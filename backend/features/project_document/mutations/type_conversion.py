@@ -326,6 +326,19 @@ def apply_change_type(
 
     rows = read_rows_from_envelope(body, mutation.table_key)
 
+    if policy == "linked_record_wipe":
+        return _apply_linked_record_wipe(
+            body,
+            mutation,
+            existing=existing,
+            index=index,
+            current_fields=current_fields,
+            rows=rows,
+            from_type=from_type,
+            to_type=to_type,
+            capability=capability,
+        )
+
     # When converting FROM formula, re-evaluate the live document one
     # last time so the snapshot pass reads the actual current computed
     # value, not a stale overlay. Empty when from_type is not formula.
@@ -540,6 +553,80 @@ def apply_change_type(
         audit["row_changes"] = row_changes[:AUDIT_ROW_CAP]
         if len(row_changes) > AUDIT_ROW_CAP:
             audit["row_changes_truncated"] = True
+    return next_body, audit
+
+
+def _apply_linked_record_wipe(
+    body: ProjectDocumentV1,
+    mutation: ChangeTypeMutation,
+    *,
+    existing: TableFieldDef,
+    index: int,
+    current_fields: list[TableFieldDef],
+    rows: list[object],
+    from_type: CustomFieldType,
+    to_type: CustomFieldType,
+    capability: TableFieldRegistry,
+) -> tuple[ProjectDocumentV1, dict[str, object]]:
+    """changeType to/from `linked_record`: wipe row data on both bag
+    sides for `field_id` on every row in the same transaction
+    (PRD Q12). Requires `acknowledge_destructive` when any row carries
+    a non-empty value for the field.
+    """
+    field_id = mutation.field_id
+    cleared_rows = 0
+    for row in rows:
+        if capability.read_row_custom_values(row).get(field_id) not in (None, ""):
+            cleared_rows += 1
+            continue
+        if capability.read_row_links(row).get(field_id):
+            cleared_rows += 1
+
+    if cleared_rows > 0 and not mutation.acknowledge_destructive:
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "custom_field_coercion_preflight_required",
+            "Conversion would clear values; resubmit with acknowledge_destructive.",
+            {
+                "field_id": field_id,
+                "from_type": from_type.value,
+                "to_type": to_type.value,
+                "incompatible_row_count": cleared_rows,
+                "total_row_count": len(rows),
+            },
+        )
+
+    next_fields = list(current_fields)
+    next_fields[index] = mutation.after.model_copy(
+        update={"created_by": existing.created_by, "created_at": existing.created_at}
+    )
+    next_body = capability.replace_field_defs(body, next_fields)
+
+    new_rows: list[object] = []
+    for row in rows:
+        next_row = row
+        current_values = capability.read_row_custom_values(row)
+        if field_id in current_values:
+            cleaned = dict(current_values)
+            cleaned.pop(field_id, None)
+            next_row = capability.set_row_custom_values(next_row, cleaned)
+        current_links = capability.read_row_links(next_row)
+        if field_id in current_links:
+            cleaned_links = dict(current_links)
+            cleaned_links.pop(field_id, None)
+            next_row = capability.set_row_links(next_row, cleaned_links)
+        new_rows.append(next_row)
+    next_body = replace_rows_in_envelope(next_body, mutation.table_key, new_rows)
+
+    audit: dict[str, object] = {
+        "kind": "changeType",
+        "table_key": mutation.table_key,
+        "field_id": field_id,
+        "from_type": from_type.value,
+        "to_type": to_type.value,
+        "compatible_row_count": len(rows) - cleared_rows,
+        "cleared_row_count": cleared_rows,
+    }
     return next_body, audit
 
 

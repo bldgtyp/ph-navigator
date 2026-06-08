@@ -86,7 +86,7 @@ def test_document_rejects_missing_hot_water_heater_type_option() -> None:
     first = hot_water_heater_payload()["hot_water_heaters"][0]
     tables = empty_required_tables()
     body = {
-        "schema_version": 4,
+        "schema_version": 5,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             **tables,
@@ -138,7 +138,7 @@ def test_legacy_equipment_hot_water_heaters_contract_preserves_table_envelope() 
     tables = empty_required_tables()
     body = ProjectDocumentV1.model_validate(
         {
-            "schema_version": 4,
+            "schema_version": 5,
             "project": {"name": "p", "bt_number": "1", "cert_programs": []},
             "tables": {
                 **tables,

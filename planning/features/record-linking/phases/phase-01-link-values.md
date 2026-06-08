@@ -1,7 +1,14 @@
 ---
 DATE: 2026-06-08
 TIME: planning
-STATUS: Proposed implementation plan for Record-linking Phase 1.
+STATUS: Phase 1 backend complete; frontend standalone primitives
+        (LinkedRecordCell, LinkedRecordPicker,
+        FieldConfigSectionLinkedRecord) complete; data-table
+        integration (`FieldConfigModal` modal wiring, `GridBody`
+        cell-render dispatch, `useGridEdit` editor wiring, equipment
+        table accessors, fill/paste/undo, `?focus=` highlight) +
+        Playwright smoke deferred to a follow-up session. Live
+        punch list in `../STATUS.md`.
 AUTHOR: Ed May (with Claude)
 SCOPE: First user-facing slice: a `linked_record` custom field type
        that editors can add through the field-config modal, link
@@ -89,6 +96,29 @@ escalate as a `decisions.md` entry; do not solve it inline in code
 without a PRD update.
 
 ## P2. Acceptance — Phase 1 done when
+
+**Status as of 2026-06-08** — see `../STATUS.md` for the live tracker:
+
+| # | Item | State |
+|---|---|---|
+| 1 | enum + JSON-Schema-side wire shape | ✅ enum + `custom_links` row shape shipped; JSON-Schema export regen pending if a generated artifact is shipped (P4.6) |
+| 2 | modal exposes "Linked Record" + target + cardinality | ⚠️ standalone `FieldConfigSectionLinkedRecord` built + tested; `FieldConfigModal` integration deferred |
+| 3 | save round-trip through schema-mutation pipeline | ⚠️ backend pipeline accepts `linked_record` end-to-end; frontend modal hookup deferred |
+| 4 | picker UX (search, sort, virtualize, columns) | ⚠️ standalone `LinkedRecordPicker` built + tested; data-table editor wiring deferred |
+| 5 | pill list renders picked rows w/ fallback | ⚠️ standalone `LinkedRecordCell` built + tested; `GridBody` dispatch deferred |
+| 6 | pill click → `?focus=<row_id>` highlight | ❌ deferred (P4.5) |
+| 7 | ⌫ unlink | ⚠️ `LinkedRecordCell.onPillUnlink` shipped; `useGridEdit` wiring deferred |
+| 8 | save/save-as/discard + JSON download round-trip | ✅ backend pydantic round-trip clean; download path inherits the mixin |
+| 9 | validator (target resolution, retarget, cap, dedupe, orphan strip, bag exclusivity) | ✅ all shipped — `_validate_rows_custom_links` + `_validate_linked_record_field_defs` + `bundle.py` retarget guard |
+| 10 | `changeType` wipes both bag sides + summary count | ✅ `linked_record_wipe` policy + `_apply_linked_record_wipe` |
+| 11 | fill / paste / stringified-paste reject | ❌ deferred (P4.4) |
+| 12 | MCP `linked_ids` payloads | ✅ inherits via `RowWithCustomFields` + mutation enum admission |
+| 13 | `erv_unit_ids` retirement + `schema_version` 4 → 5 | ✅ shipped end-to-end (RoomRow, validator, constants, ~13 backend fixtures, frontend types + RoomsTable + equipment lib) |
+| 14 | `RowWithCustomFields` mixin across `*Row`s | ✅ all 9 row models inherit |
+| 15 | `_validate_rows_custom_links` wired per table | ✅ wired on every FieldDef-capable table |
+| 16 | `make ci` green; vitest + pytest add coverage | ✅ backend 670 / frontend 1449; +17 backend, +19 frontend new tests |
+
+Legend: ✅ shipped · ⚠️ primitives shipped, integration deferred · ❌ deferred to next session
 
 1. The `CustomFieldType` enum admits `linked_record` and the JSON
    Schema export includes it as a field type and includes the

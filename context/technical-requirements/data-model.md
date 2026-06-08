@@ -749,7 +749,15 @@ Rules (post-Phase 1b):
     - `locked` arrays — render-time overlay, NOT persisted (see §6.6.2);
     - the canonical ordered list of built-in `field_key`s — drives the
       schema fingerprint's built-in slice.
-- `schema_version: 4` is the v4 wire shape (Phase 2). v4 promotes the
+- **`schema_version: 5`** (record-linking Phase 1, 2026-06-08) adds the
+  parallel `custom_links: dict[str, list[str]]` bag on every
+  FieldDef-capable row, retires the typed `RoomRow.erv_unit_ids` column,
+  and admits `CustomFieldType.linked_record`. The detailed doc sweep for
+  the linked-record / inverse-view / rollups feature lives under
+  `planning/features/record-linking/`; this section will be revised
+  once Phases 1–3 are merged.
+- `schema_version: 4` (superseded by v5 above) is the v4 wire shape
+  (Phase 2). v4 promotes the
   pinned identifier to a real `record_id` FieldDef on every
   FieldDef-capable table: Rooms ships a formula seed
   (`concat({Number}, " — ", {Name})`); Pumps' Phase-1b `tag` seed is

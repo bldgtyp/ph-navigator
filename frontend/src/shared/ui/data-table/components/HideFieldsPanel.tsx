@@ -16,6 +16,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
+  ArrowRightLeft,
   Calculator,
   CircleDot,
   GripVertical,
@@ -255,4 +256,5 @@ const ICON_FOR_FIELD_TYPE: Record<FieldType, ComponentType<LucideProps>> = {
   computed: Calculator,
   attachment: Paperclip,
   color: Palette,
+  linked_record: ArrowRightLeft,
 };

@@ -159,19 +159,6 @@ export function RoomsTable({
         measureText: (room) => room.icfa_factor.toFixed(2),
         className: "numeric-cell",
       },
-      {
-        id: "erv_unit_ids",
-        fieldKey: "erv_unit_ids",
-        header: "ERVs",
-        accessor: (room) => room.erv_unit_ids.join(", "),
-        render: (room) =>
-          room.erv_unit_ids.length ? (
-            room.erv_unit_ids.join(", ")
-          ) : (
-            <span className="muted-cell">None</span>
-          ),
-        defaultWidth: 200,
-      },
       ...customColumns,
     ];
   }, [fieldDefByKey, customColumns, rowsComputed]);

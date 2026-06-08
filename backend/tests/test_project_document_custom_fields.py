@@ -212,7 +212,6 @@ def test_project_document_validates_color_custom_values() -> None:
         floor_level=None,
         building_zone=None,
         icfa_factor=1.0,
-        erv_unit_ids=[],
         catalog_origin=None,
         notes=None,
         custom_values=cast(
@@ -243,7 +242,6 @@ def test_project_document_rejects_invalid_color_custom_values() -> None:
         floor_level=None,
         building_zone=None,
         icfa_factor=1.0,
-        erv_unit_ids=[],
         catalog_origin=None,
         notes=None,
         custom_values=cast(

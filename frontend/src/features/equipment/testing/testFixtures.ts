@@ -123,7 +123,6 @@ export function buildRoom(overrides: Partial<RoomRow> = {}): RoomRow {
     floor_level: "opt_ground",
     building_zone: null,
     icfa_factor: 1,
-    erv_unit_ids: [],
     catalog_origin: null,
     notes: null,
     custom_values: {
@@ -132,6 +131,7 @@ export function buildRoom(overrides: Partial<RoomRow> = {}): RoomRow {
       num_people: 0,
       num_bedrooms: 0,
     },
+    custom_links: {},
     ...overrides,
   };
 }

@@ -127,7 +127,6 @@ def _build_room_payload(custom_field_id: str, custom_value: str | None = "needs 
                 "floor_level": "opt_ground",
                 "building_zone": "opt_residential",
                 "icfa_factor": 1.0,
-                "erv_unit_ids": [],
                 "catalog_origin": None,
                 "notes": None,
                 "custom_values": {

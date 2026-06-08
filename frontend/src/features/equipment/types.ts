@@ -8,12 +8,14 @@ export type RoomRow = {
   floor_level: string | null;
   building_zone: string | null;
   icfa_factor: number;
-  erv_unit_ids: string[];
   catalog_origin: Record<string, unknown> | null;
   notes: string | null;
   // Backend `custom_values` bag keyed by every mutable-type FieldDef
   // (`number`, `name`, `num_people`, `num_bedrooms`, and `cf_*` fields).
   custom_values: Record<string, CustomValue>;
+  // PRD Q4 / Q16: parallel bag keyed by `linked_record` field keys —
+  // values are id lists pointing at rows in the target table.
+  custom_links?: Record<string, string[]>;
 };
 
 export const ROOM_FLOOR_LEVEL_KEY = "floor_level";
@@ -88,6 +90,7 @@ export type PumpRow = {
   // `record_id` replaces the old typed `tag`; the other mutable
   // built-ins listed here share storage with custom `cf_*` fields.
   custom_values: Record<string, CustomValue>;
+  custom_links?: Record<string, string[]>;
 };
 
 export type PumpsOptionMap = Record<PumpOptionKey, SingleSelectOption[]>;
@@ -125,6 +128,7 @@ export type VentilatorRow = {
   url: string | null;
   notes: string | null;
   custom_values: Record<string, CustomValue>;
+  custom_links?: Record<string, string[]>;
 };
 
 export type VentilatorsOptionMap = Record<VentilatorOptionKey, SingleSelectOption[]>;
@@ -161,6 +165,7 @@ export type ThermalBridgeRow = {
   pdf_report_asset_ids: string[];
   notes: string | null;
   custom_values: Record<string, CustomValue>;
+  custom_links?: Record<string, string[]>;
 };
 
 export type ThermalBridgesOptionMap = Record<ThermalBridgeOptionKey, SingleSelectOption[]> & {
@@ -201,6 +206,7 @@ export type FanRow = {
   notes: string | null;
   datasheet_asset_ids: string[];
   custom_values: Record<string, CustomValue>;
+  custom_links?: Record<string, string[]>;
 };
 
 export type FansOptionMap = Record<FanOptionKey, SingleSelectOption[]>;
@@ -239,6 +245,7 @@ export type HotWaterHeaterRow = {
   notes: string | null;
   datasheet_asset_ids: string[];
   custom_values: Record<string, CustomValue>;
+  custom_links?: Record<string, string[]>;
 };
 
 export type HotWaterHeatersOptionMap = Record<HotWaterHeaterOptionKey, SingleSelectOption[]>;
@@ -276,6 +283,7 @@ export type HotWaterTankRow = {
   notes: string | null;
   datasheet_asset_ids: string[];
   custom_values: Record<string, CustomValue>;
+  custom_links?: Record<string, string[]>;
 };
 
 export type HotWaterTanksOptionMap = Record<HotWaterTankOptionKey, SingleSelectOption[]>;
@@ -304,6 +312,7 @@ export type ElectricHeaterRow = {
   url: string | null;
   notes: string | null;
   custom_values: Record<string, CustomValue>;
+  custom_links?: Record<string, string[]>;
 };
 
 export type ElectricHeatersOptionMap = Record<string, SingleSelectOption[]>;
@@ -348,6 +357,7 @@ export type ApplianceRow = {
   notes: string | null;
   datasheet_asset_ids: string[];
   custom_values: Record<string, CustomValue>;
+  custom_links?: Record<string, string[]>;
 };
 
 export type AppliancesOptionMap = Record<ApplianceOptionKey, SingleSelectOption[]>;

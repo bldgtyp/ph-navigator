@@ -12,15 +12,18 @@ describe("type conversion matrix — formula parity", () => {
         .map(([to, policy]) => `${from}->${to}:${policy}`),
     );
 
-    expect(entries).toHaveLength(34);
+    // 34 pre-linked-record pairs + 14 linked_record pairs (7 from + 7 to).
+    expect(entries).toHaveLength(48);
     expect(formulaEntries.sort()).toEqual([
       "color->formula:discard_then_author",
       "formula->color:lossy",
+      "formula->linked_record:linked_record_wipe",
       "formula->long_text:lossless",
       "formula->number:lossy",
       "formula->short_text:lossless",
       "formula->single_select:create_options",
       "formula->url:lossy",
+      "linked_record->formula:linked_record_wipe",
       "long_text->formula:discard_then_author",
       "number->formula:discard_then_author",
       "short_text->formula:discard_then_author",

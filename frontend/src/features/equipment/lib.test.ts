@@ -324,12 +324,12 @@ describe("equipment room helpers", () => {
     expect(validateRoomsPayload(duplicate)).toBeNull();
   });
 
-  test("keeps cleared numeric cell writes null and blocks deferred ERV assignments", () => {
+  test("keeps cleared numeric cell writes null", () => {
     const current: RoomsSlice = {
       ...baseSlice,
       rooms: [
         roomFixture(
-          { id: "rm_1", floor_level: "opt_ground", erv_unit_ids: ["erv_fake"] },
+          { id: "rm_1", floor_level: "opt_ground" },
           { number: "101", name: "Living", num_people: 3 },
         ),
       ],
@@ -346,9 +346,7 @@ describe("equipment room helpers", () => {
     );
 
     expect(payload.rooms[0]?.custom_values.num_people).toBeNull();
-    expect(validateRoomsPayload(payload)).toBe(
-      "ERV assignments are deferred until ERV units are available.",
-    );
+    expect(validateRoomsPayload(payload)).toBe(null);
   });
 
   test("renames, reorders, and deletes options with reference replacement", () => {
@@ -512,7 +510,6 @@ describe("equipment room helpers", () => {
       "num_people",
       "num_bedrooms",
       "icfa_factor",
-      "erv_unit_ids",
     ]);
     expect(ROOM_FLOOR_LEVEL_COLUMN_ID).toBe("floor_level");
     expect(ROOM_BUILDING_ZONE_COLUMN_ID).toBe("building_zone");

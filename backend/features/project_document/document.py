@@ -75,7 +75,7 @@ THERMAL_BRIDGE_OPTION_KEYS: tuple[ThermalBridgeOptionKey, ...] = (THERMAL_BRIDGE
 # entry is renamed to `record_id` (display label stays "Tag"). Pre-
 # deploy posture (PRD §P3.6) — no v2/v3 reader is provided; dev DBs
 # rebuild on the phase boundary.
-CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 4
+CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 5
 
 # Field keys that have a typed Pydantic column on the row model. Used
 # to split read/write paths between typed columns and the
@@ -88,7 +88,7 @@ CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 4
 # these tuples enumerate the subset that the validator / formula
 # accessors / catalog-refresh path needs to branch on.
 ROOMS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
-    {"id", "floor_level", "building_zone", "icfa_factor", "erv_unit_ids", "catalog_origin", "notes"}
+    {"id", "floor_level", "building_zone", "icfa_factor", "catalog_origin", "notes"}
 )
 PUMPS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
     {"id", "device_type", "phase", "link", "notes", "datasheet_asset_ids"}
@@ -112,6 +112,20 @@ THERMAL_BRIDGES_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
 )
 
 
+class RowWithCustomFields(BaseModel):
+    """Shared bag fields for every FieldDef-capable table row.
+
+    `custom_values` holds scalar values for mutable-type built-ins and
+    every non-`linked_record` custom field. `custom_links` holds id
+    arrays for `linked_record` custom fields. A given `field_key`
+    appears in exactly one of the two bags (PRD Q16, enforced by
+    `_validate_rows_custom_links`).
+    """
+
+    custom_values: dict[str, CustomValue] = Field(default_factory=dict)
+    custom_links: dict[str, list[str]] = Field(default_factory=dict)
+
+
 class SingleSelectOption(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -128,12 +142,12 @@ class SingleSelectOption(BaseModel):
         return value
 
 
-class RoomRow(BaseModel):
+class RoomRow(RowWithCustomFields):
     """A row in the Rooms table (v3 mixed-storage).
 
     Only locked-type built-ins keep typed columns. Mutable-type built-ins
     (`number`, `name`, `num_people`, `num_bedrooms`) and all custom
-    fields live in `custom_values`, keyed by `field_key`.
+    fields live in `custom_values` / `custom_links` (inherited).
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -142,11 +156,8 @@ class RoomRow(BaseModel):
     floor_level: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
     building_zone: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
     icfa_factor: float = Field(default=1.0, ge=0.0, le=1.0)
-    erv_unit_ids: list[str] = Field(default_factory=list)
     catalog_origin: dict[str, object] | None = None
     notes: str | None = Field(default=None, max_length=4000)
-    # Mutable-type built-in + custom field values, keyed by `field_key`.
-    custom_values: dict[str, CustomValue] = Field(default_factory=dict)
 
     @field_validator("notes", mode="before")
     @classmethod
@@ -157,7 +168,7 @@ class RoomRow(BaseModel):
         return value
 
 
-class PumpRow(BaseModel):
+class PumpRow(RowWithCustomFields):
     """A row in the Pumps table (v3 mixed-storage).
 
     Locked-type built-ins keep typed columns: `device_type`, `phase`,
@@ -174,7 +185,6 @@ class PumpRow(BaseModel):
     link: str | None = Field(default=None, max_length=2000)
     notes: str | None = Field(default=None, max_length=4000)
     datasheet_asset_ids: list[str] = Field(default_factory=list)
-    custom_values: dict[str, CustomValue] = Field(default_factory=dict)
 
     @field_validator("notes", "link", mode="before")
     @classmethod
@@ -213,7 +223,7 @@ class PumpsTableEnvelope(BaseModel):
     rows: list[PumpRow] = Field(default_factory=list)
 
 
-class VentilatorRow(BaseModel):
+class VentilatorRow(RowWithCustomFields):
     """A row in the Ventilators / ERVs equipment table."""
 
     model_config = ConfigDict(extra="forbid")
@@ -222,7 +232,6 @@ class VentilatorRow(BaseModel):
     inside_outside: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
     url: str | None = Field(default=None, max_length=2000)
     notes: str | None = Field(default=None, max_length=4000)
-    custom_values: dict[str, CustomValue] = Field(default_factory=dict)
 
     @field_validator("url", "notes", mode="before")
     @classmethod
@@ -247,7 +256,7 @@ class VentilatorsTableEnvelope(BaseModel):
     rows: list[VentilatorRow] = Field(default_factory=list)
 
 
-class FanRow(BaseModel):
+class FanRow(RowWithCustomFields):
     """A row in the Fans equipment table."""
 
     model_config = ConfigDict(extra="forbid")
@@ -258,7 +267,6 @@ class FanRow(BaseModel):
     url: str | None = Field(default=None, max_length=2000)
     notes: str | None = Field(default=None, max_length=4000)
     datasheet_asset_ids: list[str] = Field(default_factory=list)
-    custom_values: dict[str, CustomValue] = Field(default_factory=dict)
 
     @field_validator("url", "notes", mode="before")
     @classmethod
@@ -290,7 +298,7 @@ class FansTableEnvelope(BaseModel):
     rows: list[FanRow] = Field(default_factory=list)
 
 
-class HotWaterHeaterRow(BaseModel):
+class HotWaterHeaterRow(RowWithCustomFields):
     """A row in the Hot Water Heaters equipment table."""
 
     model_config = ConfigDict(extra="forbid")
@@ -301,7 +309,6 @@ class HotWaterHeaterRow(BaseModel):
     url: str | None = Field(default=None, max_length=2000)
     notes: str | None = Field(default=None, max_length=4000)
     datasheet_asset_ids: list[str] = Field(default_factory=list)
-    custom_values: dict[str, CustomValue] = Field(default_factory=dict)
 
     @field_validator("url", "notes", mode="before")
     @classmethod
@@ -333,7 +340,7 @@ class HotWaterHeatersTableEnvelope(BaseModel):
     rows: list[HotWaterHeaterRow] = Field(default_factory=list)
 
 
-class HotWaterTankRow(BaseModel):
+class HotWaterTankRow(RowWithCustomFields):
     """A row in the Hot Water Tanks equipment table."""
 
     model_config = ConfigDict(extra="forbid")
@@ -343,7 +350,6 @@ class HotWaterTankRow(BaseModel):
     url: str | None = Field(default=None, max_length=2000)
     notes: str | None = Field(default=None, max_length=4000)
     datasheet_asset_ids: list[str] = Field(default_factory=list)
-    custom_values: dict[str, CustomValue] = Field(default_factory=dict)
 
     @field_validator("url", "notes", mode="before")
     @classmethod
@@ -368,7 +374,7 @@ class HotWaterTanksTableEnvelope(BaseModel):
     rows: list[HotWaterTankRow] = Field(default_factory=list)
 
 
-class ElectricHeaterRow(BaseModel):
+class ElectricHeaterRow(RowWithCustomFields):
     """A row in the Electric Heaters equipment table."""
 
     model_config = ConfigDict(extra="forbid")
@@ -376,7 +382,6 @@ class ElectricHeaterRow(BaseModel):
     id: str = Field(pattern=r"^heatr_[A-Za-z0-9_-]+$", max_length=80)
     url: str | None = Field(default=None, max_length=2000)
     notes: str | None = Field(default=None, max_length=4000)
-    custom_values: dict[str, CustomValue] = Field(default_factory=dict)
 
     @field_validator("url", "notes", mode="before")
     @classmethod
@@ -401,7 +406,7 @@ class ElectricHeatersTableEnvelope(BaseModel):
     rows: list[ElectricHeaterRow] = Field(default_factory=list)
 
 
-class ApplianceRow(BaseModel):
+class ApplianceRow(RowWithCustomFields):
     """A row in the Appliances equipment table."""
 
     model_config = ConfigDict(extra="forbid")
@@ -412,7 +417,6 @@ class ApplianceRow(BaseModel):
     url: str | None = Field(default=None, max_length=2000)
     notes: str | None = Field(default=None, max_length=4000)
     datasheet_asset_ids: list[str] = Field(default_factory=list)
-    custom_values: dict[str, CustomValue] = Field(default_factory=dict)
 
     @field_validator("url", "notes", mode="before")
     @classmethod
@@ -437,7 +441,7 @@ class AppliancesTableEnvelope(BaseModel):
     rows: list[ApplianceRow] = Field(default_factory=list)
 
 
-class ThermalBridgeRow(BaseModel):
+class ThermalBridgeRow(RowWithCustomFields):
     """A linear thermal-bridge record for the project document."""
 
     model_config = ConfigDict(extra="forbid")
@@ -446,7 +450,6 @@ class ThermalBridgeRow(BaseModel):
     thermal_bridge_type: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
     pdf_report_asset_ids: list[str] = Field(default_factory=list)
     notes: str | None = Field(default=None, max_length=4000)
-    custom_values: dict[str, CustomValue] = Field(default_factory=dict)
 
     @field_validator("notes", mode="before")
     @classmethod
@@ -896,7 +899,7 @@ class ProjectDocumentTables(BaseModel):
 class ProjectDocumentV1(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: Literal[4] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
+    schema_version: Literal[5] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     project: ProjectDocumentProject
     tables: ProjectDocumentTables = Field(default_factory=ProjectDocumentTables)
     single_select_options: dict[str, list[SingleSelectOption]] = Field(
@@ -945,8 +948,15 @@ class ProjectDocumentV1(BaseModel):
                     raise ValueError(f"Duplicate option label in {key}: {option.label}")
                 labels.add(normalized_label)
 
+        target_row_ids = _collect_target_row_ids(self)
+
         rooms_field_defs_by_key = _index_table_field_defs("rooms", self.tables.rooms.field_defs)
         _require_record_id_seeded("rooms", rooms_field_defs_by_key)
+        _validate_linked_record_field_defs(
+            table_label="rooms",
+            table_path=("rooms",),
+            field_defs_by_key=rooms_field_defs_by_key,
+        )
         floor_option_ids = {option.id for option in self.single_select_options[ROOM_FLOOR_LEVEL_OPTION_KEY]}
         zone_option_ids = {option.id for option in self.single_select_options[ROOM_BUILDING_ZONE_OPTION_KEY]}
         room_ids: set[str] = set()
@@ -959,8 +969,6 @@ class ProjectDocumentV1(BaseModel):
                 raise ValueError(f"Missing floor-level option for room {room.id}: {room.floor_level}")
             if room.building_zone is not None and room.building_zone not in zone_option_ids:
                 raise ValueError(f"Missing building-zone option for room {room.id}: {room.building_zone}")
-            if room.erv_unit_ids:
-                raise ValueError(f"Room ERV assignments are deferred until the ERV table is available: {room.id}")
 
         _validate_rows_custom_values(
             table_label="rooms",
@@ -968,6 +976,13 @@ class ProjectDocumentV1(BaseModel):
             rows=[(room.id, room.custom_values) for room in self.tables.rooms.rows],
             field_defs_by_key=rooms_field_defs_by_key,
             single_select_options=self.single_select_options,
+        )
+        _validate_rows_custom_links(
+            table_label="rooms",
+            row_label="room",
+            rows=[(room.id, room.custom_values, room.custom_links) for room in self.tables.rooms.rows],
+            field_defs_by_key=rooms_field_defs_by_key,
+            target_row_ids=target_row_ids,
         )
         _validate_default_option_ids(
             table_label="rooms",
@@ -991,12 +1006,24 @@ class ProjectDocumentV1(BaseModel):
             if pump.device_type is not None and pump.device_type not in pump_device_type_ids:
                 raise ValueError(f"Missing pump device-type option for pump {pump.id}: {pump.device_type}")
 
+        _validate_linked_record_field_defs(
+            table_label="pumps",
+            table_path=("equipment", "pumps"),
+            field_defs_by_key=pumps_field_defs_by_key,
+        )
         _validate_rows_custom_values(
             table_label="pumps",
             row_label="pump",
             rows=[(pump.id, pump.custom_values) for pump in self.tables.equipment.pumps.rows],
             field_defs_by_key=pumps_field_defs_by_key,
             single_select_options=self.single_select_options,
+        )
+        _validate_rows_custom_links(
+            table_label="pumps",
+            row_label="pump",
+            rows=[(pump.id, pump.custom_values, pump.custom_links) for pump in self.tables.equipment.pumps.rows],
+            field_defs_by_key=pumps_field_defs_by_key,
+            target_row_ids=target_row_ids,
         )
 
         fans_field_defs_by_key = _index_table_field_defs("fans", self.tables.equipment.fans.field_defs)
@@ -1010,12 +1037,24 @@ class ProjectDocumentV1(BaseModel):
             if fan.fan_type is not None and fan.fan_type not in fan_type_ids:
                 raise ValueError(f"Missing fan type option for fan {fan.id}: {fan.fan_type}")
 
+        _validate_linked_record_field_defs(
+            table_label="fans",
+            table_path=("equipment", "fans"),
+            field_defs_by_key=fans_field_defs_by_key,
+        )
         _validate_rows_custom_values(
             table_label="fans",
             row_label="fan",
             rows=[(fan.id, fan.custom_values) for fan in self.tables.equipment.fans.rows],
             field_defs_by_key=fans_field_defs_by_key,
             single_select_options=self.single_select_options,
+        )
+        _validate_rows_custom_links(
+            table_label="fans",
+            row_label="fan",
+            rows=[(fan.id, fan.custom_values, fan.custom_links) for fan in self.tables.equipment.fans.rows],
+            field_defs_by_key=fans_field_defs_by_key,
+            target_row_ids=target_row_ids,
         )
 
         hot_water_heaters_field_defs_by_key = _index_table_field_defs(
@@ -1033,12 +1072,27 @@ class ProjectDocumentV1(BaseModel):
             if heater.heater_type is not None and heater.heater_type not in hot_water_heater_type_ids:
                 raise ValueError(f"Missing hot water heater type option for heater {heater.id}: {heater.heater_type}")
 
+        _validate_linked_record_field_defs(
+            table_label="hot_water_heaters",
+            table_path=("equipment", "hot_water_heaters"),
+            field_defs_by_key=hot_water_heaters_field_defs_by_key,
+        )
         _validate_rows_custom_values(
             table_label="hot_water_heaters",
             row_label="hot water heater",
             rows=[(heater.id, heater.custom_values) for heater in self.tables.equipment.hot_water_heaters.rows],
             field_defs_by_key=hot_water_heaters_field_defs_by_key,
             single_select_options=self.single_select_options,
+        )
+        _validate_rows_custom_links(
+            table_label="hot_water_heaters",
+            row_label="hot water heater",
+            rows=[
+                (heater.id, heater.custom_values, heater.custom_links)
+                for heater in self.tables.equipment.hot_water_heaters.rows
+            ],
+            field_defs_by_key=hot_water_heaters_field_defs_by_key,
+            target_row_ids=target_row_ids,
         )
 
         hot_water_tanks_field_defs_by_key = _index_table_field_defs(
@@ -1057,12 +1111,26 @@ class ProjectDocumentV1(BaseModel):
             if isinstance(heat_loss_rate, (int, float)) and heat_loss_rate < 0:
                 raise ValueError(f"Hot water tank heat_loss_rate_w_k must be zero or greater: {tank.id}")
 
+        _validate_linked_record_field_defs(
+            table_label="hot_water_tanks",
+            table_path=("equipment", "hot_water_tanks"),
+            field_defs_by_key=hot_water_tanks_field_defs_by_key,
+        )
         _validate_rows_custom_values(
             table_label="hot_water_tanks",
             row_label="hot water tank",
             rows=[(tank.id, tank.custom_values) for tank in self.tables.equipment.hot_water_tanks.rows],
             field_defs_by_key=hot_water_tanks_field_defs_by_key,
             single_select_options=self.single_select_options,
+        )
+        _validate_rows_custom_links(
+            table_label="hot_water_tanks",
+            row_label="hot water tank",
+            rows=[
+                (tank.id, tank.custom_values, tank.custom_links) for tank in self.tables.equipment.hot_water_tanks.rows
+            ],
+            field_defs_by_key=hot_water_tanks_field_defs_by_key,
+            target_row_ids=target_row_ids,
         )
 
         electric_heaters_field_defs_by_key = _index_table_field_defs(
@@ -1075,12 +1143,27 @@ class ProjectDocumentV1(BaseModel):
                 raise ValueError(f"Duplicate electric heater id: {heater.id}")
             electric_heater_ids.add(heater.id)
 
+        _validate_linked_record_field_defs(
+            table_label="electric_heaters",
+            table_path=("equipment", "electric_heaters"),
+            field_defs_by_key=electric_heaters_field_defs_by_key,
+        )
         _validate_rows_custom_values(
             table_label="electric_heaters",
             row_label="electric heater",
             rows=[(heater.id, heater.custom_values) for heater in self.tables.equipment.electric_heaters.rows],
             field_defs_by_key=electric_heaters_field_defs_by_key,
             single_select_options=self.single_select_options,
+        )
+        _validate_rows_custom_links(
+            table_label="electric_heaters",
+            row_label="electric heater",
+            rows=[
+                (heater.id, heater.custom_values, heater.custom_links)
+                for heater in self.tables.equipment.electric_heaters.rows
+            ],
+            field_defs_by_key=electric_heaters_field_defs_by_key,
+            target_row_ids=target_row_ids,
         )
 
         appliances_field_defs_by_key = _index_table_field_defs(
@@ -1105,12 +1188,27 @@ class ProjectDocumentV1(BaseModel):
                     f"Missing appliance EnergyStar option for appliance {appliance.id}: {appliance.energy_star}"
                 )
 
+        _validate_linked_record_field_defs(
+            table_label="appliances",
+            table_path=("equipment", "appliances"),
+            field_defs_by_key=appliances_field_defs_by_key,
+        )
         _validate_rows_custom_values(
             table_label="appliances",
             row_label="appliance",
             rows=[(appliance.id, appliance.custom_values) for appliance in self.tables.equipment.appliances.rows],
             field_defs_by_key=appliances_field_defs_by_key,
             single_select_options=self.single_select_options,
+        )
+        _validate_rows_custom_links(
+            table_label="appliances",
+            row_label="appliance",
+            rows=[
+                (appliance.id, appliance.custom_values, appliance.custom_links)
+                for appliance in self.tables.equipment.appliances.rows
+            ],
+            field_defs_by_key=appliances_field_defs_by_key,
+            target_row_ids=target_row_ids,
         )
 
         thermal_bridges_field_defs_by_key = _index_table_field_defs(
@@ -1138,6 +1236,11 @@ class ProjectDocumentV1(BaseModel):
             if isinstance(frsi_value, (int, float)) and not 0 <= frsi_value <= 1:
                 raise ValueError(f"Thermal bridge frsi_value must be between 0 and 1: {thermal_bridge.id}")
 
+        _validate_linked_record_field_defs(
+            table_label="thermal_bridges",
+            table_path=("thermal_bridges",),
+            field_defs_by_key=thermal_bridges_field_defs_by_key,
+        )
         _validate_rows_custom_values(
             table_label="thermal_bridges",
             row_label="thermal bridge",
@@ -1146,6 +1249,16 @@ class ProjectDocumentV1(BaseModel):
             ],
             field_defs_by_key=thermal_bridges_field_defs_by_key,
             single_select_options=self.single_select_options,
+        )
+        _validate_rows_custom_links(
+            table_label="thermal_bridges",
+            row_label="thermal bridge",
+            rows=[
+                (thermal_bridge.id, thermal_bridge.custom_values, thermal_bridge.custom_links)
+                for thermal_bridge in self.tables.thermal_bridges.rows
+            ],
+            field_defs_by_key=thermal_bridges_field_defs_by_key,
+            target_row_ids=target_row_ids,
         )
 
         ventilators_field_defs_by_key = _index_table_field_defs("ventilators", self.tables.equipment.ervs.field_defs)
@@ -1162,12 +1275,27 @@ class ProjectDocumentV1(BaseModel):
                     f"{ventilator.inside_outside}"
                 )
 
+        _validate_linked_record_field_defs(
+            table_label="ventilators",
+            table_path=("equipment", "ervs"),
+            field_defs_by_key=ventilators_field_defs_by_key,
+        )
         _validate_rows_custom_values(
             table_label="ventilators",
             row_label="ventilator",
             rows=[(ventilator.id, ventilator.custom_values) for ventilator in self.tables.equipment.ervs.rows],
             field_defs_by_key=ventilators_field_defs_by_key,
             single_select_options=self.single_select_options,
+        )
+        _validate_rows_custom_links(
+            table_label="ventilators",
+            row_label="ventilator",
+            rows=[
+                (ventilator.id, ventilator.custom_values, ventilator.custom_links)
+                for ventilator in self.tables.equipment.ervs.rows
+            ],
+            field_defs_by_key=ventilators_field_defs_by_key,
+            target_row_ids=target_row_ids,
         )
 
         aperture_ids: set[str] = set()
@@ -1328,6 +1456,135 @@ def _validate_rows_custom_values(
                 raise ValueError(
                     f"Invalid value for {field_def.display_name!r} on {row_label} {row_id}: {exc}"
                 ) from exc
+
+
+# Set of valid `target_table_path` tuples for every FieldDef-capable
+# table. Used by linked-record validation to resolve a field's declared
+# `target_table_path` config without dragging in `tables.registry`
+# (which would cycle).
+LINKED_RECORD_TARGET_PATHS: frozenset[tuple[str, ...]] = frozenset(
+    {
+        ("rooms",),
+        ("thermal_bridges",),
+        ("equipment", "pumps"),
+        ("equipment", "fans"),
+        ("equipment", "hot_water_heaters"),
+        ("equipment", "hot_water_tanks"),
+        ("equipment", "electric_heaters"),
+        ("equipment", "appliances"),
+        ("equipment", "ervs"),
+    }
+)
+
+
+def _collect_target_row_ids(document: ProjectDocumentV1) -> dict[tuple[str, ...], set[str]]:
+    """Build `target_table_path → set of row ids` for every linked-
+    record-targetable table in the document. Phase 1 ships every
+    FieldDef-capable contract with `link_targetable=True`."""
+    tables = document.tables
+    by_path: dict[tuple[str, ...], set[str]] = {
+        ("rooms",): {row.id for row in tables.rooms.rows},
+        ("thermal_bridges",): {row.id for row in tables.thermal_bridges.rows},
+        ("equipment", "pumps"): {row.id for row in tables.equipment.pumps.rows},
+        ("equipment", "fans"): {row.id for row in tables.equipment.fans.rows},
+        ("equipment", "hot_water_heaters"): {row.id for row in tables.equipment.hot_water_heaters.rows},
+        ("equipment", "hot_water_tanks"): {row.id for row in tables.equipment.hot_water_tanks.rows},
+        ("equipment", "electric_heaters"): {row.id for row in tables.equipment.electric_heaters.rows},
+        ("equipment", "appliances"): {row.id for row in tables.equipment.appliances.rows},
+        ("equipment", "ervs"): {row.id for row in tables.equipment.ervs.rows},
+    }
+    return by_path
+
+
+def _normalize_target_table_path(raw: object) -> tuple[str, ...] | None:
+    if not isinstance(raw, (list, tuple)):
+        return None
+    segments: list[str] = []
+    for seg in raw:
+        if not isinstance(seg, str) or not seg:
+            return None
+        segments.append(seg)
+    return tuple(segments)
+
+
+def _validate_linked_record_field_defs(
+    *,
+    table_label: str,
+    table_path: tuple[str, ...],
+    field_defs_by_key: dict[str, TableFieldDef],
+) -> None:
+    """Validate every `linked_record` FieldDef's config — resolution of
+    `target_table_path`, non-self, non-unknown."""
+    for field_def in field_defs_by_key.values():
+        if field_def.field_type is not CustomFieldType.linked_record:
+            continue
+        raw = field_def.config.get("target_table_path")
+        target_path = _normalize_target_table_path(raw)
+        if target_path is None or target_path not in LINKED_RECORD_TARGET_PATHS:
+            raise ValueError(
+                f"linked_record field {field_def.field_key!r} on {table_label}: unknown target_table_path {raw!r}"
+            )
+        if target_path == table_path:
+            raise ValueError(
+                f"linked_record field {field_def.field_key!r} on {table_label}: self-links are not permitted"
+            )
+
+
+def _validate_rows_custom_links(
+    *,
+    table_label: str,
+    row_label: str,
+    rows: list[tuple[str, dict[str, CustomValue], dict[str, list[str]]]],
+    field_defs_by_key: dict[str, TableFieldDef],
+    target_row_ids: dict[tuple[str, ...], set[str]],
+) -> None:
+    """Validate the `custom_links` bag on every row.
+
+    - rejects bag co-existence with `custom_values` (PRD Q16)
+    - rejects unknown `field_key`
+    - rejects `field_key` whose FieldDef is not `linked_record`
+    - rejects `len(ids) > max_links`
+    - dedupes within-cell silently (PRD Q25)
+    - silently strips orphan ids against the snapshot (PRD Q5 amendment)
+    """
+    for row_id, custom_values, custom_links in rows:
+        for field_key, ids in list(custom_links.items()):
+            if field_key in custom_values:
+                raise ValueError(
+                    f"field_key {field_key!r} on {row_label} {row_id} appears in both custom_values and custom_links"
+                )
+            field_def = field_defs_by_key.get(field_key)
+            if field_def is None:
+                raise ValueError(f"Unknown field_key on {row_label} {row_id}: {field_key}")
+            if field_def.field_type is not CustomFieldType.linked_record:
+                raise ValueError(f"field_key {field_key!r} on {row_label} {row_id} is not a linked_record field")
+            if not isinstance(ids, list):
+                raise ValueError(
+                    f"linked_record value for {field_def.display_name!r} on {row_label} {row_id} must be a list"
+                )
+
+            max_links_raw = field_def.config.get("max_links", 1)
+            max_links = max_links_raw if isinstance(max_links_raw, int) else None
+            seen: set[str] = set()
+            deduped: list[str] = []
+            for entry in ids:
+                if not isinstance(entry, str):
+                    raise ValueError(
+                        f"linked_record ids for {field_def.display_name!r} on {row_label} {row_id} must be strings"
+                    )
+                if entry not in seen:
+                    seen.add(entry)
+                    deduped.append(entry)
+            if max_links is not None and len(deduped) > max_links:
+                raise ValueError(
+                    f"linked_record value for {field_def.display_name!r} on {row_label} {row_id} "
+                    f"exceeds max_links={max_links}"
+                )
+
+            target_path = _normalize_target_table_path(field_def.config.get("target_table_path"))
+            available = target_row_ids.get(target_path, set()) if target_path else set()
+            cleaned = [entry for entry in deduped if entry in available]
+            custom_links[field_key] = cleaned
 
 
 def _validate_default_option_ids(

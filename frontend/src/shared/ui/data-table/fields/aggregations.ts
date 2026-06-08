@@ -60,6 +60,10 @@ export function getAggregationKinds(fieldDef: FieldDef | undefined): readonly Ag
       return fieldDef.computed_type === "number" ? NUMBER_AGGREGATIONS : TEXT_AGGREGATIONS;
     case "attachment":
       return EMPTY_AGGREGATIONS;
+    case "linked_record":
+      // Phase 3 ships `count` via the formula `linked(...)` primitive;
+      // direct cell aggregation stays out of v1.
+      return EMPTY_AGGREGATIONS;
   }
 }
 

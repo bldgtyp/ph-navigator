@@ -25,7 +25,7 @@ const singleSelectField: FieldDef = {
   ],
 };
 const readOnlyField: FieldDef = {
-  field_key: "erv_unit_ids",
+  field_key: "read_only_demo",
   field_type: "text",
   display_name: "ERVs",
   read_only: true,
@@ -163,7 +163,7 @@ describe("useGridEdit", () => {
     act(() => {
       result.current.edit.start({
         rowId: "rm_1",
-        fieldKey: "erv_unit_ids",
+        fieldKey: "read_only_demo",
         initialValue: [],
         intent: "extend",
       });

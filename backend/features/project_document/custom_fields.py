@@ -91,6 +91,7 @@ class CustomFieldType(StrEnum):
     single_select = "single_select"
     color = "color"
     formula = "formula"
+    linked_record = "linked_record"
 
 
 MIN_NUMBER_PRECISION = 0
@@ -222,6 +223,7 @@ class TableFieldDef(BaseModel):
     @model_validator(mode="after")
     def validate_config(self) -> TableFieldDef:
         self.config = validate_number_config(self.field_type, self.config)
+        self.config = validate_link_config(self.field_type, self.config)
         return self
 
 
@@ -302,4 +304,73 @@ def coerce_custom_value(
         return normalize_hex_color(value)
     if field_type is CustomFieldType.formula:
         raise ValueError("formula fields are computed; stored row values are not permitted")
+    if field_type is CustomFieldType.linked_record:
+        raise ValueError("linked_record fields store ids in custom_links, not custom_values")
     raise ValueError(f"unsupported field type: {field_type!r}")
+
+
+# `linked_record.config.max_links` is constrained to None (multi-link
+# unbounded) or exactly 1 (single-link). PRD Q3 forbids arbitrary
+# numeric caps.
+LINKED_RECORD_MAX_LINKS_ALLOWED: frozenset[int | None] = frozenset({None, 1})
+
+
+def coerce_link_value(
+    value: object,
+    *,
+    max_links: int | None,
+) -> list[str]:
+    """Coerce / validate a row's `custom_links[field_key]` value.
+
+    Returns a deduped `list[str]` (insertion order preserved per PRD
+    Q20). Raises `ValueError` on shape errors (not-a-list, non-string
+    entries) or cap violations. Within-cell duplicates are silently
+    deduped per PRD Q25.
+
+    Orphan-id stripping against the target snapshot is the validator's
+    responsibility (see `_validate_rows_custom_links`); this helper
+    only sees the row's own payload.
+    """
+    if value is None:
+        return []
+    if not isinstance(value, list):
+        raise ValueError(f"linked_record value must be a list, got {type(value).__name__}")
+    seen: set[str] = set()
+    cleaned: list[str] = []
+    for entry in value:
+        if not isinstance(entry, str):
+            raise ValueError(f"linked_record ids must be strings, got {type(entry).__name__}")
+        if entry in seen:
+            continue
+        seen.add(entry)
+        cleaned.append(entry)
+    if max_links is not None and len(cleaned) > max_links:
+        raise ValueError(f"linked_record value exceeds max_links={max_links}: {len(cleaned)} ids")
+    return cleaned
+
+
+def validate_link_config(field_type: CustomFieldType, config: dict[str, object]) -> dict[str, object]:
+    """Validate `linked_record.config` while preserving existing keys.
+
+    Asserts `target_table_path` is a non-empty sequence of strings and
+    `max_links` is `1` or `None` (per PRD Q3). Self-target rejection
+    and target-contract resolution happen in document-level validation
+    where the registry is available.
+    """
+    if field_type is not CustomFieldType.linked_record:
+        if "target_table_path" in config or "max_links" in config:
+            raise ValueError("target_table_path/max_links are only valid for linked_record fields")
+        return config
+
+    target_path = config.get("target_table_path")
+    if not isinstance(target_path, (list, tuple)) or len(target_path) == 0:
+        raise ValueError("linked_record config requires non-empty target_table_path")
+    target_path_list = list(target_path)
+    if not all(isinstance(seg, str) and seg for seg in target_path_list):
+        raise ValueError("linked_record target_table_path entries must be non-empty strings")
+
+    max_links_raw = config.get("max_links", 1)
+    if max_links_raw not in LINKED_RECORD_MAX_LINKS_ALLOWED:
+        raise ValueError(f"linked_record max_links must be 1 or null, got {max_links_raw!r}")
+
+    return {**config, "target_table_path": target_path_list, "max_links": max_links_raw}

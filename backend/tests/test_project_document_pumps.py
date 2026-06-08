@@ -59,7 +59,7 @@ def test_document_allows_duplicate_pump_tags() -> None:
     first = pump_payload()["pumps"][0]
     tables = empty_required_tables()
     body = {
-        "schema_version": 4,
+        "schema_version": 5,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             **tables,

@@ -1,13 +1,13 @@
 ---
 DATE: 2026-06-08
 TIME: -
-STATUS: Active — PRD drafted; Q1–Q10 resolved 2026-06-08 through
-        paired use-case discussion, Q11–Q28 resolved 2026-06-08
-        through PRD review pass (wire shape, ETag, changeType,
-        picker UX, perf gate, etc.). Next step is phase plans under
-        `phases/`. No code work yet.
+STATUS: Active — Phase 1 backend + frontend primitives complete and
+        CI-green; data-table integration (`GridBody` /
+        `useGridEdit` / equipment table accessors) plus Playwright
+        smoke deferred to a follow-up session. See `STATUS.md` for the
+        detailed punch list. PRD Q1–Q28 all resolved 2026-06-08.
 AUTHOR: Ed May (with Claude)
-SCOPE: Folder router for the record-linking feature investigation
+SCOPE: Folder router for the record-linking feature
        (AirTable-style linked-record + rollup between project-document
        tables, e.g. Pumps ↔ Rooms).
 RELATED: options.md — architecture options memo with three approaches
@@ -39,21 +39,31 @@ totals on the inverse side.
    - `phase-03-rollups.md` — `linked(...)` / `linked_from(...)`
      formula primitives with `count` / `sum` / `avg`; document-
      level formula cycle detection.
-4. *(future)* `STATUS.md` — add when implementation work begins.
+4. `STATUS.md` — live progress tracker. Read this for the current
+   state of Phase 1 implementation work.
 
 ## Current state
 
 - **Approach 2 committed** as the baseline (see `options.md §5`).
-- **PRD complete**: use-case questions Q1–Q10 and implementation-
-  shape questions Q11–Q28 all resolved 2026-06-08. Wire shape,
-  ETag scope, changeType-across-bag behavior, picker UX, and the
-  per-request perf gate are all locked in §6 / §7 / §10 / §11.
-- **Phase plans drafted** under `phases/`: Phase 1 (link values),
-  Phase 2 (inverse view + perf gate), Phase 3 (rollups +
-  document-level cycle detection).
-- Next step: pick up Phase 1 implementation. No code work yet.
-- A precedent exists: `RoomRow.erv_unit_ids: list[str]` is the
-  half-implemented Room→ERV link from the V2 scaffold. PRD Q7
-  decided to delete the typed column outright with no built-in
-  replacement; users add their own linked_record fields if they
-  want the relationship.
+- **PRD complete**: Q1–Q28 all resolved 2026-06-08.
+- **Phase 1 — backend complete, frontend primitives complete**
+  (CI green on 2026-06-08):
+  - Backend: `CustomFieldType.linked_record`, `RowWithCustomFields`
+    mixin, `custom_links` bag on every `*Row`, `schema_version` 5,
+    `_validate_rows_custom_links` on every FieldDef-capable table,
+    `linked_record_wipe` changeType policy, retarget guard,
+    `TableContract.link_targetable`, `erv_unit_ids` retired.
+  - Frontend primitives: `LinkedRecordCell`, `LinkedRecordPicker`,
+    `FieldConfigSectionLinkedRecord`, type-system widened, conversion
+    matrix mirrored, fixtures + RoomsTable ERV column purged.
+  - Tests: backend pytest +17, frontend vitest +19 (cell/picker/
+    section); existing matrix-count test bumped 34 → 48.
+- **Phase 1 — deferred to next session**: wiring the standalone
+  primitives into `GridBody` cell-render dispatch, `useGridEdit`
+  editor-kind switch, `FieldConfigModal` modal expansion, equipment
+  table column accessors, fill / paste / undo paths, `?focus=`
+  highlight, Playwright browser smoke, e2e changeType pytest.
+- **Phases 2 & 3 — NOT STARTED.** Blocked on Phase 1 integration.
+- The half-implemented `RoomRow.erv_unit_ids` typed column referenced
+  by the original PRD has been deleted per Q7; users will add their
+  own `linked_record` fields when integration lands.

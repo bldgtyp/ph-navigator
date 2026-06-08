@@ -23,7 +23,7 @@ def test_project_document_and_room_json_schemas_are_exposed() -> None:
     assert project_schema.headers["X-Request-ID"] == "schema-project"
     project_body = project_schema.json()
     assert project_body["title"] == "ProjectDocumentV1"
-    assert project_body["properties"]["schema_version"]["const"] == 4
+    assert project_body["properties"]["schema_version"]["const"] == 5
     assert "ProjectDocumentTables" in project_body["$defs"]
 
     assert room_schema.status_code == 200

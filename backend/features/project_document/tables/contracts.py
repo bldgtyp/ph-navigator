@@ -75,6 +75,11 @@ class TableFieldRegistry:
     # to set_row_custom_values.
     read_row_custom_values: Callable[[object], dict[str, CustomValue]]
     set_row_custom_values: Callable[[object, dict[str, CustomValue]], object]
+    # Parallel accessors for the `custom_links` bag introduced by the
+    # record-linking feature (PRD Q4). Each FieldDef-capable table wires
+    # these to `row.custom_links`.
+    read_row_links: Callable[[object], dict[str, list[str]]]
+    set_row_links: Callable[[object, dict[str, list[str]]], object]
     compute_schema_fingerprint: Callable[[ProjectDocumentV1], str]
     # Schema-editor surface. Hooks raise `api_error` on rejection so
     # REST and MCP share one envelope. `actor_user_id` on apply is
@@ -182,6 +187,11 @@ class TableContract:
     field_registry: TableFieldRegistry | None = None
     # Non-persisted frontend hints for PHN-defined physical fields.
     unit_fields: dict[str, UnitQuantity] | None = None
+    # PRD Q15. When False, the field-config modal hides this contract
+    # from the linked-record target-table dropdown and the validator
+    # rejects any linked_record field that targets this contract.
+    # Defaults True; future per-table opt-outs are a one-line change.
+    link_targetable: bool = True
 
     @property
     def custom_fields(self) -> TableFieldRegistry | None:

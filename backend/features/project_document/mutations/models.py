@@ -75,6 +75,7 @@ ConversionPolicy = Literal[
     "substitute_labels",
     "substitute_option_colors",
     "discard_then_author",
+    "linked_record_wipe",
 ]
 
 CONVERSION_MATRIX: dict[tuple[CustomFieldType, CustomFieldType], ConversionPolicy] = {
@@ -126,6 +127,23 @@ CONVERSION_MATRIX: dict[tuple[CustomFieldType, CustomFieldType], ConversionPolic
     (CustomFieldType.formula, CustomFieldType.url): "lossy",
     (CustomFieldType.formula, CustomFieldType.single_select): "create_options",
     (CustomFieldType.formula, CustomFieldType.color): "lossy",
+    # linked_record ↔ * (Q12): row data on both bag sides is wiped for
+    # the field_key on every row. The picker never persists scalar
+    # values; reverse conversions never produce link values.
+    (CustomFieldType.linked_record, CustomFieldType.short_text): "linked_record_wipe",
+    (CustomFieldType.linked_record, CustomFieldType.long_text): "linked_record_wipe",
+    (CustomFieldType.linked_record, CustomFieldType.number): "linked_record_wipe",
+    (CustomFieldType.linked_record, CustomFieldType.url): "linked_record_wipe",
+    (CustomFieldType.linked_record, CustomFieldType.single_select): "linked_record_wipe",
+    (CustomFieldType.linked_record, CustomFieldType.color): "linked_record_wipe",
+    (CustomFieldType.linked_record, CustomFieldType.formula): "linked_record_wipe",
+    (CustomFieldType.short_text, CustomFieldType.linked_record): "linked_record_wipe",
+    (CustomFieldType.long_text, CustomFieldType.linked_record): "linked_record_wipe",
+    (CustomFieldType.number, CustomFieldType.linked_record): "linked_record_wipe",
+    (CustomFieldType.url, CustomFieldType.linked_record): "linked_record_wipe",
+    (CustomFieldType.single_select, CustomFieldType.linked_record): "linked_record_wipe",
+    (CustomFieldType.color, CustomFieldType.linked_record): "linked_record_wipe",
+    (CustomFieldType.formula, CustomFieldType.linked_record): "linked_record_wipe",
 }
 
 TEXT_TO_SINGLE_SELECT_OPTION_CAP = 50

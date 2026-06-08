@@ -361,6 +361,18 @@ def _set_room_row_custom_values(row: object, custom_values: dict[str, CustomValu
     return row.model_copy(update={"custom_values": dict(custom_values)})
 
 
+def _read_room_row_links(row: object) -> dict[str, list[str]]:
+    if not isinstance(row, RoomRow):
+        raise TypeError(f"expected RoomRow, got {type(row).__name__}")
+    return row.custom_links
+
+
+def _set_room_row_links(row: object, custom_links: dict[str, list[str]]) -> object:
+    if not isinstance(row, RoomRow):
+        raise TypeError(f"expected RoomRow, got {type(row).__name__}")
+    return row.model_copy(update={"custom_links": {k: list(v) for k, v in custom_links.items()}})
+
+
 def _compute_rooms_schema_fingerprint(body: ProjectDocumentV1) -> str:
     return compute_table_schema_fingerprint(body.tables.rooms.field_defs)
 
@@ -427,7 +439,6 @@ ROOMS_TYPED_COLUMN_FORMULA_TYPES: dict[str, RoomFormulaType] = {
     "floor_level": "single_select",
     "building_zone": "single_select",
     "icfa_factor": "number",
-    "erv_unit_ids": "text",
     "catalog_origin": "text",
     "notes": "text",
 }
@@ -507,6 +518,8 @@ rooms_field_registry = TableFieldRegistry(
     replace_field_defs=_replace_rooms_field_defs,
     read_row_custom_values=_read_room_row_custom_values,
     set_row_custom_values=_set_room_row_custom_values,
+    read_row_links=_read_room_row_links,
+    set_row_links=_set_room_row_links,
     compute_schema_fingerprint=_compute_rooms_schema_fingerprint,
     apply_schema_mutation=_apply_rooms_schema_mutation,
     validate_schema_mutation=_validate_rooms_schema_mutation,
