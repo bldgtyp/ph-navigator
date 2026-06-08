@@ -181,7 +181,7 @@ function FilterRuleRow({ ruleId, index, rule, fieldDefs, onChange, onRemove }: F
         aria-label="Remove filter rule"
         onClick={onRemove}
       >
-        🗑
+        ×
       </button>
       <button
         type="button"

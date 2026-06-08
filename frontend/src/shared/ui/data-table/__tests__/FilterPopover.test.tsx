@@ -142,7 +142,7 @@ describe("FilterPopover", () => {
     ]);
   });
 
-  test("delete button removes a rule", () => {
+  test("delete (×) button removes a rule", () => {
     const onChange = vi.fn();
     render(
       <Harness
@@ -156,6 +156,7 @@ describe("FilterPopover", () => {
     const removeButtons = within(popoverContent()).getAllByRole("button", {
       name: "Remove filter rule",
     });
+    expect(removeButtons[0]).toHaveTextContent("×");
     fireEvent.click(removeButtons[0]!);
     expect(onChange).toHaveBeenLastCalledWith([
       { fieldKey: "num_people", operator: "gt", value: "1" },
