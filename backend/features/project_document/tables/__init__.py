@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from features.project_document.tables.contracts import TableContract, TableRowsResponse
     from features.project_document.tables.electric_heaters import ElectricHeatersSliceResponse
     from features.project_document.tables.fans import FansSliceResponse
-    from features.project_document.tables.hot_water_tanks import HotWaterTanksSliceResponse
+    from features.project_document.tables.hot_water_heaters import HotWaterHeatersSliceResponse
     from features.project_document.tables.pumps import PumpsSliceResponse
     from features.project_document.tables.registry import (
         get_table_contract,
@@ -19,16 +19,18 @@ if TYPE_CHECKING:
         iter_table_contracts,
     )
     from features.project_document.tables.rooms import RoomsSliceResponse
+    from features.project_document.tables.thermal_bridges import ThermalBridgesSliceResponse
     from features.project_document.tables.ventilators import VentilatorsSliceResponse
 
     RegisteredTableResponse = (
         RoomsSliceResponse
+        | ThermalBridgesSliceResponse
         | AppliancesSliceResponse
         | ElectricHeatersSliceResponse
         | VentilatorsSliceResponse
         | PumpsSliceResponse
         | FansSliceResponse
-        | HotWaterTanksSliceResponse
+        | HotWaterHeatersSliceResponse
         | AperturesSliceResponse
         | TableRowsResponse
     )
@@ -59,10 +61,10 @@ def __getattr__(name: str) -> Any:
         from features.project_document.tables.electric_heaters import ElectricHeatersSliceResponse
 
         return ElectricHeatersSliceResponse
-    if name == "HotWaterTanksSliceResponse":
-        from features.project_document.tables.hot_water_tanks import HotWaterTanksSliceResponse
+    if name == "HotWaterHeatersSliceResponse":
+        from features.project_document.tables.hot_water_heaters import HotWaterHeatersSliceResponse
 
-        return HotWaterTanksSliceResponse
+        return HotWaterHeatersSliceResponse
     if name == "RoomsSliceResponse":
         from features.project_document.tables.rooms import RoomsSliceResponse
 
@@ -71,6 +73,10 @@ def __getattr__(name: str) -> Any:
         from features.project_document.tables.ventilators import VentilatorsSliceResponse
 
         return VentilatorsSliceResponse
+    if name == "ThermalBridgesSliceResponse":
+        from features.project_document.tables.thermal_bridges import ThermalBridgesSliceResponse
+
+        return ThermalBridgesSliceResponse
     if name == "AperturesSliceResponse":
         from features.project_document.tables.apertures import AperturesSliceResponse
 
@@ -85,19 +91,21 @@ def __getattr__(name: str) -> Any:
         from features.project_document.tables.contracts import TableRowsResponse
         from features.project_document.tables.electric_heaters import ElectricHeatersSliceResponse
         from features.project_document.tables.fans import FansSliceResponse
-        from features.project_document.tables.hot_water_tanks import HotWaterTanksSliceResponse
+        from features.project_document.tables.hot_water_heaters import HotWaterHeatersSliceResponse
         from features.project_document.tables.pumps import PumpsSliceResponse
         from features.project_document.tables.rooms import RoomsSliceResponse
+        from features.project_document.tables.thermal_bridges import ThermalBridgesSliceResponse
         from features.project_document.tables.ventilators import VentilatorsSliceResponse
 
         return (
             RoomsSliceResponse
+            | ThermalBridgesSliceResponse
             | AppliancesSliceResponse
             | ElectricHeatersSliceResponse
             | VentilatorsSliceResponse
             | PumpsSliceResponse
             | FansSliceResponse
-            | HotWaterTanksSliceResponse
+            | HotWaterHeatersSliceResponse
             | AperturesSliceResponse
             | TableRowsResponse
         )
@@ -111,11 +119,12 @@ __all__ = [
     "ElectricHeatersSliceResponse",
     "RegisteredTableResponse",
     "FansSliceResponse",
-    "HotWaterTanksSliceResponse",
+    "HotWaterHeatersSliceResponse",
     "PumpsSliceResponse",
     "RoomsSliceResponse",
     "TableContract",
     "TableRowsResponse",
+    "ThermalBridgesSliceResponse",
     "VentilatorsSliceResponse",
     "get_table_contract",
     "get_table_contract_by_schema_slug",

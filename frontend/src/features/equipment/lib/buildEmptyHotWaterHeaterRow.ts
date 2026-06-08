@@ -1,15 +1,15 @@
 import type { BuildEmptyRow } from "../../../shared/ui/data-table";
-import { emptyHotWaterTank } from "../lib";
-import { HOT_WATER_TANK_TYPE_KEY, type HotWaterTankRow } from "../types";
+import { emptyHotWaterHeater } from "../lib";
+import { HOT_WATER_HEATER_TYPE_KEY, type HotWaterHeaterRow } from "../types";
 import { customNumberValue, customTextValueOrNull } from "./customValueReaders";
 import { readNumberDefault, readStringDefault } from "./fieldDefaults";
 
-export function makeBuildEmptyHotWaterTankRow(): BuildEmptyRow<HotWaterTankRow> {
+export function makeBuildEmptyHotWaterHeaterRow(): BuildEmptyRow<HotWaterHeaterRow> {
   return ({ rowId, fieldDefaults }) => {
-    const base = { ...emptyHotWaterTank(), id: rowId };
+    const base = { ...emptyHotWaterHeater(), id: rowId };
     return {
       ...base,
-      tank_type: readStringDefault(fieldDefaults[HOT_WATER_TANK_TYPE_KEY], base.tank_type),
+      heater_type: readStringDefault(fieldDefaults[HOT_WATER_HEATER_TYPE_KEY], base.heater_type),
       phase: readNumberDefault(fieldDefaults.phase, base.phase),
       notes: readStringDefault(fieldDefaults.notes, base.notes),
       url: readStringDefault(fieldDefaults.url, base.url),

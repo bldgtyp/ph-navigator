@@ -16,10 +16,10 @@ import {
   fansPayloadFromRowDuplicate,
   fansPayloadFromRowInsert,
   firstRoomFloorOptionId,
-  hotWaterTanksPayloadFromCellWrites,
-  hotWaterTanksPayloadFromRowDelete,
-  hotWaterTanksPayloadFromRowDuplicate,
-  hotWaterTanksPayloadFromRowInsert,
+  hotWaterHeatersPayloadFromCellWrites,
+  hotWaterHeatersPayloadFromRowDelete,
+  hotWaterHeatersPayloadFromRowDuplicate,
+  hotWaterHeatersPayloadFromRowInsert,
   isDraftStaleError,
   isInvalidProjectDocumentError,
   nextCopySuffix,
@@ -39,7 +39,7 @@ import {
   validateFansPayload,
   validateAppliancesPayload,
   validateElectricHeatersPayload,
-  validateHotWaterTanksPayload,
+  validateHotWaterHeatersPayload,
   validateRoomsPayload,
   validateVentilatorsPayload,
   ventilatorsPayloadFromCellWrites,
@@ -65,8 +65,8 @@ import {
   buildElectricHeatersSlice,
   buildFan,
   buildFansSlice,
-  buildHotWaterTank,
-  buildHotWaterTanksSlice,
+  buildHotWaterHeater,
+  buildHotWaterHeatersSlice,
   buildRoom,
   buildPumpsSlice,
   buildVentilator,
@@ -74,7 +74,7 @@ import {
   appliancesBuiltInFieldDefs,
   electricHeatersBuiltInFieldDefs,
   fansBuiltInFieldDefs,
-  hotWaterTanksBuiltInFieldDefs,
+  hotWaterHeatersBuiltInFieldDefs,
   pumpsBuiltInFieldDefs,
   roomsBuiltInFieldDefs,
   ventilatorsBuiltInFieldDefs,
@@ -893,48 +893,48 @@ describe("equipment room helpers", () => {
     expect(payload.field_defs).toEqual(fansBuiltInFieldDefs);
   });
 
-  test("hotWaterTanksPayloadFromRowInsert preserves field_defs and field defaults", () => {
-    const current = buildHotWaterTanksSlice();
+  test("hotWaterHeatersPayloadFromRowInsert preserves field_defs and field defaults", () => {
+    const current = buildHotWaterHeatersSlice();
 
-    const payload = hotWaterTanksPayloadFromRowInsert(
+    const payload = hotWaterHeatersPayloadFromRowInsert(
       current,
-      [{ rowId: "hwt_browser", anchorRowId: null, fieldDefaults: {} }],
-      ({ rowId }) => ({ ...buildHotWaterTank(), id: rowId }),
+      [{ rowId: "hwh_browser", anchorRowId: null, fieldDefaults: {} }],
+      ({ rowId }) => ({ ...buildHotWaterHeater(), id: rowId }),
     );
 
-    expect(payload.field_defs).toEqual(hotWaterTanksBuiltInFieldDefs);
-    expect(payload.hot_water_tanks[0]?.custom_values.quantity).toBe(1);
-    expect(payload.hot_water_tanks[0]?.custom_values.power_factor).toBe(0.8);
+    expect(payload.field_defs).toEqual(hotWaterHeatersBuiltInFieldDefs);
+    expect(payload.hot_water_heaters[0]?.custom_values.quantity).toBe(1);
+    expect(payload.hot_water_heaters[0]?.custom_values.power_factor).toBe(0.8);
   });
 
-  test("hotWaterTanksPayloadFromCellWrites preserves field_defs and routes datasheet writes", () => {
-    const current = buildHotWaterTanksSlice({
-      hot_water_tanks: [buildHotWaterTank({ id: "hwt_1" })],
+  test("hotWaterHeatersPayloadFromCellWrites preserves field_defs and routes datasheet writes", () => {
+    const current = buildHotWaterHeatersSlice({
+      hot_water_heaters: [buildHotWaterHeater({ id: "hwh_1" })],
     });
 
-    const payload = hotWaterTanksPayloadFromCellWrites(
+    const payload = hotWaterHeatersPayloadFromCellWrites(
       current,
       [
-        { rowId: "hwt_1", fieldKey: "record_id", value: "HWT-2" },
-        { rowId: "hwt_1", fieldKey: "datasheet_asset_ids", value: ["asset_pdf_1"] },
+        { rowId: "hwh_1", fieldKey: "record_id", value: "HWH-2" },
+        { rowId: "hwh_1", fieldKey: "datasheet_asset_ids", value: ["asset_pdf_1"] },
       ],
       {},
     );
 
-    expect(payload.field_defs).toEqual(hotWaterTanksBuiltInFieldDefs);
-    expect(payload.hot_water_tanks[0]?.custom_values.record_id).toBe("HWT-2");
-    expect(payload.hot_water_tanks[0]?.datasheet_asset_ids).toEqual(["asset_pdf_1"]);
+    expect(payload.field_defs).toEqual(hotWaterHeatersBuiltInFieldDefs);
+    expect(payload.hot_water_heaters[0]?.custom_values.record_id).toBe("HWH-2");
+    expect(payload.hot_water_heaters[0]?.datasheet_asset_ids).toEqual(["asset_pdf_1"]);
   });
 
-  test("hotWaterTanksPayloadFromRowDelete preserves field_defs", () => {
-    const tank = buildHotWaterTank({ id: "hwt_1" });
-    const current = buildHotWaterTanksSlice({ hot_water_tanks: [tank] });
+  test("hotWaterHeatersPayloadFromRowDelete preserves field_defs", () => {
+    const heater = buildHotWaterHeater({ id: "hwh_1" });
+    const current = buildHotWaterHeatersSlice({ hot_water_heaters: [heater] });
 
-    const payload = hotWaterTanksPayloadFromRowDelete(current, [
-      { rowId: "hwt_1", row: tank, anchorRowId: null },
+    const payload = hotWaterHeatersPayloadFromRowDelete(current, [
+      { rowId: "hwh_1", row: heater, anchorRowId: null },
     ]);
 
-    expect(payload.field_defs).toEqual(hotWaterTanksBuiltInFieldDefs);
+    expect(payload.field_defs).toEqual(hotWaterHeatersBuiltInFieldDefs);
   });
 
   test("electricHeatersPayloadFromRowInsert preserves field_defs", () => {
@@ -1210,65 +1210,65 @@ describe("fansPayloadFromRowDuplicate", () => {
   });
 });
 
-describe("hotWaterTanksPayloadFromRowDuplicate", () => {
-  test("clones source tank with a record_id ' (copy)' suffix, sorted into place", () => {
-    const source = buildHotWaterTank({ id: "hwt_1" });
-    const current = buildHotWaterTanksSlice({
-      hot_water_tanks: [source],
+describe("hotWaterHeatersPayloadFromRowDuplicate", () => {
+  test("clones source heater with a record_id ' (copy)' suffix, sorted into place", () => {
+    const source = buildHotWaterHeater({ id: "hwh_1" });
+    const current = buildHotWaterHeatersSlice({
+      hot_water_heaters: [source],
     });
 
-    const payload = hotWaterTanksPayloadFromRowDuplicate(current, [
-      { rowId: "tmp_dup", sourceRowId: "hwt_1", sourceRow: source, anchorRowId: "hwt_1" },
+    const payload = hotWaterHeatersPayloadFromRowDuplicate(current, [
+      { rowId: "tmp_dup", sourceRowId: "hwh_1", sourceRow: source, anchorRowId: "hwh_1" },
     ]);
 
-    const clone = payload.hot_water_tanks.find((tank) => tank.id === "tmp_dup");
-    expect(clone?.custom_values.record_id).toBe("HWT-1 (copy)");
+    const clone = payload.hot_water_heaters.find((heater) => heater.id === "tmp_dup");
+    expect(clone?.custom_values.record_id).toBe("HWH-1 (copy)");
   });
 
   test("validates type, phase, power factor, URL, and nonnegative values", () => {
-    const valid = buildHotWaterTanksSlice({
-      hot_water_tanks: [buildHotWaterTank()],
+    const valid = buildHotWaterHeatersSlice({
+      hot_water_heaters: [buildHotWaterHeater()],
     });
-    expect(validateHotWaterTanksPayload(valid)).toBeNull();
+    expect(validateHotWaterHeatersPayload(valid)).toBeNull();
 
     expect(
-      validateHotWaterTanksPayload({
+      validateHotWaterHeatersPayload({
         ...valid,
-        hot_water_tanks: [buildHotWaterTank({ tank_type: "opt_missing" })],
+        hot_water_heaters: [buildHotWaterHeater({ heater_type: "opt_missing" })],
       }),
-    ).toBe("Hot water tank type option is missing.");
+    ).toBe("Hot water heater type option is missing.");
 
     expect(
-      validateHotWaterTanksPayload({
+      validateHotWaterHeatersPayload({
         ...valid,
-        hot_water_tanks: [buildHotWaterTank({ phase: 2 })],
+        hot_water_heaters: [buildHotWaterHeater({ phase: 2 })],
       }),
     ).toBe("Phase must be 1 or 3.");
 
     expect(
-      validateHotWaterTanksPayload({
+      validateHotWaterHeatersPayload({
         ...valid,
-        hot_water_tanks: [
-          buildHotWaterTank({
-            custom_values: { ...buildHotWaterTank().custom_values, power_factor: 1.2 },
+        hot_water_heaters: [
+          buildHotWaterHeater({
+            custom_values: { ...buildHotWaterHeater().custom_values, power_factor: 1.2 },
           }),
         ],
       }),
     ).toBe("Power Factor must be between 0 and 1.");
 
     expect(
-      validateHotWaterTanksPayload({
+      validateHotWaterHeatersPayload({
         ...valid,
-        hot_water_tanks: [buildHotWaterTank({ url: "ftp://example.com/hwt.pdf" })],
+        hot_water_heaters: [buildHotWaterHeater({ url: "ftp://example.com/hwh.pdf" })],
       }),
-    ).toBe("Hot water tank URL must start with http:// or https://.");
+    ).toBe("Hot water heater URL must start with http:// or https://.");
 
     expect(
-      validateHotWaterTanksPayload({
+      validateHotWaterHeatersPayload({
         ...valid,
-        hot_water_tanks: [
-          buildHotWaterTank({
-            custom_values: { ...buildHotWaterTank().custom_values, size_l: -1 },
+        hot_water_heaters: [
+          buildHotWaterHeater({
+            custom_values: { ...buildHotWaterHeater().custom_values, size_l: -1 },
           }),
         ],
       }),

@@ -150,11 +150,6 @@ project_materials_contract = make_simple_attachment_contract(
     schema_slug="project-material",
     table_path=("project_materials",),
 )
-thermal_bridges_contract = make_simple_attachment_contract(
-    name="thermal_bridges",
-    schema_slug="thermal-bridge",
-    table_path=("thermal_bridges",),
-)
 equipment_ervs_contract = make_simple_attachment_contract(
     name="equipment_ervs",
     schema_slug="equipment-erv",
@@ -170,10 +165,10 @@ equipment_fans_contract = make_simple_attachment_contract(
     schema_slug="equipment-fan",
     table_path=("equipment", "fans"),
 )
-equipment_hot_water_tanks_contract = make_simple_attachment_contract(
-    name="equipment_hot_water_tanks",
-    schema_slug="equipment-hot-water-tank",
-    table_path=("equipment", "hot_water_tanks"),
+equipment_hot_water_heaters_contract = make_simple_attachment_contract(
+    name="equipment_hot_water_heaters",
+    schema_slug="equipment-hot-water-heater",
+    table_path=("equipment", "hot_water_heaters"),
 )
 equipment_electric_heaters_contract = make_simple_attachment_contract(
     name="equipment_electric_heaters",

@@ -5,13 +5,13 @@ import type { ReactElement } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { createQueryClient } from "../../../app/query-client";
 import { emptyViewState, type DataTableProps } from "../../../shared/ui/data-table";
-import { HotWaterTanksTable } from "../components/HotWaterTanksTable";
+import { HotWaterHeatersTable } from "../components/HotWaterHeatersTable";
 import {
-  buildHotWaterTank,
-  buildHotWaterTanksSlice,
-  schemaForHotWaterTanks,
+  buildHotWaterHeater,
+  buildHotWaterHeatersSlice,
+  schemaForHotWaterHeaters,
 } from "../testing/testFixtures";
-import type { HotWaterTankRow } from "../types";
+import type { HotWaterHeaterRow } from "../types";
 
 const PROJECT_ID = "00000000-0000-0000-0000-000000000001";
 const fetchMock = vi.fn();
@@ -33,8 +33,8 @@ beforeEach(() => {
             thumbnail_status: "pending",
             thumbnail_expires_at: null,
             content_type: "application/pdf",
-            original_filename: "hwt-datasheet.pdf",
-            display_name: "Tank datasheet",
+            original_filename: "hwh-datasheet.pdf",
+            display_name: "Heater datasheet",
             size_bytes: 512,
           },
         ],
@@ -63,16 +63,16 @@ function jsonResponse(body: unknown, status = 200): Response {
 
 function renderTable({
   onWrite = vi.fn(),
-  hotWaterTank = buildHotWaterTank(),
+  hotWaterHeater = buildHotWaterHeater(),
 }: {
-  onWrite?: NonNullable<DataTableProps<HotWaterTankRow>["onWrite"]>;
-  hotWaterTank?: HotWaterTankRow;
+  onWrite?: NonNullable<DataTableProps<HotWaterHeaterRow>["onWrite"]>;
+  hotWaterHeater?: HotWaterHeaterRow;
 } = {}) {
-  const slice = buildHotWaterTanksSlice({ hot_water_tanks: [hotWaterTank] });
+  const slice = buildHotWaterHeatersSlice({ hot_water_heaters: [hotWaterHeater] });
   renderWithQueryClient(
-    <HotWaterTanksTable
-      hotWaterTanksSlice={slice}
-      tableSchema={schemaForHotWaterTanks(slice)}
+    <HotWaterHeatersTable
+      hotWaterHeatersSlice={slice}
+      tableSchema={schemaForHotWaterHeaters(slice)}
       isEditor
       projectId={PROJECT_ID}
       view={emptyViewState()}
@@ -83,7 +83,7 @@ function renderTable({
   return { onWrite };
 }
 
-describe("HotWaterTanksTable DataTable reuse", () => {
+describe("HotWaterHeatersTable DataTable reuse", () => {
   test("renders the requested columns, defaults, type label, and unit-backed fields", () => {
     renderTable();
 
@@ -97,7 +97,7 @@ describe("HotWaterTanksTable DataTable reuse", () => {
     expect(screen.getByRole("columnheader", { name: /Temperatur/ })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: /UEF/ })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: /Datasheet/ })).toBeInTheDocument();
-    expect(screen.getByText("3-User Defined")).toBeInTheDocument();
+    expect(screen.getByText("5-Heat Pump (Annual COP)")).toBeInTheDocument();
     expect(document.querySelector('[data-field-key="quantity"]')).toHaveTextContent("1");
     expect(document.querySelector('[data-field-key="power_factor"]')).toHaveTextContent("0.8");
     expect(screen.getByRole("gridcell", { name: "302.8" })).toBeInTheDocument();
@@ -107,23 +107,23 @@ describe("HotWaterTanksTable DataTable reuse", () => {
   test("calls onWrite through inline cell editing", async () => {
     const user = userEvent.setup();
     const { onWrite } = renderTable();
-    const row = screen.getByRole("row", { name: /HWT-1/ });
+    const row = screen.getByRole("row", { name: /HWH-1/ });
 
-    await user.dblClick(within(row).getByRole("gridcell", { name: "DHW storage tank" }));
-    await user.keyboard("{Control>}a{/Control}DHW buffer tank{Enter}");
+    await user.dblClick(within(row).getByRole("gridcell", { name: "DHW heater" }));
+    await user.keyboard("{Control>}a{/Control}DHW buffer heater{Enter}");
 
     expect(onWrite).toHaveBeenCalledWith({
       kind: "cell",
-      writes: [{ rowId: "hwt_1", fieldKey: "name", value: "DHW buffer tank" }],
+      writes: [{ rowId: "hwh_1", fieldKey: "name", value: "DHW buffer heater" }],
     });
   });
 
   test("datasheet delete emits a cell write", async () => {
     const { onWrite } = renderTable({
-      hotWaterTank: buildHotWaterTank({ datasheet_asset_ids: ["asset_pdf_1"] }),
+      hotWaterHeater: buildHotWaterHeater({ datasheet_asset_ids: ["asset_pdf_1"] }),
     });
 
-    const attachment = await screen.findByTitle("hwt-datasheet.pdf · application/pdf");
+    const attachment = await screen.findByTitle("hwh-datasheet.pdf · application/pdf");
     const attachmentCell = attachment.closest(".attachment-cell");
     expect(attachmentCell).not.toBeNull();
     fireEvent.keyDown(attachmentCell as HTMLElement, { key: "Delete" });
@@ -131,7 +131,7 @@ describe("HotWaterTanksTable DataTable reuse", () => {
     await waitFor(() => {
       expect(onWrite).toHaveBeenCalledWith({
         kind: "cell",
-        writes: [{ rowId: "hwt_1", fieldKey: "datasheet_asset_ids", value: [] }],
+        writes: [{ rowId: "hwh_1", fieldKey: "datasheet_asset_ids", value: [] }],
       });
     });
   });

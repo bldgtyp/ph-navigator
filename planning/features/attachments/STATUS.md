@@ -34,7 +34,7 @@ Implemented code currently includes:
   Specifications panel:
   `frontend/src/features/envelope/components/SpecificationsPanel.tsx`;
 - equipment datasheet cells on the current Equipment tables, including
-  Pumps, Fans, Hot Water Tanks, and Appliances;
+  Pumps, Fans, Hot Water Heaters, and Appliances;
 - Thermal Bridge attachment workbench panels for datasheets and
   simulation files:
   `frontend/src/features/assets/routes/ThermalBridgesPage.tsx`.
@@ -53,7 +53,7 @@ The code-backed fixed-field roster currently includes:
 - `equipment_ervs.datasheet_asset_ids`;
 - `equipment_pumps.datasheet_asset_ids`;
 - `equipment_fans.datasheet_asset_ids`;
-- `equipment_hot_water_tanks.datasheet_asset_ids`;
+- `equipment_hot_water_heaters.datasheet_asset_ids`;
 - `equipment_electric_heaters.datasheet_asset_ids`;
 - `equipment_appliances.datasheet_asset_ids`;
 - `thermal_bridges.datasheet_asset_ids`;

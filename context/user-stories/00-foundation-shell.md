@@ -391,7 +391,6 @@ component, new entry in the dropdown) rather than runtime config.
 | Fans | sub-types: extract-for-trash, kitchen, laundry, other |
 | Appliances | sub-types: fridge, dishwasher, etc. |
 | Hot-Water Heaters | sub-types: heat-pump, direct-elec, gas |
-| Hot-Water Storage Tanks | — |
 | Heat-Pumps (heating/cooling) | — |
 | Direct-Elec Heaters | backup unit-heaters |
 | Boilers | sub-types: gas, oil, elec |

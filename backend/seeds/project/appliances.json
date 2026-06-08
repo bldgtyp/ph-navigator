@@ -1,11 +1,89 @@
 {
   "options": {
     "appliances.type": [
-      { "id": "opt_appl_dishwasher", "label": "Dishwasher", "color": "#0ea5e9", "order": 0 },
-      { "id": "opt_appl_washer", "label": "Clothes Washer", "color": "#22c55e", "order": 1 },
-      { "id": "opt_appl_dryer", "label": "Clothes Dryer", "color": "#f97316", "order": 2 },
-      { "id": "opt_appl_refrigerator", "label": "Refrigerator", "color": "#6366f1", "order": 3 },
-      { "id": "opt_appl_range", "label": "Cooking Range", "color": "#ef4444", "order": 4 }
+      { "id": "opt_appl_dishwasher", "label": "1-dishwasher", "color": "#0ea5e9", "order": 0 },
+      {
+        "id": "opt_appl_clothes_washer",
+        "label": "2-clothes_washer",
+        "color": "#14b8a6",
+        "order": 1
+      },
+      {
+        "id": "opt_appl_clothes_dryer",
+        "label": "3-clothes_dryer",
+        "color": "#f97316",
+        "order": 2
+      },
+      { "id": "opt_appl_fridge", "label": "4-fridge", "color": "#3b82f6", "order": 3 },
+      { "id": "opt_appl_freezer", "label": "5-freezer", "color": "#6366f1", "order": 4 },
+      {
+        "id": "opt_appl_fridge_freezer",
+        "label": "6-fridge_freezer",
+        "color": "#8b5cf6",
+        "order": 5
+      },
+      { "id": "opt_appl_cooking", "label": "7-cooking", "color": "#ef4444", "order": 6 },
+      { "id": "opt_appl_phius_mel", "label": "13-PHIUS_MEL", "color": "#f59e0b", "order": 7 },
+      {
+        "id": "opt_appl_phius_lighting_int",
+        "label": "14-PHIUS_Lighting_Int",
+        "color": "#84cc16",
+        "order": 8
+      },
+      {
+        "id": "opt_appl_phius_lighting_ext",
+        "label": "15-PHIUS_Lighting_Ext",
+        "color": "#22c55e",
+        "order": 9
+      },
+      {
+        "id": "opt_appl_phius_lighting_garage",
+        "label": "16-PHIUS_Lighting_Garage",
+        "color": "#10b981",
+        "order": 10
+      },
+      {
+        "id": "opt_appl_custom_electric_per_year",
+        "label": "11-Custom_Electric_per_Year",
+        "color": "#06b6d4",
+        "order": 11
+      },
+      {
+        "id": "opt_appl_custom_electric_lighting_per_year",
+        "label": "17-Custom_Electric_Lighting_per_Year",
+        "color": "#6366f1",
+        "order": 12
+      },
+      {
+        "id": "opt_appl_custom_electric_mel_per_use",
+        "label": "18-Custom_Electric_MEL_per_Use",
+        "color": "#8b5cf6",
+        "order": 13
+      },
+      {
+        "id": "opt_appl_commercial_dishwasher",
+        "label": "21-Commercial_Dishwasher",
+        "color": "#a855f7",
+        "order": 14
+      },
+      {
+        "id": "opt_appl_commercial_refrigerator",
+        "label": "22-Commercial_Refrigerator",
+        "color": "#d946ef",
+        "order": 15
+      },
+      {
+        "id": "opt_appl_commercial_cooking",
+        "label": "23-Commercial_Cooking",
+        "color": "#ec4899",
+        "order": 16
+      },
+      {
+        "id": "opt_appl_commercial_custom",
+        "label": "24-Commercial_Custom",
+        "color": "#64748b",
+        "order": 17
+      }
     ],
     "appliances.energy_star": [
       { "id": "opt_es_yes", "label": "Energy Star", "color": "#10b981", "order": 0 },
@@ -34,7 +112,7 @@
     },
     {
       "id": "appl_2",
-      "appliance_type": "opt_appl_washer",
+      "appliance_type": "opt_appl_clothes_washer",
       "energy_star": "opt_es_yes",
       "url": "https://example.com/lg-wm4000hwa.pdf",
       "notes": "Front-load clothes washer.",
@@ -53,7 +131,7 @@
     },
     {
       "id": "appl_3",
-      "appliance_type": "opt_appl_dryer",
+      "appliance_type": "opt_appl_clothes_dryer",
       "energy_star": "opt_es_yes",
       "url": "https://example.com/lg-dlhc1455w.pdf",
       "notes": "Heat-pump condensing dryer.",
@@ -72,7 +150,7 @@
     },
     {
       "id": "appl_4",
-      "appliance_type": "opt_appl_refrigerator",
+      "appliance_type": "opt_appl_fridge",
       "energy_star": "opt_es_yes",
       "url": null,
       "notes": "Kitchen refrigerator.",
@@ -91,7 +169,7 @@
     },
     {
       "id": "appl_5",
-      "appliance_type": "opt_appl_range",
+      "appliance_type": "opt_appl_cooking",
       "energy_star": "opt_es_no",
       "url": null,
       "notes": "Induction cooktop + electric oven.",

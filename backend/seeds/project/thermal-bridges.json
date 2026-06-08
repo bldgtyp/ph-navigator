@@ -1,0 +1,81 @@
+{
+  "options": {
+    "thermal_bridges.type": [
+      { "id": "opt_tb_ambient", "label": "15-Ambient", "color": "#0ea5e9", "order": 0 },
+      { "id": "opt_tb_perimeter", "label": "16-Perimeter", "color": "#f97316", "order": 1 },
+      { "id": "opt_tb_below_grade", "label": "17-Below-Grade", "color": "#64748b", "order": 2 }
+    ]
+  },
+  "rows": [
+    {
+      "id": "tb_1",
+      "thermal_bridge_type": "opt_tb_ambient",
+      "pdf_report_asset_ids": [],
+      "notes": "Typical parapet transition at roof edge.",
+      "custom_values": {
+        "record_id": "TB-1",
+        "name": "Roof Parapet",
+        "sheet_name": "A-501",
+        "drawing_number": "4/A-501",
+        "psi_value_w_mk": 0.094,
+        "frsi_value": 0.83
+      }
+    },
+    {
+      "id": "tb_2",
+      "thermal_bridge_type": "opt_tb_perimeter",
+      "pdf_report_asset_ids": [],
+      "notes": "Slab edge at entry door threshold.",
+      "custom_values": {
+        "record_id": "TB-2",
+        "name": "Entry Threshold",
+        "sheet_name": "A-502",
+        "drawing_number": "2/A-502",
+        "psi_value_w_mk": 0.057,
+        "frsi_value": 0.79
+      }
+    },
+    {
+      "id": "tb_3",
+      "thermal_bridge_type": "opt_tb_below_grade",
+      "pdf_report_asset_ids": [],
+      "notes": "Basement wall to footing transition.",
+      "custom_values": {
+        "record_id": "TB-3",
+        "name": "Footing Junction",
+        "sheet_name": "S-301",
+        "drawing_number": "1/S-301",
+        "psi_value_w_mk": 0.112,
+        "frsi_value": 0.88
+      }
+    },
+    {
+      "id": "tb_4",
+      "thermal_bridge_type": "opt_tb_ambient",
+      "pdf_report_asset_ids": [],
+      "notes": "Steel canopy knife plate through exterior insulation.",
+      "custom_values": {
+        "record_id": "TB-4",
+        "name": "Canopy Knife Plate",
+        "sheet_name": "A-503",
+        "drawing_number": "7/A-503",
+        "psi_value_w_mk": 0.181,
+        "frsi_value": 0.72
+      }
+    },
+    {
+      "id": "tb_5",
+      "thermal_bridge_type": "opt_tb_perimeter",
+      "pdf_report_asset_ids": [],
+      "notes": "Balcony bracket at insulated wall plane.",
+      "custom_values": {
+        "record_id": "TB-5",
+        "name": "Balcony Bracket",
+        "sheet_name": "A-504",
+        "drawing_number": "5/A-504",
+        "psi_value_w_mk": 0.139,
+        "frsi_value": 0.76
+      }
+    }
+  ]
+}

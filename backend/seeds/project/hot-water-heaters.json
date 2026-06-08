@@ -1,20 +1,24 @@
 {
   "options": {
-    "hot_water_tanks.type": [
-      { "id": "opt_hwt_heat_pump", "label": "Heat Pump", "color": "#10b981", "order": 0 },
-      { "id": "opt_hwt_electric", "label": "Electric Resistance", "color": "#ef4444", "order": 1 },
-      { "id": "opt_hwt_gas", "label": "Gas", "color": "#f59e0b", "order": 2 }
+    "hot_water_heaters.type": [
+      { "id": "opt_hwh_electric", "label": "1-Electric", "color": "#ef4444", "order": 0 },
+      { "id": "opt_hwh_boiler_gas_oil", "label": "2-Boiler (Gas/Oil)", "color": "#f97316", "order": 1 },
+      { "id": "opt_hwh_boiler_wood", "label": "3-Boiler (Wood)", "color": "#92400e", "order": 2 },
+      { "id": "opt_hwh_district", "label": "4-District", "color": "#6366f1", "order": 3 },
+      { "id": "opt_hwh_heat_pump_annual_cop", "label": "5-Heat Pump (Annual COP)", "color": "#10b981", "order": 4 },
+      { "id": "opt_hwh_heat_pump_monthly_cop", "label": "6-Heat Pump (Monthly COP)", "color": "#14b8a6", "order": 5 },
+      { "id": "opt_hwh_heat_pump_inside", "label": "7-Heat Pump (Inside)", "color": "#0ea5e9", "order": 6 }
     ]
   },
   "rows": [
     {
-      "id": "hwt_1",
-      "tank_type": "opt_hwt_heat_pump",
+      "id": "hwh_1",
+      "heater_type": "opt_hwh_heat_pump_annual_cop",
       "phase": 1,
       "url": "https://example.com/rheem-proterra-65.pdf",
-      "notes": "Primary DHW heat pump tank.",
+      "notes": "Primary DHW heat-pump heater.",
       "custom_values": {
-        "record_id": "HWT-1",
+        "record_id": "HWH-1",
         "name": "DHW Heat Pump",
         "quantity": 1,
         "model": "ProTerra 65",
@@ -30,13 +34,13 @@
       }
     },
     {
-      "id": "hwt_2",
-      "tank_type": "opt_hwt_heat_pump",
+      "id": "hwh_2",
+      "heater_type": "opt_hwh_heat_pump_inside",
       "phase": 1,
       "url": "https://example.com/aosmith-hpts50.pdf",
       "notes": "Secondary HPWH for ADU.",
       "custom_values": {
-        "record_id": "HWT-2",
+        "record_id": "HWH-2",
         "name": "ADU HPWH",
         "quantity": 1,
         "model": "HPTS-50",
@@ -52,13 +56,13 @@
       }
     },
     {
-      "id": "hwt_3",
-      "tank_type": "opt_hwt_electric",
+      "id": "hwh_3",
+      "heater_type": "opt_hwh_electric",
       "phase": 1,
       "url": null,
-      "notes": "Backup electric resistance tank.",
+      "notes": "Backup electric-resistance heater.",
       "custom_values": {
-        "record_id": "HWT-3",
+        "record_id": "HWH-3",
         "name": "Backup Electric",
         "quantity": 1,
         "model": "EE40R55D",
@@ -74,14 +78,14 @@
       }
     },
     {
-      "id": "hwt_4",
-      "tank_type": "opt_hwt_heat_pump",
+      "id": "hwh_4",
+      "heater_type": "opt_hwh_district",
       "phase": 1,
       "url": null,
-      "notes": "Solar-coupled buffer tank.",
+      "notes": "District DHW heater placeholder.",
       "custom_values": {
-        "record_id": "HWT-4",
-        "name": "Solar Buffer",
+        "record_id": "HWH-4",
+        "name": "District DHW",
         "quantity": 1,
         "model": "SC-119",
         "manufacturer": "Stiebel Eltron",
@@ -96,14 +100,14 @@
       }
     },
     {
-      "id": "hwt_5",
-      "tank_type": "opt_hwt_gas",
+      "id": "hwh_5",
+      "heater_type": "opt_hwh_boiler_gas_oil",
       "phase": 1,
       "url": null,
-      "notes": "Legacy gas tank (baseline only).",
+      "notes": "Legacy gas/oil boiler heater (baseline only).",
       "custom_values": {
-        "record_id": "HWT-5",
-        "name": "Legacy Gas",
+        "record_id": "HWH-5",
+        "name": "Legacy Gas/Oil",
         "quantity": 1,
         "model": "GPV40",
         "manufacturer": "Bradford White",

@@ -146,6 +146,44 @@ export type VentilatorsReplacePayload = {
   single_select_options: VentilatorsOptionMap;
 };
 
+export const THERMAL_BRIDGES_TABLE_NAME = "thermal_bridges";
+export const THERMAL_BRIDGE_TYPE_KEY = "thermal_bridge_type";
+export const THERMAL_BRIDGE_TYPE_OPTION_KEY = "thermal_bridges.type";
+export const THERMAL_BRIDGE_TYPE_COLUMN_ID = "thermal_bridge_type";
+export const THERMAL_BRIDGE_PDF_REPORT_FIELD_KEY = "pdf_report_asset_ids";
+export const THERMAL_BRIDGE_OPTION_KEYS = [THERMAL_BRIDGE_TYPE_OPTION_KEY] as const;
+
+export type ThermalBridgeOptionKey = (typeof THERMAL_BRIDGE_OPTION_KEYS)[number];
+
+export type ThermalBridgeRow = {
+  id: string;
+  thermal_bridge_type: string | null;
+  pdf_report_asset_ids: string[];
+  notes: string | null;
+  custom_values: Record<string, CustomValue>;
+};
+
+export type ThermalBridgesOptionMap = Record<ThermalBridgeOptionKey, SingleSelectOption[]> & {
+  [key: string]: SingleSelectOption[];
+};
+
+export type ThermalBridgesSlice = {
+  project_id: string;
+  version_id: string;
+  source: "version" | "draft";
+  version_etag: string;
+  draft_etag: string | null;
+  thermal_bridges: ThermalBridgeRow[];
+  field_defs: TableFieldDef[];
+  single_select_options: ThermalBridgesOptionMap;
+};
+
+export type ThermalBridgesReplacePayload = {
+  thermal_bridges: ThermalBridgeRow[];
+  field_defs?: TableFieldDef[];
+  single_select_options: ThermalBridgesOptionMap;
+};
+
 export const FANS_TABLE_NAME = "fans";
 export const FAN_TYPE_KEY = "fan_type";
 export const FAN_TYPE_OPTION_KEY = "fans.type";
@@ -184,18 +222,18 @@ export type FansReplacePayload = {
   single_select_options: FansOptionMap;
 };
 
-export const HOT_WATER_TANKS_TABLE_NAME = "hot_water_tanks";
-export const HOT_WATER_TANK_TYPE_KEY = "tank_type";
-export const HOT_WATER_TANK_TYPE_OPTION_KEY = "hot_water_tanks.type";
-export const HOT_WATER_TANK_TYPE_COLUMN_ID = "tank_type";
-export const HOT_WATER_TANK_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
-export const HOT_WATER_TANK_OPTION_KEYS = [HOT_WATER_TANK_TYPE_OPTION_KEY] as const;
+export const HOT_WATER_HEATERS_TABLE_NAME = "hot_water_heaters";
+export const HOT_WATER_HEATER_TYPE_KEY = "heater_type";
+export const HOT_WATER_HEATER_TYPE_OPTION_KEY = "hot_water_heaters.type";
+export const HOT_WATER_HEATER_TYPE_COLUMN_ID = "heater_type";
+export const HOT_WATER_HEATER_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
+export const HOT_WATER_HEATER_OPTION_KEYS = [HOT_WATER_HEATER_TYPE_OPTION_KEY] as const;
 
-export type HotWaterTankOptionKey = (typeof HOT_WATER_TANK_OPTION_KEYS)[number];
+export type HotWaterHeaterOptionKey = (typeof HOT_WATER_HEATER_OPTION_KEYS)[number];
 
-export type HotWaterTankRow = {
+export type HotWaterHeaterRow = {
   id: string;
-  tank_type: string | null;
+  heater_type: string | null;
   phase: number | null;
   url: string | null;
   notes: string | null;
@@ -203,23 +241,23 @@ export type HotWaterTankRow = {
   custom_values: Record<string, CustomValue>;
 };
 
-export type HotWaterTanksOptionMap = Record<HotWaterTankOptionKey, SingleSelectOption[]>;
+export type HotWaterHeatersOptionMap = Record<HotWaterHeaterOptionKey, SingleSelectOption[]>;
 
-export type HotWaterTanksSlice = {
+export type HotWaterHeatersSlice = {
   project_id: string;
   version_id: string;
   source: "version" | "draft";
   version_etag: string;
   draft_etag: string | null;
-  hot_water_tanks: HotWaterTankRow[];
+  hot_water_heaters: HotWaterHeaterRow[];
   field_defs: TableFieldDef[];
-  single_select_options: HotWaterTanksOptionMap;
+  single_select_options: HotWaterHeatersOptionMap;
 };
 
-export type HotWaterTanksReplacePayload = {
-  hot_water_tanks: HotWaterTankRow[];
+export type HotWaterHeatersReplacePayload = {
+  hot_water_heaters: HotWaterHeaterRow[];
   field_defs?: TableFieldDef[];
-  single_select_options: HotWaterTanksOptionMap;
+  single_select_options: HotWaterHeatersOptionMap;
 };
 
 export const ELECTRIC_HEATERS_TABLE_NAME = "electric_heaters";

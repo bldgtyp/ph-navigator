@@ -73,7 +73,7 @@ describe("PumpsTable DataTable reuse", () => {
 
     expect(screen.getByRole("columnheader", { name: /Record-ID/ })).toBeInTheDocument();
     expect(screen.getByText("P-1")).toBeInTheDocument();
-    expect(screen.getByText("Circulator")).toBeInTheDocument();
+    expect(screen.getByText("6-DHW Circulation Pump")).toBeInTheDocument();
   });
 
   test("calls onWrite through inline cell editing", async () => {

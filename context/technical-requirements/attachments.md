@@ -46,11 +46,10 @@ Attachment cells exist ONLY on these PHN-declared core fields:
 | `tables.equipment.ervs[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
 | `tables.equipment.pumps[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
 | `tables.equipment.fans[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
-| `tables.equipment.hot_water_tanks[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
+| `tables.equipment.hot_water_heaters[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
 | `tables.equipment.electric_heaters[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
 | `tables.equipment.appliances[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
-| `tables.thermal_bridges[*]` | `datasheet_asset_ids[]` | `datasheet` | `application/pdf`, `image/png`, `image/jpeg`, `image/webp` | 5 | 25 MB |
-| `tables.thermal_bridges[*]` | `simulation_file_asset_ids[]` | `simulation_file` / `hbjson` | `application/pdf`, `image/png`, `image/jpeg`, `application/json` (`.hbjson`), `application/octet-stream` (`.hbjson`) | 5 | 25 MB |
+| `tables.thermal_bridges.rows[*]` | `pdf_report_asset_ids[]` | `datasheet` | `application/pdf` | 5 | 25 MB |
 
 Per-field config (allowed MIME, `max_count`, `max_file_size_mb`) lives
 in code in `backend/features/assets/registry.py`, with row-table

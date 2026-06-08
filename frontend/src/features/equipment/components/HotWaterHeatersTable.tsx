@@ -12,18 +12,18 @@ import { singleSelectOption } from "../../../shared/ui/data-table/lib";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { useAssetUrls } from "../../assets/hooks";
 import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
-import { sortedHotWaterTanks } from "../lib";
+import { sortedHotWaterHeaters } from "../lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
 import {
-  HOT_WATER_TANK_DATASHEET_FIELD_KEY,
-  HOT_WATER_TANK_TYPE_COLUMN_ID,
-  HOT_WATER_TANK_TYPE_KEY,
-  type HotWaterTankRow,
-  type HotWaterTanksSlice,
+  HOT_WATER_HEATER_DATASHEET_FIELD_KEY,
+  HOT_WATER_HEATER_TYPE_COLUMN_ID,
+  HOT_WATER_HEATER_TYPE_KEY,
+  type HotWaterHeaterRow,
+  type HotWaterHeatersSlice,
 } from "../types";
 
-export function HotWaterTanksTable({
-  hotWaterTanksSlice,
+export function HotWaterHeatersTable({
+  hotWaterHeatersSlice,
   tableSchema,
   isEditor,
   projectId,
@@ -37,26 +37,26 @@ export function HotWaterTanksTable({
   footerAction,
   onResetView,
 }: {
-  hotWaterTanksSlice: HotWaterTanksSlice;
+  hotWaterHeatersSlice: HotWaterHeatersSlice;
   tableSchema: TableSchema;
   isEditor: boolean;
   projectId: string;
   view: ViewState;
   onViewChange: (next: ViewState) => void;
-  onWrite: NonNullable<DataTableProps<HotWaterTankRow>["onWrite"]>;
-  buildEmptyRow?: DataTableProps<HotWaterTankRow>["buildEmptyRow"];
-  generateRowId?: DataTableProps<HotWaterTankRow>["generateRowId"];
-  sessionKey?: DataTableProps<HotWaterTankRow>["sessionKey"];
-  overflowMenuActions?: DataTableProps<HotWaterTankRow>["overflowMenuActions"];
-  footerAction?: DataTableProps<HotWaterTankRow>["footerAction"];
-  onResetView?: DataTableProps<HotWaterTankRow>["onResetView"];
+  onWrite: NonNullable<DataTableProps<HotWaterHeaterRow>["onWrite"]>;
+  buildEmptyRow?: DataTableProps<HotWaterHeaterRow>["buildEmptyRow"];
+  generateRowId?: DataTableProps<HotWaterHeaterRow>["generateRowId"];
+  sessionKey?: DataTableProps<HotWaterHeaterRow>["sessionKey"];
+  overflowMenuActions?: DataTableProps<HotWaterHeaterRow>["overflowMenuActions"];
+  footerAction?: DataTableProps<HotWaterHeaterRow>["footerAction"];
+  onResetView?: DataTableProps<HotWaterHeaterRow>["onResetView"];
 }) {
   const sortedRows = useMemo(
-    () => sortedHotWaterTanks(hotWaterTanksSlice.hot_water_tanks),
-    [hotWaterTanksSlice.hot_water_tanks],
+    () => sortedHotWaterHeaters(hotWaterHeatersSlice.hot_water_heaters),
+    [hotWaterHeatersSlice.hot_water_heaters],
   );
   const datasheetAssetIds = useMemo(
-    () => Array.from(new Set(sortedRows.flatMap((tank) => tank.datasheet_asset_ids))),
+    () => Array.from(new Set(sortedRows.flatMap((heater) => heater.datasheet_asset_ids))),
     [sortedRows],
   );
   const datasheetUrls = useAssetUrls(projectId, datasheetAssetIds);
@@ -69,57 +69,58 @@ export function HotWaterTanksTable({
     () => new Map(fieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef])),
     [fieldDefs],
   );
-  const columns = useMemo<DataTableColumnDef<HotWaterTankRow>[]>(
+  const columns = useMemo<DataTableColumnDef<HotWaterHeaterRow>[]>(
     () => [
       {
         id: RECORD_ID_FIELD_KEY,
         fieldKey: RECORD_ID_FIELD_KEY,
         header: fieldDefByKey.get(RECORD_ID_FIELD_KEY)?.display_name ?? "Tag",
-        accessor: (tank) => customTextValue(tank, RECORD_ID_FIELD_KEY),
+        accessor: (heater) => customTextValue(heater, RECORD_ID_FIELD_KEY),
         defaultWidth: 100,
       },
       {
         id: "name",
         fieldKey: "name",
         header: fieldDefByKey.get("name")?.display_name ?? "Name",
-        accessor: (tank) => customTextValue(tank, "name"),
+        accessor: (heater) => customTextValue(heater, "name"),
         defaultWidth: 180,
       },
       {
         id: "quantity",
         fieldKey: "quantity",
         header: fieldDefByKey.get("quantity")?.display_name ?? "Quantity",
-        accessor: (tank) => customNumberValue(tank, "quantity"),
+        accessor: (heater) => customNumberValue(heater, "quantity"),
         defaultWidth: 100,
         className: "numeric-cell",
       },
       {
-        id: HOT_WATER_TANK_TYPE_COLUMN_ID,
-        fieldKey: HOT_WATER_TANK_TYPE_KEY,
-        header: fieldDefByKey.get(HOT_WATER_TANK_TYPE_KEY)?.display_name ?? "Type",
-        accessor: (tank) => tank.tank_type,
-        render: (tank) => optionPill(tank.tank_type, fieldDefByKey.get(HOT_WATER_TANK_TYPE_KEY)),
+        id: HOT_WATER_HEATER_TYPE_COLUMN_ID,
+        fieldKey: HOT_WATER_HEATER_TYPE_KEY,
+        header: fieldDefByKey.get(HOT_WATER_HEATER_TYPE_KEY)?.display_name ?? "Type",
+        accessor: (heater) => heater.heater_type,
+        render: (heater) =>
+          optionPill(heater.heater_type, fieldDefByKey.get(HOT_WATER_HEATER_TYPE_KEY)),
         defaultWidth: 170,
       },
       {
         id: "model",
         fieldKey: "model",
         header: fieldDefByKey.get("model")?.display_name ?? "Model",
-        accessor: (tank) => customTextValue(tank, "model"),
+        accessor: (heater) => customTextValue(heater, "model"),
         defaultWidth: 140,
       },
       {
         id: "manufacturer",
         fieldKey: "manufacturer",
         header: fieldDefByKey.get("manufacturer")?.display_name ?? "Manufacturer",
-        accessor: (tank) => customTextValue(tank, "manufacturer"),
+        accessor: (heater) => customTextValue(heater, "manufacturer"),
         defaultWidth: 160,
       },
       {
         id: "size_l",
         fieldKey: "size_l",
         header: fieldDefByKey.get("size_l")?.display_name ?? "Size",
-        accessor: (tank) => customNumberValue(tank, "size_l"),
+        accessor: (heater) => customNumberValue(heater, "size_l"),
         defaultWidth: 120,
         className: "numeric-cell",
       },
@@ -127,7 +128,7 @@ export function HotWaterTanksTable({
         id: "temperature_c",
         fieldKey: "temperature_c",
         header: fieldDefByKey.get("temperature_c")?.display_name ?? "Temperatur",
-        accessor: (tank) => customNumberValue(tank, "temperature_c"),
+        accessor: (heater) => customNumberValue(heater, "temperature_c"),
         defaultWidth: 130,
         className: "numeric-cell",
       },
@@ -135,7 +136,7 @@ export function HotWaterTanksTable({
         id: "amps",
         fieldKey: "amps",
         header: fieldDefByKey.get("amps")?.display_name ?? "Amps",
-        accessor: (tank) => customNumberValue(tank, "amps"),
+        accessor: (heater) => customNumberValue(heater, "amps"),
         defaultWidth: 90,
         className: "numeric-cell",
       },
@@ -143,7 +144,7 @@ export function HotWaterTanksTable({
         id: "volts",
         fieldKey: "volts",
         header: fieldDefByKey.get("volts")?.display_name ?? "Volts",
-        accessor: (tank) => customNumberValue(tank, "volts"),
+        accessor: (heater) => customNumberValue(heater, "volts"),
         defaultWidth: 90,
         className: "numeric-cell",
       },
@@ -151,7 +152,7 @@ export function HotWaterTanksTable({
         id: "phase",
         fieldKey: "phase",
         header: fieldDefByKey.get("phase")?.display_name ?? "Phase",
-        accessor: (tank) => tank.phase,
+        accessor: (heater) => heater.phase,
         defaultWidth: 90,
         className: "numeric-cell",
       },
@@ -159,7 +160,7 @@ export function HotWaterTanksTable({
         id: "power_factor",
         fieldKey: "power_factor",
         header: fieldDefByKey.get("power_factor")?.display_name ?? "Power Factor",
-        accessor: (tank) => customNumberValue(tank, "power_factor"),
+        accessor: (heater) => customNumberValue(heater, "power_factor"),
         defaultWidth: 130,
         className: "numeric-cell",
       },
@@ -167,7 +168,7 @@ export function HotWaterTanksTable({
         id: "watts",
         fieldKey: "watts",
         header: fieldDefByKey.get("watts")?.display_name ?? "Watts",
-        accessor: (tank) => customNumberValue(tank, "watts"),
+        accessor: (heater) => customNumberValue(heater, "watts"),
         defaultWidth: 100,
         className: "numeric-cell",
       },
@@ -175,7 +176,7 @@ export function HotWaterTanksTable({
         id: "uef",
         fieldKey: "uef",
         header: fieldDefByKey.get("uef")?.display_name ?? "UEF",
-        accessor: (tank) => customNumberValue(tank, "uef"),
+        accessor: (heater) => customNumberValue(heater, "uef"),
         defaultWidth: 90,
         className: "numeric-cell",
       },
@@ -183,52 +184,53 @@ export function HotWaterTanksTable({
         id: "url",
         fieldKey: "url",
         header: fieldDefByKey.get("url")?.display_name ?? "URL",
-        accessor: (tank) => tank.url,
-        render: (tank) =>
-          tank.url ? (
+        accessor: (heater) => heater.url,
+        render: (heater) =>
+          heater.url ? (
             <a
-              href={tank.url}
+              href={heater.url}
               target="_blank"
               rel="noopener noreferrer"
               className="data-table-link-cell"
             >
-              {shortenUrl(tank.url)}
+              {shortenUrl(heater.url)}
             </a>
           ) : null,
-        measureText: (tank) => tank.url ?? "",
+        measureText: (heater) => heater.url ?? "",
         defaultWidth: 180,
       },
       {
         id: "notes",
         fieldKey: "notes",
         header: fieldDefByKey.get("notes")?.display_name ?? "Notes",
-        accessor: (tank) => tank.notes,
+        accessor: (heater) => heater.notes,
         defaultWidth: 280,
       },
       {
-        id: HOT_WATER_TANK_DATASHEET_FIELD_KEY,
-        fieldKey: HOT_WATER_TANK_DATASHEET_FIELD_KEY,
-        header: fieldDefByKey.get(HOT_WATER_TANK_DATASHEET_FIELD_KEY)?.display_name ?? "Datasheet",
-        accessor: (tank) => tank.datasheet_asset_ids.join(","),
-        render: (tank) => (
+        id: HOT_WATER_HEATER_DATASHEET_FIELD_KEY,
+        fieldKey: HOT_WATER_HEATER_DATASHEET_FIELD_KEY,
+        header:
+          fieldDefByKey.get(HOT_WATER_HEATER_DATASHEET_FIELD_KEY)?.display_name ?? "Datasheet",
+        accessor: (heater) => heater.datasheet_asset_ids.join(","),
+        render: (heater) => (
           <AttachmentCell
             projectId={projectId}
-            value={tank.datasheet_asset_ids}
+            value={heater.datasheet_asset_ids}
             config={DATASHEET_ATTACHMENT_CONFIG}
             readOnly={!isEditor}
             assetUrlById={datasheetUrlById}
             onChange={(next) => {
-              if (sameAttachmentAssetIds(tank.datasheet_asset_ids, next)) return;
+              if (sameAttachmentAssetIds(heater.datasheet_asset_ids, next)) return;
               return onWrite({
                 kind: "cell",
                 writes: [
-                  { rowId: tank.id, fieldKey: HOT_WATER_TANK_DATASHEET_FIELD_KEY, value: next },
+                  { rowId: heater.id, fieldKey: HOT_WATER_HEATER_DATASHEET_FIELD_KEY, value: next },
                 ],
               });
             }}
           />
         ),
-        measureText: (tank) => `${tank.datasheet_asset_ids.length} attachments`,
+        measureText: (heater) => `${heater.datasheet_asset_ids.length} attachments`,
         defaultWidth: 260,
       },
     ],
@@ -240,9 +242,11 @@ export function HotWaterTanksTable({
       rows={sortedRows}
       columnDefs={columns}
       fieldDefs={fieldDefs}
-      getRowId={(tank) => tank.id}
+      getRowId={(heater) => heater.id}
       emptyMessage={
-        isEditor ? "No hot water tanks yet." : "No hot water tanks are published in this version."
+        isEditor
+          ? "No hot water heaters yet."
+          : "No hot water heaters are published in this version."
       }
       readOnly={!isEditor}
       view={view}
