@@ -691,8 +691,12 @@
 
 .data-table-footer-row {
   display: flex;
-  width: max-content;
+  position: sticky;
+  left: 0;
+  z-index: calc(var(--z-sticky) + 1);
+  width: var(--data-table-gutter-width);
   border-top: 1px solid var(--border-subtle);
+  border-right: 1px solid var(--border-subtle);
   background: var(--bg-card);
 }
 
@@ -700,12 +704,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  min-width: 42px;
+  width: var(--data-table-gutter-width);
+  min-width: var(--data-table-gutter-width);
   height: 34px;
   min-height: 34px;
   border: 0;
-  border-right: 1px solid var(--border-subtle);
   border-radius: 0;
   background: var(--bg-card);
   color: var(--text-primary);

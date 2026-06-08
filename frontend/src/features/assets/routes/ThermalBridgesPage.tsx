@@ -216,14 +216,16 @@ const thermalBridgesPayloadBuilders: SlicePayloadBuilders<
 };
 
 function addRowButton(label: string, enabled: boolean, onClick: () => void) {
+  if (!enabled) return null;
   return (
     <button
       type="button"
       className="data-table-add-row-button"
+      aria-label={label}
+      title={label}
       onClick={onClick}
-      disabled={!enabled}
     >
-      {label}
+      +
     </button>
   );
 }

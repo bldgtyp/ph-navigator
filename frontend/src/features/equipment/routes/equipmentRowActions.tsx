@@ -1,8 +1,18 @@
 import { generatedId } from "../../../shared/lib/ids";
-import { AddEquipmentButton } from "../components/EquipmentPlaceholders";
 
 export function addRowButton(label: string, canEdit: boolean, onAdd: () => void) {
-  return <AddEquipmentButton label={label} canEdit={canEdit} onAdd={onAdd} />;
+  if (!canEdit) return null;
+  return (
+    <button
+      type="button"
+      className="data-table-add-row-button"
+      aria-label={label}
+      title={label}
+      onClick={onAdd}
+    >
+      +
+    </button>
+  );
 }
 
 export function insertEquipmentRow(
