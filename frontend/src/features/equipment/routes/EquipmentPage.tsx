@@ -5,7 +5,7 @@ import {
   useAppliancesSliceQuery,
   useElectricHeatersSliceQuery,
   useFansSliceQuery,
-  useHotWaterTanksSliceQuery,
+  useHotWaterHeatersSliceQuery,
   usePumpsSliceQuery,
   useVentilatorsSliceQuery,
 } from "../hooks";
@@ -19,7 +19,7 @@ export function EquipmentPage({ project }: { project: ProjectDetail }) {
   );
   const pumpsQuery = usePumpsSliceQuery(project.id, project.active_version_id, project.access_mode);
   const fansQuery = useFansSliceQuery(project.id, project.active_version_id, project.access_mode);
-  const hotWaterTanksQuery = useHotWaterTanksSliceQuery(
+  const hotWaterHeatersQuery = useHotWaterHeatersSliceQuery(
     project.id,
     project.active_version_id,
     project.access_mode,
@@ -38,7 +38,7 @@ export function EquipmentPage({ project }: { project: ProjectDetail }) {
     ventilatorsQuery.isLoading ||
     pumpsQuery.isLoading ||
     fansQuery.isLoading ||
-    hotWaterTanksQuery.isLoading ||
+    hotWaterHeatersQuery.isLoading ||
     electricHeatersQuery.isLoading ||
     appliancesQuery.isLoading
   ) {
@@ -55,8 +55,8 @@ export function EquipmentPage({ project }: { project: ProjectDetail }) {
     !pumpsQuery.data ||
     fansQuery.isError ||
     !fansQuery.data ||
-    hotWaterTanksQuery.isError ||
-    !hotWaterTanksQuery.data ||
+    hotWaterHeatersQuery.isError ||
+    !hotWaterHeatersQuery.data ||
     electricHeatersQuery.isError ||
     !electricHeatersQuery.data ||
     appliancesQuery.isError ||
@@ -79,8 +79,8 @@ export function EquipmentPage({ project }: { project: ProjectDetail }) {
       refetchPumps={pumpsQuery.refetch}
       fansSlice={fansQuery.data}
       refetchFans={fansQuery.refetch}
-      hotWaterTanksSlice={hotWaterTanksQuery.data}
-      refetchHotWaterTanks={hotWaterTanksQuery.refetch}
+      hotWaterHeatersSlice={hotWaterHeatersQuery.data}
+      refetchHotWaterHeaters={hotWaterHeatersQuery.refetch}
       electricHeatersSlice={electricHeatersQuery.data}
       refetchElectricHeaters={electricHeatersQuery.refetch}
       appliancesSlice={appliancesQuery.data}

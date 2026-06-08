@@ -102,7 +102,7 @@ truth.
 - **Equipment / appliance catalogs.** V2 v1 ships only the three
   envelope catalogs (Materials, Frame Types, Glazing Types).
   The 9 deferred equipment catalogs (ERVs, Pumps,
-  Fans, Appliances, Hot-Water Heaters, Hot-Water Tanks, Heat-Pumps,
+  Fans, Appliances, Hot-Water Heaters, Heat-Pumps,
   Direct-Elec Heaters, Boilers) are not in v1; full roster captured
   in §7.0 / US-2 for forward planning.
 

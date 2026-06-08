@@ -24,6 +24,12 @@ def empty_rooms_table() -> dict[str, Any]:
     return _empty_document_tables()["rooms"]
 
 
+def empty_thermal_bridges_table(rows: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    thermal_bridges = _empty_document_tables()["thermal_bridges"]
+    thermal_bridges["rows"] = rows or []
+    return thermal_bridges
+
+
 def empty_pumps_table(rows: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     pumps = _empty_document_tables()["equipment"]["pumps"]
     pumps["rows"] = rows or []
@@ -42,10 +48,10 @@ def empty_fans_table(rows: list[dict[str, Any]] | None = None) -> dict[str, Any]
     return fans
 
 
-def empty_hot_water_tanks_table(rows: list[dict[str, Any]] | None = None) -> dict[str, Any]:
-    hot_water_tanks = _empty_document_tables()["equipment"]["hot_water_tanks"]
-    hot_water_tanks["rows"] = rows or []
-    return hot_water_tanks
+def empty_hot_water_heaters_table(rows: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    hot_water_heaters = _empty_document_tables()["equipment"]["hot_water_heaters"]
+    hot_water_heaters["rows"] = rows or []
+    return hot_water_heaters
 
 
 def empty_electric_heaters_table(rows: list[dict[str, Any]] | None = None) -> dict[str, Any]:

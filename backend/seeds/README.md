@@ -18,10 +18,11 @@ backend/seeds/
     assemblies.json               # 2 assemblies + referenced project materials
     apertures.json                # 1 default 1000 mm x 1000 mm aperture
     rooms.json                    # 5 rooms + floor/zone options
+    thermal-bridges.json          # 5 thermal bridges + type options
     pumps.json                    # 5 pumps + device-type options
     fans.json                     # 5 fans + type options
     ventilators.json              # 5 ventilators (ERVs/HRVs) + inside/outside options
-    hot-water-tanks.json          # 5 tanks + type options
+    hot-water-heaters.json          # 5 hot-water heaters + type options
     electric-heaters.json         # 5 heaters
     appliances.json               # 5 appliances + type / energy-star options
 ```
@@ -42,6 +43,10 @@ Most project-document files use a simpler shape:
 `seed_dev_db.py` validates every row through the actual Pydantic models
 (`RoomRow`, `PumpRow`, etc.) before assembling the project document, so
 a typo here surfaces as a clear validation error at seed time.
+Pump `device_type`, Hot-water heater `type`, and Appliance `type`
+options intentionally keep the WUFI category numbers embedded in their
+labels; do not renumber or sort them numerically when editing the seed
+lists.
 
 `project/assemblies.json` seeds Assembly Builder directly with
 `{project_materials, assemblies}` because assemblies reference

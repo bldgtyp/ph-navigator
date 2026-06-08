@@ -37,8 +37,8 @@ from features.project_document.document import (
     FansTableEnvelope,
     FrameRef,
     GlazingRef,
-    HotWaterTankRow,
-    HotWaterTanksTableEnvelope,
+    HotWaterHeaterRow,
+    HotWaterHeatersTableEnvelope,
     ProjectDocumentTables,
     ProjectDocumentV1,
     ProjectMaterial,
@@ -47,15 +47,18 @@ from features.project_document.document import (
     RoomRow,
     RoomsTableEnvelope,
     SingleSelectOption,
+    ThermalBridgeRow,
+    ThermalBridgesTableEnvelope,
     VentilatorRow,
     VentilatorsTableEnvelope,
 )
 from features.project_document.tables.appliances import APPLIANCES_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.electric_heaters import ELECTRIC_HEATERS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.fans import FANS_BUILT_IN_FIELD_DEFS
-from features.project_document.tables.hot_water_tanks import HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS
+from features.project_document.tables.hot_water_heaters import HOT_WATER_HEATERS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.rooms import ROOMS_BUILT_IN_FIELD_DEFS
+from features.project_document.tables.thermal_bridges import THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.ventilators import VENTILATORS_BUILT_IN_FIELD_DEFS
 from features.project_document.validation import body_size_bytes, validate_document
 from features.projects.models import CreateProjectRequest
@@ -67,10 +70,11 @@ from scripts._seed_paths import (
     ASSEMBLIES_SEED_PATH,
     ELECTRIC_HEATERS_SEED_PATH,
     FANS_SEED_PATH,
-    HOT_WATER_TANKS_SEED_PATH,
+    HOT_WATER_HEATERS_SEED_PATH,
     PROJECT_META_PATH,
     PUMPS_SEED_PATH,
     ROOMS_SEED_PATH,
+    THERMAL_BRIDGES_SEED_PATH,
     VENTILATORS_SEED_PATH,
     default_user_kwargs,
 )
@@ -274,8 +278,9 @@ def _starter_project_document(payload: CreateProjectRequest) -> ProjectDocumentV
     rooms_seed = _load_table_seed(ROOMS_SEED_PATH)
     pumps_seed = _load_table_seed(PUMPS_SEED_PATH)
     fans_seed = _load_table_seed(FANS_SEED_PATH)
+    thermal_bridges_seed = _load_table_seed(THERMAL_BRIDGES_SEED_PATH)
     ventilators_seed = _load_table_seed(VENTILATORS_SEED_PATH)
-    hot_water_tanks_seed = _load_table_seed(HOT_WATER_TANKS_SEED_PATH)
+    hot_water_heaters_seed = _load_table_seed(HOT_WATER_HEATERS_SEED_PATH)
     electric_heaters_seed = _load_table_seed(ELECTRIC_HEATERS_SEED_PATH)
     appliances_seed = _load_table_seed(APPLIANCES_SEED_PATH)
 
@@ -284,8 +289,9 @@ def _starter_project_document(payload: CreateProjectRequest) -> ProjectDocumentV
         rooms_seed,
         pumps_seed,
         fans_seed,
+        thermal_bridges_seed,
         ventilators_seed,
-        hot_water_tanks_seed,
+        hot_water_heaters_seed,
         electric_heaters_seed,
         appliances_seed,
     ):
@@ -305,9 +311,9 @@ def _starter_project_document(payload: CreateProjectRequest) -> ProjectDocumentV
                 field_defs=list(VENTILATORS_BUILT_IN_FIELD_DEFS),
                 rows=[VentilatorRow.model_validate(row) for row in ventilators_seed.rows],
             ),
-            "hot_water_tanks": HotWaterTanksTableEnvelope(
-                field_defs=list(HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS),
-                rows=[HotWaterTankRow.model_validate(row) for row in hot_water_tanks_seed.rows],
+            "hot_water_heaters": HotWaterHeatersTableEnvelope(
+                field_defs=list(HOT_WATER_HEATERS_BUILT_IN_FIELD_DEFS),
+                rows=[HotWaterHeaterRow.model_validate(row) for row in hot_water_heaters_seed.rows],
             ),
             "electric_heaters": ElectricHeatersTableEnvelope(
                 field_defs=list(ELECTRIC_HEATERS_BUILT_IN_FIELD_DEFS),
@@ -330,6 +336,10 @@ def _starter_project_document(payload: CreateProjectRequest) -> ProjectDocumentV
         rooms=RoomsTableEnvelope(
             field_defs=list(ROOMS_BUILT_IN_FIELD_DEFS),
             rows=[RoomRow.model_validate(row) for row in rooms_seed.rows],
+        ),
+        thermal_bridges=ThermalBridgesTableEnvelope(
+            field_defs=list(THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS),
+            rows=[ThermalBridgeRow.model_validate(row) for row in thermal_bridges_seed.rows],
         ),
         equipment=next_equipment,
     )

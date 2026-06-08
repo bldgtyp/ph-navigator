@@ -356,21 +356,25 @@ JSON document. Illustrative sketch (the canonical model is the
         "notes": null
       }
     ],
-    "thermal_bridges": [                     // V2 NEW — see US-EQ-3 (linear-only in v1)
-      {
-        "id": "tb_...",
-        "name": "Wall-to-Slab Junction",
-        "category": "opt_...",               // single-select option_id; nullable
-        "length_m": 4.85,
-        "psi_value_w_mk": 0.04,
-        "assembly_id": "asm_...",            // optional ref to tables.assemblies
-        "simulation_method": "opt_...",      // single-select option_id; nullable
-        "simulation_file_asset_ids": [],
-        "datasheet_asset_ids": [],
-        "notes": null,
-        "catalog_origin": null
-      }
-    ],
+    "thermal_bridges": {                     // see US-EQ-3
+      "field_defs": [ /* built-ins + custom FieldDef entries */ ],
+      "rows": [
+        {
+          "id": "tb_...",
+          "thermal_bridge_type": "opt_...",  // 15-Ambient / 16-Perimeter / 17-Below-Grade
+          "pdf_report_asset_ids": [],
+          "notes": null,
+          "custom_values": {
+            "record_id": "TB-1",
+            "name": "Wall-to-Slab Junction",
+            "sheet_name": "A-501",
+            "drawing_number": "4/A-501",
+            "psi_value_w_mk": 0.04,
+            "frsi_value": 0.83
+          }
+        }
+      ]
+    },
     "equipment": {
       "fans":  [ /* see US-EQ-6 — name, manufacturer (single-select), model_number, fan_purpose (single-select), airflow_cfm, electrical_power_w, runtime_hours_per_day, datasheet_asset_ids, catalog_origin, notes */ ],
       "pumps": [ /* see US-EQ-5 — name, manufacturer (single-select), model_number, pump_type (single-select), electrical_power_w, runtime_hours_per_year, datasheet_asset_ids, catalog_origin, notes */ ],
@@ -379,10 +383,11 @@ JSON document. Illustrative sketch (the canonical model is the
     "manufacturer_filters": [ ]
   },
   "single_select_options": {                 // V2 NEW — user-defined options for single-select columns (US-Builder-Tables criteria 16–17)
-    // V2 v1 ships ALL single-select option lists empty by default
-    // (Ed 2026-05-10: no seeded defaults — user controls vocabulary
-    // per-project). Example shapes shown below; arrays are `[]` on
-    // new-project create.
+    // Most V2 v1 single-select option lists are empty by default
+    // (Ed 2026-05-10: user controls vocabulary per-project).
+    // Pump, hot-water heater, and appliance type lists are exceptions
+    // because their labels mirror WUFI-coded categories; keep embedded
+    // numbers as-is even when the sequence is not numerically sorted.
     "rooms.floor_level": [
       { "id": "opt_...", "label": "Basement", "color": "#6b7280", "order": 0 },
       { "id": "opt_...", "label": "Ground",   "color": "#3b82f6", "order": 1 },
@@ -390,12 +395,45 @@ JSON document. Illustrative sketch (the canonical model is the
       /* user-defined after first edit; empty on new-project create */
     ],
     "rooms.building_zone": [ /* user-defined; nullable cells allowed */ ],
+    "pumps.device_type": [
+      { "id": "opt_pump_heat_circulation", "label": "4-Heat Circulation Pump", "color": "#0ea5e9", "order": 0 },
+      { "id": "opt_pump_dhw_circulation", "label": "6-DHW Circulation Pump", "color": "#14b8a6", "order": 1 },
+      { "id": "opt_pump_dhw_storage", "label": "7-DHW Storage Pump", "color": "#f97316", "order": 2 },
+      { "id": "opt_pump_other", "label": "10-Other", "color": "#64748b", "order": 3 }
+    ],
+    "hot_water_heaters.type": [
+      { "id": "opt_hwh_electric", "label": "1-Electric", "color": "#ef4444", "order": 0 },
+      { "id": "opt_hwh_boiler_gas_oil", "label": "2-Boiler (Gas/Oil)", "color": "#f97316", "order": 1 },
+      { "id": "opt_hwh_boiler_wood", "label": "3-Boiler (Wood)", "color": "#92400e", "order": 2 },
+      { "id": "opt_hwh_district", "label": "4-District", "color": "#6366f1", "order": 3 },
+      { "id": "opt_hwh_heat_pump_annual_cop", "label": "5-Heat Pump (Annual COP)", "color": "#10b981", "order": 4 },
+      { "id": "opt_hwh_heat_pump_monthly_cop", "label": "6-Heat Pump (Monthly COP)", "color": "#14b8a6", "order": 5 },
+      { "id": "opt_hwh_heat_pump_inside", "label": "7-Heat Pump (Inside)", "color": "#0ea5e9", "order": 6 }
+    ],
+    "appliances.type": [
+      { "id": "opt_appl_dishwasher", "label": "1-dishwasher", "color": "#0ea5e9", "order": 0 },
+      { "id": "opt_appl_clothes_washer", "label": "2-clothes_washer", "color": "#14b8a6", "order": 1 },
+      { "id": "opt_appl_clothes_dryer", "label": "3-clothes_dryer", "color": "#f97316", "order": 2 },
+      { "id": "opt_appl_fridge", "label": "4-fridge", "color": "#3b82f6", "order": 3 },
+      { "id": "opt_appl_freezer", "label": "5-freezer", "color": "#6366f1", "order": 4 },
+      { "id": "opt_appl_fridge_freezer", "label": "6-fridge_freezer", "color": "#8b5cf6", "order": 5 },
+      { "id": "opt_appl_cooking", "label": "7-cooking", "color": "#ef4444", "order": 6 },
+      { "id": "opt_appl_phius_mel", "label": "13-PHIUS_MEL", "color": "#f59e0b", "order": 7 },
+      { "id": "opt_appl_phius_lighting_int", "label": "14-PHIUS_Lighting_Int", "color": "#84cc16", "order": 8 },
+      { "id": "opt_appl_phius_lighting_ext", "label": "15-PHIUS_Lighting_Ext", "color": "#22c55e", "order": 9 },
+      { "id": "opt_appl_phius_lighting_garage", "label": "16-PHIUS_Lighting_Garage", "color": "#10b981", "order": 10 },
+      { "id": "opt_appl_custom_electric_per_year", "label": "11-Custom_Electric_per_Year", "color": "#06b6d4", "order": 11 },
+      { "id": "opt_appl_custom_electric_lighting_per_year", "label": "17-Custom_Electric_Lighting_per_Year", "color": "#6366f1", "order": 12 },
+      { "id": "opt_appl_custom_electric_mel_per_use", "label": "18-Custom_Electric_MEL_per_Use", "color": "#8b5cf6", "order": 13 },
+      { "id": "opt_appl_commercial_dishwasher", "label": "21-Commercial_Dishwasher", "color": "#a855f7", "order": 14 },
+      { "id": "opt_appl_commercial_refrigerator", "label": "22-Commercial_Refrigerator", "color": "#d946ef", "order": 15 },
+      { "id": "opt_appl_commercial_cooking", "label": "23-Commercial_Cooking", "color": "#ec4899", "order": 16 },
+      { "id": "opt_appl_commercial_custom", "label": "24-Commercial_Custom", "color": "#64748b", "order": 17 }
+    ],
     "equipment.ervs.unit_type": [ /* user-defined; typically [ERV, HRV] but user picks labels */ ],
     "equipment.ervs.manufacturer": [ /* user-defined */ ],
     "equipment.fans.fan_purpose": [ /* user-defined */ ],
     "equipment.fans.manufacturer": [ /* user-defined */ ]
-    // thermal_bridges.* and equipment.pumps.* options are not provisioned
-    // in V2 v1 — those sub-tabs are placeholder-only (US-EQ-3 / US-EQ-5).
   }
 }
 ```
@@ -588,7 +626,7 @@ Rules:
   `project_materials[].datasheet_asset_ids[]`,
   `assembly.segments[].photo_asset_ids[]`,
   `equipment.<table>.datasheet_asset_ids[]`, and
-  `thermal_bridges[].simulation_file_asset_ids[]`.
+  `thermal_bridges.rows[].pdf_report_asset_ids[]`.
 - HBJSON files use the same `project_assets` row with
   `asset_kind = 'hbjson'`; `project_hbjson_files` is a subtype
   metadata table keyed to `asset_id` for viewer labels, notes, optional
@@ -931,7 +969,6 @@ full roster):
 | Fans | extract-for-trash, kitchen, laundry, other |
 | Appliances | fridge, dishwasher, etc. |
 | Hot-Water Heaters | heat-pump, direct-elec, gas |
-| Hot-Water Storage Tanks | — |
 | Heat-Pumps (heating/cooling) | — |
 | Direct-Elec Heaters | backup unit-heaters |
 | Boilers | gas, oil, elec |

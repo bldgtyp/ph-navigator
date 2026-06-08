@@ -23,11 +23,12 @@ from features.project_document.document import (
     RoomRow,
     RoomsTableEnvelope,
     SingleSelectOption,
+    ThermalBridgesTableEnvelope,
 )
 from features.project_document.tables.appliances import APPLIANCES_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.electric_heaters import ELECTRIC_HEATERS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.fans import FANS_BUILT_IN_FIELD_DEFS
-from features.project_document.tables.hot_water_tanks import HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS
+from features.project_document.tables.hot_water_heaters import HOT_WATER_HEATERS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.rooms import (
     ROOMS_BUILT_IN_FIELD_DEFS,
@@ -35,6 +36,7 @@ from features.project_document.tables.rooms import (
     RoomsSliceReplaceRequest,
     apply_rooms_replace,
 )
+from features.project_document.tables.thermal_bridges import THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.ventilators import VENTILATORS_BUILT_IN_FIELD_DEFS
 
 
@@ -59,6 +61,10 @@ def _body_with_default_field() -> ProjectDocumentV1:
             "project": ProjectDocumentProject(name="t", bt_number="1", cert_programs=[]).model_dump(mode="json"),
             "tables": {
                 "rooms": envelope.model_dump(mode="json"),
+                "thermal_bridges": ThermalBridgesTableEnvelope(
+                    field_defs=list(THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS),
+                    rows=[],
+                ).model_dump(mode="json"),
                 "equipment": {
                     "appliances": {
                         "field_defs": [field.model_dump(mode="json") for field in APPLIANCES_BUILT_IN_FIELD_DEFS],
@@ -80,8 +86,10 @@ def _body_with_default_field() -> ProjectDocumentV1:
                         "field_defs": [field.model_dump(mode="json") for field in FANS_BUILT_IN_FIELD_DEFS],
                         "rows": [],
                     },
-                    "hot_water_tanks": {
-                        "field_defs": [field.model_dump(mode="json") for field in HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS],
+                    "hot_water_heaters": {
+                        "field_defs": [
+                            field.model_dump(mode="json") for field in HOT_WATER_HEATERS_BUILT_IN_FIELD_DEFS
+                        ],
                         "rows": [],
                     },
                 },
@@ -92,7 +100,7 @@ def _body_with_default_field() -> ProjectDocumentV1:
                 "pumps.device_type": [],
                 "ventilators.inside_outside": [],
                 "fans.type": [],
-                "hot_water_tanks.type": [],
+                "hot_water_heaters.type": [],
                 "appliances.type": [],
                 "appliances.energy_star": [],
                 "rooms.cf_ss": [opt.model_dump(mode="json") for opt in cf_opts],

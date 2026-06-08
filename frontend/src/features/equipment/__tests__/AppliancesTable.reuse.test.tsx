@@ -93,7 +93,7 @@ describe("AppliancesTable DataTable reuse", () => {
     }
     expect(screen.getByText("m3")).toBeInTheDocument();
     expect(screen.getByText("A-1")).toBeInTheDocument();
-    expect(screen.getByText("4-Refrigerator")).toBeInTheDocument();
+    expect(screen.getByText("4-fridge")).toBeInTheDocument();
     expect(screen.getByText("Yes")).toBeInTheDocument();
   });
 

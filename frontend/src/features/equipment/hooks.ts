@@ -6,9 +6,10 @@ import {
   appliancesSliceFeature,
   electricHeatersSliceFeature,
   fansSliceFeature,
-  hotWaterTanksSliceFeature,
+  hotWaterHeatersSliceFeature,
   pumpsSliceFeature,
   roomsSliceFeature,
+  thermalBridgesSliceFeature,
   ventilatorsSliceFeature,
 } from "./api";
 import { roomsQueryKeys } from "./query-keys";
@@ -38,13 +39,18 @@ export const usePumpsSchemaMutation = pumpsSliceFeature.useSchemaMutationMutatio
 export const useVentilatorsSliceQuery = ventilatorsSliceFeature.useSliceQuery;
 export const useReplaceVentilatorsSliceMutation = ventilatorsSliceFeature.useReplaceSliceMutation;
 export const useVentilatorsSchemaMutation = ventilatorsSliceFeature.useSchemaMutationMutation;
+export const useThermalBridgesSliceQuery = thermalBridgesSliceFeature.useSliceQuery;
+export const useReplaceThermalBridgesSliceMutation =
+  thermalBridgesSliceFeature.useReplaceSliceMutation;
+export const useThermalBridgesSchemaMutation = thermalBridgesSliceFeature.useSchemaMutationMutation;
 export const useFansSliceQuery = fansSliceFeature.useSliceQuery;
 export const useReplaceFansSliceMutation = fansSliceFeature.useReplaceSliceMutation;
 export const useFansSchemaMutation = fansSliceFeature.useSchemaMutationMutation;
-export const useHotWaterTanksSliceQuery = hotWaterTanksSliceFeature.useSliceQuery;
-export const useReplaceHotWaterTanksSliceMutation =
-  hotWaterTanksSliceFeature.useReplaceSliceMutation;
-export const useHotWaterTanksSchemaMutation = hotWaterTanksSliceFeature.useSchemaMutationMutation;
+export const useHotWaterHeatersSliceQuery = hotWaterHeatersSliceFeature.useSliceQuery;
+export const useReplaceHotWaterHeatersSliceMutation =
+  hotWaterHeatersSliceFeature.useReplaceSliceMutation;
+export const useHotWaterHeatersSchemaMutation =
+  hotWaterHeatersSliceFeature.useSchemaMutationMutation;
 export const useElectricHeatersSliceQuery = electricHeatersSliceFeature.useSliceQuery;
 export const useReplaceElectricHeatersSliceMutation =
   electricHeatersSliceFeature.useReplaceSliceMutation;

@@ -20,13 +20,74 @@ def draft_appliances_url(project_id: object, version_id: object) -> str:
 def appliance_options() -> dict[str, list[dict[str, object]]]:
     return {
         "appliances.type": [
-            {"id": "opt_appl_dishwasher", "label": "1-Dishwasher", "color": "#0ea5e9", "order": 0},
-            {"id": "opt_appl_clothes_washer", "label": "2-Clothes Washer", "color": "#14b8a6", "order": 1},
-            {"id": "opt_appl_clothes_dryer", "label": "3-Clothes Dryer", "color": "#f97316", "order": 2},
-            {"id": "opt_appl_refrigerator", "label": "4-Refrigerator", "color": "#3b82f6", "order": 3},
-            {"id": "opt_appl_freezer", "label": "5-Freezer", "color": "#6366f1", "order": 4},
-            {"id": "opt_appl_fridge_freezer", "label": "6-Fridge-Freezer", "color": "#8b5cf6", "order": 5},
-            {"id": "opt_appl_oven", "label": "7-Oven", "color": "#ef4444", "order": 6},
+            {"id": "opt_appl_dishwasher", "label": "1-dishwasher", "color": "#0ea5e9", "order": 0},
+            {"id": "opt_appl_clothes_washer", "label": "2-clothes_washer", "color": "#14b8a6", "order": 1},
+            {"id": "opt_appl_clothes_dryer", "label": "3-clothes_dryer", "color": "#f97316", "order": 2},
+            {"id": "opt_appl_fridge", "label": "4-fridge", "color": "#3b82f6", "order": 3},
+            {"id": "opt_appl_freezer", "label": "5-freezer", "color": "#6366f1", "order": 4},
+            {"id": "opt_appl_fridge_freezer", "label": "6-fridge_freezer", "color": "#8b5cf6", "order": 5},
+            {"id": "opt_appl_cooking", "label": "7-cooking", "color": "#ef4444", "order": 6},
+            {"id": "opt_appl_phius_mel", "label": "13-PHIUS_MEL", "color": "#f59e0b", "order": 7},
+            {
+                "id": "opt_appl_phius_lighting_int",
+                "label": "14-PHIUS_Lighting_Int",
+                "color": "#84cc16",
+                "order": 8,
+            },
+            {
+                "id": "opt_appl_phius_lighting_ext",
+                "label": "15-PHIUS_Lighting_Ext",
+                "color": "#22c55e",
+                "order": 9,
+            },
+            {
+                "id": "opt_appl_phius_lighting_garage",
+                "label": "16-PHIUS_Lighting_Garage",
+                "color": "#10b981",
+                "order": 10,
+            },
+            {
+                "id": "opt_appl_custom_electric_per_year",
+                "label": "11-Custom_Electric_per_Year",
+                "color": "#06b6d4",
+                "order": 11,
+            },
+            {
+                "id": "opt_appl_custom_electric_lighting_per_year",
+                "label": "17-Custom_Electric_Lighting_per_Year",
+                "color": "#6366f1",
+                "order": 12,
+            },
+            {
+                "id": "opt_appl_custom_electric_mel_per_use",
+                "label": "18-Custom_Electric_MEL_per_Use",
+                "color": "#8b5cf6",
+                "order": 13,
+            },
+            {
+                "id": "opt_appl_commercial_dishwasher",
+                "label": "21-Commercial_Dishwasher",
+                "color": "#a855f7",
+                "order": 14,
+            },
+            {
+                "id": "opt_appl_commercial_refrigerator",
+                "label": "22-Commercial_Refrigerator",
+                "color": "#d946ef",
+                "order": 15,
+            },
+            {
+                "id": "opt_appl_commercial_cooking",
+                "label": "23-Commercial_Cooking",
+                "color": "#ec4899",
+                "order": 16,
+            },
+            {
+                "id": "opt_appl_commercial_custom",
+                "label": "24-Commercial_Custom",
+                "color": "#64748b",
+                "order": 17,
+            },
         ],
         "appliances.energy_star": [
             {"id": "opt_appl_energy_star_yes", "label": "Yes", "color": "#10b981", "order": 0},
@@ -41,7 +102,7 @@ def appliance_payload() -> dict[str, Any]:
         "appliances": [
             {
                 "id": "appl_1",
-                "appliance_type": "opt_appl_refrigerator",
+                "appliance_type": "opt_appl_fridge",
                 "energy_star": "opt_appl_energy_star_yes",
                 "url": "https://example.com/appliance.pdf",
                 "notes": "Basis of design.",
@@ -90,7 +151,7 @@ def test_document_rejects_missing_appliance_type_option() -> None:
             "pumps.device_type": [],
             "ventilators.inside_outside": [],
             "fans.type": [],
-            "hot_water_tanks.type": [],
+            "hot_water_heaters.type": [],
             "appliances.type": [],
             "appliances.energy_star": appliance_options()["appliances.energy_star"],
         },
@@ -144,7 +205,7 @@ def test_legacy_equipment_appliances_contract_preserves_table_envelope() -> None
                 "pumps.device_type": [],
                 "ventilators.inside_outside": [],
                 "fans.type": [],
-                "hot_water_tanks.type": [],
+                "hot_water_heaters.type": [],
                 **appliance_options(),
             },
         }

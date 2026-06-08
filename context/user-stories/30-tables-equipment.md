@@ -347,7 +347,7 @@ Photos) carries over here cleanly. **Decision (a) per Ed,
 | Order | Sub-tab | Story | V2 v1 status | Catalog-linked? |
 |---|---|---|---|---|
 | 1 | Rooms | US-EQ-2 | **Full draft** — source-of-truth for downstream HBJSON | No (rooms unlikely to ever have a catalog) |
-| 2 | Thermal Bridges | US-EQ-3 | **Placeholder** — scaffolding + empty-state copy only; full schema deferred to v1.1+ | No |
+| 2 | Thermal Bridges | US-EQ-3 | Editable DataTable with core TB fields, seeded type options, and inline PDF Report attachment | Yes |
 | 3 | ERVs | US-EQ-4 | **Full draft** — ventilation-critical for PH | Catalog deferred to v1.1+ |
 | 4 | Pumps | US-EQ-5 | **Placeholder** — scaffolding + empty-state copy only; full schema deferred to v1.1+ | Catalog deferred to v1.1+ |
 | 5 | Fans | US-EQ-6 | **Full draft** — ventilation-critical for PH | Catalog deferred to v1.1+ |
@@ -600,98 +600,55 @@ None outstanding.
 
 ## US-EQ-3 — Thermal Bridges sub-tab
 
-**Status:** Placeholder · **Priority:** MVP scaffolding only —
-**full data shape, row-detail modal, and Ψ-value computation
-deferred to v1.1+** (per Q-EQ-3.1 / Q-EQ-3.2 resolutions
-2026-05-10)
-**PRD ref:** §6.2 (`tables.thermal_bridges` — empty-list
-placeholder in V2 v1)
+**Status:** Implemented · **Priority:** MVP editable table
+**PRD ref:** §6.2 (`tables.thermal_bridges` FieldDef envelope)
 
-### Scope in V2 v1 (placeholder)
+The Thermal Bridges page is an editable shared DataTable backed by
+`tables.thermal_bridges`. It tracks the current certification-friendly
+schedule fields and stores the simulation/report PDF inline on the main
+row. The previous split attachment surface for "Simulation Files" is
+retired; report PDFs live in `pdf_report_asset_ids[]`.
 
-The Thermal Bridges sub-tab exists in V2 v1 **as scaffolding
-only** so the Equipment tab structure (US-EQ-1) is complete and
-the URL deep-link `/projects/{id}/equipment/thermal-bridges`
-resolves. **No editable schema ships in v1.**
+Core fields:
 
-Concretely:
+1. `record_id` / Tag — primary schedule identifier.
+2. `name`.
+3. `sheet_name`.
+4. `drawing_number`.
+5. `psi_value_w_mk` — stored SI as W/(m-K), displayed through the
+   shared W/(m-K) ↔ Btu/(h-ft-F) number-units path.
+6. `frsi_value` — numeric, valid range `[0.0, 1.0]`.
+7. `thermal_bridge_type` — single-select with seeded options:
+   `15-Ambient`, `16-Perimeter`, `17-Below-Grade`.
+8. `pdf_report_asset_ids[]` — PDF-only attachment cell.
+9. `notes`.
 
-1. Sub-tab nav routes correctly (US-EQ-1 criterion 2).
-2. The `<ProjectDataTable>` primitive renders, but the
-   underlying `tables.thermal_bridges` array is empty and there
-   are **no editable columns** in v1.
-3. The empty state copy reads:
-   *"Thermal Bridges — coming in v1.1+. Continue to track these
-   in your existing simulation deliverables (Flixo, Dartwin)
-   and add them directly to the energy model for now."*
-   No `[+ Add]` CTA.
-4. Add / edit / delete are all hidden in v1.
-5. Locked-version + Viewer rendering as inherited (the
-   placeholder card renders identically).
+Acceptance criteria:
 
-### Why placeholder, not full draft
+1. Editor users can add, edit, duplicate, delete, reorder/view-configure,
+   and save/reload thermal bridge rows through the shared DataTable.
+2. Viewer and locked-version states render read-only.
+3. Tag/name/sheet/drawing/psi/fRSI/type/report/notes all round-trip
+   through draft save and version read APIs.
+4. Clearing nullable cells persists `null` per the shared DataTable
+   contract.
+5. `fRSI Value` rejects values outside `[0.0, 1.0]`; `Psi-Value`
+   rejects negative values.
+6. Reset seed data creates five thermal bridge rows for UI testing.
+7. PDF Report accepts PDFs only; Flixo/Dartwin/HBJSON/native simulation
+   files are intentionally not modeled as a second table in this phase.
 
-Per Ed (2026-05-10): the simulation deliverables (Flixo 2D,
-Dartwin 3D files + PDFs) and the energy-model TB list
-currently live outside PHN, and integrating them is non-trivial
-work that doesn't gate the V2 v1 use cases. Demoting to
-placeholder lets the Equipment tab structure ship without
-blocking on the TB-specific UX questions.
+### Scope notes
 
-### Deferred to v1.1+ (full draft preserved below)
-
-The schema and acceptance criteria below are **deferred** —
-captured here as the v1.1+ starting point so the design is not
-lost. Ed's MVP guidance is to keep the placeholder above and
-walk this section when v1.1+ planning begins.
-
-> **v1.1+ data shape (deferred):**
-> ```jsonc
-> {
->   "id": "tb_<ULID>",
->   "name": "Wall-to-Slab Junction",
->   "category": "opt_<ULID>",                // user-defined single-select; no seeded defaults (Q-EQ-3.2 resolved)
->   "length_m": 4.85,
->   "psi_value_w_mk": 0.04,
->   "assembly_id": "asm_<ULID>",
->   "simulation_method": "opt_<ULID>",       // user-defined single-select; no seeded defaults
->   "simulation_file_asset_ids": [],
->   "datasheet_asset_ids": [],
->   "notes": null,
->   "catalog_origin": null
-> }
-> ```
->
-> **v1.1+ acceptance criteria (deferred):**
-> - Inherits US-Builder-Tables criteria 1–17.
-> - Column set: name / category / length_m / psi_value_w_mk /
->   assembly_id / simulation_method / simulation_file_asset_ids.
-> - Linear-only — point thermal bridges (count × χ-value)
->   deferred again to a later v1.x (Q-EQ-3.1 resolved). Schema
->   additive — `kind: 'linear' | 'point'` enum + conditional
->   `count` / `chi_value_w_k` fields can land then.
-> - `assembly_id` referential integrity: assembly delete
->   nulls the ref + soft-warning toast.
-> - Datasheet / simulation-file uploads follow the
->   per-project QA principle (auto-memory
->   `qa_principle_per_project_datasheets`).
-> - Cross-refs: `assembly_id` → `tables.assemblies[]`
->   (US-ENV-2); energy-model service will sum
->   `length_m × psi_value_w_mk` for total Ψ-loss contribution.
-
-### Resolved questions (2026-05-10)
-- **Q-EQ-3.1: Point thermal bridges in v1.1+.** Resolved:
-  **defer for MVP — placeholder tab / table is enough for now.**
-  The whole sub-tab is placeholder in V2 v1; point-vs-linear is
-  a question for the v1.1+ full draft.
-- **Q-EQ-3.2: Default suggested options for `category` and
-  `simulation_method`.** Resolved: **none. Defer for MVP** along
-  with the rest of the schema. When the v1.1+ draft lands, the
-  user defines option lists from scratch (no seeded defaults).
+- Linear thermal bridges only. Point thermal bridges (`count × χ-value`)
+  remain a future additive shape.
+- No assembly reference in this phase; `sheet_name` and
+  `drawing_number` are the current drawing-coordinate fields.
+- `thermal_bridge_type` is intentionally seeded with the WUFI-style
+  numbered labels Ed specified.
 
 ### Open questions
-None outstanding for V2 v1 (nothing to spec — placeholder
-only). v1.1+ planning will re-open the deferred design.
+None outstanding for the current editable table.
 
 ---
 

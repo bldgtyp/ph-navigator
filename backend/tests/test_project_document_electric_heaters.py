@@ -64,7 +64,7 @@ def test_document_rejects_duplicate_electric_heater_id() -> None:
             "pumps.device_type": [],
             "ventilators.inside_outside": [],
             "fans.type": [],
-            "hot_water_tanks.type": [],
+            "hot_water_heaters.type": [],
         },
     }
 
@@ -116,7 +116,7 @@ def test_legacy_equipment_electric_heaters_contract_preserves_table_envelope() -
                 "pumps.device_type": [],
                 "ventilators.inside_outside": [],
                 "fans.type": [],
-                "hot_water_tanks.type": [],
+                "hot_water_heaters.type": [],
             },
         }
     )

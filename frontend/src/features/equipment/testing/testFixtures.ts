@@ -40,7 +40,7 @@ import {
 
 const CREATED_AT = "2026-05-25T00:00:00Z";
 
-export * from "./hotWaterTanksFixtures";
+export * from "./hotWaterHeatersFixtures";
 export * from "./electricHeatersFixtures";
 export * from "./appliancesFixtures";
 
@@ -138,7 +138,7 @@ export function buildRoom(overrides: Partial<RoomRow> = {}): RoomRow {
 export function buildPump(overrides: Partial<PumpRow> = {}): PumpRow {
   return {
     id: "pmp_1",
-    device_type: "opt_circ",
+    device_type: "opt_pump_dhw_circulation",
     phase: 1,
     notes: null,
     link: null,
@@ -316,7 +316,25 @@ export function buildPumpsSlice(overrides: Partial<PumpsSlice> = {}): PumpsSlice
     field_defs: pumpsFieldDefs(),
     single_select_options: {
       [PUMP_DEVICE_TYPE_OPTION_KEY]: [
-        { id: "opt_circ", label: "Circulator", color: "#3b82f6", order: 0 },
+        {
+          id: "opt_pump_heat_circulation",
+          label: "4-Heat Circulation Pump",
+          color: "#0ea5e9",
+          order: 0,
+        },
+        {
+          id: "opt_pump_dhw_circulation",
+          label: "6-DHW Circulation Pump",
+          color: "#14b8a6",
+          order: 1,
+        },
+        {
+          id: "opt_pump_dhw_storage",
+          label: "7-DHW Storage Pump",
+          color: "#f97316",
+          order: 2,
+        },
+        { id: "opt_pump_other", label: "10-Other", color: "#64748b", order: 3 },
       ],
     },
     ...overrides,

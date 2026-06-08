@@ -169,7 +169,7 @@ use the same project workspace routes in read-only mode
   the available catalogs. **v1 (live):** Materials, Window-Frame
   Elements, Window-Glazing. **Future (deferred — see PRD §7.0
   for the full roster):** ERV units, Pumps, Fans, Appliances,
-  Hot-Water Heaters, Hot-Water Storage Tanks, Heat-Pumps,
+  Hot-Water Heaters, Heat-Pumps,
   Direct-Elec Heaters, Boilers, and others TBD.
   - **v1 menu treatment:** show only the 3 live catalogs; do not
     list future catalogs as "coming soon" entries (premature

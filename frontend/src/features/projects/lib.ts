@@ -26,7 +26,8 @@ export const TAB_COPY: Record<ProjectTab, string> = {
   apertures: "Aperture types, frames, glazing, dimensions, and U-Value.",
   envelope: "Envelope assemblies land after the aperture catalog slices.",
   rooms: "Room schedules, iCFA factors, and occupancy assumptions.",
-  equipment: "Equipment tables for ventilators, pumps, fans, hot-water tanks, and heaters.",
+  equipment:
+    "Equipment tables for ventilators, pumps, fans, hot-water heaters, and electric heaters.",
   "thermal-bridges": "Thermal bridge datasheets and simulation files.",
   model: "HBJSON upload and the R3F viewer land after the asset backbone.",
 };
