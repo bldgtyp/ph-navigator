@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { DataTable } from "../DataTable";
 import {
+  type BuildEmptyRow,
   emptyViewState,
   type DataTableColumnDef,
   type DataTableProps,
@@ -24,6 +25,12 @@ const columnDefs: DataTableColumnDef<Row>[] = [
   { id: "name", fieldKey: "name", header: "Name", accessor: (row) => row.name },
   { id: "count", fieldKey: "count", header: "Count", accessor: (row) => row.count },
 ];
+const buildEmptyRow: BuildEmptyRow<Row> = ({ rowId, fieldDefaults }) => ({
+  id: rowId,
+  number: String(fieldDefaults.number ?? ""),
+  name: String(fieldDefaults.name ?? ""),
+  count: Number(fieldDefaults.count ?? 0),
+});
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -108,6 +115,29 @@ describe("DataTable", () => {
         .compareDocumentPosition(screen.getByRole("checkbox", { name: "Select row 1" })) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+  });
+
+  test("renders the shared footer add-row button when row insert is enabled", async () => {
+    const onWrite = vi.fn();
+    renderTable({ onWrite, buildEmptyRow });
+
+    const addButton = screen.getByRole("button", { name: "Add row" });
+    expect(addButton).toHaveClass("data-table-add-row-button");
+    expect(addButton).toHaveTextContent("+");
+
+    fireEvent.click(addButton);
+
+    await screen.findByText("Row inserted.");
+    expect(onWrite).toHaveBeenCalledWith({
+      kind: "rowInsert",
+      rows: [
+        {
+          rowId: expect.stringMatching(/^tmp_row_/),
+          fieldDefaults: { count: 0, name: "", number: "" },
+          anchorRowId: null,
+        },
+      ],
+    });
   });
 
   test("body cells carry data-axis-tint='f' on a column with a contributing filter rule", () => {
@@ -870,6 +900,7 @@ function renderTable({
   fieldDefsOverride,
   columnDefsOverride,
   rowActions,
+  buildEmptyRow,
 }: {
   view?: ViewState;
   readOnly?: boolean;
@@ -879,6 +910,7 @@ function renderTable({
   fieldDefsOverride?: FieldDef[];
   columnDefsOverride?: DataTableColumnDef<Row>[];
   rowActions?: DataTableProps<Row>["rowActions"];
+  buildEmptyRow?: DataTableProps<Row>["buildEmptyRow"];
 } = {}) {
   return render(
     <DataTable
@@ -889,6 +921,7 @@ function renderTable({
       view={view}
       onViewChange={onViewChange ?? vi.fn()}
       onWrite={onWrite}
+      buildEmptyRow={buildEmptyRow}
       readOnly={readOnly}
       emptyMessage="No rooms yet."
       rowActions={rowActions}

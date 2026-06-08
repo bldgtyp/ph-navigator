@@ -492,6 +492,20 @@ export function DataTable<TRow>({
       visibleColumnDefs,
     ],
   );
+  const defaultFooterAction = canInsertRow ? (
+    <button
+      type="button"
+      className="data-table-add-row-button"
+      aria-label="Add row"
+      title="Add row"
+      onClick={() => {
+        void insertRowBelow(null);
+      }}
+    >
+      +
+    </button>
+  ) : null;
+  const renderedFooterAction = footerAction ?? defaultFooterAction;
 
   const insertRowBelowActive = useCallback(() => {
     const anchorRow = visibleDataRows[selection.activeCell.rowIndex] ?? null;
@@ -1497,7 +1511,9 @@ export function DataTable<TRow>({
                   unitSystem={unitSystem}
                 />
               </table>
-              {footerAction ? <div className="data-table-footer-row">{footerAction}</div> : null}
+              {renderedFooterAction ? (
+                <div className="data-table-footer-row">{renderedFooterAction}</div>
+              ) : null}
             </div>
           </SortableContext>
         </DndContext>
