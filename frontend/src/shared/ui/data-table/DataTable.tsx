@@ -52,6 +52,10 @@ import { DataTableErrorBoundary } from "./components/DataTableErrorBoundary";
 import { GridHeader } from "./components/GridHeader";
 import { GridBody } from "./components/GridBody";
 import { RowContextMenu, type RowContextMenuOpenState } from "./components/RowContextMenu";
+import {
+  GroupHeaderContextMenu,
+  type GroupHeaderContextMenuOpenState,
+} from "./components/GroupHeaderContextMenu";
 import { SummaryBar } from "./components/SummaryBar";
 import { GridToolbar } from "./components/GridToolbar";
 import type { HideFieldsPanelChange } from "./components/HideFieldsPanel";
@@ -750,6 +754,9 @@ export function DataTable<TRow>({
   // contract; the menu does not re-read selection/row state while
   // open.
   const [rowMenu, setRowMenu] = useState<RowContextMenuOpenState | null>(null);
+  const [groupHeaderMenu, setGroupHeaderMenu] = useState<GroupHeaderContextMenuOpenState | null>(
+    null,
+  );
   const openRowMenu = useCallback(
     (args: {
       rowId: string;
@@ -800,6 +807,10 @@ export function DataTable<TRow>({
     [readOnly, onWrite, rowSelection, rowActions, visibleDataRows, getRowId],
   );
   const closeRowMenu = useCallback(() => setRowMenu(null), []);
+  const openGroupHeaderMenu = useCallback((args: GroupHeaderContextMenuOpenState) => {
+    setGroupHeaderMenu(args);
+  }, []);
+  const closeGroupHeaderMenu = useCallback(() => setGroupHeaderMenu(null), []);
 
   // `read_only` does NOT exclude a field — filtering on a computed
   // column is a real use case. attachment is dropped because the
@@ -1473,6 +1484,7 @@ export function DataTable<TRow>({
                   identifierColumnId={pinnedColumnId}
                   identifierDuplicates={identifierDuplicates}
                   onRowContextMenu={!readOnly && onWrite ? openRowMenu : undefined}
+                  onGroupHeaderContextMenu={view.group.length > 0 ? openGroupHeaderMenu : undefined}
                   editingActive={Boolean(edit.editing)}
                 />
                 <SummaryBar
@@ -1512,6 +1524,12 @@ export function DataTable<TRow>({
           onDeleteSelection={() => {
             void deleteSelectedRows();
           }}
+        />
+        <GroupHeaderContextMenu
+          open={groupHeaderMenu}
+          onClose={closeGroupHeaderMenu}
+          onCollapseAll={handleCollapseAllGroups}
+          onExpandAll={handleExpandAllGroups}
         />
       </div>
     </DataTableErrorBoundary>

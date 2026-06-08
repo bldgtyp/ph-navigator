@@ -1,5 +1,6 @@
 import * as Popover from "@radix-ui/react-popover";
 import { useState, type ReactNode } from "react";
+import { MoreVertical } from "lucide-react";
 
 // Phase 4 §4.7: toolbar overflow menu, rightmost of the axis-button
 // cluster. Owns the Reset view action today; forward-compat slot for
@@ -22,12 +23,12 @@ export function ViewMenuOverflow({ onReset, canReset, actions }: ViewMenuOverflo
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
-        <button type="button" className="data-table-toolbar-button" aria-label="More view actions">
-          <span className="project-actions-icon" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </span>
+        <button
+          type="button"
+          className="data-table-toolbar-button data-table-toolbar-button--icon"
+          aria-label="More view actions"
+        >
+          <MoreVertical size={18} aria-hidden="true" />
         </button>
       </Popover.Trigger>
       <Popover.Portal>
