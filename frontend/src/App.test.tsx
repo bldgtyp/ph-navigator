@@ -319,7 +319,7 @@ describe("App", () => {
       if (url === "/api/v1/projects/deleted") {
         return jsonResponse({ projects: deletedProjects });
       }
-      if (url === "/api/v1/projects:bulk-delete" && init?.method === "POST") {
+      if (url === "/api/v1/projects/bulk-delete" && init?.method === "POST") {
         expect(JSON.parse(String(init.body))).toEqual({
           project_ids: [projectPayload.id],
           confirm: true,
@@ -342,7 +342,7 @@ describe("App", () => {
           ],
         });
       }
-      if (url === `/api/v1/projects/${projectPayload.id}:restore` && init?.method === "POST") {
+      if (url === `/api/v1/projects/${projectPayload.id}/restore` && init?.method === "POST") {
         activeProjects = [projectPayload];
         deletedProjects = [];
         return jsonResponse(projectPayload);
