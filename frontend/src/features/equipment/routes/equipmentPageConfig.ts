@@ -47,6 +47,7 @@ export const APPLIANCES_CONFLICT_MESSAGES = {
 
 export const EQUIPMENT_TABS = [
   { key: "ventilators", label: "Ventilators", emptyMessage: "No ventilators yet." },
+  { key: "heat-pumps", label: "Heat Pumps", emptyMessage: "No heat pumps yet." },
   { key: "pumps", label: "Pumps", emptyMessage: "No pumps yet." },
   { key: "fans", label: "Fans", emptyMessage: "No fans yet." },
   {

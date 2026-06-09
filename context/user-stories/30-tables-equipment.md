@@ -971,8 +971,8 @@ the reverse side of the HP-indoor ↔ ERV link captured by
 
 ## US-EQ-7 — Heat Pumps sub-tab structure (nested-tab navigation)
 
-**Status:** Stub (full PRD lives at
-`planning/features/heat-pumps/PRD.md`) · **Priority:** MVP
+**Status:** Phase 1 partially implemented (2026-06-09; Equipment —
+Outdoor leaf live, later leaves placeholder) · **Priority:** MVP
 **PRD ref:** Heat Pumps PRD §5 (UI and navigation)
 **Inherits:** US-EQ-1 (Equipment tab structure); US-Builder-Tables
 
@@ -1000,6 +1000,15 @@ the reverse side of the HP-indoor ↔ ERV link captured by
 5. Locked-version + Viewer rendering inherited — nested nav still
    functional; tables read-only.
 
+### Implementation status
+
+Phase 1 adds the "Heat Pumps" parent Equipment tab, the nested
+four-leaf strip, and the deep-link shape
+`/projects/{id}/equipment/heat-pumps/equipment-outdoor`. The
+Equipment — Outdoor leaf is live; Equipment — Indoor, Units —
+Outdoor, and Units — Indoor intentionally render phase-placeholder
+states until US-EQ-9..11 land.
+
 ### Resolved questions
 All directional questions resolved in
 `planning/features/heat-pumps/decisions.md`. No open questions on
@@ -1009,7 +1018,8 @@ this story.
 
 ## US-EQ-8 — HP Equipment — Outdoor DataTable
 
-**Status:** Stub (full PRD: Heat Pumps PRD §4.2 / §5 / §6) ·
+**Status:** Phase 1 partially implemented (2026-06-09; frontend
+outdoor-equipment page live, Phius export still stubbed) ·
 **Priority:** MVP
 **Inherits:** US-Builder-Tables (criteria 1–17), US-EQ-1, US-EQ-7
 
@@ -1027,13 +1037,30 @@ this story.
 2. Column set per Heat Pumps PRD §4.2 — 20 fields.
 3. Default column visibility per Heat Pumps PRD §5.3 (legacy
    metrics + inactive-discriminator side fields hidden by default).
-4. Required fields: `model_number`. `paired_indoor_model` required
-   when `mode_type` indicates a paired topology (e.g. PUZ/SUZ);
-   nullable otherwise (VRF / multi-zone).
+4. Required fields: `model_number`. `paired_indoor_equip_id` is a
+   nullable FK to HP Equipment — Indoor; null covers VRF /
+   multi-zone rows. `system_family` replaces the earlier
+   `mode_type` label.
 5. Phius export action available in the overflow `⋯` menu per Heat
    Pumps PRD §6.
 6. `datasheet_asset_ids[]` via the shared `<AttachmentCell>`.
 7. Empty state per Heat Pumps PRD §5.6.
+
+### Implementation status
+
+Phase 1 ships the active-version REST-backed DataTable, row-detail
+modal, add / edit / delete row mutations, inline simple-cell edits,
+`datasheet_asset_ids[]` via `<AttachmentCell>`, a paired-indoor FK
+picker, and a minimal inline-create modal for indoor equipment.
+The Phius export menu item is present but intentionally shows the
+Phase 5 stub state.
+
+Phase 1 caveat: HP equipment `manufacturer`, `system_family`, and
+`refrigerant` rows store option ids, but HP tables are not yet
+registered with the generic editable `single_select_options`
+lifecycle. Until that registration lands, the frontend mints
+deterministic `opt_<slug>` ids from typed labels and renders those
+ids back as readable labels.
 
 ### Resolved questions
 None outstanding on this story (Heat Pumps PRD OPQ-1 is a
