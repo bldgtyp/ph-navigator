@@ -105,3 +105,47 @@ export type CascadePreview = {
 export type HeatPumpsPatchResponse = HeatPumpsSlice & {
   cascade_preview?: CascadePreview | null;
 };
+
+export type PhiusExportWarningField =
+  | "heating_data_type"
+  | "heating_cap_kbtuh_17f"
+  | "heating_cap_kbtuh_47f"
+  | "heating_cop_17f"
+  | "heating_cop_47f"
+  | "hspf2"
+  | "cooling_data_type"
+  | "cooling_cap_kbtuh_95f"
+  | "eer2"
+  | "seer2"
+  | "ieer"
+  | "qty";
+
+export type PhiusExportRow = {
+  row_id: string;
+  device: string;
+  qty: number;
+  heating_data_type: string;
+  cap_17f: number | null;
+  cap_47f: number | null;
+  cop_17f: number | null;
+  cop_47f: number | null;
+  hspf: number | null;
+  cooling_data_type: string;
+  cap_95f: number | null;
+  eer: number | null;
+  seer: number | null;
+  ieer: number | null;
+};
+
+export type PhiusExportWarning = {
+  row_id: string;
+  model_number: string;
+  field: PhiusExportWarningField;
+  message: string;
+};
+
+export type PhiusExportResponse = {
+  rows: PhiusExportRow[];
+  warnings: PhiusExportWarning[];
+  csv: string;
+};

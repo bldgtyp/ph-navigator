@@ -9,6 +9,7 @@ import type {
   HeatPumpTableKey,
   HeatPumpsPatchResponse,
   HeatPumpsSlice,
+  PhiusExportResponse,
 } from "./types";
 
 export const heatPumpsQueryKeys = {
@@ -85,4 +86,11 @@ export async function previewHeatPumpDelete(
     },
   );
   return response.cascade_preview ?? { affected: [] };
+}
+
+export async function requestPhiusExport(projectId: string): Promise<PhiusExportResponse> {
+  return fetchJson<PhiusExportResponse>(
+    `/api/v1/projects/${projectId}/equipment/heat-pumps/export-phius`,
+    { method: "POST" },
+  );
 }

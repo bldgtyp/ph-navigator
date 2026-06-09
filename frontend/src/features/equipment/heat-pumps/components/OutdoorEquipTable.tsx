@@ -19,8 +19,10 @@ import {
   outdoorEquipFieldDefs,
 } from "../outdoor-equip-columns";
 import type { HeatPumpIndoorEquipRow, HeatPumpOutdoorEquipRow, HeatPumpsSlice } from "../types";
+import { addRowButton } from "../../routes/equipmentRowActions";
 import { IndoorEquipRowModal } from "./IndoorEquipRowModal";
 import { OutdoorEquipRowModal } from "./OutdoorEquipRowModal";
+import { PhiusExportDialog } from "./PhiusExportDialog";
 
 type ModalState =
   | { kind: "outdoor"; mode: "add" | "edit"; row: HeatPumpOutdoorEquipRow }
@@ -33,11 +35,13 @@ type ModalState =
 
 export function OutdoorEquipTable({
   projectId,
+  btNumber,
   slice,
   isEditor,
   versionLocked,
 }: {
   projectId: string;
+  btNumber: string;
   slice: HeatPumpsSlice;
   isEditor: boolean;
   versionLocked: boolean;
@@ -48,7 +52,7 @@ export function OutdoorEquipTable({
     hiddenColumns: outdoorEquipDefaultHiddenColumns,
   }));
   const [modal, setModal] = useState<ModalState>(null);
-  const [status, setStatus] = useState<string | null>(null);
+  const [phiusDialogOpen, setPhiusDialogOpen] = useState(false);
   const patchMutation = useHeatPumpPatchMutation(projectId);
   const rows = useMemo(() => sortedOutdoorEquip(slice.outdoor_equip), [slice.outdoor_equip]);
   const assetIds = useMemo(
@@ -147,11 +151,6 @@ export function OutdoorEquipTable({
 
   return (
     <>
-      {status ? (
-        <p className="draft-banner hp-status-banner" role="status">
-          {status}
-        </p>
-      ) : null}
       <DataTable
         rows={rows}
         getRowId={(row) => row.id}
@@ -165,28 +164,28 @@ export function OutdoorEquipTable({
         onRowOpen={(row) => setModal({ kind: "outdoor", mode: "edit", row })}
         sessionKey={`${projectId}:heat-pumps:outdoor-equip:${slice.version_id}`}
         generateRowId={() => buildEmptyOutdoorEquipRow().id}
-        footerAction={
-          <button
-            type="button"
-            onClick={() =>
-              setModal({ kind: "outdoor", mode: "add", row: buildEmptyOutdoorEquipRow() })
-            }
-            disabled={readOnly}
-          >
-            Add outdoor equipment
-          </button>
-        }
+        footerAction={addRowButton("Add outdoor equipment", !readOnly, () =>
+          setModal({ kind: "outdoor", mode: "add", row: buildEmptyOutdoorEquipRow() }),
+        )}
         overflowMenuActions={
           <button
             type="button"
             className="data-table-menu-item"
             disabled={rows.length === 0}
-            onClick={() => setStatus("Phius export ships in Phase 5.")}
+            title={rows.length === 0 ? "Add an outdoor heat-pump model first." : undefined}
+            onClick={() => setPhiusDialogOpen(true)}
           >
             Export to Phius HP Estimator...
           </button>
         }
       />
+      {phiusDialogOpen ? (
+        <PhiusExportDialog
+          projectId={projectId}
+          btNumber={btNumber}
+          onClose={() => setPhiusDialogOpen(false)}
+        />
+      ) : null}
       {modal?.kind === "outdoor" ? (
         <OutdoorEquipRowModal
           mode={modal.mode}
