@@ -4,6 +4,7 @@ import { projectDocumentQueryKeys } from "../../project_document/query-keys";
 import { draftWriteHeaders } from "../../project_document/table-slice";
 import { markLocalDraftTouched } from "../../project_document/lib";
 import type {
+  CascadePreview,
   HeatPumpPatchOp,
   HeatPumpTableKey,
   HeatPumpsPatchResponse,
@@ -62,4 +63,26 @@ export function useHeatPumpPatchMutation(projectId: string) {
       });
     },
   });
+}
+
+/**
+ * Issues a `?dry-run=true` delete to surface the cascade preview *before* the
+ * user confirms a destructive cascade. Cache is untouched — the real delete is
+ * a separate call through `useHeatPumpPatchMutation`.
+ */
+export async function previewHeatPumpDelete(
+  projectId: string,
+  current: HeatPumpsSlice,
+  table: HeatPumpTableKey,
+  rowId: string,
+): Promise<CascadePreview> {
+  const response = await fetchJson<HeatPumpsPatchResponse>(
+    `/api/v1/projects/${projectId}/equipment/heat-pumps/${table}?dry-run=true`,
+    {
+      method: "PATCH",
+      headers: draftWriteHeaders(current),
+      body: JSON.stringify({ op: "remove", path: `/${rowId}` }),
+    },
+  );
+  return response.cascade_preview ?? { affected: [] };
 }

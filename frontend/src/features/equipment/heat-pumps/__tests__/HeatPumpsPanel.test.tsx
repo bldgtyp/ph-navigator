@@ -51,13 +51,22 @@ describe("HeatPumpsPanel", () => {
     expect(screen.getByText("PUZ-A18NKA7")).toBeInTheDocument();
   });
 
-  test("renders coming-soon placeholders for later leaves", async () => {
+  test("mounts the outdoor units table on the outdoor-units leaf", async () => {
     const user = userEvent.setup();
     renderPanel();
 
     await user.click(await screen.findByRole("tab", { name: "Units - Outdoor" }));
 
-    expect(screen.getByRole("status")).toHaveTextContent("Coming in Phase 3");
+    expect(await screen.findByRole("button", { name: "Add outdoor unit" })).toBeInTheDocument();
+  });
+
+  test("mounts the indoor units table on the indoor-units leaf", async () => {
+    const user = userEvent.setup();
+    renderPanel();
+
+    await user.click(await screen.findByRole("tab", { name: "Units - Indoor" }));
+
+    expect(await screen.findByRole("button", { name: "Add indoor unit" })).toBeInTheDocument();
   });
 
   test("mounts the indoor equipment table on the indoor leaf", async () => {

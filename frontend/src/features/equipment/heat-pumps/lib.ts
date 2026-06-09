@@ -1,4 +1,9 @@
-import type { HeatPumpIndoorEquipRow, HeatPumpOutdoorEquipRow } from "./types";
+import type {
+  HeatPumpIndoorEquipRow,
+  HeatPumpIndoorUnitRow,
+  HeatPumpOutdoorEquipRow,
+  HeatPumpOutdoorUnitRow,
+} from "./types";
 
 export function buildEmptyOutdoorEquipRow(overrides: Partial<HeatPumpOutdoorEquipRow> = {}) {
   return {
@@ -52,22 +57,89 @@ export function buildEmptyIndoorEquipRow(overrides: Partial<HeatPumpIndoorEquipR
   } satisfies HeatPumpIndoorEquipRow;
 }
 
+export function buildEmptyOutdoorUnitRow(overrides: Partial<HeatPumpOutdoorUnitRow> = {}) {
+  return {
+    id: heatPumpId("hpou"),
+    tag: "",
+    outdoor_equip_id: "",
+    building_zone: null,
+    datasheet_asset_ids: [],
+    notes: null,
+    ...overrides,
+  } satisfies HeatPumpOutdoorUnitRow;
+}
+
+export function buildEmptyIndoorUnitRow(overrides: Partial<HeatPumpIndoorUnitRow> = {}) {
+  return {
+    id: heatPumpId("hpiu"),
+    tag: "",
+    indoor_equip_id: "",
+    outdoor_unit_id: null,
+    linked_erv_unit_id: null,
+    served_room_ids: [],
+    floor_level: null,
+    area_served: null,
+    datasheet_asset_ids: [],
+    notes: null,
+    ...overrides,
+  } satisfies HeatPumpIndoorUnitRow;
+}
+
 export function sortedOutdoorEquip(rows: HeatPumpOutdoorEquipRow[]) {
-  return sortByModelNumber(rows);
+  return sortBy(rows, (row) => row.model_number);
 }
 
 export function sortedIndoorEquip(rows: HeatPumpIndoorEquipRow[]) {
-  return sortByModelNumber(rows);
+  return sortBy(rows, (row) => row.model_number);
 }
 
-function sortByModelNumber<T extends { id: string; model_number: string }>(rows: T[]): T[] {
+export function sortedOutdoorUnits(rows: HeatPumpOutdoorUnitRow[]) {
+  return sortBy(rows, (row) => row.tag);
+}
+
+export function sortedIndoorUnits(rows: HeatPumpIndoorUnitRow[]) {
+  return sortBy(rows, (row) => row.tag);
+}
+
+function sortBy<T extends { id: string }>(rows: T[], key: (row: T) => string): T[] {
   return [...rows].sort((a, b) => {
-    const primary = a.model_number.localeCompare(b.model_number, undefined, {
+    const primary = key(a).localeCompare(key(b), undefined, {
       numeric: true,
       sensitivity: "base",
     });
     return primary || a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: "base" });
   });
+}
+
+/**
+ * Resolves a unique tag inside a table by appending `(2)`, `(3)`, … on collision.
+ * Comparison is trim + case-fold so "AHU-1" and "ahu-1 " collide.
+ * Used on add only — rename collisions are rejected with an error instead.
+ */
+export function uniqueTagForAdd(desired: string, existing: readonly { tag: string }[]): string {
+  const trimmed = desired.trim();
+  const taken = new Set(existing.map((row) => row.tag.trim().toLocaleLowerCase()));
+  if (!taken.has(trimmed.toLocaleLowerCase())) return trimmed;
+  for (let suffix = 2; suffix < 1000; suffix += 1) {
+    const candidate = `${trimmed} (${suffix})`;
+    if (!taken.has(candidate.toLocaleLowerCase())) return candidate;
+  }
+  return `${trimmed} (${Date.now()})`;
+}
+
+/**
+ * Returns true when `desired` collides with another row in `existing` (excluding the
+ * row being renamed by id). Caller uses this on rename to reject duplicates.
+ */
+export function tagCollides(
+  desired: string,
+  existing: readonly { id: string; tag: string }[],
+  excludeId: string,
+): boolean {
+  const target = desired.trim().toLocaleLowerCase();
+  return existing.some(
+    (row) => row.id !== excludeId && row.tag.trim().toLocaleLowerCase() === target,
+  );
 }
 
 export function optionIdFromLabel(label: string): string | null {
@@ -105,6 +177,10 @@ export function indoorEquipLabel(row: HeatPumpIndoorEquipRow | null | undefined)
   if (!row) return "";
   const manufacturer = optionLabelFromId(row.manufacturer);
   return manufacturer ? `${manufacturer} ${row.model_number}` : row.model_number;
+}
+
+export function outdoorUnitLabel(row: HeatPumpOutdoorUnitRow | null | undefined): string {
+  return row?.tag ?? "";
 }
 
 function heatPumpId(prefix: "hpoe" | "hpie" | "hpou" | "hpiu"): string {
