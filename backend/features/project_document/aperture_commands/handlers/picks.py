@@ -101,7 +101,7 @@ def _require_catalog_origin(ref: FrameRef | GlazingRef, target: str) -> None:
     if ref.catalog_origin is not None:
         return
     raise api_error(
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         "aperture_pick_catalog_required",
         "Aperture frame and glazing picks must come from the catalog.",
         {"target": target},

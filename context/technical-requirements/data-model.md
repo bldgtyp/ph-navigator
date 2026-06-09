@@ -812,7 +812,7 @@ only what the user can edit next.
 | `number` | SI semantics; per-field `precision` in config. **Unit dimension deferred** — start unitless to avoid coupling to the IP/SI machinery in v1. |
 | `url` | URL-validated; renders as a link. |
 | `single_select` | Options live in the existing `single_select_options` map under `<table_path>.<cf_id>` (see §6.6.4). Same lifecycle as core single-select option lists. |
-| `formula` | Read-only computed value. AirTable-style `{Display Name}` syntax parsed to a typed AST with ids resolved at commit. Record-linking Phase 3 adds backend row-set primitives `linked("field_key")` and `linked_from(table.path, "field_key")` with `count` / `sum` / `avg` rollups into the same `rows_computed` / `computed` overlay; frontend authoring and document-level cross-table cycle validation remain tracked in `planning/features/record-linking/phases/phase-03-rollups.md`. See plan-13 §4.4 for base grammar, parity, and resource limits. |
+| `formula` | Read-only computed value. AirTable-style `{Display Name}` syntax parsed to a typed AST with ids resolved at commit. Record-linking Phase 3 adds backend row-set primitives `linked("field_key")` and `linked_from(table.path, "field_key")` with `count` / `sum` / `avg` rollups into the same `rows_computed` / `computed` overlay; backend document-level cross-table cycle validation is in place, while frontend authoring remains tracked in `planning/features/record-linking/phases/phase-03-rollups.md`. See plan-13 §4.4 for base grammar, parity, and resource limits. |
 
 Future types (date, attachment, cross-table lookup, cross-row
 aggregations) are out of scope for v1; see plan-13 §6.

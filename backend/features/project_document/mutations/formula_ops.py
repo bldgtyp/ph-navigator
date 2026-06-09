@@ -15,19 +15,19 @@ from starlette import status
 from features.project_document.custom_fields import CustomFieldType
 from features.project_document.document import ProjectDocumentV1
 from features.project_document.formula import (
-    FormulaAST,
     FormulaCycleError,
     FormulaInvalidLinkedArgError,
     FormulaMissingRefError,
     FormulaParseError,
     FormulaResourceLimitError,
+    FormulaTargetFieldNotLinkedError,
+    FormulaUnknownTargetTableError,
     FormulaUnsupportedFunctionError,
-    ast_from_json,
     ast_to_json,
     build_field_registry,
-    detect_cycles,
     parse,
     resolve_refs,
+    validate_document_formula_graph,
 )
 from features.project_document.formula.analysis import count_ast_nodes, infer_result_type
 from features.project_document.formula.resolver import collect_field_refs
@@ -41,7 +41,7 @@ __all__ = ["apply_set_formula", "count_ast_nodes", "infer_result_type"]
 
 def _raise_formula_parse_error(exc: FormulaParseError, field_id: str) -> None:
     raise api_error(
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         "custom_field_formula_parse_error",
         f"Couldn't parse the formula: {exc.message} (position {exc.offset}).",
         {
@@ -55,7 +55,7 @@ def _raise_formula_parse_error(exc: FormulaParseError, field_id: str) -> None:
 
 def _raise_formula_resource_limit(exc: FormulaResourceLimitError, field_id: str) -> None:
     raise api_error(
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         "custom_field_formula_resource_limit",
         f"Formula exceeds {exc.limit_name} limit ({exc.actual}/{exc.max_value}). "
         "Simplify the expression and try again.",
@@ -71,7 +71,7 @@ def _raise_formula_resource_limit(exc: FormulaResourceLimitError, field_id: str)
 def _raise_formula_unsupported_function(exc: FormulaUnsupportedFunctionError, field_id: str) -> None:
     available = sorted(exc.available)
     raise api_error(
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         "custom_field_formula_unsupported_function",
         f"Function {exc.function_name!r} is not supported. Available: " + ", ".join(available) + ".",
         {
@@ -88,7 +88,7 @@ def _raise_formula_missing_ref(
     missing_ref_id: str | None = None,
 ) -> None:
     raise api_error(
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         "custom_field_formula_missing_ref",
         f"Formula references a field that doesn't exist in this table: {exc.display_name}.",
         {
@@ -100,13 +100,50 @@ def _raise_formula_missing_ref(
 
 
 def _raise_formula_cycle(exc: FormulaCycleError, field_id: str) -> None:
+    cycle_path = _cycle_path_for_rest(exc.cycle_path)
     raise api_error(
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         "custom_field_formula_cycle",
         f"This formula creates a cycle: {' -> '.join(exc.cycle_path)}. Remove the loop and try again.",
         {
             "field_id": field_id,
-            "cycle_path": list(exc.cycle_path),
+            "cycle_path": cycle_path,
+        },
+    )
+
+
+def _cycle_path_for_rest(cycle_path: tuple[str, ...]) -> list[str]:
+    split_path = [entry.rsplit(".", 1) for entry in cycle_path]
+    if split_path and all(len(parts) == 2 and parts[0] == split_path[0][0] for parts in split_path):
+        return [parts[-1] for parts in split_path]
+    return list(cycle_path)
+
+
+def _raise_formula_unknown_target_table(exc: FormulaUnknownTargetTableError, field_id: str) -> None:
+    table_path = ".".join(exc.table_path)
+    raise api_error(
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+        "custom_field_formula_unknown_target_table",
+        f"Formula references a table that is not available for linked rollups: {table_path}.",
+        {
+            "field_id": field_id,
+            "table_path": list(exc.table_path),
+        },
+    )
+
+
+def _raise_formula_target_field_not_linked(exc: FormulaTargetFieldNotLinkedError, field_id: str) -> None:
+    table_path = ".".join(exc.table_path)
+    expected_target = ".".join(exc.expected_target)
+    raise api_error(
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+        "custom_field_formula_target_field_not_linked",
+        f"Field {exc.field_key!r} on {table_path} does not link to {expected_target}.",
+        {
+            "field_id": field_id,
+            "source_table_path": list(exc.table_path),
+            "source_field_key": exc.field_key,
+            "expected_target_table_path": list(exc.expected_target),
         },
     )
 
@@ -120,7 +157,7 @@ def apply_set_formula(
     index, existing = find_field(current_fields, mutation.field_id, mutation.table_key)
     if existing.field_type is not CustomFieldType.formula:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "custom_field_invalid_field_id",
             "setFormula target is not a formula field.",
             {
@@ -154,29 +191,6 @@ def apply_set_formula(
         _raise_formula_missing_ref(exc, mutation.field_id)
         raise  # pragma: no cover
 
-    # Cycle-check against every other formula field's stored AST.
-    asts_by_id: dict[str, FormulaAST] = {}
-    for f in current_fields:
-        if f.field_key == mutation.field_id:
-            continue
-        if f.field_type is not CustomFieldType.formula:
-            continue
-        stored = f.config.get("ast")
-        if stored is None:
-            continue
-        try:
-            asts_by_id[f.field_key] = ast_from_json(stored)
-        except (ValueError, TypeError):
-            # Skip malformed stored ASTs — the per-row evaluator will
-            # surface missing_ref at read time.
-            continue
-
-    try:
-        detect_cycles(mutation.field_id, resolved, asts_by_id)
-    except FormulaCycleError as exc:
-        _raise_formula_cycle(exc, mutation.field_id)
-        raise  # pragma: no cover
-
     deps = collect_field_refs(resolved)
     new_config: dict[str, object] = {
         "source": mutation.source,
@@ -189,6 +203,20 @@ def apply_set_formula(
     next_fields = list(current_fields)
     next_fields[index] = next_field
     next_body = capability.replace_field_defs(body, next_fields)
+    try:
+        validate_document_formula_graph(next_body)
+    except FormulaCycleError as exc:
+        _raise_formula_cycle(exc, mutation.field_id)
+        raise  # pragma: no cover
+    except FormulaUnknownTargetTableError as exc:
+        _raise_formula_unknown_target_table(exc, mutation.field_id)
+        raise  # pragma: no cover
+    except FormulaTargetFieldNotLinkedError as exc:
+        _raise_formula_target_field_not_linked(exc, mutation.field_id)
+        raise  # pragma: no cover
+    except FormulaMissingRefError as exc:
+        _raise_formula_missing_ref(exc, mutation.field_id)
+        raise  # pragma: no cover
 
     audit: dict[str, object] = {
         "kind": "setFormula",

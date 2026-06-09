@@ -97,7 +97,7 @@ def apply_split_element(
     cs, ce = source.column_span
     if rs == re and cs == ce:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "aperture_split_not_splittable",
             "Element is already 1×1; nothing to split.",
             {"element_id": command.element_id},
@@ -150,7 +150,7 @@ def _resolve_sources(entry: ApertureTypeEntry, ids: list[str]) -> list[ApertureE
         )
     if len(set(ids)) != len(ids):
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "aperture_merge_duplicate_ids",
             "Merge source list contains duplicate element ids.",
             {"element_ids": ids},
@@ -173,7 +173,7 @@ def _validate_rectangle(
             for c in range(el.column_span[0], el.column_span[1] + 1):
                 if (r, c) in covered:
                     raise api_error(
-                        status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        status.HTTP_422_UNPROCESSABLE_CONTENT,
                         "aperture_merge_not_rectangle",
                         "Merge sources overlap on the same cell.",
                         {"element_ids": ids, "cell": [r, c]},
@@ -182,7 +182,7 @@ def _validate_rectangle(
     expected = (r1 - r0 + 1) * (c1 - c0 + 1)
     if len(covered) != expected:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "aperture_merge_not_rectangle",
             "Selection isn't a rectangle. Pick contiguous cells to merge.",
             {"element_ids": ids},

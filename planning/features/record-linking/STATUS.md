@@ -6,9 +6,10 @@ STATUS: Phases 1, 1.b, and 2 are complete for the canonical
         link-bag cleanup is fixed; browser/e2e smoke evidence is
         recorded under `assets/e2e/rooms-pumps/`. Current `make
         format` left files unchanged and `make ci` passed on
-        2026-06-09. Phase 3 backend rollup parsing/evaluation is
-        partially implemented; frontend editor completion and
-        document-level validation cycle detection remain.
+        2026-06-09. Phase 3 backend rollup parsing/evaluation and
+        document-level linked-ref validation / cycle detection are
+        implemented; frontend editor completion, perf gate extension,
+        and browser smoke remain.
 AUTHOR: Ed May (with Claude)
 ---
 
@@ -206,7 +207,7 @@ smoke.
 
 ## Phase 3 — Rollups
 
-**PARTIALLY IMPLEMENTED — backend rollup read overlay.**
+**PARTIALLY IMPLEMENTED — backend rollup read overlay + validator.**
 
 - [x] **P3.1 parser / AST backend slice** — Python formula AST now
   carries `LinkedRef`, `LinkedFromRef`, and `FieldAccess`; parser
@@ -225,14 +226,16 @@ smoke.
 - [x] **Pumps formula read registry** — `pumps_field_registry` supplies
   formula-facing field/value accessors so Pumps can participate in
   read overlays without enabling nested Pumps schema mutations yet.
-- [ ] **P3.2 resolver validation hardening** — `setFormula` still uses
-  the existing table-local resolver for `{Field}` refs. Link primitive
-  validation happens at evaluator read time in this slice; follow-up
-  should reject unknown table paths / non-linked fields at author time.
-- [ ] **P3.4 document-level cycle detector** — still uses the existing
-  per-table Rooms cycle validator plus evaluator recursion guard.
-  Follow-up should promote this to the planned document-level graph
-  pass with cycle-path REST envelopes.
+- [x] **P3.2 resolver validation hardening** — document formula
+  validation now rejects unknown linked target tables and
+  non-matching linked fields at author / validate time. `setFormula`
+  translates those into `custom_field_formula_unknown_target_table`
+  and `custom_field_formula_target_field_not_linked` REST envelopes.
+- [x] **P3.4 document-level cycle detector** — `validate_document_
+  formula_graph` indexes Rooms + Pumps formula registries, validates
+  linked primitives, builds a document-level dependency graph, and
+  raises `formula_cycle_detected` with table-qualified cycle paths.
+  The legacy Rooms helper delegates to the document-wide pass.
 - [ ] **P3.6 perf gate extension** — not yet added.
 - [ ] **P4 frontend formula editor primitives/completion** — not yet
   started.

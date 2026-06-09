@@ -297,7 +297,7 @@ def refresh_values(
     unknown = sorted(set(choices_by_key) - set(PROJECT_MATERIAL_CATALOG_FIELDS))
     if unknown:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "unknown_project_material_refresh_field",
             "Refresh choices include fields that cannot be refreshed from the materials catalog.",
             {"fields": unknown},

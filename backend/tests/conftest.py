@@ -8,24 +8,94 @@ dev rows, this conftest pins `DATABASE_URL` to the dedicated
 the override must happen at the very top of this file — before the
 first `from database ...` / `from config ...` import below.
 
-A session-scoped safety-net fixture asserts the final URL still points
-at a `*_test` database. If a future refactor breaks the override, the
-suite refuses to start instead of silently nuking dev data.
+Under `pytest-xdist`, each worker (`gw0`, `gw1`, ...) is routed to its
+own database (`ph_navigator_v2_test_gw0`, `..._gw1`, ...) so workers
+don't TRUNCATE each other's rows mid-run. The per-worker database is
+created + migrated lazily on first use; it persists between sessions
+(idempotent migrations make this cheap).
 
-See `docs/plans/2026-05-24/plan-10-separate-test-database.md`.
+A session-scoped safety-net fixture asserts the final URL still points
+at a `*_test` or `*_test_gw<N>` database. If a future refactor breaks
+the override, the suite refuses to start instead of silently nuking
+dev data.
+
+See `docs/plans/2026-05-24/plan-10-separate-test-database.md` and
+`planning/code-reviews/2026-06-08/backend-test-suite-speedup.md`.
 """
 
 from __future__ import annotations
 
 import os
+import re
+from urllib.parse import urlparse, urlunparse
 
-# Default to the local test DB. Honor any pre-set `DATABASE_URL` so CI /
-# the Makefile can point at a different *_test database, but never let
-# the safety net below pass through to a non-`*_test` target.
-os.environ.setdefault(
-    "DATABASE_URL",
-    "postgresql://phn:phn_local_only@localhost:5433/ph_navigator_v2_test",
-)
+
+def _route_database_url_for_worker() -> None:
+    """Suffix DATABASE_URL with the xdist worker id, if any.
+
+    Runs at import time so `config.settings` (read once on first import)
+    sees the worker-scoped URL.
+    """
+    os.environ.setdefault(
+        "DATABASE_URL",
+        "postgresql://phn:phn_local_only@localhost:5433/ph_navigator_v2_test",
+    )
+    worker = os.environ.get("PYTEST_XDIST_WORKER")
+    if not worker or worker == "master":
+        return
+    parsed = urlparse(os.environ["DATABASE_URL"])
+    new_path = f"{parsed.path}_{worker}"
+    os.environ["DATABASE_URL"] = urlunparse(parsed._replace(path=new_path))
+
+
+_route_database_url_for_worker()
+
+
+def _bootstrap_worker_database() -> None:
+    """Create + migrate the worker-scoped test DB if missing.
+
+    No-op on the default `*_test` database (the Makefile's
+    `db-create-test` / `db-migrate-test` recipes already handle that one;
+    in CI the Postgres service container creates `ph_navigator_v2_test`
+    via `POSTGRES_DB`). Only worker-suffixed databases need lazy
+    creation.
+    """
+    worker = os.environ.get("PYTEST_XDIST_WORKER")
+    if not worker or worker == "master":
+        return
+
+    import psycopg  # noqa: E402 — defer until after env routing
+    from psycopg import sql
+
+    parsed = urlparse(os.environ["DATABASE_URL"])
+    target_db = parsed.path.lstrip("/")
+    admin_url = urlunparse(parsed._replace(path="/postgres"))
+
+    with psycopg.connect(admin_url, autocommit=True) as conn:
+        existing = conn.execute("SELECT 1 FROM pg_database WHERE datname = %s", (target_db,)).fetchone()
+        if existing is None:
+            # Postgres rejects a parameterized database name in DDL, so we have
+            # to interpolate the identifier. The name comes from
+            # PYTEST_XDIST_WORKER (`gw<N>`) plus a fixed prefix — injection
+            # surface is nil — but validate the shape as a belt-and-braces
+            # guard, then use psycopg.sql.Identifier for safe quoting.
+            if not re.fullmatch(r"[A-Za-z0-9_]+_test_gw\d+", target_db):
+                raise RuntimeError(f"Refusing to CREATE DATABASE with unexpected name {target_db!r}.")
+            conn.execute(sql.SQL("CREATE DATABASE {} OWNER phn").format(sql.Identifier(target_db)))
+
+    # Run migrations against the (possibly fresh) worker DB. Import lazily
+    # because alembic transitively imports `config`, which freezes settings
+    # against the current DATABASE_URL.
+    from alembic.config import Config
+
+    from alembic import command
+
+    cfg = Config("alembic.ini")
+    command.upgrade(cfg, "head")
+
+
+_bootstrap_worker_database()
+
 
 from collections.abc import Iterator  # noqa: E402
 
@@ -34,15 +104,19 @@ import pytest  # noqa: E402
 from config import settings  # noqa: E402
 from database import transaction  # noqa: E402
 
+_TEST_DB_PATTERN = re.compile(r"_test(?:_gw\d+)?$")
+
 
 @pytest.fixture(scope="session", autouse=True)
 def _refuse_to_truncate_dev_db() -> None:
     """Abort the test session if pytest isn't pointed at a *_test database."""
-    if not settings.database_url.endswith("_test"):
+    parsed = urlparse(settings.database_url)
+    db_name = parsed.path.lstrip("/")
+    if not _TEST_DB_PATTERN.search(db_name):
         raise RuntimeError(
             f"Refusing to run tests against {settings.database_url}. "
             "Backend tests TRUNCATE every table — they must run against "
-            "a *_test database (default: ph_navigator_v2_test)."
+            "a *_test (or *_test_gw<N>) database."
         )
 
 
@@ -68,3 +142,29 @@ def _truncate() -> None:
             RESTART IDENTITY CASCADE
             """
         )
+
+
+_CATALOG_TRUNCATE = """
+TRUNCATE catalog_materials, catalog_frame_types,
+         catalog_glazing_types,
+         user_action_log, sessions, project_status_items,
+         project_version_drafts, project_versions, projects, users
+RESTART IDENTITY CASCADE
+"""
+
+
+@pytest.fixture()
+def clean_catalog_tables() -> Iterator[None]:
+    """Truncate catalog + auth/project state before and after a test.
+
+    Shared by the materials/frame/glazing catalog test modules so they
+    don't each redeclare the same fixture and TRUNCATE statement.
+    """
+    _truncate_catalogs()
+    yield
+    _truncate_catalogs()
+
+
+def _truncate_catalogs() -> None:
+    with transaction() as conn:
+        conn.execute(_CATALOG_TRUNCATE)

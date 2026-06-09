@@ -39,6 +39,7 @@ from features.project_document.formula.limits import (
     OUTPUT_LENGTH_MAX,
     PER_ROW_FUSE_MAX,
 )
+from features.project_document.formula.resolver import iter_formula_registries
 from features.project_document.inverse_view import (
     build_inverse_links,
     build_snapshot_row_ids,
@@ -569,24 +570,7 @@ def _formula_contexts(body: ProjectDocumentV1) -> dict[tuple[str, ...], _Formula
 
 
 def _formula_registries() -> tuple[TableFieldRegistry, ...]:
-    from features.project_document.tables.pumps import pumps_field_registry
-    from features.project_document.tables.registry import iter_table_contracts
-
-    registries: list[TableFieldRegistry] = []
-    seen_paths: set[tuple[str, ...]] = set()
-    for contract in iter_table_contracts():
-        registry = contract.field_registry
-        if registry is None or registry.table_path in seen_paths:
-            continue
-        seen_paths.add(registry.table_path)
-        registries.append(registry)
-
-    # Pumps has formula read accessors before its nested equipment
-    # schema-mutation route is enabled, so it is not yet exposed as
-    # `pumps_contract.field_registry`.
-    if pumps_field_registry.table_path not in seen_paths:
-        registries.append(pumps_field_registry)
-    return tuple(registries)
+    return iter_formula_registries()
 
 
 def _compute_formula_cell(

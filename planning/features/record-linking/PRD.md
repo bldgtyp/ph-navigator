@@ -7,8 +7,9 @@ STATUS: In implementation — product / behavior contract is accepted.
         surface, including linked_record deleteField cleanup and
         browser/e2e smoke evidence. Phase 2 inverse-view work is
         complete for the canonical Rooms→Pumps target surface. Phase 3
-        backend rollup parsing/evaluation has started; frontend
-        editor completion and document-level cycle validation remain.
+        backend rollup parsing/evaluation and document-level formula
+        validation have started; frontend editor completion, perf gate,
+        and browser smoke remain.
         `STATUS.md` is the current execution ledger.
 AUTHOR: Ed May (with Claude)
 SCOPE: Add AirTable-style record-linking between project-document

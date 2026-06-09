@@ -24,7 +24,7 @@ def export_hbjson_constructions(body: ProjectDocumentV1) -> dict[str, object]:
     errors = _export_errors(body.tables.assemblies, materials_by_id)
     if errors:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "envelope_export_incomplete",
             "Envelope assemblies need complete material assignments and conductivity before HBJSON export.",
             {"errors": errors},

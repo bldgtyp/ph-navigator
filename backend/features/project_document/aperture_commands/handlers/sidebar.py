@@ -65,7 +65,7 @@ def apply_rename_aperture_type(
             continue
         if normalize_display_name(other.name) == normalized_new:
             raise api_error(
-                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
                 "aperture_name_collision",
                 "Another aperture type already uses this name.",
                 {"aperture_type_id": other.id, "name": other.name},

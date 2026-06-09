@@ -219,7 +219,7 @@ class TableContract:
             return self.replace_request_model.model_validate(raw_payload)
         except ValidationError as exc:
             raise api_error(
-                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
                 "validation_error",
                 "Table payload failed validation.",
                 {"errors": [str(error["msg"]) for error in exc.errors()]},

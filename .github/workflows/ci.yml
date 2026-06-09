@@ -44,7 +44,10 @@ jobs:
       - name: Migrate
         run: uv run alembic upgrade head
       - name: Pytest
-        run: uv run pytest
+        # `-n auto` parallelizes across the runner's vCPUs. Each worker
+        # is routed to its own *_test_gw<N> database by tests/conftest.py
+        # (lazily created + migrated on first use).
+        run: uv run pytest -n auto
 
   frontend:
     runs-on: ubuntu-latest

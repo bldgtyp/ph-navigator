@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator
-
 import pytest
 from fastapi.testclient import TestClient
 
@@ -12,23 +10,6 @@ from features.auth.service import create_or_update_user
 from main import app
 
 ORIGIN = "http://localhost:5173"
-
-_TRUNCATE = """
-TRUNCATE catalog_materials, catalog_frame_types,
-         catalog_glazing_types,
-         user_action_log, sessions, project_status_items,
-         project_version_drafts, project_versions, projects, users
-RESTART IDENTITY CASCADE
-"""
-
-
-@pytest.fixture()
-def clean_catalog_tables() -> Iterator[None]:
-    with transaction() as conn:
-        conn.execute(_TRUNCATE)
-    yield
-    with transaction() as conn:
-        conn.execute(_TRUNCATE)
 
 
 def signed_in_client() -> TestClient:

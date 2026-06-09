@@ -178,7 +178,7 @@ class AssetService:
             with transaction() as conn:
                 repository.mark_asset_failed(conn, access.project_id, asset_id, reason=str(exc))
             raise api_error(
-                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
                 "asset_mime_not_allowed",
                 "Uploaded file does not match the declared content type or policy.",
                 {"asset_id": asset_id, "reason": str(exc)},
@@ -203,7 +203,7 @@ class AssetService:
 
     def list_assets(self, access: ProjectAccess, kind: str | None = None) -> list[AssetRow]:
         if kind and kind not in all_asset_kinds():
-            raise api_error(status.HTTP_422_UNPROCESSABLE_ENTITY, "asset_unknown_kind", "Unknown asset kind.")
+            raise api_error(status.HTTP_422_UNPROCESSABLE_CONTENT, "asset_unknown_kind", "Unknown asset kind.")
         with connection() as conn:
             return repository.list_assets(conn, access.project_id, kind=kind)
 
@@ -351,7 +351,7 @@ class AssetService:
 
     def _validate_upload_intent_payload(self, payload: UploadIntentRequest) -> None:
         if payload.asset_kind not in all_asset_kinds():
-            raise api_error(status.HTTP_422_UNPROCESSABLE_ENTITY, "asset_unknown_kind", "Unknown asset kind.")
+            raise api_error(status.HTTP_422_UNPROCESSABLE_CONTENT, "asset_unknown_kind", "Unknown asset kind.")
         if payload.size_bytes > settings.asset_max_file_size_mb_hard_cap * 1024 * 1024:
             raise api_error(
                 status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "asset_size_exceeded", "Asset exceeds the hard size cap."
@@ -369,7 +369,7 @@ class AssetService:
                 for field in fields
             ):
                 raise api_error(
-                    status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    status.HTTP_422_UNPROCESSABLE_CONTENT,
                     "asset_mime_not_allowed",
                     "File type is not allowed for this asset kind.",
                 )
@@ -461,7 +461,7 @@ class AssetService:
         field = get_attachment_field(payload.table_key, payload.field_key)
         if field is None:
             raise api_error(
-                status.HTTP_422_UNPROCESSABLE_ENTITY, "asset_attachment_field_unknown", "Unknown attachment field."
+                status.HTTP_422_UNPROCESSABLE_CONTENT, "asset_attachment_field_unknown", "Unknown attachment field."
             )
         with transaction() as conn:
             asset = repository.get_asset_by_id(conn, access.project_id, asset_id)
@@ -469,7 +469,7 @@ class AssetService:
                 other = repository.get_asset_by_id_any_project(conn, asset_id)
                 if other is not None:
                     raise api_error(
-                        status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        status.HTTP_422_UNPROCESSABLE_CONTENT,
                         "asset_cross_project_reference",
                         "Asset belongs to another project.",
                     )
@@ -484,7 +484,9 @@ class AssetService:
                 size_bytes=asset.size_bytes,
             ):
                 raise api_error(
-                    status.HTTP_422_UNPROCESSABLE_ENTITY, "asset_mime_not_allowed", "Asset is not valid for this field."
+                    status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    "asset_mime_not_allowed",
+                    "Asset is not valid for this field.",
                 )
             base_body, base_version_etag, version_etag, draft = load_draft_context(
                 conn,
@@ -505,7 +507,7 @@ class AssetService:
                 if asset_id not in values:
                     if len(values) >= field.max_count:
                         raise api_error(
-                            status.HTTP_422_UNPROCESSABLE_ENTITY, "asset_count_exceeded", "Attachment cell is full."
+                            status.HTTP_422_UNPROCESSABLE_CONTENT, "asset_count_exceeded", "Attachment cell is full."
                         )
                     insert_at = payload.index if payload.index is not None else len(values)
                     values.insert(max(0, min(insert_at, len(values))), asset_id)

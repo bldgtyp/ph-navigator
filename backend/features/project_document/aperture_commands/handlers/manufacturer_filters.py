@@ -69,7 +69,7 @@ def _check_in_use(
     proposed_set = {m.casefold() for m in proposed}
     stranded = sorted({m for m in in_use if m.casefold() not in proposed_set})
     if stranded:
-        raise api_error(status.HTTP_422_UNPROCESSABLE_ENTITY, error_code, message, {"in_use": stranded})
+        raise api_error(status.HTTP_422_UNPROCESSABLE_CONTENT, error_code, message, {"in_use": stranded})
 
 
 def _canonical_list(value: list[str] | None) -> list[str] | None:

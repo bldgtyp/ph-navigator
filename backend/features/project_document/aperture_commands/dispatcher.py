@@ -92,7 +92,7 @@ def apply_aperture_command(
     kind = command.kind  # type: ignore[union-attr]
     if kind in _NOT_IMPLEMENTED_KINDS:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "aperture_command_not_implemented",
             "This aperture command is reserved but its handler ships in a later phase.",
             {"kind": kind},
@@ -100,7 +100,7 @@ def apply_aperture_command(
     handler = _HANDLERS.get(kind)
     if handler is None:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "aperture_command_unsupported_kind",
             "Unknown aperture command kind.",
             {"kind": kind},

@@ -20,7 +20,7 @@ def apply_command(conn: Connection[Any], body: ProjectDocumentV1, command: Envel
     handler = _COMMAND_HANDLERS.get(command.kind)
     if handler is None:
         # Pydantic rejects unknown kinds at the route boundary; this preserves a typed 422 if bypassed.
-        raise api_error(status.HTTP_422_UNPROCESSABLE_ENTITY, "unknown_envelope_command", "Unknown envelope command.")
+        raise api_error(status.HTTP_422_UNPROCESSABLE_CONTENT, "unknown_envelope_command", "Unknown envelope command.")
     return handler(conn, body, command)
 
 

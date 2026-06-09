@@ -19,7 +19,7 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
-from features.project_document.custom_fields import normalize_display_name
+from features.project_document.custom_fields import CustomFieldType, normalize_display_name
 from features.project_document.formula.ast_nodes import (
     BinaryOp,
     FieldAccess,
@@ -36,6 +36,8 @@ from features.project_document.formula.ast_nodes import (
 from features.project_document.formula.errors import (
     FormulaCycleError,
     FormulaMissingRefError,
+    FormulaTargetFieldNotLinkedError,
+    FormulaUnknownTargetTableError,
 )
 
 if TYPE_CHECKING:
@@ -50,6 +52,34 @@ class FieldRegistryEntry:
     display_name: str
     origin: Literal["built_in", "custom"]
     field_type: Literal["text", "number", "single_select", "formula", "bool"]
+
+
+FormulaFieldId = tuple[tuple[str, ...], str]
+
+
+@dataclass(frozen=True, slots=True)
+class _FormulaTableContext:
+    table_path: tuple[str, ...]
+    fields_by_key: dict[str, TableFieldDef]
+    registry: TableFieldRegistry
+
+
+def iter_formula_registries() -> tuple[TableFieldRegistry, ...]:
+    from features.project_document.tables.pumps import pumps_field_registry
+    from features.project_document.tables.registry import iter_table_contracts
+
+    registries: list[TableFieldRegistry] = []
+    seen_paths: set[tuple[str, ...]] = set()
+    for contract in iter_table_contracts():
+        registry = contract.field_registry
+        if registry is None or registry.table_path in seen_paths:
+            continue
+        seen_paths.add(registry.table_path)
+        registries.append(registry)
+
+    if pumps_field_registry.table_path not in seen_paths:
+        registries.append(pumps_field_registry)
+    return tuple(registries)
 
 
 def build_field_registry(
@@ -240,6 +270,33 @@ def detect_cycles(
     visit(field_id)
 
 
+def validate_document_formula_graph(body: ProjectDocumentV1) -> tuple[FormulaFieldId, ...]:
+    """Validate linked formula refs and return a document-level topo order.
+
+    Missing `{Display Name}` refs keep the pre-existing behavior: they
+    are skipped during document validation and surface per row at read
+    time. Linked primitives are schema-shaped, so invalid table/field
+    targets fail validation before read overlays run.
+    """
+    contexts = _formula_table_contexts(body)
+    asts_by_id: dict[FormulaFieldId, FormulaAST] = {}
+    for table_path, ctx in contexts.items():
+        registry = build_field_registry(ctx.registry, body)
+        for field in ctx.fields_by_key.values():
+            if field.field_type is not CustomFieldType.formula:
+                continue
+            ast = resolve_stored_ast(field, registry)
+            if ast is not None:
+                asts_by_id[(table_path, field.field_key)] = ast
+
+    graph: dict[FormulaFieldId, set[FormulaFieldId]] = {field_id: set() for field_id in asts_by_id}
+    for field_id, ast in asts_by_id.items():
+        deps = _collect_document_formula_deps(ast, field_id[0], contexts)
+        graph[field_id].update(dep for dep in deps if dep in asts_by_id)
+
+    return _toposort_or_raise(graph)
+
+
 def resolve_stored_ast(
     field: TableFieldDef,
     registry: Iterable[FieldRegistryEntry],
@@ -260,3 +317,179 @@ def resolve_stored_ast(
         return resolve_refs(ast, registry)
     except FormulaMissingRefError:
         return None
+
+
+def _formula_table_contexts(body: ProjectDocumentV1) -> dict[tuple[str, ...], _FormulaTableContext]:
+    contexts: dict[tuple[str, ...], _FormulaTableContext] = {}
+    for registry in iter_formula_registries():
+        contexts[registry.table_path] = _FormulaTableContext(
+            table_path=registry.table_path,
+            fields_by_key={field.field_key: field for field in registry.read_field_defs(body)},
+            registry=registry,
+        )
+    return contexts
+
+
+def _collect_document_formula_deps(
+    ast: FormulaAST,
+    current_table_path: tuple[str, ...],
+    contexts: Mapping[tuple[str, ...], _FormulaTableContext],
+) -> set[FormulaFieldId]:
+    out: set[FormulaFieldId] = set()
+
+    def walk(node: FormulaAST) -> None:
+        if isinstance(node, Literal_):
+            return
+        if isinstance(node, FieldRef):
+            if node.field_id is not None:
+                out.add((current_table_path, node.field_id))
+            return
+        if isinstance(node, LinkedRef):
+            _linked_ref_target_path(node, current_table_path, contexts)
+            return
+        if isinstance(node, LinkedFromRef):
+            _validate_linked_from_ref(node, current_table_path, contexts)
+            return
+        if isinstance(node, FieldAccess):
+            target_path = _rowset_result_table_path(node.target, current_table_path, contexts)
+            target_ctx = contexts.get(target_path)
+            if target_ctx is None:
+                raise FormulaUnknownTargetTableError(target_path)
+            if node.field_key not in target_ctx.fields_by_key:
+                raise FormulaMissingRefError(node.field_key)
+            out.add((target_path, node.field_key))
+            walk(node.target)
+            return
+        if isinstance(node, FuncCall):
+            for arg in node.args:
+                walk(arg)
+            return
+        if isinstance(node, BinaryOp):
+            walk(node.left)
+            walk(node.right)
+            return
+        if isinstance(node, UnaryOp):
+            walk(node.operand)
+            return
+        if isinstance(node, IfExpr):
+            walk(node.condition)
+            walk(node.then_branch)
+            walk(node.else_branch)
+            return
+
+    walk(ast)
+    return out
+
+
+def _rowset_result_table_path(
+    node: FormulaAST,
+    current_table_path: tuple[str, ...],
+    contexts: Mapping[tuple[str, ...], _FormulaTableContext],
+) -> tuple[str, ...]:
+    if isinstance(node, LinkedRef):
+        return _linked_ref_target_path(node, current_table_path, contexts)
+    if isinstance(node, LinkedFromRef):
+        _validate_linked_from_ref(node, current_table_path, contexts)
+        return node.source_table_path
+    raise FormulaTargetFieldNotLinkedError(current_table_path, getattr(node, "field_key", ""), current_table_path)
+
+
+def _linked_ref_target_path(
+    node: LinkedRef,
+    current_table_path: tuple[str, ...],
+    contexts: Mapping[tuple[str, ...], _FormulaTableContext],
+) -> tuple[str, ...]:
+    current_ctx = contexts.get(current_table_path)
+    if current_ctx is None:
+        raise FormulaUnknownTargetTableError(current_table_path)
+    field = current_ctx.fields_by_key.get(node.field_key)
+    if field is None or field.field_type is not CustomFieldType.linked_record:
+        raise FormulaTargetFieldNotLinkedError(current_table_path, node.field_key, current_table_path)
+    target_path = _target_table_path(field)
+    if target_path is None or target_path not in contexts:
+        raise FormulaUnknownTargetTableError(target_path or ())
+    return target_path
+
+
+def _validate_linked_from_ref(
+    node: LinkedFromRef,
+    current_table_path: tuple[str, ...],
+    contexts: Mapping[tuple[str, ...], _FormulaTableContext],
+) -> None:
+    source_ctx = contexts.get(node.source_table_path)
+    if source_ctx is None:
+        raise FormulaUnknownTargetTableError(node.source_table_path)
+    field = source_ctx.fields_by_key.get(node.source_field_key)
+    if field is None or field.field_type is not CustomFieldType.linked_record:
+        raise FormulaTargetFieldNotLinkedError(node.source_table_path, node.source_field_key, current_table_path)
+    if _target_table_path(field) != current_table_path:
+        raise FormulaTargetFieldNotLinkedError(node.source_table_path, node.source_field_key, current_table_path)
+
+
+def _target_table_path(field: TableFieldDef) -> tuple[str, ...] | None:
+    raw = field.config.get("target_table_path")
+    if not isinstance(raw, list | tuple):
+        return None
+    path: list[str] = []
+    for segment in raw:
+        if not isinstance(segment, str) or not segment:
+            return None
+        path.append(segment)
+    return tuple(path)
+
+
+def _toposort_or_raise(graph: Mapping[FormulaFieldId, set[FormulaFieldId]]) -> tuple[FormulaFieldId, ...]:
+    incoming_count = {node: 0 for node in graph}
+    dependents: dict[FormulaFieldId, set[FormulaFieldId]] = {node: set() for node in graph}
+    for node, deps in graph.items():
+        for dep in deps:
+            incoming_count[node] += 1
+            dependents.setdefault(dep, set()).add(node)
+
+    ready = sorted((node for node, count in incoming_count.items() if count == 0), key=_format_formula_id)
+    ordered: list[FormulaFieldId] = []
+    while ready:
+        node = ready.pop(0)
+        ordered.append(node)
+        for dependent in sorted(dependents.get(node, set()), key=_format_formula_id):
+            incoming_count[dependent] -= 1
+            if incoming_count[dependent] == 0:
+                ready.append(dependent)
+
+    if len(ordered) != len(graph):
+        raise FormulaCycleError(_find_cycle_path(graph))
+    return tuple(ordered)
+
+
+def _find_cycle_path(graph: Mapping[FormulaFieldId, set[FormulaFieldId]]) -> tuple[str, ...]:
+    visiting: list[FormulaFieldId] = []
+    visiting_set: set[FormulaFieldId] = set()
+    visited: set[FormulaFieldId] = set()
+
+    def visit(node: FormulaFieldId) -> tuple[str, ...] | None:
+        if node in visited:
+            return None
+        if node in visiting_set:
+            start = visiting.index(node)
+            return tuple(_format_formula_id(item) for item in [*visiting[start:], node])
+        visiting.append(node)
+        visiting_set.add(node)
+        for dep in sorted(graph.get(node, set()), key=_format_formula_id):
+            cycle = visit(dep)
+            if cycle is not None:
+                return cycle
+        visiting.pop()
+        visiting_set.discard(node)
+        visited.add(node)
+        return None
+
+    for node in sorted(graph, key=_format_formula_id):
+        cycle = visit(node)
+        if cycle is not None:
+            return cycle
+    return ()
+
+
+def _format_formula_id(field_id: FormulaFieldId) -> str:
+    table_path, field_key = field_id
+    return ".".join((*table_path, field_key))

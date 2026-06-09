@@ -36,7 +36,7 @@ def apply_set_element_name(
     new_name = command.new_name.strip()
     if not new_name:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "aperture_element_name_empty",
             "Aperture element name must not be empty.",
             {"element_id": element.id},

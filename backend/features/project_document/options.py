@@ -80,14 +80,14 @@ def validate_option_list(options: Iterable[SingleSelectOption]) -> None:
     for option in options:
         if not _OPTION_ID_PATTERN.match(option.id):
             raise api_error(
-                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
                 "custom_field_option_list_invalid",
                 "Option id does not match the required pattern.",
                 {"reason": "invalid_option_id", "option_id": option.id},
             )
         if option.id in seen_ids:
             raise api_error(
-                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
                 "custom_field_option_list_invalid",
                 "Duplicate option id in option list.",
                 {"reason": "duplicate_option_id", "option_id": option.id},
@@ -96,14 +96,14 @@ def validate_option_list(options: Iterable[SingleSelectOption]) -> None:
         normalized = normalize_display_name(option.label)
         if not normalized:
             raise api_error(
-                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
                 "custom_field_option_list_invalid",
                 "Option label cannot be empty.",
                 {"reason": "empty_label", "option_id": option.id},
             )
         if normalized in seen_labels:
             raise api_error(
-                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
                 "custom_field_option_list_invalid",
                 "Duplicate option label in option list.",
                 {"reason": "duplicate_label", "option_id": option.id, "label": option.label},
@@ -111,7 +111,7 @@ def validate_option_list(options: Iterable[SingleSelectOption]) -> None:
         seen_labels.add(normalized)
         if not _HEX_COLOR_PATTERN.match(option.color):
             raise api_error(
-                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
                 "custom_field_option_list_invalid",
                 "Option color must be a 6-digit hex string.",
                 {"reason": "invalid_color", "option_id": option.id, "color": option.color},
