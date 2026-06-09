@@ -60,7 +60,7 @@ export function IndoorUnitRowModal({
     () => [...rooms].sort((a, b) => roomLabel(a).localeCompare(roomLabel(b))),
     [rooms],
   );
-  const selectedRoomIds = new Set(draft.served_room_ids);
+  const selectedRoomIds = useMemo(() => new Set(draft.served_room_ids), [draft.served_room_ids]);
 
   // Functional updater — rapid concurrent toggles each compute against the
   // freshest draft instead of the closure's captured value, so two

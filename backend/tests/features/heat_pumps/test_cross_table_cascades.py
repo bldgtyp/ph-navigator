@@ -247,3 +247,65 @@ def test_room_replace_without_deletion_leaves_hp_indoor_unit_alone() -> None:
     next_body = apply_rooms_replace(body, payload)
 
     assert next_body.tables.equipment.heat_pumps.indoor_units[0].served_room_ids == [ROOM_KEEP]
+
+
+def test_simultaneous_ventilator_deletes_cascade_each_referencing_hp_indoor_unit() -> None:
+    """Guards against a 'first removed id only' refactor passing the single-row tests."""
+    vent_a = "vent_a_01"
+    vent_b = "vent_b_01"
+    vent_c = "vent_c_01"
+    body = _build_body(
+        ventilators=[_ventilator(vent_a, "ERV-A"), _ventilator(vent_b, "ERV-B"), _ventilator(vent_c, "ERV-C")],
+        rooms=[],
+        indoor_units=[
+            _indoor_unit(HPIU_1, linked_erv_unit_id=vent_a),
+            _indoor_unit(HPIU_2, linked_erv_unit_id=vent_b),
+        ],
+    )
+    # Both A and B removed in one replace; C survives.
+    payload = _ventilators_payload(body, [_ventilator(vent_c, "ERV-C")])
+
+    next_body = apply_ventilators_replace(body, payload)
+
+    indoor_units = {row.id: row for row in next_body.tables.equipment.heat_pumps.indoor_units}
+    assert indoor_units[HPIU_1].linked_erv_unit_id is None
+    assert indoor_units[HPIU_2].linked_erv_unit_id is None
+
+
+def test_simultaneous_room_deletes_cascade_each_referencing_hp_indoor_unit() -> None:
+    """Guards against a 'first removed id only' refactor on the rooms side."""
+    rm_a = "rm_a_01"
+    rm_b = "rm_b_01"
+    rm_c = "rm_c_01"
+    body = _build_body(
+        ventilators=[],
+        rooms=[_room(rm_a, "101"), _room(rm_b, "102"), _room(rm_c, "103")],
+        indoor_units=[
+            _indoor_unit(HPIU_1, served_room_ids=[rm_a, rm_c]),
+            _indoor_unit(HPIU_2, served_room_ids=[rm_b, rm_c]),
+        ],
+    )
+    # Drop both A and B in one replace; C survives.
+    payload = _rooms_payload(body, [_room(rm_c, "103")])
+
+    next_body = apply_rooms_replace(body, payload)
+
+    indoor_units = {row.id: row for row in next_body.tables.equipment.heat_pumps.indoor_units}
+    assert indoor_units[HPIU_1].served_room_ids == [rm_c]
+    assert indoor_units[HPIU_2].served_room_ids == [rm_c]
+
+
+def test_room_cascade_dedupes_existing_duplicate_served_room_ids() -> None:
+    """If upstream data ever leaks duplicate ids into the array, the cascade scrubs them."""
+    body = _build_body(
+        ventilators=[],
+        rooms=[_room(ROOM_KEEP, "101"), _room(ROOM_DELETE, "102"), _room(ROOM_OTHER, "103")],
+        # HPIU_1 has duplicate ROOM_KEEP plus a referenced-then-deleted ROOM_DELETE.
+        indoor_units=[_indoor_unit(HPIU_1, served_room_ids=[ROOM_KEEP, ROOM_DELETE, ROOM_KEEP, ROOM_OTHER])],
+    )
+    payload = _rooms_payload(body, [_room(ROOM_KEEP, "101"), _room(ROOM_OTHER, "103")])
+
+    next_body = apply_rooms_replace(body, payload)
+
+    # Survivors are ordered first-seen-wins and de-duplicated.
+    assert next_body.tables.equipment.heat_pumps.indoor_units[0].served_room_ids == [ROOM_KEEP, ROOM_OTHER]

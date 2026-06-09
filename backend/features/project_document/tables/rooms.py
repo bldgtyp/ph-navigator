@@ -290,8 +290,16 @@ def apply_rooms_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectD
     removed_ids = prior_row_ids - next_ids
     if removed_ids:
         heat_pumps = next_tables.equipment.heat_pumps
+        # `dict.fromkeys` preserves first-seen order while collapsing any
+        # accidental duplicates upstream data may have introduced — the
+        # field itself has no uniqueness constraint, and the document
+        # validator only checks per-element existence.
         cascaded_indoor_units = [
-            row.model_copy(update={"served_room_ids": [rid for rid in row.served_room_ids if rid not in removed_ids]})
+            row.model_copy(
+                update={
+                    "served_room_ids": list(dict.fromkeys(rid for rid in row.served_room_ids if rid not in removed_ids))
+                }
+            )
             if any(rid in removed_ids for rid in row.served_room_ids)
             else row
             for row in heat_pumps.indoor_units

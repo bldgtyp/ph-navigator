@@ -86,7 +86,11 @@ export type UseSliceTableControllerArgs<TSlice, TRow extends { id: string }, TPa
   refetch: () => Promise<unknown>;
   // Column ids hidden on first load. Applied only when the user has no
   // saved view state for this table; subsequent toggles persist as
-  // usual.
+  // usual. NB: the downstream `useState(defaults)` inside
+  // `useProjectTableViewState` captures the value on mount, so changing
+  // this prop dynamically (e.g. from an async feature flag) only takes
+  // effect on Reset — pass a stable module-constant unless that
+  // semantics is intended.
   defaultHiddenColumns?: string[];
 };
 

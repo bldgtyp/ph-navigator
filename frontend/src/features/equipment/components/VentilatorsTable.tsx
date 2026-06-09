@@ -174,10 +174,14 @@ export function VentilatorsTable({
         fieldKey: VENTILATOR_LINKED_HP_INDOOR_COLUMN_ID,
         header: "Linked HP indoor",
         // `linkedHpIndoorCountById === undefined` distinguishes "HP slice
-        // still loading" from "loaded with no link" (count of 0). Render
-        // an em-dash for the loading case so unhiding the column on a cold
-        // load doesn't mislead the user into thinking nothing is linked.
-        accessor: (ventilator) => linkedHpIndoorCountById?.get(ventilator.id) ?? 0,
+        // still loading" from "loaded with no link" (count of 0). Both
+        // the accessor (used for sort + filter) and the render must agree
+        // on the loading case so the user never sorts or filters by a
+        // phantom 0 while the cells visibly show `—`.
+        accessor: (ventilator) =>
+          linkedHpIndoorCountById === undefined
+            ? null
+            : (linkedHpIndoorCountById.get(ventilator.id) ?? 0),
         render: (ventilator) =>
           linkedHpIndoorCountById === undefined
             ? "—"
