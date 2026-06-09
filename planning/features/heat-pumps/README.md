@@ -1,9 +1,8 @@
 ---
 DATE: 2026-06-09
 TIME: 17:00
-STATUS: Active — Phases 0–3 merged; Phase 4 implemented locally
-        and awaiting `make ci` + commit. Phase 5 (Phius export +
-        MCP) is next.
+STATUS: Active — Phases 0–4 merged. Phase 5 (Phius export + MCP)
+        is next.
 AUTHOR: Ed (via Claude)
 SCOPE: Heat-Pump equipment data model for PH-Navigator V2
 RELATED:
@@ -29,11 +28,9 @@ the existing line-item equipment (Pumps, Fans, ERVs) because:
    Kit + Lossnay LGH pattern) — meaning an HP indoor row needs a
    relationship to an ERV row.
 
-**Phases 0–3 merged (commits `9da3726`, `1aeab68`, `e9cd6dd`,
-`2dd9807`, `399d4e6`). Phase 4 (ERV cross-link + Rooms
-`served_room_ids` picker + silent backend cascades) implemented
-locally 2026-06-09; awaiting `make ci` + commit. Phase 5 (Phius
-export + MCP) is next.** Phase 4 scope was amended on 2026-06-09:
+**Phases 0–4 merged (commits `9da3726`, `1aeab68`, `e9cd6dd`,
+`2dd9807`, `399d4e6`, `16bdefe`). Phase 5 (Phius export + MCP) is
+next.** Phase 4 scope was amended on 2026-06-09:
 AC #6 modal badge and AC #8 pre-delete dialog descoped to
 Q-HP-FOLLOWUP-7 (Ventilators uses inline DataTable editing — no
 row-detail modal to host them). 25 numbered D-HP decisions fully
@@ -47,10 +44,9 @@ scope amendment details.
 2. `decisions.md` — 13 numbered resolutions (all closed 2026-06-09)
 3. `PRD.md` — V2 data shape, UI, REST, MCP, and phasing contract
 4. `STATUS.md` — current state, next step, verification ledger
-5. `phases/phase-00-backend-foundation.md` … `phases/phase-03-unit-pages.md`
-   — implemented and merged. `phases/phase-04-erv-and-rooms-cross-link.md`
-   — implemented locally 2026-06-09; awaiting commit.
-   `phases/phase-05-phius-export-and-mcp.md` is still DRAFT.
+5. `phases/phase-00-backend-foundation.md` …
+   `phases/phase-04-erv-and-rooms-cross-link.md` — implemented and
+   merged. `phases/phase-05-phius-export-and-mcp.md` is still DRAFT.
 
 ## Resolved directional debates (archived in `decisions.md`)
 

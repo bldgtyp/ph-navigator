@@ -1,10 +1,10 @@
 ---
 DATE: 2026-06-09
 TIME: 17:00
-STATUS: ✅ IMPLEMENTED LOCALLY — scope amended 2026-06-09 (see
-        "Scope amendment" section). Awaiting `make ci` green +
-        commit. AC #6 (modal badge) and AC #8 pre-delete dialog
-        descoped to Q-HP-FOLLOWUP-7; everything else shipped.
+STATUS: ✅ IMPLEMENTED — merged in commit `16bdefe`, 2026-06-09.
+        Scope amended 2026-06-09 (see "Scope amendment" section):
+        AC #6 modal badge and AC #8 pre-delete dialog descoped to
+        Q-HP-FOLLOWUP-7; everything else shipped.
 AUTHOR: Ed May (with Claude)
 SCOPE: Wire the `linked_erv_unit_id` and `served_room_ids[]` fields
        on the HP Indoor Units page. Add a default-hidden reverse-
