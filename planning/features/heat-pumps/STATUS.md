@@ -1,9 +1,8 @@
 ---
 DATE: 2026-06-09
 TIME: 18:00
-STATUS: Active — planning round 2 tidy-up complete; **all OPQs
-        resolved.** Phase 0 and Phase 1 are both fully unblocked.
-        Ready for implementation.
+STATUS: Active — Phase 0 backend implementation complete locally;
+        full closeout gate green. Ready for review / commit.
 AUTHOR: Ed May (with Claude)
 SCOPE: Current state, next step, blockers, verification evidence
 RELATED:
@@ -17,6 +16,13 @@ RELATED:
 # Heat Pumps — Status
 
 ## Current state
+
+**Phase 0 backend implementation started (2026-06-09 evening).**
+Backend feature module, project-document defaults, active-version REST
+routes, draft-buffer writes, focused pytest coverage, and core
+referential rules now exist locally. `$ simplify`, `$ docs-pass`,
+`make format`, and `make ci` all ran green. Phase 0 is complete
+locally and ready for review / commit; not yet marked merged.
 
 **Planning round 2 tidy-up complete (2026-06-09 evening).** PRD,
 decisions, and phase plans hardened against an end-to-end review:
@@ -59,8 +65,7 @@ stubs, and the US-EQ-4 amendment landed earlier in
   captures a screenshot in its verification ledger for Ed
   eyeball-confirm before Phase 2 inherits the styling.**
 
-**Next step is Phase 0 backend implementation — once OPQ-5/6/7
-(+ OPQ-8/9 if Ed wants to touch them up front) are pinned.**
+**Next step is review / commit of the local Phase 0 implementation.**
 
 | Artifact | State |
 |---|---|
@@ -71,17 +76,26 @@ stubs, and the US-EQ-4 amendment landed earlier in
 | GLOSSARY graduation | ✅ 6 terms + Relationships entry added |
 | User-story stubs | ✅ US-EQ-7..11 + US-EQ-4 amendment + US-EQ-1 sub-tab list updated |
 | Other context graduation | ◻ `context/PRD.md` §6.2, `data-model.md`, `api.md`, `llm-mcp-schema.md` — runs during Phase 5 |
-| Code | ◻ not started |
+| Code | ✅ Phase 0 backend implementation complete locally; not yet merged |
 
 ## Next step
 
-1. **Phase 0 starts now.** All architectural and visual calls
-   pinned; backend implementation has a stable schema target.
-2. Open a feature branch off main; land Phase 0 in one PR per the
-   phase acceptance criteria. Phase 0 includes:
+1. Review / commit Phase 0 backend foundation. Implemented locally:
+   - Four HP arrays under `tables.equipment.heat_pumps`.
+   - Active-version read endpoint and table PATCH endpoints.
+   - Draft-buffer write path with ETag gating.
+   - Pydantic row validation for hard enums, ULID IDs, required
+     model/tag fields, and numeric ranges.
+   - Server-side HP FK validation and delete preview/cascade rules for
+     HP-owned relations.
+   - Focused pytest slice: `cd backend && uv run pytest
+     tests/features/heat_pumps -q` → 7 passed.
+2. Then land Phase 0 in one PR per the phase acceptance criteria.
+   Phase 0 includes:
    - Four HP tables (outdoor equip / indoor equip / outdoor units
      / indoor units) under `tables.equipment`.
-   - Single-select `shared_with` primitive bump (D-HP-21).
+   - Room-vocabulary reuse for HP unit fields
+     (`outdoor_units.building_zone`, `indoor_units.floor_level`).
    - `?dry-run=true` delete contract for cascade-preview (D-HP-19).
    - FK validation on `paired_indoor_equip_id` (D-HP-22).
    - Hard-enum validation for `heating_data_type` / `cooling_data_type`
@@ -114,7 +128,7 @@ question and is a Phase 5 detail, not blocking any earlier phase.
 
 | Phase | Verified by | Date | Notes |
 |---|---|---|---|
-| 0 | — | — | — |
+| 0 | `cd backend && uv run pytest tests/features/heat_pumps -q`; targeted Ruff; `$ simplify`; `$ docs-pass`; `make format`; `make ci` | 2026-06-09 | Focused HP tests 7 passed; full CI passed: backend 700 passed / 2 skipped, frontend 145 files / 1498 tests passed, production build passed |
 | 1 | — | — | — |
 | 2 | — | — | — |
 | 3 | — | — | — |

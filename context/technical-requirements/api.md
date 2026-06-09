@@ -166,6 +166,20 @@ All mutating REST writes accept `Idempotency-Key`. Replay semantics:
 Draft writes additionally use `If-Match` / `If-Match-Version` ETags as
 defined in §8.5 and the state-machine note.
 
+Heat Pumps Phase 0 adds active-version convenience endpoints that still
+write through the same draft buffer and ETag gates:
+
+```
+GET   /api/v1/projects/{pid}/equipment/heat-pumps
+PATCH /api/v1/projects/{pid}/equipment/heat-pumps/{table}
+```
+
+`{table}` is one of `outdoor-equip`, `indoor-equip`, `outdoor-units`,
+or `indoor-units`. The PATCH body is one JSON-Patch-style op against a
+row id path (`/-` for add, `/{row_id}` for replace/remove). Delete ops
+that would cascade accept `?dry-run=true` and return
+`cascade_preview.affected[]` without mutating.
+
 ### 9.6 Diff
 
 ```
