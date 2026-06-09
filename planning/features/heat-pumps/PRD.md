@@ -58,9 +58,11 @@ four-table shape — outdoor equipment / outdoor units / indoor equipment
 / indoor units — that this PRD ports into the V2 project document
 with three improvements:
 
-1. **Explicit pairing field** replaces the AirTable model-string
+1. **Explicit pairing FK** replaces the AirTable model-string
    bracket convention (`PUZ-A18NKA7 [PLA-A18EA8]` → separate
-   `model_number` and `paired_indoor_model` columns).
+   `model_number` string field on the outdoor row and a strict
+   FK `paired_indoor_equip_id` to the indoor-equip catalog,
+   per D-HP-22).
 2. **Phius-aligned performance field set** — `heating_data_type` /
    `cooling_data_type` discriminators plus both M1 (HSPF2 / SEER2 /
    EER2) and legacy (HSPF / SEER / EER) metrics so projects can
@@ -126,6 +128,17 @@ After this feature ships, a CPHC editor can:
 - **Schedule output to Rhino / HBJSON.** HBJSON consumes Rooms
   data; HPs are downstream metadata, not geometry. Future
   integration is a separate feature.
+- **Bulk import from AirTable / CSV / xlsx.** Every existing
+  BLDGTYP multifamily project has 14–30 outdoor equip rows and
+  100–200 indoor unit rows already authored in AirTable; manual
+  re-entry into V2 is the v1 cost. A "paste tabular data into a
+  table" flow is a strong v1.1+ candidate (and would benefit all
+  the equipment tables, not just HPs). Tracked as
+  **Q-HP-FOLLOWUP-4** in `decisions.md`.
+- **Energy-model load-coverage validation.** No check that every
+  conditioned Room is referenced by at least one HP indoor unit's
+  `served_room_ids[]`. Same gap exists for the ERV ↔ Rooms link;
+  worth solving in a unified pass post-v1.
 
 ## 3. Vocabulary additions (graduate to GLOSSARY.md on merge)
 
@@ -177,11 +190,11 @@ here.
   "id": "hpoe_<ULID>",
   "manufacturer":           "opt_<ULID> | null",   // single_select, user-defined
   "model_number":           "PUZ-A18NKA7",          // bare outdoor model code; required
-  "paired_indoor_model":    "PVA-A18AA7 | null",    // indoor model whose AHRI cert this row carries
-  "mode_type":              "opt_<ULID> | null",    // single_select; e.g. PUZ / PUHY / TUHYE / SUZ / NTXM
+  "paired_indoor_equip_id": "hpie_<ULID> | null",   // FK → heat_pump_indoor_equip[*].id; null for VRF / multi-indoor (D-HP-22)
+  "system_family":          "opt_<ULID> | null",    // single_select; e.g. PUZ / PUHY / TUHYE / SUZ / NTXM (renamed from mode_type per D-HP-24)
   "refrigerant":            "opt_<ULID> | null",    // single_select; e.g. R-410A / R-32 / R-454B
 
-  "heating_data_type":      "cops | hspf2 | null",  // Phius export discriminator
+  "heating_data_type":      "cops | hspf2 | null",  // Phius export discriminator (HARD ENUM — see note below)
   "heating_cap_kbtuh_17f":  null,                   // ✅ Phius (cops)
   "heating_cap_kbtuh_47f":  null,                   // ✅ Phius (cops)
   "heating_cop_17f":        null,                   // ✅ Phius (cops)
@@ -189,7 +202,7 @@ here.
   "hspf2":                  null,                   // ✅ Phius (hspf2)
   "hspf":                   null,                   // legacy, reference only
 
-  "cooling_data_type":      "eer2_seer2 | ieer | null",  // Phius export discriminator
+  "cooling_data_type":      "eer2_seer2 | ieer | null",  // Phius export discriminator (HARD ENUM — see note below)
   "cooling_cap_kbtuh_95f":  null,                   // ✅ Phius (both)
   "eer2":                   null,                   // ✅ Phius (eer2_seer2)
   "seer2":                  null,                   // ✅ Phius (eer2_seer2)
@@ -202,6 +215,15 @@ here.
   "catalog_origin":         null                    // forward-compat for v1.1+ catalog
 }
 ```
+
+> **`heating_data_type` and `cooling_data_type` are hard enums, not
+> user-defined single-selects** (per D-HP-17). The Phius export (§6.2)
+> reads literal string values, so allowing the user to rename the
+> option labels would silently break export. The editor surfaces a
+> fixed dropdown of `cops` / `hspf2` (heating) and `eer2_seer2` /
+> `ieer` (cooling); these strings are also what's stored on the row.
+> All other single-select fields on this row (`manufacturer`,
+> `system_family`, `refrigerant`) remain user-defined per-project.
 
 ### 4.3 `heat_pump_indoor_equip[*]` — indoor equipment row
 
@@ -266,14 +288,23 @@ Per `decisions.md` D-HP-10 / D-HP-11 / D-HP-4.
 
 ### 4.6 Referential integrity rules
 
+**Cascade-null deletes show a pre-delete confirmation dialog with a
+preview of the affected rows** (per D-HP-19), rather than firing
+silently and reporting after. Blocked deletes show an error dialog
+with the same referencing-row preview. Cascade-on-array-filter
+deletes (where a row's array of ids has one element removed but the
+row itself is preserved) fire silently — the user-visible state of
+the referencing row is unchanged except for the missing id.
+
 | When | What happens | Why |
 |---|---|---|
-| Outdoor equip row deleted while >0 outdoor units reference it | Block delete; toast lists referencing units | Same pattern as deleting a referenced single-select option (US-Builder-Tables §16) |
-| Indoor equip row deleted while >0 indoor units reference it | Block delete; toast lists referencing units | Same |
-| Outdoor unit row deleted while >0 indoor units reference it | Indoor units' `outdoor_unit_id` set to `null`; soft-warning toast lists affected indoor tags | Same shape as US-EQ-2 criterion 6 (ERV-delete → rooms unset) |
-| ERV row deleted while >0 indoor HP units link to it via `linked_erv_unit_id` | Indoor units' `linked_erv_unit_id` set to `null`; soft-warning toast | Mirrors above; the HP unit's other data is still valid |
-| Room row deleted while >0 indoor HP units reference it via `served_room_ids[]` | Each referencing indoor unit's `served_room_ids[]` array filters out the deleted id; no toast (silent) | Mirrors ERV ↔ rooms direction |
-| HP indoor unit row deleted while linked to an ERV row | ERV row untouched; reverse-lookup surface (§5.4) drops the deleted indoor reference | One-way link; HP-side deletion is fully reversible from the user's POV without ERV-side disruption |
+| Outdoor equip row deleted while >0 outdoor units reference it | **Blocked.** Error dialog lists referencing unit tags. | Same pattern as deleting a referenced single-select option (US-Builder-Tables §16) |
+| Indoor equip row deleted while >0 indoor units reference it | **Blocked.** Error dialog lists referencing unit tags. | Same |
+| Indoor equip row deleted while >0 outdoor equip rows reference it via `paired_indoor_equip_id` | **Pre-delete confirmation dialog** lists affected outdoor `model_number` values; on confirm, `paired_indoor_equip_id` cleared to `null` on each. Outdoor row retains all other data. | Per D-HP-22; the outdoor row's pairing context is lost but its identity / performance data remain valid (parallel to outdoor-unit → indoor-unit cascade pattern) |
+| Outdoor unit row deleted while >0 indoor units reference it | **Pre-delete confirmation dialog** lists affected indoor tags ("Deleting HP-17 will clear the outdoor link on 12 indoor units: AHU-17B, AHU-17C, …"); on confirm, indoor units' `outdoor_unit_id` set to `null`. The indoor units' `linked_erv_unit_id` is untouched. | Same shape as US-EQ-2 criterion 6 (ERV-delete → rooms unset); pre-delete preview prevents accidental cascades |
+| ERV row deleted while >0 indoor HP units link to it via `linked_erv_unit_id` | **Pre-delete confirmation dialog** lists affected HP indoor tags; on confirm, indoor units' `linked_erv_unit_id` set to `null`. | Mirrors above; the HP unit's other data is still valid |
+| Room row deleted while >0 indoor HP units reference it via `served_room_ids[]` | Each referencing indoor unit's `served_room_ids[]` array filters out the deleted id; silent (no dialog, no toast). | Mirrors ERV ↔ rooms direction; the indoor unit's identity / link state is unchanged — only an item in a multi-select array is filtered out |
+| HP indoor unit row deleted while linked to an ERV row | ERV row untouched; reverse-lookup surface (§5.4) drops the deleted indoor reference. Silent. | One-way link; HP-side deletion is fully reversible from the user's POV without ERV-side disruption |
 
 ## 5. UI and navigation
 
@@ -296,11 +327,12 @@ Equipment tab (existing)
   └─ Fans
 ```
 
-The outer tab strip uses the existing shadcn `Tabs` variant; the
-nested strip uses a visually subordinate variant
-(`size="sm"` or equivalent — final treatment is a phase-plan
-detail). One DataTable per leaf page — no horizontal splits, no
-segmented overlays.
+The outer tab strip uses the default shadcn `Tabs` variant; the
+nested strip uses the smaller / visually lighter shadcn `Tabs`
+variant (`size="sm"` or equivalent), per D-HP-25 — narrower font,
+less vertical padding, lighter underline, placed directly below
+the outer strip with a small visual gap. One DataTable per leaf
+page — no horizontal splits, no segmented overlays.
 
 ### 5.2 Routes
 
@@ -320,39 +352,46 @@ Heat Pumps slot. Per US-Builder-Tables criterion 3, view state
 
 ### 5.3 Default column visibility on the wide outdoor-equip table
 
-20 fields would be unusable as a default view. Default-visible
-columns (subject to phase-plan refinement):
+20 fields would be unusable as a default view. **Column visibility is
+per-column, not per-row** (per D-HP-20): every performance column is
+either always visible or always hidden across the whole table; a row
+that doesn't carry data for a given column renders an empty cell.
+This matches TanStack-Table's column-visibility primitive and avoids
+a custom per-row visibility shim.
+
+Default-visible columns:
 
 1. Manufacturer
 2. Model number
-3. Paired indoor model
-4. Mode type
+3. Paired indoor equip (renders the resolved indoor row's `model_number`; empty when null)
+4. System family
 5. Refrigerant
 6. Heating data type
 7. Cooling data type
 8. Cooling capacity @ 95°F
-9. The "active" heating perf field — chosen from the row's
-   `heating_data_type`: if `cops`, show `heating_cop_47f` and
-   `heating_cop_17f`; if `hspf2`, show `hspf2`. This is a
-   **conditional column** — visible based on per-row value.
-   (Alternative: show both columns always, hidden cells render
-   empty. Pin the choice in phase 1.)
-10. The "active" cooling perf field — same conditional rule.
-11. Datasheet (`<AttachmentCell>`)
+9. `heating_cop_47f` and `heating_cop_17f` (visible always; empty
+   cells on rows where `heating_data_type=hspf2`)
+10. `hspf2` (visible always; empty cells on rows where
+    `heating_data_type=cops`)
+11. `eer2`, `seer2`, `ieer` (visible always; the inactive one for a
+    given row renders empty)
+12. Datasheet (`<AttachmentCell>`)
 
-Hidden-by-default: the legacy `hspf`, `seer`, `eer`, the
-inactive-side performance fields, `notes`. User toggles via the
-column-visibility overflow menu (US-Builder-Tables §14 / general
-DataTable contract).
+Hidden-by-default: the legacy `hspf`, `seer`, `eer`, and `notes`.
+User toggles via the column-visibility overflow menu
+(US-Builder-Tables §14 / general DataTable contract). Phase 1 may
+narrow this list further if 12 default-visible columns prove too
+wide; the always-visible vs hidden-by-default policy stays.
 
 ### 5.4 ERV cross-link surfaces
 
 **On the HP indoor row-detail modal** (`Units — Indoor` page):
 
-- A "Linked ERV unit" field appears in the modal. Visible when the
-  row's referenced indoor equip has `install_type` matching an
-  ERV-integrated option (initial seeded set includes
-  `ERV-INTEGRATED`; user can rename). Hidden otherwise.
+- A "Linked ERV unit" field appears in the modal — **always
+  rendered**, regardless of the row's `install_type` (per
+  D-HP-23). For non-integrated install types the user simply
+  leaves it empty; placement at the bottom of the modal keeps it
+  out of the way on the 95%+ of rows that won't use it.
 - The field is a single-select dropdown listing the project's ERV
   rows by `name`.
 - Cleared field = `linked_erv_unit_id: null`.
@@ -422,7 +461,7 @@ documentation.
 
 | Calc column | Source field | Notes |
 |---|---|---|
-| Device(s) | `model_number` + ` [` + `paired_indoor_model` + `]` | Reconstructs the bracketed display the calc expects |
+| Device(s) | `model_number` + ` [` + `resolve(paired_indoor_equip_id).model_number` + `]` when paired is non-null; bare `model_number` otherwise | Reconstructs the bracketed display the calc expects for paired splits; VRF / multi-indoor rows (with null `paired_indoor_equip_id`) export with no brackets, per D-HP-18 / D-HP-22. Resolution happens server-side at export time; a referenced indoor row deleted post-pairing would have already cleared the FK to null per §4.6 |
 | Qty | `count(heat_pump_outdoor_units where outdoor_equip_id = this.id)` | Derived, never user-entered |
 | Heating Data Type | `heating_data_type` ∈ {`COPs`, `HSPF2`} | Title-cased values matching the calc dropdown |
 | Cap @ 17°F | `heating_cap_kbtuh_17f` | Only when `heating_data_type=cops` |
@@ -440,8 +479,14 @@ documentation.
 
 A "Export to Phius HP Estimator…" item appears in the overflow
 `⋯` menu of the **Equipment — Outdoor** page, alongside the
-existing "Download as JSON" (US-Builder-Tables criterion 14). When
-clicked:
+existing "Download as JSON" (US-Builder-Tables criterion 14).
+
+**Menu item is disabled when the equip table is empty** (no rows to
+export) with tooltip "Add an outdoor heat-pump model first.";
+otherwise it's enabled regardless of row-level completeness — the
+pre-export dialog (§6.4) is where the user is warned about gaps.
+
+When clicked:
 
 1. Backend computes the per-row `Qty` from outdoor-unit instance
    counts.
@@ -555,22 +600,63 @@ independently (and merges cleanly with concurrent ERV-side work).
 Phase 5 lands the Phius export and the MCP tool stack, which depend
 on the underlying data being clean — not a moment sooner.
 
-## 10. Open implementation questions (phase-plan scope)
+## 10. Open implementation questions
 
-These are not architectural; they're decisions the phase author
-makes when writing the phase file.
+§10.1 lists architectural questions that need an Ed call before
+Phase 0 starts (they shape storage or primitives). §10.2 lists
+phase-author-scope details that the relevant phase pins when
+written.
 
-- **OPQ-1**: Conditional column visibility on the outdoor-equip
-  DataTable (per-row based on discriminator) vs always-visible-but-
-  empty cells. Pin in Phase 1.
-- **OPQ-2**: Exact shadcn variant for the nested Heat Pumps sub-tab
-  strip. Pin in Phase 1.
-- **OPQ-3**: xlsx-paste payload format (v1 stretch goal in Phase 5)
-  — exact rectangular range, header included or not, sheet-name
-  override.
-- **OPQ-4**: Whether the "Linked ERV unit" field is hidden vs
-  disabled when `install_type` isn't ERV-integrated. Hidden is
-  simpler; disabled is more discoverable. Pin in Phase 4.
+### 10.1 Needs Ed input before Phase 0
+
+- **OPQ-5** — ~~Cross-table single-select option-list sharing~~
+  **CLOSED via D-HP-21** (2026-06-09). Option (a) adopted:
+  `shared_with: "<table>.<col>"` directive on the single-select
+  primitive. HP outdoor-unit `building_zone` and HP indoor-unit
+  `floor_level` alias to the rooms columns. `manufacturer` sharing
+  deferred to Q-HP-FOLLOWUP-6 (no canonical owner among
+  ERV/HP/Pumps/Fans). Phase 0 backend scope amended.
+- **OPQ-6** — ~~`paired_indoor_model` as FK vs free text~~
+  **CLOSED via D-HP-22** (2026-06-09). Option (a) adopted: strict
+  FK `paired_indoor_equip_id` to `heat_pump_indoor_equip[*].id`.
+  Authoring flow preserved by adding an inline "Create new indoor
+  equipment" shortcut on the picker; Phase 1 ships a minimal
+  indoor-equip create modal (Phase 2 then ships the full
+  indoor-equip page using the same modal as its main authoring
+  surface). PRD §1, §4.2, §4.6, §5.3, §6.2 all updated.
+- **OPQ-7** — ~~`linked_erv_unit_id` picker gating~~ **CLOSED via
+  D-HP-23** (2026-06-09). Option (b) adopted: picker always
+  rendered, regardless of `install_type`; users leave the field
+  empty for non-integrated install types. No primitive change,
+  no resolver hook. Phase 2 simplifies (plain seeded options),
+  Phase 4 §Step 1 collapses to "render the picker". Escalation
+  path stays open as Q-HP-FOLLOWUP-5.
+
+### 10.2 Phase-author scope (pin in the relevant phase file)
+
+- **OPQ-1** — ~~Conditional column visibility~~ **PINNED via D-HP-20**
+  (always-visible columns, per-row data dictates cell content).
+  Phase 1 implements directly.
+- **OPQ-2** — ~~Exact shadcn variant for the nested Heat Pumps
+  sub-tab strip~~ **CLOSED via D-HP-25** — smaller / lighter
+  shadcn `Tabs` variant (`size="sm"` or equivalent).
+- **OPQ-3** — xlsx-paste payload format (v1 stretch goal in
+  Phase 5) — exact rectangular range, header included or not,
+  sheet-name override.
+- **OPQ-4** — ~~Hidden vs disabled for the "Linked ERV unit"
+  field~~ **PINNED in Phase 4 §Step 1: hidden** when the indoor
+  equip's `install_type` is not ERV-INTEGRATED.
+- **OPQ-8** — ~~Nested-tab visual treatment wireframe~~ **CLOSED
+  via D-HP-25** — Variant A (smaller / lighter inner shadcn
+  `Tabs`). Phase 1 still produces a screenshot of the rendered
+  nested strip in its verification ledger; Ed eyeball-confirms
+  before Phase 2 inherits the styling. Iteration path documented
+  in D-HP-25.
+- **OPQ-9** — ~~Rename `outdoor.mode_type` → `outdoor.system_family`~~
+  **CLOSED via D-HP-24** (2026-06-09). Renamed across PRD,
+  decisions, phase plans, and research.md V2 sketch. AirTable
+  reference docs keep `MODE_TYPE` since they document the source
+  system accurately.
 
 ## 11. Cross-doc graduation checklist (run at merge)
 

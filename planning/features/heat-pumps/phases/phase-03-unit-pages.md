@@ -66,8 +66,10 @@ tables that point back at them. By the end:
    - Deleting an indoor-equip row with ≥1 referencing indoor unit:
      blocked, error dialog lists tags.
    - Deleting an outdoor unit with ≥1 referencing indoor unit:
-     cascade-null `outdoor_unit_id` on affected indoor units;
-     soft-warning toast names them.
+     **pre-delete confirmation dialog** (per D-HP-19) lists the
+     affected indoor tags and asks to confirm; on confirm,
+     cascade-null `outdoor_unit_id` on those indoor units. No
+     post-delete toast — the dialog is the user notification.
 8. **Building zone single-select** on Outdoor Units uses the
    project's `tables.rooms[*].building_zone` option list (shared
    across tables — same option_id space).
@@ -139,15 +141,20 @@ tables that point back at them. By the end:
 ### Step 6: Referential integrity wiring
 
 The backend service (Phase 0) already implements the rules. Phase 3
-ensures the frontend surfaces them correctly:
+ensures the frontend surfaces them correctly per D-HP-19:
 
-- On 409 from delete: show a structured error dialog listing the
-  referencing rows. (Existing error-handling pattern from US-EQ-2
-  delete.)
-- On cascade-null soft-warning toast: read the
-  `affected_indoor_units[]` array from the backend response,
-  format as `"3 indoor units had their outdoor link cleared:
-  AHU-17B, AHU-17C, AHU-17D"`.
+- On 409 from delete (blocked): show a structured error dialog
+  listing the referencing rows. (Existing error-handling pattern
+  from US-EQ-2 delete.)
+- On cascade-null delete: a **two-step UI flow**. The user clicks
+  Delete → frontend issues a `?dry-run=true` request → backend
+  returns the `affected_indoor_units[]` preview list → frontend
+  opens a confirmation dialog
+  ("Deleting HP-17 will clear the outdoor link on 12 indoor units:
+  AHU-17B, AHU-17C, …  Continue?") → on confirm, frontend issues
+  the real delete. The Phase 0 service module needs a `dry_run`
+  flag on the delete endpoint to support this — flag for Phase 0
+  scope amendment.
 
 ### Step 7: ERV / Rooms field stubs
 
@@ -191,11 +198,12 @@ already (Phase 0); the UI gate is purely cosmetic.
   accessible. Mitigation: prototype in Step 3 against the existing
   shadcn `Dialog` modal-on-modal behavior; if stacking is ugly,
   fall back to a side-panel pattern. Pin decision in this phase.
-- **Cascade-null toast clarity.** A user deleting an outdoor unit
-  may not realize the implications. Mitigation: pre-delete
-  confirmation dialog lists the indoor units that will be
-  affected ("Deleting HP-17 will clear the outdoor link on 12
-  indoor units: AHU-17B, AHU-17C, … Continue?").
+- **Cascade-null preview round-trip.** Per D-HP-19 the
+  confirmation dialog needs the affected-rows list *before* the
+  user confirms. Phase 0 must ship a `?dry-run=true` flag on the
+  delete endpoint that returns the cascade-preview payload
+  without mutating. Scope amendment to Phase 0 — confirm before
+  Phase 0 starts.
 - **Building zone + floor level option-list sharing.** Existing
   rooms-table options are the source-of-truth. Mitigation: the
   single-select primitive (US-Builder-Tables §16) already keys

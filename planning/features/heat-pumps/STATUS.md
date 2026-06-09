@@ -1,8 +1,9 @@
 ---
 DATE: 2026-06-09
-TIME: 15:10
-STATUS: Active — planning + planning-context graduation complete;
-        ready for Phase 0 implementation
+TIME: 18:00
+STATUS: Active — planning round 2 tidy-up complete; **all OPQs
+        resolved.** Phase 0 and Phase 1 are both fully unblocked.
+        Ready for implementation.
 AUTHOR: Ed May (with Claude)
 SCOPE: Current state, next step, blockers, verification evidence
 RELATED:
@@ -17,12 +18,49 @@ RELATED:
 
 ## Current state
 
-**Planning + planning-context graduation complete.** PRD is
-approved (Ed sign-off 2026-06-09). Vocabulary has graduated into
-`context/GLOSSARY.md`; user-story stubs US-EQ-7..11 and the US-EQ-4
-amendment have landed in `context/user-stories/30-tables-equipment.md`.
-All six phase plans are written. Next step is Phase 0 backend
-implementation.
+**Planning round 2 tidy-up complete (2026-06-09 evening).** PRD,
+decisions, and phase plans hardened against an end-to-end review:
+seven new numbered decisions (D-HP-14..20) close internal
+contradictions and promote unresolved research questions; five new
+architectural open questions (OPQ-5..9) are flagged as blockers
+needing Ed input before Phase 0 starts. Vocabulary, user-story
+stubs, and the US-EQ-4 amendment landed earlier in
+`context/GLOSSARY.md` and `context/user-stories/30-tables-equipment.md`.
+
+**Round-2 changes in summary:**
+
+- A1 → D-HP-20: column visibility is always-visible, no per-row shim.
+- A2 → D-HP-17: heating/cooling data-type fields are hard enums, not
+  user-renamable single-selects.
+- A3 → D-HP-14/15/16: refrigerant ships in v1, per-instance datasheet
+  ships in v1, sub-tab ordering is between ERVs and Pumps.
+- B2 → D-HP-18: VRF Phius-export drops brackets when paired is null.
+- D2/F2 → D-HP-19: cascade-delete uses pre-delete confirmation
+  dialog with preview, not post-delete toast.
+- C1 → PRD §2.2 + Q-HP-FOLLOWUP-4: AirTable / bulk-paste import
+  named explicitly as v1.1+.
+- C5 → PRD §2.2: energy-model load-coverage validation deferred.
+- **OPQ-5 → D-HP-21 (closed 2026-06-09): `shared_with` directive
+  on single-select primitive; HP unit columns alias rooms columns;
+  manufacturer deferred to Q-HP-FOLLOWUP-6.**
+- **OPQ-6 → D-HP-22 (closed 2026-06-09): `paired_indoor_model`
+  field renamed `paired_indoor_equip_id` and re-typed to a strict
+  FK; outdoor-first phase order preserved via Phase 1 inline-create
+  shortcut.**
+- **OPQ-7 → D-HP-23 (closed 2026-06-09): `linked_erv_unit_id`
+  picker always rendered on every indoor unit modal; no install_type
+  gate, no system-marker primitive in v1. Phase 2 and Phase 4
+  simplified.**
+- **OPQ-9 → D-HP-24 (closed 2026-06-09): `outdoor.mode_type`
+  renamed to `outdoor.system_family` across all docs and phase
+  plans. AirTable reference docs keep `MODE_TYPE`.**
+- **OPQ-8 / OPQ-2 → D-HP-25 (closed 2026-06-09): nested-tab strip
+  uses shadcn `Tabs` smaller variant (`size="sm"`); Phase 1
+  captures a screenshot in its verification ledger for Ed
+  eyeball-confirm before Phase 2 inherits the styling.**
+
+**Next step is Phase 0 backend implementation — once OPQ-5/6/7
+(+ OPQ-8/9 if Ed wants to touch them up front) are pinned.**
 
 | Artifact | State |
 |---|---|
@@ -37,17 +75,40 @@ implementation.
 
 ## Next step
 
-1. Begin Phase 0 implementation per
-   `phases/phase-00-backend-foundation.md`.
+1. **Phase 0 starts now.** All architectural and visual calls
+   pinned; backend implementation has a stable schema target.
 2. Open a feature branch off main; land Phase 0 in one PR per the
-   phase acceptance criteria.
-3. After Phase 0 merges, proceed to Phase 1 with the OPQ-1
-   conditional-column-visibility decision pinned in this STATUS.md
-   ledger.
+   phase acceptance criteria. Phase 0 includes:
+   - Four HP tables (outdoor equip / indoor equip / outdoor units
+     / indoor units) under `tables.equipment`.
+   - Single-select `shared_with` primitive bump (D-HP-21).
+   - `?dry-run=true` delete contract for cascade-preview (D-HP-19).
+   - FK validation on `paired_indoor_equip_id` (D-HP-22).
+   - Hard-enum validation for `heating_data_type` / `cooling_data_type`
+     (D-HP-17).
+3. After Phase 0 merges, proceed to Phase 1 with all round-2
+   pinned decisions inherited. Phase 1 ships the screenshot of
+   the nested-tab strip for Ed eyeball-confirm per D-HP-25.
 
 ## Blockers
 
-None outstanding.
+**None.** All architectural and phase-implementation OPQs resolved
+2026-06-09:
+
+| ID | Status |
+|---|---|
+| ~~OPQ-1~~ | **CLOSED via D-HP-20** — column visibility is always-visible (no per-row shim) |
+| ~~OPQ-2~~ | **CLOSED via D-HP-25** — subsumed into OPQ-8's nested-tab resolution |
+| OPQ-3 | Phase-detail (xlsx-paste format) — pin in Phase 5 |
+| ~~OPQ-4~~ | **CLOSED in Phase 4** — `linked_erv_unit_id` hidden when non-integrated (now moot via D-HP-23) |
+| ~~OPQ-5~~ | **CLOSED via D-HP-21** — `shared_with` directive on single-select primitive |
+| ~~OPQ-6~~ | **CLOSED via D-HP-22** — strict FK `paired_indoor_equip_id`; outdoor-first phase order preserved via inline-create |
+| ~~OPQ-7~~ | **CLOSED via D-HP-23** — `linked_erv_unit_id` picker always rendered; no gating, no marker primitive |
+| ~~OPQ-8~~ | **CLOSED via D-HP-25** — nested tabs use shadcn `Tabs` smaller variant; Phase 1 ships a screenshot for Ed confirm |
+| ~~OPQ-9~~ | **CLOSED via D-HP-24** — `outdoor.mode_type` renamed `outdoor.system_family` across all docs |
+
+OPQ-3 (xlsx-paste payload format in Phase 5) is the only remaining
+question and is a Phase 5 detail, not blocking any earlier phase.
 
 ## Verification (running ledger — fills in per phase)
 
@@ -73,16 +134,20 @@ None outstanding.
 
 ## Open questions queue
 
-The following questions are flagged in the PRD/decisions for the
-phase author to resolve when they reach the relevant phase. None
-are blocking the planning sign-off.
+Live phase-author-scope questions (none blocking the planning sign-off):
 
-- **OPQ-1** (Phase 1): conditional column visibility — per-row
-  discriminator-based vs always-visible-empty-cells.
+- **OPQ-1** — ~~Conditional column visibility~~. **Closed** via
+  D-HP-20: always-visible columns, no per-row shim.
 - **OPQ-2** (Phase 1): exact shadcn `Tabs` variant for the nested
-  Heat Pumps sub-tab strip.
+  Heat Pumps sub-tab strip. Now linked to **OPQ-8** (above) for the
+  visual wireframe.
 - **OPQ-3** (Phase 5): xlsx-paste payload format details.
-- **OPQ-4** (Phase 4): hidden vs disabled for the
-  "Linked ERV unit" field on non-integrated install types.
+- **OPQ-4** — ~~Hidden vs disabled for "Linked ERV unit"~~.
+  **Closed** in Phase 4 acceptance criterion #2: hidden when
+  `install_type` is not ERV-INTEGRATED.
 - **Q-HP-FOLLOWUP-3** (post-v1): direction of the room ↔ HP-indoor
   link — HP-side (current) vs Room-side (mirrors ERV).
+- **Q-HP-FOLLOWUP-4** (post-v1): bulk import (AirTable / CSV / xlsx
+  paste) for the four HP tables.
+- **Q-HP-FOLLOWUP-5** (post-v1): system-marked single-select options
+  primitive (the OPQ-7 escalation path).

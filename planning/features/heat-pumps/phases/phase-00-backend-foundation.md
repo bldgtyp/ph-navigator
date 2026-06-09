@@ -38,6 +38,17 @@ this slice:
 - Pytest coverage exists for every model validator, every service
   rule, and every REST endpoint happy-path + at least one
   error-path each.
+- **Delete endpoints accept `?dry-run=true`** and return the
+  cascade-preview payload (referencing-row tags, no mutation).
+  Required by D-HP-19 so Phase 3 / Phase 4 can render the
+  pre-delete confirmation dialog.
+- **Single-select primitive `shared_with` directive** (per D-HP-21).
+  US-Builder-Tables §16 extended so a column declaration may carry
+  `shared_with: "<table>.<col>"` and read/write its option list
+  from the target's key instead of its own. Applied to
+  `heat_pump_outdoor_units.building_zone → rooms.building_zone` and
+  `heat_pump_indoor_units.floor_level → rooms.floor_level`.
+  Validation rejects unresolved targets and circular chains.
 - The schema migration is reversible and lands on a feature branch
   off main.
 
@@ -70,6 +81,16 @@ tools. Those land in Phases 1–5.
    - Cascade-null on unit delete with referencing indoor units.
    - Cascade-null on ERV delete with `linked_erv_unit_id` references.
    - Filter on room delete with `served_room_ids[]` references.
+   - All cascade-null deletes accept `?dry-run=true` and return
+     the affected-row tag list without mutating (per D-HP-19).
+   - **Indoor-equip → outdoor-equip cascade** (per D-HP-22):
+     deleting an indoor-equip row with ≥1 outdoor-equip row
+     referencing it via `paired_indoor_equip_id` clears the FK to
+     `null` on each. Same `?dry-run=true` preview contract.
+   - **FK validation on outdoor-equip writes** (per D-HP-22): the
+     `paired_indoor_equip_id`, when non-null, must resolve to an
+     existing `heat_pump_indoor_equip[*].id` at write time; 422
+     rejection with structured error if not.
 6. Alembic migration `XXXX_add_heat_pump_tables.py` is reversible
    (`upgrade` and `downgrade` both pass).
 7. `cd backend && uv run pytest features/heat_pumps/` passes
@@ -151,6 +172,10 @@ The service module owns the rules; the routes module is thin.
 - `PATCH /api/v1/projects/{id}/equipment/heat-pumps/{table}` —
   one JSON-Patch op; returns 200 with updated row, 422 on
   validation failure, 409 on referential conflict.
+- The PATCH endpoint accepts `?dry-run=true` for `remove` ops on
+  rows that would trigger cascade-null on other tables; in that
+  mode, returns 200 with a `cascade_preview: { affected: [...] }`
+  body and does not write. Other ops ignore the flag.
 
 `{table}` ∈ {`outdoor-equip`, `indoor-equip`,
 `outdoor-units`, `indoor-units`}. Resolves to the matching
@@ -214,3 +239,9 @@ End of phase, before tagging Phase 0 done:
   resolve whether these checks happen synchronously inside the
   service or lazily on Save (mirroring existing referential
   patterns in US-EQ-2 / 4).
+- **`shared_with` primitive bump touches US-Builder-Tables §16**.
+  The directive lands in a single PR but the contract change
+  echoes into every existing single-select-using surface. Run the
+  full equipment-tab Vitest suite (rooms, ERVs, pumps, fans)
+  after the primitive lands, before any HP-specific tests, to
+  catch regressions in non-HP consumers.

@@ -47,13 +47,12 @@ where the real-world workflows get done. By the end:
    select on the row-detail modal. Source: `tables.rooms[]` formatted
    as `"{number} — {name}"` (matching US-EQ-2 display). Empty
    array allowed; "0 rooms selected" empty-pill display.
-2. **`linked_erv_unit_id` picker** is a conditional single-select
-   on the row-detail modal. Only visible when the row's
-   `indoor_equip_id` references an indoor equip row whose
-   `install_type` option label is `ERV-INTEGRATED` (the seeded
-   label from Phase 2; case-sensitive against the option label).
-   Hidden otherwise (OPQ-4 → hidden, not disabled, per
-   PRD §10 OPQ-4 recommendation).
+2. **`linked_erv_unit_id` picker** is an always-rendered single-
+   select on the row-detail modal, regardless of the row's
+   `install_type` (per D-HP-23). Placement at the bottom of the
+   modal so the field doesn't dominate the editor on the 95%+
+   rows that won't use it. OPQ-4 (hidden vs disabled) is moot —
+   the picker is just always shown.
 3. Source: `tables.equipment.ervs[]` formatted by `name`.
 4. The Phase 3 "Configured in Phase 4" pills are removed.
 
@@ -73,12 +72,16 @@ where the real-world workflows get done. By the end:
 ### Cross-table delete cascades
 
 8. Deleting an ERV row with ≥1 HP indoor unit linking to it:
-   succeeds; affected HP indoor rows have `linked_erv_unit_id`
-   cleared; single toast lists affected HP indoor `tag` values.
+   per D-HP-19, a **pre-delete confirmation dialog** lists the
+   affected HP indoor `tag` values ("Deleting ERV-N2 will clear
+   the linked-ERV reference on 2 HP indoor units: AHU-N2B, AHU-N5.
+   Continue?"); on confirm, affected HP indoor rows have
+   `linked_erv_unit_id` cleared. No post-delete toast.
 9. Deleting a Room row with ≥1 HP indoor unit referencing it via
    `served_room_ids[]`: succeeds; each referencing indoor unit's
-   array filters out the deleted id; **no toast** (silent — same
-   pattern as ERV ↔ rooms direction).
+   array filters out the deleted id; **no dialog, no toast**
+   (silent — same pattern as ERV ↔ rooms direction; the indoor
+   unit's identity is unchanged).
 
 ### Tests + CI
 
@@ -101,14 +104,11 @@ where the real-world workflows get done. By the end:
 
 ## Implementation outline
 
-### Step 1: Discover indoor-equip's install_type
+### Step 1: ~~Discover indoor-equip's install_type~~ — dropped per D-HP-23
 
-`frontend/src/features/equipment/heat-pumps/lib/use-indoor-equip-install-type.ts`:
-
-- Selector hook: given an `indoor_equip_id`, returns the
-  resolved `install_type` option *label* (not option_id).
-- Used by the indoor-unit row-detail modal to decide
-  `linked_erv_unit_id` visibility.
+The picker is always rendered; no resolver hook needed. This step
+collapses to: ensure the ERV picker (Step 2) mounts unconditionally
+on the indoor-unit row-detail modal.
 
 ### Step 2: ERV picker
 
@@ -181,9 +181,10 @@ fires on the same delete.
 1. `make format` clean; `make ci` passes.
 2. Playwright MCP screenshots:
    - Indoor unit row-detail modal with `linked_erv_unit_id` field
-     visible (ERV-INTEGRATED install type).
+     populated (any install type).
    - Indoor unit row-detail modal with `linked_erv_unit_id` field
-     HIDDEN (other install type).
+     empty on a non-integrated install type (always rendered, per
+     D-HP-23).
    - ERV row-detail modal with "Linked from HP indoor: AHU-N2B"
      badge.
    - ERVs DataTable with "Linked HP indoor" column toggled on.
@@ -196,15 +197,9 @@ fires on the same delete.
 
 ## Risks
 
-- **Conditional visibility on install_type label.** Step 1's
-  resolver depends on the option *label* matching "ERV-INTEGRATED"
-  (Phase 2 seeded). If a user renames the option, the resolver
-  breaks unless we key on something more stable. **Mitigation**:
-  Phase 2 should store the option in the row as `option_id`, and
-  Phase 4 should resolve via a small per-project "system option
-  marker" map — i.e. PHN remembers which `option_id` was originally
-  seeded as ERV-INTEGRATED even after a rename. Pin design in
-  Step 1.
+- ~~**Conditional visibility on install_type label.**~~ Closed
+  via D-HP-23: picker is always rendered; no install_type
+  resolver, no system-option marker primitive in v1.
 - **Cross-feature regression.** Touching `frontend/src/features/equipment/ervs/`
   could break existing US-EQ-4 tests if the column-def shape
   changes. Mitigation: run the existing US-EQ-4 test suite as

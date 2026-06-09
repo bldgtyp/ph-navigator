@@ -27,11 +27,9 @@ the existing line-item equipment (Pumps, Fans, ERVs) because:
    Kit + Lossnay LGH pattern) — meaning an HP indoor row needs a
    relationship to an ERV row.
 
-## Status
-
-**Planning complete; awaiting Ed PRD sign-off.** All directional
-decisions are resolved; the PRD is drafted with a six-phase outline.
-No implementation code yet. See `STATUS.md` for the current ledger.
+**Planning round 2 tidy-up complete; all OPQs resolved
+2026-06-09. Phase 0 ready to start.** 25 numbered D-HP decisions
+fully specify the v1 surface. See `STATUS.md` Next step.
 
 ## Read order
 
@@ -42,13 +40,23 @@ No implementation code yet. See `STATUS.md` for the current ledger.
 5. `phases/phase-00-backend-foundation.md` — backend foundation slice
    (Phases 1–5 stubs land after Phase 0 completes)
 
-## Open discussion (see `research.md` for full context)
+## Resolved directional debates (archived in `decisions.md`)
 
-- Is HP-Equipment a project-scoped "type table" or a true shared
-  Catalog (PH-Materials-style)?
-- Single combined HPs sub-tab, or split into "HP Systems" +
-  "HP Indoor Units" sub-tabs?
-- How do we express the ERV-integrated indoor unit case without
-  duplicating data between the HPs and ERVs sub-tabs?
-- Do we model the HP as one entity ("a heat-pump system") with
-  child arrays, or as two flat tables linked by FK?
+All 25 D-HP decisions are now numbered and closed. Highlights:
+
+- ✅ Catalog vs project-only → D-HP-1 (project-only in v1).
+- ✅ Combined vs split sub-tabs → D-HP-3 (nested four-leaf).
+- ✅ ERV-integrated unit modeling → D-HP-4 (two rows, one FK link).
+- ✅ Entity vs flat-tables → D-HP-2 (four flat tables, EQUIP/UNIT
+  split, indoor + outdoor symmetric).
+- ✅ Cross-table option sharing → D-HP-21 (`shared_with` directive).
+- ✅ Paired-indoor as FK → D-HP-22 (strict FK +
+  inline-create shortcut preserves outdoor-first phase order).
+- ✅ ERV picker gating → D-HP-23 (always-rendered; no gate).
+- ✅ Field naming → D-HP-24 (`mode_type` → `system_family`).
+- ✅ Nested-tab visual treatment → D-HP-25 (shadcn `Tabs` smaller
+  variant).
+
+The only live question is **OPQ-3** — Phase 5 xlsx-paste payload
+format — which is a phase-implementation detail with no blocker
+implications.
