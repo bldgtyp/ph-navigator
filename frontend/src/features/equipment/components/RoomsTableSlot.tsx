@@ -5,7 +5,13 @@
 
 import { generatedId } from "../../../shared/lib/ids";
 import type { SliceTableController } from "../../../shared/ui/data-table/feature";
-import type { BuildEmptyRow, FieldRegistryEntry, ViewState } from "../../../shared/ui/data-table";
+import type {
+  BuildEmptyRow,
+  FieldRegistryEntry,
+  LinkedRecordCellOps,
+  LinkedRecordTargetTableOption,
+  ViewState,
+} from "../../../shared/ui/data-table";
 import { RoomsTable } from "./RoomsTable";
 import { ROOM_ID_PREFIX } from "../lib";
 import { ROOMS_TABLE_NAME, type RoomRow, type RoomsSlice } from "../types";
@@ -21,6 +27,15 @@ export type RoomsTableSlotProps = {
   downloadAction: React.ReactNode;
   footerAction: React.ReactNode;
   onEdit: (room: RoomRow) => void;
+  // Per-fieldKey integration surface for `linked_record` columns. The
+  // page owner builds the Map from whichever target-table slice each
+  // field points at (see `buildLinkedRecordOps`).
+  linkedRecordOps?: ReadonlyMap<string, LinkedRecordCellOps>;
+  // Available target tables for the field config modal's "Linked
+  // record" target dropdown. Forwarded to <RoomsTable> → <DataTable>
+  // → <FieldConfigModal>. Page-level consumer derives this from the
+  // document's `TableContract` manifest.
+  linkedRecordTargets?: ReadonlyArray<LinkedRecordTargetTableOption>;
 };
 
 export function RoomsTableSlot(props: RoomsTableSlotProps) {
@@ -35,6 +50,8 @@ export function RoomsTableSlot(props: RoomsTableSlotProps) {
     downloadAction,
     footerAction,
     onEdit,
+    linkedRecordOps,
+    linkedRecordTargets,
   } = props;
   if (controller.viewLoading) {
     return <p className="form-note">Loading table view…</p>;
@@ -65,6 +82,8 @@ export function RoomsTableSlot(props: RoomsTableSlotProps) {
       formulaFieldRegistry={formulaFieldRegistry}
       getFormulaRowValues={getFormulaRowValues}
       rowsComputed={roomsSlice.rows_computed}
+      linkedRecordOps={linkedRecordOps}
+      linkedRecordTargets={linkedRecordTargets}
     />
   );
 }

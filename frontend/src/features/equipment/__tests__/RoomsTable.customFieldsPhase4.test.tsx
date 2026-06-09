@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 import { RoomsPage } from "../routes/RoomsPage";
 import { RoomsTable } from "../components/RoomsTable";
 import { emptyViewState, type TableFieldDef } from "../../../shared/ui/data-table";
@@ -186,7 +187,9 @@ function renderRoomsPage(initialSlice: RoomsSlice) {
   });
   const rendered = render(
     <QueryClientProvider client={queryClient}>
-      <RoomsPage project={buildProject()} />
+      <MemoryRouter>
+        <RoomsPage project={buildProject()} />
+      </MemoryRouter>
     </QueryClientProvider>,
   );
   return { ...rendered, postBodies };

@@ -110,6 +110,8 @@ export function DataTable<TRow>({
   rowActions,
   formulaFieldRegistry,
   getFormulaRowValues,
+  linkedRecordOps,
+  linkedRecordTargets,
 }: DataTableProps<TRow>) {
   const columnDefs = inputColumnDefs;
   const fieldDefs = inputFieldDefs;
@@ -1365,6 +1367,7 @@ export function DataTable<TRow>({
             dispatchAddField={handleAddFieldSubmit}
             returnFocusTo={createFieldModal?.triggerElement ?? null}
             formulaFieldRegistry={formulaFieldRegistry}
+            linkedRecordTargets={linkedRecordTargets}
           />
         ) : null}
         {onEditCustomFieldBundle ? (
@@ -1388,6 +1391,7 @@ export function DataTable<TRow>({
             preflightRows={configModalPreflightRows}
             optionRows={configModalPreflightRows}
             formulaPreview={configModalFormulaPreview}
+            linkedRecordTargets={linkedRecordTargets}
           />
         ) : null}
         <ConfirmDestructiveDialog
@@ -1500,6 +1504,7 @@ export function DataTable<TRow>({
                   onRowContextMenu={!readOnly && onWrite ? openRowMenu : undefined}
                   onGroupHeaderContextMenu={view.group.length > 0 ? openGroupHeaderMenu : undefined}
                   editingActive={Boolean(edit.editing)}
+                  linkedRecordOps={linkedRecordOps}
                 />
                 <SummaryBar
                   columns={visibleColumnDefs}

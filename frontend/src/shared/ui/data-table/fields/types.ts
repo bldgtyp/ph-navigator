@@ -7,4 +7,5 @@ export type FieldEditor =
   | { kind: "text" }
   | { kind: "number" }
   | { kind: "color" }
-  | { kind: "single_select" };
+  | { kind: "single_select" }
+  | { kind: "linked_record" };

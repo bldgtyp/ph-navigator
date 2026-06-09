@@ -209,6 +209,28 @@ function tableFieldToFieldDef(
       fieldDef.numberUnits = persisted.config.units;
     }
   }
+  if (persisted.field_type === "linked_record") {
+    // Mirror backend `validate_link_config`: `target_table_path` is a
+    // non-empty list of strings; `max_links` is null (multi) or a positive
+    // integer. The converter is defensive — a malformed config (which the
+    // backend rejects) renders as an empty pill list with no candidates.
+    const config = persisted.config ?? {};
+    const rawTarget = config.target_table_path;
+    const target =
+      Array.isArray(rawTarget) &&
+      (rawTarget as unknown[]).every((entry): entry is string => typeof entry === "string")
+        ? (rawTarget as string[])
+        : [];
+    const rawMax = config.max_links;
+    const max = typeof rawMax === "number" && Number.isFinite(rawMax) && rawMax > 0 ? rawMax : null;
+    // §B6 — backend `validate_link_config` rejects an empty
+    // `target_table_path`. If a corrupt / mid-migration config reaches
+    // the frontend, surface it as a missing `linked_record_config`
+    // rather than silently rendering an empty-candidate picker.
+    if (target.length > 0) {
+      fieldDef.linked_record_config = { target_table_path: target, max_links: max };
+    }
+  }
   if (persisted.field_type === "formula") {
     const config = persisted.config ?? {};
     const source = typeof config.source === "string" ? config.source : "";

@@ -15,7 +15,10 @@ import type {
   FieldDef,
   FieldOption,
   FillRect,
+  LinkedRecordCellOps,
 } from "../types";
+import { LinkedRecordCell } from "../fields/linkedRecord/LinkedRecordCell";
+import { LinkedRecordPicker } from "../fields/linkedRecord/Picker";
 
 // Stable empty-options reference. Using `[]` inline forces a fresh array
 // identity each render, which would cascade through SingleSelectPopover's
@@ -23,6 +26,20 @@ import type {
 // (— "Maximum update depth exceeded" after a text→single_select change
 // when fieldDef.options is briefly missing).
 const EMPTY_OPTIONS: FieldOption[] = [];
+// Stable empties for the linked_record render path — same identity-
+// cascade reasoning as `EMPTY_OPTIONS`.
+const EMPTY_LINKED_CANDIDATES: LinkedRecordCellOps["candidates"] = [];
+const EMPTY_LINKED_IDS: readonly string[] = [];
+const emptyResolver: LinkedRecordCellOps["resolve"] = () => null;
+
+function toLinkedIdList(value: unknown): readonly string[] {
+  if (!Array.isArray(value)) return EMPTY_LINKED_IDS;
+  const out: string[] = [];
+  for (const entry of value) {
+    if (typeof entry === "string" && entry.length > 0) out.push(entry);
+  }
+  return out;
+}
 import type { GridEdit } from "../hooks/useGridEdit";
 import type { GridRowSelection, RowSelectionMode } from "../hooks/useGridRowSelection";
 import { AddFieldTailCell } from "./AddFieldTailCell";
@@ -114,6 +131,13 @@ export type GridBodyProps<TRow> = {
   }) => void;
   onGroupHeaderContextMenu?: (args: { x: number; y: number }) => void;
   editingActive?: boolean;
+  // Per-fieldKey linked_record integration (PRD §5 Phase 1). When a
+  // cell's resolved FieldDef is `linked_record`, the body renders
+  // `LinkedRecordCell` in read mode and `LinkedRecordPicker` in edit
+  // mode using the ops bag keyed by the cell's fieldKey. Absent
+  // entries fall through to an empty pill list (read) / empty picker
+  // (edit) — the cell still renders.
+  linkedRecordOps?: ReadonlyMap<string, LinkedRecordCellOps>;
 };
 
 export function GridBody<TRow>({
@@ -152,6 +176,7 @@ export function GridBody<TRow>({
   onRowContextMenu,
   onGroupHeaderContextMenu,
   editingActive = false,
+  linkedRecordOps,
 }: GridBodyProps<TRow>) {
   const tableRows = table.getRowModel().rows;
   const isSourceEmpty = totalRowCount === 0;
@@ -421,6 +446,7 @@ export function GridBody<TRow>({
                       void edit.commit().then((committed) => {
                         if (committed) onCommitAndMove(rowIndex, columnIndex, move);
                       }),
+                    linkedRecordOps: fieldKey ? linkedRecordOps?.get(fieldKey) : undefined,
                   })}
                   {showDuplicateChip ? (
                     <span
@@ -469,10 +495,21 @@ function renderCellContent(args: {
   cellValue: unknown;
   fallback: () => ReactNode;
   onCommitAndMove: (move: CommitMove) => void;
+  linkedRecordOps: LinkedRecordCellOps | undefined;
 }): ReactNode {
-  const { edit, rowId, fieldKey, fieldDef, cellValue, fallback, onCommitAndMove } = args;
+  const { edit, rowId, fieldKey, fieldDef, cellValue, fallback, onCommitAndMove, linkedRecordOps } =
+    args;
   if (!edit.isEditingCell(rowId, fieldKey) || !edit.editing) {
     if (fieldDef?.field_type === "color") return <ColorCell value={cellValue} />;
+    if (fieldDef?.field_type === "linked_record") {
+      return (
+        <LinkedRecordCell
+          ids={toLinkedIdList(cellValue)}
+          resolve={linkedRecordOps?.resolve ?? emptyResolver}
+          onPillClick={linkedRecordOps?.onPillClick}
+        />
+      );
+    }
     return fallback();
   }
   const editor = edit.editing.editor;
@@ -500,6 +537,21 @@ function renderCellContent(args: {
             <ColorCell value={cellValue} />
           </span>
         }
+      />
+    );
+  }
+  if (editor.kind === "linked_record") {
+    const maxLinks = fieldDef?.linked_record_config?.max_links ?? null;
+    const mode = maxLinks === 1 ? "single" : "multi";
+    return (
+      <LinkedRecordPicker
+        open
+        mode={mode}
+        selectedIds={toLinkedIdList(cellValue)}
+        candidates={linkedRecordOps?.candidates ?? EMPTY_LINKED_CANDIDATES}
+        onCancel={edit.cancel}
+        onConfirm={(ids) => void edit.commitLinkedRecord(ids)}
+        title={fieldDef?.display_name ? `Link ${fieldDef.display_name}` : "Link record"}
       />
     );
   }

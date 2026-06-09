@@ -1,3 +1,4 @@
+// @size-exception: planning/features/record-linking/phases/phase-01-link-values.md
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
 import { DataTable } from "../DataTable";
@@ -6,6 +7,7 @@ import {
   type DataTableColumnDef,
   type DataTableProps,
   type FieldDef,
+  type LinkedRecordCellOps,
   type ViewState,
 } from "../types";
 
@@ -460,5 +462,91 @@ describe("GridBody — group accordion", () => {
     // Exactly one path key should be flipped to false.
     const flipped = Object.entries(next.expandedGroups).filter(([, v]) => v === false);
     expect(flipped.length).toBe(1);
+  });
+});
+
+describe("GridBody — linked_record dispatch", () => {
+  type LinkedRow = { id: string; name: string; linkedPumps: string[] };
+  const LINKED_FIELD: FieldDef = {
+    field_key: "cf_pumps",
+    field_type: "linked_record",
+    display_name: "Pumps",
+    linked_record_config: { target_table_path: ["equipment", "pumps"], max_links: null },
+  };
+  const LINKED_ROWS: LinkedRow[] = [
+    { id: "rm_1", name: "Living", linkedPumps: ["pmp_a"] },
+    { id: "rm_2", name: "Kitchen", linkedPumps: [] },
+  ];
+  const LINKED_COLUMNS: DataTableColumnDef<LinkedRow>[] = [
+    { id: "name", fieldKey: "name", header: "Name", accessor: (row) => row.name },
+    {
+      id: "cf_pumps",
+      fieldKey: "cf_pumps",
+      header: "Pumps",
+      accessor: (row) => row.linkedPumps,
+    },
+  ];
+
+  function renderLinked(opsOverride?: Partial<LinkedRecordCellOps>) {
+    const onWrite = vi.fn();
+    const onPillClick = vi.fn();
+    const ops: LinkedRecordCellOps = {
+      candidates: [
+        { rowId: "pmp_a", recordId: "Pump-A", displayName: "Boiler loop" },
+        { rowId: "pmp_b", recordId: "Pump-B", displayName: "Radiant loop" },
+      ],
+      resolve: (rowId) =>
+        rowId === "pmp_a"
+          ? { recordId: "Pump-A" }
+          : rowId === "pmp_b"
+            ? { recordId: "Pump-B" }
+            : null,
+      onPillClick,
+      ...opsOverride,
+    };
+    render(
+      <DataTable<LinkedRow>
+        rows={LINKED_ROWS}
+        getRowId={(row) => row.id}
+        fieldDefs={[{ field_key: "name", field_type: "text", display_name: "Name" }, LINKED_FIELD]}
+        columnDefs={LINKED_COLUMNS}
+        view={emptyViewState()}
+        onViewChange={vi.fn()}
+        emptyMessage="empty"
+        onWrite={onWrite}
+        linkedRecordOps={new Map([["cf_pumps", ops]])}
+      />,
+    );
+    return { onWrite, onPillClick };
+  }
+
+  test("read mode renders LinkedRecordCell pills using the resolver", () => {
+    renderLinked();
+    const pillRow = screen.getAllByTestId("linked-record-cell")[0];
+    expect(pillRow).toBeTruthy();
+    expect(within(pillRow!).getByText("Pump-A")).toBeInTheDocument();
+  });
+
+  test("empty list renders the empty caption", () => {
+    renderLinked();
+    const cells = screen.getAllByText("Empty");
+    expect(cells.length).toBeGreaterThan(0);
+  });
+
+  test("pill click invokes the consumer's onPillClick", () => {
+    const { onPillClick } = renderLinked();
+    const pillRow = screen.getAllByTestId("linked-record-cell")[0]!;
+    const pill = within(pillRow).getByRole("button", { name: /Pump-A/ });
+    fireEvent.click(pill);
+    expect(onPillClick).toHaveBeenCalledWith("pmp_a");
+  });
+
+  test("double-click on the cell opens LinkedRecordPicker", () => {
+    renderLinked();
+    const rowGroup = screen.getAllByRole("rowgroup")[1]!;
+    const row = within(rowGroup).getAllByRole("row")[0]!;
+    const linkedCell = within(row).getAllByRole("gridcell")[1]!;
+    fireEvent.doubleClick(linkedCell);
+    expect(screen.getByTestId("linked-record-picker")).toBeInTheDocument();
   });
 });

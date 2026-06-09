@@ -9,8 +9,10 @@ helper (bag exclusivity + dedupe + orphan strip + cap), and the
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import cast
 
 import pytest
+from fastapi import HTTPException
 from pydantic import ValidationError
 
 from features.project_document.custom_fields import (
@@ -19,7 +21,16 @@ from features.project_document.custom_fields import (
     coerce_link_value,
     validate_link_config,
 )
-from features.project_document.document import ProjectDocumentV1, RoomRow
+from features.project_document.document import ProjectDocumentV1, PumpRow, RoomRow
+from features.project_document.schema_mutations import (
+    ChangeTypeMutation,
+    FieldSchemaMutation,
+    apply_schema_mutation,
+)
+from features.project_document.tables.rooms import (
+    rooms_custom_fields,
+    rooms_field_registry,
+)
 from features.projects.models import CreateProjectRequest
 from features.projects.service import empty_project_document
 
@@ -294,3 +305,182 @@ class TestDocumentValidation:
         )
         with pytest.raises(ValidationError, match="exceeds max_links"):
             ProjectDocumentV1.model_validate(body.model_dump(mode="json"))
+
+
+# ---------------------------------------------------------------------------
+# changeType dispatcher (linked_record_wipe policy)
+# ---------------------------------------------------------------------------
+
+
+def _seed_pump(body: ProjectDocumentV1, pump_id: str = "pmp_a") -> ProjectDocumentV1:
+    pumps = list(body.tables.equipment.pumps.rows)
+    pumps.append(PumpRow(id=pump_id))
+    return body.model_copy(
+        update={
+            "tables": body.tables.model_copy(
+                update={
+                    "equipment": body.tables.equipment.model_copy(
+                        update={"pumps": body.tables.equipment.pumps.model_copy(update={"rows": pumps})}
+                    )
+                }
+            )
+        }
+    )
+
+
+def _seed_room_with_links(
+    body: ProjectDocumentV1,
+    *,
+    room_id: str,
+    field_key: str,
+    pump_ids: list[str],
+) -> ProjectDocumentV1:
+    room = RoomRow(id=room_id)
+    if pump_ids:
+        room.custom_links[field_key] = list(pump_ids)
+    rooms = [*body.tables.rooms.rows, room]
+    return body.model_copy(
+        update={
+            "tables": body.tables.model_copy(update={"rooms": body.tables.rooms.model_copy(update={"rows": rooms})})
+        }
+    )
+
+
+def _seed_linked_field(body: ProjectDocumentV1, field: TableFieldDef) -> ProjectDocumentV1:
+    return rooms_field_registry.replace_field_defs(
+        body,
+        [*rooms_field_registry.read_field_defs(body), field],
+    )
+
+
+def _to_short_text_target(field: TableFieldDef) -> TableFieldDef:
+    return TableFieldDef(
+        field_key=field.field_key,
+        display_name=field.display_name,
+        field_type=CustomFieldType.short_text,
+        config={},
+        description=field.description,
+        origin=field.origin,
+        created_at=field.created_at,
+        created_by=field.created_by,
+    )
+
+
+def _apply_mutation(
+    body: ProjectDocumentV1, mutation: FieldSchemaMutation
+) -> tuple[ProjectDocumentV1, dict[str, object]]:
+    return apply_schema_mutation(
+        body,
+        mutation,
+        actor_user_id="user_test",
+        capability=rooms_custom_fields,
+    )
+
+
+class TestChangeTypeDispatcher:
+    def test_linked_record_to_short_text_requires_acknowledge(self) -> None:
+        body = _seed_pump(_empty_body(), pump_id="pmp_a")
+        body = _seed_linked_field(body, _linked_record_field_def())
+        body = _seed_room_with_links(body, room_id="rm_1", field_key="cf_pumps", pump_ids=["pmp_a"])
+        existing = next(f for f in rooms_field_registry.read_field_defs(body) if f.field_key == "cf_pumps")
+        mutation = ChangeTypeMutation(
+            kind="changeType",
+            table_key="rooms",
+            field_id="cf_pumps",
+            after=_to_short_text_target(existing),
+            expected_schema_fingerprint=rooms_custom_fields.compute_schema_fingerprint(body),
+        )
+        with pytest.raises(HTTPException) as excinfo:
+            _apply_mutation(body, mutation)
+        assert excinfo.value.status_code == 422
+        detail = cast(dict[str, object], excinfo.value.detail)
+        assert detail["error_code"] == "custom_field_coercion_preflight_required"
+        details = cast(dict[str, object], detail["details"])
+        assert details["incompatible_row_count"] == 1
+
+    def test_linked_record_to_short_text_wipes_both_bags(self) -> None:
+        body = _seed_pump(_empty_body(), pump_id="pmp_a")
+        body = _seed_linked_field(body, _linked_record_field_def())
+        body = _seed_room_with_links(body, room_id="rm_1", field_key="cf_pumps", pump_ids=["pmp_a"])
+        body = _seed_room_with_links(body, room_id="rm_2", field_key="cf_pumps", pump_ids=[])
+        existing = next(f for f in rooms_field_registry.read_field_defs(body) if f.field_key == "cf_pumps")
+        mutation = ChangeTypeMutation(
+            kind="changeType",
+            table_key="rooms",
+            field_id="cf_pumps",
+            after=_to_short_text_target(existing),
+            acknowledge_destructive=True,
+            expected_schema_fingerprint=rooms_custom_fields.compute_schema_fingerprint(body),
+        )
+        next_body, audit = _apply_mutation(body, mutation)
+        assert audit["cleared_row_count"] == 1
+        assert audit["compatible_row_count"] == 1
+        for row in next_body.tables.rooms.rows:
+            assert "cf_pumps" not in row.custom_links
+            assert "cf_pumps" not in row.custom_values
+        new_field = next(f for f in rooms_field_registry.read_field_defs(next_body) if f.field_key == "cf_pumps")
+        assert new_field.field_type is CustomFieldType.short_text
+
+    def test_short_text_to_linked_record_wipes_custom_values(self) -> None:
+        body = _seed_pump(_empty_body(), pump_id="pmp_a")
+        text_field = TableFieldDef(
+            field_key="cf_note",
+            display_name="Note",
+            field_type=CustomFieldType.short_text,
+            config={},
+            created_at=datetime.now(UTC),
+            origin="custom",
+        )
+        body = _seed_linked_field(body, text_field)
+        room = RoomRow(id="rm_1")
+        room.custom_values["cf_note"] = "hello"  # type: ignore[assignment]
+        body = body.model_copy(
+            update={
+                "tables": body.tables.model_copy(
+                    update={"rooms": body.tables.rooms.model_copy(update={"rows": [*body.tables.rooms.rows, room]})}
+                )
+            }
+        )
+        after_field = TableFieldDef(
+            field_key="cf_note",
+            display_name="Note",
+            field_type=CustomFieldType.linked_record,
+            config={"target_table_path": ["equipment", "pumps"], "max_links": 1},
+            description=text_field.description,
+            origin=text_field.origin,
+            created_at=text_field.created_at,
+            created_by=text_field.created_by,
+        )
+        mutation = ChangeTypeMutation(
+            kind="changeType",
+            table_key="rooms",
+            field_id="cf_note",
+            after=after_field,
+            acknowledge_destructive=True,
+            expected_schema_fingerprint=rooms_custom_fields.compute_schema_fingerprint(body),
+        )
+        next_body, audit = _apply_mutation(body, mutation)
+        assert audit["cleared_row_count"] == 1
+        for row in next_body.tables.rooms.rows:
+            assert "cf_note" not in row.custom_values
+            assert "cf_note" not in row.custom_links
+        new_field = next(f for f in rooms_field_registry.read_field_defs(next_body) if f.field_key == "cf_note")
+        assert new_field.field_type is CustomFieldType.linked_record
+
+    def test_linked_record_to_short_text_clean_when_no_links(self) -> None:
+        body = _seed_pump(_empty_body(), pump_id="pmp_a")
+        body = _seed_linked_field(body, _linked_record_field_def())
+        body = _seed_room_with_links(body, room_id="rm_1", field_key="cf_pumps", pump_ids=[])
+        existing = next(f for f in rooms_field_registry.read_field_defs(body) if f.field_key == "cf_pumps")
+        mutation = ChangeTypeMutation(
+            kind="changeType",
+            table_key="rooms",
+            field_id="cf_pumps",
+            after=_to_short_text_target(existing),
+            expected_schema_fingerprint=rooms_custom_fields.compute_schema_fingerprint(body),
+        )
+        next_body, audit = _apply_mutation(body, mutation)
+        assert audit["cleared_row_count"] == 0
+        assert audit["compatible_row_count"] == 1
+        new_field = next(f for f in rooms_field_registry.read_field_defs(next_body) if f.field_key == "cf_pumps")
+        assert new_field.field_type is CustomFieldType.short_text

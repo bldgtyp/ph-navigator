@@ -97,7 +97,46 @@ export function coerceFieldValue(
     }
     if (!trimmed && fieldAllowsNull(fieldDef)) return { ok: true, value: null };
   }
+  if (fieldDef?.field_type === "linked_record") {
+    return coerceLinkedRecordPaste(trimmed, fieldDef);
+  }
   return { ok: true, value: raw };
+}
+
+// Linked-record paste accepts the JSON-serialized id list emitted by
+// `formatClipboardValue` (copy from a sibling linked_record cell) and
+// rejects any other shape — including stringified pill text
+// ("Pump A, Pump B") which would silently corrupt the `custom_links`
+// bag (PRD §11 Q24). An empty paste clears the cell.
+function coerceLinkedRecordPaste(
+  trimmed: string,
+  fieldDef: FieldDef,
+): { ok: true; value: string[] } | { ok: false; message: string } {
+  if (!trimmed) return { ok: true, value: [] };
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(trimmed);
+  } catch {
+    return { ok: false, message: "Expected a JSON list of linked-record ids." };
+  }
+  if (!Array.isArray(parsed) || parsed.some((entry) => typeof entry !== "string")) {
+    return { ok: false, message: "Expected a JSON list of linked-record ids." };
+  }
+  const seen = new Set<string>();
+  const ids: string[] = [];
+  for (const entry of parsed) {
+    if (entry.length === 0 || seen.has(entry)) continue;
+    seen.add(entry);
+    ids.push(entry);
+  }
+  const maxLinks = fieldDef.linked_record_config?.max_links;
+  if (typeof maxLinks === "number" && ids.length > maxLinks) {
+    return {
+      ok: false,
+      message: `${fieldDef.display_name} accepts at most ${maxLinks} link${maxLinks === 1 ? "" : "s"}.`,
+    };
+  }
+  return { ok: true, value: ids };
 }
 
 export function fieldAllowsNull(fieldDef: FieldDef | undefined): boolean {

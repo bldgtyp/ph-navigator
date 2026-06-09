@@ -33,6 +33,8 @@ function chooseAutocompleteOption(label: string, optionName: string) {
   fireEvent.click(screen.getByRole("option", { name: optionName }));
 }
 
+type PathLabel = { path: string[]; label: string };
+
 type HarnessProps = {
   initialField?: FieldDef;
   dispatchBundle?: ReturnType<typeof vi.fn>;
@@ -43,6 +45,7 @@ type HarnessProps = {
   sourceCustomFieldType?: CustomFieldType;
   preflightRows?: ReadonlyArray<PreflightSourceRow>;
   optionRows?: ReadonlyArray<PreflightSourceRow>;
+  linkedRecordTargets?: ReadonlyArray<PathLabel>;
 };
 
 function Harness({
@@ -53,6 +56,7 @@ function Harness({
   sourceCustomFieldType,
   preflightRows,
   optionRows,
+  linkedRecordTargets,
 }: HarnessProps) {
   const [open, setOpen] = useState(true);
   const [fieldDef, setFieldDef] = useState<FieldDef | undefined>(initialField);
@@ -130,6 +134,7 @@ function Harness({
           row: { id: "rm_1", values: formulaPreviewValues },
           rowsRevision: formulaRowsRevision,
         }}
+        linkedRecordTargets={linkedRecordTargets}
       />
     </div>
   );
@@ -815,5 +820,73 @@ describe("FieldConfigModal", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => expect(screen.getByText("backend boom")).toBeInTheDocument());
     expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  describe("linked_record", () => {
+    const PUMPS_TARGET = { path: ["equipment", "pumps"], label: "Pumps" };
+
+    test("switching to linked_record renders the section and gates Save until target picked", () => {
+      render(<Harness sourceCustomFieldType="short_text" linkedRecordTargets={[PUMPS_TARGET]} />);
+      fireEvent.click(screen.getByRole("radio", { name: "Linked record" }));
+      expect(screen.getByTestId("field-config-section-linked-record")).toBeInTheDocument();
+      // Target unset → Save disabled even though the type changed.
+      expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+    });
+
+    test("picking a target enables Save and dispatches the linked-record payload", async () => {
+      const dispatchBundle = vi.fn().mockResolvedValue(undefined);
+      render(
+        <Harness
+          dispatchBundle={dispatchBundle}
+          sourceCustomFieldType="short_text"
+          linkedRecordTargets={[PUMPS_TARGET]}
+        />,
+      );
+      fireEvent.click(screen.getByRole("radio", { name: "Linked record" }));
+      const select = screen.getByLabelText("Target table") as HTMLSelectElement;
+      fireEvent.change(select, { target: { value: "equipment/pumps" } });
+      const saveButton = screen.getByRole("button", { name: "Save" });
+      expect(saveButton).not.toBeDisabled();
+      fireEvent.click(saveButton);
+      await waitFor(() =>
+        expect(dispatchBundle).toHaveBeenCalledWith(
+          expect.objectContaining({
+            fieldType: "linked_record",
+            linkedRecordTargetPath: ["equipment", "pumps"],
+            linkedRecordMaxLinks: 1,
+          }),
+        ),
+      );
+    });
+
+    test("editing max_links in place on an existing linked_record dispatches only the cardinality change", async () => {
+      const dispatchBundle = vi.fn().mockResolvedValue(undefined);
+      const initial: FieldDef = baseField({
+        field_type: "linked_record",
+        custom_field_type: "linked_record",
+        linked_record_config: { target_table_path: ["equipment", "pumps"], max_links: 1 },
+      });
+      render(
+        <Harness
+          initialField={initial}
+          dispatchBundle={dispatchBundle}
+          sourceCustomFieldType="linked_record"
+          linkedRecordTargets={[PUMPS_TARGET]}
+        />,
+      );
+      // Q13 — target dropdown disabled (locked) on an existing linked_record.
+      expect(screen.getByLabelText("Target table")).toBeDisabled();
+      fireEvent.click(screen.getByRole("radio", { name: "Multiple records" }));
+      fireEvent.click(screen.getByRole("button", { name: "Save" }));
+      await waitFor(() =>
+        expect(dispatchBundle).toHaveBeenCalledWith(
+          expect.objectContaining({
+            linkedRecordMaxLinks: null,
+          }),
+        ),
+      );
+      // No linkedRecordTargetPath in payload because type did not change.
+      expect(dispatchBundle.mock.calls[0]?.[0]).not.toHaveProperty("linkedRecordTargetPath");
+    });
   });
 });

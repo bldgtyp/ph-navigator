@@ -1,3 +1,4 @@
+// @size-exception: planning/features/record-linking/phases/phase-01-link-values.md
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
 import { useGridEdit } from "../hooks/useGridEdit";
@@ -408,5 +409,112 @@ describe("useGridEdit", () => {
       expect(ok).toBe(false);
     });
     expect(result.current.onWrite).not.toHaveBeenCalled();
+  });
+
+  describe("linked_record", () => {
+    const linkedField: FieldDef = {
+      field_key: "cf_pumps",
+      field_type: "linked_record",
+      display_name: "Pumps",
+      linked_record_config: { target_table_path: ["equipment", "pumps"], max_links: null },
+    };
+    const singleLinkField: FieldDef = {
+      field_key: "cf_pump",
+      field_type: "linked_record",
+      display_name: "Pump",
+      linked_record_config: { target_table_path: ["equipment", "pumps"], max_links: 1 },
+    };
+
+    test("start opens a stateless linked_record editor", () => {
+      const { result } = setup({ fieldDefs: [linkedField] });
+      act(() => {
+        result.current.edit.start({
+          rowId: "rm_1",
+          fieldKey: "cf_pumps",
+          initialValue: ["pmp_a"],
+          intent: "extend",
+        });
+      });
+      expect(result.current.edit.editing?.editor).toEqual({ kind: "linked_record" });
+      expect(result.current.edit.editing?.originalValue).toEqual(["pmp_a"]);
+    });
+
+    test("commitLinkedRecord dispatches cell op with deduped ids and an inverse", async () => {
+      const { result } = setup({ fieldDefs: [linkedField] });
+      act(() => {
+        result.current.edit.start({
+          rowId: "rm_1",
+          fieldKey: "cf_pumps",
+          initialValue: ["pmp_a"],
+          intent: "extend",
+        });
+      });
+      await act(async () => {
+        const ok = await result.current.edit.commitLinkedRecord(["pmp_b", "pmp_b", "pmp_c"]);
+        expect(ok).toBe(true);
+      });
+      expect(result.current.onWrite).toHaveBeenCalledTimes(1);
+      const [op] = result.current.onWrite.mock.calls[0] as [WriteOp];
+      expect(op).toEqual({
+        kind: "cell",
+        writes: [{ rowId: "rm_1", fieldKey: "cf_pumps", value: ["pmp_b", "pmp_c"] }],
+      });
+      expect(result.current.edit.editing).toBeNull();
+    });
+
+    test("commitLinkedRecord with same ids is a noop", async () => {
+      const { result } = setup({ fieldDefs: [linkedField] });
+      act(() => {
+        result.current.edit.start({
+          rowId: "rm_1",
+          fieldKey: "cf_pumps",
+          initialValue: ["pmp_a", "pmp_b"],
+          intent: "extend",
+        });
+      });
+      await act(async () => {
+        const ok = await result.current.edit.commitLinkedRecord(["pmp_a", "pmp_b"]);
+        expect(ok).toBe(true);
+      });
+      expect(result.current.onWrite).not.toHaveBeenCalled();
+      expect(result.current.edit.editing).toBeNull();
+    });
+
+    test("commitLinkedRecord rejects past max_links cap and surfaces an error", async () => {
+      const { result } = setup({ fieldDefs: [singleLinkField] });
+      act(() => {
+        result.current.edit.start({
+          rowId: "rm_1",
+          fieldKey: "cf_pump",
+          initialValue: [],
+          intent: "extend",
+        });
+      });
+      await act(async () => {
+        const ok = await result.current.edit.commitLinkedRecord(["pmp_a", "pmp_b"]);
+        expect(ok).toBe(false);
+      });
+      expect(result.current.onWrite).not.toHaveBeenCalled();
+      expect(result.current.onAnnounce).toHaveBeenCalledWith(
+        expect.stringContaining("at most 1 link"),
+      );
+    });
+
+    test("commitLinkedRecord with no write handler is a no-op", async () => {
+      const { result } = setup({ fieldDefs: [linkedField], hasWriteHandler: false });
+      act(() => {
+        result.current.edit.start({
+          rowId: "rm_1",
+          fieldKey: "cf_pumps",
+          initialValue: [],
+          intent: "extend",
+        });
+      });
+      await act(async () => {
+        const ok = await result.current.edit.commitLinkedRecord(["pmp_a"]);
+        expect(ok).toBe(false);
+      });
+      expect(result.current.onWrite).not.toHaveBeenCalled();
+    });
   });
 });

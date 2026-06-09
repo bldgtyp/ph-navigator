@@ -1,3 +1,4 @@
+// @size-exception: planning/features/record-linking/phases/phase-01-link-values.md
 // Builders are the single chokepoint where the wire shape is
 // constructed and inline preflight runs. The union mirrors
 // `backend/features/project_document/schema_mutations.py` — fields
@@ -468,6 +469,35 @@ export function buildNextConfigForFieldTypeChange(
     delete nextConfig.result_type;
   } else if (request.formulaSource !== undefined) {
     nextConfig.source = request.formulaSource;
+  }
+  if (nextFieldType === "linked_record") {
+    // PRD Q13 — on a type change into linked_record the modal must
+    // supply the target path. When the type is unchanged, `nextConfig`
+    // is already a structuredClone of `source.config` so the existing
+    // path carries through unaltered (retargeting is rejected backend-
+    // side with `linked_record_retarget_not_supported`).
+    if (typeChanged) {
+      if (!request.linkedRecordTargetPath || request.linkedRecordTargetPath.length === 0) {
+        throw new Error(
+          "buildNextConfigForFieldTypeChange: linked_record requires linkedRecordTargetPath on type change.",
+        );
+      }
+      nextConfig.target_table_path = [...request.linkedRecordTargetPath];
+    }
+    nextConfig.max_links =
+      request.linkedRecordMaxLinks !== undefined
+        ? request.linkedRecordMaxLinks
+        : ((source.config as { max_links?: number | null }).max_links ?? null);
+  } else {
+    // §B4 — the frontend strips `target_table_path` / `max_links` from
+    // the config when a field changes AWAY from linked_record. The
+    // backend's `CONVERSION_MATRIX` is `linked_record_wipe` for both
+    // `linked_record → *` and `* → linked_record`, and
+    // `_apply_linked_record_wipe` clears both bag sides on every row
+    // — see `backend/features/project_document/mutations/{models,type_conversion}.py`.
+    // So no per-row `custom_links` cleanup is required client-side.
+    delete nextConfig.target_table_path;
+    delete nextConfig.max_links;
   }
   return nextConfig;
 }
