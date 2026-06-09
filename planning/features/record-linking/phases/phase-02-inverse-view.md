@@ -1,10 +1,11 @@
 ---
 DATE: 2026-06-08
 TIME: planning
-STATUS: Complete for the current link-target surface (canonical
-        Rooms→Pumps). Focused backend/frontend checks pass, `make
-        format` is clean, and `make ci` is green. Browser smoke/e2e
-        evidence remains an explicit follow-up tracked in `STATUS.md`.
+STATUS: COMPLETE for the current link-target surface (canonical
+        Rooms→Pumps). Focused backend/frontend checks pass. Browser
+        smoke/e2e evidence is recorded by
+        `frontend/tests/e2e/record-linking-rooms-pumps.spec.ts` with
+        screenshots under `../assets/e2e/rooms-pumps/`.
 AUTHOR: Ed May (with Claude)
 SCOPE: Server-computed inverse view: target tables surface "incoming
        links" as read-only columns, target-table inverse fingerprints

@@ -3,14 +3,12 @@ DATE: 2026-06-08
 TIME: -
 STATUS: In implementation — product / behavior contract is accepted.
         Phase plans exist. Phase 1 + Phase 1.b source-side
-        Rooms→Pumps implementation is mostly in place, but not
-        Complete until linked_record deleteField cleanup, browser
-        smoke / e2e evidence.
-        Phase 2 inverse-view work is implemented in the current
-        worktree for the canonical Rooms→Pumps target surface, with
-        `make format` / `make ci` green and browser evidence still
-        pending. Phase 3 rollups have not started. `STATUS.md` is the
-        current execution ledger.
+        Rooms→Pumps implementation is complete for the canonical
+        surface, including linked_record deleteField cleanup and
+        browser/e2e smoke evidence. Phase 2 inverse-view work is
+        complete for the canonical Rooms→Pumps target surface. Phase 3
+        rollups have not started. `STATUS.md` is the current execution
+        ledger.
 AUTHOR: Ed May (with Claude)
 SCOPE: Add AirTable-style record-linking between project-document
        tables in PHN V2 — a new user-creatable `linked_record` field
@@ -423,10 +421,9 @@ Notable cross-phase deliverables:
 - [x] changeType to/from `linked_record` wipes row data for that
   `field_key` on both bag sides and reports the cleared row count in
   the mutation summary (Q12).
-- [ ] deleteField for `linked_record` removes row data for that
-  `field_key` on both bag sides. Current bug: stale
-  `custom_links[field_key]` remains after the FieldDef is removed and
-  validation returns `422 invalid_project_document`.
+- [x] deleteField for `linked_record` removes row data for that
+  `field_key` on both bag sides. Regression coverage:
+  `test_project_document_linked_record.py::TestDeleteFieldDispatcher`.
 - [x] Source-table writes that touch `custom_links` change the target
   table response's `inverse_links_fingerprint` (Q14). API-shape
   adjustment: write concurrency still uses document-level

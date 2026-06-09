@@ -27,6 +27,7 @@ from features.project_document.mutations.guards import (
     find_field,
     read_rows_from_envelope,
     replace_rows_in_envelope,
+    strip_field_from_row,
 )
 from features.project_document.mutations.models import (
     CONVERSION_MATRIX,
@@ -604,17 +605,7 @@ def _apply_linked_record_wipe(
 
     new_rows: list[object] = []
     for row in rows:
-        next_row = row
-        current_values = capability.read_row_custom_values(row)
-        if field_id in current_values:
-            cleaned = dict(current_values)
-            cleaned.pop(field_id, None)
-            next_row = capability.set_row_custom_values(next_row, cleaned)
-        current_links = capability.read_row_links(next_row)
-        if field_id in current_links:
-            cleaned_links = dict(current_links)
-            cleaned_links.pop(field_id, None)
-            next_row = capability.set_row_links(next_row, cleaned_links)
+        next_row, _ = strip_field_from_row(row, field_id, capability)
         new_rows.append(next_row)
     next_body = replace_rows_in_envelope(next_body, mutation.table_key, new_rows)
 

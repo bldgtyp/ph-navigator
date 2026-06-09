@@ -1,7 +1,8 @@
 ---
 DATE: 2026-06-08
 TIME: planning
-STATUS: Phase 1 backend complete; frontend standalone primitives +
+STATUS: COMPLETE for canonical Rooms→Pumps source-side linking.
+        Phase 1 backend complete; frontend standalone primitives +
         FieldConfigModal integration + `useRowFocusHighlight` hook +
         backend changeType e2e pytest complete (second pass
         2026-06-08); data-table dispatch (GridBody render +
@@ -16,12 +17,11 @@ STATUS: Phase 1 backend complete; frontend standalone primitives +
         closed end-to-end. P4.4 fill/paste/undo + linked_record write
         routing into `custom_links` complete (sixth pass 2026-06-08).
         **Current audit 2026-06-09:** Phase 1.b §A1–§A7 and §B1–§B7
-        are implemented with focused regression tests, but Phase 1 is
-        not Complete / user-shippable yet. Missing closeout: fix the
-        linked_record deleteField `custom_links` cleanup bug, record a
-        browser smoke / e2e for the canonical Rooms→Pumps loop. The
-        current `make format` / `make ci` gate is green. Live next
-        steps are tracked in `../STATUS.md`.
+        are implemented with focused regression tests. Closeout
+        2026-06-09: linked_record deleteField `custom_links` cleanup
+        fixed; canonical Rooms→Pumps browser smoke/e2e recorded under
+        `../assets/e2e/rooms-pumps/`. Live next steps are tracked in
+        `../STATUS.md`.
 AUTHOR: Ed May (with Claude)
 SCOPE: First user-facing slice: a `linked_record` custom field type
        that editors can add through the field-config modal, link
@@ -62,10 +62,9 @@ the **complete write path** end-to-end:
   same as any other field type.
 
 Phase 1 itself owns **no inverse view** — Phase 2 owns that. The
-current checkout now has active Phase 2 WIP for read-only inverse
-columns, but the source-side Phase 1 editing path should still stand
-on its own. Phase 1 is not done until the linked-field delete cleanup,
-browser smoke / e2e evidence, and current full CI gate are closed.
+source-side Phase 1 editing path now stands on its own for the
+canonical Rooms→Pumps loop: linked-record field add, picker write,
+reload round-trip, and pill navigation are covered by e2e smoke.
 
 ## P1. Source review notes
 
@@ -108,13 +107,13 @@ without a PRD update.
 
 ## P2. Acceptance — Phase 1 done when
 
-**Status as of 2026-06-09 audit** — see `../STATUS.md` for the live tracker:
+**Status as of 2026-06-09 closeout** — see `../STATUS.md` for the live tracker:
 
 | # | Item | State |
 |---|---|---|
 | 1 | enum + JSON-Schema-side wire shape | ✅ enum + `custom_links` row shape shipped; JSON-Schema export regen pending if a generated artifact is shipped (P4.6) |
 | 2 | modal exposes "Linked Record" + target + cardinality | ✅ `FieldConfigSectionLinkedRecord` integrated into `FieldConfigModal`; Save gated on target pick; Q13 target-lock honored in-place |
-| 3 | save round-trip through schema-mutation pipeline | ✅ add / edit / changeType path works; deleteField has a known `custom_links` cleanup bug tracked below |
+| 3 | save round-trip through schema-mutation pipeline | ✅ add / edit / changeType / deleteField paths work; deleteField strips both row bags before schema removal |
 | 4 | picker UX (search, sort, virtualize, columns) | ✅ `LinkedRecordPicker` rendered by `GridBody` in edit mode; mode derived from `linked_record_config.max_links`; candidates supplied via `linkedRecordOps[fieldKey].candidates` |
 | 5 | pill list renders picked rows w/ fallback | ✅ `LinkedRecordCell` rendered by `GridBody` in read mode; resolver supplied via `linkedRecordOps[fieldKey].resolve`; RoomsTable column accessor + `buildLinkedRecordOps` helper land the consumer-side path; `tableFieldToFieldDef` now propagates `linked_record_config` from persisted config |
 | 6 | pill click → `?focus=<row_id>` highlight | ✅ Rooms→Pumps page wiring complete via `EquipmentPageBody` URL seeding, active-tab selection, and `PumpsTableSlot` focus highlight |
@@ -127,9 +126,9 @@ without a PRD update.
 | 13 | `erv_unit_ids` retirement + `schema_version` 4 → 5 | ✅ shipped end-to-end (RoomRow, validator, constants, ~13 backend fixtures, frontend types + RoomsTable + equipment lib) |
 | 14 | `RowWithCustomFields` mixin across `*Row`s | ✅ all 9 row models inherit |
 | 15 | `_validate_rows_custom_links` wired per table | ✅ wired on every FieldDef-capable table |
-| 16 | `make ci` green; vitest + pytest add coverage | ✅ focused backend / frontend regression suites pass; current checkout `make format` left files unchanged and `make ci` is green |
-| 17 | linked_record deleteField removes stored links | ❌ current backend leaves `custom_links[field_key]` on rows after deleting the FieldDef and returns `422 invalid_project_document`; fix in `field_ops.py` / `guards.py` |
-| 18 | browser smoke / e2e evidence | ❌ no recorded MCP smoke, screenshots, clip, or reusable `frontend/tests/e2e/` spec yet for the canonical Rooms→Pumps loop |
+| 16 | `make ci` green; vitest + pytest add coverage | ✅ focused backend / frontend regression suites pass; full closeout gate pending for this final cleanup |
+| 17 | linked_record deleteField removes stored links | ✅ `strip_field_from_rows` removes both `custom_values[field_key]` and `custom_links[field_key]`; regression in `TestDeleteFieldDispatcher` |
+| 18 | browser smoke / e2e evidence | ✅ reusable `frontend/tests/e2e/record-linking-rooms-pumps.spec.ts`; screenshots in `../assets/e2e/rooms-pumps/` |
 
 Legend: ✅ shipped · ⚠️ partially complete / blocked by current closeout · ❌ missing next step
 
@@ -502,9 +501,9 @@ artifact.
 - **Rollups / `linked_from(...)`** — Phase 3.
 - **Document-level formula cycle detection** — Phase 3.
 - **"Pump A is already on 3 other rooms" hint inside the picker** —
-  Phase 2 polish.
+  polish follow-up.
 - **Optional "Pump A removed; unlinked from 3 rooms" toast on
-  delete** — Phase 2 polish.
+  delete** — polish follow-up.
 - **Catalog-record linking** (separate field type — see PRD
   non-goal).
 - **Self-link support** (PRD Q2 / Q22 — deferred).
