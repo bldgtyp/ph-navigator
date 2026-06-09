@@ -143,6 +143,29 @@ def apply_ventilators_replace(body: ProjectDocumentV1, payload: BaseModel) -> Pr
         rows=ventilators_payload.ventilators,
     )
     next_equipment = body.tables.equipment.model_copy(update={"ervs": next_ventilators_envelope})
+
+    # Cross-table cascade: any HP indoor unit whose `linked_erv_unit_id`
+    # pointed at a removed ventilator gets the link cleared, so the
+    # document still validates after the ERV row vanishes. Silent — no
+    # preview, no dialog. The strict-referential-integrity validator in
+    # `document.py` is the only thing that blocks a save with a
+    # *dangling* link; legitimate deletes never trip it.
+    prior_ids = {row.id for row in body.tables.equipment.ervs.rows}
+    next_ids = {row.id for row in ventilators_payload.ventilators}
+    removed_ids = prior_ids - next_ids
+    if removed_ids:
+        heat_pumps = next_equipment.heat_pumps
+        cascaded_indoor_units = [
+            row.model_copy(update={"linked_erv_unit_id": None}) if row.linked_erv_unit_id in removed_ids else row
+            for row in heat_pumps.indoor_units
+        ]
+        if cascaded_indoor_units != list(heat_pumps.indoor_units):
+            next_equipment = next_equipment.model_copy(
+                update={
+                    "heat_pumps": heat_pumps.model_copy(update={"indoor_units": cascaded_indoor_units}),
+                }
+            )
+
     next_tables = body.tables.model_copy(update={"equipment": next_equipment})
     next_body = body.model_copy(update={"tables": next_tables, "single_select_options": options})
     return validate_document(next_body.model_dump(mode="json"))

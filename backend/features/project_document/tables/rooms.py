@@ -279,6 +279,31 @@ def apply_rooms_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectD
         rows=rooms_payload.rooms,
     )
     next_tables = body.tables.model_copy(update={"rooms": next_envelope})
+
+    # Cross-table cascade: any HP indoor unit's `served_room_ids[]`
+    # array is filtered to drop ids of rooms that no longer exist, so
+    # the document still validates after the row vanishes. Silent —
+    # the indoor unit's identity is unchanged. `prior_row_ids` is the
+    # same set computed for the defaults-backfill path above; reusing
+    # it avoids walking `body.tables.rooms.rows` twice.
+    next_ids = {room.id for room in rooms_payload.rooms}
+    removed_ids = prior_row_ids - next_ids
+    if removed_ids:
+        heat_pumps = next_tables.equipment.heat_pumps
+        cascaded_indoor_units = [
+            row.model_copy(update={"served_room_ids": [rid for rid in row.served_room_ids if rid not in removed_ids]})
+            if any(rid in removed_ids for rid in row.served_room_ids)
+            else row
+            for row in heat_pumps.indoor_units
+        ]
+        if cascaded_indoor_units != list(heat_pumps.indoor_units):
+            next_equipment = next_tables.equipment.model_copy(
+                update={
+                    "heat_pumps": heat_pumps.model_copy(update={"indoor_units": cascaded_indoor_units}),
+                }
+            )
+            next_tables = next_tables.model_copy(update={"equipment": next_equipment})
+
     next_body = body.model_copy(update={"tables": next_tables, "single_select_options": options})
     return validate_document(next_body.model_dump(mode="json"))
 

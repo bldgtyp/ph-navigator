@@ -921,9 +921,13 @@ None outstanding.
 
 ## US-EQ-4 — ERVs sub-tab — *Amendment 2026-06-09: Linked-from-HP-indoor surfaces*
 
-**Status:** Amendment to existing US-EQ-4 · **Priority:** MVP (ships
-in Phase 4 of the Heat Pumps rollout — see
-`planning/features/heat-pumps/PRD.md` §5.4)
+**Status:** Phase 4 partially implemented (2026-06-09). Count
+column (AC-AMEND-1/2) ships; modal-badge deep-link
+(AC-AMEND-3) descoped — Ventilators uses inline DataTable editing,
+no row-detail modal exists to host the badge. Tracked as
+**Q-HP-FOLLOWUP-7** (post-v1): revisit when / if Ventilators
+grows a row-detail modal. · **Priority:** MVP (Phase 4 of the
+Heat Pumps rollout — see `planning/features/heat-pumps/PRD.md` §5.4)
 **Driver:** Heat Pumps feature requires the ERV sub-tab to expose
 the reverse side of the HP-indoor ↔ ERV link captured by
 `heat_pump_indoor_units[*].linked_erv_unit_id`.
@@ -942,25 +946,39 @@ the reverse side of the HP-indoor ↔ ERV link captured by
    {tag}"` for each linked tag (comma-separated if multiple).
    Each tag is a deep-link that navigates the user to the
    matching row in `…/equipment/heat-pumps/units-indoor`.
-4. **Delete behavior:** unchanged on the ERV side (the existing
-   US-EQ-2 cascade still nulls `rooms[*].erv_unit_ids`). The new
-   cascade adds: on ERV delete, every HP indoor unit's
-   `linked_erv_unit_id = this.id` is set to `null` and a soft-
-   warning toast lists the affected HP indoor tags.
+4. **Delete behavior:** Phase 4 ships a **silent backend cascade**
+   on the ERV side — when a ventilator row is removed via the
+   slice-replace endpoint, `apply_ventilators_replace` nulls
+   `linked_erv_unit_id` on every HP indoor unit that referenced
+   it before re-validating the document. No pre-delete dialog or
+   post-delete toast (scope amendment 2026-06-09 — see
+   `planning/features/heat-pumps/phases/phase-04-erv-and-rooms-cross-link.md`
+   "Scope amendment"). The historical "US-EQ-2 cascade still nulls
+   `rooms[*].erv_unit_ids`" claim is obsolete — no `erv_unit_ids`
+   field exists on rooms in the V2 codebase.
 
 ### Acceptance criteria (additive to existing US-EQ-4)
 
-- AC-AMEND-1: `Linked HP indoor` column appears in the column-
-  visibility overflow menu; togglable on.
-- AC-AMEND-2: When toggled on, the column renders an integer count
-  per row; sorts numerically; filters work.
-- AC-AMEND-3: Opening the row-detail modal of an ERV with ≥1
-  linking HP indoor unit shows the badge with deep-link(s).
-- AC-AMEND-4: Deleting an ERV that has ≥1 linking HP indoor unit
+- ✅ AC-AMEND-1 (Phase 4 implemented 2026-06-09): `Linked HP
+  indoor` column appears in the column-visibility overflow menu;
+  default-hidden; togglable on.
+- ✅ AC-AMEND-2 (Phase 4 implemented 2026-06-09): When toggled
+  on, the column renders an integer count per row; sorts
+  numerically; filters work. While the HP slice is still
+  fetching, the cell renders `—` to distinguish "loading" from
+  "no link".
+- ◻ AC-AMEND-3 (descoped 2026-06-09 — Q-HP-FOLLOWUP-7): badge
+  with deep-link on the ERV row-detail modal. No ERV row-detail
+  modal exists today; revisit when one is added.
+- ✏️ AC-AMEND-4 (Phase 4 implemented 2026-06-09, behavior
+  amended): Deleting an ERV that has ≥1 linking HP indoor unit
   succeeds; the linked HP indoor rows have `linked_erv_unit_id`
-  cleared; a single toast names every affected HP indoor `tag`.
-- AC-AMEND-5: Viewer (locked-version + read-only) renders the
-  badge and column unchanged; deep-link still works.
+  cleared via silent backend cascade. **No toast** (scope
+  amendment — silent matches D-HP-19 spirit without dragging in
+  a row-detail modal or an inline-delete intercept path).
+- ✏️ AC-AMEND-5 (partial): Viewer renders the column unchanged.
+  Badge surfaces (AC-AMEND-3) are descoped, so the deep-link
+  navigation case is moot until a modal exists.
 
 ### Cross-references
 - HP indoor side: US-EQ-11 (HP Units — Indoor) criterion 6.
@@ -1190,8 +1208,11 @@ once Rooms supplies canonical option ids, the existing
 
 ## US-EQ-11 — HP Units — Indoor DataTable
 
-**Status:** Phase 3 implemented; `served_room_ids` picker + ERV
-link deferred to Phase 4 (Heat Pumps PRD §4.5 / §5) ·
+**Status:** Phase 4 implemented (2026-06-09) — `linked_erv_unit_id`
+single-select picker and `served_room_ids` multi-select picker are
+both wired on the indoor unit row-detail modal. Backend silent
+cascades on ventilator delete (null the link) and room delete
+(filter the array) ship in this phase. ·
 **Priority:** MVP
 **Inherits:** US-Builder-Tables (criteria 1–17), US-EQ-1, US-EQ-7,
 US-EQ-4 (amendment)
@@ -1249,5 +1270,32 @@ picker (criterion 6), and the `floor_level` cross-table option-list
 sharing (criterion 7) all land in Phase 4 alongside the Rooms
 frontend. Same Phase 1 option-id caveat applies to the current
 free-text `Floor` input.
+
+### Phase 4 implementation notes (2026-06-09)
+
+The two "Configured in Phase 4" pills are gone. `linked_erv_unit_id`
+is now an always-rendered single-select sourced from
+`tables.equipment.ervs.rows` (sorted by `record_id`); the picker
+disables with helper text "Add an ERV first under Equipment → ERVs"
+when the source list is empty. `served_room_ids[]` is an
+always-rendered multi-select sourced from `tables.rooms.rows`
+(display per US-EQ-2: `{number} — {name}`). Both fields are
+inlined in `IndoorUnitRowModal.tsx` rather than broken into
+standalone picker components — they were too small to justify
+extraction. Backend cascades land in
+`apply_ventilators_replace` (nulls `linked_erv_unit_id` on every
+referencing HP indoor row when a ventilator is removed) and
+`apply_rooms_replace` (filters `served_room_ids[]` when a room is
+removed). Both cascades are silent — no preview, no dialog — per
+the scope amendment that descoped AC #6 modal badge and AC #8
+pre-delete dialog to Q-HP-FOLLOWUP-7.
+
+**Still carry-over (Phase 1 option-id caveat):** the free-text
+`Floor` input on the indoor unit modal still derives an `opt_…`
+via `optionIdFromLabel` rather than picking from
+`tables.rooms.floor_level`. Cross-table option-list sharing
+(criterion 7) is deferred until the shared single-select
+primitive lands; the free-text approach round-trips correctly in
+the meantime.
 
 ---

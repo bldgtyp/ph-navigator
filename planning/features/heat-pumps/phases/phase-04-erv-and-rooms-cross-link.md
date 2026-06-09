@@ -1,20 +1,70 @@
 ---
 DATE: 2026-06-09
-TIME: 15:00
-STATUS: DRAFT — Phase 4 outline. Depends on Phase 3. Cross-touches
-        existing US-EQ-2 (Rooms), US-EQ-4 (ERVs) surfaces.
+TIME: 17:00
+STATUS: ✅ IMPLEMENTED LOCALLY — scope amended 2026-06-09 (see
+        "Scope amendment" section). Awaiting `make ci` green +
+        commit. AC #6 (modal badge) and AC #8 pre-delete dialog
+        descoped to Q-HP-FOLLOWUP-7; everything else shipped.
 AUTHOR: Ed May (with Claude)
 SCOPE: Wire the `linked_erv_unit_id` and `served_room_ids[]` fields
-       on the HP Indoor Units page. Land the US-EQ-4 amendment
-       (reverse-lookup badge + column on the ERVs sub-tab). Land
-       the rooms-side referential integrity for HP indoor
-       references.
+       on the HP Indoor Units page. Add a default-hidden reverse-
+       lookup count column on the Ventilators table. Add backend
+       cascade rules so deleting a ventilator nulls referencing
+       HP `linked_erv_unit_id` and deleting a room filters
+       referencing HP `served_room_ids[]`.
 RELATED:
   - planning/features/heat-pumps/PRD.md §4.5, §4.6, §5.4
   - planning/features/heat-pumps/decisions.md D-HP-4, D-HP-11
   - context/user-stories/30-tables-equipment.md US-EQ-4 amendment,
     US-EQ-11
 ---
+
+## Scope amendment (2026-06-09)
+
+Three claims in the original draft turned out to be wrong on
+contact with the code; Phase 4 is replanned around what's actually
+true. Approach **B** (pickers + silent backend cascades, no
+pre-delete dialog, no Ventilator row-detail modal) was approved
+by Ed before implementation started.
+
+**False claim #1 — "Phase 0 already implements ERV/Room cascade
+rules at the service layer."** Phase 0's HP service only implements
+HP-internal cascades (outdoor → outdoor-units, indoor → indoor-units,
+outdoor-unit → indoor-unit `outdoor_unit_id` null). The
+document validator (`backend/features/project_document/document.py`
+lines 562–566) rejects a save with `ValueError("Missing linked ERV
+…")` / `ValueError("Missing served room …")` if any HP indoor row
+still references a removed ventilator or room. **Fix:** add
+cross-table cascades to `apply_ventilators_replace` and
+`apply_rooms_replace` (Step 5 in this phase plan).
+
+**False claim #2 — "Rooms delete already cascades to
+`rooms.erv_unit_ids` per US-EQ-2 criterion 6."** No
+`erv_unit_ids` field exists on rooms anywhere in the backend or
+frontend. The ERV ↔ rooms link is a future-direction item, not a
+prior implementation we're parallelling. **Fix:** the new HP-side
+cascade is just `served_room_ids[]` filter on the HP indoor unit;
+nothing on the rooms-side or ventilators-side beyond what was
+already in `RoomRow` / `VentilatorRow`.
+
+**False claim #3 — "ERV row-detail modal" (AC #6).** Ventilators
+uses inline `DataTable` editing through `onWrite` (whole-slice PUT).
+There is no row-detail modal to host an "Linked from HP indoor:
+{tag}" badge. **Fix:** AC #6 (modal badge with deep-link) is
+descoped to a future phase. The default-hidden count column
+(AC #5) ships, which gives users a way to spot linked ERVs without
+opening a modal. Tracked as **Q-HP-FOLLOWUP-7** (post-v1):
+revisit when / if Ventilators gets a row-detail modal.
+
+**Descoped from this phase (per amendment):**
+
+- AC #6 "Linked from HP indoor" modal badge with deep-link.
+- AC #8 pre-delete confirmation dialog with affected-row list
+  (silent backend cascade replaces it — matches D-HP-19 spirit
+  without requiring a Ventilators row-detail modal or a new
+  inline-delete intercept path).
+
+**Still in scope (amended ACs marked ✏️):**
 
 # Heat Pumps — Phase 4: ERV cross-link and Rooms link
 
@@ -54,34 +104,33 @@ where the real-world workflows get done. By the end:
    rows that won't use it. OPQ-4 (hidden vs disabled) is moot —
    the picker is just always shown.
 3. Source: `tables.equipment.ervs[]` formatted by `name`.
-4. The Phase 3 "Configured in Phase 4" pills are removed.
+4. ✅ The Phase 3 "Configured in Phase 4" pills are removed.
 
 ### On the ERVs page (US-EQ-4 amendment)
 
-5. **New column "Linked HP indoor"** added to the ERVs DataTable
-   column definitions. Default-hidden. Rendered value is the
-   count of HP indoor units whose `linked_erv_unit_id` matches
-   this ERV's id. Numeric sort; numeric filter operators.
-6. **Modal badge** "Linked from HP indoor: {tag}" appears in the
-   ERV row-detail modal header when ≥1 HP indoor unit links to
-   this ERV. Multiple tags comma-separated; each is a deep-link
-   to the matching indoor unit row on `…/heat-pumps/units-indoor`.
-7. Locked-version + Viewer: column + badge render, deep-link works
-   (read-only).
+5. **New column "Linked HP indoor"** added to the Ventilators
+   DataTable column definitions. Default-hidden. Rendered value
+   is the count of HP indoor units whose `linked_erv_unit_id`
+   matches this ventilator's id. Numeric sort; numeric filter
+   operators.
+6. ✏️ ~~Modal badge~~ **DESCOPED** — Ventilators has no row-detail
+   modal. Tracked as Q-HP-FOLLOWUP-7.
+7. Locked-version + Viewer: column renders (read-only).
 
 ### Cross-table delete cascades
 
-8. Deleting an ERV row with ≥1 HP indoor unit linking to it:
-   per D-HP-19, a **pre-delete confirmation dialog** lists the
-   affected HP indoor `tag` values ("Deleting ERV-N2 will clear
-   the linked-ERV reference on 2 HP indoor units: AHU-N2B, AHU-N5.
-   Continue?"); on confirm, affected HP indoor rows have
-   `linked_erv_unit_id` cleared. No post-delete toast.
+8. ✏️ Deleting an ERV row with ≥1 HP indoor unit linking to it:
+   **silent backend cascade** — the next Ventilators slice replace
+   that omits the row triggers `apply_ventilators_replace`, which
+   nulls `linked_erv_unit_id` on each referencing HP indoor unit
+   before validating the document. No pre-delete dialog (descoped
+   per scope amendment); the cascade is logged in the response
+   slice's draft etag the way any HP-side patch would be.
 9. Deleting a Room row with ≥1 HP indoor unit referencing it via
-   `served_room_ids[]`: succeeds; each referencing indoor unit's
-   array filters out the deleted id; **no dialog, no toast**
-   (silent — same pattern as ERV ↔ rooms direction; the indoor
-   unit's identity is unchanged).
+   `served_room_ids[]`: silent backend cascade — the next Rooms
+   slice replace that omits the row triggers `apply_rooms_replace`,
+   which filters the row id out of every `served_room_ids[]` array
+   before validating the document.
 
 ### Tests + CI
 
@@ -110,71 +159,89 @@ The picker is always rendered; no resolver hook needed. This step
 collapses to: ensure the ERV picker (Step 2) mounts unconditionally
 on the indoor-unit row-detail modal.
 
-### Step 2: ERV picker
+### Step 2: ERV picker — inline in IndoorUnitRowModal
 
-`frontend/src/features/equipment/heat-pumps/components/ErvPicker.tsx`:
+The picker is small enough to inline in `IndoorUnitRowModal.tsx`
+rather than break out a one-shot component:
 
-- Single-select pulling `tables.equipment.ervs[]` rows by `name`.
-- Used in the indoor-unit row-detail modal.
+- `IndoorUnitsTable` calls `useVentilatorsSliceForHp` (a thin
+  wrapper around `ventilatorsSliceFeature.useSliceQuery`) and
+  passes the resulting `ventilators` array into the modal.
+- Modal renders a single-select sorted by record_id ("tag"),
+  always rendered per D-HP-23 (no install_type gate). When the
+  ventilators list is empty, the picker is disabled with helper
+  text "Add an ERV first under Equipment → ERVs."
 
-### Step 3: Rooms multi-picker
+### Step 3: Rooms multi-picker — inline in IndoorUnitRowModal
 
-`frontend/src/features/equipment/heat-pumps/components/RoomsMultiPicker.tsx`:
+Same shape as Step 2 — kept inline for the same reason. Uses
+`useRoomsSliceForHp`. Display per US-EQ-2 pattern
+(`{number} — {name}` pulled from the room's `custom_values`).
+Multi-select; selected ids render as removable chips below the
+list.
 
-- Multi-select pulling `tables.rooms[]` rows. Display per US-EQ-2
-  pattern (`{number} — {name}`).
-- Reusable in case Phase 4 needs to surface the picker elsewhere
-  (e.g. the "Configured in Phase 4" pill removal in Phase 3
-  fields).
+### Step 4: Ventilators page amendment
 
-### Step 4: ERVs page amendment
+`frontend/src/features/equipment/components/VentilatorsTable.tsx`
+(actual path — original plan referenced `equipment/ervs/`, which
+doesn't exist; ERVs are persisted as "ventilators" throughout
+the V2 codebase):
 
-`frontend/src/features/equipment/ervs/columns.ts` (existing file
-edit):
+- Add a new column definition `linked_hp_indoor_count` rendering
+  the count of HP indoor units linking to this row.
+- Surface the count map through `VentilatorsTableSlot.tsx`, which
+  fetches the HP slice via `useHeatPumpsQuery` and computes a
+  `Map<string, number>` keyed by ventilator id.
+- Column is added to the table's default-hidden set so it doesn't
+  clutter the default view; users can show it via the column
+  visibility menu.
 
-- Add a new column definition `linked_hp_indoor_count` with a
-  rollup formula reading `heat_pump_indoor_units[*].linked_erv_unit_id`
-  matches.
-- Default-hidden via column-visibility config.
+(AC #6 modal badge is descoped — see scope amendment.)
 
-`frontend/src/features/equipment/ervs/components/ErvRowModal.tsx`:
+### Step 5: Backend cascade rules (NEW — not in Phase 0)
 
-- Add the "Linked from HP indoor" badge to the modal header.
-- Each tag is a `<Link>` to the indoor unit row's deep-link URL.
+Phase 0's HP service only cascades HP-internal references. Add
+ERV/Room → HP cascade logic to the slice-replace handlers that
+own each side of the link:
 
-### Step 5: Backend cascade rules
+- `backend/features/project_document/tables/ventilators.py`:
+  `apply_ventilators_replace` compares the prior and next
+  ventilator ids; for every removed id, null
+  `linked_erv_unit_id` on every HP indoor unit that referenced
+  it before re-running `validate_document`.
+- `backend/features/project_document/tables/rooms.py`:
+  `apply_rooms_replace` compares the prior and next room ids;
+  for every removed id, drop it from every HP indoor unit's
+  `served_room_ids[]` before validation.
 
-Phase 0 already implements the rules at the service layer (PRD
-§4.6). Phase 4 verifies the rules fire on real deletions via the
-new UI surfaces:
+Both cascades are silent — no preview, no dialog. The validator
+will block-with-422 any payload that introduces a *new* dangling
+reference (i.e. a save that names a non-existent ERV or room),
+which is the only case left where the user can hit a referential
+error in this slice.
 
-- Tests for ERV delete → HP indoor `linked_erv_unit_id` null.
-- Tests for Room delete → HP indoor `served_room_ids[]` filter.
+### Step 6: Tests
 
-These should pass against the Phase 0 service module; Phase 4 only
-needs to confirm the frontend toast / silent behaviors match the
-backend response shape.
+Backend tests (`backend/tests/features/`):
 
-### Step 6: US-EQ-2 (Rooms) regression
+- `test_apply_ventilators_replace_cascades_to_hp_indoor.py`:
+  delete a ventilator that an HP indoor unit references → HP
+  indoor `linked_erv_unit_id` becomes null; existing indoor unit
+  id, tag, and other fields are unchanged.
+- `test_apply_rooms_replace_cascades_to_hp_indoor.py`: delete a
+  room that an HP indoor unit's `served_room_ids[]` references →
+  the id disappears from the array; other ids are unchanged.
 
-Rooms delete already cascades to `rooms.erv_unit_ids` per US-EQ-2
-criterion 6. Phase 4 adds the parallel cascade to
-`heat_pump_indoor_units[*].served_room_ids[]`. Existing US-EQ-2
-test must still pass; a new test confirms the HP-side cascade
-fires on the same delete.
+### Step 7: Frontend tests
 
-### Step 7: Tests
-
-- `use-indoor-equip-install-type.test.ts` — resolves option label
-  correctly; returns undefined when equip row missing.
-- `ErvPicker.test.tsx`, `RoomsMultiPicker.test.tsx` — render +
-  selection.
-- `ErvRowModal.test.tsx` — badge appears when linked; deep-link
-  navigates correctly.
-- `IndoorUnitRowModal.test.tsx` — `linked_erv_unit_id` field
-  conditional visibility based on install_type label.
-- Playwright MCP smoke: full integrated-unit flow per acceptance
-  criterion 11.
+- `IndoorUnitRowModal.test.tsx` — extend existing tests: the ERV
+  picker renders all ventilators by name, persists selection, and
+  is empty when no ventilators exist; the Rooms picker renders
+  all rooms by display label and supports multi-select.
+- (No new component-file tests for pickers — they live inline
+  in `IndoorUnitRowModal.tsx` to keep the modal cohesive.
+  Extraction is fair game if either picker grows beyond ~30
+  lines, but neither needs it for v1.)
 
 ## Verification
 

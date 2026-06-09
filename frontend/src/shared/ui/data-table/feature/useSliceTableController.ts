@@ -84,6 +84,10 @@ export type UseSliceTableControllerArgs<TSlice, TRow extends { id: string }, TPa
   // Returns a fresh slice from the network. Used by reload-draft and
   // by the stale-draft conflict path.
   refetch: () => Promise<unknown>;
+  // Column ids hidden on first load. Applied only when the user has no
+  // saved view state for this table; subsequent toggles persist as
+  // usual.
+  defaultHiddenColumns?: string[];
 };
 
 export function useSliceTableController<TSlice, TRow extends { id: string }, TPayload>(
@@ -108,13 +112,22 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
     replaceMutation,
     schemaMutation,
     refetch,
+    defaultHiddenColumns,
   } = args;
 
   const isEditor = accessMode === "editor";
   const [actionError, setActionError] = useState<string | null>(null);
   const [editBlocker, setEditBlocker] = useState<EditBlocker | null>(null);
 
-  const viewDefaults = useMemo(() => emptyViewState(), []);
+  // Stringify-keyed memoization keeps `viewDefaults` identity stable
+  // when the caller passes an inline `["…"]` literal. `useProjectTableViewState`
+  // treats `defaults` as stable identity, so we cannot key on the array
+  // reference directly.
+  const defaultHiddenColumnsKey = JSON.stringify(defaultHiddenColumns ?? []);
+  const viewDefaults = useMemo(() => {
+    const hidden = JSON.parse(defaultHiddenColumnsKey) as string[];
+    return hidden.length > 0 ? { ...emptyViewState(), hiddenColumns: hidden } : emptyViewState();
+  }, [defaultHiddenColumnsKey]);
   const tableSchema = useTableSchema({
     tableKey,
     fieldDefs,
