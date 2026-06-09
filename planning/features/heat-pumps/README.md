@@ -29,16 +29,18 @@ the existing line-item equipment (Pumps, Fans, ERVs) because:
 
 ## Status
 
-**Research phase.** No code, no PRD yet. We're studying an existing
-BLDGTYP AirTable base to extract the real-world data model and edge
-cases, then deciding the V2 shape together.
+**Planning complete; awaiting Ed PRD sign-off.** All directional
+decisions are resolved; the PRD is drafted with a six-phase outline.
+No implementation code yet. See `STATUS.md` for the current ledger.
 
 ## Read order
 
 1. `research.md` — AirTable findings, observed shape, key insights
-2. (next) `decisions.md` — accepted answers to the discussion questions
-3. (next) `PRD.md` — V2 data shape + user-story spec
-4. (next) `phases/` — implementation plan
+2. `decisions.md` — 13 numbered resolutions (all closed 2026-06-09)
+3. `PRD.md` — V2 data shape, UI, REST, MCP, and phasing contract
+4. `STATUS.md` — current state, next step, verification ledger
+5. `phases/phase-00-backend-foundation.md` — backend foundation slice
+   (Phases 1–5 stubs land after Phase 0 completes)
 
 ## Open discussion (see `research.md` for full context)
 

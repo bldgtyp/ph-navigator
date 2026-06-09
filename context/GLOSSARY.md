@@ -56,8 +56,14 @@
 | --------------- | ------------------------------------------------------------------------------------------------ | --------------------------------------------- |
 | **Room**        | One interior space with floor level, occupancy, iCFA factor, and ERV associations                | Space, zone (Building Zone is separate), unit |
 | **Building Zone** | A user-defined single-select grouping a Room belongs to                                        | Sector, area, region                          |
-| **Equipment**   | Mechanical devices the Project owns; in v1: Fans, Pumps, ERVs                                    | Devices, gear, MEP                            |
+| **Equipment**   | Mechanical devices the Project owns; in v1: Fans, Pumps, ERVs, Heat Pumps                        | Devices, gear, MEP                            |
 | **ERV**         | An ERV/HRV ventilation unit row; `unit_type` is a user-defined option                            | Ventilator, recovery unit                     |
+| **HP Outdoor Equipment** | Project-scoped "type" table row. One row per unique AHRI-rated outdoor + paired-indoor model combo used on the project. Carries the performance data the Phius HP Estimator consumes. | HP type, outdoor model, HP equip |
+| **HP Indoor Equipment** | Project-scoped type table row. One row per unique indoor head / cassette / concealed-duct model used on the project.        | Indoor type, AHU model                        |
+| **HP Outdoor Unit** | An installed condenser instance with a drawing-schedule tag (e.g. `HP-17`). References one HP Outdoor Equipment row. | Outdoor unit, condenser, HP instance          |
+| **HP Indoor Unit** | An installed indoor head / cassette / concealed-duct instance with a drawing-schedule tag (e.g. `AHU-17L`). References one HP Indoor Equipment row, the HP Outdoor Unit it's wired to, and 0..N served Rooms. | Indoor unit, AHU instance, head           |
+| **Integrated unit** | A physical box that implements both an HP indoor coil and an ERV core (e.g. Mitsubishi LEV Kit + Lossnay LGH). Modeled as one HP Indoor Unit row + one ERV row, linked by `linked_erv_unit_id`. | Combo unit, dual unit, hybrid ERV    |
+| **Phius HP Performance Estimator** | The current-version Phius spreadsheet (`Phius_Heat Pump Performance Estimator_v25.1.1`) whose "Air Source Heat Pump Performance Data" section is the export target for HP Outdoor Equipment. | Phius HP calc, HP estimator        |
 | **HBJSON**      | A Honeybee-PH JSON model file uploaded for the Model tab's 3D viewer; **read-only**, never imports into Builder tables | HB model, 3D file, geometry file |
 
 ## People & access
@@ -95,6 +101,7 @@
 - A **Project Material** is the Project's copy of a Catalog **Material**, linked back via **catalog_origin**.
 - An **Aperture Type** is a grid of **Aperture Elements**, each inlining four side-specific **Frame Type** values and one **Glazing Type** (no `project_frame_types` table — frames are inlined, unlike Materials). Apertures cover all envelope openings — doors, windows, skylights.
 - **Catalog entries** have **Catalog versions**; Picking copies values in. A Project never references a Catalog version live.
+- **Heat Pumps** are modeled as four project-scoped tables under `tables.equipment`: `heat_pump_outdoor_equip` (types) ← `heat_pump_outdoor_units` (instances, 1:N) → `heat_pump_indoor_units` (instances, 1:N) → `heat_pump_indoor_equip` (types, N:1). Indoor units may additionally link to an **ERV** row via `linked_erv_unit_id` for **Integrated unit** cases.
 - **HBJSON** files are independent of Versions and never feed Builder tables.
 
 ## Example dialogue

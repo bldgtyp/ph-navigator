@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-09
 TIME: afternoon ET
-STATUS: Not started
+STATUS: Implemented — shipped in #13 (commit 51dcd77).
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Phase 7 — split `backend/features/mcp/tools.py` (1,046 lines)
        into a `mcp/tools/` package grouped by tool family. Pure

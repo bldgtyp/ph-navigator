@@ -229,9 +229,10 @@ def delete_project(
     Requires explicit ``confirm=True`` in the payload; otherwise raises
     ``api_error(422, "project_delete_confirmation_required")`` before
     touching the DB. Single transaction performs the soft-delete, child
-    counts, and audit log; idempotent on already-deleted projects (still
-    refreshes ``deleted_at`` and returns ``already_deleted=True`` so
-    bulk-delete can report per-item state). Raises
+    counts, and audit log; idempotent on already-deleted projects
+    (``deleted_at``, ``deleted_by``, and ``hard_delete_after`` are
+    preserved via ``COALESCE`` and ``already_deleted=True`` is returned
+    so bulk-delete can report per-item state). Raises
     ``api_error(404, "project_not_found")`` for unknown ids and
     ``api_error(403, ...)`` when the caller is not the owner (via
     ``_ensure_project_owner``).

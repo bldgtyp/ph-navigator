@@ -349,8 +349,9 @@ Photos) carries over here cleanly. **Decision (a) per Ed,
 | 1 | Rooms | US-EQ-2 | **Full draft** — source-of-truth for downstream HBJSON | No (rooms unlikely to ever have a catalog) |
 | 2 | Thermal Bridges | US-EQ-3 | Editable DataTable with core TB fields, seeded type options, and inline PDF Report attachment | Yes |
 | 3 | ERVs | US-EQ-4 | **Full draft** — ventilation-critical for PH | Catalog deferred to v1.1+ |
-| 4 | Pumps | US-EQ-5 | **Placeholder** — scaffolding + empty-state copy only; full schema deferred to v1.1+ | Catalog deferred to v1.1+ |
-| 5 | Fans | US-EQ-6 | **Full draft** — ventilation-critical for PH | Catalog deferred to v1.1+ |
+| 4 | Heat Pumps | US-EQ-7..11 | **Full draft (2026-06-09)** — four nested leaf pages (Equipment/Units × Outdoor/Indoor); Phius Multiple HP Estimator export target | "Project Catalog" pattern (project-scoped types + instances); shared catalog deferred to v1.1+ |
+| 5 | Pumps | US-EQ-5 | **Placeholder** — scaffolding + empty-state copy only; full schema deferred to v1.1+ | Catalog deferred to v1.1+ |
+| 6 | Fans | US-EQ-6 | **Full draft** — ventilation-critical for PH | Catalog deferred to v1.1+ |
 
 Default sub-tab on first visit: **Rooms** (it's the
 source-of-truth that downstream tools — Rhino, the energy model
@@ -395,6 +396,8 @@ populating a new project).
    - `/projects/{id}/equipment/rooms`
    - `/projects/{id}/equipment/thermal-bridges`
    - `/projects/{id}/equipment/ervs`
+   - `/projects/{id}/equipment/heat-pumps` (nested; redirects to
+     `…/heat-pumps/equipment-outdoor` — see US-EQ-7)
    - `/projects/{id}/equipment/pumps`
    - `/projects/{id}/equipment/fans`
    - Browser back / forward navigates sub-tab history.
@@ -913,5 +916,232 @@ None outstanding.
   alongside the Fan catalog roster (PRD §7.0).
 - Coordinates with ERVs (US-EQ-4) — between them, Rooms'
   ventilation paths are fully covered.
+
+---
+
+## US-EQ-4 — ERVs sub-tab — *Amendment 2026-06-09: Linked-from-HP-indoor surfaces*
+
+**Status:** Amendment to existing US-EQ-4 · **Priority:** MVP (ships
+in Phase 4 of the Heat Pumps rollout — see
+`planning/features/heat-pumps/PRD.md` §5.4)
+**Driver:** Heat Pumps feature requires the ERV sub-tab to expose
+the reverse side of the HP-indoor ↔ ERV link captured by
+`heat_pump_indoor_units[*].linked_erv_unit_id`.
+
+### What changes on US-EQ-4
+
+1. **No schema change to `tables.equipment.ervs[*]`.** The link is
+   stored one-way on the HP indoor unit; ERV rows learn about it
+   via server-side reverse lookup.
+2. **New column on the ERVs DataTable:** `Linked HP indoor` —
+   default-hidden. Renders the count of HP indoor units linking to
+   this ERV row (`0` means standalone ERV; `1+` means integrated).
+   Filterable + sortable like any column.
+3. **New badge on the ERV row-detail modal header:** when ≥1 HP
+   indoor unit links to this ERV, render `"Linked from HP indoor:
+   {tag}"` for each linked tag (comma-separated if multiple).
+   Each tag is a deep-link that navigates the user to the
+   matching row in `…/equipment/heat-pumps/units-indoor`.
+4. **Delete behavior:** unchanged on the ERV side (the existing
+   US-EQ-2 cascade still nulls `rooms[*].erv_unit_ids`). The new
+   cascade adds: on ERV delete, every HP indoor unit's
+   `linked_erv_unit_id = this.id` is set to `null` and a soft-
+   warning toast lists the affected HP indoor tags.
+
+### Acceptance criteria (additive to existing US-EQ-4)
+
+- AC-AMEND-1: `Linked HP indoor` column appears in the column-
+  visibility overflow menu; togglable on.
+- AC-AMEND-2: When toggled on, the column renders an integer count
+  per row; sorts numerically; filters work.
+- AC-AMEND-3: Opening the row-detail modal of an ERV with ≥1
+  linking HP indoor unit shows the badge with deep-link(s).
+- AC-AMEND-4: Deleting an ERV that has ≥1 linking HP indoor unit
+  succeeds; the linked HP indoor rows have `linked_erv_unit_id`
+  cleared; a single toast names every affected HP indoor `tag`.
+- AC-AMEND-5: Viewer (locked-version + read-only) renders the
+  badge and column unchanged; deep-link still works.
+
+### Cross-references
+- HP indoor side: US-EQ-11 (HP Units — Indoor) criterion 6.
+- Storage shape: `tables.equipment.heat_pump_indoor_units[*].linked_erv_unit_id`
+  per `planning/features/heat-pumps/PRD.md` §4.5.
+
+---
+
+## US-EQ-7 — Heat Pumps sub-tab structure (nested-tab navigation)
+
+**Status:** Stub (full PRD lives at
+`planning/features/heat-pumps/PRD.md`) · **Priority:** MVP
+**PRD ref:** Heat Pumps PRD §5 (UI and navigation)
+**Inherits:** US-EQ-1 (Equipment tab structure); US-Builder-Tables
+
+### Story
+> As an editor, I want a single "Heat Pumps" slot inside the
+> Equipment tab that opens a nested sub-tab strip — Equipment
+> Outdoor / Equipment Indoor / Units Outdoor / Units Indoor — so I
+> learn one navigation pattern (the existing Equipment sub-tab
+> idiom) and apply it to a richer four-table feature without
+> bloating the parent strip.
+
+### Acceptance criteria (summary)
+
+1. New sub-tab "Heat Pumps" added to the Equipment sub-tab bar in
+   the position defined in §US-Builder-Equipment table above
+   (between ERVs and Pumps).
+2. Clicking "Heat Pumps" renders a nested sub-tab strip with four
+   entries: `Equipment — Outdoor` (default), `Equipment — Indoor`,
+   `Units — Outdoor`, `Units — Indoor`. shadcn `Tabs` smaller
+   variant (per Heat Pumps PRD D-HP-13).
+3. URL deep-link per the route shape in the Heat Pumps PRD §5.2.
+   `…/heat-pumps` redirects to `…/heat-pumps/equipment-outdoor`.
+4. Each leaf page renders exactly one DataTable wired to the
+   underlying project document body shape (US-EQ-8..11).
+5. Locked-version + Viewer rendering inherited — nested nav still
+   functional; tables read-only.
+
+### Resolved questions
+All directional questions resolved in
+`planning/features/heat-pumps/decisions.md`. No open questions on
+this story.
+
+---
+
+## US-EQ-8 — HP Equipment — Outdoor DataTable
+
+**Status:** Stub (full PRD: Heat Pumps PRD §4.2 / §5 / §6) ·
+**Priority:** MVP
+**Inherits:** US-Builder-Tables (criteria 1–17), US-EQ-1, US-EQ-7
+
+### Story
+> As an editor, I want a DataTable that captures every distinct
+> outdoor condensing unit model used on the project — including
+> the AHRI-rated pairing with a specific indoor model, Phius-calc-
+> aligned performance numbers (HSPF2/COP/SEER2/EER2/IEER),
+> refrigerant type, and the cut-sheet PDF — so the Phius Multiple
+> Heat Pump Performance Estimator export has every row it needs.
+
+### Acceptance criteria (summary)
+
+1. Inherits US-Builder-Tables criteria 1–17.
+2. Column set per Heat Pumps PRD §4.2 — 20 fields.
+3. Default column visibility per Heat Pumps PRD §5.3 (legacy
+   metrics + inactive-discriminator side fields hidden by default).
+4. Required fields: `model_number`. `paired_indoor_model` required
+   when `mode_type` indicates a paired topology (e.g. PUZ/SUZ);
+   nullable otherwise (VRF / multi-zone).
+5. Phius export action available in the overflow `⋯` menu per Heat
+   Pumps PRD §6.
+6. `datasheet_asset_ids[]` via the shared `<AttachmentCell>`.
+7. Empty state per Heat Pumps PRD §5.6.
+
+### Resolved questions
+None outstanding on this story (Heat Pumps PRD OPQ-1 is a
+phase-1-internal implementation detail, not a story question).
+
+---
+
+## US-EQ-9 — HP Equipment — Indoor DataTable
+
+**Status:** Stub (full PRD: Heat Pumps PRD §4.3 / §5) ·
+**Priority:** MVP
+**Inherits:** US-Builder-Tables (criteria 1–17), US-EQ-1, US-EQ-7
+
+### Story
+> As an editor, I want a DataTable that captures every distinct
+> indoor head / cassette / concealed-duct / multi-position /
+> ERV-integrated model used on the project — including
+> install-type (so the ERV-integrated path drives the
+> `linked_erv_unit_id` picker on the instance side) — so the
+> indoor side of every installed AHU is documented and the
+> Phius / energy-model handoff has consistent per-type metadata.
+
+### Acceptance criteria (summary)
+
+1. Inherits US-Builder-Tables criteria 1–17.
+2. Column set per Heat Pumps PRD §4.3 — 16 fields.
+3. Required fields: `model_number`.
+4. `install_type` is a user-defined single-select with seeded
+   examples (CASSETTE / WALL-MOUNTED / CONCEALED-DUCTED /
+   MULTI-POSITION / ERV-INTEGRATED). The `ERV-INTEGRATED` value
+   drives the conditional visibility of the
+   `linked_erv_unit_id` field on instance rows (US-EQ-11).
+5. `datasheet_asset_ids[]` via the shared `<AttachmentCell>`.
+6. Empty state per Heat Pumps PRD §5.6.
+
+---
+
+## US-EQ-10 — HP Units — Outdoor DataTable
+
+**Status:** Stub (full PRD: Heat Pumps PRD §4.4 / §5) ·
+**Priority:** MVP
+**Inherits:** US-Builder-Tables (criteria 1–17), US-EQ-1, US-EQ-7
+
+### Story
+> As an editor, I want a DataTable that captures every installed
+> outdoor condenser instance on the project — tagged with the GC
+> drawing schedule label (e.g. `HP-17`), pointing to its
+> outdoor-equipment "type" row, and noting the building zone it
+> serves — so the Phius export's `Qty` column is computed from
+> real instance counts and the project's drawing schedule is
+> faithfully captured.
+
+### Acceptance criteria (summary)
+
+1. Inherits US-Builder-Tables criteria 1–17.
+2. Column set per Heat Pumps PRD §4.4 — 6 fields.
+3. `tag` is the Record-ID per US-Builder-Tables §record-id;
+   required; unique within table (trim + case-insensitive).
+4. `outdoor_equip_id` required — picker dropdown sources
+   `heat_pump_outdoor_equip[]` rows by display name; inline
+   "Create new outdoor equipment" shortcut per Heat Pumps PRD §5.5.
+5. Empty state per Heat Pumps PRD §5.6 (with secondary line when
+   the outdoor-equip table is itself empty).
+6. Referential integrity per Heat Pumps PRD §4.6 (deleting an
+   outdoor-equip row referenced by ≥1 unit is blocked; deleting
+   an outdoor unit cascade-nulls referencing indoor units).
+
+---
+
+## US-EQ-11 — HP Units — Indoor DataTable
+
+**Status:** Stub (full PRD: Heat Pumps PRD §4.5 / §5) ·
+**Priority:** MVP
+**Inherits:** US-Builder-Tables (criteria 1–17), US-EQ-1, US-EQ-7,
+US-EQ-4 (amendment)
+
+### Story
+> As an editor, I want a DataTable that captures every installed
+> indoor AHU instance — tagged with the GC drawing schedule label
+> (e.g. `AHU-17L`), pointing to its indoor-equipment type, the
+> outdoor unit it's wired to, the rooms it serves, and (for
+> ERV-integrated installs) the matching ERV row — so the project's
+> mechanical schedule, energy-model load attribution, and
+> Mitsubishi-style integrated-unit cases are all captured in one
+> place.
+
+### Acceptance criteria (summary)
+
+1. Inherits US-Builder-Tables criteria 1–17.
+2. Column set per Heat Pumps PRD §4.5 — 9 fields.
+3. `tag` is the Record-ID; required; unique within table.
+4. `indoor_equip_id` required (picker per US-EQ-10 criterion 4
+   pattern). `outdoor_unit_id` nullable but encouraged; picker
+   sources `heat_pump_outdoor_units[]` rows.
+5. `served_room_ids[]` multi-select picker sources `tables.rooms[]`
+   by `number` / `name`; empty array allowed; integers cap at the
+   project's room count.
+6. `linked_erv_unit_id` field appears in the row-detail modal only
+   when the row's `indoor_equip_id` references an indoor equip
+   row whose `install_type` is `ERV-INTEGRATED` (or
+   user-renamed equivalent). Field is a single-select picker
+   sourcing `tables.equipment.ervs[]` rows by `name`. See US-EQ-4
+   amendment for the reverse-lookup surface.
+7. `floor_level` mirrors `tables.rooms[*].floor_level` option list.
+8. Empty state per Heat Pumps PRD §5.6.
+9. Referential integrity per Heat Pumps PRD §4.6 — every linked
+   id (`indoor_equip_id`, `outdoor_unit_id`, `linked_erv_unit_id`,
+   each entry of `served_room_ids[]`) responds correctly to
+   deletes on the referenced side.
 
 ---
