@@ -1517,7 +1517,7 @@ button:disabled {
 
 .app-subtabs {
   align-items: end;
-  background: var(--bg-page);
+  background: var(--bg-elev);
   border-bottom: 1px solid var(--border-subtle);
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

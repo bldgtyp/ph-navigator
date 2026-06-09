@@ -1,6 +1,21 @@
 /* Z-index contract: base < sticky headers < dropdowns/popovers < overlay HUD < modals < tooltips. */
 :root {
   color-scheme: light;
+
+  /* Surface stack — see planning/features/report-tables/PRD.md §D2.
+     Outer chrome (topbar, project tabs) is --bg-card (#fff); the
+     project-page workspace body is --bg-page; the app-subtabs strip
+     and other slightly-elevated surfaces are --bg-elev. */
+  --bg-page: rgb(247, 248, 249);
+  --bg-elev: rgb(249, 250, 251);
+  --bg-card: #ffffff;
+
+  /* Report-table status dot colors. See shared/ui/report-table/. */
+  --report-status-missing: #d97706;
+  --report-status-question: #0ea5b7;
+  --report-status-complete: #16a34a;
+  --report-status-na: #9ca3af;
+
   --radius-sm: 5px;
   --phn-radius: var(--radius-sm);
   --phn-control-radius: 6px;

@@ -1,0 +1,231 @@
+/* Report-table primitive — dense, read-mostly view tables.
+   See planning/features/report-tables/PRD.md.
+   Distinct from <DataTable> (the AirTable-style data-entry grid). */
+
+.report-table {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  display: grid;
+  font-family: var(--font-primary);
+  font-size: 13px;
+  overflow: hidden;
+}
+
+.report-table__head,
+.report-table__row {
+  display: grid;
+  grid-template-columns: var(--report-table-columns);
+  align-items: center;
+  column-gap: 12px;
+  padding: 0 14px;
+}
+
+.report-table__head {
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  min-height: 44px;
+  text-transform: uppercase;
+}
+
+.report-table__head-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.2;
+}
+
+.report-table__head-cell--numeric {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.report-table__head-unit {
+  color: var(--text-muted, var(--text-secondary));
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.report-table__body {
+  display: grid;
+}
+
+.report-table__row {
+  border-top: 1px solid color-mix(in oklab, var(--border-subtle) 60%, transparent);
+  min-height: 38px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.report-table__row:first-child {
+  border-top: 0;
+}
+
+.report-table__row--expandable {
+  cursor: pointer;
+}
+
+.report-table__row--expandable:hover {
+  background: color-mix(in oklab, var(--accent) 4%, transparent);
+}
+
+.report-table__cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.report-table__cell--numeric {
+  justify-content: flex-end;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-table__cell--primary {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.report-table__chevron {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  width: 24px;
+  padding: 0;
+  transition: transform 0.16s var(--ease, ease-out);
+}
+
+.report-table__chevron[aria-expanded="true"] {
+  color: var(--text-primary);
+  transform: rotate(90deg);
+}
+
+.report-table__expansion {
+  background: var(--bg-elev);
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid color-mix(in oklab, var(--border-subtle) 60%, transparent);
+  padding: 14px 22px 18px;
+}
+
+/* Status filter chips (top-of-page filter row) */
+.report-status-filters {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.report-status-filters__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.report-status-filters__summary {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.report-status-chip {
+  align-items: center;
+  appearance: none;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 500;
+  gap: 8px;
+  line-height: 1;
+  padding: 7px 12px;
+  transition:
+    background 0.16s var(--ease, ease-out),
+    border-color 0.16s var(--ease, ease-out);
+}
+
+.report-status-chip[aria-pressed="true"] {
+  background: color-mix(in oklab, var(--accent) 10%, var(--bg-card));
+  border-color: color-mix(in oklab, var(--accent) 55%, var(--border-subtle));
+}
+
+.report-status-chip__count {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* Status pill (per-row Status cell) + the dot used by chips and pills */
+.report-status-dot {
+  border-radius: 999px;
+  display: inline-block;
+  flex-shrink: 0;
+  height: 8px;
+  width: 8px;
+}
+
+.report-status-dot[data-status="missing"] {
+  background: var(--report-status-missing);
+}
+
+.report-status-dot[data-status="question"] {
+  background: var(--report-status-question);
+}
+
+.report-status-dot[data-status="complete"] {
+  background: var(--report-status-complete);
+}
+
+.report-status-dot[data-status="na"] {
+  background: var(--report-status-na);
+}
+
+.report-status-pill {
+  align-items: center;
+  display: inline-flex;
+  font-size: 12px;
+  gap: 6px;
+  line-height: 1;
+}
+
+/* Compact attachment chip — used in dense column cells.
+   Click is delegated to the row (expansion); this is display-only. */
+.report-attachment-chip {
+  align-items: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  display: inline-flex;
+  font-size: 12px;
+  gap: 6px;
+  line-height: 1;
+  min-height: 24px;
+  min-width: 44px;
+  padding: 0 8px;
+}
+
+.report-attachment-chip[data-has-files="true"] {
+  color: var(--text-primary);
+}
+
+.report-attachment-chip__glyph {
+  font-size: 12px;
+}

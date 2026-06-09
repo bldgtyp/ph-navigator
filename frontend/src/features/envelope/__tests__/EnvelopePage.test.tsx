@@ -468,8 +468,14 @@ describe("EnvelopePage", () => {
     });
 
     expect(await screen.findByText("Wood fiber board")).toBeInTheDocument();
-    expect(screen.getByText("Use over exterior sheathing.")).toBeInTheDocument();
     expect(screen.queryByText("Unused air barrier")).not.toBeInTheDocument();
+    await userEvent.click(
+      screen
+        .getByText("Wood fiber board")
+        .closest("[role='row']")!
+        .querySelector("button[aria-label='Expand row']") as HTMLElement,
+    );
+    expect(await screen.findByText("Use over exterior sheathing.")).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining("/envelope?source=version"),
       expect.objectContaining({ credentials: "include" }),
@@ -504,6 +510,11 @@ describe("EnvelopePage", () => {
       projectOverride: { access_mode: "viewer" },
     });
 
+    await userEvent.click(
+      (await screen.findByText("Wood fiber board"))
+        .closest("[role='row']")!
+        .querySelector("button[aria-label='Expand row']") as HTMLElement,
+    );
     expect(await screen.findByTitle("wood-fiber.pdf · application/pdf")).toBeInTheDocument();
     expect(screen.getByTitle("install.png · image/png")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Drop files here/ })).not.toBeInTheDocument();
@@ -512,10 +523,12 @@ describe("EnvelopePage", () => {
   test("na material status hides datasheet upload controls", async () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/specifications`);
 
-    expect(await screen.findByText("Unused air barrier")).toBeInTheDocument();
-    const unusedCard = screen.getByText("Unused air barrier").closest("article");
-    expect(unusedCard).not.toBeNull();
-    expect(unusedCard!).not.toHaveTextContent("Drop files here");
+    const unusedRow = (await screen.findByText("Unused air barrier")).closest("[role='row']");
+    expect(unusedRow).not.toBeNull();
+    await userEvent.click(
+      unusedRow!.querySelector("button[aria-label='Expand row']") as HTMLElement,
+    );
+    expect(screen.queryByRole("button", { name: /Drop files here/ })).not.toBeInTheDocument();
   });
 
   test("specifications sort incomplete materials before complete materials and unused materials last", async () => {
@@ -523,10 +536,10 @@ describe("EnvelopePage", () => {
 
     expect(await screen.findByText("Wood fiber board")).toBeInTheDocument();
 
-    const materialHeadings = screen
-      .getAllByRole("heading", { level: 2 })
-      .map((heading) => heading.textContent);
-    expect(materialHeadings).toEqual([
+    const materialNames = Array.from(document.querySelectorAll(".report-table__cell--primary")).map(
+      (cell) => cell.textContent,
+    );
+    expect(materialNames).toEqual([
       "Wood fiber board",
       "Dense-pack cellulose",
       "Unused air barrier",
@@ -588,7 +601,14 @@ describe("EnvelopePage", () => {
     expect(await screen.findByText("1 material copy needs catalog review.")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("link", { name: "Review all" }));
 
-    expect(await screen.findByRole("heading", { name: "Catalog review" })).toBeInTheDocument();
+    // Drift now surfaces inside the per-material expanded row, not as a
+    // top-of-page "Catalog review" band. Expand the drifted material and
+    // confirm the MaterialDriftBadge renders inside.
+    await userEvent.click(
+      (await screen.findByText("Wood fiber board"))
+        .closest("[role='row']")!
+        .querySelector("button[aria-label='Expand row']") as HTMLElement,
+    );
     expect(await screen.findAllByText("Catalog drift")).not.toHaveLength(0);
   });
 

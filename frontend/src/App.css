@@ -10,3 +10,4 @@
 @import "./features/catalogs/catalogs.css";
 @import "./features/envelope/envelope.css";
 @import "./shared/ui/data-table/DataTable.css";
+@import "./shared/ui/report-table/ReportTable.css";
