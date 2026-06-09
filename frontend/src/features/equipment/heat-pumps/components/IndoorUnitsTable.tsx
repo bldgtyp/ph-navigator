@@ -8,6 +8,8 @@ import {
   type WriteOp,
 } from "../../../../shared/ui/data-table";
 import { useAssetUrls } from "../../../assets/hooks";
+import { roomsSliceFeature, ventilatorsSliceFeature } from "../../api";
+import type { RoomRow, VentilatorRow } from "../../types";
 import { useHeatPumpPatchMutation } from "../api";
 import {
   buildEmptyIndoorEquipRow,
@@ -57,6 +59,15 @@ export function IndoorUnitsTable({
     affected: CascadeReference[];
   } | null>(null);
   const patchMutation = useHeatPumpPatchMutation(projectId);
+  const accessMode = isEditor ? "editor" : "viewer";
+  const ventilatorsQuery = ventilatorsSliceFeature.useSliceQuery(
+    projectId,
+    slice.version_id,
+    accessMode,
+  );
+  const roomsQuery = roomsSliceFeature.useSliceQuery(projectId, slice.version_id, accessMode);
+  const ventilators: VentilatorRow[] = ventilatorsQuery.data?.ventilators ?? [];
+  const rooms: RoomRow[] = roomsQuery.data?.rooms ?? [];
   const rows = useMemo(() => sortedIndoorUnits(slice.indoor_units), [slice.indoor_units]);
   const assetIds = useMemo(
     () => Array.from(new Set(rows.flatMap((row) => row.datasheet_asset_ids))),
@@ -213,6 +224,8 @@ export function IndoorUnitsTable({
           row={modal.row}
           indoorEquip={slice.indoor_equip}
           outdoorUnits={slice.outdoor_units}
+          ventilators={ventilators}
+          rooms={rooms}
           existingUnits={slice.indoor_units}
           readOnly={readOnly}
           onCancel={() => setModal(null)}

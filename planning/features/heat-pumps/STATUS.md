@@ -1,9 +1,12 @@
 ---
 DATE: 2026-06-09
-TIME: 12:45
-STATUS: Active — Phase 3 merged (commit `399d4e6`); full
-        `make ci` green. Next: Phase 4 (ERV cross-link +
-        Rooms `served_room_ids` picker).
+TIME: 17:00
+STATUS: ✅ Active — Phase 4 implemented locally (pickers + silent
+        backend cascades + default-hidden reverse-lookup count
+        column). Awaiting `make ci` green + commit. Scope amended
+        2026-06-09: AC #6 modal badge and AC #8 pre-delete dialog
+        descoped to Q-HP-FOLLOWUP-7 (Ventilators has no row-detail
+        modal). Next: Phase 5 (Phius export + MCP).
 AUTHOR: Ed May (with Claude)
 SCOPE: Current state, next step, blockers, verification evidence
 RELATED:
@@ -79,16 +82,16 @@ stubs, and the US-EQ-4 amendment landed earlier in
 | GLOSSARY graduation | ✅ 6 terms + Relationships entry added |
 | User-story stubs | ✅ US-EQ-7..11 + US-EQ-4 amendment + US-EQ-1 sub-tab list updated |
 | Other context graduation | ◻ `context/PRD.md` §6.2, `data-model.md`, `api.md`, `llm-mcp-schema.md` — runs during Phase 5 |
-| Code | ✅ Phases 0–3 merged (commits `9da3726`, `1aeab68`, `e9cd6dd`, `2dd9807`, `399d4e6`) |
+| Code | ✅ Phases 0–3 merged (commits `9da3726`, `1aeab68`, `e9cd6dd`, `2dd9807`, `399d4e6`); Phase 4 implemented locally 2026-06-09 — awaiting commit |
 
 ## Next step
 
-1. Implement Phase 3 frontend: `UnitsOutdoorPage`, `UnitsIndoorPage`,
-   row-detail modals, cascade-null preview dialog, tag uniqueness
-   helper, and tests.
-2. Closeout via `$ simplify`, `$ docs-pass`, `make format`, `make ci`.
-3. Commit Phase 3, then proceed to Phase 4 (ERV cross-link + Rooms
-   served_room_ids picker).
+1. `make format` + `make ci` on the Phase 4 working tree; fix any
+   red.
+2. Commit Phase 4 (single bundled commit — backend cascades +
+   frontend pickers + reverse-lookup column + tests + docs).
+3. Proceed to Phase 5 (Phius export + MCP) per
+   `phases/phase-05-phius-export-and-mcp.md`.
 
 ## Blockers
 
@@ -118,7 +121,7 @@ question and is a Phase 5 detail, not blocking any earlier phase.
 | 1 | `cd frontend && pnpm exec vitest run src/features/equipment/heat-pumps/__tests__/HeatPumpsPanel.test.tsx`; `make frontend-dev-check`; Playwright / Node REPL browser smoke; `$ simplify`; `$ docs-pass`; `make format`; `make ci` | 2026-06-09 | Focused HP frontend tests 3 passed; fast frontend gate passed with 3 pre-existing Fast Refresh warnings and existing Vite chunk warning; browser smoke add/edit/delete passed against project `a2126d4b-e84c-4512-b22f-190de3b6a2da`; screenshots in `working/heat-pumps-phase-1-*.png`. `$ simplify` fixed HP shell leakage of legacy Pumps draft/error state. `$ docs-pass` updated `context/user-stories/30-tables-equipment.md` for Phase 1 status and the temporary HP option-id caveat. Full CI passed: backend 700 passed / 2 skipped; frontend 146 files / 1501 tests passed; production build passed |
 | 2 | `pnpm exec vitest run src/features/equipment/heat-pumps` (3 files, 13 tests passed); `make frontend-dev-check`; browser empty-state screenshot at repo-root `heat-pumps-phase-2-empty-state.png`; `$ simplify` (no findings, no fixes); `$ docs-pass`; `make format`; `make ci` | 2026-06-09 | Browser in-app add/edit/delete smoke blocked by sticky "Recovered draft found" dialog on the Phase 1 seed project — pre-existing project-state condition, not a Phase 2 regression. Empty-state mount and nested-tab navigation verified via Playwright MCP. `$ simplify` confirmed clean diff (no correctness or cleanup findings). `$ docs-pass` graduated US-EQ-9 status to "Phase 2 implemented" and recorded the `install_type` seed-list datalist approach + Phase 1 option-id caveat carry-over. Full CI green: backend 700 passed / 2 skipped; frontend 148 files / 1511 tests passed; production build passed. Phase 2 merged in commit `2dd9807`. |
 | 3 | `pnpm exec vitest run src/features/equipment/heat-pumps` (7 files, 28 tests passed); `pnpm exec eslint src/features/equipment/heat-pumps` clean; `pnpm exec tsc --noEmit` clean; `$ simplify` (3 findings applied: leafFromPath split index, CascadeReference type dedup, stale-slice cache-read in confirmDelete; 2 follow-ups noted); `$ docs-pass` (US-EQ-10 + US-EQ-11 graduated to "Phase 3 implemented" + option-id carry-over recorded) | 2026-06-09 | Phase 3 ships HP Units — Outdoor and Indoor pages, two-step cascade-null preview dialog (dry-run → confirm via fresh slice from query cache), tag-uniqueness helper (auto-suffix on add / reject on rename), and Phase-4 disabled stubs for `linked_erv_unit_id` + `served_room_ids` in the indoor modal. Backend is unchanged — Phase 0 service already supports `?dry-run=true` and cascade-null. New files: 4 components, 2 column files, 1 dialog, 4 test files; modified: `lib.ts`, `api.ts`, `types.ts`, `HeatPumpsPanel.tsx`, `HeatPumpsPanel.test.tsx`. |
-| 4 | — | — | — |
+| 4 | `cd backend && uv run pytest tests/features/heat_pumps/test_cross_table_cascades.py` (4 passed); `pnpm exec vitest run src/features/equipment` (26 files, 160 tests passed); `pnpm exec tsc --noEmit` clean; `$ simplify` (4 findings applied: functional `setDraft` updater in `toggleRoom`, em-dash for loading state on count column, reused `prior_row_ids` in `apply_rooms_replace`, undefined-vs-empty count map in `VentilatorsTableSlot`; 6 lower-severity follow-ups noted); `$ docs-pass` (US-EQ-4 amendment + US-EQ-11 graduated to "Phase 4 implemented" with AC-AMEND-3 marked descoped to Q-HP-FOLLOWUP-7) | 2026-06-09 | Phase 4 ships the `linked_erv_unit_id` single-select picker and `served_room_ids` multi-select picker on the HP indoor unit modal (both always rendered per D-HP-23; helper text when ventilators/rooms are empty), and the default-hidden `Linked HP indoor` count column on the Ventilators DataTable. Backend gets two new silent cascades: `apply_ventilators_replace` nulls `linked_erv_unit_id` on every referencing HP indoor row when a ventilator is removed; `apply_rooms_replace` filters `served_room_ids[]` when a room is removed. Phase 4 scope amended 2026-06-09 — AC #6 modal badge + AC #8 pre-delete dialog descoped to Q-HP-FOLLOWUP-7 (Ventilators uses inline DataTable editing; no row-detail modal to host them). Generic improvement: `useSliceTableController` learned a `defaultHiddenColumns?: string[]` arg, applied only when no saved view exists. New files: `backend/tests/features/heat_pumps/test_cross_table_cascades.py`; modified: `backend/features/project_document/tables/{ventilators,rooms}.py`, `frontend/src/features/equipment/{components/{VentilatorsTable,VentilatorsTableSlot}.tsx, routes/EquipmentPageBody.tsx, equipment.css, heat-pumps/{components/{IndoorUnitsTable,IndoorUnitRowModal}.tsx, lib.ts}}`, `frontend/src/shared/ui/data-table/feature/useSliceTableController.ts`, two test files. |
 | 5 | — | — | — |
 
 ## Phase plans inventory
@@ -129,7 +132,7 @@ question and is a Phase 5 detail, not blocking any earlier phase.
 | 1 | `phases/phase-01-equipment-outdoor-page.md` | ✅ merged |
 | 2 | `phases/phase-02-equipment-indoor-page.md` | ✅ complete locally; ready for review / commit |
 | 3 | `phases/phase-03-unit-pages.md` | ✅ merged (commit `399d4e6`) |
-| 4 | `phases/phase-04-erv-and-rooms-cross-link.md` | ✅ drafted |
+| 4 | `phases/phase-04-erv-and-rooms-cross-link.md` | ✅ implemented locally (scope amended 2026-06-09 — Option B); awaiting commit |
 | 5 | `phases/phase-05-phius-export-and-mcp.md` | ✅ drafted |
 
 ## Open questions queue
@@ -151,3 +154,8 @@ Live phase-author-scope questions (none blocking the planning sign-off):
   paste) for the four HP tables.
 - **Q-HP-FOLLOWUP-5** (post-v1): system-marked single-select options
   primitive (the OPQ-7 escalation path).
+- **Q-HP-FOLLOWUP-7** (post-v1, added 2026-06-09 during Phase 4
+  scope amendment): "Linked from HP indoor" deep-link badge on the
+  Ventilators row. Deferred because Ventilators uses inline DataTable
+  editing — no row-detail modal exists to host the badge. Revisit
+  when / if Ventilators grows a row-detail modal pattern.

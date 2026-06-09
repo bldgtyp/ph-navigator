@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { errorMessage } from "../../../../shared/lib/errors";
 import { ModalDialog } from "../../../../shared/ui/ModalDialog";
+import type { RoomRow, VentilatorRow } from "../../types";
 import {
   indoorEquipLabel,
   optionIdFromLabel,
   optionLabelFromId,
   outdoorUnitLabel,
+  roomLabel,
   tagCollides,
+  ventilatorLabel,
 } from "../lib";
 import type {
   HeatPumpIndoorEquipRow,
@@ -19,6 +22,8 @@ export function IndoorUnitRowModal({
   row,
   indoorEquip,
   outdoorUnits,
+  ventilators,
+  rooms,
   existingUnits,
   onCancel,
   onSubmit,
@@ -30,6 +35,8 @@ export function IndoorUnitRowModal({
   row: HeatPumpIndoorUnitRow;
   indoorEquip: HeatPumpIndoorEquipRow[];
   outdoorUnits: HeatPumpOutdoorUnitRow[];
+  ventilators: VentilatorRow[];
+  rooms: RoomRow[];
   existingUnits: HeatPumpIndoorUnitRow[];
   onCancel: () => void;
   onSubmit: (row: HeatPumpIndoorUnitRow) => Promise<void>;
@@ -44,6 +51,28 @@ export function IndoorUnitRowModal({
   const title = mode === "add" ? "New indoor unit" : `Indoor unit: ${row.tag || "(unnamed)"}`;
   const submitLabel = mode === "add" ? "Create indoor unit" : "Save indoor unit";
   const noOutdoorUnits = outdoorUnits.length === 0;
+  const noVentilators = ventilators.length === 0;
+  const sortedVentilators = useMemo(
+    () => [...ventilators].sort((a, b) => ventilatorLabel(a).localeCompare(ventilatorLabel(b))),
+    [ventilators],
+  );
+  const sortedRooms = useMemo(
+    () => [...rooms].sort((a, b) => roomLabel(a).localeCompare(roomLabel(b))),
+    [rooms],
+  );
+  const selectedRoomIds = new Set(draft.served_room_ids);
+
+  // Functional updater — rapid concurrent toggles each compute against the
+  // freshest draft instead of the closure's captured value, so two
+  // checkbox clicks in the same animation frame both land.
+  const toggleRoom = (roomId: string) => {
+    setDraft((prev) => {
+      const next = new Set(prev.served_room_ids);
+      if (next.has(roomId)) next.delete(roomId);
+      else next.add(roomId);
+      return { ...prev, served_room_ids: Array.from(next) };
+    });
+  };
 
   const save = async () => {
     setError(null);
@@ -166,15 +195,47 @@ export function IndoorUnitRowModal({
               />
             </label>
             <label className="hp-form-grid__wide">
-              Linked ERV unit <span className="hp-future-badge">Configured in Phase 4</span>
-              <select value={draft.linked_erv_unit_id ?? ""} disabled>
-                <option value="">{draft.linked_erv_unit_id ?? "None"}</option>
+              Linked ERV unit
+              <select
+                value={draft.linked_erv_unit_id ?? ""}
+                onChange={(event) =>
+                  setDraft({ ...draft, linked_erv_unit_id: event.target.value || null })
+                }
+                disabled={readOnly || noVentilators}
+              >
+                <option value="">{noVentilators ? "No ERVs yet" : "None"}</option>
+                {sortedVentilators.map((vent) => (
+                  <option key={vent.id} value={vent.id}>
+                    {ventilatorLabel(vent)}
+                  </option>
+                ))}
               </select>
+              {noVentilators ? (
+                <small className="hp-helper-text">Add an ERV first under Equipment → ERVs.</small>
+              ) : null}
             </label>
-            <label className="hp-form-grid__wide">
-              Served rooms <span className="hp-future-badge">Configured in Phase 4</span>
-              <input value={draft.served_room_ids.join(", ")} disabled />
-            </label>
+            <fieldset className="hp-form-grid__wide hp-rooms-picker">
+              <legend>Served rooms</legend>
+              {sortedRooms.length === 0 ? (
+                <small className="hp-helper-text">Add a room first under Rooms.</small>
+              ) : (
+                <ul className="hp-rooms-picker__list">
+                  {sortedRooms.map((room) => (
+                    <li key={room.id}>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={selectedRoomIds.has(room.id)}
+                          disabled={readOnly}
+                          onChange={() => toggleRoom(room.id)}
+                        />
+                        {roomLabel(room)}
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </fieldset>
           </div>
         </section>
         <label>
