@@ -1,7 +1,9 @@
 ---
 DATE: 2026-06-09
-TIME: 14:55
-STATUS: DRAFT — Phase 3 outline. Depends on Phases 1–2.
+TIME: 12:45
+STATUS: ✅ IMPLEMENTED — merged in commit `399d4e6`.
+        See `../STATUS.md` Phase 3 row for the verification ledger
+        and the deliberate Phase 4 carry-overs.
 AUTHOR: Ed May (with Claude)
 SCOPE: Frontend pages for both HP Units — Outdoor and HP Units —
        Indoor DataTables. Introduces the equip-picker primitive

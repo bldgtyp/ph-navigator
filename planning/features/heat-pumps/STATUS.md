@@ -1,9 +1,9 @@
 ---
 DATE: 2026-06-09
-TIME: 12:30
-STATUS: Active — Phase 3 implemented locally; closeout gate
-        (focused vitest + lint + tsc) green. Awaiting
-        review / commit, then full `make ci`.
+TIME: 12:45
+STATUS: Active — Phase 3 merged (commit `399d4e6`); full
+        `make ci` green. Next: Phase 4 (ERV cross-link +
+        Rooms `served_room_ids` picker).
 AUTHOR: Ed May (with Claude)
 SCOPE: Current state, next step, blockers, verification evidence
 RELATED:
@@ -79,7 +79,7 @@ stubs, and the US-EQ-4 amendment landed earlier in
 | GLOSSARY graduation | ✅ 6 terms + Relationships entry added |
 | User-story stubs | ✅ US-EQ-7..11 + US-EQ-4 amendment + US-EQ-1 sub-tab list updated |
 | Other context graduation | ◻ `context/PRD.md` §6.2, `data-model.md`, `api.md`, `llm-mcp-schema.md` — runs during Phase 5 |
-| Code | ✅ Phases 0–2 merged (commits `9da3726`, `1aeab68`, `e9cd6dd`, `2dd9807`); Phase 3 in progress |
+| Code | ✅ Phases 0–3 merged (commits `9da3726`, `1aeab68`, `e9cd6dd`, `2dd9807`, `399d4e6`) |
 
 ## Next step
 
@@ -128,7 +128,7 @@ question and is a Phase 5 detail, not blocking any earlier phase.
 | 0 | `phases/phase-00-backend-foundation.md` | ✅ merged |
 | 1 | `phases/phase-01-equipment-outdoor-page.md` | ✅ merged |
 | 2 | `phases/phase-02-equipment-indoor-page.md` | ✅ complete locally; ready for review / commit |
-| 3 | `phases/phase-03-unit-pages.md` | ✅ implemented locally; ready for review / commit |
+| 3 | `phases/phase-03-unit-pages.md` | ✅ merged (commit `399d4e6`) |
 | 4 | `phases/phase-04-erv-and-rooms-cross-link.md` | ✅ drafted |
 | 5 | `phases/phase-05-phius-export-and-mcp.md` | ✅ drafted |
 
