@@ -1,13 +1,15 @@
 ---
 DATE: 2026-06-09
-TIME: 19:15
+TIME: 19:30
 STATUS: ⏳ PARTIAL — split into 5A/5B/5C during 5A implementation.
-        **5A (Phius CSV export end-to-end) implemented locally
-        2026-06-09; awaiting commit.** AC #1–5 satisfied;
-        `?format=xlsx-paste` returns a 501 placeholder (OPQ-3
-        remains open as stretch). **5B (MCP tools, AC #7–11) and
-        5C (Playwright e2e + PRD §11 cross-doc graduation,
-        AC #12–14) still pending.**
+        **5A (Phius CSV export end-to-end) merged in commit
+        `79e11b3` (2026-06-09).** AC #1–5 satisfied;
+        `?format=xlsx-paste` returns 501 (OPQ-3 deferred). **5B
+        (MCP tools, AC #7–11) deferred to Q-HP-FOLLOWUP-8. 5C
+        Playwright e2e (AC #12) deferred to Q-HP-FOLLOWUP-9.
+        5C PRD §11 cross-doc graduation (AC #13–14) deferred to
+        Q-HP-FOLLOWUP-10.** Folder archived alongside the rest of
+        Heat Pumps planning at `planning/archive/heat-pumps/`.
 AUTHOR: Ed May (with Claude)
 SCOPE: Phius Multiple HP Performance Estimator export (CSV + xlsx-
        paste stretch); MCP tools for all four HP tables + a

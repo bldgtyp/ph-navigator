@@ -690,6 +690,45 @@ Phase 1 re-styles before Phase 2 starts.
   shared namespace (Option C-style, scoped to just one concept) is
   the likely answer. Defer until real-project usage shows the
   duplicate-Mitsubishi pain.
+- ⊘ **Q-HP-FOLLOWUP-7** (added 2026-06-09 during Phase 4 scope
+  amendment) — "Linked from HP indoor" deep-link badge on the
+  Ventilators row. Phase 4 PRD called for an ERV-modal badge
+  showing `"Linked from HP indoor: AHU-N2B"` plus a `Linked HP
+  indoor` count column; the count column shipped, but the modal
+  badge and deep-link are blocked because Ventilators uses inline
+  DataTable editing — no row-detail modal exists to host them.
+  Revisit when / if Ventilators grows a row-detail modal pattern.
+- ⊘ **Q-HP-FOLLOWUP-8** (added 2026-06-09 at archival) — Phase 5B
+  MCP tools. Wire `read_table` / `add_row` / `update_row` /
+  `delete_row` for the four HP table keys (verify the generic
+  `tool_get_table` / `tool_replace_table` cover them first — they
+  likely do); add a dedicated
+  `export_phius_hp_estimator(project_id) → text/csv` tool that
+  wraps the Phase 5A `compute_phius_payload` + `serialize_csv`.
+  Schemas land in `context/technical-requirements/llm-mcp-schema.md`.
+  Originally Phase 5 AC #7–11.
+- ⊘ **Q-HP-FOLLOWUP-9** (added 2026-06-09 at archival) — Phase 5C
+  Playwright e2e. Full-lifecycle spec at
+  `frontend/tests/e2e/heat-pumps.spec.ts` covering: seed project
+  with rooms + ervs; add rows across all four HP tables; integrate
+  one indoor with an ERV; open the ERV row to verify the count
+  column; run the Phius export and verify CSV row count + sample
+  cells; delete an ERV and verify cascade-null fires; lock the
+  version and verify read-only mode. Originally Phase 5 AC #12.
+- ⊘ **Q-HP-FOLLOWUP-10** (added 2026-06-09 at archival) — Phase 5C
+  cross-doc graduation per PRD §11. Fold durable bits into
+  `context/PRD.md` §6.2 (add the four new tables to the equipment-
+  tables enumeration), `context/technical-requirements/data-model.md`
+  (add row schemas), `context/technical-requirements/api.md` §9.X
+  (heat-pumps endpoints + Phius export), and
+  `context/technical-requirements/llm-mcp-schema.md` (the MCP tool
+  definitions from FOLLOWUP-8). The user-stories and GLOSSARY
+  graduations were completed during Phase 1; only the technical-
+  requirements docs remain. Originally Phase 5 AC #13–14.
+- ⊘ **OPQ-3** (added 2026-06-09 at archival) — xlsx-paste payload
+  format. Phase 5A backend returns 501 on `?format=xlsx-paste`.
+  Revisit if the calc's paste-target validation actually rejects
+  the CSV form; the v1.0 commit is CSV.
 - ⊘ **Energy-model load-coverage validation.** No check that
   every conditioned Room is referenced by ≥1 HP indoor unit's
   `served_room_ids[]`. Same gap on the ERV side. Solve in one pass

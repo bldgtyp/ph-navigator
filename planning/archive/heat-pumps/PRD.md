@@ -1,10 +1,13 @@
 ---
 DATE: 2026-06-09
 TIME: 12:50
-STATUS: ✅ APPROVED 2026-06-09. Phases 0–3 implemented and merged
-        per this PRD. US-EQ-7..11 stubs landed in
-        context/user-stories/30-tables-equipment.md and now carry
-        per-phase implementation notes. Phases 4–5 still to ship.
+STATUS: ✅ COMPLETE 2026-06-09. Phases 0–4 + Phase 5A all merged
+        per this PRD (final commit `79e11b3`). US-EQ-7..11 + US-EQ-4
+        amendment landed in context/user-stories/30-tables-equipment.md
+        with per-phase implementation notes. Phase 5B (MCP tools)
+        and Phase 5C (Playwright e2e + PRD §11 cross-doc graduation)
+        deferred to Q-HP-FOLLOWUP-8/9/10. Folder archived to
+        `planning/archive/heat-pumps/`.
 AUTHOR: Ed May (with Claude)
 SCOPE: Heat Pump equipment in PH-Navigator V2 — four project-scoped
        tables (catalog + instance × outdoor + indoor), nested-tab UX

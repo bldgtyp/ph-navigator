@@ -381,7 +381,7 @@ JSON document. Illustrative sketch (the canonical model is the
       "ervs":  [ /* see US-EQ-4 — name, manufacturer (single-select), model_number, unit_type (single-select), nominal_airflow_cfm, sensible_recovery_efficiency, electrical_power_w, datasheet_asset_ids, catalog_origin, notes */ ],
       "heat_pumps": {
         // Phase 0 backend foundation, 2026-06-09. See
-        // planning/features/heat-pumps/PRD.md for full field lists.
+        // planning/archive/heat-pumps/PRD.md for full field lists.
         "outdoor_equip":  [ /* hpoe_* rows: manufacturer, model_number, paired_indoor_equip_id, system_family, refrigerant, heating/cooling performance, datasheet_asset_ids, notes */ ],
         "indoor_equip":   [ /* hpie_* rows: manufacturer, model_type, model_number, install_type, nominal/fan/performance fields, datasheet_asset_ids, notes */ ],
         "outdoor_units":  [ /* hpou_* rows: tag, outdoor_equip_id, building_zone, datasheet_asset_ids, notes */ ],
