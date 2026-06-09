@@ -32,13 +32,17 @@ export function UseSiteRow({
   const trimmedNotes = notes.trim() || null;
   const canSave = trimmedNotes !== site.use_site_notes && !busy;
   return (
-    <li>
-      <strong>{site.assembly_name}</strong>
-      <span>
-        Layer {site.layer_order + 1}, segment {site.segment_order + 1}
-      </span>
-      <div className="use-site-evidence">
-        <span>Photos</span>
+    <li className="use-site">
+      <header className="use-site__header">
+        <span className="use-site__title">
+          <span aria-hidden="true">📷</span>
+          <strong>{site.assembly_name}</strong>
+          <span className="use-site__where">
+            · layer {site.layer_order + 1}, segment {site.segment_order + 1}
+          </span>
+        </span>
+      </header>
+      <div className="use-site__photos">
         <AttachmentCell
           projectId={projectId}
           value={site.photo_asset_ids}

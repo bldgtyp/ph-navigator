@@ -9,6 +9,16 @@ import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { useAssetUrls } from "../../assets/hooks";
 import { DATASHEET_ATTACHMENT_CONFIG } from "../../assets/lib";
 import { AutocompleteSelect } from "../../../shared/ui/AutocompleteSelect";
+import {
+  AttachmentChipCell,
+  ReportTable,
+  StatusDot,
+  StatusFilterChips,
+  type ReportStatusKey,
+  type ReportTableColumn,
+  type StatusFilterOption,
+  type StatusFilterValue,
+} from "../../../shared/ui/report-table";
 import { MaterialDriftBadge } from "./MaterialDrift";
 import { ProjectMaterialEditor } from "./ProjectMaterialEditor";
 import { materialNeedsCatalogReview } from "../drift";
@@ -20,10 +30,16 @@ import type {
   ProjectMaterialDriftItem,
   SpecificationStatus,
 } from "../types";
-import { DriftSummary } from "./specifications/DriftSummary";
 import { UseSiteRow } from "./specifications/UseSiteRow";
 
 const STATUSES: SpecificationStatus[] = ["missing", "question", "complete", "na"];
+
+const STATUS_LABEL: Record<SpecificationStatus, string> = {
+  missing: "Missing",
+  question: "Question",
+  complete: "Complete",
+  na: "N/A",
+};
 
 export function SpecificationsPanel({
   materials,
@@ -49,13 +65,31 @@ export function SpecificationsPanel({
   onRefreshMaterial: (projectMaterialId: string) => void;
 }) {
   const { unitSystem } = useUnitPreference();
-  const [editingMaterialId, setEditingMaterialId] = useState<string | null>(null);
+  const [expandedMaterialId, setExpandedMaterialId] = useState<string | null>(null);
   const [editingSiteKey, setEditingSiteKey] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<StatusFilterValue<ReportStatusKey>>("all");
+
   const visibleMaterials = useMemo(() => {
     const filtered = isViewer ? viewerVisibleMaterials(materials) : materials;
     return sortProjectMaterials(filtered);
   }, [isViewer, materials]);
-  const editingMaterial = visibleMaterials.find((material) => material.id === editingMaterialId);
+
+  const statusCounts = useMemo(() => {
+    const counts: Record<SpecificationStatus, number> = {
+      missing: 0,
+      question: 0,
+      complete: 0,
+      na: 0,
+    };
+    for (const material of visibleMaterials) counts[material.specification_status] += 1;
+    return counts;
+  }, [visibleMaterials]);
+
+  const filteredMaterials = useMemo(() => {
+    if (statusFilter === "all") return visibleMaterials;
+    return visibleMaterials.filter((m) => m.specification_status === statusFilter);
+  }, [statusFilter, visibleMaterials]);
+
   const attachmentAssetIds = useMemo(
     () => collectSpecificationAssetIds(visibleMaterials),
     [visibleMaterials],
@@ -75,59 +109,138 @@ export function SpecificationsPanel({
     );
   }
 
+  const resolvedCount = statusCounts.complete + statusCounts.na;
+  const totalCount = visibleMaterials.length;
+
+  const filterOptions: StatusFilterOption<ReportStatusKey>[] = [
+    { value: "all", label: "All", count: totalCount },
+    { value: "missing", status: "missing", label: "Missing", count: statusCounts.missing },
+    { value: "question", status: "question", label: "Question", count: statusCounts.question },
+    { value: "complete", status: "complete", label: "Complete", count: statusCounts.complete },
+    { value: "na", status: "na", label: "N/A", count: statusCounts.na },
+  ];
+
+  const columns: ReportTableColumn<ProjectMaterial>[] = [
+    {
+      key: "material",
+      header: "Material",
+      primary: true,
+      width: "minmax(180px, 2fr)",
+      render: (m) => <span title={m.name}>{m.name}</span>,
+    },
+    {
+      key: "category",
+      header: "Category",
+      width: "minmax(120px, 1.2fr)",
+      render: (m) => <span>{m.category ?? "Uncategorized"}</span>,
+    },
+    {
+      key: "lambda",
+      header: "Lambda",
+      unit: "W/(m·K)",
+      numeric: true,
+      width: "minmax(80px, 0.7fr)",
+      render: (m) => <span>{formatConductivityFromWmK(m.conductivity_w_mk, { unitSystem })}</span>,
+    },
+    {
+      key: "density",
+      header: "Density",
+      unit: "kg/m³",
+      numeric: true,
+      width: "minmax(80px, 0.7fr)",
+      render: (m) => <span>{formatDensityFromKgM3(m.density_kg_m3, { unitSystem })}</span>,
+    },
+    {
+      key: "specific_heat",
+      header: "Spec. Heat",
+      unit: "J/(kg·K)",
+      numeric: true,
+      width: "minmax(80px, 0.7fr)",
+      render: (m) => (
+        <span>{formatSpecificHeatFromJKgK(m.specific_heat_j_kgk, { unitSystem })}</span>
+      ),
+    },
+    {
+      key: "uses",
+      header: "Uses",
+      numeric: true,
+      width: "60px",
+      render: (m) => <span>{m.use_sites.length}</span>,
+    },
+    {
+      key: "datasheet",
+      header: "Datasheet",
+      width: "80px",
+      render: (m) => <AttachmentChipCell count={m.datasheet_asset_ids.length} />,
+    },
+    {
+      key: "photos",
+      header: "Photos",
+      width: "80px",
+      render: (m) => (
+        <AttachmentChipCell
+          count={m.use_sites.reduce((total, site) => total + site.photo_asset_ids.length, 0)}
+        />
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      width: "minmax(120px, 1fr)",
+      render: (m) => (
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, width: "100%" }}>
+          <StatusDot status={m.specification_status} />
+          {canEdit ? (
+            <AutocompleteSelect
+              label="Status"
+              value={m.specification_status}
+              disabled={busy}
+              compact
+              options={STATUSES.map((status) => ({
+                value: status,
+                label: STATUS_LABEL[status],
+              }))}
+              onChange={(nextStatus) =>
+                onCommand({
+                  kind: "update_project_material",
+                  project_material_id: m.id,
+                  specification_status: nextStatus as SpecificationStatus,
+                })
+              }
+            />
+          ) : (
+            <span>{STATUS_LABEL[m.specification_status]}</span>
+          )}
+        </span>
+      ),
+    },
+  ];
+
   return (
     <>
-      <DriftSummary
-        materials={visibleMaterials}
-        driftByMaterialId={driftByMaterialId}
-        canEdit={canEdit}
-        onRefreshMaterial={onRefreshMaterial}
+      <StatusFilterChips
+        options={filterOptions}
+        value={statusFilter}
+        onChange={setStatusFilter}
+        summary={`${resolvedCount}/${totalCount} resolved`}
       />
-      <div className="specifications-grid">
-        {visibleMaterials.map((material) => {
+      <ReportTable
+        rows={filteredMaterials}
+        columns={columns}
+        getRowId={(m) => m.id}
+        expandedRowId={expandedMaterialId}
+        onToggleExpand={(id) => setExpandedMaterialId((current) => (current === id ? null : id))}
+        emptyMessage="No materials match the current filter."
+        renderExpansion={(material) => {
           const driftItem = driftByMaterialId.get(material.id) ?? null;
           return (
-            <article key={material.id} className="spec-card">
-              <header>
-                <div>
-                  <h2>{material.name}</h2>
-                  <p>
-                    {material.category ?? "Uncategorized"} · {material.specification_status}
-                  </p>
-                </div>
-                <div className="spec-card-badges">
-                  <MaterialDriftBadge item={driftItem} />
-                  <span>{material.use_sites.length} uses</span>
-                </div>
-              </header>
-              {canEdit ? (
-                <div className="spec-card-actions">
-                  <AutocompleteSelect
-                    label="Status"
-                    value={material.specification_status}
-                    disabled={busy}
-                    compact
-                    options={STATUSES.map((status) => ({ value: status, label: status }))}
-                    onChange={(nextStatus) =>
-                      onCommand({
-                        kind: "update_project_material",
-                        project_material_id: material.id,
-                        specification_status: nextStatus as SpecificationStatus,
-                      })
-                    }
-                  />
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() =>
-                      setEditingMaterialId((current) =>
-                        current === material.id ? null : material.id,
-                      )
-                    }
-                  >
-                    {editingMaterialId === material.id ? "Close editor" : "Edit material"}
-                  </button>
-                  {materialNeedsCatalogReview(driftItem) ? (
+            <div className="spec-expansion">
+              <div className="spec-expansion__left">
+                <header className="spec-expansion__header">
+                  <div>
+                    <MaterialDriftBadge item={driftItem} />
+                  </div>
+                  {canEdit && materialNeedsCatalogReview(driftItem) ? (
                     <button
                       type="button"
                       className="secondary-button"
@@ -137,61 +250,54 @@ export function SpecificationsPanel({
                       Refresh from catalog
                     </button>
                   ) : null}
-                </div>
-              ) : null}
-              <dl className="spec-values">
-                <div>
-                  <dt>Lambda</dt>
-                  <dd>{formatConductivityFromWmK(material.conductivity_w_mk, { unitSystem })}</dd>
-                </div>
-                <div>
-                  <dt>Density</dt>
-                  <dd>{formatDensityFromKgM3(material.density_kg_m3, { unitSystem })}</dd>
-                </div>
-                <div>
-                  <dt>Specific heat</dt>
-                  <dd>
-                    {formatSpecificHeatFromJKgK(material.specific_heat_j_kgk, { unitSystem })}
-                  </dd>
-                </div>
-              </dl>
-              {canEdit && editingMaterial?.id === material.id ? (
-                <ProjectMaterialEditor
-                  key={material.id}
-                  material={material}
-                  busy={busy}
-                  error={error}
-                  onCommand={onCommand}
-                />
-              ) : material.comments ? (
-                <p className="spec-notes">{material.comments}</p>
-              ) : null}
-              <section className="spec-evidence" aria-label={`${material.name} datasheets`}>
-                <h3>Datasheets</h3>
-                <AttachmentCell
-                  projectId={projectId}
-                  value={material.datasheet_asset_ids}
-                  config={DATASHEET_ATTACHMENT_CONFIG}
-                  readOnly={!canEdit || material.specification_status === "na" || busy}
-                  assetUrlById={assetUrlById}
-                  showInlineEmptyButton={canEdit && material.specification_status !== "na"}
-                  onChange={(nextAssetIds) =>
-                    onAttachmentChange({
-                      tableKey: "project_materials",
-                      rowId: material.id,
-                      fieldKey: "datasheet_asset_ids",
-                      currentAssetIds: material.datasheet_asset_ids,
-                      nextAssetIds,
-                    })
-                  }
-                />
-              </section>
-              <div className="use-sites">
-                <h3>Use-sites</h3>
+                </header>
+                <section className="spec-evidence" aria-label={`${material.name} datasheets`}>
+                  <h3>Datasheets</h3>
+                  <AttachmentCell
+                    projectId={projectId}
+                    value={material.datasheet_asset_ids}
+                    config={DATASHEET_ATTACHMENT_CONFIG}
+                    readOnly={!canEdit || material.specification_status === "na" || busy}
+                    assetUrlById={assetUrlById}
+                    showInlineEmptyButton={canEdit && material.specification_status !== "na"}
+                    onChange={(nextAssetIds) =>
+                      onAttachmentChange({
+                        tableKey: "project_materials",
+                        rowId: material.id,
+                        fieldKey: "datasheet_asset_ids",
+                        currentAssetIds: material.datasheet_asset_ids,
+                        nextAssetIds,
+                      })
+                    }
+                  />
+                </section>
+                {canEdit ? (
+                  <ProjectMaterialEditor
+                    material={material}
+                    busy={busy}
+                    error={error}
+                    onCommand={onCommand}
+                  />
+                ) : material.comments ? (
+                  <p className="spec-notes">{material.comments}</p>
+                ) : null}
+                {canEdit && material.use_sites.length === 0 ? (
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={busy}
+                    onClick={() => onCommand({ kind: "remove_unused_project_materials" })}
+                  >
+                    Remove unused project materials
+                  </button>
+                ) : null}
+              </div>
+              <div className="spec-expansion__right">
+                <h3>Use-sites &amp; site photos</h3>
                 {material.use_sites.length === 0 ? (
                   <p>Not used by an assembly.</p>
                 ) : (
-                  <ul>
+                  <ul className="spec-expansion__use-sites">
                     {material.use_sites.map((site) => {
                       const siteKey = `${site.assembly_id}:${site.layer_id}:${site.segment_id}`;
                       return (
@@ -231,20 +337,10 @@ export function SpecificationsPanel({
                   </ul>
                 )}
               </div>
-              {canEdit && material.use_sites.length === 0 ? (
-                <button
-                  type="button"
-                  className="secondary-button"
-                  disabled={busy}
-                  onClick={() => onCommand({ kind: "remove_unused_project_materials" })}
-                >
-                  Remove unused project materials
-                </button>
-              ) : null}
-            </article>
+            </div>
           );
-        })}
-      </div>
+        }}
+      />
     </>
   );
 }
