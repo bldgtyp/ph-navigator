@@ -62,7 +62,7 @@ def post_project(
     return create_project(payload, user, request)
 
 
-@router.post(":bulk-delete", response_model=ProjectBulkDeleteResponse)
+@router.post("/bulk-delete", response_model=ProjectBulkDeleteResponse)
 def post_projects_bulk_delete(
     payload: ProjectBulkDeleteRequest,
     request: Request,
@@ -86,7 +86,7 @@ def check_bt_number(
     return check_bt_number_available(value)
 
 
-@router.post("/{project_id}:delete", response_model=ProjectDeleteResponse)
+@router.post("/{project_id}/delete", response_model=ProjectDeleteResponse)
 def post_project_delete(
     project_id: UUID,
     payload: ProjectDeleteRequest,
@@ -97,7 +97,7 @@ def post_project_delete(
     return delete_project(project_id, payload, user, request)
 
 
-@router.post("/{project_id}:restore", response_model=ProjectDetail)
+@router.post("/{project_id}/restore", response_model=ProjectDetail)
 def post_project_restore(
     project_id: UUID,
     request: Request,
