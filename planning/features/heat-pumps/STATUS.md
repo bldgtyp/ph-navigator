@@ -1,10 +1,11 @@
 ---
 DATE: 2026-06-09
-TIME: 17:00
+TIME: 19:15
 STATUS: ✅ Active — Phase 4 merged (commit `16bdefe`, 2026-06-09).
-        Scope amended 2026-06-09: AC #6 modal badge and AC #8
-        pre-delete dialog descoped to Q-HP-FOLLOWUP-7 (Ventilators
-        has no row-detail modal). Next: Phase 5 (Phius export + MCP).
+        Phase 5 split into 5A/5B/5C slices: **5A (Phius CSV export
+        end-to-end) implemented locally 2026-06-09; awaiting commit.**
+        5B (MCP tools) and 5C (Playwright e2e + cross-doc graduation)
+        still pending.
 AUTHOR: Ed May (with Claude)
 SCOPE: Current state, next step, blockers, verification evidence
 RELATED:
@@ -84,11 +85,28 @@ stubs, and the US-EQ-4 amendment landed earlier in
 
 ## Next step
 
-Phase 4 merged in `16bdefe`; bookkeeping in `9337f62`; post-merge
-simplify cleanup in `66a8f63`. Proceed to **Phase 5 (Phius export +
-MCP)** per `phases/phase-05-phius-export-and-mcp.md` — the only
-remaining open question is OPQ-3 (xlsx-paste payload format),
-which is a Phase 5 implementation detail.
+Phase 5 was scoped into three slices this session:
+
+- **5A — Phius CSV export end-to-end** *(implemented locally
+  2026-06-09; awaiting commit)*. Ships `phius_export.py` + the
+  `POST /equipment/heat-pumps/export-phius` endpoint + the
+  `PhiusExportDialog` + the menu wire-up. AC #1–5 satisfied.
+  `?format=xlsx-paste` returns a 501 placeholder (OPQ-3 remains
+  open as stretch).
+- **5B — MCP** *(pending)*. Verify the generic `tool_get_table` /
+  `tool_replace_table` register the four HP table keys (likely
+  already covered transparently); add the dedicated
+  `export_phius_hp_estimator(project_id) → text/csv` tool; land
+  schemas in `context/technical-requirements/llm-mcp-schema.md`.
+  AC #7–11.
+- **5C — Playwright e2e + cross-doc graduation** *(pending)*.
+  Full feature-lifecycle spec at
+  `frontend/tests/e2e/heat-pumps.spec.ts`; run the PRD §11
+  cross-doc graduation checklist (`context/PRD.md` §6.2,
+  `data-model.md`, `api.md`, `llm-mcp-schema.md`, and this
+  `STATUS.md`'s Complete marker). AC #12–14.
+
+Proceed by committing 5A, then picking up 5B in the next session.
 
 ## Blockers
 
@@ -119,7 +137,9 @@ question and is a Phase 5 detail, not blocking any earlier phase.
 | 2 | `pnpm exec vitest run src/features/equipment/heat-pumps` (3 files, 13 tests passed); `make frontend-dev-check`; browser empty-state screenshot at repo-root `heat-pumps-phase-2-empty-state.png`; `$ simplify` (no findings, no fixes); `$ docs-pass`; `make format`; `make ci` | 2026-06-09 | Browser in-app add/edit/delete smoke blocked by sticky "Recovered draft found" dialog on the Phase 1 seed project — pre-existing project-state condition, not a Phase 2 regression. Empty-state mount and nested-tab navigation verified via Playwright MCP. `$ simplify` confirmed clean diff (no correctness or cleanup findings). `$ docs-pass` graduated US-EQ-9 status to "Phase 2 implemented" and recorded the `install_type` seed-list datalist approach + Phase 1 option-id caveat carry-over. Full CI green: backend 700 passed / 2 skipped; frontend 148 files / 1511 tests passed; production build passed. Phase 2 merged in commit `2dd9807`. |
 | 3 | `pnpm exec vitest run src/features/equipment/heat-pumps` (7 files, 28 tests passed); `pnpm exec eslint src/features/equipment/heat-pumps` clean; `pnpm exec tsc --noEmit` clean; `$ simplify` (3 findings applied: leafFromPath split index, CascadeReference type dedup, stale-slice cache-read in confirmDelete; 2 follow-ups noted); `$ docs-pass` (US-EQ-10 + US-EQ-11 graduated to "Phase 3 implemented" + option-id carry-over recorded) | 2026-06-09 | Phase 3 ships HP Units — Outdoor and Indoor pages, two-step cascade-null preview dialog (dry-run → confirm via fresh slice from query cache), tag-uniqueness helper (auto-suffix on add / reject on rename), and Phase-4 disabled stubs for `linked_erv_unit_id` + `served_room_ids` in the indoor modal. Backend is unchanged — Phase 0 service already supports `?dry-run=true` and cascade-null. New files: 4 components, 2 column files, 1 dialog, 4 test files; modified: `lib.ts`, `api.ts`, `types.ts`, `HeatPumpsPanel.tsx`, `HeatPumpsPanel.test.tsx`. |
 | 4 | `cd backend && uv run pytest tests/features/heat_pumps/test_cross_table_cascades.py` (7 passed after simplify pass); `pnpm exec vitest run src/features/equipment` (26 files, 160 tests passed); `pnpm exec tsc --noEmit` clean; `$ simplify` ×2: pre-merge pass applied 4 findings (functional `setDraft` updater in `toggleRoom`, em-dash for loading state on count column, reused `prior_row_ids` in `apply_rooms_replace`, undefined-vs-empty count map in `VentilatorsTableSlot`); post-merge pass applied 5 more (loading-aware accessor on the count column to match the em-dash render, `dict.fromkeys` dedupe in the rooms cascade + 3 new tests covering multi-row deletes and dedupe, memoized `selectedRoomIds`, documented mount-time-capture semantics of `defaultHiddenColumns`); `$ docs-pass` ×2 (US-EQ-4 amendment + US-EQ-11 graduated to "Phase 4 implemented" with AC-AMEND-3 marked descoped to Q-HP-FOLLOWUP-7; second pass updated this ledger row + Next step). Two architectural edges noted but deferred: cross-tab stale-snapshot race on `linked_erv_unit_id`, access-mode cache split on `useHeatPumpsQuery`. | 2026-06-09 | Phase 4 ships the `linked_erv_unit_id` single-select picker and `served_room_ids` multi-select picker on the HP indoor unit modal (both always rendered per D-HP-23; helper text when ventilators/rooms are empty), and the default-hidden `Linked HP indoor` count column on the Ventilators DataTable. Backend gets two new silent cascades: `apply_ventilators_replace` nulls `linked_erv_unit_id` on every referencing HP indoor row when a ventilator is removed; `apply_rooms_replace` filters `served_room_ids[]` when a room is removed (also dedupes via `dict.fromkeys` to scrub any latent duplicates upstream may have introduced — the field itself has no uniqueness constraint and the document validator only checks per-element existence). Phase 4 scope amended 2026-06-09 — AC #6 modal badge + AC #8 pre-delete dialog descoped to Q-HP-FOLLOWUP-7 (Ventilators uses inline DataTable editing; no row-detail modal to host them). Generic improvement: `useSliceTableController` learned a `defaultHiddenColumns?: string[]` arg, applied only when no saved view exists. Merged in `16bdefe` (Phase 4 cohort) + `9337f62` (commit-hash bookkeeping) + `66a8f63` (post-merge simplify cleanup). New files: `backend/tests/features/heat_pumps/test_cross_table_cascades.py`; modified: `backend/features/project_document/tables/{ventilators,rooms}.py`, `frontend/src/features/equipment/{components/{VentilatorsTable,VentilatorsTableSlot}.tsx, routes/EquipmentPageBody.tsx, equipment.css, heat-pumps/{components/{IndoorUnitsTable,IndoorUnitRowModal}.tsx, lib.ts}}`, `frontend/src/shared/ui/data-table/feature/useSliceTableController.ts`, two test files. |
-| 5 | — | — | — |
+| 5A | `cd backend && uv run pytest tests/features/heat_pumps/test_phius_export.py` (17 passed: 14 pure-transform + 3 HTTP integration covering JSON / raw-csv / 501 xlsx-paste); `cd frontend && pnpm exec vitest run src/features/equipment/heat-pumps/__tests__/PhiusExportDialog.test.tsx` (8 passed: dialog states + filename builder); `pnpm exec tsc --noEmit` clean; `$ simplify` (1 finding applied: renamed `format` route param to `export_format` with `Query(alias="format")` to avoid Python builtin shadow; 4 findings skipped with reason); `$ docs-pass` (this row + STATUS Next step + Phase 5 plan header + README header + US-EQ-8 status all touched) | 2026-06-09 | Phase 5A ships the Phius CSV export end-to-end. **Backend:** new `phius_export.py` pure-transform module (`compute_phius_payload` derives Qty from outdoor-unit instance count, emits per-row warnings per PRD §6.4 incl. zero-instance; `serialize_csv` writes CRLF-terminated CSV with column order per PRD §6.2; column-conditional cells per `heating_data_type` / `cooling_data_type`). New `POST /api/v1/projects/{id}/equipment/heat-pumps/export-phius` returns wrapped `{rows, warnings, csv}` JSON by default; `?format=raw-csv` returns `text/csv` bytes for curl / MCP consumers; `?format=xlsx-paste` returns 501 (OPQ-3 deferred). `read_slice` helper added to `service.py` to keep the export route thin. **Frontend:** new `PhiusExportDialog` opens on the Equipment — Outdoor `⋯` menu (replacing the Phase 1 stub), fetches once on mount, renders row count + warnings grouped by `model_number`; "Continue with gaps" / "Download CSV" downloads the embedded CSV via `shared/lib/downloadBlob`; filename built via new `lib/phius-export.ts` `buildPhiusExportFilename(btNumber)` → `phius-hp-estimator-{bt}-{YYYY-MM-DD}.csv`. Menu remains disabled with tooltip when the outdoor-equip table is empty per PRD §6.3. New files: `backend/features/heat_pumps/phius_export.py`, `backend/tests/features/heat_pumps/test_phius_export.py`, `frontend/src/features/equipment/heat-pumps/components/PhiusExportDialog.tsx`, `frontend/src/features/equipment/heat-pumps/lib/phius-export.ts`, `frontend/src/features/equipment/heat-pumps/__tests__/PhiusExportDialog.test.tsx`. Modified: `backend/features/heat_pumps/{routes,service}.py`, `frontend/src/features/equipment/heat-pumps/{api,types}.ts`, `frontend/src/features/equipment/heat-pumps/components/OutdoorEquipTable.tsx` (removed dead `status` banner state along with the Phase 1 stub), `frontend/src/features/equipment/heat-pumps/routes/HeatPumpsPanel.tsx` (threads `project.bt_number`), `frontend/src/features/equipment/equipment.css` (removed dead `.hp-status-banner`; added `.hp-phius-warning-list`). |
+| 5B | — | — | Pending: MCP `read/add/update/delete_row` for the four HP table keys (verify generic tool coverage first), plus dedicated `export_phius_hp_estimator(project_id)` tool wrapping the Phase 5A `compute_phius_payload` + `serialize_csv`. Schemas land in `context/technical-requirements/llm-mcp-schema.md`. AC #7–11. |
+| 5C | — | — | Pending: full-lifecycle Playwright spec at `frontend/tests/e2e/heat-pumps.spec.ts`; PRD §11 cross-doc graduation checklist (PRD §6.2 / data-model / api / llm-mcp-schema / STATUS Complete marker). AC #12–14. |
 
 ## Phase plans inventory
 
@@ -130,7 +150,7 @@ question and is a Phase 5 detail, not blocking any earlier phase.
 | 2 | `phases/phase-02-equipment-indoor-page.md` | ✅ complete locally; ready for review / commit |
 | 3 | `phases/phase-03-unit-pages.md` | ✅ merged (commit `399d4e6`) |
 | 4 | `phases/phase-04-erv-and-rooms-cross-link.md` | ✅ merged (commit `16bdefe`; scope amended 2026-06-09 — Option B) |
-| 5 | `phases/phase-05-phius-export-and-mcp.md` | ✅ drafted |
+| 5 | `phases/phase-05-phius-export-and-mcp.md` | ⏳ split into 5A/5B/5C — 5A implemented locally 2026-06-09 (awaiting commit); 5B + 5C pending |
 
 ## Open questions queue
 

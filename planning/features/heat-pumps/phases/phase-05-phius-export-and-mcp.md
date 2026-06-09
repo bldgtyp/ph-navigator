@@ -1,7 +1,13 @@
 ---
 DATE: 2026-06-09
-TIME: 15:05
-STATUS: DRAFT — Phase 5 outline. Depends on Phases 0–4.
+TIME: 19:15
+STATUS: ⏳ PARTIAL — split into 5A/5B/5C during 5A implementation.
+        **5A (Phius CSV export end-to-end) implemented locally
+        2026-06-09; awaiting commit.** AC #1–5 satisfied;
+        `?format=xlsx-paste` returns a 501 placeholder (OPQ-3
+        remains open as stretch). **5B (MCP tools, AC #7–11) and
+        5C (Playwright e2e + PRD §11 cross-doc graduation,
+        AC #12–14) still pending.**
 AUTHOR: Ed May (with Claude)
 SCOPE: Phius Multiple HP Performance Estimator export (CSV + xlsx-
        paste stretch); MCP tools for all four HP tables + a

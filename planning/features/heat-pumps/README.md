@@ -1,8 +1,10 @@
 ---
 DATE: 2026-06-09
-TIME: 17:00
-STATUS: Active — Phases 0–4 merged. Phase 5 (Phius export + MCP)
-        is next.
+TIME: 19:15
+STATUS: Active — Phases 0–4 merged. Phase 5 split into 5A/5B/5C.
+        **5A (Phius CSV export end-to-end) implemented locally
+        2026-06-09; awaiting commit.** 5B (MCP tools) and 5C
+        (Playwright e2e + cross-doc graduation) still pending.
 AUTHOR: Ed (via Claude)
 SCOPE: Heat-Pump equipment data model for PH-Navigator V2
 RELATED:
@@ -29,13 +31,25 @@ the existing line-item equipment (Pumps, Fans, ERVs) because:
    relationship to an ERV row.
 
 **Phases 0–4 merged (commits `9da3726`, `1aeab68`, `e9cd6dd`,
-`2dd9807`, `399d4e6`, `16bdefe`). Phase 5 (Phius export + MCP) is
-next.** Phase 4 scope was amended on 2026-06-09:
-AC #6 modal badge and AC #8 pre-delete dialog descoped to
-Q-HP-FOLLOWUP-7 (Ventilators uses inline DataTable editing — no
-row-detail modal to host them). 25 numbered D-HP decisions fully
-specify the v1 surface. See `STATUS.md` for the verification
-ledger and `phases/phase-04-erv-and-rooms-cross-link.md` for the
+`2dd9807`, `399d4e6`, `16bdefe`).** Phase 4 scope was amended on
+2026-06-09: AC #6 modal badge and AC #8 pre-delete dialog descoped
+to Q-HP-FOLLOWUP-7 (Ventilators uses inline DataTable editing —
+no row-detail modal to host them).
+
+**Phase 5 split into three slices** during the 5A implementation
+session (2026-06-09):
+
+- **5A — Phius CSV export end-to-end** *(implemented locally;
+  awaiting commit).* Backend `phius_export` module + POST endpoint
+  + `PhiusExportDialog` + menu wire-up. AC #1–5 satisfied.
+- **5B — MCP** *(pending).* `read/add/update/delete_row` for the
+  four HP tables + dedicated `export_phius_hp_estimator`.
+- **5C — Playwright e2e + cross-doc graduation** *(pending).*
+  Full-lifecycle spec + PRD §11 checklist.
+
+25 numbered D-HP decisions fully specify the v1 surface. See
+`STATUS.md` for the verification ledger and
+`phases/phase-04-erv-and-rooms-cross-link.md` for the Phase 4
 scope amendment details.
 
 ## Read order
@@ -46,7 +60,9 @@ scope amendment details.
 4. `STATUS.md` — current state, next step, verification ledger
 5. `phases/phase-00-backend-foundation.md` …
    `phases/phase-04-erv-and-rooms-cross-link.md` — implemented and
-   merged. `phases/phase-05-phius-export-and-mcp.md` is still DRAFT.
+   merged. `phases/phase-05-phius-export-and-mcp.md` is split into
+   5A/5B/5C — 5A implemented locally 2026-06-09 (awaiting commit);
+   5B + 5C pending.
 
 ## Resolved directional debates (archived in `decisions.md`)
 

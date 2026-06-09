@@ -44,7 +44,7 @@ export function HeatPumpsPanel({ project }: { project: ProjectDetail }) {
 
   return (
     <div className="hp-panel">
-      <AppSubTabs ariaLabel="Heat Pump tables" role="tablist">
+      <AppSubTabs ariaLabel="Heat Pump tables" role="tablist" variant="pills">
         {HEAT_PUMP_LEAF_TABS.map((tab) => (
           <AppSubTabButton
             key={tab.key}
@@ -62,6 +62,7 @@ export function HeatPumpsPanel({ project }: { project: ProjectDetail }) {
       {activeLeaf === "equipment-outdoor" ? (
         <OutdoorEquipTable
           projectId={project.id}
+          btNumber={project.bt_number}
           slice={query.data}
           isEditor={project.access_mode === "editor"}
           versionLocked={project.active_version?.locked ?? false}

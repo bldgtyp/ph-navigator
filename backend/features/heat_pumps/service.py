@@ -97,6 +97,12 @@ def compose_read(version_id: UUID, access: ProjectAccess) -> HeatPumpsReadRespon
     )
 
 
+def read_slice(version_id: UUID, access: ProjectAccess) -> HeatPumpsTableSlice:
+    """Read-only view of the heat-pump slice for downstream computations (e.g. Phius export)."""
+
+    return get_current_document_view(version_id, access).body.tables.equipment.heat_pumps
+
+
 def apply_patch(
     version_id: UUID,
     table_key: HeatPumpTableKey,

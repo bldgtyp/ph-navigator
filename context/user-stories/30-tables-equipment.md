@@ -1039,9 +1039,10 @@ this story.
 
 ## US-EQ-8 — HP Equipment — Outdoor DataTable
 
-**Status:** Phase 1 partially implemented (2026-06-09; frontend
-outdoor-equipment page live, Phius export still stubbed) ·
-**Priority:** MVP
+**Status:** Phase 1 implemented (2026-06-09) + Phase 5A locally
+implemented (2026-06-09; Phius CSV export end-to-end wired —
+backend `phius_export` + dialog + menu; xlsx-paste still
+deferred per OPQ-3) · **Priority:** MVP
 **Inherits:** US-Builder-Tables (criteria 1–17), US-EQ-1, US-EQ-7
 
 ### Story
@@ -1073,8 +1074,18 @@ Phase 1 ships the active-version REST-backed DataTable, row-detail
 modal, add / edit / delete row mutations, inline simple-cell edits,
 `datasheet_asset_ids[]` via `<AttachmentCell>`, a paired-indoor FK
 picker, and a minimal inline-create modal for indoor equipment.
-The Phius export menu item is present but intentionally shows the
-Phase 5 stub state.
+
+Phase 5A (2026-06-09, awaiting commit) replaces the Phase 1 export
+stub with a real pre-export dialog: the `⋯ → Export to Phius HP
+Estimator…` menu item opens `PhiusExportDialog`, which fetches the
+wrapped JSON payload (`rows` + `warnings` + inline `csv`) from
+`POST /api/v1/projects/{id}/equipment/heat-pumps/export-phius`,
+renders row count + per-row warnings grouped by `model_number`,
+and on Continue downloads `phius-hp-estimator-{bt}-{YYYY-MM-DD}.csv`
+via `shared/lib/downloadBlob`. Backend Qty is derived from outdoor-
+unit instance counts; column-conditional cells follow Heat Pumps
+PRD §6.2 / §6.4. xlsx-paste payload (OPQ-3) returns a 501
+placeholder this slice.
 
 Phase 1 caveat: HP equipment `manufacturer`, `system_family`, and
 `refrigerant` rows store option ids, but HP tables are not yet

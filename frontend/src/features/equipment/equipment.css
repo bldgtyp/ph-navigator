@@ -34,20 +34,24 @@
   gap: 12px;
 }
 
-.hp-panel .app-subtabs {
-  --hp-tab-scale: 0.92;
-  margin-top: -4px;
-}
-
-.hp-panel .app-subtabs__tab {
-  font-size: calc(0.875rem * var(--hp-tab-scale));
-  min-height: 30px;
-  padding: 5px 10px;
-}
-
-.hp-coming-soon,
-.hp-status-banner {
+.hp-coming-soon {
   max-width: 720px;
+}
+
+.hp-phius-warning-list {
+  margin: 0;
+  padding-left: 18px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.hp-phius-warning-list > li {
+  margin-bottom: 8px;
+}
+
+.hp-phius-warning-list ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
 }
 
 .hp-modal-form {
