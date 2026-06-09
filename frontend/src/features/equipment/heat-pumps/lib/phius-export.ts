@@ -1,6 +1,6 @@
 /**
  * Phius export filename builder. Matches the convention from
- * `planning/features/heat-pumps/phases/phase-05-phius-export-and-mcp.md`
+ * `planning/archive/heat-pumps/phases/phase-05-phius-export-and-mcp.md`
  * (AC #3): `phius-hp-estimator-{project-bt-number}-{date}.csv`.
  */
 export function buildPhiusExportFilename(btNumber: string, today: Date = new Date()): string {

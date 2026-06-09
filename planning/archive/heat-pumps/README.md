@@ -1,10 +1,11 @@
 ---
 DATE: 2026-06-09
-TIME: 19:15
-STATUS: Active — Phases 0–4 merged. Phase 5 split into 5A/5B/5C.
-        **5A (Phius CSV export end-to-end) implemented locally
-        2026-06-09; awaiting commit.** 5B (MCP tools) and 5C
-        (Playwright e2e + cross-doc graduation) still pending.
+TIME: 19:30
+STATUS: Complete — Phases 0–4 + Phase 5A all merged (final commit
+        `79e11b3`, 2026-06-09). Phase 5B (MCP tools) and Phase 5C
+        (Playwright e2e + PRD §11 cross-doc graduation) deferred to
+        Q-HP-FOLLOWUP-8/9/10. Folder archived to
+        `planning/archive/heat-pumps/`.
 AUTHOR: Ed (via Claude)
 SCOPE: Heat-Pump equipment data model for PH-Navigator V2
 RELATED:
@@ -30,27 +31,23 @@ the existing line-item equipment (Pumps, Fans, ERVs) because:
    Kit + Lossnay LGH pattern) — meaning an HP indoor row needs a
    relationship to an ERV row.
 
-**Phases 0–4 merged (commits `9da3726`, `1aeab68`, `e9cd6dd`,
-`2dd9807`, `399d4e6`, `16bdefe`).** Phase 4 scope was amended on
-2026-06-09: AC #6 modal badge and AC #8 pre-delete dialog descoped
-to Q-HP-FOLLOWUP-7 (Ventilators uses inline DataTable editing —
-no row-detail modal to host them).
+**Feature shipped 2026-06-09 across seven commits.** Phases 0–4
+(commits `9da3726`, `1aeab68`, `e9cd6dd`, `2dd9807`, `399d4e6`,
+`16bdefe`) plus Phase 5A Phius CSV export (commit `79e11b3`)
+deliver all five user-visible PRD §2.1 goals. Phase 4 scope was
+amended on 2026-06-09: AC #6 modal badge and AC #8 pre-delete
+dialog descoped to Q-HP-FOLLOWUP-7 (Ventilators uses inline
+DataTable editing — no row-detail modal to host them).
 
-**Phase 5 split into three slices** during the 5A implementation
-session (2026-06-09):
-
-- **5A — Phius CSV export end-to-end** *(implemented locally;
-  awaiting commit).* Backend `phius_export` module + POST endpoint
-  + `PhiusExportDialog` + menu wire-up. AC #1–5 satisfied.
-- **5B — MCP** *(pending).* `read/add/update/delete_row` for the
-  four HP tables + dedicated `export_phius_hp_estimator`.
-- **5C — Playwright e2e + cross-doc graduation** *(pending).*
-  Full-lifecycle spec + PRD §11 checklist.
+**Phase 5 split into three slices.** 5A (Phius CSV export
+end-to-end) merged in `79e11b3`. **5B (MCP) and 5C (Playwright
+e2e + PRD §11 cross-doc graduation) deferred to
+Q-HP-FOLLOWUP-8/9/10** rather than blocking the shipped feature.
 
 25 numbered D-HP decisions fully specify the v1 surface. See
-`STATUS.md` for the verification ledger and
-`phases/phase-04-erv-and-rooms-cross-link.md` for the Phase 4
-scope amendment details.
+`STATUS.md` for the per-phase verification ledger and the deferred
+follow-up list; `phases/phase-04-erv-and-rooms-cross-link.md` for
+the Phase 4 scope amendment details.
 
 ## Read order
 
@@ -60,9 +57,9 @@ scope amendment details.
 4. `STATUS.md` — current state, next step, verification ledger
 5. `phases/phase-00-backend-foundation.md` …
    `phases/phase-04-erv-and-rooms-cross-link.md` — implemented and
-   merged. `phases/phase-05-phius-export-and-mcp.md` is split into
-   5A/5B/5C — 5A implemented locally 2026-06-09 (awaiting commit);
-   5B + 5C pending.
+   merged. `phases/phase-05-phius-export-and-mcp.md` split into
+   5A/5B/5C — 5A merged in `79e11b3`; 5B + 5C deferred at archival
+   to Q-HP-FOLLOWUP-8/9/10.
 
 ## Resolved directional debates (archived in `decisions.md`)
 
@@ -81,6 +78,6 @@ All 25 D-HP decisions are now numbered and closed. Highlights:
 - ✅ Nested-tab visual treatment → D-HP-25 (shadcn `Tabs` smaller
   variant).
 
-The only live question is **OPQ-3** — Phase 5 xlsx-paste payload
-format — which is a phase-implementation detail with no blocker
-implications.
+**OPQ-3** (Phase 5 xlsx-paste payload format) was deferred at
+archival; the CSV form is the v1.0 commit. Phase 5A returns 501 on
+`?format=xlsx-paste`.

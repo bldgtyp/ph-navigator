@@ -3,7 +3,7 @@
 Pure transform: project's heat-pump slice → CSV payload that pastes
 cleanly into the calc's "Air Source Heat Pump Performance Data"
 section. Column order and conditional cells follow
-`planning/features/heat-pumps/PRD.md` §6.2; pre-export validation
+`planning/archive/heat-pumps/PRD.md` §6.2; pre-export validation
 follows §6.4.
 """
 
