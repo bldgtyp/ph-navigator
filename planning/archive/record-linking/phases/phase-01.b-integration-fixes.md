@@ -15,10 +15,10 @@ SCOPE: Follow-on fix list for Phase 1 record-linking. Closes the gap
        code landed across the first–sixth passes of
        `phase-01-link-values.md`.
 RELATED:
-  - planning/features/record-linking/phases/phase-01-link-values.md
+  - planning/archive/record-linking/phases/phase-01-link-values.md
     (the parent phase whose acceptance gates this list closes)
-  - planning/features/record-linking/STATUS.md (seventh-pass note)
-  - planning/features/record-linking/PRD.md §11 Q13, Q18, Q19, Q24
+  - planning/archive/record-linking/STATUS.md (seventh-pass note)
+  - planning/archive/record-linking/PRD.md §11 Q13, Q18, Q19, Q24
   - frontend/src/features/equipment/routes/RoomsPage.tsx
   - frontend/src/features/equipment/routes/EquipmentPageBody.tsx
   - frontend/src/shared/ui/data-table/DataTable.tsx

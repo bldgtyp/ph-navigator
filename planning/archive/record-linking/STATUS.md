@@ -1,15 +1,13 @@
 ---
 DATE: 2026-06-08
 TIME: -
-STATUS: Phases 1, 1.b, and 2 are complete for the canonical
-        Rooms→Pumps source/inverse loop. linked_record deleteField
-        link-bag cleanup is fixed; browser/e2e smoke evidence is
-        recorded under `assets/e2e/rooms-pumps/`. Current `make
-        format` left files unchanged and `make ci` passed on
-        2026-06-09. Phase 3 backend rollup parsing/evaluation and
+STATUS: Complete and archived on 2026-06-09 for the canonical
+        Rooms→Pumps record-linking workflow. Phases 1, 1.b, and 2 are
+        complete; Phase 3 backend rollup parsing/evaluation and
         document-level linked-ref validation / cycle detection are
-        implemented; frontend editor completion, perf gate extension,
-        and browser smoke remain.
+        implemented. Manual closeout passed. `make format` left files
+        unchanged and `make ci` passed on 2026-06-09. Remaining
+        non-blocking polish is explicitly deferred below.
 AUTHOR: Ed May (with Claude)
 ---
 
@@ -63,8 +61,8 @@ Tracks per-phase progress. Step IDs map to `phases/phase-01-link-values.md` P-nu
 
 ### Verification warnings noticed
 
-- [ ] **Frontend test hygiene** — `make ci` still emits existing React `act(...)` warnings in several frontend suites, including DataTable / table-view state tests and `RoomsTable.customFieldCellWrite.test.tsx`. Non-blocking today, but worth cleaning before the warnings hide a real regression.
-- [ ] **Bundle-size hygiene** — Vite still warns that the main JS chunk is larger than 500 kB after minification. Non-blocking for record-linking; track separately if load time becomes a target.
+- [x] **Deferred — frontend test hygiene** — `make ci` still emits existing React `act(...)` warnings in several frontend suites, including DataTable / table-view state tests and `RoomsTable.customFieldCellWrite.test.tsx`. Non-blocking today, but worth cleaning before the warnings hide a real regression.
+- [x] **Deferred — bundle-size hygiene** — Vite still warns that the main JS chunk is larger than 500 kB after minification. Non-blocking for record-linking; track separately if load time becomes a target.
 
 ### Landed this session (2026-06-08, fifth pass)
 
@@ -189,8 +187,8 @@ smoke.
 
 - [x] **Fix linked_record deleteField bug** — backend delete-field row stripping removes `custom_links[field_key]`; focused regression `cd backend && uv run pytest tests/test_project_document_linked_record.py` passed on 2026-06-09.
 - [x] **Record the canonical browser smoke** — reusable Playwright spec added at `frontend/tests/e2e/record-linking-rooms-pumps.spec.ts`: create linked_record field on Rooms, target Pumps, link a pump, reload, click pill, land on Pumps with `?tab=pumps&focus=<row_id>`, and verify inverse column. Screenshots: `assets/e2e/rooms-pumps/01-linked-room-pill.png`, `assets/e2e/rooms-pumps/02-pumps-focus-inverse.png`.
-- [ ] **Other-target page wiring** — when a non-Pumps target table becomes a link target (e.g. Ventilators), apply the RoomsPage / EquipmentPageBody reference pattern: fetch target slice, build ops per target, merge maps, and plumb `focusRowId` through the corresponding `*TableSlot`.
-- [ ] **Diff / schema acceptance audit** — verify whether JSON Schema export and `custom_links.<field_key>` diff rendering are truly satisfied or should be explicitly deferred / implemented.
+- [x] **Deferred — other-target page wiring** — when a non-Pumps target table becomes a link target (e.g. Ventilators), apply the RoomsPage / EquipmentPageBody reference pattern: fetch target slice, build ops per target, merge maps, and plumb `focusRowId` through the corresponding `*TableSlot`.
+- [x] **Deferred — diff / schema acceptance audit** — JSON Schema export is deferred until PHN ships a generated schema artifact; list-aware linked-record diffs are deferred until linked-record diffs become a user-facing review surface.
 
 ## Phase 2 — Inverse view
 
@@ -207,7 +205,7 @@ smoke.
 
 ## Phase 3 — Rollups
 
-**PARTIALLY IMPLEMENTED — backend rollup read overlay + validator.**
+**Complete for backend rollup read overlay + validator; frontend authoring deferred.**
 
 - [x] **P3.1 parser / AST backend slice** — Python formula AST now
   carries `LinkedRef`, `LinkedFromRef`, and `FieldAccess`; parser
@@ -236,7 +234,11 @@ smoke.
   linked primitives, builds a document-level dependency graph, and
   raises `formula_cycle_detected` with table-qualified cycle paths.
   The legacy Rooms helper delegates to the document-wide pass.
-- [ ] **P3.6 perf gate extension** — not yet added.
-- [ ] **P4 frontend formula editor primitives/completion** — not yet
-  started.
-- [ ] **P5 browser smoke for rollup authoring** — not yet recorded.
+- [x] **Deferred — P3.6 perf gate extension** — not added in this
+  closeout. Existing Phase 2 inverse-view perf gate remains in place;
+  extend it if rollup formulas become a large-fixture performance risk.
+- [x] **Deferred — P4 frontend formula editor primitives/completion** —
+  not started. Backend supports persisted rollup formulas; UI authoring
+  can be added when rollups need first-class editor support.
+- [x] **Deferred — P5 browser smoke for rollup authoring** — not
+  recorded because frontend rollup authoring is deferred.

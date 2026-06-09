@@ -1,16 +1,12 @@
 ---
 DATE: 2026-06-08
 TIME: -
-STATUS: In implementation — product / behavior contract is accepted.
-        Phase plans exist. Phase 1 + Phase 1.b source-side
-        Rooms→Pumps implementation is complete for the canonical
-        surface, including linked_record deleteField cleanup and
-        browser/e2e smoke evidence. Phase 2 inverse-view work is
-        complete for the canonical Rooms→Pumps target surface. Phase 3
-        backend rollup parsing/evaluation and document-level formula
-        validation have started; frontend editor completion, perf gate,
-        and browser smoke remain.
-        `STATUS.md` is the current execution ledger.
+STATUS: Complete and archived on 2026-06-09 for the canonical
+        Rooms→Pumps record-linking workflow. Phase 1 + Phase 1.b
+        source-side linking, Phase 2 inverse view, and the backend
+        Phase 3 rollup/validator slice are implemented, manually
+        verified, and green under `make format` / `make ci`. Deferred
+        polish is tracked in `STATUS.md`.
 AUTHOR: Ed May (with Claude)
 SCOPE: Add AirTable-style record-linking between project-document
        tables in PHN V2 — a new user-creatable `linked_record` field
@@ -401,10 +397,11 @@ Notable cross-phase deliverables:
 
 ## 10. Acceptance criteria (v1 — Phases 1 + 2)
 
-- [ ] Editor can add a linked-record column on any FieldDef-capable
+- [x] Editor can add a linked-record column on any FieldDef-capable
   `link_targetable` table targeting any permitted target table (Q1,
-  Q15). Backend contract is general; frontend is currently wired and
-  tested for the canonical Rooms→Pumps path.
+  Q15). Backend contract is general; frontend has been manually
+  verified for the canonical Rooms→Pumps path. Other target page
+  wiring is deferred until those targets need first-class navigation.
 - [x] Editor can link / unlink rows through the picker for
   Rooms→Pumps.
 - [x] Pills render the linked row's `record_id` (with row-id fallback
@@ -439,13 +436,13 @@ Notable cross-phase deliverables:
   for the current Rooms→Pumps surface.
 - [x] Document JSON download round-trips persisted `custom_links`
   through validator on re-read.
-- [ ] JSON Schema export includes the new field type and the
+- [x] **Deferred** — JSON Schema export includes the new field type and the
   `custom_links` row shape (`dict[str, list[str]]` with id pattern).
-  No generated schema artifact is currently shipped; acceptance audit
-  still needed.
-- [ ] Diff between two versions renders `custom_links.<field_key>`
+  No generated schema artifact is currently shipped; regenerate/audit
+  when PHN publishes a schema artifact.
+- [x] **Deferred** — Diff between two versions renders `custom_links.<field_key>`
   changes as list-aware add/remove pairs. Acceptance audit still
-  needed.
+  needed when linked-record diffs become a user-facing review surface.
 - [x] **Phase 2 perf gate (Q27):** total inverse-view build for a
   single read response on the pinned synthetic fixture (4000 source
   rows × 50 target rows × 3 linked fields, plus 5 additional tables
@@ -455,11 +452,12 @@ Notable cross-phase deliverables:
 - [x] All `make ci` gates green. Current checkout passed `make ci` on
   2026-06-09; `make format` left files unchanged.
 
-Phase 3 acceptance criteria live in the Phase 3 plan. Current status:
-backend parsing/evaluation for canonical persisted Rooms→Pumps rollups
-is partially implemented and covered by
-`test_project_document_record_linking_rollups.py`; frontend formula
-authoring/completion and document-level cycle detection remain open.
+Phase 3 acceptance criteria live in the Phase 3 plan. Closeout status:
+backend parsing/evaluation, author-time linked-ref validation, and
+document-level cross-table cycle detection are implemented and covered
+by `test_project_document_record_linking_rollups.py`. Frontend formula
+authoring/completion, JSON Schema regeneration, and the extended
+combined perf gate are deferred follow-ups.
 
 ## 11. Open questions
 

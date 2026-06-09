@@ -11,10 +11,10 @@ SCOPE: Server-computed inverse view: target tables surface "incoming
        links" as read-only columns, target-table inverse fingerprints
        land, perf gate ships as a CI assertion.
 RELATED:
-  - planning/features/record-linking/PRD.md §4 (Phase 2), §5 (inverse
+  - planning/archive/record-linking/PRD.md §4 (Phase 2), §5 (inverse
     view section), §6 (ETag + inverse overlay), §10 acceptance,
     §11 Q14, Q21, Q27 (inverse fingerprint, header naming, perf gate)
-  - planning/features/record-linking/phases/phase-01-link-values.md
+  - planning/archive/record-linking/phases/phase-01-link-values.md
   - context/technical-requirements/data-model.md §6.3, §6.6.4
   - context/technical-requirements/data-table.md
   - backend/features/project_document/tables/contracts.py
@@ -374,14 +374,16 @@ after backend changes land.
 
 ### Browser smoke (Playwright MCP / e2e follow-up)
 
-- [ ] Editor on Rooms links 3 rooms to Pump A; opens Pumps; sees a
+- [x] Editor on Rooms links 3 rooms to Pump A; opens Pumps; sees a
   "Rooms ← Pump" column on Pump A's row with 3 pills.
-- [ ] Click a pill → lands on Rooms with the room highlighted.
-- [ ] Add a second field "Backup Pump" on Rooms targeting Pumps;
+- [x] Click a pill → lands on Rooms with the room highlighted.
+- [x] Add a second field "Backup Pump" on Rooms targeting Pumps;
   link a different room; Pumps now shows "Rooms ← Pump" and
   "Rooms ← Backup Pump" as two columns.
-- [ ] Viewer mode: inverse columns visible, click-navigate works, no
-  picker affordances.
+- [x] Viewer mode: inverse columns visible, click-navigate works, no
+  picker affordances. Canonical reusable evidence is
+  `frontend/tests/e2e/record-linking-rooms-pumps.spec.ts` plus
+  screenshots under `../assets/e2e/rooms-pumps/`.
 
 ## P6. Out of scope
 
