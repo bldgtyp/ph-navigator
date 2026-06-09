@@ -31,12 +31,17 @@ from features.project_document.document import (
     PumpsTableEnvelope,
     SingleSelectOption,
 )
+from features.project_document.inverse_view import (
+    attach_inverse_links_overlay,
+    build_inverse_table_view,
+)
 from features.project_document.models import ProjectDocumentSource
 from features.project_document.tables._built_in_seeds import built_in_field_def
-from features.project_document.tables.contracts import TableContract
+from features.project_document.tables.contracts import InverseLinkField, TableContract
 from features.project_document.validation import validate_document
 
 PUMPS_TABLE_NAME = "pumps"
+_PUMPS_TABLE_PATH: tuple[str, ...] = ("equipment", PUMPS_TABLE_NAME)
 
 
 # Pumps built-in FieldDef seeds. `record_id` replaces Phase 1b's `tag`
@@ -106,6 +111,9 @@ class PumpsSliceResponse(BaseModel):
     pumps: list[PumpRow]
     field_defs: list[TableFieldDef]
     single_select_options: dict[str, list[SingleSelectOption]]
+    inverse_links: dict[str, dict[str, list[str]]] = Field(default_factory=dict)
+    inverse_link_fields: list[InverseLinkField] = Field(default_factory=list)
+    inverse_links_fingerprint: str = ""
 
 
 def apply_pumps_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectDocumentV1:
@@ -139,6 +147,7 @@ def pumps_response(
     draft_etag: str | None,
     body: ProjectDocumentV1,
 ) -> PumpsSliceResponse:
+    inverse_view = build_inverse_table_view(body, _PUMPS_TABLE_PATH)
     return PumpsSliceResponse(
         project_id=project_id,
         version_id=version_id,
@@ -148,6 +157,9 @@ def pumps_response(
         pumps=body.tables.equipment.pumps.rows,
         field_defs=body.tables.equipment.pumps.field_defs,
         single_select_options={PUMP_DEVICE_TYPE_OPTION_KEY: body.single_select_options[PUMP_DEVICE_TYPE_OPTION_KEY]},
+        inverse_links=inverse_view.inverse_links,
+        inverse_link_fields=inverse_view.inverse_link_fields,
+        inverse_links_fingerprint=inverse_view.fingerprint,
     )
 
 
@@ -156,9 +168,13 @@ def extract_pumps_envelope(body: ProjectDocumentV1) -> dict[str, object]:
 
     Mirrors `extract_rooms_envelope`'s `{field_defs, rows}` shape.
     """
+    inverse_view = build_inverse_table_view(body, _PUMPS_TABLE_PATH)
+    rows = [pump.model_dump(mode="json") for pump in body.tables.equipment.pumps.rows]
     return {
         "field_defs": [field.model_dump(mode="json") for field in body.tables.equipment.pumps.field_defs],
-        "rows": [pump.model_dump(mode="json") for pump in body.tables.equipment.pumps.rows],
+        "rows": attach_inverse_links_overlay(rows, inverse_view.inverse_links),
+        "inverse_link_fields": [field.model_dump(mode="json") for field in inverse_view.inverse_link_fields],
+        "inverse_links_fingerprint": inverse_view.fingerprint,
     }
 
 
@@ -182,6 +198,6 @@ pumps_contract = TableContract(
     apply_replace=apply_pumps_replace,
     extract_rows=extract_pumps_envelope,
     extract_diff_value=extract_pumps_diff_value,
-    table_path=("equipment", "pumps"),
+    table_path=_PUMPS_TABLE_PATH,
     field_registry=None,
 )

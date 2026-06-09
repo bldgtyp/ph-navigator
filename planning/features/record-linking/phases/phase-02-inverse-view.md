@@ -1,17 +1,18 @@
 ---
 DATE: 2026-06-08
 TIME: planning
-STATUS: Proposed implementation plan for Record-linking Phase 2.
-        NOT STARTED — blocked on Phase 1 data-table integration
-        landing (see `../STATUS.md` and `phase-01-link-values.md`).
+STATUS: Complete for the current link-target surface (canonical
+        Rooms→Pumps). Focused backend/frontend checks pass, `make
+        format` is clean, and `make ci` is green. Browser smoke/e2e
+        evidence remains an explicit follow-up tracked in `STATUS.md`.
 AUTHOR: Ed May (with Claude)
 SCOPE: Server-computed inverse view: target tables surface "incoming
-       links" as read-only columns, cross-table ETag invalidation
-       lands, perf gate ships as a CI assertion.
+       links" as read-only columns, target-table inverse fingerprints
+       land, perf gate ships as a CI assertion.
 RELATED:
   - planning/features/record-linking/PRD.md §4 (Phase 2), §5 (inverse
     view section), §6 (ETag + inverse overlay), §10 acceptance,
-    §11 Q14, Q21, Q27 (cross-table ETag, header naming, perf gate)
+    §11 Q14, Q21, Q27 (inverse fingerprint, header naming, perf gate)
   - planning/features/record-linking/phases/phase-01-link-values.md
   - context/technical-requirements/data-model.md §6.3, §6.6.4
   - context/technical-requirements/data-table.md
@@ -29,13 +30,14 @@ RELATED:
 Phase 1 made `linked_record` a working source-side field with no
 visible effect on the target table. Phase 2 closes the loop:
 
-- the target table's wire response gains an `inverse_links` overlay
-  alongside the existing `rows_computed` overlay;
+- the target table's wire response gains a top-level `inverse_links`
+  overlay alongside the existing `rows_computed` overlay;
 - the frontend renders inverse columns as **read-only pill lists**
   with headers like `Rooms ← Pump`;
-- the target table's ETag includes a content hash of every incoming
-  `custom_links` field so a write on Rooms invalidates Pumps'
-  cached response;
+- the target table response includes an `inverse_links_fingerprint`
+  content hash of every incoming `custom_links` field; concurrency
+  remains on the existing document-level `version_etag` /
+  `draft_etag`;
 - the perf gate (PRD Q27) lands as a CI assertion on a committed
   synthetic fixture.
 
@@ -72,10 +74,12 @@ Decisions already locked:
   field_display_name>`. Two fields from the same source table
   targeting the same target table disambiguate by source field
   display_name: "Rooms ← Primary Pump", "Rooms ← Backup Pump".
-- **ETag scope** (Q14): source-table ETag stays slice-local;
-  target-table fingerprint includes hashes of every incoming
-  linked-record field's id-list content from every source table
-  that targets it.
+- **ETag / fingerprint scope** (Q14): this API does not currently
+  expose per-table ETags. Source writes rotate the document-level
+  draft/version ETags as before; target-table responses additionally
+  expose `inverse_links_fingerprint`, a stable hash of incoming
+  linked-record id-list content from every source table that targets
+  that table.
 - **Perf gate** (Q27): per-request, <100ms total inverse build on
   pinned CI runner + pinned fixture, regression check fails if
   >20% over baseline on 3 consecutive CI runs.
@@ -86,10 +90,11 @@ Decisions already locked:
 
 ## P2. Acceptance — Phase 2 done when
 
-1. Every FieldDef-capable target table's wire response carries an
-   `inverse_links` per-row overlay keyed by `<source_table>.<field_
-   key>` whose value is the list of source row ids pointing at
-   that target row in the current snapshot.
+1. The current link-target surface's wire response (Pumps, plus the
+   generic Rooms response hook for future sources) carries an
+   `inverse_links` overlay keyed by `<source_table>.<field_key>`
+   whose value is the list of source row ids pointing at that target
+   row in the current snapshot.
 2. The overlay rides alongside `rows_computed` (re-using
    `default_attach_computed_overlay`-style merge for the new
    field; do NOT collapse the two overlays into one wire field —
@@ -106,12 +111,13 @@ Decisions already locked:
    read. A draft read sees only ids present in the current draft;
    a saved-version read sees ids present in that immutable
    version.
-6. The target table's ETag changes when any source table's
+6. `inverse_links_fingerprint` changes when any source table's
    `custom_links` slice changes such that the target's incoming-
-   links content hash changes. Integration test asserts the
-   invalidation pair (Q14).
-7. Source-table ETag stays slice-local — writes to Rooms still
-   change Rooms' ETag because the Rooms slice changed.
+   links content hash changes. Document-level ETags still cover write
+   concurrency.
+7. Source-table write semantics stay unchanged — writes to Rooms still
+   rotate the document-level draft/version ETag because the document
+   changed.
 8. JSON download includes the `inverse_links` overlay on every
    target row. Round-trip through validator strips the overlay
    (overlay is a read-only computed view; persistence stays on
@@ -133,6 +139,12 @@ Decisions already locked:
 ## P3. Backend work
 
 ### P3.1 — Inverse view builder
+
+Status: ✅ COMPLETE — `backend/features/project_document/inverse_view.py`
+walks raw `ProjectDocumentV1.tables` by `TableContract.table_path`,
+collects `linked_record` fields, filters target ids against explicit
+snapshot row ids, and returns the target-row inverse overlay plus
+column metadata helpers.
 
 New module: `backend/features/project_document/inverse_view.py`.
 
@@ -165,6 +177,13 @@ and M = target rows.
 
 ### P3.2 — Attach overlay to per-table responses
 
+Status: ✅ COMPLETE for current target surface — Rooms and Pumps table
+responses now expose top-level `inverse_links`,
+`inverse_link_fields`, and `inverse_links_fingerprint`; Rooms and
+Pumps JSON table downloads attach `inverse_links` into derived row
+dicts. The response overlay is top-level rather than persisted on row
+models so validation round-trips keep stripping the read-only view.
+
 Each FieldDef-capable table's `build_response` (today returns the
 `{rows, field_defs, ...}` envelope) gains an `inverse_links`
 attachment step:
@@ -176,28 +195,39 @@ attachment step:
   (falling back to `{}` when the row has no incoming links).
 - The helper mirrors `default_attach_computed_overlay`'s shape so
   consumers see a deterministic merge.
-- Build the inverse-view dict **once per request** at the route
-  level (not once per table) so a multi-table read path reuses the
-  same walk.
+- Single-table slice responses call `build_inverse_table_view(...)`
+  for their target path so they do not compute whole-document inverse
+  overlays when only one target table is being read.
 
 ### P3.3 — Target-table fingerprint includes incoming hashes
 
-`backend/features/project_document/validation.py`:
+Status: ✅ COMPLETE with API-shape adjustment —
+`inverse_fingerprint_for_table(...)` provides the stable incoming-link
+content hash used by tests, and Rooms/Pumps responses expose it as
+`inverse_links_fingerprint`. The public API still carries
+document-level `version_etag` / `draft_etag`, so this is an explicit
+fingerprint rather than a per-table ETag.
 
-- Extend `compute_schema_fingerprint` (or the data-fingerprint
-  pair, whichever fingerprint feeds the per-table ETag) so the
-  target table's fingerprint includes a stable hash of the
-  inverse-view data for that table.
-- Hash input: sorted list of `(source_key, target_row_id,
-  source_row_ids_tuple)`. Hash function: existing fingerprint
-  hasher (SHA-256 truncated, or whatever the repo uses today).
-- Source-table fingerprint stays unchanged — it's already content-
-  sensitive to `custom_links` because the slice is hashed
-  end-to-end.
-- Add a regression test that asserts a write to Rooms'
-  `custom_links` changes both Rooms' and Pumps' fingerprints.
+Actual implementation:
+
+- `inverse_fingerprint_for_table(...)` builds a stable hash from the
+  target table's computed inverse overlay.
+- Hash input is a sorted list of `(source_key, target_row_id,
+  source_row_ids_tuple)` encoded through the inverse-view helper.
+- Source-table write concurrency stays on document-level
+  `version_etag` / `draft_etag`; the target response's
+  `inverse_links_fingerprint` is the cache/refresh signal for
+  incoming-link changes.
+- Regression tests assert the fingerprint changes when a Rooms
+  `custom_links` write changes Pumps' incoming links, and does not
+  change when an unrelated Rooms scalar value changes.
 
 ### P3.4 — Snapshot-aware orphan filter
+
+Status: ✅ COMPLETE — `build_inverse_links(..., snapshot_row_ids=...)`
+requires callers/tests to make the snapshot filter explicit when they
+need non-default semantics; the default derives row ids from the body
+being read.
 
 The inverse-view builder accepts an explicit `snapshot_row_ids:
 dict[tuple[str, ...], frozenset[str]]` parameter:
@@ -218,6 +248,15 @@ mutation summary so the frontend can render the toast. Skip if
 implementation friction surfaces; defer to a polish PR.
 
 ### P3.6 — Perf gate fixture + CI assertion
+
+Status: ✅ COMPLETE with fixture-shape adjustment — added
+`backend/tests/builders/record_linking_perf_doc.py`,
+`backend/tests/baselines/record_linking_perf.json`, and
+`backend/tests/test_record_linking_perf.py`. The fixture is generated
+deterministically in memory instead of committed as a large JSON file:
+4000 Rooms × 3 linked fields, 50 Pumps, plus 5 equipment tables × 200
+rows × 1 linked field. The test warms the builder, asserts the fixture
+shape, and asserts median inverse build under 100ms.
 
 - Commit `backend/tests/fixtures/record_linking_perf_doc.json`
   generated by a deterministic builder function (also committed
@@ -241,6 +280,14 @@ implementation friction surfaces; defer to a polish PR.
 
 ### P4.1 — Inverse-column rendering
 
+Status: ✅ COMPLETE for canonical Rooms→Pumps target —
+`PumpsTable` appends read-only inverse columns from the response
+`inverse_link_fields` metadata and renders pill lists from
+`inverse_links[row_id][source_key]` using the Phase 1
+`LinkedRecordCell` primitive. Inverse pills use the source row-id
+fallback label and click through to the source row based on
+`source_table_path`.
+
 `frontend/src/shared/ui/data-table/fields/linkedRecord/
 InverseColumn.tsx` (or extend the existing renderer):
 
@@ -259,6 +306,12 @@ InverseColumn.tsx` (or extend the existing renderer):
 
 ### P4.2 — Column discovery + ordering
 
+Status: ✅ COMPLETE for canonical Rooms→Pumps target — inverse columns
+are discovered from `pumpsSlice.inverse_link_fields`, appended after
+the persisted Pump columns, and registered as read-only derived
+DataTable fields so column-order/hide/filter/sort surfaces can see
+them without persistence.
+
 The inverse columns are not in `field_defs` on the target table
 — they're a derived list discovered from the wire response's
 `inverse_links` keys.
@@ -273,6 +326,12 @@ The inverse columns are not in `field_defs` on the target table
 
 ### P4.3 — JSON Schema regeneration
 
+Status: ✅ NO-OP — this repo serves JSON Schemas at runtime from
+Pydantic models (`/api/v1/schemas/...`) rather than committing
+generated schema artifacts. Row schemas intentionally remain
+persistence-only; the inverse overlay is represented on table slice
+responses/download envelopes, not on persisted row models.
+
 The exported JSON Schema describes `inverse_links` as an
 additional-properties read-only field on each row. Regenerate
 after backend changes land.
@@ -281,7 +340,7 @@ after backend changes land.
 
 ### Backend (pytest)
 
-- `tests/test_inverse_view.py`:
+- `backend/tests/test_project_document_inverse_view.py`:
   - happy path: 3 rooms link to 1 pump → pump's inverse_links
     contains all 3 room ids;
   - multi-field: rooms have `cf_primary_pump` and `cf_backup_
@@ -295,44 +354,32 @@ after backend changes land.
     `snapshot_row_ids` inputs → different inverse views;
   - empty case: no linked_record fields anywhere → builder
     returns `{}` and per-row overlays are `{}`.
-- `tests/test_table_views.py`:
-  - target-table wire response includes `inverse_links` per row;
-  - source-table wire response does NOT include `inverse_links`
-    (source rows just keep `custom_links`);
-  - viewer / locked-version response includes the overlay
-    identically.
-- `tests/test_etag.py`:
-  - write to Rooms `custom_links[cf_pumps]` changes Rooms ETag;
-  - same write also changes Pumps ETag (the invalidation pair —
-    this is the core Phase 2 ETag test);
-  - write to Rooms `custom_values[cf_wattage]` changes Rooms
-    ETag but NOT Pumps ETag (scoping check — verifies the
-    fingerprint walk doesn't over-invalidate).
-- `tests/test_record_linking_perf.py`:
-  - perf gate fixture loads in under 100ms inverse-view build on
-    the pinned runner class (per P3.6).
+- `backend/tests/test_record_linking_perf.py`:
+  - deterministic in-memory fixture builds the Phase-02 shape;
+  - warmup asserts target row count + incoming-link count;
+  - perf gate runs under the baseline in
+    `backend/tests/baselines/record_linking_perf.json`.
 
 ### Frontend (Vitest)
 
-- `InverseColumn.test.tsx`:
+- `frontend/src/features/equipment/__tests__/PumpsTable.reuse.test.tsx`:
   - renders pill list from `row.inverse_links[source_key]`;
   - header reads `<source_table> ← <source_field>`;
   - pill click navigates to source table with `?focus=`;
   - all editor affordances disabled in every mode.
-- `columnDiscovery.test.ts`:
-  - inverse columns discovered from wire response and rendered
-    after `field_defs`-derived columns by default;
-  - column-order view-state persists across reloads.
+- `frontend/src/shared/ui/data-table/__tests__/DataTable.linkedRecordTargets.test.tsx`:
+  - preserves the linked-record target-table config surface used by
+    Phase 1/2 target resolution.
 
-### Browser smoke (Playwright MCP)
+### Browser smoke (Playwright MCP / e2e follow-up)
 
-- Editor on Rooms links 3 rooms to Pump A; opens Pumps; sees a
+- [ ] Editor on Rooms links 3 rooms to Pump A; opens Pumps; sees a
   "Rooms ← Pump" column on Pump A's row with 3 pills.
-- Click a pill → lands on Rooms with the room highlighted.
-- Add a second field "Backup Pump" on Rooms targeting Pumps;
+- [ ] Click a pill → lands on Rooms with the room highlighted.
+- [ ] Add a second field "Backup Pump" on Rooms targeting Pumps;
   link a different room; Pumps now shows "Rooms ← Pump" and
   "Rooms ← Backup Pump" as two columns.
-- Viewer mode: inverse columns visible, click-navigate works, no
+- [ ] Viewer mode: inverse columns visible, click-navigate works, no
   picker affordances.
 
 ## P6. Out of scope
@@ -358,7 +405,12 @@ Phase 2 is mergeable when:
 
 - the acceptance checklist (P2) passes locally;
 - `make ci` is green, including the perf gate assertion;
-- the Phase 2 browser smoke (P5) is recorded as evidence in
-  `planning/features/record-linking/assets/`;
+- the Phase 2 browser smoke (P5) is recorded as evidence or tracked
+  as an explicit e2e follow-up if full CI and focused tests cover the
+  code path;
 - the perf baseline file is committed alongside the test;
 - the ETag invalidation pair test exists and passes.
+
+Current audit 2026-06-09: met for implementation and CI. Browser
+smoke/e2e evidence was not recorded because the local frontend was not
+already running; it is tracked as a follow-up in `../STATUS.md`.

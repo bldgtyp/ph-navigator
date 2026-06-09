@@ -1,11 +1,13 @@
 ---
 DATE: 2026-06-09
 TIME: planning
-STATUS: Open — punch list of integration-layer defects surfaced by a
-        `/simplify xhigh` review of the Phase 1 working-tree diff on
-        2026-06-09. `make ci` is green, but the suite stubs the
-        cross-layer wiring exercised here, so the bugs ship despite a
-        clean CI. Phase 1 is NOT user-shippable until §B1–§B7 land.
+STATUS: Implemented / in review — §A1–§A7 and §B1–§B7 have fixes
+        landed with focused regression tests. §B8 is deferred to
+        Phase 2 polish. This punch list is not fully merge-complete
+        because no Phase 1 browser smoke / e2e evidence is recorded.
+        Current `make format` left files unchanged and `make ci` is
+        green. Post-review backend bug: deleteField
+        for linked_record must strip `custom_links[field_key]`.
 AUTHOR: Ed May (with Claude)
 SCOPE: Follow-on fix list for Phase 1 record-linking. Closes the gap
        between "primitives + tests green" and "Rooms↔Pumps loop
@@ -45,11 +47,16 @@ A xhigh `/simplify` review on 2026-06-09 then walked the diff with 9
 finder angles and verified the top items end-to-end against backend
 canonical shapes and current call sites.
 
-Result: **the Phase 1 user-facing loop does not work in a real
-browser** despite green CI. The unit suite stubs field defs,
+Original result: **the Phase 1 user-facing loop did not work in a
+real browser** despite green CI. The unit suite stubbed field defs,
 target-table shapes, and modal props that the actual call sites
-either mismatch or omit. This file is the punch list to close that
-gap.
+either mismatched or omitted.
+
+Follow-up audit 2026-06-09: the §A blockers and §B cleanup items
+through §B7 are implemented and covered by focused regression tests.
+The remaining closeout gates are the linked_record deleteField
+cleanup bug and browser smoke / e2e evidence. Current `make format`
+left files unchanged and `make ci` is green.
 
 The items below are grouped by severity. §A1–§A7 are **must-fix
 blockers** — Phase 1 cannot ship without them. §B1–§B8 are
@@ -405,8 +412,9 @@ These came up during the review but belong elsewhere:
   types; they don't block §A. Park them as a Phase-2 architecture
   prep note.
 - **Playwright MCP browser smoke** (per `STATUS.md` deferred list).
-  Once §A1–§A7 land, the smoke can actually exercise the loop;
-  recommend running it AFTER §A is green, not before.
+  Now that §A1–§A7 are implemented, the smoke can exercise the loop;
+  run it after the deleteField cleanup fix so the evidence corresponds
+  to a shippable checkout.
 - **`commitLinkedRecord` and `commit` consolidation** — covered by
   §B1's fix sketch; keeping the wider altitude refactor out of
   this list.
@@ -415,18 +423,22 @@ These came up during the review but belong elsewhere:
 
 §1.b is mergeable when:
 
-- §A1–§A7 each have a fix landed and a regression test that would
-  have failed before the fix.
-- `make ci` is green.
-- A manual MCP smoke (or the Playwright e2e spec authored in the
-  same session) demonstrates: add linked_record field on Rooms via
-  `+`; pick target = Pumps; save; double-click Rooms cell; pick a
-  pump; save row; click pill → land on Pumps with the row scrolled
-  into view and the focus highlight visible; back to Rooms;
-  second pill click on a different sub-table switches sub-tab and
-  focuses the right row.
-- §B1–§B8 are tracked (here or in `STATUS.md` deferred list) with
-  owners or planned-pass markers.
+- [x] §A1–§A7 each have a fix landed and a regression test that
+  would have failed before the fix.
+- [x] §B1–§B7 are fixed and regression-tested.
+- [x] §B8 is explicitly deferred to Phase 2 polish.
+- [x] `make ci` is green for the current checkout. Current audit:
+  `make format` left files unchanged and `make ci` passed on
+  2026-06-09.
+- [ ] A manual MCP smoke or Playwright e2e spec demonstrates: add
+  linked_record field on Rooms via `+`; pick target = Pumps; save;
+  double-click Rooms cell; pick a pump; save row; click pill → land
+  on Pumps with the row scrolled into view and the focus highlight
+  visible; back to Rooms; second pill click on a different sub-table
+  switches sub-tab and focuses the right row.
+- [ ] Linked-record deleteField cleanup bug is fixed and regression-
+  tested: deleting the FieldDef must also remove
+  `custom_links[field_key]` from source rows.
 
 ## Origin
 

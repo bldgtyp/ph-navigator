@@ -1,14 +1,16 @@
 ---
 DATE: 2026-06-08
 TIME: -
-STATUS: DRAFT — Approach-2 baseline committed (see options.md §5).
-        All open questions Q1–Q10 resolved 2026-06-08 through paired
-        use-case discussion. Implementation-shape decisions Q11–Q28
-        resolved 2026-06-08 through PRD review pass; sections §2 / §5
-        / §6 / §7 / §8 / §10 reflect those decisions. Next step:
-        produce phase plans under `phases/` for Phase 1 (link values),
-        Phase 2 (inverse view + perf gate), and Phase 3 (rollups +
-        document-level cycle detection). No code work has started.
+STATUS: In implementation — product / behavior contract is accepted.
+        Phase plans exist. Phase 1 + Phase 1.b source-side
+        Rooms→Pumps implementation is mostly in place, but not
+        Complete until linked_record deleteField cleanup, browser
+        smoke / e2e evidence.
+        Phase 2 inverse-view work is implemented in the current
+        worktree for the canonical Rooms→Pumps target surface, with
+        `make format` / `make ci` green and browser evidence still
+        pending. Phase 3 rollups have not started. `STATUS.md` is the
+        current execution ledger.
 AUTHOR: Ed May (with Claude)
 SCOPE: Add AirTable-style record-linking between project-document
        tables in PHN V2 — a new user-creatable `linked_record` field
@@ -285,14 +287,15 @@ one MCP tool — all already exist.
 **Per-table replace endpoints** absorb the new `custom_links` bag
 without a new route; the request model widens by one optional field.
 
-**ETag scope.** The source table's ETag stays slice-local — writes to
-Rooms change Rooms' ETag because the slice changed. The target
-table's fingerprint additionally includes a content hash of every
-incoming linked-record field's id-list contents from every source
-table that targets it (Q14). A write on Rooms that touches
-`cf_pumps` therefore updates both Rooms' ETag (slice change) and
-Pumps' ETag (inverse-content change). Without this, a client with a
-cached Pumps response would never see the new inverse pill.
+**ETag / inverse fingerprint scope.** The API currently exposes
+document-level `version_etag` / `draft_etag`, not per-table ETags.
+Source writes rotate those document-level ETags as before. Target
+table responses additionally expose `inverse_links_fingerprint`, a
+content hash of every incoming linked-record field's id-list contents
+from every source table that targets it (Q14). A write on Rooms that
+touches `cf_pumps` therefore changes the document ETag and the Pumps
+`inverse_links_fingerprint`. Without this, a client with a cached
+Pumps response would not have a stable inverse-content change signal.
 
 **Diff.** `diff.py` renders `custom_links.<field_key>` changes as
 list-aware add/remove pairs over the id arrays — the same shape it
@@ -391,52 +394,67 @@ Notable cross-phase deliverables:
   across the nine `*Row` models, shared `_validate_rows_custom_links`
   helper, and the `link_targetable: bool` flag on `TableContract`
   (defaults `True` on every existing contract).
-- **Phase 2 also lands**: cross-table ETag (Q14) and the perf gate
-  fixture + CI assertion (Q27).
+- **Phase 2 also lands**: inverse-link fingerprinting for target-table
+  read responses (Q14) and the perf gate fixture + CI assertion (Q27).
 - **Phase 3 also lands**: document-level formula cycle detector
   structured as a topological sort over the formula graph (Q26).
 
 ## 10. Acceptance criteria (v1 — Phases 1 + 2)
 
-- Editor can add a linked-record column on any FieldDef-capable
+- [ ] Editor can add a linked-record column on any FieldDef-capable
   `link_targetable` table targeting any permitted target table (Q1,
-  Q15).
-- Editor can link / unlink rows through the picker.
-- Pills render the linked row's `record_id` (with row-id fallback
+  Q15). Backend contract is general; frontend is currently wired and
+  tested for the canonical Rooms→Pumps path.
+- [x] Editor can link / unlink rows through the picker for
+  Rooms→Pumps.
+- [x] Pills render the linked row's `record_id` (with row-id fallback
   when `record_id` is empty per Q18) and click-navigate via the
-  `?focus=` query param (Q19).
-- Wire response on the target table includes the inverse view
-  (Phase 2).
-- Validator rejects unknown `target_table_path` on field add.
-- Validator rejects editing `target_table_path` on an existing
+  `?focus=` query param (Q19) for Rooms→Pumps.
+- [x] Wire response on the target table includes the inverse view
+  (Phase 2) for the current canonical Rooms→Pumps target surface.
+- [x] Validator rejects unknown `target_table_path` on field add.
+- [x] Validator rejects editing `target_table_path` on an existing
   linked_record field (Q13).
-- Validator rejects a `field_key` co-existing in `custom_values` and
-  `custom_links` (Q16).
-- Validator silently dedupes within-cell duplicate ids (Q25).
-- Validator handles orphan target ids per Q5 (filter against the
+- [x] Validator rejects a `field_key` co-existing in `custom_values`
+  and `custom_links` (Q16).
+- [x] Validator silently dedupes within-cell duplicate ids (Q25).
+- [x] Validator handles orphan target ids per Q5 (filter against the
   snapshot being read; strip silently on save).
-- changeType to/from `linked_record` wipes row data for that
+- [x] changeType to/from `linked_record` wipes row data for that
   `field_key` on both bag sides and reports the cleared row count in
   the mutation summary (Q12).
-- Source-table writes that touch `custom_links` invalidate the target
-  table's ETag (Q14) — verified by integration test.
-- Fill-handle drag copies the full id list to destination cells; no
-  union with existing contents (Q24).
-- Paste between linked-record cells of matching `target_table_path`
-  succeeds; mismatched paths reject at draft sync with `422` (Q24).
-- Frontend Viewer mode renders linked + inverse columns read-only.
-- Document JSON download round-trips through validator on re-read.
-- JSON Schema export includes the new field type and the
+- [ ] deleteField for `linked_record` removes row data for that
+  `field_key` on both bag sides. Current bug: stale
+  `custom_links[field_key]` remains after the FieldDef is removed and
+  validation returns `422 invalid_project_document`.
+- [x] Source-table writes that touch `custom_links` change the target
+  table response's `inverse_links_fingerprint` (Q14). API-shape
+  adjustment: write concurrency still uses document-level
+  `version_etag` / `draft_etag`, not per-table ETags.
+- [x] Fill-handle drag copies the full id list to destination cells;
+  no union with existing contents (Q24).
+- [x] Paste between linked-record cells of matching
+  `target_table_path` succeeds; mismatched paths reject at draft sync
+  with `422` (Q24).
+- [x] Frontend Viewer mode renders linked + inverse columns read-only
+  for the current Rooms→Pumps surface.
+- [x] Document JSON download round-trips persisted `custom_links`
+  through validator on re-read.
+- [ ] JSON Schema export includes the new field type and the
   `custom_links` row shape (`dict[str, list[str]]` with id pattern).
-- Diff between two versions renders `custom_links.<field_key>`
-  changes as list-aware add/remove pairs.
-- **Phase 2 perf gate (Q27):** total inverse-view build for a single
-  read response on the pinned synthetic fixture (4000 source rows ×
-  50 target rows × 3 linked fields, plus 5 additional tables each
-  with 200 rows × 1 linked field) completes in under 100ms on the
-  pinned CI runner class. Regression check: fail if measured time
-  exceeds the baseline by >20% on 3 consecutive CI runs.
-- All `make ci` gates green.
+  No generated schema artifact is currently shipped; acceptance audit
+  still needed.
+- [ ] Diff between two versions renders `custom_links.<field_key>`
+  changes as list-aware add/remove pairs. Acceptance audit still
+  needed.
+- [x] **Phase 2 perf gate (Q27):** total inverse-view build for a
+  single read response on the pinned synthetic fixture (4000 source
+  rows × 50 target rows × 3 linked fields, plus 5 additional tables
+  each with 200 rows × 1 linked field) completes in under 100ms on the
+  pinned CI runner class. Direct local perf test exists and passes;
+  current full CI closeout is green.
+- [x] All `make ci` gates green. Current checkout passed `make ci` on
+  2026-06-09; `make format` left files unchanged.
 
 Phase 3 acceptance criteria land in the Phase 3 plan.
 
@@ -581,16 +599,18 @@ relevant section above is updated and the anchor is marked
   the schema-mutation surface narrow and avoids a quietly-destructive
   edit path. `config.max_links` remains freely editable.
 
-- **Q14. Target-table ETag invalidation.** **RESOLVED 2026-06-08:**
-  source-table ETag stays slice-local. Target table's fingerprint
-  additionally includes a content hash of every incoming linked-
-  record field's id-list contents from every source table that
-  targets it. A write to Rooms that touches `cf_pumps` therefore
-  updates Rooms' ETag (slice change) AND Pumps' ETag (inverse-
-  content change). The hash is cheap (one pass over each source
-  table's `custom_links` slice keyed by target path). Without this,
-  a cached Pumps response would never see new inverse pills.
-  Integration test asserts the invalidation pair.
+- **Q14. Target-table inverse fingerprint.** **RESOLVED 2026-06-09:**
+  the API does not expose per-table ETags. Source writes rotate the
+  document-level `version_etag` / `draft_etag` as before. Target table
+  responses additionally expose `inverse_links_fingerprint`, a content
+  hash of every incoming linked-record field's id-list contents from
+  every source table that targets it. A write to Rooms that touches
+  `cf_pumps` therefore changes the document ETag and the Pumps
+  inverse fingerprint. The hash is cheap (one pass over each source
+  table's `custom_links` slice keyed by target path). Without this, a
+  cached Pumps response would not have a stable inverse-content change
+  signal. Regression tests assert the fingerprint changes only when
+  the target table's incoming links change.
 
 - **Q15. `link_targetable` per-table opt-out flag.** **RESOLVED
   2026-06-08:** every `TableContract` gains `link_targetable: bool

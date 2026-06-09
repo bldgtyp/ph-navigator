@@ -11,6 +11,7 @@ import {
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { useAssetUrls } from "../../assets/hooks";
 import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
+import { LinkedRecordCell } from "../../../shared/ui/data-table/fields/linkedRecord/LinkedRecordCell";
 import { singleSelectOption } from "../../../shared/ui/data-table/lib";
 import { sortedPumps } from "../lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
@@ -18,9 +19,12 @@ import {
   PUMP_DATASHEET_FIELD_KEY,
   PUMP_DEVICE_TYPE_COLUMN_ID,
   PUMP_DEVICE_TYPE_KEY,
+  type InverseLinkField,
   type PumpRow,
   type PumpsSlice,
 } from "../types";
+
+const EMPTY_INVERSE_IDS: readonly string[] = [];
 
 export function PumpsTable({
   pumpsSlice,
@@ -36,6 +40,7 @@ export function PumpsTable({
   overflowMenuActions,
   footerAction,
   onResetView,
+  onInversePillClick,
 }: {
   pumpsSlice: PumpsSlice;
   tableSchema: TableSchema;
@@ -50,6 +55,7 @@ export function PumpsTable({
   overflowMenuActions?: DataTableProps<PumpRow>["overflowMenuActions"];
   footerAction?: DataTableProps<PumpRow>["footerAction"];
   onResetView?: DataTableProps<PumpRow>["onResetView"];
+  onInversePillClick?: (field: InverseLinkField, rowId: string) => void;
 }) {
   const sortedRows = useMemo(() => sortedPumps(pumpsSlice.pumps), [pumpsSlice.pumps]);
   const datasheetAssetIds = useMemo(
@@ -62,12 +68,28 @@ export function PumpsTable({
     [datasheetUrls.data],
   );
   const { fieldDefs } = tableSchema;
+  const inverseLinkFields = pumpsSlice.inverse_link_fields;
+  const inverseLinks = pumpsSlice.inverse_links;
+  const inverseFieldDefs = useMemo<FieldDef[]>(
+    () =>
+      (inverseLinkFields ?? []).map((field) => ({
+        field_key: inverseFieldKey(field),
+        field_type: "text",
+        display_name: inverseColumnHeader(field),
+        read_only: true,
+      })),
+    [inverseLinkFields],
+  );
+  const dataTableFieldDefs = useMemo(
+    () => [...fieldDefs, ...inverseFieldDefs],
+    [fieldDefs, inverseFieldDefs],
+  );
   const fieldDefByKey = useMemo(
     () => new Map(fieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef])),
     [fieldDefs],
   );
-  const columns = useMemo<DataTableColumnDef<PumpRow>[]>(
-    () => [
+  const columns = useMemo<DataTableColumnDef<PumpRow>[]>(() => {
+    const baseColumns: DataTableColumnDef<PumpRow>[] = [
       {
         id: RECORD_ID_FIELD_KEY,
         fieldKey: RECORD_ID_FIELD_KEY,
@@ -208,15 +230,42 @@ export function PumpsTable({
         measureText: (pump) => `${pump.datasheet_asset_ids.length} attachments`,
         defaultWidth: 260,
       },
-    ],
-    [datasheetUrlById, fieldDefByKey, isEditor, onWrite, projectId],
-  );
+    ];
+    const inverseColumns: DataTableColumnDef<PumpRow>[] = (inverseLinkFields ?? []).map(
+      (field) => ({
+        id: inverseFieldKey(field),
+        fieldKey: inverseFieldKey(field),
+        header: inverseColumnHeader(field),
+        accessor: (pump) => inverseIdsForPump(inverseLinks, pump.id, field).join(", "),
+        render: (pump) => (
+          <LinkedRecordCell
+            ids={inverseIdsForPump(inverseLinks, pump.id, field)}
+            resolve={() => ({ recordId: null })}
+            onPillClick={(rowId) => onInversePillClick?.(field, rowId)}
+          />
+        ),
+        measureText: (pump) => inverseIdsForPump(inverseLinks, pump.id, field).join(","),
+        defaultWidth: 180,
+        className: "data-table-inverse-link-cell",
+      }),
+    );
+    return [...baseColumns, ...inverseColumns];
+  }, [
+    datasheetUrlById,
+    fieldDefByKey,
+    isEditor,
+    onInversePillClick,
+    onWrite,
+    projectId,
+    inverseLinkFields,
+    inverseLinks,
+  ]);
 
   return (
     <DataTable
       rows={sortedRows}
       columnDefs={columns}
-      fieldDefs={fieldDefs}
+      fieldDefs={dataTableFieldDefs}
       getRowId={(pump) => pump.id}
       emptyMessage={isEditor ? "No pumps yet." : "No pumps are published in this version."}
       readOnly={!isEditor}
@@ -231,6 +280,22 @@ export function PumpsTable({
       onResetView={onResetView}
     />
   );
+}
+
+function inverseFieldKey(field: InverseLinkField): string {
+  return `inverse:${field.source_key}`;
+}
+
+function inverseColumnHeader(field: InverseLinkField): string {
+  return `${field.source_table_display} ← ${field.source_field_display_name}`;
+}
+
+function inverseIdsForPump(
+  inverseLinks: PumpsSlice["inverse_links"],
+  pumpId: string,
+  field: InverseLinkField,
+): readonly string[] {
+  return inverseLinks?.[pumpId]?.[field.source_key] ?? EMPTY_INVERSE_IDS;
 }
 
 function optionPill(value: string | null, fieldDef: FieldDef | undefined) {

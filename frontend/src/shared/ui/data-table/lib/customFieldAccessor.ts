@@ -36,7 +36,8 @@ export function setCustomValue<
   // text before the next backend refetch landed). Without this, the
   // backend rejects with `bag_exclusivity_violation` on save.
   const linksEntry = row.custom_links?.[fieldKey];
-  const valueChanged = !(value === undefined && current === undefined) && !Object.is(current, value);
+  const valueChanged =
+    !(value === undefined && current === undefined) && !Object.is(current, value);
   if (!valueChanged && linksEntry === undefined) return row;
 
   let nextRow: TRow = row;

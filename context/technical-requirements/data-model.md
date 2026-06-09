@@ -752,10 +752,15 @@ Rules (post-Phase 1b):
 - **`schema_version: 5`** (record-linking Phase 1, 2026-06-08) adds the
   parallel `custom_links: dict[str, list[str]]` bag on every
   FieldDef-capable row, retires the typed `RoomRow.erv_unit_ids` column,
-  and admits `CustomFieldType.linked_record`. The detailed doc sweep for
-  the linked-record / inverse-view / rollups feature lives under
-  `planning/features/record-linking/`; this section will be revised
-  once Phases 1–3 are merged.
+  and admits `CustomFieldType.linked_record`.
+- **Record-linking Phase 2** (2026-06-09) keeps storage normalized on
+  `custom_links` and adds a read-only inverse overlay to table slice
+  responses/download envelopes. The overlay is not persisted on row
+  models. Current Rooms/Pumps responses expose top-level
+  `inverse_links`, `inverse_link_fields`, and
+  `inverse_links_fingerprint`; JSON table envelopes attach per-row
+  `inverse_links` for exports. Write concurrency still uses the
+  document-level `version_etag` / `draft_etag`.
 - `schema_version: 4` (superseded by v5 above) is the v4 wire shape
   (Phase 2). v4 promotes the
   pinned identifier to a real `record_id` FieldDef on every
