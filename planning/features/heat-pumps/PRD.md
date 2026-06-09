@@ -1,9 +1,10 @@
 ---
 DATE: 2026-06-09
-TIME: 14:30
-STATUS: DRAFT — first complete PRD pass; awaiting Ed review before
-        US-EQ-7..11 user-story stubs land in
-        context/user-stories/30-tables-equipment.md.
+TIME: 12:50
+STATUS: ✅ APPROVED 2026-06-09. Phases 0–3 implemented and merged
+        per this PRD. US-EQ-7..11 stubs landed in
+        context/user-stories/30-tables-equipment.md and now carry
+        per-phase implementation notes. Phases 4–5 still to ship.
 AUTHOR: Ed May (with Claude)
 SCOPE: Heat Pump equipment in PH-Navigator V2 — four project-scoped
        tables (catalog + instance × outdoor + indoor), nested-tab UX

@@ -1,7 +1,8 @@
 ---
 DATE: 2026-06-09
-TIME: 12:00
-STATUS: Active — research phase
+TIME: 12:50
+STATUS: Active — Phases 0–3 merged. Phase 4 (ERV cross-link +
+        Rooms served_room_ids picker) is next.
 AUTHOR: Ed (via Claude)
 SCOPE: Heat-Pump equipment data model for PH-Navigator V2
 RELATED:
@@ -27,9 +28,11 @@ the existing line-item equipment (Pumps, Fans, ERVs) because:
    Kit + Lossnay LGH pattern) — meaning an HP indoor row needs a
    relationship to an ERV row.
 
-**Planning round 2 tidy-up complete; all OPQs resolved
-2026-06-09. Phase 0 ready to start.** 25 numbered D-HP decisions
-fully specify the v1 surface. See `STATUS.md` Next step.
+**Phases 0–3 merged (commits `9da3726`, `1aeab68`, `e9cd6dd`,
+`2dd9807`, `399d4e6`); Phase 4 (ERV cross-link + Rooms
+`served_room_ids` picker) is next.** 25 numbered D-HP decisions
+fully specify the v1 surface. See `STATUS.md` for the verification
+ledger and Phase 4 carry-overs.
 
 ## Read order
 
@@ -37,8 +40,9 @@ fully specify the v1 surface. See `STATUS.md` Next step.
 2. `decisions.md` — 13 numbered resolutions (all closed 2026-06-09)
 3. `PRD.md` — V2 data shape, UI, REST, MCP, and phasing contract
 4. `STATUS.md` — current state, next step, verification ledger
-5. `phases/phase-00-backend-foundation.md` — backend foundation slice
-   (Phases 1–5 stubs land after Phase 0 completes)
+5. `phases/phase-00-backend-foundation.md` … `phases/phase-03-unit-pages.md`
+   — implemented and merged. `phases/phase-04-erv-and-rooms-cross-link.md`
+   and `phases/phase-05-phius-export-and-mcp.md` are still DRAFT.
 
 ## Resolved directional debates (archived in `decisions.md`)
 
