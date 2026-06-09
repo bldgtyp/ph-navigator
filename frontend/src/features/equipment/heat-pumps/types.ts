@@ -91,8 +91,17 @@ export type HeatPumpPatchRow =
   | HeatPumpOutdoorUnitRow
   | HeatPumpIndoorUnitRow;
 
+export type CascadeReference = {
+  table: string;
+  row_id: string;
+  tag: string;
+  field: string;
+};
+
+export type CascadePreview = {
+  affected: CascadeReference[];
+};
+
 export type HeatPumpsPatchResponse = HeatPumpsSlice & {
-  cascade_preview?: {
-    affected: Array<{ table: string; row_id: string; tag: string; field: string }>;
-  } | null;
+  cascade_preview?: CascadePreview | null;
 };

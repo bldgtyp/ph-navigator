@@ -1133,7 +1133,7 @@ US-EQ-8's caveat note).
 
 ## US-EQ-10 — HP Units — Outdoor DataTable
 
-**Status:** Stub (full PRD: Heat Pumps PRD §4.4 / §5) ·
+**Status:** Phase 3 implemented (Heat Pumps PRD §4.4 / §5) ·
 **Priority:** MVP
 **Inherits:** US-Builder-Tables (criteria 1–17), US-EQ-1, US-EQ-7
 
@@ -1161,11 +1161,37 @@ US-EQ-8's caveat note).
    outdoor-equip row referenced by ≥1 unit is blocked; deleting
    an outdoor unit cascade-nulls referencing indoor units).
 
+### Phase 3 implementation notes (2026-06-09)
+
+Shipped `OutdoorUnitsTable.tsx`, `OutdoorUnitRowModal.tsx`, and
+`outdoor-unit-columns.tsx` (frontend) on top of the Phase 0 backend
+service which already supports the dry-run cascade preview
+(`?dry-run=true`) and the cascade-null on confirm. The two-step
+cascade flow is implemented as: click Delete → call
+`previewHeatPumpDelete` (dry-run) → if `affected.length > 0` open
+`CascadePreviewDialog` → on confirm re-read the slice from the
+TanStack Query cache (to pick up any draft_etag advances while the
+dialog was open) and issue the real delete. Tag uniqueness mirrors
+US-EQ-2 (auto-suffix `(2)` / `(3)` on add via `uniqueTagForAdd`;
+reject on rename via `tagCollides`).
+
+**Carry-over (Phase 1 / Phase 2 option-id caveat):** the `Zone`
+field on the outdoor unit row-detail modal is a free-text input
+that derives an `opt_…` id via `optionIdFromLabel`, mirroring the
+existing Phase 1 `manufacturer` / `system_family` / `refrigerant`
+inputs. The acceptance-item 8 "shared with `tables.rooms[*].building_zone`
+option list" picker UX is deferred until the Rooms frontend lands
+and the cross-table single_select_options primitive is registered
+(see US-EQ-8 caveat). The free-text approach is forward-compatible:
+once Rooms supplies canonical option ids, the existing
+`optionIdFromLabel` slugging keeps matched casing aligned.
+
 ---
 
 ## US-EQ-11 — HP Units — Indoor DataTable
 
-**Status:** Stub (full PRD: Heat Pumps PRD §4.5 / §5) ·
+**Status:** Phase 3 implemented; `served_room_ids` picker + ERV
+link deferred to Phase 4 (Heat Pumps PRD §4.5 / §5) ·
 **Priority:** MVP
 **Inherits:** US-Builder-Tables (criteria 1–17), US-EQ-1, US-EQ-7,
 US-EQ-4 (amendment)
@@ -1203,5 +1229,25 @@ US-EQ-4 (amendment)
    id (`indoor_equip_id`, `outdoor_unit_id`, `linked_erv_unit_id`,
    each entry of `served_room_ids[]`) responds correctly to
    deletes on the referenced side.
+
+### Phase 3 implementation notes (2026-06-09)
+
+Shipped `IndoorUnitsTable.tsx`, `IndoorUnitRowModal.tsx`, and
+`indoor-unit-columns.tsx`. The modal includes `linked_erv_unit_id`
+and `served_room_ids` as visible-but-disabled fields tagged with a
+"Configured in Phase 4" pill — the underlying storage (Phase 0)
+already accepts and round-trips both values; only the picker UI is
+gated. The outdoor-unit picker disables itself with helper text
+("Add an outdoor unit first in Units — Outdoor.") when the source
+list is empty, satisfying acceptance criterion 4's nullable picker
+behavior. Indoor-unit deletes are direct (no dry-run) — indoor
+units are leaves with no downstream cascade.
+
+**Carry-overs to Phase 4:** the `served_room_ids[]` multi-select
+picker (criterion 5), the `linked_erv_unit_id` install-type-gated
+picker (criterion 6), and the `floor_level` cross-table option-list
+sharing (criterion 7) all land in Phase 4 alongside the Rooms
+frontend. Same Phase 1 option-id caveat applies to the current
+free-text `Floor` input.
 
 ---
