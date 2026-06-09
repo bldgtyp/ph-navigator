@@ -225,21 +225,30 @@ export function OutdoorUnitsTable({
         sessionKey={`${projectId}:heat-pumps:outdoor-units:${slice.version_id}`}
         generateRowId={() => buildEmptyOutdoorUnitRow().id}
         footerAction={
-          <button
-            type="button"
-            disabled={readOnly || noEquip}
-            onClick={() =>
-              setModal({
-                kind: "unit",
-                mode: "add",
-                row: buildEmptyOutdoorUnitRow({
-                  outdoor_equip_id: slice.outdoor_equip[0]?.id ?? "",
-                }),
-              })
-            }
-          >
-            Add outdoor unit
-          </button>
+          readOnly ? null : (
+            <button
+              type="button"
+              className="data-table-add-row-button"
+              aria-label="Add outdoor unit"
+              title={
+                noEquip
+                  ? "Add an outdoor equipment row first under Equipment — Outdoor"
+                  : "Add outdoor unit"
+              }
+              disabled={noEquip}
+              onClick={() =>
+                setModal({
+                  kind: "unit",
+                  mode: "add",
+                  row: buildEmptyOutdoorUnitRow({
+                    outdoor_equip_id: slice.outdoor_equip[0]?.id ?? "",
+                  }),
+                })
+              }
+            >
+              +
+            </button>
+          )
         }
       />
       {modal?.kind === "unit" ? (

@@ -5,17 +5,19 @@ export function AppSubTabs({
   id,
   ariaLabel,
   role,
+  variant,
   children,
   actions,
 }: {
   id?: string;
   ariaLabel: string;
   role?: "tablist";
+  variant?: "pills";
   children: ReactNode;
   actions?: ReactNode;
 }) {
   return (
-    <div id={id} className="app-subtabs" role={role} aria-label={ariaLabel}>
+    <div id={id} className="app-subtabs" data-variant={variant} role={role} aria-label={ariaLabel}>
       <div className="app-subtabs__list">{children}</div>
       {actions ? <div className="app-subtabs__actions">{actions}</div> : null}
     </div>

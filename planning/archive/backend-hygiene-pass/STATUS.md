@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-09
 TIME: evening ET
-STATUS: Merged to main — all 8 phases shipped in #13 (commit 51dcd77); full `make ci` (backend + frontend) green.
+STATUS: Complete — all 8 phases shipped in #13 (commit 51dcd77) on main; full `make ci` (backend + frontend) green. Archived 2026-06-09.
 AUTHOR: Claude (Opus 4.7)
 RELATED: `README.md`, `PRD.md`, `decisions.md`
 ---

@@ -14,6 +14,7 @@ import {
   indoorEquipFieldDefs,
 } from "../indoor-equip-columns";
 import type { HeatPumpIndoorEquipRow, HeatPumpsSlice } from "../types";
+import { addRowButton } from "../../routes/equipmentRowActions";
 import { IndoorEquipRowModal } from "./IndoorEquipRowModal";
 
 type ModalState = { mode: "add" | "edit"; row: HeatPumpIndoorEquipRow } | null;
@@ -128,15 +129,9 @@ export function IndoorEquipTable({
         onRowOpen={(row) => setModal({ mode: "edit", row })}
         sessionKey={`${projectId}:heat-pumps:indoor-equip:${slice.version_id}`}
         generateRowId={() => buildEmptyIndoorEquipRow().id}
-        footerAction={
-          <button
-            type="button"
-            onClick={() => setModal({ mode: "add", row: buildEmptyIndoorEquipRow() })}
-            disabled={readOnly}
-          >
-            Add indoor model
-          </button>
-        }
+        footerAction={addRowButton("Add indoor model", !readOnly, () =>
+          setModal({ mode: "add", row: buildEmptyIndoorEquipRow() }),
+        )}
       />
       {modal ? (
         <IndoorEquipRowModal
