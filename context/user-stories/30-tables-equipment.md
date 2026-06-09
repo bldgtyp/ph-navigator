@@ -971,8 +971,9 @@ the reverse side of the HP-indoor ↔ ERV link captured by
 
 ## US-EQ-7 — Heat Pumps sub-tab structure (nested-tab navigation)
 
-**Status:** Phase 1 partially implemented (2026-06-09; Equipment —
-Outdoor leaf live, later leaves placeholder) · **Priority:** MVP
+**Status:** Phase 2 partially implemented (2026-06-09; Equipment —
+Outdoor + Equipment — Indoor leaves live, Units leaves
+placeholder) · **Priority:** MVP
 **PRD ref:** Heat Pumps PRD §5 (UI and navigation)
 **Inherits:** US-EQ-1 (Equipment tab structure); US-Builder-Tables
 
@@ -1005,8 +1006,10 @@ Outdoor leaf live, later leaves placeholder) · **Priority:** MVP
 Phase 1 adds the "Heat Pumps" parent Equipment tab, the nested
 four-leaf strip, and the deep-link shape
 `/projects/{id}/equipment/heat-pumps/equipment-outdoor`. The
-Equipment — Outdoor leaf is live; Equipment — Indoor, Units —
-Outdoor, and Units — Indoor intentionally render phase-placeholder
+Equipment — Outdoor leaf is live. Phase 2 lights up the
+Equipment — Indoor leaf using the same nested-strip primitive.
+Units — Outdoor and Units — Indoor intentionally render
+phase-placeholder
 states until US-EQ-9..11 land.
 
 ### Resolved questions
@@ -1070,8 +1073,8 @@ phase-1-internal implementation detail, not a story question).
 
 ## US-EQ-9 — HP Equipment — Indoor DataTable
 
-**Status:** Stub (full PRD: Heat Pumps PRD §4.3 / §5) ·
-**Priority:** MVP
+**Status:** Phase 2 implemented (2026-06-09; frontend
+indoor-equipment page live) · **Priority:** MVP
 **Inherits:** US-Builder-Tables (criteria 1–17), US-EQ-1, US-EQ-7
 
 ### Story
@@ -1095,6 +1098,36 @@ phase-1-internal implementation detail, not a story question).
    `linked_erv_unit_id` field on instance rows (US-EQ-11).
 5. `datasheet_asset_ids[]` via the shared `<AttachmentCell>`.
 6. Empty state per Heat Pumps PRD §5.6.
+
+### Implementation status
+
+Phase 2 ships the active-version REST-backed indoor-equipment
+DataTable, the full 16-field row-detail modal (Identity /
+Performance / Notes sections), and add / edit / delete row
+mutations. Default-visible columns: manufacturer, model_type,
+model_number, install_type, nominal_tons, cooling_btuh,
+heating_btuh_47f, datasheet. Default-hidden: fan_speed_cfm,
+heating_btuh_17f, heating_cop, seer, eer, hspf, notes. Required
+validation: `model_number` non-empty, `nominal_tons > 0` when
+set, all other numeric fields `>= 0` when set.
+
+`install_type` ships its five canonical seed labels (Cassette,
+Wall-mounted, Concealed-ducted, Multi-position, ERV-integrated)
+through a frontend `<datalist>` autocomplete on the row-detail
+modal. The same Phase 1 `manufacturer`/`system_family`/
+`refrigerant` caveat applies: HP option ids are still minted
+deterministically from typed labels until the generic
+`single_select_options` registration lands.
+
+The Phase 1 minimal "Create indoor equipment" modal used by the
+outdoor-equipment inline-create shortcut is now the same full
+modal mounted in `mode="add"`; the outdoor flow's inline-create
+shortcut continues to work without code-site changes.
+
+### Resolved questions
+None outstanding on this story (the
+single_select_options registration follow-up is tracked on
+US-EQ-8's caveat note).
 
 ---
 

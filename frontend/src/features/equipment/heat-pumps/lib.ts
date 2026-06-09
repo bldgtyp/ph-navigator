@@ -53,6 +53,14 @@ export function buildEmptyIndoorEquipRow(overrides: Partial<HeatPumpIndoorEquipR
 }
 
 export function sortedOutdoorEquip(rows: HeatPumpOutdoorEquipRow[]) {
+  return sortByModelNumber(rows);
+}
+
+export function sortedIndoorEquip(rows: HeatPumpIndoorEquipRow[]) {
+  return sortByModelNumber(rows);
+}
+
+function sortByModelNumber<T extends { id: string; model_number: string }>(rows: T[]): T[] {
   return [...rows].sort((a, b) => {
     const primary = a.model_number.localeCompare(b.model_number, undefined, {
       numeric: true,

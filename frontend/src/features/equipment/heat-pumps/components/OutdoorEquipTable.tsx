@@ -7,19 +7,28 @@ import {
 } from "../../../../shared/ui/data-table";
 import { useAssetUrls } from "../../../assets/hooks";
 import { useHeatPumpPatchMutation } from "../api";
-import { buildEmptyOutdoorEquipRow, numericValue, sortedOutdoorEquip } from "../lib";
+import {
+  buildEmptyIndoorEquipRow,
+  buildEmptyOutdoorEquipRow,
+  numericValue,
+  sortedOutdoorEquip,
+} from "../lib";
 import {
   outdoorEquipColumnDefs,
   outdoorEquipDefaultHiddenColumns,
   outdoorEquipFieldDefs,
 } from "../outdoor-equip-columns";
 import type { HeatPumpIndoorEquipRow, HeatPumpOutdoorEquipRow, HeatPumpsSlice } from "../types";
-import { IndoorEquipCreateModal } from "./IndoorEquipCreateModal";
+import { IndoorEquipRowModal } from "./IndoorEquipRowModal";
 import { OutdoorEquipRowModal } from "./OutdoorEquipRowModal";
 
 type ModalState =
   | { kind: "outdoor"; mode: "add" | "edit"; row: HeatPumpOutdoorEquipRow }
-  | { kind: "indoor-create"; selectForOutdoorRowId: string | null }
+  | {
+      kind: "indoor-create";
+      row: HeatPumpIndoorEquipRow;
+      selectForOutdoorRowId: string | null;
+    }
   | null;
 
 export function OutdoorEquipTable({
@@ -188,12 +197,19 @@ export function OutdoorEquipTable({
           onSubmit={modal.mode === "add" ? addOutdoorRow : replaceOutdoorRow}
           onDelete={modal.mode === "edit" ? () => void deleteOutdoorRow(modal.row) : undefined}
           onCreateIndoorEquip={() =>
-            setModal({ kind: "indoor-create", selectForOutdoorRowId: modal.row.id })
+            setModal({
+              kind: "indoor-create",
+              row: buildEmptyIndoorEquipRow(),
+              selectForOutdoorRowId: modal.row.id,
+            })
           }
         />
       ) : null}
       {modal?.kind === "indoor-create" ? (
-        <IndoorEquipCreateModal
+        <IndoorEquipRowModal
+          mode="add"
+          row={modal.row}
+          readOnly={false}
           onCancel={() => setModal(null)}
           onSubmit={(row) => addIndoorRow(row, modal.selectForOutdoorRowId)}
         />

@@ -55,9 +55,19 @@ describe("HeatPumpsPanel", () => {
     const user = userEvent.setup();
     renderPanel();
 
+    await user.click(await screen.findByRole("tab", { name: "Units - Outdoor" }));
+
+    expect(screen.getByRole("status")).toHaveTextContent("Coming in Phase 3");
+  });
+
+  test("mounts the indoor equipment table on the indoor leaf", async () => {
+    const user = userEvent.setup();
+    renderPanel();
+
     await user.click(await screen.findByRole("tab", { name: "Equipment - Indoor" }));
 
-    expect(screen.getByRole("status")).toHaveTextContent("Coming in Phase 2");
+    expect(await screen.findByRole("button", { name: "Add indoor model" })).toBeInTheDocument();
+    expect(screen.getByText("PLA-A18EA8")).toBeInTheDocument();
   });
 
   test("adds an outdoor equipment row through the Phase 0 PATCH API", async () => {
