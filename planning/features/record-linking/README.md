@@ -1,13 +1,12 @@
 ---
 DATE: 2026-06-08
 TIME: -
-STATUS: Active — Phase 1 backend + frontend primitives complete and
-        CI-green; FieldConfigModal integration + `?focus=` highlight +
-        backend changeType e2e pytest landed in second pass (2026-06-08).
-        Remaining for Phase 1: `GridBody` cell-render dispatch,
-        `useGridEdit` editor wiring, equipment-table accessors,
-        fill/paste, and Playwright smoke. See `STATUS.md` for the
-        detailed punch list. PRD Q1–Q28 all resolved 2026-06-08.
+STATUS: Phase 2 inverse-view implementation is complete in the current
+        worktree for canonical Rooms→Pumps incoming links. `make
+        format` and `make ci` are green. Phase 1 source-side linking
+        has two follow-ups tracked in `STATUS.md`: linked_record
+        deleteField cleanup and browser/e2e smoke evidence. Phase 3
+        rollups are not started.
 AUTHOR: Ed May (with Claude)
 SCOPE: Folder router for the record-linking feature
        (AirTable-style linked-record + rollup between project-document
@@ -42,14 +41,15 @@ totals on the inverse side.
      formula primitives with `count` / `sum` / `avg`; document-
      level formula cycle detection.
 4. `STATUS.md` — live progress tracker. Read this for the current
-   state of Phase 1 implementation work.
+   state of implementation and closeout work.
 
 ## Current state
 
 - **Approach 2 committed** as the baseline (see `options.md §5`).
 - **PRD complete**: Q1–Q28 all resolved 2026-06-08.
-- **Phase 1 — backend complete, frontend primitives complete**
-  (CI green on 2026-06-08):
+- **Phase 1 — source-side linking implemented**
+  (historical CI green on 2026-06-08; current follow-ups tracked in
+  `STATUS.md`):
   - Backend: `CustomFieldType.linked_record`, `RowWithCustomFields`
     mixin, `custom_links` bag on every `*Row`, `schema_version` 5,
     `_validate_rows_custom_links` on every FieldDef-capable table,
@@ -70,12 +70,12 @@ totals on the inverse side.
   the `?focus=<row_id>` highlight. Backend pytest covers the
   `_apply_linked_record_wipe` changeType path through the dispatcher
   in both directions (incl. ack-required + clean paths).
-- **Phase 1 — deferred to next session**: `GridBody` cell-render
-  dispatch, `useGridEdit` editor-kind switch, equipment-table column
-  accessors, fill / paste / undo paths, Playwright browser smoke, and
-  route-level wiring of `useRowFocusHighlight` against
-  `useSearchParams().get("focus")`.
-- **Phases 2 & 3 — NOT STARTED.** Blocked on Phase 1 integration.
+- **Phase 2 — inverse view implemented in current worktree**:
+  backend inverse projection, Rooms/Pumps response overlays,
+  `inverse_links_fingerprint`, Pumps read-only inverse columns,
+  source-path pill navigation, and a deterministic perf gate are in
+  place. `make format && make ci` are green.
+- **Phase 3 — NOT STARTED.**
 - The half-implemented `RoomRow.erv_unit_ids` typed column referenced
   by the original PRD has been deleted per Q7; users will add their
   own `linked_record` fields when integration lands.

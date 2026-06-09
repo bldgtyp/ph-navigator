@@ -1,6 +1,6 @@
 import "../equipment.css";
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   buildLinkedRecordOps,
   tableFieldDefsToFieldDefs,
@@ -88,6 +88,8 @@ function RoomsPageBody(props: {
 }) {
   const { project, roomsSlice, refetch, pumpsSlice } = props;
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const focusRowId = searchParams.get("focus");
   const activeVersionId = project.active_version_id;
   const isEditor = project.access_mode === "editor";
 
@@ -226,6 +228,7 @@ function RoomsPageBody(props: {
         onEdit={(room) => setRoomModal({ mode: "edit", room })}
         linkedRecordOps={linkedRecordOps}
         linkedRecordTargets={ROOMS_LINKED_RECORD_TARGETS}
+        focusRowId={focusRowId}
       />
       <RoomDialogStack
         isEditor={isEditor}

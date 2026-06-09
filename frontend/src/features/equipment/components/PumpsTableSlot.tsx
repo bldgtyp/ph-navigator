@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { generatedId } from "../../../shared/lib/ids";
 import type { SliceTableController } from "../../../shared/ui/data-table/feature";
 import {
@@ -7,6 +8,7 @@ import {
   type ViewState,
 } from "../../../shared/ui/data-table";
 import { PUMP_ID_PREFIX } from "../lib";
+import { routeForInverseSource } from "../lib/inverseRoutes";
 import { PUMPS_TABLE_NAME, type PumpRow, type PumpsSlice } from "../types";
 import { PumpsTable } from "./PumpsTable";
 
@@ -33,6 +35,7 @@ export function PumpsTableSlot(props: PumpsTableSlotProps) {
     footerAction,
     focusRowId,
   } = props;
+  const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement | null>(null);
   // §A5 — `viewLoading` flips false AFTER mount; without a re-trigger
   // the one-shot effect runs once on first paint, can't find the row,
@@ -69,6 +72,10 @@ export function PumpsTableSlot(props: PumpsTableSlotProps) {
         generateRowId={controller.canEdit ? () => generatedId(PUMP_ID_PREFIX) : undefined}
         sessionKey={`${projectId}:${activeVersionId ?? "none"}:${PUMPS_TABLE_NAME}`}
         footerAction={footerAction}
+        onInversePillClick={(field, rowId) => {
+          const route = routeForInverseSource(projectId, field, rowId);
+          if (route) navigate(route);
+        }}
       />
     </div>
   );

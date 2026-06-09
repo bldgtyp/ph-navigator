@@ -32,6 +32,10 @@ from features.project_document.document import (
     RoomsTableEnvelope,
     SingleSelectOption,
 )
+from features.project_document.inverse_view import (
+    attach_inverse_links_overlay,
+    build_inverse_table_view,
+)
 from features.project_document.models import ProjectDocumentSource
 from features.project_document.options import (
     option_list_key,
@@ -41,6 +45,7 @@ from features.project_document.options import (
 from features.project_document.tables._built_in_seeds import built_in_field_def
 from features.project_document.tables._fingerprint import compute_table_schema_fingerprint
 from features.project_document.tables.contracts import (
+    InverseLinkField,
     TableContract,
     TableFieldRegistry,
     default_attach_computed_overlay,
@@ -209,6 +214,9 @@ class RoomsSliceResponse(BaseModel):
     # formula field. Always present; empty per-row dict when no formula
     # fields exist.
     rows_computed: dict[str, dict[str, object]] = Field(default_factory=dict)
+    inverse_links: dict[str, dict[str, list[str]]] = Field(default_factory=dict)
+    inverse_link_fields: list[InverseLinkField] = Field(default_factory=list)
+    inverse_links_fingerprint: str = ""
 
 
 def apply_rooms_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectDocumentV1:
@@ -298,6 +306,7 @@ def rooms_response(
     from features.project_document.formula import evaluate_table_formulas
 
     rows_computed = evaluate_table_formulas(rooms_field_registry, body)
+    inverse_view = build_inverse_table_view(body, _ROOMS_TABLE_PATH)
     return RoomsSliceResponse(
         project_id=project_id,
         version_id=version_id,
@@ -308,6 +317,9 @@ def rooms_response(
         field_defs=body.tables.rooms.field_defs,
         single_select_options=_rooms_single_select_options(body),
         rows_computed=rows_computed,
+        inverse_links=inverse_view.inverse_links,
+        inverse_link_fields=inverse_view.inverse_link_fields,
+        inverse_links_fingerprint=inverse_view.fingerprint,
     )
 
 
@@ -316,11 +328,15 @@ def extract_rooms_envelope(body: ProjectDocumentV1) -> dict[str, object]:
     from features.project_document.formula import evaluate_table_formulas
 
     overlay = evaluate_table_formulas(rooms_field_registry, body)
+    inverse_view = build_inverse_table_view(body, _ROOMS_TABLE_PATH)
     row_dicts = [room.model_dump(mode="json") for room in body.tables.rooms.rows]
     rows_with_overlay = rooms_field_registry.attach_computed_overlay(row_dicts, overlay)
+    rows_with_overlay = attach_inverse_links_overlay(rows_with_overlay, inverse_view.inverse_links)
     return {
         "field_defs": [field.model_dump(mode="json") for field in body.tables.rooms.field_defs],
         "rows": rows_with_overlay,
+        "inverse_link_fields": [field.model_dump(mode="json") for field in inverse_view.inverse_link_fields],
+        "inverse_links_fingerprint": inverse_view.fingerprint,
     }
 
 

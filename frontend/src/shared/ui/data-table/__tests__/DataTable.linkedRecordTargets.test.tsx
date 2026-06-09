@@ -10,16 +10,14 @@ import type { ComponentProps } from "react";
 // Mock the FieldConfigModal so we can spy on the props the DataTable
 // forwards. The mock keeps the module identity stable and just renders
 // a probe element exposing the relevant prop count in its dataset.
-const seenProps: ComponentProps<typeof import("../components/FieldConfigModal").FieldConfigModal>[] =
-  [];
+const seenProps: ComponentProps<
+  typeof import("../components/FieldConfigModal").FieldConfigModal
+>[] = [];
 vi.mock("../components/FieldConfigModal", () => ({
   FieldConfigModal: (props: Record<string, unknown>) => {
     seenProps.push(props as never);
     return props.open ? (
-      <div
-        data-testid="fcm-spy"
-        data-targets={JSON.stringify(props.linkedRecordTargets ?? null)}
-      />
+      <div data-testid="fcm-spy" data-targets={JSON.stringify(props.linkedRecordTargets ?? null)} />
     ) : null;
   },
 }));
@@ -59,6 +57,7 @@ describe("DataTable → FieldConfigModal linkedRecordTargets forwarding", () => 
         view={emptyViewState()}
         onViewChange={vi.fn()}
         onWrite={vi.fn()}
+        emptyMessage="No rows"
         onEditCustomFieldBundle={vi.fn()}
         linkedRecordTargets={targets}
       />,

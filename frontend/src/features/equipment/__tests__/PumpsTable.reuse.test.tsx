@@ -6,6 +6,7 @@ import type { ReactElement } from "react";
 import { createQueryClient } from "../../../app/query-client";
 import { emptyViewState } from "../../../shared/ui/data-table";
 import { PumpsTable } from "../components/PumpsTable";
+import { routeForInverseSource } from "../lib/inverseRoutes";
 import { buildPump, buildPumpsSlice, schemaForPumps } from "../testing/testFixtures";
 
 const fetchMock = vi.fn();
@@ -176,5 +177,79 @@ describe("PumpsTable DataTable reuse", () => {
         writes: [{ rowId: "pmp_1", fieldKey: "datasheet_asset_ids", value: [] }],
       });
     });
+  });
+
+  test("renders read-only inverse link columns and forwards pill clicks", async () => {
+    const user = userEvent.setup();
+    const slice = buildPumpsSlice({
+      pumps: [buildPump({ id: "pmp_a" })],
+      inverse_link_fields: [
+        {
+          source_key: "rooms.cf_pumps",
+          source_table_path: ["rooms"],
+          source_table_display: "Rooms",
+          source_field_key: "cf_pumps",
+          source_field_display_name: "Pump",
+        },
+      ],
+      inverse_links: {
+        pmp_a: {
+          "rooms.cf_pumps": ["rm_a", "rm_b"],
+        },
+      },
+    });
+    const tableSchema = schemaForPumps(slice);
+    const onInversePillClick = vi.fn();
+
+    renderWithQueryClient(
+      <PumpsTable
+        pumpsSlice={slice}
+        tableSchema={tableSchema}
+        isEditor={false}
+        projectId="proj_1"
+        view={emptyViewState()}
+        onViewChange={() => undefined}
+        onWrite={vi.fn()}
+        onInversePillClick={onInversePillClick}
+      />,
+    );
+
+    expect(screen.getByRole("columnheader", { name: /Rooms ← Pump/ })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "rm_a" }));
+
+    expect(onInversePillClick).toHaveBeenCalledWith(
+      expect.objectContaining({ source_key: "rooms.cf_pumps" }),
+      "rm_a",
+    );
+  });
+
+  test("routes inverse-link source pills from their declared table path", () => {
+    expect(
+      routeForInverseSource(
+        "proj_1",
+        {
+          source_key: "rooms.cf_pumps",
+          source_table_path: ["rooms"],
+          source_table_display: "Rooms",
+          source_field_key: "cf_pumps",
+          source_field_display_name: "Pump",
+        },
+        "rm_a",
+      ),
+    ).toBe("/projects/proj_1/rooms?focus=rm_a");
+
+    expect(
+      routeForInverseSource(
+        "proj_1",
+        {
+          source_key: "equipment.hot_water_heaters.cf_pumps",
+          source_table_path: ["equipment", "hot_water_heaters"],
+          source_table_display: "Hot Water Heaters",
+          source_field_key: "cf_pumps",
+          source_field_display_name: "Pump",
+        },
+        "hwh_a",
+      ),
+    ).toBe("/projects/proj_1/equipment?tab=hot-water-heaters&focus=hwh_a");
   });
 });

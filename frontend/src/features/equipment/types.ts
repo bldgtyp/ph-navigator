@@ -3,6 +3,16 @@ import type { FieldOption, TableFieldDef } from "../../shared/ui/data-table";
 export type SingleSelectOption = FieldOption;
 export type CustomValue = string | number | boolean | null;
 
+export type InverseLinks = Record<string, Record<string, string[]>>;
+
+export type InverseLinkField = {
+  source_key: string;
+  source_table_path: string[];
+  source_table_display: string;
+  source_field_key: string;
+  source_field_display_name: string;
+};
+
 export type RoomRow = {
   id: string;
   floor_level: string | null;
@@ -59,6 +69,9 @@ export type RoomsSlice = {
   // Optional to keep test fixtures and pre-P4.4 payloads compatible
   // — consumers treat a missing overlay as `{}`.
   rows_computed?: Record<string, Record<string, unknown>>;
+  inverse_links?: InverseLinks;
+  inverse_link_fields?: InverseLinkField[];
+  inverse_links_fingerprint?: string;
 };
 
 export type RoomsOptionMap = Record<RoomOptionKey, SingleSelectOption[]> & {
@@ -110,6 +123,9 @@ export type PumpsSlice = {
   // custom entries keyed by `field_key`. Always present.
   field_defs: TableFieldDef[];
   single_select_options: PumpsOptionMap;
+  inverse_links?: InverseLinks;
+  inverse_link_fields?: InverseLinkField[];
+  inverse_links_fingerprint?: string;
 };
 
 export type PumpsReplacePayload = {

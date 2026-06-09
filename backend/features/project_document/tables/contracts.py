@@ -45,6 +45,18 @@ class TableRowsResponse(BaseModel):
     rows: list[dict[str, object]]
 
 
+class InverseLinkField(BaseModel):
+    """Metadata for one server-computed inverse-link column."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    source_key: str
+    source_table_path: list[str]
+    source_table_display: str
+    source_field_key: str
+    source_field_display_name: str
+
+
 @dataclass(frozen=True)
 class TableFieldRegistry:
     """Per-table field-config accessors for the schema-editor surface.

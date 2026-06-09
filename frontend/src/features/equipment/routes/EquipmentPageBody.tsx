@@ -93,7 +93,6 @@ import {
   PUMPS_CONFLICT_MESSAGES,
   VENTILATORS_CONFLICT_MESSAGES,
   equipmentTabLabel,
-  type EquipmentTabKey,
 } from "./equipmentPageConfig";
 import { addRowButton, insertEquipmentRow } from "./equipmentRowActions";
 
