@@ -1,4 +1,4 @@
-import { expect, type APIRequestContext, type Page } from "@playwright/test";
+import { expect, type APIRequestContext, type Locator, type Page } from "@playwright/test";
 
 export const FRAME_TYPES_PATH = "/api/v1/catalogs/frame-types";
 export const GLAZING_TYPES_PATH = "/api/v1/catalogs/glazing-types";
@@ -36,7 +36,7 @@ export async function createProject(
   page: Page,
   options: { name: string; btNumber: string; client?: string },
 ): Promise<string> {
-  await page.getByRole("button", { name: "Create new project" }).click();
+  await page.getByRole("button", { name: /^(Create new project|Add New Project \+)$/ }).click();
   await page.getByLabel("Project name").fill(options.name);
   await page.getByLabel("BT number").fill(options.btNumber);
   await page.getByLabel("Client").fill(options.client ?? "BLDGTYP");
@@ -102,6 +102,23 @@ export async function addShortTextField(page: Page, name: string): Promise<void>
   await dialog.getByLabel(/^(Field )?Name$/).fill(name);
   await dialog.getByRole("button", { name: /Add field/ }).click();
   await expect(dialog).toBeHidden();
+}
+
+export async function gridCellForRowAndHeader(
+  page: Page,
+  options: { rowCellText: string; headerName: string },
+): Promise<Locator> {
+  const escapedHeader = options.headerName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const header = page.getByRole("columnheader", {
+    name: new RegExp(`^${escapedHeader}\\b`),
+  });
+  const columnIndex = await header.getAttribute("aria-colindex");
+  if (!columnIndex) throw new Error(`${options.headerName} column is missing aria-colindex`);
+  const row = page.getByRole("row").filter({
+    has: page.getByRole("gridcell", { name: options.rowCellText, exact: true }),
+  });
+  await expect(row).toBeVisible();
+  return row.locator(`td[aria-colindex="${columnIndex}"]`);
 }
 
 export async function readWindowTypesSlice(

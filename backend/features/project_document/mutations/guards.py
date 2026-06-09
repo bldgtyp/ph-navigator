@@ -32,6 +32,7 @@ __all__ = [
     "reject_reserved_field_key",
     "replace_rows_in_envelope",
     "resolve_insert_position",
+    "strip_field_from_row",
     "strip_field_from_rows",
 ]
 
@@ -156,14 +157,28 @@ def strip_field_from_rows(
     cleared = 0
     next_rows: list[object] = []
     for row in rows:
-        custom_values = capability.read_row_custom_values(row)
-        if field_key in custom_values:
+        next_row, row_was_cleared = strip_field_from_row(row, field_key, capability)
+        if row_was_cleared:
             cleared += 1
-            stripped = {key: value for key, value in custom_values.items() if key != field_key}
-            next_rows.append(capability.set_row_custom_values(row, stripped))
-        else:
-            next_rows.append(row)
+        next_rows.append(next_row)
     return next_rows, cleared
+
+
+def strip_field_from_row(
+    row: object,
+    field_key: str,
+    capability: TableFieldRegistry,
+) -> tuple[object, bool]:
+    custom_values = capability.read_row_custom_values(row)
+    custom_links = capability.read_row_links(row)
+    has_value = field_key in custom_values
+    has_link = field_key in custom_links
+    if not has_value and not has_link:
+        return row, False
+    stripped_values = {key: value for key, value in custom_values.items() if key != field_key}
+    stripped_links = {key: value for key, value in custom_links.items() if key != field_key}
+    stripped_row = capability.set_row_custom_values(row, stripped_values)
+    return capability.set_row_links(stripped_row, stripped_links), True
 
 
 def read_rows_from_envelope(body: ProjectDocumentV1, table_key: str) -> list[object]:

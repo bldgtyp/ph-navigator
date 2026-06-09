@@ -24,6 +24,7 @@ from features.project_document.custom_fields import (
 from features.project_document.document import ProjectDocumentV1, PumpRow, RoomRow
 from features.project_document.schema_mutations import (
     ChangeTypeMutation,
+    DeleteFieldMutation,
     FieldSchemaMutation,
     apply_schema_mutation,
 )
@@ -420,6 +421,28 @@ class TestChangeTypeDispatcher:
             assert "cf_pumps" not in row.custom_values
         new_field = next(f for f in rooms_field_registry.read_field_defs(next_body) if f.field_key == "cf_pumps")
         assert new_field.field_type is CustomFieldType.short_text
+
+
+class TestDeleteFieldDispatcher:
+    def test_delete_linked_record_field_strips_custom_links(self) -> None:
+        body = _seed_pump(_empty_body(), pump_id="pmp_a")
+        body = _seed_linked_field(body, _linked_record_field_def())
+        body = _seed_room_with_links(body, room_id="rm_1", field_key="cf_pumps", pump_ids=["pmp_a"])
+        body = _seed_room_with_links(body, room_id="rm_2", field_key="cf_pumps", pump_ids=[])
+
+        mutation = DeleteFieldMutation(
+            kind="deleteField",
+            table_key="rooms",
+            field_id="cf_pumps",
+            expected_schema_fingerprint=rooms_custom_fields.compute_schema_fingerprint(body),
+        )
+        next_body, audit = _apply_mutation(body, mutation)
+
+        assert all(field.field_key != "cf_pumps" for field in rooms_field_registry.read_field_defs(next_body))
+        assert audit["cleared_row_count"] == 1
+        for row in next_body.tables.rooms.rows:
+            assert "cf_pumps" not in row.custom_links
+            assert "cf_pumps" not in row.custom_values
 
     def test_short_text_to_linked_record_wipes_custom_values(self) -> None:
         body = _seed_pump(_empty_body(), pump_id="pmp_a")

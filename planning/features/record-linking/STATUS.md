@@ -1,13 +1,12 @@
 ---
 DATE: 2026-06-08
 TIME: -
-STATUS: Phase 2 implemented in the current worktree for the canonical
-        Rooms→Pumps inverse-view loop. Focused backend/frontend checks
-        pass; current `make format` left files unchanged and `make ci`
-        is green. Phase 1 source-side linking is implemented, but
-        still has two closeout follow-ups tracked below:
-        linked_record deleteField link-bag cleanup and browser/e2e
-        smoke evidence. Phase 3 rollups are not started.
+STATUS: Phases 1, 1.b, and 2 are complete for the canonical
+        Rooms→Pumps source/inverse loop. linked_record deleteField
+        link-bag cleanup is fixed; browser/e2e smoke evidence is
+        recorded under `assets/e2e/rooms-pumps/`. Current `make
+        format` left files unchanged and `make ci` passed on
+        2026-06-09. Phase 3 rollups are not started.
 AUTHOR: Ed May (with Claude)
 ---
 
@@ -17,7 +16,7 @@ Tracks per-phase progress. Step IDs map to `phases/phase-01-link-values.md` P-nu
 
 ## Phase 1 — Link values
 
-### Backend — implemented with one known Phase 1 gap
+### Backend — complete
 
 - [x] **P3.1** — `CustomFieldType.linked_record`, `coerce_link_value`, `validate_link_config` (`custom_fields.py`)
 - [x] **P3.2** — `RowWithCustomFields` mixin + `custom_links: dict[str, list[str]]` on every `*Row`; `schema_version` 4 → 5 (`document.py`)
@@ -27,7 +26,7 @@ Tracks per-phase progress. Step IDs map to `phases/phase-01-link-values.md` P-nu
 - [x] **P3.6** — `RoomRow.erv_unit_ids` retired across backend (RoomRow field, validator branch, `ROOMS_TYPED_COLUMN_*` constants, ~13 backend fixtures)
 - [x] **P3.7** — N/A (no repository/store changes; existing JSON columns carry the new bag)
 - [x] **P3.8** — MCP path inherits via Pydantic round-trip (rows + `RowWithCustomFields` mixin, mutation enum + config validation)
-- [ ] **P3.9 — bug** — `deleteField` for a `linked_record` field must strip `custom_links[field_key]` as well as `custom_values[field_key]`. Current behavior leaves stale link-bag entries and returns `422 invalid_project_document` (`Unknown field_key ...`) after the FieldDef is removed.
+- [x] **P3.9 — bug** — `deleteField` for a `linked_record` field strips `custom_links[field_key]` as well as `custom_values[field_key]`; regression coverage lives in `test_project_document_linked_record.py::TestDeleteFieldDispatcher`.
 
 ### Frontend — Phase 1 + Phase 1.b implemented for Rooms→Pumps
 
@@ -38,7 +37,7 @@ Tracks per-phase progress. Step IDs map to `phases/phase-01-link-values.md` P-nu
 - [x] **P4.3** — `LinkedRecordPicker` is wired through `GridBody` edit mode and `useGridEdit.commitLinkedRecord`, with substring search, sorted candidates, single/multi mode, dedupe, max-links validation, and stable open-draft behavior.
 - [x] **P4.4** — Fill / paste / undo route linked-record `string[]` payloads through `custom_links`; paste accepts JSON id-list round-trips and rejects stringified pill text.
 - [x] **P4.5** — Pill click navigation to `?tab=pumps&focus=<row_id>` and `useRowFocusHighlight` are wired and regression-tested for cold-start rows and selector collisions.
-- [ ] **P4.6 / smoke evidence** — no generated JSON Schema artifact ships today, but the browser smoke evidence required by `phase-01-link-values.md` P7 is still missing.
+- [x] **P4.6 / smoke evidence** — no generated JSON Schema artifact ships today; browser smoke evidence is covered by `frontend/tests/e2e/record-linking-rooms-pumps.spec.ts` and screenshots in `assets/e2e/rooms-pumps/`.
 
 ### Tests — added this session
 
@@ -55,7 +54,7 @@ Tracks per-phase progress. Step IDs map to `phases/phase-01-link-values.md` P-nu
 - [x] Current checkout closeout gate — `make format` left files unchanged; `make ci` passed on 2026-06-09 (backend pytest 681 passed / 2 skipped; frontend Vitest 145 files / 1498 tests; production build green).
 
 ### Current full-gate test totals
-- **Backend pytest**: 681 passed / 2 skipped
+- **Backend pytest**: 682 passed / 2 skipped
 - **Frontend Vitest**: 1498 passed across 145 files
 - **Full gate**: backend ruff format, ruff lint, ty, alembic, pytest, coverage; frontend Prettier, ESLint, structural guards, Vitest, and production build all green on 2026-06-09
 
@@ -173,25 +172,26 @@ Three coordinated wirings close the rooms→pumps add/link/navigate loop.
   dedupe + empty drop; blank clears; stringified pill text rejects;
   non-array JSON rejects; over-cap on `max_links=1` rejects).
 
-### Phase 1.b — Integration fixes (verified 2026-06-09)
+### Phase 1.b — Integration fixes (complete 2026-06-09)
 
 `/simplify xhigh` review on 2026-06-09 surfaced 15 defects in the
 working-tree diff. The §A1–§A7 blockers and §B1–§B7 cleanup items are
 implemented and covered by focused tests; §B8 (external clipboard copy
-format) is explicitly deferred to Phase 2 polish. Phase 1.b is still
-not Complete because browser smoke / e2e evidence is missing and the
-linked-record deleteField cleanup bug remains open.
+format) is explicitly deferred to Phase 3/polish. The remaining
+Phase 1.b closeout gates are now closed by the linked-record
+deleteField cleanup regression and the canonical Rooms→Pumps e2e
+smoke.
 
 ### Remaining Phase 1 follow-ups
 
-- [ ] **Fix linked_record deleteField bug** — update backend delete-field row stripping to remove `custom_links[field_key]`, add a regression test for deleting a linked-record field with linked rows, and rerun `backend/tests/test_project_document_linked_record.py`.
-- [ ] **Record the canonical browser smoke** — add a reusable Playwright e2e spec or recorded MCP smoke for: create linked_record field on Rooms, target Pumps, link a pump, save, reload, click pill, land on Pumps with focus highlight. Store evidence under `planning/features/record-linking/assets/` if using screenshots / clips.
+- [x] **Fix linked_record deleteField bug** — backend delete-field row stripping removes `custom_links[field_key]`; focused regression `cd backend && uv run pytest tests/test_project_document_linked_record.py` passed on 2026-06-09.
+- [x] **Record the canonical browser smoke** — reusable Playwright spec added at `frontend/tests/e2e/record-linking-rooms-pumps.spec.ts`: create linked_record field on Rooms, target Pumps, link a pump, reload, click pill, land on Pumps with `?tab=pumps&focus=<row_id>`, and verify inverse column. Screenshots: `assets/e2e/rooms-pumps/01-linked-room-pill.png`, `assets/e2e/rooms-pumps/02-pumps-focus-inverse.png`.
 - [ ] **Other-target page wiring** — when a non-Pumps target table becomes a link target (e.g. Ventilators), apply the RoomsPage / EquipmentPageBody reference pattern: fetch target slice, build ops per target, merge maps, and plumb `focusRowId` through the corresponding `*TableSlot`.
 - [ ] **Diff / schema acceptance audit** — verify whether JSON Schema export and `custom_links.<field_key>` diff rendering are truly satisfied or should be explicitly deferred / implemented.
 
 ## Phase 2 — Inverse view
 
-**Implemented; browser evidence pending.**
+**Complete for canonical Rooms→Pumps.**
 
 - [x] Backend inverse-view builder — `backend/features/project_document/inverse_view.py` walks declared `linked_record` fields through table contracts, filters target ids against the snapshot being read, and projects `{target_row_id: {source_key: [source_row_id]}}`.
 - [x] Slice response overlays — Rooms/Pumps responses expose top-level `inverse_links`, `inverse_link_fields`, and `inverse_links_fingerprint`; JSON table envelopes attach per-row `inverse_links` as a read-only export overlay.
@@ -200,8 +200,8 @@ linked-record deleteField cleanup bug remains open.
 - [x] Perf gate — deterministic in-memory fixture (`4000` Rooms × `3` fields, `50` Pumps, plus equipment source tables) with median inverse-build threshold from `backend/tests/baselines/record_linking_perf.json`.
 - [x] Focused verification — `uv run pytest tests/test_project_document_inverse_view.py tests/test_record_linking_perf.py`; `uv run ty check ...`; `pnpm exec vitest run src/features/equipment/__tests__/PumpsTable.reuse.test.tsx`; `pnpm exec tsc --noEmit --pretty false`.
 - [x] Full closeout gate — `make format` left files unchanged; `make ci` passed on 2026-06-09.
-- [ ] Browser smoke / e2e evidence — record the canonical Rooms→Pumps source/inverse loop in Playwright or MCP evidence.
+- [x] Browser smoke / e2e evidence — `frontend/tests/e2e/record-linking-rooms-pumps.spec.ts` passed on 2026-06-09; screenshots stored under `assets/e2e/rooms-pumps/`.
 
 ## Phase 3 — Rollups
 
-**NOT STARTED.** Blocked on Phase 2 closeout / browser evidence.
+**NOT STARTED.** Unblocked by Phase 1/2 closeout; next implementation slice.

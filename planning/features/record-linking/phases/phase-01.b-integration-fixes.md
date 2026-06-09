@@ -1,13 +1,12 @@
 ---
 DATE: 2026-06-09
 TIME: planning
-STATUS: Implemented / in review — §A1–§A7 and §B1–§B7 have fixes
-        landed with focused regression tests. §B8 is deferred to
-        Phase 2 polish. This punch list is not fully merge-complete
-        because no Phase 1 browser smoke / e2e evidence is recorded.
-        Current `make format` left files unchanged and `make ci` is
-        green. Post-review backend bug: deleteField
-        for linked_record must strip `custom_links[field_key]`.
+STATUS: COMPLETE for canonical Rooms→Pumps — §A1–§A7 and §B1–§B7
+        have fixes landed with focused regression tests. §B8 is
+        deferred to Phase 3/polish. Closeout 2026-06-09 fixed the
+        linked_record deleteField `custom_links[field_key]` cleanup
+        bug and recorded browser/e2e smoke evidence under
+        `../assets/e2e/rooms-pumps/`.
 AUTHOR: Ed May (with Claude)
 SCOPE: Follow-on fix list for Phase 1 record-linking. Closes the gap
        between "primitives + tests green" and "Rooms↔Pumps loop
@@ -54,9 +53,9 @@ either mismatched or omitted.
 
 Follow-up audit 2026-06-09: the §A blockers and §B cleanup items
 through §B7 are implemented and covered by focused regression tests.
-The remaining closeout gates are the linked_record deleteField
-cleanup bug and browser smoke / e2e evidence. Current `make format`
-left files unchanged and `make ci` is green.
+The final closeout gates are now closed: linked_record deleteField
+cleanup has backend regression coverage, and the canonical browser
+smoke/e2e is recorded in the repo.
 
 The items below are grouped by severity. §A1–§A7 are **must-fix
 blockers** — Phase 1 cannot ship without them. §B1–§B8 are
@@ -381,7 +380,7 @@ should be addressed before the feature stops being "new."
   no-record_id case. Optionally surface orphan count on the cell
   for editor-mode discoverability.
 
-### B8 — External clipboard copy emits raw JSON id list — ⏸ DEFERRED to Phase 2 polish (PRD §11 Q24 only specifies in-grid round-trip; external copy is not in Phase 1 scope)
+### B8 — External clipboard copy emits raw JSON id list — ⏸ DEFERRED to Phase 3/polish (PRD §11 Q24 only specifies in-grid round-trip; external copy is not in Phase 1 scope)
 
 - **File**: `frontend/src/shared/ui/data-table/lib/paste/tsv.ts:22`
 - **Defect**: `formatClipboardCellValue`'s dispatch table omits a
@@ -398,7 +397,7 @@ should be addressed before the feature stops being "new."
   row-id fallbacks. Decision needed first: is external copy
   in-scope for Phase 1, or deferred? PRD §11 Q24 names the in-grid
   round-trip explicitly; external copy is not stated. Recommend:
-  defer if scope-tight, file as Phase 2 polish. Documented either
+  defer if scope-tight, file as Phase 3/polish. Documented either
   way.
 
 ## Out of scope for §1.b
@@ -411,10 +410,9 @@ These came up during the review but belong elsewhere:
   `useTabFromUrl`). These are real and would simplify future field
   types; they don't block §A. Park them as a Phase-2 architecture
   prep note.
-- **Playwright MCP browser smoke** (per `STATUS.md` deferred list).
-  Now that §A1–§A7 are implemented, the smoke can exercise the loop;
-  run it after the deleteField cleanup fix so the evidence corresponds
-  to a shippable checkout.
+- **Additional non-Pumps browser smoke**. The canonical Rooms→Pumps
+  loop is covered; run a second target-table smoke when another table
+  is wired as a link target.
 - **`commitLinkedRecord` and `commit` consolidation** — covered by
   §B1's fix sketch; keeping the wider altitude refactor out of
   this list.
@@ -426,17 +424,16 @@ These came up during the review but belong elsewhere:
 - [x] §A1–§A7 each have a fix landed and a regression test that
   would have failed before the fix.
 - [x] §B1–§B7 are fixed and regression-tested.
-- [x] §B8 is explicitly deferred to Phase 2 polish.
+- [x] §B8 is explicitly deferred to Phase 3/polish.
 - [x] `make ci` is green for the current checkout. Current audit:
   `make format` left files unchanged and `make ci` passed on
   2026-06-09.
-- [ ] A manual MCP smoke or Playwright e2e spec demonstrates: add
-  linked_record field on Rooms via `+`; pick target = Pumps; save;
-  double-click Rooms cell; pick a pump; save row; click pill → land
-  on Pumps with the row scrolled into view and the focus highlight
-  visible; back to Rooms; second pill click on a different sub-table
-  switches sub-tab and focuses the right row.
-- [ ] Linked-record deleteField cleanup bug is fixed and regression-
+- [x] A Playwright e2e spec demonstrates: add linked_record field on
+  Rooms via `+`; pick target = Pumps; save; double-click Rooms cell;
+  pick a pump; confirm; reload; click pill → land on Pumps with
+  `?tab=pumps&focus=<row_id>`; verify the target row and inverse
+  column. Screenshots are recorded under `../assets/e2e/rooms-pumps/`.
+- [x] Linked-record deleteField cleanup bug is fixed and regression-
   tested: deleting the FieldDef must also remove
   `custom_links[field_key]` from source rows.
 

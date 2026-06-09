@@ -1,5 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { addShortTextField, createProject, openHeaderMenu, signIn } from "./_helpers";
+import {
+  addShortTextField,
+  createProject,
+  gridCellForRowAndHeader,
+  openHeaderMenu,
+  signIn,
+} from "./_helpers";
 
 test.describe.configure({ mode: "serial" });
 
@@ -27,13 +33,11 @@ test("editable Rooms and Pumps fields round-trip through the browser", async ({ 
   await roomDialog.getByRole("button", { name: "Save room" }).click();
   await expect(page.getByRole("gridcell", { name: "Browser Room", exact: true })).toBeVisible();
 
-  const browserNoteHeader = page.getByRole("columnheader", { name: /^Browser Note\b/ });
-  const browserNoteColumnIndex = await browserNoteHeader.getAttribute("aria-colindex");
-  if (!browserNoteColumnIndex) throw new Error("Browser Note column is missing aria-colindex");
-  const browserRoomRow = page.getByRole("row").filter({
-    has: page.getByRole("gridcell", { name: "Browser Room", exact: true }),
+  const browserNoteCell = await gridCellForRowAndHeader(page, {
+    rowCellText: "Browser Room",
+    headerName: "Browser Note",
   });
-  await browserRoomRow.locator(`td[aria-colindex="${browserNoteColumnIndex}"]`).dblclick();
+  await browserNoteCell.dblclick();
   await page.keyboard.type("round-tripped room note");
   await page.keyboard.press("Enter");
   await expect(page.getByText("round-tripped room note")).toBeVisible();
