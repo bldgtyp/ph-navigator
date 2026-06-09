@@ -521,6 +521,52 @@ class ProjectDocumentV1(BaseModel):
             target_row_ids=target_row_ids,
         )
 
+        ventilator_ids = {row.id for row in self.tables.equipment.ervs.rows}
+        heat_pumps = self.tables.equipment.heat_pumps
+        self._validate_heat_pump_table_ids_and_tags(
+            "heat_pump_outdoor_equip",
+            "model_number",
+            [(row.id, row.model_number) for row in heat_pumps.outdoor_equip],
+        )
+        self._validate_heat_pump_table_ids_and_tags(
+            "heat_pump_indoor_equip",
+            "model_number",
+            [(row.id, row.model_number) for row in heat_pumps.indoor_equip],
+        )
+        self._validate_heat_pump_table_ids_and_tags(
+            "heat_pump_outdoor_units",
+            "tag",
+            [(row.id, row.tag) for row in heat_pumps.outdoor_units],
+        )
+        self._validate_heat_pump_table_ids_and_tags(
+            "heat_pump_indoor_units",
+            "tag",
+            [(row.id, row.tag) for row in heat_pumps.indoor_units],
+        )
+        heat_pump_indoor_equip_ids = {row.id for row in heat_pumps.indoor_equip}
+        heat_pump_outdoor_equip_ids = {row.id for row in heat_pumps.outdoor_equip}
+        heat_pump_outdoor_unit_ids = {row.id for row in heat_pumps.outdoor_units}
+        for row in heat_pumps.outdoor_equip:
+            if row.paired_indoor_equip_id is not None and row.paired_indoor_equip_id not in heat_pump_indoor_equip_ids:
+                raise ValueError(
+                    f"Missing heat-pump indoor equip for outdoor equip {row.id}: {row.paired_indoor_equip_id}"
+                )
+        for row in heat_pumps.outdoor_units:
+            if row.outdoor_equip_id not in heat_pump_outdoor_equip_ids:
+                raise ValueError(f"Missing heat-pump outdoor equip for outdoor unit {row.id}: {row.outdoor_equip_id}")
+        for row in heat_pumps.indoor_units:
+            if row.indoor_equip_id not in heat_pump_indoor_equip_ids:
+                raise ValueError(f"Missing heat-pump indoor equip for indoor unit {row.id}: {row.indoor_equip_id}")
+            if row.outdoor_unit_id is not None and row.outdoor_unit_id not in heat_pump_outdoor_unit_ids:
+                raise ValueError(f"Missing heat-pump outdoor unit for indoor unit {row.id}: {row.outdoor_unit_id}")
+            if row.linked_erv_unit_id is not None and row.linked_erv_unit_id not in ventilator_ids:
+                raise ValueError(f"Missing linked ERV for heat-pump indoor unit {row.id}: {row.linked_erv_unit_id}")
+            missing_room_ids = [room_id for room_id in row.served_room_ids if room_id not in room_ids]
+            if missing_room_ids:
+                raise ValueError(f"Missing served room for heat-pump indoor unit {row.id}: {missing_room_ids[0]}")
+            if row.floor_level is not None and row.floor_level not in floor_option_ids:
+                raise ValueError(f"Missing floor-level option for heat-pump indoor unit {row.id}: {row.floor_level}")
+
         thermal_bridges_field_defs_by_key = index_table_field_defs(
             "thermal_bridges", self.tables.thermal_bridges.field_defs
         )
@@ -624,6 +670,23 @@ class ProjectDocumentV1(BaseModel):
         self._validate_document_formula_graph()
 
         return self
+
+    @staticmethod
+    def _validate_heat_pump_table_ids_and_tags(
+        table_label: str,
+        tag_label: str,
+        rows: list[tuple[str, str]],
+    ) -> None:
+        ids: set[str] = set()
+        tags: set[str] = set()
+        for row_id, tag in rows:
+            if row_id in ids:
+                raise ValueError(f"Duplicate {table_label} id: {row_id}")
+            ids.add(row_id)
+            normalized_tag = tag.strip().casefold()
+            if normalized_tag in tags:
+                raise ValueError(f"Duplicate {table_label} {tag_label}: {tag}")
+            tags.add(normalized_tag)
 
     def _validate_rooms_formula_cycles(self, field_defs_by_key: dict[str, TableFieldDef]) -> None:
         _ = field_defs_by_key

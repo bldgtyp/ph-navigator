@@ -1,8 +1,8 @@
 ---
 DATE: 2026-06-09
 TIME: 14:30
-STATUS: DRAFT — Phase 0 outline; awaiting PRD sign-off before
-        promotion to detailed implementation plan.
+STATUS: Implemented locally — closeout gates green; ready for review /
+        commit.
 AUTHOR: Ed May (with Claude)
 SCOPE: Backend-only foundation for the Heat Pumps feature. No
        frontend, no UX wiring — those land in Phases 1–5.
@@ -42,19 +42,45 @@ this slice:
   cascade-preview payload (referencing-row tags, no mutation).
   Required by D-HP-19 so Phase 3 / Phase 4 can render the
   pre-delete confirmation dialog.
-- **Single-select primitive `shared_with` directive** (per D-HP-21).
-  US-Builder-Tables §16 extended so a column declaration may carry
-  `shared_with: "<table>.<col>"` and read/write its option list
-  from the target's key instead of its own. Applied to
+- HP unit fields reuse the Rooms vocabularies directly:
   `heat_pump_outdoor_units.building_zone → rooms.building_zone` and
   `heat_pump_indoor_units.floor_level → rooms.floor_level`.
-  Validation rejects unresolved targets and circular chains.
-- The schema migration is reversible and lands on a feature branch
-  off main.
+  The generic FieldDef-level `shared_with` primitive is not needed
+  until the HP tables are registered with the shared DataTable
+  schema-editor surface in later phases.
+- No Alembic migration is required: HP state lives inside the versioned
+  JSON document, and the four arrays default to `[]` through the
+  Pydantic document model.
 
 Phase 0 does **not** ship any frontend code, any DataTable wiring,
 any Phius export logic, any ERV-cross-link surfaces, or any MCP
 tools. Those land in Phases 1–5.
+
+## Implementation progress
+
+Updated 2026-06-09 during Phase 0 implementation:
+
+- [x] `backend/features/heat_pumps/` module created with
+  `models.py`, `repository.py`, `service.py`, and `routes.py`.
+- [x] `ProjectDocumentV1` default shape extended with
+  `tables.equipment.heat_pumps.{outdoor_equip, indoor_equip,
+  outdoor_units, indoor_units}`.
+- [x] `GET /api/v1/projects/{id}/equipment/heat-pumps` reads the
+  active version's current draft-or-version view.
+- [x] `PATCH /api/v1/projects/{id}/equipment/heat-pumps/{table}`
+  accepts one JSON-Patch-style op and writes through the existing draft
+  buffer with ETag gating.
+- [x] Focused pytest coverage added under
+  `backend/tests/features/heat_pumps/`.
+- [x] Focused verification: `cd backend && uv run pytest
+  tests/features/heat_pumps -q` → 7 passed.
+- [x] No Alembic migration added; `make ci` Alembic upgrade verified
+  the existing migration chain remains green.
+- [x] `$ simplify` cleanup pass.
+- [x] `$ docs-pass` repo-doc pass; stable `context/technical-requirements/data-model.md`
+  and `context/technical-requirements/api.md` updated.
+- [x] `make format`.
+- [x] `make ci`.
 
 ## Acceptance — Phase 0 done when
 
@@ -91,9 +117,9 @@ tools. Those land in Phases 1–5.
      `paired_indoor_equip_id`, when non-null, must resolve to an
      existing `heat_pump_indoor_equip[*].id` at write time; 422
      rejection with structured error if not.
-6. Alembic migration `XXXX_add_heat_pump_tables.py` is reversible
-   (`upgrade` and `downgrade` both pass).
-7. `cd backend && uv run pytest features/heat_pumps/` passes
+6. Alembic upgrade passes with no HP-specific migration; HP arrays are
+   document-body fields with Pydantic defaults, not relational columns.
+7. `cd backend && uv run pytest tests/features/heat_pumps/` passes
    green; ≥ 1 test per model validator, per service rule, per
    REST endpoint.
 8. `make ci` from the repo root passes — Ruff format, Ruff lint,

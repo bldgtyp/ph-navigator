@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from features.heat_pumps.models import HeatPumpsTableSlice
 from features.project_document.document import (
     APPLIANCE_ENERGY_STAR_OPTION_KEY,
     APPLIANCE_TYPE_OPTION_KEY,
@@ -61,6 +62,7 @@ def empty_project_document(payload: CreateProjectRequest) -> ProjectDocumentV1:
                 fans=FansTableEnvelope(field_defs=list(FANS_BUILT_IN_FIELD_DEFS)),
                 hot_water_heaters=HotWaterHeatersTableEnvelope(field_defs=list(HOT_WATER_HEATERS_BUILT_IN_FIELD_DEFS)),
                 hot_water_tanks=HotWaterTanksTableEnvelope(field_defs=list(HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS)),
+                heat_pumps=HeatPumpsTableSlice(),
             ),
         ),
         single_select_options={

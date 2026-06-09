@@ -378,7 +378,15 @@ JSON document. Illustrative sketch (the canonical model is the
     "equipment": {
       "fans":  [ /* see US-EQ-6 — name, manufacturer (single-select), model_number, fan_purpose (single-select), airflow_cfm, electrical_power_w, runtime_hours_per_day, datasheet_asset_ids, catalog_origin, notes */ ],
       "pumps": [ /* see US-EQ-5 — name, manufacturer (single-select), model_number, pump_type (single-select), electrical_power_w, runtime_hours_per_year, datasheet_asset_ids, catalog_origin, notes */ ],
-      "ervs":  [ /* see US-EQ-4 — name, manufacturer (single-select), model_number, unit_type (single-select), nominal_airflow_cfm, sensible_recovery_efficiency, electrical_power_w, datasheet_asset_ids, catalog_origin, notes */ ]
+      "ervs":  [ /* see US-EQ-4 — name, manufacturer (single-select), model_number, unit_type (single-select), nominal_airflow_cfm, sensible_recovery_efficiency, electrical_power_w, datasheet_asset_ids, catalog_origin, notes */ ],
+      "heat_pumps": {
+        // Phase 0 backend foundation, 2026-06-09. See
+        // planning/features/heat-pumps/PRD.md for full field lists.
+        "outdoor_equip":  [ /* hpoe_* rows: manufacturer, model_number, paired_indoor_equip_id, system_family, refrigerant, heating/cooling performance, datasheet_asset_ids, notes */ ],
+        "indoor_equip":   [ /* hpie_* rows: manufacturer, model_type, model_number, install_type, nominal/fan/performance fields, datasheet_asset_ids, notes */ ],
+        "outdoor_units":  [ /* hpou_* rows: tag, outdoor_equip_id, building_zone, datasheet_asset_ids, notes */ ],
+        "indoor_units":   [ /* hpiu_* rows: tag, indoor_equip_id, outdoor_unit_id, linked_erv_unit_id, served_room_ids, floor_level, area_served, datasheet_asset_ids, notes */ ]
+      }
     },
     "manufacturer_filters": [ ]
   },
@@ -395,6 +403,9 @@ JSON document. Illustrative sketch (the canonical model is the
       /* user-defined after first edit; empty on new-project create */
     ],
     "rooms.building_zone": [ /* user-defined; nullable cells allowed */ ],
+    // Heat-pump unit rows reuse the Rooms vocabularies:
+    // heat_pumps.outdoor_units[*].building_zone -> rooms.building_zone
+    // heat_pumps.indoor_units[*].floor_level -> rooms.floor_level
     "pumps.device_type": [
       { "id": "opt_pump_heat_circulation", "label": "4-Heat Circulation Pump", "color": "#0ea5e9", "order": 0 },
       { "id": "opt_pump_dhw_circulation", "label": "6-DHW Circulation Pump", "color": "#14b8a6", "order": 1 },

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from features.heat_pumps.models import HeatPumpsTableSlice
 from features.project_document.custom_fields import CustomValue, TableFieldDef
 
 
@@ -398,3 +399,4 @@ class EmptyEquipmentTables(BaseModel):
     hot_water_tanks: HotWaterTanksTableEnvelope = Field(default_factory=HotWaterTanksTableEnvelope)
     pumps: PumpsTableEnvelope = Field(default_factory=PumpsTableEnvelope)
     ervs: VentilatorsTableEnvelope = Field(default_factory=VentilatorsTableEnvelope)
+    heat_pumps: HeatPumpsTableSlice = Field(default_factory=HeatPumpsTableSlice)
