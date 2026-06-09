@@ -1,22 +1,24 @@
 ---
 DATE: 2026-06-08
 TIME: planning
-STATUS: Partial backend implementation in progress. 2026-06-09
-        landed Python parser / AST support, document-aware server
-        read-overlay evaluation for canonical Rooms→Pumps persisted
-        rollups, document-level linked-ref validation / cycle
-        detection, and focused backend tests. Frontend editor support,
-        perf gate, and browser smoke remain open.
+STATUS: Complete and archived on 2026-06-09 for the backend Phase 3
+        rollup/validator slice. Python parser / AST support,
+        document-aware server read-overlay evaluation for canonical
+        Rooms→Pumps persisted rollups, document-level linked-ref
+        validation / cycle detection, focused backend tests, manual
+        closeout, and full `make ci` are complete. Frontend editor
+        support, JSON Schema regeneration, and the extended combined
+        perf gate are deferred follow-ups.
 AUTHOR: Ed May (with Claude)
 SCOPE: Cross-table formula primitives `linked(...)` and
        `linked_from(...)` with `count` / `sum` / `avg` aggregators,
        plus document-level formula cycle detection as a topological
        sort over the formula graph.
 RELATED:
-  - planning/features/record-linking/PRD.md §4 (Phase 3), §11 Q8
+  - planning/archive/record-linking/PRD.md §4 (Phase 3), §11 Q8
     (rollup grammar), Q26 (cross-table eval order)
-  - planning/features/record-linking/phases/phase-01-link-values.md
-  - planning/features/record-linking/phases/phase-02-inverse-view.md
+  - planning/archive/record-linking/phases/phase-01-link-values.md
+  - planning/archive/record-linking/phases/phase-02-inverse-view.md
   - context/technical-requirements/data-model.md §6.6.4
   - backend/features/project_document/formula/{ast_nodes.py,
     parser.py, resolver.py, evaluator.py, analysis.py, tokens.py,
@@ -124,19 +126,20 @@ Decisions already locked:
    graph. A formula on Pumps that references a Rooms formula
    sees the final Rooms value, not the stale-pre-eval value.
    Implemented as a document-aware recursive overlay cache with
-   recursion guard; graph-based validator remains open.
-9. [ ] Performance budget: the **combined** inverse-view + formula
+   recursion guard plus document-level graph validator.
+9. [x] **Deferred** — Performance budget: the **combined** inverse-view + formula
    evaluation for the Phase 2 perf-gate fixture (plus 5 formula
    fields added across tables) completes in under 200ms on the
-   pinned CI runner. New baseline / regression rule mirrors
-   Phase 2's (>20% over baseline on 3 consecutive runs).
-10. [ ] Frontend formula editor learns the new primitives in its
+   pinned CI runner. Existing Phase 2 inverse-view perf gate remains
+   in place; extend it when rollups become performance-sensitive.
+10. [x] **Deferred** — Frontend formula editor learns the new primitives in its
     ref-completion dropdown. Typing `linked_from(` surfaces
     target-table suggestions; typing `linked_from(rooms, ` then
     surfaces field-key suggestions filtered to linked-record
     fields on Rooms.
-11. [ ] JSON Schema regeneration includes the new formula nodes.
-12. [ ] All `make ci` gates green.
+11. [x] **Deferred** — JSON Schema regeneration includes the new formula nodes.
+    PHN does not currently ship a generated schema artifact.
+12. [x] All `make ci` gates green.
 
 ## P3. Backend work
 
@@ -222,8 +225,7 @@ Decisions already locked:
   1. compute snapshot row id sets;
   2. build inverse-view dict (Phase 2 P3.1);
   3. compute formula values through the document-aware overlay cache
-     (recursive dependency resolution today; graph topological sort
-     remains P3.4);
+     (recursive dependency resolution plus P3.4 graph validation);
   4. attach `rows_computed` overlay (existing);
   5. attach `inverse_links` overlay (Phase 2 P3.2).
 
@@ -413,7 +415,7 @@ Phase 3 is mergeable when:
 - the acceptance checklist (P2) passes locally;
 - `make ci` is green including the extended perf gate;
 - the Phase 3 browser smoke (P5) is recorded as evidence in
-  `planning/features/record-linking/assets/`;
+  `planning/archive/record-linking/assets/`;
 - the per-table cycle detector is either removed or thinned to a
   delegate of the document-level detector (no duplicate logic);
 - deferred-aggregator error messaging is verified in both parser

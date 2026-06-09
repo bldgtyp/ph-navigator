@@ -20,7 +20,7 @@ STATUS: COMPLETE for canonical Rooms→Pumps source-side linking.
         are implemented with focused regression tests. Closeout
         2026-06-09: linked_record deleteField `custom_links` cleanup
         fixed; canonical Rooms→Pumps browser smoke/e2e recorded under
-        `../assets/e2e/rooms-pumps/`. Live next steps are tracked in
+        `../assets/e2e/rooms-pumps/`. Feature closeout is recorded in
         `../STATUS.md`.
 AUTHOR: Ed May (with Claude)
 SCOPE: First user-facing slice: a `linked_record` custom field type
@@ -28,10 +28,10 @@ SCOPE: First user-facing slice: a `linked_record` custom field type
        through a record-picker, and unlink through the picker or pill
        ⌫. No inverse view, no rollups, no cycle detection.
 RELATED:
-  - planning/features/record-linking/PRD.md §4 (Phase 1), §5, §6, §7
-  - planning/features/record-linking/PRD.md §11 Q11–Q25 (locked
+  - planning/archive/record-linking/PRD.md §4 (Phase 1), §5, §6, §7
+  - planning/archive/record-linking/PRD.md §11 Q11–Q25 (locked
     implementation decisions for this phase)
-  - planning/features/record-linking/options.md §5
+  - planning/archive/record-linking/options.md §5
   - context/technical-requirements/data-model.md §6.3, §6.6.3
   - context/technical-requirements/data-table.md
   - backend/features/project_document/custom_fields.py
@@ -516,7 +516,7 @@ Phase 1 is mergeable when:
 - the acceptance checklist (P2) passes locally;
 - `make ci` is green;
 - the Phase 1 browser smoke (P5) is recorded as evidence in
-  `planning/features/record-linking/assets/` (screenshots or a
+  `planning/archive/record-linking/assets/` (screenshots or a
   short clip);
 - no `erv_unit_ids` references remain anywhere in the repo;
 - `schema_version` is 5 everywhere it appears (document, fixtures,

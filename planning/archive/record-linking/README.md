@@ -1,12 +1,11 @@
 ---
 DATE: 2026-06-08
 TIME: -
-STATUS: Phase 2 inverse-view implementation is complete in the current
-        worktree for canonical Rooms→Pumps incoming links. `make
-        format` and `make ci` are green. Phase 1 source-side linking
-        has two follow-ups tracked in `STATUS.md`: linked_record
-        deleteField cleanup and browser/e2e smoke evidence. Phase 3
-        rollups are not started.
+STATUS: Complete and archived on 2026-06-09. Phases 1, 1.b, 2, and
+        the backend Phase 3 rollup/validator slice are implemented and
+        manually verified for the canonical Rooms→Pumps workflow.
+        Remaining non-blocking polish is recorded as deferred in
+        `STATUS.md` / `phases/phase-03-rollups.md`.
 AUTHOR: Ed May (with Claude)
 SCOPE: Folder router for the record-linking feature
        (AirTable-style linked-record + rollup between project-document
@@ -70,12 +69,17 @@ totals on the inverse side.
   the `?focus=<row_id>` highlight. Backend pytest covers the
   `_apply_linked_record_wipe` changeType path through the dispatcher
   in both directions (incl. ack-required + clean paths).
-- **Phase 2 — inverse view implemented in current worktree**:
+- **Phase 2 — inverse view implemented**:
   backend inverse projection, Rooms/Pumps response overlays,
   `inverse_links_fingerprint`, Pumps read-only inverse columns,
   source-path pill navigation, and a deterministic perf gate are in
   place. `make format && make ci` are green.
-- **Phase 3 — NOT STARTED.**
+- **Phase 3 — backend rollup/validator slice implemented**:
+  Python parser / AST support, server read-overlay evaluation,
+  document-level linked-ref validation, and cross-table cycle detection
+  are in place and covered by focused backend tests. Frontend formula
+  authoring/completion, JSON Schema regeneration, and the extended
+  combined perf gate are deferred follow-ups.
 - The half-implemented `RoomRow.erv_unit_ids` typed column referenced
   by the original PRD has been deleted per Q7; users will add their
   own `linked_record` fields when integration lands.
