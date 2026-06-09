@@ -1,12 +1,10 @@
 ---
 DATE: 2026-06-09
 TIME: 17:00
-STATUS: ✅ Active — Phase 4 implemented locally (pickers + silent
-        backend cascades + default-hidden reverse-lookup count
-        column). Awaiting `make ci` green + commit. Scope amended
-        2026-06-09: AC #6 modal badge and AC #8 pre-delete dialog
-        descoped to Q-HP-FOLLOWUP-7 (Ventilators has no row-detail
-        modal). Next: Phase 5 (Phius export + MCP).
+STATUS: ✅ Active — Phase 4 merged (commit `16bdefe`, 2026-06-09).
+        Scope amended 2026-06-09: AC #6 modal badge and AC #8
+        pre-delete dialog descoped to Q-HP-FOLLOWUP-7 (Ventilators
+        has no row-detail modal). Next: Phase 5 (Phius export + MCP).
 AUTHOR: Ed May (with Claude)
 SCOPE: Current state, next step, blockers, verification evidence
 RELATED:
@@ -82,7 +80,7 @@ stubs, and the US-EQ-4 amendment landed earlier in
 | GLOSSARY graduation | ✅ 6 terms + Relationships entry added |
 | User-story stubs | ✅ US-EQ-7..11 + US-EQ-4 amendment + US-EQ-1 sub-tab list updated |
 | Other context graduation | ◻ `context/PRD.md` §6.2, `data-model.md`, `api.md`, `llm-mcp-schema.md` — runs during Phase 5 |
-| Code | ✅ Phases 0–3 merged (commits `9da3726`, `1aeab68`, `e9cd6dd`, `2dd9807`, `399d4e6`); Phase 4 implemented locally 2026-06-09 — awaiting commit |
+| Code | ✅ Phases 0–4 merged (commits `9da3726`, `1aeab68`, `e9cd6dd`, `2dd9807`, `399d4e6`, `16bdefe`) |
 
 ## Next step
 
@@ -132,7 +130,7 @@ question and is a Phase 5 detail, not blocking any earlier phase.
 | 1 | `phases/phase-01-equipment-outdoor-page.md` | ✅ merged |
 | 2 | `phases/phase-02-equipment-indoor-page.md` | ✅ complete locally; ready for review / commit |
 | 3 | `phases/phase-03-unit-pages.md` | ✅ merged (commit `399d4e6`) |
-| 4 | `phases/phase-04-erv-and-rooms-cross-link.md` | ✅ implemented locally (scope amended 2026-06-09 — Option B); awaiting commit |
+| 4 | `phases/phase-04-erv-and-rooms-cross-link.md` | ✅ merged (commit `16bdefe`; scope amended 2026-06-09 — Option B) |
 | 5 | `phases/phase-05-phius-export-and-mcp.md` | ✅ drafted |
 
 ## Open questions queue
