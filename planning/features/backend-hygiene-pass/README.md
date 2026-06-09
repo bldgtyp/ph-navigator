@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-09
 TIME: afternoon ET
-STATUS: Active — implementation plan drafted, no phases started.
+STATUS: Implemented — all 8 phases merged to main (#13, commit 51dcd77).
 AUTHOR: Claude (Opus 4.7) per Ed's request, based on
         `planning/code-reviews/2026-06-07/backend-data-structure-review.md`.
 SCOPE: Backend-only hygiene pass: schema FK consistency + index, module

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-09
 TIME: evening ET
-STATUS: Implemented on branch — all 8 phases complete on `chore/backend-hygiene-pass`; CI green; not yet merged.
+STATUS: Merged to main — all 8 phases shipped in #13 (commit 51dcd77); full `make ci` (backend + frontend) green.
 AUTHOR: Claude (Opus 4.7)
 RELATED: `README.md`, `PRD.md`, `decisions.md`
 ---
@@ -10,10 +10,10 @@ RELATED: `README.md`, `PRD.md`, `decisions.md`
 
 ## Current state
 
-All 8 phases implemented on branch `chore/backend-hygiene-pass`. Backend CI
-locally green: `ruff format`, `ruff check`, `ty check`, 693 pytest passing.
-Frontend tests not yet run from this branch — pending `make ci` for the
-full closeout gate.
+All 8 phases shipped in PR #13 (commit 51dcd77 on main). Full `make ci`
+green prior to merge: backend `ruff format`, `ruff check`, `ty check`,
+Alembic, pytest (693 passing); frontend Prettier, ESLint, structural
+guards, Vitest, production build.
 
 Verified line counts after the splits (2026-06-09 evening):
 

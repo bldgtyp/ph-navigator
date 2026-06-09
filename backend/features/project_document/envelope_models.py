@@ -42,9 +42,11 @@ class CatalogOrigin(BaseModel):
     catalog_record_id: str = Field(pattern=CATALOG_RECORD_ID_PATTERN)
     # ``catalog_version_id`` / ``catalog_schema_version`` are legacy fields
     # from the per-version row layer. All v1 catalogs (materials, glazing,
-    # frames) are now flat; new origins always leave both null. The fields
-    # stay nullable on the model so older documents that still carry a
-    # stamped version id round-trip cleanly.
+    # frames) are now flat; new origins leave ``catalog_version_id`` null
+    # and may stamp ``catalog_schema_version=1`` (e.g. default aperture
+    # refs). Both stay nullable on the model so older documents that
+    # carry neither — or that still carry a stamped version id — round-
+    # trip cleanly.
     catalog_version_id: str | None = Field(default=None, pattern=CATALOG_VERSION_ID_PATTERN)
     catalog_schema_version: int | None = Field(default=None, ge=1)
     synced_at: datetime

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-09
 TIME: afternoon ET
-STATUS: Not started
+STATUS: Implemented — shipped in #13 (commit 51dcd77).
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Phase 5 — capture the deletability decision for `user_table_views`.
        Either a one-line comment on migration 0010 or a new migration
