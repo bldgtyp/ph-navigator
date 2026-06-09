@@ -10,9 +10,10 @@ first `from database ...` / `from config ...` import below.
 
 Under `pytest-xdist`, each worker (`gw0`, `gw1`, ...) is routed to its
 own database (`ph_navigator_v2_test_gw0`, `..._gw1`, ...) so workers
-don't TRUNCATE each other's rows mid-run. The per-worker database is
+don't TRUNCATE each other's rows mid-run. The active test database is
 created + migrated lazily on first use; it persists between sessions
-(idempotent migrations make this cheap).
+(idempotent migrations make this cheap). This keeps direct
+`uv run pytest ...` invocations aligned with the Makefile test recipes.
 
 A session-scoped safety-net fixture asserts the final URL still points
 at a `*_test` or `*_test_gw<N>` database. If a future refactor breaks
@@ -51,39 +52,26 @@ def _route_database_url_for_worker() -> None:
 _route_database_url_for_worker()
 
 
-def _bootstrap_worker_database() -> None:
-    """Create + migrate the worker-scoped test DB if missing.
-
-    No-op on the default `*_test` database (the Makefile's
-    `db-create-test` / `db-migrate-test` recipes already handle that one;
-    in CI the Postgres service container creates `ph_navigator_v2_test`
-    via `POSTGRES_DB`). Only worker-suffixed databases need lazy
-    creation.
-    """
-    worker = os.environ.get("PYTEST_XDIST_WORKER")
-    if not worker or worker == "master":
-        return
-
+def _bootstrap_test_database() -> None:
+    """Create + migrate the active test DB if missing or stale."""
     import psycopg  # noqa: E402 — defer until after env routing
     from psycopg import sql
 
     parsed = urlparse(os.environ["DATABASE_URL"])
     target_db = parsed.path.lstrip("/")
     admin_url = urlunparse(parsed._replace(path="/postgres"))
+    if not re.fullmatch(r"[A-Za-z0-9_]+_test(?:_gw\d+)?", target_db):
+        raise RuntimeError(f"Refusing to bootstrap database with unexpected name {target_db!r}.")
 
     with psycopg.connect(admin_url, autocommit=True) as conn:
         existing = conn.execute("SELECT 1 FROM pg_database WHERE datname = %s", (target_db,)).fetchone()
         if existing is None:
             # Postgres rejects a parameterized database name in DDL, so we have
-            # to interpolate the identifier. The name comes from
-            # PYTEST_XDIST_WORKER (`gw<N>`) plus a fixed prefix — injection
-            # surface is nil — but validate the shape as a belt-and-braces
-            # guard, then use psycopg.sql.Identifier for safe quoting.
-            if not re.fullmatch(r"[A-Za-z0-9_]+_test_gw\d+", target_db):
-                raise RuntimeError(f"Refusing to CREATE DATABASE with unexpected name {target_db!r}.")
+            # to interpolate the identifier. The name is validated above and
+            # then quoted as an identifier here.
             conn.execute(sql.SQL("CREATE DATABASE {} OWNER phn").format(sql.Identifier(target_db)))
 
-    # Run migrations against the (possibly fresh) worker DB. Import lazily
+    # Run migrations against the (possibly fresh) test DB. Import lazily
     # because alembic transitively imports `config`, which freezes settings
     # against the current DATABASE_URL.
     from alembic.config import Config
@@ -94,7 +82,7 @@ def _bootstrap_worker_database() -> None:
     command.upgrade(cfg, "head")
 
 
-_bootstrap_worker_database()
+_bootstrap_test_database()
 
 
 from collections.abc import Iterator  # noqa: E402
