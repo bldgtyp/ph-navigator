@@ -226,7 +226,7 @@ tables.equipment.heat_pump_outdoor_equip = [
     "manufacturer": "opt_<ULID>",           // single-select
     "model_number": "PUZ-A18NKA7",          // bare outdoor model code
     "paired_indoor_model": "PVA-A18AA7",    // explicit pairing field (replaces the bracket trick)
-    "mode_type": "opt_<ULID>",              // single-select: PUZ / PUHY / TUHYE / SUZ / NTXM / …
+    "system_family": "opt_<ULID>",          // single-select: PUZ / PUHY / TUHYE / SUZ / NTXM / … (renamed from mode_type per D-HP-24)
     "ahri_certificate_number": "12345678",
     "cooling_kbtuh_95f": 18.0,
     "heating_kbtuh_47f": 19.0,

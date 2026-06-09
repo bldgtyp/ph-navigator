@@ -86,6 +86,13 @@ end:
 - Mirrors `OutdoorEquipRowModal.tsx` structure from Phase 1.
 - No discriminator-based conditional sections — all fields visible
   always.
+- **Generalizes Phase 1's `IndoorEquipCreateModal.tsx`** into a
+  full create + edit + read modal (per D-HP-22 inline-create
+  contract). Phase 1's minimal create-modal stays in the same
+  directory; Phase 2 either folds the two into one component or
+  re-exports the minimal version as a thin wrapper. Pick the
+  cleanest factoring; the inline-create call site from Phase 1
+  must continue to work without change.
 
 ### Step 4: `install_type` seeded options
 
@@ -94,6 +101,13 @@ project* on first use. Phase 2 adds the helper that bootstraps the
 five default options into `single_select_options["heat_pump_indoor_equip.install_type"]`
 when the project's option list is empty. User-rename / reorder
 post-bootstrap behaves like any other single-select column.
+
+Per D-HP-23 (OPQ-7 resolved), no `system_role` marker is needed
+on the seeded `ERV-INTEGRATED` option — Phase 4 renders the
+`linked_erv_unit_id` picker unconditionally. The seeded options
+are plain single-select values; the user is free to rename,
+reorder, add, or delete them without affecting any framework
+behavior.
 
 ### Step 5: Tests
 
