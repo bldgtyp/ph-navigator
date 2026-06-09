@@ -28,3 +28,55 @@
   display: grid;
   gap: 18px;
 }
+
+.hp-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.hp-panel .app-subtabs {
+  --hp-tab-scale: 0.92;
+  margin-top: -4px;
+}
+
+.hp-panel .app-subtabs__tab {
+  font-size: calc(0.875rem * var(--hp-tab-scale));
+  min-height: 30px;
+  padding: 5px 10px;
+}
+
+.hp-coming-soon,
+.hp-status-banner {
+  max-width: 720px;
+}
+
+.hp-modal-form {
+  display: grid;
+  gap: 16px;
+}
+
+.hp-modal-section {
+  display: grid;
+  gap: 10px;
+}
+
+.hp-modal-section h3,
+.hp-modal-section summary {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.hp-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 14px;
+}
+
+.hp-form-grid__wide {
+  grid-column: 1 / -1;
+}
+
+.hp-inline-action {
+  align-self: end;
+  justify-self: start;
+}

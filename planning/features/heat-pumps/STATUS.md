@@ -1,8 +1,8 @@
 ---
 DATE: 2026-06-09
-TIME: 18:00
-STATUS: Active — Phase 0 backend implementation complete locally;
-        full closeout gate green. Ready for review / commit.
+TIME: 10:52
+STATUS: Active — Phase 1 frontend outdoor-equipment page complete
+        locally; full closeout gate green. Ready for review / commit.
 AUTHOR: Ed May (with Claude)
 SCOPE: Current state, next step, blockers, verification evidence
 RELATED:
@@ -17,12 +17,12 @@ RELATED:
 
 ## Current state
 
-**Phase 0 backend implementation started (2026-06-09 evening).**
-Backend feature module, project-document defaults, active-version REST
-routes, draft-buffer writes, focused pytest coverage, and core
-referential rules now exist locally. `$ simplify`, `$ docs-pass`,
-`make format`, and `make ci` all ran green. Phase 0 is complete
-locally and ready for review / commit; not yet marked merged.
+**Phase 1 frontend implementation complete locally (2026-06-09).**
+Phase 0 backend foundation is committed and merged. Phase 1 now ships
+the HP Equipment — Outdoor page, nested Heat Pumps sub-tabs, and
+frontend read / patch wiring against the Phase 0 active-version REST
+API. `$ simplify`, `$ docs-pass`, `make format`, and `make ci` all
+ran green. Ready for review / commit.
 
 **Planning round 2 tidy-up complete (2026-06-09 evening).** PRD,
 decisions, and phase plans hardened against an end-to-end review:
@@ -65,7 +65,7 @@ stubs, and the US-EQ-4 amendment landed earlier in
   captures a screenshot in its verification ledger for Ed
   eyeball-confirm before Phase 2 inherits the styling.**
 
-**Next step is review / commit of the local Phase 0 implementation.**
+**Next step is review / commit of the local Phase 1 implementation.**
 
 | Artifact | State |
 |---|---|
@@ -76,33 +76,12 @@ stubs, and the US-EQ-4 amendment landed earlier in
 | GLOSSARY graduation | ✅ 6 terms + Relationships entry added |
 | User-story stubs | ✅ US-EQ-7..11 + US-EQ-4 amendment + US-EQ-1 sub-tab list updated |
 | Other context graduation | ◻ `context/PRD.md` §6.2, `data-model.md`, `api.md`, `llm-mcp-schema.md` — runs during Phase 5 |
-| Code | ✅ Phase 0 backend implementation complete locally; not yet merged |
+| Code | ✅ Phase 1 frontend implementation complete locally; not yet merged |
 
 ## Next step
 
-1. Review / commit Phase 0 backend foundation. Implemented locally:
-   - Four HP arrays under `tables.equipment.heat_pumps`.
-   - Active-version read endpoint and table PATCH endpoints.
-   - Draft-buffer write path with ETag gating.
-   - Pydantic row validation for hard enums, ULID IDs, required
-     model/tag fields, and numeric ranges.
-   - Server-side HP FK validation and delete preview/cascade rules for
-     HP-owned relations.
-   - Focused pytest slice: `cd backend && uv run pytest
-     tests/features/heat_pumps -q` → 7 passed.
-2. Then land Phase 0 in one PR per the phase acceptance criteria.
-   Phase 0 includes:
-   - Four HP tables (outdoor equip / indoor equip / outdoor units
-     / indoor units) under `tables.equipment`.
-   - Room-vocabulary reuse for HP unit fields
-     (`outdoor_units.building_zone`, `indoor_units.floor_level`).
-   - `?dry-run=true` delete contract for cascade-preview (D-HP-19).
-   - FK validation on `paired_indoor_equip_id` (D-HP-22).
-   - Hard-enum validation for `heating_data_type` / `cooling_data_type`
-     (D-HP-17).
-3. After Phase 0 merges, proceed to Phase 1 with all round-2
-   pinned decisions inherited. Phase 1 ships the screenshot of
-   the nested-tab strip for Ed eyeball-confirm per D-HP-25.
+1. Review / commit Phase 1 frontend outdoor-equipment slice.
+2. After Phase 1 merges, proceed to Phase 2 (HP Equipment — Indoor).
 
 ## Blockers
 
@@ -129,7 +108,7 @@ question and is a Phase 5 detail, not blocking any earlier phase.
 | Phase | Verified by | Date | Notes |
 |---|---|---|---|
 | 0 | `cd backend && uv run pytest tests/features/heat_pumps -q`; targeted Ruff; `$ simplify`; `$ docs-pass`; `make format`; `make ci` | 2026-06-09 | Focused HP tests 7 passed; full CI passed: backend 700 passed / 2 skipped, frontend 145 files / 1498 tests passed, production build passed |
-| 1 | — | — | — |
+| 1 | `cd frontend && pnpm exec vitest run src/features/equipment/heat-pumps/__tests__/HeatPumpsPanel.test.tsx`; `make frontend-dev-check`; Playwright / Node REPL browser smoke; `$ simplify`; `$ docs-pass`; `make format`; `make ci` | 2026-06-09 | Focused HP frontend tests 3 passed; fast frontend gate passed with 3 pre-existing Fast Refresh warnings and existing Vite chunk warning; browser smoke add/edit/delete passed against project `a2126d4b-e84c-4512-b22f-190de3b6a2da`; screenshots in `working/heat-pumps-phase-1-*.png`. `$ simplify` fixed HP shell leakage of legacy Pumps draft/error state. `$ docs-pass` updated `context/user-stories/30-tables-equipment.md` for Phase 1 status and the temporary HP option-id caveat. Full CI passed: backend 700 passed / 2 skipped; frontend 146 files / 1501 tests passed; production build passed |
 | 2 | — | — | — |
 | 3 | — | — | — |
 | 4 | — | — | — |
@@ -139,8 +118,8 @@ question and is a Phase 5 detail, not blocking any earlier phase.
 
 | Phase | File | Status |
 |---|---|---|
-| 0 | `phases/phase-00-backend-foundation.md` | ✅ drafted |
-| 1 | `phases/phase-01-equipment-outdoor-page.md` | ✅ drafted |
+| 0 | `phases/phase-00-backend-foundation.md` | ✅ merged |
+| 1 | `phases/phase-01-equipment-outdoor-page.md` | ✅ complete locally; ready for review / commit |
 | 2 | `phases/phase-02-equipment-indoor-page.md` | ✅ drafted |
 | 3 | `phases/phase-03-unit-pages.md` | ✅ drafted |
 | 4 | `phases/phase-04-erv-and-rooms-cross-link.md` | ✅ drafted |

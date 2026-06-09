@@ -1,8 +1,9 @@
 ---
 DATE: 2026-06-09
-TIME: 14:45
-STATUS: DRAFT — Phase 1 outline. Depends on Phase 0 backend
-        foundation being merged.
+TIME: 10:52
+STATUS: COMPLETE LOCALLY — Phase 0 backend foundation merged; Phase 1
+        frontend outdoor-equipment slice implemented and full closeout
+        gate green. Ready for review / commit.
 AUTHOR: Ed May (with Claude)
 SCOPE: Frontend page for the HP Equipment — Outdoor DataTable.
        Establishes the nested-tab UX primitive that Phases 2–4
@@ -60,20 +61,26 @@ in Phases 2–5.
 
 ## Acceptance — Phase 1 done when
 
-1. **Sub-tab visible.** "Heat Pumps" appears in the Equipment
+Progress marker: implementation started 2026-06-09 10:52 EDT. Items
+below are checked only after code and focused verification exist.
+
+1. ✅ **Sub-tab visible.** "Heat Pumps" appears in the Equipment
    sub-tab strip in the position from US-EQ-1 (between ERVs and
    Pumps). Clicking it routes to `…/heat-pumps`, which redirects
    to `…/heat-pumps/equipment-outdoor`.
-2. **Nested strip.** The four nested leaf-tab labels render
+2. ✅ **Nested strip.** The four nested leaf-tab labels render
    (`Equipment — Outdoor`, `Equipment — Indoor`, `Units — Outdoor`,
    `Units — Indoor`); only the Outdoor Equipment leaf navigates
    to a real page in this phase. The other three leaves render a
    "Coming in Phase 2/3" empty state.
-3. **DataTable.** The HP Equipment — Outdoor page renders the
+3. ✅ **DataTable.** The HP Equipment — Outdoor page renders the
    `<ProjectDataTable>` primitive (US-Builder-Tables criterion 1)
    bound to `tables.equipment.heat_pump_outdoor_equip[]`. Default
    sort by `model_number` ascending via `naturalSortCompare`.
-4. **20-field column set.** All 20 fields per PRD §4.2 are
+   Implementation note: this uses the existing shared `DataTable`
+   component directly; there is no separate exported
+   `<ProjectDataTable>` wrapper in the current frontend.
+4. ✅ **20-field column set.** All 20 fields per PRD §4.2 are
    declared in the `columnDef` array. Single-select columns
    (`manufacturer`, `system_family`, `refrigerant`) use the
    user-defined single-select primitive (US-Builder-Tables §16);
@@ -83,34 +90,48 @@ in Phases 2–5.
    from `heat_pump_indoor_equip[]` with an inline "Create new
    indoor equipment" shortcut. The picker cell displays the
    resolved indoor `model_number`.
-5. **Default visibility.** PRD §5.3 default-visible set renders;
+   Implementation note: Phase 0 does not yet expose HP option lists,
+   so typed labels are stored as deterministic `opt_<slug>` values
+   and rendered back as readable labels until the shared option
+   primitive is registered for HP tables.
+5. ✅ **Default visibility.** PRD §5.3 default-visible set renders;
    the rest are hidden in the column-visibility overflow until
    the user toggles them on. Per-row "active" cells for the
    performance columns render empty when the row's discriminator
    doesn't apply — no per-row column-visibility logic
    (per D-HP-20).
-6. **Add / edit / delete.** Hand-enter (per US-Builder-Tables
+6. ✅ **Add / edit / delete.** Hand-enter (per US-Builder-Tables
    criterion 7); row-detail modal opens on click (criterion 8);
    destructive delete dialog (criterion 10). All mutations route
    through the draft buffer; one JSON-Patch per row op
    (criterion 15).
-7. **Inline cell edit** (criterion 9) on simple-typed columns
+7. ✅ **Inline cell edit** (criterion 9) on simple-typed columns
    (numbers, short text).
-8. **`<AttachmentCell>`** renders in the `datasheet_asset_ids[]`
+8. ✅ **`<AttachmentCell>`** renders in the `datasheet_asset_ids[]`
    column and accepts drag-drop uploads per the existing
    attachments contract.
-9. **Phius export button stubbed.** "Export to Phius HP
+9. ✅ **Phius export button stubbed.** "Export to Phius HP
    Estimator…" entry in the overflow `⋯` menu next to "Download
    as JSON"; **disabled when the equip table is empty** per
    PRD §6.3; otherwise clicking it shows a "Coming in Phase 5"
    toast.
-10. **Empty state** per PRD §5.6.
-11. **Locked-version + Viewer rendering** per US-Builder-Tables
+   Implementation note: V2 has no toast library; the stub renders an
+   in-panel status message instead of adding one.
+10. ✅ **Empty state** per PRD §5.6.
+11. ✅ **Locked-version + Viewer rendering** per US-Builder-Tables
     criterion 13.
-12. **Tests.** Vitest coverage for the page-mount, column-def
+12. ✅ **Tests.** Vitest coverage for the page-mount, column-def
     render, modal interaction, and mutation paths. Playwright MCP
     smoke test of the happy-path add-edit-delete flow.
-13. `make ci` passes; `make frontend-dev-check` passes.
+   Current status: focused Vitest passed; browser smoke passed via
+   Playwright / Node REPL against project
+   `a2126d4b-e84c-4512-b22f-190de3b6a2da`. Screenshots:
+   `working/heat-pumps-phase-1-nested-tabs.png` and
+   `working/heat-pumps-phase-1-smoke.png`.
+13. ✅ `make ci` passes; `make frontend-dev-check` passes.
+   Current status: `make frontend-dev-check` passed; full `make ci`
+   passed with backend 700 passed / 2 skipped, frontend 146 files /
+   1501 tests passed, and production build passed.
 
 ## Out of scope for Phase 1
 

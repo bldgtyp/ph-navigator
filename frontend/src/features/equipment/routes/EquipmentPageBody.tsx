@@ -1,7 +1,7 @@
 // @size-exception: docs/code-reviews/2026-05-25/frontend-code-review.md#21-srp--file-length-violations
 import { useMemo } from "react";
 import { useActiveEquipmentTabFromUrl } from "./useActiveEquipmentTabFromUrl";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { AppSubTabButton, AppSubTabs } from "../../../shared/ui/AppSubTabs";
 import { SliceTableShell, useSliceTableController } from "../../../shared/ui/data-table/feature";
 import type { ProjectDetail } from "../../projects/types";
@@ -12,6 +12,7 @@ import { HotWaterHeatersTableSlot } from "../components/HotWaterHeatersTableSlot
 import { HotWaterTanksTableSlot } from "../components/HotWaterTanksTableSlot";
 import { PumpsTableSlot } from "../components/PumpsTableSlot";
 import { VentilatorsTableSlot } from "../components/VentilatorsTableSlot";
+import { HeatPumpsPanel } from "../heat-pumps/routes/HeatPumpsPanel";
 import {
   useAppliancesSchemaMutation,
   useElectricHeatersSchemaMutation,
@@ -227,9 +228,23 @@ export function EquipmentPageBody(props: {
   // existing UX never did, and doing so risks fighting the pill-click
   // navigation that brought the user here).
   const [searchParams] = useSearchParams();
+  const params = useParams();
+  const navigate = useNavigate();
   const focusRowId = searchParams.get("focus");
   const requestedTabKey = searchParams.get("tab");
-  const [activeTab, setActiveTab] = useActiveEquipmentTabFromUrl(requestedTabKey);
+  const nestedPath = params["*"] ?? "";
+  const requestedNestedTab = nestedPath.startsWith("heat-pumps") ? "heat-pumps" : null;
+  const [activeTab, setActiveTab] = useActiveEquipmentTabFromUrl(
+    requestedNestedTab ?? requestedTabKey,
+  );
+  const selectTab = (next: typeof activeTab) => {
+    setActiveTab(next);
+    if (next === "heat-pumps") {
+      navigate(`/projects/${project.id}/equipment/heat-pumps/equipment-outdoor`);
+    } else {
+      navigate(`/projects/${project.id}/equipment?tab=${next}`);
+    }
+  };
 
   const ventilatorsController = useSliceTableController({
     projectId: project.id,
@@ -411,6 +426,11 @@ export function EquipmentPageBody(props: {
               : activeTab === "appliances"
                 ? APPLIANCES_CONFLICT_MESSAGES
                 : PUMPS_CONFLICT_MESSAGES;
+  const heatPumpsLockedMessage = "This version is locked. Save As to copy it into a new version.";
+  const shellIsLocked =
+    activeTab === "heat-pumps"
+      ? (project.active_version?.locked ?? false)
+      : activeController.isLocked;
 
   const reloadDraft = async () => {
     await activeController.reloadDraft();
@@ -445,6 +465,9 @@ export function EquipmentPageBody(props: {
           focusRowId={focusRowId}
         />
       );
+    }
+    if (activeTab === "heat-pumps") {
+      return <HeatPumpsPanel project={project} />;
     }
     if (activeTab === "fans") {
       return (
@@ -526,16 +549,19 @@ export function EquipmentPageBody(props: {
       ariaLabel="Equipment"
       className="tab-panel equipment-panel"
       showDraftRestoredBanner={
+        activeTab !== "heat-pumps" &&
         activeSlice.source === "draft" &&
         Boolean(activeVersionId) &&
         !wasLocalDraftTouched(project.id, activeVersionId!, activeSlice.draft_etag)
       }
       draftRestoredMessage={`${equipmentTabLabel(activeTab)} draft restored`}
-      isLocked={activeController.isLocked}
-      lockedMessage={activeConflictMessages.versionLocked}
-      editBlocker={activeController.editBlocker}
+      isLocked={shellIsLocked}
+      lockedMessage={
+        activeTab === "heat-pumps" ? heatPumpsLockedMessage : activeConflictMessages.versionLocked
+      }
+      editBlocker={activeTab === "heat-pumps" ? null : activeController.editBlocker}
       onReloadDraft={() => void reloadDraft()}
-      actionError={activeController.actionError}
+      actionError={activeTab === "heat-pumps" ? null : activeController.actionError}
     >
       <AppSubTabs ariaLabel="Equipment tables" role="tablist">
         {EQUIPMENT_TABS.map((tab) => (
@@ -543,7 +569,7 @@ export function EquipmentPageBody(props: {
             key={tab.key}
             role="tab"
             active={activeTab === tab.key}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => selectTab(tab.key)}
           >
             {tab.label}
           </AppSubTabButton>
