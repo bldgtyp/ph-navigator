@@ -14,7 +14,7 @@
      doesn't clip the table. */
   --data-table-page-chrome: 220px;
   max-height: calc(100dvh - var(--data-table-page-chrome));
-  background: var(--bg-table-outside);
+  background: var(--bg-card);
 }
 
 .data-table-wrap:focus {
@@ -33,6 +33,7 @@
 .data-table-shell {
   display: grid;
   gap: 0;
+  background: var(--bg-card);
 }
 
 .data-table-shell:has(.room-option-popover) {

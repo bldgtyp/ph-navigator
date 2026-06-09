@@ -5,6 +5,10 @@
   min-height: calc(100vh - 180px);
 }
 
+#envelope-assembly-builder-panel {
+  background: transparent;
+}
+
 .envelope-sidebar-header {
   align-items: center;
   display: flex;
@@ -29,7 +33,7 @@
 
 .envelope-sidebar {
   border-right: 1px solid var(--border-subtle);
-  background: color-mix(in oklab, var(--accent) 3%, transparent);
+  background: var(--bg-page);
   display: flex;
   flex-direction: column;
   min-width: 0;

@@ -368,7 +368,7 @@ a:focus-visible {
   column-gap: 18px;
   min-height: 58px;
   border-bottom: 1px solid var(--border-subtle);
-  background: color-mix(in oklab, var(--bg-page) 88%, transparent);
+  background: var(--bg-card);
   padding: 0 24px;
   -webkit-backdrop-filter: saturate(1.4) blur(14px);
   backdrop-filter: saturate(1.4) blur(14px);
@@ -699,6 +699,7 @@ a:focus-visible {
 }
 
 .project-workspace {
+  background: var(--bg-page);
   max-width: none;
 }
 
@@ -1486,10 +1487,15 @@ button:disabled {
 }
 
 .tabbar {
+  box-sizing: border-box;
   display: flex;
   gap: 2px;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
   overflow-x: auto;
   border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  padding-inline: max(16px, calc((100vw - 1440px) / 2));
   min-height: 36px;
   align-items: flex-end;
 }
@@ -1517,13 +1523,17 @@ button:disabled {
 
 .app-subtabs {
   align-items: end;
-  background: var(--bg-elev);
+  background: rgb(249, 250, 251);
   border-bottom: 1px solid var(--border-subtle);
+  box-sizing: border-box;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
   margin-top: 0;
   min-height: 42px;
   overflow: visible;
+  padding-inline: max(16px, calc((100vw - 1440px) / 2));
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
@@ -1733,6 +1743,11 @@ button:disabled {
   border: 0;
   background: transparent;
   padding: 18px 0 0;
+}
+
+.tab-panel.rooms-panel,
+.tab-panel.equipment-panel {
+  background: transparent;
 }
 
 .tab-panel:has(> .app-subtabs) {

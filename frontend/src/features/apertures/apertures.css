@@ -155,7 +155,7 @@
 
 .aperture-sidebar {
   border-right: 1px solid var(--border-subtle);
-  background: color-mix(in oklab, var(--accent) 3%, transparent);
+  background: var(--bg-page);
   display: flex;
   flex-direction: column;
   min-width: 0;
