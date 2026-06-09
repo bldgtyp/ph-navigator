@@ -1,5 +1,7 @@
 // @size-exception: docs/code-reviews/2026-05-25/frontend-code-review.md#21-srp--file-length-violations
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useActiveEquipmentTabFromUrl } from "./useActiveEquipmentTabFromUrl";
+import { useSearchParams } from "react-router-dom";
 import { AppSubTabButton, AppSubTabs } from "../../../shared/ui/AppSubTabs";
 import { SliceTableShell, useSliceTableController } from "../../../shared/ui/data-table/feature";
 import type { ProjectDetail } from "../../projects/types";
@@ -218,7 +220,17 @@ export function EquipmentPageBody(props: {
   );
   const appliancesReplaceMutation = useReplaceAppliancesSliceMutation(project.id, activeVersionId);
   const appliancesSchemaMutation = useAppliancesSchemaMutation(project.id, activeVersionId);
-  const [activeTab, setActiveTab] = useState<EquipmentTabKey>("ventilators");
+  // PRD Q19 cross-tab navigation: `?tab=<key>` seeds the initial active
+  // sub-tab so a Rooms→Pumps pill click lands on the right table.
+  // `?focus=<row_id>` is forwarded to the active slot for
+  // `useRowFocusHighlight`. The activeTab is local state once mounted —
+  // subsequent in-page tab clicks are not pushed back to the URL (the
+  // existing UX never did, and doing so risks fighting the pill-click
+  // navigation that brought the user here).
+  const [searchParams] = useSearchParams();
+  const focusRowId = searchParams.get("focus");
+  const requestedTabKey = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useActiveEquipmentTabFromUrl(requestedTabKey);
 
   const ventilatorsController = useSliceTableController({
     projectId: project.id,
@@ -431,6 +443,7 @@ export function EquipmentPageBody(props: {
           footerAction={addRowButton("Add pump", pumpsController.canEdit, () =>
             insertEquipmentRow(pumpsController, "pmp"),
           )}
+          focusRowId={focusRowId}
         />
       );
     }

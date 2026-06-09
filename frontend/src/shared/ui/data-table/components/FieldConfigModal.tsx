@@ -47,6 +47,10 @@ import {
   type FormulaDraftState,
   type FormulaPreviewRowSnapshot,
 } from "./FieldConfigSectionFormula";
+import {
+  FieldConfigSectionLinkedRecord,
+  type LinkedRecordTargetTableOption,
+} from "./FieldConfigSectionLinkedRecord";
 import { FIELD_TYPE_CHOICES } from "./fieldConfigChoices";
 
 // Stable empty references. Inline `?? []` fallbacks force a fresh array
@@ -57,6 +61,7 @@ import { FIELD_TYPE_CHOICES } from "./fieldConfigChoices";
 // `source.options` from undefined to a real array mid-save.
 const EMPTY_FIELD_OPTIONS: readonly FieldOption[] = [];
 const EMPTY_OPTION_SOURCE_ROWS: readonly OptionSourceRow[] = [];
+const EMPTY_LINKED_RECORD_TARGETS: readonly LinkedRecordTargetTableOption[] = [];
 
 function optionListsEquivalent(a: readonly FieldOption[], b: readonly FieldOption[]): boolean {
   if (a.length !== b.length) return false;
@@ -107,6 +112,11 @@ export type FieldConfigModalProps = {
   preflightRows?: ReadonlyArray<PreflightSourceRow>;
   optionRows?: ReadonlyArray<OptionSourceRow>;
   formulaPreview?: FieldConfigFormulaPreviewContext;
+  // PRD §7 — populates the linked-record target-table dropdown. The
+  // consumer pre-filters: only `link_targetable=true` entries, never
+  // the current field's own table. Omit (or pass `[]`) when the modal
+  // host doesn't expose linked-record fields.
+  linkedRecordTargets?: ReadonlyArray<LinkedRecordTargetTableOption>;
 };
 
 export function FieldConfigModal({
@@ -121,7 +131,9 @@ export function FieldConfigModal({
   preflightRows,
   optionRows,
   formulaPreview,
+  linkedRecordTargets,
 }: FieldConfigModalProps) {
+  const linkedRecordTargetOptions = linkedRecordTargets ?? EMPTY_LINKED_RECORD_TARGETS;
   // Source-of-truth FieldDef captured at modal open. Used for the
   // change-detection diff and for R-S2 comparison against the live
   // fieldDef prop on subsequent renders.
@@ -150,6 +162,11 @@ export function FieldConfigModal({
   const [formulaPreviewSnapshot, setFormulaPreviewSnapshot] =
     useState<FormulaPreviewRowSnapshot | null>(null);
   const [formulaPreviewStale, setFormulaPreviewStale] = useState(false);
+  // Linked-record draft. `null` target path = nothing chosen (initial
+  // state when switching INTO `linked_record` from another type).
+  // `maxLinks` defaults to `1` (PRD Q3 Single by default).
+  const [linkedRecordTargetPath, setLinkedRecordTargetPath] = useState<string[] | null>(null);
+  const [linkedRecordMaxLinks, setLinkedRecordMaxLinks] = useState<number | null>(1);
   // Populated from the backend's `custom_field_coercion_preflight_required`
   // 422 envelope; overrides the local preflight in the sub-panel.
   const [serverPreflight, setServerPreflight] = useState<ServerPreflightPayload | null>(null);
@@ -178,6 +195,8 @@ export function FieldConfigModal({
       setFormulaPreviewSnapshot(null);
       setFormulaPreviewStale(false);
       setServerPreflight(null);
+      setLinkedRecordTargetPath(null);
+      setLinkedRecordMaxLinks(1);
       return;
     }
     if (!fieldDef) return;
@@ -200,6 +219,13 @@ export function FieldConfigModal({
     setFormulaPreviewStale(false);
     formulaRowsRevisionAtOpenRef.current = formulaPreview?.rowsRevision;
     setServerPreflight(null);
+    // Seed linked-record draft from the source field's config when it's
+    // already a linked_record. PRD Q13 — `target_table_path` is immutable,
+    // so the dropdown shows the existing target locked; `max_links`
+    // remains editable.
+    const linkedConfig = seededSource.linked_record_config ?? null;
+    setLinkedRecordTargetPath(linkedConfig ? [...linkedConfig.target_table_path] : null);
+    setLinkedRecordMaxLinks(linkedConfig ? linkedConfig.max_links : 1);
   }, [open, fieldDef?.field_key]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const formulaFieldRegistry = formulaPreview?.fieldRegistry ?? EMPTY_FORMULA_FIELD_REGISTRY;
@@ -356,10 +382,26 @@ export function FieldConfigModal({
     draftType === "number" && !numberUnitsEquivalent(numberUnits, source?.numberUnits ?? null);
   const numberDirty = numberPrecisionDirty || numberUnitsDirty;
 
+  // PRD Q3 / Q13 — linked-record max_links is editable in place; the
+  // target path is immutable on an existing linked_record field, so we
+  // never diff it for !typeChanged. When typeChanged into linked_record,
+  // both keys are required.
+  const linkedRecordMaxLinksDirty =
+    draftType === "linked_record" &&
+    !typeChanged &&
+    linkedRecordMaxLinks !== (source?.linked_record_config?.max_links ?? null);
+  const linkedRecordTargetMissing =
+    draftType === "linked_record" &&
+    typeChanged &&
+    (!linkedRecordTargetPath || linkedRecordTargetPath.length === 0);
+  const linkedRecordDirty =
+    linkedRecordMaxLinksDirty || (typeChanged && draftType === "linked_record");
+
   const hasTypeSpecificDirty = Boolean(
     (draftType === "single_select" && optionsDraft?.dirty) ||
     numberDirty ||
-    (draftType === "formula" && formulaDraft?.dirty),
+    (draftType === "formula" && formulaDraft?.dirty) ||
+    linkedRecordDirty,
   );
 
   const formDirty =
@@ -372,8 +414,15 @@ export function FieldConfigModal({
 
   const optionsValid = draftType !== "single_select" || optionsDraft?.valid !== false;
   const formulaValid = draftType !== "formula" || formulaDraft?.valid !== false;
+  const linkedRecordValid = !linkedRecordTargetMissing;
   const canSave =
-    formDirty && optionsValid && formulaValid && !pending && !externalConflict && ackSatisfied;
+    formDirty &&
+    optionsValid &&
+    formulaValid &&
+    linkedRecordValid &&
+    !pending &&
+    !externalConflict &&
+    ackSatisfied;
 
   const fieldTypeLocked = isAttributeLocked(fieldDef, "field_type");
 
@@ -401,6 +450,12 @@ export function FieldConfigModal({
         ...(draftType === "number" && numberUnitsDirty ? { numberUnits } : {}),
         ...(draftType === "formula" && formulaDraft?.dirty
           ? { formulaSource: formulaDraft.source }
+          : {}),
+        ...(draftType === "linked_record" && typeChanged && linkedRecordTargetPath
+          ? { linkedRecordTargetPath: [...linkedRecordTargetPath] }
+          : {}),
+        ...(draftType === "linked_record" && (typeChanged || linkedRecordMaxLinksDirty)
+          ? { linkedRecordMaxLinks }
           : {}),
       });
       onOpenChange(false);
@@ -446,6 +501,9 @@ export function FieldConfigModal({
     formulaDraft,
     onOpenChange,
     preflightRows,
+    linkedRecordTargetPath,
+    linkedRecordMaxLinks,
+    linkedRecordMaxLinksDirty,
   ]);
 
   // Esc handling — Radix Dialog's onEscapeKeyDown fires before the
@@ -491,6 +549,9 @@ export function FieldConfigModal({
     setFormulaPreviewSnapshot(cloneFormulaPreviewRow(formulaPreview?.row ?? null));
     setFormulaPreviewStale(false);
     setServerPreflight(null);
+    const conflictLinked = externalConflict.linked_record_config ?? null;
+    setLinkedRecordTargetPath(conflictLinked ? [...conflictLinked.target_table_path] : null);
+    setLinkedRecordMaxLinks(conflictLinked ? conflictLinked.max_links : 1);
     setExternalConflict(null);
     setSubmitError(null);
   }, [externalConflict, formulaPreview, sourceCustomFieldType]);
@@ -681,6 +742,19 @@ export function FieldConfigModal({
                 previewStale={formulaPreviewStale}
                 disabled={pending || isAttributeLocked(fieldDef, "formula")}
                 onDraftChange={setFormulaDraft}
+              />
+            ) : null}
+            {draftType === "linked_record" && source ? (
+              <FieldConfigSectionLinkedRecord
+                targetPath={linkedRecordTargetPath}
+                targets={linkedRecordTargetOptions}
+                onTargetPathChange={setLinkedRecordTargetPath}
+                maxLinks={linkedRecordMaxLinks}
+                onMaxLinksChange={setLinkedRecordMaxLinks}
+                // PRD Q13 — target is immutable on an existing linked_record
+                // field; only editable while initially picking the type.
+                targetLocked={!typeChanged && source.custom_field_type === "linked_record"}
+                disabled={pending}
               />
             ) : null}
             <div className="data-table-field-config-modal-section">

@@ -2,13 +2,17 @@ import { useMemo, type CSSProperties } from "react";
 import {
   DataTable,
   RECORD_ID_FIELD_KEY,
+  getCustomLink,
   getCustomValue,
   type DataTableColumnDef,
   type DataTableProps,
   type FieldDef,
+  type LinkedRecordCellOps,
+  type LinkedRecordTargetTableOption,
   type TableSchema,
   type ViewState,
 } from "../../../shared/ui/data-table";
+
 import { ComputedCell } from "../../../shared/ui/data-table/components/ComputedCell";
 import { isComputedErrorValue } from "../../../shared/ui/data-table/lib/formula";
 import { singleSelectOption } from "../../../shared/ui/data-table/lib";
@@ -43,6 +47,8 @@ export function RoomsTable({
   formulaFieldRegistry,
   getFormulaRowValues,
   rowsComputed,
+  linkedRecordOps,
+  linkedRecordTargets,
 }: {
   roomsSlice: RoomsSlice;
   // Plan-14 P1.4: produced by the parent's single `useTableSchema`
@@ -67,6 +73,8 @@ export function RoomsTable({
   formulaFieldRegistry?: DataTableProps<RoomRow>["formulaFieldRegistry"];
   getFormulaRowValues?: DataTableProps<RoomRow>["getFormulaRowValues"];
   rowsComputed?: Record<string, Record<string, unknown>>;
+  linkedRecordOps?: ReadonlyMap<string, LinkedRecordCellOps>;
+  linkedRecordTargets?: ReadonlyArray<LinkedRecordTargetTableOption>;
 }) {
   const { fieldDefs, customFields } = tableSchema;
   const fieldDefByKey = useMemo(
@@ -88,6 +96,18 @@ export function RoomsTable({
             computedType,
             rowsComputed,
           });
+        }
+        if (custom.field_type === "linked_record") {
+          // Linked-record values live in the `custom_links` bag, not
+          // `custom_values`. GridBody owns rendering (LinkedRecordCell)
+          // and editing (LinkedRecordPicker) via DataTable.linkedRecordOps;
+          // this accessor only feeds sort/filter/group with the id list.
+          return {
+            id: custom.field_key,
+            fieldKey: custom.field_key,
+            header: custom.display_name,
+            accessor: (room) => getCustomLink(room, custom.field_key),
+          };
         }
         return {
           id: custom.field_key,
@@ -187,6 +207,8 @@ export function RoomsTable({
       onEditCustomFieldBundle={onEditCustomFieldBundle}
       formulaFieldRegistry={formulaFieldRegistry}
       getFormulaRowValues={getFormulaRowValues}
+      linkedRecordOps={linkedRecordOps}
+      linkedRecordTargets={linkedRecordTargets}
     />
   );
 }

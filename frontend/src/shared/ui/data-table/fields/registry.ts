@@ -25,9 +25,6 @@ export function getFieldEditor(fieldDef: FieldDef | undefined): FieldEditor {
     case "attachment":
       return { kind: "none" };
     case "linked_record":
-      // Phase 1: full picker/cell are added in P4.2 / P4.3. Keep the
-      // editor a no-op until those components land so the column at
-      // least renders without breaking dispatch.
-      return { kind: "none" };
+      return { kind: "linked_record" };
   }
 }

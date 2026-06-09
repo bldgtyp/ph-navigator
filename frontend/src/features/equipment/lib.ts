@@ -84,6 +84,7 @@ import {
   ALL_FIELD_LOCKS,
   DEFAULT_BUILT_IN_LOCKS,
   isCustomFieldKey,
+  setCustomLink,
   setCustomValue,
 } from "../../shared/ui/data-table";
 import {
@@ -2005,8 +2006,21 @@ export function roomsPayloadFromCellWrites(
     return byRowId;
   }, new Map<string, RoomCellWrite[]>());
   const customFieldKeys = new Set(current.field_defs.map((field) => field.field_key));
+  // §B5 — derive once outside the per-row loop instead of rebuilding
+  // on every `applyWritesToRoom` call.
+  const linkedFieldKeys = new Set(
+    current.field_defs
+      .filter((field) => field.field_type === "linked_record")
+      .map((field) => field.field_key),
+  );
   const rooms = current.rooms.map((room) =>
-    applyWritesToRoom(room, writesByRowId.get(room.id) ?? [], customFieldKeys, current.field_defs),
+    applyWritesToRoom(
+      room,
+      writesByRowId.get(room.id) ?? [],
+      customFieldKeys,
+      linkedFieldKeys,
+      current.field_defs,
+    ),
   );
   return {
     rooms,
@@ -2782,12 +2796,13 @@ function applyWritesToRoom(
   room: RoomRow,
   writes: RoomCellWrite[],
   customFieldKeys: ReadonlySet<string>,
+  linkedFieldKeys: ReadonlySet<string>,
   fieldDefs: readonly Pick<TableFieldDef, "field_key" | "field_type">[],
 ): RoomRow {
   if (writes.length === 0) return room;
   let next = room;
   for (const write of writes) {
-    next = applyWriteToRoom(next, write.fieldKey, write.value, customFieldKeys);
+    next = applyWriteToRoom(next, write.fieldKey, write.value, customFieldKeys, linkedFieldKeys);
   }
   return normalizeRoomForPayload(next, fieldDefs);
 }
@@ -2797,6 +2812,7 @@ function applyWriteToRoom(
   fieldKey: string,
   value: unknown,
   customFieldKeys: ReadonlySet<string>,
+  linkedFieldKeys: ReadonlySet<string>,
 ): RoomRow {
   if (fieldKey === "icfa_factor" && isNullableNumber(value)) {
     return { ...room, icfa_factor: value ?? 0 };
@@ -2806,6 +2822,12 @@ function applyWriteToRoom(
   }
   if (fieldKey === ROOM_BUILDING_ZONE_KEY && isNullableOptionId(value)) {
     return { ...room, building_zone: value };
+  }
+  // Linked-record writes carry a `string[]` id list and land in the
+  // `custom_links` bag — never in `custom_values` (backend enforces
+  // bag exclusivity).
+  if (linkedFieldKeys.has(fieldKey)) {
+    return setCustomLink(room, fieldKey, value);
   }
   if (ROOM_CUSTOM_VALUE_FIELD_KEYS.has(fieldKey) || customFieldKeys.has(fieldKey)) {
     return setCustomValue(room, fieldKey, value);

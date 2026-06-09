@@ -21,9 +21,14 @@ import {
   type CreateOptionsDraft,
 } from "./FieldConfigSectionCreateOptions";
 import { FieldConfigSectionNumber } from "./FieldConfigSectionNumber";
+import {
+  FieldConfigSectionLinkedRecord,
+  type LinkedRecordTargetTableOption,
+} from "./FieldConfigSectionLinkedRecord";
 import { FIELD_TYPE_CHOICES } from "./fieldConfigChoices";
 
 const EMPTY_FORMULA_FIELD_REGISTRY: ReadonlyArray<FieldRegistryEntry> = [];
+const EMPTY_LINKED_RECORD_TARGETS: ReadonlyArray<LinkedRecordTargetTableOption> = [];
 
 export type CreateFieldConfigModalProps = {
   open: boolean;
@@ -33,6 +38,12 @@ export type CreateFieldConfigModalProps = {
   dispatchAddField: (request: AddCustomFieldRequest) => Promise<void>;
   returnFocusTo?: HTMLElement | null;
   formulaFieldRegistry?: ReadonlyArray<FieldRegistryEntry>;
+  // Available link-target tables for the "Linked record" type. The
+  // consumer supplies this from the document's TableContract manifest
+  // (`link_targetable === true`, minus the current table). When the
+  // list is empty, Save stays disabled while the user has linked_record
+  // selected — there is nothing valid to point at.
+  linkedRecordTargets?: ReadonlyArray<LinkedRecordTargetTableOption>;
 };
 
 export function CreateFieldConfigModal({
@@ -43,6 +54,7 @@ export function CreateFieldConfigModal({
   dispatchAddField,
   returnFocusTo,
   formulaFieldRegistry = EMPTY_FORMULA_FIELD_REGISTRY,
+  linkedRecordTargets = EMPTY_LINKED_RECORD_TARGETS,
 }: CreateFieldConfigModalProps) {
   const [displayName, setDisplayName] = useState("");
   const [fieldType, setFieldType] = useState<CustomFieldType>("short_text");
@@ -50,6 +62,9 @@ export function CreateFieldConfigModal({
   const [numberPrecision, setNumberPrecision] = useState(DEFAULT_NUMBER_PRECISION);
   const [optionsDraft, setOptionsDraft] = useState<CreateOptionsDraft | null>(null);
   const [formulaDraft, setFormulaDraft] = useState<FormulaDraftState | null>(null);
+  const [linkedRecordTargetPath, setLinkedRecordTargetPath] = useState<string[] | null>(null);
+  // PRD Q3 — single-link is the default for new linked_record fields.
+  const [linkedRecordMaxLinks, setLinkedRecordMaxLinks] = useState<number | null>(1);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
@@ -64,6 +79,8 @@ export function CreateFieldConfigModal({
     setNumberPrecision(DEFAULT_NUMBER_PRECISION);
     setOptionsDraft(null);
     setFormulaDraft(null);
+    setLinkedRecordTargetPath(null);
+    setLinkedRecordMaxLinks(1);
     setSubmitError(null);
     setPending(false);
   }, []);
@@ -98,7 +115,13 @@ export function CreateFieldConfigModal({
   const formulaValid =
     fieldType !== "formula" ||
     (formulaDraft?.valid === true && formulaDraft.source.trim().length > 0);
-  const canSubmit = !nameValidationError && optionsValid && formulaValid && !pending;
+  // PRD Q13 — creating a linked_record field requires a target table.
+  // Save stays disabled until the user picks one from the dropdown.
+  const linkedRecordValid =
+    fieldType !== "linked_record" ||
+    (linkedRecordTargetPath !== null && linkedRecordTargetPath.length > 0);
+  const canSubmit =
+    !nameValidationError && optionsValid && formulaValid && linkedRecordValid && !pending;
 
   const handleSubmit = async (event?: FormEvent<HTMLFormElement>) => {
     event?.preventDefault();
@@ -232,6 +255,18 @@ export function CreateFieldConfigModal({
                 disabled={pending}
               />
             ) : null}
+            {fieldType === "linked_record" ? (
+              <FieldConfigSectionLinkedRecord
+                targetPath={linkedRecordTargetPath}
+                targets={linkedRecordTargets}
+                onTargetPathChange={setLinkedRecordTargetPath}
+                maxLinks={linkedRecordMaxLinks}
+                onMaxLinksChange={setLinkedRecordMaxLinks}
+                // Greenfield draft: target is editable until Save.
+                targetLocked={false}
+                disabled={pending}
+              />
+            ) : null}
             {fieldType === "formula" ? (
               <FieldConfigSectionFormula
                 fieldId="__new_custom_field__"
@@ -311,6 +346,17 @@ export function CreateFieldConfigModal({
             label: option.label.trim(),
             order: index + 1,
           })),
+        };
+      }
+      case "linked_record": {
+        if (!linkedRecordTargetPath || linkedRecordTargetPath.length === 0) return null;
+        return {
+          ...base,
+          fieldType,
+          config: {
+            target_table_path: [...linkedRecordTargetPath],
+            max_links: linkedRecordMaxLinks,
+          },
         };
       }
       case "formula": {

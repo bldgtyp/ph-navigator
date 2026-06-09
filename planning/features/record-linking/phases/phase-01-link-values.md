@@ -1,14 +1,26 @@
 ---
 DATE: 2026-06-08
 TIME: planning
-STATUS: Phase 1 backend complete; frontend standalone primitives
-        (LinkedRecordCell, LinkedRecordPicker,
-        FieldConfigSectionLinkedRecord) complete; data-table
-        integration (`FieldConfigModal` modal wiring, `GridBody`
-        cell-render dispatch, `useGridEdit` editor wiring, equipment
-        table accessors, fill/paste/undo, `?focus=` highlight) +
-        Playwright smoke deferred to a follow-up session. Live
-        punch list in `../STATUS.md`.
+STATUS: Phase 1 backend complete; frontend standalone primitives +
+        FieldConfigModal integration + `useRowFocusHighlight` hook +
+        backend changeType e2e pytest complete (second pass
+        2026-06-08); data-table dispatch (GridBody render +
+        useGridEdit editor + DataTable `linkedRecordOps` prop)
+        complete (third pass 2026-06-08); RoomsTable column accessor
+        + `linkedRecordOps` prop pass-through + `buildLinkedRecordOps`
+        helper + `tableFieldToFieldDef` linked_record_config mapping
+        complete (fourth pass 2026-06-08); RoomsPage builder
+        invocation + EquipmentPageBody `?tab`/`?focus` URL seeding +
+        PumpsTableSlot focus highlight complete (fifth pass
+        2026-06-08) — the rooms→pumps add/link/navigate loop is now
+        closed end-to-end. P4.4 fill/paste/undo + linked_record write
+        routing into `custom_links` complete (sixth pass 2026-06-08).
+        Remaining: Playwright smoke. Live punch list in `../STATUS.md`.
+        **Phase 1.b** (`./phase-01.b-integration-fixes.md`, 2026-06-09)
+        captures 7 integration blockers + 8 cleanup items surfaced by
+        `/simplify xhigh` against the working-tree diff; `make ci` is
+        green but unit tests stub the wiring the blockers exercise.
+        Phase 1 is NOT user-shippable until §A1–§A7 there land.
 AUTHOR: Ed May (with Claude)
 SCOPE: First user-facing slice: a `linked_record` custom field type
        that editors can add through the field-config modal, link
@@ -102,21 +114,21 @@ without a PRD update.
 | # | Item | State |
 |---|---|---|
 | 1 | enum + JSON-Schema-side wire shape | ✅ enum + `custom_links` row shape shipped; JSON-Schema export regen pending if a generated artifact is shipped (P4.6) |
-| 2 | modal exposes "Linked Record" + target + cardinality | ⚠️ standalone `FieldConfigSectionLinkedRecord` built + tested; `FieldConfigModal` integration deferred |
-| 3 | save round-trip through schema-mutation pipeline | ⚠️ backend pipeline accepts `linked_record` end-to-end; frontend modal hookup deferred |
-| 4 | picker UX (search, sort, virtualize, columns) | ⚠️ standalone `LinkedRecordPicker` built + tested; data-table editor wiring deferred |
-| 5 | pill list renders picked rows w/ fallback | ⚠️ standalone `LinkedRecordCell` built + tested; `GridBody` dispatch deferred |
-| 6 | pill click → `?focus=<row_id>` highlight | ❌ deferred (P4.5) |
-| 7 | ⌫ unlink | ⚠️ `LinkedRecordCell.onPillUnlink` shipped; `useGridEdit` wiring deferred |
+| 2 | modal exposes "Linked Record" + target + cardinality | ✅ `FieldConfigSectionLinkedRecord` integrated into `FieldConfigModal`; Save gated on target pick; Q13 target-lock honored in-place |
+| 3 | save round-trip through schema-mutation pipeline | ✅ backend end-to-end; frontend modal emits `linkedRecordTargetPath` / `linkedRecordMaxLinks` and `buildNextConfigForFieldTypeChange` writes the config |
+| 4 | picker UX (search, sort, virtualize, columns) | ✅ `LinkedRecordPicker` rendered by `GridBody` in edit mode; mode derived from `linked_record_config.max_links`; candidates supplied via `linkedRecordOps[fieldKey].candidates` |
+| 5 | pill list renders picked rows w/ fallback | ✅ `LinkedRecordCell` rendered by `GridBody` in read mode; resolver supplied via `linkedRecordOps[fieldKey].resolve`; RoomsTable column accessor + `buildLinkedRecordOps` helper land the consumer-side path; `tableFieldToFieldDef` now propagates `linked_record_config` from persisted config |
+| 6 | pill click → `?focus=<row_id>` highlight | ✅ `useRowFocusHighlight` hook + CSS animation shipped & tested; `onPillClick` carried on `linkedRecordOps[fieldKey]`; destination-route `useSearchParams` wiring still needed on consumer pages |
+| 7 | ⌫ unlink | ✅ `LinkedRecordCell.onPillUnlink` shipped; picker re-Confirm with the pill removed is the editor-side unlink path. (Direct Backspace-on-focused-pill while in read mode is not yet bound to a cell-write — see Deferred.) |
 | 8 | save/save-as/discard + JSON download round-trip | ✅ backend pydantic round-trip clean; download path inherits the mixin |
 | 9 | validator (target resolution, retarget, cap, dedupe, orphan strip, bag exclusivity) | ✅ all shipped — `_validate_rows_custom_links` + `_validate_linked_record_field_defs` + `bundle.py` retarget guard |
 | 10 | `changeType` wipes both bag sides + summary count | ✅ `linked_record_wipe` policy + `_apply_linked_record_wipe` |
-| 11 | fill / paste / stringified-paste reject | ❌ deferred (P4.4) |
+| 11 | fill / paste / stringified-paste reject | ✅ shipped (sixth pass) — `applyWriteToRoom` routes linked_record writes via `setCustomLink`; `coerceFieldValue` parses JSON id lists, dedupes, drops empties, enforces `max_links`, rejects stringified pill text |
 | 12 | MCP `linked_ids` payloads | ✅ inherits via `RowWithCustomFields` + mutation enum admission |
 | 13 | `erv_unit_ids` retirement + `schema_version` 4 → 5 | ✅ shipped end-to-end (RoomRow, validator, constants, ~13 backend fixtures, frontend types + RoomsTable + equipment lib) |
 | 14 | `RowWithCustomFields` mixin across `*Row`s | ✅ all 9 row models inherit |
 | 15 | `_validate_rows_custom_links` wired per table | ✅ wired on every FieldDef-capable table |
-| 16 | `make ci` green; vitest + pytest add coverage | ✅ backend 670 / frontend 1449; +17 backend, +19 frontend new tests |
+| 16 | `make ci` green; vitest + pytest add coverage | ✅ backend 674 / frontend 1477 (4th pass: +8 frontend — 5 `buildLinkedRecordOps`, 3 `RoomsTable.linkedRecord`); cumulative +17 backend, +27 frontend new tests |
 
 Legend: ✅ shipped · ⚠️ primitives shipped, integration deferred · ❌ deferred to next session
 

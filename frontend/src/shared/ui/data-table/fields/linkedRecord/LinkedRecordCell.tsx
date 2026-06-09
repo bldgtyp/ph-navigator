@@ -63,6 +63,11 @@ export function LinkedRecordCell({
     <span className="data-table-linked-record-cell" data-testid="linked-record-cell">
       {ids.map((rowId) => {
         const resolution = resolve(rowId);
+        // §B7 — separate the two not-canonical states. `null`
+        // resolution means the target row no longer exists (orphan
+        // pill); a `{recordId: null}` resolution means the target row
+        // is present but has no `record_id` set yet (the Q18 fallback).
+        const isOrphan = resolution === null;
         const recordId = resolution?.recordId ?? null;
         const label = recordId && recordId.length > 0 ? recordId : rowId;
         const isFallback = !recordId || recordId.length === 0;
@@ -72,10 +77,13 @@ export function LinkedRecordCell({
             type="button"
             className={
               "data-table-linked-record-pill" +
-              (isFallback ? " data-table-linked-record-pill-fallback" : "")
+              (isFallback ? " data-table-linked-record-pill-fallback" : "") +
+              (isOrphan ? " data-table-linked-record-pill-orphan" : "")
             }
             data-row-id={rowId}
             data-fallback={isFallback ? "true" : undefined}
+            data-orphan={isOrphan ? "true" : undefined}
+            title={isOrphan ? "Linked record no longer exists" : undefined}
             onClick={onClick(rowId)}
             onKeyDown={onKeyDown(rowId)}
             disabled={!onPillClick && !onPillUnlink}

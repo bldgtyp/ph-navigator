@@ -578,6 +578,48 @@ describe("equipment room helpers", () => {
     expect(payload.field_defs).toEqual([...roomsBuiltInFieldDefs, cfText]);
   });
 
+  test("roomsPayloadFromCellWrites routes linked_record writes to custom_links (not custom_values)", () => {
+    const cfPumps = customField({
+      field_key: "cf_pumps",
+      field_type: "linked_record",
+      config: { target_table_path: ["tables", "pumps"], max_links: null },
+    });
+    const current = sliceWithCustomFields([cfPumps], {
+      rooms: [roomFixture({ id: "rm_1", floor_level: null }, { number: "101", name: "Living" })],
+    });
+
+    const payload = roomsPayloadFromCellWrites(
+      current,
+      [{ rowId: "rm_1", fieldKey: "cf_pumps", value: ["pump-a", "pump-b"] }],
+      {},
+    );
+
+    expect(payload.rooms[0]?.custom_links?.cf_pumps).toEqual(["pump-a", "pump-b"]);
+    expect(payload.rooms[0]?.custom_values.cf_pumps).toBeUndefined();
+  });
+
+  test("roomsPayloadFromCellWrites clears linked_record cell to empty list", () => {
+    const cfPumps = customField({
+      field_key: "cf_pumps",
+      field_type: "linked_record",
+      config: { target_table_path: ["tables", "pumps"], max_links: null },
+    });
+    const seedRoom = roomFixture(
+      { id: "rm_1", floor_level: null },
+      { number: "101", name: "Living" },
+    );
+    seedRoom.custom_links = { cf_pumps: ["pump-a"] };
+    const current = sliceWithCustomFields([cfPumps], { rooms: [seedRoom] });
+
+    const payload = roomsPayloadFromCellWrites(
+      current,
+      [{ rowId: "rm_1", fieldKey: "cf_pumps", value: [] }],
+      {},
+    );
+
+    expect(payload.rooms[0]?.custom_links?.cf_pumps).toEqual([]);
+  });
+
   test("roomsPayloadFromCellWrites clears a cf_* value when written undefined", () => {
     const ground = { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 };
     const current = sliceWithCustomFields([cfText], {

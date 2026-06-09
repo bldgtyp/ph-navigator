@@ -2,9 +2,11 @@
 DATE: 2026-06-08
 TIME: -
 STATUS: Active — Phase 1 backend + frontend primitives complete and
-        CI-green; data-table integration (`GridBody` /
-        `useGridEdit` / equipment table accessors) plus Playwright
-        smoke deferred to a follow-up session. See `STATUS.md` for the
+        CI-green; FieldConfigModal integration + `?focus=` highlight +
+        backend changeType e2e pytest landed in second pass (2026-06-08).
+        Remaining for Phase 1: `GridBody` cell-render dispatch,
+        `useGridEdit` editor wiring, equipment-table accessors,
+        fill/paste, and Playwright smoke. See `STATUS.md` for the
         detailed punch list. PRD Q1–Q28 all resolved 2026-06-08.
 AUTHOR: Ed May (with Claude)
 SCOPE: Folder router for the record-linking feature
@@ -58,11 +60,21 @@ totals on the inverse side.
     matrix mirrored, fixtures + RoomsTable ERV column purged.
   - Tests: backend pytest +17, frontend vitest +19 (cell/picker/
     section); existing matrix-count test bumped 34 → 48.
-- **Phase 1 — deferred to next session**: wiring the standalone
-  primitives into `GridBody` cell-render dispatch, `useGridEdit`
-  editor-kind switch, `FieldConfigModal` modal expansion, equipment
-  table column accessors, fill / paste / undo paths, `?focus=`
-  highlight, Playwright browser smoke, e2e changeType pytest.
+- **Phase 1 — second pass landed (2026-06-08)**: FieldConfigModal
+  integrates `FieldConfigSectionLinkedRecord` (target dropdown,
+  Single/Multi cardinality, Q13 lock); `dispatchBundle` payload now
+  emits `linkedRecordTargetPath` / `linkedRecordMaxLinks`;
+  `buildNextConfigForFieldTypeChange` writes the linked-record config
+  on type change and preserves the locked `target_table_path` on
+  in-place edits. `useRowFocusHighlight` hook + CSS animation cover
+  the `?focus=<row_id>` highlight. Backend pytest covers the
+  `_apply_linked_record_wipe` changeType path through the dispatcher
+  in both directions (incl. ack-required + clean paths).
+- **Phase 1 — deferred to next session**: `GridBody` cell-render
+  dispatch, `useGridEdit` editor-kind switch, equipment-table column
+  accessors, fill / paste / undo paths, Playwright browser smoke, and
+  route-level wiring of `useRowFocusHighlight` against
+  `useSearchParams().get("focus")`.
 - **Phases 2 & 3 — NOT STARTED.** Blocked on Phase 1 integration.
 - The half-implemented `RoomRow.erv_unit_ids` typed column referenced
   by the original PRD has been deleted per Q7; users will add their

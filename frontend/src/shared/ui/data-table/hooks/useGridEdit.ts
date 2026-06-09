@@ -1,3 +1,4 @@
+// @size-exception: planning/features/record-linking/phases/phase-01-link-values.md
 import { useCallback, useRef, useState } from "react";
 import { formatNumberUnitsDisplay, type UnitSystem } from "../../../../lib/units";
 import { coerceFieldValue } from "../lib/rows/defaults";
@@ -22,7 +23,12 @@ export type EditorState =
   | { kind: "text"; draftValue: string }
   | { kind: "number"; draftValue: string }
   | { kind: "color"; draftValue: string }
-  | { kind: "single_select"; searchText: string; highlightedOptionId: string | null };
+  | { kind: "single_select"; searchText: string; highlightedOptionId: string | null }
+  // linked_record carries no draft state — the LinkedRecordPicker
+  // manages its own draft internally and emits the final id list on
+  // Confirm, which goes through `commitLinkedRecord` (skipping the
+  // text/number `draft` setter entirely).
+  | { kind: "linked_record" };
 
 export type EditingCell = {
   rowId: string;
@@ -68,6 +74,10 @@ export type GridEdit = {
   // null when the "Create new" footer is the highlight target.
   highlight: (optionId: string | null) => void;
   commit: () => Promise<boolean>;
+  // Linked-record picker emits its final id list directly; this skips
+  // the draft setter so the picker doesn't have to serialize through a
+  // string and back. Returns the same boolean contract as `commit`.
+  commitLinkedRecord: (ids: readonly string[]) => Promise<boolean>;
   cancel: () => void;
   queuePendingEdit: (pending: PendingEdit | null) => void;
   consumePendingEdit: (rowIds: string[]) => void;
@@ -166,6 +176,15 @@ export function useGridEdit(args: {
   const commit = useCallback(async (): Promise<boolean> => {
     if (!editing || !hasWriteHandler) return false;
     if (commitInFlightRef.current) return false;
+    // §B1 — `commit()` cannot reach the picker's internal draft. If a
+    // caller (e.g. `insertRowBelow` via Shift-Enter) tries to commit
+    // while a linked_record editor is open, returning `false` without
+    // clearing `editing` keeps the picker mounted so the user can
+    // Confirm/Cancel explicitly instead of silently losing their
+    // selections. The dedicated path is `commitLinkedRecord(ids)`.
+    if (editing.editor.kind === "linked_record") {
+      return false;
+    }
     commitInFlightRef.current = true;
     const fieldDef = fieldDefByKey.get(editing.fieldKey);
     const editor = editing.editor;
@@ -207,6 +226,51 @@ export function useGridEdit(args: {
     setCellError,
   ]);
 
+  const commitLinkedRecord = useCallback(
+    async (ids: readonly string[]): Promise<boolean> => {
+      if (!editing || editing.editor.kind !== "linked_record" || !hasWriteHandler) return false;
+      if (commitInFlightRef.current) return false;
+      commitInFlightRef.current = true;
+      const fieldDef = fieldDefByKey.get(editing.fieldKey);
+      try {
+        const plan = planLinkedRecord(editing, ids, fieldDef);
+        if (plan.kind === "noop") {
+          clearCellError(editing.rowId, editing.fieldKey);
+          setEditing(null);
+          return true;
+        }
+        if (plan.kind === "invalid") {
+          onAnnounce(plan.message);
+          setCellError(editing.rowId, editing.fieldKey, plan.message);
+          setEditing(null);
+          return false;
+        }
+        await dispatchWrite(plan.op, plan.inverse);
+        onAnnounce(`${fieldDef?.display_name ?? "Cell"} updated.`);
+        clearCellError(editing.rowId, editing.fieldKey);
+        setEditing(null);
+        return true;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Cell update failed.";
+        onAnnounce(message);
+        setCellError(editing.rowId, editing.fieldKey, message);
+        setEditing(null);
+        return false;
+      } finally {
+        commitInFlightRef.current = false;
+      }
+    },
+    [
+      editing,
+      hasWriteHandler,
+      fieldDefByKey,
+      dispatchWrite,
+      onAnnounce,
+      clearCellError,
+      setCellError,
+    ],
+  );
+
   const queuePendingEdit = useCallback((pending: PendingEdit | null) => {
     pendingRef.current = pending;
     pendingRowsRef.current = null;
@@ -247,6 +311,7 @@ export function useGridEdit(args: {
     draft,
     highlight,
     commit,
+    commitLinkedRecord,
     cancel,
     queuePendingEdit,
     consumePendingEdit,
@@ -270,6 +335,13 @@ function planCommit(
 ): CommitPlan {
   if (editor.kind === "single_select") {
     return planSingleSelect(current, editor, fieldDef);
+  }
+  if (editor.kind === "linked_record") {
+    // Linked-record commits flow through `commitLinkedRecord`, not the
+    // generic `commit` path — reaching here from the text/number flow
+    // means the keyboard handler called commit() on a linked_record
+    // editor, which is a no-op.
+    return { kind: "noop" };
   }
   return planTextNumberOrColor(current, editor, fieldDef, unitSystem);
 }
@@ -328,6 +400,59 @@ function planSingleSelect(
   return { kind: "dispatch", op, inverse };
 }
 
+function planLinkedRecord(
+  current: EditingCell,
+  ids: readonly string[],
+  fieldDef: FieldDef | undefined,
+): CommitPlan {
+  // Dedupe within-cell (mirrors backend `coerce_link_value` — PRD Q25);
+  // cap enforcement happens in the backend validator on save, but a
+  // single-mode field still UX-wise caps at 1 here.
+  const deduped: string[] = [];
+  const seen = new Set<string>();
+  for (const id of ids) {
+    if (typeof id !== "string" || id.length === 0) continue;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    deduped.push(id);
+  }
+  const maxLinks = fieldDef?.linked_record_config?.max_links;
+  if (typeof maxLinks === "number" && deduped.length > maxLinks) {
+    return {
+      kind: "invalid",
+      message: `${fieldDef?.display_name ?? current.fieldKey} accepts at most ${maxLinks} link${maxLinks === 1 ? "" : "s"}.`,
+    };
+  }
+  const originalIds = toStringArray(current.originalValue);
+  if (sameIdSequence(deduped, originalIds)) return { kind: "noop" };
+  const op: WriteOp = {
+    kind: "cell",
+    writes: [{ rowId: current.rowId, fieldKey: current.fieldKey, value: deduped }],
+  };
+  const inverse: WriteOp = {
+    kind: "cell",
+    writes: [{ rowId: current.rowId, fieldKey: current.fieldKey, value: originalIds }],
+  };
+  return { kind: "dispatch", op, inverse };
+}
+
+function toStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const out: string[] = [];
+  for (const entry of value) {
+    if (typeof entry === "string" && entry.length > 0) out.push(entry);
+  }
+  return out;
+}
+
+function sameIdSequence(a: readonly string[], b: readonly string[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
 // Decide what a single-select commit() resolves to given the current
 // editor state. Pure so it can be unit-tested without React.
 export type SingleSelectCommitDecision =
@@ -353,7 +478,7 @@ function decideSingleSelectCommit(
 }
 
 function initialEditorState(
-  kind: "text" | "number" | "color" | "single_select" | "none",
+  kind: "text" | "number" | "color" | "single_select" | "linked_record" | "none",
   initialValue: unknown,
   intent: EditIntent,
   replaceSeed: string | undefined,
@@ -361,6 +486,11 @@ function initialEditorState(
   unitSystem: UnitSystem,
 ): EditorState | null {
   if (kind === "none") return null;
+  if (kind === "linked_record") {
+    // The picker reads `initialValue` directly via the cell's
+    // `custom_links[fieldKey]` projection — no seed work needed here.
+    return { kind: "linked_record" };
+  }
   if (kind === "single_select") {
     // Plan 05: type-to-edit on a single-select cell pre-fills the
     // popover's search input with the typed character so the list

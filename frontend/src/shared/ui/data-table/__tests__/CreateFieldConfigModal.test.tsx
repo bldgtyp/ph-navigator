@@ -16,6 +16,7 @@ type HarnessProps = {
     origin: "core" | "custom";
     field_type: "text" | "number" | "single_select" | "formula" | "bool";
   }>;
+  linkedRecordTargets?: ReadonlyArray<{ path: string[]; label: string }>;
 };
 
 function Harness({
@@ -24,6 +25,7 @@ function Harness({
   insertAfterFieldKey = null,
   initialOpen = true,
   formulaFieldRegistry,
+  linkedRecordTargets,
 }: HarnessProps) {
   const [open, setOpen] = useState(initialOpen);
   const anchorRef = useRef<HTMLButtonElement | null>(null);
@@ -43,6 +45,7 @@ function Harness({
         dispatchAddField={dispatch}
         returnFocusTo={anchorRef.current}
         formulaFieldRegistry={formulaFieldRegistry}
+        linkedRecordTargets={linkedRecordTargets}
       />
     </>
   );
@@ -312,6 +315,41 @@ describe("CreateFieldConfigModal", () => {
       }) as HTMLButtonElement;
       expect(submit.disabled).toBe(true);
       expect(within(dialog()).getByRole("status")).toHaveTextContent(/Nonexistent/);
+    });
+  });
+
+  // §A3 regression: the "+" create flow had no linked_record branch at
+  // all, so a Phase-1 user couldn't create a linked_record field
+  // through the only on-grid add affordance. These tests pin the
+  // section render, the Save gate, and the dispatched request shape.
+  describe("linked_record", () => {
+    const TARGETS = [{ path: ["equipment", "pumps"], label: "Pumps" }];
+
+    test("Save stays disabled until a target table is picked", () => {
+      render(<Harness linkedRecordTargets={TARGETS} />);
+      typeName("Pumps");
+      clickPill("Linked record");
+      const submit = within(dialog()).getByRole("button", {
+        name: /Add field/,
+      }) as HTMLButtonElement;
+      expect(submit.disabled).toBe(true);
+    });
+
+    test("dispatches a linked_record request with target_table_path + max_links", async () => {
+      const dispatch = vi.fn().mockResolvedValue(undefined);
+      render(<Harness dispatch={dispatch} linkedRecordTargets={TARGETS} />);
+      typeName("Pumps");
+      clickPill("Linked record");
+      const select = within(dialog()).getByLabelText("Target table") as HTMLSelectElement;
+      fireEvent.change(select, { target: { value: "equipment/pumps" } });
+      clickAdd();
+      await waitFor(() => expect(dispatch).toHaveBeenCalledTimes(1));
+      const request = dispatch.mock.calls[0]?.[0] as AddCustomFieldRequest;
+      expect(request.fieldType).toBe("linked_record");
+      expect(request.config).toEqual({
+        target_table_path: ["equipment", "pumps"],
+        max_links: 1,
+      });
     });
   });
 });

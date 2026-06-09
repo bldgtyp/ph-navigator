@@ -10,8 +10,10 @@ export type { ConversionPolicy } from "./lib/typeConversionMatrix";
 export { clampNumberPrecision } from "./lib/numberPrecision";
 export {
   CUSTOM_FIELD_KEY_PREFIX,
+  getCustomLink,
   getCustomValue,
   isCustomFieldKey,
+  setCustomLink,
   setCustomValue,
 } from "./lib/customFieldAccessor";
 export {
@@ -72,6 +74,8 @@ export {
 } from "./lib/columnWidths";
 export type { FieldRegistryEntry } from "./lib/formula";
 export { RECORD_ID_FIELD_KEY } from "./lib/identifier/recordId";
+export { useRowFocusHighlight } from "./hooks/useRowFocusHighlight";
+export type { UseRowFocusHighlightOptions } from "./hooks/useRowFocusHighlight";
 export { emptyViewState } from "./types";
 export type {
   AddCustomFieldRequest,
@@ -86,6 +90,9 @@ export type {
   FilterCondition,
   FilterOperator,
   GroupRule,
+  LinkedRecordCellOps,
+  LinkedRecordCellCandidate,
+  LinkedRecordTargetTableOption,
   RowAction,
   RowActionContext,
   RowDeletePayload,
@@ -104,3 +111,5 @@ export {
   isFieldDeletable,
   isFieldDuplicable,
 } from "./lib/locks";
+export { buildLinkedRecordOps } from "./fields/linkedRecord/buildLinkedRecordOps";
+export type { BuildLinkedRecordOpsArgs } from "./fields/linkedRecord/buildLinkedRecordOps";

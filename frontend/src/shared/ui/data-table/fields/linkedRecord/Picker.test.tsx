@@ -126,4 +126,36 @@ describe("LinkedRecordPicker", () => {
     );
     expect(screen.getByRole("listbox").getAttribute("data-virtualized")).toBe("true");
   });
+
+  // §A4 regression: previously the reset effect ran on every parent
+  // re-render that allocated a new `selectedIds` array reference,
+  // wiping the user's draft mid-edit. The fix gates the reset on the
+  // closed → open transition. This test re-renders with a freshly
+  // allocated identical array AFTER the user toggled a candidate and
+  // asserts the draft survives.
+  test("draft survives parent re-renders with a new selectedIds array identity", () => {
+    function Harness() {
+      // Allocate a new array on every render so the dep changes by
+      // reference but not by value — the exact race the fix targets.
+      return (
+        <LinkedRecordPicker
+          open
+          mode="multi"
+          selectedIds={[]}
+          candidates={CANDIDATES}
+          onConfirm={vi.fn()}
+          onCancel={vi.fn()}
+        />
+      );
+    }
+    const { rerender } = render(<Harness />);
+    fireEvent.click(screen.getByRole("checkbox", { name: /Link PUMP-1/ }));
+    expect(
+      (screen.getByRole("checkbox", { name: /Link PUMP-1/ }) as HTMLInputElement).checked,
+    ).toBe(true);
+    rerender(<Harness />);
+    expect(
+      (screen.getByRole("checkbox", { name: /Link PUMP-1/ }) as HTMLInputElement).checked,
+    ).toBe(true);
+  });
 });

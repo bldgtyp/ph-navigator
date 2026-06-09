@@ -1,3 +1,4 @@
+// @size-exception: planning/features/record-linking/phases/phase-01-link-values.md
 import { describe, expect, test } from "vitest";
 
 import type { CustomFieldDef } from "../hooks/useTableSchema";
@@ -358,6 +359,67 @@ describe("buildNextConfigForFieldTypeChange number units", () => {
       buildNextConfigForFieldTypeChange(source, {
         fieldKey: "cf_sample",
         displayName: "Notes",
+        description: null,
+        fieldType: "short_text",
+      }),
+    ).toEqual({});
+  });
+});
+
+describe("buildNextConfigForFieldTypeChange linked_record", () => {
+  test("seeds target_table_path and max_links on type change into linked_record", () => {
+    const source: CustomFieldDef = { ...SAMPLE_FIELD, field_type: "short_text", config: {} };
+    expect(
+      buildNextConfigForFieldTypeChange(source, {
+        fieldKey: source.field_key,
+        displayName: source.display_name,
+        description: null,
+        fieldType: "linked_record",
+        linkedRecordTargetPath: ["equipment", "pumps"],
+        linkedRecordMaxLinks: 1,
+      }),
+    ).toEqual({ target_table_path: ["equipment", "pumps"], max_links: 1 });
+  });
+
+  test("throws when type changes into linked_record without a target path", () => {
+    const source: CustomFieldDef = { ...SAMPLE_FIELD, field_type: "short_text", config: {} };
+    expect(() =>
+      buildNextConfigForFieldTypeChange(source, {
+        fieldKey: source.field_key,
+        displayName: source.display_name,
+        description: null,
+        fieldType: "linked_record",
+        linkedRecordMaxLinks: null,
+      }),
+    ).toThrow(/linkedRecordTargetPath/);
+  });
+
+  test("preserves target_table_path on in-place max_links edits (Q13 immutability)", () => {
+    const source: CustomFieldDef = {
+      ...SAMPLE_FIELD,
+      field_type: "linked_record",
+      config: { target_table_path: ["equipment", "pumps"], max_links: 1 },
+    };
+    expect(
+      buildNextConfigForFieldTypeChange(source, {
+        fieldKey: source.field_key,
+        displayName: source.display_name,
+        description: null,
+        linkedRecordMaxLinks: null,
+      }),
+    ).toEqual({ target_table_path: ["equipment", "pumps"], max_links: null });
+  });
+
+  test("strips linked_record config when changing away to a non-linked type", () => {
+    const source: CustomFieldDef = {
+      ...SAMPLE_FIELD,
+      field_type: "linked_record",
+      config: { target_table_path: ["equipment", "pumps"], max_links: 1 },
+    };
+    expect(
+      buildNextConfigForFieldTypeChange(source, {
+        fieldKey: source.field_key,
+        displayName: source.display_name,
         description: null,
         fieldType: "short_text",
       }),

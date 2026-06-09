@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { normalizeDisplayName } from "../../lib/fieldDisplayNames";
 
 /**
@@ -53,14 +53,20 @@ export function LinkedRecordPicker({
   const [search, setSearch] = useState("");
   const [draftIds, setDraftIds] = useState<string[]>(() => [...selectedIds]);
 
-  // Reset draft whenever the picker transitions closed → open with a
-  // possibly-different `selectedIds`. Without this, reopening the modal
-  // on a different cell would retain the previous cell's draft.
+  // §A4 — only reseed on the rising edge of `open`. The parent re-renders
+  // the picker constantly (every keystroke in the picker's own search
+  // input, every cell hover) and used to pass a freshly-allocated
+  // `selectedIds` array each time, so an `open + selectedIds` dep list
+  // wiped the user's draft on every re-render. Track previous-open in a
+  // ref and only reseed on closed → open. `selectedIds` is intentionally
+  // captured at the transition (via the ref's current snapshot).
+  const wasOpenRef = useRef(open);
   useEffect(() => {
-    if (open) {
+    if (open && !wasOpenRef.current) {
       setDraftIds([...selectedIds]);
       setSearch("");
     }
+    wasOpenRef.current = open;
   }, [open, selectedIds]);
 
   const normalizedSearch = useMemo(() => normalizeDisplayName(search), [search]);

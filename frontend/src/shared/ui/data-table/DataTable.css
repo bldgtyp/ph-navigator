@@ -2557,3 +2557,20 @@ td.data-table-cell-editing {
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+/* PRD Q19 — transient highlight applied by `useRowFocusHighlight` when a
+   linked-record pill click navigates with `?focus=<row_id>`. Removed
+   after the hook's timeout; CSS animates the fade out. */
+[data-row-id][data-focus="true"] {
+  animation: data-table-row-focus-flash 1.5s ease-out;
+  background: color-mix(in oklab, var(--accent) 22%, var(--bg-card));
+}
+
+@keyframes data-table-row-focus-flash {
+  0% {
+    background: color-mix(in oklab, var(--accent) 45%, var(--bg-card));
+  }
+  100% {
+    background: color-mix(in oklab, var(--accent) 0%, var(--bg-card));
+  }
+}

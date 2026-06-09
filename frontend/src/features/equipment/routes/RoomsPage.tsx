@@ -1,6 +1,12 @@
 import "../equipment.css";
 import { useMemo, useState } from "react";
-import { tableFieldDefsToFieldDefs } from "../../../shared/ui/data-table";
+import { useNavigate } from "react-router-dom";
+import {
+  buildLinkedRecordOps,
+  tableFieldDefsToFieldDefs,
+  type LinkedRecordCellOps,
+  type LinkedRecordTargetTableOption,
+} from "../../../shared/ui/data-table";
 import { SliceTableShell, useSliceTableController } from "../../../shared/ui/data-table/feature";
 import type { ProjectDetail } from "../../projects/types";
 import { RoomsPageError } from "../components/RoomsPageError";
@@ -10,7 +16,18 @@ import {
   buildRoomsDownloadAction,
 } from "../components/RoomsToolbarActions";
 import { RoomsTableSlot } from "../components/RoomsTableSlot";
-import { useRoomsSliceQuery } from "../hooks";
+import { usePumpsSliceQuery, useRoomsSliceQuery } from "../hooks";
+import { PUMPS_TARGET_TABLE_PATH, type PumpRow, type PumpsSlice } from "../types";
+
+// Phase 1 has one link-targetable table on Rooms: Pumps. As more
+// tables opt into `link_targetable=True` on the backend, derive this
+// list from the document's `TableContract` manifest instead of a
+// hard-coded literal.
+const ROOMS_LINKED_RECORD_TARGETS: ReadonlyArray<LinkedRecordTargetTableOption> = [
+  { path: [...PUMPS_TARGET_TABLE_PATH], label: "Pumps" },
+];
+import { customTextValueOrNull } from "../lib/customValueReaders";
+import { RECORD_ID_FIELD_KEY } from "../../../shared/ui/data-table";
 import {
   roomsFieldOverlay,
   roomsTableColumnsForSanitize,
@@ -32,6 +49,15 @@ import { ROOMS_TABLE_NAME, type RoomRow, type RoomsSlice } from "../types";
 
 export function RoomsPage({ project }: { project: ProjectDetail }) {
   const roomsQuery = useRoomsSliceQuery(project.id, project.active_version_id, project.access_mode);
+  // Phase 1 record-linking: rooms can link to pumps via the
+  // `linked_record` custom field type. We fetch the pumps slice
+  // unconditionally so the linked-record pill resolver + picker
+  // candidates have data. A still-loading or error'd pumps slice
+  // degrades gracefully: pills fall back to row-id text and the picker
+  // shows an empty candidate list. The fetch piggy-backs on the same
+  // query cache the equipment page uses — no extra round-trip when the
+  // user has just left the equipment page.
+  const pumpsQuery = usePumpsSliceQuery(project.id, project.active_version_id, project.access_mode);
   if (roomsQuery.isLoading) {
     return (
       <section className="tab-panel" aria-label="Rooms">
@@ -43,7 +69,12 @@ export function RoomsPage({ project }: { project: ProjectDetail }) {
     return <RoomsPageError project={project} error={roomsQuery.error} />;
   }
   return (
-    <RoomsPageBody project={project} roomsSlice={roomsQuery.data} refetch={roomsQuery.refetch} />
+    <RoomsPageBody
+      project={project}
+      roomsSlice={roomsQuery.data}
+      refetch={roomsQuery.refetch}
+      pumpsSlice={pumpsQuery.data ?? null}
+    />
   );
 }
 
@@ -53,8 +84,10 @@ function RoomsPageBody(props: {
   project: ProjectDetail;
   roomsSlice: RoomsSlice;
   refetch: () => Promise<unknown>;
+  pumpsSlice: PumpsSlice | null;
 }) {
-  const { project, roomsSlice, refetch } = props;
+  const { project, roomsSlice, refetch, pumpsSlice } = props;
+  const navigate = useNavigate();
   const activeVersionId = project.active_version_id;
   const isEditor = project.access_mode === "editor";
 
@@ -121,6 +154,24 @@ function RoomsPageBody(props: {
     [controller.tableSchema.fieldDefs],
   );
 
+  // PRD Q19 — `onPillClick` lands on the equipment tab with the right
+  // sub-tab seeded and `?focus=<row_id>` for the highlight hook on
+  // PumpsTableSlot. When the pumps slice hasn't resolved yet, the ops
+  // map is empty; pills still render with row-id fallback labels.
+  const linkedRecordOps: ReadonlyMap<string, LinkedRecordCellOps> | undefined = useMemo(() => {
+    if (!pumpsSlice?.pumps) return undefined;
+    return buildLinkedRecordOps<PumpRow>({
+      fieldDefs: controller.tableSchema.fieldDefs,
+      targetTablePath: PUMPS_TARGET_TABLE_PATH,
+      targetRows: pumpsSlice.pumps,
+      getRowId: (pump) => pump.id,
+      getRecordId: (pump) => customTextValueOrNull(pump, RECORD_ID_FIELD_KEY),
+      onPillClick: (rowId) => {
+        navigate(`/projects/${project.id}/equipment?tab=pumps&focus=${encodeURIComponent(rowId)}`);
+      },
+    });
+  }, [pumpsSlice, controller.tableSchema.fieldDefs, navigate, project.id]);
+
   const reloadDraft = async () => {
     setRoomModal(null);
     await controller.reloadDraft();
@@ -173,6 +224,8 @@ function RoomsPageBody(props: {
           setRoomModal({ mode: "add" }),
         )}
         onEdit={(room) => setRoomModal({ mode: "edit", room })}
+        linkedRecordOps={linkedRecordOps}
+        linkedRecordTargets={ROOMS_LINKED_RECORD_TARGETS}
       />
       <RoomDialogStack
         isEditor={isEditor}

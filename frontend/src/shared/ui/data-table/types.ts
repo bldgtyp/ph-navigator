@@ -4,6 +4,9 @@ import type { NumberUnitsConfig } from "../../../lib/units";
 import type { AggregationKind } from "./fields/aggregations";
 import type { FieldSchemaMutation } from "./lib/customFieldMutations";
 import type { FieldRegistryEntry } from "./lib/formula/resolver";
+import type { LinkedRecordTargetTableOption } from "./components/FieldConfigSectionLinkedRecord";
+
+export type { LinkedRecordTargetTableOption } from "./components/FieldConfigSectionLinkedRecord";
 
 // Phase 6 §4.3.1: subset codes for the 7 non-empty subsets of
 // {filter, sort, group}. Encoded as lowercase concatenations of the
@@ -354,6 +357,23 @@ export type BuildEmptyRow<TRow> = (args: {
   anchorRow: TRow | null;
 }) => TRow;
 
+// Per-field linked-record integration surface. The data-table library
+// has no knowledge of the target table — the consumer supplies the
+// candidate row list (for the picker) and a resolver (for the pill's
+// display label). `onPillClick` is the navigation hook (PRD Q19); when
+// undefined the pills render but do nothing on click.
+export type LinkedRecordCellOps = {
+  candidates: ReadonlyArray<LinkedRecordCellCandidate>;
+  resolve: (rowId: string) => { recordId: string | null } | null;
+  onPillClick?: (rowId: string) => void;
+};
+
+export type LinkedRecordCellCandidate = {
+  rowId: string;
+  recordId: string | null;
+  displayName?: string | null;
+};
+
 export type DataTableProps<TRow> = {
   rows: TRow[];
   getRowId: (row: TRow) => string;
@@ -427,6 +447,19 @@ export type DataTableProps<TRow> = {
   // editor's focused-row live preview. Each map key is a formula-side
   // `field_id` (core key for core fields, `cf_*` for custom fields).
   getFormulaRowValues?: (row: TRow) => Record<string, unknown>;
+  // Per-fieldKey integration surface for `linked_record` columns
+  // (PRD §5 Phase 1). The data-table library is target-table agnostic
+  // — the consumer supplies candidates + resolver + navigation hook
+  // per linked_record FieldDef. Omit (or omit a fieldKey) to render
+  // the cell as a read-only pill list with empty resolution.
+  linkedRecordOps?: ReadonlyMap<string, LinkedRecordCellOps>;
+  // Target-table options for the field config modal's "linked record"
+  // target dropdown (PRD Q13). Page-level consumers derive this from
+  // the project's `TableContract` manifest (entries with
+  // `link_targetable === true`, minus the current table). Omit when
+  // the table has no link-target candidates — the modal then gates
+  // Save as long as `linked_record` is the selected field type.
+  linkedRecordTargets?: ReadonlyArray<LinkedRecordTargetTableOption>;
 };
 
 // Request shape for the unified field-config modal Save. The consumer
@@ -461,6 +494,13 @@ export type EditCustomFieldBundleRequest = {
   // consumer sends it as `editFieldBundle.formulaSource` so the
   // backend reparses/resolves the bundle atomically.
   formulaSource?: string;
+  // Set for `linked_record` fields. PRD Q13 — `target_table_path` is
+  // immutable on existing linked-record fields; the modal only emits it
+  // when the type also changes (initial creation through this bundle
+  // path is not currently supported; addField owns creation). `null`
+  // for `maxLinks` means multi.
+  linkedRecordTargetPath?: string[];
+  linkedRecordMaxLinks?: number | null;
 };
 
 // Phase 6 §4.6: discriminated union the body renderer walks. A `group`

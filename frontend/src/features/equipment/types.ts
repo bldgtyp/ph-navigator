@@ -72,6 +72,10 @@ export type RoomsReplacePayload = {
 };
 
 export const PUMPS_TABLE_NAME = "pumps";
+// Canonical backend table path for FieldDef `linked_record_config.target_table_path`.
+// `PUMPS_TABLE_NAME` is the single-segment display key; persisted paths
+// always carry the 2-segment ["equipment", "pumps"] form.
+export const PUMPS_TARGET_TABLE_PATH = ["equipment", "pumps"] as const;
 export const PUMP_DEVICE_TYPE_KEY = "device_type";
 export const PUMP_DEVICE_TYPE_OPTION_KEY = "pumps.device_type";
 export const PUMP_DEVICE_TYPE_COLUMN_ID = "device_type";
