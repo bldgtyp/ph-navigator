@@ -201,21 +201,30 @@ export function IndoorUnitsTable({
         sessionKey={`${projectId}:heat-pumps:indoor-units:${slice.version_id}`}
         generateRowId={() => buildEmptyIndoorUnitRow().id}
         footerAction={
-          <button
-            type="button"
-            disabled={readOnly || noEquip}
-            onClick={() =>
-              setModal({
-                kind: "unit",
-                mode: "add",
-                row: buildEmptyIndoorUnitRow({
-                  indoor_equip_id: slice.indoor_equip[0]?.id ?? "",
-                }),
-              })
-            }
-          >
-            Add indoor unit
-          </button>
+          readOnly ? null : (
+            <button
+              type="button"
+              className="data-table-add-row-button"
+              aria-label="Add indoor unit"
+              title={
+                noEquip
+                  ? "Add an indoor equipment row first under Equipment — Indoor"
+                  : "Add indoor unit"
+              }
+              disabled={noEquip}
+              onClick={() =>
+                setModal({
+                  kind: "unit",
+                  mode: "add",
+                  row: buildEmptyIndoorUnitRow({
+                    indoor_equip_id: slice.indoor_equip[0]?.id ?? "",
+                  }),
+                })
+              }
+            >
+              +
+            </button>
+          )
         }
       />
       {modal?.kind === "unit" ? (

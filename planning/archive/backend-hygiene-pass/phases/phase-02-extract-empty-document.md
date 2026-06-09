@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-09
 TIME: afternoon ET
-STATUS: Not started
+STATUS: Implemented — shipped in #13 (commit 51dcd77).
 AUTHOR: Claude (Opus 4.7)
 SCOPE: Phase 2 — extract `empty_project_document` and any peer
        template builders out of `projects/service.py` into
