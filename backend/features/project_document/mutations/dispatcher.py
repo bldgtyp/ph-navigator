@@ -119,7 +119,7 @@ def apply_schema_mutation(
         # Defensive — every discriminator branch is registered above; this
         # only fires if the union grows without a matching dispatcher.
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "custom_field_unsupported_mutation",
             "Unknown custom-field mutation kind.",
             {"kind": mutation.kind},

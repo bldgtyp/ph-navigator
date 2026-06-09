@@ -4,9 +4,9 @@ TIME: planning
 STATUS: Partial backend implementation in progress. 2026-06-09
         landed Python parser / AST support, document-aware server
         read-overlay evaluation for canonical Rooms→Pumps persisted
-        rollups, and focused backend tests. Frontend editor support,
-        author-time linked-ref validation, document-level cycle
-        detection, perf gate, and browser smoke remain open.
+        rollups, document-level linked-ref validation / cycle
+        detection, and focused backend tests. Frontend editor support,
+        perf gate, and browser smoke remain open.
 AUTHOR: Ed May (with Claude)
 SCOPE: Cross-table formula primitives `linked(...)` and
        `linked_from(...)` with `count` / `sum` / `avg` aggregators,
@@ -108,13 +108,13 @@ Decisions already locked:
 5. [x] Min / max / concat / array_join / count_unique / boolean
    aggregators raise `formula_function_not_supported` at parse
    time with the deferred-function name in the error envelope.
-6. [ ] Document-level formula cycle detection: a formula on Pumps
+6. [x] Document-level formula cycle detection: a formula on Pumps
    that aggregates `linked_from(rooms).cf_x` where `cf_x` on
    Rooms is a formula that aggregates `linked("cf_pumps").cf_y`
    where `cf_y` on Pumps is the original formula → fails
    validation with `formula_cycle_detected` and a path through
    the cycle in the error envelope.
-7. [ ] Per-table cycle detection (Phase 1 / pre-existing) is
+7. [x] Per-table cycle detection (Phase 1 / pre-existing) is
    subsumed by the document-level detector. The per-table
    `_validate_rooms_formula_cycles` helper either becomes a
    thin wrapper over the document-level detector or is removed
@@ -171,7 +171,7 @@ Decisions already locked:
   Unknown table / target-field / cycle author-time errors remain in
   the resolver/cycle follow-up.
 
-### P3.2 — Resolver — ⏳ PARTIAL / FOLLOW-UP
+### P3.2 — Resolver — ✅ BACKEND SLICE COMPLETE
 
 `backend/features/project_document/formula/resolver.py`:
 
@@ -227,7 +227,7 @@ Decisions already locked:
   4. attach `rows_computed` overlay (existing);
   5. attach `inverse_links` overlay (Phase 2 P3.2).
 
-### P3.4 — Document-level cycle detection + topological sort — ⏳ OPEN
+### P3.4 — Document-level cycle detection + topological sort — ✅ BACKEND SLICE COMPLETE
 
 `backend/features/project_document/formula/analysis.py` (or a new
 sibling module):
@@ -432,3 +432,25 @@ Phase 3 is mergeable when:
   `rows_computed` in the Pumps response, but nested Pumps schema
   mutation routing remains deferred. Current rollup tests seed
   persisted Pumps `field_defs` directly.
+
+## P9. Implementation notes — 2026-06-09 validator slice
+
+- Landed backend validation files:
+  `backend/features/project_document/formula/{resolver.py,errors.py,__init__.py}`,
+  `backend/features/project_document/document.py`, and
+  `backend/features/project_document/mutations/formula_ops.py`.
+- `validate_document_formula_graph` now validates `linked` /
+  `linked_from` primitives against the document's formula-capable
+  registries, builds table-qualified formula dependency edges, and
+  runs a document-level topological sort. Cross-table cycles raise
+  `FormulaCycleError` with paths like
+  `equipment.pumps.cf_total -> rooms.cf_load -> equipment.pumps.cf_total`.
+- `setFormula` now translates linked-ref validation failures to
+  structured REST envelopes before the generic final document
+  validation pass:
+  `custom_field_formula_unknown_target_table` and
+  `custom_field_formula_target_field_not_linked`.
+- Focused tests:
+  `backend/tests/test_project_document_record_linking_rollups.py`
+  covers unknown linked tables, non-linked source fields, cross-table
+  cycles, and schema-mutation linked-field rejection.

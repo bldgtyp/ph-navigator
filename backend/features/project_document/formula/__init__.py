@@ -36,6 +36,8 @@ from features.project_document.formula.errors import (
     FormulaMissingRefError,
     FormulaParseError,
     FormulaResourceLimitError,
+    FormulaTargetFieldNotLinkedError,
+    FormulaUnknownTargetTableError,
     FormulaUnsupportedFunctionError,
 )
 from features.project_document.formula.evaluator import (
@@ -61,6 +63,7 @@ from features.project_document.formula.resolver import (
     detect_cycles,
     formula_facing_field_type,
     resolve_refs,
+    validate_document_formula_graph,
 )
 
 __all__ = [
@@ -81,7 +84,9 @@ __all__ = [
     "FormulaMissingRefError",
     "FormulaParseError",
     "FormulaResourceLimitError",
+    "FormulaTargetFieldNotLinkedError",
     "FormulaUnsupportedFunctionError",
+    "FormulaUnknownTargetTableError",
     "FuncCall",
     "IfExpr",
     "LinkedFromRef",
@@ -102,4 +107,5 @@ __all__ = [
     "infer_result_type",
     "parse",
     "resolve_refs",
+    "validate_document_formula_graph",
 ]

@@ -66,7 +66,7 @@ def apply_add_field(
     initial_options = mutation.initial_options
     if initial_options is not None and mutation.after.field_type is not CustomFieldType.single_select:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "custom_field_option_list_invalid",
             "initial_options is only valid for single_select fields.",
             {"reason": "initial_options_wrong_type", "field_type": mutation.after.field_type.value},
@@ -154,7 +154,7 @@ def apply_duplicate_field(
     source_index, source = find_field(current_fields, mutation.source_field_id, mutation.table_key)
     if mutation.after.field_key == mutation.source_field_id:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "custom_field_invalid_field_id",
             "Duplicate target id must differ from the source field id.",
             {

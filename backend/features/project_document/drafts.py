@@ -172,7 +172,7 @@ def apply_schema_mutation_to_draft(
     contract = get_table_contract(table_name)
     if contract.custom_fields is None:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "custom_field_unsupported_table",
             "This table does not support custom fields.",
             {"table_key": table_name},
@@ -183,7 +183,7 @@ def apply_schema_mutation_to_draft(
         # capability we just looked up by `table_name`; a mismatch
         # would silently apply against the wrong table.
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "custom_field_invalid_field_id",
             "Mutation table_key does not match the path table_name.",
             {"table_key": mutation.table_key, "path_table_name": table_name},
@@ -303,7 +303,7 @@ def save_draft_as(
     version_name = payload.name.strip()
     if not version_name:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "validation_error",
             "Version name is required.",
         )

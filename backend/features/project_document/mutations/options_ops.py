@@ -55,7 +55,7 @@ def resolve_option_target(
         if field.field_key == field_key:
             if field.field_type is not CustomFieldType.single_select:
                 raise api_error(
-                    status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    status.HTTP_422_UNPROCESSABLE_CONTENT,
                     "custom_field_invalid_field_id",
                     "Cannot edit options on a non-single_select field.",
                     {
@@ -67,7 +67,7 @@ def resolve_option_target(
             namespace_key = option_list_key(capability.table_path, field_key)
             return True, namespace_key, list(body.single_select_options.get(namespace_key, []))
     raise api_error(
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         "custom_field_invalid_field_id",
         "Field id was not found as a single-select column.",
         {"field_id": field_key, "table_key": table_key},
@@ -89,7 +89,7 @@ def validate_default_option_id(field: TableFieldDef, next_option_ids: set[str]) 
         return
     if not isinstance(raw, str):
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "custom_field_option_list_invalid",
             "default_option_id must be a string option id or null.",
             {
@@ -99,7 +99,7 @@ def validate_default_option_id(field: TableFieldDef, next_option_ids: set[str]) 
         )
     if raw not in next_option_ids:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "custom_field_option_list_invalid",
             "default_option_id must reference an option in the field's option list.",
             {
@@ -140,7 +140,7 @@ def apply_edit_options(
             replacement = mutation.replacements.get(deleted_id)
             if replacement is None:
                 raise api_error(
-                    status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    status.HTTP_422_UNPROCESSABLE_CONTENT,
                     "custom_field_option_list_invalid",
                     "Required built-in single-select option deletion requires a replacement.",
                     {
@@ -151,7 +151,7 @@ def apply_edit_options(
                 )
             if replacement not in next_ids:
                 raise api_error(
-                    status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    status.HTTP_422_UNPROCESSABLE_CONTENT,
                     "custom_field_option_list_invalid",
                     "Replacement option must be present in next_options.",
                     {

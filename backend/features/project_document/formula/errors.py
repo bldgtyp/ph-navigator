@@ -73,6 +73,26 @@ class FormulaMissingRefError(Exception):
         self.display_name = display_name
 
 
+class FormulaUnknownTargetTableError(Exception):
+    """Raised when a linked formula primitive names an unknown table."""
+
+    def __init__(self, table_path: tuple[str, ...]) -> None:
+        super().__init__(f"unknown formula target table: {'.'.join(table_path)}")
+        self.table_path = table_path
+
+
+class FormulaTargetFieldNotLinkedError(Exception):
+    """Raised when a linked formula primitive points at a non-matching link field."""
+
+    def __init__(self, table_path: tuple[str, ...], field_key: str, expected_target: tuple[str, ...]) -> None:
+        super().__init__(
+            f"formula linked field {'.'.join((*table_path, field_key))} does not link to {'.'.join(expected_target)}"
+        )
+        self.table_path = table_path
+        self.field_key = field_key
+        self.expected_target = expected_target
+
+
 class FormulaCycleError(Exception):
     """Raised at commit time when the formula dep graph contains a cycle."""
 

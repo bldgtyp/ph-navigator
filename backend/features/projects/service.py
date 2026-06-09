@@ -374,7 +374,7 @@ def delete_project(
 ) -> ProjectDeleteResponse:
     if not payload.confirm:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "project_delete_confirmation_required",
             "Project delete requires explicit confirmation.",
         )
@@ -423,7 +423,7 @@ def bulk_delete_projects(
 ) -> ProjectBulkDeleteResponse:
     if not payload.confirm:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "project_delete_confirmation_required",
             "Project delete requires explicit confirmation.",
         )
@@ -576,7 +576,7 @@ def hard_delete_project(
             _ensure_project_owner(current, user)
         if current["name"] != payload.confirm_project_name or current["bt_number"] != payload.confirm_bt_number:
             raise api_error(
-                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
                 "project_delete_hard_confirmation_mismatch",
                 "Project name and BT number confirmation did not match.",
             )

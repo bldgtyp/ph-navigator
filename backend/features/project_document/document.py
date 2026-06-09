@@ -989,12 +989,6 @@ class ProjectDocumentV1(BaseModel):
             field_defs_by_key=rooms_field_defs_by_key,
             single_select_options=self.single_select_options,
         )
-        # Formula cycle detection across the Rooms table's formula
-        # fields. Missing refs are *silently absorbed* (per plan-13 D2)
-        # — the evaluator surfaces them per-row at read time. Cycles
-        # are a hard validation failure.
-        self._validate_rooms_formula_cycles(rooms_field_defs_by_key)
-
         pumps_field_defs_by_key = _index_table_field_defs("pumps", self.tables.equipment.pumps.field_defs)
         _require_record_id_seeded("pumps", pumps_field_defs_by_key)
         pump_device_type_ids = {option.id for option in self.single_select_options[PUMP_DEVICE_TYPE_OPTION_KEY]}
@@ -1311,42 +1305,35 @@ class ProjectDocumentV1(BaseModel):
             aperture_names.add(normalized_aperture_name)
 
         _validate_envelope_references(self.tables.project_materials, self.tables.assemblies)
+        self._validate_document_formula_graph()
 
         return self
 
     def _validate_rooms_formula_cycles(self, field_defs_by_key: dict[str, TableFieldDef]) -> None:
-        # Lazy-import to keep the document module free of formula deps
-        # for callers that don't touch formula fields.
+        _ = field_defs_by_key
+        self._validate_document_formula_graph()
+
+    def _validate_document_formula_graph(self) -> None:
         from features.project_document.formula import (
-            FormulaAST,
             FormulaCycleError,
-            ast_from_json,
-            detect_cycles,
+            FormulaMissingRefError,
+            FormulaTargetFieldNotLinkedError,
+            FormulaUnknownTargetTableError,
+            validate_document_formula_graph,
         )
 
-        formula_fields = [f for f in field_defs_by_key.values() if f.field_type is CustomFieldType.formula]
-        if not formula_fields:
-            return
-
-        asts_by_key: dict[str, FormulaAST] = {}
-        for f in formula_fields:
-            stored = f.config.get("ast")
-            if stored is None:
-                continue
-            try:
-                asts_by_key[f.field_key] = ast_from_json(stored)
-            except (ValueError, TypeError):
-                continue
-
-        for f in formula_fields:
-            stored = asts_by_key.get(f.field_key)
-            if stored is None:
-                continue
-            others = {k: v for k, v in asts_by_key.items() if k != f.field_key}
-            try:
-                detect_cycles(f.field_key, stored, others)
-            except FormulaCycleError as exc:
-                raise ValueError(f"Rooms formula cycle for {f.display_name!r}: {' -> '.join(exc.cycle_path)}") from exc
+        try:
+            validate_document_formula_graph(self)
+        except FormulaCycleError as exc:
+            raise ValueError(f"Formula cycle detected: {' -> '.join(exc.cycle_path)}") from exc
+        except FormulaUnknownTargetTableError as exc:
+            raise ValueError(f"Formula references unknown target table: {'.'.join(exc.table_path)}") from exc
+        except FormulaTargetFieldNotLinkedError as exc:
+            field_path = ".".join((*exc.table_path, exc.field_key))
+            expected = ".".join(exc.expected_target)
+            raise ValueError(f"Formula linked field {field_path} does not link to {expected}") from exc
+        except FormulaMissingRefError as exc:
+            raise ValueError(f"Formula references unknown linked field: {exc.display_name}") from exc
 
 
 def _require_record_id_seeded(

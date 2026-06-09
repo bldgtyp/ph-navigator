@@ -92,7 +92,7 @@ def apply_edit_dimension(
     dims = list(entry.row_heights_mm if is_row else entry.column_widths_mm)
     if command.index >= len(dims):
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "aperture_dimension_index_out_of_bounds",
             "Dimension index is past the end of the aperture grid.",
             {"axis": command.axis, "index": command.index, "size": len(dims)},
@@ -215,7 +215,7 @@ def _add_along_axis(
     dims = list(entry.row_heights_mm if is_row else entry.column_widths_mm)
     if at_index > len(dims):
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "aperture_dimension_index_out_of_bounds",
             "Insertion index is past the end of the aperture grid.",
             {"axis": axis, "at_index": at_index, "size": len(dims)},
@@ -275,14 +275,14 @@ def _delete_along_axis(entry: ApertureTypeEntry, *, axis: str, at_index: int) ->
     dims = list(entry.row_heights_mm if is_row else entry.column_widths_mm)
     if at_index >= len(dims):
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "aperture_dimension_index_out_of_bounds",
             "Delete index is past the end of the aperture grid.",
             {"axis": axis, "index": at_index, "size": len(dims)},
         )
     if len(dims) <= 1:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "aperture_dimension_min_violation",
             "An aperture type must have at least one row and one column.",
             {"axis": axis, "index": at_index},
@@ -316,7 +316,7 @@ def _delete_along_axis(entry: ApertureTypeEntry, *, axis: str, at_index: int) ->
         # Cannot happen for a valid grid (other axis ≥ 1, surviving span
         # required), but surface a structured error if invariants ever drift.
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "aperture_dimension_delete_leaves_empty_grid",
             "Deleting this row / column would leave the aperture with no elements.",
             {"axis": axis, "index": at_index},

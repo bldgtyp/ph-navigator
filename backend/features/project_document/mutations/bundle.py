@@ -72,14 +72,14 @@ def apply_edit_field_bundle(
     # --- 1. Identity ---
     if after.field_key != mutation.field_id:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "custom_field_invalid_field_id",
             "editFieldBundle target id must equal field_id.",
             {"field_id": after.field_key, "expected_field_id": mutation.field_id},
         )
     if _number_units_are_fixed(existing) and existing.config.get("units") != after.config.get("units"):
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "custom_field_fixed_units_locked",
             "Fixed unit config cannot be edited.",
             {"field_id": mutation.field_id},
@@ -123,7 +123,7 @@ def apply_edit_field_bundle(
         and existing.config.get("target_table_path") != after.config.get("target_table_path")
     ):
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "linked_record_retarget_not_supported",
             "Editing target_table_path on an existing linked_record field is not supported.",
             {"field_id": mutation.field_id},
@@ -255,7 +255,7 @@ def apply_edit_field_bundle(
             properties_changed.append("default_option_id")
     elif "default_option_id" in final_field.config:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "custom_field_option_list_invalid",
             "default_option_id is only valid for single_select fields.",
             {

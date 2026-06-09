@@ -30,7 +30,7 @@ def get_project_diff(
             to_version_id = UUID(to_value)
         except ValueError as exc:
             raise api_error(
-                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
                 "validation_error",
                 "Invalid diff target.",
             ) from exc

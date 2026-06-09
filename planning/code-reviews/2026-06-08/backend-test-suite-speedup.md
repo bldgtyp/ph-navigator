@@ -181,6 +181,77 @@ measured against a parallel baseline rather than the current
 single-worker one. If xdist alone gets us under ~20s wall, (3) may not
 be worth the refactor cost.
 
+## Quick wins — applied 2026-06-08
+
+- `--cov=features --cov-report=term-missing` removed from
+  `backend/pyproject.toml` `addopts`. Coverage is now opt-in via the new
+  `make coverage` recipe.
+- New `make coverage` recipe (added to `.PHONY`) runs pytest with
+  coverage on the dedicated `*_test` DB.
+- Repo-wide rename `HTTP_422_UNPROCESSABLE_ENTITY` →
+  `HTTP_422_UNPROCESSABLE_CONTENT` across `backend/features/` and
+  `backend/tests/` (27 files). Pytest warning count dropped from **107
+  → 1**.
+- `clean_catalog_tables` fixture (and its `TRUNCATE` SQL) moved to
+  `backend/tests/conftest.py`. Removed the duplicated definitions from
+  `test_catalogs.py`, `test_catalogs_materials_duplicate.py`,
+  `test_catalog_manufacturer_rosters.py`,
+  `test_catalogs_glazing_types.py`, and `test_catalogs_frame_types.py`.
+  Cleaned up now-unused `Iterator` / `transaction` imports in those
+  files.
+
+Measured after: `make ci-backend` 44.4s wall (was ~52s). 689 passed,
+2 skipped, 1 warning.
+
+## xdist + per-worker DBs — applied 2026-06-08
+
+- Added `pytest-xdist>=3.8.0` to backend dev deps.
+- `backend/tests/conftest.py` now:
+  - Reads `PYTEST_XDIST_WORKER` at import time and appends the worker id
+    (`gw0`, `gw1`, ...) to `DATABASE_URL` before `config.settings` is
+    imported.
+  - Lazily creates the worker DB if missing (connects to the admin
+    `postgres` DB, validates the name shape, and runs `CREATE DATABASE`
+    via `psycopg.sql.Identifier` for safe quoting).
+  - Runs `alembic upgrade head` programmatically against the worker DB.
+  - Extended the safety-net regex to accept both `*_test` and
+    `*_test_gw<N>`.
+- `Makefile`: new `PYTEST_WORKERS ?= auto` variable, threaded through
+  `test-backend`, `coverage`, and `ci-backend`. Override with
+  `PYTEST_WORKERS=0` for single-process debugging.
+- `.github/workflows/ci.yml`: pytest step now uses `-n auto`.
+- `backend/alembic.ini`: added `path_separator = os` to silence the
+  Alembic 1.16 deprecation warning that fired once per worker.
+
+Measured after, on a 10-core M-series Mac (3 consecutive runs):
+
+| Run            | `make ci-backend` wall |
+| -------------- | ---------------------- |
+| 1              | 17.6s                  |
+| 2              | 17.8s                  |
+| 3              | 18.1s                  |
+
+**Overall: 52s → 18s, ~2.9× faster** versus the original baseline (44s
+→ 18s, ~2.5× versus the post-quick-wins baseline). GH Actions runners
+have fewer vCPUs (typically 2–4), so the CI speedup will be smaller in
+absolute terms but should still be meaningful (~40–50% wall-time
+reduction).
+
+Notes:
+
+- Worker DBs (`ph_navigator_v2_test_gw0`…`_gw9`) persist between
+  sessions. Migrations are idempotent, so reusing them is faster than
+  recreating. `make db-reset` already drops the whole volume if a clean
+  slate is needed.
+- The conftest currently boots the DB and runs migrations at import
+  time. On a fresh DB this adds ~0.4s per worker, but workers
+  parallelize so the wall impact is negligible.
+- One transient failure was seen during initial development at `-n 8`
+  on `test_phase_4_setformula_rejects_self_cycle`; it did not reproduce
+  across 6+ subsequent runs at `-n auto`. Watch for it in CI; if it
+  recurs, the most likely cause is a shared in-process cache that
+  doesn't reset between tests in the same worker.
+
 ## Out of scope
 
 - Frontend test/build speed (Vitest + Vite build) — separate review.

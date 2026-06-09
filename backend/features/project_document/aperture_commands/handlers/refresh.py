@@ -64,7 +64,7 @@ def apply_refresh_ref_from_catalog(
         side = target.split(".", 1)[1]
         if side not in _FRAME_SIDES:
             raise api_error(
-                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
                 "aperture_refresh_target_invalid",
                 "Unknown refresh target side.",
                 {"target": target},
@@ -91,7 +91,7 @@ def apply_refresh_ref_from_catalog(
 def _apply_chosen(ref: _RefT, chosen_values: Mapping[str, object]) -> _RefT:
     if ref.catalog_origin is None:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "aperture_refresh_not_catalog_sourced",
             "Cannot refresh a hand-entered ref — repick from the catalog instead.",
             {"name": ref.name},
@@ -99,14 +99,14 @@ def _apply_chosen(ref: _RefT, chosen_values: Mapping[str, object]) -> _RefT:
     for field_key in chosen_values:
         if field_key == "catalog_origin":
             raise api_error(
-                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
                 "aperture_refresh_field_protected",
                 "catalog_origin is not refreshable through refreshRefFromCatalog.",
                 {"field_key": field_key},
             )
         if field_key not in type(ref).model_fields:
             raise api_error(
-                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
                 "aperture_refresh_unknown_field",
                 "Unknown field on the target ref.",
                 {"field_key": field_key, "ref_type": type(ref).__name__},
@@ -117,7 +117,7 @@ def _apply_chosen(ref: _RefT, chosen_values: Mapping[str, object]) -> _RefT:
         next_ref = type(ref).model_validate(patched.model_dump(mode="json"))
     except (ValueError, TypeError) as exc:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "aperture_refresh_invalid_value",
             f"Chosen value rejected by field validator: {exc}",
             {"chosen_keys": sorted(chosen_values.keys())},
@@ -131,7 +131,7 @@ def _apply_chosen(ref: _RefT, chosen_values: Mapping[str, object]) -> _RefT:
 
 def _target_unset_error(element_id: str, target: str) -> Exception:
     return api_error(
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         "aperture_refresh_target_unset",
         "Cannot refresh a slot that has not been picked yet.",
         {"element_id": element_id, "target": target},

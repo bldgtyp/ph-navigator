@@ -55,7 +55,7 @@ def apply_paste_assignment(
         )
     if command.source_element_id in command.target_element_ids:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "aperture_paste_target_is_source",
             "A paste target may not be the source element.",
             {"source_element_id": command.source_element_id},

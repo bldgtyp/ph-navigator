@@ -6,12 +6,25 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
+from fastapi import HTTPException
 
 from features.project_document.custom_fields import CustomFieldType, TableFieldDef
 from features.project_document.document import ProjectDocumentV1, PumpRow, RoomRow
-from features.project_document.formula import ast_to_json, build_field_registry, parse, resolve_refs
+from features.project_document.formula import (
+    ast_to_json,
+    build_field_registry,
+    parse,
+    resolve_refs,
+    validate_document_formula_graph,
+)
 from features.project_document.formula.ast_nodes import FieldAccess, FuncCall, LinkedFromRef, LinkedRef
-from features.project_document.formula.errors import FormulaUnsupportedFunctionError
+from features.project_document.formula.errors import (
+    FormulaCycleError,
+    FormulaTargetFieldNotLinkedError,
+    FormulaUnknownTargetTableError,
+    FormulaUnsupportedFunctionError,
+)
+from features.project_document.schema_mutations import SetFormulaMutation, apply_schema_mutation
 from features.project_document.tables.pumps import pumps_response
 from features.project_document.tables.rooms import rooms_field_registry, rooms_response
 from features.projects.models import CreateProjectRequest
@@ -64,6 +77,10 @@ def _parsed_formula_config(source: str) -> dict[str, object]:
         "deps": [],
         "result_type": "number",
     }
+
+
+def _rooms_schema_fingerprint(body: ProjectDocumentV1) -> str:
+    return rooms_field_registry.compute_schema_fingerprint(body)
 
 
 def test_parser_accepts_linked_rollup_primitives() -> None:
@@ -236,3 +253,147 @@ def test_rooms_response_computes_forward_linked_avg() -> None:
     )
 
     assert response.rows_computed["rm_a"]["cf_avg_pump_watts"] == 150.0
+
+
+def test_document_formula_graph_rejects_unknown_linked_from_table() -> None:
+    body = _empty_body()
+    pump_formula = _field(
+        "cf_bad",
+        "Bad",
+        CustomFieldType.formula,
+        _parsed_formula_config('count(linked_from(not_a_table, "cf_pumps"))'),
+    )
+    body = body.model_copy(
+        update={
+            "tables": body.tables.model_copy(
+                update={
+                    "equipment": body.tables.equipment.model_copy(
+                        update={
+                            "pumps": body.tables.equipment.pumps.model_copy(
+                                update={
+                                    "field_defs": [*body.tables.equipment.pumps.field_defs, pump_formula],
+                                }
+                            )
+                        }
+                    )
+                }
+            )
+        }
+    )
+
+    with pytest.raises(FormulaUnknownTargetTableError) as excinfo:
+        validate_document_formula_graph(body)
+
+    assert excinfo.value.table_path == ("not_a_table",)
+
+
+def test_document_formula_graph_rejects_linked_from_field_that_does_not_link_to_current_table() -> None:
+    body = _empty_body()
+    wattage_field = _field("cf_wattage", "Wattage", CustomFieldType.number)
+    pump_formula = _field(
+        "cf_bad",
+        "Bad",
+        CustomFieldType.formula,
+        _parsed_formula_config('count(linked_from(rooms, "cf_wattage"))'),
+    )
+    body = body.model_copy(
+        update={
+            "tables": body.tables.model_copy(
+                update={
+                    "rooms": body.tables.rooms.model_copy(
+                        update={"field_defs": [*body.tables.rooms.field_defs, wattage_field]}
+                    ),
+                    "equipment": body.tables.equipment.model_copy(
+                        update={
+                            "pumps": body.tables.equipment.pumps.model_copy(
+                                update={
+                                    "field_defs": [*body.tables.equipment.pumps.field_defs, pump_formula],
+                                }
+                            )
+                        }
+                    ),
+                }
+            )
+        }
+    )
+
+    with pytest.raises(FormulaTargetFieldNotLinkedError) as excinfo:
+        validate_document_formula_graph(body)
+
+    assert excinfo.value.table_path == ("rooms",)
+    assert excinfo.value.field_key == "cf_wattage"
+    assert excinfo.value.expected_target == ("equipment", "pumps")
+
+
+def test_document_formula_graph_rejects_cross_table_cycle() -> None:
+    body = _empty_body()
+    linked_field = _field(
+        "cf_pumps",
+        "Pump",
+        CustomFieldType.linked_record,
+        {"target_table_path": ["equipment", "pumps"], "max_links": None},
+    )
+    room_formula = _field(
+        "cf_room_cycle",
+        "Room Cycle",
+        CustomFieldType.formula,
+        _parsed_formula_config('sum(linked("cf_pumps").cf_pump_cycle)'),
+    )
+    pump_formula = _field(
+        "cf_pump_cycle",
+        "Pump Cycle",
+        CustomFieldType.formula,
+        _parsed_formula_config('sum(linked_from(rooms, "cf_pumps").cf_room_cycle)'),
+    )
+    body = body.model_copy(
+        update={
+            "tables": body.tables.model_copy(
+                update={
+                    "rooms": body.tables.rooms.model_copy(
+                        update={"field_defs": [*body.tables.rooms.field_defs, linked_field, room_formula]}
+                    ),
+                    "equipment": body.tables.equipment.model_copy(
+                        update={
+                            "pumps": body.tables.equipment.pumps.model_copy(
+                                update={
+                                    "field_defs": [*body.tables.equipment.pumps.field_defs, pump_formula],
+                                }
+                            )
+                        }
+                    ),
+                }
+            )
+        }
+    )
+
+    with pytest.raises(FormulaCycleError) as excinfo:
+        validate_document_formula_graph(body)
+
+    assert excinfo.value.cycle_path == (
+        "equipment.pumps.cf_pump_cycle",
+        "rooms.cf_room_cycle",
+        "equipment.pumps.cf_pump_cycle",
+    )
+
+
+def test_set_formula_rejects_linked_field_that_is_not_linked_record() -> None:
+    body = _empty_body()
+    formula_field = _field("cf_bad", "Bad", CustomFieldType.formula)
+    body = rooms_field_registry.replace_field_defs(
+        body,
+        [*rooms_field_registry.read_field_defs(body), formula_field],
+    )
+    mutation = SetFormulaMutation(
+        kind="setFormula",
+        table_key="rooms",
+        field_id="cf_bad",
+        source='count(linked("num_people"))',
+        expected_schema_fingerprint=_rooms_schema_fingerprint(body),
+    )
+
+    with pytest.raises(HTTPException) as excinfo:
+        apply_schema_mutation(body, mutation, actor_user_id="test", capability=rooms_field_registry)
+
+    detail = excinfo.value.detail
+    assert isinstance(detail, dict)
+    assert detail["error_code"] == "custom_field_formula_target_field_not_linked"

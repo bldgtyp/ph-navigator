@@ -66,7 +66,7 @@ def find_field(
         if field.field_key == field_key:
             return index, field
     raise api_error(
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         "custom_field_invalid_field_id",
         "Custom field id was not found in this table.",
         {"field_id": field_key, "table_key": table_key},
@@ -79,7 +79,7 @@ def reject_field_id_collision(
 ) -> None:
     if any(field.field_key == new_field_key for field in field_defs):
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "custom_field_invalid_field_id",
             "Custom field id is already in use on this table.",
             {"field_id": new_field_key},
@@ -96,7 +96,7 @@ def reject_reserved_field_key(field_key: str) -> None:
     """
     if field_key in RESERVED_CUSTOM_FIELD_KEYS:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "custom_field_invalid_field_id",
             f"Custom fields cannot use the reserved field_key {field_key!r}.",
             {"field_id": field_key, "reason": "reserved_field_key"},
@@ -117,7 +117,7 @@ def reject_duplicate_display_name(
             continue
         origin_label = "built-in" if field.origin == "built_in" else "custom"
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "custom_field_duplicate_name",
             f"Field name '{candidate}' already exists in this table ({origin_label} field).",
             {
@@ -139,7 +139,7 @@ def resolve_insert_position(
         if field.field_key == insert_after_field_key:
             return index + 1
     raise api_error(
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         "custom_field_invalid_field_id",
         "Anchor field id for insertion was not found in this table.",
         {"field_id": insert_after_field_key, "table_key": table_key},
@@ -192,7 +192,7 @@ def read_rows_from_envelope(body: ProjectDocumentV1, table_key: str) -> list[obj
     rows = getattr(envelope, "rows", None)
     if rows is None:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "custom_field_unsupported_table",
             "Table envelope does not expose rows.",
             {"table_key": table_key},

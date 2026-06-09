@@ -93,10 +93,10 @@ async def validation_exception_handler(request: Request, exc: Exception) -> JSON
         raise exc
 
     errors = jsonable_encoder(exc.errors())
-    log.warning("api.validation_error", status=status.HTTP_422_UNPROCESSABLE_ENTITY, errors=errors)
+    log.warning("api.validation_error", status=status.HTTP_422_UNPROCESSABLE_CONTENT, errors=errors)
     return error_response(
         request=request,
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         error_code="validation_error",
         message="Request validation failed.",
         details={"errors": errors},

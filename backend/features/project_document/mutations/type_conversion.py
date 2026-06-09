@@ -268,14 +268,14 @@ def apply_change_type(
 
     if mutation.after.field_key != mutation.field_id:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "custom_field_invalid_field_id",
             "changeType target id must equal the source field id.",
             {"field_id": mutation.after.field_key, "expected_field_id": mutation.field_id},
         )
     if _number_units_are_fixed(existing) and existing.config.get("units") != mutation.after.config.get("units"):
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "custom_field_fixed_units_locked",
             "Fixed unit config cannot be edited.",
             {"field_id": mutation.field_id},
@@ -287,14 +287,14 @@ def apply_change_type(
     # check consults the per-table registry rather than the FieldDef.
     if mutation.field_id in capability.field_type_locked_keys:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "custom_field_field_type_locked",
             "This built-in field's type is locked by feature code.",
             {"field_id": mutation.field_id, "reason": "field_type_locked"},
         )
     if mutation.after.field_type == existing.field_type:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "custom_field_invalid_field_id",
             "changeType requires a different target field_type.",
             {"field_id": mutation.field_id, "field_type": existing.field_type.value},
@@ -308,7 +308,7 @@ def apply_change_type(
     for attr in ("display_name", "description"):
         if getattr(mutation.after, attr) != getattr(existing, attr):
             raise api_error(
-                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
                 "custom_field_invalid_field_id",
                 "changeType may not modify field metadata other than type/config.",
                 {"field_id": mutation.field_id, "disallowed_attribute": attr},
@@ -319,7 +319,7 @@ def apply_change_type(
     policy = CONVERSION_MATRIX.get((from_type, to_type))
     if policy is None:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "custom_field_illegal_type_conversion",
             f"Cannot convert custom field from {from_type.value} to {to_type.value}.",
             {"field_id": mutation.field_id, "from_type": from_type.value, "to_type": to_type.value},
@@ -460,7 +460,7 @@ def apply_change_type(
 
     if incompatible and not mutation.acknowledge_destructive:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "custom_field_coercion_preflight_required",
             "Conversion would clear values; resubmit with acknowledge_destructive.",
             {
@@ -486,7 +486,7 @@ def apply_change_type(
         validate_default_option_id(mutation.after, target_ids)
     elif "default_option_id" in mutation.after.config:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "custom_field_option_list_invalid",
             "default_option_id is only valid for single_select fields.",
             {
@@ -585,7 +585,7 @@ def _apply_linked_record_wipe(
 
     if cleared_rows > 0 and not mutation.acknowledge_destructive:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "custom_field_coercion_preflight_required",
             "Conversion would clear values; resubmit with acknowledge_destructive.",
             {

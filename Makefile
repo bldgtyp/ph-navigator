@@ -7,13 +7,20 @@
 .PHONY: help setup sync dev backend frontend db db-up db-down db-wait db-reset db-reset-dev \
         object-store-up object-store-init object-store-down \
         db-create-test db-migrate-test \
-        migrate makemigration test test-backend test-frontend typecheck \
+        migrate makemigration test test-backend test-frontend coverage typecheck \
         lint check ci ci-backend ci-frontend check-backend check-frontend frontend-dev-check build-frontend format format-check \
         smoke seed-dev-user seed-agent-user seed-dev-data seed-materials seed-glazing seed-frames db-seed e2e e2e-report clean
 
 # Local Postgres URL for the dedicated pytest database. Mirrors the dev
 # URL in backend/.env.example with the database name swapped to *_test.
 TEST_DATABASE_URL ?= postgresql://phn:phn_local_only@localhost:5433/ph_navigator_v2_test
+
+# pytest-xdist worker count. `auto` = one worker per available CPU. Each
+# worker is routed to its own *_test_gw<N> database by tests/conftest.py;
+# the worker database is created + migrated lazily on first use.
+# Override locally with `PYTEST_WORKERS=0 make test-backend` to disable
+# xdist (useful for `pdb`-style debugging of a single failing test).
+PYTEST_WORKERS ?= auto
 
 help: ## Show available recipes
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / \
@@ -125,7 +132,10 @@ makemigration: ## Generate new empty Alembic migration ('make makemigration name
 test: test-backend test-frontend ## Run all unit / integration tests
 
 test-backend: db-migrate-test ## Run backend tests against the dedicated *_test DB
-	cd backend && DATABASE_URL="$(TEST_DATABASE_URL)" uv run pytest
+	cd backend && DATABASE_URL="$(TEST_DATABASE_URL)" uv run pytest -n $(PYTEST_WORKERS)
+
+coverage: db-migrate-test ## Run backend tests with coverage report (slower; opt-in)
+	cd backend && DATABASE_URL="$(TEST_DATABASE_URL)" uv run pytest -n $(PYTEST_WORKERS) --cov=features --cov-report=term-missing
 
 test-frontend:
 	cd frontend && pnpm test
@@ -144,7 +154,7 @@ ci-backend: db-wait db-create-test ## Run the backend GitHub Actions job locally
 	cd backend && uv run ruff check .
 	cd backend && uv run ty check
 	cd backend && DATABASE_URL="$(TEST_DATABASE_URL)" uv run alembic upgrade head
-	cd backend && DATABASE_URL="$(TEST_DATABASE_URL)" uv run pytest
+	cd backend && DATABASE_URL="$(TEST_DATABASE_URL)" uv run pytest -n $(PYTEST_WORKERS)
 
 ci-frontend: ## Run the frontend GitHub Actions job locally
 	cd frontend && pnpm install --frozen-lockfile

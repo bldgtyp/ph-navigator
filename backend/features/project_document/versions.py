@@ -27,7 +27,7 @@ def patch_version(
     user = require_editor_user(access)
     if payload.locked is None and not payload.make_active:
         raise api_error(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "validation_error",
             "No version metadata change supplied.",
         )

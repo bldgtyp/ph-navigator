@@ -35,13 +35,17 @@ dev = [
     "ruff>=0.7",
     "ty>=0.0.35",
     "moto[s3]>=5.2.1",
+    "pytest-xdist>=3.8.0",
 ]
 
 [tool.pytest.ini_options]
 pythonpath = "."
 python_files = "test_*.py"
 testpaths = ["tests"]
-addopts = "--cov=features --cov-report=term-missing"
+# Coverage is opt-in (run via `make coverage` or `pytest --cov=features
+# --cov-report=term-missing`). It adds ~13% wall time and shouldn't gate
+# every dev/CI run. See planning/code-reviews/2026-06-08/backend-test-suite-speedup.md.
+addopts = ""
 
 [tool.ruff]
 line-length = 120
