@@ -17,6 +17,7 @@ from features.project_document.document import ProjectDocumentV1
 from features.project_document.formula import (
     FormulaAST,
     FormulaCycleError,
+    FormulaInvalidLinkedArgError,
     FormulaMissingRefError,
     FormulaParseError,
     FormulaResourceLimitError,
@@ -140,6 +141,9 @@ def apply_set_formula(
         raise  # pragma: no cover
     except FormulaUnsupportedFunctionError as exc:
         _raise_formula_unsupported_function(exc, mutation.field_id)
+        raise  # pragma: no cover
+    except FormulaInvalidLinkedArgError as exc:
+        _raise_formula_parse_error(FormulaParseError(exc.message, 0, mutation.source), mutation.field_id)
         raise  # pragma: no cover
 
     # Resolve refs against the current registry.

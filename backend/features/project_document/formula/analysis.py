@@ -4,9 +4,12 @@ from __future__ import annotations
 
 from features.project_document.formula.ast_nodes import (
     BinaryOp,
+    FieldAccess,
     FieldRef,
     FuncCall,
     IfExpr,
+    LinkedFromRef,
+    LinkedRef,
     Literal_,
     UnaryOp,
 )
@@ -15,8 +18,10 @@ __all__ = ["count_ast_nodes", "infer_result_type"]
 
 
 def count_ast_nodes(node: object) -> int:
-    if isinstance(node, (Literal_, FieldRef)):
+    if isinstance(node, (Literal_, FieldRef, LinkedRef, LinkedFromRef)):
         return 1
+    if isinstance(node, FieldAccess):
+        return 1 + count_ast_nodes(node.target)
     if isinstance(node, UnaryOp):
         return 1 + count_ast_nodes(node.operand)
     if isinstance(node, BinaryOp):
@@ -49,8 +54,12 @@ def infer_result_type(node: object) -> str:
         else_t = infer_result_type(node.else_branch)
         return then_t if then_t == else_t else "text"
     if isinstance(node, FuncCall):
+        if node.name in ("count", "sum", "avg"):
+            return "number"
         if node.name in ("upper", "lower", "trim", "replace", "substring", "concat", "text"):
             return "text"
         if node.name in ("len", "number"):
             return "number"
+    if isinstance(node, (LinkedRef, LinkedFromRef, FieldAccess)):
+        return "number" if isinstance(node, FieldAccess) else "text"
     return "text"

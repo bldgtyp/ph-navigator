@@ -1,9 +1,12 @@
 ---
 DATE: 2026-06-08
 TIME: planning
-STATUS: Proposed implementation plan for Record-linking Phase 3.
-        NOT STARTED — blocked on Phases 1 + 2 landing (see
-        `../STATUS.md`).
+STATUS: Partial backend implementation in progress. 2026-06-09
+        landed Python parser / AST support, document-aware server
+        read-overlay evaluation for canonical Rooms→Pumps persisted
+        rollups, and focused backend tests. Frontend editor support,
+        author-time linked-ref validation, document-level cycle
+        detection, perf gate, and browser smoke remain open.
 AUTHOR: Ed May (with Claude)
 SCOPE: Cross-table formula primitives `linked(...)` and
        `linked_from(...)` with `count` / `sum` / `avg` aggregators,
@@ -86,59 +89,63 @@ Decisions already locked:
 
 ## P2. Acceptance — Phase 3 done when
 
-1. The formula parser accepts `linked(<field_key>)` and
+1. [x] The formula parser accepts `linked(<field_key>)` and
    `linked_from(<table>, <field_key>)` as primary expressions. The
-   AST gains two new node kinds (`LinkedRef`, `LinkedFromRef`).
-2. `count(linked_from(rooms, "cf_pumps"))` evaluates to the number
+   AST gains linked row-set node kinds (`LinkedRef`,
+   `LinkedFromRef`) plus `FieldAccess` for `.<field_key>`.
+2. [x] `count(linked_from(rooms, "cf_pumps"))` evaluates to the number
    of rooms pointing at the current pump (matches the count of
    pills in the Phase 2 inverse view for that row).
-3. `sum(linked_from(rooms, "cf_pumps").cf_wattage)` evaluates to
+3. [x] `sum(linked_from(rooms, "cf_pumps").cf_wattage)` evaluates to
    the sum of `cf_wattage` across every room pointing at the
    current pump. `cf_wattage` may be a stored number field OR a
    formula field — evaluation order resolves the formula first.
-4. `avg(linked(<field_key>))` works on the source side too —
+4. [x] `avg(linked(<field_key>))` works on the source side too —
    e.g. on a Room with a multi-link pump field, `avg(linked
-   ("cf_pumps").cf_wattage)` returns the mean pump wattage across
-   the room's linked pumps.
-5. Min / max / concat / array_join / count_unique / boolean
+   ("cf_pumps").cf_wattage)` can return the mean pump wattage
+   across the room's linked pumps. Backend parser/evaluator support
+   is in place; frontend authoring is still open.
+5. [x] Min / max / concat / array_join / count_unique / boolean
    aggregators raise `formula_function_not_supported` at parse
    time with the deferred-function name in the error envelope.
-6. Document-level formula cycle detection: a formula on Pumps
+6. [ ] Document-level formula cycle detection: a formula on Pumps
    that aggregates `linked_from(rooms).cf_x` where `cf_x` on
    Rooms is a formula that aggregates `linked("cf_pumps").cf_y`
    where `cf_y` on Pumps is the original formula → fails
    validation with `formula_cycle_detected` and a path through
    the cycle in the error envelope.
-7. Per-table cycle detection (Phase 1 / pre-existing) is
+7. [ ] Per-table cycle detection (Phase 1 / pre-existing) is
    subsumed by the document-level detector. The per-table
    `_validate_rooms_formula_cycles` helper either becomes a
    thin wrapper over the document-level detector or is removed
    outright in favor of a single pass.
-8. Evaluation order: the evaluator computes formula fields in a
+8. [x] Evaluation order: the evaluator computes formula fields in a
    topologically-sorted order across the document's formula
    graph. A formula on Pumps that references a Rooms formula
    sees the final Rooms value, not the stale-pre-eval value.
-9. Performance budget: the **combined** inverse-view + formula
+   Implemented as a document-aware recursive overlay cache with
+   recursion guard; graph-based validator remains open.
+9. [ ] Performance budget: the **combined** inverse-view + formula
    evaluation for the Phase 2 perf-gate fixture (plus 5 formula
    fields added across tables) completes in under 200ms on the
    pinned CI runner. New baseline / regression rule mirrors
    Phase 2's (>20% over baseline on 3 consecutive runs).
-10. Frontend formula editor learns the new primitives in its
+10. [ ] Frontend formula editor learns the new primitives in its
     ref-completion dropdown. Typing `linked_from(` surfaces
     target-table suggestions; typing `linked_from(rooms, ` then
     surfaces field-key suggestions filtered to linked-record
     fields on Rooms.
-11. JSON Schema regeneration includes the new formula nodes.
-12. All `make ci` gates green.
+11. [ ] JSON Schema regeneration includes the new formula nodes.
+12. [ ] All `make ci` gates green.
 
 ## P3. Backend work
 
-### P3.1 — Grammar + parser + AST
+### P3.1 — Grammar + parser + AST — ✅ BACKEND SLICE COMPLETE
 
 `backend/features/project_document/formula/`:
 
-- `tokens.py`: add `LINKED`, `LINKED_FROM` keyword tokens.
-- `ast_nodes.py`: add two node types:
+- `tokens.py`: add dotted field/table path token support.
+- `ast_nodes.py`: add row-set node types:
   ```python
   class LinkedRef(BaseModel):
       kind: Literal["linked_ref"] = "linked_ref"
@@ -150,21 +157,21 @@ Decisions already locked:
                                             #     ("equipment", "fans")
       source_field_key: str
   ```
-  Both can sit on the LHS of a `.<field_key>` field access (so
-  `linked_from(rooms, "cf_pumps").cf_wattage` parses as a field
-  access whose target is a `LinkedFromRef`).
+  Both can sit on the LHS of a `.<field_key>` field access through
+  the new `FieldAccess` AST node, so `linked_from(rooms,
+  "cf_pumps").cf_wattage` parses as a field access whose target is
+  a `LinkedFromRef`.
 - `parser.py`: extend the primary-expression rule to accept the
   two new keyword calls with strict arity checks. `linked` takes
   one string-literal argument (`field_key`). `linked_from` takes
   a table identifier (segmented dotted path, e.g.
   `equipment.fans`) and a string-literal `field_key`.
-- `errors.py`: add `formula_function_not_supported` for the
-  deferred aggregators, `formula_invalid_linked_arg` for shape
-  errors, `formula_unknown_target_table` for unresolved table
-  paths, `formula_target_field_not_linked` when the named field
-  isn't a `linked_record`, `formula_cycle_detected` for cycles.
+- `errors.py`: add `formula_function_not_supported` for deferred
+  aggregators and `formula_invalid_linked_arg` for shape errors.
+  Unknown table / target-field / cycle author-time errors remain in
+  the resolver/cycle follow-up.
 
-### P3.2 — Resolver
+### P3.2 — Resolver — ⏳ PARTIAL / FOLLOW-UP
 
 `backend/features/project_document/formula/resolver.py`:
 
@@ -188,7 +195,7 @@ Decisions already locked:
     `target_table_path`; for `LinkedFromRef`, against the
     `source_table_path` (the rows it returns are source rows).
 
-### P3.3 — Evaluator
+### P3.3 — Evaluator — ✅ BACKEND SLICE COMPLETE
 
 `backend/features/project_document/formula/evaluator.py`:
 
@@ -214,11 +221,13 @@ Decisions already locked:
   becomes:
   1. compute snapshot row id sets;
   2. build inverse-view dict (Phase 2 P3.1);
-  3. compute formula values per topological layer (P3.4);
+  3. compute formula values through the document-aware overlay cache
+     (recursive dependency resolution today; graph topological sort
+     remains P3.4);
   4. attach `rows_computed` overlay (existing);
   5. attach `inverse_links` overlay (Phase 2 P3.2).
 
-### P3.4 — Document-level cycle detection + topological sort
+### P3.4 — Document-level cycle detection + topological sort — ⏳ OPEN
 
 `backend/features/project_document/formula/analysis.py` (or a new
 sibling module):
@@ -242,7 +251,7 @@ sibling module):
   (the per-table detector becomes a thin wrapper that delegates
   to the document-level pass, or is removed outright).
 
-### P3.5 — Snapshot-aware evaluation
+### P3.5 — Snapshot-aware evaluation — ✅ BACKEND SLICE COMPLETE
 
 The evaluator's `linked_from` walk consumes the Phase 2 inverse-
 view dict, which already filters against the snapshot being
@@ -250,7 +259,7 @@ read. The evaluator's `linked` walk filters the source row's
 `custom_links[field_key]` against the snapshot's target-row id
 set directly (same filter primitive as Phase 2 P3.4).
 
-### P3.6 — Perf gate extension
+### P3.6 — Perf gate extension — ⏳ OPEN
 
 Extend the Phase 2 perf-gate test:
 
@@ -409,3 +418,17 @@ Phase 3 is mergeable when:
   delegate of the document-level detector (no duplicate logic);
 - deferred-aggregator error messaging is verified in both parser
   tests and at least one frontend editor test.
+
+## P8. Implementation notes — 2026-06-09 backend slice
+
+- Landed backend files:
+  `backend/features/project_document/formula/{ast_nodes.py,parser.py,evaluator.py,resolver.py,analysis.py,tokens.py,errors.py,__init__.py}`,
+  `backend/features/project_document/tables/pumps.py`, and
+  `backend/features/project_document/mutations/formula_ops.py`.
+- Focused tests:
+  `backend/tests/test_project_document_record_linking_rollups.py`,
+  plus existing formula grammar/evaluator and inverse-view suites.
+- Deliberate boundary: Pumps now has a formula read registry and
+  `rows_computed` in the Pumps response, but nested Pumps schema
+  mutation routing remains deferred. Current rollup tests seed
+  persisted Pumps `field_defs` directly.

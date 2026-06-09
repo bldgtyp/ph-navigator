@@ -182,6 +182,14 @@ def source_link_key(table_path: Sequence[str], field_key: str) -> str:
     return ".".join((*table_path, field_key))
 
 
+def target_table_path_for_link_field(field: TableFieldDef) -> tuple[str, ...] | None:
+    return _target_table_path(field)
+
+
+def row_link_ids_for_field(row: Mapping[str, object], field: TableFieldDef) -> list[str]:
+    return _row_link_ids(row, field)
+
+
 def _iter_unique_table_contracts() -> Iterable[TableContract]:
     from features.project_document.tables.registry import iter_table_contracts
 

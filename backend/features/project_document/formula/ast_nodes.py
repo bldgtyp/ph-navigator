@@ -40,6 +40,26 @@ class FieldRef:
 
 
 @dataclass(frozen=True, slots=True)
+class LinkedRef:
+    kind: Literal["linked_ref"]
+    field_key: str
+
+
+@dataclass(frozen=True, slots=True)
+class LinkedFromRef:
+    kind: Literal["linked_from_ref"]
+    source_table_path: tuple[str, ...]
+    source_field_key: str
+
+
+@dataclass(frozen=True, slots=True)
+class FieldAccess:
+    kind: Literal["field_access"]
+    target: FormulaAST
+    field_key: str
+
+
+@dataclass(frozen=True, slots=True)
 class FuncCall:
     kind: Literal["func_call"]
     name: str
@@ -73,7 +93,7 @@ class IfExpr:
 # `typing.Literal` inside this module's annotations.
 LiteralNode = Literal_
 
-FormulaAST = Literal_ | FieldRef | FuncCall | BinaryOp | UnaryOp | IfExpr
+FormulaAST = Literal_ | FieldRef | LinkedRef | LinkedFromRef | FieldAccess | FuncCall | BinaryOp | UnaryOp | IfExpr
 
 
 def ast_to_json(node: FormulaAST) -> dict[str, object]:
@@ -81,6 +101,16 @@ def ast_to_json(node: FormulaAST) -> dict[str, object]:
         return {"kind": "literal", "value": node.value, "inferred_type": node.inferred_type}
     if isinstance(node, FieldRef):
         return {"kind": "field_ref", "display_name": node.display_name, "field_id": node.field_id}
+    if isinstance(node, LinkedRef):
+        return {"kind": "linked_ref", "field_key": node.field_key}
+    if isinstance(node, LinkedFromRef):
+        return {
+            "kind": "linked_from_ref",
+            "source_table_path": list(node.source_table_path),
+            "source_field_key": node.source_field_key,
+        }
+    if isinstance(node, FieldAccess):
+        return {"kind": "field_access", "target": ast_to_json(node.target), "field_key": node.field_key}
     if isinstance(node, FuncCall):
         return {"kind": "func_call", "name": node.name, "args": [ast_to_json(a) for a in node.args]}
     if isinstance(node, BinaryOp):
@@ -114,6 +144,20 @@ def ast_from_json(payload: object) -> FormulaAST:
             display_name=str(data["display_name"]),
             field_id=cast(str | None, data.get("field_id")),
         )
+    if kind == "linked_ref":
+        return LinkedRef(kind="linked_ref", field_key=str(data["field_key"]))
+    if kind == "linked_from_ref":
+        raw_path = data.get("source_table_path")
+        if not isinstance(raw_path, list) or not all(isinstance(part, str) and part for part in raw_path):
+            raise ValueError("linked_from_ref source_table_path must be a non-empty string list")
+        source_table_path = cast(list[str], raw_path)
+        return LinkedFromRef(
+            kind="linked_from_ref",
+            source_table_path=tuple(source_table_path),
+            source_field_key=str(data["source_field_key"]),
+        )
+    if kind == "field_access":
+        return FieldAccess(kind="field_access", target=ast_from_json(data["target"]), field_key=str(data["field_key"]))
     if kind == "func_call":
         raw_args = data.get("args") or []
         if not isinstance(raw_args, list):

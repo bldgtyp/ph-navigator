@@ -22,10 +22,13 @@ from typing import TYPE_CHECKING, Literal
 from features.project_document.custom_fields import normalize_display_name
 from features.project_document.formula.ast_nodes import (
     BinaryOp,
+    FieldAccess,
     FieldRef,
     FormulaAST,
     FuncCall,
     IfExpr,
+    LinkedFromRef,
+    LinkedRef,
     Literal_,
     UnaryOp,
     ast_from_json,
@@ -116,8 +119,10 @@ def resolve_refs(
 
 
 def _resolve_walk(node: FormulaAST, by_name: Mapping[str, FieldRegistryEntry]) -> FormulaAST:
-    if isinstance(node, Literal_):
+    if isinstance(node, (Literal_, LinkedRef, LinkedFromRef)):
         return node
+    if isinstance(node, FieldAccess):
+        return FieldAccess(kind="field_access", target=_resolve_walk(node.target, by_name), field_key=node.field_key)
     if isinstance(node, FieldRef):
         key = normalize_display_name(node.display_name)
         entry = by_name.get(key)
@@ -163,7 +168,10 @@ def collect_field_refs(ast: FormulaAST) -> list[str]:
     seen: set[str] = set()
 
     def walk(node: FormulaAST) -> None:
-        if isinstance(node, Literal_):
+        if isinstance(node, (Literal_, LinkedRef, LinkedFromRef)):
+            return
+        if isinstance(node, FieldAccess):
+            walk(node.target)
             return
         if isinstance(node, FieldRef):
             if node.field_id is not None and node.field_id not in seen:

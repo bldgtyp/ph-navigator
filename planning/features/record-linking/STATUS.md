@@ -6,7 +6,9 @@ STATUS: Phases 1, 1.b, and 2 are complete for the canonical
         link-bag cleanup is fixed; browser/e2e smoke evidence is
         recorded under `assets/e2e/rooms-pumps/`. Current `make
         format` left files unchanged and `make ci` passed on
-        2026-06-09. Phase 3 rollups are not started.
+        2026-06-09. Phase 3 backend rollup parsing/evaluation is
+        partially implemented; frontend editor completion and
+        document-level validation cycle detection remain.
 AUTHOR: Ed May (with Claude)
 ---
 
@@ -204,4 +206,34 @@ smoke.
 
 ## Phase 3 — Rollups
 
-**NOT STARTED.** Unblocked by Phase 1/2 closeout; next implementation slice.
+**PARTIALLY IMPLEMENTED — backend rollup read overlay.**
+
+- [x] **P3.1 parser / AST backend slice** — Python formula AST now
+  carries `LinkedRef`, `LinkedFromRef`, and `FieldAccess`; parser
+  accepts `linked("cf_key")`,
+  `linked_from(rooms, "cf_key")`, dotted table paths, and
+  `count` / `sum` / `avg` aggregators. Deferred functions
+  (`min`, `max`, `array_join`, `count_unique`) raise
+  `formula_function_not_supported`. Focused coverage:
+  `test_project_document_record_linking_rollups.py`.
+- [x] **P3.3 / P3.5 evaluator backend slice** — server read overlays
+  compute `count(linked_from(...))`,
+  `sum(linked_from(...).<field_key>)`, and cross-table formula-chain
+  dependencies using the Phase 2 inverse-link index plus snapshot row
+  filtering. The canonical Pumps response now includes
+  `rows_computed` for persisted formula `field_defs`.
+- [x] **Pumps formula read registry** — `pumps_field_registry` supplies
+  formula-facing field/value accessors so Pumps can participate in
+  read overlays without enabling nested Pumps schema mutations yet.
+- [ ] **P3.2 resolver validation hardening** — `setFormula` still uses
+  the existing table-local resolver for `{Field}` refs. Link primitive
+  validation happens at evaluator read time in this slice; follow-up
+  should reject unknown table paths / non-linked fields at author time.
+- [ ] **P3.4 document-level cycle detector** — still uses the existing
+  per-table Rooms cycle validator plus evaluator recursion guard.
+  Follow-up should promote this to the planned document-level graph
+  pass with cycle-path REST envelopes.
+- [ ] **P3.6 perf gate extension** — not yet added.
+- [ ] **P4 frontend formula editor primitives/completion** — not yet
+  started.
+- [ ] **P5 browser smoke for rollup authoring** — not yet recorded.
