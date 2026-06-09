@@ -10,32 +10,82 @@ device_type, phase, link) keep their typed Pydantic columns so domain
 invariants (ge=0, le=1.0, opt_*, etc.) survive.
 
 Schema version is 3; no v2 reader is provided (pre-deploy posture).
+
+Layout: this module now hosts the cross-table ProjectDocumentV1 model
+plus the option-key constants and typed-column-key sets used by every
+table feature. Row + envelope models live in ``rows.py``; envelope
+(assemblies + apertures + materials) models live in ``envelope_models.py``;
+the private invariant validators called by ``ProjectDocumentV1`` live
+in ``_validators.py``. Every symbol previously importable from
+``project_document.document`` is re-exported below so existing callers
+keep working.
 """
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Any, Literal, cast
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from features.project_document.custom_fields import (
-    RESERVED_FIELD_KEY_RECORD_ID,
-    CustomFieldType,
-    CustomValue,
-    TableFieldDef,
-    coerce_custom_value,
-    normalize_display_name,
+from features.project_document._validators import (
+    collect_target_row_ids,
+    index_table_field_defs,
+    require_record_id_seeded,
+    validate_default_option_ids,
+    validate_envelope_references,
+    validate_linked_record_field_defs,
+    validate_rows_custom_links,
+    validate_rows_custom_values,
+)
+from features.project_document.custom_fields import TableFieldDef, normalize_display_name
+from features.project_document.envelope_models import (
+    APERTURE_DEFAULT_FRAME_NAME,
+    APERTURE_DEFAULT_GLAZING_NAME,
+    CATALOG_RECORD_ID_PATTERN,
+    CATALOG_VERSION_ID_PATTERN,
+    ApertureElement,
+    ApertureElementFrames,
+    ApertureOperation,
+    ApertureOperationDirection,
+    ApertureOperationType,
+    ApertureTypeEntry,
+    Assembly,
+    AssemblyLayer,
+    AssemblyOrientation,
+    AssemblySegment,
+    AssemblyType,
+    CatalogOrigin,
+    CatalogTableName,
+    FrameRef,
+    GlazingRef,
+    ProjectMaterial,
+    SpecificationStatus,
+    require_catalog_origin_family,
+)
+from features.project_document.rows import (
+    ApplianceRow,
+    AppliancesTableEnvelope,
+    ElectricHeaterRow,
+    ElectricHeatersTableEnvelope,
+    EmptyEquipmentTables,
+    FanRow,
+    FansTableEnvelope,
+    HotWaterHeaterRow,
+    HotWaterHeatersTableEnvelope,
+    HotWaterTankRow,
+    HotWaterTanksTableEnvelope,
+    PumpRow,
+    PumpsTableEnvelope,
+    RoomRow,
+    RoomsTableEnvelope,
+    RowWithCustomFields,
+    SingleSelectOption,
+    ThermalBridgeRow,
+    ThermalBridgesTableEnvelope,
+    VentilatorRow,
+    VentilatorsTableEnvelope,
 )
 from features.projects.models import CertificationProgram
-from features.shared.colors import normalize_optional_hex_color
-
-CatalogTableName = Literal["materials", "frame_types", "glazing_types"]
-CATALOG_RECORD_ID_PATTERN = r"^rec[A-Za-z0-9]{14}$"
-CATALOG_VERSION_ID_PATTERN = r"^(matv|framev|glazingv)_[A-Za-z0-9_-]+$"
-AssemblyType = Literal["wall", "floor", "roof", "other"]
-AssemblyOrientation = Literal["first_layer_outside", "last_layer_outside"]
-SpecificationStatus = Literal["complete", "missing", "question", "na"]
 
 ROOM_FLOOR_LEVEL_OPTION_KEY = "rooms.floor_level"
 ROOM_BUILDING_ZONE_OPTION_KEY = "rooms.building_zone"
@@ -84,9 +134,9 @@ CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 5
 # mutable-type built-in (Rooms: number/name/num_people/num_bedrooms;
 # Pumps: tag/use/manufacturer/etc.).
 #
-# Source of truth is each row model's declared attribute set below;
-# these tuples enumerate the subset that the validator / formula
-# accessors / catalog-refresh path needs to branch on.
+# Source of truth is each row model's declared attribute set in
+# ``rows.py``; these tuples enumerate the subset that the validator /
+# formula accessors / catalog-refresh path needs to branch on.
 ROOMS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
     {"id", "floor_level", "building_zone", "icfa_factor", "catalog_origin", "notes"}
 )
@@ -110,738 +160,6 @@ APPLIANCES_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
 THERMAL_BRIDGES_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
     {"id", "thermal_bridge_type", "pdf_report_asset_ids", "notes"}
 )
-
-
-class RowWithCustomFields(BaseModel):
-    """Shared bag fields for every FieldDef-capable table row.
-
-    `custom_values` holds scalar values for mutable-type built-ins and
-    every non-`linked_record` custom field. `custom_links` holds id
-    arrays for `linked_record` custom fields. A given `field_key`
-    appears in exactly one of the two bags (PRD Q16, enforced by
-    `_validate_rows_custom_links`).
-    """
-
-    custom_values: dict[str, CustomValue] = Field(default_factory=dict)
-    custom_links: dict[str, list[str]] = Field(default_factory=dict)
-
-
-class SingleSelectOption(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    id: str = Field(pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
-    label: str = Field(min_length=1, max_length=120)
-    color: str = Field(pattern=r"^#[0-9A-Fa-f]{6}$")
-    order: float
-
-    @field_validator("label", mode="before")
-    @classmethod
-    def strip_label(cls, value: object) -> object:
-        if isinstance(value, str):
-            return value.strip()
-        return value
-
-
-class RoomRow(RowWithCustomFields):
-    """A row in the Rooms table (v3 mixed-storage).
-
-    Only locked-type built-ins keep typed columns. Mutable-type built-ins
-    (`number`, `name`, `num_people`, `num_bedrooms`) and all custom
-    fields live in `custom_values` / `custom_links` (inherited).
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    id: str = Field(pattern=r"^rm_[A-Za-z0-9_-]+$", max_length=80)
-    floor_level: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
-    building_zone: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
-    icfa_factor: float = Field(default=1.0, ge=0.0, le=1.0)
-    catalog_origin: dict[str, object] | None = None
-    notes: str | None = Field(default=None, max_length=4000)
-
-    @field_validator("notes", mode="before")
-    @classmethod
-    def strip_optional_notes(cls, value: object) -> object:
-        if isinstance(value, str):
-            stripped = value.strip()
-            return stripped or None
-        return value
-
-
-class PumpRow(RowWithCustomFields):
-    """A row in the Pumps table (v3 mixed-storage).
-
-    Locked-type built-ins keep typed columns: `device_type`, `phase`,
-    `link`, `notes`, `datasheet_asset_ids`. Mutable-type built-ins
-    (`tag`, `use`, `manufacturer`, `model`, `volts`, `horse_power`,
-    `wattage`, `flow_gpm`, `runtime_khr_yr`) live in `custom_values`.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    id: str = Field(pattern=r"^pmp_[A-Za-z0-9_-]+$", max_length=80)
-    device_type: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
-    phase: int | None = None
-    link: str | None = Field(default=None, max_length=2000)
-    notes: str | None = Field(default=None, max_length=4000)
-    datasheet_asset_ids: list[str] = Field(default_factory=list)
-
-    @field_validator("notes", "link", mode="before")
-    @classmethod
-    def strip_optional_strings(cls, value: object) -> object:
-        if isinstance(value, str):
-            stripped = value.strip()
-            return stripped or None
-        return value
-
-    @field_validator("phase")
-    @classmethod
-    def validate_phase(cls, value: int | None) -> int | None:
-        if value is not None and value not in {1, 3}:
-            raise ValueError("phase must be 1 or 3")
-        return value
-
-    @field_validator("link")
-    @classmethod
-    def validate_link(cls, value: str | None) -> str | None:
-        if value is not None and not (value.startswith("http://") or value.startswith("https://")):
-            raise ValueError("link must start with http:// or https://")
-        return value
-
-
-class PumpsTableEnvelope(BaseModel):
-    """`{ field_defs, rows }` envelope around the Pumps table.
-
-    Phase 1b adds the persisted FieldDef registry on Pumps. Phase 1b is
-    storage-only for Pumps — schema-mutation capability is wired in a
-    follow-up phase when Pumps gets `record_id`.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    field_defs: list[TableFieldDef] = Field(default_factory=list)
-    rows: list[PumpRow] = Field(default_factory=list)
-
-
-class VentilatorRow(RowWithCustomFields):
-    """A row in the Ventilators / ERVs equipment table."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    id: str = Field(pattern=r"^vent_[A-Za-z0-9_-]+$", max_length=80)
-    inside_outside: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
-    url: str | None = Field(default=None, max_length=2000)
-    notes: str | None = Field(default=None, max_length=4000)
-
-    @field_validator("url", "notes", mode="before")
-    @classmethod
-    def strip_optional_strings(cls, value: object) -> object:
-        if isinstance(value, str):
-            stripped = value.strip()
-            return stripped or None
-        return value
-
-    @field_validator("url")
-    @classmethod
-    def validate_url(cls, value: str | None) -> str | None:
-        if value is not None and not (value.startswith("http://") or value.startswith("https://")):
-            raise ValueError("url must start with http:// or https://")
-        return value
-
-
-class VentilatorsTableEnvelope(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    field_defs: list[TableFieldDef] = Field(default_factory=list)
-    rows: list[VentilatorRow] = Field(default_factory=list)
-
-
-class FanRow(RowWithCustomFields):
-    """A row in the Fans equipment table."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    id: str = Field(pattern=r"^fan_[A-Za-z0-9_-]+$", max_length=80)
-    fan_type: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
-    phase: int | None = None
-    url: str | None = Field(default=None, max_length=2000)
-    notes: str | None = Field(default=None, max_length=4000)
-    datasheet_asset_ids: list[str] = Field(default_factory=list)
-
-    @field_validator("url", "notes", mode="before")
-    @classmethod
-    def strip_optional_strings(cls, value: object) -> object:
-        if isinstance(value, str):
-            stripped = value.strip()
-            return stripped or None
-        return value
-
-    @field_validator("phase")
-    @classmethod
-    def validate_phase(cls, value: int | None) -> int | None:
-        if value is not None and value not in {1, 3}:
-            raise ValueError("phase must be 1 or 3")
-        return value
-
-    @field_validator("url")
-    @classmethod
-    def validate_url(cls, value: str | None) -> str | None:
-        if value is not None and not (value.startswith("http://") or value.startswith("https://")):
-            raise ValueError("url must start with http:// or https://")
-        return value
-
-
-class FansTableEnvelope(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    field_defs: list[TableFieldDef] = Field(default_factory=list)
-    rows: list[FanRow] = Field(default_factory=list)
-
-
-class HotWaterHeaterRow(RowWithCustomFields):
-    """A row in the Hot Water Heaters equipment table."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    id: str = Field(pattern=r"^hwh_[A-Za-z0-9_-]+$", max_length=80)
-    heater_type: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
-    phase: int | None = None
-    url: str | None = Field(default=None, max_length=2000)
-    notes: str | None = Field(default=None, max_length=4000)
-    datasheet_asset_ids: list[str] = Field(default_factory=list)
-
-    @field_validator("url", "notes", mode="before")
-    @classmethod
-    def strip_optional_strings(cls, value: object) -> object:
-        if isinstance(value, str):
-            stripped = value.strip()
-            return stripped or None
-        return value
-
-    @field_validator("phase")
-    @classmethod
-    def validate_phase(cls, value: int | None) -> int | None:
-        if value is not None and value not in {1, 3}:
-            raise ValueError("phase must be 1 or 3")
-        return value
-
-    @field_validator("url")
-    @classmethod
-    def validate_url(cls, value: str | None) -> str | None:
-        if value is not None and not (value.startswith("http://") or value.startswith("https://")):
-            raise ValueError("url must start with http:// or https://")
-        return value
-
-
-class HotWaterHeatersTableEnvelope(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    field_defs: list[TableFieldDef] = Field(default_factory=list)
-    rows: list[HotWaterHeaterRow] = Field(default_factory=list)
-
-
-class HotWaterTankRow(RowWithCustomFields):
-    """A row in the Hot Water Tanks equipment table."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    id: str = Field(pattern=r"^hwt_[A-Za-z0-9_-]+$", max_length=80)
-    tank_type: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
-    url: str | None = Field(default=None, max_length=2000)
-    notes: str | None = Field(default=None, max_length=4000)
-    datasheet_asset_ids: list[str] = Field(default_factory=list)
-
-    @field_validator("url", "notes", mode="before")
-    @classmethod
-    def strip_optional_strings(cls, value: object) -> object:
-        if isinstance(value, str):
-            stripped = value.strip()
-            return stripped or None
-        return value
-
-    @field_validator("url")
-    @classmethod
-    def validate_url(cls, value: str | None) -> str | None:
-        if value is not None and not (value.startswith("http://") or value.startswith("https://")):
-            raise ValueError("url must start with http:// or https://")
-        return value
-
-
-class HotWaterTanksTableEnvelope(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    field_defs: list[TableFieldDef] = Field(default_factory=list)
-    rows: list[HotWaterTankRow] = Field(default_factory=list)
-
-
-class ElectricHeaterRow(RowWithCustomFields):
-    """A row in the Electric Heaters equipment table."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    id: str = Field(pattern=r"^heatr_[A-Za-z0-9_-]+$", max_length=80)
-    url: str | None = Field(default=None, max_length=2000)
-    notes: str | None = Field(default=None, max_length=4000)
-
-    @field_validator("url", "notes", mode="before")
-    @classmethod
-    def strip_optional_strings(cls, value: object) -> object:
-        if isinstance(value, str):
-            stripped = value.strip()
-            return stripped or None
-        return value
-
-    @field_validator("url")
-    @classmethod
-    def validate_url(cls, value: str | None) -> str | None:
-        if value is not None and not (value.startswith("http://") or value.startswith("https://")):
-            raise ValueError("url must start with http:// or https://")
-        return value
-
-
-class ElectricHeatersTableEnvelope(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    field_defs: list[TableFieldDef] = Field(default_factory=list)
-    rows: list[ElectricHeaterRow] = Field(default_factory=list)
-
-
-class ApplianceRow(RowWithCustomFields):
-    """A row in the Appliances equipment table."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    id: str = Field(pattern=r"^appl_[A-Za-z0-9_-]+$", max_length=80)
-    appliance_type: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
-    energy_star: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
-    url: str | None = Field(default=None, max_length=2000)
-    notes: str | None = Field(default=None, max_length=4000)
-    datasheet_asset_ids: list[str] = Field(default_factory=list)
-
-    @field_validator("url", "notes", mode="before")
-    @classmethod
-    def strip_optional_strings(cls, value: object) -> object:
-        if isinstance(value, str):
-            stripped = value.strip()
-            return stripped or None
-        return value
-
-    @field_validator("url")
-    @classmethod
-    def validate_url(cls, value: str | None) -> str | None:
-        if value is not None and not (value.startswith("http://") or value.startswith("https://")):
-            raise ValueError("url must start with http:// or https://")
-        return value
-
-
-class AppliancesTableEnvelope(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    field_defs: list[TableFieldDef] = Field(default_factory=list)
-    rows: list[ApplianceRow] = Field(default_factory=list)
-
-
-class ThermalBridgeRow(RowWithCustomFields):
-    """A linear thermal-bridge record for the project document."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    id: str = Field(pattern=r"^tb_[A-Za-z0-9_-]+$", max_length=80)
-    thermal_bridge_type: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
-    pdf_report_asset_ids: list[str] = Field(default_factory=list)
-    notes: str | None = Field(default=None, max_length=4000)
-
-    @field_validator("notes", mode="before")
-    @classmethod
-    def strip_optional_strings(cls, value: object) -> object:
-        if isinstance(value, str):
-            stripped = value.strip()
-            return stripped or None
-        return value
-
-
-class ThermalBridgesTableEnvelope(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    field_defs: list[TableFieldDef] = Field(default_factory=list)
-    rows: list[ThermalBridgeRow] = Field(default_factory=list)
-
-
-class EmptyEquipmentTables(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    appliances: AppliancesTableEnvelope = Field(default_factory=AppliancesTableEnvelope)
-    electric_heaters: ElectricHeatersTableEnvelope = Field(default_factory=ElectricHeatersTableEnvelope)
-    fans: FansTableEnvelope = Field(default_factory=FansTableEnvelope)
-    hot_water_heaters: HotWaterHeatersTableEnvelope = Field(default_factory=HotWaterHeatersTableEnvelope)
-    hot_water_tanks: HotWaterTanksTableEnvelope = Field(default_factory=HotWaterTanksTableEnvelope)
-    pumps: PumpsTableEnvelope = Field(default_factory=PumpsTableEnvelope)
-    ervs: VentilatorsTableEnvelope = Field(default_factory=VentilatorsTableEnvelope)
-
-
-class CatalogOrigin(BaseModel):
-    """Bookshelf-copy provenance stamped at pick time."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    catalog_table: CatalogTableName
-    catalog_record_id: str = Field(pattern=CATALOG_RECORD_ID_PATTERN)
-    # ``catalog_version_id`` / ``catalog_schema_version`` are legacy fields
-    # from the per-version row layer. All v1 catalogs (materials, glazing,
-    # frames) are now flat; new origins always leave both null. The fields
-    # stay nullable on the model so older documents that still carry a
-    # stamped version id round-trip cleanly.
-    catalog_version_id: str | None = Field(default=None, pattern=CATALOG_VERSION_ID_PATTERN)
-    catalog_schema_version: int | None = Field(default=None, ge=1)
-    synced_at: datetime
-    local_overrides: list[str] = Field(default_factory=list)
-
-
-def _require_catalog_origin_family(
-    origin: CatalogOrigin | None,
-    *,
-    expected_table: CatalogTableName,
-    expected_version_prefix: str | None,
-) -> None:
-    if origin is None:
-        return
-    if origin.catalog_table != expected_table:
-        raise ValueError(f"catalog_origin.catalog_table must be {expected_table!r}, got {origin.catalog_table!r}")
-    version_id = origin.catalog_version_id
-    if expected_version_prefix is None:
-        # Catalogs without a version layer (materials) must not stamp a
-        # version id; surface that mismatch instead of silently ignoring it.
-        if version_id is not None:
-            raise ValueError(f"catalog_origin.catalog_version_id must be null for {expected_table!r}")
-        return
-    if version_id is None or not version_id.startswith(expected_version_prefix):
-        raise ValueError(f"catalog_origin.catalog_version_id must start with {expected_version_prefix!r}")
-
-
-class FrameRef(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    name: str = Field(min_length=1, max_length=200)
-    manufacturer: str | None = Field(default=None, max_length=200)
-    brand: str | None = Field(default=None, max_length=200)
-    use: str | None = Field(default=None, max_length=40)
-    operation: str | None = Field(default=None, max_length=40)
-    location: str | None = Field(default=None, max_length=40)
-    mull_type: str | None = Field(default=None, max_length=40)
-    prefix: str | None = Field(default=None, max_length=80)
-    suffix: str | None = Field(default=None, max_length=80)
-    material: str | None = Field(default=None, max_length=80)
-    width_mm: float | None = Field(default=None, ge=0)
-    u_value_w_m2k: float | None = Field(default=None, ge=0)
-    psi_g_w_mk: float | None = Field(default=None, ge=0)
-    psi_install_w_mk: float | None = Field(default=None, ge=0)
-    color: str | None = Field(default=None, max_length=40)
-    source: str | None = Field(default=None, max_length=400)
-    datasheet_url: str | None = Field(default=None, max_length=400)
-    comments: str | None = Field(default=None, max_length=4000)
-    catalog_origin: CatalogOrigin | None = None
-
-    @field_validator("color", mode="before")
-    @classmethod
-    def _normalize_color(cls, value: object) -> object:
-        return normalize_optional_hex_color(value)
-
-    @model_validator(mode="after")
-    def _validate_catalog_origin_family(self) -> FrameRef:
-        _require_catalog_origin_family(
-            self.catalog_origin,
-            expected_table="frame_types",
-            expected_version_prefix=None,
-        )
-        return self
-
-
-class GlazingRef(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    name: str = Field(min_length=1, max_length=200)
-    manufacturer: str | None = Field(default=None, max_length=200)
-    brand: str | None = Field(default=None, max_length=200)
-    suffix: str | None = Field(default=None, max_length=80)
-    u_value_w_m2k: float | None = Field(default=None, ge=0)
-    g_value: float | None = Field(default=None, ge=0.0, le=1.0)
-    color: str | None = Field(default=None, max_length=40)
-    source: str | None = Field(default=None, max_length=400)
-    datasheet_url: str | None = Field(default=None, max_length=400)
-    comments: str | None = Field(default=None, max_length=4000)
-    catalog_origin: CatalogOrigin | None = None
-
-    @field_validator("color", mode="before")
-    @classmethod
-    def _normalize_color(cls, value: object) -> object:
-        return normalize_optional_hex_color(value)
-
-    @model_validator(mode="after")
-    def _validate_catalog_origin_family(self) -> GlazingRef:
-        _require_catalog_origin_family(
-            self.catalog_origin,
-            expected_table="glazing_types",
-            expected_version_prefix=None,
-        )
-        return self
-
-
-class AssemblySegment(BaseModel):
-    """A side-by-side material slot inside one assembly layer."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    id: str = Field(pattern=r"^seg_[A-Za-z0-9_-]+$", max_length=80)
-    order: int = Field(ge=0)
-    width_mm: float = Field(gt=0, allow_inf_nan=False)
-    is_continuous_insulation: bool = False
-    steel_stud_spacing_mm: float | None = Field(default=None, gt=0, allow_inf_nan=False)
-    project_material_id: str | None = Field(default=None, pattern=r"^pmat_[A-Za-z0-9_-]+$", max_length=80)
-    photo_asset_ids: list[str] = Field(default_factory=list)
-    use_site_notes: str | None = Field(default=None, max_length=4000)
-
-    @field_validator("use_site_notes", mode="before")
-    @classmethod
-    def _strip_optional_notes(cls, value: object) -> object:
-        if isinstance(value, str):
-            stripped = value.strip()
-            return stripped or None
-        return value
-
-
-class AssemblyLayer(BaseModel):
-    """One ordered horizontal strip in an assembly cross-section."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    id: str = Field(pattern=r"^lyr_[A-Za-z0-9_-]+$", max_length=80)
-    order: int = Field(ge=0)
-    thickness_mm: float = Field(gt=0, allow_inf_nan=False)
-    segments: list[AssemblySegment] = Field(min_length=1)
-
-    @model_validator(mode="after")
-    def _validate_segments(self) -> AssemblyLayer:
-        _validate_unique_ids("segment", [segment.id for segment in self.segments])
-        _validate_contiguous_orders("segment", [(segment.id, segment.order) for segment in self.segments])
-        return self
-
-
-class Assembly(BaseModel):
-    """A project-owned opaque construction assembly."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    id: str = Field(pattern=r"^asm_[A-Za-z0-9_-]+$", max_length=80)
-    name: str = Field(min_length=1, max_length=200)
-    type: AssemblyType
-    orientation: AssemblyOrientation
-    layers: list[AssemblyLayer] = Field(min_length=1)
-
-    @field_validator("name", mode="before")
-    @classmethod
-    def _strip_name(cls, value: object) -> object:
-        if isinstance(value, str):
-            return value.strip()
-        return value
-
-    @model_validator(mode="after")
-    def _validate_layers(self) -> Assembly:
-        _validate_unique_ids("layer", [layer.id for layer in self.layers])
-        _validate_contiguous_orders("layer", [(layer.id, layer.order) for layer in self.layers])
-        return self
-
-
-class ProjectMaterial(BaseModel):
-    """A project-owned material/product record referenced by segments.
-
-    Catalog-sourced fields mirror ``CatalogMaterialPublic``; the project
-    side adds ``id``, ``specification_status``, ``datasheet_asset_ids``,
-    and ``catalog_origin``.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    id: str = Field(pattern=r"^pmat_[A-Za-z0-9_-]+$", max_length=80)
-    name: str = Field(min_length=1, max_length=200)
-    category: str = Field(min_length=1, max_length=120)
-    density_kg_m3: float | None = Field(default=None, ge=0, allow_inf_nan=False)
-    specific_heat_j_kgk: float | None = Field(default=None, ge=0, allow_inf_nan=False)
-    conductivity_w_mk: float | None = Field(default=None, gt=0, allow_inf_nan=False)
-    emissivity: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
-    color: str | None = Field(default=None, max_length=40)
-    source: str | None = Field(default=None, max_length=400)
-    url: str | None = Field(default=None, max_length=2000)
-    comments: str | None = Field(default=None, max_length=4000)
-    specification_status: SpecificationStatus = "missing"
-    datasheet_asset_ids: list[str] = Field(default_factory=list)
-    catalog_origin: CatalogOrigin | None = None
-
-    @field_validator("name", "category", mode="before")
-    @classmethod
-    def _strip_required_strings(cls, value: object) -> object:
-        if isinstance(value, str):
-            return value.strip()
-        return value
-
-    @field_validator("source", "url", "comments", mode="before")
-    @classmethod
-    def _strip_optional_text(cls, value: object) -> object:
-        if isinstance(value, str):
-            stripped = value.strip()
-            return stripped or None
-        return value
-
-    @field_validator("color", mode="before")
-    @classmethod
-    def _normalize_color(cls, value: object) -> object:
-        return normalize_optional_hex_color(value)
-
-    @model_validator(mode="after")
-    def _validate_catalog_origin_family(self) -> ProjectMaterial:
-        _require_catalog_origin_family(
-            self.catalog_origin,
-            expected_table="materials",
-            expected_version_prefix=None,
-        )
-        return self
-
-
-APERTURE_DEFAULT_FRAME_NAME = "PHN-Default-Frame"
-APERTURE_DEFAULT_GLAZING_NAME = "PHN-Default-Glazing"
-
-ApertureOperationType = Literal["swing", "slide"]
-ApertureOperationDirection = Literal["left", "right", "up", "down"]
-
-
-class ApertureOperation(BaseModel):
-    """Aperture-element operation (Fixed when omitted at the element level).
-
-    `swing` (hinge) and `slide` (track) are the two parametric families.
-    `directions` is the per-leaf set of hinge or slide directions. Multiple
-    directions remain valid for compound operations such as tilt-turn.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    type: ApertureOperationType
-    directions: list[ApertureOperationDirection] = Field(default_factory=list)
-
-    @model_validator(mode="after")
-    def _validate_directions(self) -> ApertureOperation:
-        if len(self.directions) != len(set(self.directions)):
-            raise ValueError("ApertureOperation.directions must be unique")
-        return self
-
-
-class ApertureElementFrames(BaseModel):
-    """Four-sided per-element frame slots (top/right/bottom/left)."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    top: FrameRef | None = None
-    right: FrameRef | None = None
-    bottom: FrameRef | None = None
-    left: FrameRef | None = None
-
-
-class ApertureElement(BaseModel):
-    """One sash inside an aperture type, spanning a contiguous grid rectangle.
-
-    `name` defaults to "Unnamed" so newly created elements are valid
-    without an explicit label; empty / whitespace-only names are rejected
-    at validation time. `operation=None` means Fixed. `row_span` /
-    `column_span` are inclusive on both ends; coverage of the aperture
-    grid is enforced by `check_aperture_coverage` (no holes, no overlaps).
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    id: str = Field(pattern=r"^aptel_[A-Za-z0-9_-]+$", max_length=80)
-    name: str = Field(default="Unnamed", min_length=1, max_length=200)
-    row_span: tuple[int, int]
-    column_span: tuple[int, int]
-    frames: ApertureElementFrames = Field(default_factory=ApertureElementFrames)
-    glazing: GlazingRef | None = None
-    operation: ApertureOperation | None = None
-
-    @field_validator("name", mode="before")
-    @classmethod
-    def _strip_name(cls, value: object) -> object:
-        if isinstance(value, str):
-            stripped = value.strip()
-            if not stripped:
-                raise ValueError("ApertureElement.name must not be empty")
-            return stripped
-        return value
-
-    @field_validator("row_span", "column_span")
-    @classmethod
-    def _validate_span(cls, value: tuple[int, int]) -> tuple[int, int]:
-        start, end = value
-        if start < 0 or end < 0:
-            raise ValueError("span indices must be >= 0")
-        if start > end:
-            raise ValueError("span start must be <= end")
-        return value
-
-
-class ApertureTypeEntry(BaseModel):
-    """A named aperture type — grid + element layout + per-element refs.
-
-    The `coverage invariant` is enforced here: every grid cell
-    `(r, c)` for `0 <= r < R`, `0 <= c < C` must be covered by exactly
-    one element. Holes and overlaps both raise validation errors. The
-    pure check lives in `apertures/coverage.py` so the merge/split and
-    add-row/add-column command handlers (later phases) can reuse it.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    id: str = Field(pattern=r"^apt_[A-Za-z0-9_-]+$", max_length=80)
-    name: str = Field(min_length=1, max_length=200)
-    row_heights_mm: list[float] = Field(min_length=1)
-    column_widths_mm: list[float] = Field(min_length=1)
-    elements: list[ApertureElement] = Field(min_length=1)
-
-    @field_validator("name", mode="before")
-    @classmethod
-    def _strip_name(cls, value: object) -> object:
-        if isinstance(value, str):
-            return value.strip()
-        return value
-
-    @field_validator("row_heights_mm", "column_widths_mm")
-    @classmethod
-    def _positive_dimensions(cls, value: list[float]) -> list[float]:
-        for dim in value:
-            if dim <= 0:
-                raise ValueError("grid dimensions must be > 0")
-        return value
-
-    @model_validator(mode="after")
-    def _validate_coverage(self) -> ApertureTypeEntry:
-        # Lazy-import to keep the coverage check independent of the
-        # document module — apertures/coverage.py imports
-        # `ApertureTypeEntry` for typing, so a top-level import would
-        # cycle.
-        from features.project_document.apertures.coverage import check_aperture_coverage
-
-        check_aperture_coverage(self)
-        return self
-
-
-class RoomsTableEnvelope(BaseModel):
-    """`{ field_defs, rows }` envelope around the Rooms table.
-
-    Phase 1b: every field on the table — built-in or custom — lives in
-    the persisted `field_defs` list. Mutable-type built-in values plus
-    all custom values live in each row's `custom_values` bag.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    field_defs: list[TableFieldDef] = Field(default_factory=list)
-    rows: list[RoomRow] = Field(default_factory=list)
 
 
 class ProjectDocumentProject(BaseModel):
@@ -948,11 +266,11 @@ class ProjectDocumentV1(BaseModel):
                     raise ValueError(f"Duplicate option label in {key}: {option.label}")
                 labels.add(normalized_label)
 
-        target_row_ids = _collect_target_row_ids(self)
+        target_row_ids = collect_target_row_ids(self)
 
-        rooms_field_defs_by_key = _index_table_field_defs("rooms", self.tables.rooms.field_defs)
-        _require_record_id_seeded("rooms", rooms_field_defs_by_key)
-        _validate_linked_record_field_defs(
+        rooms_field_defs_by_key = index_table_field_defs("rooms", self.tables.rooms.field_defs)
+        require_record_id_seeded("rooms", rooms_field_defs_by_key)
+        validate_linked_record_field_defs(
             table_label="rooms",
             table_path=("rooms",),
             field_defs_by_key=rooms_field_defs_by_key,
@@ -970,27 +288,27 @@ class ProjectDocumentV1(BaseModel):
             if room.building_zone is not None and room.building_zone not in zone_option_ids:
                 raise ValueError(f"Missing building-zone option for room {room.id}: {room.building_zone}")
 
-        _validate_rows_custom_values(
+        validate_rows_custom_values(
             table_label="rooms",
             row_label="room",
             rows=[(room.id, room.custom_values) for room in self.tables.rooms.rows],
             field_defs_by_key=rooms_field_defs_by_key,
             single_select_options=self.single_select_options,
         )
-        _validate_rows_custom_links(
+        validate_rows_custom_links(
             table_label="rooms",
             row_label="room",
             rows=[(room.id, room.custom_values, room.custom_links) for room in self.tables.rooms.rows],
             field_defs_by_key=rooms_field_defs_by_key,
             target_row_ids=target_row_ids,
         )
-        _validate_default_option_ids(
+        validate_default_option_ids(
             table_label="rooms",
             field_defs_by_key=rooms_field_defs_by_key,
             single_select_options=self.single_select_options,
         )
-        pumps_field_defs_by_key = _index_table_field_defs("pumps", self.tables.equipment.pumps.field_defs)
-        _require_record_id_seeded("pumps", pumps_field_defs_by_key)
+        pumps_field_defs_by_key = index_table_field_defs("pumps", self.tables.equipment.pumps.field_defs)
+        require_record_id_seeded("pumps", pumps_field_defs_by_key)
         pump_device_type_ids = {option.id for option in self.single_select_options[PUMP_DEVICE_TYPE_OPTION_KEY]}
         pump_ids: set[str] = set()
         for pump in self.tables.equipment.pumps.rows:
@@ -1000,19 +318,19 @@ class ProjectDocumentV1(BaseModel):
             if pump.device_type is not None and pump.device_type not in pump_device_type_ids:
                 raise ValueError(f"Missing pump device-type option for pump {pump.id}: {pump.device_type}")
 
-        _validate_linked_record_field_defs(
+        validate_linked_record_field_defs(
             table_label="pumps",
             table_path=("equipment", "pumps"),
             field_defs_by_key=pumps_field_defs_by_key,
         )
-        _validate_rows_custom_values(
+        validate_rows_custom_values(
             table_label="pumps",
             row_label="pump",
             rows=[(pump.id, pump.custom_values) for pump in self.tables.equipment.pumps.rows],
             field_defs_by_key=pumps_field_defs_by_key,
             single_select_options=self.single_select_options,
         )
-        _validate_rows_custom_links(
+        validate_rows_custom_links(
             table_label="pumps",
             row_label="pump",
             rows=[(pump.id, pump.custom_values, pump.custom_links) for pump in self.tables.equipment.pumps.rows],
@@ -1020,8 +338,8 @@ class ProjectDocumentV1(BaseModel):
             target_row_ids=target_row_ids,
         )
 
-        fans_field_defs_by_key = _index_table_field_defs("fans", self.tables.equipment.fans.field_defs)
-        _require_record_id_seeded("fans", fans_field_defs_by_key)
+        fans_field_defs_by_key = index_table_field_defs("fans", self.tables.equipment.fans.field_defs)
+        require_record_id_seeded("fans", fans_field_defs_by_key)
         fan_type_ids = {option.id for option in self.single_select_options[FAN_TYPE_OPTION_KEY]}
         fan_ids: set[str] = set()
         for fan in self.tables.equipment.fans.rows:
@@ -1031,19 +349,19 @@ class ProjectDocumentV1(BaseModel):
             if fan.fan_type is not None and fan.fan_type not in fan_type_ids:
                 raise ValueError(f"Missing fan type option for fan {fan.id}: {fan.fan_type}")
 
-        _validate_linked_record_field_defs(
+        validate_linked_record_field_defs(
             table_label="fans",
             table_path=("equipment", "fans"),
             field_defs_by_key=fans_field_defs_by_key,
         )
-        _validate_rows_custom_values(
+        validate_rows_custom_values(
             table_label="fans",
             row_label="fan",
             rows=[(fan.id, fan.custom_values) for fan in self.tables.equipment.fans.rows],
             field_defs_by_key=fans_field_defs_by_key,
             single_select_options=self.single_select_options,
         )
-        _validate_rows_custom_links(
+        validate_rows_custom_links(
             table_label="fans",
             row_label="fan",
             rows=[(fan.id, fan.custom_values, fan.custom_links) for fan in self.tables.equipment.fans.rows],
@@ -1051,10 +369,10 @@ class ProjectDocumentV1(BaseModel):
             target_row_ids=target_row_ids,
         )
 
-        hot_water_heaters_field_defs_by_key = _index_table_field_defs(
+        hot_water_heaters_field_defs_by_key = index_table_field_defs(
             "hot_water_heaters", self.tables.equipment.hot_water_heaters.field_defs
         )
-        _require_record_id_seeded("hot_water_heaters", hot_water_heaters_field_defs_by_key)
+        require_record_id_seeded("hot_water_heaters", hot_water_heaters_field_defs_by_key)
         hot_water_heater_type_ids = {
             option.id for option in self.single_select_options[HOT_WATER_HEATER_TYPE_OPTION_KEY]
         }
@@ -1066,19 +384,19 @@ class ProjectDocumentV1(BaseModel):
             if heater.heater_type is not None and heater.heater_type not in hot_water_heater_type_ids:
                 raise ValueError(f"Missing hot water heater type option for heater {heater.id}: {heater.heater_type}")
 
-        _validate_linked_record_field_defs(
+        validate_linked_record_field_defs(
             table_label="hot_water_heaters",
             table_path=("equipment", "hot_water_heaters"),
             field_defs_by_key=hot_water_heaters_field_defs_by_key,
         )
-        _validate_rows_custom_values(
+        validate_rows_custom_values(
             table_label="hot_water_heaters",
             row_label="hot water heater",
             rows=[(heater.id, heater.custom_values) for heater in self.tables.equipment.hot_water_heaters.rows],
             field_defs_by_key=hot_water_heaters_field_defs_by_key,
             single_select_options=self.single_select_options,
         )
-        _validate_rows_custom_links(
+        validate_rows_custom_links(
             table_label="hot_water_heaters",
             row_label="hot water heater",
             rows=[
@@ -1089,10 +407,10 @@ class ProjectDocumentV1(BaseModel):
             target_row_ids=target_row_ids,
         )
 
-        hot_water_tanks_field_defs_by_key = _index_table_field_defs(
+        hot_water_tanks_field_defs_by_key = index_table_field_defs(
             "hot_water_tanks", self.tables.equipment.hot_water_tanks.field_defs
         )
-        _require_record_id_seeded("hot_water_tanks", hot_water_tanks_field_defs_by_key)
+        require_record_id_seeded("hot_water_tanks", hot_water_tanks_field_defs_by_key)
         hot_water_tank_type_ids = {option.id for option in self.single_select_options[HOT_WATER_TANK_TYPE_OPTION_KEY]}
         hot_water_tank_ids: set[str] = set()
         for tank in self.tables.equipment.hot_water_tanks.rows:
@@ -1105,19 +423,19 @@ class ProjectDocumentV1(BaseModel):
             if isinstance(heat_loss_rate, (int, float)) and heat_loss_rate < 0:
                 raise ValueError(f"Hot water tank heat_loss_rate_w_k must be zero or greater: {tank.id}")
 
-        _validate_linked_record_field_defs(
+        validate_linked_record_field_defs(
             table_label="hot_water_tanks",
             table_path=("equipment", "hot_water_tanks"),
             field_defs_by_key=hot_water_tanks_field_defs_by_key,
         )
-        _validate_rows_custom_values(
+        validate_rows_custom_values(
             table_label="hot_water_tanks",
             row_label="hot water tank",
             rows=[(tank.id, tank.custom_values) for tank in self.tables.equipment.hot_water_tanks.rows],
             field_defs_by_key=hot_water_tanks_field_defs_by_key,
             single_select_options=self.single_select_options,
         )
-        _validate_rows_custom_links(
+        validate_rows_custom_links(
             table_label="hot_water_tanks",
             row_label="hot water tank",
             rows=[
@@ -1127,29 +445,29 @@ class ProjectDocumentV1(BaseModel):
             target_row_ids=target_row_ids,
         )
 
-        electric_heaters_field_defs_by_key = _index_table_field_defs(
+        electric_heaters_field_defs_by_key = index_table_field_defs(
             "electric_heaters", self.tables.equipment.electric_heaters.field_defs
         )
-        _require_record_id_seeded("electric_heaters", electric_heaters_field_defs_by_key)
+        require_record_id_seeded("electric_heaters", electric_heaters_field_defs_by_key)
         electric_heater_ids: set[str] = set()
         for heater in self.tables.equipment.electric_heaters.rows:
             if heater.id in electric_heater_ids:
                 raise ValueError(f"Duplicate electric heater id: {heater.id}")
             electric_heater_ids.add(heater.id)
 
-        _validate_linked_record_field_defs(
+        validate_linked_record_field_defs(
             table_label="electric_heaters",
             table_path=("equipment", "electric_heaters"),
             field_defs_by_key=electric_heaters_field_defs_by_key,
         )
-        _validate_rows_custom_values(
+        validate_rows_custom_values(
             table_label="electric_heaters",
             row_label="electric heater",
             rows=[(heater.id, heater.custom_values) for heater in self.tables.equipment.electric_heaters.rows],
             field_defs_by_key=electric_heaters_field_defs_by_key,
             single_select_options=self.single_select_options,
         )
-        _validate_rows_custom_links(
+        validate_rows_custom_links(
             table_label="electric_heaters",
             row_label="electric heater",
             rows=[
@@ -1160,10 +478,8 @@ class ProjectDocumentV1(BaseModel):
             target_row_ids=target_row_ids,
         )
 
-        appliances_field_defs_by_key = _index_table_field_defs(
-            "appliances", self.tables.equipment.appliances.field_defs
-        )
-        _require_record_id_seeded("appliances", appliances_field_defs_by_key)
+        appliances_field_defs_by_key = index_table_field_defs("appliances", self.tables.equipment.appliances.field_defs)
+        require_record_id_seeded("appliances", appliances_field_defs_by_key)
         appliance_type_ids = {option.id for option in self.single_select_options[APPLIANCE_TYPE_OPTION_KEY]}
         appliance_energy_star_ids = {
             option.id for option in self.single_select_options[APPLIANCE_ENERGY_STAR_OPTION_KEY]
@@ -1182,19 +498,19 @@ class ProjectDocumentV1(BaseModel):
                     f"Missing appliance EnergyStar option for appliance {appliance.id}: {appliance.energy_star}"
                 )
 
-        _validate_linked_record_field_defs(
+        validate_linked_record_field_defs(
             table_label="appliances",
             table_path=("equipment", "appliances"),
             field_defs_by_key=appliances_field_defs_by_key,
         )
-        _validate_rows_custom_values(
+        validate_rows_custom_values(
             table_label="appliances",
             row_label="appliance",
             rows=[(appliance.id, appliance.custom_values) for appliance in self.tables.equipment.appliances.rows],
             field_defs_by_key=appliances_field_defs_by_key,
             single_select_options=self.single_select_options,
         )
-        _validate_rows_custom_links(
+        validate_rows_custom_links(
             table_label="appliances",
             row_label="appliance",
             rows=[
@@ -1205,10 +521,10 @@ class ProjectDocumentV1(BaseModel):
             target_row_ids=target_row_ids,
         )
 
-        thermal_bridges_field_defs_by_key = _index_table_field_defs(
+        thermal_bridges_field_defs_by_key = index_table_field_defs(
             "thermal_bridges", self.tables.thermal_bridges.field_defs
         )
-        _require_record_id_seeded("thermal_bridges", thermal_bridges_field_defs_by_key)
+        require_record_id_seeded("thermal_bridges", thermal_bridges_field_defs_by_key)
         thermal_bridge_type_ids = {option.id for option in self.single_select_options[THERMAL_BRIDGE_TYPE_OPTION_KEY]}
         thermal_bridge_ids: set[str] = set()
         for thermal_bridge in self.tables.thermal_bridges.rows:
@@ -1230,12 +546,12 @@ class ProjectDocumentV1(BaseModel):
             if isinstance(frsi_value, (int, float)) and not 0 <= frsi_value <= 1:
                 raise ValueError(f"Thermal bridge frsi_value must be between 0 and 1: {thermal_bridge.id}")
 
-        _validate_linked_record_field_defs(
+        validate_linked_record_field_defs(
             table_label="thermal_bridges",
             table_path=("thermal_bridges",),
             field_defs_by_key=thermal_bridges_field_defs_by_key,
         )
-        _validate_rows_custom_values(
+        validate_rows_custom_values(
             table_label="thermal_bridges",
             row_label="thermal bridge",
             rows=[
@@ -1244,7 +560,7 @@ class ProjectDocumentV1(BaseModel):
             field_defs_by_key=thermal_bridges_field_defs_by_key,
             single_select_options=self.single_select_options,
         )
-        _validate_rows_custom_links(
+        validate_rows_custom_links(
             table_label="thermal_bridges",
             row_label="thermal bridge",
             rows=[
@@ -1255,8 +571,8 @@ class ProjectDocumentV1(BaseModel):
             target_row_ids=target_row_ids,
         )
 
-        ventilators_field_defs_by_key = _index_table_field_defs("ventilators", self.tables.equipment.ervs.field_defs)
-        _require_record_id_seeded("ventilators", ventilators_field_defs_by_key)
+        ventilators_field_defs_by_key = index_table_field_defs("ventilators", self.tables.equipment.ervs.field_defs)
+        require_record_id_seeded("ventilators", ventilators_field_defs_by_key)
         inside_outside_ids = {option.id for option in self.single_select_options[VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY]}
         ventilator_ids: set[str] = set()
         for ventilator in self.tables.equipment.ervs.rows:
@@ -1269,19 +585,19 @@ class ProjectDocumentV1(BaseModel):
                     f"{ventilator.inside_outside}"
                 )
 
-        _validate_linked_record_field_defs(
+        validate_linked_record_field_defs(
             table_label="ventilators",
             table_path=("equipment", "ervs"),
             field_defs_by_key=ventilators_field_defs_by_key,
         )
-        _validate_rows_custom_values(
+        validate_rows_custom_values(
             table_label="ventilators",
             row_label="ventilator",
             rows=[(ventilator.id, ventilator.custom_values) for ventilator in self.tables.equipment.ervs.rows],
             field_defs_by_key=ventilators_field_defs_by_key,
             single_select_options=self.single_select_options,
         )
-        _validate_rows_custom_links(
+        validate_rows_custom_links(
             table_label="ventilators",
             row_label="ventilator",
             rows=[
@@ -1304,7 +620,7 @@ class ProjectDocumentV1(BaseModel):
                 raise ValueError(f"Duplicate aperture name: {aperture.name}")
             aperture_names.add(normalized_aperture_name)
 
-        _validate_envelope_references(self.tables.project_materials, self.tables.assemblies)
+        validate_envelope_references(self.tables.project_materials, self.tables.assemblies)
         self._validate_document_formula_graph()
 
         return self
@@ -1336,267 +652,90 @@ class ProjectDocumentV1(BaseModel):
             raise ValueError(f"Formula references unknown linked field: {exc.display_name}") from exc
 
 
-def _require_record_id_seeded(
-    table_label: str,
-    field_defs_by_key: dict[str, TableFieldDef],
-) -> None:
-    """Enforce PRD §P4.3 identifier invariant: every FieldDef-capable
-    table carries a `record_id` entry. Uniqueness is already enforced
-    upstream by `_index_table_field_defs`, so a membership check is
-    sufficient.
-    """
-    if RESERVED_FIELD_KEY_RECORD_ID not in field_defs_by_key:
-        raise ValueError(f"{table_label}.field_defs must contain a record_id entry")
-
-
-def _validate_unique_ids(label: str, ids: list[str]) -> None:
-    seen: set[str] = set()
-    for item_id in ids:
-        if item_id in seen:
-            raise ValueError(f"Duplicate {label} id: {item_id}")
-        seen.add(item_id)
-
-
-def _validate_contiguous_orders(label: str, ordered_ids: list[tuple[str, int]]) -> None:
-    expected = list(range(len(ordered_ids)))
-    actual = sorted(order for _item_id, order in ordered_ids)
-    if actual != expected:
-        raise ValueError(f"{label} orders must be contiguous from 0")
-
-
-def _validate_envelope_references(project_materials: list[ProjectMaterial], assemblies: list[Assembly]) -> None:
-    project_material_ids = {material.id for material in project_materials}
-    if len(project_material_ids) != len(project_materials):
-        raise ValueError("Duplicate project material id")
-
-    assembly_ids: set[str] = set()
-    assembly_names: set[str] = set()
-    for assembly in assemblies:
-        if assembly.id in assembly_ids:
-            raise ValueError(f"Duplicate assembly id: {assembly.id}")
-        assembly_ids.add(assembly.id)
-
-        normalized_name = normalize_display_name(assembly.name)
-        if normalized_name in assembly_names:
-            raise ValueError(f"Duplicate assembly name: {assembly.name}")
-        assembly_names.add(normalized_name)
-
-        for layer in assembly.layers:
-            for segment in layer.segments:
-                if segment.project_material_id is not None and segment.project_material_id not in project_material_ids:
-                    raise ValueError(
-                        f"Unknown project_material_id {segment.project_material_id!r} on segment {segment.id}"
-                    )
-
-
-def _index_table_field_defs(
-    table_label: str,
-    field_defs: list[TableFieldDef],
-) -> dict[str, TableFieldDef]:
-    """Build a `field_key → FieldDef` map while enforcing uniqueness of
-    both `field_key` (identity) and `display_name` (case-insensitive,
-    trimmed)."""
-    by_key: dict[str, TableFieldDef] = {}
-    name_seen: dict[str, str] = {}
-    for field_def in field_defs:
-        if field_def.field_key in by_key:
-            raise ValueError(f"Duplicate field_key in {table_label}.field_defs: {field_def.field_key}")
-        by_key[field_def.field_key] = field_def
-        normalized_name = normalize_display_name(field_def.display_name)
-        if normalized_name in name_seen:
-            existing = name_seen[normalized_name]
-            raise ValueError(
-                f"Duplicate field name in {table_label}: {field_def.display_name!r} collides with {existing!r}"
-            )
-        name_seen[normalized_name] = field_def.display_name
-    return by_key
-
-
-def _validate_rows_custom_values(
-    *,
-    table_label: str,
-    row_label: str,
-    rows: list[tuple[str, dict[str, CustomValue]]],
-    field_defs_by_key: dict[str, TableFieldDef],
-    single_select_options: dict[str, list[SingleSelectOption]],
-) -> None:
-    """Coerce every `(row_id, custom_values)` pair against its
-    FieldDef's declared type. Single-select option lists are resolved
-    once per field_key, not per row."""
-    option_list_by_field_key: dict[str, list[SingleSelectOption]] = {}
-    for field_key, field_def in field_defs_by_key.items():
-        if field_def.field_type is CustomFieldType.single_select:
-            option_list_by_field_key[field_key] = single_select_options.get(f"{table_label}.{field_key}", [])
-
-    for row_id, custom_values in rows:
-        for field_key, value in custom_values.items():
-            field_def = field_defs_by_key.get(field_key)
-            if field_def is None:
-                raise ValueError(f"Unknown field_key on {row_label} {row_id}: {field_key}")
-            try:
-                coerce_custom_value(
-                    value,
-                    field_def.field_type,
-                    option_list=option_list_by_field_key.get(field_key),
-                )
-            except ValueError as exc:
-                raise ValueError(
-                    f"Invalid value for {field_def.display_name!r} on {row_label} {row_id}: {exc}"
-                ) from exc
-
-
-# Set of valid `target_table_path` tuples for every FieldDef-capable
-# table. Used by linked-record validation to resolve a field's declared
-# `target_table_path` config without dragging in `tables.registry`
-# (which would cycle).
-LINKED_RECORD_TARGET_PATHS: frozenset[tuple[str, ...]] = frozenset(
-    {
-        ("rooms",),
-        ("thermal_bridges",),
-        ("equipment", "pumps"),
-        ("equipment", "fans"),
-        ("equipment", "hot_water_heaters"),
-        ("equipment", "hot_water_tanks"),
-        ("equipment", "electric_heaters"),
-        ("equipment", "appliances"),
-        ("equipment", "ervs"),
-    }
-)
-
-
-def _collect_target_row_ids(document: ProjectDocumentV1) -> dict[tuple[str, ...], set[str]]:
-    """Build `target_table_path → set of row ids` for every linked-
-    record-targetable table in the document. Phase 1 ships every
-    FieldDef-capable contract with `link_targetable=True`."""
-    tables = document.tables
-    by_path: dict[tuple[str, ...], set[str]] = {
-        ("rooms",): {row.id for row in tables.rooms.rows},
-        ("thermal_bridges",): {row.id for row in tables.thermal_bridges.rows},
-        ("equipment", "pumps"): {row.id for row in tables.equipment.pumps.rows},
-        ("equipment", "fans"): {row.id for row in tables.equipment.fans.rows},
-        ("equipment", "hot_water_heaters"): {row.id for row in tables.equipment.hot_water_heaters.rows},
-        ("equipment", "hot_water_tanks"): {row.id for row in tables.equipment.hot_water_tanks.rows},
-        ("equipment", "electric_heaters"): {row.id for row in tables.equipment.electric_heaters.rows},
-        ("equipment", "appliances"): {row.id for row in tables.equipment.appliances.rows},
-        ("equipment", "ervs"): {row.id for row in tables.equipment.ervs.rows},
-    }
-    return by_path
-
-
-def _normalize_target_table_path(raw: object) -> tuple[str, ...] | None:
-    if not isinstance(raw, (list, tuple)):
-        return None
-    segments: list[str] = []
-    for seg in raw:
-        if not isinstance(seg, str) or not seg:
-            return None
-        segments.append(seg)
-    return tuple(segments)
-
-
-def _validate_linked_record_field_defs(
-    *,
-    table_label: str,
-    table_path: tuple[str, ...],
-    field_defs_by_key: dict[str, TableFieldDef],
-) -> None:
-    """Validate every `linked_record` FieldDef's config — resolution of
-    `target_table_path`, non-self, non-unknown."""
-    for field_def in field_defs_by_key.values():
-        if field_def.field_type is not CustomFieldType.linked_record:
-            continue
-        raw = field_def.config.get("target_table_path")
-        target_path = _normalize_target_table_path(raw)
-        if target_path is None or target_path not in LINKED_RECORD_TARGET_PATHS:
-            raise ValueError(
-                f"linked_record field {field_def.field_key!r} on {table_label}: unknown target_table_path {raw!r}"
-            )
-        if target_path == table_path:
-            raise ValueError(
-                f"linked_record field {field_def.field_key!r} on {table_label}: self-links are not permitted"
-            )
-
-
-def _validate_rows_custom_links(
-    *,
-    table_label: str,
-    row_label: str,
-    rows: list[tuple[str, dict[str, CustomValue], dict[str, list[str]]]],
-    field_defs_by_key: dict[str, TableFieldDef],
-    target_row_ids: dict[tuple[str, ...], set[str]],
-) -> None:
-    """Validate the `custom_links` bag on every row.
-
-    - rejects bag co-existence with `custom_values` (PRD Q16)
-    - rejects unknown `field_key`
-    - rejects `field_key` whose FieldDef is not `linked_record`
-    - rejects `len(ids) > max_links`
-    - dedupes within-cell silently (PRD Q25)
-    - silently strips orphan ids against the snapshot (PRD Q5 amendment)
-    """
-    for row_id, custom_values, custom_links in rows:
-        for field_key, ids in list(custom_links.items()):
-            if field_key in custom_values:
-                raise ValueError(
-                    f"field_key {field_key!r} on {row_label} {row_id} appears in both custom_values and custom_links"
-                )
-            field_def = field_defs_by_key.get(field_key)
-            if field_def is None:
-                raise ValueError(f"Unknown field_key on {row_label} {row_id}: {field_key}")
-            if field_def.field_type is not CustomFieldType.linked_record:
-                raise ValueError(f"field_key {field_key!r} on {row_label} {row_id} is not a linked_record field")
-            if not isinstance(ids, list):
-                raise ValueError(
-                    f"linked_record value for {field_def.display_name!r} on {row_label} {row_id} must be a list"
-                )
-
-            max_links_raw = field_def.config.get("max_links", 1)
-            max_links = max_links_raw if isinstance(max_links_raw, int) else None
-            seen: set[str] = set()
-            deduped: list[str] = []
-            for entry in ids:
-                if not isinstance(entry, str):
-                    raise ValueError(
-                        f"linked_record ids for {field_def.display_name!r} on {row_label} {row_id} must be strings"
-                    )
-                if entry not in seen:
-                    seen.add(entry)
-                    deduped.append(entry)
-            if max_links is not None and len(deduped) > max_links:
-                raise ValueError(
-                    f"linked_record value for {field_def.display_name!r} on {row_label} {row_id} "
-                    f"exceeds max_links={max_links}"
-                )
-
-            target_path = _normalize_target_table_path(field_def.config.get("target_table_path"))
-            available = target_row_ids.get(target_path, set()) if target_path else set()
-            cleaned = [entry for entry in deduped if entry in available]
-            custom_links[field_key] = cleaned
-
-
-def _validate_default_option_ids(
-    *,
-    table_label: str,
-    field_defs_by_key: dict[str, TableFieldDef],
-    single_select_options: dict[str, list[SingleSelectOption]],
-) -> None:
-    """`config.default_option_id`, when set, must reference an option in
-    the field's namespaced list. Only valid on single_select fields."""
-    for field_def in field_defs_by_key.values():
-        default_raw = field_def.config.get("default_option_id")
-        if default_raw is None:
-            continue
-        if field_def.field_type is not CustomFieldType.single_select:
-            raise ValueError(
-                f"default_option_id is only valid for single_select fields "
-                f"(field {field_def.field_key!r}, type {field_def.field_type.value!r})"
-            )
-        if not isinstance(default_raw, str):
-            raise ValueError(f"default_option_id for {field_def.field_key!r} must be a string option id")
-        namespace_key = f"{table_label}.{field_def.field_key}"
-        default_option_ids = {option.id for option in single_select_options.get(namespace_key, [])}
-        if default_raw not in default_option_ids:
-            raise ValueError(
-                f"default_option_id {default_raw!r} for {field_def.field_key!r} "
-                "does not reference an option in the field's option list"
-            )
+# Backward-compatibility re-exports. Existing callers import every symbol
+# above from ``features.project_document.document``; preserve that surface.
+__all__ = [
+    "APERTURE_DEFAULT_FRAME_NAME",
+    "APERTURE_DEFAULT_GLAZING_NAME",
+    "APPLIANCE_ENERGY_STAR_OPTION_KEY",
+    "APPLIANCE_OPTION_KEYS",
+    "APPLIANCE_TYPE_OPTION_KEY",
+    "APPLIANCES_TYPED_COLUMN_FIELD_KEYS",
+    "ApertureElement",
+    "ApertureElementFrames",
+    "ApertureOperation",
+    "ApertureOperationDirection",
+    "ApertureOperationType",
+    "ApertureTypeEntry",
+    "ApplianceOptionKey",
+    "ApplianceRow",
+    "AppliancesTableEnvelope",
+    "Assembly",
+    "AssemblyLayer",
+    "AssemblyOrientation",
+    "AssemblySegment",
+    "AssemblyType",
+    "CATALOG_RECORD_ID_PATTERN",
+    "CATALOG_VERSION_ID_PATTERN",
+    "CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION",
+    "CatalogOrigin",
+    "CatalogTableName",
+    "ELECTRIC_HEATERS_TYPED_COLUMN_FIELD_KEYS",
+    "ElectricHeaterRow",
+    "ElectricHeatersTableEnvelope",
+    "EmptyEquipmentTables",
+    "FAN_OPTION_KEYS",
+    "FAN_TYPE_OPTION_KEY",
+    "FANS_TYPED_COLUMN_FIELD_KEYS",
+    "FanOptionKey",
+    "FanRow",
+    "FansTableEnvelope",
+    "FrameRef",
+    "GlazingRef",
+    "HOT_WATER_HEATER_OPTION_KEYS",
+    "HOT_WATER_HEATER_TYPE_OPTION_KEY",
+    "HOT_WATER_HEATERS_TYPED_COLUMN_FIELD_KEYS",
+    "HOT_WATER_TANK_OPTION_KEYS",
+    "HOT_WATER_TANK_TYPE_OPTION_KEY",
+    "HOT_WATER_TANKS_TYPED_COLUMN_FIELD_KEYS",
+    "HotWaterHeaterOptionKey",
+    "HotWaterHeaterRow",
+    "HotWaterHeatersTableEnvelope",
+    "HotWaterTankOptionKey",
+    "HotWaterTankRow",
+    "HotWaterTanksTableEnvelope",
+    "ManufacturerFilters",
+    "PUMP_DEVICE_TYPE_OPTION_KEY",
+    "PUMP_OPTION_KEYS",
+    "PUMPS_TYPED_COLUMN_FIELD_KEYS",
+    "ProjectDocumentProject",
+    "ProjectDocumentTables",
+    "ProjectDocumentV1",
+    "ProjectMaterial",
+    "PumpOptionKey",
+    "PumpRow",
+    "PumpsTableEnvelope",
+    "ROOM_BUILDING_ZONE_OPTION_KEY",
+    "ROOM_FLOOR_LEVEL_OPTION_KEY",
+    "ROOM_OPTION_KEYS",
+    "ROOMS_TYPED_COLUMN_FIELD_KEYS",
+    "RoomOptionKey",
+    "RoomRow",
+    "RoomsTableEnvelope",
+    "RowWithCustomFields",
+    "SingleSelectOption",
+    "SpecificationStatus",
+    "THERMAL_BRIDGE_OPTION_KEYS",
+    "THERMAL_BRIDGE_TYPE_OPTION_KEY",
+    "THERMAL_BRIDGES_TYPED_COLUMN_FIELD_KEYS",
+    "ThermalBridgeOptionKey",
+    "ThermalBridgeRow",
+    "ThermalBridgesTableEnvelope",
+    "VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY",
+    "VENTILATOR_OPTION_KEYS",
+    "VENTILATORS_TYPED_COLUMN_FIELD_KEYS",
+    "VentilatorOptionKey",
+    "VentilatorRow",
+    "VentilatorsTableEnvelope",
+    "require_catalog_origin_family",
+]

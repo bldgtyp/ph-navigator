@@ -27,6 +27,14 @@ Or from the repo root: `make backend`, `make typecheck`, `make test-backend`.
 - `scripts/` — one-shot utilities
 - `tests/` — pytest suite
 
+## Action URLs
+
+Non-CRUD actions use the slash-verb style:
+`POST /resource/{id}/verb-phrase` (e.g. `POST /projects/{project_id}/delete`,
+`POST /projects/bulk-delete`, `POST /assets/{asset_id}/complete-upload`).
+Do not use the Google `:verb` style — every route under `features/` was
+unified on slash-verb in the 2026-06-09 hygiene pass.
+
 See `context/ENVIRONMENT.md` for the full env contract and
 `context/CODING_STANDARDS.md` for the backend layer, typing, module-size,
 documentation, and quality-gate standard.

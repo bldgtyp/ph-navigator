@@ -3,6 +3,14 @@
 Persistence store for per-user, per-(project, table) DataTable ViewState.
 One row per (user_id, project_id, table_key); deletion = reset.
 
+This table intentionally has NO ``deleted_at`` column — unlike every
+other soft-deletable table in the schema, ``user_table_views`` rows are
+hard-deleted by ``features.table_views.repository.delete``. The row is
+a UI-state cache (column widths, filters, etc.) that fully regenerates
+on the next save; there is no audit or recovery value in keeping a
+tombstone. Confirmed as the canonical choice in the 2026-06-09
+hygiene pass; see ``planning/features/backend-hygiene-pass/decisions.md``.
+
 Revision ID: 20260524_0010
 Revises: 20260514_0009
 Create Date: 2026-05-24 10:00:00.000000

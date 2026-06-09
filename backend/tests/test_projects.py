@@ -172,7 +172,7 @@ def test_editor_can_soft_delete_list_deleted_and_restore_project(clean_project_t
     project = create_project(client)
     project_id = project["id"]
 
-    delete = client.post(f"/api/v1/projects/{project_id}:delete", headers={"Origin": ORIGIN}, json={"confirm": True})
+    delete = client.post(f"/api/v1/projects/{project_id}/delete", headers={"Origin": ORIGIN}, json={"confirm": True})
 
     assert delete.status_code == 200
     delete_body = delete.json()
@@ -193,7 +193,7 @@ def test_editor_can_soft_delete_list_deleted_and_restore_project(clean_project_t
     assert [item["id"] for item in deleted.json()["projects"]] == [project_id]
     assert deleted.json()["projects"][0]["counts"]["versions"] == 1
 
-    restore = client.post(f"/api/v1/projects/{project_id}:restore", headers={"Origin": ORIGIN})
+    restore = client.post(f"/api/v1/projects/{project_id}/restore", headers={"Origin": ORIGIN})
     assert restore.status_code == 200
     assert restore.json()["id"] == project_id
     assert client.get(f"/api/v1/projects/{project_id}").status_code == 200
@@ -207,7 +207,7 @@ def test_bulk_delete_projects_deduplicates_and_returns_item_errors(clean_project
     missing_project_id = str(uuid4())
 
     response = client.post(
-        "/api/v1/projects:bulk-delete",
+        "/api/v1/projects/bulk-delete",
         headers={"Origin": ORIGIN},
         json={"project_ids": [first["id"], second["id"], first["id"], missing_project_id], "confirm": True},
     )

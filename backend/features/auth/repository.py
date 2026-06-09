@@ -17,7 +17,8 @@ def normalize_email(email: str) -> str:
 def get_user_by_email(conn: Connection[Any], email: str) -> dict[str, Any] | None:
     return conn.execute(
         """
-        SELECT id, email, display_name, password_hash, is_active, units_preference
+        SELECT id, email, display_name, password_hash,
+               (deleted_at IS NULL) AS is_active, units_preference
         FROM users
         WHERE lower(email) = %(email)s
         """,
@@ -28,7 +29,8 @@ def get_user_by_email(conn: Connection[Any], email: str) -> dict[str, Any] | Non
 def get_user_by_email_for_update(conn: Connection[Any], email: str) -> dict[str, Any] | None:
     return conn.execute(
         """
-        SELECT id, email, display_name, password_hash, is_active, units_preference
+        SELECT id, email, display_name, password_hash,
+               (deleted_at IS NULL) AS is_active, units_preference
         FROM users
         WHERE lower(email) = %(email)s
         FOR UPDATE
@@ -40,7 +42,8 @@ def get_user_by_email_for_update(conn: Connection[Any], email: str) -> dict[str,
 def get_user_by_id(conn: Connection[Any], user_id: UUID) -> dict[str, Any] | None:
     return conn.execute(
         """
-        SELECT id, email, display_name, is_active, units_preference
+        SELECT id, email, display_name,
+               (deleted_at IS NULL) AS is_active, units_preference
         FROM users
         WHERE id = %(user_id)s
         """,
@@ -57,9 +60,10 @@ def upsert_user(conn: Connection[Any], email: str, display_name: str, password_h
         DO UPDATE
         SET display_name = EXCLUDED.display_name,
             password_hash = EXCLUDED.password_hash,
-            is_active = true,
+            deleted_at = NULL,
             updated_at = now()
-        RETURNING id, email, display_name, is_active, units_preference
+        RETURNING id, email, display_name,
+                  (deleted_at IS NULL) AS is_active, units_preference
         """,
         {
             "email": normalize_email(email),
@@ -79,7 +83,8 @@ def update_user_units_preference(conn: Connection[Any], user_id: UUID, units_pre
         SET units_preference = %(units_preference)s,
             updated_at = now()
         WHERE id = %(user_id)s
-        RETURNING id, email, display_name, is_active, units_preference
+        RETURNING id, email, display_name,
+                  (deleted_at IS NULL) AS is_active, units_preference
         """,
         {"user_id": user_id, "units_preference": units_preference},
     ).fetchone()
@@ -152,7 +157,7 @@ def get_session_with_user(conn: Connection[Any], session_id: UUID) -> dict[str, 
             u.id                  AS user_id,
             u.email               AS user_email,
             u.display_name        AS user_display_name,
-            u.is_active           AS user_is_active,
+            (u.deleted_at IS NULL) AS user_is_active,
             u.units_preference    AS user_units_preference
         FROM sessions AS s
         JOIN users AS u ON u.id = s.user_id

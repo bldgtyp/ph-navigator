@@ -37,14 +37,14 @@ export async function createProject(payload: CreateProjectPayload): Promise<Proj
 }
 
 export async function bulkDeleteProjects(projectIds: string[]): Promise<ProjectBulkDeleteResponse> {
-  return fetchJson<ProjectBulkDeleteResponse>("/api/v1/projects:bulk-delete", {
+  return fetchJson<ProjectBulkDeleteResponse>("/api/v1/projects/bulk-delete", {
     method: "POST",
     body: JSON.stringify({ project_ids: projectIds, confirm: true }),
   });
 }
 
 export async function restoreProject(projectId: string): Promise<ProjectDetail> {
-  return fetchJson<ProjectDetail>(`/api/v1/projects/${projectId}:restore`, {
+  return fetchJson<ProjectDetail>(`/api/v1/projects/${projectId}/restore`, {
     method: "POST",
   });
 }
