@@ -1,7 +1,9 @@
 ---
 DATE: 2026-06-09
 TIME: 14:50
-STATUS: DRAFT — Phase 2 outline. Depends on Phase 1.
+STATUS: COMPLETE LOCALLY — Phase 2 frontend implementation landed
+        2026-06-09; vitest + fast frontend gate green; awaiting
+        final `make ci` and commit.
 AUTHOR: Ed May (with Claude)
 SCOPE: Frontend page for the HP Equipment — Indoor DataTable.
        Inherits all UX primitives from Phase 1 (nested tabs,
@@ -140,3 +142,26 @@ behavior.
   Phase 1 builds shared helpers in
   `frontend/src/features/equipment/heat-pumps/lib/`; Phase 2 imports
   them rather than copy-pasting.
+
+## Implementation notes (2026-06-09)
+
+- `install_type` ships as a frontend `<datalist>` autocomplete
+  seeded with the five canonical labels (Cassette, Wall-mounted,
+  Concealed-ducted, Multi-position, ERV-integrated). The "single-
+  select primitive" registry referenced in Step 4 is not yet
+  wired for HP columns (same caveat as Phase 1 manufacturer /
+  system_family / refrigerant); the seed labels reach the user
+  via `bootstrapInstallTypeOptions` and live in
+  `install-type-options.ts`. The slug-mint round-trip continues
+  to use `optionIdFromLabel` / `optionLabelFromId`.
+- The Phase 1 `IndoorEquipCreateModal.tsx` was folded into
+  `IndoorEquipRowModal.tsx`; the Phase 1 outdoor inline-create
+  call site now mounts the full modal in `mode="add"`.
+- `sortedIndoorEquip` was refactored to share an internal
+  `sortByModelNumber` helper with `sortedOutdoorEquip`.
+- Browser smoke add/edit/delete inside the live UI is blocked by
+  a sticky "Recovered draft found" dialog on the Phase 1 seed
+  project — a pre-existing project-state condition, not a
+  Phase 2 regression. Empty-state mount and nested-tab
+  navigation were verified via Playwright MCP (screenshot at
+  repo-root `heat-pumps-phase-2-empty-state.png`).

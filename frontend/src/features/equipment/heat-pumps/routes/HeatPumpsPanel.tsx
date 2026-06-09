@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { AppSubTabButton, AppSubTabs } from "../../../../shared/ui/AppSubTabs";
 import type { ProjectDetail } from "../../../projects/types";
 import { useHeatPumpsQuery } from "../api";
+import { IndoorEquipTable } from "../components/IndoorEquipTable";
 import { OutdoorEquipTable } from "../components/OutdoorEquipTable";
 
 const HEAT_PUMP_LEAF_TABS = [
@@ -62,6 +63,13 @@ export function HeatPumpsPanel({ project }: { project: ProjectDetail }) {
       </AppSubTabs>
       {activeLeaf === "equipment-outdoor" ? (
         <OutdoorEquipTable
+          projectId={project.id}
+          slice={query.data}
+          isEditor={project.access_mode === "editor"}
+          versionLocked={project.active_version?.locked ?? false}
+        />
+      ) : activeLeaf === "equipment-indoor" ? (
+        <IndoorEquipTable
           projectId={project.id}
           slice={query.data}
           isEditor={project.access_mode === "editor"}
