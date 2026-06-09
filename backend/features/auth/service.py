@@ -78,6 +78,19 @@ def create_or_update_user(email: str, display_name: str, password: str) -> UserP
 
 
 def authenticate(email: str, password: str, request: Request) -> tuple[UserPublic, UUID, datetime]:
+    """Verify credentials and start a new session for ``email``.
+
+    Runs in three transaction scopes so that constant-time password
+    verification happens outside any write transaction: a read-only
+    ``connection()`` fetches the candidate user row, then a first
+    ``transaction()`` records the ``login_failed`` audit on any failure,
+    and a second ``transaction()`` re-fetches the row ``FOR UPDATE``,
+    invalidates every active session for the user (single-active-session
+    rule), creates the new session, and writes the ``login`` audit. All
+    failures raise ``api_error(401, "invalid_credentials")`` with the
+    generic message so the response is identical for unknown email,
+    inactive user, and wrong password.
+    """
     ip_address = client_ip(request)
     agent = user_agent(request)
     now = now_utc()
@@ -167,6 +180,17 @@ def authenticate(email: str, password: str, request: Request) -> tuple[UserPubli
 
 
 def current_user_from_request(request: Request) -> tuple[UserPublic, datetime]:
+    """Resolve the session cookie to the current user, touching the session.
+
+    Single transaction that joins the session and user rows, rejects
+    invalidated or expired sessions, and (subject to the
+    ``session_touch_throttle_seconds`` rate limit) extends the session's
+    ``last_seen_at`` + ``expires_at`` in place. Raises
+    ``api_error(401, ...)`` with one of ``not_authenticated``,
+    ``invalid_session``, ``session_invalidated``, or ``session_expired``
+    depending on which gate fails; the route layer turns these into the
+    standard 401 envelope.
+    """
     raw_session_id = request.cookies.get(settings.session_cookie_name)
     if not raw_session_id:
         raise api_error(status.HTTP_401_UNAUTHORIZED, "not_authenticated", "Sign-in required.")
@@ -254,6 +278,14 @@ def update_units_preference(
 
 
 def sign_out(request: Request) -> None:
+    """Invalidate the session referenced by the request cookie.
+
+    No-op when the cookie is missing or malformed so the endpoint is
+    safe to call from any client state. When a session row is found, a
+    single transaction marks it ``signed_out`` and writes a ``sign_out``
+    audit entry. Never raises; clearing the client cookie is the route's
+    job.
+    """
     raw_session_id = request.cookies.get(settings.session_cookie_name)
     if not raw_session_id:
         return

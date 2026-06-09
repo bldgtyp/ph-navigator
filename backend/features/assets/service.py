@@ -94,6 +94,16 @@ class AssetService:
         self.thumbnailer = thumbnailer
 
     def create_upload_intent(self, access: ProjectAccess, payload: UploadIntentRequest) -> UploadIntentResponse:
+        """Reserve an asset row and mint a 10-minute signed PUT URL.
+
+        Single DB transaction so deduplication-by-content-hash and the
+        pending-row insert see a consistent snapshot — without this, two
+        concurrent uploads of the same file could both insert a pending
+        row before either sees the other. R2 sign-URL minting happens
+        outside the transaction (no side effect to compensate for if the
+        commit fails). Returns the existing asset with
+        ``upload_url=None`` when a duplicate content hash already exists.
+        """
         user = require_editor_user(access)
         self._validate_upload_intent_payload(payload)
         ext = filename_extension(payload.original_filename).lstrip(".") or _extension_from_content_type(
@@ -162,6 +172,19 @@ class AssetService:
         return BulkUploadIntentResponse(items=out)
 
     def complete_upload(self, access: ProjectAccess, asset_id: str, background_tasks: BackgroundTasks) -> AssetRow:
+        """Verify a finished R2 upload and flip the asset to ``uploaded``.
+
+        Three scopes by design: a read-only ``connection()`` fetches the
+        pending row; HEAD + magic-byte check on R2 happen outside any DB
+        transaction so we don't hold a row lock during a network call.
+        On verification failure, a ``transaction()`` marks the row
+        ``failed`` and the function raises
+        ``api_error(422, "asset_mime_not_allowed", ...)``. On success,
+        a second ``transaction()`` writes ``upload_status='uploaded'``
+        with the R2 ETag, and the thumbnailer is queued as a
+        background task (best-effort; failure does not roll the row
+        back).
+        """
         require_editor_user(access)
         with connection() as conn:
             asset = repository.get_asset_by_id(conn, access.project_id, asset_id)
@@ -216,6 +239,15 @@ class AssetService:
                 raise _asset_not_found() from exc
 
     def soft_delete(self, access: ProjectAccess, asset_id: str) -> None:
+        """Soft-delete an asset row; R2 object cleanup is deferred to GC.
+
+        Single transaction. Does NOT delete the R2 object — the
+        ``sweep_orphaned_assets`` pass moves objects to the orphan
+        prefix later, which gives us a recovery window if the soft
+        delete was a mistake. Idempotent on missing/already-deleted
+        rows (repository returns silently); callers needing a 404 must
+        check ``get_asset`` first.
+        """
         user = require_editor_user(access)
         with transaction() as conn:
             repository.soft_delete_asset(conn, access.project_id, asset_id, deleted_by=user.id)
@@ -249,6 +281,17 @@ class AssetService:
         return self._mutate_attachment_array(access, asset_id, payload, mode="detach")
 
     def start_bulk_download(self, access: ProjectAccess, payload: BulkDownloadRequest) -> JobResponse:
+        """Run a bulk-download job synchronously, exposing job-style status.
+
+        Three transactions: insert the ``pending`` job row, run the
+        bundle build + R2 upload outside any DB transaction, then write
+        either ``completed`` (with ``result_asset_id``) or ``failed``
+        (with ``error_details``). Despite the name and the JobResponse
+        return type, today this runs to completion before returning —
+        the route returns a 200 with status already set. The job row
+        exists so the same API surface can later move to a background
+        worker without changing clients.
+        """
         user = require_editor_user(access)
         job_id = generated_job_id()
         with transaction() as conn:
@@ -299,6 +342,20 @@ class AssetService:
         dry_run: bool = True,
         pending_max_age_hours: int = 24,
     ) -> dict[str, object]:
+        """Move unreferenced/expired assets to the orphan R2 prefix.
+
+        Read-only ``connection()`` enumerates candidates and the live
+        reference set in one snapshot; each candidate is then processed
+        outside any DB transaction so a single slow R2 call does not
+        block the others. Per-candidate, a small ``transaction()``
+        writes ``orphaned_status='moved'`` metadata only after the R2
+        move succeeds, so a network failure leaves the DB and R2 state
+        consistent (row still points at the original key). ``dry_run``
+        skips the R2 + DB mutation but still reports the planned move.
+        Default 24-hour ``pending_max_age_hours`` matches the upload-
+        intent expiry window plus headroom; callers may shorten it for
+        manual cleanup.
+        """
         pending_expired_before = datetime.now(tz=UTC) - timedelta(hours=pending_max_age_hours)
         with connection() as conn:
             candidates = repository.list_asset_gc_candidates(

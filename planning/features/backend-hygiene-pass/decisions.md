@@ -49,4 +49,31 @@ The review marked this as a five-minute design call. Treat it that way
 
 ## Accepted decisions
 
-(none yet)
+### D1 — REST action-URL style (Phase 3) — slash-verb
+
+Adopted **slash-verb** style: `POST /resource/{id}/verb-phrase`.
+
+Reasoning: 18 of 21 action routes in the codebase were already slash-verb;
+only three routes in `projects/routes.py` used `:verb` style
+(`:bulk-delete`, `/{project_id}:delete`, `/{project_id}:restore`).
+Cheaper to rename the three than to migrate the rest. Documented in
+`backend/README.md`.
+
+Decided: 2026-06-09. Implemented in Phase 3.
+
+### D2 — `user_table_views` deletability (Phase 5) — reset-only via hard-delete
+
+`user_table_views` rows are **hard-deleted** when a user resets a table
+view. No `deleted_at` column. No partial index.
+
+Reasoning: the table is a per-user UI-state cache (column widths,
+filters) that the frontend fully regenerates on the next save. There is
+no audit, recovery, or downstream-reference value in keeping a
+tombstone. Hard-delete also keeps reads cheap — every other query
+against the table is a (user_id, project_id, table_key) PK lookup.
+
+The schema is correct as-is (migration 0010); the change is a beefed-up
+docstring on that migration documenting the policy so the next
+soft-delete review doesn't re-flag it.
+
+Decided: 2026-06-09. Implemented in Phase 5.

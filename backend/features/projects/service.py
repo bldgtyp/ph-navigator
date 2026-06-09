@@ -109,6 +109,17 @@ def check_bt_number_available(value: str) -> BtNumberAvailabilityResponse:
 
 
 def create_project(payload: CreateProjectRequest, user: UserPublic, request_meta: Request) -> ProjectDetail:
+    """Create a project with its v0 working version atomically.
+
+    Single transaction so the ``projects`` row, the seeded
+    ``project_versions`` v0 row, and the ``project_create`` audit entry
+    either all land or none do. Re-checks ``bt_number`` inside the
+    transaction (defence in depth against TOCTOU between the route's
+    availability check and the insert) and also catches
+    ``UniqueViolation`` raised by the partial unique index — both paths
+    raise ``api_error(409, "bt_number_taken", ...)`` with the conflicting
+    project's id when known.
+    """
     body = empty_project_document(payload)
     size = body_size_bytes(body)
     try:
@@ -148,6 +159,16 @@ def update_project_metadata(
     user: UserPublic,
     request_meta: Request,
 ) -> ProjectDetail:
+    """Update mutable project metadata under owner-only authorization.
+
+    Single transaction. Computes the set of actually-changed fields up
+    front and short-circuits to a plain read when nothing changed (so a
+    no-op PATCH does not write an audit entry). On a ``bt_number``
+    change re-checks availability inside the transaction and also
+    catches ``UniqueViolation`` on the way out. Raises
+    ``api_error(404, "project_not_found")`` for missing rows and
+    ``api_error(409, "bt_number_taken")`` for conflicts.
+    """
     try:
         with transaction() as conn:
             current_project = repository.get_project_by_id(conn, project_id)
@@ -203,6 +224,18 @@ def delete_project(
     user: UserPublic,
     request_meta: Request | None,
 ) -> ProjectDeleteResponse:
+    """Soft-delete a project under owner-only authorization.
+
+    Requires explicit ``confirm=True`` in the payload; otherwise raises
+    ``api_error(422, "project_delete_confirmation_required")`` before
+    touching the DB. Single transaction performs the soft-delete, child
+    counts, and audit log; idempotent on already-deleted projects (still
+    refreshes ``deleted_at`` and returns ``already_deleted=True`` so
+    bulk-delete can report per-item state). Raises
+    ``api_error(404, "project_not_found")`` for unknown ids and
+    ``api_error(403, ...)`` when the caller is not the owner (via
+    ``_ensure_project_owner``).
+    """
     if not payload.confirm:
         raise api_error(
             status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -252,6 +285,16 @@ def bulk_delete_projects(
     user: UserPublic,
     request_meta: Request | None,
 ) -> ProjectBulkDeleteResponse:
+    """Soft-delete a batch of projects, reporting per-item success.
+
+    Requires ``confirm=True`` on the envelope. Deduplicates the input
+    id list, then delegates each id to ``delete_project`` in its own
+    transaction so a failure on one row never rolls back the others.
+    Per-item failures (not-found, not-owner, restore-expired) are
+    captured into ``ProjectBulkDeleteItem.error_code`` / ``message``;
+    the response always has 200 status regardless of how many items
+    failed. Never raises after the initial confirmation gate.
+    """
     if not payload.confirm:
         raise api_error(
             status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -300,6 +343,16 @@ def bulk_delete_projects(
 
 
 def restore_project(project_id: UUID, user: UserPublic, request_meta: Request | None) -> ProjectDetail:
+    """Restore a soft-deleted project before its hard-delete deadline.
+
+    Single transaction. Idempotent on not-deleted projects (returns the
+    current detail). When the row is past ``hard_delete_after``, the
+    repository ``restore_project`` returns None and this function raises
+    ``api_error(409, "project_restore_expired", ...)`` with the deadline
+    in the details. Other failure paths:
+    ``api_error(404, "project_not_found")`` for unknown ids,
+    ``api_error(403, ...)`` for non-owners.
+    """
     with transaction() as conn:
         current = repository.get_project_by_id_including_deleted(conn, project_id)
         if current is None:
@@ -396,8 +449,18 @@ def hard_delete_project(
 ) -> ProjectHardDeleteResponse:
     """Permanently remove a project and its project-owned object prefix.
 
-    This is intentionally not used by normal dashboard routes. It exists for
-    dev/admin cleanup and MCP's explicitly confirmed hard-delete tool.
+    Used only by dev/admin cleanup and MCP's explicitly confirmed
+    hard-delete tool — never by normal dashboard routes. Three
+    transaction scopes, by design: (1) one to verify the row, confirm
+    the name+bt_number match, soft-delete if needed, and read the
+    storage manifest while holding the row; (2) external R2 calls
+    happen outside any DB transaction; (3) one to either log
+    ``project_hard_delete_failed`` and raise (if R2 reported any failed
+    keys, leaving DB rows for retry) or delete the rows and log
+    ``project_hard_delete``. Raises ``api_error(404, "project_not_found")``,
+    ``api_error(422, "project_delete_hard_confirmation_mismatch")``,
+    ``api_error(409, "project_hard_delete_storage_partial_failure")``,
+    or ``api_error(403, ...)`` from ``_ensure_project_owner``.
     """
     with transaction() as conn:
         current = repository.get_project_by_id_including_deleted(conn, project_id)
