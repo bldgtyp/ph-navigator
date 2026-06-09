@@ -615,7 +615,7 @@ def test_set_formula_rejects_unsupported_function() -> None:
         kind="setFormula",
         table_key="rooms",
         field_id="cf_a",
-        source="sum({Name})",
+        source="min({Name})",
         expected_schema_fingerprint=_fingerprint(body),
     )
     with pytest.raises(HTTPException) as excinfo:

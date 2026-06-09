@@ -31,14 +31,18 @@ from __future__ import annotations
 from features.project_document.formula.ast_nodes import (
     BinaryOp,
     BinaryOperator,
+    FieldAccess,
     FieldRef,
     FormulaAST,
     FuncCall,
     IfExpr,
+    LinkedFromRef,
+    LinkedRef,
     Literal_,
     UnaryOp,
 )
 from features.project_document.formula.errors import (
+    FormulaInvalidLinkedArgError,
     FormulaParseError,
     FormulaResourceLimitError,
     FormulaUnsupportedFunctionError,
@@ -55,15 +59,25 @@ from features.project_document.formula.tokens import Token, TokenKind
 # is grammar-level, not a function — but we include it in the
 # tokenizer's keyword set.
 ALLOWED_FUNCTIONS: tuple[str, ...] = (
+    "avg",
     "concat",
+    "count",
     "len",
     "lower",
     "number",
     "replace",
+    "sum",
     "substring",
     "text",
     "trim",
     "upper",
+)
+
+DEFERRED_FUNCTIONS: tuple[str, ...] = (
+    "array_join",
+    "count_unique",
+    "max",
+    "min",
 )
 
 KEYWORDS: dict[str, TokenKind] = {
@@ -216,6 +230,7 @@ def tokenize(source: str) -> list[Token]:
             "(": TokenKind.LPAREN,
             ")": TokenKind.RPAREN,
             ",": TokenKind.COMMA,
+            ".": TokenKind.DOT,
             "+": TokenKind.PLUS,
             "-": TokenKind.MINUS,
             "*": TokenKind.STAR,
@@ -407,22 +422,27 @@ class _Parser:
 
     def _atom(self) -> FormulaAST:
         tok = self._peek()
+        node: FormulaAST
         if tok.kind is TokenKind.NUMBER:
             self._advance()
             self._bump_node()
-            return Literal_(kind="literal", value=tok.value, inferred_type="number")
+            node = Literal_(kind="literal", value=tok.value, inferred_type="number")
+            return self._field_access_suffix(node)
         if tok.kind is TokenKind.STRING:
             self._advance()
             self._bump_node()
-            return Literal_(kind="literal", value=tok.value, inferred_type="text")
+            node = Literal_(kind="literal", value=tok.value, inferred_type="text")
+            return self._field_access_suffix(node)
         if tok.kind is TokenKind.BOOL:
             self._advance()
             self._bump_node()
-            return Literal_(kind="literal", value=tok.value, inferred_type="bool")
+            node = Literal_(kind="literal", value=tok.value, inferred_type="bool")
+            return self._field_access_suffix(node)
         if tok.kind is TokenKind.NULL:
             self._advance()
             self._bump_node()
-            return Literal_(kind="literal", value=None, inferred_type="null")
+            node = Literal_(kind="literal", value=None, inferred_type="null")
+            return self._field_access_suffix(node)
         if tok.kind is TokenKind.FIELD_REF:
             self._advance()
             self._bump_node()
@@ -430,25 +450,85 @@ class _Parser:
             # Distinct-ref count tracks the *display_name* identity at
             # parse time; resolution later folds equivalent references
             # to the same field_id.
-            normalized = display_name.strip().casefold()
-            self.distinct_refs.add(normalized)
-            if len(self.distinct_refs) > DEP_COUNT_MAX:
-                raise FormulaResourceLimitError("dep_count", len(self.distinct_refs), DEP_COUNT_MAX)
-            return FieldRef(kind="field_ref", display_name=display_name, field_id=None)
+            self._track_distinct_ref(display_name.strip().casefold())
+            node = FieldRef(kind="field_ref", display_name=display_name, field_id=None)
+            return self._field_access_suffix(node)
         if tok.kind is TokenKind.LPAREN:
             self._advance()
             self._enter_depth()
             try:
-                inner = self._expr()
+                node = self._expr()
             finally:
                 self._exit_depth()
             self._expect(TokenKind.RPAREN, "expected ')'")
-            return inner
+            return self._field_access_suffix(node)
         if tok.kind is TokenKind.IDENT:
-            return self._func_call()
+            if tok.text == "linked":
+                node = self._linked_ref()
+            elif tok.text == "linked_from":
+                node = self._linked_from_ref()
+            else:
+                node = self._func_call()
+            return self._field_access_suffix(node)
         if tok.kind is TokenKind.IF:
-            return self._if_expr()
+            node = self._if_expr()
+            return self._field_access_suffix(node)
         raise FormulaParseError(f"unexpected token {tok.text!r}", tok.offset, self.source)
+
+    def _field_access_suffix(self, node: FormulaAST) -> FormulaAST:
+        current = node
+        while self._peek().kind is TokenKind.DOT:
+            dot = self._advance()
+            field_tok = self._expect(TokenKind.IDENT, "expected field key after '.'")
+            self._bump_node()
+            if not isinstance(current, (LinkedRef, LinkedFromRef)):
+                raise FormulaParseError(
+                    "field access is only supported after linked row expressions",
+                    dot.offset,
+                    self.source,
+                )
+            if isinstance(current, FieldAccess):
+                raise FormulaParseError("chained linked field access is not supported", dot.offset, self.source)
+            current = FieldAccess(kind="field_access", target=current, field_key=field_tok.text)
+        return current
+
+    def _linked_ref(self) -> FormulaAST:
+        self._advance()
+        self._expect(TokenKind.LPAREN, "expected '(' after 'linked'")
+        arg = self._expect(TokenKind.STRING, "linked(...) expects a string field_key")
+        self._expect(TokenKind.RPAREN, "expected ')' closing linked(...)")
+        if not isinstance(arg.value, str) or not arg.value:
+            raise FormulaInvalidLinkedArgError("linked(...) expects a non-empty string field_key")
+        self._bump_node()
+        self._track_distinct_ref(f"linked:{arg.value}")
+        return LinkedRef(kind="linked_ref", field_key=arg.value)
+
+    def _linked_from_ref(self) -> FormulaAST:
+        self._advance()
+        self._expect(TokenKind.LPAREN, "expected '(' after 'linked_from'")
+        table_path = self._table_path_arg()
+        self._expect(TokenKind.COMMA, "linked_from(...) expects table path, field_key")
+        field_tok = self._expect(TokenKind.STRING, "linked_from(...) expects a string source field_key")
+        self._expect(TokenKind.RPAREN, "expected ')' closing linked_from(...)")
+        if not isinstance(field_tok.value, str) or not field_tok.value:
+            raise FormulaInvalidLinkedArgError("linked_from(...) expects a non-empty string source field_key")
+        self._bump_node()
+        self._track_distinct_ref(f"linked_from:{'.'.join(table_path)}:{field_tok.value}")
+        return LinkedFromRef(kind="linked_from_ref", source_table_path=table_path, source_field_key=field_tok.value)
+
+    def _table_path_arg(self) -> tuple[str, ...]:
+        first = self._expect(TokenKind.IDENT, "linked_from(...) expects a table path")
+        parts = [first.text]
+        while self._peek().kind is TokenKind.DOT:
+            self._advance()
+            segment = self._expect(TokenKind.IDENT, "expected table path segment after '.'")
+            parts.append(segment.text)
+        return tuple(parts)
+
+    def _track_distinct_ref(self, key: str) -> None:
+        self.distinct_refs.add(key)
+        if len(self.distinct_refs) > DEP_COUNT_MAX:
+            raise FormulaResourceLimitError("dep_count", len(self.distinct_refs), DEP_COUNT_MAX)
 
     def _func_call(self) -> FormulaAST:
         name_tok = self._advance()
@@ -459,6 +539,8 @@ class _Parser:
                 self._peek().offset,
                 self.source,
             )
+        if name in DEFERRED_FUNCTIONS:
+            raise FormulaUnsupportedFunctionError(name, ALLOWED_FUNCTIONS, error_code="formula_function_not_supported")
         if name not in ALLOWED_FUNCTIONS:
             raise FormulaUnsupportedFunctionError(name, ALLOWED_FUNCTIONS)
         self._advance()  # consume '('
@@ -487,10 +569,13 @@ class _Parser:
 _FUNCTION_ARITY: dict[str, tuple[int, int]] = {
     # (min, max) inclusive; max=-1 means unbounded.
     "concat": (1, -1),
+    "count": (1, 1),
+    "avg": (1, 1),
     "len": (1, 1),
     "lower": (1, 1),
     "number": (1, 1),
     "replace": (3, 3),
+    "sum": (1, 1),
     "substring": (2, 3),
     "text": (1, 1),
     "trim": (1, 1),

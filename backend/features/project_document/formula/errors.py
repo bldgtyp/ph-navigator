@@ -44,10 +44,25 @@ class FormulaResourceLimitError(Exception):
 class FormulaUnsupportedFunctionError(Exception):
     """Raised at parse time on an unknown function name."""
 
-    def __init__(self, function_name: str, available: tuple[str, ...]) -> None:
+    def __init__(
+        self,
+        function_name: str,
+        available: tuple[str, ...],
+        *,
+        error_code: str = "custom_field_formula_unsupported_function",
+    ) -> None:
         super().__init__(f"unsupported formula function: {function_name!r}")
         self.function_name = function_name
         self.available = available
+        self.error_code = error_code
+
+
+class FormulaInvalidLinkedArgError(Exception):
+    """Raised when linked/linked_from arguments violate the Phase 3 grammar."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+        self.message = message
 
 
 class FormulaMissingRefError(Exception):

@@ -7,8 +7,9 @@ STATUS: In implementation — product / behavior contract is accepted.
         surface, including linked_record deleteField cleanup and
         browser/e2e smoke evidence. Phase 2 inverse-view work is
         complete for the canonical Rooms→Pumps target surface. Phase 3
-        rollups have not started. `STATUS.md` is the current execution
-        ledger.
+        backend rollup parsing/evaluation has started; frontend
+        editor completion and document-level cycle validation remain.
+        `STATUS.md` is the current execution ledger.
 AUTHOR: Ed May (with Claude)
 SCOPE: Add AirTable-style record-linking between project-document
        tables in PHN V2 — a new user-creatable `linked_record` field
@@ -453,7 +454,11 @@ Notable cross-phase deliverables:
 - [x] All `make ci` gates green. Current checkout passed `make ci` on
   2026-06-09; `make format` left files unchanged.
 
-Phase 3 acceptance criteria land in the Phase 3 plan.
+Phase 3 acceptance criteria live in the Phase 3 plan. Current status:
+backend parsing/evaluation for canonical persisted Rooms→Pumps rollups
+is partially implemented and covered by
+`test_project_document_record_linking_rollups.py`; frontend formula
+authoring/completion and document-level cycle detection remain open.
 
 ## 11. Open questions
 

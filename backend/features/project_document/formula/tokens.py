@@ -21,6 +21,7 @@ class TokenKind(StrEnum):
     LPAREN = "LPAREN"
     RPAREN = "RPAREN"
     COMMA = "COMMA"
+    DOT = "DOT"
     PLUS = "PLUS"
     MINUS = "MINUS"
     STAR = "STAR"

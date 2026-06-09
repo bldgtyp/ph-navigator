@@ -13,7 +13,7 @@ registry — attachment is a FE-only renderer type).
 
 from __future__ import annotations
 
-from typing import cast
+from typing import TYPE_CHECKING, Literal, cast
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -21,6 +21,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from features.project_document.custom_fields import (
     RESERVED_FIELD_KEY_RECORD_ID,
     CustomFieldType,
+    CustomValue,
     TableFieldDef,
 )
 from features.project_document.document import (
@@ -36,9 +37,19 @@ from features.project_document.inverse_view import (
     build_inverse_table_view,
 )
 from features.project_document.models import ProjectDocumentSource
+from features.project_document.options import option_list_key, read_option_list, replace_option_list
 from features.project_document.tables._built_in_seeds import built_in_field_def
-from features.project_document.tables.contracts import InverseLinkField, TableContract
+from features.project_document.tables._fingerprint import compute_table_schema_fingerprint
+from features.project_document.tables.contracts import (
+    InverseLinkField,
+    TableContract,
+    TableFieldRegistry,
+    default_attach_computed_overlay,
+)
 from features.project_document.validation import validate_document
+
+if TYPE_CHECKING:
+    from features.project_document.schema_mutations import FieldSchemaMutation
 
 PUMPS_TABLE_NAME = "pumps"
 _PUMPS_TABLE_PATH: tuple[str, ...] = ("equipment", PUMPS_TABLE_NAME)
@@ -111,6 +122,7 @@ class PumpsSliceResponse(BaseModel):
     pumps: list[PumpRow]
     field_defs: list[TableFieldDef]
     single_select_options: dict[str, list[SingleSelectOption]]
+    rows_computed: dict[str, dict[str, object]] = Field(default_factory=dict)
     inverse_links: dict[str, dict[str, list[str]]] = Field(default_factory=dict)
     inverse_link_fields: list[InverseLinkField] = Field(default_factory=list)
     inverse_links_fingerprint: str = ""
@@ -147,6 +159,9 @@ def pumps_response(
     draft_etag: str | None,
     body: ProjectDocumentV1,
 ) -> PumpsSliceResponse:
+    from features.project_document.formula import evaluate_table_formulas
+
+    rows_computed = evaluate_table_formulas(pumps_field_registry, body)
     inverse_view = build_inverse_table_view(body, _PUMPS_TABLE_PATH)
     return PumpsSliceResponse(
         project_id=project_id,
@@ -157,6 +172,7 @@ def pumps_response(
         pumps=body.tables.equipment.pumps.rows,
         field_defs=body.tables.equipment.pumps.field_defs,
         single_select_options={PUMP_DEVICE_TYPE_OPTION_KEY: body.single_select_options[PUMP_DEVICE_TYPE_OPTION_KEY]},
+        rows_computed=rows_computed,
         inverse_links=inverse_view.inverse_links,
         inverse_link_fields=inverse_view.inverse_link_fields,
         inverse_links_fingerprint=inverse_view.fingerprint,
@@ -168,11 +184,16 @@ def extract_pumps_envelope(body: ProjectDocumentV1) -> dict[str, object]:
 
     Mirrors `extract_rooms_envelope`'s `{field_defs, rows}` shape.
     """
+    from features.project_document.formula import evaluate_table_formulas
+
+    overlay = evaluate_table_formulas(pumps_field_registry, body)
     inverse_view = build_inverse_table_view(body, _PUMPS_TABLE_PATH)
     rows = [pump.model_dump(mode="json") for pump in body.tables.equipment.pumps.rows]
+    rows_with_overlay = pumps_field_registry.attach_computed_overlay(rows, overlay)
+    rows_with_overlay = attach_inverse_links_overlay(rows_with_overlay, inverse_view.inverse_links)
     return {
         "field_defs": [field.model_dump(mode="json") for field in body.tables.equipment.pumps.field_defs],
-        "rows": attach_inverse_links_overlay(rows, inverse_view.inverse_links),
+        "rows": rows_with_overlay,
         "inverse_link_fields": [field.model_dump(mode="json") for field in inverse_view.inverse_link_fields],
         "inverse_links_fingerprint": inverse_view.fingerprint,
     }
@@ -187,6 +208,136 @@ def extract_pumps_diff_value(body: ProjectDocumentV1) -> dict[str, object]:
             ],
         },
     }
+
+
+def _read_pumps_field_defs(body: ProjectDocumentV1) -> list[TableFieldDef]:
+    return list(body.tables.equipment.pumps.field_defs)
+
+
+def _replace_pumps_field_defs(body: ProjectDocumentV1, field_defs: list[TableFieldDef]) -> ProjectDocumentV1:
+    next_envelope = body.tables.equipment.pumps.model_copy(update={"field_defs": list(field_defs)})
+    next_equipment = body.tables.equipment.model_copy(update={"pumps": next_envelope})
+    next_tables = body.tables.model_copy(update={"equipment": next_equipment})
+    return body.model_copy(update={"tables": next_tables})
+
+
+def _read_pump_row_custom_values(row: object) -> dict[str, CustomValue]:
+    if not isinstance(row, PumpRow):
+        raise TypeError(f"expected PumpRow, got {type(row).__name__}")
+    return row.custom_values
+
+
+def _set_pump_row_custom_values(row: object, custom_values: dict[str, CustomValue]) -> object:
+    if not isinstance(row, PumpRow):
+        raise TypeError(f"expected PumpRow, got {type(row).__name__}")
+    return row.model_copy(update={"custom_values": dict(custom_values)})
+
+
+def _read_pump_row_links(row: object) -> dict[str, list[str]]:
+    if not isinstance(row, PumpRow):
+        raise TypeError(f"expected PumpRow, got {type(row).__name__}")
+    return row.custom_links
+
+
+def _set_pump_row_links(row: object, custom_links: dict[str, list[str]]) -> object:
+    if not isinstance(row, PumpRow):
+        raise TypeError(f"expected PumpRow, got {type(row).__name__}")
+    return row.model_copy(update={"custom_links": {k: list(v) for k, v in custom_links.items()}})
+
+
+def _compute_pumps_schema_fingerprint(body: ProjectDocumentV1) -> str:
+    return compute_table_schema_fingerprint(body.tables.equipment.pumps.field_defs)
+
+
+def _read_pumps_field_option_list(body: ProjectDocumentV1, field_key: str) -> list[SingleSelectOption]:
+    return read_option_list(body, option_list_key(_PUMPS_TABLE_PATH, field_key))
+
+
+def _replace_pumps_field_option_list(
+    body: ProjectDocumentV1,
+    field_key: str,
+    options: list[SingleSelectOption],
+) -> ProjectDocumentV1:
+    return replace_option_list(body, option_list_key(_PUMPS_TABLE_PATH, field_key), options)
+
+
+def _read_pumps_built_in_option_value(row: object, field_key: str) -> str | None:
+    if not isinstance(row, PumpRow):
+        raise TypeError(f"expected PumpRow, got {type(row).__name__}")
+    if field_key == "device_type":
+        return row.device_type
+    raise ValueError(f"unknown built-in single-select field: {field_key}")
+
+
+def _set_pumps_built_in_option_value(row: object, field_key: str, value: str | None) -> object:
+    if not isinstance(row, PumpRow):
+        raise TypeError(f"expected PumpRow, got {type(row).__name__}")
+    if field_key == "device_type":
+        return row.model_copy(update={"device_type": value})
+    raise ValueError(f"unknown built-in single-select field: {field_key}")
+
+
+PumpFormulaType = Literal["text", "number", "single_select", "bool"]
+PUMPS_TYPED_COLUMN_FORMULA_TYPES: dict[str, PumpFormulaType] = {
+    "id": "text",
+    "device_type": "single_select",
+    "phase": "number",
+    "link": "text",
+    "notes": "text",
+}
+
+
+def _read_pumps_field_for_formula(row: object, field_key: str) -> object | None:
+    if not isinstance(row, PumpRow):
+        return None
+    if field_key in row.custom_values:
+        return row.custom_values[field_key]
+    value = getattr(row, field_key, None)
+    if value is None:
+        return None
+    if isinstance(value, list):
+        return ", ".join(str(v) for v in value)
+    if isinstance(value, (str, int, float, bool)):
+        return value
+    return str(value)
+
+
+def _pumps_field_type_for_formula(field_key: str) -> PumpFormulaType | None:
+    return PUMPS_TYPED_COLUMN_FORMULA_TYPES.get(field_key)
+
+
+def _reject_pumps_schema_mutation(
+    body: ProjectDocumentV1,
+    mutation: FieldSchemaMutation,
+    actor_user_id: str,
+) -> tuple[ProjectDocumentV1, dict[str, object]]:
+    _ = (body, mutation, actor_user_id)
+    raise NotImplementedError("Pumps schema mutations are not routed through this registry yet.")
+
+
+pumps_field_registry = TableFieldRegistry(
+    field_keys=PUMPS_BUILT_IN_FIELD_KEYS,
+    option_list_namespace_prefix="equipment.pumps",
+    table_path=_PUMPS_TABLE_PATH,
+    read_field_defs=_read_pumps_field_defs,
+    replace_field_defs=_replace_pumps_field_defs,
+    read_row_custom_values=_read_pump_row_custom_values,
+    set_row_custom_values=_set_pump_row_custom_values,
+    read_row_links=_read_pump_row_links,
+    set_row_links=_set_pump_row_links,
+    compute_schema_fingerprint=_compute_pumps_schema_fingerprint,
+    apply_schema_mutation=_reject_pumps_schema_mutation,
+    validate_schema_mutation=lambda body, mutation: None,
+    read_field_option_list=_read_pumps_field_option_list,
+    replace_field_option_list=_replace_pumps_field_option_list,
+    built_in_option_key_by_field_key={"device_type": PUMP_DEVICE_TYPE_OPTION_KEY},
+    required_field_keys=frozenset(),
+    read_built_in_option_value=_read_pumps_built_in_option_value,
+    set_built_in_option_value=_set_pumps_built_in_option_value,
+    field_value_for_formula=_read_pumps_field_for_formula,
+    field_type_for_formula=_pumps_field_type_for_formula,  # type: ignore[arg-type]
+    attach_computed_overlay=default_attach_computed_overlay,
+)
 
 
 pumps_contract = TableContract(
