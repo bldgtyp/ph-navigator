@@ -23,6 +23,13 @@ from pydantic import BaseModel, Field
 from config import settings
 from database import transaction
 from features.auth.service import create_or_update_user
+from features.heat_pumps.models import (
+    HeatPumpIndoorEquipRow,
+    HeatPumpIndoorUnitRow,
+    HeatPumpOutdoorEquipRow,
+    HeatPumpOutdoorUnitRow,
+    HeatPumpsTableSlice,
+)
 from features.project_document.apertures.factories import build_default_aperture_type
 from features.project_document.document import (
     APERTURE_DEFAULT_FRAME_NAME,
@@ -73,6 +80,7 @@ from scripts._seed_paths import (
     ASSEMBLIES_SEED_PATH,
     ELECTRIC_HEATERS_SEED_PATH,
     FANS_SEED_PATH,
+    HEAT_PUMPS_SEED_PATH,
     HOT_WATER_HEATERS_SEED_PATH,
     HOT_WATER_TANKS_SEED_PATH,
     PROJECT_META_PATH,
@@ -112,6 +120,15 @@ class _ApertureSeed(BaseModel):
     rows: list[_ApertureSeedRow] = Field(default_factory=list)
 
 
+class _HeatPumpsSeed(BaseModel):
+    """Heat-pumps slice seed: four parallel row lists, no field_defs/options."""
+
+    outdoor_equip: list[dict[str, Any]] = Field(default_factory=list)
+    indoor_equip: list[dict[str, Any]] = Field(default_factory=list)
+    outdoor_units: list[dict[str, Any]] = Field(default_factory=list)
+    indoor_units: list[dict[str, Any]] = Field(default_factory=list)
+
+
 def _load_table_seed(path: Any) -> _TableSeed:
     return _TableSeed.model_validate_json(path.read_text())
 
@@ -122,6 +139,10 @@ def _load_envelope_seed(path: Any) -> _EnvelopeSeed:
 
 def _load_aperture_seed(path: Any) -> _ApertureSeed:
     return _ApertureSeed.model_validate_json(path.read_text())
+
+
+def _load_heat_pumps_seed(path: Any) -> _HeatPumpsSeed:
+    return _HeatPumpsSeed.model_validate_json(path.read_text())
 
 
 def main() -> None:
@@ -288,6 +309,7 @@ def _starter_project_document(payload: CreateProjectRequest) -> ProjectDocumentV
     hot_water_tanks_seed = _load_table_seed(HOT_WATER_TANKS_SEED_PATH)
     electric_heaters_seed = _load_table_seed(ELECTRIC_HEATERS_SEED_PATH)
     appliances_seed = _load_table_seed(APPLIANCES_SEED_PATH)
+    heat_pumps_seed = _load_heat_pumps_seed(HEAT_PUMPS_SEED_PATH)
 
     next_options = dict(body.single_select_options)
     for seed in (
@@ -332,6 +354,12 @@ def _starter_project_document(payload: CreateProjectRequest) -> ProjectDocumentV
             "appliances": AppliancesTableEnvelope(
                 field_defs=list(APPLIANCES_BUILT_IN_FIELD_DEFS),
                 rows=[ApplianceRow.model_validate(row) for row in appliances_seed.rows],
+            ),
+            "heat_pumps": HeatPumpsTableSlice(
+                outdoor_equip=[HeatPumpOutdoorEquipRow.model_validate(row) for row in heat_pumps_seed.outdoor_equip],
+                indoor_equip=[HeatPumpIndoorEquipRow.model_validate(row) for row in heat_pumps_seed.indoor_equip],
+                outdoor_units=[HeatPumpOutdoorUnitRow.model_validate(row) for row in heat_pumps_seed.outdoor_units],
+                indoor_units=[HeatPumpIndoorUnitRow.model_validate(row) for row in heat_pumps_seed.indoor_units],
             ),
         }
     )

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Camera } from "lucide-react";
 import { AttachmentCell } from "../../../assets/components/AttachmentCell";
 import { SITE_PHOTO_ATTACHMENT_CONFIG } from "../../../assets/lib";
 import type { AssetUrls } from "../../../assets/types";
@@ -35,7 +36,7 @@ export function UseSiteRow({
     <li className="use-site">
       <header className="use-site__header">
         <span className="use-site__title">
-          <span aria-hidden="true">📷</span>
+          <Camera size={14} aria-hidden="true" />
           <strong>{site.assembly_name}</strong>
           <span className="use-site__where">
             · layer {site.layer_order + 1}, segment {site.segment_order + 1}

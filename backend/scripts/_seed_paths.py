@@ -36,6 +36,7 @@ HOT_WATER_HEATERS_SEED_PATH: Final[pathlib.Path] = PROJECT_DIR / "hot-water-heat
 HOT_WATER_TANKS_SEED_PATH: Final[pathlib.Path] = PROJECT_DIR / "hot-water-tanks.json"
 ELECTRIC_HEATERS_SEED_PATH: Final[pathlib.Path] = PROJECT_DIR / "electric-heaters.json"
 APPLIANCES_SEED_PATH: Final[pathlib.Path] = PROJECT_DIR / "appliances.json"
+HEAT_PUMPS_SEED_PATH: Final[pathlib.Path] = PROJECT_DIR / "heat-pumps.json"
 
 
 def default_user_kwargs() -> dict[str, str]:

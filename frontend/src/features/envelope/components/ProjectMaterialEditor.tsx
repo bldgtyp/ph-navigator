@@ -140,69 +140,103 @@ export function ProjectMaterialEditor({
 
   const content = (
     <>
-      <p className="shared-material-warning">
-        Editing applies to all {material.use_sites.length} segments using this material.
-      </p>
-      <ModalUnitToggle unitSystem={unitSystem} setUnitSystem={setUnitSystem} />
-      <label>
-        Name
-        <input
-          value={form.name}
-          onChange={(event) => updateForm("name", event.currentTarget.value)}
-        />
-      </label>
-      <label>
-        Category
-        <input
-          value={form.category}
-          onChange={(event) => updateForm("category", event.currentTarget.value)}
-        />
-      </label>
-      <label>
-        Lambda ({conductivityUnitLabel(editorUnitSystem)})
-        <input
-          value={form.conductivity_w_mk}
-          onChange={(event) => updateForm("conductivity_w_mk", event.currentTarget.value)}
-        />
-      </label>
-      <label>
-        Density ({densityUnitLabel(editorUnitSystem)})
-        <input
-          value={form.density_kg_m3}
-          onChange={(event) => updateForm("density_kg_m3", event.currentTarget.value)}
-        />
-      </label>
-      <label>
-        Specific heat ({specificHeatUnitLabel(editorUnitSystem)})
-        <input
-          value={form.specific_heat_j_kgk}
-          onChange={(event) => updateForm("specific_heat_j_kgk", event.currentTarget.value)}
-        />
-      </label>
-      <label>
-        Emissivity
-        <input
-          value={form.emissivity}
-          onChange={(event) => updateForm("emissivity", event.currentTarget.value)}
-        />
-      </label>
-      {showNotes ? (
-        <label>
-          Comments
-          <textarea
-            value={form.comments}
-            onChange={(event) => updateForm("comments", event.currentTarget.value)}
-          />
-        </label>
-      ) : null}
-      {parseError || error ? (
-        <p className="form-error" role="alert">
-          {parseError ?? error}
+      <header className="project-material-editor__header">
+        <p className="shared-material-warning">
+          Editing applies to all {material.use_sites.length}{" "}
+          {material.use_sites.length === 1 ? "segment" : "segments"} using this material in this
+          project, but does not affect the shared <em>Catalog</em> material.
         </p>
+        <ModalUnitToggle unitSystem={unitSystem} setUnitSystem={setUnitSystem} />
+      </header>
+
+      <fieldset className="project-material-editor__group">
+        <legend>Identity</legend>
+        <div className="project-material-editor__grid">
+          <label className="project-material-editor__field project-material-editor__field--full">
+            <span>Name</span>
+            <input
+              value={form.name}
+              onChange={(event) => updateForm("name", event.currentTarget.value)}
+            />
+          </label>
+          <label className="project-material-editor__field project-material-editor__field--full">
+            <span>Category</span>
+            <input
+              value={form.category}
+              onChange={(event) => updateForm("category", event.currentTarget.value)}
+            />
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset className="project-material-editor__group">
+        <legend>Thermal properties</legend>
+        <div className="project-material-editor__grid">
+          <label className="project-material-editor__field">
+            <span>
+              Lambda
+              <small>{conductivityUnitLabel(editorUnitSystem)}</small>
+            </span>
+            <input
+              value={form.conductivity_w_mk}
+              onChange={(event) => updateForm("conductivity_w_mk", event.currentTarget.value)}
+            />
+          </label>
+          <label className="project-material-editor__field">
+            <span>
+              Density
+              <small>{densityUnitLabel(editorUnitSystem)}</small>
+            </span>
+            <input
+              value={form.density_kg_m3}
+              onChange={(event) => updateForm("density_kg_m3", event.currentTarget.value)}
+            />
+          </label>
+          <label className="project-material-editor__field">
+            <span>
+              Specific heat
+              <small>{specificHeatUnitLabel(editorUnitSystem)}</small>
+            </span>
+            <input
+              value={form.specific_heat_j_kgk}
+              onChange={(event) => updateForm("specific_heat_j_kgk", event.currentTarget.value)}
+            />
+          </label>
+          <label className="project-material-editor__field">
+            <span>Emissivity</span>
+            <input
+              value={form.emissivity}
+              onChange={(event) => updateForm("emissivity", event.currentTarget.value)}
+            />
+          </label>
+        </div>
+      </fieldset>
+
+      {showNotes ? (
+        <fieldset className="project-material-editor__group">
+          <legend>Notes</legend>
+          <label className="project-material-editor__field project-material-editor__field--full">
+            <span>Comments</span>
+            <textarea
+              value={form.comments}
+              onChange={(event) => updateForm("comments", event.currentTarget.value)}
+            />
+          </label>
+        </fieldset>
       ) : null}
-      <button type="submit" className="secondary-button" disabled={!canSubmit}>
-        Update material
-      </button>
+
+      <footer className="project-material-editor__footer">
+        {parseError || error ? (
+          <p className="form-error" role="alert">
+            {parseError ?? error}
+          </p>
+        ) : (
+          <span />
+        )}
+        <button type="submit" disabled={!canSubmit}>
+          Update material
+        </button>
+      </footer>
     </>
   );
 

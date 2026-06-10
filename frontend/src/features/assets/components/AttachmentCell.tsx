@@ -1,6 +1,7 @@
 import "../attachments.css";
 import { useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
+import { Paperclip } from "lucide-react";
 import { assetDownloadPath } from "../api";
 import { uploadAsset, useAssetUrls } from "../hooks";
 import { sameAttachmentAssetIds } from "../lib";
@@ -122,7 +123,7 @@ export function AttachmentCell({
           className="attachment-drop-button"
           onClick={() => inputRef.current?.click()}
         >
-          <span aria-hidden="true">📎</span>
+          <Paperclip size={16} aria-hidden="true" />
           <span>Drop files here</span>
         </button>
       ) : isEmpty ? null : (

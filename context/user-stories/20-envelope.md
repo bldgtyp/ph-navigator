@@ -207,7 +207,7 @@ Pydantic models are written.
   5. **Last-segment deletion → orphan row preserved.** When the
      last segment referencing a `project_material_id` is deleted,
      the `project_materials` row is **not** auto-cleaned. It
-     surfaces in the Specifications view as **"Unused"** so the
+     surfaces in the Materials view as **"Unused"** so the
      user can keep it (datasheet still useful for the QA record)
      or explicitly delete. This protects against accidental
      datasheet-loss when reorganizing assemblies.
@@ -254,7 +254,7 @@ Pydantic models are written.
      `Save As` without warnings or blockers. Null materials,
      missing datasheets, missing site photos, and open
      specification statuses are normal until late in the
-     certification process; the canvas and Specifications
+     certification process; the canvas and Materials
      dashboard are the completeness surfaces, not the Save flow.
   2. **Visual cues for null-material segments** (so the user
      never wonders "why does my R-value say `--`?"):
@@ -419,20 +419,18 @@ Pydantic models are written.
   4 sub-tabs (Assemblies / Materials / Airtightness / Site
   Photos; V1 ref §3.1). V2 PRD §11.1 says only "Envelope —
   assemblies." **Lean: keep V1's sub-tab structure for feature
-  parity** — Assemblies (the canvas), Specifications (renamed
-  from V1's misleadingly-named "Materials" — V1 ref §13.16;
-  feature parity, clearer name), Airtightness, Site Photos.
-  Walked under US-ENV-1. Confirm.
+  parity** — Assemblies (the canvas), Materials (per-material
+  spec status, datasheets, and photos — V1 ref §13.16),
+  Airtightness, Site Photos. Walked under US-ENV-1. Confirm.
 
-- **Q-ENV-8: V1 "Materials" sub-tab rename.** V1's tab labeled
-  "Materials" is actually a per-segment design-spec / photo /
-  datasheet view — V1 ref §13.16 calls out the misleading
-  naming. **Lean: rename to "Specifications"** in V2 (matches
-  the per-row "Complete / Missing / Question / N/A"
-  status, and clearly distinguishes from the global Materials
-  catalog reachable via the header "Catalogs ▾" dropdown). Page
-  heading text inside the tab can stay "Project Materials" if
-  Ed prefers visual continuity. Confirm.
+- **Q-ENV-8: V1 "Materials" sub-tab rename — REVERSED 2026-06-09.**
+  Originally renamed to "Specifications" in V2 to match the
+  per-row Complete / Missing / Question / N/A status. Reverted
+  back to **"Materials"** in V2 after live UX review: the tab
+  surfaces a list of project materials and is the natural place
+  users look for them. The per-row `specification_status` field
+  still drives the status chips and filter chips inside the tab;
+  the data model name is unchanged.
 
 - **Q-ENV-9: Per-assembly deep-link URL.** Resolved 2026-05-10:
   **`/projects/{project_id}/envelope/assemblies` lists** and
@@ -480,7 +478,7 @@ Pydantic models are written.
 
 | Sub-story | Topic | Status |
 |---|---|---|
-| US-ENV-1 | Envelope tab structure (sub-tabs) | Shipped (Assemblies + Specifications routed; Airtightness / Site Photos still placeholders) |
+| US-ENV-1 | Envelope tab structure (sub-tabs) | Shipped (Assemblies + Materials routed; Airtightness / Site Photos still placeholders) |
 | US-ENV-2 | Assembly list (sidebar) — add / rename / duplicate / delete | Shipped |
 | US-ENV-3 | Assembly header (name, totals, header actions) | Shipped |
 | US-ENV-4 | Canvas — layers, segments, orientation labels, legend | Shipped |
@@ -492,7 +490,7 @@ Pydantic models are written.
 | US-ENV-10 | Effective R-value / U-value display | Shipped |
 | US-ENV-11 | Refresh-from-catalog (per-segment material) | Shipped (new in V2) |
 | US-ENV-12 | HBJSON construction **export** (download only — import not in V2 v1) | Shipped |
-| US-ENV-13 | Specifications sub-tab (per-segment status, photos, datasheets) | Shipped |
+| US-ENV-13 | Materials sub-tab (per-segment status, photos, datasheets) | Shipped |
 | US-ENV-14 | Airtightness sub-tab | Placeholder (out of cluster scope) |
 | US-ENV-15 | Site Photos sub-tab — contractor-facing regrouped view of US-ENV-13 photo data | Draft (sub-tab not yet wired) |
 
@@ -515,12 +513,12 @@ Pydantic models are written.
 
 1. **Envelope tab has four sub-tabs**, in this order:
    - **Assemblies** (default landing)
-   - **Specifications**
+   - **Materials**
    - **Airtightness**
    - **Site Photos**
 2. **URLs.** Each sub-tab updates the URL:
    - `/projects/{id}/envelope/assemblies`
-   - `/projects/{id}/envelope/specifications`
+   - `/projects/{id}/envelope/materials`
    - `/projects/{id}/envelope/airtightness`
    - `/projects/{id}/envelope/site-photos`
    The bare `/projects/{id}/envelope` redirects to
@@ -539,11 +537,14 @@ Pydantic models are written.
 6. **Locked-version banner** (US-3.1 cross-cutting) renders above
    all four sub-tabs when the active version is locked. Banner
    does not duplicate per-sub-tab.
-7. **No "Materials" sub-tab.** Per Q-ENV-8, V1's misleadingly-
-   named "Materials" sub-tab is renamed to **Specifications** in
-   V2 to disambiguate from the global Materials catalog (header
-   "Catalogs ▾" dropdown, US-2). The page heading inside the tab
-   stays **"Project Materials"** for visual continuity with V1.
+7. **Materials sub-tab naming.** Per Q-ENV-8 (re-resolved
+   2026-06-09), the sub-tab is labeled **"Materials"** — the
+   original V2 rename to "Specifications" was reverted after
+   live UX review. The global Materials catalog remains
+   reachable via the header "Catalogs ▾" dropdown (US-2). The
+   page heading inside the tab stays **"Project Materials"** for
+   visual continuity. Per-row `specification_status` still drives
+   the status chips and filter chips.
 
 ### Open questions
 None — resolved by Q-ENV-7 / Q-ENV-8 above.
@@ -685,14 +686,14 @@ None — resolved by Q-ENV-7 / Q-ENV-8 above.
       '<name>' and all its layers, segments, and per-segment site
       photos from this version. Project-level material datasheets
       and spec-status are preserved (visible as 'Unused' in the
-      Specifications view if no other assembly uses the material).
+      Materials view if no other assembly uses the material).
       Save or Save As to persist. Cancel keeps it in your draft."**,
       buttons **Cancel** / **Delete** (delete is destructive
       variant).
     - On confirm, removes the entry from the draft.
     - **`project_materials` rows are NOT auto-deleted** per
       Q-ENV-2 rule 5 — they survive as orphans and surface in the
-      Specifications view as "Unused" so the user can decide
+      Materials view as "Unused" so the user can decide
       whether to keep the datasheet record or delete explicitly.
     - If the deleted assembly was active, the next assembly in
       sort order becomes active; if the list is empty, the main
@@ -1212,10 +1213,10 @@ None — V1 parity covered.
         (≈ 16", V1 default).
    - **Specification Status, datasheets, notes are NOT in this
      modal in V2.** They live on the `project_materials` row
-     and are edited from the Specifications sub-tab (US-ENV-13).
-     A small **"Open material in Specifications →"** link at
+     and are edited from the Materials sub-tab (US-ENV-13).
+     A small **"Open material in Materials →"** link at
      the bottom of the modal jumps to the row in the
-     Specifications view scrolled-into-view + briefly
+     Materials view scrolled-into-view + briefly
      highlighted. (Replaces the V1 pattern of editing spec /
      notes inline per-segment in V1 ref §10.3 / §12.8 — the V2
      restructure consolidates these to the material primary.)
@@ -1240,7 +1241,7 @@ None — V1 parity covered.
      R-value refetch.
    - **`project_materials` row is preserved** even if the
      deleted segment was the last reference (per Q-ENV-2
-     rule 5) — the row surfaces in the Specifications view as
+     rule 5) — the row surfaces in the Materials view as
      "Unused" until the user explicitly removes it there.
 4. **Read-only on locked versions / for Viewers.** Modal opens
    in read-only mode (inputs disabled; Delete hidden).
@@ -1250,13 +1251,13 @@ None — V1 parity covered.
 ### Resolved questions (2026-05-10)
 
 - **Q-ENV-6.1: Where does the user edit specification_status —
-  in this modal, in the Specifications sub-tab, or both?**
+  in this modal, in the Materials sub-tab, or both?**
   **Resolved (revised after Q-ENV-2 restructure):** **only in
-  the Specifications sub-tab.** Specification status moved to
+  the Materials sub-tab.** Specification status moved to
   the `project_materials` row level per Q-ENV-2 — it's
   per-material, not per-segment, so the segment-edit modal is
   not the right place. SegmentPropertiesModal carries an
-  **"Open material in Specifications →"** link to jump there
+  **"Open material in Materials →"** link to jump there
   with the right row scrolled-into-view.
 
 ### Resolved questions (2026-05-10) — additional
@@ -1288,7 +1289,7 @@ None — V1 parity covered.
     `pmat_<ULID>`); we never re-use a previously-detached
     "Custom" row even if its name and conductivity match.
   - Surface a toast post-detach: "Detached. New project material
-    'XPS (Custom)' created — edit it in Specifications to apply
+    'XPS (Custom)' created — edit it in Materials to apply
     different values."
 
 ---
@@ -1316,7 +1317,7 @@ in V1)
 
 1. **Where the picker lives.** Inside the SegmentPropertiesModal
    (US-ENV-6 criterion 2.1). Also reachable from the
-   Specifications sub-tab when re-assigning a segment to a
+   Materials sub-tab when re-assigning a segment to a
    different material (US-ENV-13). Combobox-style trigger; opens
    a popover with search + grouped list.
 
@@ -1415,7 +1416,7 @@ in V1)
    identity = shared values. Two paths to override:
    - **Edit values for the shared material** (default path) —
      opens the project_materials row's editor (in-modal expander
-     per US-ENV-6 criterion 2.4 OR via the Specifications-tab
+     per US-ENV-6 criterion 2.4 OR via the Materials-tab
      inline editor in US-ENV-13). Adds the edited field key to
      `catalog_origin.local_overrides` so refresh-from-catalog flags
      it as an intentional project-specific value.
@@ -1881,7 +1882,7 @@ purged (V1 ref §13.9); V2 is bookshelf
    glazing.
 2. **Surfaces.**
    - **Per-segment badge** — material chip in the
-     SegmentPropertiesModal AND in the Specifications-tab row
+     SegmentPropertiesModal AND in the Materials-tab row
      (US-ENV-13) shows a `RefreshCw` overlay when drifted.
      Hover tooltip: **"Catalog has changed since pick. Click
      to review."**
@@ -2125,7 +2126,7 @@ None outstanding.
 
 ---
 
-## US-ENV-13 — Specifications sub-tab (per-material primary view)
+## US-ENV-13 — Materials sub-tab (per-material primary view)
 
 **Status:** Draft · **Priority:** MVP — **major V2 restructure**
 **PRD ref:** §6.2 (per Q-ENV-2:
@@ -2159,7 +2160,7 @@ level.
 
 ### Acceptance criteria
 
-1. **URL.** `/projects/{id}/envelope/specifications` (per
+1. **URL.** `/projects/{id}/envelope/materials` (per
    Q-ENV-8 rename).
 2. **Page heading.** **"Project Materials"** (matches V1's
    `<h4>` to preserve visual continuity with V1 ref §12.1
@@ -2551,14 +2552,14 @@ updated 2026-05-10)
 **V1 ref:** §3.5 (V1's Site Photos tab — out of V1 reference
 scope; V2 reorganizes the per-segment photo data captured by
 US-ENV-13 into a contractor-facing view)
-**Inherits:** US-ENV-13 (Specifications sub-tab) for photo
+**Inherits:** US-ENV-13 (Materials sub-tab) for photo
 storage shape and upload primitive
 
 ### Story
 > As an editor, I want a Site Photos sub-tab that's primarily
 > useful for **sharing with the construction team** — a
 > contractor-facing view of all the per-segment installation
-> photos already attached in the Specifications sub-tab,
+> photos already attached in the Materials sub-tab,
 > reorganized by assembly type (Walls / Floors / Roofs) so the
 > trades crew can see "all the wall photos in one place"
 > without drilling per-material. Sharing happens by sending
@@ -2570,7 +2571,7 @@ storage shape and upload primitive
 
 - **No new backend / no new tables in v1.** The data shown
   here is the **same per-segment site-photos** that the
-  Specifications sub-tab already manages
+  Materials sub-tab already manages
   (`segment.photo_asset_ids` per Q-ENV-2). This sub-tab is
   purely a **presentation-layer reorganization** of existing
   data — no new asset storage, no new endpoints beyond
@@ -2591,7 +2592,7 @@ storage shape and upload primitive
   field on the assembly schema, not a separate lookup table.
 
 - **Editable here too — not a read-only redirect to
-  Specifications.** Users can drop new photos directly onto
+  Materials.** Users can drop new photos directly onto
   per-segment zones in this view. Same R2 upload +
   `segment.photo_asset_ids[]` JSON-Patch path as US-ENV-13;
   this surface is a **different view of the same data**, with
@@ -2606,7 +2607,7 @@ storage shape and upload primitive
 
 1. **Sub-tab placement.** Lives under the Envelope tab
    (US-ENV-1) as the 4th sub-tab in display order:
-   **Assemblies · Specifications · Airtightness · Site Photos**.
+   **Assemblies · Materials · Airtightness · Site Photos**.
    URL deep-link: `/projects/{id}/envelope/site-photos`
    (mirrors Q-ENV-9 / US-ENV-1 routing pattern).
 
@@ -2614,9 +2615,9 @@ storage shape and upload primitive
    project):
    - Centered card with copy: *"No site photos yet. Site
      photos are attached per-segment under the
-     **Specifications** sub-tab — they'll appear here
+     **Materials** sub-tab — they'll appear here
      organized by assembly type once uploaded."*
-   - Primary CTA: **[Go to Specifications]** (linkable
+   - Primary CTA: **[Go to Materials]** (linkable
      button — same data, different view).
    - Viewers see the empty-state card without
      CTA (just the explanatory text). Avoids dead links to
@@ -2757,7 +2758,7 @@ None outstanding.
 
 ### Cross-references
 
-- **US-ENV-13 (Specifications sub-tab)** — the OTHER view of
+- **US-ENV-13 (Materials sub-tab)** — the OTHER view of
   the same per-segment photo data; this sub-tab is a
   presentation-layer reorganization. All photo storage /
   upload / delete plumbing is shared. Bug fixes on one

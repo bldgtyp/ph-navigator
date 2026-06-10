@@ -26,6 +26,7 @@ backend/seeds/
     hot-water-tanks.json          # 5 hot-water tanks + type options
     electric-heaters.json         # 5 heaters
     appliances.json               # 5 appliances + type / energy-star options
+    heat-pumps.json               # 5 outdoor-equip + 5 indoor-equip + 5 outdoor-units + 5 indoor-units (cross-linked)
 ```
 
 Catalog files use the canonical import envelope
