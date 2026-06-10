@@ -49,15 +49,22 @@ export function useHeatPumpPatchMutation(projectId: string) {
       current: HeatPumpsSlice;
       table: HeatPumpTableKey;
       patch: HeatPumpPatchOp;
-    }) =>
-      fetchJson<HeatPumpsPatchResponse>(
+    }) => {
+      // Read the freshest cached slice so cross-table edits (e.g. an
+      // indoor-units PATCH followed by an outdoor-units PATCH from a
+      // sibling sub-tab) don't fire with the previous render's etags.
+      const fresh =
+        queryClient.getQueryData<HeatPumpsSlice>(heatPumpsQueryKeys.slice(projectId, "editor")) ??
+        current;
+      return fetchJson<HeatPumpsPatchResponse>(
         `/api/v1/projects/${projectId}/equipment/heat-pumps/${table}`,
         {
           method: "PATCH",
-          headers: draftWriteHeaders(current),
+          headers: draftWriteHeaders(fresh),
           body: JSON.stringify(patch),
         },
-      ),
+      );
+    },
     onSuccess: (slice) => {
       markLocalDraftTouched(projectId, slice.version_id, slice.draft_etag);
       queryClient.setQueryData(heatPumpsQueryKeys.slice(projectId, "editor"), slice);
@@ -108,15 +115,19 @@ export function useHeatPumpOptionMutation(projectId: string) {
       current: HeatPumpsSlice;
       optionKey: HeatPumpOwnedOptionKey;
       patch: HeatPumpOptionPatchOp;
-    }) =>
-      fetchJson<HeatPumpsSlice>(
+    }) => {
+      const fresh =
+        queryClient.getQueryData<HeatPumpsSlice>(heatPumpsQueryKeys.slice(projectId, "editor")) ??
+        current;
+      return fetchJson<HeatPumpsSlice>(
         `/api/v1/projects/${projectId}/equipment/heat-pumps/options/${optionKey}`,
         {
           method: "PATCH",
-          headers: draftWriteHeaders(current),
+          headers: draftWriteHeaders(fresh),
           body: JSON.stringify(patch),
         },
-      ),
+      );
+    },
     onSuccess: (slice) => {
       markLocalDraftTouched(projectId, slice.version_id, slice.draft_etag);
       queryClient.setQueryData(heatPumpsQueryKeys.slice(projectId, "editor"), slice);
