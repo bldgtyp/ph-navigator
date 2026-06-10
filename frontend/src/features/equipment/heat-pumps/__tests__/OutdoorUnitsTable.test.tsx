@@ -204,8 +204,6 @@ function indoorUnit(overrides: Partial<HeatPumpsSlice["indoor_units"][number]> =
     outdoor_unit_id: "hpou_01HX0000000000000000000000",
     linked_erv_unit_id: null,
     served_room_ids: [],
-    floor_level: null,
-    area_served: null,
     datasheet_asset_ids: [],
     notes: null,
     ...overrides,

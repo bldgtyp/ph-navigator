@@ -564,8 +564,6 @@ class ProjectDocumentV1(BaseModel):
             missing_room_ids = [room_id for room_id in row.served_room_ids if room_id not in room_ids]
             if missing_room_ids:
                 raise ValueError(f"Missing served room for heat-pump indoor unit {row.id}: {missing_room_ids[0]}")
-            if row.floor_level is not None and row.floor_level not in floor_option_ids:
-                raise ValueError(f"Missing floor-level option for heat-pump indoor unit {row.id}: {row.floor_level}")
 
         thermal_bridges_field_defs_by_key = index_table_field_defs(
             "thermal_bridges", self.tables.thermal_bridges.field_defs

@@ -1,7 +1,8 @@
 import type { DataTableColumnDef, FieldDef } from "../../../shared/ui/data-table";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
-import { indoorEquipLabel, outdoorUnitLabel } from "./lib";
+import type { RoomRow } from "../types";
+import { indoorEquipLabel, outdoorUnitLabel, roomLabel } from "./lib";
 import {
   HEAT_PUMP_OPTION_KEYS,
   type HeatPumpIndoorEquipRow,
@@ -22,7 +23,6 @@ export function indoorUnitFieldDefs({
   indoorEquip: readonly HeatPumpIndoorEquipRow[];
   outdoorUnits: readonly HeatPumpOutdoorUnitRow[];
 }): FieldDef[] {
-  const floorLevel = options[HEAT_PUMP_OPTION_KEYS.floorLevel] ?? [];
   const manufacturer = options[HEAT_PUMP_OPTION_KEYS.manufacturer] ?? [];
   // Same pattern as outdoor-unit-columns: synthetic FieldDef.options keyed
   // by row id so the cell renderer can resolve the label without us
@@ -54,12 +54,12 @@ export function indoorUnitFieldDefs({
       options: outdoorUnitOptions,
     },
     {
-      field_key: "floor_level",
-      field_type: "single_select",
-      display_name: "Floor",
-      options: floorLevel,
+      field_key: "served_room_ids",
+      field_type: "text",
+      display_name: "Rooms",
+      read_only: true,
+      description: "Rooms this indoor unit serves. Edit in the row modal.",
     },
-    { field_key: "area_served", field_type: "text", display_name: "Area served" },
     {
       field_key: "linked_erv_unit_id",
       field_type: "single_select",
@@ -82,18 +82,29 @@ export const indoorUnitDefaultHiddenColumns: string[] = ["linked_erv_unit_id", "
 export function indoorUnitColumnDefs({
   projectId,
   isEditor,
+  rooms,
   assetUrlById,
   onDatasheetChange,
 }: {
   projectId: string;
   isEditor: boolean;
-  // Labels for single-select cells (equipment / outdoor unit / floor) are
-  // resolved from FieldDef.options inside the DataTable, so this builder
-  // doesn't need `options`, `indoorEquip`, or `outdoorUnits` — they all
-  // flow through `indoorUnitFieldDefs`.
+  // Rooms slice rows — required to resolve `served_room_ids` to a
+  // human-readable, comma-joined cell value. Labels for the
+  // equipment / outdoor-unit single-select cells are still resolved
+  // from FieldDef.options inside the DataTable.
+  rooms: readonly RoomRow[];
   assetUrlById: Map<string, unknown>;
   onDatasheetChange: (row: HeatPumpIndoorUnitRow, next: string[]) => void | Promise<void>;
 }): DataTableColumnDef<HeatPumpIndoorUnitRow>[] {
+  const roomsById = new Map(rooms.map((room) => [room.id, room]));
+  const formatServedRooms = (row: HeatPumpIndoorUnitRow): string =>
+    row.served_room_ids
+      .map((id) => {
+        const room = roomsById.get(id);
+        return room ? roomLabel(room) : id;
+      })
+      .filter(Boolean)
+      .join(", ");
   return [
     {
       id: "tag",
@@ -117,20 +128,11 @@ export function indoorUnitColumnDefs({
       defaultWidth: 160,
     },
     {
-      id: "floor_level",
-      fieldKey: "floor_level",
-      header: "Floor",
-      // Accessor returns the raw option id — DataTable's
-      // `formatDisplayCellValue` resolves the label from FieldDef.options.
-      accessor: (row) => row.floor_level,
-      defaultWidth: 120,
-    },
-    {
-      id: "area_served",
-      fieldKey: "area_served",
-      header: "Area served",
-      accessor: (row) => row.area_served,
-      defaultWidth: 200,
+      id: "served_room_ids",
+      fieldKey: "served_room_ids",
+      header: "Rooms",
+      accessor: formatServedRooms,
+      defaultWidth: 220,
     },
     {
       id: "linked_erv_unit_id",

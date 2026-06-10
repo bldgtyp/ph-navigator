@@ -102,8 +102,6 @@ def indoor_unit(**overrides: object) -> dict[str, Any]:
         "outdoor_unit_id": HPOU_1,
         "linked_erv_unit_id": None,
         "served_room_ids": [],
-        "floor_level": None,
-        "area_served": None,
         "datasheet_asset_ids": [],
         "notes": None,
     }
