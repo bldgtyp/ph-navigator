@@ -80,11 +80,23 @@ export function outdoorEquipFieldDefs({
     selectField("heating_data_type", "Heating Data Type", HEATING_DATA_TYPE_OPTIONS),
     numberField("heating_cop_17f", "COP 17F"),
     numberField("heating_cop_47f", "COP 47F"),
-    numberField("hspf2", "HSPF2"),
+    numberField(
+      "hspf",
+      "HSPF/HSPF2",
+      "Holds either the legacy HSPF rating or the AHRI-2023 HSPF2 rating; which one is determined by Heating Data Type.",
+    ),
     powerField("cooling_cap_kw_95f", "Cooling Capacity at 95F"),
     selectField("cooling_data_type", "Cooling Data Type", COOLING_DATA_TYPE_OPTIONS),
-    numberField("eer2", "EER2"),
-    numberField("seer2", "SEER2"),
+    numberField(
+      "eer",
+      "EER/EER2",
+      "Holds either the legacy EER rating or the AHRI-2023 EER2 rating; which one is determined by Cooling Data Type.",
+    ),
+    numberField(
+      "seer",
+      "SEER/SEER2",
+      "Holds either the legacy SEER rating or the AHRI-2023 SEER2 rating; which one is determined by Cooling Data Type.",
+    ),
     numberField("ieer", "IEER"),
     {
       field_key: OUTDOOR_EQUIP_DATASHEET_FIELD_KEY,
@@ -180,7 +192,7 @@ export function outdoorEquipColumnDefs({
     },
     number("heating_cop_17f", "COP 17F"),
     number("heating_cop_47f", "COP 47F"),
-    number("hspf2", "HSPF2"),
+    number("hspf", "HSPF/HSPF2", 130),
     number("cooling_cap_kw_95f", "Cooling Capacity at 95F", 180),
     {
       id: "cooling_data_type",
@@ -189,8 +201,8 @@ export function outdoorEquipColumnDefs({
       accessor: (row) => row.cooling_data_type,
       defaultWidth: 160,
     },
-    number("eer2", "EER2"),
-    number("seer2", "SEER2"),
+    number("eer", "EER/EER2", 120),
+    number("seer", "SEER/SEER2", 120),
     number("ieer", "IEER"),
     {
       id: OUTDOOR_EQUIP_DATASHEET_FIELD_KEY,
@@ -227,8 +239,8 @@ function textField(field_key: string, display_name: string, required = false): F
   return { field_key, field_type: "text", display_name, required };
 }
 
-function numberField(field_key: string, display_name: string): FieldDef {
-  return { field_key, field_type: "number", display_name };
+function numberField(field_key: string, display_name: string, description?: string): FieldDef {
+  return { field_key, field_type: "number", display_name, ...(description ? { description } : {}) };
 }
 
 function powerField(field_key: string, display_name: string): FieldDef {

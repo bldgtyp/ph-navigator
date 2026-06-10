@@ -10,8 +10,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 # as the discriminator stored on each outdoor-equip row and as the
 # verbatim cell text emitted by the export. Renaming these would
 # silently break paste-into-Phius — they must match the calc strings.
-HeatingDataType = Literal["COPs", "HSPF2"]
-CoolingDataType = Literal["EER2/SEER2", "IEER"]
+HeatingDataType = Literal["COPs", "HSPF", "HSPF2"]
+CoolingDataType = Literal["EER/SEER", "EER2/SEER2", "IEER"]
 
 ULID_SUFFIX_PATTERN = r"[0-9A-HJKMNP-TV-Z]{26}"
 
@@ -49,11 +49,17 @@ class HeatPumpOutdoorEquipRow(BaseModel):
     heating_data_type: HeatingDataType | None = None
     heating_cop_17f: PositiveFloat | None = None
     heating_cop_47f: PositiveFloat | None = None
-    hspf2: NonNegativeFloat | None = None
+    # Single seasonal-heating efficiency value; whether it represents the
+    # legacy HSPF rating or the AHRI-2023 HSPF2 rating is determined by
+    # ``heating_data_type``.
+    hspf: NonNegativeFloat | None = None
     cooling_cap_kw_95f: NonNegativeFloat | None = None
     cooling_data_type: CoolingDataType | None = None
-    eer2: NonNegativeFloat | None = None
-    seer2: NonNegativeFloat | None = None
+    # ``eer`` and ``seer`` hold the cooling-efficiency values; whether they
+    # are the legacy EER/SEER or the AHRI-2023 EER2/SEER2 is determined by
+    # ``cooling_data_type``. ``ieer`` is used only when cooling_data_type=IEER.
+    eer: NonNegativeFloat | None = None
+    seer: NonNegativeFloat | None = None
     ieer: NonNegativeFloat | None = None
     datasheet_asset_ids: list[str] = Field(default_factory=list)
     notes: str | None = Field(default=None, max_length=4000)

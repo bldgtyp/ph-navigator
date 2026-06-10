@@ -8,11 +8,15 @@ export type HeatPumpTableKey = "outdoor-equip" | "indoor-equip" | "outdoor-units
  * (including the slash in `"EER2/SEER2"`) match the calc; renaming
  * them would silently break paste-into-Phius.
  */
-export type HeatingDataType = "COPs" | "HSPF2";
-export type CoolingDataType = "EER2/SEER2" | "IEER";
+export type HeatingDataType = "COPs" | "HSPF" | "HSPF2";
+export type CoolingDataType = "EER/SEER" | "EER2/SEER2" | "IEER";
 
-export const HEATING_DATA_TYPES: readonly HeatingDataType[] = ["COPs", "HSPF2"] as const;
-export const COOLING_DATA_TYPES: readonly CoolingDataType[] = ["EER2/SEER2", "IEER"] as const;
+export const HEATING_DATA_TYPES: readonly HeatingDataType[] = ["COPs", "HSPF", "HSPF2"] as const;
+export const COOLING_DATA_TYPES: readonly CoolingDataType[] = [
+  "EER/SEER",
+  "EER2/SEER2",
+  "IEER",
+] as const;
 
 export type HeatPumpOutdoorEquipRow = {
   id: string;
@@ -27,11 +31,15 @@ export type HeatPumpOutdoorEquipRow = {
   heating_data_type: HeatingDataType | null;
   heating_cop_17f: number | null;
   heating_cop_47f: number | null;
-  hspf2: number | null;
+  // Single seasonal-heating efficiency value; interpreted as HSPF or HSPF2
+  // depending on `heating_data_type`.
+  hspf: number | null;
   cooling_cap_kw_95f: number | null;
   cooling_data_type: CoolingDataType | null;
-  eer2: number | null;
-  seer2: number | null;
+  // EER/SEER hold the cooling values; interpreted as legacy or AHRI-2023
+  // depending on `cooling_data_type`. IEER is used only when type=IEER.
+  eer: number | null;
+  seer: number | null;
   ieer: number | null;
   datasheet_asset_ids: string[];
   notes: string | null;
@@ -165,11 +173,11 @@ export type PhiusExportRow = {
   heating_data_type: HeatingDataType | null;
   cop_17f: number | null;
   cop_47f: number | null;
-  hspf2: number | null;
+  hspf: number | null;
   cap_95f: number | null;
   cooling_data_type: CoolingDataType | null;
-  eer2: number | null;
-  seer2: number | null;
+  eer: number | null;
+  seer: number | null;
   ieer: number | null;
 };
 

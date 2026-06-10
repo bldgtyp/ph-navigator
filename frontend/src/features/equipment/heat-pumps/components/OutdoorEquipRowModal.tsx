@@ -222,9 +222,10 @@ export function OutdoorEquipRowModal({
               readOnly={readOnly}
             />
             <NumberInput
-              label="HSPF2"
-              value={draft.hspf2}
-              onChange={(hspf2) => setDraft({ ...draft, hspf2 })}
+              label="HSPF/HSPF2"
+              title="Holds either the legacy HSPF rating or the AHRI-2023 HSPF2 rating; which one is determined by Heating Data Type."
+              value={draft.hspf}
+              onChange={(hspf) => setDraft({ ...draft, hspf })}
               readOnly={readOnly}
             />
           </div>
@@ -251,15 +252,17 @@ export function OutdoorEquipRowModal({
               readOnly={readOnly}
             />
             <NumberInput
-              label="EER2"
-              value={draft.eer2}
-              onChange={(eer2) => setDraft({ ...draft, eer2 })}
+              label="EER/EER2"
+              title="Holds either the legacy EER rating or the AHRI-2023 EER2 rating; which one is determined by Cooling Data Type."
+              value={draft.eer}
+              onChange={(eer) => setDraft({ ...draft, eer })}
               readOnly={readOnly}
             />
             <NumberInput
-              label="SEER2"
-              value={draft.seer2}
-              onChange={(seer2) => setDraft({ ...draft, seer2 })}
+              label="SEER/SEER2"
+              title="Holds either the legacy SEER rating or the AHRI-2023 SEER2 rating; which one is determined by Cooling Data Type."
+              value={draft.seer}
+              onChange={(seer) => setDraft({ ...draft, seer })}
               readOnly={readOnly}
             />
             <NumberInput
@@ -301,17 +304,19 @@ export function OutdoorEquipRowModal({
 
 function NumberInput({
   label,
+  title,
   value,
   onChange,
   readOnly,
 }: {
   label: string;
+  title?: string;
   value: number | null;
   onChange: (value: number | null) => void;
   readOnly: boolean;
 }) {
   return (
-    <label>
+    <label title={title}>
       {label}
       <input
         type="number"
