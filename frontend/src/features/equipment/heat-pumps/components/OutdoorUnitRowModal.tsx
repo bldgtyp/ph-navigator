@@ -1,14 +1,21 @@
 import { useState } from "react";
 import { errorMessage } from "../../../../shared/lib/errors";
 import { ModalDialog } from "../../../../shared/ui/ModalDialog";
-import { optionIdFromLabel, optionLabelFromId, outdoorEquipLabel, tagCollides } from "../lib";
-import type { HeatPumpOutdoorEquipRow, HeatPumpOutdoorUnitRow } from "../types";
+import { outdoorEquipLabel, tagCollides } from "../lib";
+import {
+  HEAT_PUMP_OPTION_KEYS,
+  type HeatPumpOutdoorEquipRow,
+  type HeatPumpOutdoorUnitRow,
+  type HeatPumpsSlice,
+} from "../types";
+import { OptionPicker } from "./OptionPicker";
 
 export function OutdoorUnitRowModal({
   mode,
   row,
   outdoorEquip,
   existingUnits,
+  options,
   onCancel,
   onSubmit,
   onDelete,
@@ -19,6 +26,7 @@ export function OutdoorUnitRowModal({
   row: HeatPumpOutdoorUnitRow;
   outdoorEquip: HeatPumpOutdoorEquipRow[];
   existingUnits: HeatPumpOutdoorUnitRow[];
+  options: HeatPumpsSlice["single_select_options"];
   onCancel: () => void;
   onSubmit: (row: HeatPumpOutdoorUnitRow) => Promise<void>;
   onDelete?: () => void;
@@ -26,9 +34,10 @@ export function OutdoorUnitRowModal({
   readOnly: boolean;
 }) {
   const [draft, setDraft] = useState(row);
-  const [buildingZone, setBuildingZone] = useState(optionLabelFromId(row.building_zone));
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const buildingZoneOptions = options[HEAT_PUMP_OPTION_KEYS.buildingZone] ?? [];
+  const manufacturerOptions = options[HEAT_PUMP_OPTION_KEYS.manufacturer] ?? [];
   const title = mode === "add" ? "New outdoor unit" : `Outdoor unit: ${row.tag || "(unnamed)"}`;
   const submitLabel = mode === "add" ? "Create outdoor unit" : "Save outdoor unit";
 
@@ -52,7 +61,6 @@ export function OutdoorUnitRowModal({
       await onSubmit({
         ...draft,
         tag: trimmedTag,
-        building_zone: optionIdFromLabel(buildingZone),
       });
     } catch (err) {
       setError(errorMessage(err, "Could not save outdoor unit."));
@@ -87,14 +95,14 @@ export function OutdoorUnitRowModal({
                 disabled={readOnly}
               />
             </label>
-            <label>
-              Zone
-              <input
-                value={buildingZone}
-                onChange={(event) => setBuildingZone(event.target.value)}
-                disabled={readOnly}
-              />
-            </label>
+            <OptionPicker
+              label="Zone"
+              value={draft.building_zone}
+              options={buildingZoneOptions}
+              onChange={(building_zone) => setDraft({ ...draft, building_zone })}
+              disabled={readOnly}
+              placeholder="Not set"
+            />
             <label className="hp-form-grid__wide">
               Outdoor equipment
               <select
@@ -105,7 +113,7 @@ export function OutdoorUnitRowModal({
                 <option value="">Select an outdoor equipment row…</option>
                 {outdoorEquip.map((equip) => (
                   <option key={equip.id} value={equip.id}>
-                    {outdoorEquipLabel(equip)}
+                    {outdoorEquipLabel(equip, manufacturerOptions)}
                   </option>
                 ))}
               </select>

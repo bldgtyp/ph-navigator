@@ -6,7 +6,7 @@ import { buildEmptyIndoorEquipRow } from "../lib";
 import type { HeatPumpIndoorEquipRow } from "../types";
 
 describe("IndoorEquipRowModal", () => {
-  test("blocks save when model number is empty", async () => {
+  test("blocks save when tag is empty", async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn(async () => undefined);
 
@@ -14,6 +14,7 @@ describe("IndoorEquipRowModal", () => {
       <IndoorEquipRowModal
         mode="add"
         row={buildEmptyIndoorEquipRow()}
+        options={{}}
         readOnly={false}
         onCancel={() => undefined}
         onSubmit={onSubmit}
@@ -22,19 +23,20 @@ describe("IndoorEquipRowModal", () => {
 
     await user.click(screen.getByRole("button", { name: "Create indoor equipment" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Model number is required");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Tag is required");
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
   test("rejects negative numeric values", async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn(async () => undefined);
-    const row = buildEmptyIndoorEquipRow({ model_number: "PLA-A12EA8", cooling_btuh: -1 });
+    const row = buildEmptyIndoorEquipRow({ tag: "IE-1", cooling_btuh: -1 });
 
     render(
       <IndoorEquipRowModal
         mode="edit"
         row={row}
+        options={{}}
         readOnly={false}
         onCancel={() => undefined}
         onSubmit={onSubmit}
@@ -50,12 +52,13 @@ describe("IndoorEquipRowModal", () => {
   test("rejects nominal_tons === 0 because PRD requires strictly positive", async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn(async () => undefined);
-    const row = buildEmptyIndoorEquipRow({ model_number: "PLA-A12EA8", nominal_tons: 0 });
+    const row = buildEmptyIndoorEquipRow({ tag: "IE-1", nominal_tons: 0 });
 
     render(
       <IndoorEquipRowModal
         mode="edit"
         row={row}
+        options={{}}
         readOnly={false}
         onCancel={() => undefined}
         onSubmit={onSubmit}
@@ -70,7 +73,7 @@ describe("IndoorEquipRowModal", () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  test("slugifies free-text install_type on submit", async () => {
+  test("picks install_type from the project options list", async () => {
     const user = userEvent.setup();
     let submitted: HeatPumpIndoorEquipRow | null = null;
     const onSubmit = vi.fn(async (row: HeatPumpIndoorEquipRow) => {
@@ -80,7 +83,13 @@ describe("IndoorEquipRowModal", () => {
     render(
       <IndoorEquipRowModal
         mode="add"
-        row={buildEmptyIndoorEquipRow()}
+        row={buildEmptyIndoorEquipRow({ tag: "IE-1" })}
+        options={{
+          "heat_pumps.install_type": [
+            { id: "opt_wall_mounted", label: "Wall Mounted", color: "#3b82f6", order: 0 },
+            { id: "opt_ceiling_recessed", label: "Ceiling Recessed", color: "#10b981", order: 1 },
+          ],
+        }}
         readOnly={false}
         onCancel={() => undefined}
         onSubmit={onSubmit}
@@ -88,12 +97,12 @@ describe("IndoorEquipRowModal", () => {
     );
 
     await user.type(screen.getByLabelText("Model number"), "PLA-A12EA8");
-    await user.type(screen.getByLabelText("Install type"), "Cassette");
+    await user.selectOptions(screen.getByLabelText("Install type"), "opt_ceiling_recessed");
     await user.click(screen.getByRole("button", { name: "Create indoor equipment" }));
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
     expect(submitted).not.toBeNull();
-    expect(submitted!.install_type).toBe("opt_cassette");
+    expect(submitted!.install_type).toBe("opt_ceiling_recessed");
     expect(submitted!.model_number).toBe("PLA-A12EA8");
   });
 
@@ -101,7 +110,8 @@ describe("IndoorEquipRowModal", () => {
     render(
       <IndoorEquipRowModal
         mode="edit"
-        row={buildEmptyIndoorEquipRow({ model_number: "PLA-A12EA8" })}
+        row={buildEmptyIndoorEquipRow({ tag: "IE-1", model_number: "PLA-A12EA8" })}
+        options={{}}
         readOnly={true}
         onCancel={() => undefined}
         onSubmit={vi.fn(async () => undefined)}
@@ -110,6 +120,6 @@ describe("IndoorEquipRowModal", () => {
 
     expect(screen.queryByRole("button", { name: "Save indoor equipment" })).toBeNull();
     expect(screen.getAllByRole("button", { name: "Close" }).length).toBeGreaterThan(0);
-    expect(screen.getByLabelText("Model number")).toBeDisabled();
+    expect(screen.getByLabelText("Tag")).toBeDisabled();
   });
 });

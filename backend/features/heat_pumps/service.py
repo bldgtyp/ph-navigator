@@ -11,6 +11,8 @@ from starlette import status
 
 from database import transaction
 from features.heat_pumps.models import (
+    HEAT_PUMP_OWNED_OPTION_KEYS,
+    HEAT_PUMP_VISIBLE_OPTION_KEYS,
     HeatPumpIndoorEquipRow,
     HeatPumpIndoorUnitRow,
     HeatPumpOutdoorEquipRow,
@@ -20,6 +22,12 @@ from features.heat_pumps.models import (
 from features.project_document import repository as document_repository
 from features.project_document.document import ProjectDocumentV1
 from features.project_document.drafts import load_draft_context
+from features.project_document.options import (
+    read_option_list,
+    replace_option_list,
+    validate_option_list,
+)
+from features.project_document.rows import SingleSelectOption
 from features.project_document.service import get_current_document_view
 from features.project_document.validation import next_draft_etag, validate_document
 from features.projects.access import ProjectAccess, require_editor_user
@@ -64,6 +72,7 @@ class HeatPumpsReadResponse(BaseModel):
     indoor_equip: list[HeatPumpIndoorEquipRow]
     outdoor_units: list[HeatPumpOutdoorUnitRow]
     indoor_units: list[HeatPumpIndoorUnitRow]
+    single_select_options: dict[str, list[SingleSelectOption]]
 
 
 class HeatPumpsPatchResponse(HeatPumpsReadResponse):
@@ -78,8 +87,8 @@ class _TableSpec:
 
 
 _TABLE_SPECS: dict[HeatPumpTableKey, _TableSpec] = {
-    "outdoor-equip": _TableSpec("outdoor_equip", HeatPumpOutdoorEquipRow, "model_number"),
-    "indoor-equip": _TableSpec("indoor_equip", HeatPumpIndoorEquipRow, "model_number"),
+    "outdoor-equip": _TableSpec("outdoor_equip", HeatPumpOutdoorEquipRow, "tag"),
+    "indoor-equip": _TableSpec("indoor_equip", HeatPumpIndoorEquipRow, "tag"),
     "outdoor-units": _TableSpec("outdoor_units", HeatPumpOutdoorUnitRow, "tag"),
     "indoor-units": _TableSpec("indoor_units", HeatPumpIndoorUnitRow, "tag"),
 }
@@ -282,7 +291,7 @@ def _delete_preview(slice_: HeatPumpsTableSlice, table_key: HeatPumpTableKey, ro
                 {"referenced_by": [item.model_dump(mode="json") for item in blockers]},
             )
         affected.extend(
-            CascadeReference(table="outdoor-equip", row_id=row.id, tag=row.model_number, field="paired_indoor_equip_id")
+            CascadeReference(table="outdoor-equip", row_id=row.id, tag=row.tag, field="paired_indoor_equip_id")
             for row in slice_.outdoor_equip
             if row.paired_indoor_equip_id == row_id
         )
@@ -371,6 +380,7 @@ def _response(
         indoor_equip=slice_.indoor_equip,
         outdoor_units=slice_.outdoor_units,
         indoor_units=slice_.indoor_units,
+        single_select_options={key: read_option_list(body, key) for key in HEAT_PUMP_VISIBLE_OPTION_KEYS},
     )
 
 
@@ -394,3 +404,131 @@ def _validation_error(field: str, message: str, details: dict[str, object] | Non
         message,
         {"field": field, **(details or {})},
     )
+
+
+class OptionPatchOp(BaseModel):
+    """Patch op for a single SingleSelectOption inside a heat-pumps option list.
+
+    `add`     : append a new option (id must not already exist in the list).
+    `replace` : in-place edit a single option by id (label/color/order).
+    `remove`  : remove an option by id; rows referencing it are NOT auto-cleared
+                — the caller (UI) decides; for now we 422 if any row points at it.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    op: Literal["add", "replace", "remove"]
+    option: SingleSelectOption
+
+
+def apply_option_patch(
+    version_id: UUID,
+    option_key: str,
+    patch: OptionPatchOp,
+    access: ProjectAccess,
+    *,
+    if_match: str | None,
+    if_match_version: str | None,
+) -> HeatPumpsReadResponse:
+    """Apply a single-option mutation to one of the heat-pump-owned option lists."""
+
+    if option_key not in HEAT_PUMP_OWNED_OPTION_KEYS:
+        raise api_error(
+            status.HTTP_404_NOT_FOUND,
+            "heat_pump_option_key_unknown",
+            "Option key is not owned by the heat-pumps slice.",
+            {"option_key": option_key, "allowed": list(HEAT_PUMP_OWNED_OPTION_KEYS)},
+        )
+
+    user = require_editor_user(access)
+    with transaction() as conn:
+        base_body, base_version_etag, version_etag, draft = load_draft_context(
+            conn,
+            access.project_id,
+            version_id,
+            user.id,
+            if_match,
+            if_match_version,
+            draft_etag_mismatch_message="The draft changed before this heat-pump option update was applied.",
+        )
+        next_body = _apply_option_patch_to_body(base_body, option_key, patch)
+        if next_body == base_body:
+            return _response(
+                access.project_id,
+                version_id,
+                "draft" if draft is not None else "version",
+                version_etag,
+                draft["draft_etag"] if draft is not None else None,
+                base_body,
+            )
+        draft_etag = document_repository.upsert_draft(
+            conn,
+            version_id,
+            user.id,
+            next_body,
+            base_version_etag,
+            next_draft_etag(next_body),
+        )
+    return _response(access.project_id, version_id, "draft", version_etag, draft_etag, next_body)
+
+
+def _apply_option_patch_to_body(
+    body: ProjectDocumentV1, option_key: str, patch: OptionPatchOp
+) -> ProjectDocumentV1:
+    current = read_option_list(body, option_key)
+    by_id = {opt.id: index for index, opt in enumerate(current)}
+
+    if patch.op == "add":
+        if patch.option.id in by_id:
+            raise _validation_error(
+                "option.id", "Option id already exists in this list.", {"option_id": patch.option.id}
+            )
+        next_options = [*current, patch.option]
+    elif patch.op == "replace":
+        index = by_id.get(patch.option.id)
+        if index is None:
+            raise _validation_error(
+                "option.id", "Option id not found in this list.", {"option_id": patch.option.id}
+            )
+        next_options = [*current[:index], patch.option, *current[index + 1 :]]
+    else:
+        index = by_id.get(patch.option.id)
+        if index is None:
+            raise _validation_error(
+                "option.id", "Option id not found in this list.", {"option_id": patch.option.id}
+            )
+        if _option_is_referenced(body, option_key, patch.option.id):
+            raise api_error(
+                status.HTTP_409_CONFLICT,
+                "heat_pump_option_in_use",
+                "Option is still referenced by one or more heat-pump rows.",
+                {"option_id": patch.option.id, "option_key": option_key},
+            )
+        next_options = [*current[:index], *current[index + 1 :]]
+
+    validate_option_list(next_options)
+    next_body = replace_option_list(body, option_key, next_options)
+    return validate_document(next_body.model_dump(mode="json"))
+
+
+# Maps each owned option key to the (sub_table_attr, field_name) cell that
+# stores its option id. Kept narrow on purpose — the rooms-owned zone/floor
+# keys are NOT writable here, so they don't appear in this table.
+_OPTION_KEY_TO_CELL: dict[str, tuple[str, str]] = {
+    "heat_pumps.manufacturer": ("__manufacturer__", "manufacturer"),
+    "heat_pumps.system_family": ("outdoor_equip", "system_family"),
+    "heat_pumps.refrigerant": ("outdoor_equip", "refrigerant"),
+    "heat_pumps.model_type": ("indoor_equip", "model_type"),
+    "heat_pumps.install_type": ("indoor_equip", "install_type"),
+}
+
+
+def _option_is_referenced(body: ProjectDocumentV1, option_key: str, option_id: str) -> bool:
+    slice_ = body.tables.equipment.heat_pumps
+    sub_table, field_name = _OPTION_KEY_TO_CELL[option_key]
+    if sub_table == "__manufacturer__":
+        return any(row.manufacturer == option_id for row in slice_.outdoor_equip) or any(
+            row.manufacturer == option_id for row in slice_.indoor_equip
+        )
+    rows = getattr(slice_, sub_table)
+    return any(getattr(row, field_name) == option_id for row in rows)

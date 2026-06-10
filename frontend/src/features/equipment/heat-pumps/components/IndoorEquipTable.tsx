@@ -6,14 +6,24 @@ import {
   type WriteOp,
 } from "../../../../shared/ui/data-table";
 import { useAssetUrls } from "../../../assets/hooks";
-import { useHeatPumpPatchMutation } from "../api";
-import { buildEmptyIndoorEquipRow, numericValue, sortedIndoorEquip } from "../lib";
+import { useHeatPumpOptionMutation, useHeatPumpPatchMutation } from "../api";
+import {
+  buildEmptyIndoorEquipRow,
+  buildNewHeatPumpOption,
+  numericValue,
+  sortedIndoorEquip,
+  uniqueTagForAdd,
+} from "../lib";
 import {
   indoorEquipColumnDefs,
   indoorEquipDefaultHiddenColumns,
   indoorEquipFieldDefs,
 } from "../indoor-equip-columns";
-import type { HeatPumpIndoorEquipRow, HeatPumpsSlice } from "../types";
+import type {
+  HeatPumpIndoorEquipRow,
+  HeatPumpOwnedOptionKey,
+  HeatPumpsSlice,
+} from "../types";
 import { addRowButton } from "../../routes/equipmentRowActions";
 import { IndoorEquipRowModal } from "./IndoorEquipRowModal";
 
@@ -32,11 +42,12 @@ export function IndoorEquipTable({
 }) {
   const [view, setView] = useState<ViewState>(() => ({
     ...emptyViewState(),
-    sort: [{ fieldKey: "model_number", direction: "asc" }],
+    sort: [{ fieldKey: "tag", direction: "asc" }],
     hiddenColumns: indoorEquipDefaultHiddenColumns,
   }));
   const [modal, setModal] = useState<ModalState>(null);
   const patchMutation = useHeatPumpPatchMutation(projectId);
+  const optionMutation = useHeatPumpOptionMutation(projectId);
   const rows = useMemo(() => sortedIndoorEquip(slice.indoor_equip), [slice.indoor_equip]);
   const assetIds = useMemo(
     () => Array.from(new Set(rows.flatMap((row) => row.datasheet_asset_ids))),
@@ -54,12 +65,28 @@ export function IndoorEquipTable({
     assetUrlById,
     onDatasheetChange: (row, next) => replaceIndoorRow({ ...row, datasheet_asset_ids: next }),
   });
+  const fieldDefs = useMemo(
+    () => indoorEquipFieldDefs(slice.single_select_options),
+    [slice.single_select_options],
+  );
+
+  async function createOption(optionKey: HeatPumpOwnedOptionKey, label: string): Promise<string> {
+    const existing = slice.single_select_options[optionKey] ?? [];
+    const newOption = buildNewHeatPumpOption(label, existing);
+    await optionMutation.mutateAsync({
+      current: slice,
+      optionKey,
+      patch: { op: "add", option: newOption },
+    });
+    return newOption.id;
+  }
 
   async function addIndoorRow(row: HeatPumpIndoorEquipRow) {
+    const tag = uniqueTagForAdd(row.tag, slice.indoor_equip);
     await patchMutation.mutateAsync({
       current: slice,
       table: "indoor-equip",
-      patch: { op: "add", path: "/-", value: row },
+      patch: { op: "add", path: "/-", value: { ...row, tag } },
     });
     setModal(null);
   }
@@ -85,13 +112,36 @@ export function IndoorEquipTable({
   async function handleWrite(op: WriteOp) {
     if (readOnly) return;
     if (op.kind === "cell" || op.kind === "fill") {
+      // See OutdoorEquipTable.handleWrite for the same pattern; only cell ops
+      // carry the popover's newOptions delta, and each PATCH must use the
+      // latest etag to avoid a 409 from the draft-etag check.
+      let latest = slice;
+      if (op.kind === "cell" && op.newOptions) {
+        for (const [fieldKey, created] of Object.entries(op.newOptions)) {
+          const optionKey = INDOOR_FIELD_TO_OPTION_KEY[fieldKey];
+          if (!optionKey) continue;
+          for (const option of created) {
+            latest = await optionMutation.mutateAsync({
+              current: latest,
+              optionKey,
+              patch: { op: "add", option },
+            });
+          }
+        }
+      }
       for (const write of op.writes) {
-        const row = slice.indoor_equip.find((candidate) => candidate.id === write.rowId);
+        const row = latest.indoor_equip.find((candidate) => candidate.id === write.rowId);
         if (!row) continue;
-        await replaceIndoorRow({
-          ...row,
-          [write.fieldKey]: coerceCellValue(write.fieldKey, write.value),
+        const next = await patchMutation.mutateAsync({
+          current: latest,
+          table: "indoor-equip",
+          patch: {
+            op: "replace",
+            path: `/${row.id}`,
+            value: { ...row, [write.fieldKey]: coerceCellValue(write.fieldKey, write.value) },
+          },
         });
+        latest = next;
       }
       return;
     }
@@ -107,7 +157,7 @@ export function IndoorEquipTable({
         await addIndoorRow(
           buildEmptyIndoorEquipRow({
             id: inserted.rowId,
-            model_number: String(inserted.fieldDefaults.model_number ?? "New model"),
+            tag: String(inserted.fieldDefaults.tag ?? "IE"),
           }),
         );
       }
@@ -119,7 +169,7 @@ export function IndoorEquipTable({
       <DataTable
         rows={rows}
         getRowId={(row) => row.id}
-        fieldDefs={indoorEquipFieldDefs}
+        fieldDefs={fieldDefs}
         columnDefs={columns}
         view={view}
         onViewChange={setView}
@@ -137,10 +187,13 @@ export function IndoorEquipTable({
         <IndoorEquipRowModal
           mode={modal.mode}
           row={modal.row}
+          existingEquip={slice.indoor_equip}
+          options={slice.single_select_options}
           readOnly={readOnly}
           onCancel={() => setModal(null)}
           onSubmit={modal.mode === "add" ? addIndoorRow : replaceIndoorRow}
           onDelete={modal.mode === "edit" ? () => void deleteIndoorRow(modal.row) : undefined}
+          onCreateOption={readOnly ? undefined : createOption}
         />
       ) : null}
     </>
@@ -152,6 +205,12 @@ function coerceCellValue(fieldKey: string, value: unknown): unknown {
   if (value === "") return null;
   return value;
 }
+
+const INDOOR_FIELD_TO_OPTION_KEY: Record<string, HeatPumpOwnedOptionKey> = {
+  manufacturer: "heat_pumps.manufacturer",
+  model_type: "heat_pumps.model_type",
+  install_type: "heat_pumps.install_type",
+};
 
 const NUMERIC_FIELDS = new Set([
   "nominal_tons",

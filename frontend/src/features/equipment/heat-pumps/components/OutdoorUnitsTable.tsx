@@ -9,10 +9,16 @@ import {
   type WriteOp,
 } from "../../../../shared/ui/data-table";
 import { useAssetUrls } from "../../../assets/hooks";
-import { heatPumpsQueryKeys, previewHeatPumpDelete, useHeatPumpPatchMutation } from "../api";
+import {
+  heatPumpsQueryKeys,
+  previewHeatPumpDelete,
+  useHeatPumpOptionMutation,
+  useHeatPumpPatchMutation,
+} from "../api";
 import {
   buildEmptyOutdoorEquipRow,
   buildEmptyOutdoorUnitRow,
+  buildNewHeatPumpOption,
   sortedOutdoorUnits,
   uniqueTagForAdd,
 } from "../lib";
@@ -25,6 +31,7 @@ import type {
   CascadeReference,
   HeatPumpOutdoorEquipRow,
   HeatPumpOutdoorUnitRow,
+  HeatPumpOwnedOptionKey,
   HeatPumpsSlice,
 } from "../types";
 import { OutdoorEquipRowModal } from "./OutdoorEquipRowModal";
@@ -65,6 +72,7 @@ export function OutdoorUnitsTable({
     affected: CascadeReference[];
   } | null>(null);
   const patchMutation = useHeatPumpPatchMutation(projectId);
+  const optionMutation = useHeatPumpOptionMutation(projectId);
   const queryClient = useQueryClient();
   const rows = useMemo(() => sortedOutdoorUnits(slice.outdoor_units), [slice.outdoor_units]);
   const assetIds = useMemo(
@@ -81,10 +89,33 @@ export function OutdoorUnitsTable({
   const columns = outdoorUnitColumnDefs({
     projectId,
     isEditor: !readOnly,
-    outdoorEquip: slice.outdoor_equip,
     assetUrlById,
     onDatasheetChange: (row, next) => replaceUnit({ ...row, datasheet_asset_ids: next }),
   });
+  const fieldDefs = useMemo(
+    () =>
+      outdoorUnitFieldDefs({
+        options: slice.single_select_options,
+        outdoorEquip: slice.outdoor_equip,
+      }),
+    [slice.single_select_options, slice.outdoor_equip],
+  );
+
+  // building_zone is owned by the rooms slice, so the heat-pumps options
+  // endpoint refuses writes to that key. The unit-side modals therefore do
+  // not expose inline-create — users add zones from the Rooms table. The
+  // OutdoorEquipRowModal that opens here (for paired equipment) still gets a
+  // createOption for the manufacturer/system_family/refrigerant lists.
+  async function createOption(optionKey: HeatPumpOwnedOptionKey, label: string): Promise<string> {
+    const existing = slice.single_select_options[optionKey] ?? [];
+    const newOption = buildNewHeatPumpOption(label, existing);
+    await optionMutation.mutateAsync({
+      current: slice,
+      optionKey,
+      patch: { op: "add", option: newOption },
+    });
+    return newOption.id;
+  }
 
   async function addUnit(row: HeatPumpOutdoorUnitRow) {
     const tag = uniqueTagForAdd(row.tag, slice.outdoor_units);
@@ -210,7 +241,7 @@ export function OutdoorUnitsTable({
       <DataTable
         rows={rows}
         getRowId={(row) => row.id}
-        fieldDefs={outdoorUnitFieldDefs}
+        fieldDefs={fieldDefs}
         columnDefs={columns}
         view={view}
         onViewChange={setView}
@@ -257,6 +288,7 @@ export function OutdoorUnitsTable({
           row={modal.row}
           outdoorEquip={slice.outdoor_equip}
           existingUnits={slice.outdoor_units}
+          options={slice.single_select_options}
           readOnly={readOnly}
           onCancel={() => setModal(null)}
           onSubmit={modal.mode === "add" ? addUnit : replaceUnit}
@@ -275,10 +307,12 @@ export function OutdoorUnitsTable({
           mode="add"
           row={modal.row}
           indoorEquip={slice.indoor_equip}
+          options={slice.single_select_options}
           readOnly={false}
           onCancel={() => setModal(null)}
           onSubmit={(equip) => addOutdoorEquipAndSelect(equip, modal.selectForUnitId)}
           onCreateIndoorEquip={() => undefined}
+          onCreateOption={createOption}
         />
       ) : null}
       {deleteState?.kind === "preview" ? (

@@ -29,6 +29,7 @@ def _outdoor(
     *,
     id_: str,
     model: str,
+    tag: str | None = None,
     paired: str | None = None,
     heating_data_type: str | None = "cops",
     cap_17f: float | None = 18.0,
@@ -44,6 +45,7 @@ def _outdoor(
 ) -> dict[str, Any]:
     return {
         "id": id_,
+        "tag": tag if tag is not None else model,
         "model_number": model,
         "paired_indoor_equip_id": paired,
         "heating_data_type": heating_data_type,
@@ -60,8 +62,8 @@ def _outdoor(
     }
 
 
-def _indoor(id_: str, model: str) -> dict[str, Any]:
-    return {"id": id_, "model_number": model}
+def _indoor(id_: str, model: str, *, tag: str | None = None) -> dict[str, Any]:
+    return {"id": id_, "tag": tag if tag is not None else model, "model_number": model}
 
 
 def _outdoor_unit(id_: str, tag: str, equip_id: str) -> dict[str, Any]:
@@ -212,12 +214,13 @@ def test_cops_mode_missing_cap_fields_each_emit_warning() -> None:
     assert {"heating_cap_kbtuh_17f", "heating_cap_kbtuh_47f", "heating_cop_17f", "heating_cop_47f"} <= fields
 
 
-def test_warnings_carry_row_id_and_model_number_for_dialog_grouping() -> None:
+def test_warnings_carry_row_id_and_tag_for_dialog_grouping() -> None:
     slice_ = _slice(
         outdoor_equip=[
             _outdoor(
                 id_=HPOE_HSPF2,
                 model="SUZ-KA15NA",
+                tag="OE-2",
                 heating_data_type="hspf2",
                 cap_17f=None,
                 cap_47f=None,
@@ -229,7 +232,7 @@ def test_warnings_carry_row_id_and_model_number_for_dialog_grouping() -> None:
         outdoor_units=[_outdoor_unit(HPOU_1, "HP-1", HPOE_HSPF2)],
     )
     warning = next(w for w in compute_phius_payload(slice_).warnings if w.field == "hspf2")
-    assert (warning.row_id, warning.model_number) == (HPOE_HSPF2, "SUZ-KA15NA")
+    assert (warning.row_id, warning.tag) == (HPOE_HSPF2, "OE-2")
 
 
 def test_csv_header_matches_prd_column_order() -> None:

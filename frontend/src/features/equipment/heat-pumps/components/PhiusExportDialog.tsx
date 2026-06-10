@@ -90,7 +90,7 @@ function PhiusExportReadyBody({ payload }: { payload: PhiusExportResponse }) {
         <ul className="hp-phius-warning-list">
           {Array.from(groupedWarnings.values()).map((group) => (
             <li key={group.row_id}>
-              <strong>{group.model_number || "(no model number)"}</strong>
+              <strong>{group.tag || "(no tag)"}</strong>
               <ul>
                 {group.warnings.map((warning) => (
                   <li key={`${warning.row_id}:${warning.field}`}>{warning.message}</li>
@@ -106,7 +106,7 @@ function PhiusExportReadyBody({ payload }: { payload: PhiusExportResponse }) {
 
 type WarningGroup = {
   row_id: string;
-  model_number: string;
+  tag: string;
   warnings: PhiusExportWarning[];
 };
 
@@ -119,7 +119,7 @@ function groupByRow(warnings: PhiusExportWarning[]): Map<string, WarningGroup> {
     } else {
       grouped.set(warning.row_id, {
         row_id: warning.row_id,
-        model_number: warning.model_number,
+        tag: warning.tag,
         warnings: [warning],
       });
     }

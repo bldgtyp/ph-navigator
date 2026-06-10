@@ -1,43 +1,60 @@
 import { useState } from "react";
 import { errorMessage } from "../../../../shared/lib/errors";
 import { ModalDialog } from "../../../../shared/ui/ModalDialog";
-import { INSTALL_TYPE_SEED_OPTIONS } from "../install-type-options";
-import { numericValue, optionIdFromLabel, optionLabelFromId } from "../lib";
-import type { HeatPumpIndoorEquipRow } from "../types";
-
-const INSTALL_TYPE_DATALIST_ID = "hp-indoor-install-type-options";
+import { numericValue, tagCollides } from "../lib";
+import {
+  HEAT_PUMP_OPTION_KEYS,
+  type HeatPumpIndoorEquipRow,
+  type HeatPumpsSlice,
+} from "../types";
+import { OptionPicker } from "./OptionPicker";
 
 export function IndoorEquipRowModal({
   mode,
   row,
+  existingEquip = [],
+  options,
   onCancel,
   onSubmit,
   onDelete,
+  onCreateOption,
   readOnly,
 }: {
   mode: "add" | "edit";
   row: HeatPumpIndoorEquipRow;
+  existingEquip?: HeatPumpIndoorEquipRow[];
+  options: HeatPumpsSlice["single_select_options"];
   onCancel: () => void;
   onSubmit: (row: HeatPumpIndoorEquipRow) => Promise<void>;
   onDelete?: () => void;
+  onCreateOption?: (
+    optionKey:
+      | typeof HEAT_PUMP_OPTION_KEYS.manufacturer
+      | typeof HEAT_PUMP_OPTION_KEYS.modelType
+      | typeof HEAT_PUMP_OPTION_KEYS.installType,
+    label: string,
+  ) => Promise<string>;
   readOnly: boolean;
 }) {
   const [draft, setDraft] = useState(row);
-  const [manufacturer, setManufacturer] = useState(optionLabelFromId(row.manufacturer));
-  const [modelType, setModelType] = useState(optionLabelFromId(row.model_type));
-  const [installType, setInstallType] = useState(optionLabelFromId(row.install_type));
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const manufacturerOptions = options[HEAT_PUMP_OPTION_KEYS.manufacturer] ?? [];
+  const modelTypeOptions = options[HEAT_PUMP_OPTION_KEYS.modelType] ?? [];
+  const installTypeOptions = options[HEAT_PUMP_OPTION_KEYS.installType] ?? [];
   const title =
-    mode === "add"
-      ? "New indoor equipment"
-      : `Indoor equipment: ${row.model_number || "(unnamed)"}`;
+    mode === "add" ? "New indoor equipment" : `Indoor equipment: ${row.tag || "(unnamed)"}`;
   const submitLabel = mode === "add" ? "Create indoor equipment" : "Save indoor equipment";
 
   const save = async () => {
     setError(null);
-    if (!draft.model_number.trim()) {
-      setError("Model number is required.");
+    const trimmedTag = draft.tag.trim();
+    if (!trimmedTag) {
+      setError("Tag is required.");
+      return;
+    }
+    if (mode === "edit" && tagCollides(trimmedTag, existingEquip, row.id)) {
+      setError(`Tag "${trimmedTag}" is already in use by another indoor equipment row.`);
       return;
     }
     if (negativeNumber(draft.nominal_tons, { strictlyPositive: true })) {
@@ -61,10 +78,8 @@ export function IndoorEquipRowModal({
     try {
       await onSubmit({
         ...draft,
-        model_number: draft.model_number.trim(),
-        manufacturer: optionIdFromLabel(manufacturer),
-        model_type: optionIdFromLabel(modelType),
-        install_type: optionIdFromLabel(installType),
+        tag: trimmedTag,
+        model_number: draft.model_number?.trim() || null,
       });
     } catch (err) {
       setError(errorMessage(err, "Could not save indoor equipment."));
@@ -87,48 +102,64 @@ export function IndoorEquipRowModal({
             {error}
           </p>
         ) : null}
-        <datalist id={INSTALL_TYPE_DATALIST_ID}>
-          {INSTALL_TYPE_SEED_OPTIONS.map((option) => (
-            <option key={option.id} value={option.label} />
-          ))}
-        </datalist>
         <section className="hp-modal-section">
           <h3>Identity</h3>
           <div className="hp-form-grid">
             <label>
-              Manufacturer
+              Tag
               <input
-                value={manufacturer}
-                onChange={(event) => setManufacturer(event.target.value)}
+                required
+                value={draft.tag}
+                onChange={(event) => setDraft({ ...draft, tag: event.target.value })}
                 disabled={readOnly}
               />
             </label>
-            <label>
-              Model type
-              <input
-                value={modelType}
-                onChange={(event) => setModelType(event.target.value)}
-                disabled={readOnly}
-              />
-            </label>
+            <OptionPicker
+              label="Manufacturer"
+              value={draft.manufacturer}
+              options={manufacturerOptions}
+              onChange={(manufacturer) => setDraft({ ...draft, manufacturer })}
+              onCreate={
+                onCreateOption
+                  ? (label) => onCreateOption(HEAT_PUMP_OPTION_KEYS.manufacturer, label)
+                  : undefined
+              }
+              disabled={readOnly}
+            />
+            <OptionPicker
+              label="Model type"
+              value={draft.model_type}
+              options={modelTypeOptions}
+              onChange={(model_type) => setDraft({ ...draft, model_type })}
+              onCreate={
+                onCreateOption
+                  ? (label) => onCreateOption(HEAT_PUMP_OPTION_KEYS.modelType, label)
+                  : undefined
+              }
+              disabled={readOnly}
+            />
             <label>
               Model number
               <input
-                required
-                value={draft.model_number}
-                onChange={(event) => setDraft({ ...draft, model_number: event.target.value })}
+                value={draft.model_number ?? ""}
+                onChange={(event) =>
+                  setDraft({ ...draft, model_number: event.target.value || null })
+                }
                 disabled={readOnly}
               />
             </label>
-            <label>
-              Install type
-              <input
-                list={INSTALL_TYPE_DATALIST_ID}
-                value={installType}
-                onChange={(event) => setInstallType(event.target.value)}
-                disabled={readOnly}
-              />
-            </label>
+            <OptionPicker
+              label="Install type"
+              value={draft.install_type}
+              options={installTypeOptions}
+              onChange={(install_type) => setDraft({ ...draft, install_type })}
+              onCreate={
+                onCreateOption
+                  ? (label) => onCreateOption(HEAT_PUMP_OPTION_KEYS.installType, label)
+                  : undefined
+              }
+              disabled={readOnly}
+            />
           </div>
         </section>
         <section className="hp-modal-section">

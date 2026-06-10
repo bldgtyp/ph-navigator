@@ -4,18 +4,19 @@ import { ModalDialog } from "../../../../shared/ui/ModalDialog";
 import type { RoomRow, VentilatorRow } from "../../types";
 import {
   indoorEquipLabel,
-  optionIdFromLabel,
-  optionLabelFromId,
   outdoorUnitLabel,
   roomLabel,
   tagCollides,
   ventilatorLabel,
 } from "../lib";
-import type {
-  HeatPumpIndoorEquipRow,
-  HeatPumpIndoorUnitRow,
-  HeatPumpOutdoorUnitRow,
+import {
+  HEAT_PUMP_OPTION_KEYS,
+  type HeatPumpIndoorEquipRow,
+  type HeatPumpIndoorUnitRow,
+  type HeatPumpOutdoorUnitRow,
+  type HeatPumpsSlice,
 } from "../types";
+import { OptionPicker } from "./OptionPicker";
 
 export function IndoorUnitRowModal({
   mode,
@@ -25,6 +26,7 @@ export function IndoorUnitRowModal({
   ventilators,
   rooms,
   existingUnits,
+  options,
   onCancel,
   onSubmit,
   onDelete,
@@ -38,6 +40,7 @@ export function IndoorUnitRowModal({
   ventilators: VentilatorRow[];
   rooms: RoomRow[];
   existingUnits: HeatPumpIndoorUnitRow[];
+  options: HeatPumpsSlice["single_select_options"];
   onCancel: () => void;
   onSubmit: (row: HeatPumpIndoorUnitRow) => Promise<void>;
   onDelete?: () => void;
@@ -45,9 +48,10 @@ export function IndoorUnitRowModal({
   readOnly: boolean;
 }) {
   const [draft, setDraft] = useState(row);
-  const [floorLevel, setFloorLevel] = useState(optionLabelFromId(row.floor_level));
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const floorLevelOptions = options[HEAT_PUMP_OPTION_KEYS.floorLevel] ?? [];
+  const manufacturerOptions = options[HEAT_PUMP_OPTION_KEYS.manufacturer] ?? [];
   const title = mode === "add" ? "New indoor unit" : `Indoor unit: ${row.tag || "(unnamed)"}`;
   const submitLabel = mode === "add" ? "Create indoor unit" : "Save indoor unit";
   const noOutdoorUnits = outdoorUnits.length === 0;
@@ -95,7 +99,6 @@ export function IndoorUnitRowModal({
         ...draft,
         tag: trimmedTag,
         area_served: draft.area_served?.trim() || null,
-        floor_level: optionIdFromLabel(floorLevel),
       });
     } catch (err) {
       setError(errorMessage(err, "Could not save indoor unit."));
@@ -130,14 +133,14 @@ export function IndoorUnitRowModal({
                 disabled={readOnly}
               />
             </label>
-            <label>
-              Floor
-              <input
-                value={floorLevel}
-                onChange={(event) => setFloorLevel(event.target.value)}
-                disabled={readOnly}
-              />
-            </label>
+            <OptionPicker
+              label="Floor"
+              value={draft.floor_level}
+              options={floorLevelOptions}
+              onChange={(floor_level) => setDraft({ ...draft, floor_level })}
+              disabled={readOnly}
+              placeholder="Not set"
+            />
             <label className="hp-form-grid__wide">
               Indoor equipment
               <select
@@ -148,7 +151,7 @@ export function IndoorUnitRowModal({
                 <option value="">Select an indoor equipment row…</option>
                 {indoorEquip.map((equip) => (
                   <option key={equip.id} value={equip.id}>
-                    {indoorEquipLabel(equip)}
+                    {indoorEquipLabel(equip, manufacturerOptions)}
                   </option>
                 ))}
               </select>

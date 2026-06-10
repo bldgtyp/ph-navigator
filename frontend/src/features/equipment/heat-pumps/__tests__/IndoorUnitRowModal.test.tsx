@@ -9,6 +9,7 @@ import type { RoomRow, VentilatorRow } from "../../types";
 function indoorEquip(): HeatPumpIndoorEquipRow {
   return {
     id: "hpie_01HX0000000000000000000000",
+    tag: "IE-A",
     manufacturer: "opt_mitsubishi",
     model_type: null,
     model_number: "PLA-A18EA8",
@@ -74,6 +75,7 @@ describe("IndoorUnitRowModal", () => {
         ventilators={[ventilator("vent_n2", "ERV-N2"), ventilator("vent_n5", "ERV-N5")]}
         rooms={[room("rm_a", "101"), room("rm_b", "102")]}
         existingUnits={[]}
+        options={{}}
         readOnly={false}
         onCancel={() => undefined}
         onSubmit={onSubmit}
@@ -115,6 +117,7 @@ describe("IndoorUnitRowModal", () => {
         ventilators={[]}
         rooms={[]}
         existingUnits={[]}
+        options={{}}
         readOnly={false}
         onCancel={() => undefined}
         onSubmit={() => Promise.resolve()}
@@ -136,6 +139,7 @@ describe("IndoorUnitRowModal", () => {
         ventilators={[]}
         rooms={[]}
         existingUnits={[]}
+        options={{}}
         readOnly={false}
         onCancel={() => undefined}
         onSubmit={() => Promise.resolve()}

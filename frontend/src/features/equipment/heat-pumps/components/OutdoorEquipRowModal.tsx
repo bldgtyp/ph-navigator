@@ -1,55 +1,75 @@
 import { useState } from "react";
 import { errorMessage } from "../../../../shared/lib/errors";
 import { ModalDialog } from "../../../../shared/ui/ModalDialog";
-import { indoorEquipLabel, numericValue, optionIdFromLabel, optionLabelFromId } from "../lib";
-import type {
-  CoolingDataType,
-  HeatingDataType,
-  HeatPumpIndoorEquipRow,
-  HeatPumpOutdoorEquipRow,
+import { indoorEquipLabel, numericValue, tagCollides } from "../lib";
+import {
+  HEAT_PUMP_OPTION_KEYS,
+  type CoolingDataType,
+  type HeatingDataType,
+  type HeatPumpIndoorEquipRow,
+  type HeatPumpOutdoorEquipRow,
+  type HeatPumpsSlice,
 } from "../types";
+import { OptionPicker } from "./OptionPicker";
 
 export function OutdoorEquipRowModal({
   mode,
   row,
   indoorEquip,
+  existingEquip = [],
+  options,
   onCancel,
   onSubmit,
   onDelete,
   onCreateIndoorEquip,
+  onCreateOption,
   readOnly,
 }: {
   mode: "add" | "edit";
   row: HeatPumpOutdoorEquipRow;
   indoorEquip: HeatPumpIndoorEquipRow[];
+  existingEquip?: HeatPumpOutdoorEquipRow[];
+  options: HeatPumpsSlice["single_select_options"];
   onCancel: () => void;
   onSubmit: (row: HeatPumpOutdoorEquipRow) => Promise<void>;
   onDelete?: () => void;
   onCreateIndoorEquip: () => void;
+  onCreateOption?: (
+    optionKey:
+      | typeof HEAT_PUMP_OPTION_KEYS.manufacturer
+      | typeof HEAT_PUMP_OPTION_KEYS.systemFamily
+      | typeof HEAT_PUMP_OPTION_KEYS.refrigerant,
+    label: string,
+  ) => Promise<string>;
   readOnly: boolean;
 }) {
   const [draft, setDraft] = useState(row);
-  const [manufacturer, setManufacturer] = useState(optionLabelFromId(row.manufacturer));
-  const [systemFamily, setSystemFamily] = useState(optionLabelFromId(row.system_family));
-  const [refrigerant, setRefrigerant] = useState(optionLabelFromId(row.refrigerant));
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const title = mode === "add" ? "New outdoor equipment" : `Outdoor equipment: ${row.model_number}`;
+  const title =
+    mode === "add" ? "New outdoor equipment" : `Outdoor equipment: ${row.tag || "(unnamed)"}`;
+  const manufacturerOptions = options[HEAT_PUMP_OPTION_KEYS.manufacturer] ?? [];
+  const systemFamilyOptions = options[HEAT_PUMP_OPTION_KEYS.systemFamily] ?? [];
+  const refrigerantOptions = options[HEAT_PUMP_OPTION_KEYS.refrigerant] ?? [];
 
   const save = async () => {
     setError(null);
-    if (!draft.model_number.trim()) {
-      setError("Model number is required.");
+    const trimmedTag = draft.tag.trim();
+    if (!trimmedTag) {
+      setError("Tag is required.");
       return;
     }
+    if (mode === "edit" && tagCollides(trimmedTag, existingEquip, row.id)) {
+      setError(`Tag "${trimmedTag}" is already in use by another outdoor equipment row.`);
+      return;
+    }
+    const trimmedModel = draft.model_number?.trim() || null;
     setIsSaving(true);
     try {
       await onSubmit({
         ...draft,
-        model_number: draft.model_number.trim(),
-        manufacturer: optionIdFromLabel(manufacturer),
-        system_family: optionIdFromLabel(systemFamily),
-        refrigerant: optionIdFromLabel(refrigerant),
+        tag: trimmedTag,
+        model_number: trimmedModel,
       });
     } catch (err) {
       setError(errorMessage(err, "Could not save outdoor equipment."));
@@ -75,38 +95,60 @@ export function OutdoorEquipRowModal({
           <h3>Identity</h3>
           <div className="hp-form-grid">
             <label>
-              Manufacturer
+              Tag
               <input
-                value={manufacturer}
-                onChange={(event) => setManufacturer(event.target.value)}
+                required
+                value={draft.tag}
+                onChange={(event) => setDraft({ ...draft, tag: event.target.value })}
                 disabled={readOnly}
               />
             </label>
+            <OptionPicker
+              label="Manufacturer"
+              value={draft.manufacturer}
+              options={manufacturerOptions}
+              onChange={(manufacturer) => setDraft({ ...draft, manufacturer })}
+              onCreate={
+                onCreateOption
+                  ? (label) => onCreateOption(HEAT_PUMP_OPTION_KEYS.manufacturer, label)
+                  : undefined
+              }
+              disabled={readOnly}
+            />
             <label>
               Model number
               <input
-                required
-                value={draft.model_number}
-                onChange={(event) => setDraft({ ...draft, model_number: event.target.value })}
+                value={draft.model_number ?? ""}
+                onChange={(event) =>
+                  setDraft({ ...draft, model_number: event.target.value || null })
+                }
                 disabled={readOnly}
               />
             </label>
-            <label>
-              System family
-              <input
-                value={systemFamily}
-                onChange={(event) => setSystemFamily(event.target.value)}
-                disabled={readOnly}
-              />
-            </label>
-            <label>
-              Refrigerant
-              <input
-                value={refrigerant}
-                onChange={(event) => setRefrigerant(event.target.value)}
-                disabled={readOnly}
-              />
-            </label>
+            <OptionPicker
+              label="System family"
+              value={draft.system_family}
+              options={systemFamilyOptions}
+              onChange={(system_family) => setDraft({ ...draft, system_family })}
+              onCreate={
+                onCreateOption
+                  ? (label) => onCreateOption(HEAT_PUMP_OPTION_KEYS.systemFamily, label)
+                  : undefined
+              }
+              disabled={readOnly}
+            />
+            <OptionPicker
+              label="Refrigerant"
+              value={draft.refrigerant}
+              options={refrigerantOptions}
+              onChange={(refrigerant) => setDraft({ ...draft, refrigerant })}
+              onCreate={
+                onCreateOption
+                  ? (label) => onCreateOption(HEAT_PUMP_OPTION_KEYS.refrigerant, label)
+                  : undefined
+              }
+              disabled={readOnly}
+            />
             <label className="hp-form-grid__wide">
               Paired indoor equipment
               <select
@@ -119,7 +161,7 @@ export function OutdoorEquipRowModal({
                 <option value="">None / VRF or multi-indoor</option>
                 {indoorEquip.map((indoor) => (
                   <option key={indoor.id} value={indoor.id}>
-                    {indoorEquipLabel(indoor)}
+                    {indoorEquipLabel(indoor, manufacturerOptions)}
                   </option>
                 ))}
               </select>

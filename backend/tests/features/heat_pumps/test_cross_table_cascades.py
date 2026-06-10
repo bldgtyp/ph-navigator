@@ -40,6 +40,7 @@ ROOM_OTHER = "rm_other_01"
 def _indoor_equip() -> dict[str, Any]:
     return {
         "id": HPIE_1,
+        "tag": "IE-1",
         "manufacturer": None,
         "model_type": None,
         "model_number": "PLA-A12EA8",

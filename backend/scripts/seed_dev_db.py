@@ -121,8 +121,9 @@ class _ApertureSeed(BaseModel):
 
 
 class _HeatPumpsSeed(BaseModel):
-    """Heat-pumps slice seed: four parallel row lists, no field_defs/options."""
+    """Heat-pumps slice seed: four parallel row lists plus shared option lists."""
 
+    options: dict[str, list[SingleSelectOption]] = Field(default_factory=dict)
     outdoor_equip: list[dict[str, Any]] = Field(default_factory=list)
     indoor_equip: list[dict[str, Any]] = Field(default_factory=list)
     outdoor_units: list[dict[str, Any]] = Field(default_factory=list)
@@ -322,6 +323,7 @@ def _starter_project_document(payload: CreateProjectRequest) -> ProjectDocumentV
         hot_water_tanks_seed,
         electric_heaters_seed,
         appliances_seed,
+        heat_pumps_seed,
     ):
         next_options.update(seed.options)
 
