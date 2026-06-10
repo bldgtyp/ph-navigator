@@ -27,7 +27,7 @@ export function outdoorUnitFieldDefs({
   const outdoorEquipOptions: FieldOption[] = outdoorEquip.map((row, index) => ({
     id: row.id,
     label: outdoorEquipLabel(row, manufacturer),
-    color: "#94a3b8",
+    color: "slategray",
     order: index,
   }));
   return [

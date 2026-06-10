@@ -3,10 +3,14 @@ import { errorMessage } from "../../../../shared/lib/errors";
 import { ModalDialog } from "../../../../shared/ui/ModalDialog";
 import { indoorEquipLabel, numericValue, tagCollides } from "../lib";
 import {
+  COOLING_DATA_TYPES,
+  HEATING_DATA_TYPES,
   HEAT_PUMP_OPTION_KEYS,
+  type CoolingDataType,
   type HeatPumpIndoorEquipRow,
   type HeatPumpOutdoorEquipRow,
   type HeatPumpsSlice,
+  type HeatingDataType,
 } from "../types";
 import { OptionPicker } from "./OptionPicker";
 
@@ -177,9 +181,9 @@ export function OutdoorEquipRowModal({
         </section>
         <section className="hp-modal-section">
           <h3>Heating performance</h3>
-          {/* All fields shown unconditionally — users fill in only the
-              ratings they care about. The Phius export warns when neither
-              the COP-table nor the HSPF2 path is populated. */}
+          {/* Data Type mirrors the Phius calc dropdown and gates which
+              efficiency cells the export emits — pick COPs to send the
+              17/47F pair, HSPF2 to send the seasonal figure. */}
           <div className="hp-form-grid">
             <NumberInput
               label="Capacity at 17F (kW)"
@@ -191,6 +195,18 @@ export function OutdoorEquipRowModal({
               label="Capacity at 47F (kW)"
               value={draft.heating_cap_kw_47f}
               onChange={(heating_cap_kw_47f) => setDraft({ ...draft, heating_cap_kw_47f })}
+              readOnly={readOnly}
+            />
+            <DataTypeSelect
+              label="Heating Data Type"
+              value={draft.heating_data_type}
+              options={HEATING_DATA_TYPES}
+              onChange={(heating_data_type) =>
+                setDraft({
+                  ...draft,
+                  heating_data_type: heating_data_type as HeatingDataType | null,
+                })
+              }
               readOnly={readOnly}
             />
             <NumberInput
@@ -222,6 +238,18 @@ export function OutdoorEquipRowModal({
               onChange={(cooling_cap_kw_95f) => setDraft({ ...draft, cooling_cap_kw_95f })}
               readOnly={readOnly}
             />
+            <DataTypeSelect
+              label="Cooling Data Type"
+              value={draft.cooling_data_type}
+              options={COOLING_DATA_TYPES}
+              onChange={(cooling_data_type) =>
+                setDraft({
+                  ...draft,
+                  cooling_data_type: cooling_data_type as CoolingDataType | null,
+                })
+              }
+              readOnly={readOnly}
+            />
             <NumberInput
               label="EER2"
               value={draft.eer2}
@@ -242,29 +270,6 @@ export function OutdoorEquipRowModal({
             />
           </div>
         </section>
-        <details className="hp-modal-section">
-          <summary>Legacy ratings</summary>
-          <div className="hp-form-grid">
-            <NumberInput
-              label="HSPF"
-              value={draft.hspf}
-              onChange={(hspf) => setDraft({ ...draft, hspf })}
-              readOnly={readOnly}
-            />
-            <NumberInput
-              label="EER"
-              value={draft.eer}
-              onChange={(eer) => setDraft({ ...draft, eer })}
-              readOnly={readOnly}
-            />
-            <NumberInput
-              label="SEER"
-              value={draft.seer}
-              onChange={(seer) => setDraft({ ...draft, seer })}
-              readOnly={readOnly}
-            />
-          </div>
-        </details>
         <label>
           Notes
           <textarea
@@ -316,6 +321,38 @@ function NumberInput({
         onChange={(event) => onChange(numericValue(event.target.value))}
         disabled={readOnly}
       />
+    </label>
+  );
+}
+
+function DataTypeSelect({
+  label,
+  value,
+  options,
+  onChange,
+  readOnly,
+}: {
+  label: string;
+  value: string | null;
+  options: readonly string[];
+  onChange: (value: string | null) => void;
+  readOnly: boolean;
+}) {
+  return (
+    <label>
+      {label}
+      <select
+        value={value ?? ""}
+        onChange={(event) => onChange(event.target.value || null)}
+        disabled={readOnly}
+      >
+        <option value="">(not set)</option>
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
     </label>
   );
 }

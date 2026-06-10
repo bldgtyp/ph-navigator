@@ -2,9 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+# Phius Multiple HP Performance Estimator dropdown values, used both
+# as the discriminator stored on each outdoor-equip row and as the
+# verbatim cell text emitted by the export. Renaming these would
+# silently break paste-into-Phius — they must match the calc strings.
+HeatingDataType = Literal["COPs", "HSPF2"]
+CoolingDataType = Literal["EER2/SEER2", "IEER"]
 
 ULID_SUFFIX_PATTERN = r"[0-9A-HJKMNP-TV-Z]{26}"
 
@@ -39,16 +46,15 @@ class HeatPumpOutdoorEquipRow(BaseModel):
     refrigerant: OptionId | None = None
     heating_cap_kw_17f: NonNegativeFloat | None = None
     heating_cap_kw_47f: NonNegativeFloat | None = None
+    heating_data_type: HeatingDataType | None = None
     heating_cop_17f: PositiveFloat | None = None
     heating_cop_47f: PositiveFloat | None = None
     hspf2: NonNegativeFloat | None = None
-    hspf: NonNegativeFloat | None = None
     cooling_cap_kw_95f: NonNegativeFloat | None = None
+    cooling_data_type: CoolingDataType | None = None
     eer2: NonNegativeFloat | None = None
     seer2: NonNegativeFloat | None = None
     ieer: NonNegativeFloat | None = None
-    eer: NonNegativeFloat | None = None
-    seer: NonNegativeFloat | None = None
     datasheet_asset_ids: list[str] = Field(default_factory=list)
     notes: str | None = Field(default=None, max_length=4000)
     catalog_origin: dict[str, object] | None = None

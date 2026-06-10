@@ -675,7 +675,7 @@ class ProjectDocumentV1(BaseModel):
     def _validate_heat_pump_table_ids_and_tags(
         table_label: str,
         tag_label: str,
-        rows: list[tuple[str, str]],
+        rows: list[tuple[str, str | None]],
     ) -> None:
         ids: set[str] = set()
         tags: set[str] = set()
@@ -683,6 +683,8 @@ class ProjectDocumentV1(BaseModel):
             if row_id in ids:
                 raise ValueError(f"Duplicate {table_label} id: {row_id}")
             ids.add(row_id)
+            if tag is None:
+                continue
             normalized_tag = tag.strip().casefold()
             if normalized_tag in tags:
                 raise ValueError(f"Duplicate {table_label} {tag_label}: {tag}")

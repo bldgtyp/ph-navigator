@@ -15,6 +15,8 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict
 
 from features.heat_pumps.models import (
+    CoolingDataType,
+    HeatingDataType,
     HeatPumpIndoorEquipRow,
     HeatPumpOutdoorEquipRow,
     HeatPumpsTableSlice,
@@ -35,10 +37,12 @@ CSV_HEADER: tuple[str, ...] = (
     "Qty",
     "Cap @ 17°F",
     "Cap @ 47°F",
+    "Heating Data Type",
     "COP @ 17°F",
     "COP @ 47°F",
     "HSPF2",
     "Cap @ 95°F",
+    "Cooling Data Type",
     "EER2",
     "SEER2",
     "IEER",
@@ -56,10 +60,12 @@ class PhiusRow(BaseModel):
     qty: int
     cap_17f: float | None
     cap_47f: float | None
+    heating_data_type: HeatingDataType | None
     cop_17f: float | None
     cop_47f: float | None
     hspf2: float | None
     cap_95f: float | None
+    cooling_data_type: CoolingDataType | None
     eer2: float | None
     seer2: float | None
     ieer: float | None
@@ -127,10 +133,12 @@ def serialize_csv(payload: PhiusPayload) -> bytes:
                 _csv_int(row.qty),
                 _csv_number(row.cap_17f),
                 _csv_number(row.cap_47f),
+                row.heating_data_type or "",
                 _csv_number(row.cop_17f),
                 _csv_number(row.cop_47f),
                 _csv_number(row.hspf2),
                 _csv_number(row.cap_95f),
+                row.cooling_data_type or "",
                 _csv_number(row.eer2),
                 _csv_number(row.seer2),
                 _csv_number(row.ieer),
@@ -151,19 +159,31 @@ def _build_row(
     qty: int,
     indoor_labels_by_id: dict[str, str],
 ) -> PhiusRow:
+    # The discriminator gates which heating/cooling metric the Phius calc
+    # reads from the pasted row. Always blank the cells the user's chosen
+    # type would not consume, so a stale value on the row never leaks into
+    # the calc and silently shifts the result.
+    cop_17f = equip.heating_cop_17f if equip.heating_data_type == "COPs" else None
+    cop_47f = equip.heating_cop_47f if equip.heating_data_type == "COPs" else None
+    hspf2 = equip.hspf2 if equip.heating_data_type == "HSPF2" else None
+    eer2 = equip.eer2 if equip.cooling_data_type == "EER2/SEER2" else None
+    seer2 = equip.seer2 if equip.cooling_data_type == "EER2/SEER2" else None
+    ieer = equip.ieer if equip.cooling_data_type == "IEER" else None
     return PhiusRow(
         row_id=equip.id,
         device=_device_label(equip, indoor_labels_by_id),
         qty=qty,
         cap_17f=_kw_to_kbtuh(equip.heating_cap_kw_17f),
         cap_47f=_kw_to_kbtuh(equip.heating_cap_kw_47f),
-        cop_17f=equip.heating_cop_17f,
-        cop_47f=equip.heating_cop_47f,
-        hspf2=equip.hspf2,
+        heating_data_type=equip.heating_data_type,
+        cop_17f=cop_17f,
+        cop_47f=cop_47f,
+        hspf2=hspf2,
         cap_95f=_kw_to_kbtuh(equip.cooling_cap_kw_95f),
-        eer2=equip.eer2,
-        seer2=equip.seer2,
-        ieer=equip.ieer,
+        cooling_data_type=equip.cooling_data_type,
+        eer2=eer2,
+        seer2=seer2,
+        ieer=ieer,
     )
 
 
@@ -217,32 +237,22 @@ def _validate(equip: HeatPumpOutdoorEquipRow, qty: int) -> list[PhiusWarning]:
     if qty == 0:
         warn("qty", "No outdoor units reference this equipment row.")
 
-    # All performance fields are optional individually — the modal now
-    # exposes every one. Warn only when the row carries no heating or
-    # no cooling data at all, so the export row would be useless.
-    heating_filled = any(
-        value is not None
-        for value in (
-            equip.heating_cap_kw_17f,
-            equip.heating_cap_kw_47f,
-            equip.heating_cop_17f,
-            equip.heating_cop_47f,
-            equip.hspf2,
-        )
-    )
-    cooling_filled = any(
-        value is not None
-        for value in (
-            equip.cooling_cap_kw_95f,
-            equip.eer2,
-            equip.seer2,
-            equip.ieer,
-        )
-    )
-    if not heating_filled:
-        warn("heating", "No heating performance data set.")
-    if not cooling_filled:
-        warn("cooling", "No cooling performance data set.")
+    # Heating: warn if no data type is chosen, or if the chosen type's
+    # metric cells are empty. The capacity-only case still warns because
+    # the Phius calc needs an efficiency value as well as the cap @ 17/47F.
+    if equip.heating_data_type is None:
+        warn("heating", "Heating data type not set; calc will need COPs or HSPF2.")
+    elif equip.heating_data_type == "COPs" and equip.heating_cop_17f is None and equip.heating_cop_47f is None:
+        warn("heating", "Heating data type is COPs but no COP value is set.")
+    elif equip.heating_data_type == "HSPF2" and equip.hspf2 is None:
+        warn("heating", "Heating data type is HSPF2 but HSPF2 is not set.")
+
+    if equip.cooling_data_type is None:
+        warn("cooling", "Cooling data type not set; calc will need EER2/SEER2 or IEER.")
+    elif equip.cooling_data_type == "EER2/SEER2" and equip.eer2 is None and equip.seer2 is None:
+        warn("cooling", "Cooling data type is EER2/SEER2 but neither EER2 nor SEER2 is set.")
+    elif equip.cooling_data_type == "IEER" and equip.ieer is None:
+        warn("cooling", "Cooling data type is IEER but IEER is not set.")
 
     return warnings
 

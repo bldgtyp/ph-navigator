@@ -2,11 +2,7 @@ import { useState } from "react";
 import { errorMessage } from "../../../../shared/lib/errors";
 import { ModalDialog } from "../../../../shared/ui/ModalDialog";
 import { numericValue, tagCollides } from "../lib";
-import {
-  HEAT_PUMP_OPTION_KEYS,
-  type HeatPumpIndoorEquipRow,
-  type HeatPumpsSlice,
-} from "../types";
+import { HEAT_PUMP_OPTION_KEYS, type HeatPumpIndoorEquipRow, type HeatPumpsSlice } from "../types";
 import { OptionPicker } from "./OptionPicker";
 
 export function IndoorEquipRowModal({

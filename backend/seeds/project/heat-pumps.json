@@ -38,9 +38,11 @@
       "refrigerant": "opt_r410a",
       "heating_cap_kw_17f": 5.28,
       "heating_cap_kw_47f": 7.91,
+      "heating_data_type": "COPs",
       "heating_cop_17f": 2.1,
       "heating_cop_47f": 3.4,
       "cooling_cap_kw_95f": 7.03,
+      "cooling_data_type": "EER2/SEER2",
       "eer2": 11.5,
       "seer2": 19.0,
       "notes": "Ductless multi-zone outdoor; serves bedrooms + living."
@@ -54,9 +56,11 @@
       "refrigerant": "opt_r32",
       "heating_cap_kw_17f": 3.66,
       "heating_cap_kw_47f": 5.28,
+      "heating_data_type": "COPs",
       "heating_cop_17f": 2.3,
       "heating_cop_47f": 3.6,
       "cooling_cap_kw_95f": 5.28,
+      "cooling_data_type": "EER2/SEER2",
       "eer2": 12.0,
       "seer2": 20.3,
       "notes": "Single-zone wall cassette outdoor."
@@ -70,8 +74,10 @@
       "refrigerant": "opt_r410a",
       "heating_cap_kw_17f": 4.98,
       "heating_cap_kw_47f": 7.33,
+      "heating_data_type": "HSPF2",
       "hspf2": 9.6,
       "cooling_cap_kw_95f": 6.45,
+      "cooling_data_type": "EER2/SEER2",
       "eer2": 11.0,
       "seer2": 18.5,
       "notes": "Multi-split outdoor; no specific paired indoor."
@@ -85,9 +91,11 @@
       "refrigerant": "opt_r410a",
       "heating_cap_kw_17f": 5.57,
       "heating_cap_kw_47f": 7.33,
+      "heating_data_type": "COPs",
       "heating_cop_17f": 2.0,
       "heating_cop_47f": 3.2,
       "cooling_cap_kw_95f": 7.03,
+      "cooling_data_type": "EER2/SEER2",
       "eer2": 11.8,
       "seer2": 19.5,
       "notes": "Halcyon single-zone; cold-climate variant."
@@ -102,8 +110,10 @@
       "refrigerant": "opt_r410a",
       "heating_cap_kw_17f": 7.03,
       "heating_cap_kw_47f": 9.96,
+      "heating_data_type": "HSPF2",
       "hspf2": 8.5,
       "cooling_cap_kw_95f": 10.55,
+      "cooling_data_type": "IEER",
       "ieer": 16.5,
       "notes": "Central ducted outdoor; paired with FB4CNF air handler."
     }

@@ -2,6 +2,18 @@ import type { BaseTableSlice } from "../../project_document/table-slice";
 
 export type HeatPumpTableKey = "outdoor-equip" | "indoor-equip" | "outdoor-units" | "indoor-units";
 
+/**
+ * Phius Multiple HP Performance Estimator dropdown values for the
+ * heating-data-type and cooling-data-type cells. The exact strings
+ * (including the slash in `"EER2/SEER2"`) match the calc; renaming
+ * them would silently break paste-into-Phius.
+ */
+export type HeatingDataType = "COPs" | "HSPF2";
+export type CoolingDataType = "EER2/SEER2" | "IEER";
+
+export const HEATING_DATA_TYPES: readonly HeatingDataType[] = ["COPs", "HSPF2"] as const;
+export const COOLING_DATA_TYPES: readonly CoolingDataType[] = ["EER2/SEER2", "IEER"] as const;
+
 export type HeatPumpOutdoorEquipRow = {
   id: string;
   tag: string;
@@ -12,16 +24,15 @@ export type HeatPumpOutdoorEquipRow = {
   refrigerant: string | null;
   heating_cap_kw_17f: number | null;
   heating_cap_kw_47f: number | null;
+  heating_data_type: HeatingDataType | null;
   heating_cop_17f: number | null;
   heating_cop_47f: number | null;
   hspf2: number | null;
-  hspf: number | null;
   cooling_cap_kw_95f: number | null;
+  cooling_data_type: CoolingDataType | null;
   eer2: number | null;
   seer2: number | null;
   ieer: number | null;
-  eer: number | null;
-  seer: number | null;
   datasheet_asset_ids: string[];
   notes: string | null;
   catalog_origin: Record<string, unknown> | null;
@@ -151,10 +162,12 @@ export type PhiusExportRow = {
   qty: number;
   cap_17f: number | null;
   cap_47f: number | null;
+  heating_data_type: HeatingDataType | null;
   cop_17f: number | null;
   cop_47f: number | null;
   hspf2: number | null;
   cap_95f: number | null;
+  cooling_data_type: CoolingDataType | null;
   eer2: number | null;
   seer2: number | null;
   ieer: number | null;
