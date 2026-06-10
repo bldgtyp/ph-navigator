@@ -1,0 +1,250 @@
+{
+  "outdoor_equip": [
+    {
+      "id": "hpoe_01J5RH4F1A0000000000000001",
+      "manufacturer": "opt_mitsubishi",
+      "model_number": "MXZ-3C24NA",
+      "paired_indoor_equip_id": "hpie_01J5RH4F1A0000000000000001",
+      "system_family": "opt_multi_split",
+      "refrigerant": "opt_r410a",
+      "heating_data_type": "cops",
+      "heating_cap_kbtuh_17f": 18.0,
+      "heating_cap_kbtuh_47f": 27.0,
+      "heating_cop_17f": 2.1,
+      "heating_cop_47f": 3.4,
+      "cooling_data_type": "eer2_seer2",
+      "cooling_cap_kbtuh_95f": 24.0,
+      "eer2": 11.5,
+      "seer2": 19.0,
+      "notes": "Ductless multi-zone outdoor; serves bedrooms + living."
+    },
+    {
+      "id": "hpoe_01J5RH4F1A0000000000000002",
+      "manufacturer": "opt_daikin",
+      "model_number": "RXG18AXVJU",
+      "system_family": "opt_single_zone",
+      "refrigerant": "opt_r32",
+      "heating_data_type": "cops",
+      "heating_cap_kbtuh_17f": 12.5,
+      "heating_cap_kbtuh_47f": 18.0,
+      "heating_cop_17f": 2.3,
+      "heating_cop_47f": 3.6,
+      "cooling_data_type": "eer2_seer2",
+      "cooling_cap_kbtuh_95f": 18.0,
+      "eer2": 12.0,
+      "seer2": 20.3,
+      "notes": "Single-zone wall cassette outdoor."
+    },
+    {
+      "id": "hpoe_01J5RH4F1A0000000000000003",
+      "manufacturer": "opt_lg",
+      "model_number": "LMU240HHV",
+      "system_family": "opt_multi_split",
+      "refrigerant": "opt_r410a",
+      "heating_data_type": "hspf2",
+      "heating_cap_kbtuh_17f": 17.0,
+      "heating_cap_kbtuh_47f": 25.0,
+      "hspf2": 9.6,
+      "cooling_data_type": "eer2_seer2",
+      "cooling_cap_kbtuh_95f": 22.0,
+      "eer2": 11.0,
+      "seer2": 18.5,
+      "notes": "Multi-split outdoor; no specific paired indoor."
+    },
+    {
+      "id": "hpoe_01J5RH4F1A0000000000000004",
+      "manufacturer": "opt_fujitsu",
+      "model_number": "AOU24RLXFZH",
+      "system_family": "opt_single_zone",
+      "refrigerant": "opt_r410a",
+      "heating_data_type": "cops",
+      "heating_cap_kbtuh_17f": 19.0,
+      "heating_cap_kbtuh_47f": 25.0,
+      "heating_cop_17f": 2.0,
+      "heating_cop_47f": 3.2,
+      "cooling_data_type": "eer2_seer2",
+      "cooling_cap_kbtuh_95f": 24.0,
+      "eer2": 11.8,
+      "seer2": 19.5,
+      "notes": "Halcyon single-zone; cold-climate variant."
+    },
+    {
+      "id": "hpoe_01J5RH4F1A0000000000000005",
+      "manufacturer": "opt_carrier",
+      "model_number": "38MAQB36-3",
+      "paired_indoor_equip_id": "hpie_01J5RH4F1A0000000000000005",
+      "system_family": "opt_central_ducted",
+      "refrigerant": "opt_r410a",
+      "heating_data_type": "hspf2",
+      "heating_cap_kbtuh_17f": 24.0,
+      "heating_cap_kbtuh_47f": 34.0,
+      "hspf2": 8.5,
+      "cooling_data_type": "ieer",
+      "cooling_cap_kbtuh_95f": 36.0,
+      "ieer": 16.5,
+      "notes": "Central ducted outdoor; paired with FB4CNF air handler."
+    }
+  ],
+  "indoor_equip": [
+    {
+      "id": "hpie_01J5RH4F1A0000000000000001",
+      "manufacturer": "opt_mitsubishi",
+      "model_type": "opt_wall_cassette",
+      "model_number": "MSZ-FH09NA",
+      "install_type": "opt_wall_mounted",
+      "nominal_tons": 0.75,
+      "fan_speed_cfm": 350,
+      "cooling_btuh": 9000,
+      "heating_btuh_47f": 10900,
+      "heating_btuh_17f": 7200,
+      "heating_cop": 3.2,
+      "seer": 26.0,
+      "notes": "Hyper-heat wall cassette."
+    },
+    {
+      "id": "hpie_01J5RH4F1A0000000000000002",
+      "manufacturer": "opt_mitsubishi",
+      "model_type": "opt_wall_cassette",
+      "model_number": "MSZ-FH12NA",
+      "install_type": "opt_wall_mounted",
+      "nominal_tons": 1.0,
+      "fan_speed_cfm": 420,
+      "cooling_btuh": 12000,
+      "heating_btuh_47f": 13600,
+      "heating_btuh_17f": 9000,
+      "heating_cop": 3.1,
+      "seer": 25.5,
+      "notes": "Hyper-heat wall cassette."
+    },
+    {
+      "id": "hpie_01J5RH4F1A0000000000000003",
+      "manufacturer": "opt_daikin",
+      "model_type": "opt_wall_cassette",
+      "model_number": "FTXG09HVJU",
+      "install_type": "opt_wall_mounted",
+      "nominal_tons": 0.75,
+      "fan_speed_cfm": 330,
+      "cooling_btuh": 9000,
+      "heating_btuh_47f": 11500,
+      "heating_btuh_17f": 7800,
+      "heating_cop": 3.3,
+      "seer": 24.0,
+      "notes": "Emura-style designer wall unit."
+    },
+    {
+      "id": "hpie_01J5RH4F1A0000000000000004",
+      "manufacturer": "opt_lg",
+      "model_type": "opt_ceiling_cassette",
+      "model_number": "LAN090HYV",
+      "install_type": "opt_ceiling_recessed",
+      "nominal_tons": 0.75,
+      "fan_speed_cfm": 290,
+      "cooling_btuh": 9000,
+      "heating_btuh_47f": 10000,
+      "heating_btuh_17f": 6500,
+      "heating_cop": 3.0,
+      "seer": 22.0,
+      "notes": "4-way ceiling cassette."
+    },
+    {
+      "id": "hpie_01J5RH4F1A0000000000000005",
+      "manufacturer": "opt_carrier",
+      "model_type": "opt_ducted_air_handler",
+      "model_number": "FB4CNF036",
+      "install_type": "opt_ducted_central",
+      "nominal_tons": 3.0,
+      "fan_speed_cfm": 1200,
+      "cooling_btuh": 36000,
+      "heating_btuh_47f": 34000,
+      "heating_btuh_17f": 24000,
+      "heating_cop": 2.6,
+      "seer": 17.0,
+      "notes": "Central air handler matched to 38MAQB36-3 outdoor."
+    }
+  ],
+  "outdoor_units": [
+    {
+      "id": "hpou_01J5RH4F1A0000000000000001",
+      "tag": "HP-1",
+      "outdoor_equip_id": "hpoe_01J5RH4F1A0000000000000001",
+      "building_zone": "opt_conditioned",
+      "notes": "Roof-mounted multi-split serving Level 1."
+    },
+    {
+      "id": "hpou_01J5RH4F1A0000000000000002",
+      "tag": "HP-2",
+      "outdoor_equip_id": "hpoe_01J5RH4F1A0000000000000002",
+      "building_zone": "opt_conditioned",
+      "notes": "Single-zone outdoor at south side yard."
+    },
+    {
+      "id": "hpou_01J5RH4F1A0000000000000003",
+      "tag": "HP-3",
+      "outdoor_equip_id": "hpoe_01J5RH4F1A0000000000000003",
+      "building_zone": "opt_conditioned",
+      "notes": "Multi-split outdoor at north side yard."
+    },
+    {
+      "id": "hpou_01J5RH4F1A0000000000000004",
+      "tag": "HP-4",
+      "outdoor_equip_id": "hpoe_01J5RH4F1A0000000000000004",
+      "building_zone": "opt_unconditioned",
+      "notes": "Spare/secondary outdoor on shed roof; not currently piped."
+    },
+    {
+      "id": "hpou_01J5RH4F1A0000000000000005",
+      "tag": "HP-5",
+      "outdoor_equip_id": "hpoe_01J5RH4F1A0000000000000005",
+      "building_zone": "opt_conditioned",
+      "notes": "Central ducted outdoor; serves whole-house air handler."
+    }
+  ],
+  "indoor_units": [
+    {
+      "id": "hpiu_01J5RH4F1A0000000000000001",
+      "tag": "IU-1.1",
+      "indoor_equip_id": "hpie_01J5RH4F1A0000000000000001",
+      "outdoor_unit_id": "hpou_01J5RH4F1A0000000000000001",
+      "served_room_ids": ["rm_101"],
+      "floor_level": "opt_level_1",
+      "area_served": "Living Room"
+    },
+    {
+      "id": "hpiu_01J5RH4F1A0000000000000002",
+      "tag": "IU-1.2",
+      "indoor_equip_id": "hpie_01J5RH4F1A0000000000000002",
+      "outdoor_unit_id": "hpou_01J5RH4F1A0000000000000001",
+      "linked_erv_unit_id": "vent_1",
+      "served_room_ids": ["rm_102"],
+      "floor_level": "opt_level_1",
+      "area_served": "Kitchen"
+    },
+    {
+      "id": "hpiu_01J5RH4F1A0000000000000003",
+      "tag": "IU-2.1",
+      "indoor_equip_id": "hpie_01J5RH4F1A0000000000000003",
+      "outdoor_unit_id": "hpou_01J5RH4F1A0000000000000002",
+      "served_room_ids": ["rm_103"],
+      "floor_level": "opt_level_2",
+      "area_served": "Bedroom 1"
+    },
+    {
+      "id": "hpiu_01J5RH4F1A0000000000000004",
+      "tag": "IU-3.1",
+      "indoor_equip_id": "hpie_01J5RH4F1A0000000000000004",
+      "outdoor_unit_id": "hpou_01J5RH4F1A0000000000000003",
+      "served_room_ids": ["rm_104"],
+      "floor_level": "opt_level_2",
+      "area_served": "Bedroom 2"
+    },
+    {
+      "id": "hpiu_01J5RH4F1A0000000000000005",
+      "tag": "IU-5.1",
+      "indoor_equip_id": "hpie_01J5RH4F1A0000000000000005",
+      "outdoor_unit_id": "hpou_01J5RH4F1A0000000000000005",
+      "served_room_ids": ["rm_101", "rm_102", "rm_103", "rm_104"],
+      "floor_level": "opt_level_1",
+      "area_served": "Whole-house ducted distribution"
+    }
+  ]
+}

@@ -27,7 +27,7 @@ import {
   envelopeAssemblyPath,
   activeAssemblyIdFromSubpath,
   envelopeSubpath,
-  envelopeSpecificationsPath,
+  envelopeMaterialsPath,
   isEnvelopeSubroute,
 } from "../paths";
 import { AssemblyWorkspace } from "../components/AssemblyWorkspace";
@@ -40,7 +40,7 @@ import {
   EnvelopeLoadingState,
 } from "../components/EnvelopeStates";
 import { MaterialDriftDialog } from "../components/MaterialDrift";
-import { SpecificationsPanel } from "../components/SpecificationsPanel";
+import { MaterialsPanel } from "../components/MaterialsPanel";
 import { nextZoomStep, previousZoomStep } from "../canvas-constants";
 import type { EnvelopeAttachmentChangeArgs, EnvelopeCommand } from "../types";
 import {
@@ -95,7 +95,7 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
   );
   const subpath = envelopeSubpath(location.pathname, project.id);
   const isAssembliesRoute = isEnvelopeSubroute(subpath, "assemblies");
-  const isSpecificationsRoute = isEnvelopeSubroute(subpath, "specifications");
+  const isMaterialsRoute = isEnvelopeSubroute(subpath, "materials");
   const assemblyId = activeAssemblyIdFromSubpath(subpath);
   const assemblies = useMemo(
     () => naturalSortAssemblies(query.data?.assemblies ?? []),
@@ -173,7 +173,7 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     );
   }
 
-  if (!isAssembliesRoute && !isSpecificationsRoute) {
+  if (!isAssembliesRoute && !isMaterialsRoute) {
     return (
       <Navigate
         to={{ pathname: envelopeAssembliesPath(project.id), search: location.search }}
@@ -255,11 +255,11 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
         </AppSubTabLink>
         <AppSubTabLink
           to={{
-            pathname: envelopeSpecificationsPath(project.id),
+            pathname: envelopeMaterialsPath(project.id),
             search: location.search,
           }}
         >
-          Specifications
+          Materials
         </AppSubTabLink>
       </AppSubTabs>
       {activeAssemblyDriftCount > 0 && isAssembliesRoute ? (
@@ -268,14 +268,14 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
           {activeAssemblyDriftCount === 1 ? "copy needs" : "copies need"} catalog review.
           <NavLink
             className="text-button"
-            to={{ pathname: envelopeSpecificationsPath(project.id), search: location.search }}
+            to={{ pathname: envelopeMaterialsPath(project.id), search: location.search }}
           >
             Review all
           </NavLink>
         </div>
       ) : null}
-      {isSpecificationsRoute ? (
-        <SpecificationsPanel
+      {isMaterialsRoute ? (
+        <MaterialsPanel
           materials={query.data.project_materials}
           driftByMaterialId={driftByMaterialId}
           projectId={project.id}

@@ -1,6 +1,8 @@
+import { Paperclip } from "lucide-react";
+
 /**
  * Compact display-only attachment chip for report-table column cells.
- * Shows "📎 +" when empty (placeholder count) or "📎 N" when populated.
+ * Renders a binary presence state — have attachments vs missing.
  * Editing (upload / view / replace / detach) happens inside the
  * expanded row using the full <AttachmentCell>.
  */
@@ -10,12 +12,9 @@ export function AttachmentChipCell({ count }: { count: number }) {
     <span
       className="report-attachment-chip"
       data-has-files={hasFiles}
-      aria-label={hasFiles ? `${count} attachment${count === 1 ? "" : "s"}` : "No attachments"}
+      aria-label={hasFiles ? "Attached" : "Missing"}
     >
-      <span className="report-attachment-chip__glyph" aria-hidden="true">
-        📎
-      </span>
-      <span>{hasFiles ? count : "+"}</span>
+      <Paperclip className="report-attachment-chip__glyph" size={14} aria-hidden="true" />
     </span>
   );
 }

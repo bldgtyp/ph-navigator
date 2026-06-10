@@ -262,7 +262,7 @@ Examples:
 
 The same React component (`<DataTable>`) renders every grid-style
 surface: the catalog manager pages (`/catalog/{slug}`), the
-project-scoped Specifications sub-tab, the bookshelf material
+project-scoped Materials sub-tab, the bookshelf material
 picker, and any future tabular surface. Per-table column
 declarations live in TS at the call site (PRD §11.1: "schema
 flexibility lives in code, not runtime").
@@ -560,7 +560,7 @@ framed by chrome that's specific to catalogs:
 - Above the table, a small audit-log link surfaces who-changed-what
   inside this catalog (recent N events).
 - The `<DataTable>` itself is the same component used in the
-  project-scoped Specifications sub-tab; the only differences are
+  project-scoped Materials sub-tab; the only differences are
   the column declarations and which row-chrome slots are enabled.
 
 Full UX description (page header layout, version picker mechanics,
@@ -810,17 +810,17 @@ The Envelope tab has its own **second-level tab bar** below the
 project header / project tab bar. Four sub-tabs in this order:
 
 ```
-Assemblies · Specifications · Airtightness · Site Photos
+Assemblies · Materials · Airtightness · Site Photos
 ```
 
 - **Assemblies** (default landing) — visual layer/segment composer
   for each assembly. URL `/envelope/assemblies` (with optional
   `/{assembly_id}` for direct deep-link).
-- **Specifications** — per-segment design-spec status, attached
+- **Materials** — per-material design-spec status, attached
   product datasheets, attached site photos, and notes. URL
-  `/envelope/specifications`. Replaces V1's misleadingly-named
-  "Materials" sub-tab; the page heading inside ("Project
-  Materials") stays for visual continuity with V1.
+  `/envelope/materials`. The page heading inside is "Project
+  Materials"; each row carries a `specification_status` that the
+  tab surfaces and filters on.
 - **Airtightness** — placeholder; specced separately. URL
   `/envelope/airtightness`.
 - **Site Photos** — placeholder; specced separately. URL
@@ -1003,7 +1003,7 @@ above the canvas:
 Click "Review all" → opens the project-wide drift report
 (reachable also from project header `⋯ → Catalog drift report`).
 
-#### 2.7.3 Specifications sub-tab (`/envelope/specifications`)
+#### 2.7.3 Materials sub-tab (`/envelope/materials`)
 
 **Purpose:** A QA-prep dashboard for the CPHC. List every unique
 material used across all assemblies in the project (auto-
@@ -1126,7 +1126,7 @@ canvas's segment modal → Detach to a new material."*
 
 - Viewers see only material cards whose
   `specification_status != 'na'`. The "Unused materials"
-  section is also hidden from Viewers. The Specifications
+  section is also hidden from Viewers. The Materials
   tab is most useful as a "what's pending / what's documented"
   view; n/a cards are noise for external readers.
 
@@ -1207,7 +1207,7 @@ use case per Ed's framing.
 **(Detailed in US-ENV-15.)**
 
 Contractor-facing reorganization of the same per-segment site
-photos that the Specifications sub-tab manages — grouped by
+photos that the Materials sub-tab manages — grouped by
 **assembly type** (Walls / Floors / Roofs / Other) instead of by
 material. Same data, different presentation. Useful for sharing
 with the trades team via the normal project URL: "all the wall photos in
@@ -1236,13 +1236,13 @@ one place," etc.
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-- **No new backend** in v1 — same data as Specifications, just
+- **No new backend** in v1 — same data as the Materials sub-tab, just
   re-grouped.
 - **Assembly type** comes from a new `assembly.type` field
   (auto-detected from name on create per Q-ENV-15.1 lean;
   user-editable thereafter).
 - **Editable here too** — drag-and-drop upload writes to the
-  same `segment.photo_asset_ids[]` arrays as Specifications.
+  same `segment.photo_asset_ids[]` arrays as the Materials sub-tab.
 - **Viewers** see this page populated and organized
   for trades-crew use — the primary motivation for the tab's
   existence.
@@ -1379,7 +1379,7 @@ Consistent visual language for state across the app:
 | Submitted | Document-with-checkmark icon | Versions list |
 | Closed | Folded-document icon | Versions list |
 | Read-only (Viewer public read) | "Read-only" pill in header | Project workspace header |
-| Evidence missing | Badge/icon + filterable status | Tables, Specifications, Site Photos |
+| Evidence missing | Badge/icon + filterable status | Tables, Materials, Site Photos |
 | Evidence attached | Badge/icon + file count/preview | Datasheets, photos, HBJSON files |
 | N/A accepted | Muted badge/state | Spec/photo requirements |
 | Catalog/source drift | Refresh/drift badge | Materials, frames, glazings, catalog-linked rows |
@@ -1432,7 +1432,7 @@ content review.
 | Locked-version edit lockout banner | Drafted | MVP |
 | Status tab (`/projects/{id}/status`) | Placeholder | MVP |
 | Apertures tab (`/projects/{id}/apertures`) | Shipped | MVP |
-| Envelope tab (`/projects/{id}/envelope`) — sub-tab structure + Assemblies + Specifications | Drafted | MVP |
+| Envelope tab (`/projects/{id}/envelope`) — sub-tab structure + Assemblies + Materials | Drafted | MVP |
 | Envelope · Airtightness sub-tab | Placeholder | MVP |
 | Envelope · Site Photos sub-tab | Placeholder | MVP |
 | Equipment tab (`/projects/{id}/equipment`) | Placeholder | MVP |

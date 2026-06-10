@@ -18,6 +18,7 @@ export function ReportTable<T>({
   expandedRowId,
   onToggleExpand,
   renderExpansion,
+  renderRowAction,
   emptyMessage,
 }: {
   rows: T[];
@@ -26,6 +27,7 @@ export function ReportTable<T>({
   expandedRowId?: string | null;
   onToggleExpand?: (id: string) => void;
   renderExpansion?: (row: T) => ReactNode;
+  renderRowAction?: (row: T) => ReactNode;
   emptyMessage?: ReactNode;
 }) {
   const expandable = Boolean(onToggleExpand && renderExpansion);
@@ -60,22 +62,33 @@ export function ReportTable<T>({
     <div className="report-table" role="table" style={gridStyle}>
       <div className="report-table__head" role="row" style={gridStyle}>
         {expandable ? <span aria-hidden="true" /> : null}
-        {columns.map((col) => (
-          <span
-            key={col.key}
-            role="columnheader"
-            className={`report-table__head-cell${col.numeric ? " report-table__head-cell--numeric" : ""}`}
-          >
-            <span>{col.header}</span>
-            {col.unit ? <span className="report-table__head-unit">{col.unit}</span> : null}
-          </span>
-        ))}
+        {columns.map((col) => {
+          const headClassName = [
+            "report-table__head-cell",
+            col.numeric ? "report-table__head-cell--numeric" : null,
+            col.primary ? "report-table__head-cell--primary" : null,
+          ]
+            .filter(Boolean)
+            .join(" ");
+          return (
+            <span key={col.key} role="columnheader" className={headClassName}>
+              <span>{col.header}</span>
+              {col.unit ? <span className="report-table__head-unit">{col.unit}</span> : null}
+            </span>
+          );
+        })}
       </div>
       <div className="report-table__body" role="rowgroup">
         {rows.map((row) => {
           const id = getRowId(row);
           const isExpanded = expandedRowId === id;
-          const rowClass = `report-table__row${expandable ? " report-table__row--expandable" : ""}`;
+          const rowClass = [
+            "report-table__row",
+            expandable ? "report-table__row--expandable" : null,
+            isExpanded ? "report-table__row--expanded" : null,
+          ]
+            .filter(Boolean)
+            .join(" ");
           return (
             <Fragment key={id}>
               <div
@@ -122,6 +135,11 @@ export function ReportTable<T>({
                         }
                       }}
                     >
+                      {col.primary && renderRowAction ? (
+                        <span className="report-table__row-action" aria-hidden="false">
+                          {renderRowAction(row)}
+                        </span>
+                      ) : null}
                       {col.render(row)}
                     </span>
                   );

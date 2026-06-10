@@ -5,6 +5,7 @@ import {
   type ReactNode,
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -80,6 +81,32 @@ export function AutocompleteSelect({
     if (!open) return;
     setHighlightedIndex(firstEnabledIndex);
   }, [firstEnabledIndex, normalizedQuery, open]);
+
+  const [listboxPosition, setListboxPosition] = useState<{
+    top: number;
+    left: number;
+    width: number;
+  } | null>(null);
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setListboxPosition(null);
+      return;
+    }
+    function updatePosition(): void {
+      const el = inputRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      setListboxPosition({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+    }
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [open]);
 
   function openList() {
     if (disabled) return;
@@ -161,7 +188,7 @@ export function AutocompleteSelect({
     .join(" ");
 
   return (
-    <div className={rootClassName} ref={rootRef}>
+    <div className={rootClassName} ref={rootRef} onClick={(event) => event.stopPropagation()}>
       {label ? (
         <label className="autocomplete-select-label" htmlFor={inputId}>
           {label}
@@ -212,7 +239,22 @@ export function AutocompleteSelect({
         </button>
       </div>
       {open ? (
-        <ul className="autocomplete-select-listbox" id={listboxId} role="listbox">
+        <ul
+          className="autocomplete-select-listbox"
+          id={listboxId}
+          role="listbox"
+          style={
+            listboxPosition
+              ? {
+                  position: "fixed",
+                  top: listboxPosition.top,
+                  left: listboxPosition.left,
+                  width: listboxPosition.width,
+                  right: "auto",
+                }
+              : undefined
+          }
+        >
           {filteredOptions.length === 0 ? (
             <li className="autocomplete-select-empty">{emptyMessage}</li>
           ) : (

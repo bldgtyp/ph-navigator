@@ -367,7 +367,7 @@ per Q-ENV-2) lets us guarantee 1:1 coverage.
   HBJSON / window-construction export under header `⋯` menu).
 - One PDF binder vs zip of individual PDFs? Lean: zip; PDF binder
   as v1.1+.
-- Surface in: Specifications sub-tab toolbar (bulk button) AND
+- Surface in: Materials sub-tab toolbar (bulk button) AND
   project header `⋯` menu (per Q-ENV-11 pattern). Per-row "↓"
   button on each material card for individual download.
 

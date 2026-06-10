@@ -338,7 +338,7 @@ Per Q-LAND-1's resolved tab bar (Status / Windows / Envelope /
 Splitting Rooms, Thermal Bridges, and the equipment tables into
 five top-level tabs would push the bar to 9 tabs and bury
 related data behind extra clicks. The sub-tab convention used
-by Envelope (Assemblies / Specifications / Airtightness / Site
+by Envelope (Assemblies / Materials / Airtightness / Site
 Photos) carries over here cleanly. **Decision (a) per Ed,
 2026-05-10.**
 

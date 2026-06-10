@@ -292,7 +292,7 @@ function edgeMaterials(): ProjectMaterial[] {
       datasheet_asset_ids: [],
       source: null,
       url: null,
-      comments: "Unused material verifies Specifications cleanup and viewer filtering.",
+      comments: "Unused material verifies Materials tab cleanup and viewer filtering.",
       catalog_origin: null,
       use_sites: [],
     },

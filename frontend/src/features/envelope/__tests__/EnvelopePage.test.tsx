@@ -462,8 +462,8 @@ describe("EnvelopePage", () => {
     expect(within(legend).getByText("0.502")).toBeInTheDocument();
   });
 
-  test("specifications render segment use-site notes and hide unused na cards in viewer mode", async () => {
-    renderEnvelope(`/projects/${PROJECT_ID}/envelope/specifications`, {
+  test("materials tab renders segment use-site notes and hides unused na cards in viewer mode", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/materials`, {
       projectOverride: { access_mode: "viewer" },
     });
 
@@ -482,7 +482,7 @@ describe("EnvelopePage", () => {
     );
   });
 
-  test("specifications render datasheet and site-photo evidence in read-only mode", async () => {
+  test("materials tab renders datasheet and site-photo evidence in read-only mode", async () => {
     fetchMock.mockImplementation((url: string) => {
       if (url.includes("/envelope?")) {
         return Promise.resolve(
@@ -506,7 +506,7 @@ describe("EnvelopePage", () => {
       return defaultFetchImplementation(url);
     });
 
-    renderEnvelope(`/projects/${PROJECT_ID}/envelope/specifications`, {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/materials`, {
       projectOverride: { access_mode: "viewer" },
     });
 
@@ -521,7 +521,7 @@ describe("EnvelopePage", () => {
   });
 
   test("na material status hides datasheet upload controls", async () => {
-    renderEnvelope(`/projects/${PROJECT_ID}/envelope/specifications`);
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/materials`);
 
     const unusedRow = (await screen.findByText("Unused air barrier")).closest("[role='row']");
     expect(unusedRow).not.toBeNull();
@@ -531,8 +531,8 @@ describe("EnvelopePage", () => {
     expect(screen.queryByRole("button", { name: /Drop files here/ })).not.toBeInTheDocument();
   });
 
-  test("specifications sort incomplete materials before complete materials and unused materials last", async () => {
-    renderEnvelope(`/projects/${PROJECT_ID}/envelope/specifications`);
+  test("materials tab sorts incomplete materials before complete materials and unused materials last", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/materials`);
 
     expect(await screen.findByText("Wood fiber board")).toBeInTheDocument();
 
@@ -546,7 +546,7 @@ describe("EnvelopePage", () => {
     ]);
   });
 
-  test("catalog drift badges render in assemblies and specifications", async () => {
+  test("catalog drift badges render in assemblies and materials tabs", async () => {
     fetchMock.mockImplementation((url: string) => {
       if (url.includes("/envelope?")) {
         return Promise.resolve(
