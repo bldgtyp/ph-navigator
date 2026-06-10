@@ -1,61 +1,91 @@
-import type { DataTableColumnDef, FieldDef } from "../../../shared/ui/data-table";
+import type { DataTableColumnDef, FieldDef, FieldOption } from "../../../shared/ui/data-table";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
-import { indoorEquipLabel, optionLabelFromId } from "./lib";
-import type { HeatPumpIndoorEquipRow, HeatPumpOutdoorEquipRow } from "./types";
+import { indoorEquipLabel } from "./lib";
+import {
+  HEAT_PUMP_OPTION_KEYS,
+  type HeatPumpIndoorEquipRow,
+  type HeatPumpOutdoorEquipRow,
+  type HeatPumpsSlice,
+} from "./types";
 
 export const OUTDOOR_EQUIP_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
 
-export const outdoorEquipFieldDefs: FieldDef[] = [
-  textField("model_number", "Model number", true),
-  selectField("manufacturer", "Manufacturer"),
-  selectField("paired_indoor_equip_id", "Paired indoor equip"),
-  selectField("system_family", "System family"),
-  selectField("refrigerant", "Refrigerant"),
-  selectField("heating_data_type", "Heating data type", [
-    { id: "cops", label: "COPs", color: "blue", order: 0 },
-    { id: "hspf2", label: "HSPF2", color: "green", order: 1 },
-  ]),
-  numberField("heating_cap_kbtuh_17f", "Heat cap 17F"),
-  numberField("heating_cap_kbtuh_47f", "Heat cap 47F"),
-  numberField("heating_cop_17f", "COP 17F"),
-  numberField("heating_cop_47f", "COP 47F"),
-  numberField("hspf2", "HSPF2"),
-  numberField("hspf", "HSPF"),
-  selectField("cooling_data_type", "Cooling data type", [
-    { id: "eer2_seer2", label: "EER2 / SEER2", color: "blue", order: 0 },
-    { id: "ieer", label: "IEER", color: "green", order: 1 },
-  ]),
-  numberField("cooling_cap_kbtuh_95f", "Cool cap 95F"),
-  numberField("eer2", "EER2"),
-  numberField("seer2", "SEER2"),
-  numberField("ieer", "IEER"),
-  numberField("eer", "EER"),
-  numberField("seer", "SEER"),
-  {
-    field_key: OUTDOOR_EQUIP_DATASHEET_FIELD_KEY,
-    field_type: "attachment",
-    display_name: "Datasheet",
-  },
-  textField("notes", "Notes"),
+const HEATING_DATA_TYPE_OPTIONS: FieldOption[] = [
+  { id: "cops", label: "COPs", color: "#3b82f6", order: 0 },
+  { id: "hspf2", label: "HSPF2", color: "#10b981", order: 1 },
 ];
+const COOLING_DATA_TYPE_OPTIONS: FieldOption[] = [
+  { id: "eer2_seer2", label: "EER2 / SEER2", color: "#3b82f6", order: 0 },
+  { id: "ieer", label: "IEER", color: "#10b981", order: 1 },
+];
+
+export function outdoorEquipFieldDefs({
+  options,
+  indoorEquip,
+}: {
+  options: HeatPumpsSlice["single_select_options"];
+  indoorEquip: readonly HeatPumpIndoorEquipRow[];
+}): FieldDef[] {
+  const manufacturer = options[HEAT_PUMP_OPTION_KEYS.manufacturer] ?? [];
+  const systemFamily = options[HEAT_PUMP_OPTION_KEYS.systemFamily] ?? [];
+  const refrigerant = options[HEAT_PUMP_OPTION_KEYS.refrigerant] ?? [];
+  // The paired-indoor pickers (cell popover + modal) read from a synthetic
+  // option list whose `id` is the row id and `label` is `indoorEquipLabel`.
+  // Mirroring the manufacturer pattern lets the same DataTable cell renderer
+  // resolve the label without a row-shape-specific code path.
+  const pairedIndoor: FieldOption[] = indoorEquip.map((row, index) => ({
+    id: row.id,
+    label: indoorEquipLabel(row, manufacturer),
+    color: "#94a3b8",
+    order: index,
+  }));
+  return [
+    textField("tag", "Tag", true),
+    textField("model_number", "Model number"),
+    selectField("manufacturer", "Manufacturer", manufacturer),
+    selectField("paired_indoor_equip_id", "Paired indoor equip", pairedIndoor),
+    selectField("system_family", "System family", systemFamily),
+    selectField("refrigerant", "Refrigerant", refrigerant),
+    selectField("heating_data_type", "Heating data type", HEATING_DATA_TYPE_OPTIONS),
+    numberField("heating_cap_kbtuh_17f", "Heat cap 17F"),
+    numberField("heating_cap_kbtuh_47f", "Heat cap 47F"),
+    numberField("heating_cop_17f", "COP 17F"),
+    numberField("heating_cop_47f", "COP 47F"),
+    numberField("hspf2", "HSPF2"),
+    numberField("hspf", "HSPF"),
+    selectField("cooling_data_type", "Cooling data type", COOLING_DATA_TYPE_OPTIONS),
+    numberField("cooling_cap_kbtuh_95f", "Cool cap 95F"),
+    numberField("eer2", "EER2"),
+    numberField("seer2", "SEER2"),
+    numberField("ieer", "IEER"),
+    numberField("eer", "EER"),
+    numberField("seer", "SEER"),
+    {
+      field_key: OUTDOOR_EQUIP_DATASHEET_FIELD_KEY,
+      field_type: "attachment",
+      display_name: "Datasheet",
+    },
+    textField("notes", "Notes"),
+  ];
+}
 
 export const outdoorEquipDefaultHiddenColumns = ["hspf", "eer", "seer"];
 
 export function outdoorEquipColumnDefs({
   projectId,
   isEditor,
-  indoorEquip,
   assetUrlById,
   onDatasheetChange,
 }: {
   projectId: string;
   isEditor: boolean;
-  indoorEquip: HeatPumpIndoorEquipRow[];
+  // Single-select column labels are resolved from FieldDef.options inside
+  // the DataTable, so this builder no longer needs `options` or the
+  // related `indoorEquip` list — both flow through `outdoorEquipFieldDefs`.
   assetUrlById: Map<string, unknown>;
   onDatasheetChange: (row: HeatPumpOutdoorEquipRow, next: string[]) => void | Promise<void>;
 }): DataTableColumnDef<HeatPumpOutdoorEquipRow>[] {
-  const indoorById = new Map(indoorEquip.map((row) => [row.id, row]));
   const number = (fieldKey: keyof HeatPumpOutdoorEquipRow, header: string, width = 110) => ({
     id: fieldKey,
     fieldKey,
@@ -65,6 +95,13 @@ export function outdoorEquipColumnDefs({
     className: "numeric-cell",
   });
   return [
+    {
+      id: "tag",
+      fieldKey: "tag",
+      header: "Tag",
+      accessor: (row) => row.tag,
+      defaultWidth: 120,
+    },
     {
       id: "model_number",
       fieldKey: "model_number",
@@ -76,28 +113,32 @@ export function outdoorEquipColumnDefs({
       id: "manufacturer",
       fieldKey: "manufacturer",
       header: "Manufacturer",
-      accessor: (row) => optionLabelFromId(row.manufacturer),
+      // DataTable's formatDisplayCellValue takes the accessor's return value
+      // and looks it up against FieldDef.options by `id`, so single-select
+      // accessors must yield the raw option id. The label resolution then
+      // happens once, inside the cell renderer.
+      accessor: (row) => row.manufacturer,
       defaultWidth: 150,
     },
     {
       id: "paired_indoor_equip_id",
       fieldKey: "paired_indoor_equip_id",
       header: "Paired indoor equip",
-      accessor: (row) => indoorEquipLabel(indoorById.get(row.paired_indoor_equip_id ?? "")),
+      accessor: (row) => row.paired_indoor_equip_id,
       defaultWidth: 190,
     },
     {
       id: "system_family",
       fieldKey: "system_family",
       header: "System family",
-      accessor: (row) => optionLabelFromId(row.system_family),
+      accessor: (row) => row.system_family,
       defaultWidth: 140,
     },
     {
       id: "refrigerant",
       fieldKey: "refrigerant",
       header: "Refrigerant",
-      accessor: (row) => optionLabelFromId(row.refrigerant),
+      accessor: (row) => row.refrigerant,
       defaultWidth: 120,
     },
     {

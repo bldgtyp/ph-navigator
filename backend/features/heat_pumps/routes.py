@@ -20,6 +20,8 @@ from features.heat_pumps.service import (
     HeatPumpsReadResponse,
     HeatPumpTableKey,
     JsonPatchOp,
+    OptionPatchOp,
+    apply_option_patch,
     apply_patch,
     compose_read,
     read_slice,
@@ -57,6 +59,24 @@ def patch_heat_pumps_table(
         if_match=if_match,
         if_match_version=if_match_version,
         dry_run=dry_run,
+    )
+
+
+@router.patch("/options/{option_key:path}", response_model=HeatPumpsReadResponse)
+def patch_heat_pumps_option(
+    option_key: str,
+    payload: OptionPatchOp,
+    access: ProjectEditAccess,
+    if_match: Annotated[str | None, Header()] = None,
+    if_match_version: Annotated[str | None, Header()] = None,
+) -> HeatPumpsReadResponse:
+    return apply_option_patch(
+        _active_version_id(access.project_id),
+        option_key,
+        payload,
+        access,
+        if_match=if_match,
+        if_match_version=if_match_version,
     )
 
 

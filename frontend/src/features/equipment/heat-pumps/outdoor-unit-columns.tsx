@@ -1,44 +1,74 @@
 import type { DataTableColumnDef, FieldDef } from "../../../shared/ui/data-table";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
-import { optionLabelFromId, outdoorEquipLabel } from "./lib";
-import type { HeatPumpOutdoorEquipRow, HeatPumpOutdoorUnitRow } from "./types";
+import { outdoorEquipLabel } from "./lib";
+import {
+  HEAT_PUMP_OPTION_KEYS,
+  type HeatPumpOutdoorEquipRow,
+  type HeatPumpOutdoorUnitRow,
+  type HeatPumpsSlice,
+} from "./types";
+import type { FieldOption } from "../../../shared/ui/data-table";
 
 export const OUTDOOR_UNIT_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
 
-export const outdoorUnitFieldDefs: FieldDef[] = [
-  { field_key: "tag", field_type: "text", display_name: "Tag", required: true },
-  {
-    field_key: "outdoor_equip_id",
-    field_type: "single_select",
-    display_name: "Equipment",
-    options: [],
-  },
-  { field_key: "building_zone", field_type: "single_select", display_name: "Zone", options: [] },
-  {
-    field_key: OUTDOOR_UNIT_DATASHEET_FIELD_KEY,
-    field_type: "attachment",
-    display_name: "Datasheet",
-  },
-  { field_key: "notes", field_type: "text", display_name: "Notes" },
-];
+export function outdoorUnitFieldDefs({
+  options,
+  outdoorEquip,
+}: {
+  options: HeatPumpsSlice["single_select_options"];
+  outdoorEquip: readonly HeatPumpOutdoorEquipRow[];
+}): FieldDef[] {
+  const buildingZone = options[HEAT_PUMP_OPTION_KEYS.buildingZone] ?? [];
+  const manufacturer = options[HEAT_PUMP_OPTION_KEYS.manufacturer] ?? [];
+  // The equipment-picker's FieldDef.options drives both the popover list AND
+  // the cell renderer's label lookup, so we feed it a synthetic list keyed
+  // by row id with the rendered equip label (tag — manufacturer model).
+  const outdoorEquipOptions: FieldOption[] = outdoorEquip.map((row, index) => ({
+    id: row.id,
+    label: outdoorEquipLabel(row, manufacturer),
+    color: "#94a3b8",
+    order: index,
+  }));
+  return [
+    { field_key: "tag", field_type: "text", display_name: "Tag", required: true },
+    {
+      field_key: "outdoor_equip_id",
+      field_type: "single_select",
+      display_name: "Equipment",
+      options: outdoorEquipOptions,
+    },
+    {
+      field_key: "building_zone",
+      field_type: "single_select",
+      display_name: "Zone",
+      options: buildingZone,
+    },
+    {
+      field_key: OUTDOOR_UNIT_DATASHEET_FIELD_KEY,
+      field_type: "attachment",
+      display_name: "Datasheet",
+    },
+    { field_key: "notes", field_type: "text", display_name: "Notes" },
+  ];
+}
 
 export const outdoorUnitDefaultHiddenColumns: string[] = ["notes"];
 
 export function outdoorUnitColumnDefs({
   projectId,
   isEditor,
-  outdoorEquip,
   assetUrlById,
   onDatasheetChange,
 }: {
   projectId: string;
   isEditor: boolean;
-  outdoorEquip: HeatPumpOutdoorEquipRow[];
+  // Labels for single-select cells (equipment + zone) are resolved from
+  // FieldDef.options inside the DataTable, so this builder doesn't need
+  // `options` or `outdoorEquip` — both flow through `outdoorUnitFieldDefs`.
   assetUrlById: Map<string, unknown>;
   onDatasheetChange: (row: HeatPumpOutdoorUnitRow, next: string[]) => void | Promise<void>;
 }): DataTableColumnDef<HeatPumpOutdoorUnitRow>[] {
-  const equipById = new Map(outdoorEquip.map((row) => [row.id, row]));
   return [
     {
       id: "tag",
@@ -51,14 +81,16 @@ export function outdoorUnitColumnDefs({
       id: "outdoor_equip_id",
       fieldKey: "outdoor_equip_id",
       header: "Equipment",
-      accessor: (row) => outdoorEquipLabel(equipById.get(row.outdoor_equip_id) ?? null),
+      accessor: (row) => row.outdoor_equip_id,
       defaultWidth: 220,
     },
     {
       id: "building_zone",
       fieldKey: "building_zone",
       header: "Zone",
-      accessor: (row) => optionLabelFromId(row.building_zone),
+      // Accessor returns the raw option id — DataTable's
+      // `formatDisplayCellValue` resolves the label from FieldDef.options.
+      accessor: (row) => row.building_zone,
       defaultWidth: 140,
     },
     {

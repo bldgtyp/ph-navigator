@@ -3,13 +3,15 @@ import type {
   HeatPumpIndoorUnitRow,
   HeatPumpOutdoorEquipRow,
   HeatPumpOutdoorUnitRow,
+  HeatPumpSingleSelectOption,
 } from "./types";
 
 export function buildEmptyOutdoorEquipRow(overrides: Partial<HeatPumpOutdoorEquipRow> = {}) {
   return {
     id: heatPumpId("hpoe"),
+    tag: "",
     manufacturer: null,
-    model_number: "",
+    model_number: null,
     paired_indoor_equip_id: null,
     system_family: null,
     refrigerant: null,
@@ -37,9 +39,10 @@ export function buildEmptyOutdoorEquipRow(overrides: Partial<HeatPumpOutdoorEqui
 export function buildEmptyIndoorEquipRow(overrides: Partial<HeatPumpIndoorEquipRow> = {}) {
   return {
     id: heatPumpId("hpie"),
+    tag: "",
     manufacturer: null,
     model_type: null,
-    model_number: "",
+    model_number: null,
     install_type: null,
     nominal_tons: null,
     fan_speed_cfm: null,
@@ -86,11 +89,11 @@ export function buildEmptyIndoorUnitRow(overrides: Partial<HeatPumpIndoorUnitRow
 }
 
 export function sortedOutdoorEquip(rows: HeatPumpOutdoorEquipRow[]) {
-  return sortBy(rows, (row) => row.model_number);
+  return sortBy(rows, (row) => row.tag);
 }
 
 export function sortedIndoorEquip(rows: HeatPumpIndoorEquipRow[]) {
-  return sortBy(rows, (row) => row.model_number);
+  return sortBy(rows, (row) => row.tag);
 }
 
 export function sortedOutdoorUnits(rows: HeatPumpOutdoorUnitRow[]) {
@@ -142,23 +145,73 @@ export function tagCollides(
   );
 }
 
-export function optionIdFromLabel(label: string): string | null {
-  const slug = label
-    .trim()
+/**
+ * Resolve the human-readable label for an option id from an explicit option
+ * list. Returns "" if `id` is null, "" if `options` is empty, or the raw id
+ * (without the `opt_` prefix) if the id isn't present in the list — that fallback
+ * keeps existing rows readable while the option list is being populated for the
+ * first time, and avoids a blank column for catalog-imported rows that
+ * reference an option from a different project.
+ */
+export function optionLabelFromId(
+  id: string | null,
+  options: readonly HeatPumpSingleSelectOption[],
+): string {
+  if (!id) return "";
+  const hit = options.find((option) => option.id === id);
+  if (hit) return hit.label;
+  return id.replace(/^opt_/, "");
+}
+
+/**
+ * Look up an option by case-insensitive trimmed label match. Returns null when
+ * the label doesn't match any existing option — callers that want "find or
+ * create" should mint a new option and call the options-mutation API instead of
+ * slugging the label client-side.
+ */
+export function findOptionByLabel(
+  label: string,
+  options: readonly HeatPumpSingleSelectOption[],
+): HeatPumpSingleSelectOption | null {
+  const target = label.trim().toLocaleLowerCase();
+  if (!target) return null;
+  return options.find((option) => option.label.trim().toLocaleLowerCase() === target) ?? null;
+}
+
+const OPTION_COLOR_PALETTE = [
+  "#3b82f6",
+  "#10b981",
+  "#a16207",
+  "#7c3aed",
+  "#0f766e",
+  "#be123c",
+] as const;
+
+/**
+ * Mint a fresh `opt_*` id + cycling color for an option created from the UI.
+ * The backend mints its own id when add ops omit one, but we mint here so the
+ * optimistic patch payload stays self-consistent.
+ */
+export function buildNewHeatPumpOption(
+  label: string,
+  existing: readonly HeatPumpSingleSelectOption[],
+): HeatPumpSingleSelectOption {
+  const trimmed = label.trim();
+  const slug = trimmed
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "");
-  return slug ? `opt_${slug}` : null;
+  const id = slug ? `opt_${slug}_${randomSuffix(4)}` : `opt_${randomSuffix(8)}`;
+  const color = OPTION_COLOR_PALETTE[existing.length % OPTION_COLOR_PALETTE.length] ?? "#3b82f6";
+  const order =
+    existing.length === 0 ? 0 : Math.max(...existing.map((option) => option.order)) + 1;
+  return { id, label: trimmed, color, order };
 }
 
-export function optionLabelFromId(id: string | null): string {
-  if (!id) return "";
-  return id
-    .replace(/^opt_/, "")
-    .split("_")
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
+function randomSuffix(length: number): string {
+  const bytes = new Uint8Array(length);
+  globalThis.crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 export function numericValue(value: unknown): number | null {
@@ -167,16 +220,33 @@ export function numericValue(value: unknown): number | null {
   return Number.isFinite(next) ? next : null;
 }
 
-export function outdoorEquipLabel(row: HeatPumpOutdoorEquipRow | null | undefined): string {
+export function outdoorEquipLabel(
+  row: HeatPumpOutdoorEquipRow | null | undefined,
+  manufacturerOptions: readonly HeatPumpSingleSelectOption[] = [],
+): string {
   if (!row) return "";
-  const manufacturer = optionLabelFromId(row.manufacturer);
-  return manufacturer ? `${manufacturer} ${row.model_number}` : row.model_number;
+  return equipLabel(row.tag, row.manufacturer, row.model_number, manufacturerOptions);
 }
 
-export function indoorEquipLabel(row: HeatPumpIndoorEquipRow | null | undefined): string {
+export function indoorEquipLabel(
+  row: HeatPumpIndoorEquipRow | null | undefined,
+  manufacturerOptions: readonly HeatPumpSingleSelectOption[] = [],
+): string {
   if (!row) return "";
-  const manufacturer = optionLabelFromId(row.manufacturer);
-  return manufacturer ? `${manufacturer} ${row.model_number}` : row.model_number;
+  return equipLabel(row.tag, row.manufacturer, row.model_number, manufacturerOptions);
+}
+
+function equipLabel(
+  tag: string,
+  manufacturerId: string | null,
+  modelNumber: string | null,
+  manufacturerOptions: readonly HeatPumpSingleSelectOption[],
+): string {
+  const manufacturer = optionLabelFromId(manufacturerId, manufacturerOptions);
+  const model = (modelNumber ?? "").trim();
+  const spec = [manufacturer, model].filter(Boolean).join(" ");
+  if (!tag) return spec;
+  return spec ? `${tag} — ${spec}` : tag;
 }
 
 export function outdoorUnitLabel(row: HeatPumpOutdoorUnitRow | null | undefined): string {

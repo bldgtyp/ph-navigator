@@ -8,6 +8,7 @@ import type { HeatPumpOutdoorEquipRow, HeatPumpOutdoorUnitRow } from "../types";
 function outdoorEquip(): HeatPumpOutdoorEquipRow {
   return {
     id: "hpoe_01HX0000000000000000000000",
+    tag: "OE-A",
     manufacturer: "opt_mitsubishi",
     model_number: "PUZ-A18NKA7",
     paired_indoor_equip_id: null,
@@ -43,6 +44,7 @@ describe("OutdoorUnitRowModal", () => {
         row={buildEmptyOutdoorUnitRow()}
         outdoorEquip={[outdoorEquip()]}
         existingUnits={[]}
+        options={{}}
         readOnly={false}
         onCancel={() => undefined}
         onSubmit={onSubmit}
@@ -74,6 +76,7 @@ describe("OutdoorUnitRowModal", () => {
         row={buildEmptyOutdoorUnitRow()}
         outdoorEquip={[outdoorEquip()]}
         existingUnits={[]}
+        options={{}}
         readOnly={false}
         onCancel={() => undefined}
         onSubmit={onSubmit}
@@ -107,6 +110,7 @@ describe("OutdoorUnitRowModal", () => {
         row={rowB}
         outdoorEquip={[outdoorEquip()]}
         existingUnits={existing}
+        options={{}}
         readOnly={false}
         onCancel={() => undefined}
         onSubmit={onSubmit}

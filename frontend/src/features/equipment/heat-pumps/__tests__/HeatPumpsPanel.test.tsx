@@ -21,10 +21,10 @@ beforeEach(() => {
       return jsonResponse(heatPumpsSlice());
     }
     if (url.endsWith("/api/v1/projects/proj_1/equipment/heat-pumps/outdoor-equip")) {
-      const body = JSON.parse(String(init?.body)) as { value: { model_number: string } };
+      const body = JSON.parse(String(init?.body)) as { value: { tag: string } };
       return jsonResponse(
         heatPumpsSlice({
-          outdoor_equip: [outdoorEquipRow({ model_number: body.value.model_number })],
+          outdoor_equip: [outdoorEquipRow({ tag: body.value.tag })],
           source: "draft",
           draft_etag: "draft_2",
         }),
@@ -84,6 +84,7 @@ describe("HeatPumpsPanel", () => {
     renderPanel({ slice: heatPumpsSlice({ outdoor_equip: [] }) });
 
     await user.click(await screen.findByRole("button", { name: "Add outdoor equipment" }));
+    await user.type(screen.getByLabelText("Tag"), "OE-X");
     await user.type(screen.getByLabelText("Model number"), "PUZ-A24NHA7");
     await user.click(screen.getByRole("button", { name: "Save outdoor equipment" }));
 
@@ -113,7 +114,7 @@ function renderPanel({ slice = heatPumpsSlice() }: { slice?: HeatPumpsSlice } = 
         ...slice,
         source: "draft",
         draft_etag: "draft_2",
-        outdoor_equip: [outdoorEquipRow({ model_number: "PUZ-A24NHA7" })],
+        outdoor_equip: [outdoorEquipRow({ tag: "OE-X", model_number: "PUZ-A24NHA7" })],
       });
     }
     return jsonResponse({});
@@ -180,6 +181,7 @@ function heatPumpsSlice(overrides: Partial<HeatPumpsSlice> = {}): HeatPumpsSlice
     indoor_equip: [indoorEquipRow()],
     outdoor_units: [],
     indoor_units: [],
+    single_select_options: {},
     ...overrides,
   };
 }
@@ -187,6 +189,7 @@ function heatPumpsSlice(overrides: Partial<HeatPumpsSlice> = {}): HeatPumpsSlice
 function outdoorEquipRow(overrides: Partial<HeatPumpsSlice["outdoor_equip"][number]> = {}) {
   return {
     id: "hpoe_01HX0000000000000000000000",
+    tag: "OE-A",
     manufacturer: "opt_mitsubishi",
     model_number: "PUZ-A18NKA7",
     paired_indoor_equip_id: "hpie_01HX0000000000000000000000",
@@ -216,6 +219,7 @@ function outdoorEquipRow(overrides: Partial<HeatPumpsSlice["outdoor_equip"][numb
 function indoorEquipRow(overrides: Partial<HeatPumpsSlice["indoor_equip"][number]> = {}) {
   return {
     id: "hpie_01HX0000000000000000000000",
+    tag: "IE-A",
     manufacturer: "opt_mitsubishi",
     model_type: "opt_wall",
     model_number: "PLA-A18EA8",

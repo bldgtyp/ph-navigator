@@ -62,19 +62,19 @@ describe("PhiusExportDialog", () => {
     expect(screen.getByRole("button", { name: "Download CSV" })).toBeInTheDocument();
   });
 
-  test("groups warnings under their model_number and labels the action as Continue with gaps", async () => {
+  test("groups warnings under their tag and labels the action as Continue with gaps", async () => {
     vi.spyOn(api, "requestPhiusExport").mockResolvedValueOnce(
       payload({
         warnings: [
           {
             row_id: "hpoe_01",
-            model_number: "PUZ-A18NKA7",
+            tag: "OE-A",
             field: "heating_cap_kbtuh_17f",
             message: "Heating capacity @ 17°F is required for COPs export.",
           },
           {
             row_id: "hpoe_01",
-            model_number: "PUZ-A18NKA7",
+            tag: "OE-A",
             field: "heating_cop_17f",
             message: "COP @ 17°F is required for COPs export.",
           },
@@ -85,7 +85,7 @@ describe("PhiusExportDialog", () => {
     render(<PhiusExportDialog projectId="p-1" btNumber="2426" onClose={vi.fn()} />);
 
     await waitFor(() => expect(screen.getByText(/1 with warning/)).toBeInTheDocument());
-    expect(screen.getByText("PUZ-A18NKA7")).toBeInTheDocument();
+    expect(screen.getByText("OE-A")).toBeInTheDocument();
     expect(
       screen.getByText("Heating capacity @ 17°F is required for COPs export."),
     ).toBeInTheDocument();

@@ -10,10 +10,11 @@ import {
 import { useAssetUrls } from "../../../assets/hooks";
 import { roomsSliceFeature, ventilatorsSliceFeature } from "../../api";
 import type { RoomRow, VentilatorRow } from "../../types";
-import { useHeatPumpPatchMutation } from "../api";
+import { useHeatPumpOptionMutation, useHeatPumpPatchMutation } from "../api";
 import {
   buildEmptyIndoorEquipRow,
   buildEmptyIndoorUnitRow,
+  buildNewHeatPumpOption,
   sortedIndoorUnits,
   uniqueTagForAdd,
 } from "../lib";
@@ -26,6 +27,7 @@ import type {
   CascadeReference,
   HeatPumpIndoorEquipRow,
   HeatPumpIndoorUnitRow,
+  HeatPumpOwnedOptionKey,
   HeatPumpsSlice,
 } from "../types";
 import { IndoorEquipRowModal } from "./IndoorEquipRowModal";
@@ -59,6 +61,7 @@ export function IndoorUnitsTable({
     affected: CascadeReference[];
   } | null>(null);
   const patchMutation = useHeatPumpPatchMutation(projectId);
+  const optionMutation = useHeatPumpOptionMutation(projectId);
   const accessMode = isEditor ? "editor" : "viewer";
   const ventilatorsQuery = ventilatorsSliceFeature.useSliceQuery(
     projectId,
@@ -83,11 +86,34 @@ export function IndoorUnitsTable({
   const columns = indoorUnitColumnDefs({
     projectId,
     isEditor: !readOnly,
-    indoorEquip: slice.indoor_equip,
-    outdoorUnits: slice.outdoor_units,
     assetUrlById,
     onDatasheetChange: (row, next) => replaceUnit({ ...row, datasheet_asset_ids: next }),
   });
+  const fieldDefs = useMemo(
+    () =>
+      indoorUnitFieldDefs({
+        options: slice.single_select_options,
+        indoorEquip: slice.indoor_equip,
+        outdoorUnits: slice.outdoor_units,
+      }),
+    [slice.single_select_options, slice.indoor_equip, slice.outdoor_units],
+  );
+
+  // floor_level is rooms-owned (see HEAT_PUMP_VISIBLE_OPTION_KEYS in
+  // backend/features/heat_pumps/models.py), so IndoorUnitRowModal does not
+  // expose inline-create. IndoorEquipRowModal — opened from this table for
+  // equip-create — still gets a createOption for the manufacturer / model_type
+  // / install_type lists owned by the heat-pumps slice.
+  async function createOption(optionKey: HeatPumpOwnedOptionKey, label: string): Promise<string> {
+    const existing = slice.single_select_options[optionKey] ?? [];
+    const newOption = buildNewHeatPumpOption(label, existing);
+    await optionMutation.mutateAsync({
+      current: slice,
+      optionKey,
+      patch: { op: "add", option: newOption },
+    });
+    return newOption.id;
+  }
 
   async function addUnit(row: HeatPumpIndoorUnitRow) {
     const tag = uniqueTagForAdd(row.tag, slice.indoor_units);
@@ -186,7 +212,7 @@ export function IndoorUnitsTable({
       <DataTable
         rows={rows}
         getRowId={(row) => row.id}
-        fieldDefs={indoorUnitFieldDefs}
+        fieldDefs={fieldDefs}
         columnDefs={columns}
         view={view}
         onViewChange={setView}
@@ -236,6 +262,7 @@ export function IndoorUnitsTable({
           ventilators={ventilators}
           rooms={rooms}
           existingUnits={slice.indoor_units}
+          options={slice.single_select_options}
           readOnly={readOnly}
           onCancel={() => setModal(null)}
           onSubmit={modal.mode === "add" ? addUnit : replaceUnit}
@@ -253,9 +280,11 @@ export function IndoorUnitsTable({
         <IndoorEquipRowModal
           mode="add"
           row={modal.row}
+          options={slice.single_select_options}
           readOnly={false}
           onCancel={() => setModal(null)}
           onSubmit={(equip) => addIndoorEquipAndSelect(equip, modal.selectForUnitId)}
+          onCreateOption={createOption}
         />
       ) : null}
       {blockedDialog ? (

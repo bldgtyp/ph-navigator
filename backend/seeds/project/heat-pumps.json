@@ -1,7 +1,36 @@
 {
+  "options": {
+    "heat_pumps.manufacturer": [
+      { "id": "opt_mitsubishi", "label": "Mitsubishi", "color": "#ef4444", "order": 0 },
+      { "id": "opt_daikin", "label": "Daikin", "color": "#3b82f6", "order": 1 },
+      { "id": "opt_lg", "label": "LG", "color": "#a16207", "order": 2 },
+      { "id": "opt_fujitsu", "label": "Fujitsu", "color": "#10b981", "order": 3 },
+      { "id": "opt_carrier", "label": "Carrier", "color": "#7c3aed", "order": 4 }
+    ],
+    "heat_pumps.system_family": [
+      { "id": "opt_single_zone", "label": "Single Zone", "color": "#3b82f6", "order": 0 },
+      { "id": "opt_multi_split", "label": "Multi-Split", "color": "#10b981", "order": 1 },
+      { "id": "opt_central_ducted", "label": "Central Ducted", "color": "#a16207", "order": 2 }
+    ],
+    "heat_pumps.refrigerant": [
+      { "id": "opt_r410a", "label": "R-410A", "color": "#3b82f6", "order": 0 },
+      { "id": "opt_r32", "label": "R-32", "color": "#10b981", "order": 1 }
+    ],
+    "heat_pumps.model_type": [
+      { "id": "opt_wall_cassette", "label": "Wall Cassette", "color": "#3b82f6", "order": 0 },
+      { "id": "opt_ceiling_cassette", "label": "Ceiling Cassette", "color": "#10b981", "order": 1 },
+      { "id": "opt_ducted_air_handler", "label": "Ducted Air Handler", "color": "#a16207", "order": 2 }
+    ],
+    "heat_pumps.install_type": [
+      { "id": "opt_wall_mounted", "label": "Wall Mounted", "color": "#3b82f6", "order": 0 },
+      { "id": "opt_ceiling_recessed", "label": "Ceiling Recessed", "color": "#10b981", "order": 1 },
+      { "id": "opt_ducted_central", "label": "Ducted Central", "color": "#a16207", "order": 2 }
+    ]
+  },
   "outdoor_equip": [
     {
       "id": "hpoe_01J5RH4F1A0000000000000001",
+      "tag": "OE-A",
       "manufacturer": "opt_mitsubishi",
       "model_number": "MXZ-3C24NA",
       "paired_indoor_equip_id": "hpie_01J5RH4F1A0000000000000001",
@@ -20,6 +49,7 @@
     },
     {
       "id": "hpoe_01J5RH4F1A0000000000000002",
+      "tag": "OE-B",
       "manufacturer": "opt_daikin",
       "model_number": "RXG18AXVJU",
       "system_family": "opt_single_zone",
@@ -37,6 +67,7 @@
     },
     {
       "id": "hpoe_01J5RH4F1A0000000000000003",
+      "tag": "OE-C",
       "manufacturer": "opt_lg",
       "model_number": "LMU240HHV",
       "system_family": "opt_multi_split",
@@ -53,6 +84,7 @@
     },
     {
       "id": "hpoe_01J5RH4F1A0000000000000004",
+      "tag": "OE-D",
       "manufacturer": "opt_fujitsu",
       "model_number": "AOU24RLXFZH",
       "system_family": "opt_single_zone",
@@ -70,6 +102,7 @@
     },
     {
       "id": "hpoe_01J5RH4F1A0000000000000005",
+      "tag": "OE-E",
       "manufacturer": "opt_carrier",
       "model_number": "38MAQB36-3",
       "paired_indoor_equip_id": "hpie_01J5RH4F1A0000000000000005",
@@ -88,6 +121,7 @@
   "indoor_equip": [
     {
       "id": "hpie_01J5RH4F1A0000000000000001",
+      "tag": "IE-A",
       "manufacturer": "opt_mitsubishi",
       "model_type": "opt_wall_cassette",
       "model_number": "MSZ-FH09NA",
@@ -103,6 +137,7 @@
     },
     {
       "id": "hpie_01J5RH4F1A0000000000000002",
+      "tag": "IE-B",
       "manufacturer": "opt_mitsubishi",
       "model_type": "opt_wall_cassette",
       "model_number": "MSZ-FH12NA",
@@ -118,6 +153,7 @@
     },
     {
       "id": "hpie_01J5RH4F1A0000000000000003",
+      "tag": "IE-C",
       "manufacturer": "opt_daikin",
       "model_type": "opt_wall_cassette",
       "model_number": "FTXG09HVJU",
@@ -133,6 +169,7 @@
     },
     {
       "id": "hpie_01J5RH4F1A0000000000000004",
+      "tag": "IE-D",
       "manufacturer": "opt_lg",
       "model_type": "opt_ceiling_cassette",
       "model_number": "LAN090HYV",
@@ -148,6 +185,7 @@
     },
     {
       "id": "hpie_01J5RH4F1A0000000000000005",
+      "tag": "IE-E",
       "manufacturer": "opt_carrier",
       "model_type": "opt_ducted_air_handler",
       "model_number": "FB4CNF036",

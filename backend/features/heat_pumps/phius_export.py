@@ -16,6 +16,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict
 
 from features.heat_pumps.models import (
+    HeatPumpIndoorEquipRow,
     HeatPumpOutdoorEquipRow,
     HeatPumpsTableSlice,
 )
@@ -83,7 +84,7 @@ class PhiusWarning(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     row_id: str
-    model_number: str
+    tag: str
     field: WarningField
     message: str
 
@@ -115,13 +116,13 @@ def compute_phius_payload(slice_: HeatPumpsTableSlice) -> PhiusPayload:
     """Walk the outdoor-equip table; derive Qty from instance counts; validate."""
 
     qty_by_equip_id = _count_outdoor_units_by_equip_id(slice_)
-    indoor_models_by_id = {row.id: row.model_number for row in slice_.indoor_equip}
+    indoor_labels_by_id = {row.id: _indoor_label(row) for row in slice_.indoor_equip}
 
     rows: list[PhiusRow] = []
     warnings: list[PhiusWarning] = []
     for equip in slice_.outdoor_equip:
         qty = qty_by_equip_id.get(equip.id, 0)
-        rows.append(_build_row(equip, qty, indoor_models_by_id))
+        rows.append(_build_row(equip, qty, indoor_labels_by_id))
         warnings.extend(_validate(equip, qty))
     return PhiusPayload(rows=rows, warnings=warnings)
 
@@ -163,7 +164,7 @@ def _count_outdoor_units_by_equip_id(slice_: HeatPumpsTableSlice) -> dict[str, i
 def _build_row(
     equip: HeatPumpOutdoorEquipRow,
     qty: int,
-    indoor_models_by_id: dict[str, str],
+    indoor_labels_by_id: dict[str, str],
 ) -> PhiusRow:
     heating_is_cops = equip.heating_data_type == "cops"
     heating_is_hspf2 = equip.heating_data_type == "hspf2"
@@ -171,7 +172,7 @@ def _build_row(
     cooling_is_ieer = equip.cooling_data_type == "ieer"
     return PhiusRow(
         row_id=equip.id,
-        device=_device_label(equip, indoor_models_by_id),
+        device=_device_label(equip, indoor_labels_by_id),
         qty=qty,
         heating_data_type=_HEATING_DATA_TYPE_LABELS.get(equip.heating_data_type or "", ""),
         cap_17f=equip.heating_cap_kbtuh_17f if heating_is_cops else None,
@@ -189,18 +190,30 @@ def _build_row(
 
 def _device_label(
     equip: HeatPumpOutdoorEquipRow,
-    indoor_models_by_id: dict[str, str],
+    indoor_labels_by_id: dict[str, str],
 ) -> str:
-    """`PUZ-A18NKA7 [PLA-A18EA8]` for paired splits; bare for VRF / null."""
+    """`PUZ-A18NKA7 [PLA-A18EA8]` for paired splits; bare for VRF / null.
 
+    Falls back to the row's tag when ``model_number`` is empty.
+    """
+
+    outdoor_label = _outdoor_label(equip)
     paired_id = equip.paired_indoor_equip_id
     if paired_id is None:
-        return equip.model_number
-    paired_model = indoor_models_by_id.get(paired_id)
-    if paired_model is None:
+        return outdoor_label
+    paired_label = indoor_labels_by_id.get(paired_id)
+    if paired_label is None:
         # FK validator on the slice would have caught this; defensive bare output.
-        return equip.model_number
-    return f"{equip.model_number} [{paired_model}]"
+        return outdoor_label
+    return f"{outdoor_label} [{paired_label}]"
+
+
+def _outdoor_label(equip: HeatPumpOutdoorEquipRow) -> str:
+    return equip.model_number or equip.tag
+
+
+def _indoor_label(equip: HeatPumpIndoorEquipRow) -> str:
+    return equip.model_number or equip.tag
 
 
 def _validate(equip: HeatPumpOutdoorEquipRow, qty: int) -> list[PhiusWarning]:
@@ -210,7 +223,7 @@ def _validate(equip: HeatPumpOutdoorEquipRow, qty: int) -> list[PhiusWarning]:
         warnings.append(
             PhiusWarning(
                 row_id=equip.id,
-                model_number=equip.model_number,
+                tag=equip.tag,
                 field=field,
                 message=message,
             )

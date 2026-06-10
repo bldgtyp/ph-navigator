@@ -1,32 +1,41 @@
 import type { DataTableColumnDef, FieldDef } from "../../../shared/ui/data-table";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
-import { optionLabelFromId } from "./lib";
-import type { HeatPumpIndoorEquipRow } from "./types";
+import {
+  HEAT_PUMP_OPTION_KEYS,
+  type HeatPumpIndoorEquipRow,
+  type HeatPumpsSlice,
+} from "./types";
 
 export const INDOOR_EQUIP_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
 
-export const indoorEquipFieldDefs: FieldDef[] = [
-  textField("model_number", "Model number", true),
-  selectField("manufacturer", "Manufacturer"),
-  selectField("model_type", "Model type"),
-  selectField("install_type", "Install type"),
-  numberField("nominal_tons", "Nominal tons"),
-  numberField("fan_speed_cfm", "Fan speed (CFM)"),
-  numberField("cooling_btuh", "Cooling Btu/h"),
-  numberField("heating_btuh_47f", "Heating Btu/h @ 47F"),
-  numberField("heating_btuh_17f", "Heating Btu/h @ 17F"),
-  numberField("heating_cop", "Heating COP"),
-  numberField("seer", "SEER"),
-  numberField("eer", "EER"),
-  numberField("hspf", "HSPF"),
-  {
-    field_key: INDOOR_EQUIP_DATASHEET_FIELD_KEY,
-    field_type: "attachment",
-    display_name: "Datasheet",
-  },
-  textField("notes", "Notes"),
-];
+export function indoorEquipFieldDefs(options: HeatPumpsSlice["single_select_options"]): FieldDef[] {
+  const manufacturer = options[HEAT_PUMP_OPTION_KEYS.manufacturer] ?? [];
+  const modelType = options[HEAT_PUMP_OPTION_KEYS.modelType] ?? [];
+  const installType = options[HEAT_PUMP_OPTION_KEYS.installType] ?? [];
+  return [
+    textField("tag", "Tag", true),
+    textField("model_number", "Model number"),
+    selectField("manufacturer", "Manufacturer", manufacturer),
+    selectField("model_type", "Model type", modelType),
+    selectField("install_type", "Install type", installType),
+    numberField("nominal_tons", "Nominal tons"),
+    numberField("fan_speed_cfm", "Fan speed (CFM)"),
+    numberField("cooling_btuh", "Cooling Btu/h"),
+    numberField("heating_btuh_47f", "Heating Btu/h @ 47F"),
+    numberField("heating_btuh_17f", "Heating Btu/h @ 17F"),
+    numberField("heating_cop", "Heating COP"),
+    numberField("seer", "SEER"),
+    numberField("eer", "EER"),
+    numberField("hspf", "HSPF"),
+    {
+      field_key: INDOOR_EQUIP_DATASHEET_FIELD_KEY,
+      field_type: "attachment",
+      display_name: "Datasheet",
+    },
+    textField("notes", "Notes"),
+  ];
+}
 
 // Default-hidden columns per PRD §4.3 / phase-02 acceptance #2.
 export const indoorEquipDefaultHiddenColumns = [
@@ -60,18 +69,11 @@ export function indoorEquipColumnDefs({
   });
   return [
     {
-      id: "manufacturer",
-      fieldKey: "manufacturer",
-      header: "Manufacturer",
-      accessor: (row) => optionLabelFromId(row.manufacturer),
-      defaultWidth: 150,
-    },
-    {
-      id: "model_type",
-      fieldKey: "model_type",
-      header: "Model type",
-      accessor: (row) => optionLabelFromId(row.model_type),
-      defaultWidth: 130,
+      id: "tag",
+      fieldKey: "tag",
+      header: "Tag",
+      accessor: (row) => row.tag,
+      defaultWidth: 120,
     },
     {
       id: "model_number",
@@ -81,10 +83,26 @@ export function indoorEquipColumnDefs({
       defaultWidth: 160,
     },
     {
+      id: "manufacturer",
+      fieldKey: "manufacturer",
+      header: "Manufacturer",
+      // Accessor returns the raw option id — DataTable's
+      // `formatDisplayCellValue` resolves the label from FieldDef.options.
+      accessor: (row) => row.manufacturer,
+      defaultWidth: 150,
+    },
+    {
+      id: "model_type",
+      fieldKey: "model_type",
+      header: "Model type",
+      accessor: (row) => row.model_type,
+      defaultWidth: 130,
+    },
+    {
       id: "install_type",
       fieldKey: "install_type",
       header: "Install type",
-      accessor: (row) => optionLabelFromId(row.install_type),
+      accessor: (row) => row.install_type,
       defaultWidth: 160,
     },
     number("nominal_tons", "Nominal tons"),

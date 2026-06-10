@@ -31,6 +31,7 @@ def heat_pumps_table_url(project_id: object, table: str, *, dry_run: bool = Fals
 def outdoor_equip(**overrides: object) -> dict[str, Any]:
     row: dict[str, Any] = {
         "id": HPOE_1,
+        "tag": "OE-1",
         "manufacturer": None,
         "model_number": "PUZ-A18NKA7",
         "paired_indoor_equip_id": None,
@@ -61,6 +62,7 @@ def outdoor_equip(**overrides: object) -> dict[str, Any]:
 def indoor_equip(**overrides: object) -> dict[str, Any]:
     row: dict[str, Any] = {
         "id": HPIE_1,
+        "tag": "IE-1",
         "manufacturer": None,
         "model_type": None,
         "model_number": "PLA-A12EA8",

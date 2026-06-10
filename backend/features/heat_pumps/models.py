@@ -33,8 +33,9 @@ class HeatPumpOutdoorEquipRow(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: str = Field(pattern=rf"^hpoe_{ULID_SUFFIX_PATTERN}$")
+    tag: str = Field(min_length=1, max_length=80)
     manufacturer: OptionId | None = None
-    model_number: str = Field(min_length=1, max_length=160)
+    model_number: str | None = Field(default=None, max_length=160)
     paired_indoor_equip_id: str | None = Field(default=None, pattern=rf"^hpie_{ULID_SUFFIX_PATTERN}$")
     system_family: OptionId | None = None
     refrigerant: OptionId | None = None
@@ -56,14 +57,14 @@ class HeatPumpOutdoorEquipRow(BaseModel):
     notes: str | None = Field(default=None, max_length=4000)
     catalog_origin: dict[str, object] | None = None
 
-    @field_validator("model_number", mode="before")
+    @field_validator("tag", mode="before")
     @classmethod
-    def strip_model_number(cls, value: object) -> object:
+    def strip_tag(cls, value: object) -> object:
         return _strip_required_string(value)
 
-    @field_validator("notes", mode="before")
+    @field_validator("model_number", "notes", mode="before")
     @classmethod
-    def strip_notes(cls, value: object) -> object:
+    def strip_optional_strings(cls, value: object) -> object:
         return _strip_optional_string(value)
 
 
@@ -71,9 +72,10 @@ class HeatPumpIndoorEquipRow(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: str = Field(pattern=rf"^hpie_{ULID_SUFFIX_PATTERN}$")
+    tag: str = Field(min_length=1, max_length=80)
     manufacturer: OptionId | None = None
     model_type: OptionId | None = None
-    model_number: str = Field(min_length=1, max_length=160)
+    model_number: str | None = Field(default=None, max_length=160)
     install_type: OptionId | None = None
     nominal_tons: NonNegativeFloat | None = None
     fan_speed_cfm: NonNegativeFloat | None = None
@@ -88,14 +90,14 @@ class HeatPumpIndoorEquipRow(BaseModel):
     notes: str | None = Field(default=None, max_length=4000)
     catalog_origin: dict[str, object] | None = None
 
-    @field_validator("model_number", mode="before")
+    @field_validator("tag", mode="before")
     @classmethod
-    def strip_model_number(cls, value: object) -> object:
+    def strip_tag(cls, value: object) -> object:
         return _strip_required_string(value)
 
-    @field_validator("notes", mode="before")
+    @field_validator("model_number", "notes", mode="before")
     @classmethod
-    def strip_notes(cls, value: object) -> object:
+    def strip_optional_strings(cls, value: object) -> object:
         return _strip_optional_string(value)
 
 
@@ -152,3 +154,35 @@ class HeatPumpsTableSlice(BaseModel):
     indoor_equip: list[HeatPumpIndoorEquipRow] = Field(default_factory=list)
     outdoor_units: list[HeatPumpOutdoorUnitRow] = Field(default_factory=list)
     indoor_units: list[HeatPumpIndoorUnitRow] = Field(default_factory=list)
+
+
+# Single-select option keys consumed by heat-pump tables. Stored in the
+# document-level `body.single_select_options` map (same shape as
+# appliances/ventilators). `building_zone` and `floor_level` are reused
+# from the rooms slice so a project-wide list serves both tables.
+HEAT_PUMP_MANUFACTURER_OPTION_KEY = "heat_pumps.manufacturer"
+HEAT_PUMP_SYSTEM_FAMILY_OPTION_KEY = "heat_pumps.system_family"
+HEAT_PUMP_REFRIGERANT_OPTION_KEY = "heat_pumps.refrigerant"
+HEAT_PUMP_MODEL_TYPE_OPTION_KEY = "heat_pumps.model_type"
+HEAT_PUMP_INSTALL_TYPE_OPTION_KEY = "heat_pumps.install_type"
+ROOMS_BUILDING_ZONE_OPTION_KEY = "rooms.building_zone"
+ROOMS_FLOOR_LEVEL_OPTION_KEY = "rooms.floor_level"
+
+# Keys writable through the heat-pumps options endpoint. The rooms-scoped
+# keys are reused read-only here; editing them belongs in the rooms slice.
+HEAT_PUMP_OWNED_OPTION_KEYS: tuple[str, ...] = (
+    HEAT_PUMP_MANUFACTURER_OPTION_KEY,
+    HEAT_PUMP_SYSTEM_FAMILY_OPTION_KEY,
+    HEAT_PUMP_REFRIGERANT_OPTION_KEY,
+    HEAT_PUMP_MODEL_TYPE_OPTION_KEY,
+    HEAT_PUMP_INSTALL_TYPE_OPTION_KEY,
+)
+
+# All keys exposed on the heat-pumps slice response so the UI can render
+# manufacturer/system_family/etc. labels alongside rows that reference
+# rooms-owned zone/floor lists.
+HEAT_PUMP_VISIBLE_OPTION_KEYS: tuple[str, ...] = (
+    *HEAT_PUMP_OWNED_OPTION_KEYS,
+    ROOMS_BUILDING_ZONE_OPTION_KEY,
+    ROOMS_FLOOR_LEVEL_OPTION_KEY,
+)

@@ -130,6 +130,7 @@ function baseSlice(overrides: Partial<HeatPumpsSlice> = {}): HeatPumpsSlice {
     indoor_equip: [indoorEquipRow()],
     outdoor_units: [],
     indoor_units: [],
+    single_select_options: {},
     ...overrides,
   };
 }
@@ -137,6 +138,7 @@ function baseSlice(overrides: Partial<HeatPumpsSlice> = {}): HeatPumpsSlice {
 function outdoorEquipRow() {
   return {
     id: "hpoe_01HX0000000000000000000000",
+    tag: "OE-A",
     manufacturer: "opt_mitsubishi",
     model_number: "PUZ-A18NKA7",
     paired_indoor_equip_id: null,
@@ -165,6 +167,7 @@ function outdoorEquipRow() {
 function indoorEquipRow() {
   return {
     id: "hpie_01HX0000000000000000000000",
+    tag: "IE-A",
     manufacturer: null,
     model_type: null,
     model_number: "PLA-A18EA8",

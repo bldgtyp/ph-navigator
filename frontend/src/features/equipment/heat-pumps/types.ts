@@ -7,8 +7,9 @@ export type CoolingDataType = "eer2_seer2" | "ieer";
 
 export type HeatPumpOutdoorEquipRow = {
   id: string;
+  tag: string;
   manufacturer: string | null;
-  model_number: string;
+  model_number: string | null;
   paired_indoor_equip_id: string | null;
   system_family: string | null;
   refrigerant: string | null;
@@ -33,9 +34,10 @@ export type HeatPumpOutdoorEquipRow = {
 
 export type HeatPumpIndoorEquipRow = {
   id: string;
+  tag: string;
   manufacturer: string | null;
   model_type: string | null;
-  model_number: string;
+  model_number: string | null;
   install_type: string | null;
   nominal_tons: number | null;
   fan_speed_cfm: number | null;
@@ -73,11 +75,51 @@ export type HeatPumpIndoorUnitRow = {
   notes: string | null;
 };
 
+export type HeatPumpSingleSelectOption = {
+  id: string;
+  label: string;
+  color: string;
+  order: number;
+};
+
+/**
+ * Single-select option keys exposed on the heat-pumps slice response. Mirrors
+ * `HEAT_PUMP_VISIBLE_OPTION_KEYS` in backend/features/heat_pumps/models.py. The
+ * five `heat_pumps.*` keys are owned by this slice and editable through
+ * {@link useHeatPumpOptionMutation}; the two `rooms.*` keys are reused from the
+ * rooms slice (read-only here).
+ */
+export const HEAT_PUMP_OPTION_KEYS = {
+  manufacturer: "heat_pumps.manufacturer",
+  systemFamily: "heat_pumps.system_family",
+  refrigerant: "heat_pumps.refrigerant",
+  modelType: "heat_pumps.model_type",
+  installType: "heat_pumps.install_type",
+  buildingZone: "rooms.building_zone",
+  floorLevel: "rooms.floor_level",
+} as const;
+
+export const HEAT_PUMP_OWNED_OPTION_KEYS = [
+  HEAT_PUMP_OPTION_KEYS.manufacturer,
+  HEAT_PUMP_OPTION_KEYS.systemFamily,
+  HEAT_PUMP_OPTION_KEYS.refrigerant,
+  HEAT_PUMP_OPTION_KEYS.modelType,
+  HEAT_PUMP_OPTION_KEYS.installType,
+] as const;
+
+export type HeatPumpOwnedOptionKey = (typeof HEAT_PUMP_OWNED_OPTION_KEYS)[number];
+
+export type HeatPumpOptionPatchOp = {
+  op: "add" | "replace" | "remove";
+  option: HeatPumpSingleSelectOption;
+};
+
 export type HeatPumpsSlice = BaseTableSlice & {
   outdoor_equip: HeatPumpOutdoorEquipRow[];
   indoor_equip: HeatPumpIndoorEquipRow[];
   outdoor_units: HeatPumpOutdoorUnitRow[];
   indoor_units: HeatPumpIndoorUnitRow[];
+  single_select_options: Record<string, HeatPumpSingleSelectOption[]>;
 };
 
 export type HeatPumpPatchOp =
@@ -139,7 +181,7 @@ export type PhiusExportRow = {
 
 export type PhiusExportWarning = {
   row_id: string;
-  model_number: string;
+  tag: string;
   field: PhiusExportWarningField;
   message: string;
 };
