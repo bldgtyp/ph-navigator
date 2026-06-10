@@ -472,9 +472,7 @@ def apply_option_patch(
     return _response(access.project_id, version_id, "draft", version_etag, draft_etag, next_body)
 
 
-def _apply_option_patch_to_body(
-    body: ProjectDocumentV1, option_key: str, patch: OptionPatchOp
-) -> ProjectDocumentV1:
+def _apply_option_patch_to_body(body: ProjectDocumentV1, option_key: str, patch: OptionPatchOp) -> ProjectDocumentV1:
     current = read_option_list(body, option_key)
     by_id = {opt.id: index for index, opt in enumerate(current)}
 
@@ -487,16 +485,12 @@ def _apply_option_patch_to_body(
     elif patch.op == "replace":
         index = by_id.get(patch.option.id)
         if index is None:
-            raise _validation_error(
-                "option.id", "Option id not found in this list.", {"option_id": patch.option.id}
-            )
+            raise _validation_error("option.id", "Option id not found in this list.", {"option_id": patch.option.id})
         next_options = [*current[:index], patch.option, *current[index + 1 :]]
     else:
         index = by_id.get(patch.option.id)
         if index is None:
-            raise _validation_error(
-                "option.id", "Option id not found in this list.", {"option_id": patch.option.id}
-            )
+            raise _validation_error("option.id", "Option id not found in this list.", {"option_id": patch.option.id})
         if _option_is_referenced(body, option_key, patch.option.id):
             raise api_error(
                 status.HTTP_409_CONFLICT,

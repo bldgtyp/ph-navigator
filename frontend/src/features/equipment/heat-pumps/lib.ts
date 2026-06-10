@@ -17,16 +17,15 @@ export function buildEmptyOutdoorEquipRow(overrides: Partial<HeatPumpOutdoorEqui
     refrigerant: null,
     heating_cap_kw_17f: null,
     heating_cap_kw_47f: null,
+    heating_data_type: null,
     heating_cop_17f: null,
     heating_cop_47f: null,
     hspf2: null,
-    hspf: null,
     cooling_cap_kw_95f: null,
+    cooling_data_type: null,
     eer2: null,
     seer2: null,
     ieer: null,
-    eer: null,
-    seer: null,
     datasheet_asset_ids: [],
     notes: null,
     catalog_origin: null,
@@ -201,8 +200,7 @@ export function buildNewHeatPumpOption(
     .replace(/^_+|_+$/g, "");
   const id = slug ? `opt_${slug}_${randomSuffix(4)}` : `opt_${randomSuffix(8)}`;
   const color = OPTION_COLOR_PALETTE[existing.length % OPTION_COLOR_PALETTE.length] ?? "#3b82f6";
-  const order =
-    existing.length === 0 ? 0 : Math.max(...existing.map((option) => option.order)) + 1;
+  const order = existing.length === 0 ? 0 : Math.max(...existing.map((option) => option.order)) + 1;
   return { id, label: trimmed, color, order };
 }
 

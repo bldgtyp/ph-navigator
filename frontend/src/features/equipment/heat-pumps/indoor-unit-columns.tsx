@@ -30,13 +30,13 @@ export function indoorUnitFieldDefs({
   const indoorEquipOptions: FieldOption[] = indoorEquip.map((row, index) => ({
     id: row.id,
     label: indoorEquipLabel(row, manufacturer),
-    color: "#94a3b8",
+    color: "slategray",
     order: index,
   }));
   const outdoorUnitOptions: FieldOption[] = outdoorUnits.map((row, index) => ({
     id: row.id,
     label: outdoorUnitLabel(row),
-    color: "#94a3b8",
+    color: "slategray",
     order: index,
   }));
   return [

@@ -56,7 +56,9 @@ describe("useHeatPumpPatchMutation — fresh-etag read", () => {
     });
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
-    const [, init] = fetchMock.mock.calls[0];
+    const firstCall = fetchMock.mock.calls[0];
+    if (!firstCall) throw new Error("fetchMock was asserted to have been called");
+    const [, init] = firstCall;
     const headers = init?.headers as Headers;
     expect(headers.get("If-Match")).toBe("draft_after_indoor");
     expect(headers.get("If-Match-Version")).toBeNull();
@@ -95,7 +97,9 @@ describe("useHeatPumpPatchMutation — fresh-etag read", () => {
     });
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
-    const [, init] = fetchMock.mock.calls[0];
+    const firstCall = fetchMock.mock.calls[0];
+    if (!firstCall) throw new Error("fetchMock was asserted to have been called");
+    const [, init] = firstCall;
     const headers = init?.headers as Headers;
     expect(headers.get("If-Match")).toBeNull();
     expect(headers.get("If-Match-Version")).toBe("version_caller");

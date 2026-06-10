@@ -19,11 +19,7 @@ import {
   indoorEquipDefaultHiddenColumns,
   indoorEquipFieldDefs,
 } from "../indoor-equip-columns";
-import type {
-  HeatPumpIndoorEquipRow,
-  HeatPumpOwnedOptionKey,
-  HeatPumpsSlice,
-} from "../types";
+import type { HeatPumpIndoorEquipRow, HeatPumpOwnedOptionKey, HeatPumpsSlice } from "../types";
 import { addRowButton } from "../../routes/equipmentRowActions";
 import { IndoorEquipRowModal } from "./IndoorEquipRowModal";
 

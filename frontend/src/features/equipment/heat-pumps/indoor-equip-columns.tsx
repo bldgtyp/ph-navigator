@@ -1,11 +1,7 @@
 import type { DataTableColumnDef, FieldDef } from "../../../shared/ui/data-table";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
-import {
-  HEAT_PUMP_OPTION_KEYS,
-  type HeatPumpIndoorEquipRow,
-  type HeatPumpsSlice,
-} from "./types";
+import { HEAT_PUMP_OPTION_KEYS, type HeatPumpIndoorEquipRow, type HeatPumpsSlice } from "./types";
 
 export const INDOOR_EQUIP_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
 
