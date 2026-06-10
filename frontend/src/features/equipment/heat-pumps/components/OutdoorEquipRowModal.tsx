@@ -4,8 +4,6 @@ import { ModalDialog } from "../../../../shared/ui/ModalDialog";
 import { indoorEquipLabel, numericValue, tagCollides } from "../lib";
 import {
   HEAT_PUMP_OPTION_KEYS,
-  type CoolingDataType,
-  type HeatingDataType,
   type HeatPumpIndoorEquipRow,
   type HeatPumpOutdoorEquipRow,
   type HeatPumpsSlice,
@@ -179,114 +177,69 @@ export function OutdoorEquipRowModal({
         </section>
         <section className="hp-modal-section">
           <h3>Heating performance</h3>
+          {/* All fields shown unconditionally — users fill in only the
+              ratings they care about. The Phius export warns when neither
+              the COP-table nor the HSPF2 path is populated. */}
           <div className="hp-form-grid">
-            <label>
-              Data type
-              <select
-                value={draft.heating_data_type ?? ""}
-                onChange={(event) =>
-                  setDraft({
-                    ...draft,
-                    heating_data_type: (event.target.value || null) as HeatingDataType | null,
-                  })
-                }
-                disabled={readOnly}
-              >
-                <option value="">Not set</option>
-                <option value="cops">COPs</option>
-                <option value="hspf2">HSPF2</option>
-              </select>
-            </label>
-            {draft.heating_data_type === "hspf2" ? (
-              <NumberInput
-                label="HSPF2"
-                value={draft.hspf2}
-                onChange={(hspf2) => setDraft({ ...draft, hspf2 })}
-                readOnly={readOnly}
-              />
-            ) : (
-              <>
-                <NumberInput
-                  label="Capacity at 17F kBtu/h"
-                  value={draft.heating_cap_kbtuh_17f}
-                  onChange={(heating_cap_kbtuh_17f) =>
-                    setDraft({ ...draft, heating_cap_kbtuh_17f })
-                  }
-                  readOnly={readOnly}
-                />
-                <NumberInput
-                  label="Capacity at 47F kBtu/h"
-                  value={draft.heating_cap_kbtuh_47f}
-                  onChange={(heating_cap_kbtuh_47f) =>
-                    setDraft({ ...draft, heating_cap_kbtuh_47f })
-                  }
-                  readOnly={readOnly}
-                />
-                <NumberInput
-                  label="COP at 17F"
-                  value={draft.heating_cop_17f}
-                  onChange={(heating_cop_17f) => setDraft({ ...draft, heating_cop_17f })}
-                  readOnly={readOnly}
-                />
-                <NumberInput
-                  label="COP at 47F"
-                  value={draft.heating_cop_47f}
-                  onChange={(heating_cop_47f) => setDraft({ ...draft, heating_cop_47f })}
-                  readOnly={readOnly}
-                />
-              </>
-            )}
+            <NumberInput
+              label="Capacity at 17F (kW)"
+              value={draft.heating_cap_kw_17f}
+              onChange={(heating_cap_kw_17f) => setDraft({ ...draft, heating_cap_kw_17f })}
+              readOnly={readOnly}
+            />
+            <NumberInput
+              label="Capacity at 47F (kW)"
+              value={draft.heating_cap_kw_47f}
+              onChange={(heating_cap_kw_47f) => setDraft({ ...draft, heating_cap_kw_47f })}
+              readOnly={readOnly}
+            />
+            <NumberInput
+              label="COP at 17F"
+              value={draft.heating_cop_17f}
+              onChange={(heating_cop_17f) => setDraft({ ...draft, heating_cop_17f })}
+              readOnly={readOnly}
+            />
+            <NumberInput
+              label="COP at 47F"
+              value={draft.heating_cop_47f}
+              onChange={(heating_cop_47f) => setDraft({ ...draft, heating_cop_47f })}
+              readOnly={readOnly}
+            />
+            <NumberInput
+              label="HSPF2"
+              value={draft.hspf2}
+              onChange={(hspf2) => setDraft({ ...draft, hspf2 })}
+              readOnly={readOnly}
+            />
           </div>
         </section>
         <section className="hp-modal-section">
           <h3>Cooling performance</h3>
           <div className="hp-form-grid">
-            <label>
-              Data type
-              <select
-                value={draft.cooling_data_type ?? ""}
-                onChange={(event) =>
-                  setDraft({
-                    ...draft,
-                    cooling_data_type: (event.target.value || null) as CoolingDataType | null,
-                  })
-                }
-                disabled={readOnly}
-              >
-                <option value="">Not set</option>
-                <option value="eer2_seer2">EER2 / SEER2</option>
-                <option value="ieer">IEER</option>
-              </select>
-            </label>
             <NumberInput
-              label="Capacity at 95F kBtu/h"
-              value={draft.cooling_cap_kbtuh_95f}
-              onChange={(cooling_cap_kbtuh_95f) => setDraft({ ...draft, cooling_cap_kbtuh_95f })}
+              label="Capacity at 95F (kW)"
+              value={draft.cooling_cap_kw_95f}
+              onChange={(cooling_cap_kw_95f) => setDraft({ ...draft, cooling_cap_kw_95f })}
               readOnly={readOnly}
             />
-            {draft.cooling_data_type === "ieer" ? (
-              <NumberInput
-                label="IEER"
-                value={draft.ieer}
-                onChange={(ieer) => setDraft({ ...draft, ieer })}
-                readOnly={readOnly}
-              />
-            ) : (
-              <>
-                <NumberInput
-                  label="EER2"
-                  value={draft.eer2}
-                  onChange={(eer2) => setDraft({ ...draft, eer2 })}
-                  readOnly={readOnly}
-                />
-                <NumberInput
-                  label="SEER2"
-                  value={draft.seer2}
-                  onChange={(seer2) => setDraft({ ...draft, seer2 })}
-                  readOnly={readOnly}
-                />
-              </>
-            )}
+            <NumberInput
+              label="EER2"
+              value={draft.eer2}
+              onChange={(eer2) => setDraft({ ...draft, eer2 })}
+              readOnly={readOnly}
+            />
+            <NumberInput
+              label="SEER2"
+              value={draft.seer2}
+              onChange={(seer2) => setDraft({ ...draft, seer2 })}
+              readOnly={readOnly}
+            />
+            <NumberInput
+              label="IEER"
+              value={draft.ieer}
+              onChange={(ieer) => setDraft({ ...draft, ieer })}
+              readOnly={readOnly}
+            />
           </div>
         </section>
         <details className="hp-modal-section">
