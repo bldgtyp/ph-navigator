@@ -242,9 +242,7 @@
       "tag": "IU-1.1",
       "indoor_equip_id": "hpie_01J5RH4F1A0000000000000001",
       "outdoor_unit_id": "hpou_01J5RH4F1A0000000000000001",
-      "served_room_ids": ["rm_101"],
-      "floor_level": "opt_level_1",
-      "area_served": "Living Room"
+      "served_room_ids": ["rm_101"]
     },
     {
       "id": "hpiu_01J5RH4F1A0000000000000002",
@@ -252,36 +250,28 @@
       "indoor_equip_id": "hpie_01J5RH4F1A0000000000000002",
       "outdoor_unit_id": "hpou_01J5RH4F1A0000000000000001",
       "linked_erv_unit_id": "vent_1",
-      "served_room_ids": ["rm_102"],
-      "floor_level": "opt_level_1",
-      "area_served": "Kitchen"
+      "served_room_ids": ["rm_102"]
     },
     {
       "id": "hpiu_01J5RH4F1A0000000000000003",
       "tag": "IU-2.1",
       "indoor_equip_id": "hpie_01J5RH4F1A0000000000000003",
       "outdoor_unit_id": "hpou_01J5RH4F1A0000000000000002",
-      "served_room_ids": ["rm_103"],
-      "floor_level": "opt_level_2",
-      "area_served": "Bedroom 1"
+      "served_room_ids": ["rm_103"]
     },
     {
       "id": "hpiu_01J5RH4F1A0000000000000004",
       "tag": "IU-3.1",
       "indoor_equip_id": "hpie_01J5RH4F1A0000000000000004",
       "outdoor_unit_id": "hpou_01J5RH4F1A0000000000000003",
-      "served_room_ids": ["rm_104"],
-      "floor_level": "opt_level_2",
-      "area_served": "Bedroom 2"
+      "served_room_ids": ["rm_104"]
     },
     {
       "id": "hpiu_01J5RH4F1A0000000000000005",
       "tag": "IU-5.1",
       "indoor_equip_id": "hpie_01J5RH4F1A0000000000000005",
       "outdoor_unit_id": "hpou_01J5RH4F1A0000000000000005",
-      "served_room_ids": ["rm_101", "rm_102", "rm_103", "rm_104"],
-      "floor_level": "opt_level_1",
-      "area_served": "Whole-house ducted distribution"
+      "served_room_ids": ["rm_101", "rm_102", "rm_103", "rm_104"]
     }
   ]
 }

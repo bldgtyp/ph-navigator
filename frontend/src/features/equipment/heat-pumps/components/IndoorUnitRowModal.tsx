@@ -16,7 +16,6 @@ import {
   type HeatPumpOutdoorUnitRow,
   type HeatPumpsSlice,
 } from "../types";
-import { OptionPicker } from "./OptionPicker";
 
 export function IndoorUnitRowModal({
   mode,
@@ -50,7 +49,6 @@ export function IndoorUnitRowModal({
   const [draft, setDraft] = useState(row);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const floorLevelOptions = options[HEAT_PUMP_OPTION_KEYS.floorLevel] ?? [];
   const manufacturerOptions = options[HEAT_PUMP_OPTION_KEYS.manufacturer] ?? [];
   const title = mode === "add" ? "New indoor unit" : `Indoor unit: ${row.tag || "(unnamed)"}`;
   const submitLabel = mode === "add" ? "Create indoor unit" : "Save indoor unit";
@@ -98,7 +96,6 @@ export function IndoorUnitRowModal({
       await onSubmit({
         ...draft,
         tag: trimmedTag,
-        area_served: draft.area_served?.trim() || null,
       });
     } catch (err) {
       setError(errorMessage(err, "Could not save indoor unit."));
@@ -133,14 +130,6 @@ export function IndoorUnitRowModal({
                 disabled={readOnly}
               />
             </label>
-            <OptionPicker
-              label="Floor"
-              value={draft.floor_level}
-              options={floorLevelOptions}
-              onChange={(floor_level) => setDraft({ ...draft, floor_level })}
-              disabled={readOnly}
-              placeholder="Not set"
-            />
             <label className="hp-form-grid__wide">
               Indoor equipment
               <select
@@ -186,16 +175,6 @@ export function IndoorUnitRowModal({
                   Add an outdoor unit first in Units — Outdoor.
                 </small>
               ) : null}
-            </label>
-            <label className="hp-form-grid__wide">
-              Area served
-              <input
-                value={draft.area_served ?? ""}
-                onChange={(event) =>
-                  setDraft({ ...draft, area_served: event.target.value || null })
-                }
-                disabled={readOnly}
-              />
             </label>
             <label className="hp-form-grid__wide">
               Linked ERV unit

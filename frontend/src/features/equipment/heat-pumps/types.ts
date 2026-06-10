@@ -83,8 +83,6 @@ export type HeatPumpIndoorUnitRow = {
   outdoor_unit_id: string | null;
   linked_erv_unit_id: string | null;
   served_room_ids: string[];
-  floor_level: string | null;
-  area_served: string | null;
   datasheet_asset_ids: string[];
   notes: string | null;
 };
@@ -100,7 +98,7 @@ export type HeatPumpSingleSelectOption = {
  * Single-select option keys exposed on the heat-pumps slice response. Mirrors
  * `HEAT_PUMP_VISIBLE_OPTION_KEYS` in backend/features/heat_pumps/models.py. The
  * five `heat_pumps.*` keys are owned by this slice and editable through
- * {@link useHeatPumpOptionMutation}; the two `rooms.*` keys are reused from the
+ * {@link useHeatPumpOptionMutation}; `rooms.building_zone` is reused from the
  * rooms slice (read-only here).
  */
 export const HEAT_PUMP_OPTION_KEYS = {
@@ -110,7 +108,6 @@ export const HEAT_PUMP_OPTION_KEYS = {
   modelType: "heat_pumps.model_type",
   installType: "heat_pumps.install_type",
   buildingZone: "rooms.building_zone",
-  floorLevel: "rooms.floor_level",
 } as const;
 
 export const HEAT_PUMP_OWNED_OPTION_KEYS = [

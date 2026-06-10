@@ -77,8 +77,6 @@ export function buildEmptyIndoorUnitRow(overrides: Partial<HeatPumpIndoorUnitRow
     outdoor_unit_id: null,
     linked_erv_unit_id: null,
     served_room_ids: [],
-    floor_level: null,
-    area_served: null,
     datasheet_asset_ids: [],
     notes: null,
     ...overrides,

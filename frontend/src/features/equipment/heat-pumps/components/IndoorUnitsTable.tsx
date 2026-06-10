@@ -86,6 +86,7 @@ export function IndoorUnitsTable({
   const columns = indoorUnitColumnDefs({
     projectId,
     isEditor: !readOnly,
+    rooms,
     assetUrlById,
     onDatasheetChange: (row, next) => replaceUnit({ ...row, datasheet_asset_ids: next }),
   });
@@ -99,11 +100,10 @@ export function IndoorUnitsTable({
     [slice.single_select_options, slice.indoor_equip, slice.outdoor_units],
   );
 
-  // floor_level is rooms-owned (see HEAT_PUMP_VISIBLE_OPTION_KEYS in
-  // backend/features/heat_pumps/models.py), so IndoorUnitRowModal does not
-  // expose inline-create. IndoorEquipRowModal — opened from this table for
-  // equip-create — still gets a createOption for the manufacturer / model_type
-  // / install_type lists owned by the heat-pumps slice.
+  // IndoorUnitRowModal does not expose inline-create for any options.
+  // IndoorEquipRowModal — opened from this table for equip-create — still
+  // gets a createOption for the manufacturer / model_type / install_type
+  // lists owned by the heat-pumps slice.
   async function createOption(optionKey: HeatPumpOwnedOptionKey, label: string): Promise<string> {
     const existing = slice.single_select_options[optionKey] ?? [];
     const newOption = buildNewHeatPumpOption(label, existing);
