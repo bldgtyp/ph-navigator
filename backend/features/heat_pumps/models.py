@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Literal
+from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 ULID_SUFFIX_PATTERN = r"[0-9A-HJKMNP-TV-Z]{26}"
-HeatingDataType = Literal["cops", "hspf2"]
-CoolingDataType = Literal["eer2_seer2", "ieer"]
 
 
 def _strip_optional_string(value: object) -> object:
@@ -39,15 +37,13 @@ class HeatPumpOutdoorEquipRow(BaseModel):
     paired_indoor_equip_id: str | None = Field(default=None, pattern=rf"^hpie_{ULID_SUFFIX_PATTERN}$")
     system_family: OptionId | None = None
     refrigerant: OptionId | None = None
-    heating_data_type: HeatingDataType | None = None
-    heating_cap_kbtuh_17f: NonNegativeFloat | None = None
-    heating_cap_kbtuh_47f: NonNegativeFloat | None = None
+    heating_cap_kw_17f: NonNegativeFloat | None = None
+    heating_cap_kw_47f: NonNegativeFloat | None = None
     heating_cop_17f: PositiveFloat | None = None
     heating_cop_47f: PositiveFloat | None = None
     hspf2: NonNegativeFloat | None = None
     hspf: NonNegativeFloat | None = None
-    cooling_data_type: CoolingDataType | None = None
-    cooling_cap_kbtuh_95f: NonNegativeFloat | None = None
+    cooling_cap_kw_95f: NonNegativeFloat | None = None
     eer2: NonNegativeFloat | None = None
     seer2: NonNegativeFloat | None = None
     ieer: NonNegativeFloat | None = None

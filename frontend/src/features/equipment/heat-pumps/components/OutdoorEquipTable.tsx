@@ -306,13 +306,13 @@ const OUTDOOR_FIELD_TO_OPTION_KEY: Record<string, (typeof HEAT_PUMP_OWNED_OPTION
 };
 
 const NUMERIC_FIELDS = new Set([
-  "heating_cap_kbtuh_17f",
-  "heating_cap_kbtuh_47f",
+  "heating_cap_kw_17f",
+  "heating_cap_kw_47f",
   "heating_cop_17f",
   "heating_cop_47f",
   "hspf2",
   "hspf",
-  "cooling_cap_kbtuh_95f",
+  "cooling_cap_kw_95f",
   "eer2",
   "seer2",
   "ieer",

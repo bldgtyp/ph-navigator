@@ -37,15 +37,13 @@ def outdoor_equip(**overrides: object) -> dict[str, Any]:
         "paired_indoor_equip_id": None,
         "system_family": None,
         "refrigerant": None,
-        "heating_data_type": "cops",
-        "heating_cap_kbtuh_17f": 12.0,
-        "heating_cap_kbtuh_47f": 18.0,
+        "heating_cap_kw_17f": 3.52,
+        "heating_cap_kw_47f": 5.28,
         "heating_cop_17f": 2.1,
         "heating_cop_47f": 3.4,
         "hspf2": None,
         "hspf": None,
-        "cooling_data_type": "eer2_seer2",
-        "cooling_cap_kbtuh_95f": 17.0,
+        "cooling_cap_kw_95f": 4.98,
         "eer2": 11.2,
         "seer2": 18.0,
         "ieer": None,
@@ -124,10 +122,10 @@ def remove_patch(row_id: str) -> dict[str, Any]:
 
 def test_outdoor_equip_model_validates_enums_and_ranges() -> None:
     assert HeatPumpOutdoorEquipRow.model_validate(outdoor_equip()).model_number == "PUZ-A18NKA7"
-    with pytest.raises(ValidationError, match="Input should be 'cops' or 'hspf2'"):
-        HeatPumpOutdoorEquipRow.model_validate(outdoor_equip(heating_data_type="cop-table"))
     with pytest.raises(ValidationError, match="greater than 0"):
         HeatPumpOutdoorEquipRow.model_validate(outdoor_equip(heating_cop_47f=0))
+    with pytest.raises(ValidationError, match="greater than or equal to 0"):
+        HeatPumpOutdoorEquipRow.model_validate(outdoor_equip(heating_cap_kw_17f=-1))
 
 
 def test_document_defaults_heat_pump_arrays() -> None:

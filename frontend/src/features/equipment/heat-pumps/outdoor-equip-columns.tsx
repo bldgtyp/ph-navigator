@@ -1,4 +1,5 @@
 import type { DataTableColumnDef, FieldDef, FieldOption } from "../../../shared/ui/data-table";
+import type { NumberUnitsConfig } from "../../../lib/units";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
 import { indoorEquipLabel } from "./lib";
@@ -11,14 +12,17 @@ import {
 
 export const OUTDOOR_EQUIP_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
 
-const HEATING_DATA_TYPE_OPTIONS: FieldOption[] = [
-  { id: "cops", label: "COPs", color: "#3b82f6", order: 0 },
-  { id: "hspf2", label: "HSPF2", color: "#10b981", order: 1 },
-];
-const COOLING_DATA_TYPE_OPTIONS: FieldOption[] = [
-  { id: "eer2_seer2", label: "EER2 / SEER2", color: "#3b82f6", order: 0 },
-  { id: "ieer", label: "IEER", color: "#10b981", order: 1 },
-];
+// Heat-pump capacity is stored canonically in kW; the DataTable resolves
+// the live header label and parses/formats cell input via the global
+// SI/IP toggle. Phius export converts back to kBtu/h on the way out.
+const POWER_UNITS: NumberUnitsConfig = {
+  mode: "fixed",
+  unit_type: "power",
+  si_unit: "kw",
+  ip_unit: "kbtu_h",
+  precision_si: 2,
+  precision_ip: 1,
+};
 
 export function outdoorEquipFieldDefs({
   options,
@@ -47,15 +51,13 @@ export function outdoorEquipFieldDefs({
     selectField("paired_indoor_equip_id", "Paired indoor equip", pairedIndoor),
     selectField("system_family", "System family", systemFamily),
     selectField("refrigerant", "Refrigerant", refrigerant),
-    selectField("heating_data_type", "Heating data type", HEATING_DATA_TYPE_OPTIONS),
-    numberField("heating_cap_kbtuh_17f", "Heat cap 17F"),
-    numberField("heating_cap_kbtuh_47f", "Heat cap 47F"),
+    powerField("heating_cap_kw_17f", "Heating Capacity at 17F"),
+    powerField("heating_cap_kw_47f", "Heating Capacity at 47F"),
     numberField("heating_cop_17f", "COP 17F"),
     numberField("heating_cop_47f", "COP 47F"),
     numberField("hspf2", "HSPF2"),
     numberField("hspf", "HSPF"),
-    selectField("cooling_data_type", "Cooling data type", COOLING_DATA_TYPE_OPTIONS),
-    numberField("cooling_cap_kbtuh_95f", "Cool cap 95F"),
+    powerField("cooling_cap_kw_95f", "Cooling Capacity at 95F"),
     numberField("eer2", "EER2"),
     numberField("seer2", "SEER2"),
     numberField("ieer", "IEER"),
@@ -141,31 +143,16 @@ export function outdoorEquipColumnDefs({
       accessor: (row) => row.refrigerant,
       defaultWidth: 120,
     },
-    {
-      id: "heating_data_type",
-      fieldKey: "heating_data_type",
-      header: "Heating data",
-      accessor: (row) =>
-        row.heating_data_type === "cops" ? "COPs" : row.heating_data_type?.toUpperCase(),
-      defaultWidth: 130,
-    },
-    number("heating_cap_kbtuh_17f", "Heat 17F"),
-    number("heating_cap_kbtuh_47f", "Heat 47F"),
+    // Capacity columns: header label here is title-only — the live unit
+    // suffix (kW / kBtu/h) is rendered by the DataTable header from the
+    // FieldDef's numberUnits config. Accessors yield raw canonical kW.
+    number("heating_cap_kw_17f", "Heating Capacity at 17F", 180),
+    number("heating_cap_kw_47f", "Heating Capacity at 47F", 180),
     number("heating_cop_17f", "COP 17F"),
     number("heating_cop_47f", "COP 47F"),
     number("hspf2", "HSPF2"),
     number("hspf", "HSPF"),
-    {
-      id: "cooling_data_type",
-      fieldKey: "cooling_data_type",
-      header: "Cooling data",
-      accessor: (row) =>
-        row.cooling_data_type === "eer2_seer2"
-          ? "EER2 / SEER2"
-          : row.cooling_data_type?.toUpperCase(),
-      defaultWidth: 140,
-    },
-    number("cooling_cap_kbtuh_95f", "Cool 95F"),
+    number("cooling_cap_kw_95f", "Cooling Capacity at 95F", 180),
     number("eer2", "EER2"),
     number("seer2", "SEER2"),
     number("ieer", "IEER"),
@@ -208,6 +195,10 @@ function textField(field_key: string, display_name: string, required = false): F
 
 function numberField(field_key: string, display_name: string): FieldDef {
   return { field_key, field_type: "number", display_name };
+}
+
+function powerField(field_key: string, display_name: string): FieldDef {
+  return { field_key, field_type: "number", display_name, numberUnits: POWER_UNITS };
 }
 
 function selectField(

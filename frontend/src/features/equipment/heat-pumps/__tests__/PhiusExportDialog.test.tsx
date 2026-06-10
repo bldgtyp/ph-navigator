@@ -15,16 +15,14 @@ function payload(overrides: Partial<PhiusExportResponse> = {}): PhiusExportRespo
         row_id: "hpoe_01",
         device: "PUZ-A18NKA7",
         qty: 2,
-        heating_data_type: "COPs",
         cap_17f: 18,
         cap_47f: 22,
         cop_17f: 2.4,
         cop_47f: 3.8,
-        hspf: null,
-        cooling_data_type: "EER2/SEER2",
+        hspf2: null,
         cap_95f: 17,
-        eer: 12,
-        seer: 21,
+        eer2: 12,
+        seer2: 21,
         ieer: null,
       },
     ],
@@ -69,14 +67,14 @@ describe("PhiusExportDialog", () => {
           {
             row_id: "hpoe_01",
             tag: "OE-A",
-            field: "heating_cap_kbtuh_17f",
-            message: "Heating capacity @ 17°F is required for COPs export.",
+            field: "heating",
+            message: "No heating performance data set.",
           },
           {
             row_id: "hpoe_01",
             tag: "OE-A",
-            field: "heating_cop_17f",
-            message: "COP @ 17°F is required for COPs export.",
+            field: "cooling",
+            message: "No cooling performance data set.",
           },
         ],
       }),
@@ -86,10 +84,8 @@ describe("PhiusExportDialog", () => {
 
     await waitFor(() => expect(screen.getByText(/1 with warning/)).toBeInTheDocument());
     expect(screen.getByText("OE-A")).toBeInTheDocument();
-    expect(
-      screen.getByText("Heating capacity @ 17°F is required for COPs export."),
-    ).toBeInTheDocument();
-    expect(screen.getByText("COP @ 17°F is required for COPs export.")).toBeInTheDocument();
+    expect(screen.getByText("No heating performance data set.")).toBeInTheDocument();
+    expect(screen.getByText("No cooling performance data set.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Continue with gaps" })).toBeInTheDocument();
   });
 

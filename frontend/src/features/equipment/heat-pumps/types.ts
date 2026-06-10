@@ -2,9 +2,6 @@ import type { BaseTableSlice } from "../../project_document/table-slice";
 
 export type HeatPumpTableKey = "outdoor-equip" | "indoor-equip" | "outdoor-units" | "indoor-units";
 
-export type HeatingDataType = "cops" | "hspf2";
-export type CoolingDataType = "eer2_seer2" | "ieer";
-
 export type HeatPumpOutdoorEquipRow = {
   id: string;
   tag: string;
@@ -13,15 +10,13 @@ export type HeatPumpOutdoorEquipRow = {
   paired_indoor_equip_id: string | null;
   system_family: string | null;
   refrigerant: string | null;
-  heating_data_type: HeatingDataType | null;
-  heating_cap_kbtuh_17f: number | null;
-  heating_cap_kbtuh_47f: number | null;
+  heating_cap_kw_17f: number | null;
+  heating_cap_kw_47f: number | null;
   heating_cop_17f: number | null;
   heating_cop_47f: number | null;
   hspf2: number | null;
   hspf: number | null;
-  cooling_data_type: CoolingDataType | null;
-  cooling_cap_kbtuh_95f: number | null;
+  cooling_cap_kw_95f: number | null;
   eer2: number | null;
   seer2: number | null;
   ieer: number | null;
@@ -148,34 +143,20 @@ export type HeatPumpsPatchResponse = HeatPumpsSlice & {
   cascade_preview?: CascadePreview | null;
 };
 
-export type PhiusExportWarningField =
-  | "heating_data_type"
-  | "heating_cap_kbtuh_17f"
-  | "heating_cap_kbtuh_47f"
-  | "heating_cop_17f"
-  | "heating_cop_47f"
-  | "hspf2"
-  | "cooling_data_type"
-  | "cooling_cap_kbtuh_95f"
-  | "eer2"
-  | "seer2"
-  | "ieer"
-  | "qty";
+export type PhiusExportWarningField = "heating" | "cooling" | "qty";
 
 export type PhiusExportRow = {
   row_id: string;
   device: string;
   qty: number;
-  heating_data_type: string;
   cap_17f: number | null;
   cap_47f: number | null;
   cop_17f: number | null;
   cop_47f: number | null;
-  hspf: number | null;
-  cooling_data_type: string;
+  hspf2: number | null;
   cap_95f: number | null;
-  eer: number | null;
-  seer: number | null;
+  eer2: number | null;
+  seer2: number | null;
   ieer: number | null;
 };
 

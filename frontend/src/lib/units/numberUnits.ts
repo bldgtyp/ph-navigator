@@ -11,6 +11,7 @@ const MIN_NUMBER_PRECISION = 0;
 const MAX_NUMBER_PRECISION = 10;
 const L_PER_GAL = 3.785411784;
 const W_PER_K_TO_BTU_PER_H_F = 3.412141633 / 1.8;
+const KW_TO_KBTU_PER_H = 3.412141633;
 
 type UnitDefinitionInput = {
   id: string;
@@ -105,6 +106,12 @@ export const NUMBER_UNIT_TYPES = [
     label: "Heat Loss Rate",
     siUnits: [{ id: "w_k", label: "W/K", system: "SI" }],
     ipUnits: [{ id: "btu_h_f", label: "Btu/hr-F", system: "IP" }],
+  },
+  {
+    id: "power",
+    label: "Power",
+    siUnits: [{ id: "kw", label: "kW", system: "SI" }],
+    ipUnits: [{ id: "kbtu_h", label: "kBtu/h", system: "IP" }],
   },
 ] as const satisfies readonly UnitTypeDefinitionInput[];
 
@@ -230,6 +237,8 @@ export function convertNumberUnitsToDisplay(valueSi: number, config: NumberUnits
       return valueSi / m3hToCfm(1);
     case "heat_loss_rate":
       return valueSi * W_PER_K_TO_BTU_PER_H_F;
+    case "power":
+      return valueSi * KW_TO_KBTU_PER_H;
   }
 }
 
@@ -261,6 +270,8 @@ export function convertNumberUnitsToSi(valueIp: number, config: NumberUnitsConfi
       return valueIp * m3hToCfm(1);
     case "heat_loss_rate":
       return valueIp / W_PER_K_TO_BTU_PER_H_F;
+    case "power":
+      return valueIp / KW_TO_KBTU_PER_H;
   }
 }
 

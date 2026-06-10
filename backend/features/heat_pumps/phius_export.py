@@ -2,9 +2,8 @@
 
 Pure transform: project's heat-pump slice → CSV payload that pastes
 cleanly into the calc's "Air Source Heat Pump Performance Data"
-section. Column order and conditional cells follow
-`planning/archive/heat-pumps/PRD.md` §6.2; pre-export validation
-follows §6.4.
+section. Heat-pump capacity is stored in canonical kW and converted
+to kBtu/h on the way out — the Phius calc still expects IP units.
 """
 
 from __future__ import annotations
@@ -21,18 +20,12 @@ from features.heat_pumps.models import (
     HeatPumpsTableSlice,
 )
 
+# Conversion factor for storage (kW) → Phius calc (kBtu/h).
+KW_TO_KBTU_PER_H = 3.412141633
+
 WarningField = Literal[
-    "heating_data_type",
-    "heating_cap_kbtuh_17f",
-    "heating_cap_kbtuh_47f",
-    "heating_cop_17f",
-    "heating_cop_47f",
-    "hspf2",
-    "cooling_data_type",
-    "cooling_cap_kbtuh_95f",
-    "eer2",
-    "seer2",
-    "ieer",
+    "heating",
+    "cooling",
     "qty",
 ]
 
@@ -40,41 +33,35 @@ WarningField = Literal[
 CSV_HEADER: tuple[str, ...] = (
     "Device(s)",
     "Qty",
-    "Heating Data Type",
     "Cap @ 17°F",
     "Cap @ 47°F",
     "COP @ 17°F",
     "COP @ 47°F",
-    "HSPF",
-    "Cooling Data Type",
+    "HSPF2",
     "Cap @ 95°F",
-    "EER",
-    "SEER",
+    "EER2",
+    "SEER2",
     "IEER",
 )
 
-_HEATING_DATA_TYPE_LABELS: dict[str, str] = {"cops": "COPs", "hspf2": "HSPF2"}
-_COOLING_DATA_TYPE_LABELS: dict[str, str] = {"eer2_seer2": "EER2/SEER2", "ieer": "IEER"}
-
 
 class PhiusRow(BaseModel):
-    """One CSV row, one outdoor equipment record."""
+    """One CSV row, one outdoor equipment record. All capacity values
+    in kBtu/h (post-conversion from canonical kW storage)."""
 
     model_config = ConfigDict(extra="forbid")
 
     row_id: str
     device: str
     qty: int
-    heating_data_type: str
     cap_17f: float | None
     cap_47f: float | None
     cop_17f: float | None
     cop_47f: float | None
-    hspf: float | None
-    cooling_data_type: str
+    hspf2: float | None
     cap_95f: float | None
-    eer: float | None
-    seer: float | None
+    eer2: float | None
+    seer2: float | None
     ieer: float | None
 
 
@@ -128,7 +115,7 @@ def compute_phius_payload(slice_: HeatPumpsTableSlice) -> PhiusPayload:
 
 
 def serialize_csv(payload: PhiusPayload) -> bytes:
-    """UTF-8 CSV; column order per PRD §6.2."""
+    """UTF-8 CSV; columns follow CSV_HEADER order."""
 
     buffer = io.StringIO()
     writer = csv.writer(buffer, lineterminator="\r\n")
@@ -138,16 +125,14 @@ def serialize_csv(payload: PhiusPayload) -> bytes:
             (
                 row.device,
                 _csv_int(row.qty),
-                row.heating_data_type,
                 _csv_number(row.cap_17f),
                 _csv_number(row.cap_47f),
                 _csv_number(row.cop_17f),
                 _csv_number(row.cop_47f),
-                _csv_number(row.hspf),
-                row.cooling_data_type,
+                _csv_number(row.hspf2),
                 _csv_number(row.cap_95f),
-                _csv_number(row.eer),
-                _csv_number(row.seer),
+                _csv_number(row.eer2),
+                _csv_number(row.seer2),
                 _csv_number(row.ieer),
             )
         )
@@ -166,26 +151,26 @@ def _build_row(
     qty: int,
     indoor_labels_by_id: dict[str, str],
 ) -> PhiusRow:
-    heating_is_cops = equip.heating_data_type == "cops"
-    heating_is_hspf2 = equip.heating_data_type == "hspf2"
-    cooling_is_eer2 = equip.cooling_data_type == "eer2_seer2"
-    cooling_is_ieer = equip.cooling_data_type == "ieer"
     return PhiusRow(
         row_id=equip.id,
         device=_device_label(equip, indoor_labels_by_id),
         qty=qty,
-        heating_data_type=_HEATING_DATA_TYPE_LABELS.get(equip.heating_data_type or "", ""),
-        cap_17f=equip.heating_cap_kbtuh_17f if heating_is_cops else None,
-        cap_47f=equip.heating_cap_kbtuh_47f if heating_is_cops else None,
-        cop_17f=equip.heating_cop_17f if heating_is_cops else None,
-        cop_47f=equip.heating_cop_47f if heating_is_cops else None,
-        hspf=equip.hspf2 if heating_is_hspf2 else None,
-        cooling_data_type=_COOLING_DATA_TYPE_LABELS.get(equip.cooling_data_type or "", ""),
-        cap_95f=equip.cooling_cap_kbtuh_95f if (cooling_is_eer2 or cooling_is_ieer) else None,
-        eer=equip.eer2 if cooling_is_eer2 else None,
-        seer=equip.seer2 if cooling_is_eer2 else None,
-        ieer=equip.ieer if cooling_is_ieer else None,
+        cap_17f=_kw_to_kbtuh(equip.heating_cap_kw_17f),
+        cap_47f=_kw_to_kbtuh(equip.heating_cap_kw_47f),
+        cop_17f=equip.heating_cop_17f,
+        cop_47f=equip.heating_cop_47f,
+        hspf2=equip.hspf2,
+        cap_95f=_kw_to_kbtuh(equip.cooling_cap_kw_95f),
+        eer2=equip.eer2,
+        seer2=equip.seer2,
+        ieer=equip.ieer,
     )
+
+
+def _kw_to_kbtuh(value: float | None) -> float | None:
+    if value is None:
+        return None
+    return round(value * KW_TO_KBTU_PER_H, 2)
 
 
 def _device_label(
@@ -232,34 +217,32 @@ def _validate(equip: HeatPumpOutdoorEquipRow, qty: int) -> list[PhiusWarning]:
     if qty == 0:
         warn("qty", "No outdoor units reference this equipment row.")
 
-    if equip.heating_data_type is None:
-        warn("heating_data_type", "Heating data type is required for export.")
-    elif equip.heating_data_type == "cops":
-        if equip.heating_cap_kbtuh_17f is None:
-            warn("heating_cap_kbtuh_17f", "Heating capacity @ 17°F is required for COPs export.")
-        if equip.heating_cap_kbtuh_47f is None:
-            warn("heating_cap_kbtuh_47f", "Heating capacity @ 47°F is required for COPs export.")
-        if equip.heating_cop_17f is None:
-            warn("heating_cop_17f", "COP @ 17°F is required for COPs export.")
-        if equip.heating_cop_47f is None:
-            warn("heating_cop_47f", "COP @ 47°F is required for COPs export.")
-    elif equip.heating_data_type == "hspf2" and equip.hspf2 is None:
-        warn("hspf2", "HSPF2 is required for HSPF2 export.")
-
-    if equip.cooling_data_type is None:
-        warn("cooling_data_type", "Cooling data type is required for export.")
-    elif equip.cooling_data_type == "eer2_seer2":
-        if equip.cooling_cap_kbtuh_95f is None:
-            warn("cooling_cap_kbtuh_95f", "Cooling capacity @ 95°F is required for EER2/SEER2 export.")
-        if equip.eer2 is None:
-            warn("eer2", "EER2 is required for EER2/SEER2 export.")
-        if equip.seer2 is None:
-            warn("seer2", "SEER2 is required for EER2/SEER2 export.")
-    elif equip.cooling_data_type == "ieer":
-        if equip.cooling_cap_kbtuh_95f is None:
-            warn("cooling_cap_kbtuh_95f", "Cooling capacity @ 95°F is required for IEER export.")
-        if equip.ieer is None:
-            warn("ieer", "IEER is required for IEER export.")
+    # All performance fields are optional individually — the modal now
+    # exposes every one. Warn only when the row carries no heating or
+    # no cooling data at all, so the export row would be useless.
+    heating_filled = any(
+        value is not None
+        for value in (
+            equip.heating_cap_kw_17f,
+            equip.heating_cap_kw_47f,
+            equip.heating_cop_17f,
+            equip.heating_cop_47f,
+            equip.hspf2,
+        )
+    )
+    cooling_filled = any(
+        value is not None
+        for value in (
+            equip.cooling_cap_kw_95f,
+            equip.eer2,
+            equip.seer2,
+            equip.ieer,
+        )
+    )
+    if not heating_filled:
+        warn("heating", "No heating performance data set.")
+    if not cooling_filled:
+        warn("cooling", "No cooling performance data set.")
 
     return warnings
 
