@@ -40,11 +40,11 @@ def _outdoor(
     heating_data_type: str | None = "COPs",
     cop_17f: float | None = 2.4,
     cop_47f: float | None = 3.8,
-    hspf2: float | None = None,
+    hspf: float | None = None,
     cap_kw_95f: float | None = 5.0,
     cooling_data_type: str | None = "EER2/SEER2",
-    eer2: float | None = 12.5,
-    seer2: float | None = 21.0,
+    eer: float | None = 12.5,
+    seer: float | None = 21.0,
     ieer: float | None = None,
 ) -> dict[str, Any]:
     return {
@@ -57,11 +57,11 @@ def _outdoor(
         "heating_data_type": heating_data_type,
         "heating_cop_17f": cop_17f,
         "heating_cop_47f": cop_47f,
-        "hspf2": hspf2,
+        "hspf": hspf,
         "cooling_cap_kw_95f": cap_kw_95f,
         "cooling_data_type": cooling_data_type,
-        "eer2": eer2,
-        "seer2": seer2,
+        "eer": eer,
+        "seer": seer,
         "ieer": ieer,
     }
 
@@ -139,7 +139,7 @@ def test_capacity_fields_convert_kw_to_kbtuh() -> None:
     assert row.cap_95f == _kbtuh(7.03)
 
 
-def test_cops_data_type_emits_cops_blanks_hspf2() -> None:
+def test_cops_data_type_emits_cops_blanks_hspf() -> None:
     slice_ = _slice(
         outdoor_equip=[
             _outdoor(
@@ -148,17 +148,37 @@ def test_cops_data_type_emits_cops_blanks_hspf2() -> None:
                 heating_data_type="COPs",
                 cop_17f=2.4,
                 cop_47f=3.8,
-                hspf2=9.5,
+                hspf=9.5,
             )
         ],
         outdoor_units=[_outdoor_unit(HPOU_1, "HP-1", HPOE_A)],
     )
     row = compute_phius_payload(slice_).rows[0]
     assert (row.cop_17f, row.cop_47f) == (2.4, 3.8)
-    assert row.hspf2 is None
+    assert row.hspf is None
 
 
-def test_hspf2_data_type_emits_hspf2_blanks_cops() -> None:
+def test_hspf_data_type_emits_hspf_blanks_cops() -> None:
+    slice_ = _slice(
+        outdoor_equip=[
+            _outdoor(
+                id_=HPOE_A,
+                model="PUZ-A18NKA7",
+                heating_data_type="HSPF",
+                cop_17f=2.4,
+                cop_47f=3.8,
+                hspf=8.0,
+            )
+        ],
+        outdoor_units=[_outdoor_unit(HPOU_1, "HP-1", HPOE_A)],
+    )
+    row = compute_phius_payload(slice_).rows[0]
+    assert row.hspf == 8.0
+    assert (row.cop_17f, row.cop_47f) == (None, None)
+
+
+def test_hspf2_data_type_emits_hspf_field_blanks_cops() -> None:
+    """The HSPF column holds whichever value the user entered — HSPF2 here."""
     slice_ = _slice(
         outdoor_equip=[
             _outdoor(
@@ -167,33 +187,37 @@ def test_hspf2_data_type_emits_hspf2_blanks_cops() -> None:
                 heating_data_type="HSPF2",
                 cop_17f=2.4,
                 cop_47f=3.8,
-                hspf2=9.5,
+                hspf=9.5,
             )
         ],
         outdoor_units=[_outdoor_unit(HPOU_1, "HP-1", HPOE_A)],
     )
     row = compute_phius_payload(slice_).rows[0]
-    assert row.hspf2 == 9.5
+    assert row.hspf == 9.5
+    assert row.heating_data_type == "HSPF2"
     assert (row.cop_17f, row.cop_47f) == (None, None)
 
 
-def test_eer_seer_data_type_emits_eer_seer_blanks_ieer() -> None:
-    slice_ = _slice(
-        outdoor_equip=[
-            _outdoor(
-                id_=HPOE_A,
-                model="PUZ-A18NKA7",
-                cooling_data_type="EER2/SEER2",
-                eer2=12.5,
-                seer2=21.0,
-                ieer=14.5,
-            )
-        ],
-        outdoor_units=[_outdoor_unit(HPOU_1, "HP-1", HPOE_A)],
-    )
-    row = compute_phius_payload(slice_).rows[0]
-    assert (row.eer2, row.seer2) == (12.5, 21.0)
-    assert row.ieer is None
+def test_eer_seer_family_data_types_emit_eer_seer_blank_ieer() -> None:
+    """Both EER/SEER and EER2/SEER2 read from the same hspf-style single fields."""
+    for data_type in ("EER/SEER", "EER2/SEER2"):
+        slice_ = _slice(
+            outdoor_equip=[
+                _outdoor(
+                    id_=HPOE_A,
+                    model="PUZ-A18NKA7",
+                    cooling_data_type=data_type,
+                    eer=12.5,
+                    seer=21.0,
+                    ieer=14.5,
+                )
+            ],
+            outdoor_units=[_outdoor_unit(HPOU_1, "HP-1", HPOE_A)],
+        )
+        row = compute_phius_payload(slice_).rows[0]
+        assert (row.eer, row.seer) == (12.5, 21.0)
+        assert row.cooling_data_type == data_type
+        assert row.ieer is None
 
 
 def test_ieer_data_type_emits_ieer_blanks_eer_seer() -> None:
@@ -203,8 +227,8 @@ def test_ieer_data_type_emits_ieer_blanks_eer_seer() -> None:
                 id_=HPOE_A,
                 model="PUZ-A18NKA7",
                 cooling_data_type="IEER",
-                eer2=12.5,
-                seer2=21.0,
+                eer=12.5,
+                seer=21.0,
                 ieer=14.5,
             )
         ],
@@ -212,7 +236,7 @@ def test_ieer_data_type_emits_ieer_blanks_eer_seer() -> None:
     )
     row = compute_phius_payload(slice_).rows[0]
     assert row.ieer == 14.5
-    assert (row.eer2, row.seer2) == (None, None)
+    assert (row.eer, row.seer) == (None, None)
 
 
 def test_null_data_types_emit_no_efficiency_values() -> None:
@@ -225,18 +249,18 @@ def test_null_data_types_emit_no_efficiency_values() -> None:
                 heating_data_type=None,
                 cop_17f=2.4,
                 cop_47f=3.8,
-                hspf2=9.5,
+                hspf=9.5,
                 cooling_data_type=None,
-                eer2=12.5,
-                seer2=21.0,
+                eer=12.5,
+                seer=21.0,
                 ieer=14.5,
             )
         ],
         outdoor_units=[_outdoor_unit(HPOU_1, "HP-1", HPOE_A)],
     )
     row = compute_phius_payload(slice_).rows[0]
-    assert (row.cop_17f, row.cop_47f, row.hspf2) == (None, None, None)
-    assert (row.eer2, row.seer2, row.ieer) == (None, None, None)
+    assert (row.cop_17f, row.cop_47f, row.hspf) == (None, None, None)
+    assert (row.eer, row.seer, row.ieer) == (None, None, None)
 
 
 def test_null_heating_data_type_emits_warning() -> None:
@@ -271,14 +295,14 @@ def test_cops_data_type_with_no_cop_values_emits_warning() -> None:
     assert len(heating_warnings) == 1
 
 
-def test_hspf2_data_type_with_no_hspf2_emits_warning() -> None:
+def test_hspf2_data_type_with_no_hspf_emits_warning() -> None:
     slice_ = _slice(
         outdoor_equip=[
             _outdoor(
                 id_=HPOE_A,
                 model="PUZ-A18NKA7",
                 heating_data_type="HSPF2",
-                hspf2=None,
+                hspf=None,
             )
         ],
         outdoor_units=[_outdoor_unit(HPOU_1, "HP-1", HPOE_A)],
@@ -296,7 +320,7 @@ def test_complete_heating_pair_suppresses_warning() -> None:
                 heating_data_type="HSPF2",
                 cop_17f=None,
                 cop_47f=None,
-                hspf2=9.5,
+                hspf=9.5,
             )
         ],
         outdoor_units=[_outdoor_unit(HPOU_1, "HP-1", HPOE_A)],
@@ -326,8 +350,8 @@ def test_ieer_data_type_with_no_ieer_emits_warning() -> None:
                 id_=HPOE_A,
                 model="PUZ-A18NKA7",
                 cooling_data_type="IEER",
-                eer2=None,
-                seer2=None,
+                eer=None,
+                seer=None,
                 ieer=None,
             )
         ],
@@ -375,11 +399,11 @@ def test_csv_row_emits_data_types_and_type_gated_metrics() -> None:
                 heating_data_type="HSPF2",
                 cop_17f=2.4,
                 cop_47f=3.8,
-                hspf2=9.5,
+                hspf=9.5,
                 cap_kw_95f=6.0,
                 cooling_data_type="IEER",
-                eer2=12.5,
-                seer2=21.0,
+                eer=12.5,
+                seer=21.0,
                 ieer=13.0,
             ),
         ],
@@ -389,8 +413,8 @@ def test_csv_row_emits_data_types_and_type_gated_metrics() -> None:
     expected_cap_17f = _csv_format(_kbtuh(5.0))
     expected_cap_47f = _csv_format(_kbtuh(8.0))
     expected_cap_95f = _csv_format(_kbtuh(6.0))
-    # heating_data_type=HSPF2 ⇒ COP cells blank, HSPF2 populated.
-    # cooling_data_type=IEER ⇒ EER2/SEER2 cells blank, IEER populated.
+    # heating_data_type=HSPF2 ⇒ COP cells blank, HSPF/HSPF2 cell carries the value (9.5).
+    # cooling_data_type=IEER ⇒ EER/SEER cells blank, IEER carries the value (13).
     assert csv_text.splitlines()[1].split(",") == [
         "PUZ-A18NKA7",
         "1",
