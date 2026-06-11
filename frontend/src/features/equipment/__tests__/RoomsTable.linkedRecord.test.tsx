@@ -114,6 +114,9 @@ describe("RoomsTable linked_record column", () => {
       />,
     );
 
+    // Airtable parity: first click activates the cell, second click on
+    // the pill fires the nav callback.
+    fireEvent.click(screen.getByText("P-001"));
     fireEvent.click(screen.getByText("P-001"));
     expect(onPillClick).toHaveBeenCalledWith("pump_row_a");
   });

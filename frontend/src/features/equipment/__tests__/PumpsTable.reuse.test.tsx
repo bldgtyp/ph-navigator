@@ -215,6 +215,7 @@ describe("PumpsTable DataTable reuse", () => {
     );
 
     expect(screen.getByRole("columnheader", { name: /Rooms ← Pump/ })).toBeInTheDocument();
+    // Inverse-link columns are read-only — pills nav on the first click.
     await user.click(screen.getByRole("button", { name: "rm_a" }));
 
     expect(onInversePillClick).toHaveBeenCalledWith(

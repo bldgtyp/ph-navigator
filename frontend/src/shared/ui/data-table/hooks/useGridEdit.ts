@@ -78,6 +78,16 @@ export type GridEdit = {
   // the draft setter so the picker doesn't have to serialize through a
   // string and back. Returns the same boolean contract as `commit`.
   commitLinkedRecord: (ids: readonly string[]) => Promise<boolean>;
+  // Direct unlink for the in-cell "x" affordance — does NOT require the
+  // editor to be in linked_record mode. Filters `currentIds` to drop
+  // `targetRowId` and dispatches a cellWrite + inverse straight through
+  // dispatchWrite. No-op if `targetRowId` is not in `currentIds`.
+  unlinkLinkedRecord: (args: {
+    rowId: string;
+    fieldKey: string;
+    targetRowId: string;
+    currentIds: readonly string[];
+  }) => Promise<boolean>;
   cancel: () => void;
   queuePendingEdit: (pending: PendingEdit | null) => void;
   consumePendingEdit: (rowIds: string[]) => void;
@@ -271,6 +281,46 @@ export function useGridEdit(args: {
     ],
   );
 
+  const unlinkLinkedRecord = useCallback(
+    async (args: {
+      rowId: string;
+      fieldKey: string;
+      targetRowId: string;
+      currentIds: readonly string[];
+    }): Promise<boolean> => {
+      if (!hasWriteHandler) return false;
+      if (commitInFlightRef.current) return false;
+      const { rowId, fieldKey, targetRowId, currentIds } = args;
+      const before = toStringArray(currentIds);
+      const after = before.filter((id) => id !== targetRowId);
+      if (after.length === before.length) return true;
+      const fieldDef = fieldDefByKey.get(fieldKey);
+      commitInFlightRef.current = true;
+      try {
+        const op: WriteOp = {
+          kind: "cell",
+          writes: [{ rowId, fieldKey, value: after }],
+        };
+        const inverse: WriteOp = {
+          kind: "cell",
+          writes: [{ rowId, fieldKey, value: before }],
+        };
+        await dispatchWrite(op, inverse);
+        onAnnounce(`${fieldDef?.display_name ?? "Cell"} updated.`);
+        clearCellError(rowId, fieldKey);
+        return true;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Cell update failed.";
+        onAnnounce(message);
+        setCellError(rowId, fieldKey, message);
+        return false;
+      } finally {
+        commitInFlightRef.current = false;
+      }
+    },
+    [hasWriteHandler, fieldDefByKey, dispatchWrite, onAnnounce, clearCellError, setCellError],
+  );
+
   const queuePendingEdit = useCallback((pending: PendingEdit | null) => {
     pendingRef.current = pending;
     pendingRowsRef.current = null;
@@ -312,6 +362,7 @@ export function useGridEdit(args: {
     highlight,
     commit,
     commitLinkedRecord,
+    unlinkLinkedRecord,
     cancel,
     queuePendingEdit,
     consumePendingEdit,
