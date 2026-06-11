@@ -366,6 +366,10 @@ export type LinkedRecordCellOps = {
   candidates: ReadonlyArray<LinkedRecordCellCandidate>;
   resolve: (rowId: string) => { recordId: string | null } | null;
   onPillClick?: (rowId: string) => void;
+  // True while the target-table slice is still being fetched. The
+  // picker surfaces a spinner so an empty `candidates` list isn't
+  // mistaken for "no records exist yet" during the in-flight load.
+  isLoading?: boolean;
 };
 
 export type LinkedRecordCellCandidate = {

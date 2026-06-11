@@ -1,14 +1,8 @@
 import { useMemo, useState } from "react";
 import { errorMessage } from "../../../../shared/lib/errors";
 import { ModalDialog } from "../../../../shared/ui/ModalDialog";
-import type { RoomRow, VentilatorRow } from "../../types";
-import {
-  indoorEquipLabel,
-  outdoorUnitLabel,
-  roomLabel,
-  tagCollides,
-  ventilatorLabel,
-} from "../lib";
+import type { VentilatorRow } from "../../types";
+import { indoorEquipLabel, outdoorUnitLabel, tagCollides, ventilatorLabel } from "../lib";
 import {
   HEAT_PUMP_OPTION_KEYS,
   type HeatPumpIndoorEquipRow,
@@ -23,7 +17,6 @@ export function IndoorUnitRowModal({
   indoorEquip,
   outdoorUnits,
   ventilators,
-  rooms,
   existingUnits,
   options,
   onCancel,
@@ -37,7 +30,6 @@ export function IndoorUnitRowModal({
   indoorEquip: HeatPumpIndoorEquipRow[];
   outdoorUnits: HeatPumpOutdoorUnitRow[];
   ventilators: VentilatorRow[];
-  rooms: RoomRow[];
   existingUnits: HeatPumpIndoorUnitRow[];
   options: HeatPumpsSlice["single_select_options"];
   onCancel: () => void;
@@ -58,23 +50,6 @@ export function IndoorUnitRowModal({
     () => [...ventilators].sort((a, b) => ventilatorLabel(a).localeCompare(ventilatorLabel(b))),
     [ventilators],
   );
-  const sortedRooms = useMemo(
-    () => [...rooms].sort((a, b) => roomLabel(a).localeCompare(roomLabel(b))),
-    [rooms],
-  );
-  const selectedRoomIds = useMemo(() => new Set(draft.served_room_ids), [draft.served_room_ids]);
-
-  // Functional updater — rapid concurrent toggles each compute against the
-  // freshest draft instead of the closure's captured value, so two
-  // checkbox clicks in the same animation frame both land.
-  const toggleRoom = (roomId: string) => {
-    setDraft((prev) => {
-      const next = new Set(prev.served_room_ids);
-      if (next.has(roomId)) next.delete(roomId);
-      else next.add(roomId);
-      return { ...prev, served_room_ids: Array.from(next) };
-    });
-  };
 
   const save = async () => {
     setError(null);
@@ -196,28 +171,6 @@ export function IndoorUnitRowModal({
                 <small className="hp-helper-text">Add an ERV first under Equipment → ERVs.</small>
               ) : null}
             </label>
-            <fieldset className="hp-form-grid__wide hp-rooms-picker">
-              <legend>Served rooms</legend>
-              {sortedRooms.length === 0 ? (
-                <small className="hp-helper-text">Add a room first under Rooms.</small>
-              ) : (
-                <ul className="hp-rooms-picker__list">
-                  {sortedRooms.map((room) => (
-                    <li key={room.id}>
-                      <label>
-                        <input
-                          type="checkbox"
-                          checked={selectedRoomIds.has(room.id)}
-                          disabled={readOnly}
-                          onChange={() => toggleRoom(room.id)}
-                        />
-                        {roomLabel(room)}
-                      </label>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </fieldset>
           </div>
         </section>
         <label>

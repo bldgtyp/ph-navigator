@@ -25,6 +25,11 @@ export type LinkedRecordPickerProps = {
   onCancel: () => void;
   /** Modal heading. Defaults to "Link record". */
   title?: string;
+  /** While true, swap the candidate list for a spinner. The target
+   * slice is still being fetched from its own query; an empty
+   * `candidates` array during the load must not be mistaken for
+   * "no records exist". */
+  isLoading?: boolean;
 };
 
 const VIRTUALIZE_THRESHOLD = 100;
@@ -49,6 +54,7 @@ export function LinkedRecordPicker({
   onConfirm,
   onCancel,
   title = "Link record",
+  isLoading = false,
 }: LinkedRecordPickerProps) {
   const [search, setSearch] = useState("");
   const [draftIds, setDraftIds] = useState<string[]>(() => [...selectedIds]);
@@ -122,11 +128,23 @@ export function LinkedRecordPicker({
           onChange={(event) => setSearch(event.target.value)}
         />
       </header>
+      {isLoading ? (
+        <div
+          className="data-table-linked-record-picker-loading"
+          role="status"
+          aria-live="polite"
+          data-testid="linked-record-picker-loading"
+        >
+          <span className="data-table-linked-record-picker-spinner" aria-hidden="true" />
+          <span>Loading records…</span>
+        </div>
+      ) : null}
       <ul
         className="data-table-linked-record-picker-list"
         data-virtualized={virtualized ? "true" : "false"}
         role="listbox"
         aria-multiselectable={mode === "multi" ? true : undefined}
+        hidden={isLoading}
       >
         {visible.length === 0 ? (
           <li className="muted-cell">No matching records.</li>

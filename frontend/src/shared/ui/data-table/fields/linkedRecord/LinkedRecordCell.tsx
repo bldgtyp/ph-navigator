@@ -22,6 +22,10 @@ export type LinkedRecordCellProps = {
   onPillClick?: (rowId: string) => void;
   /** Backspace on a focused pill → unlink. Omit in viewer mode. */
   onPillUnlink?: (rowId: string) => void;
+  /** Open the linked-record picker. When provided, the cell renders a
+   * trailing "+" button and (for empty cells) replaces the empty-state
+   * caption with the "+" affordance. Omit in viewer mode. */
+  onActivateEdit?: () => void;
   /** Optional empty-state caption. Defaults to "Empty". */
   emptyLabel?: string;
 };
@@ -39,9 +43,34 @@ export function LinkedRecordCell({
   resolve,
   onPillClick,
   onPillUnlink,
+  onActivateEdit,
   emptyLabel = "Empty",
 }: LinkedRecordCellProps) {
+  const addButton = onActivateEdit ? (
+    <button
+      type="button"
+      className="data-table-linked-record-add"
+      aria-label="Add linked record"
+      title="Add linked record"
+      onClick={(event) => {
+        // Don't let the click reach the cell's onCellActivate
+        // handler — we want the picker, not a focus-only toggle.
+        event.stopPropagation();
+        onActivateEdit();
+      }}
+    >
+      +
+    </button>
+  ) : null;
+
   if (ids.length === 0) {
+    if (addButton) {
+      return (
+        <span className="data-table-linked-record-cell" data-testid="linked-record-cell">
+          {addButton}
+        </span>
+      );
+    }
     return <span className="muted-cell">{emptyLabel}</span>;
   }
 
@@ -59,6 +88,12 @@ export function LinkedRecordCell({
     }
   };
 
+  // When neither pill-click nor unlink is wired, render the chip as
+  // an inert <span> so the cell-level click handler (which opens the
+  // picker) still fires. A disabled <button> would swallow the click
+  // and surface a `not-allowed` cursor on the chip.
+  const isInteractive = Boolean(onPillClick || onPillUnlink);
+
   return (
     <span className="data-table-linked-record-cell" data-testid="linked-record-cell">
       {ids.map((rowId) => {
@@ -71,27 +106,41 @@ export function LinkedRecordCell({
         const recordId = resolution?.recordId ?? null;
         const label = recordId && recordId.length > 0 ? recordId : rowId;
         const isFallback = !recordId || recordId.length === 0;
+        const className =
+          "data-table-linked-record-pill" +
+          (isFallback ? " data-table-linked-record-pill-fallback" : "") +
+          (isOrphan ? " data-table-linked-record-pill-orphan" : "");
+        if (!isInteractive) {
+          return (
+            <span
+              key={rowId}
+              className={className}
+              data-row-id={rowId}
+              data-fallback={isFallback ? "true" : undefined}
+              data-orphan={isOrphan ? "true" : undefined}
+              title={isOrphan ? "Linked record no longer exists" : undefined}
+            >
+              {label}
+            </span>
+          );
+        }
         return (
           <button
             key={rowId}
             type="button"
-            className={
-              "data-table-linked-record-pill" +
-              (isFallback ? " data-table-linked-record-pill-fallback" : "") +
-              (isOrphan ? " data-table-linked-record-pill-orphan" : "")
-            }
+            className={className}
             data-row-id={rowId}
             data-fallback={isFallback ? "true" : undefined}
             data-orphan={isOrphan ? "true" : undefined}
             title={isOrphan ? "Linked record no longer exists" : undefined}
             onClick={onClick(rowId)}
             onKeyDown={onKeyDown(rowId)}
-            disabled={!onPillClick && !onPillUnlink}
           >
             {label}
           </button>
         );
       })}
+      {addButton}
     </span>
   );
 }

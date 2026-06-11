@@ -28,8 +28,10 @@ describe("LinkedRecordCell", () => {
 
   test("falls back to the row id when record_id is empty/null (PRD Q18)", () => {
     render(<LinkedRecordCell ids={["pmp_a"]} resolve={makeResolver({ pmp_a: null })} />);
+    // No interaction handler → inert <span> pill; data-fallback lives
+    // directly on the chip element.
     const pill = screen.getByText("pmp_a");
-    expect(pill.closest("button")?.dataset.fallback).toBe("true");
+    expect(pill.dataset.fallback).toBe("true");
   });
 
   test("forwards pill clicks to onPillClick with the row id (PRD Q19)", () => {
@@ -58,9 +60,14 @@ describe("LinkedRecordCell", () => {
     expect(onPillUnlink).toHaveBeenCalledWith("pmp_a");
   });
 
-  test("disables pills when no interaction handler is provided (viewer mode)", () => {
+  test("renders pills as inert <span>s when no interaction handler is provided", () => {
+    // Inert pills let click events bubble up so the cell-level handler
+    // (which opens the linked-record picker) still fires. A disabled
+    // <button> would swallow the click and surface a `not-allowed`
+    // cursor on the chip.
     render(<LinkedRecordCell ids={["pmp_a"]} resolve={makeResolver({ pmp_a: "PUMP-1" })} />);
-    const button = screen.getByText("PUMP-1").closest("button");
-    expect(button).toBeDisabled();
+    const pill = screen.getByText("PUMP-1");
+    expect(pill.tagName).toBe("SPAN");
+    expect(pill.closest("button")).toBeNull();
   });
 });

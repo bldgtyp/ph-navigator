@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { IndoorUnitRowModal } from "../components/IndoorUnitRowModal";
 import { buildEmptyIndoorUnitRow } from "../lib";
 import type { HeatPumpIndoorEquipRow, HeatPumpOutdoorUnitRow } from "../types";
-import type { RoomRow, VentilatorRow } from "../../types";
+import type { VentilatorRow } from "../../types";
 
 function indoorEquip(): HeatPumpIndoorEquipRow {
   return {
@@ -50,20 +50,8 @@ function ventilator(id: string, recordId: string): VentilatorRow {
   };
 }
 
-function room(id: string, number: string): RoomRow {
-  return {
-    id,
-    floor_level: null,
-    building_zone: null,
-    icfa_factor: 1,
-    catalog_origin: null,
-    notes: null,
-    custom_values: { number, name: `Room ${number}` },
-  };
-}
-
 describe("IndoorUnitRowModal", () => {
-  test("submits a unit with linked ERV and served rooms wired in", async () => {
+  test("submits a unit with linked ERV; room links are edited in the table chip cell", async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn().mockResolvedValue(undefined);
     render(
@@ -73,7 +61,6 @@ describe("IndoorUnitRowModal", () => {
         indoorEquip={[indoorEquip()]}
         outdoorUnits={[outdoorUnit()]}
         ventilators={[ventilator("vent_n2", "ERV-N2"), ventilator("vent_n5", "ERV-N5")]}
-        rooms={[room("rm_a", "101"), room("rm_b", "102")]}
         existingUnits={[]}
         options={{}}
         readOnly={false}
@@ -83,7 +70,9 @@ describe("IndoorUnitRowModal", () => {
       />,
     );
 
-    expect(screen.queryByText(/Configured in Phase 4/i)).not.toBeInTheDocument();
+    // The "Served rooms" fieldset was removed in favour of the
+    // linked_record chip cell on the indoor-units table.
+    expect(screen.queryByText(/Served rooms/i)).not.toBeInTheDocument();
     expect(screen.getByLabelText(/Linked ERV unit/i)).not.toBeDisabled();
 
     await user.type(screen.getByLabelText("Tag"), "AHU-1");
@@ -92,9 +81,6 @@ describe("IndoorUnitRowModal", () => {
       "hpie_01HX0000000000000000000000",
     );
     await user.selectOptions(screen.getByLabelText(/Linked ERV unit/i), "vent_n2");
-    await user.click(screen.getByLabelText(/101 — Room 101/));
-    await user.click(screen.getByLabelText(/102 — Room 102/));
-    await user.click(screen.getByLabelText(/102 — Room 102/));
     await user.click(screen.getByRole("button", { name: "Create indoor unit" }));
 
     expect(onSubmit).toHaveBeenCalledWith(
@@ -102,7 +88,6 @@ describe("IndoorUnitRowModal", () => {
         tag: "AHU-1",
         indoor_equip_id: "hpie_01HX0000000000000000000000",
         linked_erv_unit_id: "vent_n2",
-        served_room_ids: ["rm_a"],
       }),
     );
   });
@@ -115,7 +100,6 @@ describe("IndoorUnitRowModal", () => {
         indoorEquip={[indoorEquip()]}
         outdoorUnits={[]}
         ventilators={[]}
-        rooms={[]}
         existingUnits={[]}
         options={{}}
         readOnly={false}
@@ -137,7 +121,6 @@ describe("IndoorUnitRowModal", () => {
         indoorEquip={[indoorEquip()]}
         outdoorUnits={[outdoorUnit()]}
         ventilators={[]}
-        rooms={[]}
         existingUnits={[]}
         options={{}}
         readOnly={false}

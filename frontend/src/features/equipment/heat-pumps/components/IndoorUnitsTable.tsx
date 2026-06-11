@@ -1,9 +1,12 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ApiRequestError } from "../../../../shared/api/client";
 import { errorMessage } from "../../../../shared/lib/errors";
 import {
+  buildLinkedRecordOps,
   DataTable,
   emptyViewState,
+  type LinkedRecordCellOps,
   type ViewState,
   type WriteOp,
 } from "../../../../shared/ui/data-table";
@@ -15,6 +18,7 @@ import {
   buildEmptyIndoorEquipRow,
   buildEmptyIndoorUnitRow,
   buildNewHeatPumpOption,
+  roomLabel,
   sortedIndoorUnits,
   uniqueTagForAdd,
 } from "../lib";
@@ -60,6 +64,7 @@ export function IndoorUnitsTable({
     message: string;
     affected: CascadeReference[];
   } | null>(null);
+  const navigate = useNavigate();
   const patchMutation = useHeatPumpPatchMutation(projectId);
   const optionMutation = useHeatPumpOptionMutation(projectId);
   const accessMode = isEditor ? "editor" : "viewer";
@@ -70,7 +75,7 @@ export function IndoorUnitsTable({
   );
   const roomsQuery = roomsSliceFeature.useSliceQuery(projectId, slice.version_id, accessMode);
   const ventilators: VentilatorRow[] = ventilatorsQuery.data?.ventilators ?? [];
-  const rooms: RoomRow[] = roomsQuery.data?.rooms ?? [];
+  const rooms: RoomRow[] = useMemo(() => roomsQuery.data?.rooms ?? [], [roomsQuery.data?.rooms]);
   const rows = useMemo(() => sortedIndoorUnits(slice.indoor_units), [slice.indoor_units]);
   const assetIds = useMemo(
     () => Array.from(new Set(rows.flatMap((row) => row.datasheet_asset_ids))),
@@ -99,6 +104,34 @@ export function IndoorUnitsTable({
       }),
     [slice.single_select_options, slice.indoor_equip, slice.outdoor_units],
   );
+  // linked_record ops for the Rooms column. Rooms come from a sibling
+  // slice query; while it is in-flight the picker shows a spinner so
+  // an empty candidates list isn't mistaken for "no rooms yet".
+  const linkedRecordOps = useMemo<ReadonlyMap<string, LinkedRecordCellOps>>(() => {
+    const base = buildLinkedRecordOps<RoomRow>({
+      fieldDefs,
+      targetTablePath: ["rooms"],
+      targetRows: rooms,
+      getRowId: (room) => room.id,
+      getRecordId: (room) => {
+        const label = roomLabel(room);
+        return label.length > 0 ? label : null;
+      },
+      // Chip click → land on Rooms tab focused on this room with the
+      // edit modal auto-opened, mirroring a gutter-expand click.
+      onPillClick: (rowId) => {
+        navigate(`/projects/${projectId}/rooms?focus=${encodeURIComponent(rowId)}&open=1`);
+      },
+    });
+    if (!roomsQuery.isLoading) return base;
+    // Re-key each entry with isLoading flipped on so the picker shows
+    // a spinner while the rooms slice is still being fetched.
+    const next = new Map<string, LinkedRecordCellOps>();
+    for (const [key, ops] of base) {
+      next.set(key, { ...ops, isLoading: true });
+    }
+    return next;
+  }, [fieldDefs, rooms, roomsQuery.isLoading, navigate, projectId]);
 
   // IndoorUnitRowModal does not expose inline-create for any options.
   // IndoorEquipRowModal — opened from this table for equip-create — still
@@ -226,6 +259,7 @@ export function IndoorUnitsTable({
         onRowOpen={(row) => setModal({ kind: "unit", mode: "edit", row })}
         sessionKey={`${projectId}:heat-pumps:indoor-units:${slice.version_id}`}
         generateRowId={() => buildEmptyIndoorUnitRow().id}
+        linkedRecordOps={linkedRecordOps}
         footerAction={
           readOnly ? null : (
             <button
@@ -260,7 +294,6 @@ export function IndoorUnitsTable({
           indoorEquip={slice.indoor_equip}
           outdoorUnits={slice.outdoor_units}
           ventilators={ventilators}
-          rooms={rooms}
           existingUnits={slice.indoor_units}
           options={slice.single_select_options}
           readOnly={readOnly}
