@@ -447,6 +447,7 @@ export function GridBody<TRow>({
                         if (committed) onCommitAndMove(rowIndex, columnIndex, move);
                       }),
                     linkedRecordOps: fieldKey ? linkedRecordOps?.get(fieldKey) : undefined,
+                    onActivateEdit: () => onCellOpen(tanstackRow.original, columnIndex),
                   })}
                   {showDuplicateChip ? (
                     <span
@@ -496,9 +497,22 @@ function renderCellContent(args: {
   fallback: () => ReactNode;
   onCommitAndMove: (move: CommitMove) => void;
   linkedRecordOps: LinkedRecordCellOps | undefined;
+  // Opens the editor for this cell (same path as double-click).
+  // Wired through LinkedRecordCell so the always-visible "+" button can
+  // open the picker on a single click.
+  onActivateEdit?: () => void;
 }): ReactNode {
-  const { edit, rowId, fieldKey, fieldDef, cellValue, fallback, onCommitAndMove, linkedRecordOps } =
-    args;
+  const {
+    edit,
+    rowId,
+    fieldKey,
+    fieldDef,
+    cellValue,
+    fallback,
+    onCommitAndMove,
+    linkedRecordOps,
+    onActivateEdit,
+  } = args;
   if (!edit.isEditingCell(rowId, fieldKey) || !edit.editing) {
     if (fieldDef?.field_type === "color") return <ColorCell value={cellValue} />;
     if (fieldDef?.field_type === "linked_record") {
@@ -507,6 +521,7 @@ function renderCellContent(args: {
           ids={toLinkedIdList(cellValue)}
           resolve={linkedRecordOps?.resolve ?? emptyResolver}
           onPillClick={linkedRecordOps?.onPillClick}
+          onActivateEdit={onActivateEdit}
         />
       );
     }
@@ -549,6 +564,7 @@ function renderCellContent(args: {
         mode={mode}
         selectedIds={toLinkedIdList(cellValue)}
         candidates={linkedRecordOps?.candidates ?? EMPTY_LINKED_CANDIDATES}
+        isLoading={linkedRecordOps?.isLoading ?? false}
         onCancel={edit.cancel}
         onConfirm={(ids) => void edit.commitLinkedRecord(ids)}
         title={fieldDef?.display_name ? `Link ${fieldDef.display_name}` : "Link record"}

@@ -1,5 +1,5 @@
 import "../equipment.css";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   buildLinkedRecordOps,
@@ -88,13 +88,32 @@ function RoomsPageBody(props: {
 }) {
   const { project, roomsSlice, refetch, pumpsSlice } = props;
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const focusRowId = searchParams.get("focus");
+  const openModalRequested = searchParams.get("open") === "1";
   const activeVersionId = project.active_version_id;
   const isEditor = project.access_mode === "editor";
 
   const [roomModal, setRoomModal] = useState<RoomModalState | null>(null);
   const [roomPendingDelete, setRoomPendingDelete] = useState<RoomRow | null>(null);
+
+  // Deep links (e.g. heat-pump indoor-unit chip → /projects/.../rooms
+  // ?focus=<id>&open=1) auto-open the row modal on landing. We then
+  // drop the `open` param so subsequent modal closes don't re-open it.
+  // `focus` is preserved for the existing scroll/highlight behaviour.
+  useEffect(() => {
+    if (!openModalRequested || !focusRowId) return;
+    const room = roomsSlice.rooms.find((candidate) => candidate.id === focusRowId);
+    if (!room) return;
+    setRoomModal({ mode: "edit", room });
+    setSearchParams(
+      (params) => {
+        params.delete("open");
+        return params;
+      },
+      { replace: true },
+    );
+  }, [openModalRequested, focusRowId, roomsSlice.rooms, setSearchParams]);
 
   const fieldOverlay = useMemo(() => roomsFieldOverlay(roomsSlice), [roomsSlice]);
   const fieldDefs = useMemo(

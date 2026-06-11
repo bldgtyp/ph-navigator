@@ -2575,3 +2575,173 @@ td.data-table-cell-editing {
     background: color-mix(in oklab, var(--accent) 0%, var(--bg-card));
   }
 }
+
+/* Linked-record cell: Airtable-style chip list. The cell is a horizontal
+ * flex row that clips overflow — too many chips truncate at the cell
+ * edge rather than wrapping or scrolling. */
+.data-table-linked-record-cell {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 4px;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.data-table-linked-record-pill {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  max-width: 100%;
+  border: 1px solid color-mix(in oklab, var(--accent) 18%, var(--border-subtle));
+  border-radius: 6px;
+  background: color-mix(in oklab, var(--accent) 12%, var(--bg-card));
+  color: var(--text-primary);
+  padding: 1px 8px;
+  font-size: 13px;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.data-table-linked-record-pill:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.data-table-linked-record-pill-fallback {
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+.data-table-linked-record-pill-orphan {
+  border-color: var(--phn-danger);
+  color: var(--phn-danger);
+  background: var(--phn-danger-bg);
+}
+
+/* Trailing "+" button — always present when the cell is editable so
+ * users don't have to discover the double-click gesture. */
+.data-table-linked-record-add {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.data-table-linked-record-add:hover {
+  background: color-mix(in oklab, var(--accent) 10%, var(--bg-card));
+  color: var(--text-primary);
+}
+
+.data-table-linked-record-add:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Picker shell — kept as a centred floating dialog for Phase 1.
+ * Floating-dropdown anchored to the cell is a Phase 2 follow-up. */
+.data-table-linked-record-picker {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: var(--z-modal);
+  display: flex;
+  flex-direction: column;
+  min-width: 360px;
+  max-width: 560px;
+  max-height: 70vh;
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+}
+
+.data-table-linked-record-picker-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 12px 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.data-table-linked-record-picker-header h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.data-table-linked-record-picker-header input[type="search"] {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.data-table-linked-record-picker-list {
+  flex: 1 1 auto;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  overflow-y: auto;
+}
+
+.data-table-linked-record-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.data-table-linked-record-picker-row:hover {
+  background: color-mix(in oklab, var(--accent) 8%, transparent);
+}
+
+.data-table-linked-record-picker-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.data-table-linked-record-picker-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.data-table-linked-record-picker-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid color-mix(in oklab, var(--accent) 25%, transparent);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: data-table-linked-record-spin 0.8s linear infinite;
+}
+
+@keyframes data-table-linked-record-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

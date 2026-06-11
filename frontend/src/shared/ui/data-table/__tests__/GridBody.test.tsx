@@ -527,10 +527,15 @@ describe("GridBody — linked_record dispatch", () => {
     expect(within(pillRow!).getByText("Pump-A")).toBeInTheDocument();
   });
 
-  test("empty list renders the empty caption", () => {
+  test("empty list renders the add-record affordance instead of an empty caption", () => {
+    // When the cell is editable (onActivateEdit is wired through
+    // GridBody from onCellOpen), the LinkedRecordCell renders a
+    // trailing "+" button instead of the muted "Empty" caption so
+    // users have a discoverable single-click add path.
     renderLinked();
-    const cells = screen.getAllByText("Empty");
-    expect(cells.length).toBeGreaterThan(0);
+    expect(screen.queryByText("Empty")).not.toBeInTheDocument();
+    const addButtons = screen.getAllByRole("button", { name: "Add linked record" });
+    expect(addButtons.length).toBeGreaterThan(0);
   });
 
   test("pill click invokes the consumer's onPillClick", () => {

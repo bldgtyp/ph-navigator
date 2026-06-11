@@ -55,10 +55,10 @@ export function indoorUnitFieldDefs({
     },
     {
       field_key: "served_room_ids",
-      field_type: "text",
+      field_type: "linked_record",
       display_name: "Rooms",
-      read_only: true,
-      description: "Rooms this indoor unit serves. Edit in the row modal.",
+      description: "Rooms this indoor unit serves.",
+      linked_record_config: { target_table_path: ["rooms"], max_links: null },
     },
     {
       field_key: "linked_erv_unit_id",
@@ -131,7 +131,10 @@ export function indoorUnitColumnDefs({
       id: "served_room_ids",
       fieldKey: "served_room_ids",
       header: "Rooms",
-      accessor: formatServedRooms,
+      // linked_record cell reads the id list directly; `measureText`
+      // drives auto-width sizing from the comma-joined room labels.
+      accessor: (row) => row.served_room_ids,
+      measureText: formatServedRooms,
       defaultWidth: 220,
     },
     {
