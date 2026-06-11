@@ -448,6 +448,7 @@ export function GridBody<TRow>({
                       }),
                     linkedRecordOps: fieldKey ? linkedRecordOps?.get(fieldKey) : undefined,
                     onActivateEdit: () => onCellOpen(tanstackRow.original, columnIndex),
+                    isActive: active,
                   })}
                   {showDuplicateChip ? (
                     <span
@@ -501,6 +502,9 @@ function renderCellContent(args: {
   // Wired through LinkedRecordCell so the always-visible "+" button can
   // open the picker on a single click.
   onActivateEdit?: () => void;
+  // True when this cell is the active cell (Airtable-parity: linked-
+  // record pills only nav / show "x" unlink when their cell is active).
+  isActive?: boolean;
 }): ReactNode {
   const {
     edit,
@@ -512,16 +516,27 @@ function renderCellContent(args: {
     onCommitAndMove,
     linkedRecordOps,
     onActivateEdit,
+    isActive = false,
   } = args;
   if (!edit.isEditingCell(rowId, fieldKey) || !edit.editing) {
     if (fieldDef?.field_type === "color") return <ColorCell value={cellValue} />;
     if (fieldDef?.field_type === "linked_record") {
+      const ids = toLinkedIdList(cellValue);
       return (
         <LinkedRecordCell
-          ids={toLinkedIdList(cellValue)}
+          ids={ids}
           resolve={linkedRecordOps?.resolve ?? emptyResolver}
           onPillClick={linkedRecordOps?.onPillClick}
+          onPillUnlink={(targetRowId) =>
+            void edit.unlinkLinkedRecord({
+              rowId,
+              fieldKey,
+              targetRowId,
+              currentIds: ids,
+            })
+          }
           onActivateEdit={onActivateEdit}
+          isActive={isActive}
         />
       );
     }

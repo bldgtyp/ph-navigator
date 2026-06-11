@@ -28,6 +28,11 @@ export type LinkedRecordCellProps = {
   onActivateEdit?: () => void;
   /** Optional empty-state caption. Defaults to "Empty". */
   emptyLabel?: string;
+  /** Airtable-parity active state. When true, each pill shows an inline
+   * "x" affordance that calls onPillUnlink, and pill clicks fire
+   * onPillClick (nav). When false, pill clicks are inert so the cell
+   * click handler can activate the cell first. */
+  isActive?: boolean;
 };
 
 /**
@@ -45,23 +50,29 @@ export function LinkedRecordCell({
   onPillUnlink,
   onActivateEdit,
   emptyLabel = "Empty",
+  isActive = false,
 }: LinkedRecordCellProps) {
-  const addButton = onActivateEdit ? (
-    <button
-      type="button"
-      className="data-table-linked-record-add"
-      aria-label="Add linked record"
-      title="Add linked record"
-      onClick={(event) => {
-        // Don't let the click reach the cell's onCellActivate
-        // handler — we want the picker, not a focus-only toggle.
-        event.stopPropagation();
-        onActivateEdit();
-      }}
-    >
-      +
-    </button>
-  ) : null;
+  // Airtable parity: the "+" affordance only appears once the cell is
+  // active, mirroring the inline "x" unlink button. Inactive empty
+  // cells fall back to the muted "Empty" caption (or the bare wrapper
+  // when no editor is wired).
+  const addButton =
+    isActive && onActivateEdit ? (
+      <button
+        type="button"
+        className="data-table-linked-record-add"
+        aria-label="Add linked record"
+        title="Add linked record"
+        onClick={(event) => {
+          // Don't let the click reach the cell's onCellActivate
+          // handler — we want the picker, not a focus-only toggle.
+          event.stopPropagation();
+          onActivateEdit();
+        }}
+      >
+        +
+      </button>
+    ) : null;
 
   if (ids.length === 0) {
     if (addButton) {
@@ -75,6 +86,10 @@ export function LinkedRecordCell({
   }
 
   const onClick = (rowId: string) => (event: MouseEvent<HTMLButtonElement>) => {
+    // Inactive cell: let the click bubble to the td so the cell
+    // activates on the first click (Airtable parity). Only fire the
+    // nav callback when the cell is already active.
+    if (!isActive) return;
     event.stopPropagation();
     onPillClick?.(rowId);
   };
@@ -88,11 +103,17 @@ export function LinkedRecordCell({
     }
   };
 
-  // When neither pill-click nor unlink is wired, render the chip as
-  // an inert <span> so the cell-level click handler (which opens the
-  // picker) still fires. A disabled <button> would swallow the click
-  // and surface a `not-allowed` cursor on the chip.
+  const onUnlinkClick = (rowId: string) => (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    onPillUnlink?.(rowId);
+  };
+
+  // Render the chip as a <button> when ANY interaction is wired (nav
+  // or unlink) so the keyboard handler stays attached. Inactive +
+  // interactive: click does nothing (bubbles to cell). Inactive +
+  // inert: span so the cell-level click handler still fires.
   const isInteractive = Boolean(onPillClick || onPillUnlink);
+  const showUnlinkButton = isActive && Boolean(onPillUnlink);
 
   return (
     <span className="data-table-linked-record-cell" data-testid="linked-record-cell">
@@ -108,8 +129,20 @@ export function LinkedRecordCell({
         const isFallback = !recordId || recordId.length === 0;
         const className =
           "data-table-linked-record-pill" +
+          (isActive ? " is-active" : "") +
           (isFallback ? " data-table-linked-record-pill-fallback" : "") +
           (isOrphan ? " data-table-linked-record-pill-orphan" : "");
+        const unlinkButton = showUnlinkButton ? (
+          <button
+            type="button"
+            className="data-table-linked-record-pill-unlink"
+            aria-label="Unlink record"
+            title="Unlink record"
+            onClick={onUnlinkClick(rowId)}
+          >
+            ×
+          </button>
+        ) : null;
         if (!isInteractive) {
           return (
             <span
@@ -120,7 +153,7 @@ export function LinkedRecordCell({
               data-orphan={isOrphan ? "true" : undefined}
               title={isOrphan ? "Linked record no longer exists" : undefined}
             >
-              {label}
+              <span className="data-table-linked-record-pill-label">{label}</span>
             </span>
           );
         }
@@ -136,7 +169,8 @@ export function LinkedRecordCell({
             onClick={onClick(rowId)}
             onKeyDown={onKeyDown(rowId)}
           >
-            {label}
+            <span className="data-table-linked-record-pill-label">{label}</span>
+            {unlinkButton}
           </button>
         );
       })}

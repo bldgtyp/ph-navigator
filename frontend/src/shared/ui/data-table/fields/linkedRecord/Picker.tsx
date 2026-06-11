@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { normalizeDisplayName } from "../../lib/fieldDisplayNames";
 
 /**
@@ -109,7 +110,12 @@ export function LinkedRecordPicker({
 
   if (!open) return null;
 
-  return (
+  // Portal to the document body so stacking contexts created by the
+  // data-table toolbar / summary bar / sticky chrome don't trap the
+  // picker behind them. Without the portal, even `z-index: var(--z-modal)`
+  // is scoped to the picker's nearest stacking-context ancestor and the
+  // picker renders behind sibling chrome.
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -184,6 +190,7 @@ export function LinkedRecordPicker({
           Confirm
         </button>
       </footer>
-    </div>
+    </div>,
+    document.body,
   );
 }

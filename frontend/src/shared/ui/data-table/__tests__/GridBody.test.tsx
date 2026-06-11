@@ -527,21 +527,27 @@ describe("GridBody — linked_record dispatch", () => {
     expect(within(pillRow!).getByText("Pump-A")).toBeInTheDocument();
   });
 
-  test("empty list renders the add-record affordance instead of an empty caption", () => {
-    // When the cell is editable (onActivateEdit is wired through
-    // GridBody from onCellOpen), the LinkedRecordCell renders a
-    // trailing "+" button instead of the muted "Empty" caption so
-    // users have a discoverable single-click add path.
+  test("empty list reveals the add-record affordance once the cell is active", () => {
+    // Airtable parity: the "+" affordance only appears on the active
+    // cell, mirroring the inline "x" unlink button on filled pills.
     renderLinked();
-    expect(screen.queryByText("Empty")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Add linked record" })).toBeNull();
+    // Activate the first empty linked-record cell.
+    const rowGroup = screen.getAllByRole("rowgroup")[1]!;
+    const emptyRow = within(rowGroup).getAllByRole("row")[1]!;
+    const emptyCell = within(emptyRow).getAllByRole("gridcell")[1]!;
+    fireEvent.click(emptyCell);
     const addButtons = screen.getAllByRole("button", { name: "Add linked record" });
     expect(addButtons.length).toBeGreaterThan(0);
   });
 
-  test("pill click invokes the consumer's onPillClick", () => {
+  test("pill click invokes the consumer's onPillClick once the cell is active", () => {
     const { onPillClick } = renderLinked();
     const pillRow = screen.getAllByTestId("linked-record-cell")[0]!;
     const pill = within(pillRow).getByRole("button", { name: /Pump-A/ });
+    // Airtable parity: first click activates the cell, second click on
+    // the pill fires the nav callback.
+    fireEvent.click(pill);
     fireEvent.click(pill);
     expect(onPillClick).toHaveBeenCalledWith("pmp_a");
   });

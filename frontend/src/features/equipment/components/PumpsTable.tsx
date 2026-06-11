@@ -242,6 +242,9 @@ export function PumpsTable({
             ids={inverseIdsForPump(inverseLinks, pump.id, field)}
             resolve={() => ({ recordId: null })}
             onPillClick={(rowId) => onInversePillClick?.(field, rowId)}
+            // Inverse-link columns are read-only — there's no unlink or
+            // add affordance to gate, so a single pill click navigates.
+            isActive
           />
         ),
         measureText: (pump) => inverseIdsForPump(inverseLinks, pump.id, field).join(","),
