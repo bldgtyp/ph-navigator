@@ -38,6 +38,7 @@ function makeEdit(): GridEdit {
     highlight: vi.fn(),
     commit: vi.fn().mockResolvedValue(true),
     commitLinkedRecord: vi.fn().mockResolvedValue(true),
+    unlinkLinkedRecord: vi.fn().mockResolvedValue(true),
     cancel: vi.fn(),
     queuePendingEdit: vi.fn(),
     consumePendingEdit: vi.fn(),

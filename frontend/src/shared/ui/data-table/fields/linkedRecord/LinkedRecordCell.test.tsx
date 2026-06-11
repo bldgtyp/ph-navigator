@@ -73,7 +73,7 @@ describe("LinkedRecordCell", () => {
     );
     const unlinkButtons = screen.getAllByRole("button", { name: "Unlink record" });
     expect(unlinkButtons).toHaveLength(2);
-    fireEvent.click(unlinkButtons[0]);
+    fireEvent.click(unlinkButtons[0]!);
     expect(onPillUnlink).toHaveBeenCalledWith("pmp_a");
   });
 
