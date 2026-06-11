@@ -679,7 +679,13 @@
 }
 
 .data-table {
-  width: max-content;
+  /* `min-content` (with table-layout: fixed + explicit <col> widths) is
+     what makes <col width> authoritative — every column renders at its
+     declared width, and over-long content clips at the cell edge with
+     `.data-table-cell-content` ellipsis. `max-content` would re-expand
+     columns to fit the widest cell text, defeating user resize below
+     content width. Verified in Chrome 2026-06-10. */
+  width: min-content;
   table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0;
@@ -1326,6 +1332,19 @@
 .data-table-header-label {
   flex: 1 1 auto;
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* AirTable-parity body-cell clip: columns may be dragged narrower than
+   their content; plain text content clips at the cell edge with an
+   ellipsis. Custom cell renderers (ColorCell, LinkedRecordCell, the
+   single-select pill, the inline editor) self-clip and bypass this
+   wrapper. */
+.data-table-cell-content {
+  display: block;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

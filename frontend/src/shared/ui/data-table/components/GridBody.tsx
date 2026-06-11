@@ -525,7 +525,7 @@ function renderCellContent(args: {
         />
       );
     }
-    return fallback();
+    return <span className="data-table-cell-content">{fallback()}</span>;
   }
   const editor = edit.editing.editor;
   if (editor.kind === "text" || editor.kind === "number") {
@@ -586,5 +586,5 @@ function renderCellContent(args: {
       />
     );
   }
-  return fallback();
+  return <span className="data-table-cell-content">{fallback()}</span>;
 }
