@@ -315,7 +315,9 @@ additions** based on Ed's signaled priority.
 
 ## US-VIEW-1 — HBJSON file management
 
-**Status:** Draft · **Priority:** MVP — gates all other
+**Status:** Implemented 2026-06-12 (model-viewer Phase 1, as amended
+by `planning/features/model-viewer/phases/phase-01-*.md`) ·
+**Priority:** MVP — gates all other
 US-VIEW-* (nothing can render without a file)
 **PRD ref:** §6.5 (`project_assets` backbone), §11.4.2
 (`project_hbjson_files` subtype table), §3 (non-goals —

@@ -3,6 +3,7 @@ import { ThermalBridgesPage } from "../../assets/routes/ThermalBridgesPage";
 import { EquipmentPage } from "../../equipment/routes/EquipmentPage";
 import { EnvelopePage } from "../../envelope/routes/EnvelopePage";
 import { RoomsPage } from "../../equipment/routes/RoomsPage";
+import { ModelTab } from "../../model_viewer/routes/ModelTab";
 import { StatusTab } from "../../project_status/routes/StatusTab";
 import { TAB_COPY, TAB_LABELS, type ProjectTab } from "../lib";
 import type { ProjectDetail } from "../types";
@@ -30,6 +31,10 @@ export function ProjectTabContent({ tab, project }: { tab: ProjectTab; project: 
 
   if (tab === "envelope") {
     return <EnvelopePage project={project} />;
+  }
+
+  if (tab === "model") {
+    return <ModelTab project={project} />;
   }
 
   return (

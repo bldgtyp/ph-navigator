@@ -68,6 +68,17 @@ from features.mcp.tools_custom_fields import (
     tool_set_custom_field_description,
     tool_set_custom_field_formula,
 )
+
+# Model-viewer HBJSON file tools live in `tools_model_viewer.py`.
+# Re-export them so `from features.mcp.tools import tool_*` callers keep
+# one import surface.
+from features.mcp.tools_model_viewer import (
+    tool_create_hbjson_file,
+    tool_delete_hbjson_file,
+    tool_get_hbjson_file_download_url,
+    tool_list_hbjson_files,
+    tool_rename_hbjson_file,
+)
 from features.project_document.models import ProjectDocumentSource
 from features.project_status.service import list_project_status_items
 from features.projects.models import (
@@ -89,8 +100,13 @@ from features.projects.service import (
 __all__ = [
     "tool_add_custom_field",
     "tool_change_custom_field_type",
+    "tool_create_hbjson_file",
     "tool_delete_custom_field",
+    "tool_delete_hbjson_file",
     "tool_delete_project",
+    "tool_get_hbjson_file_download_url",
+    "tool_list_hbjson_files",
+    "tool_rename_hbjson_file",
     "tool_duplicate_custom_field",
     "tool_edit_custom_field_options",
     "tool_get_document",

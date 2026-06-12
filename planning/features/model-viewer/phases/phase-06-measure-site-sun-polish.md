@@ -132,8 +132,11 @@ Phase 3 camera cluster, bottom-right) or `M`.
 
 ## 4. Out of scope
 
-Sun-path rendering (blocked on `project-location` — integration
-happens in that feature's plan), sun scrubber, legend-as-filter
+Sun-path rendering (blocked on `project-location`; the location
+*data* comes from that feature's Phase 1, but the wiring + rendering
+stay owned by model-viewer and are scheduled separately once
+project-location Phase 1 has landed — see project-location PRD §10 and
+decisions.md D-PL-2), sun scrubber, legend-as-filter
 (NEW-VIEW-2, first post-MVP), clipping planes, HBJSON↔document
 cross-check, comments.
 

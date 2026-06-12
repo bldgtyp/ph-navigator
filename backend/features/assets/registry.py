@@ -84,6 +84,22 @@ ATTACHMENT_FIELDS: tuple[AttachmentFieldConfig, ...] = (
 )
 
 
+# Model-tab HBJSON exports (US-VIEW-1) upload as standalone assets, not
+# through an attachment field, so ATTACHMENT_FIELDS does not govern them.
+# Size is bounded by the service's global hard cap, which is the D-17
+# 100 MB HBJSON limit. Browsers report no MIME type for `.hbjson`, so
+# `application/octet-stream` must be accepted alongside JSON.
+HBJSON_ALLOWED_EXTENSIONS = frozenset({".hbjson", ".json"})
+HBJSON_ALLOWED_CONTENT_TYPES = frozenset({"application/json", "application/octet-stream"})
+
+
+def hbjson_upload_allowed(*, content_type: str, original_filename: str) -> bool:
+    return (
+        content_type in HBJSON_ALLOWED_CONTENT_TYPES
+        and filename_extension(original_filename) in HBJSON_ALLOWED_EXTENSIONS
+    )
+
+
 def all_asset_kinds() -> frozenset[AssetKind]:
     return frozenset({"datasheet", "site_photo", "hbjson", "simulation_file", "export_bundle", "other"})
 

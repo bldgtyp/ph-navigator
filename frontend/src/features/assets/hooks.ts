@@ -7,6 +7,7 @@ import {
   putToSignedUrl,
   replaceAttachmentRows,
 } from "./api";
+import { sha256HexOfFile } from "../../shared/lib/sha256";
 import { assetQueryKeys } from "./query-keys";
 import type { AssetKind, AttachmentRowsPayload, AttachmentRowsSlice } from "./types";
 
@@ -64,17 +65,11 @@ export async function uploadAsset(
   assetKind: AssetKind,
   file: File,
 ): Promise<string> {
-  const contentHashSha256 = await fileSha256(file);
+  const contentHashSha256 = await sha256HexOfFile(file);
   const intent = await createUploadIntent({ projectId, assetKind, file, contentHashSha256 });
   if (intent.upload_url) {
     await putToSignedUrl(intent.upload_url, file);
     await completeUpload(projectId, intent.asset.id);
   }
   return intent.asset.id;
-}
-
-async function fileSha256(file: File): Promise<string> {
-  const buffer = await file.arrayBuffer();
-  const digest = await crypto.subtle.digest("SHA-256", buffer);
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }

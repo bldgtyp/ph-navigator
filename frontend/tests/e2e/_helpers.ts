@@ -24,10 +24,17 @@ export function apiUrl(baseURL: string | undefined, path: string): string {
   return new URL(path, frontendBase).toString();
 }
 
-export async function signIn(page: Page): Promise<void> {
+export async function signIn(
+  page: Page,
+  credentials?: { email: string; password: string },
+): Promise<void> {
   await page.goto("/sign-in");
-  await page.getByLabel("Email").fill(process.env.E2E_EMAIL ?? "ed@example.com");
-  await page.getByLabel("Password").fill(process.env.E2E_PASSWORD ?? "password");
+  await page
+    .getByLabel("Email")
+    .fill(credentials?.email ?? process.env.E2E_EMAIL ?? "ed@example.com");
+  await page
+    .getByLabel("Password")
+    .fill(credentials?.password ?? process.env.E2E_PASSWORD ?? "password");
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/dashboard/);
 }
@@ -36,7 +43,11 @@ export async function createProject(
   page: Page,
   options: { name: string; btNumber: string; client?: string },
 ): Promise<string> {
-  await page.getByRole("button", { name: /^(Create new project|Add New Project \+)$/ }).click();
+  // An empty dashboard renders the CTA twice (header + empty state).
+  await page
+    .getByRole("button", { name: /^(Create new project|Add New Project \+)$/ })
+    .first()
+    .click();
   await page.getByLabel("Project name").fill(options.name);
   await page.getByLabel("BT number").fill(options.btNumber);
   await page.getByLabel("Client").fill(options.client ?? "BLDGTYP");
