@@ -1,8 +1,8 @@
 ---
 DATE: 2026-06-12
-TIME: 17:19 EDT
-STATUS: Ready for handoff — no blockers. Critical path; unblocks the
-  model-viewer sun-path data dependency on completion.
+TIME: 18:08 EDT
+STATUS: Complete — implementation, simplify, docs-pass, format, CI,
+  and graph update complete.
 AUTHOR: Claude (for Ed)
 SCOPE: Backend implementation of the `project_location` feature
   module: 1:1 table, models + validation, repository, service, REST
@@ -25,6 +25,30 @@ location as SI-canonical data over REST (`GET/PUT
 backed by a 1:1 `project_location` table. No frontend, no EPW yet —
 this is the data + contract layer, and it is the only thing the
 deferred model-viewer sun-path wiring needs (PRD §10).
+
+## 1.1 Implementation status
+
+- [x] Migration creates the 1:1 `project_location` table.
+- [x] Pydantic models validate SI-canonical location fields and IANA
+  time zones.
+- [x] Repository reads/upserts only changed fields with raw
+  parameterized SQL.
+- [x] Service synthesizes the unset response shape, applies partial
+  updates, preserves explicit `null` clears, and returns empty
+  `warnings[]` plumbing for Phase 3.
+- [x] REST routes are registered at
+  `/api/v1/projects/{id}/location` with public read and editor write.
+- [x] MCP `get_project_location` is registered and enforces
+  `project:read`.
+- [x] Focused tests cover validation, initial read, update/clear,
+  unauthenticated write rejection, MCP read, and MCP project-scope
+  rejection.
+- [x] Simplify pass complete; findings were folded into the
+  implementation.
+- [x] Docs-pass complete; no context/ADR update needed beyond this
+  phase/status ledger.
+- [x] `make format` and `make ci` pass.
+- [x] Graph update complete.
 
 ## 2. Required reading (in order)
 
@@ -127,6 +151,12 @@ Frontend (Phase 2). EPW asset_kind, parsing, mismatch warning rule
    `project:read` token; scope/owner mismatch raises the structured
    MCP error.
 3. **Closeout**: `make format` + `make ci` green. `graphify update .`.
+
+Focused verification passed on 2026-06-12:
+
+- `cd backend && uv run pytest tests/test_project_location.py`
+- `cd backend && uv run ruff check features/project_location tests/test_project_location.py`
+- `cd backend && uv run ty check features/project_location tests/test_project_location.py`
 
 ## 6. Exit criteria
 

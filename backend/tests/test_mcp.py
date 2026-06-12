@@ -42,7 +42,7 @@ def clean_mcp_tables() -> Iterator[None]:
         conn.execute(
             """
             TRUNCATE user_action_log, sessions, mcp_tokens, project_status_items,
-                     project_version_drafts, project_versions, projects, users
+                     project_version_drafts, project_versions, project_location, projects, users
             RESTART IDENTITY CASCADE
             """
         )
@@ -51,7 +51,7 @@ def clean_mcp_tables() -> Iterator[None]:
         conn.execute(
             """
             TRUNCATE user_action_log, sessions, mcp_tokens, project_status_items,
-                     project_version_drafts, project_versions, projects, users
+                     project_version_drafts, project_versions, project_location, projects, users
             RESTART IDENTITY CASCADE
             """
         )
@@ -69,13 +69,13 @@ def signed_in_client() -> TestClient:
     return client
 
 
-def create_project(client: TestClient) -> dict[str, object]:
+def create_project(client: TestClient, bt_number: str = "2426") -> dict[str, object]:
     response = client.post(
         "/api/v1/projects",
         headers={"Origin": ORIGIN},
         json={
             "name": "West Stockbridge House",
-            "bt_number": "2426",
+            "bt_number": bt_number,
             "client": "May",
             "cert_programs": ["phi"],
             "phius_number": None,

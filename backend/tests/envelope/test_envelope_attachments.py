@@ -39,7 +39,7 @@ def _truncate() -> None:
             """
             TRUNCATE project_assets, project_jobs, catalog_materials,
                      user_action_log, sessions, project_status_items,
-                     project_version_drafts, project_versions, projects, users
+                     project_version_drafts, project_versions, project_location, projects, users
             RESTART IDENTITY CASCADE
             """
         )

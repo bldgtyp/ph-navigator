@@ -29,7 +29,7 @@ def _truncate() -> None:
         conn.execute(
             """
             TRUNCATE user_action_log, sessions, user_table_views,
-                     project_status_items, project_versions, projects, users
+                     project_status_items, project_versions, project_location, projects, users
             RESTART IDENTITY CASCADE
             """
         )

@@ -27,6 +27,7 @@ from features.mcp.server import mcp as phn_mcp
 from features.model_viewer.routes import router as model_viewer_router
 from features.project_document.routes import diff_router as project_diff_router
 from features.project_document.routes import router as project_document_router
+from features.project_location.routes import router as project_location_router
 from features.project_status.routes import router as project_status_router
 from features.projects.routes import router as projects_router
 from features.schemas.routes import router as schemas_router
@@ -69,6 +70,7 @@ app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
 app.include_router(auth_router)
 app.include_router(projects_router)
+app.include_router(project_location_router)
 app.include_router(assets_router)
 app.include_router(asset_jobs_router)
 app.include_router(project_diff_router)
