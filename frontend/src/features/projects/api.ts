@@ -2,6 +2,7 @@ import { fetchJson } from "../../shared/api/client";
 import type {
   BtNumberAvailability,
   CreateProjectPayload,
+  EpwParseResponse,
   ProjectLocation,
   ProjectLocationUpdateResponse,
   ProjectBulkDeleteResponse,
@@ -84,6 +85,16 @@ export async function updateProjectLocation(
     method: "PUT",
     body: JSON.stringify(payload),
   });
+}
+
+export async function parseProjectLocationEpw(
+  projectId: string,
+  assetId: string,
+): Promise<EpwParseResponse> {
+  return fetchJson<EpwParseResponse>(
+    `/api/v1/projects/${projectId}/location/epw/parse?asset_id=${encodeURIComponent(assetId)}`,
+    { method: "POST" },
+  );
 }
 
 export async function patchVersion(

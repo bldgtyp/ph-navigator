@@ -1284,6 +1284,10 @@ modal (or dedicated route — TBD when walked) with:
   phius_dropbox_url).
 - Location metadata (latitude, longitude, elevation, time zone,
   true-north, address/city/state). Editors edit; Viewers read only.
+  Editors can upload an EPW weather file, parse its `LOCATION` header,
+  apply the suggested coordinates/elevation/time zone into editable
+  fields, save an EPW source URL, and see non-blocking mismatch
+  warnings. Linked EPWs are downloadable from the settings view.
 - MCP tokens for this project (issue / list / revoke).
 - Transfer ownership (post-MVP UI; data model supports).
 - Delete project (gated to v1.1, US-1.4).
@@ -1307,7 +1311,8 @@ editor.
   lock/rename/delete/default-version actions are hidden.
 - Model tab viewing is allowed; Upload HBJSON is hidden.
 - Project settings remains available in read-only mode for metadata
-  and location visibility; mutating settings and MCP token controls are
+  and location visibility, including linked EPW download when present;
+  mutating settings, EPW upload/apply, and MCP token controls are
   hidden.
 - Catalog manager routes require editor auth and are not part of the
   Viewer project workspace.

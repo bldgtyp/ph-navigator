@@ -4,6 +4,7 @@ export type AssetKind =
   | "hbjson"
   | "simulation_file"
   | "export_bundle"
+  | "epw"
   | "other";
 
 export type AssetMetadata = {
@@ -12,6 +13,7 @@ export type AssetMetadata = {
   thumbnail_failure_reason?: string | null;
   page_count?: number | null;
   image_dimensions?: [number, number] | null;
+  epw_location?: Record<string, unknown> | null;
 };
 
 export type ProjectAsset = {

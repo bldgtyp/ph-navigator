@@ -24,6 +24,7 @@ from features.assets.registry import (
     asset_matches_field,
     attachment_fields_for_asset_kind,
     attachment_table_rows,
+    epw_upload_allowed,
     filename_extension,
     get_attachment_field,
     hbjson_upload_allowed,
@@ -44,6 +45,7 @@ from features.assets.storage_r2 import asset_object_key, orphaned_asset_object_k
 from features.project_document.drafts import load_draft_context
 from features.project_document.store import get_saved_document
 from features.project_document.validation import next_draft_etag, validate_document
+from features.project_location.epw import epw_header_looks_valid
 from features.projects.access import ProjectAccess, require_editor_user
 from features.shared.errors import api_error
 
@@ -215,7 +217,8 @@ class AssetService:
                 asset_id,
                 r2_etag=str(head.get("ETag", "")).strip('"'),
             )
-        background_tasks.add_task(self.thumbnailer.render_for_asset, access.project_id, asset_id)
+        if uploaded.asset_kind != "epw":
+            background_tasks.add_task(self.thumbnailer.render_for_asset, access.project_id, asset_id)
         return uploaded
 
     def get_asset(self, access: ProjectAccess, asset_id: str) -> AssetRow:
@@ -224,6 +227,20 @@ class AssetService:
         if asset is None:
             raise _asset_not_found()
         return asset
+
+    def read_asset_prefix(self, access: ProjectAccess, asset_id: str, byte_count: int) -> tuple[AssetRow, bytes]:
+        asset = self.get_asset(access, asset_id)
+        if asset.upload_status != "uploaded":
+            raise api_error(status.HTTP_409_CONFLICT, "asset_upload_incomplete", "Asset upload is not complete.")
+        return asset, self.r2.get_object_prefix(asset.object_key, (0, max(0, byte_count - 1)))
+
+    def set_metadata(self, access: ProjectAccess, asset_id: str, metadata_patch: dict[str, Any]) -> AssetRow:
+        require_editor_user(access)
+        with transaction() as conn:
+            try:
+                return repository.set_asset_metadata(conn, access.project_id, asset_id, metadata_patch)
+            except LookupError as exc:
+                raise _asset_not_found() from exc
 
     def list_assets(self, access: ProjectAccess, kind: str | None = None) -> list[AssetRow]:
         if kind and kind not in all_asset_kinds():
@@ -271,7 +288,7 @@ class AssetService:
         with connection() as conn:
             assets = repository.list_assets_by_ids(conn, access.project_id, asset_ids)
         if access.user is None:
-            referenced = {ref["asset_id"] for ref in self._references_for_access(access)}
+            referenced = self._referenced_asset_ids_for_access(access)
             assets = [asset for asset in assets if asset.id in referenced]
         return [self._urls_for_asset(asset) for asset in assets if asset.upload_status == "uploaded"]
 
@@ -427,6 +444,18 @@ class AssetService:
                     "Only .hbjson files are supported. Please drop a Honeybee Model JSON.",
                 )
             return
+        if payload.asset_kind == "epw":
+            if not epw_upload_allowed(
+                content_type=payload.content_type,
+                original_filename=payload.original_filename,
+                size_bytes=payload.size_bytes,
+            ):
+                raise api_error(
+                    status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    "asset_mime_not_allowed",
+                    "Only .epw weather files are supported.",
+                )
+            return
         if payload.asset_kind != "export_bundle":
             fields = attachment_fields_for_asset_kind(payload.asset_kind)
             if fields and not any(
@@ -468,6 +497,8 @@ class AssetService:
                     raise ValueError("hbjson_parse_failed") from exc
             elif not prefix.lstrip().startswith(b"{"):
                 raise ValueError("hbjson_parse_failed")
+        if asset.asset_kind == "epw" and not epw_header_looks_valid(prefix):
+            raise ValueError("epw_location_header_missing")
 
     def _urls_for_asset(self, asset: AssetRow) -> AssetUrlsResponse:
         now = datetime.now(tz=UTC)
@@ -491,7 +522,10 @@ class AssetService:
         )
 
     def _asset_is_referenced(self, access: ProjectAccess, asset_id: str) -> bool:
-        return any(ref["asset_id"] == asset_id for ref in self._references_for_access(access))
+        if any(ref["asset_id"] == asset_id for ref in self._references_for_access(access)):
+            return True
+        with connection() as conn:
+            return asset_id in self._location_asset_ids_for_project(conn, access.project_id)
 
     def _references_for_access(self, access: ProjectAccess) -> list[dict[str, object]]:
         version_id = access.project.active_version_id
@@ -499,6 +533,12 @@ class AssetService:
             return []
         body = get_saved_document(version_id, access)
         return list_asset_references(body)
+
+    def _referenced_asset_ids_for_access(self, access: ProjectAccess) -> set[str]:
+        asset_ids = {str(ref["asset_id"]) for ref in self._references_for_access(access)}
+        with connection() as conn:
+            asset_ids.update(self._location_asset_ids_for_project(conn, access.project_id))
+        return asset_ids
 
     def _referenced_asset_ids_for_project(self, conn: Connection[Any], project_id: UUID) -> set[str]:
         rows = conn.execute(
@@ -518,7 +558,20 @@ class AssetService:
         for row in rows:
             body = validate_document(row["body"])
             referenced.update(str(ref["asset_id"]) for ref in list_asset_references(body))
+        referenced.update(self._location_asset_ids_for_project(conn, project_id))
         return referenced
+
+    def _location_asset_ids_for_project(self, conn: Connection[Any], project_id: UUID) -> set[str]:
+        rows = conn.execute(
+            """
+            SELECT epw_asset_id
+            FROM project_location
+            WHERE project_id = %(project_id)s
+              AND epw_asset_id IS NOT NULL
+            """,
+            {"project_id": project_id},
+        ).fetchall()
+        return {str(row["epw_asset_id"]) for row in rows}
 
     def _move_asset_object_to_orphan_prefix(self, asset: AssetRow, target_key: str) -> str | None:
         self.r2.copy_object(asset.object_key, target_key)

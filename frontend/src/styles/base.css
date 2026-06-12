@@ -1162,6 +1162,25 @@ a:focus-visible {
   gap: 4px;
 }
 
+.settings-location-epw {
+  display: grid;
+  gap: 10px;
+}
+
+.settings-location-epw-row,
+.settings-location-epw-suggestion {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.settings-location-epw-suggestion {
+  border-left: 3px solid var(--accent);
+  padding-left: 10px;
+  color: var(--text-secondary);
+}
+
 .settings-readonly-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }

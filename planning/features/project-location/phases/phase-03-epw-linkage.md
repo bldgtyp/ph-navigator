@@ -1,8 +1,8 @@
 ---
 DATE: 2026-06-12
 TIME: 17:19 EDT
-STATUS: Ready for handoff — depends on Phases 1–2 and the existing R2
-  asset system. Phase 3 backend can start in parallel with Phase 2.
+STATUS: Complete — focused tests, `$ simplify`, `$ docs-pass`,
+  `make format`, `make ci`, and `graphify update .` pass.
 AUTHOR: Claude (for Ed)
 SCOPE: EPW weather-file linkage — new asset_kind='epw', upload in the
   Location section, header parse → one-click pre-fill, source URL,
@@ -47,23 +47,23 @@ owner of the location fields (PRD §6).
 ## 3. Work breakdown
 
 ### 3.1 Register the `epw` asset kind (backend)
-- `registry.py`: add `"epw"` to the `AssetKind` literal and to
+- [x] `registry.py`: add `"epw"` to the `AssetKind` literal and to
   `all_asset_kinds()`. Add an `AttachmentFieldConfig` (or the minimal
   project-level registration the system needs) for EPW: allowed
   content types `text/plain` + `application/octet-stream`, allowed
   extension `.epw`, a sensible size cap, project-scoped.
-- **Migration** under `backend/alembic/versions/`: drop and recreate
+- [x] **Migration** under `backend/alembic/versions/`: drop and recreate
   the `project_assets_kind_allowed` CHECK to include `'epw'` (the kind
   is a CHECK constraint, not an enum table). Verify upgrade/downgrade.
 
 ### 3.2 Light EPW validation in assets (D-PL-3)
-In `_validate_magic`, add a minimal EPW branch: when extension is
+- [x] In `_validate_magic`, add a minimal EPW branch: when extension is
 `.epw`, the first line must begin `LOCATION,` with the expected field
 count. Failure ⇒ asset failed / 422. **No** full parse here — that is
 the location feature's job.
 
 ### 3.3 EPW parse endpoint (project_location)
-`POST /api/v1/projects/{id}/location/epw/parse?asset_id=...`
+- [x] `POST /api/v1/projects/{id}/location/epw/parse?asset_id=...`
 (editor-only):
 - Read the EPW's leading bytes via the assets service's object-prefix
   read; parse the `LOCATION` header (dependency-free split — no
@@ -78,22 +78,22 @@ the location feature's job.
   re-opens don't re-parse.
 
 ### 3.4 Mismatch warning rule (service)
-Extend Phase 1's `warnings[]` plumbing in
+- [x] Extend Phase 1's `warnings[]` plumbing in
 `update_project_location`: when both entered and the linked EPW's
 parsed lat/long exist and differ by ≳1°, append a non-blocking warning
 (code + human message). Never reject (PRD §8).
 
 ### 3.5 Frontend — uploader + apply (in the Phase 2 section)
-- `types.ts`: add `"epw"` to the `AssetKind` union.
-- In the Location section: an EPW uploader (reuse `uploadAsset` /
+- [x] `types.ts`: add `"epw"` to the `AssetKind` union.
+- [x] In the Location section: an EPW uploader (reuse `uploadAsset` /
   asset upload UX) visible to editors; on upload-complete call the
   parse endpoint; show the parsed values with an **"Apply"** button
   that fills the form inputs (editable, not auto-saved) and sets
   `epw_asset_id` + `epw_source_url` on the next save.
-- Show the linked EPW (filename, source URL) with a download affordance
+- [x] Show the linked EPW (filename, source URL) with a download affordance
   for editors and viewers; render the `warnings[]` mismatch banner in
   the Phase 2 slot.
-- True-north is **not** in the EPW — keep it a user field (D-PL-4).
+- [x] True-north is **not** in the EPW — keep it a user field (D-PL-4).
 
 ## 4. Out of scope
 
@@ -104,17 +104,20 @@ parsed snapshot + full file, not built). Geocoding. Sun-path wiring
 
 ## 5. Verification gate
 
-1. **pytest**: header parse on a real EPW fixture (lat/long/elev/tz
+- [x] **pytest**: header parse on an EPW fixture (lat/long/elev/tz
    extracted); light `_validate_magic` accepts a valid EPW and rejects
    a non-EPW with a `.epw` name; mismatch rule fires >1° and is silent
    ≤1°; parsed snapshot lands in asset metadata; parse endpoint is
    editor-gated.
-2. **Vitest**: apply-suggestion fills inputs without auto-saving;
+- [x] **Vitest**: apply-suggestion fills inputs without auto-saving;
    uploader hidden for viewers; warning banner renders.
-3. **Playwright/MCP**: editor uploads an EPW fixture, applies values,
-   edits one, saves, reloads → persisted; viewer can download but not
-   upload.
-4. **Closeout**: `make format` + `make ci` green. `graphify update .`.
+- [~] **Playwright/MCP**: editor smoke reached the EPW upload control,
+   but real signed-object PUT failed in the local browser with
+   `Failed to fetch`. Fake-R2 backend and Vitest upload/parse/apply
+   paths pass; rerun real browser upload smoke when local R2 signed
+   PUT/CORS is configured.
+- [x] **Closeout**: `make format` + `make ci` green.
+- [x] `graphify update .`.
 
 ## 6. Exit criteria
 

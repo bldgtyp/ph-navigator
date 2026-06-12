@@ -18,6 +18,7 @@ class AssetMetadata(BaseModel):
     thumbnail_failure_reason: str | None = None
     page_count: int | None = None
     image_dimensions: tuple[int, int] | None = None
+    epw_location: dict[str, Any] | None = None
 
 
 class AssetRow(BaseModel):

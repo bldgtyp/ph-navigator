@@ -6,7 +6,12 @@ import {
   type UnitSystem,
 } from "../../lib/units";
 import { parseDecimalInput, stripTrailingZeros } from "../../lib/units/format";
-import type { ProjectLocation, ProjectLocationFields, UpdateProjectLocationPayload } from "./types";
+import type {
+  EpwParseResponse,
+  ProjectLocation,
+  ProjectLocationFields,
+  UpdateProjectLocationPayload,
+} from "./types";
 
 export type ProjectLocationFormValues = {
   latitude: string;
@@ -17,6 +22,8 @@ export type ProjectLocationFormValues = {
   siteAddress: string;
   city: string;
   state: string;
+  epwAssetId: string;
+  epwSourceUrl: string;
 };
 
 export type ProjectLocationPayloadResult =
@@ -42,6 +49,8 @@ export function emptyLocationFormValues(): ProjectLocationFormValues {
     siteAddress: "",
     city: "",
     state: "",
+    epwAssetId: "",
+    epwSourceUrl: "",
   };
 }
 
@@ -59,6 +68,30 @@ export function locationFormValuesFromLocation(
     siteAddress: location.site_address ?? "",
     city: location.city ?? "",
     state: location.state ?? "",
+    epwAssetId: location.epw_asset_id ?? "",
+    epwSourceUrl: location.epw_source_url ?? "",
+  };
+}
+
+export function applyEpwSuggestionToLocationValues(
+  current: ProjectLocationFormValues,
+  response: EpwParseResponse,
+  unitSystem: UnitSystem,
+): ProjectLocationFormValues {
+  const suggestion = response.suggestion;
+  return {
+    ...current,
+    latitude: formatOptionalNumber(suggestion.latitude, 6),
+    longitude: formatOptionalNumber(suggestion.longitude, 6),
+    elevation: formatNumberUnitsDisplay(
+      suggestion.elevation_m,
+      LOCATION_ELEVATION_UNITS,
+      unitSystem,
+    ),
+    timeZone: suggestion.time_zone ?? current.timeZone,
+    city: suggestion.city ?? current.city,
+    state: suggestion.state ?? current.state,
+    epwAssetId: response.asset_id,
   };
 }
 
@@ -146,8 +179,8 @@ function parseLocationFormValues(
       site_address: trimmedOrNull(values.siteAddress),
       city: trimmedOrNull(values.city),
       state: trimmedOrNull(values.state),
-      epw_asset_id: null,
-      epw_source_url: null,
+      epw_asset_id: trimmedOrNull(values.epwAssetId),
+      epw_source_url: trimmedOrNull(values.epwSourceUrl),
     },
   };
 }
@@ -213,6 +246,8 @@ function assignLocationPayloadField(
     case "site_address":
     case "city":
     case "state":
+    case "epw_asset_id":
+    case "epw_source_url":
       payload[field] = value as string | null;
       return;
   }
@@ -227,4 +262,6 @@ const EDITABLE_LOCATION_FIELD_NAMES = [
   "site_address",
   "city",
   "state",
+  "epw_asset_id",
+  "epw_source_url",
 ] as const;

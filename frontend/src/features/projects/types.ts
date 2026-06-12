@@ -95,8 +95,18 @@ export type EpwParsedLocation = {
   longitude: number | null;
   elevation_m: number | null;
   time_zone: string | null;
+  time_zone_offset_hours: number | null;
   city: string | null;
   state: string | null;
+  country: string | null;
+  source: string | null;
+  wmo: string | null;
+};
+
+export type EpwParseResponse = {
+  asset_id: string;
+  filename: string;
+  suggestion: EpwParsedLocation;
 };
 
 export type EpwDescriptor = {
