@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-12
 TIME: -
-STATUS: Active — Phase 1 implemented 2026-06-12; Phase 2 next
+STATUS: Active — Phases 1–2 implemented 2026-06-12; Phase 3 next
 AUTHOR: Claude (for Ed)
 SCOPE: Status ledger for the Model Viewer feature.
 RELATED: planning/features/model-viewer/README.md
@@ -13,11 +13,10 @@ RELATED: planning/features/model-viewer/README.md
 
 `Active — implementing.` Feature folder authored 2026-06-12: PRD,
 UI_SPEC (redesigned non-CAD composition), decisions ledger, 6-phase
-plan. **Phase 1 (HBJSON file management) implemented 2026-06-12** —
-`project_hbjson_files` table, `backend/features/model_viewer/`,
-`frontend/src/features/model_viewer/` (Model tab live). Still absent:
-three/R3F frontend deps and honeybee backend deps (arrive Phases 3
-and 2 respectively).
+plan. **Phase 1 (HBJSON file management) implemented 2026-06-12**;
+**Phase 2 (extraction backend) implemented 2026-06-12** — honeybee
+deps in, `/model_data` artifact pipeline live (details below). Still
+absent: three/R3F frontend deps (arrive Phase 3).
 
 Test fixtures (both in this folder, both copied to
 `backend/tests/fixtures/` in Phase 2; coverage maps + remaining
@@ -108,10 +107,87 @@ scene helpers (phase-03 §4.1).
 
 ## Next step
 
-**Start Phase 2** — handoff doc:
-`phases/phase-02-extraction-backend.md` (honeybee deps, extraction
-job, `/model_data` artifact). Phase 1 shipped 2026-06-12; details
-below.
+**Start Phase 3** — handoff doc: `phases/phase-03-viewer-core.md`
+(three/R3F deps, canvas, Building lens, selection, inspector).
+Phase 2 shipped 2026-06-12; details below.
+
+## Phase 2 — implemented 2026-06-12
+
+Backend only (no frontend changes; the Phase 1 "Failed to parse"
+badge is now live data):
+
+- Deps: `uv add honeybee-ph ladybug-core` resolved cleanly
+  (honeybee-core 1.64.47, honeybee-energy 1.121.2, honeybee-ph
+  1.33.19, honeybee-schema 2.0.7, ladybug-core 0.44.49).
+- `backend/features/model_viewer/schemas/` — V1 schema port, split by
+  source library (8 modules), Pydantic v2. Wire deltas vs. V1: m³/s
+  airflow (no ×3600; aliases `_v_sup` etc. preserved via
+  `by_alias=True` artifact dumps), all four U/R fields (D-12), typed
+  duct element/segment schemas (V1 shipped raw dicts), `load_summary`,
+  `wufi_type` on spaces (V1 frontend declared it but V1's backend
+  schema never shipped it).
+- `extraction.py` — pure dict→DTO port of V1 `model_elements.py`:
+  Meters normalization before extraction, AirBoundary skip+log+count,
+  shade merging per display_name. The O(n²) V1 vertex merge was
+  replaced with a rounded-coordinate bucket index (27-neighbor probe
+  preserves `is_equivalent` tol=1e-7 semantics) — required for the
+  253-shade Hillandale group. **duct_type is normalized from list
+  membership** (supply=1/exhaust=2; US-VIEW-7 crit. 7): real GH
+  exports tag exhaust ducts duct_type=1 (the primary fixture does).
+- `model_data.py` — D-13/D-15/D-16 workflow: link-step
+  `BackgroundTasks` job does ONE parse → `extracted_*` columns + gzip
+  artifact at `derived/{asset_id}/model_data.json.gz` (mtime=0 for a
+  deterministic ETag). `GET /model_data` streams it
+  (`Cache-Control: private, max-age=31536000, immutable`, ETag,
+  304 on If-None-Match). Self-healing: missing artifact on a
+  non-failed row re-extracts synchronously (also covers MCP-created
+  links — MCP `create_hbjson_file` schedules no job; first read
+  extracts). Permanent (`model_data_extraction_failed`, 422,
+  kind=permanent, names declared vs. pinned schema version) vs.
+  transient (`model_data_unavailable`, 503, kind=transient; job
+  failures leave the row 'pending' for retry-on-read).
+- Routes: `/model_data` + 5 per-feature subset routes (raw-JSON
+  passthrough from the artifact — no re-validation). All six
+  MCP-exposed (`get_hbjson_model_data`, `list_hbjson_faces`/`spaces`/
+  `ventilation_systems`/`hot_water_systems`/`shading_elements`).
+- Tests: `test_model_viewer_extraction.py` ×17 (golden counts both
+  fixtures, m³/s wire, D-12 fields, synthetic AirBoundary/Adiabatic/
+  recirc), `test_model_viewer_model_data.py` ×11 (job, headers/304,
+  subsets, D-16 both kinds, self-heal ×2, MCP tools), Phase 1 file
+  tests updated (valid minimal Models — the job now runs on link).
+  `hillandale` pytest marker registered: CI runs the 52 MB tests;
+  skip locally with `-m 'not hillandale'`. Full suite 780 passed.
+- **D-15 perf canary (Hillandale, 52 MB, recorded this session):**
+  7.4 s end-to-end on Ed's machine — json.load 0.3 s, parse+convert
+  (Inches→Meters) 4.2 s, extraction 1.8 s, serialize+gzip 1.0 s.
+  Artifact: 18 MB JSON → 1 MB gzip.
+
+Plan-vs-fixture corrections discovered while implementing (golden
+counts in PLAN.md §Phase 2 were authored before parsing the files):
+
+- Primary fixture ventilation: ONE system shared by 4 rooms (the
+  "4 supply + 4 exhaust duct elements" count was the per-room view
+  before V1-parity dedup) → 1 supply duct element (3 segments) +
+  1 exhaust (2 segments) on the wire.
+- Hillandale is NOT duct/pipe-free: 24 ventilation systems with 48
+  duct elements and 1 HW system with 10 trunks (so it does not
+  exercise the disabled-lens case; the empty-arrays case remains
+  covered by... no fixture — Phase 4 should synthesize it in e2e).
+- Hillandale opaque constructions: 12 in use (not 9); 62 window ✓.
+- Primary fixture spaces carry NO airflow values (all None) — the
+  m³/s wire test is synthetic (sets `_v_sup` on the parsed model).
+
+Known edge (V1 parity, deliberate): the AirBoundary tripwire is
+"construction fails OpaqueConstructionSchema validation" — a
+construction containing an EnergyMaterialNoMass layer (no thickness/
+conductivity fields) would also fail and be skipped+counted as an air
+boundary. Neither fixture has one (skip counts are 0 ✓) and V1
+behaved identically; if a real project ever shows a nonzero
+`air_boundaries_skipped` with no air boundaries modeled, look here
+first.
+
+Closeout gate (`make format` + `make ci`) green this session;
+`graphify update .` run.
 
 ## Phase 1 — implemented 2026-06-12
 
@@ -186,7 +262,7 @@ blocker is cleared.
 | Planning docs | Done 2026-06-12 | this folder |
 | Phase handoff plans (01–06) | Done 2026-06-12 | `phases/` |
 | Phase 1 — file management | **Done 2026-06-12** | migration `20260612_0022`; `backend/features/model_viewer/`; `frontend/src/features/model_viewer/`; pytest ×11 + Vitest ×11 + e2e green; `make ci` green (this session) |
-| Phase 2 — extraction backend | Not started | — |
+| Phase 2 — extraction backend | **Done 2026-06-12** | `schemas/` + `extraction.py` + `model_data.py`; 6 read routes + 6 MCP tools; pytest ×28 new (incl. Hillandale goldens); perf canary 7.4 s; `make ci` green (this session) |
 | Phase 3 — canvas + Building lens | Not started | — |
 | Phase 4 — remaining lenses | Not started | — |
 | Phase 5 — themes + legend | Not started | — |

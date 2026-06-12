@@ -49,6 +49,7 @@ from features.mcp.tools import (
     tool_get_asset_url,
     tool_get_document,
     tool_get_hbjson_file_download_url,
+    tool_get_hbjson_model_data,
     tool_get_job,
     tool_get_project,
     tool_get_project_location,
@@ -56,7 +57,12 @@ from features.mcp.tools import (
     tool_hard_delete_project,
     tool_list_assets,
     tool_list_envelope_assemblies,
+    tool_list_hbjson_faces,
     tool_list_hbjson_files,
+    tool_list_hbjson_hot_water_systems,
+    tool_list_hbjson_shading_elements,
+    tool_list_hbjson_spaces,
+    tool_list_hbjson_ventilation_systems,
     tool_list_project_materials,
     tool_list_projects,
     tool_list_status_items,
@@ -318,6 +324,38 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
     def get_hbjson_file_download_url(project_id: str, file_id: str, ctx: Context) -> dict[str, object]:
         """Return signed download URLs for one HBJSON file."""
         return tool_get_hbjson_file_download_url(project_id, file_id, ctx, allow_env_token=allow_env_token)
+
+    @mcp.tool()
+    def get_hbjson_model_data(project_id: str, file_id: str, ctx: Context) -> dict[str, object]:
+        """Full extracted 3D-model payload for one HBJSON file (faces, spaces,
+        ventilation, hot water, shading, load_summary; SI units). Large —
+        prefer the list_hbjson_* subset tools unless you need everything."""
+        return tool_get_hbjson_model_data(project_id, file_id, ctx, allow_env_token=allow_env_token)
+
+    @mcp.tool()
+    def list_hbjson_faces(project_id: str, file_id: str, ctx: Context) -> dict[str, object]:
+        """Opaque faces (with apertures + constructions) from one HBJSON file. SI units."""
+        return tool_list_hbjson_faces(project_id, file_id, ctx, allow_env_token=allow_env_token)
+
+    @mcp.tool()
+    def list_hbjson_spaces(project_id: str, file_id: str, ctx: Context) -> dict[str, object]:
+        """PH spaces (floor segments, airflow in m³/s) from one HBJSON file."""
+        return tool_list_hbjson_spaces(project_id, file_id, ctx, allow_env_token=allow_env_token)
+
+    @mcp.tool()
+    def list_hbjson_ventilation_systems(project_id: str, file_id: str, ctx: Context) -> dict[str, object]:
+        """Ventilation systems (supply/exhaust ducting) from one HBJSON file."""
+        return tool_list_hbjson_ventilation_systems(project_id, file_id, ctx, allow_env_token=allow_env_token)
+
+    @mcp.tool()
+    def list_hbjson_hot_water_systems(project_id: str, file_id: str, ctx: Context) -> dict[str, object]:
+        """Hot-water systems (distribution tree + recirc piping) from one HBJSON file."""
+        return tool_list_hbjson_hot_water_systems(project_id, file_id, ctx, allow_env_token=allow_env_token)
+
+    @mcp.tool()
+    def list_hbjson_shading_elements(project_id: str, file_id: str, ctx: Context) -> dict[str, object]:
+        """Merged shade groups from one HBJSON file."""
+        return tool_list_hbjson_shading_elements(project_id, file_id, ctx, allow_env_token=allow_env_token)
 
     @mcp.tool()
     def resolve_asset_urls(project_id: str, asset_ids: list[str], ctx: Context) -> dict[str, object]:

@@ -1,8 +1,9 @@
 ---
 DATE: 2026-06-12
 TIME: -
-STATUS: Ready for handoff — requires Phase 1 merged (the
-  `project_hbjson_files` table and link flow must exist).
+STATUS: IMPLEMENTED 2026-06-12 — see STATUS.md "Phase 2" for the
+  as-built record, incl. fixture golden-count corrections (vent duct
+  dedup, Hillandale duct/pipe presence) and the 7.4 s perf canary.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff for Model Viewer Phase 2 — backend HBJSON
   extraction (US-VIEW-7): honeybee deps, schema port from V1, bulk

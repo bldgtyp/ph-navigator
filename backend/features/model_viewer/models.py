@@ -30,8 +30,8 @@ class HbjsonFilePublic(BaseModel):
     # "{size} MB · {relative time} · {uploader}" from the list payload.
     size_bytes: int
     original_filename: str
-    # D-16: drives the "Failed to parse" badge. Stays 'pending' until the
-    # Phase 2 extraction job exists.
+    # D-16: drives the "Failed to parse" badge. 'pending' until the
+    # link-step extraction job (model_data.run_extraction_job) completes.
     extraction_status: ExtractionStatus
     extraction_error: str | None
 

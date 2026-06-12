@@ -1180,7 +1180,10 @@ None outstanding.
 
 ## US-VIEW-7 — Backend: HBJSON parsing + bulk `/model_data` endpoint
 
-**Status:** Draft · **Priority:** MVP
+**Status:** Implemented 2026-06-12 (model-viewer Phase 2, as amended
+by `planning/features/model-viewer/phases/phase-02-*.md` — no EPW
+port per D-07, D-15 artifact serving, D-16 taxonomy) ·
+**Priority:** MVP
 **PRD ref:** §11.4.2 (`project_hbjson_files`), §11.5 (SI
 canonical on wire), §10.3 (MCP surface)
 **V1 ref:** §2 (full backend tour — routes, cache, services,

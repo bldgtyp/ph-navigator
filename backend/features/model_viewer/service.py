@@ -11,14 +11,15 @@ from typing import Any
 from uuid import UUID
 
 import structlog
+from fastapi import BackgroundTasks
 from psycopg.errors import UniqueViolation
 from starlette import status
 
 from database import connection, transaction
 from features.assets import repository as assets_repository
 from features.assets.schemas import AssetRow, AssetUrlsResponse
-from features.assets.service import AssetService
-from features.model_viewer import repository
+from features.assets.service import AssetService, AssetStorage
+from features.model_viewer import model_data, repository
 from features.model_viewer.models import (
     HbjsonFileCreateRequest,
     HbjsonFileListResponse,
@@ -42,7 +43,13 @@ def list_files(access: ProjectAccess) -> HbjsonFileListResponse:
     return HbjsonFileListResponse(items=[hbjson_file_public(row) for row in rows])
 
 
-def create_file(payload: HbjsonFileCreateRequest, access: ProjectAccess) -> HbjsonFilePublic:
+def create_file(
+    payload: HbjsonFileCreateRequest,
+    access: ProjectAccess,
+    *,
+    background_tasks: BackgroundTasks | None = None,
+    storage: AssetStorage | None = None,
+) -> HbjsonFilePublic:
     """Link an uploaded hbjson asset into the viewer file list.
 
     Content-hash dedup (US-VIEW-1 crit. 3) is two-layer: a SELECT first so
@@ -53,6 +60,11 @@ def create_file(payload: HbjsonFileCreateRequest, access: ProjectAccess) -> Hbjs
     Re-linking a soft-deleted file's bytes restores the old row: the asset
     layer dedups uploads by hash, so the same `asset_id` (UNIQUE here
     across live and deleted rows) comes back for a re-upload.
+
+    A successful link schedules the D-13/D-15 extraction job when the
+    caller can run background work (REST). MCP links skip it — the row
+    stays 'pending' and the self-healing `/model_data` path extracts on
+    first read instead.
     """
     user = require_editor_user(access)
     asset: AssetRow | None = None
@@ -97,6 +109,8 @@ def create_file(payload: HbjsonFileCreateRequest, access: ProjectAccess) -> Hbjs
         raise _duplicate_file_error(duplicate)
 
     log.info("model_viewer.hbjson_file_linked", file_id=str(row["id"]), asset_id=row["asset_id"])
+    if background_tasks is not None and storage is not None:
+        background_tasks.add_task(model_data.run_extraction_job, storage, access.project_id, row["id"])
     return hbjson_file_public(row)
 
 
