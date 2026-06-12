@@ -7,6 +7,7 @@ import {
   fetchProject,
   listDeletedProjects,
   listProjects,
+  parseProjectLocationEpw,
   patchVersion,
   restoreProject,
   updateProjectLocation,
@@ -144,6 +145,12 @@ export function useUpdateProjectLocationMutation(projectId: string) {
     onSuccess: (response) => {
       queryClient.setQueryData(projectQueryKeys.location(projectId), response.location);
     },
+  });
+}
+
+export function useParseProjectLocationEpwMutation(projectId: string) {
+  return useMutation({
+    mutationFn: (assetId: string) => parseProjectLocationEpw(projectId, assetId),
   });
 }
 

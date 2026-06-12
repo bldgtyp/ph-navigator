@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-12
 TIME: 18:08 EDT
-STATUS: Active — Phase 2 complete
+STATUS: Active — Phase 3 complete
 AUTHOR: Claude (for Ed)
 SCOPE: Status ledger for the Project Location feature.
 RELATED:
@@ -13,14 +13,16 @@ RELATED:
 
 # Project Location — Status
 
-`Active — Phase 2 complete.` Requirements stub (2026-06-12) expanded
+`Active — Phase 3 complete.` Requirements stub (2026-06-12) expanded
 into a full PRD + 3-phase plan. The two open forks are resolved
 (decisions.md): **dedicated `project_location` table + module**
 (D-PL-1) and **sun-path wiring deferred to model-viewer** (D-PL-2).
 Phase 1 backend code exists, `make format` + `make ci` pass, and the
 code graph has been updated. Phase 2 frontend implementation is
 complete with focused tests, browser smoke, `make format`, `make ci`,
-and `graphify update .` passing.
+and `graphify update .` passing. Phase 3 EPW linkage is implemented
+with focused backend/frontend tests, `$ simplify`, `$ docs-pass`,
+`make format`, `make ci`, and `graphify update .` passing.
 
 ## Phases
 
@@ -28,7 +30,7 @@ and `graphify update .` passing.
 |-------|-------|-------|
 | 1 | Location backbone (BE: table + REST + MCP) | Complete — REST + MCP live, tested, formatted, CI-green, graph updated |
 | 2 | Location UI (FE: Project Settings section) | Complete — Project Settings editor/viewer UI live, tested, formatted, CI-green, graph updated |
-| 3 | EPW linkage (BE+FE) | Planned — depends on Phases 1–2 |
+| 3 | EPW linkage (BE+FE) | Complete — EPW asset kind, parse/apply, warnings, tests, format, CI |
 
 ## Phase 1 implementation ledger
 
@@ -98,10 +100,61 @@ and `graphify update .` passing.
   build.
 - [x] `graphify update .` passed.
 
+## Phase 3 implementation ledger
+
+- [x] Added Alembic revision `20260612_0024_epw_asset_kind.py`
+  extending the `project_assets_kind_allowed` CHECK constraint to
+  include `epw`.
+- [x] Registered the `epw` asset kind in backend/frontend asset types
+  with `.epw` upload policy (`text/plain` and
+  `application/octet-stream`) and a 25 MB cap.
+- [x] Added EPW magic/header validation during asset upload completion,
+  keyed by `asset_kind='epw'` and using the same parser-backed header
+  validation as the parse endpoint.
+- [x] Added dependency-free EPW `LOCATION` header parsing under
+  `backend/features/project_location/epw.py`, including conservative
+  IANA time-zone suggestion for common single-zone US states and
+  retention of numeric UTC offset.
+- [x] Added editor-only
+  `POST /api/v1/projects/{id}/location/epw/parse?asset_id=...` that
+  reads the asset prefix through `AssetService`, returns a suggestion,
+  and stores `metadata.epw_location` without mutating the saved
+  project-location row.
+- [x] Added linked-EPW descriptor resolution on location reads and
+  public download authorization for location-linked EPWs.
+- [x] Added non-blocking >1° entered-vs-EPW latitude/longitude warning
+  on location save.
+- [x] Added Project Settings EPW upload, parse, one-click Apply,
+  editable source URL, saved EPW download link, and viewer read-only
+  download rendering.
+- [x] Added focused backend coverage for EPW upload validation, parse
+  metadata retention, mismatch warning, and editor-gated parse.
+- [x] Added focused Vitest coverage for EPW apply/save and viewer
+  read-only download affordance.
+- [x] Playwright smoke reached the editor Project Settings EPW upload
+  control on `http://localhost:5173` / `http://localhost:8000`, but
+  the real signed-object PUT failed in the browser with `Failed to
+  fetch` in the local environment. The fake-R2 backend and Vitest
+  upload/parse/apply paths pass; rerun real upload smoke when local R2
+  signed PUT/CORS is configured.
+- [x] `$ simplify` pass complete: shared parser-backed EPW validation,
+  removed duplicate frontend parse-error state, narrowed Location
+  section props, skipped EPW thumbnail work, avoided no-op metadata
+  rewrites on repeat parse, and reduced single-asset public-reference
+  DB work.
+- [x] `$ docs-pass` complete: updated this status ledger, README,
+  Phase 3 handoff, and `context/UI_UX.md`.
+- [x] `make format` passed.
+- [x] `make ci` passed: backend Ruff format/check, Ty, Alembic
+  upgrade, pytest (`752 passed, 2 skipped`); frontend Prettier check,
+  ESLint (existing Fast Refresh warnings only), structural checks,
+  Vitest (`1557 passed`), and production build.
+- [x] `graphify update .` passed.
+
 ## Next step
 
-Start Phase 3 EPW linkage: EPW asset kind, parser/service, apply-to-
-location workflow, and mismatch warnings.
+Rerun the real browser EPW upload smoke when local R2 signed PUT/CORS
+is available.
 
 ## Blockers
 

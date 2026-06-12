@@ -11,7 +11,7 @@ from typing import Any, Literal, cast
 
 from features.project_document.document import ProjectDocumentV1
 
-AssetKind = Literal["datasheet", "site_photo", "hbjson", "simulation_file", "export_bundle", "other"]
+AssetKind = Literal["datasheet", "site_photo", "hbjson", "simulation_file", "export_bundle", "epw", "other"]
 
 
 @dataclass(frozen=True)
@@ -91,6 +91,9 @@ ATTACHMENT_FIELDS: tuple[AttachmentFieldConfig, ...] = (
 # `application/octet-stream` must be accepted alongside JSON.
 HBJSON_ALLOWED_EXTENSIONS = frozenset({".hbjson", ".json"})
 HBJSON_ALLOWED_CONTENT_TYPES = frozenset({"application/json", "application/octet-stream"})
+EPW_ALLOWED_EXTENSIONS = frozenset({".epw"})
+EPW_ALLOWED_CONTENT_TYPES = frozenset({"text/plain", "application/octet-stream"})
+EPW_MAX_FILE_SIZE_MB = 25
 
 
 def hbjson_upload_allowed(*, content_type: str, original_filename: str) -> bool:
@@ -100,8 +103,16 @@ def hbjson_upload_allowed(*, content_type: str, original_filename: str) -> bool:
     )
 
 
+def epw_upload_allowed(*, content_type: str, original_filename: str, size_bytes: int) -> bool:
+    return (
+        size_bytes <= EPW_MAX_FILE_SIZE_MB * 1024 * 1024
+        and content_type in EPW_ALLOWED_CONTENT_TYPES
+        and filename_extension(original_filename) in EPW_ALLOWED_EXTENSIONS
+    )
+
+
 def all_asset_kinds() -> frozenset[AssetKind]:
-    return frozenset({"datasheet", "site_photo", "hbjson", "simulation_file", "export_bundle", "other"})
+    return frozenset({"datasheet", "site_photo", "hbjson", "simulation_file", "export_bundle", "epw", "other"})
 
 
 def get_attachment_field(table_key: str, field_key: str) -> AttachmentFieldConfig | None:

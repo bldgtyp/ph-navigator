@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from typing import cast
 
 import pytest
@@ -9,9 +10,12 @@ from fastapi.testclient import TestClient
 from mcp.server.fastmcp import Context
 from mcp.server.fastmcp.exceptions import ToolError
 
+from features.assets.routes import get_asset_service
+from features.assets.service import AssetService
 from features.project_location.mcp import tool_get_project_location
 from features.project_location.models import UpdateProjectLocationRequest
 from main import app
+from tests.test_assets_service import FakeR2Client, NoopThumbnailer
 from tests.test_mcp import ORIGIN, clean_mcp_tables, create_project, signed_in_client
 
 __all__ = ["clean_mcp_tables"]
@@ -25,6 +29,49 @@ def issue_mcp_token(client: TestClient, project_id: str) -> str:
     )
     assert response.status_code == 201
     return cast(str, response.json()["token"])
+
+
+def install_fake_asset_service(fake_r2: FakeR2Client) -> None:
+    app.dependency_overrides[get_asset_service] = lambda: AssetService(fake_r2, NoopThumbnailer())
+
+
+def clear_fake_asset_service() -> None:
+    app.dependency_overrides.pop(get_asset_service, None)
+
+
+def epw_bytes(
+    *,
+    latitude: float = 42.2876,
+    longitude: float = -73.3662,
+    elevation_m: float = 305.0,
+) -> bytes:
+    return (
+        f"LOCATION,West Stockbridge,MA,USA,TMYx,725060,{latitude},{longitude},-5,{elevation_m}\nDESIGN CONDITIONS,0\n"
+    ).encode()
+
+
+def upload_epw(client: TestClient, fake_r2: FakeR2Client, project_id: str, body: bytes) -> str:
+    intent = client.post(
+        f"/api/v1/projects/{project_id}/assets/upload-intent",
+        headers={"Origin": ORIGIN},
+        json={
+            "asset_kind": "epw",
+            "original_filename": "west-stockbridge.epw",
+            "display_name": "West Stockbridge EPW",
+            "content_type": "text/plain",
+            "size_bytes": len(body),
+            "content_hash_sha256": hashlib.sha256(body).hexdigest(),
+        },
+    )
+    assert intent.status_code == 200
+    asset = intent.json()["asset"]
+    fake_r2.put_object(asset["object_key"], body, asset["content_type"])
+    complete = client.post(
+        f"/api/v1/projects/{project_id}/assets/{asset['id']}/complete-upload",
+        headers={"Origin": ORIGIN},
+    )
+    assert complete.status_code == 200
+    return cast(str, asset["id"])
 
 
 def test_location_model_validates_ranges_and_time_zone() -> None:
@@ -114,6 +161,103 @@ def test_editor_can_upsert_and_clear_location_fields(clean_mcp_tables: None) -> 
     assert location["is_set"] is True
 
 
+def test_epw_upload_parse_persists_metadata_and_suggests_location(clean_mcp_tables: None) -> None:
+    fake_r2 = FakeR2Client()
+    install_fake_asset_service(fake_r2)
+    try:
+        client = signed_in_client()
+        project = create_project(client)
+        project_id = cast(str, project["id"])
+        asset_id = upload_epw(client, fake_r2, project_id, epw_bytes())
+
+        parsed = client.post(
+            f"/api/v1/projects/{project_id}/location/epw/parse?asset_id={asset_id}",
+            headers={"Origin": ORIGIN},
+        )
+
+        assert parsed.status_code == 200
+        suggestion = parsed.json()["suggestion"]
+        assert suggestion["latitude"] == 42.2876
+        assert suggestion["longitude"] == -73.3662
+        assert suggestion["elevation_m"] == 305.0
+        assert suggestion["time_zone"] == "America/New_York"
+        assert suggestion["time_zone_offset_hours"] == -5
+        asset = client.get(f"/api/v1/projects/{project_id}/assets/{asset_id}")
+        assert asset.status_code == 200
+        assert asset.json()["metadata"]["epw_location"]["city"] == "West Stockbridge"
+    finally:
+        clear_fake_asset_service()
+
+
+def test_epw_magic_validation_rejects_non_epw_named_epw(clean_mcp_tables: None) -> None:
+    fake_r2 = FakeR2Client()
+    install_fake_asset_service(fake_r2)
+    try:
+        client = signed_in_client()
+        project = create_project(client)
+        project_id = cast(str, project["id"])
+        body = b"not an epw file"
+        intent = client.post(
+            f"/api/v1/projects/{project_id}/assets/upload-intent",
+            headers={"Origin": ORIGIN},
+            json={
+                "asset_kind": "epw",
+                "original_filename": "bad.epw",
+                "display_name": "Bad EPW",
+                "content_type": "text/plain",
+                "size_bytes": len(body),
+                "content_hash_sha256": hashlib.sha256(body).hexdigest(),
+            },
+        )
+        assert intent.status_code == 200
+        asset = intent.json()["asset"]
+        fake_r2.put_object(asset["object_key"], body, asset["content_type"])
+
+        complete = client.post(
+            f"/api/v1/projects/{project_id}/assets/{asset['id']}/complete-upload",
+            headers={"Origin": ORIGIN},
+        )
+
+        assert complete.status_code == 422
+        assert complete.json()["details"]["reason"] == "epw_location_header_missing"
+    finally:
+        clear_fake_asset_service()
+
+
+def test_epw_mismatch_warning_is_non_blocking(clean_mcp_tables: None) -> None:
+    fake_r2 = FakeR2Client()
+    install_fake_asset_service(fake_r2)
+    try:
+        client = signed_in_client()
+        project = create_project(client)
+        project_id = cast(str, project["id"])
+        asset_id = upload_epw(client, fake_r2, project_id, epw_bytes(latitude=42, longitude=-73))
+        parsed = client.post(
+            f"/api/v1/projects/{project_id}/location/epw/parse?asset_id={asset_id}",
+            headers={"Origin": ORIGIN},
+        )
+        assert parsed.status_code == 200
+
+        close = client.put(
+            f"/api/v1/projects/{project_id}/location",
+            headers={"Origin": ORIGIN},
+            json={"latitude": 42.5, "longitude": -73.5, "epw_asset_id": asset_id},
+        )
+        assert close.status_code == 200
+        assert close.json()["warnings"] == []
+
+        far = client.put(
+            f"/api/v1/projects/{project_id}/location",
+            headers={"Origin": ORIGIN},
+            json={"latitude": 44.2, "longitude": -73.5},
+        )
+        assert far.status_code == 200
+        assert far.json()["location"]["latitude"] == 44.2
+        assert far.json()["warnings"] == ["Weather file location differs from project location by more than 1 degree."]
+    finally:
+        clear_fake_asset_service()
+
+
 def test_location_write_requires_editor_session(clean_mcp_tables: None) -> None:
     editor = signed_in_client()
     project = create_project(editor)
@@ -122,6 +266,19 @@ def test_location_write_requires_editor_session(clean_mcp_tables: None) -> None:
         f"/api/v1/projects/{project['id']}/location",
         headers={"Origin": ORIGIN},
         json={"latitude": 42.0},
+    )
+
+    assert response.status_code == 401
+    assert response.json()["error_code"] == "not_authenticated"
+
+
+def test_epw_parse_requires_editor_session(clean_mcp_tables: None) -> None:
+    editor = signed_in_client()
+    project = create_project(editor)
+
+    response = TestClient(app).post(
+        f"/api/v1/projects/{project['id']}/location/epw/parse?asset_id=asset_fake",
+        headers={"Origin": ORIGIN},
     )
 
     assert response.status_code == 401

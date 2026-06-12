@@ -6,11 +6,13 @@ import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { useUnitPreference, type UnitSystem } from "../../../lib/units";
 import { useMcpTokensQuery } from "../../mcp/hooks";
 import {
+  useParseProjectLocationEpwMutation,
   useProjectLocationQuery,
   useUpdateProjectLocationMutation,
   useUpdateProjectMutation,
 } from "../hooks";
 import {
+  applyEpwSuggestionToLocationValues,
   buildProjectLocationPayload,
   emptyLocationFormValues,
   locationFormValuesFromLocation,
@@ -19,6 +21,7 @@ import {
 } from "../location-form";
 import type {
   CertificationProgram,
+  EpwParseResponse,
   ProjectDetail,
   ProjectLocation,
   ProjectLocationUpdateResponse,
@@ -53,6 +56,7 @@ export function ProjectSettingsModal({
   const updateProjectMutation = useUpdateProjectMutation(project.id);
   const locationQuery = useProjectLocationQuery(project.id);
   const updateLocationMutation = useUpdateProjectLocationMutation(project.id);
+  const parseEpwMutation = useParseProjectLocationEpwMutation(project.id);
   const tokensQuery = useMcpTokensQuery(project.id, !isViewer);
   const changedPayload = useMemo(
     () =>
@@ -146,6 +150,13 @@ export function ProjectSettingsModal({
     setLocationValues((current) => ({ ...current, [field]: value }));
   };
 
+  const applyEpwSuggestion = (response: EpwParseResponse) => {
+    locationEdited.current = true;
+    setLocationValues((current) =>
+      applyEpwSuggestionToLocationValues(current, response, unitSystem),
+    );
+  };
+
   return (
     <ModalDialog title="Project settings" titleId="project-settings-title" onClose={closeWithGuard}>
       <p className="modal-subtitle">
@@ -232,7 +243,11 @@ export function ProjectSettingsModal({
           isLoading={locationQuery.isLoading}
           error={locationQuery.error}
           warnings={locationWarnings}
+          projectId={project.id}
+          isParsingEpw={parseEpwMutation.isPending}
+          onParseEpw={(assetId) => parseEpwMutation.mutateAsync(assetId)}
           onChange={updateLocationField}
+          onApplyEpwSuggestion={applyEpwSuggestion}
         />
         {!isViewer ? (
           <ProjectMcpTokensSection

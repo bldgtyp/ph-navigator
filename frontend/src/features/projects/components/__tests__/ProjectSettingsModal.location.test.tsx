@@ -114,6 +114,15 @@ function renderModal({
   );
 }
 
+function stubCrypto() {
+  vi.stubGlobal("crypto", {
+    randomUUID: () => "req-test",
+    subtle: {
+      digest: async () => new Uint8Array(32).buffer,
+    },
+  });
+}
+
 afterEach(() => {
   vi.unstubAllGlobals();
   fetchMock.mockReset();
@@ -238,6 +247,105 @@ describe("ProjectSettingsModal location section", () => {
     );
   });
 
+  test("uploads an EPW, applies parsed values, and saves the EPW link", async () => {
+    stubCrypto();
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === `/api/v1/projects/${PROJECT.id}/assets/upload-intent`) {
+        return jsonResponse({
+          asset: {
+            id: "asset_epw",
+            object_key: "projects/test/assets/asset_epw.epw",
+            original_filename: "west-stockbridge.epw",
+            display_name: "west-stockbridge.epw",
+            content_type: "text/plain",
+            size_bytes: 10,
+            upload_status: "pending",
+            metadata: {},
+          },
+          upload_url: "https://fake-r2.test/upload",
+          expires_at: "2026-06-12T20:00:00Z",
+          duplicate_of: null,
+        });
+      }
+      if (url === "https://fake-r2.test/upload") return Promise.resolve({ ok: true, status: 200 });
+      if (url === `/api/v1/projects/${PROJECT.id}/assets/asset_epw/complete-upload`) {
+        return jsonResponse({});
+      }
+      if (url === `/api/v1/projects/${PROJECT.id}/location/epw/parse?asset_id=asset_epw`) {
+        return jsonResponse({
+          asset_id: "asset_epw",
+          filename: "west-stockbridge.epw",
+          suggestion: {
+            latitude: 42.2876,
+            longitude: -73.3662,
+            elevation_m: 305,
+            time_zone: "America/New_York",
+            time_zone_offset_hours: -5,
+            city: "West Stockbridge",
+            state: "MA",
+            country: "USA",
+            source: "TMYx",
+            wmo: "725060",
+          },
+        });
+      }
+      if (url === `/api/v1/projects/${PROJECT.id}/location` && init?.method === "PUT") {
+        return jsonResponse({
+          location: {
+            ...UNSET_LOCATION,
+            ...JSON.parse(String(init.body)),
+            is_set: true,
+            updated_at: "2026-06-12T18:30:00Z",
+          },
+          warnings: [],
+        });
+      }
+      if (url === `/api/v1/projects/${PROJECT.id}/location`) return jsonResponse(UNSET_LOCATION);
+      if (url === `/api/v1/projects/${PROJECT.id}/mcp-tokens`) {
+        return jsonResponse({ tokens: [] });
+      }
+      return jsonResponse({}, 404);
+    });
+
+    const view = renderModal();
+
+    await screen.findByText("No active MCP tokens.");
+    const input = view.container.querySelector<HTMLInputElement>('input[type="file"]');
+    expect(input).not.toBeNull();
+    const file = new File(["LOCATION,..."], "west-stockbridge.epw", { type: "text/plain" });
+    Object.defineProperty(file, "arrayBuffer", {
+      value: async () => new TextEncoder().encode("LOCATION,...").buffer,
+    });
+    await user.upload(input as HTMLInputElement, file);
+    await user.click(await screen.findByRole("button", { name: "Apply EPW values" }));
+    await user.type(screen.getByLabelText("EPW source URL"), "https://climate.onebuilding.org/");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => {
+      expect(
+        fetchMock.mock.calls.some(([url, init]) => {
+          if (url !== `/api/v1/projects/${PROJECT.id}/location`) return false;
+          const request = init as RequestInit | undefined;
+          if (request?.method !== "PUT") return false;
+          const body = JSON.parse(String(request.body));
+          return (
+            body.latitude === 42.2876 &&
+            body.longitude === -73.3662 &&
+            body.elevation_m === 305 &&
+            body.time_zone === "America/New_York" &&
+            body.city === "West Stockbridge" &&
+            body.state === "MA" &&
+            body.epw_asset_id === "asset_epw" &&
+            body.epw_source_url === "https://climate.onebuilding.org/"
+          );
+        }),
+      ).toBe(true);
+    });
+  });
+
   test("blocks hard-invalid location values before save", async () => {
     vi.stubGlobal("fetch", fetchMock);
     const user = userEvent.setup();
@@ -263,7 +371,19 @@ describe("ProjectSettingsModal location section", () => {
     vi.stubGlobal("fetch", fetchMock);
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
-      if (url === `/api/v1/projects/${PROJECT.id}/location`) return jsonResponse(SET_LOCATION);
+      if (url === `/api/v1/projects/${PROJECT.id}/location`) {
+        return jsonResponse({
+          ...SET_LOCATION,
+          epw_asset_id: "asset_epw",
+          epw_source_url: "https://climate.onebuilding.org/",
+          epw: {
+            id: "asset_epw",
+            filename: "west-stockbridge.epw",
+            source_url: "https://climate.onebuilding.org/",
+            parsed_location: null,
+          },
+        });
+      }
       return jsonResponse({}, 404);
     });
 
@@ -271,6 +391,11 @@ describe("ProjectSettingsModal location section", () => {
 
     expect(await screen.findByText("42.2876 deg / -73.3662 deg")).toBeVisible();
     expect(screen.getByText("1000.0 ft")).toBeVisible();
+    expect(screen.getByRole("link", { name: "west-stockbridge.epw" })).toHaveAttribute(
+      "href",
+      `/api/v1/projects/${PROJECT.id}/assets/asset_epw/download`,
+    );
+    expect(screen.queryByRole("button", { name: "Upload EPW" })).toBeNull();
     expect(screen.queryByLabelText("Latitude")).toBeNull();
     expect(screen.queryByRole("button", { name: "Save" })).toBeNull();
   });

@@ -87,8 +87,22 @@ class EpwParsedLocation(BaseModel):
     longitude: float | None = None
     elevation_m: float | None = None
     time_zone: str | None = None
+    time_zone_offset_hours: float | None = None
     city: str | None = None
     state: str | None = None
+    country: str | None = None
+    source: str | None = None
+    wmo: str | None = None
+
+
+class EpwParseResponse(BaseModel):
+    """Parsed EPW location suggestion for a user-reviewed apply action."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    asset_id: str
+    filename: str
+    suggestion: EpwParsedLocation
 
 
 class EpwDescriptor(BaseModel):
