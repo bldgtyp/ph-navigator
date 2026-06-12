@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-12
 TIME: 18:08 EDT
-STATUS: Active — Phase 1 complete
+STATUS: Active — Phase 2 complete
 AUTHOR: Claude (for Ed)
 SCOPE: Status ledger for the Project Location feature.
 RELATED:
@@ -13,19 +13,21 @@ RELATED:
 
 # Project Location — Status
 
-`Active — Phase 1 complete.` Requirements stub (2026-06-12) expanded
+`Active — Phase 2 complete.` Requirements stub (2026-06-12) expanded
 into a full PRD + 3-phase plan. The two open forks are resolved
 (decisions.md): **dedicated `project_location` table + module**
 (D-PL-1) and **sun-path wiring deferred to model-viewer** (D-PL-2).
-Phase 1 backend code now exists, `make format` + `make ci` pass, and
-the code graph has been updated.
+Phase 1 backend code exists, `make format` + `make ci` pass, and the
+code graph has been updated. Phase 2 frontend implementation is
+complete with focused tests, browser smoke, `make format`, `make ci`,
+and `graphify update .` passing.
 
 ## Phases
 
 | Phase | Title | State |
 |-------|-------|-------|
 | 1 | Location backbone (BE: table + REST + MCP) | Complete — REST + MCP live, tested, formatted, CI-green, graph updated |
-| 2 | Location UI (FE: Project Settings section) | Planned — depends on Phase 1 |
+| 2 | Location UI (FE: Project Settings section) | Complete — Project Settings editor/viewer UI live, tested, formatted, CI-green, graph updated |
 | 3 | EPW linkage (BE+FE) | Planned — depends on Phases 1–2 |
 
 ## Phase 1 implementation ledger
@@ -58,10 +60,48 @@ the code graph has been updated.
   build.
 - [x] `graphify update .` passed.
 
+## Phase 2 implementation ledger
+
+- [x] Added frontend project-location API types and TanStack Query
+  hooks for `GET/PUT /api/v1/projects/{id}/location`.
+- [x] Added a Project Settings **Location** section after Metadata and
+  before MCP tokens.
+- [x] Wired editor form fields for latitude, longitude, elevation,
+  time zone, true north, address, city, and state into the modal's
+  single Save flow.
+- [x] Added viewer read-only rendering and "No location set" empty
+  state.
+- [x] Added elevation SI/IP conversion while leaving coordinate and
+  true-north values as angular degrees.
+- [x] Added client-side validation for latitude, longitude, elevation,
+  and true-north ranges.
+- [x] Added warning-banner slot for Phase 3 EPW mismatch warnings.
+- [x] Added focused Vitest coverage for unit conversion, partial PUT
+  payloads, explicit-null clears, validation, editor save, and viewer
+  read-only rendering.
+- [x] Added a viewer-safe Project Settings affordance so public viewers
+  can read metadata/location without exposing mutating controls.
+- [x] Playwright smoke passed on `http://localhost:5173` /
+  `http://localhost:8000`: editor saved a fresh project's location,
+  reload showed persisted values, and logged-out viewer saw read-only
+  coordinates with no inputs or Save button.
+- [x] `$ simplify` pass complete: reused shared unit-format helpers,
+  exposed viewer Project Settings read-only, removed unused helper,
+  parallelized metadata/location saves, memoized MCP token section, and
+  fixed the Phase 2 checklist.
+- [x] `$ docs-pass` complete: updated `context/UI_UX.md` so Viewer
+  Project Settings is documented as read-only instead of hidden.
+- [x] `make format` passed.
+- [x] `make ci` passed: backend Ruff format/check, Ty, Alembic
+  upgrade, pytest (`748 passed, 2 skipped`); frontend Prettier check,
+  ESLint, structural checks, Vitest (`1556 passed`), and production
+  build.
+- [x] `graphify update .` passed.
+
 ## Next step
 
-Implement **Phase 2** (`phases/phase-02-location-ui.md`): Project
-Settings Location UI wired to the Phase 1 `/location` API.
+Start Phase 3 EPW linkage: EPW asset kind, parser/service, apply-to-
+location workflow, and mismatch warnings.
 
 ## Blockers
 

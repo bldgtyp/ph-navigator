@@ -3,15 +3,22 @@ import {
   bulkDeleteProjects,
   checkBtNumber,
   createProject,
+  fetchProjectLocation,
   fetchProject,
   listDeletedProjects,
   listProjects,
   patchVersion,
   restoreProject,
+  updateProjectLocation,
   updateProject,
 } from "./api";
 import { projectQueryKeys } from "./query-keys";
-import type { CreateProjectPayload, ProjectListResponse, UpdateProjectPayload } from "./types";
+import type {
+  CreateProjectPayload,
+  ProjectListResponse,
+  UpdateProjectLocationPayload,
+  UpdateProjectPayload,
+} from "./types";
 
 export { projectQueryKeys };
 
@@ -47,6 +54,15 @@ export function useProjectQuery(projectId: string | undefined) {
   return useQuery({
     queryKey: projectQueryKeys.detail(resolvedProjectId),
     queryFn: ({ signal }) => fetchProject(resolvedProjectId, signal),
+    enabled: resolvedProjectId.length > 0,
+  });
+}
+
+export function useProjectLocationQuery(projectId: string | undefined) {
+  const resolvedProjectId = projectId ?? "";
+  return useQuery({
+    queryKey: projectQueryKeys.location(resolvedProjectId),
+    queryFn: ({ signal }) => fetchProjectLocation(resolvedProjectId, signal),
     enabled: resolvedProjectId.length > 0,
   });
 }
@@ -116,6 +132,17 @@ export function useUpdateProjectMutation(projectId: string) {
           };
         },
       );
+    },
+  });
+}
+
+export function useUpdateProjectLocationMutation(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: UpdateProjectLocationPayload) =>
+      updateProjectLocation(projectId, payload),
+    onSuccess: (response) => {
+      queryClient.setQueryData(projectQueryKeys.location(projectId), response.location);
     },
   });
 }

@@ -89,3 +89,45 @@ export type BtNumberAvailability = {
   available: boolean;
   conflict: { id: string; name: string } | null;
 };
+
+export type EpwParsedLocation = {
+  latitude: number | null;
+  longitude: number | null;
+  elevation_m: number | null;
+  time_zone: string | null;
+  city: string | null;
+  state: string | null;
+};
+
+export type EpwDescriptor = {
+  id: string;
+  filename: string | null;
+  source_url: string | null;
+  parsed_location: EpwParsedLocation | null;
+};
+
+export type ProjectLocationFields = {
+  latitude: number | null;
+  longitude: number | null;
+  elevation_m: number | null;
+  time_zone: string | null;
+  true_north_deg: number | null;
+  site_address: string | null;
+  city: string | null;
+  state: string | null;
+  epw_asset_id: string | null;
+  epw_source_url: string | null;
+};
+
+export type ProjectLocation = ProjectLocationFields & {
+  is_set: boolean;
+  updated_at: string | null;
+  epw: EpwDescriptor | null;
+};
+
+export type UpdateProjectLocationPayload = Partial<ProjectLocationFields>;
+
+export type ProjectLocationUpdateResponse = {
+  location: ProjectLocation;
+  warnings: string[];
+};

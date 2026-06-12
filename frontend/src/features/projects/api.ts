@@ -2,10 +2,13 @@ import { fetchJson } from "../../shared/api/client";
 import type {
   BtNumberAvailability,
   CreateProjectPayload,
+  ProjectLocation,
+  ProjectLocationUpdateResponse,
   ProjectBulkDeleteResponse,
   ProjectDeletedListResponse,
   ProjectDetail,
   ProjectListResponse,
+  UpdateProjectLocationPayload,
   UpdateProjectPayload,
 } from "./types";
 
@@ -62,6 +65,23 @@ export async function updateProject(
 ): Promise<ProjectDetail> {
   return fetchJson<ProjectDetail>(`/api/v1/projects/${projectId}`, {
     method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function fetchProjectLocation(
+  projectId: string,
+  signal?: AbortSignal,
+): Promise<ProjectLocation> {
+  return fetchJson<ProjectLocation>(`/api/v1/projects/${projectId}/location`, { signal });
+}
+
+export async function updateProjectLocation(
+  projectId: string,
+  payload: UpdateProjectLocationPayload,
+): Promise<ProjectLocationUpdateResponse> {
+  return fetchJson<ProjectLocationUpdateResponse>(`/api/v1/projects/${projectId}/location`, {
+    method: "PUT",
     body: JSON.stringify(payload),
   });
 }

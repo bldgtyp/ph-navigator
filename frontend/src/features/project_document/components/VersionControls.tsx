@@ -110,6 +110,11 @@ export function VersionControls({
     const documentControls = (
       <div className="shell-controls viewer-controls">
         <span>Edit controls hidden</span>
+        {onOpenProjectSettings ? (
+          <button type="button" className="secondary-button" onClick={onOpenProjectSettings}>
+            Project settings
+          </button>
+        ) : null}
         {activeVersionId ? (
           <a
             className="secondary-button download-link"

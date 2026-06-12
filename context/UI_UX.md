@@ -1282,6 +1282,8 @@ Reached via the project header `⋯` → "Project settings". Opens a
 modal (or dedicated route — TBD when walked) with:
 - Edit metadata (name, bt_number, client, phius_number,
   phius_dropbox_url).
+- Location metadata (latitude, longitude, elevation, time zone,
+  true-north, address/city/state). Editors edit; Viewers read only.
 - MCP tokens for this project (issue / list / revoke).
 - Transfer ownership (post-MVP UI; data model supports).
 - Delete project (gated to v1.1, US-1.4).
@@ -1304,7 +1306,9 @@ editor.
 - Version dropdown remains available for opening other versions;
   lock/rename/delete/default-version actions are hidden.
 - Model tab viewing is allowed; Upload HBJSON is hidden.
-- Project settings menu is hidden.
+- Project settings remains available in read-only mode for metadata
+  and location visibility; mutating settings and MCP token controls are
+  hidden.
 - Catalog manager routes require editor auth and are not part of the
   Viewer project workspace.
 
