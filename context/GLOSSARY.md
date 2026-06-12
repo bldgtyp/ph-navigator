@@ -50,6 +50,22 @@
 | **Glazing Type**      | A glazing assembly (IGU spec) with U-value, SHGC, etc.; catalogged                                        | Glass, IGU (unless literally referring to the IGU) |
 | **Thermal Bridge**    | A linear envelope discontinuity carrying a psi-value, optional simulation file, and length                | TB, junction (junction is the geometric thing)     |
 
+## Thermal performance
+
+PHN follows honeybee-energy (LBT) terminology **verbatim** for U/R
+quantities (D-12, accepted 2026-06-12): **"-Factor" = air films
+included; "-Value" = air films excluded.**
+
+| Term         | Definition                                                                                                          | Aliases to avoid                       |
+| ------------ | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| **U-Factor** | Heat-transfer coefficient **including** standard interior + exterior air-film resistances (EN673 / ISO10292); honeybee `u_factor`. Manufacturer whole-assembly and PHPP-style values are almost always Factors | U-Value (when films are included)      |
+| **U-Value**  | Heat-transfer coefficient of the material layers only, films **excluded**; honeybee `u_value`. Matches the envelope builder's layer-sum convention | U-Factor (when films are excluded)     |
+| **R-Factor** | Thermal resistance including air films; honeybee `r_factor`                                                            | —                                       |
+| **R-Value**  | Thermal resistance of layers only, films excluded; honeybee `r_value`                                                  | —                                       |
+
+Surfaces that show both quantities (e.g. the Model tab inspector)
+label each row explicitly and state the film convention in tooltips.
+
 ## Rooms & equipment
 
 | Term            | Definition                                                                                       | Aliases to avoid                              |

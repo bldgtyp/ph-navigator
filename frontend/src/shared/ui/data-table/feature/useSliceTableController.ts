@@ -92,6 +92,9 @@ export type UseSliceTableControllerArgs<TSlice, TRow extends { id: string }, TPa
   // effect on Reset — pass a stable module-constant unless that
   // semantics is intended.
   defaultHiddenColumns?: string[];
+  // Modal-only consumers can opt out of table-view persistence while
+  // still reusing schema, mutation, and conflict handling.
+  viewStateEnabled?: boolean;
 };
 
 export function useSliceTableController<TSlice, TRow extends { id: string }, TPayload>(
@@ -117,6 +120,7 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
     schemaMutation,
     refetch,
     defaultHiddenColumns,
+    viewStateEnabled = true,
   } = args;
 
   const isEditor = accessMode === "editor";
@@ -148,9 +152,9 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
     projectId,
     tableKey,
     defaults: viewDefaults,
-    enabled: isEditor,
-    columns: columnsForSanitize,
-    fieldDefs: tableSchema.fieldDefs,
+    enabled: isEditor && viewStateEnabled,
+    columns: viewStateEnabled ? columnsForSanitize : [],
+    fieldDefs: viewStateEnabled ? tableSchema.fieldDefs : [],
     schemaFingerprint: tableSchema.schemaFingerprint,
   });
 

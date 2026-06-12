@@ -18,7 +18,7 @@ export type LinkedRecordCellProps = {
   ids: readonly string[];
   /** Resolves each id to its display `record_id` or the row-id fallback. */
   resolve: LinkedRecordPillResolver;
-  /** Click on a pill → navigate to the target row (PRD Q19). Omit in viewer mode. */
+  /** Click on a pill -> open the target row. Omit in viewer mode. */
   onPillClick?: (rowId: string) => void;
   /** Backspace on a focused pill → unlink. Omit in viewer mode. */
   onPillUnlink?: (rowId: string) => void;
@@ -30,7 +30,7 @@ export type LinkedRecordCellProps = {
   emptyLabel?: string;
   /** Airtable-parity active state. When true, each pill shows an inline
    * "x" affordance that calls onPillUnlink, and pill clicks fire
-   * onPillClick (nav). When false, pill clicks are inert so the cell
+   * onPillClick. When false, pill clicks are inert so the cell
    * click handler can activate the cell first. */
   isActive?: boolean;
 };
@@ -88,7 +88,7 @@ export function LinkedRecordCell({
   const onClick = (rowId: string) => (event: MouseEvent<HTMLButtonElement>) => {
     // Inactive cell: let the click bubble to the td so the cell
     // activates on the first click (Airtable parity). Only fire the
-    // nav callback when the cell is already active.
+    // linked-row callback when the cell is already active.
     if (!isActive) return;
     event.stopPropagation();
     onPillClick?.(rowId);
@@ -108,10 +108,8 @@ export function LinkedRecordCell({
     onPillUnlink?.(rowId);
   };
 
-  // Render the chip as a <button> when ANY interaction is wired (nav
-  // or unlink) so the keyboard handler stays attached. Inactive +
-  // interactive: click does nothing (bubbles to cell). Inactive +
-  // inert: span so the cell-level click handler still fires.
+  // Active unlink renders a span pill so the inline unlink button is
+  // not nested inside the pill's open button.
   const isInteractive = Boolean(onPillClick || onPillUnlink);
   const showUnlinkButton = isActive && Boolean(onPillUnlink);
 
@@ -132,6 +130,14 @@ export function LinkedRecordCell({
           (isActive ? " is-active" : "") +
           (isFallback ? " data-table-linked-record-pill-fallback" : "") +
           (isOrphan ? " data-table-linked-record-pill-orphan" : "");
+        const pillAttrs = {
+          className,
+          "data-row-id": rowId,
+          "data-fallback": isFallback ? "true" : undefined,
+          "data-orphan": isOrphan ? "true" : undefined,
+          title: isOrphan ? "Linked record no longer exists" : undefined,
+        };
+        const labelNode = <span className="data-table-linked-record-pill-label">{label}</span>;
         const unlinkButton = showUnlinkButton ? (
           <button
             type="button"
@@ -145,15 +151,23 @@ export function LinkedRecordCell({
         ) : null;
         if (!isInteractive) {
           return (
-            <span
-              key={rowId}
-              className={className}
-              data-row-id={rowId}
-              data-fallback={isFallback ? "true" : undefined}
-              data-orphan={isOrphan ? "true" : undefined}
-              title={isOrphan ? "Linked record no longer exists" : undefined}
-            >
-              <span className="data-table-linked-record-pill-label">{label}</span>
+            <span key={rowId} {...pillAttrs}>
+              {labelNode}
+            </span>
+          );
+        }
+        if (showUnlinkButton) {
+          return (
+            <span key={rowId} {...pillAttrs}>
+              <button
+                type="button"
+                className="data-table-linked-record-pill-open"
+                onClick={onClick(rowId)}
+                onKeyDown={onKeyDown(rowId)}
+              >
+                {labelNode}
+              </button>
+              {unlinkButton}
             </span>
           );
         }
@@ -161,15 +175,11 @@ export function LinkedRecordCell({
           <button
             key={rowId}
             type="button"
-            className={className}
-            data-row-id={rowId}
-            data-fallback={isFallback ? "true" : undefined}
-            data-orphan={isOrphan ? "true" : undefined}
-            title={isOrphan ? "Linked record no longer exists" : undefined}
+            {...pillAttrs}
             onClick={onClick(rowId)}
             onKeyDown={onKeyDown(rowId)}
           >
-            <span className="data-table-linked-record-pill-label">{label}</span>
+            {labelNode}
             {unlinkButton}
           </button>
         );

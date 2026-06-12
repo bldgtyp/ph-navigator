@@ -360,8 +360,9 @@ export type BuildEmptyRow<TRow> = (args: {
 // Per-field linked-record integration surface. The data-table library
 // has no knowledge of the target table — the consumer supplies the
 // candidate row list (for the picker) and a resolver (for the pill's
-// display label). `onPillClick` is the navigation hook (PRD Q19); when
-// undefined the pills render but do nothing on click.
+// display label). `onPillClick` opens the linked row, usually in a
+// same-page modal; when undefined the pills render but do nothing on
+// click.
 export type LinkedRecordCellOps = {
   candidates: ReadonlyArray<LinkedRecordCellCandidate>;
   resolve: (rowId: string) => { recordId: string | null } | null;
@@ -453,7 +454,7 @@ export type DataTableProps<TRow> = {
   getFormulaRowValues?: (row: TRow) => Record<string, unknown>;
   // Per-fieldKey integration surface for `linked_record` columns
   // (PRD §5 Phase 1). The data-table library is target-table agnostic
-  // — the consumer supplies candidates + resolver + navigation hook
+  // — the consumer supplies candidates + resolver + open hook
   // per linked_record FieldDef. Omit (or omit a fieldKey) to render
   // the cell as a read-only pill list with empty resolution.
   linkedRecordOps?: ReadonlyMap<string, LinkedRecordCellOps>;

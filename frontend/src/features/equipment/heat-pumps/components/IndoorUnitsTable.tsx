@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { ApiRequestError } from "../../../../shared/api/client";
 import { errorMessage } from "../../../../shared/lib/errors";
 import {
@@ -12,6 +11,7 @@ import {
 } from "../../../../shared/ui/data-table";
 import { useAssetUrls } from "../../../assets/hooks";
 import { roomsSliceFeature, ventilatorsSliceFeature } from "../../api";
+import { LinkedRoomDialogHost } from "../../components/LinkedRoomDialogHost";
 import type { RoomRow, VentilatorRow } from "../../types";
 import { useHeatPumpOptionMutation, useHeatPumpPatchMutation } from "../api";
 import {
@@ -64,7 +64,7 @@ export function IndoorUnitsTable({
     message: string;
     affected: CascadeReference[];
   } | null>(null);
-  const navigate = useNavigate();
+  const [linkedRoomId, setLinkedRoomId] = useState<string | null>(null);
   const patchMutation = useHeatPumpPatchMutation(projectId);
   const optionMutation = useHeatPumpOptionMutation(projectId);
   const accessMode = isEditor ? "editor" : "viewer";
@@ -117,11 +117,9 @@ export function IndoorUnitsTable({
         const label = roomLabel(room);
         return label.length > 0 ? label : null;
       },
-      // Chip click → land on Rooms tab focused on this room with the
-      // edit modal auto-opened, mirroring a gutter-expand click.
-      onPillClick: (rowId) => {
-        navigate(`/projects/${projectId}/rooms?focus=${encodeURIComponent(rowId)}&open=1`);
-      },
+      // Chip click opens the standard Room modal in place. The legacy
+      // /rooms?focus=...&open=1 route still exists for external deep links.
+      onPillClick: setLinkedRoomId,
     });
     if (!roomsQuery.isLoading) return base;
     // Re-key each entry with isLoading flipped on so the picker shows
@@ -131,7 +129,7 @@ export function IndoorUnitsTable({
       next.set(key, { ...ops, isLoading: true });
     }
     return next;
-  }, [fieldDefs, rooms, roomsQuery.isLoading, navigate, projectId]);
+  }, [fieldDefs, rooms, roomsQuery.isLoading]);
 
   // IndoorUnitRowModal does not expose inline-create for any options.
   // IndoorEquipRowModal — opened from this table for equip-create — still
@@ -287,6 +285,18 @@ export function IndoorUnitsTable({
           )
         }
       />
+      {linkedRoomId && roomsQuery.data ? (
+        <LinkedRoomDialogHost
+          projectId={projectId}
+          activeVersionId={slice.version_id}
+          accessMode={accessMode}
+          versionLocked={versionLocked}
+          roomsSlice={roomsQuery.data}
+          refetch={roomsQuery.refetch}
+          roomId={linkedRoomId}
+          onClose={() => setLinkedRoomId(null)}
+        />
+      ) : null}
       {modal?.kind === "unit" ? (
         <IndoorUnitRowModal
           mode={modal.mode}

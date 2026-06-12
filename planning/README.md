@@ -15,6 +15,8 @@ Read order:
 
 - `features/<feature>/` - feature PRDs, phase plans, status ledgers,
   decisions, reviews, research, and assets.
+- `features_v1.1/<feature>/` - deferred v1.1 candidate PRDs and status
+  ledgers that are intentionally outside the current v1 scope.
 - `code-reviews/<YYYY-MM-DD>/` - dated review artifacts that are not
   feature-local.
 - `archive/dated/<YYYY-MM-DD>/` - historical dated plans preserved for
