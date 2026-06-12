@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-12
 TIME: -
-STATUS: Active — decisions accepted; Phase 1 ready to start
+STATUS: Active — Phase 1 implemented 2026-06-12; Phase 2 next
 AUTHOR: Claude (for Ed)
 SCOPE: Status ledger for the Model Viewer feature.
 RELATED: planning/features/model-viewer/README.md
@@ -11,11 +11,13 @@ RELATED: planning/features/model-viewer/README.md
 
 ## Current state
 
-`Active — planning.` Feature folder authored 2026-06-12: PRD,
+`Active — implementing.` Feature folder authored 2026-06-12: PRD,
 UI_SPEC (redesigned non-CAD composition), decisions ledger, 6-phase
-plan. No implementation code exists yet (no three/R3F frontend deps,
-no honeybee backend deps, no `project_hbjson_files` table, no
-`model_viewer` feature modules).
+plan. **Phase 1 (HBJSON file management) implemented 2026-06-12** —
+`project_hbjson_files` table, `backend/features/model_viewer/`,
+`frontend/src/features/model_viewer/` (Model tab live). Still absent:
+three/R3F frontend deps and honeybee backend deps (arrive Phases 3
+and 2 respectively).
 
 Test fixtures (both in this folder, both copied to
 `backend/tests/fixtures/` in Phase 2; coverage maps + remaining
@@ -106,11 +108,68 @@ scene helpers (phase-03 §4.1).
 
 ## Next step
 
-**Start Phase 1** — handoff doc:
-`phases/phase-01-hbjson-file-management.md` (migration + backend
-CRUD + file chip/popover + upload flow). All decision gates are
-cleared; the docs sync that acceptance required is done (see
-2026-06-12 round-2 entry above).
+**Start Phase 2** — handoff doc:
+`phases/phase-02-extraction-backend.md` (honeybee deps, extraction
+job, `/model_data` artifact). Phase 1 shipped 2026-06-12; details
+below.
+
+## Phase 1 — implemented 2026-06-12
+
+Backend:
+- Migration `20260612_0022_project_hbjson_files` (UUID PK, TEXT
+  asset_id, partial unique `(project_id, content_hash_sha256)` dedup
+  backstop, `(project_id, uploaded_at DESC)` list index).
+- `backend/features/model_viewer/` (routes/models/service/repository)
+  registered in `main.py`. Link step implements two-layer dedup
+  (SELECT for the friendly 409 + unique-index backstop), restore-on-
+  relink for soft-deleted rows (asset-layer hash dedup returns the
+  same `asset_id`, which is UNIQUE on the link table), and orphan-
+  asset discard on rejected duplicates.
+- hbjson kind-level upload policy added in `assets/registry.py` +
+  intent validation (`.hbjson`/`.json`, JSON/octet-stream content
+  type; the 100 MB cap is the existing service hard cap = D-17).
+  Without this, hbjson intents fell through to the thermal-bridge
+  attachment config and its 25 MB cap.
+- Download route does its own linked-file check and bypasses the
+  asset layer's anonymous document-reference gate (hbjson assets are
+  never document-referenced).
+- MCP tools in `features/mcp/tools_model_viewer.py` (list/create/
+  rename/delete/download-url) re-exported via `tools.py`, stubs in
+  `server.py`.
+- `backend/tests/test_model_viewer_files.py` — 11 tests green
+  (round-trip, ordering, rename/notes validation, soft delete,
+  dedup 409 + backstop + orphan discard, restore-on-relink, viewer
+  401s, anonymous download, intent constraint rejections, >8 KB
+  magic-check regression).
+- Latent asset-layer bug found and fixed: `_validate_magic` ran
+  `json.loads` on only the first 8 KB, so ANY real `.hbjson` over
+  8 KB failed complete-upload (`hbjson_parse_failed`). Now: full
+  parse only when the prefix holds the whole file, JSON-object sniff
+  otherwise. Regression test included.
+
+Frontend:
+- `frontend/src/features/model_viewer/` (api/hooks/lib/store/
+  query-keys/types + components FileChip, FilePopover, FileRow,
+  UploadDropZone, UploadNoticeLine, ModelEmptyState,
+  DeleteFileDialog + routes/ModelTab + model_viewer.css). Wired in
+  `ProjectTabContent`; `TAB_COPY.model` updated.
+- Active file ⇆ `?file=` via `useSearchParams` (newest fallback);
+  `store.ts` zustand groundwork holds `activeFileId`.
+- Upload flow: local validation → SHA-256 (shared
+  `shared/lib/sha256.ts:sha256HexOfFile`) → intent → XHR PUT with
+  progress (shared `assets/api.ts:putToSignedUrlWithProgress`) →
+  complete → link; dedup 409 surfaces inline with [Switch] (D-06:
+  no toasts).
+- Vitest: 11 tests green (`lib.test.ts`, `FilePopover.test.tsx` —
+  validation, sort, viewer-role hiding, failed badge, dedup notice).
+- Playwright e2e green: `frontend/tests/e2e/model-viewer-files.spec.ts`
+  (codex@example.com, real fixture upload → rename → notes →
+  `?file=` → delete → empty state). Requires `make seed-agent-user`
+  and `make object-store-init` (the MinIO bucket was missing on this
+  machine — that's the dev-stack step that creates it).
+
+Closeout gate (`make format` + `make ci`) run at end of session —
+see ledger.
 
 ## Blockers
 
@@ -126,7 +185,7 @@ blocker is cleared.
 |---|---|---|
 | Planning docs | Done 2026-06-12 | this folder |
 | Phase handoff plans (01–06) | Done 2026-06-12 | `phases/` |
-| Phase 1 — file management | Not started | — |
+| Phase 1 — file management | **Done 2026-06-12** | migration `20260612_0022`; `backend/features/model_viewer/`; `frontend/src/features/model_viewer/`; pytest ×11 + Vitest ×11 + e2e green; `make ci` green (this session) |
 | Phase 2 — extraction backend | Not started | — |
 | Phase 3 — canvas + Building lens | Not started | — |
 | Phase 4 — remaining lenses | Not started | — |

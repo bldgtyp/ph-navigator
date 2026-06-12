@@ -30,7 +30,7 @@ Dependency order: files → data → scene → lenses → themes → tools.
 Each phase ends green on `make format` + `make ci` and, from Phase 3
 on, a Playwright-MCP walkthrough against a real HBJSON.
 
-## Phase 1 — HBJSON file management (US-VIEW-1)
+## Phase 1 — HBJSON file management (US-VIEW-1) — DONE 2026-06-12
 
 Backend: `project_hbjson_files` migration (incl. geometry-summary
 columns with `extraction_status='pending'`, per D-13 — the

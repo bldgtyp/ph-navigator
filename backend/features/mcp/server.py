@@ -40,24 +40,29 @@ from features.mcp.tools import (
     tool_bulk_attach,
     tool_bulk_detach,
     tool_change_custom_field_type,
+    tool_create_hbjson_file,
     tool_delete_custom_field,
+    tool_delete_hbjson_file,
     tool_delete_project,
     tool_duplicate_custom_field,
     tool_edit_custom_field_options,
     tool_get_asset_url,
     tool_get_document,
+    tool_get_hbjson_file_download_url,
     tool_get_job,
     tool_get_project,
     tool_get_table,
     tool_hard_delete_project,
     tool_list_assets,
     tool_list_envelope_assemblies,
+    tool_list_hbjson_files,
     tool_list_project_materials,
     tool_list_projects,
     tool_list_status_items,
     tool_list_versions,
     tool_query_unfinished_envelope_work,
     tool_rename_custom_field,
+    tool_rename_hbjson_file,
     tool_replace_table,
     tool_report_material_catalog_drift,
     tool_report_missing_envelope_evidence,
@@ -256,6 +261,57 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
     def get_asset_url(project_id: str, asset_id: str, ctx: Context) -> dict[str, object]:
         """Return signed preview, download, and thumbnail URLs for one asset."""
         return tool_get_asset_url(project_id, asset_id, ctx, allow_env_token=allow_env_token)
+
+    @mcp.tool()
+    def list_hbjson_files(project_id: str, ctx: Context) -> dict[str, object]:
+        """List the Model tab's HBJSON files, newest first."""
+        return tool_list_hbjson_files(project_id, ctx, allow_env_token=allow_env_token)
+
+    @mcp.tool()
+    def create_hbjson_file(
+        project_id: str,
+        asset_id: str,
+        ctx: Context,
+        display_name: str | None = None,
+        notes: str | None = None,
+    ) -> dict[str, object]:
+        """Link an uploaded hbjson asset into the Model tab file list (the post-upload link step)."""
+        return tool_create_hbjson_file(
+            project_id,
+            asset_id,
+            ctx,
+            allow_env_token=allow_env_token,
+            display_name=display_name,
+            notes=notes,
+        )
+
+    @mcp.tool()
+    def rename_hbjson_file(
+        project_id: str,
+        file_id: str,
+        ctx: Context,
+        display_name: str | None = None,
+        notes: str | None = None,
+    ) -> dict[str, object]:
+        """Rename an HBJSON file and/or update its notes."""
+        return tool_rename_hbjson_file(
+            project_id,
+            file_id,
+            ctx,
+            allow_env_token=allow_env_token,
+            display_name=display_name,
+            notes=notes,
+        )
+
+    @mcp.tool()
+    def delete_hbjson_file(project_id: str, file_id: str, ctx: Context) -> dict[str, object]:
+        """Soft-delete an HBJSON file from the Model tab list."""
+        return tool_delete_hbjson_file(project_id, file_id, ctx, allow_env_token=allow_env_token)
+
+    @mcp.tool()
+    def get_hbjson_file_download_url(project_id: str, file_id: str, ctx: Context) -> dict[str, object]:
+        """Return signed download URLs for one HBJSON file."""
+        return tool_get_hbjson_file_download_url(project_id, file_id, ctx, allow_env_token=allow_env_token)
 
     @mcp.tool()
     def resolve_asset_urls(project_id: str, asset_ids: list[str], ctx: Context) -> dict[str, object]:

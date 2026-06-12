@@ -1,8 +1,17 @@
 ---
 DATE: 2026-06-12
 TIME: -
-STATUS: Ready for handoff — Phase 1 not started. No code dependencies on
-  other phases; this is the entry phase.
+STATUS: Implemented 2026-06-12 — all gates green (pytest, Vitest,
+  Playwright e2e, make ci). Evidence + implementation amendments in
+  STATUS.md ("Phase 1 — implemented"). Notable design calls made during
+  implementation: (1) re-linking a soft-deleted file's bytes RESTORES the
+  old row (asset-layer hash dedup returns the same asset_id, which is
+  UNIQUE here across live and deleted rows); (2) the hbjson upload policy
+  is a kind-level branch in the assets intent validation — without it,
+  hbjson intents fell through to the thermal-bridge ATTACHMENT_FIELDS
+  config and its 25 MB cap; (3) the asset `_validate_magic` JSON sniff
+  was fixed for files larger than its 8 KB prefix (latent bug that
+  rejected every real HBJSON at complete-upload).
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff for Model Viewer Phase 1 — HBJSON file
   management (US-VIEW-1). Backend table + routes + MCP tools; frontend

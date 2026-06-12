@@ -29,7 +29,7 @@ export const TAB_COPY: Record<ProjectTab, string> = {
   equipment:
     "Equipment tables for ventilators, pumps, fans, hot-water heaters, and electric heaters.",
   "thermal-bridges": "Thermal bridge datasheets and simulation files.",
-  model: "HBJSON upload and the R3F viewer land after the asset backbone.",
+  model: "Upload HBJSON exports and view them as an interactive 3D model.",
 };
 
 export function projectTabPath(projectId: string, tab: ProjectTab): string {

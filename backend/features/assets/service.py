@@ -26,6 +26,7 @@ from features.assets.registry import (
     attachment_table_rows,
     filename_extension,
     get_attachment_field,
+    hbjson_upload_allowed,
     list_asset_references,
 )
 from features.assets.schemas import (
@@ -413,6 +414,19 @@ class AssetService:
             raise api_error(
                 status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "asset_size_exceeded", "Asset exceeds the hard size cap."
             )
+        if payload.asset_kind == "hbjson":
+            # Standalone kind-level policy (US-VIEW-1 / D-17): hbjson uploads
+            # are not attachment-field-bound, so the field configs (and their
+            # tighter caps) only apply later, at attach time.
+            if not hbjson_upload_allowed(
+                content_type=payload.content_type, original_filename=payload.original_filename
+            ):
+                raise api_error(
+                    status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    "asset_mime_not_allowed",
+                    "Only .hbjson files are supported. Please drop a Honeybee Model JSON.",
+                )
+            return
         if payload.asset_kind != "export_bundle":
             fields = attachment_fields_for_asset_kind(payload.asset_kind)
             if fields and not any(
@@ -444,10 +458,16 @@ class AssetService:
             asset.content_type in {"application/json", "application/octet-stream"}
             and filename_extension(asset.original_filename) == ".hbjson"
         ):
-            try:
-                json.loads(prefix.decode("utf-8"))
-            except Exception as exc:
-                raise ValueError("hbjson_parse_failed") from exc
+            # `prefix` is only the first 8 KB — full json.loads is valid only
+            # when the whole file fits in it; larger files get a JSON-object
+            # sniff (real schema validation is the extraction job's problem).
+            if len(prefix) >= asset.size_bytes:
+                try:
+                    json.loads(prefix.decode("utf-8"))
+                except Exception as exc:
+                    raise ValueError("hbjson_parse_failed") from exc
+            elif not prefix.lstrip().startswith(b"{"):
+                raise ValueError("hbjson_parse_failed")
 
     def _urls_for_asset(self, asset: AssetRow) -> AssetUrlsResponse:
         now = datetime.now(tz=UTC)

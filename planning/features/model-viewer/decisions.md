@@ -268,12 +268,21 @@ dedup rules unchanged) and UI_SPEC §2 copy.
 
 - **OQ-1 · Project location** — *Resolved, Ed 2026-06-12.* A new
   project-level **Location** section will be developed as its own
-  feature with robust EPW linkages; requirements handoff stub at
-  `planning/features/project-location/README.md`. All
+  feature with robust EPW linkages; full PRD + plan at
+  `planning/features/project-location/`. All
   location-consuming viewer work (Site & Sun sun path, D-07) is
   **deferred until that section exists** — PLAN Phase 6 ships the
   lens with building + shades + a "Set project location" hint, and
   the sun path activates when project-location lands.
+  **Ownership split (project-location decisions.md D-PL-2,
+  2026-06-12):** the project-location feature ships the location
+  *data* (its Phase 1: lat/long/north/time-zone via REST + MCP); the
+  **sun-path wiring stays owned by model-viewer** — reading that data
+  into extraction and populating the `sun_path` key. Schedule that
+  wiring once MV Phase 2 (extraction + ladybug) and Phase 6 (renderer
+  stub) are merged AND project-location Phase 1 has landed. The seam
+  (inputs, `Sunpath.from_location`, true-north sign verification) is
+  specified in `planning/features/project-location/PRD.md` §10.
 - **OQ-2** — resolved as D-13 above.
 - **OQ-3 · Selection accent token** — *Resolved, Ed 2026-06-12, as
   D-14 above:* stick with the app's BLDGTYP branding tokens; use the

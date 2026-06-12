@@ -2,6 +2,12 @@
 // a sync digest of a tiny input keeps API ergonomics simple. The fingerprint
 // payload is short enough that the perf cost vs SubtleCrypto is negligible.
 
+/** SHA-256 of a File via SubtleCrypto — used for asset content-hash dedup. */
+export async function sha256HexOfFile(file: File): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
 export function sha256Hex(input: string): string {
   const bytes = utf8Encode(input);
   const hash = sha256Bytes(bytes);

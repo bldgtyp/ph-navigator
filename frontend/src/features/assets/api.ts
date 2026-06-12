@@ -71,6 +71,28 @@ export async function putToSignedUrl(uploadUrl: string, file: File): Promise<voi
   if (!response.ok) throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
 }
 
+/** PUT to the signed URL via XHR so callers can render real upload progress. */
+export function putToSignedUrlWithProgress(
+  uploadUrl: string,
+  file: File,
+  onProgress?: (fraction: number) => void,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    request.open("PUT", uploadUrl);
+    request.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+    request.upload.onprogress = (event) => {
+      if (event.lengthComputable) onProgress?.(event.loaded / event.total);
+    };
+    request.onload = () => {
+      if (request.status >= 200 && request.status < 300) resolve();
+      else reject(new Error(`Upload failed: ${request.status} ${request.statusText}`));
+    };
+    request.onerror = () => reject(new Error("Upload failed: network error"));
+    request.send(file);
+  });
+}
+
 export async function completeUpload(projectId: string, assetId: string): Promise<void> {
   await fetchJson(`/api/v1/projects/${projectId}/assets/${assetId}/complete-upload`, {
     method: "POST",
