@@ -149,7 +149,7 @@ export function ProjectShell() {
       project={openProject}
       defaultVersionId={project.active_version_id}
       onOpenVersion={openVersionById}
-      onOpenProjectSettings={!isViewer ? () => setIsSettingsOpen(true) : undefined}
+      onOpenProjectSettings={() => setIsSettingsOpen(true)}
     >
       {renderTopbar}
     </VersionControls>
@@ -193,7 +193,7 @@ export function ProjectShell() {
         </nav>
         <ProjectTabContent tab={activeTab ?? "status"} project={openProject} />
       </section>
-      {isSettingsOpen && !isViewer ? (
+      {isSettingsOpen ? (
         <ProjectSettingsModal project={openProject} onClose={() => setIsSettingsOpen(false)} />
       ) : null}
     </main>

@@ -434,7 +434,7 @@ describe("App", () => {
     expect(await screen.findByText("Read-only")).toBeVisible();
     expect(screen.getByText("Edit controls hidden")).toBeVisible();
     expect(screen.queryByRole("button", { name: "Save Version" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Project settings" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Project settings" })).toBeVisible();
     expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
       "href",
       `/sign-in?next=${encodeURIComponent(

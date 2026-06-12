@@ -3,5 +3,6 @@ export const projectQueryKeys = {
   list: () => [...projectQueryKeys.all, "list"] as const,
   deleted: () => [...projectQueryKeys.all, "deleted"] as const,
   detail: (projectId: string) => [...projectQueryKeys.all, "detail", projectId] as const,
+  location: (projectId: string) => [...projectQueryKeys.detail(projectId), "location"] as const,
   btNumber: (value: string) => [...projectQueryKeys.all, "bt-number", value] as const,
 };

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-12
 TIME: 17:19 EDT
-STATUS: Ready for handoff — depends on Phase 1 (the /location API).
+STATUS: Complete — implementation, browser smoke, format, CI, and graph update passed.
 AUTHOR: Claude (for Ed)
 SCOPE: Frontend "Location" section in Project Settings — editor edit /
   viewer read-only, wired to GET/PUT /location with SI↔display unit
@@ -40,41 +40,41 @@ wire, with elevation the only IP/SI-converted field.
 ## 3. Work breakdown
 
 ### 3.1 Types + data layer
-- Add `ProjectLocation` (+ `EpwDescriptor | null`, present now, used in
+- [x] Add `ProjectLocation` (+ `EpwDescriptor | null`, present now, used in
   Phase 3) to a location types module under
   `frontend/src/features/projects/` (or a small
   `features/project-location/` FE folder mirroring backend — pick the
   convention already used for sibling project sub-resources).
-- `useProjectLocationQuery(projectId)` and
+- [x] `useProjectLocationQuery(projectId)` and
   `useUpdateProjectLocationMutation(projectId)` mirroring
   `hooks.ts`; mutation `onSuccess` updates the query cache and surfaces
   `warnings[]`.
 
 ### 3.2 Location section in `ProjectSettingsModal`
-- New `<section className="settings-section">` after metadata, before
+- [x] New `<section className="settings-section">` after metadata, before
   MCP tokens, matching the existing markup/labels.
-- **Editor:** controlled inputs for coordinates (decimal degrees),
+- [x] **Editor:** controlled inputs for coordinates (decimal degrees),
   elevation (display-unit aware), time zone (text or select of common
   IANA zones), true-north (degrees), address/city/state. Save through
   the location mutation; reuse the modal's existing dirty-tracking /
   save-button pattern (a `changedLocationFields` helper analogous to
   the metadata one).
-- **Viewer:** read-only rendering (no inputs), matching the modal's
+- [x] **Viewer:** read-only rendering (no inputs), matching the modal's
   existing viewer branch.
-- **Empty state:** "No location set" hint when `is_set` is false.
-- Render any `warnings[]` from the PUT response as a non-blocking
+- [x] **Empty state:** "No location set" hint when `is_set` is false.
+- [x] Render any `warnings[]` from the PUT response as a non-blocking
   banner (the slot Phase 3's EPW-mismatch warning will fill).
 
 ### 3.3 Units (PRD §9)
-- Elevation: store/send metres; display/edit in m or ft per the IP/SI
+- [x] Elevation: store/send metres; display/edit in m or ft per the IP/SI
   toggle using `frontend/src/lib/units/` helpers; round-trip safely
   (convert display→m on save).
-- Latitude / longitude / true-north: angular degrees — render as-is in
+- [x] Latitude / longitude / true-north: angular degrees — render as-is in
   both unit systems (no conversion). Document this inline so a future
   editor doesn't "helpfully" convert them.
 
 ### 3.4 Client-side validation
-Mirror PRD §8 ranges for instant feedback; the server remains
+- [x] Mirror PRD §8 ranges for instant feedback; the server remains
 authoritative. Block save on hard-invalid input; never block on the
 EPW-mismatch warning (Phase 3).
 
@@ -85,14 +85,14 @@ nice-to-have; only if cheap and requested). Map / geocoding.
 
 ## 5. Verification gate
 
-1. **Vitest**: elevation m↔ft round-trip; coordinate/north invariance
+1. [x] **Vitest**: elevation m↔ft round-trip; coordinate/north invariance
    across the IP/SI toggle; client validation accept/reject; dirty-
    tracking + save payload shape (partial PUT, explicit-null clears);
    viewer renders read-only with no write affordances.
-2. **Playwright/MCP** (codex@example.com, port 5173): editor sets a
+2. [x] **Playwright/MCP** (codex@example.com, port 5173): editor sets a
    location and reloads to confirm persistence; logged-out viewer sees
    read-only values and no inputs.
-3. **Closeout**: `make frontend-dev-check` during iteration; full
+3. [x] **Closeout**: `make frontend-dev-check` during iteration; full
    `make format` + `make ci` green before done. `graphify update .`.
 
 ## 6. Exit criteria

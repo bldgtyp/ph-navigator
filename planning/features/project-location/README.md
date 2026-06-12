@@ -1,9 +1,11 @@
 ---
 DATE: 2026-06-12
 TIME: 18:08 EDT
-STATUS: Active — Phase 1 complete. Backend location backbone is
+STATUS: Active — Phase 2 complete. Backend location backbone is
   implemented with `/simplify`, `/docs-pass`, `make format`,
-  `make ci`, and `graphify update .` complete.
+  `make ci`, and `graphify update .` complete. Frontend Project
+  Settings location UI is implemented with focused tests, browser
+  smoke, `make format`, `make ci`, and `graphify update .` complete.
 AUTHOR: Claude (for Ed)
 SCOPE: Router for the Project Location feature — scope, read order,
   phase map. Expanded from the 2026-06-12 handoff stub (now in §
@@ -48,7 +50,7 @@ document.
 | Phase | Title | Layer |
 |-------|-------|-------|
 | 1 | Location backbone | backend (`project_location` module + table + REST + MCP) — complete |
-| 2 | Location UI | frontend (Project Settings section) |
+| 2 | Location UI | frontend (Project Settings section) — complete |
 | 3 | EPW linkage | backend + frontend (asset_kind, parse, apply, warnings) |
 
 The model-viewer **sun-path wiring** is the known consumer but is

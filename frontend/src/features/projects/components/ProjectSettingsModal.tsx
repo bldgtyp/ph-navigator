@@ -1,18 +1,32 @@
-import { type FormEvent, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ApiRequestError } from "../../../shared/api/client";
 import { formatProjectDateTime } from "../../../shared/lib/dates";
 import { errorMessage } from "../../../shared/lib/errors";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
-import { MCP_SCOPES, REQUIRED_MCP_SCOPE } from "../../mcp/constants";
+import { useUnitPreference, type UnitSystem } from "../../../lib/units";
+import { useMcpTokensQuery } from "../../mcp/hooks";
 import {
-  useIssueMcpTokenMutation,
-  useMcpTokensQuery,
-  useRevokeMcpTokenMutation,
-} from "../../mcp/hooks";
-import type { McpScope, McpTokenRecord } from "../../mcp/types";
-import { useUpdateProjectMutation } from "../hooks";
-import type { CertificationProgram, ProjectDetail, UpdateProjectPayload } from "../types";
+  useProjectLocationQuery,
+  useUpdateProjectLocationMutation,
+  useUpdateProjectMutation,
+} from "../hooks";
+import {
+  buildProjectLocationPayload,
+  emptyLocationFormValues,
+  locationFormValuesFromLocation,
+  reformatElevationForUnitSystem,
+  type ProjectLocationFormValues,
+} from "../location-form";
+import type {
+  CertificationProgram,
+  ProjectDetail,
+  ProjectLocation,
+  ProjectLocationUpdateResponse,
+  UpdateProjectPayload,
+} from "../types";
 import { CertificationProgramFieldset } from "./CertificationProgramFieldset";
+import { ProjectLocationSettingsSection } from "./ProjectLocationSettingsSection";
+import { ProjectMcpTokensSection } from "./ProjectMcpTokensSection";
 
 export function ProjectSettingsModal({
   project,
@@ -29,7 +43,16 @@ export function ProjectSettingsModal({
   const [phiusNumber, setPhiusNumber] = useState(project.phius_number ?? "");
   const [phiusDropboxUrl, setPhiusDropboxUrl] = useState(project.phius_dropbox_url ?? "");
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [locationValues, setLocationValues] =
+    useState<ProjectLocationFormValues>(emptyLocationFormValues);
+  const [locationWarnings, setLocationWarnings] = useState<string[]>([]);
+  const { unitSystem } = useUnitPreference();
+  const previousUnitSystem = useRef<UnitSystem>(unitSystem);
+  const loadedLocation = useRef<ProjectLocation | undefined>(undefined);
+  const locationEdited = useRef(false);
   const updateProjectMutation = useUpdateProjectMutation(project.id);
+  const locationQuery = useProjectLocationQuery(project.id);
+  const updateLocationMutation = useUpdateProjectLocationMutation(project.id);
   const tokensQuery = useMcpTokensQuery(project.id, !isViewer);
   const changedPayload = useMemo(
     () =>
@@ -43,9 +66,44 @@ export function ProjectSettingsModal({
       }),
     [btNumber, certPrograms, client, name, phiusDropboxUrl, phiusNumber, project],
   );
-  const validationError = settingsValidationError(name, btNumber, phiusDropboxUrl);
-  const isDirty = Object.keys(changedPayload).length > 0;
-  const canSave = !isViewer && isDirty && !validationError && !updateProjectMutation.isPending;
+  useEffect(() => {
+    if (
+      locationQuery.data &&
+      loadedLocation.current !== locationQuery.data &&
+      !locationEdited.current
+    ) {
+      setLocationValues(locationFormValuesFromLocation(locationQuery.data, unitSystem));
+      loadedLocation.current = locationQuery.data;
+      previousUnitSystem.current = unitSystem;
+    }
+  }, [locationQuery.data, unitSystem]);
+  useEffect(() => {
+    setLocationValues((current) => {
+      if (previousUnitSystem.current === unitSystem) return current;
+      return {
+        ...current,
+        elevation: reformatElevationForUnitSystem(
+          current.elevation,
+          previousUnitSystem.current,
+          unitSystem,
+        ),
+      };
+    });
+    previousUnitSystem.current = unitSystem;
+  }, [unitSystem]);
+  const locationPayloadResult = useMemo(
+    () => buildProjectLocationPayload(locationQuery.data, locationValues, unitSystem),
+    [locationQuery.data, locationValues, unitSystem],
+  );
+  const locationPayload = locationPayloadResult.ok ? locationPayloadResult.payload : {};
+  const locationValidationError = locationPayloadResult.ok ? null : locationPayloadResult.error;
+  const validationError =
+    settingsValidationError(name, btNumber, phiusDropboxUrl) ?? locationValidationError;
+  const hasProjectChanges = Object.keys(changedPayload).length > 0;
+  const hasLocationChanges = Object.keys(locationPayload).length > 0;
+  const isDirty = hasProjectChanges || hasLocationChanges;
+  const isSaving = updateProjectMutation.isPending || updateLocationMutation.isPending;
+  const canSave = !isViewer && isDirty && !validationError && !isSaving;
 
   const closeWithGuard = () => {
     if (isDirty && !confirmDiscard && !isViewer) {
@@ -58,7 +116,34 @@ export function ProjectSettingsModal({
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!canSave) return;
-    updateProjectMutation.mutate(changedPayload, { onSuccess: onClose });
+    void saveSettings();
+  };
+
+  const saveSettings = async () => {
+    try {
+      const projectSave = hasProjectChanges
+        ? updateProjectMutation.mutateAsync(changedPayload)
+        : Promise.resolve(null);
+      const locationSave: Promise<ProjectLocationUpdateResponse | null> = hasLocationChanges
+        ? updateLocationMutation.mutateAsync(locationPayload)
+        : Promise.resolve(null);
+      const [, locationResponse] = await Promise.all([projectSave, locationSave]);
+      if (locationResponse) {
+        const response = locationResponse;
+        loadedLocation.current = response.location;
+        setLocationValues(locationFormValuesFromLocation(response.location, unitSystem));
+        locationEdited.current = false;
+        setLocationWarnings(response.warnings);
+      }
+      if (!locationResponse || locationResponse.warnings.length === 0) onClose();
+    } catch {
+      // Mutation state renders the authoritative error message below.
+    }
+  };
+
+  const updateLocationField = (field: keyof ProjectLocationFormValues, value: string) => {
+    locationEdited.current = true;
+    setLocationValues((current) => ({ ...current, [field]: value }));
   };
 
   return (
@@ -139,9 +224,19 @@ export function ProjectSettingsModal({
             </div>
           </dl>
         </section>
+        <ProjectLocationSettingsSection
+          location={locationQuery.data}
+          values={locationValues}
+          unitSystem={unitSystem}
+          isViewer={isViewer}
+          isLoading={locationQuery.isLoading}
+          error={locationQuery.error}
+          warnings={locationWarnings}
+          onChange={updateLocationField}
+        />
         {!isViewer ? (
-          <McpTokensSection
-            tokens={tokensQuery.data ?? []}
+          <ProjectMcpTokensSection
+            tokens={tokensQuery.data}
             isLoading={tokensQuery.isLoading}
             error={tokensQuery.error}
             projectId={project.id}
@@ -151,6 +246,11 @@ export function ProjectSettingsModal({
         {updateProjectMutation.isError ? (
           <p className="form-error" role="alert">
             {settingsSaveError(updateProjectMutation.error)}
+          </p>
+        ) : null}
+        {updateLocationMutation.isError ? (
+          <p className="form-error" role="alert">
+            {errorMessage(updateLocationMutation.error, "Could not save project location.")}
           </p>
         ) : null}
         {confirmDiscard ? (
@@ -170,207 +270,12 @@ export function ProjectSettingsModal({
           </button>
           {!isViewer ? (
             <button type="submit" disabled={!canSave}>
-              {updateProjectMutation.isPending ? "Saving..." : "Save"}
+              {isSaving ? "Saving..." : "Save"}
             </button>
           ) : null}
         </div>
       </form>
     </ModalDialog>
-  );
-}
-
-function McpTokensSection({
-  tokens,
-  isLoading,
-  error,
-  projectId,
-}: {
-  tokens: McpTokenRecord[];
-  isLoading: boolean;
-  error: Error | null;
-  projectId: string;
-}) {
-  const [label, setLabel] = useState("");
-  const [scopes, setScopes] = useState<McpScope[]>(MCP_SCOPES);
-  const [expiresAt, setExpiresAt] = useState("");
-  const [plaintextToken, setPlaintextToken] = useState<string | null>(null);
-  const [copyStatus, setCopyStatus] = useState<string | null>(null);
-  const issueMutation = useIssueMcpTokenMutation(projectId);
-  const revokeMutation = useRevokeMcpTokenMutation(projectId);
-  const activeTokens = tokens.filter((token) => token.revoked_at === null);
-  const revokedTokens = tokens.filter((token) => token.revoked_at !== null);
-  const canIssue =
-    label.trim().length > 0 && scopes.includes(REQUIRED_MCP_SCOPE) && !issueMutation.isPending;
-
-  const toggleScope = (scope: McpScope) => {
-    setScopes((current) => {
-      if (scope === REQUIRED_MCP_SCOPE) return current;
-      return current.includes(scope)
-        ? current.filter((value) => value !== scope)
-        : [...current, scope];
-    });
-  };
-
-  const handleIssue = () => {
-    if (!canIssue) return;
-    issueMutation.mutate(
-      {
-        label: label.trim(),
-        scopes,
-        expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
-      },
-      {
-        onSuccess: (issued) => {
-          setPlaintextToken(issued.token);
-          setCopyStatus(null);
-          setLabel("");
-          setScopes(MCP_SCOPES);
-          setExpiresAt("");
-        },
-      },
-    );
-  };
-
-  const copyPlaintextToken = async () => {
-    if (!plaintextToken) return;
-    if (!navigator.clipboard?.writeText) {
-      setCopyStatus("Clipboard unavailable. Select and copy manually.");
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(plaintextToken);
-      setCopyStatus("Copied.");
-    } catch {
-      setCopyStatus("Clipboard unavailable. Select and copy manually.");
-    }
-  };
-
-  return (
-    <section className="settings-section" aria-labelledby="settings-mcp-title">
-      <div className="settings-section-heading">
-        <h3 id="settings-mcp-title">MCP tokens</h3>
-        <span>Project scoped</span>
-      </div>
-      {isLoading ? <p className="form-note">Loading MCP tokens...</p> : null}
-      {error ? (
-        <p className="form-error">{errorMessage(error, "Could not load MCP tokens.")}</p>
-      ) : null}
-      {plaintextToken ? (
-        <div className="one-time-token" role="status">
-          <p>This token is shown once. Store it before closing settings.</p>
-          <div className="one-time-token-copy">
-            <code>{plaintextToken}</code>
-            <button type="button" className="secondary-button" onClick={copyPlaintextToken}>
-              Copy
-            </button>
-          </div>
-          {copyStatus ? <p>{copyStatus}</p> : null}
-        </div>
-      ) : null}
-      <div className="token-list" aria-label="Active MCP tokens">
-        {activeTokens.length === 0 ? <p className="form-note">No active MCP tokens.</p> : null}
-        {activeTokens.map((token) => (
-          <TokenRow
-            key={token.id}
-            token={token}
-            onRevoke={() => revokeMutation.mutate(token.id)}
-            isRevoking={revokeMutation.isPending && revokeMutation.variables === token.id}
-          />
-        ))}
-      </div>
-      {revokedTokens.length > 0 ? (
-        <details className="revoked-token-details">
-          <summary>
-            {revokedTokens.length} revoked token{revokedTokens.length === 1 ? "" : "s"}
-          </summary>
-          <div className="token-list">
-            {revokedTokens.map((token) => (
-              <TokenRow key={token.id} token={token} revoked />
-            ))}
-          </div>
-        </details>
-      ) : null}
-      <div className="token-issue-form">
-        <label>
-          <span>Token label</span>
-          <input value={label} maxLength={120} onChange={(event) => setLabel(event.target.value)} />
-        </label>
-        <fieldset>
-          <legend>Scopes</legend>
-          {MCP_SCOPES.map((scope) => (
-            <label className="checkbox-row" key={scope}>
-              <input
-                type="checkbox"
-                checked={scopes.includes(scope)}
-                disabled={scope === REQUIRED_MCP_SCOPE}
-                onChange={() => toggleScope(scope)}
-              />
-              <span>{scope}</span>
-            </label>
-          ))}
-        </fieldset>
-        <label>
-          <span>Expires at</span>
-          <input
-            type="datetime-local"
-            value={expiresAt}
-            onChange={(event) => setExpiresAt(event.target.value)}
-          />
-        </label>
-        {issueMutation.isError ? (
-          <p className="form-error" role="alert">
-            {errorMessage(issueMutation.error, "Could not issue MCP token.")}
-          </p>
-        ) : null}
-        {revokeMutation.isError ? (
-          <p className="form-error" role="alert">
-            {errorMessage(revokeMutation.error, "Could not revoke MCP token.")}
-          </p>
-        ) : null}
-        <button
-          type="button"
-          className="secondary-button"
-          disabled={!canIssue}
-          onClick={handleIssue}
-        >
-          {issueMutation.isPending ? "Issuing..." : "Create token"}
-        </button>
-      </div>
-    </section>
-  );
-}
-
-function TokenRow({
-  token,
-  revoked = false,
-  isRevoking = false,
-  onRevoke,
-}: {
-  token: McpTokenRecord;
-  revoked?: boolean;
-  isRevoking?: boolean;
-  onRevoke?: () => void;
-}) {
-  return (
-    <div className="token-row">
-      <div>
-        <strong>{token.label}</strong>
-        <span>
-          {token.token_prefix} · {token.scopes.join(", ")}
-        </span>
-        <span>
-          Created {formatProjectDateTime(token.created_at)} · Last used{" "}
-          {token.last_used_at ? formatProjectDateTime(token.last_used_at) : "never"}
-          {token.expires_at ? ` · Expires ${formatProjectDateTime(token.expires_at)}` : ""}
-          {token.revoked_at ? ` · Revoked ${formatProjectDateTime(token.revoked_at)}` : ""}
-        </span>
-      </div>
-      {!revoked && onRevoke ? (
-        <button type="button" className="danger-button" disabled={isRevoking} onClick={onRevoke}>
-          {isRevoking ? "Revoking..." : "Revoke"}
-        </button>
-      ) : null}
-    </div>
   );
 }
 
