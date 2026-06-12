@@ -43,7 +43,7 @@ def clean_mcp_tables() -> Iterator[None]:
         conn.execute(
             """
             TRUNCATE user_action_log, sessions, mcp_tokens, project_status_items,
-                     project_version_drafts, project_versions, projects, users
+                     project_version_drafts, project_versions, project_location, projects, users
             RESTART IDENTITY CASCADE
             """
         )
@@ -52,7 +52,7 @@ def clean_mcp_tables() -> Iterator[None]:
         conn.execute(
             """
             TRUNCATE user_action_log, sessions, mcp_tokens, project_status_items,
-                     project_version_drafts, project_versions, projects, users
+                     project_version_drafts, project_versions, project_location, projects, users
             RESTART IDENTITY CASCADE
             """
         )

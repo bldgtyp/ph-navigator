@@ -8,16 +8,11 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from features.shared.models import strip_blank_string
+
 CertificationProgram = Literal["phi", "phius"]
 VersionKind = Literal["working", "submitted", "closed", "snapshot"]
 AccessMode = Literal["editor", "viewer"]
-
-
-def _strip_blank_string(value: object) -> object:
-    if isinstance(value, str):
-        stripped = value.strip()
-        return stripped or None
-    return value
 
 
 def _require_project_name(value: str | None) -> str:
@@ -55,7 +50,7 @@ class CreateProjectRequest(BaseModel):
     @field_validator("name", "bt_number", "client", "phius_number", "phius_dropbox_url", mode="before")
     @classmethod
     def strip_blank_strings(cls, value: object) -> object:
-        return _strip_blank_string(value)
+        return strip_blank_string(value)
 
     @field_validator("bt_number")
     @classmethod
@@ -86,7 +81,7 @@ class UpdateProjectRequest(BaseModel):
     @field_validator("name", "bt_number", "client", "phius_number", "phius_dropbox_url", mode="before")
     @classmethod
     def strip_blank_strings(cls, value: object) -> object:
-        return _strip_blank_string(value)
+        return strip_blank_string(value)
 
     @model_validator(mode="after")
     def required_fields_cannot_be_cleared(self) -> Self:

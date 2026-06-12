@@ -30,7 +30,7 @@ _TRUNCATE = """
 TRUNCATE catalog_materials, catalog_frame_types,
          catalog_glazing_types,
          user_action_log, sessions, project_status_items,
-         project_version_drafts, project_versions, projects, users
+         project_version_drafts, project_versions, project_location, projects, users
 RESTART IDENTITY CASCADE
 """
 

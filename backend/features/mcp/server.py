@@ -51,6 +51,7 @@ from features.mcp.tools import (
     tool_get_hbjson_file_download_url,
     tool_get_job,
     tool_get_project,
+    tool_get_project_location,
     tool_get_table,
     tool_hard_delete_project,
     tool_list_assets,
@@ -110,6 +111,11 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
     def get_project(project_id: str, ctx: Context) -> McpProjectEnvelope:
         """Return project metadata plus version list."""
         return tool_get_project(project_id, ctx, allow_env_token=allow_env_token)
+
+    @mcp.tool()
+    def get_project_location(project_id: str, ctx: Context) -> dict[str, object]:
+        """Return SI-canonical project location metadata."""
+        return tool_get_project_location(project_id, ctx, allow_env_token=allow_env_token)
 
     @mcp.tool()
     def delete_project(project_id: str, ctx: Context) -> dict[str, object]:
