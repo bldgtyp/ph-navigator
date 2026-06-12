@@ -22,9 +22,62 @@ HBJSON write-back to builder tables)
 schemas, services, scene setup, viz states, tool states,
 color-by modes, loaders, UI components, cross-cutting concerns)
 **Convention reference:** `context/GLOSSARY.md` — Thermal
-performance section (U-values exclude films; the viewer
-surfaces them in the info panel verbatim from HBJSON, so
-labels match)
+performance section ("-Factor = with films, -Value = without";
+LBT-verbatim per D-12, accepted 2026-06-12 — see the V2
+amendments block below)
+
+### V2 composition amendments — accepted 2026-06-12
+
+The redesigned V2 surface (`planning/features/model-viewer/` —
+PRD.md §4, UI_SPEC.md, decisions.md) was accepted by Ed
+2026-06-12. **Capabilities below are unchanged**; these amendments
+re-map this file's composition language. Where an amendment and the
+original text conflict, the amendment wins.
+
+- **D-03** "Lens + Color theme" replaces "VizState + ColorBy as an
+  8th state" (supersedes US-VIEW-3 crit. 1–2/6 and US-VIEW-5
+  composition language). Six lenses — Building / Spaces /
+  Floor Areas / Site & Sun / Ventilation / Hot Water; all six
+  color attributes survive 1:1; the "click active button reverts
+  to Geometry" gesture is dropped.
+- **D-04** Selection is always-on; Measure is the only mode
+  (supersedes US-VIEW-4 crit. 1–3 composition; the 5 px
+  drag-vs-click tolerance and select/hover semantics are kept).
+- **D-05 / D-08** Quadrant layout + modern scene dressing —
+  UI_SPEC.md supersedes the menubar/panel composition described in
+  this file (bottom icon rails, MUI submenus).
+- **D-06** Loading UX is an in-canvas progress chip + scene-info
+  popover; every "Sonner toast" reference in this file reads as
+  that chip (sonner is not in the V2 stack; amends Q-VIEW-5's
+  surface choice, not its non-blocking intent).
+- **D-07** The sun path derives from the deferred
+  `project-location` feature, not an EPW (supersedes US-VIEW-7
+  crit. 6). Site & Sun ships with building + shades + a "Set
+  project location" hint until that feature lands.
+- **D-09** Declarative derived materials; the `materialStore`
+  userData contract (US-VIEW-4 crit. 6, US-VIEW-5 crit. 4) is
+  retired as implementation language — its observable behavior
+  contract is preserved (PRD §4.3).
+- **D-10** Deep links extend US-VIEW-1 crit. 6 with `&lens=` and
+  `&theme=` URL params.
+- **D-11** Legend rows show per-bucket counts and are built as
+  inert buttons (pre-staging NEW-VIEW-2).
+- **D-12** U-Factor / U-Value / R-Factor / R-Value shown with
+  LBT-verbatim terminology — supersedes US-VIEW-6 crit. 7 as
+  originally written (see the amended criterion in place).
+- **D-15** `/model_data` is precomputed at upload and served as an
+  immutable R2 artifact with `Cache-Control: immutable` + ETag —
+  amends US-VIEW-7 crit. 9 (see the amended criterion in place; the
+  "no in-memory cache" intent stands, but the backend does NOT
+  re-parse HBJSON per request).
+- **D-16** Broken-file lifecycle: `extraction_status='failed'`
+  surfaces as a "Failed to parse" badge in the file list;
+  `/model_data` errors are typed permanent (no Retry; names the
+  cause incl. schema-version mismatch) vs. transient (Retry shown).
+- **D-17** Upload cap raised to **100 MB** (amends US-VIEW-1
+  crit. 3; real multifamily exports exceeded the original 50 MB).
+
+Implementation handoffs: `planning/features/model-viewer/phases/`.
 
 ### Story
 
@@ -363,11 +416,13 @@ upload a file, which doesn't match the workflow.
      (case-insensitive). On rejection, toast: *"Only
      `.hbjson` files are supported. Please drop a Honeybee
      Model JSON."*
-   - File-size cap: **50 MB**. Files larger than 50 MB
-     rejected with toast: *"File is too large (max 50 MB).
-     Please contact support if you need to upload a larger
-     model."* — 5–20 MB is the typical range (per Ed); 50
-     MB cap gives 2× headroom.
+   - File-size cap: **100 MB** *(amended 2026-06-12, D-17 —
+     originally 50 MB; a real multifamily export measured
+     51.99 MB)*. Files larger than 100 MB rejected with
+     toast: *"File is too large (max 100 MB). Please contact
+     support if you need to upload a larger model."* —
+     5–20 MB is the typical range (per Ed); large
+     multifamily exports run ~50 MB.
    - Default `display_name` = the original filename minus
      extension. User can rename before/after upload.
    - **Content-hash dedup:** client/agent computes
@@ -1044,8 +1099,8 @@ conversion at display)
 
    | Type | Title | Fields | Section |
    |---|---|---|---|
-   | `faceMesh` | "Opaque Surface" | Name, ID, Face Type, Boundary, Area | "Construction": Name, Type, U-Value (with the `context/GLOSSARY.md` convention applied — see criterion 7), R-Value |
-   | `apertureMeshFace` | "Window" | Name, ID, Face Type, Boundary, Area | "Construction": Name, Type, U-Value (no R-Value per V1) |
+   | `faceMesh` | "Opaque Surface" | Name, ID, Face Type, Boundary, Area | "Construction": Name, Type, U-Factor, U-Value, R-Factor, R-Value (per criterion 7 as amended by D-12) |
+   | `apertureMeshFace` | "Window" | Name, ID, Face Type, Boundary, Area | "Construction": Name, Type, U-Factor, U-Value (no R rows per V1; criterion 7) |
    | `spaceGroup` | "Interior Space" | Name, ID, Number, Quantity, WUFI Type, Floor Area, Weighted Area, Net Volume, Avg Height, Avg Weighting Factor | "Ventilation": Supply Air, Extract Air, Transfer Air (m³/s SI → CFM IP per PRD §11.5) |
    | `spaceFloorSegmentMeshFace` | "Interior Floor" | Space, Number, Weight, Floor Area, Weighted Area | "Ventilation": Supply, Extract, Transfer Air |
    | `pipeSegmentLine` | "Pipe" | ID, Name, **Diameter** (mm/in), **Insulation Thickness** (mm/in), **Insulation Conductivity** (W/m·K), **Insulation Reflective** (yes/no), **Insulation Quality** (text), **Water Temp** (°C/°F), **Daily Period** (hours), **Length** (m/ft), **Material** (text) | **Per Q-VIEW-4 resolved — V1 only showed ID + Name; V2 surfaces all loaded fields.** |
@@ -1057,16 +1112,24 @@ conversion at display)
    the absence of a config means the panel renders
    empty / hidden, which is the safe default.
 
-7. **U-Value / R-Value labels respect `context/GLOSSARY.md`
-   convention.** Per the Thermal performance section
-   (created 2026-05-10 as part of Q-ENV-4 resolution):
-   - Labels read "U-Value" and "R-Value" (NOT "U-Factor" /
-     "R-Factor").
-   - Tooltip on the field rephrases: *"Excludes surface air
-     films. Matches Honeybee's `OpaqueConstruction.u_value`
-     convention."*
-   - Same convention as US-ENV-10 — the viewer's labels
-     match the envelope-builder's labels exactly.
+7. **U/R rows follow honeybee-energy (LBT) terminology
+   verbatim — amended 2026-06-12 per D-12.** (The original
+   criterion would have relabeled honeybee's `u_factor` as a
+   films-excluded "U-Value" — a mislabel; parity audit finding
+   F-1.)
+   - Opaque constructions show four rows: **U-Factor**
+     (primary) and **R-Factor** — air films INCLUDED
+     (EN673 / ISO10292 coefficients); **U-Value** and
+     **R-Value** — material layers only, films EXCLUDED.
+     Windows show U-Factor + U-Value (no R rows, V1 parity).
+   - Tooltips state the film convention and the honeybee field
+     name, e.g. U-Factor: *"Includes interior + exterior
+     air-film resistances (EN673/ISO10292). Honeybee
+     `u_factor`."*
+   - Convention recorded in `context/GLOSSARY.md` Thermal
+     performance: "-Factor = with films, -Value = without."
+     The envelope builder's layer-sum quantity corresponds to
+     the films-excluded "-Value" rows.
 
 8. **Airflow units** — Q-VIEW that's implicit, addressed
    by PRD §11.5: the wire transports m³/s (SI canonical);
@@ -1221,14 +1284,22 @@ schemas), §14.2 (pre-Pydantic airflow conversion — V2 fix),
    backend's job is to ship the DTOs in the schemas the
    loaders expect — no field renames vs V1.
 
-9. **Process-local cache removed** (V1 ref §14.4). V2
-   relies on R2 + HTTP-level caching (signed-URL with
-   `Cache-Control: immutable` since HBJSON is immutable
-   post-upload). Backend does NOT memoize the
-   deserialized `honeybee.model.Model` — re-parsing on
-   every request is acceptable for 5-20 MB files and
-   avoids the cross-worker cache-coherence problems V1
-   had (V1 ref §14.4).
+9. **Process-local cache removed** (V1 ref §14.4); derived
+   payload precomputed *(amended 2026-06-12, D-15)*. The
+   upload-time extraction job writes the full
+   `CombinedModelData` to R2 as an immutable derived
+   artifact; `GET /model_data` streams that artifact with
+   `Cache-Control: immutable` + ETag and does NOT parse
+   HBJSON per request (re-parse-per-request had no latency
+   ceiling on ~50 MB multifamily files). The original
+   intent stands: backend does NOT memoize the
+   deserialized `honeybee.model.Model` in process memory,
+   avoiding V1's cross-worker cache-coherence problems
+   (V1 ref §14.4) — immutable storage replaces both the
+   cache and the re-parse. Self-healing: artifact missing
+   with `extraction_status='pending'` → extract
+   synchronously and persist; `'failed'` → typed permanent
+   error (D-16).
 
 10. **MCP-callable endpoints** (NEW-LLM-API-1) — every
     endpoint listed in criterion 2 is also exposed as an

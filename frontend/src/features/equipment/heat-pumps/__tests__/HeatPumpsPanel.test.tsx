@@ -1,10 +1,12 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import { createQueryClient } from "../../../../app/query-client";
 import type { ProjectDetail } from "../../../projects/types";
+import { buildRoom, buildRoomsSlice } from "../../testing/testFixtures";
+import { buildEmptyIndoorUnitRow } from "../lib";
 import { HeatPumpsPanel } from "../routes/HeatPumpsPanel";
 import type { HeatPumpsSlice } from "../types";
 
@@ -19,6 +21,9 @@ beforeEach(() => {
     }
     if (url.endsWith("/api/v1/projects/proj_1/equipment/heat-pumps")) {
       return jsonResponse(heatPumpsSlice());
+    }
+    if (url.endsWith("/api/v1/projects/proj_1/versions/ver_1/draft/tables/rooms")) {
+      return jsonResponse(roomsSlice());
     }
     if (url.endsWith("/api/v1/projects/proj_1/equipment/heat-pumps/outdoor-equip")) {
       const body = JSON.parse(String(init?.body)) as { value: { tag: string } };
@@ -69,6 +74,39 @@ describe("HeatPumpsPanel", () => {
     expect(await screen.findByRole("button", { name: "Add indoor unit" })).toBeInTheDocument();
   });
 
+  test("opens linked room chips in the Room modal without leaving indoor units", async () => {
+    const user = userEvent.setup();
+    renderPanel({
+      slice: heatPumpsSlice({
+        indoor_units: [
+          buildEmptyIndoorUnitRow({
+            id: "hpiu_01HX0000000000000000000000",
+            tag: "IU-A",
+            indoor_equip_id: "hpie_01HX0000000000000000000000",
+            served_room_ids: ["rm_1"],
+          }),
+        ],
+      }),
+    });
+
+    await user.click(await screen.findByRole("tab", { name: "Units - Indoor" }));
+    expect(await screen.findByRole("button", { name: "Add indoor unit" })).toBeInTheDocument();
+
+    const roomChip = await screen.findByRole("button", { name: /101.*Living Room/ });
+    fireEvent.click(roomChip);
+    fireEvent.click(screen.getByRole("button", { name: /101.*Living Room/ }));
+
+    expect(await screen.findByRole("dialog", { name: "Room: 101 - Living Room" })).toBeVisible();
+    expect(screen.getByTestId("location")).toHaveTextContent(
+      "/projects/proj_1/equipment/heat-pumps/units-indoor",
+    );
+    expect(
+      fetchMock.mock.calls.some(([input]) =>
+        String(input).endsWith("/api/v1/projects/proj_1/table-views/rooms"),
+      ),
+    ).toBe(false);
+  });
+
   test("mounts the indoor equipment table on the indoor leaf", async () => {
     const user = userEvent.setup();
     renderPanel();
@@ -109,6 +147,9 @@ function renderPanel({ slice = heatPumpsSlice() }: { slice?: HeatPumpsSlice } = 
     if (url.endsWith("/api/v1/projects/proj_1/equipment/heat-pumps")) {
       return jsonResponse(slice);
     }
+    if (url.endsWith("/api/v1/projects/proj_1/versions/ver_1/draft/tables/rooms")) {
+      return jsonResponse(roomsSlice());
+    }
     if (url.endsWith("/api/v1/projects/proj_1/equipment/heat-pumps/outdoor-equip")) {
       return jsonResponse({
         ...slice,
@@ -123,10 +164,16 @@ function renderPanel({ slice = heatPumpsSlice() }: { slice?: HeatPumpsSlice } = 
   return render(
     <MemoryRouter initialEntries={["/projects/proj_1/equipment/heat-pumps/equipment-outdoor"]}>
       <QueryClientProvider client={queryClient}>
+        <LocationProbe />
         <HeatPumpsPanel project={project()} />
       </QueryClientProvider>
     </MemoryRouter>,
   );
+}
+
+function LocationProbe() {
+  const location = useLocation();
+  return <output data-testid="location">{`${location.pathname}${location.search}`}</output>;
 }
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -184,6 +231,18 @@ function heatPumpsSlice(overrides: Partial<HeatPumpsSlice> = {}): HeatPumpsSlice
     single_select_options: {},
     ...overrides,
   };
+}
+
+function roomsSlice() {
+  return buildRoomsSlice({
+    project_id: "proj_1",
+    version_id: "ver_1",
+    source: "version",
+    version_etag: "version_1",
+    draft_etag: null,
+    rooms: [buildRoom()],
+    rows_computed: {},
+  });
 }
 
 function outdoorEquipRow(overrides: Partial<HeatPumpsSlice["outdoor_equip"][number]> = {}) {

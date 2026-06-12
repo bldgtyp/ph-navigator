@@ -3,11 +3,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   buildLinkedRecordOps,
-  tableFieldDefsToFieldDefs,
+  RECORD_ID_FIELD_KEY,
   type LinkedRecordCellOps,
   type LinkedRecordTargetTableOption,
 } from "../../../shared/ui/data-table";
-import { SliceTableShell, useSliceTableController } from "../../../shared/ui/data-table/feature";
+import { SliceTableShell } from "../../../shared/ui/data-table/feature";
 import type { ProjectDetail } from "../../projects/types";
 import { RoomsPageError } from "../components/RoomsPageError";
 import { RoomDialogStack, type RoomModalState } from "../components/RoomDialogStack";
@@ -17,7 +17,17 @@ import {
 } from "../components/RoomsToolbarActions";
 import { RoomsTableSlot } from "../components/RoomsTableSlot";
 import { usePumpsSliceQuery, useRoomsSliceQuery } from "../hooks";
-import { PUMPS_TARGET_TABLE_PATH, type PumpRow, type PumpsSlice } from "../types";
+import { customTextValueOrNull } from "../lib/customValueReaders";
+import { wasLocalDraftTouched } from "../lib";
+import { buildRoomFormulaRowValues, buildRoomsFormulaRegistry } from "../lib/roomsFormulaRegistry";
+import { useRoomDialogController } from "../lib/useRoomDialogController";
+import {
+  PUMPS_TARGET_TABLE_PATH,
+  type PumpRow,
+  type PumpsSlice,
+  type RoomRow,
+  type RoomsSlice,
+} from "../types";
 
 // Phase 1 has one link-targetable table on Rooms: Pumps. As more
 // tables opt into `link_targetable=True` on the backend, derive this
@@ -26,26 +36,6 @@ import { PUMPS_TARGET_TABLE_PATH, type PumpRow, type PumpsSlice } from "../types
 const ROOMS_LINKED_RECORD_TARGETS: ReadonlyArray<LinkedRecordTargetTableOption> = [
   { path: [...PUMPS_TARGET_TABLE_PATH], label: "Pumps" },
 ];
-import { customTextValueOrNull } from "../lib/customValueReaders";
-import { RECORD_ID_FIELD_KEY } from "../../../shared/ui/data-table";
-import {
-  roomsFieldOverlay,
-  roomsTableColumnsForSanitize,
-  roomsTableFieldDefs,
-  wasLocalDraftTouched,
-} from "../lib";
-import { makeBuildEmptyRoomRow } from "../lib/buildEmptyRoomRow";
-import { makeDeleteRoom, makeSaveRoom } from "../lib/roomMutationCallbacks";
-import {
-  ROOMS_ACTIVE_ROW_CONFLICT_MESSAGE,
-  ROOMS_CONFLICT_MESSAGES,
-  ROOMS_DELETE_CONFLICT_MESSAGE,
-  ROOMS_VERSION_LOCKED_MESSAGE,
-} from "../lib/roomsConflictMessages";
-import { roomsPayloadBuilders } from "../lib/roomsController";
-import { buildRoomFormulaRowValues, buildRoomsFormulaRegistry } from "../lib/roomsFormulaRegistry";
-import { useRoomsSliceWiring } from "../lib/useRoomsSliceWiring";
-import { ROOMS_TABLE_NAME, type RoomRow, type RoomsSlice } from "../types";
 
 export function RoomsPage({ project }: { project: ProjectDetail }) {
   const roomsQuery = useRoomsSliceQuery(project.id, project.active_version_id, project.access_mode);
@@ -115,70 +105,28 @@ function RoomsPageBody(props: {
     );
   }, [openModalRequested, focusRowId, roomsSlice.rooms, setSearchParams]);
 
-  const fieldOverlay = useMemo(() => roomsFieldOverlay(roomsSlice), [roomsSlice]);
-  const fieldDefs = useMemo(
-    () =>
-      roomsSlice.field_defs ?? [
-        ...roomsTableFieldDefs(roomsSlice),
-        ...((roomsSlice as RoomsSlice & { custom_fields?: RoomsSlice["field_defs"] })
-          .custom_fields ?? []),
-      ],
-    [roomsSlice],
-  );
-  const previewSchemaFieldDefs = useMemo(
-    () =>
-      tableFieldDefsToFieldDefs({
-        tableKey: ROOMS_TABLE_NAME,
-        fieldDefs,
-        fieldOverlay,
-        singleSelectOptions: roomsSlice.single_select_options,
-      }),
-    [fieldDefs, fieldOverlay, roomsSlice.single_select_options],
-  );
-  const columnsForSanitize = useMemo(
-    () => roomsTableColumnsForSanitize(previewSchemaFieldDefs),
-    [previewSchemaFieldDefs],
-  );
-  const buildEmptyRoomRow = useMemo(() => makeBuildEmptyRoomRow(roomsSlice), [roomsSlice]);
-
-  const { replaceMutation, schemaMutation, setNotifyRemoteSlice } = useRoomsSliceWiring({
-    projectId: project.id,
-    activeVersionId,
-    isEditor,
-  });
-
   const activeRow = roomModal?.mode === "edit" ? roomModal.room : null;
-
-  const controller = useSliceTableController({
-    projectId: project.id,
-    activeVersionId,
-    accessMode: project.access_mode,
-    versionLocked: project.active_version?.locked ?? false,
-    tableKey: ROOMS_TABLE_NAME,
-    slice: roomsSlice,
-    fieldDefs,
-    fieldOverlay,
-    singleSelectOptions: roomsSlice.single_select_options ?? null,
-    columnsForSanitize,
-    payloadBuilders: roomsPayloadBuilders,
-    conflictMessages: ROOMS_CONFLICT_MESSAGES,
-    buildEmptyRow: buildEmptyRoomRow,
-    activeRow,
-    replaceMutation,
-    schemaMutation,
-    refetch,
-  });
-  setNotifyRemoteSlice(controller.notifyRemoteSlice);
+  const { controller, buildEmptyRoomRow, saveRoom, deleteRoom, frozenReason } =
+    useRoomDialogController({
+      projectId: project.id,
+      activeVersionId,
+      accessMode: project.access_mode,
+      versionLocked: project.active_version?.locked ?? false,
+      roomsSlice,
+      refetch,
+      activeRoom: activeRow,
+      onSaved: () => setRoomModal(null),
+      onDeleted: () => {
+        setRoomPendingDelete(null);
+        setRoomModal(null);
+      },
+    });
 
   const formulaFieldRegistry = useMemo(
     () => buildRoomsFormulaRegistry(controller.tableSchema.fieldDefs),
     [controller.tableSchema.fieldDefs],
   );
 
-  // PRD Q19 — `onPillClick` lands on the equipment tab with the right
-  // sub-tab seeded and `?focus=<row_id>` for the highlight hook on
-  // PumpsTableSlot. When the pumps slice hasn't resolved yet, the ops
-  // map is empty; pills still render with row-id fallback labels.
   const linkedRecordOps: ReadonlyMap<string, LinkedRecordCellOps> | undefined = useMemo(() => {
     if (!pumpsSlice?.pumps) return undefined;
     return buildLinkedRecordOps<PumpRow>({
@@ -197,24 +145,6 @@ function RoomsPageBody(props: {
     setRoomModal(null);
     await controller.reloadDraft();
   };
-
-  const saveRoom = makeSaveRoom({
-    controller,
-    roomsSlice,
-    replaceMutation,
-    conflictMessage: ROOMS_ACTIVE_ROW_CONFLICT_MESSAGE,
-    onSaved: () => setRoomModal(null),
-  });
-  const deleteRoom = makeDeleteRoom({
-    controller,
-    roomsSlice,
-    replaceMutation,
-    conflictMessage: ROOMS_DELETE_CONFLICT_MESSAGE,
-    onDeleted: () => {
-      setRoomPendingDelete(null);
-      setRoomModal(null);
-    },
-  });
 
   return (
     <SliceTableShell
@@ -254,10 +184,7 @@ function RoomsPageBody(props: {
         roomsSlice={roomsSlice}
         roomModal={roomModal}
         roomPendingDelete={roomPendingDelete}
-        frozenReason={
-          controller.editBlocker?.message ??
-          (controller.isLocked ? ROOMS_VERSION_LOCKED_MESSAGE : null)
-        }
+        frozenReason={frozenReason}
         blockerActive={Boolean(controller.editBlocker)}
         deletePending={controller.isReplacePending}
         onCancelModal={() => setRoomModal(null)}

@@ -503,7 +503,7 @@ function renderCellContent(args: {
   // open the picker on a single click.
   onActivateEdit?: () => void;
   // True when this cell is the active cell (Airtable-parity: linked-
-  // record pills only nav / show "x" unlink when their cell is active).
+  // record pills only open / show "x" unlink when their cell is active).
   isActive?: boolean;
 }): ReactNode {
   const {

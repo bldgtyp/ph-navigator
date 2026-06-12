@@ -546,9 +546,9 @@ describe("GridBody — linked_record dispatch", () => {
     const pillRow = screen.getAllByTestId("linked-record-cell")[0]!;
     const pill = within(pillRow).getByRole("button", { name: /Pump-A/ });
     // Airtable parity: first click activates the cell, second click on
-    // the pill fires the nav callback.
+    // the pill fires the linked-row callback.
     fireEvent.click(pill);
-    fireEvent.click(pill);
+    fireEvent.click(within(pillRow).getByRole("button", { name: /Pump-A/ }));
     expect(onPillClick).toHaveBeenCalledWith("pmp_a");
   });
 

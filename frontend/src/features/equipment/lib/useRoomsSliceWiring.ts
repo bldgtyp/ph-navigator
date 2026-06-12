@@ -45,11 +45,12 @@ export function useRoomsSliceWiring(args: {
     args.activeVersionId,
     publishRoomsSlice,
   );
+  const setNotifyRemoteSlice = useCallback((cb: (incoming: RoomsSlice) => void) => {
+    notifyRemoteSliceRef.current = cb;
+  }, []);
   return {
     replaceMutation,
     schemaMutation,
-    setNotifyRemoteSlice: (cb) => {
-      notifyRemoteSliceRef.current = cb;
-    },
+    setNotifyRemoteSlice,
   };
 }

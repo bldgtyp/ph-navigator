@@ -1260,29 +1260,19 @@ long manufacturer/model/spec strings into cramped cells. Preserve fast
 scan/edit/copy behavior; avoid pagination as the primary way to manage
 project-scale tables unless performance requires it.
 
-### 2.9 Model tab (`/projects/{id}/model`) — placeholder
+### 2.9 Model tab (`/projects/{id}/model`) — see feature UI spec
 
-**(Detailed in US-Viewer.)**
-
-Top-of-tab strip: HBJSON file picker (dropdown listing uploaded
-files with labels and dates) + "Upload new HBJSON" button.
-
-Main area: R3F canvas filling the available space. The viewer should be
-full-bleed or near full-bleed below the project header, with minimal
-generic page chrome. Preserve V1 viewer behavior but redesign the
-composition:
-
-- compact floating HBJSON file selector / upload affordance;
-- left legend/filter rail when color-by is active;
-- right inspector panel for selected object metadata;
-- bottom or side tool rail with grouped tools, labels on hover, and
-  keyboard-accessible controls;
-- restrained, high-contrast selection color that is distinct from table
-  focus and evidence status colors.
-
-The Model tab may carry more BLDGTYP character than ordinary tables,
-but it still needs to feel like inspecting a building model, not viewing
-a dashboard chart.
+**Superseded 2026-06-12.** The accepted UI definition lives at
+`planning/features/model-viewer/UI_SPEC.md` — quadrant layout over a
+full-bleed canvas: file chip (top-left), lens bar + theme menu
+(top-center), legend card (bottom-left), camera cluster + measure
+toggle (bottom-right), inspector sliding in from the right. Behavior
+contract: US-Viewer / US-VIEW-1..7 as amended by
+`planning/features/model-viewer/PRD.md` §4 (accepted decisions
+D-02..D-14 in that folder's `decisions.md`). Selection styling uses
+the brand `--highlight` token family (D-14). This section's earlier
+placeholder composition (left legend rail, bottom tool rail) is
+retired.
 
 ### 2.10 Project settings (overflow menu, not a tab)
 
@@ -1401,7 +1391,7 @@ back to a user-story open question.
 | UX-Q6 | Empty-state primary action — single button or guided onboarding? | single button |
 | ~~UX-Q7~~ | ~~Viewer header — "Read-only" pill or banner?~~ | **Resolved 2026-05-11:** pill in normal project header |
 | UX-Q8 | Builder details placement — below canvas, right inspector, or adaptive? | adaptive by surface |
-| UX-Q9 | Model toolbar placement — bottom V1 rail or left/right modeling-app rail? | open through prototype |
+| ~~UX-Q9~~ | ~~Model toolbar placement — bottom V1 rail or left/right modeling-app rail?~~ | **Resolved 2026-06-12:** neither — top-center lens bar + bottom-right camera/measure cluster (D-05; `planning/features/model-viewer/UI_SPEC.md` §1) |
 | UX-Q10 | Evidence interaction model — checklist, table filters, or both? | both, via §1.8 |
 
 ---

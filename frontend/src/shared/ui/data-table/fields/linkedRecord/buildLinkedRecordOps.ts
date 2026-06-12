@@ -1,7 +1,7 @@
 // Consumer-side helper that turns a target-table slice into the
 // per-fieldKey `LinkedRecordCellOps` map that `DataTable.linkedRecordOps`
 // expects. The data-table library is target-table-agnostic; pages own
-// the candidate/resolver wiring and the navigation hook.
+// the candidate/resolver wiring and the linked-row open action.
 //
 // Pages with linked_record fields pointing at multiple target tables
 // call this once per target table and merge the resulting Maps.
@@ -26,8 +26,8 @@ export type BuildLinkedRecordOpsArgs<TRow> = {
   // Optional searchable display name used by the picker's substring
   // filter. Defaults to `null` if omitted.
   getDisplayName?: (row: TRow) => string | null;
-  // Navigation hook (PRD Q19). When omitted, pills render but no-op on
-  // click.
+  // Linked-row open hook. Consumers commonly show the target row in a
+  // modal; when omitted, pills render but no-op on click.
   onPillClick?: (rowId: string) => void;
 };
 
