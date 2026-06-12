@@ -237,7 +237,8 @@ honeybee-schema version newer than the backend pin) is first-class:
 - **File list badge:** popover rows with `extraction_status='failed'`
   show a quiet "Failed to parse" badge (tooltip = `extraction_error`).
   The list payload includes `extraction_status` from Phase 1 (badge
-  is inert until the Phase 2 job exists).
+  is inert until the Phase 2 job exists — the job shipped
+  2026-06-12).
 - **Error taxonomy on `/model_data`:** **permanent** (invalid HBJSON,
   schema-version mismatch — error names the cause, including the
   file's declared schema version vs. the backend's; NO Retry button)

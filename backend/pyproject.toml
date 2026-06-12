@@ -24,6 +24,8 @@ dependencies = [
     "pypdfium2>=5.8.0",
     "pillow>=12.2.0",
     "python-magic>=0.4.27",
+    "honeybee-ph>=1.33.19",
+    "ladybug-core>=0.44.49",
 ]
 
 [dependency-groups]
@@ -46,6 +48,9 @@ testpaths = ["tests"]
 # --cov-report=term-missing`). It adds ~13% wall time and shouldn't gate
 # every dev/CI run. See planning/code-reviews/2026-06-08/backend-test-suite-speedup.md.
 addopts = ""
+markers = [
+    "hillandale: heavyweight 52 MB scale-fixture tests (CI runs them; skip locally with -m 'not hillandale')",
+]
 
 [tool.ruff]
 line-length = 120

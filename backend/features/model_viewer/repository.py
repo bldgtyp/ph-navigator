@@ -195,6 +195,76 @@ def update_hbjson_file(
     return row["id"] if row else None
 
 
+def get_extraction_target(conn: Connection[Any], project_id: UUID, file_id: UUID) -> dict[str, Any] | None:
+    """The minimal row the extraction job / artifact serving needs.
+
+    Separate from `_FILE_SELECT` because it carries the asset's R2
+    `object_key`, which the public list payload must not leak.
+    """
+    return conn.execute(
+        """
+        SELECT h.id, h.asset_id, h.extraction_status, h.extraction_error,
+               a.object_key
+        FROM project_hbjson_files h
+        JOIN project_assets a ON a.id = h.asset_id
+        WHERE h.project_id = %(project_id)s
+          AND h.id = %(file_id)s
+          AND h.deleted_at IS NULL
+        """,
+        {"project_id": project_id, "file_id": file_id},
+    ).fetchone()
+
+
+def set_extraction_success(
+    conn: Connection[Any],
+    project_id: UUID,
+    file_id: UUID,
+    *,
+    volume_m3: float,
+    envelope_area_m2: float,
+    floor_area_m2: float,
+) -> None:
+    conn.execute(
+        """
+        UPDATE project_hbjson_files
+        SET extraction_status = 'success',
+            extraction_error = NULL,
+            extracted_volume_m3 = %(volume_m3)s,
+            extracted_envelope_area_m2 = %(envelope_area_m2)s,
+            extracted_floor_area_m2 = %(floor_area_m2)s,
+            extracted_at = now()
+        WHERE project_id = %(project_id)s
+          AND id = %(file_id)s
+        """,
+        {
+            "project_id": project_id,
+            "file_id": file_id,
+            "volume_m3": volume_m3,
+            "envelope_area_m2": envelope_area_m2,
+            "floor_area_m2": floor_area_m2,
+        },
+    )
+
+
+def set_extraction_failed(conn: Connection[Any], project_id: UUID, file_id: UUID, *, error: str) -> None:
+    """Permanent parse failure (D-16). The file stays listable/renamable/
+    deletable — only rendering is off the table."""
+    conn.execute(
+        """
+        UPDATE project_hbjson_files
+        SET extraction_status = 'failed',
+            extraction_error = %(error)s,
+            extracted_volume_m3 = NULL,
+            extracted_envelope_area_m2 = NULL,
+            extracted_floor_area_m2 = NULL,
+            extracted_at = now()
+        WHERE project_id = %(project_id)s
+          AND id = %(file_id)s
+        """,
+        {"project_id": project_id, "file_id": file_id, "error": error},
+    )
+
+
 def soft_delete_hbjson_file(conn: Connection[Any], project_id: UUID, file_id: UUID) -> bool:
     row = conn.execute(
         """

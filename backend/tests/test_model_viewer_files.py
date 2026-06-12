@@ -14,6 +14,7 @@ from uuid import UUID
 
 import pytest
 from fastapi.testclient import TestClient
+from honeybee.model import Model
 
 from database import connection, transaction
 from features.assets import repository as assets_repository
@@ -23,8 +24,10 @@ from main import app
 from tests.test_assets_service import FakeR2Client, NoopThumbnailer
 from tests.test_project_document import ORIGIN, create_project, signed_in_client
 
-HBJSON_BODY = json.dumps({"type": "Model", "identifier": "phase-1-fixture"}).encode()
-HBJSON_BODY_2 = json.dumps({"type": "Model", "identifier": "phase-1-fixture-2"}).encode()
+# Valid (empty) honeybee models: since Phase 2, linking schedules the
+# extraction job — junk bodies would flip rows to 'failed' mid-test.
+HBJSON_BODY = json.dumps(Model("phase-1-fixture").to_dict()).encode()
+HBJSON_BODY_2 = json.dumps(Model("phase-1-fixture-2").to_dict()).encode()
 
 
 @pytest.fixture()
@@ -100,7 +103,9 @@ def test_upload_link_round_trip_and_list_shape(clean_document_tables: None, fake
     assert items[0]["size_bytes"] == len(HBJSON_BODY)
     assert items[0]["original_filename"] == "model.hbjson"
     assert items[0]["uploaded_by_display_name"] == "Ed May"
-    assert items[0]["extraction_status"] == "pending"
+    # The link response said 'pending'; the background job has run by the
+    # time the list is read (TestClient executes background tasks inline).
+    assert items[0]["extraction_status"] == "success"
     assert items[0]["extraction_error"] is None
 
 

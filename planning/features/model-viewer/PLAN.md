@@ -50,7 +50,7 @@ cap, D-17), empty state, `?file=` URL param. No 3D yet — the
 **Verify:** upload → list → rename → note → delete round-trip via UI
 and pytest; dedup toast; viewer-role hides write affordances.
 
-## Phase 2 — Extraction backend (US-VIEW-7)
+## Phase 2 — Extraction backend (US-VIEW-7) — DONE 2026-06-12
 
 `uv add honeybee-ph ladybug-core` (D-02). Port V1
 `services/model_elements.py` + schema subtrees to
@@ -72,6 +72,15 @@ faces, spaces, shades-merged, skipped air boundaries); m³/s on the
 wire asserted; artifact round-trip + cache headers; permanent vs.
 transient error paths; Hillandale extraction wall-time recorded in
 STATUS.md (the perf canary — do not defer to Phase 6).
+
+**Done 2026-06-12** — all gates green; perf canary 7.4 s. NOTE:
+several golden counts below were corrected against the actual parsed
+fixtures during implementation (vent ducts dedupe to 1+1 elements;
+Hillandale DOES carry duct/pipe geometry — 48 duct elements,
+10 HW trunks — and uses 12 opaque constructions, not 9; primary
+fixture spaces have no airflow values). Corrected goldens live in
+`backend/tests/test_model_viewer_extraction.py` and STATUS.md
+"Phase 2" section; the lists below are left as originally planned.
 
 Canonical fixtures:
 - **Primary (provided by Ed 2026-06-12):**
