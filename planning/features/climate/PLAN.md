@@ -9,8 +9,9 @@ RELATED:
   - PRD.md
   - decisions.md
   - phases/phase-01-sun-path-service.md
-  - phases/phase-02-climate-tab-ui.md
-  - phases/phase-03-design-conditions-and-metrics.md
+  - phases/phase-02-reference-datasets-and-format.md
+  - phases/phase-03-climate-tab-ui.md
+  - phases/phase-04-design-conditions-and-metrics.md
   - planning/features_v1.1/model-viewer-sun-path/ (Phase-1 consumer)
 ---
 
@@ -21,15 +22,17 @@ RELATED:
 | Phase | Scope | Gate to start | Unblocks |
 |---|---|---|---|
 | 1 — Sun-path service ✅ **done** (2026-06-13) | Backend sun-path builder + `GET /projects/{id}/sun-path` + MCP; north-sign verified (identity) | None — `project_location` data + `ladybug-core` exist | Model Viewer Site & Sun render; Climate tab sun-path visual |
-| 2 — Reference datasets + standardized format | Canonical `ClimateRecord`; app-wide versioned Phius/PHI stores; seed importers; dataset read endpoints + MCP | None (reuse-investigate PH-Tools first, D-CL-10) | The tab dropdowns/graphs; the design-conditions contract |
-| 3 — Climate tab UI | New `climate` tab: location record + multi-source attach/select (ASHRAE/EPW/Phius/PHI/custom) + per-source graph/table + sun-path visual | Phase 1 + Phase 2 merged | The "see + record + compare sources" goal |
+| 2 — Reference datasets + standardized format ✅ **done** (2026-06-13; PHI xlsx seed deferred) | Canonical `ClimateRecord` + honeybee_ph adapters; app-wide versioned `climate_dataset*` store; Phius `-mon.txt` importer + idempotent seed; dataset read endpoints + MCP | None | The tab dropdowns/graphs; the design-conditions contract |
+| 3 — Climate tab UI | New `climate` tab: location record + multi-source attach/select (ASHRAE/EPW/Phius/PHI/custom) + per-source graph/table + sun-path visual | Phase 1 + Phase 2 (met) | The "see + record + compare sources" goal |
 | 4 — Design conditions + metrics | Per-source, source-parameterized design-conditions contract (+ MCP) | **Deferred** (Ed 2026-06-13) — needs a scheduled fRSI/comfort consumer | Thermal-Bridges fRSI; Window comfort |
 
-**Focus (Ed 2026-06-13): the climate data *store* — Phases 1–3.** The
-*use* of the data (Phase 4 design conditions + the fRSI/comfort
+**Focus (Ed 2026-06-13): the climate data *store* — Phases 1–3.**
+Phases 1 and 2 are **done** (2026-06-13); **Phase 3 (the tab) is next.**
+The *use* of the data (Phase 4 design conditions + the fRSI/comfort
 consumers + the D-CL-5 interior assumption + temperature-asymmetry) is
-deferred to later feature work. Phases 1 and 2 are independent and can
-run in parallel (sun path vs. dataset store); Phase 3 needs both.
+deferred to later feature work. Phase-2 carry-overs into Phase 3: the
+real Phius seed + the PHI xlsx importer (await Ed's files), and promoting
+`ClimateRecord` to a `context/` reference doc.
 
 ## Cross-feature ordering (the answer to "Climate first?")
 

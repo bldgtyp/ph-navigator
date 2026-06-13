@@ -1,9 +1,10 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Active — Phase 1 (sun-path service) implemented 2026-06-13; the
-  endpoint other features (Model Viewer sun path, fRSI, window comfort)
-  wait on now exists. Phase 2 next.
+STATUS: Active — Phase 1 (sun-path service) + Phase 2 (standardized
+  record + app-wide reference datasets) implemented 2026-06-13. Phase 3
+  (the Climate tab) is next. PHI/PHPP xlsx seed importer + the real-data
+  bulk seed are the deferred Phase-2 slices (await Ed's files).
 AUTHOR: Claude (for Ed)
 SCOPE: Router for the project-scoped Climate feature — a top-level tab
   that owns and visualizes project location + weather basis, and serves
@@ -76,9 +77,13 @@ fRSI, Window comfort.
 
 ## Sequence headline
 
-**Phase 1 (sun-path service) is implemented (2026-06-13).** It now ships
-the `GET /projects/{id}/sun-path` endpoint that unblocks the Model Viewer
+**Phase 1 (sun-path service) and Phase 2 (reference datasets +
+standardized format) are implemented (2026-06-13).** Phase 1 ships the
+`GET /projects/{id}/sun-path` endpoint that unblocks the Model Viewer
 Site & Sun 3D render (`planning/features_v1.1/model-viewer-sun-path/`, now
-frontend-only). **Phase 2 (reference datasets + standardized format) is
-next** — independent of Phase 1. Phase 3 (the tab) needs both. Phase 4
-(per-source design conditions) gates the fRSI/comfort consumers.
+frontend-only). Phase 2 ships the `ClimateRecord` schema, the app-wide
+`climate_dataset*` store, the Phius importer + seed routine, and the
+`GET /api/v1/climate/datasets…` read endpoints + MCP. **Phase 3 (the
+Climate tab) is next** and needs both (met). Phase 4 (per-source design
+conditions) gates the fRSI/comfort consumers. Deferred Phase-2 slices:
+the PHI/PHPP xlsx importer and the real-data bulk seed (await Ed's files).

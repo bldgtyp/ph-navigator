@@ -1,9 +1,11 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Planned — the climate-data foundation. Start after (or parallel
-  to) Phase 1; required before the tab (Phase 3) and design conditions
-  (Phase 4).
+STATUS: Implemented 2026-06-13 — standardized `ClimateRecord` + adapters,
+  app-wide dataset store + migration, Phius importer + seed routine, read
+  endpoints + MCP all landed; `make ci` green. PHI/PHPP xlsx importer +
+  the real-data bulk seed are the deferred slices (await Ed's files). See
+  §5 Outcome.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff — the standardized climate record + the
   app-wide, versioned Phius/PHI reference datasets + seed importers.
@@ -115,3 +117,65 @@ build on.
 - Phius 2022 + PHI 10.6 seeded, queryable, version-tagged; counts
   verified (Phius ~1007).
 - Read endpoints + MCP live. `make ci` green.
+
+## 5. Outcome (implemented 2026-06-13)
+
+Landed as a new `backend/features/climate/` module (app-wide reference
+data is its own concern, kept separate from project-scoped
+`project_location`; the eventual `project_location → climate` rename is a
+Phase-3 follow-up).
+
+- **`record.py`** — Pydantic v2 `ClimateRecord` (+ `ClimateLocation` /
+  `ClimateData` / `ClimateMonthlyTemps` / `ClimateMonthlyRadiation` /
+  `ClimatePeakLoad(s)` / `ClimateGround` / `ClimatePhppCodes` /
+  `ClimateAux`) mirroring `honeybee_ph.site` (PRD §4.3, D-CL-10).
+  `from_honeybee_ph_site()` / `to_honeybee_ph_site()` adapters bridge our
+  ordered 12-element monthly lists ↔ honeybee_ph's month-keyed dicts;
+  identity/`aux` ride along in `user_data`. **Lossless round-trip is
+  test-pinned** (`Site().to_dict()` → record → `Site.from_dict()` equal).
+  Used `glob` (not `global`) for global-horizontal radiation to keep the
+  bridge a trivial pass-through and stay a valid Python identifier.
+- **migration `20260613_0025`** — `climate_dataset` (`(provider,
+  version)` unique) + `climate_dataset_location` (`data` JSONB, geo +
+  lat/long indexes), app-wide (no `project_id`), immutable per release.
+- **`repository.py` / `service.py`** — list/search (country/region),
+  nearest (planar + cos-lat correction, no PostGIS), get; plus an
+  idempotent `seed_dataset(provider, version, records, …)` (delete +
+  rebuild per `(provider, version)` in one transaction; `replace=False`
+  to no-op on an existing release).
+- **`importers/phius.py`** — `parse_phius_mon_txt/file` → `ClimateRecord`
+  (label→field mapping centralized in `_SERIES_FIELDS` / `_SCALARS`; the
+  3 design columns → heat1/heat2/cooling1) + `seed_phius_dataset(root)`.
+  Tested against a committed golden fixture
+  (`tests/fixtures/climate/phius/USA/MA/US0001a-Boston-mon.txt`).
+- **`routes.py`** — `GET /api/v1/climate/datasets`,
+  `…/datasets/{id}/locations?country=&region=&near=lat,long`,
+  `…/datasets/{id}/locations/{loc_id}` (auth = any signed-in user).
+- **`mcp.py`** — `list_climate_datasets` / `search_climate_locations` /
+  `get_climate_location`, app-wide (token-gated, **no** project scope —
+  the datasets are shared); route/MCP parity test-pinned.
+
+Tests: `tests/test_climate_datasets.py` (honeybee round-trip + identity,
+Phius parser golden + truncation guard, seed idempotency + replace=False,
+route list/search/nearest/detail + 404 + bad-`near`, MCP parity + auth).
+`make ci` green (backend 800 passed).
+
+### Deferred (carry into Phase 3)
+
+- **PHI/PHPP xlsx seed importer** — NOT built. The exact PHPP `Climate`
+  worksheet cell layout cannot be reconstructed without the real workbook
+  + `PHX/PHPP/sheet_io/io_climate.py`; building it blind against an
+  invented fixture would test the fixture against itself. The
+  storage/API/MCP layer is provider-agnostic (`seed_dataset(...)`), so
+  PHI plugs in once a parser exists. `importers/__init__.py` records this.
+- **Real-data bulk seed** — the Phius parser carries a **REVALIDATION
+  NOTE**: it was written against `research.md`'s documented shape + the
+  golden fixture, so the real source labels / cp1252 mojibake / German
+  wording must be reconciled (one-place edit in `_SERIES_FIELDS` /
+  `_SCALARS`) and the ~1007-station count asserted before the production
+  seed. Seed inserts are per-row in one transaction — fine for a
+  re-runnable admin seed; batch with `executemany` if the real seed is
+  slow.
+- **Promote `ClimateRecord` to `context/`** — the authoritative contract
+  currently lives in `features/climate/record.py` docstrings + PRD §4.3;
+  a thin `context/` reference doc pointing at it is a small follow-up.
