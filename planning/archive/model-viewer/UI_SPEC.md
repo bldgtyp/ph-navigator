@@ -9,7 +9,7 @@ SCOPE: UI definition for the Model tab — layout, components,
   implementation agents; supersedes context/UI_UX.md §2.9 placeholder
   once accepted.
 RELATED:
-  - planning/features/model-viewer/PRD.md
+  - planning/archive/model-viewer/PRD.md
   - context/user-stories/40-model-viewer.md (US-VIEW-6 field configs)
   - context/UI_UX.md §1 (BLDGTYP token system, state indicators)
   - research/ph-nav-v1-screenshots/HBJSON-viewer/ (V1 precedent —

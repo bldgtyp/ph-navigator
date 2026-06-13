@@ -1,17 +1,16 @@
 ---
 DATE: 2026-06-12
 TIME: -
-STATUS: Active — sequence proposed; detailed handoff plans for all six
-  phases authored 2026-06-12 under phases/ (phase-NN-*.md). The phase
-  files are the implementation-agent entry points; this file remains
-  the one-screen sequence overview.
+STATUS: Complete — all six phases implemented and verified 2026-06-13;
+  deferred post-MVP work split to
+  planning/features_v1.1/model-viewer-post-mvp/.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation phase sequence for the Model Viewer. Each phase
   is one PR-sized, independently verifiable slice.
 RELATED:
-  - planning/features/model-viewer/PRD.md
-  - planning/features/model-viewer/UI_SPEC.md
-  - planning/features/model-viewer/decisions.md
+  - planning/archive/model-viewer/PRD.md
+  - planning/archive/model-viewer/UI_SPEC.md
+  - planning/archive/model-viewer/decisions.md
   - context/user-stories/40-model-viewer.md
 ---
 
@@ -84,7 +83,7 @@ fixture spaces have no airflow values). Corrected goldens live in
 
 Canonical fixtures:
 - **Primary (provided by Ed 2026-06-12):**
-  `planning/features/model-viewer/ph_nav_v2_example.hbjson`
+  `planning/archive/model-viewer/ph_nav_v2_example.hbjson`
   (459 KB) — copy into `backend/tests/fixtures/` in this phase and
   use for ALL smoke / e2e / verification work. Coverage: 4 rooms,
   25 faces (16 Wall / 5 Floor / 4 RoofCeiling), boundary conditions
@@ -96,7 +95,7 @@ Canonical fixtures:
   4-level tree** (trunk → branch → fixture → 4 segments).
   (Supersedes `my_example_project.hbjson`, which can be removed.)
 - **Scale fixture (provided by Ed 2026-06-12, review round 3):**
-  `planning/features/model-viewer/Hillandale_Gateway_NAR_260402.hbjson`
+  `planning/archive/model-viewer/Hillandale_Gateway_NAR_260402.hbjson`
   (51.99 MB — the trigger for D-17's 100 MB cap; copy into
   `backend/tests/fixtures/` in Phase 2 alongside the primary).
   Schema 2.0.4, model units **Inches** (exercises units→SI

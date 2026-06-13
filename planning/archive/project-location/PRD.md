@@ -15,7 +15,7 @@ RELATED:
   - planning/archive/project-location/PLAN.md (phase sequence)
   - context/PRD.md §4 (public-read access), §6.1 (thin relational
     layer), §11.5 (SI canonical), §10.3 (MCP)
-  - planning/features/model-viewer/decisions.md D-07 (sun-path
+  - planning/archive/model-viewer/decisions.md D-07 (sun-path
     consumer), phases/phase-02 + phase-06 (pending wiring)
   - backend/features/assets/registry.py (asset-kind registry)
 ---
@@ -229,7 +229,7 @@ built here. What model-viewer needs, recorded so the handoff is clean:
   `GET /projects/{id}/location` (or the location repository directly,
   in-process within the extraction service).
 - **Computation:** model-viewer extraction
-  (`planning/features/model-viewer/phases/phase-02-extraction-backend.md`)
+  (`planning/archive/model-viewer/phases/phase-02-extraction-backend.md`)
   already owns `ladybug`/`honeybee` and the `sun_path` wire key
   (currently always `null`). It calls `Sunpath.from_location(...)`
   with the location inputs and populates `sun_path`.

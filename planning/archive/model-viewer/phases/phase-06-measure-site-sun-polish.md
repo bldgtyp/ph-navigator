@@ -1,10 +1,10 @@
 ---
 DATE: 2026-06-12
 TIME: -
-STATUS: In review — implementation started 2026-06-13. Final MVP
-  phase; focused TypeScript/Vitest/e2e/browser checks green, simplify
-  and docs-pass complete, make format + make ci green. John test
-  requires Ed/John coordination.
+STATUS: Done 2026-06-13 — final MVP phase implemented and verified.
+  Focused TypeScript/Vitest/e2e/browser checks green, simplify and
+  docs-pass complete, make format + make ci green. John test/product
+  validation split to planning/features_v1.1/model-viewer-post-mvp/.
   The Site & Sun sun path itself remains blocked on model-viewer
   wiring against the completed `project-location` feature; the lens
   ships with a location hint.
@@ -13,9 +13,9 @@ SCOPE: Implementation handoff for Model Viewer Phase 6 — Measure mode,
   Site & Sun lens (building + shades + hint), keyboard map, a11y pass,
   full e2e suite, and the PRD §8 acceptance run.
 RELATED:
-  - planning/features/model-viewer/UI_SPEC.md (§7 measure, §3 Site &
+  - planning/archive/model-viewer/UI_SPEC.md (§7 measure, §3 Site &
     Sun row, §9 keyboard map)
-  - planning/features/model-viewer/PRD.md (§4.5 sun path deferral —
+  - planning/archive/model-viewer/PRD.md (§4.5 sun path deferral —
     D-07; §8 acceptance gate)
   - context/user-stories/40-model-viewer.md (US-VIEW-4 measure
     semantics)
@@ -70,12 +70,15 @@ Landed so far:
   aperture fast-refresh warnings), structural checks, Vitest (1575
   passed), and production build.
 
-Still pending:
+Closeout disposition:
 
-- [ ] §16 parity checklist / PRD §8 acceptance notes, including the
-  John test outcome or explicit deferral note if Ed must coordinate it
-  outside this coding pass.
-- [ ] Full `make e2e` is red outside the model-viewer slice:
+- [x] §16 parity / PRD §8 implementation acceptance recorded in
+  STATUS.md through the per-phase ledgers, focused model-viewer e2e
+  suite, browser walkthrough, and final `make format` / `make ci`.
+- [x] John test/product validation explicitly split to
+  `planning/features_v1.1/model-viewer-post-mvp/`; it requires Ed/John
+  coordination and does not block MVP archive.
+- [x] Full `make e2e` is red outside the model-viewer slice:
   all 5 model-viewer specs passed, but 12 unrelated specs failed
   across custom-fields, row-context-menu, windows/catalog drift, and
   record-linking/health flows. Do not treat those failures as Phase 06
@@ -93,7 +96,7 @@ Model Viewer MVP.
 
 ## 2. Required reading (in order)
 
-1. `planning/features/model-viewer/UI_SPEC.md` §7 (measure), §3
+1. `planning/archive/model-viewer/UI_SPEC.md` §7 (measure), §3
    (Site & Sun lens row), §9 (keyboard map + a11y).
 2. `context/user-stories/40-model-viewer.md` — US-VIEW-4 (measure
    semantics + lifecycle; the Select-tool parts are superseded by
@@ -102,7 +105,7 @@ Model Viewer MVP.
 4. `research/v1-3d-model-viewer-reference.md` §12.3 (vertex snap
    math), §9.7 (shade rendering), §14.8 (the document.body label
    leak to avoid), §16 (the checklist this phase closes out).
-5. `planning/features/model-viewer/reviews/2026-06-12-v1-parity-audit.md`
+5. `planning/archive/model-viewer/reviews/2026-06-12-v1-parity-audit.md`
    (the mapping table doubles as the §16 walk key).
 
 ## 3. Work breakdown
@@ -174,7 +177,7 @@ Phase 3 camera cluster, bottom-right) or `M`.
    and on lens switch) and `model-viewer-site-sun.spec.ts` (shades
    render, hint visible, shades not selectable).
 4. Scripted Playwright-MCP walkthrough as the acceptance run,
-   screenshots into `planning/features/model-viewer/assets/`.
+   screenshots into `planning/archive/model-viewer/assets/`.
 5. **Scale check** (confirmation only — the 52 MB Hillandale
    fixture has been exercised since Phase 2, per the round-3
    resequencing): re-confirm load time acceptable with the progress

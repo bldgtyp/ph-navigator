@@ -28,7 +28,7 @@ amendments block below)
 
 ### V2 composition amendments — accepted 2026-06-12
 
-The redesigned V2 surface (`planning/features/model-viewer/` —
+The redesigned V2 surface (`planning/archive/model-viewer/` —
 PRD.md §4, UI_SPEC.md, decisions.md) was accepted by Ed
 2026-06-12. **Capabilities below are unchanged**; these amendments
 re-map this file's composition language. Where an amendment and the
@@ -78,7 +78,7 @@ original text conflict, the amendment wins.
 - **D-17** Upload cap raised to **100 MB** (amends US-VIEW-1
   crit. 3; real multifamily exports exceeded the original 50 MB).
 
-Implementation handoffs: `planning/features/model-viewer/phases/`.
+Implementation handoffs: `planning/archive/model-viewer/phases/`.
 
 ### Story
 
@@ -317,7 +317,7 @@ additions** based on Ed's signaled priority.
 ## US-VIEW-1 — HBJSON file management
 
 **Status:** Implemented 2026-06-12 (model-viewer Phase 1, as amended
-by `planning/features/model-viewer/phases/phase-01-*.md`) ·
+by `planning/archive/model-viewer/phases/phase-01-*.md`) ·
 **Priority:** MVP — gates all other
 US-VIEW-* (nothing can render without a file)
 **PRD ref:** §6.5 (`project_assets` backbone), §11.4.2
@@ -1182,7 +1182,7 @@ None outstanding.
 ## US-VIEW-7 — Backend: HBJSON parsing + bulk `/model_data` endpoint
 
 **Status:** Implemented 2026-06-12 (model-viewer Phase 2, as amended
-by `planning/features/model-viewer/phases/phase-02-*.md` — no EPW
+by `planning/archive/model-viewer/phases/phase-02-*.md` — no EPW
 port per D-07, D-15 artifact serving, D-16 taxonomy) ·
 **Priority:** MVP
 **PRD ref:** §11.4.2 (`project_hbjson_files`), §11.5 (SI

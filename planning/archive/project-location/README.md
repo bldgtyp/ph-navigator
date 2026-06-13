@@ -10,7 +10,7 @@ SCOPE: Archived router for the Project Location feature — scope, read order,
   phase map. Expanded from the 2026-06-12 handoff stub (now in §
   "Origin") into a full PRD + plan per Ed's direction.
 RELATED:
-  - planning/features/model-viewer/decisions.md (D-07 origin;
+  - planning/archive/model-viewer/decisions.md (D-07 origin;
     sun-path consumer — wiring deferred back to model-viewer)
   - context/PRD.md §4 (access), §6.1 (relational layer), §11.5 (SI)
   - backend/features/assets/registry.py (EPW asset kind — Phase 3)

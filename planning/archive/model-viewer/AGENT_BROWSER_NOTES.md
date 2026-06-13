@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Active reference for Model Viewer browser verification
+STATUS: Reference for Model Viewer browser verification
 AUTHOR: Codex (for Ed)
 SCOPE: Agent browser-access notes for the Model Viewer feature,
   especially in-app Browser / Playwright limitations found during
@@ -10,8 +10,8 @@ RELATED:
   - context/ENVIRONMENT.md
   - AGENTS.md
   - CLAUDE.md
-  - planning/features/model-viewer/README.md
-  - planning/features/model-viewer/phases/phase-06-measure-site-sun-polish.md
+  - planning/archive/model-viewer/README.md
+  - planning/archive/model-viewer/phases/phase-06-measure-site-sun-polish.md
 ---
 
 # Model Viewer Agent Browser Notes
@@ -95,10 +95,10 @@ For Model Viewer Phase 06, the reliable visual evidence was:
 - DOM showed the active Model tab, active Site & Sun lens, file chip,
   scene aria label, and location hint;
 - screenshot saved under
-  `planning/features/model-viewer/assets/phase-06-site-sun.png`;
+  `planning/archive/model-viewer/assets/phase-06-site-sun.png`;
 - Measure button toggled active and showed the Measure hint;
 - screenshot saved under
-  `planning/features/model-viewer/assets/phase-06-measure.png`.
+  `planning/archive/model-viewer/assets/phase-06-measure.png`.
 
 ### Deterministic assertions
 

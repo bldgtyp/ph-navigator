@@ -8,7 +8,7 @@ SCOPE: Accepted/rejected design forks. Folded back into PRD.md and
 RELATED:
   - planning/archive/project-location/PRD.md
   - planning/archive/project-location/README.md (item 3 = D-PL-1)
-  - planning/features/model-viewer/decisions.md D-07
+  - planning/archive/model-viewer/decisions.md D-07
 ---
 
 # Project Location — Decisions
