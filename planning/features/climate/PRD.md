@@ -126,36 +126,50 @@ of the data (design conditions, fRSI, comfort) comes next.
   model show the climate basis it used, without document-versioning the
   live location.
 
-### 4.3 The standardized climate record (the centerpiece — D-CL-10)
+### 4.3 The standardized climate record — PINNED to `honeybee_ph.site` (D-CL-10)
 
 One canonical schema all sources normalize into (Phius txt, PHI xlsx,
-EPW-derived, ASHRAE, custom). Based on the PHPP/PH monthly format both
-example sets use (research.md). **Align it with the `honeybee-ph`
-PH-climate model** so it round-trips into HBJSON/PHPP export — reuse,
-don't reinvent. Shape (SI):
+EPW-derived, ASHRAE, custom). **Pinned to mirror `honeybee_ph.site`**
+(the HBJSON-native PH model — research.md), so it round-trips into
+HBJSON/PHX/PHPP/WUFI via the existing `to_dict()`/`from_dict()`. Our
+Pydantic v2 `ClimateRecord` mirrors the `Site.to_dict()` shape exactly
+for the core, adds an `aux` block for source fields honeybee_ph omits,
+and provides `from_honeybee_ph_site()` / `to_honeybee_ph_site()`
+adapters — we do **not** subclass the py2.7 classes. Shape (SI):
 
 ```
-ClimateRecord {
-  identity: { name, country, region, climate_zone?,
-              latitude, longitude, elevation_m, station_id?, source }
-  monthly (12 × Jan..Dec):
-    temp_air_c[]                        // outdoor air temperature
-    radiation_kwh_m2: { north[], east[], south[], west[], global[] }
-    dewpoint_c[]
-    sky_temp_c[]
-  design:                               // PHPP "Heating load 1 / 2 / Cooling load"
-    heating_1, heating_2, cooling: { temp_air_c, radiation{N,E,S,W,global},
-                                     dewpoint_c, sky_temp_c }
-  aux:
+ClimateRecord {                          // mirrors honeybee_ph.site.Site
+  identity:
+    display_name
+    phpp_codes: { country_code, region_code, dataset_name }   // honeybee_ph.PHPPCodes — the dropdown identity
+    provider, version, station_id        // OUR additions for the reference-dataset model (D-CL-8)
+  location:                              // honeybee_ph.Location
+    latitude, longitude, site_elevation_m, climate_zone, hours_from_UTC
+  climate:                               // honeybee_ph.Climate
+    station_elevation_m
+    summer_daily_temperature_swing_k
+    average_wind_speed_ms
+    ground: { thermal_conductivity, heat_capacity, density,
+              depth_groundwater_m, flow_rate_groundwater }     // honeybee_ph.Climate_Ground
+    monthly_temps:     { air_c[12], dewpoint_c[12], sky_c[12], ground_c[12] }    // Climate_MonthlyTempCollection
+    monthly_radiation: { north[12], east[12], south[12], west[12], global[12] }  // kWh/m²; Climate_MonthlyRadiationCollection
+    peak_loads:                          // Climate_PeakLoadCollection (4 design conditions)
+      heat_load_1, heat_load_2, cooling_load_1, cooling_load_2:
+        { temp_c, rad_north, rad_east, rad_south, rad_west, rad_global,  // rad W/m²
+          dewpoint_c, sky_c, ground_c }                                  // Climate_PeakLoadValueSet
+  aux:                                   // source fields honeybee_ph keeps in user_data
     heating_degree_hours_12_20, cooling_degree_hours_24,
     wind_speed_jan_ms, wind_speed_jul_ms,
-    daily_temp_variation_summer_k, temp_min_12h_c,
-    summer_night_fraction_dry_pct, summer_night_fraction_humid_pct,
-    albedo
+    temp_min_12h_c, summer_night_fraction_dry_pct,
+    summer_night_fraction_humid_pct, albedo
 }
 ```
 
-This becomes a stable `context/` reference doc once Phase 2 settles it.
+Field names/units mirror `honeybee_ph.site` verbatim (research.md):
+monthly radiation kWh/m², peak-load radiation W/m², temps °C, elevation
+m, wind m/s, swing K. The Phius `-mon.txt` 3-column design set maps to
+`heat_load_1`/`heat_load_2`/`cooling_load_1`. This schema becomes a
+stable `context/` reference doc once Phase 2 lands it.
 
 ## 5. Behavior contract
 

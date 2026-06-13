@@ -20,28 +20,32 @@ RELATED:
 `Active — planned.` README, PRD, decisions, plan, research, and four
 phase handoffs authored 2026-06-13. **Scope expanded 2026-06-13** (Ed):
 store all climate sources (ASHRAE/EPW/Phius/PHI/custom) backed by
-app-wide versioned reference datasets. No code written. Builds on the
-implemented + archived `project_location` feature.
+app-wide versioned reference datasets. **D-CL-10 reuse investigation
+complete (research.md): the `ClimateRecord` schema is pinned to mirror
+`honeybee_ph.site`; PHI seed reuses `PHX`'s `io_climate.py`.** No code
+written. Builds on the implemented + archived `project_location`.
 
 ## Next step
 
 Implement `phases/phase-01-sun-path-service.md` (unblocks the Model
-Viewer render) — and/or `phases/phase-02-reference-datasets-and-format.md`
-(the climate-data foundation); the two are independent and can run in
-parallel. Phase 2 should start with the PH-Tools reuse investigation
-(D-CL-10).
+Viewer render) and/or `phases/phase-02-reference-datasets-and-format.md`
+(the climate-data foundation) — independent, can run in parallel.
+Phase 2 starts from the **pinned** schema (PRD §4.3) and the existing
+PH-Tools code, not a from-scratch design.
 
 ## Decisions
 
-- **Resolved (Ed 2026-06-13):** D-CL-4 — store all sources; don't pick
-  one basis.
+- **Resolved (Ed 2026-06-13):** D-CL-4 (store all sources; ASHRAE
+  pointer); **D-CL-10 (investigated) — `ClimateRecord` is PINNED to
+  mirror `honeybee_ph.site`; reuse `io_climate.py` for the PHI seed;
+  thin parser for Phius `-mon.txt`; adapters, not subclassing
+  (research.md, PRD §4.3).**
 - **Proposed, recommended (confirm on review):** D-CL-1 (extends, not
   replaces `project_location`), D-CL-2 (sun-path service home), D-CL-3
   (new 6th tab, gated to Phase 3), D-CL-6 (store the EPW), D-CL-7
   (durable + editable location; reproducibility via pinning),
   **D-CL-8 (app-wide versioned reference datasets)**, **D-CL-9 (custom
-  locations)**, **D-CL-10 (reuse PH-Tools/PHX parsing; align with
-  honeybee-ph)**, **D-CL-11 (per-analysis source selection)**.
+  locations)**, **D-CL-11 (per-analysis source selection)**.
 - **Deferred to later feature work (Ed 2026-06-13):** the design-
   conditions/use-case layer (Phase 4) and **D-CL-5** (fRSI interior
   assumption) and the temperature-asymmetry use-case. Focus is the data
