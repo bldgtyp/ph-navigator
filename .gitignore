@@ -66,6 +66,7 @@ phase3-walk/
 
 # ─── Local working notes / agent scratch ───
 working/
+*/features/climate/example_data/*
 
 # ─── Graphify output ───
 graphify-out/

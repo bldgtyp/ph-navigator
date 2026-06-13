@@ -15,34 +15,38 @@ RELATED:
 
 ## Current state
 
-`Active — planned.` PRD, decisions, plan, and both phase handoffs
-authored 2026-06-13. No code written.
+`Active — planned. REALIGNED 2026-06-13` to frontend-only. PRD,
+decisions, plan, and both phase handoffs authored 2026-06-13. No code
+written. The sun-path **backend** moved to Climate Phase 1
+(`planning/features/climate/`); this feature is now the Model Viewer
+**frontend** consumer.
 
 ## Next step
 
-Implement `phases/phase-01-static-sun-path.md`. **D-SP-1 is accepted**
-(Ed 2026-06-13): the sun path is served from a separate, project-scoped,
-location-reactive endpoint + store; the `/model_data` artifact stays
-immutable with `sun_path` null. No decisions remain open.
+Implement `phases/phase-01-static-sun-path.md` **after Climate Phase 1
+ships** the `GET /projects/{id}/sun-path` endpoint. The work here is the
+frontend render: query the endpoint, complete `SiteSunLayer` (monthly
+arcs + compass), fit to model bounds, flip the location hint. D-SP-1
+accepted; no decisions open for this feature.
 
 ## Blockers
 
-None. The setter UI already shipped with `project_location`
-(`ProjectLocationSettingsSection.tsx`); this feature only consumes the
-location data. Ready to implement.
+- **Climate Phase 1** (`planning/features/climate/phases/phase-01-sun-path-service.md`)
+  must ship first — it owns the endpoint this feature consumes. That is
+  the only blocker. Setter UI + location data already exist.
 
-## Prerequisites (met)
+## Prerequisites
 
-- Model Viewer MVP Phases 2 + 6 merged (ladybug/honeybee deps; Site &
-  Sun renderer stub; `SunPathAndCompassDTOSchema` wire shape).
-- `project-location` implemented and archived
-  (`planning/archive/project-location/`) — confirmed by Ed 2026-06-13.
-  Location data is available in-process via
-  `features/project_location/repository.py`.
+- **Climate Phase 1 (`planning/features/climate/`) — NOT yet built.**
+  The gating prerequisite (owns the sun-path endpoint).
+- Model Viewer MVP Phases 2 + 6 merged (Site & Sun renderer stub; the
+  geometry/bounds this render fits to) — met.
+- `project-location` implemented + archived (data + setter UI) — met;
+  Climate Phase 1 consumes it.
 
 ## Phase ledger
 
 | Phase | State | Gate |
 |---|---|---|
-| 1 — Static sun path | Planned — ready (D-SP-1 accepted) | none |
+| 1 — Site & Sun 3D render (frontend) | Planned | Climate Phase 1 merged |
 | 2 — Scrubber | Deferred | Phase 1 merged + named time/season need |

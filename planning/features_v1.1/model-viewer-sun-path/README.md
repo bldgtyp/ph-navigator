@@ -1,40 +1,51 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Active — ready to implement. D-SP-1 accepted (Ed 2026-06-13);
-  no open decisions.
+STATUS: Active — REALIGNED 2026-06-13. Now FRONTEND-ONLY; depends on
+  Climate Phase 1 (which owns the sun-path backend/endpoint). D-SP-1
+  accepted; no open decisions.
 AUTHOR: Claude (for Ed)
-SCOPE: Router for the Model Viewer Site & Sun sun-path feature —
-  wiring project-location data into a rendered annual sun path, plus
-  the deferred time/season scrubber.
+SCOPE: The Model Viewer Site & Sun 3D render — consume the Climate
+  sun-path endpoint and draw the annual sun path over the building
+  geometry. Plus the deferred time/season scrubber.
 RELATED:
   - PRD.md
   - decisions.md
   - PLAN.md
   - phases/phase-01-static-sun-path.md
   - phases/phase-02-scrubber.md
+  - planning/features/climate/ (OWNS the sun-path service — build first)
   - planning/archive/model-viewer/ (completed MVP — source of truth)
   - planning/archive/model-viewer/decisions.md D-07
-  - planning/archive/project-location/PRD.md §10 (consumer seam)
   - planning/features_v1.1/model-viewer-post-mvp/ (umbrella router)
 ---
 
-# Model Viewer — Sun Path
+# Model Viewer — Sun Path (3D render)
+
+> **Realigned 2026-06-13.** The sun-path *backend* (builder + endpoint)
+> moved to the **Climate** feature (`planning/features/climate/`
+> Phase 1), its proper home, because the sun path is climate-derived and
+> has multiple consumers (this 3D render + the Climate tab). This
+> feature is now **frontend-only**: it consumes the Climate
+> `GET /projects/{id}/sun-path` endpoint and renders the diagram over
+> the building geometry in the Site & Sun lens. **It depends on Climate
+> Phase 1 shipping first.**
 
 Completes the Site & Sun lens. The MVP shipped the lens with building
 geometry, grey non-selectable shades, a north marker, and a quiet
-"Set project location to see the sun path" hint. The backend
-`sun_path` wire key is permanently `null` and the frontend renderer is
-a partial stub. This feature populates and renders the annual sun path
-from the project's stored location.
+"Set project location to see the sun path" hint. The frontend renderer
+is a partial stub (it only draws the dashed analemmas, from the
+always-null `/model_data` `sun_path` key). This feature points the lens
+at the Climate sun-path endpoint and completes the renderer (monthly
+arcs + compass), fit to the model bounds.
 
-It folds in two deferred post-MVP candidates:
+Scope:
 
-- **Sun-path wiring** (deferred roster item; D-07 / project-location
-  seam) → **Phase 1**.
+- **Site & Sun 3D render** (the frontend consumer of Climate Phase 1)
+  → **Phase 1**.
 - **Sun-path scrubber** (Q-VIEW-6; deferred roster item) → **Phase 2**,
-  which is itself gated until Phase 1 ships and a time/season
-  interaction has a real use case.
+  gated until Phase 1 ships and a time/season interaction has a real
+  use case.
 
 ## Read order
 
@@ -46,21 +57,19 @@ It folds in two deferred post-MVP candidates:
 4. `phases/phase-01-static-sun-path.md` — the implementable handoff.
 5. `phases/phase-02-scrubber.md` — deferred sub-phase contract.
 
-## Prerequisites (all met)
+## Prerequisites
 
-- Model Viewer MVP Phases 2 + 6 merged (extraction owns
-  ladybug/honeybee; Site & Sun renderer stub keyed off
-  `sunPath != null`).
-- `project-location` feature merged and archived
-  (`planning/archive/project-location/`): location data
-  (lat/long/true-north/time-zone) is available via REST, MCP, and the
-  in-process `features/project_location/repository.py`.
+- **Climate Phase 1 (`planning/features/climate/`) merged** — it owns
+  the `GET /projects/{id}/sun-path` endpoint this feature consumes.
+  **This is the gating prerequisite.**
+- Model Viewer MVP Phases 2 + 6 merged (Site & Sun renderer stub keyed
+  off `sunPath != null`; the geometry/bounds this render fits to).
 
 ## Current decision
 
-Ready to schedule. D-SP-1 (serving strategy) is **accepted** (Ed
-2026-06-13): sun path is served from a separate, project-scoped,
-location-reactive endpoint + store; the `/model_data` artifact stays
-immutable. The setter UI already shipped with `project_location`
-(`ProjectLocationSettingsSection.tsx`) — this feature only consumes the
-location data. No open decisions; Phase 1 is implementable as written.
+Frontend-only, gated on Climate Phase 1. D-SP-1 (serving strategy) is
+**accepted** (Ed 2026-06-13): the sun path is a separate, project-scoped,
+location-reactive endpoint — now owned by Climate. This feature consumes
+it and renders over geometry. The setter UI already shipped with
+`project_location`. No open decisions for this feature; it is
+implementable once Climate Phase 1 lands.
