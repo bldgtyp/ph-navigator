@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { resolveViewerTokens } from "../lib/colors";
 import { fieldValue, inspectorConfigs } from "../lib/fieldConfigs";
+import { disabledLensReason, parseModelViewerLens } from "../lib/lenses";
 import { isClickWithinDragTolerance } from "../lib/selection";
 import { buildBuildingModel } from "../loaders/building";
 import type { CombinedModelData, ModelObjectMeta } from "../types";
@@ -9,15 +10,56 @@ describe("buildBuildingModel", () => {
   test("builds face and aperture geometry with stable object metadata", () => {
     const model = buildBuildingModel(sampleModelData());
 
-    expect(model.objectCounts).toEqual({ faceMesh: 1, apertureMeshFace: 1 });
+    expect(model.objectCounts).toEqual({
+      faceMesh: 1,
+      apertureMeshFace: 1,
+      spaceGroup: 0,
+      spaceFloorSegmentMeshFace: 0,
+      ductSegmentLine: 0,
+      pipeSegmentLine: 0,
+    });
     expect(model.objects).toHaveLength(2);
     expect(model.metaById.get("face:wall-1")).toMatchObject({
       type: "faceMesh",
       display_name: "North Wall",
       area: 12,
     });
-    expect(model.objects[0]?.geometry.getAttribute("position").count).toBe(6);
+    const firstObject = model.objects[0];
+    expect(firstObject?.kind).toBe("mesh");
+    if (firstObject?.kind !== "mesh") throw new Error("fixture first object must be a mesh");
+    expect(firstObject.geometries[0]?.getAttribute("position").count).toBe(6);
     expect(model.bounds.isEmpty()).toBe(false);
+  });
+
+  test("builds Phase 04 lens geometry and availability from the combined DTO", () => {
+    const model = buildBuildingModel(samplePhaseFourData());
+
+    expect(model.objectCounts).toEqual({
+      faceMesh: 1,
+      apertureMeshFace: 0,
+      spaceGroup: 1,
+      spaceFloorSegmentMeshFace: 1,
+      ductSegmentLine: 2,
+      pipeSegmentLine: 2,
+    });
+    expect(model.lensAvailability).toEqual({
+      building: true,
+      spaces: true,
+      "floor-areas": true,
+      "site-sun": false,
+      ventilation: true,
+      "hot-water": true,
+    });
+    expect(model.metaById.get("duct:supply-duct:seg-1")).toMatchObject({
+      type: "ductSegmentLine",
+      duct_type: 1,
+      diameter_m: 0.16,
+    });
+    expect(model.metaById.get("pipe:recirc:recirc-1:seg-r")).toMatchObject({
+      type: "pipeSegmentLine",
+      pipe_kind: "recirc",
+      diameter_mm: 19,
+    });
   });
 });
 
@@ -47,6 +89,40 @@ describe("viewer core helpers", () => {
     expect(rValue).toBeDefined();
     expect(fieldValue(meta, uFactor!, "IP")).toBe("0.053 Btu/(h-ft2-F)");
     expect(fieldValue(meta, rValue!, "SI")).toBe("--");
+  });
+
+  test("formats Phase 04 inspector fields with unit conversion", () => {
+    const model = buildBuildingModel(samplePhaseFourData());
+    const spaceMeta = model.metaById.get("space:space-1");
+    const ductMeta = model.metaById.get("duct:supply-duct:seg-1");
+    const pipeMeta = model.metaById.get("pipe:distribution:fixture-1:seg-p");
+    expect(spaceMeta).toBeDefined();
+    expect(ductMeta).toBeDefined();
+    expect(pipeMeta).toBeDefined();
+
+    const supplyAir = inspectorConfigs.spaceGroup.sections[1]?.fields[0];
+    const ductType = inspectorConfigs.ductSegmentLine.sections[0]?.fields.find(
+      (field) => field.id === "duct_type",
+    );
+    const pipeTemp = inspectorConfigs.pipeSegmentLine.sections[0]?.fields.find(
+      (field) => field.id === "water_temp_c",
+    );
+    expect(fieldValue(spaceMeta!, supplyAir!, "SI")).toBe("36 m3/h");
+    expect(fieldValue(spaceMeta!, supplyAir!, "IP")).toBe("21.2 cfm");
+    expect(fieldValue(ductMeta!, ductType!, "SI")).toBe("Supply");
+    expect(fieldValue(pipeMeta!, pipeTemp!, "IP")).toBe("140 deg F");
+  });
+
+  test("parses lens URL tokens and derives disabled reasons", () => {
+    const model = buildBuildingModel(sampleModelData());
+    expect(parseModelViewerLens("ventilation")).toBe("ventilation");
+    expect(parseModelViewerLens("bad-token")).toBe("building");
+    expect(disabledLensReason("site-sun", model.lensAvailability)).toBe(
+      "Coming with project location",
+    );
+    expect(disabledLensReason("hot-water", model.lensAvailability)).toBe(
+      "No hot-water piping in this model",
+    );
   });
 });
 
@@ -127,6 +203,205 @@ function sampleModelData(): CombinedModelData {
       shade_groups_extracted: 0,
       extraction_warnings: [],
     },
+  };
+}
+
+function samplePhaseFourData(): CombinedModelData {
+  const base = sampleModelData();
+  return {
+    ...base,
+    faces: base.faces.map((face) => ({ ...face, apertures: [] })),
+    spaces: [
+      {
+        identifier: "space-1",
+        quantity: 1,
+        name: "Kitchen",
+        number: "101",
+        wufi_type: 99,
+        volumes: [
+          {
+            identifier: "volume-1",
+            display_name: "Kitchen Volume",
+            avg_ceiling_height: 3,
+            geometry: [rectFace(0, 0, 0, 3, 0, 3)],
+            floor: {
+              identifier: "floor-1",
+              display_name: "Kitchen Floor",
+              geometry: rectFace(0, 0, 0, 3, 3, 0),
+              floor_segments: [
+                {
+                  identifier: "floor-seg-1",
+                  display_name: "Kitchen Floor Segment",
+                  geometry: rectFace(0, 0, 0, 3, 3, 0),
+                  weighting_factor: 1,
+                  floor_area: 9,
+                  weighted_floor_area: 9,
+                },
+              ],
+            },
+          },
+        ],
+        properties: {
+          ph: { id_num: 1, type: "SpacePhProperties", _v_sup: 0.01, _v_eta: null, _v_tran: 0 },
+        },
+        net_volume: 27,
+        floor_area: 9,
+        weighted_floor_area: 9,
+        avg_clear_height: 3,
+        average_floor_weighting_factor: 1,
+      },
+    ],
+    ventilation_systems: [
+      {
+        identifier: "vent-1",
+        display_name: "ERV 1",
+        sys_type: 1,
+        supply_ducting: [
+          {
+            identifier: "supply-duct",
+            display_name: "Supply Duct",
+            duct_type: 1,
+            segments: {
+              "seg-1": {
+                identifier: "seg-1",
+                display_name: "Supply Segment",
+                geometry: { p: [0, 0, 2], v: [3, 0, 0] },
+                diameter: 0.16,
+                height: null,
+                width: null,
+                insulation_thickness: 0.025,
+                insulation_conductivity: 0.04,
+                insulation_reflective: false,
+              },
+            },
+          },
+        ],
+        exhaust_ducting: [
+          {
+            identifier: "exhaust-duct",
+            display_name: "Exhaust Duct",
+            duct_type: 2,
+            segments: {
+              "seg-2": {
+                identifier: "seg-2",
+                display_name: "Exhaust Segment",
+                geometry: { p: [0, 1, 2], v: [3, 0, 0] },
+                diameter: 0.14,
+                height: null,
+                width: null,
+                insulation_thickness: 0.02,
+                insulation_conductivity: 0.04,
+                insulation_reflective: false,
+              },
+            },
+          },
+        ],
+      },
+    ],
+    hot_water_systems: [
+      {
+        identifier: "dhw-1",
+        display_name: "DHW",
+        distribution_piping: {
+          "trunk-1": {
+            identifier: "trunk-1",
+            display_name: "Trunk",
+            multiplier: 1,
+            pipe_element: { identifier: "empty-trunk", display_name: "Empty Trunk", segments: {} },
+            branches: {
+              "branch-1": {
+                identifier: "branch-1",
+                display_name: "Branch",
+                pipe_element: {
+                  identifier: "empty-branch",
+                  display_name: "Empty Branch",
+                  segments: {},
+                },
+                fixtures: {
+                  "fixture-1": {
+                    identifier: "fixture-1",
+                    display_name: "Sink",
+                    segments: {
+                      "seg-p": pipeSegment({
+                        diameter_mm: 12.7,
+                        geometry: { p: [0, 0, 0], v: [0, 0, 3] },
+                      }),
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        recirc_piping: {
+          "recirc-1": {
+            identifier: "recirc-1",
+            display_name: "Recirc",
+            segments: {
+              "seg-r": pipeSegment({ diameter_mm: 19, geometry: { p: [1, 0, 0], v: [0, 0, 3] } }),
+            },
+          },
+        },
+      },
+    ],
+    load_summary: {
+      ...base.load_summary,
+      spaces_extracted: 1,
+    },
+  };
+}
+
+function pipeSegment({
+  diameter_mm,
+  geometry,
+}: {
+  diameter_mm: number;
+  geometry: { p: [number, number, number]; v: [number, number, number] };
+}) {
+  return {
+    geometry,
+    diameter_mm,
+    insulation_thickness_mm: 13,
+    insulation_conductivity: 0.04,
+    insulation_reflective: false,
+    insulation_quality: null,
+    daily_period: 24,
+    water_temp_c: 60,
+    material_value: "Copper",
+    length: 3,
+  };
+}
+
+function rectFace(x: number, y: number, z: number, width: number, depth: number, height: number) {
+  const vertices: [number, number, number][] =
+    height === 0
+      ? [
+          [x, y, z],
+          [x + width, y, z],
+          [x + width, y + depth, z],
+          [x, y + depth, z],
+        ]
+      : [
+          [x, y, z],
+          [x + width, y, z],
+          [x + width, y, z + height],
+          [x, y, z + height],
+        ];
+  return {
+    boundary: vertices,
+    plane: {
+      n: [0, 0, 1] as [number, number, number],
+      o: vertices[0]!,
+      x: [1, 0, 0] as [number, number, number],
+    },
+    mesh: {
+      vertices,
+      faces: [
+        [0, 1, 2],
+        [0, 2, 3],
+      ],
+    },
+    area: width * (height || depth),
   };
 }
 

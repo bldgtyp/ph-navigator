@@ -9,6 +9,7 @@ import { useModelDataQuery } from "../hooks";
 import type { HbjsonFile, ModelViewerErrorKind } from "../types";
 import { CameraCluster } from "./CameraCluster";
 import { InspectorPanel } from "./InspectorPanel";
+import { LensBar } from "./LensBar";
 import { LoadingChip } from "./LoadingChip";
 
 type ModelViewerStageProps = {
@@ -25,6 +26,8 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
   const query = useModelDataQuery(projectId, activeFile.id);
   const setLoadState = useModelViewerStore((state) => state.setLoadState);
   const selectionId = useModelViewerStore((state) => state.selectionId);
+  const lens = useModelViewerStore((state) => state.lens);
+  const setLens = useModelViewerStore((state) => state.setLens);
   const clearSelection = useModelViewerStore((state) => state.clearSelection);
   const requestCamera = useModelViewerStore((state) => state.requestCamera);
   const [renderedModel, setRenderedModel] = useState<RenderedModel | null>(null);
@@ -71,6 +74,11 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
   useModelViewerDebugHook(model);
 
   useEffect(() => {
+    if (!model || model.lensAvailability[lens]) return;
+    setLens("building");
+  }, [lens, model, setLens]);
+
+  useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (isTextEntryTarget(event.target)) return;
       if (event.key === "Escape") {
@@ -109,6 +117,7 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
         loadSummary={loadPhase === "ready" ? (query.data?.load_summary ?? null) : null}
         onRetry={() => void query.refetch()}
       />
+      <LensBar availability={model?.lensAvailability ?? null} />
       <CameraCluster />
       <InspectorPanel meta={selectedMeta} />
     </>

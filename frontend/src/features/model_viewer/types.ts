@@ -37,7 +37,13 @@ export type HbjsonUploadOutcome =
 
 export type ViewerLoadPhase = "idle" | "downloading" | "building" | "ready" | "error";
 export type ModelViewerErrorKind = "permanent" | "transient";
-export type ModelViewerLens = "building";
+export type ModelViewerLens =
+  | "building"
+  | "spaces"
+  | "floor-areas"
+  | "site-sun"
+  | "ventilation"
+  | "hot-water";
 
 export type Mesh3D = {
   vertices: [number, number, number][];
@@ -115,30 +121,216 @@ export type LoadSummary = {
   extraction_warnings: string[];
 };
 
+export type SpacePhProperties = {
+  id_num: number | null;
+  type: string | null;
+  _v_eta: number | null;
+  _v_sup: number | null;
+  _v_tran: number | null;
+};
+
+export type SpaceFloorSegmentModelData = {
+  identifier: string;
+  display_name: string;
+  geometry: Face3D | null;
+  weighting_factor: number;
+  floor_area: number | null;
+  weighted_floor_area: number | null;
+};
+
+export type SpaceVolumeModelData = {
+  identifier: string;
+  display_name: string;
+  avg_ceiling_height: number;
+  floor: {
+    identifier: string;
+    display_name: string;
+    floor_segments: SpaceFloorSegmentModelData[];
+    geometry: Face3D;
+  };
+  geometry: Face3D[];
+};
+
+export type SpaceModelData = {
+  identifier: string;
+  quantity: number;
+  name: string;
+  number: string;
+  wufi_type: number;
+  volumes: SpaceVolumeModelData[];
+  properties: {
+    ph: SpacePhProperties | null;
+  };
+  net_volume: number;
+  floor_area: number;
+  weighted_floor_area: number;
+  avg_clear_height: number;
+  average_floor_weighting_factor: number;
+};
+
+export type LineSegment3D = {
+  p: [number, number, number];
+  v: [number, number, number];
+};
+
+export type DuctSegmentModelData = {
+  identifier: string;
+  display_name: string;
+  geometry: LineSegment3D;
+  diameter: number;
+  height: number | null;
+  width: number | null;
+  insulation_thickness: number;
+  insulation_conductivity: number;
+  insulation_reflective: boolean;
+};
+
+export type DuctElementModelData = {
+  identifier: string;
+  display_name: string;
+  duct_type: 1 | 2 | number;
+  segments: Record<string, DuctSegmentModelData>;
+};
+
+export type VentilationSystemModelData = {
+  identifier: string;
+  display_name: string;
+  sys_type: number;
+  supply_ducting: DuctElementModelData[];
+  exhaust_ducting: DuctElementModelData[];
+};
+
+export type PipeSegmentModelData = {
+  geometry: LineSegment3D;
+  diameter_mm: number;
+  insulation_thickness_mm: number;
+  insulation_conductivity: number;
+  insulation_reflective: boolean;
+  insulation_quality: unknown;
+  daily_period: number;
+  water_temp_c: number;
+  material_value: string;
+  length: number;
+};
+
+export type PipeElementModelData = {
+  identifier: string;
+  display_name: string;
+  segments: Record<string, PipeSegmentModelData>;
+};
+
+export type PipeBranchModelData = {
+  identifier: string;
+  display_name: string;
+  pipe_element: PipeElementModelData;
+  fixtures: Record<string, PipeElementModelData>;
+};
+
+export type PipeTrunkModelData = {
+  identifier: string;
+  display_name: string;
+  pipe_element: PipeElementModelData;
+  branches: Record<string, PipeBranchModelData>;
+  multiplier: number;
+};
+
+export type HotWaterSystemModelData = {
+  identifier: string;
+  display_name: string;
+  distribution_piping: Record<string, PipeTrunkModelData>;
+  recirc_piping: Record<string, PipeElementModelData>;
+};
+
 export type CombinedModelData = {
   faces: FaceModelData[];
-  spaces: unknown[];
+  spaces: SpaceModelData[];
   sun_path: unknown | null;
-  hot_water_systems: unknown[];
-  ventilation_systems: unknown[];
+  hot_water_systems: HotWaterSystemModelData[];
+  ventilation_systems: VentilationSystemModelData[];
   shading_elements: unknown[];
   load_summary: LoadSummary;
 };
 
-export type ModelObjectType = "faceMesh" | "apertureMeshFace";
+export type ModelObjectType =
+  | "faceMesh"
+  | "apertureMeshFace"
+  | "spaceGroup"
+  | "spaceFloorSegmentMeshFace"
+  | "ductSegmentLine"
+  | "pipeSegmentLine";
 export type ModelObjectCounts = Record<ModelObjectType, number>;
 
-export type ModelObjectMeta = {
+type BaseModelObjectMeta<TType extends ModelObjectType> = {
   id: string;
-  type: ModelObjectType;
+  type: TType;
   identifier: string;
   display_name: string;
   face_type: string;
-  boundary_condition: BoundaryCondition;
+  boundary_condition: BoundaryCondition | null;
   area: number | null;
-  properties: FaceModelData["properties"] | ApertureModelData["properties"];
   vertices: [number, number, number][];
 };
+
+export type FaceMeshMeta = BaseModelObjectMeta<"faceMesh"> & {
+  properties: FaceModelData["properties"];
+};
+
+export type ApertureMeshFaceMeta = BaseModelObjectMeta<"apertureMeshFace"> & {
+  properties: ApertureModelData["properties"];
+};
+
+export type SpaceGroupMeta = BaseModelObjectMeta<"spaceGroup"> & {
+  properties: SpaceModelData["properties"];
+  number?: string;
+  quantity?: number;
+  wufi_type?: number;
+  net_volume?: number;
+  floor_area?: number | null;
+  weighted_floor_area?: number | null;
+  avg_clear_height?: number;
+  average_floor_weighting_factor?: number;
+  airflow?: SpacePhProperties | null;
+};
+
+export type SpaceFloorSegmentMeshFaceMeta = BaseModelObjectMeta<"spaceFloorSegmentMeshFace"> & {
+  properties: SpaceModelData["properties"];
+  number?: string;
+  floor_area?: number | null;
+  weighted_floor_area?: number | null;
+  weighting_factor?: number;
+  airflow?: SpacePhProperties | null;
+};
+
+export type DuctSegmentLineMeta = BaseModelObjectMeta<"ductSegmentLine"> & {
+  properties: Record<string, never>;
+  duct_type?: 1 | 2 | number;
+  diameter_m?: number;
+  insulation_thickness_m?: number;
+  insulation_conductivity?: number;
+  insulation_reflective?: boolean;
+};
+
+export type PipeSegmentLineMeta = BaseModelObjectMeta<"pipeSegmentLine"> & {
+  properties: Record<string, never>;
+  diameter_mm?: number;
+  insulation_thickness_mm?: number;
+  insulation_conductivity?: number;
+  insulation_reflective?: boolean;
+  insulation_quality?: unknown;
+  water_temp_c?: number;
+  daily_period?: number;
+  length?: number;
+  material_value?: string;
+  pipe_kind?: "distribution" | "recirc";
+};
+
+export type ModelObjectMeta =
+  | FaceMeshMeta
+  | ApertureMeshFaceMeta
+  | SpaceGroupMeta
+  | SpaceFloorSegmentMeshFaceMeta
+  | DuctSegmentLineMeta
+  | PipeSegmentLineMeta;
 
 export type ModelViewerDebugState = {
   loadPhase: ViewerLoadPhase;
@@ -146,9 +338,12 @@ export type ModelViewerDebugState = {
   activeFileId: string | null;
   objectCounts: ModelObjectCounts;
   objectIds: string[];
+  visibleObjectIds: string[];
   lens: ModelViewerLens;
   selectionId: string | null;
   hoverId: string | null;
+  setLens: (lens: ModelViewerLens) => void;
   selectObject: (objectId: string | null) => void;
+  selectAnyModelObject: (type?: ModelObjectType) => string | null;
   clearSelection: () => void;
 };

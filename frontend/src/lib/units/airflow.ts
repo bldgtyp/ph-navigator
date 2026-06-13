@@ -49,5 +49,9 @@ export function formatAirflowFromM3S(
           ...options,
         },
       )
-    : formatNumberWithUnit(valueM3S, "m3/s", { fractionDigits: 3, ...options });
+    : formatNumberWithUnit(
+        valueM3S === null || valueM3S === undefined ? valueM3S : valueM3S * 3600,
+        "m3/h",
+        { fractionDigits: 1, ...options },
+      );
 }

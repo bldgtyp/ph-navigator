@@ -2,7 +2,7 @@ import { ContactShadows, Grid } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { EffectComposer, SMAA } from "@react-three/postprocessing";
 import { useMemo } from "react";
-import { createBuildingMaterials, resolveViewerTokens } from "../lib/colors";
+import { createBuildingMaterials, createGhostMaterial, resolveViewerTokens } from "../lib/colors";
 import type { BuildingModel } from "../loaders/building";
 import { useModelViewerStore } from "../store";
 import { BuildingLens } from "./BuildingLens";
@@ -15,6 +15,7 @@ type ViewerCanvasProps = {
 export function ViewerCanvas({ model }: ViewerCanvasProps) {
   const clearSelection = useModelViewerStore((state) => state.clearSelection);
   const materials = useMemo(() => createBuildingMaterials(resolveViewerTokens()), []);
+  const ghostMaterial = useMemo(() => createGhostMaterial(), []);
 
   return (
     <Canvas
@@ -47,7 +48,7 @@ export function ViewerCanvas({ model }: ViewerCanvasProps) {
         blur={2.8}
         far={30}
       />
-      <BuildingLens model={model} materials={materials} />
+      <BuildingLens model={model} materials={materials} ghostMaterial={ghostMaterial} />
       <CameraRig model={model} />
       <EffectComposer multisampling={0}>
         <SMAA />

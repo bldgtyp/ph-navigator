@@ -1,7 +1,11 @@
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 import { createProject, signIn } from "./_helpers";
+import {
+  MODEL_VIEWER_FIXTURE_PATH,
+  modelViewerObjectCount,
+  selectAnyModelObject,
+  waitForModelViewerReady,
+} from "./_modelViewer";
 
 /**
  * Model Viewer — HBJSON file management round trip + Phase 3 scene-ready smoke.
@@ -11,11 +15,6 @@ import { createProject, signIn } from "./_helpers";
  * (`make seed-agent-user`). Uses the canonical 459 KB fixture from the
  * feature planning folder.
  */
-const FIXTURE_PATH = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "../../../planning/features/model-viewer/ph_nav_v2_example.hbjson",
-);
-
 test.describe.configure({ mode: "serial" });
 
 test("upload, rename, annotate, deep-link, and delete an HBJSON file", async ({ page }) => {
@@ -30,19 +29,13 @@ test("upload, rename, annotate, deep-link, and delete an HBJSON file", async ({ 
   // Upload through the empty-state drop zone (browse input is hidden).
   await page
     .locator(".model-empty-state input[type=file]")
-    .setInputFiles(FIXTURE_PATH);
+    .setInputFiles(MODEL_VIEWER_FIXTURE_PATH);
 
   // New upload becomes active: chip label, scene-ready hook, and ?file= update.
   await expect(page.getByRole("button", { name: /ph_nav_v2_example/ })).toBeVisible();
-  await page.waitForFunction(() => window.__phnModelViewer?.loadPhase === "ready", null, {
-    timeout: 30_000,
-  });
-  await expect
-    .poll(() => page.evaluate(() => window.__phnModelViewer?.objectCounts.faceMesh ?? 0))
-    .toBe(25);
-  await expect
-    .poll(() => page.evaluate(() => window.__phnModelViewer?.objectCounts.apertureMeshFace ?? 0))
-    .toBe(30);
+  await waitForModelViewerReady(page);
+  await expect.poll(() => modelViewerObjectCount(page, "faceMesh")).toBe(25);
+  await expect.poll(() => modelViewerObjectCount(page, "apertureMeshFace")).toBe(30);
   await expect(page).toHaveURL(/[?&]file=[0-9a-f-]+/);
 
   await selectAnyModelObject(page);
@@ -74,12 +67,3 @@ test("upload, rename, annotate, deep-link, and delete an HBJSON file", async ({ 
   await expect(page.getByText("No model uploaded yet")).toBeVisible();
   await expect(page.getByRole("button", { name: /No model uploaded/ })).toBeVisible();
 });
-
-async function selectAnyModelObject(page: import("@playwright/test").Page): Promise<void> {
-  await page.evaluate(() => {
-    const viewer = window.__phnModelViewer;
-    const objectId = viewer?.objectIds[0];
-    if (!viewer || !objectId) throw new Error("Model viewer object hook is not ready.");
-    viewer.selectObject(objectId);
-  });
-}

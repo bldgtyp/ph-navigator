@@ -1,8 +1,8 @@
 ---
 DATE: 2026-06-12
 TIME: -
-STATUS: Ready for handoff — requires Phase 3 merged (canvas, store,
-  selection, inspector shell).
+STATUS: Done — implemented and focused-verified 2026-06-13; final
+  closeout gates tracked in STATUS.md.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff for Model Viewer Phase 4 — lens bar +
   the Spaces, Floor Areas, Ventilation, and Hot Water lenses; inspector
@@ -18,6 +18,38 @@ RELATED:
 ---
 
 # Phase 4 — Remaining lenses
+
+## 0. Implementation status — 2026-06-13
+
+Implemented in this session:
+
+- Lens bar with six permanent URL tokens:
+  `building`, `spaces`, `floor-areas`, `site-sun`, `ventilation`,
+  `hot-water`.
+- Site & Sun kept disabled with tooltip "Coming with project
+  location"; Phase 6 remains responsible for project-location and
+  sun-path completion.
+- Spaces, Floor Areas, Ventilation, and Hot Water render from the
+  existing `/model_data` payload. Interior lenses include ghost
+  building-edge context.
+- Lens switches clear selection and run a 180 ms demand-driven
+  opacity fade without changing the canvas to continuous rendering.
+- Thick duct/pipe lines use world-unit drei `<Line>` and explicit
+  `Line2`/`Line` raycast thresholds.
+- Inspector configs added for `spaceGroup`,
+  `spaceFloorSegmentMeshFace`, `ductSegmentLine`, and
+  `pipeSegmentLine`; pipe config includes all Q-VIEW-4 fields.
+- `formatAirflowFromM3S` now follows US-VIEW-6 criterion 8: wire
+  m³/s displays as m³/h in SI and CFM in IP.
+- Focused verification completed:
+  `pnpm exec tsc -b --pretty false`, focused Vitest for viewer/unit
+  helpers, `pnpm run lint` (only pre-existing aperture fast-refresh
+  warnings), and
+  `pnpm exec playwright test tests/e2e/model-viewer-lenses.spec.ts --project=chromium`.
+
+Final repository closeout (`$ simplify`, `$ docs-pass`,
+`make format`, `make ci`, `graphify update .`) is recorded in
+`planning/features/model-viewer/STATUS.md`.
 
 ## 1. Goal
 
@@ -151,7 +183,8 @@ keyboard `1–6` (Phase 6 keyboard map).
 3. **Playwright MCP walkthrough**: verify crossfade feel, thick-line
    hover forgiveness, ghost-context legibility. Screenshot evidence
    into STATUS.md.
-4. **Closeout**: `make format` + `make ci`. `graphify update .`.
+4. **Closeout**: `make format` + `make ci` green on 2026-06-13.
+   `graphify update .` run during final session closeout.
 
 ## 6. Exit criteria
 

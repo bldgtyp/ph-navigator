@@ -1103,7 +1103,7 @@ conversion at display)
    |---|---|---|---|
    | `faceMesh` | "Opaque Surface" | Name, ID, Face Type, Boundary, Area | "Construction": Name, Type, U-Factor, U-Value, R-Factor, R-Value (per criterion 7 as amended by D-12) |
    | `apertureMeshFace` | "Window" | Name, ID, Face Type, Boundary, Area | "Construction": Name, Type, U-Factor, U-Value (no R rows per V1; criterion 7) |
-   | `spaceGroup` | "Interior Space" | Name, ID, Number, Quantity, WUFI Type, Floor Area, Weighted Area, Net Volume, Avg Height, Avg Weighting Factor | "Ventilation": Supply Air, Extract Air, Transfer Air (m³/s SI → CFM IP per PRD §11.5) |
+   | `spaceGroup` | "Interior Space" | Name, ID, Number, Quantity, WUFI Type, Floor Area, Weighted Area, Net Volume, Avg Height, Avg Weighting Factor | "Ventilation": Supply Air, Extract Air, Transfer Air (wire m³/s → m³/h SI / CFM IP per PRD §11.5) |
    | `spaceFloorSegmentMeshFace` | "Interior Floor" | Space, Number, Weight, Floor Area, Weighted Area | "Ventilation": Supply, Extract, Transfer Air |
    | `pipeSegmentLine` | "Pipe" | ID, Name, **Diameter** (mm/in), **Insulation Thickness** (mm/in), **Insulation Conductivity** (W/m·K), **Insulation Reflective** (yes/no), **Insulation Quality** (text), **Water Temp** (°C/°F), **Daily Period** (hours), **Length** (m/ft), **Material** (text) | **Per Q-VIEW-4 resolved — V1 only showed ID + Name; V2 surfaces all loaded fields.** |
    | `ductSegmentLine` | "Duct" | ID, Name, **Duct Type** (Supply / Exhaust — per Q-VIEW-2), Diameter (mm/in), Insulation Thickness (mm/in) | — |

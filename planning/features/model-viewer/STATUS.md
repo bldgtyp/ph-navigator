@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-12
 TIME: -
-STATUS: Active — Phases 1–3 implemented; Phase 4 next
+STATUS: Active — Phases 1–4 implemented; Phase 5 next
 AUTHOR: Claude (for Ed)
 SCOPE: Status ledger for the Model Viewer feature.
 RELATED: planning/features/model-viewer/README.md
@@ -18,7 +18,11 @@ plan. **Phase 1 (HBJSON file management) implemented 2026-06-12**;
 deps in, `/model_data` artifact pipeline live (details below).
 **Phase 3 (viewer core) implemented and verified 2026-06-13** —
 three/R3F deps added, Building lens renders real `/model_data`, and
-`make format` + `make ci` passed in this session.
+`make format` + `make ci` passed in that session.
+**Phase 4 (remaining lenses) implemented 2026-06-13** — lens bar,
+Spaces, Floor Areas, Ventilation, Hot Water, deep links, and the
+remaining inspector configs are live; final simplify/docs-pass and
+closeout gates are in progress below.
 
 Test fixtures (both in this folder, both copied to
 `backend/tests/fixtures/` in Phase 2; coverage maps + remaining
@@ -109,9 +113,72 @@ scene helpers (phase-03 §4.1).
 
 ## Next step
 
-Start Phase 4 — handoff doc:
-`phases/phase-04-remaining-lenses.md` (lens bar + Spaces / Floor
-Areas / Ventilation / Hot Water lenses).
+Start Phase 5 — handoff doc:
+`phases/phase-05-themes-legend.md` (color themes + legend card).
+
+## Phase 4 — implemented 2026-06-13
+
+Frontend only; Phase 2 already shipped the required backend DTOs:
+
+- Lens state/URL: `ModelViewerLens` now covers
+  `building|spaces|floor-areas|site-sun|ventilation|hot-water`.
+  `&lens=` reads/writes those permanent kebab-case tokens; invalid
+  values default to `building`.
+- Lens bar: floating top-center segmented control with lucide icons,
+  one active segment, labels collapsed below ~1100 px, disabled
+  states derived from built model content. **Site & Sun decision: kept
+  disabled in Phase 4** with tooltip "Coming with project location";
+  Phase 6 still owns project-location/sun-path completion.
+- Scene sets: the Phase 3 loader was extended into a full viewer-model
+  builder for Building, Spaces, Floor Areas, Ventilation, and Hot
+  Water. Interior lenses render low-opacity building-edge ghost
+  context. Lens switches clear selection and crossfade in 180 ms while
+  keeping `<Canvas frameloop="demand">`.
+- Geometry: spaces render translucent volume meshes; floor areas
+  render floor segment meshes; ducts/pipes render drei `<Line>`
+  world-unit thick lines. Ducts split supply blue / exhaust red from
+  normalized `duct_type`; DHW distribution and synthetic recirc paths
+  have distinct styles. `raycaster.params.Line2/Line` threshold is set
+  for forgiving thick-line picking.
+- Inspector: added `spaceGroup`, `spaceFloorSegmentMeshFace`,
+  `ductSegmentLine`, and `pipeSegmentLine` configs. Pipe config
+  includes all Q-VIEW-4 fields. Duct diameter/thickness are converted
+  from meter wire values; DHW pipe diameter/thickness use the backend
+  `*_mm` fields. Airflow wire remains m³/s and displays as m³/h (SI)
+  or CFM (IP) through `formatAirflowFromM3S`.
+- Debug/e2e hook: `window.__phnModelViewer` now exposes expanded
+  object counts, visible IDs, `setLens`, and `selectAnyModelObject`
+  for deterministic lens e2e.
+- Tests: `viewerCore.test.ts` covers Phase 4 loader counts,
+  availability, URL-token parsing, disabled reasons, line metadata,
+  synthetic recirc, and new inspector unit formatting.
+  `model-viewer-lenses.spec.ts` uploads the canonical fixture, asserts
+  4 spaces / 5 floor segments / 5 duct segments / 4 pipe segments,
+  switches through implemented lenses, selects space/floor/duct/pipe
+  objects, verifies Duct Type/Water Temp inspector rows, asserts Site
+  & Sun disabled, and verifies a direct
+  `?file=…&lens=ventilation` deep link.
+
+Focused verification already run this session:
+- `cd frontend && pnpm exec tsc -b --pretty false` — green.
+- `cd frontend && pnpm exec vitest run src/features/model_viewer/__tests__/viewerCore.test.ts src/lib/units/units.test.ts` — green.
+- `cd frontend && pnpm run lint` — green with 3 pre-existing
+  react-refresh warnings in `features/apertures`.
+- `cd frontend && pnpm exec playwright test tests/e2e/model-viewer-lenses.spec.ts --project=chromium` — green.
+- Browser walkthrough on `localhost:5173` as `codex@example.com`:
+  deep-linked Ventilation lens rendered with file chip, load summary,
+  lens toolbar, Ventilation pressed, Site & Sun disabled, and no fetch
+  error. Browser screenshot capture timed out in the in-app browser;
+  Playwright e2e remains the durable visual smoke evidence.
+- `make format` — green.
+- `make ci` — green: backend Ruff format/lint, Ty, Alembic, pytest
+  (780 passed, 2 skipped); frontend Prettier, ESLint, structural
+  guards, Vitest (158 files / 1564 tests), and production build. ESLint
+  still reports 3 pre-existing react-refresh warnings in
+  `features/apertures`.
+
+Closeout passes completed: `$ simplify`, `$ docs-pass`, `make format`,
+`make ci`, and `graphify update .`.
 
 ## Phase 3 — implemented and verified 2026-06-13
 
@@ -133,7 +200,8 @@ Frontend only:
   inspector metadata. This phase renders only `faceMesh` and
   `apertureMeshFace`; the same pattern is the Phase 4 extension point.
   Polygon faces are fan-triangulated defensively even though Phase 2
-  currently ships triangulated meshes.
+  currently ships triangulated meshes. Phase 4 later extended this
+  loader pattern to all remaining non-Site lenses.
 - R3F scene: full-bleed `<Canvas frameloop="demand">`, Z-up camera,
   OrbitControls damping, fit-on-load, Grid + ContactShadows + SMAA,
   Building lens meshes with edge lines, hover/selection materials
@@ -237,8 +305,8 @@ counts in PLAN.md §Phase 2 were authored before parsing the files):
   1 exhaust (2 segments) on the wire.
 - Hillandale is NOT duct/pipe-free: 24 ventilation systems with 48
   duct elements and 1 HW system with 10 trunks (so it does not
-  exercise the disabled-lens case; the empty-arrays case remains
-  covered by... no fixture — Phase 4 should synthesize it in e2e).
+  exercise the disabled-lens case; Phase 4 now covers empty-lens
+  disabled-state derivation in focused frontend tests.
 - Hillandale opaque constructions: 12 in use (not 9); 62 window ✓.
 - Primary fixture spaces carry NO airflow values (all None) — the
   m³/s wire test is synthetic (sets `_v_sup` on the parsed model).
@@ -330,6 +398,6 @@ blocker is cleared.
 | Phase 1 — file management | **Done 2026-06-12** | migration `20260612_0022`; `backend/features/model_viewer/`; `frontend/src/features/model_viewer/`; pytest ×11 + Vitest ×11 + e2e green; `make ci` green (this session) |
 | Phase 2 — extraction backend | **Done 2026-06-12** | `schemas/` + `extraction.py` + `model_data.py`; 6 read routes + 6 MCP tools; pytest ×28 new (incl. Hillandale goldens); perf canary 7.4 s; `make ci` green (this session) |
 | Phase 3 — canvas + Building lens | **Done 2026-06-13** | R3F deps; `/model_data` query; Building lens loader/canvas; selection + inspector; scene-ready hook; simplify + docs-pass complete; `make format` green; `make ci` green; focused Playwright spec green; `graphify update .` run |
-| Phase 4 — remaining lenses | Not started | — |
+| Phase 4 — remaining lenses | **Done 2026-06-13** | lens bar + all remaining non-Site lenses; inspector configs; `&lens=` deep links; focused Vitest green; Phase 4 Playwright e2e green; browser walkthrough green |
 | Phase 5 — themes + legend | Not started | — |
 | Phase 6 — measure, Site & Sun, polish | Not started | — |

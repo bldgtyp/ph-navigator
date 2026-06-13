@@ -15,6 +15,7 @@ type ModelViewerState = {
   errorKind: ModelViewerErrorKind | null;
   cameraRequest: { kind: "fit" | "home" | "zoomTo"; targetId?: string; id: number } | null;
   setActiveFileId: (fileId: string | null) => void;
+  setLens: (lens: ModelViewerLens) => void;
   setHoverId: (objectId: string | null) => void;
   setSelectionId: (objectId: string | null) => void;
   clearSelection: () => void;
@@ -32,6 +33,8 @@ export const useModelViewerStore = create<ModelViewerState>()((set) => ({
   cameraRequest: null,
   setActiveFileId: (fileId) =>
     set({ activeFileId: fileId, hoverId: null, selectionId: null, errorKind: null }),
+  setLens: (lens) =>
+    set((state) => (state.lens === lens ? state : { lens, hoverId: null, selectionId: null })),
   setHoverId: (objectId) =>
     set((state) => (state.hoverId === objectId ? state : { hoverId: objectId })),
   setSelectionId: (objectId) =>
