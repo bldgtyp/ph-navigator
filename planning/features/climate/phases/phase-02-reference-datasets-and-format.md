@@ -25,24 +25,35 @@ build on.
 
 ## 1. Required reading
 
-- `../research.md` — the exact Phius `-mon.txt` and PHI xlsx shapes; the
-  field list the standardized record must cover.
-- `../PRD.md` §4.3 — the `ClimateRecord` schema.
-- `../decisions.md` D-CL-8 / D-CL-9 / D-CL-10.
-- **Reuse investigation (do first, D-CL-10):** check `honeybee-ph` /
-  `PHX` (already backend deps) for an existing PHPP monthly-climate
-  reader/model. The Phius `-mon.txt` IS the PHPP climate import format.
-  If a parser/model exists, normalize the standardized record to it
-  rather than hand-rolling — and record what you found.
+- `../research.md` — the Phius `-mon.txt` / PHI xlsx shapes **and the
+  completed PH-Tools reuse investigation** (the three existing models +
+  the `io_climate.py` reader). Read this first.
+- `../PRD.md` §4.3 — the `ClimateRecord` schema, **pinned to
+  `honeybee_ph.site`**.
+- `../decisions.md` D-CL-8 / D-CL-9 / D-CL-10 (D-CL-10 resolved).
+- The actual PH-Tools source (Ed's libs, backend deps):
+  - `honeybee_ph/honeybee_ph/site.py` — `Site`/`Location`/`Climate`/
+    `Climate_MonthlyTempCollection`/`Climate_MonthlyRadiationCollection`/
+    `Climate_PeakLoadCollection`/`Climate_PeakLoadValueSet`/`PHPPCodes`.
+    **The alignment target.**
+  - `PHX/PHX/PHPP/sheet_io/io_climate.py` — PHPP Climate-worksheet
+    reader (reference/reuse for the PHI xlsx seed).
+  - `PHX/PHX/model/phx_site.py` — the export model (4 design conditions).
 
 ## 2. Work
 
-### 2.1 Standardized record schema
-- Pydantic v2 `ClimateRecord` per PRD §4.3 (identity + 12 monthly arrays
-  + design block + aux), SI-canonical. Align field names with the
-  honeybee-ph PH-climate model where one exists (D-CL-10) so it can
-  round-trip to HBJSON/PHPP.
-- Once settled, promote the schema to a `context/` reference doc (stable
+### 2.1 Standardized record schema (PINNED — D-CL-10)
+- Pydantic v2 `ClimateRecord` **mirroring `honeybee_ph.site.Site`**
+  (PRD §4.3): `location` (Location), `climate` (Climate: station
+  elevation, summer swing, wind, ground, `monthly_temps`,
+  `monthly_radiation`, `peak_loads` ×4), `phpp_codes` (PHPPCodes), plus
+  our `provider`/`version`/`station_id` identity and an `aux` block.
+  SI verbatim from honeybee_ph (radiation kWh/m² monthly, W/m² peak;
+  temps °C; elevation m; wind m/s; swing K).
+- Provide `from_honeybee_ph_site()` / `to_honeybee_ph_site()` adapters
+  over the existing `Site.from_dict()`/`to_dict()`. **Do not subclass**
+  the py2.7 honeybee_ph classes — mirror the dict shape and adapt.
+- Promote the schema to a `context/` reference doc once it lands (stable
   contract; planning/.instructions.md source-of-truth rule).
 
 ### 2.2 Reference-dataset storage (app-wide, versioned — D-CL-8)
@@ -58,12 +69,14 @@ build on.
 - **Phius (2022):** parse the 1007 `USA/<ST>/<STATION>-mon.txt` files
   (tab-delimited, cp1252; mind the German labels + degree-symbol
   mojibake) → `ClimateRecord` → rows under
-  `provider='phius', version='2022'`. Assert the seeded count matches
-  the file count.
-- **PHI (PHPP 10.6):** read the `Climate` sheet of
-  `phi_phpp_10_6_climate_data.xlsx` (~1474 rows; ignore PER-factor /
-  interpolation columns) → `ClimateRecord` → rows under
-  `provider='phi', version='10.6'`.
+  `provider='phius', version='2022'`. No existing reader — thin custom
+  parser, but the fields map 1:1 onto `honeybee_ph.Climate` (research.md).
+  Assert the seeded count matches the file count.
+- **PHI (PHPP 10.6):** read the `Climate` sheet of the PHPP xlsx
+  (~1474 rows; ignore PER-factor / interpolation columns) → `ClimateRecord`
+  → rows under `provider='phi', version='10.6'`. **Reuse/reference
+  `PHX/PHX/PHPP/sheet_io/io_climate.py`** — it already reads this exact
+  worksheet (country/region/dataset, lat/long, elevation, monthly data).
 - Make the importer a re-runnable seed routine (idempotent per
   `(provider, version)`), not a one-off script — future versions reuse
   it. The interactive admin upload/update UI is **out of scope** (Ed);
@@ -97,8 +110,8 @@ build on.
 
 ## 4. Exit criteria
 
-- Standardized `ClimateRecord` defined (+ promoted toward `context/`).
+- `ClimateRecord` defined mirroring `honeybee_ph.site` + adapters
+  (round-trips to `Site.to_dict()`); promoted toward `context/`.
 - Phius 2022 + PHI 10.6 seeded, queryable, version-tagged; counts
-  verified.
-- Reuse decision (D-CL-10) recorded (what honeybee-ph/PHX offered).
+  verified (Phius ~1007).
 - Read endpoints + MCP live. `make ci` green.

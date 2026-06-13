@@ -3,8 +3,10 @@ DATE: 2026-06-13
 TIME: -
 STATUS: Active — focus is the climate data STORE (Phases 1–3); design
   conditions / fRSI / temp-asymmetry USE-cases deferred to later feature
-  work (Ed 2026-06-13). D-CL-1..3, D-CL-6..11 proposed; D-CL-4 resolved
-  (incl. ASHRAE-as-pointer); D-CL-5 deferred to the fRSI consumer.
+  work (Ed 2026-06-13). D-CL-4 resolved (store all; ASHRAE pointer);
+  D-CL-10 resolved (mirror honeybee_ph.site; reuse io_climate.py);
+  D-CL-1..3, D-CL-6..9, D-CL-11 proposed; D-CL-5 deferred to the fRSI
+  consumer.
 AUTHOR: Claude (for Ed)
 SCOPE: Decision ledger for the Climate feature.
 RELATED:
@@ -152,15 +154,30 @@ in any standard set, or to override one. Stored per-project (not
 app-wide). Editable; visualized the same way.
 **Recommendation: accept.**
 
-### D-CL-10 · Reuse PH-Tools / PHX climate parsing; align the standardized schema with honeybee-ph (NEW)
-The Phius `-mon.txt` shape IS the PHPP climate import format, and PHI
-data comes out of PHPP. `PHX` / `honeybee-ph` (Ed's own libraries,
-already backend deps) very likely already read/model PHPP monthly
-climate. **Investigate reuse before writing parsers from scratch**, and
-**align the standardized internal schema (PRD §4) with the honeybee-ph
-PH-climate model** so a climate record can round-trip into HBJSON/PHPP
-export. Avoids a parallel, drifting representation.
-**Recommendation: accept** (research task in Phase 2).
+### D-CL-10 · Mirror `honeybee_ph.site`; reuse `io_climate.py` for PHI (RESOLVED 2026-06-13, investigated)
+Investigation done (research.md). The PH climate record is already
+modeled in Ed's libs:
+- **`honeybee_ph/honeybee_ph/site.py`** — the HBJSON-native model
+  (`Site`/`Location`/`Climate`/`Climate_*Collection`/`PHPPCodes`), with
+  `to_dict()`/`from_dict()`. **This is the alignment target.**
+- **`PHX/PHX/model/phx_site.py`** — the export model (confirms 4 design
+  conditions + 12-element arrays).
+- **`PHX/PHX/PHPP/sheet_io/io_climate.py`** — already reads the PHPP
+  **Climate worksheet** (`read_active_country/region/data_set`,
+  `read_latitude/longitude`, `read_station_elevation`,
+  `read_active_monthly_data`). The PHI example xlsx **is** that
+  worksheet → direct reference (and possibly reusable) for the PHI seed.
+
+**Decision:** our Pydantic `ClimateRecord` (PRD §4.3) **mirrors
+`Site.to_dict()`** for the core + an `aux` block for the source fields
+honeybee_ph keeps in `user_data` (degree-hours, Jan/Jul wind, albedo,
+12-h min, summer night fractions). Provide
+`from_honeybee_ph_site()`/`to_honeybee_ph_site()` adapters — **do not
+subclass** the py2.7 classes. Reuse/reference `io_climate.py` for the
+PHI xlsx; write a thin parser for the Phius `-mon.txt` (no existing
+reader, but identical field shape). Units are SI verbatim from
+honeybee_ph.
+**Resolved: accept.**
 
 ### D-CL-11 · Per-analysis source selection (NEW)
 Because a project stores multiple sources (D-CL-4), each downstream
