@@ -31,10 +31,9 @@ and `RoomsTable` into `DataTable`.
 1. `PRD.md`
 2. `PLAN.md`
 3. `STATUS.md`
-4. Active phase:
-   - `phases/phase-01-backend-registry-pilot.md`
-5. Remaining phases:
+4. Next phase:
    - `phases/phase-02-backend-registry-rollout.md`
+5. Remaining phases:
    - `phases/phase-03-frontend-affordance-wiring.md`
    - `phases/phase-04-verification-closeout.md`
 6. Current implementation references:
@@ -51,9 +50,9 @@ This is not only a frontend prop-forwarding task. The shared controller
 already exposes schema-mutation handlers for the target tables, but the
 backend contracts currently do not opt most target tables into
 custom-field mutation support. Several contracts publish
-`field_registry=None`; Pumps has a registry scaffold but intentionally
-routes schema mutation to a rejection helper and still publishes
-`field_registry=None`.
+`field_registry=None`. Phase 01 enabled the Pumps backend registry
+pilot: Pumps now publishes `pumps_field_registry` and routes schema
+mutations through the shared dispatcher.
 
 Implementation should first make the backend table contracts actually
 support custom fields, then expose the existing Rooms-style UI handlers.
@@ -62,7 +61,7 @@ support custom fields, then expose the existing Rooms-style UI handlers.
 
 | Phase | Status | Handoff |
 | --- | --- | --- |
-| 01 - Backend registry pilot | Active | Prove the custom-field mutation path on Pumps first, using its existing registry scaffold. |
+| 01 - Backend registry pilot | Complete | Pumps accepts backend custom-field schema mutations through its existing registry scaffold. |
 | 02 - Backend registry rollout | Pending | Apply the proven registry pattern to the remaining Equipment and Thermal Bridges contracts. |
 | 03 - Frontend affordance wiring | Pending | Forward existing controller handlers through every target table component. |
 | 04 - Verification and closeout | Pending | Run focused tests, browser smoke, `make format`, and `make ci`; update status evidence. |
