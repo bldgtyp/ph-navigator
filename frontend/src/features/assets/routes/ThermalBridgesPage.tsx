@@ -1,7 +1,11 @@
 import { useMemo } from "react";
 import type { ProjectDetail } from "../../projects/types";
 import { tableFieldDefsToFieldDefs, type ViewState } from "../../../shared/ui/data-table";
-import { SliceTableShell, useSliceTableController } from "../../../shared/ui/data-table/feature";
+import {
+  SliceTableShell,
+  customFieldActionsForController,
+  useSliceTableController,
+} from "../../../shared/ui/data-table/feature";
 import type { SlicePayloadBuilders } from "../../../shared/ui/data-table/feature";
 import { generatedId } from "../../../shared/lib/ids";
 import { ThermalBridgesTable } from "../thermal-bridges/ThermalBridgesTable";
@@ -161,6 +165,7 @@ function ThermalBridgesPageBody({
             controller.canEdit ? () => generatedId(THERMAL_BRIDGE_ID_PREFIX) : undefined
           }
           sessionKey={`${project.id}:${activeVersionId ?? "none"}:${THERMAL_BRIDGES_TABLE_NAME}`}
+          {...customFieldActionsForController(controller)}
           footerAction={addRowButton(
             "Add thermal bridge",
             controller.canEdit,

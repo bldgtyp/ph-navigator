@@ -15,6 +15,10 @@ import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../asset
 import { sortedFans } from "../lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
 import {
+  customFieldColumnDefs,
+  type CustomFieldTableActions,
+} from "../../../shared/ui/data-table/feature";
+import {
   FAN_DATASHEET_FIELD_KEY,
   FAN_TYPE_COLUMN_ID,
   FAN_TYPE_KEY,
@@ -36,6 +40,7 @@ export function FansTable({
   overflowMenuActions,
   footerAction,
   onResetView,
+  ...customFieldActions
 }: {
   fansSlice: FansSlice;
   tableSchema: TableSchema;
@@ -50,7 +55,7 @@ export function FansTable({
   overflowMenuActions?: DataTableProps<FanRow>["overflowMenuActions"];
   footerAction?: DataTableProps<FanRow>["footerAction"];
   onResetView?: DataTableProps<FanRow>["onResetView"];
-}) {
+} & CustomFieldTableActions<FanRow>) {
   const sortedRows = useMemo(() => sortedFans(fansSlice.fans), [fansSlice.fans]);
   const datasheetAssetIds = useMemo(
     () => Array.from(new Set(sortedRows.flatMap((fan) => fan.datasheet_asset_ids))),
@@ -61,10 +66,14 @@ export function FansTable({
     () => new Map((datasheetUrls.data ?? []).map((item) => [item.asset_id, item])),
     [datasheetUrls.data],
   );
-  const { fieldDefs } = tableSchema;
+  const { fieldDefs, customFields } = tableSchema;
   const fieldDefByKey = useMemo(
     () => new Map(fieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef])),
     [fieldDefs],
+  );
+  const customColumns = useMemo<DataTableColumnDef<FanRow>[]>(
+    () => customFieldColumnDefs({ customFields, fieldDefByKey }),
+    [customFields, fieldDefByKey],
   );
   const columns = useMemo<DataTableColumnDef<FanRow>[]>(
     () => [
@@ -220,8 +229,9 @@ export function FansTable({
         measureText: (fan) => `${fan.datasheet_asset_ids.length} attachments`,
         defaultWidth: 260,
       },
+      ...customColumns,
     ],
-    [datasheetUrlById, fieldDefByKey, isEditor, onWrite, projectId],
+    [customColumns, datasheetUrlById, fieldDefByKey, isEditor, onWrite, projectId],
   );
 
   return (
@@ -241,6 +251,7 @@ export function FansTable({
       overflowMenuActions={overflowMenuActions}
       footerAction={footerAction}
       onResetView={onResetView}
+      {...customFieldActions}
     />
   );
 }

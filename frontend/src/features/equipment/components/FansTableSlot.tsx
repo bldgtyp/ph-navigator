@@ -1,6 +1,9 @@
 import { generatedId } from "../../../shared/lib/ids";
 import type { BuildEmptyRow, ViewState } from "../../../shared/ui/data-table";
-import type { SliceTableController } from "../../../shared/ui/data-table/feature";
+import {
+  customFieldActionsForController,
+  type SliceTableController,
+} from "../../../shared/ui/data-table/feature";
 import { FAN_ID_PREFIX } from "../lib";
 import { FANS_TABLE_NAME, type FanRow, type FansSlice } from "../types";
 import { FansTable } from "./FansTable";
@@ -33,6 +36,7 @@ export function FansTableSlot(props: FansTableSlotProps) {
       generateRowId={controller.canEdit ? () => generatedId(FAN_ID_PREFIX) : undefined}
       sessionKey={`${projectId}:${activeVersionId ?? "none"}:${FANS_TABLE_NAME}`}
       footerAction={footerAction}
+      {...customFieldActionsForController(controller)}
     />
   );
 }

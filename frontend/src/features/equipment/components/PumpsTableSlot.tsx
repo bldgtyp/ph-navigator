@@ -1,7 +1,10 @@
 import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { generatedId } from "../../../shared/lib/ids";
-import type { SliceTableController } from "../../../shared/ui/data-table/feature";
+import {
+  customFieldActionsForController,
+  type SliceTableController,
+} from "../../../shared/ui/data-table/feature";
 import {
   useRowFocusHighlight,
   type BuildEmptyRow,
@@ -72,6 +75,7 @@ export function PumpsTableSlot(props: PumpsTableSlotProps) {
         generateRowId={controller.canEdit ? () => generatedId(PUMP_ID_PREFIX) : undefined}
         sessionKey={`${projectId}:${activeVersionId ?? "none"}:${PUMPS_TABLE_NAME}`}
         footerAction={footerAction}
+        {...customFieldActionsForController(controller)}
         onInversePillClick={(field, rowId) => {
           const route = routeForInverseSource(projectId, field, rowId);
           if (route) navigate(route);

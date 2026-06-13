@@ -1,6 +1,9 @@
 import { useMemo } from "react";
 import { generatedId } from "../../../shared/lib/ids";
-import type { SliceTableController } from "../../../shared/ui/data-table/feature";
+import {
+  customFieldActionsForController,
+  type SliceTableController,
+} from "../../../shared/ui/data-table/feature";
 import type { BuildEmptyRow, ViewState } from "../../../shared/ui/data-table";
 import { useHeatPumpsQuery } from "../heat-pumps/api";
 import { VENTILATOR_ID_PREFIX } from "../lib";
@@ -53,6 +56,7 @@ export function VentilatorsTableSlot(props: VentilatorsTableSlotProps) {
       generateRowId={controller.canEdit ? () => generatedId(VENTILATOR_ID_PREFIX) : undefined}
       sessionKey={`${projectId}:${activeVersionId ?? "none"}:${VENTILATORS_TABLE_NAME}`}
       footerAction={footerAction}
+      {...customFieldActionsForController(controller)}
       linkedHpIndoorCountById={linkedHpIndoorCountById}
     />
   );

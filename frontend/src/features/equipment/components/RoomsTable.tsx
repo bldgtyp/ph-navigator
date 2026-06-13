@@ -2,8 +2,6 @@ import { useMemo, type CSSProperties } from "react";
 import {
   DataTable,
   RECORD_ID_FIELD_KEY,
-  getCustomLink,
-  getCustomValue,
   type DataTableColumnDef,
   type DataTableProps,
   type FieldDef,
@@ -13,10 +11,12 @@ import {
   type ViewState,
 } from "../../../shared/ui/data-table";
 
-import { ComputedCell } from "../../../shared/ui/data-table/components/ComputedCell";
-import { isComputedErrorValue } from "../../../shared/ui/data-table/lib/formula";
 import { singleSelectOption } from "../../../shared/ui/data-table/lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
+import {
+  computedFieldColumnDef,
+  customFieldColumnDefs,
+} from "../../../shared/ui/data-table/feature";
 import {
   ROOM_BUILDING_ZONE_COLUMN_ID,
   ROOM_BUILDING_ZONE_KEY,
@@ -83,45 +83,17 @@ export function RoomsTable({
   );
   const customColumns = useMemo<DataTableColumnDef<RoomRow>[]>(
     () =>
-      customFields.map((custom) => {
-        const fieldDef = fieldDefByKey.get(custom.field_key);
-        if (custom.field_type === "formula") {
-          // Formula values live in `rows_computed`, never on the row.
-          // The accessor returns the scalar (errors → null) so sorts
-          // and aggregates stay clean; render shows the error glyph.
-          const computedType = fieldDef?.computed_type ?? "text";
-          return computedColumnDef({
-            fieldKey: custom.field_key,
-            header: custom.display_name,
-            computedType,
-            rowsComputed,
-          });
-        }
-        if (custom.field_type === "linked_record") {
-          // Linked-record values live in the `custom_links` bag, not
-          // `custom_values`. GridBody owns rendering (LinkedRecordCell)
-          // and editing (LinkedRecordPicker) via DataTable.linkedRecordOps;
-          // this accessor only feeds sort/filter/group with the id list.
-          return {
-            id: custom.field_key,
-            fieldKey: custom.field_key,
-            header: custom.display_name,
-            accessor: (room) => getCustomLink(room, custom.field_key),
-          };
-        }
-        return {
-          id: custom.field_key,
-          fieldKey: custom.field_key,
-          header: custom.display_name,
-          accessor: (room) => (fieldDef ? (getCustomValue(room, fieldDef) ?? null) : null),
-        };
+      customFieldColumnDefs({
+        customFields,
+        fieldDefByKey,
+        rowsComputed,
       }),
     [customFields, fieldDefByKey, rowsComputed],
   );
   const columns = useMemo<DataTableColumnDef<RoomRow>[]>(() => {
     const recordIdFieldDef = fieldDefByKey.get(RECORD_ID_FIELD_KEY);
     return [
-      computedColumnDef({
+      computedFieldColumnDef({
         fieldKey: RECORD_ID_FIELD_KEY,
         header: recordIdFieldDef?.display_name ?? "Record-ID",
         computedType: recordIdFieldDef?.computed_type ?? "text",
@@ -211,51 +183,6 @@ export function RoomsTable({
       linkedRecordTargets={linkedRecordTargets}
     />
   );
-}
-
-function readComputedRaw(
-  overlay: Record<string, Record<string, unknown>> | undefined,
-  rowId: string,
-  fieldId: string,
-): unknown {
-  return overlay?.[rowId]?.[fieldId] ?? null;
-}
-
-// Sort / filter / group / aggregate consume the *scalar* value;
-// structured error tokens become null so a `#ERROR` cell doesn't
-// poison the column's ordering or summary stats. Render still
-// surfaces the error glyph via `readComputedRaw`.
-function readComputedScalar(
-  overlay: Record<string, Record<string, unknown>> | undefined,
-  rowId: string,
-  fieldId: string,
-): unknown {
-  const raw = readComputedRaw(overlay, rowId, fieldId);
-  return isComputedErrorValue(raw) ? null : raw;
-}
-
-function computedColumnDef(args: {
-  fieldKey: string;
-  header: string;
-  computedType: "text" | "number";
-  rowsComputed: Record<string, Record<string, unknown>> | undefined;
-  defaultWidth?: number;
-}): DataTableColumnDef<RoomRow> {
-  const { fieldKey, header, computedType, rowsComputed, defaultWidth } = args;
-  return {
-    id: fieldKey,
-    fieldKey,
-    header,
-    accessor: (room) => readComputedScalar(rowsComputed, room.id, fieldKey),
-    render: (room) => (
-      <ComputedCell
-        value={readComputedRaw(rowsComputed, room.id, fieldKey)}
-        computedType={computedType}
-      />
-    ),
-    measureText: (room) => String(readComputedScalar(rowsComputed, room.id, fieldKey) ?? ""),
-    ...(defaultWidth !== undefined ? { defaultWidth } : {}),
-  };
 }
 
 function optionPill(value: string | null, fieldDef: FieldDef | undefined) {
