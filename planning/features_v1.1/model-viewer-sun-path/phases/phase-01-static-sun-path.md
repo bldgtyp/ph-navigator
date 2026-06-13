@@ -96,6 +96,16 @@ comment in `build_sun_path`. **This is the acceptance-critical step.**
 
 ### 2.3 Route + service + MCP
 
+**Module placement (see decisions.md "Climate direction"):** the sun
+path is location/climate-derived and will likely gain a second consumer
+(a project-level Climate tab) beyond the Model viewer. Author the
+builder + endpoint in the **location/climate domain**
+(`features/project_location/`, the eventual `climate` home) rather than
+`features/model_viewer/`, so a future Climate tab consumes it without a
+move. The Model viewer just calls it. If Ed wants the absolute-smallest
+diff and is fine with a later move, `features/model_viewer/` also works
+— but location-owned is the forward-compatible default.
+
 - `routes.py`: `GET /projects/{project_id}/sun-path`, view-access
   (public-readable), returns `SunPathAndCompassDTOSchema | None`.
 - `service.py`: read `project_location` via

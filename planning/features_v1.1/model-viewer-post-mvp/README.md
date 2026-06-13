@@ -33,7 +33,7 @@ with detailed phased plans.
 
 | Candidate | Feature folder | Notes |
 |---|---|---|
-| Sun-path wiring (D-07) **+** sun-path scrubber (Q-VIEW-6) | [`model-viewer-sun-path/`](../model-viewer-sun-path/) | Flagship. Phase 1 = static annual sun path from project-location data; Phase 2 = scrubber (gated). One decision to ratify: D-SP-1 (decouple from the immutable `/model_data` artifact). |
+| Sun-path wiring (D-07) **+** sun-path scrubber (Q-VIEW-6) | [`model-viewer-sun-path/`](../model-viewer-sun-path/) | Flagship. Phase 1 = static annual sun path from project-location data; Phase 2 = scrubber (gated). D-SP-1 settled (decouple from the immutable `/model_data` artifact, accepted 2026-06-13). |
 | Legend-as-filter (NEW-VIEW-2 / Q-VIEW-7) | [`model-viewer-legend-filter/`](../model-viewer-legend-filter/) | Ed-flagged near-priority. Frontend-only; reuses the D-11 legend rows + existing bucket-key function. No open decisions. |
 
 ### Tier 2 — Plannable but gated (own folder, plan ready, idle)
@@ -62,7 +62,7 @@ with detailed phased plans.
 ## Recommended order if Ed promotes work
 
 1. **Sun path** — completes declared Site & Sun behavior; prerequisites
-   met; ratify D-SP-1 and go.
+   met; D-SP-1 settled — ready to build.
 2. **Legend-as-filter** — Ed's stated near-priority; cheapest high-value
    win; no dependencies.
 3. **Clipping planes** — when a section workflow names itself.

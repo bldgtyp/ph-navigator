@@ -36,73 +36,38 @@ So the work is moderately more complicated than "wire the button":
 turning the button on before backend opt-in would create a visible
 workflow that fails on submit.
 
-## Phase 1 - Backend Registry Opt-In
+## Phase 1 - Backend Registry Pilot
 
-1. Convert the target table contracts from `field_registry=None` to real
-   `TableFieldRegistry` support.
-2. Reuse the Rooms registry pattern:
-   - read and replace each table's `field_defs`
-   - read and set `row.custom_values`
-   - read and set `row.custom_links`
-   - compute schema fingerprints
-   - route apply / validate through `schema_mutations`
-   - preserve existing built-in single-select option-list editing
-3. Pay special attention to tables with typed physical fields,
-   attachment core fields, and inverse display columns:
-   - attachment columns stay built-in / locked
-   - inverse-link columns remain display-only and outside persisted
-     `field_defs`
-   - typed core columns keep existing field overlays and formula typing
-4. Add backend tests proving `addField` succeeds on each target table
-   and rejects unsupported / mismatched table keys as before.
+See `phases/phase-01-backend-registry-pilot.md`.
 
-## Phase 2 - Frontend Prop Wiring
+Use Pumps as the pilot because it already has the most complete
+`TableFieldRegistry` scaffold and also includes attachment plus inverse
+display-column edge cases. The phase is complete when Pumps accepts
+`addField` through `/custom-fields:mutate`, preserves existing Pumps
+behavior, and has focused backend tests.
 
-1. Add custom-field props to each target table component, matching
-   `RoomsTable`:
-   - `onAddCustomField`
-   - `onDeleteCustomField`
-   - `onDuplicateCustomField`
-   - `onEditCustomFieldBundle`
-2. Forward controller handlers from each table slot / route only when
-   `controller.canEdit` is true.
-3. For Thermal Bridges, wire directly from `ThermalBridgesPageBody` into
-   `ThermalBridgesTable`.
-4. Keep viewer and locked-version behavior passive by continuing to omit
-   these props when editing is unavailable.
+## Phase 2 - Backend Registry Rollout
 
-## Phase 3 - Tests
+See `phases/phase-02-backend-registry-rollout.md`.
 
-1. Add focused rendered tests modeled on
-   `RoomsTable.addField.test.tsx` for:
-   - one simple table, e.g. `VentilatorsTable`
-   - one attachment-heavy table, e.g. `PumpsTable` or Hot Water Heaters
-   - `ThermalBridgesTable`
-2. Add or extend controller / integration tests to assert the POST path
-   uses `/draft/tables/<table>/custom-fields:mutate` for each table.
-3. Add backend table-mutation tests for representative target tables.
-4. Keep existing Rooms custom-field tests unchanged as regression
-   coverage.
+Roll the proven registry pattern across the remaining target tables:
+`ventilators`, `fans`, `hot_water_heaters`, `hot_water_tanks`,
+`electric_heaters`, `appliances`, and `thermal_bridges`.
 
-## Phase 4 - Verification
+## Phase 3 - Frontend Affordance Wiring
 
-1. Run focused backend tests for project-document schema mutations.
-2. Run focused frontend tests for Rooms plus the new target-table
-   coverage.
-3. Use browser/Playwright against `http://localhost:5173` and
-   `http://localhost:8000` with `codex@example.com` if visual
-   verification is needed.
-4. Close with repo gate:
-   - `make format`
-   - `make ci`
-   - inspect any formatter diff, then rerun `make ci` if needed
+See `phases/phase-03-frontend-affordance-wiring.md`.
+
+Expose the existing Rooms-style `DataTable` schema handlers on all
+target tables, only after backend support exists for the corresponding
+contracts.
+
+## Phase 4 - Verification and Closeout
+
+See `phases/phase-04-verification-closeout.md`.
 
 ## Open Questions
 
-- Should Pumps be the first backend implementation target because its
-  registry scaffold already exists, or should Ventilators be first
-  because it is visually simpler and has fewer attachment / inverse
-  behaviors?
 - Do we want formula support on every target table immediately, or
   should Phase 1 restrict formula registry typing to fields we can
   confidently expose now?

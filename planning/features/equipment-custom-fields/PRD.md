@@ -71,3 +71,14 @@ coverage, because it already has the behavior.
 7. Focused tests cover at least one simple Equipment table, one
    attachment-heavy table, and Thermal Bridges; Rooms add-field tests
    still pass.
+
+## Execution Phases
+
+- Phase 01: `phases/phase-01-backend-registry-pilot.md` proves the
+  backend schema-mutation path on Pumps.
+- Phase 02: `phases/phase-02-backend-registry-rollout.md` applies the
+  backend registry pattern to the remaining target contracts.
+- Phase 03: `phases/phase-03-frontend-affordance-wiring.md` turns on
+  the existing Rooms-style DataTable affordance for every target table.
+- Phase 04: `phases/phase-04-verification-closeout.md` records focused
+  tests, browser smoke if needed, and the repo closeout gate.
