@@ -156,6 +156,9 @@ alternate ports or missing cookies:
    signed in as `codex@example.com`. If the Playwright MCP browser
    profile is locked, use the Node REPL Playwright fallback with
    `frontend/node_modules`; do not switch to another app port.
+6. For Model Viewer-specific browser troubleshooting, read
+   `planning/features/model-viewer/AGENT_BROWSER_NOTES.md` before
+   manual browser verification.
 
 ## Planning
 

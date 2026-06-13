@@ -50,10 +50,11 @@ original text conflict, the amendment wins.
   popover; every "Sonner toast" reference in this file reads as
   that chip (sonner is not in the V2 stack; amends Q-VIEW-5's
   surface choice, not its non-blocking intent).
-- **D-07** The sun path derives from the deferred
+- **D-07** The sun path derives from the completed
   `project-location` feature, not an EPW (supersedes US-VIEW-7
   crit. 6). Site & Sun ships with building + shades + a "Set
-  project location" hint until that feature lands.
+  project location" hint until model-viewer wires the location data
+  into `sun_path`.
 - **D-09** Declarative derived materials; the `materialStore`
   userData contract (US-VIEW-4 crit. 6, US-VIEW-5 crit. 4) is
   retired as implementation language — its observable behavior

@@ -9,8 +9,8 @@ SCOPE: EPW weather-file linkage — new asset_kind='epw', upload in the
   non-blocking entered-vs-EPW mismatch warning, parsed header retained
   in asset metadata, full file retained in R2.
 RELATED:
-  - planning/features/project-location/PRD.md §6,§8
-  - planning/features/project-location/decisions.md D-PL-3
+  - planning/archive/project-location/PRD.md §6,§8
+  - planning/archive/project-location/decisions.md D-PL-3
   - backend/features/assets/{registry.py,schemas.py,service.py,repository.py}
   - backend/alembic/versions/20260526_0011_project_assets_and_jobs.py
   - frontend/src/features/assets/{types.ts,hooks.ts,components/AttachmentCell.tsx}

@@ -1,8 +1,9 @@
 """Pydantic mirrors of ladybug sun-path / compass DTOs.
 
-Phase 2 always serves `sun_path: null` — generation is blocked on the
-deferred project-location feature (D-07/OQ-1). The schemas exist now so
-the wire shape does not change when that feature lands.
+Phase 2 always serves `sun_path: null` — generation is blocked on
+model-viewer wiring against project-location data (D-07/OQ-1). The
+schemas exist now so the wire shape does not change when that wiring
+lands.
 """
 
 from __future__ import annotations

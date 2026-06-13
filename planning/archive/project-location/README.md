@@ -1,12 +1,12 @@
 ---
 DATE: 2026-06-12
 TIME: 18:08 EDT
-STATUS: Active — Phase 3 complete. Backend location backbone,
+STATUS: Complete — archived after Phase 3. Backend location backbone,
   frontend Project Settings location UI, and EPW linkage are
   implemented with focused tests, `$ simplify`, `$ docs-pass`,
   `make format`, `make ci`, and `graphify update .` complete.
 AUTHOR: Claude (for Ed)
-SCOPE: Router for the Project Location feature — scope, read order,
+SCOPE: Archived router for the Project Location feature — scope, read order,
   phase map. Expanded from the 2026-06-12 handoff stub (now in §
   "Origin") into a full PRD + plan per Ed's direction.
 RELATED:

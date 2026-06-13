@@ -163,10 +163,11 @@ latitude / longitude / north — not a weather file. Resolved (Ed
 2026-06-12): location data will come from a new project-level
 **Location** section, developed as its own feature with robust EPW
 linkages — requirements handoff at
-`planning/features/project-location/README.md`. Until it ships, the
-Site & Sun lens renders building + shades with a quiet "Set project
-location to see the sun path" hint; the sun path activates when
-project-location lands (no Model-tab rework needed —
+`planning/archive/project-location/README.md`. Until model-viewer
+wires that data into extraction, the Site & Sun lens renders building
++ shades with a quiet "Set project location to see the sun path" hint;
+the sun path activates when model-viewer populates `sun_path` (no
+Model-tab rework needed —
 `Sunpath.from_location` reads whatever that section stores).
 
 ### 4.6 Round-3 amendments: artifact serving, broken files, cap (D-15/D-16/D-17)
