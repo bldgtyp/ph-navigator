@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import cast
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from features.project_document.custom_fields import (
     RESERVED_FIELD_KEY_RECORD_ID,
@@ -22,10 +22,17 @@ from features.project_document.document import (
 )
 from features.project_document.models import ProjectDocumentSource
 from features.project_document.tables._built_in_seeds import built_in_field_def
+from features.project_document.tables._registry_helpers import (
+    FormulaType,
+    coerce_custom_option_list_extras,
+    custom_option_lists_for_table,
+    make_field_registry,
+)
 from features.project_document.tables.contracts import TableContract
 from features.project_document.validation import validate_document
 
 HOT_WATER_TANKS_TABLE_NAME = "hot_water_tanks"
+_HOT_WATER_TANKS_TABLE_PATH: tuple[str, ...] = ("equipment", "hot_water_tanks")
 
 
 HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
@@ -81,6 +88,13 @@ HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
 )
 
 HOT_WATER_TANKS_BUILT_IN_FIELD_KEYS: tuple[str, ...] = tuple(f.field_key for f in HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS)
+HOT_WATER_TANKS_TYPED_COLUMN_FORMULA_TYPES: dict[str, FormulaType] = {
+    "id": "text",
+    "tank_type": "single_select",
+    "url": "text",
+    "notes": "text",
+    "datasheet_asset_ids": "text",
+}
 
 assert any(f.field_key == RESERVED_FIELD_KEY_RECORD_ID for f in HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS), (
     "Hot Water Tanks built-in seed must contain a record_id FieldDef"
@@ -88,12 +102,24 @@ assert any(f.field_key == RESERVED_FIELD_KEY_RECORD_ID for f in HOT_WATER_TANKS_
 
 
 class HotWaterTanksSliceOptions(BaseModel):
-    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     hot_water_tanks_type: list[SingleSelectOption] = Field(alias=HOT_WATER_TANK_TYPE_OPTION_KEY)
 
+    @model_validator(mode="after")
+    def _validate_namespaced_extras(self) -> HotWaterTanksSliceOptions:
+        coerce_custom_option_list_extras(
+            self,
+            table_path=_HOT_WATER_TANKS_TABLE_PATH,
+            table_label=HOT_WATER_TANKS_TABLE_NAME,
+        )
+        return self
+
     def by_option_key(self) -> dict[str, list[SingleSelectOption]]:
         return {HOT_WATER_TANK_TYPE_OPTION_KEY: self.hot_water_tanks_type}
+
+    def custom_option_lists(self) -> dict[str, list[SingleSelectOption]]:
+        return dict(self.__pydantic_extra__ or {})
 
 
 class HotWaterTanksSliceReplaceRequest(BaseModel):
@@ -120,18 +146,22 @@ class HotWaterTanksSliceResponse(BaseModel):
 def apply_hot_water_tanks_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectDocumentV1:
     hot_water_tanks_payload = cast(HotWaterTanksSliceReplaceRequest, payload)
     hot_water_tank_options = hot_water_tanks_payload.single_select_options.by_option_key()
+    custom_option_lists = hot_water_tanks_payload.single_select_options.custom_option_lists()
     if (
         body.tables.equipment.hot_water_tanks.rows == hot_water_tanks_payload.hot_water_tanks
         and body.tables.equipment.hot_water_tanks.field_defs == hot_water_tanks_payload.field_defs
         and all(
             body.single_select_options.get(key, []) == hot_water_tank_options[key] for key in HOT_WATER_TANK_OPTION_KEYS
         )
+        and all(body.single_select_options.get(key, []) == value for key, value in custom_option_lists.items())
     ):
         return body
 
     options = dict(body.single_select_options)
     for key in HOT_WATER_TANK_OPTION_KEYS:
         options[key] = hot_water_tank_options[key]
+    for key, value in custom_option_lists.items():
+        options[key] = value
     next_hot_water_tanks_envelope = HotWaterTanksTableEnvelope(
         field_defs=hot_water_tanks_payload.field_defs,
         rows=hot_water_tanks_payload.hot_water_tanks,
@@ -159,7 +189,8 @@ def hot_water_tanks_response(
         hot_water_tanks=body.tables.equipment.hot_water_tanks.rows,
         field_defs=body.tables.equipment.hot_water_tanks.field_defs,
         single_select_options={
-            HOT_WATER_TANK_TYPE_OPTION_KEY: body.single_select_options[HOT_WATER_TANK_TYPE_OPTION_KEY]
+            HOT_WATER_TANK_TYPE_OPTION_KEY: body.single_select_options[HOT_WATER_TANK_TYPE_OPTION_KEY],
+            **custom_option_lists_for_table(body, _HOT_WATER_TANKS_TABLE_PATH),
         },
     )
 
@@ -182,6 +213,15 @@ def extract_hot_water_tanks_diff_value(body: ProjectDocumentV1) -> dict[str, obj
     }
 
 
+hot_water_tanks_field_registry = make_field_registry(
+    field_keys=HOT_WATER_TANKS_BUILT_IN_FIELD_KEYS,
+    table_path=_HOT_WATER_TANKS_TABLE_PATH,
+    row_model=HotWaterTankRow,
+    built_in_option_key_by_field_key={"tank_type": HOT_WATER_TANK_TYPE_OPTION_KEY},
+    built_in_formula_types=HOT_WATER_TANKS_TYPED_COLUMN_FORMULA_TYPES,
+)
+
+
 hot_water_tanks_contract = TableContract(
     name=HOT_WATER_TANKS_TABLE_NAME,
     schema_slug="hot-water-tank",
@@ -191,6 +231,6 @@ hot_water_tanks_contract = TableContract(
     apply_replace=apply_hot_water_tanks_replace,
     extract_rows=extract_hot_water_tanks_envelope,
     extract_diff_value=extract_hot_water_tanks_diff_value,
-    table_path=("equipment", "hot_water_tanks"),
-    field_registry=None,
+    table_path=_HOT_WATER_TANKS_TABLE_PATH,
+    field_registry=hot_water_tanks_field_registry,
 )

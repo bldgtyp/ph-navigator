@@ -177,6 +177,36 @@ def default_attach_computed_overlay(
     return out
 
 
+def table_path_option_namespace(table_path: tuple[str, ...]) -> str:
+    if not table_path:
+        raise ValueError("table_path option namespace requires a non-empty table_path")
+    return ".".join(table_path)
+
+
+def read_table_envelope(body: ProjectDocumentV1, table_path: tuple[str, ...]) -> object:
+    envelope: object = body.tables
+    for path_part in table_path:
+        envelope = getattr(envelope, path_part)
+    return envelope
+
+
+def replace_table_envelope(
+    body: ProjectDocumentV1,
+    table_path: tuple[str, ...],
+    envelope: object,
+) -> ProjectDocumentV1:
+    next_tables = _replace_nested_model(body.tables, table_path, envelope)
+    return body.model_copy(update={"tables": next_tables})
+
+
+def _replace_nested_model(model: BaseModel, path: tuple[str, ...], value: object) -> BaseModel:
+    if len(path) == 1:
+        return model.model_copy(update={path[0]: value})
+    child = getattr(model, path[0])
+    next_child = _replace_nested_model(child, path[1:], value)
+    return model.model_copy(update={path[0]: next_child})
+
+
 @dataclass(frozen=True)
 class TableContract:
     """Per-table behavior used by generic document/draft/table routes."""

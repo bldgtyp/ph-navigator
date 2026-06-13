@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import cast
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from features.project_document.custom_fields import (
     RESERVED_FIELD_KEY_RECORD_ID,
@@ -22,10 +22,17 @@ from features.project_document.document import (
 )
 from features.project_document.models import ProjectDocumentSource
 from features.project_document.tables._built_in_seeds import built_in_field_def
+from features.project_document.tables._registry_helpers import (
+    FormulaType,
+    coerce_custom_option_list_extras,
+    custom_option_lists_for_table,
+    make_field_registry,
+)
 from features.project_document.tables.contracts import TableContract
 from features.project_document.validation import validate_document
 
 FANS_TABLE_NAME = "fans"
+_FANS_TABLE_PATH: tuple[str, ...] = ("equipment", "fans")
 
 
 FANS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
@@ -77,6 +84,14 @@ FANS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
 )
 
 FANS_BUILT_IN_FIELD_KEYS: tuple[str, ...] = tuple(f.field_key for f in FANS_BUILT_IN_FIELD_DEFS)
+FANS_TYPED_COLUMN_FORMULA_TYPES: dict[str, FormulaType] = {
+    "id": "text",
+    "fan_type": "single_select",
+    "phase": "number",
+    "url": "text",
+    "notes": "text",
+    "datasheet_asset_ids": "text",
+}
 
 assert any(f.field_key == RESERVED_FIELD_KEY_RECORD_ID for f in FANS_BUILT_IN_FIELD_DEFS), (
     "Fans built-in seed must contain a record_id FieldDef"
@@ -84,12 +99,20 @@ assert any(f.field_key == RESERVED_FIELD_KEY_RECORD_ID for f in FANS_BUILT_IN_FI
 
 
 class FansSliceOptions(BaseModel):
-    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     fans_type: list[SingleSelectOption] = Field(alias=FAN_TYPE_OPTION_KEY)
 
+    @model_validator(mode="after")
+    def _validate_namespaced_extras(self) -> FansSliceOptions:
+        coerce_custom_option_list_extras(self, table_path=_FANS_TABLE_PATH, table_label=FANS_TABLE_NAME)
+        return self
+
     def by_option_key(self) -> dict[str, list[SingleSelectOption]]:
         return {FAN_TYPE_OPTION_KEY: self.fans_type}
+
+    def custom_option_lists(self) -> dict[str, list[SingleSelectOption]]:
+        return dict(self.__pydantic_extra__ or {})
 
 
 class FansSliceReplaceRequest(BaseModel):
@@ -116,16 +139,20 @@ class FansSliceResponse(BaseModel):
 def apply_fans_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectDocumentV1:
     fans_payload = cast(FansSliceReplaceRequest, payload)
     fan_options = fans_payload.single_select_options.by_option_key()
+    custom_option_lists = fans_payload.single_select_options.custom_option_lists()
     if (
         body.tables.equipment.fans.rows == fans_payload.fans
         and body.tables.equipment.fans.field_defs == fans_payload.field_defs
         and all(body.single_select_options.get(key, []) == fan_options[key] for key in FAN_OPTION_KEYS)
+        and all(body.single_select_options.get(key, []) == value for key, value in custom_option_lists.items())
     ):
         return body
 
     options = dict(body.single_select_options)
     for key in FAN_OPTION_KEYS:
         options[key] = fan_options[key]
+    for key, value in custom_option_lists.items():
+        options[key] = value
     next_fans_envelope = FansTableEnvelope(
         field_defs=fans_payload.field_defs,
         rows=fans_payload.fans,
@@ -152,7 +179,10 @@ def fans_response(
         draft_etag=draft_etag,
         fans=body.tables.equipment.fans.rows,
         field_defs=body.tables.equipment.fans.field_defs,
-        single_select_options={FAN_TYPE_OPTION_KEY: body.single_select_options[FAN_TYPE_OPTION_KEY]},
+        single_select_options={
+            FAN_TYPE_OPTION_KEY: body.single_select_options[FAN_TYPE_OPTION_KEY],
+            **custom_option_lists_for_table(body, _FANS_TABLE_PATH),
+        },
     )
 
 
@@ -174,6 +204,15 @@ def extract_fans_diff_value(body: ProjectDocumentV1) -> dict[str, object]:
     }
 
 
+fans_field_registry = make_field_registry(
+    field_keys=FANS_BUILT_IN_FIELD_KEYS,
+    table_path=_FANS_TABLE_PATH,
+    row_model=FanRow,
+    built_in_option_key_by_field_key={"fan_type": FAN_TYPE_OPTION_KEY},
+    built_in_formula_types=FANS_TYPED_COLUMN_FORMULA_TYPES,
+)
+
+
 fans_contract = TableContract(
     name=FANS_TABLE_NAME,
     schema_slug="fan",
@@ -183,6 +222,6 @@ fans_contract = TableContract(
     apply_replace=apply_fans_replace,
     extract_rows=extract_fans_envelope,
     extract_diff_value=extract_fans_diff_value,
-    table_path=("equipment", "fans"),
-    field_registry=None,
+    table_path=_FANS_TABLE_PATH,
+    field_registry=fans_field_registry,
 )
