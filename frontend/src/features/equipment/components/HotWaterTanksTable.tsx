@@ -15,6 +15,10 @@ import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../asset
 import { sortedHotWaterTanks } from "../lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
 import {
+  customFieldColumnDefs,
+  type CustomFieldTableActions,
+} from "../../../shared/ui/data-table/feature";
+import {
   HOT_WATER_TANK_DATASHEET_FIELD_KEY,
   HOT_WATER_TANK_TYPE_COLUMN_ID,
   HOT_WATER_TANK_TYPE_KEY,
@@ -36,6 +40,7 @@ export function HotWaterTanksTable({
   overflowMenuActions,
   footerAction,
   onResetView,
+  ...customFieldActions
 }: {
   hotWaterTanksSlice: HotWaterTanksSlice;
   tableSchema: TableSchema;
@@ -50,7 +55,7 @@ export function HotWaterTanksTable({
   overflowMenuActions?: DataTableProps<HotWaterTankRow>["overflowMenuActions"];
   footerAction?: DataTableProps<HotWaterTankRow>["footerAction"];
   onResetView?: DataTableProps<HotWaterTankRow>["onResetView"];
-}) {
+} & CustomFieldTableActions<HotWaterTankRow>) {
   const sortedRows = useMemo(
     () => sortedHotWaterTanks(hotWaterTanksSlice.hot_water_tanks),
     [hotWaterTanksSlice.hot_water_tanks],
@@ -64,10 +69,14 @@ export function HotWaterTanksTable({
     () => new Map((datasheetUrls.data ?? []).map((item) => [item.asset_id, item])),
     [datasheetUrls.data],
   );
-  const { fieldDefs } = tableSchema;
+  const { fieldDefs, customFields } = tableSchema;
   const fieldDefByKey = useMemo(
     () => new Map(fieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef])),
     [fieldDefs],
+  );
+  const customColumns = useMemo<DataTableColumnDef<HotWaterTankRow>[]>(
+    () => customFieldColumnDefs({ customFields, fieldDefByKey }),
+    [customFields, fieldDefByKey],
   );
   const columns = useMemo<DataTableColumnDef<HotWaterTankRow>[]>(
     () => [
@@ -190,8 +199,9 @@ export function HotWaterTanksTable({
         accessor: (tank) => tank.notes,
         defaultWidth: 280,
       },
+      ...customColumns,
     ],
-    [datasheetUrlById, fieldDefByKey, isEditor, onWrite, projectId],
+    [customColumns, datasheetUrlById, fieldDefByKey, isEditor, onWrite, projectId],
   );
 
   return (
@@ -213,6 +223,7 @@ export function HotWaterTanksTable({
       overflowMenuActions={overflowMenuActions}
       footerAction={footerAction}
       onResetView={onResetView}
+      {...customFieldActions}
     />
   );
 }

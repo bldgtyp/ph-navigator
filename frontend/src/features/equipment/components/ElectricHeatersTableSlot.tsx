@@ -1,6 +1,9 @@
 import { generatedId } from "../../../shared/lib/ids";
 import type { BuildEmptyRow, ViewState } from "../../../shared/ui/data-table";
-import type { SliceTableController } from "../../../shared/ui/data-table/feature";
+import {
+  customFieldActionsForController,
+  type SliceTableController,
+} from "../../../shared/ui/data-table/feature";
 import { ELECTRIC_HEATER_ID_PREFIX } from "../lib";
 import {
   ELECTRIC_HEATERS_TABLE_NAME,
@@ -43,6 +46,7 @@ export function ElectricHeatersTableSlot(props: ElectricHeatersTableSlotProps) {
       generateRowId={controller.canEdit ? () => generatedId(ELECTRIC_HEATER_ID_PREFIX) : undefined}
       sessionKey={`${projectId}:${activeVersionId ?? "none"}:${ELECTRIC_HEATERS_TABLE_NAME}`}
       footerAction={footerAction}
+      {...customFieldActionsForController(controller)}
     />
   );
 }

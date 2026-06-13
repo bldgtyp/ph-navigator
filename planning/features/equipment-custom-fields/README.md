@@ -32,9 +32,9 @@ and `RoomsTable` into `DataTable`.
 2. `PLAN.md`
 3. `STATUS.md`
 4. Next phase:
-   - `phases/phase-03-frontend-affordance-wiring.md`
-5. Remaining phases:
    - `phases/phase-04-verification-closeout.md`
+5. Later phases:
+   - None after Phase 04
 6. Current implementation references:
    - `frontend/src/features/equipment/components/RoomsTableSlot.tsx`
    - `frontend/src/features/equipment/components/RoomsTable.tsx`
@@ -55,9 +55,14 @@ and Thermal Bridges, so every target backend contract now publishes a
 non-null `field_registry` and routes schema mutations through the
 shared dispatcher.
 
-The remaining implementation work is frontend affordance wiring:
-expose the existing Rooms-style UI handlers now that backend support
-exists for all target contracts.
+Phase 03 exposed the existing Rooms-style UI handlers now that backend
+support exists for all target contracts. The target table components
+now append user-defined custom columns from `tableSchema.customFields`
+and receive the shared DataTable schema callbacks in editable
+controller states.
+
+The remaining work is Phase 04 verification and closeout: browser
+smoke, final repo gate, and PR-ready status evidence.
 
 ## Phase Map
 
@@ -65,5 +70,5 @@ exists for all target contracts.
 | --- | --- | --- |
 | 01 - Backend registry pilot | Complete | Pumps accepts backend custom-field schema mutations through its existing registry scaffold. |
 | 02 - Backend registry rollout | Complete | Remaining Equipment and Thermal Bridges contracts publish registries and pass focused backend mutation tests. |
-| 03 - Frontend affordance wiring | Pending | Forward existing controller handlers through every target table component. |
+| 03 - Frontend affordance wiring | Complete | Target table components render custom columns and receive existing controller handlers in editable states. |
 | 04 - Verification and closeout | Pending | Run focused tests, browser smoke, `make format`, and `make ci`; update status evidence. |

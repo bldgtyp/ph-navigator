@@ -15,6 +15,10 @@ import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../asset
 import { sortedHotWaterHeaters } from "../lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
 import {
+  customFieldColumnDefs,
+  type CustomFieldTableActions,
+} from "../../../shared/ui/data-table/feature";
+import {
   HOT_WATER_HEATER_DATASHEET_FIELD_KEY,
   HOT_WATER_HEATER_TYPE_COLUMN_ID,
   HOT_WATER_HEATER_TYPE_KEY,
@@ -36,6 +40,7 @@ export function HotWaterHeatersTable({
   overflowMenuActions,
   footerAction,
   onResetView,
+  ...customFieldActions
 }: {
   hotWaterHeatersSlice: HotWaterHeatersSlice;
   tableSchema: TableSchema;
@@ -50,7 +55,7 @@ export function HotWaterHeatersTable({
   overflowMenuActions?: DataTableProps<HotWaterHeaterRow>["overflowMenuActions"];
   footerAction?: DataTableProps<HotWaterHeaterRow>["footerAction"];
   onResetView?: DataTableProps<HotWaterHeaterRow>["onResetView"];
-}) {
+} & CustomFieldTableActions<HotWaterHeaterRow>) {
   const sortedRows = useMemo(
     () => sortedHotWaterHeaters(hotWaterHeatersSlice.hot_water_heaters),
     [hotWaterHeatersSlice.hot_water_heaters],
@@ -64,10 +69,14 @@ export function HotWaterHeatersTable({
     () => new Map((datasheetUrls.data ?? []).map((item) => [item.asset_id, item])),
     [datasheetUrls.data],
   );
-  const { fieldDefs } = tableSchema;
+  const { fieldDefs, customFields } = tableSchema;
   const fieldDefByKey = useMemo(
     () => new Map(fieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef])),
     [fieldDefs],
+  );
+  const customColumns = useMemo<DataTableColumnDef<HotWaterHeaterRow>[]>(
+    () => customFieldColumnDefs({ customFields, fieldDefByKey }),
+    [customFields, fieldDefByKey],
   );
   const columns = useMemo<DataTableColumnDef<HotWaterHeaterRow>[]>(
     () => [
@@ -233,8 +242,9 @@ export function HotWaterHeatersTable({
         measureText: (heater) => `${heater.datasheet_asset_ids.length} attachments`,
         defaultWidth: 260,
       },
+      ...customColumns,
     ],
-    [datasheetUrlById, fieldDefByKey, isEditor, onWrite, projectId],
+    [customColumns, datasheetUrlById, fieldDefByKey, isEditor, onWrite, projectId],
   );
 
   return (
@@ -258,6 +268,7 @@ export function HotWaterHeatersTable({
       overflowMenuActions={overflowMenuActions}
       footerAction={footerAction}
       onResetView={onResetView}
+      {...customFieldActions}
     />
   );
 }

@@ -1,6 +1,9 @@
 import { generatedId } from "../../../shared/lib/ids";
 import type { BuildEmptyRow, ViewState } from "../../../shared/ui/data-table";
-import type { SliceTableController } from "../../../shared/ui/data-table/feature";
+import {
+  customFieldActionsForController,
+  type SliceTableController,
+} from "../../../shared/ui/data-table/feature";
 import { APPLIANCE_ID_PREFIX } from "../lib";
 import { APPLIANCES_TABLE_NAME, type ApplianceRow, type AppliancesSlice } from "../types";
 import { AppliancesTable } from "./AppliancesTable";
@@ -34,6 +37,7 @@ export function AppliancesTableSlot(props: AppliancesTableSlotProps) {
       generateRowId={controller.canEdit ? () => generatedId(APPLIANCE_ID_PREFIX) : undefined}
       sessionKey={`${projectId}:${activeVersionId ?? "none"}:${APPLIANCES_TABLE_NAME}`}
       footerAction={footerAction}
+      {...customFieldActionsForController(controller)}
     />
   );
 }

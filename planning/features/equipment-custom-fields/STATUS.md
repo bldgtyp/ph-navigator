@@ -18,23 +18,22 @@ Thermal Bridges. Every target table contract now publishes a non-null
 `field_registry` and routes schema mutations through the shared
 `custom-fields:mutate` dispatcher.
 
-Rooms already has the desired behavior. Equipment and Thermal Bridges
-currently render the shared `AddFieldTailCell` in disabled mode because
-their table components do not receive `onAddCustomField`.
-
-The backend blocker for enabling the buttons is cleared. Phase 03 can
-wire the existing Rooms-style controller handlers through the target
-table components.
+Phase 03 frontend affordance wiring is implemented. Ventilators,
+Pumps, Fans, Hot Water Heaters, Hot Water Tanks, Electric Heaters,
+Appliances, and Thermal Bridges now render user-defined custom columns
+from `tableSchema.customFields`; their table components accept the
+shared DataTable schema callbacks, and their slots/pages pass the
+controller handlers only when `controller.canEdit` is true.
 
 ## Next Step
 
-Start `phases/phase-03-frontend-affordance-wiring.md`: forward the
-existing custom-field handlers through every target table component.
+Start `phases/phase-04-verification-closeout.md`: browser smoke,
+mandatory `make format`, mandatory `make ci`, and PR-ready closeout
+evidence.
 
 ## Blockers
 
-None for Phase 03. Backend mutation support now exists for every target
-contract in this feature.
+None for Phase 04.
 
 ## Verification To Date
 
@@ -50,6 +49,16 @@ contract in this feature.
 - `$docs-pass` completed; feature planning docs were updated, and no stable `context/` doc change was needed.
 - `make format` - passed; no files changed.
 - `make ci` - passed; backend `804 passed, 2 skipped, 1 warning`; frontend lint had 3 existing fast-refresh warnings, Vitest `160 passed` files / `1575 passed` tests, production build passed with existing chunk-size warning.
+- `cd frontend && pnpm exec vitest run src/features/equipment/__tests__/EquipmentCustomFieldsPhase03.test.tsx src/features/equipment/__tests__/RoomsTable.addField.test.tsx` - passed, 23 tests.
+- `cd frontend && pnpm exec vitest run src/features/equipment/__tests__/EquipmentCustomFieldsPhase03.test.tsx src/features/equipment/__tests__/RoomsTable.addField.test.tsx src/features/equipment/__tests__/RoomsTable.customField.test.tsx src/features/equipment/__tests__/RoomsTable.formulaField.test.tsx src/features/equipment/__tests__/RoomsTable.linkedRecord.test.tsx src/features/equipment/__tests__/RoomsTable.schemaEditor.test.tsx src/features/equipment/__tests__/PumpsTable.reuse.test.tsx src/features/equipment/__tests__/VentilatorsTable.reuse.test.tsx src/features/equipment/__tests__/FansTable.reuse.test.tsx src/features/equipment/__tests__/HotWaterHeatersTable.reuse.test.tsx src/features/equipment/__tests__/HotWaterTanksTable.reuse.test.tsx src/features/equipment/__tests__/ElectricHeatersTable.reuse.test.tsx src/features/equipment/__tests__/AppliancesTable.reuse.test.tsx` - passed, 61 tests.
+- `cd frontend && pnpm exec eslint src/shared/ui/data-table/feature/customFieldColumns.tsx src/shared/ui/data-table/feature/index.ts src/features/equipment/components/RoomsTable.tsx src/features/equipment/components/PumpsTable.tsx src/features/equipment/components/PumpsTableSlot.tsx src/features/equipment/components/VentilatorsTable.tsx src/features/equipment/components/VentilatorsTableSlot.tsx src/features/equipment/components/FansTable.tsx src/features/equipment/components/FansTableSlot.tsx src/features/equipment/components/HotWaterHeatersTable.tsx src/features/equipment/components/HotWaterHeatersTableSlot.tsx src/features/equipment/components/HotWaterTanksTable.tsx src/features/equipment/components/HotWaterTanksTableSlot.tsx src/features/equipment/components/ElectricHeatersTable.tsx src/features/equipment/components/ElectricHeatersTableSlot.tsx src/features/equipment/components/AppliancesTable.tsx src/features/equipment/components/AppliancesTableSlot.tsx src/features/assets/thermal-bridges/ThermalBridgesTable.tsx src/features/assets/routes/ThermalBridgesPage.tsx src/features/equipment/__tests__/EquipmentCustomFieldsPhase03.test.tsx` - passed.
+- `cd frontend && pnpm exec tsc -b` - passed.
+- `cd frontend && pnpm exec vitest run src/features/equipment/__tests__/EquipmentCustomFieldsPhase03.test.tsx` - passed, 19 tests after the test-helper type fix.
+- `$simplify` pass completed for Phase 03. Actionable cleanup was fixed by moving reusable custom-field column helpers into the shared DataTable feature layer, bundling editable controller schema handlers, removing the `cloneElement` test pattern, and clarifying README phase wording.
+- `$docs-pass` completed for Phase 03. Existing feature planning docs were the right durable home; no stable `context/` update was needed.
+- `make format` - passed; no files changed.
+- `make ci` - passed after recreating only the stale local `ph_navigator_v2_test` database. Backend `804 passed, 2 skipped, 1 warning`; frontend lint kept 3 existing fast-refresh warnings, Vitest `161 passed` files / `1594 passed` tests, production build passed with existing chunk-size warning.
+- `graphify update .` - passed; rebuilt `graphify-out/graph.json` and `GRAPH_REPORT.md`, skipped HTML because the graph has 10,713 nodes.
 
 ## Phase Ledger
 
@@ -57,5 +66,5 @@ contract in this feature.
 | --- | --- | --- |
 | 01 - Backend registry pilot | Complete | `pumps_contract.field_registry=pumps_field_registry`; focused Pumps tests pass. |
 | 02 - Backend registry rollout | Complete | All remaining target contracts publish registries; focused Phase 02 backend tests pass. |
-| 03 - Frontend affordance wiring | Pending | Pending. |
+| 03 - Frontend affordance wiring | Complete | Target tables render custom columns, expose active add-field affordances in editor mode, and focused frontend tests pass. |
 | 04 - Verification and closeout | Pending | Pending. |
