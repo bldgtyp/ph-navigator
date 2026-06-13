@@ -17,9 +17,9 @@ SCOPE: Implementation handoff for Model Viewer Phase 1 — HBJSON file
   management (US-VIEW-1). Backend table + routes + MCP tools; frontend
   Model tab, file chip + popover, upload flow. No 3D rendering.
 RELATED:
-  - planning/features/model-viewer/PLAN.md (phase sequence)
-  - planning/features/model-viewer/PRD.md (§3 data flow, §5 backend)
-  - planning/features/model-viewer/UI_SPEC.md (§2 file chip, §8 states)
+  - planning/archive/model-viewer/PLAN.md (phase sequence)
+  - planning/archive/model-viewer/PRD.md (§3 data flow, §5 backend)
+  - planning/archive/model-viewer/UI_SPEC.md (§2 file chip, §8 states)
   - context/user-stories/40-model-viewer.md (US-VIEW-1 — canonical
     acceptance criteria; this doc amends its DDL, see §3.1)
   - context/CODING_STANDARDS.md (mandatory for all feature code)
@@ -40,9 +40,9 @@ doc records an amendment. Read US-VIEW-1 in full before starting.
 ## 2. Required reading (in order)
 
 1. `context/user-stories/40-model-viewer.md` — US-VIEW-1 only.
-2. `planning/features/model-viewer/UI_SPEC.md` §2 (file chip +
+2. `planning/archive/model-viewer/UI_SPEC.md` §2 (file chip +
    popover), §8 (empty state — Phase-1 subset).
-3. `planning/features/model-viewer/decisions.md` — D-13 (geometry
+3. `planning/archive/model-viewer/decisions.md` — D-13 (geometry
    summary columns now, job in Phase 2), D-06 (no sonner / no global
    toast system).
 4. `context/CODING_STANDARDS.md` — backend + frontend sections.
@@ -265,7 +265,7 @@ airtightness pin.
 3. **Playwright e2e** (`frontend/tests/e2e/model-viewer-files.spec.ts`):
    sign in as the seeded agent user (`make seed-agent-user`,
    `codex@example.com`), upload
-   `planning/features/model-viewer/ph_nav_v2_example.hbjson` (459 KB),
+   `planning/archive/model-viewer/ph_nav_v2_example.hbjson` (459 KB),
    rename, add a note, verify `?file=` updates, delete, verify empty
    state. Frontend on strict port 5173.
 4. **Closeout**: `make format` then `make ci` green, per the repo

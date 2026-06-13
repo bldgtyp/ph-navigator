@@ -1,9 +1,9 @@
 ---
 DATE: 2026-06-12
 TIME: -
-STATUS: Active — decisions accepted (Ed 2026-06-12); Phases 1–5
-  implemented; Phase 6 in review
-  (phases/phase-06-measure-site-sun-polish.md)
+STATUS: Complete — MVP Phases 1–6 implemented and verified
+  2026-06-13; archived after deferred work was split to
+  planning/features_v1.1/model-viewer-post-mvp/
 AUTHOR: Claude (for Ed)
 SCOPE: Router for the 3D Model Viewer feature (the Model tab) — scope,
   read order, and phase map.
@@ -16,11 +16,11 @@ RELATED:
     stack, §11.4.2 storage, §11.5 units)
   - context/UI_UX.md §2.9 (Model tab — points at UI_SPEC.md in this
     folder since the 2026-06-12 acceptance)
-  - planning/features/model-viewer/PRD.md
-  - planning/features/model-viewer/UI_SPEC.md
-  - planning/features/model-viewer/PLAN.md
-  - planning/features/model-viewer/decisions.md
-  - planning/features/model-viewer/AGENT_BROWSER_NOTES.md
+  - planning/archive/model-viewer/PRD.md
+  - planning/archive/model-viewer/UI_SPEC.md
+  - planning/archive/model-viewer/PLAN.md
+  - planning/archive/model-viewer/decisions.md
+  - planning/archive/model-viewer/AGENT_BROWSER_NOTES.md
 ---
 
 # Model Viewer — Feature Folder
@@ -35,6 +35,11 @@ metadata, and measure between vertices.
 
 Read-only viewer. Deliberately disconnected from the builder tables
 (PRD §11.4.6 / §3 non-goals). Last of the five MVP workspace tabs.
+
+## Archive Note
+
+MVP implementation is complete. Deferred post-MVP candidates now live
+in `planning/features_v1.1/model-viewer-post-mvp/`.
 
 ## What is new in this folder (vs. the user stories)
 

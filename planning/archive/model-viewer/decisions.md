@@ -7,7 +7,7 @@ STATUS: Settled — Inherited items were already accepted; D-02..D-12
 AUTHOR: Claude (for Ed)
 SCOPE: Decision ledger for the Model Viewer feature.
 RELATED:
-  - planning/features/model-viewer/PRD.md (§4 deltas)
+  - planning/archive/model-viewer/PRD.md (§4 deltas)
   - context/user-stories/40-model-viewer.md (Q-VIEW-1..9 resolutions)
 ---
 

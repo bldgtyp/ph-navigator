@@ -1263,12 +1263,12 @@ project-scale tables unless performance requires it.
 ### 2.9 Model tab (`/projects/{id}/model`) — see feature UI spec
 
 **Superseded 2026-06-12.** The accepted UI definition lives at
-`planning/features/model-viewer/UI_SPEC.md` — quadrant layout over a
+`planning/archive/model-viewer/UI_SPEC.md` — quadrant layout over a
 full-bleed canvas: file chip (top-left), lens bar + theme menu
 (top-center), legend card (bottom-left), camera cluster + measure
 toggle (bottom-right), inspector sliding in from the right. Behavior
 contract: US-Viewer / US-VIEW-1..7 as amended by
-`planning/features/model-viewer/PRD.md` §4 (accepted decisions
+`planning/archive/model-viewer/PRD.md` §4 (accepted decisions
 D-02..D-14 in that folder's `decisions.md`). Selection styling uses
 the brand `--highlight` token family (D-14). This section's earlier
 placeholder composition (left legend rail, bottom tool rail) is
@@ -1400,7 +1400,7 @@ back to a user-story open question.
 | UX-Q6 | Empty-state primary action — single button or guided onboarding? | single button |
 | ~~UX-Q7~~ | ~~Viewer header — "Read-only" pill or banner?~~ | **Resolved 2026-05-11:** pill in normal project header |
 | UX-Q8 | Builder details placement — below canvas, right inspector, or adaptive? | adaptive by surface |
-| ~~UX-Q9~~ | ~~Model toolbar placement — bottom V1 rail or left/right modeling-app rail?~~ | **Resolved 2026-06-12:** neither — top-center lens bar + bottom-right camera/measure cluster (D-05; `planning/features/model-viewer/UI_SPEC.md` §1) |
+| ~~UX-Q9~~ | ~~Model toolbar placement — bottom V1 rail or left/right modeling-app rail?~~ | **Resolved 2026-06-12:** neither — top-center lens bar + bottom-right camera/measure cluster (D-05; `planning/archive/model-viewer/UI_SPEC.md` §1) |
 | UX-Q10 | Evidence interaction model — checklist, table filters, or both? | both, via §1.8 |
 
 ---

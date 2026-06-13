@@ -12,8 +12,8 @@ RELATED:
   - research/v1-3d-model-viewer-reference.md (V1 source of truth;
     §16 no-regression checklist is the acceptance gate)
   - context/technical-requirements/frontend-viewer-units.md §11.4/§11.5
-  - planning/features/model-viewer/UI_SPEC.md (UI definition)
-  - planning/features/model-viewer/decisions.md
+  - planning/archive/model-viewer/UI_SPEC.md (UI definition)
+  - planning/archive/model-viewer/decisions.md
 ---
 
 # Model Viewer — PRD
@@ -257,7 +257,7 @@ Full detail in US-VIEW-7; the deltas and confirmations:
    §4.1 is the mapping key).
 3. UI_SPEC.md states and interactions verified via Playwright e2e +
    Playwright MCP walkthrough with the canonical fixture
-   (`planning/features/model-viewer/ph_nav_v2_example.hbjson`,
+   (`planning/archive/model-viewer/ph_nav_v2_example.hbjson`,
    Ed 2026-06-12 — coverage map in PLAN.md Phase 2) plus the real
    52 MB multifamily fixture
    (`Hillandale_Gateway_NAR_260402.hbjson`, Ed 2026-06-12) for

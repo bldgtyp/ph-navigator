@@ -27,5 +27,5 @@ planning/features_v1.1/<feature-slug>/
 
 | Feature | Status | Current next step |
 |---|---|---|
+| [Model Viewer post-MVP](model-viewer-post-mvp/README.md) | Deferred | Reopen individual candidates after v1; near-priority item is legend-as-filter, plus sun-path wiring and HBJSON/document cross-check. |
 | [User-defined attachment fields](user-defined-attachment-fields/README.md) | Deferred | Revisit after v1 ships and at least two real project workflows need ad hoc attachment columns. |
-

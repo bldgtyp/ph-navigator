@@ -8,9 +8,9 @@ SCOPE: Implementation handoff for Model Viewer Phase 4 — lens bar +
   the Spaces, Floor Areas, Ventilation, and Hot Water lenses; inspector
   configs for space / floor segment / duct / pipe; &lens= deep link.
 RELATED:
-  - planning/features/model-viewer/UI_SPEC.md (§3 lens bar + per-lens
+  - planning/archive/model-viewer/UI_SPEC.md (§3 lens bar + per-lens
     composition table)
-  - planning/features/model-viewer/PRD.md (§4.1 lens model — D-03)
+  - planning/archive/model-viewer/PRD.md (§4.1 lens model — D-03)
   - context/user-stories/40-model-viewer.md (US-VIEW-3 visibility/
     selectability rules; US-VIEW-6 remaining field configs)
   - research/v1-3d-model-viewer-reference.md (§9.2–9.6 loaders,
@@ -49,7 +49,7 @@ Implemented in this session:
 
 Final repository closeout (`$ simplify`, `$ docs-pass`,
 `make format`, `make ci`, `graphify update .`) is recorded in
-`planning/features/model-viewer/STATUS.md`.
+`planning/archive/model-viewer/STATUS.md`.
 
 ## 1. Goal
 
@@ -71,9 +71,9 @@ V1's "click active button reverts to Geometry" is dropped.
 
 ## 2. Required reading (in order)
 
-1. `planning/features/model-viewer/UI_SPEC.md` §3 (lens bar,
+1. `planning/archive/model-viewer/UI_SPEC.md` §3 (lens bar,
    per-lens composition table — the authoritative matrix).
-2. `planning/features/model-viewer/PRD.md` §4.1 (D-03 mapping).
+2. `planning/archive/model-viewer/PRD.md` §4.1 (D-03 mapping).
 3. `context/user-stories/40-model-viewer.md` — US-VIEW-3 crit. 4
    (visibility/selectability), US-VIEW-6 crit. 5 rows `spaceGroup`,
    `spaceFloorSegmentMeshFace`, `pipeSegmentLine`,

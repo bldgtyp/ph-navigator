@@ -7,9 +7,9 @@ SCOPE: Implementation handoff for Model Viewer Phase 5 — color themes
   per lens, theme menu, legend card with counts, mini-keys, scene-info
   popover, &theme= deep link.
 RELATED:
-  - planning/features/model-viewer/PRD.md (§4.1 lens/theme table —
+  - planning/archive/model-viewer/PRD.md (§4.1 lens/theme table —
     D-03; §4.3 derived materials — D-09)
-  - planning/features/model-viewer/UI_SPEC.md (§3 theme menu, §4
+  - planning/archive/model-viewer/UI_SPEC.md (§3 theme menu, §4
     legend card, §8 scene-info popover)
   - context/user-stories/40-model-viewer.md (US-VIEW-5 — color
     sources, hash, weighting buckets)
@@ -29,14 +29,14 @@ home in the scene-info popover. `&theme=` deep-links work.
 
 ## 2. Required reading (in order)
 
-1. `planning/features/model-viewer/PRD.md` §4.1 — the lens→themes
+1. `planning/archive/model-viewer/PRD.md` §4.1 — the lens→themes
    table is the authoritative mapping (defaults: Building→Shaded,
    Spaces→Shaded, **Floor Areas→Weighting Factor**).
 2. `context/user-stories/40-model-viewer.md` — US-VIEW-5: color
    sources, static maps, cyrb53 + golden-ratio hash (crit. 6 —
    preserve verbatim), weighting buckets (crit. 2 — the fixed 0.3
    boundary), unlit colors (crit. 7).
-3. `planning/features/model-viewer/UI_SPEC.md` §3 (theme menu), §4
+3. `planning/archive/model-viewer/UI_SPEC.md` §3 (theme menu), §4
    (legend card — counts, collapse, inert-button rows), §8
    (scene-info popover).
 4. `decisions.md` D-09 (derived materials), D-11 (legend counts).

@@ -9,8 +9,8 @@ SCOPE: Component-by-component parity audit of
   reference doc) on Ed's request.
 RELATED:
   - research/v1-3d-model-viewer-reference.md
-  - planning/features/model-viewer/UI_SPEC.md
-  - planning/features/model-viewer/decisions.md (OQ-4 added by this audit)
+  - planning/archive/model-viewer/UI_SPEC.md
+  - planning/archive/model-viewer/decisions.md (OQ-4 added by this audit)
 ---
 
 # V1 → V2 Parity Audit (frontend affordances)

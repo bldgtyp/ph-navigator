@@ -1,17 +1,17 @@
 ---
 DATE: 2026-06-12
 TIME: -
-STATUS: Active — Phases 1–5 implemented; Phase 6 in review
+STATUS: Complete — MVP Phases 1–6 implemented and verified 2026-06-13
 AUTHOR: Claude (for Ed)
 SCOPE: Status ledger for the Model Viewer feature.
-RELATED: planning/features/model-viewer/README.md
+RELATED: planning/archive/model-viewer/README.md
 ---
 
 # Model Viewer — Status
 
 ## Current state
 
-`Active — implementing.` Feature folder authored 2026-06-12: PRD,
+`Complete — archived.` Feature folder authored 2026-06-12: PRD,
 UI_SPEC (redesigned non-CAD composition), decisions ledger, 6-phase
 plan. **Phase 1 (HBJSON file management) implemented 2026-06-12**;
 **Phase 2 (extraction backend) implemented 2026-06-12** — honeybee
@@ -24,9 +24,16 @@ Spaces, Floor Areas, Ventilation, Hot Water, deep links, and the
 remaining inspector configs are live. **Phase 5 (themes + legend)
 implemented 2026-06-13** — color themes, `&theme=`, legend counts,
 mini-keys, and scene-info popover are live. **Phase 6 (Measure, Site
-& Sun, polish) implementation started 2026-06-13 and is in review** —
-measure mode, Site & Sun enablement, shade renderables, keyboard map,
-and e2e specs are implemented; closeout gates are pending below.
+& Sun, polish) implemented and verified 2026-06-13** — measure mode,
+Site & Sun enablement, shade renderables, keyboard map, focused e2e,
+browser walkthrough, simplify/docs-pass, `make format`, and `make ci`
+are complete.
+
+Deferred follow-up work moved to
+`planning/features_v1.1/model-viewer-post-mvp/`: sun-path wiring,
+legend-as-filter, HBJSON/document cross-check, clipping planes,
+sun-path scrubber, comments/annotations, and the non-technical John
+test/product-validation follow-up.
 
 Test fixtures (both in this folder, both copied to
 `backend/tests/fixtures/` in Phase 2; coverage maps + remaining
@@ -117,11 +124,11 @@ scene helpers (phase-03 §4.1).
 
 ## Next step
 
-Complete Phase 6 verification and closeout — handoff doc:
-`phases/phase-06-measure-site-sun-polish.md` (Measure, Site & Sun
-polish, keyboard/a11y polish).
+None for the MVP feature. Reopen follow-up work from
+`planning/features_v1.1/model-viewer-post-mvp/` after v1 if Ed
+promotes a candidate.
 
-## Phase 6 — in review 2026-06-13
+## Phase 6 — implemented and verified 2026-06-13
 
 Frontend MVP closeout work landed so far:
 
@@ -187,9 +194,13 @@ Focused verification run so far:
     passed), and production build.
 
 Acceptance notes:
+- PRD §8 implementation gates were satisfied by the per-phase ledgers,
+  focused model-viewer Playwright suite, browser walkthrough, and final
+  `make format` / `make ci`.
 - The John test requires Ed/John coordination with a non-technical
-  viewer and was not performed by the coding agent. Record the outcome
-  here when coordinated.
+  viewer and was not performable by the coding agent. It has been
+  split to `planning/features_v1.1/model-viewer-post-mvp/` as product
+  validation; it does not block the MVP archive.
 
 ## Phase 5 — implemented 2026-06-13
 
@@ -526,11 +537,9 @@ see ledger.
 
 ## Blockers
 
-None. Phase 6's sun path remains blocked on model-viewer wiring
-against the completed `project-location` feature (the lens itself
-still ships with a location hint) — it does not gate Phases 1–5. The
-scale fixture is in hand (round 3); the former "waiting on
-multifamily HBJSON" blocker is cleared.
+None. The MVP feature is complete. Sun-path rendering and the other
+post-MVP candidates are deferred to
+`planning/features_v1.1/model-viewer-post-mvp/`.
 
 ## Verification ledger
 
@@ -543,4 +552,4 @@ multifamily HBJSON" blocker is cleared.
 | Phase 3 — canvas + Building lens | **Done 2026-06-13** | R3F deps; `/model_data` query; Building lens loader/canvas; selection + inspector; scene-ready hook; simplify + docs-pass complete; `make format` green; `make ci` green; focused Playwright spec green; `graphify update .` run |
 | Phase 4 — remaining lenses | **Done 2026-06-13** | lens bar + all remaining non-Site lenses; inspector configs; `&lens=` deep links; focused Vitest green; Phase 4 Playwright e2e green; browser walkthrough green |
 | Phase 5 — themes + legend | **Done 2026-06-13** | theme registry + `&theme=`; attached Color menu; unlit theme bucket materials; legend counts + mini-keys + scene-info popover; focused Vitest green; Phase 5 Playwright e2e green; browser walkthrough green |
-| Phase 6 — measure, Site & Sun, polish | In review | Measure store/overlay, Site & Sun shade layer, keyboard map, debug hook, focused TypeScript/Vitest/lint/check/e2e green; browser screenshots saved; simplify/docs-pass complete; `make format` green; `make ci` green; John test requires Ed/John coordination |
+| Phase 6 — measure, Site & Sun, polish | **Done 2026-06-13** | Measure store/overlay, Site & Sun shade layer, keyboard map, debug hook, focused TypeScript/Vitest/lint/check/e2e green; browser screenshots saved; simplify/docs-pass complete; `make format` green; `make ci` green; John test/product validation split to v1.1 follow-up |

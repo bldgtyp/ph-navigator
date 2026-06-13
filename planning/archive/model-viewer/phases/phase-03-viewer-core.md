@@ -7,9 +7,9 @@ SCOPE: Implementation handoff for Model Viewer Phase 3 — R3F canvas,
   scene dressing, Building lens geometry, always-on selection, inspector
   (Opaque Surface + Window), loading states, camera cluster.
 RELATED:
-  - planning/features/model-viewer/UI_SPEC.md (§1, §5, §6, §8 — the UI
+  - planning/archive/model-viewer/UI_SPEC.md (§1, §5, §6, §8 — the UI
     contract for this phase)
-  - planning/features/model-viewer/decisions.md (D-01, D-04, D-06,
+  - planning/archive/model-viewer/decisions.md (D-01, D-04, D-06,
     D-08, D-09, D-12, D-14)
   - context/user-stories/40-model-viewer.md (US-VIEW-2; US-VIEW-4/6
     partial, as recomposed by PRD §4.2/§4.3)
@@ -78,10 +78,10 @@ bar yet — the Building lens is implicitly the only view.
 
 ## 2. Required reading (in order)
 
-1. `planning/features/model-viewer/UI_SPEC.md` §0–§1 (design intent,
+1. `planning/archive/model-viewer/UI_SPEC.md` §0–§1 (design intent,
    quadrant layout), §5 (camera), §6 (selection + inspector), §8
    (load/empty/error).
-2. `planning/features/model-viewer/PRD.md` §4.2 (always-on
+2. `planning/archive/model-viewer/PRD.md` §4.2 (always-on
    selection), §4.3 (declarative materials), §6–§7 (stack, perf).
 3. `decisions.md` D-04, D-06, D-08, D-09, D-12, D-14 (read the D-14
    implementer notes verbatim).

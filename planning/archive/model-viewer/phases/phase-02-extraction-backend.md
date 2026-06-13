@@ -10,9 +10,9 @@ SCOPE: Implementation handoff for Model Viewer Phase 2 — backend HBJSON
   /model_data endpoint, per-feature MCP routes, upload-time geometry
   summary job (D-13).
 RELATED:
-  - planning/features/model-viewer/PLAN.md
-  - planning/features/model-viewer/PRD.md (§5 backend contract)
-  - planning/features/model-viewer/decisions.md (D-02, D-12, D-13, D-07)
+  - planning/archive/model-viewer/PLAN.md
+  - planning/archive/model-viewer/PRD.md (§5 backend contract)
+  - planning/archive/model-viewer/decisions.md (D-02, D-12, D-13, D-07)
   - context/user-stories/40-model-viewer.md (US-VIEW-7 — canonical)
   - research/v1-3d-model-viewer-reference.md (§2 backend tour, §9
     userData contracts, §16 checklist)
@@ -44,7 +44,7 @@ amends crit. 9; D-16 error taxonomy).
 
 1. `context/user-stories/40-model-viewer.md` — US-VIEW-7 (and
    US-VIEW-1 crit. 5 for the summary job).
-2. `planning/features/model-viewer/PRD.md` §5 (deltas: D-02 deps,
+2. `planning/archive/model-viewer/PRD.md` §5 (deltas: D-02 deps,
    SI wire, no cache, D-12, summary job).
 3. `research/v1-3d-model-viewer-reference.md` §2 (backend tour:
    routes, services, schema subtrees), §9 (what each loader expects —
@@ -166,10 +166,10 @@ Nothing consumes the summary columns yet (US-ENV-14 is FUTURE).
 
 ## 8. Test fixtures
 
-- Copy `planning/features/model-viewer/ph_nav_v2_example.hbjson` →
+- Copy `planning/archive/model-viewer/ph_nav_v2_example.hbjson` →
   `backend/tests/fixtures/ph_nav_v2_example.hbjson` (canonical
   fixture, Ed 2026-06-12). Delete the superseded
-  `planning/features/model-viewer/my_example_project.hbjson`.
+  `planning/archive/model-viewer/my_example_project.hbjson`.
 - Golden counts for assertions (from PLAN.md coverage map):
   4 rooms · 25 faces (16 Wall / 5 Floor / 4 RoofCeiling) · boundary
   conditions Outdoors 12 / Surface 6 / Ground 7 · 30 apertures ·
@@ -177,7 +177,7 @@ Nothing consumes the summary columns yet (US-ENV-14 is FUTURE).
   segments · 4 supply + 4 exhaust duct elements · hot-water tree
   trunk → branch → fixture → 4 segments · `air_boundaries_skipped == 0`.
 - **Scale fixture (Ed 2026-06-12):** copy
-  `planning/features/model-viewer/Hillandale_Gateway_NAR_260402.hbjson`
+  `planning/archive/model-viewer/Hillandale_Gateway_NAR_260402.hbjson`
   (51.99 MB) → `backend/tests/fixtures/` as well. Golden counts:
   583 rooms · 6,178 faces (4,591 Wall / 798 Floor / 789
   RoofCeiling) · BCs Outdoors 831 / Surface 5,248 / Ground 99 ·
