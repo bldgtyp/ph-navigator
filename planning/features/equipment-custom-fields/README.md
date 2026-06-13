@@ -31,7 +31,13 @@ and `RoomsTable` into `DataTable`.
 1. `PRD.md`
 2. `PLAN.md`
 3. `STATUS.md`
-4. Current implementation references:
+4. Active phase:
+   - `phases/phase-01-backend-registry-pilot.md`
+5. Remaining phases:
+   - `phases/phase-02-backend-registry-rollout.md`
+   - `phases/phase-03-frontend-affordance-wiring.md`
+   - `phases/phase-04-verification-closeout.md`
+6. Current implementation references:
    - `frontend/src/features/equipment/components/RoomsTableSlot.tsx`
    - `frontend/src/features/equipment/components/RoomsTable.tsx`
    - `frontend/src/shared/ui/data-table/feature/useSliceTableController.ts`
@@ -51,3 +57,12 @@ routes schema mutation to a rejection helper and still publishes
 
 Implementation should first make the backend table contracts actually
 support custom fields, then expose the existing Rooms-style UI handlers.
+
+## Phase Map
+
+| Phase | Status | Handoff |
+| --- | --- | --- |
+| 01 - Backend registry pilot | Active | Prove the custom-field mutation path on Pumps first, using its existing registry scaffold. |
+| 02 - Backend registry rollout | Pending | Apply the proven registry pattern to the remaining Equipment and Thermal Bridges contracts. |
+| 03 - Frontend affordance wiring | Pending | Forward existing controller handlers through every target table component. |
+| 04 - Verification and closeout | Pending | Run focused tests, browser smoke, `make format`, and `make ci`; update status evidence. |

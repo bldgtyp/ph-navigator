@@ -116,6 +116,30 @@ shape.
 project's HBJSON files, with a matching frontend query invalidation.
 The plan flags every spot this diverges.
 
+## Climate direction (recorded 2026-06-13)
+
+Ed raised a project-scoped **Climate** top-level tab (alongside Status /
+Apertures / Envelope / Equipment / Model) that owns location + EPW and
+visualizes climate, with other consumers beyond the viewer (e.g.
+thermal-bridge fRSI condensation resistance, window thermal-comfort
+checks, degree-days). This is bigger than the sun-path feature and is
+proposed as its own top-level feature, **not** a model-viewer item.
+
+Impact on this feature:
+- **Validates D-SP-1.** A separate, project-scoped, location-reactive
+  sun-path endpoint is exactly what a Climate tab and the Model viewer
+  both consume — the decoupling is right regardless.
+- **Endpoint placement** (phase-01 §2.3): author the sun-path builder +
+  endpoint in the location/climate domain, not model_viewer, so the
+  Climate tab reuses it without a move.
+- **The Model viewer's Site & Sun lens stays the 3D-over-geometry
+  consumer.** The Climate tab (if built) is a second consumer of the
+  same endpoint, possibly showing the diagram standalone + other
+  climate charts. Sun-path-in-the-viewer remains a model-viewer feature.
+- **Sequencing:** this feature does **not** wait for the Climate tab.
+  Sun-path Phase 1 ships against the existing `project_location` data
+  now; the Climate tab is a separate, later workstream.
+
 ## Open questions
 
 - **OQ-SP-1 · Compass ticks/arcs parity.** The MVP `SiteSunLayer`

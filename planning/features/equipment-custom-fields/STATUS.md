@@ -11,7 +11,8 @@ RELATED: planning/features/equipment-custom-fields/README.md; planning/features/
 
 ## Current State
 
-Planning added. No functional code has been changed yet.
+Planning added and expanded into handoff-ready phase plans. No
+functional code has been changed yet.
 
 Rooms already has the desired behavior. Equipment and Thermal Bridges
 currently render the shared `AddFieldTailCell` in disabled mode because
@@ -25,10 +26,11 @@ schema mutations and does not publish it on the contract.
 
 ## Next Step
 
-Implement Phase 1 from `PLAN.md`: backend field-registry opt-in for a
-representative target table, then wire the frontend affordance for that
-same table and verify the full add-field path before repeating the
-pattern across the remaining tables.
+Start `phases/phase-01-backend-registry-pilot.md`: enable the backend
+custom-field mutation path for Pumps first, using the existing
+`pumps_field_registry` scaffold, and prove the full backend contract
+with focused tests before rolling the pattern across the remaining
+tables.
 
 ## Blockers
 
@@ -39,3 +41,12 @@ until the matching backend table contract accepts schema mutations.
 
 - Source review only.
 - No tests run for this planning-only change.
+
+## Phase Ledger
+
+| Phase | Status | Exit Evidence |
+| --- | --- | --- |
+| 01 - Backend registry pilot | Active | Pending. |
+| 02 - Backend registry rollout | Pending | Pending. |
+| 03 - Frontend affordance wiring | Pending | Pending. |
+| 04 - Verification and closeout | Pending | Pending. |

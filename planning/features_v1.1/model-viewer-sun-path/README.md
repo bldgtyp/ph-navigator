@@ -38,9 +38,9 @@ It folds in two deferred post-MVP candidates:
 
 ## Read order
 
-1. `decisions.md` — the one decision to ratify (D-SP-1: decouple the
-   sun path from the immutable `/model_data` artifact) plus inherited
-   constraints.
+1. `decisions.md` — the settled serving decision (D-SP-1: decouple the
+   sun path from the immutable `/model_data` artifact, accepted
+   2026-06-13) plus inherited constraints.
 2. `PRD.md` — behavior contract.
 3. `PLAN.md` — phase sequence and build order.
 4. `phases/phase-01-static-sun-path.md` — the implementable handoff.
