@@ -32,9 +32,8 @@ and `RoomsTable` into `DataTable`.
 2. `PLAN.md`
 3. `STATUS.md`
 4. Next phase:
-   - `phases/phase-02-backend-registry-rollout.md`
-5. Remaining phases:
    - `phases/phase-03-frontend-affordance-wiring.md`
+5. Remaining phases:
    - `phases/phase-04-verification-closeout.md`
 6. Current implementation references:
    - `frontend/src/features/equipment/components/RoomsTableSlot.tsx`
@@ -48,20 +47,23 @@ and `RoomsTable` into `DataTable`.
 
 This is not only a frontend prop-forwarding task. The shared controller
 already exposes schema-mutation handlers for the target tables, but the
-backend contracts currently do not opt most target tables into
-custom-field mutation support. Several contracts publish
-`field_registry=None`. Phase 01 enabled the Pumps backend registry
-pilot: Pumps now publishes `pumps_field_registry` and routes schema
-mutations through the shared dispatcher.
+backend contracts previously did not opt most target tables into
+custom-field mutation support. Phase 01 enabled the Pumps backend
+registry pilot. Phase 02 rolled the same pattern across Ventilators,
+Fans, Hot Water Heaters, Hot Water Tanks, Electric Heaters, Appliances,
+and Thermal Bridges, so every target backend contract now publishes a
+non-null `field_registry` and routes schema mutations through the
+shared dispatcher.
 
-Implementation should first make the backend table contracts actually
-support custom fields, then expose the existing Rooms-style UI handlers.
+The remaining implementation work is frontend affordance wiring:
+expose the existing Rooms-style UI handlers now that backend support
+exists for all target contracts.
 
 ## Phase Map
 
 | Phase | Status | Handoff |
 | --- | --- | --- |
 | 01 - Backend registry pilot | Complete | Pumps accepts backend custom-field schema mutations through its existing registry scaffold. |
-| 02 - Backend registry rollout | Pending | Apply the proven registry pattern to the remaining Equipment and Thermal Bridges contracts. |
+| 02 - Backend registry rollout | Complete | Remaining Equipment and Thermal Bridges contracts publish registries and pass focused backend mutation tests. |
 | 03 - Frontend affordance wiring | Pending | Forward existing controller handlers through every target table component. |
 | 04 - Verification and closeout | Pending | Run focused tests, browser smoke, `make format`, and `make ci`; update status evidence. |
