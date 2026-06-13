@@ -23,7 +23,7 @@ export async function modelViewerObjectCount(
 export async function selectAnyModelObject(
   page: Page,
   type?: keyof NonNullable<Window["__phnModelViewer"]>["objectCounts"],
-): Promise<void> {
+): Promise<string> {
   const selected = await page.evaluate((objectType) => {
     const viewer = window.__phnModelViewer;
     if (!viewer) throw new Error("Model viewer object hook is not ready.");
@@ -34,4 +34,6 @@ export async function selectAnyModelObject(
     return objectId;
   }, type);
   expect(selected).toBeTruthy();
+  if (!selected) throw new Error("No selectable model object was found.");
+  return selected;
 }

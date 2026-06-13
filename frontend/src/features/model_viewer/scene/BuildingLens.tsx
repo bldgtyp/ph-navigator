@@ -2,24 +2,22 @@ import { Edges, Line } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
 import { useFrame, useThree } from "@react-three/fiber";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { DoubleSide, MeshBasicMaterial } from "three";
 import type { MeshStandardMaterial } from "three";
 import {
   materialKey,
   VIEWER_APERTURE_EDGE_COLOR,
-  VIEWER_DUCT_EXHAUST_COLOR,
-  VIEWER_DUCT_SUPPLY_COLOR,
   VIEWER_FACE_EDGE_COLOR,
   VIEWER_GHOST_EDGE_COLOR,
   VIEWER_HIGHLIGHT_FALLBACK,
   VIEWER_LINE_HOVER_COLOR,
-  VIEWER_PIPE_DISTRIBUTION_COLOR,
-  VIEWER_PIPE_RECIRC_COLOR,
   VIEWER_SPACE_EDGE_COLOR,
 } from "../lib/colors";
 import { isClickWithinDragTolerance, type PointerPoint } from "../lib/selection";
+import { colorForThemedObject, isThemeAllowedForLens, lineStyleDefinition } from "../lib/themes";
 import type { BuildingModel, BuildingRenderable, LineRenderable } from "../loaders/building";
 import { useModelViewerStore } from "../store";
-import type { ModelObjectType, ModelViewerLens } from "../types";
+import type { ModelObjectMeta, ModelObjectType, ModelViewerLens, ModelViewerTheme } from "../types";
 
 type BuildingLensProps = {
   model: BuildingModel;
@@ -28,11 +26,24 @@ type BuildingLensProps = {
 };
 
 const LENS_FADE_SECONDS = 0.18;
+type MeshMaterial = MeshStandardMaterial | MeshBasicMaterial;
 
 export function BuildingLens({ model, materials, ghostMaterial }: BuildingLensProps) {
   const lens = useModelViewerStore((state) => state.lens);
+  const theme = useModelViewerStore((state) => state.themesByLens[state.lens]);
   const layers = useLensFade(lens);
   const objectsByLens = useMemo(() => groupObjectsByLens(model.objects), [model.objects]);
+  const themeMaterials = useMemo(
+    () => createThemeMaterials(model, lens, theme),
+    [lens, model, theme],
+  );
+  useEffect(() => {
+    return () => {
+      for (const material of themeMaterials.values()) {
+        material.dispose();
+      }
+    };
+  }, [themeMaterials]);
   useLineRaycastTolerance();
   const showGhost = lens !== "building" && lens !== "site-sun";
 
@@ -51,6 +62,9 @@ export function BuildingLens({ model, materials, ghostMaterial }: BuildingLensPr
                   key={object.id}
                   object={object}
                   materials={materials}
+                  themeMaterials={themeMaterials}
+                  lens={lens}
+                  theme={theme}
                   opacity={layer.opacity}
                   interactive={layer.lens === lens}
                 />
@@ -145,11 +159,17 @@ function GhostBuildingContext({
 const MeshObject = memo(function MeshObject({
   object,
   materials,
+  themeMaterials,
+  lens,
+  theme,
   opacity,
   interactive,
 }: {
   object: BuildingRenderable;
   materials: Map<string, MeshStandardMaterial>;
+  themeMaterials: Map<string, MeshBasicMaterial>;
+  lens: ModelViewerLens;
+  theme: ModelViewerTheme;
   opacity: number;
   interactive: boolean;
 }) {
@@ -157,7 +177,7 @@ const MeshObject = memo(function MeshObject({
   const isHovered = useModelViewerStore((state) => state.hoverId === object.id);
   const isSelected = useModelViewerStore((state) => state.selectionId === object.id);
   const material = useOpacityMaterial(
-    materialForObject(object.meta.type, isHovered, isSelected, materials),
+    materialForObject(object.meta, lens, theme, isHovered, isSelected, materials, themeMaterials),
     opacity,
   );
   const edgeColor = edgeColorForObject(object.meta.type, isSelected);
@@ -225,7 +245,7 @@ const LineObject = memo(function LineObject({
   );
 });
 
-function useOpacityMaterial(material: MeshStandardMaterial, opacity: number): MeshStandardMaterial {
+function useOpacityMaterial(material: MeshMaterial, opacity: number): MeshMaterial {
   const faded = useMemo(() => {
     const clone = material.clone();
     clone.transparent = true;
@@ -260,15 +280,46 @@ function useLineRaycastTolerance(): void {
 }
 
 function materialForObject(
-  type: ModelObjectType,
+  meta: ModelObjectMeta,
+  lens: ModelViewerLens,
+  theme: ModelViewerTheme,
   isHovered: boolean,
   isSelected: boolean,
   materials: Map<string, MeshStandardMaterial>,
-): MeshStandardMaterial {
+  themeMaterials: Map<string, MeshBasicMaterial>,
+): MeshMaterial {
+  const type = meta.type;
   const state = isSelected ? "selected" : isHovered ? "hovered" : "base";
+  if (state === "base") {
+    const themeColor = colorForThemedObject(meta, lens, theme);
+    if (themeColor) {
+      const material = themeMaterials.get(themeColor.color);
+      if (!material) throw new Error(`Missing theme material for ${themeColor.color}`);
+      return material;
+    }
+  }
   const material = materials.get(materialKey(type, state));
   if (!material) throw new Error(`Missing material for ${type}:${state}`);
   return material;
+}
+
+function createThemeMaterials(
+  model: BuildingModel,
+  lens: ModelViewerLens,
+  theme: ModelViewerTheme,
+): Map<string, MeshBasicMaterial> {
+  const palette = new Map<string, MeshBasicMaterial>();
+  if (theme === "shaded" || !isThemeAllowedForLens(lens, theme)) return palette;
+  for (const object of model.objects) {
+    if (object.kind !== "mesh" || object.lens !== lens) continue;
+    const themeColor = colorForThemedObject(object.meta, lens, theme);
+    if (!themeColor || palette.has(themeColor.color)) continue;
+    palette.set(
+      themeColor.color,
+      new MeshBasicMaterial({ color: themeColor.color, side: DoubleSide }),
+    );
+  }
+  return palette;
 }
 
 function edgeColorForObject(type: ModelObjectType, isSelected: boolean): string {
@@ -280,16 +331,7 @@ function edgeColorForObject(type: ModelObjectType, isSelected: boolean): string 
 
 function lineColor(style: LineRenderable["lineStyle"], isHovered: boolean): string {
   if (isHovered) return VIEWER_LINE_HOVER_COLOR;
-  switch (style) {
-    case "duct-supply":
-      return VIEWER_DUCT_SUPPLY_COLOR;
-    case "duct-exhaust":
-      return VIEWER_DUCT_EXHAUST_COLOR;
-    case "pipe-distribution":
-      return VIEWER_PIPE_DISTRIBUTION_COLOR;
-    case "pipe-recirc":
-      return VIEWER_PIPE_RECIRC_COLOR;
-  }
+  return lineStyleDefinition(style).color;
 }
 
 function lineWidth(

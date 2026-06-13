@@ -9,6 +9,7 @@ import { useModelDataQuery } from "../hooks";
 import type { HbjsonFile, ModelViewerErrorKind } from "../types";
 import { CameraCluster } from "./CameraCluster";
 import { InspectorPanel } from "./InspectorPanel";
+import { LegendCard } from "./LegendCard";
 import { LensBar } from "./LensBar";
 import { LoadingChip } from "./LoadingChip";
 
@@ -118,6 +119,11 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
         onRetry={() => void query.refetch()}
       />
       <LensBar availability={model?.lensAvailability ?? null} />
+      <LegendCard
+        model={model}
+        activeFile={activeFile}
+        loadSummary={query.data?.load_summary ?? null}
+      />
       <CameraCluster />
       <InspectorPanel meta={selectedMeta} />
     </>

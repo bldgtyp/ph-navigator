@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-12
 TIME: -
-STATUS: Active — Phases 1–4 implemented; Phase 5 next
+STATUS: Active — Phases 1–5 implemented; Phase 6 next
 AUTHOR: Claude (for Ed)
 SCOPE: Status ledger for the Model Viewer feature.
 RELATED: planning/features/model-viewer/README.md
@@ -21,8 +21,10 @@ three/R3F deps added, Building lens renders real `/model_data`, and
 `make format` + `make ci` passed in that session.
 **Phase 4 (remaining lenses) implemented 2026-06-13** — lens bar,
 Spaces, Floor Areas, Ventilation, Hot Water, deep links, and the
-remaining inspector configs are live; final simplify/docs-pass and
-closeout gates are in progress below.
+remaining inspector configs are live. **Phase 5 (themes + legend)
+implemented 2026-06-13** — color themes, `&theme=`, legend counts,
+mini-keys, and scene-info popover are live; final simplify/docs-pass
+and closeout gates are in progress below.
 
 Test fixtures (both in this folder, both copied to
 `backend/tests/fixtures/` in Phase 2; coverage maps + remaining
@@ -113,8 +115,77 @@ scene helpers (phase-03 §4.1).
 
 ## Next step
 
-Start Phase 5 — handoff doc:
-`phases/phase-05-themes-legend.md` (color themes + legend card).
+Start Phase 6 — handoff doc:
+`phases/phase-06-measure-site-sun-polish.md` (Measure, Site & Sun
+polish, keyboard/a11y polish).
+
+## Phase 5 — implemented 2026-06-13
+
+Frontend only; Phase 2/4 already shipped the required model-data DTOs
+and renderable metadata:
+
+- Theme model/URL: store now tracks `themesByLens`; switching lens
+  resets to that lens's default while switching theme preserves
+  selection. `&theme=` reads/writes permanent kebab-case tokens:
+  `shaded`, `surface-type`, `boundary`, `construction`,
+  `window-construction`, `ventilation-airflow`, `weighting-factor`.
+  Invalid or inapplicable theme tokens silently fall back to the
+  active lens default.
+- Theme menu: attached to the right end of the lens bar only for
+  Building, Spaces, and Floor Areas. Building offers Shaded, Surface
+  Type, Boundary, Construction, Window Construction; Spaces offers
+  Shaded and Ventilation Airflow; Floor Areas defaults to Weighting
+  Factor and also offers Shaded.
+- Color application: `lib/themes.ts` owns V1 static color maps,
+  ventilation airflow categories, the V2 floor-weighting buckets
+  (fixed `0.3` boundary), and the preserved cyrb53 + golden-ratio HSL
+  construction hash. The scene uses shared unlit `MeshBasicMaterial`
+  bucket colors for active themes; hover/selection still override via
+  the D-14 highlight materials and deselection returns to the theme
+  color.
+- Legend card: bottom-left card renders non-Shaded theme legends and
+  Ventilation / Hot Water mini-keys. Rows are inert buttons with
+  swatch, label, and count; dynamic construction legends sort
+  alphabetically; long legends scroll; collapsed state is remembered
+  in session storage.
+- Scene info: bottom-left info trigger is available with or without a
+  legend. Popover shows file name, upload timestamp, load-summary
+  counts, and extraction warnings. The ready loading-chip summary now
+  flashes briefly and collapses into this popover.
+- Debug/e2e hook: `window.__phnModelViewer` now exposes `theme`,
+  `legend`, `setTheme`, and `themeColorForObject`.
+- Tests: `viewerThemes.test.ts` covers theme-token fallback, cyrb53
+  golden values, weighting bucket boundaries, ventilation airflow
+  truth table, legend counts, theme reset on lens switch, and
+  selection survival on theme switch. `model-viewer-themes.spec.ts`
+  uploads the canonical fixture, verifies Boundary legend counts
+  (Outdoors 12 / Ground 7 / Surface 6), verifies selected-face
+  survival across theme changes, checks Floor Areas default Weighting
+  Factor, checks Ventilation mini-key, verifies deep link
+  `?file=…&lens=building&theme=boundary`, and checks legend collapse
+  persistence.
+
+Focused verification already run this session:
+- `cd frontend && pnpm exec tsc -b --pretty false` — green.
+- `cd frontend && pnpm exec vitest run
+  src/features/model_viewer/__tests__/viewerCore.test.ts
+  src/features/model_viewer/__tests__/viewerThemes.test.ts
+  src/lib/units/units.test.ts` — green.
+- `cd frontend && pnpm run lint` — green with 3 pre-existing
+  react-refresh warnings in `features/apertures`.
+- `cd frontend && pnpm run check:all` — green.
+- `cd frontend && pnpm exec playwright test
+  tests/e2e/model-viewer-files.spec.ts
+  tests/e2e/model-viewer-lenses.spec.ts
+  tests/e2e/model-viewer-themes.spec.ts --project=chromium` —
+  green.
+- Browser walkthrough on `localhost:5173` as `codex@example.com`:
+  deep-linked Building / Boundary rendered with the attached Color:
+  Boundary trigger, disabled Site & Sun segment, legend counts
+  Outdoors 12 / Ground 7 / Surface 6, and scene-info popover counts
+  25 surfaces / 4 spaces / 5 shade groups / 0 air boundaries skipped.
+  Screenshot showed boundary swatches matching unlit mesh colors over
+  the canvas.
 
 ## Phase 4 — implemented 2026-06-13
 
@@ -399,5 +470,5 @@ blocker is cleared.
 | Phase 2 — extraction backend | **Done 2026-06-12** | `schemas/` + `extraction.py` + `model_data.py`; 6 read routes + 6 MCP tools; pytest ×28 new (incl. Hillandale goldens); perf canary 7.4 s; `make ci` green (this session) |
 | Phase 3 — canvas + Building lens | **Done 2026-06-13** | R3F deps; `/model_data` query; Building lens loader/canvas; selection + inspector; scene-ready hook; simplify + docs-pass complete; `make format` green; `make ci` green; focused Playwright spec green; `graphify update .` run |
 | Phase 4 — remaining lenses | **Done 2026-06-13** | lens bar + all remaining non-Site lenses; inspector configs; `&lens=` deep links; focused Vitest green; Phase 4 Playwright e2e green; browser walkthrough green |
-| Phase 5 — themes + legend | Not started | — |
+| Phase 5 — themes + legend | **Done 2026-06-13** | theme registry + `&theme=`; attached Color menu; unlit theme bucket materials; legend counts + mini-keys + scene-info popover; focused Vitest green; Phase 5 Playwright e2e green; browser walkthrough green |
 | Phase 6 — measure, Site & Sun, polish | Not started | — |

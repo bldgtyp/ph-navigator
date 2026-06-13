@@ -1,8 +1,7 @@
 ---
 DATE: 2026-06-12
 TIME: -
-STATUS: Ready for handoff — requires Phase 4 merged (all lenses +
-  inspector configs).
+STATUS: Done — implemented and verified 2026-06-13.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff for Model Viewer Phase 5 — color themes
   per lens, theme menu, legend card with counts, mini-keys, scene-info
@@ -158,3 +157,69 @@ US-VIEW-5 criteria pass under the D-03/D-09 recomposition; legend
 counts match client tallies and the fixture's golden counts;
 PRD §4.3 observable-behavior contract holds. STATUS.md ledger
 updated (incl. theme URL tokens).
+
+## 8. Implementation status — 2026-06-13
+
+Implemented frontend-only:
+
+- Theme state: `themesByLens` in the model-viewer Zustand store,
+  with default tokens:
+  - Building: `shaded`
+  - Spaces: `shaded`
+  - Floor Areas: `weighting-factor`
+  - Site & Sun / Ventilation / Hot Water: `shaded` fixed
+- Theme URL tokens:
+  `shaded`, `surface-type`, `boundary`, `construction`,
+  `window-construction`, `ventilation-airflow`, `weighting-factor`.
+  Invalid or inapplicable `&theme=` values silently fall back to the
+  active lens default.
+- Theme menu: attached to the lens bar for Building, Spaces, and
+  Floor Areas only. Theme switches recolor in place and preserve
+  selection.
+- Color application: static V1 maps and cyrb53 + golden-ratio
+  construction hash ported into a pure theme helper. Themed meshes use
+  shared unlit `MeshBasicMaterial` bucket colors; hover/selection
+  still override through the D-14 highlight treatment.
+- Legend: bottom-left card with inert button rows, per-bucket counts,
+  dynamic construction sorting, internal scroll, session collapse, and
+  Ventilation / Hot Water mini-keys.
+- Scene info: bottom-left `Info` trigger available with or without a
+  legend; popover shows file name, upload timestamp, load-summary
+  counts, and extraction warnings.
+- Debug/e2e hook: `window.__phnModelViewer` now exposes `theme`,
+  `legend`, `setTheme`, and `themeColorForObject`.
+
+Focused verification completed before closeout:
+
+- `cd frontend && pnpm exec tsc -b --pretty false` — green.
+- `cd frontend && pnpm run lint` — green with the known pre-existing
+  aperture fast-refresh warnings.
+- `cd frontend && pnpm run check:all` — green.
+- `cd frontend && pnpm exec vitest run
+  src/features/model_viewer/__tests__/viewerCore.test.ts
+  src/features/model_viewer/__tests__/viewerThemes.test.ts
+  src/lib/units/units.test.ts` — green.
+- `cd frontend && pnpm exec playwright test
+  tests/e2e/model-viewer-files.spec.ts
+  tests/e2e/model-viewer-lenses.spec.ts
+  tests/e2e/model-viewer-themes.spec.ts --project=chromium` —
+  green.
+- `$ simplify` completed after focused verification. Applied fixes:
+  atomic URL lens/theme hydration to avoid same-lens theme churn and
+  accidental selection clearing; production gating for debug-hook
+  derived data; `metaById` lookup for debug theme colors; shared
+  line-style label/color registry for scene lines and mini-key
+  legends; early return for shaded/fixed theme material creation;
+  shared outside-pointer close handling for the theme menu; explicit
+  legend-title CSS class.
+- `$ docs-pass` completed: planning docs were already current; stable
+  `context/user-stories/40-model-viewer.md` was updated to replace
+  the stale "no duct legend in V2 v1" note with the implemented
+  Ventilation mini-key behavior.
+- In-app browser walkthrough on `localhost:5173` as
+  `codex@example.com`: deep-linked
+  `?file=…&lens=building&theme=boundary`, verified the Color:
+  Boundary trigger, disabled Site & Sun segment, legend counts
+  Outdoors 12 / Ground 7 / Surface 6, scene-info popover counts
+  25 surfaces / 4 spaces / 5 shade groups / 0 air boundaries skipped,
+  and swatch-vs-mesh color fidelity in screenshot.

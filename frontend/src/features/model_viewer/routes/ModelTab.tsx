@@ -8,9 +8,10 @@ import { ModelEmptyState } from "../components/ModelEmptyState";
 import { ModelViewerStage } from "../components/ModelViewerStage";
 import { useHbjsonFilesQuery, useHbjsonUploadFlow } from "../hooks";
 import { parseModelViewerLens } from "../lib/lenses";
+import { parseModelViewerTheme } from "../lib/themes";
 import { useModelViewerStore } from "../store";
 
-/** `?file=` and `&lens=` are the shareable viewer state. */
+/** `?file=`, `&lens=`, and `&theme=` are the shareable viewer state. */
 export function ModelTab({ project }: { project: ProjectDetail }) {
   const isEditor = project.access_mode === "editor";
   const filesQuery = useHbjsonFilesQuery(project.id);
@@ -19,31 +20,34 @@ export function ModelTab({ project }: { project: ProjectDetail }) {
   const files = filesQuery.data ?? [];
   const requestedFileId = searchParams.get("file");
   const requestedLens = parseModelViewerLens(searchParams.get("lens"));
+  const requestedTheme = parseModelViewerTheme(requestedLens, searchParams.get("theme"));
   const activeFile = files.find((file) => file.id === requestedFileId) ?? files[0] ?? null;
   const activeFileId = activeFile?.id ?? null;
 
   const setActiveFileId = useModelViewerStore((state) => state.setActiveFileId);
   const lens = useModelViewerStore((state) => state.lens);
-  const setLens = useModelViewerStore((state) => state.setLens);
+  const theme = useModelViewerStore((state) => state.themesByLens[state.lens]);
+  const setUrlViewState = useModelViewerStore((state) => state.setUrlViewState);
   useEffect(() => {
     setActiveFileId(activeFileId);
   }, [activeFileId, setActiveFileId]);
 
   useEffect(() => {
-    setLens(requestedLens);
-  }, [requestedLens, setLens]);
+    setUrlViewState(requestedLens, requestedTheme);
+  }, [requestedLens, requestedTheme, setUrlViewState]);
 
   useEffect(() => {
     setSearchParams(
       (current) => {
-        if (current.get("lens") === lens) return current;
+        if (current.get("lens") === lens && current.get("theme") === theme) return current;
         const next = new URLSearchParams(current);
         next.set("lens", lens);
+        next.set("theme", theme);
         return next;
       },
       { replace: true },
     );
-  }, [lens, setSearchParams]);
+  }, [lens, setSearchParams, theme]);
 
   const selectFile = (fileId: string) => {
     setSearchParams((current) => {
