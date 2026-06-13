@@ -1,5 +1,6 @@
 import { fetchJson, getApiBaseUrl } from "../../shared/api/client";
 import type {
+  CombinedModelData,
   HbjsonFile,
   HbjsonFileCreatePayload,
   HbjsonFileListResponse,
@@ -45,4 +46,15 @@ export async function deleteHbjsonFile(projectId: string, fileId: string): Promi
 
 export function hbjsonFileDownloadPath(projectId: string, fileId: string): string {
   return `${getApiBaseUrl()}/api/v1/projects/${projectId}/hbjson-files/${fileId}/download`;
+}
+
+export async function fetchModelData(
+  projectId: string,
+  fileId: string,
+  signal?: AbortSignal,
+): Promise<CombinedModelData> {
+  return fetchJson<CombinedModelData>(
+    `/api/v1/projects/${projectId}/hbjson-files/${fileId}/model_data`,
+    { signal },
+  );
 }

@@ -5,6 +5,7 @@ import { errorMessage } from "../../../shared/lib/errors";
 import type { ProjectDetail } from "../../projects/types";
 import { FileChip } from "../components/FileChip";
 import { ModelEmptyState } from "../components/ModelEmptyState";
+import { ModelViewerStage } from "../components/ModelViewerStage";
 import { useHbjsonFilesQuery, useHbjsonUploadFlow } from "../hooks";
 import { useModelViewerStore } from "../store";
 
@@ -82,12 +83,7 @@ export function ModelTab({ project }: { project: ProjectDetail }) {
           onDeleted={handleDeleted}
         />
         {activeFile ? (
-          <div className="model-viewer-placeholder">
-            <p className="model-viewer-placeholder-title">3D viewer arrives in Phase 3</p>
-            <p className="model-viewer-placeholder-file">
-              Active file: <strong>{activeFile.display_name}</strong>
-            </p>
-          </div>
+          <ModelViewerStage projectId={project.id} activeFile={activeFile} />
         ) : (
           <ModelEmptyState isEditor={isEditor} uploadFlow={uploadFlow} />
         )}

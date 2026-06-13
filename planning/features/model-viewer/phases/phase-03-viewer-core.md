@@ -1,8 +1,7 @@
 ---
 DATE: 2026-06-12
 TIME: -
-STATUS: Ready for handoff — requires Phases 1–2 merged (file picking +
-  real /model_data wire). First visible 3D.
+STATUS: Done — implemented and verified 2026-06-13.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff for Model Viewer Phase 3 — R3F canvas,
   scene dressing, Building lens geometry, always-on selection, inspector
@@ -21,6 +20,52 @@ RELATED:
 ---
 
 # Phase 3 — Viewer core: canvas + Building lens + selection
+
+## 0. Implementation status — 2026-06-13
+
+Implemented in this session:
+- R3F/three/drei/postprocessing deps added; React-19-compatible
+  versions resolved.
+- `/model_data` fetch/query path and typed frontend DTOs added.
+- Building-lens pure loaders convert faces + apertures into
+  `BufferGeometry` and `ModelObjectMeta` without scene side effects;
+  defensive fan triangulation handles polygon faces.
+- Full-bleed Canvas, Z-up OrbitControls, Grid, ContactShadows, SMAA,
+  fit/home/zoom camera requests, always-on hover/click selection,
+  double-click zoom, and right-side inspector added.
+- Inspector covers Phase-3 `faceMesh` and `apertureMeshFace` rows,
+  including D-12 U/R terminology and IP/SI formatting, with typed
+  accessor configs rather than string paths.
+- In-canvas loading/error chip and dev/test-only
+  `window.__phnModelViewer` hook added.
+- Existing model-viewer e2e smoke updated to assert scene readiness,
+  canonical fixture object counts, dev/test-hook selection, and Esc
+  clear.
+- `$ simplify` cleanup completed: old geometries dispose on file
+  switch/unmount, model-data cache is removed on delete, pointer-heavy
+  store setters skip no-op updates, mesh rerenders are object-scoped,
+  and `ModelTab` is lazy-loaded from `ProjectTabContent`.
+
+Verification:
+- `cd frontend && pnpm exec tsc -b --pretty false` — green.
+- `cd frontend && pnpm exec vitest run src/features/model_viewer/__tests__/viewerCore.test.ts` — green.
+- `cd frontend && pnpm run lint` — green with pre-existing aperture
+  fast-refresh warnings only.
+- `cd frontend && pnpm run check:all` — green.
+- `cd frontend && pnpm run build` — green; Vite still reports a
+  chunk-size warning, but `ModelTab` is now emitted as its own lazy
+  chunk.
+- `make format` — green.
+- `make ci` — green (backend Ruff, Ty, Alembic, 780 pytest passed /
+  2 skipped; frontend Prettier, ESLint with the pre-existing
+  aperture fast-refresh warnings only, structural guards, 1,561
+  Vitest tests passed, production build green).
+- `cd frontend && pnpm exec playwright test tests/e2e/model-viewer-files.spec.ts --project=chromium`
+  — green.
+
+Docs-pass result: planning docs updated here and in `STATUS.md`; no
+stable `context/` contract changed. `graphify update .` run after
+the implementation docs were updated.
 
 ## 1. Goal
 
