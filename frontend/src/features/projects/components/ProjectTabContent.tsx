@@ -1,12 +1,16 @@
+import { lazy, Suspense } from "react";
 import { AperturesTab } from "../../apertures/routes/AperturesTab";
 import { ThermalBridgesPage } from "../../assets/routes/ThermalBridgesPage";
 import { EquipmentPage } from "../../equipment/routes/EquipmentPage";
 import { EnvelopePage } from "../../envelope/routes/EnvelopePage";
 import { RoomsPage } from "../../equipment/routes/RoomsPage";
-import { ModelTab } from "../../model_viewer/routes/ModelTab";
 import { StatusTab } from "../../project_status/routes/StatusTab";
 import { TAB_COPY, TAB_LABELS, type ProjectTab } from "../lib";
 import type { ProjectDetail } from "../types";
+
+const ModelTab = lazy(() =>
+  import("../../model_viewer/routes/ModelTab").then((module) => ({ default: module.ModelTab })),
+);
 
 export function ProjectTabContent({ tab, project }: { tab: ProjectTab; project: ProjectDetail }) {
   if (tab === "status") {
@@ -34,7 +38,13 @@ export function ProjectTabContent({ tab, project }: { tab: ProjectTab; project: 
   }
 
   if (tab === "model") {
-    return <ModelTab project={project} />;
+    return (
+      <Suspense
+        fallback={<section className="tab-panel model-tab">Loading model viewer...</section>}
+      >
+        <ModelTab project={project} />
+      </Suspense>
+    );
   }
 
   return (

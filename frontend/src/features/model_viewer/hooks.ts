@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { ApiRequestError } from "../../shared/api/client";
 import { errorMessage } from "../../shared/lib/errors";
-import { deleteHbjsonFile, fetchHbjsonFiles, updateHbjsonFile } from "./api";
+import { deleteHbjsonFile, fetchHbjsonFiles, fetchModelData, updateHbjsonFile } from "./api";
 import { sortFilesNewestFirst, uploadHbjsonFile, validateHbjsonFile } from "./lib";
 import { modelViewerQueryKeys } from "./query-keys";
 import type { HbjsonFile, HbjsonFileListResponse, HbjsonFileUpdatePayload } from "./types";
@@ -13,6 +14,27 @@ export function useHbjsonFilesQuery(projectId: string) {
     queryKey: modelViewerQueryKeys.files(projectId),
     queryFn: ({ signal }) => fetchHbjsonFiles(projectId, signal),
     select: (payload) => sortFilesNewestFirst(payload.items),
+  });
+}
+
+export function useModelDataQuery(projectId: string, fileId: string | null) {
+  return useQuery({
+    queryKey: fileId
+      ? modelViewerQueryKeys.modelData(projectId, fileId)
+      : [...modelViewerQueryKeys.all, "model-data", projectId, "idle"],
+    queryFn: ({ signal }) => {
+      if (!fileId) throw new Error("Cannot load model data without an active file.");
+      return fetchModelData(projectId, fileId, signal);
+    },
+    enabled: Boolean(fileId),
+    staleTime: Infinity,
+    gcTime: 30 * 60 * 1000,
+    retry: (failureCount, error) => {
+      if (error instanceof ApiRequestError && error.details.kind === "permanent") {
+        return false;
+      }
+      return failureCount < 2;
+    },
   });
 }
 
@@ -56,6 +78,7 @@ export function useDeleteHbjsonFileMutation(projectId: string) {
         (current) =>
           current ? { items: current.items.filter((file) => file.id !== fileId) } : current,
       );
+      queryClient.removeQueries({ queryKey: modelViewerQueryKeys.modelData(projectId, fileId) });
     },
   });
 }

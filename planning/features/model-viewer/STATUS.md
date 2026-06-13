@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-12
 TIME: -
-STATUS: Active — Phases 1–2 implemented 2026-06-12; Phase 3 next
+STATUS: Active — Phases 1–3 implemented; Phase 4 next
 AUTHOR: Claude (for Ed)
 SCOPE: Status ledger for the Model Viewer feature.
 RELATED: planning/features/model-viewer/README.md
@@ -15,8 +15,10 @@ RELATED: planning/features/model-viewer/README.md
 UI_SPEC (redesigned non-CAD composition), decisions ledger, 6-phase
 plan. **Phase 1 (HBJSON file management) implemented 2026-06-12**;
 **Phase 2 (extraction backend) implemented 2026-06-12** — honeybee
-deps in, `/model_data` artifact pipeline live (details below). Still
-absent: three/R3F frontend deps (arrive Phase 3).
+deps in, `/model_data` artifact pipeline live (details below).
+**Phase 3 (viewer core) implemented and verified 2026-06-13** —
+three/R3F deps added, Building lens renders real `/model_data`, and
+`make format` + `make ci` passed in this session.
 
 Test fixtures (both in this folder, both copied to
 `backend/tests/fixtures/` in Phase 2; coverage maps + remaining
@@ -107,9 +109,73 @@ scene helpers (phase-03 §4.1).
 
 ## Next step
 
-**Start Phase 3** — handoff doc: `phases/phase-03-viewer-core.md`
-(three/R3F deps, canvas, Building lens, selection, inspector).
-Phase 2 shipped 2026-06-12; details below.
+Start Phase 4 — handoff doc:
+`phases/phase-04-remaining-lenses.md` (lens bar + Spaces / Floor
+Areas / Ventilation / Hot Water lenses).
+
+## Phase 3 — implemented and verified 2026-06-13
+
+Frontend only:
+- Deps: `three`, `@react-three/fiber`, `@react-three/drei`,
+  `@react-three/postprocessing`, `@types/three` added with pnpm
+  supply-chain protections intact. Resolution landed on React-19-
+  compatible R3F v9.6.1 / drei v10.7.7.
+- `/model_data` client path: `fetchModelData`, `useModelDataQuery`
+  (`staleTime: Infinity`, no retry for D-16 permanent failures),
+  typed DTOs in `types.ts`, and model-data cache removal when a file
+  is deleted.
+- Viewer state: `store.ts` now carries fixed Phase-3 `lens='building'`,
+  hover/selection IDs, load/error state, and fit/home/zoom camera
+  requests, with no-op guards on pointer-heavy updates. `Esc`, `F`,
+  and `H` keyboard handling shipped; Measure stays Phase 6.
+- Pure loader layer: `loaders/geometry.ts` and `loaders/building.ts`
+  convert Phase 2 faces/apertures into `BufferGeometry` + full
+  inspector metadata. This phase renders only `faceMesh` and
+  `apertureMeshFace`; the same pattern is the Phase 4 extension point.
+  Polygon faces are fan-triangulated defensively even though Phase 2
+  currently ships triangulated meshes.
+- R3F scene: full-bleed `<Canvas frameloop="demand">`, Z-up camera,
+  OrbitControls damping, fit-on-load, Grid + ContactShadows + SMAA,
+  Building lens meshes with edge lines, hover/selection materials
+  from the BLDGTYP `--highlight` family, double-click / button zoom,
+  Fit/Home camera buttons. Old `BufferGeometry` is disposed on file
+  switch/unmount, and the canvas is keyed by file id so repeated
+  HBJSON object identifiers across files cannot retain stale geometry.
+- Inspector: right slide-in panel for Opaque Surface + Window configs,
+  D-12 U-Factor/U-Value/R-Factor/R-Value rows, `--` missing-value
+  fallback, IP/SI live formatting through existing unit helpers, Copy
+  ID, and Zoom to. Field configs use typed accessors rather than
+  string paths.
+- Loading/error: in-canvas chip shows download/building/error states;
+  transient errors show Retry, permanent parse errors do not. Scene
+  ready/debug hook `window.__phnModelViewer` is dev/test-only and
+  exposes load phase, object counts, lens, hover, and selection for
+  e2e.
+- Bundle: `ProjectTabContent` now lazy-loads `ModelTab`, keeping the
+  Three/R3F stack out of the initial project-workspace route module.
+- Tests: `viewerCore.test.ts` covers loader counts/geometry, drag
+  tolerance, D-14 highlight fallback, and D-12 field formatting.
+  `model-viewer-files.spec.ts` now waits on the scene-ready hook,
+  asserts 25 face meshes / 30 aperture meshes for the primary
+  fixture, selects through the dev/test-only viewer hook to open the
+  inspector, and verifies `Esc` clears selection.
+
+Focused verification already run this session:
+- `cd frontend && pnpm exec tsc -b --pretty false` — green.
+- `cd frontend && pnpm exec vitest run src/features/model_viewer/__tests__/viewerCore.test.ts` — green.
+- `cd frontend && pnpm run lint` — green with 3 pre-existing
+  react-refresh warnings in `features/apertures`.
+- `cd frontend && pnpm run check:all` — green.
+
+Closeout passes: `$ simplify` completed; `$ docs-pass` completed
+(planning docs only; no stable `context/` update needed). Final
+gates completed: `make format` green; `make ci` green (backend Ruff,
+Ty, Alembic, 780 pytest passed / 2 skipped; frontend Prettier,
+ESLint with the pre-existing aperture fast-refresh warnings only,
+structural guards, 1,561 Vitest tests passed, production build
+green); `cd frontend && pnpm exec playwright test
+tests/e2e/model-viewer-files.spec.ts --project=chromium` green.
+`graphify update .` run after the implementation docs were updated.
 
 ## Phase 2 — implemented 2026-06-12
 
@@ -263,7 +329,7 @@ blocker is cleared.
 | Phase handoff plans (01–06) | Done 2026-06-12 | `phases/` |
 | Phase 1 — file management | **Done 2026-06-12** | migration `20260612_0022`; `backend/features/model_viewer/`; `frontend/src/features/model_viewer/`; pytest ×11 + Vitest ×11 + e2e green; `make ci` green (this session) |
 | Phase 2 — extraction backend | **Done 2026-06-12** | `schemas/` + `extraction.py` + `model_data.py`; 6 read routes + 6 MCP tools; pytest ×28 new (incl. Hillandale goldens); perf canary 7.4 s; `make ci` green (this session) |
-| Phase 3 — canvas + Building lens | Not started | — |
+| Phase 3 — canvas + Building lens | **Done 2026-06-13** | R3F deps; `/model_data` query; Building lens loader/canvas; selection + inspector; scene-ready hook; simplify + docs-pass complete; `make format` green; `make ci` green; focused Playwright spec green; `graphify update .` run |
 | Phase 4 — remaining lenses | Not started | — |
 | Phase 5 — themes + legend | Not started | — |
 | Phase 6 — measure, Site & Sun, polish | Not started | — |
