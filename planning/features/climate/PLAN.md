@@ -20,7 +20,7 @@ RELATED:
 
 | Phase | Scope | Gate to start | Unblocks |
 |---|---|---|---|
-| 1 — Sun-path service | Backend sun-path builder + `GET /projects/{id}/sun-path` + MCP; north-sign verified | None — `project_location` data + `ladybug-core` exist | Model Viewer Site & Sun render; Climate tab sun-path visual |
+| 1 — Sun-path service ✅ **done** (2026-06-13) | Backend sun-path builder + `GET /projects/{id}/sun-path` + MCP; north-sign verified (identity) | None — `project_location` data + `ladybug-core` exist | Model Viewer Site & Sun render; Climate tab sun-path visual |
 | 2 — Reference datasets + standardized format | Canonical `ClimateRecord`; app-wide versioned Phius/PHI stores; seed importers; dataset read endpoints + MCP | None (reuse-investigate PH-Tools first, D-CL-10) | The tab dropdowns/graphs; the design-conditions contract |
 | 3 — Climate tab UI | New `climate` tab: location record + multi-source attach/select (ASHRAE/EPW/Phius/PHI/custom) + per-source graph/table + sun-path visual | Phase 1 + Phase 2 merged | The "see + record + compare sources" goal |
 | 4 — Design conditions + metrics | Per-source, source-parameterized design-conditions contract (+ MCP) | **Deferred** (Ed 2026-06-13) — needs a scheduled fRSI/comfort consumer | Thermal-Bridges fRSI; Window comfort |

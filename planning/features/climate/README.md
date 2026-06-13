@@ -1,8 +1,9 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Active — planned. Phase 1 is the foundation other features
-  (Model Viewer sun path, fRSI, window comfort) wait on.
+STATUS: Active — Phase 1 (sun-path service) implemented 2026-06-13; the
+  endpoint other features (Model Viewer sun path, fRSI, window comfort)
+  wait on now exists. Phase 2 next.
 AUTHOR: Claude (for Ed)
 SCOPE: Router for the project-scoped Climate feature — a top-level tab
   that owns and visualizes project location + weather basis, and serves
@@ -75,9 +76,9 @@ fRSI, Window comfort.
 
 ## Sequence headline
 
-**Phases 1 (sun-path service) and 2 (reference datasets + standardized
-format) are the foundations — independent, build first/in parallel.**
-Phase 1 unblocks the Model Viewer Site & Sun 3D render
-(`planning/features_v1.1/model-viewer-sun-path/`, now frontend-only).
-Phase 3 (the tab) needs both. Phase 4 (per-source design conditions)
-gates the fRSI/comfort consumers.
+**Phase 1 (sun-path service) is implemented (2026-06-13).** It now ships
+the `GET /projects/{id}/sun-path` endpoint that unblocks the Model Viewer
+Site & Sun 3D render (`planning/features_v1.1/model-viewer-sun-path/`, now
+frontend-only). **Phase 2 (reference datasets + standardized format) is
+next** — independent of Phase 1. Phase 3 (the tab) needs both. Phase 4
+(per-source design conditions) gates the fRSI/comfort consumers.
