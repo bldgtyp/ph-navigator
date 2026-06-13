@@ -1,7 +1,7 @@
-import { useEffect } from "react";
-import type { BuildingModel } from "../loaders/building";
+import { useEffect, useMemo } from "react";
+import { emptyModelObjectCounts, type BuildingModel } from "../loaders/building";
 import { useModelViewerStore } from "../store";
-import type { ModelObjectCounts, ModelViewerDebugState } from "../types";
+import type { ModelObjectType, ModelViewerDebugState } from "../types";
 
 declare global {
   interface Window {
@@ -17,7 +17,16 @@ export function useModelViewerDebugHook(model: BuildingModel | null): void {
   const selectionId = useModelViewerStore((state) => state.selectionId);
   const hoverId = useModelViewerStore((state) => state.hoverId);
   const setSelectionId = useModelViewerStore((state) => state.setSelectionId);
+  const setLens = useModelViewerStore((state) => state.setLens);
   const clearSelection = useModelViewerStore((state) => state.clearSelection);
+  const objectIds = useMemo(
+    () => model?.objects.map((object) => object.id) ?? [],
+    [model?.objects],
+  );
+  const visibleObjectIds = useMemo(
+    () => model?.objects.filter((object) => object.lens === lens).map((object) => object.id) ?? [],
+    [lens, model?.objects],
+  );
 
   useEffect(() => {
     if (!(import.meta.env.DEV || import.meta.env.MODE === "test")) return;
@@ -25,12 +34,22 @@ export function useModelViewerDebugHook(model: BuildingModel | null): void {
       loadPhase,
       errorKind,
       activeFileId,
-      objectCounts: model?.objectCounts ?? emptyObjectCounts(),
-      objectIds: model?.objects.map((object) => object.id) ?? [],
+      objectCounts: model?.objectCounts ?? emptyModelObjectCounts(),
+      objectIds,
+      visibleObjectIds,
       lens,
       selectionId,
       hoverId,
+      setLens,
       selectObject: setSelectionId,
+      selectAnyModelObject: (type?: ModelObjectType) => {
+        const object = model?.objects.find(
+          (candidate) => candidate.lens === lens && (!type || candidate.meta.type === type),
+        );
+        if (!object) return null;
+        setSelectionId(object.id);
+        return object.id;
+      },
       clearSelection,
     };
     return () => {
@@ -45,11 +64,10 @@ export function useModelViewerDebugHook(model: BuildingModel | null): void {
     loadPhase,
     model?.objectCounts,
     model?.objects,
+    objectIds,
     selectionId,
+    setLens,
     setSelectionId,
+    visibleObjectIds,
   ]);
-}
-
-function emptyObjectCounts(): ModelObjectCounts {
-  return { faceMesh: 0, apertureMeshFace: 0 };
 }

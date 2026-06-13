@@ -1,9 +1,8 @@
 ---
 DATE: 2026-06-12
 TIME: -
-STATUS: Active — decisions accepted (Ed 2026-06-12); Phases 1–2
-  implemented 2026-06-12; Phase 3 next
-  (phases/phase-03-viewer-core.md)
+STATUS: Active — decisions accepted (Ed 2026-06-12); Phases 1–4
+  implemented; Phase 5 next (phases/phase-05-themes-legend.md)
 AUTHOR: Claude (for Ed)
 SCOPE: Router for the 3D Model Viewer feature (the Model tab) — scope,
   read order, and phase map.

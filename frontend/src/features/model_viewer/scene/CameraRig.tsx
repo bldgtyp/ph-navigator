@@ -2,6 +2,7 @@ import { GizmoHelper, GizmoViewport, OrbitControls } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import { useEffect, useRef, type ElementRef } from "react";
 import { Box3, Camera, MathUtils, PerspectiveCamera, Vector3 } from "three";
+import { boundsForPoints } from "../loaders/bounds";
 import type { BuildingModel } from "../loaders/building";
 import { useModelViewerStore } from "../store";
 
@@ -26,7 +27,7 @@ export function CameraRig({ model }: CameraRigProps) {
       return;
     }
     const target = cameraRequest.targetId ? model.metaById.get(cameraRequest.targetId) : null;
-    const bounds = target ? boundsForVertices(target.vertices) : model.bounds;
+    const bounds = target ? boundsForPoints(target.vertices) : model.bounds;
     fitCameraToBounds(camera, controlsRef.current, bounds, invalidate, 1.8);
   }, [camera, cameraRequest, invalidate, model.bounds, model.metaById]);
 
@@ -75,12 +76,4 @@ function fitCameraToBounds(
     controls.update();
   }
   invalidate();
-}
-
-function boundsForVertices(vertices: [number, number, number][]): Box3 {
-  const bounds = new Box3();
-  for (const vertex of vertices) {
-    bounds.expandByPoint(new Vector3(vertex[0], vertex[1], vertex[2]));
-  }
-  return bounds;
 }

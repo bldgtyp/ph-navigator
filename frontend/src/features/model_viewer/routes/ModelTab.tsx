@@ -7,18 +7,10 @@ import { FileChip } from "../components/FileChip";
 import { ModelEmptyState } from "../components/ModelEmptyState";
 import { ModelViewerStage } from "../components/ModelViewerStage";
 import { useHbjsonFilesQuery, useHbjsonUploadFlow } from "../hooks";
+import { parseModelViewerLens } from "../lib/lenses";
 import { useModelViewerStore } from "../store";
 
-/**
- * The Model tab (Phase 1 of the model-viewer feature): HBJSON file
- * management only. The viewer area renders the empty/placeholder state;
- * the 3D canvas arrives in Phase 3.
- *
- * Active file: `?file={id}` is the source of truth (US-VIEW-1 crit. 6 —
- * in-session only, deep-linkable); a missing or invalid id falls back to
- * the newest file without error. The Zustand store mirrors the resolved
- * id for the later viewer phases.
- */
+/** `?file=` and `&lens=` are the shareable viewer state. */
 export function ModelTab({ project }: { project: ProjectDetail }) {
   const isEditor = project.access_mode === "editor";
   const filesQuery = useHbjsonFilesQuery(project.id);
@@ -26,13 +18,32 @@ export function ModelTab({ project }: { project: ProjectDetail }) {
 
   const files = filesQuery.data ?? [];
   const requestedFileId = searchParams.get("file");
+  const requestedLens = parseModelViewerLens(searchParams.get("lens"));
   const activeFile = files.find((file) => file.id === requestedFileId) ?? files[0] ?? null;
   const activeFileId = activeFile?.id ?? null;
 
   const setActiveFileId = useModelViewerStore((state) => state.setActiveFileId);
+  const lens = useModelViewerStore((state) => state.lens);
+  const setLens = useModelViewerStore((state) => state.setLens);
   useEffect(() => {
     setActiveFileId(activeFileId);
   }, [activeFileId, setActiveFileId]);
+
+  useEffect(() => {
+    setLens(requestedLens);
+  }, [requestedLens, setLens]);
+
+  useEffect(() => {
+    setSearchParams(
+      (current) => {
+        if (current.get("lens") === lens) return current;
+        const next = new URLSearchParams(current);
+        next.set("lens", lens);
+        return next;
+      },
+      { replace: true },
+    );
+  }, [lens, setSearchParams]);
 
   const selectFile = (fileId: string) => {
     setSearchParams((current) => {
