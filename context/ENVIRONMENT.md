@@ -118,6 +118,12 @@ If the Playwright MCP browser profile is locked, use the Node REPL
 Playwright fallback with `frontend/node_modules` and an isolated browser
 profile. Keep the same `5173`/`8000` URLs and the same agent login.
 
+For Model Viewer-specific browser troubleshooting (in-app Browser
+clipboard/text-entry limits, restricted evaluate sandbox, HttpOnly auth
+cookie constraints, and debug-hook access), read
+`planning/features/model-viewer/AGENT_BROWSER_NOTES.md` before starting
+manual browser verification.
+
 ### Cloudflare R2
 
 Canonical PHN bucket plan:

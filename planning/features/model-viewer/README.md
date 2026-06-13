@@ -20,6 +20,7 @@ RELATED:
   - planning/features/model-viewer/UI_SPEC.md
   - planning/features/model-viewer/PLAN.md
   - planning/features/model-viewer/decisions.md
+  - planning/features/model-viewer/AGENT_BROWSER_NOTES.md
 ---
 
 # Model Viewer — Feature Folder
@@ -62,6 +63,9 @@ question there still applies. This folder adds:
    Ed 2026-06-12; none open).
 4. `PLAN.md` — phase map (6 phases, each PR-sized).
 5. `STATUS.md` — current state, next step, blockers.
+6. `AGENT_BROWSER_NOTES.md` — use before interactive browser
+   verification on the Model tab; records in-app Browser limitations
+   and the Playwright/Node fallbacks that worked in Phase 06.
 
 For fine-grained acceptance criteria (file management rules, schema
 DDL, per-type inspector fields, backend extraction details), go to

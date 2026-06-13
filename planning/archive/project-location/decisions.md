@@ -1,13 +1,13 @@
 ---
 DATE: 2026-06-12
 TIME: 17:19 EDT
-STATUS: Active — resolved decisions for the Project Location feature.
+STATUS: Complete — archived resolved decisions for the Project Location feature.
 AUTHOR: Claude (for Ed)
 SCOPE: Accepted/rejected design forks. Folded back into PRD.md and
   the phase docs in the same pass.
 RELATED:
-  - planning/features/project-location/PRD.md
-  - planning/features/project-location/README.md (item 3 = D-PL-1)
+  - planning/archive/project-location/PRD.md
+  - planning/archive/project-location/README.md (item 3 = D-PL-1)
   - planning/features/model-viewer/decisions.md D-07
 ---
 

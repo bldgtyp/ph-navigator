@@ -147,8 +147,8 @@ def test_primary_hot_water_tree_depth(primary_data: CombinedModelDataSchema) -> 
 
 
 def test_primary_sun_path_is_null(primary_data: CombinedModelDataSchema) -> None:
-    """D-07: sun-path generation is blocked on project-location; the key
-    exists and is null so the wire shape won't change when it lands."""
+    """D-07: sun-path generation is blocked on model-viewer wiring; the key
+    exists and is null so the wire shape won't change when wiring lands."""
     assert primary_data.sun_path is None
 
 

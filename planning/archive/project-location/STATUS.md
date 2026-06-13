@@ -1,19 +1,19 @@
 ---
 DATE: 2026-06-12
 TIME: 18:08 EDT
-STATUS: Active — Phase 3 complete
+STATUS: Complete — archived after Phase 3
 AUTHOR: Claude (for Ed)
 SCOPE: Status ledger for the Project Location feature.
 RELATED:
-  - planning/features/project-location/README.md
-  - planning/features/project-location/PRD.md
-  - planning/features/project-location/PLAN.md
-  - planning/features/project-location/decisions.md
+  - planning/archive/project-location/README.md
+  - planning/archive/project-location/PRD.md
+  - planning/archive/project-location/PLAN.md
+  - planning/archive/project-location/decisions.md
 ---
 
 # Project Location — Status
 
-`Active — Phase 3 complete.` Requirements stub (2026-06-12) expanded
+`Complete — archived after Phase 3.` Requirements stub (2026-06-12) expanded
 into a full PRD + 3-phase plan. The two open forks are resolved
 (decisions.md): **dedicated `project_location` table + module**
 (D-PL-1) and **sun-path wiring deferred to model-viewer** (D-PL-2).

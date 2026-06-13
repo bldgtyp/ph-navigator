@@ -8,8 +8,8 @@ SCOPE: Backend implementation of the `project_location` feature
   module: 1:1 table, models + validation, repository, service, REST
   GET/PUT, and the MCP read tool. SI-canonical + MCP from day one.
 RELATED:
-  - planning/features/project-location/PRD.md §3,§4,§5,§8,§9
-  - planning/features/project-location/decisions.md D-PL-1,D-PL-5
+  - planning/archive/project-location/PRD.md §3,§4,§5,§8,§9
+  - planning/archive/project-location/decisions.md D-PL-1,D-PL-5
   - backend/features/projects/ (the module to mirror)
   - backend/features/mcp/server.py + tools.py + helpers.py
   - context/CODING_STANDARDS.md (load before writing backend code)

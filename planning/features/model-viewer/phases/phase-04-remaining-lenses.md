@@ -27,8 +27,8 @@ Implemented in this session:
   `building`, `spaces`, `floor-areas`, `site-sun`, `ventilation`,
   `hot-water`.
 - Site & Sun kept disabled with tooltip "Coming with project
-  location"; Phase 6 remains responsible for project-location and
-  sun-path completion.
+  location"; Phase 6 remains responsible for sun-path completion
+  against project-location data.
 - Spaces, Floor Areas, Ventilation, and Hot Water render from the
   existing `/model_data` payload. Interior lenses include ghost
   building-edge context.
@@ -163,7 +163,7 @@ contract, so record them in STATUS.md on landing.
 Themes + theme menu + legend card (Phase 5 — Spaces/Floor-Areas
 default appearance this phase is their neutral shaded look; Floor
 Areas' Weighting-Factor default activates when themes land), Site &
-Sun completion + sun path (Phase 6 / project-location), Measure,
+Sun completion + sun path (Phase 6 against project-location data), Measure,
 keyboard `1–6` (Phase 6 keyboard map).
 
 ## 5. Verification gate

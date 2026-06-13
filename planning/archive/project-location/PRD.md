@@ -1,8 +1,8 @@
 ---
 DATE: 2026-06-12
 TIME: 17:19 EDT
-STATUS: Active — PRD ready for implementation. Phases 1–3 in
-  planning/features/project-location/phases/. Sun-path consumer
+STATUS: Complete — archived PRD. Phases 1–3 completed in
+  planning/archive/project-location/phases/. Sun-path consumer
   deferred to model-viewer (seam documented in §10).
 AUTHOR: Claude (for Ed)
 SCOPE: Product + behavior contract for the project-level Location
@@ -10,13 +10,13 @@ SCOPE: Product + behavior contract for the project-level Location
   (README item 3) and defines the REST + MCP surface, validation,
   units, and UI.
 RELATED:
-  - planning/features/project-location/README.md (router)
-  - planning/features/project-location/decisions.md (resolved forks)
-  - planning/features/project-location/PLAN.md (phase sequence)
+  - planning/archive/project-location/README.md (router)
+  - planning/archive/project-location/decisions.md (resolved forks)
+  - planning/archive/project-location/PLAN.md (phase sequence)
   - context/PRD.md §4 (public-read access), §6.1 (thin relational
     layer), §11.5 (SI canonical), §10.3 (MCP)
   - planning/features/model-viewer/decisions.md D-07 (sun-path
-    consumer), phases/phase-02 + phase-06 (the deferred wiring)
+    consumer), phases/phase-02 + phase-06 (pending wiring)
   - backend/features/assets/registry.py (asset-kind registry)
 ---
 

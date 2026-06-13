@@ -166,12 +166,13 @@ weighting-factor buckets per US-VIEW-5 crit. 2 (0.3 boundary fixed).
 
 Measure mode (snap, dimension lines, unit-aware labels, lifecycle);
 Site & Sun lens — building + shades + "Set project location" hint.
-**The sun path itself is blocked on the separate `project-location`
-feature** (`planning/features/project-location/`, OQ-1 resolution) —
-wire `Sunpath.from_location` against it when it ships; no Model-tab
-rework expected. Keyboard map (UI_SPEC §9); a11y pass; full e2e
-suite; Playwright-MCP walkthrough scripted as the acceptance run
-(PRD §8 incl. the "John test").
+**The sun path itself is blocked on model-viewer integration against
+the completed `project-location` feature**
+(`planning/archive/project-location/`, OQ-1 resolution) — wire
+`Sunpath.from_location` against it; no Model-tab rework expected.
+Keyboard map (UI_SPEC §9); a11y pass; full e2e suite;
+Playwright-MCP walkthrough scripted as the acceptance run (PRD §8
+incl. the "John test").
 
 **Verify:** measured distance matches known fixture dimensions in
 both unit systems; Site & Sun shows shades + the location hint
@@ -184,8 +185,8 @@ both unit systems; Site & Sun shows shades + the location hint
   are still being tuned; Phase 3 is the first visible 3D.
 - Phase 2 before 3 so the frontend never builds against a mock wire
   format.
-- Site & Sun deliberately last: its sun path depends on the
-  separate, currently-deferred `project-location` feature.
+- Site & Sun deliberately last: its sun path depends on wiring data
+  from the completed `project-location` feature.
 - Post-MVP queue (separate planning when reached): NEW-VIEW-2
   legend-as-filter (near-priority per Ed), NEW-VIEW-1 cross-check,
   clipping planes, sun scrubber.

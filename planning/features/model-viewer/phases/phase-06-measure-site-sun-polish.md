@@ -5,8 +5,9 @@ STATUS: In review — implementation started 2026-06-13. Final MVP
   phase; focused TypeScript/Vitest/e2e/browser checks green, simplify
   and docs-pass complete, make format + make ci green. John test
   requires Ed/John coordination.
-  The Site & Sun sun path itself remains blocked on the separate
-  `project-location` feature; the lens ships with a location hint.
+  The Site & Sun sun path itself remains blocked on model-viewer
+  wiring against the completed `project-location` feature; the lens
+  ships with a location hint.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff for Model Viewer Phase 6 — Measure mode,
   Site & Sun lens (building + shades + hint), keyboard map, a11y pass,
@@ -20,8 +21,8 @@ RELATED:
     semantics)
   - research/v1-3d-model-viewer-reference.md (§12.3 measure handler,
     §9.7 shades, §14.8 label-scoping bug, §16 checklist)
-  - planning/features/project-location/README.md (the blocking
-    feature's requirements stub)
+  - planning/archive/project-location/README.md (completed location
+    feature seam)
 ---
 
 # Phase 6 — Measure, Site & Sun, polish + acceptance
@@ -137,12 +138,12 @@ Phase 3 camera cluster, bottom-right) or `M`.
   grey (NOT selectable — Q-VIEW-3) + compass/north indicator if
   cheap, + a quiet in-canvas hint: *"Set project location to see
   the sun path."*
-- The hint is informational only (no link target exists yet). When
-  `project-location` ships, the sun path activates via backend
-  `Sunpath.from_location` and the `sun_path` wire key going
-  non-null — no Model-tab rework expected (D-07). Leave the
-  renderer keyed off `sun_path != null` with the dashed-line
-  styling stubbed for that integration.
+- The hint is informational only. When model-viewer wires the
+  completed `project-location` data, the sun path activates via
+  backend `Sunpath.from_location` and the `sun_path` wire key going
+  non-null — no Model-tab rework expected (D-07). Leave the renderer
+  keyed off `sun_path != null` with the dashed-line styling stubbed
+  for that integration.
 - Shade loader: backend ships one merged mesh per group (Phase 2);
   the loader is a thin mesh mapper. Enable the lens-bar segment if
   Phase 4 shipped it disabled.
@@ -189,11 +190,11 @@ Phase 3 camera cluster, bottom-right) or `M`.
 
 ## 4. Out of scope
 
-Sun-path rendering (blocked on `project-location`; the location
-*data* comes from that feature's Phase 1, but the wiring + rendering
-stay owned by model-viewer and are scheduled separately once
-project-location Phase 1 has landed — see project-location PRD §10 and
-decisions.md D-PL-2), sun scrubber, legend-as-filter
+Sun-path rendering (blocked on model-viewer wiring; the location
+*data* comes from the completed `project-location` feature, but the
+wiring + rendering stay owned by model-viewer — see
+planning/archive/project-location/PRD.md §10 and decisions.md D-PL-2),
+sun scrubber, legend-as-filter
 (NEW-VIEW-2, first post-MVP), clipping planes, HBJSON↔document
 cross-check, comments.
 

@@ -33,7 +33,7 @@ class CombinedModelDataSchema(BaseModel):
 
     Precomputed at upload and served as an immutable R2 artifact (D-15);
     the viewer makes exactly one data call. `sun_path` stays null until
-    the project-location feature lands (D-07).
+    model-viewer wires project-location data into extraction (D-07).
     """
 
     faces: list[FaceSchema]

@@ -1,16 +1,16 @@
 ---
 DATE: 2026-06-12
 TIME: 17:19 EDT
-STATUS: Active — implementation sequence for Phases 1–3.
+STATUS: Complete — archived implementation sequence for Phases 1–3.
 AUTHOR: Claude (for Ed)
 SCOPE: High-level phase map, dependency graph, and sequencing for the
   Project Location feature. Per-phase handoffs in phases/.
 RELATED:
-  - planning/features/project-location/PRD.md
-  - planning/features/project-location/decisions.md
-  - planning/features/project-location/phases/phase-01-location-backbone.md
-  - planning/features/project-location/phases/phase-02-location-ui.md
-  - planning/features/project-location/phases/phase-03-epw-linkage.md
+  - planning/archive/project-location/PRD.md
+  - planning/archive/project-location/decisions.md
+  - planning/archive/project-location/phases/phase-01-location-backbone.md
+  - planning/archive/project-location/phases/phase-02-location-ui.md
+  - planning/archive/project-location/phases/phase-03-epw-linkage.md
 ---
 
 # Project Location — Implementation Plan

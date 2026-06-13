@@ -7,8 +7,8 @@ SCOPE: Frontend "Location" section in Project Settings — editor edit /
   viewer read-only, wired to GET/PUT /location with SI↔display unit
   conversion and client-side validation.
 RELATED:
-  - planning/features/project-location/PRD.md §5,§7,§8,§9
-  - planning/features/project-location/phases/phase-01-location-backbone.md
+  - planning/archive/project-location/PRD.md §5,§7,§8,§9
+  - planning/archive/project-location/phases/phase-01-location-backbone.md
   - frontend/src/features/projects/components/ProjectSettingsModal.tsx
   - frontend/src/features/projects/{types,hooks,api}.ts
   - frontend/src/lib/units/ (unit helpers)

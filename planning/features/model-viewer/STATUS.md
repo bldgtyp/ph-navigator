@@ -75,9 +75,9 @@ the asset upload-intent flow already captures `content_hash_sha256`
 already a frontend dep, three/R3F are not (added in Phase 3).
 
 2026-06-12 (Ed review round 1): OQ-1 resolved — project location
-becomes its own deferred feature
-(`planning/features/project-location/`, requirements stub written);
-Site & Sun sun path blocked on it. OQ-2 resolved → D-13 (schema
+became its own feature, now complete and archived at
+`planning/archive/project-location/`; Site & Sun sun path remains
+blocked on model-viewer wiring against that data. OQ-2 resolved → D-13 (schema
 Phase 1, job Phase 2, Airtightness consumer marked FUTURE). OQ-4
 researched (LBT forum #11790 + honeybee-energy source) → D-12
 proposed: LBT-verbatim terminology, show U-Factor (films incl.) AND
@@ -271,7 +271,7 @@ Frontend only; Phase 2 already shipped the required backend DTOs:
   one active segment, labels collapsed below ~1100 px, disabled
   states derived from built model content. **Site & Sun decision: kept
   disabled in Phase 4** with tooltip "Coming with project location";
-  Phase 6 still owns project-location/sun-path completion.
+  Phase 6 still owns sun-path completion against project-location data.
 - Scene sets: the Phase 3 loader was extended into a full viewer-model
   builder for Building, Spaces, Floor Areas, Ventilation, and Hot
   Water. Interior lenses render low-opacity building-edge ghost
@@ -526,11 +526,11 @@ see ledger.
 
 ## Blockers
 
-None. Phase 6's sun path remains blocked on the deferred
-`project-location` feature (the lens itself still ships with a
-location hint) — it does not gate Phases 1–5. The scale fixture is
-in hand (round 3); the former "waiting on multifamily HBJSON"
-blocker is cleared.
+None. Phase 6's sun path remains blocked on model-viewer wiring
+against the completed `project-location` feature (the lens itself
+still ships with a location hint) — it does not gate Phases 1–5. The
+scale fixture is in hand (round 3); the former "waiting on
+multifamily HBJSON" blocker is cleared.
 
 ## Verification ledger
 

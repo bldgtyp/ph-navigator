@@ -87,10 +87,10 @@ frontend loaders key off these names) — except:
   `{air_boundaries_skipped, faces_extracted, spaces_extracted,
   shade_groups_extracted, extraction_warnings: [str]}`.
 - `sun_path` key exists and is **always `null` in this phase** —
-  D-07/OQ-1: sun-path generation is blocked on the deferred
-  `project-location` feature. Keep the field nullable so the wire
-  shape doesn't change when it lands. Do not port V1's
-  `services/epw.py`.
+  D-07/OQ-1: sun-path generation is blocked on later model-viewer
+  wiring against the completed `project-location` feature. Keep the
+  field nullable so the wire shape doesn't change when that wiring
+  lands. Do not port V1's `services/epw.py`.
 
 ## 5. Extraction service
 

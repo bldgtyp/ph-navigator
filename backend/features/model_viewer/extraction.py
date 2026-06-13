@@ -111,7 +111,7 @@ def extract_model_data(model: Model) -> CombinedModelDataSchema:
     """Build the full viewer payload from a parsed, Meters-normalized model.
 
     `sun_path` is always None in this phase — generation is blocked on
-    the deferred project-location feature (D-07/OQ-1).
+    model-viewer wiring against project-location data (D-07/OQ-1).
     """
     summary = LoadSummarySchema()
     faces = _faces_from_model(model, summary)
