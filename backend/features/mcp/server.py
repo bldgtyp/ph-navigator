@@ -47,6 +47,7 @@ from features.mcp.tools import (
     tool_duplicate_custom_field,
     tool_edit_custom_field_options,
     tool_get_asset_url,
+    tool_get_climate_location,
     tool_get_document,
     tool_get_hbjson_file_download_url,
     tool_get_hbjson_model_data,
@@ -57,6 +58,7 @@ from features.mcp.tools import (
     tool_get_table,
     tool_hard_delete_project,
     tool_list_assets,
+    tool_list_climate_datasets,
     tool_list_envelope_assemblies,
     tool_list_hbjson_faces,
     tool_list_hbjson_files,
@@ -76,6 +78,7 @@ from features.mcp.tools import (
     tool_report_missing_envelope_evidence,
     tool_resolve_asset_urls,
     tool_restore_project,
+    tool_search_climate_locations,
     tool_set_custom_field_description,
     tool_set_custom_field_formula,
     tool_start_bulk_download,
@@ -128,6 +131,41 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
     def get_project_sun_path(project_id: str, ctx: Context) -> dict[str, object] | None:
         """Return the project's sun-path + compass diagram (origin-centered, unit radius), or null when unset."""
         return tool_get_project_sun_path(project_id, ctx, allow_env_token=allow_env_token)
+
+    # App-wide climate reference datasets (Phius/PHI). These require a
+    # valid token but gate on no single project — the datasets are shared.
+
+    @mcp.tool()
+    def list_climate_datasets(ctx: Context) -> list[dict[str, object]]:
+        """List the available climate reference datasets (provider/version)."""
+        return tool_list_climate_datasets(ctx, allow_env_token=allow_env_token)
+
+    @mcp.tool()
+    def search_climate_locations(
+        dataset_id: str,
+        ctx: Context,
+        country: str | None = None,
+        region: str | None = None,
+        near: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> dict[str, object]:
+        """Search a dataset's locations by country/region, or nearest to `lat,long`."""
+        return tool_search_climate_locations(
+            dataset_id,
+            ctx,
+            allow_env_token=allow_env_token,
+            country=country,
+            region=region,
+            near=near,
+            limit=limit,
+            offset=offset,
+        )
+
+    @mcp.tool()
+    def get_climate_location(location_id: str, ctx: Context) -> dict[str, object] | None:
+        """Return one climate-dataset location's standardized record, or null if unknown."""
+        return tool_get_climate_location(location_id, ctx, allow_env_token=allow_env_token)
 
     @mcp.tool()
     def delete_project(project_id: str, ctx: Context) -> dict[str, object]:
