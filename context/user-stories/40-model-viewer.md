@@ -967,8 +967,8 @@ None outstanding.
    the Ducts viz state is active (US-VIEW-3). Supply
    ducts always use the supply-blue `LineMaterial`;
    exhaust ducts always use the exhaust-red `LineMaterial`.
-   No legend in V2 v1 (just the implicit color convention);
-   v1.1+ could add a one-time visual legend.
+   V2 shows this as an always-visible mini-key in the
+   legend card (implemented in Model Viewer Phase 5).
 
 4. **`materialStore` contract** (V1 ref §14.5, shared
    with US-VIEW-4 Select):

@@ -44,6 +44,14 @@ export type ModelViewerLens =
   | "site-sun"
   | "ventilation"
   | "hot-water";
+export type ModelViewerTheme =
+  | "shaded"
+  | "surface-type"
+  | "boundary"
+  | "construction"
+  | "window-construction"
+  | "ventilation-airflow"
+  | "weighting-factor";
 
 export type Mesh3D = {
   vertices: [number, number, number][];
@@ -332,6 +340,19 @@ export type ModelObjectMeta =
   | DuctSegmentLineMeta
   | PipeSegmentLineMeta;
 
+export type ModelViewerLegendRow = {
+  id: string;
+  label: string;
+  color: string;
+  count: number;
+};
+
+export type ModelViewerLegend = {
+  title: string;
+  rows: ModelViewerLegendRow[];
+  kind: "theme" | "mini-key";
+} | null;
+
 export type ModelViewerDebugState = {
   loadPhase: ViewerLoadPhase;
   errorKind: ModelViewerErrorKind | null;
@@ -340,9 +361,13 @@ export type ModelViewerDebugState = {
   objectIds: string[];
   visibleObjectIds: string[];
   lens: ModelViewerLens;
+  theme: ModelViewerTheme;
+  legend: ModelViewerLegend;
   selectionId: string | null;
   hoverId: string | null;
   setLens: (lens: ModelViewerLens) => void;
+  setTheme: (theme: ModelViewerTheme) => void;
+  themeColorForObject: (objectId: string) => string | null;
   selectObject: (objectId: string | null) => void;
   selectAnyModelObject: (type?: ModelObjectType) => string | null;
   clearSelection: () => void;

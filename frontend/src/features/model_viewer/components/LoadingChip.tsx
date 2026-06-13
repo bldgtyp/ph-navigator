@@ -1,4 +1,5 @@
 import { AlertTriangle, LoaderCircle, RotateCw } from "lucide-react";
+import { useEffect, useState } from "react";
 import type { LoadSummary, ModelViewerErrorKind, ViewerLoadPhase } from "../types";
 
 type LoadingChipProps = {
@@ -16,8 +17,20 @@ export function LoadingChip({
   loadSummary,
   onRetry,
 }: LoadingChipProps) {
+  const [showReadySummary, setShowReadySummary] = useState(false);
+
+  useEffect(() => {
+    if (phase !== "ready" || !loadSummary) {
+      setShowReadySummary(false);
+      return;
+    }
+    setShowReadySummary(true);
+    const timeout = window.setTimeout(() => setShowReadySummary(false), 2400);
+    return () => window.clearTimeout(timeout);
+  }, [loadSummary, phase]);
+
   if (phase === "idle" || phase === "ready") {
-    if (!loadSummary) return null;
+    if (!loadSummary || !showReadySummary) return null;
     return (
       <div className="model-loading-chip" role="status">
         {summaryText(loadSummary)}
