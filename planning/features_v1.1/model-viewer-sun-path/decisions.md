@@ -1,0 +1,128 @@
+---
+DATE: 2026-06-13
+TIME: -
+STATUS: Settled — D-SP-1 accepted (Ed 2026-06-13). Inherited items
+  restated for one-stop reading. No open decisions.
+AUTHOR: Claude (for Ed)
+SCOPE: Decision ledger for the Model Viewer sun-path feature.
+RELATED:
+  - PRD.md
+  - planning/archive/model-viewer/decisions.md (D-07, D-15)
+  - planning/archive/project-location/PRD.md §10, decisions.md D-PL-2/D-PL-4
+---
+
+# Sun Path — Decisions
+
+## Inherited (settled; restated)
+
+- **D-07 (model-viewer):** sun path derives from project
+  latitude/longitude/true-north, NOT an EPW. No EPW upload needed for
+  the diagram (the project-location feature retains the EPW for other
+  consumers, but the sun path needs only the location floats).
+- **D-PL-2 (project-location):** the location *data* ships from
+  `project_location`; the sun-path *wiring* (reading that data into a
+  rendered diagram) is **owned here**.
+- **D-PL-4 (project-location):** `true_north_deg` is stored in the
+  ladybug/honeybee convention — counterclockwise degrees from +Y,
+  90°=West, 270°=East, validated `[0, 360)`. The exact sign passed to
+  ladybug's `Sunpath` is re-verified at implementation against a
+  known-orientation fixture (a wrong sign silently rotates the
+  diagram). See PRD §6 and phase-01 §4.
+- **D-15 (model-viewer):** `/model_data` is a precomputed, immutable,
+  forever-cached (`max-age=31536000, immutable`) R2 artifact, parsed
+  once at upload. This is the constraint that forces D-SP-1.
+
+## Accepted (Ed 2026-06-13)
+
+### D-SP-1 · Serve the sun path from a separate, location-reactive endpoint — NOT baked into the `/model_data` artifact
+
+**Accepted, Ed 2026-06-13:** "the 'location' is a project-level variable,
+not an HBJSON-level variable. It should be settable by the user before
+or after (and editable anytime) the HBJSON files are uploaded… it
+should be decoupled to a separate project-scoped endpoint and store."
+The setter UI already exists — `project_location` shipped the Location
+section in Project Settings (`ProjectLocationSettingsSection.tsx` +
+`location-form.ts`), so this feature only consumes the data.
+
+The project-location seam (PRD §10) sketched populating the existing
+`CombinedModelData.sun_path` key inside model-viewer extraction. That
+made sense before D-15 hardened `/model_data` into an immutable,
+upload-time, forever-cached artifact. Two facts now collide:
+
+1. **The geometry artifact is immutable and computed once at upload.**
+   It only re-extracts when `extraction_status='pending'` or the
+   artifact is missing; a `'success'` row is served from R2 forever
+   with `Cache-Control: immutable`.
+2. **Location is set/edited independently of the upload** — in Project
+   Settings, very often *after* the HBJSON was uploaded (upload first,
+   set lat/long later is the normal order).
+
+If `sun_path` is baked into the artifact at upload, a project whose
+location is set later gets a `sun_path: null` artifact that never
+updates, and the immutable cache guarantees it never will.
+
+**Decision:** keep the geometry artifact a pure function of the HBJSON
+bytes (`sun_path` stays `null` there — backward-compatible). Compute
+and serve the sun path from a **new, project-scoped, location-reactive
+endpoint** that reads current `project_location` on every request. The
+sun path is purely a function of `(latitude, longitude, true_north,
+time_zone)` and is microseconds-to-milliseconds of ladybug math with
+**no HBJSON parse** — so a per-request compute is cheap and always
+fresh.
+
+| | A — Decoupled endpoint (recommended) | B — Bake into artifact + invalidate |
+|---|---|---|
+| Freshness on location edit | Instant (read on request) | Needs cross-feature invalidation |
+| Cost on location edit | ~0 (no parse) | Re-parse every HBJSON in project (≤52 MB, ~7 s each) |
+| Coupling | None (sun-path endpoint reads location repo) | `project_location` PUT must reset every `project_hbjson_files` row + delete derived R2 objects |
+| Frontend cache | New query, normal lifecycle | Must bust `staleTime: Infinity` model-data query on location change |
+| Artifact immutability | Preserved (D-15 intact) | Broken — artifact now depends on mutable location |
+| Frontend work | One extra query + position diagram to model bounds | Reads existing `combinedData.sun_path` |
+
+Option B is more code, worse performance, and breaks the D-15
+immutability invariant for a diagram that depends on two floats.
+Option A is the clean separation.
+
+**Endpoint shape (Option A):**
+`GET /api/v1/projects/{project_id}/sun-path` →
+`SunPathAndCompassDTOSchema | null` (null when no location is set, or
+lat/long are absent). Project-scoped, **not** file-scoped: the sun path
+does not depend on which HBJSON is active. Lives in the model_viewer
+routes module for cohesion. Cache: not the immutable treatment — a
+short private cache or an ETag derived from a hash of the location
+inputs, so a location edit is reflected on the next view.
+
+**Geometry sizing (the one thing that touches the model):** the
+analemma/arc/compass geometry must be scaled and centered to the
+building so it frames the model rather than sitting at a fixed V1
+radius (V1 hardcoded radius 40 because V1 models were near that scale;
+the 52 MB multifamily fixture is not). To keep the endpoint
+location-only, the **backend generates at a unit radius centered at
+the origin** and the **frontend uniformly scales + translates** it to
+the model's bounding-sphere radius and center — exactly how the MVP
+already positions the north-marker compass from `model.bounds`.
+Uniform scale + translate preserves the true-north rotation. No model
+bounds cross the endpoint.
+
+**Why both rows of the wire schema already exist:** Phase 2 of the MVP
+shipped `SunPathAndCompassDTOSchema` (and its `SunPathSchema` /
+`CompassSchema` children) precisely so this wiring would not change the
+wire shape. This decision changes *where* that DTO is served, not its
+shape.
+
+**If Ed prefers B instead:** Phase 1 changes — extraction populates
+`sun_path` using an in-process location read, and `project_location`'s
+`PUT` (and EPW apply) must enqueue a model-data invalidation for the
+project's HBJSON files, with a matching frontend query invalidation.
+The plan flags every spot this diverges.
+
+## Open questions
+
+- **OQ-SP-1 · Compass ticks/arcs parity.** The MVP `SiteSunLayer`
+  renders only the dashed hourly analemmas, and only from the (always
+  null) `sun_path.sunpath` branch. Full V1 parity also draws
+  `monthly_day_arc3d` and the compass (`all_boundary_circles`,
+  `major_azimuth_ticks`, `minor_azimuth_ticks`). Phase 1 completes the
+  renderer for arcs + compass; confirm the frontend `SunPathAndCompass`
+  DTO type carries the `compass` branch (the backend DTO does). Not a
+  fork — just scope tracked here so it is not lost.

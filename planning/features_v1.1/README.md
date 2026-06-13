@@ -27,5 +27,13 @@ planning/features_v1.1/<feature-slug>/
 
 | Feature | Status | Current next step |
 |---|---|---|
-| [Model Viewer post-MVP](model-viewer-post-mvp/README.md) | Deferred | Reopen individual candidates after v1; near-priority item is legend-as-filter, plus sun-path wiring and HBJSON/document cross-check. |
+| [Model Viewer post-MVP](model-viewer-post-mvp/README.md) | Active (router) | Umbrella router classifying the deferred Model Viewer candidates into the feature folders below. |
+| ⮑ [Model Viewer — Sun Path](model-viewer-sun-path/README.md) | Active (planned) | Ratify decision D-SP-1, then implement Phase 1 (static annual sun path from project-location data). Scrubber is a gated Phase 2. |
+| ⮑ [Model Viewer — Legend as Filter](model-viewer-legend-filter/README.md) | Active (planned) | Ready to build — Ed-flagged near-priority; frontend-only, no open decisions. |
+| ⮑ [Model Viewer — Clipping Planes](model-viewer-clipping-planes/README.md) | Deferred (gated) | Build when a named sectioned-inspection workflow exists; plan is ready. |
 | [User-defined attachment fields](user-defined-attachment-fields/README.md) | Deferred | Revisit after v1 ships and at least two real project workflows need ad hoc attachment columns. |
+
+Model Viewer Tier 3 candidates (HBJSON↔document cross-check, comments/
+annotations, John test) stay scoped inside
+[model-viewer-post-mvp](model-viewer-post-mvp/PRD.md) until their gates
+open — they are not yet broken into feature folders.
