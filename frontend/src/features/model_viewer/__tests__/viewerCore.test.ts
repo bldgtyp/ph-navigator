@@ -46,7 +46,7 @@ describe("buildBuildingModel", () => {
       building: true,
       spaces: true,
       "floor-areas": true,
-      "site-sun": false,
+      "site-sun": true,
       ventilation: true,
       "hot-water": true,
     });
@@ -60,6 +60,31 @@ describe("buildBuildingModel", () => {
       pipe_kind: "recirc",
       diameter_mm: 19,
     });
+  });
+
+  test("builds Site & Sun shade meshes without adding selectable objects", () => {
+    const model = buildBuildingModel(sampleSiteSunData());
+
+    expect(model.shadeObjects).toHaveLength(2);
+    expect(model.shadeObjects[0]).toMatchObject({
+      id: "shade:shade-1a",
+      displayName: "South Overhangs",
+    });
+    expect(model.shadeObjects[1]).toMatchObject({
+      id: "shade:shade-1b",
+      displayName: "South Side Fin",
+    });
+    expect(model.objectCounts).toEqual({
+      faceMesh: 1,
+      apertureMeshFace: 1,
+      spaceGroup: 0,
+      spaceFloorSegmentMeshFace: 0,
+      ductSegmentLine: 0,
+      pipeSegmentLine: 0,
+    });
+    expect(model.lensAvailability["site-sun"]).toBe(true);
+    expect(model.metaById.has("shade:shade-1a")).toBe(false);
+    expect(model.metaById.has("shade:shade-1b")).toBe(false);
   });
 });
 
@@ -117,9 +142,7 @@ describe("viewer core helpers", () => {
     const model = buildBuildingModel(sampleModelData());
     expect(parseModelViewerLens("ventilation")).toBe("ventilation");
     expect(parseModelViewerLens("bad-token")).toBe("building");
-    expect(disabledLensReason("site-sun", model.lensAvailability)).toBe(
-      "Coming with project location",
-    );
+    expect(disabledLensReason("site-sun", model.lensAvailability)).toBeNull();
     expect(disabledLensReason("hot-water", model.lensAvailability)).toBe(
       "No hot-water piping in this model",
     );
@@ -347,6 +370,41 @@ function samplePhaseFourData(): CombinedModelData {
     load_summary: {
       ...base.load_summary,
       spaces_extracted: 1,
+    },
+  };
+}
+
+function sampleSiteSunData(): CombinedModelData {
+  return {
+    ...sampleModelData(),
+    shading_elements: [
+      {
+        shades: [
+          {
+            type: "Shade",
+            identifier: "shade-1a",
+            user_data: null,
+            display_name: "South Overhangs",
+            is_detached: true,
+            geometry: rectFace(0, -1, 3, 2, 1, 0),
+          },
+          {
+            type: "Shade",
+            identifier: "shade-1b",
+            user_data: null,
+            display_name: "South Side Fin",
+            is_detached: true,
+            geometry: rectFace(2, -1, 0, 1, 0, 3),
+          },
+        ],
+      },
+    ],
+    load_summary: {
+      air_boundaries_skipped: 0,
+      faces_extracted: 1,
+      spaces_extracted: 0,
+      shade_groups_extracted: 1,
+      extraction_warnings: [],
     },
   };
 }

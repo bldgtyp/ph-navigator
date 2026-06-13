@@ -42,7 +42,8 @@ test("switches model lenses, selects lens objects, and honors lens deep links", 
   await selectAnyModelObject(page, "pipeSegmentLine");
   await expect(page.getByLabel("Selected model element")).toContainText("Water Temp");
 
-  await expect(page.getByRole("button", { name: "Site & Sun" })).toBeDisabled();
+  await switchLens(page, "Site & Sun");
+  await expect(page.getByText("Set project location to see the sun path.")).toBeVisible();
 
   const fileId = new URL(page.url()).searchParams.get("file");
   expect(fileId).toBeTruthy();

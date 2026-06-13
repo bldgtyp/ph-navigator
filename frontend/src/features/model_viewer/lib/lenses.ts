@@ -34,3 +34,7 @@ export function disabledLensReason(
   if (availability[lens]) return null;
   return MODEL_VIEWER_LENSES.find((definition) => definition.id === lens)?.emptyTooltip ?? null;
 }
+
+export function labelForLens(lens: ModelViewerLens): string {
+  return MODEL_VIEWER_LENSES.find((definition) => definition.id === lens)?.label ?? lens;
+}

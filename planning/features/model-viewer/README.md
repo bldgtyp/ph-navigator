@@ -2,7 +2,8 @@
 DATE: 2026-06-12
 TIME: -
 STATUS: Active — decisions accepted (Ed 2026-06-12); Phases 1–5
-  implemented; Phase 6 next (phases/phase-06-measure-site-sun-polish.md)
+  implemented; Phase 6 in review
+  (phases/phase-06-measure-site-sun-polish.md)
 AUTHOR: Claude (for Ed)
 SCOPE: Router for the 3D Model Viewer feature (the Model tab) — scope,
   read order, and phase map.

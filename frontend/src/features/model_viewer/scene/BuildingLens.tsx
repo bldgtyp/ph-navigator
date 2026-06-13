@@ -11,6 +11,7 @@ import {
   VIEWER_GHOST_EDGE_COLOR,
   VIEWER_HIGHLIGHT_FALLBACK,
   VIEWER_LINE_HOVER_COLOR,
+  VIEWER_SHADE_COLOR,
   VIEWER_SPACE_EDGE_COLOR,
 } from "../lib/colors";
 import { isClickWithinDragTolerance, type PointerPoint } from "../lib/selection";
@@ -18,6 +19,9 @@ import { colorForThemedObject, isThemeAllowedForLens, lineStyleDefinition } from
 import type { BuildingModel, BuildingRenderable, LineRenderable } from "../loaders/building";
 import { useModelViewerStore } from "../store";
 import type { ModelObjectMeta, ModelObjectType, ModelViewerLens, ModelViewerTheme } from "../types";
+import { MeasureOverlay } from "./MeasureOverlay";
+import { SiteSunLayer } from "./SiteSunLayer";
+import { useOpacityMaterial, type ViewerMeshMaterial } from "./useOpacityMaterial";
 
 type BuildingLensProps = {
   model: BuildingModel;
@@ -26,11 +30,11 @@ type BuildingLensProps = {
 };
 
 const LENS_FADE_SECONDS = 0.18;
-type MeshMaterial = MeshStandardMaterial | MeshBasicMaterial;
 
 export function BuildingLens({ model, materials, ghostMaterial }: BuildingLensProps) {
   const lens = useModelViewerStore((state) => state.lens);
   const theme = useModelViewerStore((state) => state.themesByLens[state.lens]);
+  const measureActive = useModelViewerStore((state) => state.measureActive);
   const layers = useLensFade(lens);
   const objectsByLens = useMemo(() => groupObjectsByLens(model.objects), [model.objects]);
   const themeMaterials = useMemo(
@@ -44,6 +48,17 @@ export function BuildingLens({ model, materials, ghostMaterial }: BuildingLensPr
       }
     };
   }, [themeMaterials]);
+  const shadeMaterial = useMemo(
+    () =>
+      new MeshBasicMaterial({
+        color: VIEWER_SHADE_COLOR,
+        side: DoubleSide,
+        transparent: true,
+        opacity: 0.48,
+      }),
+    [],
+  );
+  useEffect(() => () => shadeMaterial.dispose(), [shadeMaterial]);
   useLineRaycastTolerance();
   const showGhost = lens !== "building" && lens !== "site-sun";
 
@@ -56,30 +71,43 @@ export function BuildingLens({ model, materials, ghostMaterial }: BuildingLensPr
         const activeObjects = objectsByLens.get(layer.lens) ?? [];
         return (
           <group key={layer.lens} name={`${layer.lens}-lens`}>
-            {activeObjects.map((object) =>
-              object.kind === "mesh" ? (
-                <MeshObject
-                  key={object.id}
-                  object={object}
-                  materials={materials}
-                  themeMaterials={themeMaterials}
-                  lens={lens}
-                  theme={theme}
-                  opacity={layer.opacity}
-                  interactive={layer.lens === lens}
-                />
-              ) : (
-                <LineObject
-                  key={object.id}
-                  object={object}
-                  opacity={layer.opacity}
-                  interactive={layer.lens === lens}
-                />
-              ),
+            {layer.lens === "site-sun" ? (
+              <SiteSunLayer
+                model={model}
+                materials={materials}
+                themeMaterials={themeMaterials}
+                theme={theme}
+                opacity={layer.opacity}
+                interactive={layer.lens === lens && !measureActive}
+                shadeMaterial={shadeMaterial}
+              />
+            ) : (
+              activeObjects.map((object) =>
+                object.kind === "mesh" ? (
+                  <MeshObject
+                    key={object.id}
+                    object={object}
+                    materials={materials}
+                    themeMaterials={themeMaterials}
+                    lens={lens}
+                    theme={theme}
+                    opacity={layer.opacity}
+                    interactive={layer.lens === lens && !measureActive}
+                  />
+                ) : (
+                  <LineObject
+                    key={object.id}
+                    object={object}
+                    opacity={layer.opacity}
+                    interactive={layer.lens === lens && !measureActive}
+                  />
+                ),
+              )
             )}
           </group>
         );
       })}
+      <MeasureOverlay model={model} />
     </>
   );
 }
@@ -156,7 +184,7 @@ function GhostBuildingContext({
   );
 }
 
-const MeshObject = memo(function MeshObject({
+export const MeshObject = memo(function MeshObject({
   object,
   materials,
   themeMaterials,
@@ -245,28 +273,6 @@ const LineObject = memo(function LineObject({
   );
 });
 
-function useOpacityMaterial(material: MeshMaterial, opacity: number): MeshMaterial {
-  const faded = useMemo(() => {
-    const clone = material.clone();
-    clone.transparent = true;
-    return clone;
-  }, [material]);
-
-  useEffect(() => {
-    faded.opacity = material.opacity * opacity;
-    faded.depthWrite = opacity >= 0.98;
-    faded.needsUpdate = true;
-  }, [faded, material.opacity, opacity]);
-
-  useEffect(() => {
-    return () => {
-      faded.dispose();
-    };
-  }, [faded]);
-
-  return faded;
-}
-
 function useLineRaycastTolerance(): void {
   const { raycaster } = useThree();
   useEffect(() => {
@@ -287,7 +293,7 @@ function materialForObject(
   isSelected: boolean,
   materials: Map<string, MeshStandardMaterial>,
   themeMaterials: Map<string, MeshBasicMaterial>,
-): MeshMaterial {
+): ViewerMeshMaterial {
   const type = meta.type;
   const state = isSelected ? "selected" : isHovered ? "hovered" : "base";
   if (state === "base") {

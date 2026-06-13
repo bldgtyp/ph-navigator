@@ -270,6 +270,58 @@
   height: 100%;
 }
 
+.model-canvas-wrap.measuring .model-viewer-canvas {
+  cursor: crosshair;
+}
+
+.model-measure-hint,
+.model-site-sun-hint {
+  position: absolute;
+  left: 50%;
+  z-index: var(--z-base-elevated);
+  max-width: min(420px, calc(100% - 180px));
+  padding: 7px 11px;
+  border: 1px solid var(--border-card);
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--bg-card) 92%, transparent);
+  box-shadow: 0 3px 14px rgb(0 0 0 / 10%);
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  line-height: 1.25;
+  text-align: center;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.model-measure-hint {
+  bottom: 18px;
+}
+
+.model-site-sun-hint {
+  bottom: 18px;
+  color: var(--text-muted);
+}
+
+.model-measure-label {
+  padding: 4px 7px;
+  border: 1px solid var(--border-card);
+  border-radius: 999px;
+  background: var(--bg-card);
+  box-shadow: 0 2px 10px rgb(0 0 0 / 16%);
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.model-site-compass-label {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+
 .model-loading-chip {
   position: absolute;
   top: 58px;
@@ -468,6 +520,12 @@
   width: 34px;
   height: 34px;
   padding: 0;
+}
+
+.model-camera-cluster button.active {
+  border-color: color-mix(in oklab, var(--highlight) 48%, var(--border-card));
+  background: color-mix(in oklab, var(--highlight-light) 34%, var(--bg-card));
+  color: var(--highlight);
 }
 
 .model-legend-card,
