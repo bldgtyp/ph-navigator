@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-13
 TIME: 09:21 EDT
-STATUS: Active
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Backend pilot for enabling custom-field schema mutations on Pumps.
 RELATED: planning/features/equipment-custom-fields/README.md; planning/features/equipment-custom-fields/PRD.md; planning/features/equipment-custom-fields/PLAN.md; backend/features/project_document/tables/pumps.py; backend/features/project_document/tables/rooms.py
@@ -15,9 +15,9 @@ Make `pumps` the first non-Rooms Equipment table that actually supports
 user-defined custom-field schema mutations through the generic
 `custom-fields:mutate` endpoint.
 
-Pumps is the right pilot because it already has a nearly complete
-`pumps_field_registry`, but deliberately rejects schema mutation and
-publishes `field_registry=None`. It also exercises the two hazards the
+Pumps is the right pilot because it already had a nearly complete
+`pumps_field_registry`, but deliberately rejected schema mutation and
+published `field_registry=None`. It also exercises the two hazards the
 rollout must handle later: attachment core fields and inverse-link
 display columns.
 
@@ -35,26 +35,28 @@ display columns.
   - row `custom_links` accessors
   - built-in option-list helpers
   - formula field readers
-- `pumps_field_registry.apply_schema_mutation` currently points at
-  `_reject_pumps_schema_mutation`.
-- `pumps_contract.field_registry` is currently `None`.
+- `pumps_field_registry.apply_schema_mutation` now points at
+  `_apply_pumps_schema_mutation`.
+- `pumps_field_registry.validate_schema_mutation` now points at
+  `_validate_pumps_schema_mutation`.
+- `pumps_contract.field_registry` now publishes `pumps_field_registry`.
 
 ## Implementation Tasks
 
-1. Replace the Pumps rejection helper with Rooms-style apply / validate
+- [x] Replace the Pumps rejection helper with Rooms-style apply / validate
    wrappers:
    - `_apply_pumps_schema_mutation(...)`
    - `_validate_pumps_schema_mutation(...)`
    - lazy-import `apply_schema_mutation` and `validate_schema_mutation`
      from `features.project_document.schema_mutations`
    - pass `capability=pumps_field_registry`
-2. Set `pumps_field_registry.apply_schema_mutation` and
+- [x] Set `pumps_field_registry.apply_schema_mutation` and
    `validate_schema_mutation` to the real wrappers.
-3. Publish `pumps_field_registry` on `pumps_contract.field_registry`.
-4. Confirm Pumps built-in physical fields stay built-in and locked by
+- [x] Publish `pumps_field_registry` on `pumps_contract.field_registry`.
+- [x] Confirm Pumps built-in physical fields stay built-in and locked by
    the existing frontend overlays. Do not add inverse-link columns to
    backend `field_defs`; they are computed display columns.
-5. Add focused backend tests for:
+- [x] Add focused backend tests for:
    - `addField` on `pumps` succeeds and returns an updated slice with a
      new `cf_*` field in `field_defs`
    - duplicate display-name rejection still applies across built-in and
@@ -63,9 +65,24 @@ display columns.
    - custom value writes to the new Pumps field survive table replace /
      refetch paths, if a convenient fixture already exists
    - attachment field behavior is unchanged for `datasheet_asset_ids`
-6. Run only focused backend tests during the phase. Leave repo-wide
+- [x] Run only focused backend tests during the phase. Leave repo-wide
    gates for Phase 04 unless the implementation touches shared mutation
    behavior.
+
+## Completion Evidence
+
+- `backend/features/project_document/tables/pumps.py` now delegates
+  schema mutations through `apply_schema_mutation` /
+  `validate_schema_mutation` with `capability=pumps_field_registry`.
+- `pumps_contract.field_registry` now publishes `pumps_field_registry`.
+- `backend/tests/test_project_document_pumps.py` covers registry
+  exposure, `addField` round trip, built-in duplicate-name rejection,
+  path/payload table mismatch rejection, and custom value plus
+  `datasheet_asset_ids` replace/refetch behavior.
+- `cd backend && uv run ruff check tests/test_project_document_pumps.py features/project_document/tables/pumps.py` - passed.
+- `cd backend && uv run pytest tests/test_project_document_pumps.py` - passed, 8 tests.
+- `$simplify` pass completed; only stale module-docstring wording was
+  flagged and fixed.
 
 ## Files To Inspect First
 
@@ -78,22 +95,23 @@ display columns.
 
 ## Acceptance Criteria
 
-- `POST /draft/tables/pumps/custom-fields:mutate` no longer returns
+- [x] `POST /draft/tables/pumps/custom-fields:mutate` no longer returns
   `custom_field_unsupported_table` for valid editor requests.
-- A valid `addField` mutation appends or inserts a custom Pumps
+- [x] A valid `addField` mutation appends or inserts a custom Pumps
   `TableFieldDef` without changing PHN-defined core fields.
-- Existing Pumps replace, option-list, attachment, and inverse-link
+- [x] Existing Pumps replace, option-list, attachment, and inverse-link
   read behavior remains unchanged.
-- Focused backend tests pass.
+- [x] Focused backend tests pass.
 
 ## Handoff Notes
 
-Do not wire the Pumps frontend add-field button in this phase unless
-the backend pilot is already green. Keeping the UI disabled until the
-backend accepts schema mutations prevents a visible submit failure.
+Pumps backend custom-field mutation support is green, but frontend
+add-field button wiring remains intentionally out of this phase. Phase
+02 should roll backend support across the remaining target tables
+before Phase 03 exposes the UI affordance.
 
 ## Stop Condition
 
-Stop after the Pumps backend pilot is implemented and focused backend
-tests pass. Update `STATUS.md` with test commands and results before
-starting Phase 02.
+Phase 01 stopped after the Pumps backend pilot was implemented and
+focused backend tests passed. `STATUS.md` records the test commands and
+results; Phase 02 has not started.

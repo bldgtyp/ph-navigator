@@ -1,14 +1,13 @@
 """Pumps table contract for the project document registry (v3).
 
-Phase 1b: Pumps gains a persisted `field_defs` array (storage-only —
-the full schema-mutation capability is deferred to a follow-up phase
-that ships record_id and the catalog rollout). Mutable-type built-in
-pump values (`tag`, `use`, `manufacturer`, `model`, `volts`,
-`horse_power`, `wattage`, `flow_gpm`, `runtime_khr_yr`) live in
-`PumpRow.custom_values`. Locked-type built-ins (`device_type`, `phase`,
-`link`, `notes`) keep typed Pydantic columns. The `datasheet`
-attachment lives in `datasheet_asset_ids` (not in the FieldDef
-registry — attachment is a FE-only renderer type).
+Pumps publishes a `TableFieldRegistry` for user-defined custom-field
+schema mutations through the generic project-document mutation path.
+Mutable-type built-in pump values (`tag`, `use`, `manufacturer`,
+`model`, `volts`, `horse_power`, `wattage`, `flow_gpm`,
+`runtime_khr_yr`) live in `PumpRow.custom_values`. Locked-type built-ins
+(`device_type`, `phase`, `link`, `notes`) keep typed Pydantic columns.
+The `datasheet` attachment lives in `datasheet_asset_ids` (not in the
+FieldDef registry — attachment is a FE-only renderer type).
 """
 
 from __future__ import annotations
@@ -306,13 +305,32 @@ def _pumps_field_type_for_formula(field_key: str) -> PumpFormulaType | None:
     return PUMPS_TYPED_COLUMN_FORMULA_TYPES.get(field_key)
 
 
-def _reject_pumps_schema_mutation(
+def _apply_pumps_schema_mutation(
     body: ProjectDocumentV1,
     mutation: FieldSchemaMutation,
     actor_user_id: str,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
-    _ = (body, mutation, actor_user_id)
-    raise NotImplementedError("Pumps schema mutations are not routed through this registry yet.")
+    from features.project_document.schema_mutations import apply_schema_mutation
+
+    return apply_schema_mutation(
+        body,
+        mutation,
+        actor_user_id=actor_user_id,
+        capability=pumps_field_registry,
+    )
+
+
+def _validate_pumps_schema_mutation(
+    body: ProjectDocumentV1,
+    mutation: FieldSchemaMutation,
+) -> None:
+    from features.project_document.schema_mutations import validate_schema_mutation
+
+    validate_schema_mutation(
+        body,
+        mutation,
+        capability=pumps_field_registry,
+    )
 
 
 pumps_field_registry = TableFieldRegistry(
@@ -326,8 +344,8 @@ pumps_field_registry = TableFieldRegistry(
     read_row_links=_read_pump_row_links,
     set_row_links=_set_pump_row_links,
     compute_schema_fingerprint=_compute_pumps_schema_fingerprint,
-    apply_schema_mutation=_reject_pumps_schema_mutation,
-    validate_schema_mutation=lambda body, mutation: None,
+    apply_schema_mutation=_apply_pumps_schema_mutation,
+    validate_schema_mutation=_validate_pumps_schema_mutation,
     read_field_option_list=_read_pumps_field_option_list,
     replace_field_option_list=_replace_pumps_field_option_list,
     built_in_option_key_by_field_key={"device_type": PUMP_DEVICE_TYPE_OPTION_KEY},
@@ -350,5 +368,5 @@ pumps_contract = TableContract(
     extract_rows=extract_pumps_envelope,
     extract_diff_value=extract_pumps_diff_value,
     table_path=_PUMPS_TABLE_PATH,
-    field_registry=None,
+    field_registry=pumps_field_registry,
 )
