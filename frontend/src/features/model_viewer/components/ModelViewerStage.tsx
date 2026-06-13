@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { ApiRequestError } from "../../../shared/api/client";
 import { errorMessage } from "../../../shared/lib/errors";
-import { useModelViewerDebugHook } from "../lib/debugHook";
+import { isModelViewerDebugHookEnabled, ModelViewerDebugBridge } from "../lib/debugHook";
+import { dispatchModelViewerPopoverEscape } from "../lib/events";
+import { MODEL_VIEWER_LENSES } from "../lib/lenses";
 import { buildBuildingModel, disposeBuildingModel, type BuildingModel } from "../loaders/building";
 import { ViewerCanvas } from "../scene/ViewerCanvas";
 import { useModelViewerStore } from "../store";
@@ -31,6 +33,9 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
   const setLens = useModelViewerStore((state) => state.setLens);
   const clearSelection = useModelViewerStore((state) => state.clearSelection);
   const requestCamera = useModelViewerStore((state) => state.requestCamera);
+  const measureActive = useModelViewerStore((state) => state.measureActive);
+  const setMeasureActive = useModelViewerStore((state) => state.setMeasureActive);
+  const toggleMeasure = useModelViewerStore((state) => state.toggleMeasure);
   const [renderedModel, setRenderedModel] = useState<RenderedModel | null>(null);
   const renderedModelRef = useRef<RenderedModel | null>(null);
 
@@ -72,7 +77,6 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
   }, []);
 
   const model = renderedModel?.model ?? null;
-  useModelViewerDebugHook(model);
 
   useEffect(() => {
     if (!model || model.lensAvailability[lens]) return;
@@ -83,7 +87,36 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
     const onKeyDown = (event: KeyboardEvent) => {
       if (isTextEntryTarget(event.target)) return;
       if (event.key === "Escape") {
-        clearSelection();
+        if (measureActive) {
+          setMeasureActive(false);
+          return;
+        }
+        if (selectionId) {
+          clearSelection();
+          return;
+        }
+        dispatchModelViewerPopoverEscape();
+        return;
+      }
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "c") {
+        const meta = selectionId ? model?.metaById.get(selectionId) : null;
+        if (!meta) return;
+        event.preventDefault();
+        void navigator.clipboard?.writeText(meta.identifier);
+        return;
+      }
+      const numberKey = Number(event.key);
+      if (
+        Number.isInteger(numberKey) &&
+        numberKey >= 1 &&
+        numberKey <= MODEL_VIEWER_LENSES.length
+      ) {
+        const nextLens = MODEL_VIEWER_LENSES[numberKey - 1]?.id;
+        if (nextLens && model?.lensAvailability[nextLens]) setLens(nextLens);
+        return;
+      }
+      if (event.key.toLowerCase() === "m") {
+        toggleMeasure();
       } else if (event.key.toLowerCase() === "f") {
         requestCamera("fit");
       } else if (event.key.toLowerCase() === "h") {
@@ -92,7 +125,16 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [clearSelection, requestCamera]);
+  }, [
+    clearSelection,
+    measureActive,
+    model,
+    requestCamera,
+    selectionId,
+    setLens,
+    setMeasureActive,
+    toggleMeasure,
+  ]);
 
   const loadPhase = useModelViewerStore((state) => state.loadPhase);
   const storeErrorKind = useModelViewerStore((state) => state.errorKind);
@@ -100,9 +142,14 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
 
   return (
     <>
+      {isModelViewerDebugHookEnabled() ? <ModelViewerDebugBridge model={model} /> : null}
       {renderedModel ? (
-        <div className="model-canvas-wrap">
-          <ViewerCanvas key={renderedModel.fileId} model={renderedModel.model} />
+        <div className={measureActive ? "model-canvas-wrap measuring" : "model-canvas-wrap"}>
+          <ViewerCanvas
+            key={renderedModel.fileId}
+            model={renderedModel.model}
+            activeFileName={activeFile.display_name}
+          />
         </div>
       ) : (
         <div className="model-viewer-placeholder">
@@ -124,6 +171,12 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
         activeFile={activeFile}
         loadSummary={query.data?.load_summary ?? null}
       />
+      {model && lens === "site-sun" && !model.sunPath && !measureActive ? (
+        <div className="model-site-sun-hint">Set project location to see the sun path.</div>
+      ) : null}
+      {measureActive ? (
+        <div className="model-measure-hint">Click two points to measure · Esc to exit</div>
+      ) : null}
       <CameraCluster />
       <InspectorPanel meta={selectedMeta} />
     </>

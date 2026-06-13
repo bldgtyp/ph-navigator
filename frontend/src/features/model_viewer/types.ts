@@ -249,13 +249,61 @@ export type HotWaterSystemModelData = {
   recirc_piping: Record<string, PipeElementModelData>;
 };
 
+export type ShadeModelData = {
+  type: string;
+  identifier: string;
+  user_data: Record<string, unknown> | null;
+  display_name: string;
+  is_detached: boolean;
+  geometry: Face3D;
+};
+
+export type ShadeGroupModelData = {
+  shades: ShadeModelData[];
+};
+
+export type Polyline3DModelData = {
+  vertices: [number, number, number][];
+};
+
+export type Arc3DModelData = {
+  plane: Plane3D;
+  radius: number;
+  a1: number;
+  a2: number;
+};
+
+export type Arc2DModelData = {
+  c: [number, number];
+  r: number;
+  a1: number;
+  a2: number;
+};
+
+export type LineSegment2DModelData = {
+  p: [number, number];
+  v: [number, number];
+};
+
+export type SunPathAndCompassModelData = {
+  sunpath: {
+    hourly_analemma_polyline3d: Polyline3DModelData[];
+    monthly_day_arc3d: Arc3DModelData[];
+  };
+  compass: {
+    all_boundary_circles: Arc2DModelData[];
+    major_azimuth_ticks: LineSegment2DModelData[];
+    minor_azimuth_ticks: LineSegment2DModelData[];
+  };
+};
+
 export type CombinedModelData = {
   faces: FaceModelData[];
   spaces: SpaceModelData[];
-  sun_path: unknown | null;
+  sun_path: SunPathAndCompassModelData | null;
   hot_water_systems: HotWaterSystemModelData[];
   ventilation_systems: VentilationSystemModelData[];
-  shading_elements: unknown[];
+  shading_elements: ShadeGroupModelData[];
   load_summary: LoadSummary;
 };
 
@@ -353,11 +401,26 @@ export type ModelViewerLegend = {
   kind: "theme" | "mini-key";
 } | null;
 
+export type ModelViewerMeasurePoint = {
+  id: string;
+  sourceObjectId: string;
+  position: [number, number, number];
+};
+
+export type ModelViewerMeasureLine = {
+  id: string;
+  start: ModelViewerMeasurePoint;
+  end: ModelViewerMeasurePoint;
+  distanceM: number;
+};
+
 export type ModelViewerDebugState = {
   loadPhase: ViewerLoadPhase;
   errorKind: ModelViewerErrorKind | null;
   activeFileId: string | null;
   objectCounts: ModelObjectCounts;
+  shadeCount: number;
+  sunPathReady: boolean;
   objectIds: string[];
   visibleObjectIds: string[];
   lens: ModelViewerLens;
@@ -365,10 +428,19 @@ export type ModelViewerDebugState = {
   legend: ModelViewerLegend;
   selectionId: string | null;
   hoverId: string | null;
+  measureActive: boolean;
+  measureSnap: ModelViewerMeasurePoint | null;
+  measureLines: ModelViewerMeasureLine[];
   setLens: (lens: ModelViewerLens) => void;
   setTheme: (theme: ModelViewerTheme) => void;
   themeColorForObject: (objectId: string) => string | null;
   selectObject: (objectId: string | null) => void;
   selectAnyModelObject: (type?: ModelObjectType) => string | null;
   clearSelection: () => void;
+  setMeasureActive: (active: boolean) => void;
+  measureBetweenVertices: (
+    sourceObjectId: string,
+    startIndex?: number,
+    endIndex?: number,
+  ) => ModelViewerMeasureLine | null;
 };

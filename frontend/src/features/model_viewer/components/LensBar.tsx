@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   Box,
   Building2,
@@ -11,6 +11,7 @@ import {
   Wind,
 } from "lucide-react";
 import { useOutsidePointerDown } from "../../../shared/ui/useOutsidePointerDown";
+import { useModelViewerPopoverEscape } from "../lib/events";
 import { disabledLensReason, MODEL_VIEWER_LENSES } from "../lib/lenses";
 import { hasThemeMenu, themeLabel, themesForLens } from "../lib/themes";
 import type { LensAvailability } from "../loaders/building";
@@ -40,6 +41,7 @@ export function LensBar({ availability }: LensBarProps) {
               className={activeLens === lens.id ? "active" : undefined}
               disabled={disabled}
               title={disabledReason ?? lens.label}
+              aria-label={lens.label}
               aria-pressed={activeLens === lens.id}
               onClick={() => {
                 if (activeLens !== lens.id) setLens(lens.id);
@@ -61,7 +63,9 @@ function ThemeMenu({ lens, theme }: { lens: ModelViewerLens; theme: ModelViewerT
   const setTheme = useModelViewerStore((state) => state.setTheme);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const themes = themesForLens(lens);
-  useOutsidePointerDown(rootRef, open, () => setOpen(false));
+  const close = useCallback(() => setOpen(false), []);
+  useOutsidePointerDown(rootRef, open, close);
+  useModelViewerPopoverEscape(close);
 
   return (
     <div className="model-theme-menu" ref={rootRef}>
@@ -70,6 +74,8 @@ function ThemeMenu({ lens, theme }: { lens: ModelViewerLens; theme: ModelViewerT
         className="model-theme-trigger"
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-label={`Color: ${themeLabel(theme)}`}
+        title={`Color theme: ${themeLabel(theme)}`}
         onClick={() => setOpen((current) => !current)}
       >
         <Palette size={14} aria-hidden />

@@ -3,6 +3,7 @@ import { Box, ChevronDown } from "lucide-react";
 import { formatProjectDate } from "../../../shared/lib/dates";
 import { useOutsidePointerDown } from "../../../shared/ui/useOutsidePointerDown";
 import type { HbjsonUploadFlow } from "../hooks";
+import { useModelViewerPopoverEscape } from "../lib/events";
 import type { HbjsonFile } from "../types";
 import { FilePopover } from "./FilePopover";
 
@@ -32,6 +33,7 @@ export function FileChip({
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
   useOutsidePointerDown(rootRef, open, close);
+  useModelViewerPopoverEscape(close);
 
   return (
     <div ref={rootRef} className="model-file-chip-root">
@@ -40,6 +42,7 @@ export function FileChip({
         className="model-file-chip"
         aria-expanded={open}
         aria-haspopup="dialog"
+        title="Choose HBJSON model file"
         onClick={() => setOpen((current) => !current)}
       >
         <Box size={14} aria-hidden="true" />

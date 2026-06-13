@@ -1,7 +1,10 @@
 ---
 DATE: 2026-06-12
 TIME: -
-STATUS: Ready for handoff — requires Phase 5 merged. Final MVP phase.
+STATUS: In review — implementation started 2026-06-13. Final MVP
+  phase; focused TypeScript/Vitest/e2e/browser checks green, simplify
+  and docs-pass complete, make format + make ci green. John test
+  requires Ed/John coordination.
   The Site & Sun sun path itself remains blocked on the separate
   `project-location` feature; the lens ships with a location hint.
 AUTHOR: Claude (for Ed)
@@ -22,6 +25,60 @@ RELATED:
 ---
 
 # Phase 6 — Measure, Site & Sun, polish + acceptance
+
+## 0. Implementation checkpoint — 2026-06-13
+
+Landed so far:
+
+- [x] Measure store lifecycle: active flag, snap target, pending
+  point, accumulated lines; entering Measure clears hover/selection;
+  exit/file switch/lens switch clears measurement artifacts.
+- [x] Measure rendering: screen-space nearest-vertex snap, snap
+  marker, two-click dimension lines, canvas-scoped drei `<Html>`
+  labels, and `m` / feet-inches formatting.
+- [x] Site & Sun segment enabled when building geometry exists.
+- [x] Site & Sun scene renders selectable building faces/apertures,
+  flat grey non-selectable merged shade groups, a small north marker,
+  the D-07 location hint, and a `sun_path != null` renderer stub for
+  future project-location wiring.
+- [x] Keyboard map: `1`–`6`, `F`, `H`, `M`, Esc cascade, and
+  `Cmd/Ctrl+C` with selection.
+- [x] A11y polish: canvas aria description names active file + lens;
+  icon-heavy floating controls gained labels/titles.
+- [x] Focused tests:
+  `viewerCore.test.ts`, `viewerThemes.test.ts`,
+  `viewerMeasure.test.ts`, and `units.test.ts` green (32 tests);
+  `tsc -b --pretty false` green.
+- [x] Playwright e2e:
+  `model-viewer-files.spec.ts`, `model-viewer-lenses.spec.ts`,
+  `model-viewer-themes.spec.ts`, `model-viewer-measure.spec.ts`,
+  and `model-viewer-site-sun.spec.ts` green (5 specs).
+- [x] Browser walkthrough: in-app browser on `localhost:5173` as
+  `codex@example.com`; Site & Sun deep link rendered active, location
+  hint visible, scene aria description present. Screenshots:
+  `assets/phase-06-site-sun.png`, `assets/phase-06-measure.png`.
+- [x] `graphify update .` run after code/docs changes.
+- [x] `$ simplify` completed; follow-up fixes landed for shade group
+  flattening, shared feet-inches formatting, popover Escape handling,
+  dev/test-only debug hook subscriptions, and Measure pointer
+  invalidation/coalescing.
+- [x] `$ docs-pass` completed; no context/ADR updates needed.
+- [x] `make format` green.
+- [x] `make ci` green: backend Ruff format/lint, Ty, Alembic, pytest
+  (780 passed, 2 skipped); frontend Prettier check, ESLint (3 known
+  aperture fast-refresh warnings), structural checks, Vitest (1575
+  passed), and production build.
+
+Still pending:
+
+- [ ] §16 parity checklist / PRD §8 acceptance notes, including the
+  John test outcome or explicit deferral note if Ed must coordinate it
+  outside this coding pass.
+- [ ] Full `make e2e` is red outside the model-viewer slice:
+  all 5 model-viewer specs passed, but 12 unrelated specs failed
+  across custom-fields, row-context-menu, windows/catalog drift, and
+  record-linking/health flows. Do not treat those failures as Phase 06
+  regressions without a separate investigation.
 
 ## 1. Goal
 

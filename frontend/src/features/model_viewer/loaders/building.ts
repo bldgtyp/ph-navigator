@@ -13,7 +13,9 @@ import type {
   ModelObjectMeta,
   ModelViewerLens,
   PipeElementModelData,
+  ShadeGroupModelData,
   SpaceModelData,
+  SunPathAndCompassModelData,
 } from "../types";
 
 export type BuildingRenderable = {
@@ -33,6 +35,13 @@ export type LineRenderable = {
   lineStyle: "duct-supply" | "duct-exhaust" | "pipe-distribution" | "pipe-recirc";
 };
 
+export type ShadeRenderable = {
+  id: string;
+  kind: "shade";
+  displayName: string;
+  geometries: BufferGeometry[];
+};
+
 export type ModelRenderable = BuildingRenderable | LineRenderable;
 
 export type LensAvailability = Record<ModelViewerLens, boolean>;
@@ -40,6 +49,8 @@ export type LensAvailability = Record<ModelViewerLens, boolean>;
 export type BuildingModel = {
   objects: ModelRenderable[];
   buildingObjects: BuildingRenderable[];
+  shadeObjects: ShadeRenderable[];
+  sunPath: SunPathAndCompassModelData | null;
   metaById: Map<string, ModelObjectMeta>;
   bounds: Box3;
   objectCounts: ModelObjectCounts;
@@ -64,6 +75,7 @@ export function buildBuildingModel(data: CombinedModelData): BuildingModel {
   objects.push(...floorSegmentRenderables(data.spaces));
   objects.push(...ductRenderables(data.ventilation_systems));
   objects.push(...pipeRenderables(data.hot_water_systems));
+  const shadeObjects = shadeRenderables(data.shading_elements);
 
   for (const object of objects) {
     if (object.kind === "mesh") {
@@ -71,6 +83,9 @@ export function buildBuildingModel(data: CombinedModelData): BuildingModel {
     } else {
       expandBoundsByPoints(bounds, object.points);
     }
+  }
+  for (const shade of shadeObjects) {
+    expandBoundsByGeometries(bounds, shade.geometries);
   }
 
   const metaById = new Map(objects.map((object) => [object.id, object.meta]));
@@ -82,6 +97,8 @@ export function buildBuildingModel(data: CombinedModelData): BuildingModel {
   return {
     objects,
     buildingObjects,
+    shadeObjects,
+    sunPath: data.sun_path,
     metaById,
     bounds: bounds.isEmpty() ? fallbackBounds(objects) : bounds,
     objectCounts: countObjects(objects),
@@ -275,6 +292,23 @@ function pipeRenderables(systems: HotWaterSystemModelData[]): LineRenderable[] {
   return renderables;
 }
 
+function shadeRenderables(groups: ShadeGroupModelData[]): ShadeRenderable[] {
+  return groups.flatMap((group, groupIndex) => {
+    return group.shades.flatMap((shade, shadeIndex) => {
+      const built = geometryFromFace3D(shade.geometry);
+      if (!built) return [];
+      return [
+        {
+          id: `shade:${shade.identifier || `${groupIndex}:${shadeIndex}`}`,
+          kind: "shade",
+          displayName: shade.display_name,
+          geometries: [built.geometry],
+        },
+      ];
+    });
+  });
+}
+
 function addPipeElement(
   renderables: LineRenderable[],
   element: PipeElementModelData,
@@ -333,6 +367,11 @@ export function disposeBuildingModel(model: BuildingModel): void {
       }
     }
   }
+  for (const shade of model.shadeObjects) {
+    for (const geometry of shade.geometries) {
+      geometry.dispose();
+    }
+  }
 }
 
 function countObjects(objects: ModelRenderable[]): ModelObjectCounts {
@@ -354,10 +393,11 @@ export function emptyModelObjectCounts(): ModelObjectCounts {
 }
 
 function lensAvailability(objects: ModelRenderable[]): LensAvailability {
+  const hasBuilding = objects.some((object) => object.lens === "building");
   return Object.fromEntries(
     MODEL_VIEWER_LENS_IDS.map((lens) => [
       lens,
-      lens !== "site-sun" && objects.some((object) => object.lens === lens),
+      lens === "site-sun" ? hasBuilding : objects.some((object) => object.lens === lens),
     ]),
   ) as LensAvailability;
 }

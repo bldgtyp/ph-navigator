@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-12
 TIME: -
-STATUS: Active — Phases 1–5 implemented; Phase 6 next
+STATUS: Active — Phases 1–5 implemented; Phase 6 in review
 AUTHOR: Claude (for Ed)
 SCOPE: Status ledger for the Model Viewer feature.
 RELATED: planning/features/model-viewer/README.md
@@ -23,8 +23,10 @@ three/R3F deps added, Building lens renders real `/model_data`, and
 Spaces, Floor Areas, Ventilation, Hot Water, deep links, and the
 remaining inspector configs are live. **Phase 5 (themes + legend)
 implemented 2026-06-13** — color themes, `&theme=`, legend counts,
-mini-keys, and scene-info popover are live; final simplify/docs-pass
-and closeout gates are in progress below.
+mini-keys, and scene-info popover are live. **Phase 6 (Measure, Site
+& Sun, polish) implementation started 2026-06-13 and is in review** —
+measure mode, Site & Sun enablement, shade renderables, keyboard map,
+and e2e specs are implemented; closeout gates are pending below.
 
 Test fixtures (both in this folder, both copied to
 `backend/tests/fixtures/` in Phase 2; coverage maps + remaining
@@ -115,9 +117,79 @@ scene helpers (phase-03 §4.1).
 
 ## Next step
 
-Start Phase 6 — handoff doc:
+Complete Phase 6 verification and closeout — handoff doc:
 `phases/phase-06-measure-site-sun-polish.md` (Measure, Site & Sun
 polish, keyboard/a11y polish).
+
+## Phase 6 — in review 2026-06-13
+
+Frontend MVP closeout work landed so far:
+
+- Measure state/lifecycle: store now tracks active Measure mode, snap
+  target, pending point, and accumulated dimension lines. Entering
+  Measure clears hover/selection; exit/file switch/lens switch clear
+  all measurement artifacts.
+- Measure rendering: canvas-scoped drei `<Html>` pill labels, nearest
+  face-corner snap by screen-space projection within the 20 px target,
+  snap marker, two-click dimension line, and unit-aware labels
+  (`m` / feet-inches) backed by `lib/measure.ts`.
+- Site & Sun: segment is enabled when building geometry exists; the
+  lens reuses selectable building faces/apertures, renders merged
+  shade groups as flat grey non-selectable meshes, adds a small north
+  marker, keeps sun-path rendering keyed behind `sun_path != null`,
+  and shows the D-07 location hint while `sun_path` is null.
+- Keyboard/a11y: `1`–`6`, `F`, `H`, `M`, Esc cascade
+  (Measure → selection → popovers), and `Cmd/Ctrl+C` with selection
+  are wired. The canvas has an aria label naming active file + lens;
+  icon-heavy controls gained labels/titles.
+- Debug/e2e hook: exposes `measureActive`, `measureLines`,
+  `measureBetweenVertices`, `shadeCount`, and `sunPathReady`; Site &
+  Sun visible/selectable IDs intentionally expose building objects
+  only, not shades.
+- Tests added/updated: `viewerMeasure.test.ts`,
+  `model-viewer-measure.spec.ts`, `model-viewer-site-sun.spec.ts`;
+  existing core/lens expectations updated for enabled Site & Sun.
+
+Focused verification run so far:
+- `cd frontend && pnpm exec tsc -b --pretty false` — green.
+- `cd frontend && pnpm exec vitest run
+  src/features/model_viewer/__tests__/viewerCore.test.ts
+  src/features/model_viewer/__tests__/viewerThemes.test.ts
+  src/features/model_viewer/__tests__/viewerMeasure.test.ts
+  src/lib/units/units.test.ts` — green (32 tests).
+- `cd frontend && pnpm run lint` — green with the 3 known
+  pre-existing aperture fast-refresh warnings.
+- `cd frontend && pnpm run check:all` — green.
+- `cd frontend && pnpm exec playwright test
+  tests/e2e/model-viewer-files.spec.ts
+  tests/e2e/model-viewer-lenses.spec.ts
+  tests/e2e/model-viewer-themes.spec.ts
+  tests/e2e/model-viewer-measure.spec.ts
+  tests/e2e/model-viewer-site-sun.spec.ts --project=chromium` —
+  green (5 specs).
+- Browser walkthrough on `localhost:5173` as `codex@example.com`:
+  Site & Sun deep link rendered active with the location hint and
+  scene aria description; Measure toggle rendered active with hint.
+  Screenshots saved to `assets/phase-06-site-sun.png` and
+  `assets/phase-06-measure.png`.
+- `$ simplify` completed after implementation. Follow-up fixes:
+  shade groups now flatten all shades in a group; Measure reuses the
+  shared feet-inches formatter; Escape popover handling is centralized;
+  the debug hook mounts only in dev/test; Measure pointer snapping is
+  rAF-coalesced and avoids redundant invalidations.
+- `$ docs-pass` completed; no context/ADR updates were needed. The
+  remaining durable tracker item is the Ed/John-coordinated John test.
+- Final closeout gates completed:
+  - `make format` — green.
+  - `make ci` — green: backend Ruff format/lint, Ty, Alembic, pytest
+    (780 passed, 2 skipped); frontend Prettier check, ESLint (3 known
+    aperture fast-refresh warnings), structural checks, Vitest (1575
+    passed), and production build.
+
+Acceptance notes:
+- The John test requires Ed/John coordination with a non-technical
+  viewer and was not performed by the coding agent. Record the outcome
+  here when coordinated.
 
 ## Phase 5 — implemented 2026-06-13
 
@@ -471,4 +543,4 @@ blocker is cleared.
 | Phase 3 — canvas + Building lens | **Done 2026-06-13** | R3F deps; `/model_data` query; Building lens loader/canvas; selection + inspector; scene-ready hook; simplify + docs-pass complete; `make format` green; `make ci` green; focused Playwright spec green; `graphify update .` run |
 | Phase 4 — remaining lenses | **Done 2026-06-13** | lens bar + all remaining non-Site lenses; inspector configs; `&lens=` deep links; focused Vitest green; Phase 4 Playwright e2e green; browser walkthrough green |
 | Phase 5 — themes + legend | **Done 2026-06-13** | theme registry + `&theme=`; attached Color menu; unlit theme bucket materials; legend counts + mini-keys + scene-info popover; focused Vitest green; Phase 5 Playwright e2e green; browser walkthrough green |
-| Phase 6 — measure, Site & Sun, polish | Not started | — |
+| Phase 6 — measure, Site & Sun, polish | In review | Measure store/overlay, Site & Sun shade layer, keyboard map, debug hook, focused TypeScript/Vitest/lint/check/e2e green; browser screenshots saved; simplify/docs-pass complete; `make format` green; `make ci` green; John test requires Ed/John coordination |

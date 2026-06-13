@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronUp, Info } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { formatProjectDateTime } from "../../../shared/lib/dates";
+import { useModelViewerPopoverEscape } from "../lib/events";
 import { legendForModel } from "../lib/themes";
 import type { BuildingModel } from "../loaders/building";
 import { useModelViewerStore } from "../store";
@@ -19,10 +20,12 @@ export function LegendCard({ model, activeFile, loadSummary }: LegendCardProps) 
   const theme = useModelViewerStore((state) => state.themesByLens[state.lens]);
   const [collapsed, setCollapsed] = useState(readCollapsed);
   const [infoOpen, setInfoOpen] = useState(false);
+  const closeInfo = useCallback(() => setInfoOpen(false), []);
   const legend = useMemo(
     () => (model ? legendForModel(model, lens, theme) : null),
     [lens, model, theme],
   );
+  useModelViewerPopoverEscape(closeInfo);
 
   if (!legend) {
     return (
@@ -53,6 +56,7 @@ export function LegendCard({ model, activeFile, loadSummary }: LegendCardProps) 
           <button
             type="button"
             aria-label={collapsed ? "Expand legend" : "Collapse legend"}
+            title={collapsed ? "Expand legend" : "Collapse legend"}
             onClick={toggleCollapsed}
           >
             {collapsed ? (
@@ -89,6 +93,7 @@ function InfoButton({ open, onClick }: { open: boolean; onClick: () => void }) {
       type="button"
       aria-label="Model scene information"
       aria-expanded={open}
+      title="Model scene information"
       onClick={onClick}
     >
       <Info size={15} aria-hidden />

@@ -18,6 +18,10 @@ export const VIEWER_DUCT_SUPPLY_COLOR = "#2674d9";
 export const VIEWER_DUCT_EXHAUST_COLOR = "#d94a3a";
 export const VIEWER_PIPE_DISTRIBUTION_COLOR = "#9a4f1f";
 export const VIEWER_PIPE_RECIRC_COLOR = "#d4952f";
+export const VIEWER_SHADE_COLOR = "#a8aca7";
+export const VIEWER_SHADE_EDGE_COLOR = "#7d837d";
+export const VIEWER_SITE_COMPASS_COLOR = "#5f6760";
+export const VIEWER_SUN_PATH_COLOR = "#d49b35";
 
 export function resolveViewerTokens(root: HTMLElement = document.documentElement): ViewerTokens {
   const styles = getComputedStyle(root);

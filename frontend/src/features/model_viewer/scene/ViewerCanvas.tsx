@@ -3,6 +3,7 @@ import { Canvas } from "@react-three/fiber";
 import { EffectComposer, SMAA } from "@react-three/postprocessing";
 import { useMemo } from "react";
 import { createBuildingMaterials, createGhostMaterial, resolveViewerTokens } from "../lib/colors";
+import { labelForLens } from "../lib/lenses";
 import type { BuildingModel } from "../loaders/building";
 import { useModelViewerStore } from "../store";
 import { BuildingLens } from "./BuildingLens";
@@ -10,20 +11,27 @@ import { CameraRig } from "./CameraRig";
 
 type ViewerCanvasProps = {
   model: BuildingModel;
+  activeFileName: string;
 };
 
-export function ViewerCanvas({ model }: ViewerCanvasProps) {
+export function ViewerCanvas({ model, activeFileName }: ViewerCanvasProps) {
+  const lens = useModelViewerStore((state) => state.lens);
   const clearSelection = useModelViewerStore((state) => state.clearSelection);
+  const measureActive = useModelViewerStore((state) => state.measureActive);
   const materials = useMemo(() => createBuildingMaterials(resolveViewerTokens()), []);
   const ghostMaterial = useMemo(() => createGhostMaterial(), []);
+  const handlePointerMissed = () => {
+    if (!measureActive) clearSelection();
+  };
 
   return (
     <Canvas
       frameloop="demand"
       shadows
       camera={{ fov: 45, near: 0.1, far: 1000, position: [-25, 40, 30], up: [0, 0, 1] }}
-      onPointerMissed={clearSelection}
+      onPointerMissed={handlePointerMissed}
       className="model-viewer-canvas"
+      aria-label={`3D model viewer for ${activeFileName}. Active lens: ${labelForLens(lens)}.`}
       gl={{ antialias: false }}
     >
       <color attach="background" args={["snow"]} />
