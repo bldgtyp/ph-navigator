@@ -5,16 +5,22 @@ from __future__ import annotations
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Response
 
 from features.assets.routes import AssetServiceDep
+from features.model_viewer.schemas.ladybug import SunPathAndCompassDTOSchema
 from features.project_location.models import (
     EpwParseResponse,
     ProjectLocation,
     ProjectLocationUpdateResponse,
     UpdateProjectLocationRequest,
 )
-from features.project_location.service import get_project_location, parse_epw_location, update_project_location
+from features.project_location.service import (
+    get_project_location,
+    get_project_sun_path,
+    parse_epw_location,
+    update_project_location,
+)
 from features.projects.access import (
     ProjectAccess,
     require_editor_user,
@@ -31,6 +37,14 @@ ProjectEditAccess = Annotated[ProjectAccess, Depends(require_project_edit_access
 @router.get("/{project_id}/location", response_model=ProjectLocation)
 def get_location(project_id: UUID, _access: ProjectViewAccess) -> ProjectLocation:
     return get_project_location(project_id)
+
+
+@router.get("/{project_id}/sun-path", response_model=SunPathAndCompassDTOSchema | None)
+def get_sun_path(project_id: UUID, _access: ProjectViewAccess, response: Response) -> SunPathAndCompassDTOSchema | None:
+    # Location is editable in place, so the diagram can change -- revalidate
+    # rather than reuse the immutable model_data cache policy (D-CL-2).
+    response.headers["Cache-Control"] = "private, max-age=0"
+    return get_project_sun_path(project_id)
 
 
 @router.put("/{project_id}/location", response_model=ProjectLocationUpdateResponse)

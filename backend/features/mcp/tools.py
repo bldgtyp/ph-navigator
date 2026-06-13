@@ -86,7 +86,7 @@ from features.mcp.tools_model_viewer import (
     tool_rename_hbjson_file,
 )
 from features.project_document.models import ProjectDocumentSource
-from features.project_location.mcp import tool_get_project_location
+from features.project_location.mcp import tool_get_project_location, tool_get_project_sun_path
 from features.project_status.service import list_project_status_items
 from features.projects.models import (
     AccessMode,
@@ -125,6 +125,7 @@ __all__ = [
     "tool_get_document",
     "tool_get_project",
     "tool_get_project_location",
+    "tool_get_project_sun_path",
     "tool_get_table",
     "tool_list_projects",
     "tool_list_status_items",
