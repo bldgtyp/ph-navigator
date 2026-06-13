@@ -1,126 +1,55 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Ready — implement. D-SP-1 accepted (Ed 2026-06-13): the
-  decoupled, project-scoped, location-reactive endpoint.
+STATUS: Ready (after Climate Phase 1). REALIGNED 2026-06-13 to
+  frontend-only — the backend moved to Climate Phase 1.
 AUTHOR: Claude (for Ed)
-SCOPE: Implementation handoff — static annual sun path in Site & Sun.
+SCOPE: Implementation handoff — render the annual sun path over the
+  building in the Site & Sun lens (frontend consumer of the Climate
+  endpoint).
 RELATED:
   - ../PRD.md
   - ../decisions.md (D-SP-1, D-PL-4)
   - ../PLAN.md
-  - planning/archive/project-location/PRD.md §10
-  - research/v1-3d-model-viewer-reference.md §2.3.3, §9.4, §10
+  - planning/features/climate/phases/phase-01-sun-path-service.md (the backend)
+  - research/v1-3d-model-viewer-reference.md §9.4, §10
 ---
 
-# Phase 1 — Static sun path
+# Phase 1 — Site & Sun 3D render (frontend)
 
-Self-contained handoff. Connects the already-shipped wire schema and
-renderer scaffold to live project-location data. Implements D-SP-1 as
-accepted (decoupled, project-scoped endpoint). The location setter UI
-already shipped with `project_location`
-(`frontend/src/features/projects/components/ProjectLocationSettingsSection.tsx`)
-— this phase only reads the stored data.
+> **Realigned 2026-06-13.** The backend (builder + `GET
+> /projects/{id}/sun-path` endpoint + MCP + the north-sign fixture)
+> moved to **Climate Phase 1**
+> (`planning/features/climate/phases/phase-01-sun-path-service.md`).
+> This phase is now **frontend-only** and **depends on Climate Phase 1
+> shipping the endpoint.** It points the Site & Sun lens at that
+> endpoint and completes the renderer.
+
+Connects the already-shipped renderer scaffold to the Climate sun-path
+endpoint. The location setter UI already shipped with `project_location`
+(`ProjectLocationSettingsSection.tsx`); this phase only reads the
+computed sun path and draws it.
+
+## 0. Backend — see Climate Phase 1
+
+The builder (`Sunpath.from_location`, unit radius, origin-centered, DST
+off), the `GET /projects/{id}/sun-path` endpoint (null on no-location),
+the MCP tool, and the **true-north sign fixture** (D-PL-4) are all owned
+by Climate Phase 1. Do not build them here. This phase assumes that
+endpoint exists and returns `SunPathAndCompassDTOSchema | null`.
 
 ## 1. Required reading
 
-- `../decisions.md` — D-SP-1 (serving strategy) and D-PL-4 (true-north
-  convention + sign verification).
-- `planning/archive/project-location/PRD.md` §10 — the consumer seam
-  (inputs, computation, true-north verification, trigger).
+- `../PRD.md` §5 (the consumed contract) + §6 (frontend contract).
+- `planning/features/climate/phases/phase-01-sun-path-service.md` — the
+  endpoint shape + the unit-radius/origin-centered geometry convention
+  this render scales.
 - V1 reference `research/v1-3d-model-viewer-reference.md`:
-  - §2.3.3 `get_sun_path_from_model(epw)` — V1 used
-    `Sunpath.from_location(...)` + `Compass(radius=40, center=(0,0),
-    north=0)`, scale 0.4, DST off. **V2 differs:** north comes from
-    `true_north_deg`, location from `project_location` (not EPW), and
-    the radius is unit-scale (frontend fits to bounds).
-  - §9.4 `load_sun_path.tsx` — the loader rendered every polyline/arc
-    in `sunpath` and `compass`, called `computeLineDistances()` for
-    dashed lines, used the `sunpathLine` material, added to a
-    non-selectable group.
+  - §9.4 `load_sun_path.tsx` — V1 rendered every polyline/arc in
+    `sunpath` and `compass`, called `computeLineDistances()` for dashed
+    lines, in a non-selectable group.
   - §10 — the LBT geometry → three converters (polyline, arc3d, arc2d,
     line2d). The compass arcs/ticks are 2D at z=0.
-
-## 2. Backend work
-
-### 2.1 Pure builder
-
-New `backend/features/model_viewer/sun_path.py` (or a function group in
-`extraction.py` — prefer a new module; `extraction.py` is large and
-HBJSON-shaped, this is location-shaped):
-
-```python
-def build_sun_path(
-    *,
-    latitude: float,
-    longitude: float,
-    elevation_m: float | None,
-    true_north_deg: float | None,
-    time_zone: str | None,
-) -> SunPathAndCompassDTOSchema:
-    """Annual sun path + compass at unit radius, origin-centered.
-
-    Daylight saving is off (V1 parity). North is applied per D-PL-4 —
-    see the sign note below. Returns geometry the frontend scales and
-    translates to the model bounds.
-    """
-```
-
-- Build a ladybug `Location(latitude=…, longitude=…, elevation=…,
-  time_zone=<numeric UTC offset>)`. Derive the numeric offset from the
-  IANA `time_zone` via `zoneinfo` (mirror whatever helper
-  `project_location` already uses, if any — check
-  `features/project_location/service.py`; do not duplicate).
-- `sunpath = Sunpath.from_location(location, north_angle=<signed
-  true_north>, daylight_saving_period=None)`.
-- Generate hourly analemma polylines and monthly day-arcs at a **unit
-  radius centered at origin**; build a `Compass(radius=<unit>,
-  center=Point2D(0,0), north_angle=<signed true_north>)` and read
-  `all_boundary_circles`, `major_azimuth_ticks`,
-  `minor_azimuth_ticks`.
-- Convert each to the existing DTOs in
-  `schemas/ladybug.py` + `schemas/ladybug_geometry.py`
-  (`Polyline3DSchema`, `Arc3DSchema`, `Arc2DSchema`,
-  `LineSegment2DSchema`). These were shipped in MVP Phase 2 precisely
-  for this — do not invent new shapes.
-
-### 2.2 True-north sign (D-PL-4) — verify, do not assume
-
-The stored convention is CCW-from-+Y (90°=West, 270°=East). ladybug's
-`Sunpath`/`Compass` `north_angle` has its own sign convention. Before
-trusting output, write a fixture test: set `true_north_deg` to a known
-value (e.g. 90) and assert a known solar position (e.g. the noon arc
-apex, or a specific azimuth tick) lands on the expected side. Record
-the confirmed mapping (identity vs. negation vs. offset) as an inline
-comment in `build_sun_path`. **This is the acceptance-critical step.**
-
-### 2.3 Route + service + MCP
-
-**Module placement (see decisions.md "Climate direction"):** the sun
-path is location/climate-derived and will likely gain a second consumer
-(a project-level Climate tab) beyond the Model viewer. Author the
-builder + endpoint in the **location/climate domain**
-(`features/project_location/`, the eventual `climate` home) rather than
-`features/model_viewer/`, so a future Climate tab consumes it without a
-move. The Model viewer just calls it. If Ed wants the absolute-smallest
-diff and is fine with a later move, `features/model_viewer/` also works
-— but location-owned is the forward-compatible default.
-
-- `routes.py`: `GET /projects/{project_id}/sun-path`, view-access
-  (public-readable), returns `SunPathAndCompassDTOSchema | None`.
-- `service.py`: read `project_location` via
-  `features/project_location/repository.get_location(conn,
-  project_id)`. If the row is absent or `latitude`/`longitude` is
-  None → return `None`. Otherwise call `build_sun_path(...)`.
-  - Keep model_viewer → project_location a one-way import (model_viewer
-    already depends on shared infra; project_location must NOT import
-    model_viewer). Confirm no import cycle.
-- MCP: add `get_project_sun_path` alongside the existing model-viewer
-  MCP tools (`features/mcp/tools_model_viewer.py` + `tools.py` +
-  `server.py` stub), `project:read` scope, same null-on-unset shape.
-- Caching: optional `ETag` from a stable hash of the location inputs;
-  `Cache-Control: private, max-age=0` (revalidate). Do **not** reuse
-  the immutable `_CACHE_CONTROL` from `model_data.py`.
 
 ## 3. Frontend work
 
@@ -168,16 +97,8 @@ diff and is fine with a later move, `features/model_viewer/` also works
   (`frameloop="demand"`), or the diagram won't paint until the next
   interaction.
 
-## 4. Verification gates
+## 4. Verification gates (frontend)
 
-- **pytest** (`backend/tests/test_model_viewer_sun_path.py`):
-  - builder returns non-empty analemmas + arcs + compass for a known
-    location;
-  - **north-sign fixture** (§2.2) — the load-bearing test;
-  - route returns `null` for a project with no location row and for a
-    row with null lat/long;
-  - route returns the DTO for a seeded location;
-  - MCP tool parity.
 - **vitest**: DTO→geometry mapping (arc discretization, compass tick
   mapping) and bounds-fit scaling math.
 - **Playwright** (`model-viewer-site-sun.spec.ts`, extend): seed a
@@ -186,12 +107,15 @@ diff and is fine with a later move, `features/model_viewer/` also works
   the hint. Expose `sunPathReady` (already in the debug hook) to gate
   the assertion.
 - **`make format` + `make ci`** green.
+- (Backend pytest incl. the north-sign fixture is Climate Phase 1's
+  gate, not this feature's.)
 
 ## 5. Exit criteria
 
-- PRD §7 acceptance items 1–5 met.
-- North sign verified by fixture, mapping documented inline.
+- PRD §7 acceptance items 1–5 met (the items this frontend owns).
 - Diagram frames the model at any scale (check both the 459 KB and the
   52 MB fixtures).
+- North orientation correct in the lens (visual confirmation; the sign
+  itself is locked by Climate Phase 1's fixture).
 - Location-reactive: editing location + reload updates the diagram
   (manual browser check + the freshness note in STATUS).

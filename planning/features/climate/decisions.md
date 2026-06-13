@@ -1,8 +1,10 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Active — D-CL-1..3, D-CL-6, D-CL-7 proposed (recommendations
-  inline); D-CL-4 and D-CL-5 are CPHC-domain decisions for Ed.
+STATUS: Active — focus is the climate data STORE (Phases 1–3); design
+  conditions / fRSI / temp-asymmetry USE-cases deferred to later feature
+  work (Ed 2026-06-13). D-CL-1..3, D-CL-6..11 proposed; D-CL-4 resolved
+  (incl. ASHRAE-as-pointer); D-CL-5 deferred to the fRSI consumer.
 AUTHOR: Claude (for Ed)
 SCOPE: Decision ledger for the Climate feature.
 RELATED:
@@ -102,27 +104,89 @@ US-VIEW arch-decision-2 rejected for HBJSON.
 **Recommendation: accept** (durable + editable; reproducibility via
 immutable EPW asset + pin; audit-history optional).
 
-## CPHC-domain decisions for Ed (Phase 3 — do not guess)
+## Climate-data model (Ed 2026-06-13 — major expansion)
 
-### D-CL-4 · Design-condition basis (OPEN — Ed to decide)
-fRSI and window-comfort consumers need a **design exterior temperature**.
-The convention matters and is Ed's call as CPHC. Candidates:
-- ASHRAE 99.6% / 99% heating design dry-bulb (from the EPW / climate
-  data).
-- Coldest-month mean dry-bulb (ISO 13788 fRSI monthly method).
-- PHPP climate-dataset design values (for PH consistency).
-- A national-annex value.
-**Impact:** changes the fRSI threshold and the comfort check inputs.
-**Status:** OPEN. Phase 3 is blocked on this; Phases 1–2 are not.
-Likely answer: support the ISO 13788 monthly method for fRSI AND a
-single heating design temp for comfort — but Ed decides.
+### D-CL-4 · Store ALL climate sources; don't pick one basis (RESOLVED, Ed 2026-06-13)
+We do not know ahead of time which basis a user wants, and a CPHC may
+want to evaluate several. So a project can store **all** of these
+simultaneously, each independently visualizable (graph + table):
+1. **ASHRAE** — a **pointer** to the ASHRAE meteo station
+   (`https://ashrae-meteo.info/v3.0/`): store the station id + URL only.
+   **Settled (Ed 2026-06-13): keep ASHRAE as a pointer for now** — no
+   fetch/store/cache of values yet. (Asymmetry vs. EPW is intentional:
+   ASHRAE design data is a stable published reference; the EPW is the
+   reproducibility-critical hourly input, so it is stored, D-CL-6.)
+2. **EPW** — the stored EPW asset (D-CL-6).
+3. **Phius dataset location** — selected from an app-wide Phius
+   reference dataset (D-CL-8), by version (2022, 2024, …).
+4. **PHI/PHPP dataset location** — selected from an app-wide PHI
+   reference dataset (D-CL-8), by version (10.6, 10.7, 11.0, …).
+Plus **custom** data (D-CL-9) for locations not in the standard sets.
+**Supersedes** the earlier "pick one design-condition basis" framing —
+the design conditions are derived *per source*; the consumer (fRSI,
+comfort) selects which source to read (D-CL-11).
 
-### D-CL-5 · Interior boundary assumption for fRSI (OPEN — Ed to decide)
-fRSI condensation assessment needs an interior condition (temp + RH /
-humidity class). Candidates: ISO 13788 humidity classes; a fixed PH
-assumption (e.g. 20 °C / 50–60% RH); per-project override.
-**Status:** OPEN. Phase 3 / the Thermal-Bridges fRSI consumer needs
-this. Not blocking Phases 1–2.
+### D-CL-8 · App-wide, versioned reference climate datasets (NEW, Ed 2026-06-13)
+Phius and PHI/PHPP climate data are **app-wide reference data**, shared
+across ALL projects and users — not per-project. Store each as a
+**versioned, immutable named dataset** (`provider` ∈ {phius, phi} ×
+`version` ∈ {2022, 2024, 10.6, 10.7, 11.0, …}) containing N location
+records in the standardized format (PRD §4). Seeded into the app from
+the source files Ed has (Phius `-mon.txt` set; PHI from PHPP). Small —
+~12 monthly points/field/location; Phius (1007) + PHI (~1400) ≈ a few
+MB total (research.md).
+- Projects **select + pin** a `(provider, version, location)` — the
+  pinned dataset version is the immutable, reproducible basis (this is
+  the climate analogue of D-CL-7's pinning, and what makes "load an old
+  model and see the climate it used" work without document-versioning).
+- New provider releases = a new seeded dataset version; **old versions
+  retained** (reproducibility). The specific upload/update admin flow
+  is **deferred** (Ed: "worry about that later") — but the data model
+  must carry `version` from day one.
+**Recommendation: accept.**
+
+### D-CL-9 · Custom climate locations (NEW)
+A project can supply a **custom** climate record in the standardized
+format (same shape as a reference-dataset location) for locations not
+in any standard set, or to override one. Stored per-project (not
+app-wide). Editable; visualized the same way.
+**Recommendation: accept.**
+
+### D-CL-10 · Reuse PH-Tools / PHX climate parsing; align the standardized schema with honeybee-ph (NEW)
+The Phius `-mon.txt` shape IS the PHPP climate import format, and PHI
+data comes out of PHPP. `PHX` / `honeybee-ph` (Ed's own libraries,
+already backend deps) very likely already read/model PHPP monthly
+climate. **Investigate reuse before writing parsers from scratch**, and
+**align the standardized internal schema (PRD §4) with the honeybee-ph
+PH-climate model** so a climate record can round-trip into HBJSON/PHPP
+export. Avoids a parallel, drifting representation.
+**Recommendation: accept** (research task in Phase 2).
+
+### D-CL-11 · Per-analysis source selection (NEW)
+Because a project stores multiple sources (D-CL-4), each downstream
+consumer (sun path, fRSI, comfort) **selects which source** it reads —
+with a sensible project-level default. The design-conditions contract
+(Phase 4) is therefore *source-parameterized*, and the `basis` is named
+in the response so a reviewer can audit which dataset/version produced
+a value.
+**Recommendation: accept.**
+
+## Deferred to later feature work (Ed 2026-06-13)
+
+**Current focus is the climate data *store* (Phases 1–3); the *use* of
+that data comes next.** Ed (2026-06-13): "defer the use-case around both
+fRSI and temp-asymmetry to later feature dev work. Focus on the climate
+data store for now, we'll get to use next."
+
+- **The per-source design-conditions contract (Phase 4) is deferred.**
+  It is not part of the current build; reopen with the first consumer.
+- **D-CL-5 · Interior boundary assumption for fRSI — deferred to the
+  Thermal-Bridges fRSI feature.** fRSI needs an interior condition (temp
+  + RH / humidity class): ISO 13788 humidity classes vs. a fixed PH
+  assumption (e.g. 20 °C / 50–60% RH) vs. per-project override. This is
+  the fRSI consumer's decision, not Climate's — Climate supplies the
+  exterior side per source (D-CL-11). Recorded so it is not lost; no
+  Climate phase is blocked on it.
 
 ## Inherited (settled elsewhere; restated)
 

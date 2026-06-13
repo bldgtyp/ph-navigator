@@ -28,7 +28,7 @@ on Ed's promotion.
 
 | Item | Tier | Plan | Reopen gate |
 |---|---|---|---|
-| Sun-path wiring in Site & Sun | 1 (ready) | [`model-viewer-sun-path/`](../model-viewer-sun-path/) Phase 1 | None — D-SP-1 accepted (Ed 2026-06-13); ready to build. Prereqs met: project-location implemented + archived (data + setter UI shipped); MVP Phase 2/6 merged. |
+| Sun-path 3D render in Site & Sun | 1 (frontend) | [`model-viewer-sun-path/`](../model-viewer-sun-path/) Phase 1 | **Climate Phase 1 merged** (`planning/features/climate/`) — it owns the sun-path endpoint (realigned 2026-06-13). D-SP-1 accepted. Then this is a frontend render. |
 | Sun-path scrubber | 1 (gated sub-phase) | [`model-viewer-sun-path/`](../model-viewer-sun-path/) Phase 2 | Phase 1 merged **and** a named time/season review need (Q-VIEW-6). |
 | NEW-VIEW-2 legend-as-filter | 1 (ready) | [`model-viewer-legend-filter/`](../model-viewer-legend-filter/) | None — ready. Ed-flagged near-priority. |
 | Section / clipping planes | 2 (gated) | [`model-viewer-clipping-planes/`](../model-viewer-clipping-planes/) | A named sectioned-inspection workflow (Q-VIEW-8). |

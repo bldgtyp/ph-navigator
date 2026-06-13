@@ -20,36 +20,42 @@ RELATED:
 
 | Phase | Scope | Gate to start | Unblocks |
 |---|---|---|---|
-| 1 — Sun-path service | Backend sun-path builder + `GET /projects/{id}/sun-path` + MCP, in the location/climate module; north-sign verified | None — `project_location` data + `ladybug-core` exist | Model Viewer Site & Sun render; Climate tab sun-path visual |
-| 2 — Climate tab UI | New top-level `climate` tab: location/EPW record + sun-path visualization | Phase 1 merged | The "see + record" goal |
-| 3 — Design conditions + metrics | EPW-derived metrics + design-conditions contract endpoint (+ MCP) | D-CL-4 + D-CL-5 resolved by Ed | Thermal-Bridges fRSI; Window comfort |
+| 1 — Sun-path service | Backend sun-path builder + `GET /projects/{id}/sun-path` + MCP; north-sign verified | None — `project_location` data + `ladybug-core` exist | Model Viewer Site & Sun render; Climate tab sun-path visual |
+| 2 — Reference datasets + standardized format | Canonical `ClimateRecord`; app-wide versioned Phius/PHI stores; seed importers; dataset read endpoints + MCP | None (reuse-investigate PH-Tools first, D-CL-10) | The tab dropdowns/graphs; the design-conditions contract |
+| 3 — Climate tab UI | New `climate` tab: location record + multi-source attach/select (ASHRAE/EPW/Phius/PHI/custom) + per-source graph/table + sun-path visual | Phase 1 + Phase 2 merged | The "see + record + compare sources" goal |
+| 4 — Design conditions + metrics | Per-source, source-parameterized design-conditions contract (+ MCP) | **Deferred** (Ed 2026-06-13) — needs a scheduled fRSI/comfort consumer | Thermal-Bridges fRSI; Window comfort |
+
+**Focus (Ed 2026-06-13): the climate data *store* — Phases 1–3.** The
+*use* of the data (Phase 4 design conditions + the fRSI/comfort
+consumers + the D-CL-5 interior assumption + temperature-asymmetry) is
+deferred to later feature work. Phases 1 and 2 are independent and can
+run in parallel (sun path vs. dataset store); Phase 3 needs both.
 
 ## Cross-feature ordering (the answer to "Climate first?")
 
 ```
-Climate P1 (sun-path service)  ──unblocks──►  Model Viewer sun-path render (frontend-only)
-        │                                       (planning/features_v1.1/model-viewer-sun-path)
-        └──unblocks──►  Climate P2 (tab + sun-path visual)
+Climate P1 (sun-path service) ──unblocks──► Model Viewer sun-path render (frontend-only)
+                                            (planning/features_v1.1/model-viewer-sun-path)
 
-Climate P3 (design conditions) ──unblocks──►  Thermal-Bridges fRSI  (separate future feature)
-                                └──unblocks──►  Window comfort       (separate future feature)
+Climate P1 + P2 (datasets) ──unblocks──► Climate P3 (tab: record + sources + graphs + sun path)
+
+Climate P4 (design conditions) ──unblocks──► Thermal-Bridges fRSI  (separate future feature)
+                                └──unblocks──► Window comfort       (separate future feature)
 ```
 
-- **Phase 1 is the only true prerequisite for the 3D sun-path viz.**
-  Build it first; then the Model-Viewer render and Climate Phase 2 can
-  run in parallel (both just consume the endpoint).
-- **Do not gate the 3D render behind the whole tab.** The tab (Phase 2)
-  and the analytical metrics (Phase 3) are not prerequisites for the
-  Model-Viewer sun path — only the Phase 1 service is.
-- **Phase 3 is gated on Ed's domain decisions** (D-CL-4 design basis,
-  D-CL-5 interior assumption) and on the consumers actually being
-  scheduled. It can lag well behind Phases 1–2.
+- **Phase 1 is the only prerequisite for the 3D sun-path viz.** Build
+  it first; the Model-Viewer render then just consumes the endpoint.
+- **Phases 1 and 2 are independent** (sun path vs. dataset store) — run
+  in parallel if capacity allows.
+- **Do not gate the 3D render behind the tab.** Phases 2–4 are not
+  prerequisites for the Model-Viewer sun path — only Phase 1 is.
+- **Phase 4 is gated** on a scheduled fRSI/comfort consumer (and the
+  D-CL-5 interior assumption, likely owned by that consumer). It can lag
+  well behind Phases 1–3.
 
 ## Build order within Phase 1
 
-Identical to the backend originally drafted in
-`model-viewer-sun-path/phases/phase-01` §2 — that backend now lands
-**here**:
+The sun-path backend (relocated from `model-viewer-sun-path`):
 1. Pure `build_sun_path(...)` (ladybug `Location` + `Sunpath`, unit
    radius, origin-centered, DST off) — fixture-test the **north sign**
    (D-PL-4) before plumbing.
@@ -61,13 +67,19 @@ Identical to the backend originally drafted in
 ## Risks / watch-items
 
 - **North sign (D-PL-4)** — the load-bearing correctness item; lock
-  with a fixture.
+  with a fixture (Phase 1).
+- **Reuse PH-Tools climate parsing (D-CL-10)** — investigate
+  `honeybee-ph`/`PHX` before hand-writing the Phius/PHI parsers
+  (Phase 2). The `-mon.txt` IS the PHPP climate format.
 - **Module home** — author in the location/climate backend
   (`features/project_location/`, the eventual `climate` module), NOT
-  `features/model_viewer/`, so consumers don't trigger a later move
-  (D-CL-2). Keep imports one-way (model_viewer → climate, never the
-  reverse).
-- **EPW parsing cost (Phase 3)** — hourly EPW → metrics is real work;
-  derive-on-read where cheap, persist where not (PRD §4).
+  `features/model_viewer/`. Keep imports one-way (model_viewer →
+  climate, never the reverse).
+- **Reference-dataset scope** — `climate_dataset*` tables are
+  **app-wide** (no `project_id`); don't accidentally project-scope them.
+- **EPW parsing cost (Phase 4)** — hourly EPW → metrics is real work;
+  derive-on-read where cheap, persist where not, keyed by the immutable
+  EPW asset id (PRD §4).
 - **Scope discipline** — the fRSI/comfort *consumers* are separate
-  features. Climate ships the contract; it does not compute fRSI.
+  features. Climate ships the per-source contract; it does not compute
+  fRSI or comfort.

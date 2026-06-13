@@ -84,31 +84,22 @@ The geometry `/model_data` artifact is untouched; its `sun_path` key
 stays `null`. The two queries (model_data, sun-path) are independent;
 the lens composes them.
 
-## 5. Backend contract
+## 5. Backend contract — owned by Climate Phase 1
 
-- **New route** `GET /projects/{project_id}/sun-path` in the
-  model_viewer routes module. Public-readable through the standard
-  `require_project_access` view seam (same as `/model_data`).
-- **Returns** `SunPathAndCompassDTOSchema` (the MVP-shipped schema) or
-  `null` when location is unset / lat-long absent. Never 500s on
-  missing location — null is a first-class result.
-- **Computation** in a pure helper
-  (`features/model_viewer/sun_path.py` or a function in
-  `extraction.py`): build a ladybug `Location` from lat/long/elevation
-  + numeric UTC offset (derived from the IANA `time_zone` via
-  `zoneinfo`), call `Sunpath.from_location(...)`, generate the
-  analemma polylines + monthly arcs + `Compass`, convert to the
-  existing DTOs. **Daylight saving off** (V1 parity). **Unit radius,
-  origin-centered.**
-- **True-north sign** (D-PL-4): pass `true_north_deg` to ladybug's
-  north parameter with the sign confirmed by the phase-01 fixture
-  test. Document the confirmed mapping inline.
-- **MCP:** expose the sun-path read as an MCP tool
-  (`get_project_sun_path` or fold into the existing model-viewer MCP
-  surface) for parity with the other per-feature reads (NEW-LLM-API-1).
-- **Caching:** not the immutable artifact treatment. Compute per
-  request (cheap), optionally ETag from a hash of the location inputs
-  so an unchanged location 304s. No precompute, no R2 artifact.
+> **Realigned 2026-06-13.** The sun-path builder + `GET
+> /projects/{id}/sun-path` endpoint + MCP tool live in **Climate
+> Phase 1** (`planning/features/climate/phases/phase-01-sun-path-service.md`),
+> their proper home (climate-derived, multi-consumer — D-CL-2). The
+> contract this feature consumes:
+
+- `GET /api/v1/projects/{project_id}/sun-path` →
+  `SunPathAndCompassDTOSchema | null` (null when no location).
+  Public-readable, location-reactive, **unit radius / origin-centered**,
+  true-north verified (D-PL-4). Not the immutable-artifact treatment.
+
+This feature does **not** build backend; it consumes the above. (If
+Climate Phase 1 has not shipped when this is scheduled, build it there
+first.)
 
 ## 6. Frontend contract
 

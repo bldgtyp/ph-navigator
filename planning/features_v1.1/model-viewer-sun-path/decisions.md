@@ -116,29 +116,27 @@ shape.
 project's HBJSON files, with a matching frontend query invalidation.
 The plan flags every spot this diverges.
 
-## Climate direction (recorded 2026-06-13)
+## Climate feature — this feature was realigned (2026-06-13)
 
-Ed raised a project-scoped **Climate** top-level tab (alongside Status /
-Apertures / Envelope / Equipment / Model) that owns location + EPW and
-visualizes climate, with other consumers beyond the viewer (e.g.
-thermal-bridge fRSI condensation resistance, window thermal-comfort
-checks, degree-days). This is bigger than the sun-path feature and is
-proposed as its own top-level feature, **not** a model-viewer item.
+Ed greenlit a project-scoped **Climate** top-level tab + service
+(`planning/features/climate/`) and asked to build it **first**. The
+sun-path backend therefore moved to **Climate Phase 1** (D-CL-2), and
+this feature was realigned to **frontend-only**, consuming the Climate
+`GET /projects/{id}/sun-path` endpoint.
 
 Impact on this feature:
 - **Validates D-SP-1.** A separate, project-scoped, location-reactive
-  sun-path endpoint is exactly what a Climate tab and the Model viewer
-  both consume — the decoupling is right regardless.
-- **Endpoint placement** (phase-01 §2.3): author the sun-path builder +
-  endpoint in the location/climate domain, not model_viewer, so the
-  Climate tab reuses it without a move.
-- **The Model viewer's Site & Sun lens stays the 3D-over-geometry
-  consumer.** The Climate tab (if built) is a second consumer of the
-  same endpoint, possibly showing the diagram standalone + other
-  climate charts. Sun-path-in-the-viewer remains a model-viewer feature.
-- **Sequencing:** this feature does **not** wait for the Climate tab.
-  Sun-path Phase 1 ships against the existing `project_location` data
-  now; the Climate tab is a separate, later workstream.
+  endpoint is exactly what the Climate tab and the Model viewer both
+  consume — the decoupling is right; Climate now owns it.
+- **Backend moved out.** The builder, endpoint, MCP tool, and the
+  true-north fixture (D-PL-4) live in Climate Phase 1, not here.
+- **This feature renders only** — it points the Site & Sun lens at the
+  Climate endpoint and draws the diagram over geometry. The Climate tab
+  is a *second* consumer (standalone sun-path visual + climate charts);
+  sun-path-in-the-3D-viewer stays a model-viewer feature.
+- **Sequencing:** this feature now **depends on Climate Phase 1**.
+  Build Climate Phase 1 → then this render and the Climate tab can
+  proceed in parallel.
 
 ## Open questions
 

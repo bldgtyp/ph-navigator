@@ -11,9 +11,11 @@ RELATED:
   - PRD.md
   - decisions.md
   - PLAN.md
+  - research.md
   - phases/phase-01-sun-path-service.md
-  - phases/phase-02-climate-tab-ui.md
-  - phases/phase-03-design-conditions-and-metrics.md
+  - phases/phase-02-reference-datasets-and-format.md
+  - phases/phase-03-climate-tab-ui.md
+  - phases/phase-04-design-conditions-and-metrics.md
   - planning/archive/project-location/ (the data foundation this builds on)
   - planning/features_v1.1/model-viewer-sun-path/ (a Phase-1 consumer)
 ---
@@ -22,55 +24,60 @@ RELATED:
 
 A project-scoped **Climate** top-level tab (alongside Status /
 Apertures / Envelope / Equipment / Model) that is the single
-authoritative home for a project's **location + weather basis**, and
-the source of **climate-derived design conditions** that several
-analyses consume.
+authoritative home for a project's **location + multiple
+weather/climate sources** (ASHRAE pointer · EPW · Phius · PHI · custom),
+backed by **app-wide versioned reference datasets**, and the source of
+**climate-derived design conditions** that several analyses consume.
 
 ## Why this exists (Ed, 2026-06-13)
 
 Location and climate are cross-cutting project inputs, not Model-Viewer-
-local ones. A user wants to set location + EPW once, *see and visualize*
-the climate, keep a clear record of the building location, and have
-other features reuse it:
+local ones. A CPHC wants to record location, attach/compare several
+climate sources (you don't know in advance which basis you'll evaluate),
+*see and visualize* the data, and have other features reuse it:
 
 - **Model Viewer** Site & Sun lens — sun path over the building.
-- **Thermal Bridges** — fRSI condensation-resistance assessment needs
-  the design exterior temperature + interior humidity load.
+- **Thermal Bridges** — fRSI condensation-resistance needs the design
+  exterior temperature + interior humidity load.
 - **Window U-values** — thermal-comfort checks need the design winter
   exterior temperature.
 - **Future** — degree-days, PHPP/WUFI climate cross-checks.
 
 The `project-location` feature (implemented + archived) already built
-the data foundation and deliberately retained the full EPW "for future
-climate-aware features." Climate is that future home: it **extends**
-`project_location`, it does not replace it.
+the location/EPW data foundation. Climate **extends** it (not replaces)
+and adds the big new piece: **app-wide reference climate datasets**
+(Phius, PHI/PHPP — the same canonical PHPP monthly format; see
+`research.md`), versioned, shared across all projects/users.
 
 ## What Climate owns vs. consumes
 
 | Owns | Consumes / depends on |
 |---|---|
-| Location + EPW record (extends `project_location`) | `project_location` table + setter (existing) |
-| Sun-path service + `GET /projects/{id}/sun-path` (Phase 1) | `ladybug-core` (already a backend dep from Model Viewer Phase 2) |
-| Climate tab UI + visualizations (Phase 2) | The project tab roster (`PROJECT_TABS`) |
-| EPW-derived metrics + the design-conditions contract (Phase 3) | EPW bytes in R2 (existing) |
+| Sun-path service + `GET /projects/{id}/sun-path` (Phase 1) | `ladybug-core` (backend dep); `project_location` data |
+| Standardized climate record + app-wide versioned Phius/PHI reference datasets + seed importers (Phase 2) | `honeybee-ph`/`PHX` parsing (reuse — D-CL-10); Ed's source files |
+| Climate tab: location record + multi-source attach/select + per-source graph/table + sun path (Phase 3) | `PROJECT_TABS`; `ProjectLocationSettingsSection` (reuse/migrate) |
+| Per-source design-conditions contract (Phase 4) | EPW bytes in R2; PH-dataset design columns (Phase 2) |
 
 Downstream **consumers are separate features** — they read Climate's
-endpoints, they are not built here: Model Viewer sun-path render,
-Thermal Bridges fRSI, Window comfort.
+endpoints, not built here: Model Viewer sun-path render, Thermal Bridges
+fRSI, Window comfort.
 
 ## Read order
 
-1. `decisions.md` — what Climate owns, extends-not-replaces, and the
-   two CPHC-domain decisions to make (design-condition basis; interior
-   RH assumption).
-2. `PRD.md` — behavior contract.
-3. `PLAN.md` — phase sequence and the cross-feature ordering.
-4. `phases/phase-01-sun-path-service.md` — build first.
+1. `research.md` — what the Phius/PHI example data contain (basis for
+   the standardized format).
+2. `decisions.md` — what Climate owns, extends-not-replaces, the
+   app-wide reference datasets (D-CL-8), store-all-sources (D-CL-4), and
+   the one open fRSI-interior question (D-CL-5).
+3. `PRD.md` — behavior contract + the standardized record (§4.3).
+4. `PLAN.md` — phase sequence and cross-feature ordering.
+5. `phases/phase-01-sun-path-service.md` (+ `phase-02-…`) — build first.
 
 ## Sequence headline
 
-**Phase 1 (sun-path service) is the foundation to build first** — it
-unblocks the Model Viewer Site & Sun 3D render
+**Phases 1 (sun-path service) and 2 (reference datasets + standardized
+format) are the foundations — independent, build first/in parallel.**
+Phase 1 unblocks the Model Viewer Site & Sun 3D render
 (`planning/features_v1.1/model-viewer-sun-path/`, now frontend-only).
-Phases 2 (tab UI) and the Model-Viewer render can then proceed in
-parallel. Phase 3 (design conditions) gates the fRSI/comfort consumers.
+Phase 3 (the tab) needs both. Phase 4 (per-source design conditions)
+gates the fRSI/comfort consumers.

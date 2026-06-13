@@ -33,8 +33,8 @@ with detailed phased plans.
 
 | Candidate | Feature folder | Notes |
 |---|---|---|
-| Sun-path wiring (D-07) **+** sun-path scrubber (Q-VIEW-6) | [`model-viewer-sun-path/`](../model-viewer-sun-path/) | Flagship. Phase 1 = static annual sun path from project-location data; Phase 2 = scrubber (gated). D-SP-1 settled (decouple from the immutable `/model_data` artifact, accepted 2026-06-13). |
-| Legend-as-filter (NEW-VIEW-2 / Q-VIEW-7) | [`model-viewer-legend-filter/`](../model-viewer-legend-filter/) | Ed-flagged near-priority. Frontend-only; reuses the D-11 legend rows + existing bucket-key function. No open decisions. |
+| Sun-path **3D render** (D-07) **+** scrubber (Q-VIEW-6) | [`model-viewer-sun-path/`](../model-viewer-sun-path/) | **Realigned 2026-06-13 to frontend-only.** The sun-path *backend* moved to the new **[Climate](../../features/climate/)** feature (Phase 1), which must ship first. This feature renders the diagram over geometry in Site & Sun. D-SP-1 settled (decoupled, location-reactive endpoint, now Climate-owned). |
+| Legend-as-filter (NEW-VIEW-2 / Q-VIEW-7) | [`model-viewer-legend-filter/`](../model-viewer-legend-filter/) | Ed-flagged near-priority. Frontend-only; reuses the D-11 legend rows + existing bucket-key function. No open decisions. **No Climate dependency** — can go anytime. |
 
 ### Tier 2 — Plannable but gated (own folder, plan ready, idle)
 
@@ -61,12 +61,16 @@ with detailed phased plans.
 
 ## Recommended order if Ed promotes work
 
-1. **Sun path** — completes declared Site & Sun behavior; prerequisites
-   met; D-SP-1 settled — ready to build.
-2. **Legend-as-filter** — Ed's stated near-priority; cheapest high-value
-   win; no dependencies.
-3. **Clipping planes** — when a section workflow names itself.
-4. **Doc cross-check** — with the Rooms/equipment family, not before.
+1. **Climate Phase 1** (`planning/features/climate/`) — the sun-path
+   *service*; the prerequisite for the sun-path 3D render and the
+   Climate tab. Build first (Ed, 2026-06-13).
+2. **Sun-path 3D render** — frontend render in Site & Sun, once Climate
+   Phase 1 ships. (Climate Phase 2 tab can proceed in parallel.)
+3. **Legend-as-filter** — Ed's stated near-priority; cheapest high-value
+   win; **no Climate dependency**, so it can also run anytime/in
+   parallel.
+4. **Clipping planes** — when a section workflow names itself.
+5. **Doc cross-check** — with the Rooms/equipment family, not before.
 
 ## Current decision
 
