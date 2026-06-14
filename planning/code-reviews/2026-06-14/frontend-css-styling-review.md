@@ -510,10 +510,26 @@ parentheses.
      Optional future: unify `.chip--sm` padding so all small chips match.
 7. Extract shared drawing widgets used by apertures+envelope into
    `shared/ui/canvas/`. (M–L)
-8. Route all SVG/3D color through tokens; unify the 3D+chart+brand
-   palette source. (M) — ✅ *SVG-stroke swaps done 2026-06-14
-   (`rgba(0,0,0,0.5)`→`--svg-line-heavy` in apertures + envelope,
-   neutral, verified). The 3D JS palette unification remains.*
+8. Route SVG color through tokens; assess the 3D palette. (M) —
+   ✅ **Resolved 2026-06-14.**
+   - *SVG:* apertures `--aperture-region-stroke` + envelope
+     `.assembly-svg-segment` now use `var(--svg-line-heavy)` (neutral;
+     first use of the brand `--svg-*` tokens). Verified.
+   - *3D palette — review over-flagged this; correct action is to LEAVE
+     IT INDEPENDENT.* `model_viewer/lib/themes.ts`'s color-by palettes
+     (`FACE_TYPE_COLORS`, `BOUNDARY_COLORS`, `VENTILATION_AIRFLOW_COLORS`,
+     `FLOOR_WEIGHTING_FACTOR_COLORS`) are **domain-standard
+     Honeybee/Ladybug colors** (Outdoors `#40B4FF`, Ground `#A55200`,
+     Adiabatic `#FF8080`, Surface `#008000`; standard face-type hues) —
+     merging them into the generic `--chart-*` palette would break a
+     convention the PH ecosystem (and honeybee_ph) relies on.
+     `colors.ts` is already a centralized 3D material module with a CSS
+     bridge (`resolveViewerTokens` reads `--highlight`/`--highlight-light`
+     with a brand-matching fallback). No change made.
+   - *Optional governance follow-up (deferred):* extend `check:hex` to
+     `.ts` while exempting the sanctioned colour modules (`colors.ts`,
+     `themes.ts`, data-table `lib/options/create.ts`) so future
+     *accidental* hex in other `.ts` becomes visible. Separate guard task.
 
 **P3 — Structure & discoverability (owner's goal #3):**
 9. `src/styles/README.md` token+class catalog + `shared/ui/index.ts`
