@@ -928,17 +928,12 @@
   display: grid;
 }
 
+/* Composes `.chip .chip--sm`; coloured material-drift indicator. */
 .material-drift-badge {
   background: color-mix(in oklab, var(--phn-warning) 16%, var(--bg-card));
   border: 1px solid color-mix(in oklab, var(--phn-warning) 45%, var(--border-subtle));
-  border-radius: var(--radius-pill);
   color: var(--text-primary);
-  display: inline-flex;
-  font-size: 11px;
   font-weight: 700;
-  line-height: 1;
-  padding: 4px 7px;
-  white-space: nowrap;
 }
 
 .material-drift-badge.source_deactivated,

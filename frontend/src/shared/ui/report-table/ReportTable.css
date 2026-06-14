@@ -169,23 +169,12 @@
   font-size: 12px;
 }
 
+/* Composes `.chip .chip--md .chip--outline .chip--interactive`; only the
+   filter-chip specifics remain here. */
 .report-status-chip {
-  align-items: center;
   appearance: none;
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-pill);
-  color: var(--text-primary);
-  cursor: pointer;
-  display: inline-flex;
-  font-size: 12px;
   font-weight: 500;
   gap: var(--space-8);
-  line-height: 1;
-  padding: 7px 12px;
-  transition:
-    background 0.16s var(--ease, ease-out),
-    border-color 0.16s var(--ease, ease-out);
 }
 
 .report-status-chip[aria-pressed="true"] {

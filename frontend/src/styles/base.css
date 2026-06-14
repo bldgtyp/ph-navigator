@@ -1440,6 +1440,43 @@ button:not([class]):hover:not(:disabled),
   opacity: 0.5;
 }
 
+/* Chip / pill primitive — a pill-shaped inline label or control. Compose
+   a size (.chip--sm / .chip--md) and optionally .chip--outline (bordered
+   card surface) and .chip--interactive (clickable: cursor + hover). Layer
+   semantic colour and typography (mono status labels, data-coloured
+   option pills, etc.) via the consumer's own class on top. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-6);
+  border-radius: var(--radius-pill);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.chip--sm {
+  padding: var(--space-4) var(--space-8);
+  font-size: var(--fs-2xs);
+}
+
+.chip--md {
+  padding: 7px var(--space-12);
+  font-size: 12px;
+}
+
+.chip--outline {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.chip--interactive {
+  cursor: pointer;
+  transition:
+    background var(--transition-fast) var(--ease),
+    border-color var(--transition-fast) var(--ease);
+}
+
 [data-tooltip] {
   position: relative;
 }
