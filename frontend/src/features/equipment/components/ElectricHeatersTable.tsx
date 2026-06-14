@@ -53,8 +53,13 @@ export function ElectricHeatersTable({
     [fieldDefs],
   );
   const customColumns = useMemo<DataTableColumnDef<ElectricHeaterRow>[]>(
-    () => customFieldColumnDefs({ customFields, fieldDefByKey }),
-    [customFields, fieldDefByKey],
+    () =>
+      customFieldColumnDefs({
+        customFields,
+        fieldDefByKey,
+        rowsComputed: electricHeatersSlice.rows_computed,
+      }),
+    [customFields, fieldDefByKey, electricHeatersSlice.rows_computed],
   );
   const columns = useMemo<DataTableColumnDef<ElectricHeaterRow>[]>(
     () => [

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-13
 TIME: 09:21 EDT
-STATUS: Active
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Enable user-defined custom fields on Equipment and Thermal Bridges DATA-TABLES.
 RELATED: context/user-stories/32-custom-fields.md; context/user-stories/30-tables-equipment.md; context/technical-requirements/data-table.md; frontend/src/features/equipment/routes/EquipmentPageBody.tsx; frontend/src/features/assets/routes/ThermalBridgesPage.tsx
@@ -31,7 +31,7 @@ and `RoomsTable` into `DataTable`.
 1. `PRD.md`
 2. `PLAN.md`
 3. `STATUS.md`
-4. Next phase:
+4. Phase closeout:
    - `phases/phase-04-verification-closeout.md`
 5. Later phases:
    - None after Phase 04
@@ -61,8 +61,13 @@ now append user-defined custom columns from `tableSchema.customFields`
 and receive the shared DataTable schema callbacks in editable
 controller states.
 
-The remaining work is Phase 04 verification and closeout: browser
-smoke, final repo gate, and PR-ready status evidence.
+Phase 04 verified the feature end to end. Focused backend/frontend
+tests passed, browser smoke proved Add field authoring on Pumps,
+Ventilators, and Thermal Bridges, Pumps custom values persisted through
+the draft table path, formula custom fields render from computed
+overlays on the newly enabled target tables, and locked versions hide
+schema-mutation controls. The final repo gate passed, and the branch is
+ready for PR review.
 
 ## Phase Map
 
@@ -71,4 +76,4 @@ smoke, final repo gate, and PR-ready status evidence.
 | 01 - Backend registry pilot | Complete | Pumps accepts backend custom-field schema mutations through its existing registry scaffold. |
 | 02 - Backend registry rollout | Complete | Remaining Equipment and Thermal Bridges contracts publish registries and pass focused backend mutation tests. |
 | 03 - Frontend affordance wiring | Complete | Target table components render custom columns and receive existing controller handlers in editable states. |
-| 04 - Verification and closeout | Pending | Run focused tests, browser smoke, `make format`, and `make ci`; update status evidence. |
+| 04 - Verification and closeout | Complete | Focused tests and browser smoke pass; final repo gate evidence recorded in `STATUS.md`. |

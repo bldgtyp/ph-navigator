@@ -73,8 +73,8 @@ export function ThermalBridgesTable({
     [fieldDefs],
   );
   const customColumns = useMemo<DataTableColumnDef<ThermalBridgeRow>[]>(
-    () => customFieldColumnDefs({ customFields, fieldDefByKey }),
-    [customFields, fieldDefByKey],
+    () => customFieldColumnDefs({ customFields, fieldDefByKey, rowsComputed: slice.rows_computed }),
+    [customFields, fieldDefByKey, slice.rows_computed],
   );
   const columns = useMemo<DataTableColumnDef<ThermalBridgeRow>[]>(
     () => [

@@ -28,6 +28,7 @@ import {
   buildElectricHeater,
   buildElectricHeatersSlice,
   buildFan,
+  buildFormulaField,
   buildFansSlice,
   buildHotWaterHeater,
   buildHotWaterHeatersSlice,
@@ -319,6 +320,69 @@ describe("equipment custom fields Phase 03", () => {
     expect(await screen.findByRole("menuitem", { name: "Edit field…" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "Duplicate field" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "Delete field" })).toBeInTheDocument();
+  });
+
+  test("renders computed formula overlays for newly enabled table families", () => {
+    const formulaField = buildFormulaField({
+      field_key: "cf_label",
+      display_name: "Label",
+      config: { result_type: "text" },
+    });
+    const pumpSlice = buildPumpsSlice({
+      pumps: [buildPump({ id: "pump_1" })],
+      field_defs: [...buildPumpsSlice().field_defs, formulaField],
+      rows_computed: { pump_1: { cf_label: "Pump label" } },
+    });
+    const ventilatorSlice = buildVentilatorsSlice({
+      ventilators: [buildVentilator({ id: "erv_1" })],
+      field_defs: [...buildVentilatorsSlice().field_defs, formulaField],
+      rows_computed: { erv_1: { cf_label: "ERV label" } },
+    });
+    const thermalBridgeSlice = buildThermalBridgesSlice({
+      thermal_bridges: [buildThermalBridge({ id: "tb_1" })],
+      field_defs: [...buildThermalBridgesSlice().field_defs, formulaField],
+      rows_computed: { tb_1: { cf_label: "TB label" } },
+    });
+
+    const { unmount } = renderWithQueryClient(
+      <PumpsTable
+        pumpsSlice={pumpSlice}
+        tableSchema={schemaForPumps(pumpSlice)}
+        isEditor
+        projectId="proj_1"
+        view={emptyViewState()}
+        onViewChange={vi.fn()}
+        onWrite={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("Pump label")).toBeInTheDocument();
+    unmount();
+
+    const renderedVentilator = renderWithQueryClient(
+      <VentilatorsTable
+        ventilatorsSlice={ventilatorSlice}
+        tableSchema={schemaForVentilators(ventilatorSlice)}
+        isEditor
+        view={emptyViewState()}
+        onViewChange={vi.fn()}
+        onWrite={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("ERV label")).toBeInTheDocument();
+    renderedVentilator.unmount();
+
+    renderWithQueryClient(
+      <ThermalBridgesTable
+        slice={thermalBridgeSlice}
+        tableSchema={schemaForThermalBridges(thermalBridgeSlice)}
+        isEditor
+        projectId="proj_1"
+        view={emptyViewState()}
+        onViewChange={vi.fn()}
+        onWrite={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("TB label")).toBeInTheDocument();
   });
 
   test("attachment tables still emit attachment writes with Add field enabled", async () => {

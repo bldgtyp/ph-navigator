@@ -75,8 +75,13 @@ export function HotWaterTanksTable({
     [fieldDefs],
   );
   const customColumns = useMemo<DataTableColumnDef<HotWaterTankRow>[]>(
-    () => customFieldColumnDefs({ customFields, fieldDefByKey }),
-    [customFields, fieldDefByKey],
+    () =>
+      customFieldColumnDefs({
+        customFields,
+        fieldDefByKey,
+        rowsComputed: hotWaterTanksSlice.rows_computed,
+      }),
+    [customFields, fieldDefByKey, hotWaterTanksSlice.rows_computed],
   );
   const columns = useMemo<DataTableColumnDef<HotWaterTankRow>[]>(
     () => [

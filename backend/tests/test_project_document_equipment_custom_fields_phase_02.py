@@ -123,6 +123,16 @@ def delete_field_mutation(*, table_key: str, field_key: str, fingerprint: str) -
     }
 
 
+def set_formula_mutation(*, table_key: str, field_key: str, fingerprint: str, source: str) -> dict[str, Any]:
+    return {
+        "kind": "setFormula",
+        "table_key": table_key,
+        "field_id": field_key,
+        "source": source,
+        "expected_schema_fingerprint": fingerprint,
+    }
+
+
 @pytest.mark.parametrize("case", TABLE_CASES, ids=[case.table_key for case in TABLE_CASES])
 def test_phase_02_target_contract_exposes_field_registry(case: TableCase) -> None:
     contract = get_table_contract(case.table_key)
@@ -160,6 +170,57 @@ def test_phase_02_add_field_succeeds_on_every_target_table(
     refetch = client.get(draft_table_url(project_id, version_id, case.table_key))
     assert refetch.status_code == 200
     assert [field["field_key"] for field in custom_fields_from_slice(refetch.json())] == ["cf_phase_02"]
+
+
+@pytest.mark.parametrize("case", TABLE_CASES, ids=[case.table_key for case in TABLE_CASES])
+def test_phase_04_target_response_includes_formula_overlay(
+    clean_document_tables: None,
+    case: TableCase,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+
+    initial = client.get(draft_table_url(project_id, version_id, case.table_key))
+    assert initial.status_code == 200
+    added = client.post(
+        mutate_table_url(project_id, version_id, case.table_key),
+        headers=mutation_headers(initial.json()),
+        json=add_field_mutation(
+            table_key=case.table_key,
+            fingerprint=field_defs_fingerprint(initial.json()["field_defs"]),
+            field_key="cf_tag_copy",
+            display_name="Tag Copy",
+            field_type=CustomFieldType.formula,
+        ),
+    )
+    assert added.status_code == 200, added.text
+
+    payload = case.payload_factory()
+    payload["field_defs"] = added.json()["field_defs"]
+    write = client.put(
+        draft_table_url(project_id, version_id, case.table_key),
+        headers=mutation_headers(added.json()),
+        json=payload,
+    )
+    assert write.status_code == 200, write.text
+
+    formula = client.post(
+        mutate_table_url(project_id, version_id, case.table_key),
+        headers=mutation_headers(write.json()),
+        json=set_formula_mutation(
+            table_key=case.table_key,
+            field_key="cf_tag_copy",
+            fingerprint=field_defs_fingerprint(write.json()["field_defs"]),
+            source="{Tag}",
+        ),
+    )
+
+    assert formula.status_code == 200, formula.text
+    body = formula.json()
+    row = payload[case.payload_key][0]
+    assert body["rows_computed"][row["id"]]["cf_tag_copy"] == row["custom_values"]["record_id"]
 
 
 @pytest.mark.parametrize(
