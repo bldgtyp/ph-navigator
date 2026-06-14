@@ -1,0 +1,18 @@
+
+ISLIP LONG ISL MACARTHUR AP NY	Latitude [°]	40.783	Longitude [°]	-73.100	Height a.s.l. (m)	26			Daily temperature variation summer (K)	8.0			Heating load 1	Heating load 2	Cooling load
+Temperature outdoor	-1.0	1.2	5.8	10.9	15.5	21.6	24.8	23.5	19.2	12.4	8.9	3.3	-8.7	-5.0	25.5
+North	23	32	30	37	52	54	55	45	35	28	18	16	36	33	62
+East	43	58	69	80	94	89	97	92	75	62	40	36	70	51	138
+South	100	103	102	90	84	74	82	92	103	110	90	87	165	105	157
+West	46	58	66	79	99	99	100	94	81	61	39	34	72	54	153
+Global	58	76	107	136	171	178	184	167	130	97	59	47	89	67	267
+Dewpoint	-7.4	-3.6	-0.9	4.3	9.5	15.7	20.2	18.3	14.5	7.1	3.3	-2.6	4d	4d	2d
+Sky temperature	-16.4	-13.4	-8.7	-2.4	3.3	10.8	15.1	14.2	9.2	1.4	-3.5	-10.9	w1: 17/1	w2: 20/1	s: 17/8
+Heating degree-hours (12/20)	69230	Cooling degree-hours (24)	3118	Wind speed	Jan	5.4	Jul	3.3	m/s
+12-h Temperaturmin.	-13.9 °C	Anteil Nachtstunden < 21 °C und abs. Feuchte < 14 g/kg im Sommer 	14.7%	Anteil Nachtstunden < 21 °C  und abs. Feuchte > 14 g/kg im Sommer 	1.8%
+
+Heating loads (time constant for buildings, number of cold days): Statistics based on: Coldest period / weighting of coldest and cloudiest period
+Cooling (number of hot days): Statistics based on: Mean val.
+
+Albedo = 0.2
+

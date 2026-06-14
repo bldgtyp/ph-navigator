@@ -1,0 +1,18 @@
+
+MONTICELLO(AWOS) NY	Latitude [°]	41.700	Longitude [°]	-74.800	Height a.s.l. (m)	428			Daily temperature variation summer (K)	11.0			Heating load 1	Heating load 2	Cooling load
+Temperature outdoor	-3.4	-3.0	-1.4	9.3	11.8	18.7	21.1	20.2	16.9	9.0	3.8	-4.2	-10.7	-3.0	21.9
+North	23	33	48	41	48	57	55	47	34	26	23	22	35	29	76
+East	43	60	89	73	77	99	104	86	65	59	39	40	74	46	151
+South	95	105	118	80	67	79	90	89	90	109	80	85	145	84	125
+West	44	59	88	67	78	106	112	91	69	59	39	38	56	43	170
+Global	51	71	108	114	136	186	202	154	114	90	52	45	72	53	305
+Dewpoint	-7.1	-9.4	-7.7	2.8	5.6	12.3	15.5	14.2	11.8	3.7	-1.5	-8.5	4d	4d	2d
+Sky temperature	-17.6	-20.3	-17.7	-3.6	-0.7	6.5	9.8	10.0	6.4	-2.5	-8.8	-19.2	w1: 12/12	w2: 4/12	s: 6/7
+Heating degree-hours (12/20)	100670	Cooling degree-hours (24)	1323	Wind speed	Jan	3.7	Jul	2.2	m/s
+12-h Temperaturmin.	-18.4 °C	Anteil Nachtstunden < 21 °C und abs. Feuchte < 14 g/kg im Sommer 	33.2%	Anteil Nachtstunden < 21 °C  und abs. Feuchte > 14 g/kg im Sommer 	0.9%
+
+Heating loads (time constant for buildings, number of cold days): Statistics based on: Coldest period / weighting of coldest and cloudiest period
+Cooling (number of hot days): Statistics based on: Mean val.
+
+Albedo = 0.2
+

@@ -1,0 +1,18 @@
+
+GLENS FALLS AP NY	Latitude [°]	43.350	Longitude [°]	-73.617	Height a.s.l. (m)	98			Daily temperature variation summer (K)	11.3			Heating load 1	Heating load 2	Cooling load
+Temperature outdoor	-6.8	-9.3	2.6	9.7	11.8	18.8	22.2	20.0	17.4	8.7	5.2	-1.3	-18.4	-14.7	23.3
+North	24	32	40	40	50	50	53	45	32	24	20	18	35	35	68
+East	45	53	68	70	92	76	89	84	65	53	34	31	53	53	104
+South	103	98	96	79	80	63	74	84	88	93	80	70	93	93	99
+West	47	58	70	68	90	75	90	77	72	51	38	30	53	53	99
+Global	52	67	93	113	157	137	157	140	109	79	49	36	69	69	193
+Dewpoint	-12.2	-15.3	-2.9	2.5	5.2	14.2	17.8	16.1	13.0	4.7	0.9	-5.0	4d	4d	2d
+Sky temperature	-23.8	-28.6	-11.3	-3.9	-1.5	9.5	12.9	11.0	7.7	-1.3	-6.2	-14.2	w1: 8/2	w2: 8/2	s: 21/7
+Heating degree-hours (12/20)	100527	Cooling degree-hours (24)	1590	Wind speed	Jan	2.9	Jul	2.3	m/s
+12-h Temperaturmin.	-28.6 °C	Anteil Nachtstunden < 21 °C und abs. Feuchte < 14 g/kg im Sommer 	29.4%	Anteil Nachtstunden < 21 °C  und abs. Feuchte > 14 g/kg im Sommer 	1.5%
+
+Heating loads (time constant for buildings, number of cold days): Statistics based on: Coldest period / weighting of coldest and cloudiest period
+Cooling (number of hot days): Statistics based on: Mean val.
+
+Albedo = 0.2
+

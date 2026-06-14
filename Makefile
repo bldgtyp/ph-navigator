@@ -9,7 +9,7 @@
         db-create-test db-migrate-test \
         migrate makemigration test test-backend test-frontend coverage typecheck \
         lint check ci ci-backend ci-frontend check-backend check-frontend frontend-dev-check build-frontend format format-check \
-        smoke seed-dev-user seed-agent-user seed-dev-data seed-materials seed-glazing seed-frames db-seed e2e e2e-report clean
+        smoke seed-dev-user seed-agent-user seed-dev-data seed-materials seed-glazing seed-frames seed-hbjson db-seed e2e e2e-report clean
 
 # Local Postgres URL for the dedicated pytest database. Mirrors the dev
 # URL in backend/.env.example with the database name swapped to *_test.
@@ -221,7 +221,15 @@ seed-glazing: migrate ## Load the canonical Window-Glazing catalog seed (~42 row
 seed-frames: migrate ## Load the canonical Window-Frame Elements catalog seed (~190 rows)
 	cd backend && uv run python -m scripts.seed_frame_catalog
 
-db-seed: seed-dev-data seed-materials seed-glazing seed-frames ## Wipe app tables + seed user, starter project, and all three catalogs from backend/seeds/
+seed-hbjson: migrate object-store-init ## Seed the example HBJSON model into the starter project (needs MinIO)
+	cd backend && \
+	R2_ENDPOINT_URL="$(LOCAL_R2_ENDPOINT_URL)" \
+	R2_ACCESS_KEY_ID="$(LOCAL_R2_ACCESS_KEY_ID)" \
+	R2_SECRET_ACCESS_KEY="$(LOCAL_R2_SECRET_ACCESS_KEY)" \
+	R2_BUCKET="$(LOCAL_R2_BUCKET)" \
+	uv run python -m scripts.seed_hbjson_model
+
+db-seed: seed-dev-data seed-materials seed-glazing seed-frames seed-hbjson ## Wipe app tables + seed user, starter project, catalogs, climate, and the example model from backend/seeds/
 	@echo ""
 	@echo "Local dev DB seeded from backend/seeds/."
 

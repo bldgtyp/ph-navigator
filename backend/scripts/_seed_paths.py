@@ -18,6 +18,11 @@ from typing import Final
 SEEDS_DIR: Final[pathlib.Path] = pathlib.Path(__file__).resolve().parent.parent / "seeds"
 CATALOGS_DIR: Final[pathlib.Path] = SEEDS_DIR / "catalogs"
 PROJECT_DIR: Final[pathlib.Path] = SEEDS_DIR / "project"
+# Phius `-mon.txt` station tree (root for the importer walk) + the
+# example HBJSON model. Both ride along in `backend/seeds/` so the climate
+# and Model-tab features have something to show after a fresh reseed.
+CLIMATE_DIR: Final[pathlib.Path] = SEEDS_DIR / "climate"
+MODEL_DIR: Final[pathlib.Path] = SEEDS_DIR / "model"
 
 USER_SEED_PATH: Final[pathlib.Path] = SEEDS_DIR / "user.json"
 MATERIALS_SEED_PATH: Final[pathlib.Path] = CATALOGS_DIR / "materials.v1.json"
@@ -37,6 +42,14 @@ HOT_WATER_TANKS_SEED_PATH: Final[pathlib.Path] = PROJECT_DIR / "hot-water-tanks.
 ELECTRIC_HEATERS_SEED_PATH: Final[pathlib.Path] = PROJECT_DIR / "electric-heaters.json"
 APPLIANCES_SEED_PATH: Final[pathlib.Path] = PROJECT_DIR / "appliances.json"
 HEAT_PUMPS_SEED_PATH: Final[pathlib.Path] = PROJECT_DIR / "heat-pumps.json"
+
+# Climate / Model-tab seed sources.
+CLIMATE_PHIUS_ROOT: Final[pathlib.Path] = CLIMATE_DIR
+HBJSON_SEED_PATH: Final[pathlib.Path] = MODEL_DIR / "ph_nav_v2_example.hbjson"
+
+# Station id (filename minus `-mon.txt`) the starter project pins as its
+# default climate source — the firm's home turf, NYC / Central Park.
+CLIMATE_DEFAULT_STATION_ID: Final[str] = "NEW_YORK_CENTRAL_PRK_OBS_BELV_NY"
 
 
 def default_user_kwargs() -> dict[str, str]:

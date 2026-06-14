@@ -16,6 +16,7 @@ import json
 from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import urlparse
+from uuid import UUID, uuid4
 
 from psycopg import sql
 from pydantic import BaseModel, Field
@@ -23,6 +24,7 @@ from pydantic import BaseModel, Field
 from config import settings
 from database import transaction
 from features.auth.service import create_or_update_user
+from features.climate.importers.phius import seed_phius_dataset
 from features.heat_pumps.models import (
     HeatPumpIndoorEquipRow,
     HeatPumpIndoorUnitRow,
@@ -30,6 +32,7 @@ from features.heat_pumps.models import (
     HeatPumpOutdoorUnitRow,
     HeatPumpsTableSlice,
 )
+from features.project_climate_source import repository as climate_source_repository
 from features.project_document.apertures.factories import build_default_aperture_type
 from features.project_document.document import (
     APERTURE_DEFAULT_FRAME_NAME,
@@ -71,6 +74,7 @@ from features.project_document.tables.rooms import ROOMS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.thermal_bridges import THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.ventilators import VENTILATORS_BUILT_IN_FIELD_DEFS
 from features.project_document.validation import body_size_bytes, validate_document
+from features.project_location import repository as project_location_repository
 from features.projects.models import CreateProjectRequest
 from features.projects.repository import insert_project_with_initial_version
 from features.projects.service import empty_project_document
@@ -78,6 +82,8 @@ from scripts._seed_paths import (
     APERTURES_SEED_PATH,
     APPLIANCES_SEED_PATH,
     ASSEMBLIES_SEED_PATH,
+    CLIMATE_DEFAULT_STATION_ID,
+    CLIMATE_PHIUS_ROOT,
     ELECTRIC_HEATERS_SEED_PATH,
     FANS_SEED_PATH,
     HEAT_PUMPS_SEED_PATH,
@@ -177,7 +183,13 @@ def main() -> None:
     with transaction() as conn:
         project = insert_project_with_initial_version(conn, payload, user.id, body, body_size_bytes(body))
 
+    climate = _seed_climate(project["id"])
+
     print(f"Seeded local dev database: user={user.email}, project={project['bt_number']} ({project['id']})")
+    print(
+        f"Seeded climate: {climate['dataset_label']} ({climate['location_count']} locations); "
+        f"default source -> {climate['default_location_name']}"
+    )
 
 
 def _assert_local_dev_database() -> None:
@@ -386,6 +398,65 @@ def _starter_project_document(payload: CreateProjectRequest) -> ProjectDocumentV
     return validate_document(
         body.model_copy(update={"tables": next_tables, "single_select_options": next_options}).model_dump(mode="json")
     )
+
+
+def _seed_climate(project_id: UUID) -> dict[str, Any]:
+    """Seed the app-wide Phius dataset and pin a default project source.
+
+    The truncate above wipes ``climate_dataset*`` and the project-scoped
+    ``project_climate_source`` / ``project_location`` rows, so this rebuilds
+    all three on every reseed. ``seed_phius_dataset`` is idempotent per
+    ``(provider, version)`` and runs in its own transaction; we then look
+    the chosen station back up by ``station_id`` and attach it as the
+    project's default climate source plus a matching site location, so the
+    Climate tab opens with real data instead of an empty roster.
+    """
+    result = seed_phius_dataset(CLIMATE_PHIUS_ROOT, version="2022")
+
+    with transaction() as conn:
+        location = conn.execute(
+            """
+            SELECT id, name, latitude, longitude, elevation_m, region
+            FROM climate_dataset_location
+            WHERE dataset_id = %(dataset_id)s AND station_id = %(station_id)s
+            """,
+            {"dataset_id": result.dataset_id, "station_id": CLIMATE_DEFAULT_STATION_ID},
+        ).fetchone()
+        if location is None:
+            raise SystemExit(
+                f"Climate seed station {CLIMATE_DEFAULT_STATION_ID!r} missing from the Phius dataset; "
+                "check backend/seeds/climate/."
+            )
+
+        climate_source_repository.clear_default(conn, project_id)
+        climate_source_repository.insert_source(
+            conn,
+            source_id=uuid4(),
+            project_id=project_id,
+            kind="phius",
+            ref=str(location["id"]),
+            label=f"{location['name']} (Phius 2022)",
+            is_default=True,
+            data=None,
+        )
+
+        location_values: dict[str, object] = {
+            "latitude": location["latitude"],
+            "longitude": location["longitude"],
+            "elevation_m": location["elevation_m"],
+            "time_zone": "America/New_York",
+            "true_north_deg": 0.0,
+            "site_address": "Industry City, 220 36th St",
+            "city": "Brooklyn",
+            "state": location["region"],
+        }
+        project_location_repository.upsert_location(conn, project_id, set(location_values), location_values)
+
+    return {
+        "dataset_label": f"{result.provider} {result.version}",
+        "location_count": result.location_count,
+        "default_location_name": location["name"],
+    }
 
 
 if __name__ == "__main__":

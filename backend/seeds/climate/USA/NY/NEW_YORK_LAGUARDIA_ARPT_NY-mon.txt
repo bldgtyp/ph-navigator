@@ -1,0 +1,18 @@
+
+NEW YORK LAGUARDIA ARPT NY	Latitude [°]	40.783	Longitude [°]	-73.883	Height a.s.l. (m)	3			Daily temperature variation summer (K)	7.6			Heating load 1	Heating load 2	Cooling load
+Temperature outdoor	1.9	0.1	6.8	12.7	16.4	22.2	26.5	25.0	20.3	15.4	11.2	3.6	-6.9	2.7	27.7
+North	20	29	32	39	52	55	54	49	35	29	18	18	44	20	80
+East	43	58	70	82	96	95	91	96	77	70	37	40	107	29	118
+South	102	106	100	93	86	74	77	98	101	131	88	100	199	41	116
+West	44	54	67	83	101	92	100	96	81	74	40	38	83	23	143
+Global	58	72	108	145	180	175	176	175	129	110	58	52	120	41	260
+Dewpoint	-5.5	-8.1	-0.8	3.6	7.5	14.2	19.9	17.8	13.5	6.4	2.3	-3.4	4d	4d	2d
+Sky temperature	-14.1	-17.7	-8.2	-2.5	1.8	9.9	15.7	14.3	8.5	1.2	-3.8	-11.1	w1: 5/2	w2: 6/1	s: 6/7
+Heating degree-hours (12/20)	60758	Cooling degree-hours (24)	4507	Wind speed	Jan	5.9	Jul	4.8	m/s
+12-h Temperaturmin.	-14.2 °C	Anteil Nachtstunden < 21 °C und abs. Feuchte < 14 g/kg im Sommer 	7.9%	Anteil Nachtstunden < 21 °C  und abs. Feuchte > 14 g/kg im Sommer 	0.4%
+
+Heating loads (time constant for buildings, number of cold days): Statistics based on: Coldest period / weighting of coldest and cloudiest period
+Cooling (number of hot days): Statistics based on: Mean val.
+
+Albedo = 0.2
+
