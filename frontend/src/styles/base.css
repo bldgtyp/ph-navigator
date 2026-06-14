@@ -5,6 +5,13 @@
 html {
   min-height: 100%;
   background: var(--bg-page);
+  scrollbar-gutter: stable;
+}
+
+@supports not (scrollbar-gutter: stable) {
+  html {
+    overflow-y: scroll;
+  }
 }
 
 body {
