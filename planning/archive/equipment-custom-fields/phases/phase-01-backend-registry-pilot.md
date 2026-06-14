@@ -4,7 +4,7 @@ TIME: 09:21 EDT
 STATUS: Complete
 AUTHOR: Codex
 SCOPE: Backend pilot for enabling custom-field schema mutations on Pumps.
-RELATED: planning/features/equipment-custom-fields/README.md; planning/features/equipment-custom-fields/PRD.md; planning/features/equipment-custom-fields/PLAN.md; backend/features/project_document/tables/pumps.py; backend/features/project_document/tables/rooms.py
+RELATED: planning/archive/equipment-custom-fields/README.md; planning/archive/equipment-custom-fields/PRD.md; planning/archive/equipment-custom-fields/PLAN.md; backend/features/project_document/tables/pumps.py; backend/features/project_document/tables/rooms.py
 ---
 
 # Phase 01 - Backend Registry Pilot

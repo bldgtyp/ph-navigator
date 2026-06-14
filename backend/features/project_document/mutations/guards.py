@@ -11,6 +11,8 @@ sentinels. The `origin` slot on each FieldDef carries the
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 from starlette import status
 
 from features.project_document.custom_fields import (
@@ -184,11 +186,15 @@ def strip_field_from_row(
 def read_rows_from_envelope(body: ProjectDocumentV1, table_key: str) -> list[object]:
     """Pull the row list out of the table's envelope.
 
-    Phase 2 only ships Rooms; the dotted-path indirection through
-    `getattr(body.tables, ...)` is here so registering ERVs / Pumps /
-    Fans later does not need a per-table reader.
+    FieldDef-capable equipment tables live under `tables.equipment`,
+    while Rooms and Thermal Bridges are top-level envelopes. Resolve
+    through the table contract path so mutation handlers stay table-
+    agnostic.
     """
-    envelope = getattr(body.tables, table_key)
+    from features.project_document.tables.contracts import read_table_envelope
+    from features.project_document.tables.registry import get_table_contract
+
+    envelope = read_table_envelope(body, get_table_contract(table_key).table_path)
     rows = getattr(envelope, "rows", None)
     if rows is None:
         raise api_error(
@@ -205,7 +211,10 @@ def replace_rows_in_envelope(
     table_key: str,
     rows: list[object],
 ) -> ProjectDocumentV1:
-    envelope = getattr(body.tables, table_key)
+    from features.project_document.tables.contracts import read_table_envelope, replace_table_envelope
+    from features.project_document.tables.registry import get_table_contract
+
+    table_path = get_table_contract(table_key).table_path
+    envelope = cast(Any, read_table_envelope(body, table_path))
     next_envelope = envelope.model_copy(update={"rows": list(rows)})
-    next_tables = body.tables.model_copy(update={table_key: next_envelope})
-    return body.model_copy(update={"tables": next_tables})
+    return replace_table_envelope(body, table_path, next_envelope)

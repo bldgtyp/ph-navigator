@@ -5,7 +5,10 @@
 
 import { useRef } from "react";
 import { generatedId } from "../../../shared/lib/ids";
-import type { SliceTableController } from "../../../shared/ui/data-table/feature";
+import {
+  customFieldActionsForController,
+  type SliceTableController,
+} from "../../../shared/ui/data-table/feature";
 import type {
   BuildEmptyRow,
   FieldRegistryEntry,
@@ -89,14 +92,7 @@ export function RoomsTableSlot(props: RoomsTableSlotProps) {
         sessionKey={`${projectId}:${activeVersionId ?? "none"}:${ROOMS_TABLE_NAME}`}
         overflowMenuActions={downloadAction}
         footerAction={footerAction}
-        onDeleteCustomField={controller.canEdit ? controller.handleDeleteCustomField : undefined}
-        onAddCustomField={controller.canEdit ? controller.handleAddCustomField : undefined}
-        onDuplicateCustomField={
-          controller.canEdit ? controller.handleDuplicateCustomField : undefined
-        }
-        onEditCustomFieldBundle={
-          controller.canEdit ? controller.handleEditCustomFieldBundle : undefined
-        }
+        {...customFieldActionsForController(controller)}
         formulaFieldRegistry={formulaFieldRegistry}
         getFormulaRowValues={getFormulaRowValues}
         rowsComputed={roomsSlice.rows_computed}

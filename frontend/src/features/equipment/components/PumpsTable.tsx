@@ -16,6 +16,10 @@ import { singleSelectOption } from "../../../shared/ui/data-table/lib";
 import { sortedPumps } from "../lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
 import {
+  customFieldColumnDefs,
+  type CustomFieldTableActions,
+} from "../../../shared/ui/data-table/feature";
+import {
   PUMP_DATASHEET_FIELD_KEY,
   PUMP_DEVICE_TYPE_COLUMN_ID,
   PUMP_DEVICE_TYPE_KEY,
@@ -41,6 +45,7 @@ export function PumpsTable({
   footerAction,
   onResetView,
   onInversePillClick,
+  ...customFieldActions
 }: {
   pumpsSlice: PumpsSlice;
   tableSchema: TableSchema;
@@ -56,7 +61,7 @@ export function PumpsTable({
   footerAction?: DataTableProps<PumpRow>["footerAction"];
   onResetView?: DataTableProps<PumpRow>["onResetView"];
   onInversePillClick?: (field: InverseLinkField, rowId: string) => void;
-}) {
+} & CustomFieldTableActions<PumpRow>) {
   const sortedRows = useMemo(() => sortedPumps(pumpsSlice.pumps), [pumpsSlice.pumps]);
   const datasheetAssetIds = useMemo(
     () => Array.from(new Set(sortedRows.flatMap((pump) => pump.datasheet_asset_ids))),
@@ -67,7 +72,7 @@ export function PumpsTable({
     () => new Map((datasheetUrls.data ?? []).map((item) => [item.asset_id, item])),
     [datasheetUrls.data],
   );
-  const { fieldDefs } = tableSchema;
+  const { fieldDefs, customFields } = tableSchema;
   const inverseLinkFields = pumpsSlice.inverse_link_fields;
   const inverseLinks = pumpsSlice.inverse_links;
   const inverseFieldDefs = useMemo<FieldDef[]>(
@@ -87,6 +92,15 @@ export function PumpsTable({
   const fieldDefByKey = useMemo(
     () => new Map(fieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef])),
     [fieldDefs],
+  );
+  const customColumns = useMemo<DataTableColumnDef<PumpRow>[]>(
+    () =>
+      customFieldColumnDefs({
+        customFields,
+        fieldDefByKey,
+        rowsComputed: pumpsSlice.rows_computed,
+      }),
+    [customFields, fieldDefByKey, pumpsSlice.rows_computed],
   );
   const columns = useMemo<DataTableColumnDef<PumpRow>[]>(() => {
     const baseColumns: DataTableColumnDef<PumpRow>[] = [
@@ -252,8 +266,9 @@ export function PumpsTable({
         className: "data-table-inverse-link-cell",
       }),
     );
-    return [...baseColumns, ...inverseColumns];
+    return [...baseColumns, ...customColumns, ...inverseColumns];
   }, [
+    customColumns,
     datasheetUrlById,
     fieldDefByKey,
     isEditor,
@@ -281,6 +296,7 @@ export function PumpsTable({
       overflowMenuActions={overflowMenuActions}
       footerAction={footerAction}
       onResetView={onResetView}
+      {...customFieldActions}
     />
   );
 }

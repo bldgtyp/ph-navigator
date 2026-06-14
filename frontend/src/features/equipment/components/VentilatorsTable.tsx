@@ -12,6 +12,10 @@ import { singleSelectOption } from "../../../shared/ui/data-table/lib";
 import { sortedVentilators } from "../lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
 import {
+  customFieldColumnDefs,
+  type CustomFieldTableActions,
+} from "../../../shared/ui/data-table/feature";
+import {
   VENTILATOR_INSIDE_OUTSIDE_COLUMN_ID,
   VENTILATOR_INSIDE_OUTSIDE_KEY,
   type VentilatorRow,
@@ -34,6 +38,7 @@ export function VentilatorsTable({
   footerAction,
   onResetView,
   linkedHpIndoorCountById,
+  ...customFieldActions
 }: {
   ventilatorsSlice: VentilatorsSlice;
   tableSchema: TableSchema;
@@ -51,15 +56,24 @@ export function VentilatorsTable({
   // Phase 4 (US-EQ-4 amendment). Undefined while the HP slice is still loading;
   // the column accessor falls back to 0.
   linkedHpIndoorCountById?: Map<string, number>;
-}) {
+} & CustomFieldTableActions<VentilatorRow>) {
   const sortedRows = useMemo(
     () => sortedVentilators(ventilatorsSlice.ventilators),
     [ventilatorsSlice.ventilators],
   );
-  const { fieldDefs } = tableSchema;
+  const { fieldDefs, customFields } = tableSchema;
   const fieldDefByKey = useMemo(
     () => new Map(fieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef])),
     [fieldDefs],
+  );
+  const customColumns = useMemo<DataTableColumnDef<VentilatorRow>[]>(
+    () =>
+      customFieldColumnDefs({
+        customFields,
+        fieldDefByKey,
+        rowsComputed: ventilatorsSlice.rows_computed,
+      }),
+    [customFields, fieldDefByKey, ventilatorsSlice.rows_computed],
   );
   const columns = useMemo<DataTableColumnDef<VentilatorRow>[]>(
     () => [
@@ -189,8 +203,9 @@ export function VentilatorsTable({
         defaultWidth: 130,
         className: "numeric-cell",
       },
+      ...customColumns,
     ],
-    [fieldDefByKey, linkedHpIndoorCountById],
+    [customColumns, fieldDefByKey, linkedHpIndoorCountById],
   );
 
   return (
@@ -212,6 +227,7 @@ export function VentilatorsTable({
       overflowMenuActions={overflowMenuActions}
       footerAction={footerAction}
       onResetView={onResetView}
+      {...customFieldActions}
     />
   );
 }

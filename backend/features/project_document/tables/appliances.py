@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import cast
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from features.project_document.custom_fields import (
     RESERVED_FIELD_KEY_RECORD_ID,
@@ -23,10 +23,17 @@ from features.project_document.document import (
 )
 from features.project_document.models import ProjectDocumentSource
 from features.project_document.tables._built_in_seeds import built_in_field_def
+from features.project_document.tables._registry_helpers import (
+    FormulaType,
+    coerce_custom_option_list_extras,
+    custom_option_lists_for_table,
+    make_field_registry,
+)
 from features.project_document.tables.contracts import TableContract
 from features.project_document.validation import validate_document
 
 APPLIANCES_TABLE_NAME = "appliances"
+_APPLIANCES_TABLE_PATH: tuple[str, ...] = ("equipment", "appliances")
 
 
 APPLIANCES_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
@@ -67,6 +74,14 @@ APPLIANCES_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
 )
 
 APPLIANCES_BUILT_IN_FIELD_KEYS: tuple[str, ...] = tuple(f.field_key for f in APPLIANCES_BUILT_IN_FIELD_DEFS)
+APPLIANCES_TYPED_COLUMN_FORMULA_TYPES: dict[str, FormulaType] = {
+    "id": "text",
+    "appliance_type": "single_select",
+    "energy_star": "single_select",
+    "url": "text",
+    "notes": "text",
+    "datasheet_asset_ids": "text",
+}
 
 assert any(f.field_key == RESERVED_FIELD_KEY_RECORD_ID for f in APPLIANCES_BUILT_IN_FIELD_DEFS), (
     "Appliances built-in seed must contain a record_id FieldDef"
@@ -74,16 +89,24 @@ assert any(f.field_key == RESERVED_FIELD_KEY_RECORD_ID for f in APPLIANCES_BUILT
 
 
 class AppliancesSliceOptions(BaseModel):
-    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     appliances_type: list[SingleSelectOption] = Field(alias=APPLIANCE_TYPE_OPTION_KEY)
     appliances_energy_star: list[SingleSelectOption] = Field(alias=APPLIANCE_ENERGY_STAR_OPTION_KEY)
+
+    @model_validator(mode="after")
+    def _validate_namespaced_extras(self) -> AppliancesSliceOptions:
+        coerce_custom_option_list_extras(self, table_path=_APPLIANCES_TABLE_PATH, table_label=APPLIANCES_TABLE_NAME)
+        return self
 
     def by_option_key(self) -> dict[str, list[SingleSelectOption]]:
         return {
             APPLIANCE_TYPE_OPTION_KEY: self.appliances_type,
             APPLIANCE_ENERGY_STAR_OPTION_KEY: self.appliances_energy_star,
         }
+
+    def custom_option_lists(self) -> dict[str, list[SingleSelectOption]]:
+        return dict(self.__pydantic_extra__ or {})
 
 
 class AppliancesSliceReplaceRequest(BaseModel):
@@ -105,21 +128,26 @@ class AppliancesSliceResponse(BaseModel):
     appliances: list[ApplianceRow]
     field_defs: list[TableFieldDef]
     single_select_options: dict[str, list[SingleSelectOption]]
+    rows_computed: dict[str, dict[str, object]] = Field(default_factory=dict)
 
 
 def apply_appliances_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectDocumentV1:
     appliances_payload = cast(AppliancesSliceReplaceRequest, payload)
     appliance_options = appliances_payload.single_select_options.by_option_key()
+    custom_option_lists = appliances_payload.single_select_options.custom_option_lists()
     if (
         body.tables.equipment.appliances.rows == appliances_payload.appliances
         and body.tables.equipment.appliances.field_defs == appliances_payload.field_defs
         and all(body.single_select_options.get(key, []) == appliance_options[key] for key in APPLIANCE_OPTION_KEYS)
+        and all(body.single_select_options.get(key, []) == value for key, value in custom_option_lists.items())
     ):
         return body
 
     options = dict(body.single_select_options)
     for key in APPLIANCE_OPTION_KEYS:
         options[key] = appliance_options[key]
+    for key, value in custom_option_lists.items():
+        options[key] = value
     next_appliances_envelope = AppliancesTableEnvelope(
         field_defs=appliances_payload.field_defs,
         rows=appliances_payload.appliances,
@@ -138,6 +166,8 @@ def appliances_response(
     draft_etag: str | None,
     body: ProjectDocumentV1,
 ) -> AppliancesSliceResponse:
+    from features.project_document.formula import evaluate_table_formulas
+
     return AppliancesSliceResponse(
         project_id=project_id,
         version_id=version_id,
@@ -149,7 +179,9 @@ def appliances_response(
         single_select_options={
             APPLIANCE_TYPE_OPTION_KEY: body.single_select_options[APPLIANCE_TYPE_OPTION_KEY],
             APPLIANCE_ENERGY_STAR_OPTION_KEY: body.single_select_options[APPLIANCE_ENERGY_STAR_OPTION_KEY],
+            **custom_option_lists_for_table(body, _APPLIANCES_TABLE_PATH),
         },
+        rows_computed=evaluate_table_formulas(appliances_field_registry, body),
     )
 
 
@@ -170,6 +202,18 @@ def extract_appliances_diff_value(body: ProjectDocumentV1) -> dict[str, object]:
     }
 
 
+appliances_field_registry = make_field_registry(
+    field_keys=APPLIANCES_BUILT_IN_FIELD_KEYS,
+    table_path=_APPLIANCES_TABLE_PATH,
+    row_model=ApplianceRow,
+    built_in_option_key_by_field_key={
+        "appliance_type": APPLIANCE_TYPE_OPTION_KEY,
+        "energy_star": APPLIANCE_ENERGY_STAR_OPTION_KEY,
+    },
+    built_in_formula_types=APPLIANCES_TYPED_COLUMN_FORMULA_TYPES,
+)
+
+
 appliances_contract = TableContract(
     name=APPLIANCES_TABLE_NAME,
     schema_slug="appliance",
@@ -179,6 +223,6 @@ appliances_contract = TableContract(
     apply_replace=apply_appliances_replace,
     extract_rows=extract_appliances_envelope,
     extract_diff_value=extract_appliances_diff_value,
-    table_path=("equipment", "appliances"),
-    field_registry=None,
+    table_path=_APPLIANCES_TABLE_PATH,
+    field_registry=appliances_field_registry,
 )
