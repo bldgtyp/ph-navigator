@@ -1,0 +1,18 @@
+
+FORT DRUM/WHEELER-S NY	Latitude [°]	44.050	Longitude [°]	-75.717	Height a.s.l. (m)	211			Daily temperature variation summer (K)	11.5			Heating load 1	Heating load 2	Cooling load
+Temperature outdoor	-3.4	-2.8	0.6	4.8	11.5	18.7	21.3	18.1	13.9	7.5	1.9	-0.8	-12.5	-9.4	25.4
+North	17	28	42	42	59	62	65	52	33	23	17	12	23	23	87
+East	18	33	56	55	63	63	71	55	47	32	20	12	24	24	114
+South	44	88	97	81	74	64	83	74	94	84	65	27	67	67	129
+West	37	81	106	102	123	121	147	123	109	74	46	27	60	60	234
+Global	30	56	92	116	144	143	174	126	109	71	39	20	40	40	279
+Dewpoint	-5.5	-7.4	-1.9	-1.3	3.5	12.3	15.3	13.0	10.3	4.1	-0.4	-2.5	4d	4d	2d
+Sky temperature	-19.9	-24.5	-16.8	-18.7	-5.0	-1.6	-0.2	2.3	-5.2	-10.2	-14.5	-11.1	w1: 8/1	w2: 8/1	s: 19/7
+Heating degree-hours (12/20)	104837	Cooling degree-hours (24)	1377	Wind speed	Jan	4.4	Jul	2.0	m/s
+12-h Temperaturmin.	-21.4 °C	Anteil Nachtstunden < 21 °C und abs. Feuchte < 14 g/kg im Sommer 	31.7%	Anteil Nachtstunden < 21 °C  und abs. Feuchte > 14 g/kg im Sommer 	0.8%
+
+Heating loads (time constant for buildings, number of cold days): Statistics based on: Coldest period / weighting of coldest and cloudiest period
+Cooling (number of hot days): Statistics based on: Mean val.
+
+Albedo = 0.2
+

@@ -27,7 +27,26 @@ backend/seeds/
     electric-heaters.json         # 5 heaters
     appliances.json               # 5 appliances + type / energy-star options
     heat-pumps.json               # 5 outdoor-equip + 5 indoor-equip + 5 outdoor-units + 5 indoor-units (cross-linked)
+  climate/
+    USA/NY/*-mon.txt              # Phius 2022 NY-metro station files (importer source)
+  model/
+    ph_nav_v2_example.hbjson      # small example model for the Model tab
 ```
+
+`climate/` holds a NY-metro slice of the Phius 2022 `-mon.txt` station
+set. `seed_dev_db.py` walks it through the same
+`features.climate.importers.phius` importer the real CLI uses, seeds the
+app-wide `phius`/`2022` dataset, then pins NYC / Central Park as the
+starter project's **default** `project_climate_source` and writes a
+matching `project_location`. Drop more `-mon.txt` files under
+`climate/USA/<STATE>/` to widen the seeded dataset; the region code comes
+from the parent directory name.
+
+`model/ph_nav_v2_example.hbjson` is linked into the project's Model tab by
+`scripts/seed_hbjson_model.py`. That seed rides the real asset backbone
+(MinIO object store → `project_assets` → `project_hbjson_files`) and runs
+the geometry-extraction job, so it needs the object store up
+(`make object-store-init`).
 
 Catalog files use the canonical import envelope
 (`{kind, schema_version, exported_at, rows}`) so they round-trip
@@ -71,11 +90,14 @@ That runs, in order:
 
 1. `seed-dev-data` — `scripts.seed_dev_db --reset` truncates every
    application table (except `alembic_version`), creates the default
-   editor account, and inserts one project whose document body is
-   assembled from `project/*.json`.
+   editor account, inserts one project whose document body is assembled
+   from `project/*.json`, and seeds the `phius`/`2022` climate dataset
+   plus the project's default climate source + location from `climate/`.
 2. `seed-materials` — `scripts.seed_materials_catalog`
 3. `seed-glazing` — `scripts.seed_glazing_catalog`
 4. `seed-frames` — `scripts.seed_frame_catalog`
+5. `seed-hbjson` — `scripts.seed_hbjson_model` (links `model/*.hbjson`
+   into the Model tab; brings up + initializes the MinIO object store).
 
 The Postgres volume is left intact. Use `make db-reset-dev` for the
 heavier reset (drop the Docker volume, re-migrate, then seed).

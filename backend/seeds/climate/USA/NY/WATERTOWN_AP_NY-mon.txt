@@ -1,0 +1,18 @@
+
+WATERTOWN AP NY	Latitude [°]	44.000	Longitude [°]	-76.017	Height a.s.l. (m)	97			Daily temperature variation summer (K)	10.9			Heating load 1	Heating load 2	Cooling load
+Temperature outdoor	-5.4	-3.9	-1.5	7.4	12.7	17.3	19.9	20.2	17.3	9.9	2.1	-1.8	-12.1	-4.5	22.8
+North	22	28	38	46	50	57	52	46	32	22	18	15	27	21	53
+East	40	56	58	87	79	104	89	94	69	42	27	21	52	22	86
+South	85	89	76	101	74	77	75	95	90	69	43	44	167	28	125
+West	46	52	54	99	85	100	90	95	69	43	25	23	66	23	100
+Global	44	59	76	137	139	177	158	157	109	63	35	27	65	33	169
+Dewpoint	-8.2	-8.5	-6.5	1.8	6.0	12.3	16.8	15.3	12.3	6.7	-1.6	-5.3	4d	4d	2d
+Sky temperature	-20.6	-19.0	-15.7	-5.6	0.2	6.9	11.6	10.0	7.0	1.0	-9.0	-14.1	w1: 30/12	w2: 21/11	s: 5/9
+Heating degree-hours (12/20)	102220	Cooling degree-hours (24)	1043	Wind speed	Jan	3.2	Jul	2.7	m/s
+12-h Temperaturmin.	-24.3 °C	Anteil Nachtstunden < 21 °C und abs. Feuchte < 14 g/kg im Sommer 	32.7%	Anteil Nachtstunden < 21 °C  und abs. Feuchte > 14 g/kg im Sommer 	0.5%
+
+Heating loads (time constant for buildings, number of cold days): Statistics based on: Coldest period / weighting of coldest and cloudiest period
+Cooling (number of hot days): Statistics based on: Mean val.
+
+Albedo = 0.2
+
