@@ -499,17 +499,21 @@ parentheses.
      (interactive filter chip vs mono status label vs data-coloured table
      pill), so the win is a reusable forward-looking primitive + shell
      dedup, not collapsing them to one look.
-   - *Still to migrate (lower priority, intentional or complex):*
-     `read-only-pill`, `model-file-chip`/`model-loading-chip`,
-     `aperture-name-pill`, `manufacturer-column__badge`; left as-is:
+   - *Also migrated (2026-06-14):* `read-only-pill` → `chip chip--sm`;
+     `model-file-chip` → `chip chip--md chip--outline` (verified on the
+     Model tab). **6 of the chip family now compose `.chip`.**
+   - *Left as-is by design:* `aperture-name-pill` (canvas-positioned
+     editable label), `model-loading-chip` (status banner w/ states),
+     `manufacturer-column__badge` (tiny inline table tag, custom padding),
      `aperture-uvalue-chip` (metric + info-button), `pill-tab` (nav),
      data-table `single-select-pill`/`linked-record-pill` (user-coloured).
      Optional future: unify `.chip--sm` padding so all small chips match.
 7. Extract shared drawing widgets used by apertures+envelope into
    `shared/ui/canvas/`. (M–L)
 8. Route all SVG/3D color through tokens; unify the 3D+chart+brand
-   palette source. (M) — *the 2 neutral SVG-stroke swaps
-   (`rgba(0,0,0,0.5)`→`--svg-line-heavy`) are still pending.*
+   palette source. (M) — ✅ *SVG-stroke swaps done 2026-06-14
+   (`rgba(0,0,0,0.5)`→`--svg-line-heavy` in apertures + envelope,
+   neutral, verified). The 3D JS palette unification remains.*
 
 **P3 — Structure & discoverability (owner's goal #3):**
 9. `src/styles/README.md` token+class catalog + `shared/ui/index.ts`

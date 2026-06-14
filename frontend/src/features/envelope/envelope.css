@@ -504,7 +504,7 @@
 }
 
 .assembly-svg-segment {
-  stroke: rgba(0, 0, 0, 0.5);
+  stroke: var(--svg-line-heavy);
   stroke-width: 0.5;
 }
 

@@ -1535,14 +1535,12 @@ button:disabled {
   gap: var(--space-10);
 }
 
+/* Composes `.chip .chip--sm`; mono uppercase read-only warning pill. */
 .read-only-pill {
   border: 1px solid var(--phn-warning);
-  border-radius: var(--radius-pill);
   background: var(--phn-warning-bg);
   color: var(--phn-warning);
-  padding: 4px 9px;
   font-family: var(--font-mono);
-  font-size: var(--fs-2xs);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
