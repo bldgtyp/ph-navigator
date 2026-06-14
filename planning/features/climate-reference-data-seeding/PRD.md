@@ -129,6 +129,8 @@ to disk/object-store instead of going straight to Postgres.
 
 ### Phase 1 — process→seed over the object store + full Phius + cleanup (independent, now)
 
+> Detailed plan: `phases/phase-01-phius-objectstore-pipeline.md`.
+
 1. **Refactor importers into a process step.** Split `importers/phius.py`'s
    parse-and-seed into `parse → list[ClimateRecord]` (pure) and keep a thin
    convenience wrapper. Add a bundle writer
@@ -169,6 +171,8 @@ to disk/object-store instead of going straight to Postgres.
   countries (`DE-…`, `US-…`) — already handled by `ClimatePhppCodes`.
 
 ### Phase 3 — Render seed path (D-CS-7)
+
+> Detailed plan: `phases/phase-03-render-seed.md`.
 
 - A documented, re-runnable seed job against R2 + the Render Postgres (one-off
   job or release command). Confirm `R2_*` env is present in Render (the object
