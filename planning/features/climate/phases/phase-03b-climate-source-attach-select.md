@@ -1,10 +1,12 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Planned (next substantial Phase-3 slice after the 3a editor
-  migration). Needs NEW backend — Phase 2 built only the app-wide
-  reference datasets; there is no project-scoped "this project selected
-  source X" model yet.
+STATUS: In progress (2026-06-14) — **backend landed** (project_climate_source
+  table + migration, repository/service, REST CRUD + set-default routes,
+  project-scoped MCP list + set-default tools, tests; `make ci` green). The
+  **frontend attach/select UI is the remaining slice** (see §Outcome). Phase 2
+  built only the app-wide reference datasets; this added the project-scoped
+  "this project selected source X" model.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff — the project-climate source model + the tab
   UI to attach/select multiple climate sources per project (D-CL-4 / D-CL-9
@@ -18,7 +20,7 @@ RELATED:
   - frontend/src/features/climate/ (3a client; this adds attach/select UI)
 ---
 
-# Climate Phase 3b — Source attach + select (deferred)
+# Climate Phase 3b — Source attach + select
 
 The "record + compare sources" half of the tab. 3a made the app-wide
 reference datasets *browsable*; 3b lets a project **attach** one or more
@@ -81,3 +83,44 @@ station / this uploaded EPW / this custom record". 3b introduces it.
 - A project can attach Phius/PHI/ASHRAE/EPW/custom sources, all stored
   simultaneously (D-CL-4), with one marked default (D-CL-11); editor/viewer
   gating holds; routes + MCP live; `make ci` green.
+
+## Outcome — backend (2026-06-14)
+
+New `backend/features/project_climate_source/` module + migration
+`20260614_0026`, mirroring the `project_location` feature patterns:
+
+- **migration** — `project_climate_source (id, project_id FK CASCADE, kind
+  CHECK ∈ {phius,phi,ashrae,epw,custom}, ref, label, is_default, data JSONB,
+  created_at, updated_at)`; a `project_id` index and a **partial-unique index
+  on `(project_id) WHERE is_default`** enforcing one default per project
+  (D-CL-11).
+- **models.py** — `ProjectClimateSourcePublic` + list/create/update requests;
+  `validate_source_shape()` is the shared presence-rule check (custom needs
+  `data`+no `ref`; phius/phi/ashrae/epw need `ref`; only custom/ashrae may
+  carry `data`), run by the create `model_validator` and re-run in the
+  service for the merged PATCH shape.
+- **repository.py** — raw SQL list/get/insert/update (dynamic SET over an
+  allow-list)/delete + `clear_default`/`mark_default` + a
+  `get_dataset_location_provider` join for ref validation.
+- **service.py** — per-kind validation against live data (phius/phi: the
+  referenced `climate_dataset_location` exists **and its provider matches the
+  kind**; epw: the project EPW asset exists + is uploaded; custom: `data`
+  validates as a `ClimateRecord`), one-default enforcement (clear-then-mark
+  in one transaction so the partial-unique index never sees two defaults),
+  and audit logging on every mutation.
+- **routes.py** — `GET/POST` `…/climate/sources`, `PATCH/DELETE
+  …/sources/{sid}`, `PUT …/sources/{sid}/default`; view access reads, editor
+  writes.
+- **mcp.py** — project-scoped `list_project_climate_sources` (`project:read`)
+  and `set_project_climate_source_default` (`project:write`); create/patch/
+  delete stay REST-only, matching the read-mostly `project_location` MCP
+  surface.
+- **tests** — `tests/test_project_climate_source.py`: CRUD, default toggle,
+  project-scoping isolation, per-kind validation, editor/viewer gating, MCP
+  parity + scope gating. `make ci` green.
+
+**Remaining: the frontend attach/select UI (§Scope 2)** — the
+`features/climate/` client (`api`/`hooks`/`query-keys`/`types`) over these
+routes, the source roster + default radio, and the per-kind attach affordances
+(reuse `ClimateDatasetBrowser` for Phius/PHI, the EPW flow for EPW, an ASHRAE
+station/URL form, a custom-record form).

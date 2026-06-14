@@ -26,6 +26,7 @@ from features.heat_pumps.routes import router as heat_pumps_router
 from features.mcp.routes import router as mcp_token_router
 from features.mcp.server import mcp as phn_mcp
 from features.model_viewer.routes import router as model_viewer_router
+from features.project_climate_source.routes import router as project_climate_source_router
 from features.project_document.routes import diff_router as project_diff_router
 from features.project_document.routes import router as project_document_router
 from features.project_location.routes import router as project_location_router
@@ -72,6 +73,7 @@ app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.include_router(auth_router)
 app.include_router(projects_router)
 app.include_router(project_location_router)
+app.include_router(project_climate_source_router)
 app.include_router(assets_router)
 app.include_router(asset_jobs_router)
 app.include_router(project_diff_router)

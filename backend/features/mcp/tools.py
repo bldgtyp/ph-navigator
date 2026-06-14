@@ -90,6 +90,10 @@ from features.mcp.tools_model_viewer import (
     tool_list_hbjson_ventilation_systems,
     tool_rename_hbjson_file,
 )
+from features.project_climate_source.mcp import (
+    tool_list_project_climate_sources,
+    tool_set_project_climate_source_default,
+)
 from features.project_document.models import ProjectDocumentSource
 from features.project_location.mcp import tool_get_project_location, tool_get_project_sun_path
 from features.project_status.service import list_project_status_items
@@ -133,6 +137,8 @@ __all__ = [
     "tool_get_project_location",
     "tool_get_project_sun_path",
     "tool_list_climate_datasets",
+    "tool_list_project_climate_sources",
+    "tool_set_project_climate_source_default",
     "tool_search_climate_locations",
     "tool_get_table",
     "tool_list_projects",
