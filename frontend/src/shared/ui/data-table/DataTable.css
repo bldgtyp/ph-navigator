@@ -810,7 +810,7 @@
   border-radius: 4px;
   font-size: 0.95rem;
   background: var(--bg-input, var(--bg-card));
-  color: var(--text-strong);
+  color: var(--text-primary);
 }
 
 .data-table-add-field-input:focus-visible {
@@ -822,7 +822,7 @@
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: var(--text-strong);
+  color: var(--text-primary);
   padding: 0;
   width: 100%;
 }
@@ -831,7 +831,7 @@
   border-color: var(--border-subtle);
   border-radius: 4px;
   background: var(--bg-input, var(--bg-card));
-  color: var(--text-strong);
+  color: var(--text-primary);
   font-size: 0.95rem;
   min-height: 34px;
 }
@@ -852,7 +852,7 @@
   border-radius: 999px;
   padding: 4px 10px;
   background: var(--bg-card);
-  color: var(--text-strong);
+  color: var(--text-primary);
   cursor: pointer;
   font-size: 0.85rem;
 }
@@ -896,14 +896,14 @@
   border: 1px solid var(--border-subtle);
   border-radius: 4px;
   background: var(--bg-input, var(--bg-card));
-  color: var(--text-strong);
+  color: var(--text-primary);
 }
 
 .autocomplete-select.data-table-add-field-option-color {
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: var(--text-strong);
+  color: var(--text-primary);
   padding: 0;
 }
 
@@ -911,7 +911,7 @@
   border-color: var(--border-subtle);
   border-radius: 4px;
   background: var(--bg-input, var(--bg-card));
-  color: var(--text-strong);
+  color: var(--text-primary);
 }
 
 .data-table-add-field-toggle {
@@ -919,7 +919,7 @@
   align-items: center;
   gap: 6px;
   font-size: 0.9rem;
-  color: var(--text-strong);
+  color: var(--text-primary);
   cursor: pointer;
 }
 
@@ -932,7 +932,7 @@
   font-size: 0.9rem;
   resize: vertical;
   background: var(--bg-input, var(--bg-card));
-  color: var(--text-strong);
+  color: var(--text-primary);
 }
 
 .data-table-add-field-counter {
@@ -962,7 +962,7 @@
   background: var(--bg-card);
   border: 1px solid var(--border-strong);
   border-radius: 8px;
-  box-shadow: var(--shadow-popover, 0 10px 32px rgba(0, 0, 0, 0.18));
+  box-shadow: var(--shadow-elev-2);
   padding: 16px;
   min-width: 360px;
   max-width: 480px;
@@ -974,7 +974,7 @@
 .data-table-field-config-modal-title {
   font-size: 1.05rem;
   font-weight: 600;
-  color: var(--text-strong);
+  color: var(--text-primary);
   margin: 0 0 12px;
 }
 
@@ -1024,7 +1024,7 @@
 .data-table-field-config-modal-conflict-text {
   margin: 0;
   font-size: 0.88rem;
-  color: var(--text-strong);
+  color: var(--text-primary);
 }
 
 .data-table-field-config-modal-conflict-actions {
@@ -2827,4 +2827,21 @@ td.data-table-cell-editing {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Anchor rendered inside a data-table cell (e.g. equipment "Link"
+   columns). Truncates to the column width and reads as a link. */
+.data-table-link-cell {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+  color: var(--accent-text);
+  text-decoration: none;
+}
+
+.data-table-link-cell:hover {
+  text-decoration: underline;
 }
