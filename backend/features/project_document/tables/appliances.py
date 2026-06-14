@@ -128,6 +128,7 @@ class AppliancesSliceResponse(BaseModel):
     appliances: list[ApplianceRow]
     field_defs: list[TableFieldDef]
     single_select_options: dict[str, list[SingleSelectOption]]
+    rows_computed: dict[str, dict[str, object]] = Field(default_factory=dict)
 
 
 def apply_appliances_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectDocumentV1:
@@ -165,6 +166,8 @@ def appliances_response(
     draft_etag: str | None,
     body: ProjectDocumentV1,
 ) -> AppliancesSliceResponse:
+    from features.project_document.formula import evaluate_table_formulas
+
     return AppliancesSliceResponse(
         project_id=project_id,
         version_id=version_id,
@@ -178,6 +181,7 @@ def appliances_response(
             APPLIANCE_ENERGY_STAR_OPTION_KEY: body.single_select_options[APPLIANCE_ENERGY_STAR_OPTION_KEY],
             **custom_option_lists_for_table(body, _APPLIANCES_TABLE_PATH),
         },
+        rows_computed=evaluate_table_formulas(appliances_field_registry, body),
     )
 
 

@@ -94,8 +94,13 @@ export function PumpsTable({
     [fieldDefs],
   );
   const customColumns = useMemo<DataTableColumnDef<PumpRow>[]>(
-    () => customFieldColumnDefs({ customFields, fieldDefByKey }),
-    [customFields, fieldDefByKey],
+    () =>
+      customFieldColumnDefs({
+        customFields,
+        fieldDefByKey,
+        rowsComputed: pumpsSlice.rows_computed,
+      }),
+    [customFields, fieldDefByKey, pumpsSlice.rows_computed],
   );
   const columns = useMemo<DataTableColumnDef<PumpRow>[]>(() => {
     const baseColumns: DataTableColumnDef<PumpRow>[] = [

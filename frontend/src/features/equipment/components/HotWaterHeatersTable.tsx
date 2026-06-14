@@ -75,8 +75,13 @@ export function HotWaterHeatersTable({
     [fieldDefs],
   );
   const customColumns = useMemo<DataTableColumnDef<HotWaterHeaterRow>[]>(
-    () => customFieldColumnDefs({ customFields, fieldDefByKey }),
-    [customFields, fieldDefByKey],
+    () =>
+      customFieldColumnDefs({
+        customFields,
+        fieldDefByKey,
+        rowsComputed: hotWaterHeatersSlice.rows_computed,
+      }),
+    [customFields, fieldDefByKey, hotWaterHeatersSlice.rows_computed],
   );
   const columns = useMemo<DataTableColumnDef<HotWaterHeaterRow>[]>(
     () => [

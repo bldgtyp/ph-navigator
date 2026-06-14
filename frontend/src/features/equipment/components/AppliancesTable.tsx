@@ -77,8 +77,13 @@ export function AppliancesTable({
     [fieldDefs],
   );
   const customColumns = useMemo<DataTableColumnDef<ApplianceRow>[]>(
-    () => customFieldColumnDefs({ customFields, fieldDefByKey }),
-    [customFields, fieldDefByKey],
+    () =>
+      customFieldColumnDefs({
+        customFields,
+        fieldDefByKey,
+        rowsComputed: appliancesSlice.rows_computed,
+      }),
+    [customFields, fieldDefByKey, appliancesSlice.rows_computed],
   );
   const columns = useMemo<DataTableColumnDef<ApplianceRow>[]>(
     () => [

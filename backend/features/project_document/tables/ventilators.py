@@ -144,6 +144,7 @@ class VentilatorsSliceResponse(BaseModel):
     ventilators: list[VentilatorRow]
     field_defs: list[TableFieldDef]
     single_select_options: dict[str, list[SingleSelectOption]]
+    rows_computed: dict[str, dict[str, object]] = Field(default_factory=dict)
 
 
 def apply_ventilators_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectDocumentV1:
@@ -204,6 +205,8 @@ def ventilators_response(
     draft_etag: str | None,
     body: ProjectDocumentV1,
 ) -> VentilatorsSliceResponse:
+    from features.project_document.formula import evaluate_table_formulas
+
     return VentilatorsSliceResponse(
         project_id=project_id,
         version_id=version_id,
@@ -216,6 +219,7 @@ def ventilators_response(
             VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY: body.single_select_options[VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY],
             **custom_option_lists_for_table(body, _VENTILATORS_TABLE_PATH),
         },
+        rows_computed=evaluate_table_formulas(ventilators_field_registry, body),
     )
 
 

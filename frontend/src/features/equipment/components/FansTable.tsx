@@ -72,8 +72,9 @@ export function FansTable({
     [fieldDefs],
   );
   const customColumns = useMemo<DataTableColumnDef<FanRow>[]>(
-    () => customFieldColumnDefs({ customFields, fieldDefByKey }),
-    [customFields, fieldDefByKey],
+    () =>
+      customFieldColumnDefs({ customFields, fieldDefByKey, rowsComputed: fansSlice.rows_computed }),
+    [customFields, fieldDefByKey, fansSlice.rows_computed],
   );
   const columns = useMemo<DataTableColumnDef<FanRow>[]>(
     () => [

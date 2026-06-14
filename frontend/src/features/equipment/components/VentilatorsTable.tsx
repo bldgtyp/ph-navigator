@@ -67,8 +67,13 @@ export function VentilatorsTable({
     [fieldDefs],
   );
   const customColumns = useMemo<DataTableColumnDef<VentilatorRow>[]>(
-    () => customFieldColumnDefs({ customFields, fieldDefByKey }),
-    [customFields, fieldDefByKey],
+    () =>
+      customFieldColumnDefs({
+        customFields,
+        fieldDefByKey,
+        rowsComputed: ventilatorsSlice.rows_computed,
+      }),
+    [customFields, fieldDefByKey, ventilatorsSlice.rows_computed],
   );
   const columns = useMemo<DataTableColumnDef<VentilatorRow>[]>(
     () => [

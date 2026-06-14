@@ -78,6 +78,7 @@ class ElectricHeatersSliceResponse(BaseModel):
     electric_heaters: list[ElectricHeaterRow]
     field_defs: list[TableFieldDef]
     single_select_options: dict[str, list[SingleSelectOption]]
+    rows_computed: dict[str, dict[str, object]] = Field(default_factory=dict)
 
 
 def apply_electric_heaters_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectDocumentV1:
@@ -113,6 +114,8 @@ def electric_heaters_response(
     draft_etag: str | None,
     body: ProjectDocumentV1,
 ) -> ElectricHeatersSliceResponse:
+    from features.project_document.formula import evaluate_table_formulas
+
     return ElectricHeatersSliceResponse(
         project_id=project_id,
         version_id=version_id,
@@ -122,6 +125,7 @@ def electric_heaters_response(
         electric_heaters=body.tables.equipment.electric_heaters.rows,
         field_defs=body.tables.equipment.electric_heaters.field_defs,
         single_select_options=custom_option_lists_for_table(body, _ELECTRIC_HEATERS_TABLE_PATH),
+        rows_computed=evaluate_table_formulas(electric_heaters_field_registry, body),
     )
 
 

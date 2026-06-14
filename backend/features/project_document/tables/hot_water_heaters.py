@@ -150,6 +150,7 @@ class HotWaterHeatersSliceResponse(BaseModel):
     hot_water_heaters: list[HotWaterHeaterRow]
     field_defs: list[TableFieldDef]
     single_select_options: dict[str, list[SingleSelectOption]]
+    rows_computed: dict[str, dict[str, object]] = Field(default_factory=dict)
 
 
 def apply_hot_water_heaters_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectDocumentV1:
@@ -190,6 +191,8 @@ def hot_water_heaters_response(
     draft_etag: str | None,
     body: ProjectDocumentV1,
 ) -> HotWaterHeatersSliceResponse:
+    from features.project_document.formula import evaluate_table_formulas
+
     return HotWaterHeatersSliceResponse(
         project_id=project_id,
         version_id=version_id,
@@ -202,6 +205,7 @@ def hot_water_heaters_response(
             HOT_WATER_HEATER_TYPE_OPTION_KEY: body.single_select_options[HOT_WATER_HEATER_TYPE_OPTION_KEY],
             **custom_option_lists_for_table(body, _HOT_WATER_HEATERS_TABLE_PATH),
         },
+        rows_computed=evaluate_table_formulas(hot_water_heaters_field_registry, body),
     )
 
 

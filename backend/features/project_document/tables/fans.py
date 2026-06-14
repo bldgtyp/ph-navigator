@@ -134,6 +134,7 @@ class FansSliceResponse(BaseModel):
     fans: list[FanRow]
     field_defs: list[TableFieldDef]
     single_select_options: dict[str, list[SingleSelectOption]]
+    rows_computed: dict[str, dict[str, object]] = Field(default_factory=dict)
 
 
 def apply_fans_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectDocumentV1:
@@ -171,6 +172,8 @@ def fans_response(
     draft_etag: str | None,
     body: ProjectDocumentV1,
 ) -> FansSliceResponse:
+    from features.project_document.formula import evaluate_table_formulas
+
     return FansSliceResponse(
         project_id=project_id,
         version_id=version_id,
@@ -183,6 +186,7 @@ def fans_response(
             FAN_TYPE_OPTION_KEY: body.single_select_options[FAN_TYPE_OPTION_KEY],
             **custom_option_lists_for_table(body, _FANS_TABLE_PATH),
         },
+        rows_computed=evaluate_table_formulas(fans_field_registry, body),
     )
 
 

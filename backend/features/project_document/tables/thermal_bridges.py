@@ -133,6 +133,7 @@ class ThermalBridgesSliceResponse(BaseModel):
     thermal_bridges: list[ThermalBridgeRow]
     field_defs: list[TableFieldDef]
     single_select_options: dict[str, list[SingleSelectOption]]
+    rows_computed: dict[str, dict[str, object]] = Field(default_factory=dict)
 
 
 def apply_thermal_bridges_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectDocumentV1:
@@ -171,6 +172,8 @@ def thermal_bridges_response(
     draft_etag: str | None,
     body: ProjectDocumentV1,
 ) -> ThermalBridgesSliceResponse:
+    from features.project_document.formula import evaluate_table_formulas
+
     return ThermalBridgesSliceResponse(
         project_id=project_id,
         version_id=version_id,
@@ -183,6 +186,7 @@ def thermal_bridges_response(
             THERMAL_BRIDGE_TYPE_OPTION_KEY: body.single_select_options[THERMAL_BRIDGE_TYPE_OPTION_KEY],
             **custom_option_lists_for_table(body, _THERMAL_BRIDGES_TABLE_PATH),
         },
+        rows_computed=evaluate_table_formulas(thermal_bridges_field_registry, body),
     )
 
 
