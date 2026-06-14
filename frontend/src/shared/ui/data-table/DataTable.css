@@ -638,7 +638,7 @@
 .data-table-alert-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--scrim);
   z-index: var(--z-modal);
 }
 
@@ -654,7 +654,7 @@
   min-width: 320px;
   max-width: 480px;
   z-index: calc(var(--z-modal) + 1);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-alert);
 }
 
 .data-table-alert-title {
@@ -952,7 +952,7 @@
 .data-table-field-config-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--scrim);
   z-index: calc(var(--z-dropdown) + 30);
 }
 
@@ -1170,7 +1170,7 @@
   height: 16px;
   margin: 0;
   border: 1px solid color-mix(in oklab, var(--text-muted) 52%, var(--bg-card));
-  border-radius: 3px;
+  border-radius: var(--radius-2xs);
   background: var(--bg-card);
   cursor: pointer;
   opacity: 0;
@@ -1232,7 +1232,7 @@
   margin: 0;
   padding: 0;
   border: 1px solid var(--border-subtle);
-  border-radius: 3px;
+  border-radius: var(--radius-2xs);
   background: var(--bg-card);
   color: var(--text-secondary);
   cursor: pointer;
@@ -1533,7 +1533,7 @@
   white-space: nowrap;
   padding: 0 var(--space-6);
   border-radius: var(--radius-pill);
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--surface-black-5);
 }
 
 .data-table-field-editor-warning {
@@ -1589,7 +1589,7 @@
   border: 1px solid var(--border-subtle);
   background: var(--option-color, var(--text-muted));
   cursor: pointer;
-  color: rgba(0, 0, 0, 0.6);
+  color: var(--text-on-swatch-muted);
 }
 
 .data-table-field-editor-color-chevron {
@@ -1916,7 +1916,7 @@ td:has(> .data-table-cell-chevron) {
   align-items: center;
   justify-content: center;
   border: 0;
-  border-radius: 3px;
+  border-radius: var(--radius-2xs);
   padding: 0;
   background: transparent;
   color: var(--text-muted);
@@ -2009,8 +2009,8 @@ td.data-table-cell-editing {
   height: 16px;
   flex: 0 0 auto;
   border: 1px solid var(--border-subtle);
-  border-radius: 3px;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+  border-radius: var(--radius-2xs);
+  box-shadow: var(--shadow-data-table-swatch-inset);
 }
 
 .data-table-color-value {
@@ -2037,7 +2037,7 @@ td.data-table-cell-editing {
   border: 1px solid var(--border-card);
   border-radius: var(--phn-control-radius);
   background: var(--bg-card);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
+  box-shadow: var(--shadow-data-table-color-editor);
   padding: var(--space-10);
   color: var(--text-primary);
 }
@@ -2163,7 +2163,7 @@ td.data-table-cell-editing {
   border-radius: var(--phn-control-radius);
   border: 1px solid var(--border-subtle);
   background: var(--bg-card);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-data-table-single-select);
   z-index: var(--z-dropdown);
 }
 
@@ -2622,7 +2622,7 @@ td.data-table-cell-editing {
   min-height: 0;
   border: none;
   border-radius: var(--phn-control-radius);
-  background: rgb(233, 238, 249);
+  background: var(--data-table-linked-record-bg);
   color: var(--text-primary);
   padding: 1px 6px;
   font-size: 12px;
@@ -2686,7 +2686,7 @@ td.data-table-cell-editing {
 }
 
 .data-table-linked-record-pill-unlink:hover {
-  background: color-mix(in srgb, rgb(233, 238, 249) 60%, var(--accent));
+  background: color-mix(in srgb, var(--data-table-linked-record-bg) 60%, var(--accent));
   color: var(--text-primary);
 }
 
@@ -2719,8 +2719,8 @@ td.data-table-cell-editing {
   min-height: 0;
   padding: 0;
   border: none;
-  border-radius: 3px;
-  background: rgb(233, 238, 249);
+  border-radius: var(--radius-2xs);
+  background: var(--data-table-linked-record-bg);
   color: var(--text-primary);
   font-size: 13px;
   line-height: 1;
@@ -2728,7 +2728,7 @@ td.data-table-cell-editing {
 }
 
 .data-table-linked-record-add:hover {
-  background: color-mix(in srgb, rgb(233, 238, 249) 85%, var(--accent));
+  background: color-mix(in srgb, var(--data-table-linked-record-bg) 85%, var(--accent));
   color: var(--text-primary);
 }
 
@@ -2753,7 +2753,7 @@ td.data-table-cell-editing {
   background: var(--bg-card);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--shadow-data-table-picker);
   overflow: hidden;
 }
 

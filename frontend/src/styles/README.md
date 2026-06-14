@@ -64,13 +64,14 @@ Source of truth is `styles/tokens.css` (+ `styles/brand/tokens.css`). Intent:
 | **Brand palette** (L1) | `--accent`, `--accent-dark/-light/-text`, `--highlight*`, `--bg-page/-elev/-card`, `--border-subtle/-card/-strong`, `--text-primary/-secondary/-muted`, `--svg-line-*`, `--svg-fill-dot`, `--svg-text`, `--ease` | brand-level color, surfaces, borders, text, blueprint SVG lines |
 | **Spacing** | `--space-2 … --space-48` (px-named, 2px base) | margins, padding, gaps |
 | **Type size** | `--fs-2xs … --fs-3xl` (8-step, rem) | `font-size`. Intentional literals: 13px table body, em sizes |
-| **Radius** | `--radius-xs/sm/md/pill`, `--phn-radius`, `--phn-control-radius` | `border-radius` |
-| **Shadow** | `--shadow-elev-1/2/3`, `--shadow-popover`, `--shadow-hud-1/2/3`, `--phn-shadow` | `box-shadow` |
+| **Radius** | `--radius-2xs/xs/sm/md/lg/xl/pill`, exact active steps `--radius-7/-9`, `--phn-radius`, `--phn-control-radius` | `border-radius` |
+| **Shadow** | `--shadow-elev-1/2/3`, `--shadow-popover`, `--shadow-hud-1/2/3`, exact feature/shared shadows, `--phn-shadow` | `box-shadow` |
 | **Z-index** | `--z-base`, `--z-base-elevated`, `--z-sticky`, `--z-dropdown`, `--z-modal`, `--z-tooltip` | stacking (contract enforced by `check:z-index`) |
 | **Semantic** | `--phn-success/-warning/-danger` (+ `-bg`), `--phn-focus`, `--text-on-accent`, `--phn-control-height` | status, focus rings, control sizing |
 | **Charts** | `--chart-axis/-grid`, `--chart-1 … --chart-5` | recharts series (climate graphs) |
 | **Report table** | `--report-status-missing/-question/-complete/-na` | report-table status dots |
-| **Data table** | `--data-table-*` sizing + the `--data-table-tint-*` axis-tint cascade | the DataTable grid |
+| **Scrim / overlay** | `--scrim`, `--scrim-slate`, `--surface-black-5`, `--text-on-swatch-muted` | backdrops, subtle black overlays, swatch text |
+| **Data table** | `--data-table-*` sizing + linked-record bg + the `--data-table-tint-*` axis-tint cascade | the DataTable grid |
 | **Info tooltip** | `--info-tooltip-bg/-fg` | shared `<InfoTooltip>` |
 
 Fonts: brand sets `--font-primary` (Outfit) but **Layer 2 overrides it to

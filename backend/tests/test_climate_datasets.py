@@ -36,12 +36,14 @@ from tests.test_mcp import clean_mcp_tables, create_project
 
 __all__ = ["clean_mcp_tables"]
 
-# A real, unmodified Phius 2022 station file (Worcester, MA) is the golden
-# fixture: cp1252 + CRLF, packed header rows, German night-fraction labels,
-# and the non-numeric Dewpoint/Sky design columns the parser must skip.
+# A SYNTHETIC station file (fabricated round numbers) is the golden fixture:
+# real Phius/PHI data is licensed and must not live in this PUBLIC repo (see
+# planning/features/climate-reference-data-seeding/). It still exercises the real
+# file shape -- cp1252 + CRLF, packed header rows, the German night-fraction
+# labels, and the non-numeric Dewpoint/Sky design columns the parser must skip.
 _FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "climate" / "phius"
-_STATION_ID = "WORCHESTER_REGIONAL_ARPT_MA"
-_STATION_FILE = _FIXTURE_ROOT / "USA" / "MA" / f"{_STATION_ID}-mon.txt"
+_STATION_ID = "PHN_SYNTHETIC_TEST_STATION_ZZ"
+_STATION_FILE = _FIXTURE_ROOT / "USA" / "ZZ" / f"{_STATION_ID}-mon.txt"
 
 
 @pytest.fixture()
@@ -103,7 +105,7 @@ def test_climate_record_preserves_provider_identity_and_aux() -> None:
     assert rebuilt.version == "2022"
     assert rebuilt.station_id == _STATION_ID
     assert rebuilt.aux.albedo == pytest.approx(0.2)
-    assert rebuilt.aux.heating_degree_hours_12_20 == pytest.approx(99668.0)
+    assert rebuilt.aux.heating_degree_hours_12_20 == pytest.approx(90000.0)
 
 
 # --- Phius importer ---------------------------------------------------------
@@ -113,36 +115,36 @@ def test_phius_parser_maps_golden_fixture() -> None:
     record = parse_phius_mon_file(_STATION_FILE)
 
     assert record.station_id == _STATION_ID
-    assert record.display_name == "WORCHESTER REGIONAL ARPT MA"
+    assert record.display_name == "PHN SYNTHETIC TEST STATION"
     # Country is constant (US-only set); region comes from the file's path.
     assert record.phpp_codes.country_code == "US"
-    assert record.phpp_codes.region_code == "MA"
-    assert record.location.latitude == pytest.approx(42.267)
-    assert record.location.longitude == pytest.approx(-71.883)
+    assert record.phpp_codes.region_code == "ZZ"
+    assert record.location.latitude == pytest.approx(40.0)
+    assert record.location.longitude == pytest.approx(-75.0)
     assert record.location.hours_from_utc == -5
-    assert record.location.site_elevation_m == pytest.approx(300.0)
-    assert record.climate.summer_daily_temperature_swing_k == pytest.approx(8.9)
+    assert record.location.site_elevation_m == pytest.approx(100.0)
+    assert record.climate.summer_daily_temperature_swing_k == pytest.approx(10.0)
     # No annual wind in the file -> mean of the Jan/Jul design winds.
-    assert record.aux.wind_speed_jan_ms == pytest.approx(4.9)
-    assert record.aux.wind_speed_jul_ms == pytest.approx(3.2)
-    assert record.climate.average_wind_speed_ms == pytest.approx((4.9 + 3.2) / 2)
-    assert record.climate.monthly_temps.air_c[0] == pytest.approx(-6.8)
-    assert record.climate.monthly_temps.dewpoint_c[0] == pytest.approx(-12.6)
-    assert record.climate.monthly_radiation.glob[6] == pytest.approx(178.0)
+    assert record.aux.wind_speed_jan_ms == pytest.approx(5.0)
+    assert record.aux.wind_speed_jul_ms == pytest.approx(3.0)
+    assert record.climate.average_wind_speed_ms == pytest.approx((5.0 + 3.0) / 2)
+    assert record.climate.monthly_temps.air_c[0] == pytest.approx(1.0)
+    assert record.climate.monthly_temps.dewpoint_c[0] == pytest.approx(-15.0)
+    assert record.climate.monthly_radiation.glob[6] == pytest.approx(160.0)
     # Three design columns -> heat1 / heat2 / cooling1; cooling2 stays default.
-    assert record.climate.peak_loads.heat_load_1.temp_c == pytest.approx(-12.6)
-    assert record.climate.peak_loads.heat_load_1.rad_global == pytest.approx(97.0)
-    assert record.climate.peak_loads.heat_load_2.temp_c == pytest.approx(-7.4)
-    assert record.climate.peak_loads.cooling_load_1.temp_c == pytest.approx(23.8)
+    assert record.climate.peak_loads.heat_load_1.temp_c == pytest.approx(-10.0)
+    assert record.climate.peak_loads.heat_load_1.rad_global == pytest.approx(50.0)
+    assert record.climate.peak_loads.heat_load_2.temp_c == pytest.approx(-8.0)
+    assert record.climate.peak_loads.cooling_load_1.temp_c == pytest.approx(30.0)
     assert record.climate.peak_loads.cooling_load_2.temp_c == pytest.approx(0.0)
     # Dewpoint/Sky design columns are metadata (`4d`, `w1: 22/1`) -> not parsed.
     assert record.climate.peak_loads.heat_load_1.dewpoint_c is None
     # Aux: degree-hours, German 12-h min (units stripped), night fractions, albedo.
-    assert record.aux.heating_degree_hours_12_20 == pytest.approx(99668.0)
-    assert record.aux.cooling_degree_hours_24 == pytest.approx(907.0)
-    assert record.aux.temp_min_12h_c == pytest.approx(-22.6)
-    assert record.aux.summer_night_fraction_dry_pct == pytest.approx(30.4)
-    assert record.aux.summer_night_fraction_humid_pct == pytest.approx(1.5)
+    assert record.aux.heating_degree_hours_12_20 == pytest.approx(90000.0)
+    assert record.aux.cooling_degree_hours_24 == pytest.approx(1000.0)
+    assert record.aux.temp_min_12h_c == pytest.approx(-20.0)
+    assert record.aux.summer_night_fraction_dry_pct == pytest.approx(25.0)
+    assert record.aux.summer_night_fraction_humid_pct == pytest.approx(2.0)
     assert record.aux.albedo == pytest.approx(0.2)
     # Climate zone is absent from the Phius file -> schema default.
     assert record.location.climate_zone == 1
@@ -186,17 +188,17 @@ def test_seed_skips_existing_when_replace_false(clean_climate_tables: None) -> N
 
 
 def _seed_two_locations() -> None:
-    worcester = parse_phius_mon_file(_STATION_FILE)
+    home = parse_phius_mon_file(_STATION_FILE)
     # A second, far-away station so nearest-search has a real choice.
-    denver = worcester.model_copy(
+    denver = home.model_copy(
         update={
             "display_name": "US0002a-Denver",
             "station_id": "US0002a-Denver",
-            "phpp_codes": worcester.phpp_codes.model_copy(update={"region_code": "CO"}),
-            "location": worcester.location.model_copy(update={"latitude": 39.74, "longitude": -104.99}),
+            "phpp_codes": home.phpp_codes.model_copy(update={"region_code": "CO"}),
+            "location": home.location.model_copy(update={"latitude": 39.74, "longitude": -104.99}),
         }
     )
-    seed_dataset("phius", "2022", [worcester, denver], label="Phius 2022")
+    seed_dataset("phius", "2022", [home, denver], label="Phius 2022")
 
 
 def test_routes_list_search_and_fetch(clean_climate_tables: None) -> None:
@@ -211,11 +213,11 @@ def test_routes_list_search_and_fetch(clean_climate_tables: None) -> None:
     dataset_id = dataset["id"]
     by_region = client.get(
         f"/api/v1/climate/datasets/{dataset_id}/locations",
-        params={"region": "MA"},
+        params={"region": "ZZ"},
         headers={"Origin": ORIGIN},
     ).json()
     assert by_region["total"] == 1
-    assert by_region["items"][0]["region"] == "MA"
+    assert by_region["items"][0]["region"] == "ZZ"
 
     nearest = client.get(
         f"/api/v1/climate/datasets/{dataset_id}/locations",
@@ -270,10 +272,10 @@ def test_mcp_climate_tools_match_routes(
     assert len(datasets) == 1
     dataset_id = datasets[0]["id"]
 
-    search = tool_search_climate_locations(cast(str, dataset_id), ctx, allow_env_token=True, region="MA")
+    search = tool_search_climate_locations(cast(str, dataset_id), ctx, allow_env_token=True, region="ZZ")
     route_search = client.get(
         f"/api/v1/climate/datasets/{dataset_id}/locations",
-        params={"region": "MA"},
+        params={"region": "ZZ"},
         headers={"Origin": ORIGIN},
     ).json()
     assert search == route_search

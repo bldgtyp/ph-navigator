@@ -1,12 +1,12 @@
 ---
 DATE: 2026-06-14
-TIME: (local, evening)
-STATUS: Deferred — backlog spec; not started.
+TIME: 15:50 EDT
+STATUS: Complete — implemented and verified.
 AUTHOR: Claude Code (Opus 4.8) + Ed May
 SCOPE: Work items, evidence, and acceptance criteria
 RELATED:
   - ./README.md
-  - ../../archive/css-structure-discoverability/PRD.md  (§3 + §4 design-pass tail this replaces)
+  - ../css-structure-discoverability/PRD.md  (§3 + §4 design-pass tail this replaces)
   - ../../code-reviews/2026-06-14/frontend-css-styling-review.md
 ---
 
@@ -80,6 +80,23 @@ review, not a mechanical sweep.
 - `check:hex` covers `rgb/rgba/hsl(a)` + `.ts`, with documented exemptions;
   `pnpm run check:all` and `make ci` green.
 - Spacing/type scales tightened, literal radii folded, after Ed's review.
+
+## Implementation notes — 2026-06-14
+
+- Color literals were moved behind exact-value tokens rather than snapped to
+  nearby existing shadows/scrims. That keeps this sweep pixel-neutral while
+  giving `check:hex` a stricter surface to enforce.
+- `.ts` color literals are permitted only in the guard's explicit sanctioned
+  data-color list: Model Viewer color/theme modules, DataTable option palette
+  generation, Equipment heat-pump option palette generation, and Materials
+  category default color. Tests, `__tests__/`, `testing/`, and fixture files
+  remain skipped as fixtures.
+- Spacing/type scale removal was audited and rejected for this pass. All current
+  spacing and type tokens are still referenced; the sparse large/display steps
+  remain intentional until a later visual redesign has a reason to change
+  pixels.
+- Literal radii were folded into tokens with exact active steps, so the pass
+  does not shift rendered corner geometry.
 
 ## Out of scope
 

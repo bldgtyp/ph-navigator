@@ -1,8 +1,8 @@
 ---
 DATE: 2026-06-14
 TIME: -
-STATUS: Planned — ready to build (Phase 1 independent; Phase 2 gated on
-  climate-phi-importer).
+STATUS: Planned (v1.0). Phase 1 independent; cleanup (D-CS-6) partially
+  executed 2026-06-14; Phase 2 (PHI) integrated as phases/phase-02-phi-importer.md.
 AUTHOR: Claude (for Ed)
 SCOPE: Product/behavior contract for the climate reference-data ingest + seed
   pipeline: a two-stage process→seed flow that lands the full Phius + PHI
@@ -11,7 +11,7 @@ SCOPE: Product/behavior contract for the climate reference-data ingest + seed
 RELATED:
   - README.md
   - STATUS.md
-  - planning/features_v1.1/climate-phi-importer/PRD.md
+  - phases/phase-02-phi-importer.md (the PHI process step)
   - planning/archive/climate/phases/phase-02-reference-datasets-and-format.md
   - backend/features/climate/record.py (ClimateRecord — the .json shape)
   - backend/features/climate/service.py (seed_dataset, SeedResult)
@@ -157,10 +157,11 @@ to disk/object-store instead of going straight to Postgres.
    synthetic fixture; update `backend/seeds/README.md` to describe the bundle
    pull instead of committed files.
 
-### Phase 2 — PHI/PHPP 10.6 (gated on `climate-phi-importer`)
+### Phase 2 — PHI/PHPP 10.6 (see `phases/phase-02-phi-importer.md`)
 
-- Depends on `importers/phi.py` (the deferred `.xlsx` parser + ~130-column map
-  validation). Once it exists, it is just another **process** parser →
+- Depends on `importers/phi.py` (the `.xlsx` parser + ~130-column map
+  validation; full plan in the phase doc). Once it exists, it is just another
+  **process** parser →
   `ClimateRecord` → the same bundle writer + object-store upload + seed path.
   No new seed code (provider-agnostic by D-CS-3).
 - Publish `climate/phi/10.6/dataset.json`; add `phi` to the process CLI
@@ -207,7 +208,7 @@ Object-store bundles: one `dataset.json` (+ optional raw archive) per
   `make db-reset-dev` bring climate back automatically (MinIO).
 - An admin-only **process** CLI and a provider-agnostic **seed** path exist and
   are documented; a `make` recipe publishes a bundle to the object store.
-- PHI 10.6 path defined and gated on `climate-phi-importer` (Phase 2).
+- PHI 10.6 path defined as Phase 2 (`phases/phase-02-phi-importer.md`).
 - A documented Render seed job (Phase 3). `make ci` green.
 
 ## 8. Risks / open sub-questions
@@ -218,7 +219,8 @@ Object-store bundles: one `dataset.json` (+ optional raw archive) per
 - **Local bootstrap chicken/egg:** MinIO is empty on a fresh `make dev`; the
   `seed-climate-bundle` recipe must run before `db-seed`. Document the order
   (mirror `object-store-init`).
-- **PHI parser correctness** is owned by `climate-phi-importer` (the ~130-
-  column map is the real risk); this feature only consumes its output.
+- **PHI parser correctness** (the ~130-column map) is the real risk, owned by
+  Phase 2 (`phases/phase-02-phi-importer.md`); the seed path only consumes its
+  standardized `.json` output.
 - **Render seed trigger:** one-off job vs release command — pick during Phase 3
   based on how Render is wired; both satisfy D-CS-7.

@@ -1,19 +1,22 @@
 ---
 DATE: 2026-06-14
 TIME: -
-STATUS: Planned — ready to build. Phase 1 (Phius + object-store pipeline +
-  public-repo cleanup) is independent and buildable now; Phase 2 (PHI) is
-  gated on the `climate-phi-importer` parser.
+STATUS: Planned (v1.0). Phase 1 (Phius + object-store pipeline) is independent
+  and buildable now; the public-repo cleanup (D-CS-6) is partially executed
+  (2026-06-14 — licensed source files untracked + synthetic test fixture; the
+  object-store dev-seeding swap remains). Phase 2 (PHI) is integrated here as
+  `phases/phase-02-phi-importer.md`.
 AUTHOR: Claude (for Ed)
 SCOPE: Router for the climate reference-data ingest + seed pipeline — get the
   full PHI + Phius libraries into Postgres without putting licensed source
   data in the PUBLIC repo, via a two-stage process→seed flow over the
-  existing object store.
+  existing object store. Promoted to v1.0 and absorbed the former
+  `climate-phi-importer` candidate (Ed, 2026-06-14).
 RELATED:
   - PRD.md
   - STATUS.md
-  - planning/features_v1.1/climate-phi-importer/ (the PHI `.xlsx` parser this
-    consumes in Phase 2; provider-agnostic seed seam already shipped)
+  - phases/phase-02-phi-importer.md (the PHI `.xlsx` process step, integrated
+    from the former standalone climate-phi-importer feature)
   - planning/archive/climate/ (the complete Climate feature this extends)
   - planning/archive/climate/decisions.md (D-CL-8 app-wide versioned datasets,
     D-CL-10 mirror honeybee_ph.site)

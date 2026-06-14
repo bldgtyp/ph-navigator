@@ -82,7 +82,7 @@
 
 .version-control-wrap .shell-controls {
   border: 1px solid var(--border-subtle);
-  border-radius: 7px;
+  border-radius: var(--radius-7);
   background: color-mix(in oklab, var(--bg-card) 88%, transparent);
   padding: 3px;
   box-shadow: 0 1px 0 color-mix(in oklab, var(--text-primary) 4%, transparent);
@@ -135,7 +135,7 @@
   height: 22px;
   min-height: 22px;
   border: 0;
-  border-radius: 3px;
+  border-radius: var(--radius-2xs);
   background: transparent;
   color: var(--text-secondary);
   padding: 0;

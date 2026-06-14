@@ -28,7 +28,7 @@
 [data-toolbar-tooltip]::before,
 [data-sidebar-tooltip]::before {
   background: color-mix(in oklab, var(--text-primary) 88%, transparent);
-  border-radius: 3px;
+  border-radius: var(--radius-2xs);
   bottom: calc(100% + 8px);
   color: var(--bg-card);
   font-family: var(--font-primary);

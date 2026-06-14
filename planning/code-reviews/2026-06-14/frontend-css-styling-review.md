@@ -577,7 +577,7 @@ parentheses.
 2026-06-14** — *built and archived at
 `../../archive/css-structure-discoverability/`. The color-literal token sweep,
 the `check:hex` → `rgb/hsl`/`.ts` extension, and the scale design pass were
-carved out to `../../features/css-token-guard-sweep/`.*
+carved out to `../../archive/css-token-guard-sweep/`.*
 9. ✅ **Done** — `src/styles/README.md` token+class catalog + import strategy
    + "how to style a new feature" recipe + split plan; `shared/ui/index.ts`
    barrel; the `report-table/` co-located pattern documented as the norm.

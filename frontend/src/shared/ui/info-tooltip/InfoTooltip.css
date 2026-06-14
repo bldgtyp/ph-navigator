@@ -28,7 +28,7 @@
 
 .info-tooltip-content {
   background: var(--info-tooltip-bg);
-  border-radius: 3px;
+  border-radius: var(--radius-2xs);
   box-shadow: var(--shadow-elev-1);
   color: var(--info-tooltip-fg);
   display: grid;
