@@ -68,12 +68,21 @@ MCP live). What is missing is a *supply chain* for the data:
 - **Source-of-truth** (raw files *and* the standardized `.json`) lives in the
   **private object store** (MinIO local / Cloudflare R2 prod), never in git.
 
+## Phase map
+
+| Phase | Doc | What |
+|---|---|---|
+| 1 | `phases/phase-01-phius-objectstore-pipeline.md` | Process→seed over the object store; full Phius 2022; dev reset/reseed wiring; public-repo cleanup (partly done). **Independent, build now.** |
+| 2 | `phases/phase-02-phi-importer.md` | The PHI/PHPP 10.6 `.xlsx` process step (the ~130-column workbook map). Reuses the Phase-1 seams. |
+| 3 | `phases/phase-03-render-seed.md` | On-demand idempotent prod seed from R2 into the Render Postgres. |
+
 ## Read order
 
 1. `PRD.md` — decisions, two-stage scope, artifact format, tests, exit
    criteria.
 2. `STATUS.md` — current state, gate, next step.
-3. Precedent: `backend/features/climate/importers/phius.py` (the Phius parser
+3. `phases/phase-01-phius-objectstore-pipeline.md` — the buildable-now plan.
+4. Precedent: `backend/features/climate/importers/phius.py` (the Phius parser
    to refactor into the process step) and `backend/features/assets/storage_r2.py`
    (the object-store client to reuse).
 
