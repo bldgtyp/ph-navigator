@@ -1,19 +1,24 @@
 ---
 DATE: 2026-06-14
 TIME: (local, afternoon)
-STATUS: Active
+STATUS: Done (branch css-p2-canvas, awaiting review/merge)
 AUTHOR: Claude Code (Opus 4.8) + Ed May
 SCOPE: P2 item 7 — extract shared apertures/envelope drawing widgets
 RELATED:
-  - ../README.md
+  - ../README.md  (see "Phase 7 outcome" for what shipped)
   - ../../../code-reviews/2026-06-14/scopes/scope-D-apertures-envelope.md  (original duplication analysis)
   - ../../../code-reviews/2026-06-14/frontend-css-styling-review.md  (Theme 6)
 ---
 
 # Phase 7 — Canvas widget extraction (HANDOFF)
 
-> Fresh-process handoff. Everything before this (P0, P1, P2.6, P2.8) is
-> merged to `main` (`origin/main` @ `fd10e996`). Start here.
+> **DONE 2026-06-14 on branch `css-p2-canvas` (off `main` `61aba28b`).**
+> Four genuinely-shared widgets extracted (InfoTooltip, canvas hover-hint
+> tooltip, canvas toolbar, dimension delete button); sidebar roster +
+> dimension input/hooks left feature-specific by design. All four commits
+> `make ci`-green + Playwright-verified on both canvases. See the **Phase 7
+> outcome** section in `../README.md` for the commit list and decisions.
+> The handoff text below is preserved as the original plan/method.
 
 ## Goal
 

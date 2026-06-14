@@ -221,7 +221,7 @@ function LayerThicknessEditor({
         <button
           id={`assembly-layer-${layer.id}-delete`}
           type="button"
-          className="dimension-delete-button"
+          className="dimension-chrome-delete-button"
           aria-label={`Delete layer ${layerNumber}`}
           title="Delete layer"
           onMouseDown={(event) => event.preventDefault()}

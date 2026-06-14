@@ -54,7 +54,7 @@ export function ApertureCanvasToolbar({
 }) {
   return (
     <div
-      className="aperture-canvas-toolbar assembly-canvas-toolbar"
+      className="canvas-toolbar aperture-canvas-toolbar"
       role="toolbar"
       aria-label="Aperture canvas tools"
     >
@@ -139,7 +139,7 @@ function ApertureToolbarButton({
     <button
       {...buttonProps}
       type="button"
-      className="aperture-canvas-toolbar__button assembly-canvas-toolbar-button"
+      className="canvas-toolbar__button"
       aria-label={label}
       data-toolbar-tooltip={tooltip}
       disabled={disabled}
@@ -151,10 +151,5 @@ function ApertureToolbarButton({
 }
 
 function ApertureToolbarDivider() {
-  return (
-    <span
-      className="aperture-canvas-toolbar__divider assembly-canvas-toolbar-divider"
-      aria-hidden="true"
-    />
-  );
+  return <span className="canvas-toolbar__divider" aria-hidden="true" />;
 }

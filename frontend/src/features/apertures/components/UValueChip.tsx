@@ -5,7 +5,7 @@
 //
 // Tooltip copy follows the PH-Nav-V1 effective window U-Value bubble.
 
-import { Info } from "lucide-react";
+import { InfoTooltip } from "../../../shared/ui/info-tooltip";
 import { formatElementUValue, formatWindowUValue, type UValueUnitSystem } from "../format-u-value";
 
 export const U_VALUE_TOOLTIP =
@@ -47,24 +47,17 @@ export function UValueChip({
           <span className="aperture-uvalue-chip__value">{fullValue}</span>
         </>
       )}
-      <button
-        type="button"
-        className="aperture-uvalue-chip__info-button"
-        aria-label="Effective Window U-Value details"
-      >
-        <Info aria-hidden="true" size={12} strokeWidth={1.8} />
-        <span className="aperture-uvalue-chip__info-tooltip" role="tooltip">
-          <strong>Effective Window U-Value (U-w)</strong>
-          <span>Calculated per ISO 10077-1:2006</span>
-          <span>
-            <em>
-              U<sub>w</sub> = (A<sub>g</sub>·U<sub>g</sub> + A<sub>f</sub>·U
-              <sub>f</sub> + l<sub>g</sub>·Ψ<sub>g</sub>) / A<sub>w</sub>
-            </em>
-          </span>
-          <span>Uninstalled value (excludes ψ-install)</span>
+      <InfoTooltip label="Effective Window U-Value details">
+        <strong>Effective Window U-Value (U-w)</strong>
+        <span>Calculated per ISO 10077-1:2006</span>
+        <span>
+          <em>
+            U<sub>w</sub> = (A<sub>g</sub>·U<sub>g</sub> + A<sub>f</sub>·U
+            <sub>f</sub> + l<sub>g</sub>·Ψ<sub>g</sub>) / A<sub>w</sub>
+          </em>
         </span>
-      </button>
+        <span>Uninstalled value (excludes ψ-install)</span>
+      </InfoTooltip>
       {unfinishedCount > 0 && <em className="aperture-uvalue-chip__unfinished"> (unfinished)</em>}
     </span>
   );

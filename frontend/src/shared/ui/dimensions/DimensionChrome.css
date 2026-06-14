@@ -113,3 +113,38 @@
   color: var(--accent-text);
   outline: 0;
 }
+
+/* Edit-mode delete affordance (the trash icon beside a dimension input).
+   Shared by the apertures dimension labels and the envelope layer-thickness
+   editor (CSS rationalization Phase 7). */
+.dimension-chrome-delete-button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-xs);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  height: 26px;
+  justify-content: center;
+  min-height: 26px;
+  min-width: 26px;
+  padding: 0;
+  position: relative;
+  transition:
+    background 0.14s var(--ease),
+    color 0.14s var(--ease);
+  width: 26px;
+}
+
+.dimension-chrome-delete-button:hover:not(:disabled),
+.dimension-chrome-delete-button:focus-visible:not(:disabled) {
+  background: var(--phn-danger-bg);
+  color: var(--phn-danger);
+  outline: 0;
+}
+
+.dimension-chrome-delete-button:disabled {
+  color: color-mix(in oklab, var(--text-secondary) 38%, transparent);
+  cursor: not-allowed;
+}

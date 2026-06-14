@@ -1,10 +1,10 @@
-import { Info } from "lucide-react";
 import {
   formatLengthFromMm,
   formatRValueFromM2KPerW,
   formatUValueFromWm2K,
   useUnitPreference,
 } from "../../../lib/units";
+import { InfoTooltip } from "../../../shared/ui/info-tooltip";
 import { InlineHeaderNameEditor } from "../../../shared/ui/InlineHeaderNameEditor";
 import { statusLabel, totalThicknessMm } from "../lib";
 import type { Assembly, AssemblyThermalResponse } from "../types";
@@ -55,26 +55,20 @@ export function AssemblyHeader({
         <div id="assembly-thermal-metric">
           <dt className="assembly-header-metric-label">
             <span>Thermal</span>
-            <button
+            <InfoTooltip
               id="assembly-thermal-info-button"
-              type="button"
-              className="assembly-header-info-button"
-              aria-label="Effective Thermal Resistance details"
+              label="Effective Thermal Resistance details"
             >
-              <Info aria-hidden="true" size={12} strokeWidth={1.8} />
-              <span className="assembly-header-info-tooltip" role="tooltip">
-                <strong>Effective Thermal Resistance</strong>
-                <span>
-                  Calculated using the Passive House method: the average of the Parallel-Path and
-                  Isothermal-Planes methods.
-                </span>
-                <span>
-                  Note: Surface film resistances (air films) are NOT included in the value shown
-                  here.
-                </span>
-                <em>Reference: ASHRAE Handbook - Fundamentals, Chapter 27</em>
+              <strong>Effective Thermal Resistance</strong>
+              <span>
+                Calculated using the Passive House method: the average of the Parallel-Path and
+                Isothermal-Planes methods.
               </span>
-            </button>
+              <span>
+                Note: Surface film resistances (air films) are NOT included in the value shown here.
+              </span>
+              <em>Reference: ASHRAE Handbook - Fundamentals, Chapter 27</em>
+            </InfoTooltip>
           </dt>
           <dd data-testid="assembly-thermal-label">{thermalLabel}</dd>
         </div>

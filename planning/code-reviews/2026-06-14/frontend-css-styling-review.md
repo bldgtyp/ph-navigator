@@ -508,8 +508,18 @@ parentheses.
      `aperture-uvalue-chip` (metric + info-button), `pill-tab` (nav),
      data-table `single-select-pill`/`linked-record-pill` (user-coloured).
      Optional future: unify `.chip--sm` padding so all small chips match.
-7. Extract shared drawing widgets used by apertures+envelope into
-   `shared/ui/canvas/`. (M–L)
+7. ✅ **DONE 2026-06-14 (branch `css-p2-canvas`).** Extracted the
+   genuinely-shared drawing widgets: `<InfoTooltip>`
+   (`shared/ui/info-tooltip/`, + `--info-tooltip-bg/-fg` tokens — kills the
+   dup `rgb(87 87 87 / 94%)`), the canvas hover-hint tooltip + the canvas
+   toolbar (`shared/ui/canvas/`, the latter removing a fragile apertures→
+   envelope.css class borrow), and the dimension delete button
+   (`DimensionChrome.css`). Each a neutral, browser-verified commit.
+   *Review over-flagged the rest:* the apertures vs envelope **sidebar
+   roster** (different `<li>`/`<NavLink>` interaction models + action sets)
+   and the **dimension input + draft hooks** (divergent units/validation/
+   width) are parallel-but-different and were left feature-specific, not
+   force-merged. (M–L)
 8. Route SVG color through tokens; assess the 3D palette. (M) —
    ✅ **Resolved 2026-06-14.**
    - *SVG:* apertures `--aperture-region-stroke` + envelope
