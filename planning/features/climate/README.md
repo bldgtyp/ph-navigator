@@ -1,14 +1,14 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Active — Phase 1 + Phase 2 implemented 2026-06-13 (Phius importer
-  revalidated against the real 1007-station set + seeded). Phase 3 is in
-  progress: **3a + 3b COMPLETE** (2026-06-14) — the Climate tab hosts the
-  location editor (Settings read-only), the climate-sources roster (attach
-  Phius/PHI/ASHRAE/EPW, one default), and the reference-dataset browser.
-  Next: 3c charts + sun-path. Deferred slices: the climate-source
-  custom-record entry form, and the PHI/PHPP xlsx importer (workbook on
-  disk).
+STATUS: Active — Phases 1–3 COMPLETE (2026-06-14). Phase 1 (sun-path
+  service) + Phase 2 (reference datasets; Phius importer revalidated against
+  the real 1007-station set + seeded) + Phase 3 (the Climate tab: location
+  editor with Settings read-only, climate-sources roster attaching
+  Phius/PHI/ASHRAE/EPW with one default, reference-dataset browser, recharts
+  monthly graphs behind a Table/Charts toggle, and the 2D SVG sun-path
+  visual). Deferred slices: the climate-source custom-record entry form, the
+  PHI/PHPP xlsx importer (workbook on disk), and Phase 4 design conditions.
 AUTHOR: Claude (for Ed)
 SCOPE: Router for the project-scoped Climate feature — a top-level tab
   that owns and visualizes project location + weather basis, and serves
@@ -23,7 +23,7 @@ RELATED:
   - phases/phase-02b-phi-phpp-importer.md (deferred)
   - phases/phase-03-climate-tab-ui.md
   - phases/phase-03b-climate-source-attach-select.md (complete)
-  - phases/phase-03c-climate-visualization.md (deferred)
+  - phases/phase-03c-climate-visualization.md (complete)
   - phases/phase-04-design-conditions-and-metrics.md (deferred)
   - PLAN.md → "Deferred work index" (the later-phase roadmap)
   - planning/archive/project-location/ (the data foundation this builds on)
@@ -94,15 +94,18 @@ frontend-only). Phase 2 ships the `ClimateRecord` schema, the app-wide
 `GET /api/v1/climate/datasets…` read endpoints + MCP. The Phius importer
 is **revalidated against the real 1007-station 2022 set** (parser rewritten
 to the verified format; real seed verified; seed CLI added). **Phase 3 is
-in progress** — sub-phase **3a is complete**: the Climate tab (placed after
-Status) with the reference-dataset browser, the standardized record as
-monthly + design-condition tables, and the **migrated location editor**
-(extracted into a reusable `useProjectLocationForm` hook; Settings now shows
-a read-only summary). **3b is complete** — the project-scoped
-`project_climate_source` model + routes + MCP, and the Climate-tab
-**sources roster** (attach a Phius/PHI station from the browser, an ASHRAE
-pointer, or the project EPW; one default — D-CL-4/9/11). Next: 3c (charts +
-sun-path visual). Phase 4 (per-source design
-conditions) gates the fRSI/comfort consumers. The one remaining deferred
-Phase-2 slice is the PHI/PHPP xlsx importer (workbook on disk; a ~130-column
-PPP-worksheet reverse-engineering job — see phase-02 §5).
+complete** (2026-06-14) — **3a**: the Climate tab (placed after Status) with
+the reference-dataset browser, the standardized record as monthly +
+design-condition tables, and the **migrated location editor** (extracted
+into a reusable `useProjectLocationForm` hook; Settings now shows a
+read-only summary). **3b**: the project-scoped `project_climate_source`
+model + routes + MCP, and the Climate-tab **sources roster** (attach a
+Phius/PHI station from the browser, an ASHRAE pointer, or the project EPW;
+one default — D-CL-4/9/11). **3c**: **recharts** monthly temperature/
+radiation graphs behind a Table/Charts toggle, and the **2D SVG sun-path
+visual** (`useSunPathQuery` on the Phase-1 endpoint; "Set location" empty
+state); `ClimateTab` is lazy-loaded so recharts stays out of the initial
+bundle. Phase 4 (per-source design conditions) gates the fRSI/comfort
+consumers and stays deferred. The one remaining deferred Phase-2 slice is
+the PHI/PHPP xlsx importer (workbook on disk; a ~130-column PPP-worksheet
+reverse-engineering job — see phase-02 §5).

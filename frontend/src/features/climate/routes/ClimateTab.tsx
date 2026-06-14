@@ -5,6 +5,7 @@ import type { ProjectDetail } from "../../projects/types";
 import { ClimateDatasetBrowser } from "../components/ClimateDatasetBrowser";
 import { ClimateLocationSection } from "../components/ClimateLocationSection";
 import { ClimateSourcesSection } from "../components/ClimateSourcesSection";
+import { SunPathDiagram } from "../components/SunPathDiagram";
 import { useCreateClimateSourceMutation } from "../hooks";
 import type { CreateClimateSourceRequest } from "../types";
 
@@ -49,6 +50,15 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
           isAttaching={createSource.isPending}
           attachError={createSource.error}
         />
+      </section>
+
+      <section className="climate-section" aria-labelledby="climate-sun-path-title">
+        <h3 id="climate-sun-path-title">Sun path</h3>
+        <p className="climate-section-note">
+          The sun-path diagram for this project&rsquo;s location: hourly analemmas and monthly day
+          arcs over the compass.
+        </p>
+        <SunPathDiagram projectId={project.id} />
       </section>
 
       <section className="climate-section" aria-labelledby="climate-datasets-title">

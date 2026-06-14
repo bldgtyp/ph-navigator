@@ -13,7 +13,7 @@ RELATED:
   - phases/phase-02b-phi-phpp-importer.md (deferred)
   - phases/phase-03-climate-tab-ui.md
   - phases/phase-03b-climate-source-attach-select.md (complete)
-  - phases/phase-03c-climate-visualization.md (deferred)
+  - phases/phase-03c-climate-visualization.md (complete)
   - phases/phase-04-design-conditions-and-metrics.md (deferred)
   - planning/features_v1.1/model-viewer-sun-path/ (Phase-1 consumer)
 ---
@@ -26,17 +26,16 @@ RELATED:
 |---|---|---|---|
 | 1 — Sun-path service ✅ **done** (2026-06-13) | Backend sun-path builder + `GET /projects/{id}/sun-path` + MCP; north-sign verified (identity) | None — `project_location` data + `ladybug-core` exist | Model Viewer Site & Sun render; Climate tab sun-path visual |
 | 2 — Reference datasets + standardized format ✅ **done** (2026-06-13; Phius revalidated + real 1007-station seed; PHI xlsx deferred) | Canonical `ClimateRecord` + honeybee_ph adapters; app-wide versioned `climate_dataset*` store; Phius `-mon.txt` importer + idempotent seed + seed CLI; dataset read endpoints + MCP | None | The tab dropdowns/graphs; the design-conditions contract |
-| 3 — Climate tab UI 🚧 **in progress** — decomposed 3a/3b/3c | New `climate` tab. **3a** (done 2026-06-13): tab + reference-dataset browser + record tables + the migrated location editor. **3b** (done 2026-06-14): `project_climate_source` model + routes + MCP + the sources-roster/attach UI (D-CL-4/9/11; custom-record form deferred). **3c** (next): charts + sun-path visual | Phase 1 + Phase 2 (met) | The "see + record + compare sources" goal |
+| 3 — Climate tab UI ✅ **done** (2026-06-14) — decomposed 3a/3b/3c | New `climate` tab. **3a**: tab + reference-dataset browser + record tables + the migrated location editor. **3b**: `project_climate_source` model + routes + MCP + the sources-roster/attach UI (D-CL-4/9/11; custom-record form deferred). **3c**: recharts monthly graphs (Table/Charts toggle) + 2D SVG sun-path visual; ClimateTab lazy-loaded | Phase 1 + Phase 2 (met) | The "see + record + compare sources" goal |
 | 4 — Design conditions + metrics | Per-source, source-parameterized design-conditions contract (+ MCP) | **Deferred** (Ed 2026-06-13) — needs a scheduled fRSI/comfort consumer | Thermal-Bridges fRSI; Window comfort |
 
-**Focus (Ed 2026-06-13): the climate data *store* — Phases 1–3.**
-Phases 1 and 2 are **done**; **Phase 3 is in progress — sub-phase 3a
-complete** (the tab + reference-dataset browser + the migrated location
-editor are live). The *use* of the
-data (Phase 4 design conditions + the fRSI/comfort consumers + the D-CL-5
-interior assumption + temperature-asymmetry) is deferred to later feature
-work. The real Phius seed is **done** (parser revalidated against the real
-1007-station set + seeded).
+**Focus (Ed 2026-06-13): the climate data *store* — Phases 1–3 — is
+COMPLETE (2026-06-14).** All of Phase 3 (3a tab + location editor, 3b
+sources roster, 3c monthly graphs + sun-path visual) is live. The *use* of
+the data (Phase 4 design conditions + the fRSI/comfort consumers + the
+D-CL-5 interior assumption + temperature-asymmetry) is deferred to later
+feature work. The real Phius seed is **done** (parser revalidated against
+the real 1007-station set + seeded).
 
 ## Deferred work index (later phases)
 
@@ -45,9 +44,10 @@ deferred items as new phases"). Suggested order top-to-bottom:
 
 | Later phase | What | Gate / depends on |
 |---|---|---|
-| **3c** — `phase-03c-climate-visualization.md` | Charting-lib decision + monthly graphs + sun-path visual | 3b complete (met); sun-path piece needs only Phase 1 |
 | **2b** — `phase-02b-phi-phpp-importer.md` | PHI/PHPP xlsx importer (`provider='phi'`); ~130-col PPP-worksheet reverse-engineering + `openpyxl` | independent; the seed seam is ready |
 | **4** — `phase-04-design-conditions-and-metrics.md` | Per-source design-conditions contract (+ MCP) | a scheduled fRSI/comfort consumer + D-CL-5 |
+
+(3c — visualization — is **done**, 2026-06-14.)
 
 Small follow-ups (too small for their own phase):
 - **Climate-source custom-record entry form** — the backend accepts a
@@ -55,6 +55,13 @@ Small follow-ups (too small for their own phase):
   one (a full record editor) was deferred out of the 3b frontend slice.
 - **Promote `ClimateRecord` to a `context/` reference doc** — the contract
   currently lives in `features/climate/record.py` docstrings + PRD §4.3.
+- **Sun-path cardinal N/E/S/W labels** — the `/sun-path` DTO carries no
+  label geometry; labelling needs the project true-north passed separately
+  (3c §Outcome).
+- **Charts for a *resolved attached source*** — 3c graphs render the
+  browsed reference record; resolving an attached source (phius/phi `ref` →
+  record, `custom` `data` → record) to a graph lands with the Phase-4
+  consumers / a source-detail view (3c §Outcome).
 
 ## Cross-feature ordering (the answer to "Climate first?")
 

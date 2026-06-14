@@ -1,14 +1,14 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Active — Phase 1 + Phase 2 implemented (2026-06-13). Phase 2
-  ships the standardized `ClimateRecord`, the app-wide versioned dataset
-  store, the Phius `-mon.txt` importer (now **revalidated against the real
-  1007-station 2022 set** + a committed seed CLI), and dataset read
-  endpoints + MCP. The PHI/PHPP xlsx importer is the one remaining slice
-  (workbook now on disk; needs `openpyxl` + `io_climate.py` study). Phase 3
-  (the tab) is unblocked; its setter-migration + tab-placement questions are
-  resolved (see Decisions).
+STATUS: Active — Phases 1–3 implemented (2026-06-14). Phase 1 (sun-path
+  service) + Phase 2 (standardized `ClimateRecord`, app-wide versioned
+  dataset store, Phius `-mon.txt` importer revalidated against the real
+  1007-station 2022 set + seed CLI, dataset read endpoints + MCP) + Phase 3
+  (the Climate tab: location editor, sources roster, reference-dataset
+  browser, monthly graphs, sun-path visual) are all done. Remaining open
+  work: the PHI/PHPP xlsx importer (phase-02b), the climate-source
+  custom-record entry form, and Phase 4 design conditions — all deferred.
 AUTHOR: Claude (for Ed)
 SCOPE: Status, gates, and decisions for the Climate feature.
 RELATED:
@@ -22,9 +22,10 @@ RELATED:
 
 ## Current state
 
-**Phase 1 + Phase 2 implemented; Phase 3 in progress (sub-phases 3a + 3b
-COMPLETE; 3c next) — 2026-06-14.** `make ci` green (backend + frontend
-suites passing).
+**Phase 1 + Phase 2 + Phase 3 implemented (3a + 3b + 3c all COMPLETE) —
+2026-06-14.** `make ci` green (backend + frontend suites passing). Phase 3
+(the Climate tab) is done end-to-end: location editor, sources roster,
+reference-dataset browser, monthly graphs, and the sun-path visual.
 
 - **Phase 3a — COMPLETE (2026-06-13).** The Climate tab is live: `climate`
   tab added to `PROJECT_TABS` (right after Status); new
@@ -85,15 +86,20 @@ storage/API/MCP layer is provider-agnostic; PHI plugs in via the same
 
 ## Next step
 
-**3a and 3b are complete** (2026-06-14): the tab hosts the location editor
-(Settings read-only), the **climate-sources roster** (attach Phius/PHI from
-the browser, ASHRAE pointer, project EPW; one default — D-CL-4/9/11), and the
-reference-dataset browser. **Next: 3c** (charting-lib decision + monthly
-graphs + the sun-path visual, coordinated with `model-viewer-sun-path`).
+**Phase 3 is complete** (3a + 3b + 3c, 2026-06-14): the tab hosts the
+location editor (Settings read-only), the **climate-sources roster** (attach
+Phius/PHI from the browser, ASHRAE pointer, project EPW; one default —
+D-CL-4/9/11), the reference-dataset browser, **monthly graphs** (recharts,
+behind a Table/Charts toggle), and the **2D SVG sun-path visual**. The
+"see + record + compare sources" data-store goal (Phases 1–3) is met.
+
 Independent follow-ups still open: (a) the PHI xlsx importer (deferred; see
 phase-02 §5); (b) the climate-source **custom-record entry form** (backend
 ready; UI deferred — see phase-03b §Outcome); (c) promote `ClimateRecord` to
-a `context/` reference doc.
+a `context/` reference doc; (d) sun-path **cardinal N/E/S/W labels** + charts
+rendering a *resolved attached source* (vs. the browsed record) — see
+phase-03c §Outcome. **Phase 4** (per-source design conditions) remains
+deferred to a scheduled fRSI/comfort consumer.
 
 ## Decisions
 
@@ -124,6 +130,11 @@ a `context/` reference doc.
   kind's `data` — backend ready; the entry *form* is a deferred follow-up),
   **D-CL-11** (one project default, partial-unique enforced + `PUT …/default`
   + the roster default radio).
+- **Implemented (Phase 3c, 2026-06-14):** charting library = **recharts**
+  (Ed-confirmed; over visx / hand-rolled SVG) for the monthly graphs;
+  sun-path visual = **2D SVG** (Ed-confirmed; over reusing the 3D three.js
+  layer) projected from the Phase-1 DTO. `ClimateTab` lazy-loaded to keep
+  recharts out of the initial bundle.
 - **Deferred to later feature work (Ed 2026-06-13):** the design-
   conditions/use-case layer (Phase 4) and **D-CL-5** (fRSI interior
   assumption) and the temperature-asymmetry use-case. Focus is the data
@@ -148,10 +159,10 @@ a `context/` reference doc.
 |---|---|---|
 | 1 — Sun-path service | **Implemented** (2026-06-13; committed `005839dc`) | none |
 | 2 — Reference datasets + standardized format | **Implemented** (2026-06-13; `make ci` green). Phius parser revalidated + real 1007-station seed verified + seed CLI. PHI xlsx importer still deferred (workbook on disk; needs `openpyxl` + `io_climate.py`) | none |
-| 3 — Climate tab UI | **In progress** — 3a **complete** (tab + dataset browser + record tables + migrated location editor; Settings now read-only; `make ci` green). Remaining: 3b + 3c (own docs) | Phase 1 + Phase 2 (met) |
+| 3 — Climate tab UI | **Complete** (2026-06-14) — 3a + 3b + 3c all done (tab + dataset browser + record tables + location editor + sources roster + monthly graphs + sun-path visual; `make ci` green) | Phase 1 + Phase 2 (met) |
 | 2b — PHI/PHPP importer (`phase-02b-…`) | **Deferred** — ~130-col PPP-worksheet reverse-engineering + `openpyxl`; seed seam ready | independent |
 | 3b — Source attach/select (`phase-03b-…`) | **Complete** 2026-06-14 — backend (`project_climate_source` + routes + MCP) + frontend (sources roster + default radio + Phius/PHI/ASHRAE/EPW attach); `make ci` green. Custom-record entry form deferred | 3a complete (met) |
-| 3c — Visualization (`phase-03c-…`) | **Deferred/planned** — charting-lib decision + monthly graphs + sun-path visual | after 3b |
+| 3c — Visualization (`phase-03c-…`) | **Complete** 2026-06-14 — recharts monthly graphs (Table/Charts toggle) + 2D SVG sun-path visual; ClimateTab lazy-loaded; `make ci` green | after 3b (met) |
 | 4 — Design conditions + metrics | **Deferred** (later feature work) | scheduled fRSI/comfort consumer (+ D-CL-5) |
 
 See `PLAN.md` → "Deferred work index" for the suggested order across these
