@@ -28,19 +28,24 @@ backend/seeds/
     appliances.json               # 5 appliances + type / energy-star options
     heat-pumps.json               # 5 outdoor-equip + 5 indoor-equip + 5 outdoor-units + 5 indoor-units (cross-linked)
   climate/
-    USA/NY/*-mon.txt              # Phius 2022 NY-metro station files (importer source)
+    README.md                     # source data is gitignored (licensed); supply locally
+    USA/<ST>/*-mon.txt            # Phius station files — NOT committed (see climate/README.md)
   model/
     ph_nav_v2_example.hbjson      # small example model for the Model tab
 ```
 
-`climate/` holds a NY-metro slice of the Phius 2022 `-mon.txt` station
-set. `seed_dev_db.py` walks it through the same
+`climate/` is the local home for the Phius 2022 `-mon.txt` station files, but
+the source data is **gitignored and not committed** — it is licensed Phius/PHI
+reference data and this is a **public** repo (see `climate/README.md` and
+`planning/features/climate-reference-data-seeding/`). Supply the files locally
+under `climate/USA/<STATE>/<STATION>-mon.txt`; the region code comes from the
+parent directory name. `seed_dev_db.py` walks whatever is present through the
 `features.climate.importers.phius` importer the real CLI uses, seeds the
-app-wide `phius`/`2022` dataset, then pins NYC / Central Park as the
-starter project's **default** `project_climate_source` and writes a
-matching `project_location`. Drop more `-mon.txt` files under
-`climate/USA/<STATE>/` to widen the seeded dataset; the region code comes
-from the parent directory name.
+app-wide `phius`/`2022` dataset, then pins NYC / Central Park as the starter
+project's **default** `project_climate_source` and writes a matching
+`project_location`. With `climate/` empty, the climate seed step finds no
+stations (and the NYC default lookup fails) until the source files are supplied
+or the object-store seeding lands.
 
 `model/ph_nav_v2_example.hbjson` is linked into the project's Model tab by
 `scripts/seed_hbjson_model.py`. That seed rides the real asset backbone

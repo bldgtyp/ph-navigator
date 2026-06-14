@@ -5,14 +5,14 @@ STATUS: Complete & archived (2026-06-14). Structure, discoverability,
   leaked-CSS promotion, the first god-stylesheet split, the .css size cap, and
   the TECH_STACK/UI_UX doc reconciliation all landed. The judgment-heavy tail
   (color-literal token sweep + check:hex extension + scale design pass) was
-  carved out to ../../features/css-token-guard-sweep/.
+  carved out to ../css-token-guard-sweep/.
 AUTHOR: Claude Code (Opus 4.8) + Ed May
 SCOPE: P3 of the 2026-06-14 CSS review — structure & discoverability
 RELATED:
   - ../../code-reviews/2026-06-14/frontend-css-styling-review.md  (canonical findings; Themes 7 & 9, backlog items 9–10)
   - ../../archive/css-rationalization/  (parent effort — P0–P2 done & archived)
   - ../../archive/css-brand-dependency-resilience/  (P4 — done & archived; left a small doc-reconciliation tail here, PRD §4)
-  - ../../features/css-token-guard-sweep/  (the carved-out color-sweep + scale tail)
+  - ../css-token-guard-sweep/  (the carved-out color-sweep + scale tail)
   - ../../code-reviews/2026-06-14/scopes/scope-A-global-tokens.md  (global layer detail)
   - ../../features/report-tables/  (the gold-standard co-located shared-UI pattern propagated here)
 ---
@@ -32,7 +32,7 @@ RELATED:
 > **Carved out** (needs Ed's eye + per-literal browser verification): the
 > `rgb/hsl` color-token sweep, the `check:hex` → `rgb/hsl`/`.ts` extension, and
 > the spacing/type/radius design pass →
-> [`../../features/css-token-guard-sweep/`](../../features/css-token-guard-sweep/).
+> [`../css-token-guard-sweep/`](../css-token-guard-sweep/).
 > `TablePrimitiveStub.tsx` was found to be dead code (zero importers) and
 > subsequently deleted in a follow-up commit.
 

@@ -949,7 +949,7 @@
 .manufacturer-modal__backdrop {
   position: fixed;
   inset: 0;
-  background: rgb(0 0 0 / 45%);
+  background: var(--scrim);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -964,7 +964,7 @@
   max-width: 92vw;
   max-height: 88vh;
   overflow: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-dialog-strong);
 }
 .manufacturer-modal__header h2 {
   margin: 0 0 0.75rem;
@@ -1091,7 +1091,7 @@
 .project-refs__backdrop {
   position: fixed;
   inset: 0;
-  background: rgb(0 0 0 / 45%);
+  background: var(--scrim);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1107,7 +1107,7 @@
   max-width: 92vw;
   max-height: 88vh;
   overflow: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-dialog-strong);
 }
 .refresh-dialog__header h2,
 .aperture-drift-modal__header h2,

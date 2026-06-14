@@ -7,7 +7,7 @@ SCOPE: P3 final state
 RELATED:
   - ./README.md
   - ./PRD.md
-  - ../../features/css-token-guard-sweep/  (carved-out tail)
+  - ../css-token-guard-sweep/  (carved-out tail)
 ---
 
 # STATUS — CSS Structure & Discoverability (P3)
@@ -42,7 +42,7 @@ sign-in page browser-checked), merged to `main`.
   §design-system cross-links the styles README, and three stale
   "shadcn Dialog/Sonner" references were corrected to Radix / D-06.
 
-## Carved out → `../../features/css-token-guard-sweep/`
+## Carved out → `../css-token-guard-sweep/`
 
 The judgment-heavy, non-visually-neutral tail that needs Ed's eye + per-literal
 browser verification: tokenizing the ~24 `rgb/hsl` color literals, extending

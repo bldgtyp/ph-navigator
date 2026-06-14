@@ -69,6 +69,13 @@ working/
 # Climate reference example data (Phius/PHI source files) — gitignored
 # wherever the climate feature folder lives (active or archived).
 **/climate/example_data/
+# Licensed PHI/Phius climate SOURCE data must never be committed to this
+# PUBLIC repo (it is licensed reference data — use only in-app). Local dev
+# keeps untracked copies under backend/seeds/climate/; seeding pulls from the
+# private object store. See planning/features/climate-reference-data-seeding/.
+backend/seeds/climate/**/*.txt
+backend/seeds/climate/**/*.xlsx
+backend/seeds/climate/**/*.json
 
 # ─── Graphify output ───
 graphify-out/

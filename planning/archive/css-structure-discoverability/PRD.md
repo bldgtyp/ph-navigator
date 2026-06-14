@@ -8,7 +8,7 @@ SCOPE: P3 work items, evidence, and acceptance criteria
 RELATED:
   - ./README.md
   - ./STATUS.md
-  - ../../features/css-token-guard-sweep/  (carved-out §3 color sweep + design pass)
+  - ../css-token-guard-sweep/  (carved-out §3 color sweep + design pass)
   - ../../code-reviews/2026-06-14/frontend-css-styling-review.md
 ---
 
@@ -22,7 +22,7 @@ RELATED:
 >   written plan for the rest.
 > - **§3 Guards — PARTIAL.** The `.css` size cap shipped. The `check:hex` →
 >   `rgb/hsl`/`.ts` extension + color-literal tokenization were **carved out**
->   to [`../../features/css-token-guard-sweep/`](../../features/css-token-guard-sweep/)
+>   to [`../css-token-guard-sweep/`](../css-token-guard-sweep/)
 >   (not visually neutral; needs per-literal verification + sanctioned-palette
 >   decisions the original review under-scoped).
 > - **§3 design-pass items / §4 acceptance — split.** §4 doc reconciliation

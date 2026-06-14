@@ -4,7 +4,7 @@ TIME: (local, afternoon)
 STATUS: Complete — P0–P2 landed on main (P2.7 squash-merged 2026-06-14).
   Archived. P3 (structure/discoverability) was pulled out, BUILT, and archived:
   ../css-structure-discoverability/ (its color-sweep + scale tail carved out to
-  ../../features/css-token-guard-sweep/). P4 (vendor tokens, doc reconcile) was
+  ../css-token-guard-sweep/). P4 (vendor tokens, doc reconcile) was
   pulled out, BUILT, and archived too: ../css-brand-dependency-resilience/.
 AUTHOR: Claude Code (Opus 4.8) + Ed May
 SCOPE: Frontend CSS/styling consolidation following the 2026-06-14 review
@@ -22,7 +22,7 @@ RELATED:
 > [`../css-structure-discoverability/`](../css-structure-discoverability/)
 > (styles README + barrel, one import strategy, leaked-CSS promotion, first
 > god-stylesheet split, `.css` size cap; its color-sweep + scale tail carved
-> out to [`../../features/css-token-guard-sweep/`](../../features/css-token-guard-sweep/)).
+> out to [`../css-token-guard-sweep/`](../css-token-guard-sweep/)).
 > **P4 was built and archived** alongside this folder:
 > [`../css-brand-dependency-resilience/`](../css-brand-dependency-resilience/)
 > (vendored brand tokens + self-hosted fonts; `UI_UX.md`/PRD §12
@@ -51,7 +51,7 @@ remote brand-token dependency. We are working it phase by phase.
 | **P2.6 — Chip primitive** | `.chip` + variants; migrate 6 chips | ✅ **Merged to main** (`f274585b`, `32839dc0`) |
 | **P2.8 — SVG/3D color** | SVG strokes → `--svg-line-heavy`; 3D palette assessed | ✅ **Merged to main** (`32839dc0`, `fd10e996`) |
 | **P2.7 — Canvas extraction** | Extract shared apertures/envelope drawing widgets | ✅ **Done** on branch `css-p2-canvas` (4 commits, `make ci` green) → [phase-07](phases/phase-07-canvas-extraction.md) |
-| **P3 — Structure & discoverability** | styles README, `shared/ui` barrel, import strategy, split god-stylesheets | ✅ Done & archived ([`../css-structure-discoverability/`](../css-structure-discoverability/)); color-sweep + scale tail → [`css-token-guard-sweep`](../../features/css-token-guard-sweep/) |
+| **P3 — Structure & discoverability** | styles README, `shared/ui` barrel, import strategy, split god-stylesheets | ✅ Done & archived ([`../css-structure-discoverability/`](../css-structure-discoverability/)); color-sweep + scale tail → [`css-token-guard-sweep`](../css-token-guard-sweep/) |
 | **P4 — Strategic** | Vendor brand tokens/fonts; reconcile Tailwind/shadcn docs | ✅ Done & archived ([`../css-brand-dependency-resilience/`](../css-brand-dependency-resilience/)) |
 
 `origin/main` is at **`fd10e996`** with all merged phases above. CI is
@@ -138,7 +138,7 @@ Built and archived at
 
 The color-literal token sweep, the `check:hex` → `rgb/hsl`/`.ts` extension, and
 the spacing/type/radius design pass were carved out to
-[`../../features/css-token-guard-sweep/`](../../features/css-token-guard-sweep/).
+[`../css-token-guard-sweep/`](../css-token-guard-sweep/).
 
 ## P4 — Strategic (✅ done & archived 2026-06-14)
 
@@ -158,7 +158,7 @@ Built and merged the same day; see
 ## Deferred guard/scale follow-ups
 
 The **`.css` line-size cap** shipped in P3. Everything else here moved to
-[`../../features/css-token-guard-sweep/`](../../features/css-token-guard-sweep/):
+[`../css-token-guard-sweep/`](../css-token-guard-sweep/):
 
 - Extend `check:hex` to `rgb()/rgba()/hsl()`/named colors and to `.ts`
   files (exempt the sanctioned colour modules: `model_viewer/lib/colors.ts`,

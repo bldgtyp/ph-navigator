@@ -1,14 +1,14 @@
 ---
 DATE: 2026-06-14
-TIME: (local, evening)
-STATUS: Deferred — backlog; not started. Carved out of P3 during P3 implementation.
+TIME: 15:50 EDT
+STATUS: Complete — implemented and verified.
 AUTHOR: Claude Code (Opus 4.8) + Ed May
 SCOPE: The judgment-heavy CSS-token tail — color-literal tokenization, the
   check:hex guard extension, and the spacing/type/radius design pass.
 RELATED:
-  - ../../archive/css-structure-discoverability/  (P3 — parent; this was its §3 + design-pass tail)
+  - ../css-structure-discoverability/  (P3 — parent; this was its §3 + design-pass tail)
   - ../../code-reviews/2026-06-14/frontend-css-styling-review.md  (canonical findings)
-  - ../../archive/css-rationalization/  (P0–P2; deferred these from P0.3)
+  - ../css-rationalization/  (P0–P2; deferred these from P0.3)
 ---
 
 # CSS — Token sweep + guard extension + scale design pass
@@ -41,6 +41,26 @@ Three reasons this couldn't ride along with P3's neutral structural sweep:
 1. This README.
 2. [`PRD.md`](PRD.md) — the exact literals, the `.ts` cases, and the scale work.
 3. [`STATUS.md`](STATUS.md) — state + suggested first step.
+
+## Execution summary
+
+Implemented and verified 2026-06-14 in the main worktree:
+
+- Feature/shared `rgb()/rgba()/hsl()` CSS literals were replaced with
+  app-level tokens in `frontend/src/styles/tokens.css`.
+- `frontend/scripts/check-hex.mjs` now scans `.css`, `.ts`, and `.tsx` for
+  hex and `rgb()/rgba()/hsl()/hsla()` literals.
+- Sanctioned TypeScript color-data modules are explicit in the guard:
+  Model Viewer color/theme data, DataTable option palette generation,
+  Equipment heat-pump option palette generation, and the Materials category
+  default color.
+- Literal `border-radius` values called out by the PRD were folded into radius
+  tokens without pixel shifts.
+- Spacing/type scale deletion was audited and not performed: every type token
+  and every spacing token remains in active use (`--space-32`/`--space-48` and
+  `--fs-2xl`/`--fs-3xl` are sparse but live).
+
+No follow-up phase is required for this packet.
 
 ## Acceptance (high level)
 

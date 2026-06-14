@@ -1,7 +1,7 @@
 # Planning Status
 
-DATE: 2026-06-05
-TIME: 20:46 EDT
+DATE: 2026-06-14
+TIME: 15:50 EDT
 STATUS: Active routing index for tracked planning material.
 AUTHOR: Codex
 SCOPE: Current planning folder organization after moving dated docs to
@@ -16,6 +16,7 @@ feature-first planning.
 | Attachments | In review / partially implemented on main; full acceptance still open | `features/attachments/STATUS.md` |
 | IP/SI Unit Switching | Planned / implementation plan drafted | `features/ip-si-unit-switching/STATUS.md` |
 | Apertures / Aperture Builder | Planned / PRD updated with review decisions; phase planning not started | `features/apertures/STATUS.md` |
+| CSS Token Guard Sweep | Complete / implemented on main worktree with format + CI evidence; archived | `archive/css-token-guard-sweep/STATUS.md` |
 
 ## Historical Material
 
@@ -25,6 +26,8 @@ feature-first planning.
 - Completed Assembly Builder canvas-refactor planning now lives under
   `archive/assembly-builder/`; older foundation precedent remains
   under `archive/assembly-builder-foundation/`.
+- Completed CSS Token Guard Sweep planning now lives under
+  `archive/css-token-guard-sweep/`.
 
 ## Update Rule
 

@@ -114,8 +114,8 @@
   align-items: flex-end;
   background: var(--bg-card);
   border: 1px solid color-mix(in oklab, var(--border-subtle) 82%, var(--text-secondary));
-  border-radius: 3px;
-  box-shadow: 0 1px 2px rgb(15 23 42 / 0.14);
+  border-radius: var(--radius-2xs);
+  box-shadow: var(--shadow-attachment-doc-thumb);
   color: var(--text-primary);
   display: flex;
   height: 25px;
@@ -182,7 +182,7 @@
 
 .attachment-modal {
   align-items: center;
-  background: rgb(15 23 42 / 0.45);
+  background: var(--scrim-slate);
   display: flex;
   inset: 0;
   justify-content: center;
@@ -193,7 +193,7 @@
 .attachment-modal-panel {
   background: var(--bg-card);
   border-radius: var(--radius-md);
-  box-shadow: 0 20px 60px rgb(15 23 42 / 0.35);
+  box-shadow: var(--shadow-dialog-slate-strong);
   display: grid;
   grid-template-rows: auto minmax(280px, 78vh) auto;
   max-width: 980px;
