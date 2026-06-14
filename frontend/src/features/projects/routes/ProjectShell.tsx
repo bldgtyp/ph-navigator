@@ -120,7 +120,7 @@ export function ProjectShell() {
   };
   const accountSlot = isViewer ? (
     <>
-      <span className="read-only-pill">Read-only</span>
+      <span className="chip chip--sm read-only-pill">Read-only</span>
       <Link className="text-link" to={`/sign-in?next=${encodeURIComponent(returnPath)}`}>
         Sign in
       </Link>

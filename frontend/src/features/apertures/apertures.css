@@ -351,7 +351,7 @@
 .apertures-page {
   --aperture-frame-default-fill: var(--aperture-frame-fill-default);
   --aperture-glazing-default-fill: var(--aperture-glazing-fill-default);
-  --aperture-region-stroke: rgba(0, 0, 0, 0.5);
+  --aperture-region-stroke: var(--svg-line-heavy);
   --aperture-null-stroke: color-mix(in oklab, var(--text-secondary) 60%, transparent);
   --aperture-canvas-add: var(--highlight-text);
   --aperture-hover-ring: color-mix(in oklab, var(--highlight-text) 76%, transparent);

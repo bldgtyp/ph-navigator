@@ -39,7 +39,7 @@ export function FileChip({
     <div ref={rootRef} className="model-file-chip-root">
       <button
         type="button"
-        className="model-file-chip"
+        className="chip chip--md chip--outline model-file-chip"
         aria-expanded={open}
         aria-haspopup="dialog"
         title="Choose HBJSON model file"
