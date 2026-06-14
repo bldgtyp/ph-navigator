@@ -1,5 +1,6 @@
 // @size-exception: docs/code-reviews/2026-05-25/frontend-code-review.md#21-srp--file-length-violations
-import "./DataTable.css";
+// DataTable.css is loaded globally via the App.css @import manifest (shared/ui
+// stylesheets are @import'd once there; see src/styles/README.md).
 import { useCallback, useEffect, useMemo, useRef, useState, type ClipboardEvent } from "react";
 import { getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";

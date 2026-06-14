@@ -1,0 +1,46 @@
+/* Shared "card panel" recipe: bordered, rounded, card-background surfaces,
+   plus the blueprint-grid decoration shared by the auth panel and the
+   project-status empty state. Promoted out of features/auth/auth-page.css,
+   where it styled selectors owned by ~6 other features. @import'd at
+   auth-page.css's former cascade slot so precedence is unchanged.
+   See styles/README.md. */
+
+.auth-panel,
+.empty-state,
+.project-list,
+.modal-panel,
+.version-popover,
+.read-safe-panel,
+.data-table-wrap,
+.data-table-empty,
+.status-empty,
+.status-item,
+.metadata-grid div {
+  border: 1px solid var(--border-card);
+  border-radius: var(--phn-radius);
+  background: var(--bg-card);
+}
+
+.auth-panel::before,
+.status-empty::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--svg-line-faint) 1px, transparent 1px),
+    linear-gradient(90deg, var(--svg-line-faint) 1px, transparent 1px),
+    linear-gradient(var(--svg-line-light) 1px, transparent 1px),
+    linear-gradient(90deg, var(--svg-line-light) 1px, transparent 1px);
+  background-size:
+    12px 12px,
+    12px 12px,
+    60px 60px,
+    60px 60px;
+  opacity: 0.45;
+}
+
+.auth-panel > *,
+.status-empty > * {
+  position: relative;
+}

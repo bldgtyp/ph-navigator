@@ -1,4 +1,3 @@
-import "../attachments.css";
 import { useMemo } from "react";
 import { AttachmentRowsTable } from "./AttachmentRowsTable";
 import { useAttachmentRows, useReplaceAttachmentRows } from "../hooks";

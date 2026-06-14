@@ -2,14 +2,14 @@
 DATE: 2026-06-14
 TIME: (local, afternoon)
 STATUS: Complete — P0–P2 landed on main (P2.7 squash-merged 2026-06-14).
-  Archived. P3 (structure/discoverability) pulled out into its own backlog
-  folder ../../features/css-structure-discoverability/ (not yet built). P4
-  (vendor tokens, doc reconcile) was pulled out, BUILT, and archived too:
-  ../css-brand-dependency-resilience/.
+  Archived. P3 (structure/discoverability) was pulled out, BUILT, and archived:
+  ../css-structure-discoverability/ (its color-sweep + scale tail carved out to
+  ../../features/css-token-guard-sweep/). P4 (vendor tokens, doc reconcile) was
+  pulled out, BUILT, and archived too: ../css-brand-dependency-resilience/.
 AUTHOR: Claude Code (Opus 4.8) + Ed May
 SCOPE: Frontend CSS/styling consolidation following the 2026-06-14 review
 RELATED:
-  - ../../code-reviews/2026-06-14/frontend-css-styling-review.md  (canonical findings + P0–P4 backlog; P3/P4 still open)
+  - ../../code-reviews/2026-06-14/frontend-css-styling-review.md  (canonical findings + P0–P4 backlog; all phases now built)
   - ../../code-reviews/2026-06-14/scopes/  (six per-module detail reports)
   - phases/phase-07-canvas-extraction.md  (P2.7 — done, merged)
 ---
@@ -18,9 +18,11 @@ RELATED:
 
 > **STATUS: Complete & archived (2026-06-14).** P0–P2 (correctness, token
 > scales, chip primitive, SVG/3D color, and P2.7 canvas-widget extraction)
-> all landed on `main`. **P3 is still backlog**, pulled out into its own
-> tracked folder so it isn't lost:
-> [`../../features/css-structure-discoverability/`](../../features/css-structure-discoverability/).
+> all landed on `main`. **P3 was built and archived** alongside this folder:
+> [`../css-structure-discoverability/`](../css-structure-discoverability/)
+> (styles README + barrel, one import strategy, leaked-CSS promotion, first
+> god-stylesheet split, `.css` size cap; its color-sweep + scale tail carved
+> out to [`../../features/css-token-guard-sweep/`](../../features/css-token-guard-sweep/)).
 > **P4 was built and archived** alongside this folder:
 > [`../css-brand-dependency-resilience/`](../css-brand-dependency-resilience/)
 > (vendored brand tokens + self-hosted fonts; `UI_UX.md`/PRD §12
@@ -49,7 +51,7 @@ remote brand-token dependency. We are working it phase by phase.
 | **P2.6 — Chip primitive** | `.chip` + variants; migrate 6 chips | ✅ **Merged to main** (`f274585b`, `32839dc0`) |
 | **P2.8 — SVG/3D color** | SVG strokes → `--svg-line-heavy`; 3D palette assessed | ✅ **Merged to main** (`32839dc0`, `fd10e996`) |
 | **P2.7 — Canvas extraction** | Extract shared apertures/envelope drawing widgets | ✅ **Done** on branch `css-p2-canvas` (4 commits, `make ci` green) → [phase-07](phases/phase-07-canvas-extraction.md) |
-| **P3 — Structure & discoverability** | styles README, `shared/ui` barrel, import strategy, split god-stylesheets | 🔜 Planned ([`../../features/css-structure-discoverability/`](../../features/css-structure-discoverability/)) |
+| **P3 — Structure & discoverability** | styles README, `shared/ui` barrel, import strategy, split god-stylesheets | ✅ Done & archived ([`../css-structure-discoverability/`](../css-structure-discoverability/)); color-sweep + scale tail → [`css-token-guard-sweep`](../../features/css-token-guard-sweep/) |
 | **P4 — Strategic** | Vendor brand tokens/fonts; reconcile Tailwind/shadcn docs | ✅ Done & archived ([`../css-brand-dependency-resilience/`](../css-brand-dependency-resilience/)) |
 
 `origin/main` is at **`fd10e996`** with all merged phases above. CI is
@@ -119,22 +121,24 @@ UIs (apertures + envelope). Completed on branch `css-p2-canvas` with
 interaction-level Playwright verification; see the **Phase 7 outcome**
 section above and the handoff
 [phases/phase-07-canvas-extraction.md](phases/phase-07-canvas-extraction.md).
-Next pickup is **P3 — Structure & discoverability**.
 
-## P3 — Structure & discoverability (owner's goal #3)
+## P3 — Structure & discoverability (owner's goal #3) — ✅ done & archived 2026-06-14
 
-Not yet started. From the review backlog:
-1. `src/styles/README.md` — token catalog (L1/L2/L3, the scales) + the
-   shared-class catalog (what lives in `base.css`) + "how to style a new
-   feature." Add a `src/shared/ui/index.ts` barrel. Propagate the
-   `shared/ui/report-table/` co-located pattern (the gold standard).
-2. Pick one CSS import strategy (today: `App.css` `@import` for some,
-   component TS-import for others, **6 sheets double-imported**). Promote
-   genuinely-shared CSS out of feature files (`.sr-only` in
-   `equipment.css`; the panel recipe in `auth-page.css`; invert the
-   `InlineHeaderNameEditor.css` shared→feature selectors). Begin splitting
-   the `base.css` god-stylesheet (~2,000 lines) and `DataTable.css`
-   (2,830 lines).
+Built and archived at
+[`../css-structure-discoverability/`](../css-structure-discoverability/):
+1. `src/styles/README.md` (token + shared-class catalog, import strategy,
+   "how to style a new feature", god-stylesheet split plan) + a
+   `src/shared/ui/index.ts` barrel.
+2. One import strategy with the **6 double-imports removed**; leaked shared CSS
+   promoted (`.sr-only` → `reset.css`; the panel recipe → `styles/panels.css`;
+   `attachments.css` → `shared/ui/`); the `InlineHeaderNameEditor`
+   shared→feature selectors inverted to a `data-reveal-edit-on-hover` opt-in;
+   the first cascade-safe `base.css` split (`reset.css` + `base-responsive.css`)
+   + a `.css` size guard.
+
+The color-literal token sweep, the `check:hex` → `rgb/hsl`/`.ts` extension, and
+the spacing/type/radius design pass were carved out to
+[`../../features/css-token-guard-sweep/`](../../features/css-token-guard-sweep/).
 
 ## P4 — Strategic (✅ done & archived 2026-06-14)
 
@@ -148,16 +152,20 @@ Built and merged the same day; see
    from the vendored file. Offline render verified.
 2. ✅ **Reconciled the docs:** `context/UI_UX.md` §design-system and PRD
    §12 now describe the bespoke plain-CSS + 3-tier-token reality (no
-   Tailwind/shadcn migration). A small `TECH_STACK.md` tail was handed to
-   P3.
+   Tailwind/shadcn migration). The `TECH_STACK.md` tail was reconciled in
+   **P3** (done).
 
-## Deferred guard/scale follow-ups (small, do when convenient)
+## Deferred guard/scale follow-ups
+
+The **`.css` line-size cap** shipped in P3. Everything else here moved to
+[`../../features/css-token-guard-sweep/`](../../features/css-token-guard-sweep/):
 
 - Extend `check:hex` to `rgb()/rgba()/hsl()`/named colors and to `.ts`
   files (exempt the sanctioned colour modules: `model_viewer/lib/colors.ts`,
-  `themes.ts`, `data-table/lib/options/create.ts`). Add a `.css` line-size
-  cap. These were deferred from P0.3 because they'd turn pre-existing
-  literals red — do them *with* the sweep/split that cleans those up.
+  `themes.ts`, `data-table/lib/options/create.ts`, + the new cases the P3
+  sweep surfaced — `heat-pumps/lib.ts`, `equipment/testing/*Fixtures.ts`).
+  Deferred because turning the guard on first requires tokenizing the
+  pre-existing literals (not visually neutral).
 - Tighten the spacing + type scales (drop rarely-used steps) — a design
   pass with Ed's eye, since it shifts sizes.
 - Fold the remaining literal radii (`3/7/9/10/12px`) into tokens.

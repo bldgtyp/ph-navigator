@@ -7,7 +7,7 @@ SCOPE: P4 of the 2026-06-14 CSS review — strategic decisions (Themes 8 & 10)
 RELATED:
   - ../../code-reviews/2026-06-14/frontend-css-styling-review.md  (Themes 8 & 10; backlog items 11–12)
   - ../css-rationalization/  (parent effort — P0–P2 done & archived)
-  - ../../features/css-structure-discoverability/  (P3 — sibling backlog; inherited this feature's TECH_STACK doc tail)
+  - ../css-structure-discoverability/  (P3 — done & archived; reconciled this feature's TECH_STACK doc tail)
 ---
 
 # CSS — Brand-Dependency Resilience & Doc Reconciliation (P4)
@@ -16,9 +16,10 @@ RELATED:
 > merged to `main`; `make ci` green; offline render verified. See
 > [`STATUS.md`](STATUS.md) for the implementation summary. One small
 > doc-reconciliation tail (reconcile `context/TECH_STACK.md`; cross-link
-> the future `styles/README.md` from `UI_UX.md`) was **handed to P3**,
-> [`../../features/css-structure-discoverability/`](../../features/css-structure-discoverability/)
-> (PRD §4), because it depends on P3's styles-README work.
+> the `styles/README.md` from `UI_UX.md`) was handed to P3 and is now
+> **done** —
+> [`../css-structure-discoverability/`](../css-structure-discoverability/)
+> (built & archived).
 
 The fourth (strategic) tranche from the **2026-06-14 frontend CSS/styling
 review**. Both items were **DECIDED on 2026-06-14** and **built the same
@@ -58,6 +59,6 @@ wasn't lost, then executed and archived in turn.
 Both items shipped 2026-06-14 (Item 2's `UI_UX.md` §design-system + PRD §12
 reconciliation, and Item 1's vendored tokens + self-hosted fonts + sync
 script). The `TECH_STACK.md` reconciliation tail and the
-`UI_UX.md` → `styles/README.md` cross-link were handed to P3
-([`../../features/css-structure-discoverability/`](../../features/css-structure-discoverability/),
-PRD §4). See [`STATUS.md`](STATUS.md) for the full outcome.
+`UI_UX.md` → `styles/README.md` cross-link were handed to P3 and are now
+**done** ([`../css-structure-discoverability/`](../css-structure-discoverability/),
+built & archived). See [`STATUS.md`](STATUS.md) for the full outcome.

@@ -1,0 +1,103 @@
+/* Narrow-viewport (<=760px) layout overrides for the global shell + pages.
+   Split out of the tail of base.css per
+   planning/archive/css-structure-discoverability; @import'd immediately
+   after base.css so the cascade order is unchanged. See styles/README.md. */
+
+@media (max-width: 760px) {
+  .topbar {
+    grid-template-columns: 1fr;
+    gap: var(--space-10);
+    padding: var(--space-12) var(--space-20);
+  }
+
+  .brand {
+    border-right: 0;
+    padding-right: 0;
+  }
+
+  .topnav {
+    justify-content: flex-start;
+  }
+
+  .version-control-wrap .shell-controls {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .user-menu,
+  .page-heading,
+  .project-header,
+  .modal-header,
+  .modal-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .dashboard-page,
+  .project-page {
+    width: min(100% - 28px, 1180px);
+  }
+
+  .dashboard-page {
+    padding: 28px 0;
+  }
+
+  .catalog-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .project-list-heading {
+    display: none;
+  }
+
+  .project-row {
+    grid-template-columns: 32px 1fr;
+    gap: var(--space-6) var(--space-12);
+  }
+
+  .project-row .project-select-cell {
+    grid-row: 1 / span 4;
+    align-self: start;
+    padding-top: var(--space-2);
+  }
+
+  .project-row .project-number,
+  .project-row .project-name-link,
+  .project-row > span:not(.project-select-cell):not(.project-number) {
+    grid-column: 2;
+  }
+
+  .deleted-project-row {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  .deleted-project-row > div {
+    align-items: baseline;
+    flex-wrap: wrap;
+  }
+
+  .tabbar {
+    overflow-x: auto;
+  }
+
+  .room-form-grid,
+  .metadata-grid,
+  .status-item {
+    grid-template-columns: 1fr;
+  }
+
+  .status-heading {
+    flex-direction: column;
+  }
+
+  .status-row-actions,
+  .table-actions,
+  .shell-controls {
+    justify-content: flex-start;
+  }
+
+  .status-rail {
+    justify-content: flex-start;
+  }
+}

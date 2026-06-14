@@ -1,4 +1,3 @@
-import "../attachments.css";
 import type { ProjectDetail } from "../../projects/types";
 import { AttachmentTablePanel } from "../components/AttachmentTablePanel";
 import { DATASHEET_ATTACHMENT_CONFIG, SITE_PHOTO_ATTACHMENT_CONFIG } from "../lib";

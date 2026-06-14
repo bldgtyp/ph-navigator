@@ -1,15 +1,33 @@
 ---
 DATE: 2026-06-14
 TIME: (local, evening)
-STATUS: Deferred — backlog spec; not started.
+STATUS: Complete & archived (2026-06-14). §1, §2, §4, and the §3 .css size cap
+  shipped; the §3 color-guard sweep + the design-pass items were carved out.
 AUTHOR: Claude Code (Opus 4.8) + Ed May
 SCOPE: P3 work items, evidence, and acceptance criteria
 RELATED:
   - ./README.md
+  - ./STATUS.md
+  - ../../features/css-token-guard-sweep/  (carved-out §3 color sweep + design pass)
   - ../../code-reviews/2026-06-14/frontend-css-styling-review.md
 ---
 
 # P3 — Structure & Discoverability — PRD
+
+> **Outcome (2026-06-14, archived):**
+> - **§1 Discoverability — DONE.** `styles/README.md` + `shared/ui/index.ts`.
+> - **§2 Structure — DONE.** One import strategy, 6 double-imports removed,
+>   leaked CSS promoted, InlineHeaderNameEditor inverted (to a
+>   `data-reveal-edit-on-hover` opt-in), first `base.css` split landed +
+>   written plan for the rest.
+> - **§3 Guards — PARTIAL.** The `.css` size cap shipped. The `check:hex` →
+>   `rgb/hsl`/`.ts` extension + color-literal tokenization were **carved out**
+>   to [`../../features/css-token-guard-sweep/`](../../features/css-token-guard-sweep/)
+>   (not visually neutral; needs per-literal verification + sanctioned-palette
+>   decisions the original review under-scoped).
+> - **§3 design-pass items / §4 acceptance — split.** §4 doc reconciliation
+>   (TECH_STACK + UI_UX cross-link) **DONE**; the spacing/type/radius scale
+>   tightening **carved out** to the same follow-up (needs Ed's eye).
 
 Source: 2026-06-14 CSS review, Theme 7 (architecture/structure, MED),
 Theme 9 (discoverability, HIGH for owner goal #3), backlog items 9–10.

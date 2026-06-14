@@ -303,6 +303,15 @@ both apertures and envelope; add a `.data-table-popover-surface` and a
 
 ### Theme 7 — Architecture / structure (MED)
 
+> ✅ **BUILT 2026-06-14** (P3, archived:
+> `../../archive/css-structure-discoverability/`). One import strategy with the
+> 6 double-imports removed; leaked shared CSS promoted (`.sr-only` →
+> `reset.css`; panel recipe → `styles/panels.css`; `attachments.css` →
+> `shared/ui/`); the `InlineHeaderNameEditor` shared→feature selectors inverted
+> to a `data-reveal-edit-on-hover` opt-in; the first cascade-safe `base.css`
+> split (`reset.css` + `base-responsive.css`) landed with a written split plan
+> for the rest in `styles/README.md`; a `.css` line-size guard added.
+
 - **`base.css` is a 1,967-line god-stylesheet** holding resets + the
   *entire* shared component library (buttons, pills, tabs, three menu
   systems, forms, tooltip) + page layouts + responsive — uncapped and
@@ -356,6 +365,14 @@ add `var(--accent, #3E93AE)`-style fallbacks on the most critical tokens.
 
 ### Theme 9 — Discoverability (HIGH for the owner's goal #3)
 
+> ✅ **BUILT 2026-06-14** (P3, archived:
+> `../../archive/css-structure-discoverability/`). `frontend/src/styles/README.md`
+> now provides the map — the L1/L2/L3 tier model, a token catalog, a
+> shared-class catalog (which sheet owns which class), the import strategy, a
+> "how to style a new feature" recipe, and the god-stylesheet split plan — and
+> `frontend/src/shared/ui/index.ts` is the shared-UI barrel. The right
+> token/class is no longer a grep exercise.
+
 A new feature author has no map. There is **no** `src/styles/README`, no
 token catalog, no `src/shared/ui/index.ts` barrel, and no index of which
 classes live in `base.css`. Components without their own CSS (AppMenu,
@@ -380,12 +397,13 @@ the docs to match the bespoke-CSS reality** (no Tailwind/shadcn
 migration). Until the docs are updated they mislead and the
 shadcn-vocabulary ghost tokens (Theme 1) keep reappearing.
 
-> ✅ **MOSTLY DONE 2026-06-14** (P4, archived). `context/UI_UX.md`
+> ✅ **DONE 2026-06-14** (P4 + P3, archived). `context/UI_UX.md`
 > §design-system + PRD §12 rewritten to the bespoke plain-CSS + 3-tier
-> token reality. **Tail:** `context/TECH_STACK.md` still carries
-> shadcn/Tailwind UI-kit + table-primitive rows; flagged superseded in
-> PRD §12 and handed to P3
-> (`../../features/css-structure-discoverability/` §4) for its own pass.
+> token reality (P4). The `context/TECH_STACK.md` tail — UI-kit +
+> table-primitive rows + the design-system section — was reconciled off
+> shadcn/Tailwind in **P3**
+> (`../../archive/css-structure-discoverability/` §4); `UI_UX.md` now
+> cross-links the `styles/README.md`.
 
 ---
 
@@ -555,18 +573,23 @@ parentheses.
      `themes.ts`, data-table `lib/options/create.ts`) so future
      *accidental* hex in other `.ts` becomes visible. Separate guard task.
 
-**P3 — Structure & discoverability (owner's goal #3)** — *not built; now
-tracked as its own backlog feature folder:
-`../../features/css-structure-discoverability/`.*
-9. `src/styles/README.md` token+class catalog + `shared/ui/index.ts`
-   barrel; propagate the `report-table/` pattern. (S–M)
-10. One CSS import strategy; promote shared CSS out of feature files;
-    begin splitting `base.css`. (M)
+**P3 — Structure & discoverability (owner's goal #3) — ✅ BUILT & ARCHIVED
+2026-06-14** — *built and archived at
+`../../archive/css-structure-discoverability/`. The color-literal token sweep,
+the `check:hex` → `rgb/hsl`/`.ts` extension, and the scale design pass were
+carved out to `../../features/css-token-guard-sweep/`.*
+9. ✅ **Done** — `src/styles/README.md` token+class catalog + import strategy
+   + "how to style a new feature" recipe + split plan; `shared/ui/index.ts`
+   barrel; the `report-table/` co-located pattern documented as the norm.
+10. ✅ **Done** — one CSS import strategy (6 double-imports removed); shared CSS
+    promoted out of feature files (`.sr-only`, panel recipe, `attachments.css`);
+    `InlineHeaderNameEditor` selectors inverted; first cascade-safe `base.css`
+    split + `.css` size guard.
 
 **P4 — Strategic decisions (✅ BUILT & ARCHIVED 2026-06-14)** — *shipped the
 same day; archived at `../../archive/css-brand-dependency-resilience/`. The
-`TECH_STACK.md` reconciliation tail was handed to P3
-(`../../features/css-structure-discoverability/` §4).*
+`TECH_STACK.md` reconciliation tail was handed to P3 and is now done
+(`../../archive/css-structure-discoverability/`).*
 11. ✅ **Done** — vendored + self-hosted the brand tokens and fonts
     (`frontend/src/styles/brand/`) with a `pnpm run sync:brand` script;
     `index.html` dropped both remote fetches; `check-css-vars` sources its

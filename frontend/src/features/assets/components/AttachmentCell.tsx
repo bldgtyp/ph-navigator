@@ -1,4 +1,3 @@
-import "../attachments.css";
 import { useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import { Paperclip } from "lucide-react";

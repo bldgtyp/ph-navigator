@@ -60,7 +60,7 @@ export function ApertureElementCard({
 
   return (
     <div className="aperture-element-card" data-testid={`element-card-${element.id}`} ref={cardRef}>
-      <div className="aperture-element-card__header">
+      <div className="aperture-element-card__header" data-reveal-edit-on-hover>
         <InlineHeaderNameEditor
           className="aperture-element-card__name"
           variant="inline"

@@ -3,7 +3,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const MAX_LINES = 500;
-const SIZE_EXCEPTION_PATTERN = /^\/\/\s*@size-exception:\s+\S+/;
+// Accept the exception marker on line 1 as either a JS line comment
+// (`// @size-exception: <doc>`) or a CSS block comment
+// (`/* @size-exception: <doc>`), so the same guard covers .ts/.tsx and .css.
+const SIZE_EXCEPTION_PATTERN = /^(\/\/|\/\*)\s*@size-exception:\s+\S+/;
 const FRONTEND_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SRC_ROOT = path.join(FRONTEND_ROOT, "src");
 
@@ -29,7 +32,7 @@ function countLines(text) {
 const violations = [];
 
 for (const filePath of walk(SRC_ROOT)) {
-  if (!/\.(ts|tsx)$/.test(filePath) || filePath.endsWith(".d.ts")) {
+  if (!/\.(ts|tsx|css)$/.test(filePath) || filePath.endsWith(".d.ts")) {
     continue;
   }
 

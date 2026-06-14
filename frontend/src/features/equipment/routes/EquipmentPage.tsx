@@ -1,4 +1,3 @@
-import "../../assets/attachments.css";
 import "../equipment.css";
 import type { ProjectDetail } from "../../projects/types";
 import {

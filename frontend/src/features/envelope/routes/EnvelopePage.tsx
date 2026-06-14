@@ -4,7 +4,7 @@
 // `usePaintMode` / `useEnvelopeDialogs`; server state lives in the envelope
 // hooks; canvas/sidebar/specification layout details stay in feature
 // components so browser and MCP mutations share the semantic command boundary.
-import "../../assets/attachments.css";
+import "../envelope.css";
 import { Download } from "lucide-react";
 import { Navigate, NavLink, useLocation, useSearchParams } from "react-router-dom";
 import { useMemo, useRef, useState } from "react";
