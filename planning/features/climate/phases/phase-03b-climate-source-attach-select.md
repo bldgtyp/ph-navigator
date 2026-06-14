@@ -1,12 +1,13 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: In progress (2026-06-14) — **backend landed** (project_climate_source
-  table + migration, repository/service, REST CRUD + set-default routes,
-  project-scoped MCP list + set-default tools, tests; `make ci` green). The
-  **frontend attach/select UI is the remaining slice** (see §Outcome). Phase 2
-  built only the app-wide reference datasets; this added the project-scoped
-  "this project selected source X" model.
+STATUS: COMPLETE (2026-06-14) — backend (project_climate_source table +
+  migration, repository/service, REST CRUD + set-default routes,
+  project-scoped MCP) **and** the frontend attach/select UI (sources roster +
+  default radio + Phius/PHI/ASHRAE/EPW attach) both landed; `make ci` green.
+  Only the **custom-record entry form** is deferred (backend supports the
+  `custom` kind; a full standardized-record editor is a follow-up). See
+  §Outcome.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff — the project-climate source model + the tab
   UI to attach/select multiple climate sources per project (D-CL-4 / D-CL-9
@@ -119,8 +120,29 @@ New `backend/features/project_climate_source/` module + migration
   project-scoping isolation, per-kind validation, editor/viewer gating, MCP
   parity + scope gating. `make ci` green.
 
-**Remaining: the frontend attach/select UI (§Scope 2)** — the
-`features/climate/` client (`api`/`hooks`/`query-keys`/`types`) over these
-routes, the source roster + default radio, and the per-kind attach affordances
-(reuse `ClimateDatasetBrowser` for Phius/PHI, the EPW flow for EPW, an ASHRAE
-station/URL form, a custom-record form).
+## Outcome — frontend (2026-06-14)
+
+The `features/climate/` client gained a project-scoped source layer
+(`types`/`query-keys`/`api`/`hooks`/`lib`, section-headered alongside the
+app-wide reference-dataset client): `useClimateSourcesQuery` +
+create/delete/set-default mutations (one shared `invalidateClimateSourceQueries`
+helper, matching `project_document`/`projects` hooks).
+
+- **`ClimateSourcesSection`** — the attached-source roster with the default
+  radio (D-CL-11), a remove button, plus the non-dataset attach affordances:
+  an **ASHRAE** station/URL form and an **attach project EPW** button (wired to
+  `project_location`'s EPW asset). Editor-gated; viewers get a read-only
+  roster.
+- **`ClimateDatasetBrowser`** gained an optional `onAttach` — selecting a
+  Phius/PHI location shows **"Attach as source"** (kind = the dataset
+  provider).
+- **`ClimateTab`** owns one `useCreateClimateSourceMutation` and funnels every
+  attach affordance through it (single pending/error surface, error shown in
+  the sources section).
+- Tests: `features/climate/__tests__/ClimateSourcesSection.test.tsx` (roster +
+  default reflection, ASHRAE/EPW attach payloads, set-default, remove, viewer
+  read-only).
+
+**Deferred (small follow-up):** the **custom-record entry form** — attaching a
+`custom` source needs a full standardized-`ClimateRecord` editor; the backend
+already accepts it, but the UI is out of this slice.

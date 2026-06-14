@@ -1,3 +1,4 @@
+import type { ClimateSourceKind, ProjectClimateSource } from "./types";
 import type { ClimateLocationSummary } from "./types";
 
 // Jan…Dec — the ordering of every `Monthly12` series in a ClimateRecord.
@@ -39,4 +40,25 @@ export function formatLatLong(latitude: number | null, longitude: number | null)
 export function formatSi(value: number | null | undefined, fractionDigits = 0): string {
   if (value === null || value === undefined) return "—";
   return value.toFixed(fractionDigits);
+}
+
+const SOURCE_KIND_LABELS: Record<ClimateSourceKind, string> = {
+  phius: "Phius",
+  phi: "PHI",
+  ashrae: "ASHRAE",
+  epw: "EPW",
+  custom: "Custom",
+};
+
+// Short display name for a source kind (e.g. "Phius", "ASHRAE").
+export function climateSourceKindLabel(kind: ClimateSourceKind): string {
+  return SOURCE_KIND_LABELS[kind] ?? kind;
+}
+
+// One-line description of an attached source for the roster: its label, or
+// a kind-appropriate fallback derived from `ref`.
+export function climateSourceSubtitle(source: ProjectClimateSource): string {
+  if (source.label) return source.label;
+  if (source.kind === "custom") return "Custom record";
+  return source.ref ?? "—";
 }
