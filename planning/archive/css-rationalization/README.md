@@ -2,10 +2,10 @@
 DATE: 2026-06-14
 TIME: (local, afternoon)
 STATUS: Complete — P0–P2 landed on main (P2.7 squash-merged 2026-06-14).
-  Archived. P3 (structure/discoverability) + P4 (vendor tokens, doc
-  reconcile) were NOT built; they were pulled out into their own backlog
-  feature folders: ../../features/css-structure-discoverability/ and
-  ../../features/css-brand-dependency-resilience/.
+  Archived. P3 (structure/discoverability) pulled out into its own backlog
+  folder ../../features/css-structure-discoverability/ (not yet built). P4
+  (vendor tokens, doc reconcile) was pulled out, BUILT, and archived too:
+  ../css-brand-dependency-resilience/.
 AUTHOR: Claude Code (Opus 4.8) + Ed May
 SCOPE: Frontend CSS/styling consolidation following the 2026-06-14 review
 RELATED:
@@ -18,12 +18,13 @@ RELATED:
 
 > **STATUS: Complete & archived (2026-06-14).** P0–P2 (correctness, token
 > scales, chip primitive, SVG/3D color, and P2.7 canvas-widget extraction)
-> all landed on `main`. **P3 and P4 were never built** — they have been
-> pulled out into their own tracked backlog folders so they aren't lost:
-> [`../../features/css-structure-discoverability/`](../../features/css-structure-discoverability/)
-> (P3) and
-> [`../../features/css-brand-dependency-resilience/`](../../features/css-brand-dependency-resilience/)
-> (P4). Canonical findings remain in
+> all landed on `main`. **P3 is still backlog**, pulled out into its own
+> tracked folder so it isn't lost:
+> [`../../features/css-structure-discoverability/`](../../features/css-structure-discoverability/).
+> **P4 was built and archived** alongside this folder:
+> [`../css-brand-dependency-resilience/`](../css-brand-dependency-resilience/)
+> (vendored brand tokens + self-hosted fonts; `UI_UX.md`/PRD §12
+> reconciled). Canonical findings remain in
 > [`../../code-reviews/2026-06-14/frontend-css-styling-review.md`](../../code-reviews/2026-06-14/frontend-css-styling-review.md).
 
 Execution surface for the styling cleanup that came out of the
@@ -48,8 +49,8 @@ remote brand-token dependency. We are working it phase by phase.
 | **P2.6 — Chip primitive** | `.chip` + variants; migrate 6 chips | ✅ **Merged to main** (`f274585b`, `32839dc0`) |
 | **P2.8 — SVG/3D color** | SVG strokes → `--svg-line-heavy`; 3D palette assessed | ✅ **Merged to main** (`32839dc0`, `fd10e996`) |
 | **P2.7 — Canvas extraction** | Extract shared apertures/envelope drawing widgets | ✅ **Done** on branch `css-p2-canvas` (4 commits, `make ci` green) → [phase-07](phases/phase-07-canvas-extraction.md) |
-| **P3 — Structure & discoverability** | styles README, `shared/ui` barrel, import strategy, split god-stylesheets | 🔜 Planned (see below) |
-| **P4 — Strategic** | Vendor brand tokens/fonts; reconcile Tailwind/shadcn docs | 🔜 Decided, not built (see below) |
+| **P3 — Structure & discoverability** | styles README, `shared/ui` barrel, import strategy, split god-stylesheets | 🔜 Planned ([`../../features/css-structure-discoverability/`](../../features/css-structure-discoverability/)) |
+| **P4 — Strategic** | Vendor brand tokens/fonts; reconcile Tailwind/shadcn docs | ✅ Done & archived ([`../css-brand-dependency-resilience/`](../css-brand-dependency-resilience/)) |
 
 `origin/main` is at **`fd10e996`** with all merged phases above. CI is
 green (`make ci`). **P2.7 is built on branch `css-p2-canvas` (off `main`
@@ -135,16 +136,20 @@ Not yet started. From the review backlog:
    the `base.css` god-stylesheet (~2,000 lines) and `DataTable.css`
    (2,830 lines).
 
-## P4 — Strategic (decided 2026-06-14, not yet built)
+## P4 — Strategic (✅ done & archived 2026-06-14)
 
-1. **Vendor + self-host** a pinned copy of the brand `tokens.css` and the
-   Geist fonts (currently render-blocking runtime fetches from
-   `bldgtyp.github.io` + Google Fonts with no fallback). Add a sync
-   script. Then `check-css-vars.mjs`'s `BRAND_TOKENS` allowlist can import
-   the vendored list instead of mirroring it by hand.
-2. **Reconcile the docs:** update `context/UI_UX.md` §design-system and
-   PRD §12 to describe the bespoke-CSS reality (drop the Tailwind/shadcn
-   prescription — not migrating).
+Built and merged the same day; see
+[`../css-brand-dependency-resilience/`](../css-brand-dependency-resilience/).
+
+1. ✅ **Vendored + self-hosted** the brand `tokens.css`
+   (`frontend/src/styles/brand/`) and the Geist fonts, with a
+   `pnpm run sync:brand` script. `index.html` dropped both render-blocking
+   remote fetches; `check-css-vars.mjs` now sources its brand allowlist
+   from the vendored file. Offline render verified.
+2. ✅ **Reconciled the docs:** `context/UI_UX.md` §design-system and PRD
+   §12 now describe the bespoke plain-CSS + 3-tier-token reality (no
+   Tailwind/shadcn migration). A small `TECH_STACK.md` tail was handed to
+   P3.
 
 ## Deferred guard/scale follow-ups (small, do when convenient)
 

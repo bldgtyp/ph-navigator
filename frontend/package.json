@@ -15,6 +15,7 @@
     "check:hex": "node scripts/check-hex.mjs",
     "check:css-vars": "node scripts/check-css-vars.mjs",
     "check:all": "pnpm run check:sizes && pnpm run check:shape && pnpm run check:z-index && pnpm run check:hex && pnpm run check:css-vars",
+    "sync:brand": "node scripts/sync-brand-assets.mjs",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,html}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css,html}\"",
     "test": "vitest run",

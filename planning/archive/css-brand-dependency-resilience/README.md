@@ -1,22 +1,30 @@
 ---
 DATE: 2026-06-14
 TIME: (local, evening)
-STATUS: Deferred — decided, written up as backlog; not built.
+STATUS: Complete — both items built, verified, merged to main 2026-06-14. Archived.
 AUTHOR: Claude Code (Opus 4.8) + Ed May
 SCOPE: P4 of the 2026-06-14 CSS review — strategic decisions (Themes 8 & 10)
 RELATED:
   - ../../code-reviews/2026-06-14/frontend-css-styling-review.md  (Themes 8 & 10; backlog items 11–12)
-  - ../../archive/css-rationalization/  (parent effort — P0–P2 done & archived)
-  - ../css-structure-discoverability/  (P3 — sibling backlog)
+  - ../css-rationalization/  (parent effort — P0–P2 done & archived)
+  - ../../features/css-structure-discoverability/  (P3 — sibling backlog; inherited this feature's TECH_STACK doc tail)
 ---
 
 # CSS — Brand-Dependency Resilience & Doc Reconciliation (P4)
 
+> **STATUS: Complete & archived (2026-06-14).** Both items shipped and
+> merged to `main`; `make ci` green; offline render verified. See
+> [`STATUS.md`](STATUS.md) for the implementation summary. One small
+> doc-reconciliation tail (reconcile `context/TECH_STACK.md`; cross-link
+> the future `styles/README.md` from `UI_UX.md`) was **handed to P3**,
+> [`../../features/css-structure-discoverability/`](../../features/css-structure-discoverability/)
+> (PRD §4), because it depends on P3's styles-README work.
+
 The fourth (strategic) tranche from the **2026-06-14 frontend CSS/styling
-review**. Both items were **DECIDED on 2026-06-14 but never built** — this
-folder pulls them out of the archived
-[`css-rationalization`](../../archive/css-rationalization/) backlog so they
-aren't lost.
+review**. Both items were **DECIDED on 2026-06-14** and **built the same
+day** — this folder was pulled out of the archived
+[`css-rationalization`](../css-rationalization/) backlog so the work
+wasn't lost, then executed and archived in turn.
 
 ## The two decided items
 
@@ -47,6 +55,9 @@ aren't lost.
 
 ## Note
 
-The decisions are settled; this is an **execution** backlog, not an open
-question. Item 2 (doc reconciliation) is small and can ship independently of
-item 1.
+Both items shipped 2026-06-14 (Item 2's `UI_UX.md` §design-system + PRD §12
+reconciliation, and Item 1's vendored tokens + self-hosted fonts + sync
+script). The `TECH_STACK.md` reconciliation tail and the
+`UI_UX.md` → `styles/README.md` cross-link were handed to P3
+([`../../features/css-structure-discoverability/`](../../features/css-structure-discoverability/),
+PRD §4). See [`STATUS.md`](STATUS.md) for the full outcome.

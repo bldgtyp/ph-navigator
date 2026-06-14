@@ -635,8 +635,11 @@ Current stack decisions:
 - persistence: Postgres 16, Alembic, raw parameterized SQL through
   narrow repository modules, no SQLAlchemy ORM/Core in app code;
 - object storage: Cloudflare R2;
-- frontend: Vite, TypeScript, React 19, shadcn/ui, Tailwind, TanStack
-  Query, TanStack Table, Zustand;
+- frontend: Vite, TypeScript, React 19, hand-written plain CSS on a
+  3-tier custom-property token system (vendored BLDGTYP brand → app
+  tokens → feature CSS; no Tailwind, no shadcn/ui), Radix UI primitives
+  for dialog/popover behavior, TanStack Query, TanStack Table, Zustand —
+  see `context/UI_UX.md` §"BLDGTYP design system";
 - 3D viewer: `three`, React Three Fiber, drei, postprocessing;
 - hosting: Render.com backend service, managed Postgres, frontend static
   site;
@@ -644,6 +647,13 @@ Current stack decisions:
 
 Implementation contract: `context/TECH_STACK.md` and
 `context/technical-requirements/stack-auth-migration.md`.
+
+> **Styling authority:** `context/UI_UX.md` §"BLDGTYP design system" is
+> the source of truth for the frontend styling approach (plain CSS +
+> 3-tier tokens). `TECH_STACK.md`'s UI-kit / table-primitive rows still
+> mention shadcn/Tailwind and predate the bespoke-CSS decision (2026-06-14
+> CSS review, Theme 10); treat them as superseded pending a follow-up
+> pass on that doc.
 
 ### 12.1 Persistence pattern — raw SQL + Pydantic
 

@@ -1,3 +1,8 @@
+/* Layer 1 (vendored brand). Loaded first so Layer 2 (styles/tokens.css)
+   can override — e.g. --font-primary. Refresh via `pnpm run sync:brand`.
+   See planning/archive/css-brand-dependency-resilience/. */
+@import "./styles/brand/tokens.css";
+@import "./styles/brand/fonts.css";
 @import "./styles/tokens.css";
 @import "./styles/base.css";
 @import "./styles/modals.css";
