@@ -1,16 +1,26 @@
 ---
 DATE: 2026-06-14
 TIME: (local, afternoon)
-STATUS: Active
+STATUS: Complete — P0–P2 landed on main (P2.7 squash-merged 2026-06-14).
+  Archived. P3 (structure/discoverability) + P4 (vendor tokens, doc
+  reconcile) were NOT built; they remain as backlog in the review doc and
+  can be picked up as their own feature folder.
 AUTHOR: Claude Code (Opus 4.8) + Ed May
 SCOPE: Frontend CSS/styling consolidation following the 2026-06-14 review
 RELATED:
-  - ../../code-reviews/2026-06-14/frontend-css-styling-review.md  (canonical findings + P0–P4 backlog)
+  - ../../code-reviews/2026-06-14/frontend-css-styling-review.md  (canonical findings + P0–P4 backlog; P3/P4 still open)
   - ../../code-reviews/2026-06-14/scopes/  (six per-module detail reports)
-  - phases/phase-07-canvas-extraction.md  (next pickup — handoff)
+  - phases/phase-07-canvas-extraction.md  (P2.7 — done, merged)
 ---
 
 # CSS Rationalization
+
+> **STATUS: Complete & archived (2026-06-14).** P0–P2 (correctness, token
+> scales, chip primitive, SVG/3D color, and P2.7 canvas-widget extraction)
+> all landed on `main`. **P3 and P4 were never built** — they remain as an
+> open backlog in
+> [`../../code-reviews/2026-06-14/frontend-css-styling-review.md`](../../code-reviews/2026-06-14/frontend-css-styling-review.md);
+> spin up a fresh feature folder if/when they're picked up.
 
 Execution surface for the styling cleanup that came out of the
 **2026-06-14 frontend CSS/styling review**. The review doc is the
