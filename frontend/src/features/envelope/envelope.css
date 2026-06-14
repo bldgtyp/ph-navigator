@@ -253,80 +253,8 @@
   line-height: 1;
 }
 
-.assembly-header-info-button {
-  align-items: center;
-  background: transparent;
-  border: 0;
-  border-radius: var(--radius-pill);
-  color: var(--text-secondary);
-  display: inline-flex;
-  flex: 0 0 auto;
-  height: 14px;
-  justify-content: center;
-  margin: 0;
-  min-height: 14px;
-  min-width: 14px;
-  padding: 0;
-  position: relative;
-  width: 14px;
-}
-
-.assembly-header-info-button:hover,
-.assembly-header-info-button:focus-visible {
-  color: var(--text-primary);
-  outline: 0;
-}
-
-.assembly-header-info-tooltip {
-  background: rgb(87 87 87 / 94%);
-  border-radius: 3px;
-  box-shadow: var(--shadow-elev-1);
-  color: white;
-  display: grid;
-  font-size: var(--fs-sm);
-  font-weight: 400;
-  gap: var(--space-8);
-  line-height: 1.35;
-  max-width: min(316px, calc(100vw - 24px));
-  opacity: 0;
-  padding: var(--space-8);
-  pointer-events: none;
-  position: absolute;
-  right: 0;
-  text-align: left;
-  top: calc(100% + 8px);
-  transform: translateY(4px);
-  transition:
-    opacity 0.12s var(--ease) 0.2s,
-    transform 0.12s var(--ease) 0.2s;
-  white-space: normal;
-  width: min(316px, calc(100vw - 24px));
-  z-index: var(--z-tooltip);
-}
-
-.assembly-header-info-tooltip::after {
-  border-color: transparent transparent rgb(87 87 87 / 94%);
-  border-style: solid;
-  border-width: 0 6px 6px;
-  bottom: 100%;
-  content: "";
-  position: absolute;
-  right: 1px;
-}
-
-.assembly-header-info-tooltip strong {
-  font-weight: 700;
-}
-
-.assembly-header-info-tooltip em {
-  font-style: italic;
-}
-
-.assembly-header-info-button:hover .assembly-header-info-tooltip,
-.assembly-header-info-button:focus-visible .assembly-header-info-tooltip {
-  opacity: 1;
-  transform: translateY(0);
-}
+/* Info "ⓘ" tooltip moved to shared/ui/info-tooltip (CSS rationalization
+   Phase 7) — now <InfoTooltip> in AssemblyHeader.tsx. */
 
 .assembly-canvas-scroll {
   align-self: stretch;
@@ -387,114 +315,14 @@
   position: relative;
 }
 
+/* Strip surface + button + divider now in
+   shared/ui/canvas/canvas-toolbar.css; envelope only sets placement (floats
+   above the canvas; `left` set inline). The hover-hint is in
+   canvas-hint-tooltip.css (both CSS rationalization Phase 7). */
 .assembly-canvas-toolbar {
-  align-items: center;
-  background: color-mix(in oklab, var(--bg-card) 94%, transparent);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--phn-control-radius);
-  box-shadow: var(--shadow-elev-1);
-  display: inline-flex;
-  gap: 1px;
-  min-height: 28px;
-  overflow: visible;
-  padding: var(--space-2) var(--space-4);
   position: absolute;
   top: -58px;
   transform: translateX(-50%);
-  z-index: calc(var(--z-base) + 3);
-}
-
-.assembly-canvas-toolbar-button {
-  align-items: center;
-  background: transparent;
-  border: 0;
-  border-radius: var(--radius-xs);
-  color: var(--text-secondary);
-  display: flex;
-  height: 23px;
-  justify-content: center;
-  min-height: 23px;
-  min-width: 23px;
-  padding: 0;
-  position: relative;
-  width: 23px;
-}
-
-.assembly-canvas-toolbar-button:hover,
-.assembly-canvas-toolbar-button:focus-visible,
-.assembly-canvas-toolbar-button[aria-pressed="true"] {
-  background: color-mix(in oklab, var(--accent) 12%, transparent);
-  color: var(--accent-text);
-  outline: 0;
-}
-
-.assembly-canvas-toolbar-button:disabled {
-  color: color-mix(in oklab, var(--text-secondary) 38%, transparent);
-}
-
-.assembly-canvas-toolbar-button[data-toolbar-tooltip]::before,
-.assembly-canvas-toolbar-button[data-toolbar-tooltip]::after,
-.envelope-sidebar [data-sidebar-tooltip]::before,
-.envelope-sidebar [data-sidebar-tooltip]::after {
-  left: 50%;
-  opacity: 0;
-  pointer-events: none;
-  position: absolute;
-  transition:
-    opacity 0.12s var(--ease) 0.35s,
-    transform 0.12s var(--ease) 0.35s;
-  z-index: calc(var(--z-base) + 4);
-}
-
-.assembly-canvas-toolbar-button[data-toolbar-tooltip]::before,
-.envelope-sidebar [data-sidebar-tooltip]::before {
-  background: color-mix(in oklab, var(--text-primary) 88%, transparent);
-  border-radius: 3px;
-  bottom: calc(100% + 8px);
-  color: var(--bg-card);
-  font-family: var(--font-primary);
-  font-size: 11px;
-  line-height: 1.2;
-  padding: 4px 7px;
-  transform: translate(-50%, 2px);
-  white-space: nowrap;
-}
-
-.assembly-canvas-toolbar-button[data-toolbar-tooltip]::before {
-  content: attr(data-toolbar-tooltip);
-}
-
-.envelope-sidebar [data-sidebar-tooltip]::before {
-  content: attr(data-sidebar-tooltip);
-}
-
-.assembly-canvas-toolbar-button[data-toolbar-tooltip]::after,
-.envelope-sidebar [data-sidebar-tooltip]::after {
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-top: 5px solid color-mix(in oklab, var(--text-primary) 88%, transparent);
-  bottom: calc(100% + 3px);
-  content: "";
-  transform: translate(-50%, 2px);
-}
-
-.assembly-canvas-toolbar-button[data-toolbar-tooltip]:hover::before,
-.assembly-canvas-toolbar-button[data-toolbar-tooltip]:hover::after,
-.assembly-canvas-toolbar-button[data-toolbar-tooltip]:focus-visible::before,
-.assembly-canvas-toolbar-button[data-toolbar-tooltip]:focus-visible::after,
-.envelope-sidebar [data-sidebar-tooltip]:hover::before,
-.envelope-sidebar [data-sidebar-tooltip]:hover::after,
-.envelope-sidebar [data-sidebar-tooltip]:focus-visible::before,
-.envelope-sidebar [data-sidebar-tooltip]:focus-visible::after {
-  opacity: 1;
-  transform: translate(-50%, 0);
-}
-
-.assembly-canvas-toolbar-divider {
-  align-self: stretch;
-  background: var(--border-subtle);
-  margin: 4px 3px;
-  width: 1px;
 }
 
 .assembly-svg-canvas {
@@ -607,31 +435,8 @@
   z-index: calc(var(--z-base) + 6);
 }
 
-.dimension-delete-button {
-  align-items: center;
-  background: transparent;
-  border: 0;
-  border-radius: var(--radius-xs);
-  color: var(--text-secondary);
-  display: flex;
-  height: 26px;
-  justify-content: center;
-  min-height: 26px;
-  min-width: 26px;
-  padding: 0;
-  position: relative;
-  transition:
-    background 0.14s var(--ease),
-    color 0.14s var(--ease);
-  width: 26px;
-}
-
-.dimension-delete-button:hover,
-.dimension-delete-button:focus-visible {
-  background: var(--phn-danger-bg);
-  color: var(--phn-danger);
-  outline: 0;
-}
+/* Dimension delete button now in shared/ui/dimensions/DimensionChrome.css
+   (.dimension-chrome-delete-button) — CSS rationalization Phase 7. */
 
 .assembly-segment-overlay {
   color: var(--text-primary);

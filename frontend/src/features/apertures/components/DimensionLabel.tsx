@@ -97,7 +97,7 @@ export function DimensionLabel({
           />
           <button
             type="button"
-            className="aperture-dim-label__delete"
+            className="dimension-chrome-delete-button"
             onMouseDown={(event) => event.preventDefault()}
             onClick={onDelete}
             disabled={!canDelete}

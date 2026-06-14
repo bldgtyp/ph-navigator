@@ -1,7 +1,10 @@
 @import "./styles/tokens.css";
 @import "./styles/base.css";
 @import "./styles/modals.css";
+@import "./shared/ui/canvas/canvas-hint-tooltip.css";
+@import "./shared/ui/canvas/canvas-toolbar.css";
 @import "./shared/ui/dimensions/DimensionChrome.css";
+@import "./shared/ui/info-tooltip/InfoTooltip.css";
 @import "./shared/ui/InlineHeaderNameEditor.css";
 @import "./features/auth/auth-page.css";
 @import "./features/project_document/version-controls.css";

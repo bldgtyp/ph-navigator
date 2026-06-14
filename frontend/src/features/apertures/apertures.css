@@ -51,80 +51,8 @@
   color: var(--text-secondary);
 }
 
-.aperture-uvalue-chip__info-button {
-  align-items: center;
-  background: transparent;
-  border: 0;
-  border-radius: var(--radius-pill);
-  color: var(--text-secondary);
-  display: inline-flex;
-  flex: 0 0 auto;
-  height: 14px;
-  justify-content: center;
-  margin: 0;
-  min-height: 14px;
-  min-width: 14px;
-  padding: 0;
-  position: relative;
-  width: 14px;
-}
-
-.aperture-uvalue-chip__info-button:hover,
-.aperture-uvalue-chip__info-button:focus-visible {
-  color: var(--text-primary);
-  outline: 0;
-}
-
-.aperture-uvalue-chip__info-tooltip {
-  background: rgb(87 87 87 / 94%);
-  border-radius: 3px;
-  box-shadow: var(--shadow-elev-1);
-  color: white;
-  display: grid;
-  font-size: var(--fs-sm);
-  font-weight: 400;
-  gap: var(--space-8);
-  line-height: 1.35;
-  max-width: min(316px, calc(100vw - 24px));
-  opacity: 0;
-  padding: var(--space-8);
-  pointer-events: none;
-  position: absolute;
-  right: 0;
-  text-align: left;
-  top: calc(100% + 8px);
-  transform: translateY(4px);
-  transition:
-    opacity 0.12s var(--ease) 0.2s,
-    transform 0.12s var(--ease) 0.2s;
-  white-space: normal;
-  width: min(316px, calc(100vw - 24px));
-  z-index: var(--z-tooltip);
-}
-
-.aperture-uvalue-chip__info-tooltip::after {
-  border-color: transparent transparent rgb(87 87 87 / 94%);
-  border-style: solid;
-  border-width: 0 6px 6px;
-  bottom: 100%;
-  content: "";
-  position: absolute;
-  right: 1px;
-}
-
-.aperture-uvalue-chip__info-tooltip strong {
-  font-weight: 700;
-}
-
-.aperture-uvalue-chip__info-tooltip em {
-  font-style: italic;
-}
-
-.aperture-uvalue-chip__info-button:hover .aperture-uvalue-chip__info-tooltip,
-.aperture-uvalue-chip__info-button:focus-visible .aperture-uvalue-chip__info-tooltip {
-  opacity: 1;
-  transform: translateY(0);
-}
+/* Info "ⓘ" tooltip moved to shared/ui/info-tooltip (CSS rationalization
+   Phase 7) — now <InfoTooltip> in UValueChip.tsx. */
 
 .aperture-uvalue-chip--compact {
   background: transparent;
@@ -288,48 +216,8 @@
   color: color-mix(in oklab, var(--text-secondary) 38%, transparent);
 }
 
-.aperture-sidebar [data-sidebar-tooltip]::before,
-.aperture-sidebar [data-sidebar-tooltip]::after {
-  left: 50%;
-  opacity: 0;
-  pointer-events: none;
-  position: absolute;
-  transition:
-    opacity 0.12s var(--ease) 0.35s,
-    transform 0.12s var(--ease) 0.35s;
-  z-index: calc(var(--z-base) + 4);
-}
-
-.aperture-sidebar [data-sidebar-tooltip]::before {
-  background: color-mix(in oklab, var(--text-primary) 88%, transparent);
-  border-radius: 3px;
-  bottom: calc(100% + 8px);
-  color: var(--bg-card);
-  content: attr(data-sidebar-tooltip);
-  font-family: var(--font-primary);
-  font-size: 11px;
-  line-height: 1.2;
-  padding: 4px 7px;
-  transform: translate(-50%, 2px);
-  white-space: nowrap;
-}
-
-.aperture-sidebar [data-sidebar-tooltip]::after {
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-top: 5px solid color-mix(in oklab, var(--text-primary) 88%, transparent);
-  bottom: calc(100% + 3px);
-  content: "";
-  transform: translate(-50%, 2px);
-}
-
-.aperture-sidebar [data-sidebar-tooltip]:hover::before,
-.aperture-sidebar [data-sidebar-tooltip]:hover::after,
-.aperture-sidebar [data-sidebar-tooltip]:focus-visible::before,
-.aperture-sidebar [data-sidebar-tooltip]:focus-visible::after {
-  opacity: 1;
-  transform: translate(-50%, 0);
-}
+/* [data-sidebar-tooltip] hover-hint moved to
+   shared/ui/canvas/canvas-hint-tooltip.css (CSS rationalization Phase 7). */
 
 .apertures-page__main {
   color: var(--text-secondary);
@@ -373,103 +261,13 @@
   position: relative;
 }
 
-.aperture-canvas-toolbar.assembly-canvas-toolbar {
-  align-items: center;
+/* Strip surface + button + divider now in
+   shared/ui/canvas/canvas-toolbar.css; apertures only sets placement
+   (centered in the toolbar row). The [data-toolbar-tooltip] hover-hint is
+   in canvas-hint-tooltip.css (both CSS rationalization Phase 7). */
+.aperture-canvas-toolbar {
   align-self: center;
-  background: color-mix(in oklab, var(--bg-card) 94%, transparent);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--phn-control-radius);
-  box-shadow: var(--shadow-elev-1);
-  display: inline-flex;
-  gap: 1px;
-  left: auto;
-  min-height: 28px;
-  overflow: visible;
-  padding: var(--space-2) var(--space-4);
   position: relative;
-  top: auto;
-  transform: none;
-  z-index: calc(var(--z-base) + 3);
-}
-
-.aperture-canvas-toolbar__divider {
-  align-self: stretch;
-  background: var(--border-subtle);
-  margin: 4px 3px;
-  width: 1px;
-}
-
-.aperture-canvas-toolbar__button {
-  align-items: center;
-  background: transparent;
-  border: 0;
-  border-radius: var(--radius-xs);
-  color: var(--text-secondary);
-  cursor: pointer;
-  display: flex;
-  height: 23px;
-  justify-content: center;
-  min-height: 23px;
-  min-width: 23px;
-  padding: 0;
-  position: relative;
-  width: 23px;
-}
-
-.aperture-canvas-toolbar__button:hover,
-.aperture-canvas-toolbar__button:focus-visible,
-.aperture-canvas-toolbar__button[aria-pressed="true"] {
-  background: color-mix(in oklab, var(--accent) 12%, transparent);
-  color: var(--accent-text);
-  outline: 0;
-}
-
-.aperture-canvas-toolbar__button:disabled {
-  color: color-mix(in oklab, var(--text-secondary) 38%, transparent);
-  cursor: not-allowed;
-}
-
-.aperture-canvas-toolbar__button[data-toolbar-tooltip]::before,
-.aperture-canvas-toolbar__button[data-toolbar-tooltip]::after {
-  left: 50%;
-  opacity: 0;
-  pointer-events: none;
-  position: absolute;
-  transition:
-    opacity 0.12s var(--ease) 0.35s,
-    transform 0.12s var(--ease) 0.35s;
-  z-index: calc(var(--z-base) + 4);
-}
-
-.aperture-canvas-toolbar__button[data-toolbar-tooltip]::before {
-  background: color-mix(in oklab, var(--text-primary) 88%, transparent);
-  border-radius: 3px;
-  bottom: calc(100% + 8px);
-  color: var(--bg-card);
-  content: attr(data-toolbar-tooltip);
-  font-family: var(--font-primary);
-  font-size: 11px;
-  line-height: 1.2;
-  padding: 4px 7px;
-  transform: translate(-50%, 2px);
-  white-space: nowrap;
-}
-
-.aperture-canvas-toolbar__button[data-toolbar-tooltip]::after {
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-top: 5px solid color-mix(in oklab, var(--text-primary) 88%, transparent);
-  bottom: calc(100% + 3px);
-  content: "";
-  transform: translate(-50%, 2px);
-}
-
-.aperture-canvas-toolbar__button[data-toolbar-tooltip]:hover::before,
-.aperture-canvas-toolbar__button[data-toolbar-tooltip]:hover::after,
-.aperture-canvas-toolbar__button[data-toolbar-tooltip]:focus-visible::before,
-.aperture-canvas-toolbar__button[data-toolbar-tooltip]:focus-visible::after {
-  opacity: 1;
-  transform: translate(-50%, 0);
 }
 
 .aperture-canvas-toolbar__zoom {
@@ -791,37 +589,8 @@
   width: clamp(68px, calc((var(--aperture-dim-input-ch, 7) * 1ch) + 14px), 180px);
 }
 
-.aperture-dim-label__delete {
-  align-items: center;
-  background: transparent;
-  border: 0;
-  border-radius: var(--radius-xs);
-  color: var(--text-secondary);
-  cursor: pointer;
-  display: flex;
-  height: 26px;
-  justify-content: center;
-  min-height: 26px;
-  min-width: 26px;
-  padding: 0;
-  position: relative;
-  transition:
-    background 0.14s var(--ease),
-    color 0.14s var(--ease);
-  width: 26px;
-}
-
-.aperture-dim-label__delete:hover:not(:disabled),
-.aperture-dim-label__delete:focus-visible:not(:disabled) {
-  background: var(--phn-danger-bg);
-  color: var(--phn-danger);
-  outline: 0;
-}
-
-.aperture-dim-label__delete:disabled {
-  color: color-mix(in oklab, var(--text-secondary) 38%, transparent);
-  cursor: not-allowed;
-}
+/* Dimension delete button now in shared/ui/dimensions/DimensionChrome.css
+   (.dimension-chrome-delete-button) — CSS rationalization Phase 7. */
 
 .aperture-dim-label__input-wrap .aperture-dim-label__input[data-error="true"] {
   color: var(--phn-danger);

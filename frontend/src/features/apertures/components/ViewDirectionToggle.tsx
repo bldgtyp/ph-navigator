@@ -12,7 +12,7 @@ export function ViewDirectionToggle({
   return (
     <button
       type="button"
-      className="aperture-canvas-toolbar__button assembly-canvas-toolbar-button aperture-canvas-toolbar__view-toggle"
+      className="canvas-toolbar__button aperture-canvas-toolbar__view-toggle"
       aria-label={label}
       aria-pressed={viewDirection === "interior"}
       data-toolbar-tooltip={label}

@@ -174,7 +174,7 @@ function AssemblyCanvasToolbar({
   return (
     <div
       id="assembly-canvas-toolbar"
-      className="assembly-canvas-toolbar"
+      className="canvas-toolbar assembly-canvas-toolbar"
       aria-label="Assembly canvas tools"
       style={{ left: `${leftPx}px` }}
     >
@@ -272,7 +272,7 @@ function CanvasToolbarButton({
     <button
       id={id}
       type="button"
-      className="assembly-canvas-toolbar-button"
+      className="canvas-toolbar__button"
       aria-label={label}
       aria-pressed={pressed ?? undefined}
       data-toolbar-tooltip={tooltip}
@@ -285,5 +285,5 @@ function CanvasToolbarButton({
 }
 
 function CanvasToolbarDivider() {
-  return <span className="assembly-canvas-toolbar-divider" aria-hidden="true" />;
+  return <span className="canvas-toolbar__divider" aria-hidden="true" />;
 }

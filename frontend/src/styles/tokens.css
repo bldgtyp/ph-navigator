@@ -114,6 +114,12 @@
   /* Bottom-border tint on header cells whose FieldDef carries any
      author-declared lock. Token name predates the lock-list model. */
   --phn-header-border-locked: color-mix(in oklab, var(--accent) 35%, transparent);
+
+  /* Info "ⓘ" hover tooltip (shared/ui/info-tooltip): dark grey panel +
+     white text. Distinct from the canvas hover-hint tooltip, which is a
+     --text-primary tint. */
+  --info-tooltip-bg: rgb(87 87 87 / 94%);
+  --info-tooltip-fg: #ffffff;
 }
 
 /* Phase 6 §4.3.3: per-axis tint cascade. Seven non-empty subsets of

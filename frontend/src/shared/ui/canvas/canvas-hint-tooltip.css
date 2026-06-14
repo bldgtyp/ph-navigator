@@ -1,0 +1,70 @@
+/* Shared hover-hint tooltip for canvas-page chrome — the drawing-tool
+   toolbar buttons and sidebar roster controls in the apertures + envelope
+   features. Pure CSS, attribute-driven: any control carrying
+   [data-toolbar-tooltip] or [data-sidebar-tooltip] gets a small label +
+   arrow above it on hover/focus. The host element must be
+   position: relative (the toolbar buttons and sidebar controls already
+   are). Imported once via App.css.
+
+   Distinct from the info "ⓘ" panel (shared/ui/info-tooltip) and from the
+   base.css [data-tooltip] system. Previously duplicated three times —
+   apertures toolbar, apertures sidebar, and an envelope block serving both
+   its toolbar + sidebar (CSS rationalization Phase 7). */
+
+[data-toolbar-tooltip]::before,
+[data-toolbar-tooltip]::after,
+[data-sidebar-tooltip]::before,
+[data-sidebar-tooltip]::after {
+  left: 50%;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  transition:
+    opacity 0.12s var(--ease) 0.35s,
+    transform 0.12s var(--ease) 0.35s;
+  z-index: calc(var(--z-base) + 4);
+}
+
+[data-toolbar-tooltip]::before,
+[data-sidebar-tooltip]::before {
+  background: color-mix(in oklab, var(--text-primary) 88%, transparent);
+  border-radius: 3px;
+  bottom: calc(100% + 8px);
+  color: var(--bg-card);
+  font-family: var(--font-primary);
+  font-size: 11px;
+  line-height: 1.2;
+  padding: 4px 7px;
+  transform: translate(-50%, 2px);
+  white-space: nowrap;
+}
+
+[data-toolbar-tooltip]::before {
+  content: attr(data-toolbar-tooltip);
+}
+
+[data-sidebar-tooltip]::before {
+  content: attr(data-sidebar-tooltip);
+}
+
+[data-toolbar-tooltip]::after,
+[data-sidebar-tooltip]::after {
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid color-mix(in oklab, var(--text-primary) 88%, transparent);
+  bottom: calc(100% + 3px);
+  content: "";
+  transform: translate(-50%, 2px);
+}
+
+[data-toolbar-tooltip]:hover::before,
+[data-toolbar-tooltip]:hover::after,
+[data-toolbar-tooltip]:focus-visible::before,
+[data-toolbar-tooltip]:focus-visible::after,
+[data-sidebar-tooltip]:hover::before,
+[data-sidebar-tooltip]:hover::after,
+[data-sidebar-tooltip]:focus-visible::before,
+[data-sidebar-tooltip]:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}

@@ -33,12 +33,54 @@ remote brand-token dependency. We are working it phase by phase.
 | **P1 — Token scales** | Tokenize shadows/radius/spacing (neutral); 2px-base spacing scale; 8-step type scale; radius xs/md | ✅ **Merged to main** (`21a89165`, `ab8a01ff`) |
 | **P2.6 — Chip primitive** | `.chip` + variants; migrate 6 chips | ✅ **Merged to main** (`f274585b`, `32839dc0`) |
 | **P2.8 — SVG/3D color** | SVG strokes → `--svg-line-heavy`; 3D palette assessed | ✅ **Merged to main** (`32839dc0`, `fd10e996`) |
-| **P2.7 — Canvas extraction** | Extract shared apertures/envelope drawing widgets | ⏸ **Active / next** → [phase-07](phases/phase-07-canvas-extraction.md) |
+| **P2.7 — Canvas extraction** | Extract shared apertures/envelope drawing widgets | ✅ **Done** on branch `css-p2-canvas` (4 commits, `make ci` green) → [phase-07](phases/phase-07-canvas-extraction.md) |
 | **P3 — Structure & discoverability** | styles README, `shared/ui` barrel, import strategy, split god-stylesheets | 🔜 Planned (see below) |
 | **P4 — Strategic** | Vendor brand tokens/fonts; reconcile Tailwind/shadcn docs | 🔜 Decided, not built (see below) |
 
 `origin/main` is at **`fd10e996`** with all merged phases above. CI is
-green (`make ci`).
+green (`make ci`). **P2.7 is built on branch `css-p2-canvas` (off `main`
+`61aba28b`), awaiting review/merge.**
+
+## Phase 7 outcome (2026-06-14, branch `css-p2-canvas`)
+
+The handoff warned the review over-flagged duplication; that held. Each
+candidate was diffed before extraction. **Four genuinely-identical,
+browser-verified widgets were shared; the parallel-but-different ones were
+deliberately left separate.**
+
+Extracted (one neutral commit each, `make ci` green + Playwright-verified):
+1. **`<InfoTooltip>`** → `shared/ui/info-tooltip/` (component + co-located
+   CSS + barrel). Killed the duplicated `rgb(87 87 87 / 94%)` literal via
+   new `--info-tooltip-bg` / `--info-tooltip-fg` tokens. (`34374a4f`)
+2. **Canvas hover-hint tooltip** (`[data-toolbar-tooltip]` /
+   `[data-sidebar-tooltip]`) → `shared/ui/canvas/canvas-hint-tooltip.css`.
+   Was duplicated 3× (apertures toolbar + sidebar, envelope combined);
+   zero DOM churn (attribute-driven). (`fb2634c3`)
+3. **Canvas toolbar** (strip + button + divider) →
+   `shared/ui/canvas/canvas-toolbar.css`. **Removed a fragile cross-feature
+   smell**: the apertures toolbar had been borrowing envelope's
+   `.assembly-canvas-toolbar*` classes. Components stay separate (different
+   tool sets). (`5d75d394`)
+4. **Dimension delete button** → `shared/ui/dimensions/DimensionChrome.css`
+   (`.dimension-chrome-delete-button`). (`be77ec74`)
+
+Two small, intentional non-neutral niceties (verified): canvas-toolbar
+buttons and the dimension delete button now carry `cursor: pointer` on
+**both** features (envelope previously lacked it).
+
+Left feature-specific by design (diffed, genuinely divergent — not drift):
+- **Sidebar roster** — apertures uses `<ul><li onClick>` + 3 row actions
+  with inline rename-validation; envelope uses `<div>` + `<NavLink>`
+  routing + 4 actions (incl. change-type). CSS is ~98% alike but the
+  interaction models differ; a merged component would need 5+ conditional
+  props. (Also `.aperture-sidebar__item-name` is asserted in a test.)
+- **Dimension input / input-wrap + the draft hooks** (`useDimensionDraft`
+  vs `useLengthDraft`) — divergent unit handling, validation, dynamic-vs-
+  fixed input width, and `data-error` vs `aria-invalid`. The shared
+  *chrome* (`DimensionChrome.css`) was already adopted; the interactive
+  input stays per-feature.
+- **3D viewer palette** — already resolved in P2.8 (domain-standard
+  Honeybee colors; leave independent).
 
 ## Recurring lesson from P0–P2
 
@@ -55,12 +97,14 @@ two items were *intentional*, not drift:
 not assume the review's duplication estimate; confirm it, and prefer
 visually-neutral changes (verify any non-neutral change in the browser).
 
-## Next: Phase 7 — canvas widget extraction
+## Phase 7 — canvas widget extraction (DONE)
 
-The remaining P2 item and the next pickup. It is a **larger, higher-risk
-refactor of the two core drawing UIs** (apertures + envelope), so it gets
-its own branch + interaction-level verification. Full handoff:
+The last P2 item — a larger, higher-risk refactor of the two core drawing
+UIs (apertures + envelope). Completed on branch `css-p2-canvas` with
+interaction-level Playwright verification; see the **Phase 7 outcome**
+section above and the handoff
 [phases/phase-07-canvas-extraction.md](phases/phase-07-canvas-extraction.md).
+Next pickup is **P3 — Structure & discoverability**.
 
 ## P3 — Structure & discoverability (owner's goal #3)
 

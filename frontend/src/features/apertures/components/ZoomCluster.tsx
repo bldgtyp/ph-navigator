@@ -16,7 +16,7 @@ export function ZoomCluster({
     <div className="aperture-canvas-toolbar__zoom" role="group" aria-label="Canvas zoom">
       <button
         type="button"
-        className="aperture-canvas-toolbar__button assembly-canvas-toolbar-button"
+        className="canvas-toolbar__button"
         aria-label="Zoom out"
         data-toolbar-tooltip="Zoom out"
         disabled={zoom <= ZOOM_MIN}
@@ -29,7 +29,7 @@ export function ZoomCluster({
       </span>
       <button
         type="button"
-        className="aperture-canvas-toolbar__button assembly-canvas-toolbar-button"
+        className="canvas-toolbar__button"
         aria-label="Zoom in"
         data-toolbar-tooltip="Zoom in"
         disabled={zoom >= ZOOM_MAX}
@@ -39,7 +39,7 @@ export function ZoomCluster({
       </button>
       <button
         type="button"
-        className="aperture-canvas-toolbar__button assembly-canvas-toolbar-button"
+        className="canvas-toolbar__button"
         aria-label="Fit canvas to width"
         data-toolbar-tooltip="Fit canvas"
         onClick={onFit}

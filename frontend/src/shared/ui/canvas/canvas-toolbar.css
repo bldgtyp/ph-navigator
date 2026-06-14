@@ -1,0 +1,60 @@
+/* Shared canvas-tool toolbar — the floating strip of icon buttons +
+   dividers on the apertures + envelope drawing canvases. Placement is left
+   to each feature (apertures centers itself in a flex row; envelope floats
+   absolutely above the canvas with `left` set inline); this owns the strip
+   surface + button + divider appearance. Imported once via App.css.
+
+   Replaces a cross-feature borrow where the apertures toolbar reused the
+   envelope `.assembly-canvas-toolbar*` classes (CSS rationalization
+   Phase 7). The hover-hint label lives in canvas-hint-tooltip.css. */
+
+.canvas-toolbar {
+  align-items: center;
+  background: color-mix(in oklab, var(--bg-card) 94%, transparent);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--phn-control-radius);
+  box-shadow: var(--shadow-elev-1);
+  display: inline-flex;
+  gap: 1px;
+  min-height: 28px;
+  overflow: visible;
+  padding: var(--space-2) var(--space-4);
+  z-index: calc(var(--z-base) + 3);
+}
+
+.canvas-toolbar__divider {
+  align-self: stretch;
+  background: var(--border-subtle);
+  margin: 4px 3px;
+  width: 1px;
+}
+
+.canvas-toolbar__button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-xs);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  height: 23px;
+  justify-content: center;
+  min-height: 23px;
+  min-width: 23px;
+  padding: 0;
+  position: relative;
+  width: 23px;
+}
+
+.canvas-toolbar__button:hover,
+.canvas-toolbar__button:focus-visible,
+.canvas-toolbar__button[aria-pressed="true"] {
+  background: color-mix(in oklab, var(--accent) 12%, transparent);
+  color: var(--accent-text);
+  outline: 0;
+}
+
+.canvas-toolbar__button:disabled {
+  color: color-mix(in oklab, var(--text-secondary) 38%, transparent);
+  cursor: not-allowed;
+}
