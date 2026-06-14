@@ -104,11 +104,11 @@ textarea {
 .rooms-panel,
 .status-timeline {
   display: grid;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .auth-form {
-  margin-top: 24px;
+  margin-top: var(--space-5);
 }
 
 .project-form {
@@ -120,7 +120,7 @@ textarea {
 .project-form fieldset,
 .diff-target-control {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
   color: var(--text-secondary);
   font-size: 0.875rem;
   font-weight: 400;
@@ -178,7 +178,7 @@ a:focus-visible {
 .autocomplete-select {
   position: relative;
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
   color: var(--text-primary);
 }
@@ -242,7 +242,7 @@ a:focus-visible {
   max-height: min(280px, 45vh);
   overflow: auto;
   margin: 0;
-  padding: 4px;
+  padding: var(--space-1);
   list-style: none;
   border: 1px solid var(--border-strong);
   border-radius: var(--phn-radius);
@@ -283,7 +283,7 @@ a:focus-visible {
 .autocomplete-select-option {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
 }
 
@@ -292,7 +292,7 @@ a:focus-visible {
   height: 14px;
   flex: 0 0 auto;
   border: 1px solid color-mix(in oklab, var(--text-primary) 18%, transparent);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--autocomplete-option-color);
 }
 
@@ -316,7 +316,7 @@ a:focus-visible {
 }
 
 .autocomplete-select.is-compact {
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .autocomplete-select.is-compact input {
@@ -343,18 +343,18 @@ a:focus-visible {
 .project-form fieldset {
   border: 1px solid var(--border-subtle);
   border-radius: var(--phn-radius);
-  padding: 12px;
+  padding: var(--space-3);
 }
 
 .project-form legend {
-  padding: 0 4px;
+  padding: 0 var(--space-1);
   color: var(--accent-text);
 }
 
 .project-form .checkbox-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   font-family: var(--font-primary);
   letter-spacing: 0;
   text-transform: none;
@@ -376,7 +376,7 @@ a:focus-visible {
   min-height: 58px;
   border-bottom: 1px solid var(--border-subtle);
   background: var(--bg-card);
-  padding: 0 24px;
+  padding: 0 var(--space-5);
   -webkit-backdrop-filter: saturate(1.4) blur(14px);
   backdrop-filter: saturate(1.4) blur(14px);
 }
@@ -385,7 +385,7 @@ a:focus-visible {
   display: flex;
   min-width: 0;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   overflow: visible;
 }
 
@@ -405,7 +405,7 @@ a:focus-visible {
   display: flex;
   min-width: 0;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   color: var(--text-secondary);
   font-size: 0.86rem;
   overflow: hidden;
@@ -422,7 +422,7 @@ a:focus-visible {
   display: inline-flex;
   min-width: 0;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .breadcrumb-segment + .breadcrumb-segment::before {
@@ -546,11 +546,11 @@ a:focus-visible {
   right: 0;
   display: grid;
   min-width: 220px;
-  gap: 4px;
+  gap: var(--space-1);
   border: 1px solid var(--border-card);
   border-radius: var(--phn-radius);
   background: var(--bg-card);
-  padding: 8px;
+  padding: var(--space-2);
   box-shadow: var(--phn-shadow);
 }
 
@@ -566,7 +566,7 @@ a:focus-visible {
 
 .account-menu-panel {
   min-width: 168px;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .account-menu-label {
@@ -580,7 +580,7 @@ a:focus-visible {
   display: inline-flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 8px;
+  gap: var(--space-2);
   width: 100%;
   min-height: 30px;
   border-radius: var(--phn-radius);
@@ -599,7 +599,7 @@ a:focus-visible {
 .user-menu {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   color: var(--text-secondary);
   font-size: 0.875rem;
   order: 3;
@@ -610,7 +610,7 @@ a:focus-visible {
   align-items: center;
   background: color-mix(in oklab, var(--accent) 12%, var(--bg-card));
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   display: inline-flex;
   font-family: var(--font-mono);
   overflow: hidden;
@@ -626,7 +626,7 @@ a:focus-visible {
   z-index: var(--z-base);
   width: 32px;
   height: 32px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--accent-dark);
   box-shadow: 0 1px 2px color-mix(in oklab, var(--text-primary) 18%, transparent);
   transition: transform 0.16s var(--ease);
@@ -753,7 +753,7 @@ a:focus-visible {
 .status-heading {
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .status-heading h2 {
@@ -790,7 +790,7 @@ a:focus-visible {
 .tab-panel h2,
 .read-safe-panel h2,
 .diff-table h3 {
-  margin: 0 0 8px;
+  margin: 0 0 var(--space-2);
   color: var(--text-primary);
   font-weight: 600;
   letter-spacing: 0;
@@ -834,13 +834,13 @@ a:focus-visible {
 
 .dashboard-sections {
   display: grid;
-  gap: 24px;
+  gap: var(--space-5);
 }
 
 .catalog-card-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .catalog-card {
@@ -852,7 +852,7 @@ a:focus-visible {
   border-radius: var(--phn-radius);
   background: var(--bg-card);
   color: var(--text-primary);
-  padding: 16px;
+  padding: var(--space-4);
   text-decoration: none;
   transition:
     border-color 0.16s var(--ease),
@@ -897,9 +897,9 @@ a:focus-visible {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
 }
 
 .project-section-heading > div {
@@ -925,16 +925,16 @@ a:focus-visible {
 .project-bulk-actions {
   display: flex;
   justify-content: center;
-  margin: 12px 0;
+  margin: var(--space-3) 0;
 }
 
 .project-list-heading,
 .project-row {
   display: grid;
   grid-template-columns: 32px 96px minmax(180px, 1fr) minmax(120px, 0.75fr) 140px;
-  gap: 16px;
+  gap: var(--space-4);
   align-items: center;
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
 }
 
 .project-list-heading,
@@ -1010,9 +1010,9 @@ a:focus-visible {
 .deleted-project-row {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) minmax(150px, 0.6fr) minmax(150px, 0.6fr) auto;
-  gap: 16px;
+  gap: var(--space-4);
   align-items: center;
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
 }
 
 .deleted-project-row + .deleted-project-row {
@@ -1023,7 +1023,7 @@ a:focus-visible {
   display: flex;
   min-width: 0;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .deleted-project-row strong,
@@ -1059,7 +1059,7 @@ a:focus-visible {
 .deleted-project-title {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .deleted-project-toggle {
@@ -1101,7 +1101,7 @@ a:focus-visible {
 .project-delete-list {
   display: grid;
   max-height: 240px;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   overflow: auto;
@@ -1111,7 +1111,7 @@ a:focus-visible {
 .project-delete-list li {
   display: flex;
   align-items: baseline;
-  gap: 12px;
+  gap: var(--space-3);
   border: 1px solid var(--border-subtle);
   border-radius: var(--phn-radius);
   background: var(--bg-elev);
@@ -1129,7 +1129,7 @@ a:focus-visible {
 
 .settings-section {
   border-top: 1px solid var(--border-subtle);
-  padding-top: 16px;
+  padding-top: var(--space-4);
 }
 
 .settings-section h3 {
@@ -1143,7 +1143,7 @@ a:focus-visible {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .settings-section-heading span {
@@ -1166,7 +1166,7 @@ a:focus-visible {
 
 .settings-location-warning {
   display: grid;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .settings-location-epw {
@@ -1194,13 +1194,13 @@ a:focus-visible {
 
 .settings-readonly-list {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
 }
 
 .settings-readonly-list div {
   display: grid;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .settings-readonly-list dt {
@@ -1227,11 +1227,11 @@ a:focus-visible {
 
 .one-time-token {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
   border: 1px solid var(--phn-warning);
   border-radius: var(--phn-radius);
   background: var(--phn-warning-bg);
-  padding: 12px;
+  padding: var(--space-3);
 }
 
 .one-time-token p {
@@ -1252,7 +1252,7 @@ a:focus-visible {
 .one-time-token-copy {
   display: flex;
   align-items: stretch;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .one-time-token-copy code {
@@ -1261,14 +1261,14 @@ a:focus-visible {
 
 .token-list {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .token-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   border: 1px solid var(--border-subtle);
   border-radius: var(--phn-radius);
   background: var(--bg-elev);
@@ -1277,7 +1277,7 @@ a:focus-visible {
 
 .token-row div {
   display: grid;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .token-row strong {
@@ -1299,7 +1299,7 @@ a:focus-visible {
 }
 
 .revoked-token-details .token-list {
-  margin-top: 8px;
+  margin-top: var(--space-2);
 }
 
 button {
@@ -1485,7 +1485,7 @@ button:disabled {
 }
 
 .project-meta {
-  margin: 4px 0 0;
+  margin: var(--space-1) 0 0;
   font-family: var(--font-mono);
   font-size: 0.74rem;
   letter-spacing: 0.04em;
@@ -1500,7 +1500,7 @@ button:disabled {
 
 .read-only-pill {
   border: 1px solid var(--phn-warning);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--phn-warning-bg);
   color: var(--phn-warning);
   padding: 4px 9px;
@@ -1520,7 +1520,7 @@ button:disabled {
 .pill-tab {
   min-height: 32px;
   border: 1px solid var(--border-subtle);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--bg-card);
   color: var(--accent-text);
   font-size: 0.9rem;
@@ -1668,7 +1668,7 @@ button:disabled {
   border-bottom: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
   margin-left: 0;
   min-height: 0;
   padding-inline: 0;
@@ -1687,14 +1687,14 @@ button:disabled {
 .app-subtabs[data-variant="pills"] .app-subtabs__tab {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   color: var(--text-secondary);
   font-family: inherit;
   font-size: 0.78rem;
   font-weight: 500;
   letter-spacing: 0;
   margin-bottom: 0;
-  padding: 4px 12px;
+  padding: var(--space-1) var(--space-3);
 }
 
 .app-subtabs[data-variant="pills"] .app-subtabs__tab:hover {
@@ -1723,7 +1723,7 @@ button:disabled {
   align-items: center;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: var(--phn-control-radius);
   color: var(--text-secondary);
   cursor: pointer;
   display: inline-flex;
@@ -1764,7 +1764,7 @@ button:disabled {
   align-items: center;
   background: transparent;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--phn-control-radius);
   color: var(--text-primary);
   cursor: pointer;
   display: grid;

@@ -47,7 +47,7 @@
   border-radius: var(--phn-radius);
   background: var(--bg-card);
   color: var(--text-primary);
-  padding: 0 12px;
+  padding: 0 var(--space-3);
   font-family: var(--font-mono);
   font-size: 0.72rem;
   font-weight: 400;
@@ -60,7 +60,7 @@
   content: "";
   width: 7px;
   height: 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--save-state-dot);
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--save-state-dot) 12%, transparent);
 }
@@ -76,7 +76,7 @@
   position: relative;
   display: grid;
   justify-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
 }
 
@@ -100,7 +100,7 @@
   display: inline-flex;
   min-width: 0;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .version-path-control::before {
@@ -151,7 +151,7 @@
 .version-control-fallback {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .inline-action-error {
@@ -293,8 +293,8 @@
 
 .version-list {
   display: grid;
-  gap: 8px;
-  margin: 12px 0;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
 }
 
 .version-row {
@@ -306,7 +306,7 @@
 
 .version-row span {
   display: block;
-  margin-top: 4px;
+  margin-top: var(--space-1);
   font-size: 0.78rem;
   text-transform: capitalize;
 }
@@ -315,10 +315,10 @@
   border: 1px solid var(--border-subtle);
   border-radius: var(--phn-radius);
   background: var(--bg-elev);
-  padding: 12px;
+  padding: var(--space-3);
 }
 
 .diff-table ul {
-  margin: 8px 0 0;
+  margin: var(--space-2) 0 0;
   padding-left: 20px;
 }

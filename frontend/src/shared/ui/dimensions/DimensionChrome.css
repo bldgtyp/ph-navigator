@@ -77,7 +77,7 @@
 
 .dimension-chrome-tick {
   background: var(--dimension-axis-color);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   height: 5px;
   position: absolute;
   width: 5px;

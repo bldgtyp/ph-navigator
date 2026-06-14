@@ -17,7 +17,7 @@
   display: grid;
   grid-template-columns: var(--report-table-columns);
   align-items: center;
-  column-gap: 12px;
+  column-gap: var(--space-3);
   padding: 0 14px;
 }
 
@@ -65,8 +65,8 @@
 .report-table__row {
   border-top: 1px solid color-mix(in oklab, var(--border-subtle) 60%, transparent);
   min-height: 38px;
-  padding-top: 4px;
-  padding-bottom: 4px;
+  padding-top: var(--space-1);
+  padding-bottom: var(--space-1);
 }
 
 .report-table__row:first-child {
@@ -85,7 +85,7 @@
 .report-table__cell {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   justify-content: flex-end;
   min-width: 0;
   overflow: hidden;
@@ -152,16 +152,16 @@
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
   justify-content: space-between;
-  margin-top: 16px;
-  margin-bottom: 12px;
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-3);
 }
 
 .report-status-filters__chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .report-status-filters__summary {
@@ -174,13 +174,13 @@
   appearance: none;
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   color: var(--text-primary);
   cursor: pointer;
   display: inline-flex;
   font-size: 12px;
   font-weight: 500;
-  gap: 8px;
+  gap: var(--space-2);
   line-height: 1;
   padding: 7px 12px;
   transition:
@@ -200,7 +200,7 @@
 
 /* Status pill (per-row Status cell) + the dot used by chips and pills */
 .report-status-dot {
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   display: inline-block;
   flex-shrink: 0;
   height: 8px;
@@ -238,7 +238,7 @@
   align-items: center;
   background: transparent;
   border: 1px dashed var(--border-subtle);
-  border-radius: 6px;
+  border-radius: var(--phn-control-radius);
   color: var(--text-muted, var(--text-secondary));
   display: inline-flex;
   justify-content: center;
