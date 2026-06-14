@@ -1,31 +1,31 @@
 .climate-tab {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-24);
 }
 
 .climate-section {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-12);
 }
 
 .climate-section h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--fs-lg);
 }
 
 .climate-section-note {
   margin: 0;
   color: var(--text-secondary);
-  font-size: 0.85rem;
+  font-size: var(--fs-md);
 }
 
 /* Project-location read-only card */
 .climate-location-editor {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-12);
 }
 
 .climate-location-actions {
@@ -37,7 +37,7 @@
 .climate-sources {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-12);
 }
 
 .climate-source-list {
@@ -52,8 +52,8 @@
 .climate-source-row {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-3);
+  gap: var(--space-12);
+  padding: var(--space-8) var(--space-12);
   border-bottom: 1px solid var(--border-card);
 }
 
@@ -70,7 +70,7 @@
   flex: none;
   min-width: 4rem;
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: var(--fs-2xs);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -93,52 +93,52 @@
 .climate-source-attach {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-4);
+  gap: var(--space-16);
 }
 
 .climate-source-form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-8);
 }
 
 .climate-source-form-title {
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   color: var(--text-muted);
 }
 
 .climate-source-form-row {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: var(--space-8);
 }
 
 .climate-detail-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-3);
+  gap: var(--space-12);
 }
 
 /* Dataset browser */
 .climate-browser {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-16);
 }
 
 .climate-browser-controls {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: var(--space-3);
+  gap: var(--space-12);
 }
 
 .climate-browser-controls label {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
-  font-size: 0.8rem;
+  gap: var(--space-4);
+  font-size: var(--fs-sm);
 }
 
 .climate-browser-controls input,
@@ -150,7 +150,7 @@
 .climate-browser-body {
   display: grid;
   grid-template-columns: minmax(240px, 320px) 1fr;
-  gap: var(--space-4);
+  gap: var(--space-16);
   align-items: start;
 }
 
@@ -169,11 +169,11 @@
 
 .climate-location-count {
   margin: 0;
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-8) var(--space-12);
   border-bottom: 1px solid var(--border-subtle);
   background: var(--bg-elev);
   color: var(--text-muted);
-  font-size: 0.72rem;
+  font-size: var(--fs-xs);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -189,9 +189,9 @@
 .climate-location-list button {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-2);
   width: 100%;
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-8) var(--space-12);
   border: none;
   border-bottom: 1px solid var(--border-subtle);
   background: transparent;
@@ -209,12 +209,12 @@
 }
 
 .climate-location-name {
-  font-size: 0.85rem;
+  font-size: var(--fs-md);
 }
 
 .climate-location-coords {
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: var(--fs-xs);
   color: var(--text-muted);
 }
 
@@ -223,60 +223,60 @@
 }
 
 .climate-detail-title {
-  margin: 0 0 var(--space-3);
-  font-size: 0.95rem;
+  margin: 0 0 var(--space-12);
+  font-size: var(--fs-lg);
 }
 
 /* Standardized-record tables */
 .climate-record {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-16);
 }
 
 .climate-record-summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: var(--space-3);
+  gap: var(--space-12);
   margin: 0;
 }
 
 .climate-record-summary dt {
   color: var(--text-muted);
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: var(--fs-2xs);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .climate-record-summary dd {
-  margin: 2px 0 0;
-  font-size: 0.85rem;
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-md);
 }
 
 .climate-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.78rem;
+  font-size: var(--fs-sm);
 }
 
 .climate-table caption {
   text-align: left;
-  padding-bottom: var(--space-2);
+  padding-bottom: var(--space-8);
   font-weight: 600;
 }
 
 .climate-table-unit {
-  margin-left: var(--space-2);
+  margin-left: var(--space-8);
   color: var(--text-muted);
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: var(--fs-2xs);
   font-weight: 400;
 }
 
 .climate-table th,
 .climate-table td {
-  padding: 4px 6px;
+  padding: var(--space-4) var(--space-6);
   border: 1px solid var(--border-subtle);
   text-align: right;
 }
@@ -298,18 +298,18 @@
 .climate-record-view {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-12);
 }
 
 .climate-record-view-toggle {
   display: flex;
-  gap: var(--space-2);
+  gap: var(--space-8);
 }
 
 .climate-charts {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-16);
 }
 
 .climate-chart {
@@ -317,9 +317,9 @@
 }
 
 .climate-chart figcaption {
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-8);
   color: var(--text-secondary);
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   font-weight: 600;
 }
 

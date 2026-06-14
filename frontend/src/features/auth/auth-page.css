@@ -1,7 +1,7 @@
 .auth-page {
   display: grid;
   place-items: center;
-  padding: var(--space-5);
+  padding: var(--space-24);
 }
 
 .tab-panel {
@@ -28,7 +28,7 @@
   position: relative;
   width: min(100%, 420px);
   overflow: hidden;
-  padding: var(--space-6);
+  padding: var(--space-32);
   box-shadow: var(--phn-shadow);
 }
 
@@ -57,5 +57,5 @@
 }
 
 .auth-form {
-  margin-top: var(--space-5);
+  margin-top: var(--space-24);
 }
