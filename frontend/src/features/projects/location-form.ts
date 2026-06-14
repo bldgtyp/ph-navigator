@@ -99,6 +99,13 @@ export function elevationUnitLabel(unitSystem: UnitSystem): string {
   return numberUnitLabel(unitSystem === "IP" ? "ft" : "m");
 }
 
+// Display a coordinate / angle for read-only views: integers verbatim,
+// otherwise trimmed to 6 decimals; null renders as "None".
+export function formatReadOnlyCoordinate(value: number | null, suffix = "deg"): string {
+  if (value === null) return "None";
+  return `${Number.isInteger(value) ? value : Number(value.toFixed(6))} ${suffix}`;
+}
+
 export function formatLocationElevationDisplay(
   valueM: number | null,
   unitSystem: UnitSystem,

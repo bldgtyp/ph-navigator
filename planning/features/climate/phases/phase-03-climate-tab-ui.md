@@ -2,11 +2,10 @@
 DATE: 2026-06-13
 TIME: -
 STATUS: In progress (2026-06-13) — decomposed into 3a/3b/3c (see §0).
-  Sub-phase **3a shipped** (tab + reference-dataset browser + read-only
-  location + record tables; `make ci` green). Remaining in 3a: migrate the
-  location *editor* into the tab. 3b (project-climate source model +
-  attach/select; needs new backend) and 3c (charting + sun-path visual)
-  follow.
+  Sub-phase **3a COMPLETE** (tab + reference-dataset browser + record tables
+  + the migrated location editor; Settings now read-only; `make ci` green).
+  3b (project-climate source model + attach/select; needs new backend) and
+  3c (charting + sun-path visual) follow.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff — the Climate top-level tab: location
   record + multi-source attach/select + per-source visualization.
@@ -47,19 +46,24 @@ a split:
 
 So Phase 3 ships in three sub-phases:
 
-- **3a — Tab shell + location + reference-dataset browser**
-  (frontend-only; no new deps; no backend). **Shipped 2026-06-13** (`make
-  ci` green, frontend 1586): `climate` tab added after Status
-  (`features/projects/lib.ts` + `ProjectTabContent.tsx`); new
-  `frontend/src/features/climate/` client (`types`/`api`/`query-keys`/
-  `hooks`) over `/api/v1/climate/datasets…`; a dataset **browser**
-  (`ClimateDatasetBrowser` — dataset picker + country/region filter +
-  nearest-to-project) with the standardized record as read-only monthly +
-  design-condition tables (`ClimateRecordTable`, IP/SI temp toggle); a
-  read-only project-location card (`ClimateLocationCard`). Tests under
-  `features/climate/__tests__/`. **Remaining 3a step:** migrate the rich
-  location *editor* (`EditableLocationFields`) into the tab (D-CL-3) —
-  today editing still lives in Settings; the tab shows location read-only.
+- **3a — Tab shell + location editor + reference-dataset browser**
+  (frontend-only; no new deps; no backend). **COMPLETE 2026-06-13** (`make
+  ci` green): `climate` tab added after Status (`features/projects/lib.ts` +
+  `ProjectTabContent.tsx`); new `frontend/src/features/climate/` client
+  (`types`/`api`/`query-keys`/`hooks`) over `/api/v1/climate/datasets…`; a
+  dataset **browser** (`ClimateDatasetBrowser` — dataset picker +
+  country/region filter + nearest-to-project) with the standardized record
+  as read-only monthly + design-condition tables (`ClimateRecordTable`,
+  IP/SI temp toggle). The **rich location editor was migrated into the tab**
+  (D-CL-3): the editor + EPW upload/parse flow were extracted into a
+  reusable `useProjectLocationForm` hook plus `ProjectLocationEditor` /
+  `ProjectLocationSummary` components (in `features/projects/`, imported
+  one-way by climate); `ClimateLocationSection` hosts the editable section
+  with its own Save, and project **Settings now renders only a compact
+  read-only summary** pointing at the Climate tab. Tests under
+  `features/climate/__tests__/` (incl. `ClimateLocationSection`:
+  editor/viewer/EPW/late-resolve/units) + the slimmed
+  `ProjectSettingsModal.location` read-only test.
 - **3b — Source attach/select** → **`phase-03b-climate-source-attach-select.md`**.
   New backend `project_climate_source` model + routes (attach Phius/PHI
   location, ASHRAE pointer, EPW, custom; per-project default per D-CL-11) +

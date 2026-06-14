@@ -10,7 +10,7 @@ SCOPE: Implementation handoff — the project-climate source model + the tab
   UI to attach/select multiple climate sources per project (D-CL-4 / D-CL-9
   / D-CL-11).
 RELATED:
-  - phase-03-climate-tab-ui.md (§0 decomposition; 3a shipped)
+  - phase-03-climate-tab-ui.md (§0 decomposition; 3a complete)
   - ../PRD.md §4.1 (sources), §5.3
   - ../decisions.md (D-CL-4 store-all-sources, D-CL-9 custom, D-CL-11
     per-analysis default)
@@ -61,8 +61,9 @@ station / this uploaded EPW / this custom record". 3b introduces it.
 
 ## Depends on / sequencing
 
-- Lands after the **3a location-editor migration** (still open in
-  phase-03) so the tab's location + source UI cohere.
+- The **3a location-editor migration is complete** (the tab owns the
+  location editor via `useProjectLocationForm`), so the source UI can sit
+  alongside it directly.
 - Unblocks the per-source visualization in **phase-03c** (3c renders the
   selected/active source) and feeds **Phase 4** (design conditions read
   the attached sources).

@@ -1,34 +1,15 @@
-import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { ApiRequestError } from "../../../shared/api/client";
 import { formatProjectDateTime } from "../../../shared/lib/dates";
 import { errorMessage } from "../../../shared/lib/errors";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
-import { useUnitPreference, type UnitSystem } from "../../../lib/units";
+import { useUnitPreference } from "../../../lib/units";
 import { useMcpTokensQuery } from "../../mcp/hooks";
-import {
-  useParseProjectLocationEpwMutation,
-  useProjectLocationQuery,
-  useUpdateProjectLocationMutation,
-  useUpdateProjectMutation,
-} from "../hooks";
-import {
-  applyEpwSuggestionToLocationValues,
-  buildProjectLocationPayload,
-  emptyLocationFormValues,
-  locationFormValuesFromLocation,
-  reformatElevationForUnitSystem,
-  type ProjectLocationFormValues,
-} from "../location-form";
-import type {
-  CertificationProgram,
-  EpwParseResponse,
-  ProjectDetail,
-  ProjectLocation,
-  ProjectLocationUpdateResponse,
-  UpdateProjectPayload,
-} from "../types";
+import { useProjectLocationQuery, useUpdateProjectMutation } from "../hooks";
+import { elevationUnitLabel } from "../location-form";
+import type { CertificationProgram, ProjectDetail, UpdateProjectPayload } from "../types";
 import { CertificationProgramFieldset } from "./CertificationProgramFieldset";
-import { ProjectLocationSettingsSection } from "./ProjectLocationSettingsSection";
+import { ProjectLocationSummary } from "./ProjectLocationSummary";
 import { ProjectMcpTokensSection } from "./ProjectMcpTokensSection";
 
 export function ProjectSettingsModal({
@@ -46,67 +27,21 @@ export function ProjectSettingsModal({
   const [phiusNumber, setPhiusNumber] = useState(project.phius_number ?? "");
   const [phiusDropboxUrl, setPhiusDropboxUrl] = useState(project.phius_dropbox_url ?? "");
   const [confirmDiscard, setConfirmDiscard] = useState(false);
-  const [locationValues, setLocationValues] =
-    useState<ProjectLocationFormValues>(emptyLocationFormValues);
-  const [locationWarnings, setLocationWarnings] = useState<string[]>([]);
   const { unitSystem } = useUnitPreference();
-  const previousUnitSystem = useRef<UnitSystem>(unitSystem);
-  const loadedLocation = useRef<ProjectLocation | undefined>(undefined);
-  const locationEdited = useRef(false);
   const updateProjectMutation = useUpdateProjectMutation(project.id);
   const locationQuery = useProjectLocationQuery(project.id);
-  const updateLocationMutation = useUpdateProjectLocationMutation(project.id);
-  const parseEpwMutation = useParseProjectLocationEpwMutation(project.id);
   const tokensQuery = useMcpTokensQuery(project.id, !isViewer);
-  const changedPayload = useMemo(
-    () =>
-      changedProjectFields(project, {
-        name,
-        btNumber,
-        client,
-        certPrograms,
-        phiusNumber,
-        phiusDropboxUrl,
-      }),
-    [btNumber, certPrograms, client, name, phiusDropboxUrl, phiusNumber, project],
-  );
-  useEffect(() => {
-    if (
-      locationQuery.data &&
-      loadedLocation.current !== locationQuery.data &&
-      !locationEdited.current
-    ) {
-      setLocationValues(locationFormValuesFromLocation(locationQuery.data, unitSystem));
-      loadedLocation.current = locationQuery.data;
-      previousUnitSystem.current = unitSystem;
-    }
-  }, [locationQuery.data, unitSystem]);
-  useEffect(() => {
-    setLocationValues((current) => {
-      if (previousUnitSystem.current === unitSystem) return current;
-      return {
-        ...current,
-        elevation: reformatElevationForUnitSystem(
-          current.elevation,
-          previousUnitSystem.current,
-          unitSystem,
-        ),
-      };
-    });
-    previousUnitSystem.current = unitSystem;
-  }, [unitSystem]);
-  const locationPayloadResult = useMemo(
-    () => buildProjectLocationPayload(locationQuery.data, locationValues, unitSystem),
-    [locationQuery.data, locationValues, unitSystem],
-  );
-  const locationPayload = locationPayloadResult.ok ? locationPayloadResult.payload : {};
-  const locationValidationError = locationPayloadResult.ok ? null : locationPayloadResult.error;
-  const validationError =
-    settingsValidationError(name, btNumber, phiusDropboxUrl) ?? locationValidationError;
-  const hasProjectChanges = Object.keys(changedPayload).length > 0;
-  const hasLocationChanges = Object.keys(locationPayload).length > 0;
-  const isDirty = hasProjectChanges || hasLocationChanges;
-  const isSaving = updateProjectMutation.isPending || updateLocationMutation.isPending;
+  const changedPayload = changedProjectFields(project, {
+    name,
+    btNumber,
+    client,
+    certPrograms,
+    phiusNumber,
+    phiusDropboxUrl,
+  });
+  const validationError = settingsValidationError(name, btNumber, phiusDropboxUrl);
+  const isDirty = Object.keys(changedPayload).length > 0;
+  const isSaving = updateProjectMutation.isPending;
   const canSave = !isViewer && isDirty && !validationError && !isSaving;
 
   const closeWithGuard = () => {
@@ -125,36 +60,11 @@ export function ProjectSettingsModal({
 
   const saveSettings = async () => {
     try {
-      const projectSave = hasProjectChanges
-        ? updateProjectMutation.mutateAsync(changedPayload)
-        : Promise.resolve(null);
-      const locationSave: Promise<ProjectLocationUpdateResponse | null> = hasLocationChanges
-        ? updateLocationMutation.mutateAsync(locationPayload)
-        : Promise.resolve(null);
-      const [, locationResponse] = await Promise.all([projectSave, locationSave]);
-      if (locationResponse) {
-        const response = locationResponse;
-        loadedLocation.current = response.location;
-        setLocationValues(locationFormValuesFromLocation(response.location, unitSystem));
-        locationEdited.current = false;
-        setLocationWarnings(response.warnings);
-      }
-      if (!locationResponse || locationResponse.warnings.length === 0) onClose();
+      await updateProjectMutation.mutateAsync(changedPayload);
+      onClose();
     } catch {
       // Mutation state renders the authoritative error message below.
     }
-  };
-
-  const updateLocationField = (field: keyof ProjectLocationFormValues, value: string) => {
-    locationEdited.current = true;
-    setLocationValues((current) => ({ ...current, [field]: value }));
-  };
-
-  const applyEpwSuggestion = (response: EpwParseResponse) => {
-    locationEdited.current = true;
-    setLocationValues((current) =>
-      applyEpwSuggestionToLocationValues(current, response, unitSystem),
-    );
   };
 
   return (
@@ -235,20 +145,26 @@ export function ProjectSettingsModal({
             </div>
           </dl>
         </section>
-        <ProjectLocationSettingsSection
-          location={locationQuery.data}
-          values={locationValues}
-          unitSystem={unitSystem}
-          isViewer={isViewer}
-          isLoading={locationQuery.isLoading}
-          error={locationQuery.error}
-          warnings={locationWarnings}
-          projectId={project.id}
-          isParsingEpw={parseEpwMutation.isPending}
-          onParseEpw={(assetId) => parseEpwMutation.mutateAsync(assetId)}
-          onChange={updateLocationField}
-          onApplyEpwSuggestion={applyEpwSuggestion}
-        />
+        <section className="settings-section" aria-labelledby="settings-location-title">
+          <div className="settings-section-heading">
+            <h3 id="settings-location-title">Location</h3>
+            <span>{elevationUnitLabel(unitSystem)}</span>
+          </div>
+          {locationQuery.isLoading ? (
+            <p className="form-note">Loading project location...</p>
+          ) : null}
+          {locationQuery.error ? (
+            <p className="form-error">
+              {errorMessage(locationQuery.error, "Could not load project location.")}
+            </p>
+          ) : null}
+          <ProjectLocationSummary
+            projectId={project.id}
+            location={locationQuery.data}
+            unitSystem={unitSystem}
+          />
+          <p className="form-note">Edit location and weather data in the Climate tab.</p>
+        </section>
         {!isViewer ? (
           <ProjectMcpTokensSection
             tokens={tokensQuery.data}
@@ -261,11 +177,6 @@ export function ProjectSettingsModal({
         {updateProjectMutation.isError ? (
           <p className="form-error" role="alert">
             {settingsSaveError(updateProjectMutation.error)}
-          </p>
-        ) : null}
-        {updateLocationMutation.isError ? (
-          <p className="form-error" role="alert">
-            {errorMessage(updateLocationMutation.error, "Could not save project location.")}
           </p>
         ) : null}
         {confirmDiscard ? (
