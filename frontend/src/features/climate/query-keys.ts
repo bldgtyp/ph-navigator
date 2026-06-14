@@ -8,4 +8,7 @@ export const climateQueryKeys = {
     [...climateQueryKeys.all, "locations", datasetId, search] as const,
   location: (datasetId: string, locationId: string) =>
     [...climateQueryKeys.all, "location", datasetId, locationId] as const,
+  // Project-scoped climate sources (keyed by projectId, unlike the
+  // app-wide reference-dataset keys above).
+  sources: (projectId: string) => [...climateQueryKeys.all, "sources", projectId] as const,
 };

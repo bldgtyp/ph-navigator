@@ -4,6 +4,9 @@ import type {
   ClimateLocationDetail,
   ClimateLocationListResponse,
   ClimateLocationSearch,
+  CreateClimateSourceRequest,
+  ProjectClimateSource,
+  ProjectClimateSourceListResponse,
 } from "./types";
 
 export async function fetchClimateDatasets(
@@ -47,4 +50,40 @@ export function buildLocationQuery(search: ClimateLocationSearch): string {
   if (search.limit != null) params.set("limit", String(search.limit));
   if (search.offset != null) params.set("offset", String(search.offset));
   return params.toString();
+}
+
+// ---- Project-scoped climate sources (Phase 3b) ----
+
+function sourcesPath(projectId: string): string {
+  return `/api/v1/projects/${projectId}/climate/sources`;
+}
+
+export async function fetchClimateSources(
+  projectId: string,
+  signal?: AbortSignal,
+): Promise<ProjectClimateSourceListResponse> {
+  return fetchJson<ProjectClimateSourceListResponse>(sourcesPath(projectId), { signal });
+}
+
+export async function createClimateSource(
+  projectId: string,
+  body: CreateClimateSourceRequest,
+): Promise<ProjectClimateSource> {
+  return fetchJson<ProjectClimateSource>(sourcesPath(projectId), {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function deleteClimateSource(projectId: string, sourceId: string): Promise<void> {
+  await fetchJson<void>(`${sourcesPath(projectId)}/${sourceId}`, { method: "DELETE" });
+}
+
+export async function setClimateSourceDefault(
+  projectId: string,
+  sourceId: string,
+): Promise<ProjectClimateSource> {
+  return fetchJson<ProjectClimateSource>(`${sourcesPath(projectId)}/${sourceId}/default`, {
+    method: "PUT",
+  });
 }

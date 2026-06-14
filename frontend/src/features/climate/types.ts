@@ -1,7 +1,7 @@
-// Wire contracts for the app-wide climate reference datasets, mirroring
-// backend `features/climate/models.py` + `record.py`. These datasets are
-// app-scoped reference data (Phius, PHI/PHPP), not project-scoped: the
-// project-climate-source association arrives in Phase 3b.
+// Wire contracts for the climate feature. The reference datasets (Phius,
+// PHI/PHPP) are app-scoped, mirroring backend `features/climate/models.py`
+// + `record.py`; the project-scoped climate *sources* at the bottom mirror
+// `features/project_climate_source/models.py`.
 
 export type ClimateDataset = {
   id: string;
@@ -116,4 +116,35 @@ export type ClimateLocationSearch = {
   near?: { latitude: number; longitude: number };
   limit?: number;
   offset?: number;
+};
+
+// ---- Project-scoped climate sources (Phase 3b) ----
+// Mirrors backend `features/project_climate_source/models.py`. `ref`/`data`
+// are interpreted by `kind`: phius/phi → ref is a reference-location id;
+// epw → ref is the project EPW asset id; ashrae → ref is a station id (data
+// may hold {url}); custom → data is a standardized ClimateRecord.
+export type ClimateSourceKind = "phius" | "phi" | "ashrae" | "epw" | "custom";
+
+export type ProjectClimateSource = {
+  id: string;
+  project_id: string;
+  kind: ClimateSourceKind;
+  ref: string | null;
+  label: string | null;
+  is_default: boolean;
+  data: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ProjectClimateSourceListResponse = {
+  items: ProjectClimateSource[];
+};
+
+export type CreateClimateSourceRequest = {
+  kind: ClimateSourceKind;
+  ref?: string | null;
+  label?: string | null;
+  is_default?: boolean;
+  data?: Record<string, unknown> | null;
 };

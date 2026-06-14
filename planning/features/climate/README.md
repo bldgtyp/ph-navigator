@@ -3,11 +3,11 @@ DATE: 2026-06-13
 TIME: -
 STATUS: Active — Phase 1 + Phase 2 implemented 2026-06-13 (Phius importer
   revalidated against the real 1007-station set + seeded). Phase 3 is in
-  progress: **3a COMPLETE** (the Climate tab + reference-dataset browser +
-  the migrated location editor; Settings now read-only) and **3b backend
-  LANDED** (`project_climate_source` model + routes + MCP + tests).
-  Remaining: the 3b frontend attach/select UI, then 3c charts + sun-path.
-  The PHI/PHPP xlsx importer remains a deferred Phase-2 slice (workbook on
+  progress: **3a + 3b COMPLETE** (2026-06-14) — the Climate tab hosts the
+  location editor (Settings read-only), the climate-sources roster (attach
+  Phius/PHI/ASHRAE/EPW, one default), and the reference-dataset browser.
+  Next: 3c charts + sun-path. Deferred slices: the climate-source
+  custom-record entry form, and the PHI/PHPP xlsx importer (workbook on
   disk).
 AUTHOR: Claude (for Ed)
 SCOPE: Router for the project-scoped Climate feature — a top-level tab
@@ -22,7 +22,7 @@ RELATED:
   - phases/phase-02-reference-datasets-and-format.md
   - phases/phase-02b-phi-phpp-importer.md (deferred)
   - phases/phase-03-climate-tab-ui.md
-  - phases/phase-03b-climate-source-attach-select.md (backend landed; frontend pending)
+  - phases/phase-03b-climate-source-attach-select.md (complete)
   - phases/phase-03c-climate-visualization.md (deferred)
   - phases/phase-04-design-conditions-and-metrics.md (deferred)
   - PLAN.md → "Deferred work index" (the later-phase roadmap)
@@ -98,9 +98,11 @@ in progress** — sub-phase **3a is complete**: the Climate tab (placed after
 Status) with the reference-dataset browser, the standardized record as
 monthly + design-condition tables, and the **migrated location editor**
 (extracted into a reusable `useProjectLocationForm` hook; Settings now shows
-a read-only summary). 3b's **backend is landed** (`project_climate_source`
-model + routes + MCP); remaining: the 3b frontend attach/select UI, then 3c
-(charts + sun-path visual). Phase 4 (per-source design
+a read-only summary). **3b is complete** — the project-scoped
+`project_climate_source` model + routes + MCP, and the Climate-tab
+**sources roster** (attach a Phius/PHI station from the browser, an ASHRAE
+pointer, or the project EPW; one default — D-CL-4/9/11). Next: 3c (charts +
+sun-path visual). Phase 4 (per-source design
 conditions) gates the fRSI/comfort consumers. The one remaining deferred
 Phase-2 slice is the PHI/PHPP xlsx importer (workbook on disk; a ~130-column
 PPP-worksheet reverse-engineering job — see phase-02 §5).

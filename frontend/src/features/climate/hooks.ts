@@ -1,7 +1,15 @@
-import { useQuery } from "@tanstack/react-query";
-import { fetchClimateDatasets, fetchClimateLocation, fetchClimateLocations } from "./api";
+import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import {
+  createClimateSource,
+  deleteClimateSource,
+  fetchClimateDatasets,
+  fetchClimateLocation,
+  fetchClimateLocations,
+  fetchClimateSources,
+  setClimateSourceDefault,
+} from "./api";
 import { climateQueryKeys } from "./query-keys";
-import type { ClimateLocationSearch } from "./types";
+import type { ClimateLocationSearch, CreateClimateSourceRequest } from "./types";
 
 export { climateQueryKeys };
 
@@ -33,5 +41,43 @@ export function useClimateLocationQuery(
     queryFn: ({ signal }) =>
       fetchClimateLocation(datasetId as string, locationId as string, signal),
     enabled: Boolean(datasetId) && Boolean(locationId),
+  });
+}
+
+// ---- Project-scoped climate sources (Phase 3b) ----
+
+function invalidateClimateSourceQueries(queryClient: QueryClient, projectId: string) {
+  return queryClient.invalidateQueries({ queryKey: climateQueryKeys.sources(projectId) });
+}
+
+export function useClimateSourcesQuery(projectId: string) {
+  return useQuery({
+    queryKey: climateQueryKeys.sources(projectId),
+    queryFn: ({ signal }) => fetchClimateSources(projectId, signal),
+    select: (payload) => payload.items,
+  });
+}
+
+export function useCreateClimateSourceMutation(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CreateClimateSourceRequest) => createClimateSource(projectId, body),
+    onSuccess: () => invalidateClimateSourceQueries(queryClient, projectId),
+  });
+}
+
+export function useDeleteClimateSourceMutation(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (sourceId: string) => deleteClimateSource(projectId, sourceId),
+    onSuccess: () => invalidateClimateSourceQueries(queryClient, projectId),
+  });
+}
+
+export function useSetClimateSourceDefaultMutation(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (sourceId: string) => setClimateSourceDefault(projectId, sourceId),
+    onSuccess: () => invalidateClimateSourceQueries(queryClient, projectId),
   });
 }

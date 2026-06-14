@@ -1,0 +1,210 @@
+import { useState } from "react";
+import { Trash2 } from "lucide-react";
+import { errorMessage } from "../../../shared/lib/errors";
+import type { ProjectDetail } from "../../projects/types";
+import type { ProjectLocation } from "../../projects/types";
+import {
+  useClimateSourcesQuery,
+  useDeleteClimateSourceMutation,
+  useSetClimateSourceDefaultMutation,
+} from "../hooks";
+import { climateSourceKindLabel, climateSourceSubtitle } from "../lib";
+import type { CreateClimateSourceRequest, ProjectClimateSource } from "../types";
+
+// The project's attached climate sources (D-CL-4): a roster with the
+// default radio (D-CL-11) plus the non-dataset attach affordances (ASHRAE
+// pointer, the project EPW). Phius/PHI sources are attached from the
+// reference-dataset browser, which calls the same `onAttach`.
+export function ClimateSourcesSection({
+  project,
+  location,
+  onAttach,
+  isAttaching,
+  attachError,
+}: {
+  project: ProjectDetail;
+  location: ProjectLocation | undefined;
+  onAttach: (body: CreateClimateSourceRequest) => void;
+  isAttaching: boolean;
+  attachError: Error | null;
+}) {
+  const canEdit = project.access_mode === "editor";
+  const sourcesQuery = useClimateSourcesQuery(project.id);
+  const deleteMutation = useDeleteClimateSourceMutation(project.id);
+  const setDefaultMutation = useSetClimateSourceDefaultMutation(project.id);
+
+  if (sourcesQuery.isLoading) {
+    return <p className="form-note">Loading climate sources…</p>;
+  }
+  if (sourcesQuery.error) {
+    return (
+      <p className="form-error">
+        {errorMessage(sourcesQuery.error, "Could not load climate sources.")}
+      </p>
+    );
+  }
+
+  const sources = sourcesQuery.data ?? [];
+  const rosterError = deleteMutation.error ?? setDefaultMutation.error ?? attachError;
+
+  return (
+    <div className="climate-sources">
+      {sources.length === 0 ? (
+        <p className="form-note">No climate sources attached yet.</p>
+      ) : (
+        <ul className="climate-source-list">
+          {sources.map((source) => (
+            <SourceRow
+              key={source.id}
+              source={source}
+              canEdit={canEdit}
+              busy={setDefaultMutation.isPending || deleteMutation.isPending}
+              onSetDefault={() => setDefaultMutation.mutate(source.id)}
+              onRemove={() => deleteMutation.mutate(source.id)}
+            />
+          ))}
+        </ul>
+      )}
+
+      {rosterError ? (
+        <p className="form-error" role="alert">
+          {errorMessage(rosterError, "Could not update climate sources.")}
+        </p>
+      ) : null}
+
+      {canEdit ? (
+        <div className="climate-source-attach">
+          <AshraeAttachForm onAttach={onAttach} isAttaching={isAttaching} />
+          <EpwAttachButton location={location} onAttach={onAttach} isAttaching={isAttaching} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function SourceRow({
+  source,
+  canEdit,
+  busy,
+  onSetDefault,
+  onRemove,
+}: {
+  source: ProjectClimateSource;
+  canEdit: boolean;
+  busy: boolean;
+  onSetDefault: () => void;
+  onRemove: () => void;
+}) {
+  const kindLabel = climateSourceKindLabel(source.kind);
+  return (
+    <li className="climate-source-row">
+      <input
+        type="radio"
+        name="climate-default-source"
+        className="climate-source-default"
+        checked={source.is_default}
+        disabled={!canEdit || busy}
+        onChange={onSetDefault}
+        aria-label={`Set ${kindLabel} source as default`}
+      />
+      <span className="climate-source-kind">{kindLabel}</span>
+      <span className="climate-source-label">{climateSourceSubtitle(source)}</span>
+      {canEdit ? (
+        <button
+          type="button"
+          className="text-button climate-source-remove"
+          onClick={onRemove}
+          disabled={busy}
+          aria-label={`Remove ${kindLabel} source`}
+        >
+          <Trash2 size={16} aria-hidden="true" />
+        </button>
+      ) : null}
+    </li>
+  );
+}
+
+function AshraeAttachForm({
+  onAttach,
+  isAttaching,
+}: {
+  onAttach: (body: CreateClimateSourceRequest) => void;
+  isAttaching: boolean;
+}) {
+  const [station, setStation] = useState("");
+  const [url, setUrl] = useState("");
+  const trimmedStation = station.trim();
+
+  const attach = () => {
+    if (!trimmedStation) return;
+    onAttach({
+      kind: "ashrae",
+      ref: trimmedStation,
+      label: trimmedStation,
+      data: url.trim() ? { url: url.trim() } : null,
+    });
+    setStation("");
+    setUrl("");
+  };
+
+  return (
+    <div className="climate-source-form">
+      <span className="climate-source-form-title">Attach ASHRAE station</span>
+      <div className="climate-source-form-row">
+        <input
+          value={station}
+          onChange={(event) => setStation(event.target.value)}
+          placeholder="Station id (e.g. 725060)"
+          aria-label="ASHRAE station id"
+        />
+        <input
+          value={url}
+          onChange={(event) => setUrl(event.target.value)}
+          placeholder="ashrae-meteo.info URL (optional)"
+          aria-label="ASHRAE URL"
+        />
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={attach}
+          disabled={!trimmedStation || isAttaching}
+        >
+          Attach
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function EpwAttachButton({
+  location,
+  onAttach,
+  isAttaching,
+}: {
+  location: ProjectLocation | undefined;
+  onAttach: (body: CreateClimateSourceRequest) => void;
+  isAttaching: boolean;
+}) {
+  const epwAssetId = location?.epw_asset_id ?? null;
+  const epwName = location?.epw?.filename ?? null;
+
+  return (
+    <div className="climate-source-form">
+      <span className="climate-source-form-title">Attach project EPW</span>
+      {epwAssetId ? (
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={() =>
+            onAttach({ kind: "epw", ref: epwAssetId, label: epwName ?? "Project EPW" })
+          }
+          disabled={isAttaching}
+        >
+          Attach {epwName ?? "EPW"}
+        </button>
+      ) : (
+        <p className="form-note">Upload an EPW in the location editor above to attach it.</p>
+      )}
+    </div>
+  );
+}

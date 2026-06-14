@@ -15,14 +15,18 @@ const PAGE_SIZE = 25;
 
 // Browse the app-wide reference datasets: pick a dataset version, filter
 // its locations by country/region (or nearest-to-project), and inspect one
-// location's standardized record. Read-only — attaching a source to the
-// project is Phase 3b.
+// location's standardized record. When `onAttach` is supplied (editors), the
+// selected Phius/PHI location can be attached to the project as a source.
 export function ClimateDatasetBrowser({
   unitSystem,
   projectCoords,
+  onAttach,
+  attachPending = false,
 }: {
   unitSystem: UnitSystem;
   projectCoords: { latitude: number; longitude: number } | null;
+  onAttach?: (source: { kind: "phius" | "phi"; ref: string; label: string }) => void;
+  attachPending?: boolean;
 }) {
   const datasetsQuery = useClimateDatasetsQuery();
   const [datasetId, setDatasetId] = useState<string | undefined>(undefined);
@@ -45,6 +49,15 @@ export function ClimateDatasetBrowser({
         };
   const locationsQuery = useClimateLocationsQuery(activeDatasetId, search);
   const detailQuery = useClimateLocationQuery(activeDatasetId, selectedLocationId);
+  const detail = detailQuery.data;
+
+  // Only Phius/PHI datasets pin to a project source (D-CL-4); the kind is
+  // the active dataset's provider.
+  const activeDataset = datasets.find((dataset) => dataset.id === activeDatasetId);
+  const attachKind: "phius" | "phi" | null =
+    activeDataset?.provider === "phius" || activeDataset?.provider === "phi"
+      ? activeDataset.provider
+      : null;
 
   const selectDataset = (id: string) => {
     setDatasetId(id);
@@ -127,10 +140,24 @@ export function ClimateDatasetBrowser({
             <p className="form-error">
               {errorMessage(detailQuery.error, "Could not load the climate record.")}
             </p>
-          ) : detailQuery.data ? (
+          ) : detail ? (
             <>
-              <h4 className="climate-detail-title">{detailQuery.data.name}</h4>
-              <ClimateRecordTable record={detailQuery.data.record} unitSystem={unitSystem} />
+              <div className="climate-detail-header">
+                <h4 className="climate-detail-title">{detail.name}</h4>
+                {onAttach && attachKind ? (
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={attachPending}
+                    onClick={() =>
+                      onAttach({ kind: attachKind, ref: detail.id, label: detail.name })
+                    }
+                  >
+                    {attachPending ? "Attaching…" : "Attach as source"}
+                  </button>
+                ) : null}
+              </div>
+              <ClimateRecordTable record={detail.record} unitSystem={unitSystem} />
             </>
           ) : null}
         </div>
