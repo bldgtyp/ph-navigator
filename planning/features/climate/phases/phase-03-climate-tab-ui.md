@@ -1,11 +1,11 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: In progress (2026-06-13) — decomposed into 3a/3b/3c (see §0).
-  Sub-phase **3a COMPLETE** (tab + reference-dataset browser + record tables
-  + the migrated location editor; Settings now read-only; `make ci` green).
-  3b (project-climate source model + attach/select; needs new backend) and
-  3c (charting + sun-path visual) follow.
+STATUS: COMPLETE (2026-06-14) — all three sub-phases done. **3a** (tab +
+  reference-dataset browser + record tables + migrated location editor),
+  **3b** (project-climate source model + attach/select roster), and **3c**
+  (recharts monthly graphs behind a Table/Charts toggle + the 2D SVG
+  sun-path visual) all landed; `make ci` green. PRD §7 Phase 3 met.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff — the Climate top-level tab: location
   record + multi-source attach/select + per-source visualization.
@@ -69,9 +69,11 @@ So Phase 3 ships in three sub-phases:
   location, ASHRAE pointer, EPW, custom; per-project default per D-CL-11) +
   the frontend attach/select UI.
 - **3c — Visualization** → **`phase-03c-climate-visualization.md`**.
-  Charting-lib decision + monthly graphs for the active source; the
-  sun-path visual (`useSunPathQuery` on the Phase-1 endpoint; coordinate
-  with / reuse `model-viewer-sun-path` geometry).
+  **COMPLETE 2026-06-14:** recharts monthly temperature/radiation graphs
+  behind a Table/Charts toggle on the standardized record; the 2D SVG
+  sun-path diagram (`useSunPathQuery` on the Phase-1 endpoint; null →
+  "Set location" empty state). `ClimateTab` lazy-loaded so recharts stays
+  out of the initial bundle.
 
 Tab placement (Ed 2026-06-13): **near the front, right after Status.**
 

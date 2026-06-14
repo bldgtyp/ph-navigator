@@ -1,9 +1,11 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Planned (the visualization slice of Phase 3). Needs a charting
-  dependency decision and a sun-path render. Best done after 3b so charts
-  can render the selected/active source.
+STATUS: COMPLETE (2026-06-14) — recharts chosen + installed; monthly
+  temperature/radiation graphs render behind a Table/Charts toggle on the
+  standardized record; the 2D SVG sun-path diagram renders against the
+  Phase-1 endpoint (empty state when the location is unset). `make ci`
+  green. See §Outcome.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff — monthly climate graphs for the active
   source + the sun-path visual in the Climate tab.
@@ -15,7 +17,7 @@ RELATED:
   - ../decisions.md (D-CL-11 per-analysis default)
 ---
 
-# Climate Phase 3c — Visualization: charts + sun path (deferred)
+# Climate Phase 3c — Visualization: charts + sun path
 
 The "see the data" half of the tab. 3a renders the standardized record as
 read-only tables; 3c adds **monthly graphs** and the **sun-path visual**.
@@ -72,3 +74,44 @@ Two distinct pieces of new infrastructure, hence its own slice.
   source with the IP/SI toggle; the sun-path visual renders (and shows the
   empty state when location is unset); `make ci` green. Completes PRD §7
   Phase 3 alongside 3a/3b.
+
+## Outcome (2026-06-14)
+
+Frontend-only; no new backend (charts read the 3a record; the sun path reads
+the Phase-1 `GET /projects/{id}/sun-path` endpoint).
+
+- **Charting — recharts (3.8.1).** Chosen over visx / hand-rolled SVG for
+  declarative, low-maintenance monthly line charts. Installed clean under the
+  pnpm 24h `minimumReleaseAge` + `blockExoticSubdeps` rules. Recorded in
+  `context/TECH_STACK.md`.
+- **Monthly graphs.** `chart-data.ts` holds pure, unit-tested transforms from
+  a `ClimateRecord` to recharts rows (temperature IP/SI-aware via `cToF`;
+  radiation stays SI — no IP form). `ClimateRecordCharts` renders monthly
+  temperature + radiation line charts; series colors come from new
+  `--chart-*` design tokens in `tokens.css` (feature code stays hex-free).
+  `ClimateRecordView` wraps the 3a tables + the graphs behind a Table/Charts
+  toggle; the dataset browser renders this view.
+- **Sun-path visual — 2D SVG.** `sun-path.ts` projects the origin-centered,
+  unit-radius DTO top-down (z dropped, y flipped for SVG) into SVG paths:
+  the hourly analemmas, the tessellated monthly day arcs (Arc3D sampled in
+  its plane basis), and the compass rings + azimuth ticks. `SunPathDiagram`
+  runs `useSunPathQuery` and renders the SVG, with a "Set the project
+  location" empty state when the endpoint returns null. The DTO wire types
+  are mirrored in `climate/types.ts` (climate may not import `model_viewer`,
+  where the same shape lives — imports are one-way).
+- **Bundle.** `ClimateTab` is now lazy-loaded (Suspense), keeping recharts
+  out of the initial bundle (index 1682→1300 kB; ClimateTab its own ~379 kB
+  chunk), matching the ModelTab/three.js split.
+- **Tests.** `__tests__/chart-data.test.ts` (row mapping + IP/SI),
+  `__tests__/sun-path.test.tsx` (top-down projection coordinates + arc
+  tessellation; diagram populated vs. null empty state). `make ci` green.
+
+**Deferred / not done here:**
+- **Cardinal N/E/S/W letters** on the sun-path compass — the DTO carries no
+  label geometry, so labelling would need the project true-north passed
+  separately. Left as a refinement.
+- **Charts render the *browsed* record**, not yet a resolved *attached
+  source* — per the phase plan, the graphs reuse the 3a dataset-browser
+  record. Rendering an arbitrary attached source's record (resolving
+  phius/phi `ref` → record, custom `data` → record) lands with the Phase-4
+  consumers / a source-detail view.

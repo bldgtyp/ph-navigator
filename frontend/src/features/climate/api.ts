@@ -7,6 +7,7 @@ import type {
   CreateClimateSourceRequest,
   ProjectClimateSource,
   ProjectClimateSourceListResponse,
+  SunPathAndCompass,
 } from "./types";
 
 export async function fetchClimateDatasets(
@@ -50,6 +51,15 @@ export function buildLocationQuery(search: ClimateLocationSearch): string {
   if (search.limit != null) params.set("limit", String(search.limit));
   if (search.offset != null) params.set("offset", String(search.offset));
   return params.toString();
+}
+
+// The sun-path + compass diagram for the project location, or null when the
+// location is unset (Phase 3c; Phase 1 endpoint).
+export async function fetchProjectSunPath(
+  projectId: string,
+  signal?: AbortSignal,
+): Promise<SunPathAndCompass | null> {
+  return fetchJson<SunPathAndCompass | null>(`/api/v1/projects/${projectId}/sun-path`, { signal });
 }
 
 // ---- Project-scoped climate sources (Phase 3b) ----

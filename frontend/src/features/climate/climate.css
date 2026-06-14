@@ -329,3 +329,29 @@
   width: 100%;
   height: 260px;
 }
+
+/* Sun-path diagram (Phase 3c) — 2D SVG projected from the /sun-path DTO */
+.climate-sun-path {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  aspect-ratio: 1 / 1;
+}
+
+.climate-sun-path-compass circle,
+.climate-sun-path-compass line {
+  stroke: var(--chart-grid);
+  stroke-width: 0.75;
+}
+
+.climate-sun-path-arcs path {
+  stroke: var(--chart-4);
+  stroke-width: 1;
+  opacity: 0.7;
+}
+
+.climate-sun-path-analemmas path {
+  stroke: var(--chart-1);
+  stroke-width: 0.75;
+  opacity: 0.85;
+}

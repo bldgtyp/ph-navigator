@@ -44,6 +44,7 @@ Use a boring, explicit stack:
 | Tables | TanStack Table v8 + `@tanstack/react-virtual` + shadcn-table primitives — see Table-View section below |
 | Client/UI state | Zustand |
 | 3D viewer | three + React Three Fiber + drei + react-three/postprocessing |
+| Charts | recharts (declarative line/bar; Climate monthly graphs). Lazy-loaded with its tab so it stays out of the initial bundle. Sun-path diagrams are hand-rolled SVG, not recharts |
 | Object storage | Cloudflare R2 |
 | Quality gates | Ty + Ruff for backend static checks; pytest, Vitest, Playwright for tests |
 | MCP auth | Project-scoped bearer tokens stored hashed in `mcp_tokens` |

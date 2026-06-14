@@ -148,3 +148,33 @@ export type CreateClimateSourceRequest = {
   is_default?: boolean;
   data?: Record<string, unknown> | null;
 };
+
+// ---- Sun-path diagram (Phase 3c) ----
+// Mirrors the backend `SunPathAndCompassDTOSchema` (ladybug geometry, served
+// by GET /projects/{id}/sun-path). Origin-centered, unit-radius; the frontend
+// projects it top-down to a 2D SVG. Defined here rather than imported from
+// `model_viewer` because the climate→model_viewer import direction is
+// forbidden (imports flow one-way, model_viewer→climate).
+export type Vec3 = [number, number, number];
+
+export type SunPathPlane = { n: Vec3; o: Vec3; x: Vec3 };
+
+export type Polyline3D = { vertices: Vec3[] };
+
+export type Arc3D = { plane: SunPathPlane; radius: number; a1: number; a2: number };
+
+export type Arc2D = { c: [number, number]; r: number; a1: number; a2: number };
+
+export type LineSegment2D = { p: [number, number]; v: [number, number] };
+
+export type SunPathAndCompass = {
+  sunpath: {
+    hourly_analemma_polyline3d: Polyline3D[];
+    monthly_day_arc3d: Arc3D[];
+  };
+  compass: {
+    all_boundary_circles: Arc2D[];
+    major_azimuth_ticks: LineSegment2D[];
+    minor_azimuth_ticks: LineSegment2D[];
+  };
+};
