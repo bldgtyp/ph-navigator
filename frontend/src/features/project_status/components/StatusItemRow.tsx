@@ -101,11 +101,13 @@ export function StatusItemRow({
           ) : (
             <h3>{item.title}</h3>
           )}
-          <span className={`status-badge ${item.state}`}>{STATUS_STATE_LABELS[item.state]}</span>
+          <span className={`chip chip--sm status-badge ${item.state}`}>
+            {STATUS_STATE_LABELS[item.state]}
+          </span>
           {item.completion_date ? (
             <button
               type="button"
-              className="date-pill"
+              className="chip chip--sm date-pill"
               disabled={!isEditor}
               onClick={isEditor ? onEdit : undefined}
             >

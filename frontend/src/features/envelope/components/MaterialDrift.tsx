@@ -44,7 +44,7 @@ type DriftAction = ProjectMaterialRefreshChoice["action"];
 export function MaterialDriftBadge({ item }: { item: ProjectMaterialDriftItem | null }) {
   if (!item || item.state === "in_sync") return null;
   return (
-    <span className={`material-drift-badge ${item.state}`}>
+    <span className={`chip chip--sm material-drift-badge ${item.state}`}>
       {MATERIAL_DRIFT_STATE_LABELS[item.state]}
     </span>
   );

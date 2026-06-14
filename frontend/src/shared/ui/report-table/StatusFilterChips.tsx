@@ -30,7 +30,7 @@ export function StatusFilterChips<K extends ReportStatusKey>({
             <button
               key={option.value}
               type="button"
-              className="report-status-chip"
+              className="chip chip--md chip--outline chip--interactive report-status-chip"
               aria-pressed={pressed}
               onClick={() => onChange(option.value)}
             >

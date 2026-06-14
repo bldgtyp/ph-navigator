@@ -486,11 +486,30 @@ parentheses.
    the 13px/11px px font-sizes should join the rem scale.
 
 **P2 — Build the missing shared primitives:**
-6. One tokenized `.chip`/`.pill` primitive; migrate the ~12 chips. (M)
+6. ✅ **Chip primitive started 2026-06-14 (on `main`).** Added a tokenized
+   `.chip` primitive to `base.css` — base shell + `.chip--sm`/`--md`
+   sizes + `.chip--outline`/`--interactive` variants — and migrated 4
+   chips to compose it: `report-status-chip` (neutral), `status-badge`,
+   `date-pill`, `material-drift-badge` (≤1px padding standardization).
+   Verified: `make ci` green; Playwright before/after on the status page
+   (`status-badge`) and envelope Materials filters (`report-status-chip`)
+   confirmed clean (`working/css-review/chip-*.png`).
+   - *Finding:* P1's tokenization had already removed most of the chip
+     "drift" — the remaining classes are largely **semantically distinct**
+     (interactive filter chip vs mono status label vs data-coloured table
+     pill), so the win is a reusable forward-looking primitive + shell
+     dedup, not collapsing them to one look.
+   - *Still to migrate (lower priority, intentional or complex):*
+     `read-only-pill`, `model-file-chip`/`model-loading-chip`,
+     `aperture-name-pill`, `manufacturer-column__badge`; left as-is:
+     `aperture-uvalue-chip` (metric + info-button), `pill-tab` (nav),
+     data-table `single-select-pill`/`linked-record-pill` (user-coloured).
+     Optional future: unify `.chip--sm` padding so all small chips match.
 7. Extract shared drawing widgets used by apertures+envelope into
    `shared/ui/canvas/`. (M–L)
 8. Route all SVG/3D color through tokens; unify the 3D+chart+brand
-   palette source. (M)
+   palette source. (M) — *the 2 neutral SVG-stroke swaps
+   (`rgba(0,0,0,0.5)`→`--svg-line-heavy`) are still pending.*
 
 **P3 — Structure & discoverability (owner's goal #3):**
 9. `src/styles/README.md` token+class catalog + `shared/ui/index.ts`
