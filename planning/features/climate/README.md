@@ -18,8 +18,12 @@ RELATED:
   - research.md
   - phases/phase-01-sun-path-service.md
   - phases/phase-02-reference-datasets-and-format.md
+  - phases/phase-02b-phi-phpp-importer.md (deferred)
   - phases/phase-03-climate-tab-ui.md
-  - phases/phase-04-design-conditions-and-metrics.md
+  - phases/phase-03b-climate-source-attach-select.md (deferred)
+  - phases/phase-03c-climate-visualization.md (deferred)
+  - phases/phase-04-design-conditions-and-metrics.md (deferred)
+  - PLAN.md → "Deferred work index" (the later-phase roadmap)
   - planning/archive/project-location/ (the data foundation this builds on)
   - planning/features_v1.1/model-viewer-sun-path/ (a Phase-1 consumer)
 ---

@@ -15,6 +15,8 @@ RELATED:
   - ../decisions.md (D-CL-3 tab, D-CL-4 sources, D-CL-9 custom, D-CL-11)
   - phase-01-sun-path-service.md
   - phase-02-reference-datasets-and-format.md
+  - phase-03b-climate-source-attach-select.md (3b — own doc)
+  - phase-03c-climate-visualization.md (3c — own doc)
 ---
 
 # Climate Phase 3 — Climate tab UI
@@ -58,13 +60,14 @@ So Phase 3 ships in three sub-phases:
   `features/climate/__tests__/`. **Remaining 3a step:** migrate the rich
   location *editor* (`EditableLocationFields`) into the tab (D-CL-3) —
   today editing still lives in Settings; the tab shows location read-only.
-- **3b — Source attach/select** — new backend `project_climate_source`
-  model + table + routes (attach Phius/PHI location, ASHRAE pointer, EPW,
-  custom; per-project default per D-CL-11) + the frontend attach/select UI.
-- **3c — Visualization** — charting-lib decision + monthly graph/table
-  for the active source; the sun-path visual (coordinate with /
-  reuse `model-viewer-sun-path` geometry; `useSunPathQuery` on the
-  Phase-1 endpoint).
+- **3b — Source attach/select** → **`phase-03b-climate-source-attach-select.md`**.
+  New backend `project_climate_source` model + routes (attach Phius/PHI
+  location, ASHRAE pointer, EPW, custom; per-project default per D-CL-11) +
+  the frontend attach/select UI.
+- **3c — Visualization** → **`phase-03c-climate-visualization.md`**.
+  Charting-lib decision + monthly graphs for the active source; the
+  sun-path visual (`useSunPathQuery` on the Phase-1 endpoint; coordinate
+  with / reuse `model-viewer-sun-path` geometry).
 
 Tab placement (Ed 2026-06-13): **near the front, right after Status.**
 
