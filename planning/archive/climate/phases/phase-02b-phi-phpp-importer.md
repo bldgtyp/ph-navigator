@@ -1,11 +1,13 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Deferred (Ed 2026-06-13 — behind the Phase-3 tab). Investigated:
-  the workbook is on disk and parseable in principle, but it is a
-  ~130-column reverse-engineering job, not a quick parser. Extends Phase 2
-  (reference-dataset store); plugs into the existing provider-agnostic
-  `seed_dataset(...)` + `--provider` CLI seam.
+STATUS: Superseded — promoted to its own v1.1 feature at
+  `planning/features_v1.1/climate-phi-importer/` (2026-06-14). This is the
+  original handoff, kept for history. Deferred (Ed 2026-06-13 — behind the
+  Phase-3 tab). Investigated: the workbook is on disk and parseable in
+  principle, but it is a ~130-column reverse-engineering job, not a quick
+  parser. Extends Phase 2 (reference-dataset store); plugs into the existing
+  provider-agnostic `seed_dataset(...)` + `--provider` CLI seam.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff — the PHI/PHPP reference-dataset importer
   (`provider='phi', version='10.6'`), the second app-wide climate dataset
@@ -28,7 +30,7 @@ the parser is missing.
 ## Why deferred (investigated 2026-06-13)
 
 The real workbook is on disk
-(`planning/features/climate/example_data/phi_phpp_10_6_climate_data/phi_phpp_10_6_climate_data.xlsx`,
+(`planning/archive/climate/example_data/phi_phpp_10_6_climate_data/phi_phpp_10_6_climate_data.xlsx`,
 gitignored). Inspection showed it is **not** a clean per-location table:
 
 - It is a live **PHPP `Climate` worksheet** (sheets `Sheet1` + `Climate`;

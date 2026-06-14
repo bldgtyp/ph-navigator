@@ -88,7 +88,7 @@ the lens composes them.
 
 > **Realigned 2026-06-13.** The sun-path builder + `GET
 > /projects/{id}/sun-path` endpoint + MCP tool live in **Climate
-> Phase 1** (`planning/features/climate/phases/phase-01-sun-path-service.md`),
+> Phase 1** (`planning/archive/climate/phases/phase-01-sun-path-service.md`),
 > their proper home (climate-derived, multi-consumer — D-CL-2). The
 > contract this feature consumes:
 

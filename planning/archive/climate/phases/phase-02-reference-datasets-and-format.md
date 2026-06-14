@@ -86,7 +86,7 @@ build on.
   it. The interactive admin upload/update UI is **out of scope** (Ed);
   a CLI/seed entry point is enough now.
 - **Seed-file availability:** the raw example files
-  (`planning/features/climate/example_data/`) are **gitignored** (Ed,
+  (`planning/archive/climate/example_data/`) are **gitignored** (Ed,
   2026-06-13) — they are not in the repo. `../research.md` is the
   durable record of their shape. At implementation, Ed provides the
   canonical Phius/PHI source files; place them in a committed backend
@@ -175,7 +175,7 @@ route list/search/nearest/detail + 404 + bad-`near`, MCP parity + auth).
 ### Real Phius seed — DONE (2026-06-13)
 
 Ed's real Phius 2022 files were on disk (gitignored under
-`planning/features/climate/example_data/`). The parser was rewritten
+`planning/archive/climate/example_data/`). The parser was rewritten
 against the verified real format, all 1007 stations parse + seed clean
 (50 states; ~1.3 s), and the seed was verified against the dev DB
 (`location_count == 1007`). The honeybee_ph round-trip stays lossless.

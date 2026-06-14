@@ -1,9 +1,11 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Deferred to later feature work (Ed 2026-06-13 — focus is the
-  data store first). Needs a scheduled fRSI/comfort consumer + D-CL-5.
-  Builds on Phase 2 datasets.
+STATUS: Superseded — promoted to its own v1.1 feature at
+  `planning/features_v1.1/climate-design-conditions/` (2026-06-14). This is
+  the original handoff, kept for history. Deferred to later feature work
+  (Ed 2026-06-13 — focus is the data store first). Needs a scheduled
+  fRSI/comfort consumer + D-CL-5. Builds on Phase 2 datasets.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff — per-source design conditions + EPW
   metrics; the source-parameterized contract consumed by fRSI / window

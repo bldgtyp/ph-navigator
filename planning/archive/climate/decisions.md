@@ -1,12 +1,12 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Active — focus is the climate data STORE (Phases 1–3); design
-  conditions / fRSI / temp-asymmetry USE-cases deferred to later feature
-  work (Ed 2026-06-13). D-CL-4 resolved (store all; ASHRAE pointer);
-  D-CL-10 resolved (mirror honeybee_ph.site; reuse io_climate.py);
-  D-CL-1..3, D-CL-6..9, D-CL-11 proposed; D-CL-5 deferred to the fRSI
-  consumer.
+STATUS: Complete (archived 2026-06-14) — the climate data STORE (Phases 1–3)
+  shipped; design conditions / fRSI / temp-asymmetry USE-cases moved to
+  planning/features_v1.1/climate-design-conditions. D-CL-4 resolved (store
+  all; ASHRAE pointer); D-CL-10 resolved (mirror honeybee_ph.site; reuse
+  io_climate.py); D-CL-1..3, D-CL-6..9, D-CL-11 implemented; D-CL-5 deferred
+  to the fRSI consumer.
 AUTHOR: Claude (for Ed)
 SCOPE: Decision ledger for the Climate feature.
 RELATED:

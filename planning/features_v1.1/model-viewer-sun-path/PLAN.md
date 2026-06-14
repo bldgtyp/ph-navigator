@@ -14,7 +14,7 @@ RELATED:
 # Sun Path — PLAN (frontend render; backend is Climate Phase 1)
 
 > **Realigned 2026-06-13.** The backend builder + `sun-path` endpoint
-> moved to Climate Phase 1 (`planning/features/climate/`). This plan now
+> moved to Climate Phase 1 (`planning/archive/climate/`). This plan now
 > covers only the Model Viewer frontend render, which **depends on
 > Climate Phase 1**.
 

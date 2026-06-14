@@ -11,7 +11,7 @@ RELATED:
   - ../PRD.md
   - ../decisions.md (D-SP-1, D-PL-4)
   - ../PLAN.md
-  - planning/features/climate/phases/phase-01-sun-path-service.md (the backend)
+  - planning/archive/climate/phases/phase-01-sun-path-service.md (the backend)
   - research/v1-3d-model-viewer-reference.md §9.4, §10
 ---
 
@@ -20,7 +20,7 @@ RELATED:
 > **Realigned 2026-06-13.** The backend (builder + `GET
 > /projects/{id}/sun-path` endpoint + MCP + the north-sign fixture)
 > moved to **Climate Phase 1**
-> (`planning/features/climate/phases/phase-01-sun-path-service.md`).
+> (`planning/archive/climate/phases/phase-01-sun-path-service.md`).
 > This phase is now **frontend-only** and **depends on Climate Phase 1
 > shipping the endpoint.** It points the Site & Sun lens at that
 > endpoint and completes the renderer.
@@ -41,7 +41,7 @@ endpoint exists and returns `SunPathAndCompassDTOSchema | null`.
 ## 1. Required reading
 
 - `../PRD.md` §5 (the consumed contract) + §6 (frontend contract).
-- `planning/features/climate/phases/phase-01-sun-path-service.md` — the
+- `planning/archive/climate/phases/phase-01-sun-path-service.md` — the
   endpoint shape + the unit-radius/origin-centered geometry convention
   this render scales.
 - V1 reference `research/v1-3d-model-viewer-reference.md`:

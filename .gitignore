@@ -66,7 +66,9 @@ phase3-walk/
 
 # ─── Local working notes / agent scratch ───
 working/
-*/features/climate/example_data/*
+# Climate reference example data (Phius/PHI source files) — gitignored
+# wherever the climate feature folder lives (active or archived).
+**/climate/example_data/
 
 # ─── Graphify output ───
 graphify-out/

@@ -19,7 +19,7 @@ RELATED:
 `Active — unblocked, not started. REALIGNED 2026-06-13` to frontend-only.
 PRD, decisions, plan, and both phase handoffs authored 2026-06-13. No
 frontend code written. The sun-path **backend** moved to Climate Phase 1
-(`planning/features/climate/`), which **shipped the endpoint 2026-06-13**;
+(`planning/archive/climate/`), which **shipped the endpoint 2026-06-13**;
 this feature is now the Model Viewer **frontend** consumer and is ready to
 start.
 
@@ -36,12 +36,12 @@ accepted; no decisions open for this feature.
 - **None** — the only blocker (Climate Phase 1) is cleared. The
   `GET /projects/{id}/sun-path` endpoint this feature consumes was
   implemented 2026-06-13
-  (`planning/features/climate/phases/phase-01-sun-path-service.md`,
+  (`planning/archive/climate/phases/phase-01-sun-path-service.md`,
   `make ci` green, pending commit/merge).
 
 ## Prerequisites
 
-- **Climate Phase 1 (`planning/features/climate/`) — implemented
+- **Climate Phase 1 (`planning/archive/climate/`) — implemented
   2026-06-13** (pending merge). The gating prerequisite (owns the
   sun-path endpoint) is met.
 - Model Viewer MVP Phases 2 + 6 merged (Site & Sun renderer stub; the

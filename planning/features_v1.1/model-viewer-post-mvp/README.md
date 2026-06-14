@@ -33,7 +33,7 @@ with detailed phased plans.
 
 | Candidate | Feature folder | Notes |
 |---|---|---|
-| Sun-path **3D render** (D-07) **+** scrubber (Q-VIEW-6) | [`model-viewer-sun-path/`](../model-viewer-sun-path/) | **Realigned 2026-06-13 to frontend-only.** The sun-path *backend* moved to the new **[Climate](../../features/climate/)** feature (Phase 1), which must ship first. This feature renders the diagram over geometry in Site & Sun. D-SP-1 settled (decoupled, location-reactive endpoint, now Climate-owned). |
+| Sun-path **3D render** (D-07) **+** scrubber (Q-VIEW-6) | [`model-viewer-sun-path/`](../model-viewer-sun-path/) | **Realigned 2026-06-13 to frontend-only.** The sun-path *backend* moved to the new **[Climate](../../archive/climate/)** feature (Phase 1), which must ship first. This feature renders the diagram over geometry in Site & Sun. D-SP-1 settled (decoupled, location-reactive endpoint, now Climate-owned). |
 | Legend-as-filter (NEW-VIEW-2 / Q-VIEW-7) | [`model-viewer-legend-filter/`](../model-viewer-legend-filter/) | Ed-flagged near-priority. Frontend-only; reuses the D-11 legend rows + existing bucket-key function. No open decisions. **No Climate dependency** — can go anytime. |
 
 ### Tier 2 — Plannable but gated (own folder, plan ready, idle)
@@ -61,7 +61,7 @@ with detailed phased plans.
 
 ## Recommended order if Ed promotes work
 
-1. **Climate Phase 1** (`planning/features/climate/`) — the sun-path
+1. **Climate Phase 1** (`planning/archive/climate/`) — the sun-path
    *service*; the prerequisite for the sun-path 3D render and the
    Climate tab. Build first (Ed, 2026-06-13).
 2. **Sun-path 3D render** — frontend render in Site & Sun, once Climate
