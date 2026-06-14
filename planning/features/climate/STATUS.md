@@ -85,13 +85,14 @@ storage/API/MCP layer is provider-agnostic; PHI plugs in via the same
 
 ## Next step
 
-Continue `phases/phase-03-climate-tab-ui.md`. **3a is complete** (tab +
-dataset browser + record tables + the migrated location editor; Settings
-now read-only). Next: **3b** (new backend `project_climate_source` model +
-attach/select; D-CL-4/D-CL-11) and **3c** (charting-lib decision +
-monthly graphs + the sun-path visual, coordinated with
-`model-viewer-sun-path`). Independent follow-ups still open: (a) the PHI
-xlsx importer (deferred; see phase-02 §5); (b) promote `ClimateRecord`
+**3a is complete** (tab + dataset browser + record tables + the migrated
+location editor; Settings now read-only). **3b backend is landed**
+(`project_climate_source` model + routes + MCP + tests; 2026-06-14) — the
+remaining 3b slice is the **frontend attach/select UI** (source roster +
+default radio + per-kind attach; see `phase-03b-…` §Outcome). Then **3c**
+(charting-lib decision + monthly graphs + the sun-path visual, coordinated
+with `model-viewer-sun-path`). Independent follow-ups still open: (a) the
+PHI xlsx importer (deferred; see phase-02 §5); (b) promote `ClimateRecord`
 to a `context/` reference doc.
 
 ## Decisions
@@ -116,9 +117,12 @@ to a `context/` reference doc.
   placed after Status, and **owns the location editor**; project Settings
   keeps only a compact read-only summary that points to the tab.
 - **Proposed, recommended (confirm on review):** D-CL-6 (store the EPW),
-  D-CL-7 (durable + editable location; reproducibility via pinning),
-  **D-CL-9 (custom locations — schema supports it; tab wiring is 3b)**,
-  **D-CL-11 (per-analysis source selection — 3b)**.
+  D-CL-7 (durable + editable location; reproducibility via pinning).
+- **Implemented (Phase 3b backend, 2026-06-14):** **D-CL-4** (store all
+  sources — `project_climate_source`, one row per attached source),
+  **D-CL-9** (custom standardized record stored as the `custom` kind's
+  `data`), **D-CL-11** (one project default, partial-unique enforced +
+  `PUT …/default`). The frontend attach/select UI is the remaining 3b slice.
 - **Deferred to later feature work (Ed 2026-06-13):** the design-
   conditions/use-case layer (Phase 4) and **D-CL-5** (fRSI interior
   assumption) and the temperature-asymmetry use-case. Focus is the data
@@ -145,7 +149,7 @@ to a `context/` reference doc.
 | 2 — Reference datasets + standardized format | **Implemented** (2026-06-13; `make ci` green). Phius parser revalidated + real 1007-station seed verified + seed CLI. PHI xlsx importer still deferred (workbook on disk; needs `openpyxl` + `io_climate.py`) | none |
 | 3 — Climate tab UI | **In progress** — 3a **complete** (tab + dataset browser + record tables + migrated location editor; Settings now read-only; `make ci` green). Remaining: 3b + 3c (own docs) | Phase 1 + Phase 2 (met) |
 | 2b — PHI/PHPP importer (`phase-02b-…`) | **Deferred** — ~130-col PPP-worksheet reverse-engineering + `openpyxl`; seed seam ready | independent |
-| 3b — Source attach/select (`phase-03b-…`) | **Deferred/planned** — new backend `project_climate_source` + attach/select UI (D-CL-4/9/11) | 3a complete (met) |
+| 3b — Source attach/select (`phase-03b-…`) | **In progress** — backend **landed** 2026-06-14 (`project_climate_source` table + migration, repo/service, REST CRUD + set-default, MCP list/set-default, tests; `make ci` green). Frontend attach/select UI remains | 3a complete (met) |
 | 3c — Visualization (`phase-03c-…`) | **Deferred/planned** — charting-lib decision + monthly graphs + sun-path visual | after 3b |
 | 4 — Design conditions + metrics | **Deferred** (later feature work) | scheduled fRSI/comfort consumer (+ D-CL-5) |
 
