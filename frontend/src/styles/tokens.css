@@ -16,6 +16,19 @@
   --report-status-complete: #16a34a;
   --report-status-na: #9ca3af;
 
+  /* Categorical chart-series palette (recharts, climate monthly graphs).
+     Distinct, reasonably color-blind-aware hues; consumed via var() so the
+     feature chart code stays hex-free (check:hex). --chart-axis / --chart-grid
+     are the neutral axis + gridline tints. */
+  --chart-axis: #6b7280;
+  --chart-grid: #e5e7eb;
+  --chart-1: #2563eb;
+  --chart-2: #dc2626;
+  --chart-3: #16a34a;
+  --chart-4: #d97706;
+  --chart-5: #7c3aed;
+  --chart-6: #0891b2;
+
   --radius-sm: 5px;
   --phn-radius: var(--radius-sm);
   --phn-control-radius: 6px;

@@ -9,7 +9,7 @@ import {
 } from "../hooks";
 import { datasetLabel, formatLatLong, locationSubtitle } from "../lib";
 import type { ClimateLocationSearch, ClimateLocationSummary } from "../types";
-import { ClimateRecordTable } from "./ClimateRecordTable";
+import { ClimateRecordView } from "./ClimateRecordView";
 
 const PAGE_SIZE = 25;
 
@@ -157,7 +157,7 @@ export function ClimateDatasetBrowser({
                   </button>
                 ) : null}
               </div>
-              <ClimateRecordTable record={detail.record} unitSystem={unitSystem} />
+              <ClimateRecordView record={detail.record} unitSystem={unitSystem} />
             </>
           ) : null}
         </div>

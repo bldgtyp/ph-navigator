@@ -1,7 +1,6 @@
 import { lazy, Suspense } from "react";
 import { AperturesTab } from "../../apertures/routes/AperturesTab";
 import { ThermalBridgesPage } from "../../assets/routes/ThermalBridgesPage";
-import { ClimateTab } from "../../climate/routes/ClimateTab";
 import { EquipmentPage } from "../../equipment/routes/EquipmentPage";
 import { EnvelopePage } from "../../envelope/routes/EnvelopePage";
 import { RoomsPage } from "../../equipment/routes/RoomsPage";
@@ -13,13 +12,23 @@ const ModelTab = lazy(() =>
   import("../../model_viewer/routes/ModelTab").then((module) => ({ default: module.ModelTab })),
 );
 
+// Lazy-loaded so recharts (monthly graphs) stays out of the initial bundle,
+// matching the ModelTab/three.js split.
+const ClimateTab = lazy(() =>
+  import("../../climate/routes/ClimateTab").then((module) => ({ default: module.ClimateTab })),
+);
+
 export function ProjectTabContent({ tab, project }: { tab: ProjectTab; project: ProjectDetail }) {
   if (tab === "status") {
     return <StatusTab project={project} />;
   }
 
   if (tab === "climate") {
-    return <ClimateTab project={project} />;
+    return (
+      <Suspense fallback={<section className="tab-panel climate-tab">Loading climate…</section>}>
+        <ClimateTab project={project} />
+      </Suspense>
+    );
   }
 
   if (tab === "apertures") {
