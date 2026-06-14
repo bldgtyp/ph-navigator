@@ -1,0 +1,18 @@
+
+WORCHESTER REGIONAL ARPT MA	Latitude [°]	42.267	Longitude [°]	-71.883	Height a.s.l. (m)	300			Daily temperature variation summer (K)	8.9			Heating load 1	Heating load 2	Cooling load
+Temperature outdoor	-6.8	-3.8	0.3	6.5	14.2	17.7	21.4	18.9	15.2	9.8	3.7	-1.7	-12.6	-7.4	23.8
+North	28	38	50	52	52	57	57	46	36	27	22	24	45	36	70
+East	50	62	87	93	93	99	101	92	78	62	44	44	81	58	120
+South	102	114	127	100	82	76	83	98	100	112	97	97	170	112	114
+West	46	67	91	91	93	97	101	90	71	61	45	41	75	53	120
+Global	58	80	115	135	167	176	178	163	122	93	57	50	97	69	228
+Dewpoint	-12.6	-9.8	-6.7	-0.2	6.6	11.4	15.0	13.5	10.8	2.9	-3.6	-7.7	4d	4d	2d
+Sky temperature	-25.8	-21.8	-17.0	-8.3	0.4	5.7	9.7	7.6	4.1	-4.5	-12.4	-18.3	w1: 22/1	w2: 10/1	s: 24/7
+Heating degree-hours (12/20)	99668	Cooling degree-hours (24)	907	Wind speed	Jan	4.9	Jul	3.2	m/s
+12-h Temperaturmin.	-22.6 °C	Anteil Nachtstunden < 21 °C und abs. Feuchte < 14 g/kg im Sommer 	30.4%	Anteil Nachtstunden < 21 °C  und abs. Feuchte > 14 g/kg im Sommer 	1.5%
+
+Heating loads (time constant for buildings, number of cold days): Statistics based on: Coldest period / weighting of coldest and cloudiest period
+Cooling (number of hot days): Statistics based on: Mean val.
+
+Albedo = 0.2
+

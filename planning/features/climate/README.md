@@ -1,10 +1,12 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Active — Phase 1 (sun-path service) + Phase 2 (standardized
-  record + app-wide reference datasets) implemented 2026-06-13. Phase 3
-  (the Climate tab) is next. PHI/PHPP xlsx seed importer + the real-data
-  bulk seed are the deferred Phase-2 slices (await Ed's files).
+STATUS: Active — Phase 1 + Phase 2 implemented 2026-06-13 (Phius importer
+  revalidated against the real 1007-station set + seeded). Phase 3 is in
+  progress: **sub-phase 3a shipped** (the Climate tab + reference-dataset
+  browser + read-only location). Remaining: 3a editor migration, 3b
+  source attach/select (new backend), 3c charts + sun-path. The PHI/PHPP
+  xlsx importer remains a deferred Phase-2 slice (workbook on disk).
 AUTHOR: Claude (for Ed)
 SCOPE: Router for the project-scoped Climate feature — a top-level tab
   that owns and visualizes project location + weather basis, and serves
@@ -83,7 +85,14 @@ standardized format) are implemented (2026-06-13).** Phase 1 ships the
 Site & Sun 3D render (`planning/features_v1.1/model-viewer-sun-path/`, now
 frontend-only). Phase 2 ships the `ClimateRecord` schema, the app-wide
 `climate_dataset*` store, the Phius importer + seed routine, and the
-`GET /api/v1/climate/datasets…` read endpoints + MCP. **Phase 3 (the
-Climate tab) is next** and needs both (met). Phase 4 (per-source design
-conditions) gates the fRSI/comfort consumers. Deferred Phase-2 slices:
-the PHI/PHPP xlsx importer and the real-data bulk seed (await Ed's files).
+`GET /api/v1/climate/datasets…` read endpoints + MCP. The Phius importer
+is **revalidated against the real 1007-station 2022 set** (parser rewritten
+to the verified format; real seed verified; seed CLI added). **Phase 3 is
+in progress** — sub-phase **3a is live**: the Climate tab (placed after
+Status) with the reference-dataset browser, read-only project location, and
+the standardized record as monthly + design-condition tables. Remaining: 3a
+location-editor migration, then 3b (project-climate source attach/select —
+new backend) and 3c (charts + sun-path visual). Phase 4 (per-source design
+conditions) gates the fRSI/comfort consumers. The one remaining deferred
+Phase-2 slice is the PHI/PHPP xlsx importer (workbook on disk; a ~130-column
+PPP-worksheet reverse-engineering job — see phase-02 §5).
