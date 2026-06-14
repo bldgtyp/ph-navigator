@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-14
 TIME: (local, evening)
-STATUS: Deferred — decided; execution backlog. Not built.
+STATUS: Complete — built, verified, merged to main 2026-06-14.
 AUTHOR: Claude Code (Opus 4.8) + Ed May
 SCOPE: P4 work items, evidence, and acceptance criteria
 RELATED:
@@ -10,6 +10,10 @@ RELATED:
 ---
 
 # P4 — Brand-Dependency Resilience & Doc Reconciliation — PRD
+
+> **Implemented 2026-06-14.** Both items below shipped; acceptance met
+> (offline render verified, `make ci` green). See [`STATUS.md`](STATUS.md)
+> for the per-item outcome and the `TECH_STACK.md` tail handed to P3.
 
 Source: 2026-06-14 CSS review, Theme 8 (remote-dependency resilience,
 MED/strategic) and Theme 10 (plan vs reality). **Both decisions were taken

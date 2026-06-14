@@ -7,6 +7,7 @@ SCOPE: P3 of the 2026-06-14 CSS review — structure & discoverability
 RELATED:
   - ../../code-reviews/2026-06-14/frontend-css-styling-review.md  (canonical findings; Themes 7 & 9, backlog items 9–10)
   - ../../archive/css-rationalization/  (parent effort — P0–P2 done & archived)
+  - ../../archive/css-brand-dependency-resilience/  (P4 — done & archived; left a small doc-reconciliation tail here, PRD §4)
   - ../../code-reviews/2026-06-14/scopes/scope-A-global-tokens.md  (global layer detail)
   - ../report-tables/  (the gold-standard co-located shared-UI pattern to propagate)
 ---
@@ -51,6 +52,10 @@ A small set of **deferred guard/scale follow-ups** (extend `check:hex`, add a
 `.css` size cap, tighten the spacing/type scales, fold the last literal
 radii) belong with this work because they only become green-able once the
 split/sweep cleans up the pre-existing literals. See PRD §3.
+
+A **doc-reconciliation tail from P4** also lands here: reconcile
+`context/TECH_STACK.md` to the bespoke-CSS reality, and cross-link the new
+`styles/README.md` from `context/UI_UX.md` §design-system. See PRD §4.
 
 ## Precedent already in the tree
 

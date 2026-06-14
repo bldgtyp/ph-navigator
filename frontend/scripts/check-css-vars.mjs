@@ -13,12 +13,13 @@
 //      (scope-agnostic — all app CSS loads into one global cascade).
 //   2. A custom property set from JS via an inline style object, detected
 //      as a quoted `"--x"` / '--x' / `--x` literal in any .ts/.tsx file.
-//   3. A BLDGTYP brand token. These are defined in the remote brand
-//      stylesheet loaded at runtime in index.html, so they never appear
-//      as a definition in src/. The allowlist below mirrors
-//      https://bldgtyp.github.io/bt-branding/tokens/tokens.css and must
-//      be kept in sync (replace with a vendored import if/when the brand
-//      tokens are pulled local — see the 2026-06-14 CSS styling review).
+//   3. A BLDGTYP brand token. These come from the vendored brand
+//      stylesheet (src/styles/brand/tokens.css), a pinned copy of
+//      https://bldgtyp.github.io/bt-branding/tokens/tokens.css refreshed
+//      via `pnpm run sync:brand`. The allowlist below is read straight
+//      from that file rather than hand-mirrored, so it stays in sync
+//      automatically when the vendored copy is refreshed. See
+//      planning/archive/css-brand-dependency-resilience/.
 
 import fs from "node:fs";
 import path from "node:path";
@@ -26,43 +27,7 @@ import { fileURLToPath } from "node:url";
 
 const FRONTEND_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SRC_ROOT = path.join(FRONTEND_ROOT, "src");
-
-// Mirror of the remote BLDGTYP brand tokens (theme-invariant + light/dark
-// share names). Keep in sync with bt-branding/tokens/tokens.css.
-const BRAND_TOKENS = new Set([
-  "--accent",
-  "--accent-light",
-  "--accent-dark",
-  "--highlight",
-  "--highlight-light",
-  "--highlight-dark",
-  "--highlight-darker",
-  "--font-primary",
-  "--font-table",
-  "--font-mono",
-  "--radius-sm",
-  "--transition-base",
-  "--ease",
-  "--bg-page",
-  "--bg-card",
-  "--bg-elev",
-  "--bg-section-alt",
-  "--bg-stats",
-  "--text-primary",
-  "--text-secondary",
-  "--text-muted",
-  "--border-subtle",
-  "--border-card",
-  "--border-strong",
-  "--accent-text",
-  "--highlight-text",
-  "--svg-line-heavy",
-  "--svg-line-medium",
-  "--svg-line-light",
-  "--svg-line-faint",
-  "--svg-fill-dot",
-  "--svg-text",
-]);
+const BRAND_TOKENS_FILE = path.join(SRC_ROOT, "styles", "brand", "tokens.css");
 
 const CSS_DEFINITION_PATTERN = /(--[\w-]+)\s*:/g;
 const JS_PROPERTY_PATTERN = /['"`](--[\w-]+)['"`]/g;
@@ -81,7 +46,23 @@ function* walk(dir) {
   }
 }
 
-const defined = new Set(BRAND_TOKENS);
+// Brand tokens are sourced from the vendored copy, not hand-mirrored, so
+// the allowlist tracks `pnpm run sync:brand` automatically. If the file is
+// missing the brand tokens won't be allowlisted and every `--accent`-style
+// reference fails the guard — a loud signal that vendoring is broken.
+function readBrandTokens() {
+  if (!fs.existsSync(BRAND_TOKENS_FILE)) {
+    console.error(
+      `Vendored brand tokens not found at ${path.relative(FRONTEND_ROOT, BRAND_TOKENS_FILE)}.`,
+    );
+    console.error("Run `pnpm run sync:brand` to vendor them.");
+    process.exit(1);
+  }
+  const text = fs.readFileSync(BRAND_TOKENS_FILE, "utf8");
+  return [...text.matchAll(CSS_DEFINITION_PATTERN)].map((match) => match[1]);
+}
+
+const defined = new Set(readBrandTokens());
 const cssFiles = [];
 
 // Pass 1 — collect every definition (CSS declarations + JS-set props).

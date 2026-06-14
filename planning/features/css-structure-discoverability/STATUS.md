@@ -25,7 +25,14 @@ the *next* wave of feature authors but not blocking anything today.
 write `frontend/src/styles/README.md` (token + shared-class catalog + "how
 to style a new feature" recipe) and add `frontend/src/shared/ui/index.ts`.
 Those alone close most of owner goal #3. See `PRD.md` §1 and the suggested
-sequencing.
+sequencing. When the README lands, also add its cross-link to
+`context/UI_UX.md` §design-system (the P4 tail, PRD §4).
+
+**Absorbed from P4 (2026-06-14):** the brand-dependency-resilience feature
+shipped (vendored brand tokens + self-hosted fonts; `UI_UX.md`
+§design-system + PRD §12 reconciled) and was archived. It left two small
+doc-reconciliation tails here — reconcile `context/TECH_STACK.md`, and the
+`UI_UX.md` → styles-README cross-link. See `PRD.md` §4.
 
 **Verification baseline:** standard repo gate — `make format` + `make ci`
 from the repo root; browser-verify any visually non-neutral change with the

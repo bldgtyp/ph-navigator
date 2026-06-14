@@ -347,6 +347,13 @@ into the repo (with a sync script) and self-host the Geist fonts**, so
 the app owns its visual contract and CI can validate it. Optionally also
 add `var(--accent, #3E93AE)`-style fallbacks on the most critical tokens.
 
+> ✅ **BUILT 2026-06-14** (P4, archived). Vendored to
+> `frontend/src/styles/brand/` + `pnpm run sync:brand`; `index.html`
+> dropped both remote fetches; `check-css-vars` sources its allowlist from
+> the vendored file. Offline render verified (no remote requests, brand
+> teal + Geist resolve locally). The optional `var()` fallbacks were not
+> added — the vendored copy + guard make them redundant.
+
 ### Theme 9 — Discoverability (HIGH for the owner's goal #3)
 
 A new feature author has no map. There is **no** `src/styles/README`, no
@@ -372,6 +379,13 @@ Tailwind+shadcn; the app is bespoke CSS. **DECIDED (2026-06-14): update
 the docs to match the bespoke-CSS reality** (no Tailwind/shadcn
 migration). Until the docs are updated they mislead and the
 shadcn-vocabulary ghost tokens (Theme 1) keep reappearing.
+
+> ✅ **MOSTLY DONE 2026-06-14** (P4, archived). `context/UI_UX.md`
+> §design-system + PRD §12 rewritten to the bespoke plain-CSS + 3-tier
+> token reality. **Tail:** `context/TECH_STACK.md` still carries
+> shadcn/Tailwind UI-kit + table-primitive rows; flagged superseded in
+> PRD §12 and handed to P3
+> (`../../features/css-structure-discoverability/` §4) for its own pass.
 
 ---
 
@@ -549,14 +563,17 @@ tracked as its own backlog feature folder:
 10. One CSS import strategy; promote shared CSS out of feature files;
     begin splitting `base.css`. (M)
 
-**P4 — Strategic decisions (DECIDED 2026-06-14)** — *decided but not built;
-now tracked as its own backlog feature folder:
-`../../features/css-brand-dependency-resilience/`.*
-11. ✅ Vendor + self-host the brand tokens and fonts, with a sync script
-    (Theme 8). *Decision: vendor + self-host.*
-12. ✅ Reconcile the docs with the bespoke-CSS reality — update
-    `UI_UX.md` §design-system + PRD §12 to drop the Tailwind/shadcn
-    prescription (Theme 10). *Decision: update docs; no migration.*
+**P4 — Strategic decisions (✅ BUILT & ARCHIVED 2026-06-14)** — *shipped the
+same day; archived at `../../archive/css-brand-dependency-resilience/`. The
+`TECH_STACK.md` reconciliation tail was handed to P3
+(`../../features/css-structure-discoverability/` §4).*
+11. ✅ **Done** — vendored + self-hosted the brand tokens and fonts
+    (`frontend/src/styles/brand/`) with a `pnpm run sync:brand` script;
+    `index.html` dropped both remote fetches; `check-css-vars` sources its
+    allowlist from the vendored file (Theme 8). Offline render verified.
+12. ✅ **Done** — reconciled `UI_UX.md` §design-system + PRD §12 to the
+    bespoke plain-CSS reality, dropping the Tailwind/shadcn prescription
+    (Theme 10); no migration. `TECH_STACK.md` tail → P3.
 
 ---
 

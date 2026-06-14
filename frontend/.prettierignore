@@ -1,0 +1,5 @@
+# Vendored / generated brand assets. Refreshed by `pnpm run sync:brand`,
+# not hand-edited; keep the tokens.css copy byte-stable against upstream
+# so refresh diffs stay clean. See
+# planning/archive/css-brand-dependency-resilience/.
+src/styles/brand/

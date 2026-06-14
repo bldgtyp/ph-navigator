@@ -80,59 +80,100 @@ Current V1-derived invariants:
 
 ### BLDGTYP design system
 
-PH-Navigator V2 should crib directly from the BLDGTYP brand design
-system where it helps the application feel like part of the same
-technical tool family:
+> **Implementation reality (2026-06-14).** The styling is **hand-written
+> plain CSS** on a 3-tier custom-property token system cribbed from the
+> BLDGTYP brand. **There is no Tailwind and no shadcn/ui.** Earlier
+> drafts of this section and PRD §12 prescribed Tailwind + shadcn; that
+> prescription was the source of the "ghost token" vocabulary
+> (`--surface`, `--border`, `--danger`, `--font-sans`,
+> `--text-on-accent`) the CSS-rationalization pass had to hunt down, and
+> it was **dropped** (decision: reconcile docs to reality, no migration —
+> see the 2026-06-14 CSS review, Theme 10). Build new UI as plain CSS
+> against the tokens below.
+
+PH-Navigator V2 cribs from the BLDGTYP brand design system so the app
+feels like part of the same technical tool family:
 
 - Canonical reference: <https://bldgtyp.github.io/bt-branding/>
 - Source repo: <https://github.com/bldgtyp/bt-branding>
-- Required CSS tokens:
-  <https://bldgtyp.github.io/bt-branding/tokens/tokens.css>
-- Optional component reference:
-  <https://bldgtyp.github.io/bt-branding/tokens/components.css>
-- Machine-readable tokens:
-  <https://bldgtyp.github.io/bt-branding/tokens/tokens.json>
 
-Use the published tokens for fonts, color, radius, motion, and theme
-surfaces when possible. Build PH-Navigator-specific components on
-shadcn/ui/Tailwind, but map the visual layer to BLDGTYP tokens instead
-of inventing a separate palette.
+The brand assets are **vendored and self-hosted**, not fetched from
+`bldgtyp.github.io` / Google Fonts at runtime, so the app renders fully
+offline and in CI and a brand-side token rename surfaces as a reviewable
+diff. Refresh the vendored copies with `pnpm run sync:brand`. See
+`planning/archive/css-brand-dependency-resilience/`.
+
+**3-tier token system** (cascade order matters — each layer can override
+the previous):
+
+- **Layer 1 — brand** (`frontend/src/styles/brand/tokens.css`, vendored).
+  The brand palette and theme surfaces: `--accent` / `--highlight`
+  families, `--bg-*`, `--text-*`, `--border-*`, `--font-primary` /
+  `--font-table` / `--font-mono`, `--radius-sm`, `--transition-base`,
+  `--ease`, `--svg-*`. Self-hosted Geist + Geist Mono `@font-face` rules
+  live alongside in `brand/fonts.css`.
+- **Layer 2 — app tokens** (`frontend/src/styles/tokens.css`). App-wide
+  scales built on Layer 1: the px-named spacing scale (`--space-2 …
+  --space-48`), the rem type scale (`--fs-2xs … --fs-3xl`), radius,
+  shadow, z-index, the chart/report-status palettes, and the semantic
+  `--phn-*` tokens (`--phn-danger`, `--phn-focus`, …). This layer also
+  pins `--font-primary` / `--font-table` to **Geist** (overriding the
+  brand default).
+- **Layer 3 — feature/component CSS** (`features/**/*.css`,
+  `shared/ui/**/*.css`). Consumes Layer 1 + Layer 2 tokens via `var()`;
+  defines no raw colors of its own.
 
 Initial application guidance:
 
-- Use Outfit 400 for readable body text where practical; keep headings
-  on Outfit weights from the published token scale.
-- Use Geist Mono for labels, numeric annotations, nav triggers,
-  compact metadata, units, and technical chips.
-- Use the published `--font-table` token (Geist) for table headers and
-  records.
+- Body text and headings use **Geist** (the `--font-primary` /
+  `--font-table` tokens), not Outfit — Layer 2 pins both to Geist.
+- Use Geist Mono (`--font-mono`) for labels, numeric annotations, nav
+  triggers, compact metadata, units, and technical chips.
 - Use `--accent` / `--accent-text` as the primary action/accent channel.
 - Use `--highlight` / `--highlight-text` sparingly for emphasis,
   warnings, missing evidence, or selected technical objects. Do not let
   magenta mean every action state.
 - Use theme-aware surfaces (`--bg-page`, `--bg-card`, `--bg-elev`,
-  `--border-subtle`, `--text-*`) for light/dark mode.
+  `--border-subtle`, `--text-*`). The app currently runs light-only
+  (`color-scheme: light`); the dark surface family exists in the brand
+  layer but is not yet enabled.
 - Consider graph-paper treatments only where they reinforce technical
   drafting/data context: dashboard bands, data views, model/building
   workbench panels, or empty technical states. Keep them subtle.
-- Treat `components.css` classes as reference or selectively reusable
-  pieces, not a mandate to make this app look like the public branding
-  site.
+
+**Guard suite** (`frontend/scripts/`, wired into `pnpm run check:all` →
+CI) keeps the token system honest:
+
+- `check:css-vars` — every fallback-less `var(--x)` must resolve to a
+  real token; the brand allowlist is sourced from the vendored
+  `brand/tokens.css` so it stays in sync.
+- `check:hex` — **sanctioned-hex rule:** raw hex literals are allowed
+  only in the token-definition files; feature/shared-ui CSS must go
+  through `var()` tokens.
+- `check:z-index`, `check:sizes`, `check:shape` — z-index must use the
+  `--z-*` tokens, `.ts`/`.tsx` files stay under the size cap, and
+  feature folders keep their canonical shape.
+
+A token + shared-class catalog (`frontend/src/styles/README.md`) is
+planned under the `css-structure-discoverability` feature; cross-link it
+here once it lands.
 
 ### Tech-stack constraints (from PRD §12)
 
-The chosen frontend stack is **Vite + React + TypeScript + Tailwind +
-shadcn/ui + TanStack Table + Zustand**. The 3D viewer adds **React
-Three Fiber + drei**. These should not be visible to the user as
-specific tools — the user sees clean, consistent UI — but they
-constrain visual idioms in friendly ways:
+The frontend stack is **Vite + React + TypeScript + plain CSS +
+TanStack Query + TanStack Table + Zustand**. Interactive primitives
+(dialog, alert-dialog, popover) are built on **Radix UI** and styled
+with plain CSS. The 3D viewer adds **React Three Fiber + drei +
+postprocessing**. These should not be visible to the user as specific
+tools — the user sees clean, consistent UI — but they constrain visual
+idioms:
 
-- shadcn/ui's primitives (button, input, dialog, tabs, table, command)
-  are the building blocks.
-- Tailwind tokens (color, spacing, radius) define the look.
-- Tailwind/shadcn theme tokens should be wired to the BLDGTYP CSS
-  custom properties when possible, so app components consume the same
-  source values as the design-system site.
+- Compose from hand-written, plain-CSS components (the existing
+  `shared/ui/*` widgets are the building blocks); reach for a Radix
+  primitive when a behavior needs robust a11y/focus management
+  (modals, popovers).
+- All component styling flows through the 3-tier token system above —
+  do not introduce a parallel palette or shadcn-style vocabulary.
 - Real screen composition and component design are deferred to a Claude
   Design pass that follows this doc and the BLDGTYP design system.
 
@@ -140,7 +181,8 @@ constrain visual idioms in friendly ways:
 
 Pixel-perfect mockups, final component variants, illustration,
 empty-state art, and animation specifics. Those land in the design pass.
-The brand-token dependency itself is in scope here.
+The brand-asset dependency (vendoring + self-hosting) is resolved — see
+`planning/archive/css-brand-dependency-resilience/`.
 
 ---
 

@@ -50,7 +50,8 @@ load/ownership story is tangled:
 ### 1. Discoverability (Theme 9)
 
 - **`frontend/src/styles/README.md`** (or `STYLING.md`):
-  - The L1 (remote brand) / L2 (`styles/tokens.css`) / L3 (feature) tier map.
+  - The L1 (vendored brand, `styles/brand/`) / L2 (`styles/tokens.css`) /
+    L3 (feature) tier map.
   - The **token catalog** with intent for every scale: `--space-*` (2px-base),
     `--fs-*` (8-step type), radius (`--radius-xs/sm/md/pill`,
     `--phn-control-radius`), shadow (`--shadow-elev-*`, `--shadow-popover`,
@@ -66,6 +67,10 @@ load/ownership story is tangled:
 - **Propagate the `report-table/` co-located pattern** (co-located CSS +
   barrel + PRD/doc ref) across `shared/ui`. `info-tooltip/` already follows
   it; bring the rest in line.
+- **Cross-link the styles README from `context/UI_UX.md`
+  §"BLDGTYP design system"** once it lands. (Carried over from P4 / Theme
+  10: that doc-reconciliation pass left a placeholder pointer pending the
+  README's existence — see §4.)
 
 ### 2. Structure (Theme 7)
 
@@ -96,12 +101,36 @@ must land *with* the split/sweep that cleans those up:
 sizes):** tighten the spacing + type scales (drop rarely-used steps); fold
 the remaining literal radii (`3/7/9/10/12px`) into tokens.
 
+### 4. Doc-reconciliation tail (carried over from P4 / Theme 10)
+
+P4 (`../../archive/css-brand-dependency-resilience/`, **done & archived**)
+reconciled `context/UI_UX.md` §design-system and PRD §12 to the
+bespoke-CSS reality and dropped the Tailwind/shadcn prescription. Two
+small tails were left for this folder because they depend on P3 work:
+
+- **Reconcile `context/TECH_STACK.md`.** Its "UI kit"
+  (`shadcn/ui + Tailwind`), "Design tokens", and "Tables"
+  (`shadcn-table primitives`) rows, plus the Table-View section
+  (`§ "Prefer shadcn/ui primitives"`, the map-Tailwind-to-tokens steps),
+  still prescribe Tailwind/shadcn. P4 flagged these as **superseded** via
+  a note in PRD §12 but deferred the rewrite — `TECH_STACK.md` carries
+  detailed table-primitive tradeoff text that needs a careful pass.
+  Rewrite those rows/section to the plain-CSS + 3-tier-token + Radix
+  reality; introduce no shadcn-vocabulary ghost tokens.
+- **Add the `context/UI_UX.md` cross-link** to the new
+  `styles/README.md` (see §1) — the placeholder pointer P4 left.
+
+Acceptance: no remaining Tailwind/shadcn *prescription* in `TECH_STACK.md`
+(historical "why we didn't pick X" discussion may stay if clearly
+labeled); `UI_UX.md` §design-system links the styles README.
+
 ## Out of scope
 
 - Re-platforming to Tailwind/shadcn (explicitly NOT planned — see the
-  brand-dependency-resilience feature / Theme 10).
-- The brand-token vendoring + doc reconciliation — that's P4
-  (`../css-brand-dependency-resilience/`).
+  archived brand-dependency-resilience feature / Theme 10).
+- The brand-token vendoring + the `UI_UX.md`/PRD §12 doc reconciliation —
+  **done** in P4 (`../../archive/css-brand-dependency-resilience/`). The
+  remaining `TECH_STACK.md` tail is folded in here as §4.
 
 ## Acceptance criteria
 
@@ -115,6 +144,8 @@ the remaining literal radii (`3/7/9/10/12px`) into tokens.
   landed + a written plan for the remainder); a `.css` size guard is in CI.
 - `check:hex` covers `rgb/rgba/hsl`/named + `.ts` (with the sanctioned
   exemptions).
+- **(§4 tail)** `TECH_STACK.md` no longer *prescribes* Tailwind/shadcn;
+  `UI_UX.md` §design-system links the styles README.
 - `make ci` green; any visually non-neutral change browser-verified.
 
 ## Suggested sequencing
