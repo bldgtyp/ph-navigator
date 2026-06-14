@@ -38,7 +38,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   justify-content: flex-start;
 }
 
@@ -58,7 +58,7 @@
   height: 30px;
   min-height: 30px;
   place-items: center;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 0;
   font-family: var(--font-mono);
   font-weight: 400;
@@ -97,7 +97,7 @@
 .status-item-main {
   justify-content: flex-start;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .status-title-button,
@@ -132,7 +132,7 @@
 }
 
 .status-badge {
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 3px 8px;
   font-family: var(--font-mono);
   font-size: 0.68rem;
@@ -160,19 +160,19 @@
 .date-pill {
   min-height: auto;
   border-color: var(--border-subtle);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--bg-card);
   color: var(--text-secondary);
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
   font-size: 0.72rem;
 }
 
 .status-description {
-  margin: 8px 0 0;
+  margin: var(--space-2) 0 0;
 }
 
 .status-description p {
-  margin: 0 0 8px;
+  margin: 0 0 var(--space-2);
   white-space: pre-wrap;
 }
 
@@ -196,7 +196,7 @@
 
 .status-description-empty {
   min-height: auto;
-  margin-top: 8px;
+  margin-top: var(--space-2);
   border: 0;
   background: transparent;
   color: var(--text-muted);
@@ -222,7 +222,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   font-weight: 600;
 }
 
@@ -292,7 +292,7 @@
 .metadata-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 180px));
-  gap: 12px;
+  gap: var(--space-3);
   margin: 0;
 }
 
@@ -301,7 +301,7 @@
 }
 
 .metadata-grid dd {
-  margin: 4px 0 0;
+  margin: var(--space-1) 0 0;
   font-family: var(--font-mono);
   font-size: 0.78rem;
   overflow-wrap: anywhere;

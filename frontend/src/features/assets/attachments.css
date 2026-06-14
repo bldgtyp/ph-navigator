@@ -30,14 +30,14 @@
   align-items: center;
   background: var(--bg-page);
   border: 1px solid var(--border-subtle);
-  border-radius: 6px;
+  border-radius: var(--phn-control-radius);
   color: var(--text-primary);
   display: flex;
   font: inherit;
   gap: 6px;
   height: 26px;
   min-height: 0;
-  padding: 0 8px;
+  padding: 0 var(--space-2);
   visibility: hidden;
   white-space: nowrap;
 }
@@ -54,7 +54,7 @@
   height: auto;
   justify-content: center;
   min-height: 48px;
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   visibility: visible;
   width: 100%;
 }
@@ -71,7 +71,7 @@
 .attachment-strip {
   align-items: center;
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
   overflow-x: auto;
   scrollbar-width: none;
   width: 100%;
@@ -144,7 +144,7 @@
 
 .attachment-doc-thumb::before {
   background: color-mix(in oklab, var(--accent) 58%, transparent);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   bottom: 2px;
   content: "";
   height: 2px;
@@ -177,7 +177,7 @@
   font-size: 11px;
   height: 28px;
   min-height: 0;
-  padding: 0 8px;
+  padding: 0 var(--space-2);
 }
 
 .attachment-modal {
@@ -205,7 +205,7 @@
 .attachment-modal-panel footer {
   align-items: center;
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   justify-content: space-between;
   padding: 10px 12px;
 }

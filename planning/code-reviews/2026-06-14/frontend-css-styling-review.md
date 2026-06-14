@@ -447,12 +447,38 @@ parentheses.
    literals red, so they belong with the P1/P2 sweeps and P3 split that
    actually clean those up, not P0. (`make ci` green.)
 
-**P1 — Re-centralize the scales (the bulk of the drift):**
-4. Add the missing token scales (type-scale, `--transition-fast`,
-   `--radius-pill`, `--shadow-hud-*`); delete dead tokens. (S)
-5. Mechanical literal→token sweeps: spacing→`--space-*`,
-   radius→`--phn-*-radius`, shadows→`--shadow-*`, font-size→type-scale.
-   (M, high payoff)
+**P1 — Re-centralize the scales (NEUTRAL CORE DONE 2026-06-14 on `main`):**
+4. ✅ Added tokens `--radius-pill` (999px), `--shadow-popover`,
+   `--shadow-hud-1/-2/-3`, `--transition-fast` (0.16s); deleted the two
+   genuinely-dead tokens `--chart-6` and `--z-overlay-hud` (kept
+   `--space-6/-7` and `--shadow-elev-3`, which the sweeps now use).
+5. ✅ Ran the **visually-neutral** literal→token sweep (token value ==
+   replaced literal in every case): box-shadow **15** sites (popover ×7,
+   HUD ×8), border-radius **61** sites (999px→pill, 6px→control, 5px→
+   `--phn-radius`), spacing **273** values → `--space-*` (only where
+   *every* value in a declaration is on-grid, so no mixed literal/token
+   lines). 16 files. `make ci` green; Playwright spot-check of sign-in,
+   dashboard, and the Materials DataTable confirmed pixel-identical.
+   *Tool:* `working/css-review/p1-sweep.mjs` (+ `analyze-values.mjs`).
+
+   **⏸ Deferred — needs a design decision (NOT a neutral sweep):** the
+   measured data shows spacing and font-size usage is too granular to
+   tokenize without *rounding to a chosen scale* (a visible change):
+   - **Spacing:** 741 px values, 29 distinct. The 4px-base `--space-*`
+     scale only matched 354 of them; the dominant *off-grid* values are
+     6px(103), 10px(72), 2px(46), 7px(27), 18px(26), 3px(26), 14px(22) —
+     the app de-facto uses a **2px base**. Decision: redesign `--space-*`
+     to a 2px base (2/4/6/8/10/12/16/20/24/32/48) → enables a fully
+     *neutral* sweep of the rest; or round off-grid→4px grid (layout
+     shifts). Recommend the 2px-base extension.
+   - **Type scale:** 278 font-sizes, 46 distinct, mixing rem/px/em, no
+     scale. Consolidating to ~7–8 steps means choosing canonical sizes
+     (e.g. is "small body" 0.78 / 0.8 / 0.82rem?) — each merge shifts
+     ~0.5–1px on many elements. Needs your canonical-values call; then a
+     codemod + Playwright verification pass.
+   - **Radius remainder:** 4px (×42, the most common radius, no token),
+     3px, 7/8/9/10/12px. Decide: add `--radius-xs:4px` (neutral) or
+     consolidate 4px→`--phn-radius` (5px).
 
 **P2 — Build the missing shared primitives:**
 6. One tokenized `.chip`/`.pill` primitive; migrate the ~12 chips. (M)

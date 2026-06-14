@@ -15,7 +15,7 @@
 
 .room-notes-expander {
   border-top: 1px solid var(--border-subtle);
-  padding-top: 12px;
+  padding-top: var(--space-3);
 }
 
 .room-notes-expander summary {
@@ -31,7 +31,7 @@
 
 .hp-panel {
   display: grid;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .hp-coming-soon {
@@ -46,17 +46,17 @@
 }
 
 .hp-phius-warning-list > li {
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
 }
 
 .hp-phius-warning-list ul {
-  margin: 4px 0 0;
+  margin: var(--space-1) 0 0;
   padding-left: 18px;
 }
 
 .hp-modal-form {
   display: grid;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .hp-modal-section {
@@ -87,13 +87,13 @@
 
 .hp-rooms-picker {
   border: 1px solid var(--border-subtle);
-  border-radius: 6px;
+  border-radius: var(--phn-control-radius);
   padding: 8px 10px;
   margin: 0;
 }
 
 .hp-rooms-picker > legend {
-  padding: 0 4px;
+  padding: 0 var(--space-1);
   font-size: 0.85rem;
   font-weight: 600;
 }
@@ -106,13 +106,13 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .hp-rooms-picker__list label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   cursor: pointer;
   font-weight: 400;
 }
@@ -133,7 +133,7 @@
   max-height: 240px;
   overflow-y: auto;
   display: grid;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .hp-cascade-meta {

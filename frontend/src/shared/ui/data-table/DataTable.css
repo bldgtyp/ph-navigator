@@ -44,13 +44,13 @@
 .data-table-toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
   border: 1px solid var(--border-card);
   border-bottom: 0;
   border-radius: var(--phn-radius) var(--phn-radius) 0 0;
   background: var(--bg-card);
-  padding: 8px;
+  padding: var(--space-2);
   color: var(--text-secondary);
   font-family: var(--font-mono);
   font-size: 0.72rem;
@@ -61,14 +61,14 @@
 .data-table-toolbar-status {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
   flex: 1 1 auto;
 }
 
 .data-table-toolbar-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
   margin-left: auto;
 }
@@ -104,7 +104,7 @@
    side-by-side with Sort. */
 .data-table-toolbar-buttons {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
   align-items: center;
 }
 
@@ -131,7 +131,7 @@
 }
 
 .data-table-toolbar-button--icon {
-  border-radius: 6px;
+  border-radius: var(--phn-control-radius);
   color: var(--text-secondary);
   height: 28px;
   min-height: 28px;
@@ -180,9 +180,9 @@
   background: var(--bg-card);
   border: 1px solid var(--border-card);
   border-radius: var(--phn-radius);
-  padding: 12px;
+  padding: var(--space-3);
   min-width: 380px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-popover);
   z-index: var(--z-dropdown);
   font-family: var(--font-primary, inherit);
   font-size: 0.8rem;
@@ -196,7 +196,7 @@
 .data-table-view-popover-heading {
   font-size: 0.85rem;
   font-weight: 600;
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
 }
 
 .data-table-view-popover-subheading {
@@ -209,16 +209,16 @@
   color: var(--text-secondary);
   font-size: 0.72rem;
   font-style: italic;
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
 }
 
 .data-table-view-popover-rules {
   list-style: none;
   padding: 0;
-  margin: 0 0 8px 0;
+  margin: 0 0 var(--space-2) 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .data-table-view-popover-rule {
@@ -226,7 +226,7 @@
   grid-template-columns: 48px minmax(80px, 1fr) minmax(80px, 1fr) minmax(120px, 1.4fr) 24px 20px;
   gap: 6px;
   align-items: center;
-  padding: 4px 0;
+  padding: var(--space-1) 0;
 }
 
 .data-table-view-popover-rule.is-sort,
@@ -240,7 +240,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   margin-bottom: 6px;
 }
 
@@ -289,7 +289,7 @@
 .data-table-group-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   white-space: nowrap;
 }
 
@@ -332,7 +332,7 @@
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
-  padding: 0 4px;
+  padding: 0 var(--space-1);
   font-size: 0.9em;
   border-radius: var(--phn-radius);
   opacity: 0;
@@ -355,9 +355,9 @@
   background: var(--bg-card);
   border: 1px solid var(--border-card);
   border-radius: var(--phn-radius);
-  padding: 4px;
+  padding: var(--space-1);
   min-width: 180px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-popover);
   z-index: calc(var(--z-dropdown) + 10);
   display: flex;
   flex-direction: column;
@@ -369,7 +369,7 @@
 .data-table-column-menu-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   border: 0;
   background: transparent;
   padding: 6px 8px;
@@ -401,7 +401,7 @@
   display: grid;
   grid-template-columns: 16px 1fr auto;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .data-table-column-menu-item-icon {
@@ -428,7 +428,7 @@
 .data-table-column-menu-divider {
   border: 0;
   border-top: 1px solid var(--border-subtle);
-  margin: 4px 0;
+  margin: var(--space-1) 0;
 }
 
 .data-table-view-popover-rule[data-dragging="true"] {
@@ -509,7 +509,7 @@
 .data-table-view-popover-range {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .data-table-view-popover-range-sep {
@@ -533,8 +533,8 @@
 }
 
 .data-table-view-popover-add {
-  margin-top: 4px;
-  padding: 4px 8px;
+  margin-top: var(--space-1);
+  padding: var(--space-1) var(--space-2);
   font-size: 0.78rem;
   color: var(--accent-text);
   background: transparent;
@@ -600,9 +600,9 @@
   background: var(--bg-card);
   border: 1px solid var(--border-card);
   border-radius: var(--phn-radius);
-  padding: 4px;
+  padding: var(--space-1);
   min-width: 160px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-popover);
   z-index: var(--z-dropdown);
   font-family: var(--font-primary, inherit);
   font-size: 0.8rem;
@@ -655,13 +655,13 @@
 }
 
 .data-table-alert-title {
-  margin: 0 0 8px;
+  margin: 0 0 var(--space-2);
   font-size: 1rem;
   font-weight: 600;
 }
 
 .data-table-alert-description {
-  margin: 0 0 16px;
+  margin: 0 0 var(--space-4);
   color: var(--text-secondary);
   font-size: 0.85rem;
   line-height: 1.4;
@@ -669,7 +669,7 @@
 
 .data-table-alert-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   justify-content: flex-end;
 }
 
@@ -849,7 +849,7 @@
 
 .data-table-add-field-type-pill {
   border: 1px solid var(--border-subtle);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 4px 10px;
   background: var(--bg-card);
   color: var(--text-primary);
@@ -871,7 +871,7 @@
 .data-table-add-field-config {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .data-table-add-field-options {
@@ -963,7 +963,7 @@
   border: 1px solid var(--border-strong);
   border-radius: 8px;
   box-shadow: var(--shadow-elev-2);
-  padding: 16px;
+  padding: var(--space-4);
   min-width: 360px;
   max-width: 480px;
   width: calc(100vw - 48px);
@@ -975,19 +975,19 @@
   font-size: 1.05rem;
   font-weight: 600;
   color: var(--text-primary);
-  margin: 0 0 12px;
+  margin: 0 0 var(--space-3);
 }
 
 .data-table-field-config-modal-form {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .data-table-field-config-modal-section {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .data-table-field-config-modal-inline-grid {
@@ -1007,15 +1007,15 @@
   display: flex;
   justify-content: flex-end;
   gap: 6px;
-  padding-top: 4px;
+  padding-top: var(--space-1);
 }
 
 .data-table-field-config-modal-conflict {
   border: 1px solid var(--phn-warning);
   background: color-mix(in oklab, var(--phn-warning) 8%, var(--bg-card));
-  border-radius: 6px;
+  border-radius: var(--phn-control-radius);
   padding: 8px 10px;
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -1139,7 +1139,7 @@
 
 .data-table tbody .data-table-gutter {
   height: var(--data-table-row-height);
-  padding: 0 8px;
+  padding: 0 var(--space-2);
 }
 
 .data-table thead .data-table-gutter {
@@ -1357,7 +1357,7 @@
 .data-table-header-units {
   flex: 0 0 auto;
   padding: 1px 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in oklab, var(--text-primary) 6%, transparent);
   color: var(--text-secondary);
   font-family: var(--font-mono);
@@ -1419,7 +1419,7 @@
 .data-table-identifier-duplicate {
   display: inline-flex;
   align-items: center;
-  margin-left: 4px;
+  margin-left: var(--space-1);
   color: var(--phn-warning);
   vertical-align: middle;
   pointer-events: auto;
@@ -1447,7 +1447,7 @@
   border-radius: var(--phn-radius);
   padding: 6px 10px;
   max-width: 280px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-popover);
   z-index: calc(var(--z-dropdown) + 20);
   font-family: var(--font-primary, inherit);
   font-size: 0.78rem;
@@ -1476,8 +1476,8 @@
 .data-table-field-editor-options-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 4px 0 8px 0;
+  gap: var(--space-2);
+  margin: var(--space-1) 0 var(--space-2) 0;
   flex-wrap: wrap;
 }
 
@@ -1492,7 +1492,7 @@
 .data-table-field-editor-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   font-size: 0.72rem;
   color: var(--text-secondary);
   cursor: pointer;
@@ -1508,10 +1508,10 @@
 .data-table-field-editor-list {
   list-style: none;
   padding: 0;
-  margin: 0 0 8px 0;
+  margin: 0 0 var(--space-2) 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   max-height: 320px;
   overflow-y: auto;
 }
@@ -1529,12 +1529,12 @@
   color: var(--text-secondary);
   white-space: nowrap;
   padding: 0 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(0, 0, 0, 0.05);
 }
 
 .data-table-field-editor-warning {
-  margin: 4px 0 0 0;
+  margin: var(--space-1) 0 0 0;
   font-size: 0.72rem;
   color: var(--text-secondary);
 }
@@ -1542,14 +1542,14 @@
 .data-table-field-editor-cascade {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin: 8px 0;
+  gap: var(--space-2);
+  margin: var(--space-2) 0;
 }
 
 .data-table-field-editor-cascade-row {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--space-2);
   font-size: 0.8rem;
   color: var(--text-primary);
 }
@@ -1582,7 +1582,7 @@
   width: 24px;
   height: 20px;
   padding: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--border-subtle);
   background: var(--option-color, var(--text-muted));
   cursor: pointer;
@@ -1603,14 +1603,14 @@
   grid-template-columns: repeat(3, 24px);
   grid-template-rows: repeat(2, 24px);
   gap: 6px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-popover);
   z-index: calc(var(--z-dropdown) + 10);
 }
 
 .data-table-field-editor-color-swatch {
   width: 24px;
   height: 24px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--border-subtle);
   background: var(--option-color);
   cursor: pointer;
@@ -1639,18 +1639,18 @@
 }
 
 .data-table-field-editor-add {
-  margin-top: 4px;
+  margin-top: var(--space-1);
 }
 
 .data-table-field-editor-error {
-  margin: 4px 0 0 0;
+  margin: var(--space-1) 0 0 0;
   font-size: 0.72rem;
 }
 
 .data-table-field-editor-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--space-2);
   margin-top: 10px;
   padding-top: 10px;
   border-top: 1px solid var(--border-subtle);
@@ -1715,7 +1715,7 @@
 }
 
 .data-table-header-action {
-  margin-top: 4px;
+  margin-top: var(--space-1);
   border: 1px solid var(--border-subtle);
   border-radius: var(--phn-radius);
   background: var(--bg-page);
@@ -1947,7 +1947,7 @@ td.data-table-cell-active > .data-table-cell-chevron {
    pill doesn't run under it when the chevron fades in on hover. */
 td:has(> .data-table-cell-chevron) > .single-select-popover-anchor,
 td:has(> .data-table-cell-chevron) {
-  padding-right: 24px;
+  padding-right: var(--space-5);
 }
 
 /* Phase 7 §4.1 — tint the cells inside the drag-preview target rect
@@ -1985,7 +1985,7 @@ td.data-table-cell-editing {
   height: 100%;
   box-sizing: border-box;
   min-width: 0;
-  padding: 0 8px;
+  padding: 0 var(--space-2);
   border: 0;
   outline: 0;
   background: var(--bg-card);
@@ -1996,7 +1996,7 @@ td.data-table-cell-editing {
 .data-table-color-cell {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   max-width: 100%;
   min-width: 0;
 }
@@ -2028,11 +2028,11 @@ td.data-table-cell-editing {
 .data-table-color-editor {
   z-index: var(--z-dropdown);
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
   width: 320px;
   max-width: calc(100vw - 32px);
   border: 1px solid var(--border-card);
-  border-radius: 6px;
+  border-radius: var(--phn-control-radius);
   background: var(--bg-card);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
   padding: 10px;
@@ -2042,7 +2042,7 @@ td.data-table-cell-editing {
 .data-table-color-editor-topline {
   display: grid;
   grid-template-columns: 32px 24px minmax(0, 1fr);
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
 }
 
@@ -2118,7 +2118,7 @@ td.data-table-cell-editing {
   color: var(--text-primary);
   font: inherit;
   font-size: 0.72rem;
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
   cursor: pointer;
 }
 
@@ -2131,7 +2131,7 @@ td.data-table-cell-editing {
   align-items: center;
   max-width: 100%;
   border: 1px solid color-mix(in oklab, var(--option-color) 52%, var(--border-subtle));
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in oklab, var(--option-color) 16%, var(--bg-card));
   color: var(--text-primary);
   padding: 1px 10px;
@@ -2157,7 +2157,7 @@ td.data-table-cell-editing {
   min-width: 220px;
   max-width: 320px;
   padding: 6px;
-  border-radius: 6px;
+  border-radius: var(--phn-control-radius);
   border: 1px solid var(--border-subtle);
   background: var(--bg-card);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.15);
@@ -2175,7 +2175,7 @@ td.data-table-cell-editing {
   line-height: 1.35;
   outline: none;
   padding: 4px 6px;
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
 }
 
 .single-select-popover-list {
@@ -2205,7 +2205,7 @@ td.data-table-cell-editing {
   color: var(--text-muted);
   font-style: italic;
   border-top: 1px dashed var(--border-subtle);
-  margin-top: 4px;
+  margin-top: var(--space-1);
   padding-top: 6px;
 }
 
@@ -2243,7 +2243,7 @@ td.data-table-cell-editing {
   border-radius: var(--phn-radius);
   background: var(--bg-card);
   box-shadow: var(--phn-shadow);
-  padding: 12px;
+  padding: var(--space-3);
   color: var(--text-primary);
   font-family: var(--font-primary);
   font-size: 0.86rem;
@@ -2255,7 +2255,7 @@ td.data-table-cell-editing {
 .room-option-popover-footer,
 .room-option-delete-panel {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
   justify-content: space-between;
 }
@@ -2268,7 +2268,7 @@ td.data-table-cell-editing {
 .room-option-row {
   display: grid;
   grid-template-columns: 36px minmax(110px, 1fr) 32px auto auto auto;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
 }
 
@@ -2288,12 +2288,12 @@ td.data-table-cell-editing {
   border: 1px solid var(--border-subtle);
   border-radius: var(--phn-radius);
   background: var(--bg-page);
-  padding: 8px;
+  padding: var(--space-2);
 }
 
 .room-option-delete-panel label {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
 }
 
@@ -2446,8 +2446,8 @@ td.data-table-cell-editing {
   background: var(--bg-card);
   border: 1px solid var(--border-card);
   border-radius: var(--phn-radius);
-  padding: 8px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  padding: var(--space-2);
+  box-shadow: var(--shadow-popover);
   z-index: var(--z-dropdown);
   font-family: var(--font-primary, inherit);
   font-size: 0.78rem;
@@ -2545,7 +2545,7 @@ td.data-table-cell-editing {
 }
 
 .data-table-hide-fields-empty {
-  padding: 12px 4px;
+  padding: var(--space-3) var(--space-1);
   color: var(--text-secondary);
   font-style: italic;
   text-align: center;
@@ -2602,7 +2602,7 @@ td.data-table-cell-editing {
   display: inline-flex;
   align-items: center;
   flex-wrap: nowrap;
-  gap: 4px;
+  gap: var(--space-1);
   max-width: 100%;
   padding: 1px 0;
   overflow: hidden;
@@ -2618,7 +2618,7 @@ td.data-table-cell-editing {
   height: 20px;
   min-height: 0;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--phn-control-radius);
   background: rgb(233, 238, 249);
   color: var(--text-primary);
   padding: 1px 6px;
@@ -2670,7 +2670,7 @@ td.data-table-cell-editing {
   width: 14px;
   height: 14px;
   min-height: 0;
-  margin-left: 4px;
+  margin-left: var(--space-1);
   margin-right: -2px;
   padding: 0;
   border: none;
@@ -2758,7 +2758,7 @@ td.data-table-cell-editing {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 12px 12px 8px;
+  padding: var(--space-3) var(--space-3) var(--space-2);
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -2779,7 +2779,7 @@ td.data-table-cell-editing {
 .data-table-linked-record-picker-list {
   flex: 1 1 auto;
   margin: 0;
-  padding: 4px 0;
+  padding: var(--space-1) 0;
   list-style: none;
   overflow-y: auto;
 }
@@ -2787,7 +2787,7 @@ td.data-table-cell-editing {
 .data-table-linked-record-picker-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 6px 12px;
   font-size: 13px;
   cursor: pointer;
@@ -2800,16 +2800,16 @@ td.data-table-cell-editing {
 .data-table-linked-record-picker-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
   border-top: 1px solid var(--border-subtle);
 }
 
 .data-table-linked-record-picker-loading {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 16px 12px;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-3);
   font-size: 13px;
   color: var(--text-muted);
 }

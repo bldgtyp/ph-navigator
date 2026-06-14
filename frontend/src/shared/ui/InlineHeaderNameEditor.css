@@ -5,7 +5,7 @@
   flex: 1 1 auto;
   font-size: 1.55rem;
   font-weight: 700;
-  gap: 8px;
+  gap: var(--space-2);
   letter-spacing: 0;
   line-height: 1.15;
   margin: 0;
@@ -21,7 +21,7 @@
 .inline-header-name-editor--inline {
   font-size: 0.875rem;
   font-weight: inherit;
-  gap: 4px;
+  gap: var(--space-1);
   line-height: 1.2;
   width: 100%;
 }
