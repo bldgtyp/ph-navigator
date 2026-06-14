@@ -541,13 +541,17 @@ parentheses.
      `themes.ts`, data-table `lib/options/create.ts`) so future
      *accidental* hex in other `.ts` becomes visible. Separate guard task.
 
-**P3 — Structure & discoverability (owner's goal #3):**
+**P3 — Structure & discoverability (owner's goal #3)** — *not built; now
+tracked as its own backlog feature folder:
+`../../features/css-structure-discoverability/`.*
 9. `src/styles/README.md` token+class catalog + `shared/ui/index.ts`
    barrel; propagate the `report-table/` pattern. (S–M)
 10. One CSS import strategy; promote shared CSS out of feature files;
     begin splitting `base.css`. (M)
 
-**P4 — Strategic decisions (DECIDED 2026-06-14):**
+**P4 — Strategic decisions (DECIDED 2026-06-14)** — *decided but not built;
+now tracked as its own backlog feature folder:
+`../../features/css-brand-dependency-resilience/`.*
 11. ✅ Vendor + self-host the brand tokens and fonts, with a sync script
     (Theme 8). *Decision: vendor + self-host.*
 12. ✅ Reconcile the docs with the bespoke-CSS reality — update

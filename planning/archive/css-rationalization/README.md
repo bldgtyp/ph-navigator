@@ -3,8 +3,9 @@ DATE: 2026-06-14
 TIME: (local, afternoon)
 STATUS: Complete — P0–P2 landed on main (P2.7 squash-merged 2026-06-14).
   Archived. P3 (structure/discoverability) + P4 (vendor tokens, doc
-  reconcile) were NOT built; they remain as backlog in the review doc and
-  can be picked up as their own feature folder.
+  reconcile) were NOT built; they were pulled out into their own backlog
+  feature folders: ../../features/css-structure-discoverability/ and
+  ../../features/css-brand-dependency-resilience/.
 AUTHOR: Claude Code (Opus 4.8) + Ed May
 SCOPE: Frontend CSS/styling consolidation following the 2026-06-14 review
 RELATED:
@@ -17,10 +18,13 @@ RELATED:
 
 > **STATUS: Complete & archived (2026-06-14).** P0–P2 (correctness, token
 > scales, chip primitive, SVG/3D color, and P2.7 canvas-widget extraction)
-> all landed on `main`. **P3 and P4 were never built** — they remain as an
-> open backlog in
-> [`../../code-reviews/2026-06-14/frontend-css-styling-review.md`](../../code-reviews/2026-06-14/frontend-css-styling-review.md);
-> spin up a fresh feature folder if/when they're picked up.
+> all landed on `main`. **P3 and P4 were never built** — they have been
+> pulled out into their own tracked backlog folders so they aren't lost:
+> [`../../features/css-structure-discoverability/`](../../features/css-structure-discoverability/)
+> (P3) and
+> [`../../features/css-brand-dependency-resilience/`](../../features/css-brand-dependency-resilience/)
+> (P4). Canonical findings remain in
+> [`../../code-reviews/2026-06-14/frontend-css-styling-review.md`](../../code-reviews/2026-06-14/frontend-css-styling-review.md).
 
 Execution surface for the styling cleanup that came out of the
 **2026-06-14 frontend CSS/styling review**. The review doc is the
