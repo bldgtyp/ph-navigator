@@ -10,6 +10,10 @@ import {
 import { sortedElectricHeaters } from "../lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
 import { type ElectricHeaterRow, type ElectricHeatersSlice } from "../types";
+import {
+  customFieldColumnDefs,
+  type CustomFieldTableActions,
+} from "../../../shared/ui/data-table/feature";
 
 export function ElectricHeatersTable({
   electricHeatersSlice,
@@ -24,6 +28,7 @@ export function ElectricHeatersTable({
   overflowMenuActions,
   footerAction,
   onResetView,
+  ...customFieldActions
 }: {
   electricHeatersSlice: ElectricHeatersSlice;
   tableSchema: TableSchema;
@@ -37,15 +42,24 @@ export function ElectricHeatersTable({
   overflowMenuActions?: DataTableProps<ElectricHeaterRow>["overflowMenuActions"];
   footerAction?: DataTableProps<ElectricHeaterRow>["footerAction"];
   onResetView?: DataTableProps<ElectricHeaterRow>["onResetView"];
-}) {
+} & CustomFieldTableActions<ElectricHeaterRow>) {
   const sortedRows = useMemo(
     () => sortedElectricHeaters(electricHeatersSlice.electric_heaters),
     [electricHeatersSlice.electric_heaters],
   );
-  const { fieldDefs } = tableSchema;
+  const { fieldDefs, customFields } = tableSchema;
   const fieldDefByKey = useMemo(
     () => new Map(fieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef])),
     [fieldDefs],
+  );
+  const customColumns = useMemo<DataTableColumnDef<ElectricHeaterRow>[]>(
+    () =>
+      customFieldColumnDefs({
+        customFields,
+        fieldDefByKey,
+        rowsComputed: electricHeatersSlice.rows_computed,
+      }),
+    [customFields, fieldDefByKey, electricHeatersSlice.rows_computed],
   );
   const columns = useMemo<DataTableColumnDef<ElectricHeaterRow>[]>(
     () => [
@@ -111,8 +125,9 @@ export function ElectricHeatersTable({
         accessor: (heater) => heater.notes,
         defaultWidth: 280,
       },
+      ...customColumns,
     ],
-    [fieldDefByKey],
+    [customColumns, fieldDefByKey],
   );
 
   return (
@@ -134,6 +149,7 @@ export function ElectricHeatersTable({
       overflowMenuActions={overflowMenuActions}
       footerAction={footerAction}
       onResetView={onResetView}
+      {...customFieldActions}
     />
   );
 }

@@ -1,13 +1,16 @@
 ---
 DATE: 2026-06-13
 TIME: 09:21 EDT
-STATUS: Active
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Product and behavior contract for custom-field authoring on Equipment and Thermal Bridges DATA-TABLES.
-RELATED: planning/features/equipment-custom-fields/README.md; context/user-stories/32-custom-fields.md; context/technical-requirements/data-table.md
+RELATED: planning/archive/equipment-custom-fields/README.md; context/user-stories/32-custom-fields.md; context/technical-requirements/data-table.md
 ---
 
 # Equipment Custom Fields PRD
+
+This product contract is complete and archived. The implemented scope
+matches the target tables and read-only/editor behavior described here.
 
 ## Goal
 

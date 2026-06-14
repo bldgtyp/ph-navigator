@@ -16,13 +16,20 @@ from features.project_document.document import (
     ElectricHeaterRow,
     ElectricHeatersTableEnvelope,
     ProjectDocumentV1,
+    SingleSelectOption,
 )
 from features.project_document.models import ProjectDocumentSource
 from features.project_document.tables._built_in_seeds import built_in_field_def
+from features.project_document.tables._registry_helpers import (
+    FormulaType,
+    custom_option_lists_for_table,
+    make_field_registry,
+)
 from features.project_document.tables.contracts import TableContract
 from features.project_document.validation import validate_document
 
 ELECTRIC_HEATERS_TABLE_NAME = "electric_heaters"
+_ELECTRIC_HEATERS_TABLE_PATH: tuple[str, ...] = ("equipment", "electric_heaters")
 
 
 ELECTRIC_HEATERS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
@@ -41,6 +48,11 @@ ELECTRIC_HEATERS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
 )
 
 ELECTRIC_HEATERS_BUILT_IN_FIELD_KEYS: tuple[str, ...] = tuple(f.field_key for f in ELECTRIC_HEATERS_BUILT_IN_FIELD_DEFS)
+ELECTRIC_HEATERS_TYPED_COLUMN_FORMULA_TYPES: dict[str, FormulaType] = {
+    "id": "text",
+    "url": "text",
+    "notes": "text",
+}
 
 assert any(f.field_key == RESERVED_FIELD_KEY_RECORD_ID for f in ELECTRIC_HEATERS_BUILT_IN_FIELD_DEFS), (
     "Electric Heaters built-in seed must contain a record_id FieldDef"
@@ -52,7 +64,7 @@ class ElectricHeatersSliceReplaceRequest(BaseModel):
 
     electric_heaters: list[ElectricHeaterRow]
     field_defs: list[TableFieldDef] = Field(default_factory=list)
-    single_select_options: dict[str, list[object]] = Field(default_factory=dict)
+    single_select_options: dict[str, list[SingleSelectOption]] = Field(default_factory=dict)
 
 
 class ElectricHeatersSliceResponse(BaseModel):
@@ -65,7 +77,8 @@ class ElectricHeatersSliceResponse(BaseModel):
     draft_etag: str | None
     electric_heaters: list[ElectricHeaterRow]
     field_defs: list[TableFieldDef]
-    single_select_options: dict[str, list[object]]
+    single_select_options: dict[str, list[SingleSelectOption]]
+    rows_computed: dict[str, dict[str, object]] = Field(default_factory=dict)
 
 
 def apply_electric_heaters_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectDocumentV1:
@@ -73,6 +86,10 @@ def apply_electric_heaters_replace(body: ProjectDocumentV1, payload: BaseModel) 
     if (
         body.tables.equipment.electric_heaters.rows == electric_heaters_payload.electric_heaters
         and body.tables.equipment.electric_heaters.field_defs == electric_heaters_payload.field_defs
+        and all(
+            body.single_select_options.get(key, []) == value
+            for key, value in electric_heaters_payload.single_select_options.items()
+        )
     ):
         return body
 
@@ -82,7 +99,10 @@ def apply_electric_heaters_replace(body: ProjectDocumentV1, payload: BaseModel) 
     )
     next_equipment = body.tables.equipment.model_copy(update={"electric_heaters": next_electric_heaters_envelope})
     next_tables = body.tables.model_copy(update={"equipment": next_equipment})
-    next_body = body.model_copy(update={"tables": next_tables})
+    options = dict(body.single_select_options)
+    for key, value in electric_heaters_payload.single_select_options.items():
+        options[key] = value
+    next_body = body.model_copy(update={"tables": next_tables, "single_select_options": options})
     return validate_document(next_body.model_dump(mode="json"))
 
 
@@ -94,6 +114,8 @@ def electric_heaters_response(
     draft_etag: str | None,
     body: ProjectDocumentV1,
 ) -> ElectricHeatersSliceResponse:
+    from features.project_document.formula import evaluate_table_formulas
+
     return ElectricHeatersSliceResponse(
         project_id=project_id,
         version_id=version_id,
@@ -102,7 +124,8 @@ def electric_heaters_response(
         draft_etag=draft_etag,
         electric_heaters=body.tables.equipment.electric_heaters.rows,
         field_defs=body.tables.equipment.electric_heaters.field_defs,
-        single_select_options={},
+        single_select_options=custom_option_lists_for_table(body, _ELECTRIC_HEATERS_TABLE_PATH),
+        rows_computed=evaluate_table_formulas(electric_heaters_field_registry, body),
     )
 
 
@@ -117,6 +140,14 @@ def extract_electric_heaters_diff_value(body: ProjectDocumentV1) -> dict[str, ob
     return {"electric_heaters": extract_electric_heaters_envelope(body)}
 
 
+electric_heaters_field_registry = make_field_registry(
+    field_keys=ELECTRIC_HEATERS_BUILT_IN_FIELD_KEYS,
+    table_path=_ELECTRIC_HEATERS_TABLE_PATH,
+    row_model=ElectricHeaterRow,
+    built_in_formula_types=ELECTRIC_HEATERS_TYPED_COLUMN_FORMULA_TYPES,
+)
+
+
 electric_heaters_contract = TableContract(
     name=ELECTRIC_HEATERS_TABLE_NAME,
     schema_slug="electric-heater",
@@ -126,6 +157,6 @@ electric_heaters_contract = TableContract(
     apply_replace=apply_electric_heaters_replace,
     extract_rows=extract_electric_heaters_envelope,
     extract_diff_value=extract_electric_heaters_diff_value,
-    table_path=("equipment", "electric_heaters"),
-    field_registry=None,
+    table_path=_ELECTRIC_HEATERS_TABLE_PATH,
+    field_registry=electric_heaters_field_registry,
 )

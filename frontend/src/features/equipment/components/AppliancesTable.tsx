@@ -15,6 +15,10 @@ import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../asset
 import { sortedAppliances } from "../lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
 import {
+  customFieldColumnDefs,
+  type CustomFieldTableActions,
+} from "../../../shared/ui/data-table/feature";
+import {
   APPLIANCE_DATASHEET_FIELD_KEY,
   APPLIANCE_ENERGY_STAR_COLUMN_ID,
   APPLIANCE_ENERGY_STAR_KEY,
@@ -38,6 +42,7 @@ export function AppliancesTable({
   overflowMenuActions,
   footerAction,
   onResetView,
+  ...customFieldActions
 }: {
   appliancesSlice: AppliancesSlice;
   tableSchema: TableSchema;
@@ -52,7 +57,7 @@ export function AppliancesTable({
   overflowMenuActions?: DataTableProps<ApplianceRow>["overflowMenuActions"];
   footerAction?: DataTableProps<ApplianceRow>["footerAction"];
   onResetView?: DataTableProps<ApplianceRow>["onResetView"];
-}) {
+} & CustomFieldTableActions<ApplianceRow>) {
   const sortedRows = useMemo(
     () => sortedAppliances(appliancesSlice.appliances),
     [appliancesSlice.appliances],
@@ -66,10 +71,19 @@ export function AppliancesTable({
     () => new Map((datasheetUrls.data ?? []).map((item) => [item.asset_id, item])),
     [datasheetUrls.data],
   );
-  const { fieldDefs } = tableSchema;
+  const { fieldDefs, customFields } = tableSchema;
   const fieldDefByKey = useMemo(
     () => new Map(fieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef])),
     [fieldDefs],
+  );
+  const customColumns = useMemo<DataTableColumnDef<ApplianceRow>[]>(
+    () =>
+      customFieldColumnDefs({
+        customFields,
+        fieldDefByKey,
+        rowsComputed: appliancesSlice.rows_computed,
+      }),
+    [customFields, fieldDefByKey, appliancesSlice.rows_computed],
   );
   const columns = useMemo<DataTableColumnDef<ApplianceRow>[]>(
     () => [
@@ -219,8 +233,9 @@ export function AppliancesTable({
         accessor: (appliance) => appliance.notes,
         defaultWidth: 280,
       },
+      ...customColumns,
     ],
-    [datasheetUrlById, fieldDefByKey, isEditor, onWrite, projectId],
+    [customColumns, datasheetUrlById, fieldDefByKey, isEditor, onWrite, projectId],
   );
 
   return (
@@ -242,6 +257,7 @@ export function AppliancesTable({
       overflowMenuActions={overflowMenuActions}
       footerAction={footerAction}
       onResetView={onResetView}
+      {...customFieldActions}
     />
   );
 }

@@ -1,13 +1,16 @@
 ---
 DATE: 2026-06-13
 TIME: 09:21 EDT
-STATUS: Active
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Implementation plan for enabling custom-field add affordances on Equipment and Thermal Bridges tables.
-RELATED: planning/features/equipment-custom-fields/README.md; planning/features/equipment-custom-fields/PRD.md; planning/features/equipment-custom-fields/STATUS.md
+RELATED: planning/archive/equipment-custom-fields/README.md; planning/archive/equipment-custom-fields/PRD.md; planning/archive/equipment-custom-fields/STATUS.md
 ---
 
 # Equipment Custom Fields Plan
+
+This plan is complete and archived. The implementation landed through
+the phase sequence recorded in `STATUS.md` and `phases/`.
 
 ## Assessment
 

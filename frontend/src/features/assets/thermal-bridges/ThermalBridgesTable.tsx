@@ -12,6 +12,10 @@ import { singleSelectOption } from "../../../shared/ui/data-table/lib";
 import { AttachmentCell } from "../components/AttachmentCell";
 import { useAssetUrls } from "../hooks";
 import { sameAttachmentAssetIds } from "../lib";
+import {
+  customFieldColumnDefs,
+  type CustomFieldTableActions,
+} from "../../../shared/ui/data-table/feature";
 import { customNumberValue, customTextValue } from "../../equipment/lib/customValueReaders";
 import {
   THERMAL_BRIDGE_PDF_REPORT_FIELD_KEY,
@@ -35,6 +39,7 @@ export function ThermalBridgesTable({
   sessionKey,
   footerAction,
   onResetView,
+  ...customFieldActions
 }: {
   slice: ThermalBridgesSlice;
   tableSchema: TableSchema;
@@ -48,7 +53,7 @@ export function ThermalBridgesTable({
   sessionKey?: DataTableProps<ThermalBridgeRow>["sessionKey"];
   footerAction?: DataTableProps<ThermalBridgeRow>["footerAction"];
   onResetView?: DataTableProps<ThermalBridgeRow>["onResetView"];
-}) {
+} & CustomFieldTableActions<ThermalBridgeRow>) {
   const sortedRows = useMemo(
     () => sortedThermalBridges(slice.thermal_bridges),
     [slice.thermal_bridges],
@@ -62,10 +67,14 @@ export function ThermalBridgesTable({
     () => new Map((reportUrls.data ?? []).map((item) => [item.asset_id, item])),
     [reportUrls.data],
   );
-  const { fieldDefs } = tableSchema;
+  const { fieldDefs, customFields } = tableSchema;
   const fieldDefByKey = useMemo(
     () => new Map(fieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef])),
     [fieldDefs],
+  );
+  const customColumns = useMemo<DataTableColumnDef<ThermalBridgeRow>[]>(
+    () => customFieldColumnDefs({ customFields, fieldDefByKey, rowsComputed: slice.rows_computed }),
+    [customFields, fieldDefByKey, slice.rows_computed],
   );
   const columns = useMemo<DataTableColumnDef<ThermalBridgeRow>[]>(
     () => [
@@ -159,8 +168,9 @@ export function ThermalBridgesTable({
         accessor: (row) => row.notes,
         defaultWidth: 280,
       },
+      ...customColumns,
     ],
-    [fieldDefByKey, isEditor, onWrite, projectId, reportUrlById],
+    [customColumns, fieldDefByKey, isEditor, onWrite, projectId, reportUrlById],
   );
 
   return (
@@ -181,6 +191,7 @@ export function ThermalBridgesTable({
       sessionKey={sessionKey}
       footerAction={footerAction}
       onResetView={onResetView}
+      {...customFieldActions}
     />
   );
 }

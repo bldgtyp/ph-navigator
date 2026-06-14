@@ -4,6 +4,7 @@ export type SingleSelectOption = FieldOption;
 export type CustomValue = string | number | boolean | null;
 
 export type InverseLinks = Record<string, Record<string, string[]>>;
+export type RowsComputed = Record<string, Record<string, unknown>>;
 
 export type InverseLinkField = {
   source_key: string;
@@ -68,7 +69,7 @@ export type RoomsSlice = {
   // are `{error: "<token>"}` objects (see `ComputedCellValue`).
   // Optional to keep test fixtures and pre-P4.4 payloads compatible
   // — consumers treat a missing overlay as `{}`.
-  rows_computed?: Record<string, Record<string, unknown>>;
+  rows_computed?: RowsComputed;
   inverse_links?: InverseLinks;
   inverse_link_fields?: InverseLinkField[];
   inverse_links_fingerprint?: string;
@@ -123,6 +124,7 @@ export type PumpsSlice = {
   // custom entries keyed by `field_key`. Always present.
   field_defs: TableFieldDef[];
   single_select_options: PumpsOptionMap;
+  rows_computed?: RowsComputed;
   inverse_links?: InverseLinks;
   inverse_link_fields?: InverseLinkField[];
   inverse_links_fingerprint?: string;
@@ -162,6 +164,7 @@ export type VentilatorsSlice = {
   ventilators: VentilatorRow[];
   field_defs: TableFieldDef[];
   single_select_options: VentilatorsOptionMap;
+  rows_computed?: RowsComputed;
 };
 
 export type VentilatorsReplacePayload = {
@@ -201,6 +204,7 @@ export type ThermalBridgesSlice = {
   thermal_bridges: ThermalBridgeRow[];
   field_defs: TableFieldDef[];
   single_select_options: ThermalBridgesOptionMap;
+  rows_computed?: RowsComputed;
 };
 
 export type ThermalBridgesReplacePayload = {
@@ -240,6 +244,7 @@ export type FansSlice = {
   fans: FanRow[];
   field_defs: TableFieldDef[];
   single_select_options: FansOptionMap;
+  rows_computed?: RowsComputed;
 };
 
 export type FansReplacePayload = {
@@ -279,6 +284,7 @@ export type HotWaterHeatersSlice = {
   hot_water_heaters: HotWaterHeaterRow[];
   field_defs: TableFieldDef[];
   single_select_options: HotWaterHeatersOptionMap;
+  rows_computed?: RowsComputed;
 };
 
 export type HotWaterHeatersReplacePayload = {
@@ -317,6 +323,7 @@ export type HotWaterTanksSlice = {
   hot_water_tanks: HotWaterTankRow[];
   field_defs: TableFieldDef[];
   single_select_options: HotWaterTanksOptionMap;
+  rows_computed?: RowsComputed;
 };
 
 export type HotWaterTanksReplacePayload = {
@@ -346,6 +353,7 @@ export type ElectricHeatersSlice = {
   electric_heaters: ElectricHeaterRow[];
   field_defs: TableFieldDef[];
   single_select_options: ElectricHeatersOptionMap;
+  rows_computed?: RowsComputed;
 };
 
 export type ElectricHeatersReplacePayload = {
@@ -391,6 +399,7 @@ export type AppliancesSlice = {
   appliances: ApplianceRow[];
   field_defs: TableFieldDef[];
   single_select_options: AppliancesOptionMap;
+  rows_computed?: RowsComputed;
 };
 
 export type AppliancesReplacePayload = {
