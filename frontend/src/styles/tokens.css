@@ -28,9 +28,11 @@
   --chart-4: #d97706;
   --chart-5: #7c3aed;
 
+  --radius-xs: 4px;
   --radius-sm: 5px;
   --phn-radius: var(--radius-sm);
   --phn-control-radius: 6px;
+  --radius-md: 8px;
   /* Fully-rounded pill/circle controls (chips, toggles, round icon buttons). */
   --radius-pill: 999px;
   --z-base: 0;
@@ -44,13 +46,22 @@
   --z-modal: 1000;
   --z-tooltip: 2000;
 
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 24px;
-  --space-6: 32px;
-  --space-7: 48px;
+  /* Spacing scale, px-named for self-documentation (--space-8 == 8px).
+     2px base at the small end where the dense UI needs it, widening at
+     the top. Replaces the prior index-named --space-1..7. */
+  --space-2: 2px;
+  --space-4: 4px;
+  --space-6: 6px;
+  --space-8: 8px;
+  --space-10: 10px;
+  --space-12: 12px;
+  --space-14: 14px;
+  --space-16: 16px;
+  --space-18: 18px;
+  --space-20: 20px;
+  --space-24: 24px;
+  --space-32: 32px;
+  --space-48: 48px;
 
   --shadow-elev-1: 0 1px 2px rgb(0 0 0 / 6%);
   --shadow-elev-2: 0 18px 40px rgb(0 0 0 / 12%);
@@ -85,6 +96,17 @@
   --data-table-header-padding-x: 10px;
   --font-primary: "Geist", sans-serif;
   --font-table: "Geist", sans-serif;
+  /* Type scale (rem). Consolidates the prior ~40 ad-hoc font-sizes onto
+     8 steps; px font-sizes (badges, 13px table body) and em sizes are
+     intentional and left as literals. */
+  --fs-2xs: 0.68rem;
+  --fs-xs: 0.72rem;
+  --fs-sm: 0.78rem;
+  --fs-md: 0.875rem;
+  --fs-lg: 1rem;
+  --fs-xl: 1.1rem;
+  --fs-2xl: 1.25rem;
+  --fs-3xl: 1.55rem;
   /* Readable text on an --accent-filled surface (active lens-bar button,
      primary buttons). Light-theme app, so a fixed white reads correctly
      on the teal --accent; revisit if dark theme is ever enabled. */

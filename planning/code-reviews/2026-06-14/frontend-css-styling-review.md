@@ -461,24 +461,29 @@ parentheses.
    dashboard, and the Materials DataTable confirmed pixel-identical.
    *Tool:* `working/css-review/p1-sweep.mjs` (+ `analyze-values.mjs`).
 
-   **⏸ Deferred — needs a design decision (NOT a neutral sweep):** the
-   measured data shows spacing and font-size usage is too granular to
-   tokenize without *rounding to a chosen scale* (a visible change):
-   - **Spacing:** 741 px values, 29 distinct. The 4px-base `--space-*`
-     scale only matched 354 of them; the dominant *off-grid* values are
-     6px(103), 10px(72), 2px(46), 7px(27), 18px(26), 3px(26), 14px(22) —
-     the app de-facto uses a **2px base**. Decision: redesign `--space-*`
-     to a 2px base (2/4/6/8/10/12/16/20/24/32/48) → enables a fully
-     *neutral* sweep of the rest; or round off-grid→4px grid (layout
-     shifts). Recommend the 2px-base extension.
-   - **Type scale:** 278 font-sizes, 46 distinct, mixing rem/px/em, no
-     scale. Consolidating to ~7–8 steps means choosing canonical sizes
-     (e.g. is "small body" 0.78 / 0.8 / 0.82rem?) — each merge shifts
-     ~0.5–1px on many elements. Needs your canonical-values call; then a
-     codemod + Playwright verification pass.
-   - **Radius remainder:** 4px (×42, the most common radius, no token),
-     3px, 7/8/9/10/12px. Decide: add `--radius-xs:4px` (neutral) or
-     consolidate 4px→`--phn-radius` (5px).
+   **✅ Design-dependent sweep DONE 2026-06-14 (approved, on `main`):**
+   - **Spacing:** redesigned `--space-*` to a px-named **2px-base** scale
+     (`--space-2 … --space-48`, `--space-8` == 8px). Migrated all 325
+     old index-named refs (`--space-1`→`--space-4`, etc.) and tokenized
+     294 more literals. Neutral — odd values (3/5/7px), 1px hairlines,
+     and rare oddballs (22/26/96px) left as literals (no rounding).
+   - **Type scale:** added an 8-step rem scale `--fs-2xs … --fs-3xl`
+     (0.68/0.72/0.78/0.875/1.0/1.1/1.25/1.55). Mapped **227** font-sizes
+     (46 distinct rem values → 8 tokens; 0 raw rem font-sizes left in
+     CSS). Nearest-step rounding ≤0.04rem (~0.6px, imperceptible). px
+     badges / 13px table body / `em` sizes left as literals; the 2
+     recharts `fontSize` props in `ClimateRecordCharts.tsx` left as JS
+     literals.
+   - **Radius:** added `--radius-xs:4px` (swept ×42) and `--radius-md:8px`
+     (×18), neutral; 3/7/9/10/12px left as literals for a later pass.
+   - **Verified:** `make ci` green; Playwright confirmed catalog table +
+     dashboard render pixel-identical (`working/css-review/p1b-*.png`).
+     *Tool:* `working/css-review/p1-sweep-v2.mjs`.
+
+   **Still open for a future pass (no decision blocked):** tighten the
+   spacing scale (drop rarely-used steps once design-reviewed); fold the
+   remaining literal radii (3/7/9/10/12px) into tokens; decide whether
+   the 13px/11px px font-sizes should join the rem scale.
 
 **P2 — Build the missing shared primitives:**
 6. One tokenized `.chip`/`.pill` primitive; migrate the ~12 chips. (M)

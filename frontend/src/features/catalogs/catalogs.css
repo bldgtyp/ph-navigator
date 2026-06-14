@@ -1,17 +1,17 @@
 .catalog-placeholder {
   display: grid;
-  gap: 14px;
+  gap: var(--space-14);
 }
 
 .catalog-roster {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: var(--space-10);
 }
 
 .catalog-description {
   color: var(--text-muted);
-  margin: 6px 0 0;
+  margin: var(--space-6) 0 0;
   max-width: 60ch;
 }
 
@@ -19,15 +19,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
-  margin: var(--space-4) 0 var(--space-3);
+  gap: var(--space-16);
+  margin: var(--space-16) 0 var(--space-12);
   flex-wrap: wrap;
 }
 
 .catalog-inactive-toggle {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-8);
   font-size: 0.92em;
   color: var(--text-muted);
 }
@@ -50,13 +50,13 @@
   font-family: var(--font-table, var(--font-primary));
   font-feature-settings: "kern" 1;
   font-kerning: normal;
-  font-size: 0.875rem;
+  font-size: var(--fs-md);
 }
 
 .catalog-table th,
 .catalog-table td {
   text-align: left;
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-8) var(--space-12);
   border-bottom: 1px solid var(--border-subtle);
   vertical-align: top;
 }
@@ -87,7 +87,7 @@
 
 .catalog-row-actions {
   display: inline-flex;
-  gap: 10px;
+  gap: var(--space-10);
 }
 
 /* Import dialog (Materials / Glazing / Frame catalogs share these via
@@ -97,72 +97,72 @@
 .import-dialog-done,
 .import-dialog-report {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-12);
 }
 
 .import-dialog-counts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: var(--space-2);
+  gap: var(--space-8);
   margin: 0;
 }
 
 .import-dialog-counts > div {
   border: 1px solid var(--border-subtle);
   border-radius: var(--phn-radius);
-  padding: 8px 10px;
+  padding: var(--space-8) var(--space-10);
   background: var(--bg-elev);
 }
 
 .import-dialog-counts dt {
   color: var(--text-muted);
-  font-size: 0.75rem;
+  font-size: var(--fs-xs);
 }
 
 .import-dialog-counts dd {
-  margin: 2px 0 0;
-  font-size: 1.1rem;
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-xl);
   font-weight: 600;
 }
 
 .import-dialog-row-preview > summary {
   cursor: pointer;
   color: var(--text-secondary);
-  font-size: 0.85rem;
+  font-size: var(--fs-md);
 }
 
 .import-dialog-row-preview table {
   border-collapse: collapse;
   width: 100%;
-  margin-top: var(--space-2);
-  font-size: 0.8rem;
+  margin-top: var(--space-8);
+  font-size: var(--fs-sm);
 }
 
 .import-dialog-row-preview th,
 .import-dialog-row-preview td {
   text-align: left;
-  padding: var(--space-1) var(--space-2);
+  padding: var(--space-4) var(--space-8);
   border-bottom: 1px solid var(--border-subtle);
 }
 
 .import-dialog-reasons {
   display: grid;
-  gap: 6px;
+  gap: var(--space-6);
   border-left: 3px solid var(--border-strong);
   border-radius: var(--phn-radius);
-  padding: 10px 12px;
+  padding: var(--space-10) var(--space-12);
 }
 
 .import-dialog-reasons h3 {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: var(--fs-md);
   font-weight: 600;
 }
 
 .import-dialog-reasons ul {
   margin: 0;
-  padding-left: 18px;
-  font-size: 0.8rem;
+  padding-left: var(--space-18);
+  font-size: var(--fs-sm);
 }
 
 .import-dialog-reasons-error {

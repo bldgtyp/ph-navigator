@@ -13,7 +13,7 @@
   align-items: center;
   display: flex;
   justify-content: space-between;
-  gap: var(--space-3);
+  gap: var(--space-12);
 }
 
 .envelope-sidebar h2 {
@@ -44,18 +44,18 @@
 .envelope-sidebar.is-collapsed {
   align-content: start;
   display: grid;
-  gap: 10px;
+  gap: var(--space-10);
   justify-items: center;
-  padding: 18px 10px 18px 0;
+  padding: var(--space-18) var(--space-10) var(--space-18) 0;
   width: 52px;
 }
 
 .envelope-sidebar-header {
   align-items: center;
   display: flex;
-  gap: var(--space-3);
+  gap: var(--space-12);
   justify-content: space-between;
-  padding: 18px 18px 0;
+  padding: var(--space-18) var(--space-18) 0;
 }
 
 .envelope-sidebar.is-collapsed .envelope-sidebar-header {
@@ -65,13 +65,13 @@
 }
 
 .envelope-sidebar-header h2 {
-  font-size: 1rem;
+  font-size: var(--fs-lg);
 }
 
 .envelope-sidebar-tools {
   align-items: center;
   display: flex;
-  gap: 6px;
+  gap: var(--space-6);
 }
 
 .envelope-sidebar-tools .icon-button {
@@ -80,11 +80,11 @@
 
 .envelope-sidebar-list {
   display: grid;
-  gap: 6px;
-  margin: var(--space-4) 0 0;
+  gap: var(--space-6);
+  margin: var(--space-16) 0 0;
   overflow-x: hidden;
   overflow-y: auto;
-  padding: 0 var(--space-2) var(--space-2);
+  padding: 0 var(--space-8) var(--space-8);
 }
 
 .envelope-sidebar-row {
@@ -95,7 +95,7 @@
   grid-template-columns: minmax(0, 1fr) auto;
   min-height: 38px;
   min-width: 0;
-  padding: 6px 6px 6px 10px;
+  padding: var(--space-6) var(--space-6) var(--space-6) var(--space-10);
   text-decoration: none;
 }
 
@@ -117,7 +117,7 @@
 .envelope-sidebar-row-actions {
   align-items: center;
   display: inline-flex;
-  gap: 2px;
+  gap: var(--space-2);
   opacity: 0;
   pointer-events: none;
 }
@@ -132,7 +132,7 @@
   align-items: center;
   background: transparent;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   color: var(--text-secondary);
   display: inline-flex;
   height: 24px;
@@ -180,14 +180,14 @@
   align-items: center;
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
-  gap: var(--space-7);
+  gap: var(--space-48);
   min-height: 56px;
-  padding: var(--space-2) 0;
+  padding: var(--space-8) 0;
 }
 
 .assembly-header h2 {
   color: var(--text-primary);
-  font-size: 1.55rem;
+  font-size: var(--fs-3xl);
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1.15;
@@ -199,14 +199,14 @@
   display: block;
   font-size: 12px;
   line-height: 16px;
-  margin-bottom: var(--space-1);
+  margin-bottom: var(--space-4);
 }
 
 .assembly-header-metrics {
   align-items: center;
   display: flex;
   flex: 0 1 auto;
-  gap: var(--space-3);
+  gap: var(--space-12);
   margin: 0 0 0 auto;
   min-width: 0;
 }
@@ -219,9 +219,9 @@
   color: var(--text-secondary);
   display: inline-flex;
   flex: 0 0 auto;
-  font-size: 0.82rem;
+  font-size: var(--fs-sm);
   font-weight: 500;
-  gap: var(--space-2);
+  gap: var(--space-8);
   min-height: 30px;
   line-height: 1;
   padding: 7px 10px 8px;
@@ -232,9 +232,9 @@
   align-items: center;
   color: var(--text-secondary);
   display: flex;
-  font-size: 0.82rem;
+  font-size: var(--fs-sm);
   font-weight: 550;
-  gap: var(--space-1);
+  gap: var(--space-4);
   line-height: 1;
   margin: 0;
   white-space: nowrap;
@@ -283,13 +283,13 @@
   box-shadow: var(--shadow-elev-1);
   color: white;
   display: grid;
-  font-size: 0.78rem;
+  font-size: var(--fs-sm);
   font-weight: 400;
-  gap: var(--space-2);
+  gap: var(--space-8);
   line-height: 1.35;
   max-width: min(316px, calc(100vw - 24px));
   opacity: 0;
-  padding: var(--space-2);
+  padding: var(--space-8);
   pointer-events: none;
   position: absolute;
   right: 0;
@@ -343,7 +343,7 @@
   --assembly-pick-ring: color-mix(in oklab, seagreen 82%, transparent);
 
   display: grid;
-  gap: 10px;
+  gap: var(--space-10);
   margin-inline: auto;
   min-width: 360px;
 }
@@ -359,7 +359,7 @@
 .assembly-orientation-labels {
   color: var(--text-secondary);
   font-family: var(--font-mono);
-  font-size: 0.62rem;
+  font-size: var(--fs-2xs);
   height: 100%;
   letter-spacing: 0.08em;
   pointer-events: none;
@@ -397,7 +397,7 @@
   gap: 1px;
   min-height: 28px;
   overflow: visible;
-  padding: 2px 4px;
+  padding: var(--space-2) var(--space-4);
   position: absolute;
   top: -58px;
   transform: translateX(-50%);
@@ -408,7 +408,7 @@
   align-items: center;
   background: transparent;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   color: var(--text-secondary);
   display: flex;
   height: 23px;
@@ -559,12 +559,12 @@
   align-items: center;
   background: color-mix(in oklab, var(--bg-card) 94%, transparent);
   border: 1px solid var(--border-subtle);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   box-shadow: var(--shadow-elev-1);
   display: inline-flex;
   gap: 3px;
   left: 0;
-  padding: 2px;
+  padding: var(--space-2);
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
@@ -595,7 +595,7 @@
 .dimension-error {
   background: var(--bg-card);
   border: 1px solid var(--phn-danger);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   box-shadow: var(--shadow-elev-1);
   color: var(--phn-danger);
   font-size: 11px;
@@ -611,7 +611,7 @@
   align-items: center;
   background: transparent;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   color: var(--text-secondary);
   display: flex;
   height: 26px;
@@ -652,7 +652,7 @@
   font: inherit;
   inset: 0;
   justify-content: center;
-  padding: 10px;
+  padding: var(--space-10);
   position: absolute;
   text-align: left;
 }
@@ -800,7 +800,7 @@
 .material-legend {
   display: grid;
   justify-content: center;
-  padding-top: 14px;
+  padding-top: var(--space-14);
 }
 
 .material-legend-table {
@@ -812,7 +812,7 @@
 .material-legend-table th,
 .material-legend-table td {
   border-bottom: 1px solid var(--border-subtle);
-  padding: var(--space-2) var(--space-4);
+  padding: var(--space-8) var(--space-16);
   text-align: left;
 }
 
@@ -840,7 +840,7 @@
 
 .material-legend-swatch {
   border: 1px solid var(--border-subtle);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   display: block;
   height: 26px;
   width: 26px;
@@ -852,13 +852,13 @@
 
 .spec-expansion {
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-16);
 }
 
 .spec-expansion__columns {
   align-items: start;
   display: grid;
-  gap: var(--space-5);
+  gap: var(--space-24);
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 
@@ -871,25 +871,25 @@
 .spec-expansion__left,
 .spec-expansion__right {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-12);
 }
 
 .spec-expansion__header {
   align-items: center;
   display: flex;
-  gap: var(--space-3);
+  gap: var(--space-12);
   justify-content: space-between;
 }
 
 .spec-expansion__header-actions {
   align-items: center;
   display: inline-flex;
-  gap: var(--space-2);
+  gap: var(--space-8);
 }
 
 .spec-expansion__use-sites {
   display: grid;
-  gap: 10px;
+  gap: var(--space-10);
   list-style: none;
   margin: 0;
   padding: 0;
@@ -900,14 +900,14 @@
   border: 1px solid var(--border-subtle);
   border-radius: var(--phn-control-radius);
   display: grid;
-  gap: var(--space-2);
-  padding: 10px 12px;
+  gap: var(--space-8);
+  padding: var(--space-10) var(--space-12);
 }
 
 .use-site__header {
   align-items: center;
   display: flex;
-  gap: var(--space-2);
+  gap: var(--space-8);
   justify-content: space-between;
 }
 
@@ -916,7 +916,7 @@
   display: inline-flex;
   flex-wrap: wrap;
   font-size: 13px;
-  gap: 6px;
+  gap: var(--space-6);
 }
 
 .use-site__where {
@@ -954,17 +954,17 @@
 
 .material-drift-summary {
   border: 1px solid var(--border-subtle);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   display: grid;
-  gap: var(--space-2);
-  padding: var(--space-3);
+  gap: var(--space-8);
+  padding: var(--space-12);
 }
 
 .material-drift-summary header,
 .material-drift-summary li {
   align-items: center;
   display: flex;
-  gap: 10px;
+  gap: var(--space-10);
   justify-content: space-between;
 }
 
@@ -975,7 +975,7 @@
 
 .material-drift-summary ul {
   display: grid;
-  gap: 6px;
+  gap: var(--space-6);
   list-style: none;
   margin: 0;
   padding: 0;
@@ -987,7 +987,7 @@
 
 .spec-evidence {
   display: grid;
-  gap: var(--space-2);
+  gap: var(--space-8);
 }
 
 .spec-evidence h3 {
@@ -1012,7 +1012,7 @@
 
 .use-site-note-editor {
   display: grid;
-  gap: 6px;
+  gap: var(--space-6);
 }
 
 .use-site-note-editor textarea {
@@ -1022,12 +1022,12 @@
 
 .envelope-empty {
   border: 1px dashed var(--border-subtle);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 28px;
 }
 
 .envelope-empty-action {
-  margin-top: var(--space-3);
+  margin-top: var(--space-12);
 }
 
 .envelope-command-banner {
@@ -1036,23 +1036,23 @@
   border: 1px solid color-mix(in oklab, var(--accent) 30%, var(--border-subtle));
   border-radius: var(--phn-control-radius);
   display: flex;
-  gap: 10px;
+  gap: var(--space-10);
   justify-content: space-between;
-  padding: 8px 10px;
+  padding: var(--space-8) var(--space-10);
 }
 
 .material-drift-fields {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-12);
 }
 
 .material-drift-field {
   border: 1px solid var(--border-subtle);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   display: grid;
-  gap: var(--space-2);
+  gap: var(--space-8);
   margin: 0;
-  padding: 10px;
+  padding: var(--space-10);
 }
 
 .material-drift-field legend {
@@ -1063,12 +1063,12 @@
   color: var(--text-secondary);
   font-size: 12px;
   font-weight: 400;
-  margin-left: var(--space-2);
+  margin-left: var(--space-8);
 }
 
 .material-drift-field dl {
   display: grid;
-  gap: var(--space-2);
+  gap: var(--space-8);
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin: 0;
 }
@@ -1080,13 +1080,13 @@
 
 .project-material-editor {
   display: grid;
-  gap: 18px;
+  gap: var(--space-18);
 }
 
 .project-material-editor__header {
   align-items: flex-start;
   display: flex;
-  gap: var(--space-3);
+  gap: var(--space-12);
   justify-content: space-between;
 }
 
@@ -1107,13 +1107,13 @@
   color: var(--text-secondary);
   font-size: 12px;
   line-height: 1.4;
-  padding: 8px 10px;
+  padding: var(--space-8) var(--space-10);
 }
 
 .project-material-editor__group {
   border: 0;
   display: grid;
-  gap: 10px;
+  gap: var(--space-10);
   margin: 0;
   min-width: 0;
   padding: 0;
@@ -1133,13 +1133,13 @@
 
 .project-material-editor__grid {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-12);
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .project-material-editor__field {
   display: grid;
-  gap: var(--space-1);
+  gap: var(--space-4);
   min-width: 0;
 }
 
@@ -1153,7 +1153,7 @@
   display: flex;
   font-size: 12px;
   font-weight: 500;
-  gap: 6px;
+  gap: var(--space-6);
   line-height: 1.2;
 }
 
@@ -1173,7 +1173,7 @@
   color: var(--text-primary);
   font: inherit;
   min-height: 36px;
-  padding: 6px 10px;
+  padding: var(--space-6) var(--space-10);
   width: 100%;
 }
 
@@ -1193,10 +1193,10 @@
   align-items: center;
   border-top: 1px solid var(--border-subtle);
   display: flex;
-  gap: var(--space-3);
+  gap: var(--space-12);
   justify-content: space-between;
-  margin-top: var(--space-1);
-  padding-top: 14px;
+  margin-top: var(--space-4);
+  padding-top: var(--space-14);
 }
 
 .project-material-editor__footer .form-error {
@@ -1225,7 +1225,7 @@
   display: inline-flex;
   font-family: var(--font-mono);
   overflow: hidden;
-  padding: 2px;
+  padding: var(--space-2);
 }
 
 .modal-unit-toggle::before {
@@ -1252,7 +1252,7 @@
   border: 0;
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: 0.66rem;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   letter-spacing: 0.04em;
   line-height: 1;
@@ -1273,8 +1273,8 @@
 
 .layer-thickness-form {
   display: grid;
-  gap: 14px;
-  margin-top: 14px;
+  gap: var(--space-14);
+  margin-top: var(--space-14);
 }
 
 .length-dialog-input-row {
@@ -1303,7 +1303,7 @@
   background: transparent;
   color: var(--text-secondary);
   font-family: var(--font-mono);
-  font-size: 0.9rem;
+  font-size: var(--fs-md);
   letter-spacing: 0;
   line-height: 1;
   padding: 0;
@@ -1340,12 +1340,12 @@
   display: flex;
   min-width: 170px;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-2);
   border: 1px solid var(--border-card);
   border-radius: var(--phn-radius);
   background: var(--bg-card);
   box-shadow: var(--shadow-popover);
-  padding: var(--space-1);
+  padding: var(--space-4);
 }
 
 .segment-actions-menu-item {
@@ -1355,7 +1355,7 @@
   border-radius: var(--phn-radius);
   background: transparent;
   color: var(--text-primary);
-  font-size: 0.78rem;
+  font-size: var(--fs-sm);
   padding: 7px 8px;
   text-align: left;
   text-transform: none;
@@ -1371,20 +1371,20 @@
 }
 
 .segment-properties-form {
-  gap: var(--space-4);
+  gap: var(--space-16);
   max-height: min(76vh, 760px);
   overflow: auto;
-  padding-right: 2px;
+  padding-right: var(--space-2);
 }
 
 .segment-dialog-section {
   border: 1px solid var(--border-subtle);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-12);
   margin: 0;
   margin-bottom: 15px;
-  padding: var(--space-3);
+  padding: var(--space-12);
 }
 
 .segment-dialog-section legend,
@@ -1392,41 +1392,41 @@
   font-size: 14px;
   font-weight: 700;
   margin: 0;
-  padding: 0 var(--space-1);
+  padding: 0 var(--space-4);
 }
 
 .segment-section-header {
   align-items: center;
   display: flex;
-  gap: var(--space-3);
+  gap: var(--space-12);
   justify-content: space-between;
 }
 
 .segment-geometry-grid {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-12);
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .material-picker {
   border: 1px solid var(--border-subtle);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-12);
   margin: 0;
   margin-top: 15px;
   margin-bottom: 15px;
-  padding: var(--space-3);
+  padding: var(--space-12);
 }
 
 .material-picker legend {
   font-weight: 700;
-  padding: 0 var(--space-1);
+  padding: 0 var(--space-4);
 }
 
 .material-picker-panel {
   display: grid;
-  gap: 10px;
+  gap: var(--space-10);
 }
 
 .modal-danger-action {
@@ -1445,11 +1445,11 @@
   .envelope-sidebar {
     border-right: 0;
     border-bottom: 1px solid var(--border-subtle);
-    padding: var(--space-3) 0;
+    padding: var(--space-12) 0;
   }
 
   .assembly-workspace {
-    padding: var(--space-4) 0 0;
+    padding: var(--space-16) 0 0;
   }
 
   .assembly-header {
