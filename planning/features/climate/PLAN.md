@@ -10,8 +10,11 @@ RELATED:
   - decisions.md
   - phases/phase-01-sun-path-service.md
   - phases/phase-02-reference-datasets-and-format.md
+  - phases/phase-02b-phi-phpp-importer.md (deferred)
   - phases/phase-03-climate-tab-ui.md
-  - phases/phase-04-design-conditions-and-metrics.md
+  - phases/phase-03b-climate-source-attach-select.md (deferred)
+  - phases/phase-03c-climate-visualization.md (deferred)
+  - phases/phase-04-design-conditions-and-metrics.md (deferred)
   - planning/features_v1.1/model-viewer-sun-path/ (Phase-1 consumer)
 ---
 
@@ -32,10 +35,24 @@ shipped** (the tab + reference-dataset browser are live). The *use* of the
 data (Phase 4 design conditions + the fRSI/comfort consumers + the D-CL-5
 interior assumption + temperature-asymmetry) is deferred to later feature
 work. The real Phius seed is **done** (parser revalidated against the real
-1007-station set + seeded). Phase-2 carry-overs into Phase 3: the PHI xlsx
-importer (workbook on disk; needs
-`openpyxl` + `io_climate.py`) and promoting `ClimateRecord` to a
-`context/` reference doc.
+1007-station set + seeded).
+
+## Deferred work index (later phases)
+
+Every deferred item is now a tracked phase doc (Ed 2026-06-13 — "record
+deferred items as new phases"). Suggested order top-to-bottom:
+
+| Later phase | What | Gate / depends on |
+|---|---|---|
+| **3a remainder** — in `phase-03-…md` | Migrate the location *editor* into the tab (D-CL-3); today editing is read-only-in-tab + lives in Settings | none (frontend only) |
+| **3b** — `phase-03b-climate-source-attach-select.md` | New backend `project_climate_source` model + attach/select UI (D-CL-4/9/11) | after 3a editor migration |
+| **3c** — `phase-03c-climate-visualization.md` | Charting-lib decision + monthly graphs + sun-path visual | after 3b (sun-path piece needs only Phase 1) |
+| **2b** — `phase-02b-phi-phpp-importer.md` | PHI/PHPP xlsx importer (`provider='phi'`); ~130-col PPP-worksheet reverse-engineering + `openpyxl` | independent; the seed seam is ready |
+| **4** — `phase-04-design-conditions-and-metrics.md` | Per-source design-conditions contract (+ MCP) | a scheduled fRSI/comfort consumer + D-CL-5 |
+
+Small follow-up (too small for its own phase): **promote `ClimateRecord`
+to a `context/` reference doc** — the contract currently lives in
+`features/climate/record.py` docstrings + PRD §4.3.
 
 ## Cross-feature ordering (the answer to "Climate first?")
 

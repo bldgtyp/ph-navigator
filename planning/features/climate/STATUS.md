@@ -141,8 +141,14 @@ to a `context/` reference doc.
 |---|---|---|
 | 1 — Sun-path service | **Implemented** (2026-06-13; committed `005839dc`) | none |
 | 2 — Reference datasets + standardized format | **Implemented** (2026-06-13; `make ci` green). Phius parser revalidated + real 1007-station seed verified + seed CLI. PHI xlsx importer still deferred (workbook on disk; needs `openpyxl` + `io_climate.py`) | none |
-| 3 — Climate tab UI | **In progress** — 3a shipped (tab + dataset browser + read-only location + record tables; `make ci` green). Remaining: 3a editor migration, 3b source attach/select (new backend), 3c charts + sun-path | Phase 1 + Phase 2 (met) |
+| 3 — Climate tab UI | **In progress** — 3a shipped (tab + dataset browser + read-only location + record tables; `make ci` green). Remaining: 3a editor migration, then 3b + 3c (own docs) | Phase 1 + Phase 2 (met) |
+| 2b — PHI/PHPP importer (`phase-02b-…`) | **Deferred** — ~130-col PPP-worksheet reverse-engineering + `openpyxl`; seed seam ready | independent |
+| 3b — Source attach/select (`phase-03b-…`) | **Deferred/planned** — new backend `project_climate_source` + attach/select UI (D-CL-4/9/11) | after 3a editor migration |
+| 3c — Visualization (`phase-03c-…`) | **Deferred/planned** — charting-lib decision + monthly graphs + sun-path visual | after 3b |
 | 4 — Design conditions + metrics | **Deferred** (later feature work) | scheduled fRSI/comfort consumer (+ D-CL-5) |
+
+See `PLAN.md` → "Deferred work index" for the suggested order across these
+later phases.
 
 ## Dependent features (read Climate; built elsewhere)
 

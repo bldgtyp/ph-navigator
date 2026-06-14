@@ -183,31 +183,19 @@ Seed inserts are per-row in one transaction — fine at this volume (1.3 s);
 batch with `executemany` only if a future, larger set is slow. The
 REVALIDATION NOTE is retired.
 
-### Deferred (carry into Phase 3)
+### Deferred — promoted to their own phase docs
 
-- **PHI/PHPP xlsx seed importer** — NOT built (deferred again, Ed
-  2026-06-13, to prioritize the Phase-3 tab). **Investigated 2026-06-13 —
-  it is a bigger job than "add openpyxl":**
-  - The workbook (`phi_phpp_10_6_climate_data.xlsx`) is **not** a clean
-    per-location table; it is a live **PHPP `Climate` worksheet** (sheets
-    `Sheet1` + `Climate`, 1474 rows × 166 cols) with the dataset library
-    embedded in it.
-  - The per-dataset monthly data **is present** — a wide numeric block
-    (~cols S–EF, ~1000+ populated rows ≈ the datasets) — but as **~130
-    unlabeled, formula-driven columns** per location (lat/long/alt + eight
-    12-month series + peak/design columns), interleaved with the active-
-    climate display block (cols C–U) and the cascading-dropdown helper
-    lists (cols AA–AZ). Column semantics must be recovered by **anchoring
-    to known active-climate values** and spot-validating.
-  - `PHX/PHPP/sheet_io/io_climate.py` does **not** cover this: it reads
-    only the *single active* climate via named ranges; `get_start_rows`
-    is a `TODO` stub. There is no existing reader for the embedded library.
-  - Plan when picked up: `uv add openpyxl`; map the library columns by
-    anchoring; validate against the active climate + several spot-checked
-    datasets + the honeybee round-trip; seed `provider='phi',
-    version='10.6'`. The storage/API/MCP layer is provider-agnostic
-    (`seed_dataset(...)`) and the CLI already has a `--provider` seam, so
-    only the parser is missing. `importers/__init__.py` records this.
-- **Promote `ClimateRecord` to `context/`** — the authoritative contract
-  currently lives in `features/climate/record.py` docstrings + PRD §4.3;
-  a thin `context/` reference doc pointing at it is a small follow-up.
+The Phase-2 deferrals are now tracked as first-class later-work phases
+(Ed 2026-06-13, "record deferred items as new phases"):
+
+- **PHI/PHPP xlsx seed importer → `phase-02b-phi-phpp-importer.md`.**
+  Investigated: the workbook is a live PHPP `Climate` worksheet with the
+  library embedded as ~130 unlabeled formula columns × ~1000 datasets
+  (`io_climate.py` only reads the active climate) — a full
+  anchor-and-validate session, not a quick parser. The storage/API/MCP
+  layer is provider-agnostic (`seed_dataset(...)`) and the CLI has a
+  `--provider` seam, so only the parser is missing. Full recovery plan in
+  that doc.
+- **Promote `ClimateRecord` to `context/`** — small follow-up; tracked in
+  `PLAN.md` → "Deferred work index" (the authoritative contract currently
+  lives in `features/climate/record.py` docstrings + PRD §4.3).
