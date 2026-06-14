@@ -2,9 +2,6 @@
 // "shared/ui" rather than reaching into individual files. See styles/README.md
 // for the styling side (which sheet owns which class) and the
 // "how to style a new feature" recipe.
-//
-// TablePrimitiveStub is intentionally not re-exported: it has no callers and is
-// flagged for removal (see planning/archive/css-structure-discoverability).
 
 // Leaf components + hooks.
 export * from "./AppMenu";

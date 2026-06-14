@@ -33,8 +33,8 @@ RELATED:
 > `rgb/hsl` color-token sweep, the `check:hex` → `rgb/hsl`/`.ts` extension, and
 > the spacing/type/radius design pass →
 > [`../../features/css-token-guard-sweep/`](../../features/css-token-guard-sweep/).
-> `TablePrimitiveStub.tsx` was found to be dead code and flagged (not deleted)
-> for a future cleanup.
+> `TablePrimitiveStub.tsx` was found to be dead code (zero importers) and
+> subsequently deleted in a follow-up commit.
 
 The third remediation tranche from the **2026-06-14 frontend CSS/styling
 review**. P0–P2 (correctness, token scales, chips, SVG color, canvas-widget
