@@ -49,7 +49,7 @@ browser verification: tokenizing the ~24 `rgb/hsl` color literals, extending
 `check:hex` to `rgb/hsl`/`.ts` (with sanctioned-palette exemptions the original
 review under-scoped), and the spacing/type/radius scale design pass.
 
-## Known follow-up
+## Follow-up — done
 
-`TablePrimitiveStub.tsx` has zero importers (dead). Flagged, not deleted, per
-the surgical-change rule. Recommend removing it in a future cleanup.
+`TablePrimitiveStub.tsx` had zero importers (dead). It was flagged during P3
+and **deleted in a follow-up commit** once confirmed unused.
