@@ -4,7 +4,7 @@ TIME: 09:21 EDT
 STATUS: Complete
 AUTHOR: Codex
 SCOPE: Verification, browser smoke, documentation updates, and closeout for Equipment Custom Fields.
-RELATED: planning/features/equipment-custom-fields/README.md; planning/features/equipment-custom-fields/STATUS.md; planning/features/equipment-custom-fields/phases/phase-01-backend-registry-pilot.md; planning/features/equipment-custom-fields/phases/phase-02-backend-registry-rollout.md; planning/features/equipment-custom-fields/phases/phase-03-frontend-affordance-wiring.md
+RELATED: planning/archive/equipment-custom-fields/README.md; planning/archive/equipment-custom-fields/STATUS.md; planning/archive/equipment-custom-fields/phases/phase-01-backend-registry-pilot.md; planning/archive/equipment-custom-fields/phases/phase-02-backend-registry-rollout.md; planning/archive/equipment-custom-fields/phases/phase-03-frontend-affordance-wiring.md
 ---
 
 # Phase 04 - Verification and Closeout

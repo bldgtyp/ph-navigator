@@ -15,6 +15,7 @@ from features.assets.service import AssetService
 from features.auth import repository as auth_repository
 from features.auth.models import UserPublic
 from features.auth.service import client_ip, user_agent
+from features.model_viewer.schemas.ladybug import SunPathAndCompassDTOSchema
 from features.project_location import repository
 from features.project_location.epw import EPW_HEADER_PREFIX_BYTES, parse_epw_location_header
 from features.project_location.models import (
@@ -25,6 +26,7 @@ from features.project_location.models import (
     ProjectLocationUpdateResponse,
     UpdateProjectLocationRequest,
 )
+from features.project_location.sun_path import build_sun_path
 from features.projects.access import ProjectAccess
 from features.shared.errors import api_error
 
@@ -35,6 +37,28 @@ def get_project_location(project_id: UUID) -> ProjectLocation:
         row = repository.get_location(conn, project_id)
         epw = epw_descriptor_for_row(conn, project_id, row)
     return project_location_from_row(row, epw)
+
+
+def get_project_sun_path(project_id: UUID) -> SunPathAndCompassDTOSchema | None:
+    """Build the project's sun-path diagram, or None when the location is unset.
+
+    Climate consumes the `project_location` data in-process (D-CL-1). Returns
+    None -- never raises -- when there is no location row or latitude/longitude
+    are unset, because the sun path is undefined without coordinates. Optional
+    fields fall back to neutral defaults: no elevation -> sea level, no true
+    north -> +Y, no time zone -> the meridian implied by longitude.
+    """
+    with connection() as conn:
+        row = repository.get_location(conn, project_id)
+    if row is None or row["latitude"] is None or row["longitude"] is None:
+        return None
+    return build_sun_path(
+        latitude=row["latitude"],
+        longitude=row["longitude"],
+        elevation_m=row["elevation_m"] if row["elevation_m"] is not None else 0.0,
+        true_north_deg=row["true_north_deg"] if row["true_north_deg"] is not None else 0.0,
+        time_zone=row["time_zone"],
+    )
 
 
 def update_project_location(

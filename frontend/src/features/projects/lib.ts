@@ -2,6 +2,7 @@ import { errorMessage } from "../../shared/lib/errors";
 
 export const PROJECT_TABS = [
   "status",
+  "climate",
   "apertures",
   "envelope",
   "rooms",
@@ -13,6 +14,7 @@ export type ProjectTab = (typeof PROJECT_TABS)[number];
 
 export const TAB_LABELS: Record<ProjectTab, string> = {
   status: "Status",
+  climate: "Climate",
   apertures: "Apertures",
   envelope: "Envelope",
   rooms: "Rooms",
@@ -23,6 +25,7 @@ export const TAB_LABELS: Record<ProjectTab, string> = {
 
 export const TAB_COPY: Record<ProjectTab, string> = {
   status: "Track this project's lifecycle milestones.",
+  climate: "Project location and weather/climate reference datasets.",
   apertures: "Aperture types, frames, glazing, dimensions, and U-Value.",
   envelope: "Envelope assemblies land after the aperture catalog slices.",
   rooms: "Room schedules, iCFA factors, and occupancy assumptions.",

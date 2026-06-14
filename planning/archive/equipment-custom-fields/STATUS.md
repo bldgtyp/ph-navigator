@@ -4,7 +4,7 @@ TIME: 09:21 EDT
 STATUS: Complete
 AUTHOR: Codex
 SCOPE: Current status for Equipment and Thermal Bridges custom-field wiring.
-RELATED: planning/features/equipment-custom-fields/README.md; planning/features/equipment-custom-fields/PLAN.md
+RELATED: planning/archive/equipment-custom-fields/README.md; planning/archive/equipment-custom-fields/PLAN.md
 ---
 
 # Equipment Custom Fields Status
@@ -35,7 +35,7 @@ table component.
 
 ## Next Step
 
-Keep the draft PR ready for review against `main`.
+None for implementation. This feature is complete and archived.
 
 ## Blockers
 
