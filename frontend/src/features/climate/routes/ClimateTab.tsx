@@ -3,7 +3,7 @@ import { useUnitPreference } from "../../../lib/units";
 import { useProjectLocationQuery } from "../../projects/hooks";
 import type { ProjectDetail } from "../../projects/types";
 import { ClimateDatasetBrowser } from "../components/ClimateDatasetBrowser";
-import { ClimateLocationCard } from "../components/ClimateLocationCard";
+import { ClimateLocationSection } from "../components/ClimateLocationSection";
 
 // The Climate tab: the project's location record plus the app-wide
 // reference-dataset browser (Phius today, PHI next). Source attach/select
@@ -23,7 +23,7 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
 
       <section className="climate-section" aria-labelledby="climate-location-title">
         <h3 id="climate-location-title">Project location</h3>
-        <ClimateLocationCard projectId={project.id} unitSystem={unitSystem} />
+        <ClimateLocationSection project={project} />
       </section>
 
       <section className="climate-section" aria-labelledby="climate-datasets-title">

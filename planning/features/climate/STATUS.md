@@ -23,20 +23,24 @@ RELATED:
 ## Current state
 
 **Phase 1 + Phase 2 implemented; Phase 3 in progress (sub-phase 3a
-shipped) — 2026-06-13.** `make ci` green (backend 800 passed; frontend
-1586).
+COMPLETE) — 2026-06-13.** `make ci` green (backend 800 passed; frontend
+suite passing).
 
-- **Phase 3a** — the Climate tab is live: `climate` tab added to
-  `PROJECT_TABS` (right after Status); new `frontend/src/features/climate/`
-  client (`types`/`api`/`query-keys`/`hooks`) over the
-  `/api/v1/climate/datasets…` endpoints; a reference-dataset **browser**
-  (dataset picker + country/region filter + nearest-to-project) with the
-  standardized record rendered as read-only monthly + design-condition
-  tables (IP/SI temperature toggle); a read-only project-location card.
-  Tests: `features/climate/__tests__/` (lib, api query builder, record-table
-  render + unit toggle). **Remaining 3a step:** migrate the rich location
-  *editor* into the tab (D-CL-3) — today the tab shows location read-only
-  and editing still happens in Settings.
+- **Phase 3a — COMPLETE (2026-06-13).** The Climate tab is live: `climate`
+  tab added to `PROJECT_TABS` (right after Status); new
+  `frontend/src/features/climate/` client (`types`/`api`/`query-keys`/
+  `hooks`) over the `/api/v1/climate/datasets…` endpoints; a
+  reference-dataset **browser** (dataset picker + country/region filter +
+  nearest-to-project) with the standardized record rendered as read-only
+  monthly + design-condition tables (IP/SI temperature toggle). **The rich
+  location editor now lives in the Climate tab** (D-CL-3): the editor + EPW
+  upload/parse flow were extracted into a reusable `useProjectLocationForm`
+  hook + `ProjectLocationEditor`/`ProjectLocationSummary` components; the tab
+  hosts the editable section with its own Save, and project **Settings now
+  shows a compact read-only summary** that points to the Climate tab. Tests:
+  `features/climate/__tests__/` (lib, api query builder, record-table render +
+  unit toggle, `ClimateLocationSection` editor/viewer/EPW/late-resolve) +
+  the slimmed `ProjectSettingsModal.location` read-only test.
 
 - **Phase 1** — pure `build_sun_path(...)` + `GET …/sun-path` route +
   `get_project_sun_path` MCP tool in `backend/features/project_location/`.
@@ -81,11 +85,9 @@ storage/API/MCP layer is provider-agnostic; PHI plugs in via the same
 
 ## Next step
 
-Continue `phases/phase-03-climate-tab-ui.md`. **3a is shipped** (tab +
-dataset browser + read-only location + record tables). Remaining 3a
-step: **migrate the rich location editor into the tab** (D-CL-3 —
-extract `EditableLocationFields`, leave a compact read-only summary in
-Settings). Then **3b** (new backend `project_climate_source` model +
+Continue `phases/phase-03-climate-tab-ui.md`. **3a is complete** (tab +
+dataset browser + record tables + the migrated location editor; Settings
+now read-only). Next: **3b** (new backend `project_climate_source` model +
 attach/select; D-CL-4/D-CL-11) and **3c** (charting-lib decision +
 monthly graphs + the sun-path visual, coordinated with
 `model-viewer-sun-path`). Independent follow-ups still open: (a) the PHI
@@ -110,9 +112,9 @@ to a `context/` reference doc.
   Climate sits near the front of `PROJECT_TABS`, right after Status.
 - **Resolved (Ed 2026-06-13):** D-CL-4 (store all sources; ASHRAE
   pointer).
-- **Implemented (Phase 3a):** D-CL-3 (the Climate tab exists, placed
-  after Status; the editor-migration half of D-CL-3 is the remaining 3a
-  step).
+- **Implemented (Phase 3a) — D-CL-3 fully done:** the Climate tab exists,
+  placed after Status, and **owns the location editor**; project Settings
+  keeps only a compact read-only summary that points to the tab.
 - **Proposed, recommended (confirm on review):** D-CL-6 (store the EPW),
   D-CL-7 (durable + editable location; reproducibility via pinning),
   **D-CL-9 (custom locations — schema supports it; tab wiring is 3b)**,
@@ -141,9 +143,9 @@ to a `context/` reference doc.
 |---|---|---|
 | 1 — Sun-path service | **Implemented** (2026-06-13; committed `005839dc`) | none |
 | 2 — Reference datasets + standardized format | **Implemented** (2026-06-13; `make ci` green). Phius parser revalidated + real 1007-station seed verified + seed CLI. PHI xlsx importer still deferred (workbook on disk; needs `openpyxl` + `io_climate.py`) | none |
-| 3 — Climate tab UI | **In progress** — 3a shipped (tab + dataset browser + read-only location + record tables; `make ci` green). Remaining: 3a editor migration, then 3b + 3c (own docs) | Phase 1 + Phase 2 (met) |
+| 3 — Climate tab UI | **In progress** — 3a **complete** (tab + dataset browser + record tables + migrated location editor; Settings now read-only; `make ci` green). Remaining: 3b + 3c (own docs) | Phase 1 + Phase 2 (met) |
 | 2b — PHI/PHPP importer (`phase-02b-…`) | **Deferred** — ~130-col PPP-worksheet reverse-engineering + `openpyxl`; seed seam ready | independent |
-| 3b — Source attach/select (`phase-03b-…`) | **Deferred/planned** — new backend `project_climate_source` + attach/select UI (D-CL-4/9/11) | after 3a editor migration |
+| 3b — Source attach/select (`phase-03b-…`) | **Deferred/planned** — new backend `project_climate_source` + attach/select UI (D-CL-4/9/11) | 3a complete (met) |
 | 3c — Visualization (`phase-03c-…`) | **Deferred/planned** — charting-lib decision + monthly graphs + sun-path visual | after 3b |
 | 4 — Design conditions + metrics | **Deferred** (later feature work) | scheduled fRSI/comfort consumer (+ D-CL-5) |
 

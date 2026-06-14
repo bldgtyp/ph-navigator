@@ -22,27 +22,15 @@
 }
 
 /* Project-location read-only card */
-.climate-location-card {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+.climate-location-editor {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-3);
-  margin: 0;
-  padding: var(--space-4);
-  border: 1px solid var(--border-card);
-  border-radius: var(--phn-radius);
-  background: var(--bg-card);
 }
 
-.climate-location-card dt {
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.climate-location-card dd {
-  margin: 2px 0 0;
+.climate-location-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 /* Dataset browser */

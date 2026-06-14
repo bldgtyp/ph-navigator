@@ -26,12 +26,13 @@ RELATED:
 |---|---|---|---|
 | 1 — Sun-path service ✅ **done** (2026-06-13) | Backend sun-path builder + `GET /projects/{id}/sun-path` + MCP; north-sign verified (identity) | None — `project_location` data + `ladybug-core` exist | Model Viewer Site & Sun render; Climate tab sun-path visual |
 | 2 — Reference datasets + standardized format ✅ **done** (2026-06-13; Phius revalidated + real 1007-station seed; PHI xlsx deferred) | Canonical `ClimateRecord` + honeybee_ph adapters; app-wide versioned `climate_dataset*` store; Phius `-mon.txt` importer + idempotent seed + seed CLI; dataset read endpoints + MCP | None | The tab dropdowns/graphs; the design-conditions contract |
-| 3 — Climate tab UI 🚧 **in progress** (3a shipped 2026-06-13) — decomposed 3a/3b/3c | New `climate` tab. **3a** (done): tab + reference-dataset browser + read-only location + record tables. **3b**: project-climate source model + attach/select (new backend; D-CL-4/11). **3c**: charts + sun-path visual. Remaining 3a: location editor migration | Phase 1 + Phase 2 (met) | The "see + record + compare sources" goal |
+| 3 — Climate tab UI 🚧 **in progress** (3a complete 2026-06-13) — decomposed 3a/3b/3c | New `climate` tab. **3a** (done): tab + reference-dataset browser + record tables + the migrated location editor (`useProjectLocationForm` hook; Settings read-only). **3b**: project-climate source model + attach/select (new backend; D-CL-4/11). **3c**: charts + sun-path visual | Phase 1 + Phase 2 (met) | The "see + record + compare sources" goal |
 | 4 — Design conditions + metrics | Per-source, source-parameterized design-conditions contract (+ MCP) | **Deferred** (Ed 2026-06-13) — needs a scheduled fRSI/comfort consumer | Thermal-Bridges fRSI; Window comfort |
 
 **Focus (Ed 2026-06-13): the climate data *store* — Phases 1–3.**
 Phases 1 and 2 are **done**; **Phase 3 is in progress — sub-phase 3a
-shipped** (the tab + reference-dataset browser are live). The *use* of the
+complete** (the tab + reference-dataset browser + the migrated location
+editor are live). The *use* of the
 data (Phase 4 design conditions + the fRSI/comfort consumers + the D-CL-5
 interior assumption + temperature-asymmetry) is deferred to later feature
 work. The real Phius seed is **done** (parser revalidated against the real
@@ -44,8 +45,7 @@ deferred items as new phases"). Suggested order top-to-bottom:
 
 | Later phase | What | Gate / depends on |
 |---|---|---|
-| **3a remainder** — in `phase-03-…md` | Migrate the location *editor* into the tab (D-CL-3); today editing is read-only-in-tab + lives in Settings | none (frontend only) |
-| **3b** — `phase-03b-climate-source-attach-select.md` | New backend `project_climate_source` model + attach/select UI (D-CL-4/9/11) | after 3a editor migration |
+| **3b** — `phase-03b-climate-source-attach-select.md` | New backend `project_climate_source` model + attach/select UI (D-CL-4/9/11) | 3a complete (met) |
 | **3c** — `phase-03c-climate-visualization.md` | Charting-lib decision + monthly graphs + sun-path visual | after 3b (sun-path piece needs only Phase 1) |
 | **2b** — `phase-02b-phi-phpp-importer.md` | PHI/PHPP xlsx importer (`provider='phi'`); ~130-col PPP-worksheet reverse-engineering + `openpyxl` | independent; the seed seam is ready |
 | **4** — `phase-04-design-conditions-and-metrics.md` | Per-source design-conditions contract (+ MCP) | a scheduled fRSI/comfort consumer + D-CL-5 |

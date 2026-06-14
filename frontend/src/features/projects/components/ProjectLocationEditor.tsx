@@ -6,7 +6,7 @@ import { assetDownloadPath } from "../../assets/api";
 import { uploadAsset } from "../../assets/hooks";
 import {
   elevationUnitLabel,
-  formatLocationElevationDisplay,
+  formatReadOnlyCoordinate,
   type ProjectLocationFormValues,
 } from "../location-form";
 import type { EpwParseResponse, ProjectLocation } from "../types";
@@ -23,69 +23,10 @@ const COMMON_TIME_ZONES = [
   "Pacific/Honolulu",
 ] as const;
 
-export function ProjectLocationSettingsSection({
-  location,
-  values,
-  unitSystem,
-  isViewer,
-  isLoading,
-  error,
-  warnings,
-  projectId,
-  isParsingEpw,
-  onParseEpw,
-  onChange,
-  onApplyEpwSuggestion,
-}: {
-  location: ProjectLocation | undefined;
-  values: ProjectLocationFormValues;
-  unitSystem: UnitSystem;
-  isViewer: boolean;
-  isLoading: boolean;
-  error: Error | null;
-  warnings: string[];
-  projectId: string;
-  isParsingEpw: boolean;
-  onParseEpw: (assetId: string) => Promise<EpwParseResponse>;
-  onChange: (field: LocationFormField, value: string) => void;
-  onApplyEpwSuggestion: (response: EpwParseResponse) => void;
-}) {
-  return (
-    <section className="settings-section" aria-labelledby="settings-location-title">
-      <div className="settings-section-heading">
-        <h3 id="settings-location-title">Location</h3>
-        <span>{elevationUnitLabel(unitSystem)}</span>
-      </div>
-      {isLoading ? <p className="form-note">Loading project location...</p> : null}
-      {error ? (
-        <p className="form-error">{errorMessage(error, "Could not load project location.")}</p>
-      ) : null}
-      {warnings.length > 0 ? (
-        <div className="draft-banner settings-location-warning" role="status">
-          {warnings.map((warning) => (
-            <span key={warning}>{warning}</span>
-          ))}
-        </div>
-      ) : null}
-      {isViewer ? (
-        <ReadOnlyLocation projectId={projectId} location={location} unitSystem={unitSystem} />
-      ) : (
-        <EditableLocationFields
-          location={location}
-          values={values}
-          unitSystem={unitSystem}
-          projectId={projectId}
-          isParsingEpw={isParsingEpw}
-          onParseEpw={onParseEpw}
-          onChange={onChange}
-          onApplyEpwSuggestion={onApplyEpwSuggestion}
-        />
-      )}
-    </section>
-  );
-}
-
-function EditableLocationFields({
+// The editable project-location fields plus the EPW upload/parse flow. The
+// surrounding state (form values, validation, save) lives in
+// `useProjectLocationForm`; this component is presentational.
+export function ProjectLocationEditor({
   location,
   values,
   unitSystem,
@@ -261,85 +202,14 @@ function EditableLocationFields({
   );
 }
 
-function ReadOnlyLocation({
-  projectId,
-  location,
-  unitSystem,
-}: {
-  projectId: string;
-  location: ProjectLocation | undefined;
-  unitSystem: UnitSystem;
-}) {
-  if (!location?.is_set) {
-    return <p className="form-note">No location set.</p>;
-  }
-  return (
-    <dl className="settings-readonly-list">
-      <div>
-        <dt>Coordinates</dt>
-        <dd>
-          {formatReadOnlyNumber(location.latitude, "deg")} /{" "}
-          {formatReadOnlyNumber(location.longitude, "deg")}
-        </dd>
-      </div>
-      <div>
-        <dt>Elevation</dt>
-        <dd>{formatReadOnlyElevation(location.elevation_m, unitSystem)}</dd>
-      </div>
-      <div>
-        <dt>Time zone</dt>
-        <dd>{location.time_zone ?? "None"}</dd>
-      </div>
-      <div>
-        <dt>True north</dt>
-        <dd>{formatReadOnlyNumber(location.true_north_deg, "deg")}</dd>
-      </div>
-      <div>
-        <dt>Address</dt>
-        <dd>{location.site_address ?? "None"}</dd>
-      </div>
-      <div>
-        <dt>City / state</dt>
-        <dd>{[location.city, location.state].filter(Boolean).join(", ") || "None"}</dd>
-      </div>
-      <div>
-        <dt>EPW</dt>
-        <dd>
-          {location.epw ? (
-            <a href={assetDownloadPath(projectId, location.epw.id)}>
-              {location.epw.filename ?? location.epw.id}
-            </a>
-          ) : (
-            "None"
-          )}
-        </dd>
-      </div>
-      <div>
-        <dt>EPW source</dt>
-        <dd>{location.epw_source_url ?? "None"}</dd>
-      </div>
-    </dl>
-  );
-}
-
 function formatEpwSuggestion(response: EpwParseResponse): string {
   const suggestion = response.suggestion;
   return [
     suggestion.city,
     suggestion.state,
-    formatReadOnlyNumber(suggestion.latitude, "deg"),
-    formatReadOnlyNumber(suggestion.longitude, "deg"),
+    formatReadOnlyCoordinate(suggestion.latitude),
+    formatReadOnlyCoordinate(suggestion.longitude),
   ]
     .filter((part) => part && part !== "None")
     .join(" / ");
-}
-
-function formatReadOnlyNumber(value: number | null, suffix: string): string {
-  if (value === null) return "None";
-  return `${Number.isInteger(value) ? value : Number(value.toFixed(6))} ${suffix}`;
-}
-
-function formatReadOnlyElevation(valueM: number | null, unitSystem: UnitSystem): string {
-  if (valueM === null) return "None";
-  return `${formatLocationElevationDisplay(valueM, unitSystem)} ${elevationUnitLabel(unitSystem)}`;
 }
