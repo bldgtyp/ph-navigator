@@ -920,7 +920,7 @@
 .aperture-element-card__name:focus,
 .aperture-element-card__name:focus-within {
   border-color: transparent;
-  background: var(--bg-input);
+  background: var(--bg-input, var(--bg-card));
 }
 
 .aperture-element-card__summary-uvalue {
@@ -1056,7 +1056,7 @@
 }
 
 .aperture-operation-type-menu__trigger {
-  background: var(--bg-input);
+  background: var(--bg-input, var(--bg-card));
   border: 1px solid var(--border-subtle);
   border-radius: 4px;
   color: var(--text-primary);
@@ -1228,7 +1228,7 @@
 }
 
 .manufacturer-column {
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-subtle);
   border-radius: 6px;
   padding: 0.5rem 0.75rem;
 }
@@ -1367,7 +1367,7 @@
 }
 .refresh-dialog__table th,
 .refresh-dialog__table td {
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-subtle);
   padding: 0.3rem 0.4rem;
   text-align: left;
   vertical-align: top;
@@ -1412,7 +1412,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.3rem 0;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-subtle);
   font-size: 0.875rem;
 }
 
@@ -1426,7 +1426,7 @@
 }
 .project-refs__table th,
 .project-refs__table td {
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-subtle);
   padding: 0.25rem 0.4rem;
   text-align: left;
 }

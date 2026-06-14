@@ -89,3 +89,96 @@
   display: inline-flex;
   gap: 10px;
 }
+
+/* Import dialog (Materials / Glazing / Frame catalogs share these via
+   their catalog page's catalogs.css import). The ModalDialog shell is
+   styled by modals.css; these rules cover the inner stages only. */
+.import-dialog-pick,
+.import-dialog-done,
+.import-dialog-report {
+  display: grid;
+  gap: 12px;
+}
+
+.import-dialog-counts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.import-dialog-counts > div {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--phn-radius);
+  padding: 8px 10px;
+  background: var(--bg-elev);
+}
+
+.import-dialog-counts dt {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.import-dialog-counts dd {
+  margin: 2px 0 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.import-dialog-row-preview > summary {
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.import-dialog-row-preview table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 8px;
+  font-size: 0.8rem;
+}
+
+.import-dialog-row-preview th,
+.import-dialog-row-preview td {
+  text-align: left;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.import-dialog-reasons {
+  display: grid;
+  gap: 6px;
+  border-left: 3px solid var(--border-strong);
+  border-radius: var(--phn-radius);
+  padding: 10px 12px;
+}
+
+.import-dialog-reasons h3 {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.import-dialog-reasons ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.8rem;
+}
+
+.import-dialog-reasons-error {
+  background: var(--phn-danger-bg);
+  border-left-color: var(--phn-danger);
+}
+
+.import-dialog-reasons-error h3 {
+  color: var(--phn-danger);
+}
+
+.import-dialog-reasons-warning {
+  background: var(--phn-warning-bg);
+  border-left-color: var(--phn-warning);
+}
+
+.import-dialog-reasons-warning h3 {
+  color: var(--phn-warning);
+}

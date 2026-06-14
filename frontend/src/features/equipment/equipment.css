@@ -116,3 +116,26 @@
   cursor: pointer;
   font-weight: 400;
 }
+
+.hp-helper-text {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.hp-option-add-trigger {
+  justify-self: start;
+  font-size: 0.78rem;
+}
+
+.hp-cascade-list {
+  margin: 0;
+  padding-left: 18px;
+  max-height: 240px;
+  overflow-y: auto;
+  display: grid;
+  gap: 4px;
+}
+
+.hp-cascade-meta {
+  color: var(--text-muted);
+}

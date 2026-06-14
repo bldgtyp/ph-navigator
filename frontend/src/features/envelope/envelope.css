@@ -929,7 +929,7 @@
 }
 
 .material-drift-badge {
-  background: color-mix(in oklab, var(--phn-warning) 16%, var(--surface));
+  background: color-mix(in oklab, var(--phn-warning) 16%, var(--bg-card));
   border: 1px solid color-mix(in oklab, var(--phn-warning) 45%, var(--border-subtle));
   border-radius: 999px;
   color: var(--text-primary);
@@ -943,12 +943,12 @@
 
 .material-drift-badge.source_deactivated,
 .material-drift-badge.source_missing {
-  background: color-mix(in oklab, var(--phn-danger) 12%, var(--surface));
+  background: color-mix(in oklab, var(--phn-danger) 12%, var(--bg-card));
   border-color: color-mix(in oklab, var(--phn-danger) 45%, var(--border-subtle));
 }
 
 .material-drift-badge.customized {
-  background: color-mix(in oklab, var(--accent) 10%, var(--surface));
+  background: color-mix(in oklab, var(--accent) 10%, var(--bg-card));
   border-color: color-mix(in oklab, var(--accent) 35%, var(--border-subtle));
 }
 
