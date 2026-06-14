@@ -1,9 +1,13 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Planned — the climate-data foundation. Start after (or parallel
-  to) Phase 1; required before the tab (Phase 3) and design conditions
-  (Phase 4).
+STATUS: Implemented 2026-06-13 — standardized `ClimateRecord` + adapters,
+  app-wide dataset store + migration, Phius importer + seed routine, read
+  endpoints + MCP all landed; `make ci` green. The Phius importer is now
+  **revalidated against the real 1007-station 2022 set** (parser rewritten
+  to the verified format, real seed verified, seed CLI added). The
+  PHI/PHPP xlsx importer is the one remaining deferred slice (workbook on
+  disk; needs `openpyxl` + `io_climate.py` study). See §5 Outcome.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff — the standardized climate record + the
   app-wide, versioned Phius/PHI reference datasets + seed importers.
@@ -115,3 +119,95 @@ build on.
 - Phius 2022 + PHI 10.6 seeded, queryable, version-tagged; counts
   verified (Phius ~1007).
 - Read endpoints + MCP live. `make ci` green.
+
+## 5. Outcome (implemented 2026-06-13)
+
+Landed as a new `backend/features/climate/` module (app-wide reference
+data is its own concern, kept separate from project-scoped
+`project_location`; the eventual `project_location → climate` rename is a
+Phase-3 follow-up).
+
+- **`record.py`** — Pydantic v2 `ClimateRecord` (+ `ClimateLocation` /
+  `ClimateData` / `ClimateMonthlyTemps` / `ClimateMonthlyRadiation` /
+  `ClimatePeakLoad(s)` / `ClimateGround` / `ClimatePhppCodes` /
+  `ClimateAux`) mirroring `honeybee_ph.site` (PRD §4.3, D-CL-10).
+  `from_honeybee_ph_site()` / `to_honeybee_ph_site()` adapters bridge our
+  ordered 12-element monthly lists ↔ honeybee_ph's month-keyed dicts;
+  identity/`aux` ride along in `user_data`. **Lossless round-trip is
+  test-pinned** (`Site().to_dict()` → record → `Site.from_dict()` equal).
+  Used `glob` (not `global`) for global-horizontal radiation to keep the
+  bridge a trivial pass-through and stay a valid Python identifier.
+- **migration `20260613_0025`** — `climate_dataset` (`(provider,
+  version)` unique) + `climate_dataset_location` (`data` JSONB, geo +
+  lat/long indexes), app-wide (no `project_id`), immutable per release.
+- **`repository.py` / `service.py`** — list/search (country/region),
+  nearest (planar + cos-lat correction, no PostGIS), get; plus an
+  idempotent `seed_dataset(provider, version, records, …)` (delete +
+  rebuild per `(provider, version)` in one transaction; `replace=False`
+  to no-op on an existing release).
+- **`importers/phius.py`** — `parse_phius_mon_txt/file` → `ClimateRecord`
+  (label→field mapping centralized in `_SERIES_FIELDS` / `_SCALARS`; the
+  3 design columns → heat1/heat2/cooling1) + `seed_phius_dataset(root)`.
+  **Revalidated against the real Phius 2022 set** (1007 files, all 50
+  states parse + seed clean): the parser was rewritten for the verified
+  real shape — packed label-scan header rows, numeric-only design tails
+  (Dewpoint/Sky design cells are metadata, skipped), units/German label
+  stripping, albedo-from-sentence, country=US + region from the file path,
+  first-block-wins on the one duplicated file (`DALLAS_LOVE_FIELD`). The
+  golden fixture is now a real, unmodified station file
+  (`tests/fixtures/climate/phius/USA/MA/WORCHESTER_REGIONAL_ARPT_MA-mon.txt`).
+- **`importers/__main__.py`** — committed re-runnable seed CLI:
+  `uv run python -m features.climate.importers --provider phius --root <dir>`
+  (idempotent per `(provider, version)`; `--no-replace` to skip an
+  existing release).
+- **`routes.py`** — `GET /api/v1/climate/datasets`,
+  `…/datasets/{id}/locations?country=&region=&near=lat,long`,
+  `…/datasets/{id}/locations/{loc_id}` (auth = any signed-in user).
+- **`mcp.py`** — `list_climate_datasets` / `search_climate_locations` /
+  `get_climate_location`, app-wide (token-gated, **no** project scope —
+  the datasets are shared); route/MCP parity test-pinned.
+
+Tests: `tests/test_climate_datasets.py` (honeybee round-trip + identity,
+Phius parser golden + truncation guard, seed idempotency + replace=False,
+route list/search/nearest/detail + 404 + bad-`near`, MCP parity + auth).
+`make ci` green (backend 800 passed).
+
+### Real Phius seed — DONE (2026-06-13)
+
+Ed's real Phius 2022 files were on disk (gitignored under
+`planning/features/climate/example_data/`). The parser was rewritten
+against the verified real format, all 1007 stations parse + seed clean
+(50 states; ~1.3 s), and the seed was verified against the dev DB
+(`location_count == 1007`). The honeybee_ph round-trip stays lossless.
+Seed inserts are per-row in one transaction — fine at this volume (1.3 s);
+batch with `executemany` only if a future, larger set is slow. The
+REVALIDATION NOTE is retired.
+
+### Deferred (carry into Phase 3)
+
+- **PHI/PHPP xlsx seed importer** — NOT built (deferred again, Ed
+  2026-06-13, to prioritize the Phase-3 tab). **Investigated 2026-06-13 —
+  it is a bigger job than "add openpyxl":**
+  - The workbook (`phi_phpp_10_6_climate_data.xlsx`) is **not** a clean
+    per-location table; it is a live **PHPP `Climate` worksheet** (sheets
+    `Sheet1` + `Climate`, 1474 rows × 166 cols) with the dataset library
+    embedded in it.
+  - The per-dataset monthly data **is present** — a wide numeric block
+    (~cols S–EF, ~1000+ populated rows ≈ the datasets) — but as **~130
+    unlabeled, formula-driven columns** per location (lat/long/alt + eight
+    12-month series + peak/design columns), interleaved with the active-
+    climate display block (cols C–U) and the cascading-dropdown helper
+    lists (cols AA–AZ). Column semantics must be recovered by **anchoring
+    to known active-climate values** and spot-validating.
+  - `PHX/PHPP/sheet_io/io_climate.py` does **not** cover this: it reads
+    only the *single active* climate via named ranges; `get_start_rows`
+    is a `TODO` stub. There is no existing reader for the embedded library.
+  - Plan when picked up: `uv add openpyxl`; map the library columns by
+    anchoring; validate against the active climate + several spot-checked
+    datasets + the honeybee round-trip; seed `provider='phi',
+    version='10.6'`. The storage/API/MCP layer is provider-agnostic
+    (`seed_dataset(...)`) and the CLI already has a `--provider` seam, so
+    only the parser is missing. `importers/__init__.py` records this.
+- **Promote `ClimateRecord` to `context/`** — the authoritative contract
+  currently lives in `features/climate/record.py` docstrings + PRD §4.3;
+  a thin `context/` reference doc pointing at it is a small follow-up.

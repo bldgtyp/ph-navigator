@@ -1,7 +1,8 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Ready — build first. No open decisions for this phase.
+STATUS: Implemented 2026-06-13 — builder + route + MCP + north-sign
+  fixture landed; `make ci` green; pending commit/merge. See §6.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff — the project-scoped sun-path service.
 RELATED:
@@ -116,3 +117,40 @@ sun-path line of work.**
   (`planning/features_v1.1/model-viewer-sun-path` Phase 1) can consume
   the endpoint with no further backend work — i.e. this phase fully
   owns the backend that feature originally drafted.
+
+## 6. Outcome (implemented 2026-06-13)
+
+Landed in `backend/features/project_location/`:
+- `sun_path.py` — pure `build_sun_path(...)` + `utc_offset_hours(...)`
+  (IANA → standard-meridian offset, DST stripped; longitude fallback
+  when no zone is set). Origin-centered, **unit radius** (frontend scales
+  to model bounds), DST off.
+- `service.py::get_project_sun_path(project_id)` — reads
+  `project_location` in-process; returns `None` (never raises) when the
+  row or lat/long is unset; defaults elevation→0, true-north→0.
+- `routes.py` — `GET /api/v1/projects/{id}/sun-path`, view-access,
+  `SunPathAndCompassDTOSchema | None`, `Cache-Control: private,
+  max-age=0` (location is mutable; do not reuse the immutable model_data
+  policy).
+- `mcp.py::tool_get_project_sun_path` + registration in
+  `features/mcp/{tools,server}.py` — `project:read`, same null-on-unset
+  shape; MCP/route parity pinned by test.
+
+**North sign (D-PL-4) — RESOLVED: identity.** The stored
+`true_north_deg` (CCW from +Y; 90°=W, 270°=E) passes to ladybug's
+`north_angle` **unchanged**. Verified empirically (ladybug rotates the
+diagram CCW by `north_angle`, the same sense as our convention:
+`sun_math_angle = 90 + north_angle − azimuth`) and locked by
+`tests/test_climate_sun_path.py::test_builder_north_sign_is_identity`
+(true-north 90° swings the compass North tick to −X = due West). Recorded
+inline in `sun_path.py`.
+
+**DTO placement.** Reused `model_viewer.schemas.ladybug` DTOs (phase
+option (a)): no import cycle (`model_viewer` does not import
+`project_location`; the frontend consumes the endpoint directly).
+Relocation to a shared/`climate` schema home is a **Phase-3 follow-up**
+(when `project_location` is renamed to `climate`).
+
+Tests: `tests/test_climate_sun_path.py` (builder populated, north-sign
+fixture, offset/DST, route null × 2 + diagram, MCP parity + null +
+scope). `make ci` green.

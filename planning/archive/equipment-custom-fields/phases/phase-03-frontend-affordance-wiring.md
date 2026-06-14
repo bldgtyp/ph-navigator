@@ -4,7 +4,7 @@ TIME: 09:21 EDT
 STATUS: Complete
 AUTHOR: Codex
 SCOPE: Wire active Add Field affordances into Equipment and Thermal Bridges DataTables.
-RELATED: planning/features/equipment-custom-fields/phases/phase-02-backend-registry-rollout.md; frontend/src/features/equipment/components/RoomsTableSlot.tsx; frontend/src/features/equipment/components/RoomsTable.tsx; frontend/src/features/equipment/routes/EquipmentPageBody.tsx; frontend/src/features/assets/routes/ThermalBridgesPage.tsx
+RELATED: planning/archive/equipment-custom-fields/phases/phase-02-backend-registry-rollout.md; frontend/src/features/equipment/components/RoomsTableSlot.tsx; frontend/src/features/equipment/components/RoomsTable.tsx; frontend/src/features/equipment/routes/EquipmentPageBody.tsx; frontend/src/features/assets/routes/ThermalBridgesPage.tsx
 ---
 
 # Phase 03 - Frontend Affordance Wiring

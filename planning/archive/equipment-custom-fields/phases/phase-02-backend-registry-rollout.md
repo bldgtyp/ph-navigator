@@ -4,7 +4,7 @@ TIME: 09:21 EDT
 STATUS: Complete
 AUTHOR: Codex
 SCOPE: Roll backend custom-field registry support across remaining Equipment and Thermal Bridges tables.
-RELATED: planning/features/equipment-custom-fields/phases/phase-01-backend-registry-pilot.md; backend/features/project_document/tables/ventilators.py; backend/features/project_document/tables/fans.py; backend/features/project_document/tables/hot_water_heaters.py; backend/features/project_document/tables/hot_water_tanks.py; backend/features/project_document/tables/electric_heaters.py; backend/features/project_document/tables/appliances.py; backend/features/project_document/tables/thermal_bridges.py
+RELATED: planning/archive/equipment-custom-fields/phases/phase-01-backend-registry-pilot.md; backend/features/project_document/tables/ventilators.py; backend/features/project_document/tables/fans.py; backend/features/project_document/tables/hot_water_heaters.py; backend/features/project_document/tables/hot_water_tanks.py; backend/features/project_document/tables/electric_heaters.py; backend/features/project_document/tables/appliances.py; backend/features/project_document/tables/thermal_bridges.py
 ---
 
 # Phase 02 - Backend Registry Rollout

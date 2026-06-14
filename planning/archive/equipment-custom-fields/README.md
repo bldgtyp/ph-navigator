@@ -66,8 +66,8 @@ tests passed, browser smoke proved Add field authoring on Pumps,
 Ventilators, and Thermal Bridges, Pumps custom values persisted through
 the draft table path, formula custom fields render from computed
 overlays on the newly enabled target tables, and locked versions hide
-schema-mutation controls. The final repo gate passed, and the branch is
-ready for PR review.
+schema-mutation controls. The final repo gate passed, and this packet
+is archived as the completed feature record.
 
 ## Phase Map
 

@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { AperturesTab } from "../../apertures/routes/AperturesTab";
 import { ThermalBridgesPage } from "../../assets/routes/ThermalBridgesPage";
+import { ClimateTab } from "../../climate/routes/ClimateTab";
 import { EquipmentPage } from "../../equipment/routes/EquipmentPage";
 import { EnvelopePage } from "../../envelope/routes/EnvelopePage";
 import { RoomsPage } from "../../equipment/routes/RoomsPage";
@@ -15,6 +16,10 @@ const ModelTab = lazy(() =>
 export function ProjectTabContent({ tab, project }: { tab: ProjectTab; project: ProjectDetail }) {
   if (tab === "status") {
     return <StatusTab project={project} />;
+  }
+
+  if (tab === "climate") {
+    return <ClimateTab project={project} />;
   }
 
   if (tab === "apertures") {
