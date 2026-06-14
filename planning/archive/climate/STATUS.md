@@ -1,14 +1,14 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Active — Phases 1–3 implemented (2026-06-14). Phase 1 (sun-path
-  service) + Phase 2 (standardized `ClimateRecord`, app-wide versioned
-  dataset store, Phius `-mon.txt` importer revalidated against the real
-  1007-station 2022 set + seed CLI, dataset read endpoints + MCP) + Phase 3
-  (the Climate tab: location editor, sources roster, reference-dataset
-  browser, monthly graphs, sun-path visual) are all done. Remaining open
-  work: the PHI/PHPP xlsx importer (phase-02b), the climate-source
-  custom-record entry form, and Phase 4 design conditions — all deferred.
+STATUS: Complete (archived 2026-06-14) — Phases 1–3 implemented and on main.
+  Phase 1 (sun-path service) + Phase 2 (standardized `ClimateRecord`,
+  app-wide versioned dataset store, Phius `-mon.txt` importer revalidated
+  against the real 1007-station 2022 set + seed CLI, dataset read endpoints +
+  MCP) + Phase 3 (the Climate tab: location editor, sources roster,
+  reference-dataset browser, monthly graphs, sun-path visual) are all done.
+  Remaining deferred work moved to `planning/features_v1.1/climate-*`
+  (PHI importer, design conditions, tab follow-ups).
 AUTHOR: Claude (for Ed)
 SCOPE: Status, gates, and decisions for the Climate feature.
 RELATED:
@@ -70,7 +70,7 @@ reference-dataset browser, monthly graphs, and the sun-path visual.
 
 **Phius revalidation — DONE (2026-06-13).** Ed's real Phius 2022 files
 turned out to be on disk (gitignored under
-`planning/features/climate/example_data/`). The blind-authored parser was
+`planning/archive/climate/example_data/`). The blind-authored parser was
 **rewritten against the verified real format** — packed label-scan header
 rows, numeric-only design tails (Dewpoint/Sky design cells are metadata,
 skipped), units/German stripping, albedo-from-sentence, country=US +
@@ -86,20 +86,23 @@ storage/API/MCP layer is provider-agnostic; PHI plugs in via the same
 
 ## Next step
 
-**Phase 3 is complete** (3a + 3b + 3c, 2026-06-14): the tab hosts the
-location editor (Settings read-only), the **climate-sources roster** (attach
-Phius/PHI from the browser, ASHRAE pointer, project EPW; one default —
-D-CL-4/9/11), the reference-dataset browser, **monthly graphs** (recharts,
-behind a Table/Charts toggle), and the **2D SVG sun-path visual**. The
-"see + record + compare sources" data-store goal (Phases 1–3) is met.
+**None — the feature is complete and archived.** Phase 3 (3a + 3b + 3c,
+2026-06-14) shipped the tab: the location editor (Settings read-only), the
+**climate-sources roster** (attach Phius/PHI from the browser, ASHRAE
+pointer, project EPW; one default — D-CL-4/9/11), the reference-dataset
+browser, **monthly graphs** (recharts, behind a Table/Charts toggle), and the
+**2D SVG sun-path visual**. The "see + record + compare sources" data-store
+goal (Phases 1–3) is met.
 
-Independent follow-ups still open: (a) the PHI xlsx importer (deferred; see
-phase-02 §5); (b) the climate-source **custom-record entry form** (backend
-ready; UI deferred — see phase-03b §Outcome); (c) promote `ClimateRecord` to
-a `context/` reference doc; (d) sun-path **cardinal N/E/S/W labels** + charts
-rendering a *resolved attached source* (vs. the browsed record) — see
-phase-03c §Outcome. **Phase 4** (per-source design conditions) remains
-deferred to a scheduled fRSI/comfort consumer.
+Remaining deferred work was split into three v1.1 candidates (2026-06-14):
+
+- `planning/features_v1.1/climate-phi-importer/` — the PHI/PHPP xlsx importer
+  (was phase-02b).
+- `planning/features_v1.1/climate-design-conditions/` — per-source design
+  conditions (was Phase 4).
+- `planning/features_v1.1/climate-tab-followups/` — custom-record entry form,
+  sun-path cardinal labels, attached-source charts, and promoting
+  `ClimateRecord` to a `context/` doc.
 
 ## Decisions
 

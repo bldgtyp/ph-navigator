@@ -14,7 +14,7 @@ RELATED:
   - PLAN.md
   - phases/phase-01-static-sun-path.md
   - phases/phase-02-scrubber.md
-  - planning/features/climate/ (OWNS the sun-path service — build first)
+  - planning/archive/climate/ (OWNS the sun-path service — build first)
   - planning/archive/model-viewer/ (completed MVP — source of truth)
   - planning/archive/model-viewer/decisions.md D-07
   - planning/features_v1.1/model-viewer-post-mvp/ (umbrella router)
@@ -23,7 +23,7 @@ RELATED:
 # Model Viewer — Sun Path (3D render)
 
 > **Realigned 2026-06-13.** The sun-path *backend* (builder + endpoint)
-> moved to the **Climate** feature (`planning/features/climate/`
+> moved to the **Climate** feature (`planning/archive/climate/`
 > Phase 1), its proper home, because the sun path is climate-derived and
 > has multiple consumers (this 3D render + the Climate tab). This
 > feature is now **frontend-only**: it consumes the Climate
@@ -59,7 +59,7 @@ Scope:
 
 ## Prerequisites
 
-- **Climate Phase 1 (`planning/features/climate/`) merged** — it owns
+- **Climate Phase 1 (`planning/archive/climate/`) merged** — it owns
   the `GET /projects/{id}/sun-path` endpoint this feature consumes.
   **This is the gating prerequisite.**
 - Model Viewer MVP Phases 2 + 6 merged (Site & Sun renderer stub keyed

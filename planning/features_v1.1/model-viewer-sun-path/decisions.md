@@ -119,7 +119,7 @@ The plan flags every spot this diverges.
 ## Climate feature — this feature was realigned (2026-06-13)
 
 Ed greenlit a project-scoped **Climate** top-level tab + service
-(`planning/features/climate/`) and asked to build it **first**. The
+(`planning/archive/climate/`) and asked to build it **first**. The
 sun-path backend therefore moved to **Climate Phase 1** (D-CL-2), and
 this feature was realigned to **frontend-only**, consuming the Climate
 `GET /projects/{id}/sun-path` endpoint.

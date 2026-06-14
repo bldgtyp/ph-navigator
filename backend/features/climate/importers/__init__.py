@@ -5,7 +5,7 @@
 - PHI / PHPP xlsx — deferred until the real PHPP workbook + a reference to
   ``PHX/PHPP/sheet_io/io_climate.py`` are in hand (the exact worksheet cell
   layout cannot be reconstructed blind). See
-  ``planning/features/climate/phases/phase-02-reference-datasets-and-format.md``.
+  ``planning/features_v1.1/climate-phi-importer/PRD.md``.
 
 Seed from the CLI (see :mod:`features.climate.importers.__main__`)::
 

@@ -1,7 +1,9 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Active — behavior contract.
+STATUS: Complete (archived 2026-06-14) — behavior contract for the shipped
+  Phases 1–3. §5.4 (design conditions) is realized later by
+  planning/features_v1.1/climate-design-conditions.
 AUTHOR: Claude (for Ed)
 SCOPE: Product / behavior contract for the Climate feature — a
   top-level tab that owns project location + multiple weather/climate

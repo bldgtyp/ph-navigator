@@ -1,14 +1,15 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Active — Phases 1–3 COMPLETE (2026-06-14). Phase 1 (sun-path
-  service) + Phase 2 (reference datasets; Phius importer revalidated against
-  the real 1007-station set + seeded) + Phase 3 (the Climate tab: location
-  editor with Settings read-only, climate-sources roster attaching
-  Phius/PHI/ASHRAE/EPW with one default, reference-dataset browser, recharts
-  monthly graphs behind a Table/Charts toggle, and the 2D SVG sun-path
-  visual). Deferred slices: the climate-source custom-record entry form, the
-  PHI/PHPP xlsx importer (workbook on disk), and Phase 4 design conditions.
+STATUS: Complete — Phases 1–3 shipped (2026-06-14); feature archived. Phase
+  1 (sun-path service) + Phase 2 (reference datasets; Phius importer
+  revalidated against the real 1007-station set + seeded) + Phase 3 (the
+  Climate tab: location editor with Settings read-only, climate-sources
+  roster attaching Phius/PHI/ASHRAE/EPW with one default, reference-dataset
+  browser, recharts monthly graphs behind a Table/Charts toggle, and the 2D
+  SVG sun-path visual) are all on main. The remaining deferred work was split
+  into three v1.1 candidates — `planning/features_v1.1/climate-phi-importer`,
+  `climate-design-conditions`, and `climate-tab-followups`.
 AUTHOR: Claude (for Ed)
 SCOPE: Router for the project-scoped Climate feature — a top-level tab
   that owns and visualizes project location + weather basis, and serves

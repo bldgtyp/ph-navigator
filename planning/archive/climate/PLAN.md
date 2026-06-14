@@ -1,7 +1,8 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Active — implementation sequence + cross-feature ordering.
+STATUS: Complete (archived 2026-06-14) — Phases 1–3 shipped; deferred phases
+  (2b importer, 4 design conditions) moved to planning/features_v1.1/climate-*.
 AUTHOR: Claude (for Ed)
 SCOPE: Phase sequence for Climate and how it orders the dependent
   features.
