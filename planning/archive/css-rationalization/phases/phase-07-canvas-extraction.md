@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-14
 TIME: (local, afternoon)
-STATUS: Done (branch css-p2-canvas, awaiting review/merge)
+STATUS: Complete — squash-merged to main 2026-06-14; feature archived
 AUTHOR: Claude Code (Opus 4.8) + Ed May
 SCOPE: P2 item 7 — extract shared apertures/envelope drawing widgets
 RELATED:
