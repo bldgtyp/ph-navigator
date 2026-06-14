@@ -1,0 +1,220 @@
+.climate-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.climate-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.climate-section h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.climate-section-note {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+/* Project-location read-only card */
+.climate-location-card {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--border-card);
+  border-radius: var(--phn-radius);
+  background: var(--bg-card);
+}
+
+.climate-location-card dt {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.climate-location-card dd {
+  margin: 2px 0 0;
+}
+
+/* Dataset browser */
+.climate-browser {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.climate-browser-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.climate-browser-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+}
+
+.climate-browser-controls input,
+.climate-browser-controls select {
+  height: var(--phn-control-height);
+  min-width: 8rem;
+}
+
+.climate-browser-body {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) 1fr;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+@media (max-width: 880px) {
+  .climate-browser-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+.climate-location-list {
+  border: 1px solid var(--border-card);
+  border-radius: var(--phn-radius);
+  background: var(--bg-card);
+  overflow: hidden;
+}
+
+.climate-location-count {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-elev);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.climate-location-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 28rem;
+  overflow-y: auto;
+}
+
+.climate-location-list button {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-bottom: 1px solid var(--border-subtle);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.climate-location-list button:hover {
+  background: var(--bg-elev);
+}
+
+.climate-location-list button.active {
+  background: color-mix(in oklab, var(--accent) 14%, var(--bg-card));
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.climate-location-name {
+  font-size: 0.85rem;
+}
+
+.climate-location-coords {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.climate-browser-detail {
+  min-width: 0;
+}
+
+.climate-detail-title {
+  margin: 0 0 var(--space-3);
+  font-size: 0.95rem;
+}
+
+/* Standardized-record tables */
+.climate-record {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.climate-record-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.climate-record-summary dt {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.climate-record-summary dd {
+  margin: 2px 0 0;
+  font-size: 0.85rem;
+}
+
+.climate-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.climate-table caption {
+  text-align: left;
+  padding-bottom: var(--space-2);
+  font-weight: 600;
+}
+
+.climate-table-unit {
+  margin-left: var(--space-2);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 400;
+}
+
+.climate-table th,
+.climate-table td {
+  padding: 4px 6px;
+  border: 1px solid var(--border-subtle);
+  text-align: right;
+}
+
+.climate-table thead th,
+.climate-table tbody th {
+  background: var(--bg-elev);
+}
+
+.climate-table tbody th {
+  text-align: left;
+}
+
+.climate-table td {
+  font-family: var(--font-mono);
+}

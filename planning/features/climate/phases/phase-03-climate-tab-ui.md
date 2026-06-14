@@ -1,8 +1,12 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Planned — start after Phase 1 + Phase 2 (needs the sun-path
-  endpoint AND the reference-dataset read endpoints).
+STATUS: In progress (2026-06-13) — decomposed into 3a/3b/3c (see §0).
+  Sub-phase **3a shipped** (tab + reference-dataset browser + read-only
+  location + record tables; `make ci` green). Remaining in 3a: migrate the
+  location *editor* into the tab. 3b (project-climate source model +
+  attach/select; needs new backend) and 3c (charting + sun-path visual)
+  follow.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff — the Climate top-level tab: location
   record + multi-source attach/select + per-source visualization.
@@ -19,6 +23,50 @@ The visible home: location record, all climate **sources** (ASHRAE /
 EPW / Phius / PHI / custom) attachable + independently visualized, and
 the sun-path visual. Frontend-led; consumes Phase 1 (sun path) + Phase 2
 (dataset read endpoints + standardized record).
+
+## 0. Decomposition (added 2026-06-13)
+
+Phase 3 is **not** purely frontend (the §2 inventory below is the full
+target). A frontend-infrastructure survey surfaced three facts that force
+a split:
+
+- **No charting library** is installed — graphs (§2.4) need a new
+  dependency (recharts/visx), a real decision under the pnpm
+  supply-chain rules.
+- **No frontend sun-path consumer exists** — Phase 1 shipped the backend
+  `GET /projects/{id}/sun-path` + MCP only; the Model Viewer reads sun
+  path through a *different* combined model-data endpoint. A Climate-tab
+  sun-path visual needs a new `useSunPathQuery` **and** a render, which
+  overlaps the separate `model-viewer-sun-path` feature.
+- **"Attach + store all sources" (D-CL-4) needs new backend** — Phase 2
+  built only the **app-wide** reference datasets. There is no
+  **project-scoped** "this project selected Phius location X / ASHRAE
+  pointer / EPW / custom" model yet. That is a new table + routes.
+
+So Phase 3 ships in three sub-phases:
+
+- **3a — Tab shell + location + reference-dataset browser**
+  (frontend-only; no new deps; no backend). **Shipped 2026-06-13** (`make
+  ci` green, frontend 1586): `climate` tab added after Status
+  (`features/projects/lib.ts` + `ProjectTabContent.tsx`); new
+  `frontend/src/features/climate/` client (`types`/`api`/`query-keys`/
+  `hooks`) over `/api/v1/climate/datasets…`; a dataset **browser**
+  (`ClimateDatasetBrowser` — dataset picker + country/region filter +
+  nearest-to-project) with the standardized record as read-only monthly +
+  design-condition tables (`ClimateRecordTable`, IP/SI temp toggle); a
+  read-only project-location card (`ClimateLocationCard`). Tests under
+  `features/climate/__tests__/`. **Remaining 3a step:** migrate the rich
+  location *editor* (`EditableLocationFields`) into the tab (D-CL-3) —
+  today editing still lives in Settings; the tab shows location read-only.
+- **3b — Source attach/select** — new backend `project_climate_source`
+  model + table + routes (attach Phius/PHI location, ASHRAE pointer, EPW,
+  custom; per-project default per D-CL-11) + the frontend attach/select UI.
+- **3c — Visualization** — charting-lib decision + monthly graph/table
+  for the active source; the sun-path visual (coordinate with /
+  reuse `model-viewer-sun-path` geometry; `useSunPathQuery` on the
+  Phase-1 endpoint).
+
+Tab placement (Ed 2026-06-13): **near the front, right after Status.**
 
 ## 1. Required reading
 

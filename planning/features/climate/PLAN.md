@@ -22,17 +22,20 @@ RELATED:
 | Phase | Scope | Gate to start | Unblocks |
 |---|---|---|---|
 | 1 — Sun-path service ✅ **done** (2026-06-13) | Backend sun-path builder + `GET /projects/{id}/sun-path` + MCP; north-sign verified (identity) | None — `project_location` data + `ladybug-core` exist | Model Viewer Site & Sun render; Climate tab sun-path visual |
-| 2 — Reference datasets + standardized format ✅ **done** (2026-06-13; PHI xlsx seed deferred) | Canonical `ClimateRecord` + honeybee_ph adapters; app-wide versioned `climate_dataset*` store; Phius `-mon.txt` importer + idempotent seed; dataset read endpoints + MCP | None | The tab dropdowns/graphs; the design-conditions contract |
-| 3 — Climate tab UI | New `climate` tab: location record + multi-source attach/select (ASHRAE/EPW/Phius/PHI/custom) + per-source graph/table + sun-path visual | Phase 1 + Phase 2 (met) | The "see + record + compare sources" goal |
+| 2 — Reference datasets + standardized format ✅ **done** (2026-06-13; Phius revalidated + real 1007-station seed; PHI xlsx deferred) | Canonical `ClimateRecord` + honeybee_ph adapters; app-wide versioned `climate_dataset*` store; Phius `-mon.txt` importer + idempotent seed + seed CLI; dataset read endpoints + MCP | None | The tab dropdowns/graphs; the design-conditions contract |
+| 3 — Climate tab UI 🚧 **in progress** (3a shipped 2026-06-13) — decomposed 3a/3b/3c | New `climate` tab. **3a** (done): tab + reference-dataset browser + read-only location + record tables. **3b**: project-climate source model + attach/select (new backend; D-CL-4/11). **3c**: charts + sun-path visual. Remaining 3a: location editor migration | Phase 1 + Phase 2 (met) | The "see + record + compare sources" goal |
 | 4 — Design conditions + metrics | Per-source, source-parameterized design-conditions contract (+ MCP) | **Deferred** (Ed 2026-06-13) — needs a scheduled fRSI/comfort consumer | Thermal-Bridges fRSI; Window comfort |
 
 **Focus (Ed 2026-06-13): the climate data *store* — Phases 1–3.**
-Phases 1 and 2 are **done** (2026-06-13); **Phase 3 (the tab) is next.**
-The *use* of the data (Phase 4 design conditions + the fRSI/comfort
-consumers + the D-CL-5 interior assumption + temperature-asymmetry) is
-deferred to later feature work. Phase-2 carry-overs into Phase 3: the
-real Phius seed + the PHI xlsx importer (await Ed's files), and promoting
-`ClimateRecord` to a `context/` reference doc.
+Phases 1 and 2 are **done**; **Phase 3 is in progress — sub-phase 3a
+shipped** (the tab + reference-dataset browser are live). The *use* of the
+data (Phase 4 design conditions + the fRSI/comfort consumers + the D-CL-5
+interior assumption + temperature-asymmetry) is deferred to later feature
+work. The real Phius seed is **done** (parser revalidated against the real
+1007-station set + seeded). Phase-2 carry-overs into Phase 3: the PHI xlsx
+importer (workbook on disk; needs
+`openpyxl` + `io_climate.py`) and promoting `ClimateRecord` to a
+`context/` reference doc.
 
 ## Cross-feature ordering (the answer to "Climate first?")
 
