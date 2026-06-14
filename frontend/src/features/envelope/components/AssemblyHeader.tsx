@@ -30,7 +30,7 @@ export function AssemblyHeader({
     ? null
     : statusLabel(activeAssembly.status.flags);
   return (
-    <header id="assembly-builder-header" className="assembly-header">
+    <header id="assembly-builder-header" className="assembly-header" data-reveal-edit-on-hover>
       <InlineHeaderNameEditor
         value={activeAssembly.name}
         canEdit={canEdit}

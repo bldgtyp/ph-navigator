@@ -25,7 +25,7 @@ export function AperturesHeader({
   const { unitSystem } = useUnitPreference();
   const activeName = activeAperture?.name ?? "Apertures";
   return (
-    <header className="apertures-page__header">
+    <header className="apertures-page__header" data-reveal-edit-on-hover>
       <InlineHeaderNameEditor
         value={activeName}
         canEdit={canEdit && activeAperture !== null}

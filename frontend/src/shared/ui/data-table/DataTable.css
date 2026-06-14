@@ -1,3 +1,6 @@
+/* @size-exception: planning/archive/css-structure-discoverability/PRD.md §2
+   The DataTable grid stylesheet. Tightly coupled to the grid DOM; a sectioned
+   split is planned, not yet landed (see styles/README.md). */
 .data-table-wrap {
   --data-table-gutter-width: 72px;
   --data-table-gutter-hover-bg: color-mix(in oklab, var(--accent) 8%, var(--bg-card));

@@ -46,12 +46,13 @@
   transition: opacity 0.12s var(--ease);
 }
 
-.assembly-header:hover .inline-header-name-editor__edit,
-.assembly-header:focus-within .inline-header-name-editor__edit,
-.apertures-page__header:hover .inline-header-name-editor__edit,
-.apertures-page__header:focus-within .inline-header-name-editor__edit,
-.aperture-element-card__header:hover .inline-header-name-editor__edit,
-.aperture-element-card__header:focus-within .inline-header-name-editor__edit {
+/* The edit affordance defaults hidden (opacity:0 above). A feature reveals it
+   on hover/focus by marking its header element `data-reveal-edit-on-hover` — a
+   declarative opt-in, so consumers never reference this component's internals.
+   Higher specificity than the base rule, so it does not depend on stylesheet
+   load order. */
+[data-reveal-edit-on-hover]:hover .inline-header-name-editor__edit,
+[data-reveal-edit-on-hover]:focus-within .inline-header-name-editor__edit {
   opacity: 1;
 }
 

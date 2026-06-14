@@ -151,12 +151,14 @@ CI) keeps the token system honest:
   only in the token-definition files; feature/shared-ui CSS must go
   through `var()` tokens.
 - `check:z-index`, `check:sizes`, `check:shape` — z-index must use the
-  `--z-*` tokens, `.ts`/`.tsx` files stay under the size cap, and
-  feature folders keep their canonical shape.
+  `--z-*` tokens, `.ts`/`.tsx`/`.css` files stay under the size cap
+  (`@size-exception` escape hatch on line 1), and feature folders keep
+  their canonical shape.
 
-A token + shared-class catalog (`frontend/src/styles/README.md`) is
-planned under the `css-structure-discoverability` feature; cross-link it
-here once it lands.
+The token + shared-class catalog, the import strategy, the "how to style a
+new feature" recipe, and the god-stylesheet split plan live in
+**`frontend/src/styles/README.md`** — the canonical styling guide. Start
+there for any styling work.
 
 ### Tech-stack constraints (from PRD §12)
 
@@ -241,7 +243,8 @@ Used for:
 - Forms that don't justify a full page (New project, Save As).
 - Conflict-resolution dialogs (409 on Save).
 
-shadcn `Dialog` primitives. Always dismissible by Esc and clicking
+Radix UI `Dialog` / `AlertDialog` primitives, styled with the shared
+plain-CSS `ModalDialog`. Always dismissible by Esc and clicking
 outside, **unless** the dialog is mid-confirmation of a destructive
 action (e.g. project delete final-confirm) — then only an explicit
 Cancel closes.
@@ -253,8 +256,11 @@ Used for:
 - "Saved as Round 1 Submit." after Save As.
 - Error notifications (network failure on draft sync, 409 on Save).
 
-shadcn `Sonner` / `Toast`. Auto-dismiss after 4 seconds. Errors are
-sticky until the user dismisses or clicks "View details."
+Intended behavior: auto-dismiss after 4 seconds; errors sticky until the
+user dismisses or clicks "View details." **Not yet built as a global
+system** — per decision D-06 there is currently no global toast; features
+use inline notice surfaces (e.g. `UploadNoticeLine`). No shadcn/Sonner
+dependency.
 
 ### 1.5 Session-expiry modal
 
@@ -1151,7 +1157,7 @@ per-segment site-photo zones):
 - Single full-size image OR PDF iframe view (`#toolbar=0`
   hides the browser toolbar).
 - "Delete Image" / "Delete Datasheet" button confirms via
-  shadcn `Dialog` (replaces V1 `window.confirm`) and detaches
+  the Radix-based `ModalDialog` (replaces V1 `window.confirm`) and detaches
   the asset from the appropriate array in the active draft
   (project_material's datasheet array OR segment's photo array).
   The uploaded asset remains available to older saved versions

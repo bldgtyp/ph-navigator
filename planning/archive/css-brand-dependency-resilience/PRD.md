@@ -13,7 +13,8 @@ RELATED:
 
 > **Implemented 2026-06-14.** Both items below shipped; acceptance met
 > (offline render verified, `make ci` green). See [`STATUS.md`](STATUS.md)
-> for the per-item outcome and the `TECH_STACK.md` tail handed to P3.
+> for the per-item outcome. The `TECH_STACK.md` tail handed to P3 is now done
+> (P3 built & archived: `../css-structure-discoverability/`).
 
 Source: 2026-06-14 CSS review, Theme 8 (remote-dependency resilience,
 MED/strategic) and Theme 10 (plan vs reality). **Both decisions were taken

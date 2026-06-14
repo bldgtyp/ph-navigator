@@ -7,7 +7,7 @@ SCOPE: P4 final outcome
 RELATED:
   - ./README.md
   - ./PRD.md
-  - ../../features/css-structure-discoverability/  (inherited the TECH_STACK doc tail)
+  - ../css-structure-discoverability/  (P3 — done & archived; reconciled the TECH_STACK tail)
 ---
 
 # STATUS — CSS Brand-Dependency Resilience (P4)
@@ -53,9 +53,8 @@ green), and merged to `main` 2026-06-14. Feature folder archived.
 diff (esp. renamed/removed `--tokens`, which `check:css-vars` catches),
 commit.
 
-**Follow-up (out of scope here):** `context/TECH_STACK.md` still has
-shadcn/Tailwind UI-kit + table-primitive rows; flagged as superseded in
-PRD §12, but its own reconciliation pass (it carries detailed
-table-view tradeoff text) is deferred. The P3
-`css-structure-discoverability` `styles/README.md`, once it lands,
-should be cross-linked from UI_UX §design-system.
+**Follow-up — DONE in P3 (2026-06-14):** `context/TECH_STACK.md` was
+reconciled (UI-kit + table-primitive rows + design-system section rewritten
+off Tailwind/shadcn), and `context/UI_UX.md` §design-system now cross-links the
+P3 `styles/README.md`. See
+[`../css-structure-discoverability/`](../css-structure-discoverability/).

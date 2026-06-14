@@ -38,10 +38,10 @@ Use a boring, explicit stack:
 | Migrations | Alembic retained for schema migrations |
 | App document model | Pydantic-validated JSONB document versions |
 | Frontend | Vite + TypeScript + React |
-| UI kit | shadcn/ui + Tailwind, mapped to BLDGTYP CSS tokens where practical |
-| Design tokens | BLDGTYP `tokens.css` / `tokens.json` |
+| UI kit | Hand-written plain CSS + Radix UI behavior primitives (no Tailwind, no shadcn/ui). See `frontend/src/styles/README.md` |
+| Design tokens | Vendored BLDGTYP brand `styles/brand/tokens.css` (Layer 1) + app `styles/tokens.css` (Layer 2); 3-tier model |
 | Server state | TanStack Query |
-| Tables | TanStack Table v8 + `@tanstack/react-virtual` + shadcn-table primitives — see Table-View section below |
+| Tables | Bespoke `<DataTable>` on TanStack Table v8 + `@tanstack/react-virtual`, hand-written CSS — see Table-View section below |
 | Client/UI state | Zustand |
 | 3D viewer | three + React Three Fiber + drei + react-three/postprocessing |
 | Charts | recharts (declarative line/bar; Climate monthly graphs). Lazy-loaded with its tab so it stays out of the initial bundle. Sun-path diagrams are hand-rolled SVG, not recharts |
@@ -171,7 +171,7 @@ TanStack choices are coherent:
 
 - **TanStack Query** for server state, cache invalidation, mutation lifecycle, and stale/refetch behavior.
 - **TanStack Table** for table logic without forcing a visual system.
-- **shadcn-table primitives** for the actual UI so the tables match the rest of the app.
+- **Hand-written plain CSS** for the actual table UI (`shared/ui/data-table/DataTable.css`) so the tables match the rest of the app.
 
 This is better aligned with V2 than keeping MUI X DataGrid or AG Grid. The tables are important, but PHN is not a spreadsheet product. We need controlled, typed table views per domain table, not a giant user-configurable grid engine.
 
@@ -186,32 +186,28 @@ Use TanStack Query for server-owned state. Use Zustand for local interaction sta
 
 ### BLDGTYP design-system integration
 
-V2 should use BLDGTYP's published design tokens as the visual source
-where practical:
+The brand tokens are **vendored and self-hosted**, not fetched at runtime.
+The canonical guide is `frontend/src/styles/README.md`; the short version:
 
-- `https://bldgtyp.github.io/branding/tokens/tokens.css` for CSS
-  custom properties;
-- `https://bldgtyp.github.io/branding/tokens/tokens.json` when build
-  tooling or TypeScript needs machine-readable token values;
-- `https://bldgtyp.github.io/branding/tokens/components.css` only as
-  selective reference or direct reuse for generic primitives that do not
-  conflict with shadcn/ui composition.
+- `frontend/src/styles/brand/tokens.css` — the vendored BLDGTYP brand
+  palette / fonts / `--svg-*` (Layer 1). Generated; refresh with
+  `pnpm run sync:brand`. No remote `tokens.css` / `tokens.json` fetch and no
+  `components.css` import.
+- `frontend/src/styles/tokens.css` — app design tokens (Layer 2: spacing,
+  type, radius, shadow, z-index, semantic `--phn-*`, …), loaded after brand
+  so it can override (e.g. `--font-primary` → Geist).
+- Geist + Geist Mono are self-hosted woff2 (`styles/brand/fonts/`); the app is
+  light-theme only (`color-scheme: light`).
+- The UI is hand-written plain CSS consuming those tokens, with Radix UI for
+  unstyled behavior primitives. No Tailwind, no shadcn/ui, no second visual
+  system to map.
 
-Implementation lean:
-
-1. Load the required fonts once: Outfit and JetBrains Mono.
-2. Load/import `tokens.css` before app styles.
-3. Set `data-theme="light"` / `data-theme="dark"` on `<html>` for
-   theme-aware BLDGTYP variables.
-4. Map Tailwind/shadcn theme variables to BLDGTYP variables in the app
-   stylesheet (`--background: var(--bg-page)`, etc.) rather than
-   hard-coding a separate app palette.
-5. Use PH-Navigator-specific components for workbench surfaces
-   (builders, tables, viewer, evidence panels). Do not import the
-   branding site's marketing/content components wholesale.
-
-This keeps the implementation idiomatic to shadcn/Tailwind while
-avoiding a second, app-only visual system.
+> **Superseded note (2026-06):** earlier drafts of this section prescribed a
+> remote BLDGTYP `tokens.css` / `tokens.json` fetch plus a Tailwind/shadcn
+> theme-variable mapping. That was not adopted — the brand tokens were
+> vendored (`planning/archive/css-brand-dependency-resilience/`) and the UI is
+> bespoke plain CSS (`planning/archive/css-structure-discoverability/`). See
+> `context/UI_UX.md` §design-system and `frontend/src/styles/README.md`.
 
 ## Table-View Decision
 
@@ -219,8 +215,8 @@ Validated by the catalog POC (week 0 → gate 2026-05-07). Current
 implementation detail lives in
 `context/technical-requirements/data-table.md`. Summary here:
 
-**Pick: TanStack Table v8 (MIT, headless) + `@tanstack/react-virtual`
-+ shadcn-table primitives.**
+**Pick: TanStack Table v8 (MIT, headless) + `@tanstack/react-virtual`,
+with hand-written plain CSS (a bespoke `<DataTable>`).**
 
 Why not AG Grid Community: row grouping, range selection, and set
 filter (multi-select faceted filtering) are all Enterprise-only.
@@ -229,7 +225,7 @@ size is ~1.0–1.3 MB vs ~50–80 KB for TanStack + react-virtual.
 
 Why not MUI X DataGrid: V1 used it; the POC replaced it. Pricing tier
 splits hide the same parity features (range selection, grouping)
-behind Pro/Premium. Visual idiom does not match shadcn/Tailwind.
+behind Pro/Premium. Visual idiom does not match our hand-written CSS.
 
 Tradeoffs accepted (TanStack is headless):
 
@@ -316,14 +312,15 @@ Frontend:
 - Keep unit conversion in focused frontend helpers with typed quantity names.
   Use V1 unit-converter/context and Window Builder dimension parser files
   as research templates; verify conversion factors before reuse.
-- Prefer shadcn/ui primitives and lucide icons.
+- Prefer Radix UI behavior primitives and lucide icons, styled with the
+  shared plain-CSS token system (`frontend/src/styles/README.md`).
 
 ## Decisions Folded Back Into PRD / Scaffold
 
 1. Replaced `SQLAlchemy + Alembic` in the PRD stack table with `raw SQL + psycopg + Alembic + Postgres`.
 2. Added a backend persistence subsection explaining repository modules and Pydantic row/document boundaries.
 3. Added `psycopg` v3 + `psycopg_pool` as the scaffold database driver.
-4. Confirm React version during scaffold. React 19 is fine if the shadcn/R3F/TanStack combination is clean at install time; otherwise pin React 18 for compatibility.
+4. Confirm React version during scaffold. React 19 is fine if the Radix/R3F/TanStack combination is clean at install time; otherwise pin React 18 for compatibility.
 5. Decide whether to generate TypeScript API types from OpenAPI early. Lean yes, but keep the generated client thin.
 
 ## Open Questions

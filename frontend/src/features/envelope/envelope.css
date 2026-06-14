@@ -1,3 +1,5 @@
+/* @size-exception: planning/archive/css-structure-discoverability/PRD.md §2
+   Envelope feature stylesheet; tracked for a sectioned split (styles/README.md). */
 .envelope-panel {
   align-content: start;
   display: grid;

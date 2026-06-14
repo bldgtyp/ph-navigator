@@ -1,21 +1,37 @@
-/* Layer 1 (vendored brand). Loaded first so Layer 2 (styles/tokens.css)
-   can override — e.g. --font-primary. Refresh via `pnpm run sync:brand`.
+/* App stylesheet entry — the single global @import manifest. See
+   src/styles/README.md for the layer model and import strategy.
+
+   Import strategy (one rule, enforced by convention):
+     - Global + shared/ui stylesheets are @import'd here, once each.
+     - Feature stylesheets (features/<f>/*.css) are TS-imported once by that
+       feature's route/entry component — NOT @import'd here.
+
+   Layer 1 (vendored brand) loads first so Layer 2 (styles/tokens.css) can
+   override it — e.g. --font-primary. Refresh via `pnpm run sync:brand`.
    See planning/archive/css-brand-dependency-resilience/. */
+
+/* Layer 1 — vendored brand tokens + self-hosted fonts. */
 @import "./styles/brand/tokens.css";
 @import "./styles/brand/fonts.css";
+
+/* Layer 2 — app design tokens. */
 @import "./styles/tokens.css";
+
+/* Layer 3 (global foundation) — resets/utilities, the base component library,
+   the <=760px responsive overrides, then the modal + shared card-panel recipes. */
+@import "./styles/reset.css";
 @import "./styles/base.css";
+@import "./styles/base-responsive.css";
 @import "./styles/modals.css";
+
+/* Shared UI component stylesheets (shared/ui/*). panels.css stays at the
+   cascade slot the old auth-page.css @import occupied. */
 @import "./shared/ui/canvas/canvas-hint-tooltip.css";
 @import "./shared/ui/canvas/canvas-toolbar.css";
 @import "./shared/ui/dimensions/DimensionChrome.css";
 @import "./shared/ui/info-tooltip/InfoTooltip.css";
 @import "./shared/ui/InlineHeaderNameEditor.css";
-@import "./features/auth/auth-page.css";
-@import "./features/project_document/version-controls.css";
-@import "./features/equipment/equipment.css";
-@import "./features/project_status/project_status.css";
-@import "./features/catalogs/catalogs.css";
-@import "./features/envelope/envelope.css";
+@import "./shared/ui/attachments/attachments.css";
+@import "./styles/panels.css";
 @import "./shared/ui/data-table/DataTable.css";
 @import "./shared/ui/report-table/ReportTable.css";
