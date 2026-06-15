@@ -19,6 +19,7 @@ from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
 
+from features.climate.importers.phi import iter_phi_records
 from features.climate.importers.phius import iter_phius_records
 from features.climate.record import ClimateRecord
 
@@ -49,6 +50,12 @@ _PROVIDERS: dict[str, ClimateProvider] = {
         source="Phius monthly climate data (-mon.txt)",
         label_prefix="Phius",
         parse_tree=iter_phius_records,
+    ),
+    "phi": ClimateProvider(
+        default_version="10.6",
+        source="PHI/PHPP climate library (Climate worksheet)",
+        label_prefix="PHI",
+        parse_tree=iter_phi_records,
     ),
 }
 

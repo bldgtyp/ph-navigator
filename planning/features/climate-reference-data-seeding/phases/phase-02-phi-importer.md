@@ -1,10 +1,13 @@
 ---
 DATE: 2026-06-14
 TIME: -
-STATUS: Planned (Phase 2) — gated only by priority; the seed/bundle/object-store
-  seams from Phase 1 are what it plugs into. Migrated here from the former
-  standalone `planning/features_v1.1/climate-phi-importer/` feature, which Ed
-  folded into this pipeline (2026-06-14): the PHI importer is just the
+STATUS: Importer COMPLETE (2026-06-15) — `importers/phi.py` written, the column
+  map reverse-engineered + validated against the 10.6 workbook (1002 datasets
+  across 82 countries), unit-tested, and `make ci` green. The one-time operator
+  publish (process → upload `climate/phi/10.6/dataset.json` → seed) is the only
+  remaining manual step; see "Done" + "Next step" below. Migrated here from the
+  former standalone `planning/features_v1.1/climate-phi-importer/` feature, which
+  Ed folded into this pipeline (2026-06-14): the PHI importer is just the
   **process** step for `provider='phi'`.
 AUTHOR: Claude (for Ed)
 SCOPE: The PHI/PHPP 10.6 process step — parse the PHPP `Climate` worksheet into
@@ -28,6 +31,53 @@ dataset alongside Phius 2022.
 the object-store upload/download, and the provider-agnostic seed path — is built
 in Phase 1 (D-CS-3/D-CS-4). The PHI parser is just another **process** input:
 `.xlsx → list[ClimateRecord] → bundle → object store → seed`.
+
+## Done — 2026-06-15
+
+`backend/features/climate/importers/phi.py` parses the embedded PHPP `Climate`
+library; `phi` is registered as a `ClimateProvider`
+(`default_version="10.6"`, `label_prefix="PHI"`, `parse_tree=iter_phi_records`),
+so the process CLI (`--provider phi`) and the provider-agnostic seed path
+required **no other changes** (altitude confirmed in `/simplify`). Covered by
+`backend/tests/test_climate_phi.py` (synthetic-workbook golden built in
+`tmp_path` — no licensed bytes committed).
+
+**Recovered column map (validated, documented in `phi.py`'s docstring).** The
+library lives in the `Climate` worksheet, rows 243+, one dataset per row where
+column `K` ("anzeigen?") is `"x"` — which excludes the `aktuell:`
+active-selection echo and the import placeholders. Per row: `I` = PHPP picker
+key → `station_id`; `N`/`O`/`P` = country/region/name; `S`/`T`/`U`/`V` =
+lat/lon/elevation/summer-swing; eight consecutive 12-month series from column
+`W` (air, N/E/S/W/global radiation, dewpoint, sky); then four peak/design
+conditions (`DO…DT`, `DU…DZ` heating; `EA…EG`, `EH…EN` cooling, the cooling
+pair carrying a trailing dewpoint). Trailing MIN/MAX/wind/PER columns are PHPP
+bookkeeping and ignored.
+
+**Validation (the load-bearing risk — closed).** Decoded coordinates match the
+real cities (Birmingham AL → 33.5°N/-86.92°, Rochester NY → 43.12°N/-77.68°);
+all rows satisfy dewpoint ≤ air, sky ≤ air, and global ≥ directional radiation
+in summer. The parser yields **1002 datasets across 82 countries** (US 152, CA
+89, FR 64, …); it skips 16 empty `ud---NN` user-template slots, defaults absent
+sky/dewpoint series to zeros (27/24 rows), and zero-fills the design conditions
+the source leaves blank (42 rows lack heating design). Source quirks (a few
+datasets repeat December from November in dewpoint/sky, marginally pushing
+dewpoint above air) are imported verbatim, not "corrected". The honeybee_ph
+bridge round-trips losslessly.
+
+**Remaining (manual, operator).** Publish + seed the real bundle once:
+
+```sh
+cd backend
+export R2_ENDPOINT_URL=…   # `make object-store-init` brings MinIO up locally
+uv run python -m features.climate.processing \
+    --provider phi --version 10.6 \
+    --src ../planning/archive/climate/example_data/phi_phpp_10_6_climate_data \
+    --upload                                   # writes climate/phi/10.6/dataset.json
+uv run python -m features.climate.seeding --provider phi --version 10.6
+```
+
+Spot-check a few seeded rows by hand before trusting the bulk seed (exit
+criteria). Prod (Render) seeding is Phase 3.
 
 ## Why this is the hard part (investigated 2026-06-13)
 
