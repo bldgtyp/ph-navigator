@@ -5,7 +5,10 @@ STATUS: v1.0. Phase 1 COMPLETE 2026-06-15 (full 1007-station seed verified
   locally) and Phase 2 PHI COMPLETE 2026-06-15 (column map validated,
   unit-tested, `make ci` green; bundle published to local MinIO + seeded +
   verified — 1002 datasets across 82 countries) — see STATUS.md. Phase 3
-  (Render prod seed) not started.
+  (Render seed) COMPLETE 2026-06-15 — the `seeding --all` command + the Render
+  runbook shipped, and the operator publish + seed ran + verified against the
+  deployed Render (staging) environment (2009 locations). All three phases
+  shipped.
 AUTHOR: Claude (for Ed)
 SCOPE: Product/behavior contract for the climate reference-data ingest + seed
   pipeline: a two-stage process→seed flow that lands the full Phius + PHI
@@ -181,7 +184,13 @@ to disk/object-store instead of going straight to Postgres.
 
 ### Phase 3 — Render seed path (D-CS-7)
 
-> Detailed plan: `phases/phase-03-render-seed.md`.
+> Detailed plan: `phases/phase-03-render-seed.md`. **COMPLETE 2026-06-15.** The
+> provider-agnostic seed CLI gained an `--all` mode (`features.climate.seeding`)
+> that seeds every registered provider's published default version in one stable
+> command — the canonical Render seed job, unchanged as providers are added. The
+> deploy runbook is in `context/ENVIRONMENT.md → "Climate reference-data seed
+> (on-demand)"`. The operator publish + seed ran + verified against the deployed
+> Render (staging) environment (2009 locations: phius 1007 + phi 1002).
 
 - A documented, re-runnable seed job against R2 + the Render Postgres (one-off
   job or release command). Confirm `R2_*` env is present in Render (the object
@@ -224,7 +233,10 @@ Object-store bundles: one `dataset.json` (+ optional raw archive) per
 - PHI 10.6 importer implemented + validated as Phase 2
   (`phases/phase-02-phi-importer.md`); bundle published to local MinIO + seeded
   + verified (1002 datasets, 82 countries). Prod seed is Phase 3.
-- A documented Render seed job (Phase 3). `make ci` green.
+- A documented Render seed job (Phase 3) — DONE 2026-06-15 (`seeding --all`
+  command + `context/ENVIRONMENT.md` runbook); operator publish + seed ran +
+  verified against the deployed Render (staging) environment (2009 locations).
+  `make ci` green.
 
 ## 8. Risks / open sub-questions
 

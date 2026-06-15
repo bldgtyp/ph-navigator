@@ -25,7 +25,6 @@ import os
 from pathlib import Path
 
 from config import settings
-from features.assets.storage_r2 import R2Client
 from features.climate.bundle import ClimateBundle
 from features.climate.object_store import ClimateBundleStore
 from features.climate.processing import EmptySourceError, build_bundle
@@ -42,7 +41,7 @@ def main() -> None:
     if not settings.r2_endpoint_url:
         raise SystemExit("R2_ENDPOINT_URL is required; start the object store with `make object-store-init`.")
 
-    store = ClimateBundleStore(R2Client(settings))
+    store = ClimateBundleStore.from_settings()
     source_dir = _source_dir()
 
     bundle = _build_from_local_source(source_dir)

@@ -237,8 +237,44 @@ an ephemeral local shell for the opt-in smoke.
 
 ## Render staging
 
-Current staging runs inside the existing Render `PH-Navigator` project
-under the `Staging` environment.
+The staging environment is declared as Infrastructure-as-Code in
+`render.yaml` at the repo root (a Render Blueprint). That file is the
+source of truth for both services + the Postgres database; the listing
+below documents the same values in prose. `DATABASE_URL` auto-wires from
+the database block via `fromDatabase`, and all secrets are `sync: false`
+(entered once in Render, never committed — the repo is public).
+
+### Re-provision via the `render.yaml` Blueprint
+
+When the free Postgres expires (it lasts ~30 days) or staging needs a
+clean rebuild, re-provision from the Blueprint instead of re-entering
+variables by hand:
+
+1. **Free the names first.** In the Render dashboard, delete the expired
+   `ph-navigator-v2-staging-db` (staging data is synthetic seed data —
+   nothing to preserve). A Blueprint creates a database of the same name,
+   so the dead one must be gone to avoid a name collision.
+2. **Apply the Blueprint.** Render dashboard → Blueprints → connect this
+   repo (or open the existing Blueprint and *Sync*). Render reads
+   `render.yaml`, creates the Postgres, and wires `DATABASE_URL` into the
+   backend automatically. The two web services already exist with these
+   names — link them to the Blueprint rather than creating duplicates.
+3. **Enter secrets once.** Render prompts for each `sync: false` var on
+   first apply — `R2_ACCOUNT_ID`, `R2_ENDPOINT_URL`, `R2_ACCESS_KEY_ID`,
+   `R2_SECRET_ACCESS_KEY` (1Password → PH-Navigator R2),
+   `FERNET_SECRET_KEY` (generate with
+   `uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`).
+   These persist across future re-applies.
+4. **Re-seed the app.** The fresh DB is empty. Run the staging user seed
+   (the `export DATABASE_URL=… ENVIRONMENT=staging … seed_user
+   --allow-staging` block below) and the climate reference-data seed
+   (`seeding --all`, see the on-demand section) to repopulate.
+
+Agents cannot click the Render dashboard or call the Render API without a
+`RENDER_API_KEY`; steps 1–3 are operator (Ed) actions. With an API key
+exported, the same flow can be scripted against `https://api.render.com/v1`.
+
+The verbatim service/DB config (also encoded in `render.yaml`):
 
 - Static frontend service: `ph-navigator-v2-staging`
   - URL: `https://ph-navigator-v2-staging.onrender.com`
@@ -279,10 +315,15 @@ under the `Staging` environment.
       entries from them automatically.
     - `FERNET_SECRET_KEY=<generated Fernet key>`
 - Postgres service: `ph-navigator-v2-staging-db`
-  - Database: `ph_navigator_v2`
+  - Database: `ph_navigator_v2` (Render auto-suffixes the internal db
+    name for uniqueness, e.g. `ph_navigator_v2_annq`; the app connects via
+    the full `DATABASE_URL`, so the literal name does not matter)
   - Runtime: PostgreSQL 16
   - Region: Ohio (US East)
-  - Free instance expires on 2026-06-11 unless upgraded.
+  - Free instance; expires ~30 days after creation. Recreated fresh on
+    2026-06-15 (the prior free DB expired), so the current instance lapses
+    around 2026-07-15 — re-provision via the Blueprint runbook above when
+    it does.
 
 Do not copy Render database credentials into `backend/.env` for normal
 local development. Local dev should keep using Docker Postgres. For a
@@ -291,14 +332,87 @@ Render external database URL and staging environment:
 
 ```bash
 cd backend
-export DATABASE_URL='<Render External Database URL>'
+export DATABASE_URL='<Render External Database URL>?sslmode=require'
 export ENVIRONMENT=staging
 uv run python -m scripts.seed_user --email ed@example.com --display-name "Ed May" --allow-staging
 unset DATABASE_URL ENVIRONMENT
 ```
 
-Let the seed script prompt for the password. If a temporary staging app
-password was shared in chat or another durable channel, rotate it.
+External connections are blocked by default (the DB's Access Control /
+`ipAllowList` is empty), so a local seed first needs your machine's public
+IP added to that allow list (Render dashboard → the DB → Access Control,
+or `PATCH /v1/postgres/{id}` with an `ipAllowList` entry) and the external
+URL used **with `?sslmode=require`**. Remove the allow-list entry again
+afterwards — normal operation (the backend service) uses the *internal*
+connection string and needs no external access. The backend service's
+`DATABASE_URL` is wired to the internal connection string and is not
+affected by Access Control.
+
+Let the seed script prompt for the password, or pass `--password` for a
+non-interactive run. If a temporary staging app password was shared in
+chat or another durable channel, rotate it. (As of the 2026-06-15
+re-provision, both `ed@example.com` and `codex@example.com` are seeded
+with the local-convention password `password` — synthetic staging only;
+rotate if that ever matters.)
+
+### Climate reference-data seed (on-demand)
+
+Climate reference data (`phius`, `phi`) is **app-wide, immutable, and
+idempotent** per `(provider, version)`, so production seeds it **on demand —
+when a new bundle is published — not on every restart** (PRD D-CS-7). The
+backend Start command stays migrations + uvicorn only; do **not** add a climate
+seed to it. Rows persist in the Render Postgres across restarts.
+
+The seed is the same provider-agnostic CLI used in dev
+(`features.climate.seeding`). `R2_*` and `DATABASE_URL` are already present in
+the backend service env (the object store serves attachments + EPW there).
+**Publish the bundle to the same R2 bucket the target service reads** — the
+deployed `ph-navigator-v2-api-staging` service uses `R2_BUCKET=ph-navigator-v2-dev`,
+so that is the bucket to publish to for staging (a future dedicated prod
+service would use `ph-navigator-v2-prod`). Trigger when a new
+`(provider, version)` bundle is published:
+
+1. **Publish the bundle(s) to R2.** From a local shell with the real Cloudflare
+   R2 credentials (1Password → PH-Navigator R2, or copy them from the target
+   service's Environment tab so the bucket matches), run the process step with
+   `--upload` for each provider:
+
+   ```bash
+   cd backend
+   export R2_ACCOUNT_ID='<account id>'
+   export R2_ACCESS_KEY_ID='<access key id>'
+   export R2_SECRET_ACCESS_KEY='<secret>'
+   export R2_BUCKET='ph-navigator-v2-dev'   # the bucket the staging service reads
+   export R2_ENDPOINT_URL="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+   uv run python -m features.climate.processing --provider phius --version 2022 --src <raw -mon.txt tree> --upload
+   uv run python -m features.climate.processing --provider phi   --version 10.6 --src <dir with the .xlsx> --upload
+   ```
+
+2. **Run the seed.** `--all` seeds every registered provider's default version
+   that is published in R2, prints seeded-vs-skipped, and is idempotent — so it
+   is the canonical seed command, **unchanged as providers are added** (a new
+   provider is picked up once its bundle is uploaded). Two routes:
+
+   - **Render Shell / one-off Job** (preferred — no DB exposure): in the
+     `ph-navigator-v2-api-staging` service (Root directory `backend`, env
+     already set, internal `DATABASE_URL`), run
+     `uv run python -m features.climate.seeding --all`. Requires the service
+     plan to offer a Shell or Jobs.
+   - **Local shell against the external DB** (what was used 2026-06-15): Render
+     managed Postgres blocks external traffic by default, so first add your IP
+     under the DB → **Networking → Inbound IP Rules** (remove it afterward).
+     Then, keeping the `R2_*` exports from step 1:
+
+     ```bash
+     export DATABASE_URL='<Render External Database URL>?sslmode=require'
+     export ENVIRONMENT=staging
+     uv run python -m features.climate.seeding --all
+     unset DATABASE_URL ENVIRONMENT R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET R2_ENDPOINT_URL
+     ```
+
+   Either route is a safe no-op on re-run; pass `--no-replace` to leave existing
+   releases untouched. If the external DB URL leaks (e.g. a screenshot), rotate
+   the DB password and update the service's `DATABASE_URL`.
 
 ## Local auth seed
 

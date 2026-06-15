@@ -6,7 +6,11 @@ STATUS: v1.0. Phase 1 (Phius + object-store pipeline) COMPLETE (2026-06-15) —
   `phases/phase-02-phi-importer.md`) COMPLETE (2026-06-15) — column map
   validated, unit-tested, `make ci` green, and the bundle published to local
   MinIO + seeded + verified (1002 datasets, 82 countries). Phase 3 (Render,
-  `phases/phase-03-render-seed.md`) is not started. See STATUS.md.
+  `phases/phase-03-render-seed.md`) COMPLETE (2026-06-15) — the on-demand
+  `seeding --all` command + the Render runbook shipped, and the operator
+  publish + seed ran against the deployed Render (staging) environment (2009
+  locations: phius 1007 + phi 1002, in the `ph-navigator-v2-dev` bucket).
+  All three phases shipped; see STATUS.md.
 AUTHOR: Claude (for Ed)
 SCOPE: Router for the climate reference-data ingest + seed pipeline — get the
   full PHI + Phius libraries into Postgres without putting licensed source
@@ -75,7 +79,7 @@ MCP live). What is missing is a *supply chain* for the data:
 |---|---|---|
 | 1 | `phases/phase-01-phius-objectstore-pipeline.md` | Process→seed over the object store; full Phius 2022; dev reset/reseed wiring; public-repo cleanup. **COMPLETE 2026-06-15** (full 1007-station seed verified locally; `make ci` green). |
 | 2 | `phases/phase-02-phi-importer.md` | The PHI/PHPP 10.6 `.xlsx` process step (the ~130-column workbook map). Reuses the Phase-1 seams. **COMPLETE 2026-06-15** — column map validated; `make ci` green; bundle published to local MinIO + seeded + verified (1002 datasets, 82 countries). |
-| 3 | `phases/phase-03-render-seed.md` | On-demand idempotent prod seed from R2 into the Render Postgres. **Not started.** |
+| 3 | `phases/phase-03-render-seed.md` | On-demand idempotent seed from R2 into the Render Postgres. **COMPLETE 2026-06-15** — the `seeding --all` command + the `context/ENVIRONMENT.md` runbook shipped, and the operator publish + seed ran + verified against the deployed Render (staging) environment (2009 locations). |
 
 ## Read order
 

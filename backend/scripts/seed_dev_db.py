@@ -22,7 +22,6 @@ from pydantic import BaseModel, Field
 
 from config import settings
 from database import transaction
-from features.assets.storage_r2 import R2Client
 from features.auth.service import create_or_update_user
 from features.climate.object_store import ClimateBundleStore
 from features.climate.seeding import seed_from_object_store
@@ -409,7 +408,7 @@ def _seed_climate(project_id: UUID) -> dict[str, Any]:
             "R2_ENDPOINT_URL is required to seed climate from the object store; "
             "run `make object-store-init` and `make seed-climate-bundle` first."
         )
-    store = ClimateBundleStore(R2Client(settings))
+    store = ClimateBundleStore.from_settings()
     result = seed_from_object_store(store, "phius", "2022")
 
     with transaction() as conn:

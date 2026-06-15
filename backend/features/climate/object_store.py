@@ -18,7 +18,9 @@ from __future__ import annotations
 
 from botocore.exceptions import ClientError
 
+from config import settings
 from features.assets.service import AssetStorage
+from features.assets.storage_r2 import R2Client
 from features.climate.bundle import ClimateBundle
 
 _BUNDLE_CONTENT_TYPE = "application/json"
@@ -34,6 +36,15 @@ class ClimateBundleStore:
 
     def __init__(self, storage: AssetStorage) -> None:
         self._storage = storage
+
+    @classmethod
+    def from_settings(cls) -> ClimateBundleStore:
+        """Build the store over the configured R2/MinIO client (project ``Settings``).
+
+        Callers must first confirm ``settings.r2_endpoint_url`` is set — they
+        raise their own context-specific message when it is not.
+        """
+        return cls(R2Client(settings))
 
     def put_bundle(self, bundle: ClimateBundle) -> str:
         """Upload ``bundle`` under its ``(provider, version)`` key; returns the ETag."""

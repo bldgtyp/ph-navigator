@@ -19,7 +19,7 @@ from database import connection
 from features.climate.bundle import BUNDLE_KIND, BUNDLE_SCHEMA_VERSION, ClimateBundle
 from features.climate.object_store import ClimateBundleStore, bundle_object_key
 from features.climate.processing import build_bundle, write_bundle_file
-from features.climate.seeding import seed_from_bundle, seed_from_object_store
+from features.climate.seeding import seed_all_from_object_store, seed_from_bundle, seed_from_object_store
 from tests.test_assets_service import FakeR2Client
 
 # The SYNTHETIC golden station (fabricated numbers) is the only climate source
@@ -47,6 +47,18 @@ def _truncate() -> None:
 def _fixture_bundle() -> ClimateBundle:
     """The synthetic Phius fixture as a standardized bundle (fixed timestamp)."""
     return build_bundle("phius", "2022", _FIXTURE_ROOT, exported_at=_FIXED_TS)
+
+
+def _phi_bundle() -> ClimateBundle:
+    """A second-provider bundle (phi/10.6) reusing the synthetic records.
+
+    The records are generic ``ClimateRecord``s, so relabelling the Phius
+    fixture as ``phi`` gives a valid, licensed-data-free bundle for exercising
+    the provider-agnostic ``--all`` path without a PHI workbook fixture.
+    """
+    return _fixture_bundle().model_copy(
+        update={"provider": "phi", "version": "10.6", "label": "PHI 10.6", "source": "PHI test bundle"}
+    )
 
 
 # --- Process: build_bundle --------------------------------------------------
@@ -156,6 +168,46 @@ def test_seed_from_object_store_lands_golden_values(clean_climate_tables: None) 
     assert row is not None
     # The standardized record survives the bundle → object store → Postgres trip.
     assert row["data"]["climate"]["monthly_radiation"]["glob"][6] == pytest.approx(160.0)
+
+
+# --- Seed: --all (every published provider) --------------------------------
+
+
+def test_seed_all_seeds_every_published_provider(clean_climate_tables: None) -> None:
+    store = ClimateBundleStore(FakeR2Client())
+    store.put_bundle(_fixture_bundle())
+    store.put_bundle(_phi_bundle())
+
+    seeded, skipped = seed_all_from_object_store(store)
+
+    assert {(r.provider, r.version) for r in seeded} == {("phius", "2022"), ("phi", "10.6")}
+    assert skipped == []
+    with connection() as conn:
+        datasets = conn.execute("SELECT count(*) AS n FROM climate_dataset").fetchone()
+    assert datasets is not None and datasets["n"] == 2
+
+
+def test_seed_all_skips_unpublished_providers(clean_climate_tables: None) -> None:
+    # Only phius is published; phi is registered but its bundle is not uploaded.
+    store = ClimateBundleStore(FakeR2Client())
+    store.put_bundle(_fixture_bundle())
+
+    seeded, skipped = seed_all_from_object_store(store)
+
+    assert [(r.provider, r.version) for r in seeded] == [("phius", "2022")]
+    assert skipped == [("phi", "10.6")]
+    with connection() as conn:
+        datasets = conn.execute("SELECT count(*) AS n FROM climate_dataset").fetchone()
+    assert datasets is not None and datasets["n"] == 1
+
+
+def test_seed_all_reports_nothing_when_store_empty(clean_climate_tables: None) -> None:
+    # An empty store seeds nothing and skips every registered provider; the CLI
+    # turns this empty result into a loud failure (see seeding.main).
+    seeded, skipped = seed_all_from_object_store(ClimateBundleStore(FakeR2Client()))
+
+    assert seeded == []
+    assert {pair[0] for pair in skipped} == {"phius", "phi"}
 
 
 # --- Guard: no licensed climate source data tracked in this PUBLIC repo -----
