@@ -1,10 +1,13 @@
 # Attachments Status
 
 DATE: 2026-06-15
-TIME: 18:05 EDT
-STATUS: COMPLETE (v1). All acceptance items verified; Phase-5 polish
-        (parallel upload, reorder, grouped undo) is deferred by decision,
-        not outstanding.
+TIME: 18:20 EDT
+STATUS: Complete (v1) — ARCHIVED. All acceptance items verified; Phase-5
+        polish (parallel upload, reorder, grouped undo) is deferred by
+        decision, not outstanding. This planning folder was moved from
+        `planning/features/attachments/` to `planning/archive/attachments/`
+        at closeout. The stable contract stays current in
+        `context/technical-requirements/attachments.md`.
 AUTHOR: Codex
 SCOPE: Current state for fixed attachment cells, the asset backbone,
 bulk download jobs, MCP asset tools, and remaining acceptance work.
