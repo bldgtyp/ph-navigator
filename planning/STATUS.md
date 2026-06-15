@@ -13,7 +13,7 @@ feature-first planning.
 |---|---|---|
 | Delete Project | In review | `features/delete-project/STATUS.md` |
 | DataTable Color Field | Complete / implemented on main with CI and browser smoke evidence | `features/color-field/STATUS.md` |
-| Attachments | Complete (v1) / implemented on main with automated coverage, R2 smoke, and full Render staging acceptance; Phase-5 polish deferred by decision | `features/attachments/STATUS.md` |
+| Attachments | Complete (v1) / implemented on main with automated coverage, R2 smoke, and full Render staging acceptance; Phase-5 polish deferred by decision; archived | `archive/attachments/STATUS.md` |
 | IP/SI Unit Switching | Planned / implementation plan drafted | `features/ip-si-unit-switching/STATUS.md` |
 | Apertures / Aperture Builder | Planned / PRD updated with review decisions; phase planning not started | `features/apertures/STATUS.md` |
 | CSS Token Guard Sweep | Complete / implemented on main worktree with format + CI evidence; archived | `archive/css-token-guard-sweep/STATUS.md` |
@@ -28,6 +28,11 @@ feature-first planning.
   under `archive/assembly-builder-foundation/`.
 - Completed CSS Token Guard Sweep planning now lives under
   `archive/css-token-guard-sweep/`.
+- Completed Attachments (v1) planning now lives under
+  `archive/attachments/`. The stable implementation contract remains
+  current in `context/technical-requirements/attachments.md`; the
+  deferred v1.1 candidate stays in
+  `planning/features_v1.1/user-defined-attachment-fields/`.
 
 ## Update Rule
 
