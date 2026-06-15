@@ -37,7 +37,7 @@ backend/seeds/
 `climate/` is the local home for the Phius 2022 `-mon.txt` station files, but
 the source data is **gitignored and not committed** — it is licensed Phius/PHI
 reference data and this is a **public** repo (see `climate/README.md` and
-`planning/features/climate-reference-data-seeding/`). Supply the files locally
+`planning/archive/climate-reference-data-seeding/`). Supply the files locally
 under `climate/USA/<STATE>/<STATION>-mon.txt` (or set `CLIMATE_SOURCE_DIR`); the
 region code comes from the parent directory name. The seed runs a two-stage
 pipeline: `make seed-climate-bundle` *processes* that tree into a standardized

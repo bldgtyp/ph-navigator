@@ -7,8 +7,10 @@ STATUS: Phases 1, 2, and 3 ALL COMPLETE (2026-06-15) — implemented,
   datasets, 82 countries) was published + seeded locally; and Phase 3 ran the
   publish + `seeding --all` against the deployed Render (staging) environment —
   both bundles in the `ph-navigator-v2-dev` R2 bucket and seeded into the Render
-  Postgres (phius/2022 = 1007, phi/10.6 = 1002, 2009 total locations). The
-  feature is shipped; no open work remains.
+  Postgres (phius/2022 = 1007, phi/10.6 = 1002, 2009 total locations). A
+  Phase-1.1 dev-ergonomics fix (`seed-climate-bundle` no longer clobbers a
+  published bundle) also landed. **Complete — no open work remains; feature
+  archived 2026-06-15** to `planning/archive/climate-reference-data-seeding/`.
 AUTHOR: Claude (for Ed)
 SCOPE: Status + gate for the climate reference-data ingest + seed pipeline.
 RELATED:

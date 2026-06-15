@@ -37,7 +37,7 @@ __all__ = ["clean_mcp_tables"]
 
 # A SYNTHETIC station file (fabricated round numbers) is the golden fixture:
 # real Phius/PHI data is licensed and must not live in this PUBLIC repo (see
-# planning/features/climate-reference-data-seeding/). It still exercises the real
+# planning/archive/climate-reference-data-seeding/). It still exercises the real
 # file shape -- cp1252 + CRLF, packed header rows, the German night-fraction
 # labels, and the non-numeric Dewpoint/Sky design columns the parser must skip.
 _FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "climate" / "phius"

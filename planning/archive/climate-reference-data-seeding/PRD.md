@@ -8,7 +8,9 @@ STATUS: v1.0. Phase 1 COMPLETE 2026-06-15 (full 1007-station seed verified
   (Render seed) COMPLETE 2026-06-15 — the `seeding --all` command + the Render
   runbook shipped, and the operator publish + seed ran + verified against the
   deployed Render (staging) environment (2009 locations). All three phases
-  shipped.
+  shipped (plus a Phase-1.1 fix: `seed-climate-bundle` no longer clobbers a
+  published bundle). **Complete — feature archived 2026-06-15**
+  (`planning/archive/climate-reference-data-seeding/`).
 AUTHOR: Claude (for Ed)
 SCOPE: Product/behavior contract for the climate reference-data ingest + seed
   pipeline: a two-stage process→seed flow that lands the full Phius + PHI

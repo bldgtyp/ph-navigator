@@ -10,7 +10,10 @@ STATUS: v1.0. Phase 1 (Phius + object-store pipeline) COMPLETE (2026-06-15) —
   `seeding --all` command + the Render runbook shipped, and the operator
   publish + seed ran against the deployed Render (staging) environment (2009
   locations: phius 1007 + phi 1002, in the `ph-navigator-v2-dev` bucket).
-  All three phases shipped; see STATUS.md.
+  All three phases shipped, plus a Phase-1.1 dev-ergonomics fix
+  (`seed-climate-bundle` no longer clobbers a published bundle). **Complete —
+  feature archived 2026-06-15** (`planning/archive/climate-reference-data-seeding/`).
+  See STATUS.md.
 AUTHOR: Claude (for Ed)
 SCOPE: Router for the climate reference-data ingest + seed pipeline — get the
   full PHI + Phius libraries into Postgres without putting licensed source
