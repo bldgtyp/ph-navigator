@@ -2,8 +2,11 @@
 
 Phius ships its 2022 US climate set as 1007 tab-delimited station files
 under ``USA/<STATE>/<STATION>-mon.txt`` (cp1252, CRLF, some German PHPP
-labels). This module turns one file into a :class:`ClimateRecord` and
-walks a directory tree to seed the whole ``phius`` reference dataset.
+labels). This module is the Phius *process* parser: it turns one file into
+a :class:`ClimateRecord` and walks a directory tree into a stream of them.
+It is pure — no database, no object store. The bundle writer
+(:mod:`features.climate.processing`) and the seed step
+(:mod:`features.climate.seeding`) own everything downstream.
 
 The real file shape (verified against all 1007 files):
 
@@ -46,7 +49,6 @@ from features.climate.record import (
     ClimatePhppCodes,
     ClimateRecord,
 )
-from features.climate.service import SeedResult, seed_dataset
 
 _ENCODING = "cp1252"
 _MONTHS = 12
@@ -189,18 +191,6 @@ def iter_phius_records(root: Path) -> Iterator[ClimateRecord]:
     """Yield a record for every ``*-mon.txt`` under ``root`` (sorted, stable)."""
     for path in sorted(root.rglob("*-mon.txt")):
         yield parse_phius_mon_file(path)
-
-
-def seed_phius_dataset(root: Path, *, version: str = "2022", replace: bool = True) -> SeedResult:
-    """Parse every station under ``root`` and seed the ``phius`` dataset."""
-    return seed_dataset(
-        "phius",
-        version,
-        iter_phius_records(root),
-        label=f"Phius {version}",
-        source="Phius monthly climate data (-mon.txt)",
-        replace=replace,
-    )
 
 
 def _assemble_record(

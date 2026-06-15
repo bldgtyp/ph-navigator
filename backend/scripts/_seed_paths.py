@@ -14,6 +14,14 @@ from __future__ import annotations
 import json
 import pathlib
 from typing import Final
+from urllib.parse import urlparse
+
+from config import settings
+
+# Every reset/reseed script guards on these before touching data, so a stray
+# `ENVIRONMENT` or `DATABASE_URL` can never wipe a non-dev database.
+LOCAL_ENVIRONMENTS: Final[frozenset[str]] = frozenset({"development", "test", "local"})
+_LOCAL_DEV_DB_NAME: Final[str] = "ph_navigator_v2"
 
 SEEDS_DIR: Final[pathlib.Path] = pathlib.Path(__file__).resolve().parent.parent / "seeds"
 CATALOGS_DIR: Final[pathlib.Path] = SEEDS_DIR / "catalogs"
@@ -55,3 +63,17 @@ CLIMATE_DEFAULT_STATION_ID: Final[str] = "NEW_YORK_CENTRAL_PRK_OBS_BELV_NY"
 def default_user_kwargs() -> dict[str, str]:
     """Return `{email, display_name, password}` from `seeds/user.json`."""
     return json.loads(USER_SEED_PATH.read_text())
+
+
+def assert_local_dev_database() -> None:
+    """Refuse to seed anything but the local dev database.
+
+    Shared safety guard for every reset/reseed script: bails unless
+    `ENVIRONMENT` is local/dev/test and `DATABASE_URL` points at the
+    `ph_navigator_v2` dev database.
+    """
+    if settings.environment not in LOCAL_ENVIRONMENTS:
+        raise SystemExit(f"Refusing to seed ENVIRONMENT={settings.environment!r}; expected local/dev/test.")
+    db_name = urlparse(settings.database_url).path.lstrip("/")
+    if db_name != _LOCAL_DEV_DB_NAME:
+        raise SystemExit(f"Refusing to reset database {db_name!r}; expected local dev database {_LOCAL_DEV_DB_NAME!r}.")
