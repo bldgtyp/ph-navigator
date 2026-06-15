@@ -36,11 +36,14 @@ private object store (MinIO local / Cloudflare R2 prod); see
    # PHI: --provider phi --version 10.6 --src <dir containing the .xlsx>
    ```
 
-   For local dev, `make seed-climate-bundle` does this from this directory (or
-   `$CLIMATE_SOURCE_DIR`) into MinIO — the bootstrap step that fills the empty
-   bucket, like `object-store-init` does for attachments. It is a no-op when the
-   local source is absent but a bundle is already in the store, so resets keep
-   working without re-supplying the raw files.
+   For local dev, `make seed-climate-bundle` bootstraps the bucket from this
+   directory (or `$CLIMATE_SOURCE_DIR`), like `object-store-init` does for
+   attachments. It only (re)builds + uploads from a local tree when
+   `CLIMATE_SOURCE_DIR` is set explicitly; otherwise an existing bundle in the
+   store is reused as-is, so a plain reset keeps whatever was published (it does
+   not overwrite a full bundle with the default 24-station slice). A fresh dev
+   with no bundle yet bootstraps from the default slice. To refresh from the
+   default slice on purpose, set `CLIMATE_SOURCE_DIR=backend/seeds/climate`.
 
 2. **Seed (dev + prod).** `make db-seed` pulls `phius/2022` from the object
    store, seeds all stations, and pins the starter project's default climate
