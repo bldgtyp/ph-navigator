@@ -15,6 +15,12 @@ Drop the Phius `-mon.txt` tree under `USA/<STATE>/<STATION>-mon.txt` here (the
 region code comes from the parent directory name). Ed keeps the canonical copy
 locally. Set `CLIMATE_SOURCE_DIR` to point the pipeline at a tree elsewhere.
 
+The **PHI/PHPP 10.6** library is a single licensed `.xlsx` workbook (the
+embedded `Climate`-worksheet library), not a tree of files; Ed's gitignored
+copy lives at
+`planning/archive/climate/example_data/phi_phpp_10_6_climate_data/`. The process
+step finds the `.xlsx` under whatever `--src` directory it is given.
+
 ## Two-stage pipeline (process → seed)
 
 The seed no longer parses raw files at seed time. Source-of-truth is the
@@ -27,6 +33,7 @@ private object store (MinIO local / Cloudflare R2 prod); see
    ```sh
    cd backend && uv run python -m features.climate.processing \
        --provider phius --version 2022 --src <raw -mon.txt tree> --upload
+   # PHI: --provider phi --version 10.6 --src <dir containing the .xlsx>
    ```
 
    For local dev, `make seed-climate-bundle` does this from this directory (or

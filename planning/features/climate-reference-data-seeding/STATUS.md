@@ -1,10 +1,12 @@
 ---
 DATE: 2026-06-15
 TIME: -
-STATUS: Phase 1 COMPLETE (2026-06-15) — implemented, unit-tested, `make ci`
-  green, and the full 1007-station process→seed verified locally end-to-end.
-  Phase 2 (PHI, `phases/phase-02-phi-importer.md`) and Phase 3 (Render,
-  `phases/phase-03-render-seed.md`) are not started.
+STATUS: Phase 1 COMPLETE (2026-06-15) and Phase 2 importer COMPLETE
+  (2026-06-15) — both implemented, unit-tested, `make ci` green; the full
+  Phius 1007-station process→seed was verified locally end-to-end, and the PHI
+  10.6 column map is reverse-engineered + validated (1002 datasets, 82
+  countries). Remaining: the one-time operator publish of the PHI bundle, and
+  Phase 3 (Render, `phases/phase-03-render-seed.md`, not started).
 AUTHOR: Claude (for Ed)
 SCOPE: Status + gate for the climate reference-data ingest + seed pipeline.
 RELATED:
@@ -18,12 +20,33 @@ RELATED:
 
 ## Current state
 
-**v1.0, Phase 1 complete (2026-06-15).** The Climate Postgres store, read
-endpoints, MCP, and a provider-agnostic `seed_dataset(...)` shipped
-(2026-06-13, archived Climate feature). Phase 1 then built the *supply chain*:
-the admin-only two-stage process→seed pipeline sourced from the private object
-store, plus the public-repo cleanup. Phase 2 (PHI) and Phase 3 (Render) are
-still open.
+**v1.0, Phase 1 complete + Phase 2 importer complete (2026-06-15).** The
+Climate Postgres store, read endpoints, MCP, and a provider-agnostic
+`seed_dataset(...)` shipped (2026-06-13, archived Climate feature). Phase 1
+then built the *supply chain*: the admin-only two-stage process→seed pipeline
+sourced from the private object store, plus the public-repo cleanup. Phase 2
+added the second provider — the PHI/PHPP 10.6 `.xlsx` importer — which is the
+only new code a provider needs (the seed path is provider-agnostic). Phase 3
+(Render) is still open.
+
+**Phase 2 (PHI importer), shipped 2026-06-15** (`phases/phase-02-phi-importer.md`
+has the full build record + the recovered column map):
+
+- `importers/phi.py` parses the embedded PHPP `Climate`-worksheet library
+  (openpyxl); `phi` is registered as a `ClimateProvider`
+  (`default_version="10.6"`, `label_prefix="PHI"`). The process CLI
+  (`--provider phi`) and seed path needed no other change.
+- The load-bearing column map was reverse-engineered from the 10.6 workbook and
+  **validated** — decoded coordinates match real cities, and physical
+  invariants (dewpoint ≤ air, sky ≤ air, global ≥ directional) hold. It yields
+  **1002 datasets across 82 countries**, skipping 16 empty user-template slots.
+- `tests/test_climate_phi.py` golden-tests the parse path against a synthetic
+  workbook built in `tmp_path` (no licensed bytes committed). `make ci` green.
+- **Not yet done:** the one-time operator publish of the real bundle
+  (`climate/phi/10.6/dataset.json`) to the object store + seed — the licensed
+  workbook is gitignored at
+  `planning/archive/climate/example_data/phi_phpp_10_6_climate_data/`. See
+  "Next step → Manual work" below.
 
 What shipped in Phase 1 (`backend/features/climate/`):
 
@@ -101,12 +124,13 @@ the raw files.
   and the Phius parser (`importers/phius.py`); the full 1007-station seed ran
   end-to-end on Ed's machine from the gitignored canonical tree at
   `planning/archive/climate/example_data/phius_2022_climate_data/`.
-- **Phase 2 (PHI)** — `phases/phase-02-phi-importer.md`. Gated by priority, not
-  a hard blocker; the seed path is provider-agnostic and the registry seam is
-  in place (add `importers/phi.py` + one `_PROVIDERS` entry). Load-bearing risk
-  is the ~130-column workbook map.
+- **Phase 2 (PHI)** — importer DONE (2026-06-15); `phases/phase-02-phi-importer.md`.
+  The load-bearing ~130-column workbook map is reverse-engineered, validated,
+  and documented; `importers/phi.py` + the `_PROVIDERS` entry + unit tests are
+  in. Remaining is the operator's one-time bundle publish (no code).
 - **Phase 3 (Render)** — deploy task; needs `R2_*` confirmed in Render (the
-  object store already serves attachments there).
+  object store already serves attachments there). Now covers both `phius/2022`
+  and `phi/10.6` bundles.
 
 ## Next step
 
@@ -123,21 +147,25 @@ make object-store-init      # bootstrap MinIO bucket (idempotent)
 make db-seed                # rebuilds the 1007 bundle + reseeds the dev DB
 ```
 
-### Next dev step — Phase 2 (PHI), `phases/phase-02-phi-importer.md`
+### Manual work (operator — Ed) — Phase 2 PHI bundle, NOT yet done
 
-The registry seam is ready, so this is the planned shape:
+The importer + tests are merged; the licensed 10.6 workbook is gitignored on
+Ed's machine. Publish the PHI bundle to MinIO and seed it once (run from
+`backend/`, with the object store up via `make object-store-init`):
 
-1. Add `backend/features/climate/importers/phi.py` with
-   `iter_phi_records(root) -> Iterator[ClimateRecord]` (the load-bearing
-   ~130-column `.xlsx` workbook map — the real risk; see the phase doc).
-2. Register it: one `ClimateProvider` entry in `importers/__init__.py`
-   (`label_prefix="PHI"`, `default_version="10.6"`, `parse_tree=iter_phi_records`).
-3. Publish `climate/phi/10.6/dataset.json` via the existing process CLI
-   (`python -m features.climate.processing --provider phi --version 10.6 --src
-   <xlsx tree> --upload`). **No seed-side changes** — the seed path is already
-   provider-agnostic.
+```sh
+cd backend
+uv run python -m features.climate.processing \
+    --provider phi --version 10.6 \
+    --src ../planning/archive/climate/example_data/phi_phpp_10_6_climate_data \
+    --upload                                   # writes climate/phi/10.6/dataset.json (1002 datasets)
+uv run python -m features.climate.seeding --provider phi --version 10.6
+```
 
-### Later — Phase 3 (Render), `phases/phase-03-render-seed.md`
+Spot-check a handful of seeded rows by hand before trusting the bulk seed. The
+process step is idempotent per `(provider, version)`; re-running is safe.
+
+### Next dev step — Phase 3 (Render), `phases/phase-03-render-seed.md`
 
 Wire the on-demand prod seed job: confirm `R2_*` in Render, then run
 `python -m features.climate.seeding --provider <p> --version <v>` against R2 +
@@ -145,5 +173,6 @@ the Render Postgres on publish of a new bundle (not per deploy).
 
 ## Blockers
 
-- None for Phase 1 (implemented). Phase 2 waits on the PHI parser by priority,
-  not by a hard blocker.
+- None. Phase 1 and the Phase 2 PHI importer are implemented + `make ci` green;
+  the PHI bundle publish is a manual operator step (above), and Phase 3 (Render)
+  is a deploy task, neither a hard blocker.

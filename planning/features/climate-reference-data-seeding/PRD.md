@@ -1,9 +1,10 @@
 ---
 DATE: 2026-06-15
 TIME: -
-STATUS: v1.0. Phase 1 COMPLETE 2026-06-15 — implemented, unit-tested, `make ci`
-  green, full 1007-station seed verified locally (see STATUS.md). Phase 2 (PHI,
-  phases/phase-02-phi-importer.md) and Phase 3 (Render) not started.
+STATUS: v1.0. Phase 1 COMPLETE 2026-06-15 (full 1007-station seed verified
+  locally) and Phase 2 PHI importer COMPLETE 2026-06-15 (column map validated,
+  1002 datasets across 82 countries, unit-tested, `make ci` green; operator
+  bundle publish pending) — see STATUS.md. Phase 3 (Render) not started.
 AUTHOR: Claude (for Ed)
 SCOPE: Product/behavior contract for the climate reference-data ingest + seed
   pipeline: a two-stage process→seed flow that lands the full Phius + PHI
@@ -162,6 +163,11 @@ to disk/object-store instead of going straight to Postgres.
 
 ### Phase 2 — PHI/PHPP 10.6 (see `phases/phase-02-phi-importer.md`)
 
+> **Importer COMPLETE 2026-06-15.** `importers/phi.py` + the `phi` provider
+> entry shipped; the ~130-column map is reverse-engineered, validated (1002
+> datasets, 82 countries), and unit-tested; `make ci` green. The CLI/seed path
+> needed no change. Only the one-time operator bundle publish remains.
+
 - Depends on `importers/phi.py` (the `.xlsx` parser + ~130-column map
   validation; full plan in the phase doc). Once it exists, it is just another
   **process** parser →
@@ -213,7 +219,8 @@ Object-store bundles: one `dataset.json` (+ optional raw archive) per
   `make db-reset-dev` bring climate back automatically (MinIO).
 - An admin-only **process** CLI and a provider-agnostic **seed** path exist and
   are documented; a `make` recipe publishes a bundle to the object store.
-- PHI 10.6 path defined as Phase 2 (`phases/phase-02-phi-importer.md`).
+- PHI 10.6 importer implemented + validated as Phase 2
+  (`phases/phase-02-phi-importer.md`); bundle publish pending.
 - A documented Render seed job (Phase 3). `make ci` green.
 
 ## 8. Risks / open sub-questions
