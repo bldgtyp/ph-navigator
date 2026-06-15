@@ -4,9 +4,9 @@ TIME: -
 STATUS: Phase 1 COMPLETE (2026-06-15) and Phase 2 importer COMPLETE
   (2026-06-15) — both implemented, unit-tested, `make ci` green; the full
   Phius 1007-station process→seed was verified locally end-to-end, and the PHI
-  10.6 column map is reverse-engineered + validated (1002 datasets, 82
-  countries). Remaining: the one-time operator publish of the PHI bundle, and
-  Phase 3 (Render, `phases/phase-03-render-seed.md`, not started).
+  10.6 bundle (1002 datasets, 82 countries) was published to local MinIO,
+  seeded, and verified end-to-end (2026-06-15). Remaining: only Phase 3
+  (Render prod seed, `phases/phase-03-render-seed.md`, not started).
 AUTHOR: Claude (for Ed)
 SCOPE: Status + gate for the climate reference-data ingest + seed pipeline.
 RELATED:
@@ -42,11 +42,12 @@ has the full build record + the recovered column map):
   **1002 datasets across 82 countries**, skipping 16 empty user-template slots.
 - `tests/test_climate_phi.py` golden-tests the parse path against a synthetic
   workbook built in `tmp_path` (no licensed bytes committed). `make ci` green.
-- **Not yet done:** the one-time operator publish of the real bundle
-  (`climate/phi/10.6/dataset.json`) to the object store + seed — the licensed
-  workbook is gitignored at
-  `planning/archive/climate/example_data/phi_phpp_10_6_climate_data/`. See
-  "Next step → Manual work" below.
+- **Bundle published + seeded + verified (2026-06-15).** Ed processed the
+  licensed workbook with `--upload` (→ `climate/phi/10.6/dataset.json` in local
+  MinIO) and seeded it: `phi/10.6` = 1002 locations across 82 countries,
+  alongside `phius/2022` = 1007. Spot-checks match the source (Rochester
+  43.12/-77.68, Birmingham 33.5/-86.92); relational country/region/lat/lon
+  columns are populated. Prod (Render R2 + Postgres) is Phase 3.
 
 What shipped in Phase 1 (`backend/features/climate/`):
 
@@ -127,7 +128,8 @@ the raw files.
 - **Phase 2 (PHI)** — importer DONE (2026-06-15); `phases/phase-02-phi-importer.md`.
   The load-bearing ~130-column workbook map is reverse-engineered, validated,
   and documented; `importers/phi.py` + the `_PROVIDERS` entry + unit tests are
-  in. Remaining is the operator's one-time bundle publish (no code).
+  in, and the bundle is published to local MinIO + seeded + verified. Prod
+  (Render) seed is Phase 3.
 - **Phase 3 (Render)** — deploy task; needs `R2_*` confirmed in Render (the
   object store already serves attachments there). Now covers both `phius/2022`
   and `phi/10.6` bundles.
@@ -147,23 +149,28 @@ make object-store-init      # bootstrap MinIO bucket (idempotent)
 make db-seed                # rebuilds the 1007 bundle + reseeds the dev DB
 ```
 
-### Manual work (operator — Ed) — Phase 2 PHI bundle, NOT yet done
+### Manual work (operator — Ed) — Phase 2 PHI bundle — DONE 2026-06-15
 
-The importer + tests are merged; the licensed 10.6 workbook is gitignored on
-Ed's machine. Publish the PHI bundle to MinIO and seed it once (run from
-`backend/`, with the object store up via `make object-store-init`):
+Done on Ed's machine and verified. Reproduce a local publish + reseed with
+(the CLIs need the local MinIO creds in-env because `backend/.env` leaves the
+`R2_*` values blank for the make recipes to inject):
 
 ```sh
+make object-store-init                         # bring MinIO up + ensure the bucket (idempotent)
+export R2_ENDPOINT_URL=http://localhost:9000
+export R2_ACCESS_KEY_ID=phn_minio
+export R2_SECRET_ACCESS_KEY=phn_minio_local_only
+export R2_BUCKET=ph-navigator-v2-dev
 cd backend
 uv run python -m features.climate.processing \
     --provider phi --version 10.6 \
     --src ../planning/archive/climate/example_data/phi_phpp_10_6_climate_data \
-    --upload                                   # writes climate/phi/10.6/dataset.json (1002 datasets)
+    --upload                                   # → climate/phi/10.6/dataset.json (1002 datasets)
 uv run python -m features.climate.seeding --provider phi --version 10.6
 ```
 
-Spot-check a handful of seeded rows by hand before trusting the bulk seed. The
-process step is idempotent per `(provider, version)`; re-running is safe.
+Idempotent per `(provider, version)`; re-running is safe. Verified seed:
+`phi/10.6` = 1002 locations / 82 countries, spot-checks match the source.
 
 ### Next dev step — Phase 3 (Render), `phases/phase-03-render-seed.md`
 
@@ -173,6 +180,6 @@ the Render Postgres on publish of a new bundle (not per deploy).
 
 ## Blockers
 
-- None. Phase 1 and the Phase 2 PHI importer are implemented + `make ci` green;
-  the PHI bundle publish is a manual operator step (above), and Phase 3 (Render)
-  is a deploy task, neither a hard blocker.
+- None. Phase 1 and Phase 2 are complete + verified locally (`make ci` green;
+  PHI bundle published + seeded). Phase 3 (Render) is a deploy task, not a hard
+  blocker.
