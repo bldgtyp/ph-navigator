@@ -1,11 +1,51 @@
 # Attachments Status
 
-DATE: 2026-06-05
-TIME: 20:46 EDT
-STATUS: In review; partially implemented on `main`. Not complete.
+DATE: 2026-06-15
+TIME: 18:05 EDT
+STATUS: COMPLETE (v1). All acceptance items verified; Phase-5 polish
+        (parallel upload, reorder, grouped undo) is deferred by decision,
+        not outstanding.
 AUTHOR: Codex
 SCOPE: Current state for fixed attachment cells, the asset backbone,
 bulk download jobs, MCP asset tools, and remaining acceptance work.
+
+## 2026-06-15 closeout progress
+
+Bucket-A automated coverage landed; contract gaps resolved per the
+"defer polish, prove read-only" decision:
+
+- bulk-download zip / `MANIFEST.csv` / ordering / filename de-dup /
+  filter / failure-payload coverage:
+  `backend/tests/test_assets_bulk_download.py`;
+- MCP asset-tool scope enforcement (`asset:read` / `asset:write`) and
+  `bulk_attach` / `bulk_detach` partial-failure coverage:
+  `backend/tests/test_assets_mcp.py`;
+- orphan-sweeper dry-run protection of saved-version and active-draft
+  references: `backend/tests/test_assets_orphan_sweeper.py`;
+- locked-version read-only proof (attach/detach rejected with
+  `version_locked`): `backend/tests/test_assets_locked_version.py`.
+
+**Bug fixed:** `tool_bulk_attach` / `tool_bulk_detach` passed the
+positional `asset_id` into `Attach/DetachAssetRequest` (which forbids
+extras), so every MCP bulk attach/detach failed validation. The
+positional id is now stripped before payload validation
+(`backend/features/mcp/tools.py`). This path had no prior tests.
+
+Contract updated: `context/technical-requirements/attachments.md` §A0
+now records parallel `op_group_id` upload, modal-rail reorder, and
+grouped undo as deferred Phase-5 polish, and locked-version read-only +
+bulk download + MCP tools + orphan sweeper as required/proven.
+
+Bucket-B external verification — **done 2026-06-15**: the opt-in R2 smoke
+passed against the real `ph-navigator-v2-dev` bucket, and the full Render
+staging browser checklist passed (PDF + image upload, PDF iframe preview,
+native image preview, replace, detach, reload persistence after Save
+Version, bulk-download `MANIFEST.csv` inspection, and the MCP
+`list_assets` / `resolve_asset_urls` / `start_bulk_download` token smoke).
+Evidence logged in
+`phases/testing-verification-strategy.md` §2026-06-15. With bucket A,
+the contract decision, and bucket B all landed, v1 attachments is
+accepted **Complete**.
 
 ## Current Status
 
@@ -86,50 +126,45 @@ Manual evidence exists in `phases/testing-verification-strategy.md` for
 a local MinIO browser workflow and a Render staging Pumps PDF upload /
 preview / download path on 2026-05-26.
 
-## Open Acceptance Items
+## Acceptance Items — all resolved 2026-06-15
 
-Do not mark this feature `Complete` until these are either verified or
-explicitly deferred in the stable contract:
+Every gate below is now either verified or explicitly deferred in the
+stable contract (`context/technical-requirements/attachments.md` §A0):
 
-- bulk download zip/manifest behavior has automated coverage;
-- MCP asset tools have permission and partial-failure tests;
+- bulk download zip/manifest behavior has automated coverage —
+  **done** (`backend/tests/test_assets_bulk_download.py`);
+- MCP asset tools have permission and partial-failure tests —
+  **done** (`backend/tests/test_assets_mcp.py`; also fixed a latent
+  `bulk_attach`/`bulk_detach` validation bug);
 - MCP staging smoke verifies `list_assets`, `resolve_asset_urls`, and
-  `start_bulk_download` with a real project-scoped token;
-- real R2 opt-in smoke has been run with current staging/dev R2 env vars
-  and the result is logged;
+  `start_bulk_download` with a real project-scoped token — **done**
+  (ledger §2026-06-15);
+- real R2 opt-in smoke run with current staging/dev R2 env vars and the
+  result logged — **done** (ledger §2026-06-15);
 - browser staging acceptance covers image upload/preview/thumbnail,
-  replace, bulk download manifest inspection, and the current visual
-  fallback chip;
-- remaining UX-contract gaps are either implemented or deliberately
-  downgraded in `context/technical-requirements/attachments.md`.
+  replace, bulk download manifest inspection, and the visual fallback
+  chip — **done** (ledger §2026-06-15);
+- remaining UX-contract gaps either implemented or deliberately
+  downgraded in the contract — **done** (§A0).
 
-Known implementation gaps relative to the current contract include:
+Deferred by decision (Phase-5 polish, **not** acceptance blockers; see
+contract §A0):
 
-- frontend upload currently loops files sequentially through
-  `uploadAsset`; it is not the PRD's parallel upload coordinator with an
-  `op_group_id`;
-- modal rail reorder and grouped undo semantics are not proven;
-- full locked-version/read-only behavior is not yet proven across every
-  attachment surface;
-- Phase 5 polish remains deferred and should not block MVP acceptance.
+- sequential per-file upload kept; the parallel `op_group_id` upload
+  coordinator is deferred;
+- modal-rail reorder and grouped undo are deferred.
+
+Proven and required:
+
+- locked-version / read-only behavior across attachment surfaces —
+  **done** (`backend/tests/test_assets_locked_version.py`).
 
 ## Next Steps
 
-1. Add backend coverage for bulk download zip creation,
-   `MANIFEST.csv`, filter behavior, and failure payloads.
-2. Add MCP asset-tool tests for `asset:read`, `asset:write`, forbidden
-   scopes, and partial failures.
-3. Run the opt-in R2 smoke:
-   `cd backend && RUN_R2_INTEGRATION=1 uv run pytest tests/integration/test_r2_assets.py`.
-4. Run the staging browser checklist from
-   `phases/testing-verification-strategy.md`: PDF, image, replace,
-   detach, bulk download manifest, and MCP token smoke.
-5. Resolve contract-vs-code gaps. Either implement parallel upload /
-   reorder / grouped undo, or explicitly revise the stable contract to
-   say those are deferred.
-6. After the acceptance work lands, run the closeout gate from repo root:
-   `make format && make ci`, then update this file and `planning/STATUS.md`
-   to `Complete` only if all required evidence is present.
+Feature is Complete for v1. No further work required before release. The
+only attachment follow-on is the deferred v1.1 candidate
+(`planning/features_v1.1/user-defined-attachment-fields/`), which remains
+gated on real ad-hoc-column demand.
 
 ## References
 

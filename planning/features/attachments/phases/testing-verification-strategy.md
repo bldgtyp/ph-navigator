@@ -579,6 +579,56 @@ Screenshots saved outside the repo:
 - `/tmp/phn-pumps-preview.png`;
 - `/tmp/phn-pumps-after-detach.png`.
 
+### 2026-06-15 — R2 smoke run + full staging acceptance (bucket B closed)
+
+Both remaining external-verification gates were run and passed.
+
+**Cloudflare R2 opt-in smoke — PASS.** Ran against the real
+`ph-navigator-v2-dev` bucket with the staging `R2_*` credentials placed
+in gitignored `backend/.env`:
+
+```bash
+cd backend && RUN_R2_INTEGRATION=1 uv run pytest tests/integration/test_r2_assets.py
+# 1 passed
+```
+
+Verified signed PUT (200), `head_object` content-length + type, signed
+GET returning exact bytes, `copy_object` + head/get of the copy, and the
+120 s `X-Amz-Expires` TTL on both signed URLs. Objects written under an
+`integration-tests/<run-id>/` prefix and deleted in `finally`.
+
+**Render staging browser acceptance — PASS.** Driven via Playwright
+against `https://ph-navigator-v2-staging.onrender.com`, signed in as the
+seeded staging editor. Fresh project
+`1707e684-a614-4d5e-bc64-68f260749657` (`SMOKE-0615`), Equipment → Pumps
+→ Datasheet cell:
+
+- PDF datasheet upload: `upload-intent` 200 → signed R2 `PUT` 200 →
+  `complete-upload` 200 → `bulk-urls` 200; `PDF` chip rendered.
+- PDF preview modal: pdfjs iframe rendered the fixture page; modal
+  portaled above the grid; `Download` uses the API `/download` route,
+  `Open in new tab` uses the no-disposition `preview_url`.
+- Image upload via `Replace…` (small PNG): full chain 200; in-cell
+  image thumbnail rendered; preview modal showed the native `<img>`.
+- Detach: cell returned to `Drop files here`.
+- Reload persistence: re-attached the PDF, `Save Version`, reloaded —
+  the datasheet chip persisted.
+- Bulk download: `POST /assets/bulk-download` ran synchronously to
+  `completed`; the result zip contained
+  `equipment_pumps/pmp_…__phn-attachment-upload-verification-v1.pdf`
+  (646 B) plus a well-formed `MANIFEST.csv` (full column set, correct
+  asset/row/field references). Content-hash dedup confirmed: the
+  re-attached PDF reused the original `asset_id`.
+- MCP token smoke: issued a project-scoped token
+  (`project:read`, `asset:read`), connected the real MCP client to the
+  deployed `/mcp/` endpoint, and confirmed `list_assets` (3 assets),
+  `resolve_asset_urls` (3 items with signed `download_url`), and
+  `start_bulk_download` (`completed`, result asset created). Token
+  revoked afterward.
+
+This closes the open acceptance items in `STATUS.md`. The image fixture
+and MCP smoke script live in gitignored `working/staging-attachments/`.
+
 ## P9. Lessons Learned
 
 - Keep the document path and registry key explicit. The project

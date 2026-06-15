@@ -653,7 +653,11 @@ def tool_bulk_attach(
     for index, item in enumerate(attachments):
         try:
             asset_id = str(item["asset_id"])
-            payload = AttachAssetRequest.model_validate({**item, "version_id": version_id})
+            # ``asset_id`` is addressed positionally by the service, not a
+            # field of the request model (which forbids extras), so drop it
+            # before validating the per-item attach payload.
+            fields = {key: value for key, value in item.items() if key != "asset_id"}
+            payload = AttachAssetRequest.model_validate({**fields, "version_id": version_id})
             results.append({"index": index, "ok": True, "result": service.attach_asset(access, asset_id, payload)})
         except Exception as exc:
             results.append({"index": index, "ok": False, "error": str(exc)})
@@ -676,7 +680,10 @@ def tool_bulk_detach(
     for index, item in enumerate(asset_refs):
         try:
             asset_id = str(item["asset_id"])
-            payload = DetachAssetRequest.model_validate({**item, "version_id": version_id})
+            # See ``tool_bulk_attach``: strip the positional ``asset_id``
+            # before validating against the extra-forbidding request model.
+            fields = {key: value for key, value in item.items() if key != "asset_id"}
+            payload = DetachAssetRequest.model_validate({**fields, "version_id": version_id})
             results.append({"index": index, "ok": True, "result": service.detach_asset(access, asset_id, payload)})
         except Exception as exc:
             results.append({"index": index, "ok": False, "error": str(exc)})
