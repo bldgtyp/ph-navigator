@@ -23,6 +23,35 @@ options, AirTable behavior comparison, and resolution history) lives at
 `planning/features/attachments/PRD.md`. This file is the
 durable contract only.
 
+## A0. Implementation status (v1 acceptance)
+
+The asset backbone, REST surface, fixed-field registry, MCP asset tools,
+and the shared `<AttachmentCell>` are implemented. The following parts of
+this contract are **deferred to Phase-5 polish and are NOT v1 acceptance
+blockers**:
+
+- **Parallel upload coordinator with `op_group_id`** (A4.3, A5). v1 ships
+  sequential per-file uploads; the batched coordinator and shared
+  `op_group_id` are deferred.
+- **Modal-rail drag-reorder** (A4.5).
+- **Grouped undo** for batched drops, reorder, and replace (the "one undo
+  entry" / single-⌘Z semantics in A4.3–A4.7).
+
+The following properties are **required for v1 and are proven by
+automated tests**:
+
+- **Locked-version / read-only enforcement.** Attach and detach are
+  rejected with `version_locked` on a locked version
+  (`tests/test_assets_locked_version.py`), preserving the §A6
+  immutable-by-discipline invariant.
+- **Bulk download** zip + `MANIFEST.csv`, ordering, filename de-dup, and
+  filter behavior (`tests/test_assets_bulk_download.py`).
+- **MCP asset tools** scope enforcement (`asset:read` / `asset:write`)
+  and `bulk_attach` / `bulk_detach` partial-failure reporting
+  (`tests/test_assets_mcp.py`).
+- **Orphan-sweeper** dry-run protection of assets referenced by a saved
+  version or an active draft (`tests/test_assets_orphan_sweeper.py`).
+
 ## A1. Scope
 
 V1 attachments are **pre-set core fields on a fixed roster of
@@ -147,7 +176,8 @@ Signed URL TTLs:
 - On failure, the placeholder turns red with an error tooltip; retry
   or dismiss.
 - One CellWrite per file but all writes share an `op_group_id` so a
-  single ⌘Z removes the whole batch.
+  single ⌘Z removes the whole batch. **(Deferred — Phase-5 polish; see
+  A0. v1 ships sequential uploads with per-file undo.)**
 
 ### A4.4 Preview modal
 
@@ -169,6 +199,8 @@ Signed URL TTLs:
   Download button (no inline render).
 
 ### A4.5 Reorder
+
+**(Deferred — Phase-5 polish; see A0.)**
 
 - Drag-reorder within the modal's thumbnail rail.
 - Single CellWrite reshuffling the array; one undo entry.
