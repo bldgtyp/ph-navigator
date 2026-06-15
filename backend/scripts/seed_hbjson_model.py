@@ -21,7 +21,6 @@ content hash is left untouched.
 from __future__ import annotations
 
 import hashlib
-from urllib.parse import urlparse
 from uuid import UUID
 
 from config import settings
@@ -32,9 +31,7 @@ from features.auth import repository as auth_repository
 from features.model_viewer import repository as model_repository
 from features.model_viewer.model_data import run_extraction_job
 from features.projects import repository as projects_repository
-from scripts._seed_paths import HBJSON_SEED_PATH, default_user_kwargs
-
-LOCAL_ENVIRONMENTS = {"development", "test", "local"}
+from scripts._seed_paths import HBJSON_SEED_PATH, assert_local_dev_database, default_user_kwargs
 
 # Fixed so re-runs overwrite the same object key instead of orphaning a new
 # one in the bucket on every reseed.
@@ -45,7 +42,7 @@ _CONTENT_TYPE = "application/json"
 
 
 def main() -> None:
-    _assert_local_dev_database()
+    assert_local_dev_database()
     if not settings.r2_endpoint_url:
         raise SystemExit("R2_ENDPOINT_URL is required; start the object store with `make object-store-init`.")
 
@@ -111,14 +108,6 @@ def main() -> None:
     run_extraction_job(storage, project_id, file_id)
 
     print(f"Seeded HBJSON model: file={file_id} project={project_id} ({len(raw)} bytes)")
-
-
-def _assert_local_dev_database() -> None:
-    if settings.environment not in LOCAL_ENVIRONMENTS:
-        raise SystemExit(f"Refusing to seed ENVIRONMENT={settings.environment!r}; expected local/dev/test.")
-    db_name = urlparse(settings.database_url).path.lstrip("/")
-    if db_name != "ph_navigator_v2":
-        raise SystemExit(f"Refusing to seed database {db_name!r}; expected local dev database 'ph_navigator_v2'.")
 
 
 if __name__ == "__main__":

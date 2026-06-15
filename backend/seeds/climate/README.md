@@ -13,14 +13,35 @@ tracked.
 
 Drop the Phius `-mon.txt` tree under `USA/<STATE>/<STATION>-mon.txt` here (the
 region code comes from the parent directory name). Ed keeps the canonical copy
-locally; the eventual workflow pulls a standardized bundle from the private
-object store (MinIO local / Cloudflare R2 prod).
+locally. Set `CLIMATE_SOURCE_DIR` to point the pipeline at a tree elsewhere.
 
-See `planning/features/climate-reference-data-seeding/` for the two-stage
-process→seed pipeline and the object-store source-of-truth design.
+## Two-stage pipeline (process → seed)
 
-`backend/scripts/seed_dev_db.py` walks this directory through
-`features.climate.importers.phius` to seed the `phius`/`2022` dataset and pin
-the starter project's default climate source (NYC / Central Park). With this
-directory empty, `make db-seed` cannot seed climate until you supply the files
-or the object-store seeding lands.
+The seed no longer parses raw files at seed time. Source-of-truth is the
+private object store (MinIO local / Cloudflare R2 prod); see
+`planning/features/climate-reference-data-seeding/` for the design.
+
+1. **Process (admin, rare).** Parse a raw tree into a standardized
+   `dataset.json` bundle and upload it to the object store:
+
+   ```sh
+   cd backend && uv run python -m features.climate.processing \
+       --provider phius --version 2022 --src <raw -mon.txt tree> --upload
+   ```
+
+   For local dev, `make seed-climate-bundle` does this from this directory (or
+   `$CLIMATE_SOURCE_DIR`) into MinIO — the bootstrap step that fills the empty
+   bucket, like `object-store-init` does for attachments. It is a no-op when the
+   local source is absent but a bundle is already in the store, so resets keep
+   working without re-supplying the raw files.
+
+2. **Seed (dev + prod).** `make db-seed` pulls `phius/2022` from the object
+   store, seeds all stations, and pins the starter project's default climate
+   source (NYC / Central Park). Seed directly with:
+
+   ```sh
+   cd backend && uv run python -m features.climate.seeding --provider phius --version 2022
+   ```
+
+With neither a local source tree nor a bundle in the object store, the climate
+seed fails loudly (and the NYC default lookup cannot resolve).

@@ -38,14 +38,16 @@ backend/seeds/
 the source data is **gitignored and not committed** — it is licensed Phius/PHI
 reference data and this is a **public** repo (see `climate/README.md` and
 `planning/features/climate-reference-data-seeding/`). Supply the files locally
-under `climate/USA/<STATE>/<STATION>-mon.txt`; the region code comes from the
-parent directory name. `seed_dev_db.py` walks whatever is present through the
-`features.climate.importers.phius` importer the real CLI uses, seeds the
-app-wide `phius`/`2022` dataset, then pins NYC / Central Park as the starter
-project's **default** `project_climate_source` and writes a matching
-`project_location`. With `climate/` empty, the climate seed step finds no
-stations (and the NYC default lookup fails) until the source files are supplied
-or the object-store seeding lands.
+under `climate/USA/<STATE>/<STATION>-mon.txt` (or set `CLIMATE_SOURCE_DIR`); the
+region code comes from the parent directory name. The seed runs a two-stage
+pipeline: `make seed-climate-bundle` *processes* that tree into a standardized
+`dataset.json` bundle and uploads it to the object store (MinIO), then
+`seed_dev_db.py` *seeds* by pulling that bundle back from the store, seeding the
+app-wide `phius`/`2022` dataset and pinning NYC / Central Park as the starter
+project's **default** `project_climate_source` plus a matching
+`project_location`. With neither a local tree nor a bundle in the store, the
+climate seed fails loudly (and the NYC default lookup cannot resolve). See
+`climate/README.md` for the admin process/seed CLIs.
 
 `model/ph_nav_v2_example.hbjson` is linked into the project's Model tab by
 `scripts/seed_hbjson_model.py`. That seed rides the real asset backbone
@@ -93,11 +95,12 @@ make db-seed
 
 That runs, in order:
 
-1. `seed-dev-data` — `scripts.seed_dev_db --reset` truncates every
-   application table (except `alembic_version`), creates the default
-   editor account, inserts one project whose document body is assembled
-   from `project/*.json`, and seeds the `phius`/`2022` climate dataset
-   plus the project's default climate source + location from `climate/`.
+1. `seed-dev-data` — depends on `seed-climate-bundle` (processes the local
+   `climate/` tree into a bundle in MinIO), then `scripts.seed_dev_db --reset`
+   truncates every application table (except `alembic_version`), creates the
+   default editor account, inserts one project whose document body is assembled
+   from `project/*.json`, and seeds the `phius`/`2022` climate dataset (pulled
+   from the object store) plus the project's default climate source + location.
 2. `seed-materials` — `scripts.seed_materials_catalog`
 3. `seed-glazing` — `scripts.seed_glazing_catalog`
 4. `seed-frames` — `scripts.seed_frame_catalog`

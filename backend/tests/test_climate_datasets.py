@@ -22,7 +22,6 @@ from features.climate.importers.phius import (
     PhiusParseError,
     parse_phius_mon_file,
     parse_phius_mon_txt,
-    seed_phius_dataset,
 )
 from features.climate.mcp import (
     tool_get_climate_location,
@@ -156,32 +155,8 @@ def test_phius_parser_rejects_truncated_series() -> None:
         parse_phius_mon_txt(bad, station_id="bad")
 
 
-# --- Seed routine -----------------------------------------------------------
-
-
-def test_seed_phius_is_idempotent(clean_climate_tables: None) -> None:
-    first = seed_phius_dataset(_FIXTURE_ROOT)
-    assert first.location_count == 1
-    assert first.replaced is False
-
-    second = seed_phius_dataset(_FIXTURE_ROOT)
-    assert second.location_count == 1
-    assert second.replaced is True
-    # Re-seed replaces in place: still exactly one dataset, one location.
-    assert second.dataset_id != first.dataset_id
-
-    with connection() as conn:
-        datasets = conn.execute("SELECT count(*) AS n FROM climate_dataset").fetchone()
-        locations = conn.execute("SELECT count(*) AS n FROM climate_dataset_location").fetchone()
-    assert datasets is not None and datasets["n"] == 1
-    assert locations is not None and locations["n"] == 1
-
-
-def test_seed_skips_existing_when_replace_false(clean_climate_tables: None) -> None:
-    seed_phius_dataset(_FIXTURE_ROOT)
-    result = seed_phius_dataset(_FIXTURE_ROOT, replace=False)
-    assert result.replaced is False
-    assert result.location_count == 1
+# Seed idempotency now lives with the process→seed pipeline; see
+# tests/test_climate_pipeline.py.
 
 
 # --- Read surfaces: routes --------------------------------------------------

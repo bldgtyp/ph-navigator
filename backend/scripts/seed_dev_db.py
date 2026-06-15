@@ -15,7 +15,6 @@ import argparse
 import json
 from datetime import UTC, datetime
 from typing import Any
-from urllib.parse import urlparse
 from uuid import UUID, uuid4
 
 from psycopg import sql
@@ -23,8 +22,10 @@ from pydantic import BaseModel, Field
 
 from config import settings
 from database import transaction
+from features.assets.storage_r2 import R2Client
 from features.auth.service import create_or_update_user
-from features.climate.importers.phius import seed_phius_dataset
+from features.climate.object_store import ClimateBundleStore
+from features.climate.seeding import seed_from_object_store
 from features.heat_pumps.models import (
     HeatPumpIndoorEquipRow,
     HeatPumpIndoorUnitRow,
@@ -83,7 +84,6 @@ from scripts._seed_paths import (
     APPLIANCES_SEED_PATH,
     ASSEMBLIES_SEED_PATH,
     CLIMATE_DEFAULT_STATION_ID,
-    CLIMATE_PHIUS_ROOT,
     ELECTRIC_HEATERS_SEED_PATH,
     FANS_SEED_PATH,
     HEAT_PUMPS_SEED_PATH,
@@ -94,10 +94,10 @@ from scripts._seed_paths import (
     ROOMS_SEED_PATH,
     THERMAL_BRIDGES_SEED_PATH,
     VENTILATORS_SEED_PATH,
+    assert_local_dev_database,
     default_user_kwargs,
 )
 
-LOCAL_ENVIRONMENTS = {"development", "test", "local"}
 _USER_DEFAULTS = default_user_kwargs()
 
 
@@ -171,7 +171,7 @@ def main() -> None:
 
     if args.reset == args.no_reset:
         raise SystemExit("Pass exactly one of --reset or --no-reset.")
-    _assert_local_dev_database()
+    assert_local_dev_database()
 
     if args.reset:
         _truncate_application_tables()
@@ -190,15 +190,6 @@ def main() -> None:
         f"Seeded climate: {climate['dataset_label']} ({climate['location_count']} locations); "
         f"default source -> {climate['default_location_name']}"
     )
-
-
-def _assert_local_dev_database() -> None:
-    if settings.environment not in LOCAL_ENVIRONMENTS:
-        raise SystemExit(f"Refusing to seed ENVIRONMENT={settings.environment!r}; expected local/dev/test.")
-
-    db_name = urlparse(settings.database_url).path.lstrip("/")
-    if db_name != "ph_navigator_v2":
-        raise SystemExit(f"Refusing to reset database {db_name!r}; expected local dev database 'ph_navigator_v2'.")
 
 
 def _truncate_application_tables() -> None:
@@ -405,13 +396,21 @@ def _seed_climate(project_id: UUID) -> dict[str, Any]:
 
     The truncate above wipes ``climate_dataset*`` and the project-scoped
     ``project_climate_source`` / ``project_location`` rows, so this rebuilds
-    all three on every reseed. ``seed_phius_dataset`` is idempotent per
-    ``(provider, version)`` and runs in its own transaction; we then look
-    the chosen station back up by ``station_id`` and attach it as the
-    project's default climate source plus a matching site location, so the
-    Climate tab opens with real data instead of an empty roster.
+    all three on every reseed. The standardized bundle is pulled from the
+    private object store (PRD D-CS-2) — ``make seed-climate-bundle`` puts it
+    there from the operator's local source — and seeded idempotently per
+    ``(provider, version)`` in its own transaction; we then look the chosen
+    station back up by ``station_id`` and attach it as the project's default
+    climate source plus a matching site location, so the Climate tab opens
+    with real data instead of an empty roster.
     """
-    result = seed_phius_dataset(CLIMATE_PHIUS_ROOT, version="2022")
+    if not settings.r2_endpoint_url:
+        raise SystemExit(
+            "R2_ENDPOINT_URL is required to seed climate from the object store; "
+            "run `make object-store-init` and `make seed-climate-bundle` first."
+        )
+    store = ClimateBundleStore(R2Client(settings))
+    result = seed_from_object_store(store, "phius", "2022")
 
     with transaction() as conn:
         location = conn.execute(

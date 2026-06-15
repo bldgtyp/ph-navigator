@@ -1,8 +1,9 @@
 ---
-DATE: 2026-06-14
+DATE: 2026-06-15
 TIME: -
-STATUS: Planned (v1.0). Phase 1 independent; cleanup (D-CS-6) partially
-  executed 2026-06-14; Phase 2 (PHI) integrated as phases/phase-02-phi-importer.md.
+STATUS: v1.0. Phase 1 COMPLETE 2026-06-15 — implemented, unit-tested, `make ci`
+  green, full 1007-station seed verified locally (see STATUS.md). Phase 2 (PHI,
+  phases/phase-02-phi-importer.md) and Phase 3 (Render) not started.
 AUTHOR: Claude (for Ed)
 SCOPE: Product/behavior contract for the climate reference-data ingest + seed
   pipeline: a two-stage process→seed flow that lands the full Phius + PHI

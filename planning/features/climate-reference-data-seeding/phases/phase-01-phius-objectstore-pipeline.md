@@ -1,10 +1,10 @@
 ---
-DATE: 2026-06-14
+DATE: 2026-06-15
 TIME: -
-STATUS: Planned (Phase 1) — independent and buildable now. The public-repo
-  cleanup slice (step 6) is partially executed (2026-06-14: licensed source
-  files untracked + synthetic test fixture); the object-store dev-seeding swap
-  (steps 1–5) is the remaining work.
+STATUS: COMPLETE (2026-06-15). All six work items below are done; `make ci` is
+  green and the full 1007-station process→seed was verified locally from the
+  licensed tree. See ../STATUS.md for what shipped + the CLIMATE_SOURCE_DIR
+  operational note.
 AUTHOR: Claude (for Ed)
 SCOPE: The two-stage process→seed pipeline over the private object store, the
   full Phius 2022 seed, the dev reset/reseed wiring, and the public-repo
@@ -37,6 +37,12 @@ the dev reset/reseed to pull from the object store.
 ```
 
 ## Work (in order)
+
+> **DONE 2026-06-15.** Implemented as `backend/features/climate/{bundle,object_store,
+> processing,seeding}.py` + a `ClimateProvider` registry in `importers/__init__.py`,
+> with the dev bootstrap `scripts/seed_climate_bundle.py` + `make seed-climate-bundle`.
+> The seed CLI is `python -m features.climate.seeding` (the old `importers/__main__`
+> parse-on-seed CLI was deleted). Steps below kept for the build record.
 
 1. **Refactor `importers/phius.py` into a pure process step.** Split the
    current parse-and-seed (`seed_phius_dataset(root)` reads `.txt` *and* writes
@@ -73,12 +79,14 @@ the dev reset/reseed to pull from the object store.
    - REMAINING: nothing further here — the durable fix is steps 1–5 (the dev
      seed no longer needs committed source files).
 
-## Known gap until step 5 lands
+## Known gap — RESOLVED 2026-06-15
 
-A fresh clone has no local climate data, so `make db-seed` cannot seed climate
-(the NYC default-station lookup fails) until the object-store dev-seeding swap
-(steps 1–5) is in place. The operator's existing local files keep their machine
-working in the meantime.
+Step 5 landed: `make db-seed` now pulls the bundle from the object store, so a
+reset reseeds climate automatically once `make seed-climate-bundle` has pushed
+it to MinIO. The remaining inherent constraint (licensed data) is unchanged: a
+machine with neither a local source tree nor a bundle already in the store
+fails loudly — the operator supplies the source once, and resets thereafter
+work from MinIO without re-supplying the raw files.
 
 ## Tests
 

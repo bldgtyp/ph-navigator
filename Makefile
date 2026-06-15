@@ -9,7 +9,7 @@
         db-create-test db-migrate-test \
         migrate makemigration test test-backend test-frontend coverage typecheck \
         lint check ci ci-backend ci-frontend check-backend check-frontend frontend-dev-check build-frontend format format-check \
-        smoke seed-dev-user seed-agent-user seed-dev-data seed-materials seed-glazing seed-frames seed-hbjson db-seed e2e e2e-report clean
+        smoke seed-dev-user seed-agent-user seed-climate-bundle seed-dev-data seed-materials seed-glazing seed-frames seed-hbjson db-seed e2e e2e-report clean
 
 # Local Postgres URL for the dedicated pytest database. Mirrors the dev
 # URL in backend/.env.example with the database name swapped to *_test.
@@ -209,8 +209,21 @@ seed-dev-user: migrate ## Create/reset the default local editor login
 seed-agent-user: migrate ## Create/reset the dedicated local Codex/agent editor login
 	cd backend && uv run python -m scripts.seed_user --email codex@example.com --display-name "Codex Agent" --password "password"
 
-seed-dev-data: migrate ## Reset app rows and seed the default user + starter project
-	cd backend && uv run python -m scripts.seed_dev_db --reset
+seed-climate-bundle: object-store-init ## Build the Phius climate bundle from local source + upload to MinIO (needs MinIO)
+	cd backend && \
+	R2_ENDPOINT_URL="$(LOCAL_R2_ENDPOINT_URL)" \
+	R2_ACCESS_KEY_ID="$(LOCAL_R2_ACCESS_KEY_ID)" \
+	R2_SECRET_ACCESS_KEY="$(LOCAL_R2_SECRET_ACCESS_KEY)" \
+	R2_BUCKET="$(LOCAL_R2_BUCKET)" \
+	uv run python -m scripts.seed_climate_bundle
+
+seed-dev-data: migrate seed-climate-bundle ## Reset app rows; seed the default user, starter project, and climate (pulled from MinIO)
+	cd backend && \
+	R2_ENDPOINT_URL="$(LOCAL_R2_ENDPOINT_URL)" \
+	R2_ACCESS_KEY_ID="$(LOCAL_R2_ACCESS_KEY_ID)" \
+	R2_SECRET_ACCESS_KEY="$(LOCAL_R2_SECRET_ACCESS_KEY)" \
+	R2_BUCKET="$(LOCAL_R2_BUCKET)" \
+	uv run python -m scripts.seed_dev_db --reset
 
 seed-materials: migrate ## Load the canonical Materials catalog seed (10 rows)
 	cd backend && uv run python -m scripts.seed_materials_catalog
