@@ -54,6 +54,7 @@ describe("OutdoorUnitRowModal", () => {
       screen.getByLabelText(/Outdoor equipment/i),
       "hpoe_01HX0000000000000000000000",
     );
+    expect(screen.queryByLabelText("Zone")).toBeNull();
     await user.click(screen.getByRole("button", { name: "Create outdoor unit" }));
 
     expect(onSubmit).toHaveBeenCalledWith(

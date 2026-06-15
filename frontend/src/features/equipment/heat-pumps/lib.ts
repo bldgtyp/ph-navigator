@@ -62,7 +62,6 @@ export function buildEmptyOutdoorUnitRow(overrides: Partial<HeatPumpOutdoorUnitR
     id: heatPumpId("hpou"),
     tag: "",
     outdoor_equip_id: "",
-    building_zone: null,
     datasheet_asset_ids: [],
     notes: null,
     ...overrides,

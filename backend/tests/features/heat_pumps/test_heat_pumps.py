@@ -66,8 +66,8 @@ def indoor_equip(**overrides: object) -> dict[str, Any]:
         "install_type": None,
         "nominal_tons": 1.0,
         "fan_speed_cfm": 425.0,
-        "cooling_btuh": 12000.0,
-        "heating_btuh_47f": 14000.0,
+        "cooling_btuh": 3.52,
+        "heating_btuh_47f": 4.1,
         "heating_btuh_17f": 10000.0,
         "heating_cop": 3.1,
         "seer": None,
@@ -86,7 +86,6 @@ def outdoor_unit(**overrides: object) -> dict[str, Any]:
         "id": HPOU_1,
         "tag": "HP-1",
         "outdoor_equip_id": HPOE_1,
-        "building_zone": None,
         "datasheet_asset_ids": [],
         "notes": None,
     }

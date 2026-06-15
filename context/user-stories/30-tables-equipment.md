@@ -1134,9 +1134,13 @@ Phase 2 ships the active-version REST-backed indoor-equipment
 DataTable, the full 16-field row-detail modal (Identity /
 Performance / Notes sections), and add / edit / delete row
 mutations. Default-visible columns: manufacturer, model_type,
-model_number, install_type, nominal_tons, cooling_btuh,
-heating_btuh_47f, datasheet. Default-hidden: fan_speed_cfm,
-heating_btuh_17f, heating_cop, seer, eer, hspf, notes. Required
+model_number, install_type, nominal_tons, cooling capacity,
+heating capacity, datasheet. The cooling and default heating
+capacity fields retain their legacy `cooling_btuh` /
+`heating_btuh_47f` document keys, but store canonical kW and render
+through the DataTable kW / kBtu/h unit chip. Default-hidden:
+fan_speed_cfm, heating_btuh_17f, heating_cop, seer, eer, hspf,
+notes. Required
 validation: `model_number` non-empty, `nominal_tons > 0` when
 set, all other numeric fields `>= 0` when set.
 
@@ -1170,15 +1174,14 @@ US-EQ-8's caveat note).
 > As an editor, I want a DataTable that captures every installed
 > outdoor condenser instance on the project — tagged with the GC
 > drawing schedule label (e.g. `HP-17`), pointing to its
-> outdoor-equipment "type" row, and noting the building zone it
-> serves — so the Phius export's `Qty` column is computed from
-> real instance counts and the project's drawing schedule is
-> faithfully captured.
+> outdoor-equipment "type" row — so the Phius export's `Qty`
+> column is computed from real instance counts and the project's
+> drawing schedule is faithfully captured.
 
 ### Acceptance criteria (summary)
 
 1. Inherits US-Builder-Tables criteria 1–17.
-2. Column set per Heat Pumps PRD §4.4 — 6 fields.
+2. Column set per Heat Pumps PRD §4.4 — 5 fields.
 3. `tag` is the Record-ID per US-Builder-Tables §record-id;
    required; unique within table (trim + case-insensitive).
 4. `outdoor_equip_id` required — picker dropdown sources
@@ -1204,16 +1207,9 @@ dialog was open) and issue the real delete. Tag uniqueness mirrors
 US-EQ-2 (auto-suffix `(2)` / `(3)` on add via `uniqueTagForAdd`;
 reject on rename via `tagCollides`).
 
-**Carry-over (Phase 1 / Phase 2 option-id caveat):** the `Zone`
-field on the outdoor unit row-detail modal is a free-text input
-that derives an `opt_…` id via `optionIdFromLabel`, mirroring the
-existing Phase 1 `manufacturer` / `system_family` / `refrigerant`
-inputs. The acceptance-item 8 "shared with `tables.rooms[*].building_zone`
-option list" picker UX is deferred until the Rooms frontend lands
-and the cross-table single_select_options primitive is registered
-(see US-EQ-8 caveat). The free-text approach is forward-compatible:
-once Rooms supplies canonical option ids, the existing
-`optionIdFromLabel` slugging keeps matched casing aligned.
+The outdoor-unit `Zone` field was removed on 2026-06-15; outdoor
+units now track only tag, referenced outdoor equipment, datasheet,
+and notes.
 
 ---
 

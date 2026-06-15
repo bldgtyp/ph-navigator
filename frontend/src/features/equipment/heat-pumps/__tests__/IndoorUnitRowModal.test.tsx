@@ -34,7 +34,6 @@ function outdoorUnit(): HeatPumpOutdoorUnitRow {
     id: "hpou_01HX0000000000000000000000",
     tag: "HP-1",
     outdoor_equip_id: "hpoe_01HX0000000000000000000000",
-    building_zone: null,
     datasheet_asset_ids: [],
     notes: null,
   };
