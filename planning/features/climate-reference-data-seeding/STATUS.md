@@ -101,22 +101,23 @@ Verified 2026-06-15: unit suite green; `make ci` green; and the **full
 seeded 1007 locations with NYC / Central Park resolving as the starter
 project's default source. Phase 1 is fully closed.
 
-**Operational note (non-obvious — get this right):** `seed-climate-bundle`
-rebuilds + uploads the bundle from a local source tree whenever one is present,
-and the *default* tree is the 24-station NY slice kept on disk at
-`backend/seeds/climate/`. Because `make db-seed` / `make db-reset-dev` run
-`seed-climate-bundle` as a dependency, a plain run (no `CLIMATE_SOURCE_DIR`)
-rebuilds the bundle from those 24 files and seeds **only 24** — overwriting any
-1007-station bundle already in MinIO. So to seed the full set you must export
-`CLIMATE_SOURCE_DIR` on **every** full reseed — on Ed's machine the gitignored
-copy is at `planning/archive/climate/example_data/phius_2022_climate_data`. (The
-"reuse the bundle already in MinIO" branch only triggers when *no* local source
-exists at all — e.g. a dev who never had the NY slice.)
+**Operational note — `seed-climate-bundle` no longer clobbers (Phase-1.1 fix,
+2026-06-15):** `seed-climate-bundle` only rebuilds + uploads from a local tree
+when `CLIMATE_SOURCE_DIR` is set **explicitly**. Without it, an existing bundle
+in MinIO is **reused as-is**, so a plain `make db-seed` / `make db-reset-dev`
+keeps whatever was published (e.g. the full 1007-station set) instead of
+overwriting it with the default 24-station NY slice at `backend/seeds/climate/`.
+A fresh dev with no bundle yet still bootstraps from that default slice, so there
+is always something to seed. Practical flow: publish the full set once with
+`CLIMATE_SOURCE_DIR=<full tree>` (on Ed's machine the gitignored copy is at
+`planning/archive/climate/example_data/phius_2022_climate_data`); later resets
+reuse it with no env var. To deliberately refresh from the default slice, set
+`CLIMATE_SOURCE_DIR=backend/seeds/climate`.
 
-> Possible Phase-1.1 follow-up: this default-clobbers-full wrinkle is a sharp
-> edge. Options if it bites: make `seed-climate-bundle` not a hard `db-seed`
-> dependency (reuse whatever bundle is in MinIO), or default `CLIMATE_SOURCE_DIR`
-> to the full archive tree. Deferred — not blocking.
+> Phase-1.1 (the former "default-clobbers-full" sharp edge) — **DONE 2026-06-15.**
+> Fixed in `ensure_bundle` (`scripts/seed_climate_bundle.py`): the overwrite is
+> gated on an explicit `CLIMATE_SOURCE_DIR`. Covered by
+> `tests/test_seed_climate_bundle.py`.
 
 Decisions are locked (PRD §2): Postgres runtime; object-store source-of-truth;
 two-stage process→seed; standardized `ClimateRecord` `.json`; PH-Nav-V2-only;
@@ -169,13 +170,14 @@ the raw files.
 
 The full 1007-station run was completed on Ed's machine and verified
 (`make seed-climate-bundle` → 1007 uploaded; `make db-seed` → 1007 locations
-seeded, NYC default resolved). Reproduce a full local reseed with (note the
-required env var — see the operational note in "Current state"):
+seeded, NYC default resolved). To (re)publish the full set from the local tree,
+export `CLIMATE_SOURCE_DIR` once; afterwards a plain `make db-seed` reuses the
+published bundle (the Phase-1.1 fix — no env var needed on later resets):
 
 ```sh
 export CLIMATE_SOURCE_DIR="…/planning/archive/climate/example_data/phius_2022_climate_data"
 make object-store-init      # bootstrap MinIO bucket (idempotent)
-make db-seed                # rebuilds the 1007 bundle + reseeds the dev DB
+make db-seed                # builds + uploads the 1007 bundle, then reseeds the dev DB
 ```
 
 ### Manual work (operator — Ed) — Phase 2 PHI bundle — DONE 2026-06-15

@@ -3,20 +3,28 @@
 The dev DB seed (:mod:`scripts.seed_dev_db`) pulls the standardized climate
 bundle from the object store (PRD D-CS-2), but a fresh MinIO starts empty —
 the same bootstrap role :mod:`scripts.init_object_store` plays for the
-attachment bucket. This script (re)builds the ``phius/2022`` bundle from the
-operator's local raw ``-mon.txt`` tree and uploads it.
+attachment bucket. This script ensures the ``phius/2022`` bundle exists in the
+store, building it from the operator's local raw ``-mon.txt`` tree when needed.
 
     make object-store-init
     cd backend && uv run python -m scripts.seed_climate_bundle
 
-Source tree: ``$CLIMATE_SOURCE_DIR`` if set, else ``backend/seeds/climate/``
-(licensed data, gitignored — the operator supplies it; see
-``backend/seeds/climate/README.md``). Behavior:
+Behavior (``$CLIMATE_SOURCE_DIR`` is the operator's raw ``-mon.txt`` tree;
+absent it defaults to ``backend/seeds/climate/``, the gitignored 24-station NY
+slice — see ``backend/seeds/climate/README.md``):
 
-- local source present  → build + upload (refresh the bundle);
-- no source, bundle already in the store → no-op (resets keep working without
-  re-supplying the raw files);
-- neither → fail loudly.
+- ``CLIMATE_SOURCE_DIR`` set        → (re)build from it and upload (the operator
+  chose this tree, so publishing it — and replacing any existing bundle — is
+  intended);
+- no override, bundle already in the store → **reuse it** (never clobber a
+  published bundle with the small default slice — this is what lets a plain
+  ``make db-reset-dev`` keep the full library that was published once);
+- no override, no bundle yet        → bootstrap-upload the default slice so a
+  fresh dev still gets seedable data;
+- nothing buildable and no bundle   → fail loudly.
+
+To deliberately refresh the bundle from the default slice, set
+``CLIMATE_SOURCE_DIR=backend/seeds/climate`` explicitly.
 """
 
 from __future__ import annotations
@@ -36,23 +44,25 @@ _PROVIDER = "phius"
 _VERSION = "2022"
 
 
-def main() -> None:
-    assert_local_dev_database()
-    if not settings.r2_endpoint_url:
-        raise SystemExit("R2_ENDPOINT_URL is required; start the object store with `make object-store-init`.")
+def ensure_bundle(store: ClimateBundleStore, *, explicit_source: str | None) -> str:
+    """Ensure the ``phius/2022`` bundle is in ``store``; return a status line.
 
-    store = ClimateBundleStore.from_settings()
-    source_dir = _source_dir()
+    ``explicit_source`` is ``$CLIMATE_SOURCE_DIR`` (``None`` when unset). The
+    key rule: only an *explicit* source tree may overwrite a published bundle —
+    without one, an existing bundle is reused as-is rather than rebuilt from the
+    default 24-station slice. See the module docstring for the full matrix.
+    """
+    if explicit_source is None and store.has_bundle(_PROVIDER, _VERSION):
+        return f"using existing {_PROVIDER}/{_VERSION} bundle in the object store (no CLIMATE_SOURCE_DIR set)"
 
+    source_dir = Path(explicit_source) if explicit_source else CLIMATE_PHIUS_ROOT
     bundle = _build_from_local_source(source_dir)
     if bundle is not None:
         store.put_bundle(bundle)
-        print(f"uploaded {_PROVIDER}/{_VERSION} bundle ({len(bundle.records)} stations) from {source_dir}")
-        return
+        return f"uploaded {_PROVIDER}/{_VERSION} bundle ({len(bundle.records)} stations) from {source_dir}"
 
     if store.has_bundle(_PROVIDER, _VERSION):
-        print(f"using existing {_PROVIDER}/{_VERSION} bundle in the object store (no local source at {source_dir})")
-        return
+        return f"using existing {_PROVIDER}/{_VERSION} bundle in the object store (no local source at {source_dir})"
 
     raise SystemExit(
         f"No Phius source under {source_dir} and no bundle in the object store. "
@@ -60,9 +70,12 @@ def main() -> None:
     )
 
 
-def _source_dir() -> Path:
-    override = os.getenv("CLIMATE_SOURCE_DIR")
-    return Path(override) if override else CLIMATE_PHIUS_ROOT
+def main() -> None:
+    assert_local_dev_database()
+    if not settings.r2_endpoint_url:
+        raise SystemExit("R2_ENDPOINT_URL is required; start the object store with `make object-store-init`.")
+
+    print(ensure_bundle(ClimateBundleStore.from_settings(), explicit_source=os.getenv("CLIMATE_SOURCE_DIR")))
 
 
 def _build_from_local_source(source_dir: Path) -> ClimateBundle | None:
