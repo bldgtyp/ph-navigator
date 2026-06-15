@@ -1,11 +1,11 @@
 ---
 DATE: 2026-06-14
 TIME: -
-STATUS: Importer COMPLETE (2026-06-15) — `importers/phi.py` written, the column
-  map reverse-engineered + validated against the 10.6 workbook (1002 datasets
-  across 82 countries), unit-tested, and `make ci` green. The one-time operator
-  publish (process → upload `climate/phi/10.6/dataset.json` → seed) is the only
-  remaining manual step; see "Done" + "Next step" below. Migrated here from the
+STATUS: COMPLETE (2026-06-15) — `importers/phi.py` written, the column map
+  reverse-engineered + validated against the 10.6 workbook, unit-tested, and
+  `make ci` green; the real bundle was published to local MinIO, seeded, and
+  verified end-to-end (1002 datasets across 82 countries, alongside Phius's
+  1007). Only prod (Render) seeding remains, and that is Phase 3. Migrated here from the
   former standalone `planning/features_v1.1/climate-phi-importer/` feature, which
   Ed folded into this pipeline (2026-06-14): the PHI importer is just the
   **process** step for `provider='phi'`.
@@ -64,20 +64,12 @@ datasets repeat December from November in dewpoint/sky, marginally pushing
 dewpoint above air) are imported verbatim, not "corrected". The honeybee_ph
 bridge round-trips losslessly.
 
-**Remaining (manual, operator).** Publish + seed the real bundle once:
-
-```sh
-cd backend
-export R2_ENDPOINT_URL=…   # `make object-store-init` brings MinIO up locally
-uv run python -m features.climate.processing \
-    --provider phi --version 10.6 \
-    --src ../planning/archive/climate/example_data/phi_phpp_10_6_climate_data \
-    --upload                                   # writes climate/phi/10.6/dataset.json
-uv run python -m features.climate.seeding --provider phi --version 10.6
-```
-
-Spot-check a few seeded rows by hand before trusting the bulk seed (exit
-criteria). Prod (Render) seeding is Phase 3.
+**Operator publish — DONE 2026-06-15.** The real bundle was processed with
+`--upload` (→ `climate/phi/10.6/dataset.json` in local MinIO) and seeded;
+verified `phi/10.6` = 1002 locations / 82 countries with spot-checks matching
+the source (Rochester 43.12/-77.68, Birmingham 33.5/-86.92). The exact local
+recipe (incl. the in-env `R2_*` creds the CLIs need) is in
+`../STATUS.md → Manual work`. Prod (Render) seeding is Phase 3.
 
 ## Why this is the hard part (investigated 2026-06-13)
 
