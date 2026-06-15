@@ -32,7 +32,7 @@ planning/features_v1.1/<feature-slug>/
 | ⮑ [Model Viewer — Legend as Filter](model-viewer-legend-filter/README.md) | Active (planned) | Ready to build — Ed-flagged near-priority; frontend-only, no open decisions, no Climate dependency. |
 | ⮑ [Model Viewer — Clipping Planes](model-viewer-clipping-planes/README.md) | Deferred (gated) | Build when a named sectioned-inspection workflow exists; plan is ready. |
 | [User-defined attachment fields](user-defined-attachment-fields/README.md) | Deferred | Revisit after v1 ships and at least two real project workflows need ad hoc attachment columns. |
-| _(moved to v1.0)_ Climate — reference-data ingest + seed | — | Promoted to `planning/features/climate-reference-data-seeding/` (v1.0, 2026-06-14). The former **PHI/PHPP importer** candidate was folded into it as `phases/phase-02-phi-importer.md`. |
+| _(shipped in v1.0)_ Climate — reference-data ingest + seed | Complete | Shipped v1.0 (2026-06-15) and archived to `planning/archive/climate-reference-data-seeding/`. The former **PHI/PHPP importer** candidate was folded in as `phases/phase-02-phi-importer.md`. |
 | [Climate — Design conditions + metrics](climate-design-conditions/README.md) | Deferred (gated) | Build with a scheduled fRSI/comfort consumer; needs D-CL-5. Per-source, source-parameterized exterior-conditions contract. |
 | [Climate — tab follow-ups](climate-tab-followups/README.md) | Deferred | Small independent backlog: custom-record entry form, sun-path cardinal labels, attached-source charts, promote `ClimateRecord` to `context/`. |
 

@@ -25,7 +25,7 @@ step finds the `.xlsx` under whatever `--src` directory it is given.
 
 The seed no longer parses raw files at seed time. Source-of-truth is the
 private object store (MinIO local / Cloudflare R2 prod); see
-`planning/features/climate-reference-data-seeding/` for the design.
+`planning/archive/climate-reference-data-seeding/` for the design.
 
 1. **Process (admin, rare).** Parse a raw tree into a standardized
    `dataset.json` bundle and upload it to the object store:
