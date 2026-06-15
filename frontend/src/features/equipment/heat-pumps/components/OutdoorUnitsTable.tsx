@@ -101,11 +101,8 @@ export function OutdoorUnitsTable({
     [slice.single_select_options, slice.outdoor_equip],
   );
 
-  // building_zone is owned by the rooms slice, so the heat-pumps options
-  // endpoint refuses writes to that key. The unit-side modals therefore do
-  // not expose inline-create — users add zones from the Rooms table. The
-  // OutdoorEquipRowModal that opens here (for paired equipment) still gets a
-  // createOption for the manufacturer/system_family/refrigerant lists.
+  // OutdoorEquipRowModal opens here for paired equipment and still gets a
+  // createOption callback for the manufacturer/system_family/refrigerant lists.
   async function createOption(optionKey: HeatPumpOwnedOptionKey, label: string): Promise<string> {
     const existing = slice.single_select_options[optionKey] ?? [];
     const newOption = buildNewHeatPumpOption(label, existing);

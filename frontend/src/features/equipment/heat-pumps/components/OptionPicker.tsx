@@ -11,8 +11,7 @@ export type OptionPickerProps = {
    * and submits it. The handler should persist the new option and return its
    * minted id; the picker then selects it for this row. When omitted the
    * "Add option" affordance is hidden — used in read-only mode and for picker
-   * surfaces that don't own the option list (e.g. the `building_zone` /
-   * `floor_level` lists owned by the rooms slice).
+   * surfaces that don't own the option list.
    */
   onCreate?: (label: string) => Promise<string>;
   disabled?: boolean;

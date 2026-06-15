@@ -115,7 +115,6 @@ class HeatPumpOutdoorUnitRow(BaseModel):
     id: str = Field(pattern=rf"^hpou_{ULID_SUFFIX_PATTERN}$")
     tag: str = Field(min_length=1, max_length=80)
     outdoor_equip_id: str = Field(pattern=rf"^hpoe_{ULID_SUFFIX_PATTERN}$")
-    building_zone: OptionId | None = None
     datasheet_asset_ids: list[str] = Field(default_factory=list)
     notes: str | None = Field(default=None, max_length=4000)
 
@@ -164,17 +163,14 @@ class HeatPumpsTableSlice(BaseModel):
 
 # Single-select option keys consumed by heat-pump tables. Stored in the
 # document-level `body.single_select_options` map (same shape as
-# appliances/ventilators). `building_zone` is reused from the rooms slice
-# so a project-wide list serves both tables.
+# appliances/ventilators).
 HEAT_PUMP_MANUFACTURER_OPTION_KEY = "heat_pumps.manufacturer"
 HEAT_PUMP_SYSTEM_FAMILY_OPTION_KEY = "heat_pumps.system_family"
 HEAT_PUMP_REFRIGERANT_OPTION_KEY = "heat_pumps.refrigerant"
 HEAT_PUMP_MODEL_TYPE_OPTION_KEY = "heat_pumps.model_type"
 HEAT_PUMP_INSTALL_TYPE_OPTION_KEY = "heat_pumps.install_type"
-ROOMS_BUILDING_ZONE_OPTION_KEY = "rooms.building_zone"
 
-# Keys writable through the heat-pumps options endpoint. The rooms-scoped
-# keys are reused read-only here; editing them belongs in the rooms slice.
+# Keys writable through the heat-pumps options endpoint.
 HEAT_PUMP_OWNED_OPTION_KEYS: tuple[str, ...] = (
     HEAT_PUMP_MANUFACTURER_OPTION_KEY,
     HEAT_PUMP_SYSTEM_FAMILY_OPTION_KEY,
@@ -184,9 +180,5 @@ HEAT_PUMP_OWNED_OPTION_KEYS: tuple[str, ...] = (
 )
 
 # All keys exposed on the heat-pumps slice response so the UI can render
-# manufacturer/system_family/etc. labels alongside rows that reference the
-# rooms-owned building-zone list.
-HEAT_PUMP_VISIBLE_OPTION_KEYS: tuple[str, ...] = (
-    *HEAT_PUMP_OWNED_OPTION_KEYS,
-    ROOMS_BUILDING_ZONE_OPTION_KEY,
-)
+# manufacturer/system_family/etc. labels alongside rows.
+HEAT_PUMP_VISIBLE_OPTION_KEYS: tuple[str, ...] = HEAT_PUMP_OWNED_OPTION_KEYS

@@ -4,6 +4,8 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { createQueryClient } from "../../../../app/query-client";
+import type { UnitSystem } from "../../../../lib/units";
+import { UnitPreferenceContext } from "../../../../lib/units/preference-context";
 import type { ProjectDetail } from "../../../projects/types";
 import { buildRoom, buildRoomsSlice } from "../../testing/testFixtures";
 import { buildEmptyIndoorUnitRow } from "../lib";
@@ -63,6 +65,7 @@ describe("HeatPumpsPanel", () => {
     await user.click(await screen.findByRole("tab", { name: "Units - Outdoor" }));
 
     expect(await screen.findByRole("button", { name: "Add outdoor unit" })).toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "Zone" })).toBeNull();
   });
 
   test("mounts the indoor units table on the indoor-units leaf", async () => {
@@ -115,6 +118,25 @@ describe("HeatPumpsPanel", () => {
 
     expect(await screen.findByRole("button", { name: "Add indoor model" })).toBeInTheDocument();
     expect(screen.getByText("PLA-A18EA8")).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: /Cooling Capacity kW/ })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: /Heating Capacity kW/ })).toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: /47F/ })).toBeNull();
+    expect(screen.getAllByText("5.28").length).toBeGreaterThan(0);
+  });
+
+  test("renders indoor equipment capacity columns in IP units", async () => {
+    const user = userEvent.setup();
+    renderPanel({ unitSystem: "IP" });
+
+    await user.click(await screen.findByRole("tab", { name: "Equipment - Indoor" }));
+
+    expect(
+      await screen.findByRole("columnheader", { name: /Cooling Capacity kBtu\/h/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: /Heating Capacity kBtu\/h/ }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText("18.0").length).toBeGreaterThan(0);
   });
 
   test("adds an outdoor equipment row through the Phase 0 PATCH API", async () => {
@@ -138,7 +160,10 @@ describe("HeatPumpsPanel", () => {
   });
 });
 
-function renderPanel({ slice = heatPumpsSlice() }: { slice?: HeatPumpsSlice } = {}) {
+function renderPanel({
+  slice = heatPumpsSlice(),
+  unitSystem = "SI",
+}: { slice?: HeatPumpsSlice; unitSystem?: UnitSystem } = {}) {
   fetchMock.mockImplementation((input: RequestInfo | URL) => {
     const url = String(input);
     if (url.includes("/assets/bulk-urls")) {
@@ -164,8 +189,18 @@ function renderPanel({ slice = heatPumpsSlice() }: { slice?: HeatPumpsSlice } = 
   return render(
     <MemoryRouter initialEntries={["/projects/proj_1/equipment/heat-pumps/equipment-outdoor"]}>
       <QueryClientProvider client={queryClient}>
-        <LocationProbe />
-        <HeatPumpsPanel project={project()} />
+        <UnitPreferenceContext.Provider
+          value={{
+            unitSystem,
+            source: "default",
+            error: null,
+            setUnitSystem: () => undefined,
+            toggleUnitSystem: () => undefined,
+          }}
+        >
+          <LocationProbe />
+          <HeatPumpsPanel project={project()} />
+        </UnitPreferenceContext.Provider>
       </QueryClientProvider>
     </MemoryRouter>,
   );
@@ -282,8 +317,8 @@ function indoorEquipRow(overrides: Partial<HeatPumpsSlice["indoor_equip"][number
     install_type: "opt_standard",
     nominal_tons: 1.5,
     fan_speed_cfm: null,
-    cooling_btuh: 18000,
-    heating_btuh_47f: 18000,
+    cooling_btuh: 5.28,
+    heating_btuh_47f: 5.28,
     heating_btuh_17f: null,
     heating_cop: null,
     seer: null,

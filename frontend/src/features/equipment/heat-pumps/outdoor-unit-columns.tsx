@@ -19,7 +19,6 @@ export function outdoorUnitFieldDefs({
   options: HeatPumpsSlice["single_select_options"];
   outdoorEquip: readonly HeatPumpOutdoorEquipRow[];
 }): FieldDef[] {
-  const buildingZone = options[HEAT_PUMP_OPTION_KEYS.buildingZone] ?? [];
   const manufacturer = options[HEAT_PUMP_OPTION_KEYS.manufacturer] ?? [];
   // The equipment-picker's FieldDef.options drives both the popover list AND
   // the cell renderer's label lookup, so we feed it a synthetic list keyed
@@ -37,12 +36,6 @@ export function outdoorUnitFieldDefs({
       field_type: "single_select",
       display_name: "Equipment",
       options: outdoorEquipOptions,
-    },
-    {
-      field_key: "building_zone",
-      field_type: "single_select",
-      display_name: "Zone",
-      options: buildingZone,
     },
     {
       field_key: OUTDOOR_UNIT_DATASHEET_FIELD_KEY,
@@ -63,9 +56,8 @@ export function outdoorUnitColumnDefs({
 }: {
   projectId: string;
   isEditor: boolean;
-  // Labels for single-select cells (equipment + zone) are resolved from
-  // FieldDef.options inside the DataTable, so this builder doesn't need
-  // `options` or `outdoorEquip` — both flow through `outdoorUnitFieldDefs`.
+  // Equipment labels are resolved from FieldDef.options inside the DataTable,
+  // so this builder doesn't need `outdoorEquip` directly.
   assetUrlById: Map<string, unknown>;
   onDatasheetChange: (row: HeatPumpOutdoorUnitRow, next: string[]) => void | Promise<void>;
 }): DataTableColumnDef<HeatPumpOutdoorUnitRow>[] {
@@ -83,15 +75,6 @@ export function outdoorUnitColumnDefs({
       header: "Equipment",
       accessor: (row) => row.outdoor_equip_id,
       defaultWidth: 220,
-    },
-    {
-      id: "building_zone",
-      fieldKey: "building_zone",
-      header: "Zone",
-      // Accessor returns the raw option id — DataTable's
-      // `formatDisplayCellValue` resolves the label from FieldDef.options.
-      accessor: (row) => row.building_zone,
-      defaultWidth: 140,
     },
     {
       id: OUTDOOR_UNIT_DATASHEET_FIELD_KEY,

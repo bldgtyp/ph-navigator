@@ -8,7 +8,6 @@ import {
   type HeatPumpOutdoorUnitRow,
   type HeatPumpsSlice,
 } from "../types";
-import { OptionPicker } from "./OptionPicker";
 
 export function OutdoorUnitRowModal({
   mode,
@@ -36,7 +35,6 @@ export function OutdoorUnitRowModal({
   const [draft, setDraft] = useState(row);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const buildingZoneOptions = options[HEAT_PUMP_OPTION_KEYS.buildingZone] ?? [];
   const manufacturerOptions = options[HEAT_PUMP_OPTION_KEYS.manufacturer] ?? [];
   const title = mode === "add" ? "New outdoor unit" : `Outdoor unit: ${row.tag || "(unnamed)"}`;
   const submitLabel = mode === "add" ? "Create outdoor unit" : "Save outdoor unit";
@@ -95,14 +93,6 @@ export function OutdoorUnitRowModal({
                 disabled={readOnly}
               />
             </label>
-            <OptionPicker
-              label="Zone"
-              value={draft.building_zone}
-              options={buildingZoneOptions}
-              onChange={(building_zone) => setDraft({ ...draft, building_zone })}
-              disabled={readOnly}
-              placeholder="Not set"
-            />
             <label className="hp-form-grid__wide">
               Outdoor equipment
               <select

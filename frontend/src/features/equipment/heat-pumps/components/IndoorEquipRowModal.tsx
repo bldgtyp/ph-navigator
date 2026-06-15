@@ -175,13 +175,13 @@ export function IndoorEquipRowModal({
               readOnly={readOnly}
             />
             <NumberInput
-              label="Cooling Btu/h"
+              label="Cooling capacity (kW)"
               value={draft.cooling_btuh}
               onChange={(cooling_btuh) => setDraft({ ...draft, cooling_btuh })}
               readOnly={readOnly}
             />
             <NumberInput
-              label="Heating Btu/h at 47F"
+              label="Heating capacity (kW)"
               value={draft.heating_btuh_47f}
               onChange={(heating_btuh_47f) => setDraft({ ...draft, heating_btuh_47f })}
               readOnly={readOnly}
