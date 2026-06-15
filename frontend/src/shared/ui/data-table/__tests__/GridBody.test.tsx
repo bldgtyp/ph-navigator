@@ -310,7 +310,13 @@ describe("GridBody — single-select chevron (plan 05)", () => {
     { field_key: "name", field_type: "text", display_name: "Name" },
   ];
   const SELECT_COLUMN_DEFS: DataTableColumnDef<SelectRow>[] = [
-    { id: "floor", fieldKey: "floor", header: "Floor", accessor: (row) => row.floor },
+    {
+      id: "floor",
+      fieldKey: "floor",
+      header: "Floor",
+      accessor: (row) => row.floor,
+      render: (row) => `plain ${row.floor}`,
+    },
     { id: "name", fieldKey: "name", header: "Name", accessor: (row) => row.name },
   ];
 
@@ -337,6 +343,18 @@ describe("GridBody — single-select chevron (plan 05)", () => {
     if (!row) throw new Error(`body row ${rowIndex} missing`);
     return within(row).getAllByRole("gridcell")[columnIndex] as HTMLTableCellElement;
   }
+
+  test("single-select cells render option pills from the shared field definition", () => {
+    renderSelectTable();
+
+    const cell = getSelectCell(0, 0);
+    const pill = cell.querySelector(".single-select-pill") as HTMLElement | null;
+
+    expect(pill).not.toBeNull();
+    expect(pill).toHaveTextContent("Ground");
+    expect(pill?.getAttribute("style")).toContain("--option-color: #3b82f6");
+    expect(cell).not.toHaveTextContent("plain opt_ground");
+  });
 
   test("writable single-select cells render the chevron (visibility gated by CSS hover/active)", () => {
     renderSelectTable({ onWrite: vi.fn() });

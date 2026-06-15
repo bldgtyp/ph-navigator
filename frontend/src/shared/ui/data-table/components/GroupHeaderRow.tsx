@@ -1,7 +1,8 @@
-import type { CSSProperties, ReactNode } from "react";
-import { formatDisplayCellValue, singleSelectOption } from "../lib/rows/format";
+import type { ReactNode } from "react";
+import { formatDisplayCellValue } from "../lib/rows/format";
 import type { DataTableColumnDef, FieldDef } from "../types";
 import { AddFieldTailCell } from "./AddFieldTailCell";
+import { SingleSelectCell } from "./SingleSelectCell";
 
 // Presentational group-header row. Chevron + left-indent + key (pill
 // for single_select) + `(N rows)` count in the first column; per-
@@ -94,18 +95,8 @@ export function GroupHeaderRow<TRow>({
 }
 
 function renderGroupKey(value: unknown, fieldDef: FieldDef): ReactNode {
-  if (fieldDef.field_type === "single_select" && typeof value === "string" && value) {
-    const option = singleSelectOption(value, fieldDef);
-    if (option) {
-      return (
-        <span
-          className="single-select-pill"
-          style={{ "--option-color": option.color } as CSSProperties}
-        >
-          {option.label}
-        </span>
-      );
-    }
+  if (fieldDef.field_type === "single_select") {
+    return <SingleSelectCell value={value} fieldDef={fieldDef} />;
   }
   if (value === null || value === undefined || value === "") {
     return <span className="muted-cell">Unassigned</span>;
