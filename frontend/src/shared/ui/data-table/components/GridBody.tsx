@@ -49,6 +49,7 @@ import { GridChevron } from "./GridChevron";
 import { GridGutter } from "./GridGutter";
 import { GroupHeaderRow } from "./GroupHeaderRow";
 import { InlineCellEditor } from "./InlineCellEditor";
+import { SingleSelectCell } from "./SingleSelectCell";
 import { SingleSelectPopover } from "./SingleSelectPopover";
 
 type CommitMove = { kind: "tab"; shiftKey: boolean } | { kind: "down" };
@@ -520,6 +521,9 @@ function renderCellContent(args: {
   } = args;
   if (!edit.isEditingCell(rowId, fieldKey) || !edit.editing) {
     if (fieldDef?.field_type === "color") return <ColorCell value={cellValue} />;
+    if (fieldDef?.field_type === "single_select") {
+      return <SingleSelectCell value={cellValue} fieldDef={fieldDef} />;
+    }
     if (fieldDef?.field_type === "linked_record") {
       const ids = toLinkedIdList(cellValue);
       return (
@@ -597,7 +601,11 @@ function renderCellContent(args: {
         onCancel={edit.cancel}
         onCommit={() => void edit.commit()}
         onCommitAndMove={(shiftKey) => onCommitAndMove({ kind: "tab", shiftKey })}
-        anchorChildren={<span className="single-select-popover-anchor">{fallback()}</span>}
+        anchorChildren={
+          <span className="single-select-popover-anchor">
+            <SingleSelectCell value={cellValue} fieldDef={fieldDef} />
+          </span>
+        }
       />
     );
   }

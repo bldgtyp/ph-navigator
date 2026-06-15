@@ -1,7 +1,8 @@
 import * as Popover from "@radix-ui/react-popover";
-import { useEffect, useMemo, type CSSProperties, type KeyboardEvent } from "react";
+import { useEffect, useMemo, type KeyboardEvent } from "react";
 import { findFieldOptionByLabel } from "../lib/options/references";
 import type { FieldOption } from "../types";
+import { SingleSelectPill } from "./SingleSelectCell";
 
 // Popover editor for single-select cells. Owns no domain state — every
 // gesture flows back to useGridEdit (draft / highlight / commit / cancel)
@@ -153,12 +154,7 @@ export function SingleSelectPopover({
                   onCommit();
                 }}
               >
-                <span
-                  className="single-select-pill"
-                  style={{ "--option-color": option.color } as CSSProperties}
-                >
-                  {option.label}
-                </span>
+                <SingleSelectPill option={option} />
               </li>
             ))}
             {filteredOptions.length === 0 && !showCreate ? (

@@ -2133,9 +2133,10 @@ td.data-table-cell-editing {
   display: inline-flex;
   align-items: center;
   max-width: 100%;
-  border: 1px solid color-mix(in oklab, var(--option-color) 52%, var(--border-subtle));
+  border: 1px solid
+    color-mix(in oklab, var(--option-color, var(--text-muted)) 52%, var(--border-subtle));
   border-radius: var(--radius-pill);
-  background: color-mix(in oklab, var(--option-color) 16%, var(--bg-card));
+  background: color-mix(in oklab, var(--option-color, var(--text-muted)) 16%, var(--bg-card));
   color: var(--text-primary);
   padding: 1px 10px;
   font-size: 13px;
