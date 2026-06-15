@@ -1,12 +1,14 @@
 ---
 DATE: 2026-06-15
 TIME: -
-STATUS: Phase 1 COMPLETE (2026-06-15) and Phase 2 importer COMPLETE
-  (2026-06-15) — both implemented, unit-tested, `make ci` green; the full
-  Phius 1007-station process→seed was verified locally end-to-end, and the PHI
-  10.6 bundle (1002 datasets, 82 countries) was published to local MinIO,
-  seeded, and verified end-to-end (2026-06-15). Remaining: only Phase 3
-  (Render prod seed, `phases/phase-03-render-seed.md`, not started).
+STATUS: Phases 1, 2, and 3 ALL COMPLETE (2026-06-15) — implemented,
+  unit-tested, `make ci` green, and verified end-to-end. The full Phius
+  1007-station process→seed was verified locally; the PHI 10.6 bundle (1002
+  datasets, 82 countries) was published + seeded locally; and Phase 3 ran the
+  publish + `seeding --all` against the deployed Render (staging) environment —
+  both bundles in the `ph-navigator-v2-dev` R2 bucket and seeded into the Render
+  Postgres (phius/2022 = 1007, phi/10.6 = 1002, 2009 total locations). The
+  feature is shipped; no open work remains.
 AUTHOR: Claude (for Ed)
 SCOPE: Status + gate for the climate reference-data ingest + seed pipeline.
 RELATED:
@@ -20,14 +22,39 @@ RELATED:
 
 ## Current state
 
-**v1.0, Phase 1 complete + Phase 2 importer complete (2026-06-15).** The
-Climate Postgres store, read endpoints, MCP, and a provider-agnostic
-`seed_dataset(...)` shipped (2026-06-13, archived Climate feature). Phase 1
-then built the *supply chain*: the admin-only two-stage process→seed pipeline
-sourced from the private object store, plus the public-repo cleanup. Phase 2
-added the second provider — the PHI/PHPP 10.6 `.xlsx` importer — which is the
-only new code a provider needs (the seed path is provider-agnostic). Phase 3
-(Render) is still open.
+**v1.0, all three phases shipped (2026-06-15).** The Climate Postgres store,
+read endpoints, MCP, and a provider-agnostic `seed_dataset(...)` shipped
+(2026-06-13, archived Climate feature). Phase 1 then built the *supply chain*:
+the admin-only two-stage process→seed pipeline sourced from the private object
+store, plus the public-repo cleanup. Phase 2 added the second provider — the
+PHI/PHPP 10.6 `.xlsx` importer — which is the only new code a provider needs
+(the seed path is provider-agnostic). Phase 3 added the on-demand `seeding
+--all` command + the Render runbook, and the operator publish + seed ran +
+verified against the deployed Render (staging) environment (2009 locations).
+
+**Phase 3 (Render seed path), code + runbook 2026-06-15**
+(`phases/phase-03-render-seed.md`):
+
+- `features.climate.seeding` gained an **`--all`** mode: it walks the provider
+  registry and seeds each provider's default version that is published in the
+  object store, reporting seeded-vs-skipped and failing loudly if nothing is
+  published. So the Render seed job is **one stable command that never changes
+  as providers are added** (D-CS-3): `python -m features.climate.seeding --all`.
+- The deploy runbook (confirm `R2_*` in Render → publish bundles with the
+  process `--upload` → run `seeding --all` as a Render one-off job / Shell
+  command, on publish of a new bundle, not per deploy) lives in
+  `context/ENVIRONMENT.md → "Climate reference-data seed (on-demand)"`.
+- Covered by `tests/test_climate_pipeline.py` (`seed_all_*`); the `FakeR2Client`
+  fake was aligned to real R2's 404 `ClientError` so `has_bundle()` is testable.
+  Cleanup: the duplicated `ClimateBundleStore(R2Client(settings))` build was
+  extracted to `ClimateBundleStore.from_settings()` (4 call sites). `make ci` green.
+- **Operator publish + seed — DONE 2026-06-15.** Ed published both bundles to
+  the `ph-navigator-v2-dev` R2 bucket and ran `seeding --all` against the Render
+  Postgres; verified `phius/2022` = 1007 and `phi/10.6` = 1002 (2009 total).
+  Render's managed Postgres blocks external traffic by default, so the
+  local-shell run required temporarily allowlisting the operator's IP under the
+  DB's Networking → Inbound IP Rules (removed afterward); a future reseed can
+  run `seeding --all` from the Render Shell instead.
 
 **Phase 2 (PHI importer), shipped 2026-06-15** (`phases/phase-02-phi-importer.md`
 has the full build record + the recovered column map):
@@ -130,9 +157,11 @@ the raw files.
   and documented; `importers/phi.py` + the `_PROVIDERS` entry + unit tests are
   in, and the bundle is published to local MinIO + seeded + verified. Prod
   (Render) seed is Phase 3.
-- **Phase 3 (Render)** — deploy task; needs `R2_*` confirmed in Render (the
-  object store already serves attachments there). Now covers both `phius/2022`
-  and `phi/10.6` bundles.
+- **Phase 3 (Render)** — COMPLETE (2026-06-15). The `--all` seed command + the
+  Render runbook in `context/ENVIRONMENT.md` shipped, and the operator publish +
+  seed ran against the deployed Render (staging) environment: both `phius/2022`
+  and `phi/10.6` bundles in the `ph-navigator-v2-dev` R2 bucket, seeded into the
+  Render Postgres (2009 locations) and read back through the app repository.
 
 ## Next step
 
@@ -172,14 +201,27 @@ uv run python -m features.climate.seeding --provider phi --version 10.6
 Idempotent per `(provider, version)`; re-running is safe. Verified seed:
 `phi/10.6` = 1002 locations / 82 countries, spot-checks match the source.
 
-### Next dev step — Phase 3 (Render), `phases/phase-03-render-seed.md`
+### Manual work (operator — Ed) — Phase 3 Render seed — DONE 2026-06-15
 
-Wire the on-demand prod seed job: confirm `R2_*` in Render, then run
-`python -m features.climate.seeding --provider <p> --version <v>` against R2 +
-the Render Postgres on publish of a new bundle (not per deploy).
+Completed against the deployed Render (staging) environment, which reads the
+`ph-navigator-v2-dev` R2 bucket. Full runbook: `context/ENVIRONMENT.md →
+"Climate reference-data seed (on-demand)"`. What ran:
+
+1. Exported the real Cloudflare R2 creds for `ph-navigator-v2-dev`; verified
+   connectivity.
+2. Published both bundles: `processing --provider phius --version 2022 …
+   --upload` (1007) and `--provider phi --version 10.6 … --upload` (1002).
+3. Temporarily allowlisted the operator's IP under the DB's Networking →
+   Inbound IP Rules (Render blocks external Postgres traffic by default), then
+   ran `seeding --all` with `DATABASE_URL` pointed at the Render external URL →
+   `phi 10.6 — 1002 locations`, `phius 2022 — 1007 locations`. Verified 2009
+   total via the app repository; IP rule removed afterward.
+
+A future reseed can skip the IP allowlist by running `seeding --all` from the
+Render Shell (internal DB URL, env already set).
 
 ## Blockers
 
-- None. Phase 1 and Phase 2 are complete + verified locally (`make ci` green;
-  PHI bundle published + seeded). Phase 3 (Render) is a deploy task, not a hard
-  blocker.
+- None. The feature is shipped: Phases 1–3 complete, `make ci` green, and the
+  full library (2009 locations) is seeded + verified in the deployed Render
+  (staging) environment.

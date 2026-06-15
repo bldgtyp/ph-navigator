@@ -6,6 +6,7 @@ import hashlib
 from typing import Any
 from uuid import UUID
 
+from botocore.exceptions import ClientError
 from fastapi.testclient import TestClient
 
 from features.assets.routes import get_asset_service
@@ -39,17 +40,24 @@ class FakeR2Client:
         disposition = "&disposition=attachment" if response_content_disposition else ""
         return f"https://fake-r2.test/{object_key}?method=get{disposition}"
 
+    def _require(self, object_key: str) -> tuple[bytes, str]:
+        """Look up an object, raising a 404 ``ClientError`` like real R2 on a miss."""
+        try:
+            return self.objects[object_key]
+        except KeyError:
+            raise ClientError({"Error": {"Code": "404", "Message": "Not Found"}}, "HeadObject") from None
+
     def head_object(self, object_key: str) -> dict[str, object]:
-        body, _content_type = self.objects[object_key]
+        body, _content_type = self._require(object_key)
         return {"ContentLength": len(body), "ETag": hashlib.md5(body, usedforsecurity=False).hexdigest()}
 
     def get_object_prefix(self, object_key: str, byte_range: tuple[int, int]) -> bytes:
         start, end = byte_range
-        body, _content_type = self.objects[object_key]
+        body, _content_type = self._require(object_key)
         return body[start : end + 1]
 
     def get_object(self, object_key: str) -> bytes:
-        body, _content_type = self.objects[object_key]
+        body, _content_type = self._require(object_key)
         return body
 
     def put_object(self, object_key: str, body: bytes, content_type: str) -> str:

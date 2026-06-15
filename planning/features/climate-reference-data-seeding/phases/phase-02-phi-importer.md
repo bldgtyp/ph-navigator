@@ -5,7 +5,7 @@ STATUS: COMPLETE (2026-06-15) — `importers/phi.py` written, the column map
   reverse-engineered + validated against the 10.6 workbook, unit-tested, and
   `make ci` green; the real bundle was published to local MinIO, seeded, and
   verified end-to-end (1002 datasets across 82 countries, alongside Phius's
-  1007). Only prod (Render) seeding remains, and that is Phase 3. Migrated here from the
+  1007). Render seeding shipped as Phase 3 (COMPLETE 2026-06-15). Migrated here from the
   former standalone `planning/features_v1.1/climate-phi-importer/` feature, which
   Ed folded into this pipeline (2026-06-14): the PHI importer is just the
   **process** step for `provider='phi'`.

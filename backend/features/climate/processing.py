@@ -24,7 +24,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from config import settings
-from features.assets.storage_r2 import R2Client
 from features.climate.bundle import ClimateBundle
 from features.climate.importers import get_provider, provider_names, resolve_version
 from features.climate.object_store import ClimateBundleStore, bundle_object_key
@@ -73,7 +72,7 @@ def _upload_bundle(bundle: ClimateBundle) -> str:
         raise SystemExit(
             "R2_ENDPOINT_URL is required to --upload; start the object store with `make object-store-init`."
         )
-    ClimateBundleStore(R2Client(settings)).put_bundle(bundle)
+    ClimateBundleStore.from_settings().put_bundle(bundle)
     return bundle_object_key(bundle.provider, bundle.version)
 
 
