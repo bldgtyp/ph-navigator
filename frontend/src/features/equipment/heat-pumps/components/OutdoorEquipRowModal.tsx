@@ -35,7 +35,7 @@ export function OutdoorEquipRowModal({
   onCancel: () => void;
   onSubmit: (row: HeatPumpOutdoorEquipRow) => Promise<void>;
   onDelete?: () => void;
-  onCreateIndoorEquip: () => void;
+  onCreateIndoorEquip?: () => void;
   onCreateOption?: (
     optionKey:
       | typeof HEAT_PUMP_OPTION_KEYS.manufacturer
@@ -168,7 +168,7 @@ export function OutdoorEquipRowModal({
                 ))}
               </select>
             </label>
-            {!readOnly ? (
+            {!readOnly && onCreateIndoorEquip ? (
               <button
                 type="button"
                 className="secondary-button hp-inline-action"

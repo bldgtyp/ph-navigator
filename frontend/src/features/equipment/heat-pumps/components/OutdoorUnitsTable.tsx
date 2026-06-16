@@ -23,7 +23,9 @@ import {
   buildEmptyOutdoorEquipRow,
   buildEmptyOutdoorUnitRow,
   buildNewHeatPumpOption,
+  outdoorEquipLabel,
   sortedIndoorUnits,
+  sortedOutdoorEquip,
   sortedOutdoorUnits,
   uniqueTagForAdd,
 } from "../lib";
@@ -32,14 +34,15 @@ import {
   outdoorUnitDefaultHiddenColumns,
   outdoorUnitFieldDefs,
 } from "../outdoor-unit-columns";
-import { HEAT_PUMP_LINK_TARGETS, indoorUnitIdsByOutdoorUnit } from "../link-fields";
-import type {
-  CascadeReference,
-  HeatPumpIndoorUnitRow,
-  HeatPumpOutdoorEquipRow,
-  HeatPumpOutdoorUnitRow,
-  HeatPumpOwnedOptionKey,
-  HeatPumpsSlice,
+import { firstLinkedId, HEAT_PUMP_LINK_TARGETS, indoorUnitIdsByOutdoorUnit } from "../link-fields";
+import {
+  HEAT_PUMP_OPTION_KEYS,
+  type CascadeReference,
+  type HeatPumpIndoorUnitRow,
+  type HeatPumpOutdoorEquipRow,
+  type HeatPumpOutdoorUnitRow,
+  type HeatPumpOwnedOptionKey,
+  type HeatPumpsSlice,
 } from "../types";
 import { OutdoorEquipRowModal } from "./OutdoorEquipRowModal";
 import { IndoorUnitRowModal } from "./IndoorUnitRowModal";
@@ -49,6 +52,7 @@ import { BlockedDeleteDialog, CascadePreviewDialog } from "./CascadePreviewDialo
 type ModalState =
   | { kind: "unit"; mode: "add" | "edit"; row: HeatPumpOutdoorUnitRow }
   | { kind: "indoor-unit"; row: HeatPumpIndoorUnitRow }
+  | { kind: "outdoor-equip"; row: HeatPumpOutdoorEquipRow }
   | { kind: "equip-create"; row: HeatPumpOutdoorEquipRow; selectForUnitId: string }
   | null;
 
@@ -57,6 +61,8 @@ type DeleteState = {
   row: HeatPumpOutdoorUnitRow;
   affected: CascadeReference[];
 } | null;
+
+const EMPTY_HEAT_PUMP_OPTIONS: HeatPumpsSlice["single_select_options"][string] = [];
 
 export function OutdoorUnitsTable({
   projectId,
@@ -94,6 +100,10 @@ export function OutdoorUnitsTable({
   const ventilators: VentilatorRow[] = ventilatorsQuery.data?.ventilators ?? [];
   const rows = useMemo(() => sortedOutdoorUnits(slice.outdoor_units), [slice.outdoor_units]);
   const indoorUnits = useMemo(() => sortedIndoorUnits(slice.indoor_units), [slice.indoor_units]);
+  const outdoorEquip = useMemo(
+    () => sortedOutdoorEquip(slice.outdoor_equip),
+    [slice.outdoor_equip],
+  );
   const incomingIndoorUnitIdsByRowId = useMemo(
     () => indoorUnitIdsByOutdoorUnit(indoorUnits),
     [indoorUnits],
@@ -116,34 +126,72 @@ export function OutdoorUnitsTable({
     },
     [slice.indoor_units],
   );
-  const fieldDefs = useMemo(
-    () =>
-      outdoorUnitFieldDefs({
-        options: slice.single_select_options,
-        outdoorEquip: slice.outdoor_equip,
-      }),
-    [slice.single_select_options, slice.outdoor_equip],
+  const openOutdoorEquipLink = useCallback(
+    (equipId: string) => {
+      const row = slice.outdoor_equip.find((candidate) => candidate.id === equipId);
+      if (row) setModal({ kind: "outdoor-equip", row });
+    },
+    [slice.outdoor_equip],
   );
-  const linkedRecordOps = useMemo<ReadonlyMap<string, LinkedRecordCellOps>>(
-    () =>
-      buildLinkedRecordOps<HeatPumpIndoorUnitRow>({
-        fieldDefs,
-        targetTablePath: HEAT_PUMP_LINK_TARGETS.indoorUnits,
-        targetRows: indoorUnits,
-        getRowId: (unit) => unit.id,
-        getRecordId: (unit) => unit.tag || unit.id,
-        onPillClick: openIndoorUnitLink,
-      }),
-    [fieldDefs, indoorUnits, openIndoorUnitLink],
-  );
-  const columns = outdoorUnitColumnDefs({
-    projectId,
-    isEditor: !readOnly,
-    assetUrlById,
-    onDatasheetChange: (row, next) => replaceUnit({ ...row, datasheet_asset_ids: next }),
+  const fieldDefs = useMemo(() => outdoorUnitFieldDefs(), []);
+  const manufacturerOptions =
+    slice.single_select_options[HEAT_PUMP_OPTION_KEYS.manufacturer] ?? EMPTY_HEAT_PUMP_OPTIONS;
+  const linkedRecordOps = useMemo<ReadonlyMap<string, LinkedRecordCellOps>>(() => {
+    const outdoorEquipOps = buildLinkedRecordOps<HeatPumpOutdoorEquipRow>({
+      fieldDefs,
+      targetTablePath: HEAT_PUMP_LINK_TARGETS.outdoorEquip,
+      targetRows: outdoorEquip,
+      getRowId: (equip) => equip.id,
+      getRecordId: (equip) => outdoorEquipLabel(equip, manufacturerOptions),
+      onPillClick: openOutdoorEquipLink,
+    });
+    const indoorUnitOps = buildLinkedRecordOps<HeatPumpIndoorUnitRow>({
+      fieldDefs,
+      targetTablePath: HEAT_PUMP_LINK_TARGETS.indoorUnits,
+      targetRows: indoorUnits,
+      getRowId: (unit) => unit.id,
+      getRecordId: (unit) => unit.tag || unit.id,
+      onPillClick: openIndoorUnitLink,
+    });
+    return new Map([...outdoorEquipOps, ...indoorUnitOps]);
+  }, [
+    fieldDefs,
     indoorUnits,
-    incomingIndoorUnitIdsByRowId,
-  });
+    openIndoorUnitLink,
+    openOutdoorEquipLink,
+    outdoorEquip,
+    manufacturerOptions,
+  ]);
+  const columns = useMemo(
+    () =>
+      outdoorUnitColumnDefs({
+        projectId,
+        isEditor: !readOnly,
+        assetUrlById,
+        onDatasheetChange: async (row, next) => {
+          await patchMutation.mutateAsync({
+            current: slice,
+            table: "outdoor-units",
+            patch: {
+              op: "replace",
+              path: `/${row.id}`,
+              value: { ...row, datasheet_asset_ids: next },
+            },
+          });
+        },
+        indoorUnits,
+        incomingIndoorUnitIdsByRowId,
+      }),
+    [
+      assetUrlById,
+      incomingIndoorUnitIdsByRowId,
+      indoorUnits,
+      patchMutation,
+      projectId,
+      readOnly,
+      slice,
+    ],
+  );
 
   // OutdoorEquipRowModal opens here for paired equipment and still gets a
   // createOption callback for the manufacturer/system_family/refrigerant lists.
@@ -172,6 +220,15 @@ export function OutdoorUnitsTable({
     await patchMutation.mutateAsync({
       current: slice,
       table: "outdoor-units",
+      patch: { op: "replace", path: `/${row.id}`, value: row },
+    });
+    setModal(null);
+  }
+
+  async function replaceOutdoorEquip(row: HeatPumpOutdoorEquipRow) {
+    await patchMutation.mutateAsync({
+      current: slice,
+      table: "outdoor-equip",
       patch: { op: "replace", path: `/${row.id}`, value: row },
     });
     setModal(null);
@@ -260,7 +317,7 @@ export function OutdoorUnitsTable({
       for (const write of op.writes) {
         const row = slice.outdoor_units.find((candidate) => candidate.id === write.rowId);
         if (!row) continue;
-        const nextValue = write.value === "" ? null : write.value;
+        const nextValue = outdoorUnitWriteValue(write.fieldKey, write.value);
         await replaceUnit({ ...row, [write.fieldKey]: nextValue } as HeatPumpOutdoorUnitRow);
       }
       return;
@@ -367,6 +424,19 @@ export function OutdoorUnitsTable({
           onSubmit={replaceIndoorUnit}
         />
       ) : null}
+      {modal?.kind === "outdoor-equip" ? (
+        <OutdoorEquipRowModal
+          mode="edit"
+          row={modal.row}
+          indoorEquip={slice.indoor_equip}
+          existingEquip={slice.outdoor_equip}
+          options={slice.single_select_options}
+          readOnly={readOnly}
+          onCancel={() => setModal(null)}
+          onSubmit={replaceOutdoorEquip}
+          onCreateOption={readOnly ? undefined : createOption}
+        />
+      ) : null}
       {modal?.kind === "equip-create" ? (
         <OutdoorEquipRowModal
           mode="add"
@@ -401,4 +471,14 @@ export function OutdoorUnitsTable({
       ) : null}
     </>
   );
+}
+
+function outdoorUnitWriteValue(fieldKey: string, value: unknown): unknown {
+  if (fieldKey === "outdoor_equip_id") {
+    const nextId = firstLinkedId(value);
+    if (!nextId) throw new Error("Outdoor equipment is required.");
+    return nextId;
+  }
+  if (value === "") return null;
+  return value;
 }

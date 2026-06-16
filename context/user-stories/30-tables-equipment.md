@@ -1184,8 +1184,8 @@ US-EQ-8's caveat note).
 2. Column set per Heat Pumps PRD §4.4 — 5 fields.
 3. `tag` is the Record-ID per US-Builder-Tables §record-id;
    required; unique within table (trim + case-insensitive).
-4. `outdoor_equip_id` required — picker dropdown sources
-   `heat_pump_outdoor_equip[]` rows by display name; inline
+4. `outdoor_equip_id` required — single-link field targeting
+   Heat Pumps → Equipment - Outdoor rows by display name; inline
    "Create new outdoor equipment" shortcut per Heat Pumps PRD §5.5.
 5. Empty state per Heat Pumps PRD §5.6 (with secondary line when
    the outdoor-equip table is itself empty).
@@ -1316,5 +1316,12 @@ preserving the backend row shape (`indoor_equip_id: string`,
 `Units - Outdoor` also show read-only incoming `Indoor units`
 columns computed from the loaded Heat Pumps slice, so both ends of
 the relationship are visible in the UI.
+
+`Units - Outdoor`.`Equipment` is the same native-reference pattern:
+the DataTable exposes `outdoor_equip_id` as a required single
+`linked_record` field targeting `Equipment - Outdoor`, while the
+backend row shape remains `outdoor_equip_id: string`. The
+`Equipment - Outdoor` table shows a read-only incoming `Outdoor units` column computed
+from the loaded Heat Pumps slice.
 
 ---

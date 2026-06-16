@@ -60,11 +60,14 @@ describe("HeatPumpsPanel", () => {
 
   test("mounts the outdoor units table on the outdoor-units leaf", async () => {
     const user = userEvent.setup();
-    renderPanel();
+    renderPanel({ slice: heatPumpsSlice({ outdoor_units: [outdoorUnitRow()] }) });
 
     await user.click(await screen.findByRole("tab", { name: "Units - Outdoor" }));
 
     expect(await screen.findByRole("button", { name: "Add outdoor unit" })).toBeInTheDocument();
+    const equipmentHeader = screen.getByRole("columnheader", { name: /Equipment/ });
+    expect(equipmentHeader.querySelector('[data-field-type-icon="linked_record"]')).toBeTruthy();
+    expect(screen.getByRole("button", { name: /OE-A/ })).toBeInTheDocument();
     expect(screen.queryByRole("columnheader", { name: "Zone" })).toBeNull();
   });
 
@@ -150,7 +153,7 @@ describe("HeatPumpsPanel", () => {
     expect(screen.getAllByText("5.28").length).toBeGreaterThan(0);
   });
 
-  test("shows incoming indoor-unit links on referenced Heat Pump tables", async () => {
+  test("shows incoming unit links on referenced Heat Pump tables", async () => {
     const user = userEvent.setup();
     renderPanel({
       slice: heatPumpsSlice({
@@ -165,6 +168,9 @@ describe("HeatPumpsPanel", () => {
         ],
       }),
     });
+
+    expect(await screen.findByRole("columnheader", { name: /Outdoor units/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "HP-1" })).toBeInTheDocument();
 
     await user.click(await screen.findByRole("tab", { name: "Equipment - Indoor" }));
     expect(await screen.findByRole("columnheader", { name: /Indoor units/ })).toBeInTheDocument();
