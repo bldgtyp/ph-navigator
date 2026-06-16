@@ -22,8 +22,6 @@ import {
   type VentilatorsSlice,
 } from "../types";
 
-export const VENTILATOR_LINKED_HP_INDOOR_COLUMN_ID = "linked_hp_indoor_count";
-
 export function VentilatorsTable({
   ventilatorsSlice,
   tableSchema,
@@ -37,7 +35,6 @@ export function VentilatorsTable({
   overflowMenuActions,
   footerAction,
   onResetView,
-  linkedHpIndoorCountById,
   ...customFieldActions
 }: {
   ventilatorsSlice: VentilatorsSlice;
@@ -52,10 +49,6 @@ export function VentilatorsTable({
   overflowMenuActions?: DataTableProps<VentilatorRow>["overflowMenuActions"];
   footerAction?: DataTableProps<VentilatorRow>["footerAction"];
   onResetView?: DataTableProps<VentilatorRow>["onResetView"];
-  // Reverse-lookup count: ventilator id → number of HP indoor units linking to it.
-  // Phase 4 (US-EQ-4 amendment). Undefined while the HP slice is still loading;
-  // the column accessor falls back to 0.
-  linkedHpIndoorCountById?: Map<string, number>;
 } & CustomFieldTableActions<VentilatorRow>) {
   const sortedRows = useMemo(
     () => sortedVentilators(ventilatorsSlice.ventilators),
@@ -183,29 +176,9 @@ export function VentilatorsTable({
         accessor: (ventilator) => ventilator.notes,
         defaultWidth: 280,
       },
-      {
-        id: VENTILATOR_LINKED_HP_INDOOR_COLUMN_ID,
-        fieldKey: VENTILATOR_LINKED_HP_INDOOR_COLUMN_ID,
-        header: "Linked HP indoor",
-        // `linkedHpIndoorCountById === undefined` distinguishes "HP slice
-        // still loading" from "loaded with no link" (count of 0). Both
-        // the accessor (used for sort + filter) and the render must agree
-        // on the loading case so the user never sorts or filters by a
-        // phantom 0 while the cells visibly show `—`.
-        accessor: (ventilator) =>
-          linkedHpIndoorCountById === undefined
-            ? null
-            : (linkedHpIndoorCountById.get(ventilator.id) ?? 0),
-        render: (ventilator) =>
-          linkedHpIndoorCountById === undefined
-            ? "—"
-            : String(linkedHpIndoorCountById.get(ventilator.id) ?? 0),
-        defaultWidth: 130,
-        className: "numeric-cell",
-      },
       ...customColumns,
     ],
-    [customColumns, fieldDefByKey, linkedHpIndoorCountById],
+    [customColumns, fieldDefByKey],
   );
 
   return (

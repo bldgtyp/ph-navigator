@@ -921,13 +921,14 @@ None outstanding.
 
 ## US-EQ-4 — ERVs sub-tab — *Amendment 2026-06-09: Linked-from-HP-indoor surfaces*
 
-**Status:** Phase 4 partially implemented (2026-06-09). Count
-column (AC-AMEND-1/2) ships; modal-badge deep-link
-(AC-AMEND-3) descoped — Ventilators uses inline DataTable editing,
-no row-detail modal exists to host the badge. Tracked as
-**Q-HP-FOLLOWUP-7** (post-v1): revisit when / if Ventilators
-grows a row-detail modal. · **Priority:** MVP (Phase 4 of the
-Heat Pumps rollout — see `planning/archive/heat-pumps/PRD.md` §5.4)
+**Status:** Phase 4 amended (2026-06-16). The reverse count column
+was removed from the Ventilators DataTable because it duplicated the
+real `linked_erv_unit_id` link owned by HP Units — Indoor.
+Ventilators uses inline DataTable editing, so modal-badge deep-links
+remain descoped and tracked as **Q-HP-FOLLOWUP-7** (post-v1):
+revisit when / if Ventilators grows a row-detail modal. ·
+**Priority:** MVP (Phase 4 of the Heat Pumps rollout — see
+`planning/archive/heat-pumps/PRD.md` §5.4)
 **Driver:** Heat Pumps feature requires the ERV sub-tab to expose
 the reverse side of the HP-indoor ↔ ERV link captured by
 `heat_pump_indoor_units[*].linked_erv_unit_id`.
@@ -937,10 +938,10 @@ the reverse side of the HP-indoor ↔ ERV link captured by
 1. **No schema change to `tables.equipment.ervs[*]`.** The link is
    stored one-way on the HP indoor unit; ERV rows learn about it
    via server-side reverse lookup.
-2. **New column on the ERVs DataTable:** `Linked HP indoor` —
-   default-hidden. Renders the count of HP indoor units linking to
-   this ERV row (`0` means standalone ERV; `1+` means integrated).
-   Filterable + sortable like any column.
+2. **No reverse count column on the ERVs DataTable.** The
+   Ventilators table should not carry a computed `Linked HP indoor`
+   count. The editable link remains the normal HP Units — Indoor
+   `linked_erv_unit_id` field.
 3. **New badge on the ERV row-detail modal header:** when ≥1 HP
    indoor unit links to this ERV, render `"Linked from HP indoor:
    {tag}"` for each linked tag (comma-separated if multiple).
@@ -959,14 +960,11 @@ the reverse side of the HP-indoor ↔ ERV link captured by
 
 ### Acceptance criteria (additive to existing US-EQ-4)
 
-- ✅ AC-AMEND-1 (Phase 4 implemented 2026-06-09): `Linked HP
-  indoor` column appears in the column-visibility overflow menu;
-  default-hidden; togglable on.
-- ✅ AC-AMEND-2 (Phase 4 implemented 2026-06-09): When toggled
-  on, the column renders an integer count per row; sorts
-  numerically; filters work. While the HP slice is still
-  fetching, the cell renders `—` to distinguish "loading" from
-  "no link".
+- ✅ AC-AMEND-1 (amended 2026-06-16): No `Linked HP indoor` count
+  column appears on the Ventilators DataTable or in the column-
+  visibility menu.
+- ✅ AC-AMEND-2 (amended 2026-06-16): The HP indoor link remains
+  editable only from HP Units — Indoor via `linked_erv_unit_id`.
 - ◻ AC-AMEND-3 (descoped 2026-06-09 — Q-HP-FOLLOWUP-7): badge
   with deep-link on the ERV row-detail modal. No ERV row-detail
   modal exists today; revisit when one is added.
@@ -976,9 +974,8 @@ the reverse side of the HP-indoor ↔ ERV link captured by
   cleared via silent backend cascade. **No toast** (scope
   amendment — silent matches D-HP-19 spirit without dragging in
   a row-detail modal or an inline-delete intercept path).
-- ✏️ AC-AMEND-5 (partial): Viewer renders the column unchanged.
-  Badge surfaces (AC-AMEND-3) are descoped, so the deep-link
-  navigation case is moot until a modal exists.
+- ✏️ AC-AMEND-5 (partial): Badge surfaces (AC-AMEND-3) are descoped,
+  so the deep-link navigation case is moot until a modal exists.
 
 ### Cross-references
 - HP indoor side: US-EQ-11 (HP Units — Indoor) criterion 6.

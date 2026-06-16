@@ -31,26 +31,9 @@ describe("VentilatorsTable DataTable reuse", () => {
     expect(screen.getByText("Wh/m3")).toBeInTheDocument();
     expect(screen.getByText("ERV-1")).toBeInTheDocument();
     expect(screen.getByText("Inside")).toBeInTheDocument();
-  });
-
-  test("renders Linked HP indoor count from the reverse-lookup map", () => {
-    const ventilator = buildVentilator({ id: "vent_n2" });
-    const slice = buildVentilatorsSlice({ ventilators: [ventilator] });
-    const tableSchema = schemaForVentilators(slice);
-    render(
-      <VentilatorsTable
-        ventilatorsSlice={slice}
-        tableSchema={tableSchema}
-        isEditor={false}
-        view={emptyViewState()}
-        onViewChange={() => undefined}
-        onWrite={vi.fn()}
-        linkedHpIndoorCountById={new Map([["vent_n2", 3]])}
-      />,
-    );
-
-    expect(screen.getByRole("columnheader", { name: /Linked HP indoor/i })).toBeInTheDocument();
-    expect(screen.getByText("3")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("columnheader", { name: /Linked HP indoor/i }),
+    ).not.toBeInTheDocument();
   });
 
   test("calls onWrite through inline cell editing", async () => {
