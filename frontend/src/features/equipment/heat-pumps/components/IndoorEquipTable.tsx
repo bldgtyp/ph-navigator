@@ -2,9 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import {
   buildLinkedRecordOps,
   DataTable,
-  emptyViewState,
   type LinkedRecordCellOps,
-  type ViewState,
   type WriteOp,
 } from "../../../../shared/ui/data-table";
 import { useAssetUrls } from "../../../assets/hooks";
@@ -25,12 +23,14 @@ import {
   indoorEquipFieldDefs,
 } from "../indoor-equip-columns";
 import { HEAT_PUMP_LINK_TARGETS, indoorUnitIdsByIndoorEquip } from "../link-fields";
-import type {
-  HeatPumpIndoorEquipRow,
-  HeatPumpIndoorUnitRow,
-  HeatPumpOwnedOptionKey,
-  HeatPumpsSlice,
+import {
+  HEAT_PUMP_INDOOR_EQUIP_TABLE_NAME,
+  type HeatPumpIndoorEquipRow,
+  type HeatPumpIndoorUnitRow,
+  type HeatPumpOwnedOptionKey,
+  type HeatPumpsSlice,
 } from "../types";
+import { useHeatPumpTableViewState } from "../useHeatPumpTableViewState";
 import { addRowButton } from "../../routes/equipmentRowActions";
 import { IndoorEquipRowModal } from "./IndoorEquipRowModal";
 import { IndoorUnitRowModal } from "./IndoorUnitRowModal";
@@ -51,11 +51,6 @@ export function IndoorEquipTable({
   isEditor: boolean;
   versionLocked: boolean;
 }) {
-  const [view, setView] = useState<ViewState>(() => ({
-    ...emptyViewState(),
-    sort: [{ fieldKey: "tag", direction: "asc" }],
-    hiddenColumns: indoorEquipDefaultHiddenColumns,
-  }));
   const [modal, setModal] = useState<ModalState>(null);
   const patchMutation = useHeatPumpPatchMutation(projectId);
   const optionMutation = useHeatPumpOptionMutation(projectId);
@@ -114,6 +109,15 @@ export function IndoorEquipTable({
     onDatasheetChange: (row, next) => replaceIndoorRow({ ...row, datasheet_asset_ids: next }),
     indoorUnits,
     incomingIndoorUnitIdsByRowId,
+  });
+  const tableView = useHeatPumpTableViewState({
+    projectId,
+    tableKey: HEAT_PUMP_INDOOR_EQUIP_TABLE_NAME,
+    isEditor,
+    columns,
+    fieldDefs,
+    sort: [{ fieldKey: "tag", direction: "asc" }],
+    hiddenColumns: indoorEquipDefaultHiddenColumns,
   });
 
   async function createOption(optionKey: HeatPumpOwnedOptionKey, label: string): Promise<string> {
@@ -221,24 +225,29 @@ export function IndoorEquipTable({
 
   return (
     <>
-      <DataTable
-        rows={rows}
-        getRowId={(row) => row.id}
-        fieldDefs={fieldDefs}
-        columnDefs={columns}
-        view={view}
-        onViewChange={setView}
-        onWrite={handleWrite}
-        readOnly={readOnly}
-        linkedRecordOps={linkedRecordOps}
-        emptyMessage="No indoor heat-pump models defined."
-        onRowOpen={(row) => setModal({ kind: "equip", mode: "edit", row })}
-        sessionKey={`${projectId}:heat-pumps:indoor-equip:${slice.version_id}`}
-        generateRowId={() => buildEmptyIndoorEquipRow().id}
-        footerAction={addRowButton("Add indoor model", !readOnly, () =>
-          setModal({ kind: "equip", mode: "add", row: buildEmptyIndoorEquipRow() }),
-        )}
-      />
+      {tableView.isLoading ? (
+        <p className="form-note">Loading table view...</p>
+      ) : (
+        <DataTable
+          rows={rows}
+          getRowId={(row) => row.id}
+          fieldDefs={fieldDefs}
+          columnDefs={columns}
+          view={tableView.view}
+          onViewChange={tableView.onViewChange}
+          onResetView={tableView.reset}
+          onWrite={handleWrite}
+          readOnly={readOnly}
+          linkedRecordOps={linkedRecordOps}
+          emptyMessage="No indoor heat-pump models defined."
+          onRowOpen={(row) => setModal({ kind: "equip", mode: "edit", row })}
+          sessionKey={`${projectId}:heat-pumps:indoor-equip:${slice.version_id}`}
+          generateRowId={() => buildEmptyIndoorEquipRow().id}
+          footerAction={addRowButton("Add indoor model", !readOnly, () =>
+            setModal({ kind: "equip", mode: "add", row: buildEmptyIndoorEquipRow() }),
+          )}
+        />
+      )}
       {modal?.kind === "equip" ? (
         <IndoorEquipRowModal
           mode={modal.mode}

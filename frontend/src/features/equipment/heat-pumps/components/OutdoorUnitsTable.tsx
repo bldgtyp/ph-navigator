@@ -5,9 +5,7 @@ import { errorMessage } from "../../../../shared/lib/errors";
 import {
   buildLinkedRecordOps,
   DataTable,
-  emptyViewState,
   type LinkedRecordCellOps,
-  type ViewState,
   type WriteOp,
 } from "../../../../shared/ui/data-table";
 import { useAssetUrls } from "../../../assets/hooks";
@@ -36,6 +34,7 @@ import {
 } from "../outdoor-unit-columns";
 import { firstLinkedId, HEAT_PUMP_LINK_TARGETS, indoorUnitIdsByOutdoorUnit } from "../link-fields";
 import {
+  HEAT_PUMP_OUTDOOR_UNITS_TABLE_NAME,
   HEAT_PUMP_OPTION_KEYS,
   type CascadeReference,
   type HeatPumpIndoorUnitRow,
@@ -44,6 +43,7 @@ import {
   type HeatPumpOwnedOptionKey,
   type HeatPumpsSlice,
 } from "../types";
+import { useHeatPumpTableViewState } from "../useHeatPumpTableViewState";
 import { OutdoorEquipRowModal } from "./OutdoorEquipRowModal";
 import { IndoorUnitRowModal } from "./IndoorUnitRowModal";
 import { OutdoorUnitRowModal } from "./OutdoorUnitRowModal";
@@ -75,11 +75,6 @@ export function OutdoorUnitsTable({
   isEditor: boolean;
   versionLocked: boolean;
 }) {
-  const [view, setView] = useState<ViewState>(() => ({
-    ...emptyViewState(),
-    sort: [{ fieldKey: "tag", direction: "asc" }],
-    hiddenColumns: outdoorUnitDefaultHiddenColumns,
-  }));
   const [modal, setModal] = useState<ModalState>(null);
   const [deleteState, setDeleteState] = useState<DeleteState>(null);
   const [blockedDialog, setBlockedDialog] = useState<{
@@ -192,6 +187,15 @@ export function OutdoorUnitsTable({
       slice,
     ],
   );
+  const tableView = useHeatPumpTableViewState({
+    projectId,
+    tableKey: HEAT_PUMP_OUTDOOR_UNITS_TABLE_NAME,
+    isEditor,
+    columns,
+    fieldDefs,
+    sort: [{ fieldKey: "tag", direction: "asc" }],
+    hiddenColumns: outdoorUnitDefaultHiddenColumns,
+  });
 
   // OutdoorEquipRowModal opens here for paired equipment and still gets a
   // createOption callback for the manufacturer/system_family/refrigerant lists.
@@ -345,51 +349,56 @@ export function OutdoorUnitsTable({
 
   return (
     <>
-      <DataTable
-        rows={rows}
-        getRowId={(row) => row.id}
-        fieldDefs={fieldDefs}
-        columnDefs={columns}
-        view={view}
-        onViewChange={setView}
-        onWrite={handleWrite}
-        readOnly={readOnly}
-        linkedRecordOps={linkedRecordOps}
-        emptyMessage={
-          noEquip
-            ? "No outdoor units yet. Add an outdoor equipment row first under Equipment — Outdoor."
-            : "No outdoor units yet."
-        }
-        onRowOpen={(row) => setModal({ kind: "unit", mode: "edit", row })}
-        sessionKey={`${projectId}:heat-pumps:outdoor-units:${slice.version_id}`}
-        generateRowId={() => buildEmptyOutdoorUnitRow().id}
-        footerAction={
-          readOnly ? null : (
-            <button
-              type="button"
-              className="data-table-add-row-button"
-              aria-label="Add outdoor unit"
-              title={
-                noEquip
-                  ? "Add an outdoor equipment row first under Equipment — Outdoor"
-                  : "Add outdoor unit"
-              }
-              disabled={noEquip}
-              onClick={() =>
-                setModal({
-                  kind: "unit",
-                  mode: "add",
-                  row: buildEmptyOutdoorUnitRow({
-                    outdoor_equip_id: slice.outdoor_equip[0]?.id ?? "",
-                  }),
-                })
-              }
-            >
-              +
-            </button>
-          )
-        }
-      />
+      {tableView.isLoading ? (
+        <p className="form-note">Loading table view...</p>
+      ) : (
+        <DataTable
+          rows={rows}
+          getRowId={(row) => row.id}
+          fieldDefs={fieldDefs}
+          columnDefs={columns}
+          view={tableView.view}
+          onViewChange={tableView.onViewChange}
+          onResetView={tableView.reset}
+          onWrite={handleWrite}
+          readOnly={readOnly}
+          linkedRecordOps={linkedRecordOps}
+          emptyMessage={
+            noEquip
+              ? "No outdoor units yet. Add an outdoor equipment row first under Equipment — Outdoor."
+              : "No outdoor units yet."
+          }
+          onRowOpen={(row) => setModal({ kind: "unit", mode: "edit", row })}
+          sessionKey={`${projectId}:heat-pumps:outdoor-units:${slice.version_id}`}
+          generateRowId={() => buildEmptyOutdoorUnitRow().id}
+          footerAction={
+            readOnly ? null : (
+              <button
+                type="button"
+                className="data-table-add-row-button"
+                aria-label="Add outdoor unit"
+                title={
+                  noEquip
+                    ? "Add an outdoor equipment row first under Equipment — Outdoor"
+                    : "Add outdoor unit"
+                }
+                disabled={noEquip}
+                onClick={() =>
+                  setModal({
+                    kind: "unit",
+                    mode: "add",
+                    row: buildEmptyOutdoorUnitRow({
+                      outdoor_equip_id: slice.outdoor_equip[0]?.id ?? "",
+                    }),
+                  })
+                }
+              >
+                +
+              </button>
+            )
+          }
+        />
+      )}
       {modal?.kind === "unit" ? (
         <OutdoorUnitRowModal
           mode={modal.mode}

@@ -2,6 +2,11 @@ import type { BaseTableSlice } from "../../project_document/table-slice";
 
 export type HeatPumpTableKey = "outdoor-equip" | "indoor-equip" | "outdoor-units" | "indoor-units";
 
+export const HEAT_PUMP_OUTDOOR_EQUIP_TABLE_NAME = "heat_pumps_outdoor_equip";
+export const HEAT_PUMP_INDOOR_EQUIP_TABLE_NAME = "heat_pumps_indoor_equip";
+export const HEAT_PUMP_OUTDOOR_UNITS_TABLE_NAME = "heat_pumps_outdoor_units";
+export const HEAT_PUMP_INDOOR_UNITS_TABLE_NAME = "heat_pumps_indoor_units";
+
 /**
  * Phius Multiple HP Performance Estimator dropdown values for the
  * heating-data-type and cooling-data-type cells. The exact strings
