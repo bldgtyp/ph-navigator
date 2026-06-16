@@ -111,10 +111,12 @@ describe("number unit registry", () => {
       "area",
       "volume",
       "volume_liters",
+      "flow_rate",
       "temperature",
       "airflow",
       "electric_efficiency",
       "heat_loss_rate",
+      "energy",
       "power",
     ]);
     expect(isCompatibleNumberUnitPair("area", "m2", "ft2")).toBe(true);
@@ -129,10 +131,12 @@ describe("number unit registry", () => {
       area: { si: ["m2"], ip: ["ft2"] },
       volume: { si: ["m3"], ip: ["ft3"] },
       volume_liters: { si: ["l"], ip: ["gal"] },
+      flow_rate: { si: ["l_min"], ip: ["gpm"] },
       temperature: { si: ["c"], ip: ["f"] },
       airflow: { si: ["m3_h"], ip: ["cfm"] },
       electric_efficiency: { si: ["wh_m3"], ip: ["w_cfm"] },
       heat_loss_rate: { si: ["w_k"], ip: ["btu_h_f"] },
+      energy: { si: ["kwh"], ip: ["kbtu"] },
       power: { si: ["kw"], ip: ["kbtu_h"] },
     });
   });
@@ -203,6 +207,28 @@ describe("number unit registry", () => {
     };
     expect(convertNumberUnitsToDisplay(3.785411784, gallonsLiters)).toBeCloseTo(1, 10);
     expect(convertNumberUnitsToSi(1, gallonsLiters)).toBeCloseTo(3.785411784, 10);
+
+    const flowRate = {
+      mode: "fixed" as const,
+      unit_type: "flow_rate" as const,
+      si_unit: "l_min" as const,
+      ip_unit: "gpm" as const,
+      precision_si: 1,
+      precision_ip: 1,
+    };
+    expect(convertNumberUnitsToDisplay(3.785411784, flowRate)).toBeCloseTo(1, 10);
+    expect(convertNumberUnitsToSi(1, flowRate)).toBeCloseTo(3.785411784, 10);
+
+    const energy = {
+      mode: "fixed" as const,
+      unit_type: "energy" as const,
+      si_unit: "kwh" as const,
+      ip_unit: "kbtu" as const,
+      precision_si: 0,
+      precision_ip: 0,
+    };
+    expect(convertNumberUnitsToDisplay(1, energy)).toBeCloseTo(3.412141633, 10);
+    expect(convertNumberUnitsToSi(3.412141633, energy)).toBeCloseTo(1, 10);
 
     const temperature = {
       mode: "fixed" as const,

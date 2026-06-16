@@ -8,6 +8,7 @@ import pytest
 from pydantic import ValidationError
 
 from features.project_document.document import ApplianceRow, ProjectDocumentV1
+from features.project_document.tables.appliances import APPLIANCES_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.registry import get_table_contract
 from tests.project_document_helpers import empty_appliances_table, empty_required_tables
 from tests.test_project_document import ORIGIN, create_project, signed_in_client
@@ -122,6 +123,19 @@ def appliance_payload() -> dict[str, Any]:
             }
         ],
         "single_select_options": appliance_options(),
+    }
+
+
+def test_annual_energy_field_has_fixed_kwh_kbtu_units() -> None:
+    annual_energy = next(field for field in APPLIANCES_BUILT_IN_FIELD_DEFS if field.field_key == "annual_energy_kwh")
+
+    assert annual_energy.config["units"] == {
+        "mode": "fixed",
+        "unit_type": "energy",
+        "si_unit": "kwh",
+        "ip_unit": "kbtu",
+        "precision_si": 0,
+        "precision_ip": 0,
     }
 
 

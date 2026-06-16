@@ -678,7 +678,12 @@ export function FieldConfigModal({
                         title={
                           fieldTypeLocked
                             ? FIELD_LOCKED_TOOLTIP
-                            : typeCandidateTitle(candidate, sourceCustomFieldType, allowed)
+                            : typeCandidateTitle(
+                                candidate,
+                                sourceCustomFieldType,
+                                allowed,
+                                candidate.kind === "number" ? numberUnits : null,
+                              )
                         }
                         className="data-table-add-field-type-pill"
                         onClick={() => {
@@ -687,7 +692,10 @@ export function FieldConfigModal({
                           setServerPreflight(null);
                         }}
                       >
-                        {candidate.label}
+                        {fieldTypeChoiceLabel(
+                          candidate,
+                          candidate.kind === "number" ? numberUnits : null,
+                        )}
                       </button>
                     );
                   })}
@@ -822,7 +830,17 @@ function typeCandidateTitle(
   candidate: (typeof FIELD_TYPE_CHOICES)[number],
   sourceCustomFieldType: CustomFieldType,
   allowed: boolean,
+  numberUnits: NumberUnitsConfig | null,
 ): string {
-  if (allowed) return candidate.label;
-  return `Cannot convert ${sourceCustomFieldType} values to ${candidate.label.toLowerCase()}.`;
+  const label = fieldTypeChoiceLabel(candidate, numberUnits);
+  if (allowed) return label;
+  return `Cannot convert ${sourceCustomFieldType} values to ${label.toLowerCase()}.`;
+}
+
+function fieldTypeChoiceLabel(
+  candidate: (typeof FIELD_TYPE_CHOICES)[number],
+  numberUnits: NumberUnitsConfig | null,
+): string {
+  if (candidate.kind === "number" && numberUnits) return "Unit";
+  return candidate.label;
 }

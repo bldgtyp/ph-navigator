@@ -63,7 +63,7 @@ export function FieldConfigSectionNumberUnits({
 
   return (
     <div className="data-table-field-config-modal-section" role="group" aria-label="Units">
-      <span className="data-table-add-field-label">Number with Units</span>
+      <span className="data-table-add-field-label">Unit</span>
       <label className="data-table-add-field-label" htmlFor={typeId}>
         Unit type
       </label>

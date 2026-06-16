@@ -93,6 +93,11 @@ function getBodyCellText(rowIndex: number, columnIndex: number): string {
 describe("number-with-units grid behavior (Phase 03)", () => {
   test("renders bare SI number in SI mode and header carries SI unit label", () => {
     renderWithUnits("SI");
+    expect(screen.getByTestId("data-table-field-type-icon")).toHaveAttribute(
+      "data-field-type-icon",
+      "unit",
+    );
+    expect(screen.getByTestId("data-table-field-type-icon")).toHaveAttribute("title", "Unit field");
     expect(screen.getByTestId("data-table-header-units").textContent).toBe("m");
     expect(getBodyCellText(0, 0)).toBe("1.000");
     expect(getBodyCellText(1, 0)).toBe("2.000");

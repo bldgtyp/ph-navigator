@@ -10,6 +10,7 @@ export type NumberUnitMode = "editable" | "fixed";
 const MIN_NUMBER_PRECISION = 0;
 const MAX_NUMBER_PRECISION = 10;
 const L_PER_GAL = 3.785411784;
+const KWH_TO_KBTU = 3.412141633;
 const W_PER_K_TO_BTU_PER_H_F = 3.412141633 / 1.8;
 const KW_TO_KBTU_PER_H = 3.412141633;
 
@@ -84,6 +85,12 @@ export const NUMBER_UNIT_TYPES = [
     ipUnits: [{ id: "gal", label: "gal", system: "IP" }],
   },
   {
+    id: "flow_rate",
+    label: "Flow Rate",
+    siUnits: [{ id: "l_min", label: "L/min", system: "SI" }],
+    ipUnits: [{ id: "gpm", label: "gpm", system: "IP" }],
+  },
+  {
     id: "temperature",
     label: "Temperature",
     siUnits: [{ id: "c", label: "deg C", system: "SI" }],
@@ -106,6 +113,12 @@ export const NUMBER_UNIT_TYPES = [
     label: "Heat Loss Rate",
     siUnits: [{ id: "w_k", label: "W/K", system: "SI" }],
     ipUnits: [{ id: "btu_h_f", label: "Btu/hr-F", system: "IP" }],
+  },
+  {
+    id: "energy",
+    label: "Energy",
+    siUnits: [{ id: "kwh", label: "kWh", system: "SI" }],
+    ipUnits: [{ id: "kbtu", label: "kBtu", system: "IP" }],
   },
   {
     id: "power",
@@ -229,6 +242,8 @@ export function convertNumberUnitsToDisplay(valueSi: number, config: NumberUnits
       return m3ToFt3(valueSi);
     case "volume_liters":
       return valueSi / L_PER_GAL;
+    case "flow_rate":
+      return valueSi / L_PER_GAL;
     case "temperature":
       return cToF(valueSi);
     case "airflow":
@@ -237,6 +252,8 @@ export function convertNumberUnitsToDisplay(valueSi: number, config: NumberUnits
       return valueSi / m3hToCfm(1);
     case "heat_loss_rate":
       return valueSi * W_PER_K_TO_BTU_PER_H_F;
+    case "energy":
+      return valueSi * KWH_TO_KBTU;
     case "power":
       return valueSi * KW_TO_KBTU_PER_H;
   }
@@ -262,6 +279,8 @@ export function convertNumberUnitsToSi(valueIp: number, config: NumberUnitsConfi
       return ft3ToM3(valueIp);
     case "volume_liters":
       return valueIp * L_PER_GAL;
+    case "flow_rate":
+      return valueIp * L_PER_GAL;
     case "temperature":
       return fToC(valueIp);
     case "airflow":
@@ -270,6 +289,8 @@ export function convertNumberUnitsToSi(valueIp: number, config: NumberUnitsConfi
       return valueIp * m3hToCfm(1);
     case "heat_loss_rate":
       return valueIp / W_PER_K_TO_BTU_PER_H_F;
+    case "energy":
+      return valueIp / KWH_TO_KBTU;
     case "power":
       return valueIp / KW_TO_KBTU_PER_H;
   }

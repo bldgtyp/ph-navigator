@@ -77,6 +77,7 @@ import {
   hotWaterHeatersBuiltInFieldDefs,
   pumpsBuiltInFieldDefs,
   roomsBuiltInFieldDefs,
+  schemaForPumps,
   ventilatorsBuiltInFieldDefs,
   withRoomCustomValues as withCustomValues,
 } from "./testing/testFixtures";
@@ -824,6 +825,38 @@ describe("equipment room helpers", () => {
     );
 
     expect(payload.field_defs).toEqual(pumpsBuiltInFieldDefs);
+  });
+
+  test("pumps flow field carries fixed gpm and L/min units", () => {
+    const flowField = pumpsBuiltInFieldDefs.find((field) => field.field_key === "flow_gpm");
+
+    expect(flowField?.display_name).toBe("Flow");
+    expect(flowField?.config.units).toEqual({
+      mode: "fixed",
+      unit_type: "flow_rate",
+      si_unit: "l_min",
+      ip_unit: "gpm",
+      precision_si: 1,
+      precision_ip: 1,
+    });
+  });
+
+  test("pumps flow overlay renders legacy persisted field as unit-aware Flow", () => {
+    const legacyFieldDefs = pumpsBuiltInFieldDefs.map((field) =>
+      field.field_key === "flow_gpm" ? { ...field, display_name: "Flow - GPM", config: {} } : field,
+    );
+    const schema = schemaForPumps(buildPumpsSlice({ field_defs: legacyFieldDefs }));
+    const flowField = schema.fieldDefs.find((field) => field.field_key === "flow_gpm");
+
+    expect(flowField?.display_name).toBe("Flow");
+    expect(flowField?.numberUnits).toEqual({
+      mode: "fixed",
+      unit_type: "flow_rate",
+      si_unit: "l_min",
+      ip_unit: "gpm",
+      precision_si: 1,
+      precision_ip: 1,
+    });
   });
 
   test("pumpsPayloadFromCellWrites preserves field_defs", () => {

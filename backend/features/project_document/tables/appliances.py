@@ -67,7 +67,21 @@ APPLIANCES_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
     built_in_field_def(field_key="cef", display_name="CEF", field_type=CustomFieldType.number),
     built_in_field_def(field_key="imef", display_name="IMEF", field_type=CustomFieldType.number),
     built_in_field_def(field_key="mef", display_name="MEF", field_type=CustomFieldType.number),
-    built_in_field_def(field_key="annual_energy_kwh", display_name="Annual Energy", field_type=CustomFieldType.number),
+    built_in_field_def(
+        field_key="annual_energy_kwh",
+        display_name="Annual Energy",
+        field_type=CustomFieldType.number,
+        config={
+            "units": {
+                "mode": "fixed",
+                "unit_type": "energy",
+                "si_unit": "kwh",
+                "ip_unit": "kbtu",
+                "precision_si": 0,
+                "precision_ip": 0,
+            }
+        },
+    ),
     built_in_field_def(field_key="url", display_name="URL", field_type=CustomFieldType.url),
     built_in_field_def(field_key="datasheet_asset_ids", display_name="Datasheet", field_type=CustomFieldType.long_text),
     built_in_field_def(field_key="notes", display_name="Notes", field_type=CustomFieldType.long_text),

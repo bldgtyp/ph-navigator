@@ -80,6 +80,7 @@ import type {
   TableFieldRenderOverlay,
   TableFieldDef,
 } from "../../shared/ui/data-table";
+import type { NumberUnitsConfig } from "../../lib/units";
 import {
   ALL_FIELD_LOCKS,
   DEFAULT_BUILT_IN_LOCKS,
@@ -118,6 +119,24 @@ export const HOT_WATER_HEATER_ID_PREFIX = "hwh";
 export const HOT_WATER_TANK_ID_PREFIX = "hwt";
 export const ELECTRIC_HEATER_ID_PREFIX = "heatr";
 export const APPLIANCE_ID_PREFIX = "appl";
+
+const PUMP_FLOW_LEGACY_DISPLAY_NAME = "Flow - GPM";
+export const PUMP_FLOW_RATE_UNITS: NumberUnitsConfig = {
+  mode: "fixed",
+  unit_type: "flow_rate",
+  si_unit: "l_min",
+  ip_unit: "gpm",
+  precision_si: 1,
+  precision_ip: 1,
+};
+export const APPLIANCE_ANNUAL_ENERGY_UNITS: NumberUnitsConfig = {
+  mode: "fixed",
+  unit_type: "energy",
+  si_unit: "kwh",
+  ip_unit: "kbtu",
+  precision_si: 0,
+  precision_ip: 0,
+};
 
 type RoomCellWrite = { rowId: string; fieldKey: string; value: unknown };
 type ApplianceCellWrite = { rowId: string; fieldKey: string; value: unknown };
@@ -329,7 +348,12 @@ export const PUMPS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("phase", "Phase", "number"),
   builtInFieldDef("horse_power", "Horse Power", "number"),
   builtInFieldDef("wattage", "Wattage", "number"),
-  builtInFieldDef("flow_gpm", "Flow - GPM", "number"),
+  {
+    ...builtInFieldDef("flow_gpm", "Flow", "number"),
+    config: {
+      units: PUMP_FLOW_RATE_UNITS,
+    },
+  },
   builtInFieldDef("runtime_khr_yr", "Runtime - kHR/YEAR", "number"),
   builtInFieldDef("link", "Link", "url"),
   builtInFieldDef("notes", "Notes", "long_text"),
@@ -523,7 +547,12 @@ export const APPLIANCES_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("cef", "CEF", "number"),
   builtInFieldDef("imef", "IMEF", "number"),
   builtInFieldDef("mef", "MEF", "number"),
-  builtInFieldDef("annual_energy_kwh", "Annual Energy", "number"),
+  {
+    ...builtInFieldDef("annual_energy_kwh", "Annual Energy", "number"),
+    config: {
+      units: APPLIANCE_ANNUAL_ENERGY_UNITS,
+    },
+  },
   builtInFieldDef("url", "URL", "url"),
   builtInFieldDef(APPLIANCE_DATASHEET_FIELD_KEY, "Datasheet", "long_text"),
   builtInFieldDef("notes", "Notes", "long_text"),
@@ -622,6 +651,7 @@ export function roomsTableColumnsForSanitize(
 }
 
 export function pumpsFieldOverlay(pumpsSlice: PumpsSlice): Record<string, TableFieldRenderOverlay> {
+  const flowField = pumpsTableFieldDefs(pumpsSlice).find((field) => field.field_key === "flow_gpm");
   return {
     record_id: {
       locked: ["display_name", "delete", "duplicate"],
@@ -654,6 +684,10 @@ export function pumpsFieldOverlay(pumpsSlice: PumpsSlice): Record<string, TableF
     },
     flow_gpm: {
       locked: DEFAULT_BUILT_IN_LOCKS,
+      numberUnits: PUMP_FLOW_RATE_UNITS,
+      ...(flowField?.display_name === PUMP_FLOW_LEGACY_DISPLAY_NAME
+        ? { display_name: "Flow" }
+        : {}),
     },
     runtime_khr_yr: {
       locked: DEFAULT_BUILT_IN_LOCKS,
@@ -1015,6 +1049,7 @@ export function appliancesFieldOverlay(
     },
     annual_energy_kwh: {
       locked: DEFAULT_BUILT_IN_LOCKS,
+      numberUnits: APPLIANCE_ANNUAL_ENERGY_UNITS,
     },
     url: {
       locked: ["field_type", "delete", "duplicate"],
