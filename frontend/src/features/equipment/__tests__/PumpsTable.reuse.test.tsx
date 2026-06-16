@@ -244,6 +244,21 @@ describe("PumpsTable DataTable reuse", () => {
       routeForInverseSource(
         "proj_1",
         {
+          source_key: "rooms.cf_pumps",
+          source_table_path: ["rooms"],
+          source_table_display: "Rooms",
+          source_field_key: "cf_pumps",
+          source_field_display_name: "Pump",
+        },
+        "rm_a",
+        { openRoom: true },
+      ),
+    ).toBe(`${spacesRoomsPath("proj_1")}?focus=rm_a&open=1`);
+
+    expect(
+      routeForInverseSource(
+        "proj_1",
+        {
           source_key: "equipment.hot_water_heaters.cf_pumps",
           source_table_path: ["equipment", "hot_water_heaters"],
           source_table_display: "Hot Water Heaters",

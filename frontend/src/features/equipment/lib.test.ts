@@ -53,6 +53,7 @@ import { tableFieldDefsToFieldDefs } from "../../shared/ui/data-table";
 import {
   ROOM_BUILDING_ZONE_COLUMN_ID,
   ROOM_FLOOR_LEVEL_COLUMN_ID,
+  ROOM_SPACE_TYPE_FIELD_KEY,
   type RoomRow,
   type RoomsSlice,
 } from "./types";
@@ -508,6 +509,7 @@ describe("equipment room helpers", () => {
       "name",
       ROOM_FLOOR_LEVEL_COLUMN_ID,
       ROOM_BUILDING_ZONE_COLUMN_ID,
+      ROOM_SPACE_TYPE_FIELD_KEY,
       "num_people",
       "num_bedrooms",
       "icfa_factor",

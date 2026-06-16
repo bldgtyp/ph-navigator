@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-16
 TIME: 17:34 EDT
-STATUS: Active - Phase 04 complete; Phase 05 next
+STATUS: Complete - Phase 05 verified; ready for review/archive
 AUTHOR: Ed (via Codex)
 SCOPE: Current state of Spaces refactor planning.
 RELATED:
@@ -14,7 +14,7 @@ RELATED:
 
 ## Current State
 
-`Active - Phase 04 complete; Phase 05 next`.
+`Complete - Phase 05 verified; ready for review/archive`.
 
 Phase 01 backend work is implemented and verified:
 
@@ -64,9 +64,9 @@ Phase 04 frontend table/link UI work is implemented:
 
 ## Next Step
 
-Begin Phase 05:
+Review and archive the completed feature folder when ready:
 
-`planning/features/spaces-refactor/phases/phase-05-verification-docs-closeout.md`
+`planning/features/spaces-refactor/`
 
 ## Blockers
 
@@ -135,6 +135,57 @@ None for starting Phase 01.
 - 2026-06-16 18:55 EDT: `$ docs-pass` complete. No stable `context/`
   edits were made; Phase 05 remains responsible for final browser smoke,
   full verification, and durable context closeout.
+- 2026-06-16 19:05 EDT: Phase 05 started. Stable context docs updated
+  for the Spaces parent tab, `tables.space_types`, Rooms
+  `space_type_id`, reverse Rooms links, and legacy `/rooms` redirect.
+- 2026-06-16 19:45 EDT: Phase 05 closeout complete. `make format`, full
+  `make ci`, browser smoke, `graphify update .`, `$ simplify`, and
+  `$ docs-pass` all completed. Stable docs now match the implemented
+  Spaces route/table/link contract.
+
+## Phase 05 Verification
+
+- `make format`
+  - Passed on 2026-06-16 19:16 EDT; no source changes.
+- First full `make ci`
+  - Failed on 2026-06-16 19:19 EDT because
+    `frontend/src/features/equipment/lib.test.ts` still expected the
+    pre-Spaces Rooms sanitizer column list. Fixed the test expectation
+    to include `ROOM_SPACE_TYPE_FIELD_KEY`.
+- `cd frontend && pnpm exec vitest run src/features/equipment/lib.test.ts --reporter=dot`
+  - 69 passed on 2026-06-16 19:20 EDT.
+- Full `make ci`
+  - Passed on 2026-06-16 19:31 EDT: backend 887 passed, 2 skipped;
+    frontend 172 files / 1651 tests passed; production build passed with
+    the existing Vite large-chunk warning.
+- Browser smoke on `http://localhost:5173` / `http://localhost:8000` as
+  `codex@example.com`
+  - Passed on 2026-06-16 19:38 EDT using project
+    `543563a1-7a26-4b5f-90e1-3302f7e34728`.
+  - Created Space-Types `APT` / Apartment and `CORR` / Corridor.
+  - Created Room `101` / Living Room and linked it to Space-Type `APT`.
+  - Verified the Space-Types reverse Rooms pill displays
+    `101 - Living Room`.
+  - Clicked the reverse Rooms pill and confirmed the Room editor opens
+    under `/spaces/rooms?focus=<room_id>`. `RoomsPage` consumes
+    `open=1` after opening the modal.
+  - Verified legacy `/projects/:projectId/rooms?focus=rm_fake&open=1#legacy`
+    redirects to `/projects/:projectId/spaces/rooms?focus=rm_fake&open=1#legacy`.
+- `$ simplify`
+  - Completed on 2026-06-16 19:43 EDT. Reuse and efficiency passes had
+    no findings; quality pass found stale stable-doc contradictions,
+    which were corrected.
+- `make format && cd frontend && pnpm exec vitest run src/features/equipment/lib.test.ts src/features/equipment/__tests__/PumpsTable.reuse.test.tsx --reporter=dot`
+  - Passed on 2026-06-16 19:44 EDT; 75 passed.
+- Final full `make ci`
+  - Passed on 2026-06-16 19:48 EDT: backend 887 passed, 2 skipped;
+    frontend 172 files / 1651 tests passed; production build passed with
+    the existing Vite large-chunk warning.
+- `graphify update .`
+  - Passed on 2026-06-16 19:49 EDT.
+- `$ docs-pass`
+  - Completed on 2026-06-16 19:50 EDT; updated the Spaces phase/status
+    docs and planning index with closeout evidence.
 
 ## Phase 02 Verification
 
