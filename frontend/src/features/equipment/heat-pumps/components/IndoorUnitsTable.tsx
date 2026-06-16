@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ApiRequestError } from "../../../../shared/api/client";
 import { errorMessage } from "../../../../shared/lib/errors";
 import {
@@ -18,28 +18,36 @@ import {
   buildEmptyIndoorEquipRow,
   buildEmptyIndoorUnitRow,
   buildNewHeatPumpOption,
+  indoorEquipLabel,
+  outdoorUnitLabel,
   roomLabel,
   sortedIndoorUnits,
   uniqueTagForAdd,
 } from "../lib";
+import { HEAT_PUMP_LINK_TARGETS } from "../link-fields";
 import {
   indoorUnitColumnDefs,
   indoorUnitDefaultHiddenColumns,
   indoorUnitFieldDefs,
 } from "../indoor-unit-columns";
-import type {
-  CascadeReference,
-  HeatPumpIndoorEquipRow,
-  HeatPumpIndoorUnitRow,
-  HeatPumpOwnedOptionKey,
-  HeatPumpsSlice,
+import {
+  HEAT_PUMP_OPTION_KEYS,
+  type CascadeReference,
+  type HeatPumpIndoorEquipRow,
+  type HeatPumpIndoorUnitRow,
+  type HeatPumpOutdoorUnitRow,
+  type HeatPumpOwnedOptionKey,
+  type HeatPumpsSlice,
 } from "../types";
 import { IndoorEquipRowModal } from "./IndoorEquipRowModal";
 import { IndoorUnitRowModal } from "./IndoorUnitRowModal";
+import { OutdoorUnitRowModal } from "./OutdoorUnitRowModal";
 import { BlockedDeleteDialog } from "./CascadePreviewDialog";
 
 type ModalState =
   | { kind: "unit"; mode: "add" | "edit"; row: HeatPumpIndoorUnitRow }
+  | { kind: "indoor-equip"; row: HeatPumpIndoorEquipRow }
+  | { kind: "outdoor-unit"; row: HeatPumpOutdoorUnitRow }
   | { kind: "equip-create"; row: HeatPumpIndoorEquipRow; selectForUnitId: string }
   | null;
 
@@ -95,20 +103,42 @@ export function IndoorUnitsTable({
     assetUrlById,
     onDatasheetChange: (row, next) => replaceUnit({ ...row, datasheet_asset_ids: next }),
   });
-  const fieldDefs = useMemo(
-    () =>
-      indoorUnitFieldDefs({
-        options: slice.single_select_options,
-        indoorEquip: slice.indoor_equip,
-        outdoorUnits: slice.outdoor_units,
-      }),
-    [slice.single_select_options, slice.indoor_equip, slice.outdoor_units],
+  const fieldDefs = useMemo(() => indoorUnitFieldDefs(), []);
+  const openIndoorEquipLink = useCallback(
+    (rowId: string) => {
+      const row = slice.indoor_equip.find((candidate) => candidate.id === rowId);
+      if (row) setModal({ kind: "indoor-equip", row });
+    },
+    [slice.indoor_equip],
   );
-  // linked_record ops for the Rooms column. Rooms come from a sibling
-  // slice query; while it is in-flight the picker shows a spinner so
-  // an empty candidates list isn't mistaken for "no rooms yet".
+  const openOutdoorUnitLink = useCallback(
+    (rowId: string) => {
+      const row = slice.outdoor_units.find((candidate) => candidate.id === rowId);
+      if (row) setModal({ kind: "outdoor-unit", row });
+    },
+    [slice.outdoor_units],
+  );
   const linkedRecordOps = useMemo<ReadonlyMap<string, LinkedRecordCellOps>>(() => {
-    const base = buildLinkedRecordOps<RoomRow>({
+    const manufacturerOptions =
+      slice.single_select_options[HEAT_PUMP_OPTION_KEYS.manufacturer] ?? [];
+    const indoorEquipOps = buildLinkedRecordOps<HeatPumpIndoorEquipRow>({
+      fieldDefs,
+      targetTablePath: HEAT_PUMP_LINK_TARGETS.indoorEquip,
+      targetRows: slice.indoor_equip,
+      getRowId: (equip) => equip.id,
+      getRecordId: (equip) => indoorEquipLabel(equip, manufacturerOptions),
+      getDisplayName: (equip) => equip.model_number,
+      onPillClick: openIndoorEquipLink,
+    });
+    const outdoorUnitOps = buildLinkedRecordOps<HeatPumpOutdoorUnitRow>({
+      fieldDefs,
+      targetTablePath: HEAT_PUMP_LINK_TARGETS.outdoorUnits,
+      targetRows: slice.outdoor_units,
+      getRowId: (unit) => unit.id,
+      getRecordId: (unit) => outdoorUnitLabel(unit),
+      onPillClick: openOutdoorUnitLink,
+    });
+    const roomOps = buildLinkedRecordOps<RoomRow>({
       fieldDefs,
       targetTablePath: ["rooms"],
       targetRows: rooms,
@@ -121,15 +151,27 @@ export function IndoorUnitsTable({
       // /rooms?focus=...&open=1 route still exists for external deep links.
       onPillClick: setLinkedRoomId,
     });
-    if (!roomsQuery.isLoading) return base;
-    // Re-key each entry with isLoading flipped on so the picker shows
-    // a spinner while the rooms slice is still being fetched.
-    const next = new Map<string, LinkedRecordCellOps>();
-    for (const [key, ops] of base) {
-      next.set(key, { ...ops, isLoading: true });
+    const next = new Map<string, LinkedRecordCellOps>([
+      ...indoorEquipOps,
+      ...outdoorUnitOps,
+      ...roomOps,
+    ]);
+    if (roomsQuery.isLoading) {
+      for (const [key, ops] of roomOps) {
+        next.set(key, { ...ops, isLoading: true });
+      }
     }
     return next;
-  }, [fieldDefs, rooms, roomsQuery.isLoading]);
+  }, [
+    fieldDefs,
+    openIndoorEquipLink,
+    openOutdoorUnitLink,
+    rooms,
+    roomsQuery.isLoading,
+    slice.indoor_equip,
+    slice.outdoor_units,
+    slice.single_select_options,
+  ]);
 
   // IndoorUnitRowModal does not expose inline-create for any options.
   // IndoorEquipRowModal — opened from this table for equip-create — still
@@ -160,6 +202,24 @@ export function IndoorUnitsTable({
     await patchMutation.mutateAsync({
       current: slice,
       table: "indoor-units",
+      patch: { op: "replace", path: `/${row.id}`, value: row },
+    });
+    setModal(null);
+  }
+
+  async function replaceIndoorEquip(row: HeatPumpIndoorEquipRow) {
+    await patchMutation.mutateAsync({
+      current: slice,
+      table: "indoor-equip",
+      patch: { op: "replace", path: `/${row.id}`, value: row },
+    });
+    setModal(null);
+  }
+
+  async function replaceOutdoorUnit(row: HeatPumpOutdoorUnitRow) {
+    await patchMutation.mutateAsync({
+      current: slice,
+      table: "outdoor-units",
       patch: { op: "replace", path: `/${row.id}`, value: row },
     });
     setModal(null);
@@ -212,8 +272,10 @@ export function IndoorUnitsTable({
       for (const write of op.writes) {
         const row = slice.indoor_units.find((candidate) => candidate.id === write.rowId);
         if (!row) continue;
-        const nextValue = write.value === "" ? null : write.value;
-        await replaceUnit({ ...row, [write.fieldKey]: nextValue } as HeatPumpIndoorUnitRow);
+        await replaceUnit({
+          ...row,
+          [write.fieldKey]: indoorUnitWriteValue(write.fieldKey, write.value),
+        } as HeatPumpIndoorUnitRow);
       }
       return;
     }
@@ -330,6 +392,30 @@ export function IndoorUnitsTable({
           onCreateOption={createOption}
         />
       ) : null}
+      {modal?.kind === "indoor-equip" ? (
+        <IndoorEquipRowModal
+          mode="edit"
+          row={modal.row}
+          existingEquip={slice.indoor_equip}
+          options={slice.single_select_options}
+          readOnly={readOnly}
+          onCancel={() => setModal(null)}
+          onSubmit={replaceIndoorEquip}
+          onCreateOption={readOnly ? undefined : createOption}
+        />
+      ) : null}
+      {modal?.kind === "outdoor-unit" ? (
+        <OutdoorUnitRowModal
+          mode="edit"
+          row={modal.row}
+          outdoorEquip={slice.outdoor_equip}
+          existingUnits={slice.outdoor_units}
+          options={slice.single_select_options}
+          readOnly={readOnly}
+          onCancel={() => setModal(null)}
+          onSubmit={replaceOutdoorUnit}
+        />
+      ) : null}
       {blockedDialog ? (
         <BlockedDeleteDialog
           title="Cannot delete"
@@ -340,4 +426,24 @@ export function IndoorUnitsTable({
       ) : null}
     </>
   );
+}
+
+function indoorUnitWriteValue(fieldKey: string, value: unknown): unknown {
+  if (fieldKey === "indoor_equip_id") {
+    const next = firstLinkedId(value);
+    if (!next) throw new Error("Indoor equipment is required.");
+    return next;
+  }
+  if (fieldKey === "outdoor_unit_id") return firstLinkedId(value);
+  if (fieldKey === "served_room_ids") return linkedIds(value);
+  return value === "" ? null : value;
+}
+
+function firstLinkedId(value: unknown): string | null {
+  return linkedIds(value)[0] ?? null;
+}
+
+function linkedIds(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((entry): entry is string => typeof entry === "string" && entry.length > 0);
 }

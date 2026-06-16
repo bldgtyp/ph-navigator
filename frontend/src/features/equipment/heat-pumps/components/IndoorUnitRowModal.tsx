@@ -35,7 +35,7 @@ export function IndoorUnitRowModal({
   onCancel: () => void;
   onSubmit: (row: HeatPumpIndoorUnitRow) => Promise<void>;
   onDelete?: () => void;
-  onCreateIndoorEquip: () => void;
+  onCreateIndoorEquip?: () => void;
   readOnly: boolean;
 }) {
   const [draft, setDraft] = useState(row);
@@ -120,7 +120,7 @@ export function IndoorUnitRowModal({
                 ))}
               </select>
             </label>
-            {!readOnly ? (
+            {!readOnly && onCreateIndoorEquip ? (
               <button
                 type="button"
                 className="secondary-button hp-inline-action"

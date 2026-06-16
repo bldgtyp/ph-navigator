@@ -3,6 +3,11 @@ import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
 import { outdoorEquipLabel } from "./lib";
 import {
+  incomingIndoorUnitIds,
+  incomingIndoorUnitColumnDef,
+  incomingIndoorUnitsFieldDef,
+} from "./link-fields";
+import {
   HEAT_PUMP_OPTION_KEYS,
   type HeatPumpOutdoorEquipRow,
   type HeatPumpOutdoorUnitRow,
@@ -42,6 +47,7 @@ export function outdoorUnitFieldDefs({
       field_type: "attachment",
       display_name: "Datasheet",
     },
+    incomingIndoorUnitsFieldDef(),
     { field_key: "notes", field_type: "text", display_name: "Notes" },
   ];
 }
@@ -53,6 +59,8 @@ export function outdoorUnitColumnDefs({
   isEditor,
   assetUrlById,
   onDatasheetChange,
+  indoorUnits = [],
+  incomingIndoorUnitIdsByRowId = new Map(),
 }: {
   projectId: string;
   isEditor: boolean;
@@ -60,6 +68,8 @@ export function outdoorUnitColumnDefs({
   // so this builder doesn't need `outdoorEquip` directly.
   assetUrlById: Map<string, unknown>;
   onDatasheetChange: (row: HeatPumpOutdoorUnitRow, next: string[]) => void | Promise<void>;
+  indoorUnits?: HeatPumpsSlice["indoor_units"];
+  incomingIndoorUnitIdsByRowId?: ReadonlyMap<string, readonly string[]>;
 }): DataTableColumnDef<HeatPumpOutdoorUnitRow>[] {
   return [
     {
@@ -97,6 +107,10 @@ export function outdoorUnitColumnDefs({
       measureText: (row) => `${row.datasheet_asset_ids.length} attachments`,
       defaultWidth: 260,
     },
+    incomingIndoorUnitColumnDef<HeatPumpOutdoorUnitRow>({
+      indoorUnits,
+      getIncomingIds: (row) => incomingIndoorUnitIds(incomingIndoorUnitIdsByRowId, row.id),
+    }),
     {
       id: "notes",
       fieldKey: "notes",
