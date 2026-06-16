@@ -921,12 +921,13 @@ None outstanding.
 
 ## US-EQ-4 — ERVs sub-tab — *Amendment 2026-06-09: Linked-from-HP-indoor surfaces*
 
-**Status:** Phase 4 amended (2026-06-16). The reverse count column
-was removed from the Ventilators DataTable because it duplicated the
-real `linked_erv_unit_id` link owned by HP Units — Indoor.
-Ventilators uses inline DataTable editing, so modal-badge deep-links
-remain descoped and tracked as **Q-HP-FOLLOWUP-7** (post-v1):
-revisit when / if Ventilators grows a row-detail modal. ·
+**Status:** Phase 4 amended (2026-06-16). The old reverse count
+column was replaced with a read-only incoming linked-record column
+on the Ventilators DataTable. The real editable link remains owned
+by HP Units — Indoor via `linked_erv_unit_id`. Ventilators uses
+inline DataTable editing, so modal-badge deep-links remain
+descoped and tracked as **Q-HP-FOLLOWUP-7** (post-v1): revisit
+when / if Ventilators grows a row-detail modal. ·
 **Priority:** MVP (Phase 4 of the Heat Pumps rollout — see
 `planning/archive/heat-pumps/PRD.md` §5.4)
 **Driver:** Heat Pumps feature requires the ERV sub-tab to expose
@@ -938,10 +939,11 @@ the reverse side of the HP-indoor ↔ ERV link captured by
 1. **No schema change to `tables.equipment.ervs[*]`.** The link is
    stored one-way on the HP indoor unit; ERV rows learn about it
    via server-side reverse lookup.
-2. **No reverse count column on the ERVs DataTable.** The
-   Ventilators table should not carry a computed `Linked HP indoor`
-   count. The editable link remains the normal HP Units — Indoor
-   `linked_erv_unit_id` field.
+2. **Read-only reverse link column on the ERVs DataTable.** The
+   Ventilators table carries a computed `HP indoor units`
+   `linked_record` column sourced from HP Units — Indoor rows whose
+   `linked_erv_unit_id` points at the ventilator. The editable link
+   remains the normal HP Units — Indoor `linked_erv_unit_id` field.
 3. **New badge on the ERV row-detail modal header:** when ≥1 HP
    indoor unit links to this ERV, render `"Linked from HP indoor:
    {tag}"` for each linked tag (comma-separated if multiple).
@@ -961,8 +963,8 @@ the reverse side of the HP-indoor ↔ ERV link captured by
 ### Acceptance criteria (additive to existing US-EQ-4)
 
 - ✅ AC-AMEND-1 (amended 2026-06-16): No `Linked HP indoor` count
-  column appears on the Ventilators DataTable or in the column-
-  visibility menu.
+  column appears. Instead, the Ventilators DataTable exposes a
+  read-only incoming `HP indoor units` linked-record column.
 - ✅ AC-AMEND-2 (amended 2026-06-16): The HP indoor link remains
   editable only from HP Units — Indoor via `linked_erv_unit_id`.
 - ◻ AC-AMEND-3 (descoped 2026-06-09 — Q-HP-FOLLOWUP-7): badge
@@ -1311,7 +1313,10 @@ the meantime.
 are native Heat Pumps references, not single-select vocabularies.
 The DataTable now exposes them as `linked_record` fields while
 preserving the backend row shape (`indoor_equip_id: string`,
-`outdoor_unit_id: string | null`). `Equipment - Indoor` and
+`outdoor_unit_id: string | null`). `Units - Indoor`.`Linked ERV`
+is the same native-reference pattern, exposed as a single
+`linked_record` field targeting `Ventilators` while preserving
+`linked_erv_unit_id: string | null`. `Equipment - Indoor` and
 `Units - Outdoor` also show read-only incoming `Indoor units`
 columns computed from the loaded Heat Pumps slice, so both ends of
 the relationship are visible in the UI.

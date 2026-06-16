@@ -21,6 +21,7 @@ import {
   roomLabel,
   sortedIndoorUnits,
   uniqueTagForAdd,
+  ventilatorLabel,
 } from "../lib";
 import { firstLinkedId, HEAT_PUMP_LINK_TARGETS, linkedIds } from "../link-fields";
 import {
@@ -77,7 +78,10 @@ export function IndoorUnitsTable({
     accessMode,
   );
   const roomsQuery = roomsSliceFeature.useSliceQuery(projectId, slice.version_id, accessMode);
-  const ventilators: VentilatorRow[] = ventilatorsQuery.data?.ventilators ?? [];
+  const ventilators: VentilatorRow[] = useMemo(
+    () => ventilatorsQuery.data?.ventilators ?? [],
+    [ventilatorsQuery.data?.ventilators],
+  );
   const rooms: RoomRow[] = useMemo(() => roomsQuery.data?.rooms ?? [], [roomsQuery.data?.rooms]);
   const rows = useMemo(() => sortedIndoorUnits(slice.indoor_units), [slice.indoor_units]);
   const assetIds = useMemo(
@@ -95,6 +99,7 @@ export function IndoorUnitsTable({
     projectId,
     isEditor: !readOnly,
     rooms,
+    ventilators,
     assetUrlById,
     onDatasheetChange: (row, next) => replaceUnit({ ...row, datasheet_asset_ids: next }),
   });
@@ -155,13 +160,26 @@ export function IndoorUnitsTable({
       // /rooms?focus=...&open=1 route still exists for external deep links.
       onPillClick: setLinkedRoomId,
     });
+    const ventilatorOps = buildLinkedRecordOps<VentilatorRow>({
+      fieldDefs,
+      targetTablePath: HEAT_PUMP_LINK_TARGETS.ventilators,
+      targetRows: ventilators,
+      getRowId: (ventilator) => ventilator.id,
+      getRecordId: (ventilator) => ventilatorLabel(ventilator),
+    });
     const next = new Map<string, LinkedRecordCellOps>([
       ...indoorEquipOps,
       ...outdoorUnitOps,
       ...roomOps,
+      ...ventilatorOps,
     ]);
     if (roomsQuery.isLoading) {
       for (const [key, ops] of roomOps) {
+        next.set(key, { ...ops, isLoading: true });
+      }
+    }
+    if (ventilatorsQuery.isLoading) {
+      for (const [key, ops] of ventilatorOps) {
         next.set(key, { ...ops, isLoading: true });
       }
     }
@@ -175,6 +193,8 @@ export function IndoorUnitsTable({
     slice.indoor_equip,
     slice.outdoor_units,
     slice.single_select_options,
+    ventilators,
+    ventilatorsQuery.isLoading,
   ]);
 
   // IndoorUnitRowModal does not expose inline-create for any options.
@@ -444,6 +464,7 @@ function indoorUnitWriteValue(fieldKey: string, value: unknown): unknown {
     return next;
   }
   if (fieldKey === "outdoor_unit_id") return firstLinkedId(value);
+  if (fieldKey === "linked_erv_unit_id") return firstLinkedId(value);
   if (fieldKey === "served_room_ids") return linkedIds(value);
   return value === "" ? null : value;
 }

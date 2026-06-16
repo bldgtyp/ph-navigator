@@ -100,8 +100,10 @@ describe("HeatPumpsPanel", () => {
 
     const equipmentHeader = await screen.findByRole("columnheader", { name: /Equipment/ });
     const outdoorHeader = screen.getByRole("columnheader", { name: /Outdoor unit/ });
+    const linkedErvHeader = screen.getByRole("columnheader", { name: /Linked ERV/ });
     expect(equipmentHeader.querySelector('[data-field-type-icon="linked_record"]')).toBeTruthy();
     expect(outdoorHeader.querySelector('[data-field-type-icon="linked_record"]')).toBeTruthy();
+    expect(linkedErvHeader.querySelector('[data-field-type-icon="linked_record"]')).toBeTruthy();
     expect(await screen.findByRole("button", { name: /IE-A/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "HP-1" })).toBeInTheDocument();
   });

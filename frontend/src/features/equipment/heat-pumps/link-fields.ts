@@ -6,6 +6,7 @@ export const HEAT_PUMP_LINK_TARGETS = {
   indoorEquip: ["equipment", "heat_pumps", "indoor_equip"],
   outdoorUnits: ["equipment", "heat_pumps", "outdoor_units"],
   indoorUnits: ["equipment", "heat_pumps", "indoor_units"],
+  ventilators: ["equipment", "ervs"],
 } as const;
 
 export const INCOMING_INDOOR_UNITS_FIELD_KEY = "incoming_indoor_unit_ids";

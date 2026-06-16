@@ -1,8 +1,8 @@
 import type { DataTableColumnDef, FieldDef } from "../../../shared/ui/data-table";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
-import type { RoomRow } from "../types";
-import { roomLabel } from "./lib";
+import type { RoomRow, VentilatorRow } from "../types";
+import { roomLabel, ventilatorLabel } from "./lib";
 import { HEAT_PUMP_LINK_TARGETS } from "./link-fields";
 import { type HeatPumpIndoorUnitRow } from "./types";
 
@@ -39,11 +39,13 @@ export function indoorUnitFieldDefs(): FieldDef[] {
     },
     {
       field_key: "linked_erv_unit_id",
-      field_type: "single_select",
+      field_type: "linked_record",
       display_name: "Linked ERV",
-      // The linked-ERV options aren't owned by the heat-pumps slice; the
-      // modal still drives that picker from the ventilators query.
-      options: [],
+      description: "Ventilator / ERV containing or associated with this indoor unit.",
+      linked_record_config: {
+        target_table_path: [...HEAT_PUMP_LINK_TARGETS.ventilators],
+        max_links: 1,
+      },
     },
     {
       field_key: INDOOR_UNIT_DATASHEET_FIELD_KEY,
@@ -54,26 +56,27 @@ export function indoorUnitFieldDefs(): FieldDef[] {
   ];
 }
 
-export const indoorUnitDefaultHiddenColumns: string[] = ["linked_erv_unit_id", "notes"];
+export const indoorUnitDefaultHiddenColumns: string[] = ["notes"];
 
 export function indoorUnitColumnDefs({
   projectId,
   isEditor,
   rooms,
+  ventilators,
   assetUrlById,
   onDatasheetChange,
 }: {
   projectId: string;
   isEditor: boolean;
-  // Rooms slice rows — required to resolve `served_room_ids` to a
-  // human-readable, comma-joined cell value. Labels for the
-  // equipment / outdoor-unit single-select cells are still resolved
-  // from FieldDef.options inside the DataTable.
+  // Target-table rows are required to resolve stored link ids to
+  // human-readable, comma-joined cell values.
   rooms: readonly RoomRow[];
+  ventilators: readonly VentilatorRow[];
   assetUrlById: Map<string, unknown>;
   onDatasheetChange: (row: HeatPumpIndoorUnitRow, next: string[]) => void | Promise<void>;
 }): DataTableColumnDef<HeatPumpIndoorUnitRow>[] {
   const roomsById = new Map(rooms.map((room) => [room.id, room]));
+  const ventilatorsById = new Map(ventilators.map((ventilator) => [ventilator.id, ventilator]));
   const formatServedRooms = (row: HeatPumpIndoorUnitRow): string =>
     row.served_room_ids
       .map((id) => {
@@ -82,6 +85,11 @@ export function indoorUnitColumnDefs({
       })
       .filter(Boolean)
       .join(", ");
+  const formatLinkedVentilator = (row: HeatPumpIndoorUnitRow): string => {
+    if (!row.linked_erv_unit_id) return "";
+    const ventilator = ventilatorsById.get(row.linked_erv_unit_id);
+    return ventilator ? ventilatorLabel(ventilator) : row.linked_erv_unit_id;
+  };
   return [
     {
       id: "tag",
@@ -118,7 +126,8 @@ export function indoorUnitColumnDefs({
       id: "linked_erv_unit_id",
       fieldKey: "linked_erv_unit_id",
       header: "Linked ERV",
-      accessor: (row) => row.linked_erv_unit_id ?? "",
+      accessor: (row) => (row.linked_erv_unit_id ? [row.linked_erv_unit_id] : []),
+      measureText: formatLinkedVentilator,
       defaultWidth: 160,
     },
     {

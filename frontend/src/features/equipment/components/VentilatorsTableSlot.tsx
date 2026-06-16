@@ -4,6 +4,7 @@ import {
   type SliceTableController,
 } from "../../../shared/ui/data-table/feature";
 import type { BuildEmptyRow, ViewState } from "../../../shared/ui/data-table";
+import { useHeatPumpsQuery } from "../heat-pumps/api";
 import { VENTILATOR_ID_PREFIX } from "../lib";
 import { VENTILATORS_TABLE_NAME, type VentilatorRow, type VentilatorsSlice } from "../types";
 import { VentilatorsTable } from "./VentilatorsTable";
@@ -20,6 +21,11 @@ export type VentilatorsTableSlotProps = {
 export function VentilatorsTableSlot(props: VentilatorsTableSlotProps) {
   const { controller, ventilatorsSlice, projectId, activeVersionId, buildEmptyRow, footerAction } =
     props;
+  const heatPumpsQuery = useHeatPumpsQuery(
+    projectId,
+    Boolean(activeVersionId),
+    controller.canEdit ? "editor" : "viewer",
+  );
   if (controller.viewLoading) {
     return <p className="form-note">Loading table view...</p>;
   }
@@ -36,6 +42,7 @@ export function VentilatorsTableSlot(props: VentilatorsTableSlotProps) {
       generateRowId={controller.canEdit ? () => generatedId(VENTILATOR_ID_PREFIX) : undefined}
       sessionKey={`${projectId}:${activeVersionId ?? "none"}:${VENTILATORS_TABLE_NAME}`}
       footerAction={footerAction}
+      heatPumpIndoorUnits={heatPumpsQuery.data?.indoor_units ?? []}
       {...customFieldActionsForController(controller)}
     />
   );
