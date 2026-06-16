@@ -7,7 +7,8 @@ import {
   spaceTypesPayloadFromRowInsert,
   validateSpaceTypesPayload,
 } from "../lib/spaceTypesController";
-import { SPACE_TYPE_NAME_FIELD_KEY, type SpaceTypesSlice } from "../types";
+import { SPACE_TYPE_NAME_FIELD_KEY } from "../types";
+import { buildSpaceType, buildSpaceTypesSlice } from "../testing/testFixtures";
 
 describe("spaceTypesPayloadBuilders", () => {
   test("adds an empty Space-Type row through the slice-replace payload", () => {
@@ -90,61 +91,3 @@ describe("spaceTypesPayloadBuilders", () => {
     ).toBe("Space-Type Tags must be unique: Office and office.");
   });
 });
-
-function buildSpaceTypesSlice(overrides: Partial<SpaceTypesSlice> = {}): SpaceTypesSlice {
-  return {
-    project_id: "proj_1",
-    version_id: "ver_1",
-    source: "draft",
-    version_etag: "v1",
-    draft_etag: "d1",
-    space_types: [],
-    field_defs: [
-      {
-        field_key: RECORD_ID_FIELD_KEY,
-        display_name: "Tag",
-        field_type: "short_text",
-        config: {},
-        description: null,
-        origin: "built_in",
-        created_at: "2026-06-16T00:00:00Z",
-        created_by: null,
-      },
-      {
-        field_key: SPACE_TYPE_NAME_FIELD_KEY,
-        display_name: "Name",
-        field_type: "short_text",
-        config: {},
-        description: null,
-        origin: "built_in",
-        created_at: "2026-06-16T00:00:00Z",
-        created_by: null,
-      },
-    ],
-    single_select_options: {},
-    rows_computed: {},
-    inverse_links: {},
-    inverse_link_fields: [],
-    inverse_links_fingerprint: "",
-    ...overrides,
-  };
-}
-
-function buildSpaceType({
-  id = "st_1",
-  tag = "Office",
-  name = "Office",
-}: {
-  id?: string;
-  tag?: string;
-  name?: string;
-} = {}) {
-  return {
-    id,
-    custom_values: {
-      [RECORD_ID_FIELD_KEY]: tag,
-      [SPACE_TYPE_NAME_FIELD_KEY]: name,
-    },
-    custom_links: {},
-  };
-}

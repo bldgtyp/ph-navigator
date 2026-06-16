@@ -69,9 +69,10 @@ export function spaceTypesPayloadFromCellWrites(
     return byRowId;
   }, new Map<string, SpaceTypeCellWrite[]>());
   const fieldDefByKey = fieldDefsByKey(current.field_defs);
-  const rows = current.space_types.map((row) =>
-    applyWritesToSpaceType(row, writesByRowId.get(row.id) ?? [], fieldDefByKey),
-  );
+  const rows = current.space_types.map((row) => {
+    const rowWrites = writesByRowId.get(row.id);
+    return rowWrites ? applyWritesToSpaceType(row, rowWrites, fieldDefByKey) : row;
+  });
   return buildPayload(current, rows, options);
 }
 

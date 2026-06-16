@@ -15,11 +15,13 @@ export function routeForInverseSource(
   projectId: string,
   field: InverseLinkField,
   rowId: string,
+  options: { openRoom?: boolean } = {},
 ): string | null {
   const [root, child] = field.source_table_path;
   const focus = encodeURIComponent(rowId);
   if (root === "rooms" && child === undefined) {
-    return `${spacesRoomsPath(projectId)}?focus=${focus}`;
+    const open = options.openRoom ? "&open=1" : "";
+    return `${spacesRoomsPath(projectId)}?focus=${focus}${open}`;
   }
   if (root === "equipment" && child) {
     const tab = EQUIPMENT_SOURCE_TAB_BY_TABLE[child];

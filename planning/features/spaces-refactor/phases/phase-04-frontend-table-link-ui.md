@@ -67,6 +67,14 @@ Space-Types side.
   rendering, reverse Rooms link rendering/click callbacks, viewer
   read-only rendering, Rooms built-in Space Type linked-record rendering,
   `space_type_id` write persistence, and `max_links: 1` metadata.
+- `$ simplify` cleanup extracted shared project-document table
+  primitives, shared field-default readers, shared Space-Types test
+  fixtures, and shared Room display-label helpers; it also stabilized
+  reverse-link navigation callbacks and avoids rewriting unchanged
+  Space-Type rows during cell writes.
+- `$ docs-pass` made no stable `context/` edits. Phase 05 remains
+  responsible for browser smoke, full verification, and durable context
+  closeout.
 - Full `make ci` intentionally remains deferred until Phase 05.
 
 ## Acceptance Criteria
