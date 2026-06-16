@@ -31,6 +31,7 @@ export type RoomRow = {
 
 export const ROOM_FLOOR_LEVEL_KEY = "floor_level";
 export const ROOM_BUILDING_ZONE_KEY = "building_zone";
+export const ROOM_SPACE_TYPE_FIELD_KEY = "space_type_id";
 export const ROOM_FLOOR_LEVEL_OPTION_KEY = "rooms.floor_level";
 export const ROOM_BUILDING_ZONE_OPTION_KEY = "rooms.building_zone";
 export const ROOM_OPTION_KEYS = [

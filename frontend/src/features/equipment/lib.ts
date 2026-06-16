@@ -64,6 +64,7 @@ import {
   ROOM_FLOOR_LEVEL_COLUMN_ID,
   ROOM_FLOOR_LEVEL_KEY,
   ROOM_FLOOR_LEVEL_OPTION_KEY,
+  ROOM_SPACE_TYPE_FIELD_KEY,
   ROOMS_TABLE_NAME,
   VENTILATOR_INSIDE_OUTSIDE_COLUMN_ID,
   VENTILATOR_INSIDE_OUTSIDE_KEY,
@@ -101,6 +102,8 @@ import {
   customTextValue,
   customTextValueOrNull,
 } from "./lib/customValueReaders";
+import { nextCopySuffix } from "../../shared/lib/copySuffix";
+export { nextCopySuffix } from "../../shared/lib/copySuffix";
 export {
   isDraftStaleError,
   isInvalidProjectDocumentError,
@@ -333,6 +336,10 @@ export const ROOMS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("name", "Name", "short_text"),
   builtInFieldDef(ROOM_FLOOR_LEVEL_KEY, "Floor", "single_select"),
   builtInFieldDef(ROOM_BUILDING_ZONE_KEY, "Zone", "single_select"),
+  {
+    ...builtInFieldDef(ROOM_SPACE_TYPE_FIELD_KEY, "Space Type", "linked_record"),
+    config: { target_table_path: ["space_types"], max_links: 1 },
+  },
   builtInFieldDef("num_people", "People", "number"),
   builtInFieldDef("num_bedrooms", "Bedrooms", "number"),
   builtInFieldDef("icfa_factor", "iCFA", "number"),
@@ -576,6 +583,9 @@ export function roomsFieldOverlay(roomsSlice: RoomsSlice): Record<string, TableF
     [ROOM_BUILDING_ZONE_KEY]: {
       options: roomsSlice.single_select_options[ROOM_BUILDING_ZONE_OPTION_KEY],
       locked: ["field_type", "options", "delete", "duplicate"],
+    },
+    [ROOM_SPACE_TYPE_FIELD_KEY]: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
     },
     num_people: {
       locked: DEFAULT_BUILT_IN_LOCKS,
@@ -1475,32 +1485,6 @@ export function roomsPayloadFromRowInsert(
     single_select_options: cloneOptions(current),
     field_defs: [...current.field_defs],
   };
-}
-
-// Build a RoomsReplacePayload that removes the rows named by the
-// <DataTable> toolbar-delete gesture. Inverse-of-delete (undo)
-// dispatches a matching rowInsert; the consumer's buildEmptyRow
-// reconstructs each row from extractRowDefaults output.
-// AirTable-parity " (copy)" / " (copy N)" suffix resolver. Mirrors
-// the backend `next_copy_suffix` in
-// `backend/features/catalogs/_shared.py` so CRUD and slice-replace
-// consumers behave identically. Lives here today next to its two
-// consumers (Rooms, Pumps); promote to `shared/lib/copySuffix.ts` if a
-// third TS consumer needs it.
-const COPY_SUFFIX_RE = /^(.*?)\s*\(copy(?:\s+(\d+))?\)$/;
-
-export function nextCopySuffix(baseName: string, siblingNames: Iterable<string>): string {
-  const match = COPY_SUFFIX_RE.exec(baseName);
-  const root = match ? match[1] : baseName;
-  const siblings = new Set(siblingNames);
-  let candidate = `${root} (copy)`;
-  if (!siblings.has(candidate)) return candidate;
-  let n = 2;
-  while (true) {
-    candidate = `${root} (copy ${n})`;
-    if (!siblings.has(candidate)) return candidate;
-    n += 1;
-  }
 }
 
 // Slice-replace duplicate for Rooms. The library's WriteOp carries the

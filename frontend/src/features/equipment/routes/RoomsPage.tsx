@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   buildLinkedRecordOps,
   RECORD_ID_FIELD_KEY,
+  type FieldDef,
   type LinkedRecordCellOps,
   type LinkedRecordTargetTableOption,
 } from "../../../shared/ui/data-table";
@@ -17,6 +18,7 @@ import {
 } from "../components/RoomsToolbarActions";
 import { RoomsTableSlot } from "../components/RoomsTableSlot";
 import { usePumpsSliceQuery, useRoomsSliceQuery } from "../hooks";
+import { useSpaceTypesSliceQuery } from "../../spaces/hooks";
 import { customTextValueOrNull } from "../lib/customValueReaders";
 import { wasLocalDraftTouched } from "../lib";
 import { buildRoomFormulaRowValues, buildRoomsFormulaRegistry } from "../lib/roomsFormulaRegistry";
@@ -28,14 +30,13 @@ import {
   type RoomRow,
   type RoomsSlice,
 } from "../types";
-
-// Phase 1 has one link-targetable table on Rooms: Pumps. As more
-// tables opt into `link_targetable=True` on the backend, derive this
-// list from the document's `TableContract` manifest instead of a
-// hard-coded literal.
-const ROOMS_LINKED_RECORD_TARGETS: ReadonlyArray<LinkedRecordTargetTableOption> = [
-  { path: [...PUMPS_TARGET_TABLE_PATH], label: "Pumps" },
-];
+import {
+  SPACE_TYPE_NAME_FIELD_KEY,
+  SPACE_TYPES_TARGET_TABLE_PATH,
+  type SpaceTypeRow,
+  type SpaceTypesSlice,
+} from "../../spaces/types";
+import { spaceTypesPath } from "../../spaces/paths";
 
 export function RoomsPage({ project }: { project: ProjectDetail }) {
   const roomsQuery = useRoomsSliceQuery(project.id, project.active_version_id, project.access_mode);
@@ -48,6 +49,11 @@ export function RoomsPage({ project }: { project: ProjectDetail }) {
   // query cache the equipment page uses — no extra round-trip when the
   // user has just left the equipment page.
   const pumpsQuery = usePumpsSliceQuery(project.id, project.active_version_id, project.access_mode);
+  const spaceTypesQuery = useSpaceTypesSliceQuery(
+    project.id,
+    project.active_version_id,
+    project.access_mode,
+  );
   if (roomsQuery.isLoading) {
     return (
       <section className="tab-panel" aria-label="Rooms">
@@ -64,6 +70,7 @@ export function RoomsPage({ project }: { project: ProjectDetail }) {
       roomsSlice={roomsQuery.data}
       refetch={roomsQuery.refetch}
       pumpsSlice={pumpsQuery.data ?? null}
+      spaceTypesSlice={spaceTypesQuery.data ?? null}
     />
   );
 }
@@ -75,8 +82,9 @@ function RoomsPageBody(props: {
   roomsSlice: RoomsSlice;
   refetch: () => Promise<unknown>;
   pumpsSlice: PumpsSlice | null;
+  spaceTypesSlice: SpaceTypesSlice | null;
 }) {
-  const { project, roomsSlice, refetch, pumpsSlice } = props;
+  const { project, roomsSlice, refetch, pumpsSlice, spaceTypesSlice } = props;
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const focusRowId = searchParams.get("focus");
@@ -128,18 +136,51 @@ function RoomsPageBody(props: {
   );
 
   const linkedRecordOps: ReadonlyMap<string, LinkedRecordCellOps> | undefined = useMemo(() => {
-    if (!pumpsSlice?.pumps) return undefined;
-    return buildLinkedRecordOps<PumpRow>({
-      fieldDefs: controller.tableSchema.fieldDefs,
-      targetTablePath: PUMPS_TARGET_TABLE_PATH,
-      targetRows: pumpsSlice.pumps,
-      getRowId: (pump) => pump.id,
-      getRecordId: (pump) => customTextValueOrNull(pump, RECORD_ID_FIELD_KEY),
-      onPillClick: (rowId) => {
-        navigate(`/projects/${project.id}/equipment?tab=pumps&focus=${encodeURIComponent(rowId)}`);
-      },
-    });
-  }, [pumpsSlice, controller.tableSchema.fieldDefs, navigate, project.id]);
+    const maps: ReadonlyMap<string, LinkedRecordCellOps>[] = [];
+    if (spaceTypesSlice?.space_types) {
+      maps.push(
+        buildLinkedRecordOps<SpaceTypeRow>({
+          fieldDefs: controller.tableSchema.fieldDefs,
+          targetTablePath: SPACE_TYPES_TARGET_TABLE_PATH,
+          targetRows: spaceTypesSlice.space_types,
+          getRowId: (spaceType) => spaceType.id,
+          getRecordId: (spaceType) =>
+            customTextValueOrNull(spaceType, RECORD_ID_FIELD_KEY) ??
+            customTextValueOrNull(spaceType, SPACE_TYPE_NAME_FIELD_KEY),
+          getDisplayName: (spaceType) =>
+            customTextValueOrNull(spaceType, SPACE_TYPE_NAME_FIELD_KEY),
+          onPillClick: (rowId) => {
+            navigate({
+              pathname: spaceTypesPath(project.id),
+              search: `?focus=${encodeURIComponent(rowId)}`,
+            });
+          },
+        }),
+      );
+    }
+    if (pumpsSlice?.pumps) {
+      maps.push(
+        buildLinkedRecordOps<PumpRow>({
+          fieldDefs: controller.tableSchema.fieldDefs,
+          targetTablePath: PUMPS_TARGET_TABLE_PATH,
+          targetRows: pumpsSlice.pumps,
+          getRowId: (pump) => pump.id,
+          getRecordId: (pump) => customTextValueOrNull(pump, RECORD_ID_FIELD_KEY),
+          onPillClick: (rowId) => {
+            navigate(
+              `/projects/${project.id}/equipment?tab=pumps&focus=${encodeURIComponent(rowId)}`,
+            );
+          },
+        }),
+      );
+    }
+    return mergeLinkedRecordOps(maps);
+  }, [controller.tableSchema.fieldDefs, navigate, project.id, pumpsSlice, spaceTypesSlice]);
+
+  const linkedRecordTargets = useMemo(
+    () => linkedRecordTargetsFromFieldDefs(controller.tableSchema.fieldDefs),
+    [controller.tableSchema.fieldDefs],
+  );
 
   const reloadDraft = async () => {
     setRoomModal(null);
@@ -176,7 +217,7 @@ function RoomsPageBody(props: {
         )}
         onEdit={(room) => setRoomModal({ mode: "edit", room })}
         linkedRecordOps={linkedRecordOps}
-        linkedRecordTargets={ROOMS_LINKED_RECORD_TARGETS}
+        linkedRecordTargets={linkedRecordTargets}
         focusRowId={focusRowId}
       />
       <RoomDialogStack
@@ -196,4 +237,48 @@ function RoomsPageBody(props: {
       />
     </SliceTableShell>
   );
+}
+
+function mergeLinkedRecordOps(
+  maps: ReadonlyArray<ReadonlyMap<string, LinkedRecordCellOps>>,
+): ReadonlyMap<string, LinkedRecordCellOps> | undefined {
+  if (maps.length === 0) return undefined;
+  return new Map(maps.flatMap((map) => Array.from(map.entries())));
+}
+
+const LINKED_RECORD_TARGET_LABELS = new Map<string, string>([
+  [targetPathKey(SPACE_TYPES_TARGET_TABLE_PATH), "Space-Types"],
+  [targetPathKey(PUMPS_TARGET_TABLE_PATH), "Pumps"],
+]);
+
+function linkedRecordTargetsFromFieldDefs(
+  fieldDefs: ReadonlyArray<FieldDef>,
+): ReadonlyArray<LinkedRecordTargetTableOption> {
+  const targets = new Map<string, LinkedRecordTargetTableOption>();
+  for (const fieldDef of fieldDefs) {
+    const path = fieldDef.linked_record_config?.target_table_path;
+    if (!path) continue;
+    const key = targetPathKey(path);
+    targets.set(key, {
+      path: [...path],
+      label: LINKED_RECORD_TARGET_LABELS.get(key) ?? humanizeTargetPath(path),
+    });
+  }
+  for (const [key, label] of LINKED_RECORD_TARGET_LABELS) {
+    if (targets.has(key)) continue;
+    targets.set(key, { path: key.split("/"), label });
+  }
+  return Array.from(targets.values());
+}
+
+function targetPathKey(path: ReadonlyArray<string>): string {
+  return path.join("/");
+}
+
+function humanizeTargetPath(path: ReadonlyArray<string>): string {
+  const last = path.at(-1) ?? "Records";
+  return last
+    .split("_")
+    .map((word) => (word.length > 0 ? `${word.charAt(0).toUpperCase()}${word.slice(1)}` : word))
+    .join(" ");
 }
