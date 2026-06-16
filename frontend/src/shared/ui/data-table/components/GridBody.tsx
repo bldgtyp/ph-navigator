@@ -19,6 +19,7 @@ import type {
 } from "../types";
 import { LinkedRecordCell } from "../fields/linkedRecord/LinkedRecordCell";
 import { LinkedRecordPicker } from "../fields/linkedRecord/Picker";
+import { LookupCell } from "../fields/lookup/LookupCell";
 
 // Stable empty-options reference. Using `[]` inline forces a fresh array
 // identity each render, which would cascade through SingleSelectPopover's
@@ -524,6 +525,7 @@ function renderCellContent(args: {
     if (fieldDef?.field_type === "single_select") {
       return <SingleSelectCell value={cellValue} fieldDef={fieldDef} />;
     }
+    if (fieldDef?.field_type === "lookup") return <LookupCell value={cellValue} />;
     if (fieldDef?.field_type === "linked_record") {
       const ids = toLinkedIdList(cellValue);
       return (

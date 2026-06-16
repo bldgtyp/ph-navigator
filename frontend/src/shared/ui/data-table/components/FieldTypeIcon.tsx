@@ -2,6 +2,7 @@ import {
   AlignLeft,
   ArrowRightLeft,
   CircleChevronDown,
+  Eye,
   Hash,
   Link,
   Palette,
@@ -32,6 +33,7 @@ const FIELD_TYPE_ICON_META: Record<FieldTypeIconKind, FieldTypeIconMeta> = {
   computed: { Icon: SquareFunction, label: "Computed" },
   attachment: { Icon: Paperclip, label: "Attachment" },
   color: { Icon: Palette, label: "Color" },
+  lookup: { Icon: Eye, label: "Lookup" },
   linked_record: { Icon: ArrowRightLeft, label: "Linked record" },
 };
 

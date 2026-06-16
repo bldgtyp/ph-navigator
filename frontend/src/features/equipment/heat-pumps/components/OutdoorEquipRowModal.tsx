@@ -1,13 +1,12 @@
 import { useState } from "react";
 import { errorMessage } from "../../../../shared/lib/errors";
 import { ModalDialog } from "../../../../shared/ui/ModalDialog";
-import { indoorEquipLabel, numericValue, tagCollides } from "../lib";
+import { numericValue, tagCollides } from "../lib";
 import {
   COOLING_DATA_TYPES,
   HEATING_DATA_TYPES,
   HEAT_PUMP_OPTION_KEYS,
   type CoolingDataType,
-  type HeatPumpIndoorEquipRow,
   type HeatPumpOutdoorEquipRow,
   type HeatPumpsSlice,
   type HeatingDataType,
@@ -17,25 +16,21 @@ import { OptionPicker } from "./OptionPicker";
 export function OutdoorEquipRowModal({
   mode,
   row,
-  indoorEquip,
   existingEquip = [],
   options,
   onCancel,
   onSubmit,
   onDelete,
-  onCreateIndoorEquip,
   onCreateOption,
   readOnly,
 }: {
   mode: "add" | "edit";
   row: HeatPumpOutdoorEquipRow;
-  indoorEquip: HeatPumpIndoorEquipRow[];
   existingEquip?: HeatPumpOutdoorEquipRow[];
   options: HeatPumpsSlice["single_select_options"];
   onCancel: () => void;
   onSubmit: (row: HeatPumpOutdoorEquipRow) => Promise<void>;
   onDelete?: () => void;
-  onCreateIndoorEquip?: () => void;
   onCreateOption?: (
     optionKey:
       | typeof HEAT_PUMP_OPTION_KEYS.manufacturer
@@ -151,32 +146,6 @@ export function OutdoorEquipRowModal({
               }
               disabled={readOnly}
             />
-            <label className="hp-form-grid__wide">
-              Paired indoor equipment
-              <select
-                value={draft.paired_indoor_equip_id ?? ""}
-                onChange={(event) =>
-                  setDraft({ ...draft, paired_indoor_equip_id: event.target.value || null })
-                }
-                disabled={readOnly}
-              >
-                <option value="">None / VRF or multi-indoor</option>
-                {indoorEquip.map((indoor) => (
-                  <option key={indoor.id} value={indoor.id}>
-                    {indoorEquipLabel(indoor, manufacturerOptions)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {!readOnly && onCreateIndoorEquip ? (
-              <button
-                type="button"
-                className="secondary-button hp-inline-action"
-                onClick={onCreateIndoorEquip}
-              >
-                Create new indoor equipment
-              </button>
-            ) : null}
           </div>
         </section>
         <section className="hp-modal-section">

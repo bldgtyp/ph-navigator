@@ -91,6 +91,28 @@ export function outdoorUnitIdsByOutdoorEquip(
   return groupOutdoorUnitIds(outdoorUnits, (unit) => unit.outdoor_equip_id);
 }
 
+export function indoorEquipIdsByOutdoorEquip({
+  outdoorUnits,
+  indoorUnits,
+}: {
+  outdoorUnits: readonly HeatPumpOutdoorUnitRow[];
+  indoorUnits: readonly HeatPumpIndoorUnitRow[];
+}): ReadonlyMap<string, readonly string[]> {
+  const outdoorEquipIdByUnitId = new Map(
+    outdoorUnits.map((unit) => [unit.id, unit.outdoor_equip_id]),
+  );
+  const grouped = new Map<string, string[]>();
+  for (const unit of indoorUnits) {
+    if (!unit.outdoor_unit_id) continue;
+    const outdoorEquipId = outdoorEquipIdByUnitId.get(unit.outdoor_unit_id);
+    if (!outdoorEquipId) continue;
+    const ids = grouped.get(outdoorEquipId) ?? [];
+    if (!ids.includes(unit.indoor_equip_id)) ids.push(unit.indoor_equip_id);
+    grouped.set(outdoorEquipId, ids);
+  }
+  return grouped;
+}
+
 export function incomingOutdoorUnitIds(
   index: ReadonlyMap<string, readonly string[]>,
   targetId: string,

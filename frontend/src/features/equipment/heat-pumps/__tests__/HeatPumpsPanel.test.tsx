@@ -182,6 +182,22 @@ describe("HeatPumpsPanel", () => {
     expect(screen.getByRole("button", { name: "IU-A" })).toBeInTheDocument();
   });
 
+  test("renders paired indoor equipment as a read-only lookup from unit links", async () => {
+    renderPanel({
+      slice: heatPumpsSlice({
+        outdoor_equip: [outdoorEquipRow({ paired_indoor_equip_id: null })],
+        outdoor_units: [outdoorUnitRow()],
+        indoor_units: [indoorUnitRow()],
+      }),
+    });
+
+    const pairedHeader = await screen.findByRole("columnheader", {
+      name: /Paired indoor equip/,
+    });
+    expect(pairedHeader.querySelector('[data-field-type-icon="lookup"]')).toBeTruthy();
+    expect(screen.getByText(/PLA-A18EA8/)).toBeInTheDocument();
+  });
+
   test("renders indoor equipment capacity columns in IP units", async () => {
     const user = userEvent.setup();
     renderPanel({ unitSystem: "IP" });
@@ -445,4 +461,18 @@ function outdoorUnitRow(overrides: Partial<HeatPumpsSlice["outdoor_units"][numbe
     notes: null,
     ...overrides,
   } satisfies HeatPumpsSlice["outdoor_units"][number];
+}
+
+function indoorUnitRow(overrides: Partial<HeatPumpsSlice["indoor_units"][number]> = {}) {
+  return {
+    id: "hpiu_01HX0000000000000000000000",
+    tag: "IU-A",
+    indoor_equip_id: "hpie_01HX0000000000000000000000",
+    outdoor_unit_id: "hpou_01HX0000000000000000000000",
+    linked_erv_unit_id: null,
+    served_room_ids: [],
+    datasheet_asset_ids: [],
+    notes: null,
+    ...overrides,
+  } satisfies HeatPumpsSlice["indoor_units"][number];
 }

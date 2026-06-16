@@ -22,6 +22,7 @@ export type FieldType =
   | "computed"
   | "attachment"
   | "color"
+  | "lookup"
   | "linked_record";
 
 // Closed v1 set, mirrored from backend `CustomFieldType`.
@@ -105,6 +106,12 @@ export type FieldDef = {
   linked_record_config?: {
     target_table_path: string[];
     max_links: number | null;
+  };
+  // App-owned read-only projection from another source of truth. Unlike
+  // `linked_record`, lookup values are not edited in this table and do not
+  // imply a persisted id-array shape.
+  lookup_config?: {
+    source?: string;
   };
 };
 

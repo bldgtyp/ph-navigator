@@ -115,12 +115,16 @@ def compute_phius_payload(slice_: HeatPumpsTableSlice) -> PhiusPayload:
 
     qty_by_equip_id = _count_outdoor_units_by_equip_id(slice_)
     indoor_labels_by_id = {row.id: _indoor_label(row) for row in slice_.indoor_equip}
+    paired_indoor_label_by_equip_id = _paired_indoor_label_by_outdoor_equip_id(
+        slice_,
+        indoor_labels_by_id,
+    )
 
     rows: list[PhiusRow] = []
     warnings: list[PhiusWarning] = []
     for equip in slice_.outdoor_equip:
         qty = qty_by_equip_id.get(equip.id, 0)
-        rows.append(_build_row(equip, qty, indoor_labels_by_id))
+        rows.append(_build_row(equip, qty, paired_indoor_label_by_equip_id.get(equip.id)))
         warnings.extend(_validate(equip, qty))
     return PhiusPayload(rows=rows, warnings=warnings)
 
@@ -159,10 +163,43 @@ def _count_outdoor_units_by_equip_id(slice_: HeatPumpsTableSlice) -> dict[str, i
     return counts
 
 
+def _paired_indoor_label_by_outdoor_equip_id(
+    slice_: HeatPumpsTableSlice,
+    indoor_labels_by_id: dict[str, str],
+) -> dict[str, str]:
+    """Resolve exactly-one indoor equipment label per outdoor equipment.
+
+    The editable relationship lives on installed units: indoor unit →
+    outdoor unit → outdoor equipment. Multiple indoor equipment models
+    linked to one outdoor model indicate VRF / multi-indoor equipment, so
+    the Phius device label stays bare.
+    """
+
+    outdoor_equip_id_by_unit_id = {unit.id: unit.outdoor_equip_id for unit in slice_.outdoor_units}
+    indoor_equip_ids_by_outdoor_equip_id: dict[str, set[str]] = {}
+    for unit in slice_.indoor_units:
+        if unit.outdoor_unit_id is None:
+            continue
+        outdoor_equip_id = outdoor_equip_id_by_unit_id.get(unit.outdoor_unit_id)
+        if outdoor_equip_id is None:
+            continue
+        indoor_equip_ids_by_outdoor_equip_id.setdefault(outdoor_equip_id, set()).add(unit.indoor_equip_id)
+
+    labels: dict[str, str] = {}
+    for outdoor_equip_id, indoor_equip_ids in indoor_equip_ids_by_outdoor_equip_id.items():
+        if len(indoor_equip_ids) != 1:
+            continue
+        indoor_equip_id = next(iter(indoor_equip_ids))
+        indoor_label = indoor_labels_by_id.get(indoor_equip_id)
+        if indoor_label is not None:
+            labels[outdoor_equip_id] = indoor_label
+    return labels
+
+
 def _build_row(
     equip: HeatPumpOutdoorEquipRow,
     qty: int,
-    indoor_labels_by_id: dict[str, str],
+    paired_indoor_label: str | None,
 ) -> PhiusRow:
     # The discriminator gates which heating/cooling metric the Phius calc
     # reads from the pasted row. Always blank the cells the user's chosen
@@ -178,7 +215,7 @@ def _build_row(
     ieer = equip.ieer if equip.cooling_data_type == "IEER" else None
     return PhiusRow(
         row_id=equip.id,
-        device=_device_label(equip, indoor_labels_by_id),
+        device=_device_label(equip, paired_indoor_label),
         qty=qty,
         cap_17f=_kw_to_kbtuh(equip.heating_cap_kw_17f),
         cap_47f=_kw_to_kbtuh(equip.heating_cap_kw_47f),
@@ -202,7 +239,7 @@ def _kw_to_kbtuh(value: float | None) -> float | None:
 
 def _device_label(
     equip: HeatPumpOutdoorEquipRow,
-    indoor_labels_by_id: dict[str, str],
+    paired_indoor_label: str | None,
 ) -> str:
     """`PUZ-A18NKA7 [PLA-A18EA8]` for paired splits; bare for VRF / null.
 
@@ -210,14 +247,9 @@ def _device_label(
     """
 
     outdoor_label = _outdoor_label(equip)
-    paired_id = equip.paired_indoor_equip_id
-    if paired_id is None:
+    if paired_indoor_label is None:
         return outdoor_label
-    paired_label = indoor_labels_by_id.get(paired_id)
-    if paired_label is None:
-        # FK validator on the slice would have caught this; defensive bare output.
-        return outdoor_label
-    return f"{outdoor_label} [{paired_label}]"
+    return f"{outdoor_label} [{paired_indoor_label}]"
 
 
 def _outdoor_label(equip: HeatPumpOutdoorEquipRow) -> str:

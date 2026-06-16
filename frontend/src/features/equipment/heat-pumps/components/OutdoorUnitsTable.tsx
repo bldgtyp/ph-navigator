@@ -437,7 +437,6 @@ export function OutdoorUnitsTable({
         <OutdoorEquipRowModal
           mode="edit"
           row={modal.row}
-          indoorEquip={slice.indoor_equip}
           existingEquip={slice.outdoor_equip}
           options={slice.single_select_options}
           readOnly={readOnly}
@@ -450,12 +449,10 @@ export function OutdoorUnitsTable({
         <OutdoorEquipRowModal
           mode="add"
           row={modal.row}
-          indoorEquip={slice.indoor_equip}
           options={slice.single_select_options}
           readOnly={false}
           onCancel={() => setModal(null)}
           onSubmit={(equip) => addOutdoorEquipAndSelect(equip, modal.selectForUnitId)}
-          onCreateIndoorEquip={() => undefined}
           onCreateOption={createOption}
         />
       ) : null}
