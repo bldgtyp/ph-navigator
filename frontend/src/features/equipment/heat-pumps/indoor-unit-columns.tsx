@@ -2,56 +2,33 @@ import type { DataTableColumnDef, FieldDef } from "../../../shared/ui/data-table
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
 import type { RoomRow } from "../types";
-import { indoorEquipLabel, outdoorUnitLabel, roomLabel } from "./lib";
-import {
-  HEAT_PUMP_OPTION_KEYS,
-  type HeatPumpIndoorEquipRow,
-  type HeatPumpIndoorUnitRow,
-  type HeatPumpOutdoorUnitRow,
-  type HeatPumpsSlice,
-} from "./types";
-import type { FieldOption } from "../../../shared/ui/data-table";
+import { roomLabel } from "./lib";
+import { HEAT_PUMP_LINK_TARGETS } from "./link-fields";
+import { type HeatPumpIndoorUnitRow } from "./types";
 
 export const INDOOR_UNIT_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
 
-export function indoorUnitFieldDefs({
-  options,
-  indoorEquip,
-  outdoorUnits,
-}: {
-  options: HeatPumpsSlice["single_select_options"];
-  indoorEquip: readonly HeatPumpIndoorEquipRow[];
-  outdoorUnits: readonly HeatPumpOutdoorUnitRow[];
-}): FieldDef[] {
-  const manufacturer = options[HEAT_PUMP_OPTION_KEYS.manufacturer] ?? [];
-  // Same pattern as outdoor-unit-columns: synthetic FieldDef.options keyed
-  // by row id so the cell renderer can resolve the label without us
-  // teaching it about heat-pump rows.
-  const indoorEquipOptions: FieldOption[] = indoorEquip.map((row, index) => ({
-    id: row.id,
-    label: indoorEquipLabel(row, manufacturer),
-    color: "slategray",
-    order: index,
-  }));
-  const outdoorUnitOptions: FieldOption[] = outdoorUnits.map((row, index) => ({
-    id: row.id,
-    label: outdoorUnitLabel(row),
-    color: "slategray",
-    order: index,
-  }));
+export function indoorUnitFieldDefs(): FieldDef[] {
   return [
     { field_key: "tag", field_type: "text", display_name: "Tag", required: true },
     {
       field_key: "indoor_equip_id",
-      field_type: "single_select",
+      field_type: "linked_record",
       display_name: "Equipment",
-      options: indoorEquipOptions,
+      required: true,
+      linked_record_config: {
+        target_table_path: [...HEAT_PUMP_LINK_TARGETS.indoorEquip],
+        max_links: 1,
+      },
     },
     {
       field_key: "outdoor_unit_id",
-      field_type: "single_select",
+      field_type: "linked_record",
       display_name: "Outdoor unit",
-      options: outdoorUnitOptions,
+      linked_record_config: {
+        target_table_path: [...HEAT_PUMP_LINK_TARGETS.outdoorUnits],
+        max_links: 1,
+      },
     },
     {
       field_key: "served_room_ids",
@@ -117,14 +94,14 @@ export function indoorUnitColumnDefs({
       id: "indoor_equip_id",
       fieldKey: "indoor_equip_id",
       header: "Equipment",
-      accessor: (row) => row.indoor_equip_id,
+      accessor: (row) => [row.indoor_equip_id],
       defaultWidth: 220,
     },
     {
       id: "outdoor_unit_id",
       fieldKey: "outdoor_unit_id",
       header: "Outdoor unit",
-      accessor: (row) => row.outdoor_unit_id,
+      accessor: (row) => (row.outdoor_unit_id ? [row.outdoor_unit_id] : []),
       defaultWidth: 160,
     },
     {

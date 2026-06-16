@@ -77,6 +77,32 @@ describe("HeatPumpsPanel", () => {
     expect(await screen.findByRole("button", { name: "Add indoor unit" })).toBeInTheDocument();
   });
 
+  test("renders indoor unit native references as linked-record fields", async () => {
+    const user = userEvent.setup();
+    renderPanel({
+      slice: heatPumpsSlice({
+        outdoor_units: [outdoorUnitRow()],
+        indoor_units: [
+          buildEmptyIndoorUnitRow({
+            id: "hpiu_01HX0000000000000000000000",
+            tag: "IU-A",
+            indoor_equip_id: "hpie_01HX0000000000000000000000",
+            outdoor_unit_id: "hpou_01HX0000000000000000000000",
+          }),
+        ],
+      }),
+    });
+
+    await user.click(await screen.findByRole("tab", { name: "Units - Indoor" }));
+
+    const equipmentHeader = await screen.findByRole("columnheader", { name: /Equipment/ });
+    const outdoorHeader = screen.getByRole("columnheader", { name: /Outdoor unit/ });
+    expect(equipmentHeader.querySelector('[data-field-type-icon="linked_record"]')).toBeTruthy();
+    expect(outdoorHeader.querySelector('[data-field-type-icon="linked_record"]')).toBeTruthy();
+    expect(await screen.findByRole("button", { name: /IE-A/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "HP-1" })).toBeInTheDocument();
+  });
+
   test("opens linked room chips in the Room modal without leaving indoor units", async () => {
     const user = userEvent.setup();
     renderPanel({
@@ -122,6 +148,31 @@ describe("HeatPumpsPanel", () => {
     expect(screen.getByRole("columnheader", { name: /Heating Capacity kW/ })).toBeInTheDocument();
     expect(screen.queryByRole("columnheader", { name: /47F/ })).toBeNull();
     expect(screen.getAllByText("5.28").length).toBeGreaterThan(0);
+  });
+
+  test("shows incoming indoor-unit links on referenced Heat Pump tables", async () => {
+    const user = userEvent.setup();
+    renderPanel({
+      slice: heatPumpsSlice({
+        outdoor_units: [outdoorUnitRow()],
+        indoor_units: [
+          buildEmptyIndoorUnitRow({
+            id: "hpiu_01HX0000000000000000000000",
+            tag: "IU-A",
+            indoor_equip_id: "hpie_01HX0000000000000000000000",
+            outdoor_unit_id: "hpou_01HX0000000000000000000000",
+          }),
+        ],
+      }),
+    });
+
+    await user.click(await screen.findByRole("tab", { name: "Equipment - Indoor" }));
+    expect(await screen.findByRole("columnheader", { name: /Indoor units/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "IU-A" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "Units - Outdoor" }));
+    expect(await screen.findByRole("columnheader", { name: /Indoor units/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "IU-A" })).toBeInTheDocument();
   });
 
   test("renders indoor equipment capacity columns in IP units", async () => {
@@ -329,4 +380,15 @@ function indoorEquipRow(overrides: Partial<HeatPumpsSlice["indoor_equip"][number
     catalog_origin: null,
     ...overrides,
   } satisfies HeatPumpsSlice["indoor_equip"][number];
+}
+
+function outdoorUnitRow(overrides: Partial<HeatPumpsSlice["outdoor_units"][number]> = {}) {
+  return {
+    id: "hpou_01HX0000000000000000000000",
+    tag: "HP-1",
+    outdoor_equip_id: "hpoe_01HX0000000000000000000000",
+    datasheet_asset_ids: [],
+    notes: null,
+    ...overrides,
+  } satisfies HeatPumpsSlice["outdoor_units"][number];
 }

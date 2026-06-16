@@ -1239,9 +1239,10 @@ US-EQ-4 (amendment)
 1. Inherits US-Builder-Tables criteria 1–17.
 2. Column set per Heat Pumps PRD §4.5 — 9 fields.
 3. `tag` is the Record-ID; required; unique within table.
-4. `indoor_equip_id` required (picker per US-EQ-10 criterion 4
-   pattern). `outdoor_unit_id` nullable but encouraged; picker
-   sources `heat_pump_outdoor_units[]` rows.
+4. `indoor_equip_id` required and rendered as a single-link field
+   targeting Heat Pumps → Equipment - Indoor. `outdoor_unit_id`
+   nullable but encouraged and rendered as a single-link field
+   targeting Heat Pumps → Units - Outdoor.
 5. `served_room_ids[]` multi-select picker sources `tables.rooms[]`
    by `number` / `name`; empty array allowed; integers cap at the
    project's room count.
@@ -1304,5 +1305,16 @@ via `optionIdFromLabel` rather than picking from
 (criterion 7) is deferred until the shared single-select
 primitive lands; the free-text approach round-trips correctly in
 the meantime.
+
+### Link-field correction notes (2026-06-16)
+
+`Units - Indoor`.`Equipment` and `Units - Indoor`.`Outdoor unit`
+are native Heat Pumps references, not single-select vocabularies.
+The DataTable now exposes them as `linked_record` fields while
+preserving the backend row shape (`indoor_equip_id: string`,
+`outdoor_unit_id: string | null`). `Equipment - Indoor` and
+`Units - Outdoor` also show read-only incoming `Indoor units`
+columns computed from the loaded Heat Pumps slice, so both ends of
+the relationship are visible in the UI.
 
 ---

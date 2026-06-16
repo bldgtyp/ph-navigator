@@ -2,6 +2,11 @@ import type { DataTableColumnDef, FieldDef } from "../../../shared/ui/data-table
 import type { NumberUnitsConfig } from "../../../lib/units";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
+import {
+  incomingIndoorUnitIds,
+  incomingIndoorUnitColumnDef,
+  incomingIndoorUnitsFieldDef,
+} from "./link-fields";
 import { HEAT_PUMP_OPTION_KEYS, type HeatPumpIndoorEquipRow, type HeatPumpsSlice } from "./types";
 
 export const INDOOR_EQUIP_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
@@ -41,6 +46,7 @@ export function indoorEquipFieldDefs(options: HeatPumpsSlice["single_select_opti
       field_type: "attachment",
       display_name: "Datasheet",
     },
+    incomingIndoorUnitsFieldDef(),
     textField("notes", "Notes"),
   ];
 }
@@ -61,11 +67,15 @@ export function indoorEquipColumnDefs({
   isEditor,
   assetUrlById,
   onDatasheetChange,
+  indoorUnits = [],
+  incomingIndoorUnitIdsByRowId = new Map(),
 }: {
   projectId: string;
   isEditor: boolean;
   assetUrlById: Map<string, unknown>;
   onDatasheetChange: (row: HeatPumpIndoorEquipRow, next: string[]) => void | Promise<void>;
+  indoorUnits?: HeatPumpsSlice["indoor_units"];
+  incomingIndoorUnitIdsByRowId?: ReadonlyMap<string, readonly string[]>;
 }): DataTableColumnDef<HeatPumpIndoorEquipRow>[] {
   const number = (fieldKey: keyof HeatPumpIndoorEquipRow, header: string, width = 110) => ({
     id: fieldKey,
@@ -143,6 +153,10 @@ export function indoorEquipColumnDefs({
       measureText: (row) => `${row.datasheet_asset_ids.length} attachments`,
       defaultWidth: 260,
     },
+    incomingIndoorUnitColumnDef<HeatPumpIndoorEquipRow>({
+      indoorUnits,
+      getIncomingIds: (row) => incomingIndoorUnitIds(incomingIndoorUnitIdsByRowId, row.id),
+    }),
     {
       id: "notes",
       fieldKey: "notes",

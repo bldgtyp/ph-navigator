@@ -1,6 +1,6 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createQueryClient } from "../../../../app/query-client";
 import { OutdoorUnitsTable } from "../components/OutdoorUnitsTable";
@@ -58,7 +58,7 @@ describe("OutdoorUnitsTable", () => {
     await user.click(await screen.findByRole("button", { name: "Delete outdoor unit" }));
 
     expect(await screen.findByText(/clear the outdoor link on 1 indoor unit/i)).toBeInTheDocument();
-    expect(screen.getByText("AHU-1")).toBeInTheDocument();
+    expect(within(screen.getByRole("dialog")).getByText("AHU-1")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Delete and clear links" }));
 

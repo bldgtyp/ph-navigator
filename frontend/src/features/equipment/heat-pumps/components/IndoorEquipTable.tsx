@@ -1,17 +1,22 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
+  buildLinkedRecordOps,
   DataTable,
   emptyViewState,
+  type LinkedRecordCellOps,
   type ViewState,
   type WriteOp,
 } from "../../../../shared/ui/data-table";
 import { useAssetUrls } from "../../../assets/hooks";
+import { ventilatorsSliceFeature } from "../../api";
+import type { VentilatorRow } from "../../types";
 import { useHeatPumpOptionMutation, useHeatPumpPatchMutation } from "../api";
 import {
   buildEmptyIndoorEquipRow,
   buildNewHeatPumpOption,
   numericValue,
   sortedIndoorEquip,
+  sortedIndoorUnits,
   uniqueTagForAdd,
 } from "../lib";
 import {
@@ -19,11 +24,21 @@ import {
   indoorEquipDefaultHiddenColumns,
   indoorEquipFieldDefs,
 } from "../indoor-equip-columns";
-import type { HeatPumpIndoorEquipRow, HeatPumpOwnedOptionKey, HeatPumpsSlice } from "../types";
+import { HEAT_PUMP_LINK_TARGETS, indoorUnitIdsByIndoorEquip } from "../link-fields";
+import type {
+  HeatPumpIndoorEquipRow,
+  HeatPumpIndoorUnitRow,
+  HeatPumpOwnedOptionKey,
+  HeatPumpsSlice,
+} from "../types";
 import { addRowButton } from "../../routes/equipmentRowActions";
 import { IndoorEquipRowModal } from "./IndoorEquipRowModal";
+import { IndoorUnitRowModal } from "./IndoorUnitRowModal";
 
-type ModalState = { mode: "add" | "edit"; row: HeatPumpIndoorEquipRow } | null;
+type ModalState =
+  | { kind: "equip"; mode: "add" | "edit"; row: HeatPumpIndoorEquipRow }
+  | { kind: "unit"; row: HeatPumpIndoorUnitRow }
+  | null;
 
 export function IndoorEquipTable({
   projectId,
@@ -44,7 +59,21 @@ export function IndoorEquipTable({
   const [modal, setModal] = useState<ModalState>(null);
   const patchMutation = useHeatPumpPatchMutation(projectId);
   const optionMutation = useHeatPumpOptionMutation(projectId);
+  const accessMode = isEditor ? "editor" : "viewer";
+  const indoorUnitModalOpen = modal?.kind === "unit";
+  const ventilatorsQuery = ventilatorsSliceFeature.useSliceQuery(
+    projectId,
+    slice.version_id,
+    accessMode,
+    indoorUnitModalOpen,
+  );
+  const ventilators: VentilatorRow[] = ventilatorsQuery.data?.ventilators ?? [];
   const rows = useMemo(() => sortedIndoorEquip(slice.indoor_equip), [slice.indoor_equip]);
+  const indoorUnits = useMemo(() => sortedIndoorUnits(slice.indoor_units), [slice.indoor_units]);
+  const incomingIndoorUnitIdsByRowId = useMemo(
+    () => indoorUnitIdsByIndoorEquip(indoorUnits),
+    [indoorUnits],
+  );
   const assetIds = useMemo(
     () => Array.from(new Set(rows.flatMap((row) => row.datasheet_asset_ids))),
     [rows],
@@ -55,16 +84,37 @@ export function IndoorEquipTable({
     [assetUrls.data],
   );
   const readOnly = !isEditor || versionLocked;
+  const openIndoorUnitLink = useCallback(
+    (unitId: string) => {
+      const row = slice.indoor_units.find((candidate) => candidate.id === unitId);
+      if (row) setModal({ kind: "unit", row });
+    },
+    [slice.indoor_units],
+  );
+  const fieldDefs = useMemo(
+    () => indoorEquipFieldDefs(slice.single_select_options),
+    [slice.single_select_options],
+  );
+  const linkedRecordOps = useMemo<ReadonlyMap<string, LinkedRecordCellOps>>(
+    () =>
+      buildLinkedRecordOps<HeatPumpIndoorUnitRow>({
+        fieldDefs,
+        targetTablePath: HEAT_PUMP_LINK_TARGETS.indoorUnits,
+        targetRows: indoorUnits,
+        getRowId: (unit) => unit.id,
+        getRecordId: (unit) => unit.tag || unit.id,
+        onPillClick: openIndoorUnitLink,
+      }),
+    [fieldDefs, indoorUnits, openIndoorUnitLink],
+  );
   const columns = indoorEquipColumnDefs({
     projectId,
     isEditor: !readOnly,
     assetUrlById,
     onDatasheetChange: (row, next) => replaceIndoorRow({ ...row, datasheet_asset_ids: next }),
+    indoorUnits,
+    incomingIndoorUnitIdsByRowId,
   });
-  const fieldDefs = useMemo(
-    () => indoorEquipFieldDefs(slice.single_select_options),
-    [slice.single_select_options],
-  );
 
   async function createOption(optionKey: HeatPumpOwnedOptionKey, label: string): Promise<string> {
     const existing = slice.single_select_options[optionKey] ?? [];
@@ -91,6 +141,15 @@ export function IndoorEquipTable({
     await patchMutation.mutateAsync({
       current: slice,
       table: "indoor-equip",
+      patch: { op: "replace", path: `/${row.id}`, value: row },
+    });
+    setModal(null);
+  }
+
+  async function replaceIndoorUnit(row: HeatPumpIndoorUnitRow) {
+    await patchMutation.mutateAsync({
+      current: slice,
+      table: "indoor-units",
       patch: { op: "replace", path: `/${row.id}`, value: row },
     });
     setModal(null);
@@ -171,15 +230,16 @@ export function IndoorEquipTable({
         onViewChange={setView}
         onWrite={handleWrite}
         readOnly={readOnly}
+        linkedRecordOps={linkedRecordOps}
         emptyMessage="No indoor heat-pump models defined."
-        onRowOpen={(row) => setModal({ mode: "edit", row })}
+        onRowOpen={(row) => setModal({ kind: "equip", mode: "edit", row })}
         sessionKey={`${projectId}:heat-pumps:indoor-equip:${slice.version_id}`}
         generateRowId={() => buildEmptyIndoorEquipRow().id}
         footerAction={addRowButton("Add indoor model", !readOnly, () =>
-          setModal({ mode: "add", row: buildEmptyIndoorEquipRow() }),
+          setModal({ kind: "equip", mode: "add", row: buildEmptyIndoorEquipRow() }),
         )}
       />
-      {modal ? (
+      {modal?.kind === "equip" ? (
         <IndoorEquipRowModal
           mode={modal.mode}
           row={modal.row}
@@ -190,6 +250,20 @@ export function IndoorEquipTable({
           onSubmit={modal.mode === "add" ? addIndoorRow : replaceIndoorRow}
           onDelete={modal.mode === "edit" ? () => void deleteIndoorRow(modal.row) : undefined}
           onCreateOption={readOnly ? undefined : createOption}
+        />
+      ) : null}
+      {modal?.kind === "unit" ? (
+        <IndoorUnitRowModal
+          mode="edit"
+          row={modal.row}
+          indoorEquip={slice.indoor_equip}
+          outdoorUnits={slice.outdoor_units}
+          ventilators={ventilators}
+          existingUnits={slice.indoor_units}
+          options={slice.single_select_options}
+          readOnly={readOnly}
+          onCancel={() => setModal(null)}
+          onSubmit={replaceIndoorUnit}
         />
       ) : null}
     </>

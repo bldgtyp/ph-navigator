@@ -29,7 +29,7 @@ export function OutdoorUnitRowModal({
   onCancel: () => void;
   onSubmit: (row: HeatPumpOutdoorUnitRow) => Promise<void>;
   onDelete?: () => void;
-  onCreateOutdoorEquip: () => void;
+  onCreateOutdoorEquip?: () => void;
   readOnly: boolean;
 }) {
   const [draft, setDraft] = useState(row);
@@ -108,7 +108,7 @@ export function OutdoorUnitRowModal({
                 ))}
               </select>
             </label>
-            {!readOnly ? (
+            {!readOnly && onCreateOutdoorEquip ? (
               <button
                 type="button"
                 className="secondary-button hp-inline-action"
