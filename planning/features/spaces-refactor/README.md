@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-16
 TIME: 15:59 EDT
-STATUS: Active - planning complete, awaiting implementation
+STATUS: Active - Phase 04 complete; Phase 05 next
 AUTHOR: Ed (via Codex)
 SCOPE: Refactor the current Rooms top-level tab into a Spaces parent tab,
   add a Space-Types project-document DataTable, link Rooms to Space-Types,

@@ -3,6 +3,7 @@ import { AppSubTabLink, AppSubTabs } from "../../../shared/ui/AppSubTabs";
 import { RoomsPage } from "../../equipment/routes/RoomsPage";
 import type { ProjectDetail } from "../../projects/types";
 import { spaceTypesPath, spacesRoomsPath } from "../paths";
+import { SpaceTypesPage } from "./SpaceTypesPage";
 
 export function SpacesPage({ project }: { project: ProjectDetail }) {
   const location = useLocation();
@@ -55,16 +56,11 @@ export function SpacesPage({ project }: { project: ProjectDetail }) {
           Rooms
         </AppSubTabLink>
       </AppSubTabs>
-      {activeTab === "rooms" ? <RoomsPage project={project} /> : <SpaceTypesPlaceholder />}
+      {activeTab === "rooms" ? (
+        <RoomsPage project={project} />
+      ) : (
+        <SpaceTypesPage project={project} />
+      )}
     </>
-  );
-}
-
-function SpaceTypesPlaceholder() {
-  return (
-    <section className="tab-panel spaces-panel" aria-label="Space-Types">
-      <h2>Space-Types</h2>
-      <p>No space types yet.</p>
-    </section>
   );
 }

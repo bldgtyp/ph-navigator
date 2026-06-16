@@ -2,6 +2,7 @@ import { useMemo, type CSSProperties } from "react";
 import {
   DataTable,
   RECORD_ID_FIELD_KEY,
+  getCustomLink,
   type DataTableColumnDef,
   type DataTableProps,
   type FieldDef,
@@ -22,6 +23,7 @@ import {
   ROOM_BUILDING_ZONE_KEY,
   ROOM_FLOOR_LEVEL_COLUMN_ID,
   ROOM_FLOOR_LEVEL_KEY,
+  ROOM_SPACE_TYPE_FIELD_KEY,
   type RoomRow,
   type RoomsSlice,
 } from "../types";
@@ -92,6 +94,20 @@ export function RoomsTable({
   );
   const columns = useMemo<DataTableColumnDef<RoomRow>[]>(() => {
     const recordIdFieldDef = fieldDefByKey.get(RECORD_ID_FIELD_KEY);
+    const spaceTypeColumn: DataTableColumnDef<RoomRow>[] = fieldDefByKey.has(
+      ROOM_SPACE_TYPE_FIELD_KEY,
+    )
+      ? [
+          {
+            id: ROOM_SPACE_TYPE_FIELD_KEY,
+            fieldKey: ROOM_SPACE_TYPE_FIELD_KEY,
+            header: fieldDefByKey.get(ROOM_SPACE_TYPE_FIELD_KEY)?.display_name ?? "Space Type",
+            accessor: (room) => getCustomLink(room, ROOM_SPACE_TYPE_FIELD_KEY),
+            measureText: (room) => getCustomLink(room, ROOM_SPACE_TYPE_FIELD_KEY).join(","),
+            defaultWidth: 180,
+          },
+        ]
+      : [];
     return [
       computedFieldColumnDef({
         fieldKey: RECORD_ID_FIELD_KEY,
@@ -128,6 +144,7 @@ export function RoomsTable({
         accessor: (room) => room.building_zone,
         render: (room) => optionPill(room.building_zone, fieldDefByKey.get(ROOM_BUILDING_ZONE_KEY)),
       },
+      ...spaceTypeColumn,
       {
         id: "num_people",
         fieldKey: "num_people",

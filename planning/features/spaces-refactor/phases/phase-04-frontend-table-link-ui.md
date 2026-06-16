@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-16
 TIME: 15:59 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Space-Types DataTable UI, Rooms single-link picker, and reverse
   Rooms link rendering.
@@ -28,36 +28,46 @@ Space-Types side.
 
 ## Tasks
 
-1. Add frontend Space-Types types and slice feature:
+1. [x] Add frontend Space-Types types and slice feature:
    - `SPACE_TYPES_TABLE_NAME = "space_types"`
    - `SpaceTypeRow`
    - `SpaceTypesSlice`
    - `SpaceTypesReplacePayload`
    - `spaceTypesSliceFeature`
-2. Build Space-Types table components by following current equipment
+2. [x] Build Space-Types table components by following current equipment
    table slot/controller patterns:
    - `SpaceTypesTable.tsx`
    - `SpaceTypesTableSlot.tsx`
    - `buildEmptySpaceTypeRow.ts`
    - controller payload builders
-3. Render Tag and Name columns using the shared DataTable.
-4. Render read-only reverse Rooms links from `inverse_links` /
+3. [x] Render Tag and Name columns using the shared DataTable.
+4. [x] Render read-only reverse Rooms links from `inverse_links` /
    `inverse_link_fields`. Pills should label Rooms by `Record-ID`
    formula if available, then number/name, then row id.
-5. In `RoomsPage`, fetch Space-Types alongside Rooms and build
+5. [x] In `RoomsPage`, fetch Space-Types alongside Rooms and build
    `LinkedRecordCellOps` for the built-in `space_type_id` field.
-6. Derive linked-record target options from backend metadata when
+6. [x] Derive linked-record target options from backend metadata when
    available; remove the current hard-coded target-list pattern where
    feasible.
-7. Ensure the Rooms picker enforces single-link UX for
+7. [x] Ensure the Rooms picker enforces single-link UX for
    `max_links: 1`.
-8. Add frontend tests:
+8. [x] Add frontend tests:
    - Space-Types empty state and add-row flow;
    - Rooms Space Type cell write persists one id;
    - Rooms Space Type picker rejects/limits multiple picks;
    - Space-Types reverse Rooms column displays linked Rooms;
    - reverse Room pill navigates to `/spaces/rooms?focus=...&open=1`;
    - locked/viewer mode disables edits.
+
+## Completion Notes
+
+- Implemented on 2026-06-16.
+- Focused tests cover Space-Types row creation/write/duplicate
+  payloads, duplicate/blank Tag validation, Space-Types Tag/Name
+  rendering, reverse Rooms link rendering/click callbacks, viewer
+  read-only rendering, Rooms built-in Space Type linked-record rendering,
+  `space_type_id` write persistence, and `max_links: 1` metadata.
+- Full `make ci` intentionally remains deferred until Phase 05.
 
 ## Acceptance Criteria
 

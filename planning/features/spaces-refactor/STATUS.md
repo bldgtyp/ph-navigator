@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-16
 TIME: 17:34 EDT
-STATUS: Active - Phase 03 complete; Phase 04 next
+STATUS: Active - Phase 04 complete; Phase 05 next
 AUTHOR: Ed (via Codex)
 SCOPE: Current state of Spaces refactor planning.
 RELATED:
@@ -14,7 +14,7 @@ RELATED:
 
 ## Current State
 
-`Active - Phase 03 complete; Phase 04 next`.
+`Active - Phase 04 complete; Phase 05 next`.
 
 Phase 01 backend work is implemented and verified:
 
@@ -45,11 +45,28 @@ Phase 03 frontend route work is implemented:
 - Added canonical Spaces path helpers and shared E2E Rooms navigation
   helper during `$ simplify`.
 
+Phase 04 frontend table/link UI work is implemented:
+
+- Added the Space-Types frontend table-slice feature, row/payload types,
+  route, DataTable components, slot, empty-row builder, and slice
+  payload builders.
+- Added Space-Types Tag/Name rendering and read-only inverse Rooms
+  columns using backend `inverse_links` / `inverse_link_fields`.
+- Wired Rooms to fetch Space-Types, render built-in `space_type_id` as a
+  linked-record column, and build `LinkedRecordCellOps` for both
+  Space-Types and existing Pumps links.
+- Updated frontend Rooms compatibility FieldDefs so `space_type_id`
+  matches the backend linked-record contract (`target_table_path:
+  ["space_types"]`, `max_links: 1`).
+- Added focused frontend coverage for Space-Types payload builders,
+  Space-Types table rendering/reverse links/viewer mode, and Rooms Space
+  Type linked-record rendering/write metadata.
+
 ## Next Step
 
-Begin Phase 04:
+Begin Phase 05:
 
-`planning/features/spaces-refactor/phases/phase-04-frontend-table-link-ui.md`
+`planning/features/spaces-refactor/phases/phase-05-verification-docs-closeout.md`
 
 ## Blockers
 
@@ -106,6 +123,9 @@ None for starting Phase 01.
 - 2026-06-16 17:34 EDT: Phase 03 closeout complete. `$ docs-pass`
   made no stable `context/` edits; final context updates remain in
   Phase 05 after Space-Types table and Rooms link UI verification.
+- 2026-06-16 17:49 EDT: Phase 04 implementation and focused frontend
+  verification complete. Full `make ci` remains deferred until Phase 05
+  per current direction.
 
 ## Phase 02 Verification
 
@@ -145,5 +165,18 @@ None for starting Phase 01.
   - Passed on 2026-06-16 17:33 EDT.
 - `$ docs-pass`
   - Completed on 2026-06-16 17:34 EDT; no stable `context/` edits.
+- Full `make ci`
+  - Deferred until Phase 05 per current direction.
+
+## Phase 04 Verification
+
+- `cd frontend && pnpm exec vitest run src/features/spaces/__tests__/spaceTypesController.test.ts src/features/spaces/__tests__/SpaceTypesTable.test.tsx src/features/equipment/__tests__/RoomsTable.linkedRecord.test.tsx --reporter=dot`
+  - 14 passed on 2026-06-16 17:48 EDT.
+- `make frontend-dev-check`
+  - Passed on 2026-06-16 17:49 EDT; ESLint reported only the existing
+    Apertures Fast Refresh warnings and Vite reported the existing large
+    chunk warning.
+- `make format`
+  - Passed through the frontend formatter on 2026-06-16 17:47 EDT.
 - Full `make ci`
   - Deferred until Phase 05 per current direction.

@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
 import { RoomsTable } from "../components/RoomsTable";
+import { roomsPayloadFromCellWrites } from "../lib";
 import {
   buildLinkedRecordOps,
   emptyViewState,
@@ -13,7 +14,8 @@ import {
   roomsFieldDefs,
   schemaForRooms,
 } from "../testing/testFixtures";
-import { PUMPS_TARGET_TABLE_PATH } from "../types";
+import { SPACE_TYPES_TARGET_TABLE_PATH } from "../../spaces/types";
+import { PUMPS_TARGET_TABLE_PATH, ROOM_SPACE_TYPE_FIELD_KEY } from "../types";
 
 const linkedRecordField = () =>
   buildCustomField({
@@ -142,5 +144,65 @@ describe("RoomsTable linked_record column", () => {
     });
     expect(ops.size).toBeGreaterThan(0);
     expect(ops.get("cf_pumps")).toBeDefined();
+  });
+
+  test("renders built-in Space Type links from the custom_links bag", () => {
+    const room = buildRoom({
+      custom_links: { [ROOM_SPACE_TYPE_FIELD_KEY]: ["st_office"] },
+    });
+    const slice = buildRoomsSlice({
+      rooms: [room],
+      field_defs: roomsFieldDefs(),
+    });
+    const ops = buildLinkedRecordOps({
+      fieldDefs: schemaForRooms(slice).fieldDefs,
+      targetTablePath: SPACE_TYPES_TARGET_TABLE_PATH,
+      targetRows: [{ id: "st_office", record_id: "Office" }],
+      getRowId: (spaceType) => spaceType.id,
+      getRecordId: (spaceType) => spaceType.record_id,
+    });
+
+    render(
+      <RoomsTable
+        roomsSlice={slice}
+        tableSchema={schemaForRooms(slice)}
+        isEditor
+        onEdit={vi.fn()}
+        view={emptyViewState()}
+        onViewChange={vi.fn()}
+        onWrite={vi.fn()}
+        linkedRecordOps={ops}
+      />,
+    );
+
+    expect(screen.getByRole("columnheader", { name: /Space Type/ })).toBeInTheDocument();
+    expect(screen.getByText("Office")).toBeInTheDocument();
+  });
+
+  test("Space Type FieldDef is configured as a single linked-record target", () => {
+    const slice = buildRoomsSlice({ field_defs: roomsFieldDefs() });
+    const fieldDef = schemaForRooms(slice).fieldDefs.find(
+      (candidate) => candidate.field_key === ROOM_SPACE_TYPE_FIELD_KEY,
+    );
+
+    expect(fieldDef?.linked_record_config).toEqual({
+      target_table_path: [...SPACE_TYPES_TARGET_TABLE_PATH],
+      max_links: 1,
+    });
+  });
+
+  test("Space Type cell writes persist exactly one id in custom_links", () => {
+    const slice = buildRoomsSlice({
+      rooms: [buildRoom({ id: "rm_1" })],
+      field_defs: roomsFieldDefs(),
+    });
+
+    const payload = roomsPayloadFromCellWrites(
+      slice,
+      [{ rowId: "rm_1", fieldKey: ROOM_SPACE_TYPE_FIELD_KEY, value: ["st_office"] }],
+      {},
+    );
+
+    expect(payload.rooms[0]?.custom_links?.[ROOM_SPACE_TYPE_FIELD_KEY]).toEqual(["st_office"]);
   });
 });
