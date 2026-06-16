@@ -24,7 +24,7 @@ import {
   sortedIndoorUnits,
   uniqueTagForAdd,
 } from "../lib";
-import { HEAT_PUMP_LINK_TARGETS } from "../link-fields";
+import { firstLinkedId, HEAT_PUMP_LINK_TARGETS, linkedIds } from "../link-fields";
 import {
   indoorUnitColumnDefs,
   indoorUnitDefaultHiddenColumns,
@@ -437,13 +437,4 @@ function indoorUnitWriteValue(fieldKey: string, value: unknown): unknown {
   if (fieldKey === "outdoor_unit_id") return firstLinkedId(value);
   if (fieldKey === "served_room_ids") return linkedIds(value);
   return value === "" ? null : value;
-}
-
-function firstLinkedId(value: unknown): string | null {
-  return linkedIds(value)[0] ?? null;
-}
-
-function linkedIds(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value.filter((entry): entry is string => typeof entry === "string" && entry.length > 0);
 }

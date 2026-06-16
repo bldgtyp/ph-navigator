@@ -4,11 +4,17 @@ import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
 import { indoorEquipLabel } from "./lib";
 import {
+  incomingOutdoorUnitColumnDef,
+  incomingOutdoorUnitIds,
+  incomingOutdoorUnitsFieldDef,
+} from "./link-fields";
+import {
   COOLING_DATA_TYPES,
   HEATING_DATA_TYPES,
   HEAT_PUMP_OPTION_KEYS,
   type HeatPumpIndoorEquipRow,
   type HeatPumpOutdoorEquipRow,
+  type HeatPumpOutdoorUnitRow,
   type HeatPumpsSlice,
 } from "./types";
 
@@ -103,6 +109,7 @@ export function outdoorEquipFieldDefs({
       field_type: "attachment",
       display_name: "Datasheet",
     },
+    incomingOutdoorUnitsFieldDef(),
     textField("notes", "Notes"),
   ];
 }
@@ -114,6 +121,8 @@ export function outdoorEquipColumnDefs({
   isEditor,
   assetUrlById,
   onDatasheetChange,
+  outdoorUnits = [],
+  incomingOutdoorUnitIdsByRowId = new Map(),
 }: {
   projectId: string;
   isEditor: boolean;
@@ -122,6 +131,8 @@ export function outdoorEquipColumnDefs({
   // related `indoorEquip` list — both flow through `outdoorEquipFieldDefs`.
   assetUrlById: Map<string, unknown>;
   onDatasheetChange: (row: HeatPumpOutdoorEquipRow, next: string[]) => void | Promise<void>;
+  outdoorUnits?: readonly HeatPumpOutdoorUnitRow[];
+  incomingOutdoorUnitIdsByRowId?: ReadonlyMap<string, readonly string[]>;
 }): DataTableColumnDef<HeatPumpOutdoorEquipRow>[] {
   const number = (fieldKey: keyof HeatPumpOutdoorEquipRow, header: string, width = 110) => ({
     id: fieldKey,
@@ -225,6 +236,10 @@ export function outdoorEquipColumnDefs({
       measureText: (row) => `${row.datasheet_asset_ids.length} attachments`,
       defaultWidth: 260,
     },
+    incomingOutdoorUnitColumnDef<HeatPumpOutdoorEquipRow>({
+      outdoorUnits,
+      getIncomingIds: (row) => incomingOutdoorUnitIds(incomingOutdoorUnitIdsByRowId, row.id),
+    }),
     {
       id: "notes",
       fieldKey: "notes",
