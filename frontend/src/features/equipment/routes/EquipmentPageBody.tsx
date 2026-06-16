@@ -13,6 +13,7 @@ import { HotWaterTanksTableSlot } from "../components/HotWaterTanksTableSlot";
 import { PumpsTableSlot } from "../components/PumpsTableSlot";
 import { VentilatorsTableSlot } from "../components/VentilatorsTableSlot";
 import { VENTILATOR_LINKED_HP_INDOOR_COLUMN_ID } from "../components/VentilatorsTable";
+import { rememberedHeatPumpLeafPath } from "../heat-pumps/routes/heatPumpLeafTabs";
 import { HeatPumpsPanel } from "../heat-pumps/routes/HeatPumpsPanel";
 import {
   useAppliancesSchemaMutation,
@@ -243,7 +244,7 @@ export function EquipmentPageBody(props: {
   const selectTab = (next: typeof activeTab) => {
     setActiveTab(next);
     if (next === "heat-pumps") {
-      navigate(`/projects/${project.id}/equipment/heat-pumps/equipment-outdoor`);
+      navigate(rememberedHeatPumpLeafPath(project.id));
     } else {
       navigate(`/projects/${project.id}/equipment?tab=${next}`);
     }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppSubTabButton, AppSubTabs } from "../../../../shared/ui/AppSubTabs";
 import type { ProjectDetail } from "../../../projects/types";
@@ -7,15 +7,15 @@ import { IndoorEquipTable } from "../components/IndoorEquipTable";
 import { IndoorUnitsTable } from "../components/IndoorUnitsTable";
 import { OutdoorEquipTable } from "../components/OutdoorEquipTable";
 import { OutdoorUnitsTable } from "../components/OutdoorUnitsTable";
-
-const HEAT_PUMP_LEAF_TABS = [
-  { key: "equipment-outdoor", label: "Equipment - Outdoor" },
-  { key: "equipment-indoor", label: "Equipment - Indoor" },
-  { key: "units-outdoor", label: "Units - Outdoor" },
-  { key: "units-indoor", label: "Units - Indoor" },
-] as const;
-
-type HeatPumpLeafKey = (typeof HEAT_PUMP_LEAF_TABS)[number]["key"];
+import {
+  DEFAULT_HEAT_PUMP_LEAF,
+  HEAT_PUMP_LEAF_TABS,
+  heatPumpLeafPath,
+  leafFromPath,
+  readRememberedHeatPumpLeaf,
+  rememberHeatPumpLeaf,
+  type HeatPumpLeafKey,
+} from "./heatPumpLeafTabs";
 
 export function HeatPumpsPanel({ project }: { project: ProjectDetail }) {
   const navigate = useNavigate();
@@ -28,8 +28,19 @@ export function HeatPumpsPanel({ project }: { project: ProjectDetail }) {
     project.access_mode,
   );
   const [activeLeaf, setActiveLeaf] = useState<HeatPumpLeafKey>(
-    requestedLeaf ?? "equipment-outdoor",
+    () => requestedLeaf ?? readRememberedHeatPumpLeaf(project.id) ?? DEFAULT_HEAT_PUMP_LEAF,
   );
+
+  useEffect(() => {
+    const nextLeaf =
+      requestedLeaf ?? readRememberedHeatPumpLeaf(project.id) ?? DEFAULT_HEAT_PUMP_LEAF;
+    setActiveLeaf((current) => (current === nextLeaf ? current : nextLeaf));
+    if (requestedLeaf) {
+      rememberHeatPumpLeaf(project.id, requestedLeaf);
+    } else {
+      navigate(heatPumpLeafPath(project.id, nextLeaf), { replace: true });
+    }
+  }, [navigate, project.id, requestedLeaf]);
 
   if (query.isLoading) {
     return <p>Loading heat pumps...</p>;
@@ -52,7 +63,8 @@ export function HeatPumpsPanel({ project }: { project: ProjectDetail }) {
             active={activeLeaf === tab.key}
             onClick={() => {
               setActiveLeaf(tab.key);
-              navigate(`/projects/${project.id}/equipment/heat-pumps/${tab.key}`);
+              rememberHeatPumpLeaf(project.id, tab.key);
+              navigate(heatPumpLeafPath(project.id, tab.key));
             }}
           >
             {tab.label}
@@ -91,12 +103,4 @@ export function HeatPumpsPanel({ project }: { project: ProjectDetail }) {
       )}
     </div>
   );
-}
-
-function leafFromPath(path: string): HeatPumpLeafKey | null {
-  const [leaf] = path.split("/");
-  if (leaf && HEAT_PUMP_LEAF_TABS.some((tab) => tab.key === leaf)) {
-    return leaf as HeatPumpLeafKey;
-  }
-  return null;
 }

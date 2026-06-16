@@ -1013,7 +1013,9 @@ placeholder) · **Priority:** MVP
    `Units — Outdoor`, `Units — Indoor`. shadcn `Tabs` smaller
    variant (per Heat Pumps PRD D-HP-13).
 3. URL deep-link per the route shape in the Heat Pumps PRD §5.2.
-   `…/heat-pumps` redirects to `…/heat-pumps/equipment-outdoor`.
+   `…/heat-pumps` redirects to the last Heat Pumps leaf used in the
+   current browser session, or `…/heat-pumps/equipment-outdoor` when
+   no session leaf exists.
 4. Each leaf page renders exactly one DataTable wired to the
    underlying project document body shape (US-EQ-8..11).
 5. Locked-version + Viewer rendering inherited — nested nav still
