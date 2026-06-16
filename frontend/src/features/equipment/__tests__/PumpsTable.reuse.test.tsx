@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactElement } from "react";
 import { createQueryClient } from "../../../app/query-client";
+import { spacesRoomsPath } from "../../spaces/paths";
 import { emptyViewState } from "../../../shared/ui/data-table";
 import { PumpsTable } from "../components/PumpsTable";
 import { routeForInverseSource } from "../lib/inverseRoutes";
@@ -237,7 +238,7 @@ describe("PumpsTable DataTable reuse", () => {
         },
         "rm_a",
       ),
-    ).toBe("/projects/proj_1/rooms?focus=rm_a");
+    ).toBe(`${spacesRoomsPath("proj_1")}?focus=rm_a`);
 
     expect(
       routeForInverseSource(

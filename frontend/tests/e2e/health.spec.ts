@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { createProject, signIn } from "./_helpers";
+import { createProject, openRoomsTable, signIn } from "./_helpers";
 
 test.describe.configure({ mode: "serial" });
 
@@ -44,8 +44,7 @@ test("editor creates a project and public viewer can open the shell", async ({ p
   await expect(page.getByText("Certification Complete")).toHaveCount(0);
   const publicStatusUrl = page.url();
 
-  await page.getByRole("link", { name: "Rooms" }).click();
-  await expect(page.getByRole("region", { name: "Rooms" })).toBeVisible();
+  await openRoomsTable(page);
   await page.getByRole("button", { name: "Add New Room" }).click();
   const newRoomDialog = page.getByRole("dialog", { name: "New room" });
   await newRoomDialog.getByLabel("Number").fill("101");
@@ -136,8 +135,7 @@ test.skip("same-editor Rooms tabs freeze stale active edits", async ({ page, con
   const btNumber = `tabs-${Date.now().toString().slice(-8)}`;
   await createProject(page, { name: `Tab Conflict ${btNumber}`, btNumber });
 
-  await page.getByRole("link", { name: "Rooms" }).click();
-  await expect(page.getByRole("region", { name: "Rooms" })).toBeVisible();
+  await openRoomsTable(page);
   await page.getByRole("button", { name: "Add New Room" }).click();
   const newRoomDialog = page.getByRole("dialog", { name: "New room" });
   await newRoomDialog.getByLabel("Number").fill("101");

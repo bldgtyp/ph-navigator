@@ -1,3 +1,4 @@
+import { spacesRoomsPath } from "../../spaces/paths";
 import type { InverseLinkField } from "../types";
 
 const EQUIPMENT_SOURCE_TAB_BY_TABLE: Record<string, string> = {
@@ -18,7 +19,7 @@ export function routeForInverseSource(
   const [root, child] = field.source_table_path;
   const focus = encodeURIComponent(rowId);
   if (root === "rooms" && child === undefined) {
-    return `/projects/${projectId}/rooms?focus=${focus}`;
+    return `${spacesRoomsPath(projectId)}?focus=${focus}`;
   }
   if (root === "equipment" && child) {
     const tab = EQUIPMENT_SOURCE_TAB_BY_TABLE[child];

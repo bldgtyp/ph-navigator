@@ -3,8 +3,8 @@ import { AperturesTab } from "../../apertures/routes/AperturesTab";
 import { ThermalBridgesPage } from "../../assets/routes/ThermalBridgesPage";
 import { EquipmentPage } from "../../equipment/routes/EquipmentPage";
 import { EnvelopePage } from "../../envelope/routes/EnvelopePage";
-import { RoomsPage } from "../../equipment/routes/RoomsPage";
 import { StatusTab } from "../../project_status/routes/StatusTab";
+import { SpacesPage } from "../../spaces/routes/SpacesPage";
 import { TAB_COPY, TAB_LABELS, type ProjectTab } from "../lib";
 import type { ProjectDetail } from "../types";
 
@@ -35,8 +35,8 @@ export function ProjectTabContent({ tab, project }: { tab: ProjectTab; project: 
     return <AperturesTab project={project} />;
   }
 
-  if (tab === "rooms") {
-    return <RoomsPage project={project} />;
+  if (tab === "spaces") {
+    return <SpacesPage project={project} />;
   }
 
   if (tab === "equipment") {

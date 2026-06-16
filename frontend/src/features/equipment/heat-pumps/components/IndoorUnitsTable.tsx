@@ -165,8 +165,8 @@ export function IndoorUnitsTable({
         const label = roomLabel(room);
         return label.length > 0 ? label : null;
       },
-      // Chip click opens the standard Room modal in place. The legacy
-      // /rooms?focus=...&open=1 route still exists for external deep links.
+      // Chip click opens the standard Room modal in place. The
+      // /spaces/rooms?focus=...&open=1 route exists for external deep links.
       onPillClick: setLinkedRoomId,
     });
     const ventilatorOps = buildLinkedRecordOps<VentilatorRow>({

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createProject, signIn } from "./_helpers";
+import { createProject, openRoomsTable, signIn } from "./_helpers";
 
 test.describe.configure({ mode: "serial" });
 
@@ -17,8 +17,7 @@ test("rooms row context menu — Duplicate clones with (copy) suffix; ⌘Z remov
     name: `Rooms Dup ${suffix}`,
     btNumber: `rd-${suffix}`,
   });
-  await page.getByRole("link", { name: "Rooms" }).click();
-  await expect(page.getByRole("region", { name: "Rooms" })).toBeVisible();
+  await openRoomsTable(page);
 
   await page.getByRole("button", { name: "Add New Room" }).click();
   const dialog = page.getByRole("dialog", { name: "New room" });

@@ -1,6 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { test, expect } from "@playwright/test";
-import { createProject, openHeaderMenu, signIn } from "./_helpers";
+import { createProject, openHeaderMenu, openRoomsTable, signIn } from "./_helpers";
 
 const SCREENSHOT_DIR = "../docs/plans/2026-05-24/screenshots/custom-fields-phase-2";
 
@@ -12,8 +12,7 @@ test("custom-field Phase 2 editor walkthrough", async ({ page }) => {
 
   const btNumber = `cf2-${Date.now().toString().slice(-8)}`;
   await createProject(page, { name: `Custom Fields ${btNumber}`, btNumber });
-  await page.getByRole("link", { name: "Rooms" }).click();
-  await expect(page.getByRole("region", { name: "Rooms" })).toBeVisible();
+  await openRoomsTable(page);
 
   await page.getByRole("button", { name: "Add field" }).click();
   const addDialog = page.getByRole("dialog", { name: "Add field" });

@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes, useParams } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import { RequireAuth } from "../features/auth/routes/RequireAuth";
 import { SignInPage } from "../features/auth/routes/SignInPage";
 import { FrameTypesCatalogPage } from "../features/catalogs/routes/FrameTypesCatalogPage";
@@ -7,6 +7,7 @@ import { MaterialsCatalogPage } from "../features/catalogs/routes/MaterialsCatal
 import { Dashboard } from "../features/projects/routes/Dashboard";
 import { ProjectShell } from "../features/projects/routes/ProjectShell";
 import { ProjectTabRedirect } from "../features/projects/routes/ProjectTabRedirect";
+import { spacesRoomsPath } from "../features/spaces/paths";
 
 export function AppRouter() {
   return (
@@ -36,6 +37,7 @@ export function AppRouter() {
       />
       <Route path="/projects/:projectId" element={<ProjectTabRedirect />} />
       <Route path="/projects/:projectId/windows/*" element={<WindowsToAperturesRedirect />} />
+      <Route path="/projects/:projectId/rooms" element={<RoomsToSpacesRedirect />} />
       <Route path="/projects/:projectId/:tab/*" element={<ProjectShell />} />
       <Route path="/" element={<RootRoute />} />
       <Route path="*" element={<Navigate to="/" replace />} />
@@ -50,4 +52,19 @@ function RootRoute() {
 function WindowsToAperturesRedirect() {
   const { projectId } = useParams();
   return <Navigate to={`/projects/${projectId}/apertures`} replace />;
+}
+
+function RoomsToSpacesRedirect() {
+  const { projectId } = useParams();
+  const location = useLocation();
+  return (
+    <Navigate
+      to={{
+        pathname: spacesRoomsPath(projectId ?? ""),
+        search: location.search,
+        hash: location.hash,
+      }}
+      replace
+    />
+  );
 }

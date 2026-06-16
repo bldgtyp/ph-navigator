@@ -8,6 +8,7 @@ import {
   roomsBuiltInFieldDefs,
   withRoomCustomValues,
 } from "./features/equipment/testing/testFixtures";
+import { spaceTypesPath, spacesRoomsPath } from "./features/spaces/paths";
 
 const fetchMock = vi.fn();
 
@@ -302,9 +303,97 @@ describe("App", () => {
     expect(screen.getByRole("link", { name: "2426 - West Stockbridge House" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Status" })).toBeVisible();
     const projectTabs = screen.getByRole("navigation", { name: "Project tabs" });
-    expect(within(projectTabs).getByRole("link", { name: "Rooms" })).toBeVisible();
+    expect(within(projectTabs).getByRole("link", { name: "Spaces" })).toBeVisible();
+    expect(within(projectTabs).queryByRole("link", { name: "Rooms" })).not.toBeInTheDocument();
     expect(within(projectTabs).getByRole("link", { name: "Thermal Bridges" })).toBeVisible();
     expect(window.location.pathname).toBe(`/projects/${projectPayload.id}/status`);
+  });
+
+  test("renders Spaces in the project tab list instead of Rooms", async () => {
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
+    const draftUrl = draftSummaryUrl();
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "/api/v1/auth/session") return sessionResponse();
+      if (url === `/api/v1/projects/${projectPayload.id}`) return jsonResponse(projectPayload);
+      if (url === draftUrl) return jsonResponse(draftSummaryPayload);
+      if (url === `/api/v1/projects/${projectPayload.id}/status-items`) {
+        return jsonResponse({ items: [] });
+      }
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+
+    await screen.findByRole("heading", { name: "Status" });
+    const projectTabs = screen.getByRole("navigation", { name: "Project tabs" });
+    expect(within(projectTabs).getByRole("link", { name: "Spaces" })).toHaveAttribute(
+      "href",
+      spaceTypesPath(projectPayload.id),
+    );
+    expect(within(projectTabs).queryByRole("link", { name: "Rooms" })).not.toBeInTheDocument();
+  });
+
+  test("redirects Spaces to the Space-Types sub-tab by default", async () => {
+    window.history.pushState(
+      {},
+      "",
+      `/projects/${projectPayload.id}/spaces?version=${alternateVersion.id}`,
+    );
+    const draftUrl = draftSummaryUrl(projectPayload.id, alternateVersion.id);
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "/api/v1/auth/session") return sessionResponse();
+      if (url === `/api/v1/projects/${projectPayload.id}`) {
+        return jsonResponse({
+          ...projectPayload,
+          active_version: alternateVersion,
+          active_version_id: alternateVersion.id,
+          versions: [projectPayload.versions[0], alternateVersion],
+        });
+      }
+      if (url === draftUrl)
+        return jsonResponse({ ...draftSummaryPayload, version_id: alternateVersion.id });
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+
+    expect(await screen.findByRole("region", { name: "Space-Types" })).toBeVisible();
+    expect(window.location.pathname).toBe(spaceTypesPath(projectPayload.id));
+    expect(window.location.search).toBe(`?version=${alternateVersion.id}`);
+    expect(screen.getByRole("button", { name: "Space-Types" })).toHaveAttribute(
+      "data-active",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Rooms" })).toBeVisible();
+  });
+
+  test("redirects legacy Rooms URLs into Spaces Rooms without dropping query params", async () => {
+    window.history.pushState(
+      {},
+      "",
+      `/projects/${projectPayload.id}/rooms?focus=rm_a&open=1&version=${projectPayload.active_version_id}`,
+    );
+    const draftUrl = draftSummaryUrl();
+    const roomsUrl = `/api/v1/projects/${projectPayload.id}/versions/${projectPayload.active_version_id}/draft/tables/rooms`;
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "/api/v1/auth/session") return sessionResponse();
+      if (url === `/api/v1/projects/${projectPayload.id}`) return jsonResponse(projectPayload);
+      if (url === draftUrl) return jsonResponse(draftSummaryPayload);
+      if (url === roomsUrl) return jsonResponse(roomsSlicePayload);
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+
+    expect(await screen.findByRole("region", { name: "Rooms" })).toBeVisible();
+    expect(window.location.pathname).toBe(spacesRoomsPath(projectPayload.id));
+    expect(window.location.search).toBe(
+      `?focus=rm_a&open=1&version=${projectPayload.active_version_id}`,
+    );
+    expect(screen.getByRole("button", { name: "Rooms" })).toHaveAttribute("data-active", "true");
   });
 
   test("bulk soft-deletes selected dashboard projects and restores from Recently Deleted", async () => {
@@ -971,7 +1060,7 @@ describe("App", () => {
 
   test("adds a room through the Rooms page draft path", async () => {
     const user = userEvent.setup();
-    window.history.pushState({}, "", `/projects/${projectPayload.id}/rooms`);
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/spaces/rooms`);
     const roomsUrl = `/api/v1/projects/${projectPayload.id}/versions/${projectPayload.active_version_id}/draft/tables/rooms`;
     const draftUrl = draftSummaryUrl();
     fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
@@ -1039,7 +1128,7 @@ describe("App", () => {
 
   test("downgrades an open room edit when the version is locked elsewhere", async () => {
     const user = userEvent.setup();
-    window.history.pushState({}, "", `/projects/${projectPayload.id}/rooms`);
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/spaces/rooms`);
     const roomsUrl = `/api/v1/projects/${projectPayload.id}/versions/${projectPayload.active_version_id}/draft/tables/rooms`;
     const draftUrl = draftSummaryUrl();
     const room = withRoomCustomValues(
