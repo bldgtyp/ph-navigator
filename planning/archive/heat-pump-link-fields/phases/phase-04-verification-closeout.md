@@ -6,8 +6,8 @@ AUTHOR: Codex
 SCOPE: Final verification, docs pass, and closeout for Heat Pumps link
   fields.
 RELATED:
-  - planning/features/heat-pump-link-fields/STATUS.md
-  - planning/features/heat-pump-link-fields/PRD.md
+  - planning/archive/heat-pump-link-fields/STATUS.md
+  - planning/archive/heat-pump-link-fields/PRD.md
   - context/user-stories/30-tables-equipment.md
 ---
 
@@ -21,8 +21,8 @@ RELATED:
 ## Tasks
 
 1. Update durable docs:
-   - `planning/features/heat-pump-link-fields/STATUS.md`
-   - `planning/features/heat-pump-link-fields/PRD.md` if decisions
+   - `planning/archive/heat-pump-link-fields/STATUS.md`
+   - `planning/archive/heat-pump-link-fields/PRD.md` if decisions
      changed during implementation.
    - `context/user-stories/30-tables-equipment.md` if the current
      Heat Pumps user-story language still says these are single-select

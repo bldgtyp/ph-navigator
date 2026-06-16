@@ -6,7 +6,7 @@ AUTHOR: Codex
 SCOPE: Render Units - Indoor Equipment and Outdoor unit as link fields
   while preserving Heat Pumps native storage.
 RELATED:
-  - planning/features/heat-pump-link-fields/PRD.md
+  - planning/archive/heat-pump-link-fields/PRD.md
   - frontend/src/features/equipment/heat-pumps/indoor-unit-columns.tsx
   - frontend/src/features/equipment/heat-pumps/components/IndoorUnitsTable.tsx
 ---

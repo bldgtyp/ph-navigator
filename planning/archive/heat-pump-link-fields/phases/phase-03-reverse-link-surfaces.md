@@ -6,7 +6,7 @@ AUTHOR: Codex
 SCOPE: Add read-only referenced-side visibility for Heat Pumps native
   relationships.
 RELATED:
-  - planning/features/heat-pump-link-fields/PRD.md
+  - planning/archive/heat-pump-link-fields/PRD.md
   - frontend/src/features/equipment/heat-pumps/components/IndoorEquipTable.tsx
   - frontend/src/features/equipment/heat-pumps/components/OutdoorUnitsTable.tsx
   - frontend/src/features/equipment/components/PumpsTable.tsx
