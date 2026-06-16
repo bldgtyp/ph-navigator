@@ -172,6 +172,36 @@ describe("IndoorUnitsTable", () => {
       expect(Array.isArray(body.value.linked_erv_unit_id)).toBe(false);
     });
   });
+
+  test("linked-record ventilator chip opens the Ventilator modal", async () => {
+    const slice = baseSlice({
+      indoor_units: [indoorUnit({ linked_erv_unit_id: "vent_a" })],
+    });
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/assets/bulk-urls")) return jsonResponse({ items: [] });
+      if (url.endsWith("/api/v1/projects/proj_1/versions/ver_1/draft/tables/rooms")) {
+        return jsonResponse(roomsSlice());
+      }
+      if (url.endsWith("/api/v1/projects/proj_1/versions/ver_1/draft/tables/ventilators")) {
+        return jsonResponse({
+          ...ventilatorsSlice(),
+          ventilators: [ventilator("vent_a", "ERV-A")],
+        });
+      }
+      return jsonResponse({});
+    });
+
+    renderTable(slice);
+
+    let linkedErvPill = await screen.findByRole("button", { name: /ERV-A/ });
+    fireEvent.click(linkedErvPill);
+    linkedErvPill = await screen.findByRole("button", { name: /ERV-A/ });
+    fireEvent.click(linkedErvPill);
+
+    expect(await screen.findByRole("dialog", { name: /Ventilator: ERV-A/ })).toBeInTheDocument();
+    expect(screen.getByLabelText("Name")).toHaveValue("ERV-A unit");
+  });
 });
 
 function renderTable(slice: HeatPumpsSlice) {
@@ -200,6 +230,21 @@ function roomsSlice() {
     rooms: [buildRoom()],
     rows_computed: {},
   });
+}
+
+function ventilatorsSlice() {
+  return {
+    project_id: "proj_1",
+    version_id: "ver_1",
+    source: "draft",
+    version_etag: "version_1",
+    draft_etag: "draft_1",
+    ventilators: [],
+    field_defs: [],
+    single_select_options: {
+      "ventilators.inside_outside": [],
+    },
+  };
 }
 
 function baseSlice(overrides: Partial<HeatPumpsSlice> = {}): HeatPumpsSlice {

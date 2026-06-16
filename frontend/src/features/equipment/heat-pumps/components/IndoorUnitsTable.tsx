@@ -42,6 +42,7 @@ import {
 import { useHeatPumpTableViewState } from "../useHeatPumpTableViewState";
 import { IndoorEquipRowModal } from "./IndoorEquipRowModal";
 import { IndoorUnitRowModal } from "./IndoorUnitRowModal";
+import { LinkedVentilatorModalHost } from "./LinkedVentilatorModalHost";
 import { OutdoorUnitRowModal } from "./OutdoorUnitRowModal";
 import { BlockedDeleteDialog } from "./CascadePreviewDialog";
 
@@ -49,6 +50,7 @@ type ModalState =
   | { kind: "unit"; mode: "add" | "edit"; row: HeatPumpIndoorUnitRow }
   | { kind: "indoor-equip"; row: HeatPumpIndoorEquipRow }
   | { kind: "outdoor-unit"; row: HeatPumpOutdoorUnitRow }
+  | { kind: "ventilator"; row: VentilatorRow }
   | { kind: "equip-create"; row: HeatPumpIndoorEquipRow; selectForUnitId: string }
   | null;
 
@@ -127,6 +129,13 @@ export function IndoorUnitsTable({
     },
     [slice.outdoor_units],
   );
+  const openVentilatorLink = useCallback(
+    (rowId: string) => {
+      const row = ventilators.find((candidate) => candidate.id === rowId);
+      if (row) setModal({ kind: "ventilator", row });
+    },
+    [ventilators],
+  );
   const linkedRecordOps = useMemo<ReadonlyMap<string, LinkedRecordCellOps>>(() => {
     const manufacturerOptions =
       slice.single_select_options[HEAT_PUMP_OPTION_KEYS.manufacturer] ?? [];
@@ -166,6 +175,7 @@ export function IndoorUnitsTable({
       targetRows: ventilators,
       getRowId: (ventilator) => ventilator.id,
       getRecordId: (ventilator) => ventilatorLabel(ventilator),
+      onPillClick: openVentilatorLink,
     });
     const next = new Map<string, LinkedRecordCellOps>([
       ...indoorEquipOps,
@@ -188,6 +198,7 @@ export function IndoorUnitsTable({
     fieldDefs,
     openIndoorEquipLink,
     openOutdoorUnitLink,
+    openVentilatorLink,
     rooms,
     roomsQuery.isLoading,
     slice.indoor_equip,
@@ -443,6 +454,16 @@ export function IndoorUnitsTable({
           readOnly={readOnly}
           onCancel={() => setModal(null)}
           onSubmit={replaceOutdoorUnit}
+        />
+      ) : null}
+      {modal?.kind === "ventilator" ? (
+        <LinkedVentilatorModalHost
+          projectId={projectId}
+          versionId={slice.version_id}
+          ventilatorsSlice={ventilatorsQuery.data ?? null}
+          row={modal.row}
+          readOnly={readOnly}
+          onClose={() => setModal(null)}
         />
       ) : null}
       {blockedDialog ? (
