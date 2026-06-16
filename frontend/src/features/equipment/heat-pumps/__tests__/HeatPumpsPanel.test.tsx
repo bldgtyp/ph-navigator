@@ -6,11 +6,12 @@ import { MemoryRouter, useLocation } from "react-router-dom";
 import { createQueryClient } from "../../../../app/query-client";
 import type { UnitSystem } from "../../../../lib/units";
 import { UnitPreferenceContext } from "../../../../lib/units/preference-context";
+import { emptyViewState, type ViewState } from "../../../../shared/ui/data-table";
 import type { ProjectDetail } from "../../../projects/types";
 import { buildRoom, buildRoomsSlice } from "../../testing/testFixtures";
 import { buildEmptyIndoorUnitRow } from "../lib";
 import { HeatPumpsPanel } from "../routes/HeatPumpsPanel";
-import type { HeatPumpsSlice } from "../types";
+import { HEAT_PUMP_OUTDOOR_EQUIP_TABLE_NAME, type HeatPumpsSlice } from "../types";
 
 const fetchMock = vi.fn();
 
@@ -196,6 +197,26 @@ describe("HeatPumpsPanel", () => {
     expect(screen.getAllByText("18.0").length).toBeGreaterThan(0);
   });
 
+  test("keeps saved outdoor equipment field order across leaf remounts", async () => {
+    const user = userEvent.setup();
+    renderPanel({
+      savedTableViews: {
+        [HEAT_PUMP_OUTDOOR_EQUIP_TABLE_NAME]: {
+          ...emptyViewState(),
+          columnOrder: ["manufacturer", "tag", "model_number"],
+        },
+      },
+    });
+
+    await expectHeaderOrder(["Manufacturer", "Tag", "Model number"]);
+
+    await user.click(await screen.findByRole("tab", { name: "Equipment - Indoor" }));
+    expect(await screen.findByRole("button", { name: "Add indoor model" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "Equipment - Outdoor" }));
+    await expectHeaderOrder(["Manufacturer", "Tag", "Model number"]);
+  });
+
   test("adds an outdoor equipment row through the Phase 0 PATCH API", async () => {
     const user = userEvent.setup();
     renderPanel({ slice: heatPumpsSlice({ outdoor_equip: [] }) });
@@ -220,7 +241,12 @@ describe("HeatPumpsPanel", () => {
 function renderPanel({
   slice = heatPumpsSlice(),
   unitSystem = "SI",
-}: { slice?: HeatPumpsSlice; unitSystem?: UnitSystem } = {}) {
+  savedTableViews = {},
+}: {
+  slice?: HeatPumpsSlice;
+  unitSystem?: UnitSystem;
+  savedTableViews?: Record<string, ViewState>;
+} = {}) {
   fetchMock.mockImplementation((input: RequestInfo | URL) => {
     const url = String(input);
     if (url.includes("/assets/bulk-urls")) {
@@ -231,6 +257,16 @@ function renderPanel({
     }
     if (url.endsWith("/api/v1/projects/proj_1/versions/ver_1/draft/tables/rooms")) {
       return jsonResponse(roomsSlice());
+    }
+    const tableViewMatch = url.match(/\/api\/v1\/projects\/proj_1\/table-views\/([^/?]+)$/);
+    const tableKey = tableViewMatch?.[1];
+    if (tableKey) {
+      const view = savedTableViews[tableKey];
+      return jsonResponse({
+        view_state_schema_version: 1,
+        view_state: view ? { schema_fingerprint: "test-fingerprint", view_state: view } : null,
+        updated_at: view ? "2026-06-16T00:00:00Z" : null,
+      });
     }
     if (url.endsWith("/api/v1/projects/proj_1/equipment/heat-pumps/outdoor-equip")) {
       return jsonResponse({
@@ -261,6 +297,18 @@ function renderPanel({
       </QueryClientProvider>
     </MemoryRouter>,
   );
+}
+
+async function expectHeaderOrder(expectedHeaders: string[]) {
+  const firstHeader = expectedHeaders[0];
+  if (!firstHeader) throw new Error("Expected at least one header.");
+  await screen.findByRole("columnheader", { name: new RegExp(firstHeader) });
+  const headers = screen.getAllByRole("columnheader");
+  const indexes = expectedHeaders.map((header) =>
+    headers.findIndex((element) => element.textContent?.includes(header)),
+  );
+  expect(indexes.every((index) => index >= 0)).toBe(true);
+  expect(indexes).toEqual([...indexes].sort((a, b) => a - b));
 }
 
 function LocationProbe() {

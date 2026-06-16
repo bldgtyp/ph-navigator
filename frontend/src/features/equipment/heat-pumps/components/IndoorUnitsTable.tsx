@@ -4,9 +4,7 @@ import { errorMessage } from "../../../../shared/lib/errors";
 import {
   buildLinkedRecordOps,
   DataTable,
-  emptyViewState,
   type LinkedRecordCellOps,
-  type ViewState,
   type WriteOp,
 } from "../../../../shared/ui/data-table";
 import { useAssetUrls } from "../../../assets/hooks";
@@ -31,6 +29,7 @@ import {
   indoorUnitFieldDefs,
 } from "../indoor-unit-columns";
 import {
+  HEAT_PUMP_INDOOR_UNITS_TABLE_NAME,
   HEAT_PUMP_OPTION_KEYS,
   type CascadeReference,
   type HeatPumpIndoorEquipRow,
@@ -39,6 +38,7 @@ import {
   type HeatPumpOwnedOptionKey,
   type HeatPumpsSlice,
 } from "../types";
+import { useHeatPumpTableViewState } from "../useHeatPumpTableViewState";
 import { IndoorEquipRowModal } from "./IndoorEquipRowModal";
 import { IndoorUnitRowModal } from "./IndoorUnitRowModal";
 import { OutdoorUnitRowModal } from "./OutdoorUnitRowModal";
@@ -62,11 +62,6 @@ export function IndoorUnitsTable({
   isEditor: boolean;
   versionLocked: boolean;
 }) {
-  const [view, setView] = useState<ViewState>(() => ({
-    ...emptyViewState(),
-    sort: [{ fieldKey: "tag", direction: "asc" }],
-    hiddenColumns: indoorUnitDefaultHiddenColumns,
-  }));
   const [modal, setModal] = useState<ModalState>(null);
   const [blockedDialog, setBlockedDialog] = useState<{
     message: string;
@@ -104,6 +99,15 @@ export function IndoorUnitsTable({
     onDatasheetChange: (row, next) => replaceUnit({ ...row, datasheet_asset_ids: next }),
   });
   const fieldDefs = useMemo(() => indoorUnitFieldDefs(), []);
+  const tableView = useHeatPumpTableViewState({
+    projectId,
+    tableKey: HEAT_PUMP_INDOOR_UNITS_TABLE_NAME,
+    isEditor,
+    columns,
+    fieldDefs,
+    sort: [{ fieldKey: "tag", direction: "asc" }],
+    hiddenColumns: indoorUnitDefaultHiddenColumns,
+  });
   const openIndoorEquipLink = useCallback(
     (rowId: string) => {
       const row = slice.indoor_equip.find((candidate) => candidate.id === rowId);
@@ -302,51 +306,56 @@ export function IndoorUnitsTable({
 
   return (
     <>
-      <DataTable
-        rows={rows}
-        getRowId={(row) => row.id}
-        fieldDefs={fieldDefs}
-        columnDefs={columns}
-        view={view}
-        onViewChange={setView}
-        onWrite={handleWrite}
-        readOnly={readOnly}
-        emptyMessage={
-          noEquip
-            ? "No indoor units yet. Add an indoor equipment row first under Equipment — Indoor."
-            : "No indoor units yet."
-        }
-        onRowOpen={(row) => setModal({ kind: "unit", mode: "edit", row })}
-        sessionKey={`${projectId}:heat-pumps:indoor-units:${slice.version_id}`}
-        generateRowId={() => buildEmptyIndoorUnitRow().id}
-        linkedRecordOps={linkedRecordOps}
-        footerAction={
-          readOnly ? null : (
-            <button
-              type="button"
-              className="data-table-add-row-button"
-              aria-label="Add indoor unit"
-              title={
-                noEquip
-                  ? "Add an indoor equipment row first under Equipment — Indoor"
-                  : "Add indoor unit"
-              }
-              disabled={noEquip}
-              onClick={() =>
-                setModal({
-                  kind: "unit",
-                  mode: "add",
-                  row: buildEmptyIndoorUnitRow({
-                    indoor_equip_id: slice.indoor_equip[0]?.id ?? "",
-                  }),
-                })
-              }
-            >
-              +
-            </button>
-          )
-        }
-      />
+      {tableView.isLoading ? (
+        <p className="form-note">Loading table view...</p>
+      ) : (
+        <DataTable
+          rows={rows}
+          getRowId={(row) => row.id}
+          fieldDefs={fieldDefs}
+          columnDefs={columns}
+          view={tableView.view}
+          onViewChange={tableView.onViewChange}
+          onResetView={tableView.reset}
+          onWrite={handleWrite}
+          readOnly={readOnly}
+          emptyMessage={
+            noEquip
+              ? "No indoor units yet. Add an indoor equipment row first under Equipment — Indoor."
+              : "No indoor units yet."
+          }
+          onRowOpen={(row) => setModal({ kind: "unit", mode: "edit", row })}
+          sessionKey={`${projectId}:heat-pumps:indoor-units:${slice.version_id}`}
+          generateRowId={() => buildEmptyIndoorUnitRow().id}
+          linkedRecordOps={linkedRecordOps}
+          footerAction={
+            readOnly ? null : (
+              <button
+                type="button"
+                className="data-table-add-row-button"
+                aria-label="Add indoor unit"
+                title={
+                  noEquip
+                    ? "Add an indoor equipment row first under Equipment — Indoor"
+                    : "Add indoor unit"
+                }
+                disabled={noEquip}
+                onClick={() =>
+                  setModal({
+                    kind: "unit",
+                    mode: "add",
+                    row: buildEmptyIndoorUnitRow({
+                      indoor_equip_id: slice.indoor_equip[0]?.id ?? "",
+                    }),
+                  })
+                }
+              >
+                +
+              </button>
+            )
+          }
+        />
+      )}
       {linkedRoomId && roomsQuery.data ? (
         <LinkedRoomDialogHost
           projectId={projectId}

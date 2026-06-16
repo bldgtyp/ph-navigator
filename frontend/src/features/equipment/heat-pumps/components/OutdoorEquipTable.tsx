@@ -2,9 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import {
   buildLinkedRecordOps,
   DataTable,
-  emptyViewState,
   type LinkedRecordCellOps,
-  type ViewState,
   type WriteOp,
 } from "../../../../shared/ui/data-table";
 import { useAssetUrls } from "../../../assets/hooks";
@@ -26,12 +24,14 @@ import {
 } from "../outdoor-equip-columns";
 import {
   HEAT_PUMP_OWNED_OPTION_KEYS,
+  HEAT_PUMP_OUTDOOR_EQUIP_TABLE_NAME,
   type HeatPumpIndoorEquipRow,
   type HeatPumpOutdoorEquipRow,
   type HeatPumpOutdoorUnitRow,
   type HeatPumpOwnedOptionKey,
   type HeatPumpsSlice,
 } from "../types";
+import { useHeatPumpTableViewState } from "../useHeatPumpTableViewState";
 import { addRowButton } from "../../routes/equipmentRowActions";
 import { IndoorEquipRowModal } from "./IndoorEquipRowModal";
 import { OutdoorEquipRowModal } from "./OutdoorEquipRowModal";
@@ -61,11 +61,6 @@ export function OutdoorEquipTable({
   isEditor: boolean;
   versionLocked: boolean;
 }) {
-  const [view, setView] = useState<ViewState>(() => ({
-    ...emptyViewState(),
-    sort: [{ fieldKey: "tag", direction: "asc" }],
-    hiddenColumns: outdoorEquipDefaultHiddenColumns,
-  }));
   const [modal, setModal] = useState<ModalState>(null);
   const [phiusDialogOpen, setPhiusDialogOpen] = useState(false);
   const patchMutation = useHeatPumpPatchMutation(projectId);
@@ -146,6 +141,15 @@ export function OutdoorEquipTable({
       }),
     [fieldDefs, openOutdoorUnitLink, outdoorUnits],
   );
+  const tableView = useHeatPumpTableViewState({
+    projectId,
+    tableKey: HEAT_PUMP_OUTDOOR_EQUIP_TABLE_NAME,
+    isEditor,
+    columns,
+    fieldDefs,
+    sort: [{ fieldKey: "tag", direction: "asc" }],
+    hiddenColumns: outdoorEquipDefaultHiddenColumns,
+  });
 
   /**
    * Persists a new option onto one of the heat-pumps-owned single-select lists.
@@ -280,35 +284,40 @@ export function OutdoorEquipTable({
 
   return (
     <>
-      <DataTable
-        rows={rows}
-        getRowId={(row) => row.id}
-        fieldDefs={fieldDefs}
-        columnDefs={columns}
-        view={view}
-        onViewChange={setView}
-        onWrite={handleWrite}
-        readOnly={readOnly}
-        linkedRecordOps={linkedRecordOps}
-        emptyMessage="No heat-pump outdoor equipment yet."
-        onRowOpen={(row) => setModal({ kind: "outdoor", mode: "edit", row })}
-        sessionKey={`${projectId}:heat-pumps:outdoor-equip:${slice.version_id}`}
-        generateRowId={() => buildEmptyOutdoorEquipRow().id}
-        footerAction={addRowButton("Add outdoor equipment", !readOnly, () =>
-          setModal({ kind: "outdoor", mode: "add", row: buildEmptyOutdoorEquipRow() }),
-        )}
-        overflowMenuActions={
-          <button
-            type="button"
-            className="data-table-menu-item"
-            disabled={rows.length === 0}
-            title={rows.length === 0 ? "Add an outdoor heat-pump model first." : undefined}
-            onClick={() => setPhiusDialogOpen(true)}
-          >
-            Export to Phius HP Estimator...
-          </button>
-        }
-      />
+      {tableView.isLoading ? (
+        <p className="form-note">Loading table view...</p>
+      ) : (
+        <DataTable
+          rows={rows}
+          getRowId={(row) => row.id}
+          fieldDefs={fieldDefs}
+          columnDefs={columns}
+          view={tableView.view}
+          onViewChange={tableView.onViewChange}
+          onResetView={tableView.reset}
+          onWrite={handleWrite}
+          readOnly={readOnly}
+          linkedRecordOps={linkedRecordOps}
+          emptyMessage="No heat-pump outdoor equipment yet."
+          onRowOpen={(row) => setModal({ kind: "outdoor", mode: "edit", row })}
+          sessionKey={`${projectId}:heat-pumps:outdoor-equip:${slice.version_id}`}
+          generateRowId={() => buildEmptyOutdoorEquipRow().id}
+          footerAction={addRowButton("Add outdoor equipment", !readOnly, () =>
+            setModal({ kind: "outdoor", mode: "add", row: buildEmptyOutdoorEquipRow() }),
+          )}
+          overflowMenuActions={
+            <button
+              type="button"
+              className="data-table-menu-item"
+              disabled={rows.length === 0}
+              title={rows.length === 0 ? "Add an outdoor heat-pump model first." : undefined}
+              onClick={() => setPhiusDialogOpen(true)}
+            >
+              Export to Phius HP Estimator...
+            </button>
+          }
+        />
+      )}
       {phiusDialogOpen ? (
         <PhiusExportDialog
           projectId={projectId}
