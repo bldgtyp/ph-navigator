@@ -9,6 +9,7 @@ export const FIELD_TYPE_DEFAULT_WIDTH: Record<FieldType, number> = {
   computed: 140,
   attachment: 120,
   color: 100,
+  lookup: 200,
   linked_record: 200,
 };
 

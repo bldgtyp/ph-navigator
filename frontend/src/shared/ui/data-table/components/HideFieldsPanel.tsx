@@ -19,6 +19,7 @@ import {
   ArrowRightLeft,
   Calculator,
   CircleDot,
+  Eye,
   GripVertical,
   Hash,
   type LucideProps,
@@ -256,5 +257,6 @@ const ICON_FOR_FIELD_TYPE: Record<FieldType, ComponentType<LucideProps>> = {
   computed: Calculator,
   attachment: Paperclip,
   color: Palette,
+  lookup: Eye,
   linked_record: ArrowRightLeft,
 };

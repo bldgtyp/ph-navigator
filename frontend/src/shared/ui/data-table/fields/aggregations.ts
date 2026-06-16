@@ -58,6 +58,8 @@ export function getAggregationKinds(fieldDef: FieldDef | undefined): readonly Ag
       return COLOR_AGGREGATIONS;
     case "computed":
       return fieldDef.computed_type === "number" ? NUMBER_AGGREGATIONS : TEXT_AGGREGATIONS;
+    case "lookup":
+      return TEXT_AGGREGATIONS;
     case "attachment":
       return EMPTY_AGGREGATIONS;
     case "linked_record":

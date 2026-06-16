@@ -23,6 +23,7 @@ export function getFieldEditor(fieldDef: FieldDef | undefined): FieldEditor {
       return { kind: "color" };
     case "computed":
     case "attachment":
+    case "lookup":
       return { kind: "none" };
     case "linked_record":
       return { kind: "linked_record" };

@@ -1,8 +1,12 @@
-import type { DataTableColumnDef, FieldDef, FieldOption } from "../../../shared/ui/data-table";
+import {
+  OPTION_COLOR_PALETTE,
+  type DataTableColumnDef,
+  type FieldDef,
+  type FieldOption,
+} from "../../../shared/ui/data-table";
 import type { NumberUnitsConfig } from "../../../lib/units";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
-import { indoorEquipLabel } from "./lib";
 import {
   incomingOutdoorUnitColumnDef,
   incomingOutdoorUnitIds,
@@ -12,7 +16,6 @@ import {
   COOLING_DATA_TYPES,
   HEATING_DATA_TYPES,
   HEAT_PUMP_OPTION_KEYS,
-  type HeatPumpIndoorEquipRow,
   type HeatPumpOutdoorEquipRow,
   type HeatPumpOutdoorUnitRow,
   type HeatPumpsSlice,
@@ -23,20 +26,16 @@ import {
 // FieldOptions so the DataTable single-select renderer treats them like
 // any other option column. `id === label` because the row stores the
 // verbatim calc string.
-// Neutral chip color shared by synthetic FieldOption lists in this slice
-// (paired-indoor picker + data-type discriminators). Named-color form so
-// the `check:hex` lint stays clean.
-const SYNTHETIC_OPTION_CHIP_COLOR = "slategray";
 const HEATING_DATA_TYPE_OPTIONS: FieldOption[] = HEATING_DATA_TYPES.map((value, index) => ({
   id: value,
   label: value,
-  color: SYNTHETIC_OPTION_CHIP_COLOR,
+  color: OPTION_COLOR_PALETTE[index % OPTION_COLOR_PALETTE.length]!,
   order: index,
 }));
 const COOLING_DATA_TYPE_OPTIONS: FieldOption[] = COOLING_DATA_TYPES.map((value, index) => ({
   id: value,
   label: value,
-  color: SYNTHETIC_OPTION_CHIP_COLOR,
+  color: OPTION_COLOR_PALETTE[index % OPTION_COLOR_PALETTE.length]!,
   order: index,
 }));
 
@@ -56,29 +55,21 @@ const POWER_UNITS: NumberUnitsConfig = {
 
 export function outdoorEquipFieldDefs({
   options,
-  indoorEquip,
 }: {
   options: HeatPumpsSlice["single_select_options"];
-  indoorEquip: readonly HeatPumpIndoorEquipRow[];
 }): FieldDef[] {
   const manufacturer = options[HEAT_PUMP_OPTION_KEYS.manufacturer] ?? [];
   const systemFamily = options[HEAT_PUMP_OPTION_KEYS.systemFamily] ?? [];
   const refrigerant = options[HEAT_PUMP_OPTION_KEYS.refrigerant] ?? [];
-  // The paired-indoor pickers (cell popover + modal) read from a synthetic
-  // option list whose `id` is the row id and `label` is `indoorEquipLabel`.
-  // Mirroring the manufacturer pattern lets the same DataTable cell renderer
-  // resolve the label without a row-shape-specific code path.
-  const pairedIndoor: FieldOption[] = indoorEquip.map((row, index) => ({
-    id: row.id,
-    label: indoorEquipLabel(row, manufacturer),
-    color: SYNTHETIC_OPTION_CHIP_COLOR,
-    order: index,
-  }));
   return [
     textField("tag", "Tag", true),
     textField("model_number", "Model number"),
     selectField("manufacturer", "Manufacturer", manufacturer),
-    selectField("paired_indoor_equip_id", "Paired indoor equip", pairedIndoor),
+    lookupField(
+      "paired_indoor_equip_id",
+      "Paired indoor equip",
+      "Derived from Units - Indoor links to outdoor units.",
+    ),
     selectField("system_family", "System family", systemFamily),
     selectField("refrigerant", "Refrigerant", refrigerant),
     powerField("heating_cap_kw_17f", "Heating Capacity at 17F"),
@@ -123,16 +114,15 @@ export function outdoorEquipColumnDefs({
   onDatasheetChange,
   outdoorUnits = [],
   incomingOutdoorUnitIdsByRowId = new Map(),
+  pairedIndoorEquipLabelsByRowId = new Map(),
 }: {
   projectId: string;
   isEditor: boolean;
-  // Single-select column labels are resolved from FieldDef.options inside
-  // the DataTable, so this builder no longer needs `options` or the
-  // related `indoorEquip` list — both flow through `outdoorEquipFieldDefs`.
   assetUrlById: Map<string, unknown>;
   onDatasheetChange: (row: HeatPumpOutdoorEquipRow, next: string[]) => void | Promise<void>;
   outdoorUnits?: readonly HeatPumpOutdoorUnitRow[];
   incomingOutdoorUnitIdsByRowId?: ReadonlyMap<string, readonly string[]>;
+  pairedIndoorEquipLabelsByRowId?: ReadonlyMap<string, readonly string[]>;
 }): DataTableColumnDef<HeatPumpOutdoorEquipRow>[] {
   const number = (fieldKey: keyof HeatPumpOutdoorEquipRow, header: string, width = 110) => ({
     id: fieldKey,
@@ -172,7 +162,8 @@ export function outdoorEquipColumnDefs({
       id: "paired_indoor_equip_id",
       fieldKey: "paired_indoor_equip_id",
       header: "Paired indoor equip",
-      accessor: (row) => row.paired_indoor_equip_id,
+      accessor: (row) => pairedIndoorEquipLabelsByRowId.get(row.id) ?? [],
+      measureText: (row) => (pairedIndoorEquipLabelsByRowId.get(row.id) ?? []).join(", "),
       defaultWidth: 190,
     },
     {
@@ -260,6 +251,17 @@ function numberField(field_key: string, display_name: string, description?: stri
 
 function powerField(field_key: string, display_name: string): FieldDef {
   return { field_key, field_type: "number", display_name, numberUnits: POWER_UNITS };
+}
+
+function lookupField(field_key: string, display_name: string, description: string): FieldDef {
+  return {
+    field_key,
+    field_type: "lookup",
+    display_name,
+    description,
+    read_only: true,
+    lookup_config: { source: "equipment.heat_pumps.units_indoor" },
+  };
 }
 
 function selectField(

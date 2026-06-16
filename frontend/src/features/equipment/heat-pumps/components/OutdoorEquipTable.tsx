@@ -8,15 +8,19 @@ import {
 import { useAssetUrls } from "../../../assets/hooks";
 import { useHeatPumpOptionMutation, useHeatPumpPatchMutation } from "../api";
 import {
-  buildEmptyIndoorEquipRow,
   buildEmptyOutdoorEquipRow,
   buildNewHeatPumpOption,
+  indoorEquipLabel,
   numericValue,
   sortedOutdoorEquip,
   sortedOutdoorUnits,
   uniqueTagForAdd,
 } from "../lib";
-import { HEAT_PUMP_LINK_TARGETS, outdoorUnitIdsByOutdoorEquip } from "../link-fields";
+import {
+  HEAT_PUMP_LINK_TARGETS,
+  indoorEquipIdsByOutdoorEquip,
+  outdoorUnitIdsByOutdoorEquip,
+} from "../link-fields";
 import {
   outdoorEquipColumnDefs,
   outdoorEquipDefaultHiddenColumns,
@@ -24,8 +28,8 @@ import {
 } from "../outdoor-equip-columns";
 import {
   HEAT_PUMP_OWNED_OPTION_KEYS,
+  HEAT_PUMP_OPTION_KEYS,
   HEAT_PUMP_OUTDOOR_EQUIP_TABLE_NAME,
-  type HeatPumpIndoorEquipRow,
   type HeatPumpOutdoorEquipRow,
   type HeatPumpOutdoorUnitRow,
   type HeatPumpOwnedOptionKey,
@@ -33,7 +37,6 @@ import {
 } from "../types";
 import { useHeatPumpTableViewState } from "../useHeatPumpTableViewState";
 import { addRowButton } from "../../routes/equipmentRowActions";
-import { IndoorEquipRowModal } from "./IndoorEquipRowModal";
 import { OutdoorEquipRowModal } from "./OutdoorEquipRowModal";
 import { OutdoorUnitRowModal } from "./OutdoorUnitRowModal";
 import { PhiusExportDialog } from "./PhiusExportDialog";
@@ -41,11 +44,6 @@ import { PhiusExportDialog } from "./PhiusExportDialog";
 type ModalState =
   | { kind: "outdoor"; mode: "add" | "edit"; row: HeatPumpOutdoorEquipRow }
   | { kind: "unit"; row: HeatPumpOutdoorUnitRow }
-  | {
-      kind: "indoor-create";
-      row: HeatPumpIndoorEquipRow;
-      selectForOutdoorRowId: string | null;
-    }
   | null;
 
 export function OutdoorEquipTable({
@@ -74,6 +72,35 @@ export function OutdoorEquipTable({
     () => outdoorUnitIdsByOutdoorEquip(outdoorUnits),
     [outdoorUnits],
   );
+  const manufacturerOptions = useMemo(
+    () => slice.single_select_options[HEAT_PUMP_OPTION_KEYS.manufacturer] ?? [],
+    [slice.single_select_options],
+  );
+  const indoorEquipById = useMemo(
+    () => new Map(slice.indoor_equip.map((row) => [row.id, row])),
+    [slice.indoor_equip],
+  );
+  const pairedIndoorEquipIdsByOutdoorEquip = useMemo(
+    () =>
+      indoorEquipIdsByOutdoorEquip({
+        outdoorUnits,
+        indoorUnits: slice.indoor_units,
+      }),
+    [outdoorUnits, slice.indoor_units],
+  );
+  const pairedIndoorEquipLabelsByRowId = useMemo(() => {
+    const labels = new Map<string, readonly string[]>();
+    for (const [outdoorEquipId, indoorEquipIds] of pairedIndoorEquipIdsByOutdoorEquip) {
+      labels.set(
+        outdoorEquipId,
+        indoorEquipIds.map((id) => {
+          const equip = indoorEquipById.get(id);
+          return equip ? indoorEquipLabel(equip, manufacturerOptions) : id;
+        }),
+      );
+    }
+    return labels;
+  }, [indoorEquipById, manufacturerOptions, pairedIndoorEquipIdsByOutdoorEquip]);
   const assetIds = useMemo(
     () => Array.from(new Set(rows.flatMap((row) => row.datasheet_asset_ids))),
     [rows],
@@ -110,11 +137,13 @@ export function OutdoorEquipTable({
         },
         outdoorUnits,
         incomingOutdoorUnitIdsByRowId,
+        pairedIndoorEquipLabelsByRowId,
       }),
     [
       assetUrlById,
       incomingOutdoorUnitIdsByRowId,
       outdoorUnits,
+      pairedIndoorEquipLabelsByRowId,
       patchMutation,
       projectId,
       readOnly,
@@ -125,9 +154,8 @@ export function OutdoorEquipTable({
     () =>
       outdoorEquipFieldDefs({
         options: slice.single_select_options,
-        indoorEquip: slice.indoor_equip,
       }),
-    [slice.single_select_options, slice.indoor_equip],
+    [slice.single_select_options],
   );
   const linkedRecordOps = useMemo<ReadonlyMap<string, LinkedRecordCellOps>>(
     () =>
@@ -201,24 +229,6 @@ export function OutdoorEquipTable({
       table: "outdoor-equip",
       patch: { op: "remove", path: `/${row.id}` },
     });
-    setModal(null);
-  }
-
-  async function addIndoorRow(row: HeatPumpIndoorEquipRow, selectForOutdoorRowId: string | null) {
-    const tag = uniqueTagForAdd(row.tag, slice.indoor_equip);
-    await patchMutation.mutateAsync({
-      current: slice,
-      table: "indoor-equip",
-      patch: { op: "add", path: "/-", value: { ...row, tag } },
-    });
-    if (selectForOutdoorRowId) {
-      const outdoor = slice.outdoor_equip.find(
-        (candidate) => candidate.id === selectForOutdoorRowId,
-      );
-      if (outdoor) {
-        await replaceOutdoorRow({ ...outdoor, paired_indoor_equip_id: row.id });
-      }
-    }
     setModal(null);
   }
 
@@ -329,20 +339,12 @@ export function OutdoorEquipTable({
         <OutdoorEquipRowModal
           mode={modal.mode}
           row={modal.row}
-          indoorEquip={slice.indoor_equip}
           existingEquip={slice.outdoor_equip}
           options={slice.single_select_options}
           readOnly={readOnly}
           onCancel={() => setModal(null)}
           onSubmit={modal.mode === "add" ? addOutdoorRow : replaceOutdoorRow}
           onDelete={modal.mode === "edit" ? () => void deleteOutdoorRow(modal.row) : undefined}
-          onCreateIndoorEquip={() =>
-            setModal({
-              kind: "indoor-create",
-              row: buildEmptyIndoorEquipRow(),
-              selectForOutdoorRowId: modal.row.id,
-            })
-          }
           onCreateOption={readOnly ? undefined : createOption}
         />
       ) : null}
@@ -356,18 +358,6 @@ export function OutdoorEquipTable({
           readOnly={readOnly}
           onCancel={() => setModal(null)}
           onSubmit={replaceOutdoorUnit}
-        />
-      ) : null}
-      {modal?.kind === "indoor-create" ? (
-        <IndoorEquipRowModal
-          mode="add"
-          row={modal.row}
-          existingEquip={slice.indoor_equip}
-          options={slice.single_select_options}
-          readOnly={false}
-          onCancel={() => setModal(null)}
-          onSubmit={(row) => addIndoorRow(row, modal.selectForOutdoorRowId)}
-          onCreateOption={createOption}
         />
       ) : null}
     </>
@@ -384,9 +374,9 @@ function coerceCellValue(fieldKey: string, value: unknown): unknown {
  * Maps an outdoor-equip cell's fieldKey to the option-list key whose `add` op
  * persists a popover-minted option. Used by `handleWrite` to translate the
  * DataTable's `newOptions` payload into a heat-pump options-endpoint write.
- * Keys NOT in this map (e.g. `paired_indoor_equip_id`, the `cops`/`hspf2`
- * literal columns) ignore `newOptions` entries — those popovers don't support
- * inline-create.
+ * Keys NOT in this map (e.g. lookup fields and the `cops`/`hspf2` literal
+ * columns) ignore `newOptions` entries — those cells don't support inline-
+ * create.
  */
 const OUTDOOR_FIELD_TO_OPTION_KEY: Record<string, (typeof HEAT_PUMP_OWNED_OPTION_KEYS)[number]> = {
   manufacturer: "heat_pumps.manufacturer",

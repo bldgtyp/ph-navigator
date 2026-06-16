@@ -74,6 +74,8 @@ export function getFilterOperators(fieldDef: FieldDef | undefined): readonly Fil
       return COLOR_OPERATORS;
     case "computed":
       return fieldDef.computed_type === "number" ? NUMBER_OPERATORS : TEXT_OPERATORS;
+    case "lookup":
+      return TEXT_OPERATORS;
     case "attachment":
       return EMPTY_OPERATORS;
     case "linked_record":

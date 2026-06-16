@@ -24,9 +24,12 @@ HPOE_A = "hpoe_01HX0000000000000000000001"
 HPOE_B = "hpoe_01HX0000000000000000000002"
 HPOE_BARE = "hpoe_01HX0000000000000000000004"
 HPIE_PAIRED = "hpie_01HX0000000000000000000001"
+HPIE_SECOND = "hpie_01HX0000000000000000000002"
 HPOU_1 = "hpou_01HX0000000000000000000001"
 HPOU_2 = "hpou_01HX0000000000000000000002"
 HPOU_3 = "hpou_01HX0000000000000000000003"
+HPIU_1 = "hpiu_01HX0000000000000000000001"
+HPIU_2 = "hpiu_01HX0000000000000000000002"
 
 
 def _outdoor(
@@ -74,6 +77,15 @@ def _outdoor_unit(id_: str, tag: str, equip_id: str) -> dict[str, Any]:
     return {"id": id_, "tag": tag, "outdoor_equip_id": equip_id}
 
 
+def _indoor_unit(id_: str, tag: str, indoor_equip_id: str, outdoor_unit_id: str) -> dict[str, Any]:
+    return {
+        "id": id_,
+        "tag": tag,
+        "indoor_equip_id": indoor_equip_id,
+        "outdoor_unit_id": outdoor_unit_id,
+    }
+
+
 def _slice(**fields: Any) -> HeatPumpsTableSlice:
     return HeatPumpsTableSlice.model_validate(fields)
 
@@ -101,14 +113,29 @@ def test_zero_instance_count_emits_warning() -> None:
     assert any(w.field == "qty" for w in payload.warnings)
 
 
-def test_paired_indoor_renders_bracketed_device_label() -> None:
+def test_unit_derived_paired_indoor_renders_bracketed_device_label() -> None:
     slice_ = _slice(
-        outdoor_equip=[_outdoor(id_=HPOE_A, model="PUZ-A18NKA7", paired=HPIE_PAIRED)],
+        outdoor_equip=[_outdoor(id_=HPOE_A, model="PUZ-A18NKA7")],
         indoor_equip=[_indoor(HPIE_PAIRED, "PLA-A18EA8")],
         outdoor_units=[_outdoor_unit(HPOU_1, "HP-1", HPOE_A)],
+        indoor_units=[_indoor_unit(HPIU_1, "IU-1", HPIE_PAIRED, HPOU_1)],
     )
     payload = compute_phius_payload(slice_)
     assert payload.rows[0].device == "PUZ-A18NKA7 [PLA-A18EA8]"
+
+
+def test_multiple_unit_derived_indoor_models_render_bare_device_label() -> None:
+    slice_ = _slice(
+        outdoor_equip=[_outdoor(id_=HPOE_A, model="PUHY-P72TKMU-A")],
+        indoor_equip=[_indoor(HPIE_PAIRED, "PLA-A18EA8"), _indoor(HPIE_SECOND, "PEFY-P24")],
+        outdoor_units=[_outdoor_unit(HPOU_1, "HP-1", HPOE_A)],
+        indoor_units=[
+            _indoor_unit(HPIU_1, "IU-1", HPIE_PAIRED, HPOU_1),
+            _indoor_unit(HPIU_2, "IU-2", HPIE_SECOND, HPOU_1),
+        ],
+    )
+    payload = compute_phius_payload(slice_)
+    assert payload.rows[0].device == "PUHY-P72TKMU-A"
 
 
 def test_null_paired_renders_bare_device_label() -> None:
