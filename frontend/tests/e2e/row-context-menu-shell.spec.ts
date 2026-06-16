@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createProject, signIn } from "./_helpers";
+import { createProject, openRoomsTable, signIn } from "./_helpers";
 
 test.describe.configure({ mode: "serial" });
 
@@ -20,8 +20,7 @@ test("row context menu — gesture surfaces", async ({ page }) => {
     btNumber: `rm-${suffix}`,
   });
 
-  await page.getByRole("link", { name: "Rooms" }).click();
-  await expect(page.getByRole("region", { name: "Rooms" })).toBeVisible();
+  await openRoomsTable(page);
 
   // Seed one row so the body has a target to right-click.
   await page.getByRole("button", { name: "Add New Room" }).click();
@@ -56,10 +55,7 @@ test("row context menu — gesture surfaces", async ({ page }) => {
   await page.keyboard.press("Escape");
 
   // 3. Shift+F10 on the row's gutter number button opens the menu.
-  const gutterButton = page
-    .locator(".data-table-gutter-number")
-    .filter({ hasText: /^1$/ })
-    .first();
+  const gutterButton = page.locator(".data-table-gutter-number").filter({ hasText: /^1$/ }).first();
   await gutterButton.focus();
   await page.keyboard.press("Shift+F10");
   await expect(page.getByRole("menu")).toBeVisible();

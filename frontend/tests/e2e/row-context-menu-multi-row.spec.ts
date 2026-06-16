@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createProject, signIn } from "./_helpers";
+import { createProject, openRoomsTable, signIn } from "./_helpers";
 
 test.describe.configure({ mode: "serial" });
 
@@ -30,8 +30,7 @@ test("row context menu — multi-row collapse + selection-clear fallthrough", as
     name: `Row Menu Multi ${suffix}`,
     btNumber: `rmm-${suffix}`,
   });
-  await page.getByRole("link", { name: "Rooms" }).click();
-  await expect(page.getByRole("region", { name: "Rooms" })).toBeVisible();
+  await openRoomsTable(page);
 
   await seedRoom(page, { number: "101", name: "Alpha" });
   await seedRoom(page, { number: "102", name: "Bravo" });

@@ -115,6 +115,12 @@ export async function addShortTextField(page: Page, name: string): Promise<void>
   await expect(dialog).toBeHidden();
 }
 
+export async function openRoomsTable(page: Page): Promise<void> {
+  await page.getByRole("link", { name: "Spaces" }).click();
+  await page.getByRole("button", { name: "Rooms" }).click();
+  await expect(page.getByRole("region", { name: "Rooms" })).toBeVisible();
+}
+
 export async function gridCellForRowAndHeader(
   page: Page,
   options: { rowCellText: string; headerName: string },

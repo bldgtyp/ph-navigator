@@ -87,8 +87,8 @@ function RoomsPageBody(props: {
   const [roomModal, setRoomModal] = useState<RoomModalState | null>(null);
   const [roomPendingDelete, setRoomPendingDelete] = useState<RoomRow | null>(null);
 
-  // Deep links (e.g. heat-pump indoor-unit chip → /projects/.../rooms
-  // ?focus=<id>&open=1) auto-open the row modal on landing. We then
+  // Deep links (e.g. /projects/.../spaces/rooms?focus=<id>&open=1)
+  // auto-open the row modal on landing. We then
   // drop the `open` param so subsequent modal closes don't re-open it.
   // `focus` is preserved for the existing scroll/highlight behaviour.
   useEffect(() => {

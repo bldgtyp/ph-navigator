@@ -1,11 +1,12 @@
 import { errorMessage } from "../../shared/lib/errors";
+import { spaceTypesPath } from "../spaces/paths";
 
 export const PROJECT_TABS = [
   "status",
   "climate",
   "apertures",
   "envelope",
-  "rooms",
+  "spaces",
   "equipment",
   "thermal-bridges",
   "model",
@@ -17,7 +18,7 @@ export const TAB_LABELS: Record<ProjectTab, string> = {
   climate: "Climate",
   apertures: "Apertures",
   envelope: "Envelope",
-  rooms: "Rooms",
+  spaces: "Spaces",
   equipment: "Equipment",
   "thermal-bridges": "Thermal Bridges",
   model: "Model",
@@ -28,7 +29,7 @@ export const TAB_COPY: Record<ProjectTab, string> = {
   climate: "Project location and weather/climate reference datasets.",
   apertures: "Aperture types, frames, glazing, dimensions, and U-Value.",
   envelope: "Envelope assemblies land after the aperture catalog slices.",
-  rooms: "Room schedules, iCFA factors, and occupancy assumptions.",
+  spaces: "Space types, room schedules, iCFA factors, and occupancy assumptions.",
   equipment:
     "Equipment tables for ventilators, pumps, fans, hot-water heaters, and electric heaters.",
   "thermal-bridges": "Thermal bridge datasheets and simulation files.",
@@ -36,6 +37,9 @@ export const TAB_COPY: Record<ProjectTab, string> = {
 };
 
 export function projectTabPath(projectId: string, tab: ProjectTab): string {
+  if (tab === "spaces") {
+    return spaceTypesPath(projectId);
+  }
   return `/projects/${projectId}/${tab}`;
 }
 

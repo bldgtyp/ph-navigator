@@ -1,6 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { expect, test } from "@playwright/test";
-import { createProject, gridCellForRowAndHeader, signIn } from "./_helpers";
+import { createProject, gridCellForRowAndHeader, openRoomsTable, signIn } from "./_helpers";
 
 const SCREENSHOT_DIR = "../planning/features/record-linking/assets/e2e/rooms-pumps";
 const RECORD_EVIDENCE = process.env.RECORD_LINKING_EVIDENCE === "1";
@@ -26,8 +26,7 @@ test("record-linking Rooms to Pumps source and inverse loop", async ({ page }) =
   await page.keyboard.press("Enter");
   await expect(page.getByRole("gridcell", { name: "P-LINK", exact: true })).toBeVisible();
 
-  await page.getByRole("link", { name: "Rooms" }).click();
-  await expect(page.getByRole("region", { name: "Rooms" })).toBeVisible();
+  await openRoomsTable(page);
   await page.getByRole("button", { name: "Add New Room" }).click();
   const roomDialog = page.getByRole("dialog", { name: "New room" });
   await roomDialog.getByLabel("Number").fill("301");
@@ -36,7 +35,7 @@ test("record-linking Rooms to Pumps source and inverse loop", async ({ page }) =
   await roomDialog.getByLabel("Building zone").fill("Residential");
   await roomDialog.getByRole("button", { name: "Save room" }).click();
   await expect(page.getByRole("gridcell", { name: "Linked Room", exact: true })).toBeVisible();
-  const linkedRoomRow = page.locator('tr[data-row-id]').filter({ hasText: "Linked Room" });
+  const linkedRoomRow = page.locator("tr[data-row-id]").filter({ hasText: "Linked Room" });
   const linkedRoomRowId = await linkedRoomRow.getAttribute("data-row-id");
   if (!linkedRoomRowId) throw new Error("Linked Room row is missing data-row-id");
 
@@ -73,13 +72,16 @@ test("record-linking Rooms to Pumps source and inverse loop", async ({ page }) =
 
   await expect(page).toHaveURL(/\/equipment\?tab=pumps&focus=/);
   await expect(page.getByRole("region", { name: "Equipment" })).toBeVisible();
-  const focusedPumpRow = page.locator('tr[data-row-id]').filter({ hasText: "P-LINK" });
+  const focusedPumpRow = page.locator("tr[data-row-id]").filter({ hasText: "P-LINK" });
   await expect(focusedPumpRow).toBeVisible();
   const pumpRowId = await focusedPumpRow.getAttribute("data-row-id");
   expect(page.url()).toContain(`focus=${pumpRowId}`);
   await expect(page.getByRole("columnheader", { name: /Rooms ← Pump/ })).toBeVisible();
   await expect(focusedPumpRow.getByRole("button", { name: linkedRoomRowId })).toBeVisible();
   if (RECORD_EVIDENCE) {
-    await page.screenshot({ path: `${SCREENSHOT_DIR}/02-pumps-focus-inverse.png`, fullPage: false });
+    await page.screenshot({
+      path: `${SCREENSHOT_DIR}/02-pumps-focus-inverse.png`,
+      fullPage: false,
+    });
   }
 });

@@ -4,6 +4,7 @@ import {
   createProject,
   gridCellForRowAndHeader,
   openHeaderMenu,
+  openRoomsTable,
   signIn,
 } from "./_helpers";
 
@@ -18,8 +19,7 @@ test("editable Rooms and Pumps fields round-trip through the browser", async ({ 
     btNumber: `ef-${suffix}`,
   });
 
-  await page.getByRole("link", { name: "Rooms" }).click();
-  await expect(page.getByRole("region", { name: "Rooms" })).toBeVisible();
+  await openRoomsTable(page);
 
   await addShortTextField(page, "Browser Note");
   await expect(page.getByRole("columnheader", { name: /^Browser Note\b/ })).toBeVisible();

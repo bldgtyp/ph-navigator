@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-16
-TIME: 17:15 EDT
-STATUS: Active - Phase 02 complete; Phase 03 next
+TIME: 17:34 EDT
+STATUS: Active - Phase 03 complete; Phase 04 next
 AUTHOR: Ed (via Codex)
 SCOPE: Current state of Spaces refactor planning.
 RELATED:
@@ -14,10 +14,9 @@ RELATED:
 
 ## Current State
 
-`Active - Phase 02 complete; Phase 03 next`.
+`Active - Phase 03 complete; Phase 04 next`.
 
-Phase 01 backend work is implemented and verified in the current
-checkout:
+Phase 01 backend work is implemented and verified:
 
 - Added the `space_types` project-document table, row/envelope models,
   registry contract, table-slice response, inverse-link response fields,
@@ -27,13 +26,30 @@ checkout:
   rejection, and named-row-without-Tag rejection.
 - Updated raw schema-version test fixtures from 5 to 6.
 
+Phase 02 backend Rooms link work is implemented and verified:
+
+- Added the built-in Rooms `Space Type` linked-record FieldDef targeting
+  `space_types`.
+- Added strict validation for built-in linked-record targets and delete
+  cascade cleanup when Space-Type rows are removed.
+- Added schema-version bump, migration, and focused backend tests.
+
+Phase 03 frontend route work is implemented:
+
+- Replaced the top-level Rooms project tab with Spaces.
+- Added `SpacesPage` with Space-Types and Rooms sub-tabs.
+- Moved Rooms rendering under `/projects/:projectId/spaces/rooms`.
+- Added legacy `/projects/:projectId/rooms` redirect preserving
+  `focus`, `open`, `version`, and hash state.
+- Updated inverse Rooms source routes and stale E2E tab selectors.
+- Added canonical Spaces path helpers and shared E2E Rooms navigation
+  helper during `$ simplify`.
+
 ## Next Step
 
-`planning/features/spaces-refactor/phases/phase-02-rooms-space-type-link.md`
+Begin Phase 04:
 
-Then begin Phase 03:
-
-`planning/features/spaces-refactor/phases/phase-03-frontend-spaces-parent.md`
+`planning/features/spaces-refactor/phases/phase-04-frontend-table-link-ui.md`
 
 ## Blockers
 
@@ -78,6 +94,18 @@ None for starting Phase 01.
   kept stable `context/` updates deferred to Phase 05 because the
   backend link contract is not user-visible until the Spaces route/UI
   phases land.
+- 2026-06-16 17:18 EDT: Phase 03 started. Scope is route/navigation
+  structure only; Phase 04 remains responsible for Space-Types DataTable
+  UI and Rooms `space_type_id` picker rendering.
+- 2026-06-16 17:25 EDT: Phase 03 implementation and focused frontend
+  verification complete. Full `make ci` remains deferred until Phase 05
+  per current direction.
+- 2026-06-16 17:31 EDT: `$ simplify` complete. Accepted path-helper,
+  direct Spaces-tab target, and E2E helper cleanup. Deferred shared
+  `AppSubTabLink` accessibility follow-up outside this phase.
+- 2026-06-16 17:34 EDT: Phase 03 closeout complete. `$ docs-pass`
+  made no stable `context/` edits; final context updates remain in
+  Phase 05 after Space-Types table and Rooms link UI verification.
 
 ## Phase 02 Verification
 
@@ -95,5 +123,27 @@ None for starting Phase 01.
   - Passed on 2026-06-16 17:15 EDT.
 - `$ docs-pass`
   - Completed on 2026-06-16 17:15 EDT; no stable `context/` edits.
+- Full `make ci`
+  - Deferred until Phase 05 per current direction.
+
+## Phase 03 Verification
+
+- `cd frontend && pnpm exec vitest run src/App.test.tsx src/features/equipment/__tests__/PumpsTable.reuse.test.tsx`
+  - 33 passed on 2026-06-16 17:30 EDT.
+- `cd frontend && pnpm exec eslint src/App.test.tsx src/app/router.tsx src/features/spaces src/features/projects/lib.ts src/features/projects/components/ProjectTabContent.tsx src/features/equipment/lib/inverseRoutes.ts src/features/equipment/routes/RoomsPage.tsx src/features/equipment/heat-pumps/components/IndoorUnitsTable.tsx src/features/equipment/__tests__/PumpsTable.reuse.test.tsx`
+  - Passed on 2026-06-16 17:30 EDT.
+- `cd frontend && pnpm run check:shape`
+  - Passed on 2026-06-16 17:30 EDT.
+- `cd frontend && pnpm exec prettier --check src/features/spaces/README.md src/features/spaces/api.ts src/features/spaces/hooks.ts src/features/spaces/query-keys.ts src/features/spaces/types.ts src/features/spaces/routes/SpacesPage.tsx src/App.test.tsx`
+  - Passed on 2026-06-16 17:24 EDT.
+- `cd frontend && pnpm run build`
+  - Passed on 2026-06-16 17:30 EDT; Vite emitted the existing large
+    chunk warning.
+- `make format`
+  - Passed on 2026-06-16 17:33 EDT; no files changed.
+- `graphify update .`
+  - Passed on 2026-06-16 17:33 EDT.
+- `$ docs-pass`
+  - Completed on 2026-06-16 17:34 EDT; no stable `context/` edits.
 - Full `make ci`
   - Deferred until Phase 05 per current direction.
