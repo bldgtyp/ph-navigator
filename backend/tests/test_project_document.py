@@ -11,7 +11,7 @@ from pydantic import ValidationError
 
 from database import connection, transaction
 from features.auth.service import create_or_update_user
-from features.project_document.document import ProjectDocumentV1
+from features.project_document.document import CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION, ProjectDocumentV1
 from features.project_document.tables.rooms import ROOMS_BUILT_IN_FIELD_DEFS
 from features.projects.models import CreateProjectRequest
 from features.projects.service import empty_project_document
@@ -643,7 +643,7 @@ def test_project_download_returns_raw_body_when_schema_is_invalid(
     document_body = document.json()
     assert document_body["schema_version_unsupported"] is True
     assert document_body["schema_version"] == 999
-    assert document_body["current_schema_version"] == 6
+    assert document_body["current_schema_version"] == CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     assert document_body["error_code"] == "schema_validation_failed_after_migration"
     assert document_body["request_id"] == "schema-safe"
     assert document_body["body"]["schema_version"] == 999
@@ -889,7 +889,7 @@ def test_rooms_envelope_rejects_unknown_custom_key(
 
 def test_rooms_custom_field_duplicate_display_name_rejected() -> None:
     body = {
-        "schema_version": 6,
+        "schema_version": 7,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             "rooms": {
@@ -929,7 +929,7 @@ def test_rooms_custom_field_duplicate_display_name_rejected() -> None:
 
 def test_rooms_custom_field_collides_with_core_display_name_rejected() -> None:
     body = {
-        "schema_version": 6,
+        "schema_version": 7,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             "rooms": {
