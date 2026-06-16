@@ -36,8 +36,9 @@ from features.project_document._validators import (
     validate_linked_record_field_defs,
     validate_rows_custom_links,
     validate_rows_custom_values,
+    validate_unique_ids,
 )
-from features.project_document.custom_fields import TableFieldDef, normalize_display_name
+from features.project_document.custom_fields import RESERVED_FIELD_KEY_RECORD_ID, TableFieldDef, normalize_display_name
 from features.project_document.envelope_models import (
     APERTURE_DEFAULT_FRAME_NAME,
     APERTURE_DEFAULT_GLAZING_NAME,
@@ -80,6 +81,8 @@ from features.project_document.rows import (
     RoomsTableEnvelope,
     RowWithCustomFields,
     SingleSelectOption,
+    SpaceTypeRow,
+    SpaceTypesTableEnvelope,
     ThermalBridgeRow,
     ThermalBridgesTableEnvelope,
     VentilatorRow,
@@ -120,12 +123,14 @@ THERMAL_BRIDGE_TYPE_OPTION_KEY = "thermal_bridges.type"
 ThermalBridgeOptionKey = Literal["thermal_bridges.type"]
 THERMAL_BRIDGE_OPTION_KEYS: tuple[ThermalBridgeOptionKey, ...] = (THERMAL_BRIDGE_TYPE_OPTION_KEY,)
 
+# v6 wire shape: Space-Types adds a first-class top-level table.
+#
 # v4 wire shape: Phase 2 promotes the pinned identifier to a real
 # `record_id` FieldDef on every FieldDef-capable table; Pumps' `tag`
 # entry is renamed to `record_id` (display label stays "Tag"). Pre-
 # deploy posture (PRD §P3.6) — no v2/v3 reader is provided; dev DBs
 # rebuild on the phase boundary.
-CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 5
+CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 6
 
 # Field keys that have a typed Pydantic column on the row model. Used
 # to split read/write paths between typed columns and the
@@ -160,6 +165,7 @@ APPLIANCES_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
 THERMAL_BRIDGES_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
     {"id", "thermal_bridge_type", "pdf_report_asset_ids", "notes"}
 )
+SPACE_TYPES_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset({"id"})
 
 
 class ProjectDocumentProject(BaseModel):
@@ -196,6 +202,7 @@ class ProjectDocumentTables(BaseModel):
     project_materials: list[ProjectMaterial] = Field(default_factory=list)
     apertures: list[ApertureTypeEntry] = Field(default_factory=list)
     rooms: RoomsTableEnvelope = Field(default_factory=RoomsTableEnvelope)
+    space_types: SpaceTypesTableEnvelope = Field(default_factory=SpaceTypesTableEnvelope)
     thermal_bridges: ThermalBridgesTableEnvelope = Field(default_factory=ThermalBridgesTableEnvelope)
     equipment: EmptyEquipmentTables = Field(default_factory=EmptyEquipmentTables)
     manufacturer_filters: ManufacturerFilters | None = None
@@ -217,7 +224,7 @@ class ProjectDocumentTables(BaseModel):
 class ProjectDocumentV1(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: Literal[5] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
+    schema_version: Literal[6] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     project: ProjectDocumentProject
     tables: ProjectDocumentTables = Field(default_factory=ProjectDocumentTables)
     single_select_options: dict[str, list[SingleSelectOption]] = Field(
@@ -307,6 +314,51 @@ class ProjectDocumentV1(BaseModel):
             field_defs_by_key=rooms_field_defs_by_key,
             single_select_options=self.single_select_options,
         )
+
+        space_types_field_defs_by_key = index_table_field_defs("space_types", self.tables.space_types.field_defs)
+        require_record_id_seeded("space_types", space_types_field_defs_by_key)
+        validate_unique_ids("space type", [space_type.id for space_type in self.tables.space_types.rows])
+        space_type_tags: set[str] = set()
+        for space_type in self.tables.space_types.rows:
+            tag = space_type.custom_values.get(RESERVED_FIELD_KEY_RECORD_ID)
+            name = space_type.custom_values.get("name")
+            normalized_tag = normalize_display_name(tag) if isinstance(tag, str) else ""
+            normalized_name = normalize_display_name(name) if isinstance(name, str) else ""
+            if not normalized_tag and normalized_name:
+                raise ValueError(f"Space type {space_type.id} requires a Tag")
+            if normalized_tag in space_type_tags:
+                raise ValueError(f"Duplicate space type Tag: {tag}")
+            if normalized_tag:
+                space_type_tags.add(normalized_tag)
+
+        validate_linked_record_field_defs(
+            table_label="space_types",
+            table_path=("space_types",),
+            field_defs_by_key=space_types_field_defs_by_key,
+        )
+        validate_rows_custom_values(
+            table_label="space_types",
+            row_label="space type",
+            rows=[(space_type.id, space_type.custom_values) for space_type in self.tables.space_types.rows],
+            field_defs_by_key=space_types_field_defs_by_key,
+            single_select_options=self.single_select_options,
+        )
+        validate_rows_custom_links(
+            table_label="space_types",
+            row_label="space type",
+            rows=[
+                (space_type.id, space_type.custom_values, space_type.custom_links)
+                for space_type in self.tables.space_types.rows
+            ],
+            field_defs_by_key=space_types_field_defs_by_key,
+            target_row_ids=target_row_ids,
+        )
+        validate_default_option_ids(
+            table_label="space_types",
+            field_defs_by_key=space_types_field_defs_by_key,
+            single_select_options=self.single_select_options,
+        )
+
         pumps_field_defs_by_key = index_table_field_defs("pumps", self.tables.equipment.pumps.field_defs)
         require_record_id_seeded("pumps", pumps_field_defs_by_key)
         pump_device_type_ids = {option.id for option in self.single_select_options[PUMP_DEVICE_TYPE_OPTION_KEY]}
@@ -787,6 +839,9 @@ __all__ = [
     "RoomsTableEnvelope",
     "RowWithCustomFields",
     "SingleSelectOption",
+    "SPACE_TYPES_TYPED_COLUMN_FIELD_KEYS",
+    "SpaceTypeRow",
+    "SpaceTypesTableEnvelope",
     "SpecificationStatus",
     "THERMAL_BRIDGE_OPTION_KEYS",
     "THERMAL_BRIDGE_TYPE_OPTION_KEY",

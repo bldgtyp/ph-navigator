@@ -13,6 +13,7 @@ from psycopg.types.json import Jsonb
 
 from database import connection, transaction
 from features.auth.service import create_or_update_user
+from features.project_document.document import CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
 from features.projects.models import ProjectHardDeleteRequest
 from features.projects.service import hard_delete_project
 from main import app
@@ -107,7 +108,7 @@ def test_create_project_inserts_initial_working_version(clean_project_tables: No
         ).fetchone()
 
     assert version is not None
-    assert version["body"]["schema_version"] == 5
+    assert version["body"]["schema_version"] == CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     assert version["body"]["project"]["cert_programs"] == ["phi", "phius"]
     assert version["body"]["tables"]["rooms"]["rows"] == []
     assert version["body"]["tables"]["rooms"]["field_defs"][0]["field_key"] == "record_id"

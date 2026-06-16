@@ -23,6 +23,7 @@ from features.project_document.document import (
     PumpsTableEnvelope,
     RoomsTableEnvelope,
     SingleSelectOption,
+    SpaceTypesTableEnvelope,
     ThermalBridgesTableEnvelope,
     VentilatorsTableEnvelope,
 )
@@ -33,6 +34,7 @@ from features.project_document.tables.hot_water_heaters import HOT_WATER_HEATERS
 from features.project_document.tables.hot_water_tanks import HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.rooms import ROOMS_BUILT_IN_FIELD_DEFS
+from features.project_document.tables.space_types import SPACE_TYPES_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.thermal_bridges import THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.ventilators import VENTILATORS_BUILT_IN_FIELD_DEFS
 from features.projects.models import CreateProjectRequest
@@ -53,6 +55,7 @@ def empty_project_document(payload: CreateProjectRequest) -> ProjectDocumentV1:
         ),
         tables=ProjectDocumentTables(
             rooms=RoomsTableEnvelope(field_defs=list(ROOMS_BUILT_IN_FIELD_DEFS)),
+            space_types=SpaceTypesTableEnvelope(field_defs=list(SPACE_TYPES_BUILT_IN_FIELD_DEFS)),
             thermal_bridges=ThermalBridgesTableEnvelope(field_defs=list(THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS)),
             equipment=EmptyEquipmentTables(
                 appliances=AppliancesTableEnvelope(field_defs=list(APPLIANCES_BUILT_IN_FIELD_DEFS)),

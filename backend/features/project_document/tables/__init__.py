@@ -20,11 +20,13 @@ if TYPE_CHECKING:
         iter_table_contracts,
     )
     from features.project_document.tables.rooms import RoomsSliceResponse
+    from features.project_document.tables.space_types import SpaceTypesSliceResponse
     from features.project_document.tables.thermal_bridges import ThermalBridgesSliceResponse
     from features.project_document.tables.ventilators import VentilatorsSliceResponse
 
     RegisteredTableResponse = (
         RoomsSliceResponse
+        | SpaceTypesSliceResponse
         | ThermalBridgesSliceResponse
         | AppliancesSliceResponse
         | ElectricHeatersSliceResponse
@@ -75,6 +77,10 @@ def __getattr__(name: str) -> Any:
         from features.project_document.tables.rooms import RoomsSliceResponse
 
         return RoomsSliceResponse
+    if name == "SpaceTypesSliceResponse":
+        from features.project_document.tables.space_types import SpaceTypesSliceResponse
+
+        return SpaceTypesSliceResponse
     if name == "VentilatorsSliceResponse":
         from features.project_document.tables.ventilators import VentilatorsSliceResponse
 
@@ -101,11 +107,13 @@ def __getattr__(name: str) -> Any:
         from features.project_document.tables.hot_water_tanks import HotWaterTanksSliceResponse
         from features.project_document.tables.pumps import PumpsSliceResponse
         from features.project_document.tables.rooms import RoomsSliceResponse
+        from features.project_document.tables.space_types import SpaceTypesSliceResponse
         from features.project_document.tables.thermal_bridges import ThermalBridgesSliceResponse
         from features.project_document.tables.ventilators import VentilatorsSliceResponse
 
         return (
             RoomsSliceResponse
+            | SpaceTypesSliceResponse
             | ThermalBridgesSliceResponse
             | AppliancesSliceResponse
             | ElectricHeatersSliceResponse
@@ -131,6 +139,7 @@ __all__ = [
     "HotWaterTanksSliceResponse",
     "PumpsSliceResponse",
     "RoomsSliceResponse",
+    "SpaceTypesSliceResponse",
     "TableContract",
     "TableRowsResponse",
     "ThermalBridgesSliceResponse",

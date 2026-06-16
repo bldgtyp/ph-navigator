@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
+from features.project_document.document import CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
 from main import app
 
 
@@ -23,7 +24,7 @@ def test_project_document_and_room_json_schemas_are_exposed() -> None:
     assert project_schema.headers["X-Request-ID"] == "schema-project"
     project_body = project_schema.json()
     assert project_body["title"] == "ProjectDocumentV1"
-    assert project_body["properties"]["schema_version"]["const"] == 5
+    assert project_body["properties"]["schema_version"]["const"] == CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     assert "ProjectDocumentTables" in project_body["$defs"]
 
     assert room_schema.status_code == 200

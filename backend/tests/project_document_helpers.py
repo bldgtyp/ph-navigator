@@ -24,6 +24,12 @@ def empty_rooms_table() -> dict[str, Any]:
     return _empty_document_tables()["rooms"]
 
 
+def empty_space_types_table(rows: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    space_types = _empty_document_tables()["space_types"]
+    space_types["rows"] = rows or []
+    return space_types
+
+
 def empty_thermal_bridges_table(rows: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     thermal_bridges = _empty_document_tables()["thermal_bridges"]
     thermal_bridges["rows"] = rows or []

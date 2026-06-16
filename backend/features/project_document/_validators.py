@@ -33,6 +33,7 @@ if TYPE_CHECKING:
 LINKED_RECORD_TARGET_PATHS: frozenset[tuple[str, ...]] = frozenset(
     {
         ("rooms",),
+        ("space_types",),
         ("thermal_bridges",),
         ("equipment", "pumps"),
         ("equipment", "fans"),
@@ -164,6 +165,7 @@ def collect_target_row_ids(document: ProjectDocumentV1) -> dict[tuple[str, ...],
     tables = document.tables
     by_path: dict[tuple[str, ...], set[str]] = {
         ("rooms",): {row.id for row in tables.rooms.rows},
+        ("space_types",): {row.id for row in tables.space_types.rows},
         ("thermal_bridges",): {row.id for row in tables.thermal_bridges.rows},
         ("equipment", "pumps"): {row.id for row in tables.equipment.pumps.rows},
         ("equipment", "fans"): {row.id for row in tables.equipment.fans.rows},

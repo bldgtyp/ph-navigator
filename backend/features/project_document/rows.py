@@ -90,6 +90,21 @@ class RoomsTableEnvelope(BaseModel):
     rows: list[RoomRow] = Field(default_factory=list)
 
 
+class SpaceTypeRow(RowWithCustomFields):
+    """A row in the Space-Types table."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(pattern=r"^st_[A-Za-z0-9_-]+$", max_length=80)
+
+
+class SpaceTypesTableEnvelope(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    field_defs: list[TableFieldDef] = Field(default_factory=list)
+    rows: list[SpaceTypeRow] = Field(default_factory=list)
+
+
 class PumpRow(RowWithCustomFields):
     """A row in the Pumps table (v3 mixed-storage).
 

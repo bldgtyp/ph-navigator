@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-16
 TIME: 15:59 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Backend document schema and registered table-slice support for
   the new Space-Types table.
@@ -30,33 +30,51 @@ with an empty default row set and two user-facing fields: Tag and Name.
 
 ## Tasks
 
-1. Add `SpaceTypeRow` and `SpaceTypesTableEnvelope` in
+1. [x] Add `SpaceTypeRow` and `SpaceTypesTableEnvelope` in
    `backend/features/project_document/rows.py`.
-2. Add `space_types: SpaceTypesTableEnvelope` to
+2. [x] Add `space_types: SpaceTypesTableEnvelope` to
    `ProjectDocumentTables` in
    `backend/features/project_document/document.py`.
-3. Add a typed-column key set for Space-Types. Preferred minimal shape:
+3. [x] Add a typed-column key set for Space-Types. Preferred minimal shape:
    `id` as typed column, `record_id` and `name` in `custom_values`.
-4. Create `backend/features/project_document/tables/space_types.py`
+4. [x] Create `backend/features/project_document/tables/space_types.py`
    following the Rooms/Pumps table-contract pattern.
-5. Seed built-in FieldDefs:
+5. [x] Seed built-in FieldDefs:
    - `record_id`, display `Tag`, `short_text`, primary identifier.
    - `name`, display `Name`, `short_text`.
-6. Register `space_types_contract` in
+6. [x] Register `space_types_contract` in
    `backend/features/project_document/tables/registry.py`.
-7. Add table-slice response/extract/diff support, including
+7. [x] Add table-slice response/extract/diff support, including
    `field_defs`, `rows`, `rows_computed`, `inverse_links`, and
    `inverse_link_fields`.
-8. Decide and implement schema-version handling for existing documents.
+8. [x] Decide and implement schema-version handling for existing documents.
    Expected path: bump document schema version and migrate
    `project_versions` / `project_version_drafts` JSON to add empty
    `tables.space_types`.
-9. Add backend tests proving:
+9. [x] Add backend tests proving:
    - new empty project documents include `tables.space_types`;
    - no default Space-Type rows are seeded;
    - Tag/Name FieldDefs are present;
    - duplicate non-empty Tags are rejected;
    - generic table-slice fetch/replace works for `space_types`.
+
+## Progress
+
+- 2026-06-16 16:24 EDT: implementation complete and verified in the
+  current checkout.
+- Focused verification passed:
+  `cd backend && uv run pytest tests/test_project_document_space_types.py`
+  (7 passed).
+- Focused backend regression suite passed:
+  `cd backend && uv run pytest tests/test_project_document.py tests/test_project_document_fans.py tests/test_project_document_pumps.py tests/test_project_document_ventilators.py tests/test_project_document_thermal_bridges.py tests/test_project_document_electric_heaters.py tests/test_project_document_appliances.py tests/test_project_document_hot_water_heaters.py tests/test_project_document_hot_water_tanks.py tests/test_project_document_default_option_fill.py tests/features/heat_pumps/test_heat_pumps.py tests/features/heat_pumps/test_cross_table_cascades.py tests/test_project_document_space_types.py`
+  (91 passed).
+- `$ simplify` completed; accepted hygiene findings were patched.
+- `make format` passed.
+- `make ci` passed.
+- `graphify update .` passed.
+- `$ docs-pass` completed; Phase 01 remains fully documented in this
+  planning packet, with stable `context/` updates deferred until the
+  user-visible Spaces surface lands.
 
 ## Acceptance Criteria
 

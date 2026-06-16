@@ -28,6 +28,7 @@ from features.project_document.tables.hot_water_heaters import hot_water_heaters
 from features.project_document.tables.hot_water_tanks import hot_water_tanks_contract
 from features.project_document.tables.pumps import pumps_contract
 from features.project_document.tables.rooms import rooms_contract
+from features.project_document.tables.space_types import space_types_contract
 from features.project_document.tables.thermal_bridges import thermal_bridges_contract
 from features.project_document.tables.ventilators import ventilators_contract
 from features.shared.errors import api_error
@@ -71,6 +72,7 @@ _TABLES: dict[str, TableContract] = {
     assembly_segments_contract.name: assembly_segments_contract,
     project_materials_contract.name: project_materials_contract,
     rooms_contract.name: rooms_contract,
+    space_types_contract.name: space_types_contract,
     ventilators_contract.name: ventilators_contract,
     appliances_contract.name: appliances_contract,
     pumps_contract.name: pumps_contract,
