@@ -1,13 +1,13 @@
 ---
 DATE: 2026-06-16
-TIME: 12:14 EDT
-STATUS: Active - planning
+TIME: 13:05 EDT
+STATUS: Complete - archived
 AUTHOR: Codex
 SCOPE: Heat Pumps DataTables link-field correction for Units - Indoor and
   related reverse-link surfaces.
 RELATED:
-  - planning/features/heat-pump-link-fields/PRD.md
-  - planning/features/heat-pump-link-fields/STATUS.md
+  - planning/archive/heat-pump-link-fields/PRD.md
+  - planning/archive/heat-pump-link-fields/STATUS.md
   - context/user-stories/30-tables-equipment.md
   - planning/archive/heat-pumps/PRD.md
   - planning/archive/heat-pumps/decisions.md
@@ -28,6 +28,11 @@ point at other project records:
 
 This feature starts with `Units - Indoor`, but includes the minimum
 target-table surfaces needed for parity with the existing `Rooms` link.
+
+## Archive State
+
+Implemented, verified, committed, pushed, and archived on 2026-06-16.
+Current routing pointer: `planning/archive/heat-pump-link-fields/STATUS.md`.
 
 ## Current Finding
 

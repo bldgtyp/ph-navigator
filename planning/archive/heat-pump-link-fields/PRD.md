@@ -6,7 +6,7 @@ AUTHOR: Codex
 SCOPE: Product and technical contract for Heat Pumps native relationship
   fields that should render as links, not single-select vocabularies.
 RELATED:
-  - planning/features/heat-pump-link-fields/README.md
+  - planning/archive/heat-pump-link-fields/README.md
   - context/user-stories/30-tables-equipment.md
   - planning/archive/heat-pumps/PRD.md
   - planning/archive/heat-pumps/decisions.md

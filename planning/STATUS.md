@@ -1,7 +1,7 @@
 # Planning Status
 
 DATE: 2026-06-16
-TIME: 12:55 EDT
+TIME: 13:05 EDT
 STATUS: Active routing index for tracked planning material.
 AUTHOR: Codex
 SCOPE: Current planning folder organization after moving dated docs to
@@ -17,7 +17,7 @@ feature-first planning.
 | IP/SI Unit Switching | Planned / implementation plan drafted | `features/ip-si-unit-switching/STATUS.md` |
 | Apertures / Aperture Builder | Planned / PRD updated with review decisions; phase planning not started | `features/apertures/STATUS.md` |
 | CSS Token Guard Sweep | Complete / implemented on main worktree with format + CI evidence; archived | `archive/css-token-guard-sweep/STATUS.md` |
-| Heat Pump Link Fields | Complete / implemented with format, CI, graphify update, and browser smoke evidence | `features/heat-pump-link-fields/STATUS.md` |
+| Heat Pump Link Fields | Complete / implemented on main with format, CI, graphify update, browser smoke evidence; archived | `archive/heat-pump-link-fields/STATUS.md` |
 
 ## Historical Material
 
@@ -29,6 +29,8 @@ feature-first planning.
   under `archive/assembly-builder-foundation/`.
 - Completed CSS Token Guard Sweep planning now lives under
   `archive/css-token-guard-sweep/`.
+- Completed Heat Pump Link Fields planning now lives under
+  `archive/heat-pump-link-fields/`.
 - Completed Attachments (v1) planning now lives under
   `archive/attachments/`. The stable implementation contract remains
   current in `context/technical-requirements/attachments.md`; the

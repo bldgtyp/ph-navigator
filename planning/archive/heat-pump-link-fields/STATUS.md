@@ -1,20 +1,20 @@
 ---
 DATE: 2026-06-16
-TIME: 12:55 EDT
-STATUS: Complete - implemented, verified, ready to commit
+TIME: 13:05 EDT
+STATUS: Complete - implemented, verified, pushed, archived
 AUTHOR: Codex
 SCOPE: Status ledger for Heat Pumps link-field correction.
 RELATED:
-  - planning/features/heat-pump-link-fields/README.md
-  - planning/features/heat-pump-link-fields/PRD.md
-  - planning/features/heat-pump-link-fields/phases/phase-01-audit-and-decision.md
+  - planning/archive/heat-pump-link-fields/README.md
+  - planning/archive/heat-pump-link-fields/PRD.md
+  - planning/archive/heat-pump-link-fields/phases/phase-01-audit-and-decision.md
 ---
 
 # Heat Pump Link Fields - Status
 
 ## Current State
 
-`Complete - implemented, verified, ready to commit`.
+`Complete - implemented, verified, pushed, archived`.
 
 Source audit confirmed:
 
@@ -58,9 +58,11 @@ Implemented direction:
 - `frontend/src/features/equipment/heat-pumps/__tests__/HeatPumpsPanel.test.tsx`
 - `frontend/src/features/equipment/heat-pumps/__tests__/OutdoorUnitsTable.test.tsx`
 
-## Next Step
+## Archive Note
 
-Commit the scoped implementation and planning updates.
+Implementation landed on `main` in commit `80ea05bc` and was pushed to
+`origin/main`. This planning packet was moved from the active feature
+area to `planning/archive/heat-pump-link-fields/` after completion.
 
 ## Blockers
 

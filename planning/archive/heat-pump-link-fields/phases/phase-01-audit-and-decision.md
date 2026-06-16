@@ -6,7 +6,7 @@ AUTHOR: Codex
 SCOPE: Confirm native-FK link architecture and decide reverse-overlay
   location before implementation.
 RELATED:
-  - planning/features/heat-pump-link-fields/PRD.md
+  - planning/archive/heat-pump-link-fields/PRD.md
   - frontend/src/features/equipment/heat-pumps/indoor-unit-columns.tsx
   - frontend/src/features/equipment/heat-pumps/components/IndoorUnitsTable.tsx
   - backend/features/heat_pumps/service.py
