@@ -2,7 +2,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter, useLocation } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { createQueryClient } from "../../../../app/query-client";
 import type { UnitSystem } from "../../../../lib/units";
 import { UnitPreferenceContext } from "../../../../lib/units/preference-context";
@@ -17,29 +17,7 @@ const fetchMock = vi.fn();
 
 beforeEach(() => {
   fetchMock.mockReset();
-  fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
-    const url = String(input);
-    if (url.includes("/assets/bulk-urls")) {
-      return jsonResponse({ items: [] });
-    }
-    if (url.endsWith("/api/v1/projects/proj_1/equipment/heat-pumps")) {
-      return jsonResponse(heatPumpsSlice());
-    }
-    if (url.endsWith("/api/v1/projects/proj_1/versions/ver_1/draft/tables/rooms")) {
-      return jsonResponse(roomsSlice());
-    }
-    if (url.endsWith("/api/v1/projects/proj_1/equipment/heat-pumps/outdoor-equip")) {
-      const body = JSON.parse(String(init?.body)) as { value: { tag: string } };
-      return jsonResponse(
-        heatPumpsSlice({
-          outdoor_equip: [outdoorEquipRow({ tag: body.value.tag })],
-          source: "draft",
-          draft_etag: "draft_2",
-        }),
-      );
-    }
-    return jsonResponse({});
-  });
+  window.sessionStorage.clear();
   vi.stubGlobal("fetch", fetchMock);
 });
 
@@ -79,6 +57,27 @@ describe("HeatPumpsPanel", () => {
     await user.click(await screen.findByRole("tab", { name: "Units - Indoor" }));
 
     expect(await screen.findByRole("button", { name: "Add indoor unit" })).toBeInTheDocument();
+  });
+
+  test("remembers the last Heat Pumps leaf for the browser session", async () => {
+    const user = userEvent.setup();
+    const rendered = renderPanel();
+
+    await user.click(await screen.findByRole("tab", { name: "Units - Indoor" }));
+    expect(await screen.findByRole("button", { name: "Add indoor unit" })).toBeInTheDocument();
+    expect(screen.getByTestId("location")).toHaveTextContent(
+      "/projects/proj_1/equipment/heat-pumps/units-indoor",
+    );
+
+    rendered.unmount();
+    renderPanel({ initialEntry: "/projects/proj_1/equipment/heat-pumps" });
+
+    expect(await screen.findByRole("button", { name: "Add indoor unit" })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId("location")).toHaveTextContent(
+        "/projects/proj_1/equipment/heat-pumps/units-indoor",
+      );
+    });
   });
 
   test("renders indoor unit native references as linked-record fields", async () => {
@@ -258,10 +257,12 @@ function renderPanel({
   slice = heatPumpsSlice(),
   unitSystem = "SI",
   savedTableViews = {},
+  initialEntry = "/projects/proj_1/equipment/heat-pumps/equipment-outdoor",
 }: {
   slice?: HeatPumpsSlice;
   unitSystem?: UnitSystem;
   savedTableViews?: Record<string, ViewState>;
+  initialEntry?: string;
 } = {}) {
   fetchMock.mockImplementation((input: RequestInfo | URL) => {
     const url = String(input);
@@ -296,7 +297,7 @@ function renderPanel({
   });
   const queryClient = createQueryClient();
   return render(
-    <MemoryRouter initialEntries={["/projects/proj_1/equipment/heat-pumps/equipment-outdoor"]}>
+    <MemoryRouter initialEntries={[initialEntry]}>
       <QueryClientProvider client={queryClient}>
         <UnitPreferenceContext.Provider
           value={{
@@ -307,8 +308,17 @@ function renderPanel({
             toggleUnitSystem: () => undefined,
           }}
         >
-          <LocationProbe />
-          <HeatPumpsPanel project={project()} />
+          <Routes>
+            <Route
+              path="/projects/:projectId/equipment/*"
+              element={
+                <>
+                  <LocationProbe />
+                  <HeatPumpsPanel project={project()} />
+                </>
+              }
+            />
+          </Routes>
         </UnitPreferenceContext.Provider>
       </QueryClientProvider>
     </MemoryRouter>,
