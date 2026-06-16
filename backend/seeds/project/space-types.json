@@ -1,0 +1,40 @@
+{
+  "options": {},
+  "rows": [
+    {
+      "id": "st_living",
+      "custom_values": {
+        "record_id": "LIVING",
+        "name": "Living / Dining"
+      }
+    },
+    {
+      "id": "st_kitchen",
+      "custom_values": {
+        "record_id": "KITCHEN",
+        "name": "Kitchen"
+      }
+    },
+    {
+      "id": "st_bedroom",
+      "custom_values": {
+        "record_id": "BEDROOM",
+        "name": "Bedroom"
+      }
+    },
+    {
+      "id": "st_bathroom",
+      "custom_values": {
+        "record_id": "BATH",
+        "name": "Bathroom"
+      }
+    },
+    {
+      "id": "st_service",
+      "custom_values": {
+        "record_id": "SERVICE",
+        "name": "Service / Basement"
+      }
+    }
+  ]
+}

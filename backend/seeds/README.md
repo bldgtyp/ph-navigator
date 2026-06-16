@@ -18,6 +18,7 @@ backend/seeds/
     assemblies.json               # 2 assemblies + referenced project materials
     apertures.json                # 1 default 1000 mm x 1000 mm aperture
     rooms.json                    # 5 rooms + floor/zone options
+    space-types.json              # 5 project-local Space-Type rows
     thermal-bridges.json          # 5 thermal bridges + type options
     pumps.json                    # 5 pumps + device-type options
     fans.json                     # 5 fans + type options

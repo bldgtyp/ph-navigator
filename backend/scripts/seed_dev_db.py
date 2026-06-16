@@ -59,6 +59,7 @@ from features.project_document.document import (
     RoomRow,
     RoomsTableEnvelope,
     SingleSelectOption,
+    SpaceTypeRow,
     SpaceTypesTableEnvelope,
     ThermalBridgeRow,
     ThermalBridgesTableEnvelope,
@@ -93,6 +94,7 @@ from scripts._seed_paths import (
     PROJECT_META_PATH,
     PUMPS_SEED_PATH,
     ROOMS_SEED_PATH,
+    SPACE_TYPES_SEED_PATH,
     THERMAL_BRIDGES_SEED_PATH,
     VENTILATORS_SEED_PATH,
     assert_local_dev_database,
@@ -306,6 +308,7 @@ def _starter_project_document(payload: CreateProjectRequest) -> ProjectDocumentV
     envelope_seed = _load_envelope_seed(ASSEMBLIES_SEED_PATH)
     apertures_seed = _load_aperture_seed(APERTURES_SEED_PATH)
     rooms_seed = _load_table_seed(ROOMS_SEED_PATH)
+    space_types_seed = _load_table_seed(SPACE_TYPES_SEED_PATH)
     pumps_seed = _load_table_seed(PUMPS_SEED_PATH)
     fans_seed = _load_table_seed(FANS_SEED_PATH)
     thermal_bridges_seed = _load_table_seed(THERMAL_BRIDGES_SEED_PATH)
@@ -319,6 +322,7 @@ def _starter_project_document(payload: CreateProjectRequest) -> ProjectDocumentV
     next_options = dict(body.single_select_options)
     for seed in (
         rooms_seed,
+        space_types_seed,
         pumps_seed,
         fans_seed,
         thermal_bridges_seed,
@@ -381,7 +385,10 @@ def _starter_project_document(payload: CreateProjectRequest) -> ProjectDocumentV
             field_defs=list(ROOMS_BUILT_IN_FIELD_DEFS),
             rows=[RoomRow.model_validate(row) for row in rooms_seed.rows],
         ),
-        space_types=SpaceTypesTableEnvelope(field_defs=list(SPACE_TYPES_BUILT_IN_FIELD_DEFS)),
+        space_types=SpaceTypesTableEnvelope(
+            field_defs=list(SPACE_TYPES_BUILT_IN_FIELD_DEFS),
+            rows=[SpaceTypeRow.model_validate(row) for row in space_types_seed.rows],
+        ),
         thermal_bridges=ThermalBridgesTableEnvelope(
             field_defs=list(THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS),
             rows=[ThermalBridgeRow.model_validate(row) for row in thermal_bridges_seed.rows],
