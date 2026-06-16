@@ -28,11 +28,19 @@ help: ## Show available recipes
 
 # ─────────────── setup ───────────────
 
-setup: ## First-time setup (Python, Node, env files)
+# `setup` is also the one consistent provisioning command for a NEW git
+# worktree: a fresh worktree has none of the gitignored deps/env files, and
+# `setup` regenerates them. It additionally marks the regenerated dependency
+# folders (backend/.venv, frontend/node_modules) as Dropbox-ignored, so a
+# checkout under a Dropbox-backed path — including a worktree — never syncs
+# them. The xattr step is guarded: a no-op when `xattr` is absent (non-macOS)
+# or the path is not under Dropbox.
+setup: ## First-time setup (Python, Node, env files, Dropbox-ignore)
 	cd backend && uv python install 3.11 && uv sync
 	cd frontend && pnpm install
 	test -f backend/.env || cp backend/.env.example backend/.env
 	test -f frontend/.env.local || cp frontend/.env.example frontend/.env.local
+	@command -v xattr >/dev/null 2>&1 && { xattr -w com.dropbox.ignored 1 backend/.venv 2>/dev/null || true; xattr -w com.dropbox.ignored 1 frontend/node_modules 2>/dev/null || true; } || true
 
 sync: ## Re-sync Python and Node deps from lockfiles
 	cd backend && uv sync
