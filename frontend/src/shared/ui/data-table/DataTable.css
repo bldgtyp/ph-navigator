@@ -2130,8 +2130,8 @@ td.data-table-cell-editing {
 }
 
 .single-select-pill {
-  display: inline-flex;
-  align-items: center;
+  display: inline-block;
+  box-sizing: border-box;
   max-width: 100%;
   border: 1px solid
     color-mix(in oklab, var(--option-color, var(--text-muted)) 52%, var(--border-subtle));
@@ -2638,10 +2638,11 @@ td.data-table-cell-editing {
  * flex row that clips overflow — too many chips truncate at the cell
  * edge rather than wrapping or scrolling. */
 .data-table-linked-record-cell {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   flex-wrap: nowrap;
   gap: var(--space-4);
+  width: 100%;
   max-width: 100%;
   padding: 1px 0;
   overflow: hidden;
@@ -2651,7 +2652,8 @@ td.data-table-cell-editing {
   display: inline-flex;
   align-items: center;
   align-self: center;
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
   height: 20px;
@@ -2677,6 +2679,8 @@ td.data-table-cell-editing {
 
 /* Shared truncation for inert, openable, and active-unlink pill labels. */
 .data-table-linked-record-pill-label {
+  display: block;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
