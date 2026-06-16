@@ -1,4 +1,5 @@
 import { RECORD_ID_FIELD_KEY, type BuildEmptyRow } from "../../../shared/ui/data-table";
+import { readStringDefault } from "../../../shared/lib/fieldDefaults";
 import { SPACE_TYPE_NAME_FIELD_KEY, type SpaceTypeRow } from "../types";
 
 export function buildEmptySpaceTypeRow({
@@ -16,5 +17,5 @@ export function buildEmptySpaceTypeRow({
 }
 
 function stringDefault(value: unknown): string {
-  return typeof value === "string" ? value : "";
+  return readStringDefault(value, "") ?? "";
 }

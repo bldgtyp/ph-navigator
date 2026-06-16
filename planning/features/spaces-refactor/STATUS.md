@@ -126,6 +126,15 @@ None for starting Phase 01.
 - 2026-06-16 17:49 EDT: Phase 04 implementation and focused frontend
   verification complete. Full `make ci` remains deferred until Phase 05
   per current direction.
+- 2026-06-16 18:55 EDT: Phase 04 `$ simplify` closeout complete.
+  Accepted cleanup extracted shared project-document table primitives,
+  shared field-default readers, shared Space-Types test fixtures, and a
+  shared Room display-label helper; it also memoized Space-Type
+  sanitizer columns, stabilized reverse-link navigation callbacks, and
+  avoided rewriting unchanged Space-Type rows during cell writes.
+- 2026-06-16 18:55 EDT: `$ docs-pass` complete. No stable `context/`
+  edits were made; Phase 05 remains responsible for final browser smoke,
+  full verification, and durable context closeout.
 
 ## Phase 02 Verification
 
@@ -177,6 +186,19 @@ None for starting Phase 01.
     Apertures Fast Refresh warnings and Vite reported the existing large
     chunk warning.
 - `make format`
-  - Passed through the frontend formatter on 2026-06-16 17:47 EDT.
+  - Passed on 2026-06-16 18:52 EDT; no files changed.
+- `$ simplify`
+  - Completed on 2026-06-16 18:55 EDT with shared-helper and
+    controller-stability cleanup folded into Phase 04.
+- `cd frontend && pnpm exec vitest run src/features/spaces/__tests__/spaceTypesController.test.ts src/features/spaces/__tests__/SpaceTypesTable.test.tsx src/features/equipment/__tests__/RoomsTable.linkedRecord.test.tsx src/features/equipment/__tests__/PumpsTable.reuse.test.tsx --reporter=dot`
+  - 20 passed on 2026-06-16 18:53 EDT.
+- `make frontend-dev-check`
+  - Passed on 2026-06-16 18:53 EDT; ESLint reported only the existing
+    Apertures Fast Refresh warnings and Vite reported the existing large
+    chunk warning.
+- `graphify update .`
+  - Passed on 2026-06-16 18:54 EDT.
+- `$ docs-pass`
+  - Completed on 2026-06-16 18:55 EDT; no stable `context/` edits.
 - Full `make ci`
   - Deferred until Phase 05 per current direction.

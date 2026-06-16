@@ -1,12 +1,12 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { generatedId } from "../../../shared/lib/ids";
-import { RECORD_ID_FIELD_KEY } from "../../../shared/ui/data-table";
 import { SliceTableShell, useSliceTableController } from "../../../shared/ui/data-table/feature";
-import { customTextValueOrNull } from "../../equipment/lib/customValueReaders";
 import { wasLocalDraftTouched } from "../../equipment/lib";
 import { useRoomsSliceQuery } from "../../equipment/hooks";
-import type { RoomRow, RoomsSlice } from "../../equipment/types";
+import { routeForInverseSource } from "../../equipment/lib/inverseRoutes";
+import { roomDisplayLabel } from "../../equipment/lib/roomLabels";
+import type { RoomsSlice } from "../../equipment/types";
 import type { ProjectDetail } from "../../projects/types";
 import { SpaceTypesTableSlot } from "../components/SpaceTypesTableSlot";
 import { buildEmptySpaceTypeRow } from "../lib/buildEmptySpaceTypeRow";
@@ -16,7 +16,6 @@ import {
   useSpaceTypesSchemaMutation,
   useSpaceTypesSliceQuery,
 } from "../hooks";
-import { spacesRoomsPath } from "../paths";
 import {
   SPACE_TYPE_ID_PREFIX,
   SPACE_TYPES_TABLE_NAME,
@@ -76,6 +75,10 @@ function SpaceTypesPageBody({
   const activeVersionId = project.active_version_id;
   const replaceMutation = useReplaceSpaceTypesSliceMutation(project.id, activeVersionId);
   const schemaMutation = useSpaceTypesSchemaMutation(project.id, activeVersionId);
+  const columnsForSanitize = useMemo(
+    () => spaceTypeColumnStubs(spaceTypesSlice.field_defs, spaceTypesSlice.inverse_link_fields),
+    [spaceTypesSlice.field_defs, spaceTypesSlice.inverse_link_fields],
+  );
 
   const controller = useSliceTableController({
     projectId: project.id,
@@ -86,10 +89,7 @@ function SpaceTypesPageBody({
     slice: spaceTypesSlice,
     fieldDefs: spaceTypesSlice.field_defs,
     singleSelectOptions: spaceTypesSlice.single_select_options,
-    columnsForSanitize: spaceTypeColumnStubs(
-      spaceTypesSlice.field_defs,
-      spaceTypesSlice.inverse_link_fields,
-    ),
+    columnsForSanitize,
     payloadBuilders: spaceTypesPayloadBuilders,
     conflictMessages: {
       activeRowConflict:
@@ -107,7 +107,10 @@ function SpaceTypesPageBody({
   const resolveLinkedRoom = useMemo<LinkedRoomResolver>(() => {
     const rowsComputed = roomsSlice?.rows_computed ?? {};
     const labelsById = new Map(
-      (roomsSlice?.rooms ?? []).map((room) => [room.id, roomLabel(room, rowsComputed[room.id])]),
+      (roomsSlice?.rooms ?? []).map((room) => [
+        room.id,
+        roomDisplayLabel(room, rowsComputed[room.id]),
+      ]),
     );
     return (rowId) => {
       const label = labelsById.get(rowId);
@@ -115,16 +118,24 @@ function SpaceTypesPageBody({
     };
   }, [roomsSlice]);
 
-  const onInversePillClick = (field: InverseLinkField, rowId: string) => {
-    if (field.source_table_path[0] !== "rooms") return;
-    const next = new URLSearchParams(searchParams);
-    next.set("focus", rowId);
-    next.set("open", "1");
-    navigate({
-      pathname: spacesRoomsPath(project.id),
-      search: next.toString() ? `?${next.toString()}` : "",
-    });
-  };
+  const onInversePillClick = useCallback(
+    (field: InverseLinkField, rowId: string) => {
+      const route = routeForInverseSource(project.id, field, rowId, { openRoom: true });
+      if (!route) return;
+      const next = new URLSearchParams(searchParams);
+      const [pathname, routeSearch] = route.split("?");
+      if (routeSearch) {
+        for (const [key, value] of new URLSearchParams(routeSearch)) {
+          next.set(key, value);
+        }
+      }
+      navigate({
+        pathname,
+        search: next.toString() ? `?${next.toString()}` : "",
+      });
+    },
+    [navigate, project.id, searchParams],
+  );
 
   const reloadDraft = async () => {
     await controller.reloadDraft();
@@ -193,14 +204,3 @@ type SpaceTypesSliceControllerWrite = (op: {
   kind: "rowInsert";
   rows: { rowId: string; fieldDefaults: Record<string, unknown>; anchorRowId: null }[];
 }) => unknown;
-
-function roomLabel(room: RoomRow, computed: Record<string, unknown> | undefined): string {
-  const computedRecordId = computed?.[RECORD_ID_FIELD_KEY];
-  if (typeof computedRecordId === "string" && computedRecordId.trim().length > 0) {
-    return computedRecordId;
-  }
-  const number = customTextValueOrNull(room, "number");
-  const name = customTextValueOrNull(room, "name");
-  if (number && name) return `${number} - ${name}`;
-  return number ?? name ?? room.id;
-}
