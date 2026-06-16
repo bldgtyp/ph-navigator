@@ -59,6 +59,7 @@ from features.project_document.document import (
     RoomRow,
     RoomsTableEnvelope,
     SingleSelectOption,
+    SpaceTypesTableEnvelope,
     ThermalBridgeRow,
     ThermalBridgesTableEnvelope,
     VentilatorRow,
@@ -71,6 +72,7 @@ from features.project_document.tables.hot_water_heaters import HOT_WATER_HEATERS
 from features.project_document.tables.hot_water_tanks import HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.rooms import ROOMS_BUILT_IN_FIELD_DEFS
+from features.project_document.tables.space_types import SPACE_TYPES_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.thermal_bridges import THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.ventilators import VENTILATORS_BUILT_IN_FIELD_DEFS
 from features.project_document.validation import body_size_bytes, validate_document
@@ -379,6 +381,7 @@ def _starter_project_document(payload: CreateProjectRequest) -> ProjectDocumentV
             field_defs=list(ROOMS_BUILT_IN_FIELD_DEFS),
             rows=[RoomRow.model_validate(row) for row in rooms_seed.rows],
         ),
+        space_types=SpaceTypesTableEnvelope(field_defs=list(SPACE_TYPES_BUILT_IN_FIELD_DEFS)),
         thermal_bridges=ThermalBridgesTableEnvelope(
             field_defs=list(THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS),
             rows=[ThermalBridgeRow.model_validate(row) for row in thermal_bridges_seed.rows],

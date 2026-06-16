@@ -23,6 +23,7 @@ from features.project_document.document import (
     RoomRow,
     RoomsTableEnvelope,
     SingleSelectOption,
+    SpaceTypesTableEnvelope,
     ThermalBridgesTableEnvelope,
 )
 from features.project_document.tables.appliances import APPLIANCES_BUILT_IN_FIELD_DEFS
@@ -37,6 +38,7 @@ from features.project_document.tables.rooms import (
     RoomsSliceReplaceRequest,
     apply_rooms_replace,
 )
+from features.project_document.tables.space_types import SPACE_TYPES_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.thermal_bridges import THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.ventilators import VENTILATORS_BUILT_IN_FIELD_DEFS
 
@@ -58,10 +60,14 @@ def _body_with_default_field() -> ProjectDocumentV1:
     envelope = RoomsTableEnvelope(field_defs=[*ROOMS_BUILT_IN_FIELD_DEFS, field], rows=[])
     return ProjectDocumentV1.model_validate(
         {
-            "schema_version": 5,
+            "schema_version": 6,
             "project": ProjectDocumentProject(name="t", bt_number="1", cert_programs=[]).model_dump(mode="json"),
             "tables": {
                 "rooms": envelope.model_dump(mode="json"),
+                "space_types": SpaceTypesTableEnvelope(
+                    field_defs=list(SPACE_TYPES_BUILT_IN_FIELD_DEFS),
+                    rows=[],
+                ).model_dump(mode="json"),
                 "thermal_bridges": ThermalBridgesTableEnvelope(
                     field_defs=list(THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS),
                     rows=[],

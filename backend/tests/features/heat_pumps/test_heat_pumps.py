@@ -128,7 +128,7 @@ def test_document_defaults_heat_pump_arrays() -> None:
     tables = empty_required_tables()
     document = ProjectDocumentV1.model_validate(
         {
-            "schema_version": 5,
+            "schema_version": 6,
             "project": {"name": "p", "bt_number": "1", "cert_programs": []},
             "tables": tables,
             "single_select_options": {
@@ -151,7 +151,7 @@ def test_document_rejects_bad_heat_pump_fk() -> None:
     with pytest.raises(ValidationError, match="Missing heat-pump outdoor equip"):
         ProjectDocumentV1.model_validate(
             {
-                "schema_version": 5,
+                "schema_version": 6,
                 "project": {"name": "p", "bt_number": "1", "cert_programs": []},
                 "tables": tables,
                 "single_select_options": {

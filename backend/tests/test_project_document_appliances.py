@@ -150,7 +150,7 @@ def test_document_rejects_missing_appliance_type_option() -> None:
     first = appliance_payload()["appliances"][0]
     tables = empty_required_tables()
     body = {
-        "schema_version": 5,
+        "schema_version": 6,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             **tables,
@@ -204,7 +204,7 @@ def test_legacy_equipment_appliances_contract_preserves_table_envelope() -> None
     tables = empty_required_tables()
     body = ProjectDocumentV1.model_validate(
         {
-            "schema_version": 5,
+            "schema_version": 6,
             "project": {"name": "p", "bt_number": "1", "cert_programs": []},
             "tables": {
                 **tables,
