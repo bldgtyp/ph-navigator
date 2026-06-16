@@ -37,7 +37,7 @@
         "volts": 120,
         "horse_power": null,
         "wattage": 45,
-        "flow_gpm": 4,
+        "flow_gpm": 15.141647136,
         "runtime_khr_yr": 2.5
       }
     },
@@ -55,7 +55,7 @@
         "volts": 120,
         "horse_power": null,
         "wattage": 45,
-        "flow_gpm": 6,
+        "flow_gpm": 22.712470704,
         "runtime_khr_yr": 4.0
       }
     },
@@ -73,7 +73,7 @@
         "volts": 240,
         "horse_power": 0.5,
         "wattage": 750,
-        "flow_gpm": 12,
+        "flow_gpm": 45.424941408,
         "runtime_khr_yr": 0.8
       }
     },
@@ -91,7 +91,7 @@
         "volts": 120,
         "horse_power": 0.33,
         "wattage": 360,
-        "flow_gpm": 43,
+        "flow_gpm": 162.772706712,
         "runtime_khr_yr": 0.15
       }
     },
@@ -109,7 +109,7 @@
         "volts": 120,
         "horse_power": null,
         "wattage": 60,
-        "flow_gpm": 5,
+        "flow_gpm": 18.92705892,
         "runtime_khr_yr": 1.6
       }
     }

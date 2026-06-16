@@ -506,6 +506,7 @@ describe("FieldConfigModal", () => {
     );
 
     expect(screen.getByRole("group", { name: "Units" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Unit" })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByLabelText("Unit type")).toBeDisabled();
     expect(screen.getByLabelText("SI decimal precision")).toBeDisabled();
     expect(screen.queryByRole("button", { name: "Remove units" })).toBeNull();

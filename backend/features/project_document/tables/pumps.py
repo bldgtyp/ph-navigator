@@ -74,7 +74,21 @@ PUMPS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
     built_in_field_def(field_key="phase", display_name="Phase", field_type=CustomFieldType.number),
     built_in_field_def(field_key="horse_power", display_name="Horse Power", field_type=CustomFieldType.number),
     built_in_field_def(field_key="wattage", display_name="Wattage", field_type=CustomFieldType.number),
-    built_in_field_def(field_key="flow_gpm", display_name="Flow - GPM", field_type=CustomFieldType.number),
+    built_in_field_def(
+        field_key="flow_gpm",
+        display_name="Flow",
+        field_type=CustomFieldType.number,
+        config={
+            "units": {
+                "mode": "fixed",
+                "unit_type": "flow_rate",
+                "si_unit": "l_min",
+                "ip_unit": "gpm",
+                "precision_si": 1,
+                "precision_ip": 1,
+            }
+        },
+    ),
     built_in_field_def(
         field_key="runtime_khr_yr",
         display_name="Runtime - kHR/YEAR",

@@ -10,7 +10,7 @@ from pydantic import ValidationError
 from features.project_document.custom_fields import CustomFieldType
 from features.project_document.document import ProjectDocumentV1, PumpRow
 from features.project_document.tables import get_table_contract
-from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_KEYS
+from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_DEFS, PUMPS_BUILT_IN_FIELD_KEYS
 from tests.project_document_helpers import (
     custom_fields_from_slice,
     empty_pumps_table,
@@ -70,7 +70,7 @@ def pump_payload() -> dict[str, Any]:
                     "volts": 120,
                     "horse_power": None,
                     "wattage": 45,
-                    "flow_gpm": 4,
+                    "flow_gpm": 15.141647136,
                     "runtime_khr_yr": 2.5,
                 },
             }
@@ -129,6 +129,20 @@ def test_pumps_contract_exposes_field_registry() -> None:
     assert pumps.table_path == ("equipment", "pumps")
     assert pumps.field_registry.field_keys == PUMPS_BUILT_IN_FIELD_KEYS
     assert pumps.field_registry.option_list_namespace_prefix == "equipment.pumps"
+
+
+def test_pump_flow_field_uses_fixed_flow_rate_units() -> None:
+    flow_field = next(field for field in PUMPS_BUILT_IN_FIELD_DEFS if field.field_key == "flow_gpm")
+
+    assert flow_field.display_name == "Flow"
+    assert flow_field.config["units"] == {
+        "mode": "fixed",
+        "unit_type": "flow_rate",
+        "si_unit": "l_min",
+        "ip_unit": "gpm",
+        "precision_si": 1,
+        "precision_ip": 1,
+    }
 
 
 def test_first_pumps_replace_lazily_creates_draft(clean_document_tables: None) -> None:

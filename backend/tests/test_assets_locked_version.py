@@ -64,7 +64,7 @@ def _seed_pump_row(client: TestClient, project_id: object, version_id: object, d
             "model": "0015e3",
             "volts": 120,
             "wattage": 45,
-            "flow_gpm": 4,
+            "flow_gpm": 15.141647136,
             "runtime_khr_yr": 2.5,
         },
     }

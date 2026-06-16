@@ -6,13 +6,14 @@ import {
   Link,
   Palette,
   Paperclip,
+  Ruler,
   SquareFunction,
   Type,
   type LucideIcon,
 } from "lucide-react";
 import type { CustomFieldType, FieldDef, FieldType } from "../types";
 
-type FieldTypeIconKind = CustomFieldType | FieldType;
+type FieldTypeIconKind = CustomFieldType | FieldType | "unit";
 
 type FieldTypeIconMeta = {
   Icon: LucideIcon;
@@ -23,6 +24,7 @@ const FIELD_TYPE_ICON_META: Record<FieldTypeIconKind, FieldTypeIconMeta> = {
   short_text: { Icon: Type, label: "Short text" },
   long_text: { Icon: AlignLeft, label: "Long text" },
   number: { Icon: Hash, label: "Number" },
+  unit: { Icon: Ruler, label: "Unit" },
   url: { Icon: Link, label: "URL" },
   single_select: { Icon: CircleChevronDown, label: "Single select" },
   formula: { Icon: SquareFunction, label: "Formula" },
@@ -34,6 +36,9 @@ const FIELD_TYPE_ICON_META: Record<FieldTypeIconKind, FieldTypeIconMeta> = {
 };
 
 function fieldTypeIconKind(fieldDef: FieldDef): FieldTypeIconKind {
+  if ((fieldDef.custom_field_type ?? fieldDef.field_type) === "number" && fieldDef.numberUnits) {
+    return "unit";
+  }
   return fieldDef.custom_field_type ?? fieldDef.field_type;
 }
 

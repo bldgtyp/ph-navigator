@@ -49,6 +49,7 @@ export type TableFieldRenderOverlay = Partial<
     FieldDef,
     | "colorCodeOptions"
     | "defaultOptionId"
+    | "display_name"
     | "locked"
     | "numberPrecision"
     | "numberUnits"
@@ -259,6 +260,7 @@ function fieldOverlayWithoutOptions(
   const out: Omit<TableFieldRenderOverlay, "options"> = {};
   if (overlay.colorCodeOptions !== undefined) out.colorCodeOptions = overlay.colorCodeOptions;
   if (overlay.defaultOptionId !== undefined) out.defaultOptionId = overlay.defaultOptionId;
+  if (overlay.display_name !== undefined) out.display_name = overlay.display_name;
   if (overlay.locked !== undefined) out.locked = overlay.locked;
   if (overlay.numberPrecision !== undefined) out.numberPrecision = overlay.numberPrecision;
   if (overlay.numberUnits !== undefined) out.numberUnits = overlay.numberUnits;

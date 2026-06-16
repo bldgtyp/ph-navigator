@@ -175,7 +175,7 @@ export function PumpsTable({
       {
         id: "flow_gpm",
         fieldKey: "flow_gpm",
-        header: fieldDefByKey.get("flow_gpm")?.display_name ?? "Flow - GPM",
+        header: fieldDefByKey.get("flow_gpm")?.display_name ?? "Flow",
         accessor: (pump) => customNumberValue(pump, "flow_gpm"),
         defaultWidth: 120,
         className: "numeric-cell",

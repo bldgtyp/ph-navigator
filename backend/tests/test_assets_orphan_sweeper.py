@@ -69,7 +69,7 @@ def _pump_row(datasheet_asset_ids: list[str]) -> dict[str, Any]:
             "model": "0015e3",
             "volts": 120,
             "wattage": 45,
-            "flow_gpm": 4,
+            "flow_gpm": 15.141647136,
             "runtime_khr_yr": 2.5,
         },
     }
