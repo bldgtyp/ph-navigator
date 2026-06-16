@@ -13,7 +13,9 @@ from features.project_document.custom_fields import (
     TableFieldDef,
 )
 from features.project_document.document import (
+    ROOM_SPACE_TYPE_FIELD_KEY,
     ProjectDocumentV1,
+    RoomRow,
     SingleSelectOption,
     SpaceTypeRow,
     SpaceTypesTableEnvelope,
@@ -111,6 +113,31 @@ def apply_space_types_replace(body: ProjectDocumentV1, payload: BaseModel) -> Pr
     for key, value in custom_option_lists.items():
         options[key] = value
     next_tables = body.tables.model_copy(update={"space_types": next_envelope})
+
+    prior_ids = {space_type.id for space_type in body.tables.space_types.rows}
+    next_ids = {space_type.id for space_type in space_types_payload.space_types}
+    removed_ids = prior_ids - next_ids
+    if removed_ids:
+        cascaded_rooms: list[RoomRow] = []
+        rooms_changed = False
+        for room in next_tables.rooms.rows:
+            current_links = room.custom_links.get(ROOM_SPACE_TYPE_FIELD_KEY, [])
+            if not any(link_id in removed_ids for link_id in current_links):
+                cascaded_rooms.append(room)
+                continue
+            rooms_changed = True
+            next_custom_links = dict(room.custom_links)
+            kept_links = [link_id for link_id in current_links if link_id not in removed_ids]
+            if kept_links:
+                next_custom_links[ROOM_SPACE_TYPE_FIELD_KEY] = kept_links
+            else:
+                next_custom_links.pop(ROOM_SPACE_TYPE_FIELD_KEY, None)
+            cascaded_rooms.append(room.model_copy(update={"custom_links": next_custom_links}))
+        if rooms_changed:
+            next_tables = next_tables.model_copy(
+                update={"rooms": next_tables.rooms.model_copy(update={"rows": cascaded_rooms})}
+            )
+
     next_body = body.model_copy(update={"tables": next_tables, "single_select_options": options})
     return validate_document(next_body.model_dump(mode="json"))
 

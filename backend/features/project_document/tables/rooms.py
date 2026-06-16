@@ -25,6 +25,7 @@ from features.project_document.document import (
     ROOM_BUILDING_ZONE_OPTION_KEY,
     ROOM_FLOOR_LEVEL_OPTION_KEY,
     ROOM_OPTION_KEYS,
+    ROOM_SPACE_TYPE_FIELD_KEY,
     ROOMS_TYPED_COLUMN_FIELD_KEYS,
     ProjectDocumentV1,
     RoomOptionKey,
@@ -76,6 +77,13 @@ _ROOMS_NON_RECORD_ID_FIELD_DEFS: tuple[TableFieldDef, ...] = (
     built_in_field_def(field_key="name", display_name="Name", field_type=CustomFieldType.short_text, default=""),
     built_in_field_def(field_key="floor_level", display_name="Floor", field_type=CustomFieldType.single_select),
     built_in_field_def(field_key="building_zone", display_name="Zone", field_type=CustomFieldType.single_select),
+    built_in_field_def(
+        field_key=ROOM_SPACE_TYPE_FIELD_KEY,
+        display_name="Space Type",
+        field_type=CustomFieldType.linked_record,
+        config={"target_table_path": ["space_types"], "max_links": 1},
+        description="Project-local Space-Type linked to this Room.",
+    ),
     built_in_field_def(field_key="num_people", display_name="People", field_type=CustomFieldType.number, default=0),
     built_in_field_def(field_key="num_bedrooms", display_name="Bedrooms", field_type=CustomFieldType.number, default=0),
     built_in_field_def(field_key="icfa_factor", display_name="iCFA", field_type=CustomFieldType.number, default=1.0),
@@ -443,7 +451,9 @@ ROOMS_REQUIRED_FIELD_KEYS: frozenset[str] = frozenset()
 # their values live outside `custom_values` and a retype would strand
 # the typed column. Floor / Zone reference the project's namespaced
 # option list; iCFA carries the `ge=0, le=1.0` PH-domain invariant.
-ROOMS_FIELD_TYPE_LOCKED_KEYS: frozenset[str] = frozenset({"floor_level", "building_zone", "icfa_factor"})
+ROOMS_FIELD_TYPE_LOCKED_KEYS: frozenset[str] = frozenset(
+    {"floor_level", "building_zone", "icfa_factor", ROOM_SPACE_TYPE_FIELD_KEY}
+)
 
 
 def _read_rooms_field_option_list(body: ProjectDocumentV1, field_key: str) -> list[SingleSelectOption]:

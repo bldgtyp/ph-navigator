@@ -122,7 +122,11 @@ APPLIANCE_OPTION_KEYS: tuple[ApplianceOptionKey, ...] = (
 THERMAL_BRIDGE_TYPE_OPTION_KEY = "thermal_bridges.type"
 ThermalBridgeOptionKey = Literal["thermal_bridges.type"]
 THERMAL_BRIDGE_OPTION_KEYS: tuple[ThermalBridgeOptionKey, ...] = (THERMAL_BRIDGE_TYPE_OPTION_KEY,)
+ROOM_SPACE_TYPE_FIELD_KEY = "space_type_id"
 
+# v7 wire shape: Rooms adds a built-in linked-record FieldDef
+# (`space_type_id`) targeting Space-Types.
+#
 # v6 wire shape: Space-Types adds a first-class top-level table.
 #
 # v4 wire shape: Phase 2 promotes the pinned identifier to a real
@@ -130,7 +134,7 @@ THERMAL_BRIDGE_OPTION_KEYS: tuple[ThermalBridgeOptionKey, ...] = (THERMAL_BRIDGE
 # entry is renamed to `record_id` (display label stays "Tag"). Pre-
 # deploy posture (PRD §P3.6) — no v2/v3 reader is provided; dev DBs
 # rebuild on the phase boundary.
-CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 6
+CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 7
 
 # Field keys that have a typed Pydantic column on the row model. Used
 # to split read/write paths between typed columns and the
@@ -224,7 +228,7 @@ class ProjectDocumentTables(BaseModel):
 class ProjectDocumentV1(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: Literal[6] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
+    schema_version: Literal[7] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     project: ProjectDocumentProject
     tables: ProjectDocumentTables = Field(default_factory=ProjectDocumentTables)
     single_select_options: dict[str, list[SingleSelectOption]] = Field(

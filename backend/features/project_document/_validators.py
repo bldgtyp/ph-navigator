@@ -227,7 +227,8 @@ def validate_rows_custom_links(
     - rejects `field_key` whose FieldDef is not `linked_record`
     - rejects `len(ids) > max_links`
     - dedupes within-cell silently (PRD Q25)
-    - silently strips orphan ids against the snapshot (PRD Q5 amendment)
+    - silently strips orphan ids against the snapshot for custom fields
+    - rejects orphan ids for feature-author-declared built-in links
     """
     _ = table_label
     for row_id, custom_values, custom_links in rows:
@@ -266,7 +267,18 @@ def validate_rows_custom_links(
 
             target_path = normalize_target_table_path(field_def.config.get("target_table_path"))
             available = target_row_ids.get(target_path, set()) if target_path else set()
-            cleaned = [entry for entry in deduped if entry in available]
+            cleaned: list[str] = []
+            missing: list[str] = []
+            for entry in deduped:
+                if entry in available:
+                    cleaned.append(entry)
+                elif field_def.origin != "custom":
+                    missing.append(entry)
+            if missing:
+                raise ValueError(
+                    f"linked_record value for {field_def.display_name!r} on {row_label} {row_id} "
+                    f"references missing target ids: {missing}"
+                )
             custom_links[field_key] = cleaned
 
 
