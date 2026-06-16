@@ -410,9 +410,11 @@ wide; the always-visible vs hidden-by-default policy stays.
 
 **On the ERVs DataTable** (`ERVs` sub-tab):
 
-- A small column "Linked HP indoor" (default-hidden) shows the
-  count of HP indoor units linked to each ERV row. Lets a user
-  quickly find integrated-unit ERVs vs standalone ERVs.
+- Superseded 2026-06-16: do not show a computed "Linked HP indoor"
+  count column on the Ventilators DataTable. The editable relationship
+  remains the HP Units — Indoor `linked_erv_unit_id` field; if a
+  Ventilators-side surface is needed later, model it as a normal link
+  field rather than a derived count.
 
 This requires a small amendment to US-EQ-4 (ERVs sub-tab) — the
 new column and the modal badge are additive; no schema change to

@@ -12,7 +12,6 @@ import { HotWaterHeatersTableSlot } from "../components/HotWaterHeatersTableSlot
 import { HotWaterTanksTableSlot } from "../components/HotWaterTanksTableSlot";
 import { PumpsTableSlot } from "../components/PumpsTableSlot";
 import { VentilatorsTableSlot } from "../components/VentilatorsTableSlot";
-import { VENTILATOR_LINKED_HP_INDOOR_COLUMN_ID } from "../components/VentilatorsTable";
 import { rememberedHeatPumpLeafPath } from "../heat-pumps/routes/heatPumpLeafTabs";
 import { HeatPumpsPanel } from "../heat-pumps/routes/HeatPumpsPanel";
 import {
@@ -98,8 +97,6 @@ import {
   equipmentTabLabel,
 } from "./equipmentPageConfig";
 import { addRowButton, insertEquipmentRow } from "./equipmentRowActions";
-
-const VENTILATORS_DEFAULT_HIDDEN_COLUMNS = [VENTILATOR_LINKED_HP_INDOOR_COLUMN_ID];
 
 export function EquipmentPageBody(props: {
   project: ProjectDetail;
@@ -268,7 +265,6 @@ export function EquipmentPageBody(props: {
     replaceMutation: ventilatorsReplaceMutation,
     schemaMutation: ventilatorsSchemaMutation,
     refetch: refetchVentilators,
-    defaultHiddenColumns: VENTILATORS_DEFAULT_HIDDEN_COLUMNS,
   });
 
   const pumpsController = useSliceTableController({
