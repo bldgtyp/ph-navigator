@@ -317,46 +317,49 @@ endpoints from day 1 so the MCP server can manage views.
 **Status:** Draft · **Priority:** MVP (promotes the placeholder
 in US-3.5 to a walked story; sub-stories US-EQ-1..6 detail the
 sub-tabs)
-**PRD ref:** §6.2 (`tables.rooms`, `tables.equipment`), §6.3
+**PRD ref:** §6.2 (`tables.rooms`, `tables.space_types`,
+`tables.equipment`), §6.3
 (non-catalog tables), §11.1 (project tabs)
 **V1 ref:** V1 has equipment surfaces under the AirTable
 backend; V2 brings them into the project document and into the
 unified table-view UX (US-Builder-Tables)
 
 ### Story
-> As an editor, I want a single "Equipment" tab that gathers
-> all per-project occupancy and MEP data — Rooms, Thermal
-> Bridges, ERVs, Pumps, Fans — under one roof, so I have one
-> destination for "everything that's not envelope and not
-> windows." Sub-tabs let me focus on one table at a time
-> without losing the parent context.
+> As an editor, I want a dedicated "Spaces" tab for per-project
+> occupancy/room data and an "Equipment" tab for MEP equipment
+> schedules — Ventilators, Heat Pumps, Pumps, Fans, hot-water
+> equipment, electric heaters, Appliances —
+> so Rooms and Space-Types stay close to each other without
+> overloading the equipment workspace. Sub-tabs let me focus on
+> one table at a time without losing the parent context.
 
 ### Why one tab, not five
 
-Per Q-LAND-1's resolved tab bar (Status / Windows / Envelope /
-**Equipment** / Model), Equipment is one of five top-level tabs.
-Splitting Rooms, Thermal Bridges, and the equipment tables into
-five top-level tabs would push the bar to 9 tabs and bury
-related data behind extra clicks. The sub-tab convention used
-by Envelope (Assemblies / Materials / Airtightness / Site
-Photos) carries over here cleanly. **Decision (a) per Ed,
-2026-05-10.**
+Per the Spaces refactor (2026-06-16), Rooms moved out of the
+Equipment parent and into a top-level **Spaces** tab. Spaces owns
+the Space-Types setup table and Rooms table. Thermal Bridges is also a
+top-level project tab in the current implementation. Equipment remains
+a top-level project tab for MEP/equipment schedules, preserving the
+sub-tab convention used by Envelope (Assemblies / Materials /
+Airtightness / Site Photos) without burying room-program data under
+equipment.
 
 ### Sub-tabs (in display order)
 
 | Order | Sub-tab | Story | V2 v1 status | Catalog-linked? |
 |---|---|---|---|---|
-| 1 | Rooms | US-EQ-2 | **Full draft** — source-of-truth for downstream HBJSON | No (rooms unlikely to ever have a catalog) |
-| 2 | Thermal Bridges | US-EQ-3 | Editable DataTable with core TB fields, seeded type options, and inline PDF Report attachment | Yes |
-| 3 | ERVs | US-EQ-4 | **Full draft** — ventilation-critical for PH | Catalog deferred to v1.1+ |
-| 4 | Heat Pumps | US-EQ-7..11 | **Full draft (2026-06-09)** — four nested leaf pages (Equipment/Units × Outdoor/Indoor); Phius Multiple HP Estimator export target | "Project Catalog" pattern (project-scoped types + instances); shared catalog deferred to v1.1+ |
-| 5 | Pumps | US-EQ-5 | **Placeholder** — scaffolding + empty-state copy only; full schema deferred to v1.1+ | Catalog deferred to v1.1+ |
-| 6 | Fans | US-EQ-6 | **Full draft** — ventilation-critical for PH | Catalog deferred to v1.1+ |
+| 1 | Ventilators | US-EQ-4 | **Full draft** — ventilation-critical for PH | Catalog deferred to v1.1+ |
+| 2 | Heat Pumps | US-EQ-7..11 | **Full draft (2026-06-09)** — four nested leaf pages (Equipment/Units × Outdoor/Indoor); Phius Multiple HP Estimator export target | "Project Catalog" pattern (project-scoped types + instances); shared catalog deferred to v1.1+ |
+| 3 | Pumps | US-EQ-5 | **Placeholder** — scaffolding + empty-state copy only; full schema deferred to v1.1+ | Catalog deferred to v1.1+ |
+| 4 | Fans | US-EQ-6 | **Full draft** — ventilation-critical for PH | Catalog deferred to v1.1+ |
+| 5 | Hot-water heaters | TBD | Editable equipment DataTable | Catalog deferred to v1.1+ |
+| 6 | Hot-water tanks | TBD | Editable equipment DataTable | Catalog deferred to v1.1+ |
+| 7 | Electric heaters | TBD | Editable equipment DataTable | Catalog deferred to v1.1+ |
+| 8 | Appliances | TBD | Editable equipment DataTable | Catalog deferred to v1.1+ |
 
-Default sub-tab on first visit: **Rooms** (it's the
-source-of-truth that downstream tools — Rhino, the energy model
-— consume; users are most likely to land here first when
-populating a new project).
+Default Equipment sub-tab on first visit: **Ventilators** in the
+current implementation. Rooms-specific default behavior lives under
+the Spaces tab.
 
 ### Architectural decisions
 
@@ -371,7 +374,7 @@ populating a new project).
   etc.) ship in v1.1+. Each row's schema includes
   `catalog_origin: null | <object>` from day 1 so adding the
   catalog-pick path later is additive — no schema migration.
-- **Rooms is special: PHN-first source-of-truth.** Per Ed's
+- **Spaces is special: PHN-first source-of-truth.** Per Ed's
   framing (2026-05-10), Rooms data is **defined in PHN first**,
   then **consumed by Rhino** to generate HBJSON. HBJSON is
   downstream of the rooms table, not upstream. There is **no
@@ -388,18 +391,19 @@ populating a new project).
 
 **Acceptance criteria:**
 
-1. **Sub-tab bar** below the Equipment tab heading. Five
-   sub-tabs in the order above. shadcn `Tabs` primitive.
+1. **Sub-tab bar** below the Equipment tab heading. Equipment
+   sub-tabs in the order above. Rooms lives under Spaces, not
+   Equipment.
 2. **URL deep-link** per Q-LAND-1 / Q-ENV-9 pattern:
-   - `/projects/{id}/equipment` → redirect to
-     `/projects/{id}/equipment/rooms` (default sub-tab)
-   - `/projects/{id}/equipment/rooms`
-   - `/projects/{id}/equipment/thermal-bridges`
-   - `/projects/{id}/equipment/ervs`
-   - `/projects/{id}/equipment/heat-pumps` (nested; redirects to
+   - `/projects/{id}/equipment?tab=ventilators`
+   - `/projects/{id}/equipment?tab=heat-pumps` (nested; redirects to
      `…/heat-pumps/equipment-outdoor` — see US-EQ-7)
-   - `/projects/{id}/equipment/pumps`
-   - `/projects/{id}/equipment/fans`
+   - `/projects/{id}/equipment?tab=pumps`
+   - `/projects/{id}/equipment?tab=fans`
+   - `/projects/{id}/equipment?tab=hot-water-heaters`
+   - `/projects/{id}/equipment?tab=hot-water-tanks`
+   - `/projects/{id}/equipment?tab=electric-heaters`
+   - `/projects/{id}/equipment?tab=appliances`
    - Browser back / forward navigates sub-tab history.
 3. **Sub-tab content area** renders the matching
    `<ProjectDataTable>` (US-Builder-Tables) with that table's
@@ -413,12 +417,16 @@ populating a new project).
 
 ### Resolved questions (2026-05-10)
 - **Q-EQ-1: Sub-tab order.** Resolved: **Rooms / Thermal
-  Bridges / ERVs / Pumps / Fans** (as listed). Rooms first
-  matches "user populates this first."
+  Bridges / ERVs / Pumps / Fans** was the original order.
+  Superseded 2026-06-16 by the Spaces refactor: Rooms moved to
+  Spaces alongside Space-Types; Equipment keeps the MEP/equipment
+  schedules.
 - **Q-EQ-2: Default sub-tab on first visit to the Equipment
-  tab.** Resolved: **Rooms** (source-of-truth, most-edited).
-  `/projects/{id}/equipment` redirects to
-  `/projects/{id}/equipment/rooms`.
+  tab.** Original answer **Rooms** is superseded by the Spaces
+  refactor and later Equipment table expansion. `/projects/{id}/spaces`
+  defaults to Space-Types, `/projects/{id}/spaces/rooms` owns the Rooms
+  table, and `/projects/{id}/equipment` defaults to Ventilators. Legacy
+  `/projects/{id}/rooms` redirects to `/projects/{id}/spaces/rooms`.
 
 ### Open questions
 None outstanding.
@@ -447,6 +455,9 @@ the project document.
 **Inherits:** US-Builder-Tables (toolbar, keyboard nav,
 mutations, locked-version, JSON download).
 
+**Current route:** `/projects/{id}/spaces/rooms`. Rooms is under the
+top-level Spaces tab, paired with `/projects/{id}/spaces/space-types`.
+
 ### Story
 > As an editor, I want a Rooms table that captures the per-room
 > metadata our Rhino → HBJSON pipeline depends on — name,
@@ -468,6 +479,9 @@ mutations, locked-version, JSON download).
   "num_bedrooms": 0,
   "icfa_factor": 1.0,                 // clamped [0.0, 1.0]
   "erv_unit_ids": ["erv_<ULID>"],     // array of refs to tables.equipment.ervs[*].id; empty array = no ERV; multiple ERVs allowed
+  "custom_links": {
+    "space_type_id": ["st_<ULID>"]     // linked_record targeting tables.space_types.rows[*].id; max one id
+  },
   "catalog_origin": null,             // forward-compatible (rooms have no catalog and likely never will)
   "notes": null
 }
@@ -505,6 +519,7 @@ mutations, locked-version, JSON download).
    | `name` | string | nullable/blank allowed | |
    | `floor_level` | **single_select** (US-Builder-Tables criteria 16–17) | nullable; when present, option_id ref into `single_select_options["rooms.floor_level"]` | sort follows option order, not label; blank rooms remain valid |
    | `building_zone` | **single_select** (US-Builder-Tables criteria 16–17) | option_id ref into `single_select_options["rooms.building_zone"]`; **nullable** | user-defined options; no enum imposed |
+   | `space_type_id` | **linked_record** | nullable; when present, exactly one id pointing at `tables.space_types.rows[*].id` | displayed as **Space Type**; target options come from project-local Space-Types |
    | `num_people` | int | `>= 0` | |
    | `num_bedrooms` | int | `>= 0` | |
    | `icfa_factor` | float | `0.0 <= x <= 1.0`, default `1.0` | |

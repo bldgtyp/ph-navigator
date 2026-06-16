@@ -18,7 +18,7 @@ feature-first planning.
 | Apertures / Aperture Builder | Planned / PRD updated with review decisions; phase planning not started | `features/apertures/STATUS.md` |
 | CSS Token Guard Sweep | Complete / implemented on main worktree with format + CI evidence; archived | `archive/css-token-guard-sweep/STATUS.md` |
 | Heat Pump Link Fields | Complete / implemented on main with format, CI, graphify update, browser smoke evidence; archived | `archive/heat-pump-link-fields/STATUS.md` |
-| Spaces Refactor | Active / Phase 04 complete; Phase 05 verification, browser smoke, and context closeout next | `features/spaces-refactor/STATUS.md` |
+| Spaces Refactor | Complete / Phase 05 verified with format, CI, browser smoke, graphify, simplify, and docs-pass evidence; ready to archive | `features/spaces-refactor/STATUS.md` |
 
 ## Historical Material
 

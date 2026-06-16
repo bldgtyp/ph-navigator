@@ -538,17 +538,29 @@ Properties of the document shape:
 
 ### 6.3 Project-scoped non-catalog tables
 
-Rooms, fans, pumps, ERVs, and similar live entirely inside the document.
+Space-Types, Rooms, fans, pumps, ERVs, and similar live entirely inside the document.
 No relational shadow. Schema and route behavior for each table are
 defined under `backend/features/project_document/tables/` as a
 registered Pydantic-backed contract. Adding a new table type is a code
 change (table contract + frontend column config), not a schema
 migration or a new route/service branch.
 
-Implementation note for Phase 1: Rooms includes the future
-`erv_unit_ids` field in the row shape, but non-empty ERV assignments
-are rejected until the ERV table contract exists and can validate
-references against `tables.equipment.ervs[*].id`.
+Current Spaces contract:
+
+- `tables.space_types` is a FieldDef-capable table envelope with
+  project-local rows. Its built-ins are `record_id` displayed as
+  **Tag** and `name` displayed as **Name**. Space-Types are not
+  pre-seeded; each project defines its own list.
+- Space-Type Tag is the user-facing primary identifier. Named
+  Space-Type rows require a non-blank Tag, and non-blank Tags are
+  unique within the project document after normalized comparison.
+- Rooms include a built-in `linked_record` FieldDef named
+  **Space Type** with field key `space_type_id`,
+  `target_table_path: ["space_types"]`, and `max_links: 1`. Values
+  live in the row's `custom_links` bag, not in a typed row column.
+- Deleting Space-Type rows clears matching Rooms `space_type_id` links
+  during the Space-Types replace mutation. There is no cross-table row
+  delete cascade.
 
 For tables with a corresponding global catalog (fans, pumps, ERVs), the
 "add row" UI offers two paths: pick from catalog (copies values in) or
@@ -739,7 +751,23 @@ Every field-config-capable table carries `{ field_defs, rows }`:
           "num_people": 2,
           "num_bedrooms": 1,
           "cf_01HX...": "needs paint"
+        },
+        "custom_links": {
+          "space_type_id": ["st_..."]         // built-in linked_record; max one Space-Type id
         }
+      }
+    ]
+  },
+  "space_types": {
+    "field_defs": [ /* record_id displayed as Tag, name, plus custom fields */ ],
+    "rows": [
+      {
+        "id": "st_...",
+        "custom_values": {
+          "record_id": "APT",
+          "name": "Apartment"
+        },
+        "custom_links": {}
       }
     ]
   }
@@ -782,6 +810,11 @@ Rules (post-Phase 1b):
   `record_id` entry, and `apply_add_field` / `apply_duplicate_field`
   reject `field_key="record_id"` on custom-side writes. No back-compat
   reader for v2 / v3 — pre-deploy posture.
+- **`schema_version: 7`** (Spaces refactor, 2026-06-16) adds
+  `tables.space_types`, seeds its Tag/Name FieldDefs, adds the Rooms
+  built-in `space_type_id` linked-record FieldDef targeting
+  `["space_types"]`, and exposes inverse Rooms links on Space-Types
+  table-slice responses/download envelopes.
 
 #### 6.6.2 `TableFieldDef` shape
 

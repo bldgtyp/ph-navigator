@@ -66,8 +66,8 @@ direction. Treat V1 findings with this taxonomy:
 
 Current V1-derived invariants:
 
-- Project workspace tabs stay: Status, Windows, Envelope, Equipment,
-  Model.
+- Project workspace tabs stay: Status, Climate, Apertures, Envelope,
+  Spaces, Equipment, Thermal Bridges, Model.
 - Status remains the default project landing surface.
 - Windows and assemblies need visual builders, not only tables.
 - Dense table views remain central for equipment, materials, and
@@ -1295,18 +1295,29 @@ one place," etc.
   for trades-crew use — the primary motivation for the tab's
   existence.
 
-### 2.8 Equipment tab (`/projects/{id}/equipment`) — placeholder
+### 2.8 Spaces and Equipment tabs
 
-**(Detailed in US-Builder-Equipment.)** Sub-rail or sub-tabs per
-equipment kind: Rooms (MVP), then ERVs / Pumps / Fans / etc. as
-the corresponding catalogs ship.
+**Spaces (`/projects/{id}/spaces`).** The Spaces tab groups
+project-local occupancy/program tables. It contains Space-Types and
+Rooms sub-tabs. Space-Types is the setup table for project-specific
+labels such as Apartment, Corridor, Restroom, or other local program
+types; Rooms links to exactly one Space-Type and remains the
+PHN-first source-of-truth consumed by downstream Rhino/HBJSON
+workflows. Legacy `/projects/{id}/rooms` URLs redirect to
+`/projects/{id}/spaces/rooms`.
 
-Equipment surfaces should use dense, filterable tables with status /
-evidence badges that follow §1.8. When row detail becomes too wide for
-the grid, use a selected-row details/evidence panel rather than forcing
-long manufacturer/model/spec strings into cramped cells. Preserve fast
-scan/edit/copy behavior; avoid pagination as the primary way to manage
-project-scale tables unless performance requires it.
+**Equipment (`/projects/{id}/equipment`).** Detailed in
+US-Builder-Equipment. Equipment keeps MEP/equipment schedules such as
+Ventilators, Heat Pumps, Pumps, Fans, hot-water equipment, electric
+heaters, Appliances, and future equipment catalog-backed tables.
+Thermal Bridges is a top-level project tab, not an Equipment sub-tab.
+
+Spaces and Equipment surfaces should use dense, filterable tables with
+status / evidence badges that follow §1.8. When row detail becomes too
+wide for the grid, use a selected-row details/evidence panel rather
+than forcing long manufacturer/model/spec strings into cramped cells.
+Preserve fast scan/edit/copy behavior; avoid pagination as the primary
+way to manage project-scale tables unless performance requires it.
 
 ### 2.9 Model tab (`/projects/{id}/model`) — see feature UI spec
 
