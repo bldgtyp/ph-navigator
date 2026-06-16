@@ -122,6 +122,56 @@ describe("IndoorUnitsTable", () => {
       expect(Array.isArray(body.value.outdoor_unit_id)).toBe(false);
     });
   });
+
+  test("linked-record ventilator edits persist the nullable scalar linked_erv_unit_id field", async () => {
+    const user = userEvent.setup();
+    const slice = baseSlice({
+      indoor_units: [indoorUnit({ linked_erv_unit_id: "vent_a" })],
+    });
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("/assets/bulk-urls")) return jsonResponse({ items: [] });
+      if (url.endsWith("/api/v1/projects/proj_1/versions/ver_1/draft/tables/rooms")) {
+        return jsonResponse(roomsSlice());
+      }
+      if (url.endsWith("/api/v1/projects/proj_1/versions/ver_1/draft/tables/ventilators")) {
+        return jsonResponse({
+          ventilators: [ventilator("vent_a", "ERV-A"), ventilator("vent_b", "ERV-B")],
+        });
+      }
+      if (url.endsWith("/api/v1/projects/proj_1/equipment/heat-pumps/indoor-units")) {
+        const body = JSON.parse(String(init?.body));
+        return jsonResponse({
+          ...slice,
+          source: "draft",
+          draft_etag: "draft_2",
+          indoor_units: [body.value],
+        });
+      }
+      return jsonResponse({});
+    });
+
+    renderTable(slice);
+
+    const currentPill = await screen.findByRole("button", { name: /ERV-A/ });
+    const cell = currentPill.closest('[role="gridcell"]');
+    expect(cell).toBeTruthy();
+    fireEvent.doubleClick(cell!);
+    await user.click(await screen.findByRole("radio", { name: /Link ERV-B/ }));
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    await waitFor(() => {
+      const write = fetchMock.mock.calls.find(
+        ([url, init]) =>
+          String(url).endsWith("/equipment/heat-pumps/indoor-units") &&
+          (init as RequestInit | undefined)?.method === "PATCH",
+      );
+      expect(write).toBeTruthy();
+      const body = JSON.parse(String((write?.[1] as RequestInit).body));
+      expect(body.value.linked_erv_unit_id).toBe("vent_b");
+      expect(Array.isArray(body.value.linked_erv_unit_id)).toBe(false);
+    });
+  });
 });
 
 function renderTable(slice: HeatPumpsSlice) {
@@ -241,4 +291,17 @@ function indoorUnit(overrides: Partial<HeatPumpsSlice["indoor_units"][number]> =
     notes: null,
     ...overrides,
   } satisfies HeatPumpsSlice["indoor_units"][number];
+}
+
+function ventilator(id: string, recordId: string) {
+  return {
+    id,
+    inside_outside: null,
+    url: null,
+    notes: null,
+    custom_values: {
+      record_id: recordId,
+      name: `${recordId} unit`,
+    },
+  };
 }

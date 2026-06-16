@@ -1,13 +1,22 @@
 import { useMemo, type CSSProperties } from "react";
 import {
+  buildLinkedRecordOps,
   DataTable,
   RECORD_ID_FIELD_KEY,
   type DataTableColumnDef,
   type DataTableProps,
   type FieldDef,
+  type LinkedRecordCellOps,
   type TableSchema,
   type ViewState,
 } from "../../../shared/ui/data-table";
+import {
+  HEAT_PUMP_LINK_TARGETS,
+  incomingIndoorUnitColumnDef,
+  incomingIndoorUnitIds,
+  incomingIndoorUnitsFieldDef,
+} from "../heat-pumps/link-fields";
+import type { HeatPumpIndoorUnitRow } from "../heat-pumps/types";
 import { singleSelectOption } from "../../../shared/ui/data-table/lib";
 import { sortedVentilators } from "../lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
@@ -22,6 +31,8 @@ import {
   type VentilatorsSlice,
 } from "../types";
 
+const EMPTY_HEAT_PUMP_INDOOR_UNITS: readonly HeatPumpIndoorUnitRow[] = [];
+
 export function VentilatorsTable({
   ventilatorsSlice,
   tableSchema,
@@ -35,6 +46,7 @@ export function VentilatorsTable({
   overflowMenuActions,
   footerAction,
   onResetView,
+  heatPumpIndoorUnits = EMPTY_HEAT_PUMP_INDOOR_UNITS,
   ...customFieldActions
 }: {
   ventilatorsSlice: VentilatorsSlice;
@@ -49,15 +61,32 @@ export function VentilatorsTable({
   overflowMenuActions?: DataTableProps<VentilatorRow>["overflowMenuActions"];
   footerAction?: DataTableProps<VentilatorRow>["footerAction"];
   onResetView?: DataTableProps<VentilatorRow>["onResetView"];
+  heatPumpIndoorUnits?: readonly HeatPumpIndoorUnitRow[];
 } & CustomFieldTableActions<VentilatorRow>) {
   const sortedRows = useMemo(
     () => sortedVentilators(ventilatorsSlice.ventilators),
     [ventilatorsSlice.ventilators],
   );
   const { fieldDefs, customFields } = tableSchema;
-  const fieldDefByKey = useMemo(
-    () => new Map(fieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef])),
+  const tableFieldDefs = useMemo(
+    () => [...fieldDefs, incomingIndoorUnitsFieldDef("HP indoor units")],
     [fieldDefs],
+  );
+  const fieldDefByKey = useMemo(
+    () => new Map(tableFieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef])),
+    [tableFieldDefs],
+  );
+  const sortedIndoorUnits = useMemo(
+    () =>
+      [...heatPumpIndoorUnits].sort(
+        (a, b) =>
+          a.tag.localeCompare(b.tag, undefined, { numeric: true }) || a.id.localeCompare(b.id),
+      ),
+    [heatPumpIndoorUnits],
+  );
+  const incomingIndoorUnitIdsByVentilatorId = useMemo(
+    () => groupIndoorUnitIdsByVentilator(sortedIndoorUnits),
+    [sortedIndoorUnits],
   );
   const customColumns = useMemo<DataTableColumnDef<VentilatorRow>[]>(
     () =>
@@ -176,16 +205,33 @@ export function VentilatorsTable({
         accessor: (ventilator) => ventilator.notes,
         defaultWidth: 280,
       },
+      incomingIndoorUnitColumnDef<VentilatorRow>({
+        header: "HP indoor units",
+        indoorUnits: sortedIndoorUnits,
+        getIncomingIds: (ventilator) =>
+          incomingIndoorUnitIds(incomingIndoorUnitIdsByVentilatorId, ventilator.id),
+      }),
       ...customColumns,
     ],
-    [customColumns, fieldDefByKey],
+    [customColumns, fieldDefByKey, incomingIndoorUnitIdsByVentilatorId, sortedIndoorUnits],
+  );
+  const linkedRecordOps = useMemo<ReadonlyMap<string, LinkedRecordCellOps>>(
+    () =>
+      buildLinkedRecordOps<HeatPumpIndoorUnitRow>({
+        fieldDefs: tableFieldDefs,
+        targetTablePath: HEAT_PUMP_LINK_TARGETS.indoorUnits,
+        targetRows: sortedIndoorUnits,
+        getRowId: (unit) => unit.id,
+        getRecordId: (unit) => unit.tag || unit.id,
+      }),
+    [sortedIndoorUnits, tableFieldDefs],
   );
 
   return (
     <DataTable
       rows={sortedRows}
       columnDefs={columns}
-      fieldDefs={fieldDefs}
+      fieldDefs={tableFieldDefs}
       getRowId={(ventilator) => ventilator.id}
       emptyMessage={
         isEditor ? "No ventilators yet." : "No ventilators are published in this version."
@@ -200,6 +246,7 @@ export function VentilatorsTable({
       overflowMenuActions={overflowMenuActions}
       footerAction={footerAction}
       onResetView={onResetView}
+      linkedRecordOps={linkedRecordOps}
       {...customFieldActions}
     />
   );
@@ -228,4 +275,20 @@ function shortenUrl(value: string): string {
   } catch {
     return value;
   }
+}
+
+function groupIndoorUnitIdsByVentilator(
+  indoorUnits: readonly HeatPumpIndoorUnitRow[],
+): ReadonlyMap<string, readonly string[]> {
+  const index = new Map<string, string[]>();
+  for (const unit of indoorUnits) {
+    if (!unit.linked_erv_unit_id) continue;
+    const ids = index.get(unit.linked_erv_unit_id);
+    if (ids) {
+      ids.push(unit.id);
+    } else {
+      index.set(unit.linked_erv_unit_id, [unit.id]);
+    }
+  }
+  return index;
 }
