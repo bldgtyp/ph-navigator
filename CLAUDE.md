@@ -97,7 +97,9 @@ Start here in `context/`:
 
 ## Make recipes
 
-- `make setup` — first-time install
+- `make setup` — first-time install; also the provisioning step for a
+  new `git worktree` (deps + env files + Dropbox-ignore). See
+  `context/ENVIRONMENT.md` § Git worktrees.
 - `make dev` — bring Postgres up; prints how to launch backend + frontend
 - `make backend`, `make frontend`
 - `make ci`, `make check`, `make check-backend`, `make check-frontend`

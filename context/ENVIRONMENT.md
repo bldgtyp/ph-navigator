@@ -445,6 +445,33 @@ service would use `ph-navigator-v2-prod`). Trigger when a new
 - `make e2e-report` — open the last Playwright HTML report
 - See `Makefile` for the full list (or `make help`).
 
+## Git worktrees
+
+PHN has **no auto-provisioning worktree hook** (unlike Codex's environment
+setup script). A fresh `git worktree` is a clean checkout with none of the
+gitignored deps or env files, so `make setup` is the single, consistent
+provisioning step:
+
+```bash
+git worktree add ../phn-<branch> <base>
+cd ../phn-<branch>
+make setup
+```
+
+`make setup` regenerates `backend/.venv`, `frontend/node_modules`, and the
+`.env` / `.env.local` files, and marks the two dependency folders
+`com.dropbox.ignored` so a worktree created under this Dropbox-backed repo
+never syncs those heavy, regenerated trees. It is idempotent — safe to
+re-run in any checkout.
+
+Notes:
+
+- A branch can be checked out in only one worktree at a time. To stack work
+  on an unmerged base, branch a new branch off it rather than reusing the
+  base branch directly.
+- Tear down with `git worktree remove ../phn-<branch>`, then
+  `git worktree prune` to clear stale entries.
+
 ## Code-change closeout gate
 
 Every code-changing session must end with the same local gate before the
