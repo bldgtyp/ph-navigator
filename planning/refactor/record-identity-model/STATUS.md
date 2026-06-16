@@ -17,8 +17,8 @@ RELATED:
 `Active - planning complete, awaiting implementation`.
 
 No code changes have been made. This packet was authored from the
-2026-06-16 consistency review and an owner decision on identifier
-semantics. PRD, plan, and four phase files are ready for handoff.
+2026-06-16 consistency review and owner decisions on identifier
+semantics. PRD, plan, and three phase files are ready for handoff.
 
 This refactor **precedes** the data-table-consolidation refactor; that
 folder's Phase 02 and Phase 04 should inherit this identity model.
@@ -34,37 +34,50 @@ Begin Phase 00:
 | Phase | State |
 |---|---|
 | 00 - Backend identity guarantee | Planned |
-| 01 - Display Name rename + migration | Planned |
-| 02 - Tag as ordinary field | Planned |
-| 03 - Verification, docs, closeout | Planned |
+| 01 - Swap identity columns (Display Name + Tag) | Planned (atomic migration; key design decision = repoint identifier role) |
+| 02 - Verification, docs, closeout | Planned |
 
 ## Blockers
 
-None for starting Phase 00. Phase 01 is gated on the conditional
-forward-fill migration design (preserve user renames) and the
-schema-version decision.
+None for starting Phase 00. Phase 01 is gated on the identifier-role
+repointing decision (move the role off `record_id` to the Display Name
+field while keeping stable field_keys) and the conditional migration
+design (preserve user renames).
 
 ## Decisions Recorded
 
-- User-facing identifier label is **Display Name** (not "ID" or "Name").
-- **Tag** is demoted to an ordinary field and seeded built-in on the
-  equipment tables; it is not the identity column.
+- One human label, **Display Name**, and it is the **descriptive name**
+  field (formerly "Name"), promoted to the pinned identifier column.
+- The ambiguous **"Name"** label is retired on every table.
+- The short code becomes an ordinary, non-unique **Tag** field (the
+  former `record_id`, already labeled "Tag" on most tables).
+- "ID" rejected as a label (collides with the hidden identifier).
 - The user-facing label is **never unique-constrained**; duplicates show
   the existing warning chip. Heat Pumps drops its hard block.
 - The hidden `row.id` remains the only enforced-unique identity, with a
   universal `validate_unique_ids` guard.
-- The stable `record_id` field_key and `row.id` minting do not change.
+- Stable field_keys (`name`, `record_id`) and `row.id` minting do not
+  change.
+- **Rooms** Display Name defaults to a **formula** `{Number} - {Name}`
+  (its existing `record_id` formula, relabeled and kept as the
+  identifier, still editable); Rooms keeps Number + Name as inputs and
+  has no Tag field.
 - Ships as a **standalone refactor that precedes** the
   data-table-consolidation work.
-- Identity model mirrors Honeybee `identifier` / `display_name` for
-  forward-compatible model round-tripping.
+- Identity model mirrors Honeybee `identifier` / `display_name`.
 
 ## Open Questions Carried From The PRD
 
-1. Tag seed coverage (all 7 equipment tables vs a subset).
-2. "Display Name" + "Name" coexistence on Rooms / Thermal Bridges.
-3. Schema-version bump vs non-breaking forward-fill.
-4. Heat-Pump interim UI after the backend hard block is removed but
+1. Field-key / role strategy for repointing the identifier off
+   `record_id`.
+2. Rooms formula - DECIDED: Rooms' Display Name is the existing
+   `{Number} - {Name}` formula field, relabeled (not repointed); no Tag
+   field. Remaining work is confirming the relabel leaves the formula
+   deps/registry intact.
+3. Pumps (and any other table) missing a `name` field - seed a new
+   Display Name.
+4. Schema-version bump vs non-breaking migration.
+5. Heat-Pump interim UI after the backend hard block is removed but
    before HP joins the shared grid.
 
 ## Verification Status

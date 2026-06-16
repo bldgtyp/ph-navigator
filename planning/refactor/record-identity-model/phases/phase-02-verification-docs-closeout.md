@@ -12,7 +12,7 @@ RELATED:
   - planning/refactor/data-table-consolidation/PRD.md
 ---
 
-# Phase 03 - Verification, Docs, And Closeout
+# Phase 02 - Verification, Docs, And Closeout
 
 ## Goal
 
@@ -21,7 +21,7 @@ durable contract future table work inherits.
 
 ## Preconditions
 
-- Phases 00-02 complete and individually verified.
+- Phases 00-01 complete and individually verified.
 
 ## Tasks
 
@@ -31,37 +31,41 @@ durable contract future table work inherits.
    - If `make format` changes files, inspect the diff and rerun
      `make ci`.
 2. Browser smoke on `http://localhost:5173` (backend
-   `http://localhost:8000`, signed in as `codex@example.com`): confirm on
-   Rooms, each Equipment tab, and Thermal Bridges that the pinned column
-   reads "Display Name", duplicate Display Names warn but do not block,
-   and the equipment Tag field is present and editable. Spot-check Heat
-   Pumps no longer rejects duplicate tags.
+   `http://localhost:8000`, signed in as `codex@example.com`): on Rooms,
+   each Equipment tab, and Thermal Bridges confirm the pinned column reads
+   **Display Name** (the descriptive name), duplicate Display Names warn
+   but do not block, the **Tag** column is an ordinary editable field, and
+   no column is labeled **Name**. Confirm Rooms still shows Number, Pumps
+   shows an (empty) Display Name, and Heat Pumps no longer rejects
+   duplicate tags.
 3. Run `graphify update .` after the code changes.
 4. Update `context/technical-requirements/data-table.md`:
-   - replace the "header is always Record-ID" rule with "Display Name";
-   - state the two-layer identity model (hidden unique `row.id` vs
-     non-unique Display Name label);
+   - replace the "header is always Record-ID" rule with **Display Name**;
+   - state the two-layer identity model: hidden unique `row.id` vs the
+     non-unique **Display Name** label, which is the descriptive name and
+     the pinned identifier;
    - state that the user-facing label is never unique-constrained on any
      table (warning chip only) and that the hidden-id guard is universal;
-   - note Tag is an ordinary field, not the identifier.
-5. Update `context/technical-requirements/data-model.md` for the
-   universal hidden-id uniqueness guarantee and the Tag field, and note
-   the Honeybee `identifier` / `display_name` mapping as forward context.
+   - state that **Tag** is an ordinary field (the former identifier),
+     and that **Name** is retired as a label.
+5. Update `context/technical-requirements/data-model.md` for the universal
+   hidden-id guarantee, the Display Name / Tag field roles, and the
+   Honeybee `identifier` / `display_name` mapping as forward context.
 6. Update `context/CODING_STANDARDS.md` if it references identifier
-   labeling, so new tables default to "Display Name" + ordinary Tag.
+   labeling, so new tables default to a "Display Name" identifier (the
+   descriptive name) plus an ordinary Tag, never a "Name" label.
 7. Update the data-table-consolidation refactor: amend its Phase 02
-   (identifier-column helper) and Phase 04 (uniqueness reconciliation) to
-   reference this settled model as the baseline, and mark the B3
-   uniqueness item resolved.
+   (identifier-column helper) and Phase 04 (uniqueness reconciliation, B3)
+   to reference this settled model as the baseline, and mark B3 resolved.
 8. Update this folder's `STATUS.md` to final state; route the packet
-   toward `planning/archive/` per `planning/.instructions.md` once
-   merged.
+   toward `planning/archive/` per `planning/.instructions.md` once merged.
 
 ## Acceptance Criteria
 
 - `make format` and `make ci` are green.
-- Browser smoke confirms "Display Name" labeling, non-blocking duplicate
-  behavior, and the editable Tag field across all tables.
+- Browser smoke confirms Display Name labeling (the descriptive name),
+  non-blocking duplicate behavior, the ordinary Tag field, and no "Name"
+  label, across all tables.
 - `graphify update .` has been run.
 - `data-table.md`, `data-model.md`, and `CODING_STANDARDS.md` capture the
   identity model.
