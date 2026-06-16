@@ -46,6 +46,8 @@ export function VentilatorsTable({
   overflowMenuActions,
   footerAction,
   onResetView,
+  onEdit,
+  onIncomingIndoorUnitOpen,
   heatPumpIndoorUnits = EMPTY_HEAT_PUMP_INDOOR_UNITS,
   ...customFieldActions
 }: {
@@ -61,6 +63,8 @@ export function VentilatorsTable({
   overflowMenuActions?: DataTableProps<VentilatorRow>["overflowMenuActions"];
   footerAction?: DataTableProps<VentilatorRow>["footerAction"];
   onResetView?: DataTableProps<VentilatorRow>["onResetView"];
+  onEdit?: (row: VentilatorRow) => void;
+  onIncomingIndoorUnitOpen?: (rowId: string) => void;
   heatPumpIndoorUnits?: readonly HeatPumpIndoorUnitRow[];
 } & CustomFieldTableActions<VentilatorRow>) {
   const sortedRows = useMemo(
@@ -223,8 +227,9 @@ export function VentilatorsTable({
         targetRows: sortedIndoorUnits,
         getRowId: (unit) => unit.id,
         getRecordId: (unit) => unit.tag || unit.id,
+        onPillClick: onIncomingIndoorUnitOpen,
       }),
-    [sortedIndoorUnits, tableFieldDefs],
+    [onIncomingIndoorUnitOpen, sortedIndoorUnits, tableFieldDefs],
   );
 
   return (
@@ -243,6 +248,7 @@ export function VentilatorsTable({
       buildEmptyRow={buildEmptyRow}
       generateRowId={generateRowId}
       sessionKey={sessionKey}
+      onRowOpen={onEdit}
       overflowMenuActions={overflowMenuActions}
       footerAction={footerAction}
       onResetView={onResetView}

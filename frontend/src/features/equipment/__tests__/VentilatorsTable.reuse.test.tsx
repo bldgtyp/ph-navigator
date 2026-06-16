@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { emptyViewState } from "../../../shared/ui/data-table";
 import { VentilatorsTable } from "../components/VentilatorsTable";
@@ -38,6 +38,7 @@ describe("VentilatorsTable DataTable reuse", () => {
   test("renders incoming HP indoor unit links from linked_erv_unit_id", () => {
     const slice = buildVentilatorsSlice({ ventilators: [buildVentilator({ id: "vent_1" })] });
     const tableSchema = schemaForVentilators(slice);
+    const onIncomingIndoorUnitOpen = vi.fn();
     render(
       <VentilatorsTable
         ventilatorsSlice={slice}
@@ -47,12 +48,38 @@ describe("VentilatorsTable DataTable reuse", () => {
         onViewChange={() => undefined}
         onWrite={vi.fn()}
         heatPumpIndoorUnits={[indoorUnit({ linked_erv_unit_id: "vent_1" })]}
+        onIncomingIndoorUnitOpen={onIncomingIndoorUnitOpen}
       />,
     );
 
     const incomingHeader = screen.getByRole("columnheader", { name: /HP indoor units/ });
     expect(incomingHeader.querySelector('[data-field-type-icon="linked_record"]')).toBeTruthy();
-    expect(screen.getByText("AHU-1")).toBeInTheDocument();
+    let incomingPill = screen.getByRole("button", { name: "AHU-1" });
+    fireEvent.click(incomingPill);
+    incomingPill = screen.getByRole("button", { name: "AHU-1" });
+    fireEvent.click(incomingPill);
+    expect(onIncomingIndoorUnitOpen).toHaveBeenCalledWith("hpiu_01HX0000000000000000000001");
+  });
+
+  test("wires DataTable row expansion to Ventilator edit", async () => {
+    const user = userEvent.setup();
+    const slice = buildVentilatorsSlice({ ventilators: [buildVentilator()] });
+    const tableSchema = schemaForVentilators(slice);
+    const onEdit = vi.fn();
+    render(
+      <VentilatorsTable
+        ventilatorsSlice={slice}
+        tableSchema={tableSchema}
+        isEditor
+        view={emptyViewState()}
+        onViewChange={() => undefined}
+        onWrite={vi.fn()}
+        onEdit={onEdit}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Expand row 1" }));
+    expect(onEdit).toHaveBeenCalledWith(slice.ventilators[0]);
   });
 
   test("calls onWrite through inline cell editing", async () => {
