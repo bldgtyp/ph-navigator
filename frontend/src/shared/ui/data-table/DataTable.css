@@ -185,6 +185,9 @@
   border-radius: var(--phn-radius);
   padding: var(--space-12);
   min-width: 380px;
+  max-height: calc(var(--radix-popover-content-available-height, 100vh) - var(--space-32));
+  overflow-y: auto;
+  overscroll-behavior: contain;
   box-shadow: var(--shadow-popover);
   z-index: var(--z-dropdown);
   font-family: var(--font-primary, inherit);
@@ -2478,14 +2481,20 @@ td.data-table-cell-editing {
    stacking-context race against the sticky headers when they overlap. */
 .data-table-hide-fields-popover {
   z-index: var(--z-tooltip);
+  max-height: calc(var(--radix-popover-content-available-height, 100vh) - var(--space-32));
+  overflow: hidden;
 }
 
 .data-table-hide-fields-panel {
+  display: flex;
+  flex-direction: column;
   width: 280px;
+  max-height: calc(var(--radix-popover-content-available-height, 100vh) - var(--space-32));
   background: var(--bg-card);
   border: 1px solid var(--border-card);
   border-radius: var(--phn-radius);
   padding: var(--space-8);
+  overflow: hidden;
   box-shadow: var(--shadow-popover);
   z-index: var(--z-dropdown);
   font-family: var(--font-primary, inherit);
@@ -2512,6 +2521,9 @@ td.data-table-cell-editing {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .data-table-hide-fields-row {
