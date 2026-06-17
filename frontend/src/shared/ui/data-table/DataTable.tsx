@@ -20,7 +20,7 @@ import {
 } from "@dnd-kit/sortable";
 import { useContext } from "react";
 import { UnitPreferenceContext } from "../../../lib/units/preference-context";
-import { computeIdentifierDuplicates, recordIdColumnId } from "./lib/identifier/recordId";
+import { computeIdentifierDuplicates, identifierColumnId } from "./lib/identifier/recordId";
 import { applyFilters } from "./lib/filter/apply";
 import { buildBodyPlan, groupPathByRowIdFromBodyPlan } from "./lib/body/plan";
 import { isPointerInActiveEditor as isPointerInActiveEditorBase } from "./lib/eventTargets";
@@ -124,7 +124,7 @@ export function DataTable<TRow>({
   // so unit-aware columns re-display without a write.
   const unitPreference = useContext(UnitPreferenceContext);
   const unitSystem = unitPreference?.unitSystem ?? "SI";
-  const pinnedColumnId = useMemo(() => recordIdColumnId(columnDefs), [columnDefs]);
+  const pinnedColumnId = useMemo(() => identifierColumnId(columnDefs), [columnDefs]);
   const visibleColumnDefs = useGridColumns(
     columnDefs,
     view.columnOrder,

@@ -98,9 +98,10 @@ export function SpaceTypesTable({
       {
         id: SPACE_TYPE_NAME_FIELD_KEY,
         fieldKey: SPACE_TYPE_NAME_FIELD_KEY,
-        header: fieldDefByKey.get(SPACE_TYPE_NAME_FIELD_KEY)?.display_name ?? "Name",
+        header: fieldDefByKey.get(SPACE_TYPE_NAME_FIELD_KEY)?.display_name ?? "Display Name",
         accessor: (spaceType) => textValue(spaceType, SPACE_TYPE_NAME_FIELD_KEY),
         defaultWidth: 260,
+        isIdentifier: true,
       },
     ];
     const inverseColumns: DataTableColumnDef<SpaceTypeRow>[] = inverseLinkFields.map((field) => ({

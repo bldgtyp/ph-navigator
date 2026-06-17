@@ -73,9 +73,10 @@ export function ElectricHeatersTable({
       {
         id: "name",
         fieldKey: "name",
-        header: fieldDefByKey.get("name")?.display_name ?? "Name",
+        header: fieldDefByKey.get("name")?.display_name ?? "Display Name",
         accessor: (heater) => customTextValue(heater, "name"),
         defaultWidth: 180,
+        isIdentifier: true,
       },
       {
         id: "model",

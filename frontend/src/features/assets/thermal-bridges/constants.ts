@@ -26,7 +26,7 @@ export const PDF_REPORT_ATTACHMENT_CONFIG = {
 
 export const THERMAL_BRIDGE_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef(RECORD_ID_FIELD_KEY, "Tag", "short_text"),
-  builtInFieldDef("name", "Name", "short_text"),
+  builtInFieldDef("name", "Display Name", "short_text"),
   builtInFieldDef("sheet_name", "Sheet Name", "short_text"),
   builtInFieldDef("drawing_number", "Drawing Number", "short_text"),
   {

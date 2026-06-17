@@ -43,7 +43,7 @@ SPACE_TYPES_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
         field_type=CustomFieldType.short_text,
         description="Project-specific space type tag.",
     ),
-    built_in_field_def(field_key="name", display_name="Name", field_type=CustomFieldType.short_text),
+    built_in_field_def(field_key="name", display_name="Display Name", field_type=CustomFieldType.short_text),
 )
 
 SPACE_TYPES_BUILT_IN_FIELD_KEYS: tuple[str, ...] = tuple(f.field_key for f in SPACE_TYPES_BUILT_IN_FIELD_DEFS)

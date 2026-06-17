@@ -95,9 +95,10 @@ export function HotWaterTanksTable({
       {
         id: "name",
         fieldKey: "name",
-        header: fieldDefByKey.get("name")?.display_name ?? "Name",
+        header: fieldDefByKey.get("name")?.display_name ?? "Display Name",
         accessor: (tank) => customTextValue(tank, "name"),
         defaultWidth: 180,
+        isIdentifier: true,
       },
       {
         id: "quantity",

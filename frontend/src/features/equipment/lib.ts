@@ -331,7 +331,7 @@ function builtInFieldDef(
 }
 
 export const ROOMS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
-  builtInFieldDef("record_id", "Record-ID", "formula"),
+  builtInFieldDef("record_id", "Display Name", "formula"),
   builtInFieldDef("number", "Number", "short_text"),
   builtInFieldDef("name", "Name", "short_text"),
   builtInFieldDef(ROOM_FLOOR_LEVEL_KEY, "Floor", "single_select"),
@@ -346,7 +346,8 @@ export const ROOMS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
 ];
 
 export const PUMPS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
-  builtInFieldDef("record_id", "Record-ID", "short_text"),
+  builtInFieldDef("record_id", "Tag", "short_text"),
+  builtInFieldDef("name", "Display Name", "short_text"),
   builtInFieldDef(PUMP_DEVICE_TYPE_KEY, "Device", "single_select"),
   builtInFieldDef("use", "Use", "short_text"),
   builtInFieldDef("manufacturer", "Manufacturer", "short_text"),
@@ -369,7 +370,7 @@ export const PUMPS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
 
 export const VENTILATORS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("record_id", "Tag", "short_text"),
-  builtInFieldDef("name", "Name", "short_text"),
+  builtInFieldDef("name", "Display Name", "short_text"),
   {
     ...builtInFieldDef("airflow_rate_m3h", "Airflow Rate", "number"),
     config: {
@@ -408,7 +409,7 @@ export const VENTILATORS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
 
 export const FANS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("record_id", "Tag", "short_text"),
-  builtInFieldDef("name", "Name", "short_text"),
+  builtInFieldDef("name", "Display Name", "short_text"),
   builtInFieldDef("quantity", "Quantity", "number", 1),
   builtInFieldDef(FAN_TYPE_KEY, "Type", "single_select"),
   builtInFieldDef("model", "Model", "short_text"),
@@ -439,7 +440,7 @@ export const FANS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
 
 export const HOT_WATER_HEATERS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("record_id", "Tag", "short_text"),
-  builtInFieldDef("name", "Name", "short_text"),
+  builtInFieldDef("name", "Display Name", "short_text"),
   builtInFieldDef("quantity", "Quantity", "number", 1),
   builtInFieldDef(HOT_WATER_HEATER_TYPE_KEY, "Type", "single_select"),
   builtInFieldDef("model", "Model", "short_text"),
@@ -483,7 +484,7 @@ export const HOT_WATER_HEATERS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
 
 export const HOT_WATER_TANKS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("record_id", "Tag", "short_text"),
-  builtInFieldDef("name", "Name", "short_text"),
+  builtInFieldDef("name", "Display Name", "short_text"),
   builtInFieldDef("quantity", "Quantity", "number", 1),
   builtInFieldDef(HOT_WATER_TANK_TYPE_KEY, "Type", "single_select"),
   builtInFieldDef("inside_outside", "Inside / Outside", "short_text"),
@@ -522,7 +523,7 @@ export const HOT_WATER_TANKS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
 
 export const ELECTRIC_HEATERS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("record_id", "Tag", "short_text"),
-  builtInFieldDef("name", "Name", "short_text"),
+  builtInFieldDef("name", "Display Name", "short_text"),
   builtInFieldDef("model", "Model", "short_text"),
   builtInFieldDef("manufacturer", "Manufacturer", "short_text"),
   builtInFieldDef("watt", "Watt", "number"),
@@ -533,7 +534,7 @@ export const ELECTRIC_HEATERS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
 export const APPLIANCES_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("record_id", "Tag", "short_text"),
   builtInFieldDef(APPLIANCE_TYPE_KEY, "Type", "single_select"),
-  builtInFieldDef("name", "Name", "short_text"),
+  builtInFieldDef("name", "Display Name", "short_text"),
   builtInFieldDef("quantity", "Quantity", "number", 1),
   builtInFieldDef("model", "Model", "short_text"),
   builtInFieldDef("manufacturer", "Manufacturer", "short_text"),

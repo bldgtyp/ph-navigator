@@ -94,12 +94,16 @@ export function computedFieldColumnDef<TRow extends CustomFieldRow>({
   computedType,
   rowsComputed,
   defaultWidth,
+  isIdentifier,
 }: {
   fieldKey: string;
   header: string;
   computedType: "text" | "number";
   rowsComputed: Record<string, Record<string, unknown>> | undefined;
   defaultWidth?: number;
+  // Set on the one computed column that is the table's Display Name
+  // identifier — Rooms' {Number} — {Name} formula. See DataTableColumnDef.
+  isIdentifier?: boolean;
 }): DataTableColumnDef<TRow> {
   return {
     id: fieldKey,
@@ -114,5 +118,6 @@ export function computedFieldColumnDef<TRow extends CustomFieldRow>({
     ),
     measureText: (row) => String(readComputedScalar(rowsComputed, row.id, fieldKey) ?? ""),
     ...(defaultWidth !== undefined ? { defaultWidth } : {}),
+    ...(isIdentifier ? { isIdentifier: true } : {}),
   };
 }

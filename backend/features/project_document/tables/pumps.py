@@ -54,8 +54,10 @@ PUMPS_TABLE_NAME = "pumps"
 _PUMPS_TABLE_PATH: tuple[str, ...] = ("equipment", PUMPS_TABLE_NAME)
 
 
-# Pumps built-in FieldDef seeds. `record_id` replaces Phase 1b's `tag`
-# entry end-to-end (display name stays "Tag" — the domain term). The
+# Pumps built-in FieldDef seeds. `name` is the pinned Display Name
+# identifier (record-identity model); Pumps had no descriptive name
+# before, so it is seeded empty. `record_id` stays the ordinary "Tag"
+# code field (display name stays "Tag" — the domain term). The
 # `datasheet` attachment is NOT a TableFieldDef entry — attachment is
 # a FE-only renderer type and never round-trips through the schema-
 # mutation pipeline (PRD §P5.5).
@@ -66,6 +68,7 @@ PUMPS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
         field_type=CustomFieldType.short_text,
         description="Drawing-schedule tag (Phase 2: replaces `tag`).",
     ),
+    built_in_field_def(field_key="name", display_name="Display Name", field_type=CustomFieldType.short_text),
     built_in_field_def(field_key="device_type", display_name="Device", field_type=CustomFieldType.single_select),
     built_in_field_def(field_key="use", display_name="Use", field_type=CustomFieldType.short_text),
     built_in_field_def(field_key="manufacturer", display_name="Manufacturer", field_type=CustomFieldType.short_text),

@@ -19,8 +19,9 @@ const pumpColumns: DataTableColumnDef<Pump>[] = [
   {
     id: "col-record-id",
     fieldKey: RECORD_ID_FIELD_KEY,
-    header: "Tag",
+    header: "Display Name",
     accessor: (row) => row.record_id,
+    isIdentifier: true,
   },
 ];
 
@@ -59,8 +60,9 @@ const roomColumns: DataTableColumnDef<Room>[] = [
   {
     id: "col-record-id",
     fieldKey: RECORD_ID_FIELD_KEY,
-    header: "Record-ID",
+    header: "Display Name",
     accessor: (row) => row.record_id,
+    isIdentifier: true,
   },
   { id: "col-name", fieldKey: "name", header: "Name", accessor: (row) => row.name },
 ];
@@ -80,18 +82,18 @@ function renderRooms() {
   );
 }
 
-describe("DataTable record_id column", () => {
-  test("pins the real record_id column to slot 0", () => {
+describe("DataTable identifier column", () => {
+  test("pins the flagged identifier column to slot 0", () => {
     renderPumps();
     const headers = screen.getAllByRole("columnheader");
-    expect(headers[1]?.textContent).toContain("Tag");
+    expect(headers[1]?.textContent).toContain("Display Name");
     expect(headers[2]?.textContent).toContain("Flow");
   });
 
-  test("record_id pinning overrides saved column order", () => {
+  test("identifier pinning overrides saved column order", () => {
     renderPumps({ ...emptyViewState(), columnOrder: ["col-flow", "col-record-id"] });
     const headers = screen.getAllByRole("columnheader");
-    expect(headers[1]?.textContent).toContain("Tag");
+    expect(headers[1]?.textContent).toContain("Display Name");
     expect(headers[2]?.textContent).toContain("Flow");
   });
 
@@ -141,10 +143,10 @@ describe("DataTable record_id column", () => {
     expect(within(menu).getByText("Hide field")).toBeTruthy();
   });
 
-  test("supports computed record_id values as a real column", () => {
+  test("supports a computed Display Name identifier as a real column", () => {
     renderRooms();
     const headers = screen.getAllByRole("columnheader");
-    expect(headers[1]?.textContent).toContain("Record-ID");
+    expect(headers[1]?.textContent).toContain("Display Name");
     expect(screen.getByText("101 - Living")).toBeTruthy();
     expect(screen.getByText("102 - Kitchen")).toBeTruthy();
   });

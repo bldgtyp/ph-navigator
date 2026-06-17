@@ -21,7 +21,10 @@ export function buildSpaceTypesSlice(overrides: Partial<SpaceTypesSlice> = {}): 
     version_etag: "v1",
     draft_etag: "d1",
     space_types: [],
-    field_defs: [spaceTypeFieldDef(RECORD_ID_FIELD_KEY, "Tag"), spaceTypeFieldDef("name", "Name")],
+    field_defs: [
+      spaceTypeFieldDef(RECORD_ID_FIELD_KEY, "Tag"),
+      spaceTypeFieldDef("name", "Display Name"),
+    ],
     single_select_options: {},
     rows_computed: {},
     inverse_links: {},

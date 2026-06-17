@@ -143,6 +143,13 @@ export type DataTableColumnDef<TRow> = {
   header: string;
   accessor: (row: TRow) => unknown;
   render?: (row: TRow) => ReactNode;
+  // Marks this column as the table's Display Name identifier: the
+  // renderer pins it to slot 0 and keys the duplicate-warning chip on
+  // it. Exactly one column per table sets this; it is the descriptive
+  // `name` field on most tables and the `{Number} — {Name}` formula on
+  // Rooms. See the record-identity model (hidden `row.id` is the only
+  // enforced-unique key; Display Name is the non-unique human handle).
+  isIdentifier?: boolean;
   className?: string;
   defaultWidth?: number;
   minWidth?: number;

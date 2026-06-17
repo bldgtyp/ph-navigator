@@ -1,12 +1,13 @@
 ---
 DATE: 2026-06-16
 TIME: 16:35 EDT
-STATUS: Planned
+STATUS: Complete (2026-06-17)
 AUTHOR: Ed (via Claude)
 SCOPE: Make the descriptive name the single "Display Name" and the pinned
   identifier, demote the old identifier to an ordinary "Tag" field, and
-  eliminate the ambiguous "Name" label - as one atomic swap with a
-  migration.
+  eliminate the ambiguous "Name" label - as one atomic swap. Shipped with
+  a schema-version bump + reseed (no body-migration) per the owner
+  decision below.
 RELATED:
   - planning/refactor/record-identity-model/PRD.md
   - backend/features/project_document/tables/
@@ -187,3 +188,85 @@ Per-table specifics:
   picker / reverse-pill label resolution)
 - `frontend/src/features/spaces/` (Space-Types table + tests)
 - `backend/tests/test_project_document.py`
+
+## Outcome (2026-06-17)
+
+### Identifier-role repoint (open question 1 - RESOLVED)
+
+The pinned identifier is now declared **per-table on the frontend column
+def** via a new optional `isIdentifier?: boolean`
+(`shared/ui/data-table/types.ts`). `recordIdColumnId` →
+`identifierColumnId` and `computeIdentifierDuplicates` now select the
+flagged column instead of matching `fieldKey === "record_id"`
+(`lib/identifier/recordId.ts`); `DataTable` pins and chips that column.
+Each table builder flags exactly one column: the `name` Display Name
+column on the 8 generic tables + Space-Types + Pumps, and the
+`record_id` formula column on Rooms (via a new `isIdentifier` param on
+`computedFieldColumnDef`). `RECORD_ID_FIELD_KEY` stays as a constant for
+the demoted Tag field's value reads.
+
+**Decision: the identifier role lives on the frontend column, not on the
+backend `TableFieldDef`.** Pinning + the duplicate chip are pure render
+concerns the backend never performs, and adding an `is_identifier` field
+to the *persisted* `TableFieldDef` would grow the schema fingerprint and
+migration surface for no backend behavior. Stable field_keys (`name`,
+`record_id`) and `row.id` minting are unchanged, per the PRD. The
+alternative (backend-declared `is_identifier`, frontend reads it) was
+considered and rejected as heavier than the minimal-change spirit; it can
+be revisited if a backend consumer (e.g. honeybee-ph export) ever needs
+the role server-side.
+
+### Backend seeds
+
+- 8 generic tables (appliances, electric_heaters, fans,
+  hot_water_heaters, hot_water_tanks, ventilators, thermal_bridges,
+  space_types): `name` FieldDef relabeled "Name" → "Display Name";
+  `record_id` left as the ordinary "Tag" field.
+- Rooms: the `record_id` `{Number} — {Name}` formula FieldDef relabeled
+  "Record-ID" → "Display Name", display-only — formula source/AST/deps
+  and the `roomsFormulaRegistry` untouched. `number`/`name` stay ordinary
+  inputs; "Name" legitimately remains on Rooms.
+- Pumps: gained an empty `name` "Display Name" built-in (it had none);
+  `record_id` stays "Tag".
+
+### Migration / schema version (open question 4 - RESOLVED)
+
+**Decision: reseed + bump `schema_version` 7 → 8, no body-migration.**
+The owner confirmed no users / no deploy / no backwards-compat need.
+There is no body-transform migration framework (`schema_version` is a
+hard `Literal`; mismatches fall to read-safe mode) and dev DBs reseed
+from the table-seed constants (`seed_dev_db.py` assembles `field_defs`
+straight from `*_BUILT_IN_FIELD_DEFS`). The bump forces any pre-v8 dev
+document into read-safe mode rather than silently rendering stale labels.
+The planned conditional "preserve user renames" migration was dropped as
+dead-on-arrival code with no production target.
+
+### Frontend label resolution
+
+The Rooms → Space-Type picker / reverse pills now resolve the primary
+label as Display Name (`name`) → Tag (`record_id`) → row id
+(`RoomsPage.tsx`); the Tag rides as the muted secondary hint only when a
+Display Name leads (avoids a duplicated "Name · Name" chip). The pump
+linked-record label follows the same order.
+
+### Verification
+
+- Focused frontend suites green: data-table identifier + pinning
+  (`identifier.test.ts`, `identifierColumn.test.tsx`), all 10 table
+  builders' reuse/render tests, Space-Types, linked-record picker.
+  Updated the COMPAT test fixtures (`equipment/lib.ts`,
+  `thermal-bridges/constants.ts`, `spaces/testing/testFixtures.ts`) to
+  mirror the new seed labels, and the few header assertions that named
+  "Record-ID"/"Name".
+- Full backend `uv run pytest` green (890 passed, 2 skipped); test
+  `schema_version` literals bumped 7 → 8.
+- `make format` / `make ci` run at closeout.
+
+### Deferred to Phase 02
+
+- The context technical-requirement docs
+  (`context/technical-requirements/data-table.md`, `data-model.md`) and
+  `CODING_STANDARDS.md` still describe the old `record_id`-pinned model;
+  rewriting them to the Display Name / Tag / hidden-key contract is the
+  Phase 02 deliverable (PRD acceptance #8), together with the browser
+  smoke check.

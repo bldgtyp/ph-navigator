@@ -88,9 +88,10 @@ export function ThermalBridgesTable({
       {
         id: "name",
         fieldKey: "name",
-        header: fieldDefByKey.get("name")?.display_name ?? "Name",
+        header: fieldDefByKey.get("name")?.display_name ?? "Display Name",
         accessor: (row) => customTextValue(row, "name"),
         defaultWidth: 190,
+        isIdentifier: true,
       },
       {
         id: "sheet_name",

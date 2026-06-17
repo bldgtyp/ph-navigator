@@ -2,8 +2,8 @@ import { describe, expect, test } from "vitest";
 import {
   computeIdentifierDuplicates,
   describeDuplicateRows,
+  identifierColumnId,
   RECORD_ID_FIELD_KEY,
-  recordIdColumnId,
 } from "../lib/identifier/recordId";
 import { sanitizeViewStateForSchema } from "../lib/view/sanitize";
 import { sortRows } from "../lib/sort/sortRows";
@@ -21,23 +21,24 @@ const pumpColumns: DataTableColumnDef<PumpRow>[] = [
   {
     id: "col-record-id",
     fieldKey: RECORD_ID_FIELD_KEY,
-    header: "Tag",
+    header: "Display Name",
     accessor: (row) => row.record_id,
+    isIdentifier: true,
   },
 ];
 
-describe("record_id pinning", () => {
-  test("returns null when the table has no record_id column", () => {
-    expect(recordIdColumnId([{ ...pumpColumns[0]!, id: "flow-only" }])).toBeNull();
+describe("identifier pinning", () => {
+  test("returns null when no column is flagged the identifier", () => {
+    expect(identifierColumnId([{ ...pumpColumns[0]!, id: "flow-only" }])).toBeNull();
   });
 
-  test("returns the real column id for the record_id field", () => {
-    expect(recordIdColumnId(pumpColumns)).toBe("col-record-id");
+  test("returns the id of the column flagged the identifier", () => {
+    expect(identifierColumnId(pumpColumns)).toBe("col-record-id");
   });
 });
 
 describe("computeIdentifierDuplicates", () => {
-  test("returns empty map when the table has no record_id column", () => {
+  test("returns empty map when no column is flagged the identifier", () => {
     expect(
       computeIdentifierDuplicates({
         columns: [pumpColumns[0]!],

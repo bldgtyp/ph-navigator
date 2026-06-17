@@ -65,7 +65,7 @@ def test_new_project_document_seeds_empty_space_types_table(clean_document_table
     body = saved.json()
     assert body["space_types"] == []
     assert [field["field_key"] for field in body["field_defs"]] == ["record_id", "name"]
-    assert [field["display_name"] for field in body["field_defs"]] == ["Tag", "Name"]
+    assert [field["display_name"] for field in body["field_defs"]] == ["Tag", "Display Name"]
 
 
 def test_new_project_document_seeds_rooms_space_type_link_field(clean_document_tables: None) -> None:

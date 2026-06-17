@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-16
 TIME: 16:35 EDT
-STATUS: Active - Phase 00 complete (2026-06-17), Phase 01 next
+STATUS: Active - Phases 00 + 01 complete (2026-06-17), Phase 02 next
 AUTHOR: Ed (via Claude)
 SCOPE: Current state of the record identity model refactor planning.
 RELATED:
@@ -14,16 +14,26 @@ RELATED:
 
 ## Current State
 
-`Active - Phase 00 complete, Phase 01 next`.
+`Active - Phases 00 + 01 complete, Phase 02 next`.
 
 **Phase 00 (backend identity guarantee) landed 2026-06-17.** Hidden
 `row.id` uniqueness is now enforced universally via
 `generic_table_row_ids()` + `validate_table_row_ids()` in
 `backend/features/project_document/_validators.py`; the Heat Pumps and
 Space-Types user-facing-handle hard blocks were removed. See the phase-00
-file's "Outcome" section. Full backend suite green. Phases 01 (the atomic
-Display Name / Tag swap + migration) and 02 (verification, docs, closeout)
-remain.
+file's "Outcome" section.
+
+**Phase 01 (swap identity columns) landed 2026-06-17.** The descriptive
+`name` is now the pinned **Display Name** identifier on every table;
+`record_id` is the ordinary "Tag" field (still the `{Number} — {Name}`
+formula identifier on Rooms); Pumps gained an empty Display Name. The
+pinned column + duplicate chip are now selected by a per-table
+`isIdentifier` frontend column flag (was a hardcoded `record_id`
+field_key). Shipped as a `schema_version` 7 → 8 bump + reseed, **no
+body-migration** (owner decision: no users / no deploy). Full backend
+suite green (890 passed); focused frontend suites green. See the phase-01
+file's "Outcome" section. Phase 02 (verification, **context-doc rewrite**,
+closeout) remains.
 
 This packet was authored from the 2026-06-16 consistency review and owner
 decisions on identifier semantics.
@@ -42,24 +52,28 @@ folder's Phase 02 and Phase 04 should inherit this identity model.
 
 ## Next Step
 
-Begin Phase 01:
+Begin Phase 02:
 
-`planning/refactor/record-identity-model/phases/phase-01-swap-identity-columns.md`
+`planning/refactor/record-identity-model/phases/phase-02-verification-docs-closeout.md`
+
+Phase 02's core remaining work is the **context-doc rewrite** (PRD
+acceptance #8): `context/technical-requirements/data-table.md`,
+`data-model.md`, and `CODING_STANDARDS.md` still describe the old
+`record_id`-pinned model and must be rewritten to the hidden-key /
+Display Name / Tag contract; plus the browser smoke check on
+`localhost:5173`.
 
 ## Phase Status
 
 | Phase | State |
 |---|---|
 | 00 - Backend identity guarantee (universal id guard; remove Heat Pumps **and** Space-Types hard blocks) | Complete (2026-06-17) |
-| 01 - Swap identity columns (Display Name + Tag) | Planned (atomic migration; key design decision = repoint identifier role) |
-| 02 - Verification, docs, closeout | Planned |
+| 01 - Swap identity columns (Display Name + Tag) | Complete (2026-06-17); shipped via `isIdentifier` frontend flag + schema v8 reseed, no body-migration |
+| 02 - Verification, docs, closeout | Next (context-doc rewrite + browser smoke) |
 
 ## Blockers
 
-None for starting Phase 01, but it is gated on the identifier-role
-repointing decision (move the role off `record_id` to the Display Name
-field while keeping stable field_keys) and the conditional migration
-design (preserve user renames).
+None for starting Phase 02.
 
 ## Decisions Recorded
 
@@ -84,6 +98,12 @@ design (preserve user renames).
 - Ships as a **standalone refactor that precedes** the
   data-table-consolidation work.
 - Identity model mirrors Honeybee `identifier` / `display_name`.
+- **Identifier role is a frontend per-column flag** (`isIdentifier` on
+  `DataTableColumnDef`), not a persisted backend `TableFieldDef` field -
+  pinning + the duplicate chip are render concerns. Decided Phase 01.
+- **Shipped via `schema_version` 7 → 8 + reseed, no body-migration** -
+  no production data, dev DBs reseed from the seed constants. Decided
+  Phase 01.
 - **Space-Types** (added by the spaces-refactor) follows the generic flip
   (`name` -> pinned Display Name, `record_id` -> ordinary Tag) with **no**
   residual hard block; its `name` is optional, so a Tag-only row shows a
@@ -93,25 +113,36 @@ design (preserve user renames).
 
 ## Open Questions Carried From The PRD
 
-1. Field-key / role strategy for repointing the identifier off
-   `record_id`.
+1. Field-key / role strategy - **DECIDED (Phase 01)**: the identifier role
+   is a per-table **frontend column flag** (`isIdentifier`), not a
+   persisted backend field; stable field_keys unchanged. See the phase-01
+   Outcome "Identifier-role repoint" for the why-this-not-that (backend
+   `is_identifier` considered and rejected as heavier than warranted).
 2. Rooms formula - DECIDED: Rooms' Display Name is the existing
    `{Number} - {Name}` formula field, relabeled (not repointed); no Tag
-   field. Remaining work is confirming the relabel leaves the formula
+   field. **Implemented Phase 01** - relabel was display-only; formula
    deps/registry intact.
-3. Pumps (and any other table) missing a `name` field - seed a new
-   Display Name.
-4. Schema-version bump vs non-breaking migration.
-5. Heat-Pump interim UI after the backend hard block is removed but
-   before HP joins the shared grid.
+3. Pumps missing a `name` field - **DONE (Phase 01)**: seeded an empty
+   "Display Name" built-in on Pumps; no other table was missing one.
+4. Schema-version bump vs non-breaking migration - **DECIDED (Phase 01)**:
+   bump `schema_version` 7 → 8 + reseed, **no body-migration** (owner
+   confirmed no users / no deploy / no backwards-compat).
+5. Heat-Pump interim UI - HP keeps its bespoke tables and is **not** on the
+   shared grid yet (joins in data-table-consolidation Phase 05), so it has
+   no pinned identifier / warning chip in the interim. Unchanged by
+   Phase 01; acceptable (no worse than today).
 6. Space-Types - DECIDED: generic flip, no residual hard block, picker
-   label resolution follows Display Name. Remaining implementation items
-   are deleting the two `document.py` blocks (Phase 00), repointing the
-   `RoomsPage` picker labels (Phase 01), and sequencing after the
-   spaces-refactor's Phase 05 closeout.
+   label resolution follows Display Name. **Implemented Phase 01** - the
+   `RoomsPage` picker now labels by Display Name first; Phase 00 already
+   removed the two `document.py` hard blocks.
 
 ## Verification Status
 
 Phase 00: focused backend tests + full backend `uv run pytest` green (890
-passed, 2 skipped). `make format` / `make ci` run at closeout. Phases 01
-and 02 not started.
+passed, 2 skipped). `make format` / `make ci` run at closeout.
+
+Phase 01: full backend `uv run pytest` green (890 passed, 2 skipped);
+focused frontend suites green (data-table identifier/pinning, all 10
+table builders, Space-Types, linked-record picker). `make format` /
+`make ci` run at closeout. Phase 02 not started; its browser smoke check
+and context-doc rewrite are the remaining verification.

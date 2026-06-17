@@ -113,9 +113,10 @@ export function VentilatorsTable({
       {
         id: "name",
         fieldKey: "name",
-        header: fieldDefByKey.get("name")?.display_name ?? "Name",
+        header: fieldDefByKey.get("name")?.display_name ?? "Display Name",
         accessor: (ventilator) => customTextValue(ventilator, "name"),
         defaultWidth: 180,
+        isIdentifier: true,
       },
       {
         id: "airflow_rate_m3h",
