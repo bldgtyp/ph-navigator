@@ -42,7 +42,7 @@ VENTILATORS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
         field_type=CustomFieldType.short_text,
         description="Equipment schedule tag.",
     ),
-    built_in_field_def(field_key="name", display_name="Name", field_type=CustomFieldType.short_text),
+    built_in_field_def(field_key="name", display_name="Display Name", field_type=CustomFieldType.short_text),
     built_in_field_def(
         field_key="airflow_rate_m3h",
         display_name="Airflow Rate",

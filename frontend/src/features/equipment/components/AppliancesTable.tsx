@@ -106,9 +106,10 @@ export function AppliancesTable({
       {
         id: "name",
         fieldKey: "name",
-        header: fieldDefByKey.get("name")?.display_name ?? "Name",
+        header: fieldDefByKey.get("name")?.display_name ?? "Display Name",
         accessor: (appliance) => customTextValue(appliance, "name"),
         defaultWidth: 180,
+        isIdentifier: true,
       },
       {
         id: "quantity",

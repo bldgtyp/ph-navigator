@@ -135,7 +135,15 @@ ROOM_SPACE_TYPE_FIELD_KEY = "space_type_id"
 # entry is renamed to `record_id` (display label stays "Tag"). Pre-
 # deploy posture (PRD §P3.6) — no v2/v3 reader is provided; dev DBs
 # rebuild on the phase boundary.
-CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 7
+#
+# v8 (record-identity model): the descriptive `name` becomes the pinned
+# "Display Name" identifier on every table; `record_id` is demoted to an
+# ordinary "Tag" field (still the {Number} — {Name} formula identifier on
+# Rooms); Pumps gains an empty `name`. Built-in FieldDef labels are
+# persisted per-document, so the bump forces pre-v8 dev docs into
+# read-safe mode rather than silently showing stale labels — dev DBs
+# reseed from the table-seed constants. No body-transform migration.
+CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 8
 
 # Field keys that have a typed Pydantic column on the row model. Used
 # to split read/write paths between typed columns and the
@@ -229,7 +237,7 @@ class ProjectDocumentTables(BaseModel):
 class ProjectDocumentV1(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: Literal[7] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
+    schema_version: Literal[8] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     project: ProjectDocumentProject
     tables: ProjectDocumentTables = Field(default_factory=ProjectDocumentTables)
     single_select_options: dict[str, list[SingleSelectOption]] = Field(

@@ -95,7 +95,7 @@ describe("AppliancesTable DataTable reuse", () => {
     for (const label of [
       "Tag",
       "Type",
-      "Name",
+      "Display Name",
       "Quantity",
       "Model",
       "Manufacturer",

@@ -144,11 +144,18 @@ function RoomsPageBody(props: {
           targetTablePath: SPACE_TYPES_TARGET_TABLE_PATH,
           targetRows: spaceTypesSlice.space_types,
           getRowId: (spaceType) => spaceType.id,
+          // Identity order: Display Name (`name`) is the primary pill
+          // label and the picker's searchable text, then Tag
+          // (`record_id`), then the raw row id (the buildLinkedRecordOps
+          // fallback when both are null). The Tag rides along as the
+          // muted secondary hint, shown only when a Display Name leads.
           getRecordId: (spaceType) =>
-            customTextValueOrNull(spaceType, RECORD_ID_FIELD_KEY) ??
-            customTextValueOrNull(spaceType, SPACE_TYPE_NAME_FIELD_KEY),
+            customTextValueOrNull(spaceType, SPACE_TYPE_NAME_FIELD_KEY) ??
+            customTextValueOrNull(spaceType, RECORD_ID_FIELD_KEY),
           getDisplayName: (spaceType) =>
-            customTextValueOrNull(spaceType, SPACE_TYPE_NAME_FIELD_KEY),
+            customTextValueOrNull(spaceType, SPACE_TYPE_NAME_FIELD_KEY)
+              ? customTextValueOrNull(spaceType, RECORD_ID_FIELD_KEY)
+              : null,
           onPillClick: (rowId) => {
             navigate({
               pathname: spaceTypesPath(project.id),
@@ -165,7 +172,10 @@ function RoomsPageBody(props: {
           targetTablePath: PUMPS_TARGET_TABLE_PATH,
           targetRows: pumpsSlice.pumps,
           getRowId: (pump) => pump.id,
-          getRecordId: (pump) => customTextValueOrNull(pump, RECORD_ID_FIELD_KEY),
+          // Same identity order as Space-Types: Display Name (`name`)
+          // first, then Tag (`record_id`), then the raw row id.
+          getRecordId: (pump) =>
+            customTextValueOrNull(pump, "name") ?? customTextValueOrNull(pump, RECORD_ID_FIELD_KEY),
           onPillClick: (rowId) => {
             navigate(
               `/projects/${project.id}/equipment?tab=pumps&focus=${encodeURIComponent(rowId)}`,

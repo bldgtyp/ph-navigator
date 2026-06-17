@@ -1,6 +1,10 @@
 import type { DataTableColumnDef } from "../../types";
 import { formatClipboardValue } from "../paste/tsv";
 
+// Stable field_key of the demoted short-code "Tag" field. It is an
+// ordinary, non-unique column now — kept as a constant only because
+// several call sites still read/write its custom value. The pinned
+// identifier is the column flagged `isIdentifier`, NOT this key.
 export const RECORD_ID_FIELD_KEY = "record_id";
 
 export type DuplicateIdentifierRows = {
@@ -8,13 +12,18 @@ export type DuplicateIdentifierRows = {
   totalOthers: number;
 };
 
-export function recordIdColumnId<TRow>(
+// Id of the table's Display Name identifier column — the column each
+// table builder flags `isIdentifier`. The renderer pins it to slot 0
+// and keys the duplicate-warning chip on it. Returns null when no
+// column is flagged (e.g. the heat-pump tables, not yet on the shared
+// grid).
+export function identifierColumnId<TRow>(
   columns: readonly DataTableColumnDef<TRow>[],
 ): string | null {
-  return columns.find((column) => column.fieldKey === RECORD_ID_FIELD_KEY)?.id ?? null;
+  return columns.find((column) => column.isIdentifier)?.id ?? null;
 }
 
-// Build the set of rowIds whose record_id value collides with another
+// Build the set of rowIds whose Display Name value collides with another
 // row in the same table. Empty / whitespace identifiers do not warn.
 // The map value carries the 1-indexed row numbers of the *other*
 // conflicting rows so the tooltip can list them.
@@ -27,11 +36,11 @@ export function computeIdentifierDuplicates<TRow>({
   rows: readonly TRow[];
   getRowId: (row: TRow) => string;
 }): Map<string, DuplicateIdentifierRows> {
-  const recordIdColumn = columns.find((column) => column.fieldKey === RECORD_ID_FIELD_KEY);
-  if (!recordIdColumn) return new Map();
+  const identifierColumn = columns.find((column) => column.isIdentifier);
+  if (!identifierColumn) return new Map();
   const byValue = new Map<string, { rowId: string; rowNumber: number }[]>();
   rows.forEach((row, index) => {
-    const value = formatClipboardValue(recordIdColumn.accessor(row)).trim();
+    const value = formatClipboardValue(identifierColumn.accessor(row)).trim();
     if (value === "") return;
     let bucket = byValue.get(value);
     if (bucket === undefined) {

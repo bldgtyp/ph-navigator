@@ -39,7 +39,7 @@ ELECTRIC_HEATERS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
         field_type=CustomFieldType.short_text,
         description="Equipment schedule tag.",
     ),
-    built_in_field_def(field_key="name", display_name="Name", field_type=CustomFieldType.short_text),
+    built_in_field_def(field_key="name", display_name="Display Name", field_type=CustomFieldType.short_text),
     built_in_field_def(field_key="model", display_name="Model", field_type=CustomFieldType.short_text),
     built_in_field_def(field_key="manufacturer", display_name="Manufacturer", field_type=CustomFieldType.short_text),
     built_in_field_def(field_key="watt", display_name="Watt", field_type=CustomFieldType.number),

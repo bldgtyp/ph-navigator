@@ -88,9 +88,10 @@ export function FansTable({
       {
         id: "name",
         fieldKey: "name",
-        header: fieldDefByKey.get("name")?.display_name ?? "Name",
+        header: fieldDefByKey.get("name")?.display_name ?? "Display Name",
         accessor: (fan) => customTextValue(fan, "name"),
         defaultWidth: 180,
+        isIdentifier: true,
       },
       {
         id: "quantity",

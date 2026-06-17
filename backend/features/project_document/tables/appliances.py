@@ -44,7 +44,7 @@ APPLIANCES_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
         description="Equipment schedule tag.",
     ),
     built_in_field_def(field_key="appliance_type", display_name="Type", field_type=CustomFieldType.single_select),
-    built_in_field_def(field_key="name", display_name="Name", field_type=CustomFieldType.short_text),
+    built_in_field_def(field_key="name", display_name="Display Name", field_type=CustomFieldType.short_text),
     built_in_field_def(field_key="quantity", display_name="Quantity", field_type=CustomFieldType.number, default=1),
     built_in_field_def(field_key="model", display_name="Model", field_type=CustomFieldType.short_text),
     built_in_field_def(field_key="manufacturer", display_name="Manufacturer", field_type=CustomFieldType.short_text),

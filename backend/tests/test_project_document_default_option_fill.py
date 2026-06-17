@@ -60,7 +60,7 @@ def _body_with_default_field() -> ProjectDocumentV1:
     envelope = RoomsTableEnvelope(field_defs=[*ROOMS_BUILT_IN_FIELD_DEFS, field], rows=[])
     return ProjectDocumentV1.model_validate(
         {
-            "schema_version": 7,
+            "schema_version": 8,
             "project": ProjectDocumentProject(name="t", bt_number="1", cert_programs=[]).model_dump(mode="json"),
             "tables": {
                 "rooms": envelope.model_dump(mode="json"),

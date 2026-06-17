@@ -125,11 +125,11 @@ def _build_rooms_record_id_seed() -> TableFieldDef:
     }
     return built_in_field_def(
         field_key=RESERVED_FIELD_KEY_RECORD_ID,
-        display_name="Record-ID",
+        display_name="Display Name",
         field_type=CustomFieldType.formula,
         config=config,
         description=(
-            "Computed identifier. Defaults to {Number} — {Name}; edit the "
+            "Computed Display Name. Defaults to {Number} — {Name}; edit the "
             "formula or change the type to enter values directly."
         ),
     )
@@ -137,9 +137,9 @@ def _build_rooms_record_id_seed() -> TableFieldDef:
 
 # Feature-author-declared built-in FieldDef seeds for Rooms. New
 # projects land this verbatim into `rooms.field_defs` on first save.
-# `record_id` is pinned at index 0; the renderer pins by `field_key`,
-# but seed order also drives the fingerprint and the column layout
-# default.
+# `record_id` is the Display Name identifier here (the {Number} — {Name}
+# formula); the renderer pins the column flagged `isIdentifier`, and seed
+# order drives the fingerprint and the column layout default.
 ROOMS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
     _build_rooms_record_id_seed(),
     *_ROOMS_NON_RECORD_ID_FIELD_DEFS,

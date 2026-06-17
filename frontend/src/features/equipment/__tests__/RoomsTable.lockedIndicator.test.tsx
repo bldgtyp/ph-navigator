@@ -32,7 +32,7 @@ describe("RoomsTable header field indicators", () => {
     // for resizable columns that includes the "Resize column" button
     // label. Match on the column label as a prefix word.
     for (const [name, type] of [
-      [/^Record-ID\b/, "formula"],
+      [/^Display Name\b/, "formula"],
       [/^Number\b/, "short_text"],
       [/^Floor\b/, "single_select"],
       [/^iCFA\b/, "number"],

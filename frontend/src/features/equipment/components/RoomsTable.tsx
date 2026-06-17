@@ -109,12 +109,17 @@ export function RoomsTable({
         ]
       : [];
     return [
-      computedFieldColumnDef({
+      // Rooms is the formula exception: the Display Name identifier is
+      // the `{Number} — {Name}` formula kept on the `record_id` field,
+      // not a separate descriptive `name`. Number and Name stay below as
+      // the ordinary inputs the formula reads.
+      computedFieldColumnDef<RoomRow>({
         fieldKey: RECORD_ID_FIELD_KEY,
-        header: recordIdFieldDef?.display_name ?? "Record-ID",
+        header: recordIdFieldDef?.display_name ?? "Display Name",
         computedType: recordIdFieldDef?.computed_type ?? "text",
         rowsComputed,
         defaultWidth: 180,
+        isIdentifier: true,
       }),
       {
         id: "number",

@@ -105,6 +105,14 @@ export function PumpsTable({
   const columns = useMemo<DataTableColumnDef<PumpRow>[]>(() => {
     const baseColumns: DataTableColumnDef<PumpRow>[] = [
       {
+        id: "name",
+        fieldKey: "name",
+        header: fieldDefByKey.get("name")?.display_name ?? "Display Name",
+        accessor: (pump) => customTextValue(pump, "name"),
+        defaultWidth: 180,
+        isIdentifier: true,
+      },
+      {
         id: RECORD_ID_FIELD_KEY,
         fieldKey: RECORD_ID_FIELD_KEY,
         header: fieldDefByKey.get(RECORD_ID_FIELD_KEY)?.display_name ?? "Tag",

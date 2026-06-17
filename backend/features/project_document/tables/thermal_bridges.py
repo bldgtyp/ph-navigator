@@ -42,7 +42,7 @@ THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
         field_type=CustomFieldType.short_text,
         description="Thermal bridge schedule tag.",
     ),
-    built_in_field_def(field_key="name", display_name="Name", field_type=CustomFieldType.short_text),
+    built_in_field_def(field_key="name", display_name="Display Name", field_type=CustomFieldType.short_text),
     built_in_field_def(field_key="sheet_name", display_name="Sheet Name", field_type=CustomFieldType.short_text),
     built_in_field_def(
         field_key="drawing_number",

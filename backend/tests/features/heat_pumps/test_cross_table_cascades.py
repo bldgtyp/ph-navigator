@@ -135,7 +135,7 @@ def _build_body(
 
     return ProjectDocumentV1.model_validate(
         {
-            "schema_version": 7,
+            "schema_version": 8,
             "project": {"name": "p", "bt_number": str(uuid4()), "cert_programs": []},
             "tables": tables,
             "single_select_options": {
