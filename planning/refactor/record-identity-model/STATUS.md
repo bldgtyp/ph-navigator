@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-16
 TIME: 16:35 EDT
-STATUS: Active - planning complete, awaiting implementation
+STATUS: Active - Phase 00 complete (2026-06-17), Phase 01 next
 AUTHOR: Ed (via Claude)
 SCOPE: Current state of the record identity model refactor planning.
 RELATED:
@@ -14,11 +14,19 @@ RELATED:
 
 ## Current State
 
-`Active - planning complete, awaiting implementation`.
+`Active - Phase 00 complete, Phase 01 next`.
 
-No code changes have been made. This packet was authored from the
-2026-06-16 consistency review and owner decisions on identifier
-semantics. PRD, plan, and three phase files are ready for handoff.
+**Phase 00 (backend identity guarantee) landed 2026-06-17.** Hidden
+`row.id` uniqueness is now enforced universally via
+`generic_table_row_ids()` + `validate_table_row_ids()` in
+`backend/features/project_document/_validators.py`; the Heat Pumps and
+Space-Types user-facing-handle hard blocks were removed. See the phase-00
+file's "Outcome" section. Full backend suite green. Phases 01 (the atomic
+Display Name / Tag swap + migration) and 02 (verification, docs, closeout)
+remain.
+
+This packet was authored from the 2026-06-16 consistency review and owner
+decisions on identifier semantics.
 
 **Reconciled 2026-06-16 19:03 EDT** with the landed spaces-refactor (new
 `space_types` table, Rooms `space_type_id` link, schema v7). Space-Types
@@ -34,21 +42,21 @@ folder's Phase 02 and Phase 04 should inherit this identity model.
 
 ## Next Step
 
-Begin Phase 00:
+Begin Phase 01:
 
-`planning/refactor/record-identity-model/phases/phase-00-backend-identity-guarantee.md`
+`planning/refactor/record-identity-model/phases/phase-01-swap-identity-columns.md`
 
 ## Phase Status
 
 | Phase | State |
 |---|---|
-| 00 - Backend identity guarantee (universal id guard; remove Heat Pumps **and** Space-Types hard blocks) | Planned |
+| 00 - Backend identity guarantee (universal id guard; remove Heat Pumps **and** Space-Types hard blocks) | Complete (2026-06-17) |
 | 01 - Swap identity columns (Display Name + Tag) | Planned (atomic migration; key design decision = repoint identifier role) |
 | 02 - Verification, docs, closeout | Planned |
 
 ## Blockers
 
-None for starting Phase 00. Phase 01 is gated on the identifier-role
+None for starting Phase 01, but it is gated on the identifier-role
 repointing decision (move the role off `record_id` to the Display Name
 field while keeping stable field_keys) and the conditional migration
 design (preserve user renames).
@@ -104,5 +112,6 @@ design (preserve user renames).
 
 ## Verification Status
 
-Not started. This pass is planning-only, so no code or test gates were
-run.
+Phase 00: focused backend tests + full backend `uv run pytest` green (890
+passed, 2 skipped). `make format` / `make ci` run at closeout. Phases 01
+and 02 not started.

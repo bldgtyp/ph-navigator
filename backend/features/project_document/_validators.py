@@ -29,7 +29,8 @@ if TYPE_CHECKING:
 # Set of valid ``target_table_path`` tuples for every FieldDef-capable
 # table. Used by linked-record validation to resolve a field's declared
 # ``target_table_path`` config without dragging in ``tables.registry``
-# (which would cycle).
+# (which would cycle). Lists the same generic tables as
+# ``generic_table_row_ids`` below; keep the two in step when adding a table.
 LINKED_RECORD_TARGET_PATHS: frozenset[tuple[str, ...]] = frozenset(
     {
         ("rooms",),
@@ -65,6 +66,49 @@ def validate_unique_ids(label: str, ids: list[str]) -> None:
         if item_id in seen:
             raise ValueError(f"Duplicate {label} id: {item_id}")
         seen.add(item_id)
+
+
+def generic_table_row_ids(
+    document: ProjectDocumentV1,
+) -> list[tuple[tuple[str, ...], str, list[str]]]:
+    """``(target_table_path, human label, ordered row ids)`` for every generic,
+    link-targetable project DataTable.
+
+    Single source of truth for the set of generic tables: both the universal
+    row.id uniqueness guard (``validate_table_row_ids``) and the linked-record
+    target snapshot (``collect_target_row_ids``) are derived from this list, so
+    a new generic table is wired into both by adding one entry.
+
+    Heat-pump sub-tables and the envelope tables (assemblies, project
+    materials, apertures) are NOT generic DataTables — they carry their own id
+    checks next to their cross-table invariants and are validated elsewhere.
+    """
+    tables = document.tables
+    equipment = tables.equipment
+    return [
+        (("rooms",), "room", [row.id for row in tables.rooms.rows]),
+        (("space_types",), "space type", [row.id for row in tables.space_types.rows]),
+        (("thermal_bridges",), "thermal bridge", [row.id for row in tables.thermal_bridges.rows]),
+        (("equipment", "pumps"), "pump", [row.id for row in equipment.pumps.rows]),
+        (("equipment", "fans"), "fan", [row.id for row in equipment.fans.rows]),
+        (("equipment", "hot_water_heaters"), "hot water heater", [row.id for row in equipment.hot_water_heaters.rows]),
+        (("equipment", "hot_water_tanks"), "hot water tank", [row.id for row in equipment.hot_water_tanks.rows]),
+        (("equipment", "electric_heaters"), "electric heater", [row.id for row in equipment.electric_heaters.rows]),
+        (("equipment", "appliances"), "appliance", [row.id for row in equipment.appliances.rows]),
+        (("equipment", "ervs"), "ventilator", [row.id for row in equipment.ervs.rows]),
+    ]
+
+
+def validate_table_row_ids(document: ProjectDocumentV1) -> None:
+    """Enforce the record-identity invariant on every generic project
+    DataTable: the hidden ``row.id`` is the only enforced-unique identity.
+
+    User-facing handles (the pinned Display Name, the Tag field) are never
+    unique-constrained — duplicates surface as a non-blocking warning chip,
+    not a hard error.
+    """
+    for _table_path, label, row_ids in generic_table_row_ids(document):
+        validate_unique_ids(label, row_ids)
 
 
 def validate_contiguous_orders(label: str, ordered_ids: list[tuple[str, int]]) -> None:
@@ -162,20 +206,7 @@ def collect_target_row_ids(document: ProjectDocumentV1) -> dict[tuple[str, ...],
     """Build `target_table_path → set of row ids` for every linked-
     record-targetable table in the document. Phase 1 ships every
     FieldDef-capable contract with `link_targetable=True`."""
-    tables = document.tables
-    by_path: dict[tuple[str, ...], set[str]] = {
-        ("rooms",): {row.id for row in tables.rooms.rows},
-        ("space_types",): {row.id for row in tables.space_types.rows},
-        ("thermal_bridges",): {row.id for row in tables.thermal_bridges.rows},
-        ("equipment", "pumps"): {row.id for row in tables.equipment.pumps.rows},
-        ("equipment", "fans"): {row.id for row in tables.equipment.fans.rows},
-        ("equipment", "hot_water_heaters"): {row.id for row in tables.equipment.hot_water_heaters.rows},
-        ("equipment", "hot_water_tanks"): {row.id for row in tables.equipment.hot_water_tanks.rows},
-        ("equipment", "electric_heaters"): {row.id for row in tables.equipment.electric_heaters.rows},
-        ("equipment", "appliances"): {row.id for row in tables.equipment.appliances.rows},
-        ("equipment", "ervs"): {row.id for row in tables.equipment.ervs.rows},
-    }
-    return by_path
+    return {table_path: set(row_ids) for table_path, _label, row_ids in generic_table_row_ids(document)}
 
 
 def normalize_target_table_path(raw: object) -> tuple[str, ...] | None:

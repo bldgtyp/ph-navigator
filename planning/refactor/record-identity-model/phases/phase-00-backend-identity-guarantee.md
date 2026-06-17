@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-16
 TIME: 16:35 EDT
-STATUS: Planned
+STATUS: Complete (2026-06-17)
 AUTHOR: Ed (via Claude)
 SCOPE: Make hidden-id uniqueness universal across all DataTables and stop
   Heat Pumps hard-blocking duplicate user-facing labels.
@@ -101,3 +101,41 @@ rows).
 - `backend/features/heat_pumps/service.py`
 - `backend/tests/test_project_document.py`
 - `backend/tests/test_project_document_space_types.py`
+
+## Outcome (2026-06-17)
+
+- The universal guard is `generic_table_row_ids()` +
+  `validate_table_row_ids()` in `_validators.py`, called once from
+  `validate_document_references`. `generic_table_row_ids()` is the single
+  source of truth for the 10 generic, link-targetable tables;
+  `collect_target_row_ids` now derives from it, and
+  `LINKED_RECORD_TARGET_PATHS` carries a keep-in-step cross-reference.
+- The per-table inline `row.id` dup checks were removed in favor of the
+  guard. Note: in practice every table already enforced `row.id`
+  uniqueness inline, so making it universal was effectively a refactor —
+  the guard is **not stricter** than before, so it cannot newly reject an
+  existing document. The net behavior change is only the dropped
+  user-facing-handle hard blocks. (This satisfies the "compatibility
+  against saved documents" task: no new id rejection path was introduced;
+  dev DBs rebuild regardless.)
+- Heat Pumps: dropped the "Duplicate tag within table" block in
+  `service._validate_slice` (and the now-unused `tag_field` on
+  `_TableSpec`); replaced the document-level
+  `_validate_heat_pump_table_ids_and_tags` with id-only
+  `validate_unique_ids` calls.
+- Space-Types: removed both hard blocks (duplicate-Tag and
+  named-row-without-Tag); `require_record_id_seeded` stays.
+- Tests: space_types duplicate-Tag / named-without-Tag tests inverted to
+  assert acceptance; added duplicate-`row.id` rejection tests for
+  Space-Types and Heat Pumps, and a duplicate-tag-accepted test for Heat
+  Pumps. Full backend suite green (890 passed, 2 skipped).
+
+### Deferred to a later phase
+
+- `heat_pumps/service._validate_slice` still enforces `row.id` uniqueness
+  even though the document model_validator (run on every save via
+  `validate_document`) now re-checks it. Harmless and fail-safe (both
+  enforce the same invariant), but the slice keeps the check because it is
+  also the standalone unit-test seam. Consolidating the heat-pump
+  validation seam onto the document gate is out of scope for the
+  record-identity model and left for the data-table-consolidation work.

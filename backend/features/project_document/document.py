@@ -36,9 +36,10 @@ from features.project_document._validators import (
     validate_linked_record_field_defs,
     validate_rows_custom_links,
     validate_rows_custom_values,
+    validate_table_row_ids,
     validate_unique_ids,
 )
-from features.project_document.custom_fields import RESERVED_FIELD_KEY_RECORD_ID, TableFieldDef, normalize_display_name
+from features.project_document.custom_fields import TableFieldDef, normalize_display_name
 from features.project_document.envelope_models import (
     APERTURE_DEFAULT_FRAME_NAME,
     APERTURE_DEFAULT_GLAZING_NAME,
@@ -277,6 +278,10 @@ class ProjectDocumentV1(BaseModel):
                     raise ValueError(f"Duplicate option label in {key}: {option.label}")
                 labels.add(normalized_label)
 
+        # The hidden row.id is the only enforced-unique identity; guarantee
+        # it on every generic DataTable in one place (record-identity model).
+        validate_table_row_ids(self)
+
         target_row_ids = collect_target_row_ids(self)
 
         rooms_field_defs_by_key = index_table_field_defs("rooms", self.tables.rooms.field_defs)
@@ -288,12 +293,8 @@ class ProjectDocumentV1(BaseModel):
         )
         floor_option_ids = {option.id for option in self.single_select_options[ROOM_FLOOR_LEVEL_OPTION_KEY]}
         zone_option_ids = {option.id for option in self.single_select_options[ROOM_BUILDING_ZONE_OPTION_KEY]}
-        room_ids: set[str] = set()
+        room_ids = {room.id for room in self.tables.rooms.rows}
         for room in self.tables.rooms.rows:
-            if room.id in room_ids:
-                raise ValueError(f"Duplicate room id: {room.id}")
-            room_ids.add(room.id)
-
             if room.floor_level is not None and room.floor_level not in floor_option_ids:
                 raise ValueError(f"Missing floor-level option for room {room.id}: {room.floor_level}")
             if room.building_zone is not None and room.building_zone not in zone_option_ids:
@@ -319,21 +320,12 @@ class ProjectDocumentV1(BaseModel):
             single_select_options=self.single_select_options,
         )
 
+        # Space-Types follows the generic identity model: row.id uniqueness is
+        # guaranteed by validate_table_row_ids; the Tag (record_id) and Name
+        # are ordinary, non-unique fields. No hard block on duplicate Tags or
+        # on a named row without a Tag — duplicates warn via the chip.
         space_types_field_defs_by_key = index_table_field_defs("space_types", self.tables.space_types.field_defs)
         require_record_id_seeded("space_types", space_types_field_defs_by_key)
-        validate_unique_ids("space type", [space_type.id for space_type in self.tables.space_types.rows])
-        space_type_tags: set[str] = set()
-        for space_type in self.tables.space_types.rows:
-            tag = space_type.custom_values.get(RESERVED_FIELD_KEY_RECORD_ID)
-            name = space_type.custom_values.get("name")
-            normalized_tag = normalize_display_name(tag) if isinstance(tag, str) else ""
-            normalized_name = normalize_display_name(name) if isinstance(name, str) else ""
-            if not normalized_tag and normalized_name:
-                raise ValueError(f"Space type {space_type.id} requires a Tag")
-            if normalized_tag in space_type_tags:
-                raise ValueError(f"Duplicate space type Tag: {tag}")
-            if normalized_tag:
-                space_type_tags.add(normalized_tag)
 
         validate_linked_record_field_defs(
             table_label="space_types",
@@ -366,11 +358,7 @@ class ProjectDocumentV1(BaseModel):
         pumps_field_defs_by_key = index_table_field_defs("pumps", self.tables.equipment.pumps.field_defs)
         require_record_id_seeded("pumps", pumps_field_defs_by_key)
         pump_device_type_ids = {option.id for option in self.single_select_options[PUMP_DEVICE_TYPE_OPTION_KEY]}
-        pump_ids: set[str] = set()
         for pump in self.tables.equipment.pumps.rows:
-            if pump.id in pump_ids:
-                raise ValueError(f"Duplicate pump id: {pump.id}")
-            pump_ids.add(pump.id)
             if pump.device_type is not None and pump.device_type not in pump_device_type_ids:
                 raise ValueError(f"Missing pump device-type option for pump {pump.id}: {pump.device_type}")
 
@@ -397,11 +385,7 @@ class ProjectDocumentV1(BaseModel):
         fans_field_defs_by_key = index_table_field_defs("fans", self.tables.equipment.fans.field_defs)
         require_record_id_seeded("fans", fans_field_defs_by_key)
         fan_type_ids = {option.id for option in self.single_select_options[FAN_TYPE_OPTION_KEY]}
-        fan_ids: set[str] = set()
         for fan in self.tables.equipment.fans.rows:
-            if fan.id in fan_ids:
-                raise ValueError(f"Duplicate fan id: {fan.id}")
-            fan_ids.add(fan.id)
             if fan.fan_type is not None and fan.fan_type not in fan_type_ids:
                 raise ValueError(f"Missing fan type option for fan {fan.id}: {fan.fan_type}")
 
@@ -432,11 +416,7 @@ class ProjectDocumentV1(BaseModel):
         hot_water_heater_type_ids = {
             option.id for option in self.single_select_options[HOT_WATER_HEATER_TYPE_OPTION_KEY]
         }
-        hot_water_heater_ids: set[str] = set()
         for heater in self.tables.equipment.hot_water_heaters.rows:
-            if heater.id in hot_water_heater_ids:
-                raise ValueError(f"Duplicate hot water heater id: {heater.id}")
-            hot_water_heater_ids.add(heater.id)
             if heater.heater_type is not None and heater.heater_type not in hot_water_heater_type_ids:
                 raise ValueError(f"Missing hot water heater type option for heater {heater.id}: {heater.heater_type}")
 
@@ -468,11 +448,7 @@ class ProjectDocumentV1(BaseModel):
         )
         require_record_id_seeded("hot_water_tanks", hot_water_tanks_field_defs_by_key)
         hot_water_tank_type_ids = {option.id for option in self.single_select_options[HOT_WATER_TANK_TYPE_OPTION_KEY]}
-        hot_water_tank_ids: set[str] = set()
         for tank in self.tables.equipment.hot_water_tanks.rows:
-            if tank.id in hot_water_tank_ids:
-                raise ValueError(f"Duplicate hot water tank id: {tank.id}")
-            hot_water_tank_ids.add(tank.id)
             if tank.tank_type is not None and tank.tank_type not in hot_water_tank_type_ids:
                 raise ValueError(f"Missing hot water tank type option for tank {tank.id}: {tank.tank_type}")
             heat_loss_rate = tank.custom_values.get("heat_loss_rate_w_k")
@@ -505,11 +481,6 @@ class ProjectDocumentV1(BaseModel):
             "electric_heaters", self.tables.equipment.electric_heaters.field_defs
         )
         require_record_id_seeded("electric_heaters", electric_heaters_field_defs_by_key)
-        electric_heater_ids: set[str] = set()
-        for heater in self.tables.equipment.electric_heaters.rows:
-            if heater.id in electric_heater_ids:
-                raise ValueError(f"Duplicate electric heater id: {heater.id}")
-            electric_heater_ids.add(heater.id)
 
         validate_linked_record_field_defs(
             table_label="electric_heaters",
@@ -540,11 +511,7 @@ class ProjectDocumentV1(BaseModel):
         appliance_energy_star_ids = {
             option.id for option in self.single_select_options[APPLIANCE_ENERGY_STAR_OPTION_KEY]
         }
-        appliance_ids: set[str] = set()
         for appliance in self.tables.equipment.appliances.rows:
-            if appliance.id in appliance_ids:
-                raise ValueError(f"Duplicate appliance id: {appliance.id}")
-            appliance_ids.add(appliance.id)
             if appliance.appliance_type is not None and appliance.appliance_type not in appliance_type_ids:
                 raise ValueError(
                     f"Missing appliance type option for appliance {appliance.id}: {appliance.appliance_type}"
@@ -579,26 +546,13 @@ class ProjectDocumentV1(BaseModel):
 
         ventilator_ids = {row.id for row in self.tables.equipment.ervs.rows}
         heat_pumps = self.tables.equipment.heat_pumps
-        self._validate_heat_pump_table_ids_and_tags(
-            "heat_pump_outdoor_equip",
-            "model_number",
-            [(row.id, row.model_number) for row in heat_pumps.outdoor_equip],
-        )
-        self._validate_heat_pump_table_ids_and_tags(
-            "heat_pump_indoor_equip",
-            "model_number",
-            [(row.id, row.model_number) for row in heat_pumps.indoor_equip],
-        )
-        self._validate_heat_pump_table_ids_and_tags(
-            "heat_pump_outdoor_units",
-            "tag",
-            [(row.id, row.tag) for row in heat_pumps.outdoor_units],
-        )
-        self._validate_heat_pump_table_ids_and_tags(
-            "heat_pump_indoor_units",
-            "tag",
-            [(row.id, row.tag) for row in heat_pumps.indoor_units],
-        )
+        # Heat-pump sub-tables keep their own row.id uniqueness (they are not
+        # part of the generic DataTable guard). Their tags follow the
+        # record-identity model: ordinary, non-unique fields, no hard block.
+        validate_unique_ids("heat_pump_outdoor_equip", [row.id for row in heat_pumps.outdoor_equip])
+        validate_unique_ids("heat_pump_indoor_equip", [row.id for row in heat_pumps.indoor_equip])
+        validate_unique_ids("heat_pump_outdoor_units", [row.id for row in heat_pumps.outdoor_units])
+        validate_unique_ids("heat_pump_indoor_units", [row.id for row in heat_pumps.indoor_units])
         heat_pump_indoor_equip_ids = {row.id for row in heat_pumps.indoor_equip}
         heat_pump_outdoor_equip_ids = {row.id for row in heat_pumps.outdoor_equip}
         heat_pump_outdoor_unit_ids = {row.id for row in heat_pumps.outdoor_units}
@@ -626,11 +580,7 @@ class ProjectDocumentV1(BaseModel):
         )
         require_record_id_seeded("thermal_bridges", thermal_bridges_field_defs_by_key)
         thermal_bridge_type_ids = {option.id for option in self.single_select_options[THERMAL_BRIDGE_TYPE_OPTION_KEY]}
-        thermal_bridge_ids: set[str] = set()
         for thermal_bridge in self.tables.thermal_bridges.rows:
-            if thermal_bridge.id in thermal_bridge_ids:
-                raise ValueError(f"Duplicate thermal bridge id: {thermal_bridge.id}")
-            thermal_bridge_ids.add(thermal_bridge.id)
             if (
                 thermal_bridge.thermal_bridge_type is not None
                 and thermal_bridge.thermal_bridge_type not in thermal_bridge_type_ids
@@ -674,11 +624,7 @@ class ProjectDocumentV1(BaseModel):
         ventilators_field_defs_by_key = index_table_field_defs("ventilators", self.tables.equipment.ervs.field_defs)
         require_record_id_seeded("ventilators", ventilators_field_defs_by_key)
         inside_outside_ids = {option.id for option in self.single_select_options[VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY]}
-        ventilator_ids: set[str] = set()
         for ventilator in self.tables.equipment.ervs.rows:
-            if ventilator.id in ventilator_ids:
-                raise ValueError(f"Duplicate ventilator id: {ventilator.id}")
-            ventilator_ids.add(ventilator.id)
             if ventilator.inside_outside is not None and ventilator.inside_outside not in inside_outside_ids:
                 raise ValueError(
                     f"Missing ventilator inside/outside option for ventilator {ventilator.id}: "
@@ -724,25 +670,6 @@ class ProjectDocumentV1(BaseModel):
         self._validate_document_formula_graph()
 
         return self
-
-    @staticmethod
-    def _validate_heat_pump_table_ids_and_tags(
-        table_label: str,
-        tag_label: str,
-        rows: list[tuple[str, str | None]],
-    ) -> None:
-        ids: set[str] = set()
-        tags: set[str] = set()
-        for row_id, tag in rows:
-            if row_id in ids:
-                raise ValueError(f"Duplicate {table_label} id: {row_id}")
-            ids.add(row_id)
-            if tag is None:
-                continue
-            normalized_tag = tag.strip().casefold()
-            if normalized_tag in tags:
-                raise ValueError(f"Duplicate {table_label} {tag_label}: {tag}")
-            tags.add(normalized_tag)
 
     def _validate_rooms_formula_cycles(self, field_defs_by_key: dict[str, TableFieldDef]) -> None:
         _ = field_defs_by_key

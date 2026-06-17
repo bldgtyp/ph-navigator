@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-16
 TIME: 16:35 EDT
-STATUS: Active - planning complete, awaiting implementation
+STATUS: Active - implementation in progress (Phase 00 complete 2026-06-17); see STATUS.md
 AUTHOR: Ed (via Claude)
 SCOPE: Identity contract for project DataTables - hidden unique key, a
   single non-unique "Display Name" label (the descriptive name) as the
