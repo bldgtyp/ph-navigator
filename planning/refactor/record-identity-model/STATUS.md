@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-16
 TIME: 16:35 EDT
-STATUS: Active - Phases 00 + 01 complete (2026-06-17), Phase 02 next
+STATUS: Complete (2026-06-17) - all three phases landed, verified, docs folded back
 AUTHOR: Ed (via Claude)
 SCOPE: Current state of the record identity model refactor planning.
 RELATED:
@@ -14,7 +14,22 @@ RELATED:
 
 ## Current State
 
-`Active - Phases 00 + 01 complete, Phase 02 next`.
+`Complete - all three phases landed, verified, and the identity contract
+folded into context/ + CODING_STANDARDS`.
+
+**Phase 02 (verification, docs, closeout) landed 2026-06-17.** `make ci`
+green on the landed code; a real-browser smoke on DEV-0001
+(`localhost:5173`, codex@example.com) confirmed the Display Name pinned
+column, ordinary Tag, and absent "Name" label across Space-Types, Rooms
+(formula Display Name + kept Number/Name inputs), Ventilators, Pumps
+(empty Display Name), and Thermal Bridges. The contract was written into
+`context/technical-requirements/data-table.md` (§ Identifier Column
+rewrite), `data-model.md` (new §6.6.10 + schema-v8 history + Spaces
+contract flip), and `context/CODING_STANDARDS.md` (DataTable Identity
+Convention); the data-table-consolidation refactor's Phase 02/04 now
+reference this model and B3 is marked resolved. `graphify update .` run.
+See the phase-02 file's "Outcome" section. Packet kept in place (not
+archived) because the consolidation refactor links to it by path.
 
 **Phase 00 (backend identity guarantee) landed 2026-06-17.** Hidden
 `row.id` uniqueness is now enforced universally via
@@ -52,16 +67,14 @@ folder's Phase 02 and Phase 04 should inherit this identity model.
 
 ## Next Step
 
-Begin Phase 02:
-
-`planning/refactor/record-identity-model/phases/phase-02-verification-docs-closeout.md`
-
-Phase 02's core remaining work is the **context-doc rewrite** (PRD
-acceptance #8): `context/technical-requirements/data-table.md`,
-`data-model.md`, and `CODING_STANDARDS.md` still describe the old
-`record_id`-pinned model and must be rewritten to the hidden-key /
-Display Name / Tag contract; plus the browser smoke check on
-`localhost:5173`.
+None - the refactor is complete. Future table work inherits this
+identity model from `context/technical-requirements/data-table.md`
+(§ Identifier Column), `data-model.md` §6.6.10, and the DataTable
+Identity Convention in `context/CODING_STANDARDS.md`. The
+data-table-consolidation refactor is the downstream consumer (its Phase
+02 identifier helper and Phase 04 B3 inherit this baseline). Archive
+this packet to `planning/archive/dated/` only after that refactor closes
+out, since it references this folder by path.
 
 ## Phase Status
 
@@ -69,11 +82,11 @@ Display Name / Tag contract; plus the browser smoke check on
 |---|---|
 | 00 - Backend identity guarantee (universal id guard; remove Heat Pumps **and** Space-Types hard blocks) | Complete (2026-06-17) |
 | 01 - Swap identity columns (Display Name + Tag) | Complete (2026-06-17); shipped via `isIdentifier` frontend flag + schema v8 reseed, no body-migration |
-| 02 - Verification, docs, closeout | Next (context-doc rewrite + browser smoke) |
+| 02 - Verification, docs, closeout | Complete (2026-06-17); `make ci` green, browser smoke passed, contract folded into context/ + CODING_STANDARDS, consolidation B3 resolved |
 
 ## Blockers
 
-None for starting Phase 02.
+None. Refactor complete.
 
 ## Decisions Recorded
 
@@ -144,5 +157,14 @@ passed, 2 skipped). `make format` / `make ci` run at closeout.
 Phase 01: full backend `uv run pytest` green (890 passed, 2 skipped);
 focused frontend suites green (data-table identifier/pinning, all 10
 table builders, Space-Types, linked-record picker). `make format` /
-`make ci` run at closeout. Phase 02 not started; its browser smoke check
-and context-doc rewrite are the remaining verification.
+`make ci` run at closeout.
+
+Phase 02: `make ci` green from the repo root on the landed code.
+Real-browser smoke on DEV-0001 (`localhost:5173`, codex@example.com)
+confirmed Display Name pinned / ordinary Tag / no "Name" label on
+Space-Types, Rooms (formula Display Name + Number/Name inputs),
+Ventilators, Pumps (empty Display Name), and Thermal Bridges; the
+interactive duplicate-chip and Space-Type-picker label-order paths rest
+on the green unit suites (custom inline editor / linked-record popover do
+not surface in the accessibility tree). `graphify update .` run.
+Final `make format` + `make ci` run at commit closeout.

@@ -370,6 +370,28 @@ Preferred split direction:
 - Split expensive derived data into memoized helpers or hooks with primitive
   dependencies.
 
+### DataTable Identity Convention
+
+Every project DataTable follows one identity model (schema v8; full
+contract in `context/technical-requirements/data-table.md` §
+*Identifier Column* and `data-model.md` §6.6.10):
+
+- The hidden `row.id` is the only enforced-unique identity. Never add a
+  uniqueness constraint to a user-facing label, on the frontend or the
+  backend.
+- A new table's pinned identifier is its **descriptive name** field,
+  labeled **"Display Name"**, flagged with `isIdentifier: true` on
+  exactly one `DataTableColumnDef`. Do not pin by a hardcoded
+  `record_id` field key.
+- A short code, if any, is an ordinary, non-unique **"Tag"** column —
+  not pinned, not constrained.
+- Never label a column **"Name"** (ambiguous against Display Name) or
+  **"Record-ID"** (collides with the hidden key). The lone exception is
+  Rooms, where **Number** and **Name** are genuine input attributes that
+  feed the `{Number} — {Name}` Display Name formula.
+- Duplicate Display Names warn through the existing non-blocking chip;
+  they never block a write.
+
 ### Frontend Controls
 
 Useful focused frontend checks while iterating:

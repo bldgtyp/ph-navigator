@@ -69,11 +69,14 @@ state before implementation.
 
 ## Open Questions Carried From The PRD
 
-1. Identifier-uniqueness rule - RESOLVED by the preceding
-   record-identity-model refactor
-   (`planning/refactor/record-identity-model/`): hidden `row.id` unique,
-   user-facing Display Name never constrained, Heat Pumps hard block
-   removed. Phase 04's B3 item defers to it.
+1. Identifier-uniqueness rule - RESOLVED and LANDED (2026-06-17) by the
+   preceding record-identity-model refactor
+   (`planning/refactor/record-identity-model/`, schema v8): hidden
+   `row.id` unique (universal guard), user-facing Display Name never
+   constrained, Heat Pumps **and** Space-Types hard blocks removed.
+   Phase 04's B3 item is now a no-op verification of the landed
+   behavior; Phase 02's identifier helper inherits the shipped
+   `isIdentifier`-flag baseline.
 2. `inside_outside` / `phase` storage tier and migration cost (Phase 04).
 3. Heat-pump slice on one controller vs per-sub-table slices (Phase 05).
 4. Heat-pump custom-field storage path (Phase 05).

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-16
 TIME: 16:35 EDT
-STATUS: Planned
+STATUS: Complete (2026-06-17)
 AUTHOR: Ed (via Claude)
 SCOPE: Gates, browser smoke, and folding the identity model into the
   contract and standards; hand the baseline to the consolidation refactor.
@@ -90,3 +90,78 @@ durable contract future table work inherits.
 - `planning/refactor/data-table-consolidation/phases/phase-02-shared-column-builders.md`
 - `planning/refactor/data-table-consolidation/phases/phase-04-data-shape-and-backend-symmetry.md`
 - `planning/refactor/record-identity-model/STATUS.md`
+
+## Outcome (2026-06-17)
+
+### Gates
+
+- `make ci` green from the repo root on the landed Phases 00 + 01 code
+  (backend locked sync, Ruff format + lint, Ty, Alembic, pytest;
+  frontend frozen install, Prettier, ESLint, structural guards, Vitest,
+  production build). Re-run after the doc edits at final closeout.
+
+### Browser smoke (localhost:5173, signed in as codex@example.com)
+
+Reseeded the dev DB (`make seed-dev-data` + `make seed-agent-user`) and
+drove the starter project DEV-0001 in a real browser. Confirmed the
+pinned slot-0 header is **Display Name** and **Tag** is an ordinary
+editable column, with **no "Name" label**, on every table checked:
+
+- **Space-Types** — Display Name (Living / Dining, Kitchen, …), Tag
+  (LIVING, KITCHEN, …), plus the reverse "Rooms ← Space Type" pill
+  column. Loads with descriptive Display Names and short Tags; no hard
+  block.
+- **Rooms** — Display Name is the `{Number} — {Name}` formula
+  ("103 — Bedroom 1"); **Number** and **Name** remain ordinary input
+  columns (the Rooms-only exception); Space Type link column present.
+- **Ventilators** — Display Name + Tag generic flip.
+- **Pumps** — pinned Display Name renders **blank** (the empty built-in
+  it gained) ahead of the Tag (P-1, P-2).
+- **Thermal Bridges** — Display Name ("Roof Parapet"), Tag ("TB-1").
+
+The remaining 5 generic equipment tables (Fans, Hot-water heaters,
+Hot-water tanks, Electric heaters, Appliances) use the identical generic
+column builder verified on Ventilators and are covered by their green
+table-builder suites. The interactive duplicate-Display-Name
+warning-chip / no-block behavior and the Rooms → Space-Type picker
+Display-Name-first label resolution are covered by the green
+`identifier.test.ts`, `identifierColumn.test.tsx`, and RoomsPage /
+linked-record picker suites; the custom grid's inline editor and the
+linked-record popover do not surface in the Playwright accessibility
+tree, so those two paths were left to the unit coverage rather than
+driven manually. Heat-pump sub-tables remain off the shared grid (no
+pinned identifier), as decided.
+
+### Docs folded back
+
+- `context/technical-requirements/data-table.md` — § *Identifier Column*
+  rewritten from the old `IdentifierConfig` / `__record_id__` /
+  "Record-ID" model to the two-layer hidden-key + Display Name + Tag
+  contract, keyed on the `isIdentifier` per-column flag; the Layout
+  section's stale `IdentifierConfig` reference updated.
+- `context/technical-requirements/data-model.md` — new **§6.6.10 Row
+  identity model (schema v8)**; §6.3 Spaces contract and the §6.6.1
+  space_types envelope example flipped to Display Name / Tag; a
+  `schema_version: 8` entry added to the version history.
+- `context/CODING_STANDARDS.md` — new **DataTable Identity Convention**
+  subsection (new tables default to a Display Name identifier + ordinary
+  Tag, never a "Name" label; never unique-constrain a user-facing
+  label).
+- `planning/refactor/data-table-consolidation/` — Phase 02 identifier
+  helper repointed to the shipped `isIdentifier`-flag baseline; Phase 04
+  **B3 marked RESOLVED (landed)**; PRD open-question 1 and STATUS
+  open-question 1 marked resolved.
+
+### graphify
+
+`graphify update .` run after the edits (AST-only; docs-only change, so
+the code graph is unchanged).
+
+### Packet disposition
+
+Marked **Complete in place** rather than moved to
+`planning/archive/dated/`: the active data-table-consolidation refactor
+references this packet by its `planning/refactor/record-identity-model/`
+path (README + Phases 02/04), so a physical move would break those
+links. Archive once the consolidation refactor that inherits this model
+also closes out.

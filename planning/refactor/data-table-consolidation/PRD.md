@@ -163,9 +163,12 @@ Final values are confirmed per phase, but the planning defaults are:
 
 ## Open Questions For Implementation
 
-1. **Identifier uniqueness.** Does Heat Pumps have a real requirement for
-   unique tags, or can it adopt the non-unique + warning-chip behavior
-   the other tables use? Resolve in Phase 04 before changing validators.
+1. **Identifier uniqueness - RESOLVED (landed 2026-06-17).** The
+   record-identity-model refactor (schema v8) removed Heat Pumps'
+   "Duplicate tag within table" hard block; Heat Pumps now follows the
+   non-unique + warning-chip behavior of the other tables, and the
+   hidden `row.id` carries the only enforced-unique guard. Phase 04's B3
+   item is a no-op verification of this landed behavior.
 2. **`inside_outside` / `phase` storage tier.** Should the convergence
    move these to `custom_values` (matching the user-extensible model) or
    keep built-in selects top-level (the current house pattern Rooms

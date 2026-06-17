@@ -41,14 +41,15 @@ structural asymmetries the review found (review F8, B3, B6, B7, B8).
 2. **`phase` (F8/B4).** Converge to one storage tier across the five
    tables that have a `phase` concept and apply the `{1,3}` validation
    wherever `phase` exists. Migrate if storage changes.
-3. **Identifier uniqueness (B3) - resolved upstream.** The rule is
-   settled by the record-identity-model refactor
-   (`planning/refactor/record-identity-model/`): the hidden `row.id` is
-   the only enforced-unique identity (universal guard), and the
-   user-facing label is never unique-constrained (warning chip), with
-   Heat Pumps' hard block removed. If that refactor has already landed,
-   this item is a no-op verification; if these phases run first, defer
-   B3 to it rather than re-deciding here.
+3. **Identifier uniqueness (B3) - RESOLVED (landed 2026-06-17).** The
+   rule is settled and shipped by the record-identity-model refactor
+   (`planning/refactor/record-identity-model/`, schema v8): the hidden
+   `row.id` is the only enforced-unique identity (universal
+   `validate_table_row_ids` guard over `generic_table_row_ids`), and the
+   user-facing label is never unique-constrained (warning chip only),
+   with both the Heat Pumps and Space-Types hard blocks removed. This
+   item is now a **no-op verification** - confirm the landed behavior on
+   the converged tables; do not re-decide it here.
 4. **Dual contracts (B6).** Remove or consolidate the
    `make_simple_attachment_contract` `equipment_*` contracts that
    register a second writable surface at the same table path as the rich

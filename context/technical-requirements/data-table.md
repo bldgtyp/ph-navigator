@@ -372,49 +372,77 @@ Rules:
 
 ## Identifier Column
 
-The DataTable's pinned leading column is a **label**, never a key. Each
-feature declares its identifier through an `IdentifierConfig<TRow>`
-prop; the hidden Database-ID (`pmp_…`, `rm_…`, `rec_…`) continues to
-own row identity.
+The DataTable separates **identity** (a hidden machine key) from the
+**human label** shown in the pinned leading column. This is the Honeybee
+model: the hidden `row.id` maps to HB `identifier`; the pinned
+**Display Name** maps to HB `display_name`. The settled contract lives
+in `planning/refactor/record-identity-model/`.
 
-- **`kind: "field"`** — the named field is promoted into slot 0. The
-  cell stays editable; writes pass through the normal cell-edit path.
-- **`kind: "computed"`** — a synthetic read-only column with reserved
-  id `__record_id__` is prepended. `deps` declares the source fields;
-  `compute(row)` produces the rendered string.
-- Header label is always **"Record-ID"** (no per-feature override).
-- The pinned slot cannot be hidden or reordered (the "Hide field" and
-  "Filter by"/"Group by" menu items are suppressed for the synthetic
-  identifier; only sort remains).
-- The identifier is **never** unique-constrained. Cells whose value
-  matches another row in the same table render a non-blocking warning
-  chip ("Also used on row N…"). Empty / whitespace values do not warn.
-- Shift-Enter row insert produces a **truly blank row**: field
-  defaults come from `FieldDef.default` / natural zero only, never
-  cloned from the anchor row. The clone-from-anchor "Duplicate
-  record" workflow moves to an explicit context-menu action (not
-  yet wired).
-- Paste over the synthetic identifier column silently skips those
-  cells with a count in the toast; fill silently skips via the
-  synthetic FieldDef's `read_only: true`.
-- Broken state (a `kind: "field"` identifier whose backing field has
-  been deleted) renders a header warning glyph and `ERROR` cell
-  bodies; the grid stays functional until the consumer rewires the
-  identifier in code.
-- `__record_id__` is whitelisted by `sanitizeViewStateForSchema` so
-  persisted sort rules and column widths under that key round-trip
-  cleanly across schema-fingerprint changes.
+Two layers, applied uniformly across every project DataTable:
 
-See `planning/archive/editable-fields/archive/complete/plan-30-datatable-identifier-column.md`
-for the rollout phasing (catalog and remaining project-document
-tables drop their identifier uniqueness validators in later phases).
+| Layer | Backing field | Unique? | User-visible? | Owns |
+|---|---|---|---|---|
+| Hidden key | `row.id` (`rm_`, `pmp_`, `st_`, `tb_`, `fan_`, …) | **Yes** — enforced on every table | No | Identity, linked-record targets, `custom_links`, formula deps |
+| **Display Name** | the descriptive `name` field (the `{Number} — {Name}` formula on Rooms) | **No** — never constrained | Yes — pinned to slot 0 | The readable handle; carries the duplicate-warning chip |
+| **Tag** | the former identifier (`record_id` field key) | No | Yes — ordinary column | Nothing structural; a normal code field |
+
+Rules:
+
+- **Pinned by a per-column flag.** Each table builder sets
+  `isIdentifier: true` on exactly one `DataTableColumnDef`
+  (`shared/ui/data-table/types.ts`). `identifierColumnId()` finds it,
+  `useGridColumns` forces it to slot 0 (and never hides it even if its
+  id is in `hiddenColumns`), and `computeIdentifierDuplicates` keys the
+  warning chip on it (`lib/identifier/recordId.ts`, `GridBody.tsx`).
+  There is no global `record_id` constant in the pin path and no
+  synthetic `__record_id__` column — the identifier is whatever column
+  the table flags, per table, not a hardcoded field key.
+- **Display Name is the descriptive name.** On the 8 generic tables
+  (appliances, electric_heaters, fans, hot_water_heaters,
+  hot_water_tanks, ventilators, thermal_bridges, space_types) and Pumps
+  the flagged column is the `name` field, labeled **"Display Name"**.
+  On Rooms it is the editable `{Number} — {Name}` formula column
+  (`record_id` field key kept as a formula), also labeled
+  "Display Name". The header is never **"Name"** and never
+  **"Record-ID"** — both labels are retired.
+- **Tag is an ordinary field.** The former identifier (`record_id`
+  field key, labeled **"Tag"**) is now an ordinary, editable,
+  non-unique, unpinned column on the generic tables. `RECORD_ID_FIELD_KEY`
+  survives only as the field key several call sites read its value by;
+  it no longer drives pinning or the warning chip. Rooms has no Tag
+  field (its `record_id` slot is the Display Name formula); Pumps gained
+  an empty Display Name and keeps its Tag.
+- **Never unique-constrained.** No table hard-blocks a duplicate Display
+  Name (or a duplicate Tag). Cells whose Display Name matches another
+  row in the same table render a non-blocking warning chip ("Also used
+  on row N…"); empty / whitespace values do not warn. The only
+  enforced-unique guard is on the hidden `row.id`, applied to every
+  FieldDef-capable table by `validate_table_row_ids` /
+  `generic_table_row_ids` (`backend/features/project_document/_validators.py`).
+- **The pinned slot cannot be hidden or reordered** (the "Hide field"
+  toggle is suppressed for it; only sort remains).
+- **Shift-Enter row insert produces a truly blank row**: field defaults
+  come from `FieldDef.default` / natural zero only, never cloned from
+  the anchor row.
+- **View state round-trips without a special case.** The identifier
+  column has an ordinary column id, so its persisted sort rules and
+  widths flow through `sanitizeViewStateForSchema`'s generic
+  `columnIds` set with no reserved-key whitelist.
+- **Heat-pump sub-tables are not yet on the shared grid** (they join in
+  the data-table-consolidation refactor); they flag no `isIdentifier`
+  column and show no pinned Display Name or warning chip in the interim.
+
+See `planning/refactor/record-identity-model/PRD.md` for the full
+identity contract, and
+`planning/archive/editable-fields/archive/complete/plan-30-datatable-identifier-column.md`
+for the original identifier-column rollout that this model supersedes.
 
 ## Layout, Styling, And Accessibility
 
 - 32 px row height; 1 px dividers; row hover highlight.
-- Sticky first data column by default; when an `IdentifierConfig` is
-  declared (see *Identifier column*), that column is pinned to slot 0
-  regardless of saved `columnOrder`.
+- Sticky first data column by default; when a column declares
+  `isIdentifier` (see *Identifier column*), that column is pinned to
+  slot 0 regardless of saved `columnOrder`.
 - Row numbers, row select, and drag handles live in table chrome, not in
   the backend schema or TanStack data column model.
 - Use explicit stacking lanes for sticky headers, frozen columns,
