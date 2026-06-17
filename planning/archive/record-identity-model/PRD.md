@@ -7,8 +7,8 @@ SCOPE: Identity contract for project DataTables - hidden unique key, a
   single non-unique "Display Name" label (the descriptive name) as the
   pinned identifier, and "Tag" as an ordinary field.
 RELATED:
-  - planning/refactor/record-identity-model/README.md
-  - planning/refactor/record-identity-model/PLAN.md
+  - planning/archive/record-identity-model/README.md
+  - planning/archive/record-identity-model/PLAN.md
   - planning/code-reviews/2026-06-16/data-table-consistency-review.md
   - context/technical-requirements/data-table.md
   - context/technical-requirements/data-model.md

@@ -71,7 +71,7 @@ state before implementation.
 
 1. Identifier-uniqueness rule - RESOLVED and LANDED (2026-06-17) by the
    preceding record-identity-model refactor
-   (`planning/refactor/record-identity-model/`, schema v8): hidden
+   (`planning/archive/record-identity-model/`, schema v8): hidden
    `row.id` unique (universal guard), user-facing Display Name never
    constrained, Heat Pumps **and** Space-Types hard blocks removed.
    Phase 04's B3 item is now a no-op verification of the landed

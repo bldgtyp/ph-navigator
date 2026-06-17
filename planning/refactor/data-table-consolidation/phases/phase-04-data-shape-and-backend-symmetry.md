@@ -43,7 +43,7 @@ structural asymmetries the review found (review F8, B3, B6, B7, B8).
    wherever `phase` exists. Migrate if storage changes.
 3. **Identifier uniqueness (B3) - RESOLVED (landed 2026-06-17).** The
    rule is settled and shipped by the record-identity-model refactor
-   (`planning/refactor/record-identity-model/`, schema v8): the hidden
+   (`planning/archive/record-identity-model/`, schema v8): the hidden
    `row.id` is the only enforced-unique identity (universal
    `validate_table_row_ids` guard over `generic_table_row_ids`), and the
    user-facing label is never unique-constrained (warning chip only),

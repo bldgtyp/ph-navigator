@@ -9,7 +9,7 @@ SCOPE: Make the descriptive name the single "Display Name" and the pinned
   a schema-version bump + reseed (no body-migration) per the owner
   decision below.
 RELATED:
-  - planning/refactor/record-identity-model/PRD.md
+  - planning/archive/record-identity-model/PRD.md
   - backend/features/project_document/tables/
   - frontend/src/shared/ui/data-table/lib/identifier/recordId.ts
   - frontend/src/shared/ui/data-table/components/GridBody.tsx

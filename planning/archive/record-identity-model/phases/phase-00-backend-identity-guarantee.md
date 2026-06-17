@@ -6,7 +6,7 @@ AUTHOR: Ed (via Claude)
 SCOPE: Make hidden-id uniqueness universal across all DataTables and stop
   Heat Pumps hard-blocking duplicate user-facing labels.
 RELATED:
-  - planning/refactor/record-identity-model/PRD.md
+  - planning/archive/record-identity-model/PRD.md
   - backend/features/project_document/_validators.py
   - backend/features/project_document/document.py
   - backend/features/heat_pumps/service.py

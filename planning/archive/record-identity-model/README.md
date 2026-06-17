@@ -8,9 +8,9 @@ SCOPE: Make the descriptive name the single "Display Name" and the pinned
   "Tag" field, eliminate the ambiguous "Name" label, and make the
   hidden-id uniqueness guard universal.
 RELATED:
-  - planning/refactor/record-identity-model/PRD.md
-  - planning/refactor/record-identity-model/PLAN.md
-  - planning/refactor/record-identity-model/STATUS.md
+  - planning/archive/record-identity-model/PRD.md
+  - planning/archive/record-identity-model/PLAN.md
+  - planning/archive/record-identity-model/STATUS.md
   - planning/refactor/data-table-consolidation/PRD.md
   - planning/code-reviews/2026-06-16/data-table-consistency-review.md
   - context/technical-requirements/data-table.md

@@ -376,7 +376,7 @@ The DataTable separates **identity** (a hidden machine key) from the
 **human label** shown in the pinned leading column. This is the Honeybee
 model: the hidden `row.id` maps to HB `identifier`; the pinned
 **Display Name** maps to HB `display_name`. The settled contract lives
-in `planning/refactor/record-identity-model/`.
+in `planning/archive/record-identity-model/`.
 
 Two layers, applied uniformly across every project DataTable:
 
@@ -432,7 +432,7 @@ Rules:
   the data-table-consolidation refactor); they flag no `isIdentifier`
   column and show no pinned Display Name or warning chip in the interim.
 
-See `planning/refactor/record-identity-model/PRD.md` for the full
+See `planning/archive/record-identity-model/PRD.md` for the full
 identity contract, and
 `planning/archive/editable-fields/archive/complete/plan-30-datatable-identifier-column.md`
 for the original identifier-column rollout that this model supersedes.

@@ -5,9 +5,9 @@ STATUS: Complete (2026-06-17) - all three phases landed, verified, docs folded b
 AUTHOR: Ed (via Claude)
 SCOPE: Current state of the record identity model refactor planning.
 RELATED:
-  - planning/refactor/record-identity-model/README.md
-  - planning/refactor/record-identity-model/PRD.md
-  - planning/refactor/record-identity-model/PLAN.md
+  - planning/archive/record-identity-model/README.md
+  - planning/archive/record-identity-model/PRD.md
+  - planning/archive/record-identity-model/PLAN.md
 ---
 
 # Record Identity Model - Status
@@ -28,8 +28,10 @@ rewrite), `data-model.md` (new §6.6.10 + schema-v8 history + Spaces
 contract flip), and `context/CODING_STANDARDS.md` (DataTable Identity
 Convention); the data-table-consolidation refactor's Phase 02/04 now
 reference this model and B3 is marked resolved. `graphify update .` run.
-See the phase-02 file's "Outcome" section. Packet kept in place (not
-archived) because the consolidation refactor links to it by path.
+See the phase-02 file's "Outcome" section. Packet archived to
+`planning/archive/record-identity-model/` on 2026-06-17; all
+consolidation-refactor and context-doc references were repointed to the
+new path in the same move.
 
 **Phase 00 (backend identity guarantee) landed 2026-06-17.** Hidden
 `row.id` uniqueness is now enforced universally via
@@ -72,9 +74,16 @@ identity model from `context/technical-requirements/data-table.md`
 (§ Identifier Column), `data-model.md` §6.6.10, and the DataTable
 Identity Convention in `context/CODING_STANDARDS.md`. The
 data-table-consolidation refactor is the downstream consumer (its Phase
-02 identifier helper and Phase 04 B3 inherit this baseline). Archive
-this packet to `planning/archive/dated/` only after that refactor closes
-out, since it references this folder by path.
+02 identifier helper and Phase 04 B3 inherit this baseline) and still
+references this packet at its archived path
+`planning/archive/record-identity-model/`.
+
+## Disposition
+
+Archived to `planning/archive/record-identity-model/` on 2026-06-17 (flat
+archive convention, matching `spaces-refactor`). All inbound references
+(context docs + the data-table-consolidation refactor) were repointed
+from `planning/refactor/...` to `planning/archive/...` in the same move.
 
 ## Phase Status
 
