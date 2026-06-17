@@ -1,19 +1,19 @@
 ---
 DATE: 2026-06-16
 TIME: 16:09 EDT
-STATUS: Active - phased implementation plan
+STATUS: Complete - archived after full CI/browser smoke
 AUTHOR: Ed (via Claude)
 SCOPE: Implementation sequence, precedents, and cross-cutting risks for
   the DataTable consolidation refactor.
 RELATED:
-  - planning/refactor/data-table-consolidation/PRD.md
-  - planning/refactor/data-table-consolidation/phases/phase-00-frontend-subtraction.md
-  - planning/refactor/data-table-consolidation/phases/phase-01-backend-validation-hardening.md
-  - planning/refactor/data-table-consolidation/phases/phase-02-shared-column-builders.md
-  - planning/refactor/data-table-consolidation/phases/phase-03-shared-row-modal-and-links.md
-  - planning/refactor/data-table-consolidation/phases/phase-04-data-shape-and-backend-symmetry.md
-  - planning/refactor/data-table-consolidation/phases/phase-05-heat-pumps-on-shared-abstraction.md
-  - planning/refactor/data-table-consolidation/phases/phase-06-verification-docs-closeout.md
+  - planning/archive/data-table-consolidation/PRD.md
+  - planning/archive/data-table-consolidation/phases/phase-00-frontend-subtraction.md
+  - planning/archive/data-table-consolidation/phases/phase-01-backend-validation-hardening.md
+  - planning/archive/data-table-consolidation/phases/phase-02-shared-column-builders.md
+  - planning/archive/data-table-consolidation/phases/phase-03-shared-row-modal-and-links.md
+  - planning/archive/data-table-consolidation/phases/phase-04-data-shape-and-backend-symmetry.md
+  - planning/archive/data-table-consolidation/phases/phase-05-heat-pumps-on-shared-abstraction.md
+  - planning/archive/data-table-consolidation/phases/phase-06-verification-docs-closeout.md
 ---
 
 # DataTable Consolidation - Plan
@@ -125,7 +125,10 @@ produce.
 4. **Heat-Pump slice shape.** The heat-pump slice carries four row-types
    plus option lists together. The shared controller assumes one
    row-type per slice. The Phase 05 spike must resolve this before any
-   migration code is written; do not force-fit.
+   migration code is written; do not force-fit. **Resolved 2026-06-17:**
+   use four per-leaf table contracts/controllers under the existing
+   `equipment.heat_pumps` aggregate. Do not add a multi-row-type shared
+   controller variant.
 5. **Public-repo data hygiene.** This repo is public and must never carry
    licensed/PHI-derived data. The asset-reference validation (Phase 01)
    is partly a data-hygiene control (no cross-project asset references);
@@ -134,7 +137,10 @@ produce.
    intersects the Plan-31 custom-field/locks work. Confirm Phase 05's
    custom-field path against the current Plan-31 state before building,
    and coordinate so the two efforts do not reshape heat-pump storage
-   twice.
+   twice. **Resolved 2026-06-17:** the accepted Phase 05 path is exactly
+   the Plan-31 `{ field_defs, rows }` storage shape with row
+   `custom_values` / `custom_links`, applied as a dev-schema v10 heat
+   pump reshape.
 7. **CSS namespace rename.** Renaming the `hp-` modal-form classes to a
    neutral namespace touches every modal that borrowed them
    (Ventilator, Room, the four heat-pump modals). Do the rename inside

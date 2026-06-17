@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, ValidationError
 from starlette import status
 
 from database import transaction
+from features.assets.reference_validation import validate_document_asset_references
 from features.heat_pumps.models import (
     HEAT_PUMP_OWNED_OPTION_KEYS,
     HEAT_PUMP_VISIBLE_OPTION_KEYS,
@@ -154,6 +155,7 @@ def apply_patch(
                 base_body,
                 None,
             )
+        validate_document_asset_references(conn, project_id=access.project_id, body=next_body)
         draft_etag = document_repository.upsert_draft(
             conn,
             version_id,
@@ -170,7 +172,8 @@ def _apply_patch_to_body(
 ) -> tuple[ProjectDocumentV1, CascadePreview | None]:
     slice_ = body.tables.equipment.heat_pumps
     spec = _TABLE_SPECS[table_key]
-    rows = list(getattr(slice_, spec.attr))
+    envelope = getattr(slice_, spec.attr)
+    rows = list(envelope.rows)
     if patch.op == "add":
         if patch.value is None:
             raise _validation_error("value", "Add operations require a value.")
@@ -192,7 +195,7 @@ def _apply_patch_to_body(
         rows = _remove_row(rows, row_id)
         slice_ = _apply_delete_cascades(slice_, table_key, row_id)
 
-    next_slice = slice_.model_copy(update={spec.attr: rows})
+    next_slice = slice_.model_copy(update={spec.attr: envelope.model_copy(update={"rows": rows})})
     _validate_slice(next_slice)
     next_equipment = body.tables.equipment.model_copy(update={"heat_pumps": next_slice})
     next_tables = body.tables.model_copy(update={"equipment": next_equipment})
@@ -212,31 +215,31 @@ def _validate_row(row_model: type[Any], value: dict[str, Any]) -> Any:
 
 def _validate_slice(slice_: HeatPumpsTableSlice) -> None:
     for table_key, spec in _TABLE_SPECS.items():
-        rows = getattr(slice_, spec.attr)
+        rows = getattr(slice_, spec.attr).rows
         seen_ids: set[str] = set()
         for row in rows:
             if row.id in seen_ids:
                 raise _validation_error("id", "Duplicate row id.", {"table": table_key, "row_id": row.id})
             seen_ids.add(row.id)
 
-    indoor_equip_ids = {row.id for row in slice_.indoor_equip}
-    outdoor_equip_ids = {row.id for row in slice_.outdoor_equip}
-    outdoor_unit_ids = {row.id for row in slice_.outdoor_units}
-    for row in slice_.outdoor_equip:
+    indoor_equip_ids = {row.id for row in slice_.indoor_equip.rows}
+    outdoor_equip_ids = {row.id for row in slice_.outdoor_equip.rows}
+    outdoor_unit_ids = {row.id for row in slice_.outdoor_units.rows}
+    for row in slice_.outdoor_equip.rows:
         if row.paired_indoor_equip_id is not None and row.paired_indoor_equip_id not in indoor_equip_ids:
             raise _validation_error(
                 "paired_indoor_equip_id",
                 "Paired indoor equipment does not exist.",
                 {"row_id": row.id, "missing_id": row.paired_indoor_equip_id},
             )
-    for row in slice_.outdoor_units:
+    for row in slice_.outdoor_units.rows:
         if row.outdoor_equip_id not in outdoor_equip_ids:
             raise _validation_error(
                 "outdoor_equip_id",
                 "Outdoor equipment does not exist.",
                 {"row_id": row.id, "missing_id": row.outdoor_equip_id},
             )
-    for row in slice_.indoor_units:
+    for row in slice_.indoor_units.rows:
         if row.indoor_equip_id not in indoor_equip_ids:
             raise _validation_error(
                 "indoor_equip_id",
@@ -254,7 +257,7 @@ def _validate_slice(slice_: HeatPumpsTableSlice) -> None:
 def _delete_preview(slice_: HeatPumpsTableSlice, table_key: HeatPumpTableKey, row_id: str) -> CascadePreview:
     affected: list[CascadeReference] = []
     if table_key == "outdoor-equip":
-        for row in slice_.outdoor_units:
+        for row in slice_.outdoor_units.rows:
             if row.outdoor_equip_id == row_id:
                 affected.append(
                     CascadeReference(
@@ -274,7 +277,7 @@ def _delete_preview(slice_: HeatPumpsTableSlice, table_key: HeatPumpTableKey, ro
     elif table_key == "indoor-equip":
         blockers = [
             CascadeReference(table="indoor-units", row_id=row.id, tag=row.tag, field="indoor_equip_id")
-            for row in slice_.indoor_units
+            for row in slice_.indoor_units.rows
             if row.indoor_equip_id == row_id
         ]
         if blockers:
@@ -286,13 +289,13 @@ def _delete_preview(slice_: HeatPumpsTableSlice, table_key: HeatPumpTableKey, ro
             )
         affected.extend(
             CascadeReference(table="outdoor-equip", row_id=row.id, tag=row.tag, field="paired_indoor_equip_id")
-            for row in slice_.outdoor_equip
+            for row in slice_.outdoor_equip.rows
             if row.paired_indoor_equip_id == row_id
         )
     elif table_key == "outdoor-units":
         affected.extend(
             CascadeReference(table="indoor-units", row_id=row.id, tag=row.tag, field="outdoor_unit_id")
-            for row in slice_.indoor_units
+            for row in slice_.indoor_units.rows
             if row.outdoor_unit_id == row_id
         )
     return CascadePreview(affected=affected)
@@ -304,21 +307,29 @@ def _apply_delete_cascades(
     if table_key == "indoor-equip":
         return slice_.model_copy(
             update={
-                "outdoor_equip": [
-                    row.model_copy(update={"paired_indoor_equip_id": None})
-                    if row.paired_indoor_equip_id == row_id
-                    else row
-                    for row in slice_.outdoor_equip
-                ]
+                "outdoor_equip": slice_.outdoor_equip.model_copy(
+                    update={
+                        "rows": [
+                            row.model_copy(update={"paired_indoor_equip_id": None})
+                            if row.paired_indoor_equip_id == row_id
+                            else row
+                            for row in slice_.outdoor_equip.rows
+                        ]
+                    }
+                )
             }
         )
     if table_key == "outdoor-units":
         return slice_.model_copy(
             update={
-                "indoor_units": [
-                    row.model_copy(update={"outdoor_unit_id": None}) if row.outdoor_unit_id == row_id else row
-                    for row in slice_.indoor_units
-                ]
+                "indoor_units": slice_.indoor_units.model_copy(
+                    update={
+                        "rows": [
+                            row.model_copy(update={"outdoor_unit_id": None}) if row.outdoor_unit_id == row_id else row
+                            for row in slice_.indoor_units.rows
+                        ]
+                    }
+                )
             }
         )
     return slice_
@@ -370,10 +381,10 @@ def _response(
         source=source,
         version_etag=version_etag,
         draft_etag=draft_etag,
-        outdoor_equip=slice_.outdoor_equip,
-        indoor_equip=slice_.indoor_equip,
-        outdoor_units=slice_.outdoor_units,
-        indoor_units=slice_.indoor_units,
+        outdoor_equip=slice_.outdoor_equip.rows,
+        indoor_equip=slice_.indoor_equip.rows,
+        outdoor_units=slice_.outdoor_units.rows,
+        indoor_units=slice_.indoor_units.rows,
         single_select_options={key: read_option_list(body, key) for key in HEAT_PUMP_VISIBLE_OPTION_KEYS},
     )
 
@@ -515,8 +526,8 @@ def _option_is_referenced(body: ProjectDocumentV1, option_key: str, option_id: s
     slice_ = body.tables.equipment.heat_pumps
     sub_table, field_name = _OPTION_KEY_TO_CELL[option_key]
     if sub_table == "__manufacturer__":
-        return any(row.manufacturer == option_id for row in slice_.outdoor_equip) or any(
-            row.manufacturer == option_id for row in slice_.indoor_equip
+        return any(row.manufacturer == option_id for row in slice_.outdoor_equip.rows) or any(
+            row.manufacturer == option_id for row in slice_.indoor_equip.rows
         )
-    rows = getattr(slice_, sub_table)
+    rows = getattr(slice_, sub_table).rows
     return any(getattr(row, field_name) == option_id for row in rows)

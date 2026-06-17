@@ -1108,15 +1108,12 @@ describe("App", () => {
     await user.click(await screen.findByRole("button", { name: "Add New Room" }));
     await user.type(screen.getByLabelText("Number"), "101");
     await user.type(screen.getByLabelText("Name"), "Living Room");
-    await user.type(screen.getByLabelText("Floor level"), "Ground");
-    await user.type(screen.getByLabelText("Building zone"), "Residential");
     await user.click(screen.getByRole("button", { name: "Save room" }));
 
     expect(await screen.findByText("Uncommitted changes")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Version actions for Working" }));
     expect(screen.getByRole("menuitem", { name: "Save Version" })).toBeEnabled();
     expect(screen.getByText("Living Room")).toBeVisible();
-    expect(screen.getByText("Ground")).toBeVisible();
     expect(fetchMock).toHaveBeenCalledWith(
       roomsUrl,
       expect.objectContaining({

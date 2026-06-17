@@ -1,4 +1,5 @@
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
+import type { ReactNode } from "react";
 
 // Default focus lands on Cancel — matches the existing RoomModal
 // delete confirm and US-Builder-Tables criterion 10 (no name retype).
@@ -7,8 +8,10 @@ export type ConfirmDestructiveDialogProps = {
   title: string;
   description: string;
   confirmLabel: string;
+  confirmDisabled?: boolean;
   onCancel: () => void;
   onConfirm: () => void;
+  children?: ReactNode;
 };
 
 export function ConfirmDestructiveDialog({
@@ -16,8 +19,10 @@ export function ConfirmDestructiveDialog({
   title,
   description,
   confirmLabel,
+  confirmDisabled = false,
   onCancel,
   onConfirm,
+  children,
 }: ConfirmDestructiveDialogProps) {
   return (
     <AlertDialog.Root
@@ -33,6 +38,7 @@ export function ConfirmDestructiveDialog({
           <AlertDialog.Description className="data-table-alert-description">
             {description}
           </AlertDialog.Description>
+          {children}
           <div className="data-table-alert-actions">
             <AlertDialog.Cancel asChild>
               <button type="button" className="secondary-button" onClick={onCancel}>
@@ -40,7 +46,12 @@ export function ConfirmDestructiveDialog({
               </button>
             </AlertDialog.Cancel>
             <AlertDialog.Action asChild>
-              <button type="button" className="danger-button" onClick={onConfirm}>
+              <button
+                type="button"
+                className="danger-button"
+                onClick={onConfirm}
+                disabled={confirmDisabled}
+              >
                 {confirmLabel}
               </button>
             </AlertDialog.Action>

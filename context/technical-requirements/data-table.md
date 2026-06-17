@@ -157,7 +157,7 @@ V2 v1 field types:
 | `number` | SI in document. Plain numbers render raw and have no unit chrome. Optional `numberUnits` config (see "Number with Units" below) wires a single Number field into the global SI/IP toggle without inventing a separate type. |
 | `single_select` | Project-defined options, pill renderer, popover editor, match-or-create paste, sort by option order. |
 | `computed` | Backend-owned read overlay; frontend renders ready/stale/loading/error states and never reimplements PH calculations. |
-| `attachment` | Cell value is `string[]` of `asset_id`s referencing `project_assets` rows (`data-model.md` §6.5). Rendered by `<AttachmentCell>` — mousewheel-scrolled thumbnail strip, fixed cell height, "📎 Drop files here" pill-button in the empty active state, preview modal on double-click, select-and-Delete detach gesture. **Pre-set core fields only in v1** — not in the user-extensible custom-field set; the roster of attachment-capable cells lives in `attachments.md` §A2. **Clipboard semantics in v1: copy/paste of attachment cells is disabled.** Fill propagates the array verbatim within the same column. Aggregations: Count, Count Unique. Sort: by array length. Filter: `is_empty`, `is_not_empty`, `count_gte`, `count_lte`. **No** schema-mutation menu entries — `addField` / `deleteField` / `changeType` / `setFormula` do not apply. Full UX contract: `attachments.md`. |
+| `attachment` | Cell value is `string[]` of `asset_id`s referencing `project_assets` rows (`data-model.md` §6.5). Rendered by `<AttachmentCell>` — mousewheel-scrolled thumbnail strip, fixed cell height, "📎 Drop files here" pill-button in the empty active state, preview modal on double-click, select-and-Delete detach gesture. **Pre-set core fields only in v1** — not in the user-extensible custom-field set; the roster of attachment-capable cells lives in `attachments.md` §A2. **Clipboard semantics in v1: copy/paste of attachment cells is disabled.** Fill propagates the array verbatim within the same column. Aggregations: Count, Count Unique. Sort: by array length. Filter: `is_empty`, `is_not_empty`, `count_gte`, `count_lte`. **No** schema-mutation menu entries — `addField` / `deleteField` / `changeType` / `setFormula` do not apply. Write paths reject asset ids that are missing, pending/failed, cross-project, invalid for the field policy, or over the field's max-count. Full UX contract: `attachments.md`. |
 | `color` | User-authorable nullable color field stored as normalized `#rrggbb` hex. Editor exposes native color picker plus hex/RGB/CMYK inputs; short hex is accepted by frontend input and expanded before write. Filter: `is`, `is_not`, `is_empty`, `is_not_empty`. Aggregations: Count, Count Unique. Sort/group by stored hex. Does not drive row tinting or app view-state coloring. |
 | `linked_record` | Cell value is an ordered `string[]` of target row ids. Pills resolve labels through consumer-supplied target-table data and open the target record in the standard same-page row modal when active, preserving the current table/route for AirTable parity. Cross-route `?focus=<row_id>` deep links remain allowed for explicit navigation flows, but linked chips should not navigate by default. |
 
@@ -165,6 +165,54 @@ Clipboard coercion must preflight the whole paste range. If any cell
 fails validation, commit nothing and show a paste review dialog with row,
 column, raw value, and error, capped to the first 25 failures plus an
 overflow count.
+
+## Backend Data Shapes
+
+Semantically identical built-ins use one storage tier across tables.
+`inside_outside` is a typed single-select column on both Ventilators and
+Hot Water Tanks, with per-table option namespaces
+`ventilators.inside_outside` and `hot_water_tanks.inside_outside`.
+`phase` is a typed nullable number column on equipment tables that
+currently expose it (Pumps, Fans, Hot Water Heaters), and Pydantic row
+validators enforce `phase in {1, 3}` wherever the column exists.
+
+Attachment-capable equipment tables use their canonical rich table keys
+(`ventilators`, `pumps`, `fans`, `hot_water_heaters`,
+`hot_water_tanks`, `electric_heaters`, `appliances`) in the attachment
+registry and bulk-download manifests. The previous `equipment_*`
+attachment-only table aliases are intentionally unregistered so each
+table path has one validated write surface.
+
+Heat Pumps uses the same generic FieldDef-capable backend table shape as
+the rest of the equipment tables, but at the leaf-table grain under the
+existing `equipment.heat_pumps` aggregate. The registered generic table
+keys are `heat_pumps_outdoor_equip`, `heat_pumps_indoor_equip`,
+`heat_pumps_outdoor_units`, and `heat_pumps_indoor_units`; each leaf
+stores `{ field_defs, rows }`, and each row carries the standard
+`custom_values` / `custom_links` bags. Normal leaf edits use the generic
+project-document table read/replace/schema-mutation routes. The
+feature-specific aggregate route may remain for legacy delete-preview and
+Phius export workflows until the frontend finishes migrating. On the
+frontend, each Heat Pump leaf owns its own `useSliceTableController`
+instance, view-state key, schema fingerprint, and replace payload
+builder. Each leaf table composes its built-in Heat Pump columns with
+the shared `customFieldColumnDefs` output from the controller's
+`tableSchema`, and forwards the controller's custom-field action
+handlers into `<DataTable>`, so server-returned custom fields, locks,
+formula `rows_computed` overlays, view-state sanitization, and schema
+mutations use the same frontend path as Rooms and the generic equipment
+tables. Cross-leaf displays may compose the four loaded slices for
+labels and inverse-link pills, but writes still land on the owning leaf
+controller so custom-field bag routing, option deltas, and conflict
+handling stay identical to other generic table consumers.
+Heat Pump built-in link columns on the unit leaves are declared as
+backend `linked_record` FieldDefs (`outdoor_equip_id`,
+`indoor_equip_id`, `outdoor_unit_id`, `served_room_ids`, and
+`linked_erv_unit_id`) even when the Pydantic row stores the canonical
+value in a typed scalar/list attribute. The frontend adapter converts
+grid writes back to that typed row shape, but the schema remains
+truthful so the shared linked-record cell renders labels/pills instead
+of raw stored ids.
 
 Blank-value coercion follows AirTable parity: when a field allows null
 (`required !== true`), user clear gestures write `null`, not the
@@ -512,6 +560,65 @@ group / order / hidden columns (plan 09).
   whose column id is no longer present in the schema. No back-compat
   shim is required for the rename from `width` → `defaultWidth` —
   pre-deployment.
+
+## Shared Column Builders
+
+Feature tables should use the shared builders in
+`shared/ui/data-table/columns.tsx` and adjacent shared modules for
+common column and row-editor shapes:
+
+- `linkColumn` / `LinkCell` for external URL cells using
+  `.data-table-link-cell` and the shared `shortenUrl` formatter.
+- `attachmentColumn` for attachment fields: ordered id accessors,
+  count-based `measureText`, editor/read-only wiring, and no-op ordered
+  id suppression before `onWrite` / direct `onChange`.
+- `identifierColumn` / `identifierColumnDef` for the single
+  `isIdentifier: true` column described above.
+- `incomingLinkColumn` / `incomingLinkFieldDef` for read-only incoming
+  linked-record pill columns. Use `accessorValue: "ids"` only when the
+  table also declares a real `linked_record` `FieldDef` and therefore
+  needs the DataTable linked-record renderer to receive row ids; use
+  the default display-text accessor for synthetic inverse-link columns
+  so clipboard, filter, sort, and measure text stay aligned with the
+  visible pill labels.
+- Synthetic computed columns that are not persisted backend fields must
+  still provide frontend `FieldDef` metadata when they need a shared
+  renderer such as `lookup` or `linked_record`. Append these definitions
+  only for missing `field_key`s; persisted backend FieldDefs remain
+  authoritative for real editable fields.
+- `DATA_TABLE_COLUMN_WIDTHS` for semantic default widths such as
+  `recordId`, `identifier`, `link`, `attachment`, `notes`, and small
+  numeric columns.
+
+Editable numeric inputs that need blank-to-null parsing use
+`parseNumberInput` from `lib/units/format.ts`.
+
+## Shared Row-Edit Modal
+
+Feature row editors should use the shared row-edit primitives in
+`shared/ui/data-table/row-edit.tsx` and `useRowEditForm.ts` when their
+form shape fits the common scaffold:
+
+- `useRowEditForm` owns `draft`, `error`, `isSaving`, frozen-draft
+  checks, optional validation, and the submit try/catch path.
+- `RowEditModal` owns the `ModalDialog` / `project-form` chrome,
+  conflict banner, error paragraph, Cancel/submit actions, optional
+  Delete action, read-only submit suppression, and read-only delete
+  suppression.
+- `TextField`, `TextAreaField`, `NumberField`,
+  `ModalSingleSelectField`, and `ModalLinkedRecordField` provide shared
+  field wrappers for modal editing. `ModalSingleSelectField` writes
+  option ids, not labels, and may optionally create a new option id for
+  modal-owned option lists. `ModalLinkedRecordField` wraps the shared
+  linked-record picker and only mounts the picker while open, so closed
+  fields do not sort target candidates during unrelated form edits.
+- `ConfirmDestructiveDialog` is the shared destructive-confirm
+  primitive for table/row operations. It exposes optional detail
+  children and disabled confirm state for cascade previews; feature
+  surfaces that only report blocked deletion details may still use a
+  feature-specific informational modal.
+- Row-edit layout styles live in `DataTable.css`; shared row-edit
+  components must not depend on feature-local CSS imports.
 
 ## Deferred
 

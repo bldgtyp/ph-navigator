@@ -23,11 +23,11 @@ from features.assets.registry import (
     all_asset_kinds,
     asset_matches_field,
     attachment_fields_for_asset_kind,
-    attachment_table_rows,
     epw_upload_allowed,
     filename_extension,
     get_attachment_field,
     hbjson_upload_allowed,
+    iter_rows_for_raw_tables,
     list_asset_references,
 )
 from features.assets.schemas import (
@@ -753,17 +753,7 @@ def _find_row(document: dict[str, object], table_key: str, row_id: str) -> dict[
     tables = cast(dict[str, object], document["tables"])
     if not isinstance(tables, dict):
         raise ValueError("invalid_tables")
-    rows: list[dict[str, object]]
-    if table_key == "project_materials":
-        rows = _dict_rows(tables.get("project_materials"))
-    elif table_key == "thermal_bridges":
-        rows = _dict_rows(tables.get("thermal_bridges"))
-    elif table_key.startswith("equipment_"):
-        equipment = tables.get("equipment")
-        suffix = table_key.removeprefix("equipment_")
-        equipment_rows = cast(dict[str, object], equipment) if isinstance(equipment, dict) else {}
-        rows = attachment_table_rows(equipment_rows.get(suffix))
-    elif table_key == "assembly_segments":
+    if table_key == "assembly_segments":
         for assembly in _dict_rows(tables.get("assemblies")):
             for layer in _dict_rows(assembly.get("layers")):
                 for segment in _dict_rows(layer.get("segments")):
@@ -771,7 +761,7 @@ def _find_row(document: dict[str, object], table_key: str, row_id: str) -> dict[
                         return segment
         rows = []
     else:
-        rows = []
+        rows = iter_rows_for_raw_tables(tables, table_key)
     for row in rows:
         if row.get("id") == row_id:
             return row

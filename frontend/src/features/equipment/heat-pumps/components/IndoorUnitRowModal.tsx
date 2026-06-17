@@ -1,6 +1,13 @@
 import { useMemo, useState } from "react";
 import { errorMessage } from "../../../../shared/lib/errors";
-import { ModalDialog } from "../../../../shared/ui/ModalDialog";
+import {
+  ModalLinkedRecordField,
+  RowEditGrid,
+  RowEditModal,
+  RowEditSection,
+  TextAreaField,
+  TextField,
+} from "../../../../shared/ui/data-table";
 import type { VentilatorRow } from "../../types";
 import { indoorEquipLabel, outdoorUnitLabel, tagCollides, ventilatorLabel } from "../lib";
 import {
@@ -41,7 +48,10 @@ export function IndoorUnitRowModal({
   const [draft, setDraft] = useState(row);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const manufacturerOptions = options[HEAT_PUMP_OPTION_KEYS.manufacturer] ?? [];
+  const manufacturerOptions = useMemo(
+    () => options[HEAT_PUMP_OPTION_KEYS.manufacturer] ?? [],
+    [options],
+  );
   const title = mode === "add" ? "New indoor unit" : `Indoor unit: ${row.tag || "(unnamed)"}`;
   const submitLabel = mode === "add" ? "Create indoor unit" : "Save indoor unit";
   const noOutdoorUnits = outdoorUnits.length === 0;
@@ -49,6 +59,22 @@ export function IndoorUnitRowModal({
   const sortedVentilators = useMemo(
     () => [...ventilators].sort((a, b) => ventilatorLabel(a).localeCompare(ventilatorLabel(b))),
     [ventilators],
+  );
+  const indoorEquipCandidates = useMemo(
+    () =>
+      indoorEquip.map((equip) => ({
+        rowId: equip.id,
+        recordId: indoorEquipLabel(equip, manufacturerOptions),
+      })),
+    [indoorEquip, manufacturerOptions],
+  );
+  const outdoorUnitCandidates = useMemo(
+    () => outdoorUnits.map((unit) => ({ rowId: unit.id, recordId: outdoorUnitLabel(unit) })),
+    [outdoorUnits],
+  );
+  const ventilatorCandidates = useMemo(
+    () => sortedVentilators.map((vent) => ({ rowId: vent.id, recordId: ventilatorLabel(vent) })),
+    [sortedVentilators],
   );
 
   const save = async () => {
@@ -79,125 +105,84 @@ export function IndoorUnitRowModal({
   };
 
   return (
-    <ModalDialog title={title} titleId="hp-indoor-unit-title" onClose={onCancel}>
-      <form
-        className="project-form hp-modal-form"
-        noValidate
-        onSubmit={(event) => {
-          event.preventDefault();
-          void save();
-        }}
-      >
-        {error ? (
-          <p className="form-error" role="alert">
-            {error}
-          </p>
-        ) : null}
-        <section className="hp-modal-section">
-          <h3>Identity</h3>
-          <div className="hp-form-grid">
-            <label>
-              Tag
-              <input
-                required
-                value={draft.tag}
-                onChange={(event) => setDraft({ ...draft, tag: event.target.value })}
-                disabled={readOnly}
-              />
-            </label>
-            <label className="hp-form-grid__wide">
-              Indoor equipment
-              <select
-                value={draft.indoor_equip_id}
-                onChange={(event) => setDraft({ ...draft, indoor_equip_id: event.target.value })}
-                disabled={readOnly}
-              >
-                <option value="">Select an indoor equipment row…</option>
-                {indoorEquip.map((equip) => (
-                  <option key={equip.id} value={equip.id}>
-                    {indoorEquipLabel(equip, manufacturerOptions)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {!readOnly && onCreateIndoorEquip ? (
-              <button
-                type="button"
-                className="secondary-button hp-inline-action"
-                onClick={onCreateIndoorEquip}
-              >
-                Create new indoor equipment
-              </button>
-            ) : null}
-            <label className="hp-form-grid__wide">
-              Outdoor unit
-              <select
-                value={draft.outdoor_unit_id ?? ""}
-                onChange={(event) =>
-                  setDraft({ ...draft, outdoor_unit_id: event.target.value || null })
-                }
-                disabled={readOnly || noOutdoorUnits}
-              >
-                <option value="">{noOutdoorUnits ? "No outdoor units yet" : "None"}</option>
-                {outdoorUnits.map((unit) => (
-                  <option key={unit.id} value={unit.id}>
-                    {outdoorUnitLabel(unit)}
-                  </option>
-                ))}
-              </select>
-              {noOutdoorUnits ? (
-                <small className="hp-helper-text">
-                  Add an outdoor unit first in Units — Outdoor.
-                </small>
-              ) : null}
-            </label>
-            <label className="hp-form-grid__wide">
-              Linked ERV unit
-              <select
-                value={draft.linked_erv_unit_id ?? ""}
-                onChange={(event) =>
-                  setDraft({ ...draft, linked_erv_unit_id: event.target.value || null })
-                }
-                disabled={readOnly || noVentilators}
-              >
-                <option value="">{noVentilators ? "No ERVs yet" : "None"}</option>
-                {sortedVentilators.map((vent) => (
-                  <option key={vent.id} value={vent.id}>
-                    {ventilatorLabel(vent)}
-                  </option>
-                ))}
-              </select>
-              {noVentilators ? (
-                <small className="hp-helper-text">Add an ERV first under Equipment → ERVs.</small>
-              ) : null}
-            </label>
-          </div>
-        </section>
-        <label>
-          Notes
-          <textarea
-            rows={4}
-            value={draft.notes ?? ""}
-            onChange={(event) => setDraft({ ...draft, notes: event.target.value || null })}
+    <RowEditModal
+      title={title}
+      titleId="hp-indoor-unit-title"
+      onCancel={onCancel}
+      onSubmit={() => void save()}
+      onDelete={onDelete}
+      deleteLabel="Delete indoor unit"
+      error={error}
+      isSaving={isSaving}
+      readOnly={readOnly}
+      submitLabel={submitLabel}
+    >
+      <RowEditSection title="Identity">
+        <RowEditGrid>
+          <TextField
+            label="Tag"
+            value={draft.tag}
+            onChange={(tag) => setDraft({ ...draft, tag: tag ?? "" })}
             disabled={readOnly}
           />
-        </label>
-        <div className="modal-actions">
-          {onDelete && !readOnly ? (
-            <button type="button" className="danger-button" onClick={onDelete}>
-              Delete indoor unit
+          <div className="table-row-modal-grid__wide">
+            <ModalLinkedRecordField
+              label="Indoor equipment"
+              value={draft.indoor_equip_id}
+              candidates={indoorEquipCandidates}
+              disabled={readOnly}
+              placeholder="Select an indoor equipment row..."
+              emptyMessage="No indoor equipment rows yet"
+              onChange={(indoor_equip_id) =>
+                setDraft({ ...draft, indoor_equip_id: indoor_equip_id ?? "" })
+              }
+            />
+          </div>
+          {!readOnly && onCreateIndoorEquip ? (
+            <button
+              type="button"
+              className="secondary-button hp-inline-action"
+              onClick={onCreateIndoorEquip}
+            >
+              Create new indoor equipment
             </button>
           ) : null}
-          <button type="button" className="secondary-button" onClick={onCancel}>
-            {readOnly ? "Close" : "Cancel"}
-          </button>
-          {!readOnly ? (
-            <button type="submit" disabled={isSaving}>
-              {submitLabel}
-            </button>
-          ) : null}
-        </div>
-      </form>
-    </ModalDialog>
+          <div className="table-row-modal-grid__wide">
+            <ModalLinkedRecordField
+              label="Outdoor unit"
+              value={draft.outdoor_unit_id}
+              candidates={outdoorUnitCandidates}
+              disabled={readOnly || noOutdoorUnits}
+              emptyMessage="No outdoor units yet"
+              onChange={(outdoor_unit_id) => setDraft({ ...draft, outdoor_unit_id })}
+            />
+            {noOutdoorUnits ? (
+              <small className="hp-helper-text">
+                Add an outdoor unit first in Units — Outdoor.
+              </small>
+            ) : null}
+          </div>
+          <div className="table-row-modal-grid__wide">
+            <ModalLinkedRecordField
+              label="Linked ERV unit"
+              value={draft.linked_erv_unit_id}
+              candidates={ventilatorCandidates}
+              disabled={readOnly || noVentilators}
+              emptyMessage="No ERVs yet"
+              onChange={(linked_erv_unit_id) => setDraft({ ...draft, linked_erv_unit_id })}
+            />
+            {noVentilators ? (
+              <small className="hp-helper-text">Add an ERV first under Equipment → ERVs.</small>
+            ) : null}
+          </div>
+        </RowEditGrid>
+      </RowEditSection>
+      <TextAreaField
+        label="Notes"
+        value={draft.notes ?? ""}
+        onChange={(notes) => setDraft({ ...draft, notes })}
+        disabled={readOnly}
+      />
+    </RowEditModal>
   );
 }

@@ -1,13 +1,13 @@
 ---
 DATE: 2026-06-16
 TIME: 16:09 EDT
-STATUS: Active - planning complete, awaiting implementation
+STATUS: Complete - archived after full CI/browser smoke
 AUTHOR: Ed (via Claude)
 SCOPE: Product, architecture, and data-shape contract for consolidating
   all project DataTable pages onto the shared data-table system.
 RELATED:
-  - planning/refactor/data-table-consolidation/README.md
-  - planning/refactor/data-table-consolidation/PLAN.md
+  - planning/archive/data-table-consolidation/README.md
+  - planning/archive/data-table-consolidation/PLAN.md
   - planning/code-reviews/2026-06-16/data-table-consistency-review.md
   - context/technical-requirements/data-table.md
   - context/technical-requirements/data-model.md

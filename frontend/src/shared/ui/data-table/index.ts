@@ -1,4 +1,5 @@
 export { DataTable } from "./DataTable";
+export { SingleSelectCell } from "./components/SingleSelectCell";
 export { coerceCustomValue } from "./lib/coerceCustomFieldType";
 export type { CoerceResult } from "./lib/coerceCustomFieldType";
 export {
@@ -60,6 +61,31 @@ export type {
   SetFormulaMutation,
 } from "./lib/customFieldMutations";
 export { OPTION_COLOR_PALETTE } from "./lib/options/create";
+export {
+  DATA_TABLE_COLUMN_WIDTHS,
+  LinkCell,
+  attachmentColumn,
+  identifierColumn,
+  identifierColumnDef,
+  linkColumn,
+  shortenUrl,
+} from "./columns";
+export { incomingLinkColumn, incomingLinkFieldDef } from "./incoming-links";
+export type { IncomingLinkColumnArgs, IncomingLinkFieldDefArgs } from "./incoming-links";
+export { ConfirmDestructiveDialog } from "./components/ConfirmDestructiveDialog";
+export type { ConfirmDestructiveDialogProps } from "./components/ConfirmDestructiveDialog";
+export {
+  ModalLinkedRecordField,
+  ModalSingleSelectField,
+  NumberField,
+  RowEditGrid,
+  RowEditModal,
+  RowEditSection,
+  TextAreaField,
+  TextField,
+} from "./row-edit";
+export { useRowEditForm } from "./useRowEditForm";
+export type { UseRowEditFormArgs } from "./useRowEditForm";
 export { missingOptionReferences, optionReferenceCounts } from "./lib/options/references";
 export { normalizeOptionOrders } from "./lib/options/normalize";
 export { sanitizeViewStateForSchema } from "./lib/view/sanitize";

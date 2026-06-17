@@ -50,10 +50,13 @@ describe("OutdoorUnitRowModal", () => {
     );
 
     await user.type(screen.getByLabelText("Tag"), "HP-1");
-    await user.selectOptions(
-      screen.getByLabelText(/Outdoor equipment/i),
-      "hpoe_01HX0000000000000000000000",
+    await user.click(
+      screen.getByRole("button", {
+        name: /Outdoor equipment: Select an outdoor equipment row/i,
+      }),
     );
+    await user.click(screen.getByRole("radio", { name: /Link OE-A/i }));
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
     expect(screen.queryByLabelText("Zone")).toBeNull();
     await user.click(screen.getByRole("button", { name: "Create outdoor unit" }));
 

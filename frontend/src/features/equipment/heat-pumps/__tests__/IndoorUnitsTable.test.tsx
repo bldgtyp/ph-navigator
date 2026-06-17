@@ -3,9 +3,18 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { createQueryClient } from "../../../../app/query-client";
+import type { WriteOp } from "../../../../shared/ui/data-table";
 import { buildRoom, buildRoomsSlice } from "../../testing/testFixtures";
 import { IndoorUnitsTable } from "../components/IndoorUnitsTable";
-import type { HeatPumpsSlice } from "../types";
+import { indoorUnitFieldDefs } from "../indoor-unit-columns";
+import { heatPumpIndoorUnitsPayloadBuilders } from "../lib";
+import type {
+  HeatPumpIndoorEquipSlice,
+  HeatPumpIndoorUnitsSlice,
+  HeatPumpOutdoorUnitsSlice,
+  HeatPumpsSlice,
+} from "../types";
+import { heatPumpTestController } from "./heatPumpControllerTestUtils";
 
 const fetchMock = vi.fn();
 
@@ -28,7 +37,7 @@ describe("IndoorUnitsTable", () => {
       ],
       indoor_units: [indoorUnit({ indoor_equip_id: "hpie_a" })],
     });
-    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes("/assets/bulk-urls")) return jsonResponse({ items: [] });
       if (url.endsWith("/api/v1/projects/proj_1/versions/ver_1/draft/tables/rooms")) {
@@ -37,19 +46,11 @@ describe("IndoorUnitsTable", () => {
       if (url.endsWith("/api/v1/projects/proj_1/versions/ver_1/draft/tables/ventilators")) {
         return jsonResponse({ ventilators: [] });
       }
-      if (url.endsWith("/api/v1/projects/proj_1/equipment/heat-pumps/indoor-units")) {
-        const body = JSON.parse(String(init?.body));
-        return jsonResponse({
-          ...slice,
-          source: "draft",
-          draft_etag: "draft_2",
-          indoor_units: [body.value],
-        });
-      }
       return jsonResponse({});
     });
+    const writes: WriteOp[] = [];
 
-    renderTable(slice);
+    renderTable(slice, { writes });
 
     const currentPill = await screen.findByRole("button", { name: /IE-A/ });
     const cell = currentPill.closest('[role="gridcell"]');
@@ -58,17 +59,9 @@ describe("IndoorUnitsTable", () => {
     await user.click(await screen.findByRole("radio", { name: /Link IE-B/ }));
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
-    await waitFor(() => {
-      const write = fetchMock.mock.calls.find(
-        ([url, init]) =>
-          String(url).endsWith("/equipment/heat-pumps/indoor-units") &&
-          (init as RequestInit | undefined)?.method === "PATCH",
-      );
-      expect(write).toBeTruthy();
-      const body = JSON.parse(String((write?.[1] as RequestInit).body));
-      expect(body.value.indoor_equip_id).toBe("hpie_b");
-      expect(Array.isArray(body.value.indoor_equip_id)).toBe(false);
-    });
+    await waitFor(() => expect(writes).toHaveLength(1));
+    const payload = payloadFromFirstCellWrite(slice, writes);
+    expect(payload.indoor_units[0]?.indoor_equip_id).toBe("hpie_b");
   });
 
   test("linked-record outdoor unit edits persist the nullable scalar outdoor_unit_id field", async () => {
@@ -80,7 +73,7 @@ describe("IndoorUnitsTable", () => {
       ],
       indoor_units: [indoorUnit({ outdoor_unit_id: "hpou_a" })],
     });
-    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes("/assets/bulk-urls")) return jsonResponse({ items: [] });
       if (url.endsWith("/api/v1/projects/proj_1/versions/ver_1/draft/tables/rooms")) {
@@ -89,19 +82,11 @@ describe("IndoorUnitsTable", () => {
       if (url.endsWith("/api/v1/projects/proj_1/versions/ver_1/draft/tables/ventilators")) {
         return jsonResponse({ ventilators: [] });
       }
-      if (url.endsWith("/api/v1/projects/proj_1/equipment/heat-pumps/indoor-units")) {
-        const body = JSON.parse(String(init?.body));
-        return jsonResponse({
-          ...slice,
-          source: "draft",
-          draft_etag: "draft_2",
-          indoor_units: [body.value],
-        });
-      }
       return jsonResponse({});
     });
+    const writes: WriteOp[] = [];
 
-    renderTable(slice);
+    renderTable(slice, { writes });
 
     const currentPill = await screen.findByRole("button", { name: "HP-A" });
     const cell = currentPill.closest('[role="gridcell"]');
@@ -110,17 +95,9 @@ describe("IndoorUnitsTable", () => {
     await user.click(await screen.findByRole("radio", { name: /Link HP-B/ }));
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
-    await waitFor(() => {
-      const write = fetchMock.mock.calls.find(
-        ([url, init]) =>
-          String(url).endsWith("/equipment/heat-pumps/indoor-units") &&
-          (init as RequestInit | undefined)?.method === "PATCH",
-      );
-      expect(write).toBeTruthy();
-      const body = JSON.parse(String((write?.[1] as RequestInit).body));
-      expect(body.value.outdoor_unit_id).toBe("hpou_b");
-      expect(Array.isArray(body.value.outdoor_unit_id)).toBe(false);
-    });
+    await waitFor(() => expect(writes).toHaveLength(1));
+    const payload = payloadFromFirstCellWrite(slice, writes);
+    expect(payload.indoor_units[0]?.outdoor_unit_id).toBe("hpou_b");
   });
 
   test("linked-record ventilator edits persist the nullable scalar linked_erv_unit_id field", async () => {
@@ -128,7 +105,7 @@ describe("IndoorUnitsTable", () => {
     const slice = baseSlice({
       indoor_units: [indoorUnit({ linked_erv_unit_id: "vent_a" })],
     });
-    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes("/assets/bulk-urls")) return jsonResponse({ items: [] });
       if (url.endsWith("/api/v1/projects/proj_1/versions/ver_1/draft/tables/rooms")) {
@@ -139,19 +116,11 @@ describe("IndoorUnitsTable", () => {
           ventilators: [ventilator("vent_a", "ERV-A"), ventilator("vent_b", "ERV-B")],
         });
       }
-      if (url.endsWith("/api/v1/projects/proj_1/equipment/heat-pumps/indoor-units")) {
-        const body = JSON.parse(String(init?.body));
-        return jsonResponse({
-          ...slice,
-          source: "draft",
-          draft_etag: "draft_2",
-          indoor_units: [body.value],
-        });
-      }
       return jsonResponse({});
     });
+    const writes: WriteOp[] = [];
 
-    renderTable(slice);
+    renderTable(slice, { writes });
 
     const currentPill = await screen.findByRole("button", { name: /ERV-A/ });
     const cell = currentPill.closest('[role="gridcell"]');
@@ -160,17 +129,9 @@ describe("IndoorUnitsTable", () => {
     await user.click(await screen.findByRole("radio", { name: /Link ERV-B/ }));
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
-    await waitFor(() => {
-      const write = fetchMock.mock.calls.find(
-        ([url, init]) =>
-          String(url).endsWith("/equipment/heat-pumps/indoor-units") &&
-          (init as RequestInit | undefined)?.method === "PATCH",
-      );
-      expect(write).toBeTruthy();
-      const body = JSON.parse(String((write?.[1] as RequestInit).body));
-      expect(body.value.linked_erv_unit_id).toBe("vent_b");
-      expect(Array.isArray(body.value.linked_erv_unit_id)).toBe(false);
-    });
+    await waitFor(() => expect(writes).toHaveLength(1));
+    const payload = payloadFromFirstCellWrite(slice, writes);
+    expect(payload.indoor_units[0]?.linked_erv_unit_id).toBe("vent_b");
   });
 
   test("linked-record ventilator chip opens the Ventilator modal", async () => {
@@ -204,12 +165,60 @@ describe("IndoorUnitsTable", () => {
   });
 });
 
-function renderTable(slice: HeatPumpsSlice) {
+function renderTable(slice: HeatPumpsSlice, options: { writes?: WriteOp[] } = {}) {
   const queryClient = createQueryClient();
+  const leafSlice = indoorUnitsLeafSlice(slice);
+  const controller = heatPumpTestController<HeatPumpIndoorUnitsSlice>({
+    fieldDefs: indoorUnitFieldDefs(),
+    onWrite: (op) => {
+      options.writes?.push(op);
+    },
+  });
+  const indoorEquipController = heatPumpTestController<HeatPumpIndoorEquipSlice>({
+    fieldDefs: [],
+  });
+  const outdoorUnitsController = heatPumpTestController<HeatPumpOutdoorUnitsSlice>({
+    fieldDefs: [],
+  });
   return render(
     <QueryClientProvider client={queryClient}>
-      <IndoorUnitsTable projectId="proj_1" slice={slice} isEditor versionLocked={false} />
+      <IndoorUnitsTable
+        projectId="proj_1"
+        slice={slice}
+        leafSlice={leafSlice}
+        controller={controller}
+        indoorEquipController={indoorEquipController}
+        outdoorUnitsController={outdoorUnitsController}
+        isEditor
+        versionLocked={false}
+      />
     </QueryClientProvider>,
+  );
+}
+
+function indoorUnitsLeafSlice(slice: HeatPumpsSlice): HeatPumpIndoorUnitsSlice {
+  return {
+    project_id: slice.project_id,
+    version_id: slice.version_id,
+    source: slice.source,
+    version_etag: slice.version_etag,
+    draft_etag: slice.draft_etag,
+    indoor_units: slice.indoor_units,
+    field_defs: [],
+    single_select_options: {},
+  };
+}
+
+function payloadFromFirstCellWrite(slice: HeatPumpsSlice, writes: WriteOp[]) {
+  const op = writes[0];
+  if (!op) throw new Error("Expected a write op");
+  expect(op.kind).toBe("cell");
+  if (op.kind !== "cell") throw new Error("Expected a cell write");
+  return heatPumpIndoorUnitsPayloadBuilders.fromCellWrites(
+    indoorUnitsLeafSlice(slice),
+    op.writes,
+    {},
+    {},
   );
 }
 

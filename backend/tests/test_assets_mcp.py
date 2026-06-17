@@ -206,14 +206,14 @@ def test_bulk_attach_reports_partial_failure(clean_mcp_tables: None, monkeypatch
                 [
                     {
                         "asset_id": asset_id,
-                        "table_key": "equipment_pumps",
+                        "table_key": "pumps",
                         "row_id": "pmp_1",
                         "field_key": "datasheet_asset_ids",
                         "if_match_version": version_etag,
                     },
                     {
                         "asset_id": "asset_missing",
-                        "table_key": "equipment_pumps",
+                        "table_key": "pumps",
                         "row_id": "pmp_1",
                         "field_key": "datasheet_asset_ids",
                         "if_match_version": version_etag,
@@ -254,14 +254,14 @@ def test_bulk_detach_reports_partial_failure(clean_mcp_tables: None, monkeypatch
                 [
                     {
                         "asset_id": asset_id,
-                        "table_key": "equipment_pumps",
+                        "table_key": "pumps",
                         "row_id": "pmp_1",
                         "field_key": "datasheet_asset_ids",
                         "if_match_version": version_etag,
                     },
                     {
                         "asset_id": "asset_missing",
-                        "table_key": "equipment_pumps",
+                        "table_key": "pumps",
                         "row_id": "pmp_1",
                         "field_key": "datasheet_asset_ids",
                         "if_match_version": version_etag,

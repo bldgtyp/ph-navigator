@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 import pytest
+from fastapi import HTTPException
 from pydantic import ValidationError
 
 from features.project_document.document import HotWaterTankRow, ProjectDocumentV1
@@ -24,6 +25,7 @@ def hot_water_tank_payload() -> dict[str, Any]:
             {
                 "id": "hwt_1",
                 "tank_type": "opt_hwt_dhw_heating",
+                "inside_outside": "opt_hwt_inside",
                 "url": "https://example.com/hwt.pdf",
                 "notes": "Basis of design.",
                 "datasheet_asset_ids": [],
@@ -31,7 +33,6 @@ def hot_water_tank_payload() -> dict[str, Any]:
                     "record_id": "HWT-1",
                     "name": "DHW storage tank",
                     "quantity": 1,
-                    "inside_outside": "Inside",
                     "manufacturer": "Acme",
                     "model": "ST-80",
                     "size_l": 302.8,
@@ -43,7 +44,11 @@ def hot_water_tank_payload() -> dict[str, Any]:
             "hot_water_tanks.type": [
                 {"id": "opt_hwt_dhw_heating", "label": "1-DHW and Heating", "color": "#0ea5e9", "order": 0},
                 {"id": "opt_hwt_dhw_only", "label": "2-DHW only", "color": "#14b8a6", "order": 1},
-            ]
+            ],
+            "hot_water_tanks.inside_outside": [
+                {"id": "opt_hwt_inside", "label": "Inside", "color": "#0ea5e9", "order": 0},
+                {"id": "opt_hwt_outside", "label": "Outside", "color": "#f97316", "order": 1},
+            ],
         },
     }
 
@@ -59,7 +64,7 @@ def test_document_rejects_missing_hot_water_tank_type_option() -> None:
     first = hot_water_tank_payload()["hot_water_tanks"][0]
     tables = empty_required_tables()
     body = {
-        "schema_version": 8,
+        "schema_version": 10,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             **tables,
@@ -76,6 +81,7 @@ def test_document_rejects_missing_hot_water_tank_type_option() -> None:
             "fans.type": [],
             "hot_water_heaters.type": [],
             "hot_water_tanks.type": [],
+            "hot_water_tanks.inside_outside": [],
             "electric_heaters.type": [],
             "appliances.type": [],
             "appliances.energy_star": [],
@@ -111,48 +117,9 @@ def test_first_hot_water_tanks_replace_lazily_creates_draft(clean_document_table
     assert body["hot_water_tanks"][0]["custom_values"]["record_id"] == "HWT-1"
 
 
-def test_equipment_hot_water_tanks_contract_preserves_table_envelope() -> None:
-    first = hot_water_tank_payload()["hot_water_tanks"][0]
-    tables = empty_required_tables()
-    body = ProjectDocumentV1.model_validate(
-        {
-            "schema_version": 8,
-            "project": {"name": "p", "bt_number": "1", "cert_programs": []},
-            "tables": {
-                **tables,
-                "equipment": {
-                    **tables["equipment"],
-                    "hot_water_tanks": empty_hot_water_tanks_table(rows=[first]),
-                },
-            },
-            "single_select_options": {
-                "rooms.floor_level": [],
-                "rooms.building_zone": [],
-                "pumps.device_type": [],
-                "ventilators.inside_outside": [],
-                "fans.type": [],
-                "hot_water_heaters.type": [],
-                "hot_water_tanks.type": [
-                    {
-                        "id": "opt_hwt_dhw_heating",
-                        "label": "1-DHW and Heating",
-                        "color": "#0ea5e9",
-                        "order": 0,
-                    }
-                ],
-                "electric_heaters.type": [],
-                "appliances.type": [],
-                "appliances.energy_star": [],
-                "thermal_bridges.type": [],
-            },
-        }
-    )
-    contract = get_table_contract("equipment_hot_water_tanks")
-
-    next_body = contract.apply_replace(
-        body,
-        contract.parse_replace_payload({"rows": [{**first, "notes": "Updated through tank attachment table."}]}),
-    )
-
-    assert next_body.tables.equipment.hot_water_tanks.field_defs[0].display_name == "Tag"
-    assert next_body.tables.equipment.hot_water_tanks.rows[0].notes == "Updated through tank attachment table."
+def test_legacy_equipment_hot_water_tanks_contract_is_not_registered() -> None:
+    with pytest.raises(HTTPException) as exc_info:
+        get_table_contract("equipment_hot_water_tanks")
+    assert exc_info.value.status_code == 404
+    detail = cast(dict[str, object], exc_info.value.detail)
+    assert detail["error_code"] == "document_table_not_found"

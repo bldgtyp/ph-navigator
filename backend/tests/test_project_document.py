@@ -889,7 +889,7 @@ def test_rooms_envelope_rejects_unknown_custom_key(
 
 def test_rooms_custom_field_duplicate_display_name_rejected() -> None:
     body = {
-        "schema_version": 8,
+        "schema_version": 10,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             "rooms": {
@@ -929,7 +929,7 @@ def test_rooms_custom_field_duplicate_display_name_rejected() -> None:
 
 def test_rooms_custom_field_collides_with_core_display_name_rejected() -> None:
     body = {
-        "schema_version": 8,
+        "schema_version": 10,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             "rooms": {

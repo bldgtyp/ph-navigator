@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from starlette import status
 
 from database import transaction
+from features.assets.reference_validation import validate_document_asset_references
 from features.project_document import repository
 from features.project_document.audit import log_document_action
 from features.project_document.document import ProjectDocumentV1
@@ -124,6 +125,7 @@ def replace_table_slice(
                 base_body,
             )
 
+        validate_document_asset_references(conn, project_id=access.project_id, body=next_body)
         draft_etag = repository.upsert_draft(
             conn,
             version_id,
@@ -274,6 +276,7 @@ def save_draft(version_id: UUID, access: ProjectAccess, if_match: str | None, re
             raise api_error(status.HTTP_409_CONFLICT, "draft_not_found", "No draft exists to save.")
 
         draft_body = validate_document(draft["body"])
+        validate_document_asset_references(conn, project_id=access.project_id, body=draft_body)
         saved_row = repository.save_draft_to_version(
             conn,
             access.project_id,
@@ -317,6 +320,7 @@ def save_draft_as(
             version_body = validate_document(version["body"])
             draft = repository.get_draft_for_update(conn, version_id, user.id)
             source_body = validate_document(draft["body"]) if draft is not None else version_body
+            validate_document_asset_references(conn, project_id=access.project_id, body=source_body)
             saved_row = repository.insert_version_from_body(
                 conn,
                 access.project_id,

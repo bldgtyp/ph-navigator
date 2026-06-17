@@ -1,17 +1,19 @@
-import { useMemo, type CSSProperties } from "react";
+import { useMemo } from "react";
 import {
   DataTable,
+  DATA_TABLE_COLUMN_WIDTHS,
   RECORD_ID_FIELD_KEY,
+  attachmentColumn,
+  identifierColumn,
+  linkColumn,
   type DataTableColumnDef,
   type DataTableProps,
-  type FieldDef,
   type TableSchema,
   type ViewState,
 } from "../../../shared/ui/data-table";
-import { singleSelectOption } from "../../../shared/ui/data-table/lib";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { useAssetUrls } from "../../assets/hooks";
-import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
+import { DATASHEET_ATTACHMENT_CONFIG } from "../../assets/lib";
 import { sortedAppliances } from "../lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
 import {
@@ -92,25 +94,19 @@ export function AppliancesTable({
         fieldKey: RECORD_ID_FIELD_KEY,
         header: fieldDefByKey.get(RECORD_ID_FIELD_KEY)?.display_name ?? "Tag",
         accessor: (appliance) => customTextValue(appliance, RECORD_ID_FIELD_KEY),
-        defaultWidth: 100,
+        defaultWidth: DATA_TABLE_COLUMN_WIDTHS.recordId,
       },
       {
         id: APPLIANCE_TYPE_COLUMN_ID,
         fieldKey: APPLIANCE_TYPE_KEY,
         header: fieldDefByKey.get(APPLIANCE_TYPE_KEY)?.display_name ?? "Type",
         accessor: (appliance) => appliance.appliance_type,
-        render: (appliance) =>
-          optionPill(appliance.appliance_type, fieldDefByKey.get(APPLIANCE_TYPE_KEY)),
         defaultWidth: 180,
       },
-      {
-        id: "name",
-        fieldKey: "name",
-        header: fieldDefByKey.get("name")?.display_name ?? "Display Name",
+      identifierColumn({
+        fieldDefByKey,
         accessor: (appliance) => customTextValue(appliance, "name"),
-        defaultWidth: 180,
-        isIdentifier: true,
-      },
+      }),
       {
         id: "quantity",
         fieldKey: "quantity",
@@ -138,8 +134,6 @@ export function AppliancesTable({
         fieldKey: APPLIANCE_ENERGY_STAR_KEY,
         header: fieldDefByKey.get(APPLIANCE_ENERGY_STAR_KEY)?.display_name ?? "EnergyStar",
         accessor: (appliance) => appliance.energy_star,
-        render: (appliance) =>
-          optionPill(appliance.energy_star, fieldDefByKey.get(APPLIANCE_ENERGY_STAR_KEY)),
         defaultWidth: 130,
       },
       {
@@ -182,57 +176,30 @@ export function AppliancesTable({
         defaultWidth: 150,
         className: "numeric-cell",
       },
-      {
+      linkColumn({
         id: "url",
-        fieldKey: "url",
         header: fieldDefByKey.get("url")?.display_name ?? "URL",
-        accessor: (appliance) => appliance.url,
-        render: (appliance) =>
-          appliance.url ? (
-            <a
-              href={appliance.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="data-table-link-cell"
-            >
-              {shortenUrl(appliance.url)}
-            </a>
-          ) : null,
-        measureText: (appliance) => appliance.url ?? "",
-        defaultWidth: 180,
-      },
-      {
+        getValue: (appliance) => appliance.url,
+      }),
+      attachmentColumn({
         id: APPLIANCE_DATASHEET_FIELD_KEY,
         fieldKey: APPLIANCE_DATASHEET_FIELD_KEY,
         header: fieldDefByKey.get(APPLIANCE_DATASHEET_FIELD_KEY)?.display_name ?? "Datasheet",
-        accessor: (appliance) => appliance.datasheet_asset_ids.join(","),
-        render: (appliance) => (
-          <AttachmentCell
-            projectId={projectId}
-            value={appliance.datasheet_asset_ids}
-            config={DATASHEET_ATTACHMENT_CONFIG}
-            readOnly={!isEditor}
-            assetUrlById={datasheetUrlById}
-            onChange={(next) => {
-              if (sameAttachmentAssetIds(appliance.datasheet_asset_ids, next)) return;
-              return onWrite({
-                kind: "cell",
-                writes: [
-                  { rowId: appliance.id, fieldKey: APPLIANCE_DATASHEET_FIELD_KEY, value: next },
-                ],
-              });
-            }}
-          />
-        ),
-        measureText: (appliance) => `${appliance.datasheet_asset_ids.length} attachments`,
-        defaultWidth: 260,
-      },
+        projectId,
+        isEditor,
+        assetUrlById: datasheetUrlById,
+        config: DATASHEET_ATTACHMENT_CONFIG,
+        AttachmentCell,
+        getAssetIds: (appliance) => appliance.datasheet_asset_ids,
+        getRowId: (appliance) => appliance.id,
+        onWrite,
+      }),
       {
         id: "notes",
         fieldKey: "notes",
         header: fieldDefByKey.get("notes")?.display_name ?? "Notes",
         accessor: (appliance) => appliance.notes,
-        defaultWidth: 280,
+        defaultWidth: DATA_TABLE_COLUMN_WIDTHS.notes,
       },
       ...customColumns,
     ],
@@ -261,29 +228,4 @@ export function AppliancesTable({
       {...customFieldActions}
     />
   );
-}
-
-function optionPill(value: string | null, fieldDef: FieldDef | undefined) {
-  const option = singleSelectOption(value, fieldDef);
-  const label = value ? (option?.label ?? "Missing option") : "Unassigned";
-  const applyColor = option && fieldDef?.colorCodeOptions !== false;
-  return (
-    <span
-      className={
-        option ? "single-select-pill" : value ? "single-select-pill missing" : "muted-cell"
-      }
-      style={applyColor ? ({ "--option-color": option.color } as CSSProperties) : undefined}
-    >
-      {label}
-    </span>
-  );
-}
-
-function shortenUrl(value: string): string {
-  try {
-    const url = new URL(value);
-    return `${url.hostname}${url.pathname === "/" ? "" : url.pathname}`;
-  } catch {
-    return value;
-  }
 }

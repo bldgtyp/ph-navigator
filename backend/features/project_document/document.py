@@ -27,6 +27,23 @@ from typing import Any, Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from features.heat_pumps.models import (
+    HEAT_PUMP_INSTALL_TYPE_OPTION_KEY,
+    HEAT_PUMP_MANUFACTURER_OPTION_KEY,
+    HEAT_PUMP_MODEL_TYPE_OPTION_KEY,
+    HEAT_PUMP_REFRIGERANT_OPTION_KEY,
+    HEAT_PUMP_SYSTEM_FAMILY_OPTION_KEY,
+    HEAT_PUMP_VISIBLE_OPTION_KEYS,
+    HeatPumpIndoorEquipRow,
+    HeatPumpIndoorEquipTableEnvelope,
+    HeatPumpIndoorUnitRow,
+    HeatPumpIndoorUnitsTableEnvelope,
+    HeatPumpOutdoorEquipRow,
+    HeatPumpOutdoorEquipTableEnvelope,
+    HeatPumpOutdoorUnitRow,
+    HeatPumpOutdoorUnitsTableEnvelope,
+    HeatPumpsTableSlice,
+)
 from features.project_document._validators import (
     collect_target_row_ids,
     index_table_field_defs,
@@ -34,10 +51,10 @@ from features.project_document._validators import (
     validate_default_option_ids,
     validate_envelope_references,
     validate_linked_record_field_defs,
+    validate_non_negative_custom_numbers,
     validate_rows_custom_links,
     validate_rows_custom_values,
     validate_table_row_ids,
-    validate_unique_ids,
 )
 from features.project_document.custom_fields import TableFieldDef, normalize_display_name
 from features.project_document.envelope_models import (
@@ -111,8 +128,12 @@ HOT_WATER_HEATER_TYPE_OPTION_KEY = "hot_water_heaters.type"
 HotWaterHeaterOptionKey = Literal["hot_water_heaters.type"]
 HOT_WATER_HEATER_OPTION_KEYS: tuple[HotWaterHeaterOptionKey, ...] = (HOT_WATER_HEATER_TYPE_OPTION_KEY,)
 HOT_WATER_TANK_TYPE_OPTION_KEY = "hot_water_tanks.type"
-HotWaterTankOptionKey = Literal["hot_water_tanks.type"]
-HOT_WATER_TANK_OPTION_KEYS: tuple[HotWaterTankOptionKey, ...] = (HOT_WATER_TANK_TYPE_OPTION_KEY,)
+HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY = "hot_water_tanks.inside_outside"
+HotWaterTankOptionKey = Literal["hot_water_tanks.type", "hot_water_tanks.inside_outside"]
+HOT_WATER_TANK_OPTION_KEYS: tuple[HotWaterTankOptionKey, ...] = (
+    HOT_WATER_TANK_TYPE_OPTION_KEY,
+    HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY,
+)
 APPLIANCE_TYPE_OPTION_KEY = "appliances.type"
 APPLIANCE_ENERGY_STAR_OPTION_KEY = "appliances.energy_star"
 ApplianceOptionKey = Literal["appliances.type", "appliances.energy_star"]
@@ -143,7 +164,12 @@ ROOM_SPACE_TYPE_FIELD_KEY = "space_type_id"
 # persisted per-document, so the bump forces pre-v8 dev docs into
 # read-safe mode rather than silently showing stale labels — dev DBs
 # reseed from the table-seed constants. No body-transform migration.
-CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 8
+#
+# v10 (data-table-consolidation Phase 05A): Heat Pumps moves from four
+# flat row lists to four `{ field_defs, rows }` leaf envelopes under the
+# existing `equipment.heat_pumps` aggregate. Pre-deploy posture: no
+# compatibility reader for pre-v10 dev documents.
+CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 10
 
 # Field keys that have a typed Pydantic column on the row model. Used
 # to split read/write paths between typed columns and the
@@ -169,7 +195,7 @@ HOT_WATER_HEATERS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
     {"id", "heater_type", "phase", "url", "notes", "datasheet_asset_ids"}
 )
 HOT_WATER_TANKS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
-    {"id", "tank_type", "url", "notes", "datasheet_asset_ids"}
+    {"id", "tank_type", "inside_outside", "url", "notes", "datasheet_asset_ids"}
 )
 ELECTRIC_HEATERS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset({"id", "url", "notes"})
 APPLIANCES_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
@@ -237,7 +263,7 @@ class ProjectDocumentTables(BaseModel):
 class ProjectDocumentV1(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: Literal[8] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
+    schema_version: Literal[10] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     project: ProjectDocumentProject
     tables: ProjectDocumentTables = Field(default_factory=ProjectDocumentTables)
     single_select_options: dict[str, list[SingleSelectOption]] = Field(
@@ -249,6 +275,7 @@ class ProjectDocumentV1(BaseModel):
             FAN_TYPE_OPTION_KEY: [],
             HOT_WATER_HEATER_TYPE_OPTION_KEY: [],
             HOT_WATER_TANK_TYPE_OPTION_KEY: [],
+            HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY: [],
             APPLIANCE_TYPE_OPTION_KEY: [],
             APPLIANCE_ENERGY_STAR_OPTION_KEY: [],
             THERMAL_BRIDGE_TYPE_OPTION_KEY: [],
@@ -272,6 +299,8 @@ class ProjectDocumentV1(BaseModel):
         for key in APPLIANCE_OPTION_KEYS:
             self.single_select_options.setdefault(key, [])
         for key in THERMAL_BRIDGE_OPTION_KEYS:
+            self.single_select_options.setdefault(key, [])
+        for key in HEAT_PUMP_VISIBLE_OPTION_KEYS:
             self.single_select_options.setdefault(key, [])
 
         for key, options in self.single_select_options.items():
@@ -382,6 +411,11 @@ class ProjectDocumentV1(BaseModel):
             field_defs_by_key=pumps_field_defs_by_key,
             single_select_options=self.single_select_options,
         )
+        validate_non_negative_custom_numbers(
+            row_label="pump",
+            rows=[(pump.id, pump.custom_values) for pump in self.tables.equipment.pumps.rows],
+            field_keys=frozenset({"volts", "horse_power", "wattage", "flow_gpm", "runtime_khr_yr"}),
+        )
         validate_rows_custom_links(
             table_label="pumps",
             row_label="pump",
@@ -409,6 +443,15 @@ class ProjectDocumentV1(BaseModel):
             field_defs_by_key=fans_field_defs_by_key,
             single_select_options=self.single_select_options,
         )
+        validate_non_negative_custom_numbers(
+            row_label="fan",
+            rows=[(fan.id, fan.custom_values) for fan in self.tables.equipment.fans.rows],
+            field_keys=frozenset({"quantity", "annual_runtime_min_yr", "airflow_m3h", "amps", "volts", "watts"}),
+        )
+        for fan in self.tables.equipment.fans.rows:
+            power_factor = fan.custom_values.get("power_factor")
+            if isinstance(power_factor, (int, float)) and not 0 <= power_factor <= 1:
+                raise ValueError(f"fan power_factor must be between 0 and 1: {fan.id}")
         validate_rows_custom_links(
             table_label="fans",
             row_label="fan",
@@ -440,6 +483,15 @@ class ProjectDocumentV1(BaseModel):
             field_defs_by_key=hot_water_heaters_field_defs_by_key,
             single_select_options=self.single_select_options,
         )
+        validate_non_negative_custom_numbers(
+            row_label="hot water heater",
+            rows=[(heater.id, heater.custom_values) for heater in self.tables.equipment.hot_water_heaters.rows],
+            field_keys=frozenset({"quantity", "size_l", "amps", "volts", "watts", "uef"}),
+        )
+        for heater in self.tables.equipment.hot_water_heaters.rows:
+            power_factor = heater.custom_values.get("power_factor")
+            if isinstance(power_factor, (int, float)) and not 0 <= power_factor <= 1:
+                raise ValueError(f"hot water heater power_factor must be between 0 and 1: {heater.id}")
         validate_rows_custom_links(
             table_label="hot_water_heaters",
             row_label="hot water heater",
@@ -456,12 +508,16 @@ class ProjectDocumentV1(BaseModel):
         )
         require_record_id_seeded("hot_water_tanks", hot_water_tanks_field_defs_by_key)
         hot_water_tank_type_ids = {option.id for option in self.single_select_options[HOT_WATER_TANK_TYPE_OPTION_KEY]}
+        hot_water_tank_inside_outside_ids = {
+            option.id for option in self.single_select_options[HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY]
+        }
         for tank in self.tables.equipment.hot_water_tanks.rows:
             if tank.tank_type is not None and tank.tank_type not in hot_water_tank_type_ids:
                 raise ValueError(f"Missing hot water tank type option for tank {tank.id}: {tank.tank_type}")
-            heat_loss_rate = tank.custom_values.get("heat_loss_rate_w_k")
-            if isinstance(heat_loss_rate, (int, float)) and heat_loss_rate < 0:
-                raise ValueError(f"Hot water tank heat_loss_rate_w_k must be zero or greater: {tank.id}")
+            if tank.inside_outside is not None and tank.inside_outside not in hot_water_tank_inside_outside_ids:
+                raise ValueError(
+                    f"Missing hot water tank inside/outside option for tank {tank.id}: {tank.inside_outside}"
+                )
 
         validate_linked_record_field_defs(
             table_label="hot_water_tanks",
@@ -474,6 +530,11 @@ class ProjectDocumentV1(BaseModel):
             rows=[(tank.id, tank.custom_values) for tank in self.tables.equipment.hot_water_tanks.rows],
             field_defs_by_key=hot_water_tanks_field_defs_by_key,
             single_select_options=self.single_select_options,
+        )
+        validate_non_negative_custom_numbers(
+            row_label="hot water tank",
+            rows=[(tank.id, tank.custom_values) for tank in self.tables.equipment.hot_water_tanks.rows],
+            field_keys=frozenset({"quantity", "size_l", "heat_loss_rate_w_k"}),
         )
         validate_rows_custom_links(
             table_label="hot_water_tanks",
@@ -541,6 +602,11 @@ class ProjectDocumentV1(BaseModel):
             field_defs_by_key=appliances_field_defs_by_key,
             single_select_options=self.single_select_options,
         )
+        validate_non_negative_custom_numbers(
+            row_label="appliance",
+            rows=[(appliance.id, appliance.custom_values) for appliance in self.tables.equipment.appliances.rows],
+            field_keys=frozenset({"quantity", "capacity_m3", "cef", "imef", "mef", "annual_energy_kwh"}),
+        )
         validate_rows_custom_links(
             table_label="appliances",
             row_label="appliance",
@@ -554,25 +620,40 @@ class ProjectDocumentV1(BaseModel):
 
         ventilator_ids = {row.id for row in self.tables.equipment.ervs.rows}
         heat_pumps = self.tables.equipment.heat_pumps
-        # Heat-pump sub-tables keep their own row.id uniqueness (they are not
-        # part of the generic DataTable guard). Their tags follow the
-        # record-identity model: ordinary, non-unique fields, no hard block.
-        validate_unique_ids("heat_pump_outdoor_equip", [row.id for row in heat_pumps.outdoor_equip])
-        validate_unique_ids("heat_pump_indoor_equip", [row.id for row in heat_pumps.indoor_equip])
-        validate_unique_ids("heat_pump_outdoor_units", [row.id for row in heat_pumps.outdoor_units])
-        validate_unique_ids("heat_pump_indoor_units", [row.id for row in heat_pumps.indoor_units])
-        heat_pump_indoor_equip_ids = {row.id for row in heat_pumps.indoor_equip}
-        heat_pump_outdoor_equip_ids = {row.id for row in heat_pumps.outdoor_equip}
-        heat_pump_outdoor_unit_ids = {row.id for row in heat_pumps.outdoor_units}
-        for row in heat_pumps.outdoor_equip:
+        heat_pump_indoor_equip_ids = {row.id for row in heat_pumps.indoor_equip.rows}
+        heat_pump_outdoor_equip_ids = {row.id for row in heat_pumps.outdoor_equip.rows}
+        heat_pump_outdoor_unit_ids = {row.id for row in heat_pumps.outdoor_units.rows}
+        heat_pump_option_ids_by_key = {
+            key: {option.id for option in self.single_select_options[key]} for key in HEAT_PUMP_VISIBLE_OPTION_KEYS
+        }
+        for row in heat_pumps.outdoor_equip.rows:
+            self._validate_heat_pump_option(
+                heat_pump_option_ids_by_key, HEAT_PUMP_MANUFACTURER_OPTION_KEY, row.manufacturer, row.id
+            )
+            self._validate_heat_pump_option(
+                heat_pump_option_ids_by_key, HEAT_PUMP_SYSTEM_FAMILY_OPTION_KEY, row.system_family, row.id
+            )
+            self._validate_heat_pump_option(
+                heat_pump_option_ids_by_key, HEAT_PUMP_REFRIGERANT_OPTION_KEY, row.refrigerant, row.id
+            )
             if row.paired_indoor_equip_id is not None and row.paired_indoor_equip_id not in heat_pump_indoor_equip_ids:
                 raise ValueError(
                     f"Missing heat-pump indoor equip for outdoor equip {row.id}: {row.paired_indoor_equip_id}"
                 )
-        for row in heat_pumps.outdoor_units:
+        for row in heat_pumps.indoor_equip.rows:
+            self._validate_heat_pump_option(
+                heat_pump_option_ids_by_key, HEAT_PUMP_MANUFACTURER_OPTION_KEY, row.manufacturer, row.id
+            )
+            self._validate_heat_pump_option(
+                heat_pump_option_ids_by_key, HEAT_PUMP_MODEL_TYPE_OPTION_KEY, row.model_type, row.id
+            )
+            self._validate_heat_pump_option(
+                heat_pump_option_ids_by_key, HEAT_PUMP_INSTALL_TYPE_OPTION_KEY, row.install_type, row.id
+            )
+        for row in heat_pumps.outdoor_units.rows:
             if row.outdoor_equip_id not in heat_pump_outdoor_equip_ids:
                 raise ValueError(f"Missing heat-pump outdoor equip for outdoor unit {row.id}: {row.outdoor_equip_id}")
-        for row in heat_pumps.indoor_units:
+        for row in heat_pumps.indoor_units.rows:
             if row.indoor_equip_id not in heat_pump_indoor_equip_ids:
                 raise ValueError(f"Missing heat-pump indoor equip for indoor unit {row.id}: {row.indoor_equip_id}")
             if row.outdoor_unit_id is not None and row.outdoor_unit_id not in heat_pump_outdoor_unit_ids:
@@ -582,6 +663,35 @@ class ProjectDocumentV1(BaseModel):
             missing_room_ids = [room_id for room_id in row.served_room_ids if room_id not in room_ids]
             if missing_room_ids:
                 raise ValueError(f"Missing served room for heat-pump indoor unit {row.id}: {missing_room_ids[0]}")
+
+        from features.project_document.tables.contracts import read_table_envelope
+        from features.project_document.tables.heat_pumps import HEAT_PUMP_LEAF_VALIDATION_SPECS
+
+        for spec in HEAT_PUMP_LEAF_VALIDATION_SPECS:
+            envelope = cast(Any, read_table_envelope(self, spec.contract.table_path))
+            field_defs = envelope.field_defs
+            row_bags = [(row.id, row.custom_values, row.custom_links) for row in envelope.rows]
+            field_defs_by_key = index_table_field_defs(spec.table_label, field_defs)
+            require_record_id_seeded(spec.table_label, field_defs_by_key)
+            validate_linked_record_field_defs(
+                table_label=spec.table_label,
+                table_path=spec.contract.table_path,
+                field_defs_by_key=field_defs_by_key,
+            )
+            validate_rows_custom_values(
+                table_label=spec.table_label,
+                row_label=spec.row_label,
+                rows=[(row_id, custom_values) for row_id, custom_values, _custom_links in row_bags],
+                field_defs_by_key=field_defs_by_key,
+                single_select_options=self.single_select_options,
+            )
+            validate_rows_custom_links(
+                table_label=spec.table_label,
+                row_label=spec.row_label,
+                rows=row_bags,
+                field_defs_by_key=field_defs_by_key,
+                target_row_ids=target_row_ids,
+            )
 
         thermal_bridges_field_defs_by_key = index_table_field_defs(
             "thermal_bridges", self.tables.thermal_bridges.field_defs
@@ -679,6 +789,18 @@ class ProjectDocumentV1(BaseModel):
 
         return self
 
+    def _validate_heat_pump_option(
+        self,
+        option_ids_by_key: dict[str, set[str]],
+        option_key: str,
+        option_id: str | None,
+        row_id: str,
+    ) -> None:
+        if option_id is None:
+            return
+        if option_id not in option_ids_by_key[option_key]:
+            raise ValueError(f"Missing heat-pump option {option_key} for row {row_id}: {option_id}")
+
     def _validate_rooms_formula_cycles(self, field_defs_by_key: dict[str, TableFieldDef]) -> None:
         _ = field_defs_by_key
         self._validate_document_formula_graph()
@@ -750,6 +872,7 @@ __all__ = [
     "HOT_WATER_HEATER_TYPE_OPTION_KEY",
     "HOT_WATER_HEATERS_TYPED_COLUMN_FIELD_KEYS",
     "HOT_WATER_TANK_OPTION_KEYS",
+    "HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY",
     "HOT_WATER_TANK_TYPE_OPTION_KEY",
     "HOT_WATER_TANKS_TYPED_COLUMN_FIELD_KEYS",
     "HotWaterHeaterOptionKey",
@@ -759,6 +882,15 @@ __all__ = [
     "HotWaterTankRow",
     "HotWaterTanksTableEnvelope",
     "ManufacturerFilters",
+    "HeatPumpIndoorEquipRow",
+    "HeatPumpIndoorEquipTableEnvelope",
+    "HeatPumpIndoorUnitRow",
+    "HeatPumpIndoorUnitsTableEnvelope",
+    "HeatPumpOutdoorEquipRow",
+    "HeatPumpOutdoorEquipTableEnvelope",
+    "HeatPumpOutdoorUnitRow",
+    "HeatPumpOutdoorUnitsTableEnvelope",
+    "HeatPumpsTableSlice",
     "PUMP_DEVICE_TYPE_OPTION_KEY",
     "PUMP_OPTION_KEYS",
     "PUMPS_TYPED_COLUMN_FIELD_KEYS",

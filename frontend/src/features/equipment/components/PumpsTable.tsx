@@ -1,7 +1,12 @@
-import { useMemo, type CSSProperties } from "react";
+import { useMemo } from "react";
 import {
   DataTable,
+  DATA_TABLE_COLUMN_WIDTHS,
   RECORD_ID_FIELD_KEY,
+  attachmentColumn,
+  identifierColumn,
+  incomingLinkColumn,
+  linkColumn,
   type DataTableColumnDef,
   type DataTableProps,
   type FieldDef,
@@ -10,9 +15,7 @@ import {
 } from "../../../shared/ui/data-table";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { useAssetUrls } from "../../assets/hooks";
-import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
-import { LinkedRecordCell } from "../../../shared/ui/data-table/fields/linkedRecord/LinkedRecordCell";
-import { singleSelectOption } from "../../../shared/ui/data-table/lib";
+import { DATASHEET_ATTACHMENT_CONFIG } from "../../assets/lib";
 import { sortedPumps } from "../lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
 import {
@@ -104,27 +107,22 @@ export function PumpsTable({
   );
   const columns = useMemo<DataTableColumnDef<PumpRow>[]>(() => {
     const baseColumns: DataTableColumnDef<PumpRow>[] = [
-      {
-        id: "name",
-        fieldKey: "name",
-        header: fieldDefByKey.get("name")?.display_name ?? "Display Name",
+      identifierColumn({
+        fieldDefByKey,
         accessor: (pump) => customTextValue(pump, "name"),
-        defaultWidth: 180,
-        isIdentifier: true,
-      },
+      }),
       {
         id: RECORD_ID_FIELD_KEY,
         fieldKey: RECORD_ID_FIELD_KEY,
         header: fieldDefByKey.get(RECORD_ID_FIELD_KEY)?.display_name ?? "Tag",
         accessor: (pump) => customTextValue(pump, RECORD_ID_FIELD_KEY),
-        defaultWidth: 100,
+        defaultWidth: DATA_TABLE_COLUMN_WIDTHS.recordId,
       },
       {
         id: PUMP_DEVICE_TYPE_COLUMN_ID,
         fieldKey: PUMP_DEVICE_TYPE_KEY,
         header: fieldDefByKey.get(PUMP_DEVICE_TYPE_KEY)?.display_name ?? "Device Type",
         accessor: (pump) => pump.device_type,
-        render: (pump) => optionPill(pump.device_type, fieldDefByKey.get(PUMP_DEVICE_TYPE_KEY)),
         defaultWidth: 150,
       },
       {
@@ -153,7 +151,7 @@ export function PumpsTable({
         fieldKey: "volts",
         header: fieldDefByKey.get("volts")?.display_name ?? "Volts",
         accessor: (pump) => customNumberValue(pump, "volts"),
-        defaultWidth: 80,
+        defaultWidth: DATA_TABLE_COLUMN_WIDTHS.smallNumeric,
         className: "numeric-cell",
       },
       {
@@ -161,7 +159,7 @@ export function PumpsTable({
         fieldKey: "phase",
         header: fieldDefByKey.get("phase")?.display_name ?? "Phase",
         accessor: (pump) => pump.phase,
-        defaultWidth: 80,
+        defaultWidth: DATA_TABLE_COLUMN_WIDTHS.smallNumeric,
         className: "numeric-cell",
       },
       {
@@ -201,77 +199,35 @@ export function PumpsTable({
         fieldKey: "notes",
         header: fieldDefByKey.get("notes")?.display_name ?? "Notes",
         accessor: (pump) => pump.notes,
-        defaultWidth: 280,
+        defaultWidth: DATA_TABLE_COLUMN_WIDTHS.notes,
       },
-      {
+      linkColumn({
         id: "link",
         fieldKey: "link",
         header: fieldDefByKey.get("link")?.display_name ?? "Link",
-        accessor: (pump) => pump.link,
-        render: (pump) =>
-          pump.link ? (
-            <a
-              href={pump.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="data-table-link-cell"
-            >
-              {shortenUrl(pump.link)}
-            </a>
-          ) : null,
-        measureText: (pump) => pump.link ?? "",
-        defaultWidth: 180,
-      },
-      {
+        getValue: (pump) => pump.link,
+      }),
+      attachmentColumn({
         id: PUMP_DATASHEET_FIELD_KEY,
         fieldKey: PUMP_DATASHEET_FIELD_KEY,
-        header: "Datasheet",
-        accessor: (pump) => pump.datasheet_asset_ids.join(","),
-        render: (pump) => (
-          <AttachmentCell
-            projectId={projectId}
-            value={pump.datasheet_asset_ids}
-            config={DATASHEET_ATTACHMENT_CONFIG}
-            readOnly={!isEditor}
-            assetUrlById={datasheetUrlById}
-            onChange={(next) => {
-              if (sameAttachmentAssetIds(pump.datasheet_asset_ids, next)) return;
-              return onWrite({
-                kind: "cell",
-                writes: [
-                  {
-                    rowId: pump.id,
-                    fieldKey: PUMP_DATASHEET_FIELD_KEY,
-                    value: next,
-                  },
-                ],
-              });
-            }}
-          />
-        ),
-        measureText: (pump) => `${pump.datasheet_asset_ids.length} attachments`,
-        defaultWidth: 260,
-      },
+        header: fieldDefByKey.get(PUMP_DATASHEET_FIELD_KEY)?.display_name ?? "Datasheet",
+        projectId,
+        isEditor,
+        assetUrlById: datasheetUrlById,
+        config: DATASHEET_ATTACHMENT_CONFIG,
+        AttachmentCell,
+        getAssetIds: (pump) => pump.datasheet_asset_ids,
+        getRowId: (pump) => pump.id,
+        onWrite,
+      }),
     ];
-    const inverseColumns: DataTableColumnDef<PumpRow>[] = (inverseLinkFields ?? []).map(
-      (field) => ({
+    const inverseColumns: DataTableColumnDef<PumpRow>[] = (inverseLinkFields ?? []).map((field) =>
+      incomingLinkColumn({
         id: inverseFieldKey(field),
-        fieldKey: inverseFieldKey(field),
         header: inverseColumnHeader(field),
-        accessor: (pump) => inverseIdsForPump(inverseLinks, pump.id, field).join(", "),
-        render: (pump) => (
-          <LinkedRecordCell
-            ids={inverseIdsForPump(inverseLinks, pump.id, field)}
-            resolve={() => ({ recordId: null })}
-            onPillClick={(rowId) => onInversePillClick?.(field, rowId)}
-            // Inverse-link columns are read-only — there's no unlink or
-            // add affordance to gate, so a single pill click navigates.
-            isActive
-          />
-        ),
-        measureText: (pump) => inverseIdsForPump(inverseLinks, pump.id, field).join(","),
-        defaultWidth: 180,
-        className: "data-table-inverse-link-cell",
+        getIncomingIds: (pump) => inverseIdsForPump(inverseLinks, pump.id, field),
+        resolveLabel: () => null,
+        onPillClick: (rowId) => onInversePillClick?.(field, rowId),
       }),
     );
     return [...baseColumns, ...customColumns, ...inverseColumns];
@@ -323,29 +279,4 @@ function inverseIdsForPump(
   field: InverseLinkField,
 ): readonly string[] {
   return inverseLinks?.[pumpId]?.[field.source_key] ?? EMPTY_INVERSE_IDS;
-}
-
-function optionPill(value: string | null, fieldDef: FieldDef | undefined) {
-  const option = singleSelectOption(value, fieldDef);
-  const label = value ? (option?.label ?? "Missing option") : "Unassigned";
-  const applyColor = option && fieldDef?.colorCodeOptions !== false;
-  return (
-    <span
-      className={
-        option ? "single-select-pill" : value ? "single-select-pill missing" : "muted-cell"
-      }
-      style={applyColor ? ({ "--option-color": option.color } as CSSProperties) : undefined}
-    >
-      {label}
-    </span>
-  );
-}
-
-function shortenUrl(value: string): string {
-  try {
-    const url = new URL(value);
-    return `${url.hostname}${url.pathname === "/" ? "" : url.pathname}`;
-  } catch {
-    return value;
-  }
 }

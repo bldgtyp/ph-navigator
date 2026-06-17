@@ -51,6 +51,8 @@ import {
   HOT_WATER_HEATER_TYPE_KEY,
   HOT_WATER_HEATER_TYPE_OPTION_KEY,
   HOT_WATER_TANK_DATASHEET_FIELD_KEY,
+  HOT_WATER_TANK_INSIDE_OUTSIDE_KEY,
+  HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY,
   HOT_WATER_TANK_TYPE_COLUMN_ID,
   HOT_WATER_TANK_TYPE_KEY,
   HOT_WATER_TANK_TYPE_OPTION_KEY,
@@ -206,6 +208,7 @@ export const HOT_WATER_HEATERS_SCHEMA_CORE_FIELD_KEYS = [
 export const HOT_WATER_TANKS_SCHEMA_CORE_FIELD_KEYS = [
   "id",
   HOT_WATER_TANK_TYPE_KEY,
+  HOT_WATER_TANK_INSIDE_OUTSIDE_KEY,
   "url",
   "notes",
   HOT_WATER_TANK_DATASHEET_FIELD_KEY,
@@ -283,7 +286,6 @@ const HOT_WATER_TANK_CUSTOM_VALUE_FIELD_KEYS = new Set([
   "record_id",
   "name",
   "quantity",
-  "inside_outside",
   "manufacturer",
   "model",
   "size_l",
@@ -459,7 +461,7 @@ export const HOT_WATER_HEATERS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
     },
   },
   {
-    ...builtInFieldDef("temperature_c", "Temperatur", "number"),
+    ...builtInFieldDef("temperature_c", "Temperature", "number"),
     config: {
       units: {
         mode: "fixed",
@@ -487,7 +489,7 @@ export const HOT_WATER_TANKS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("name", "Display Name", "short_text"),
   builtInFieldDef("quantity", "Quantity", "number", 1),
   builtInFieldDef(HOT_WATER_TANK_TYPE_KEY, "Type", "single_select"),
-  builtInFieldDef("inside_outside", "Inside / Outside", "short_text"),
+  builtInFieldDef(HOT_WATER_TANK_INSIDE_OUTSIDE_KEY, "Inside / Outside", "single_select"),
   builtInFieldDef("manufacturer", "Manufacturer", "short_text"),
   builtInFieldDef("model", "Model", "short_text"),
   {
@@ -941,8 +943,9 @@ export function hotWaterTanksFieldOverlay(
       options: hotWaterTanksSlice.single_select_options[HOT_WATER_TANK_TYPE_OPTION_KEY],
       locked: ["field_type", "options", "delete", "duplicate"],
     },
-    inside_outside: {
-      locked: DEFAULT_BUILT_IN_LOCKS,
+    [HOT_WATER_TANK_INSIDE_OUTSIDE_KEY]: {
+      options: hotWaterTanksSlice.single_select_options[HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY],
+      locked: ["field_type", "options", "delete", "duplicate"],
     },
     manufacturer: {
       locked: DEFAULT_BUILT_IN_LOCKS,
@@ -1185,6 +1188,7 @@ export function emptyHotWaterTank(): HotWaterTankRow {
   return {
     id: generatedId(HOT_WATER_TANK_ID_PREFIX),
     tank_type: null,
+    inside_outside: null,
     url: null,
     notes: null,
     datasheet_asset_ids: [],
@@ -1192,7 +1196,6 @@ export function emptyHotWaterTank(): HotWaterTankRow {
       record_id: null,
       name: null,
       quantity: 1,
-      inside_outside: null,
       manufacturer: null,
       model: null,
       size_l: null,
@@ -2464,11 +2467,19 @@ export function validateHotWaterTanksPayload(payload: HotWaterTanksReplacePayloa
   const typeIds = new Set(
     payload.single_select_options[HOT_WATER_TANK_TYPE_OPTION_KEY].map((option) => option.id),
   );
+  const insideOutsideIds = new Set(
+    payload.single_select_options[HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY].map(
+      (option) => option.id,
+    ),
+  );
   for (const tank of payload.hot_water_tanks) {
     if (ids.has(tank.id)) return "Hot water tank id already exists in this project.";
     ids.add(tank.id);
     if (tank.tank_type && !typeIds.has(tank.tank_type)) {
       return "Hot water tank type option is missing.";
+    }
+    if (tank.inside_outside && !insideOutsideIds.has(tank.inside_outside)) {
+      return "Hot water tank inside/outside option is missing.";
     }
     if (tank.url && !/^https?:\/\//.test(tank.url)) {
       return "Hot water tank URL must start with http:// or https://.";
@@ -2683,9 +2694,10 @@ export function replaceHotWaterTankOptionsPayload(
   const options = cloneHotWaterTankOptions(current);
   options[key] = normalizeOptionOrders(nextOptions);
   const nextOptionIds = new Set(options[key].map((option) => option.id));
+  const fieldKey = hotWaterTankOptionFieldKey(key);
   const removedReferencedOptionIds = new Set(
     current.hot_water_tanks
-      .map((tank) => tank.tank_type)
+      .map((tank) => tank[fieldKey])
       .filter(
         (optionId): optionId is string =>
           optionId !== null && optionId !== undefined && !nextOptionIds.has(optionId),
@@ -2697,15 +2709,23 @@ export function replaceHotWaterTankOptionsPayload(
     }
   }
   const hotWaterTanks = current.hot_water_tanks.map((tank) => {
-    const currentOptionId = tank.tank_type;
+    const currentOptionId = tank[fieldKey];
     if (!currentOptionId || !(currentOptionId in replacements)) return tank;
-    return { ...tank, tank_type: replacements[currentOptionId] ?? null };
+    return { ...tank, [fieldKey]: replacements[currentOptionId] ?? null };
   });
   return {
     hot_water_tanks: sortedHotWaterTanks(hotWaterTanks),
     single_select_options: options,
     field_defs: [...current.field_defs],
   };
+}
+
+function hotWaterTankOptionFieldKey(
+  key: HotWaterTankOptionKey,
+): typeof HOT_WATER_TANK_TYPE_KEY | typeof HOT_WATER_TANK_INSIDE_OUTSIDE_KEY {
+  return key === HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY
+    ? HOT_WATER_TANK_INSIDE_OUTSIDE_KEY
+    : HOT_WATER_TANK_TYPE_KEY;
 }
 
 export function replaceApplianceOptionsPayload(
@@ -3018,6 +3038,9 @@ function applyWriteToHotWaterTank(
 ): HotWaterTankRow {
   if (fieldKey === HOT_WATER_TANK_TYPE_KEY && isNullableOptionId(value)) {
     return { ...tank, tank_type: value };
+  }
+  if (fieldKey === HOT_WATER_TANK_INSIDE_OUTSIDE_KEY && isNullableOptionId(value)) {
+    return { ...tank, inside_outside: value };
   }
   if (["notes", "url"].includes(fieldKey) && (value === null || typeof value === "string")) {
     return { ...tank, [fieldKey]: value };
@@ -3362,7 +3385,6 @@ function normalizeHotWaterTankForPayload(tank: HotWaterTankRow): HotWaterTankRow
       record_id: nullableTrimmed(customTextValue(tank, "record_id")),
       name: nullableTrimmed(customTextValue(tank, "name")),
       quantity: nonNegativeOrNull(customNumberValue(tank, "quantity")),
-      inside_outside: nullableTrimmed(customTextValue(tank, "inside_outside")),
       manufacturer: nullableTrimmed(customTextValue(tank, "manufacturer")),
       model: nullableTrimmed(customTextValue(tank, "model")),
       size_l: nonNegativeOrNull(customNumberValue(tank, "size_l")),
@@ -3484,6 +3506,9 @@ function cloneHotWaterTankOptions(
   return {
     [HOT_WATER_TANK_TYPE_OPTION_KEY]: [
       ...current.single_select_options[HOT_WATER_TANK_TYPE_OPTION_KEY],
+    ],
+    [HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY]: [
+      ...current.single_select_options[HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY],
     ],
   };
 }

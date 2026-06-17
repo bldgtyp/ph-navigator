@@ -41,6 +41,7 @@ from features.project_document.tables.rooms import (
 from features.project_document.tables.space_types import SPACE_TYPES_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.thermal_bridges import THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.ventilators import VENTILATORS_BUILT_IN_FIELD_DEFS
+from tests.project_document_helpers import empty_required_tables
 
 
 def _body_with_default_field() -> ProjectDocumentV1:
@@ -58,9 +59,10 @@ def _body_with_default_field() -> ProjectDocumentV1:
         created_by=None,
     )
     envelope = RoomsTableEnvelope(field_defs=[*ROOMS_BUILT_IN_FIELD_DEFS, field], rows=[])
+    heat_pumps = empty_required_tables()["equipment"]["heat_pumps"]
     return ProjectDocumentV1.model_validate(
         {
-            "schema_version": 8,
+            "schema_version": 10,
             "project": ProjectDocumentProject(name="t", bt_number="1", cert_programs=[]).model_dump(mode="json"),
             "tables": {
                 "rooms": envelope.model_dump(mode="json"),
@@ -103,6 +105,7 @@ def _body_with_default_field() -> ProjectDocumentV1:
                         "field_defs": [field.model_dump(mode="json") for field in HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS],
                         "rows": [],
                     },
+                    "heat_pumps": heat_pumps,
                 },
             },
             "single_select_options": {

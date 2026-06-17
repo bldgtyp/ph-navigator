@@ -53,7 +53,7 @@ export function PhiusExportDialog({
       titleId="hp-phius-export-title"
       onClose={onClose}
     >
-      <div className="project-form hp-modal-form">
+      <div className="project-form table-row-modal-form">
         {state.status === "loading" ? <p>Computing export…</p> : null}
         {state.status === "error" ? (
           <p className="form-error" role="alert">

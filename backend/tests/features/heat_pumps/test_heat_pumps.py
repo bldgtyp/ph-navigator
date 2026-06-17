@@ -8,8 +8,9 @@ import pytest
 from pydantic import ValidationError
 
 from features.heat_pumps.models import HeatPumpOutdoorEquipRow
+from features.project_document.custom_fields import CustomFieldType
 from features.project_document.document import ProjectDocumentV1
-from tests.project_document_helpers import empty_required_tables
+from tests.project_document_helpers import empty_required_tables, field_defs_fingerprint
 from tests.test_project_document import ORIGIN, create_project, signed_in_client
 
 HPOE_1 = "hpoe_01HX0000000000000000000001"
@@ -26,6 +27,14 @@ def heat_pumps_url(project_id: object) -> str:
 def heat_pumps_table_url(project_id: object, table: str, *, dry_run: bool = False) -> str:
     suffix = "?dry-run=true" if dry_run else ""
     return f"{heat_pumps_url(project_id)}/{table}{suffix}"
+
+
+def draft_table_url(project_id: object, version_id: object, table_name: str) -> str:
+    return f"/api/v1/projects/{project_id}/versions/{version_id}/draft/tables/{table_name}"
+
+
+def mutate_table_url(project_id: object, version_id: object, table_name: str) -> str:
+    return f"{draft_table_url(project_id, version_id, table_name)}/custom-fields:mutate"
 
 
 def outdoor_equip(**overrides: object) -> dict[str, Any]:
@@ -116,6 +125,23 @@ def remove_patch(row_id: str) -> dict[str, Any]:
     return {"op": "remove", "path": f"/{row_id}"}
 
 
+def add_field_mutation(*, table_key: str, fingerprint: str) -> dict[str, Any]:
+    return {
+        "kind": "addField",
+        "table_key": table_key,
+        "after": {
+            "field_key": "cf_notes",
+            "display_name": "Commissioning Notes",
+            "field_type": CustomFieldType.short_text.value,
+            "config": {},
+            "description": None,
+            "created_at": "2026-06-17T12:00:00Z",
+            "created_by": None,
+        },
+        "expected_schema_fingerprint": fingerprint,
+    }
+
+
 def test_outdoor_equip_model_validates_enums_and_ranges() -> None:
     assert HeatPumpOutdoorEquipRow.model_validate(outdoor_equip()).model_number == "PUZ-A18NKA7"
     with pytest.raises(ValidationError, match="greater than 0"):
@@ -127,7 +153,7 @@ def test_outdoor_equip_model_validates_enums_and_ranges() -> None:
 def _heat_pump_document(tables: dict[str, Any]) -> ProjectDocumentV1:
     return ProjectDocumentV1.model_validate(
         {
-            "schema_version": 8,
+            "schema_version": 10,
             "project": {"name": "p", "bt_number": "1", "cert_programs": []},
             "tables": tables,
             "single_select_options": {
@@ -143,39 +169,41 @@ def _heat_pump_document(tables: dict[str, Any]) -> ProjectDocumentV1:
 def test_document_defaults_heat_pump_arrays() -> None:
     document = _heat_pump_document(empty_required_tables())
 
-    assert document.tables.equipment.heat_pumps.outdoor_equip == []
-    assert document.tables.equipment.heat_pumps.indoor_units == []
+    assert document.tables.equipment.heat_pumps.outdoor_equip.rows == []
+    assert document.tables.equipment.heat_pumps.outdoor_equip.field_defs[0].field_key == "record_id"
+    assert document.tables.equipment.heat_pumps.indoor_units.rows == []
+    assert document.tables.equipment.heat_pumps.indoor_units.field_defs[0].field_key == "record_id"
 
 
 def test_document_accepts_duplicate_heat_pump_tags() -> None:
     """Record-identity model: the heat-pump tag is an ordinary, non-unique
     field. Two rows may share a tag as long as their hidden ids differ."""
     tables = empty_required_tables()
-    tables["equipment"]["heat_pumps"]["outdoor_equip"] = [
+    tables["equipment"]["heat_pumps"]["outdoor_equip"]["rows"] = [
         outdoor_equip(id=HPOE_1, tag="OE-1"),
         outdoor_equip(id=HPOE_2, tag="OE-1"),
     ]
 
     document = _heat_pump_document(tables)
 
-    assert [row.id for row in document.tables.equipment.heat_pumps.outdoor_equip] == [HPOE_1, HPOE_2]
+    assert [row.id for row in document.tables.equipment.heat_pumps.outdoor_equip.rows] == [HPOE_1, HPOE_2]
 
 
 def test_document_rejects_duplicate_heat_pump_row_id() -> None:
     """Heat-pump sub-tables keep their own row.id uniqueness guarantee."""
     tables = empty_required_tables()
-    tables["equipment"]["heat_pumps"]["outdoor_equip"] = [
+    tables["equipment"]["heat_pumps"]["outdoor_equip"]["rows"] = [
         outdoor_equip(id=HPOE_1, tag="OE-1"),
         outdoor_equip(id=HPOE_1, tag="OE-2"),
     ]
 
-    with pytest.raises(ValidationError, match="Duplicate heat_pump_outdoor_equip id"):
+    with pytest.raises(ValidationError, match="Duplicate heat-pump outdoor equipment id"):
         _heat_pump_document(tables)
 
 
 def test_document_rejects_bad_heat_pump_fk() -> None:
     tables = empty_required_tables()
-    tables["equipment"]["heat_pumps"]["outdoor_units"] = [outdoor_unit()]
+    tables["equipment"]["heat_pumps"]["outdoor_units"]["rows"] = [outdoor_unit()]
 
     with pytest.raises(ValidationError, match="Missing heat-pump outdoor equip"):
         _heat_pump_document(tables)
@@ -200,6 +228,103 @@ def test_heat_pumps_get_and_patch_add_round_trip(clean_document_tables: None) ->
     assert added.json()["outdoor_equip"][0]["model_number"] == "PUZ-A18NKA7"
     refetched = client.get(heat_pumps_url(project["id"]))
     assert refetched.json()["outdoor_equip"][0]["id"] == HPOE_1
+
+
+def test_heat_pumps_outdoor_equip_generic_contract_replace_and_schema_mutation(
+    clean_document_tables: None,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    table_name = "heat_pumps_outdoor_equip"
+
+    initial = client.get(draft_table_url(project_id, version_id, table_name))
+    assert initial.status_code == 200, initial.text
+    initial_body = initial.json()
+    assert initial_body["outdoor_equip"] == []
+    assert initial_body["field_defs"][0]["field_key"] == "record_id"
+    assert set(initial_body["single_select_options"]) == {
+        "heat_pumps.manufacturer",
+        "heat_pumps.system_family",
+        "heat_pumps.refrigerant",
+    }
+
+    schema_response = client.post(
+        mutate_table_url(project_id, version_id, table_name),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial_body["version_etag"]},
+        json=add_field_mutation(
+            table_key=table_name,
+            fingerprint=field_defs_fingerprint(initial_body["field_defs"]),
+        ),
+    )
+    assert schema_response.status_code == 200, schema_response.text
+    with_custom_field = schema_response.json()
+    assert [field["field_key"] for field in with_custom_field["field_defs"] if field["origin"] == "custom"] == [
+        "cf_notes"
+    ]
+
+    payload = {
+        "field_defs": with_custom_field["field_defs"],
+        "outdoor_equip": [
+            {
+                **outdoor_equip(),
+                "custom_values": {"cf_notes": "Verify low-ambient cutout."},
+            }
+        ],
+        "single_select_options": {
+            "heat_pumps.manufacturer": [],
+            "heat_pumps.system_family": [],
+            "heat_pumps.refrigerant": [],
+        },
+    }
+    updated = client.put(
+        draft_table_url(project_id, version_id, table_name),
+        headers={"Origin": ORIGIN, "If-Match": with_custom_field["draft_etag"]},
+        json=payload,
+    )
+
+    assert updated.status_code == 200, updated.text
+    row = updated.json()["outdoor_equip"][0]
+    assert row["custom_values"]["cf_notes"] == "Verify low-ambient cutout."
+
+
+def test_heat_pumps_generic_contract_rejects_missing_fk(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+
+    initial = client.get(draft_table_url(project_id, version_id, "heat_pumps_outdoor_units"))
+    response = client.put(
+        draft_table_url(project_id, version_id, "heat_pumps_outdoor_units"),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
+        json={
+            "field_defs": initial.json()["field_defs"],
+            "outdoor_units": [outdoor_unit()],
+            "single_select_options": {},
+        },
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error_code"] == "invalid_project_document"
+    assert "Missing heat-pump outdoor equip" in response.json()["details"]["errors"][0]
+
+
+def test_heat_pumps_rejects_unknown_option_id(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    initial = client.get(heat_pumps_url(project["id"]))
+
+    response = client.patch(
+        heat_pumps_table_url(project["id"], "outdoor-equip"),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
+        json=add_patch(outdoor_equip(manufacturer="opt_missing")),
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error_code"] == "invalid_project_document"
+    assert "Missing heat-pump option heat_pumps.manufacturer" in response.json()["details"]["errors"][0]
 
 
 def test_heat_pumps_rejects_missing_fk(clean_document_tables: None) -> None:

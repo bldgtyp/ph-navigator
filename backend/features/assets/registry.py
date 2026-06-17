@@ -59,29 +59,37 @@ ATTACHMENT_FIELDS: tuple[AttachmentFieldConfig, ...] = (
             max_file_size_mb=25,
         )
         for table in (
-            "equipment_ervs",
-            "equipment_pumps",
-            "equipment_fans",
-            "equipment_hot_water_heaters",
-            "equipment_hot_water_tanks",
-            "equipment_electric_heaters",
-            "equipment_appliances",
+            "ventilators",
+            "pumps",
+            "fans",
+            "hot_water_heaters",
+            "hot_water_tanks",
+            "electric_heaters",
+            "appliances",
             "thermal_bridges",
+            "heat_pump_outdoor_equip",
+            "heat_pump_indoor_equip",
+            "heat_pump_outdoor_units",
+            "heat_pump_indoor_units",
         )
     ),
-    AttachmentFieldConfig(
-        key="thermal_bridges.simulation_file_asset_ids",
-        table_key="thermal_bridges",
-        field_key="simulation_file_asset_ids",
-        asset_kinds=frozenset({"simulation_file", "hbjson"}),
-        allowed_content_types=frozenset(
-            {"application/pdf", "image/png", "image/jpeg", "application/json", "application/octet-stream"}
-        ),
-        allowed_extensions=frozenset({".hbjson"}),
-        max_count=5,
-        max_file_size_mb=25,
-    ),
 )
+
+EQUIPMENT_ATTACHMENT_TABLE_KEYS: dict[str, str] = {
+    "ventilators": "ervs",
+    "pumps": "pumps",
+    "fans": "fans",
+    "hot_water_heaters": "hot_water_heaters",
+    "hot_water_tanks": "hot_water_tanks",
+    "electric_heaters": "electric_heaters",
+    "appliances": "appliances",
+}
+HEAT_PUMP_ATTACHMENT_TABLE_KEYS: dict[str, str] = {
+    "heat_pump_outdoor_equip": "outdoor_equip",
+    "heat_pump_indoor_equip": "indoor_equip",
+    "heat_pump_outdoor_units": "outdoor_units",
+    "heat_pump_indoor_units": "indoor_units",
+}
 
 
 # Model-tab HBJSON exports (US-VIEW-1) upload as standalone assets, not
@@ -163,6 +171,7 @@ def list_asset_references(
     kind: str | None = None,
 ) -> list[dict[str, Any]]:
     references: list[dict[str, Any]] = []
+    tables = body.model_dump(mode="json")["tables"]
     field_configs = [
         field
         for field in ATTACHMENT_FIELDS
@@ -171,7 +180,7 @@ def list_asset_references(
         and (kind is None or kind in field.asset_kinds)
     ]
     for field in field_configs:
-        for row in iter_rows_for_table(body, field.table_key):
+        for row in iter_rows_for_raw_tables(tables, field.table_key):
             values = row.get(field.field_key)
             if not isinstance(values, list):
                 continue
@@ -195,24 +204,18 @@ def list_asset_references(
 
 def iter_rows_for_table(body: ProjectDocumentV1, table_key: str) -> list[dict[str, Any]]:
     tables = body.model_dump(mode="json")["tables"]
+    return iter_rows_for_raw_tables(tables, table_key)
+
+
+def iter_rows_for_raw_tables(tables: dict[str, Any], table_key: str) -> list[dict[str, Any]]:
     if table_key == "project_materials":
         return _dict_rows(tables.get("project_materials"))
     if table_key == "thermal_bridges":
         return _dict_rows(tables.get("thermal_bridges"))
-    if table_key == "equipment_ervs":
-        return attachment_table_rows(tables.get("equipment", {}).get("ervs"))
-    if table_key == "equipment_pumps":
-        return attachment_table_rows(tables.get("equipment", {}).get("pumps"))
-    if table_key == "equipment_fans":
-        return attachment_table_rows(tables.get("equipment", {}).get("fans"))
-    if table_key == "equipment_hot_water_heaters":
-        return attachment_table_rows(tables.get("equipment", {}).get("hot_water_heaters"))
-    if table_key == "equipment_hot_water_tanks":
-        return attachment_table_rows(tables.get("equipment", {}).get("hot_water_tanks"))
-    if table_key == "equipment_electric_heaters":
-        return attachment_table_rows(tables.get("equipment", {}).get("electric_heaters"))
-    if table_key == "equipment_appliances":
-        return attachment_table_rows(tables.get("equipment", {}).get("appliances"))
+    if equipment_key := EQUIPMENT_ATTACHMENT_TABLE_KEYS.get(table_key):
+        return attachment_table_rows(tables.get("equipment", {}).get(equipment_key))
+    if heat_pump_key := HEAT_PUMP_ATTACHMENT_TABLE_KEYS.get(table_key):
+        return _dict_rows(tables.get("equipment", {}).get("heat_pumps", {}).get(heat_pump_key))
     if table_key == "assembly_segments":
         rows: list[dict[str, Any]] = []
         for assembly in _dict_rows(tables.get("assemblies")):

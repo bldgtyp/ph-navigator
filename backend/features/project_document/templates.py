@@ -2,12 +2,19 @@
 
 from __future__ import annotations
 
-from features.heat_pumps.models import HeatPumpsTableSlice
+from features.heat_pumps.models import (
+    HeatPumpIndoorEquipTableEnvelope,
+    HeatPumpIndoorUnitsTableEnvelope,
+    HeatPumpOutdoorEquipTableEnvelope,
+    HeatPumpOutdoorUnitsTableEnvelope,
+    HeatPumpsTableSlice,
+)
 from features.project_document.document import (
     APPLIANCE_ENERGY_STAR_OPTION_KEY,
     APPLIANCE_TYPE_OPTION_KEY,
     FAN_TYPE_OPTION_KEY,
     HOT_WATER_HEATER_TYPE_OPTION_KEY,
+    HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY,
     HOT_WATER_TANK_TYPE_OPTION_KEY,
     THERMAL_BRIDGE_TYPE_OPTION_KEY,
     VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,
@@ -30,6 +37,12 @@ from features.project_document.document import (
 from features.project_document.tables.appliances import APPLIANCES_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.electric_heaters import ELECTRIC_HEATERS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.fans import FANS_BUILT_IN_FIELD_DEFS
+from features.project_document.tables.heat_pumps import (
+    INDOOR_EQUIP_BUILT_IN_FIELD_DEFS,
+    INDOOR_UNITS_BUILT_IN_FIELD_DEFS,
+    OUTDOOR_EQUIP_BUILT_IN_FIELD_DEFS,
+    OUTDOOR_UNITS_BUILT_IN_FIELD_DEFS,
+)
 from features.project_document.tables.hot_water_heaters import HOT_WATER_HEATERS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.hot_water_tanks import HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_DEFS
@@ -65,7 +78,12 @@ def empty_project_document(payload: CreateProjectRequest) -> ProjectDocumentV1:
                 fans=FansTableEnvelope(field_defs=list(FANS_BUILT_IN_FIELD_DEFS)),
                 hot_water_heaters=HotWaterHeatersTableEnvelope(field_defs=list(HOT_WATER_HEATERS_BUILT_IN_FIELD_DEFS)),
                 hot_water_tanks=HotWaterTanksTableEnvelope(field_defs=list(HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS)),
-                heat_pumps=HeatPumpsTableSlice(),
+                heat_pumps=HeatPumpsTableSlice(
+                    outdoor_equip=HeatPumpOutdoorEquipTableEnvelope(field_defs=list(OUTDOOR_EQUIP_BUILT_IN_FIELD_DEFS)),
+                    indoor_equip=HeatPumpIndoorEquipTableEnvelope(field_defs=list(INDOOR_EQUIP_BUILT_IN_FIELD_DEFS)),
+                    outdoor_units=HeatPumpOutdoorUnitsTableEnvelope(field_defs=list(OUTDOOR_UNITS_BUILT_IN_FIELD_DEFS)),
+                    indoor_units=HeatPumpIndoorUnitsTableEnvelope(field_defs=list(INDOOR_UNITS_BUILT_IN_FIELD_DEFS)),
+                ),
             ),
         ),
         single_select_options={
@@ -122,6 +140,10 @@ def empty_project_document(payload: CreateProjectRequest) -> ProjectDocumentV1:
             HOT_WATER_TANK_TYPE_OPTION_KEY: [
                 SingleSelectOption(id="opt_hwt_dhw_heating", label="1-DHW and Heating", color="#0ea5e9", order=0),
                 SingleSelectOption(id="opt_hwt_dhw_only", label="2-DHW only", color="#14b8a6", order=1),
+            ],
+            HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY: [
+                SingleSelectOption(id="opt_hwt_inside", label="Inside", color="#0ea5e9", order=0),
+                SingleSelectOption(id="opt_hwt_outside", label="Outside", color="#f97316", order=1),
             ],
             APPLIANCE_TYPE_OPTION_KEY: [
                 SingleSelectOption(id="opt_appl_dishwasher", label="1-dishwasher", color="#0ea5e9", order=0),

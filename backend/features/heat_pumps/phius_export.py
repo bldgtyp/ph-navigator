@@ -114,7 +114,7 @@ def compute_phius_payload(slice_: HeatPumpsTableSlice) -> PhiusPayload:
     """Walk the outdoor-equip table; derive Qty from instance counts; validate."""
 
     qty_by_equip_id = _count_outdoor_units_by_equip_id(slice_)
-    indoor_labels_by_id = {row.id: _indoor_label(row) for row in slice_.indoor_equip}
+    indoor_labels_by_id = {row.id: _indoor_label(row) for row in slice_.indoor_equip.rows}
     paired_indoor_label_by_equip_id = _paired_indoor_label_by_outdoor_equip_id(
         slice_,
         indoor_labels_by_id,
@@ -122,7 +122,7 @@ def compute_phius_payload(slice_: HeatPumpsTableSlice) -> PhiusPayload:
 
     rows: list[PhiusRow] = []
     warnings: list[PhiusWarning] = []
-    for equip in slice_.outdoor_equip:
+    for equip in slice_.outdoor_equip.rows:
         qty = qty_by_equip_id.get(equip.id, 0)
         rows.append(_build_row(equip, qty, paired_indoor_label_by_equip_id.get(equip.id)))
         warnings.extend(_validate(equip, qty))
@@ -158,7 +158,7 @@ def serialize_csv(payload: PhiusPayload) -> bytes:
 
 def _count_outdoor_units_by_equip_id(slice_: HeatPumpsTableSlice) -> dict[str, int]:
     counts: dict[str, int] = {}
-    for unit in slice_.outdoor_units:
+    for unit in slice_.outdoor_units.rows:
         counts[unit.outdoor_equip_id] = counts.get(unit.outdoor_equip_id, 0) + 1
     return counts
 
@@ -175,9 +175,9 @@ def _paired_indoor_label_by_outdoor_equip_id(
     the Phius device label stays bare.
     """
 
-    outdoor_equip_id_by_unit_id = {unit.id: unit.outdoor_equip_id for unit in slice_.outdoor_units}
+    outdoor_equip_id_by_unit_id = {unit.id: unit.outdoor_equip_id for unit in slice_.outdoor_units.rows}
     indoor_equip_ids_by_outdoor_equip_id: dict[str, set[str]] = {}
-    for unit in slice_.indoor_units:
+    for unit in slice_.indoor_units.rows:
         if unit.outdoor_unit_id is None:
             continue
         outdoor_equip_id = outdoor_equip_id_by_unit_id.get(unit.outdoor_unit_id)

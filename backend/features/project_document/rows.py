@@ -3,8 +3,8 @@
 Split out of the original ``document.py`` so the central
 ``ProjectDocumentV1`` module can focus on cross-table invariants. These
 types are leaf Pydantic models with no document-level dependencies —
-they import only ``TableFieldDef`` and ``CustomValue`` from the
-``custom_fields`` module.
+they import only ``TableFieldDef`` plus the neutral custom-field row
+base.
 
 Every Row type inherits from ``RowWithCustomFields`` and follows the
 same v3 mixed-storage rule: locked-type built-ins keep typed columns;
@@ -17,21 +17,8 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from features.heat_pumps.models import HeatPumpsTableSlice
-from features.project_document.custom_fields import CustomValue, TableFieldDef
-
-
-class RowWithCustomFields(BaseModel):
-    """Shared bag fields for every FieldDef-capable table row.
-
-    `custom_values` holds scalar values for mutable-type built-ins and
-    every non-`linked_record` custom field. `custom_links` holds id
-    arrays for `linked_record` custom fields. A given `field_key`
-    appears in exactly one of the two bags (PRD Q16, enforced by
-    `validate_rows_custom_links`).
-    """
-
-    custom_values: dict[str, CustomValue] = Field(default_factory=dict)
-    custom_links: dict[str, list[str]] = Field(default_factory=dict)
+from features.project_document.custom_fields import TableFieldDef
+from features.project_document.row_base import RowWithCustomFields
 
 
 class SingleSelectOption(BaseModel):
@@ -284,6 +271,7 @@ class HotWaterTankRow(RowWithCustomFields):
 
     id: str = Field(pattern=r"^hwt_[A-Za-z0-9_-]+$", max_length=80)
     tank_type: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
+    inside_outside: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
     url: str | None = Field(default=None, max_length=2000)
     notes: str | None = Field(default=None, max_length=4000)
     datasheet_asset_ids: list[str] = Field(default_factory=list)

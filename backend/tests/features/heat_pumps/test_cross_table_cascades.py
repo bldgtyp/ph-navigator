@@ -121,8 +121,8 @@ def _build_body(
     tables = empty_required_tables()
     tables["equipment"]["ervs"]["rows"] = ventilators
     tables["rooms"]["rows"] = rooms
-    tables["equipment"]["heat_pumps"]["indoor_equip"] = [_indoor_equip()]
-    tables["equipment"]["heat_pumps"]["indoor_units"] = indoor_units
+    tables["equipment"]["heat_pumps"]["indoor_equip"]["rows"] = [_indoor_equip()]
+    tables["equipment"]["heat_pumps"]["indoor_units"]["rows"] = indoor_units
 
     inside_outside_options = (
         [
@@ -135,7 +135,7 @@ def _build_body(
 
     return ProjectDocumentV1.model_validate(
         {
-            "schema_version": 8,
+            "schema_version": 10,
             "project": {"name": "p", "bt_number": str(uuid4()), "cert_programs": []},
             "tables": tables,
             "single_select_options": {
@@ -195,7 +195,7 @@ def test_ventilator_delete_nulls_linked_erv_unit_id_on_referencing_hp_indoor_uni
 
     next_body = apply_ventilators_replace(body, payload)
 
-    indoor_units = {row.id: row for row in next_body.tables.equipment.heat_pumps.indoor_units}
+    indoor_units = {row.id: row for row in next_body.tables.equipment.heat_pumps.indoor_units.rows}
     assert indoor_units[HPIU_1].linked_erv_unit_id is None, "deleted ERV must cascade-null"
     assert indoor_units[HPIU_2].linked_erv_unit_id == VENT_KEEP, "untouched ERV must remain linked"
     assert [v.id for v in next_body.tables.equipment.ervs.rows] == [VENT_KEEP]
@@ -213,7 +213,7 @@ def test_ventilator_replace_without_deletion_leaves_hp_indoor_unit_alone() -> No
 
     next_body = apply_ventilators_replace(body, payload)
 
-    assert next_body.tables.equipment.heat_pumps.indoor_units[0].linked_erv_unit_id == VENT_KEEP
+    assert next_body.tables.equipment.heat_pumps.indoor_units.rows[0].linked_erv_unit_id == VENT_KEEP
 
 
 def test_room_delete_filters_served_room_ids_on_referencing_hp_indoor_unit() -> None:
@@ -229,7 +229,7 @@ def test_room_delete_filters_served_room_ids_on_referencing_hp_indoor_unit() -> 
 
     next_body = apply_rooms_replace(body, payload)
 
-    indoor_units = {row.id: row for row in next_body.tables.equipment.heat_pumps.indoor_units}
+    indoor_units = {row.id: row for row in next_body.tables.equipment.heat_pumps.indoor_units.rows}
     assert indoor_units[HPIU_1].served_room_ids == [ROOM_KEEP]
     assert indoor_units[HPIU_2].served_room_ids == [ROOM_OTHER]
     assert {room.id for room in next_body.tables.rooms.rows} == {ROOM_KEEP, ROOM_OTHER}
@@ -245,7 +245,7 @@ def test_room_replace_without_deletion_leaves_hp_indoor_unit_alone() -> None:
 
     next_body = apply_rooms_replace(body, payload)
 
-    assert next_body.tables.equipment.heat_pumps.indoor_units[0].served_room_ids == [ROOM_KEEP]
+    assert next_body.tables.equipment.heat_pumps.indoor_units.rows[0].served_room_ids == [ROOM_KEEP]
 
 
 def test_simultaneous_ventilator_deletes_cascade_each_referencing_hp_indoor_unit() -> None:
@@ -266,7 +266,7 @@ def test_simultaneous_ventilator_deletes_cascade_each_referencing_hp_indoor_unit
 
     next_body = apply_ventilators_replace(body, payload)
 
-    indoor_units = {row.id: row for row in next_body.tables.equipment.heat_pumps.indoor_units}
+    indoor_units = {row.id: row for row in next_body.tables.equipment.heat_pumps.indoor_units.rows}
     assert indoor_units[HPIU_1].linked_erv_unit_id is None
     assert indoor_units[HPIU_2].linked_erv_unit_id is None
 
@@ -289,7 +289,7 @@ def test_simultaneous_room_deletes_cascade_each_referencing_hp_indoor_unit() -> 
 
     next_body = apply_rooms_replace(body, payload)
 
-    indoor_units = {row.id: row for row in next_body.tables.equipment.heat_pumps.indoor_units}
+    indoor_units = {row.id: row for row in next_body.tables.equipment.heat_pumps.indoor_units.rows}
     assert indoor_units[HPIU_1].served_room_ids == [rm_c]
     assert indoor_units[HPIU_2].served_room_ids == [rm_c]
 
@@ -307,4 +307,4 @@ def test_room_cascade_dedupes_existing_duplicate_served_room_ids() -> None:
     next_body = apply_rooms_replace(body, payload)
 
     # Survivors are ordered first-seen-wins and de-duplicated.
-    assert next_body.tables.equipment.heat_pumps.indoor_units[0].served_room_ids == [ROOM_KEEP, ROOM_OTHER]
+    assert next_body.tables.equipment.heat_pumps.indoor_units.rows[0].served_room_ids == [ROOM_KEEP, ROOM_OTHER]

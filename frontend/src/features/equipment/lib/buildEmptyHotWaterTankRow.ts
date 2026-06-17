@@ -1,6 +1,10 @@
 import type { BuildEmptyRow } from "../../../shared/ui/data-table";
 import { emptyHotWaterTank } from "../lib";
-import { HOT_WATER_TANK_TYPE_KEY, type HotWaterTankRow } from "../types";
+import {
+  HOT_WATER_TANK_INSIDE_OUTSIDE_KEY,
+  HOT_WATER_TANK_TYPE_KEY,
+  type HotWaterTankRow,
+} from "../types";
 import { customNumberValue, customTextValueOrNull } from "./customValueReaders";
 import { readNumberDefault, readStringDefault } from "./fieldDefaults";
 
@@ -10,6 +14,10 @@ export function makeBuildEmptyHotWaterTankRow(): BuildEmptyRow<HotWaterTankRow> 
     return {
       ...base,
       tank_type: readStringDefault(fieldDefaults[HOT_WATER_TANK_TYPE_KEY], base.tank_type),
+      inside_outside: readStringDefault(
+        fieldDefaults[HOT_WATER_TANK_INSIDE_OUTSIDE_KEY],
+        base.inside_outside,
+      ),
       notes: readStringDefault(fieldDefaults.notes, base.notes),
       url: readStringDefault(fieldDefaults.url, base.url),
       custom_values: {
@@ -20,10 +28,6 @@ export function makeBuildEmptyHotWaterTankRow(): BuildEmptyRow<HotWaterTankRow> 
         ),
         name: readStringDefault(fieldDefaults.name, customTextValueOrNull(base, "name")),
         quantity: readNumberDefault(fieldDefaults.quantity, customNumberValue(base, "quantity")),
-        inside_outside: readStringDefault(
-          fieldDefaults.inside_outside,
-          customTextValueOrNull(base, "inside_outside"),
-        ),
         manufacturer: readStringDefault(
           fieldDefaults.manufacturer,
           customTextValueOrNull(base, "manufacturer"),

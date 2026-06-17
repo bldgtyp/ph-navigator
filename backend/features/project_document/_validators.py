@@ -43,6 +43,10 @@ LINKED_RECORD_TARGET_PATHS: frozenset[tuple[str, ...]] = frozenset(
         ("equipment", "electric_heaters"),
         ("equipment", "appliances"),
         ("equipment", "ervs"),
+        ("equipment", "heat_pumps", "outdoor_equip"),
+        ("equipment", "heat_pumps", "indoor_equip"),
+        ("equipment", "heat_pumps", "outdoor_units"),
+        ("equipment", "heat_pumps", "indoor_units"),
     }
 )
 
@@ -79,9 +83,9 @@ def generic_table_row_ids(
     target snapshot (``collect_target_row_ids``) are derived from this list, so
     a new generic table is wired into both by adding one entry.
 
-    Heat-pump sub-tables and the envelope tables (assemblies, project
-    materials, apertures) are NOT generic DataTables — they carry their own id
-    checks next to their cross-table invariants and are validated elsewhere.
+    The envelope tables (assemblies, project materials, apertures) are NOT
+    generic DataTables — they carry their own id checks next to their
+    cross-table invariants and are validated elsewhere.
     """
     tables = document.tables
     equipment = tables.equipment
@@ -96,6 +100,26 @@ def generic_table_row_ids(
         (("equipment", "electric_heaters"), "electric heater", [row.id for row in equipment.electric_heaters.rows]),
         (("equipment", "appliances"), "appliance", [row.id for row in equipment.appliances.rows]),
         (("equipment", "ervs"), "ventilator", [row.id for row in equipment.ervs.rows]),
+        (
+            ("equipment", "heat_pumps", "outdoor_equip"),
+            "heat-pump outdoor equipment",
+            [row.id for row in equipment.heat_pumps.outdoor_equip.rows],
+        ),
+        (
+            ("equipment", "heat_pumps", "indoor_equip"),
+            "heat-pump indoor equipment",
+            [row.id for row in equipment.heat_pumps.indoor_equip.rows],
+        ),
+        (
+            ("equipment", "heat_pumps", "outdoor_units"),
+            "heat-pump outdoor unit",
+            [row.id for row in equipment.heat_pumps.outdoor_units.rows],
+        ),
+        (
+            ("equipment", "heat_pumps", "indoor_units"),
+            "heat-pump indoor unit",
+            [row.id for row in equipment.heat_pumps.indoor_units.rows],
+        ),
     ]
 
 
@@ -339,3 +363,17 @@ def validate_default_option_ids(
                 f"default_option_id {default_raw!r} for {field_def.field_key!r} "
                 "does not reference an option in the field's option list"
             )
+
+
+def validate_non_negative_custom_numbers(
+    *,
+    row_label: str,
+    rows: list[tuple[str, dict[str, CustomValue]]],
+    field_keys: frozenset[str],
+) -> None:
+    """Enforce non-negative numeric built-ins stored in custom_values."""
+    for row_id, custom_values in rows:
+        for field_key in field_keys:
+            value = custom_values.get(field_key)
+            if isinstance(value, (int, float)) and value < 0:
+                raise ValueError(f"{row_label} {field_key} must be zero or greater: {row_id}")

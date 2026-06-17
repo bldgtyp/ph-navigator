@@ -1,18 +1,17 @@
-import { useMemo, type CSSProperties } from "react";
+import { useMemo } from "react";
 import {
   DataTable,
   RECORD_ID_FIELD_KEY,
   getCustomLink,
+  identifierColumnDef,
   type DataTableColumnDef,
   type DataTableProps,
-  type FieldDef,
   type LinkedRecordCellOps,
   type LinkedRecordTargetTableOption,
   type TableSchema,
   type ViewState,
 } from "../../../shared/ui/data-table";
 
-import { singleSelectOption } from "../../../shared/ui/data-table/lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
 import {
   computedFieldColumnDef,
@@ -113,14 +112,14 @@ export function RoomsTable({
       // the `{Number} — {Name}` formula kept on the `record_id` field,
       // not a separate descriptive `name`. Number and Name stay below as
       // the ordinary inputs the formula reads.
-      computedFieldColumnDef<RoomRow>({
-        fieldKey: RECORD_ID_FIELD_KEY,
-        header: recordIdFieldDef?.display_name ?? "Display Name",
-        computedType: recordIdFieldDef?.computed_type ?? "text",
-        rowsComputed,
-        defaultWidth: 180,
-        isIdentifier: true,
-      }),
+      identifierColumnDef(
+        computedFieldColumnDef<RoomRow>({
+          fieldKey: RECORD_ID_FIELD_KEY,
+          header: recordIdFieldDef?.display_name ?? "Display Name",
+          computedType: recordIdFieldDef?.computed_type ?? "text",
+          rowsComputed,
+        }),
+      ),
       {
         id: "number",
         fieldKey: "number",
@@ -140,14 +139,12 @@ export function RoomsTable({
         fieldKey: ROOM_FLOOR_LEVEL_KEY,
         header: fieldDefByKey.get(ROOM_FLOOR_LEVEL_KEY)?.display_name ?? "Floor",
         accessor: (room) => room.floor_level,
-        render: (room) => optionPill(room.floor_level, fieldDefByKey.get(ROOM_FLOOR_LEVEL_KEY)),
       },
       {
         id: ROOM_BUILDING_ZONE_COLUMN_ID,
         fieldKey: ROOM_BUILDING_ZONE_KEY,
         header: fieldDefByKey.get(ROOM_BUILDING_ZONE_KEY)?.display_name ?? "Zone",
         accessor: (room) => room.building_zone,
-        render: (room) => optionPill(room.building_zone, fieldDefByKey.get(ROOM_BUILDING_ZONE_KEY)),
       },
       ...spaceTypeColumn,
       {
@@ -204,21 +201,5 @@ export function RoomsTable({
       linkedRecordOps={linkedRecordOps}
       linkedRecordTargets={linkedRecordTargets}
     />
-  );
-}
-
-function optionPill(value: string | null, fieldDef: FieldDef | undefined) {
-  const option = singleSelectOption(value, fieldDef);
-  const label = value ? (option?.label ?? "Missing option") : "Unassigned";
-  const applyColor = option && fieldDef?.colorCodeOptions !== false;
-  return (
-    <span
-      className={
-        option ? "single-select-pill" : value ? "single-select-pill missing" : "muted-cell"
-      }
-      style={applyColor ? ({ "--option-color": option.color } as CSSProperties) : undefined}
-    >
-      {label}
-    </span>
   );
 }

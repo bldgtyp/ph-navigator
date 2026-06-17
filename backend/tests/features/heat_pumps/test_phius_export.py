@@ -87,7 +87,8 @@ def _indoor_unit(id_: str, tag: str, indoor_equip_id: str, outdoor_unit_id: str)
 
 
 def _slice(**fields: Any) -> HeatPumpsTableSlice:
-    return HeatPumpsTableSlice.model_validate(fields)
+    payload = {key: {"rows": value} if isinstance(value, list) else value for key, value in fields.items()}
+    return HeatPumpsTableSlice.model_validate(payload)
 
 
 def _kbtuh(kw: float) -> float:

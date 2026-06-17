@@ -392,6 +392,28 @@ contract in `context/technical-requirements/data-table.md` §
 - Duplicate Display Names warn through the existing non-blocking chip;
   they never block a write.
 
+### DataTable Rendering Convention
+
+Every project DataTable field type renders through the shared
+`shared/ui/data-table` cells and helpers:
+
+- Use `SingleSelectCell` / `SingleSelectPopover` for single-select
+  fields. Store and write option ids, not labels.
+- Use `LinkedRecordCell`, `fields/linkedRecord/Picker`,
+  `buildLinkedRecordOps`, `incomingLinkColumn`, and
+  `incomingLinkFieldDef` for linked-record and inverse-link fields.
+- Use `attachmentColumn` / `AttachmentCell` for attachment fields, and
+  `identifierColumn` / `identifierColumnDef` for the one pinned
+  identifier column.
+- Do not reimplement per-table pills, selectors, attachment strips,
+  identifier pinning, or linked-record display. Table adapters may
+  supply target rows, labels, and feature-specific row-open behavior,
+  but rendering stays in the shared DataTable layer.
+- Synthetic read-only columns that are not persisted backend fields
+  still need matching frontend `FieldDef` metadata when they rely on a
+  shared renderer. Append them by missing `field_key`; never override
+  persisted backend FieldDefs for real table columns.
+
 ### Frontend Controls
 
 Useful focused frontend checks while iterating:

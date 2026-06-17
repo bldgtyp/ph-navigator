@@ -1,11 +1,13 @@
-import { useMemo, type CSSProperties } from "react";
+import { useMemo } from "react";
 import {
   buildLinkedRecordOps,
   DataTable,
+  DATA_TABLE_COLUMN_WIDTHS,
   RECORD_ID_FIELD_KEY,
+  identifierColumn,
+  linkColumn,
   type DataTableColumnDef,
   type DataTableProps,
-  type FieldDef,
   type LinkedRecordCellOps,
   type TableSchema,
   type ViewState,
@@ -17,7 +19,6 @@ import {
   incomingIndoorUnitsFieldDef,
 } from "../heat-pumps/link-fields";
 import type { HeatPumpIndoorUnitRow } from "../heat-pumps/types";
-import { singleSelectOption } from "../../../shared/ui/data-table/lib";
 import { sortedVentilators } from "../lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
 import {
@@ -108,16 +109,12 @@ export function VentilatorsTable({
         fieldKey: RECORD_ID_FIELD_KEY,
         header: fieldDefByKey.get(RECORD_ID_FIELD_KEY)?.display_name ?? "Tag",
         accessor: (ventilator) => customTextValue(ventilator, RECORD_ID_FIELD_KEY),
-        defaultWidth: 100,
+        defaultWidth: DATA_TABLE_COLUMN_WIDTHS.recordId,
       },
-      {
-        id: "name",
-        fieldKey: "name",
-        header: fieldDefByKey.get("name")?.display_name ?? "Display Name",
+      identifierColumn({
+        fieldDefByKey,
         accessor: (ventilator) => customTextValue(ventilator, "name"),
-        defaultWidth: 180,
-        isIdentifier: true,
-      },
+      }),
       {
         id: "airflow_rate_m3h",
         fieldKey: "airflow_rate_m3h",
@@ -180,35 +177,19 @@ export function VentilatorsTable({
         header:
           fieldDefByKey.get(VENTILATOR_INSIDE_OUTSIDE_KEY)?.display_name ?? "Inside / Outside",
         accessor: (ventilator) => ventilator.inside_outside,
-        render: (ventilator) =>
-          optionPill(ventilator.inside_outside, fieldDefByKey.get(VENTILATOR_INSIDE_OUTSIDE_KEY)),
         defaultWidth: 150,
       },
-      {
+      linkColumn({
         id: "url",
-        fieldKey: "url",
         header: fieldDefByKey.get("url")?.display_name ?? "URL",
-        accessor: (ventilator) => ventilator.url,
-        render: (ventilator) =>
-          ventilator.url ? (
-            <a
-              href={ventilator.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="data-table-link-cell"
-            >
-              {shortenUrl(ventilator.url)}
-            </a>
-          ) : null,
-        measureText: (ventilator) => ventilator.url ?? "",
-        defaultWidth: 180,
-      },
+        getValue: (ventilator) => ventilator.url,
+      }),
       {
         id: "notes",
         fieldKey: "notes",
         header: fieldDefByKey.get("notes")?.display_name ?? "Notes",
         accessor: (ventilator) => ventilator.notes,
-        defaultWidth: 280,
+        defaultWidth: DATA_TABLE_COLUMN_WIDTHS.notes,
       },
       incomingIndoorUnitColumnDef<VentilatorRow>({
         header: "HP indoor units",
@@ -257,31 +238,6 @@ export function VentilatorsTable({
       {...customFieldActions}
     />
   );
-}
-
-function optionPill(value: string | null, fieldDef: FieldDef | undefined) {
-  const option = singleSelectOption(value, fieldDef);
-  const label = value ? (option?.label ?? "Missing option") : "Unassigned";
-  const applyColor = option && fieldDef?.colorCodeOptions !== false;
-  return (
-    <span
-      className={
-        option ? "single-select-pill" : value ? "single-select-pill missing" : "muted-cell"
-      }
-      style={applyColor ? ({ "--option-color": option.color } as CSSProperties) : undefined}
-    >
-      {label}
-    </span>
-  );
-}
-
-function shortenUrl(value: string): string {
-  try {
-    const url = new URL(value);
-    return `${url.hostname}${url.pathname === "/" ? "" : url.pathname}`;
-  } catch {
-    return value;
-  }
 }
 
 function groupIndoorUnitIdsByVentilator(

@@ -103,7 +103,7 @@ def test_locked_version_rejects_attach_and_detach(clean_document_tables: None) -
 
         common = {
             "version_id": version_id,
-            "table_key": "equipment_pumps",
+            "table_key": "pumps",
             "row_id": "pmp_1",
             "field_key": "datasheet_asset_ids",
             "if_match": draft_etag,

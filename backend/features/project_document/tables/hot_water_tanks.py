@@ -13,6 +13,7 @@ from features.project_document.custom_fields import (
     TableFieldDef,
 )
 from features.project_document.document import (
+    HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY,
     HOT_WATER_TANK_OPTION_KEYS,
     HOT_WATER_TANK_TYPE_OPTION_KEY,
     HotWaterTankRow,
@@ -48,7 +49,7 @@ HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
     built_in_field_def(
         field_key="inside_outside",
         display_name="Inside / Outside",
-        field_type=CustomFieldType.short_text,
+        field_type=CustomFieldType.single_select,
     ),
     built_in_field_def(field_key="manufacturer", display_name="Manufacturer", field_type=CustomFieldType.short_text),
     built_in_field_def(field_key="model", display_name="Model", field_type=CustomFieldType.short_text),
@@ -91,6 +92,7 @@ HOT_WATER_TANKS_BUILT_IN_FIELD_KEYS: tuple[str, ...] = tuple(f.field_key for f i
 HOT_WATER_TANKS_TYPED_COLUMN_FORMULA_TYPES: dict[str, FormulaType] = {
     "id": "text",
     "tank_type": "single_select",
+    "inside_outside": "single_select",
     "url": "text",
     "notes": "text",
     "datasheet_asset_ids": "text",
@@ -105,6 +107,7 @@ class HotWaterTanksSliceOptions(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     hot_water_tanks_type: list[SingleSelectOption] = Field(alias=HOT_WATER_TANK_TYPE_OPTION_KEY)
+    hot_water_tanks_inside_outside: list[SingleSelectOption] = Field(alias=HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY)
 
     @model_validator(mode="after")
     def _validate_namespaced_extras(self) -> HotWaterTanksSliceOptions:
@@ -116,7 +119,10 @@ class HotWaterTanksSliceOptions(BaseModel):
         return self
 
     def by_option_key(self) -> dict[str, list[SingleSelectOption]]:
-        return {HOT_WATER_TANK_TYPE_OPTION_KEY: self.hot_water_tanks_type}
+        return {
+            HOT_WATER_TANK_TYPE_OPTION_KEY: self.hot_water_tanks_type,
+            HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY: self.hot_water_tanks_inside_outside,
+        }
 
     def custom_option_lists(self) -> dict[str, list[SingleSelectOption]]:
         return dict(self.__pydantic_extra__ or {})
@@ -193,6 +199,9 @@ def hot_water_tanks_response(
         field_defs=body.tables.equipment.hot_water_tanks.field_defs,
         single_select_options={
             HOT_WATER_TANK_TYPE_OPTION_KEY: body.single_select_options[HOT_WATER_TANK_TYPE_OPTION_KEY],
+            HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY: body.single_select_options[
+                HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY
+            ],
             **custom_option_lists_for_table(body, _HOT_WATER_TANKS_TABLE_PATH),
         },
         rows_computed=evaluate_table_formulas(hot_water_tanks_field_registry, body),
@@ -212,7 +221,11 @@ def extract_hot_water_tanks_diff_value(body: ProjectDocumentV1) -> dict[str, obj
         "single_select_options": {
             HOT_WATER_TANK_TYPE_OPTION_KEY: [
                 option.model_dump(mode="json") for option in body.single_select_options[HOT_WATER_TANK_TYPE_OPTION_KEY]
-            ]
+            ],
+            HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY: [
+                option.model_dump(mode="json")
+                for option in body.single_select_options[HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY]
+            ],
         },
     }
 
@@ -221,7 +234,10 @@ hot_water_tanks_field_registry = make_field_registry(
     field_keys=HOT_WATER_TANKS_BUILT_IN_FIELD_KEYS,
     table_path=_HOT_WATER_TANKS_TABLE_PATH,
     row_model=HotWaterTankRow,
-    built_in_option_key_by_field_key={"tank_type": HOT_WATER_TANK_TYPE_OPTION_KEY},
+    built_in_option_key_by_field_key={
+        "tank_type": HOT_WATER_TANK_TYPE_OPTION_KEY,
+        "inside_outside": HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY,
+    },
     built_in_formula_types=HOT_WATER_TANKS_TYPED_COLUMN_FORMULA_TYPES,
 )
 

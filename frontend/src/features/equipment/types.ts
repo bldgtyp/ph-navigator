@@ -292,15 +292,21 @@ export type HotWaterHeatersReplacePayload = {
 export const HOT_WATER_TANKS_TABLE_NAME = "hot_water_tanks";
 export const HOT_WATER_TANK_TYPE_KEY = "tank_type";
 export const HOT_WATER_TANK_TYPE_OPTION_KEY = "hot_water_tanks.type";
+export const HOT_WATER_TANK_INSIDE_OUTSIDE_KEY = "inside_outside";
+export const HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY = "hot_water_tanks.inside_outside";
 export const HOT_WATER_TANK_TYPE_COLUMN_ID = "tank_type";
 export const HOT_WATER_TANK_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
-export const HOT_WATER_TANK_OPTION_KEYS = [HOT_WATER_TANK_TYPE_OPTION_KEY] as const;
+export const HOT_WATER_TANK_OPTION_KEYS = [
+  HOT_WATER_TANK_TYPE_OPTION_KEY,
+  HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY,
+] as const;
 
 export type HotWaterTankOptionKey = (typeof HOT_WATER_TANK_OPTION_KEYS)[number];
 
 export type HotWaterTankRow = {
   id: string;
   tank_type: string | null;
+  inside_outside: string | null;
   url: string | null;
   notes: string | null;
   datasheet_asset_ids: string[];

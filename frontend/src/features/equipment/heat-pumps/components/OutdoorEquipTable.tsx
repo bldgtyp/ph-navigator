@@ -3,15 +3,20 @@ import {
   buildLinkedRecordOps,
   DataTable,
   type LinkedRecordCellOps,
-  type WriteOp,
 } from "../../../../shared/ui/data-table";
+import {
+  customFieldActionsForController,
+  type SliceTableController,
+} from "../../../../shared/ui/data-table/feature";
 import { useAssetUrls } from "../../../assets/hooks";
-import { useHeatPumpOptionMutation, useHeatPumpPatchMutation } from "../api";
+import { useHeatPumpOptionMutation } from "../api";
 import {
   buildEmptyOutdoorEquipRow,
   buildNewHeatPumpOption,
+  deleteHeatPumpRow,
   indoorEquipLabel,
-  numericValue,
+  insertHeatPumpRow,
+  replaceHeatPumpRow,
   sortedOutdoorEquip,
   sortedOutdoorUnits,
   uniqueTagForAdd,
@@ -21,25 +26,21 @@ import {
   indoorEquipIdsByOutdoorEquip,
   outdoorUnitIdsByOutdoorEquip,
 } from "../link-fields";
+import { outdoorEquipColumnDefs, outdoorEquipFieldDefs } from "../outdoor-equip-columns";
 import {
-  outdoorEquipColumnDefs,
-  outdoorEquipDefaultHiddenColumns,
-  outdoorEquipFieldDefs,
-} from "../outdoor-equip-columns";
-import {
-  HEAT_PUMP_OWNED_OPTION_KEYS,
   HEAT_PUMP_OPTION_KEYS,
-  HEAT_PUMP_OUTDOOR_EQUIP_TABLE_NAME,
+  type HeatPumpOutdoorEquipSlice,
   type HeatPumpOutdoorEquipRow,
+  type HeatPumpOutdoorUnitsSlice,
   type HeatPumpOutdoorUnitRow,
   type HeatPumpOwnedOptionKey,
   type HeatPumpsSlice,
 } from "../types";
-import { useHeatPumpTableViewState } from "../useHeatPumpTableViewState";
 import { addRowButton } from "../../routes/equipmentRowActions";
 import { OutdoorEquipRowModal } from "./OutdoorEquipRowModal";
 import { OutdoorUnitRowModal } from "./OutdoorUnitRowModal";
 import { PhiusExportDialog } from "./PhiusExportDialog";
+import { appendComputedFieldDefs, heatPumpColumnsWithCustomFields } from "./heatPumpCustomColumns";
 
 type ModalState =
   | { kind: "outdoor"; mode: "add" | "edit"; row: HeatPumpOutdoorEquipRow }
@@ -50,18 +51,21 @@ export function OutdoorEquipTable({
   projectId,
   btNumber,
   slice,
-  isEditor,
-  versionLocked,
+  leafSlice,
+  controller,
+  outdoorUnitsController,
 }: {
   projectId: string;
   btNumber: string;
   slice: HeatPumpsSlice;
-  isEditor: boolean;
-  versionLocked: boolean;
+  leafSlice: HeatPumpOutdoorEquipSlice;
+  controller: SliceTableController<HeatPumpOutdoorEquipSlice>;
+  outdoorUnitsController: SliceTableController<HeatPumpOutdoorUnitsSlice>;
+  isEditor?: boolean;
+  versionLocked?: boolean;
 }) {
   const [modal, setModal] = useState<ModalState>(null);
   const [phiusDialogOpen, setPhiusDialogOpen] = useState(false);
-  const patchMutation = useHeatPumpPatchMutation(projectId);
   const optionMutation = useHeatPumpOptionMutation(projectId);
   const rows = useMemo(() => sortedOutdoorEquip(slice.outdoor_equip), [slice.outdoor_equip]);
   const outdoorUnits = useMemo(
@@ -110,7 +114,7 @@ export function OutdoorEquipTable({
     () => new Map((assetUrls.data ?? []).map((item) => [item.asset_id, item])),
     [assetUrls.data],
   );
-  const readOnly = !isEditor || versionLocked;
+  const readOnly = !controller.canEdit;
   const openOutdoorUnitLink = useCallback(
     (unitId: string) => {
       const row = slice.outdoor_units.find((candidate) => candidate.id === unitId);
@@ -118,45 +122,42 @@ export function OutdoorEquipTable({
     },
     [slice.outdoor_units],
   );
-  const columns = useMemo(
+  const fieldDefs = useMemo(
     () =>
-      outdoorEquipColumnDefs({
+      appendComputedFieldDefs(
+        controller.tableSchema.fieldDefs,
+        outdoorEquipFieldDefs({ options: slice.single_select_options }),
+      ),
+    [controller.tableSchema.fieldDefs, slice.single_select_options],
+  );
+  const tableSchema = controller.tableSchema;
+  const columns = useMemo(() => {
+    return heatPumpColumnsWithCustomFields({
+      builtInColumns: outdoorEquipColumnDefs({
         projectId,
         isEditor: !readOnly,
         assetUrlById,
         onDatasheetChange: async (row, next) => {
-          await patchMutation.mutateAsync({
-            current: slice,
-            table: "outdoor-equip",
-            patch: {
-              op: "replace",
-              path: `/${row.id}`,
-              value: { ...row, datasheet_asset_ids: next },
-            },
-          });
+          await replaceHeatPumpRow(controller.onWrite, { ...row, datasheet_asset_ids: next });
         },
         outdoorUnits,
         incomingOutdoorUnitIdsByRowId,
         pairedIndoorEquipLabelsByRowId,
       }),
-    [
-      assetUrlById,
-      incomingOutdoorUnitIdsByRowId,
-      outdoorUnits,
-      pairedIndoorEquipLabelsByRowId,
-      patchMutation,
-      projectId,
-      readOnly,
-      slice,
-    ],
-  );
-  const fieldDefs = useMemo(
-    () =>
-      outdoorEquipFieldDefs({
-        options: slice.single_select_options,
-      }),
-    [slice.single_select_options],
-  );
+      tableSchema,
+      rowsComputed: leafSlice.rows_computed,
+    });
+  }, [
+    assetUrlById,
+    controller.onWrite,
+    incomingOutdoorUnitIdsByRowId,
+    leafSlice.rows_computed,
+    outdoorUnits,
+    pairedIndoorEquipLabelsByRowId,
+    projectId,
+    readOnly,
+    tableSchema,
+  ]);
   const linkedRecordOps = useMemo<ReadonlyMap<string, LinkedRecordCellOps>>(
     () =>
       buildLinkedRecordOps<HeatPumpOutdoorUnitRow>({
@@ -169,19 +170,11 @@ export function OutdoorEquipTable({
       }),
     [fieldDefs, openOutdoorUnitLink, outdoorUnits],
   );
-  const tableView = useHeatPumpTableViewState({
-    projectId,
-    tableKey: HEAT_PUMP_OUTDOOR_EQUIP_TABLE_NAME,
-    isEditor,
-    columns,
-    fieldDefs,
-    sort: [{ fieldKey: "tag", direction: "asc" }],
-    hiddenColumns: outdoorEquipDefaultHiddenColumns,
-  });
+  const tableView = controller;
 
   /**
    * Persists a new option onto one of the heat-pumps-owned single-select lists.
-   * Returns the new option id so the caller (modal `OptionPicker`, or the grid
+   * Returns the new option id so the caller (modal field, or the grid
    * cell-write below) can update the row reference in the same draft cycle.
    */
   async function createOption(optionKey: HeatPumpOwnedOptionKey, label: string): Promise<string> {
@@ -197,104 +190,28 @@ export function OutdoorEquipTable({
 
   async function addOutdoorRow(row: HeatPumpOutdoorEquipRow) {
     const tag = uniqueTagForAdd(row.tag, slice.outdoor_equip);
-    await patchMutation.mutateAsync({
-      current: slice,
-      table: "outdoor-equip",
-      patch: { op: "add", path: "/-", value: { ...row, tag } },
-    });
+    await insertHeatPumpRow(controller.onWrite, { ...row, tag });
     setModal(null);
   }
 
   async function replaceOutdoorRow(row: HeatPumpOutdoorEquipRow) {
-    await patchMutation.mutateAsync({
-      current: slice,
-      table: "outdoor-equip",
-      patch: { op: "replace", path: `/${row.id}`, value: row },
-    });
+    await replaceHeatPumpRow(controller.onWrite, row);
     setModal(null);
   }
 
   async function replaceOutdoorUnit(row: HeatPumpOutdoorUnitRow) {
-    await patchMutation.mutateAsync({
-      current: slice,
-      table: "outdoor-units",
-      patch: { op: "replace", path: `/${row.id}`, value: row },
-    });
+    await replaceHeatPumpRow(outdoorUnitsController.onWrite, row);
     setModal(null);
   }
 
   async function deleteOutdoorRow(row: HeatPumpOutdoorEquipRow) {
-    await patchMutation.mutateAsync({
-      current: slice,
-      table: "outdoor-equip",
-      patch: { op: "remove", path: `/${row.id}` },
-    });
+    await deleteHeatPumpRow(controller.onWrite, row);
     setModal(null);
-  }
-
-  async function handleWrite(op: WriteOp) {
-    if (readOnly) return;
-    if (op.kind === "cell" || op.kind === "fill") {
-      // Each mutation increments the draft etag, so subsequent calls must
-      // re-read the freshest slice from the query cache or the next PATCH
-      // will fail with a 409 on the If-Match draft etag check.
-      let latest = slice;
-      // The popover may have minted a new option as part of the same commit
-      // (e.g. user typed "Daikin" into an empty Manufacturer cell). Persist
-      // those options BEFORE the row write so the row's option reference is
-      // always valid against the document. `newOptions` is only set on cell
-      // ops — fill ops never produce new options.
-      if (op.kind === "cell" && op.newOptions) {
-        for (const [fieldKey, created] of Object.entries(op.newOptions)) {
-          const optionKey = OUTDOOR_FIELD_TO_OPTION_KEY[fieldKey];
-          if (!optionKey) continue;
-          for (const option of created) {
-            latest = await optionMutation.mutateAsync({
-              current: latest,
-              optionKey,
-              patch: { op: "add", option },
-            });
-          }
-        }
-      }
-      for (const write of op.writes) {
-        const row = latest.outdoor_equip.find((candidate) => candidate.id === write.rowId);
-        if (!row) continue;
-        const next = await patchMutation.mutateAsync({
-          current: latest,
-          table: "outdoor-equip",
-          patch: {
-            op: "replace",
-            path: `/${row.id}`,
-            value: { ...row, [write.fieldKey]: coerceCellValue(write.fieldKey, write.value) },
-          },
-        });
-        latest = next;
-      }
-      return;
-    }
-    if (op.kind === "rowDelete") {
-      for (const deleted of op.rows) {
-        const row = slice.outdoor_equip.find((candidate) => candidate.id === deleted.rowId);
-        if (row) await deleteOutdoorRow(row);
-      }
-      return;
-    }
-    if (op.kind === "rowInsert") {
-      for (const inserted of op.rows) {
-        await addOutdoorRow(
-          buildEmptyOutdoorEquipRow({
-            id: inserted.rowId,
-            tag: String(inserted.fieldDefaults.tag ?? "OE"),
-          }),
-        );
-      }
-    }
   }
 
   return (
     <>
-      {tableView.isLoading ? (
+      {tableView.viewLoading ? (
         <p className="form-note">Loading table view...</p>
       ) : (
         <DataTable
@@ -304,8 +221,8 @@ export function OutdoorEquipTable({
           columnDefs={columns}
           view={tableView.view}
           onViewChange={tableView.onViewChange}
-          onResetView={tableView.reset}
-          onWrite={handleWrite}
+          onResetView={tableView.onResetView}
+          onWrite={controller.onWrite}
           readOnly={readOnly}
           linkedRecordOps={linkedRecordOps}
           emptyMessage="No heat-pump outdoor equipment yet."
@@ -326,6 +243,7 @@ export function OutdoorEquipTable({
               Export to Phius HP Estimator...
             </button>
           }
+          {...customFieldActionsForController(controller)}
         />
       )}
       {phiusDialogOpen ? (
@@ -363,38 +281,3 @@ export function OutdoorEquipTable({
     </>
   );
 }
-
-function coerceCellValue(fieldKey: string, value: unknown): unknown {
-  if (NUMERIC_FIELDS.has(fieldKey)) return numericValue(value);
-  if (value === "") return null;
-  return value;
-}
-
-/**
- * Maps an outdoor-equip cell's fieldKey to the option-list key whose `add` op
- * persists a popover-minted option. Used by `handleWrite` to translate the
- * DataTable's `newOptions` payload into a heat-pump options-endpoint write.
- * Keys NOT in this map (e.g. lookup fields and the `cops`/`hspf2` literal
- * columns) ignore `newOptions` entries — those cells don't support inline-
- * create.
- */
-const OUTDOOR_FIELD_TO_OPTION_KEY: Record<string, (typeof HEAT_PUMP_OWNED_OPTION_KEYS)[number]> = {
-  manufacturer: "heat_pumps.manufacturer",
-  system_family: "heat_pumps.system_family",
-  refrigerant: "heat_pumps.refrigerant",
-};
-
-const NUMERIC_FIELDS = new Set([
-  "heating_cap_kw_17f",
-  "heating_cap_kw_47f",
-  "heating_cop_17f",
-  "heating_cop_47f",
-  "hspf2",
-  "hspf",
-  "cooling_cap_kw_95f",
-  "eer2",
-  "seer2",
-  "ieer",
-  "eer",
-  "seer",
-]);

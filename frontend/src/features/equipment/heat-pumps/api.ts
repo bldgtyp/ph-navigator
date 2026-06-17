@@ -3,9 +3,18 @@ import { fetchJson } from "../../../shared/api/client";
 import { projectDocumentQueryKeys } from "../../project_document/query-keys";
 import { draftWriteHeaders } from "../../project_document/table-slice";
 import { markLocalDraftTouched } from "../../project_document/lib";
+import { createTableSliceFeature } from "../../project_document/table-slice";
 import type {
   CascadePreview,
+  HeatPumpIndoorEquipReplacePayload,
+  HeatPumpIndoorEquipSlice,
+  HeatPumpIndoorUnitsReplacePayload,
+  HeatPumpIndoorUnitsSlice,
   HeatPumpOptionPatchOp,
+  HeatPumpOutdoorEquipReplacePayload,
+  HeatPumpOutdoorEquipSlice,
+  HeatPumpOutdoorUnitsReplacePayload,
+  HeatPumpOutdoorUnitsSlice,
   HeatPumpOwnedOptionKey,
   HeatPumpPatchOp,
   HeatPumpTableKey,
@@ -13,6 +22,40 @@ import type {
   HeatPumpsSlice,
   PhiusExportResponse,
 } from "./types";
+
+export const heatPumpOutdoorEquipSliceFeature = createTableSliceFeature<
+  HeatPumpOutdoorEquipSlice,
+  HeatPumpOutdoorEquipReplacePayload
+>({
+  tableName: "heat_pumps_outdoor_equip",
+  missingVersionMessage:
+    "Cannot update Heat Pump outdoor equipment without an active project version.",
+});
+
+export const heatPumpIndoorEquipSliceFeature = createTableSliceFeature<
+  HeatPumpIndoorEquipSlice,
+  HeatPumpIndoorEquipReplacePayload
+>({
+  tableName: "heat_pumps_indoor_equip",
+  missingVersionMessage:
+    "Cannot update Heat Pump indoor equipment without an active project version.",
+});
+
+export const heatPumpOutdoorUnitsSliceFeature = createTableSliceFeature<
+  HeatPumpOutdoorUnitsSlice,
+  HeatPumpOutdoorUnitsReplacePayload
+>({
+  tableName: "heat_pumps_outdoor_units",
+  missingVersionMessage: "Cannot update Heat Pump outdoor units without an active project version.",
+});
+
+export const heatPumpIndoorUnitsSliceFeature = createTableSliceFeature<
+  HeatPumpIndoorUnitsSlice,
+  HeatPumpIndoorUnitsReplacePayload
+>({
+  tableName: "heat_pumps_indoor_units",
+  missingVersionMessage: "Cannot update Heat Pump indoor units without an active project version.",
+});
 
 export const heatPumpsQueryKeys = {
   all: (projectId: string) => ["projects", projectId, "equipment", "heat-pumps"] as const,

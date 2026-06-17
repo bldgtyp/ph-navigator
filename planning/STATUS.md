@@ -1,7 +1,7 @@
 # Planning Status
 
-DATE: 2026-06-16
-TIME: 13:05 EDT
+DATE: 2026-06-17
+TIME: 14:45 EDT
 STATUS: Active routing index for tracked planning material.
 AUTHOR: Codex
 SCOPE: Current planning folder organization after moving dated docs to
@@ -19,6 +19,8 @@ feature-first planning.
 | CSS Token Guard Sweep | Complete / implemented on main worktree with format + CI evidence; archived | `archive/css-token-guard-sweep/STATUS.md` |
 | Heat Pump Link Fields | Complete / implemented on main with format, CI, graphify update, browser smoke evidence; archived | `archive/heat-pump-link-fields/STATUS.md` |
 | Spaces Refactor | Complete / Phase 05 verified with format, CI, browser smoke, graphify, simplify, and docs-pass evidence; archived | `archive/spaces-refactor/STATUS.md` |
+| DataTable Consolidation | Complete / Phase 06 verified with format, CI, browser smoke, graphify, simplify, and docs-pass evidence; archived | `archive/data-table-consolidation/STATUS.md` |
+| DataTable Maintenance | Active / cleanup outline extracted from DataTable Consolidation archive closeout | `features/data-table-maintenance/STATUS.md` |
 
 ## Historical Material
 
@@ -34,6 +36,10 @@ feature-first planning.
   `archive/heat-pump-link-fields/`.
 - Completed Spaces Refactor planning now lives under
   `archive/spaces-refactor/`.
+- Completed DataTable Consolidation planning now lives under
+  `archive/data-table-consolidation/`.
+- DataTable Consolidation's non-blocking cleanup items now live under
+  `features/data-table-maintenance/`.
 - Completed Attachments (v1) planning now lives under
   `archive/attachments/`. The stable implementation contract remains
   current in `context/technical-requirements/attachments.md`; the

@@ -1,7 +1,10 @@
 import { useMemo } from "react";
 import {
   DataTable,
+  DATA_TABLE_COLUMN_WIDTHS,
   RECORD_ID_FIELD_KEY,
+  identifierColumn,
+  linkColumn,
   type DataTableColumnDef,
   type DataTableProps,
   type TableSchema,
@@ -68,16 +71,12 @@ export function ElectricHeatersTable({
         fieldKey: RECORD_ID_FIELD_KEY,
         header: fieldDefByKey.get(RECORD_ID_FIELD_KEY)?.display_name ?? "Tag",
         accessor: (heater) => customTextValue(heater, RECORD_ID_FIELD_KEY),
-        defaultWidth: 100,
+        defaultWidth: DATA_TABLE_COLUMN_WIDTHS.recordId,
       },
-      {
-        id: "name",
-        fieldKey: "name",
-        header: fieldDefByKey.get("name")?.display_name ?? "Display Name",
+      identifierColumn({
+        fieldDefByKey,
         accessor: (heater) => customTextValue(heater, "name"),
-        defaultWidth: 180,
-        isIdentifier: true,
-      },
+      }),
       {
         id: "model",
         fieldKey: "model",
@@ -100,31 +99,17 @@ export function ElectricHeatersTable({
         defaultWidth: 100,
         className: "numeric-cell",
       },
-      {
+      linkColumn({
         id: "url",
-        fieldKey: "url",
         header: fieldDefByKey.get("url")?.display_name ?? "URL",
-        accessor: (heater) => heater.url,
-        render: (heater) =>
-          heater.url ? (
-            <a
-              href={heater.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="data-table-link-cell"
-            >
-              {shortenUrl(heater.url)}
-            </a>
-          ) : null,
-        measureText: (heater) => heater.url ?? "",
-        defaultWidth: 180,
-      },
+        getValue: (heater) => heater.url,
+      }),
       {
         id: "notes",
         fieldKey: "notes",
         header: fieldDefByKey.get("notes")?.display_name ?? "Notes",
         accessor: (heater) => heater.notes,
-        defaultWidth: 280,
+        defaultWidth: DATA_TABLE_COLUMN_WIDTHS.notes,
       },
       ...customColumns,
     ],
@@ -153,13 +138,4 @@ export function ElectricHeatersTable({
       {...customFieldActions}
     />
   );
-}
-
-function shortenUrl(value: string): string {
-  try {
-    const url = new URL(value);
-    return `${url.hostname}${url.pathname === "/" ? "" : url.pathname}`;
-  } catch {
-    return value;
-  }
 }
