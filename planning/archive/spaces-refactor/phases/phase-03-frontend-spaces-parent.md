@@ -6,7 +6,7 @@ AUTHOR: Ed (via Codex)
 SCOPE: Frontend routing/navigation refactor from Rooms top-level tab to
   Spaces parent with sub-tabs.
 RELATED:
-  - planning/features/spaces-refactor/PRD.md
+  - planning/archive/spaces-refactor/PRD.md
   - frontend/src/features/projects/lib.ts
   - frontend/src/features/projects/components/ProjectTabContent.tsx
   - frontend/src/app/router.tsx

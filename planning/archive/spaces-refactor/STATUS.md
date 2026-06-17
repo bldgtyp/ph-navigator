@@ -1,20 +1,20 @@
 ---
 DATE: 2026-06-16
 TIME: 17:34 EDT
-STATUS: Complete - Phase 05 verified; ready for review/archive
+STATUS: Complete - implemented, verified, archived
 AUTHOR: Ed (via Codex)
 SCOPE: Current state of Spaces refactor planning.
 RELATED:
-  - planning/features/spaces-refactor/README.md
-  - planning/features/spaces-refactor/PRD.md
-  - planning/features/spaces-refactor/PLAN.md
+  - planning/archive/spaces-refactor/README.md
+  - planning/archive/spaces-refactor/PRD.md
+  - planning/archive/spaces-refactor/PLAN.md
 ---
 
 # Spaces Refactor - Status
 
 ## Current State
 
-`Complete - Phase 05 verified; ready for review/archive`.
+`Complete - implemented, verified, archived`.
 
 Phase 01 backend work is implemented and verified:
 
@@ -64,13 +64,13 @@ Phase 04 frontend table/link UI work is implemented:
 
 ## Next Step
 
-Review and archive the completed feature folder when ready:
+No active implementation work remains. This planning packet is archived:
 
-`planning/features/spaces-refactor/`
+`planning/archive/spaces-refactor/`
 
 ## Blockers
 
-None for starting Phase 01.
+None.
 
 ## Decisions Recorded
 
@@ -142,6 +142,10 @@ None for starting Phase 01.
   `make ci`, browser smoke, `graphify update .`, `$ simplify`, and
   `$ docs-pass` all completed. Stable docs now match the implemented
   Spaces route/table/link contract.
+- 2026-06-17: Planning packet archived from
+  `planning/features/spaces-refactor/` to
+  `planning/archive/spaces-refactor/` after all phases were confirmed
+  complete.
 
 ## Phase 05 Verification
 

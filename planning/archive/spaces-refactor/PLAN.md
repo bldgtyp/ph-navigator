@@ -1,20 +1,26 @@
 ---
 DATE: 2026-06-16
 TIME: 15:59 EDT
-STATUS: Active - phased implementation plan
+STATUS: Complete - archived
 AUTHOR: Ed (via Codex)
 SCOPE: Implementation sequence for Spaces, Space-Types, Rooms link field,
   reverse-link UI, and closeout.
 RELATED:
-  - planning/features/spaces-refactor/PRD.md
-  - planning/features/spaces-refactor/phases/phase-01-backend-space-types-table.md
-  - planning/features/spaces-refactor/phases/phase-02-rooms-space-type-link.md
-  - planning/features/spaces-refactor/phases/phase-03-frontend-spaces-parent.md
-  - planning/features/spaces-refactor/phases/phase-04-frontend-table-link-ui.md
-  - planning/features/spaces-refactor/phases/phase-05-verification-docs-closeout.md
+  - planning/archive/spaces-refactor/PRD.md
+  - planning/archive/spaces-refactor/phases/phase-01-backend-space-types-table.md
+  - planning/archive/spaces-refactor/phases/phase-02-rooms-space-type-link.md
+  - planning/archive/spaces-refactor/phases/phase-03-frontend-spaces-parent.md
+  - planning/archive/spaces-refactor/phases/phase-04-frontend-table-link-ui.md
+  - planning/archive/spaces-refactor/phases/phase-05-verification-docs-closeout.md
 ---
 
 # Spaces Refactor - Plan
+
+## Archive State
+
+Implemented and verified through Phase 05, then archived on 2026-06-17.
+This plan is historical; current durable behavior lives in `context/`
+and the implementation.
 
 ## Existing Precedents
 

@@ -6,7 +6,7 @@ AUTHOR: Ed (via Codex)
 SCOPE: Backend Rooms single-link FieldDef to Space-Types plus inverse
   Rooms link overlay on Space-Types.
 RELATED:
-  - planning/features/spaces-refactor/PRD.md
+  - planning/archive/spaces-refactor/PRD.md
   - backend/features/project_document/tables/rooms.py
   - backend/features/project_document/inverse_view.py
   - backend/tests/test_project_document_record_linking_rollups.py

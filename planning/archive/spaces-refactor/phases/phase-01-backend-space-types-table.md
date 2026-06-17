@@ -6,7 +6,7 @@ AUTHOR: Ed (via Codex)
 SCOPE: Backend document schema and registered table-slice support for
   the new Space-Types table.
 RELATED:
-  - planning/features/spaces-refactor/PRD.md
+  - planning/archive/spaces-refactor/PRD.md
   - backend/features/project_document/document.py
   - backend/features/project_document/rows.py
   - backend/features/project_document/tables/registry.py

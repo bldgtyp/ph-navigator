@@ -6,7 +6,7 @@ AUTHOR: Ed (via Codex)
 SCOPE: Space-Types DataTable UI, Rooms single-link picker, and reverse
   Rooms link rendering.
 RELATED:
-  - planning/features/spaces-refactor/PRD.md
+  - planning/archive/spaces-refactor/PRD.md
   - frontend/src/features/equipment/components/RoomsTableSlot.tsx
   - frontend/src/features/equipment/routes/RoomsPage.tsx
   - frontend/src/shared/ui/data-table
