@@ -162,7 +162,7 @@ export function outdoorEquipColumnDefs({
       id: "paired_indoor_equip_id",
       fieldKey: "paired_indoor_equip_id",
       header: "Paired indoor equip",
-      accessor: (row) => pairedIndoorEquipLabelsByRowId.get(row.id) ?? [],
+      accessor: (row) => (pairedIndoorEquipLabelsByRowId.get(row.id) ?? []).join(", "),
       measureText: (row) => (pairedIndoorEquipLabelsByRowId.get(row.id) ?? []).join(", "),
       defaultWidth: 190,
     },

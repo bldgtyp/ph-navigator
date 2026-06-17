@@ -1,17 +1,17 @@
-import { useMemo, type CSSProperties } from "react";
+import { useMemo } from "react";
 import {
   DataTable,
+  DATA_TABLE_COLUMN_WIDTHS,
   RECORD_ID_FIELD_KEY,
+  attachmentColumn,
+  identifierColumn,
   type DataTableColumnDef,
   type DataTableProps,
-  type FieldDef,
   type TableSchema,
   type ViewState,
 } from "../../../shared/ui/data-table";
-import { singleSelectOption } from "../../../shared/ui/data-table/lib";
 import { AttachmentCell } from "../components/AttachmentCell";
 import { useAssetUrls } from "../hooks";
-import { sameAttachmentAssetIds } from "../lib";
 import {
   customFieldColumnDefs,
   type CustomFieldTableActions,
@@ -83,16 +83,13 @@ export function ThermalBridgesTable({
         fieldKey: RECORD_ID_FIELD_KEY,
         header: fieldDefByKey.get(RECORD_ID_FIELD_KEY)?.display_name ?? "Tag",
         accessor: (row) => customTextValue(row, RECORD_ID_FIELD_KEY),
-        defaultWidth: 100,
+        defaultWidth: DATA_TABLE_COLUMN_WIDTHS.recordId,
       },
-      {
-        id: "name",
-        fieldKey: "name",
-        header: fieldDefByKey.get("name")?.display_name ?? "Display Name",
+      identifierColumn({
+        fieldDefByKey,
         accessor: (row) => customTextValue(row, "name"),
         defaultWidth: 190,
-        isIdentifier: true,
-      },
+      }),
       {
         id: "sheet_name",
         fieldKey: "sheet_name",
@@ -128,46 +125,28 @@ export function ThermalBridgesTable({
         fieldKey: THERMAL_BRIDGE_TYPE_KEY,
         header: fieldDefByKey.get(THERMAL_BRIDGE_TYPE_KEY)?.display_name ?? "Type",
         accessor: (row) => row.thermal_bridge_type,
-        render: (row) =>
-          optionPill(row.thermal_bridge_type, fieldDefByKey.get(THERMAL_BRIDGE_TYPE_KEY)),
         defaultWidth: 150,
       },
-      {
+      attachmentColumn({
         id: THERMAL_BRIDGE_PDF_REPORT_FIELD_KEY,
         fieldKey: THERMAL_BRIDGE_PDF_REPORT_FIELD_KEY,
         header: "PDF Report",
-        accessor: (row) => row.pdf_report_asset_ids.join(","),
-        render: (row) => (
-          <AttachmentCell
-            projectId={projectId}
-            value={row.pdf_report_asset_ids}
-            config={PDF_REPORT_ATTACHMENT_CONFIG}
-            readOnly={!isEditor}
-            assetUrlById={reportUrlById}
-            onChange={(next) => {
-              if (sameAttachmentAssetIds(row.pdf_report_asset_ids, next)) return;
-              return onWrite({
-                kind: "cell",
-                writes: [
-                  {
-                    rowId: row.id,
-                    fieldKey: THERMAL_BRIDGE_PDF_REPORT_FIELD_KEY,
-                    value: next,
-                  },
-                ],
-              });
-            }}
-          />
-        ),
-        measureText: (row) => `${row.pdf_report_asset_ids.length} PDF reports`,
-        defaultWidth: 260,
-      },
+        projectId,
+        isEditor,
+        assetUrlById: reportUrlById,
+        config: PDF_REPORT_ATTACHMENT_CONFIG,
+        AttachmentCell,
+        getAssetIds: (row) => row.pdf_report_asset_ids,
+        getRowId: (row) => row.id,
+        onWrite,
+        measureLabel: "PDF reports",
+      }),
       {
         id: "notes",
         fieldKey: "notes",
         header: fieldDefByKey.get("notes")?.display_name ?? "Notes",
         accessor: (row) => row.notes,
-        defaultWidth: 280,
+        defaultWidth: DATA_TABLE_COLUMN_WIDTHS.notes,
       },
       ...customColumns,
     ],
@@ -194,21 +173,5 @@ export function ThermalBridgesTable({
       onResetView={onResetView}
       {...customFieldActions}
     />
-  );
-}
-
-function optionPill(value: string | null, fieldDef: FieldDef | undefined) {
-  const option = singleSelectOption(value, fieldDef);
-  const label = value ? (option?.label ?? "Missing option") : "Unassigned";
-  const applyColor = option && fieldDef?.colorCodeOptions !== false;
-  return (
-    <span
-      className={
-        option ? "single-select-pill" : value ? "single-select-pill missing" : "muted-cell"
-      }
-      style={applyColor ? ({ "--option-color": option.color } as CSSProperties) : undefined}
-    >
-      {label}
-    </span>
   );
 }

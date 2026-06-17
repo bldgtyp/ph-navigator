@@ -310,12 +310,16 @@ def apply_rooms_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectD
             )
             if any(rid in removed_ids for rid in row.served_room_ids)
             else row
-            for row in heat_pumps.indoor_units
+            for row in heat_pumps.indoor_units.rows
         ]
-        if cascaded_indoor_units != list(heat_pumps.indoor_units):
+        if cascaded_indoor_units != list(heat_pumps.indoor_units.rows):
             next_equipment = next_tables.equipment.model_copy(
                 update={
-                    "heat_pumps": heat_pumps.model_copy(update={"indoor_units": cascaded_indoor_units}),
+                    "heat_pumps": heat_pumps.model_copy(
+                        update={
+                            "indoor_units": heat_pumps.indoor_units.model_copy(update={"rows": cascaded_indoor_units})
+                        }
+                    ),
                 }
             )
             next_tables = next_tables.model_copy(update={"equipment": next_equipment})

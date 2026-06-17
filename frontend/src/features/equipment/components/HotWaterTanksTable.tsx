@@ -1,17 +1,19 @@
-import { useMemo, type CSSProperties } from "react";
+import { useMemo } from "react";
 import {
   DataTable,
+  DATA_TABLE_COLUMN_WIDTHS,
   RECORD_ID_FIELD_KEY,
+  attachmentColumn,
+  identifierColumn,
+  linkColumn,
   type DataTableColumnDef,
   type DataTableProps,
-  type FieldDef,
   type TableSchema,
   type ViewState,
 } from "../../../shared/ui/data-table";
-import { singleSelectOption } from "../../../shared/ui/data-table/lib";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { useAssetUrls } from "../../assets/hooks";
-import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
+import { DATASHEET_ATTACHMENT_CONFIG } from "../../assets/lib";
 import { sortedHotWaterTanks } from "../lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
 import {
@@ -20,6 +22,7 @@ import {
 } from "../../../shared/ui/data-table/feature";
 import {
   HOT_WATER_TANK_DATASHEET_FIELD_KEY,
+  HOT_WATER_TANK_INSIDE_OUTSIDE_KEY,
   HOT_WATER_TANK_TYPE_COLUMN_ID,
   HOT_WATER_TANK_TYPE_KEY,
   type HotWaterTankRow,
@@ -90,16 +93,12 @@ export function HotWaterTanksTable({
         fieldKey: RECORD_ID_FIELD_KEY,
         header: fieldDefByKey.get(RECORD_ID_FIELD_KEY)?.display_name ?? "Tag",
         accessor: (tank) => customTextValue(tank, RECORD_ID_FIELD_KEY),
-        defaultWidth: 100,
+        defaultWidth: DATA_TABLE_COLUMN_WIDTHS.recordId,
       },
-      {
-        id: "name",
-        fieldKey: "name",
-        header: fieldDefByKey.get("name")?.display_name ?? "Display Name",
+      identifierColumn({
+        fieldDefByKey,
         accessor: (tank) => customTextValue(tank, "name"),
-        defaultWidth: 180,
-        isIdentifier: true,
-      },
+      }),
       {
         id: "quantity",
         fieldKey: "quantity",
@@ -113,14 +112,14 @@ export function HotWaterTanksTable({
         fieldKey: HOT_WATER_TANK_TYPE_KEY,
         header: fieldDefByKey.get(HOT_WATER_TANK_TYPE_KEY)?.display_name ?? "Type",
         accessor: (tank) => tank.tank_type,
-        render: (tank) => optionPill(tank.tank_type, fieldDefByKey.get(HOT_WATER_TANK_TYPE_KEY)),
         defaultWidth: 170,
       },
       {
-        id: "inside_outside",
-        fieldKey: "inside_outside",
-        header: fieldDefByKey.get("inside_outside")?.display_name ?? "Inside / Outside",
-        accessor: (tank) => customTextValue(tank, "inside_outside"),
+        id: HOT_WATER_TANK_INSIDE_OUTSIDE_KEY,
+        fieldKey: HOT_WATER_TANK_INSIDE_OUTSIDE_KEY,
+        header:
+          fieldDefByKey.get(HOT_WATER_TANK_INSIDE_OUTSIDE_KEY)?.display_name ?? "Inside / Outside",
+        accessor: (tank) => tank.inside_outside,
         defaultWidth: 150,
       },
       {
@@ -153,57 +152,30 @@ export function HotWaterTanksTable({
         defaultWidth: 150,
         className: "numeric-cell",
       },
-      {
+      attachmentColumn({
         id: HOT_WATER_TANK_DATASHEET_FIELD_KEY,
         fieldKey: HOT_WATER_TANK_DATASHEET_FIELD_KEY,
         header: fieldDefByKey.get(HOT_WATER_TANK_DATASHEET_FIELD_KEY)?.display_name ?? "Datasheet",
-        accessor: (tank) => tank.datasheet_asset_ids.join(","),
-        render: (tank) => (
-          <AttachmentCell
-            projectId={projectId}
-            value={tank.datasheet_asset_ids}
-            config={DATASHEET_ATTACHMENT_CONFIG}
-            readOnly={!isEditor}
-            assetUrlById={datasheetUrlById}
-            onChange={(next) => {
-              if (sameAttachmentAssetIds(tank.datasheet_asset_ids, next)) return;
-              return onWrite({
-                kind: "cell",
-                writes: [
-                  { rowId: tank.id, fieldKey: HOT_WATER_TANK_DATASHEET_FIELD_KEY, value: next },
-                ],
-              });
-            }}
-          />
-        ),
-        measureText: (tank) => `${tank.datasheet_asset_ids.length} attachments`,
-        defaultWidth: 260,
-      },
-      {
+        projectId,
+        isEditor,
+        assetUrlById: datasheetUrlById,
+        config: DATASHEET_ATTACHMENT_CONFIG,
+        AttachmentCell,
+        getAssetIds: (tank) => tank.datasheet_asset_ids,
+        getRowId: (tank) => tank.id,
+        onWrite,
+      }),
+      linkColumn({
         id: "url",
-        fieldKey: "url",
         header: fieldDefByKey.get("url")?.display_name ?? "URL",
-        accessor: (tank) => tank.url,
-        render: (tank) =>
-          tank.url ? (
-            <a
-              href={tank.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="data-table-link-cell"
-            >
-              {shortenUrl(tank.url)}
-            </a>
-          ) : null,
-        measureText: (tank) => tank.url ?? "",
-        defaultWidth: 180,
-      },
+        getValue: (tank) => tank.url,
+      }),
       {
         id: "notes",
         fieldKey: "notes",
         header: fieldDefByKey.get("notes")?.display_name ?? "Notes",
         accessor: (tank) => tank.notes,
-        defaultWidth: 280,
+        defaultWidth: DATA_TABLE_COLUMN_WIDTHS.notes,
       },
       ...customColumns,
     ],
@@ -232,29 +204,4 @@ export function HotWaterTanksTable({
       {...customFieldActions}
     />
   );
-}
-
-function optionPill(value: string | null, fieldDef: FieldDef | undefined) {
-  const option = singleSelectOption(value, fieldDef);
-  const label = value ? (option?.label ?? "Missing option") : "Unassigned";
-  const applyColor = option && fieldDef?.colorCodeOptions !== false;
-  return (
-    <span
-      className={
-        option ? "single-select-pill" : value ? "single-select-pill missing" : "muted-cell"
-      }
-      style={applyColor ? ({ "--option-color": option.color } as CSSProperties) : undefined}
-    >
-      {label}
-    </span>
-  );
-}
-
-function shortenUrl(value: string): string {
-  try {
-    const url = new URL(value);
-    return `${url.hostname}${url.pathname === "/" ? "" : url.pathname}`;
-  } catch {
-    return value;
-  }
 }

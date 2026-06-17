@@ -42,19 +42,19 @@ def _document_with_pump_datasheets() -> ProjectDocumentV1:
     return ProjectDocumentV1.model_validate(raw)
 
 
-def test_equipment_pumps_datasheet_field_is_registered() -> None:
-    field = get_attachment_field("equipment_pumps", "datasheet_asset_ids")
+def test_pumps_datasheet_field_is_registered() -> None:
+    field = get_attachment_field("pumps", "datasheet_asset_ids")
 
     assert field is not None
-    assert field.key == "equipment_pumps.datasheet_asset_ids"
+    assert field.key == "pumps.datasheet_asset_ids"
     assert field.asset_kinds == frozenset({"datasheet"})
     assert field.allowed_content_types == frozenset({"application/pdf", "image/png", "image/jpeg", "image/webp"})
     assert field.max_count == 5
     assert field.max_file_size_mb == 25
 
 
-def test_equipment_pumps_datasheet_field_matches_allowed_assets() -> None:
-    field = get_attachment_field("equipment_pumps", "datasheet_asset_ids")
+def test_pumps_datasheet_field_matches_allowed_assets() -> None:
+    field = get_attachment_field("pumps", "datasheet_asset_ids")
     assert field is not None
 
     valid_cases: list[dict[str, Any]] = [
@@ -102,14 +102,14 @@ def test_equipment_pump_datasheet_references_are_discoverable() -> None:
 
     references = list_asset_references(
         body,
-        table_key="equipment_pumps",
+        table_key="pumps",
         column_key="datasheet_asset_ids",
         kind="datasheet",
     )
 
     assert references == [
         {
-            "table_key": "equipment_pumps",
+            "table_key": "pumps",
             "field_key": "datasheet_asset_ids",
             "row_id": "pmp_1",
             "row_name": "pmp_1",
@@ -117,7 +117,7 @@ def test_equipment_pump_datasheet_references_are_discoverable() -> None:
             "index": 0,
         },
         {
-            "table_key": "equipment_pumps",
+            "table_key": "pumps",
             "field_key": "datasheet_asset_ids",
             "row_id": "pmp_1",
             "row_name": "pmp_1",
@@ -135,7 +135,7 @@ def test_equipment_pump_datasheet_references_filter_by_asset_id() -> None:
     references = list_asset_references(body, asset_ids={"asset_img_1"})
 
     assert len(references) == 1
-    assert references[0]["table_key"] == "equipment_pumps"
+    assert references[0]["table_key"] == "pumps"
     assert references[0]["field_key"] == "datasheet_asset_ids"
     assert references[0]["asset_id"] == "asset_img_1"
     assert references[0]["index"] == 1

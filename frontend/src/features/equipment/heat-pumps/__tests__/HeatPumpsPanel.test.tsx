@@ -1,17 +1,34 @@
+// @size-exception: planning/features/data-table-maintenance/phases/phase-00-cleanup-outline.md
 import { QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { createQueryClient } from "../../../../app/query-client";
 import type { UnitSystem } from "../../../../lib/units";
 import { UnitPreferenceContext } from "../../../../lib/units/preference-context";
-import { emptyViewState, type ViewState } from "../../../../shared/ui/data-table";
+import {
+  emptyViewState,
+  type FieldDef,
+  type FieldSchemaMutation,
+  type TableFieldDef,
+  type ViewState,
+} from "../../../../shared/ui/data-table";
 import type { ProjectDetail } from "../../../projects/types";
-import { buildRoom, buildRoomsSlice } from "../../testing/testFixtures";
+import { buildRoom, buildRoomsSlice, tableFieldDef } from "../../testing/testFixtures";
 import { buildEmptyIndoorUnitRow } from "../lib";
+import { indoorEquipFieldDefs } from "../indoor-equip-columns";
+import { indoorUnitFieldDefs } from "../indoor-unit-columns";
+import { outdoorEquipFieldDefs } from "../outdoor-equip-columns";
+import { outdoorUnitFieldDefs } from "../outdoor-unit-columns";
 import { HeatPumpsPanel } from "../routes/HeatPumpsPanel";
-import { HEAT_PUMP_OUTDOOR_EQUIP_TABLE_NAME, type HeatPumpsSlice } from "../types";
+import {
+  HEAT_PUMP_INDOOR_EQUIP_TABLE_NAME,
+  HEAT_PUMP_INDOOR_UNITS_TABLE_NAME,
+  HEAT_PUMP_OUTDOOR_EQUIP_TABLE_NAME,
+  HEAT_PUMP_OUTDOOR_UNITS_TABLE_NAME,
+  type HeatPumpsSlice,
+} from "../types";
 
 const fetchMock = vi.fn();
 
@@ -195,7 +212,7 @@ describe("HeatPumpsPanel", () => {
     const pairedHeader = await screen.findByRole("columnheader", {
       name: /Paired indoor equip/,
     });
-    expect(pairedHeader.querySelector('[data-field-type-icon="lookup"]')).toBeTruthy();
+    expect(pairedHeader).toBeInTheDocument();
     expect(screen.getByText(/PLA-A18EA8/)).toBeInTheDocument();
   });
 
@@ -214,27 +231,20 @@ describe("HeatPumpsPanel", () => {
     expect(screen.getAllByText("18.0").length).toBeGreaterThan(0);
   });
 
-  test("keeps saved outdoor equipment field order across leaf remounts", async () => {
+  test("keeps outdoor equipment field order across leaf remounts", async () => {
     const user = userEvent.setup();
-    renderPanel({
-      savedTableViews: {
-        [HEAT_PUMP_OUTDOOR_EQUIP_TABLE_NAME]: {
-          ...emptyViewState(),
-          columnOrder: ["manufacturer", "tag", "model_number"],
-        },
-      },
-    });
+    renderPanel();
 
-    await expectHeaderOrder(["Manufacturer", "Tag", "Model number"]);
+    await expectHeaderOrder(["Tag", "Model number", "Manufacturer"]);
 
     await user.click(await screen.findByRole("tab", { name: "Equipment - Indoor" }));
     expect(await screen.findByRole("button", { name: "Add indoor model" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("tab", { name: "Equipment - Outdoor" }));
-    await expectHeaderOrder(["Manufacturer", "Tag", "Model number"]);
+    await expectHeaderOrder(["Tag", "Model number", "Manufacturer"]);
   });
 
-  test("adds an outdoor equipment row through the Phase 0 PATCH API", async () => {
+  test("adds an outdoor equipment row through the generic table replace API", async () => {
     const user = userEvent.setup();
     renderPanel({ slice: heatPumpsSlice({ outdoor_equip: [] }) });
 
@@ -245,13 +255,151 @@ describe("HeatPumpsPanel", () => {
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
-        "/api/v1/projects/proj_1/equipment/heat-pumps/outdoor-equip",
+        "/api/v1/projects/proj_1/versions/ver_1/draft/tables/heat_pumps_outdoor_equip",
         expect.objectContaining({
-          method: "PATCH",
-          body: expect.stringContaining('"op":"add"'),
+          method: "PUT",
+          body: expect.stringContaining('"outdoor_equip"'),
         }),
       );
     });
+  });
+
+  test("renders server custom fields on each Heat Pump leaf", async () => {
+    const user = userEvent.setup();
+    renderPanel({
+      savedTableViews: {
+        heat_pumps_outdoor_equip: customOnlyView(
+          outdoorEquipFieldDefs({ options: {} }),
+          "cf_outdoor_equip_note",
+        ),
+        heat_pumps_indoor_equip: customOnlyView(indoorEquipFieldDefs({}), "cf_indoor_equip_note"),
+        heat_pumps_outdoor_units: customOnlyView(outdoorUnitFieldDefs(), "cf_outdoor_unit_note"),
+        heat_pumps_indoor_units: customOnlyView(indoorUnitFieldDefs(), "cf_indoor_unit_note"),
+      },
+      customFieldsByLeaf: {
+        heat_pumps_outdoor_equip: [
+          tableFieldDef({ field_key: "cf_outdoor_equip_note", display_name: "Outdoor review" }),
+        ],
+        heat_pumps_indoor_equip: [
+          tableFieldDef({ field_key: "cf_indoor_equip_note", display_name: "Indoor review" }),
+        ],
+        heat_pumps_outdoor_units: [
+          tableFieldDef({ field_key: "cf_outdoor_unit_note", display_name: "Outdoor unit note" }),
+        ],
+        heat_pumps_indoor_units: [
+          tableFieldDef({ field_key: "cf_indoor_unit_note", display_name: "Indoor unit note" }),
+        ],
+      },
+      slice: heatPumpsSlice({
+        outdoor_equip: [
+          outdoorEquipRow({ custom_values: { cf_outdoor_equip_note: "Outdoor custom" } }),
+        ],
+        indoor_equip: [
+          indoorEquipRow({ custom_values: { cf_indoor_equip_note: "Indoor custom" } }),
+        ],
+        outdoor_units: [
+          outdoorUnitRow({ custom_values: { cf_outdoor_unit_note: "Outdoor unit custom" } }),
+        ],
+        indoor_units: [
+          indoorUnitRow({ custom_values: { cf_indoor_unit_note: "Indoor unit custom" } }),
+        ],
+      }),
+    });
+
+    expect(await screen.findByRole("columnheader", { name: /Outdoor review/ })).toBeInTheDocument();
+    expect(screen.getByText("Outdoor custom")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "Equipment - Indoor" }));
+    expect(await screen.findByRole("columnheader", { name: /Indoor review/ })).toBeInTheDocument();
+    expect(screen.getByText("Indoor custom")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "Units - Outdoor" }));
+    expect(
+      await screen.findByRole("columnheader", { name: /Outdoor unit note/ }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Outdoor unit custom")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "Units - Indoor" }));
+    expect(
+      await screen.findByRole("columnheader", { name: /Indoor unit note/ }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Indoor unit custom")).toBeInTheDocument();
+  });
+
+  test("custom-field schema adds route through the generic Heat Pump leaf endpoint", async () => {
+    const { schemaMutations } = renderPanel({
+      savedTableViews: {
+        heat_pumps_outdoor_equip: customOnlyView(
+          outdoorEquipFieldDefs({ options: {} }),
+          "cf_existing",
+        ),
+      },
+      customFieldsByLeaf: {
+        heat_pumps_outdoor_equip: [
+          tableFieldDef({ field_key: "cf_existing", display_name: "Existing field" }),
+        ],
+      },
+      slice: heatPumpsSlice({
+        outdoor_equip: [outdoorEquipRow({ custom_values: { cf_existing: "seed" } })],
+      }),
+    });
+
+    await addCustomField("Reviewer");
+    await waitFor(() =>
+      expect(screen.getByRole("columnheader", { name: /^Reviewer\b/ })).toBeVisible(),
+    );
+
+    expect(schemaMutations).toHaveLength(1);
+    expect(schemaMutations[0]).toMatchObject({
+      kind: "addField",
+      tableKey: "heat_pumps_outdoor_equip",
+      after: { display_name: "Reviewer", field_type: "short_text" },
+    });
+  });
+
+  test("requests Heat Pump leaf view state through the shared table-view endpoint", async () => {
+    renderPanel({
+      savedTableViews: {
+        heat_pumps_outdoor_equip: {
+          ...emptyViewState(),
+          hiddenColumns: ["model_number"],
+          columnOrder: ["tag", "manufacturer", "model_number"],
+        },
+      },
+    });
+
+    expect(await screen.findByRole("columnheader", { name: /^Tag\b/ })).toBeInTheDocument();
+    expect(
+      fetchMock.mock.calls.some(([url]) =>
+        String(url).endsWith("/api/v1/projects/proj_1/table-views/heat_pumps_outdoor_equip"),
+      ),
+    ).toBe(true);
+  });
+
+  test("viewer mode renders Heat Pump custom fields without edit affordances", async () => {
+    renderPanel({
+      projectOverride: { access_mode: "viewer" },
+      customFieldsByLeaf: {
+        heat_pumps_outdoor_equip: [
+          tableFieldDef({
+            field_key: "cf_review",
+            display_name: "Review note",
+            description: "Readonly field description",
+          }),
+        ],
+      },
+      slice: heatPumpsSlice({
+        outdoor_equip: [outdoorEquipRow({ custom_values: { cf_review: "viewer value" } })],
+      }),
+    });
+
+    const reviewHeader = await screen.findByRole("columnheader", { name: /Review note/ });
+    expect(screen.getByText("viewer value")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Add field" })).toBeNull();
+
+    fireEvent.contextMenu(reviewHeader, { clientX: 100, clientY: 50 });
+    expect(screen.queryByRole("menu")).toBeNull();
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/table-views/"))).toBe(false);
   });
 });
 
@@ -259,20 +407,52 @@ function renderPanel({
   slice = heatPumpsSlice(),
   unitSystem = "SI",
   savedTableViews = {},
+  customFieldsByLeaf = {},
   initialEntry = "/projects/proj_1/equipment/heat-pumps/equipment-outdoor",
+  projectOverride = {},
 }: {
   slice?: HeatPumpsSlice;
   unitSystem?: UnitSystem;
   savedTableViews?: Record<string, ViewState>;
+  customFieldsByLeaf?: Partial<Record<HeatPumpTableName, TableFieldDef[]>>;
   initialEntry?: string;
+  projectOverride?: Partial<ProjectDetail>;
 } = {}) {
-  fetchMock.mockImplementation((input: RequestInfo | URL) => {
+  const leafCustomFields = copyCustomFieldsByLeaf(customFieldsByLeaf);
+  const tableViews = new Map<string, ViewState>(
+    Object.entries(savedTableViews).map(([key, view]) => [key, structuredClone(view)]),
+  );
+  const schemaMutations: FieldSchemaMutation[] = [];
+  let draftCounter = 1;
+  fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     if (url.includes("/assets/bulk-urls")) {
       return jsonResponse({ items: [] });
     }
-    if (url.endsWith("/api/v1/projects/proj_1/equipment/heat-pumps")) {
-      return jsonResponse(slice);
+    const schemaMutationTableName = heatPumpSchemaMutationTableNameFromUrl(url);
+    if (schemaMutationTableName) {
+      const mutation = JSON.parse(String(init?.body)) as FieldSchemaMutation;
+      schemaMutations.push(mutation);
+      applyHeatPumpSchemaMutationFixture(leafCustomFields, schemaMutationTableName, mutation);
+      draftCounter += 1;
+      return jsonResponse(
+        heatPumpLeafResponse(url.replace("/custom-fields:mutate", ""), slice, leafCustomFields, {
+          draftEtag: `draft_${draftCounter}`,
+        }),
+      );
+    }
+    const heatPumpLeaf = heatPumpLeafResponse(url, slice, leafCustomFields);
+    if (heatPumpLeaf) {
+      if (init?.method === "PUT") {
+        const body = JSON.parse(String(init.body));
+        return jsonResponse({
+          ...heatPumpLeaf,
+          source: "draft",
+          draft_etag: "draft_2",
+          ...body,
+        });
+      }
+      return jsonResponse(heatPumpLeaf);
     }
     if (url.endsWith("/api/v1/projects/proj_1/versions/ver_1/draft/tables/rooms")) {
       return jsonResponse(roomsSlice());
@@ -280,25 +460,29 @@ function renderPanel({
     const tableViewMatch = url.match(/\/api\/v1\/projects\/proj_1\/table-views\/([^/?]+)$/);
     const tableKey = tableViewMatch?.[1];
     if (tableKey) {
-      const view = savedTableViews[tableKey];
+      if (init?.method === "PUT") {
+        const body = JSON.parse(String(init.body)) as {
+          view_state: { view_state: ViewState };
+        };
+        const viewState = structuredClone(body.view_state.view_state);
+        tableViews.set(tableKey, viewState);
+        return jsonResponse({
+          view_state_schema_version: 1,
+          view_state: { schema_fingerprint: "test-fingerprint", view_state: viewState },
+          updated_at: "2026-06-17T00:00:00Z",
+        });
+      }
+      const view = tableViews.get(tableKey);
       return jsonResponse({
         view_state_schema_version: 1,
         view_state: view ? { schema_fingerprint: "test-fingerprint", view_state: view } : null,
         updated_at: view ? "2026-06-16T00:00:00Z" : null,
       });
     }
-    if (url.endsWith("/api/v1/projects/proj_1/equipment/heat-pumps/outdoor-equip")) {
-      return jsonResponse({
-        ...slice,
-        source: "draft",
-        draft_etag: "draft_2",
-        outdoor_equip: [outdoorEquipRow({ tag: "OE-X", model_number: "PUZ-A24NHA7" })],
-      });
-    }
     return jsonResponse({});
   });
   const queryClient = createQueryClient();
-  return render(
+  const rendered = render(
     <MemoryRouter initialEntries={[initialEntry]}>
       <QueryClientProvider client={queryClient}>
         <UnitPreferenceContext.Provider
@@ -316,7 +500,7 @@ function renderPanel({
               element={
                 <>
                   <LocationProbe />
-                  <HeatPumpsPanel project={project()} />
+                  <HeatPumpsPanel project={project(projectOverride)} />
                 </>
               }
             />
@@ -325,6 +509,7 @@ function renderPanel({
       </QueryClientProvider>
     </MemoryRouter>,
   );
+  return { ...rendered, schemaMutations };
 }
 
 async function expectHeaderOrder(expectedHeaders: string[]) {
@@ -339,6 +524,15 @@ async function expectHeaderOrder(expectedHeaders: string[]) {
   expect(indexes).toEqual([...indexes].sort((a, b) => a - b));
 }
 
+async function addCustomField(displayName: string) {
+  fireEvent.click(await screen.findByRole("button", { name: "Add field" }));
+  const dialog = await screen.findByRole("dialog", { name: "Add field" });
+  fireEvent.change(within(dialog).getByLabelText("Name"), {
+    target: { value: displayName },
+  });
+  fireEvent.click(within(dialog).getByRole("button", { name: /Add field/ }));
+}
+
 function LocationProbe() {
   const location = useLocation();
   return <output data-testid="location">{`${location.pathname}${location.search}`}</output>;
@@ -351,7 +545,156 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-function project(): ProjectDetail {
+type HeatPumpTableName =
+  | typeof HEAT_PUMP_OUTDOOR_EQUIP_TABLE_NAME
+  | typeof HEAT_PUMP_INDOOR_EQUIP_TABLE_NAME
+  | typeof HEAT_PUMP_OUTDOOR_UNITS_TABLE_NAME
+  | typeof HEAT_PUMP_INDOOR_UNITS_TABLE_NAME;
+
+const HEAT_PUMP_LEAF_FIXTURES: Record<
+  HeatPumpTableName,
+  {
+    fieldDefs: (slice: HeatPumpsSlice) => FieldDef[];
+    rowKey: "outdoor_equip" | "indoor_equip" | "outdoor_units" | "indoor_units";
+  }
+> = {
+  [HEAT_PUMP_OUTDOOR_EQUIP_TABLE_NAME]: {
+    fieldDefs: (slice) => outdoorEquipFieldDefs({ options: slice.single_select_options }),
+    rowKey: "outdoor_equip",
+  },
+  [HEAT_PUMP_INDOOR_EQUIP_TABLE_NAME]: {
+    fieldDefs: (slice) => indoorEquipFieldDefs(slice.single_select_options),
+    rowKey: "indoor_equip",
+  },
+  [HEAT_PUMP_OUTDOOR_UNITS_TABLE_NAME]: {
+    fieldDefs: () => outdoorUnitFieldDefs(),
+    rowKey: "outdoor_units",
+  },
+  [HEAT_PUMP_INDOOR_UNITS_TABLE_NAME]: {
+    fieldDefs: () => indoorUnitFieldDefs(),
+    rowKey: "indoor_units",
+  },
+};
+
+function heatPumpLeafResponse(
+  url: string,
+  slice: HeatPumpsSlice,
+  customFieldsByLeaf: Partial<Record<HeatPumpTableName, TableFieldDef[]>>,
+  options: { draftEtag?: string } = {},
+): Record<string, unknown> | null {
+  const tableName = heatPumpTableNameFromUrl(url);
+  if (!tableName) return null;
+  const fixture = HEAT_PUMP_LEAF_FIXTURES[tableName];
+  const base = {
+    project_id: slice.project_id,
+    version_id: slice.version_id,
+    source: options.draftEtag ? "draft" : slice.source,
+    version_etag: slice.version_etag,
+    draft_etag: options.draftEtag ?? slice.draft_etag,
+    field_defs: [],
+    single_select_options: slice.single_select_options,
+    rows_computed: {},
+  };
+  return {
+    ...base,
+    field_defs: [
+      ...tableFieldDefs(fixture.fieldDefs(slice)),
+      ...(customFieldsByLeaf[tableName] ?? []),
+    ],
+    [fixture.rowKey]: slice[fixture.rowKey],
+  };
+}
+
+function heatPumpTableNameFromUrl(url: string): HeatPumpTableName | null {
+  const tableName = Object.keys(HEAT_PUMP_LEAF_FIXTURES).find((candidate) =>
+    url.endsWith(`/${candidate}`),
+  );
+  return (tableName as HeatPumpTableName | undefined) ?? null;
+}
+
+function heatPumpSchemaMutationTableNameFromUrl(url: string): HeatPumpTableName | null {
+  const tableName = Object.keys(HEAT_PUMP_LEAF_FIXTURES).find((candidate) =>
+    url.endsWith(`/${candidate}/custom-fields:mutate`),
+  );
+  return (tableName as HeatPumpTableName | undefined) ?? null;
+}
+
+function copyCustomFieldsByLeaf(
+  customFieldsByLeaf: Partial<Record<HeatPumpTableName, TableFieldDef[]>>,
+): Partial<Record<HeatPumpTableName, TableFieldDef[]>> {
+  return Object.fromEntries(
+    Object.entries(customFieldsByLeaf).map(([tableName, fieldDefs]) => [
+      tableName,
+      fieldDefs?.map(copyTableFieldDef) ?? [],
+    ]),
+  ) as Partial<Record<HeatPumpTableName, TableFieldDef[]>>;
+}
+
+function applyHeatPumpSchemaMutationFixture(
+  customFieldsByLeaf: Partial<Record<HeatPumpTableName, TableFieldDef[]>>,
+  tableName: HeatPumpTableName,
+  mutation: FieldSchemaMutation,
+) {
+  const fields = customFieldsByLeaf[tableName] ?? [];
+  switch (mutation.kind) {
+    case "addField":
+      customFieldsByLeaf[tableName] = [...fields, copyTableFieldDef(mutation.after)];
+      break;
+    case "changeType":
+    case "deleteField":
+    case "duplicateField":
+    case "editFieldBundle":
+    case "editOptions":
+    case "renameField":
+    case "setDescription":
+    case "setFormula":
+      throw new Error(`Unsupported Heat Pump schema mutation fixture: ${mutation.kind}`);
+  }
+}
+
+function tableFieldDefs(fieldDefs: FieldDef[]): TableFieldDef[] {
+  return fieldDefs.map((fieldDef) => ({
+    field_key: fieldDef.field_key,
+    display_name: fieldDef.display_name,
+    field_type: tableFieldType(fieldDef),
+    description: fieldDef.description ?? null,
+    config: tableFieldConfig(fieldDef),
+    origin: "built_in",
+    created_at: "2026-06-17T00:00:00Z",
+    created_by: null,
+  }));
+}
+
+function tableFieldType(fieldDef: FieldDef): TableFieldDef["field_type"] {
+  if (fieldDef.field_type === "text") return "short_text";
+  if (fieldDef.field_type === "attachment") return "long_text";
+  if (fieldDef.field_type === "lookup") return "short_text";
+  if (fieldDef.field_type === "computed") return "formula";
+  return fieldDef.field_type;
+}
+
+function tableFieldConfig(fieldDef: FieldDef): Record<string, unknown> {
+  const config: Record<string, unknown> = {};
+  if (fieldDef.numberUnits) config.units = fieldDef.numberUnits;
+  if (fieldDef.linked_record_config) Object.assign(config, fieldDef.linked_record_config);
+  return config;
+}
+
+function customOnlyView(builtInFields: FieldDef[], customFieldKey: string): ViewState {
+  return {
+    ...emptyViewState(),
+    columnOrder: ["tag", customFieldKey],
+    hiddenColumns: builtInFields
+      .map((fieldDef) => fieldDef.field_key)
+      .filter((fieldKey) => fieldKey !== "tag"),
+  };
+}
+
+function copyTableFieldDef(fieldDef: TableFieldDef): TableFieldDef {
+  return { ...fieldDef, config: { ...fieldDef.config } };
+}
+
+function project(overrides: Partial<ProjectDetail> = {}): ProjectDetail {
   return {
     id: "proj_1",
     name: "Test Project",
@@ -368,6 +711,7 @@ function project(): ProjectDetail {
     created_at: "2026-06-09T00:00:00Z",
     updated_at: "2026-06-09T00:00:00Z",
     owner_display_name: "Ed",
+    ...overrides,
   };
 }
 

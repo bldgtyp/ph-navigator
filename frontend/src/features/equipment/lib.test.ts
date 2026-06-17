@@ -24,6 +24,7 @@ import {
   isInvalidProjectDocumentError,
   nextCopySuffix,
   replaceRoomOptionsPayload,
+  replaceHotWaterTankOptionsPayload,
   nextRoomsPayload,
   optionLabel,
   pumpsPayloadFromCellWrites,
@@ -53,6 +54,7 @@ import { tableFieldDefsToFieldDefs } from "../../shared/ui/data-table";
 import {
   ROOM_BUILDING_ZONE_COLUMN_ID,
   ROOM_FLOOR_LEVEL_COLUMN_ID,
+  HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY,
   ROOM_SPACE_TYPE_FIELD_KEY,
   type RoomRow,
   type RoomsSlice,
@@ -82,6 +84,7 @@ import {
   ventilatorsBuiltInFieldDefs,
   withRoomCustomValues as withCustomValues,
 } from "./testing/testFixtures";
+import { buildHotWaterTank, buildHotWaterTanksSlice } from "./testing/hotWaterTanksFixtures";
 
 function roomFixture(
   overrides: Partial<Omit<RoomRow, "custom_values">> = {},
@@ -394,6 +397,22 @@ describe("equipment room helpers", () => {
     expect(() => replaceRoomOptionsPayload(current, "rooms.floor_level", [])).toThrow(
       "Missing replacement for referenced rooms.floor_level option opt_ground.",
     );
+  });
+
+  test("replaces hot water tank inside/outside options on the typed row field", () => {
+    const current = buildHotWaterTanksSlice({
+      hot_water_tanks: [buildHotWaterTank({ inside_outside: "opt_hwt_inside" })],
+    });
+
+    const payload = replaceHotWaterTankOptionsPayload(
+      current,
+      HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY,
+      [{ id: "opt_hwt_outside", label: "Outside", color: "#f97316", order: 0 }],
+      { opt_hwt_inside: "opt_hwt_outside" },
+    );
+
+    expect(payload.hot_water_tanks[0]?.inside_outside).toBe("opt_hwt_outside");
+    expect(payload.hot_water_tanks[0]?.custom_values.inside_outside).toBeUndefined();
   });
 
   test("roomsPayloadFromRowInsert appends truly blank rows built from fieldDefaults only", () => {

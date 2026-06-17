@@ -1,4 +1,5 @@
 import type { AttachmentFieldConfig } from "./types";
+import { sameOrderedStrings } from "../../shared/lib/arrays";
 
 export const DATASHEET_ATTACHMENT_CONFIG: AttachmentFieldConfig = {
   assetKind: "datasheet",
@@ -21,5 +22,5 @@ export function readAttachmentAssetIds(value: unknown): string[] {
 }
 
 export function sameAttachmentAssetIds(a: readonly string[], b: readonly string[]): boolean {
-  return a.length === b.length && a.every((value, index) => value === b[index]);
+  return sameOrderedStrings(a, b);
 }

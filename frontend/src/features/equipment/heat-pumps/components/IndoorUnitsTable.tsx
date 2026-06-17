@@ -5,46 +5,50 @@ import {
   buildLinkedRecordOps,
   DataTable,
   type LinkedRecordCellOps,
-  type WriteOp,
 } from "../../../../shared/ui/data-table";
+import {
+  customFieldActionsForController,
+  type SliceTableController,
+} from "../../../../shared/ui/data-table/feature";
 import { useAssetUrls } from "../../../assets/hooks";
 import { roomsSliceFeature, ventilatorsSliceFeature } from "../../api";
 import { LinkedRoomDialogHost } from "../../components/LinkedRoomDialogHost";
 import type { RoomRow, VentilatorRow } from "../../types";
-import { useHeatPumpOptionMutation, useHeatPumpPatchMutation } from "../api";
+import { useHeatPumpOptionMutation } from "../api";
 import {
   buildEmptyIndoorEquipRow,
   buildEmptyIndoorUnitRow,
   buildNewHeatPumpOption,
+  deleteHeatPumpRow,
   indoorEquipLabel,
+  insertHeatPumpRow,
   outdoorUnitLabel,
+  replaceHeatPumpRow,
   roomLabel,
   sortedIndoorUnits,
   uniqueTagForAdd,
   ventilatorLabel,
 } from "../lib";
-import { firstLinkedId, HEAT_PUMP_LINK_TARGETS, linkedIds } from "../link-fields";
+import { HEAT_PUMP_LINK_TARGETS } from "../link-fields";
+import { indoorUnitColumnDefs, indoorUnitFieldDefs } from "../indoor-unit-columns";
 import {
-  indoorUnitColumnDefs,
-  indoorUnitDefaultHiddenColumns,
-  indoorUnitFieldDefs,
-} from "../indoor-unit-columns";
-import {
-  HEAT_PUMP_INDOOR_UNITS_TABLE_NAME,
   HEAT_PUMP_OPTION_KEYS,
   type CascadeReference,
+  type HeatPumpIndoorEquipSlice,
   type HeatPumpIndoorEquipRow,
+  type HeatPumpIndoorUnitsSlice,
   type HeatPumpIndoorUnitRow,
+  type HeatPumpOutdoorUnitsSlice,
   type HeatPumpOutdoorUnitRow,
   type HeatPumpOwnedOptionKey,
   type HeatPumpsSlice,
 } from "../types";
-import { useHeatPumpTableViewState } from "../useHeatPumpTableViewState";
 import { IndoorEquipRowModal } from "./IndoorEquipRowModal";
 import { IndoorUnitRowModal } from "./IndoorUnitRowModal";
 import { LinkedVentilatorModalHost } from "./LinkedVentilatorModalHost";
 import { OutdoorUnitRowModal } from "./OutdoorUnitRowModal";
 import { BlockedDeleteDialog } from "./CascadePreviewDialog";
+import { appendComputedFieldDefs, heatPumpColumnsWithCustomFields } from "./heatPumpCustomColumns";
 
 type ModalState =
   | { kind: "unit"; mode: "add" | "edit"; row: HeatPumpIndoorUnitRow }
@@ -57,12 +61,19 @@ type ModalState =
 export function IndoorUnitsTable({
   projectId,
   slice,
-  isEditor,
+  leafSlice,
+  controller,
+  indoorEquipController,
+  outdoorUnitsController,
   versionLocked,
 }: {
   projectId: string;
   slice: HeatPumpsSlice;
-  isEditor: boolean;
+  leafSlice: HeatPumpIndoorUnitsSlice;
+  controller: SliceTableController<HeatPumpIndoorUnitsSlice>;
+  indoorEquipController: SliceTableController<HeatPumpIndoorEquipSlice>;
+  outdoorUnitsController: SliceTableController<HeatPumpOutdoorUnitsSlice>;
+  isEditor?: boolean;
   versionLocked: boolean;
 }) {
   const [modal, setModal] = useState<ModalState>(null);
@@ -71,9 +82,8 @@ export function IndoorUnitsTable({
     affected: CascadeReference[];
   } | null>(null);
   const [linkedRoomId, setLinkedRoomId] = useState<string | null>(null);
-  const patchMutation = useHeatPumpPatchMutation(projectId);
   const optionMutation = useHeatPumpOptionMutation(projectId);
-  const accessMode = isEditor ? "editor" : "viewer";
+  const accessMode = controller.canEdit ? "editor" : "viewer";
   const ventilatorsQuery = ventilatorsSliceFeature.useSliceQuery(
     projectId,
     slice.version_id,
@@ -95,26 +105,38 @@ export function IndoorUnitsTable({
     () => new Map((assetUrls.data ?? []).map((item) => [item.asset_id, item])),
     [assetUrls.data],
   );
-  const readOnly = !isEditor || versionLocked;
+  const readOnly = !controller.canEdit;
   const noEquip = slice.indoor_equip.length === 0;
-  const columns = indoorUnitColumnDefs({
-    projectId,
-    isEditor: !readOnly,
-    rooms,
-    ventilators,
+  const fieldDefs = useMemo(
+    () => appendComputedFieldDefs(controller.tableSchema.fieldDefs, indoorUnitFieldDefs()),
+    [controller.tableSchema.fieldDefs],
+  );
+  const tableSchema = controller.tableSchema;
+  const columns = useMemo(() => {
+    return heatPumpColumnsWithCustomFields({
+      builtInColumns: indoorUnitColumnDefs({
+        projectId,
+        isEditor: !readOnly,
+        rooms,
+        ventilators,
+        assetUrlById,
+        onDatasheetChange: (row, next) =>
+          replaceHeatPumpRow(controller.onWrite, { ...row, datasheet_asset_ids: next }),
+      }),
+      tableSchema,
+      rowsComputed: leafSlice.rows_computed,
+    });
+  }, [
     assetUrlById,
-    onDatasheetChange: (row, next) => replaceUnit({ ...row, datasheet_asset_ids: next }),
-  });
-  const fieldDefs = useMemo(() => indoorUnitFieldDefs(), []);
-  const tableView = useHeatPumpTableViewState({
+    controller.onWrite,
+    leafSlice.rows_computed,
     projectId,
-    tableKey: HEAT_PUMP_INDOOR_UNITS_TABLE_NAME,
-    isEditor,
-    columns,
-    fieldDefs,
-    sort: [{ fieldKey: "tag", direction: "asc" }],
-    hiddenColumns: indoorUnitDefaultHiddenColumns,
-  });
+    readOnly,
+    rooms,
+    tableSchema,
+    ventilators,
+  ]);
+  const tableView = controller;
   const openIndoorEquipLink = useCallback(
     (rowId: string) => {
       const row = slice.indoor_equip.find((candidate) => candidate.id === rowId);
@@ -225,60 +247,36 @@ export function IndoorUnitsTable({
 
   async function addUnit(row: HeatPumpIndoorUnitRow) {
     const tag = uniqueTagForAdd(row.tag, slice.indoor_units);
-    await patchMutation.mutateAsync({
-      current: slice,
-      table: "indoor-units",
-      patch: { op: "add", path: "/-", value: { ...row, tag } },
-    });
+    await insertHeatPumpRow(controller.onWrite, { ...row, tag });
     setModal(null);
   }
 
   async function replaceUnit(row: HeatPumpIndoorUnitRow) {
-    await patchMutation.mutateAsync({
-      current: slice,
-      table: "indoor-units",
-      patch: { op: "replace", path: `/${row.id}`, value: row },
-    });
+    await replaceHeatPumpRow(controller.onWrite, row);
     setModal(null);
   }
 
   async function replaceIndoorEquip(row: HeatPumpIndoorEquipRow) {
-    await patchMutation.mutateAsync({
-      current: slice,
-      table: "indoor-equip",
-      patch: { op: "replace", path: `/${row.id}`, value: row },
-    });
+    await replaceHeatPumpRow(indoorEquipController.onWrite, row);
     setModal(null);
   }
 
   async function replaceOutdoorUnit(row: HeatPumpOutdoorUnitRow) {
-    await patchMutation.mutateAsync({
-      current: slice,
-      table: "outdoor-units",
-      patch: { op: "replace", path: `/${row.id}`, value: row },
-    });
+    await replaceHeatPumpRow(outdoorUnitsController.onWrite, row);
     setModal(null);
   }
 
   async function deleteUnit(row: HeatPumpIndoorUnitRow) {
     setModal(null);
     try {
-      await patchMutation.mutateAsync({
-        current: slice,
-        table: "indoor-units",
-        patch: { op: "remove", path: `/${row.id}` },
-      });
+      await deleteHeatPumpRow(controller.onWrite, row);
     } catch (err) {
       handleDeleteError(err);
     }
   }
 
   async function addIndoorEquipAndSelect(equip: HeatPumpIndoorEquipRow, unitId: string) {
-    await patchMutation.mutateAsync({
-      current: slice,
-      table: "indoor-equip",
-      patch: { op: "add", path: "/-", value: equip },
-    });
+    await insertHeatPumpRow(indoorEquipController.onWrite, equip);
     const unit = slice.indoor_units.find((candidate) => candidate.id === unitId);
     setModal({
       kind: "unit",
@@ -301,43 +299,9 @@ export function IndoorUnitsTable({
     }
   }
 
-  async function handleWrite(op: WriteOp) {
-    if (readOnly) return;
-    if (op.kind === "cell" || op.kind === "fill") {
-      for (const write of op.writes) {
-        const row = slice.indoor_units.find((candidate) => candidate.id === write.rowId);
-        if (!row) continue;
-        await replaceUnit({
-          ...row,
-          [write.fieldKey]: indoorUnitWriteValue(write.fieldKey, write.value),
-        } as HeatPumpIndoorUnitRow);
-      }
-      return;
-    }
-    if (op.kind === "rowDelete") {
-      for (const deleted of op.rows) {
-        const row = slice.indoor_units.find((candidate) => candidate.id === deleted.rowId);
-        if (row) await deleteUnit(row);
-      }
-      return;
-    }
-    if (op.kind === "rowInsert") {
-      if (noEquip) return;
-      for (const inserted of op.rows) {
-        await addUnit(
-          buildEmptyIndoorUnitRow({
-            id: inserted.rowId,
-            tag: String(inserted.fieldDefaults.tag ?? "AHU"),
-            indoor_equip_id: slice.indoor_equip[0]?.id ?? "",
-          }),
-        );
-      }
-    }
-  }
-
   return (
     <>
-      {tableView.isLoading ? (
+      {tableView.viewLoading ? (
         <p className="form-note">Loading table view...</p>
       ) : (
         <DataTable
@@ -347,8 +311,8 @@ export function IndoorUnitsTable({
           columnDefs={columns}
           view={tableView.view}
           onViewChange={tableView.onViewChange}
-          onResetView={tableView.reset}
-          onWrite={handleWrite}
+          onResetView={tableView.onResetView}
+          onWrite={controller.onWrite}
           readOnly={readOnly}
           emptyMessage={
             noEquip
@@ -385,6 +349,7 @@ export function IndoorUnitsTable({
               </button>
             )
           }
+          {...customFieldActionsForController(controller)}
         />
       )}
       {linkedRoomId && roomsQuery.data ? (
@@ -476,16 +441,4 @@ export function IndoorUnitsTable({
       ) : null}
     </>
   );
-}
-
-function indoorUnitWriteValue(fieldKey: string, value: unknown): unknown {
-  if (fieldKey === "indoor_equip_id") {
-    const next = firstLinkedId(value);
-    if (!next) throw new Error("Indoor equipment is required.");
-    return next;
-  }
-  if (fieldKey === "outdoor_unit_id") return firstLinkedId(value);
-  if (fieldKey === "linked_erv_unit_id") return firstLinkedId(value);
-  if (fieldKey === "served_room_ids") return linkedIds(value);
-  return value === "" ? null : value;
 }

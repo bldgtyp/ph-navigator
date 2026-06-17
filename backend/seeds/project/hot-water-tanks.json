@@ -3,6 +3,10 @@
     "hot_water_tanks.type": [
       { "id": "opt_hwt_dhw_heating", "label": "1-DHW and Heating", "color": "#0ea5e9", "order": 0 },
       { "id": "opt_hwt_dhw_only", "label": "2-DHW only", "color": "#14b8a6", "order": 1 }
+    ],
+    "hot_water_tanks.inside_outside": [
+      { "id": "opt_hwt_inside", "label": "Inside", "color": "#3b82f6", "order": 0 },
+      { "id": "opt_hwt_outside", "label": "Outside", "color": "#f97316", "order": 1 }
     ]
   },
   "rows": [
@@ -16,7 +20,7 @@
         "record_id": "HWT-1",
         "name": "Combi Buffer Tank",
         "quantity": 1,
-        "inside_outside": "Inside",
+        "inside_outside": "opt_hwt_inside",
         "manufacturer": "Viessmann",
         "model": "Vitocell 300-B",
         "size_l": 300,
@@ -33,7 +37,7 @@
         "record_id": "HWT-2",
         "name": "Apartment DHW Tank",
         "quantity": 2,
-        "inside_outside": "Inside",
+        "inside_outside": "opt_hwt_inside",
         "manufacturer": "A.O. Smith",
         "model": "DRE-52",
         "size_l": 189,
@@ -50,7 +54,7 @@
         "record_id": "HWT-3",
         "name": "Heating Buffer",
         "quantity": 1,
-        "inside_outside": "Inside",
+        "inside_outside": "opt_hwt_inside",
         "manufacturer": "Stiebel Eltron",
         "model": "SBP 200 E",
         "size_l": 200,
@@ -67,7 +71,7 @@
         "record_id": "HWT-4",
         "name": "Outdoor DHW Tank",
         "quantity": 1,
-        "inside_outside": "Outside",
+        "inside_outside": "opt_hwt_outside",
         "manufacturer": "Bradford White",
         "model": "SW-2-120",
         "size_l": 454,
@@ -84,7 +88,7 @@
         "record_id": "HWT-5",
         "name": "Central Thermal Store",
         "quantity": 1,
-        "inside_outside": "Inside",
+        "inside_outside": "opt_hwt_inside",
         "manufacturer": "Lochinvar",
         "model": "TST-500",
         "size_l": 500,

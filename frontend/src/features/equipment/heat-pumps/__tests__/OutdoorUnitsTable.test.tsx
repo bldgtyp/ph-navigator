@@ -3,8 +3,17 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createQueryClient } from "../../../../app/query-client";
+import type { WriteOp } from "../../../../shared/ui/data-table";
 import { OutdoorUnitsTable } from "../components/OutdoorUnitsTable";
-import type { HeatPumpsSlice } from "../types";
+import { heatPumpOutdoorUnitsPayloadBuilders } from "../lib";
+import { outdoorUnitFieldDefs } from "../outdoor-unit-columns";
+import type {
+  HeatPumpIndoorUnitsSlice,
+  HeatPumpOutdoorEquipSlice,
+  HeatPumpOutdoorUnitsSlice,
+  HeatPumpsSlice,
+} from "../types";
+import { heatPumpTestController } from "./heatPumpControllerTestUtils";
 
 const fetchMock = vi.fn();
 
@@ -35,22 +44,14 @@ describe("OutdoorUnitsTable", () => {
       ],
       outdoor_units: [outdoorUnit({ outdoor_equip_id: "hpoe_01HX0000000000000000000001" })],
     });
-    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes("/assets/bulk-urls")) return jsonResponse({ items: [] });
-      if (url.endsWith("/api/v1/projects/proj_1/equipment/heat-pumps/outdoor-units")) {
-        const body = JSON.parse(String(init?.body));
-        return jsonResponse({
-          ...slice,
-          source: "draft",
-          draft_etag: "draft_2",
-          outdoor_units: [body.value],
-        });
-      }
       return jsonResponse({});
     });
+    const writes: WriteOp[] = [];
 
-    renderTable(slice);
+    renderTable(slice, { writes });
 
     const currentPill = await screen.findByRole("button", { name: /OE-A/ });
     const cell = currentPill.closest('[role="gridcell"]');
@@ -60,16 +61,19 @@ describe("OutdoorUnitsTable", () => {
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
     await waitFor(() => {
-      const write = fetchMock.mock.calls.find(
-        ([url, init]) =>
-          String(url).endsWith("/equipment/heat-pumps/outdoor-units") &&
-          (init as RequestInit | undefined)?.method === "PATCH",
-      );
-      expect(write).toBeTruthy();
-      const body = JSON.parse(String((write?.[1] as RequestInit).body));
-      expect(body.value.outdoor_equip_id).toBe("hpoe_01HX0000000000000000000002");
-      expect(Array.isArray(body.value.outdoor_equip_id)).toBe(false);
+      expect(writes).toHaveLength(1);
     });
+    const op = writes[0];
+    if (!op) throw new Error("Expected a write op");
+    expect(op.kind).toBe("cell");
+    if (op.kind !== "cell") throw new Error("Expected a cell write");
+    const payload = heatPumpOutdoorUnitsPayloadBuilders.fromCellWrites(
+      outdoorUnitsLeafSlice(slice),
+      op.writes,
+      {},
+      {},
+    );
+    expect(payload.outdoor_units[0]?.outdoor_equip_id).toBe("hpoe_01HX0000000000000000000002");
   });
 
   test("opens cascade-preview dialog when delete would null indoor units", async () => {
@@ -112,7 +116,7 @@ describe("OutdoorUnitsTable", () => {
     await user.click(await screen.findByRole("button", { name: "Delete outdoor unit" }));
 
     expect(await screen.findByText(/clear the outdoor link on 1 indoor unit/i)).toBeInTheDocument();
-    expect(within(screen.getByRole("dialog")).getByText("AHU-1")).toBeInTheDocument();
+    expect(within(screen.getByRole("alertdialog")).getByText("AHU-1")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Delete and clear links" }));
 
@@ -157,13 +161,48 @@ describe("OutdoorUnitsTable", () => {
   });
 });
 
-function renderTable(slice: HeatPumpsSlice) {
+function renderTable(slice: HeatPumpsSlice, options: { writes?: WriteOp[] } = {}) {
   const queryClient = createQueryClient();
+  const leafSlice = outdoorUnitsLeafSlice(slice);
+  const controller = heatPumpTestController<HeatPumpOutdoorUnitsSlice>({
+    fieldDefs: outdoorUnitFieldDefs(),
+    onWrite: (op) => {
+      options.writes?.push(op);
+    },
+  });
+  const indoorUnitsController = heatPumpTestController<HeatPumpIndoorUnitsSlice>({
+    fieldDefs: [],
+  });
+  const outdoorEquipController = heatPumpTestController<HeatPumpOutdoorEquipSlice>({
+    fieldDefs: [],
+  });
   return render(
     <QueryClientProvider client={queryClient}>
-      <OutdoorUnitsTable projectId="proj_1" slice={slice} isEditor versionLocked={false} />
+      <OutdoorUnitsTable
+        projectId="proj_1"
+        slice={slice}
+        leafSlice={leafSlice}
+        controller={controller}
+        indoorUnitsController={indoorUnitsController}
+        outdoorEquipController={outdoorEquipController}
+        isEditor
+        versionLocked={false}
+      />
     </QueryClientProvider>,
   );
+}
+
+function outdoorUnitsLeafSlice(slice: HeatPumpsSlice): HeatPumpOutdoorUnitsSlice {
+  return {
+    project_id: slice.project_id,
+    version_id: slice.version_id,
+    source: slice.source,
+    version_etag: slice.version_etag,
+    draft_etag: slice.draft_etag,
+    outdoor_units: slice.outdoor_units,
+    field_defs: [],
+    single_select_options: {},
+  };
 }
 
 function jsonResponse(body: unknown, status = 200): Response {

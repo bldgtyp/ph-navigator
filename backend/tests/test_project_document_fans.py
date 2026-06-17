@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 import pytest
+from fastapi import HTTPException
 from pydantic import ValidationError
 
 from features.project_document.document import FanRow, ProjectDocumentV1
@@ -66,7 +67,7 @@ def test_document_rejects_missing_fan_type_option() -> None:
     first = fan_payload()["fans"][0]
     tables = empty_required_tables()
     body = {
-        "schema_version": 8,
+        "schema_version": 10,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             **tables,
@@ -109,34 +110,9 @@ def test_first_fans_replace_lazily_creates_draft(clean_document_tables: None) ->
     assert body["fans"][0]["custom_values"]["record_id"] == "F-1"
 
 
-def test_legacy_equipment_fans_contract_preserves_table_envelope() -> None:
-    first = fan_payload()["fans"][0]
-    tables = empty_required_tables()
-    body = ProjectDocumentV1.model_validate(
-        {
-            "schema_version": 8,
-            "project": {"name": "p", "bt_number": "1", "cert_programs": []},
-            "tables": {
-                **tables,
-                "equipment": {**tables["equipment"], "fans": empty_fans_table(rows=[first])},
-            },
-            "single_select_options": {
-                "rooms.floor_level": [],
-                "rooms.building_zone": [],
-                "pumps.device_type": [],
-                "ventilators.inside_outside": [],
-                "fans.type": [
-                    {"id": "opt_fan_kitchen_hood", "label": "2-Kitchen Hood", "color": "#0ea5e9", "order": 0}
-                ],
-            },
-        }
-    )
-    contract = get_table_contract("equipment_fans")
-
-    next_body = contract.apply_replace(
-        body,
-        contract.parse_replace_payload({"rows": [{**first, "notes": "Updated through legacy attachment table."}]}),
-    )
-
-    assert next_body.tables.equipment.fans.field_defs[0].display_name == "Tag"
-    assert next_body.tables.equipment.fans.rows[0].notes == "Updated through legacy attachment table."
+def test_legacy_equipment_fans_contract_is_not_registered() -> None:
+    with pytest.raises(HTTPException) as exc_info:
+        get_table_contract("equipment_fans")
+    assert exc_info.value.status_code == 404
+    detail = cast(dict[str, object], exc_info.value.detail)
+    assert detail["error_code"] == "document_table_not_found"

@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 import pytest
+from fastapi import HTTPException
 from pydantic import ValidationError
 
 from features.project_document.document import ElectricHeaterRow, ProjectDocumentV1
@@ -49,7 +50,7 @@ def test_document_rejects_duplicate_electric_heater_id() -> None:
     first = electric_heater_payload()["electric_heaters"][0]
     tables = empty_required_tables()
     body = {
-        "schema_version": 8,
+        "schema_version": 10,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             **tables,
@@ -96,36 +97,9 @@ def test_first_electric_heaters_replace_lazily_creates_draft(clean_document_tabl
     assert body["electric_heaters"][0]["custom_values"]["record_id"] == "EH-1"
 
 
-def test_legacy_equipment_electric_heaters_contract_preserves_table_envelope() -> None:
-    first = electric_heater_payload()["electric_heaters"][0]
-    tables = empty_required_tables()
-    body = ProjectDocumentV1.model_validate(
-        {
-            "schema_version": 8,
-            "project": {"name": "p", "bt_number": "1", "cert_programs": []},
-            "tables": {
-                **tables,
-                "equipment": {
-                    **tables["equipment"],
-                    "electric_heaters": empty_electric_heaters_table(rows=[first]),
-                },
-            },
-            "single_select_options": {
-                "rooms.floor_level": [],
-                "rooms.building_zone": [],
-                "pumps.device_type": [],
-                "ventilators.inside_outside": [],
-                "fans.type": [],
-                "hot_water_heaters.type": [],
-            },
-        }
-    )
-    contract = get_table_contract("equipment_electric_heaters")
-
-    next_body = contract.apply_replace(
-        body,
-        contract.parse_replace_payload({"rows": [{**first, "notes": "Updated through legacy attachment table."}]}),
-    )
-
-    assert next_body.tables.equipment.electric_heaters.field_defs[0].display_name == "Tag"
-    assert next_body.tables.equipment.electric_heaters.rows[0].notes == "Updated through legacy attachment table."
+def test_legacy_equipment_electric_heaters_contract_is_not_registered() -> None:
+    with pytest.raises(HTTPException) as exc_info:
+        get_table_contract("equipment_electric_heaters")
+    assert exc_info.value.status_code == 404
+    detail = cast(dict[str, object], exc_info.value.detail)
+    assert detail["error_code"] == "document_table_not_found"

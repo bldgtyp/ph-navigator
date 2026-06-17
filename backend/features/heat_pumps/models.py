@@ -6,6 +6,9 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from features.project_document.custom_fields import TableFieldDef
+from features.project_document.row_base import RowWithCustomFields
+
 # Phius Multiple HP Performance Estimator dropdown values, used both
 # as the discriminator stored on each outdoor-equip row and as the
 # verbatim cell text emitted by the export. Renaming these would
@@ -34,7 +37,7 @@ NonNegativeFloat = Annotated[float, Field(ge=0)]
 PositiveFloat = Annotated[float, Field(gt=0)]
 
 
-class HeatPumpOutdoorEquipRow(BaseModel):
+class HeatPumpOutdoorEquipRow(RowWithCustomFields):
     model_config = ConfigDict(extra="forbid")
 
     id: str = Field(pattern=rf"^hpoe_{ULID_SUFFIX_PATTERN}$")
@@ -76,7 +79,7 @@ class HeatPumpOutdoorEquipRow(BaseModel):
         return _strip_optional_string(value)
 
 
-class HeatPumpIndoorEquipRow(BaseModel):
+class HeatPumpIndoorEquipRow(RowWithCustomFields):
     model_config = ConfigDict(extra="forbid")
 
     id: str = Field(pattern=rf"^hpie_{ULID_SUFFIX_PATTERN}$")
@@ -109,7 +112,7 @@ class HeatPumpIndoorEquipRow(BaseModel):
         return _strip_optional_string(value)
 
 
-class HeatPumpOutdoorUnitRow(BaseModel):
+class HeatPumpOutdoorUnitRow(RowWithCustomFields):
     model_config = ConfigDict(extra="forbid")
 
     id: str = Field(pattern=rf"^hpou_{ULID_SUFFIX_PATTERN}$")
@@ -129,7 +132,7 @@ class HeatPumpOutdoorUnitRow(BaseModel):
         return _strip_optional_string(value)
 
 
-class HeatPumpIndoorUnitRow(BaseModel):
+class HeatPumpIndoorUnitRow(RowWithCustomFields):
     model_config = ConfigDict(extra="forbid")
 
     id: str = Field(pattern=rf"^hpiu_{ULID_SUFFIX_PATTERN}$")
@@ -152,13 +155,41 @@ class HeatPumpIndoorUnitRow(BaseModel):
         return _strip_optional_string(value)
 
 
+class HeatPumpOutdoorEquipTableEnvelope(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    field_defs: list[TableFieldDef] = Field(default_factory=list)
+    rows: list[HeatPumpOutdoorEquipRow] = Field(default_factory=list)
+
+
+class HeatPumpIndoorEquipTableEnvelope(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    field_defs: list[TableFieldDef] = Field(default_factory=list)
+    rows: list[HeatPumpIndoorEquipRow] = Field(default_factory=list)
+
+
+class HeatPumpOutdoorUnitsTableEnvelope(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    field_defs: list[TableFieldDef] = Field(default_factory=list)
+    rows: list[HeatPumpOutdoorUnitRow] = Field(default_factory=list)
+
+
+class HeatPumpIndoorUnitsTableEnvelope(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    field_defs: list[TableFieldDef] = Field(default_factory=list)
+    rows: list[HeatPumpIndoorUnitRow] = Field(default_factory=list)
+
+
 class HeatPumpsTableSlice(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    outdoor_equip: list[HeatPumpOutdoorEquipRow] = Field(default_factory=list)
-    indoor_equip: list[HeatPumpIndoorEquipRow] = Field(default_factory=list)
-    outdoor_units: list[HeatPumpOutdoorUnitRow] = Field(default_factory=list)
-    indoor_units: list[HeatPumpIndoorUnitRow] = Field(default_factory=list)
+    outdoor_equip: HeatPumpOutdoorEquipTableEnvelope = Field(default_factory=HeatPumpOutdoorEquipTableEnvelope)
+    indoor_equip: HeatPumpIndoorEquipTableEnvelope = Field(default_factory=HeatPumpIndoorEquipTableEnvelope)
+    outdoor_units: HeatPumpOutdoorUnitsTableEnvelope = Field(default_factory=HeatPumpOutdoorUnitsTableEnvelope)
+    indoor_units: HeatPumpIndoorUnitsTableEnvelope = Field(default_factory=HeatPumpIndoorUnitsTableEnvelope)
 
 
 # Single-select option keys consumed by heat-pump tables. Stored in the

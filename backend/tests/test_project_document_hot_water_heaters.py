@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 import pytest
+from fastapi import HTTPException
 from pydantic import ValidationError
 
 from features.project_document.document import HotWaterHeaterRow, ProjectDocumentV1
@@ -86,7 +87,7 @@ def test_document_rejects_missing_hot_water_heater_type_option() -> None:
     first = hot_water_heater_payload()["hot_water_heaters"][0]
     tables = empty_required_tables()
     body = {
-        "schema_version": 8,
+        "schema_version": 10,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             **tables,
@@ -133,43 +134,9 @@ def test_first_hot_water_heaters_replace_lazily_creates_draft(clean_document_tab
     assert body["hot_water_heaters"][0]["custom_values"]["record_id"] == "HWH-1"
 
 
-def test_legacy_equipment_hot_water_heaters_contract_preserves_table_envelope() -> None:
-    first = hot_water_heater_payload()["hot_water_heaters"][0]
-    tables = empty_required_tables()
-    body = ProjectDocumentV1.model_validate(
-        {
-            "schema_version": 8,
-            "project": {"name": "p", "bt_number": "1", "cert_programs": []},
-            "tables": {
-                **tables,
-                "equipment": {
-                    **tables["equipment"],
-                    "hot_water_heaters": empty_hot_water_heaters_table(rows=[first]),
-                },
-            },
-            "single_select_options": {
-                "rooms.floor_level": [],
-                "rooms.building_zone": [],
-                "pumps.device_type": [],
-                "ventilators.inside_outside": [],
-                "fans.type": [],
-                "hot_water_heaters.type": [
-                    {
-                        "id": "opt_hwh_heat_pump_annual_cop",
-                        "label": "5-Heat Pump (Annual COP)",
-                        "color": "#10b981",
-                        "order": 0,
-                    }
-                ],
-            },
-        }
-    )
-    contract = get_table_contract("equipment_hot_water_heaters")
-
-    next_body = contract.apply_replace(
-        body,
-        contract.parse_replace_payload({"rows": [{**first, "notes": "Updated through heater attachment table."}]}),
-    )
-
-    assert next_body.tables.equipment.hot_water_heaters.field_defs[0].display_name == "Tag"
-    assert next_body.tables.equipment.hot_water_heaters.rows[0].notes == "Updated through heater attachment table."
+def test_legacy_equipment_hot_water_heaters_contract_is_not_registered() -> None:
+    with pytest.raises(HTTPException) as exc_info:
+        get_table_contract("equipment_hot_water_heaters")
+    assert exc_info.value.status_code == 404
+    detail = cast(dict[str, object], exc_info.value.detail)
+    assert detail["error_code"] == "document_table_not_found"

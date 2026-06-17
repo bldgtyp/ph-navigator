@@ -1,4 +1,6 @@
 import type { BaseTableSlice } from "../../project_document/table-slice";
+import type { CustomValue, RowsComputed } from "../../project_document/table-types";
+import type { TableFieldDef } from "../../../shared/ui/data-table";
 
 export type HeatPumpTableKey = "outdoor-equip" | "indoor-equip" | "outdoor-units" | "indoor-units";
 
@@ -49,6 +51,8 @@ export type HeatPumpOutdoorEquipRow = {
   datasheet_asset_ids: string[];
   notes: string | null;
   catalog_origin: Record<string, unknown> | null;
+  custom_values?: Record<string, CustomValue>;
+  custom_links?: Record<string, string[]>;
 };
 
 export type HeatPumpIndoorEquipRow = {
@@ -70,6 +74,8 @@ export type HeatPumpIndoorEquipRow = {
   datasheet_asset_ids: string[];
   notes: string | null;
   catalog_origin: Record<string, unknown> | null;
+  custom_values?: Record<string, CustomValue>;
+  custom_links?: Record<string, string[]>;
 };
 
 export type HeatPumpOutdoorUnitRow = {
@@ -78,6 +84,8 @@ export type HeatPumpOutdoorUnitRow = {
   outdoor_equip_id: string;
   datasheet_asset_ids: string[];
   notes: string | null;
+  custom_values?: Record<string, CustomValue>;
+  custom_links?: Record<string, string[]>;
 };
 
 export type HeatPumpIndoorUnitRow = {
@@ -89,6 +97,8 @@ export type HeatPumpIndoorUnitRow = {
   served_room_ids: string[];
   datasheet_asset_ids: string[];
   notes: string | null;
+  custom_values?: Record<string, CustomValue>;
+  custom_links?: Record<string, string[]>;
 };
 
 export type HeatPumpSingleSelectOption = {
@@ -127,11 +137,54 @@ export type HeatPumpOptionPatchOp = {
   option: HeatPumpSingleSelectOption;
 };
 
+export type HeatPumpLeafSlice<TRow> = BaseTableSlice & {
+  field_defs: TableFieldDef[];
+  single_select_options: Record<string, HeatPumpSingleSelectOption[]>;
+  rows_computed?: RowsComputed;
+} & TRow;
+
+export type HeatPumpOutdoorEquipSlice = HeatPumpLeafSlice<{
+  outdoor_equip: HeatPumpOutdoorEquipRow[];
+}>;
+export type HeatPumpIndoorEquipSlice = HeatPumpLeafSlice<{
+  indoor_equip: HeatPumpIndoorEquipRow[];
+}>;
+export type HeatPumpOutdoorUnitsSlice = HeatPumpLeafSlice<{
+  outdoor_units: HeatPumpOutdoorUnitRow[];
+}>;
+export type HeatPumpIndoorUnitsSlice = HeatPumpLeafSlice<{
+  indoor_units: HeatPumpIndoorUnitRow[];
+}>;
+
 export type HeatPumpsSlice = BaseTableSlice & {
   outdoor_equip: HeatPumpOutdoorEquipRow[];
   indoor_equip: HeatPumpIndoorEquipRow[];
   outdoor_units: HeatPumpOutdoorUnitRow[];
   indoor_units: HeatPumpIndoorUnitRow[];
+  single_select_options: Record<string, HeatPumpSingleSelectOption[]>;
+};
+
+export type HeatPumpOutdoorEquipReplacePayload = {
+  outdoor_equip: HeatPumpOutdoorEquipRow[];
+  field_defs?: TableFieldDef[];
+  single_select_options: Record<string, HeatPumpSingleSelectOption[]>;
+};
+
+export type HeatPumpIndoorEquipReplacePayload = {
+  indoor_equip: HeatPumpIndoorEquipRow[];
+  field_defs?: TableFieldDef[];
+  single_select_options: Record<string, HeatPumpSingleSelectOption[]>;
+};
+
+export type HeatPumpOutdoorUnitsReplacePayload = {
+  outdoor_units: HeatPumpOutdoorUnitRow[];
+  field_defs?: TableFieldDef[];
+  single_select_options: Record<string, HeatPumpSingleSelectOption[]>;
+};
+
+export type HeatPumpIndoorUnitsReplacePayload = {
+  indoor_units: HeatPumpIndoorUnitRow[];
+  field_defs?: TableFieldDef[];
   single_select_options: Record<string, HeatPumpSingleSelectOption[]>;
 };
 

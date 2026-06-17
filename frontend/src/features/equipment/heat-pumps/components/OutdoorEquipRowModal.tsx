@@ -1,7 +1,15 @@
 import { useState } from "react";
 import { errorMessage } from "../../../../shared/lib/errors";
-import { ModalDialog } from "../../../../shared/ui/ModalDialog";
-import { numericValue, tagCollides } from "../lib";
+import {
+  ModalSingleSelectField,
+  NumberField,
+  RowEditGrid,
+  RowEditModal,
+  RowEditSection,
+  TextAreaField,
+  TextField,
+} from "../../../../shared/ui/data-table";
+import { tagCollides } from "../lib";
 import {
   COOLING_DATA_TYPES,
   HEATING_DATA_TYPES,
@@ -11,7 +19,6 @@ import {
   type HeatPumpsSlice,
   type HeatingDataType,
 } from "../types";
-import { OptionPicker } from "./OptionPicker";
 
 export function OutdoorEquipRowModal({
   mode,
@@ -75,258 +82,193 @@ export function OutdoorEquipRowModal({
   };
 
   return (
-    <ModalDialog title={title} titleId="hp-outdoor-equip-title" onClose={onCancel}>
-      <form
-        className="project-form hp-modal-form"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void save();
-        }}
-      >
-        {error ? (
-          <p className="form-error" role="alert">
-            {error}
-          </p>
-        ) : null}
-        <section className="hp-modal-section">
-          <h3>Identity</h3>
-          <div className="hp-form-grid">
-            <label>
-              Tag
-              <input
-                required
-                value={draft.tag}
-                onChange={(event) => setDraft({ ...draft, tag: event.target.value })}
-                disabled={readOnly}
-              />
-            </label>
-            <OptionPicker
-              label="Manufacturer"
-              value={draft.manufacturer}
-              options={manufacturerOptions}
-              onChange={(manufacturer) => setDraft({ ...draft, manufacturer })}
-              onCreate={
-                onCreateOption
-                  ? (label) => onCreateOption(HEAT_PUMP_OPTION_KEYS.manufacturer, label)
-                  : undefined
-              }
-              disabled={readOnly}
-            />
-            <label>
-              Model number
-              <input
-                value={draft.model_number ?? ""}
-                onChange={(event) =>
-                  setDraft({ ...draft, model_number: event.target.value || null })
-                }
-                disabled={readOnly}
-              />
-            </label>
-            <OptionPicker
-              label="System family"
-              value={draft.system_family}
-              options={systemFamilyOptions}
-              onChange={(system_family) => setDraft({ ...draft, system_family })}
-              onCreate={
-                onCreateOption
-                  ? (label) => onCreateOption(HEAT_PUMP_OPTION_KEYS.systemFamily, label)
-                  : undefined
-              }
-              disabled={readOnly}
-            />
-            <OptionPicker
-              label="Refrigerant"
-              value={draft.refrigerant}
-              options={refrigerantOptions}
-              onChange={(refrigerant) => setDraft({ ...draft, refrigerant })}
-              onCreate={
-                onCreateOption
-                  ? (label) => onCreateOption(HEAT_PUMP_OPTION_KEYS.refrigerant, label)
-                  : undefined
-              }
-              disabled={readOnly}
-            />
-          </div>
-        </section>
-        <section className="hp-modal-section">
-          <h3>Heating performance</h3>
-          {/* Data Type mirrors the Phius calc dropdown and gates which
-              efficiency cells the export emits — pick COPs to send the
-              17/47F pair, HSPF2 to send the seasonal figure. */}
-          <div className="hp-form-grid">
-            <NumberInput
-              label="Capacity at 17F (kW)"
-              value={draft.heating_cap_kw_17f}
-              onChange={(heating_cap_kw_17f) => setDraft({ ...draft, heating_cap_kw_17f })}
-              readOnly={readOnly}
-            />
-            <NumberInput
-              label="Capacity at 47F (kW)"
-              value={draft.heating_cap_kw_47f}
-              onChange={(heating_cap_kw_47f) => setDraft({ ...draft, heating_cap_kw_47f })}
-              readOnly={readOnly}
-            />
-            <DataTypeSelect
-              label="Heating Data Type"
-              value={draft.heating_data_type}
-              options={HEATING_DATA_TYPES}
-              onChange={(heating_data_type) =>
-                setDraft({
-                  ...draft,
-                  heating_data_type: heating_data_type as HeatingDataType | null,
-                })
-              }
-              readOnly={readOnly}
-            />
-            <NumberInput
-              label="COP at 17F"
-              value={draft.heating_cop_17f}
-              onChange={(heating_cop_17f) => setDraft({ ...draft, heating_cop_17f })}
-              readOnly={readOnly}
-            />
-            <NumberInput
-              label="COP at 47F"
-              value={draft.heating_cop_47f}
-              onChange={(heating_cop_47f) => setDraft({ ...draft, heating_cop_47f })}
-              readOnly={readOnly}
-            />
-            <NumberInput
-              label="HSPF/HSPF2"
-              title="Holds either the legacy HSPF rating or the AHRI-2023 HSPF2 rating; which one is determined by Heating Data Type."
-              value={draft.hspf}
-              onChange={(hspf) => setDraft({ ...draft, hspf })}
-              readOnly={readOnly}
-            />
-          </div>
-        </section>
-        <section className="hp-modal-section">
-          <h3>Cooling performance</h3>
-          <div className="hp-form-grid">
-            <NumberInput
-              label="Capacity at 95F (kW)"
-              value={draft.cooling_cap_kw_95f}
-              onChange={(cooling_cap_kw_95f) => setDraft({ ...draft, cooling_cap_kw_95f })}
-              readOnly={readOnly}
-            />
-            <DataTypeSelect
-              label="Cooling Data Type"
-              value={draft.cooling_data_type}
-              options={COOLING_DATA_TYPES}
-              onChange={(cooling_data_type) =>
-                setDraft({
-                  ...draft,
-                  cooling_data_type: cooling_data_type as CoolingDataType | null,
-                })
-              }
-              readOnly={readOnly}
-            />
-            <NumberInput
-              label="EER/EER2"
-              title="Holds either the legacy EER rating or the AHRI-2023 EER2 rating; which one is determined by Cooling Data Type."
-              value={draft.eer}
-              onChange={(eer) => setDraft({ ...draft, eer })}
-              readOnly={readOnly}
-            />
-            <NumberInput
-              label="SEER/SEER2"
-              title="Holds either the legacy SEER rating or the AHRI-2023 SEER2 rating; which one is determined by Cooling Data Type."
-              value={draft.seer}
-              onChange={(seer) => setDraft({ ...draft, seer })}
-              readOnly={readOnly}
-            />
-            <NumberInput
-              label="IEER"
-              value={draft.ieer}
-              onChange={(ieer) => setDraft({ ...draft, ieer })}
-              readOnly={readOnly}
-            />
-          </div>
-        </section>
-        <label>
-          Notes
-          <textarea
-            rows={4}
-            value={draft.notes ?? ""}
-            onChange={(event) => setDraft({ ...draft, notes: event.target.value || null })}
+    <RowEditModal
+      title={title}
+      titleId="hp-outdoor-equip-title"
+      onCancel={onCancel}
+      onSubmit={() => void save()}
+      onDelete={onDelete}
+      deleteLabel="Delete outdoor equipment"
+      error={error}
+      isSaving={isSaving}
+      readOnly={readOnly}
+      submitLabel="Save outdoor equipment"
+    >
+      <RowEditSection title="Identity">
+        <RowEditGrid>
+          <TextField
+            label="Tag"
+            value={draft.tag}
+            onChange={(tag) => setDraft({ ...draft, tag: tag ?? "" })}
             disabled={readOnly}
           />
-        </label>
-        <div className="modal-actions">
-          {onDelete && !readOnly ? (
-            <button type="button" className="danger-button" onClick={onDelete}>
-              Delete outdoor equipment
-            </button>
-          ) : null}
-          <button type="button" className="secondary-button" onClick={onCancel}>
-            {readOnly ? "Close" : "Cancel"}
-          </button>
-          {!readOnly ? (
-            <button type="submit" disabled={isSaving}>
-              Save outdoor equipment
-            </button>
-          ) : null}
-        </div>
-      </form>
-    </ModalDialog>
-  );
-}
-
-function NumberInput({
-  label,
-  title,
-  value,
-  onChange,
-  readOnly,
-}: {
-  label: string;
-  title?: string;
-  value: number | null;
-  onChange: (value: number | null) => void;
-  readOnly: boolean;
-}) {
-  return (
-    <label title={title}>
-      {label}
-      <input
-        type="number"
-        min="0"
-        step="0.01"
-        value={value ?? ""}
-        onChange={(event) => onChange(numericValue(event.target.value))}
+          <ModalSingleSelectField
+            label="Manufacturer"
+            value={draft.manufacturer}
+            options={manufacturerOptions}
+            onChange={(manufacturer) => setDraft({ ...draft, manufacturer })}
+            onCreate={
+              onCreateOption
+                ? (label) => onCreateOption(HEAT_PUMP_OPTION_KEYS.manufacturer, label)
+                : undefined
+            }
+            disabled={readOnly}
+          />
+          <TextField
+            label="Model number"
+            value={draft.model_number ?? ""}
+            onChange={(model_number) => setDraft({ ...draft, model_number })}
+            disabled={readOnly}
+          />
+          <ModalSingleSelectField
+            label="System family"
+            value={draft.system_family}
+            options={systemFamilyOptions}
+            onChange={(system_family) => setDraft({ ...draft, system_family })}
+            onCreate={
+              onCreateOption
+                ? (label) => onCreateOption(HEAT_PUMP_OPTION_KEYS.systemFamily, label)
+                : undefined
+            }
+            disabled={readOnly}
+          />
+          <ModalSingleSelectField
+            label="Refrigerant"
+            value={draft.refrigerant}
+            options={refrigerantOptions}
+            onChange={(refrigerant) => setDraft({ ...draft, refrigerant })}
+            onCreate={
+              onCreateOption
+                ? (label) => onCreateOption(HEAT_PUMP_OPTION_KEYS.refrigerant, label)
+                : undefined
+            }
+            disabled={readOnly}
+          />
+        </RowEditGrid>
+      </RowEditSection>
+      <RowEditSection title="Heating performance">
+        {/* Data Type mirrors the Phius calc dropdown and gates which
+            efficiency cells the export emits: COPs sends the 17/47F pair,
+            HSPF2 sends the seasonal figure. */}
+        <RowEditGrid>
+          <NumberField
+            label="Capacity at 17F (kW)"
+            value={draft.heating_cap_kw_17f}
+            onChange={(heating_cap_kw_17f) => setDraft({ ...draft, heating_cap_kw_17f })}
+            disabled={readOnly}
+            min={0}
+            step={0.01}
+          />
+          <NumberField
+            label="Capacity at 47F (kW)"
+            value={draft.heating_cap_kw_47f}
+            onChange={(heating_cap_kw_47f) => setDraft({ ...draft, heating_cap_kw_47f })}
+            disabled={readOnly}
+            min={0}
+            step={0.01}
+          />
+          <ModalSingleSelectField
+            label="Heating Data Type"
+            value={draft.heating_data_type}
+            options={HEATING_DATA_TYPE_OPTIONS}
+            onChange={(heating_data_type) =>
+              setDraft({
+                ...draft,
+                heating_data_type: heating_data_type as HeatingDataType | null,
+              })
+            }
+            disabled={readOnly}
+          />
+          <NumberField
+            label="COP at 17F"
+            value={draft.heating_cop_17f}
+            onChange={(heating_cop_17f) => setDraft({ ...draft, heating_cop_17f })}
+            disabled={readOnly}
+            min={0}
+            step={0.01}
+          />
+          <NumberField
+            label="COP at 47F"
+            value={draft.heating_cop_47f}
+            onChange={(heating_cop_47f) => setDraft({ ...draft, heating_cop_47f })}
+            disabled={readOnly}
+            min={0}
+            step={0.01}
+          />
+          <NumberField
+            label="HSPF/HSPF2"
+            value={draft.hspf}
+            onChange={(hspf) => setDraft({ ...draft, hspf })}
+            disabled={readOnly}
+            min={0}
+            step={0.01}
+          />
+        </RowEditGrid>
+      </RowEditSection>
+      <RowEditSection title="Cooling performance">
+        <RowEditGrid>
+          <NumberField
+            label="Capacity at 95F (kW)"
+            value={draft.cooling_cap_kw_95f}
+            onChange={(cooling_cap_kw_95f) => setDraft({ ...draft, cooling_cap_kw_95f })}
+            disabled={readOnly}
+            min={0}
+            step={0.01}
+          />
+          <ModalSingleSelectField
+            label="Cooling Data Type"
+            value={draft.cooling_data_type}
+            options={COOLING_DATA_TYPE_OPTIONS}
+            onChange={(cooling_data_type) =>
+              setDraft({
+                ...draft,
+                cooling_data_type: cooling_data_type as CoolingDataType | null,
+              })
+            }
+            disabled={readOnly}
+          />
+          <NumberField
+            label="EER/EER2"
+            value={draft.eer}
+            onChange={(eer) => setDraft({ ...draft, eer })}
+            disabled={readOnly}
+            min={0}
+            step={0.01}
+          />
+          <NumberField
+            label="SEER/SEER2"
+            value={draft.seer}
+            onChange={(seer) => setDraft({ ...draft, seer })}
+            disabled={readOnly}
+            min={0}
+            step={0.01}
+          />
+          <NumberField
+            label="IEER"
+            value={draft.ieer}
+            onChange={(ieer) => setDraft({ ...draft, ieer })}
+            disabled={readOnly}
+            min={0}
+            step={0.01}
+          />
+        </RowEditGrid>
+      </RowEditSection>
+      <TextAreaField
+        label="Notes"
+        value={draft.notes ?? ""}
+        onChange={(notes) => setDraft({ ...draft, notes })}
         disabled={readOnly}
       />
-    </label>
+    </RowEditModal>
   );
 }
 
-function DataTypeSelect({
-  label,
-  value,
-  options,
-  onChange,
-  readOnly,
-}: {
-  label: string;
-  value: string | null;
-  options: readonly string[];
-  onChange: (value: string | null) => void;
-  readOnly: boolean;
-}) {
-  return (
-    <label>
-      {label}
-      <select
-        value={value ?? ""}
-        onChange={(event) => onChange(event.target.value || null)}
-        disabled={readOnly}
-      >
-        <option value="">(not set)</option>
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
+const HEATING_DATA_TYPE_OPTIONS = HEATING_DATA_TYPES.map((value) => ({
+  id: value,
+  label: value,
+}));
+
+const COOLING_DATA_TYPE_OPTIONS = COOLING_DATA_TYPES.map((value) => ({
+  id: value,
+  label: value,
+}));

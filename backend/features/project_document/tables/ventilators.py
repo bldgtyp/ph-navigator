@@ -183,12 +183,16 @@ def apply_ventilators_replace(body: ProjectDocumentV1, payload: BaseModel) -> Pr
         heat_pumps = next_equipment.heat_pumps
         cascaded_indoor_units = [
             row.model_copy(update={"linked_erv_unit_id": None}) if row.linked_erv_unit_id in removed_ids else row
-            for row in heat_pumps.indoor_units
+            for row in heat_pumps.indoor_units.rows
         ]
-        if cascaded_indoor_units != list(heat_pumps.indoor_units):
+        if cascaded_indoor_units != list(heat_pumps.indoor_units.rows):
             next_equipment = next_equipment.model_copy(
                 update={
-                    "heat_pumps": heat_pumps.model_copy(update={"indoor_units": cascaded_indoor_units}),
+                    "heat_pumps": heat_pumps.model_copy(
+                        update={
+                            "indoor_units": heat_pumps.indoor_units.model_copy(update={"rows": cascaded_indoor_units})
+                        }
+                    ),
                 }
             )
 

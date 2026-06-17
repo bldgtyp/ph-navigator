@@ -6,6 +6,7 @@ import {
 } from "../../../shared/ui/data-table";
 import { HOT_WATER_TANKS_COMPAT_BUILT_IN_FIELD_DEFS, hotWaterTanksFieldOverlay } from "../lib";
 import {
+  HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY,
   HOT_WATER_TANK_TYPE_OPTION_KEY,
   HOT_WATER_TANKS_TABLE_NAME,
   type HotWaterTankRow,
@@ -28,6 +29,7 @@ export function buildHotWaterTank(overrides: Partial<HotWaterTankRow> = {}): Hot
   return {
     id: "hwt_1",
     tank_type: "opt_hwt_dhw_heating",
+    inside_outside: "opt_hwt_inside",
     url: null,
     notes: null,
     datasheet_asset_ids: [],
@@ -35,7 +37,6 @@ export function buildHotWaterTank(overrides: Partial<HotWaterTankRow> = {}): Hot
       record_id: "HWT-1",
       name: "DHW storage tank",
       quantity: 1,
-      inside_outside: "Inside",
       manufacturer: "Acme",
       model: "ST-80",
       size_l: 302.8,
@@ -60,6 +61,10 @@ export function buildHotWaterTanksSlice(
       [HOT_WATER_TANK_TYPE_OPTION_KEY]: [
         { id: "opt_hwt_dhw_heating", label: "1-DHW and Heating", color: "#0ea5e9", order: 0 },
         { id: "opt_hwt_dhw_only", label: "2-DHW only", color: "#14b8a6", order: 1 },
+      ],
+      [HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY]: [
+        { id: "opt_hwt_inside", label: "Inside", color: "#0ea5e9", order: 0 },
+        { id: "opt_hwt_outside", label: "Outside", color: "#f97316", order: 1 },
       ],
     },
     ...overrides,

@@ -20,6 +20,15 @@ export function parseDecimalInput(input: string): number | null {
   return Number.isFinite(parsed) ? parsed : Number.NaN;
 }
 
+export function parseNumberInput(value: unknown): number | null {
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 export function stripTrailingZeros(value: string): string {
   return value.includes(".") ? value.replace(/\.?0+$/, "") : value;
 }

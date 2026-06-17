@@ -164,21 +164,21 @@ def test_bulk_download_preserves_order_and_writes_manifest(clean_document_tables
         # two P-1 datasheets come before the P-2 datasheet, and the second
         # P-1 datasheet is de-duplicated against the first.
         assert file_names == [
-            "equipment_pumps/pmp_1__datasheet.pdf",
-            "equipment_pumps/pmp_1__datasheet (2).pdf",
-            "equipment_pumps/pmp_2__spec.pdf",
+            "pumps/pmp_1__datasheet.pdf",
+            "pumps/pmp_1__datasheet (2).pdf",
+            "pumps/pmp_2__spec.pdf",
         ]
-        assert bundle.read("equipment_pumps/pmp_1__datasheet.pdf") == PDF_MAGIC + b"alpha"
-        assert bundle.read("equipment_pumps/pmp_1__datasheet (2).pdf") == PDF_MAGIC + b"bravo"
+        assert bundle.read("pumps/pmp_1__datasheet.pdf") == PDF_MAGIC + b"alpha"
+        assert bundle.read("pumps/pmp_1__datasheet (2).pdf") == PDF_MAGIC + b"bravo"
 
         manifest = bundle.read("MANIFEST.csv").decode()
         manifest_lines = manifest.splitlines()
         assert manifest_lines[0] == (
             "table_key,row_id,row_name,field_key,asset_id,index,original_filename,content_type,size_bytes,zip_path"
         )
-        assert manifest_lines[1].startswith(f"equipment_pumps,pmp_1,pmp_1,datasheet_asset_ids,{asset_a},0,")
-        assert manifest_lines[1].endswith("equipment_pumps/pmp_1__datasheet.pdf")
-        assert manifest_lines[3].startswith(f"equipment_pumps,pmp_2,pmp_2,datasheet_asset_ids,{asset_c},0,")
+        assert manifest_lines[1].startswith(f"pumps,pmp_1,pmp_1,datasheet_asset_ids,{asset_a},0,")
+        assert manifest_lines[1].endswith("pumps/pmp_1__datasheet.pdf")
+        assert manifest_lines[3].startswith(f"pumps,pmp_2,pmp_2,datasheet_asset_ids,{asset_c},0,")
         assert len(manifest_lines) == 4  # header + three references
     finally:
         _clear_fake_asset_service()
@@ -202,7 +202,7 @@ def test_bulk_download_filter_by_asset_ids(clean_document_tables: None) -> None:
 
         bundle = _open_bundle(fake_r2, project_id, job["result_asset_id"])
         file_names = [name for name in bundle.namelist() if name != "MANIFEST.csv"]
-        assert file_names == ["equipment_pumps/pmp_1__b.pdf"]
+        assert file_names == ["pumps/pmp_1__b.pdf"]
     finally:
         _clear_fake_asset_service()
 

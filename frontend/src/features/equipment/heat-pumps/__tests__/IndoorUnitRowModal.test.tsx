@@ -75,11 +75,16 @@ describe("IndoorUnitRowModal", () => {
     expect(screen.getByLabelText(/Linked ERV unit/i)).not.toBeDisabled();
 
     await user.type(screen.getByLabelText("Tag"), "AHU-1");
-    await user.selectOptions(
-      screen.getByLabelText(/Indoor equipment/i),
-      "hpie_01HX0000000000000000000000",
+    await user.click(
+      screen.getByRole("button", {
+        name: /Indoor equipment: Select an indoor equipment row/i,
+      }),
     );
-    await user.selectOptions(screen.getByLabelText(/Linked ERV unit/i), "vent_n2");
+    await user.click(screen.getByRole("radio", { name: /Link IE-A/i }));
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+    await user.click(screen.getByRole("button", { name: /Linked ERV unit: None/i }));
+    await user.click(screen.getByRole("radio", { name: /Link ERV-N2/ }));
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
     await user.click(screen.getByRole("button", { name: "Create indoor unit" }));
 
     expect(onSubmit).toHaveBeenCalledWith(

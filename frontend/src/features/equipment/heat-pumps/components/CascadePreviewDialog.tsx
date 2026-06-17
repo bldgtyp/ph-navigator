@@ -1,4 +1,5 @@
 import { ModalDialog } from "../../../../shared/ui/ModalDialog";
+import { ConfirmDestructiveDialog } from "../../../../shared/ui/data-table";
 import type { CascadeReference } from "../types";
 
 export function CascadePreviewDialog({
@@ -19,32 +20,17 @@ export function CascadePreviewDialog({
   isConfirming: boolean;
 }) {
   return (
-    <ModalDialog title={title} titleId="hp-cascade-preview-title" onClose={onCancel}>
-      <div className="project-form hp-modal-form">
-        <p>{description}</p>
-        <ul className="hp-cascade-list">
-          {affected.map((item) => (
-            <li key={`${item.table}:${item.row_id}`}>
-              <strong>{item.tag || item.row_id}</strong>
-              <span className="hp-cascade-meta"> — {item.table}</span>
-            </li>
-          ))}
-        </ul>
-        <div className="modal-actions">
-          <button type="button" className="secondary-button" onClick={onCancel}>
-            Cancel
-          </button>
-          <button
-            type="button"
-            className="danger-button"
-            onClick={onConfirm}
-            disabled={isConfirming}
-          >
-            {confirmLabel}
-          </button>
-        </div>
-      </div>
-    </ModalDialog>
+    <ConfirmDestructiveDialog
+      open
+      title={title}
+      description={description}
+      confirmLabel={confirmLabel}
+      confirmDisabled={isConfirming}
+      onCancel={onCancel}
+      onConfirm={onConfirm}
+    >
+      <CascadeReferenceList affected={affected} />
+    </ConfirmDestructiveDialog>
   );
 }
 
@@ -61,18 +47,11 @@ export function BlockedDeleteDialog({
 }) {
   return (
     <ModalDialog title={title} titleId="hp-cascade-blocked-title" onClose={onClose}>
-      <div className="project-form hp-modal-form">
+      <div className="project-form table-row-modal-form">
         <p className="form-error" role="alert">
           {message}
         </p>
-        <ul className="hp-cascade-list">
-          {affected.map((item) => (
-            <li key={`${item.table}:${item.row_id}`}>
-              <strong>{item.tag || item.row_id}</strong>
-              <span className="hp-cascade-meta"> — {item.table}</span>
-            </li>
-          ))}
-        </ul>
+        <CascadeReferenceList affected={affected} />
         <div className="modal-actions">
           <button type="button" onClick={onClose}>
             OK
@@ -80,5 +59,18 @@ export function BlockedDeleteDialog({
         </div>
       </div>
     </ModalDialog>
+  );
+}
+
+function CascadeReferenceList({ affected }: { affected: CascadeReference[] }) {
+  return (
+    <ul className="hp-cascade-list">
+      {affected.map((item) => (
+        <li key={`${item.table}:${item.row_id}`}>
+          <strong>{item.tag || item.row_id}</strong>
+          <span className="hp-cascade-meta"> — {item.table}</span>
+        </li>
+      ))}
+    </ul>
   );
 }

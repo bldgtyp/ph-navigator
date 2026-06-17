@@ -6,8 +6,11 @@ import {
   buildLinkedRecordOps,
   DataTable,
   type LinkedRecordCellOps,
-  type WriteOp,
 } from "../../../../shared/ui/data-table";
+import {
+  customFieldActionsForController,
+  type SliceTableController,
+} from "../../../../shared/ui/data-table/feature";
 import { useAssetUrls } from "../../../assets/hooks";
 import { ventilatorsSliceFeature } from "../../api";
 import type { VentilatorRow } from "../../types";
@@ -21,33 +24,33 @@ import {
   buildEmptyOutdoorEquipRow,
   buildEmptyOutdoorUnitRow,
   buildNewHeatPumpOption,
+  insertHeatPumpRow,
   outdoorEquipLabel,
+  replaceHeatPumpRow,
   sortedIndoorUnits,
   sortedOutdoorEquip,
   sortedOutdoorUnits,
   uniqueTagForAdd,
 } from "../lib";
+import { outdoorUnitColumnDefs, outdoorUnitFieldDefs } from "../outdoor-unit-columns";
+import { HEAT_PUMP_LINK_TARGETS, indoorUnitIdsByOutdoorUnit } from "../link-fields";
 import {
-  outdoorUnitColumnDefs,
-  outdoorUnitDefaultHiddenColumns,
-  outdoorUnitFieldDefs,
-} from "../outdoor-unit-columns";
-import { firstLinkedId, HEAT_PUMP_LINK_TARGETS, indoorUnitIdsByOutdoorUnit } from "../link-fields";
-import {
-  HEAT_PUMP_OUTDOOR_UNITS_TABLE_NAME,
   HEAT_PUMP_OPTION_KEYS,
   type CascadeReference,
   type HeatPumpIndoorUnitRow,
+  type HeatPumpIndoorUnitsSlice,
   type HeatPumpOutdoorEquipRow,
+  type HeatPumpOutdoorEquipSlice,
+  type HeatPumpOutdoorUnitsSlice,
   type HeatPumpOutdoorUnitRow,
   type HeatPumpOwnedOptionKey,
   type HeatPumpsSlice,
 } from "../types";
-import { useHeatPumpTableViewState } from "../useHeatPumpTableViewState";
 import { OutdoorEquipRowModal } from "./OutdoorEquipRowModal";
 import { IndoorUnitRowModal } from "./IndoorUnitRowModal";
 import { OutdoorUnitRowModal } from "./OutdoorUnitRowModal";
 import { BlockedDeleteDialog, CascadePreviewDialog } from "./CascadePreviewDialog";
+import { appendComputedFieldDefs, heatPumpColumnsWithCustomFields } from "./heatPumpCustomColumns";
 
 type ModalState =
   | { kind: "unit"; mode: "add" | "edit"; row: HeatPumpOutdoorUnitRow }
@@ -67,12 +70,18 @@ const EMPTY_HEAT_PUMP_OPTIONS: HeatPumpsSlice["single_select_options"][string] =
 export function OutdoorUnitsTable({
   projectId,
   slice,
-  isEditor,
-  versionLocked,
+  leafSlice,
+  controller,
+  indoorUnitsController,
+  outdoorEquipController,
 }: {
   projectId: string;
   slice: HeatPumpsSlice;
-  isEditor: boolean;
+  leafSlice: HeatPumpOutdoorUnitsSlice;
+  controller: SliceTableController<HeatPumpOutdoorUnitsSlice>;
+  indoorUnitsController: SliceTableController<HeatPumpIndoorUnitsSlice>;
+  outdoorEquipController: SliceTableController<HeatPumpOutdoorEquipSlice>;
+  isEditor?: boolean;
   versionLocked: boolean;
 }) {
   const [modal, setModal] = useState<ModalState>(null);
@@ -84,7 +93,7 @@ export function OutdoorUnitsTable({
   const patchMutation = useHeatPumpPatchMutation(projectId);
   const optionMutation = useHeatPumpOptionMutation(projectId);
   const queryClient = useQueryClient();
-  const accessMode = isEditor ? "editor" : "viewer";
+  const accessMode = controller.canEdit ? "editor" : "viewer";
   const indoorUnitModalOpen = modal?.kind === "indoor-unit";
   const ventilatorsQuery = ventilatorsSliceFeature.useSliceQuery(
     projectId,
@@ -112,7 +121,7 @@ export function OutdoorUnitsTable({
     () => new Map((assetUrls.data ?? []).map((item) => [item.asset_id, item])),
     [assetUrls.data],
   );
-  const readOnly = !isEditor || versionLocked;
+  const readOnly = !controller.canEdit;
   const noEquip = slice.outdoor_equip.length === 0;
   const openIndoorUnitLink = useCallback(
     (unitId: string) => {
@@ -128,7 +137,11 @@ export function OutdoorUnitsTable({
     },
     [slice.outdoor_equip],
   );
-  const fieldDefs = useMemo(() => outdoorUnitFieldDefs(), []);
+  const fieldDefs = useMemo(
+    () => appendComputedFieldDefs(controller.tableSchema.fieldDefs, outdoorUnitFieldDefs()),
+    [controller.tableSchema.fieldDefs],
+  );
+  const tableSchema = controller.tableSchema;
   const manufacturerOptions =
     slice.single_select_options[HEAT_PUMP_OPTION_KEYS.manufacturer] ?? EMPTY_HEAT_PUMP_OPTIONS;
   const linkedRecordOps = useMemo<ReadonlyMap<string, LinkedRecordCellOps>>(() => {
@@ -157,45 +170,32 @@ export function OutdoorUnitsTable({
     outdoorEquip,
     manufacturerOptions,
   ]);
-  const columns = useMemo(
-    () =>
-      outdoorUnitColumnDefs({
+  const columns = useMemo(() => {
+    return heatPumpColumnsWithCustomFields({
+      builtInColumns: outdoorUnitColumnDefs({
         projectId,
         isEditor: !readOnly,
         assetUrlById,
         onDatasheetChange: async (row, next) => {
-          await patchMutation.mutateAsync({
-            current: slice,
-            table: "outdoor-units",
-            patch: {
-              op: "replace",
-              path: `/${row.id}`,
-              value: { ...row, datasheet_asset_ids: next },
-            },
-          });
+          await replaceHeatPumpRow(controller.onWrite, { ...row, datasheet_asset_ids: next });
         },
         indoorUnits,
         incomingIndoorUnitIdsByRowId,
       }),
-    [
-      assetUrlById,
-      incomingIndoorUnitIdsByRowId,
-      indoorUnits,
-      patchMutation,
-      projectId,
-      readOnly,
-      slice,
-    ],
-  );
-  const tableView = useHeatPumpTableViewState({
+      tableSchema,
+      rowsComputed: leafSlice.rows_computed,
+    });
+  }, [
+    assetUrlById,
+    controller.onWrite,
+    incomingIndoorUnitIdsByRowId,
+    indoorUnits,
+    leafSlice.rows_computed,
     projectId,
-    tableKey: HEAT_PUMP_OUTDOOR_UNITS_TABLE_NAME,
-    isEditor,
-    columns,
-    fieldDefs,
-    sort: [{ fieldKey: "tag", direction: "asc" }],
-    hiddenColumns: outdoorUnitDefaultHiddenColumns,
-  });
+    readOnly,
+    tableSchema,
+  ]);
+  const tableView = controller;
 
   // OutdoorEquipRowModal opens here for paired equipment and still gets a
   // createOption callback for the manufacturer/system_family/refrigerant lists.
@@ -212,47 +212,27 @@ export function OutdoorUnitsTable({
 
   async function addUnit(row: HeatPumpOutdoorUnitRow) {
     const tag = uniqueTagForAdd(row.tag, slice.outdoor_units);
-    await patchMutation.mutateAsync({
-      current: slice,
-      table: "outdoor-units",
-      patch: { op: "add", path: "/-", value: { ...row, tag } },
-    });
+    await insertHeatPumpRow(controller.onWrite, { ...row, tag });
     setModal(null);
   }
 
   async function replaceUnit(row: HeatPumpOutdoorUnitRow) {
-    await patchMutation.mutateAsync({
-      current: slice,
-      table: "outdoor-units",
-      patch: { op: "replace", path: `/${row.id}`, value: row },
-    });
+    await replaceHeatPumpRow(controller.onWrite, row);
     setModal(null);
   }
 
   async function replaceOutdoorEquip(row: HeatPumpOutdoorEquipRow) {
-    await patchMutation.mutateAsync({
-      current: slice,
-      table: "outdoor-equip",
-      patch: { op: "replace", path: `/${row.id}`, value: row },
-    });
+    await replaceHeatPumpRow(outdoorEquipController.onWrite, row);
     setModal(null);
   }
 
   async function replaceIndoorUnit(row: HeatPumpIndoorUnitRow) {
-    await patchMutation.mutateAsync({
-      current: slice,
-      table: "indoor-units",
-      patch: { op: "replace", path: `/${row.id}`, value: row },
-    });
+    await replaceHeatPumpRow(indoorUnitsController.onWrite, row);
     setModal(null);
   }
 
   async function addOutdoorEquipAndSelect(equip: HeatPumpOutdoorEquipRow, unitId: string) {
-    await patchMutation.mutateAsync({
-      current: slice,
-      table: "outdoor-equip",
-      patch: { op: "add", path: "/-", value: equip },
-    });
+    await insertHeatPumpRow(outdoorEquipController.onWrite, equip);
     const unit = slice.outdoor_units.find((candidate) => candidate.id === unitId);
     setModal({
       kind: "unit",
@@ -315,41 +295,9 @@ export function OutdoorUnitsTable({
     }
   }
 
-  async function handleWrite(op: WriteOp) {
-    if (readOnly) return;
-    if (op.kind === "cell" || op.kind === "fill") {
-      for (const write of op.writes) {
-        const row = slice.outdoor_units.find((candidate) => candidate.id === write.rowId);
-        if (!row) continue;
-        const nextValue = outdoorUnitWriteValue(write.fieldKey, write.value);
-        await replaceUnit({ ...row, [write.fieldKey]: nextValue } as HeatPumpOutdoorUnitRow);
-      }
-      return;
-    }
-    if (op.kind === "rowDelete") {
-      for (const deleted of op.rows) {
-        const row = slice.outdoor_units.find((candidate) => candidate.id === deleted.rowId);
-        if (row) await startDelete(row);
-      }
-      return;
-    }
-    if (op.kind === "rowInsert") {
-      if (noEquip) return;
-      for (const inserted of op.rows) {
-        await addUnit(
-          buildEmptyOutdoorUnitRow({
-            id: inserted.rowId,
-            tag: String(inserted.fieldDefaults.tag ?? "HP"),
-            outdoor_equip_id: slice.outdoor_equip[0]?.id ?? "",
-          }),
-        );
-      }
-    }
-  }
-
   return (
     <>
-      {tableView.isLoading ? (
+      {tableView.viewLoading ? (
         <p className="form-note">Loading table view...</p>
       ) : (
         <DataTable
@@ -359,8 +307,8 @@ export function OutdoorUnitsTable({
           columnDefs={columns}
           view={tableView.view}
           onViewChange={tableView.onViewChange}
-          onResetView={tableView.reset}
-          onWrite={handleWrite}
+          onResetView={tableView.onResetView}
+          onWrite={controller.onWrite}
           readOnly={readOnly}
           linkedRecordOps={linkedRecordOps}
           emptyMessage={
@@ -397,6 +345,7 @@ export function OutdoorUnitsTable({
               </button>
             )
           }
+          {...customFieldActionsForController(controller)}
         />
       )}
       {modal?.kind === "unit" ? (
@@ -477,14 +426,4 @@ export function OutdoorUnitsTable({
       ) : null}
     </>
   );
-}
-
-function outdoorUnitWriteValue(fieldKey: string, value: unknown): unknown {
-  if (fieldKey === "outdoor_equip_id") {
-    const nextId = firstLinkedId(value);
-    if (!nextId) throw new Error("Outdoor equipment is required.");
-    return nextId;
-  }
-  if (value === "") return null;
-  return value;
 }

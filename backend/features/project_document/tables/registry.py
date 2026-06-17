@@ -12,18 +12,15 @@ from features.envelope.table_contracts import (
 )
 from features.project_document.tables.apertures import apertures_contract
 from features.project_document.tables.appliances import appliances_contract
-from features.project_document.tables.attachments import (
-    equipment_appliances_contract,
-    equipment_electric_heaters_contract,
-    equipment_ervs_contract,
-    equipment_fans_contract,
-    equipment_hot_water_heaters_contract,
-    equipment_hot_water_tanks_contract,
-    equipment_pumps_contract,
-)
 from features.project_document.tables.contracts import TableContract
 from features.project_document.tables.electric_heaters import electric_heaters_contract
 from features.project_document.tables.fans import fans_contract
+from features.project_document.tables.heat_pumps import (
+    heat_pumps_indoor_equip_contract,
+    heat_pumps_indoor_units_contract,
+    heat_pumps_outdoor_equip_contract,
+    heat_pumps_outdoor_units_contract,
+)
 from features.project_document.tables.hot_water_heaters import hot_water_heaters_contract
 from features.project_document.tables.hot_water_tanks import hot_water_tanks_contract
 from features.project_document.tables.pumps import pumps_contract
@@ -77,16 +74,13 @@ _TABLES: dict[str, TableContract] = {
     appliances_contract.name: appliances_contract,
     pumps_contract.name: pumps_contract,
     fans_contract.name: fans_contract,
+    heat_pumps_outdoor_equip_contract.name: heat_pumps_outdoor_equip_contract,
+    heat_pumps_indoor_equip_contract.name: heat_pumps_indoor_equip_contract,
+    heat_pumps_outdoor_units_contract.name: heat_pumps_outdoor_units_contract,
+    heat_pumps_indoor_units_contract.name: heat_pumps_indoor_units_contract,
     hot_water_heaters_contract.name: hot_water_heaters_contract,
     hot_water_tanks_contract.name: hot_water_tanks_contract,
     electric_heaters_contract.name: electric_heaters_contract,
     thermal_bridges_contract.name: thermal_bridges_contract,
-    equipment_ervs_contract.name: equipment_ervs_contract,
-    equipment_pumps_contract.name: equipment_pumps_contract,
-    equipment_fans_contract.name: equipment_fans_contract,
-    equipment_hot_water_heaters_contract.name: equipment_hot_water_heaters_contract,
-    equipment_hot_water_tanks_contract.name: equipment_hot_water_tanks_contract,
-    equipment_electric_heaters_contract.name: equipment_electric_heaters_contract,
-    equipment_appliances_contract.name: equipment_appliances_contract,
     apertures_contract.name: apertures_contract,
 }

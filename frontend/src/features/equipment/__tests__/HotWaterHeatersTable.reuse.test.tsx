@@ -94,7 +94,7 @@ describe("HotWaterHeatersTable DataTable reuse", () => {
     expect(screen.getByRole("columnheader", { name: /Model/ })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: /Manufacturer/ })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: /Size/ })).toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: /Temperatur/ })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: /Temperature/ })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: /UEF/ })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: /Datasheet/ })).toBeInTheDocument();
     expect(screen.getByText("5-Heat Pump (Annual COP)")).toBeInTheDocument();

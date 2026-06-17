@@ -97,7 +97,8 @@ describe("IndoorEquipRowModal", () => {
     );
 
     await user.type(screen.getByLabelText("Model number"), "PLA-A12EA8");
-    await user.selectOptions(screen.getByLabelText("Install type"), "opt_ceiling_recessed");
+    await user.click(screen.getByLabelText("Install type"));
+    await user.click(screen.getByRole("option", { name: "Ceiling Recessed" }));
     await user.click(screen.getByRole("button", { name: "Create indoor equipment" }));
 
     expect(onSubmit).toHaveBeenCalledTimes(1);

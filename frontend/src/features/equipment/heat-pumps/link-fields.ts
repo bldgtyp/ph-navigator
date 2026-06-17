@@ -1,4 +1,9 @@
-import type { DataTableColumnDef, FieldDef } from "../../../shared/ui/data-table";
+import {
+  incomingLinkColumn,
+  incomingLinkFieldDef,
+  type DataTableColumnDef,
+  type FieldDef,
+} from "../../../shared/ui/data-table";
 import type { HeatPumpIndoorUnitRow, HeatPumpOutdoorUnitRow } from "./types";
 
 export const HEAT_PUMP_LINK_TARGETS = {
@@ -126,6 +131,7 @@ export function firstLinkedId(value: unknown): string | null {
 }
 
 export function linkedIds(value: unknown): string[] {
+  if (typeof value === "string") return value.length > 0 ? [value] : [];
   if (!Array.isArray(value)) return [];
   return value.filter((entry): entry is string => typeof entry === "string" && entry.length > 0);
 }
@@ -139,16 +145,7 @@ function incomingUnitsFieldDef({
   displayName: string;
   targetTablePath: readonly string[];
 }): FieldDef {
-  return {
-    field_key: fieldKey,
-    field_type: "linked_record",
-    display_name: displayName,
-    read_only: true,
-    linked_record_config: {
-      target_table_path: [...targetTablePath],
-      max_links: null,
-    },
-  };
+  return incomingLinkFieldDef({ fieldKey, displayName, targetTablePath });
 }
 
 function incomingUnitColumnDef<TRow, TUnit extends { id: string }>({
@@ -165,16 +162,14 @@ function incomingUnitColumnDef<TRow, TUnit extends { id: string }>({
   getLabel: (unit: TUnit) => string;
 }): DataTableColumnDef<TRow> {
   const unitLabelById = new Map(units.map((unit) => [unit.id, getLabel(unit)]));
-  const labelFor = (id: string) => unitLabelById.get(id) ?? id;
-  return {
+  return incomingLinkColumn({
     id: fieldKey,
     fieldKey,
     header,
-    accessor: (row) => getIncomingIds(row),
-    measureText: (row) => getIncomingIds(row).map(labelFor).join(", "),
-    defaultWidth: 180,
-    className: "data-table-inverse-link-cell",
-  };
+    getIncomingIds,
+    resolveLabel: (id) => unitLabelById.get(id) ?? null,
+    accessorValue: "ids",
+  });
 }
 
 function indoorUnitLabel(row: HeatPumpIndoorUnitRow): string {

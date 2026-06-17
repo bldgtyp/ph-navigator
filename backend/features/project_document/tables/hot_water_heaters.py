@@ -64,7 +64,7 @@ HOT_WATER_HEATERS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
     ),
     built_in_field_def(
         field_key="temperature_c",
-        display_name="Temperatur",
+        display_name="Temperature",
         field_type=CustomFieldType.number,
         config={
             "units": {

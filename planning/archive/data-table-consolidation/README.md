@@ -1,16 +1,16 @@
 ---
 DATE: 2026-06-16
 TIME: 16:09 EDT
-STATUS: Active - planning complete, awaiting implementation
+STATUS: Complete - archived after full CI/browser smoke
 AUTHOR: Ed (via Claude)
 SCOPE: Consolidate every project DataTable page (Rooms, Equipment/*,
   Heat Pumps, Thermal Bridges) onto the shared data-table system so
   rendering and behavior are consistent across all tables, and close the
   backend data-shape/validation gaps the consistency review found.
 RELATED:
-  - planning/refactor/data-table-consolidation/PRD.md
-  - planning/refactor/data-table-consolidation/PLAN.md
-  - planning/refactor/data-table-consolidation/STATUS.md
+  - planning/archive/data-table-consolidation/PRD.md
+  - planning/archive/data-table-consolidation/PLAN.md
+  - planning/archive/data-table-consolidation/STATUS.md
   - planning/code-reviews/2026-06-16/data-table-consistency-review.md
   - context/technical-requirements/data-table.md
   - context/CODING_STANDARDS.md
@@ -19,7 +19,7 @@ RELATED:
   - backend/features/heat_pumps/
 ---
 
-# DataTable Consolidation - Refactor Folder
+# DataTable Consolidation - Archived Refactor Folder
 
 ## Scope
 

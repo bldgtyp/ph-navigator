@@ -16,6 +16,7 @@ from features.project_document.validation import body_size_bytes, document_etag
 from features.projects.models import CreateProjectRequest
 from features.projects.service import empty_project_document
 from main import app
+from tests.builders.assets import insert_project_asset
 from tests.test_project_document import ORIGIN, create_project, signed_in_client
 
 
@@ -231,6 +232,14 @@ def test_envelope_read_endpoint_returns_saved_and_draft_sources(clean_document_t
     version_id = project["active_version_id"]
     saved_body = envelope_body()
     write_saved_body(version_id, saved_body)
+    insert_project_asset(project_id=project_id, asset_id="asset_01HXABCDEF0123456789ABCD")
+    insert_project_asset(
+        project_id=project_id,
+        asset_id="asset_01HXPHOTO00123456789ABCD",
+        asset_kind="site_photo",
+        content_type="image/jpeg",
+        original_filename="assembly-photo.jpg",
+    )
 
     saved = client.get(envelope_url(project_id, version_id, source="version"))
     assert saved.status_code == 200

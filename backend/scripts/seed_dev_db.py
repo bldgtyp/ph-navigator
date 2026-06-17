@@ -27,9 +27,13 @@ from features.climate.object_store import ClimateBundleStore
 from features.climate.seeding import seed_from_object_store
 from features.heat_pumps.models import (
     HeatPumpIndoorEquipRow,
+    HeatPumpIndoorEquipTableEnvelope,
     HeatPumpIndoorUnitRow,
+    HeatPumpIndoorUnitsTableEnvelope,
     HeatPumpOutdoorEquipRow,
+    HeatPumpOutdoorEquipTableEnvelope,
     HeatPumpOutdoorUnitRow,
+    HeatPumpOutdoorUnitsTableEnvelope,
     HeatPumpsTableSlice,
 )
 from features.project_climate_source import repository as climate_source_repository
@@ -69,6 +73,12 @@ from features.project_document.document import (
 from features.project_document.tables.appliances import APPLIANCES_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.electric_heaters import ELECTRIC_HEATERS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.fans import FANS_BUILT_IN_FIELD_DEFS
+from features.project_document.tables.heat_pumps import (
+    INDOOR_EQUIP_BUILT_IN_FIELD_DEFS,
+    INDOOR_UNITS_BUILT_IN_FIELD_DEFS,
+    OUTDOOR_EQUIP_BUILT_IN_FIELD_DEFS,
+    OUTDOOR_UNITS_BUILT_IN_FIELD_DEFS,
+)
 from features.project_document.tables.hot_water_heaters import HOT_WATER_HEATERS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.hot_water_tanks import HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_DEFS
@@ -366,10 +376,22 @@ def _starter_project_document(payload: CreateProjectRequest) -> ProjectDocumentV
                 rows=[ApplianceRow.model_validate(row) for row in appliances_seed.rows],
             ),
             "heat_pumps": HeatPumpsTableSlice(
-                outdoor_equip=[HeatPumpOutdoorEquipRow.model_validate(row) for row in heat_pumps_seed.outdoor_equip],
-                indoor_equip=[HeatPumpIndoorEquipRow.model_validate(row) for row in heat_pumps_seed.indoor_equip],
-                outdoor_units=[HeatPumpOutdoorUnitRow.model_validate(row) for row in heat_pumps_seed.outdoor_units],
-                indoor_units=[HeatPumpIndoorUnitRow.model_validate(row) for row in heat_pumps_seed.indoor_units],
+                outdoor_equip=HeatPumpOutdoorEquipTableEnvelope(
+                    field_defs=list(OUTDOOR_EQUIP_BUILT_IN_FIELD_DEFS),
+                    rows=[HeatPumpOutdoorEquipRow.model_validate(row) for row in heat_pumps_seed.outdoor_equip],
+                ),
+                indoor_equip=HeatPumpIndoorEquipTableEnvelope(
+                    field_defs=list(INDOOR_EQUIP_BUILT_IN_FIELD_DEFS),
+                    rows=[HeatPumpIndoorEquipRow.model_validate(row) for row in heat_pumps_seed.indoor_equip],
+                ),
+                outdoor_units=HeatPumpOutdoorUnitsTableEnvelope(
+                    field_defs=list(OUTDOOR_UNITS_BUILT_IN_FIELD_DEFS),
+                    rows=[HeatPumpOutdoorUnitRow.model_validate(row) for row in heat_pumps_seed.outdoor_units],
+                ),
+                indoor_units=HeatPumpIndoorUnitsTableEnvelope(
+                    field_defs=list(INDOOR_UNITS_BUILT_IN_FIELD_DEFS),
+                    rows=[HeatPumpIndoorUnitRow.model_validate(row) for row in heat_pumps_seed.indoor_units],
+                ),
             ),
         }
     )

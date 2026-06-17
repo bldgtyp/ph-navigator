@@ -11,6 +11,7 @@ from features.project_document.custom_fields import CustomFieldType
 from features.project_document.document import ProjectDocumentV1, PumpRow
 from features.project_document.tables import get_table_contract
 from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_DEFS, PUMPS_BUILT_IN_FIELD_KEYS
+from tests.builders.assets import insert_project_asset
 from tests.project_document_helpers import (
     custom_fields_from_slice,
     empty_pumps_table,
@@ -94,7 +95,7 @@ def test_document_allows_duplicate_pump_tags() -> None:
     first = pump_payload()["pumps"][0]
     tables = empty_required_tables()
     body = {
-        "schema_version": 8,
+        "schema_version": 10,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             **tables,
@@ -120,6 +121,28 @@ def test_document_allows_duplicate_pump_tags() -> None:
     }
     doc = ProjectDocumentV1.model_validate(body)
     assert [pump.custom_values["record_id"] for pump in doc.tables.equipment.pumps.rows] == ["P-1", "p-1"]
+
+
+def test_document_rejects_negative_pump_numeric_builtin() -> None:
+    payload = pump_payload()
+    payload["pumps"][0]["custom_values"]["wattage"] = -1
+    tables = empty_required_tables()
+
+    with pytest.raises(ValidationError, match="pump wattage must be zero or greater"):
+        ProjectDocumentV1.model_validate(
+            {
+                "schema_version": 10,
+                "project": {"name": "p", "bt_number": "1", "cert_programs": []},
+                "tables": {
+                    **tables,
+                    "equipment": {
+                        **tables["equipment"],
+                        "pumps": empty_pumps_table(rows=payload["pumps"]),
+                    },
+                },
+                "single_select_options": payload["single_select_options"],
+            }
+        )
 
 
 def test_pumps_contract_exposes_field_registry() -> None:
@@ -264,7 +287,9 @@ def test_pumps_custom_value_and_datasheet_survive_replace_refetch(clean_document
 
     payload = pump_payload()
     payload["field_defs"] = with_custom_field["field_defs"]
-    payload["pumps"][0]["datasheet_asset_ids"] = ["asset_01HXABCDEF0123456789ABCD"]
+    asset_id = "asset_01HXABCDEF0123456789ABCD"
+    insert_project_asset(project_id=project_id, asset_id=asset_id)
+    payload["pumps"][0]["datasheet_asset_ids"] = [asset_id]
     payload["pumps"][0]["custom_values"]["cf_notes"] = "Primary recirc pump"
 
     updated = client.put(

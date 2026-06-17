@@ -1,17 +1,19 @@
-import { useMemo, type CSSProperties } from "react";
+import { useMemo } from "react";
 import {
   DataTable,
+  DATA_TABLE_COLUMN_WIDTHS,
   RECORD_ID_FIELD_KEY,
+  attachmentColumn,
+  identifierColumn,
+  linkColumn,
   type DataTableColumnDef,
   type DataTableProps,
-  type FieldDef,
   type TableSchema,
   type ViewState,
 } from "../../../shared/ui/data-table";
-import { singleSelectOption } from "../../../shared/ui/data-table/lib";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { useAssetUrls } from "../../assets/hooks";
-import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
+import { DATASHEET_ATTACHMENT_CONFIG } from "../../assets/lib";
 import { sortedHotWaterHeaters } from "../lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
 import {
@@ -90,16 +92,12 @@ export function HotWaterHeatersTable({
         fieldKey: RECORD_ID_FIELD_KEY,
         header: fieldDefByKey.get(RECORD_ID_FIELD_KEY)?.display_name ?? "Tag",
         accessor: (heater) => customTextValue(heater, RECORD_ID_FIELD_KEY),
-        defaultWidth: 100,
+        defaultWidth: DATA_TABLE_COLUMN_WIDTHS.recordId,
       },
-      {
-        id: "name",
-        fieldKey: "name",
-        header: fieldDefByKey.get("name")?.display_name ?? "Display Name",
+      identifierColumn({
+        fieldDefByKey,
         accessor: (heater) => customTextValue(heater, "name"),
-        defaultWidth: 180,
-        isIdentifier: true,
-      },
+      }),
       {
         id: "quantity",
         fieldKey: "quantity",
@@ -113,8 +111,6 @@ export function HotWaterHeatersTable({
         fieldKey: HOT_WATER_HEATER_TYPE_KEY,
         header: fieldDefByKey.get(HOT_WATER_HEATER_TYPE_KEY)?.display_name ?? "Type",
         accessor: (heater) => heater.heater_type,
-        render: (heater) =>
-          optionPill(heater.heater_type, fieldDefByKey.get(HOT_WATER_HEATER_TYPE_KEY)),
         defaultWidth: 170,
       },
       {
@@ -142,7 +138,7 @@ export function HotWaterHeatersTable({
       {
         id: "temperature_c",
         fieldKey: "temperature_c",
-        header: fieldDefByKey.get("temperature_c")?.display_name ?? "Temperatur",
+        header: fieldDefByKey.get("temperature_c")?.display_name ?? "Temperature",
         accessor: (heater) => customNumberValue(heater, "temperature_c"),
         defaultWidth: 130,
         className: "numeric-cell",
@@ -152,7 +148,7 @@ export function HotWaterHeatersTable({
         fieldKey: "amps",
         header: fieldDefByKey.get("amps")?.display_name ?? "Amps",
         accessor: (heater) => customNumberValue(heater, "amps"),
-        defaultWidth: 90,
+        defaultWidth: DATA_TABLE_COLUMN_WIDTHS.smallNumeric,
         className: "numeric-cell",
       },
       {
@@ -160,7 +156,7 @@ export function HotWaterHeatersTable({
         fieldKey: "volts",
         header: fieldDefByKey.get("volts")?.display_name ?? "Volts",
         accessor: (heater) => customNumberValue(heater, "volts"),
-        defaultWidth: 90,
+        defaultWidth: DATA_TABLE_COLUMN_WIDTHS.smallNumeric,
         className: "numeric-cell",
       },
       {
@@ -168,7 +164,7 @@ export function HotWaterHeatersTable({
         fieldKey: "phase",
         header: fieldDefByKey.get("phase")?.display_name ?? "Phase",
         accessor: (heater) => heater.phase,
-        defaultWidth: 90,
+        defaultWidth: DATA_TABLE_COLUMN_WIDTHS.smallNumeric,
         className: "numeric-cell",
       },
       {
@@ -192,62 +188,35 @@ export function HotWaterHeatersTable({
         fieldKey: "uef",
         header: fieldDefByKey.get("uef")?.display_name ?? "UEF",
         accessor: (heater) => customNumberValue(heater, "uef"),
-        defaultWidth: 90,
+        defaultWidth: DATA_TABLE_COLUMN_WIDTHS.smallNumeric,
         className: "numeric-cell",
       },
-      {
+      linkColumn({
         id: "url",
-        fieldKey: "url",
         header: fieldDefByKey.get("url")?.display_name ?? "URL",
-        accessor: (heater) => heater.url,
-        render: (heater) =>
-          heater.url ? (
-            <a
-              href={heater.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="data-table-link-cell"
-            >
-              {shortenUrl(heater.url)}
-            </a>
-          ) : null,
-        measureText: (heater) => heater.url ?? "",
-        defaultWidth: 180,
-      },
+        getValue: (heater) => heater.url,
+      }),
       {
         id: "notes",
         fieldKey: "notes",
         header: fieldDefByKey.get("notes")?.display_name ?? "Notes",
         accessor: (heater) => heater.notes,
-        defaultWidth: 280,
+        defaultWidth: DATA_TABLE_COLUMN_WIDTHS.notes,
       },
-      {
+      attachmentColumn({
         id: HOT_WATER_HEATER_DATASHEET_FIELD_KEY,
         fieldKey: HOT_WATER_HEATER_DATASHEET_FIELD_KEY,
         header:
           fieldDefByKey.get(HOT_WATER_HEATER_DATASHEET_FIELD_KEY)?.display_name ?? "Datasheet",
-        accessor: (heater) => heater.datasheet_asset_ids.join(","),
-        render: (heater) => (
-          <AttachmentCell
-            projectId={projectId}
-            value={heater.datasheet_asset_ids}
-            config={DATASHEET_ATTACHMENT_CONFIG}
-            readOnly={!isEditor}
-            assetUrlById={datasheetUrlById}
-            onChange={(next) => {
-              if (sameAttachmentAssetIds(heater.datasheet_asset_ids, next)) return;
-              return onWrite({
-                kind: "cell",
-                writes: [
-                  { rowId: heater.id, fieldKey: HOT_WATER_HEATER_DATASHEET_FIELD_KEY, value: next },
-                ],
-              });
-            }}
-          />
-        ),
-        measureText: (heater) => `${heater.datasheet_asset_ids.length} attachments`,
-        defaultWidth: 260,
-      },
+        projectId,
+        isEditor,
+        assetUrlById: datasheetUrlById,
+        config: DATASHEET_ATTACHMENT_CONFIG,
+        AttachmentCell,
+        getAssetIds: (heater) => heater.datasheet_asset_ids,
+        getRowId: (heater) => heater.id,
+        onWrite,
+      }),
       ...customColumns,
     ],
     [customColumns, datasheetUrlById, fieldDefByKey, isEditor, onWrite, projectId],
@@ -277,29 +246,4 @@ export function HotWaterHeatersTable({
       {...customFieldActions}
     />
   );
-}
-
-function optionPill(value: string | null, fieldDef: FieldDef | undefined) {
-  const option = singleSelectOption(value, fieldDef);
-  const label = value ? (option?.label ?? "Missing option") : "Unassigned";
-  const applyColor = option && fieldDef?.colorCodeOptions !== false;
-  return (
-    <span
-      className={
-        option ? "single-select-pill" : value ? "single-select-pill missing" : "muted-cell"
-      }
-      style={applyColor ? ({ "--option-color": option.color } as CSSProperties) : undefined}
-    >
-      {label}
-    </span>
-  );
-}
-
-function shortenUrl(value: string): string {
-  try {
-    const url = new URL(value);
-    return `${url.hostname}${url.pathname === "/" ? "" : url.pathname}`;
-  } catch {
-    return value;
-  }
 }

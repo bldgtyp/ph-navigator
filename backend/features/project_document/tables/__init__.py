@@ -7,10 +7,15 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from features.project_document.tables.apertures import AperturesSliceResponse
     from features.project_document.tables.appliances import AppliancesSliceResponse
-    from features.project_document.tables.attachments import AttachmentRowsResponse
     from features.project_document.tables.contracts import TableContract, TableRowsResponse
     from features.project_document.tables.electric_heaters import ElectricHeatersSliceResponse
     from features.project_document.tables.fans import FansSliceResponse
+    from features.project_document.tables.heat_pumps import (
+        IndoorEquipResponse,
+        IndoorUnitsResponse,
+        OutdoorEquipResponse,
+        OutdoorUnitsResponse,
+    )
     from features.project_document.tables.hot_water_heaters import HotWaterHeatersSliceResponse
     from features.project_document.tables.hot_water_tanks import HotWaterTanksSliceResponse
     from features.project_document.tables.pumps import PumpsSliceResponse
@@ -33,6 +38,10 @@ if TYPE_CHECKING:
         | VentilatorsSliceResponse
         | PumpsSliceResponse
         | FansSliceResponse
+        | OutdoorEquipResponse
+        | IndoorEquipResponse
+        | OutdoorUnitsResponse
+        | IndoorUnitsResponse
         | HotWaterHeatersSliceResponse
         | HotWaterTanksSliceResponse
         | AperturesSliceResponse
@@ -42,9 +51,9 @@ if TYPE_CHECKING:
 
 def __getattr__(name: str) -> Any:
     if name == "AttachmentRowsResponse":
-        from features.project_document.tables.attachments import AttachmentRowsResponse
+        from features.project_document.tables.contracts import TableRowsResponse
 
-        return AttachmentRowsResponse
+        return TableRowsResponse
     if name in {"TableContract", "TableRowsResponse"}:
         from features.project_document.tables import contracts
 
@@ -61,6 +70,22 @@ def __getattr__(name: str) -> Any:
         from features.project_document.tables.fans import FansSliceResponse
 
         return FansSliceResponse
+    if name == "OutdoorEquipResponse":
+        from features.project_document.tables.heat_pumps import OutdoorEquipResponse
+
+        return OutdoorEquipResponse
+    if name == "IndoorEquipResponse":
+        from features.project_document.tables.heat_pumps import IndoorEquipResponse
+
+        return IndoorEquipResponse
+    if name == "OutdoorUnitsResponse":
+        from features.project_document.tables.heat_pumps import OutdoorUnitsResponse
+
+        return OutdoorUnitsResponse
+    if name == "IndoorUnitsResponse":
+        from features.project_document.tables.heat_pumps import IndoorUnitsResponse
+
+        return IndoorUnitsResponse
     if name == "ElectricHeatersSliceResponse":
         from features.project_document.tables.electric_heaters import ElectricHeatersSliceResponse
 
@@ -103,6 +128,12 @@ def __getattr__(name: str) -> Any:
         from features.project_document.tables.contracts import TableRowsResponse
         from features.project_document.tables.electric_heaters import ElectricHeatersSliceResponse
         from features.project_document.tables.fans import FansSliceResponse
+        from features.project_document.tables.heat_pumps import (
+            IndoorEquipResponse,
+            IndoorUnitsResponse,
+            OutdoorEquipResponse,
+            OutdoorUnitsResponse,
+        )
         from features.project_document.tables.hot_water_heaters import HotWaterHeatersSliceResponse
         from features.project_document.tables.hot_water_tanks import HotWaterTanksSliceResponse
         from features.project_document.tables.pumps import PumpsSliceResponse
@@ -120,6 +151,10 @@ def __getattr__(name: str) -> Any:
             | VentilatorsSliceResponse
             | PumpsSliceResponse
             | FansSliceResponse
+            | OutdoorEquipResponse
+            | IndoorEquipResponse
+            | OutdoorUnitsResponse
+            | IndoorUnitsResponse
             | HotWaterHeatersSliceResponse
             | HotWaterTanksSliceResponse
             | AperturesSliceResponse
@@ -137,6 +172,10 @@ __all__ = [
     "FansSliceResponse",
     "HotWaterHeatersSliceResponse",
     "HotWaterTanksSliceResponse",
+    "IndoorEquipResponse",
+    "IndoorUnitsResponse",
+    "OutdoorEquipResponse",
+    "OutdoorUnitsResponse",
     "PumpsSliceResponse",
     "RoomsSliceResponse",
     "SpaceTypesSliceResponse",

@@ -1,9 +1,16 @@
 import { useState } from "react";
 import { errorMessage } from "../../../../shared/lib/errors";
-import { ModalDialog } from "../../../../shared/ui/ModalDialog";
-import { numericValue, tagCollides } from "../lib";
+import {
+  ModalSingleSelectField,
+  NumberField,
+  RowEditGrid,
+  RowEditModal,
+  RowEditSection,
+  TextAreaField,
+  TextField,
+} from "../../../../shared/ui/data-table";
+import { tagCollides } from "../lib";
 import { HEAT_PUMP_OPTION_KEYS, type HeatPumpIndoorEquipRow, type HeatPumpsSlice } from "../types";
-import { OptionPicker } from "./OptionPicker";
 
 export function IndoorEquipRowModal({
   mode,
@@ -84,170 +91,140 @@ export function IndoorEquipRowModal({
   };
 
   return (
-    <ModalDialog title={title} titleId="hp-indoor-equip-title" onClose={onCancel}>
-      <form
-        className="project-form hp-modal-form"
-        noValidate
-        onSubmit={(event) => {
-          event.preventDefault();
-          void save();
-        }}
-      >
-        {error ? (
-          <p className="form-error" role="alert">
-            {error}
-          </p>
-        ) : null}
-        <section className="hp-modal-section">
-          <h3>Identity</h3>
-          <div className="hp-form-grid">
-            <label>
-              Tag
-              <input
-                required
-                value={draft.tag}
-                onChange={(event) => setDraft({ ...draft, tag: event.target.value })}
-                disabled={readOnly}
-              />
-            </label>
-            <OptionPicker
-              label="Manufacturer"
-              value={draft.manufacturer}
-              options={manufacturerOptions}
-              onChange={(manufacturer) => setDraft({ ...draft, manufacturer })}
-              onCreate={
-                onCreateOption
-                  ? (label) => onCreateOption(HEAT_PUMP_OPTION_KEYS.manufacturer, label)
-                  : undefined
-              }
-              disabled={readOnly}
-            />
-            <OptionPicker
-              label="Model type"
-              value={draft.model_type}
-              options={modelTypeOptions}
-              onChange={(model_type) => setDraft({ ...draft, model_type })}
-              onCreate={
-                onCreateOption
-                  ? (label) => onCreateOption(HEAT_PUMP_OPTION_KEYS.modelType, label)
-                  : undefined
-              }
-              disabled={readOnly}
-            />
-            <label>
-              Model number
-              <input
-                value={draft.model_number ?? ""}
-                onChange={(event) =>
-                  setDraft({ ...draft, model_number: event.target.value || null })
-                }
-                disabled={readOnly}
-              />
-            </label>
-            <OptionPicker
-              label="Install type"
-              value={draft.install_type}
-              options={installTypeOptions}
-              onChange={(install_type) => setDraft({ ...draft, install_type })}
-              onCreate={
-                onCreateOption
-                  ? (label) => onCreateOption(HEAT_PUMP_OPTION_KEYS.installType, label)
-                  : undefined
-              }
-              disabled={readOnly}
-            />
-          </div>
-        </section>
-        <section className="hp-modal-section">
-          <h3>Performance</h3>
-          <div className="hp-form-grid">
-            <NumberInput
-              label="Nominal tons"
-              value={draft.nominal_tons}
-              step={0.01}
-              onChange={(nominal_tons) => setDraft({ ...draft, nominal_tons })}
-              readOnly={readOnly}
-            />
-            <NumberInput
-              label="Fan speed (CFM)"
-              value={draft.fan_speed_cfm}
-              onChange={(fan_speed_cfm) => setDraft({ ...draft, fan_speed_cfm })}
-              readOnly={readOnly}
-            />
-            <NumberInput
-              label="Cooling capacity (kW)"
-              value={draft.cooling_btuh}
-              onChange={(cooling_btuh) => setDraft({ ...draft, cooling_btuh })}
-              readOnly={readOnly}
-            />
-            <NumberInput
-              label="Heating capacity (kW)"
-              value={draft.heating_btuh_47f}
-              onChange={(heating_btuh_47f) => setDraft({ ...draft, heating_btuh_47f })}
-              readOnly={readOnly}
-            />
-            <NumberInput
-              label="Heating Btu/h at 17F"
-              value={draft.heating_btuh_17f}
-              onChange={(heating_btuh_17f) => setDraft({ ...draft, heating_btuh_17f })}
-              readOnly={readOnly}
-            />
-            <NumberInput
-              label="Heating COP"
-              value={draft.heating_cop}
-              step={0.01}
-              onChange={(heating_cop) => setDraft({ ...draft, heating_cop })}
-              readOnly={readOnly}
-            />
-            <NumberInput
-              label="SEER"
-              value={draft.seer}
-              step={0.01}
-              onChange={(seer) => setDraft({ ...draft, seer })}
-              readOnly={readOnly}
-            />
-            <NumberInput
-              label="EER"
-              value={draft.eer}
-              step={0.01}
-              onChange={(eer) => setDraft({ ...draft, eer })}
-              readOnly={readOnly}
-            />
-            <NumberInput
-              label="HSPF"
-              value={draft.hspf}
-              step={0.01}
-              onChange={(hspf) => setDraft({ ...draft, hspf })}
-              readOnly={readOnly}
-            />
-          </div>
-        </section>
-        <label>
-          Notes
-          <textarea
-            rows={4}
-            value={draft.notes ?? ""}
-            onChange={(event) => setDraft({ ...draft, notes: event.target.value || null })}
+    <RowEditModal
+      title={title}
+      titleId="hp-indoor-equip-title"
+      onCancel={onCancel}
+      onSubmit={() => void save()}
+      onDelete={onDelete}
+      deleteLabel="Delete indoor equipment"
+      error={error}
+      isSaving={isSaving}
+      readOnly={readOnly}
+      submitLabel={submitLabel}
+    >
+      <RowEditSection title="Identity">
+        <RowEditGrid>
+          <TextField
+            label="Tag"
+            value={draft.tag}
+            onChange={(tag) => setDraft({ ...draft, tag: tag ?? "" })}
             disabled={readOnly}
           />
-        </label>
-        <div className="modal-actions">
-          {onDelete && !readOnly ? (
-            <button type="button" className="danger-button" onClick={onDelete}>
-              Delete indoor equipment
-            </button>
-          ) : null}
-          <button type="button" className="secondary-button" onClick={onCancel}>
-            {readOnly ? "Close" : "Cancel"}
-          </button>
-          {!readOnly ? (
-            <button type="submit" disabled={isSaving}>
-              {submitLabel}
-            </button>
-          ) : null}
-        </div>
-      </form>
-    </ModalDialog>
+          <ModalSingleSelectField
+            label="Manufacturer"
+            value={draft.manufacturer}
+            options={manufacturerOptions}
+            onChange={(manufacturer) => setDraft({ ...draft, manufacturer })}
+            onCreate={
+              onCreateOption
+                ? (label) => onCreateOption(HEAT_PUMP_OPTION_KEYS.manufacturer, label)
+                : undefined
+            }
+            disabled={readOnly}
+          />
+          <ModalSingleSelectField
+            label="Model type"
+            value={draft.model_type}
+            options={modelTypeOptions}
+            onChange={(model_type) => setDraft({ ...draft, model_type })}
+            onCreate={
+              onCreateOption
+                ? (label) => onCreateOption(HEAT_PUMP_OPTION_KEYS.modelType, label)
+                : undefined
+            }
+            disabled={readOnly}
+          />
+          <TextField
+            label="Model number"
+            value={draft.model_number ?? ""}
+            onChange={(model_number) => setDraft({ ...draft, model_number })}
+            disabled={readOnly}
+          />
+          <ModalSingleSelectField
+            label="Install type"
+            value={draft.install_type}
+            options={installTypeOptions}
+            onChange={(install_type) => setDraft({ ...draft, install_type })}
+            onCreate={
+              onCreateOption
+                ? (label) => onCreateOption(HEAT_PUMP_OPTION_KEYS.installType, label)
+                : undefined
+            }
+            disabled={readOnly}
+          />
+        </RowEditGrid>
+      </RowEditSection>
+      <RowEditSection title="Performance">
+        <RowEditGrid>
+          <NumberField
+            label="Nominal tons"
+            value={draft.nominal_tons}
+            step={0.01}
+            onChange={(nominal_tons) => setDraft({ ...draft, nominal_tons })}
+            disabled={readOnly}
+          />
+          <NumberField
+            label="Fan speed (CFM)"
+            value={draft.fan_speed_cfm}
+            onChange={(fan_speed_cfm) => setDraft({ ...draft, fan_speed_cfm })}
+            disabled={readOnly}
+          />
+          <NumberField
+            label="Cooling capacity (kW)"
+            value={draft.cooling_btuh}
+            onChange={(cooling_btuh) => setDraft({ ...draft, cooling_btuh })}
+            disabled={readOnly}
+          />
+          <NumberField
+            label="Heating capacity (kW)"
+            value={draft.heating_btuh_47f}
+            onChange={(heating_btuh_47f) => setDraft({ ...draft, heating_btuh_47f })}
+            disabled={readOnly}
+          />
+          <NumberField
+            label="Heating Btu/h at 17F"
+            value={draft.heating_btuh_17f}
+            onChange={(heating_btuh_17f) => setDraft({ ...draft, heating_btuh_17f })}
+            disabled={readOnly}
+          />
+          <NumberField
+            label="Heating COP"
+            value={draft.heating_cop}
+            step={0.01}
+            onChange={(heating_cop) => setDraft({ ...draft, heating_cop })}
+            disabled={readOnly}
+          />
+          <NumberField
+            label="SEER"
+            value={draft.seer}
+            step={0.01}
+            onChange={(seer) => setDraft({ ...draft, seer })}
+            disabled={readOnly}
+          />
+          <NumberField
+            label="EER"
+            value={draft.eer}
+            step={0.01}
+            onChange={(eer) => setDraft({ ...draft, eer })}
+            disabled={readOnly}
+          />
+          <NumberField
+            label="HSPF"
+            value={draft.hspf}
+            step={0.01}
+            onChange={(hspf) => setDraft({ ...draft, hspf })}
+            disabled={readOnly}
+          />
+        </RowEditGrid>
+      </RowEditSection>
+      <TextAreaField
+        label="Notes"
+        value={draft.notes ?? ""}
+        onChange={(notes) => setDraft({ ...draft, notes })}
+        disabled={readOnly}
+      />
+    </RowEditModal>
   );
 }
 
@@ -257,32 +234,4 @@ function negativeNumber(
 ): boolean {
   if (value === null) return false;
   return strictlyPositive ? value <= 0 : value < 0;
-}
-
-function NumberInput({
-  label,
-  value,
-  onChange,
-  readOnly,
-  step = 1,
-}: {
-  label: string;
-  value: number | null;
-  onChange: (value: number | null) => void;
-  readOnly: boolean;
-  step?: number;
-}) {
-  return (
-    <label>
-      {label}
-      <input
-        type="number"
-        min="0"
-        step={step}
-        value={value ?? ""}
-        onChange={(event) => onChange(numericValue(event.target.value))}
-        disabled={readOnly}
-      />
-    </label>
-  );
 }

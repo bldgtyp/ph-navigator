@@ -13,6 +13,7 @@ from features.assets.routes import get_asset_service
 from features.assets.service import AssetService
 from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_DEFS
 from main import app
+from tests.builders.assets import insert_project_asset
 from tests.test_project_document import ORIGIN, create_project, signed_in_client
 
 
@@ -92,6 +93,23 @@ def _asset_url(project_id: object, asset_id: str, suffix: str = "") -> str:
     return f"/api/v1/projects/{project_id}/assets/{asset_id}{suffix}"
 
 
+def _create_project_with_bt(client: TestClient, bt_number: str) -> dict[str, object]:
+    response = client.post(
+        "/api/v1/projects",
+        headers={"Origin": ORIGIN},
+        json={
+            "name": f"Project {bt_number}",
+            "bt_number": bt_number,
+            "client": "May",
+            "cert_programs": ["phi"],
+            "phius_number": None,
+            "phius_dropbox_url": None,
+        },
+    )
+    assert response.status_code == 201
+    return response.json()
+
+
 def _upload_intent_payload(body: bytes, *, content_type: str = "application/pdf") -> dict[str, object]:
     return {
         "asset_kind": "datasheet",
@@ -144,6 +162,85 @@ def _create_project_with_pump(client: TestClient) -> tuple[dict[str, object], di
     return project, response.json()
 
 
+def test_pumps_replace_rejects_missing_attachment_asset(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    initial = client.get(_draft_pumps_url(project["id"], project["active_version_id"])).json()
+    payload = _pump_payload()
+    payload["pumps"][0]["datasheet_asset_ids"] = ["asset_missing"]
+
+    response = client.put(
+        _draft_pumps_url(project["id"], project["active_version_id"]),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial["version_etag"]},
+        json=payload,
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error_code"] == "asset_not_found"
+    assert response.json()["details"]["field_key"] == "pumps.datasheet_asset_ids"
+
+
+def test_pumps_replace_rejects_cross_project_attachment_asset(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    other_project = _create_project_with_bt(client, "9999")
+    insert_project_asset(project_id=other_project["id"], asset_id="asset_other_project")
+    initial = client.get(_draft_pumps_url(project["id"], project["active_version_id"])).json()
+    payload = _pump_payload()
+    payload["pumps"][0]["datasheet_asset_ids"] = ["asset_other_project"]
+
+    response = client.put(
+        _draft_pumps_url(project["id"], project["active_version_id"]),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial["version_etag"]},
+        json=payload,
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error_code"] == "asset_cross_project_reference"
+
+
+def test_pumps_replace_rejects_wrong_kind_attachment_asset(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    insert_project_asset(
+        project_id=project["id"],
+        asset_id="asset_site_photo",
+        asset_kind="site_photo",
+        content_type="image/png",
+        original_filename="photo.png",
+    )
+    initial = client.get(_draft_pumps_url(project["id"], project["active_version_id"])).json()
+    payload = _pump_payload()
+    payload["pumps"][0]["datasheet_asset_ids"] = ["asset_site_photo"]
+
+    response = client.put(
+        _draft_pumps_url(project["id"], project["active_version_id"]),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial["version_etag"]},
+        json=payload,
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error_code"] == "asset_mime_not_allowed"
+
+
+def test_pumps_replace_rejects_pending_attachment_asset(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    insert_project_asset(project_id=project["id"], asset_id="asset_pending", upload_status="pending")
+    initial = client.get(_draft_pumps_url(project["id"], project["active_version_id"])).json()
+    payload = _pump_payload()
+    payload["pumps"][0]["datasheet_asset_ids"] = ["asset_pending"]
+
+    response = client.put(
+        _draft_pumps_url(project["id"], project["active_version_id"]),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial["version_etag"]},
+        json=payload,
+    )
+
+    assert response.status_code == 409
+    assert response.json()["error_code"] == "asset_upload_incomplete"
+
+
 def test_datasheet_upload_complete_url_attach_and_detach_with_fake_storage(clean_document_tables: None) -> None:
     fake_r2 = FakeR2Client()
     _install_fake_asset_service(fake_r2)
@@ -186,7 +283,7 @@ def test_datasheet_upload_complete_url_attach_and_detach_with_fake_storage(clean
             headers={"Origin": ORIGIN},
             json={
                 "version_id": version_id,
-                "table_key": "equipment_pumps",
+                "table_key": "pumps",
                 "row_id": "pmp_1",
                 "field_key": "datasheet_asset_ids",
                 "if_match": pumps_slice["draft_etag"],
@@ -204,7 +301,7 @@ def test_datasheet_upload_complete_url_attach_and_detach_with_fake_storage(clean
             headers={"Origin": ORIGIN},
             json={
                 "version_id": version_id,
-                "table_key": "equipment_pumps",
+                "table_key": "pumps",
                 "row_id": "pmp_1",
                 "field_key": "datasheet_asset_ids",
                 "if_match": attach.json()["draft_etag"],
