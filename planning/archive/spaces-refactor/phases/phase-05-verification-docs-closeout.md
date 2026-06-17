@@ -5,8 +5,8 @@ STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Final verification, docs updates, graph refresh, and closeout.
 RELATED:
-  - planning/features/spaces-refactor/PRD.md
-  - planning/features/spaces-refactor/STATUS.md
+  - planning/archive/spaces-refactor/PRD.md
+  - planning/archive/spaces-refactor/STATUS.md
   - context/user-stories/30-tables-equipment.md
   - context/technical-requirements/data-model.md
 ---
@@ -44,7 +44,7 @@ stable context docs.
    - `context/technical-requirements/data-model.md` for
      `tables.space_types` and Rooms `space_type_id`;
    - `context/UI_UX.md` if project tab guidance still lists Rooms.
-7. [x] Update `planning/features/spaces-refactor/STATUS.md` with evidence.
+7. [x] Update `planning/archive/spaces-refactor/STATUS.md` with evidence.
 
 ## Progress
 
@@ -90,4 +90,4 @@ stable context docs.
 - `context/user-stories/30-tables-equipment.md`
 - `context/technical-requirements/data-model.md`
 - `context/UI_UX.md`
-- `planning/features/spaces-refactor/STATUS.md`
+- `planning/archive/spaces-refactor/STATUS.md`

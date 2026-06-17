@@ -1,15 +1,15 @@
 ---
 DATE: 2026-06-16
 TIME: 15:59 EDT
-STATUS: Complete - Phase 05 verified; ready for review/archive
+STATUS: Complete - archived
 AUTHOR: Ed (via Codex)
 SCOPE: Refactor the current Rooms top-level tab into a Spaces parent tab,
   add a Space-Types project-document DataTable, link Rooms to Space-Types,
   and surface the reverse Rooms link on Space-Types.
 RELATED:
-  - planning/features/spaces-refactor/PRD.md
-  - planning/features/spaces-refactor/PLAN.md
-  - planning/features/spaces-refactor/STATUS.md
+  - planning/archive/spaces-refactor/PRD.md
+  - planning/archive/spaces-refactor/PLAN.md
+  - planning/archive/spaces-refactor/STATUS.md
   - context/user-stories/30-tables-equipment.md
   - context/technical-requirements/data-model.md
   - context/technical-requirements/data-table.md
@@ -18,6 +18,11 @@ RELATED:
 ---
 
 # Spaces Refactor - Feature Folder
+
+## Archive State
+
+Implemented, verified, committed, and archived on 2026-06-17.
+Current routing pointer: `planning/archive/spaces-refactor/STATUS.md`.
 
 ## Scope
 

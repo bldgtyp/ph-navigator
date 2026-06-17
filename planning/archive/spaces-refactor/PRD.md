@@ -1,18 +1,24 @@
 ---
 DATE: 2026-06-16
 TIME: 15:59 EDT
-STATUS: Active - planning complete, awaiting implementation
+STATUS: Complete - archived
 AUTHOR: Ed (via Codex)
 SCOPE: Product, data, and UX contract for Spaces, Space-Types, and
   Rooms-to-Space-Type linking.
 RELATED:
-  - planning/features/spaces-refactor/README.md
-  - planning/features/spaces-refactor/PLAN.md
+  - planning/archive/spaces-refactor/README.md
+  - planning/archive/spaces-refactor/PLAN.md
   - context/user-stories/30-tables-equipment.md
   - context/technical-requirements/data-model.md
 ---
 
 # Spaces Refactor - PRD
+
+## Archive State
+
+Implemented and verified through Phase 05, then archived on 2026-06-17.
+This PRD is historical; current durable behavior lives in `context/`
+and the implementation.
 
 ## Problem
 
