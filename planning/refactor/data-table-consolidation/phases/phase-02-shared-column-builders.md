@@ -44,15 +44,20 @@ identifier column, named width constants, and number-input helpers
    Bridges. Pass a properly typed `assetUrlById` (remove the
    `as never` escapes that Phase 05 will also touch).
 3. **Identifier column helper (F7).** Pick one identifier-column
-   implementation. Default: the Rooms `computedFieldColumnDef`
-   (`RECORD_ID_FIELD_KEY`) approach, exposed as a shared helper, adopted
-   by the 7 equipment tables and Thermal Bridges so the record-id column
-   and its default width are uniform. The label, non-unique behavior, and
-   "Display Name" naming come from the record-identity-model refactor
-   (`planning/refactor/record-identity-model/`) - inherit that, do not
-   re-decide it here. This helper is the single shared column component;
-   the identity-model refactor only changes seeds/validation/labels, not
-   this component.
+   implementation and expose it as a shared helper adopted by the 7
+   equipment tables and Thermal Bridges so the identifier column and its
+   default width are uniform. **Baseline is already settled** by the
+   landed record-identity-model refactor
+   (`planning/refactor/record-identity-model/`, schema v8): the pinned
+   identifier is the Display Name column flagged
+   `isIdentifier: true` on its `DataTableColumnDef` (selected by
+   `identifierColumnId()`, pinned by `useGridColumns`, chipped by
+   `computeIdentifierDuplicates`) - NOT a hardcoded `record_id` /
+   `RECORD_ID_FIELD_KEY` field key and NOT a synthetic `__record_id__`
+   column. The shared helper must flag the right column as the
+   identifier and feed it the shared default width; it inherits the
+   label, non-unique behavior, and "Display Name" naming from the
+   identity refactor - do not re-decide them here.
 4. **Width constants (F9).** Introduce semantic width constants (link,
    notes, attachment, record-id, small-numeric) and feed them through the
    existing `resolveColumnWidth` / `FIELD_TYPE_DEFAULT_WIDTH` helpers.
@@ -86,10 +91,12 @@ identifier column, named width constants, and number-input helpers
 - Stop if a "shared" attachment column needs per-table branching that
   would make the helper more complex than the copies it replaces;
   re-scope the helper's parameters first.
-- Stop if adopting the `computedFieldColumnDef` identifier on a table
-  changes its persisted view-state keys in a way that breaks saved
-  widths/sort; confirm `sanitizeViewStateForSchema` round-trips the
-  `__record_id__` / `record_id` key first.
+- Stop if adopting the shared identifier helper on a table changes its
+  persisted view-state keys in a way that breaks saved widths/sort. The
+  identifier column now has an ordinary column id (no `__record_id__`
+  reserved key), so `sanitizeViewStateForSchema` round-trips it through
+  the generic `columnIds` set; confirm that still holds for each adopted
+  table before shipping.
 
 ## File Entry Points
 

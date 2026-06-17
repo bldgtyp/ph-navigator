@@ -548,12 +548,20 @@ migration or a new route/service branch.
 Current Spaces contract:
 
 - `tables.space_types` is a FieldDef-capable table envelope with
-  project-local rows. Its built-ins are `record_id` displayed as
-  **Tag** and `name` displayed as **Name**. Space-Types are not
-  pre-seeded; each project defines its own list.
-- Space-Type Tag is the user-facing primary identifier. Named
-  Space-Type rows require a non-blank Tag, and non-blank Tags are
-  unique within the project document after normalized comparison.
+  project-local rows. Its built-ins are `name` displayed as
+  **Display Name** (the pinned identifier) and `record_id` displayed as
+  an ordinary **Tag** field. Space-Types are not pre-seeded; each
+  project defines its own list. (The record-identity-model refactor,
+  schema v8, flipped these roles: `name` was "Name", `record_id` was
+  the pinned "Tag". See §6.6.10.)
+- Neither the Display Name nor the Tag is unique-constrained, and no
+  hard block remains: a duplicate Display Name or Tag surfaces only as
+  the non-blocking warning chip, and a named row no longer requires a
+  Tag. The Display Name is optional, so a Tag-only row renders a blank
+  pinned cell without error. Only the hidden `row.id` is enforced
+  unique (§6.6.10).
+- The Rooms → Space-Type picker and reverse pills resolve a row's label
+  as Display Name (`name`) → Tag (`record_id`) → hidden row id.
 - Rooms include a built-in `linked_record` FieldDef named
   **Space Type** with field key `space_type_id`,
   `target_table_path: ["space_types"]`, and `max_links: 1`. Values
@@ -759,13 +767,13 @@ Every field-config-capable table carries `{ field_defs, rows }`:
     ]
   },
   "space_types": {
-    "field_defs": [ /* record_id displayed as Tag, name, plus custom fields */ ],
+    "field_defs": [ /* name = "Display Name" (pinned identifier), record_id = "Tag" (ordinary), plus custom fields */ ],
     "rows": [
       {
         "id": "st_...",
         "custom_values": {
-          "record_id": "APT",
-          "name": "Apartment"
+          "name": "Apartment",            // Display Name — pinned identifier (§6.6.10)
+          "record_id": "APT"              // Tag — ordinary, non-unique
         },
         "custom_links": {}
       }
@@ -815,6 +823,15 @@ Rules (post-Phase 1b):
   built-in `space_type_id` linked-record FieldDef targeting
   `["space_types"]`, and exposes inverse Rooms links on Space-Types
   table-slice responses/download envelopes.
+- **`schema_version: 8`** (record-identity model, 2026-06-17) makes the
+  descriptive `name` field the pinned **Display Name** identifier on
+  every FieldDef-capable table and demotes `record_id` to an ordinary
+  **Tag** field (Rooms keeps `record_id` as the `{Number} — {Name}`
+  Display Name formula; Pumps gains an empty Display Name). It retires
+  the "Name" label, removes the Heat Pumps and Space-Types
+  user-handle hard blocks, and makes the hidden `row.id` uniqueness
+  guard universal. Shipped as a reseed + version bump, **no
+  body-migration** (no users / no deploy). See §6.6.10.
 
 #### 6.6.2 `TableFieldDef` shape
 
@@ -1009,6 +1026,50 @@ before, after}]` for every row whose value changed (capped at 100
 entries with a `row_changes_truncated: True` flag past the cap), so
 discards and lossy conversions are recoverable from the action log
 within the audit retention window.
+
+#### 6.6.10 Row identity model (schema v8)
+
+Every FieldDef-capable table separates three concerns, mirroring the
+Honeybee model (HB `identifier` ↔ hidden `row.id`; HB `display_name` ↔
+the Display Name column):
+
+| Layer | Backing field | Unique? | User-visible? | Owns |
+|---|---|---|---|---|
+| Hidden key | `row.id` (`rm_`, `pmp_`, `st_`, `tb_`, `fan_`, …) | **Yes** — enforced on every table | No | Identity, linked-record targets, `custom_links`, formula deps |
+| **Display Name** | the descriptive `name` field (the `{Number} — {Name}` formula on Rooms) | **No** — never constrained | Yes — the pinned identifier column | The readable human handle; carries the duplicate-warning chip |
+| **Tag** | the former identifier (`record_id` field key) | No | Yes — ordinary column | Nothing structural; a normal code field |
+
+Rules:
+
+- **The hidden `row.id` is the only enforced-unique identity**, and that
+  guard is now **universal**: `validate_table_row_ids` runs over every
+  table listed in `generic_table_row_ids`
+  (`backend/features/project_document/_validators.py`) — Rooms, the
+  equipment tables, Thermal Bridges, and Space-Types — not just the
+  subset that previously had it.
+- **No table hard-blocks a duplicate user-facing label.** Both the Heat
+  Pumps "Duplicate tag within table" enforcement and the Space-Types
+  duplicate-Tag + "named row requires a Tag" enforcement were removed.
+  Duplicate Display Names (and Tags) surface only as the non-blocking
+  warning chip; empty / whitespace values never warn.
+- **The pinned identifier is a render concern, not a persisted field.**
+  It is declared per-table on the frontend column
+  (`DataTableColumnDef.isIdentifier`), not as a backend `TableFieldDef`
+  attribute. Pinning to slot 0 and the duplicate chip are pure render
+  behavior the backend never performs, so the persisted schema
+  fingerprint and migration surface stay unchanged. See
+  `context/technical-requirements/data-table.md` § *Identifier Column*.
+- **Stable field keys are unchanged.** `name` and `record_id` keep their
+  field keys; only the labels (`display_name`), the identifier *role*,
+  and the universal `row.id` guard changed. `RECORD_ID_FIELD_KEY` lives
+  on as the key for reading the demoted Tag value, not as a pin target.
+- **Forward compatibility.** Display Name gives a clean 1:1 mapping for
+  the eventual honeybee-ph round-trip (`row.id` → HB `identifier`;
+  Display Name → HB `display_name`). This is naming-only; no export
+  wiring ships here.
+
+Full contract and rationale:
+`planning/refactor/record-identity-model/PRD.md`.
 
 ## 7. Catalog (bookshelf model)
 

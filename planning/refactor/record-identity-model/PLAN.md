@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-16
 TIME: 16:35 EDT
-STATUS: Active - phased implementation plan
+STATUS: Complete (2026-06-17) - all phases landed; see STATUS.md
 AUTHOR: Ed (via Claude)
 SCOPE: Implementation sequence, precedents, and risks for the record
   identity model refactor.
