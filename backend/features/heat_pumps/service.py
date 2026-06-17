@@ -83,14 +83,13 @@ class HeatPumpsPatchResponse(HeatPumpsReadResponse):
 class _TableSpec:
     attr: Literal["outdoor_equip", "indoor_equip", "outdoor_units", "indoor_units"]
     row_model: type[HeatPumpOutdoorEquipRow | HeatPumpIndoorEquipRow | HeatPumpOutdoorUnitRow | HeatPumpIndoorUnitRow]
-    tag_field: str
 
 
 _TABLE_SPECS: dict[HeatPumpTableKey, _TableSpec] = {
-    "outdoor-equip": _TableSpec("outdoor_equip", HeatPumpOutdoorEquipRow, "tag"),
-    "indoor-equip": _TableSpec("indoor_equip", HeatPumpIndoorEquipRow, "tag"),
-    "outdoor-units": _TableSpec("outdoor_units", HeatPumpOutdoorUnitRow, "tag"),
-    "indoor-units": _TableSpec("indoor_units", HeatPumpIndoorUnitRow, "tag"),
+    "outdoor-equip": _TableSpec("outdoor_equip", HeatPumpOutdoorEquipRow),
+    "indoor-equip": _TableSpec("indoor_equip", HeatPumpIndoorEquipRow),
+    "outdoor-units": _TableSpec("outdoor_units", HeatPumpOutdoorUnitRow),
+    "indoor-units": _TableSpec("indoor_units", HeatPumpIndoorUnitRow),
 }
 
 
@@ -215,15 +214,10 @@ def _validate_slice(slice_: HeatPumpsTableSlice) -> None:
     for table_key, spec in _TABLE_SPECS.items():
         rows = getattr(slice_, spec.attr)
         seen_ids: set[str] = set()
-        seen_tags: set[str] = set()
         for row in rows:
             if row.id in seen_ids:
                 raise _validation_error("id", "Duplicate row id.", {"table": table_key, "row_id": row.id})
             seen_ids.add(row.id)
-            tag = str(getattr(row, spec.tag_field)).strip().casefold()
-            if tag in seen_tags:
-                raise _validation_error(spec.tag_field, "Duplicate tag within table.", {"table": table_key})
-            seen_tags.add(tag)
 
     indoor_equip_ids = {row.id for row in slice_.indoor_equip}
     outdoor_equip_ids = {row.id for row in slice_.outdoor_equip}

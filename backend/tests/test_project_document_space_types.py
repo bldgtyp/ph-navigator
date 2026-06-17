@@ -141,8 +141,21 @@ def test_space_types_contract_extracts_table_envelope() -> None:
     assert extracted["rows"][0]["custom_values"]["name"] == "Common Corridor"
 
 
-def test_space_types_reject_duplicate_tags_trim_case_insensitive() -> None:
+def _document_with_space_types(rows: list[dict[str, Any]]) -> ProjectDocumentV1:
     tables = empty_required_tables()
+    return ProjectDocumentV1.model_validate(
+        {
+            "schema_version": CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION,
+            "project": {"name": "p", "bt_number": "1", "cert_programs": []},
+            "tables": {**tables, "space_types": empty_space_types_table(rows=rows)},
+            "single_select_options": {"rooms.floor_level": [], "rooms.building_zone": []},
+        }
+    )
+
+
+def test_space_types_accept_duplicate_tags() -> None:
+    """Record-identity model: the Tag (record_id) is an ordinary, non-unique
+    field. Duplicate Tags are accepted (the UI surfaces a warning chip)."""
     first = {
         "id": "st_corridor",
         "custom_values": {"record_id": " Corridor ", "name": "Common Corridor"},
@@ -154,34 +167,41 @@ def test_space_types_reject_duplicate_tags_trim_case_insensitive() -> None:
         "custom_links": {},
     }
 
-    with pytest.raises(ValidationError, match="Duplicate space type Tag"):
-        ProjectDocumentV1.model_validate(
-            {
-                "schema_version": CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION,
-                "project": {"name": "p", "bt_number": "1", "cert_programs": []},
-                "tables": {**tables, "space_types": empty_space_types_table(rows=[first, second])},
-                "single_select_options": {"rooms.floor_level": [], "rooms.building_zone": []},
-            }
-        )
+    body = _document_with_space_types([first, second])
+
+    assert [row.id for row in body.tables.space_types.rows] == ["st_corridor", "st_corridor_alt"]
 
 
-def test_space_types_reject_named_row_without_tag() -> None:
-    tables = empty_required_tables()
+def test_space_types_accept_named_row_without_tag() -> None:
+    """Record-identity model: a named row no longer requires a Tag. The Tag is
+    optional; the pinned Display Name (name) carries the human label."""
     row = {
         "id": "st_corridor",
         "custom_values": {"name": "Common Corridor"},
         "custom_links": {},
     }
 
-    with pytest.raises(ValidationError, match="requires a Tag"):
-        ProjectDocumentV1.model_validate(
-            {
-                "schema_version": CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION,
-                "project": {"name": "p", "bt_number": "1", "cert_programs": []},
-                "tables": {**tables, "space_types": empty_space_types_table(rows=[row])},
-                "single_select_options": {"rooms.floor_level": [], "rooms.building_zone": []},
-            }
-        )
+    body = _document_with_space_types([row])
+
+    assert body.tables.space_types.rows[0].custom_values == {"name": "Common Corridor"}
+
+
+def test_space_types_reject_duplicate_row_id() -> None:
+    """The hidden row.id is the only enforced-unique identity, guaranteed by
+    the universal guard in validate_table_row_ids."""
+    first = {
+        "id": "st_corridor",
+        "custom_values": {"record_id": "C1", "name": "Common Corridor"},
+        "custom_links": {},
+    }
+    second = {
+        "id": "st_corridor",
+        "custom_values": {"record_id": "C2", "name": "Secondary Corridor"},
+        "custom_links": {},
+    }
+
+    with pytest.raises(ValidationError, match="Duplicate space type id"):
+        _document_with_space_types([first, second])
 
 
 def test_rooms_can_link_to_one_space_type_and_space_types_show_inverse() -> None:

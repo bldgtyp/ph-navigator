@@ -124,9 +124,8 @@ def test_outdoor_equip_model_validates_enums_and_ranges() -> None:
         HeatPumpOutdoorEquipRow.model_validate(outdoor_equip(heating_cap_kw_17f=-1))
 
 
-def test_document_defaults_heat_pump_arrays() -> None:
-    tables = empty_required_tables()
-    document = ProjectDocumentV1.model_validate(
+def _heat_pump_document(tables: dict[str, Any]) -> ProjectDocumentV1:
+    return ProjectDocumentV1.model_validate(
         {
             "schema_version": 7,
             "project": {"name": "p", "bt_number": "1", "cert_programs": []},
@@ -140,8 +139,38 @@ def test_document_defaults_heat_pump_arrays() -> None:
         }
     )
 
+
+def test_document_defaults_heat_pump_arrays() -> None:
+    document = _heat_pump_document(empty_required_tables())
+
     assert document.tables.equipment.heat_pumps.outdoor_equip == []
     assert document.tables.equipment.heat_pumps.indoor_units == []
+
+
+def test_document_accepts_duplicate_heat_pump_tags() -> None:
+    """Record-identity model: the heat-pump tag is an ordinary, non-unique
+    field. Two rows may share a tag as long as their hidden ids differ."""
+    tables = empty_required_tables()
+    tables["equipment"]["heat_pumps"]["outdoor_equip"] = [
+        outdoor_equip(id=HPOE_1, tag="OE-1"),
+        outdoor_equip(id=HPOE_2, tag="OE-1"),
+    ]
+
+    document = _heat_pump_document(tables)
+
+    assert [row.id for row in document.tables.equipment.heat_pumps.outdoor_equip] == [HPOE_1, HPOE_2]
+
+
+def test_document_rejects_duplicate_heat_pump_row_id() -> None:
+    """Heat-pump sub-tables keep their own row.id uniqueness guarantee."""
+    tables = empty_required_tables()
+    tables["equipment"]["heat_pumps"]["outdoor_equip"] = [
+        outdoor_equip(id=HPOE_1, tag="OE-1"),
+        outdoor_equip(id=HPOE_1, tag="OE-2"),
+    ]
+
+    with pytest.raises(ValidationError, match="Duplicate heat_pump_outdoor_equip id"):
+        _heat_pump_document(tables)
 
 
 def test_document_rejects_bad_heat_pump_fk() -> None:
@@ -149,19 +178,7 @@ def test_document_rejects_bad_heat_pump_fk() -> None:
     tables["equipment"]["heat_pumps"]["outdoor_units"] = [outdoor_unit()]
 
     with pytest.raises(ValidationError, match="Missing heat-pump outdoor equip"):
-        ProjectDocumentV1.model_validate(
-            {
-                "schema_version": 7,
-                "project": {"name": "p", "bt_number": "1", "cert_programs": []},
-                "tables": tables,
-                "single_select_options": {
-                    "rooms.floor_level": [],
-                    "rooms.building_zone": [],
-                    "pumps.device_type": [],
-                    "ventilators.inside_outside": [],
-                },
-            }
-        )
+        _heat_pump_document(tables)
 
 
 def test_heat_pumps_get_and_patch_add_round_trip(clean_document_tables: None) -> None:
