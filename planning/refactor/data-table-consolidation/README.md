@@ -48,7 +48,7 @@ copy-paste drift.
 ## Depends On
 
 This refactor is **preceded** by the record-identity-model refactor
-(`planning/refactor/record-identity-model/`), which settles the
+(`planning/archive/record-identity-model/`), which settles the
 identifier model: the hidden `row.id` is the only enforced-unique
 identity, the pinned user-facing column is a non-unique **Display Name**
 label, and **Tag** is an ordinary field. Land that first. This refactor's

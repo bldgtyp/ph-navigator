@@ -48,7 +48,7 @@ identifier column, named width constants, and number-input helpers
    equipment tables and Thermal Bridges so the identifier column and its
    default width are uniform. **Baseline is already settled** by the
    landed record-identity-model refactor
-   (`planning/refactor/record-identity-model/`, schema v8): the pinned
+   (`planning/archive/record-identity-model/`, schema v8): the pinned
    identifier is the Display Name column flagged
    `isIdentifier: true` on its `DataTableColumnDef` (selected by
    `identifierColumnId()`, pinned by `useGridColumns`, chipped by

@@ -6,10 +6,10 @@ AUTHOR: Ed (via Claude)
 SCOPE: Implementation sequence, precedents, and risks for the record
   identity model refactor.
 RELATED:
-  - planning/refactor/record-identity-model/PRD.md
-  - planning/refactor/record-identity-model/phases/phase-00-backend-identity-guarantee.md
-  - planning/refactor/record-identity-model/phases/phase-01-swap-identity-columns.md
-  - planning/refactor/record-identity-model/phases/phase-02-verification-docs-closeout.md
+  - planning/archive/record-identity-model/PRD.md
+  - planning/archive/record-identity-model/phases/phase-00-backend-identity-guarantee.md
+  - planning/archive/record-identity-model/phases/phase-01-swap-identity-columns.md
+  - planning/archive/record-identity-model/phases/phase-02-verification-docs-closeout.md
   - planning/refactor/data-table-consolidation/PRD.md
 ---
 

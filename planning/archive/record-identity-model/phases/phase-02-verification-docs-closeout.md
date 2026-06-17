@@ -6,7 +6,7 @@ AUTHOR: Ed (via Claude)
 SCOPE: Gates, browser smoke, and folding the identity model into the
   contract and standards; hand the baseline to the consolidation refactor.
 RELATED:
-  - planning/refactor/record-identity-model/PRD.md
+  - planning/archive/record-identity-model/PRD.md
   - context/technical-requirements/data-table.md
   - context/technical-requirements/data-model.md
   - planning/refactor/data-table-consolidation/PRD.md
@@ -89,7 +89,7 @@ durable contract future table work inherits.
 - `context/CODING_STANDARDS.md`
 - `planning/refactor/data-table-consolidation/phases/phase-02-shared-column-builders.md`
 - `planning/refactor/data-table-consolidation/phases/phase-04-data-shape-and-backend-symmetry.md`
-- `planning/refactor/record-identity-model/STATUS.md`
+- `planning/archive/record-identity-model/STATUS.md`
 
 ## Outcome (2026-06-17)
 
@@ -159,9 +159,11 @@ the code graph is unchanged).
 
 ### Packet disposition
 
-Marked **Complete in place** rather than moved to
-`planning/archive/dated/`: the active data-table-consolidation refactor
-references this packet by its `planning/refactor/record-identity-model/`
-path (README + Phases 02/04), so a physical move would break those
-links. Archive once the consolidation refactor that inherits this model
-also closes out.
+Marked **Complete** and **archived to
+`planning/archive/record-identity-model/`** on 2026-06-17 (flat archive
+convention, matching `spaces-refactor`). Because the active
+data-table-consolidation refactor and the context docs reference this
+packet by path (README + Phases 02/04 + `data-table.md` /
+`data-model.md`), every inbound reference was repointed from
+`planning/refactor/...` to `planning/archive/...` in the same move, so no
+links break.

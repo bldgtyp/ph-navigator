@@ -1069,7 +1069,7 @@ Rules:
   wiring ships here.
 
 Full contract and rationale:
-`planning/refactor/record-identity-model/PRD.md`.
+`planning/archive/record-identity-model/PRD.md`.
 
 ## 7. Catalog (bookshelf model)
 
