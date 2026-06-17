@@ -39,9 +39,16 @@ inconsistently, and one table over-constrains the user's handle:
   (`tables/*.py`, `field_key="name"`; Pumps is the exception). "Name" is
   ambiguous, and having both a pinned "Tag" and a "Name" gives each row
   two competing labels.
-- Heat Pumps is the lone table that **hard-blocks** duplicate labels
-  ("Duplicate tag within table",
-  `backend/features/heat_pumps/service.py:225`).
+- **Two** tables **hard-block** a duplicate user-facing handle today:
+  - Heat Pumps ("Duplicate tag within table",
+    `backend/features/heat_pumps/service.py:225`).
+  - Space-Types - the table the 2026-06-16 spaces-refactor added - rejects
+    a duplicate Tag (trim/case-normalized) and rejects a row that has a
+    Name but no Tag (`backend/features/project_document/document.py:333`
+    and `:332`). Space-Types currently seeds `record_id` as the pinned
+    **"Tag"** primary identifier and `name` as an optional **"Name"** -
+    the inverse of the equipment tables, where the descriptive `name` is
+    the natural handle.
 
 ## Identity Contract (target)
 
@@ -78,6 +85,21 @@ Rules:
   Display Name (pinned); `record_id` keeps its "Tag" label but is
   unpinned and ordinary. Both fields' data is preserved. "Name" is
   retired as a label.
+- **Space-Types** (one of the 8, but it carries removable backend
+  enforcement, unlike the equipment tables): in addition to the generic
+  flip, Phase 00 **removes both of its hard blocks** - the duplicate-Tag
+  rejection and the "named row requires a Tag" rejection
+  (`document.py:332-334`) - so `record_id`/Tag becomes a fully ordinary,
+  non-unique field. Decided 2026-06-16: Space-Types follows the generic
+  rule (`name` -> Display Name) and keeps **no** hard uniqueness block;
+  duplicates use the warning chip like every other table. Two
+  consequences to handle: (a) Space-Types' `name` is optional today, so a
+  Tag-only row shows a **blank** pinned Display Name until a Name is typed
+  - acceptable, since empty/whitespace Display Names never warn; (b)
+  Space-Types is a **link target** - the Rooms -> Space-Type picker and
+  reverse pills currently prefer Tag then Name
+  (`frontend/src/features/equipment/routes/RoomsPage.tsx:147-151`); that
+  label resolution must follow the new Display Name (`name`) first.
 - **Rooms** (the formula case): the existing `record_id` **formula**
   field (`{Number} - {Name}`) stays the pinned identifier; only relabel
   it "Record-ID" -> "Display Name". `number` and `name` remain ordinary
@@ -115,7 +137,9 @@ swap is **not** a pure code change:
 - A **migration** must, for existing `project_versions` and
   `project_version_drafts`: relabel `name` -> "Display Name" and make it
   the identifier; unpin `record_id` and relabel it "Tag"; add the Pumps
-  Display Name field; handle the Rooms formula.
+  Display Name field; handle the Rooms formula. It rides on top of the
+  spaces-refactor schema version (now **v7**, after that work added
+  `space_types` and the Rooms `space_type_id` link); see open question 4.
 - Built-in `display_name` is user-editable (built-ins default-lock only
   `["delete", "duplicate"]`), so the relabels must be **conditional**:
   only rewrite values still equal to the prior defaults ("Name", "Tag",
@@ -133,8 +157,9 @@ swap is **not** a pure code change:
 
 1. `validate_unique_ids` (or equivalent) guards `row.id` uniqueness on
    every project DataTable.
-2. No table hard-blocks a duplicate user-facing label; Heat Pumps'
-   "Duplicate tag within table" enforcement is removed.
+2. No table hard-blocks a duplicate user-facing label; both Heat Pumps'
+   "Duplicate tag within table" enforcement and Space-Types' duplicate-Tag
+   + "named row requires a Tag" enforcement are removed.
 3. The pinned identifier column is the **Display Name** (the descriptive
    name) on every table; the duplicate-warning chip keys on it.
 4. **Tag** is an ordinary, editable, non-unique, unpinned field on every
@@ -143,6 +168,9 @@ swap is **not** a pure code change:
    (relabeled, still editable), with Number and Name kept as input
    fields and no Tag field; Pumps has a Display Name field; the other
    tables preserve both fields' data.
+5a. Space-Types follows the generic flip with no residual hard block, and
+   the Rooms -> Space-Type picker / reverse-link pills label options by the
+   Display Name (`name`) first, then Tag, then row id.
 6. A conditional migration performs the swap on existing documents
    without overwriting user-renamed labels; existing documents load and
    view state round-trips.
@@ -176,3 +204,12 @@ swap is **not** a pure code change:
    behavior only once it joins the shared grid (consolidation Phase 05).
    This refactor removes HP's backend hard block now; confirm the HP UI
    still reads acceptably in the interim.
+6. **Space-Types - DECIDED (2026-06-16).** Space-Types follows the generic
+   rule: `name` -> pinned Display Name, `record_id` -> ordinary Tag, and
+   **both** of its hard blocks are dropped (warning chip only). Open
+   implementation items: (a) confirm an empty pinned Display Name renders
+   sensibly for Tag-only rows; (b) repoint the Rooms -> Space-Type picker /
+   reverse-pill label resolution (`RoomsPage.tsx:147-151`) to prefer the
+   Display Name; (c) confirm the spaces-refactor still has unverified
+   closeout (its Phase 05) - coordinate sequencing so this refactor does
+   not land on top of unverified space_types work.

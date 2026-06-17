@@ -19,8 +19,12 @@ RELATED:
 
 - Hidden-id uniqueness helper: `validate_unique_ids`
   (`backend/features/project_document/_validators.py:62`), currently
-  called for space-types (`document.py:320`) and assembly
-  segments/layers (`envelope_models.py:180,205`).
+  called for space-types (`document.py:324`) and assembly
+  segments/layers (`envelope_models.py:180,205`). Space-Types is the
+  newest table and already wires this guard by hand at the document level
+  - precedent that the universal guard should be driven generically from
+  `iter_table_contracts()` so future tables inherit it without a
+  per-table stanza.
 - The pinned identifier is hardcoded to `RECORD_ID_FIELD_KEY = "record_id"`
   (`frontend/src/shared/ui/data-table/lib/identifier/recordId.ts:4`),
   pinned by field_key in `components/GridBody.tsx`, with `__record_id__`
@@ -36,8 +40,18 @@ RELATED:
   `name` field (`field_key="name"`, display "Name"); Pumps does not.
   `record_id` is labeled "Tag" on eight tables and is a formula labeled
   "Record-ID" on Rooms (`rooms.py:85,120`).
-- Heat-pump label hard-block: `heat_pumps/service.py:225`
-  ("Duplicate tag within table").
+- User-facing-handle hard-blocks (both removed in Phase 00):
+  - Heat-pump label: `heat_pumps/service.py:225` ("Duplicate tag within
+    table").
+  - Space-Types Tag: `document.py:333` ("Duplicate space type Tag") plus
+    the "named row requires a Tag" rejection at `document.py:332`. These
+    were added by the 2026-06-16 spaces-refactor; the identity model
+    drops both.
+- Space-Types link-target label resolution: the Rooms -> Space-Type picker
+  and reverse pills prefer Tag then Name
+  (`frontend/src/features/equipment/routes/RoomsPage.tsx:147-151`,
+  `getRecordId`/`getDisplayName`); these must be repointed to prefer the
+  Display Name (`name`) after the swap.
 - Built-in FieldDefs are persisted, not overlaid: `read_field_defs`
   returns `envelope.field_defs`
   (`tables/_registry_helpers.py:71-73`); only `locked` arrays overlay at
@@ -106,6 +120,20 @@ re-deciding it.
    built in the other refactor. This packet changes seeds, validation,
    labels, and the identifier role - not that component. Avoid building a
    second helper here.
+9. **Space-Types is a special generic table.** Unlike the equipment
+   tables, Space-Types carries its own backend enforcement
+   (`document.py:332-334`) that Phase 00 must delete, and its `name` is
+   optional - so its pinned Display Name can be blank for Tag-only rows
+   (acceptable, same as Pumps; empty never warns). It is also a link
+   target, so the Rooms -> Space-Type picker/reverse-pill label resolution
+   (`RoomsPage.tsx:147-151`) must follow the Display Name. The label-flip
+   on a link target is the one frontend touch-point beyond the generic
+   column swap.
+10. **Sequencing vs the spaces-refactor.** The spaces-refactor is at Phase
+    04 complete / Phase 05 (verification + full `make ci`) pending. Land
+    this refactor after that closeout so the identity swap does not sit on
+    top of unverified `space_types` work, and so the schema-version bump
+    here cleanly follows the spaces-refactor's v7.
 
 ## Verification Summary
 

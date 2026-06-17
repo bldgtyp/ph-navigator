@@ -43,6 +43,15 @@ Per-table specifics:
   Display Name + pinned; `record_id` keeps its "Tag" label but is
   unpinned and becomes ordinary. Data is preserved on both fields. "Name"
   retired.
+- **Space-Types (generic flip, plus link-target follow-ups):** it is one
+  of the 8, but two extra items apply. (1) Its `name` is optional today,
+  so the pinned Display Name can be blank for a Tag-only row - acceptable
+  (empty never warns), same as Pumps. (2) It is a Rooms link target: the
+  Rooms -> Space-Type picker and reverse pills currently prefer Tag then
+  Name (`RoomsPage.tsx:147-151`, `getRecordId`/`getDisplayName`); repoint
+  that resolution to prefer the Display Name (`name`) first, then Tag,
+  then row id. Phase 00 has already removed Space-Types' backend Tag
+  hard blocks, so by this phase Tag is already an ordinary field.
 - **Rooms (formula case, no repoint):** keep the existing `record_id`
   **formula** field (`{Number} - {Name}`) as the pinned identifier; only
   relabel "Record-ID" -> "Display Name". `number` and `name` stay as the
@@ -55,10 +64,12 @@ Per-table specifics:
 
 ## Preconditions
 
-- Phase 00 complete (hidden-id guard universal; no label hard blocks).
+- Phase 00 complete (hidden-id guard universal; no label hard blocks,
+  including the removed Space-Types duplicate-Tag and named-row-requires-Tag
+  blocks).
 - Confirmed structure: 9 tables seed a `name` field
-  (`tables/*.py`, `field_key="name"`); Pumps does not; Rooms' `record_id`
-  is a formula (`tables/rooms.py:85,120`).
+  (`tables/*.py`, `field_key="name"`, including `space_types`); Pumps does
+  not; Rooms' `record_id` is a formula (`tables/rooms.py:85,120`).
 - Confirmed: built-in `display_name` and the pinned identifier are
   persisted in `envelope.field_defs`, so a migration is required.
 - Field-key strategy decided (see Tasks 1 + Stop Conditions): keep all
@@ -94,7 +105,11 @@ Per-table specifics:
    hardcoded `?? "Tag"` / `?? "Record-ID"` identifier fallbacks
    (equipment `*Table.tsx`, `ThermalBridgesTable.tsx`, heat-pump
    `*-columns.tsx`). Ensure the duplicate-warning chip now keys on the
-   Display Name.
+   Display Name. **Space-Types link target:** repoint the Rooms ->
+   Space-Type picker / reverse-pill label resolution
+   (`RoomsPage.tsx:147-151`, the `getRecordId`/`getDisplayName` callbacks)
+   so the Display Name (`name`) is the primary label, then Tag
+   (`record_id`), then row id - matching the new identity order.
 4. **Migration (atomic).** Forward-fill `project_versions` and
    `project_version_drafts`:
    - **Generic tables:** set the `name` FieldDef `display_name` to
@@ -122,6 +137,10 @@ Per-table specifics:
      migration;
    - Rooms' Display Name is the `{Number} - {Name}` formula and stays
      editable; Pumps gains an empty Display Name;
+   - Space-Types' pinned column is the Display Name (`name`), renders a
+     blank pinned cell without error for a Tag-only row, and the Rooms ->
+     Space-Type picker labels options by Display Name first
+     (update `RoomsPage` / Space-Types linked-record tests);
    - existing documents load and round-trip view state.
 
 ## Acceptance Criteria
@@ -136,6 +155,8 @@ Per-table specifics:
   tables preserve both fields' data.
 - The migration preserves user-renamed labels and existing documents
   load; view state round-trips.
+- Space-Types' pinned column is the Display Name; the Rooms ->
+  Space-Type picker / reverse pills label options by Display Name first.
 - Focused frontend and backend tests pass.
 
 ## Stop Conditions
@@ -162,4 +183,7 @@ Per-table specifics:
 - `frontend/src/features/equipment/components/*Table.tsx`
 - `frontend/src/features/assets/thermal-bridges/ThermalBridgesTable.tsx`
 - `frontend/src/features/equipment/heat-pumps/*-columns.tsx`
+- `frontend/src/features/equipment/routes/RoomsPage.tsx` (Space-Type
+  picker / reverse-pill label resolution)
+- `frontend/src/features/spaces/` (Space-Types table + tests)
 - `backend/tests/test_project_document.py`

@@ -62,7 +62,7 @@ pinned field, label, and uniqueness behavior. Land this first.
 
 | Phase | File | Goal |
 |---|---|---|
-| 00 | `phases/phase-00-backend-identity-guarantee.md` | Make hidden-id uniqueness universal and stop Heat Pumps hard-blocking duplicate labels. |
+| 00 | `phases/phase-00-backend-identity-guarantee.md` | Make hidden-id uniqueness universal and stop both Heat Pumps and Space-Types hard-blocking duplicate user-facing handles. |
 | 01 | `phases/phase-01-swap-identity-columns.md` | Atomic swap: promote the descriptive name to "Display Name" + pinned identifier, demote `record_id` to an ordinary "Tag" field, retire "Name", with a migration (incl. Rooms-formula and Pumps-no-name special cases). |
 | 02 | `phases/phase-02-verification-docs-closeout.md` | Run gates, browser smoke, and fold the identity model into the contract and coding standards. |
 
@@ -77,8 +77,9 @@ pinned field, label, and uniqueness behavior. Land this first.
 - "ID" was rejected as the label - it collides with the hidden
   identifier and implies a uniqueness we do not enforce.
 - The user-facing label is **never unique-constrained** on any table;
-  duplicates show the existing warning chip. Heat Pumps drops its hard
-  block.
+  duplicates show the existing warning chip. **Heat Pumps and Space-Types**
+  both drop their hard blocks (Space-Types also drops its "named row
+  requires a Tag" rejection).
 - The hidden `row.id` stays the only enforced-unique identity, with a
   universal `validate_unique_ids` guard.
 - Stable field_keys (`name`, `record_id`) do **not** change - only the
@@ -88,8 +89,18 @@ pinned field, label, and uniqueness behavior. Land this first.
   as the identifier and editable). Rooms keeps Number + Name as inputs
   and gets no Tag field. The formula-identifier capability is available
   to any table; only Rooms ships that way by default.
+- **Space-Types** (added by the 2026-06-16 spaces-refactor) follows the
+  generic flip: `name` -> pinned Display Name, `record_id` -> ordinary
+  Tag, **no** residual hard block. Because it is a Rooms link target, the
+  Rooms -> Space-Type picker / reverse-pill label resolution must follow
+  the Display Name. Decided 2026-06-16.
 - Ships as a **standalone refactor that precedes** the
   data-table-consolidation work.
+
+> Reconciled 2026-06-16 19:03 EDT with the landed spaces-refactor (new
+> `space_types` table, Rooms `space_type_id` link, schema v7). The
+> spaces-refactor is at Phase 04 complete / Phase 05 (verification) pending;
+> sequence this refactor after that closeout.
 
 ## Out Of Scope
 

@@ -32,12 +32,15 @@ durable contract future table work inherits.
      `make ci`.
 2. Browser smoke on `http://localhost:5173` (backend
    `http://localhost:8000`, signed in as `codex@example.com`): on Rooms,
-   each Equipment tab, and Thermal Bridges confirm the pinned column reads
-   **Display Name** (the descriptive name), duplicate Display Names warn
-   but do not block, the **Tag** column is an ordinary editable field, and
-   no column is labeled **Name**. Confirm Rooms still shows Number, Pumps
-   shows an (empty) Display Name, and Heat Pumps no longer rejects
-   duplicate tags.
+   Space-Types (under the Spaces tab), each Equipment tab, and Thermal
+   Bridges confirm the pinned column reads **Display Name** (the
+   descriptive name), duplicate Display Names warn but do not block, the
+   **Tag** column is an ordinary editable field, and no column is labeled
+   **Name**. Confirm Rooms still shows Number, Pumps shows an (empty)
+   Display Name, and Heat Pumps no longer rejects duplicate tags. On
+   Space-Types confirm a duplicate Tag is accepted (warning chip, no hard
+   error), a Tag-only row shows a blank pinned Display Name without error,
+   and the Rooms -> Space Type picker labels options by Display Name first.
 3. Run `graphify update .` after the code changes.
 4. Update `context/technical-requirements/data-table.md`:
    - replace the "header is always Record-ID" rule with **Display Name**;
