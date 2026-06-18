@@ -152,6 +152,7 @@ function FilterRuleRow({ ruleId, index, rule, fieldDefs, onChange, onRemove }: F
         className="data-table-view-popover-select"
         value={rule.fieldKey}
         compact
+        listboxPlacement="portal"
         options={fieldDefs.map((def) => ({
           value: def.field_key,
           label: def.display_name,
@@ -163,6 +164,7 @@ function FilterRuleRow({ ruleId, index, rule, fieldDefs, onChange, onRemove }: F
         className="data-table-view-popover-select"
         value={rule.operator}
         compact
+        listboxPlacement="portal"
         options={operators.map((op) => ({
           value: op.operator,
           label: op.label,
