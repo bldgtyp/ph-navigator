@@ -133,6 +133,7 @@ function SortRuleRow({ ruleId, index, rule, fieldOptions, onChange, onRemove }: 
         className="data-table-view-popover-select"
         value={rule.fieldKey}
         compact
+        listboxPlacement="portal"
         options={fieldOptions.map((def) => ({
           value: def.field_key,
           label: def.display_name,
@@ -144,6 +145,7 @@ function SortRuleRow({ ruleId, index, rule, fieldOptions, onChange, onRemove }: 
         className="data-table-view-popover-select"
         value={rule.direction}
         compact
+        listboxPlacement="portal"
         options={[
           { value: "asc", label: "A → Z" },
           { value: "desc", label: "Z → A" },

@@ -10,6 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 import { useOutsidePointerDown } from "./useOutsidePointerDown";
 
 export type AutocompleteSelectOption = {
@@ -32,6 +33,7 @@ export function AutocompleteSelect({
   emptyMessage = "No matches",
   className,
   compact = false,
+  listboxPlacement = "inline",
   onChange,
   renderOption,
 }: {
@@ -46,6 +48,7 @@ export function AutocompleteSelect({
   emptyMessage?: string;
   className?: string;
   compact?: boolean;
+  listboxPlacement?: "inline" | "portal";
   onChange: (value: string) => void;
   renderOption?: (option: AutocompleteSelectOption) => ReactNode;
 }) {
@@ -54,6 +57,7 @@ export function AutocompleteSelect({
   const listboxId = `${inputId}-listbox`;
   const rootRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const listboxRef = useRef<HTMLUListElement | null>(null);
   const effectiveAriaLabel = ariaLabel ?? ariaLabelAttribute;
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -71,11 +75,10 @@ export function AutocompleteSelect({
   const [highlightedIndex, setHighlightedIndex] = useState(firstEnabledIndex);
   const activeOption = highlightedIndex >= 0 ? filteredOptions[highlightedIndex] : undefined;
   const activeOptionId = activeOption ? `${listboxId}-option-${highlightedIndex}` : undefined;
+  const usesPortaledListbox = listboxPlacement === "portal";
+  const outsidePointerInsideRefs = useMemo(() => [listboxRef], []);
 
-  useOutsidePointerDown(rootRef, open, () => {
-    setOpen(false);
-    setQuery("");
-  });
+  useOutsidePointerDown(rootRef, open, closeList, outsidePointerInsideRefs);
 
   useEffect(() => {
     if (!open) return;
@@ -89,7 +92,7 @@ export function AutocompleteSelect({
   } | null>(null);
 
   useLayoutEffect(() => {
-    if (!open) {
+    if (!open || !usesPortaledListbox) {
       setListboxPosition(null);
       return;
     }
@@ -97,7 +100,12 @@ export function AutocompleteSelect({
       const el = inputRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
-      setListboxPosition({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+      const next = { top: rect.bottom + 4, left: rect.left, width: rect.width };
+      setListboxPosition((current) =>
+        current?.top === next.top && current.left === next.left && current.width === next.width
+          ? current
+          : next,
+      );
     }
     updatePosition();
     window.addEventListener("resize", updatePosition);
@@ -106,7 +114,7 @@ export function AutocompleteSelect({
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", updatePosition, true);
     };
-  }, [open]);
+  }, [open, usesPortaledListbox]);
 
   function openList() {
     if (disabled) return;
@@ -187,6 +195,46 @@ export function AutocompleteSelect({
     .filter(Boolean)
     .join(" ");
 
+  const listbox = open ? (
+    <ul
+      ref={listboxRef}
+      className="autocomplete-select-listbox"
+      id={listboxId}
+      role="listbox"
+      style={
+        usesPortaledListbox
+          ? {
+              position: "fixed",
+              top: listboxPosition?.top ?? 0,
+              left: listboxPosition?.left ?? 0,
+              width: listboxPosition?.width,
+              right: "auto",
+            }
+          : undefined
+      }
+    >
+      {filteredOptions.length === 0 ? (
+        <li className="autocomplete-select-empty">{emptyMessage}</li>
+      ) : (
+        filteredOptions.map((option, index) => (
+          <li
+            key={option.value}
+            id={`${listboxId}-option-${index}`}
+            role="option"
+            aria-selected={option.value === value}
+            aria-disabled={option.disabled || undefined}
+            className={index === highlightedIndex ? "is-highlighted" : undefined}
+            onMouseDown={(event) => event.preventDefault()}
+            onMouseEnter={() => setHighlightedIndex(index)}
+            onClick={() => commitOption(option)}
+          >
+            {renderOption ? renderOption(option) : <DefaultOption option={option} />}
+          </li>
+        ))
+      )}
+    </ul>
+  ) : null;
+
   return (
     <div className={rootClassName} ref={rootRef} onClick={(event) => event.stopPropagation()}>
       {label ? (
@@ -238,44 +286,7 @@ export function AutocompleteSelect({
           <ChevronDown aria-hidden="true" size={16} strokeWidth={1.8} />
         </button>
       </div>
-      {open ? (
-        <ul
-          className="autocomplete-select-listbox"
-          id={listboxId}
-          role="listbox"
-          style={
-            listboxPosition
-              ? {
-                  position: "fixed",
-                  top: listboxPosition.top,
-                  left: listboxPosition.left,
-                  width: listboxPosition.width,
-                  right: "auto",
-                }
-              : undefined
-          }
-        >
-          {filteredOptions.length === 0 ? (
-            <li className="autocomplete-select-empty">{emptyMessage}</li>
-          ) : (
-            filteredOptions.map((option, index) => (
-              <li
-                key={option.value}
-                id={`${listboxId}-option-${index}`}
-                role="option"
-                aria-selected={option.value === value}
-                aria-disabled={option.disabled || undefined}
-                className={index === highlightedIndex ? "is-highlighted" : undefined}
-                onMouseDown={(event) => event.preventDefault()}
-                onMouseEnter={() => setHighlightedIndex(index)}
-                onClick={() => commitOption(option)}
-              >
-                {renderOption ? renderOption(option) : <DefaultOption option={option} />}
-              </li>
-            ))
-          )}
-        </ul>
-      ) : null}
+      {usesPortaledListbox && listbox ? createPortal(listbox, document.body) : listbox}
     </div>
   );
 }

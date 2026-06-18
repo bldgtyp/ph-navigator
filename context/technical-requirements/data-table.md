@@ -495,6 +495,12 @@ for the original identifier-column rollout that this model supersedes.
   the backend schema or TanStack data column model.
 - Use explicit stacking lanes for sticky headers, frozen columns,
   selection, focus, editor overlays, and popovers.
+- Toolbar filter/sort/group popovers may contain nested searchable
+  selectors for fields, operators, and directions. Those nested option
+  lists must be positioned in viewport space and escape the parent
+  popover content box so transforms, scroll containers, and clipping do
+  not offset them from the clicked input. Ordinary form/modal selectors
+  remain inline unless they have the same popover-in-popover constraint.
 - Focus uses an outline channel. Selection and fill preview use separate
   border/box-shadow channels.
 - Tint palette is an explicit token set, not runtime HSL blending.

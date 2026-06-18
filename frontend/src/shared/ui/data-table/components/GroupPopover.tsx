@@ -163,6 +163,7 @@ function GroupRuleRow({
         className="data-table-view-popover-select"
         value={rule.fieldKey}
         compact
+        listboxPlacement="portal"
         options={fieldOptions.map((def) => ({
           value: def.field_key,
           label: def.display_name,
@@ -174,6 +175,7 @@ function GroupRuleRow({
         className="data-table-view-popover-select"
         value={rule.direction}
         compact
+        listboxPlacement="portal"
         options={[
           { value: "asc", label: "First → Last" },
           { value: "desc", label: "Last → First" },
