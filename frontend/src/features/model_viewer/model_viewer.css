@@ -294,6 +294,44 @@
   bottom: 18px;
 }
 
+/* Dev-only perf harness readout (Phase 00). Mounted only when the debug hook is
+   enabled, so this never appears in production builds. */
+.model-perf-overlay {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  z-index: var(--z-base-elevated);
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 1px 10px;
+  margin: 0;
+  padding: 6px 9px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  background: color-mix(in oklab, var(--bg-card) 88%, transparent);
+  box-shadow: var(--shadow-model-hint);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+.model-perf-overlay-row {
+  display: contents;
+}
+
+.model-perf-overlay dt {
+  color: var(--text-muted);
+}
+
+.model-perf-overlay dd {
+  margin: 0;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
 .model-site-sun-hint {
   bottom: 18px;
   color: var(--text-muted);
@@ -531,6 +569,9 @@
   left: 14px;
   bottom: 14px;
   z-index: var(--z-base-elevated);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
 }
 
 .model-legend-card {

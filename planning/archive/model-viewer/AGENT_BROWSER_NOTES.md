@@ -140,6 +140,21 @@ Do not spend time trying to force the in-app Browser to read the debug
 hook. If visual DOM/canvas state is the goal, use screenshots and
 snapshots. If internal scene state is the goal, switch to Playwright.
 
+## 4b. Perf Harness (`window.__phnModelViewerPerf`)
+
+The model-viewer performance refactor (Phase 00) adds a second dev-only hook
+alongside `window.__phnModelViewer`:
+
+- `window.__phnModelViewerPerf` — `{ calls, triangles, geometries, textures,
+  programs, frameMs, fps }` for the last rendered frame. Same gating as the
+  debug hook (dev/test only) and same access rules: reliable from Playwright /
+  Node `page.evaluate`, not from the restricted in-app Browser sandbox.
+- A bottom-left perf overlay shows the same numbers visually.
+- `frameloop="demand"` means the numbers only update on rendered frames — read
+  them during an active orbit, not at idle.
+- Full capture runbook + the recorded baseline live in
+  `planning/refactor/model-viewer-performance/phases/phase-00-perf-harness.md`.
+
 ## 5. Fast Triage Checklist
 
 1. `curl -i http://localhost:8000/api/v1/auth/session` returns `401

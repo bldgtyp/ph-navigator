@@ -65,13 +65,14 @@ describe("buildBuildingModel", () => {
   test("builds Site & Sun shade meshes without adding selectable objects", () => {
     const model = buildBuildingModel(sampleSiteSunData());
 
+    // Shades merge per display_name (D-7); each group is one renderable.
     expect(model.shadeObjects).toHaveLength(2);
     expect(model.shadeObjects[0]).toMatchObject({
-      id: "shade:shade-1a",
+      id: "shade:South Overhangs",
       displayName: "South Overhangs",
     });
     expect(model.shadeObjects[1]).toMatchObject({
-      id: "shade:shade-1b",
+      id: "shade:South Side Fin",
       displayName: "South Side Fin",
     });
     expect(model.objectCounts).toEqual({

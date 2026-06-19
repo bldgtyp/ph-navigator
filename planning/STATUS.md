@@ -45,6 +45,14 @@ feature-first planning.
   current in `context/technical-requirements/attachments.md`; the
   deferred v1.1 candidate stays in
   `planning/features_v1.1/user-defined-attachment-fields/`.
+- Completed Model-Viewer rendering-performance refactor now lives under
+  `archive/model-viewer-performance/` (Phases 00–05; Hillandale building
+  lens 14 draw calls @ 60 FPS, was 32,045 @ 0.4). The reusable substrate
+  convention is in `frontend/src/features/model_viewer/scene/{LensBatch,
+  BatchedLens}`. Optional follow-ups (true cross-fade, line merging, the
+  OQ-3 opaque-shell look review) are recorded in that folder's `STATUS.md`
+  "Next step"; model-viewer feature backlog stays under
+  `planning/features_v1.1/model-viewer-*`.
 
 ## Update Rule
 
