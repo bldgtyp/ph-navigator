@@ -14,6 +14,7 @@ import { InspectorPanel } from "./InspectorPanel";
 import { LegendCard } from "./LegendCard";
 import { LensBar } from "./LensBar";
 import { LoadingChip } from "./LoadingChip";
+import { ModelViewerPerfOverlay } from "./PerfOverlay";
 
 type ModelViewerStageProps = {
   projectId: string;
@@ -150,6 +151,7 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
             model={renderedModel.model}
             activeFileName={activeFile.display_name}
           />
+          {isModelViewerDebugHookEnabled() ? <ModelViewerPerfOverlay model={model} /> : null}
         </div>
       ) : (
         <div className="model-viewer-placeholder">

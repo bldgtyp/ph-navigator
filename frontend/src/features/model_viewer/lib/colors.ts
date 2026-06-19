@@ -1,4 +1,10 @@
-import { Color, MeshStandardMaterial } from "three";
+import {
+  Color,
+  DoubleSide,
+  LineBasicMaterial,
+  MeshBasicMaterial,
+  MeshStandardMaterial,
+} from "three";
 import type { ModelObjectType } from "../types";
 
 export type ViewerTokens = {
@@ -10,9 +16,7 @@ export type MaterialState = "base" | "hovered" | "selected";
 
 export const VIEWER_HIGHLIGHT_FALLBACK = "#E23489";
 export const VIEWER_FACE_EDGE_COLOR = "#8b8177";
-export const VIEWER_APERTURE_EDGE_COLOR = "#64717c";
 export const VIEWER_GHOST_EDGE_COLOR = "#6d736f";
-export const VIEWER_SPACE_EDGE_COLOR = "#6f7d72";
 export const VIEWER_LINE_HOVER_COLOR = "#f0a8cb";
 export const VIEWER_DUCT_SUPPLY_COLOR = "#2674d9";
 export const VIEWER_DUCT_EXHAUST_COLOR = "#d94a3a";
@@ -23,6 +27,13 @@ export const VIEWER_SHADE_EDGE_COLOR = "#7d837d";
 export const VIEWER_SITE_COMPASS_COLOR = "#5f6760";
 export const VIEWER_SUN_PATH_COLOR = "#d49b35";
 
+/**
+ * Crease angle (degrees) above which an edge line is drawn. Shared by the merged
+ * lens edges (`LensBatch`) and the merged ghost outline (`buildBuildingModel`)
+ * so the two edge looks stay identical.
+ */
+export const EDGE_THRESHOLD_DEGREES = 12;
+
 export function resolveViewerTokens(root: HTMLElement = document.documentElement): ViewerTokens {
   const styles = getComputedStyle(root);
   const highlight = cssVar(styles, "--highlight") || VIEWER_HIGHLIGHT_FALLBACK;
@@ -32,60 +43,81 @@ export function resolveViewerTokens(root: HTMLElement = document.documentElement
   };
 }
 
-export function materialKey(type: ModelObjectType, state: MaterialState): string {
-  return `${type}:${state}`;
+/** Fill + edge materials for the merged ghost; an atomic pair, created together. */
+export type GhostMaterials = { fill: MeshStandardMaterial; edge: LineBasicMaterial };
+
+export function createGhostMaterials(): GhostMaterials {
+  return {
+    fill: new MeshStandardMaterial({
+      color: "#d4d7d2",
+      roughness: 0.82,
+      transparent: true,
+      opacity: 0.03,
+      depthWrite: false,
+    }),
+    edge: new LineBasicMaterial({ color: VIEWER_GHOST_EDGE_COLOR }),
+  };
 }
 
-export function createBuildingMaterials(tokens: ViewerTokens): Map<string, MeshStandardMaterial> {
-  const palette = new Map<string, MeshStandardMaterial>();
-  const states: MaterialState[] = ["base", "hovered", "selected"];
-  for (const type of [
-    "faceMesh",
-    "apertureMeshFace",
-    "spaceGroup",
-    "spaceFloorSegmentMeshFace",
-  ] as const) {
-    for (const state of states) {
-      palette.set(materialKey(type, state), materialFor(type, state, tokens));
-    }
-  }
-  return palette;
+/** Fill + edge materials for the merged site-sun shade groups; an atomic pair. */
+export type ShadeMaterials = { fill: MeshBasicMaterial; edge: LineBasicMaterial };
+
+export function createShadeMaterials(): ShadeMaterials {
+  return {
+    fill: new MeshBasicMaterial({
+      color: VIEWER_SHADE_COLOR,
+      side: DoubleSide,
+      transparent: true,
+      opacity: 0.48,
+    }),
+    edge: new LineBasicMaterial({ color: VIEWER_SHADE_EDGE_COLOR }),
+  };
 }
 
-export function createGhostMaterial(): MeshStandardMaterial {
-  return new MeshStandardMaterial({
-    color: "#d4d7d2",
-    roughness: 0.82,
-    transparent: true,
-    opacity: 0.03,
-    depthWrite: false,
-  });
+/**
+ * Batch materials for the BatchedMesh lens substrate (Phase 03). Each batch
+ * uses one neutral-white material; per-object hue (shaded base, color-by theme,
+ * or highlight) is driven entirely by the BatchedMesh per-instance color buffer
+ * (`setColorAt`), so the whole lens is one or two draw calls. The partition is
+ * opaque vs transparent (not glass-specific): the building lens's transparent
+ * batch is apertures (0.68); Phase 04 lenses set their own transparent opacity.
+ */
+export type BatchMaterials = { opaque: MeshStandardMaterial; transparent: MeshStandardMaterial };
+
+export function createBatchMaterials(
+  transparentOpacity = baseOpacity("apertureMeshFace"),
+): BatchMaterials {
+  return {
+    opaque: new MeshStandardMaterial({ color: "#ffffff", ...SHADED_SURFACE }),
+    transparent: new MeshStandardMaterial({
+      color: "#ffffff",
+      ...SHADED_SURFACE,
+      transparent: true,
+      opacity: transparentOpacity,
+      depthWrite: false,
+    }),
+  };
 }
 
-function materialFor(
-  type: ModelObjectType,
-  state: MaterialState,
-  tokens: ViewerTokens,
-): MeshStandardMaterial {
-  const base = baseColor(type);
-  const color =
-    state === "base" ? base : state === "hovered" ? tokens.highlightSoft : tokens.highlight;
-  const emissive =
-    state === "selected"
-      ? tokens.highlight
-      : state === "hovered"
-        ? tokens.highlightSoft
-        : "#000000";
-  return new MeshStandardMaterial({
-    color,
-    roughness: 0.78,
-    metalness: 0,
-    transparent: true,
-    opacity: baseOpacity(type),
-    emissive,
-    emissiveIntensity: state === "base" ? 0 : state === "hovered" ? 0.12 : 0.18,
-  });
+/** Per-type "shaded" base color — the default per-instance color of a batch. */
+export function viewerBaseColor(type: ModelObjectType): string {
+  return baseColor(type);
 }
+
+/** Per-type shaded opacity — the opacity a lens's transparent batch should use. */
+export function viewerBaseOpacity(type: ModelObjectType): number {
+  return baseOpacity(type);
+}
+
+/** A type is rendered in the transparent batch when its shaded opacity is < 1. */
+export function isTransparentType(type: ModelObjectType): boolean {
+  return baseOpacity(type) < 1;
+}
+
+// Shared shaded-surface PBR params for the batch materials (one knob for the
+// whole lit look). Opaque batch writes depth (early-Z); the transparent batch
+// blends without writing depth — see `createBatchMaterials`.
+const SHADED_SURFACE = { roughness: 0.78, metalness: 0 } as const;
 
 function baseOpacity(type: ModelObjectType): number {
   switch (type) {
@@ -93,12 +125,11 @@ function baseOpacity(type: ModelObjectType): number {
       return 0.68;
     case "spaceGroup":
       return 0.32;
-    case "spaceFloorSegmentMeshFace":
-      return 0.76;
     case "faceMesh":
+    case "spaceFloorSegmentMeshFace":
     case "ductSegmentLine":
     case "pipeSegmentLine":
-      return 0.94;
+      return 1;
   }
 }
 

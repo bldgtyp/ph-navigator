@@ -1,6 +1,8 @@
 import { Box3, BufferGeometry, Vector3 } from "three";
 import { expandBoundsByPoints } from "./bounds";
 import { geometryFromFace3D } from "./geometry";
+import { mergeEdges, mergeRenderableGeometries } from "./merge";
+import { EDGE_THRESHOLD_DEGREES } from "../lib/colors";
 import { MODEL_VIEWER_LENS_IDS } from "../lib/lenses";
 import type {
   ApertureModelData,
@@ -35,20 +37,33 @@ export type LineRenderable = {
   lineStyle: "duct-supply" | "duct-exhaust" | "pipe-distribution" | "pipe-recirc";
 };
 
+/**
+ * One shade group merged into a single mesh + edge line (D-7/F9). Shades sharing
+ * a `display_name` collapse to one renderable, matching V1 + PRD §7, so a façade
+ * of louvres draws in two calls instead of two per blade. Non-selectable.
+ */
 export type ShadeRenderable = {
   id: string;
-  kind: "shade";
   displayName: string;
-  geometries: BufferGeometry[];
+  geometry: BufferGeometry;
+  edges: BufferGeometry;
 };
 
 export type ModelRenderable = BuildingRenderable | LineRenderable;
 
 export type LensAvailability = Record<ModelViewerLens, boolean>;
 
+/**
+ * The whole building merged into one mesh + one edge line (F5). Built once at
+ * model load and rendered as the faint "ghost" context on every non-building
+ * lens, so the ghost costs two draw calls instead of ~2 × the face count.
+ */
+export type GhostGeometry = { geometry: BufferGeometry; edges: BufferGeometry };
+
 export type BuildingModel = {
   objects: ModelRenderable[];
   buildingObjects: BuildingRenderable[];
+  ghost: GhostGeometry;
   shadeObjects: ShadeRenderable[];
   sunPath: SunPathAndCompassModelData | null;
   metaById: Map<string, ModelObjectMeta>;
@@ -85,7 +100,7 @@ export function buildBuildingModel(data: CombinedModelData): BuildingModel {
     }
   }
   for (const shade of shadeObjects) {
-    expandBoundsByGeometries(bounds, shade.geometries);
+    expandBoundsByGeometries(bounds, [shade.geometry]);
   }
 
   const metaById = new Map(objects.map((object) => [object.id, object.meta]));
@@ -97,12 +112,20 @@ export function buildBuildingModel(data: CombinedModelData): BuildingModel {
   return {
     objects,
     buildingObjects,
+    ghost: buildGhostGeometry(buildingObjects),
     shadeObjects,
     sunPath: data.sun_path,
     metaById,
     bounds: bounds.isEmpty() ? fallbackBounds(objects) : bounds,
     objectCounts: countObjects(objects),
     lensAvailability: lensAvailability(objects),
+  };
+}
+
+function buildGhostGeometry(objects: BuildingRenderable[]): GhostGeometry {
+  return {
+    geometry: mergeRenderableGeometries(objects).geometry,
+    edges: mergeEdges(objects, EDGE_THRESHOLD_DEGREES),
   };
 }
 
@@ -293,20 +316,30 @@ function pipeRenderables(systems: HotWaterSystemModelData[]): LineRenderable[] {
 }
 
 function shadeRenderables(groups: ShadeGroupModelData[]): ShadeRenderable[] {
-  return groups.flatMap((group, groupIndex) => {
-    return group.shades.flatMap((shade, shadeIndex) => {
+  // Collect every shade's geometry under its display_name (insertion order kept).
+  // display_name IS the group identity here (PRD §7 / D-7), so shades that share
+  // one merge into a single renderable — by design, not a collision bug.
+  const byName = new Map<string, BufferGeometry[]>();
+  for (const group of groups) {
+    for (const shade of group.shades) {
       const built = geometryFromFace3D(shade.geometry);
-      if (!built) return [];
-      return [
-        {
-          id: `shade:${shade.identifier || `${groupIndex}:${shadeIndex}`}`,
-          kind: "shade",
-          displayName: shade.display_name,
-          geometries: [built.geometry],
-        },
-      ];
-    });
-  });
+      if (!built) continue;
+      const geometries = byName.get(shade.display_name);
+      if (geometries) geometries.push(built.geometry);
+      else byName.set(shade.display_name, [built.geometry]);
+    }
+  }
+
+  const renderables: ShadeRenderable[] = [];
+  for (const [displayName, geometries] of byName) {
+    const geometry = mergeRenderableGeometries([{ geometries }]).geometry;
+    const edges = mergeEdges([{ geometries }], EDGE_THRESHOLD_DEGREES);
+    // The per-shade geometries are scratch — their data is now in the merged
+    // buffers, so free them (they never enter `model.objects`).
+    for (const source of geometries) source.dispose();
+    renderables.push({ id: `shade:${displayName}`, displayName, geometry, edges });
+  }
+  return renderables;
 }
 
 function addPipeElement(
@@ -368,10 +401,11 @@ export function disposeBuildingModel(model: BuildingModel): void {
     }
   }
   for (const shade of model.shadeObjects) {
-    for (const geometry of shade.geometries) {
-      geometry.dispose();
-    }
+    shade.geometry.dispose();
+    shade.edges.dispose();
   }
+  model.ghost.geometry.dispose();
+  model.ghost.edges.dispose();
 }
 
 function countObjects(objects: ModelRenderable[]): ModelObjectCounts {

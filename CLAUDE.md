@@ -9,10 +9,11 @@ data model with versioned, immutable-by-discipline saves. V1
 
 ## Status
 
-**Planning / scaffold.** No feature code yet. The `context/` folder
-holds the canonical reference docs; `planning/` holds feature PRDs,
-progress, reviews, and phasing; `research/` holds POC artifacts from
-V1's catalog spike as precedent.
+**Planning / scaffold.** 
+- No users, no actual deploy yet. Backwards compatibility is **not** required at this stage. 
+- The `context/` folder holds the canonical reference docs; 
+- `planning/` holds feature PRDs, progress, reviews, and phasing;
+-  `research/` holds POC artifacts from V1's catalog spike as precedent.
 
 ## Project Structure
 
@@ -116,11 +117,13 @@ If you arrive in an unfamiliar repo state, **`make smoke` first.**
 After any code-changing session, before reporting completion, committing,
 or opening a PR:
 
-1. Run `make format` from the repo root.
-2. Run `make ci` from the repo root.
-3. If `make format` changes files, inspect the diff and run `make ci`
+1. Run your `simplfy` **skill** on the current diff and most recent changes. Wait until the skill is complete to proceed.
+2. Run your `docs-pass` **skill** on the current diff and most recent changes. Wait until the skill is complete to proceed.
+3. Run `make format` from the repo root.
+4. **IF** the code change included substantial and meaningful code change (more than a simple UI tweak) Run `make ci` from the repo root.
+5. **IF** `make format` changes files, inspect the diff and run `make ci`
    after those changes.
-4. Do not treat the work as complete while any `make ci` step is red.
+6. Do not treat the work as complete while any `make ci` step is red.
    Fix the failure locally, then rerun `make ci`.
 
 `make ci` mirrors `.github/workflows/ci.yml`: backend locked `uv`

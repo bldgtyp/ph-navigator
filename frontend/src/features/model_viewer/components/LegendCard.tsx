@@ -1,7 +1,9 @@
-import { ChevronDown, ChevronUp, Info } from "lucide-react";
+import { ChevronDown, ChevronUp, Gauge, Info } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { formatProjectDateTime } from "../../../shared/lib/dates";
+import { isModelViewerDebugHookEnabled } from "../lib/debugHook";
 import { useModelViewerPopoverEscape } from "../lib/events";
+import { useModelViewerPerfStore } from "../lib/perf";
 import { legendForModel } from "../lib/themes";
 import type { BuildingModel } from "../loaders/building";
 import { useModelViewerStore } from "../store";
@@ -31,6 +33,7 @@ export function LegendCard({ model, activeFile, loadSummary }: LegendCardProps) 
     return (
       <div className="model-scene-info-root">
         <InfoButton open={infoOpen} onClick={() => setInfoOpen((current) => !current)} />
+        <PerfToggleButton />
         {infoOpen ? <SceneInfoPopover activeFile={activeFile} loadSummary={loadSummary} /> : null}
       </div>
     );
@@ -53,6 +56,7 @@ export function LegendCard({ model, activeFile, loadSummary }: LegendCardProps) 
         </div>
         <div className="model-legend-title-actions">
           <InfoButton open={infoOpen} onClick={() => setInfoOpen((current) => !current)} />
+          <PerfToggleButton />
           <button
             type="button"
             aria-label={collapsed ? "Expand legend" : "Collapse legend"}
@@ -97,6 +101,30 @@ function InfoButton({ open, onClick }: { open: boolean; onClick: () => void }) {
       onClick={onClick}
     >
       <Info size={15} aria-hidden />
+    </button>
+  );
+}
+
+/**
+ * Dev-only toggle for the perf overlay (the calls/tris/fps readout). Renders
+ * nothing outside dev/test so it never reaches the production UI; in dev it sits
+ * beside the scene-info button and shows/hides the overlay, which stays hidden
+ * by default.
+ */
+function PerfToggleButton() {
+  const overlayVisible = useModelViewerPerfStore((state) => state.overlayVisible);
+  const toggleOverlay = useModelViewerPerfStore((state) => state.toggleOverlay);
+  if (!isModelViewerDebugHookEnabled()) return null;
+  const label = overlayVisible ? "Hide perf overlay" : "Show perf overlay";
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      aria-pressed={overlayVisible}
+      title={label}
+      onClick={toggleOverlay}
+    >
+      <Gauge size={15} aria-hidden />
     </button>
   );
 }

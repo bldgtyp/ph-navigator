@@ -1,97 +1,61 @@
-import { Edges, Html, Line } from "@react-three/drei";
-import { useMemo } from "react";
-import { Box3, MeshBasicMaterial, Vector3 } from "three";
-import type { MeshStandardMaterial } from "three";
+import { Html, Line } from "@react-three/drei";
+import { useEffect, useMemo } from "react";
+import { Box3, Vector3 } from "three";
 import {
-  VIEWER_SHADE_EDGE_COLOR,
+  createShadeMaterials,
   VIEWER_SITE_COMPASS_COLOR,
   VIEWER_SUN_PATH_COLOR,
+  type ShadeMaterials,
 } from "../lib/colors";
 import type { BuildingModel, ShadeRenderable } from "../loaders/building";
-import type { ModelViewerTheme } from "../types";
-import { MeshObject } from "./BuildingLens";
-import { useOpacityMaterial } from "./useOpacityMaterial";
 
-type SiteSunLayerProps = {
-  model: BuildingModel;
-  materials: Map<string, MeshStandardMaterial>;
-  themeMaterials: Map<string, MeshBasicMaterial>;
-  theme: ModelViewerTheme;
-  opacity: number;
-  interactive: boolean;
-  shadeMaterial: MeshBasicMaterial;
-};
+/**
+ * The site-sun overlays: merged shade groups, the north compass, and the sun
+ * path. The building context itself renders through `BatchedLens` (the site-sun
+ * lens reuses `model.buildingObjects`), so this layer is overlays only.
+ */
+export function SiteSunLayer({ model }: { model: BuildingModel }) {
+  const materials = useMemo(() => createShadeMaterials(), []);
+  useEffect(() => {
+    return () => {
+      materials.fill.dispose();
+      materials.edge.dispose();
+    };
+  }, [materials]);
 
-export function SiteSunLayer({
-  model,
-  materials,
-  themeMaterials,
-  theme,
-  opacity,
-  interactive,
-  shadeMaterial,
-}: SiteSunLayerProps) {
   return (
     <>
-      {model.buildingObjects.map((object) => (
-        <MeshObject
-          key={`site:${object.id}`}
-          object={object}
-          materials={materials}
-          themeMaterials={themeMaterials}
-          lens="site-sun"
-          theme={theme}
-          opacity={opacity}
-          interactive={interactive}
-        />
-      ))}
-      <ShadeGroups shades={model.shadeObjects} material={shadeMaterial} opacity={opacity} />
-      <SiteCompass bounds={model.bounds} opacity={opacity} />
-      {model.sunPath ? <SunPathLines model={model} opacity={opacity} /> : null}
+      <ShadeGroups shades={model.shadeObjects} materials={materials} />
+      <SiteCompass bounds={model.bounds} />
+      {model.sunPath ? <SunPathLines model={model} /> : null}
     </>
   );
 }
 
 function ShadeGroups({
   shades,
-  material,
-  opacity,
+  materials,
 }: {
   shades: ShadeRenderable[];
-  material: MeshBasicMaterial;
-  opacity: number;
+  materials: ShadeMaterials;
 }) {
-  const visibleMaterial = useOpacityMaterial(material, opacity);
   return (
     <group name="site-shade-groups">
-      {shades.map((shade) =>
-        shade.geometries.map((geometry) => (
-          <mesh
-            key={`${shade.id}:${geometry.uuid}`}
-            name={shade.displayName}
-            geometry={geometry}
-            material={visibleMaterial}
-            raycast={() => null}
-          >
-            <Edges threshold={12} color={VIEWER_SHADE_EDGE_COLOR} />
-          </mesh>
-        )),
-      )}
+      {shades.map((shade) => (
+        <group key={shade.id} name={shade.displayName}>
+          <mesh geometry={shade.geometry} material={materials.fill} raycast={() => null} />
+          <lineSegments geometry={shade.edges} material={materials.edge} raycast={() => null} />
+        </group>
+      ))}
     </group>
   );
 }
 
-function SiteCompass({ bounds, opacity }: { bounds: Box3; opacity: number }) {
+function SiteCompass({ bounds }: { bounds: Box3 }) {
   const { origin, end, label } = useMemo(() => compassPoints(bounds), [bounds]);
   return (
     <group name="site-compass">
-      <Line
-        points={[origin, end]}
-        color={VIEWER_SITE_COMPASS_COLOR}
-        lineWidth={1.2}
-        transparent
-        opacity={opacity}
-      />
+      <Line points={[origin, end]} color={VIEWER_SITE_COMPASS_COLOR} lineWidth={1.2} />
       <Html position={label} center className="model-site-compass-label" pointerEvents="none">
         N
       </Html>
@@ -99,7 +63,7 @@ function SiteCompass({ bounds, opacity }: { bounds: Box3; opacity: number }) {
   );
 }
 
-function SunPathLines({ model, opacity }: { model: BuildingModel; opacity: number }) {
+function SunPathLines({ model }: { model: BuildingModel }) {
   return (
     <group name="site-sun-path">
       {model.sunPath?.sunpath.hourly_analemma_polyline3d.map((polyline, index) => (
@@ -111,8 +75,6 @@ function SunPathLines({ model, opacity }: { model: BuildingModel; opacity: numbe
           dashed
           dashSize={1}
           gapSize={0.5}
-          transparent
-          opacity={opacity}
         />
       ))}
     </group>
