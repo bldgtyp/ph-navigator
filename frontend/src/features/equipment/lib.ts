@@ -42,6 +42,7 @@ import {
   APPLIANCE_TYPE_COLUMN_ID,
   APPLIANCE_TYPE_KEY,
   APPLIANCE_TYPE_OPTION_KEY,
+  ELECTRIC_HEATER_DATASHEET_FIELD_KEY,
   FAN_DATASHEET_FIELD_KEY,
   FAN_TYPE_COLUMN_ID,
   FAN_TYPE_KEY,
@@ -68,6 +69,7 @@ import {
   ROOM_FLOOR_LEVEL_OPTION_KEY,
   ROOM_SPACE_TYPE_FIELD_KEY,
   ROOMS_TABLE_NAME,
+  VENTILATOR_DATASHEET_FIELD_KEY,
   VENTILATOR_INSIDE_OUTSIDE_COLUMN_ID,
   VENTILATOR_INSIDE_OUTSIDE_KEY,
   VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,
@@ -182,6 +184,7 @@ export const VENTILATORS_SCHEMA_CORE_FIELD_KEYS = [
   VENTILATOR_INSIDE_OUTSIDE_KEY,
   "url",
   "notes",
+  VENTILATOR_DATASHEET_FIELD_KEY,
   "custom_values",
 ] as const;
 
@@ -219,6 +222,7 @@ export const ELECTRIC_HEATERS_SCHEMA_CORE_FIELD_KEYS = [
   "id",
   "url",
   "notes",
+  ELECTRIC_HEATER_DATASHEET_FIELD_KEY,
   "custom_values",
 ] as const;
 
@@ -235,6 +239,7 @@ export const APPLIANCES_SCHEMA_CORE_FIELD_KEYS = [
 const ROOM_CUSTOM_VALUE_FIELD_KEYS = new Set(["number", "name", "num_people", "num_bedrooms"]);
 const PUMP_CUSTOM_VALUE_FIELD_KEYS = new Set([
   "record_id",
+  "name",
   "use",
   "manufacturer",
   "model",
@@ -407,6 +412,7 @@ export const VENTILATORS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef(VENTILATOR_INSIDE_OUTSIDE_KEY, "Inside / Outside", "single_select"),
   builtInFieldDef("url", "URL", "url"),
   builtInFieldDef("notes", "Notes", "long_text"),
+  builtInFieldDef(VENTILATOR_DATASHEET_FIELD_KEY, "Datasheet", "long_text"),
 ];
 
 export const FANS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
@@ -531,6 +537,7 @@ export const ELECTRIC_HEATERS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("watt", "Watt", "number"),
   builtInFieldDef("url", "URL", "url"),
   builtInFieldDef("notes", "Notes", "long_text"),
+  builtInFieldDef(ELECTRIC_HEATER_DATASHEET_FIELD_KEY, "Datasheet", "long_text"),
 ];
 
 export const APPLIANCES_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
@@ -770,6 +777,9 @@ export function ventilatorsFieldOverlay(
     },
     notes: {
       locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    [VENTILATOR_DATASHEET_FIELD_KEY]: {
+      locked: ALL_FIELD_LOCKS,
     },
   };
 }
@@ -1103,6 +1113,7 @@ export function emptyPump(): PumpRow {
     datasheet_asset_ids: [],
     custom_values: {
       record_id: null,
+      name: null,
       use: null,
       manufacturer: null,
       model: null,
@@ -1121,6 +1132,7 @@ export function emptyVentilator(): VentilatorRow {
     inside_outside: null,
     url: null,
     notes: null,
+    datasheet_asset_ids: [],
     custom_values: {
       record_id: null,
       name: null,
@@ -1209,6 +1221,7 @@ export function emptyElectricHeater(): ElectricHeaterRow {
     id: generatedId(ELECTRIC_HEATER_ID_PREFIX),
     url: null,
     notes: null,
+    datasheet_asset_ids: [],
     custom_values: {
       record_id: null,
       name: null,
@@ -2983,6 +2996,9 @@ function applyWriteToVentilator(
   if (["notes", "url"].includes(fieldKey) && (value === null || typeof value === "string")) {
     return { ...ventilator, [fieldKey]: value };
   }
+  if (fieldKey === VENTILATOR_DATASHEET_FIELD_KEY) {
+    return { ...ventilator, datasheet_asset_ids: readAttachmentAssetIds(value) };
+  }
   if (VENTILATOR_CUSTOM_VALUE_FIELD_KEYS.has(fieldKey)) {
     return setCustomValue(ventilator, fieldKey, value);
   }
@@ -3061,6 +3077,9 @@ function applyWriteToElectricHeater(
 ): ElectricHeaterRow {
   if (["notes", "url"].includes(fieldKey) && (value === null || typeof value === "string")) {
     return { ...heater, [fieldKey]: value };
+  }
+  if (fieldKey === ELECTRIC_HEATER_DATASHEET_FIELD_KEY) {
+    return { ...heater, datasheet_asset_ids: readAttachmentAssetIds(value) };
   }
   if (ELECTRIC_HEATER_CUSTOM_VALUE_FIELD_KEYS.has(fieldKey)) {
     return setCustomValue(heater, fieldKey, value);
@@ -3276,6 +3295,7 @@ function normalizePumpForPayload(pump: PumpRow): PumpRow {
     custom_values: {
       ...pump.custom_values,
       record_id: nullableTrimmed(customTextValue(pump, "record_id")),
+      name: nullableTrimmed(customTextValue(pump, "name")),
       use: nullableTrimmed(customTextValue(pump, "use")),
       manufacturer: nullableTrimmed(customTextValue(pump, "manufacturer")),
       model: nullableTrimmed(customTextValue(pump, "model")),
@@ -3315,6 +3335,7 @@ function normalizeVentilatorForPayload(ventilator: VentilatorRow): VentilatorRow
     },
     notes: ventilator.notes?.trim() || null,
     url: ventilator.url?.trim() || null,
+    datasheet_asset_ids: readAttachmentAssetIds(ventilator.datasheet_asset_ids),
   };
 }
 
@@ -3409,6 +3430,7 @@ function normalizeElectricHeaterForPayload(heater: ElectricHeaterRow): ElectricH
     },
     notes: heater.notes?.trim() || null,
     url: heater.url?.trim() || null,
+    datasheet_asset_ids: readAttachmentAssetIds(heater.datasheet_asset_ids),
   };
 }
 

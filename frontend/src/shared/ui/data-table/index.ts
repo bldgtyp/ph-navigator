@@ -70,9 +70,19 @@ export {
   linkColumn,
   shortenUrl,
 } from "./columns";
-export { IncomingLinkPicker, incomingLinkColumn, incomingLinkFieldDef } from "./incoming-links";
+export {
+  IncomingLinkPicker,
+  incomingIdsForSourceKey,
+  incomingLinkColumn,
+  incomingLinkFieldDef,
+  incomingLinkSelectionWrites,
+  linkedRecordMaxLinksFromFieldDefs,
+} from "./incoming-links";
 export type {
+  IncomingLinkColumnEdit,
   IncomingLinkColumnArgs,
+  IncomingLinkSelectionWriteArgs,
+  IncomingLinkSourceRow,
   IncomingLinkFieldDefArgs,
   IncomingLinkPickerProps,
   IncomingLinkPickerState,

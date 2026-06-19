@@ -28,6 +28,7 @@ export function buildElectricHeater(overrides: Partial<ElectricHeaterRow> = {}):
     id: "heatr_1",
     url: null,
     notes: null,
+    datasheet_asset_ids: [],
     custom_values: {
       record_id: "EH-1",
       name: "Bath electric heater",

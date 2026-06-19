@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   formatConductivityFromWmK,
   formatDensityFromKgM3,
@@ -8,6 +8,8 @@ import {
   parseSpecificHeatToJKgK,
   useUnitPreference,
   type UnitFormatOptions,
+  type UnitParseResult,
+  type UnitSystem,
 } from "../../../lib/units";
 import {
   parseOptionalNumber,
@@ -58,6 +60,89 @@ function hasInvalidNumber(form: MaterialFormState, unitOptions: UnitFormatOption
   ].some((field) => Number.isNaN(field));
 }
 
+function unitOptionsFor(unitSystem: UnitSystem): UnitFormatOptions {
+  return {
+    unitSystem,
+    showUnit: false,
+    empty: "",
+  };
+}
+
+function convertUnitInput(
+  value: string,
+  initialValue: string,
+  originalValueSi: number | null,
+  parser: (input: string, options: UnitFormatOptions) => UnitParseResult,
+  formatter: (value: number | null | undefined, options: UnitFormatOptions) => string,
+  fromOptions: UnitFormatOptions,
+  toOptions: UnitFormatOptions,
+): string {
+  const valueSi = parseChangedUnitInput(value, initialValue, originalValueSi, parser, fromOptions);
+  return Number.isNaN(valueSi) ? value : formatter(valueSi, toOptions);
+}
+
+function convertFormUnitSystem(
+  form: MaterialFormState,
+  material: ProjectMaterial,
+  fromUnitSystem: UnitSystem,
+  toUnitSystem: UnitSystem,
+): MaterialFormState {
+  if (fromUnitSystem === toUnitSystem) return form;
+  const fromOptions = unitOptionsFor(fromUnitSystem);
+  const toOptions = unitOptionsFor(toUnitSystem);
+  const initialForm = formFromMaterial(material, fromOptions);
+  return {
+    ...form,
+    conductivity_w_mk: convertUnitInput(
+      form.conductivity_w_mk,
+      initialForm.conductivity_w_mk,
+      material.conductivity_w_mk,
+      parseConductivityToWmK,
+      formatConductivityFromWmK,
+      fromOptions,
+      toOptions,
+    ),
+    density_kg_m3: convertUnitInput(
+      form.density_kg_m3,
+      initialForm.density_kg_m3,
+      material.density_kg_m3,
+      parseDensityToKgM3,
+      formatDensityFromKgM3,
+      fromOptions,
+      toOptions,
+    ),
+    specific_heat_j_kgk: convertUnitInput(
+      form.specific_heat_j_kgk,
+      initialForm.specific_heat_j_kgk,
+      material.specific_heat_j_kgk,
+      parseSpecificHeatToJKgK,
+      formatSpecificHeatFromJKgK,
+      fromOptions,
+      toOptions,
+    ),
+  };
+}
+
+function parseChangedUnitInput(
+  value: string,
+  initialValue: string,
+  originalValueSi: number | null,
+  parser: (input: string, options: UnitFormatOptions) => UnitParseResult,
+  unitOptions: UnitFormatOptions,
+): number | null {
+  return value === initialValue
+    ? originalValueSi
+    : parseOptionalUnitNumber(value, parser, unitOptions);
+}
+
+function parseChangedNumberInput(
+  value: string,
+  initialValue: string,
+  originalValue: number | null,
+): number | null {
+  return value === initialValue ? originalValue : parseOptionalNumber(value);
+}
+
 export function ProjectMaterialEditor({
   material,
   busy,
@@ -72,13 +157,10 @@ export function ProjectMaterialEditor({
   onCommand: (command: UpdateProjectMaterialCommand) => void;
 }) {
   const { unitSystem, setUnitSystem } = useUnitPreference();
-  const [editorUnitSystem] = useState(unitSystem);
+  const [editorUnitSystem, setEditorUnitSystem] = useState(unitSystem);
+  const editorUnitSystemRef = useRef(editorUnitSystem);
   const unitOptions = useMemo<UnitFormatOptions>(
-    () => ({
-      unitSystem: editorUnitSystem,
-      showUnit: false,
-      empty: "",
-    }),
+    () => unitOptionsFor(editorUnitSystem),
     [editorUnitSystem],
   );
   const [form, setForm] = useState<MaterialFormState>(() =>
@@ -97,9 +179,20 @@ export function ProjectMaterialEditor({
     !busy;
 
   useEffect(() => {
-    setForm(formFromMaterial(material, unitOptions));
+    setForm(formFromMaterial(material, unitOptionsFor(editorUnitSystemRef.current)));
     setParseError(null);
-  }, [material, unitOptions]);
+  }, [material]);
+
+  useEffect(() => {
+    editorUnitSystemRef.current = editorUnitSystem;
+  }, [editorUnitSystem]);
+
+  useEffect(() => {
+    if (unitSystem === editorUnitSystem) return;
+    setForm((current) => convertFormUnitSystem(current, material, editorUnitSystem, unitSystem));
+    setEditorUnitSystem(unitSystem);
+    setParseError(null);
+  }, [editorUnitSystem, material, unitSystem]);
 
   function updateForm(field: keyof MaterialFormState, value: string): void {
     setForm((current) => ({ ...current, [field]: value }));
@@ -117,23 +210,41 @@ export function ProjectMaterialEditor({
       setParseError("Enter valid material values.");
       return;
     }
+    const conductivityWmK = parseChangedUnitInput(
+      form.conductivity_w_mk,
+      initialForm.conductivity_w_mk,
+      material.conductivity_w_mk,
+      parseConductivityToWmK,
+      unitOptions,
+    );
+    const densityKgM3 = parseChangedUnitInput(
+      form.density_kg_m3,
+      initialForm.density_kg_m3,
+      material.density_kg_m3,
+      parseDensityToKgM3,
+      unitOptions,
+    );
+    const specificHeatJKgK = parseChangedUnitInput(
+      form.specific_heat_j_kgk,
+      initialForm.specific_heat_j_kgk,
+      material.specific_heat_j_kgk,
+      parseSpecificHeatToJKgK,
+      unitOptions,
+    );
+    const emissivity = parseChangedNumberInput(
+      form.emissivity,
+      initialForm.emissivity,
+      material.emissivity,
+    );
     onCommand({
       kind: "update_project_material",
       project_material_id: material.id,
       name: form.name.trim(),
       category: form.category.trim() || "Other",
-      conductivity_w_mk: parseOptionalUnitNumber(
-        form.conductivity_w_mk,
-        parseConductivityToWmK,
-        unitOptions,
-      ),
-      density_kg_m3: parseOptionalUnitNumber(form.density_kg_m3, parseDensityToKgM3, unitOptions),
-      specific_heat_j_kgk: parseOptionalUnitNumber(
-        form.specific_heat_j_kgk,
-        parseSpecificHeatToJKgK,
-        unitOptions,
-      ),
-      emissivity: parseOptionalNumber(form.emissivity),
+      conductivity_w_mk: conductivityWmK,
+      density_kg_m3: densityKgM3,
+      specific_heat_j_kgk: specificHeatJKgK,
+      emissivity,
       ...(showNotes ? { comments: trimToNull(form.comments) } : {}),
     });
   }

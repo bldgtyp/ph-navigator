@@ -163,7 +163,7 @@ function incomingUnitColumnDef<TRow, TUnit extends { id: string }>({
     getIncomingIds,
     resolveLabel: (id) => unitLabelById.get(id) ?? null,
     onPillClick,
-    onActivateEdit,
+    edit: onActivateEdit ? { onActivate: onActivateEdit } : null,
     accessorValue: "ids",
   });
 }

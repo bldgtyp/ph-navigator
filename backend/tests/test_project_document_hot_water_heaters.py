@@ -87,7 +87,7 @@ def test_document_rejects_missing_hot_water_heater_type_option() -> None:
     first = hot_water_heater_payload()["hot_water_heaters"][0]
     tables = empty_required_tables()
     body = {
-        "schema_version": 10,
+        "schema_version": 11,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             **tables,

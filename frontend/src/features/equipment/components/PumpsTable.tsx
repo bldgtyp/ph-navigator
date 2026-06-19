@@ -19,6 +19,7 @@ import { useAssetUrls } from "../../assets/hooks";
 import { DATASHEET_ATTACHMENT_CONFIG } from "../../assets/lib";
 import { sortedPumps } from "../lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
+import { isRoomsSource } from "../lib/inverseSource";
 import {
   customFieldColumnDefs,
   type CustomFieldTableActions,
@@ -49,6 +50,8 @@ export function PumpsTable({
   footerAction,
   onResetView,
   onInversePillClick,
+  onInverseLinkEdit,
+  resolveInverseLinkLabel,
   ...customFieldActions
 }: {
   pumpsSlice: PumpsSlice;
@@ -65,6 +68,8 @@ export function PumpsTable({
   footerAction?: DataTableProps<PumpRow>["footerAction"];
   onResetView?: DataTableProps<PumpRow>["onResetView"];
   onInversePillClick?: (field: InverseLinkField, rowId: string) => void;
+  onInverseLinkEdit?: (field: InverseLinkField, row: PumpRow) => void;
+  resolveInverseLinkLabel?: (field: InverseLinkField, rowId: string) => string | null;
 } & CustomFieldTableActions<PumpRow>) {
   const sortedRows = useMemo(() => sortedPumps(pumpsSlice.pumps), [pumpsSlice.pumps]);
   const datasheetAssetIds = useMemo(
@@ -228,8 +233,12 @@ export function PumpsTable({
         id: inverseFieldKey(field),
         header: inverseColumnHeader(field),
         getIncomingIds: (pump) => inverseIdsForPump(inverseLinks, pump.id, field),
-        resolveLabel: () => null,
+        resolveLabel: (rowId) => resolveInverseLinkLabel?.(field, rowId) ?? null,
         onPillClick: (rowId) => onInversePillClick?.(field, rowId),
+        edit:
+          isEditor && onInverseLinkEdit && isRoomsSource(field)
+            ? { onActivate: (pump) => onInverseLinkEdit(field, pump) }
+            : null,
       }),
     );
     return [...baseColumns, ...customColumns, ...inverseColumns];
@@ -243,6 +252,8 @@ export function PumpsTable({
     projectId,
     inverseLinkFields,
     inverseLinks,
+    resolveInverseLinkLabel,
+    onInverseLinkEdit,
   ]);
 
   return (

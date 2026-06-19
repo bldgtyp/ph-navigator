@@ -4,6 +4,7 @@ import {
   DataTable,
   DATA_TABLE_COLUMN_WIDTHS,
   RECORD_ID_FIELD_KEY,
+  attachmentColumn,
   identifierColumn,
   linkColumn,
   type DataTableColumnDef,
@@ -19,6 +20,9 @@ import {
   incomingIndoorUnitsFieldDef,
 } from "../heat-pumps/link-fields";
 import type { HeatPumpIndoorUnitRow } from "../heat-pumps/types";
+import { AttachmentCell } from "../../assets/components/AttachmentCell";
+import { useAssetUrls } from "../../assets/hooks";
+import { DATASHEET_ATTACHMENT_CONFIG } from "../../assets/lib";
 import { sortedVentilators } from "../lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
 import {
@@ -26,6 +30,7 @@ import {
   type CustomFieldTableActions,
 } from "../../../shared/ui/data-table/feature";
 import {
+  VENTILATOR_DATASHEET_FIELD_KEY,
   VENTILATOR_INSIDE_OUTSIDE_COLUMN_ID,
   VENTILATOR_INSIDE_OUTSIDE_KEY,
   type VentilatorRow,
@@ -38,6 +43,7 @@ export function VentilatorsTable({
   ventilatorsSlice,
   tableSchema,
   isEditor,
+  projectId,
   view,
   onViewChange,
   onWrite,
@@ -56,6 +62,7 @@ export function VentilatorsTable({
   ventilatorsSlice: VentilatorsSlice;
   tableSchema: TableSchema;
   isEditor: boolean;
+  projectId: string;
   view: ViewState;
   onViewChange: (next: ViewState) => void;
   onWrite: NonNullable<DataTableProps<VentilatorRow>["onWrite"]>;
@@ -73,6 +80,15 @@ export function VentilatorsTable({
   const sortedRows = useMemo(
     () => sortedVentilators(ventilatorsSlice.ventilators),
     [ventilatorsSlice.ventilators],
+  );
+  const datasheetAssetIds = useMemo(
+    () => Array.from(new Set(sortedRows.flatMap((ventilator) => ventilator.datasheet_asset_ids))),
+    [sortedRows],
+  );
+  const datasheetUrls = useAssetUrls(projectId, datasheetAssetIds);
+  const datasheetUrlById = useMemo(
+    () => new Map((datasheetUrls.data ?? []).map((item) => [item.asset_id, item])),
+    [datasheetUrls.data],
   );
   const { fieldDefs, customFields } = tableSchema;
   const tableFieldDefs = useMemo(
@@ -193,6 +209,19 @@ export function VentilatorsTable({
         accessor: (ventilator) => ventilator.notes,
         defaultWidth: DATA_TABLE_COLUMN_WIDTHS.notes,
       },
+      attachmentColumn({
+        id: VENTILATOR_DATASHEET_FIELD_KEY,
+        fieldKey: VENTILATOR_DATASHEET_FIELD_KEY,
+        header: fieldDefByKey.get(VENTILATOR_DATASHEET_FIELD_KEY)?.display_name ?? "Datasheet",
+        projectId,
+        isEditor,
+        assetUrlById: datasheetUrlById,
+        config: DATASHEET_ATTACHMENT_CONFIG,
+        AttachmentCell,
+        getAssetIds: (ventilator) => ventilator.datasheet_asset_ids,
+        getRowId: (ventilator) => ventilator.id,
+        onWrite,
+      }),
       incomingIndoorUnitColumnDef<VentilatorRow>({
         header: "HP indoor units",
         indoorUnits: sortedIndoorUnits,
@@ -205,11 +234,14 @@ export function VentilatorsTable({
     ],
     [
       customColumns,
+      datasheetUrlById,
       fieldDefByKey,
       incomingIndoorUnitIdsByVentilatorId,
       isEditor,
       onIncomingIndoorUnitOpen,
       onIncomingIndoorUnitsLinkEdit,
+      onWrite,
+      projectId,
       sortedIndoorUnits,
     ],
   );

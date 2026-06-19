@@ -116,7 +116,7 @@ describe("shared data-table column builders", () => {
       getIncomingIds: () => ["unit_1"],
       resolveLabel: (rowId) => (rowId === "unit_1" ? "AHU-1" : null),
       onPillClick,
-      onActivateEdit,
+      edit: { onActivate: onActivateEdit },
     });
 
     const row = { id: "row_1", name: "Pump", url: null, assetIds: [] };
@@ -130,6 +130,22 @@ describe("shared data-table column builders", () => {
     rerender(<>{column.render?.(row, { isActive: true })}</>);
     screen.getByRole("button", { name: "AHU-1" }).click();
     expect(onPillClick).toHaveBeenCalledWith("unit_1");
+    screen.getByRole("button", { name: "Add linked record" }).click();
+    expect(onActivateEdit).toHaveBeenCalledWith(row);
+  });
+
+  test("incomingLinkColumn shows the active add affordance for empty cells", () => {
+    const onActivateEdit = vi.fn();
+    const column = incomingLinkColumn<Row>({
+      id: "incoming_units",
+      header: "Incoming units",
+      getIncomingIds: () => [],
+      resolveLabel: () => null,
+      edit: { onActivate: onActivateEdit },
+    });
+    const row = { id: "row_1", name: "Pump", url: null, assetIds: [] };
+
+    render(<>{column.render?.(row, { isActive: true })}</>);
     screen.getByRole("button", { name: "Add linked record" }).click();
     expect(onActivateEdit).toHaveBeenCalledWith(row);
   });

@@ -15,6 +15,20 @@ describe("LinkedRecordCell", () => {
     expect(screen.getByText("Empty")).toBeInTheDocument();
   });
 
+  test("renders the add button only when active and editable", () => {
+    const onActivateEdit = vi.fn();
+    const { rerender } = render(
+      <LinkedRecordCell ids={[]} resolve={() => null} onActivateEdit={onActivateEdit} />,
+    );
+    expect(screen.queryByRole("button", { name: "Add linked record" })).toBeNull();
+
+    rerender(
+      <LinkedRecordCell ids={[]} resolve={() => null} onActivateEdit={onActivateEdit} isActive />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Add linked record" }));
+    expect(onActivateEdit).toHaveBeenCalledTimes(1);
+  });
+
   test("renders a pill per id using the resolver's record_id", () => {
     render(
       <LinkedRecordCell

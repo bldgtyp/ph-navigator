@@ -156,6 +156,7 @@ class VentilatorRow(RowWithCustomFields):
     inside_outside: str | None = Field(default=None, pattern=r"^opt_[A-Za-z0-9_-]+$", max_length=80)
     url: str | None = Field(default=None, max_length=2000)
     notes: str | None = Field(default=None, max_length=4000)
+    datasheet_asset_ids: list[str] = Field(default_factory=list)
 
     @field_validator("url", "notes", mode="before")
     @classmethod
@@ -307,6 +308,7 @@ class ElectricHeaterRow(RowWithCustomFields):
     id: str = Field(pattern=r"^heatr_[A-Za-z0-9_-]+$", max_length=80)
     url: str | None = Field(default=None, max_length=2000)
     notes: str | None = Field(default=None, max_length=4000)
+    datasheet_asset_ids: list[str] = Field(default_factory=list)
 
     @field_validator("url", "notes", mode="before")
     @classmethod

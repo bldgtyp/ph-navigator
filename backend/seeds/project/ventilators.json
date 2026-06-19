@@ -11,6 +11,7 @@
       "inside_outside": "opt_vent_inside",
       "url": "https://example.com/zehnder-q350.pdf",
       "notes": "Apartment-level ERV serving units 1-4.",
+      "datasheet_asset_ids": [],
       "custom_values": {
         "record_id": "ERV-1",
         "name": "Apartment ERV",
@@ -28,6 +29,7 @@
       "inside_outside": "opt_vent_inside",
       "url": "https://example.com/zehnder-q600.pdf",
       "notes": "Common-area ERV serving the lobby and corridor.",
+      "datasheet_asset_ids": [],
       "custom_values": {
         "record_id": "ERV-2",
         "name": "Lobby ERV",
@@ -45,6 +47,7 @@
       "inside_outside": "opt_vent_outside",
       "url": "https://example.com/renewaire-ev300.pdf",
       "notes": "Rooftop ERV serving the gym.",
+      "datasheet_asset_ids": [],
       "custom_values": {
         "record_id": "ERV-3",
         "name": "Rooftop ERV",
@@ -62,6 +65,7 @@
       "inside_outside": "opt_vent_inside",
       "url": null,
       "notes": "Backup unit for Apartment ERV-1.",
+      "datasheet_asset_ids": [],
       "custom_values": {
         "record_id": "ERV-4",
         "name": "Backup Apartment ERV",
@@ -79,6 +83,7 @@
       "inside_outside": "opt_vent_outside",
       "url": "https://example.com/lifebreath-rnc155.pdf",
       "notes": "HRV serving the parking-garage ventilation.",
+      "datasheet_asset_ids": [],
       "custom_values": {
         "record_id": "HRV-1",
         "name": "Garage HRV",

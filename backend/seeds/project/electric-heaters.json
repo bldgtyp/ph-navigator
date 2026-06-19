@@ -5,6 +5,7 @@
       "id": "heatr_1",
       "url": "https://example.com/cadet-com2k.pdf",
       "notes": "Bathroom supplemental heat.",
+      "datasheet_asset_ids": [],
       "custom_values": {
         "record_id": "EH-1",
         "name": "Bath Heater 1",
@@ -17,6 +18,7 @@
       "id": "heatr_2",
       "url": "https://example.com/cadet-com2k.pdf",
       "notes": "Bathroom 2 supplemental heat.",
+      "datasheet_asset_ids": [],
       "custom_values": {
         "record_id": "EH-2",
         "name": "Bath Heater 2",
@@ -29,6 +31,7 @@
       "id": "heatr_3",
       "url": null,
       "notes": "Mudroom toe-kick heater.",
+      "datasheet_asset_ids": [],
       "custom_values": {
         "record_id": "EH-3",
         "name": "Toe-kick Heater",
@@ -41,6 +44,7 @@
       "id": "heatr_4",
       "url": null,
       "notes": "Garage frost-protection heater.",
+      "datasheet_asset_ids": [],
       "custom_values": {
         "record_id": "EH-4",
         "name": "Garage Heater",
@@ -53,6 +57,7 @@
       "id": "heatr_5",
       "url": null,
       "notes": "Outdoor heated walkway mat.",
+      "datasheet_asset_ids": [],
       "custom_values": {
         "record_id": "EH-5",
         "name": "Walkway Mat",

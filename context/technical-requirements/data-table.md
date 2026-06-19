@@ -599,16 +599,22 @@ common column and row-editor shapes:
 - `identifierColumn` / `identifierColumnDef` for the single
   `isIdentifier: true` column described above.
 - `incomingLinkColumn` / `incomingLinkFieldDef` for read-only incoming
-  linked-record pill columns. Use `accessorValue: "ids"` only when the
-  table also declares a real `linked_record` `FieldDef` and therefore
-  needs the DataTable linked-record renderer to receive row ids; use
-  the default display-text accessor for synthetic inverse-link columns
-  so clipboard, filter, sort, and measure text stay aligned with the
+  linked-record pill columns. The column helper emits the shared
+  GridBody linked-record cell behavior (`LinkedRecordCell` with active
+  `+` affordance) so feature tables do not hand-render inverse-link
+  pills. Use `accessorValue: "ids"` only when the table also declares a
+  real `linked_record` `FieldDef` and therefore needs the DataTable
+  linked-record renderer to receive row ids; use the default
+  display-text accessor for synthetic inverse-link columns so
+  clipboard, filter, sort, and measure text stay aligned with the
   visible pill labels.
 - `IncomingLinkPicker` for inverse-link edit affordances whose write
   lands on another table. Feature code may own the domain mutation, but
   it must not mount `fields/linkedRecord/Picker` directly for incoming
-  link cells. True editable FK fields should stay on the normal
+  link cells. Cross-table selection changes should be converted to
+  source-table cell writes with the shared incoming-link selection
+  helpers, including `max_links` handling and no-op suppression. True
+  editable FK fields should stay on the normal
   `linkedRecordOps` + `GridBody` path so the shared `LinkedRecordCell`
   owns pills, the active-cell `+`, unlink affordances, and picker
   launch.

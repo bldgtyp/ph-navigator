@@ -3,6 +3,7 @@ import {
   DataTable,
   DATA_TABLE_COLUMN_WIDTHS,
   RECORD_ID_FIELD_KEY,
+  attachmentColumn,
   identifierColumn,
   linkColumn,
   type DataTableColumnDef,
@@ -10,9 +11,16 @@ import {
   type TableSchema,
   type ViewState,
 } from "../../../shared/ui/data-table";
+import { AttachmentCell } from "../../assets/components/AttachmentCell";
+import { useAssetUrls } from "../../assets/hooks";
+import { DATASHEET_ATTACHMENT_CONFIG } from "../../assets/lib";
 import { sortedElectricHeaters } from "../lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
-import { type ElectricHeaterRow, type ElectricHeatersSlice } from "../types";
+import {
+  ELECTRIC_HEATER_DATASHEET_FIELD_KEY,
+  type ElectricHeaterRow,
+  type ElectricHeatersSlice,
+} from "../types";
 import {
   customFieldColumnDefs,
   type CustomFieldTableActions,
@@ -22,6 +30,7 @@ export function ElectricHeatersTable({
   electricHeatersSlice,
   tableSchema,
   isEditor,
+  projectId,
   view,
   onViewChange,
   onWrite,
@@ -36,6 +45,7 @@ export function ElectricHeatersTable({
   electricHeatersSlice: ElectricHeatersSlice;
   tableSchema: TableSchema;
   isEditor: boolean;
+  projectId: string;
   view: ViewState;
   onViewChange: (next: ViewState) => void;
   onWrite: NonNullable<DataTableProps<ElectricHeaterRow>["onWrite"]>;
@@ -49,6 +59,15 @@ export function ElectricHeatersTable({
   const sortedRows = useMemo(
     () => sortedElectricHeaters(electricHeatersSlice.electric_heaters),
     [electricHeatersSlice.electric_heaters],
+  );
+  const datasheetAssetIds = useMemo(
+    () => Array.from(new Set(sortedRows.flatMap((heater) => heater.datasheet_asset_ids))),
+    [sortedRows],
+  );
+  const datasheetUrls = useAssetUrls(projectId, datasheetAssetIds);
+  const datasheetUrlById = useMemo(
+    () => new Map((datasheetUrls.data ?? []).map((item) => [item.asset_id, item])),
+    [datasheetUrls.data],
   );
   const { fieldDefs, customFields } = tableSchema;
   const fieldDefByKey = useMemo(
@@ -111,9 +130,22 @@ export function ElectricHeatersTable({
         accessor: (heater) => heater.notes,
         defaultWidth: DATA_TABLE_COLUMN_WIDTHS.notes,
       },
+      attachmentColumn({
+        id: ELECTRIC_HEATER_DATASHEET_FIELD_KEY,
+        fieldKey: ELECTRIC_HEATER_DATASHEET_FIELD_KEY,
+        header: fieldDefByKey.get(ELECTRIC_HEATER_DATASHEET_FIELD_KEY)?.display_name ?? "Datasheet",
+        projectId,
+        isEditor,
+        assetUrlById: datasheetUrlById,
+        config: DATASHEET_ATTACHMENT_CONFIG,
+        AttachmentCell,
+        getAssetIds: (heater) => heater.datasheet_asset_ids,
+        getRowId: (heater) => heater.id,
+        onWrite,
+      }),
       ...customColumns,
     ],
-    [customColumns, fieldDefByKey],
+    [customColumns, datasheetUrlById, fieldDefByKey, isEditor, onWrite, projectId],
   );
 
   return (

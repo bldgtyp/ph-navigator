@@ -45,6 +45,7 @@ ELECTRIC_HEATERS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
     built_in_field_def(field_key="watt", display_name="Watt", field_type=CustomFieldType.number),
     built_in_field_def(field_key="url", display_name="URL", field_type=CustomFieldType.url),
     built_in_field_def(field_key="notes", display_name="Notes", field_type=CustomFieldType.long_text),
+    built_in_field_def(field_key="datasheet_asset_ids", display_name="Datasheet", field_type=CustomFieldType.long_text),
 )
 
 ELECTRIC_HEATERS_BUILT_IN_FIELD_KEYS: tuple[str, ...] = tuple(f.field_key for f in ELECTRIC_HEATERS_BUILT_IN_FIELD_DEFS)
@@ -52,6 +53,7 @@ ELECTRIC_HEATERS_TYPED_COLUMN_FORMULA_TYPES: dict[str, FormulaType] = {
     "id": "text",
     "url": "text",
     "notes": "text",
+    "datasheet_asset_ids": "text",
 }
 
 assert any(f.field_key == RESERVED_FIELD_KEY_RECORD_ID for f in ELECTRIC_HEATERS_BUILT_IN_FIELD_DEFS), (

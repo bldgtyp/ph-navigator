@@ -15,6 +15,7 @@ import type {
   FieldDef,
   FieldOption,
   FillRect,
+  LinkedRecordColumnCell,
   LinkedRecordCellOps,
 } from "../types";
 import { LinkedRecordCell } from "../fields/linkedRecord/LinkedRecordCell";
@@ -446,6 +447,7 @@ export function GridBody<TRow>({
                 >
                   {renderCellContent({
                     edit,
+                    row: tanstackRow.original,
                     rowId: tanstackRow.id,
                     fieldKey,
                     fieldDef: fieldDefByKey.get(fieldKey),
@@ -459,6 +461,7 @@ export function GridBody<TRow>({
                         if (committed) onCommitAndMove(rowIndex, columnIndex, move);
                       }),
                     linkedRecordOps: fieldKey ? linkedRecordOps?.get(fieldKey) : undefined,
+                    linkedRecordCell: visibleColumnDefs[columnIndex]?.linkedRecordCell,
                     onActivateEdit: () => onCellOpen(tanstackRow.original, columnIndex),
                     isActive: active,
                   })}
@@ -501,8 +504,9 @@ export function GridBody<TRow>({
 // the editor matching the typed draft (text/number → InlineCellEditor;
 // single_select → SingleSelectPopover). Other field types fall through
 // to the static render.
-function renderCellContent(args: {
+function renderCellContent<TRow>(args: {
   edit: GridEdit;
+  row: TRow;
   rowId: string;
   fieldKey: string;
   fieldDef: FieldDef | undefined;
@@ -510,6 +514,7 @@ function renderCellContent(args: {
   fallback: () => ReactNode;
   onCommitAndMove: (move: CommitMove) => void;
   linkedRecordOps: LinkedRecordCellOps | undefined;
+  linkedRecordCell: LinkedRecordColumnCell<TRow> | undefined;
   // Opens the editor for this cell (same path as double-click).
   // Wired through LinkedRecordCell so the always-visible "+" button can
   // open the picker on a single click.
@@ -520,6 +525,7 @@ function renderCellContent(args: {
 }): ReactNode {
   const {
     edit,
+    row,
     rowId,
     fieldKey,
     fieldDef,
@@ -527,6 +533,7 @@ function renderCellContent(args: {
     fallback,
     onCommitAndMove,
     linkedRecordOps,
+    linkedRecordCell,
     onActivateEdit,
     isActive = false,
   } = args;
@@ -536,6 +543,32 @@ function renderCellContent(args: {
       return <SingleSelectCell value={cellValue} fieldDef={fieldDef} />;
     }
     if (fieldDef?.field_type === "lookup") return <LookupCell value={cellValue} />;
+    if (fieldDef?.field_type === "linked_record" && linkedRecordCell) {
+      const ids = linkedRecordCell.getIds(row);
+      return (
+        <LinkedRecordCell
+          ids={ids}
+          resolve={(targetRowId) => linkedRecordCell.resolve(targetRowId, row)}
+          onPillClick={
+            linkedRecordCell.onPillClick
+              ? (targetRowId) => linkedRecordCell.onPillClick?.(targetRowId, row)
+              : undefined
+          }
+          onPillUnlink={
+            linkedRecordCell.onPillUnlink
+              ? (targetRowId) => linkedRecordCell.onPillUnlink?.(targetRowId, row)
+              : undefined
+          }
+          onActivateEdit={
+            linkedRecordCell.onActivateEdit
+              ? () => linkedRecordCell.onActivateEdit?.(row)
+              : undefined
+          }
+          emptyLabel={linkedRecordCell.emptyLabel}
+          isActive={isActive}
+        />
+      );
+    }
     if (fieldDef?.field_type === "linked_record" && fieldDef.read_only) {
       return <span className="data-table-cell-content">{fallback()}</span>;
     }

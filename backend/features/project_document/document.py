@@ -166,7 +166,11 @@ ROOM_SPACE_TYPE_FIELD_KEY = "space_type_id"
 # flat row lists to four `{ field_defs, rows }` leaf envelopes under the
 # existing `equipment.heat_pumps` aggregate. Pre-deploy posture: no
 # compatibility reader for pre-v10 dev documents.
-CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 10
+#
+# v11: Electric Heaters and Ventilators gain the shared Datasheet
+# attachment field (`datasheet_asset_ids`) to match the other Equipment
+# tables.
+CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 11
 
 # Field keys that have a typed Pydantic column on the row model. Used
 # to split read/write paths between typed columns and the
@@ -184,7 +188,9 @@ ROOMS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
 PUMPS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
     {"id", "device_type", "phase", "link", "notes", "datasheet_asset_ids"}
 )
-VENTILATORS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset({"id", "inside_outside", "url", "notes"})
+VENTILATORS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
+    {"id", "inside_outside", "url", "notes", "datasheet_asset_ids"}
+)
 FANS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
     {"id", "fan_type", "phase", "url", "notes", "datasheet_asset_ids"}
 )
@@ -194,7 +200,7 @@ HOT_WATER_HEATERS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
 HOT_WATER_TANKS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
     {"id", "tank_type", "inside_outside", "url", "notes", "datasheet_asset_ids"}
 )
-ELECTRIC_HEATERS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset({"id", "url", "notes"})
+ELECTRIC_HEATERS_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset({"id", "url", "notes", "datasheet_asset_ids"})
 APPLIANCES_TYPED_COLUMN_FIELD_KEYS: frozenset[str] = frozenset(
     {"id", "appliance_type", "energy_star", "url", "notes", "datasheet_asset_ids"}
 )
@@ -260,7 +266,7 @@ class ProjectDocumentTables(BaseModel):
 class ProjectDocumentV1(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: Literal[10] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
+    schema_version: Literal[11] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     project: ProjectDocumentProject
     tables: ProjectDocumentTables = Field(default_factory=ProjectDocumentTables)
     single_select_options: dict[str, list[SingleSelectOption]] = Field(

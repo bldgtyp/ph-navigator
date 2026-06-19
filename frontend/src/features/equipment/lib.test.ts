@@ -894,6 +894,20 @@ describe("equipment room helpers", () => {
     expect(payload.field_defs).toEqual(pumpsBuiltInFieldDefs);
   });
 
+  test("pumpsPayloadFromCellWrites persists Display Name writes", () => {
+    const current = buildPumpsSlice({
+      pumps: [buildPump({ id: "pmp_1", custom_values: { record_id: "P-1", name: null } })],
+    });
+
+    const payload = pumpsPayloadFromCellWrites(
+      current,
+      [{ rowId: "pmp_1", fieldKey: "name", value: "DHW recirc pump" }],
+      {},
+    );
+
+    expect(payload.pumps[0]?.custom_values.name).toBe("DHW recirc pump");
+  });
+
   test("pumpsPayloadFromRowDelete preserves field_defs", () => {
     const pump = buildPump({ id: "pmp_1" });
     const current = buildPumpsSlice({ pumps: [pump] });
@@ -929,6 +943,20 @@ describe("equipment room helpers", () => {
     );
 
     expect(payload.field_defs).toEqual(ventilatorsBuiltInFieldDefs);
+  });
+
+  test("ventilatorsPayloadFromCellWrites routes datasheet writes", () => {
+    const current = buildVentilatorsSlice({
+      ventilators: [buildVentilator({ id: "vent_1" })],
+    });
+
+    const payload = ventilatorsPayloadFromCellWrites(
+      current,
+      [{ rowId: "vent_1", fieldKey: "datasheet_asset_ids", value: ["asset_pdf_1"] }],
+      {},
+    );
+
+    expect(payload.ventilators[0]?.datasheet_asset_ids).toEqual(["asset_pdf_1"]);
   });
 
   test("ventilatorsPayloadFromRowDelete preserves field_defs", () => {
@@ -1052,12 +1080,14 @@ describe("equipment room helpers", () => {
       { rowId: "heatr_1", fieldKey: "record_id", value: "EH-2" },
       { rowId: "heatr_1", fieldKey: "url", value: " https://example.com/heater.pdf " },
       { rowId: "heatr_1", fieldKey: "watt", value: null },
+      { rowId: "heatr_1", fieldKey: "datasheet_asset_ids", value: ["asset_pdf_1"] },
     ]);
 
     expect(payload.field_defs).toEqual(electricHeatersBuiltInFieldDefs);
     expect(payload.electric_heaters[0]?.custom_values.record_id).toBe("EH-2");
     expect(payload.electric_heaters[0]?.custom_values.watt).toBeNull();
     expect(payload.electric_heaters[0]?.url).toBe("https://example.com/heater.pdf");
+    expect(payload.electric_heaters[0]?.datasheet_asset_ids).toEqual(["asset_pdf_1"]);
   });
 
   test("electricHeatersPayloadFromRowDelete preserves field_defs", () => {

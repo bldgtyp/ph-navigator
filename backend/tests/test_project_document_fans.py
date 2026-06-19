@@ -67,7 +67,7 @@ def test_document_rejects_missing_fan_type_option() -> None:
     first = fan_payload()["fans"][0]
     tables = empty_required_tables()
     body = {
-        "schema_version": 10,
+        "schema_version": 11,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             **tables,
