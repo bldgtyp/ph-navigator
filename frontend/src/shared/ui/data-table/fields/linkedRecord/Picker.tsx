@@ -76,6 +76,17 @@ export function LinkedRecordPicker({
     wasOpenRef.current = open;
   }, [open, selectedIds]);
 
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      onCancel();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onCancel, open]);
+
   const normalizedSearch = useMemo(() => normalizeDisplayName(search), [search]);
 
   const visible = useMemo(() => {

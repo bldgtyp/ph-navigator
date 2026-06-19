@@ -108,6 +108,24 @@ describe("LinkedRecordPicker", () => {
     expect(onConfirm).not.toHaveBeenCalled();
   });
 
+  test("Escape cancels the picker", () => {
+    const onConfirm = vi.fn();
+    const onCancel = vi.fn();
+    render(
+      <LinkedRecordPicker
+        open
+        mode="multi"
+        selectedIds={[]}
+        candidates={CANDIDATES}
+        onConfirm={onConfirm}
+        onCancel={onCancel}
+      />,
+    );
+    fireEvent.keyDown(screen.getByLabelText("Search records"), { key: "Escape" });
+    expect(onCancel).toHaveBeenCalled();
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
   test("flags the list as virtualized past 100 candidates", () => {
     const many: LinkedRecordPickerCandidate[] = Array.from({ length: 150 }, (_, i) => ({
       rowId: `pmp_${i}`,

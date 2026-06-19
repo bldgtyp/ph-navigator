@@ -76,6 +76,48 @@ describe("OutdoorUnitsTable", () => {
     expect(payload.outdoor_units[0]?.outdoor_equip_id).toBe("hpoe_01HX0000000000000000000002");
   });
 
+  test("incoming indoor-unit link cells expose add and open linked unit chips", async () => {
+    const user = userEvent.setup();
+    const slice = baseSlice({
+      outdoor_units: [outdoorUnit()],
+      indoor_units: [indoorUnit({ tag: "IU-1.1" })],
+    });
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/assets/bulk-urls")) return jsonResponse({ items: [] });
+      return jsonResponse({});
+    });
+
+    renderTable(slice);
+
+    await user.click(await screen.findByRole("gridcell", { name: "IU-1.1" }));
+    expect(screen.getByRole("button", { name: "Add linked record" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "IU-1.1" }));
+
+    expect(await screen.findByRole("dialog", { name: "Indoor unit: IU-1.1" })).toBeVisible();
+  });
+
+  test("double-clicking incoming indoor-unit links opens the link picker", async () => {
+    const slice = baseSlice({
+      outdoor_units: [outdoorUnit()],
+      indoor_units: [indoorUnit({ tag: "IU-1.1" })],
+    });
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/assets/bulk-urls")) return jsonResponse({ items: [] });
+      return jsonResponse({});
+    });
+
+    renderTable(slice);
+
+    const cell = await screen.findByRole("gridcell", { name: "IU-1.1" });
+    fireEvent.doubleClick(cell);
+
+    expect(await screen.findByRole("dialog", { name: "Link Indoor units" })).toBeVisible();
+    expect(screen.queryByRole("dialog", { name: "Outdoor unit: HP-1" })).toBeNull();
+  });
+
   test("opens cascade-preview dialog when delete would null indoor units", async () => {
     const user = userEvent.setup();
     const slice = baseSlice({

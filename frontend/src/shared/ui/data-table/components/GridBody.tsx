@@ -434,7 +434,14 @@ export function GridBody<TRow>({
                     // double-click as the open gesture.
                     fieldDef?.field_type === "single_select"
                       ? undefined
-                      : () => onCellOpen(tanstackRow.original, columnIndex)
+                      : () => {
+                          const activateEdit = visibleColumnDefs[columnIndex]?.onActivateEdit;
+                          if (fieldDef?.field_type === "linked_record" && activateEdit) {
+                            activateEdit(tanstackRow.original);
+                            return;
+                          }
+                          onCellOpen(tanstackRow.original, columnIndex);
+                        }
                   }
                 >
                   {renderCellContent({

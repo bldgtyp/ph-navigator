@@ -61,6 +61,63 @@ describe("VentilatorsTable DataTable reuse", () => {
     expect(onIncomingIndoorUnitOpen).toHaveBeenCalledWith("hpiu_01HX0000000000000000000001");
   });
 
+  test("shows the active-cell add affordance for incoming HP indoor unit links", () => {
+    const row = buildVentilator({ id: "vent_1" });
+    const slice = buildVentilatorsSlice({ ventilators: [row] });
+    const tableSchema = schemaForVentilators(slice);
+    const onIncomingIndoorUnitsLinkEdit = vi.fn();
+    render(
+      <VentilatorsTable
+        ventilatorsSlice={slice}
+        tableSchema={tableSchema}
+        isEditor
+        view={emptyViewState()}
+        onViewChange={() => undefined}
+        onWrite={vi.fn()}
+        heatPumpIndoorUnits={[indoorUnit({ linked_erv_unit_id: "vent_1" })]}
+        onIncomingIndoorUnitOpen={vi.fn()}
+        onIncomingIndoorUnitsLinkEdit={onIncomingIndoorUnitsLinkEdit}
+      />,
+    );
+
+    const incomingPill = screen.getByRole("button", { name: "AHU-1" });
+    const incomingCell = incomingPill.closest('[role="gridcell"]');
+    expect(incomingCell).not.toBeNull();
+    fireEvent.click(incomingCell as HTMLElement);
+
+    const addButton = screen.getByRole("button", { name: "Add linked record" });
+    fireEvent.click(addButton);
+    expect(onIncomingIndoorUnitsLinkEdit).toHaveBeenCalledWith(row);
+  });
+
+  test("double-clicking an incoming HP indoor unit link cell opens link editing", () => {
+    const row = buildVentilator({ id: "vent_1" });
+    const slice = buildVentilatorsSlice({ ventilators: [row] });
+    const tableSchema = schemaForVentilators(slice);
+    const onEdit = vi.fn();
+    const onIncomingIndoorUnitsLinkEdit = vi.fn();
+    render(
+      <VentilatorsTable
+        ventilatorsSlice={slice}
+        tableSchema={tableSchema}
+        isEditor
+        view={emptyViewState()}
+        onViewChange={() => undefined}
+        onWrite={vi.fn()}
+        onEdit={onEdit}
+        heatPumpIndoorUnits={[indoorUnit({ linked_erv_unit_id: "vent_1" })]}
+        onIncomingIndoorUnitOpen={vi.fn()}
+        onIncomingIndoorUnitsLinkEdit={onIncomingIndoorUnitsLinkEdit}
+      />,
+    );
+
+    const incomingPill = screen.getByRole("button", { name: "AHU-1" });
+    fireEvent.doubleClick(incomingPill.closest('[role="gridcell"]') as HTMLElement);
+
+    expect(onIncomingIndoorUnitsLinkEdit).toHaveBeenCalledWith(row);
+    expect(onEdit).not.toHaveBeenCalled();
+  });
+
   test("wires DataTable row expansion to Ventilator edit", async () => {
     const user = userEvent.setup();
     const slice = buildVentilatorsSlice({ ventilators: [buildVentilator()] });

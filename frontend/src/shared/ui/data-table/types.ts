@@ -143,6 +143,7 @@ export type DataTableColumnDef<TRow> = {
   header: string;
   accessor: (row: TRow) => unknown;
   render?: (row: TRow, context: { isActive: boolean }) => ReactNode;
+  onActivateEdit?: (row: TRow) => void;
   // Marks this column as the table's Display Name identifier: the
   // renderer pins it to slot 0 and keys the duplicate-warning chip on
   // it. Exactly one column per table sets this; it is the descriptive

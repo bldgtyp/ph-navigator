@@ -7,6 +7,7 @@ import {
   DataTable,
   type LinkedRecordCellOps,
 } from "../../../../shared/ui/data-table";
+import { LinkedRecordPicker } from "../../../../shared/ui/data-table/fields/linkedRecord/Picker";
 import {
   customFieldActionsForController,
   type SliceTableController,
@@ -33,7 +34,11 @@ import {
   uniqueTagForAdd,
 } from "../lib";
 import { outdoorUnitColumnDefs, outdoorUnitFieldDefs } from "../outdoor-unit-columns";
-import { HEAT_PUMP_LINK_TARGETS, indoorUnitIdsByOutdoorUnit } from "../link-fields";
+import {
+  HEAT_PUMP_LINK_TARGETS,
+  incomingIndoorUnitIds,
+  indoorUnitIdsByOutdoorUnit,
+} from "../link-fields";
 import {
   HEAT_PUMP_OPTION_KEYS,
   type CascadeReference,
@@ -85,6 +90,7 @@ export function OutdoorUnitsTable({
   versionLocked: boolean;
 }) {
   const [modal, setModal] = useState<ModalState>(null);
+  const [linkPickerRow, setLinkPickerRow] = useState<HeatPumpOutdoorUnitRow | null>(null);
   const [deleteState, setDeleteState] = useState<DeleteState>(null);
   const [blockedDialog, setBlockedDialog] = useState<{
     message: string;
@@ -181,6 +187,8 @@ export function OutdoorUnitsTable({
         },
         indoorUnits,
         incomingIndoorUnitIdsByRowId,
+        onIndoorUnitClick: openIndoorUnitLink,
+        onIndoorUnitsLinkEdit: (row) => setLinkPickerRow(row),
       }),
       tableSchema,
       rowsComputed: leafSlice.rows_computed,
@@ -191,6 +199,7 @@ export function OutdoorUnitsTable({
     incomingIndoorUnitIdsByRowId,
     indoorUnits,
     leafSlice.rows_computed,
+    openIndoorUnitLink,
     projectId,
     readOnly,
     tableSchema,
@@ -229,6 +238,17 @@ export function OutdoorUnitsTable({
   async function replaceIndoorUnit(row: HeatPumpIndoorUnitRow) {
     await replaceHeatPumpRow(indoorUnitsController.onWrite, row);
     setModal(null);
+  }
+
+  async function linkIndoorUnits(unit: HeatPumpOutdoorUnitRow, unitIds: readonly string[]) {
+    const selected = new Set(unitIds);
+    const writes = indoorUnits
+      .filter((indoorUnit) => selected.has(indoorUnit.id) && indoorUnit.outdoor_unit_id !== unit.id)
+      .map((indoorUnit) => ({ ...indoorUnit, outdoor_unit_id: unit.id }));
+    for (const indoorUnit of writes) {
+      await replaceHeatPumpRow(indoorUnitsController.onWrite, indoorUnit);
+    }
+    setLinkPickerRow(null);
   }
 
   async function addOutdoorEquipAndSelect(equip: HeatPumpOutdoorEquipRow, unitId: string) {
@@ -403,6 +423,20 @@ export function OutdoorUnitsTable({
           onCancel={() => setModal(null)}
           onSubmit={(equip) => addOutdoorEquipAndSelect(equip, modal.selectForUnitId)}
           onCreateOption={createOption}
+        />
+      ) : null}
+      {linkPickerRow ? (
+        <LinkedRecordPicker
+          open
+          mode="multi"
+          selectedIds={incomingIndoorUnitIds(incomingIndoorUnitIdsByRowId, linkPickerRow.id)}
+          candidates={indoorUnits.map((unit) => ({
+            rowId: unit.id,
+            recordId: unit.tag || unit.id,
+          }))}
+          title="Link Indoor units"
+          onCancel={() => setLinkPickerRow(null)}
+          onConfirm={(ids) => void linkIndoorUnits(linkPickerRow, ids)}
         />
       ) : null}
       {deleteState?.kind === "preview" ? (

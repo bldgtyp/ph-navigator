@@ -49,6 +49,7 @@ export function VentilatorsTable({
   onResetView,
   onEdit,
   onIncomingIndoorUnitOpen,
+  onIncomingIndoorUnitsLinkEdit,
   heatPumpIndoorUnits = EMPTY_HEAT_PUMP_INDOOR_UNITS,
   ...customFieldActions
 }: {
@@ -66,6 +67,7 @@ export function VentilatorsTable({
   onResetView?: DataTableProps<VentilatorRow>["onResetView"];
   onEdit?: (row: VentilatorRow) => void;
   onIncomingIndoorUnitOpen?: (rowId: string) => void;
+  onIncomingIndoorUnitsLinkEdit?: (row: VentilatorRow) => void;
   heatPumpIndoorUnits?: readonly HeatPumpIndoorUnitRow[];
 } & CustomFieldTableActions<VentilatorRow>) {
   const sortedRows = useMemo(
@@ -196,10 +198,20 @@ export function VentilatorsTable({
         indoorUnits: sortedIndoorUnits,
         getIncomingIds: (ventilator) =>
           incomingIndoorUnitIds(incomingIndoorUnitIdsByVentilatorId, ventilator.id),
+        onPillClick: onIncomingIndoorUnitOpen,
+        onActivateEdit: isEditor ? onIncomingIndoorUnitsLinkEdit : undefined,
       }),
       ...customColumns,
     ],
-    [customColumns, fieldDefByKey, incomingIndoorUnitIdsByVentilatorId, sortedIndoorUnits],
+    [
+      customColumns,
+      fieldDefByKey,
+      incomingIndoorUnitIdsByVentilatorId,
+      isEditor,
+      onIncomingIndoorUnitOpen,
+      onIncomingIndoorUnitsLinkEdit,
+      sortedIndoorUnits,
+    ],
   );
   const linkedRecordOps = useMemo<ReadonlyMap<string, LinkedRecordCellOps>>(
     () =>
