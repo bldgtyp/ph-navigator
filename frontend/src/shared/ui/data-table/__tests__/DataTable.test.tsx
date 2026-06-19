@@ -88,6 +88,47 @@ describe("DataTable", () => {
     expect(screen.queryByText("No rooms yet.")).not.toBeInTheDocument();
   });
 
+  test("builds formula field references from fieldDefs when no registry prop is supplied", async () => {
+    render(
+      <DataTable
+        rows={rows}
+        getRowId={(row) => row.id}
+        fieldDefs={[
+          ...fieldDefs,
+          {
+            field_key: "incoming",
+            field_type: "linked_record",
+            display_name: "Incoming",
+            read_only: true,
+          },
+        ]}
+        columnDefs={[
+          ...columnDefs,
+          {
+            id: "incoming",
+            fieldKey: "incoming",
+            header: "Incoming",
+            accessor: () => [],
+          },
+        ]}
+        view={emptyViewState()}
+        onViewChange={vi.fn()}
+        onAddCustomField={vi.fn()}
+        emptyMessage="No rooms yet."
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Add field" }));
+    const dialog = await screen.findByRole("dialog", { name: "Add field" });
+    fireEvent.click(within(dialog).getByRole("radio", { name: "Formula" }));
+
+    expect(within(dialog).queryByText("No fields available to reference.")).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Text column Number" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Text column Name" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Number column Count" })).toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: /Incoming/ })).not.toBeInTheDocument();
+  });
+
   test("keeps gutter buttons out of the tab order and renders no per-column sort UI", () => {
     renderTable();
 

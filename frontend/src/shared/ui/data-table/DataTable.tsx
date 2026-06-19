@@ -64,11 +64,13 @@ import { CreateFieldConfigModal } from "./components/CreateFieldConfigModal";
 import { ConfirmDestructiveDialog } from "./components/ConfirmDestructiveDialog";
 import { FieldConfigModal } from "./components/FieldConfigModal";
 import type { FieldRegistryEntry } from "./lib/formula";
+import { mapToFormulaType } from "./lib/formula/mapToFormulaType";
 import { getCustomValue } from "./lib/customFieldAccessor";
 import type {
   AddCustomFieldRequest,
   AxisRoleSubset,
   CellCoord,
+  DataTableColumnDef,
   DataTableProps,
   EditCustomFieldBundleRequest,
   FieldDef,
@@ -80,10 +82,9 @@ import type {
   WriteOp,
 } from "./types";
 // Identity-stable empty arrays for memo deps. Inline `[]` literals would
-// invalidate `useGridColumns`'s memo and the formulaFieldRegistry default
-// every render. Shared sentinel lives in `shared/lib/stableEmpty`.
+// invalidate `useGridColumns`'s memo every render. Shared sentinel lives
+// in `shared/lib/stableEmpty`.
 const EMPTY_ID_LIST = stableEmptyArray<string>() as string[];
-const EMPTY_FORMULA_FIELD_REGISTRY = stableEmptyArray<FieldRegistryEntry>();
 
 export function DataTable<TRow>({
   rows,
@@ -237,6 +238,31 @@ export function DataTable<TRow>({
           .map((column) => column.fieldKey),
       ),
     [columnDefs],
+  );
+  const defaultFormulaFieldRegistry = useMemo(
+    () =>
+      buildDefaultFormulaFieldRegistry(
+        fieldDefs.filter((fieldDef) => !rendererAliasFieldKeys.has(fieldDef.field_key)),
+      ),
+    [fieldDefs, rendererAliasFieldKeys],
+  );
+  const effectiveFormulaFieldRegistry = formulaFieldRegistry ?? defaultFormulaFieldRegistry;
+  const formulaPreviewColumnByFieldId = useMemo(() => {
+    const byFieldId = new Map<string, DataTableColumnDef<TRow>>();
+    for (const column of columnDefs) {
+      byFieldId.set(column.schemaFieldKey ?? column.fieldKey, column);
+    }
+    return byFieldId;
+  }, [columnDefs]);
+  const effectiveGetFormulaRowValues = useCallback(
+    (row: TRow) =>
+      getFormulaRowValues?.(row) ??
+      buildDefaultFormulaRowValues(
+        row,
+        effectiveFormulaFieldRegistry,
+        formulaPreviewColumnByFieldId,
+      ),
+    [effectiveFormulaFieldRegistry, formulaPreviewColumnByFieldId, getFormulaRowValues],
   );
 
   const [announce, setAnnounce] = useState("");
@@ -1298,27 +1324,27 @@ export function DataTable<TRow>({
     id: string;
     values: Record<string, unknown>;
   } | null>(() => {
-    if (!configModalState || !getFormulaRowValues) return null;
+    if (!configModalState) return null;
     const fieldDef = fieldDefByKey.get(configModalState.fieldKey);
     if (fieldDef?.custom_field_type !== "formula") return null;
     const row = visibleDataRows[selection.activeCell.rowIndex] ?? visibleDataRows[0];
     if (!row) return null;
-    return { id: getRowId(row), values: getFormulaRowValues(row) };
+    return { id: getRowId(row), values: effectiveGetFormulaRowValues(row) };
   }, [
     configModalState,
+    effectiveGetFormulaRowValues,
     fieldDefByKey,
-    getFormulaRowValues,
     getRowId,
     selection.activeCell.rowIndex,
     visibleDataRows,
   ]);
   const configModalFormulaPreview = useMemo(
     () => ({
-      fieldRegistry: formulaFieldRegistry ?? EMPTY_FORMULA_FIELD_REGISTRY,
+      fieldRegistry: effectiveFormulaFieldRegistry,
       row: configModalFormulaPreviewRow,
       rowsRevision: rows,
     }),
-    [configModalFormulaPreviewRow, formulaFieldRegistry, rows],
+    [configModalFormulaPreviewRow, effectiveFormulaFieldRegistry, rows],
   );
 
   const toolbarActions =
@@ -1382,7 +1408,7 @@ export function DataTable<TRow>({
             existingFieldLabels={existingFieldLabels}
             dispatchAddField={handleAddFieldSubmit}
             returnFocusTo={createFieldModal?.triggerElement ?? null}
-            formulaFieldRegistry={formulaFieldRegistry}
+            formulaFieldRegistry={effectiveFormulaFieldRegistry}
             linkedRecordTargets={linkedRecordTargets}
           />
         ) : null}
@@ -1578,6 +1604,42 @@ function describeDeleteImpact(populatedRowCount: number): string {
   if (populatedRowCount === 1)
     return "1 row currently has a value for this field; that value will be cleared.";
   return `${populatedRowCount} rows currently have values for this field; those values will be cleared.`;
+}
+
+function buildDefaultFormulaFieldRegistry(fieldDefs: readonly FieldDef[]): FieldRegistryEntry[] {
+  return fieldDefs.filter(isFormulaReferenceableField).map((fieldDef) => ({
+    field_id: fieldDef.field_key,
+    display_name: fieldDef.display_name,
+    origin: fieldDef.built_in === true ? "core" : "custom",
+    field_type: mapToFormulaType(fieldDef.field_type),
+  }));
+}
+
+function isFormulaReferenceableField(fieldDef: FieldDef): boolean {
+  // Read-only projection columns such as inverse/incoming links are not
+  // persisted in the table's formula registry. Keep real schema fields:
+  // built-ins carry `built_in`; custom fields carry `custom_field_type`.
+  if (fieldDef.read_only && fieldDef.built_in !== true && !fieldDef.custom_field_type) return false;
+  return true;
+}
+
+function buildDefaultFormulaRowValues<TRow>(
+  row: TRow,
+  fieldRegistry: ReadonlyArray<FieldRegistryEntry>,
+  columnByFieldId: ReadonlyMap<string, DataTableColumnDef<TRow>>,
+): Record<string, unknown> {
+  const values: Record<string, unknown> = {};
+  const record = row as {
+    custom_values?: Record<string, unknown> | null | undefined;
+    custom?: Record<string, unknown> | null | undefined;
+    [key: string]: unknown;
+  };
+  for (const entry of fieldRegistry) {
+    const column = columnByFieldId.get(entry.field_id);
+    const value = column ? column.accessor(row) : getCustomValue(record, entry.field_id);
+    values[entry.field_id] = value ?? null;
+  }
+  return values;
 }
 
 function pickFirstEditableFieldKey(

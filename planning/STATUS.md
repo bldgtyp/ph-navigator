@@ -1,7 +1,7 @@
 # Planning Status
 
-DATE: 2026-06-17
-TIME: 14:45 EDT
+DATE: 2026-06-19
+TIME: 19:04 EDT
 STATUS: Active routing index for tracked planning material.
 AUTHOR: Codex
 SCOPE: Current planning folder organization after moving dated docs to
@@ -20,7 +20,8 @@ feature-first planning.
 | Heat Pump Link Fields | Complete / implemented on main with format, CI, graphify update, browser smoke evidence; archived | `archive/heat-pump-link-fields/STATUS.md` |
 | Spaces Refactor | Complete / Phase 05 verified with format, CI, browser smoke, graphify, simplify, and docs-pass evidence; archived | `archive/spaces-refactor/STATUS.md` |
 | DataTable Consolidation | Complete / Phase 06 verified with format, CI, browser smoke, graphify, simplify, and docs-pass evidence; archived | `archive/data-table-consolidation/STATUS.md` |
-| DataTable Maintenance | Active / cleanup outline extracted from DataTable Consolidation archive closeout | `features/data-table-maintenance/STATUS.md` |
+| DataTable Maintenance | Complete / cleanup follow-up implemented and archived | `archive/data-table-maintenance/STATUS.md` |
+| DataTable Regression Suite | Planned / docs-only packet recorded; implementation intentionally not started | `features/data-table-regression-suite/STATUS.md` |
 
 ## Historical Material
 
@@ -38,8 +39,10 @@ feature-first planning.
   `archive/spaces-refactor/`.
 - Completed DataTable Consolidation planning now lives under
   `archive/data-table-consolidation/`.
-- DataTable Consolidation's non-blocking cleanup items now live under
-  `features/data-table-maintenance/`.
+- Completed DataTable Maintenance cleanup now lives under
+  `archive/data-table-maintenance/`.
+- Active DataTable Regression Suite planning now lives under
+  `features/data-table-regression-suite/`.
 - Completed Attachments (v1) planning now lives under
   `archive/attachments/`. The stable implementation contract remains
   current in `context/technical-requirements/attachments.md`; the
