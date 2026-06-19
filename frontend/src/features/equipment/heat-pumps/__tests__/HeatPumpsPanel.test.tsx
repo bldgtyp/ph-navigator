@@ -189,6 +189,31 @@ describe("HeatPumpsPanel", () => {
     expect(screen.getByRole("button", { name: "IU-A" })).toBeInTheDocument();
   });
 
+  test("opens the link picker from the indoor equipment incoming-unit add button", async () => {
+    const user = userEvent.setup();
+    renderPanel({
+      slice: heatPumpsSlice({
+        indoor_units: [
+          indoorUnitRow({
+            id: "hpiu_01HX0000000000000000000001",
+            tag: "IU-1.1",
+            indoor_equip_id: "hpie_01HX0000000000000000000000",
+          }),
+        ],
+      }),
+    });
+
+    await user.click(await screen.findByRole("tab", { name: "Equipment - Indoor" }));
+    expect(await screen.findByRole("columnheader", { name: /Indoor units/ })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("gridcell", { name: "IU-1.1" }));
+    await user.click(await screen.findByRole("button", { name: "Add linked record" }));
+
+    expect(await screen.findByTestId("linked-record-picker")).toBeVisible();
+    expect(screen.getByRole("dialog", { name: "Link Indoor units" })).toBeVisible();
+    expect(screen.queryByRole("dialog", { name: /Indoor equipment:/ })).toBeNull();
+  });
+
   test("renders paired indoor equipment as a read-only lookup from unit links", async () => {
     renderPanel({
       slice: heatPumpsSlice({

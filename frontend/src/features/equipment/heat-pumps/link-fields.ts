@@ -32,10 +32,12 @@ export function incomingIndoorUnitColumnDef<TRow>({
   header = "Indoor units",
   indoorUnits,
   getIncomingIds,
+  onActivateEdit,
 }: {
   header?: string;
   indoorUnits: readonly HeatPumpIndoorUnitRow[];
   getIncomingIds: (row: TRow) => readonly string[];
+  onActivateEdit?: (row: TRow) => void;
 }): DataTableColumnDef<TRow> {
   return incomingUnitColumnDef({
     fieldKey: INCOMING_INDOOR_UNITS_FIELD_KEY,
@@ -43,6 +45,7 @@ export function incomingIndoorUnitColumnDef<TRow>({
     units: indoorUnits,
     getIncomingIds,
     getLabel: indoorUnitLabel,
+    onActivateEdit,
   });
 }
 
@@ -58,10 +61,12 @@ export function incomingOutdoorUnitColumnDef<TRow>({
   header = "Outdoor units",
   outdoorUnits,
   getIncomingIds,
+  onActivateEdit,
 }: {
   header?: string;
   outdoorUnits: readonly HeatPumpOutdoorUnitRow[];
   getIncomingIds: (row: TRow) => readonly string[];
+  onActivateEdit?: (row: TRow) => void;
 }): DataTableColumnDef<TRow> {
   return incomingUnitColumnDef({
     fieldKey: INCOMING_OUTDOOR_UNITS_FIELD_KEY,
@@ -69,6 +74,7 @@ export function incomingOutdoorUnitColumnDef<TRow>({
     units: outdoorUnits,
     getIncomingIds,
     getLabel: outdoorUnitLabel,
+    onActivateEdit,
   });
 }
 
@@ -154,12 +160,14 @@ function incomingUnitColumnDef<TRow, TUnit extends { id: string }>({
   units,
   getIncomingIds,
   getLabel,
+  onActivateEdit,
 }: {
   fieldKey: string;
   header: string;
   units: readonly TUnit[];
   getIncomingIds: (row: TRow) => readonly string[];
   getLabel: (unit: TUnit) => string;
+  onActivateEdit?: (row: TRow) => void;
 }): DataTableColumnDef<TRow> {
   const unitLabelById = new Map(units.map((unit) => [unit.id, getLabel(unit)]));
   return incomingLinkColumn({
@@ -168,6 +176,7 @@ function incomingUnitColumnDef<TRow, TUnit extends { id: string }>({
     header,
     getIncomingIds,
     resolveLabel: (id) => unitLabelById.get(id) ?? null,
+    onActivateEdit,
     accessorValue: "ids",
   });
 }

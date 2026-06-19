@@ -115,6 +115,7 @@ export function outdoorEquipColumnDefs({
   outdoorUnits = [],
   incomingOutdoorUnitIdsByRowId = new Map(),
   pairedIndoorEquipLabelsByRowId = new Map(),
+  onOutdoorUnitsLinkEdit,
 }: {
   projectId: string;
   isEditor: boolean;
@@ -123,6 +124,7 @@ export function outdoorEquipColumnDefs({
   outdoorUnits?: readonly HeatPumpOutdoorUnitRow[];
   incomingOutdoorUnitIdsByRowId?: ReadonlyMap<string, readonly string[]>;
   pairedIndoorEquipLabelsByRowId?: ReadonlyMap<string, readonly string[]>;
+  onOutdoorUnitsLinkEdit?: (row: HeatPumpOutdoorEquipRow) => void;
 }): DataTableColumnDef<HeatPumpOutdoorEquipRow>[] {
   const number = (fieldKey: keyof HeatPumpOutdoorEquipRow, header: string, width = 110) => ({
     id: fieldKey,
@@ -230,6 +232,7 @@ export function outdoorEquipColumnDefs({
     incomingOutdoorUnitColumnDef<HeatPumpOutdoorEquipRow>({
       outdoorUnits,
       getIncomingIds: (row) => incomingOutdoorUnitIds(incomingOutdoorUnitIdsByRowId, row.id),
+      onActivateEdit: isEditor ? onOutdoorUnitsLinkEdit : undefined,
     }),
     {
       id: "notes",

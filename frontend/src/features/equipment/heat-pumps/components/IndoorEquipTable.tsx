@@ -4,6 +4,7 @@ import {
   DataTable,
   type LinkedRecordCellOps,
 } from "../../../../shared/ui/data-table";
+import { LinkedRecordPicker } from "../../../../shared/ui/data-table/fields/linkedRecord/Picker";
 import {
   customFieldActionsForController,
   type SliceTableController,
@@ -23,7 +24,11 @@ import {
   uniqueTagForAdd,
 } from "../lib";
 import { indoorEquipColumnDefs, indoorEquipFieldDefs } from "../indoor-equip-columns";
-import { HEAT_PUMP_LINK_TARGETS, indoorUnitIdsByIndoorEquip } from "../link-fields";
+import {
+  HEAT_PUMP_LINK_TARGETS,
+  incomingIndoorUnitIds,
+  indoorUnitIdsByIndoorEquip,
+} from "../link-fields";
 import {
   type HeatPumpIndoorEquipSlice,
   type HeatPumpIndoorEquipRow,
@@ -58,6 +63,7 @@ export function IndoorEquipTable({
   versionLocked?: boolean;
 }) {
   const [modal, setModal] = useState<ModalState>(null);
+  const [linkPickerRow, setLinkPickerRow] = useState<HeatPumpIndoorEquipRow | null>(null);
   const optionMutation = useHeatPumpOptionMutation(projectId);
   const accessMode = controller.canEdit ? "editor" : "viewer";
   const indoorUnitModalOpen = modal?.kind === "unit";
@@ -122,6 +128,7 @@ export function IndoorEquipTable({
           replaceHeatPumpRow(controller.onWrite, { ...row, datasheet_asset_ids: next }),
         indoorUnits,
         incomingIndoorUnitIdsByRowId,
+        onIndoorUnitsLinkEdit: (row) => setLinkPickerRow(row),
       }),
       tableSchema,
       rowsComputed: leafSlice.rows_computed,
@@ -163,6 +170,17 @@ export function IndoorEquipTable({
   async function replaceIndoorUnit(row: HeatPumpIndoorUnitRow) {
     await replaceHeatPumpRow(indoorUnitsController.onWrite, row);
     setModal(null);
+  }
+
+  async function linkIndoorUnits(equip: HeatPumpIndoorEquipRow, unitIds: readonly string[]) {
+    const selected = new Set(unitIds);
+    const writes = indoorUnits
+      .filter((unit) => selected.has(unit.id) && unit.indoor_equip_id !== equip.id)
+      .map((unit) => ({ ...unit, indoor_equip_id: equip.id }));
+    for (const unit of writes) {
+      await replaceHeatPumpRow(indoorUnitsController.onWrite, unit);
+    }
+    setLinkPickerRow(null);
   }
 
   async function deleteIndoorRow(row: HeatPumpIndoorEquipRow) {
@@ -221,6 +239,20 @@ export function IndoorEquipTable({
           readOnly={readOnly}
           onCancel={() => setModal(null)}
           onSubmit={replaceIndoorUnit}
+        />
+      ) : null}
+      {linkPickerRow ? (
+        <LinkedRecordPicker
+          open
+          mode="multi"
+          selectedIds={incomingIndoorUnitIds(incomingIndoorUnitIdsByRowId, linkPickerRow.id)}
+          candidates={indoorUnits.map((unit) => ({
+            rowId: unit.id,
+            recordId: unit.tag || unit.id,
+          }))}
+          title="Link Indoor units"
+          onCancel={() => setLinkPickerRow(null)}
+          onConfirm={(ids) => void linkIndoorUnits(linkPickerRow, ids)}
         />
       ) : null}
     </>

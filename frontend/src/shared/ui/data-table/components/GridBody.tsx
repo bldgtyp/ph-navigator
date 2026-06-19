@@ -443,7 +443,10 @@ export function GridBody<TRow>({
                     fieldKey,
                     fieldDef: fieldDefByKey.get(fieldKey),
                     cellValue: cell.getValue(),
-                    fallback: () => flexRender(cell.column.columnDef.cell, cell.getContext()),
+                    fallback: () =>
+                      visibleColumnDefs[columnIndex]?.render?.(tanstackRow.original, {
+                        isActive: active,
+                      }) ?? flexRender(cell.column.columnDef.cell, cell.getContext()),
                     onCommitAndMove: (move) =>
                       void edit.commit().then((committed) => {
                         if (committed) onCommitAndMove(rowIndex, columnIndex, move);
@@ -526,6 +529,9 @@ function renderCellContent(args: {
       return <SingleSelectCell value={cellValue} fieldDef={fieldDef} />;
     }
     if (fieldDef?.field_type === "lookup") return <LookupCell value={cellValue} />;
+    if (fieldDef?.field_type === "linked_record" && fieldDef.read_only) {
+      return <span className="data-table-cell-content">{fallback()}</span>;
+    }
     if (fieldDef?.field_type === "linked_record") {
       const ids = toLinkedIdList(cellValue);
       return (

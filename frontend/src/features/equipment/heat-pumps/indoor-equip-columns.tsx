@@ -69,6 +69,7 @@ export function indoorEquipColumnDefs({
   onDatasheetChange,
   indoorUnits = [],
   incomingIndoorUnitIdsByRowId = new Map(),
+  onIndoorUnitsLinkEdit,
 }: {
   projectId: string;
   isEditor: boolean;
@@ -76,6 +77,7 @@ export function indoorEquipColumnDefs({
   onDatasheetChange: (row: HeatPumpIndoorEquipRow, next: string[]) => void | Promise<void>;
   indoorUnits?: HeatPumpsSlice["indoor_units"];
   incomingIndoorUnitIdsByRowId?: ReadonlyMap<string, readonly string[]>;
+  onIndoorUnitsLinkEdit?: (row: HeatPumpIndoorEquipRow) => void;
 }): DataTableColumnDef<HeatPumpIndoorEquipRow>[] {
   const number = (fieldKey: keyof HeatPumpIndoorEquipRow, header: string, width = 110) => ({
     id: fieldKey,
@@ -156,6 +158,7 @@ export function indoorEquipColumnDefs({
     incomingIndoorUnitColumnDef<HeatPumpIndoorEquipRow>({
       indoorUnits,
       getIncomingIds: (row) => incomingIndoorUnitIds(incomingIndoorUnitIdsByRowId, row.id),
+      onActivateEdit: isEditor ? onIndoorUnitsLinkEdit : undefined,
     }),
     {
       id: "notes",
