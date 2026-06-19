@@ -15,24 +15,27 @@ RELATED:
 
 ## Current State
 
-`Phase 01 complete - inventory + harness skeleton landed`.
+`Phase 02 complete - shared DataTable edit contract pinned`.
 
-Phase 01 shipped the typed table matrix and the reusable e2e harness
-under `frontend/tests/e2e/table-regression/` (`tableMatrix.ts`,
-`tableHelpers.ts`, `table-harness.spec.ts`). All 14 target tables are
-described once, with routes, table keys, region names, identifier
-headers, core headers, representative `field_key`s, linked-record
-targets, and add-row specs confirmed against the codebase. No table
-*behavior* is asserted yet — the harness sanity spec only validates the
-matrix and helper API (no browser).
+Phase 01 shipped the typed table matrix and reusable e2e harness under
+`frontend/tests/e2e/table-regression/`. Phase 02 then established the
+shared edit contract as a single, React-free source of truth:
+`frontend/src/shared/ui/data-table/__tests__/sharedEditContract.test.ts`
+(19 tests) drives the now-exported pure commit planners (`planCommit`,
+`planLinkedRecord`, `decideSingleSelectCommit`) and pins the
+forward/inverse op pairing per editor kind. An existing-coverage audit
+showed the mature DataTable suite already covered the behaviors, so
+Phase 02 consolidated + added traceability rather than duplicating
+tests; see `phases/phase-02-shared-contract-tests.md` for the decision
+record and the behavior→test map.
 
 ## Next Step
 
-Phase 02: shared DataTable contract tests (fast Vitest coverage for
-text / number / single-select / linked-record commit + coercion, null
-clears, required-field rejection, linked-record dedupe + `maxLinks`),
-close to the shared implementation in
-`frontend/src/shared/ui/data-table/`.
+Phase 03: route smoke matrix. Add a Playwright smoke spec parameterized
+over all 14 target tables — sign in, open each table, assert expected
+headers + grid cells exist, assert no browser runtime error. Keep
+assertions shallow so mount/render regressions isolate from edit
+regressions. See `phases/phase-03-route-smoke-matrix.md`.
 
 ## Phase Status
 
@@ -40,7 +43,7 @@ close to the shared implementation in
 |---|---|---|
 | 00 - Planning packet | Complete | `phases/phase-00-planning-packet.md` |
 | 01 - Inventory and harness design | Complete | `phases/phase-01-inventory-and-harness.md` |
-| 02 - Shared DataTable contract tests | Planned | `phases/phase-02-shared-contract-tests.md` |
+| 02 - Shared DataTable contract tests | Complete | `phases/phase-02-shared-contract-tests.md` |
 | 03 - Route smoke matrix | Planned | `phases/phase-03-route-smoke-matrix.md` |
 | 04 - Cell behavior matrix | Planned | `phases/phase-04-cell-behavior-matrix.md` |
 | 05 - Deep links and view state | Planned | `phases/phase-05-deep-links-and-view-state.md` |
