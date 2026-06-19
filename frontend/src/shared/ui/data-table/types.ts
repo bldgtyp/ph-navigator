@@ -148,6 +148,10 @@ export type DataTableColumnDef<TRow> = {
   accessor: (row: TRow) => unknown;
   render?: (row: TRow, context: { isActive: boolean }) => ReactNode;
   onActivateEdit?: (row: TRow) => void;
+  // Column-owned linked-record display behavior for projection fields,
+  // such as inverse/incoming links, whose values are not edited by this
+  // table's normal `linkedRecordOps` path.
+  linkedRecordCell?: LinkedRecordColumnCell<TRow>;
   // Marks this column as the table's Display Name identifier: the
   // renderer pins it to slot 0 and keys the duplicate-warning chip on
   // it. Exactly one column per table sets this; it is the descriptive
@@ -165,6 +169,15 @@ export type DataTableColumnDef<TRow> = {
   // visibly shorter string than the accessor (e.g. iCFA rendered as
   // `toFixed(2)`) so the measured width matches what the user sees.
   measureText?: (row: TRow) => string;
+};
+
+export type LinkedRecordColumnCell<TRow> = {
+  getIds: (row: TRow) => readonly string[];
+  resolve: (rowId: string, row: TRow) => { recordId: string | null } | null;
+  onPillClick?: (rowId: string, row: TRow) => void;
+  onPillUnlink?: (rowId: string, row: TRow) => void;
+  onActivateEdit?: (row: TRow) => void;
+  emptyLabel?: string;
 };
 
 export type SortRule = {

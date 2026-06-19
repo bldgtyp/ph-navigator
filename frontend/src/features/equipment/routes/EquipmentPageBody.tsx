@@ -459,6 +459,8 @@ export function EquipmentPageBody(props: {
           pumpsSlice={pumpsSlice}
           projectId={project.id}
           activeVersionId={activeVersionId}
+          accessMode={project.access_mode}
+          versionLocked={project.active_version?.locked ?? false}
           buildEmptyRow={buildEmptyPumpRow}
           footerAction={addRowButton("Add pump", pumpsController.canEdit, () =>
             insertEquipmentRow(pumpsController, "pmp"),

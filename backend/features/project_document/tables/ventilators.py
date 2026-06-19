@@ -93,6 +93,7 @@ VENTILATORS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
     ),
     built_in_field_def(field_key="url", display_name="URL", field_type=CustomFieldType.url),
     built_in_field_def(field_key="notes", display_name="Notes", field_type=CustomFieldType.long_text),
+    built_in_field_def(field_key="datasheet_asset_ids", display_name="Datasheet", field_type=CustomFieldType.long_text),
 )
 
 VENTILATORS_BUILT_IN_FIELD_KEYS: tuple[str, ...] = tuple(f.field_key for f in VENTILATORS_BUILT_IN_FIELD_DEFS)
@@ -101,6 +102,7 @@ VENTILATORS_TYPED_COLUMN_FORMULA_TYPES: dict[str, FormulaType] = {
     "inside_outside": "single_select",
     "url": "text",
     "notes": "text",
+    "datasheet_asset_ids": "text",
 }
 
 assert any(f.field_key == RESERVED_FIELD_KEY_RECORD_ID for f in VENTILATORS_BUILT_IN_FIELD_DEFS), (

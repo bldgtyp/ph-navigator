@@ -165,6 +165,7 @@ export function buildVentilator(overrides: Partial<VentilatorRow> = {}): Ventila
     inside_outside: "opt_inside",
     url: null,
     notes: null,
+    datasheet_asset_ids: [],
     custom_values: {
       record_id: "ERV-1",
       name: "Apartment ERV",

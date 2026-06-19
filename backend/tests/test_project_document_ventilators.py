@@ -27,6 +27,7 @@ def ventilator_payload() -> dict[str, Any]:
                 "inside_outside": "opt_vent_inside",
                 "url": "https://example.com/erv.pdf",
                 "notes": "Basis of design.",
+                "datasheet_asset_ids": [],
                 "custom_values": {
                     "record_id": "ERV-1",
                     "name": "Apartment ERV",
@@ -51,7 +52,9 @@ def ventilator_payload() -> dict[str, Any]:
 
 def test_ventilator_row_validates_url() -> None:
     base = ventilator_payload()["ventilators"][0]
-    assert VentilatorRow.model_validate(base).custom_values["record_id"] == "ERV-1"
+    row = VentilatorRow.model_validate(base)
+    assert row.custom_values["record_id"] == "ERV-1"
+    assert row.datasheet_asset_ids == []
     with pytest.raises(ValidationError, match="url must start"):
         VentilatorRow.model_validate({**base, "url": "ftp://example.com/erv.pdf"})
 
@@ -60,7 +63,7 @@ def test_document_rejects_missing_inside_outside_option() -> None:
     first = ventilator_payload()["ventilators"][0]
     tables = empty_required_tables()
     body = {
-        "schema_version": 10,
+        "schema_version": 11,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             **tables,
@@ -88,6 +91,7 @@ def test_first_ventilators_replace_lazily_creates_draft(clean_document_tables: N
     assert initial.status_code == 200
     assert initial.json()["source"] == "version"
     assert initial.json()["field_defs"][0]["display_name"] == "Tag"
+    assert any(field["field_key"] == "datasheet_asset_ids" for field in initial.json()["field_defs"])
 
     updated = client.put(
         draft_ventilators_url(project_id, version_id),
@@ -100,6 +104,7 @@ def test_first_ventilators_replace_lazily_creates_draft(clean_document_tables: N
     assert body["source"] == "draft"
     assert body["draft_etag"]
     assert body["ventilators"][0]["custom_values"]["record_id"] == "ERV-1"
+    assert body["ventilators"][0]["datasheet_asset_ids"] == []
 
 
 def test_legacy_equipment_ervs_contract_is_not_registered() -> None:

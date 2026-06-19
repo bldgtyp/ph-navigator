@@ -1,9 +1,17 @@
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { generatedId } from "../../../shared/lib/ids";
+import {
+  IncomingLinkPicker,
+  incomingIdsForSourceKey,
+  incomingLinkSelectionWrites,
+  linkedRecordMaxLinksFromFieldDefs,
+} from "../../../shared/ui/data-table";
 import { SliceTableShell, useSliceTableController } from "../../../shared/ui/data-table/feature";
 import { wasLocalDraftTouched } from "../../equipment/lib";
 import { useRoomsSliceQuery } from "../../equipment/hooks";
+import { emptyRoomsSlice } from "../../equipment/lib/emptyRoomsSlice";
+import { isRoomsSource } from "../../equipment/lib/inverseSource";
 import { routeForInverseSource } from "../../equipment/lib/inverseRoutes";
 import { roomDisplayLabel } from "../../equipment/lib/roomLabels";
 import { RoomDialogStack, type RoomModalState } from "../../equipment/components/RoomDialogStack";
@@ -22,6 +30,7 @@ import {
   SPACE_TYPE_ID_PREFIX,
   SPACE_TYPES_TABLE_NAME,
   type InverseLinkField,
+  type SpaceTypeRow,
   type SpaceTypesSlice,
 } from "../types";
 import type { LinkedRoomResolver } from "../components/SpaceTypesTable";
@@ -32,7 +41,14 @@ export function SpaceTypesPage({ project }: { project: ProjectDetail }) {
     project.active_version_id,
     project.access_mode,
   );
-  const roomsQuery = useRoomsSliceQuery(project.id, project.active_version_id, project.access_mode);
+  const hasRoomInverseLinks =
+    spaceTypesQuery.data?.inverse_link_fields.some(isRoomsSource) ?? false;
+  const roomsQuery = useRoomsSliceQuery(
+    project.id,
+    project.active_version_id,
+    project.access_mode,
+    hasRoomInverseLinks,
+  );
 
   if (spaceTypesQuery.isLoading) {
     return (
@@ -83,6 +99,10 @@ function SpaceTypesPageBody({
   const isEditor = project.access_mode === "editor";
   const [roomModal, setRoomModal] = useState<RoomModalState | null>(null);
   const [roomPendingDelete, setRoomPendingDelete] = useState<RoomRow | null>(null);
+  const [inverseLinkPicker, setInverseLinkPicker] = useState<{
+    field: InverseLinkField;
+    row: SpaceTypeRow;
+  } | null>(null);
   const columnsForSanitize = useMemo(
     () => spaceTypeColumnStubs(spaceTypesSlice.field_defs, spaceTypesSlice.inverse_link_fields),
     [spaceTypesSlice.field_defs, spaceTypesSlice.inverse_link_fields],
@@ -143,7 +163,7 @@ function SpaceTypesPageBody({
 
   const onInversePillClick = useCallback(
     (field: InverseLinkField, rowId: string) => {
-      if (field.source_table_path.length === 1 && field.source_table_path[0] === "rooms") {
+      if (isRoomsSource(field)) {
         const room = roomsSlice?.rooms.find((candidate) => candidate.id === rowId);
         if (room) setRoomModal({ mode: "edit", room });
         return;
@@ -164,6 +184,36 @@ function SpaceTypesPageBody({
     },
     [navigate, project.id, roomsSlice?.rooms, searchParams],
   );
+
+  const openInverseLinkPicker = useCallback((field: InverseLinkField, row: SpaceTypeRow) => {
+    if (!isRoomsSource(field)) return;
+    setInverseLinkPicker({ field, row });
+  }, []);
+
+  const roomCandidates = useMemo(
+    () =>
+      (roomsSlice?.rooms ?? []).map((room) => ({
+        rowId: room.id,
+        recordId: roomDisplayLabel(room, roomsSlice?.rows_computed?.[room.id]),
+      })),
+    [roomsSlice],
+  );
+
+  const linkRoomsToSpaceType = async (spaceType: SpaceTypeRow, roomIds: readonly string[]) => {
+    if (!inverseLinkPicker || !roomsSlice || !isRoomsSource(inverseLinkPicker.field)) return;
+    const sourceFieldKey = inverseLinkPicker.field.source_field_key;
+    const writes = incomingLinkSelectionWrites({
+      sourceRows: roomsSlice.rooms,
+      sourceFieldKey,
+      targetRowId: spaceType.id,
+      selectedSourceRowIds: roomIds,
+      maxLinks: linkedRecordMaxLinksFromFieldDefs(roomsSlice.field_defs, sourceFieldKey),
+    });
+    if (writes.length > 0) {
+      await roomDialog.controller.onWrite({ kind: "cell", writes });
+    }
+    setInverseLinkPicker(null);
+  };
 
   const reloadDraft = async () => {
     setRoomModal(null);
@@ -203,6 +253,26 @@ function SpaceTypesPageBody({
         focusRowId={searchParams.get("focus")}
         resolveLinkedRoom={resolveLinkedRoom}
         onInversePillClick={onInversePillClick}
+        onInverseLinkEdit={openInverseLinkPicker}
+      />
+      <IncomingLinkPicker
+        state={
+          inverseLinkPicker
+            ? {
+                row: inverseLinkPicker.row,
+                selectedIds: incomingIdsForSourceKey(
+                  spaceTypesSlice.inverse_links,
+                  inverseLinkPicker.row.id,
+                  inverseLinkPicker.field.source_key,
+                ),
+                candidates: roomCandidates,
+                title: `Link ${inverseLinkPicker.field.source_table_display}`,
+                isLoading: !roomsSlice,
+              }
+            : null
+        }
+        onCancel={() => setInverseLinkPicker(null)}
+        onConfirm={linkRoomsToSpaceType}
       />
       {roomsSlice ? (
         <RoomDialogStack
@@ -223,26 +293,6 @@ function SpaceTypesPageBody({
       ) : null}
     </SliceTableShell>
   );
-}
-
-function emptyRoomsSlice(): RoomsSlice {
-  return {
-    project_id: "",
-    version_id: "",
-    rooms: [],
-    field_defs: [],
-    single_select_options: {
-      "rooms.floor_level": [],
-      "rooms.building_zone": [],
-    },
-    version_etag: "",
-    rows_computed: {},
-    source: "draft",
-    draft_etag: null,
-    inverse_links: {},
-    inverse_link_fields: [],
-    inverse_links_fingerprint: "",
-  };
 }
 
 function addSpaceTypeButton(canEdit: boolean, onAdd: () => void) {

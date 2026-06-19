@@ -227,6 +227,49 @@ describe("PumpsTable DataTable reuse", () => {
     );
   });
 
+  test("shows the shared add affordance for editable inverse Rooms links", async () => {
+    const user = userEvent.setup();
+    const slice = buildPumpsSlice({
+      pumps: [buildPump({ id: "pmp_a" })],
+      inverse_link_fields: [
+        {
+          source_key: "rooms.cf_pumps",
+          source_table_path: ["rooms"],
+          source_table_display: "Rooms",
+          source_field_key: "cf_pumps",
+          source_field_display_name: "Pump",
+        },
+      ],
+      inverse_links: {
+        pmp_a: {
+          "rooms.cf_pumps": [],
+        },
+      },
+    });
+    const tableSchema = schemaForPumps(slice);
+    const onInverseLinkEdit = vi.fn();
+    const { container } = renderWithQueryClient(
+      <PumpsTable
+        pumpsSlice={slice}
+        tableSchema={tableSchema}
+        isEditor
+        projectId="proj_1"
+        view={emptyViewState()}
+        onViewChange={() => undefined}
+        onWrite={vi.fn()}
+        onInverseLinkEdit={onInverseLinkEdit}
+      />,
+    );
+
+    await user.click(getGridCell(container, "pmp_a", "inverse:rooms.cf_pumps"));
+    await user.click(screen.getByRole("button", { name: "Add linked record" }));
+
+    expect(onInverseLinkEdit).toHaveBeenCalledWith(
+      expect.objectContaining({ source_key: "rooms.cf_pumps" }),
+      slice.pumps[0],
+    );
+  });
+
   test("routes inverse-link source pills from their declared table path", () => {
     expect(
       routeForInverseSource(
@@ -272,3 +315,11 @@ describe("PumpsTable DataTable reuse", () => {
     ).toBe("/projects/proj_1/equipment?tab=hot-water-heaters&focus=hwh_a");
   });
 });
+
+function getGridCell(container: HTMLElement, rowId: string, fieldKey: string): HTMLElement {
+  const cell = container.querySelector<HTMLElement>(
+    `td[data-row-id="${rowId}"][data-field-key="${fieldKey}"]`,
+  );
+  if (!cell) throw new Error(`Expected grid cell ${rowId}/${fieldKey}.`);
+  return cell;
+}

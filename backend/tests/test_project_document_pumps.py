@@ -95,7 +95,7 @@ def test_document_allows_duplicate_pump_tags() -> None:
     first = pump_payload()["pumps"][0]
     tables = empty_required_tables()
     body = {
-        "schema_version": 10,
+        "schema_version": 11,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             **tables,
@@ -131,7 +131,7 @@ def test_document_rejects_negative_pump_numeric_builtin() -> None:
     with pytest.raises(ValidationError, match="pump wattage must be zero or greater"):
         ProjectDocumentV1.model_validate(
             {
-                "schema_version": 10,
+                "schema_version": 11,
                 "project": {"name": "p", "bt_number": "1", "cert_programs": []},
                 "tables": {
                     **tables,

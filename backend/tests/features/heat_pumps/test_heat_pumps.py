@@ -153,7 +153,7 @@ def test_outdoor_equip_model_validates_enums_and_ranges() -> None:
 def _heat_pump_document(tables: dict[str, Any]) -> ProjectDocumentV1:
     return ProjectDocumentV1.model_validate(
         {
-            "schema_version": 10,
+            "schema_version": 11,
             "project": {"name": "p", "bt_number": "1", "cert_programs": []},
             "tables": tables,
             "single_select_options": {

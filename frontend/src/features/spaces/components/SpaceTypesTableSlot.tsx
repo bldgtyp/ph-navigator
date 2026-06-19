@@ -28,6 +28,7 @@ export type SpaceTypesTableSlotProps = {
   focusRowId?: string | null;
   resolveLinkedRoom: LinkedRoomResolver;
   onInversePillClick?: (field: InverseLinkField, rowId: string) => void;
+  onInverseLinkEdit?: (field: InverseLinkField, row: SpaceTypeRow) => void;
 };
 
 export function SpaceTypesTableSlot({
@@ -40,6 +41,7 @@ export function SpaceTypesTableSlot({
   focusRowId,
   resolveLinkedRoom,
   onInversePillClick,
+  onInverseLinkEdit,
 }: SpaceTypesTableSlotProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const focusDependencyKey = controller.viewLoading
@@ -75,6 +77,7 @@ export function SpaceTypesTableSlot({
         footerAction={footerAction}
         resolveLinkedRoom={resolveLinkedRoom}
         onInversePillClick={onInversePillClick}
+        onInverseLinkEdit={onInverseLinkEdit}
         {...customFieldActionsForController(controller)}
       />
     </div>

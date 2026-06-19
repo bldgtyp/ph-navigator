@@ -52,7 +52,6 @@ import {
   type ThermalBridgeRow,
   type ThermalBridgesSlice,
 } from "../types";
-
 const fetchMock = vi.fn();
 type AddCustomFieldHandler = (request: AddCustomFieldRequest) => Promise<{ newFieldKey: string }>;
 
@@ -78,8 +77,7 @@ afterEach(() => {
 });
 
 function renderWithQueryClient(ui: ReactElement) {
-  const queryClient = createQueryClient();
-  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+  return render(<QueryClientProvider client={createQueryClient()}>{ui}</QueryClientProvider>);
 }
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -119,6 +117,7 @@ const editableTableCases: Array<{
           ventilatorsSlice={slice}
           tableSchema={schemaForVentilators(slice)}
           isEditor
+          projectId="proj_1"
           view={emptyViewState()}
           onViewChange={vi.fn()}
           onWrite={vi.fn()}
@@ -208,6 +207,7 @@ const editableTableCases: Array<{
           electricHeatersSlice={slice}
           tableSchema={schemaForElectricHeaters(slice)}
           isEditor
+          projectId="proj_1"
           view={emptyViewState()}
           onViewChange={vi.fn()}
           onWrite={vi.fn()}
@@ -302,6 +302,7 @@ describe("equipment custom fields Phase 03", () => {
         electricHeatersSlice={slice}
         tableSchema={schemaForElectricHeaters(slice)}
         isEditor
+        projectId="proj_1"
         view={emptyViewState()}
         onViewChange={vi.fn()}
         onWrite={vi.fn()}
@@ -363,6 +364,7 @@ describe("equipment custom fields Phase 03", () => {
         ventilatorsSlice={ventilatorSlice}
         tableSchema={schemaForVentilators(ventilatorSlice)}
         isEditor
+        projectId="proj_1"
         view={emptyViewState()}
         onViewChange={vi.fn()}
         onWrite={vi.fn()}

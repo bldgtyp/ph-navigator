@@ -84,6 +84,7 @@ export function VentilatorsTableSlot(props: VentilatorsTableSlotProps) {
         ventilatorsSlice={ventilatorsSlice}
         tableSchema={controller.tableSchema}
         isEditor={controller.canEdit}
+        projectId={projectId}
         view={controller.view as ViewState}
         onViewChange={controller.onViewChange}
         onResetView={controller.onResetView}

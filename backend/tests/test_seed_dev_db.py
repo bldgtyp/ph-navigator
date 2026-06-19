@@ -65,3 +65,22 @@ def test_starter_project_document_seeds_default_aperture() -> None:
         if frame is not None
     }
     assert frame_names == {"PHN-Default-Frame"}
+
+
+def test_starter_project_document_seeds_electric_heater_datasheet_field() -> None:
+    body = _starter_project_document(
+        CreateProjectRequest(
+            name="PHN V2 Starter Project",
+            bt_number="DEV-0001",
+            client="BLDGTYP",
+            cert_programs=["phius"],
+            phius_number=None,
+            phius_dropbox_url=None,
+        )
+    )
+
+    electric_heaters = body.tables.equipment.electric_heaters
+
+    assert any(field.field_key == "datasheet_asset_ids" for field in electric_heaters.field_defs)
+    assert electric_heaters.rows
+    assert all(row.datasheet_asset_ids == [] for row in electric_heaters.rows)

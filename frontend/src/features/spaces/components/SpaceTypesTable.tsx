@@ -14,6 +14,7 @@ import {
   customFieldColumnDefs,
   type CustomFieldTableActions,
 } from "../../../shared/ui/data-table/feature";
+import { isRoomsSource } from "../../equipment/lib/inverseSource";
 import {
   SPACE_TYPE_NAME_FIELD_KEY,
   type InverseLinkField,
@@ -40,6 +41,7 @@ export function SpaceTypesTable({
   onResetView,
   resolveLinkedRoom,
   onInversePillClick,
+  onInverseLinkEdit,
   ...customFieldActions
 }: {
   spaceTypesSlice: SpaceTypesSlice;
@@ -56,6 +58,7 @@ export function SpaceTypesTable({
   onResetView?: DataTableProps<SpaceTypeRow>["onResetView"];
   resolveLinkedRoom: LinkedRoomResolver;
   onInversePillClick?: (field: InverseLinkField, rowId: string) => void;
+  onInverseLinkEdit?: (field: InverseLinkField, row: SpaceTypeRow) => void;
 } & CustomFieldTableActions<SpaceTypeRow>) {
   const { fieldDefs, customFields } = tableSchema;
   const inverseLinkFields = spaceTypesSlice.inverse_link_fields;
@@ -114,6 +117,10 @@ export function SpaceTypesTable({
         getIncomingIds: (spaceType) => inverseIdsForSpaceType(inverseLinks, spaceType.id, field),
         resolveLabel: (rowId) => resolveLinkedRoom(rowId)?.recordId ?? null,
         onPillClick: (rowId) => onInversePillClick?.(field, rowId),
+        edit:
+          isEditor && onInverseLinkEdit && isRoomsSource(field)
+            ? { onActivate: (spaceType) => onInverseLinkEdit(field, spaceType) }
+            : null,
         className: "data-table-inverse-link-cell",
         defaultWidth: 220,
       }),
@@ -124,6 +131,8 @@ export function SpaceTypesTable({
     fieldDefByKey,
     inverseLinkFields,
     inverseLinks,
+    isEditor,
+    onInverseLinkEdit,
     onInversePillClick,
     resolveLinkedRoom,
   ]);

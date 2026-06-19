@@ -60,7 +60,7 @@ def test_document_rejects_missing_thermal_bridge_type_option() -> None:
     first = thermal_bridge_payload()["thermal_bridges"][0]
     tables = empty_required_tables()
     body = {
-        "schema_version": 10,
+        "schema_version": 11,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             **tables,

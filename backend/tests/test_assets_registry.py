@@ -42,6 +42,34 @@ def _document_with_pump_datasheets() -> ProjectDocumentV1:
     return ProjectDocumentV1.model_validate(raw)
 
 
+def _document_with_ventilator_datasheets() -> ProjectDocumentV1:
+    raw = base_document().model_dump(mode="json")
+    raw["tables"]["equipment"]["ervs"]["rows"] = [
+        {
+            "id": "vent_1",
+            "inside_outside": "opt_vent_inside",
+            "url": "https://example.com/erv.pdf",
+            "notes": None,
+            "datasheet_asset_ids": ["asset_pdf_1"],
+            "custom_values": {
+                "record_id": "ERV-1",
+                "name": "Apartment ERV",
+                "airflow_rate_m3h": 425.0,
+                "model": "Q350",
+                "manufacturer": "Zehnder",
+                "heat_recovery_percent": 84,
+                "moisture_recovery_percent": 70,
+                "electrical_efficiency_wh_m3": 0.42,
+                "filter_merv_rating": 13,
+            },
+        }
+    ]
+    raw["single_select_options"]["ventilators.inside_outside"] = [
+        {"id": "opt_vent_inside", "label": "Inside", "color": "#3b82f6", "order": 0}
+    ]
+    return ProjectDocumentV1.model_validate(raw)
+
+
 def test_pumps_datasheet_field_is_registered() -> None:
     field = get_attachment_field("pumps", "datasheet_asset_ids")
 
@@ -51,6 +79,14 @@ def test_pumps_datasheet_field_is_registered() -> None:
     assert field.allowed_content_types == frozenset({"application/pdf", "image/png", "image/jpeg", "image/webp"})
     assert field.max_count == 5
     assert field.max_file_size_mb == 25
+
+
+def test_ventilators_datasheet_field_is_registered() -> None:
+    field = get_attachment_field("ventilators", "datasheet_asset_ids")
+
+    assert field is not None
+    assert field.key == "ventilators.datasheet_asset_ids"
+    assert field.asset_kinds == frozenset({"datasheet"})
 
 
 def test_pumps_datasheet_field_matches_allowed_assets() -> None:
@@ -139,3 +175,25 @@ def test_equipment_pump_datasheet_references_filter_by_asset_id() -> None:
     assert references[0]["field_key"] == "datasheet_asset_ids"
     assert references[0]["asset_id"] == "asset_img_1"
     assert references[0]["index"] == 1
+
+
+def test_equipment_ventilator_datasheet_references_are_discoverable() -> None:
+    body = _document_with_ventilator_datasheets()
+
+    references = list_asset_references(
+        body,
+        table_key="ventilators",
+        column_key="datasheet_asset_ids",
+        kind="datasheet",
+    )
+
+    assert references == [
+        {
+            "table_key": "ventilators",
+            "field_key": "datasheet_asset_ids",
+            "row_id": "vent_1",
+            "row_name": "vent_1",
+            "asset_id": "asset_pdf_1",
+            "index": 0,
+        }
+    ]

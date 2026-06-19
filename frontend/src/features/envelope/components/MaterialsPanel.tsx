@@ -204,6 +204,7 @@ export function MaterialsPanel({
               value={m.specification_status}
               disabled={busy}
               compact
+              listboxPlacement="portal"
               options={STATUSES.map((status) => ({
                 value: status,
                 label: STATUS_LABEL[status],

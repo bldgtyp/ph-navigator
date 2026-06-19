@@ -252,6 +252,75 @@ describe("EnvelopePage", () => {
     expect(screen.getByTestId("assembly-canvas").getAttribute("style")).toBe(initialWidth);
   });
 
+  test("material editor unit toggle updates modal values and posts canonical SI", async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/draft/envelope/commands")) {
+        return Promise.resolve(jsonResponse({ ...envelopePayload, draft_etag: "draft-etag-2" }));
+      }
+      return defaultFetchImplementation(url);
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/materials`);
+
+    expect(await screen.findByText("Wood fiber board")).toBeInTheDocument();
+    const editMaterialButton = screen.getAllByRole("button", {
+      name: "Edit material attributes",
+    })[0];
+    if (!editMaterialButton) throw new Error("Expected material edit button.");
+    await userEvent.click(editMaterialButton);
+
+    const dialog = await screen.findByRole("dialog", { name: /Edit material/ });
+    expect(within(dialog).getByLabelText(/Lambda/)).toHaveValue("0.038");
+    expect(within(dialog).getByLabelText(/Density/)).toHaveValue("160");
+    expect(within(dialog).getByLabelText(/Specific heat/)).toHaveValue("2100");
+
+    await userEvent.click(within(dialog).getByRole("radio", { name: "Set display units to IP" }));
+
+    await waitFor(() => {
+      expect(within(dialog).getByLabelText(/Lambda/)).toHaveValue("0.022");
+    });
+    expect(within(dialog).getByLabelText(/Density/)).toHaveValue("10");
+    expect(within(dialog).getByLabelText(/Specific heat/)).toHaveValue("0.502");
+    expect(within(dialog).getByRole("radio", { name: "Set display units to IP" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+
+    await userEvent.click(within(dialog).getByRole("radio", { name: "Set display units to SI" }));
+
+    await waitFor(() => {
+      expect(within(dialog).getByLabelText(/Lambda/)).toHaveValue("0.038");
+    });
+    expect(within(dialog).getByLabelText(/Density/)).toHaveValue("160");
+    expect(within(dialog).getByLabelText(/Specific heat/)).toHaveValue("2100");
+
+    await userEvent.click(within(dialog).getByRole("radio", { name: "Set display units to IP" }));
+
+    await waitFor(() => {
+      expect(within(dialog).getByLabelText(/Lambda/)).toHaveValue("0.022");
+    });
+
+    await userEvent.clear(within(dialog).getByLabelText("Name"));
+    await userEvent.type(within(dialog).getByLabelText("Name"), "Wood fiber board updated");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Update material" }));
+
+    await waitFor(() => {
+      expect(commandRequestBodies()).toContainEqual({
+        command: {
+          kind: "update_project_material",
+          project_material_id: "pmat_insul",
+          name: "Wood fiber board updated",
+          category: "Insulation",
+          conductivity_w_mk: 0.038,
+          density_kg_m3: 160,
+          specific_heat_j_kgk: 2100,
+          emissivity: 0.9,
+          comments: "Candidate product.",
+        },
+      });
+    });
+  });
+
   test("collapsed assembly sidebar preserves active assembly and zoom", async () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
 
@@ -544,6 +613,26 @@ describe("EnvelopePage", () => {
       "Dense-pack cellulose",
       "Unused air barrier",
     ]);
+  });
+
+  test("materials status selector opens options outside the clipped report table", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/materials`);
+
+    const woodFiberRow = (await screen.findByText("Wood fiber board")).closest(
+      "[role='row']",
+    ) as HTMLElement | null;
+    if (!woodFiberRow) throw new Error("Expected Wood fiber board row.");
+
+    const statusToggle = within(woodFiberRow).getByRole("button", { name: "Status options" });
+    const chevron = statusToggle.querySelector(".lucide-chevron-down");
+    expect(chevron).not.toBeNull();
+
+    await userEvent.click(statusToggle);
+
+    const listbox = await screen.findByRole("listbox");
+    expect(listbox.closest(".report-table")).toBeNull();
+    expect(within(listbox).getByRole("option", { name: "Question" })).toBeInTheDocument();
+    expect(within(listbox).getByRole("option", { name: "Complete" })).toBeInTheDocument();
   });
 
   test("catalog drift badges render in assemblies and materials tabs", async () => {

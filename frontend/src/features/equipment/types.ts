@@ -136,6 +136,7 @@ export const VENTILATORS_TABLE_NAME = "ventilators";
 export const VENTILATOR_INSIDE_OUTSIDE_KEY = "inside_outside";
 export const VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY = "ventilators.inside_outside";
 export const VENTILATOR_INSIDE_OUTSIDE_COLUMN_ID = "inside_outside";
+export const VENTILATOR_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
 export const VENTILATOR_OPTION_KEYS = [VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY] as const;
 
 export type VentilatorOptionKey = (typeof VENTILATOR_OPTION_KEYS)[number];
@@ -145,6 +146,7 @@ export type VentilatorRow = {
   inside_outside: string | null;
   url: string | null;
   notes: string | null;
+  datasheet_asset_ids: string[];
   custom_values: Record<string, CustomValue>;
   custom_links?: Record<string, string[]>;
 };
@@ -335,11 +337,13 @@ export type HotWaterTanksReplacePayload = {
 };
 
 export const ELECTRIC_HEATERS_TABLE_NAME = "electric_heaters";
+export const ELECTRIC_HEATER_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
 
 export type ElectricHeaterRow = {
   id: string;
   url: string | null;
   notes: string | null;
+  datasheet_asset_ids: string[];
   custom_values: Record<string, CustomValue>;
   custom_links?: Record<string, string[]>;
 };

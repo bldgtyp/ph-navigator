@@ -151,7 +151,7 @@ def test_document_rejects_missing_appliance_type_option() -> None:
     first = appliance_payload()["appliances"][0]
     tables = empty_required_tables()
     body = {
-        "schema_version": 10,
+        "schema_version": 11,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             **tables,

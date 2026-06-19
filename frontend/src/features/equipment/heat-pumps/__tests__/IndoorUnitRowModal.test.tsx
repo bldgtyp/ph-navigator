@@ -45,6 +45,7 @@ function ventilator(id: string, recordId: string): VentilatorRow {
     inside_outside: null,
     url: null,
     notes: null,
+    datasheet_asset_ids: [],
     custom_values: { record_id: recordId, name: `ERV ${recordId}` },
   };
 }
