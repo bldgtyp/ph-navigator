@@ -1,10 +1,11 @@
 import { useCallback, useMemo, useState } from "react";
 import {
+  IncomingLinkPicker,
   buildLinkedRecordOps,
   DataTable,
+  fieldDefsWithRenderOverrides,
   type LinkedRecordCellOps,
 } from "../../../../shared/ui/data-table";
-import { LinkedRecordPicker } from "../../../../shared/ui/data-table/fields/linkedRecord/Picker";
 import {
   customFieldActionsForController,
   type SliceTableController,
@@ -24,7 +25,6 @@ import {
 } from "../lib";
 import {
   HEAT_PUMP_LINK_TARGETS,
-  indoorEquipIdsByOutdoorEquip,
   incomingOutdoorUnitIds,
   outdoorUnitIdsByOutdoorEquip,
 } from "../link-fields";
@@ -45,7 +45,7 @@ import { IndoorEquipRowModal } from "./IndoorEquipRowModal";
 import { OutdoorEquipRowModal } from "./OutdoorEquipRowModal";
 import { OutdoorUnitRowModal } from "./OutdoorUnitRowModal";
 import { PhiusExportDialog } from "./PhiusExportDialog";
-import { appendComputedFieldDefs, heatPumpColumnsWithCustomFields } from "./heatPumpCustomColumns";
+import { heatPumpColumnsWithCustomFields } from "./heatPumpCustomColumns";
 
 type ModalState =
   | { kind: "outdoor"; mode: "add" | "edit"; row: HeatPumpOutdoorEquipRow }
@@ -96,14 +96,6 @@ export function OutdoorEquipTable({
     }
     return labels;
   }, [manufacturerOptions, slice.indoor_equip]);
-  const pairedIndoorEquipIdsByOutdoorEquip = useMemo(
-    () =>
-      indoorEquipIdsByOutdoorEquip({
-        outdoorUnits,
-        indoorUnits: slice.indoor_units,
-      }),
-    [outdoorUnits, slice.indoor_units],
-  );
   const assetIds = useMemo(
     () => Array.from(new Set(rows.flatMap((row) => row.datasheet_asset_ids))),
     [rows],
@@ -130,7 +122,7 @@ export function OutdoorEquipTable({
   );
   const fieldDefs = useMemo(
     () =>
-      appendComputedFieldDefs(
+      fieldDefsWithRenderOverrides(
         controller.tableSchema.fieldDefs,
         outdoorEquipFieldDefs({ options: slice.single_select_options }),
       ),
@@ -148,9 +140,7 @@ export function OutdoorEquipTable({
         },
         outdoorUnits,
         incomingOutdoorUnitIdsByRowId,
-        pairedIndoorEquipIdsByRowId: pairedIndoorEquipIdsByOutdoorEquip,
         pairedIndoorEquipLabelById,
-        onPairedIndoorEquipClick: openIndoorEquipLink,
         onOutdoorUnitClick: openOutdoorUnitLink,
         onOutdoorUnitsLinkEdit: (row) => setLinkPickerRow(row),
       }),
@@ -163,26 +153,39 @@ export function OutdoorEquipTable({
     incomingOutdoorUnitIdsByRowId,
     leafSlice.rows_computed,
     outdoorUnits,
-    pairedIndoorEquipIdsByOutdoorEquip,
     pairedIndoorEquipLabelById,
-    openIndoorEquipLink,
     openOutdoorUnitLink,
     projectId,
     readOnly,
     tableSchema,
   ]);
-  const linkedRecordOps = useMemo<ReadonlyMap<string, LinkedRecordCellOps>>(
-    () =>
-      buildLinkedRecordOps<HeatPumpOutdoorUnitRow>({
-        fieldDefs,
-        targetTablePath: HEAT_PUMP_LINK_TARGETS.outdoorUnits,
-        targetRows: outdoorUnits,
-        getRowId: (unit) => unit.id,
-        getRecordId: (unit) => unit.tag || unit.id,
-        onPillClick: openOutdoorUnitLink,
-      }),
-    [fieldDefs, openOutdoorUnitLink, outdoorUnits],
-  );
+  const linkedRecordOps = useMemo<ReadonlyMap<string, LinkedRecordCellOps>>(() => {
+    const indoorEquipOps = buildLinkedRecordOps<HeatPumpIndoorEquipRow>({
+      fieldDefs,
+      targetTablePath: HEAT_PUMP_LINK_TARGETS.indoorEquip,
+      targetRows: slice.indoor_equip,
+      getRowId: (equip) => equip.id,
+      getRecordId: (equip) => indoorEquipLabel(equip, manufacturerOptions),
+      getDisplayName: (equip) => equip.model_number,
+      onPillClick: openIndoorEquipLink,
+    });
+    const outdoorUnitOps = buildLinkedRecordOps<HeatPumpOutdoorUnitRow>({
+      fieldDefs,
+      targetTablePath: HEAT_PUMP_LINK_TARGETS.outdoorUnits,
+      targetRows: outdoorUnits,
+      getRowId: (unit) => unit.id,
+      getRecordId: (unit) => unit.tag || unit.id,
+      onPillClick: openOutdoorUnitLink,
+    });
+    return new Map([...indoorEquipOps, ...outdoorUnitOps]);
+  }, [
+    fieldDefs,
+    manufacturerOptions,
+    openIndoorEquipLink,
+    openOutdoorUnitLink,
+    outdoorUnits,
+    slice.indoor_equip,
+  ]);
   const tableView = controller;
 
   /**
@@ -319,20 +322,26 @@ export function OutdoorEquipTable({
           onSubmit={replaceOutdoorUnit}
         />
       ) : null}
-      {linkPickerRow ? (
-        <LinkedRecordPicker
-          open
-          mode="multi"
-          selectedIds={incomingOutdoorUnitIds(incomingOutdoorUnitIdsByRowId, linkPickerRow.id)}
-          candidates={outdoorUnits.map((unit) => ({
-            rowId: unit.id,
-            recordId: unit.tag || unit.id,
-          }))}
-          title="Link Outdoor units"
-          onCancel={() => setLinkPickerRow(null)}
-          onConfirm={(ids) => void linkOutdoorUnits(linkPickerRow, ids)}
-        />
-      ) : null}
+      <IncomingLinkPicker
+        state={
+          linkPickerRow
+            ? {
+                row: linkPickerRow,
+                selectedIds: incomingOutdoorUnitIds(
+                  incomingOutdoorUnitIdsByRowId,
+                  linkPickerRow.id,
+                ),
+                candidates: outdoorUnits.map((unit) => ({
+                  rowId: unit.id,
+                  recordId: unit.tag || unit.id,
+                })),
+                title: "Link Outdoor units",
+              }
+            : null
+        }
+        onCancel={() => setLinkPickerRow(null)}
+        onConfirm={linkOutdoorUnits}
+      />
     </>
   );
 }

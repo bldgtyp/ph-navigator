@@ -4,8 +4,11 @@ import {
   customFieldActionsForController,
   type SliceTableController,
 } from "../../../shared/ui/data-table/feature";
-import type { BuildEmptyRow, ViewState } from "../../../shared/ui/data-table";
-import { LinkedRecordPicker } from "../../../shared/ui/data-table/fields/linkedRecord/Picker";
+import {
+  IncomingLinkPicker,
+  type BuildEmptyRow,
+  type ViewState,
+} from "../../../shared/ui/data-table";
 import { useHeatPumpPatchMutation, useHeatPumpsQuery } from "../heat-pumps/api";
 import { incomingIndoorUnitIds } from "../heat-pumps/link-fields";
 import { IndoorUnitRowModal } from "../heat-pumps/components/IndoorUnitRowModal";
@@ -121,20 +124,26 @@ export function VentilatorsTableSlot(props: VentilatorsTableSlotProps) {
           onSubmit={saveIndoorUnit}
         />
       ) : null}
-      {linkPickerRow ? (
-        <LinkedRecordPicker
-          open
-          mode="multi"
-          selectedIds={incomingIndoorUnitIds(incomingIndoorUnitIdsByVentilatorId, linkPickerRow.id)}
-          candidates={indoorUnits.map((unit) => ({
-            rowId: unit.id,
-            recordId: unit.tag || unit.id,
-          }))}
-          title="Link HP indoor units"
-          onCancel={() => setLinkPickerRow(null)}
-          onConfirm={(ids) => void linkIndoorUnits(linkPickerRow, ids)}
-        />
-      ) : null}
+      <IncomingLinkPicker
+        state={
+          linkPickerRow
+            ? {
+                row: linkPickerRow,
+                selectedIds: incomingIndoorUnitIds(
+                  incomingIndoorUnitIdsByVentilatorId,
+                  linkPickerRow.id,
+                ),
+                candidates: indoorUnits.map((unit) => ({
+                  rowId: unit.id,
+                  recordId: unit.tag || unit.id,
+                })),
+                title: "Link HP indoor units",
+              }
+            : null
+        }
+        onCancel={() => setLinkPickerRow(null)}
+        onConfirm={linkIndoorUnits}
+      />
     </>
   );
 }

@@ -2,6 +2,13 @@ import type { DataTableColumnDef, FieldDef } from "../../../shared/ui/data-table
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
 import type { RoomRow, VentilatorRow } from "../types";
+import {
+  HEAT_PUMP_RECORD_ID_SCHEMA_FIELD_KEY,
+  heatPumpAttachmentField,
+  heatPumpLinkedRecordField,
+  heatPumpTagField,
+  heatPumpTextField,
+} from "./field-defs";
 import { roomLabel, ventilatorLabel } from "./lib";
 import { HEAT_PUMP_LINK_TARGETS } from "./link-fields";
 import { type HeatPumpIndoorUnitRow } from "./types";
@@ -10,49 +17,36 @@ export const INDOOR_UNIT_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
 
 export function indoorUnitFieldDefs(): FieldDef[] {
   return [
-    { field_key: "tag", field_type: "text", display_name: "Tag", required: true },
-    {
+    heatPumpTagField(),
+    heatPumpLinkedRecordField({
       field_key: "indoor_equip_id",
-      field_type: "linked_record",
       display_name: "Equipment",
       required: true,
-      linked_record_config: {
-        target_table_path: [...HEAT_PUMP_LINK_TARGETS.indoorEquip],
-        max_links: 1,
-      },
-    },
-    {
+      target_table_path: HEAT_PUMP_LINK_TARGETS.indoorEquip,
+      max_links: 1,
+    }),
+    heatPumpLinkedRecordField({
       field_key: "outdoor_unit_id",
-      field_type: "linked_record",
       display_name: "Outdoor unit",
-      linked_record_config: {
-        target_table_path: [...HEAT_PUMP_LINK_TARGETS.outdoorUnits],
-        max_links: 1,
-      },
-    },
-    {
+      target_table_path: HEAT_PUMP_LINK_TARGETS.outdoorUnits,
+      max_links: 1,
+    }),
+    heatPumpLinkedRecordField({
       field_key: "served_room_ids",
-      field_type: "linked_record",
       display_name: "Rooms",
       description: "Rooms this indoor unit serves.",
-      linked_record_config: { target_table_path: ["rooms"], max_links: null },
-    },
-    {
+      target_table_path: ["rooms"],
+      max_links: null,
+    }),
+    heatPumpLinkedRecordField({
       field_key: "linked_erv_unit_id",
-      field_type: "linked_record",
       display_name: "Linked ERV",
       description: "Ventilator / ERV containing or associated with this indoor unit.",
-      linked_record_config: {
-        target_table_path: [...HEAT_PUMP_LINK_TARGETS.ventilators],
-        max_links: 1,
-      },
-    },
-    {
-      field_key: INDOOR_UNIT_DATASHEET_FIELD_KEY,
-      field_type: "attachment",
-      display_name: "Datasheet",
-    },
-    { field_key: "notes", field_type: "text", display_name: "Notes" },
+      target_table_path: HEAT_PUMP_LINK_TARGETS.ventilators,
+      max_links: 1,
+    }),
+    heatPumpAttachmentField(INDOOR_UNIT_DATASHEET_FIELD_KEY, "Datasheet"),
+    heatPumpTextField("notes", "Notes"),
   ];
 }
 
@@ -94,6 +88,7 @@ export function indoorUnitColumnDefs({
     {
       id: "tag",
       fieldKey: "tag",
+      schemaFieldKey: HEAT_PUMP_RECORD_ID_SCHEMA_FIELD_KEY,
       header: "Tag",
       accessor: (row) => row.tag,
       defaultWidth: 140,

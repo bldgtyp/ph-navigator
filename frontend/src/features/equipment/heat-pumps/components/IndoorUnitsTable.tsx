@@ -4,6 +4,7 @@ import { errorMessage } from "../../../../shared/lib/errors";
 import {
   buildLinkedRecordOps,
   DataTable,
+  fieldDefsWithRenderOverrides,
   type LinkedRecordCellOps,
 } from "../../../../shared/ui/data-table";
 import {
@@ -48,7 +49,7 @@ import { IndoorUnitRowModal } from "./IndoorUnitRowModal";
 import { LinkedVentilatorModalHost } from "./LinkedVentilatorModalHost";
 import { OutdoorUnitRowModal } from "./OutdoorUnitRowModal";
 import { BlockedDeleteDialog } from "./CascadePreviewDialog";
-import { appendComputedFieldDefs, heatPumpColumnsWithCustomFields } from "./heatPumpCustomColumns";
+import { heatPumpColumnsWithCustomFields } from "./heatPumpCustomColumns";
 
 type ModalState =
   | { kind: "unit"; mode: "add" | "edit"; row: HeatPumpIndoorUnitRow }
@@ -108,7 +109,7 @@ export function IndoorUnitsTable({
   const readOnly = !controller.canEdit;
   const noEquip = slice.indoor_equip.length === 0;
   const fieldDefs = useMemo(
-    () => appendComputedFieldDefs(controller.tableSchema.fieldDefs, indoorUnitFieldDefs()),
+    () => fieldDefsWithRenderOverrides(controller.tableSchema.fieldDefs, indoorUnitFieldDefs()),
     [controller.tableSchema.fieldDefs],
   );
   const tableSchema = controller.tableSchema;

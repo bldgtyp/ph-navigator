@@ -2,13 +2,14 @@ import { useMemo } from "react";
 import {
   DataTable,
   RECORD_ID_FIELD_KEY,
+  incomingLinkColumn,
+  incomingLinkFieldDef,
   type DataTableColumnDef,
   type DataTableProps,
   type FieldDef,
   type TableSchema,
   type ViewState,
 } from "../../../shared/ui/data-table";
-import { LinkedRecordCell } from "../../../shared/ui/data-table/fields/linkedRecord/LinkedRecordCell";
 import {
   customFieldColumnDefs,
   type CustomFieldTableActions,
@@ -62,10 +63,11 @@ export function SpaceTypesTable({
   const inverseFieldDefs = useMemo<FieldDef[]>(
     () =>
       inverseLinkFields.map((field) => ({
-        field_key: inverseFieldKey(field),
-        field_type: "text",
-        display_name: inverseColumnHeader(field),
-        read_only: true,
+        ...incomingLinkFieldDef({
+          fieldKey: inverseFieldKey(field),
+          displayName: inverseColumnHeader(field),
+          targetTablePath: field.source_table_path,
+        }),
       })),
     [inverseLinkFields],
   );
@@ -104,24 +106,18 @@ export function SpaceTypesTable({
         isIdentifier: true,
       },
     ];
-    const inverseColumns: DataTableColumnDef<SpaceTypeRow>[] = inverseLinkFields.map((field) => ({
-      id: inverseFieldKey(field),
-      fieldKey: inverseFieldKey(field),
-      header: inverseColumnHeader(field),
-      accessor: (spaceType) => inverseIdsForSpaceType(inverseLinks, spaceType.id, field).join(", "),
-      render: (spaceType, { isActive }) => (
-        <LinkedRecordCell
-          ids={inverseIdsForSpaceType(inverseLinks, spaceType.id, field)}
-          resolve={resolveLinkedRoom}
-          onPillClick={(rowId) => onInversePillClick?.(field, rowId)}
-          isActive={isActive}
-        />
-      ),
-      measureText: (spaceType) =>
-        inverseIdsForSpaceType(inverseLinks, spaceType.id, field).join(","),
-      defaultWidth: 220,
-      className: "data-table-inverse-link-cell",
-    }));
+    const inverseColumns: DataTableColumnDef<SpaceTypeRow>[] = inverseLinkFields.map((field) =>
+      incomingLinkColumn({
+        id: inverseFieldKey(field),
+        fieldKey: inverseFieldKey(field),
+        header: inverseColumnHeader(field),
+        getIncomingIds: (spaceType) => inverseIdsForSpaceType(inverseLinks, spaceType.id, field),
+        resolveLabel: (rowId) => resolveLinkedRoom(rowId)?.recordId ?? null,
+        onPillClick: (rowId) => onInversePillClick?.(field, rowId),
+        className: "data-table-inverse-link-cell",
+        defaultWidth: 220,
+      }),
+    );
     return [...baseColumns, ...customColumns, ...inverseColumns];
   }, [
     customColumns,

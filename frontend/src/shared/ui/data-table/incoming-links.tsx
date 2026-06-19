@@ -1,4 +1,9 @@
 import { LinkedRecordCell } from "./fields/linkedRecord/LinkedRecordCell";
+import {
+  LinkedRecordPicker,
+  type LinkedRecordPickerCandidate,
+  type LinkedRecordPickerMode,
+} from "./fields/linkedRecord/Picker";
 import type { DataTableColumnDef, FieldDef } from "./types";
 
 export type IncomingLinkFieldDefArgs = {
@@ -32,8 +37,24 @@ export type IncomingLinkColumnArgs<TRow> = {
   resolveLabel: (rowId: string) => string | null;
   onPillClick?: (rowId: string) => void;
   onActivateEdit?: (row: TRow) => void;
+  className?: string;
   defaultWidth?: number;
   accessorValue?: "displayText" | "ids";
+};
+
+export type IncomingLinkPickerState<TRow> = {
+  row: TRow;
+  selectedIds: readonly string[];
+  candidates: readonly LinkedRecordPickerCandidate[];
+  title: string;
+  mode?: LinkedRecordPickerMode;
+  isLoading?: boolean;
+};
+
+export type IncomingLinkPickerProps<TRow> = {
+  state: IncomingLinkPickerState<TRow> | null;
+  onCancel: () => void;
+  onConfirm: (row: TRow, ids: readonly string[]) => void | Promise<void>;
 };
 
 export function incomingLinkColumn<TRow>({
@@ -44,6 +65,7 @@ export function incomingLinkColumn<TRow>({
   resolveLabel,
   onPillClick,
   onActivateEdit,
+  className,
   defaultWidth = 180,
   accessorValue = "displayText",
 }: IncomingLinkColumnArgs<TRow>): DataTableColumnDef<TRow> {
@@ -55,6 +77,7 @@ export function incomingLinkColumn<TRow>({
     header,
     accessor: (row) => (accessorValue === "ids" ? getIncomingIds(row) : displayText(row)),
     onActivateEdit,
+    className,
     render: (row, { isActive }) => (
       <LinkedRecordCell
         ids={getIncomingIds(row)}
@@ -67,4 +90,24 @@ export function incomingLinkColumn<TRow>({
     measureText: displayText,
     defaultWidth,
   };
+}
+
+export function IncomingLinkPicker<TRow>({
+  state,
+  onCancel,
+  onConfirm,
+}: IncomingLinkPickerProps<TRow>) {
+  if (!state) return null;
+  return (
+    <LinkedRecordPicker
+      open
+      mode={state.mode ?? "multi"}
+      selectedIds={state.selectedIds}
+      candidates={state.candidates}
+      title={state.title}
+      isLoading={state.isLoading}
+      onCancel={onCancel}
+      onConfirm={(ids) => void onConfirm(state.row, ids)}
+    />
+  );
 }

@@ -1,7 +1,15 @@
 import type { DataTableColumnDef, FieldDef } from "../../../shared/ui/data-table";
-import type { NumberUnitsConfig } from "../../../lib/units";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
+import {
+  HEAT_PUMP_RECORD_ID_SCHEMA_FIELD_KEY,
+  heatPumpAttachmentField,
+  heatPumpNumberField,
+  heatPumpPowerField,
+  heatPumpSelectField,
+  heatPumpTagField,
+  heatPumpTextField,
+} from "./field-defs";
 import {
   incomingIndoorUnitIds,
   incomingIndoorUnitColumnDef,
@@ -11,43 +19,28 @@ import { HEAT_PUMP_OPTION_KEYS, type HeatPumpIndoorEquipRow, type HeatPumpsSlice
 
 export const INDOOR_EQUIP_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
 
-// Indoor heat-pump capacity fields retain their legacy *_btuh keys for
-// document compatibility, but the stored value is canonical kW.
-const POWER_UNITS: NumberUnitsConfig = {
-  mode: "fixed",
-  unit_type: "power",
-  si_unit: "kw",
-  ip_unit: "kbtu_h",
-  precision_si: 2,
-  precision_ip: 1,
-};
-
 export function indoorEquipFieldDefs(options: HeatPumpsSlice["single_select_options"]): FieldDef[] {
   const manufacturer = options[HEAT_PUMP_OPTION_KEYS.manufacturer] ?? [];
   const modelType = options[HEAT_PUMP_OPTION_KEYS.modelType] ?? [];
   const installType = options[HEAT_PUMP_OPTION_KEYS.installType] ?? [];
   return [
-    textField("tag", "Tag", true),
-    textField("model_number", "Model number"),
-    selectField("manufacturer", "Manufacturer", manufacturer),
-    selectField("model_type", "Model type", modelType),
-    selectField("install_type", "Install type", installType),
-    numberField("nominal_tons", "Nominal tons"),
-    numberField("fan_speed_cfm", "Fan speed (CFM)"),
-    powerField("cooling_btuh", "Cooling Capacity"),
-    powerField("heating_btuh_47f", "Heating Capacity"),
-    numberField("heating_btuh_17f", "Heating Btu/h @ 17F"),
-    numberField("heating_cop", "Heating COP"),
-    numberField("seer", "SEER"),
-    numberField("eer", "EER"),
-    numberField("hspf", "HSPF"),
-    {
-      field_key: INDOOR_EQUIP_DATASHEET_FIELD_KEY,
-      field_type: "attachment",
-      display_name: "Datasheet",
-    },
+    heatPumpTagField(),
+    heatPumpTextField("model_number", "Model number"),
+    heatPumpSelectField("manufacturer", "Manufacturer", manufacturer),
+    heatPumpSelectField("model_type", "Model type", modelType),
+    heatPumpSelectField("install_type", "Install type", installType),
+    heatPumpNumberField("nominal_tons", "Nominal tons"),
+    heatPumpNumberField("fan_speed_cfm", "Fan speed (CFM)"),
+    heatPumpPowerField("cooling_btuh", "Cooling Capacity"),
+    heatPumpPowerField("heating_btuh_47f", "Heating Capacity"),
+    heatPumpNumberField("heating_btuh_17f", "Heating Btu/h @ 17F"),
+    heatPumpNumberField("heating_cop", "Heating COP"),
+    heatPumpNumberField("seer", "SEER"),
+    heatPumpNumberField("eer", "EER"),
+    heatPumpNumberField("hspf", "HSPF"),
+    heatPumpAttachmentField(INDOOR_EQUIP_DATASHEET_FIELD_KEY, "Datasheet"),
     incomingIndoorUnitsFieldDef(),
-    textField("notes", "Notes"),
+    heatPumpTextField("notes", "Notes"),
   ];
 }
 
@@ -93,6 +86,7 @@ export function indoorEquipColumnDefs({
     {
       id: "tag",
       fieldKey: "tag",
+      schemaFieldKey: HEAT_PUMP_RECORD_ID_SCHEMA_FIELD_KEY,
       header: "Tag",
       accessor: (row) => row.tag,
       defaultWidth: 120,
@@ -171,24 +165,4 @@ export function indoorEquipColumnDefs({
       defaultWidth: 260,
     },
   ];
-}
-
-function textField(field_key: string, display_name: string, required = false): FieldDef {
-  return { field_key, field_type: "text", display_name, required };
-}
-
-function numberField(field_key: string, display_name: string): FieldDef {
-  return { field_key, field_type: "number", display_name };
-}
-
-function powerField(field_key: string, display_name: string): FieldDef {
-  return { field_key, field_type: "number", display_name, numberUnits: POWER_UNITS };
-}
-
-function selectField(
-  field_key: string,
-  display_name: string,
-  options: FieldDef["options"] = [],
-): FieldDef {
-  return { field_key, field_type: "single_select", display_name, options };
 }

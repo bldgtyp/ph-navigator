@@ -125,6 +125,26 @@ def test_unit_derived_paired_indoor_renders_bracketed_device_label() -> None:
     assert payload.rows[0].device == "PUZ-A18NKA7 [PLA-A18EA8]"
 
 
+def test_explicit_paired_indoor_fk_renders_bracketed_device_label() -> None:
+    slice_ = _slice(
+        outdoor_equip=[_outdoor(id_=HPOE_A, model="PUZ-A18NKA7", paired=HPIE_PAIRED)],
+        indoor_equip=[_indoor(HPIE_PAIRED, "PLA-A18EA8")],
+    )
+    payload = compute_phius_payload(slice_)
+    assert payload.rows[0].device == "PUZ-A18NKA7 [PLA-A18EA8]"
+
+
+def test_explicit_paired_indoor_fk_wins_over_unit_derived_pairing() -> None:
+    slice_ = _slice(
+        outdoor_equip=[_outdoor(id_=HPOE_A, model="PUZ-A18NKA7", paired=HPIE_PAIRED)],
+        indoor_equip=[_indoor(HPIE_PAIRED, "PLA-A18EA8"), _indoor(HPIE_SECOND, "PEFY-P24")],
+        outdoor_units=[_outdoor_unit(HPOU_1, "HP-1", HPOE_A)],
+        indoor_units=[_indoor_unit(HPIU_1, "IU-1", HPIE_SECOND, HPOU_1)],
+    )
+    payload = compute_phius_payload(slice_)
+    assert payload.rows[0].device == "PUZ-A18NKA7 [PLA-A18EA8]"
+
+
 def test_multiple_unit_derived_indoor_models_render_bare_device_label() -> None:
     slice_ = _slice(
         outdoor_equip=[_outdoor(id_=HPOE_A, model="PUHY-P72TKMU-A")],

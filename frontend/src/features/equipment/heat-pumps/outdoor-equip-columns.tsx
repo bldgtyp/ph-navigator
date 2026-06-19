@@ -1,13 +1,21 @@
 import {
   OPTION_COLOR_PALETTE,
-  incomingLinkColumn,
   type DataTableColumnDef,
   type FieldDef,
   type FieldOption,
 } from "../../../shared/ui/data-table";
-import type { NumberUnitsConfig } from "../../../lib/units";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
+import {
+  HEAT_PUMP_RECORD_ID_SCHEMA_FIELD_KEY,
+  heatPumpAttachmentField,
+  heatPumpLinkedRecordField,
+  heatPumpNumberField,
+  heatPumpPowerField,
+  heatPumpSelectField,
+  heatPumpTagField,
+  heatPumpTextField,
+} from "./field-defs";
 import {
   HEAT_PUMP_LINK_TARGETS,
   incomingOutdoorUnitColumnDef,
@@ -43,18 +51,6 @@ const COOLING_DATA_TYPE_OPTIONS: FieldOption[] = COOLING_DATA_TYPES.map((value, 
 
 export const OUTDOOR_EQUIP_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
 
-// Heat-pump capacity is stored canonically in kW; the DataTable resolves
-// the live header label and parses/formats cell input via the global
-// SI/IP toggle. Phius export converts back to kBtu/h on the way out.
-const POWER_UNITS: NumberUnitsConfig = {
-  mode: "fixed",
-  unit_type: "power",
-  si_unit: "kw",
-  ip_unit: "kbtu_h",
-  precision_si: 2,
-  precision_ip: 1,
-};
-
 export function outdoorEquipFieldDefs({
   options,
 }: {
@@ -64,42 +60,44 @@ export function outdoorEquipFieldDefs({
   const systemFamily = options[HEAT_PUMP_OPTION_KEYS.systemFamily] ?? [];
   const refrigerant = options[HEAT_PUMP_OPTION_KEYS.refrigerant] ?? [];
   return [
-    textField("tag", "Tag", true),
-    textField("model_number", "Model number"),
-    selectField("manufacturer", "Manufacturer", manufacturer),
-    pairedIndoorEquipField(),
-    selectField("system_family", "System family", systemFamily),
-    selectField("refrigerant", "Refrigerant", refrigerant),
-    powerField("heating_cap_kw_17f", "Heating Capacity at 17F"),
-    powerField("heating_cap_kw_47f", "Heating Capacity at 47F"),
-    selectField("heating_data_type", "Heating Data Type", HEATING_DATA_TYPE_OPTIONS),
-    numberField("heating_cop_17f", "COP 17F"),
-    numberField("heating_cop_47f", "COP 47F"),
-    numberField(
+    heatPumpTagField(),
+    heatPumpTextField("model_number", "Model number"),
+    heatPumpSelectField("manufacturer", "Manufacturer", manufacturer),
+    heatPumpLinkedRecordField({
+      field_key: "paired_indoor_equip_id",
+      display_name: "Paired indoor equip",
+      description: "Indoor equipment row paired with this outdoor equipment model.",
+      target_table_path: HEAT_PUMP_LINK_TARGETS.indoorEquip,
+      max_links: 1,
+    }),
+    heatPumpSelectField("system_family", "System family", systemFamily),
+    heatPumpSelectField("refrigerant", "Refrigerant", refrigerant),
+    heatPumpPowerField("heating_cap_kw_17f", "Heating Capacity at 17F"),
+    heatPumpPowerField("heating_cap_kw_47f", "Heating Capacity at 47F"),
+    heatPumpSelectField("heating_data_type", "Heating Data Type", HEATING_DATA_TYPE_OPTIONS),
+    heatPumpNumberField("heating_cop_17f", "COP 17F"),
+    heatPumpNumberField("heating_cop_47f", "COP 47F"),
+    heatPumpNumberField(
       "hspf",
       "HSPF/HSPF2",
       "Holds either the legacy HSPF rating or the AHRI-2023 HSPF2 rating; which one is determined by Heating Data Type.",
     ),
-    powerField("cooling_cap_kw_95f", "Cooling Capacity at 95F"),
-    selectField("cooling_data_type", "Cooling Data Type", COOLING_DATA_TYPE_OPTIONS),
-    numberField(
+    heatPumpPowerField("cooling_cap_kw_95f", "Cooling Capacity at 95F"),
+    heatPumpSelectField("cooling_data_type", "Cooling Data Type", COOLING_DATA_TYPE_OPTIONS),
+    heatPumpNumberField(
       "eer",
       "EER/EER2",
       "Holds either the legacy EER rating or the AHRI-2023 EER2 rating; which one is determined by Cooling Data Type.",
     ),
-    numberField(
+    heatPumpNumberField(
       "seer",
       "SEER/SEER2",
       "Holds either the legacy SEER rating or the AHRI-2023 SEER2 rating; which one is determined by Cooling Data Type.",
     ),
-    numberField("ieer", "IEER"),
-    {
-      field_key: OUTDOOR_EQUIP_DATASHEET_FIELD_KEY,
-      field_type: "attachment",
-      display_name: "Datasheet",
-    },
+    heatPumpNumberField("ieer", "IEER"),
+    heatPumpAttachmentField(OUTDOOR_EQUIP_DATASHEET_FIELD_KEY, "Datasheet"),
     incomingOutdoorUnitsFieldDef(),
-    textField("notes", "Notes"),
+    heatPumpTextField("notes", "Notes"),
   ];
 }
 
@@ -112,9 +110,7 @@ export function outdoorEquipColumnDefs({
   onDatasheetChange,
   outdoorUnits = [],
   incomingOutdoorUnitIdsByRowId = new Map(),
-  pairedIndoorEquipIdsByRowId = new Map(),
   pairedIndoorEquipLabelById = new Map(),
-  onPairedIndoorEquipClick,
   onOutdoorUnitClick,
   onOutdoorUnitsLinkEdit,
 }: {
@@ -124,9 +120,7 @@ export function outdoorEquipColumnDefs({
   onDatasheetChange: (row: HeatPumpOutdoorEquipRow, next: string[]) => void | Promise<void>;
   outdoorUnits?: readonly HeatPumpOutdoorUnitRow[];
   incomingOutdoorUnitIdsByRowId?: ReadonlyMap<string, readonly string[]>;
-  pairedIndoorEquipIdsByRowId?: ReadonlyMap<string, readonly string[]>;
   pairedIndoorEquipLabelById?: ReadonlyMap<string, string>;
-  onPairedIndoorEquipClick?: (rowId: string) => void;
   onOutdoorUnitClick?: (rowId: string) => void;
   onOutdoorUnitsLinkEdit?: (row: HeatPumpOutdoorEquipRow) => void;
 }): DataTableColumnDef<HeatPumpOutdoorEquipRow>[] {
@@ -142,6 +136,7 @@ export function outdoorEquipColumnDefs({
     {
       id: "tag",
       fieldKey: "tag",
+      schemaFieldKey: HEAT_PUMP_RECORD_ID_SCHEMA_FIELD_KEY,
       header: "Tag",
       accessor: (row) => row.tag,
       defaultWidth: 120,
@@ -164,16 +159,18 @@ export function outdoorEquipColumnDefs({
       accessor: (row) => row.manufacturer,
       defaultWidth: 150,
     },
-    incomingLinkColumn<HeatPumpOutdoorEquipRow>({
+    {
       id: "paired_indoor_equip_id",
       fieldKey: "paired_indoor_equip_id",
       header: "Paired indoor equip",
-      getIncomingIds: (row) => pairedIndoorEquipIdsByRowId.get(row.id) ?? [],
-      resolveLabel: (rowId) => pairedIndoorEquipLabelById.get(rowId) ?? null,
-      onPillClick: onPairedIndoorEquipClick,
-      accessorValue: "ids",
+      accessor: (row) => (row.paired_indoor_equip_id ? [row.paired_indoor_equip_id] : []),
+      measureText: (row) =>
+        row.paired_indoor_equip_id
+          ? (pairedIndoorEquipLabelById.get(row.paired_indoor_equip_id) ??
+            row.paired_indoor_equip_id)
+          : "",
       defaultWidth: 190,
-    }),
+    },
     {
       id: "system_family",
       fieldKey: "system_family",
@@ -249,38 +246,4 @@ export function outdoorEquipColumnDefs({
       defaultWidth: 260,
     },
   ];
-}
-
-function textField(field_key: string, display_name: string, required = false): FieldDef {
-  return { field_key, field_type: "text", display_name, required };
-}
-
-function numberField(field_key: string, display_name: string, description?: string): FieldDef {
-  return { field_key, field_type: "number", display_name, ...(description ? { description } : {}) };
-}
-
-function powerField(field_key: string, display_name: string): FieldDef {
-  return { field_key, field_type: "number", display_name, numberUnits: POWER_UNITS };
-}
-
-function pairedIndoorEquipField(): FieldDef {
-  return {
-    field_key: "paired_indoor_equip_id",
-    field_type: "linked_record",
-    display_name: "Paired indoor equip",
-    description: "Derived from Units - Indoor links to outdoor units.",
-    read_only: true,
-    linked_record_config: {
-      target_table_path: [...HEAT_PUMP_LINK_TARGETS.indoorEquip],
-      max_links: null,
-    },
-  };
-}
-
-function selectField(
-  field_key: string,
-  display_name: string,
-  options: FieldDef["options"] = [],
-): FieldDef {
-  return { field_key, field_type: "single_select", display_name, options };
 }

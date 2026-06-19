@@ -1,4 +1,4 @@
-import type { DataTableColumnDef, FieldDef } from "../../../../shared/ui/data-table";
+import { type DataTableColumnDef } from "../../../../shared/ui/data-table";
 import {
   customFieldColumnDefs,
   type CustomFieldRow,
@@ -25,24 +25,4 @@ export function heatPumpColumnsWithCustomFields<TRow extends CustomFieldRow>({
       rowsComputed,
     }),
   ];
-}
-
-export function appendComputedFieldDefs(
-  persistedFieldDefs: readonly FieldDef[],
-  computedFieldDefs: readonly FieldDef[],
-): FieldDef[] {
-  const computedByKey = new Map(
-    computedFieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef]),
-  );
-  const emitted = new Set<string>();
-  const merged = persistedFieldDefs.map((fieldDef) => {
-    const computed = computedByKey.get(fieldDef.field_key);
-    if (!computed) return fieldDef;
-    emitted.add(computed.field_key);
-    return computed;
-  });
-  for (const computed of computedFieldDefs) {
-    if (!emitted.has(computed.field_key)) merged.push(computed);
-  }
-  return merged;
 }

@@ -63,6 +63,29 @@ describe("heat pump payload builders", () => {
     ).toEqual(["opt_a", "opt_c"]);
   });
 
+  test("normalizes paired indoor equipment linked-record picker writes to the scalar FK", () => {
+    const slice = outdoorEquipSlice({
+      outdoor_equip: [outdoorEquipRow({ id: "hpoe_a", paired_indoor_equip_id: null })],
+    });
+
+    const payload = heatPumpOutdoorEquipPayloadBuilders.fromCellWrites(
+      slice,
+      [
+        {
+          rowId: "hpoe_a",
+          fieldKey: "paired_indoor_equip_id",
+          value: ["hpie_01HX0000000000000000000001"],
+        },
+      ],
+      {},
+      {},
+    );
+
+    expect(payload.outdoor_equip[0]?.paired_indoor_equip_id).toBe(
+      "hpie_01HX0000000000000000000001",
+    );
+  });
+
   test("applies shared row insert, delete, and duplicate operations", () => {
     const slice = outdoorEquipSlice({
       outdoor_equip: [

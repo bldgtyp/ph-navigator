@@ -99,13 +99,16 @@ export function GridHeader<TRow>({
           {headerGroup.headers.map((header, columnIndex) => {
             const column = visibleColumnDefs[columnIndex];
             if (!column) return null;
-            const fieldDef = fieldDefByKey.get(column.fieldKey);
+            const schemaFieldKey = column.schemaFieldKey ?? column.fieldKey;
+            const fieldDef =
+              fieldDefByKey.get(schemaFieldKey) ?? fieldDefByKey.get(column.fieldKey);
             const isPrimary = columnIndex === 0;
             return (
               <DataTableHeaderCell
                 key={header.id}
                 header={header}
                 column={column}
+                schemaFieldKey={schemaFieldKey}
                 columnIndex={columnIndex}
                 fieldDef={fieldDef}
                 axisTint={axisRolesByFieldKey.get(column.fieldKey)}
@@ -132,6 +135,7 @@ export function GridHeader<TRow>({
 type DataTableHeaderCellProps<TRow> = {
   header: Header<TRow, unknown>;
   column: DataTableColumnDef<TRow>;
+  schemaFieldKey: string;
   columnIndex: number;
   fieldDef: FieldDef | undefined;
   axisTint: AxisRoleSubset | undefined;
@@ -150,6 +154,7 @@ type DataTableHeaderCellProps<TRow> = {
 function DataTableHeaderCell<TRow>({
   header,
   column,
+  schemaFieldKey,
   columnIndex,
   fieldDef,
   axisTint,
@@ -196,11 +201,15 @@ function DataTableHeaderCell<TRow>({
     ? () => headerActions.onInsertFieldRight?.(column.fieldKey, triggerRef.current)
     : undefined;
   const canEditFieldConfig = Boolean(
-    fieldDef && !readOnly && hasWriteHandler && headerActions.onEditCustomFieldConfig,
+    fieldDef &&
+    !fieldDef.read_only &&
+    !readOnly &&
+    hasWriteHandler &&
+    headerActions.onEditCustomFieldConfig,
   );
   const onEditCustomFieldConfig =
     canEditFieldConfig && headerActions.onEditCustomFieldConfig
-      ? () => headerActions.onEditCustomFieldConfig?.(column.fieldKey, triggerRef.current)
+      ? () => headerActions.onEditCustomFieldConfig?.(schemaFieldKey, triggerRef.current)
       : undefined;
   const doubleClickAction = canEditFieldConfig ? onEditCustomFieldConfig : undefined;
   const headerKeyDown =

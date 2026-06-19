@@ -3,11 +3,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ApiRequestError } from "../../../../shared/api/client";
 import { errorMessage } from "../../../../shared/lib/errors";
 import {
+  IncomingLinkPicker,
   buildLinkedRecordOps,
   DataTable,
+  fieldDefsWithRenderOverrides,
   type LinkedRecordCellOps,
 } from "../../../../shared/ui/data-table";
-import { LinkedRecordPicker } from "../../../../shared/ui/data-table/fields/linkedRecord/Picker";
 import {
   customFieldActionsForController,
   type SliceTableController,
@@ -55,7 +56,7 @@ import { OutdoorEquipRowModal } from "./OutdoorEquipRowModal";
 import { IndoorUnitRowModal } from "./IndoorUnitRowModal";
 import { OutdoorUnitRowModal } from "./OutdoorUnitRowModal";
 import { BlockedDeleteDialog, CascadePreviewDialog } from "./CascadePreviewDialog";
-import { appendComputedFieldDefs, heatPumpColumnsWithCustomFields } from "./heatPumpCustomColumns";
+import { heatPumpColumnsWithCustomFields } from "./heatPumpCustomColumns";
 
 type ModalState =
   | { kind: "unit"; mode: "add" | "edit"; row: HeatPumpOutdoorUnitRow }
@@ -144,7 +145,7 @@ export function OutdoorUnitsTable({
     [slice.outdoor_equip],
   );
   const fieldDefs = useMemo(
-    () => appendComputedFieldDefs(controller.tableSchema.fieldDefs, outdoorUnitFieldDefs()),
+    () => fieldDefsWithRenderOverrides(controller.tableSchema.fieldDefs, outdoorUnitFieldDefs()),
     [controller.tableSchema.fieldDefs],
   );
   const tableSchema = controller.tableSchema;
@@ -425,20 +426,23 @@ export function OutdoorUnitsTable({
           onCreateOption={createOption}
         />
       ) : null}
-      {linkPickerRow ? (
-        <LinkedRecordPicker
-          open
-          mode="multi"
-          selectedIds={incomingIndoorUnitIds(incomingIndoorUnitIdsByRowId, linkPickerRow.id)}
-          candidates={indoorUnits.map((unit) => ({
-            rowId: unit.id,
-            recordId: unit.tag || unit.id,
-          }))}
-          title="Link Indoor units"
-          onCancel={() => setLinkPickerRow(null)}
-          onConfirm={(ids) => void linkIndoorUnits(linkPickerRow, ids)}
-        />
-      ) : null}
+      <IncomingLinkPicker
+        state={
+          linkPickerRow
+            ? {
+                row: linkPickerRow,
+                selectedIds: incomingIndoorUnitIds(incomingIndoorUnitIdsByRowId, linkPickerRow.id),
+                candidates: indoorUnits.map((unit) => ({
+                  rowId: unit.id,
+                  recordId: unit.tag || unit.id,
+                })),
+                title: "Link Indoor units",
+              }
+            : null
+        }
+        onCancel={() => setLinkPickerRow(null)}
+        onConfirm={linkIndoorUnits}
+      />
       {deleteState?.kind === "preview" ? (
         <CascadePreviewDialog
           title={`Delete outdoor unit ${deleteState.row.tag || ""}?`}

@@ -13,6 +13,18 @@ describe("outdoorEquipFieldDefs", () => {
       OPTION_COLOR_PALETTE.slice(0, 3),
     );
   });
+
+  test("paired indoor equipment is a standard editable single linked-record field", () => {
+    const fields = outdoorEquipFieldDefs({ options: {} });
+    const field = fields.find((candidate) => candidate.field_key === "paired_indoor_equip_id");
+
+    expect(field?.field_type).toBe("linked_record");
+    expect(field?.read_only).toBeUndefined();
+    expect(field?.linked_record_config).toEqual({
+      target_table_path: ["equipment", "heat_pumps", "indoor_equip"],
+      max_links: 1,
+    });
+  });
 });
 
 function dataTypeOptionColors(fields: ReturnType<typeof outdoorEquipFieldDefs>, fieldKey: string) {

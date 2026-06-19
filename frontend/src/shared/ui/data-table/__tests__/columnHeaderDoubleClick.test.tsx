@@ -146,6 +146,93 @@ describe("DataTable column header double-click trigger (plan 21)", () => {
     expect(notes.querySelector(".data-table-header-edit-chevron")).toBeNull();
   });
 
+  test("read-only projection headers do not expose the field-config modal", async () => {
+    const user = userEvent.setup();
+    const onEditCustomFieldBundle = vi.fn().mockResolvedValue(undefined);
+    renderCustomFieldTable({
+      fieldDefs: [
+        ...CUSTOM_FIELD_DEFS,
+        {
+          field_key: "incoming_links",
+          field_type: "linked_record",
+          display_name: "Incoming links",
+          read_only: true,
+        },
+      ],
+      columnDefs: [
+        ...CUSTOM_COLUMN_DEFS,
+        {
+          id: "incoming_links",
+          fieldKey: "incoming_links",
+          header: "Incoming links",
+          accessor: () => [],
+        },
+      ],
+      onEditCustomFieldBundle,
+    });
+
+    const incoming = getColumnHeader("Incoming links");
+    expect(incoming).not.toHaveAttribute("data-field-editable");
+    await user.dblClick(incoming);
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(onEditCustomFieldBundle).not.toHaveBeenCalled();
+  });
+
+  test("schemaFieldKey routes header edits to the persisted FieldDef key", async () => {
+    const user = userEvent.setup();
+    const onEditCustomFieldBundle = vi.fn().mockResolvedValue(undefined);
+    const [view, setView] = [emptyViewState(), vi.fn<(next: ViewState) => void>()];
+    render(
+      <DataTable<Row>
+        rows={ROWS}
+        getRowId={(row) => row.id}
+        fieldDefs={[
+          {
+            field_key: "record_id",
+            field_type: "text",
+            custom_field_type: "short_text",
+            display_name: "Tag",
+            built_in: true,
+            locked: ["delete", "duplicate"],
+          },
+          {
+            field_key: "tag",
+            field_type: "text",
+            custom_field_type: "short_text",
+            display_name: "Tag",
+          },
+        ]}
+        columnDefs={[
+          {
+            id: "tag",
+            fieldKey: "tag",
+            schemaFieldKey: "record_id",
+            header: "Tag",
+            accessor: (row) => row.number,
+          },
+        ]}
+        view={view}
+        onViewChange={setView}
+        emptyMessage="No rows yet."
+        onWrite={vi.fn()}
+        onEditCustomFieldBundle={onEditCustomFieldBundle}
+      />,
+    );
+
+    await user.dblClick(getColumnHeader("Tag"));
+    const input = screen.getByLabelText("Name");
+    await user.clear(input);
+    await user.type(input, "Equipment tag");
+    await user.keyboard("{Enter}");
+
+    expect(onEditCustomFieldBundle).toHaveBeenCalledWith({
+      fieldKey: "record_id",
+      displayName: "Equipment tag",
+      description: null,
+    });
+  });
+
   test("double-click on a non-editable header is a no-op (does not flip data-field-editor-open)", () => {
     renderTable();
     const number = getColumnHeader("Number");
