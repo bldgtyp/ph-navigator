@@ -2,14 +2,27 @@
    tracked for a sectioned split (styles/README.md). */
 /* Model tab — HBJSON file management + multi-lens viewer core. */
 
+/* Full-bleed, viewport-height surface rather than a scrolling document panel.
+   The shell becomes a flex column via the `.model-shell` modifier (base.css);
+   here the tab fills that column and breaks out to span the viewport. */
 .model-tab {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  /* Break out of the centered, max-width column to span the viewport
+     (mirrors `.tabbar`'s full-bleed trick). */
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  padding-top: 0;
 }
 
 .model-viewer-surface {
   position: relative;
   flex: 1;
+  /* Graceful-degradation floor: if the flex height chain above is ever
+     unavailable, the surface still renders at a usable size instead of
+     collapsing. With the chain in place, `flex: 1` grows it to fill. */
   min-height: 480px;
   background:
     linear-gradient(180deg, color-mix(in oklab, var(--bg-card) 70%, white) 0%, transparent 44%),

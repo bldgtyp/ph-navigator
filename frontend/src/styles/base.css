@@ -660,6 +660,23 @@ a:focus-visible {
   max-width: none;
 }
 
+/* The model viewer is a full-bleed, viewport-height surface rather than a
+   scrolling document. `.model-shell` (set by ProjectShell when the model tab
+   is active) turns the shell into a flex column so `.model-tab` can fill the
+   area under the tab bars; every other tab keeps the default scrolling flow. */
+.model-shell {
+  display: flex;
+  flex-direction: column;
+}
+
+.model-shell .project-workspace {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding-bottom: 0;
+}
+
 .modal-header,
 .modal-actions,
 .version-popover-header,

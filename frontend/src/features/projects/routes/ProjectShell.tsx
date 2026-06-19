@@ -171,7 +171,9 @@ export function ProjectShell() {
   }
 
   return (
-    <main className="workspace-shell">
+    // The model viewer fills the viewport: `model-shell` switches the shell to
+    // a viewport-height flex column (see base.css). Other tabs scroll as normal.
+    <main className={activeTab === "model" ? "workspace-shell model-shell" : "workspace-shell"}>
       {topbar}
       <section
         className="project-page project-workspace"
