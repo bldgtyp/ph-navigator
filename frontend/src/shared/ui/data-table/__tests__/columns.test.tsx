@@ -109,20 +109,29 @@ describe("shared data-table column builders", () => {
 
   test("incomingLinkColumn resolves pill labels and forwards clicks", async () => {
     const onPillClick = vi.fn();
+    const onActivateEdit = vi.fn();
     const column = incomingLinkColumn<Row>({
       id: "incoming_units",
       header: "Incoming units",
       getIncomingIds: () => ["unit_1"],
       resolveLabel: (rowId) => (rowId === "unit_1" ? "AHU-1" : null),
       onPillClick,
+      onActivateEdit,
     });
 
     const row = { id: "row_1", name: "Pump", url: null, assetIds: [] };
     expect(column.accessor(row)).toBe("AHU-1");
     expect(column.measureText?.(row)).toBe("AHU-1");
-    render(<>{column.render?.(row)}</>);
+    const { rerender } = render(<>{column.render?.(row, { isActive: false })}</>);
+    expect(screen.queryByRole("button", { name: "Add linked record" })).toBeNull();
+    screen.getByRole("button", { name: "AHU-1" }).click();
+    expect(onPillClick).not.toHaveBeenCalled();
+
+    rerender(<>{column.render?.(row, { isActive: true })}</>);
     screen.getByRole("button", { name: "AHU-1" }).click();
     expect(onPillClick).toHaveBeenCalledWith("unit_1");
+    screen.getByRole("button", { name: "Add linked record" }).click();
+    expect(onActivateEdit).toHaveBeenCalledWith(row);
   });
 
   test("attachmentColumn skips equal writes and writes changed ids", () => {
@@ -146,7 +155,7 @@ describe("shared data-table column builders", () => {
     });
     const row = { id: "row_1", name: "Pump", url: null, assetIds: ["asset_1"] };
 
-    render(<>{column.render?.(row)}</>);
+    render(<>{column.render?.(row, { isActive: false })}</>);
     expect(attachmentCellMock).toHaveBeenCalled();
     const props = attachmentCellMock.mock.calls[0]?.[0];
     if (!props) throw new Error("AttachmentCell was not rendered");
@@ -182,7 +191,7 @@ describe("shared data-table column builders", () => {
     });
     const row = { id: "row_1", name: "Pump", url: null, assetIds: ["asset_1"] };
 
-    render(<>{column.render?.(row)}</>);
+    render(<>{column.render?.(row, { isActive: false })}</>);
     const props = attachmentCellMock.mock.calls[0]?.[0];
     if (!props) throw new Error("AttachmentCell was not rendered");
     props.onChange(["asset_2"]);

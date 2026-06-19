@@ -300,7 +300,7 @@ export function DataTable<TRow>({
               return formatDisplayCellValue(column.accessor(row.original), fieldDef, unitSystem);
             }
             return (
-              column.render?.(row.original) ??
+              column.render?.(row.original, { isActive: false }) ??
               formatDisplayCellValue(column.accessor(row.original), fieldDef, unitSystem)
             );
           },

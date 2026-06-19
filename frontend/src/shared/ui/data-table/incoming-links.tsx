@@ -31,6 +31,7 @@ export type IncomingLinkColumnArgs<TRow> = {
   getIncomingIds: (row: TRow) => readonly string[];
   resolveLabel: (rowId: string) => string | null;
   onPillClick?: (rowId: string) => void;
+  onActivateEdit?: (row: TRow) => void;
   defaultWidth?: number;
   accessorValue?: "displayText" | "ids";
 };
@@ -42,6 +43,7 @@ export function incomingLinkColumn<TRow>({
   getIncomingIds,
   resolveLabel,
   onPillClick,
+  onActivateEdit,
   defaultWidth = 180,
   accessorValue = "displayText",
 }: IncomingLinkColumnArgs<TRow>): DataTableColumnDef<TRow> {
@@ -52,12 +54,13 @@ export function incomingLinkColumn<TRow>({
     fieldKey,
     header,
     accessor: (row) => (accessorValue === "ids" ? getIncomingIds(row) : displayText(row)),
-    render: (row) => (
+    render: (row, { isActive }) => (
       <LinkedRecordCell
         ids={getIncomingIds(row)}
         resolve={(rowId) => ({ recordId: resolveLabel(rowId) })}
         onPillClick={onPillClick}
-        isActive
+        onActivateEdit={onActivateEdit ? () => onActivateEdit(row) : undefined}
+        isActive={isActive}
       />
     ),
     measureText: displayText,

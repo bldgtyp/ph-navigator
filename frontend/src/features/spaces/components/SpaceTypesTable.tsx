@@ -109,12 +109,12 @@ export function SpaceTypesTable({
       fieldKey: inverseFieldKey(field),
       header: inverseColumnHeader(field),
       accessor: (spaceType) => inverseIdsForSpaceType(inverseLinks, spaceType.id, field).join(", "),
-      render: (spaceType) => (
+      render: (spaceType, { isActive }) => (
         <LinkedRecordCell
           ids={inverseIdsForSpaceType(inverseLinks, spaceType.id, field)}
           resolve={resolveLinkedRoom}
           onPillClick={(rowId) => onInversePillClick?.(field, rowId)}
-          isActive
+          isActive={isActive}
         />
       ),
       measureText: (spaceType) =>

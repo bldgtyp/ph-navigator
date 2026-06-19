@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { generatedId } from "../../../shared/lib/ids";
 import { SliceTableShell, useSliceTableController } from "../../../shared/ui/data-table/feature";
@@ -6,7 +6,9 @@ import { wasLocalDraftTouched } from "../../equipment/lib";
 import { useRoomsSliceQuery } from "../../equipment/hooks";
 import { routeForInverseSource } from "../../equipment/lib/inverseRoutes";
 import { roomDisplayLabel } from "../../equipment/lib/roomLabels";
-import type { RoomsSlice } from "../../equipment/types";
+import { RoomDialogStack, type RoomModalState } from "../../equipment/components/RoomDialogStack";
+import { useRoomDialogController } from "../../equipment/lib/useRoomDialogController";
+import type { RoomRow, RoomsSlice } from "../../equipment/types";
 import type { ProjectDetail } from "../../projects/types";
 import { SpaceTypesTableSlot } from "../components/SpaceTypesTableSlot";
 import { buildEmptySpaceTypeRow } from "../lib/buildEmptySpaceTypeRow";
@@ -55,6 +57,7 @@ export function SpaceTypesPage({ project }: { project: ProjectDetail }) {
       spaceTypesSlice={spaceTypesQuery.data}
       roomsSlice={roomsQuery.data ?? null}
       refetch={spaceTypesQuery.refetch}
+      refetchRooms={roomsQuery.refetch}
     />
   );
 }
@@ -64,17 +67,22 @@ function SpaceTypesPageBody({
   spaceTypesSlice,
   roomsSlice,
   refetch,
+  refetchRooms,
 }: {
   project: ProjectDetail;
   spaceTypesSlice: SpaceTypesSlice;
   roomsSlice: RoomsSlice | null;
   refetch: () => Promise<unknown>;
+  refetchRooms: () => Promise<unknown>;
 }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const activeVersionId = project.active_version_id;
   const replaceMutation = useReplaceSpaceTypesSliceMutation(project.id, activeVersionId);
   const schemaMutation = useSpaceTypesSchemaMutation(project.id, activeVersionId);
+  const isEditor = project.access_mode === "editor";
+  const [roomModal, setRoomModal] = useState<RoomModalState | null>(null);
+  const [roomPendingDelete, setRoomPendingDelete] = useState<RoomRow | null>(null);
   const columnsForSanitize = useMemo(
     () => spaceTypeColumnStubs(spaceTypesSlice.field_defs, spaceTypesSlice.inverse_link_fields),
     [spaceTypesSlice.field_defs, spaceTypesSlice.inverse_link_fields],
@@ -103,6 +111,21 @@ function SpaceTypesPageBody({
     schemaMutation,
     refetch,
   });
+  const activeRoom = roomModal?.mode === "edit" ? roomModal.room : null;
+  const roomDialog = useRoomDialogController({
+    projectId: project.id,
+    activeVersionId,
+    accessMode: project.access_mode,
+    versionLocked: project.active_version?.locked ?? false,
+    roomsSlice: roomsSlice ?? emptyRoomsSlice(),
+    refetch: refetchRooms,
+    activeRoom,
+    onSaved: () => setRoomModal(null),
+    onDeleted: () => {
+      setRoomPendingDelete(null);
+      setRoomModal(null);
+    },
+  });
 
   const resolveLinkedRoom = useMemo<LinkedRoomResolver>(() => {
     const rowsComputed = roomsSlice?.rows_computed ?? {};
@@ -120,6 +143,11 @@ function SpaceTypesPageBody({
 
   const onInversePillClick = useCallback(
     (field: InverseLinkField, rowId: string) => {
+      if (field.source_table_path.length === 1 && field.source_table_path[0] === "rooms") {
+        const room = roomsSlice?.rooms.find((candidate) => candidate.id === rowId);
+        if (room) setRoomModal({ mode: "edit", room });
+        return;
+      }
       const route = routeForInverseSource(project.id, field, rowId, { openRoom: true });
       if (!route) return;
       const next = new URLSearchParams(searchParams);
@@ -134,11 +162,19 @@ function SpaceTypesPageBody({
         search: next.toString() ? `?${next.toString()}` : "",
       });
     },
-    [navigate, project.id, searchParams],
+    [navigate, project.id, roomsSlice?.rooms, searchParams],
   );
 
   const reloadDraft = async () => {
+    setRoomModal(null);
+    setRoomPendingDelete(null);
     await controller.reloadDraft();
+  };
+
+  const reloadRoomDraft = async () => {
+    setRoomModal(null);
+    setRoomPendingDelete(null);
+    await roomDialog.controller.reloadDraft();
   };
 
   return (
@@ -168,8 +204,45 @@ function SpaceTypesPageBody({
         resolveLinkedRoom={resolveLinkedRoom}
         onInversePillClick={onInversePillClick}
       />
+      {roomsSlice ? (
+        <RoomDialogStack
+          isEditor={isEditor}
+          roomsSlice={roomsSlice}
+          roomModal={roomModal}
+          roomPendingDelete={roomPendingDelete}
+          frozenReason={roomDialog.frozenReason}
+          blockerActive={Boolean(roomDialog.controller.editBlocker)}
+          deletePending={roomDialog.controller.isReplacePending}
+          onCancelModal={() => setRoomModal(null)}
+          onSubmitRoom={roomDialog.saveRoom}
+          onRequestDelete={(room) => setRoomPendingDelete(room)}
+          onCancelDelete={() => setRoomPendingDelete(null)}
+          onConfirmDelete={roomDialog.deleteRoom}
+          onFrozenReload={() => void reloadRoomDraft()}
+        />
+      ) : null}
     </SliceTableShell>
   );
+}
+
+function emptyRoomsSlice(): RoomsSlice {
+  return {
+    project_id: "",
+    version_id: "",
+    rooms: [],
+    field_defs: [],
+    single_select_options: {
+      "rooms.floor_level": [],
+      "rooms.building_zone": [],
+    },
+    version_etag: "",
+    rows_computed: {},
+    source: "draft",
+    draft_etag: null,
+    inverse_links: {},
+    inverse_link_fields: [],
+    inverse_links_fingerprint: "",
+  };
 }
 
 function addSpaceTypeButton(canEdit: boolean, onAdd: () => void) {
