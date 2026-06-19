@@ -9,7 +9,8 @@ imported from outside ``project_document/``.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Protocol
 
 from features.project_document.custom_fields import (
     RESERVED_FIELD_KEY_RECORD_ID,
@@ -24,6 +25,17 @@ if TYPE_CHECKING:
     from features.project_document.document import ProjectDocumentV1
     from features.project_document.envelope_models import Assembly, ProjectMaterial
     from features.project_document.rows import SingleSelectOption
+
+
+class RowWithIdentity(Protocol):
+    """Structural type for any FieldDef-capable project-document row: the
+    hidden ``id`` plus the shared custom-field bags. Lets ``validate_generic_table``
+    accept any concrete row model without importing each one (and without a
+    runtime dependency on ``rows.py``)."""
+
+    id: str
+    custom_values: dict[str, CustomValue]
+    custom_links: dict[str, list[str]]
 
 
 # Set of valid ``target_table_path`` tuples for every FieldDef-capable
@@ -377,3 +389,82 @@ def validate_non_negative_custom_numbers(
             value = custom_values.get(field_key)
             if isinstance(value, (int, float)) and value < 0:
                 raise ValueError(f"{row_label} {field_key} must be zero or greater: {row_id}")
+
+
+def validate_typed_option_refs(
+    *,
+    rows: Sequence[tuple[str, str | None]],
+    valid_option_ids: set[str],
+    missing_message: str,
+) -> None:
+    """Each ``(row_id, option_id)`` whose ``option_id`` is set must point at a
+    known single-select option. A ``None`` cell is allowed (the column is
+    optional). ``missing_message`` is a ``str.format`` template with ``{row_id}``
+    and ``{value}`` placeholders, so each caller keeps its exact error wording.
+    """
+    for row_id, value in rows:
+        if value is not None and value not in valid_option_ids:
+            raise ValueError(missing_message.format(row_id=row_id, value=value))
+
+
+def validate_generic_table(
+    *,
+    table_label: str,
+    row_label: str,
+    table_path: tuple[str, ...],
+    field_defs: list[TableFieldDef],
+    rows: Sequence[RowWithIdentity],
+    single_select_options: dict[str, list[SingleSelectOption]],
+    target_row_ids: dict[tuple[str, ...], set[str]],
+    non_negative_field_keys: frozenset[str] = frozenset(),
+    validate_defaults: bool = False,
+) -> dict[str, TableFieldDef]:
+    """Run the shared per-table validation sequence every FieldDef-capable
+    DataTable needs, in one place:
+
+    1. index ``field_defs`` (enforces unique field_key + display_name);
+    2. require the ``record_id`` identity field is seeded;
+    3. validate every ``linked_record`` field-def's config;
+    4. coerce each row's ``custom_values`` against its field type;
+    5. (optional) enforce non-negative numeric built-ins;
+    6. resolve and clean each row's ``custom_links``;
+    7. (optional) validate ``default_option_id`` references.
+
+    Table-specific checks (typed single-select columns, numeric ranges,
+    cross-table foreign keys) stay at the call site; run them around this
+    call. Returns the indexed field_defs for any such follow-up.
+    """
+    field_defs_by_key = index_table_field_defs(table_label, field_defs)
+    require_record_id_seeded(table_label, field_defs_by_key)
+    validate_linked_record_field_defs(
+        table_label=table_label,
+        table_path=table_path,
+        field_defs_by_key=field_defs_by_key,
+    )
+    validate_rows_custom_values(
+        table_label=table_label,
+        row_label=row_label,
+        rows=[(row.id, row.custom_values) for row in rows],
+        field_defs_by_key=field_defs_by_key,
+        single_select_options=single_select_options,
+    )
+    if non_negative_field_keys:
+        validate_non_negative_custom_numbers(
+            row_label=row_label,
+            rows=[(row.id, row.custom_values) for row in rows],
+            field_keys=non_negative_field_keys,
+        )
+    validate_rows_custom_links(
+        table_label=table_label,
+        row_label=row_label,
+        rows=[(row.id, row.custom_values, row.custom_links) for row in rows],
+        field_defs_by_key=field_defs_by_key,
+        target_row_ids=target_row_ids,
+    )
+    if validate_defaults:
+        validate_default_option_ids(
+            table_label=table_label,
+            field_defs_by_key=field_defs_by_key,
+            single_select_options=single_select_options,
+        )
+    return field_defs_by_key
