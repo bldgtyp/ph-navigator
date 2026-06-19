@@ -10,7 +10,7 @@ import {
   linkColumn,
   shortenUrl,
 } from "../columns";
-import { incomingLinkColumn, incomingLinkFieldDef } from "../incoming-links";
+import { IncomingLinkPicker, incomingLinkColumn, incomingLinkFieldDef } from "../incoming-links";
 import { parseNumberInput } from "../../../../lib/units/format";
 import type { FieldDef } from "../types";
 
@@ -132,6 +132,28 @@ describe("shared data-table column builders", () => {
     expect(onPillClick).toHaveBeenCalledWith("unit_1");
     screen.getByRole("button", { name: "Add linked record" }).click();
     expect(onActivateEdit).toHaveBeenCalledWith(row);
+  });
+
+  test("IncomingLinkPicker forwards the active row and confirmed ids", () => {
+    const onConfirm = vi.fn();
+    const row = { id: "row_1", name: "Pump", url: null, assetIds: [] };
+
+    render(
+      <IncomingLinkPicker
+        state={{
+          row,
+          selectedIds: ["unit_1"],
+          candidates: [{ rowId: "unit_1", recordId: "AHU-1" }],
+          title: "Link Incoming units",
+        }}
+        onCancel={vi.fn()}
+        onConfirm={onConfirm}
+      />,
+    );
+
+    expect(screen.getByRole("dialog", { name: "Link Incoming units" })).toBeVisible();
+    screen.getByRole("button", { name: "Confirm" }).click();
+    expect(onConfirm).toHaveBeenCalledWith(row, ["unit_1"]);
   });
 
   test("attachmentColumn skips equal writes and writes changed ids", () => {

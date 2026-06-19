@@ -2,6 +2,13 @@ import type { DataTableColumnDef, FieldDef } from "../../../shared/ui/data-table
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
 import {
+  HEAT_PUMP_RECORD_ID_SCHEMA_FIELD_KEY,
+  heatPumpAttachmentField,
+  heatPumpLinkedRecordField,
+  heatPumpTagField,
+  heatPumpTextField,
+} from "./field-defs";
+import {
   HEAT_PUMP_LINK_TARGETS,
   incomingIndoorUnitIds,
   incomingIndoorUnitColumnDef,
@@ -13,24 +20,17 @@ export const OUTDOOR_UNIT_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
 
 export function outdoorUnitFieldDefs(): FieldDef[] {
   return [
-    { field_key: "tag", field_type: "text", display_name: "Tag", required: true },
-    {
+    heatPumpTagField(),
+    heatPumpLinkedRecordField({
       field_key: "outdoor_equip_id",
-      field_type: "linked_record",
       display_name: "Equipment",
       required: true,
-      linked_record_config: {
-        target_table_path: [...HEAT_PUMP_LINK_TARGETS.outdoorEquip],
-        max_links: 1,
-      },
-    },
-    {
-      field_key: OUTDOOR_UNIT_DATASHEET_FIELD_KEY,
-      field_type: "attachment",
-      display_name: "Datasheet",
-    },
+      target_table_path: HEAT_PUMP_LINK_TARGETS.outdoorEquip,
+      max_links: 1,
+    }),
+    heatPumpAttachmentField(OUTDOOR_UNIT_DATASHEET_FIELD_KEY, "Datasheet"),
     incomingIndoorUnitsFieldDef(),
-    { field_key: "notes", field_type: "text", display_name: "Notes" },
+    heatPumpTextField("notes", "Notes"),
   ];
 }
 
@@ -59,6 +59,7 @@ export function outdoorUnitColumnDefs({
     {
       id: "tag",
       fieldKey: "tag",
+      schemaFieldKey: HEAT_PUMP_RECORD_ID_SCHEMA_FIELD_KEY,
       header: "Tag",
       accessor: (row) => row.tag,
       defaultWidth: 140,

@@ -70,8 +70,13 @@ export {
   linkColumn,
   shortenUrl,
 } from "./columns";
-export { incomingLinkColumn, incomingLinkFieldDef } from "./incoming-links";
-export type { IncomingLinkColumnArgs, IncomingLinkFieldDefArgs } from "./incoming-links";
+export { IncomingLinkPicker, incomingLinkColumn, incomingLinkFieldDef } from "./incoming-links";
+export type {
+  IncomingLinkColumnArgs,
+  IncomingLinkFieldDefArgs,
+  IncomingLinkPickerProps,
+  IncomingLinkPickerState,
+} from "./incoming-links";
 export { ConfirmDestructiveDialog } from "./components/ConfirmDestructiveDialog";
 export type { ConfirmDestructiveDialogProps } from "./components/ConfirmDestructiveDialog";
 export {
@@ -88,6 +93,7 @@ export { useRowEditForm } from "./useRowEditForm";
 export type { UseRowEditFormArgs } from "./useRowEditForm";
 export { missingOptionReferences, optionReferenceCounts } from "./lib/options/references";
 export { normalizeOptionOrders } from "./lib/options/normalize";
+export { fieldDefsWithRenderOverrides } from "./lib/fieldDefs/renderOverrides";
 export { sanitizeViewStateForSchema } from "./lib/view/sanitize";
 export {
   FIELD_TYPE_DEFAULT_WIDTH,

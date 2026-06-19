@@ -149,6 +149,18 @@ rule that the type picker stays disabled on every built-in regardless
 of lock-list contents — Phase 3 lifts that rule once the storage path
 has been reshaped (see `data-model.md` §6.6 + `plan-31` PRD §P0.1).
 
+**Header/schema invariant.** Every project table header is rendered by
+the shared `GridHeader` / `DataTableHeaderCell` path; feature tables do
+not provide custom header editors. If a visible row property differs
+from the persisted schema key, the column sets
+`DataTableColumnDef.schemaFieldKey`; cells still write through
+`fieldKey`, while header field-configuration actions use
+`schemaFieldKey`. Feature-owned built-in render metadata is merged into
+the persisted schema with the shared `fieldDefsWithRenderOverrides`
+helper, preserving `built_in`, `custom_field_type`, locks, and other
+schema attributes. `read_only` fields are projection-only for schema
+editing and do not expose the field-config modal.
+
 V2 v1 field types:
 
 | Type | Requirement |
@@ -593,6 +605,13 @@ common column and row-editor shapes:
   the default display-text accessor for synthetic inverse-link columns
   so clipboard, filter, sort, and measure text stay aligned with the
   visible pill labels.
+- `IncomingLinkPicker` for inverse-link edit affordances whose write
+  lands on another table. Feature code may own the domain mutation, but
+  it must not mount `fields/linkedRecord/Picker` directly for incoming
+  link cells. True editable FK fields should stay on the normal
+  `linkedRecordOps` + `GridBody` path so the shared `LinkedRecordCell`
+  owns pills, the active-cell `+`, unlink affordances, and picker
+  launch.
 - Synthetic computed columns that are not persisted backend fields must
   still provide frontend `FieldDef` metadata when they need a shared
   renderer such as `lookup` or `linked_record`. Append these definitions

@@ -6,6 +6,7 @@ import {
   attachmentColumn,
   identifierColumn,
   incomingLinkColumn,
+  incomingLinkFieldDef,
   linkColumn,
   type DataTableColumnDef,
   type DataTableProps,
@@ -81,10 +82,11 @@ export function PumpsTable({
   const inverseFieldDefs = useMemo<FieldDef[]>(
     () =>
       (inverseLinkFields ?? []).map((field) => ({
-        field_key: inverseFieldKey(field),
-        field_type: "text",
-        display_name: inverseColumnHeader(field),
-        read_only: true,
+        ...incomingLinkFieldDef({
+          fieldKey: inverseFieldKey(field),
+          displayName: inverseColumnHeader(field),
+          targetTablePath: field.source_table_path,
+        }),
       })),
     [inverseLinkFields],
   );

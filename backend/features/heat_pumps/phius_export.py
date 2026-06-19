@@ -167,13 +167,22 @@ def _paired_indoor_label_by_outdoor_equip_id(
     slice_: HeatPumpsTableSlice,
     indoor_labels_by_id: dict[str, str],
 ) -> dict[str, str]:
-    """Resolve exactly-one indoor equipment label per outdoor equipment.
+    """Resolve the paired indoor equipment label per outdoor equipment.
 
-    The editable relationship lives on installed units: indoor unit →
-    outdoor unit → outdoor equipment. Multiple indoor equipment models
-    linked to one outdoor model indicate VRF / multi-indoor equipment, so
-    the Phius device label stays bare.
+    Prefer the explicit outdoor-equipment FK. When that FK is not set,
+    fall back to the installed-unit relationship: indoor unit → outdoor
+    unit → outdoor equipment. Multiple indoor equipment models linked to
+    one outdoor model indicate VRF / multi-indoor equipment, so the Phius
+    device label stays bare.
     """
+
+    labels: dict[str, str] = {}
+    for equip in slice_.outdoor_equip.rows:
+        if equip.paired_indoor_equip_id is None:
+            continue
+        indoor_label = indoor_labels_by_id.get(equip.paired_indoor_equip_id)
+        if indoor_label is not None:
+            labels[equip.id] = indoor_label
 
     outdoor_equip_id_by_unit_id = {unit.id: unit.outdoor_equip_id for unit in slice_.outdoor_units.rows}
     indoor_equip_ids_by_outdoor_equip_id: dict[str, set[str]] = {}
@@ -185,8 +194,9 @@ def _paired_indoor_label_by_outdoor_equip_id(
             continue
         indoor_equip_ids_by_outdoor_equip_id.setdefault(outdoor_equip_id, set()).add(unit.indoor_equip_id)
 
-    labels: dict[str, str] = {}
     for outdoor_equip_id, indoor_equip_ids in indoor_equip_ids_by_outdoor_equip_id.items():
+        if outdoor_equip_id in labels:
+            continue
         if len(indoor_equip_ids) != 1:
             continue
         indoor_equip_id = next(iter(indoor_equip_ids))

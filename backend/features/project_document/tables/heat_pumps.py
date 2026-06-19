@@ -71,7 +71,8 @@ OUTDOOR_EQUIP_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
     built_in_field_def(
         field_key="paired_indoor_equip_id",
         display_name="Paired Indoor Equipment",
-        field_type=CustomFieldType.short_text,
+        field_type=CustomFieldType.linked_record,
+        config={"target_table_path": list(_INDOOR_EQUIP_PATH), "max_links": 1},
     ),
     built_in_field_def(
         field_key="system_family",

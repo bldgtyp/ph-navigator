@@ -287,6 +287,7 @@ function heatPumpCellValue(fieldKey: string, value: unknown): unknown {
   if (fieldKey === "outdoor_unit_id" || fieldKey === "linked_erv_unit_id") {
     return firstLinkedId(value);
   }
+  if (fieldKey === "paired_indoor_equip_id") return firstLinkedId(value);
   if (fieldKey === "served_room_ids") return linkedIds(value);
   return value === "" ? null : value;
 }

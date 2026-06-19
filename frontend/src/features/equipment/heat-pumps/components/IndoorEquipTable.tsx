@@ -1,10 +1,11 @@
 import { useCallback, useMemo, useState } from "react";
 import {
+  IncomingLinkPicker,
   buildLinkedRecordOps,
   DataTable,
+  fieldDefsWithRenderOverrides,
   type LinkedRecordCellOps,
 } from "../../../../shared/ui/data-table";
-import { LinkedRecordPicker } from "../../../../shared/ui/data-table/fields/linkedRecord/Picker";
 import {
   customFieldActionsForController,
   type SliceTableController,
@@ -40,7 +41,7 @@ import {
 import { addRowButton } from "../../routes/equipmentRowActions";
 import { IndoorEquipRowModal } from "./IndoorEquipRowModal";
 import { IndoorUnitRowModal } from "./IndoorUnitRowModal";
-import { appendComputedFieldDefs, heatPumpColumnsWithCustomFields } from "./heatPumpCustomColumns";
+import { heatPumpColumnsWithCustomFields } from "./heatPumpCustomColumns";
 
 type ModalState =
   | { kind: "equip"; mode: "add" | "edit"; row: HeatPumpIndoorEquipRow }
@@ -99,7 +100,7 @@ export function IndoorEquipTable({
   );
   const fieldDefs = useMemo(
     () =>
-      appendComputedFieldDefs(
+      fieldDefsWithRenderOverrides(
         controller.tableSchema.fieldDefs,
         indoorEquipFieldDefs(slice.single_select_options),
       ),
@@ -243,20 +244,23 @@ export function IndoorEquipTable({
           onSubmit={replaceIndoorUnit}
         />
       ) : null}
-      {linkPickerRow ? (
-        <LinkedRecordPicker
-          open
-          mode="multi"
-          selectedIds={incomingIndoorUnitIds(incomingIndoorUnitIdsByRowId, linkPickerRow.id)}
-          candidates={indoorUnits.map((unit) => ({
-            rowId: unit.id,
-            recordId: unit.tag || unit.id,
-          }))}
-          title="Link Indoor units"
-          onCancel={() => setLinkPickerRow(null)}
-          onConfirm={(ids) => void linkIndoorUnits(linkPickerRow, ids)}
-        />
-      ) : null}
+      <IncomingLinkPicker
+        state={
+          linkPickerRow
+            ? {
+                row: linkPickerRow,
+                selectedIds: incomingIndoorUnitIds(incomingIndoorUnitIdsByRowId, linkPickerRow.id),
+                candidates: indoorUnits.map((unit) => ({
+                  rowId: unit.id,
+                  recordId: unit.tag || unit.id,
+                })),
+                title: "Link Indoor units",
+              }
+            : null
+        }
+        onCancel={() => setLinkPickerRow(null)}
+        onConfirm={linkIndoorUnits}
+      />
     </>
   );
 }

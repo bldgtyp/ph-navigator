@@ -140,6 +140,10 @@ export type AddCustomFieldRequest = {
 export type DataTableColumnDef<TRow> = {
   id: string;
   fieldKey: string;
+  // Optional persisted-schema key when a legacy row property differs
+  // from its FieldDef key. Cell writes still use `fieldKey`; header
+  // field-config actions use `schemaFieldKey`.
+  schemaFieldKey?: string;
   header: string;
   accessor: (row: TRow) => unknown;
   render?: (row: TRow, context: { isActive: boolean }) => ReactNode;

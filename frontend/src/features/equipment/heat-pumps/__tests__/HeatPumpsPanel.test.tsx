@@ -161,6 +161,22 @@ describe("HeatPumpsPanel", () => {
     expect(screen.getAllByText("5.28").length).toBeGreaterThan(0);
   });
 
+  test("all Heat Pump leaf headers open the shared field-config modal", async () => {
+    const user = userEvent.setup();
+    renderPanel();
+
+    await openHeaderFieldConfig(user, /Model number/);
+
+    await user.click(screen.getByRole("tab", { name: "Equipment - Indoor" }));
+    await openHeaderFieldConfig(user, /Model number/);
+
+    await user.click(screen.getByRole("tab", { name: "Units - Outdoor" }));
+    await openHeaderFieldConfig(user, /Equipment/);
+
+    await user.click(screen.getByRole("tab", { name: "Units - Indoor" }));
+    await openHeaderFieldConfig(user, /Equipment/);
+  });
+
   test("shows incoming unit links on referenced Heat Pump tables", async () => {
     const user = userEvent.setup();
     renderPanel({
@@ -228,13 +244,13 @@ describe("HeatPumpsPanel", () => {
     expect(await screen.findByRole("dialog", { name: "Outdoor unit: HP-1" })).toBeVisible();
   });
 
-  test("renders paired indoor equipment as linked-record pills from unit links", async () => {
+  test("renders paired indoor equipment as a standard linked-record FK", async () => {
     const user = userEvent.setup();
     renderPanel({
       slice: heatPumpsSlice({
-        outdoor_equip: [outdoorEquipRow({ paired_indoor_equip_id: null })],
-        outdoor_units: [outdoorUnitRow()],
-        indoor_units: [indoorUnitRow()],
+        outdoor_equip: [
+          outdoorEquipRow({ paired_indoor_equip_id: "hpie_01HX0000000000000000000000" }),
+        ],
       }),
     });
 
@@ -245,6 +261,7 @@ describe("HeatPumpsPanel", () => {
     expect(pairedHeader.querySelector('[data-field-type-icon="linked_record"]')).toBeTruthy();
 
     await user.click(screen.getByRole("gridcell", { name: /IE-A/ }));
+    expect(screen.getByRole("button", { name: "Add linked record" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /IE-A/ }));
 
     expect(await screen.findByRole("dialog", { name: /Indoor equipment: IE-A/ })).toBeVisible();
@@ -436,3 +453,12 @@ describe("HeatPumpsPanel", () => {
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/table-views/"))).toBe(false);
   });
 });
+
+async function openHeaderFieldConfig(user: ReturnType<typeof userEvent.setup>, name: RegExp) {
+  const header = await screen.findByRole("columnheader", { name });
+  await user.dblClick(header);
+  expect(await screen.findByRole("dialog", { name: /Edit field/ })).toBeVisible();
+  expect(screen.getByLabelText("Name")).toBeVisible();
+  expect(screen.queryByRole("dialog", { name: /equipment:/i })).toBeNull();
+  await user.click(screen.getByRole("button", { name: "Cancel" }));
+}

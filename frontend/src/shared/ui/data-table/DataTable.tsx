@@ -229,6 +229,15 @@ export function DataTable<TRow>({
     () => visibleColumnDefs.map((column) => column.fieldKey),
     [visibleColumnDefs],
   );
+  const rendererAliasFieldKeys = useMemo(
+    () =>
+      new Set(
+        columnDefs
+          .filter((column) => column.schemaFieldKey && column.schemaFieldKey !== column.fieldKey)
+          .map((column) => column.fieldKey),
+      ),
+    [columnDefs],
+  );
 
   const [announce, setAnnounce] = useState("");
   const headerCellRefByFieldKey = useRef(new Map<string, HTMLTableCellElement>()).current;
@@ -1255,11 +1264,13 @@ export function DataTable<TRow>({
 
   const existingFieldLabels = useMemo(
     () =>
-      fieldDefs.map((fieldDef) => ({
-        fieldKey: fieldDef.field_key,
-        displayName: fieldDef.display_name,
-      })),
-    [fieldDefs],
+      fieldDefs
+        .filter((fieldDef) => !rendererAliasFieldKeys.has(fieldDef.field_key))
+        .map((fieldDef) => ({
+          fieldKey: fieldDef.field_key,
+          displayName: fieldDef.display_name,
+        })),
+    [fieldDefs, rendererAliasFieldKeys],
   );
 
   const configModalFieldDef = useMemo(() => {
@@ -1271,7 +1282,11 @@ export function DataTable<TRow>({
   // hot path.
   const configModalPreflightRows = useMemo(() => {
     if (!configModalState) return undefined;
-    const column = columnDefs.find((entry) => entry.fieldKey === configModalState.fieldKey);
+    const column = columnDefs.find(
+      (entry) =>
+        entry.fieldKey === configModalState.fieldKey ||
+        entry.schemaFieldKey === configModalState.fieldKey,
+    );
     if (!column) return undefined;
     return rows.map((row) => ({
       rowId: getRowId(row),
