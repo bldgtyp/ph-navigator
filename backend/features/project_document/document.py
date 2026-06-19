@@ -23,6 +23,7 @@ keep working.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Any, Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -45,16 +46,12 @@ from features.heat_pumps.models import (
     HeatPumpsTableSlice,
 )
 from features.project_document._validators import (
+    RowWithIdentity,
     collect_target_row_ids,
-    index_table_field_defs,
-    require_record_id_seeded,
-    validate_default_option_ids,
     validate_envelope_references,
-    validate_linked_record_field_defs,
-    validate_non_negative_custom_numbers,
-    validate_rows_custom_links,
-    validate_rows_custom_values,
+    validate_generic_table,
     validate_table_row_ids,
+    validate_typed_option_refs,
 )
 from features.project_document.custom_fields import TableFieldDef, normalize_display_name
 from features.project_document.envelope_models import (
@@ -321,301 +318,168 @@ class ProjectDocumentV1(BaseModel):
 
         target_row_ids = collect_target_row_ids(self)
 
-        rooms_field_defs_by_key = index_table_field_defs("rooms", self.tables.rooms.field_defs)
-        require_record_id_seeded("rooms", rooms_field_defs_by_key)
-        validate_linked_record_field_defs(
-            table_label="rooms",
-            table_path=("rooms",),
-            field_defs_by_key=rooms_field_defs_by_key,
-        )
+        rooms = self.tables.rooms.rows
+        room_ids = {room.id for room in rooms}
         floor_option_ids = {option.id for option in self.single_select_options[ROOM_FLOOR_LEVEL_OPTION_KEY]}
         zone_option_ids = {option.id for option in self.single_select_options[ROOM_BUILDING_ZONE_OPTION_KEY]}
-        room_ids = {room.id for room in self.tables.rooms.rows}
-        for room in self.tables.rooms.rows:
-            if room.floor_level is not None and room.floor_level not in floor_option_ids:
-                raise ValueError(f"Missing floor-level option for room {room.id}: {room.floor_level}")
-            if room.building_zone is not None and room.building_zone not in zone_option_ids:
-                raise ValueError(f"Missing building-zone option for room {room.id}: {room.building_zone}")
-
-        validate_rows_custom_values(
-            table_label="rooms",
-            row_label="room",
-            rows=[(room.id, room.custom_values) for room in self.tables.rooms.rows],
-            field_defs_by_key=rooms_field_defs_by_key,
-            single_select_options=self.single_select_options,
+        validate_typed_option_refs(
+            rows=[(room.id, room.floor_level) for room in rooms],
+            valid_option_ids=floor_option_ids,
+            missing_message="Missing floor-level option for room {row_id}: {value}",
         )
-        validate_rows_custom_links(
+        validate_typed_option_refs(
+            rows=[(room.id, room.building_zone) for room in rooms],
+            valid_option_ids=zone_option_ids,
+            missing_message="Missing building-zone option for room {row_id}: {value}",
+        )
+        validate_generic_table(
             table_label="rooms",
             row_label="room",
-            rows=[(room.id, room.custom_values, room.custom_links) for room in self.tables.rooms.rows],
-            field_defs_by_key=rooms_field_defs_by_key,
+            table_path=("rooms",),
+            field_defs=self.tables.rooms.field_defs,
+            rows=rooms,
+            single_select_options=self.single_select_options,
             target_row_ids=target_row_ids,
-        )
-        validate_default_option_ids(
-            table_label="rooms",
-            field_defs_by_key=rooms_field_defs_by_key,
-            single_select_options=self.single_select_options,
+            validate_defaults=True,
         )
 
         # Space-Types follows the generic identity model: row.id uniqueness is
         # guaranteed by validate_table_row_ids; the Tag (record_id) and Name
         # are ordinary, non-unique fields. No hard block on duplicate Tags or
         # on a named row without a Tag — duplicates warn via the chip.
-        space_types_field_defs_by_key = index_table_field_defs("space_types", self.tables.space_types.field_defs)
-        require_record_id_seeded("space_types", space_types_field_defs_by_key)
-
-        validate_linked_record_field_defs(
+        validate_generic_table(
             table_label="space_types",
+            row_label="space type",
             table_path=("space_types",),
-            field_defs_by_key=space_types_field_defs_by_key,
-        )
-        validate_rows_custom_values(
-            table_label="space_types",
-            row_label="space type",
-            rows=[(space_type.id, space_type.custom_values) for space_type in self.tables.space_types.rows],
-            field_defs_by_key=space_types_field_defs_by_key,
+            field_defs=self.tables.space_types.field_defs,
+            rows=self.tables.space_types.rows,
             single_select_options=self.single_select_options,
-        )
-        validate_rows_custom_links(
-            table_label="space_types",
-            row_label="space type",
-            rows=[
-                (space_type.id, space_type.custom_values, space_type.custom_links)
-                for space_type in self.tables.space_types.rows
-            ],
-            field_defs_by_key=space_types_field_defs_by_key,
             target_row_ids=target_row_ids,
-        )
-        validate_default_option_ids(
-            table_label="space_types",
-            field_defs_by_key=space_types_field_defs_by_key,
-            single_select_options=self.single_select_options,
+            validate_defaults=True,
         )
 
-        pumps_field_defs_by_key = index_table_field_defs("pumps", self.tables.equipment.pumps.field_defs)
-        require_record_id_seeded("pumps", pumps_field_defs_by_key)
+        pumps = self.tables.equipment.pumps.rows
         pump_device_type_ids = {option.id for option in self.single_select_options[PUMP_DEVICE_TYPE_OPTION_KEY]}
-        for pump in self.tables.equipment.pumps.rows:
-            if pump.device_type is not None and pump.device_type not in pump_device_type_ids:
-                raise ValueError(f"Missing pump device-type option for pump {pump.id}: {pump.device_type}")
-
-        validate_linked_record_field_defs(
+        validate_typed_option_refs(
+            rows=[(pump.id, pump.device_type) for pump in pumps],
+            valid_option_ids=pump_device_type_ids,
+            missing_message="Missing pump device-type option for pump {row_id}: {value}",
+        )
+        validate_generic_table(
             table_label="pumps",
+            row_label="pump",
             table_path=("equipment", "pumps"),
-            field_defs_by_key=pumps_field_defs_by_key,
-        )
-        validate_rows_custom_values(
-            table_label="pumps",
-            row_label="pump",
-            rows=[(pump.id, pump.custom_values) for pump in self.tables.equipment.pumps.rows],
-            field_defs_by_key=pumps_field_defs_by_key,
+            field_defs=self.tables.equipment.pumps.field_defs,
+            rows=pumps,
             single_select_options=self.single_select_options,
-        )
-        validate_non_negative_custom_numbers(
-            row_label="pump",
-            rows=[(pump.id, pump.custom_values) for pump in self.tables.equipment.pumps.rows],
-            field_keys=frozenset({"volts", "horse_power", "wattage", "flow_gpm", "runtime_khr_yr"}),
-        )
-        validate_rows_custom_links(
-            table_label="pumps",
-            row_label="pump",
-            rows=[(pump.id, pump.custom_values, pump.custom_links) for pump in self.tables.equipment.pumps.rows],
-            field_defs_by_key=pumps_field_defs_by_key,
             target_row_ids=target_row_ids,
+            non_negative_field_keys=frozenset({"volts", "horse_power", "wattage", "flow_gpm", "runtime_khr_yr"}),
         )
 
-        fans_field_defs_by_key = index_table_field_defs("fans", self.tables.equipment.fans.field_defs)
-        require_record_id_seeded("fans", fans_field_defs_by_key)
+        fans = self.tables.equipment.fans.rows
         fan_type_ids = {option.id for option in self.single_select_options[FAN_TYPE_OPTION_KEY]}
-        for fan in self.tables.equipment.fans.rows:
-            if fan.fan_type is not None and fan.fan_type not in fan_type_ids:
-                raise ValueError(f"Missing fan type option for fan {fan.id}: {fan.fan_type}")
-
-        validate_linked_record_field_defs(
+        validate_typed_option_refs(
+            rows=[(fan.id, fan.fan_type) for fan in fans],
+            valid_option_ids=fan_type_ids,
+            missing_message="Missing fan type option for fan {row_id}: {value}",
+        )
+        self._validate_unit_fraction(fans, "power_factor", "fan power_factor must be between 0 and 1: {row_id}")
+        validate_generic_table(
             table_label="fans",
+            row_label="fan",
             table_path=("equipment", "fans"),
-            field_defs_by_key=fans_field_defs_by_key,
-        )
-        validate_rows_custom_values(
-            table_label="fans",
-            row_label="fan",
-            rows=[(fan.id, fan.custom_values) for fan in self.tables.equipment.fans.rows],
-            field_defs_by_key=fans_field_defs_by_key,
+            field_defs=self.tables.equipment.fans.field_defs,
+            rows=fans,
             single_select_options=self.single_select_options,
-        )
-        validate_non_negative_custom_numbers(
-            row_label="fan",
-            rows=[(fan.id, fan.custom_values) for fan in self.tables.equipment.fans.rows],
-            field_keys=frozenset({"quantity", "annual_runtime_min_yr", "airflow_m3h", "amps", "volts", "watts"}),
-        )
-        for fan in self.tables.equipment.fans.rows:
-            power_factor = fan.custom_values.get("power_factor")
-            if isinstance(power_factor, (int, float)) and not 0 <= power_factor <= 1:
-                raise ValueError(f"fan power_factor must be between 0 and 1: {fan.id}")
-        validate_rows_custom_links(
-            table_label="fans",
-            row_label="fan",
-            rows=[(fan.id, fan.custom_values, fan.custom_links) for fan in self.tables.equipment.fans.rows],
-            field_defs_by_key=fans_field_defs_by_key,
             target_row_ids=target_row_ids,
+            non_negative_field_keys=frozenset(
+                {"quantity", "annual_runtime_min_yr", "airflow_m3h", "amps", "volts", "watts"}
+            ),
         )
 
-        hot_water_heaters_field_defs_by_key = index_table_field_defs(
-            "hot_water_heaters", self.tables.equipment.hot_water_heaters.field_defs
-        )
-        require_record_id_seeded("hot_water_heaters", hot_water_heaters_field_defs_by_key)
+        hot_water_heaters = self.tables.equipment.hot_water_heaters.rows
         hot_water_heater_type_ids = {
             option.id for option in self.single_select_options[HOT_WATER_HEATER_TYPE_OPTION_KEY]
         }
-        for heater in self.tables.equipment.hot_water_heaters.rows:
-            if heater.heater_type is not None and heater.heater_type not in hot_water_heater_type_ids:
-                raise ValueError(f"Missing hot water heater type option for heater {heater.id}: {heater.heater_type}")
-
-        validate_linked_record_field_defs(
+        validate_typed_option_refs(
+            rows=[(heater.id, heater.heater_type) for heater in hot_water_heaters],
+            valid_option_ids=hot_water_heater_type_ids,
+            missing_message="Missing hot water heater type option for heater {row_id}: {value}",
+        )
+        self._validate_unit_fraction(
+            hot_water_heaters, "power_factor", "hot water heater power_factor must be between 0 and 1: {row_id}"
+        )
+        validate_generic_table(
             table_label="hot_water_heaters",
+            row_label="hot water heater",
             table_path=("equipment", "hot_water_heaters"),
-            field_defs_by_key=hot_water_heaters_field_defs_by_key,
-        )
-        validate_rows_custom_values(
-            table_label="hot_water_heaters",
-            row_label="hot water heater",
-            rows=[(heater.id, heater.custom_values) for heater in self.tables.equipment.hot_water_heaters.rows],
-            field_defs_by_key=hot_water_heaters_field_defs_by_key,
+            field_defs=self.tables.equipment.hot_water_heaters.field_defs,
+            rows=hot_water_heaters,
             single_select_options=self.single_select_options,
-        )
-        validate_non_negative_custom_numbers(
-            row_label="hot water heater",
-            rows=[(heater.id, heater.custom_values) for heater in self.tables.equipment.hot_water_heaters.rows],
-            field_keys=frozenset({"quantity", "size_l", "amps", "volts", "watts", "uef"}),
-        )
-        for heater in self.tables.equipment.hot_water_heaters.rows:
-            power_factor = heater.custom_values.get("power_factor")
-            if isinstance(power_factor, (int, float)) and not 0 <= power_factor <= 1:
-                raise ValueError(f"hot water heater power_factor must be between 0 and 1: {heater.id}")
-        validate_rows_custom_links(
-            table_label="hot_water_heaters",
-            row_label="hot water heater",
-            rows=[
-                (heater.id, heater.custom_values, heater.custom_links)
-                for heater in self.tables.equipment.hot_water_heaters.rows
-            ],
-            field_defs_by_key=hot_water_heaters_field_defs_by_key,
             target_row_ids=target_row_ids,
+            non_negative_field_keys=frozenset({"quantity", "size_l", "amps", "volts", "watts", "uef"}),
         )
 
-        hot_water_tanks_field_defs_by_key = index_table_field_defs(
-            "hot_water_tanks", self.tables.equipment.hot_water_tanks.field_defs
-        )
-        require_record_id_seeded("hot_water_tanks", hot_water_tanks_field_defs_by_key)
+        hot_water_tanks = self.tables.equipment.hot_water_tanks.rows
         hot_water_tank_type_ids = {option.id for option in self.single_select_options[HOT_WATER_TANK_TYPE_OPTION_KEY]}
         hot_water_tank_inside_outside_ids = {
             option.id for option in self.single_select_options[HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY]
         }
-        for tank in self.tables.equipment.hot_water_tanks.rows:
-            if tank.tank_type is not None and tank.tank_type not in hot_water_tank_type_ids:
-                raise ValueError(f"Missing hot water tank type option for tank {tank.id}: {tank.tank_type}")
-            if tank.inside_outside is not None and tank.inside_outside not in hot_water_tank_inside_outside_ids:
-                raise ValueError(
-                    f"Missing hot water tank inside/outside option for tank {tank.id}: {tank.inside_outside}"
-                )
-
-        validate_linked_record_field_defs(
+        validate_typed_option_refs(
+            rows=[(tank.id, tank.tank_type) for tank in hot_water_tanks],
+            valid_option_ids=hot_water_tank_type_ids,
+            missing_message="Missing hot water tank type option for tank {row_id}: {value}",
+        )
+        validate_typed_option_refs(
+            rows=[(tank.id, tank.inside_outside) for tank in hot_water_tanks],
+            valid_option_ids=hot_water_tank_inside_outside_ids,
+            missing_message="Missing hot water tank inside/outside option for tank {row_id}: {value}",
+        )
+        validate_generic_table(
             table_label="hot_water_tanks",
+            row_label="hot water tank",
             table_path=("equipment", "hot_water_tanks"),
-            field_defs_by_key=hot_water_tanks_field_defs_by_key,
-        )
-        validate_rows_custom_values(
-            table_label="hot_water_tanks",
-            row_label="hot water tank",
-            rows=[(tank.id, tank.custom_values) for tank in self.tables.equipment.hot_water_tanks.rows],
-            field_defs_by_key=hot_water_tanks_field_defs_by_key,
+            field_defs=self.tables.equipment.hot_water_tanks.field_defs,
+            rows=hot_water_tanks,
             single_select_options=self.single_select_options,
-        )
-        validate_non_negative_custom_numbers(
-            row_label="hot water tank",
-            rows=[(tank.id, tank.custom_values) for tank in self.tables.equipment.hot_water_tanks.rows],
-            field_keys=frozenset({"quantity", "size_l", "heat_loss_rate_w_k"}),
-        )
-        validate_rows_custom_links(
-            table_label="hot_water_tanks",
-            row_label="hot water tank",
-            rows=[
-                (tank.id, tank.custom_values, tank.custom_links) for tank in self.tables.equipment.hot_water_tanks.rows
-            ],
-            field_defs_by_key=hot_water_tanks_field_defs_by_key,
             target_row_ids=target_row_ids,
+            non_negative_field_keys=frozenset({"quantity", "size_l", "heat_loss_rate_w_k"}),
         )
 
-        electric_heaters_field_defs_by_key = index_table_field_defs(
-            "electric_heaters", self.tables.equipment.electric_heaters.field_defs
-        )
-        require_record_id_seeded("electric_heaters", electric_heaters_field_defs_by_key)
-
-        validate_linked_record_field_defs(
+        validate_generic_table(
             table_label="electric_heaters",
+            row_label="electric heater",
             table_path=("equipment", "electric_heaters"),
-            field_defs_by_key=electric_heaters_field_defs_by_key,
-        )
-        validate_rows_custom_values(
-            table_label="electric_heaters",
-            row_label="electric heater",
-            rows=[(heater.id, heater.custom_values) for heater in self.tables.equipment.electric_heaters.rows],
-            field_defs_by_key=electric_heaters_field_defs_by_key,
+            field_defs=self.tables.equipment.electric_heaters.field_defs,
+            rows=self.tables.equipment.electric_heaters.rows,
             single_select_options=self.single_select_options,
-        )
-        validate_rows_custom_links(
-            table_label="electric_heaters",
-            row_label="electric heater",
-            rows=[
-                (heater.id, heater.custom_values, heater.custom_links)
-                for heater in self.tables.equipment.electric_heaters.rows
-            ],
-            field_defs_by_key=electric_heaters_field_defs_by_key,
             target_row_ids=target_row_ids,
         )
 
-        appliances_field_defs_by_key = index_table_field_defs("appliances", self.tables.equipment.appliances.field_defs)
-        require_record_id_seeded("appliances", appliances_field_defs_by_key)
+        appliances = self.tables.equipment.appliances.rows
         appliance_type_ids = {option.id for option in self.single_select_options[APPLIANCE_TYPE_OPTION_KEY]}
         appliance_energy_star_ids = {
             option.id for option in self.single_select_options[APPLIANCE_ENERGY_STAR_OPTION_KEY]
         }
-        for appliance in self.tables.equipment.appliances.rows:
-            if appliance.appliance_type is not None and appliance.appliance_type not in appliance_type_ids:
-                raise ValueError(
-                    f"Missing appliance type option for appliance {appliance.id}: {appliance.appliance_type}"
-                )
-            if appliance.energy_star is not None and appliance.energy_star not in appliance_energy_star_ids:
-                raise ValueError(
-                    f"Missing appliance EnergyStar option for appliance {appliance.id}: {appliance.energy_star}"
-                )
-
-        validate_linked_record_field_defs(
+        validate_typed_option_refs(
+            rows=[(appliance.id, appliance.appliance_type) for appliance in appliances],
+            valid_option_ids=appliance_type_ids,
+            missing_message="Missing appliance type option for appliance {row_id}: {value}",
+        )
+        validate_typed_option_refs(
+            rows=[(appliance.id, appliance.energy_star) for appliance in appliances],
+            valid_option_ids=appliance_energy_star_ids,
+            missing_message="Missing appliance EnergyStar option for appliance {row_id}: {value}",
+        )
+        validate_generic_table(
             table_label="appliances",
+            row_label="appliance",
             table_path=("equipment", "appliances"),
-            field_defs_by_key=appliances_field_defs_by_key,
-        )
-        validate_rows_custom_values(
-            table_label="appliances",
-            row_label="appliance",
-            rows=[(appliance.id, appliance.custom_values) for appliance in self.tables.equipment.appliances.rows],
-            field_defs_by_key=appliances_field_defs_by_key,
+            field_defs=self.tables.equipment.appliances.field_defs,
+            rows=appliances,
             single_select_options=self.single_select_options,
-        )
-        validate_non_negative_custom_numbers(
-            row_label="appliance",
-            rows=[(appliance.id, appliance.custom_values) for appliance in self.tables.equipment.appliances.rows],
-            field_keys=frozenset({"quantity", "capacity_m3", "cef", "imef", "mef", "annual_energy_kwh"}),
-        )
-        validate_rows_custom_links(
-            table_label="appliances",
-            row_label="appliance",
-            rows=[
-                (appliance.id, appliance.custom_values, appliance.custom_links)
-                for appliance in self.tables.equipment.appliances.rows
-            ],
-            field_defs_by_key=appliances_field_defs_by_key,
             target_row_ids=target_row_ids,
+            non_negative_field_keys=frozenset({"quantity", "capacity_m3", "cef", "imef", "mef", "annual_energy_kwh"}),
         )
 
         ventilator_ids = {row.id for row in self.tables.equipment.ervs.rows}
@@ -669,106 +533,53 @@ class ProjectDocumentV1(BaseModel):
 
         for spec in HEAT_PUMP_LEAF_VALIDATION_SPECS:
             envelope = cast(Any, read_table_envelope(self, spec.contract.table_path))
-            field_defs = envelope.field_defs
-            row_bags = [(row.id, row.custom_values, row.custom_links) for row in envelope.rows]
-            field_defs_by_key = index_table_field_defs(spec.table_label, field_defs)
-            require_record_id_seeded(spec.table_label, field_defs_by_key)
-            validate_linked_record_field_defs(
+            validate_generic_table(
                 table_label=spec.table_label,
+                row_label=spec.row_label,
                 table_path=spec.contract.table_path,
-                field_defs_by_key=field_defs_by_key,
-            )
-            validate_rows_custom_values(
-                table_label=spec.table_label,
-                row_label=spec.row_label,
-                rows=[(row_id, custom_values) for row_id, custom_values, _custom_links in row_bags],
-                field_defs_by_key=field_defs_by_key,
+                field_defs=envelope.field_defs,
+                rows=envelope.rows,
                 single_select_options=self.single_select_options,
-            )
-            validate_rows_custom_links(
-                table_label=spec.table_label,
-                row_label=spec.row_label,
-                rows=row_bags,
-                field_defs_by_key=field_defs_by_key,
                 target_row_ids=target_row_ids,
             )
 
-        thermal_bridges_field_defs_by_key = index_table_field_defs(
-            "thermal_bridges", self.tables.thermal_bridges.field_defs
-        )
-        require_record_id_seeded("thermal_bridges", thermal_bridges_field_defs_by_key)
+        thermal_bridges = self.tables.thermal_bridges.rows
         thermal_bridge_type_ids = {option.id for option in self.single_select_options[THERMAL_BRIDGE_TYPE_OPTION_KEY]}
-        for thermal_bridge in self.tables.thermal_bridges.rows:
-            if (
-                thermal_bridge.thermal_bridge_type is not None
-                and thermal_bridge.thermal_bridge_type not in thermal_bridge_type_ids
-            ):
-                raise ValueError(
-                    f"Missing thermal bridge type option for thermal bridge {thermal_bridge.id}: "
-                    f"{thermal_bridge.thermal_bridge_type}"
-                )
-            psi_value = thermal_bridge.custom_values.get("psi_value_w_mk")
-            if isinstance(psi_value, (int, float)) and psi_value < 0:
-                raise ValueError(f"Thermal bridge psi_value_w_mk must be zero or greater: {thermal_bridge.id}")
-            frsi_value = thermal_bridge.custom_values.get("frsi_value")
-            if isinstance(frsi_value, (int, float)) and not 0 <= frsi_value <= 1:
-                raise ValueError(f"Thermal bridge frsi_value must be between 0 and 1: {thermal_bridge.id}")
-
-        validate_linked_record_field_defs(
+        validate_typed_option_refs(
+            rows=[(thermal_bridge.id, thermal_bridge.thermal_bridge_type) for thermal_bridge in thermal_bridges],
+            valid_option_ids=thermal_bridge_type_ids,
+            missing_message="Missing thermal bridge type option for thermal bridge {row_id}: {value}",
+        )
+        self._validate_min_zero(
+            thermal_bridges, "psi_value_w_mk", "Thermal bridge psi_value_w_mk must be zero or greater: {row_id}"
+        )
+        self._validate_unit_fraction(
+            thermal_bridges, "frsi_value", "Thermal bridge frsi_value must be between 0 and 1: {row_id}"
+        )
+        validate_generic_table(
             table_label="thermal_bridges",
+            row_label="thermal bridge",
             table_path=("thermal_bridges",),
-            field_defs_by_key=thermal_bridges_field_defs_by_key,
-        )
-        validate_rows_custom_values(
-            table_label="thermal_bridges",
-            row_label="thermal bridge",
-            rows=[
-                (thermal_bridge.id, thermal_bridge.custom_values) for thermal_bridge in self.tables.thermal_bridges.rows
-            ],
-            field_defs_by_key=thermal_bridges_field_defs_by_key,
+            field_defs=self.tables.thermal_bridges.field_defs,
+            rows=thermal_bridges,
             single_select_options=self.single_select_options,
-        )
-        validate_rows_custom_links(
-            table_label="thermal_bridges",
-            row_label="thermal bridge",
-            rows=[
-                (thermal_bridge.id, thermal_bridge.custom_values, thermal_bridge.custom_links)
-                for thermal_bridge in self.tables.thermal_bridges.rows
-            ],
-            field_defs_by_key=thermal_bridges_field_defs_by_key,
             target_row_ids=target_row_ids,
         )
 
-        ventilators_field_defs_by_key = index_table_field_defs("ventilators", self.tables.equipment.ervs.field_defs)
-        require_record_id_seeded("ventilators", ventilators_field_defs_by_key)
+        ventilators = self.tables.equipment.ervs.rows
         inside_outside_ids = {option.id for option in self.single_select_options[VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY]}
-        for ventilator in self.tables.equipment.ervs.rows:
-            if ventilator.inside_outside is not None and ventilator.inside_outside not in inside_outside_ids:
-                raise ValueError(
-                    f"Missing ventilator inside/outside option for ventilator {ventilator.id}: "
-                    f"{ventilator.inside_outside}"
-                )
-
-        validate_linked_record_field_defs(
+        validate_typed_option_refs(
+            rows=[(ventilator.id, ventilator.inside_outside) for ventilator in ventilators],
+            valid_option_ids=inside_outside_ids,
+            missing_message="Missing ventilator inside/outside option for ventilator {row_id}: {value}",
+        )
+        validate_generic_table(
             table_label="ventilators",
+            row_label="ventilator",
             table_path=("equipment", "ervs"),
-            field_defs_by_key=ventilators_field_defs_by_key,
-        )
-        validate_rows_custom_values(
-            table_label="ventilators",
-            row_label="ventilator",
-            rows=[(ventilator.id, ventilator.custom_values) for ventilator in self.tables.equipment.ervs.rows],
-            field_defs_by_key=ventilators_field_defs_by_key,
+            field_defs=self.tables.equipment.ervs.field_defs,
+            rows=ventilators,
             single_select_options=self.single_select_options,
-        )
-        validate_rows_custom_links(
-            table_label="ventilators",
-            row_label="ventilator",
-            rows=[
-                (ventilator.id, ventilator.custom_values, ventilator.custom_links)
-                for ventilator in self.tables.equipment.ervs.rows
-            ],
-            field_defs_by_key=ventilators_field_defs_by_key,
             target_row_ids=target_row_ids,
         )
 
@@ -800,6 +611,24 @@ class ProjectDocumentV1(BaseModel):
             return
         if option_id not in option_ids_by_key[option_key]:
             raise ValueError(f"Missing heat-pump option {option_key} for row {row_id}: {option_id}")
+
+    @staticmethod
+    def _validate_min_zero(rows: Sequence[RowWithIdentity], field_key: str, message: str) -> None:
+        """Reject a numeric ``custom_values`` field that is below zero.
+        ``message`` is a ``str.format`` template with a ``{row_id}`` placeholder."""
+        for row in rows:
+            value = row.custom_values.get(field_key)
+            if isinstance(value, (int, float)) and value < 0:
+                raise ValueError(message.format(row_id=row.id))
+
+    @staticmethod
+    def _validate_unit_fraction(rows: Sequence[RowWithIdentity], field_key: str, message: str) -> None:
+        """Reject a numeric ``custom_values`` field that falls outside ``0..1``.
+        ``message`` is a ``str.format`` template with a ``{row_id}`` placeholder."""
+        for row in rows:
+            value = row.custom_values.get(field_key)
+            if isinstance(value, (int, float)) and not 0 <= value <= 1:
+                raise ValueError(message.format(row_id=row.id))
 
     def _validate_rooms_formula_cycles(self, field_defs_by_key: dict[str, TableFieldDef]) -> None:
         _ = field_defs_by_key

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-17
 TIME: 14:40 EDT
-STATUS: Active - outline, not started
+STATUS: Phase 00 implemented
 AUTHOR: Ed (via Codex)
 SCOPE: Current state of DataTable maintenance cleanup follow-up.
 RELATED:
@@ -15,30 +15,35 @@ RELATED:
 
 ## Current State
 
-`Active - outline, not started`.
+`Phase 00 complete — archived`.
 
 This feature was created during DataTable consolidation archive closeout
 to carry the completed refactor's non-blocking cleanup items into an
-active planning folder.
+active planning folder. Phase 00 was implemented as a single cleanup pass
+covering all three slices (two frontend splits + the backend validator
+extraction), landed on `main`, and this folder was moved to
+`planning/archive/data-table-maintenance/`.
 
 ## Next Step
 
-Choose whether to implement Phase 00 as one cleanup pass or split it into
-separate frontend and backend phases.
+None. Feature is closed.
 
 ## Phase Status
 
 | Phase | State |
 |---|---|
-| 00 - Cleanup outline | Planned |
+| 00 - Cleanup outline | Done |
 
 ## Carried Items
 
-- Split remaining oversized Heat Pump frontend files:
-  - `frontend/src/features/equipment/heat-pumps/lib.ts`;
-  - `frontend/src/features/equipment/heat-pumps/__tests__/HeatPumpsPanel.test.tsx`.
-- Extract backend `validate_document_references` into narrower validators
-  after the DataTable data-shape changes have landed.
+- [x] Split remaining oversized Heat Pump frontend files:
+  - `frontend/src/features/equipment/heat-pumps/lib.ts` → 20-line barrel
+    over six focused sibling modules.
+  - `frontend/src/features/equipment/heat-pumps/__tests__/HeatPumpsPanel.test.tsx`
+    → spec (393 lines) + `heatPumpsPanelHarness.tsx`.
+- [x] Extract backend `validate_document_references` into narrower
+  validators (`validate_generic_table`, `validate_typed_option_refs`, plus
+  `_validate_min_zero` / `_validate_unit_fraction`).
 
 ## Blockers
 
