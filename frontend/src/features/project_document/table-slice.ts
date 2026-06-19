@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { fetchJson } from "../../shared/api/client";
 import type { FieldSchemaMutation } from "../../shared/ui/data-table/lib/customFieldMutations";
 import { projectDocumentQueryKeys, projectDocumentTableQueryKeys } from "./query-keys";
@@ -18,6 +18,11 @@ export type TableSliceVersionGuard = {
   draftEtag: string | null;
   versionEtag: string;
 };
+
+export type OnAcceptedTableSlice<TSlice extends BaseTableSlice> = (
+  slice: TSlice,
+  previous: TableSliceVersionGuard,
+) => void | Promise<void>;
 
 export function createTableSliceFeature<TSlice extends BaseTableSlice, TReplaceBody>(options: {
   tableName: string;
@@ -98,7 +103,7 @@ export function createTableSliceFeature<TSlice extends BaseTableSlice, TReplaceB
   function useReplaceSliceMutation(
     projectId: string,
     versionId: string | null,
-    onAcceptedSlice?: (slice: TSlice, previous: TableSliceVersionGuard) => void,
+    onAcceptedSlice?: OnAcceptedTableSlice<TSlice>,
   ) {
     const queryClient = useQueryClient();
     return useMutation({
@@ -109,14 +114,21 @@ export function createTableSliceFeature<TSlice extends BaseTableSlice, TReplaceB
         return replaceSlice(projectId, versionId, current, payload);
       },
       onSuccess: (slice, variables) =>
-        applyAcceptedSlice(slice, variables.current, queryClient, projectId, onAcceptedSlice),
+        applyAcceptedSlice(
+          slice,
+          variables.current,
+          queryClient,
+          projectId,
+          tableName,
+          onAcceptedSlice,
+        ),
     });
   }
 
   function useSchemaMutationMutation(
     projectId: string,
     versionId: string | null,
-    onAcceptedSlice?: (slice: TSlice, previous: TableSliceVersionGuard) => void,
+    onAcceptedSlice?: OnAcceptedTableSlice<TSlice>,
   ) {
     const queryClient = useQueryClient();
     return useMutation({
@@ -127,31 +139,49 @@ export function createTableSliceFeature<TSlice extends BaseTableSlice, TReplaceB
         return mutateSchema(projectId, versionId, current, mutation);
       },
       onSuccess: (slice, variables) =>
-        applyAcceptedSlice(slice, variables.current, queryClient, projectId, onAcceptedSlice),
+        applyAcceptedSlice(
+          slice,
+          variables.current,
+          queryClient,
+          projectId,
+          tableName,
+          onAcceptedSlice,
+        ),
     });
   }
 
-  function applyAcceptedSlice(
+  async function applyAcceptedSlice(
     slice: TSlice,
     previous: TSlice,
-    queryClient: ReturnType<typeof useQueryClient>,
+    queryClient: QueryClient,
     projectId: string,
-    onAcceptedSlice: ((slice: TSlice, previous: TableSliceVersionGuard) => void) | undefined,
-  ): void {
+    acceptedTableName: string,
+    onAcceptedSlice: OnAcceptedTableSlice<TSlice> | undefined,
+  ): Promise<void> {
     markLocalDraftTouched(projectId, slice.version_id, slice.draft_etag);
     queryClient.setQueryData(queryKeys.slice(projectId, slice.version_id, "editor"), slice);
-    queryClient.invalidateQueries({
-      queryKey: projectDocumentQueryKeys.draftSummary(projectId, slice.version_id),
-    });
+    const invalidations: Array<Promise<unknown>> = [
+      queryClient.invalidateQueries({
+        queryKey: projectDocumentQueryKeys.draftSummary(projectId, slice.version_id),
+      }),
+      invalidateProjectDocumentEditorTableSlices(queryClient, projectId, slice.version_id, {
+        excludeTableName: acceptedTableName,
+      }),
+    ];
     if (
       onAcceptedSlice &&
       (slice.source !== previous.source || slice.draft_etag !== previous.draft_etag)
     ) {
-      onAcceptedSlice(slice, {
-        draftEtag: previous.draft_etag,
-        versionEtag: previous.version_etag,
-      });
+      invalidations.push(
+        Promise.resolve(
+          onAcceptedSlice(slice, {
+            draftEtag: previous.draft_etag,
+            versionEtag: previous.version_etag,
+          }),
+        ),
+      );
     }
+    await Promise.all(invalidations);
   }
 
   return {
@@ -174,4 +204,37 @@ export function draftWriteHeaders(current: BaseTableSlice): Headers {
     headers.set("If-Match-Version", current.version_etag);
   }
   return headers;
+}
+
+export function invalidateProjectDocumentEditorTableSlices(
+  queryClient: QueryClient,
+  projectId: string,
+  versionId: string,
+  options: { excludeTableName?: string } = {},
+): Promise<void> {
+  return queryClient.invalidateQueries({
+    queryKey: projectDocumentTableQueryKeys.project(projectId),
+    predicate: (query) =>
+      isEditorTableSliceQueryKey(query.queryKey, projectId, versionId, options.excludeTableName),
+  });
+}
+
+function isEditorTableSliceQueryKey(
+  queryKey: readonly unknown[],
+  projectId: string,
+  versionId: string,
+  excludeTableName: string | undefined,
+): boolean {
+  return (
+    queryKey.length === 8 &&
+    queryKey[0] === "project-document-tables" &&
+    queryKey[1] === "project" &&
+    queryKey[2] === projectId &&
+    queryKey[3] === "table" &&
+    typeof queryKey[4] === "string" &&
+    queryKey[4] !== excludeTableName &&
+    queryKey[5] === "slice" &&
+    queryKey[6] === versionId &&
+    queryKey[7] === "editor"
+  );
 }

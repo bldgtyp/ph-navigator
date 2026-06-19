@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { act, renderHook } from "@testing-library/react";
+import { createElement, type ReactNode } from "react";
 import type { FieldSchemaMutation } from "../../shared/ui/data-table/lib/customFieldMutations";
 import { createTableSliceFeature, type BaseTableSlice } from "./table-slice";
+import { projectDocumentQueryKeys } from "./query-keys";
 
 type FakeSlice = BaseTableSlice & { rows: string[] };
 type FakeReplaceBody = { rows: string[] };
@@ -36,6 +40,12 @@ function jsonResponse(body: unknown, status = 200): Response {
     status,
     headers: { "Content-Type": "application/json" },
   });
+}
+
+function queryWrapper(queryClient: QueryClient) {
+  return function Wrapper({ children }: { children: ReactNode }) {
+    return createElement(QueryClientProvider, { client: queryClient }, children);
+  };
 }
 
 describe("createTableSliceFeature", () => {
@@ -114,5 +124,58 @@ describe("createTableSliceFeature", () => {
     headers = new Headers(init.headers);
     expect(headers.get("If-Match")).toBe("d1");
     expect(headers.get("If-Match-Version")).toBeNull();
+  });
+
+  it("invalidates sibling editor table slices after an accepted draft write", async () => {
+    const sourceFeature = createTableSliceFeature<FakeSlice, FakeReplaceBody>({
+      tableName: "source_table",
+      missingVersionMessage: "no version",
+    });
+    const siblingFeature = createTableSliceFeature<FakeSlice, FakeReplaceBody>({
+      tableName: "sibling_table",
+      missingVersionMessage: "no version",
+    });
+    const queryClient = new QueryClient();
+    const current = makeSlice({
+      rows: ["old-source"],
+      source: "draft",
+      draft_etag: "draft-old",
+    });
+    const accepted = makeSlice({
+      rows: ["new-source"],
+      source: "draft",
+      draft_etag: "draft-new",
+    });
+    const sourceEditorKey = sourceFeature.queryKeys.slice(projectId, versionId, "editor");
+    const siblingEditorKey = siblingFeature.queryKeys.slice(projectId, versionId, "editor");
+    const siblingViewerKey = siblingFeature.queryKeys.slice(projectId, versionId, "viewer");
+    const siblingOtherVersionKey = siblingFeature.queryKeys.slice(projectId, "v2", "editor");
+    const draftSummaryKey = projectDocumentQueryKeys.draftSummary(projectId, versionId);
+    queryClient.setQueryData(sourceEditorKey, current);
+    queryClient.setQueryData(
+      siblingEditorKey,
+      makeSlice({ rows: ["old-sibling"], draft_etag: "draft-old" }),
+    );
+    queryClient.setQueryData(siblingViewerKey, makeSlice({ rows: ["saved-sibling"] }));
+    queryClient.setQueryData(siblingOtherVersionKey, makeSlice({ version_id: "v2" }));
+    queryClient.setQueryData(draftSummaryKey, { draft_etag: "draft-old" });
+    fetchMock.mockResolvedValueOnce(jsonResponse(accepted));
+
+    const { result } = renderHook(
+      () => sourceFeature.useReplaceSliceMutation(projectId, versionId),
+      {
+        wrapper: queryWrapper(queryClient),
+      },
+    );
+    await act(async () => {
+      await result.current.mutateAsync({ current, payload: { rows: ["new-source"] } });
+    });
+
+    expect(queryClient.getQueryData(sourceEditorKey)).toEqual(accepted);
+    expect(queryClient.getQueryState(sourceEditorKey)?.isInvalidated).toBe(false);
+    expect(queryClient.getQueryState(siblingEditorKey)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(siblingViewerKey)?.isInvalidated).toBe(false);
+    expect(queryClient.getQueryState(siblingOtherVersionKey)?.isInvalidated).toBe(false);
+    expect(queryClient.getQueryState(draftSummaryKey)?.isInvalidated).toBe(true);
   });
 });

@@ -340,6 +340,12 @@ Rules:
 - Inline edit, paste, fill, row insert/delete, and single-select option
   mutations all emit through `onWrite`.
 - One semantic gesture equals one undo entry.
+- A draft ETag is document-scoped, not table-scoped. After any accepted
+  editor table write, invalidate sibling editor table slices for the
+  same project/version so subsequent writes use a fresh guard. New
+  generic table features should rely on `createTableSliceFeature` for
+  this behavior; legacy aggregate endpoints that can change table data
+  must also invalidate the generic editor table-slice query family.
 - Single-select option creation during paste belongs in the same op as
   the cell writes that use those options.
 - One table instance maintains a FIFO persistence queue per open draft.
