@@ -96,6 +96,7 @@ export function AutocompleteSelect({
       setListboxPosition(null);
       return;
     }
+    let animationFrameIds: number[] = [];
     function updatePosition(): void {
       const el = inputRef.current;
       if (!el) return;
@@ -107,10 +108,20 @@ export function AutocompleteSelect({
           : next,
       );
     }
-    updatePosition();
+    function schedulePositionUpdate(): void {
+      const frameId = window.requestAnimationFrame(updatePosition);
+      animationFrameIds.push(frameId);
+    }
+    setListboxPosition(null);
+    const secondFrameId = window.requestAnimationFrame(schedulePositionUpdate);
+    animationFrameIds.push(secondFrameId);
     window.addEventListener("resize", updatePosition);
     window.addEventListener("scroll", updatePosition, true);
     return () => {
+      for (const frameId of animationFrameIds) {
+        window.cancelAnimationFrame(frameId);
+      }
+      animationFrameIds = [];
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", updatePosition, true);
     };
@@ -209,6 +220,8 @@ export function AutocompleteSelect({
               left: listboxPosition?.left ?? 0,
               width: listboxPosition?.width,
               right: "auto",
+              opacity: listboxPosition ? undefined : 0,
+              pointerEvents: listboxPosition ? undefined : "none",
             }
           : undefined
       }
