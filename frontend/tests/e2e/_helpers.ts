@@ -138,20 +138,43 @@ export async function gridCellForRowAndHeader(
   return row.locator(`td[aria-colindex="${columnIndex}"]`);
 }
 
+/** GET the project's `active_version_id` (one round-trip). */
+export async function readActiveVersionId(
+  request: APIRequestContext,
+  baseURL: string | undefined,
+  projectId: string,
+): Promise<string> {
+  const detailResponse = await request.get(apiUrl(baseURL, `/api/v1/projects/${projectId}`));
+  expect(detailResponse.status(), await detailResponse.text()).toBe(200);
+  return (await detailResponse.json()).active_version_id as string;
+}
+
+/**
+ * Read a registered project-document table slice for the project's active
+ * version. `subPath` selects the slice family + table key, e.g.
+ * `document/tables/window_types` (saved) or `draft/tables/rooms` (draft).
+ * Pass `versionId` to skip the project-detail round-trip when the caller
+ * already knows the active version.
+ */
+export async function readVersionedTable(
+  request: APIRequestContext,
+  baseURL: string | undefined,
+  projectId: string,
+  subPath: string,
+  versionId?: string,
+) {
+  const resolvedVersionId = versionId ?? (await readActiveVersionId(request, baseURL, projectId));
+  const tableResponse = await request.get(
+    apiUrl(baseURL, `/api/v1/projects/${projectId}/versions/${resolvedVersionId}/${subPath}`),
+  );
+  expect(tableResponse.status(), await tableResponse.text()).toBe(200);
+  return tableResponse.json();
+}
+
 export async function readWindowTypesSlice(
   request: APIRequestContext,
   baseURL: string | undefined,
   projectId: string,
 ) {
-  const detailResponse = await request.get(apiUrl(baseURL, `/api/v1/projects/${projectId}`));
-  expect(detailResponse.status(), await detailResponse.text()).toBe(200);
-  const detail = await detailResponse.json();
-  const tableResponse = await request.get(
-    apiUrl(
-      baseURL,
-      `/api/v1/projects/${projectId}/versions/${detail.active_version_id}/document/tables/window_types`,
-    ),
-  );
-  expect(tableResponse.status(), await tableResponse.text()).toBe(200);
-  return tableResponse.json();
+  return readVersionedTable(request, baseURL, projectId, "document/tables/window_types");
 }
