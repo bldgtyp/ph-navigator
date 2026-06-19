@@ -54,6 +54,7 @@ export function incomingLinkColumn<TRow>({
     fieldKey,
     header,
     accessor: (row) => (accessorValue === "ids" ? getIncomingIds(row) : displayText(row)),
+    onActivateEdit,
     render: (row, { isActive }) => (
       <LinkedRecordCell
         ids={getIncomingIds(row)}

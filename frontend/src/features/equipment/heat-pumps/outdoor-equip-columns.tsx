@@ -1,5 +1,6 @@
 import {
   OPTION_COLOR_PALETTE,
+  incomingLinkColumn,
   type DataTableColumnDef,
   type FieldDef,
   type FieldOption,
@@ -8,6 +9,7 @@ import type { NumberUnitsConfig } from "../../../lib/units";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { DATASHEET_ATTACHMENT_CONFIG, sameAttachmentAssetIds } from "../../assets/lib";
 import {
+  HEAT_PUMP_LINK_TARGETS,
   incomingOutdoorUnitColumnDef,
   incomingOutdoorUnitIds,
   incomingOutdoorUnitsFieldDef,
@@ -65,11 +67,7 @@ export function outdoorEquipFieldDefs({
     textField("tag", "Tag", true),
     textField("model_number", "Model number"),
     selectField("manufacturer", "Manufacturer", manufacturer),
-    lookupField(
-      "paired_indoor_equip_id",
-      "Paired indoor equip",
-      "Derived from Units - Indoor links to outdoor units.",
-    ),
+    pairedIndoorEquipField(),
     selectField("system_family", "System family", systemFamily),
     selectField("refrigerant", "Refrigerant", refrigerant),
     powerField("heating_cap_kw_17f", "Heating Capacity at 17F"),
@@ -114,7 +112,10 @@ export function outdoorEquipColumnDefs({
   onDatasheetChange,
   outdoorUnits = [],
   incomingOutdoorUnitIdsByRowId = new Map(),
-  pairedIndoorEquipLabelsByRowId = new Map(),
+  pairedIndoorEquipIdsByRowId = new Map(),
+  pairedIndoorEquipLabelById = new Map(),
+  onPairedIndoorEquipClick,
+  onOutdoorUnitClick,
   onOutdoorUnitsLinkEdit,
 }: {
   projectId: string;
@@ -123,7 +124,10 @@ export function outdoorEquipColumnDefs({
   onDatasheetChange: (row: HeatPumpOutdoorEquipRow, next: string[]) => void | Promise<void>;
   outdoorUnits?: readonly HeatPumpOutdoorUnitRow[];
   incomingOutdoorUnitIdsByRowId?: ReadonlyMap<string, readonly string[]>;
-  pairedIndoorEquipLabelsByRowId?: ReadonlyMap<string, readonly string[]>;
+  pairedIndoorEquipIdsByRowId?: ReadonlyMap<string, readonly string[]>;
+  pairedIndoorEquipLabelById?: ReadonlyMap<string, string>;
+  onPairedIndoorEquipClick?: (rowId: string) => void;
+  onOutdoorUnitClick?: (rowId: string) => void;
   onOutdoorUnitsLinkEdit?: (row: HeatPumpOutdoorEquipRow) => void;
 }): DataTableColumnDef<HeatPumpOutdoorEquipRow>[] {
   const number = (fieldKey: keyof HeatPumpOutdoorEquipRow, header: string, width = 110) => ({
@@ -160,14 +164,16 @@ export function outdoorEquipColumnDefs({
       accessor: (row) => row.manufacturer,
       defaultWidth: 150,
     },
-    {
+    incomingLinkColumn<HeatPumpOutdoorEquipRow>({
       id: "paired_indoor_equip_id",
       fieldKey: "paired_indoor_equip_id",
       header: "Paired indoor equip",
-      accessor: (row) => (pairedIndoorEquipLabelsByRowId.get(row.id) ?? []).join(", "),
-      measureText: (row) => (pairedIndoorEquipLabelsByRowId.get(row.id) ?? []).join(", "),
+      getIncomingIds: (row) => pairedIndoorEquipIdsByRowId.get(row.id) ?? [],
+      resolveLabel: (rowId) => pairedIndoorEquipLabelById.get(rowId) ?? null,
+      onPillClick: onPairedIndoorEquipClick,
+      accessorValue: "ids",
       defaultWidth: 190,
-    },
+    }),
     {
       id: "system_family",
       fieldKey: "system_family",
@@ -232,6 +238,7 @@ export function outdoorEquipColumnDefs({
     incomingOutdoorUnitColumnDef<HeatPumpOutdoorEquipRow>({
       outdoorUnits,
       getIncomingIds: (row) => incomingOutdoorUnitIds(incomingOutdoorUnitIdsByRowId, row.id),
+      onPillClick: onOutdoorUnitClick,
       onActivateEdit: isEditor ? onOutdoorUnitsLinkEdit : undefined,
     }),
     {
@@ -256,14 +263,17 @@ function powerField(field_key: string, display_name: string): FieldDef {
   return { field_key, field_type: "number", display_name, numberUnits: POWER_UNITS };
 }
 
-function lookupField(field_key: string, display_name: string, description: string): FieldDef {
+function pairedIndoorEquipField(): FieldDef {
   return {
-    field_key,
-    field_type: "lookup",
-    display_name,
-    description,
+    field_key: "paired_indoor_equip_id",
+    field_type: "linked_record",
+    display_name: "Paired indoor equip",
+    description: "Derived from Units - Indoor links to outdoor units.",
     read_only: true,
-    lookup_config: { source: "equipment.heat_pumps.units_indoor" },
+    linked_record_config: {
+      target_table_path: [...HEAT_PUMP_LINK_TARGETS.indoorEquip],
+      max_links: null,
+    },
   };
 }
 

@@ -43,6 +43,8 @@ export function outdoorUnitColumnDefs({
   onDatasheetChange,
   indoorUnits = [],
   incomingIndoorUnitIdsByRowId = new Map(),
+  onIndoorUnitClick,
+  onIndoorUnitsLinkEdit,
 }: {
   projectId: string;
   isEditor: boolean;
@@ -50,6 +52,8 @@ export function outdoorUnitColumnDefs({
   onDatasheetChange: (row: HeatPumpOutdoorUnitRow, next: string[]) => void | Promise<void>;
   indoorUnits?: HeatPumpsSlice["indoor_units"];
   incomingIndoorUnitIdsByRowId?: ReadonlyMap<string, readonly string[]>;
+  onIndoorUnitClick?: (rowId: string) => void;
+  onIndoorUnitsLinkEdit?: (row: HeatPumpOutdoorUnitRow) => void;
 }): DataTableColumnDef<HeatPumpOutdoorUnitRow>[] {
   return [
     {
@@ -90,6 +94,8 @@ export function outdoorUnitColumnDefs({
     incomingIndoorUnitColumnDef<HeatPumpOutdoorUnitRow>({
       indoorUnits,
       getIncomingIds: (row) => incomingIndoorUnitIds(incomingIndoorUnitIdsByRowId, row.id),
+      onPillClick: onIndoorUnitClick,
+      onActivateEdit: isEditor ? onIndoorUnitsLinkEdit : undefined,
     }),
     {
       id: "notes",

@@ -32,11 +32,13 @@ export function incomingIndoorUnitColumnDef<TRow>({
   header = "Indoor units",
   indoorUnits,
   getIncomingIds,
+  onPillClick,
   onActivateEdit,
 }: {
   header?: string;
   indoorUnits: readonly HeatPumpIndoorUnitRow[];
   getIncomingIds: (row: TRow) => readonly string[];
+  onPillClick?: (rowId: string) => void;
   onActivateEdit?: (row: TRow) => void;
 }): DataTableColumnDef<TRow> {
   return incomingUnitColumnDef({
@@ -45,6 +47,7 @@ export function incomingIndoorUnitColumnDef<TRow>({
     units: indoorUnits,
     getIncomingIds,
     getLabel: indoorUnitLabel,
+    onPillClick,
     onActivateEdit,
   });
 }
@@ -61,11 +64,13 @@ export function incomingOutdoorUnitColumnDef<TRow>({
   header = "Outdoor units",
   outdoorUnits,
   getIncomingIds,
+  onPillClick,
   onActivateEdit,
 }: {
   header?: string;
   outdoorUnits: readonly HeatPumpOutdoorUnitRow[];
   getIncomingIds: (row: TRow) => readonly string[];
+  onPillClick?: (rowId: string) => void;
   onActivateEdit?: (row: TRow) => void;
 }): DataTableColumnDef<TRow> {
   return incomingUnitColumnDef({
@@ -74,6 +79,7 @@ export function incomingOutdoorUnitColumnDef<TRow>({
     units: outdoorUnits,
     getIncomingIds,
     getLabel: outdoorUnitLabel,
+    onPillClick,
     onActivateEdit,
   });
 }
@@ -160,6 +166,7 @@ function incomingUnitColumnDef<TRow, TUnit extends { id: string }>({
   units,
   getIncomingIds,
   getLabel,
+  onPillClick,
   onActivateEdit,
 }: {
   fieldKey: string;
@@ -167,6 +174,7 @@ function incomingUnitColumnDef<TRow, TUnit extends { id: string }>({
   units: readonly TUnit[];
   getIncomingIds: (row: TRow) => readonly string[];
   getLabel: (unit: TUnit) => string;
+  onPillClick?: (rowId: string) => void;
   onActivateEdit?: (row: TRow) => void;
 }): DataTableColumnDef<TRow> {
   const unitLabelById = new Map(units.map((unit) => [unit.id, getLabel(unit)]));
@@ -176,6 +184,7 @@ function incomingUnitColumnDef<TRow, TUnit extends { id: string }>({
     header,
     getIncomingIds,
     resolveLabel: (id) => unitLabelById.get(id) ?? null,
+    onPillClick,
     onActivateEdit,
     accessorValue: "ids",
   });

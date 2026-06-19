@@ -178,15 +178,15 @@ describe("HeatPumpsPanel", () => {
     });
 
     expect(await screen.findByRole("columnheader", { name: /Outdoor units/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "HP-1" })).toBeInTheDocument();
+    expect(screen.getByText("HP-1")).toBeInTheDocument();
 
     await user.click(await screen.findByRole("tab", { name: "Equipment - Indoor" }));
     expect(await screen.findByRole("columnheader", { name: /Indoor units/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "IU-A" })).toBeInTheDocument();
+    expect(screen.getByText("IU-A")).toBeInTheDocument();
 
     await user.click(screen.getByRole("tab", { name: "Units - Outdoor" }));
     expect(await screen.findByRole("columnheader", { name: /Indoor units/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "IU-A" })).toBeInTheDocument();
+    expect(screen.getByText("IU-A")).toBeInTheDocument();
   });
 
   test("opens the link picker from the indoor equipment incoming-unit add button", async () => {
@@ -214,7 +214,22 @@ describe("HeatPumpsPanel", () => {
     expect(screen.queryByRole("dialog", { name: /Indoor equipment:/ })).toBeNull();
   });
 
-  test("renders paired indoor equipment as a read-only lookup from unit links", async () => {
+  test("opens outdoor unit chips from outdoor equipment incoming-unit links", async () => {
+    const user = userEvent.setup();
+    renderPanel({
+      slice: heatPumpsSlice({
+        outdoor_units: [outdoorUnitRow()],
+      }),
+    });
+
+    await user.click(await screen.findByRole("gridcell", { name: "HP-1" }));
+    await user.click(screen.getByRole("button", { name: "HP-1" }));
+
+    expect(await screen.findByRole("dialog", { name: "Outdoor unit: HP-1" })).toBeVisible();
+  });
+
+  test("renders paired indoor equipment as linked-record pills from unit links", async () => {
+    const user = userEvent.setup();
     renderPanel({
       slice: heatPumpsSlice({
         outdoor_equip: [outdoorEquipRow({ paired_indoor_equip_id: null })],
@@ -227,7 +242,12 @@ describe("HeatPumpsPanel", () => {
       name: /Paired indoor equip/,
     });
     expect(pairedHeader).toBeInTheDocument();
-    expect(screen.getByText(/PLA-A18EA8/)).toBeInTheDocument();
+    expect(pairedHeader.querySelector('[data-field-type-icon="linked_record"]')).toBeTruthy();
+
+    await user.click(screen.getByRole("gridcell", { name: /IE-A/ }));
+    await user.click(screen.getByRole("button", { name: /IE-A/ }));
+
+    expect(await screen.findByRole("dialog", { name: /Indoor equipment: IE-A/ })).toBeVisible();
   });
 
   test("renders indoor equipment capacity columns in IP units", async () => {

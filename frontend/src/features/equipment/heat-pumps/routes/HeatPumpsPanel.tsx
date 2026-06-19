@@ -291,6 +291,7 @@ export function HeatPumpsPanel({ project }: { project: ProjectDetail }) {
           slice={aggregateSlice}
           leafSlice={outdoorEquipSlice}
           controller={outdoorEquipController}
+          indoorEquipController={indoorEquipController}
           outdoorUnitsController={outdoorUnitsController}
           isEditor={project.access_mode === "editor"}
           versionLocked={project.active_version?.locked ?? false}
