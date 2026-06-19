@@ -22,9 +22,11 @@ table-view state behave consistently across the app's core tabular
 surfaces.
 
 Phase 01 (inventory + harness skeleton) is implemented under
-`frontend/tests/e2e/table-regression/`. Phases 02-06 (contract tests,
-smoke matrix, behavior matrix, deep links/view state, run policy) remain
-planned.
+`frontend/tests/e2e/table-regression/`. Phase 02 (shared DataTable edit
+contract) is implemented under
+`frontend/src/shared/ui/data-table/__tests__/sharedEditContract.test.ts`.
+Phases 03-06 (smoke matrix, behavior matrix, deep links/view state, run
+policy) remain planned.
 
 ## Problem Frame
 

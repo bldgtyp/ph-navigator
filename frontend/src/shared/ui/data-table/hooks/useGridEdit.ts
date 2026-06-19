@@ -197,8 +197,7 @@ export function useGridEdit(args: {
     }
     commitInFlightRef.current = true;
     const fieldDef = fieldDefByKey.get(editing.fieldKey);
-    const editor = editing.editor;
-    const plan = planCommit(editing, editor, fieldDef, unitSystem);
+    const plan = planCommit(editing, fieldDef, unitSystem);
     try {
       if (plan.kind === "noop") {
         clearCellError(editing.rowId, editing.fieldKey);
@@ -372,18 +371,21 @@ export function useGridEdit(args: {
 // Pure planner: turn the current editor state into a forward/inverse op
 // pair, a no-op signal, or a validation message. Kept outside the
 // component so React-hooks lint sees no surprise closure deps and so
-// the planner is directly unit-testable.
-type CommitPlan =
+// the planner is directly unit-testable — see
+// `__tests__/sharedEditContract.test.ts`, the regression suite's
+// single source of truth for the forward/inverse op contract
+// (planning/features/data-table-regression-suite, Phase 02).
+export type CommitPlan =
   | { kind: "noop" }
   | { kind: "invalid"; message: string }
   | { kind: "dispatch"; op: WriteOp; inverse: WriteOp };
 
-function planCommit(
+export function planCommit(
   current: EditingCell,
-  editor: EditorState,
   fieldDef: FieldDef | undefined,
   unitSystem: UnitSystem,
 ): CommitPlan {
+  const editor = current.editor;
   if (editor.kind === "single_select") {
     return planSingleSelect(current, editor, fieldDef);
   }
@@ -451,7 +453,7 @@ function planSingleSelect(
   return { kind: "dispatch", op, inverse };
 }
 
-function planLinkedRecord(
+export function planLinkedRecord(
   current: EditingCell,
   ids: readonly string[],
   fieldDef: FieldDef | undefined,
@@ -512,7 +514,7 @@ export type SingleSelectCommitDecision =
   | { kind: "existing"; optionId: string }
   | { kind: "create"; optionId: string; created: FieldOption };
 
-function decideSingleSelectCommit(
+export function decideSingleSelectCommit(
   editor: { searchText: string; highlightedOptionId: string | null },
   options: FieldOption[],
 ): SingleSelectCommitDecision {
