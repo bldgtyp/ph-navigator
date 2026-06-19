@@ -1,9 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchJson } from "../../../shared/api/client";
 import { projectDocumentQueryKeys } from "../../project_document/query-keys";
-import { draftWriteHeaders } from "../../project_document/table-slice";
+import {
+  createTableSliceFeature,
+  draftWriteHeaders,
+  invalidateProjectDocumentEditorTableSlices,
+} from "../../project_document/table-slice";
 import { markLocalDraftTouched } from "../../project_document/lib";
-import { createTableSliceFeature } from "../../project_document/table-slice";
 import type {
   CascadePreview,
   HeatPumpIndoorEquipReplacePayload,
@@ -108,12 +111,15 @@ export function useHeatPumpPatchMutation(projectId: string) {
         },
       );
     },
-    onSuccess: (slice) => {
+    onSuccess: async (slice) => {
       markLocalDraftTouched(projectId, slice.version_id, slice.draft_etag);
       queryClient.setQueryData(heatPumpsQueryKeys.slice(projectId, "editor"), slice);
-      queryClient.invalidateQueries({
-        queryKey: projectDocumentQueryKeys.draftSummary(projectId, slice.version_id),
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: projectDocumentQueryKeys.draftSummary(projectId, slice.version_id),
+        }),
+        invalidateProjectDocumentEditorTableSlices(queryClient, projectId, slice.version_id),
+      ]);
     },
   });
 }
@@ -171,12 +177,15 @@ export function useHeatPumpOptionMutation(projectId: string) {
         },
       );
     },
-    onSuccess: (slice) => {
+    onSuccess: async (slice) => {
       markLocalDraftTouched(projectId, slice.version_id, slice.draft_etag);
       queryClient.setQueryData(heatPumpsQueryKeys.slice(projectId, "editor"), slice);
-      queryClient.invalidateQueries({
-        queryKey: projectDocumentQueryKeys.draftSummary(projectId, slice.version_id),
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: projectDocumentQueryKeys.draftSummary(projectId, slice.version_id),
+        }),
+        invalidateProjectDocumentEditorTableSlices(queryClient, projectId, slice.version_id),
+      ]);
     },
   });
 }
