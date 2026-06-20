@@ -1,6 +1,6 @@
 ---
 DATE: 2026-06-20
-TIME: 09:34 EDT
+TIME: 09:45 EDT
 STATUS: Active
 AUTHOR: Ed (via Codex)
 SCOPE: Current state of DataTable formula builder planning.
@@ -15,7 +15,7 @@ RELATED:
 
 ## Current State
 
-`Phase 05 - all-table regression coverage complete; Phase 06 closeout is next`.
+`Implementation complete through Phase 06; feature packet is ready for review`.
 
 The current codebase already routes formula authoring through shared
 DataTable components:
@@ -28,9 +28,10 @@ DataTable components:
 - Frontend and backend formula grammars are parity-tested through shared
   corpus fixtures.
 
-Main confirmed gaps after Phase 05:
+Main confirmed gaps after Phase 06:
 
-- durable docs and final closeout/archive steps still need to run in Phase 06.
+- archive / PR handoff remains a workflow decision outside the implementation
+  phases.
 
 Phase 01 added:
 
@@ -95,10 +96,19 @@ Phase 05 added:
 - a shared-import/CSS guard confirming formula editor UI remains in
   `frontend/src/shared/ui/data-table`.
 
+Phase 06 added:
+
+- durable DataTable UI and regression run-policy notes in
+  `context/technical-requirements/data-table.md`;
+- formula grammar/evaluator semantics for `&` in
+  `context/technical-requirements/data-model.md`;
+- user-facing field-config modal formula behavior in `context/UI_UX.md`;
+- resolved implementation decisions in `PLAN.md`.
+
 ## Next Step
 
-Start Phase 06 with durable docs, closeout gates, graph update, and archive
-handoff.
+Review the completed feature packet and decide whether to archive the planning
+folder or open a PR from the current commits.
 
 ## Phase Status
 
@@ -110,7 +120,7 @@ handoff.
 | 03 - `&` concat grammar | Complete | `phases/phase-03-ampersand-concat.md` |
 | 04 - Autocomplete | Complete | `phases/phase-04-autocomplete.md` |
 | 05 - All-table regression coverage | Complete | `phases/phase-05-regression-coverage.md` |
-| 06 - Documentation and closeout | Planned | `phases/phase-06-docs-closeout.md` |
+| 06 - Documentation and closeout | Complete | `phases/phase-06-docs-closeout.md` |
 
 ## Blockers
 
@@ -118,8 +128,7 @@ None.
 
 ## Open Decisions
 
-- Confirm final modal max-width/resizing constraints after a quick browser
-  pass on desktop and narrow viewport.
+None.
 
 ## Verification
 
@@ -225,3 +234,14 @@ Phase 05 implementation checks:
     (`912 passed, 2 skipped`, one existing deprecation warning);
   - frontend: frozen pnpm install, Prettier, ESLint, structural guards,
     Vitest (`184 files`, `1760 tests`), production build.
+
+Phase 06 closeout checks:
+
+- `make format` passed with no file changes after durable docs updates.
+- `make ci` passed after durable docs updates:
+  - backend: Ruff format/lint, Ty, Alembic, pytest
+    (`912 passed, 2 skipped`, one existing deprecation warning);
+  - frontend: frozen pnpm install, Prettier, ESLint, structural guards,
+    Vitest (`184 files`, `1760 tests`), production build.
+- `graphify update .` passed after closeout.
+- `git diff --check` passed.
