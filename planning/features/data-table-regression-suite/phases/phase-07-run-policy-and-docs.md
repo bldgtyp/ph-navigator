@@ -9,7 +9,11 @@ RELATED:
   - context/technical-requirements/data-table.md
 ---
 
-# Phase 06 - Run Policy And Documentation
+# Phase 07 - Run Policy And Documentation
+
+> Split note: renumbered from Phase 06 when the original "deep links and view
+> state" phase was split into Phase 05 (linked records) and Phase 06 (view
+> state). Content is unchanged.
 
 ## Goal
 
@@ -45,4 +49,3 @@ suite is stable enough to justify them.
 - The suite has documented runtime and stability notes.
 - The default validation policy is explicit.
 - Durable behavior contracts are folded into `context/technical-requirements`.
-

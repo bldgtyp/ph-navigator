@@ -12,7 +12,7 @@
 // Contract").
 
 import { expect, type APIRequestContext, type Locator, type Page } from "@playwright/test";
-import { headerByLabel, readVersionedTable, signIn } from "../_helpers";
+import { escapeRegExp, headerByLabel, readVersionedTable, signIn } from "../_helpers";
 import type { SingleSelectSample, TableRegressionCase } from "./tableMatrix";
 
 // The table suite signs in as the dedicated local agent account
@@ -253,7 +253,11 @@ async function allDataRowIds(page: Page): Promise<string[]> {
  * (the heat-pump unit leaves) are out of scope here — they are seeded by the
  * Phase 05 deep-link flow, which owns the picker interaction.
  */
-export async function addRowAndGetId(page: Page, table: TableRegressionCase): Promise<string> {
+export async function addRowAndGetId(
+  page: Page,
+  table: TableRegressionCase,
+  opts: { modalLinks?: ReadonlyArray<string> } = {},
+): Promise<string> {
   const before = new Set(await allDataRowIds(page));
   await page.getByRole("button", { name: table.addRow.buttonName }).click();
 
@@ -262,6 +266,12 @@ export async function addRowAndGetId(page: Page, table: TableRegressionCase): Pr
     await expect(dialog, `${table.label}: add dialog "${table.addRow.dialogTitle}"`).toBeVisible();
     for (const field of table.addRow.fields) {
       await dialog.getByLabel(field.label).fill(field.value);
+    }
+    // Required `ModalLinkedRecordField` picks (e.g. the heat-pump unit
+    // leaves' parent equipment) — each links the first available candidate,
+    // deterministic because the caller seeds exactly one target row.
+    for (const fieldLabel of opts.modalLinks ?? []) {
+      await setModalLink(page, dialog, fieldLabel);
     }
     await dialog.getByRole("button", { name: table.addRow.submitName }).click();
     await expect(dialog, `${table.label}: add dialog should close after submit`).toBeHidden();
@@ -371,4 +381,85 @@ export function readRowFieldValue(row: Record<string, unknown>, fieldKey: string
   const custom = row.custom as Record<string, unknown> | undefined;
   if (custom && fieldKey in custom) return custom[fieldKey];
   return row[fieldKey];
+}
+
+/**
+ * Read a linked-record field's target ids off a draft row as a normalized
+ * `string[]`. Linked records persist differently per table family, so all
+ * three real shapes are handled:
+ *   - `custom_links[fieldKey]` (array) — generic-slice built-in/custom links
+ *     (e.g. Rooms `space_type_id`), mirroring the frontend `getCustomLink`.
+ *   - a typed top-level column `row[fieldKey]` — the heat-pump leaf row models
+ *     store their links as typed fields (a scalar id for single links like
+ *     `paired_indoor_equip_id`, an array for multi like `served_room_ids`),
+ *     NOT in `custom_links`. Verified live: trimming this branch made the HP
+ *     paired-equipment link read empty.
+ *   - a legacy `custom_values` array — pre-bag-routing data.
+ * A scalar single-link is normalized to a one-element list. Returns [] when no
+ * link is stored.
+ */
+export function readRowLinkIds(row: Record<string, unknown>, fieldKey: string): string[] {
+  const asIds = (value: unknown): string[] | null => {
+    if (Array.isArray(value)) {
+      return value.filter((id): id is string => typeof id === "string" && id.length > 0);
+    }
+    if (typeof value === "string" && value.length > 0) return [value];
+    return null;
+  };
+  const links = (row.custom_links as Record<string, unknown> | undefined)?.[fieldKey];
+  return (
+    asIds(links) ??
+    asIds(row[fieldKey]) ??
+    asIds((row.custom_values as Record<string, unknown> | undefined)?.[fieldKey]) ??
+    []
+  );
+}
+
+// --- Phase 05: linked-record flows ----------------------------------------
+
+// The shared record picker (`fields/linkedRecord/Picker.tsx`) — one is open at
+// a time, portaled to the body — used by both grid linked-record cells and the
+// add-dialog `ModalLinkedRecordField`. Located by test id so it's independent
+// of the per-field picker title.
+const LINKED_RECORD_PICKER = '[data-testid="linked-record-picker"]';
+
+/** Wait for the (single, body-portaled) record picker to be open and return it. */
+async function awaitOpenPicker(page: Page, context: string): Promise<Locator> {
+  const picker = page.locator(LINKED_RECORD_PICKER);
+  await expect(picker, `${context} should open the record picker`).toBeVisible();
+  return picker;
+}
+
+/** Open a grid linked-record cell's picker (double-click) and return it. */
+export async function openGridPicker(page: Page, cell: Locator): Promise<Locator> {
+  await cell.dblclick();
+  return awaitOpenPicker(page, "grid linked-record cell");
+}
+
+/**
+ * Select the first `count` candidates in an open picker and confirm. "First
+ * candidate" is deterministic because each linked-record flow seeds exactly
+ * one row in the target table, so the picker lists exactly the intended
+ * target(s) — this avoids coupling to the per-table candidate label format.
+ * The confirm only proves a link was made; the test asserts the *correct*
+ * target via the draft payload (the stored id equals the seeded target id).
+ */
+export async function confirmPickerSelection(picker: Locator, count = 1): Promise<void> {
+  const options = picker.getByRole("option");
+  for (let index = 0; index < count; index += 1) {
+    await options.nth(index).locator("input").check();
+  }
+  await picker.getByRole("button", { name: "Confirm" }).click();
+  await expect(picker, "picker should close after confirm").toBeHidden();
+}
+
+/**
+ * Set a required `ModalLinkedRecordField` inside an add dialog: click the
+ * field's button (accessible name is `"<label>: <value>"`), then link the
+ * first candidate in the picker it opens.
+ */
+export async function setModalLink(page: Page, dialog: Locator, fieldLabel: string): Promise<void> {
+  await dialog.getByRole("button", { name: new RegExp(`^${escapeRegExp(fieldLabel)}:`) }).click();
+  const picker = await awaitOpenPicker(page, `"${fieldLabel}" field`);
+  await confirmPickerSelection(picker, 1);
 }
