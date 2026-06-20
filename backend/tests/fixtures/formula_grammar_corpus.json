@@ -102,6 +102,36 @@
       }
     },
     {
+      "name": "binop_ampersand_concat_left_assoc",
+      "source": "{Number} & \" - \" & {Name}",
+      "expected_ast": {
+        "kind": "binary_op",
+        "op": "&",
+        "left": {
+          "kind": "binary_op",
+          "op": "&",
+          "left": {"kind": "field_ref", "display_name": "Number", "field_id": null},
+          "right": {"kind": "literal", "value": " - ", "inferred_type": "text"}
+        },
+        "right": {"kind": "field_ref", "display_name": "Name", "field_id": null}
+      }
+    },
+    {
+      "name": "binop_ampersand_additive_precedence",
+      "source": "1 + 2 & \" kW\"",
+      "expected_ast": {
+        "kind": "binary_op",
+        "op": "&",
+        "left": {
+          "kind": "binary_op",
+          "op": "+",
+          "left": {"kind": "literal", "value": 1, "inferred_type": "number"},
+          "right": {"kind": "literal", "value": 2, "inferred_type": "number"}
+        },
+        "right": {"kind": "literal", "value": " kW", "inferred_type": "text"}
+      }
+    },
+    {
       "name": "binop_sub_left_assoc",
       "source": "5 - 2 - 1",
       "expected_ast": {

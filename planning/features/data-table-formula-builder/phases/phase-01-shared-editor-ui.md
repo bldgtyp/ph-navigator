@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-20
-TIME: 08:05 EDT
-STATUS: Planned
+TIME: 08:42 EDT
+STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Shared formula source editor UI, syntax highlighting, sizing, and resize behavior.
 RELATED:
@@ -173,3 +173,15 @@ Then verify `http://localhost:5173` with `codex@example.com` / `password`:
 Keep this phase small. If autocomplete or `&` changes become tempting, defer
 them to Phases 03 and 04. The desired result is a better shared editor shell
 with unchanged formula language.
+
+## Implementation Notes
+
+- Implemented the shared formula source editor as
+  `frontend/src/shared/ui/data-table/components/FormulaSourceEditor.tsx`.
+- Added a tolerant highlighter at
+  `frontend/src/shared/ui/data-table/lib/formula/highlight.ts`.
+- Kept formula semantics unchanged; parser/evaluator work remains Phase 03.
+- Preserved the existing field palette insertion behavior and added textarea
+  caret regression coverage.
+- Browser smoke against the already-running `5173` server was inconclusive
+  because that server rendered stale pre-Phase-01 code from another checkout.

@@ -122,12 +122,16 @@ describe("DataTable", () => {
     fireEvent.click(screen.getByRole("button", { name: "Add field" }));
     const dialog = await screen.findByRole("dialog", { name: "Add field" });
     chooseAutocompleteOption("Field type", "Formula", dialog);
+    const expression = within(dialog).getByLabelText("Expression") as HTMLTextAreaElement;
+    fireEvent.change(expression, { target: { value: "{" } });
+    expression.setSelectionRange(1, 1);
+    fireEvent.select(expression);
 
     expect(within(dialog).queryByText("No fields available to reference.")).not.toBeInTheDocument();
-    expect(within(dialog).getByRole("button", { name: "Text column Number" })).toBeInTheDocument();
-    expect(within(dialog).getByRole("button", { name: "Text column Name" })).toBeInTheDocument();
-    expect(within(dialog).getByRole("button", { name: "Number column Count" })).toBeInTheDocument();
-    expect(within(dialog).queryByRole("button", { name: /Incoming/ })).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("option", { name: "Number Text column" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("option", { name: "Name Text column" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("option", { name: "Count Number column" })).toBeInTheDocument();
+    expect(within(dialog).queryByRole("option", { name: /Incoming/ })).not.toBeInTheDocument();
   });
 
   test("keeps gutter buttons out of the tab order and renders no per-column sort UI", () => {

@@ -222,6 +222,8 @@ def _eval_binary(node: BinaryOp, state: _State) -> object:
         return _eq(left, right)
     if op == "!=":
         return not _eq(left, right)
+    if op == "&":
+        return _to_concat_text(left) + _to_concat_text(right)
     if left is None or right is None:
         # Null propagation for arithmetic and ordering comparisons.
         if op in ("<", "<=", ">", ">="):
@@ -431,6 +433,15 @@ def _to_text(value: object) -> str | None:
     if isinstance(value, str):
         return value
     return None
+
+
+def _to_concat_text(value: object) -> str:
+    if value is None:
+        return ""
+    text = _to_text(value)
+    if text is None:
+        raise _EvalErrorSignal("type_mismatch")
+    return text
 
 
 def _format_number(value: float) -> str:
@@ -689,6 +700,8 @@ def _eval_doc_binary(node: BinaryOp, state: _DocumentEvalState, current: _RowRef
         return _eq(left, right)
     if op == "!=":
         return not _eq(left, right)
+    if op == "&":
+        return _to_concat_text(left) + _to_concat_text(right)
     if left is None or right is None:
         return None
     if op in ("+", "-", "*", "/", "%"):

@@ -173,6 +173,20 @@ V2 v1 field types:
 | `color` | User-authorable nullable color field stored as normalized `#rrggbb` hex. Editor exposes native color picker plus hex/RGB/CMYK inputs; short hex is accepted by frontend input and expanded before write. Filter: `is`, `is_not`, `is_empty`, `is_not_empty`. Aggregations: Count, Count Unique. Sort/group by stored hex. Does not drive row tinting or app view-state coloring. |
 | `linked_record` | Cell value is an ordered `string[]` of target row ids. Pills resolve labels through consumer-supplied target-table data and open the target record in the standard same-page row modal when active, preserving the current table/route for AirTable parity. Cross-route `?focus=<row_id>` deep links remain allowed for explicit navigation flows, but linked chips should not navigate by default. |
 
+**Formula authoring UI.** Add/edit Formula field modals use the shared
+`FieldConfigSectionFormula` surface only. The expression editor is the
+shared `FormulaSourceEditor`: multiline by default, textarea-backed,
+resizable, and overlaid with tolerant syntax highlighting for field
+references, string literals, and numeric literals. Formula feedback is a
+structured preview/error card; blocking local parse/evaluation errors
+use alert semantics, while neutral preview states remain polite. Field
+and function autocomplete is rendered by the shared
+`FormulaSuggestionPanel`, filters from the caret token (`{N` and bare
+`N` both work), inserts fields as `{Display Name}` and functions as
+`name(`, and supports ArrowUp/ArrowDown, Enter, Tab, Escape, and mouse
+selection. Feature tables may provide formula registries or row-value
+readers, but must not import formula editor components or CSS directly.
+
 Clipboard coercion must preflight the whole paste range. If any cell
 fails validation, commit nothing and show a paste review dialog with row,
 column, raw value, and error, capped to the first 25 failures plus an
@@ -672,6 +686,7 @@ live next to the DataTable code; the slower browser matrix lives under
 | Text / number / single-select edit → display → reload → persisted value shape | e2e `@table-behavior` |
 | Linked-record commit (grid picker + add-dialog), inverse column, persisted ids | e2e `@table-links` |
 | View-state (sort / filter / group / hide / reorder) persists by `(user, project, tableKey)` and survives reload; heat-pump leaves stay independent | e2e `@table-view-state` |
+| Shared formula editor/autocomplete reaches every field-config-capable DataTable; one persisted Rooms `&` formula recomputes after reload | e2e `@table-formula` |
 
 Run policy (see the feature `PLAN.md` "Validation Policy"):
 
@@ -683,9 +698,11 @@ Run policy (see the feature `PLAN.md` "Validation Policy"):
   `8000`) and the seeded agent account (`make seed-agent-user`). Sign-in
   defaults to `codex@example.com`.
 - Scripts: `pnpm run test:e2e:tables:smoke` (fast render check, ~20s) and
-  `pnpm run test:e2e:tables` (full directory). The suite is intentionally
-  kept out of default CI until its stack + flake profile are wired for CI
-  (a known full-run teardown flake is tracked in the feature `STATUS.md`).
+  `pnpm run test:e2e:tables:formula` (formula rollout check). Use
+  `pnpm run test:e2e:tables` for the full directory. The suite is
+  intentionally kept out of default CI until its stack + flake profile are
+  wired for CI (a known full-run teardown flake is tracked in the feature
+  `STATUS.md`).
 
 ## Deferred
 

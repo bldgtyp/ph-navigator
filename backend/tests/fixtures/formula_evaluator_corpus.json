@@ -128,6 +128,42 @@
       "expected": {"ok": true, "value": null}
     },
     {
+      "name": "concat_ampersand_text_text",
+      "source": "\"HP-\" & \"1\"",
+      "row": {},
+      "expected": {"ok": true, "value": "HP-1"}
+    },
+    {
+      "name": "concat_ampersand_number_text",
+      "source": "\"HP-\" & 4.0",
+      "row": {},
+      "expected": {"ok": true, "value": "HP-4"}
+    },
+    {
+      "name": "concat_ampersand_field_text",
+      "source": "{Number} & \" - \" & {Name}",
+      "row": {"number": 101, "name": "Living"},
+      "expected": {"ok": true, "value": "101 - Living"}
+    },
+    {
+      "name": "concat_ampersand_null_empty",
+      "source": "null & \"x\"",
+      "row": {},
+      "expected": {"ok": true, "value": "x"}
+    },
+    {
+      "name": "concat_ampersand_bool_text",
+      "source": "true & \" flag\"",
+      "row": {},
+      "expected": {"ok": true, "value": "true flag"}
+    },
+    {
+      "name": "concat_ampersand_precedence_after_add",
+      "source": "1 + 2 & \" kW\"",
+      "row": {},
+      "expected": {"ok": true, "value": "3 kW"}
+    },
+    {
       "name": "cmp_eq_true",
       "source": "1 = 1",
       "row": {},

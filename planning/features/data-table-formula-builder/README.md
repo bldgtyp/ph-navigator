@@ -66,10 +66,10 @@ Formula authoring already lives in shared DataTable components:
 - `frontend/src/shared/ui/data-table/components/CreateFieldConfigModal.tsx`
   renders the add-field modal.
 - `frontend/src/shared/ui/data-table/components/FieldConfigSectionFormula.tsx`
-  owns the formula expression input, palette insertion, local parse state,
+  owns the formula expression input, suggestion state, local parse state,
   and preview panel.
-- `frontend/src/shared/ui/data-table/components/FormulaFieldPalette.tsx`
-  is the current all-fields chip list.
+- `frontend/src/shared/ui/data-table/components/FormulaSuggestionPanel.tsx`
+  renders the field/function autocomplete list.
 - `frontend/src/shared/ui/data-table/lib/formula/*` is the TypeScript
   parser/resolver/evaluator used by local preview.
 - `backend/features/project_document/formula/*` is the authoritative Python

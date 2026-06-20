@@ -1,19 +1,35 @@
 ---
 DATE: 2026-06-20
-TIME: 08:05 EDT
-STATUS: Planned
+TIME: 09:14 EDT
+STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Field/function autocomplete for the shared formula editor.
 RELATED:
   - planning/features/data-table-formula-builder/PRD.md
   - planning/features/data-table-formula-builder/PLAN.md
   - frontend/src/shared/ui/data-table/components/FieldConfigSectionFormula.tsx
-  - frontend/src/shared/ui/data-table/components/FormulaFieldPalette.tsx
+  - frontend/src/shared/ui/data-table/components/FormulaSuggestionPanel.tsx
   - frontend/src/shared/ui/data-table/lib/formula/parser.ts
   - frontend/src/shared/ui/data-table/lib/formula/resolver.ts
 ---
 
 # Phase 04 - Autocomplete
+
+## Implementation Summary
+
+Complete on 2026-06-20.
+
+- Replaced the static `FormulaFieldPalette` chip surface with
+  `FormulaSuggestionPanel`.
+- Added `lib/formula/suggestions.ts` for caret context detection, matching,
+  ranking, insertion text, and stable ARIA option ids.
+- Wired suggestions into `FieldConfigSectionFormula` with mouse insertion,
+  ArrowUp/ArrowDown selection, Enter/Tab insertion, and Escape dismissal.
+- Added parent modal Escape coordination so Radix Dialog does not close before
+  an open suggestion panel is dismissed.
+- Suggestions use field registry entries, exclude the currently edited field,
+  insert fields as `{Display Name}`, and insert functions as `name(`.
+- Added focused helper, panel, create-modal, and edit-modal coverage.
 
 ## Objective
 
@@ -33,7 +49,6 @@ and inserts valid formula tokens at the caret.
 Primary files:
 
 - `frontend/src/shared/ui/data-table/components/FieldConfigSectionFormula.tsx`
-- `frontend/src/shared/ui/data-table/components/FormulaFieldPalette.tsx`
 - `frontend/src/shared/ui/data-table/components/FormulaSourceEditor.tsx`
 - `frontend/src/shared/ui/data-table/DataTable.css`
 
@@ -43,6 +58,10 @@ Likely new files:
 - `frontend/src/shared/ui/data-table/lib/formula/suggestions.ts`
 - `frontend/src/shared/ui/data-table/__tests__/formulaSuggestions.test.ts`
 - `frontend/src/shared/ui/data-table/__tests__/FormulaSuggestionPanel.test.tsx`
+
+Removed files:
+
+- `frontend/src/shared/ui/data-table/components/FormulaFieldPalette.tsx`
 
 Read-only references:
 
@@ -138,6 +157,20 @@ cd frontend && pnpm exec vitest run src/shared/ui/data-table/__tests__/CreateFie
 make frontend-dev-check
 ```
 
+Phase completion evidence:
+
+- Focused autocomplete/modal tests passed:
+  `cd frontend && pnpm exec vitest run src/shared/ui/data-table/__tests__/formulaSuggestions.test.ts src/shared/ui/data-table/__tests__/FormulaSuggestionPanel.test.tsx src/shared/ui/data-table/__tests__/CreateFieldConfigModal.test.tsx src/shared/ui/data-table/__tests__/FieldConfigModal.test.tsx`
+  (`67 passed`).
+- `make format` passed.
+- `make frontend-dev-check` passed. Existing lint output still reports 13
+  Fast Refresh warnings in unrelated files; no errors.
+- `make ci` passed:
+  - backend: Ruff format/lint, Ty, Alembic, pytest
+    (`912 passed, 2 skipped`);
+  - frontend: frozen pnpm install, Prettier, ESLint, structural guards,
+    Vitest (`184 files`, `1760 tests`), production build.
+
 Browser check with local stack:
 
 - open Rooms;
@@ -159,6 +192,5 @@ Browser check with local stack:
 
 ## Handoff Notes
 
-This phase is UX-heavy but should still be testable without a browser through
-caret helper tests and component tests. Add browser coverage in Phase 05 rather
-than making this phase depend on all-table e2e.
+Phase 04 shipped with helper/component/modal tests. Add browser/all-table
+coverage in Phase 05 rather than making this phase depend on all-table e2e.

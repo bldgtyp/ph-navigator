@@ -22,7 +22,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:tables": "playwright test tests/e2e/table-regression",
-    "test:e2e:tables:smoke": "playwright test tests/e2e/table-regression --grep @table-smoke"
+    "test:e2e:tables:smoke": "playwright test tests/e2e/table-regression --grep @table-smoke",
+    "test:e2e:tables:formula": "playwright test tests/e2e/table-regression --grep @table-formula"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

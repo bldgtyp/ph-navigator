@@ -19,7 +19,7 @@ export type LocalFormulaState =
   | { kind: "cycle"; field_id: string }
   | { kind: "parse_error"; message: string; offset: number }
   | { kind: "resource_limit"; limit: string; actual: number; max: number }
-  | { kind: "unsupported_function"; name: string };
+  | { kind: "unsupported_function"; name: string; available: ReadonlyArray<string> };
 
 export type ParseFormulaOptions = {
   // When set, a resolved AST referencing this id is reported as a
@@ -50,7 +50,7 @@ export function parseFormulaSource(
       };
     }
     if (err instanceof FormulaUnsupportedFunctionError) {
-      return { kind: "unsupported_function", name: err.function_name };
+      return { kind: "unsupported_function", name: err.function_name, available: err.available };
     }
     throw err;
   }
@@ -80,7 +80,7 @@ export function formatLocalFormulaError(state: LocalFormulaState): string | null
     case "resource_limit":
       return `Formula exceeds ${state.limit} limit (${state.actual}/${state.max}). Simplify the expression and try again.`;
     case "unsupported_function":
-      return `Function '${state.name}' is not supported.`;
+      return `Function '${state.name}' is not supported. Available: ${state.available.join(", ")}.`;
     case "missing_ref":
       return `Formula references a field that doesn't exist in this table: ${state.display_name}.`;
     case "cycle":
