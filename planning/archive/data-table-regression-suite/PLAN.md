@@ -5,9 +5,9 @@ STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Implementation plan for DataTable regression tests.
 RELATED:
-  - planning/features/data-table-regression-suite/README.md
-  - planning/features/data-table-regression-suite/PRD.md
-  - planning/features/data-table-regression-suite/STATUS.md
+  - planning/archive/data-table-regression-suite/README.md
+  - planning/archive/data-table-regression-suite/PRD.md
+  - planning/archive/data-table-regression-suite/STATUS.md
   - frontend/src/shared/ui/data-table/DataTable.tsx
   - frontend/src/shared/ui/data-table/components/GridBody.tsx
   - frontend/src/shared/ui/data-table/hooks/useGridEdit.ts

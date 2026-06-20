@@ -5,10 +5,10 @@ STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Docs-only creation of the DataTable regression suite plan.
 RELATED:
-  - planning/features/data-table-regression-suite/README.md
-  - planning/features/data-table-regression-suite/PRD.md
-  - planning/features/data-table-regression-suite/PLAN.md
-  - planning/features/data-table-regression-suite/STATUS.md
+  - planning/archive/data-table-regression-suite/README.md
+  - planning/archive/data-table-regression-suite/PRD.md
+  - planning/archive/data-table-regression-suite/PLAN.md
+  - planning/archive/data-table-regression-suite/STATUS.md
 ---
 
 # Phase 00 - Planning Packet

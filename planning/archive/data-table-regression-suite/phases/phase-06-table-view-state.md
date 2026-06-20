@@ -5,7 +5,7 @@ STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Persisted table-view-state regression coverage.
 RELATED:
-  - planning/features/data-table-regression-suite/PLAN.md
+  - planning/archive/data-table-regression-suite/PLAN.md
   - frontend/src/features/table_views/hooks.ts
   - frontend/src/shared/ui/data-table/feature/useSliceTableController.ts
 ---

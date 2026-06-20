@@ -374,7 +374,7 @@ export function useGridEdit(args: {
 // the planner is directly unit-testable — see
 // `__tests__/sharedEditContract.test.ts`, the regression suite's
 // single source of truth for the forward/inverse op contract
-// (planning/features/data-table-regression-suite, Phase 02).
+// (planning/archive/data-table-regression-suite, Phase 02).
 export type CommitPlan =
   | { kind: "noop" }
   | { kind: "invalid"; message: string }

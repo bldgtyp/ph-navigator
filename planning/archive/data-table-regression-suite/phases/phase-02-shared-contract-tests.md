@@ -5,7 +5,7 @@ STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Fast shared DataTable contract coverage.
 RELATED:
-  - planning/features/data-table-regression-suite/PLAN.md
+  - planning/archive/data-table-regression-suite/PLAN.md
   - frontend/src/shared/ui/data-table/hooks/useGridEdit.ts
   - frontend/src/shared/ui/data-table/lib/rows/defaults.ts
   - frontend/src/shared/ui/data-table/components/GridBody.tsx

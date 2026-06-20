@@ -21,7 +21,7 @@ feature-first planning.
 | Spaces Refactor | Complete / Phase 05 verified with format, CI, browser smoke, graphify, simplify, and docs-pass evidence; archived | `archive/spaces-refactor/STATUS.md` |
 | DataTable Consolidation | Complete / Phase 06 verified with format, CI, browser smoke, graphify, simplify, and docs-pass evidence; archived | `archive/data-table-consolidation/STATUS.md` |
 | DataTable Maintenance | Complete / cleanup follow-up implemented and archived | `archive/data-table-maintenance/STATUS.md` |
-| DataTable Regression Suite | Complete / all 7 phases implemented — layered e2e suite under `frontend/tests/e2e/table-regression/` (`@table-smoke` route matrix, `@table-behavior` cell behavior, `@table-links` linked-record flows, `@table-view-state` view-state persistence) over the React-free `sharedEditContract` seam; package scripts + run policy + CI decision recorded; not yet in default CI by decision | `features/data-table-regression-suite/STATUS.md` |
+| DataTable Regression Suite | Complete / all 7 phases implemented — layered e2e suite under `frontend/tests/e2e/table-regression/` (`@table-smoke` route matrix, `@table-behavior` cell behavior, `@table-links` linked-record flows, `@table-view-state` view-state persistence) over the React-free `sharedEditContract` seam; package scripts + run policy + CI decision recorded; not yet in default CI by decision; archived | `archive/data-table-regression-suite/STATUS.md` |
 
 ## Historical Material
 
@@ -41,8 +41,8 @@ feature-first planning.
   `archive/data-table-consolidation/`.
 - Completed DataTable Maintenance cleanup now lives under
   `archive/data-table-maintenance/`.
-- Active DataTable Regression Suite planning now lives under
-  `features/data-table-regression-suite/`.
+- Completed DataTable Regression Suite planning now lives under
+  `archive/data-table-regression-suite/`.
 - Completed Attachments (v1) planning now lives under
   `archive/attachments/`. The stable implementation contract remains
   current in `context/technical-requirements/attachments.md`; the

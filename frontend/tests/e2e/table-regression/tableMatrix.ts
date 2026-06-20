@@ -7,7 +7,7 @@
 // engineering which table broke.
 //
 // Phase 01 deliverable (see
-// planning/features/data-table-regression-suite/phases/
+// planning/archive/data-table-regression-suite/phases/
 // phase-01-inventory-and-harness.md). Behavior assertions land in later
 // phases; this file carries no assertions.
 //

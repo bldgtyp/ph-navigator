@@ -5,7 +5,7 @@ STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Operationalize the table regression suite after implementation.
 RELATED:
-  - planning/features/data-table-regression-suite/PLAN.md
+  - planning/archive/data-table-regression-suite/PLAN.md
   - context/technical-requirements/data-table.md
 ---
 

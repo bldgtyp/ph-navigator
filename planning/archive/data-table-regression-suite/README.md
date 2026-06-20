@@ -5,9 +5,9 @@ STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Planning packet for a focused DataTable regression test suite.
 RELATED:
-  - planning/features/data-table-regression-suite/PRD.md
-  - planning/features/data-table-regression-suite/PLAN.md
-  - planning/features/data-table-regression-suite/STATUS.md
+  - planning/archive/data-table-regression-suite/PRD.md
+  - planning/archive/data-table-regression-suite/PLAN.md
+  - planning/archive/data-table-regression-suite/STATUS.md
   - context/technical-requirements/data-table.md
 ---
 
