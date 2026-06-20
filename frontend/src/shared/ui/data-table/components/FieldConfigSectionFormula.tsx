@@ -163,7 +163,7 @@ export function FieldConfigSectionFormula({
       role="group"
       aria-label="Formula"
     >
-      <label className="data-table-add-field-label" htmlFor={sourceInputId}>
+      <label className="data-table-field-config-label" htmlFor={sourceInputId}>
         Expression
       </label>
       {useTextarea ? (

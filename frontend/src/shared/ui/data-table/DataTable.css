@@ -801,14 +801,6 @@
   outline: none;
 }
 
-.data-table-add-field-label {
-  font-size: var(--fs-sm);
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
 .data-table-add-field-input {
   width: 100%;
   padding: var(--space-6) var(--space-8);
@@ -857,33 +849,6 @@
 .data-table-add-field-inline-error {
   margin: 0;
   font-size: var(--fs-md);
-}
-
-.data-table-add-field-type-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-6);
-}
-
-.data-table-add-field-type-pill {
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-pill);
-  padding: var(--space-4) var(--space-10);
-  background: var(--bg-card);
-  color: var(--text-primary);
-  cursor: pointer;
-  font-size: var(--fs-md);
-}
-
-.data-table-add-field-type-pill[data-active="true"] {
-  border-color: var(--accent);
-  background: color-mix(in oklab, var(--accent) 12%, var(--bg-card));
-  color: var(--accent-text);
-}
-
-.data-table-add-field-type-pill[data-disabled="true"] {
-  opacity: 0.55;
-  cursor: not-allowed;
 }
 
 .data-table-add-field-config {
@@ -989,13 +954,6 @@
   overflow-y: auto;
 }
 
-.data-table-field-config-modal-title {
-  font-size: var(--fs-lg);
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0 0 var(--space-12);
-}
-
 .data-table-field-config-modal-form {
   display: flex;
   flex-direction: column;
@@ -1019,6 +977,43 @@
   margin: 0;
   font-size: var(--fs-sm);
   color: var(--text-muted);
+}
+
+.data-table-field-config-label {
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.data-table-field-config-typechange {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: color-mix(in oklab, var(--bg-elev) 72%, var(--bg-card));
+  padding: var(--space-8);
+}
+
+.data-table-field-config-typechange p {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}
+
+.data-table-field-config-typechange .data-table-add-field-options {
+  gap: var(--space-4);
+}
+
+.data-table-field-config-typechange .data-table-add-field-option-row {
+  grid-template-columns: minmax(5rem, 0.8fr) minmax(6rem, 1fr) minmax(7rem, 1fr);
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+}
+
+.data-table-field-config-preflight-heading {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .data-table-field-config-modal-footer {

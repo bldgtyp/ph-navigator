@@ -21,7 +21,7 @@ export function FieldConfigSectionNumber({
   const precisionId = useId();
   return (
     <div className={className}>
-      <label className="data-table-add-field-label" htmlFor={precisionId}>
+      <label className="data-table-field-config-label" htmlFor={precisionId}>
         Decimal precision
       </label>
       <input

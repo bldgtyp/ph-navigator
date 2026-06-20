@@ -607,9 +607,7 @@ export function FieldConfigModal({
           onInteractOutside={handleInteractOutside}
           onCloseAutoFocus={handleCloseAutoFocus}
         >
-          <Dialog.Title className="data-table-field-config-modal-title">
-            {source ? `Edit field — ${source.display_name}` : "Edit field"}
-          </Dialog.Title>
+          <Dialog.Title className="sr-only">Edit field</Dialog.Title>
           {externalConflict ? (
             <div className="data-table-field-config-modal-conflict" role="alert" aria-live="polite">
               <p className="data-table-field-config-modal-conflict-text">
@@ -643,7 +641,7 @@ export function FieldConfigModal({
             }}
           >
             <div className="data-table-field-config-modal-section">
-              <label className="data-table-add-field-label" htmlFor={nameId}>
+              <label className="sr-only" htmlFor={nameId}>
                 Name
               </label>
               <input
@@ -679,7 +677,6 @@ export function FieldConfigModal({
                 role="group"
                 aria-label="Field type"
               >
-                <span className="data-table-add-field-label">Type</span>
                 {draftType ? (
                   <FieldTypeSelect
                     value={draftType}
@@ -754,7 +751,7 @@ export function FieldConfigModal({
               />
             ) : null}
             <div className="data-table-field-config-modal-section">
-              <label className="data-table-add-field-label" htmlFor={descriptionId}>
+              <label className="sr-only" htmlFor={descriptionId}>
                 Description
               </label>
               <textarea

@@ -181,7 +181,7 @@ export function CreateFieldConfigModal({
           onInteractOutside={handleInteractOutside}
           onCloseAutoFocus={handleCloseAutoFocus}
         >
-          <Dialog.Title className="data-table-field-config-modal-title">Add field</Dialog.Title>
+          <Dialog.Title className="sr-only">Add field</Dialog.Title>
           <form
             className="data-table-field-config-modal-form"
             onSubmit={(event) => void handleSubmit(event)}
@@ -197,7 +197,7 @@ export function CreateFieldConfigModal({
             }}
           >
             <div className="data-table-field-config-modal-section">
-              <label className="data-table-add-field-label" htmlFor={nameId}>
+              <label className="sr-only" htmlFor={nameId}>
                 Name
               </label>
               <input
@@ -231,7 +231,6 @@ export function CreateFieldConfigModal({
               role="group"
               aria-label="Field type"
             >
-              <span className="data-table-add-field-label">Type</span>
               <FieldTypeSelect
                 value={fieldType}
                 options={fieldTypeOptions}
@@ -275,7 +274,7 @@ export function CreateFieldConfigModal({
             ) : null}
 
             <div className="data-table-field-config-modal-section">
-              <label className="data-table-add-field-label" htmlFor={descriptionId}>
+              <label className="sr-only" htmlFor={descriptionId}>
                 Description
               </label>
               <textarea
