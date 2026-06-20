@@ -169,7 +169,7 @@ export function FieldConfigSectionOptions({
     <>
       <div className="data-table-field-config-modal-section">
         <div className="data-table-field-editor-options-header">
-          <span className="data-table-add-field-label">Options</span>
+          <span className="data-table-field-config-label">Options</span>
           <label className="data-table-field-editor-toggle">
             <input
               type="checkbox"

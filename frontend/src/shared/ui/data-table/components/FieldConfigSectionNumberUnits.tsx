@@ -48,7 +48,7 @@ export function FieldConfigSectionNumberUnits({
   if (!units) {
     return (
       <div className="data-table-field-config-modal-section">
-        <span className="data-table-add-field-label">Units</span>
+        <span className="data-table-field-config-label">Units</span>
         <button
           type="button"
           className="secondary-button"
@@ -63,8 +63,8 @@ export function FieldConfigSectionNumberUnits({
 
   return (
     <div className="data-table-field-config-modal-section" role="group" aria-label="Units">
-      <span className="data-table-add-field-label">Unit</span>
-      <label className="data-table-add-field-label" htmlFor={typeId}>
+      <span className="data-table-field-config-label">Unit</span>
+      <label className="data-table-field-config-label" htmlFor={typeId}>
         Unit type
       </label>
       <AutocompleteSelect
@@ -88,7 +88,7 @@ export function FieldConfigSectionNumberUnits({
         }
       />
       <div className="data-table-field-config-modal-inline-grid">
-        <label className="data-table-add-field-label" htmlFor={siUnitId}>
+        <label className="data-table-field-config-label" htmlFor={siUnitId}>
           SI unit
         </label>
         <AutocompleteSelect
@@ -103,7 +103,7 @@ export function FieldConfigSectionNumberUnits({
           }))}
           onChange={(siUnit) => onUnitsChange({ ...units, si_unit: siUnit as NumberSiUnit })}
         />
-        <label className="data-table-add-field-label" htmlFor={ipUnitId}>
+        <label className="data-table-field-config-label" htmlFor={ipUnitId}>
           IP unit
         </label>
         <AutocompleteSelect
@@ -118,7 +118,7 @@ export function FieldConfigSectionNumberUnits({
           }))}
           onChange={(ipUnit) => onUnitsChange({ ...units, ip_unit: ipUnit as NumberIpUnit })}
         />
-        <label className="data-table-add-field-label" htmlFor={precisionSiId}>
+        <label className="data-table-field-config-label" htmlFor={precisionSiId}>
           SI decimal precision
         </label>
         <input
@@ -137,7 +137,7 @@ export function FieldConfigSectionNumberUnits({
             })
           }
         />
-        <label className="data-table-add-field-label" htmlFor={precisionIpId}>
+        <label className="data-table-field-config-label" htmlFor={precisionIpId}>
           IP decimal precision
         </label>
         <input

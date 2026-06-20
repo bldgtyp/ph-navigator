@@ -60,7 +60,7 @@ export function FieldConfigSectionLinkedRecord({
 
   return (
     <div className={className} data-testid="field-config-section-linked-record">
-      <label className="data-table-add-field-label" htmlFor={targetId}>
+      <label className="data-table-field-config-label" htmlFor={targetId}>
         Target table
       </label>
       <select
@@ -91,7 +91,7 @@ export function FieldConfigSectionLinkedRecord({
         disabled={disabled}
         aria-label="Cardinality"
       >
-        <legend className="data-table-add-field-label">Cardinality</legend>
+        <legend className="data-table-field-config-label">Cardinality</legend>
         <label>
           <input
             type="radio"

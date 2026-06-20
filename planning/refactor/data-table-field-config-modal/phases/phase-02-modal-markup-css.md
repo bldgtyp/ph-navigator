@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-20
 TIME: 07:58 EDT
-STATUS: Pending
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Modal DOM and shared CSS cleanup
 RELATED: planning/refactor/data-table-field-config-modal/phases/phase-01-field-type-select.md, frontend/src/shared/ui/data-table/DataTable.css
@@ -128,3 +128,38 @@ In `FieldConfigSectionTypeChange.tsx`:
 - Type-specific controls remain labeled and accessible.
 - The preflight content reads as secondary background information.
 
+## Completion Notes
+
+Completed 2026-06-20 08:45 EDT.
+
+- Hid Add Field and Edit Field `Dialog.Title` nodes with `.sr-only`.
+- Hid top-level Name and Description labels with `.sr-only`.
+- Removed the visible Type span; `FieldTypeSelect` remains labeled by its
+  combobox accessibility contract.
+- Replaced modal-tree uses of `data-table-add-field-label` with
+  `data-table-field-config-label` for type-specific visible labels.
+- Removed retired title/type-pill CSS and added the lower-emphasis label,
+  type-select, type-change, and preflight-heading hooks.
+- Restyled the type-change preflight as a secondary card while preserving
+  its group label, row preservation summary, incompatible row list, and
+  acknowledgement checkbox.
+
+## Verification
+
+```bash
+rg -n "data-table-field-config-modal-title|data-table-add-field-label|data-table-add-field-type-row|data-table-add-field-type-pill" frontend/src
+cd frontend && pnpm exec vitest run \
+  src/shared/ui/data-table/__tests__/FieldConfigModal.test.tsx \
+  src/shared/ui/data-table/__tests__/FieldConfigModal.locks.test.tsx \
+  src/shared/ui/data-table/__tests__/CreateFieldConfigModal.test.tsx \
+  src/shared/ui/data-table/__tests__/DataTable.test.tsx \
+  src/features/equipment/__tests__/RoomsTable.customFieldsPhase4.test.tsx
+make frontend-dev-check
+```
+
+Result:
+
+- Static retired-class search: no matches.
+- Focused modal/downstream tests: 5 files passed, 119 tests passed.
+- `make frontend-dev-check`: passed with existing Fast Refresh lint warnings
+  and existing Vite chunk-size warnings.

@@ -39,11 +39,11 @@ export function FieldConfigSectionTypeChange({
       role="group"
       aria-label={`Type change preflight: ${fromType} → ${toType}`}
     >
-      <div className="data-table-view-popover-heading">
-        {fromType} → {toType}
+      <div className="data-table-field-config-preflight-heading">
+        {fromType} -&gt; {toType}
       </div>
       <div className="data-table-add-field-config" aria-live="polite">
-        <span className="data-table-add-field-label">Preflight</span>
+        <span className="data-table-field-config-label">Preflight</span>
         <p>
           {compatibleCount} of {totalRows} row{totalRows === 1 ? "" : "s"} will keep their value
           {needsAck ? `; ${incompatible.length} will be cleared.` : "."}

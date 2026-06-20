@@ -11,9 +11,13 @@ RELATED: planning/refactor/data-table-field-config-modal/PLAN.md
 
 ## Current State
 
-Phase 01 complete. The modal is centralized in the shared DATA-TABLE
+Phase 02 complete. The modal is centralized in the shared DATA-TABLE
 package and now uses one shared field-type dropdown/select control in both
-Add Field and Edit Field flows:
+Add Field and Edit Field flows. The modal markup/CSS now matches the
+Airtable-parity direction: Name is the first visible control, Add/Edit
+titles are screen-reader-only, top-level Name/Type/Description label chrome
+is gone, and type-specific labels use the lower-emphasis
+`.data-table-field-config-label` hook.
 
 - `DataTable.tsx` mounts `CreateFieldConfigModal` and `FieldConfigModal`.
 - `FieldTypeSelect.tsx` wraps `AutocompleteSelect` for the shared field-type
@@ -23,27 +27,22 @@ Add Field and Edit Field flows:
   Number-with-Units `"Unit"` display label.
 - `CreateFieldConfigModal.tsx` builds Add Field options from
   `FIELD_TYPE_CHOICES` and keeps existing type-specific sections.
-- `DataTable.css` owns the new `.data-table-field-config-type-select`
-  layout hook.
-
-The old visible title/label classes and pill CSS classes still exist by
-design. They are Phase 02 cleanup scope:
-
-The old label class is wider than the screenshot implies: type-specific
-subsections also use it for Number precision, Units, Options, Formula
-source, Linked record target/cardinality, and Preflight. Implementation
-should remove the old class everywhere, but preserve semantic labels with
-`.sr-only` or a new low-emphasis modal label class where controls still
-need visible labels.
+- `DataTable.css` owns the new `.data-table-field-config-type-select`,
+  `.data-table-field-config-label`, `.data-table-field-config-typechange`,
+  and `.data-table-field-config-preflight-heading` layout hooks.
+- Static search confirms `data-table-field-config-modal-title`,
+  `data-table-add-field-label`, `data-table-add-field-type-row`, and
+  `data-table-add-field-type-pill` are gone from `frontend/src`.
 
 ## Next Step
 
-Implement `phases/phase-02-modal-markup-css.md`, then continue through the
-phase files in order.
+Implement `phases/phase-03-tests-static-guards.md`, then continue to the
+browser smoke closeout.
 
 ## Completed
 
 - `phases/phase-01-field-type-select.md` - Complete 2026-06-20 08:26 EDT.
+- `phases/phase-02-modal-markup-css.md` - Complete 2026-06-20 08:45 EDT.
 
 ## Last Verification
 
@@ -59,6 +58,14 @@ make frontend-dev-check
 make format
 make ci
 graphify update .
+rg -n "data-table-field-config-modal-title|data-table-add-field-label|data-table-add-field-type-row|data-table-add-field-type-pill" frontend/src
+cd frontend && pnpm exec vitest run \
+  src/shared/ui/data-table/__tests__/FieldConfigModal.test.tsx \
+  src/shared/ui/data-table/__tests__/FieldConfigModal.locks.test.tsx \
+  src/shared/ui/data-table/__tests__/CreateFieldConfigModal.test.tsx \
+  src/shared/ui/data-table/__tests__/DataTable.test.tsx \
+  src/features/equipment/__tests__/RoomsTable.customFieldsPhase4.test.tsx
+make frontend-dev-check
 ```
 
 Result:
@@ -73,6 +80,11 @@ Result:
   build passed.
 - `graphify update .`: graph updated. HTML export skipped because the graph
   exceeds the 5000-node visualization limit.
+- Retired class search after Phase 02: no matches.
+- Phase 02 focused modal/downstream tests: 5 test files passed, 119 tests
+  passed.
+- Phase 02 `make frontend-dev-check`: passed with existing Fast Refresh lint
+  warnings and existing Vite chunk-size warnings.
 
 ## Verification Target
 

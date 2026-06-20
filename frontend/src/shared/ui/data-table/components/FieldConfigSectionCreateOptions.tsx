@@ -46,7 +46,7 @@ export function FieldConfigSectionCreateOptions({
 
   return (
     <div className="data-table-field-config-modal-section">
-      <span className="data-table-add-field-label">Options</span>
+      <span className="data-table-field-config-label">Options</span>
       <ul className="data-table-add-field-options" role="list">
         {options.map((option, index) => (
           <li key={option.id} className="data-table-add-field-option-row">
