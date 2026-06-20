@@ -189,11 +189,11 @@ describe("CreateFieldConfigModal", () => {
   test("Phase 4 enables Formula alongside single_select", () => {
     render(<Harness />);
     fireEvent.focus(within(dialog()).getByRole("combobox", { name: "Field type" }));
-    expect(within(dialog()).getByRole("option", { name: /^Single select/ })).not.toHaveAttribute(
+    expect(screen.getByRole("option", { name: /^Single select/ })).not.toHaveAttribute(
       "aria-disabled",
       "true",
     );
-    expect(within(dialog()).getByRole("option", { name: /^Formula/ })).not.toHaveAttribute(
+    expect(screen.getByRole("option", { name: /^Formula/ })).not.toHaveAttribute(
       "aria-disabled",
       "true",
     );
