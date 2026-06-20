@@ -4,7 +4,7 @@ TIME: 07:58 EDT
 STATUS: Complete
 AUTHOR: Codex
 SCOPE: Shared field-type dropdown component
-RELATED: planning/refactor/data-table-field-config-modal/PLAN.md, frontend/src/shared/ui/data-table/components/fieldConfigChoices.ts
+RELATED: planning/archive/data-table-field-config-modal/PLAN.md, frontend/src/shared/ui/data-table/components/fieldConfigChoices.ts
 ---
 
 # Phase 01 - Field Type Select

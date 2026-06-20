@@ -4,7 +4,7 @@ TIME: 07:58 EDT
 STATUS: Complete
 AUTHOR: Codex
 SCOPE: Live consumer verification and closeout
-RELATED: planning/refactor/data-table-field-config-modal/phases/phase-03-tests-static-guards.md
+RELATED: planning/archive/data-table-field-config-modal/phases/phase-03-tests-static-guards.md
 ---
 
 # Phase 04 - Browser Verification And Closeout
