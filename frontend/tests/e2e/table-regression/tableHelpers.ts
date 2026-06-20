@@ -12,7 +12,7 @@
 // Contract").
 
 import { expect, type APIRequestContext, type Locator, type Page } from "@playwright/test";
-import { escapeRegExp, headerByLabel, readVersionedTable, signIn } from "../_helpers";
+import { apiUrl, escapeRegExp, headerByLabel, openHeaderMenu, readVersionedTable, signIn } from "../_helpers";
 import type { SingleSelectSample, TableRegressionCase } from "./tableMatrix";
 
 // The table suite signs in as the dedicated local agent account
@@ -462,4 +462,117 @@ export async function setModalLink(page: Page, dialog: Locator, fieldLabel: stri
   await dialog.getByRole("button", { name: new RegExp(`^${escapeRegExp(fieldLabel)}:`) }).click();
   const picker = await awaitOpenPicker(page, `"${fieldLabel}" field`);
   await confirmPickerSelection(picker, 1);
+}
+
+// --- Phase 06: table-view-state persistence -------------------------------
+
+/**
+ * The persisted `ViewState` shape (subset asserted by the suite). Mirrors
+ * `frontend/src/shared/ui/data-table/types.ts` `ViewState`. `filter` / `sort`
+ * / `group` are arrays of rules keyed by `fieldKey`; `hiddenColumns` and
+ * `columnOrder` are field-key lists.
+ */
+export type PersistedViewState = {
+  filter: ReadonlyArray<{ fieldKey: string }>;
+  sort: ReadonlyArray<{ fieldKey: string }>;
+  group: ReadonlyArray<{ fieldKey: string }>;
+  hiddenColumns: ReadonlyArray<string>;
+  columnOrder: ReadonlyArray<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * Read a table's persisted view-state through the backend table-views API,
+ * to assert persistence independently of the DOM. The state is keyed by
+ * (user, project, tableKey), so the read must run as the same signed-in user
+ * that performed the gestures. Returns `null` when the user has saved no view
+ * for the table yet.
+ */
+export async function readTableViewState(
+  request: APIRequestContext,
+  baseURL: string | undefined,
+  projectId: string,
+  tableKey: string,
+): Promise<PersistedViewState | null> {
+  const response = await request.get(
+    apiUrl(baseURL, `/api/v1/projects/${projectId}/table-views/${tableKey}`),
+  );
+  expect(response.status(), await response.text()).toBe(200);
+  const body = (await response.json()) as {
+    view_state?: { view_state?: PersistedViewState } | null;
+  };
+  return body.view_state?.view_state ?? null;
+}
+
+/**
+ * Poll the table-views read-back until `predicate` holds. View-state saves
+ * are debounced, so this doubles as the "save has landed" gate before a
+ * reload — far more robust than a fixed wait.
+ */
+export async function expectViewStatePersisted(
+  request: APIRequestContext,
+  baseURL: string | undefined,
+  projectId: string,
+  tableKey: string,
+  predicate: (state: PersistedViewState) => boolean,
+  message: string,
+): Promise<void> {
+  await expect
+    .poll(
+      async () => {
+        const state = await readTableViewState(request, baseURL, projectId, tableKey);
+        return state ? predicate(state) : false;
+      },
+      { message },
+    )
+    .toBe(true);
+}
+
+/** Sort a column via its header context menu ("Sort A → Z" / "Sort Z → A"). */
+export async function sortByHeader(
+  page: Page,
+  header: string,
+  direction: "asc" | "desc",
+): Promise<void> {
+  await openHeaderMenu(page, header);
+  await page.getByRole("menuitem", { name: direction === "asc" ? "Sort A → Z" : "Sort Z → A" }).click();
+}
+
+/** Seed a filter rule for a column via its header context menu. */
+export async function filterByHeader(page: Page, header: string): Promise<void> {
+  await openHeaderMenu(page, header);
+  await page.getByRole("menuitem", { name: "Filter by this field" }).click();
+}
+
+/** Group by a column via its header context menu. */
+export async function groupByHeader(page: Page, header: string): Promise<void> {
+  await openHeaderMenu(page, header);
+  await page.getByRole("menuitem", { name: "Group by this field" }).click();
+}
+
+/** Hide a (non-identifier) column via its header context menu. */
+export async function hideField(page: Page, header: string): Promise<void> {
+  await openHeaderMenu(page, header);
+  await page.getByRole("menuitem", { name: "Hide field" }).click();
+}
+
+/**
+ * Move a column one slot to the right via the keyboard reorder protocol
+ * (focus header → Space to pick up → ArrowRight → Space to commit). Keyboard
+ * is far more stable in Playwright than the dnd-kit pointer drag. The column
+ * must be non-primary (the frozen identifier can't be moved).
+ */
+export async function reorderHeaderRight(page: Page, header: string): Promise<void> {
+  await headerByLabel(page, header).focus();
+  await page.keyboard.press(" ");
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press(" ");
+}
+
+/** Visible column-header labels, left to right. */
+export async function visibleHeaderLabels(page: Page): Promise<string[]> {
+  const labels = await page
+    .locator('th[role="columnheader"] .data-table-header-label')
+    .allTextContents();
+  return labels.map((label) => label.trim()).filter((label) => label.length > 0);
 }

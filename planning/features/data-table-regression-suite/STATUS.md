@@ -15,8 +15,33 @@ RELATED:
 
 ## Current State
 
-`Phase 05 complete - linked-record flows green (3 tests; 46/46 across the
-whole table-regression suite)`.
+`Phase 06 complete - table-view-state persistence green (4 tests)`.
+
+Phase 06 adds
+`frontend/tests/e2e/table-regression/table-view-state.spec.ts`
+(`@table-view-state`): sort / filter / group / hide / reorder persist by
+`(user, project, tableKey)` and survive a route reload, and the four
+heat-pump leaves keep independent state by their distinct keys. View-state
+saves to the backend table-views API (debounced), so each gesture is proven
+by a live DOM signal, then `expectViewStatePersisted` polls the read-back
+(which also gates the reload on the save landing), then the DOM is
+re-checked after reload. Column gestures persist regardless of row count, so
+the spec seeds no rows (also sidestepping the HP unit-leaf add seeding). New
+table-agnostic helpers: `readTableViewState`, `expectViewStatePersisted`,
+`sortByHeader`, `filterByHeader`, `groupByHeader`, `hideField`,
+`reorderHeaderRight` (keyboard reorder), `visibleHeaderLabels`.
+
+Known flake (for Phase 07): running the *entire* `tests/e2e/table-regression`
+directory once surfaced a transient teardown flake in the Phase 04
+`thermal-bridges` behavior test (a lingering `modal-backdrop` intercepted
+the add-row click; "browser has been closed" — load/timing under the ~3min
+full run). `@table-behavior` is 13/13 in isolation and `@table-view-state`
+is 4/4; Playwright CI retries (2) would absorb it. Phase 07 owns the flake
+policy + CI decision.
+
+### Earlier phases
+
+`Phase 05 - linked-record flows green (3 tests; 46/46 across the suite)`.
 
 Phase 05 adds
 `frontend/tests/e2e/table-regression/table-linked-records.spec.ts`
@@ -68,12 +93,12 @@ empty-seeded selects with an unproven create path (heat-pump
 
 ## Next Step
 
-Phase 06: table-view-state persistence. Prove sort / filter / hide-show /
-reorder / group state persists by `(projectId, tableKey)` and survives a
-route reload, across Rooms, one standard equipment table, all four
-heat-pump leaves, and Thermal Bridges — and that the heat-pump leaves keep
-independent state by their distinct stable keys. See
-`phases/phase-06-table-view-state.md`.
+Phase 07: run policy and documentation. Measure smoke/full-suite runtime,
+record known flake points (see the `thermal-bridges` full-run flake above),
+add package scripts once the command shape is stable, fold accepted
+behavior contracts into `context/technical-requirements/data-table.md`, and
+decide whether any subset belongs in default CI. See
+`phases/phase-07-run-policy-and-docs.md`.
 
 ## Phase Status
 
@@ -85,7 +110,7 @@ independent state by their distinct stable keys. See
 | 03 - Route smoke matrix | Complete | `phases/phase-03-route-smoke-matrix.md` |
 | 04 - Cell behavior matrix | Complete | `phases/phase-04-cell-behavior-matrix.md` |
 | 05 - Deep linked-record flows | Complete | `phases/phase-05-deep-links-and-view-state.md` |
-| 06 - Table-view-state persistence | Planned | `phases/phase-06-table-view-state.md` |
+| 06 - Table-view-state persistence | Complete | `phases/phase-06-table-view-state.md` |
 | 07 - Run policy and documentation | Planned | `phases/phase-07-run-policy-and-docs.md` |
 
 ## Blockers
@@ -135,4 +160,13 @@ playwright test tests/e2e/table-regression --grep @table-links` →
 `tests/e2e/table-regression` directory (harness + smoke + behavior +
 links) is 46/46 green (~1.4m). Same local stack + seeded agent account
 preconditions.
+
+Phase 06: `E2E_EMAIL=codex@example.com E2E_PASSWORD=password pnpm exec
+playwright test tests/e2e/table-regression --grep @table-view-state` →
+4 passed (~28s), zero captured browser errors. The full
+`tests/e2e/table-regression` directory is now 50 tests; an isolated full
+run flaked once on the Phase 04 `thermal-bridges` behavior test (see the
+known flake under Current State) but every tag passes in isolation
+(`@table-view-state` 4/4, `@table-behavior` 13/13). `tsc -b`, ESLint, and
+`make ci` are green.
 
