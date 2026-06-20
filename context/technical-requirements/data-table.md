@@ -657,6 +657,36 @@ form shape fits the common scaffold:
 - Row-edit layout styles live in `DataTable.css`; shared row-edit
   components must not depend on feature-local CSS imports.
 
+## Regression Coverage
+
+The contracts above are guarded by a layered test suite. Fast shared tests
+live next to the DataTable code; the slower browser matrix lives under
+`frontend/tests/e2e/table-regression/` and is described once as data in
+`tableMatrix.ts` (one entry per project table). See
+`planning/features/data-table-regression-suite/` for the full design.
+
+| Contract | Where proven |
+|---|---|
+| Commit write/undo, coercion, null clears, option ids, link dedupe/`maxLinks` | `data-table/__tests__/sharedEditContract.test.ts` (React-free planners) |
+| Every table mounts the grid with its columns, no console error | e2e `@table-smoke` (one test per table) |
+| Text / number / single-select edit → display → reload → persisted value shape | e2e `@table-behavior` |
+| Linked-record commit (grid picker + add-dialog), inverse column, persisted ids | e2e `@table-links` |
+| View-state (sort / filter / group / hide / reorder) persists by `(user, project, tableKey)` and survives reload; heat-pump leaves stay independent | e2e `@table-view-state` |
+
+Run policy (see the feature `PLAN.md` "Validation Policy"):
+
+- Default frontend work does not pay for the browser matrix. Use
+  `make frontend-dev-check` + focused Vitest.
+- Shared DataTable changes: run the focused Vitest seam, then the relevant
+  e2e tag(s).
+- The browser matrix needs the local stack (frontend `5173`, backend
+  `8000`) and the seeded agent account (`make seed-agent-user`). Sign-in
+  defaults to `codex@example.com`.
+- Scripts: `pnpm run test:e2e:tables:smoke` (fast render check, ~20s) and
+  `pnpm run test:e2e:tables` (full directory). The suite is intentionally
+  kept out of default CI until its stack + flake profile are wired for CI
+  (a known full-run teardown flake is tracked in the feature `STATUS.md`).
+
 ## Deferred
 
 - OR mode in filters.
@@ -664,7 +694,9 @@ form shape fits the common scaffold:
 - Fill-handle pattern detection.
 - Mobile/phone optimization.
 - Comments, mentions, and presence cursors.
-- Linked-record / relation cells.
+- ~~Linked-record / relation cells.~~ Shipped — built-in + custom
+  linked-record fields with the shared picker; covered by e2e
+  `@table-links` (see Regression Coverage above).
 - ~~User-created runtime schema editing (the tail "+" cell is laid out
   but unwired).~~ Replaced by user-defined custom fields — see
   `data-model.md` §6.6 and `planning/archive/dated/2026-05-24/plan-13-custom-fields-overview.md`.

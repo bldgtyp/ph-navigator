@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-19
 TIME: 19:04 EDT
-STATUS: In progress
+STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Planning packet for a focused DataTable regression test suite.
 RELATED:
@@ -33,8 +33,11 @@ behavior matrix) is implemented under
 `frontend/tests/e2e/table-regression/table-linked-records.spec.ts`. Phase 06
 (table-view-state persistence) is implemented under
 `frontend/tests/e2e/table-regression/table-view-state.spec.ts`. Phase 07
-(run policy and docs) remains planned — the original "deep links and view
-state" Phase 05 was split into 05 + 06.
+(run policy and docs) is complete: package scripts, recorded runtimes/flake,
+a "Regression Coverage" section in
+`context/technical-requirements/data-table.md`, and the CI decision. **All
+seven phases are complete.** (The original "deep links and view state"
+Phase 05 was split into 05 + 06.)
 
 ## Problem Frame
 

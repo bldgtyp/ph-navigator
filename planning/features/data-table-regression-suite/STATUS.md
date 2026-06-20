@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-19
 TIME: 19:04 EDT
-STATUS: In progress
+STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Current state of DataTable regression suite planning.
 RELATED:
@@ -15,7 +15,23 @@ RELATED:
 
 ## Current State
 
-`Phase 06 complete - table-view-state persistence green (4 tests)`.
+`All phases complete (07/07) - DataTable regression suite implemented`.
+
+Phase 07 operationalized the suite: package scripts
+(`test:e2e:tables:smoke`, `test:e2e:tables`), recorded runtimes and the
+one known flake, folded a "Regression Coverage" section into
+`context/technical-requirements/data-table.md`, and recorded the CI
+decision (keep the browser matrix out of default CI for now; `make ci`
+already guards the React-free `sharedEditContract` seam; future: a
+stack-booting CI job running the ~20s smoke as a gate). See
+`phases/phase-07-run-policy-and-docs.md`.
+
+The suite now has 5 e2e tags + 1 no-browser harness tag, ~46–50 browser
+tests across all 14 project tables, all green in isolation.
+
+### Earlier phases
+
+`Phase 06 - table-view-state persistence green (4 tests)`.
 
 Phase 06 adds
 `frontend/tests/e2e/table-regression/table-view-state.spec.ts`
@@ -93,12 +109,10 @@ empty-seeded selects with an unproven create path (heat-pump
 
 ## Next Step
 
-Phase 07: run policy and documentation. Measure smoke/full-suite runtime,
-record known flake points (see the `thermal-bridges` full-run flake above),
-add package scripts once the command shape is stable, fold accepted
-behavior contracts into `context/technical-requirements/data-table.md`, and
-decide whether any subset belongs in default CI. See
-`phases/phase-07-run-policy-and-docs.md`.
+None — all seven phases are complete. Possible follow-ups (out of this
+feature's scope): a dedicated CI job that boots the stack and runs
+`test:e2e:tables:smoke` as a required gate; investigating the
+full-directory `thermal-bridges` teardown flake if it recurs.
 
 ## Phase Status
 
@@ -111,7 +125,7 @@ decide whether any subset belongs in default CI. See
 | 04 - Cell behavior matrix | Complete | `phases/phase-04-cell-behavior-matrix.md` |
 | 05 - Deep linked-record flows | Complete | `phases/phase-05-deep-links-and-view-state.md` |
 | 06 - Table-view-state persistence | Complete | `phases/phase-06-table-view-state.md` |
-| 07 - Run policy and documentation | Planned | `phases/phase-07-run-policy-and-docs.md` |
+| 07 - Run policy and documentation | Complete | `phases/phase-07-run-policy-and-docs.md` |
 
 ## Blockers
 
@@ -129,10 +143,15 @@ None.
   persisted value *shape* (`readDraftTable` + `findDraftRow` +
   `readRowFieldValue`). Phase 05 may revisit for linked-record target
   seeding.
-- Initial CI policy for the smoke suite.
-- Whether visual/screenshot checks are part of v1 or deferred.
-- Whether to create package scripts immediately or after local
-  stabilization (Phase 06).
+- ~~Initial CI policy for the smoke suite~~ — resolved in Phase 07: keep
+  the browser matrix out of default CI for now (it needs a booted stack +
+  seeded account); `make ci` already guards the React-free
+  `sharedEditContract` seam. Recommended future step: a stack-booting CI
+  job running `test:e2e:tables:smoke` as a gate.
+- ~~Whether to create package scripts immediately or after local
+  stabilization~~ — resolved in Phase 07: `test:e2e:tables:smoke` and
+  `test:e2e:tables` added now that the tag shape is stable.
+- Visual/screenshot checks remain a PRD non-goal for v1 (deferred).
 
 ## Verification
 
@@ -169,4 +188,12 @@ run flaked once on the Phase 04 `thermal-bridges` behavior test (see the
 known flake under Current State) but every tag passes in isolation
 (`@table-view-state` 4/4, `@table-behavior` 13/13). `tsc -b`, ESLint, and
 `make ci` are green.
+
+Phase 07: `pnpm run test:e2e:tables:smoke` → 14 passed (~20s). Package
+scripts added (`test:e2e:tables`, `test:e2e:tables:smoke`); runtimes,
+flake classification, and CI decision recorded in
+`phases/phase-07-run-policy-and-docs.md`; "Regression Coverage" section
+folded into `context/technical-requirements/data-table.md`. Docs-only +
+package-scripts change (no app logic), so the full `make ci` gate was not
+re-run for this phase.
 
