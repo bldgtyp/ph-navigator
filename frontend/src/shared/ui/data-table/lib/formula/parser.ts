@@ -12,7 +12,7 @@
 //   and_expr ::= not_expr ("and" not_expr)*
 //   not_expr ::= "not" not_expr | cmp
 //   cmp      ::= add ( ("=" | "!=" | "<" | "<=" | ">" | ">=") add )?
-//   add      ::= mul ( ("+" | "-") mul )*
+//   add      ::= mul ( ("+" | "-" | "&") mul )*
 //   mul      ::= unary ( ("*" | "/" | "%") unary )*
 //   unary    ::= "-" atom | atom
 //   atom     ::= number | string | bool | "null"
@@ -70,6 +70,7 @@ const SINGLE_CHAR_TOKENS: Readonly<Record<string, TokenKind>> = {
   "(": TokenKind.LPAREN,
   ")": TokenKind.RPAREN,
   ",": TokenKind.COMMA,
+  "&": TokenKind.AMPERSAND,
   "+": TokenKind.PLUS,
   "-": TokenKind.MINUS,
   "*": TokenKind.STAR,
@@ -472,8 +473,13 @@ class Parser {
 
   private add(): FormulaAST {
     let left = this.mul();
-    while (this.peek().kind === TokenKind.PLUS || this.peek().kind === TokenKind.MINUS) {
-      const op: BinaryOp = this.advance().kind === TokenKind.PLUS ? "+" : "-";
+    while (
+      this.peek().kind === TokenKind.PLUS ||
+      this.peek().kind === TokenKind.MINUS ||
+      this.peek().kind === TokenKind.AMPERSAND
+    ) {
+      const kind = this.advance().kind;
+      const op: BinaryOp = kind === TokenKind.PLUS ? "+" : kind === TokenKind.MINUS ? "-" : "&";
       const right = this.mul();
       this.bumpNode();
       const node: BinaryOpNode = {

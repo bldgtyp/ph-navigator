@@ -1,6 +1,6 @@
 ---
 DATE: 2026-06-20
-TIME: 08:52 EDT
+TIME: 09:01 EDT
 STATUS: Active
 AUTHOR: Ed (via Codex)
 SCOPE: Current state of DataTable formula builder planning.
@@ -15,7 +15,7 @@ RELATED:
 
 ## Current State
 
-`Phase 02 - message card and error copy complete; Phase 03 is next`.
+`Phase 03 - ampersand concat grammar complete; Phase 04 is next`.
 
 The current codebase already routes formula authoring through shared
 DataTable components:
@@ -28,9 +28,8 @@ DataTable components:
 - Frontend and backend formula grammars are parity-tested through shared
   corpus fixtures.
 
-Main confirmed gaps after Phase 02:
+Main confirmed gaps after Phase 03:
 
-- `&` is not part of the tokenizer/parser/evaluator;
 - current field insertion is a static chip palette, not autocomplete.
 
 Phase 01 added:
@@ -56,10 +55,21 @@ Phase 02 added:
 - regression coverage for parse, missing-ref, unsupported-function, preview,
   and save-gating behavior.
 
+Phase 03 added:
+
+- `&` token/parser support in the shared frontend and backend formula grammar;
+- `"&"` as a binary AST operator with the same precedence as `+` / `-`,
+  left-associative;
+- text-concat evaluation in frontend preview, backend row evaluation, and
+  backend document overlay evaluation;
+- backend `result_type: "text"` inference for `&` formulas;
+- shared grammar/evaluator corpus cases for field, number, boolean, null, and
+  precedence behavior;
+- schema mutation coverage proving `setFormula` saves a formula using `&`.
+
 ## Next Step
 
-Start Phase 03 with `&` concat tokenizer/parser/evaluator support and keep
-autocomplete deferred to Phase 04.
+Start Phase 04 with formula field-reference autocomplete.
 
 ## Phase Status
 
@@ -68,7 +78,7 @@ autocomplete deferred to Phase 04.
 | 00 - Research and planning | Complete | `phases/phase-00-research-plan.md` |
 | 01 - Shared formula editor UI | Complete | `phases/phase-01-shared-editor-ui.md` |
 | 02 - Message card and error copy | Complete | `phases/phase-02-message-card-errors.md` |
-| 03 - `&` concat grammar | Planned | `phases/phase-03-ampersand-concat.md` |
+| 03 - `&` concat grammar | Complete | `phases/phase-03-ampersand-concat.md` |
 | 04 - Autocomplete | Planned | `phases/phase-04-autocomplete.md` |
 | 05 - All-table regression coverage | Planned | `phases/phase-05-regression-coverage.md` |
 | 06 - Documentation and closeout | Planned | `phases/phase-06-docs-closeout.md` |
@@ -79,7 +89,6 @@ None.
 
 ## Open Decisions
 
-- Confirm `&` precedence and coercion against Airtable before implementation.
 - Confirm whether autocomplete should open on bare partial tokens as well as
   brace-prefixed field refs.
 - Confirm final modal max-width/resizing constraints after a quick browser
@@ -129,3 +138,22 @@ Phase 02 implementation checks:
     (`903 passed, 2 skipped`);
   - frontend: frozen pnpm install, Prettier, ESLint, structural guards,
     Vitest (`182 files`, `1743 tests`), production build.
+
+Phase 03 implementation checks:
+
+- Pre-edit focused baseline passed:
+  `cd backend && uv run pytest tests/test_project_document_formula_grammar.py tests/test_project_document_formula_evaluator.py tests/test_project_document_schema_mutations.py`
+  (`189 passed`) and
+  `cd frontend && pnpm exec vitest run src/shared/ui/data-table/__tests__/formulaGrammarCorpus.test.ts src/shared/ui/data-table/__tests__/formulaEvaluatorCorpus.test.ts src/shared/ui/data-table/__tests__/CreateFieldConfigModal.test.tsx src/shared/ui/data-table/__tests__/FieldConfigModal.test.tsx`
+  (`181 passed`).
+- Focused post-edit tests passed:
+  backend formula/schema tests (`198 passed`) and frontend formula/modal tests
+  (`189 passed`).
+- `make format` passed.
+- `make frontend-dev-check` passed. Existing lint output still reports 13
+  Fast Refresh warnings in unrelated files; no errors.
+- `make ci` passed:
+  - backend: Ruff format/lint, Ty, Alembic, pytest
+    (`912 passed, 2 skipped`);
+  - frontend: frozen pnpm install, Prettier, ESLint, structural guards,
+    Vitest (`182 files`, `1751 tests`), production build.

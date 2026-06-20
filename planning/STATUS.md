@@ -15,7 +15,7 @@ feature-first planning.
 | DataTable Color Field | Complete / implemented on main with CI and browser smoke evidence | `features/color-field/STATUS.md` |
 | Attachments | Complete (v1) / implemented on main with automated coverage, R2 smoke, and full Render staging acceptance; Phase-5 polish deferred by decision; archived | `archive/attachments/STATUS.md` |
 | IP/SI Unit Switching | Planned / implementation plan drafted | `features/ip-si-unit-switching/STATUS.md` |
-| DataTable Formula Builder | Active / Phases 01-02 implemented for shared formula editor UI and structured error cards; Phase 03 `&` concat grammar is next | `features/data-table-formula-builder/STATUS.md` |
+| DataTable Formula Builder | Active / Phases 01-03 implemented for shared formula editor UI, structured error cards, and `&` concat grammar; Phase 04 autocomplete is next | `features/data-table-formula-builder/STATUS.md` |
 | Apertures / Aperture Builder | Planned / PRD updated with review decisions; phase planning not started | `features/apertures/STATUS.md` |
 | CSS Token Guard Sweep | Complete / implemented on main worktree with format + CI evidence; archived | `archive/css-token-guard-sweep/STATUS.md` |
 | Heat Pump Link Fields | Complete / implemented on main with format, CI, graphify update, browser smoke evidence; archived | `archive/heat-pump-link-fields/STATUS.md` |

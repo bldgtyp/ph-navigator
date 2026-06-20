@@ -8,7 +8,7 @@ Grammar (plan-13 §4.4):
     and_expr ::= not_expr ("and" not_expr)*
     not_expr ::= "not" not_expr | cmp
     cmp      ::= add ( ("=" | "!=" | "<" | "<=" | ">" | ">=") add )?
-    add      ::= mul ( ("+" | "-") mul )*
+    add      ::= mul ( ("+" | "-" | "&") mul )*
     mul      ::= unary ( ("*" | "/" | "%") unary )*
     unary    ::= "-" atom | atom
     atom     ::= number | string | bool | "null"
@@ -231,6 +231,7 @@ def tokenize(source: str) -> list[Token]:
             ")": TokenKind.RPAREN,
             ",": TokenKind.COMMA,
             ".": TokenKind.DOT,
+            "&": TokenKind.AMPERSAND,
             "+": TokenKind.PLUS,
             "-": TokenKind.MINUS,
             "*": TokenKind.STAR,
@@ -386,8 +387,14 @@ class _Parser:
 
     def _add(self) -> FormulaAST:
         left = self._mul()
-        while self._peek().kind in (TokenKind.PLUS, TokenKind.MINUS):
-            op: BinaryOperator = "+" if self._advance().kind is TokenKind.PLUS else "-"
+        while self._peek().kind in (TokenKind.PLUS, TokenKind.MINUS, TokenKind.AMPERSAND):
+            kind = self._advance().kind
+            op_by_kind: dict[TokenKind, BinaryOperator] = {
+                TokenKind.PLUS: "+",
+                TokenKind.MINUS: "-",
+                TokenKind.AMPERSAND: "&",
+            }
+            op = op_by_kind[kind]
             right = self._mul()
             self._bump_node()
             left = BinaryOp(kind="binary_op", op=op, left=left, right=right)
