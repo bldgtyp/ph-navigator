@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-20
 TIME: 07:58 EDT
-STATUS: Pending
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Shared tests and static guardrails
 RELATED: planning/refactor/data-table-field-config-modal/references.md
@@ -91,3 +91,35 @@ cd frontend && pnpm exec vitest run \
 - Static guards prove retired class names and old pill tests are gone.
 - Feature-local tests are only changed if they assert shared modal internals.
 
+## Completion Notes
+
+Completed 2026-06-20 08:47 EDT.
+
+- Confirmed Phase 01 test updates cover the shared dropdown behavior for Add
+  Field and Edit Field flows.
+- Confirmed Phase 02 cleanup removed the retired visible-title, label, and
+  type-pill class hooks.
+- Tightened one feature-local Rooms comment so the modal ownership guard
+  reports only shared DATA-TABLE files.
+
+## Verification
+
+```bash
+rg -n "data-table-field-config-modal-title|data-table-add-field-label|data-table-add-field-type-row|data-table-add-field-type-pill" frontend/src
+rg -n "role=\"radiogroup\"|role=\"radio\"|clickPill|data-table-add-field-type-pill" frontend/src/shared/ui/data-table frontend/src/features --glob '*test*'
+rg -n "FieldConfigModal|CreateFieldConfigModal" frontend/src --glob '!**/__tests__/**'
+cd frontend && pnpm exec vitest run \
+  src/shared/ui/data-table/__tests__/FieldConfigModal.test.tsx \
+  src/shared/ui/data-table/__tests__/FieldConfigModal.locks.test.tsx \
+  src/shared/ui/data-table/__tests__/CreateFieldConfigModal.test.tsx \
+  src/features/equipment/__tests__/RoomsTable.customFieldsPhase4.test.tsx
+```
+
+Result:
+
+- Retired class search: no matches.
+- Old pill/radio test search: no matches.
+- Modal ownership search: shared DATA-TABLE imports, mounts, definitions, and
+  one shared type-change-section comment only.
+- Focused modal plus affected Rooms consumer tests: 4 files passed, 67 tests
+  passed.

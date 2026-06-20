@@ -37,9 +37,9 @@ export type RoomsTableSlotProps = {
   // field points at (see `buildLinkedRecordOps`).
   linkedRecordOps?: ReadonlyMap<string, LinkedRecordCellOps>;
   // Available target tables for the field config modal's "Linked
-  // record" target dropdown. Forwarded to <RoomsTable> → <DataTable>
-  // → <FieldConfigModal>. Page-level consumer derives this from the
-  // document's `TableContract` manifest.
+  // record" target dropdown. Forwarded through the shared DATA-TABLE
+  // path; page-level consumer derives this from the document's
+  // `TableContract` manifest.
   linkedRecordTargets?: ReadonlyArray<LinkedRecordTargetTableOption>;
   focusRowId?: string | null;
 };
