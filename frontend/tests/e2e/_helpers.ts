@@ -95,13 +95,24 @@ export async function updateCatalogRow(
   expect(response.status(), await response.text()).toBe(200);
 }
 
-export async function openHeaderMenu(page: Page, headerName: string): Promise<void> {
-  const escaped = headerName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const header = page.locator('th[role="columnheader"]').filter({
+/**
+ * Locate a column header by its exact label text. Matches the
+ * `.data-table-header-label` span rather than the header's accessible name,
+ * so number-with-units columns (whose name also carries the unit chip) and
+ * type-icon columns still resolve by their plain label. Shared single source
+ * of the grid's header-resolution contract.
+ */
+export function headerByLabel(page: Page, label: string): Locator {
+  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return page.locator('th[role="columnheader"]').filter({
     has: page.locator(".data-table-header-label", {
       hasText: new RegExp(`^${escaped}$`),
     }),
   });
+}
+
+export async function openHeaderMenu(page: Page, headerName: string): Promise<void> {
+  const header = headerByLabel(page, headerName);
   await expect(header).toHaveCount(1);
   await header.click({ button: "right" });
   await expect(page.getByRole("menu")).toBeVisible();
