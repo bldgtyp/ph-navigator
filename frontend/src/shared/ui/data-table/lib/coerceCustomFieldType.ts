@@ -54,12 +54,14 @@ export function computeLocalPreflight(
       : null;
   const incompatible: PreflightRow[] = [];
   for (const row of rows) {
+    const sourceValue =
+      fromType === "formula" ? coerceFormulaSnapshotToText(row.rawValue) : row.rawValue;
     const coerceInput =
       substituteLabels || substituteOptionColors
-        ? typeof row.rawValue === "string"
-          ? (sourceLookup?.get(row.rawValue) ?? null)
+        ? typeof sourceValue === "string"
+          ? (sourceLookup?.get(sourceValue) ?? null)
           : null
-        : row.rawValue;
+        : sourceValue;
     const result = coerceCustomValue(coerceInput, toType, { optionList: targetOptionList ?? [] });
     if (!result.ok) {
       incompatible.push({ rowId: row.rowId, rawValue: row.rawValue, reason: result.reason });
@@ -70,6 +72,14 @@ export function computeLocalPreflight(
 
 function formatNumberForText(value: number): string {
   if (Number.isInteger(value)) return String(value);
+  return String(value);
+}
+
+function coerceFormulaSnapshotToText(value: unknown): string | null {
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value === "string") return value;
+  if (typeof value === "boolean") return value ? "true" : "false";
+  if (typeof value === "number") return formatNumberForText(value);
   return String(value);
 }
 

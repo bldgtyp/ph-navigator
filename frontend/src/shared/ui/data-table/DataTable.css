@@ -847,7 +847,8 @@
 }
 
 .autocomplete-select-listbox.data-table-field-config-type-listbox {
-  z-index: calc(var(--z-dropdown) + 40);
+  z-index: calc(var(--z-modal) + 2);
+  pointer-events: auto;
   max-height: min(340px, calc(100vh - 160px));
   padding: var(--space-6);
 }

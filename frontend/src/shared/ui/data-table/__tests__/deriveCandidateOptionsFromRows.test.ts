@@ -18,6 +18,14 @@ describe("deriveCandidateOptionsFromRows", () => {
     expect(options.map((o) => o.label)).toEqual(["1", "12"]);
   });
 
+  test("coerces booleans to canonical formula snapshot labels", () => {
+    const options = deriveCandidateOptionsFromRows(
+      [{ rawValue: true }, { rawValue: false }, { rawValue: true }],
+      50,
+    );
+    expect(options.map((o) => o.label)).toEqual(["true", "false"]);
+  });
+
   test("skips null/empty/non-stringifiable values", () => {
     const options = deriveCandidateOptionsFromRows(
       [

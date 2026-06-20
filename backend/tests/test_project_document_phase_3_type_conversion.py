@@ -267,6 +267,69 @@ def test_primitive_to_formula_requires_ack_when_rows_non_empty() -> None:
 
 
 # ---------------------------------------------------------------------------
+# formula → primitive snapshot
+# ---------------------------------------------------------------------------
+
+
+def test_formula_to_short_text_snapshots_computed_values() -> None:
+    """Changing a formula field to a primitive snapshots the current
+    computed overlay into stored custom_values for the shared table path."""
+    body = _seed_body()
+    body = _with_custom_field(body, "cf_label", display_name="Label")
+    body = body.model_copy(
+        update={
+            "single_select_options": {
+                ROOM_FLOOR_LEVEL_OPTION_KEY: [
+                    SingleSelectOption(id="opt_L1", label="L1", color="#aabbcc", order=1.0),
+                ],
+            }
+        }
+    )
+    body = _with_room(body, room_id="rm_1", custom_values={"name": "Living", "cf_label": "discard me"})
+
+    to_formula = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="cf_label",
+        after=TableFieldDef(
+            field_key="cf_label",
+            display_name="Label",
+            field_type=CustomFieldType.formula,
+            config={},
+            origin="custom",
+            created_at=datetime(2026, 5, 26, 12, 0, tzinfo=UTC),
+            created_by=None,
+        ),
+        acknowledge_destructive=True,
+        formula_source='concat("Room: ", {Name})',
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    formula_body, _ = _apply(body, to_formula)
+
+    to_text = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="cf_label",
+        after=TableFieldDef(
+            field_key="cf_label",
+            display_name="Label",
+            field_type=CustomFieldType.short_text,
+            config={},
+            origin="custom",
+            created_at=datetime(2026, 5, 26, 12, 0, tzinfo=UTC),
+            created_by=None,
+        ),
+        expected_schema_fingerprint=_fingerprint(formula_body),
+    )
+    next_body, audit = _apply(formula_body, to_text)
+
+    assert audit["kind"] == "editFieldBundle"
+    assert audit["properties_changed"] == ["field_type"]
+    assert next_body.tables.rooms.field_defs[-1].field_type is CustomFieldType.short_text
+    assert next_body.tables.rooms.rows[0].custom_values["cf_label"] == "Room: Living"
+
+
+# ---------------------------------------------------------------------------
 # Audit log per-row before/after
 # ---------------------------------------------------------------------------
 

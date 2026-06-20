@@ -92,6 +92,25 @@ describe("computeLocalPreflight — primitive → formula (discard_then_author)"
   });
 });
 
+describe("computeLocalPreflight — formula snapshots", () => {
+  test("canonicalizes computed booleans before text coercion", () => {
+    const result = computeLocalPreflight("formula", "short_text", [
+      { rowId: "r1", rawValue: true },
+      { rowId: "r2", rawValue: false },
+    ]);
+
+    expect(result).not.toBeNull();
+    expect(result!.incompatible).toEqual([]);
+  });
+
+  test("canonicalizes computed booleans before numeric coercion", () => {
+    const result = computeLocalPreflight("formula", "number", [{ rowId: "r1", rawValue: true }]);
+
+    expect(result).not.toBeNull();
+    expect(result!.incompatible).toEqual([{ rowId: "r1", rawValue: true, reason: "not_a_number" }]);
+  });
+});
+
 describe("computeLocalPreflight — single_select → number (substitute_labels)", () => {
   // Mirrors the backend chain coercion: resolve option_id → label, then
   // try Number(label). Numeric labels coerce; non-numeric ones clear.

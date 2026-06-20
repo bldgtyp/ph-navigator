@@ -49,6 +49,7 @@ export function deriveCandidateOptionsFromRows(
     if (raw === null || raw === undefined) continue;
     let label: string;
     if (typeof raw === "string") label = raw.trim();
+    else if (typeof raw === "boolean") label = raw ? "true" : "false";
     else if (typeof raw === "number" && Number.isFinite(raw)) label = String(raw);
     else continue;
     if (!label) continue;
