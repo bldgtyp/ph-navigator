@@ -767,6 +767,38 @@ describe("FieldConfigModal", () => {
     );
   });
 
+  test("formula fields can change type to Short text through the shared bundle", async () => {
+    const dispatchBundle = vi.fn().mockResolvedValue(undefined);
+    render(
+      <Harness
+        dispatchBundle={dispatchBundle}
+        preflightRows={[{ rowId: "rm_1", rawValue: "LIVING-this" }]}
+        initialField={baseField({
+          field_type: "computed",
+          custom_field_type: "formula",
+          formula_config: {
+            source: '{Tag} & "-this"',
+            ast: null,
+            deps: ["record_id"],
+          },
+        })}
+      />,
+    );
+
+    chooseFieldType("Short text");
+    expect(screen.getByRole("group", { name: /formula → short_text/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() =>
+      expect(dispatchBundle).toHaveBeenCalledWith({
+        fieldKey: "cf_notes",
+        displayName: "Notes",
+        description: "old description",
+        fieldType: "short_text",
+      }),
+    );
+  });
+
   test("formula autocomplete excludes the field being edited", () => {
     render(
       <Harness

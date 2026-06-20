@@ -523,7 +523,9 @@ def apply_change_type(
     new_rows: list[object] = []
     row_changes: list[dict[str, object]] = []
     for row, before, after in decisions:
-        if before == after:
+        # Formula sources compare an overlay value to a stored value; an
+        # equal string still needs to be written into custom_values.
+        if from_type is not CustomFieldType.formula and before == after:
             new_rows.append(row)
             continue
         custom = dict(capability.read_row_custom_values(row))
