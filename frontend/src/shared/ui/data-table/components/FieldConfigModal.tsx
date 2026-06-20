@@ -600,7 +600,9 @@ export function FieldConfigModal({
           data-pending={pending ? "true" : undefined}
         />
         <Dialog.Content
-          className="data-table-field-config-modal"
+          className={`data-table-field-config-modal${
+            draftType === "formula" ? " data-table-field-config-modal-formula" : ""
+          }`}
           aria-describedby={submitError ? errorId : undefined}
           onEscapeKeyDown={handleEscape}
           onPointerDownOutside={handleInteractOutside}

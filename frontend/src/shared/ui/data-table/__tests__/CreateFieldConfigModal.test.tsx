@@ -317,6 +317,17 @@ describe("CreateFieldConfigModal", () => {
       expect(submit.disabled).toBe(true);
       expect(within(dialog()).getByRole("status")).toHaveTextContent(/Nonexistent/);
     });
+
+    test("field palette inserts a reference at the textarea caret", () => {
+      render(<Harness formulaFieldRegistry={registry} />);
+      clickPill("Formula");
+      const expression = within(dialog()).getByLabelText("Expression") as HTMLTextAreaElement;
+      fireEvent.change(expression, { target: { value: "upper()" } });
+      expression.focus();
+      expression.setSelectionRange(6, 6);
+      fireEvent.click(within(dialog()).getByRole("button", { name: "Text column Name" }));
+      expect(expression.value).toBe("upper({Name})");
+    });
   });
 
   // §A3 regression: the "+" create flow had no linked_record branch at
