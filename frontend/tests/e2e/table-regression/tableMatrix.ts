@@ -72,6 +72,22 @@ export type AddRowSpec =
 /** One representative `field_key` per field type that exists on the table. */
 export type RepresentativeFields = Partial<Record<TableFieldType, string>>;
 
+/**
+ * A representative single-select option for the Phase 04 behavior matrix.
+ * `existing` picks a template-seeded option by its visible label; `create`
+ * mints a brand-new option through the popover's "+ Create" footer. Only
+ * present on tables whose representative single-select is deterministic to
+ * drive — a seeded option to pick, or a select known to allow creation.
+ * Tables whose built-in select ships with NO seeded options and an unproven
+ * create path (e.g. heat-pump `manufacturer`) omit this and are skipped by
+ * the select step (documented in phase-04-cell-behavior-matrix.md).
+ */
+export type SingleSelectSample = {
+  mode: "existing" | "create";
+  /** Visible option label to pick (existing) or mint (create). */
+  label: string;
+};
+
 /** A single target table in the regression matrix. */
 export type TableRegressionCase = {
   /** Stable, unique matrix id (used in test titles + failure messages). */
@@ -97,6 +113,13 @@ export type TableRegressionCase = {
   defaultHiddenHeaders?: ReadonlyArray<string>;
   /** Representative `field_key`s for the field types present on the table. */
   representativeFields: RepresentativeFields;
+  /**
+   * The option the Phase 04 behavior matrix commits into the representative
+   * single-select cell. Omitted when the select step is intentionally not
+   * exercised for this table (no representative select, or an empty-seeded
+   * select deferred to a focused flow).
+   */
+  singleSelectSample?: SingleSelectSample;
   /** Built-in linked-record columns keyed by `field_key`. */
   linkedRecordTargets?: Record<string, LinkedRecordTarget>;
   /** How to add a row to this table. */
@@ -170,6 +193,10 @@ export const TABLE_REGRESSION_CASES: ReadonlyArray<TableRegressionCase> = [
       single_select: "floor_level",
       linked_record: "space_type_id",
     },
+    // `rooms.floor_level` seeds with an empty option list (templates.py),
+    // so the behavior matrix mints a fresh option via the popover's Create
+    // footer — the one create-mode select in the suite.
+    singleSelectSample: { mode: "create", label: "Ground" },
     linkedRecordTargets: {
       space_type_id: {
         header: "Space Type",
@@ -218,6 +245,7 @@ export const TABLE_REGRESSION_CASES: ReadonlyArray<TableRegressionCase> = [
       single_select: "inside_outside",
       linked_record: "incoming_indoor_unit_ids",
     },
+    singleSelectSample: { mode: "existing", label: "Inside" },
     linkedRecordTargets: {
       incoming_indoor_unit_ids: {
         header: "HP indoor units",
@@ -254,6 +282,7 @@ export const TABLE_REGRESSION_CASES: ReadonlyArray<TableRegressionCase> = [
       number: "wattage",
       single_select: "device_type",
     },
+    singleSelectSample: { mode: "existing", label: "10-Other" },
     addRow: { mode: "inline", buttonName: "Add pump" },
     notes:
       "No built-in linked-record column. A dynamic inverse `Rooms ← Pump` " +
@@ -283,6 +312,7 @@ export const TABLE_REGRESSION_CASES: ReadonlyArray<TableRegressionCase> = [
       number: "annual_runtime_min_yr",
       single_select: "fan_type",
     },
+    singleSelectSample: { mode: "existing", label: "1-Dryer" },
     addRow: { mode: "inline", buttonName: "Add fan" },
   },
   {
@@ -309,6 +339,7 @@ export const TABLE_REGRESSION_CASES: ReadonlyArray<TableRegressionCase> = [
       number: "quantity",
       single_select: "heater_type",
     },
+    singleSelectSample: { mode: "existing", label: "1-Electric" },
     addRow: { mode: "inline", buttonName: "Add hot water heater" },
     notes: 'Sub-tab button label is "Hot-water heaters"; region/heading is "Hot Water Heaters".',
   },
@@ -336,6 +367,7 @@ export const TABLE_REGRESSION_CASES: ReadonlyArray<TableRegressionCase> = [
       number: "size_l",
       single_select: "tank_type",
     },
+    singleSelectSample: { mode: "existing", label: "2-DHW only" },
     addRow: { mode: "inline", buttonName: "Add hot water tank" },
     notes:
       'Sub-tab button label is "Hot-water tanks". A second built-in select ' +
@@ -381,6 +413,7 @@ export const TABLE_REGRESSION_CASES: ReadonlyArray<TableRegressionCase> = [
       number: "annual_energy_kwh",
       single_select: "appliance_type",
     },
+    singleSelectSample: { mode: "existing", label: "4-fridge" },
     addRow: { mode: "inline", buttonName: "Add appliance" },
     notes: "A second built-in select `energy_star` (EnergyStar) is also present.",
   },
@@ -429,6 +462,10 @@ export const TABLE_REGRESSION_CASES: ReadonlyArray<TableRegressionCase> = [
       submitName: "Save outdoor equipment",
       fields: [{ label: "Tag", value: "HP-OE-01" }],
     },
+    notes:
+      "Heat-pump `manufacturer` seeds with no options, so no " +
+      "`singleSelectSample`: the Phase 04 behavior matrix skips the select " +
+      "step here (create-flow coverage stays in the shared edit contract).",
   },
   {
     id: "heat-pumps-equipment-indoor",
@@ -591,6 +628,7 @@ export const TABLE_REGRESSION_CASES: ReadonlyArray<TableRegressionCase> = [
       number: "psi_value_w_mk",
       single_select: "thermal_bridge_type",
     },
+    singleSelectSample: { mode: "existing", label: "15-Ambient" },
     addRow: { mode: "inline", buttonName: "Add thermal bridge" },
   },
 ];

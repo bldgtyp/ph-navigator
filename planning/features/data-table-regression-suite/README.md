@@ -26,8 +26,10 @@ Phase 01 (inventory + harness skeleton) is implemented under
 contract) is implemented under
 `frontend/src/shared/ui/data-table/__tests__/sharedEditContract.test.ts`.
 Phase 03 (route smoke matrix) is implemented under
-`frontend/tests/e2e/table-regression/table-smoke.spec.ts`. Phases 04-06
-(behavior matrix, deep links/view state, run policy) remain planned.
+`frontend/tests/e2e/table-regression/table-smoke.spec.ts`. Phase 04 (cell
+behavior matrix) is implemented under
+`frontend/tests/e2e/table-regression/table-cell-behavior.spec.ts`. Phases
+05-06 (deep links/view state, run policy) remain planned.
 
 ## Problem Frame
 
