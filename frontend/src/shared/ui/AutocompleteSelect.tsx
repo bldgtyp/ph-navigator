@@ -34,6 +34,7 @@ export function AutocompleteSelect({
   className,
   compact = false,
   listboxPlacement = "inline",
+  listboxClassName,
   onChange,
   renderOption,
 }: {
@@ -49,6 +50,7 @@ export function AutocompleteSelect({
   className?: string;
   compact?: boolean;
   listboxPlacement?: "inline" | "portal";
+  listboxClassName?: string;
   onChange: (value: string) => void;
   renderOption?: (option: AutocompleteSelectOption) => ReactNode;
 }) {
@@ -205,11 +207,14 @@ export function AutocompleteSelect({
   ]
     .filter(Boolean)
     .join(" ");
+  const listboxClassNames = ["autocomplete-select-listbox", listboxClassName ?? ""]
+    .filter(Boolean)
+    .join(" ");
 
   const listbox = open ? (
     <ul
       ref={listboxRef}
-      className="autocomplete-select-listbox"
+      className={listboxClassNames}
       id={listboxId}
       role="listbox"
       style={

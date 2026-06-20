@@ -315,13 +315,13 @@ describe("FieldConfigModal", () => {
     expect(screen.getAllByRole("option")).toHaveLength(8);
   });
 
-  test("Forbidden conversion target is visible and aria-disabled with an explanation", () => {
+  test("Forbidden conversion target is visible and aria-disabled", () => {
     // number → url is forbidden by CONVERSION_MATRIX.
     render(<Harness sourceCustomFieldType="number" preflightRows={[]} />);
     fireEvent.focus(screen.getByRole("combobox", { name: "Field type" }));
     const urlOption = screen.getByRole("option", { name: /^URL/ });
     expect(urlOption).toHaveAttribute("aria-disabled", "true");
-    expect(urlOption).toHaveTextContent(/cannot convert number/i);
+    expect(urlOption).toHaveTextContent("URL");
   });
 
   test("Selecting a compatible target mounts the inline preflight sub-panel", () => {

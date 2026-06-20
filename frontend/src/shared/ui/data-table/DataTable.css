@@ -846,6 +846,27 @@
   min-height: 34px;
 }
 
+.autocomplete-select-listbox.data-table-field-config-type-listbox {
+  z-index: calc(var(--z-dropdown) + 40);
+  max-height: min(340px, calc(100vh - 160px));
+  padding: var(--space-6);
+}
+
+.autocomplete-select-listbox.data-table-field-config-type-listbox [role="option"] {
+  min-height: 34px;
+  padding: var(--space-6) var(--space-8);
+}
+
+.data-table-field-config-type-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  width: 100%;
+  font-size: var(--fs-md);
+  font-weight: 400;
+  color: var(--text-primary);
+}
+
 .data-table-add-field-inline-error {
   margin: 0;
   font-size: var(--fs-md);
