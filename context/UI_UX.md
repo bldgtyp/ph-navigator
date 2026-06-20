@@ -441,6 +441,14 @@ sections with a uniform `"Field Locked"` tooltip rather than hiding
 the modal. Locked-attribute presence shows as a small lock glyph in
 the header.
 
+Formula fields use the same modal, with a larger multiline expression
+editor, syntax highlighting for field refs / strings / numbers, and a
+dedicated preview/error card. Field and function suggestions appear from
+the current caret token, insert valid formula syntax, and support mouse,
+ArrowUp/ArrowDown, Enter, Tab, and Escape without closing the modal first.
+The formula editor is shared DataTable UI; feature tables do not provide
+local formula authoring chrome.
+
 **Locked / read-only mode.** When the open version is locked, the
 visitor is a Viewer, or another permission boundary applies, the table
 renders in read-only mode: no toolbar mutations except sort/filter/group
