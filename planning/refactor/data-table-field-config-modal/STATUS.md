@@ -11,7 +11,7 @@ RELATED: planning/refactor/data-table-field-config-modal/PLAN.md
 
 ## Current State
 
-Phase 02 complete. The modal is centralized in the shared DATA-TABLE
+Phase 03 complete. The modal is centralized in the shared DATA-TABLE
 package and now uses one shared field-type dropdown/select control in both
 Add Field and Edit Field flows. The modal markup/CSS now matches the
 Airtable-parity direction: Name is the first visible control, Add/Edit
@@ -33,16 +33,18 @@ is gone, and type-specific labels use the lower-emphasis
 - Static search confirms `data-table-field-config-modal-title`,
   `data-table-add-field-label`, `data-table-add-field-type-row`, and
   `data-table-add-field-type-pill` are gone from `frontend/src`.
+- Static guard searches confirm old pill/radio test selectors are gone and
+  the field config modals are owned by shared DATA-TABLE files only.
 
 ## Next Step
 
-Implement `phases/phase-03-tests-static-guards.md`, then continue to the
-browser smoke closeout.
+Implement `phases/phase-04-browser-closeout.md`.
 
 ## Completed
 
 - `phases/phase-01-field-type-select.md` - Complete 2026-06-20 08:26 EDT.
 - `phases/phase-02-modal-markup-css.md` - Complete 2026-06-20 08:45 EDT.
+- `phases/phase-03-tests-static-guards.md` - Complete 2026-06-20 08:47 EDT.
 
 ## Last Verification
 
@@ -66,6 +68,13 @@ cd frontend && pnpm exec vitest run \
   src/shared/ui/data-table/__tests__/DataTable.test.tsx \
   src/features/equipment/__tests__/RoomsTable.customFieldsPhase4.test.tsx
 make frontend-dev-check
+rg -n "role=\"radiogroup\"|role=\"radio\"|clickPill|data-table-add-field-type-pill" frontend/src/shared/ui/data-table frontend/src/features --glob '*test*'
+rg -n "FieldConfigModal|CreateFieldConfigModal" frontend/src --glob '!**/__tests__/**'
+cd frontend && pnpm exec vitest run \
+  src/shared/ui/data-table/__tests__/FieldConfigModal.test.tsx \
+  src/shared/ui/data-table/__tests__/FieldConfigModal.locks.test.tsx \
+  src/shared/ui/data-table/__tests__/CreateFieldConfigModal.test.tsx \
+  src/features/equipment/__tests__/RoomsTable.customFieldsPhase4.test.tsx
 ```
 
 Result:
@@ -85,6 +94,10 @@ Result:
   passed.
 - Phase 02 `make frontend-dev-check`: passed with existing Fast Refresh lint
   warnings and existing Vite chunk-size warnings.
+- Phase 03 old pill/radio test guard: no matches.
+- Phase 03 modal ownership guard: shared DATA-TABLE files only.
+- Phase 03 focused modal plus affected Rooms consumer tests: 4 test files
+  passed, 67 tests passed.
 
 ## Verification Target
 
