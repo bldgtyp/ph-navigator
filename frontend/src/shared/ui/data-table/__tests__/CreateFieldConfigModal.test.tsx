@@ -333,14 +333,17 @@ describe("CreateFieldConfigModal", () => {
       expect(alert).toHaveTextContent("Available functions: concat, len, lower");
     });
 
-    test("field palette inserts a reference at the textarea caret", () => {
+    test("autocomplete inserts a reference at the textarea caret", () => {
       render(<Harness formulaFieldRegistry={registry} />);
       clickPill("Formula");
       const expression = within(dialog()).getByLabelText("Expression") as HTMLTextAreaElement;
       fireEvent.change(expression, { target: { value: "upper()" } });
       expression.focus();
       expression.setSelectionRange(6, 6);
-      fireEvent.click(within(dialog()).getByRole("button", { name: "Text column Name" }));
+      fireEvent.change(expression, { target: { value: "upper({N)" } });
+      expression.setSelectionRange(8, 8);
+      fireEvent.select(expression);
+      fireEvent.click(within(dialog()).getByRole("option", { name: "Name Text column" }));
       expect(expression.value).toBe("upper({Name})");
     });
   });

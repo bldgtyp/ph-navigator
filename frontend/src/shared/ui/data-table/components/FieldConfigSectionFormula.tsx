@@ -7,6 +7,7 @@ import {
   useState,
   type ChangeEvent,
   type Dispatch,
+  type KeyboardEvent,
   type SetStateAction,
   type ReactNode,
 } from "react";
@@ -22,8 +23,14 @@ import {
   type FormulaLocalMessage,
   type LocalFormulaState,
 } from "../lib/formula";
-import { FormulaFieldPalette } from "./FormulaFieldPalette";
+import {
+  buildFormulaSuggestions,
+  formulaSuggestionOptionId,
+  getFormulaCaretContext,
+  type FormulaSuggestion,
+} from "../lib/formula/suggestions";
 import { FormulaSourceEditor } from "./FormulaSourceEditor";
+import { FormulaSuggestionPanel } from "./FormulaSuggestionPanel";
 
 export type FormulaPreviewRowSnapshot = {
   id: string;
@@ -44,6 +51,8 @@ export type FieldConfigSectionFormulaProps = {
   previewStale: boolean;
   disabled?: boolean;
   onDraftChange: (draft: FormulaDraftState) => void;
+  onSuggestionPanelOpenChange?: (open: boolean) => void;
+  dismissSuggestionsSignal?: number;
 };
 
 export function FieldConfigSectionFormula({
@@ -54,11 +63,18 @@ export function FieldConfigSectionFormula({
   previewStale,
   disabled = false,
   onDraftChange,
+  onSuggestionPanelOpenChange,
+  dismissSuggestionsSignal,
 }: FieldConfigSectionFormulaProps) {
   const [source, setSource] = useStateFromInitial(initialSource);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const sourceInputId = useId();
   const previewLabelId = useId();
+  const suggestionPanelId = useId();
+  const [selection, setSelection] = useState({ start: 0, end: 0 });
+  const [suggestionsDismissed, setSuggestionsDismissed] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
+  const lastDismissSuggestionsSignalRef = useRef(dismissSuggestionsSignal);
 
   const localState = useMemo<LocalFormulaState>(
     () => parseFormulaSource(source, fieldRegistry, { excludeSelfRefId: fieldId }),
@@ -89,20 +105,18 @@ export function FieldConfigSectionFormula({
     [],
   );
 
-  const handleInsertToken = useCallback(
-    (token: string) => {
-      const el = inputRef.current;
-      if (!el) {
-        setSource((prev) =>
-          prev.length + token.length > SOURCE_LENGTH_MAX ? prev : `${prev}${token}`,
-        );
-        return;
-      }
-      const start = el.selectionStart ?? el.value.length;
-      const end = el.selectionEnd ?? el.value.length;
-      const next = `${el.value.slice(0, start)}${token}${el.value.slice(end)}`;
-      if (next.length > SOURCE_LENGTH_MAX) return;
+  const updateSelectionFromInput = useCallback(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    setSelection({ start: el.selectionStart ?? 0, end: el.selectionEnd ?? 0 });
+    setSuggestionsDismissed(false);
+  }, []);
+
+  const setSourceAndCaret = useCallback(
+    (next: string, caret: number) => {
       setSource(next);
+      setSelection({ start: caret, end: caret });
+      setSuggestionsDismissed(false);
       if (pendingCaretFrameRef.current !== null) {
         cancelAnimationFrame(pendingCaretFrameRef.current);
       }
@@ -110,7 +124,6 @@ export function FieldConfigSectionFormula({
         pendingCaretFrameRef.current = null;
         const updated = inputRef.current;
         if (!updated) return;
-        const caret = start + token.length;
         updated.focus();
         updated.setSelectionRange(caret, caret);
       });
@@ -118,9 +131,98 @@ export function FieldConfigSectionFormula({
     [setSource],
   );
 
-  const paletteEntries = useMemo(
+  const handleInsertSuggestion = useCallback(
+    (suggestion: FormulaSuggestion) => {
+      const context = getFormulaCaretContext(source, selection.start, selection.end);
+      if (context.mode === "none") return;
+      const next = `${source.slice(0, context.range.start)}${suggestion.insertText}${source.slice(
+        context.range.end,
+      )}`;
+      if (next.length > SOURCE_LENGTH_MAX) return;
+      const caret = context.range.start + suggestion.insertText.length;
+      setSourceAndCaret(next, caret);
+    },
+    [selection.end, selection.start, setSourceAndCaret, source],
+  );
+
+  const handleSourceChange = useCallback(
+    (event: ChangeEvent<HTMLTextAreaElement>) => {
+      const nextValue = event.currentTarget.value;
+      let start = event.currentTarget.selectionStart ?? 0;
+      let end = event.currentTarget.selectionEnd ?? start;
+      if (start === 0 && end === 0 && nextValue.length > 0 && nextValue !== source) {
+        start = nextValue.length;
+        end = nextValue.length;
+      }
+      setSource(nextValue);
+      setSelection({
+        start,
+        end,
+      });
+      setSuggestionsDismissed(false);
+    },
+    [setSource, source],
+  );
+
+  const suggestionEntries = useMemo(
     () => fieldRegistry.filter((entry) => entry.field_id !== fieldId),
     [fieldRegistry, fieldId],
+  );
+  const suggestionContext = useMemo(
+    () => getFormulaCaretContext(source, selection.start, selection.end),
+    [selection.end, selection.start, source],
+  );
+  const suggestions = useMemo(
+    () => buildFormulaSuggestions(suggestionContext, suggestionEntries),
+    [suggestionContext, suggestionEntries],
+  );
+  const suggestionPanelOpen = !disabled && !suggestionsDismissed && suggestions.length > 0;
+
+  useEffect(() => {
+    onSuggestionPanelOpenChange?.(suggestionPanelOpen);
+  }, [onSuggestionPanelOpenChange, suggestionPanelOpen]);
+
+  useEffect(() => {
+    if (dismissSuggestionsSignal === undefined) return;
+    if (lastDismissSuggestionsSignalRef.current === dismissSuggestionsSignal) return;
+    lastDismissSuggestionsSignalRef.current = dismissSuggestionsSignal;
+    setSuggestionsDismissed(true);
+  }, [dismissSuggestionsSignal]);
+
+  useEffect(() => {
+    setActiveSuggestionIndex(0);
+  }, [suggestionContext.query, suggestionContext.mode]);
+
+  useEffect(() => {
+    setActiveSuggestionIndex((index) => Math.min(index, Math.max(0, suggestions.length - 1)));
+  }, [suggestions.length]);
+
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLTextAreaElement>) => {
+      if (!suggestionPanelOpen) return;
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        setActiveSuggestionIndex((index) => (index + 1) % suggestions.length);
+        return;
+      }
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        setActiveSuggestionIndex((index) => (index - 1 + suggestions.length) % suggestions.length);
+        return;
+      }
+      if (event.key === "Enter" || event.key === "Tab") {
+        event.preventDefault();
+        const suggestion = suggestions[activeSuggestionIndex];
+        if (suggestion) handleInsertSuggestion(suggestion);
+        return;
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        setSuggestionsDismissed(true);
+      }
+    },
+    [activeSuggestionIndex, handleInsertSuggestion, suggestionPanelOpen, suggestions],
   );
 
   return (
@@ -132,25 +234,40 @@ export function FieldConfigSectionFormula({
       <label className="data-table-field-config-label" htmlFor={sourceInputId}>
         Expression
       </label>
-      <FormulaSourceEditor
-        ref={inputRef}
-        id={sourceInputId}
-        value={source}
-        maxLength={SOURCE_LENGTH_MAX}
-        disabled={disabled}
-        ariaInvalid={Boolean(localMessage && dirty)}
-        ariaDescribedBy={previewLabelId}
-        onChange={(event: ChangeEvent<HTMLTextAreaElement>) => setSource(event.target.value)}
-      />
+      <div className="formula-editor-composer">
+        <FormulaSourceEditor
+          ref={inputRef}
+          id={sourceInputId}
+          value={source}
+          maxLength={SOURCE_LENGTH_MAX}
+          disabled={disabled}
+          ariaInvalid={Boolean(localMessage && dirty)}
+          ariaDescribedBy={previewLabelId}
+          ariaControls={suggestionPanelOpen ? suggestionPanelId : undefined}
+          ariaExpanded={suggestionPanelOpen}
+          ariaActiveDescendant={
+            suggestionPanelOpen
+              ? formulaSuggestionOptionId(suggestionPanelId, activeSuggestionIndex)
+              : undefined
+          }
+          onChange={handleSourceChange}
+          onKeyDown={handleKeyDown}
+          onSelect={updateSelectionFromInput}
+          onClick={updateSelectionFromInput}
+        />
+        {suggestionPanelOpen ? (
+          <FormulaSuggestionPanel
+            id={suggestionPanelId}
+            suggestions={suggestions}
+            activeIndex={activeSuggestionIndex}
+            onActiveIndexChange={setActiveSuggestionIndex}
+            onSelect={handleInsertSuggestion}
+          />
+        ) : null}
+      </div>
       <span className="data-table-add-field-counter" aria-hidden>
         {source.length}/{SOURCE_LENGTH_MAX}
       </span>
-
-      <FormulaFieldPalette
-        entries={paletteEntries}
-        disabled={disabled || source.length >= SOURCE_LENGTH_MAX}
-        onInsert={handleInsertToken}
-      />
 
       <FormulaPreviewPanel
         labelId={previewLabelId}

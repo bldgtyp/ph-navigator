@@ -1,6 +1,6 @@
 ---
 DATE: 2026-06-20
-TIME: 09:01 EDT
+TIME: 09:14 EDT
 STATUS: Active
 AUTHOR: Ed (via Codex)
 SCOPE: Current state of DataTable formula builder planning.
@@ -15,7 +15,7 @@ RELATED:
 
 ## Current State
 
-`Phase 03 - ampersand concat grammar complete; Phase 04 is next`.
+`Phase 04 - autocomplete complete; Phase 05 is next`.
 
 The current codebase already routes formula authoring through shared
 DataTable components:
@@ -28,9 +28,10 @@ DataTable components:
 - Frontend and backend formula grammars are parity-tested through shared
   corpus fixtures.
 
-Main confirmed gaps after Phase 03:
+Main confirmed gaps after Phase 04:
 
-- current field insertion is a static chip palette, not autocomplete.
+- all-table regression coverage still needs to exercise the shared formula
+  authoring path across each DataTable surface.
 
 Phase 01 added:
 
@@ -67,9 +68,23 @@ Phase 03 added:
   precedence behavior;
 - schema mutation coverage proving `setFormula` saves a formula using `&`.
 
+Phase 04 added:
+
+- caret-context and suggestion helpers for brace-prefixed field refs, bare
+  partial tokens, quoted-string suppression, and closed-field suppression;
+- `FormulaSuggestionPanel`, replacing the static formula field chip palette
+  with an accessible listbox/option panel;
+- field suggestions from the formula registry, excluding the field currently
+  being edited to avoid self-reference;
+- function suggestions from the supported frontend authoring parser;
+- mouse, ArrowUp/ArrowDown, Enter, Tab, and Escape behavior, including Radix
+  dialog Escape interception so Escape closes suggestions before the modal;
+- create/edit modal regression coverage for insertion, current-field
+  exclusion, and Escape behavior.
+
 ## Next Step
 
-Start Phase 04 with formula field-reference autocomplete.
+Start Phase 05 with all-table formula regression coverage.
 
 ## Phase Status
 
@@ -79,7 +94,7 @@ Start Phase 04 with formula field-reference autocomplete.
 | 01 - Shared formula editor UI | Complete | `phases/phase-01-shared-editor-ui.md` |
 | 02 - Message card and error copy | Complete | `phases/phase-02-message-card-errors.md` |
 | 03 - `&` concat grammar | Complete | `phases/phase-03-ampersand-concat.md` |
-| 04 - Autocomplete | Planned | `phases/phase-04-autocomplete.md` |
+| 04 - Autocomplete | Complete | `phases/phase-04-autocomplete.md` |
 | 05 - All-table regression coverage | Planned | `phases/phase-05-regression-coverage.md` |
 | 06 - Documentation and closeout | Planned | `phases/phase-06-docs-closeout.md` |
 
@@ -89,8 +104,6 @@ None.
 
 ## Open Decisions
 
-- Confirm whether autocomplete should open on bare partial tokens as well as
-  brace-prefixed field refs.
 - Confirm final modal max-width/resizing constraints after a quick browser
   pass on desktop and narrow viewport.
 
@@ -157,3 +170,17 @@ Phase 03 implementation checks:
     (`912 passed, 2 skipped`);
   - frontend: frozen pnpm install, Prettier, ESLint, structural guards,
     Vitest (`182 files`, `1751 tests`), production build.
+
+Phase 04 implementation checks:
+
+- Focused autocomplete/modal tests passed:
+  `cd frontend && pnpm exec vitest run src/shared/ui/data-table/__tests__/formulaSuggestions.test.ts src/shared/ui/data-table/__tests__/FormulaSuggestionPanel.test.tsx src/shared/ui/data-table/__tests__/CreateFieldConfigModal.test.tsx src/shared/ui/data-table/__tests__/FieldConfigModal.test.tsx`
+  (`67 passed`).
+- `make format` passed.
+- `make frontend-dev-check` passed. Existing lint output still reports 13
+  Fast Refresh warnings in unrelated files; no errors.
+- `make ci` passed:
+  - backend: Ruff format/lint, Ty, Alembic, pytest
+    (`912 passed, 2 skipped`);
+  - frontend: frozen pnpm install, Prettier, ESLint, structural guards,
+    Vitest (`184 files`, `1760 tests`), production build.
