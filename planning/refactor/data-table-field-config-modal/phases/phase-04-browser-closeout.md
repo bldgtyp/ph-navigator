@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-20
 TIME: 07:58 EDT
-STATUS: Pending
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Live consumer verification and closeout
 RELATED: planning/refactor/data-table-field-config-modal/phases/phase-03-tests-static-guards.md
@@ -105,3 +105,53 @@ Update `STATUS.md` with:
 - Full closeout commands are either passed or explicitly deferred with a
   reason.
 
+## Completion Notes
+
+Completed 2026-06-20 08:52 EDT.
+
+- Verified the repo browser baseline:
+  - `curl -i http://localhost:8000/api/v1/auth/session` returned `401`
+    with `not_authenticated`.
+  - `curl -I http://localhost:5173` returned `200 OK`.
+- Logged in at `http://localhost:5173` with `codex@example.com`.
+- Opened project `ts-20316385 - Table Smoke 20316385`.
+- Navigated to `Spaces -> Rooms`
+  (`/projects/9d22c3dd-1ab2-445c-84db-07482d52b891/spaces/rooms`).
+- Opened Add Field through the table `+` control and confirmed the shared
+  modal has no retired class hooks, starts with the Name input, has one
+  field-type combobox, and has no visually visible top-level Name / Type /
+  Description labels.
+- Created disposable local-dev field `Smoke Field 07320`.
+- Opened Edit Field from that column header menu and confirmed the shared
+  Edit Field modal has one field-type combobox and no retired class hooks.
+- Changed the field type from `Short text` to `Number` and confirmed the
+  type-change preflight mounts as `.data-table-field-config-typechange`
+  with heading `short_text -> number`, `role="group"`, an accessible
+  type-change label, and a `0 of 0 rows will keep their value` preservation
+  summary.
+- Canceled the Edit Field modal without saving the type change.
+
+The disposable field remains in the local dev project as an uncommitted
+schema change from the smoke run; it was not committed to git and is useful
+only as local browser-smoke residue.
+
+## Verification
+
+```bash
+curl -i http://localhost:8000/api/v1/auth/session
+curl -I http://localhost:5173
+make frontend-dev-check
+make format
+make ci
+```
+
+Result:
+
+- Backend/frontend local baseline passed.
+- Browser smoke passed on Spaces / Rooms.
+- `make frontend-dev-check`: passed with existing Fast Refresh lint warnings
+  and existing Vite chunk-size warnings.
+- `make format`: passed; touched code was unchanged.
+- `make ci`: passed. Backend: 903 passed, 2 skipped, 1 existing
+  deprecation warning. Frontend: 181 test files passed, 1737 tests passed,
+  build passed with existing Vite chunk-size warnings.

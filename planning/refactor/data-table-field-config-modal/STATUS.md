@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-20
 TIME: 07:58 EDT
-STATUS: Active
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Current state and next steps
 RELATED: planning/refactor/data-table-field-config-modal/PLAN.md
@@ -11,7 +11,7 @@ RELATED: planning/refactor/data-table-field-config-modal/PLAN.md
 
 ## Current State
 
-Phase 03 complete. The modal is centralized in the shared DATA-TABLE
+All phases complete. The modal is centralized in the shared DATA-TABLE
 package and now uses one shared field-type dropdown/select control in both
 Add Field and Edit Field flows. The modal markup/CSS now matches the
 Airtable-parity direction: Name is the first visible control, Add/Edit
@@ -35,16 +35,20 @@ is gone, and type-specific labels use the lower-emphasis
   `data-table-add-field-type-pill` are gone from `frontend/src`.
 - Static guard searches confirm old pill/radio test selectors are gone and
   the field config modals are owned by shared DATA-TABLE files only.
+- Browser smoke on Spaces / Rooms confirms a real DATA-TABLE consumer opens
+  the shared Add Field and Edit Field modals, with the type-change preflight
+  rendered as secondary field-config UI.
 
 ## Next Step
 
-Implement `phases/phase-04-browser-closeout.md`.
+Feature packet complete. Next closeout step is archive/PR handling if desired.
 
 ## Completed
 
 - `phases/phase-01-field-type-select.md` - Complete 2026-06-20 08:26 EDT.
 - `phases/phase-02-modal-markup-css.md` - Complete 2026-06-20 08:45 EDT.
 - `phases/phase-03-tests-static-guards.md` - Complete 2026-06-20 08:47 EDT.
+- `phases/phase-04-browser-closeout.md` - Complete 2026-06-20 08:52 EDT.
 
 ## Last Verification
 
@@ -75,6 +79,11 @@ cd frontend && pnpm exec vitest run \
   src/shared/ui/data-table/__tests__/FieldConfigModal.locks.test.tsx \
   src/shared/ui/data-table/__tests__/CreateFieldConfigModal.test.tsx \
   src/features/equipment/__tests__/RoomsTable.customFieldsPhase4.test.tsx
+curl -i http://localhost:8000/api/v1/auth/session
+curl -I http://localhost:5173
+browser smoke: http://localhost:5173/projects/9d22c3dd-1ab2-445c-84db-07482d52b891/spaces/rooms
+make format
+make ci
 ```
 
 Result:
@@ -98,12 +107,22 @@ Result:
 - Phase 03 modal ownership guard: shared DATA-TABLE files only.
 - Phase 03 focused modal plus affected Rooms consumer tests: 4 test files
   passed, 67 tests passed.
+- Phase 04 browser baseline: backend session returned `401 not_authenticated`;
+  frontend returned `200 OK`.
+- Phase 04 browser smoke: passed on Spaces / Rooms using disposable custom
+  field `Smoke Field 07320`; Add Field and Edit Field both opened the shared
+  modal, the top-level label/title chrome was visually hidden, and the
+  `short_text -> number` preflight mounted as secondary UI.
+- Final `make format`: passed; touched code was unchanged.
+- Final `make ci`: passed. Backend: 903 passed, 2 skipped, 1 existing
+  deprecation warning. Frontend: 181 test files passed, 1737 tests passed,
+  build passed with existing Vite chunk-size warnings.
 
 ## Verification Target
 
-- Static search proves no `data-table-field-config-modal-title`,
+- Static search proved no `data-table-field-config-modal-title`,
   `data-table-add-field-label`, `data-table-add-field-type-row`, or
   `data-table-add-field-type-pill` references remain.
 - Shared unit tests cover both Add Field and Edit Field modal flows.
-- A browser smoke on one DATA-TABLE route proves the parent-level modal
+- A browser smoke on one DATA-TABLE route proved the parent-level modal
   renders consistently for consumers.
