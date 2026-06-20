@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-20
-TIME: 08:05 EDT
-STATUS: Planned
+TIME: 09:01 EDT
+STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Add Airtable-style `&` text concatenation to frontend and backend formula engines.
 RELATED:
@@ -181,3 +181,36 @@ make frontend-dev-check
 
 This is the highest semantic-risk phase. Keep the diff tight, lean on corpus
 tests, and do not bundle autocomplete or visual polish changes here.
+
+## Implementation Notes
+
+- Implemented `&` as a binary operator in both TypeScript and Python AST
+  unions.
+- Tokenized and parsed `&` in both formula parsers at the same precedence as
+  `+` / `-`, left-associative.
+- Evaluated `&` with text coercion:
+  - null / undefined -> empty string;
+  - strings pass through;
+  - finite numbers reuse existing `text()` number formatting;
+  - booleans render `true` / `false`;
+  - unsupported values raise `type_mismatch`.
+- Kept `+` numeric-only; string `+` still rejects with `type_mismatch`.
+- Added shared grammar/evaluator corpus cases and a backend schema mutation
+  save test.
+
+## Verification Notes
+
+- Pre-edit focused baseline passed:
+  - backend formula/schema tests: `189 passed`;
+  - frontend formula/modal tests: `181 passed`.
+- Focused post-edit tests passed:
+  - backend formula/schema tests: `198 passed`;
+  - frontend formula/modal tests: `189 passed`.
+- `make format` passed.
+- `make frontend-dev-check` passed. Existing lint output still reports 13
+  Fast Refresh warnings in unrelated files; no errors.
+- `make ci` passed:
+  - backend: Ruff format/lint, Ty, Alembic, pytest
+    (`912 passed, 2 skipped`);
+  - frontend: frozen pnpm install, Prettier, ESLint, structural guards,
+    Vitest (`182 files`, `1751 tests`), production build.

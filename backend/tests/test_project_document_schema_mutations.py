@@ -534,6 +534,29 @@ def test_set_formula_round_trip() -> None:
     assert audit["deps"] == config["deps"]
 
 
+def test_set_formula_accepts_ampersand_concat() -> None:
+    body = _with_field(
+        _empty_body(),
+        _make_custom_field("cf_a", display_name="Label", field_type=CustomFieldType.formula),
+    )
+
+    mutation = SetFormulaMutation(
+        kind="setFormula",
+        table_key="rooms",
+        field_id="cf_a",
+        source='{Number} & " - " & {Name}',
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, audit = _apply(body, mutation)
+    config = _custom_fields(next_body)[0].config
+    assert config["source"] == '{Number} & " - " & {Name}'
+    assert isinstance(config["ast"], dict)
+    assert config["result_type"] == "text"
+    assert sorted(cast(list[str], config["deps"])) == ["name", "number"]
+    assert audit["kind"] == "setFormula"
+    assert audit["deps"] == config["deps"]
+
+
 def test_set_formula_rejects_parse_error() -> None:
     body = _with_field(
         _empty_body(),

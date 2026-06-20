@@ -25,6 +25,7 @@ export interface FuncCallNode {
 }
 
 export type BinaryOp =
+  | "&"
   | "+"
   | "-"
   | "*"
