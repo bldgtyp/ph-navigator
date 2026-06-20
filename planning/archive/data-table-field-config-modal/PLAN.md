@@ -1,10 +1,10 @@
 ---
 DATE: 2026-06-20
 TIME: 07:58 EDT
-STATUS: Active
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Implementation plan
-RELATED: planning/refactor/data-table-field-config-modal/PRD.md
+RELATED: planning/archive/data-table-field-config-modal/PRD.md
 ---
 
 # Plan

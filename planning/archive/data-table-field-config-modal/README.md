@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-20
 TIME: 07:58 EDT
-STATUS: Active
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Shared DATA-TABLE Field Config modal visual refactor
 RELATED: context/technical-requirements/data-table.md, context/UI_UX.md, frontend/src/shared/ui/data-table/components/FieldConfigModal.tsx, frontend/src/shared/ui/data-table/components/CreateFieldConfigModal.tsx, frontend/src/shared/ui/data-table/DataTable.css
@@ -46,3 +46,9 @@ gets to roll its own modal or styling fork.
 No route-local Field Config modal implementation was found outside the
 shared DATA-TABLE package. Feature consumers pass table context into
 `DataTable`; the shared modal renders from there.
+
+## Archive Status
+
+Completed 2026-06-20 and archived after all phases passed focused tests,
+static guards, browser smoke on Spaces / Rooms, `make frontend-dev-check`,
+`make format`, `make ci`, and `graphify update .`.

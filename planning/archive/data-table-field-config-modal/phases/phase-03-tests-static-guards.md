@@ -4,7 +4,7 @@ TIME: 07:58 EDT
 STATUS: Complete
 AUTHOR: Codex
 SCOPE: Shared tests and static guardrails
-RELATED: planning/refactor/data-table-field-config-modal/references.md
+RELATED: planning/archive/data-table-field-config-modal/references.md
 ---
 
 # Phase 03 - Tests And Static Guards

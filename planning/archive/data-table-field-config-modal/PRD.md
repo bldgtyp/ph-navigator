@@ -1,10 +1,10 @@
 ---
 DATE: 2026-06-20
 TIME: 07:58 EDT
-STATUS: Active
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Shared DATA-TABLE Field Config modal UX contract
-RELATED: planning/refactor/data-table-field-config-modal/README.md
+RELATED: planning/archive/data-table-field-config-modal/README.md
 ---
 
 # PRD
@@ -63,4 +63,3 @@ content should not compete with the primary name/type controls.
 - Adding field-type icons/search is optional. The current custom field type
   list is small; the important change is one select/dropdown control
   instead of pills.
-

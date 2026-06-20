@@ -4,7 +4,7 @@ TIME: 07:58 EDT
 STATUS: Complete
 AUTHOR: Codex
 SCOPE: Current state and next steps
-RELATED: planning/refactor/data-table-field-config-modal/PLAN.md
+RELATED: planning/archive/data-table-field-config-modal/PLAN.md
 ---
 
 # Status

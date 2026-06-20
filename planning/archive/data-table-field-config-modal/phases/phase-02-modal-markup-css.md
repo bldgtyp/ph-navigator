@@ -4,7 +4,7 @@ TIME: 07:58 EDT
 STATUS: Complete
 AUTHOR: Codex
 SCOPE: Modal DOM and shared CSS cleanup
-RELATED: planning/refactor/data-table-field-config-modal/phases/phase-01-field-type-select.md, frontend/src/shared/ui/data-table/DataTable.css
+RELATED: planning/archive/data-table-field-config-modal/phases/phase-01-field-type-select.md, frontend/src/shared/ui/data-table/DataTable.css
 ---
 
 # Phase 02 - Modal Markup And CSS

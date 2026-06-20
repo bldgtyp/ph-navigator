@@ -1,10 +1,10 @@
 ---
 DATE: 2026-06-20
 TIME: 07:58 EDT
-STATUS: Active
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Source/test inventory for implementation
-RELATED: planning/refactor/data-table-field-config-modal/PLAN.md
+RELATED: planning/archive/data-table-field-config-modal/PLAN.md
 ---
 
 # References
@@ -78,4 +78,3 @@ rg -n "role=\"radiogroup\"|role=\"radio\"|clickPill|data-table-add-field-type-pi
 ```
 
 Expected: no remaining assertions tied to the old type-pill UI.
-
