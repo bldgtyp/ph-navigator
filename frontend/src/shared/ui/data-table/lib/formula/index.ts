@@ -58,3 +58,6 @@ export { rebuildSourceFromStoredAst } from "./displayName";
 
 export { formatLocalFormulaError, parseFormulaSource } from "./localState";
 export type { LocalFormulaState, ParseFormulaOptions } from "./localState";
+
+export { formatLocalFormulaMessage } from "./userMessages";
+export type { FormulaLocalMessage } from "./userMessages";

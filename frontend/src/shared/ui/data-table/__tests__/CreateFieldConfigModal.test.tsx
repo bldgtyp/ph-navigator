@@ -302,7 +302,9 @@ describe("CreateFieldConfigModal", () => {
         name: /Add field/,
       }) as HTMLButtonElement;
       expect(submit.disabled).toBe(true);
-      expect(within(dialog()).getByRole("status")).toHaveTextContent(/parse/i);
+      const alert = within(dialog()).getByRole("alert");
+      expect(alert).toHaveTextContent("Formula syntax error");
+      expect(alert).toHaveTextContent(/Add an operator such as \+, -, \*, \//);
     });
 
     test("Submit surfaces missing-ref errors locally", () => {
@@ -315,7 +317,20 @@ describe("CreateFieldConfigModal", () => {
         name: /Add field/,
       }) as HTMLButtonElement;
       expect(submit.disabled).toBe(true);
-      expect(within(dialog()).getByRole("status")).toHaveTextContent(/Nonexistent/);
+      const alert = within(dialog()).getByRole("alert");
+      expect(alert).toHaveTextContent("Field not found");
+      expect(alert).toHaveTextContent('No field named "Nonexistent" exists in this table.');
+    });
+
+    test("unsupported functions list available alternatives", () => {
+      render(<Harness formulaFieldRegistry={registry} />);
+      typeName("Label");
+      clickPill("Formula");
+      const expression = within(dialog()).getByLabelText("Expression") as HTMLInputElement;
+      fireEvent.change(expression, { target: { value: "missing({Name})" } });
+      const alert = within(dialog()).getByRole("alert");
+      expect(alert).toHaveTextContent("Function not supported");
+      expect(alert).toHaveTextContent("Available functions: concat, len, lower");
     });
 
     test("field palette inserts a reference at the textarea caret", () => {

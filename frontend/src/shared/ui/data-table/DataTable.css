@@ -1106,9 +1106,17 @@
   color: var(--text-primary);
 }
 
-.data-table-formula-editor-preview-label {
+.data-table-formula-editor-preview-title {
   font-weight: 600;
+  color: var(--text-primary);
+}
+
+.data-table-formula-editor-preview-detail {
   color: var(--text-muted);
+}
+
+.data-table-formula-editor-preview-body {
+  color: inherit;
 }
 
 .data-table-formula-editor-preview-value {
@@ -1122,6 +1130,11 @@
 .data-table-formula-editor-preview-error {
   border-color: var(--phn-danger);
   background: color-mix(in oklab, var(--phn-danger) 8%, var(--bg-card));
+  color: var(--phn-danger);
+}
+
+.data-table-formula-editor-preview-error .data-table-formula-editor-preview-title,
+.data-table-formula-editor-preview-error .data-table-formula-editor-preview-value {
   color: var(--phn-danger);
 }
 

@@ -1,6 +1,6 @@
 ---
 DATE: 2026-06-20
-TIME: 08:42 EDT
+TIME: 08:52 EDT
 STATUS: Active
 AUTHOR: Ed (via Codex)
 SCOPE: Current state of DataTable formula builder planning.
@@ -15,7 +15,7 @@ RELATED:
 
 ## Current State
 
-`Phase 01 - shared formula editor UI complete; Phase 02 is next`.
+`Phase 02 - message card and error copy complete; Phase 03 is next`.
 
 The current codebase already routes formula authoring through shared
 DataTable components:
@@ -28,9 +28,8 @@ DataTable components:
 - Frontend and backend formula grammars are parity-tested through shared
   corpus fixtures.
 
-Main confirmed gaps after Phase 01:
+Main confirmed gaps after Phase 02:
 
-- preview/error text is not carded and can visually run together;
 - `&` is not part of the tokenizer/parser/evaluator;
 - current field insertion is a static chip palette, not autocomplete.
 
@@ -45,10 +44,22 @@ Phase 01 added:
 - regression coverage for highlighter output, editor rendering, create/edit
   modal behavior, and palette insertion at the textarea caret.
 
+Phase 02 added:
+
+- structured formula preview cards with separate title/body/detail elements;
+- `role="alert"` for dirty blocking local formula errors and `role="status"`
+  for normal preview states;
+- actionable local message copy for parse errors, missing refs, unsupported
+  functions, resource limits, and self-reference cycles;
+- support for surfacing available function names from local unsupported-function
+  parse state;
+- regression coverage for parse, missing-ref, unsupported-function, preview,
+  and save-gating behavior.
+
 ## Next Step
 
-Start Phase 02 with formula preview/error card treatment and clearer local
-error copy. Keep grammar changes deferred to Phase 03.
+Start Phase 03 with `&` concat tokenizer/parser/evaluator support and keep
+autocomplete deferred to Phase 04.
 
 ## Phase Status
 
@@ -56,7 +67,7 @@ error copy. Keep grammar changes deferred to Phase 03.
 |---|---|---|
 | 00 - Research and planning | Complete | `phases/phase-00-research-plan.md` |
 | 01 - Shared formula editor UI | Complete | `phases/phase-01-shared-editor-ui.md` |
-| 02 - Message card and error copy | Planned | `phases/phase-02-message-card-errors.md` |
+| 02 - Message card and error copy | Complete | `phases/phase-02-message-card-errors.md` |
 | 03 - `&` concat grammar | Planned | `phases/phase-03-ampersand-concat.md` |
 | 04 - Autocomplete | Planned | `phases/phase-04-autocomplete.md` |
 | 05 - All-table regression coverage | Planned | `phases/phase-05-regression-coverage.md` |
@@ -104,3 +115,17 @@ Phase 01 implementation checks:
   the existing server rendered stale pre-Phase-01 code. A temporary worktree
   server on `5174` was stopped; backend origin/CORS guards made that route an
   unreliable verification harness.
+
+Phase 02 implementation checks:
+
+- Focused modal tests passed:
+  `cd frontend && pnpm exec vitest run src/shared/ui/data-table/__tests__/CreateFieldConfigModal.test.tsx src/shared/ui/data-table/__tests__/FieldConfigModal.test.tsx`
+  (58 tests).
+- `make format` passed.
+- `make frontend-dev-check` passed. Existing lint output still reports 13
+  Fast Refresh warnings in unrelated files; no errors.
+- `make ci` passed:
+  - backend: Ruff format/lint, Ty, Alembic, pytest
+    (`903 passed, 2 skipped`);
+  - frontend: frozen pnpm install, Prettier, ESLint, structural guards,
+    Vitest (`182 files`, `1743 tests`), production build.

@@ -15,10 +15,11 @@ import {
   SOURCE_LENGTH_MAX,
   createFuse,
   evaluate,
-  formatLocalFormulaError,
+  formatLocalFormulaMessage,
   parseFormulaSource,
   type EvalResult,
   type FieldRegistryEntry,
+  type FormulaLocalMessage,
   type LocalFormulaState,
 } from "../lib/formula";
 import { FormulaFieldPalette } from "./FormulaFieldPalette";
@@ -63,7 +64,7 @@ export function FieldConfigSectionFormula({
     () => parseFormulaSource(source, fieldRegistry, { excludeSelfRefId: fieldId }),
     [source, fieldRegistry, fieldId],
   );
-  const localErrorMessage = useMemo(() => formatLocalFormulaError(localState), [localState]);
+  const localMessage = useMemo(() => formatLocalFormulaMessage(localState), [localState]);
   const dirty = source !== initialSource;
   const valid = !dirty || localState.kind === "ok";
 
@@ -137,7 +138,7 @@ export function FieldConfigSectionFormula({
         value={source}
         maxLength={SOURCE_LENGTH_MAX}
         disabled={disabled}
-        ariaInvalid={Boolean(localErrorMessage && dirty)}
+        ariaInvalid={Boolean(localMessage && dirty)}
         ariaDescribedBy={previewLabelId}
         onChange={(event: ChangeEvent<HTMLTextAreaElement>) => setSource(event.target.value)}
       />
@@ -154,7 +155,7 @@ export function FieldConfigSectionFormula({
       <FormulaPreviewPanel
         labelId={previewLabelId}
         localState={localState}
-        localErrorMessage={dirty ? localErrorMessage : null}
+        localMessage={dirty ? localMessage : null}
         previewRow={previewRow}
         previewStale={previewStale}
         previewResult={previewResult}
@@ -174,7 +175,7 @@ function useStateFromInitial(initialSource: string): [string, Dispatch<SetStateA
 type FormulaPreviewPanelProps = {
   labelId: string;
   localState: LocalFormulaState;
-  localErrorMessage: string | null;
+  localMessage: FormulaLocalMessage | null;
   previewRow: FormulaPreviewRowSnapshot | null;
   previewStale: boolean;
   previewResult: EvalResult | null;
@@ -183,73 +184,112 @@ type FormulaPreviewPanelProps = {
 function FormulaPreviewPanel({
   labelId,
   localState,
-  localErrorMessage,
+  localMessage,
   previewRow,
   previewStale,
   previewResult,
 }: FormulaPreviewPanelProps) {
-  const panel = previewPanelContent(localState, localErrorMessage, previewRow, previewResult);
+  const panel = previewPanelContent(
+    localState,
+    localMessage,
+    previewRow,
+    previewStale,
+    previewResult,
+  );
   return (
     <div
       id={labelId}
-      className={joinClassNames("data-table-formula-editor-preview", panel.modifier)}
-      role="status"
-      aria-live="polite"
+      className={joinClassNames(
+        "data-table-formula-editor-preview",
+        `data-table-formula-editor-preview-${panel.tone}`,
+      )}
+      role={panel.role}
+      aria-live={panel.role === "alert" ? "assertive" : "polite"}
     >
-      {previewRow ? (
-        <span className="data-table-formula-editor-preview-label">
-          Preview based on row at modal open{previewStale ? " — stale" : ""}
-        </span>
+      <span className="data-table-formula-editor-preview-title">{panel.title}</span>
+      <span className="data-table-formula-editor-preview-body">{panel.body}</span>
+      {panel.detail ? (
+        <span className="data-table-formula-editor-preview-detail">{panel.detail}</span>
       ) : null}
-      {panel.body}
     </div>
   );
 }
 
-type PreviewPanel = { modifier: string | null; body: ReactNode };
+type PreviewPanel = {
+  tone: "neutral" | "empty" | "error";
+  role: "status" | "alert";
+  title: string;
+  body: ReactNode;
+  detail?: ReactNode;
+};
 
 function previewPanelContent(
   localState: LocalFormulaState,
-  localErrorMessage: string | null,
+  localMessage: FormulaLocalMessage | null,
   previewRow: FormulaPreviewRowSnapshot | null,
+  previewStale: boolean,
   previewResult: EvalResult | null,
 ): PreviewPanel {
-  if (localErrorMessage) {
+  if (localMessage) {
     return {
-      modifier: "data-table-formula-editor-preview-error",
-      body: localErrorMessage,
+      tone: "error",
+      role: "alert",
+      title: localMessage.title,
+      body: localMessage.body,
+      detail: localMessage.detail,
     };
   }
   if (localState.kind === "empty") {
     return {
-      modifier: "data-table-formula-editor-preview-empty",
+      tone: "empty",
+      role: "status",
+      title: "Formula preview",
       body: "Enter an expression to preview.",
     };
   }
   if (previewRow === null) {
-    return { modifier: null, body: "Focus a row to preview." };
+    return {
+      tone: "neutral",
+      role: "status",
+      title: "Formula preview",
+      body: "Focus a row to preview.",
+    };
   }
   if (previewResult === null) {
-    return { modifier: null, body: null };
+    return {
+      tone: "neutral",
+      role: "status",
+      title: previewTitle(previewStale),
+      body: "Preview unavailable.",
+    };
   }
   if (!previewResult.ok) {
     return {
-      modifier: "data-table-formula-editor-preview-error",
+      tone: "error",
+      role: "alert",
+      title: "Formula result error",
       body: (
         <span className="data-table-formula-editor-preview-value">
           #ERROR - {COMPUTED_ERROR_MESSAGES[previewResult.code]}
         </span>
       ),
+      detail: previewTitle(previewStale),
     };
   }
   return {
-    modifier: null,
+    tone: "neutral",
+    role: "status",
+    title: previewTitle(previewStale),
     body: (
       <span className="data-table-formula-editor-preview-value">
         {formatPreviewValue(previewResult.value)}
       </span>
     ),
   };
+}
+
+function previewTitle(previewStale: boolean): string {
+  return `Preview based on row at modal open${previewStale ? " — stale" : ""}`;
 }
 
 function formatPreviewValue(value: string | number | boolean | null): string {
