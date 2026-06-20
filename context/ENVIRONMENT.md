@@ -29,9 +29,9 @@
   - `ph_navigator_v2_test` — the dedicated pytest database. Test
     fixtures `TRUNCATE … RESTART IDENTITY CASCADE` every table on
     every run, so this MUST stay separate from the dev DB.
-- Fresh `docker compose up` (empty volume) auto-creates both DBs via
-  `docker/postgres-init/`. On a pre-existing volume run
-  `make db-create-test` once — it's idempotent.
+- Test database creation is handled by `make db-create-test`, which is
+  idempotent. Direct pytest runs also bootstrap the active `*_test`
+  database before tests import app settings.
 - `make test-backend` runs `db-create-test` + `db-migrate-test`
   automatically and exports `DATABASE_URL=…/ph_navigator_v2_test` for
   pytest. `backend/tests/conftest.py` also pins the env var and a
