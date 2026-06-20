@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-20
-TIME: 08:05 EDT
-STATUS: Planned
+TIME: 08:52 EDT
+STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Formula preview/error card treatment and improved local error copy.
 RELATED:
@@ -145,3 +145,29 @@ Optional browser check:
 The desired outcome is a better communication layer, not a more permissive
 parser. Keep save validity exactly as strict as before unless Phase 03 has
 already landed.
+
+## Implementation Notes
+
+- Implemented structured preview cards in
+  `frontend/src/shared/ui/data-table/components/FieldConfigSectionFormula.tsx`.
+- Added `frontend/src/shared/ui/data-table/lib/formula/userMessages.ts` for
+  UI-facing local formula message copy.
+- Preserved backend-compatible `formatLocalFormulaError` while extending local
+  unsupported-function state with the available function list.
+- Kept formula grammar unchanged; the Phase 02 parse suggestion avoids
+  promising `&` before Phase 03.
+- Added tests covering alert cards for parse errors, missing refs, unsupported
+  functions, and normal preview title/body separation.
+
+## Verification Notes
+
+- `cd frontend && pnpm exec vitest run src/shared/ui/data-table/__tests__/CreateFieldConfigModal.test.tsx src/shared/ui/data-table/__tests__/FieldConfigModal.test.tsx`
+  passed with 58 tests.
+- `make format` passed.
+- `make frontend-dev-check` passed. Existing lint output still reports 13
+  Fast Refresh warnings in unrelated files; no errors.
+- `make ci` passed:
+  - backend: Ruff format/lint, Ty, Alembic, pytest
+    (`903 passed, 2 skipped`);
+  - frontend: frozen pnpm install, Prettier, ESLint, structural guards,
+    Vitest (`182 files`, `1743 tests`), production build.

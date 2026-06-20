@@ -748,7 +748,9 @@ describe("FieldConfigModal", () => {
       />,
     );
 
-    expect(screen.getByText("Preview based on row at modal open")).toBeInTheDocument();
+    expect(screen.getByText("Preview based on row at modal open")).toHaveClass(
+      "data-table-formula-editor-preview-title",
+    );
     expect(screen.getByText("4")).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Expression"), { target: { value: "{People} * 3" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
