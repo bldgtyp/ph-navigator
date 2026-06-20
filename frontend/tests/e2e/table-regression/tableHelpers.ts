@@ -12,7 +12,7 @@
 // Contract").
 
 import { expect, type APIRequestContext, type Locator, type Page } from "@playwright/test";
-import { readVersionedTable, signIn } from "../_helpers";
+import { headerByLabel, readVersionedTable, signIn } from "../_helpers";
 import type { TableRegressionCase } from "./tableMatrix";
 
 // The table suite signs in as the dedicated local agent account
@@ -65,6 +65,82 @@ export async function openTable(
 export async function reloadTable(page: Page, table: TableRegressionCase): Promise<void> {
   await page.reload();
   await expectTableReady(page, table);
+}
+
+/**
+ * Assert every default-visible header named in the matrix is visible.
+ * `headerByLabel`'s strict single-element resolution also fails if a header
+ * label is duplicated, so this doubles as a uniqueness check. The per-header
+ * failure message names the table + header so a smoke failure points
+ * straight at the offending column without re-deriving the matrix.
+ */
+export async function expectHeadersVisible(page: Page, table: TableRegressionCase): Promise<void> {
+  for (const header of table.expectedHeaders) {
+    await expect(
+      headerByLabel(page, header),
+      `${table.label}: expected header "${header}" to be visible`,
+    ).toBeVisible();
+  }
+}
+
+/**
+ * Assert the grid mounted and rendered a body. A freshly seeded project's
+ * tables are empty, so accept either a real data row or the empty-state
+ * cell — both prove the body rendered without crashing. This is the
+ * "at least one cell or valid empty-state affordance" smoke contract.
+ */
+export async function expectGridBodyRendered(page: Page, table: TableRegressionCase): Promise<void> {
+  await expect(page.getByRole("grid"), `${table.label}: grid container`).toBeVisible();
+  const dataRow = page.locator("tr[data-row-id]").first();
+  const emptyState = page.locator("td.data-table-filter-empty").first();
+  await expect(
+    dataRow.or(emptyState),
+    `${table.label}: grid body rendered neither a data row nor an empty state`,
+  ).toBeVisible();
+}
+
+// Well-known benign browser console noise. ResizeObserver loop messages are
+// emitted by Chromium itself when an observer callback (the grid uses them
+// for column/row virtualization) reflows within the same frame; they are
+// not app errors. Keep this list tight — anything not matched here fails
+// the smoke so real mount errors surface.
+const IGNORED_CONSOLE_ERROR_PATTERNS: ReadonlyArray<RegExp> = [
+  /ResizeObserver loop/i,
+  /favicon\.ico/i,
+];
+
+/**
+ * Captures `console.error` and uncaught page errors for the smoke matrix,
+ * so a table that mounts but throws on render is caught even when its DOM
+ * still renders. {@link ConsoleErrorSink.reset} clears the buffer between
+ * tables (the smoke shares one page across the matrix);
+ * {@link ConsoleErrorSink.assertNoErrors} fails with the captured text.
+ */
+export type ConsoleErrorSink = {
+  reset: () => void;
+  assertNoErrors: (context: string) => void;
+};
+
+/** Attach console/page-error listeners to a page and buffer the errors. */
+export function attachConsoleErrorSink(page: Page): ConsoleErrorSink {
+  const errors: string[] = [];
+  const keep = (text: string) => !IGNORED_CONSOLE_ERROR_PATTERNS.some((re) => re.test(text));
+  page.on("console", (message) => {
+    if (message.type() !== "error") return;
+    const text = message.text();
+    if (keep(text)) errors.push(`console.error: ${text}`);
+  });
+  page.on("pageerror", (error) => {
+    if (keep(error.message)) errors.push(`pageerror: ${error.message}`);
+  });
+  return {
+    reset: () => {
+      errors.length = 0;
+    },
+    assertNoErrors: (context) => {
+      expect(errors, `${context} produced browser errors:\n${errors.join("\n")}`).toEqual([]);
+    },
+  };
 }
 
 /** Locate a specific grid cell by row id + field key (the stable contract). */
