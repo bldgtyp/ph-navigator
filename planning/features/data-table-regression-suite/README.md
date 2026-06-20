@@ -28,8 +28,12 @@ contract) is implemented under
 Phase 03 (route smoke matrix) is implemented under
 `frontend/tests/e2e/table-regression/table-smoke.spec.ts`. Phase 04 (cell
 behavior matrix) is implemented under
-`frontend/tests/e2e/table-regression/table-cell-behavior.spec.ts`. Phases
-05-06 (deep links/view state, run policy) remain planned.
+`frontend/tests/e2e/table-regression/table-cell-behavior.spec.ts`. Phase 05
+(deep linked-record flows) is implemented under
+`frontend/tests/e2e/table-regression/table-linked-records.spec.ts`. Phases
+06-07 remain planned: Phase 06 (table-view-state persistence) and Phase 07
+(run policy and docs) — the original "deep links and view state" Phase 05
+was split into 05 + 06.
 
 ## Problem Frame
 

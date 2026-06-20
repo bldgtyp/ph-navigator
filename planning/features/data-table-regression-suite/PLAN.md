@@ -190,10 +190,26 @@ Verification:
 cd frontend && E2E_EMAIL=codex@example.com E2E_PASSWORD=password pnpm exec playwright test tests/e2e/table-regression --grep @table-behavior
 ```
 
-### Phase 05 - Deep Links And View State
+### Phase 05 - Deep Linked-Record Flows
 
-- Add focused linked-record flows for Rooms/Space Types, Rooms/Pumps, and
-  Heat Pump installed-unit relationships.
+(Split from the original "Phase 05 - Deep links and view state"; view state
+is now Phase 06 and run policy is Phase 07.)
+
+- Add focused linked-record flows for Rooms/Space Types and the Heat Pump
+  installed-unit relationships (Units Indoor -> Indoor Equipment / Outdoor
+  Unit / served Rooms; Equipment Outdoor -> paired Indoor Equipment).
+- Seed the two Heat Pump unit leaves deferred from Phase 04.
+- Rooms/Pumps stays covered by the existing
+  `record-linking-rooms-pumps.spec.ts` (PRD non-goal: no replacement).
+
+Verification:
+
+```bash
+cd frontend && E2E_EMAIL=codex@example.com E2E_PASSWORD=password pnpm exec playwright test tests/e2e/table-regression --grep @table-links
+```
+
+### Phase 06 - Table-View-State Persistence
+
 - Add table-view-state checks for one standard equipment table, Rooms,
   Thermal Bridges, and all four Heat Pump leaves.
 - Verify Heat Pump leaf tables do not share or bleed `tableKey` state.
@@ -201,10 +217,10 @@ cd frontend && E2E_EMAIL=codex@example.com E2E_PASSWORD=password pnpm exec playw
 Verification:
 
 ```bash
-cd frontend && E2E_EMAIL=codex@example.com E2E_PASSWORD=password pnpm exec playwright test tests/e2e/table-regression --grep @table-regression
+cd frontend && E2E_EMAIL=codex@example.com E2E_PASSWORD=password pnpm exec playwright test tests/e2e/table-regression --grep @table-view-state
 ```
 
-### Phase 06 - Run Policy And Documentation
+### Phase 07 - Run Policy And Documentation
 
 - Add package scripts only after the suite shape is stable.
 - Document when to run smoke versus full regression.

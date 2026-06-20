@@ -102,8 +102,13 @@ export async function updateCatalogRow(
  * type-icon columns still resolve by their plain label. Shared single source
  * of the grid's header-resolution contract.
  */
+/** Escape a string for safe interpolation into a `RegExp`. */
+export function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export function headerByLabel(page: Page, label: string): Locator {
-  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const escaped = escapeRegExp(label);
   return page.locator('th[role="columnheader"]').filter({
     has: page.locator(".data-table-header-label", {
       hasText: new RegExp(`^${escaped}$`),
@@ -136,7 +141,7 @@ export async function gridCellForRowAndHeader(
   page: Page,
   options: { rowCellText: string; headerName: string },
 ): Promise<Locator> {
-  const escapedHeader = options.headerName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const escapedHeader = escapeRegExp(options.headerName);
   const header = page.getByRole("columnheader", {
     name: new RegExp(`^${escapedHeader}\\b`),
   });
