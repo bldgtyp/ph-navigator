@@ -11,6 +11,7 @@ import {
   type FieldDef,
   type ViewState,
 } from "../types";
+import { chooseAutocompleteOption } from "./helpers/autocomplete";
 
 type Row = { id: string; number: string; name: string; count: number; color?: string | null };
 
@@ -120,7 +121,7 @@ describe("DataTable", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Add field" }));
     const dialog = await screen.findByRole("dialog", { name: "Add field" });
-    fireEvent.click(within(dialog).getByRole("radio", { name: "Formula" }));
+    chooseAutocompleteOption("Field type", "Formula", dialog);
 
     expect(within(dialog).queryByText("No fields available to reference.")).not.toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Text column Number" })).toBeInTheDocument();

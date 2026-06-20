@@ -842,6 +842,18 @@
   min-height: 34px;
 }
 
+.autocomplete-select.data-table-field-config-type-select {
+  width: 100%;
+}
+
+.autocomplete-select.data-table-field-config-type-select input {
+  border-color: var(--border-subtle);
+  border-radius: var(--radius-xs);
+  background: var(--bg-input, var(--bg-card));
+  color: var(--text-primary);
+  min-height: 34px;
+}
+
 .data-table-add-field-inline-error {
   margin: 0;
   font-size: var(--fs-md);

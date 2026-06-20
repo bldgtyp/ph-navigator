@@ -26,6 +26,7 @@ import {
   type LinkedRecordTargetTableOption,
 } from "./FieldConfigSectionLinkedRecord";
 import { FIELD_TYPE_CHOICES } from "./fieldConfigChoices";
+import { FieldTypeSelect } from "./FieldTypeSelect";
 
 const EMPTY_FORMULA_FIELD_REGISTRY: ReadonlyArray<FieldRegistryEntry> = [];
 const EMPTY_LINKED_RECORD_TARGETS: ReadonlyArray<LinkedRecordTargetTableOption> = [];
@@ -122,6 +123,15 @@ export function CreateFieldConfigModal({
     (linkedRecordTargetPath !== null && linkedRecordTargetPath.length > 0);
   const canSubmit =
     !nameValidationError && optionsValid && formulaValid && linkedRecordValid && !pending;
+  const fieldTypeOptions = useMemo(
+    () =>
+      FIELD_TYPE_CHOICES.map((option) => ({
+        kind: option.kind,
+        label: option.label,
+        description: option.hint,
+      })),
+    [],
+  );
 
   const handleSubmit = async (event?: FormEvent<HTMLFormElement>) => {
     event?.preventDefault();
@@ -222,27 +232,12 @@ export function CreateFieldConfigModal({
               aria-label="Field type"
             >
               <span className="data-table-add-field-label">Type</span>
-              <div
-                className="data-table-add-field-type-row"
-                role="radiogroup"
-                aria-label="Field type"
-              >
-                {FIELD_TYPE_CHOICES.map((option) => (
-                  <button
-                    key={option.kind}
-                    type="button"
-                    role="radio"
-                    aria-checked={fieldType === option.kind}
-                    className="data-table-add-field-type-pill"
-                    data-active={fieldType === option.kind ? "true" : undefined}
-                    title={option.hint}
-                    disabled={pending}
-                    onClick={() => setFieldType(option.kind)}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
+              <FieldTypeSelect
+                value={fieldType}
+                options={fieldTypeOptions}
+                disabled={pending}
+                onChange={setFieldType}
+              />
             </div>
 
             {fieldType === "single_select" ? (

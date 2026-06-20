@@ -15,6 +15,7 @@ import { useState } from "react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { FieldConfigModal } from "../components/FieldConfigModal";
 import type { CustomFieldType, FieldDef } from "../types";
+import { chooseAutocompleteOption } from "./helpers/autocomplete";
 
 function baseField(overrides: Partial<FieldDef> = {}): FieldDef {
   return {
@@ -28,9 +29,8 @@ function baseField(overrides: Partial<FieldDef> = {}): FieldDef {
 
 type PreflightSourceRow = { rowId: string; rawValue: unknown };
 
-function chooseAutocompleteOption(label: string, optionName: string) {
-  fireEvent.focus(screen.getByRole("combobox", { name: label }));
-  fireEvent.click(screen.getByRole("option", { name: optionName }));
+function chooseFieldType(optionName: string) {
+  chooseAutocompleteOption("Field type", optionName);
 }
 
 type PathLabel = { path: string[]; label: string };
@@ -249,14 +249,14 @@ describe("FieldConfigModal", () => {
         preflightRows={[{ rowId: "rm_1", rawValue: "42" }]}
       />,
     );
-    fireEvent.click(screen.getByRole("radio", { name: "Long text" }));
+    chooseFieldType("Long text");
     expect(screen.getByRole("group", { name: /short_text → long_text/ })).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId("external-type"));
     expect(await screen.findByRole("alert")).toHaveTextContent("This field changed elsewhere");
     fireEvent.click(screen.getByRole("button", { name: "Discard my changes" }));
 
-    expect(screen.getByRole("radio", { name: "Number" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("combobox", { name: "Field type" })).toHaveValue("Number");
     expect(screen.queryByRole("group", { name: /short_text → long_text/ })).toBeNull();
   });
 
@@ -268,17 +268,14 @@ describe("FieldConfigModal", () => {
       />,
     );
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Local edit" } });
-    fireEvent.click(screen.getByRole("radio", { name: "Long text" }));
+    chooseFieldType("Long text");
 
     fireEvent.click(screen.getByTestId("external-type"));
     expect(await screen.findByRole("alert")).toHaveTextContent("This field changed elsewhere");
     fireEvent.click(screen.getByRole("button", { name: "Keep my changes" }));
 
     expect((screen.getByLabelText("Name") as HTMLInputElement).value).toBe("Local edit");
-    expect(screen.getByRole("radio", { name: "Long text" })).toHaveAttribute(
-      "aria-checked",
-      "true",
-    );
+    expect(screen.getByRole("combobox", { name: "Field type" })).toHaveValue("Long text");
   });
 
   test("R-S5 — pending Save suppresses Cancel and disables inputs", async () => {
@@ -307,23 +304,24 @@ describe("FieldConfigModal", () => {
 
   test("Type picker hidden when sourceCustomFieldType omitted (P5a.1 back-compat)", () => {
     render(<Harness />);
-    expect(screen.queryByRole("radiogroup", { name: "Field type" })).toBeNull();
+    expect(screen.queryByRole("combobox", { name: "Field type" })).toBeNull();
   });
 
   test("Type picker renders all candidates with the current type selected", () => {
     render(<Harness sourceCustomFieldType="short_text" preflightRows={[]} />);
-    const picker = screen.getByRole("radiogroup", { name: "Field type" });
-    const current = screen.getByRole("radio", { name: "Short text" });
-    expect(picker).toBeInTheDocument();
-    expect(current).toHaveAttribute("aria-checked", "true");
+    const picker = screen.getByRole("combobox", { name: "Field type" });
+    expect(picker).toHaveValue("Short text");
+    fireEvent.focus(picker);
+    expect(screen.getAllByRole("option")).toHaveLength(8);
   });
 
-  test("Forbidden conversion target is aria-disabled with a tooltip", () => {
+  test("Forbidden conversion target is visible and aria-disabled with an explanation", () => {
     // number → url is forbidden by CONVERSION_MATRIX.
     render(<Harness sourceCustomFieldType="number" preflightRows={[]} />);
-    const urlPill = screen.getByRole("radio", { name: "URL" }) as HTMLButtonElement;
-    expect(urlPill.disabled).toBe(true);
-    expect(urlPill.title.toLowerCase()).toContain("cannot convert number");
+    fireEvent.focus(screen.getByRole("combobox", { name: "Field type" }));
+    const urlOption = screen.getByRole("option", { name: /^URL/ });
+    expect(urlOption).toHaveAttribute("aria-disabled", "true");
+    expect(urlOption).toHaveTextContent(/cannot convert number/i);
   });
 
   test("Selecting a compatible target mounts the inline preflight sub-panel", () => {
@@ -337,7 +335,7 @@ describe("FieldConfigModal", () => {
       />,
     );
     expect(screen.queryByRole("group", { name: /Type change preflight/ })).toBeNull();
-    fireEvent.click(screen.getByRole("radio", { name: "Number" }));
+    chooseFieldType("Number");
     expect(screen.getByRole("group", { name: /short_text → number/ })).toBeInTheDocument();
     // Clean preflight: 2 of 2 keep.
     expect(screen.getByText(/2 of 2 rows will keep their value\./)).toBeInTheDocument();
@@ -345,9 +343,9 @@ describe("FieldConfigModal", () => {
 
   test("Reverting type to source unmounts the sub-panel", () => {
     render(<Harness sourceCustomFieldType="short_text" preflightRows={[]} />);
-    fireEvent.click(screen.getByRole("radio", { name: "Number" }));
+    chooseFieldType("Number");
     expect(screen.getByRole("group", { name: /Type change preflight/ })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("radio", { name: "Short text" }));
+    chooseFieldType("Short text");
     expect(screen.queryByRole("group", { name: /Type change preflight/ })).toBeNull();
   });
 
@@ -360,7 +358,7 @@ describe("FieldConfigModal", () => {
         preflightRows={[{ rowId: "rm_1", rawValue: "42" }]}
       />,
     );
-    fireEvent.click(screen.getByRole("radio", { name: "Number" }));
+    chooseFieldType("Number");
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() =>
       expect(dispatchBundle).toHaveBeenCalledWith({
@@ -385,7 +383,7 @@ describe("FieldConfigModal", () => {
         ]}
       />,
     );
-    fireEvent.click(screen.getByRole("radio", { name: "Number" }));
+    chooseFieldType("Number");
     expect(
       screen.getByText(/1 of 2 rows will keep their value; 1 will be cleared\./),
     ).toBeInTheDocument();
@@ -506,7 +504,7 @@ describe("FieldConfigModal", () => {
     );
 
     expect(screen.getByRole("group", { name: "Units" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Unit" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("combobox", { name: "Field type" })).toHaveValue("Unit");
     expect(screen.getByLabelText("Unit type")).toBeDisabled();
     expect(screen.getByLabelText("SI decimal precision")).toBeDisabled();
     expect(screen.queryByRole("button", { name: "Remove units" })).toBeNull();
@@ -569,7 +567,7 @@ describe("FieldConfigModal", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("radio", { name: "Single select" }));
+    chooseFieldType("Single select");
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() =>
@@ -645,7 +643,7 @@ describe("FieldConfigModal", () => {
         ]}
       />,
     );
-    fireEvent.click(screen.getByRole("radio", { name: "Number" }));
+    chooseFieldType("Number");
     const ack = screen.getByLabelText(
       /I understand the listed values will be cleared/,
     ) as HTMLInputElement;
@@ -802,7 +800,7 @@ describe("FieldConfigModal", () => {
         preflightRows={[{ rowId: "rm_1", rawValue: "42" }]}
       />,
     );
-    fireEvent.click(screen.getByRole("radio", { name: "Number" }));
+    chooseFieldType("Number");
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() =>
       expect(
@@ -828,7 +826,7 @@ describe("FieldConfigModal", () => {
 
     test("switching to linked_record renders the section and gates Save until target picked", () => {
       render(<Harness sourceCustomFieldType="short_text" linkedRecordTargets={[PUMPS_TARGET]} />);
-      fireEvent.click(screen.getByRole("radio", { name: "Linked record" }));
+      chooseFieldType("Linked record");
       expect(screen.getByTestId("field-config-section-linked-record")).toBeInTheDocument();
       // Target unset → Save disabled even though the type changed.
       expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
@@ -843,7 +841,7 @@ describe("FieldConfigModal", () => {
           linkedRecordTargets={[PUMPS_TARGET]}
         />,
       );
-      fireEvent.click(screen.getByRole("radio", { name: "Linked record" }));
+      chooseFieldType("Linked record");
       const select = screen.getByLabelText("Target table") as HTMLSelectElement;
       fireEvent.change(select, { target: { value: "equipment/pumps" } });
       const saveButton = screen.getByRole("button", { name: "Save" });
