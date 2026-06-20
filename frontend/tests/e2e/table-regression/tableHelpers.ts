@@ -13,7 +13,7 @@
 
 import { expect, type APIRequestContext, type Locator, type Page } from "@playwright/test";
 import { headerByLabel, readVersionedTable, signIn } from "../_helpers";
-import type { TableRegressionCase } from "./tableMatrix";
+import type { SingleSelectSample, TableRegressionCase } from "./tableMatrix";
 
 // The table suite signs in as the dedicated local agent account
 // (`codex@example.com`), never the user's `ed@example.com`, because PHN
@@ -22,6 +22,10 @@ import type { TableRegressionCase } from "./tableMatrix";
 // first with `make seed-agent-user`.
 const AGENT_EMAIL = process.env.E2E_EMAIL ?? "codex@example.com";
 const AGENT_PASSWORD = process.env.E2E_PASSWORD ?? "password";
+
+// The reserved built-in identifier field ("Tag") shared by every table —
+// mirrors RESERVED_FIELD_KEY_RECORD_ID in the backend registry.
+const RECORD_ID_FIELD_KEY = "record_id";
 
 /** Sign in as the dedicated local agent account for table-suite runs. */
 export async function signInForTables(page: Page): Promise<void> {
@@ -186,8 +190,13 @@ export async function commitCellEdit(
     await page.keyboard.press("ControlOrMeta+a");
     await page.keyboard.press("Delete");
   }
-  await page.keyboard.type(value);
+  if (value) await page.keyboard.type(value);
   await page.keyboard.press("Enter");
+  // Wait for the inline editor to detach so the commit is fully applied
+  // before the next gesture. An open editor leaves the cell's text content
+  // empty, so without this a follow-up edit can start mid-commit and be
+  // clobbered by the draft autosave's refetch.
+  await expect(cell.locator("input.data-table-cell-editor")).toHaveCount(0);
 }
 
 /** The draft-table slice shape returned by the generic read endpoint. */
@@ -216,4 +225,150 @@ export async function readDraftTable(
   versionId?: string,
 ): Promise<DraftTableSlice> {
   return readVersionedTable(request, baseURL, projectId, `draft/tables/${tableKey}`, versionId);
+}
+
+// --- Phase 04: row seeding + cell behavior --------------------------------
+
+/** The `data-row-id` of every rendered data row, in DOM order. */
+async function allDataRowIds(page: Page): Promise<string[]> {
+  return page
+    .locator("tr[data-row-id]")
+    .evaluateAll((rows) =>
+      rows
+        .map((row) => (row as HTMLElement).dataset.rowId)
+        .filter((id): id is string => typeof id === "string" && id.length > 0),
+    );
+}
+
+/**
+ * Add one row to the table through the real UI and return its grid row id
+ * (`getRowId(row) === row.id` for every target table, so the returned id is
+ * also the draft-payload `id`). Handles both add modes from the matrix:
+ * `inline` footer buttons insert a blank row directly; `dialog` buttons open
+ * a modal whose fields are filled and submitted. The new id is found by
+ * diffing the row-id set before/after the add, so it is correct whether the
+ * table started empty or already had rows.
+ *
+ * Tables whose add dialog requires a linked-record pick to submit
+ * (the heat-pump unit leaves) are out of scope here — they are seeded by the
+ * Phase 05 deep-link flow, which owns the picker interaction.
+ */
+export async function addRowAndGetId(page: Page, table: TableRegressionCase): Promise<string> {
+  const before = new Set(await allDataRowIds(page));
+  await page.getByRole("button", { name: table.addRow.buttonName }).click();
+
+  if (table.addRow.mode === "dialog") {
+    const dialog = page.getByRole("dialog", { name: table.addRow.dialogTitle });
+    await expect(dialog, `${table.label}: add dialog "${table.addRow.dialogTitle}"`).toBeVisible();
+    for (const field of table.addRow.fields) {
+      await dialog.getByLabel(field.label).fill(field.value);
+    }
+    await dialog.getByRole("button", { name: table.addRow.submitName }).click();
+    await expect(dialog, `${table.label}: add dialog should close after submit`).toBeHidden();
+  }
+
+  // Capture the diffed ids as the poll settles so the new id doesn't need a
+  // second full-DOM read after the wait.
+  let added: string[] = [];
+  await expect
+    .poll(
+      async () => {
+        added = (await allDataRowIds(page)).filter((id) => !before.has(id));
+        return added.length;
+      },
+      { message: `${table.label}: no new row appeared after "${table.addRow.buttonName}"` },
+    )
+    .toBeGreaterThan(0);
+
+  const newId = added.at(-1);
+  if (!newId) throw new Error(`${table.label}: could not resolve the added row id`);
+
+  // Inline-added rows start blank. A few tables (e.g. Space Types, the
+  // heat-pump leaves) reject a non-blank row that has no Tag, so give every
+  // inline row a unique Tag up front — this mirrors how a user identifies a
+  // row before filling it and keeps later representative-field edits valid.
+  // Dialog rows already carry an identity from the submitted form.
+  if (table.addRow.mode === "inline") {
+    const tagCell = gridCell(page, { rowId: newId, fieldKey: RECORD_ID_FIELD_KEY });
+    if ((await tagCell.count()) > 0) {
+      const tag = `QA-${newId.slice(-6)}`;
+      await commitCellEdit(page, tagCell, tag, { clearFirst: true });
+      // Settle before the caller's next edit: wait for the committed Tag to
+      // render so the seed's autosave/refetch can't clobber the following
+      // representative-field edit mid-flight.
+      await expect(tagCell, `${table.label}: seeded Tag should render`).toContainText(tag);
+    }
+  }
+  return newId;
+}
+
+/**
+ * Open a single-select cell's option popover and commit the sample option.
+ * Single-select cells open via the right-edge chevron (not double-click —
+ * see GridBody), so the cell is activated first to make the chevron
+ * interactive, then the popover search + listbox drive the commit. `existing`
+ * picks a seeded option by exact label; `create` mints a new option through
+ * the popover's "+ Create" footer.
+ */
+export async function commitSingleSelect(
+  page: Page,
+  cell: Locator,
+  sample: SingleSelectSample,
+): Promise<void> {
+  await cell.click();
+  await cell.getByRole("button", { name: "Open options" }).click();
+
+  const popover = page.locator(".single-select-popover");
+  await expect(popover, "single-select popover").toBeVisible();
+  await popover.getByRole("textbox", { name: "Search options" }).fill(sample.label);
+
+  if (sample.mode === "existing") {
+    await popover.getByRole("option", { name: sample.label, exact: true }).click();
+  } else {
+    // The Create footer is the only option once the search excludes every
+    // seeded label; match it loosely (its label carries smart quotes). The
+    // typed search text (`sample.label`) becomes the new option's label, so
+    // the caller can assert the cell shows `sample.label` afterwards.
+    await popover.getByRole("option", { name: /Create/ }).click();
+  }
+  await expect(popover, "single-select popover should close after commit").toBeHidden();
+}
+
+/**
+ * Find a draft-slice row by its grid/payload id. The generic
+ * `draft/tables/{key}` endpoint returns a per-table response whose row list
+ * lives under a table-specific key (`space_types`, `pumps`, …) — never a
+ * uniform `rows` — so this scans every array field for the entry carrying the
+ * matching `id`. Only row objects carry a row `id`, so the match is
+ * unambiguous. Throws if absent.
+ */
+export function findDraftRow(slice: DraftTableSlice, rowId: string): Record<string, unknown> {
+  for (const value of Object.values(slice)) {
+    if (!Array.isArray(value)) continue;
+    const match = value.find(
+      (entry): entry is Record<string, unknown> =>
+        typeof entry === "object" && entry !== null && (entry as { id?: unknown }).id === rowId,
+    );
+    if (match) return match;
+  }
+  throw new Error(`Draft slice has no row with id ${rowId}`);
+}
+
+/**
+ * Read a field's stored value off a draft row, mirroring the frontend's
+ * `getCustomValue` precedence (custom_values → custom → top-level). Built-in
+ * mutable fields live in the `custom_values` bag while locked-type built-ins
+ * stay typed top-level columns, so this is the only correct way to read a
+ * representative field by key without knowing its storage class.
+ *
+ * Unlike the frontend's `??`-chained reader, this checks key *presence* so a
+ * stored `null` (e.g. a cleared nullable field) is returned as `null` rather
+ * than skipped — the null-clear assertions depend on that distinction.
+ */
+export function readRowFieldValue(row: Record<string, unknown>, fieldKey: string): unknown {
+  const customValues = row.custom_values as Record<string, unknown> | undefined;
+  if (customValues && fieldKey in customValues) return customValues[fieldKey];
+  const custom = row.custom as Record<string, unknown> | undefined;
+  if (custom && fieldKey in custom) return custom[fieldKey];
+  return row[fieldKey];
 }

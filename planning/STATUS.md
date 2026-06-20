@@ -21,7 +21,7 @@ feature-first planning.
 | Spaces Refactor | Complete / Phase 05 verified with format, CI, browser smoke, graphify, simplify, and docs-pass evidence; archived | `archive/spaces-refactor/STATUS.md` |
 | DataTable Consolidation | Complete / Phase 06 verified with format, CI, browser smoke, graphify, simplify, and docs-pass evidence; archived | `archive/data-table-consolidation/STATUS.md` |
 | DataTable Maintenance | Complete / cleanup follow-up implemented and archived | `archive/data-table-maintenance/STATUS.md` |
-| DataTable Regression Suite | In progress / Phases 01–02 implemented (inventory + e2e harness; shared DataTable edit contract spec); Phases 03–06 (browser smoke/behavior, deep links, run policy) planned | `features/data-table-regression-suite/STATUS.md` |
+| DataTable Regression Suite | In progress / Phases 01–04 implemented (inventory + e2e harness; shared DataTable edit contract spec; `@table-smoke` route matrix; `@table-behavior` cell behavior matrix); Phases 05–06 (deep links/view state, run policy) planned | `features/data-table-regression-suite/STATUS.md` |
 
 ## Historical Material
 
