@@ -663,7 +663,7 @@ The contracts above are guarded by a layered test suite. Fast shared tests
 live next to the DataTable code; the slower browser matrix lives under
 `frontend/tests/e2e/table-regression/` and is described once as data in
 `tableMatrix.ts` (one entry per project table). See
-`planning/features/data-table-regression-suite/` for the full design.
+`planning/archive/data-table-regression-suite/` for the full design.
 
 | Contract | Where proven |
 |---|---|

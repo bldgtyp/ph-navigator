@@ -5,7 +5,7 @@ STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: High-risk linked-record regression coverage.
 RELATED:
-  - planning/features/data-table-regression-suite/PLAN.md
+  - planning/archive/data-table-regression-suite/PLAN.md
   - frontend/src/shared/ui/data-table/fields/linkedRecord/Picker.tsx
   - frontend/tests/e2e/table-regression/tableHelpers.ts
   - frontend/tests/e2e/record-linking-rooms-pumps.spec.ts

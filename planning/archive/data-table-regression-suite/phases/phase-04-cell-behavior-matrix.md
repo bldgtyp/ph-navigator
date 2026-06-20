@@ -5,7 +5,7 @@ STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Browser behavior coverage for representative table cells.
 RELATED:
-  - planning/features/data-table-regression-suite/PLAN.md
+  - planning/archive/data-table-regression-suite/PLAN.md
   - context/technical-requirements/data-table.md
   - frontend/tests/e2e/table-regression/table-cell-behavior.spec.ts
 ---

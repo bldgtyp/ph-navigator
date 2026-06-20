@@ -5,10 +5,10 @@ STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Current state of DataTable regression suite planning.
 RELATED:
-  - planning/features/data-table-regression-suite/README.md
-  - planning/features/data-table-regression-suite/PRD.md
-  - planning/features/data-table-regression-suite/PLAN.md
-  - planning/features/data-table-regression-suite/phases/phase-00-planning-packet.md
+  - planning/archive/data-table-regression-suite/README.md
+  - planning/archive/data-table-regression-suite/PRD.md
+  - planning/archive/data-table-regression-suite/PLAN.md
+  - planning/archive/data-table-regression-suite/phases/phase-00-planning-packet.md
 ---
 
 # DataTable Regression Suite - Status

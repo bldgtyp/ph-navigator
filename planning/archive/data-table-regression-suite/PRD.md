@@ -5,9 +5,9 @@ STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Product and engineering contract for DataTable regression coverage.
 RELATED:
-  - planning/features/data-table-regression-suite/README.md
-  - planning/features/data-table-regression-suite/PLAN.md
-  - planning/features/data-table-regression-suite/STATUS.md
+  - planning/archive/data-table-regression-suite/README.md
+  - planning/archive/data-table-regression-suite/PLAN.md
+  - planning/archive/data-table-regression-suite/STATUS.md
   - context/technical-requirements/data-table.md
   - frontend/tests/e2e/_helpers.ts
 ---

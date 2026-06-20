@@ -5,7 +5,7 @@ STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Build the table inventory and reusable e2e harness skeleton.
 RELATED:
-  - planning/features/data-table-regression-suite/PLAN.md
+  - planning/archive/data-table-regression-suite/PLAN.md
   - frontend/tests/e2e/_helpers.ts
   - frontend/tests/e2e/table-regression/tableMatrix.ts
   - frontend/tests/e2e/table-regression/tableHelpers.ts

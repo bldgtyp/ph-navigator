@@ -5,7 +5,7 @@ STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Browser smoke coverage for all target table routes.
 RELATED:
-  - planning/features/data-table-regression-suite/PLAN.md
+  - planning/archive/data-table-regression-suite/PLAN.md
   - frontend/tests/e2e/table-regression/table-smoke.spec.ts
   - frontend/tests/e2e/table-regression/tableHelpers.ts
 ---

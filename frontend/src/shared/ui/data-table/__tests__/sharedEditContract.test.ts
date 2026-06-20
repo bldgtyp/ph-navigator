@@ -11,7 +11,7 @@ import type { FieldDef } from "../types";
 // ---------------------------------------------------------------------------
 // Shared DataTable edit contract — the single source of truth for the
 // commit-time write/undo contract that EVERY route's editable cell rides
-// through (planning/features/data-table-regression-suite, Phase 02).
+// through (planning/archive/data-table-regression-suite, Phase 02).
 //
 // These tests exercise the PURE commit planners directly — no React, no
 // jsdom — so the forward/inverse op pairing is pinned independently of
