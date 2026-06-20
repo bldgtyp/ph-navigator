@@ -7,7 +7,6 @@ import {
   useState,
   type ChangeEvent,
   type Dispatch,
-  type KeyboardEvent as ReactKeyboardEvent,
   type SetStateAction,
   type ReactNode,
 } from "react";
@@ -23,9 +22,7 @@ import {
   type LocalFormulaState,
 } from "../lib/formula";
 import { FormulaFieldPalette } from "./FormulaFieldPalette";
-
-const FORMULA_TEXTAREA_THRESHOLD = 80;
-const FORMULA_MODAL_THRESHOLD = 240;
+import { FormulaSourceEditor } from "./FormulaSourceEditor";
 
 export type FormulaPreviewRowSnapshot = {
   id: string;
@@ -58,7 +55,7 @@ export function FieldConfigSectionFormula({
   onDraftChange,
 }: FieldConfigSectionFormulaProps) {
   const [source, setSource] = useStateFromInitial(initialSource);
-  const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const sourceInputId = useId();
   const previewLabelId = useId();
 
@@ -120,65 +117,30 @@ export function FieldConfigSectionFormula({
     [setSource],
   );
 
-  const handleSourceKeyDown = useCallback(
-    (event: ReactKeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      if (event.key === "Enter" && !event.shiftKey && event.currentTarget.tagName === "INPUT") {
-        event.preventDefault();
-      }
-    },
-    [],
-  );
-
   const paletteEntries = useMemo(
     () => fieldRegistry.filter((entry) => entry.field_id !== fieldId),
     [fieldRegistry, fieldId],
   );
 
-  const useTextarea = source.length >= FORMULA_TEXTAREA_THRESHOLD;
-  const escalateToModal = source.length >= FORMULA_MODAL_THRESHOLD;
-  const sharedInputProps = {
-    id: sourceInputId,
-    ref: (node: HTMLInputElement | HTMLTextAreaElement | null) => {
-      inputRef.current = node;
-    },
-    value: source,
-    maxLength: SOURCE_LENGTH_MAX,
-    spellCheck: false,
-    autoComplete: "off",
-    disabled,
-    "aria-invalid": localErrorMessage && dirty ? true : undefined,
-    "aria-describedby": previewLabelId,
-    onChange: (event: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLTextAreaElement>) =>
-      setSource(event.target.value),
-    onKeyDown: handleSourceKeyDown,
-  } as const;
-
   return (
     <div
-      className={joinClassNames(
-        "data-table-field-config-modal-section",
-        "data-table-formula-editor",
-        escalateToModal && "data-table-formula-editor-modal",
-      )}
+      className="data-table-field-config-modal-section data-table-formula-editor"
       role="group"
       aria-label="Formula"
     >
       <label className="data-table-field-config-label" htmlFor={sourceInputId}>
         Expression
       </label>
-      {useTextarea ? (
-        <textarea
-          {...sharedInputProps}
-          className="data-table-add-field-textarea data-table-formula-editor-source"
-          rows={escalateToModal ? 8 : 4}
-        />
-      ) : (
-        <input
-          {...sharedInputProps}
-          type="text"
-          className="data-table-add-field-input data-table-formula-editor-source"
-        />
-      )}
+      <FormulaSourceEditor
+        ref={inputRef}
+        id={sourceInputId}
+        value={source}
+        maxLength={SOURCE_LENGTH_MAX}
+        disabled={disabled}
+        ariaInvalid={Boolean(localErrorMessage && dirty)}
+        ariaDescribedBy={previewLabelId}
+        onChange={(event: ChangeEvent<HTMLTextAreaElement>) => setSource(event.target.value)}
+      />
       <span className="data-table-add-field-counter" aria-hidden>
         {source.length}/{SOURCE_LENGTH_MAX}
       </span>
