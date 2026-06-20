@@ -325,7 +325,7 @@ describe("CreateFieldConfigModal", () => {
     test("unsupported functions list available alternatives", () => {
       render(<Harness formulaFieldRegistry={registry} />);
       typeName("Label");
-      clickPill("Formula");
+      chooseFieldType("Formula");
       const expression = within(dialog()).getByLabelText("Expression") as HTMLInputElement;
       fireEvent.change(expression, { target: { value: "missing({Name})" } });
       const alert = within(dialog()).getByRole("alert");
@@ -335,7 +335,7 @@ describe("CreateFieldConfigModal", () => {
 
     test("autocomplete inserts a reference at the textarea caret", () => {
       render(<Harness formulaFieldRegistry={registry} />);
-      clickPill("Formula");
+      chooseFieldType("Formula");
       const expression = within(dialog()).getByLabelText("Expression") as HTMLTextAreaElement;
       fireEvent.change(expression, { target: { value: "upper()" } });
       expression.focus();
