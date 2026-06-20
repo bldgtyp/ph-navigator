@@ -6,6 +6,7 @@ import { RoomsPage } from "../routes/RoomsPage";
 import { RoomsTable } from "../components/RoomsTable";
 import { emptyViewState, type TableFieldDef } from "../../../shared/ui/data-table";
 import { ROOMS_TABLE_NAME, type RoomRow, type RoomsSlice } from "../types";
+import { chooseAutocompleteOption } from "../../../shared/ui/data-table/__tests__/helpers/autocomplete";
 import type { ProjectDetail } from "../../projects/types";
 import {
   applyRoomsSchemaMutationFixture,
@@ -222,7 +223,7 @@ describe("RoomsTable custom-fields Phase 4 — formula acceptance through render
     fireEvent.click(await screen.findByRole("button", { name: "Add field" }));
     const dialog = await screen.findByRole("dialog", { name: "Add field" });
     fireEvent.change(within(dialog).getByLabelText("Name"), { target: { value: "Label" } });
-    fireEvent.click(within(dialog).getByRole("radio", { name: "Formula" }));
+    chooseAutocompleteOption("Field type", "Formula", dialog);
     fireEvent.change(within(dialog).getByLabelText("Expression"), {
       target: { value: LABEL_FORMULA_SOURCE },
     });
@@ -276,7 +277,7 @@ describe("RoomsTable custom-fields Phase 4 — formula acceptance through render
     await openHeaderMenu("Number");
     fireEvent.click(screen.getByRole("menuitem", { name: "Edit field…" }));
     const dialog = await screen.findByRole("dialog", { name: /Edit field/ });
-    fireEvent.click(within(dialog).getByRole("radio", { name: "Number" }));
+    chooseAutocompleteOption("Field type", "Number", dialog);
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
 
     await waitFor(() => expect(postBodies).toHaveLength(1));

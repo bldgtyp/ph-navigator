@@ -45,13 +45,9 @@ describe("FieldConfigModal — per-attribute lock list", () => {
       locked: ["delete", "duplicate"],
     };
     render(<Harness field={builtIn} />);
-    const typePicker = screen.getByRole("radiogroup", { name: "Field type" });
-    const buttons = typePicker.querySelectorAll("button");
-    expect(buttons.length).toBeGreaterThan(0);
-    buttons.forEach((button) => {
-      expect(button).not.toBeDisabled();
-      expect(button.getAttribute("title")).not.toBe("Field Locked");
-    });
+    const typePicker = screen.getByRole("combobox", { name: "Field type" });
+    expect(typePicker).not.toBeDisabled();
+    expect(typePicker).not.toHaveAttribute("title", "Field Locked");
   });
 
   test("field_type in the lock list disables the type picker on built-ins", () => {
@@ -64,13 +60,8 @@ describe("FieldConfigModal — per-attribute lock list", () => {
       locked: ["field_type", "delete", "duplicate"],
     };
     render(<Harness field={builtIn} />);
-    const typePicker = screen.getByRole("radiogroup", { name: "Field type" });
-    const buttons = typePicker.querySelectorAll("button");
-    expect(buttons.length).toBeGreaterThan(0);
-    buttons.forEach((button) => {
-      expect(button).toBeDisabled();
-      expect(button.getAttribute("title")).toBe("Field Locked");
-    });
+    const typePicker = screen.getByRole("combobox", { name: "Field type" });
+    expect(typePicker).toBeDisabled();
   });
 
   test("display_name in the lock list disables the Name input", () => {
@@ -107,10 +98,6 @@ describe("FieldConfigModal — per-attribute lock list", () => {
     render(<Harness field={custom} />);
     expect(screen.getByLabelText("Name")).not.toBeDisabled();
     expect(screen.getByLabelText("Description")).not.toBeDisabled();
-    const typePicker = screen.getByRole("radiogroup", { name: "Field type" });
-    const enabled = Array.from(typePicker.querySelectorAll("button")).filter(
-      (b) => !(b as HTMLButtonElement).disabled,
-    );
-    expect(enabled.length).toBeGreaterThan(0);
+    expect(screen.getByRole("combobox", { name: "Field type" })).not.toBeDisabled();
   });
 });

@@ -4,6 +4,7 @@ import { describe, expect, test, vi } from "vitest";
 import { CreateFieldConfigModal } from "../components/CreateFieldConfigModal";
 import type { AddCustomFieldRequest } from "../types";
 import { ApiRequestError } from "../../../api/client";
+import { chooseAutocompleteOption } from "./helpers/autocomplete";
 
 type HarnessProps = {
   dispatch?: (request: AddCustomFieldRequest) => Promise<void>;
@@ -60,9 +61,8 @@ function typeName(value: string) {
   fireEvent.change(nameInput, { target: { value } });
 }
 
-function clickPill(label: string) {
-  const pill = within(dialog()).getByRole("radio", { name: label });
-  fireEvent.click(pill);
+function chooseFieldType(label: string) {
+  chooseAutocompleteOption("Field type", label, dialog());
 }
 
 function clickAdd() {
@@ -93,7 +93,7 @@ describe("CreateFieldConfigModal", () => {
     const dispatch = vi.fn().mockResolvedValue(undefined);
     render(<Harness dispatch={dispatch} />);
     typeName("Notes");
-    clickPill(label);
+    chooseFieldType(label);
     clickAdd();
     await waitFor(() => expect(dispatch).toHaveBeenCalled());
     const request = dispatch.mock.calls[0]?.[0] as AddCustomFieldRequest;
@@ -105,7 +105,7 @@ describe("CreateFieldConfigModal", () => {
     const dispatch = vi.fn().mockResolvedValue(undefined);
     render(<Harness dispatch={dispatch} />);
     typeName("Score");
-    clickPill("Number");
+    chooseFieldType("Number");
     const precision = within(dialog()).getByLabelText("Decimal precision") as HTMLInputElement;
     fireEvent.change(precision, { target: { value: "3" } });
     clickAdd();
@@ -188,21 +188,22 @@ describe("CreateFieldConfigModal", () => {
 
   test("Phase 4 enables Formula alongside single_select", () => {
     render(<Harness />);
-    const single = within(dialog()).getByRole("radio", {
-      name: "Single select",
-    }) as HTMLButtonElement;
-    const formula = within(dialog()).getByRole("radio", {
-      name: "Formula",
-    }) as HTMLButtonElement;
-    expect(single.disabled).toBe(false);
-    expect(formula.disabled).toBe(false);
+    fireEvent.focus(within(dialog()).getByRole("combobox", { name: "Field type" }));
+    expect(within(dialog()).getByRole("option", { name: /^Single select/ })).not.toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    expect(within(dialog()).getByRole("option", { name: /^Formula/ })).not.toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
   });
 
   test("single_select default picker lands in config.default_option_id", async () => {
     const dispatch = vi.fn().mockResolvedValue(undefined);
     render(<Harness dispatch={dispatch} />);
     typeName("Status");
-    clickPill("Single select");
+    chooseFieldType("Single select");
     fireEvent.change(within(dialog()).getByLabelText("Option label 1"), {
       target: { value: "Open" },
     });
@@ -226,7 +227,7 @@ describe("CreateFieldConfigModal", () => {
     const dispatch = vi.fn().mockResolvedValue(undefined);
     render(<Harness dispatch={dispatch} />);
     typeName("Status");
-    clickPill("Single select");
+    chooseFieldType("Single select");
     fireEvent.change(within(dialog()).getByLabelText("Option label 1"), {
       target: { value: "Open" },
     });
@@ -269,7 +270,7 @@ describe("CreateFieldConfigModal", () => {
 
     test("selecting Formula reveals the expression input", () => {
       render(<Harness formulaFieldRegistry={registry} />);
-      clickPill("Formula");
+      chooseFieldType("Formula");
       expect(within(dialog()).getByLabelText("Expression")).toBeInTheDocument();
     });
 
@@ -277,7 +278,7 @@ describe("CreateFieldConfigModal", () => {
       const dispatch = vi.fn().mockResolvedValue(undefined);
       render(<Harness dispatch={dispatch} formulaFieldRegistry={registry} />);
       typeName("Label");
-      clickPill("Formula");
+      chooseFieldType("Formula");
       const expression = within(dialog()).getByLabelText("Expression") as HTMLInputElement;
       fireEvent.change(expression, { target: { value: "upper({Name})" } });
       clickAdd();
@@ -294,7 +295,7 @@ describe("CreateFieldConfigModal", () => {
       const dispatch = vi.fn();
       render(<Harness dispatch={dispatch} formulaFieldRegistry={registry} />);
       typeName("Label");
-      clickPill("Formula");
+      chooseFieldType("Formula");
       const expression = within(dialog()).getByLabelText("Expression") as HTMLInputElement;
       fireEvent.change(expression, { target: { value: "upper(" } });
       const submit = within(dialog()).getByRole("button", {
@@ -307,7 +308,7 @@ describe("CreateFieldConfigModal", () => {
     test("Submit surfaces missing-ref errors locally", () => {
       render(<Harness formulaFieldRegistry={registry} />);
       typeName("Label");
-      clickPill("Formula");
+      chooseFieldType("Formula");
       const expression = within(dialog()).getByLabelText("Expression") as HTMLInputElement;
       fireEvent.change(expression, { target: { value: "upper({Nonexistent})" } });
       const submit = within(dialog()).getByRole("button", {
@@ -328,7 +329,7 @@ describe("CreateFieldConfigModal", () => {
     test("Save stays disabled until a target table is picked", () => {
       render(<Harness linkedRecordTargets={TARGETS} />);
       typeName("Pumps");
-      clickPill("Linked record");
+      chooseFieldType("Linked record");
       const submit = within(dialog()).getByRole("button", {
         name: /Add field/,
       }) as HTMLButtonElement;
@@ -339,7 +340,7 @@ describe("CreateFieldConfigModal", () => {
       const dispatch = vi.fn().mockResolvedValue(undefined);
       render(<Harness dispatch={dispatch} linkedRecordTargets={TARGETS} />);
       typeName("Pumps");
-      clickPill("Linked record");
+      chooseFieldType("Linked record");
       const select = within(dialog()).getByLabelText("Target table") as HTMLSelectElement;
       fireEvent.change(select, { target: { value: "equipment/pumps" } });
       clickAdd();

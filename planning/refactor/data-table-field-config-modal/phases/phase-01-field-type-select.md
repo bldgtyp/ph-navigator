@@ -1,13 +1,50 @@
 ---
 DATE: 2026-06-20
 TIME: 07:58 EDT
-STATUS: Active
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Shared field-type dropdown component
 RELATED: planning/refactor/data-table-field-config-modal/PLAN.md, frontend/src/shared/ui/data-table/components/fieldConfigChoices.ts
 ---
 
 # Phase 01 - Field Type Select
+
+## Completion Notes
+
+Completed 2026-06-20 08:26 EDT.
+
+- Added shared `FieldTypeSelect` in
+  `frontend/src/shared/ui/data-table/components/FieldTypeSelect.tsx`.
+- Wired Add Field and Edit Field through the shared select-style control.
+- Preserved Edit Field conversion policy in `FieldConfigModal.tsx`,
+  including disabled forbidden targets, field-type locking, draft reset on
+  valid selection, and the Number-with-Units `"Unit"` label override.
+- Kept Phase 02 cleanup out of this slice: visible labels, modal title, and
+  old pill CSS classes are still scheduled for the markup/CSS phase.
+
+Verification:
+
+```bash
+cd frontend && pnpm exec vitest run \
+  src/shared/ui/data-table/__tests__/FieldConfigModal.test.tsx \
+  src/shared/ui/data-table/__tests__/FieldConfigModal.locks.test.tsx \
+  src/shared/ui/data-table/__tests__/CreateFieldConfigModal.test.tsx
+make frontend-dev-check
+make format
+make ci
+graphify update .
+```
+
+Result:
+
+- Focused modal tests: 3 test files passed, 61 tests passed.
+- `make frontend-dev-check`: passed with existing Fast Refresh lint
+  warnings and existing Vite chunk-size warnings.
+- `make ci`: passed. Backend: 903 passed, 2 skipped, 1 existing
+  deprecation warning. Frontend: 181 test files passed, 1737 tests passed,
+  build passed.
+- `graphify update .`: graph updated. HTML export skipped because the graph
+  exceeds the 5000-node visualization limit.
 
 ## Goal
 
@@ -116,4 +153,3 @@ In `CreateFieldConfigModal.tsx`:
   unreadable. Use `AutocompleteSelect` descriptions for disabled reasons.
 - Do not remove the existing pill CSS in this phase unless tests are already
   updated; Phase 02 performs final CSS retirement.
-

@@ -52,6 +52,7 @@ import {
   type LinkedRecordTargetTableOption,
 } from "./FieldConfigSectionLinkedRecord";
 import { FIELD_TYPE_CHOICES } from "./fieldConfigChoices";
+import { FieldTypeSelect, type FieldTypeSelectOption } from "./FieldTypeSelect";
 
 // Stable empty references. Inline `?? []` fallbacks force a fresh array
 // identity on every render, which cascades through
@@ -425,6 +426,32 @@ export function FieldConfigModal({
     ackSatisfied;
 
   const fieldTypeLocked = isAttributeLocked(fieldDef, "field_type");
+  const fieldTypeOptions = useMemo<readonly FieldTypeSelectOption[]>(() => {
+    if (sourceCustomFieldType === undefined) return [];
+    return FIELD_TYPE_CHOICES.map((candidate) => {
+      const isCurrent = candidate.kind === sourceCustomFieldType;
+      const allowed = isCurrent || isConversionAllowed(sourceCustomFieldType, candidate.kind);
+      return {
+        kind: candidate.kind,
+        label: fieldTypeChoiceLabel(candidate, candidate.kind === "number" ? numberUnits : null),
+        disabled: !allowed,
+        description: allowed
+          ? candidate.hint
+          : typeCandidateTitle(
+              candidate,
+              sourceCustomFieldType,
+              allowed,
+              candidate.kind === "number" ? numberUnits : null,
+            ),
+      };
+    });
+  }, [numberUnits, sourceCustomFieldType]);
+
+  const handleDraftTypeChange = useCallback((next: CustomFieldType) => {
+    setDraftType(next);
+    setAcknowledged(false);
+    setServerPreflight(null);
+  }, []);
 
   const handleSave = useCallback(async () => {
     if (!source || !canSave) return;
@@ -653,53 +680,14 @@ export function FieldConfigModal({
                 aria-label="Field type"
               >
                 <span className="data-table-add-field-label">Type</span>
-                <div
-                  className="data-table-add-field-type-row"
-                  role="radiogroup"
-                  aria-label="Field type"
-                >
-                  {FIELD_TYPE_CHOICES.map((candidate) => {
-                    // Current type pill stays selectable so the user can
-                    // revert a staged change.
-                    const isCurrent = candidate.kind === sourceCustomFieldType;
-                    const allowed =
-                      isCurrent || isConversionAllowed(sourceCustomFieldType, candidate.kind);
-                    const selected = draftType === candidate.kind;
-                    const buttonDisabled = fieldTypeLocked || !allowed || pending;
-                    return (
-                      <button
-                        key={candidate.kind}
-                        type="button"
-                        role="radio"
-                        aria-checked={selected}
-                        aria-disabled={buttonDisabled}
-                        disabled={buttonDisabled}
-                        data-active={selected ? "true" : undefined}
-                        title={
-                          fieldTypeLocked
-                            ? FIELD_LOCKED_TOOLTIP
-                            : typeCandidateTitle(
-                                candidate,
-                                sourceCustomFieldType,
-                                allowed,
-                                candidate.kind === "number" ? numberUnits : null,
-                              )
-                        }
-                        className="data-table-add-field-type-pill"
-                        onClick={() => {
-                          setDraftType(candidate.kind);
-                          setAcknowledged(false);
-                          setServerPreflight(null);
-                        }}
-                      >
-                        {fieldTypeChoiceLabel(
-                          candidate,
-                          candidate.kind === "number" ? numberUnits : null,
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
+                {draftType ? (
+                  <FieldTypeSelect
+                    value={draftType}
+                    options={fieldTypeOptions}
+                    disabled={pending || fieldTypeLocked}
+                    onChange={handleDraftTypeChange}
+                  />
+                ) : null}
               </div>
             ) : null}
             {typeChanged && draftType !== null && sourceCustomFieldType !== undefined ? (
