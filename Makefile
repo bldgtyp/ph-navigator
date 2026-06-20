@@ -9,7 +9,7 @@
         db-create-test db-migrate-test \
         migrate makemigration test test-backend test-frontend coverage typecheck \
         lint check ci ci-backend ci-frontend check-backend check-frontend frontend-dev-check build-frontend format format-check \
-        smoke seed-dev-user seed-agent-user seed-climate-bundle seed-dev-data seed-materials seed-glazing seed-frames seed-hbjson db-seed e2e e2e-report clean
+        smoke seed-dev-user seed-agent-user seed-climate-bundle seed-dev-data seed-materials seed-glazing seed-frames seed-hbjson db-seed e2e e2e-report clean graphify-prune
 
 # Local Postgres URL for the dedicated pytest database. Mirrors the dev
 # URL in backend/.env.example with the database name swapped to *_test.
@@ -31,16 +31,16 @@ help: ## Show available recipes
 # `setup` is also the one consistent provisioning command for a NEW git
 # worktree: a fresh worktree has none of the gitignored deps/env files, and
 # `setup` regenerates them. It additionally marks the regenerated dependency
-# folders (backend/.venv, frontend/node_modules) as Dropbox-ignored, so a
-# checkout under a Dropbox-backed path — including a worktree — never syncs
-# them. The xattr step is guarded: a no-op when `xattr` is absent (non-macOS)
-# or the path is not under Dropbox.
+# folders (backend/.venv, frontend/node_modules) and the graphify-out/ graph
+# cache as Dropbox-ignored, so a checkout under a Dropbox-backed path —
+# including a worktree — never syncs them. The xattr step is guarded: a no-op
+# when `xattr` is absent (non-macOS) or the path does not exist yet.
 setup: ## First-time setup (Python, Node, env files, Dropbox-ignore)
 	cd backend && uv python install 3.11 && uv sync
 	cd frontend && pnpm install
 	test -f backend/.env || cp backend/.env.example backend/.env
 	test -f frontend/.env.local || cp frontend/.env.example frontend/.env.local
-	@command -v xattr >/dev/null 2>&1 && { xattr -w com.dropbox.ignored 1 backend/.venv 2>/dev/null || true; xattr -w com.dropbox.ignored 1 frontend/node_modules 2>/dev/null || true; } || true
+	@command -v xattr >/dev/null 2>&1 && { xattr -w com.dropbox.ignored 1 backend/.venv 2>/dev/null || true; xattr -w com.dropbox.ignored 1 frontend/node_modules 2>/dev/null || true; xattr -w com.dropbox.ignored 1 graphify-out 2>/dev/null || true; } || true
 
 sync: ## Re-sync Python and Node deps from lockfiles
 	cd backend && uv sync
@@ -261,3 +261,18 @@ clean: ## Remove caches and build artifacts (does NOT touch .venv or node_module
 	rm -rf backend/_coverage_html backend/.coverage
 	rm -rf frontend/dist frontend/build frontend/.vite
 	rm -rf .playwright-mcp playwright-report test-results
+
+# ─────────────── graphify housekeeping ───────────────
+
+# Graphify (graphify.export.backup_if_protected) writes a dated YYYY-MM-DD/
+# snapshot of the graph before each overwrite — a safety net for the
+# semantic/curated graph — but it never deletes old ones, so they grow
+# ~17-20 MB/day. graphify-out/ is gitignored and Dropbox-ignored, so this is
+# purely local disk, but it still accumulates. This recipe keeps only the KEEP
+# most recent snapshot folders. The post-commit hook calls it automatically.
+KEEP ?= 3
+graphify-prune: ## Keep only the KEEP most recent graphify snapshots (default 3)
+	@cd graphify-out 2>/dev/null || exit 0; \
+	ls -d 20[0-9][0-9]-[0-1][0-9]-[0-3][0-9] 2>/dev/null | sort -r | tail -n +$$(($(KEEP)+1)) | while read d; do \
+		echo "graphify-prune: removing $$d"; rm -rf "$$d"; \
+	done

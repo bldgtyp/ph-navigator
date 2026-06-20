@@ -459,10 +459,16 @@ make setup
 ```
 
 `make setup` regenerates `backend/.venv`, `frontend/node_modules`, and the
-`.env` / `.env.local` files, and marks the two dependency folders
-`com.dropbox.ignored` so a worktree created under this Dropbox-backed repo
-never syncs those heavy, regenerated trees. It is idempotent — safe to
-re-run in any checkout.
+`.env` / `.env.local` files, and marks the two dependency folders plus the
+`graphify-out/` graph cache `com.dropbox.ignored` so a worktree created under
+this Dropbox-backed repo never syncs those heavy, regenerated trees. It is
+idempotent — safe to re-run in any checkout.
+
+The `graphify-out/` graph cache is gitignored, regenerable, and grows ~17-20 MB
+per day because graphify snapshots the graph to a dated `YYYY-MM-DD/` folder
+before each overwrite and never prunes them. `make graphify-prune` (KEEP=3)
+keeps only the most recent snapshots; the `post-commit` hook calls it
+automatically after each rebuild.
 
 Notes:
 
