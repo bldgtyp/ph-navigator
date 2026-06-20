@@ -196,6 +196,15 @@ function toText(value: unknown): string | null {
   return null;
 }
 
+function toConcatText(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  const text = toText(value);
+  if (text === null) {
+    throw new EvalErrorSignal("type_mismatch");
+  }
+  return text;
+}
+
 function formatNumber(value: number): string {
   // Deterministic number-to-text format pinned by the shared corpus.
   // Matches Python `_format_number`:
@@ -300,6 +309,7 @@ function evalBinary(node: Extract<FormulaAST, { kind: "binary_op" }>, state: Sta
   const right = evalNode(node.right, state);
   if (op === "=") return eq(left, right);
   if (op === "!=") return !eq(left, right);
+  if (op === "&") return toConcatText(left) + toConcatText(right);
 
   // Null propagation for arithmetic and ordering comparisons.
   if (left === null || left === undefined || right === null || right === undefined) {

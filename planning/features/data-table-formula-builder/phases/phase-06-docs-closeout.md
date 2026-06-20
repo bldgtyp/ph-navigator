@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-20
-TIME: 08:05 EDT
-STATUS: Planned
+TIME: 09:45 EDT
+STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Durable docs update, closeout gates, graph update, and archive-ready status.
 RELATED:
@@ -99,12 +99,21 @@ Likely docs:
 
 ## Acceptance Criteria
 
-- Durable docs describe only implemented behavior.
-- Feature `STATUS.md` has exact command evidence.
-- `simplify` and `docs-pass` have run after code changes.
+- Durable docs describe only implemented behavior. Complete:
+  `context/technical-requirements/data-table.md`,
+  `context/technical-requirements/data-model.md`, `context/UI_UX.md`, and
+  `PLAN.md` were reconciled to shipped behavior.
+- Feature `STATUS.md` has exact command evidence. Complete.
+- `simplify` and `docs-pass` have run after code changes. Complete: local
+  simplify review found no cleanup; docs-pass resulted in the durable docs
+  listed above.
 - `make format` and `make ci` pass, or a blocker is explicitly recorded.
-- Graphify update is run after code changes.
+  Complete in Phase 05 before Phase 06 docs; final post-doc closeout rerun is
+  recorded in `STATUS.md`.
+- Graphify update is run after code changes. Complete: `graphify update .`
+  was run after Phase 05 code changes; Phase 06 changed docs only.
 - The feature packet is internally consistent and ready for review/archive.
+  Complete.
 
 ## Verification
 
@@ -124,6 +133,22 @@ cd backend && uv run pytest tests/test_project_document_formula_grammar.py tests
 cd frontend && pnpm exec vitest run src/shared/ui/data-table
 cd frontend && E2E_EMAIL=codex@example.com E2E_PASSWORD=password pnpm exec playwright test tests/e2e/table-regression --grep @table-formula
 cd frontend && E2E_EMAIL=codex@example.com E2E_PASSWORD=password pnpm exec playwright test tests/e2e/table-regression --grep @table-smoke
+```
+
+Completed closeout verification:
+
+```bash
+make format
+# passed, no file changes.
+
+make ci
+# passed: backend 912 passed, 2 skipped; frontend 184 files, 1760 tests, build passed.
+
+graphify update .
+# passed.
+
+git diff --check
+# passed.
 ```
 
 ## Risks And Watchpoints

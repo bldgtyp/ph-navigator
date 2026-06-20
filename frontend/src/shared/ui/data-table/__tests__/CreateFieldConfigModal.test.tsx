@@ -280,14 +280,14 @@ describe("CreateFieldConfigModal", () => {
       typeName("Label");
       chooseFieldType("Formula");
       const expression = within(dialog()).getByLabelText("Expression") as HTMLInputElement;
-      fireEvent.change(expression, { target: { value: "upper({Name})" } });
+      fireEvent.change(expression, { target: { value: '{Number} & " - " & upper({Name})' } });
       clickAdd();
       await waitFor(() => expect(dispatch).toHaveBeenCalled());
       const request = dispatch.mock.calls[0]?.[0] as AddCustomFieldRequest;
       expect(request.fieldType).toBe("formula");
-      expect(request.config.source).toBe("upper({Name})");
+      expect(request.config.source).toBe('{Number} & " - " & upper({Name})');
       expect(Array.isArray((request.config as { deps?: unknown[] }).deps)).toBe(true);
-      expect((request.config as { deps: string[] }).deps).toEqual(["name"]);
+      expect((request.config as { deps: string[] }).deps).toEqual(["number", "name"]);
       expect((request.config as { ast: unknown }).ast).toBeTruthy();
     });
 
@@ -302,7 +302,9 @@ describe("CreateFieldConfigModal", () => {
         name: /Add field/,
       }) as HTMLButtonElement;
       expect(submit.disabled).toBe(true);
-      expect(within(dialog()).getByRole("status")).toHaveTextContent(/parse/i);
+      const alert = within(dialog()).getByRole("alert");
+      expect(alert).toHaveTextContent("Formula syntax error");
+      expect(alert).toHaveTextContent(/Add an operator such as \+, -, \*, \//);
     });
 
     test("Submit surfaces missing-ref errors locally", () => {
@@ -315,7 +317,34 @@ describe("CreateFieldConfigModal", () => {
         name: /Add field/,
       }) as HTMLButtonElement;
       expect(submit.disabled).toBe(true);
-      expect(within(dialog()).getByRole("status")).toHaveTextContent(/Nonexistent/);
+      const alert = within(dialog()).getByRole("alert");
+      expect(alert).toHaveTextContent("Field not found");
+      expect(alert).toHaveTextContent('No field named "Nonexistent" exists in this table.');
+    });
+
+    test("unsupported functions list available alternatives", () => {
+      render(<Harness formulaFieldRegistry={registry} />);
+      typeName("Label");
+      chooseFieldType("Formula");
+      const expression = within(dialog()).getByLabelText("Expression") as HTMLInputElement;
+      fireEvent.change(expression, { target: { value: "missing({Name})" } });
+      const alert = within(dialog()).getByRole("alert");
+      expect(alert).toHaveTextContent("Function not supported");
+      expect(alert).toHaveTextContent("Available functions: concat, len, lower");
+    });
+
+    test("autocomplete inserts a reference at the textarea caret", () => {
+      render(<Harness formulaFieldRegistry={registry} />);
+      chooseFieldType("Formula");
+      const expression = within(dialog()).getByLabelText("Expression") as HTMLTextAreaElement;
+      fireEvent.change(expression, { target: { value: "upper()" } });
+      expression.focus();
+      expression.setSelectionRange(6, 6);
+      fireEvent.change(expression, { target: { value: "upper({N)" } });
+      expression.setSelectionRange(8, 8);
+      fireEvent.select(expression);
+      fireEvent.click(within(dialog()).getByRole("option", { name: "Name Text column" }));
+      expect(expression.value).toBe("upper({Name})");
     });
   });
 

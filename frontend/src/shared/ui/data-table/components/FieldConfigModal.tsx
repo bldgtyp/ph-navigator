@@ -160,6 +160,8 @@ export function FieldConfigModal({
   const [numberPrecision, setNumberPrecision] = useState(DEFAULT_NUMBER_PRECISION);
   const [numberUnits, setNumberUnits] = useState<NumberUnitsConfig | null>(null);
   const [formulaDraft, setFormulaDraft] = useState<FormulaDraftState | null>(null);
+  const [formulaSuggestionPanelOpen, setFormulaSuggestionPanelOpen] = useState(false);
+  const [dismissFormulaSuggestionsSignal, setDismissFormulaSuggestionsSignal] = useState(0);
   const [formulaPreviewSnapshot, setFormulaPreviewSnapshot] =
     useState<FormulaPreviewRowSnapshot | null>(null);
   const [formulaPreviewStale, setFormulaPreviewStale] = useState(false);
@@ -193,6 +195,7 @@ export function FieldConfigModal({
       setNumberPrecision(DEFAULT_NUMBER_PRECISION);
       setNumberUnits(null);
       setFormulaDraft(null);
+      setFormulaSuggestionPanelOpen(false);
       setFormulaPreviewSnapshot(null);
       setFormulaPreviewStale(false);
       setServerPreflight(null);
@@ -537,7 +540,14 @@ export function FieldConfigModal({
   // open-change. Suppress dismissal while saving (R-S5) or while
   // the R-S2 banner is up.
   const handleEscape = (event: KeyboardEvent) => {
-    if (pending) event.preventDefault();
+    if (pending) {
+      event.preventDefault();
+      return;
+    }
+    if (formulaSuggestionPanelOpen) {
+      event.preventDefault();
+      setDismissFormulaSuggestionsSignal((current) => current + 1);
+    }
   };
   const handleInteractOutside = (event: Event) => {
     if (pending) event.preventDefault();
@@ -600,7 +610,9 @@ export function FieldConfigModal({
           data-pending={pending ? "true" : undefined}
         />
         <Dialog.Content
-          className="data-table-field-config-modal"
+          className={`data-table-field-config-modal${
+            draftType === "formula" ? " data-table-field-config-modal-formula" : ""
+          }`}
           aria-describedby={submitError ? errorId : undefined}
           onEscapeKeyDown={handleEscape}
           onPointerDownOutside={handleInteractOutside}
@@ -735,6 +747,8 @@ export function FieldConfigModal({
                 previewStale={formulaPreviewStale}
                 disabled={pending || isAttributeLocked(fieldDef, "formula")}
                 onDraftChange={setFormulaDraft}
+                onSuggestionPanelOpenChange={setFormulaSuggestionPanelOpen}
+                dismissSuggestionsSignal={dismissFormulaSuggestionsSignal}
               />
             ) : null}
             {draftType === "linked_record" && source ? (

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-20
-TIME: 08:05 EDT
-STATUS: Planned
+TIME: 09:34 EDT
+STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: All-table formula editor regression coverage and persisted formula smoke.
 RELATED:
@@ -118,11 +118,17 @@ Search guards:
 ## Acceptance Criteria
 
 - Focused shared tests cover editor UI, errors, suggestions, and `&` modal
-  flow.
+  flow. Complete: `CreateFieldConfigModal.test.tsx` and
+  `FieldConfigModal.test.tsx` now dispatch/save `&` sources, and the full
+  shared DataTable folder passed.
 - Matrix e2e proves all in-scope DataTables see the shared formula editor.
-- At least one persisted formula with `&` computes correctly after route reload.
-- No table-local formula editor components or CSS are introduced.
-- Existing table smoke remains green.
+  Complete: `table-formula.spec.ts` covers all 14 table-regression cases.
+- At least one persisted formula with `&` computes correctly after route
+  reload. Complete: Rooms saves `"Room - " & {Name}` and verifies the computed
+  cell after reload.
+- No table-local formula editor components or CSS are introduced. Complete:
+  search guard found only shared `frontend/src/shared/ui/data-table` hits.
+- Existing table smoke remains green. Complete: `@table-smoke` passed.
 
 ## Verification
 
@@ -151,6 +157,31 @@ Frontend gate:
 make frontend-dev-check
 ```
 
+Completed verification:
+
+```bash
+cd frontend && pnpm exec vitest run src/shared/ui/data-table
+# 79 files, 980 tests passed.
+
+cd frontend && E2E_EMAIL=codex@example.com E2E_PASSWORD=password pnpm exec playwright test tests/e2e/table-regression --grep @table-formula
+# 15 passed.
+
+cd frontend && E2E_EMAIL=codex@example.com E2E_PASSWORD=password pnpm exec playwright test tests/e2e/table-regression --grep @table-smoke
+# 14 passed.
+
+rg -n "FormulaSourceEditor|FormulaSuggestionPanel|formula-field-palette|data-table-formula-editor" frontend/src/features frontend/src/shared/ui/data-table
+# shared data-table component/CSS/test hits only.
+
+make format
+# passed, no file changes.
+
+make frontend-dev-check
+# passed; existing 13 Fast Refresh warnings, no errors.
+
+make ci
+# passed: backend 912 passed, 2 skipped; frontend 184 files, 1760 tests, build passed.
+```
+
 ## Risks And Watchpoints
 
 - Creating custom fields in every table may be slow or flaky. The all-table
@@ -165,3 +196,14 @@ make frontend-dev-check
 
 This phase is where the user's "every DataTable" requirement is proven. Keep
 the test data matrix-driven and name failures by `case.id` / `case.label`.
+
+The browser e2e must run against current-worktree servers on the canonical
+local origins:
+
+- frontend: `http://localhost:5173`
+- backend: `http://localhost:8000`
+
+During implementation, stale Dropbox-checkout servers on those ports produced
+false failures: stale frontend lacked the current Add Field radio UI, and stale
+backend rendered `&` formulas as evaluator `#ERROR`. Restarting both servers
+from `/Users/em/.codex/worktrees/5c35/ph-navigator-v2` made the suite pass.

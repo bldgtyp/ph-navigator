@@ -68,6 +68,8 @@ export function CreateFieldConfigModal({
   const [linkedRecordMaxLinks, setLinkedRecordMaxLinks] = useState<number | null>(1);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [formulaSuggestionPanelOpen, setFormulaSuggestionPanelOpen] = useState(false);
+  const [dismissFormulaSuggestionsSignal, setDismissFormulaSuggestionsSignal] = useState(0);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
   const nameId = useId();
   const descriptionId = useId();
@@ -84,6 +86,7 @@ export function CreateFieldConfigModal({
     setLinkedRecordMaxLinks(1);
     setSubmitError(null);
     setPending(false);
+    setFormulaSuggestionPanelOpen(false);
   }, []);
 
   useEffect(() => {
@@ -155,7 +158,14 @@ export function CreateFieldConfigModal({
     onOpenChange(next);
   };
   const handleEscape = (event: KeyboardEvent) => {
-    if (pending) event.preventDefault();
+    if (pending) {
+      event.preventDefault();
+      return;
+    }
+    if (formulaSuggestionPanelOpen) {
+      event.preventDefault();
+      setDismissFormulaSuggestionsSignal((current) => current + 1);
+    }
   };
   const handleInteractOutside = (event: Event) => {
     if (pending) event.preventDefault();
@@ -174,7 +184,9 @@ export function CreateFieldConfigModal({
           data-pending={pending ? "true" : undefined}
         />
         <Dialog.Content
-          className="data-table-field-config-modal"
+          className={`data-table-field-config-modal${
+            fieldType === "formula" ? " data-table-field-config-modal-formula" : ""
+          }`}
           aria-describedby={submitError ? errorId : undefined}
           onEscapeKeyDown={handleEscape}
           onPointerDownOutside={handleInteractOutside}
@@ -270,6 +282,8 @@ export function CreateFieldConfigModal({
                 previewStale={false}
                 disabled={pending}
                 onDraftChange={setFormulaDraft}
+                onSuggestionPanelOpenChange={setFormulaSuggestionPanelOpen}
+                dismissSuggestionsSignal={dismissFormulaSuggestionsSignal}
               />
             ) : null}
 

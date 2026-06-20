@@ -13,6 +13,7 @@ export const TokenKind = {
   LPAREN: "LPAREN",
   RPAREN: "RPAREN",
   COMMA: "COMMA",
+  AMPERSAND: "AMPERSAND",
   PLUS: "PLUS",
   MINUS: "MINUS",
   STAR: "STAR",

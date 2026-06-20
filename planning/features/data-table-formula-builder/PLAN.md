@@ -223,9 +223,8 @@ Implementation shape:
   table-regression matrix to open every field-config-capable table, create or
   edit a formula field where allowed, and assert the shared editor UI is
   present.
-- Add at least one persisted end-to-end formula case that saves
-  `{Number} & " - " & {Name}`, reloads the table, and verifies computed
-  overlay display.
+- Add at least one persisted end-to-end formula case that saves an `&`
+  formula, reloads the table, and verifies computed overlay display.
 - Confirm no feature table imports formula editor CSS/components directly.
 
 Verification:
@@ -252,16 +251,12 @@ make format
 make ci
 ```
 
-## Open Decisions
+## Resolved Implementation Decisions
 
-- Exact precedence for `&` relative to arithmetic and comparison. Default plan:
-  same precedence as `+` / `-`, left-associative, unless Airtable behavior
-  says otherwise.
-- Exact number-to-text formatting for `&`. Default plan: reuse the existing
-  formula `text()` formatting helper where possible.
-- Whether bare `N` should suggest fields immediately or only after `{N`.
-  Default plan: support both because the Airtable example surfaces suggestions
-  under bare function/field typing.
-- Whether autocomplete should include only fields in v1 or fields plus
-  functions. Default plan: include both under the "Insert a field or function"
-  affordance.
+- `&` parses at the same precedence as `+` / `-`, left-associative.
+- `&` uses the shared formula number-to-text formatter; null becomes `""`,
+  booleans become `true` / `false`, and unsupported non-scalars raise
+  `type_mismatch`.
+- Autocomplete opens for both `{N` and bare `N` caret tokens.
+- Autocomplete includes both referenceable fields and supported functions under
+  the "Insert a field or function" affordance.

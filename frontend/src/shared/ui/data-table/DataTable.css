@@ -954,6 +954,17 @@
   overflow-y: auto;
 }
 
+.data-table-field-config-modal-formula {
+  max-width: min(720px, calc(100vw - 48px));
+}
+
+.data-table-field-config-modal-title {
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-12);
+}
+
 .data-table-field-config-modal-form {
   display: flex;
   flex-direction: column;
@@ -964,6 +975,191 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+}
+
+.data-table-formula-editor {
+  gap: var(--space-6);
+}
+
+.formula-source-editor {
+  position: relative;
+  min-height: 8.75rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  background: var(--bg-input, var(--bg-card));
+  overflow: hidden;
+}
+
+.formula-source-editor:focus-within {
+  border-color: var(--accent);
+}
+
+.formula-source-editor[data-disabled="true"] {
+  background: color-mix(in oklab, var(--bg-elev) 55%, var(--bg-card));
+  opacity: 0.75;
+}
+
+.formula-source-editor-highlight,
+.formula-source-editor-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 8.75rem;
+  margin: 0;
+  padding: var(--space-8) var(--space-10);
+  border: 0;
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+  font-size: var(--fs-md);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  tab-size: 2;
+}
+
+.formula-source-editor-highlight {
+  pointer-events: none;
+  color: var(--text-primary);
+  will-change: transform;
+}
+
+.formula-source-editor-input {
+  position: absolute;
+  inset: 0;
+  resize: vertical;
+  min-height: 8.75rem;
+  max-height: calc(100vh - 18rem);
+  background: transparent;
+  color: transparent;
+  caret-color: var(--text-primary);
+  overflow: auto;
+}
+
+.formula-source-editor-input:focus-visible {
+  outline: none;
+}
+
+.formula-source-editor-input::selection {
+  background: color-mix(in oklab, var(--accent) 28%, transparent);
+}
+
+.formula-source-editor-token-plain {
+  color: var(--text-primary);
+}
+
+.formula-source-editor-token-field {
+  color: var(--chart-5);
+}
+
+.formula-source-editor-token-string {
+  color: var(--chart-3);
+}
+
+.formula-source-editor-token-number {
+  color: var(--chart-4);
+}
+
+.formula-editor-composer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.formula-suggestion-panel {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  background: color-mix(in oklab, var(--bg-elev) 55%, var(--bg-card));
+  overflow: hidden;
+}
+
+.formula-suggestion-panel-title {
+  padding: var(--space-6) var(--space-8);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.formula-suggestion-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 14rem;
+  margin: 0;
+  padding: var(--space-4);
+  list-style: none;
+  overflow-y: auto;
+}
+
+.formula-suggestion-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  gap: var(--space-8);
+  align-items: center;
+  min-height: 2rem;
+  padding: var(--space-4) var(--space-6);
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  font-size: var(--fs-sm);
+  color: var(--text-primary);
+}
+
+.formula-suggestion-option[aria-selected="true"] {
+  background: color-mix(in oklab, var(--accent) 12%, transparent);
+  color: var(--accent-text);
+}
+
+.formula-suggestion-option-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.formula-suggestion-option-detail {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+}
+
+.data-table-formula-editor-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-8) var(--space-10);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  background: color-mix(in oklab, var(--bg-elev) 45%, var(--bg-card));
+  font-size: var(--fs-sm);
+  color: var(--text-primary);
+}
+
+.data-table-formula-editor-preview-title {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.data-table-formula-editor-preview-detail {
+  color: var(--text-muted);
+}
+
+.data-table-formula-editor-preview-body {
+  color: inherit;
+}
+
+.data-table-formula-editor-preview-value {
+  color: var(--text-primary);
+}
+
+.data-table-formula-editor-preview-empty {
+  color: var(--text-muted);
+}
+
+.data-table-formula-editor-preview-error {
+  border-color: var(--phn-danger);
+  background: color-mix(in oklab, var(--phn-danger) 8%, var(--bg-card));
+  color: var(--phn-danger);
+}
+
+.data-table-formula-editor-preview-error .data-table-formula-editor-preview-title,
+.data-table-formula-editor-preview-error .data-table-formula-editor-preview-value {
+  color: var(--phn-danger);
 }
 
 .data-table-field-config-modal-inline-grid {

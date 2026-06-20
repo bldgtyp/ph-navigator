@@ -17,7 +17,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Literal, cast
 
-BinaryOperator = Literal["+", "-", "*", "/", "%", "=", "!=", "<", "<=", ">", ">=", "and", "or"]
+BinaryOperator = Literal["&", "+", "-", "*", "/", "%", "=", "!=", "<", "<=", ">", ">=", "and", "or"]
 UnaryOperator = Literal["-", "not"]
 LiteralValue = str | float | bool | None
 LiteralInferredType = Literal["text", "number", "bool", "null"]

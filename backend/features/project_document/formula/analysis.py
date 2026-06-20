@@ -45,6 +45,8 @@ def infer_result_type(node: object) -> str:
         if node.op == "not":
             return "bool"
     if isinstance(node, BinaryOp):
+        if node.op == "&":
+            return "text"
         if node.op in ("+", "-", "*", "/", "%"):
             return "number"
         if node.op in ("=", "!=", "<", "<=", ">", ">=", "and", "or"):
