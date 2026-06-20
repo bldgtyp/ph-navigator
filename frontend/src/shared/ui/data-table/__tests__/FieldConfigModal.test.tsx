@@ -752,14 +752,16 @@ describe("FieldConfigModal", () => {
       "data-table-formula-editor-preview-title",
     );
     expect(screen.getByText("4")).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText("Expression"), { target: { value: "{People} * 3" } });
+    fireEvent.change(screen.getByLabelText("Expression"), {
+      target: { value: '{People} & " people"' },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() =>
       expect(dispatchBundle).toHaveBeenCalledWith(
         expect.objectContaining({
           fieldKey: "cf_notes",
-          formulaSource: "{People} * 3",
+          formulaSource: '{People} & " people"',
         }),
       ),
     );

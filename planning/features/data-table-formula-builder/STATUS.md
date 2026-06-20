@@ -1,6 +1,6 @@
 ---
 DATE: 2026-06-20
-TIME: 09:14 EDT
+TIME: 09:34 EDT
 STATUS: Active
 AUTHOR: Ed (via Codex)
 SCOPE: Current state of DataTable formula builder planning.
@@ -15,7 +15,7 @@ RELATED:
 
 ## Current State
 
-`Phase 04 - autocomplete complete; Phase 05 is next`.
+`Phase 05 - all-table regression coverage complete; Phase 06 closeout is next`.
 
 The current codebase already routes formula authoring through shared
 DataTable components:
@@ -28,10 +28,9 @@ DataTable components:
 - Frontend and backend formula grammars are parity-tested through shared
   corpus fixtures.
 
-Main confirmed gaps after Phase 04:
+Main confirmed gaps after Phase 05:
 
-- all-table regression coverage still needs to exercise the shared formula
-  authoring path across each DataTable surface.
+- durable docs and final closeout/archive steps still need to run in Phase 06.
 
 Phase 01 added:
 
@@ -82,9 +81,24 @@ Phase 04 added:
 - create/edit modal regression coverage for insertion, current-field
   exclusion, and Escape behavior.
 
+Phase 05 added:
+
+- shared modal regression updates proving add/edit formula flows dispatch
+  `&` sources and dependency lists;
+- `frontend/tests/e2e/table-regression/table-formula.spec.ts`, tagged
+  `@table-formula @table-regression`, covering the shared formula editor and
+  suggestion panel across all 14 table-regression matrix surfaces;
+- a Rooms persisted formula smoke using `"Room - " & {Name}` that verifies the
+  computed overlay after route reload;
+- `test:e2e:tables:formula` in `frontend/package.json` for the focused
+  browser suite;
+- a shared-import/CSS guard confirming formula editor UI remains in
+  `frontend/src/shared/ui/data-table`.
+
 ## Next Step
 
-Start Phase 05 with all-table formula regression coverage.
+Start Phase 06 with durable docs, closeout gates, graph update, and archive
+handoff.
 
 ## Phase Status
 
@@ -95,7 +109,7 @@ Start Phase 05 with all-table formula regression coverage.
 | 02 - Message card and error copy | Complete | `phases/phase-02-message-card-errors.md` |
 | 03 - `&` concat grammar | Complete | `phases/phase-03-ampersand-concat.md` |
 | 04 - Autocomplete | Complete | `phases/phase-04-autocomplete.md` |
-| 05 - All-table regression coverage | Planned | `phases/phase-05-regression-coverage.md` |
+| 05 - All-table regression coverage | Complete | `phases/phase-05-regression-coverage.md` |
 | 06 - Documentation and closeout | Planned | `phases/phase-06-docs-closeout.md` |
 
 ## Blockers
@@ -182,5 +196,32 @@ Phase 04 implementation checks:
 - `make ci` passed:
   - backend: Ruff format/lint, Ty, Alembic, pytest
     (`912 passed, 2 skipped`);
+  - frontend: frozen pnpm install, Prettier, ESLint, structural guards,
+    Vitest (`184 files`, `1760 tests`), production build.
+
+Phase 05 implementation checks:
+
+- Shared DataTable tests passed:
+  `cd frontend && pnpm exec vitest run src/shared/ui/data-table`
+  (`79` files, `980` tests). Existing React `act(...)` warnings remain in
+  older DataTable/number-units tests.
+- Formula e2e passed after replacing stale local servers with current-worktree
+  servers on `5173` and `8000`:
+  `cd frontend && E2E_EMAIL=codex@example.com E2E_PASSWORD=password pnpm exec playwright test tests/e2e/table-regression --grep @table-formula`
+  (`15 passed`).
+- Existing table smoke passed:
+  `cd frontend && E2E_EMAIL=codex@example.com E2E_PASSWORD=password pnpm exec playwright test tests/e2e/table-regression --grep @table-smoke`
+  (`14 passed`).
+- Shared-import guard passed:
+  `rg -n "FormulaSourceEditor|FormulaSuggestionPanel|formula-field-palette|data-table-formula-editor" frontend/src/features frontend/src/shared/ui/data-table`
+  returned only shared `frontend/src/shared/ui/data-table` component, CSS, and
+  test hits; no `frontend/src/features` direct formula-editor hits and no
+  `formula-field-palette` hits.
+- `make format` passed with no file changes.
+- `make frontend-dev-check` passed. Existing lint output still reports 13
+  Fast Refresh warnings in unrelated/shared files; no errors.
+- `make ci` passed:
+  - backend: Ruff format/lint, Ty, Alembic, pytest
+    (`912 passed, 2 skipped`, one existing deprecation warning);
   - frontend: frozen pnpm install, Prettier, ESLint, structural guards,
     Vitest (`184 files`, `1760 tests`), production build.

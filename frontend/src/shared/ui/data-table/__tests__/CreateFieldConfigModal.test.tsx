@@ -280,14 +280,14 @@ describe("CreateFieldConfigModal", () => {
       typeName("Label");
       chooseFieldType("Formula");
       const expression = within(dialog()).getByLabelText("Expression") as HTMLInputElement;
-      fireEvent.change(expression, { target: { value: "upper({Name})" } });
+      fireEvent.change(expression, { target: { value: '{Number} & " - " & upper({Name})' } });
       clickAdd();
       await waitFor(() => expect(dispatch).toHaveBeenCalled());
       const request = dispatch.mock.calls[0]?.[0] as AddCustomFieldRequest;
       expect(request.fieldType).toBe("formula");
-      expect(request.config.source).toBe("upper({Name})");
+      expect(request.config.source).toBe('{Number} & " - " & upper({Name})');
       expect(Array.isArray((request.config as { deps?: unknown[] }).deps)).toBe(true);
-      expect((request.config as { deps: string[] }).deps).toEqual(["name"]);
+      expect((request.config as { deps: string[] }).deps).toEqual(["number", "name"]);
       expect((request.config as { ast: unknown }).ast).toBeTruthy();
     });
 
