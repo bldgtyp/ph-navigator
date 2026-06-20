@@ -6,6 +6,8 @@ import {
   useState,
   type ChangeEventHandler,
   type KeyboardEventHandler,
+  type MouseEventHandler,
+  type ReactEventHandler,
   type UIEventHandler,
 } from "react";
 import { highlightFormulaSource, type FormulaHighlightSpan } from "../lib/formula/highlight";
@@ -17,13 +19,32 @@ export type FormulaSourceEditorProps = {
   disabled?: boolean;
   ariaInvalid?: boolean;
   ariaDescribedBy?: string;
+  ariaControls?: string;
+  ariaExpanded?: boolean;
+  ariaActiveDescendant?: string;
   onChange: ChangeEventHandler<HTMLTextAreaElement>;
   onKeyDown?: KeyboardEventHandler<HTMLTextAreaElement>;
+  onSelect?: ReactEventHandler<HTMLTextAreaElement>;
+  onClick?: MouseEventHandler<HTMLTextAreaElement>;
 };
 
 export const FormulaSourceEditor = forwardRef<HTMLTextAreaElement, FormulaSourceEditorProps>(
   function FormulaSourceEditor(
-    { id, value, maxLength, disabled = false, ariaInvalid, ariaDescribedBy, onChange, onKeyDown },
+    {
+      id,
+      value,
+      maxLength,
+      disabled = false,
+      ariaInvalid,
+      ariaDescribedBy,
+      ariaControls,
+      ariaExpanded,
+      ariaActiveDescendant,
+      onChange,
+      onKeyDown,
+      onSelect,
+      onClick,
+    },
     ref,
   ) {
     const spans = useMemo(() => highlightFormulaSource(value), [value]);
@@ -63,8 +84,14 @@ export const FormulaSourceEditor = forwardRef<HTMLTextAreaElement, FormulaSource
           disabled={disabled}
           aria-invalid={ariaInvalid || undefined}
           aria-describedby={ariaDescribedBy}
+          aria-autocomplete="list"
+          aria-controls={ariaControls}
+          aria-expanded={ariaExpanded}
+          aria-activedescendant={ariaActiveDescendant}
           onChange={onChange}
           onKeyDown={onKeyDown}
+          onSelect={onSelect}
+          onClick={onClick}
           onScroll={handleScroll}
         />
       </div>

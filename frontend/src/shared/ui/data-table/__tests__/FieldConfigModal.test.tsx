@@ -765,6 +765,58 @@ describe("FieldConfigModal", () => {
     );
   });
 
+  test("formula autocomplete excludes the field being edited", () => {
+    render(
+      <Harness
+        initialField={baseField({
+          field_type: "computed",
+          custom_field_type: "formula",
+          formula_config: {
+            source: "",
+            ast: null,
+            deps: [],
+          },
+        })}
+      />,
+    );
+
+    const expression = screen.getByLabelText("Expression") as HTMLTextAreaElement;
+    fireEvent.change(expression, { target: { value: "{P" } });
+    expression.setSelectionRange(2, 2);
+    fireEvent.select(expression);
+    expect(screen.getByRole("option", { name: "People Number column" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Notes Formula column" })).toBeNull();
+  });
+
+  test("formula autocomplete Escape closes suggestions before the modal", () => {
+    render(
+      <Harness
+        initialField={baseField({
+          field_type: "computed",
+          custom_field_type: "formula",
+          formula_config: {
+            source: "",
+            ast: null,
+            deps: [],
+          },
+        })}
+      />,
+    );
+
+    const expression = screen.getByLabelText("Expression") as HTMLTextAreaElement;
+    fireEvent.change(expression, { target: { value: "{P" } });
+    expression.setSelectionRange(2, 2);
+    fireEvent.select(expression);
+    expect(screen.getByRole("option", { name: "People Number column" })).toBeInTheDocument();
+
+    fireEvent.keyDown(expression, { key: "Escape" });
+    expect(screen.queryByRole("option", { name: "People Number column" })).toBeNull();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
   test("R-S4 — formula preview keeps the modal-open snapshot and marks stale after row mutation", () => {
     render(
       <Harness
