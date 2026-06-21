@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-21
-TIME: -
-STATUS: Planned
+TIME: 13:02 EDT
+STATUS: Complete — implemented on branch; CI green; visual smoke passed
 AUTHOR: Ed (via Claude)
 SCOPE: P1 — the address front-door: auth-gated address modal + MapTiler
   geocoding, and the keyless derive routines for lat/long, county/state,
@@ -71,8 +71,47 @@ and project the public location **without** the address string.
 Address set in the modal pins lat/long; county/state/elevation/zone derived,
 stored, and shown; public projection omits the address; fallbacks work; CI green.
 
+## Implementation notes (2026-06-21)
+
+- Added `project_location` storage for `county`, `county_fips`, `country`,
+  `climate_zone`, and per-field `geodata_provenance` JSONB.
+- Added editor-only `POST /api/v1/projects/{project_id}/location/geocode`
+  (MapTiler-backed when `MAPTILER_API_KEY` is configured) and
+  `POST /api/v1/projects/{project_id}/location/derive` (FCC→Census county,
+  USGS→Open-Meteo elevation, PNNL 2021 IECC county-zone lookup).
+- Added the committed PNNL-derived CSV at
+  `backend/features/project_location/data/climate_zones.csv`; Berkshire County
+  FIPS `25003` resolves to IECC `5A`.
+- External JSON fetches use the backend venv's `certifi` CA bundle explicitly;
+  this keeps FCC/Census/USGS HTTPS calls working under the `uv` Python runtime.
+- Split the public location projection behavior by route access:
+  anonymous/viewer reads keep public coordinates/geodata but return
+  `site_address: null`; signed-in editors still see the address.
+- Frontend Climate location editor now supports address lookup candidates,
+  manual pin/coordinate fallback, and a `Populate climate data` action that
+  persists derived geodata.
+
+## Verification (2026-06-21)
+
+- `cd backend && uv run pytest tests/test_project_location.py` — 15 passed.
+- `cd backend && uv run ruff check features/project_location tests/test_project_location.py config.py alembic/versions/20260621_0032_project_location_derived_geodata.py` — passed.
+- `cd backend && uv run ty check features/project_location tests/test_project_location.py config.py` — passed.
+- `cd frontend && pnpm exec vitest run src/features/projects/__tests__/location-form.test.ts src/features/projects/components/__tests__/ProjectSettingsModal.location.test.tsx src/features/climate/__tests__/ClimateSourcesSection.test.tsx` — 11 passed.
+- `cd frontend && pnpm exec tsc --noEmit` — passed.
+- `make format` — passed.
+- `make ci` — passed: backend `918 passed, 2 skipped`; frontend `186` test
+  files / `1784` tests passed; Vite build passed.
+- Playwright live smoke on `http://localhost:5173` + backend `8000` — passed:
+  editor manually pins West Stockbridge coordinates, `Populate climate data`
+  persists `Berkshire County` and `5A`; anonymous/mobile viewer DOM shows public
+  county/zone and omits `16 Main Street, West Stockbridge, MA`. Smoke project:
+  `f82cd588-d1c5-4579-80c0-47cf7d02888e`; screenshots:
+  `/tmp/phn-climate-p1-editor.png`, `/tmp/phn-climate-p1-viewer.png`.
+
 ## Open questions (phase-local)
 
-- MapTiler key placement: client-side domain-restricted vs. backend proxy.
-- Whether to add columns or stash derived geodata in existing JSONB.
-- O4 (commercial keys) applies here (MapTiler, Open-Meteo).
+- MapTiler key placement resolved for this slice as a backend proxy keyed by
+  `MAPTILER_API_KEY`; O4 procurement remains operational.
+- Storage resolved as columns for durable public geodata plus JSONB provenance.
+- O4 (commercial keys) still applies before production reliance on MapTiler /
+  Open-Meteo free tiers.

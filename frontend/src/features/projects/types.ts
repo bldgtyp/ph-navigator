@@ -116,7 +116,7 @@ export type EpwDescriptor = {
   parsed_location: EpwParsedLocation | null;
 };
 
-export type ProjectLocationFields = {
+export type EditableProjectLocationFields = {
   latitude: number | null;
   longitude: number | null;
   elevation_m: number | null;
@@ -129,15 +129,44 @@ export type ProjectLocationFields = {
   epw_source_url: string | null;
 };
 
+export type ProjectLocationFields = EditableProjectLocationFields & {
+  county: string | null;
+  county_fips: string | null;
+  country: string | null;
+  climate_zone: string | null;
+  geodata_provenance: Record<string, string>;
+};
+
 export type ProjectLocation = ProjectLocationFields & {
   is_set: boolean;
   updated_at: string | null;
   epw: EpwDescriptor | null;
 };
 
-export type UpdateProjectLocationPayload = Partial<ProjectLocationFields>;
+export type UpdateProjectLocationPayload = Partial<EditableProjectLocationFields>;
 
 export type ProjectLocationUpdateResponse = {
   location: ProjectLocation;
   warnings: string[];
+};
+
+export type DeriveProjectLocationPayload = {
+  latitude: number;
+  longitude: number;
+  site_address?: string | null;
+};
+
+export type GeocodeProjectLocationCandidate = {
+  label: string;
+  latitude: number;
+  longitude: number;
+  site_address: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  source: string;
+};
+
+export type GeocodeProjectLocationResponse = {
+  candidates: GeocodeProjectLocationCandidate[];
 };

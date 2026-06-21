@@ -3,8 +3,10 @@ import {
   bulkDeleteProjects,
   checkBtNumber,
   createProject,
+  deriveProjectLocation,
   fetchProjectLocation,
   fetchProject,
+  geocodeProjectLocation,
   listDeletedProjects,
   listProjects,
   parseProjectLocationEpw,
@@ -16,6 +18,7 @@ import {
 import { projectQueryKeys } from "./query-keys";
 import type {
   CreateProjectPayload,
+  DeriveProjectLocationPayload,
   ProjectListResponse,
   UpdateProjectLocationPayload,
   UpdateProjectPayload,
@@ -145,6 +148,23 @@ export function useUpdateProjectLocationMutation(projectId: string) {
     onSuccess: (response) => {
       queryClient.setQueryData(projectQueryKeys.location(projectId), response.location);
     },
+  });
+}
+
+export function useDeriveProjectLocationMutation(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: DeriveProjectLocationPayload) =>
+      deriveProjectLocation(projectId, payload),
+    onSuccess: (response) => {
+      queryClient.setQueryData(projectQueryKeys.location(projectId), response.location);
+    },
+  });
+}
+
+export function useGeocodeProjectLocationMutation(projectId: string) {
+  return useMutation({
+    mutationFn: (query: string) => geocodeProjectLocation(projectId, query),
   });
 }
 

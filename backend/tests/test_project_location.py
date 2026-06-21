@@ -12,8 +12,9 @@ from mcp.server.fastmcp.exceptions import ToolError
 
 from features.assets.routes import get_asset_service
 from features.assets.service import AssetService
+from features.project_location.derive import DerivedLocationGeodata, lookup_climate_zone
 from features.project_location.mcp import tool_get_project_location
-from features.project_location.models import UpdateProjectLocationRequest
+from features.project_location.models import GeocodeProjectLocationCandidate, UpdateProjectLocationRequest
 from main import app
 from tests.test_assets_service import FakeR2Client, NoopThumbnailer
 from tests.test_mcp import ORIGIN, clean_mcp_tables, create_project, signed_in_client
@@ -74,6 +75,24 @@ def upload_epw(client: TestClient, fake_r2: FakeR2Client, project_id: str, body:
     return cast(str, asset["id"])
 
 
+def west_stockbridge_geodata(latitude: float, longitude: float) -> DerivedLocationGeodata:
+    assert latitude == 42.325
+    assert longitude == -73.367
+    return DerivedLocationGeodata(
+        county="Berkshire",
+        county_fips="25003",
+        state="MA",
+        country="US",
+        elevation_m=302.0,
+        climate_zone="5A",
+        geodata_provenance={
+            "county": "fcc_area_api",
+            "elevation_m": "usgs_epqs",
+            "climate_zone": "pnnl_2021_iecc",
+        },
+    )
+
+
 def test_location_model_validates_ranges_and_time_zone() -> None:
     valid = UpdateProjectLocationRequest(
         latitude=-90,
@@ -112,6 +131,11 @@ def test_public_get_returns_unset_shape(clean_mcp_tables: None) -> None:
         "site_address": None,
         "city": None,
         "state": None,
+        "county": None,
+        "county_fips": None,
+        "country": None,
+        "climate_zone": None,
+        "geodata_provenance": {},
         "epw_asset_id": None,
         "epw_source_url": None,
         "is_set": False,
@@ -159,6 +183,138 @@ def test_editor_can_upsert_and_clear_location_fields(clean_mcp_tables: None) -> 
     assert location["elevation_m"] is None
     assert location["city"] is None
     assert location["is_set"] is True
+
+
+def test_public_location_projection_omits_street_address(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("features.project_location.service.derive_location_geodata", west_stockbridge_geodata)
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = cast(str, project["id"])
+    saved = client.post(
+        f"/api/v1/projects/{project_id}/location/derive",
+        headers={"Origin": ORIGIN},
+        json={
+            "latitude": 42.325,
+            "longitude": -73.367,
+            "site_address": "1 Main St, West Stockbridge, MA",
+        },
+    )
+    assert saved.status_code == 200
+
+    public = TestClient(app).get(f"/api/v1/projects/{project_id}/location")
+    editor = client.get(f"/api/v1/projects/{project_id}/location")
+
+    assert public.status_code == 200
+    assert public.json()["site_address"] is None
+    assert public.json()["county"] == "Berkshire"
+    assert public.json()["climate_zone"] == "5A"
+    assert editor.status_code == 200
+    assert editor.json()["site_address"] == "1 Main St, West Stockbridge, MA"
+
+
+def test_climate_zone_lookup_uses_pnnl_2021_county_csv() -> None:
+    zone = lookup_climate_zone("25003")
+
+    assert zone is not None
+    assert zone.iecc_zone == "5A"
+    assert zone.ba_zone == "Cold"
+
+
+def test_derive_location_persists_county_elevation_and_zone(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("features.project_location.service.derive_location_geodata", west_stockbridge_geodata)
+    client = signed_in_client()
+    project_id = cast(str, create_project(client)["id"])
+
+    response = client.post(
+        f"/api/v1/projects/{project_id}/location/derive",
+        headers={"Origin": ORIGIN},
+        json={"latitude": 42.325, "longitude": -73.367, "site_address": "1 Main St"},
+    )
+
+    assert response.status_code == 200, response.text
+    location = response.json()["location"]
+    assert location["site_address"] == "1 Main St"
+    assert location["county"] == "Berkshire"
+    assert location["county_fips"] == "25003"
+    assert location["elevation_m"] == 302.0
+    assert location["climate_zone"] == "5A"
+    assert location["geodata_provenance"]["climate_zone"] == "pnnl_2021_iecc"
+
+
+def test_direct_coordinate_edit_clears_derived_geodata(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("features.project_location.service.derive_location_geodata", west_stockbridge_geodata)
+    client = signed_in_client()
+    project_id = cast(str, create_project(client)["id"])
+    derived = client.post(
+        f"/api/v1/projects/{project_id}/location/derive",
+        headers={"Origin": ORIGIN},
+        json={"latitude": 42.325, "longitude": -73.367},
+    )
+    assert derived.status_code == 200
+    assert derived.json()["location"]["climate_zone"] == "5A"
+
+    edited = client.put(
+        f"/api/v1/projects/{project_id}/location",
+        headers={"Origin": ORIGIN},
+        json={"latitude": 42.4},
+    )
+
+    assert edited.status_code == 200
+    location = edited.json()["location"]
+    assert location["latitude"] == 42.4
+    assert location["county"] is None
+    assert location["county_fips"] is None
+    assert location["country"] is None
+    assert location["climate_zone"] is None
+    assert location["geodata_provenance"] == {}
+
+
+def test_geocode_location_requires_editor_and_returns_candidates(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fake_geocode(query: str) -> list[GeocodeProjectLocationCandidate]:
+        assert query == "1 Main St"
+        return [
+            GeocodeProjectLocationCandidate(
+                label="1 Main St, West Stockbridge, Massachusetts",
+                latitude=42.325,
+                longitude=-73.367,
+                site_address="1 Main St, West Stockbridge, MA",
+                city="West Stockbridge",
+                state="MA",
+                country="US",
+                source="maptiler",
+            )
+        ]
+
+    monkeypatch.setattr("features.project_location.service.geocode_address", fake_geocode)
+    client = signed_in_client()
+    project_id = cast(str, create_project(client)["id"])
+
+    anon = TestClient(app).post(
+        f"/api/v1/projects/{project_id}/location/geocode",
+        headers={"Origin": ORIGIN},
+        json={"query": "1 Main St"},
+    )
+    response = client.post(
+        f"/api/v1/projects/{project_id}/location/geocode",
+        headers={"Origin": ORIGIN},
+        json={"query": "1 Main St"},
+    )
+
+    assert anon.status_code == 401
+    assert response.status_code == 200
+    assert response.json()["candidates"][0]["latitude"] == 42.325
 
 
 def test_epw_upload_parse_persists_metadata_and_suggests_location(clean_mcp_tables: None) -> None:

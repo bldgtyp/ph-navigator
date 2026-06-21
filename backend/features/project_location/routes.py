@@ -10,12 +10,17 @@ from fastapi import APIRouter, Depends, Request, Response
 from features.assets.routes import AssetServiceDep
 from features.model_viewer.schemas.ladybug import SunPathAndCompassDTOSchema
 from features.project_location.models import (
+    DeriveProjectLocationRequest,
     EpwParseResponse,
+    GeocodeProjectLocationRequest,
+    GeocodeProjectLocationResponse,
     ProjectLocation,
     ProjectLocationUpdateResponse,
     UpdateProjectLocationRequest,
 )
 from features.project_location.service import (
+    derive_project_location,
+    geocode_project_location,
     get_project_location,
     get_project_sun_path,
     parse_epw_location,
@@ -35,8 +40,8 @@ ProjectEditAccess = Annotated[ProjectAccess, Depends(require_project_edit_access
 
 
 @router.get("/{project_id}/location", response_model=ProjectLocation)
-def get_location(project_id: UUID, _access: ProjectViewAccess) -> ProjectLocation:
-    return get_project_location(project_id)
+def get_location(project_id: UUID, access: ProjectViewAccess) -> ProjectLocation:
+    return get_project_location(project_id, include_private=access.is_editor)
 
 
 @router.get("/{project_id}/sun-path", response_model=SunPathAndCompassDTOSchema | None)
@@ -56,6 +61,27 @@ def put_location(
 ) -> ProjectLocationUpdateResponse:
     user = require_editor_user(access)
     return update_project_location(project_id, payload, user, request)
+
+
+@router.post("/{project_id}/location/derive", response_model=ProjectLocationUpdateResponse)
+def derive_location(
+    project_id: UUID,
+    payload: DeriveProjectLocationRequest,
+    request: Request,
+    access: ProjectEditAccess,
+) -> ProjectLocationUpdateResponse:
+    user = require_editor_user(access)
+    return derive_project_location(project_id, payload, user, request)
+
+
+@router.post("/{project_id}/location/geocode", response_model=GeocodeProjectLocationResponse)
+def geocode_location(
+    project_id: UUID,
+    payload: GeocodeProjectLocationRequest,
+    access: ProjectEditAccess,
+) -> GeocodeProjectLocationResponse:
+    require_editor_user(access)
+    return geocode_project_location(payload)
 
 
 @router.post("/{project_id}/location/epw/parse", response_model=EpwParseResponse)

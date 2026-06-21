@@ -1131,6 +1131,25 @@ a:focus-visible {
   grid-column: 1 / -1;
 }
 
+.settings-location-inline-control {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.settings-location-inline-control input {
+  min-width: 0;
+  flex: 1;
+}
+
+.settings-location-candidates,
+.settings-location-derived-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
 .settings-location-warning {
   display: grid;
   gap: var(--space-4);

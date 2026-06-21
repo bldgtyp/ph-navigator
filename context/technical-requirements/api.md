@@ -235,6 +235,42 @@ the editor session token, and the frontend gates edit affordances
 by auth state. There is nothing to manage at the public link level
 because public links don't exist as a separate concept.
 
+### 9.9a Project location
+
+Project location is relational project metadata, not a versioned
+project-document table. Reads are public-readable with privacy projection;
+writes and derive actions are editor-only.
+
+```
+GET  /api/v1/projects/{pid}/location
+PUT  /api/v1/projects/{pid}/location
+POST /api/v1/projects/{pid}/location/geocode
+POST /api/v1/projects/{pid}/location/derive
+```
+
+`GET /location` returns coordinates, coarse public geodata, EPW attachment
+metadata, and editor-visible address fields. For anonymous/viewer reads, the
+same route returns `site_address: null` while preserving public fields such as
+`latitude`, `longitude`, `elevation_m`, `county`, `state`, `country`, and
+`climate_zone`.
+
+`PUT /location` accepts only editable fields: coordinates, elevation, time
+zone, true north, site address, city/state, and EPW fields. Server-derived
+fields (`county`, `county_fips`, `country`, `climate_zone`,
+`geodata_provenance`) are excluded from the generic edit payload. If raw
+coordinates change through this route, derived geodata is cleared so stale
+county/climate-zone data is not retained.
+
+`POST /location/geocode` is an editor-only backend proxy for address search.
+It uses `MAPTILER_API_KEY` when configured and returns candidate coordinates
+plus normalized address pieces; without a configured key it returns
+`503 geocoder_not_configured`.
+
+`POST /location/derive` is editor-only. It derives county/state/FIPS from FCC
+Area API with Census fallback, elevation from USGS EPQS with Open-Meteo
+fallback, and `climate_zone` from the bundled PNNL 2021 IECC county table.
+Derived values are persisted to `project_location` with per-field provenance.
+
 ### 9.10 Assets
 
 Generic asset endpoints are the only upload/download backbone. Domain
