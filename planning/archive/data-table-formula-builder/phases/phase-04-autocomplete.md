@@ -5,8 +5,8 @@ STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Field/function autocomplete for the shared formula editor.
 RELATED:
-  - planning/features/data-table-formula-builder/PRD.md
-  - planning/features/data-table-formula-builder/PLAN.md
+  - planning/archive/data-table-formula-builder/PRD.md
+  - planning/archive/data-table-formula-builder/PLAN.md
   - frontend/src/shared/ui/data-table/components/FieldConfigSectionFormula.tsx
   - frontend/src/shared/ui/data-table/components/FormulaSuggestionPanel.tsx
   - frontend/src/shared/ui/data-table/lib/formula/parser.ts

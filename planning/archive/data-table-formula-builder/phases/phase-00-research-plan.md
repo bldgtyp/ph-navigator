@@ -5,10 +5,10 @@ STATUS: In review
 AUTHOR: Ed (via Codex)
 SCOPE: Research notes and docs-only planning for DataTable formula builder.
 RELATED:
-  - planning/features/data-table-formula-builder/README.md
-  - planning/features/data-table-formula-builder/PRD.md
-  - planning/features/data-table-formula-builder/PLAN.md
-  - planning/features/data-table-formula-builder/STATUS.md
+  - planning/archive/data-table-formula-builder/README.md
+  - planning/archive/data-table-formula-builder/PRD.md
+  - planning/archive/data-table-formula-builder/PLAN.md
+  - planning/archive/data-table-formula-builder/STATUS.md
 ---
 
 # Phase 00 - Research And Planning

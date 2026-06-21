@@ -1,13 +1,13 @@
 ---
 DATE: 2026-06-20
 TIME: 07:50 EDT
-STATUS: Active
+STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Shared DataTable formula editor usability and Airtable-parity planning.
 RELATED:
-  - planning/features/data-table-formula-builder/PRD.md
-  - planning/features/data-table-formula-builder/PLAN.md
-  - planning/features/data-table-formula-builder/STATUS.md
+  - planning/archive/data-table-formula-builder/PRD.md
+  - planning/archive/data-table-formula-builder/PLAN.md
+  - planning/archive/data-table-formula-builder/STATUS.md
   - context/technical-requirements/data-table.md
   - context/technical-requirements/data-model.md
 ---

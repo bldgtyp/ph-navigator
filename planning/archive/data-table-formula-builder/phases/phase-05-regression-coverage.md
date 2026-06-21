@@ -5,8 +5,8 @@ STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: All-table formula editor regression coverage and persisted formula smoke.
 RELATED:
-  - planning/features/data-table-formula-builder/PRD.md
-  - planning/features/data-table-formula-builder/PLAN.md
+  - planning/archive/data-table-formula-builder/PRD.md
+  - planning/archive/data-table-formula-builder/PLAN.md
   - frontend/tests/e2e/table-regression/tableMatrix.ts
   - frontend/tests/e2e/table-regression/tableHelpers.ts
   - frontend/src/shared/ui/data-table/DataTable.tsx

@@ -5,8 +5,8 @@ STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Formula preview/error card treatment and improved local error copy.
 RELATED:
-  - planning/features/data-table-formula-builder/PRD.md
-  - planning/features/data-table-formula-builder/PLAN.md
+  - planning/archive/data-table-formula-builder/PRD.md
+  - planning/archive/data-table-formula-builder/PLAN.md
   - frontend/src/shared/ui/data-table/components/FieldConfigSectionFormula.tsx
   - frontend/src/shared/ui/data-table/lib/formula/localState.ts
   - frontend/src/shared/ui/data-table/lib/formula/errors.ts

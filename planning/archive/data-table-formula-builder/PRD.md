@@ -1,12 +1,12 @@
 ---
 DATE: 2026-06-20
 TIME: 07:50 EDT
-STATUS: Active
+STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Product contract for shared DataTable formula builder improvements.
 RELATED:
-  - planning/features/data-table-formula-builder/README.md
-  - planning/features/data-table-formula-builder/PLAN.md
+  - planning/archive/data-table-formula-builder/README.md
+  - planning/archive/data-table-formula-builder/PLAN.md
   - context/technical-requirements/data-table.md
   - context/UI_UX.md
 ---
