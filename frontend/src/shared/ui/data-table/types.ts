@@ -436,6 +436,15 @@ export type DataTableProps<TRow> = {
   readOnly?: boolean;
   density?: "compact" | "comfortable";
   emptyMessage: string;
+  // Optional OVERRIDE for the row-expand modal. Row-expand itself is NOT
+  // optional: every table always renders a working gutter Expand button,
+  // "Expand record" context-menu item, and keyboard open. When this is
+  // provided, those affordances invoke it (a table's bespoke modal, e.g.
+  // Rooms / heat pumps). When omitted, they open DataTable's built-in
+  // generic record-detail modal instead — so a table can never present a
+  // dead expand affordance. Do NOT add a per-table gutter/expand control;
+  // this is the single, enforced entry point (see RecordDetailModal and
+  // scripts/check-data-table-contract.mjs).
   onRowOpen?: (row: TRow) => void;
   overflowMenuActions?: ReactNode;
   // Consumer-supplied toolbar actions rendered alongside the built-in

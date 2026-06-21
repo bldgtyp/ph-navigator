@@ -88,10 +88,10 @@ export type GridBodyProps<TRow> = {
   onCellOpen: (row: TRow, columnIndex: number) => void;
   onRowSelect: (rowId: string) => void;
   onRowToggleSelected: (rowId: string, mode: RowSelectionMode) => void;
-  // Plan 04 follow-up: row-hover Expand button in the gutter. Wired
-  // when the consumer provides `onRowOpen` on DataTable; the gutter
-  // hides the affordance entirely when undefined.
-  onRowExpand?: (row: TRow) => void;
+  // Row-hover Expand button in the gutter. REQUIRED — DataTable always
+  // supplies a handler (the consumer's `onRowOpen`, else the built-in
+  // record-detail modal), so the gutter never renders a dead affordance.
+  onRowExpand: (row: TRow) => void;
   onCommitAndMove: (rowIndex: number, columnIndex: number, move: CommitMove) => void;
   // Phase 7: fill state from `useGridFill`. The bottom-right cell of
   // `fillSource` carries `data-fill-handle="true"` and renders
@@ -323,7 +323,7 @@ export function GridBody<TRow>({
                 const rowId = rowIds[rowIndex];
                 if (rowId !== undefined) onRowToggleSelected(rowId, mode);
               }}
-              onExpandRow={onRowExpand ? () => onRowExpand(tanstackRow.original) : undefined}
+              onExpandRow={() => onRowExpand(tanstackRow.original)}
               onContextMenuKey={
                 onRowContextMenu && rowIdForRow !== undefined
                   ? ({ x, y, trigger }) =>
