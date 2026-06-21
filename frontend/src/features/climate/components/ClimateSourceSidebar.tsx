@@ -193,13 +193,7 @@ function SourceCard({
 // A canonical climate type with no attached source. Rendered so the four
 // required bases are always visible as a checklist; editors can click through
 // to the add/re-populate surface.
-function MissingSourceCard({
-  kind,
-  onSelect,
-}: {
-  kind: ClimateSourceKind;
-  onSelect?: () => void;
-}) {
+function MissingSourceCard({ kind, onSelect }: { kind: ClimateSourceKind; onSelect?: () => void }) {
   const className = "climate-nav-card climate-source-card climate-source-missing";
   const body = (
     <>

@@ -49,9 +49,8 @@ export function SetLocationModal({
 
   const hasCoords = values.latitude.trim() !== "" && values.longitude.trim() !== "";
   const busy = form.isDeriving || form.isSaving;
-  const handleField =
-    (field: LocationFormField) => (event: ChangeEvent<HTMLInputElement>) =>
-      form.updateField(field, event.target.value);
+  const handleField = (field: LocationFormField) => (event: ChangeEvent<HTMLInputElement>) =>
+    form.updateField(field, event.target.value);
 
   const linkedAssetId = values.epwAssetId || form.location?.epw_asset_id;
   const savedEpw = form.location?.epw;
@@ -108,7 +107,10 @@ export function SetLocationModal({
 
   return (
     <ModalDialog title="Set project location" titleId="set-location-title" onClose={onClose}>
-      <form className="project-form set-location-modal" onSubmit={(event) => event.preventDefault()}>
+      <form
+        className="project-form set-location-modal"
+        onSubmit={(event) => event.preventDefault()}
+      >
         <p className="modal-subtitle">
           Enter the building&rsquo;s address to find its coordinates and climate basis — or set
           coordinates directly for a site without a mailing address.
@@ -160,7 +162,9 @@ export function SetLocationModal({
         {geocodeError ? <p className="form-error">{geocodeError}</p> : null}
 
         <div className="set-location-map climate-map-surface" aria-hidden="true">
-          {hasCoords ? <span className="climate-map-pin" style={{ left: "50%", top: "50%" }} /> : null}
+          {hasCoords ? (
+            <span className="climate-map-pin" style={{ left: "50%", top: "50%" }} />
+          ) : null}
           <span className="set-location-map-note">
             {hasCoords ? `${values.latitude}, ${values.longitude}` : "No location set yet"}
           </span>
