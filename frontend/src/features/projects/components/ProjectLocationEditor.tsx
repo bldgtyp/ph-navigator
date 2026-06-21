@@ -93,7 +93,7 @@ export function ProjectLocationEditor({
     setGeocodeError(null);
     setCandidates([]);
     try {
-      const response = await onGeocodeAddress(values.siteAddress);
+      const response = await onGeocodeAddress(geocodeQuery(values));
       setCandidates(response.candidates);
       if (response.candidates.length === 0) {
         setGeocodeError("No address candidates found.");
@@ -289,6 +289,13 @@ export function ProjectLocationEditor({
       </div>
     </>
   );
+}
+
+function geocodeQuery(values: ProjectLocationFormValues): string {
+  return [values.siteAddress, values.city, values.state]
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(", ");
 }
 
 function formatEpwSuggestion(response: EpwParseResponse): string {

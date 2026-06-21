@@ -265,6 +265,46 @@ describe("ClimateLocationSection", () => {
     expect(screen.getByRole("button", { name: "Save location" })).toBeDisabled();
   });
 
+  test("finds location candidates with street, city, and state context", async () => {
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === `/api/v1/projects/${PROJECT.id}/location`) return jsonResponse(UNSET_LOCATION);
+      if (url === `/api/v1/projects/${PROJECT.id}/location/geocode`) {
+        expect(JSON.parse(String(init?.body))).toEqual({
+          query: "1 Main St, West Stockbridge, MA",
+        });
+        return jsonResponse({
+          candidates: [
+            {
+              label: "1 MAIN ST, WEST STOCKBRIDGE, MA, 01266",
+              latitude: 42.325,
+              longitude: -73.367,
+              site_address: "1 MAIN ST, WEST STOCKBRIDGE, MA, 01266",
+              city: "WEST STOCKBRIDGE",
+              state: "MA",
+              country: "US",
+              source: "census_geocoder",
+            },
+          ],
+        });
+      }
+      return jsonResponse({}, 404);
+    });
+
+    renderSection();
+
+    await user.type(await screen.findByLabelText("Site address"), "1 Main St");
+    await user.type(screen.getByLabelText("City"), "West Stockbridge");
+    await user.type(screen.getByLabelText("State"), "MA");
+    await user.click(screen.getByRole("button", { name: "Find" }));
+
+    expect(
+      await screen.findByRole("button", { name: "1 MAIN ST, WEST STOCKBRIDGE, MA, 01266" }),
+    ).toBeVisible();
+  });
+
   test("renders viewer location read-only with no write affordances", async () => {
     vi.stubGlobal("fetch", fetchMock);
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
