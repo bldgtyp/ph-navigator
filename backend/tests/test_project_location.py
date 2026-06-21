@@ -12,14 +12,18 @@ from mcp.server.fastmcp.exceptions import ToolError
 
 from features.assets.routes import get_asset_service
 from features.assets.service import AssetService
+from features.climate.importers.phius import parse_phius_mon_file
+from features.climate.record import ClimateRecord
+from features.climate.service import seed_dataset
 from features.project_location.derive import DerivedLocationGeodata, lookup_climate_zone
 from features.project_location.mcp import tool_get_project_location
 from features.project_location.models import GeocodeProjectLocationCandidate, UpdateProjectLocationRequest
 from main import app
 from tests.test_assets_service import FakeR2Client, NoopThumbnailer
+from tests.test_climate_datasets import _STATION_FILE, clean_climate_tables
 from tests.test_mcp import ORIGIN, clean_mcp_tables, create_project, signed_in_client
 
-__all__ = ["clean_mcp_tables"]
+__all__ = ["clean_climate_tables", "clean_mcp_tables"]
 
 
 def issue_mcp_token(client: TestClient, project_id: str) -> str:
@@ -90,6 +94,46 @@ def west_stockbridge_geodata(latitude: float, longitude: float) -> DerivedLocati
             "elevation_m": "usgs_epqs",
             "climate_zone": "pnnl_2021_iecc",
         },
+    )
+
+
+def synthetic_site_geodata(latitude: float, longitude: float) -> DerivedLocationGeodata:
+    assert latitude == 40.0
+    assert longitude == -75.0
+    return DerivedLocationGeodata(
+        county="Synthetic",
+        county_fips="42000",
+        state="PA",
+        country="US",
+        elevation_m=110.0,
+        climate_zone="5A",
+        geodata_provenance={"county": "test", "elevation_m": "test", "climate_zone": "test"},
+    )
+
+
+def synthetic_climate_record(
+    *,
+    provider: str,
+    station_id: str,
+    latitude: float,
+    longitude: float,
+    elevation_m: float,
+) -> ClimateRecord:
+    base = parse_phius_mon_file(_STATION_FILE)
+    return base.model_copy(
+        update={
+            "provider": provider,
+            "display_name": station_id,
+            "station_id": station_id,
+            "location": base.location.model_copy(
+                update={
+                    "latitude": latitude,
+                    "longitude": longitude,
+                    "site_elevation_m": elevation_m,
+                }
+            ),
+            "climate": base.climate.model_copy(update={"station_elevation_m": elevation_m}),
+        }
     )
 
 
@@ -245,6 +289,79 @@ def test_derive_location_persists_county_elevation_and_zone(
     assert location["elevation_m"] == 302.0
     assert location["climate_zone"] == "5A"
     assert location["geodata_provenance"]["climate_zone"] == "pnnl_2021_iecc"
+
+
+def test_derive_location_auto_attaches_certification_sources_idempotently(
+    clean_mcp_tables: None,
+    clean_climate_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seed_dataset(
+        "phius",
+        "2022",
+        [
+            synthetic_climate_record(
+                provider="phius",
+                station_id="PHIUS-NEAR",
+                latitude=40.1,
+                longitude=-75.1,
+                elevation_m=100.0,
+            ),
+            synthetic_climate_record(
+                provider="phius",
+                station_id="PHIUS-FAR",
+                latitude=35.0,
+                longitude=-105.0,
+                elevation_m=1000.0,
+            ),
+        ],
+        label="Phius 2022",
+    )
+    seed_dataset(
+        "phi",
+        "10.6",
+        [
+            synthetic_climate_record(
+                provider="phi",
+                station_id="PHI-NEAR",
+                latitude=40.2,
+                longitude=-75.2,
+                elevation_m=120.0,
+            )
+        ],
+        label="PHI 10.6",
+    )
+    monkeypatch.setattr("features.project_location.service.derive_location_geodata", synthetic_site_geodata)
+    client = signed_in_client()
+    project_id = cast(str, create_project(client)["id"])
+
+    first = client.post(
+        f"/api/v1/projects/{project_id}/location/derive",
+        headers={"Origin": ORIGIN},
+        json={"latitude": 40.0, "longitude": -75.0},
+    )
+    assert first.status_code == 200, first.text
+    sources = client.get(f"/api/v1/projects/{project_id}/climate/sources").json()["items"]
+    by_kind = {source["kind"]: source for source in sources}
+
+    assert set(by_kind) == {"phius", "phi"}
+    assert by_kind["phius"]["label"] == "PHIUS-NEAR"
+    assert by_kind["phius"]["data"]["dataset_version"] == "2022"
+    assert by_kind["phius"]["data"]["status"] == "pass"
+    assert by_kind["phius"]["data"]["distance_mi"] < 10
+    assert by_kind["phi"]["label"] == "PHI-NEAR"
+    assert by_kind["phi"]["data"]["dataset_version"] == "10.6"
+
+    second = client.post(
+        f"/api/v1/projects/{project_id}/location/derive",
+        headers={"Origin": ORIGIN},
+        json={"latitude": 40.0, "longitude": -75.0},
+    )
+    assert second.status_code == 200, second.text
+    rerun_sources = client.get(f"/api/v1/projects/{project_id}/climate/sources").json()["items"]
+
+    assert len(rerun_sources) == 2
+    assert {source["id"] for source in rerun_sources} == {source["id"] for source in sources}
 
 
 def test_direct_coordinate_edit_clears_derived_geodata(

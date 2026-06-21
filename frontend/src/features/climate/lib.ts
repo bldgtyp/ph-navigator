@@ -62,3 +62,33 @@ export function climateSourceSubtitle(source: ProjectClimateSource): string {
   if (source.kind === "custom") return "Custom record";
   return source.ref ?? "—";
 }
+
+export function climateSourceProximity(source: ProjectClimateSource): string | null {
+  const data = source.data;
+  if (!data || (source.kind !== "phius" && source.kind !== "phi")) return null;
+  const distanceMi = numberValue(data.distance_mi);
+  const elevationDeltaFt = numberValue(data.elevation_delta_ft);
+  const message = stringValue(data.message);
+  if (distanceMi === null && elevationDeltaFt === null && message === null) return null;
+  const parts = [];
+  if (distanceMi !== null) parts.push(`${distanceMi.toFixed(1)} mi`);
+  if (elevationDeltaFt !== null) parts.push(`${elevationDeltaFt.toFixed(0)} ft elev delta`);
+  if (message !== null) parts.push(message);
+  return parts.join(" · ");
+}
+
+export function climateSourceProximityStatus(
+  source: ProjectClimateSource,
+): "pass" | "warning" | "fail" | null {
+  const status = stringValue(source.data?.status);
+  if (status === "pass" || status === "warning" || status === "fail") return status;
+  return null;
+}
+
+function numberValue(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function stringValue(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value : null;
+}

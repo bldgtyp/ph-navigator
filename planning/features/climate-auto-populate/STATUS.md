@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-21
-TIME: 13:02 EDT
-STATUS: Active — P1 complete on branch; P2 next.
+TIME: 13:17 EDT
+STATUS: Active — P2 complete on branch; P3 next.
   Design decisions accepted (D-CL-12..24, O-units). Open items are operational only.
 AUTHOR: Ed (via Claude)
 SCOPE: Current state of the climate auto-populate feature.
@@ -14,27 +14,27 @@ RELATED:
 
 ## Current state
 
-`Active — P1 complete`. PRD, decisions, research, and four phase plans logged.
+`Active — P2 complete`. PRD, decisions, research, and four phase plans logged.
 Phase 1 implementation now extends `project_location` with derived public
 geodata, editor-only geocode/derive endpoints, a committed PNNL 2021 IECC
 county-zone CSV, and a Climate-tab editor action that populates
-county/state/elevation/climate-zone from coordinates. Builds on the shipped
-climate store (archived Phases 1–3): app-wide Phius/PHI datasets,
-`project_climate_source`, sun-path, and the dataset browser all exist and are
-reused.
+county/state/elevation/climate-zone from coordinates. Phase 2 adds
+Phius/PHI nearest-source auto-attach on derive, haversine distance and
+elevation-delta source metadata, the Phius 50 mi / 400 ft hard gate, and the
+PHI representativeness advisory. Builds on the shipped climate store (archived
+Phases 1–3): app-wide Phius/PHI datasets, `project_climate_source`, sun-path,
+and the dataset browser all exist and are reused.
 
 ## Next step
 
 Planning is complete — all design decisions accepted (D-CL-12..24, O-units).
-**Current implementation loop: start P2.** Suggested next entry points:
+**Current implementation loop: start P3.** Suggested next entry points:
 
-1. **P2 (Phius/PHI auto-pin + proximity flags)** is the next dependency step
-   after P1 gates, using the derived coordinates/elevation plus existing
-   `climate_dataset_location` nearest search.
-2. **P4 (the new tab)** can still lead independently for an early UX win — nav
+1. **P3 (ASHRAE/EPW pulls + design conditions)** is next after P2 gates.
+2. **P4 (the new tab)** can still proceed independently — nav
    sidebar + per-type pages (D-CL-20), styled with app CSS/brand tokens (the
    wireframe `working/climate-tab-wireframe-B2.html` is structure only).
-3. Before P2 ships proximity flags, confirm **O5** (seeded Phius/PHI dataset
+3. Before production reliance, confirm **O5** (seeded Phius/PHI dataset
    versions are a valid current cert basis). Procure **O4** keys (MapTiler /
    Open-Meteo) before relying on free tiers.
 
@@ -86,3 +86,19 @@ contains the address string.
   for editor derive and mobile viewer privacy projection. Smoke project:
   `f82cd588-d1c5-4579-80c0-47cf7d02888e`; screenshots:
   `/tmp/phn-climate-p1-editor.png`, `/tmp/phn-climate-p1-viewer.png`.
+
+## P2 verification (2026-06-21)
+
+- `cd backend && uv run ty check features/climate/proximity.py features/project_location/service.py features/project_climate_source/models.py tests/test_climate_proximity.py tests/test_project_location.py` — passed.
+- `cd backend && uv run pytest tests/test_climate_proximity.py tests/test_project_location.py tests/test_project_climate_source.py` — 33 passed.
+- `cd frontend && pnpm exec vitest run src/features/climate/__tests__/ClimateSourcesSection.test.tsx src/features/climate/__tests__/lib.test.ts` — 11 passed.
+- `cd frontend && pnpm exec tsc --noEmit` — passed.
+- Playwright live smoke on `http://localhost:5173` + backend `8000` — passed
+  for same-session Phius auto-attach and proximity roster rendering. Dev DB
+  only had Phius seeded; PHI auto-attach is covered by focused pytest with a
+  synthetic `phi` dataset. Smoke project:
+  `2877cd2c-06fb-495d-8d62-db87117f277b`; screenshot:
+  `/tmp/phn-climate-p2-phius-source.png`.
+- `make format` — passed.
+- `make ci` — passed: backend `927 passed, 2 skipped`; frontend `186` test
+  files / `1784` tests passed; Vite build passed.

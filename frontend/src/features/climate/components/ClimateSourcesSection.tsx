@@ -8,7 +8,12 @@ import {
   useDeleteClimateSourceMutation,
   useSetClimateSourceDefaultMutation,
 } from "../hooks";
-import { climateSourceKindLabel, climateSourceSubtitle } from "../lib";
+import {
+  climateSourceKindLabel,
+  climateSourceProximity,
+  climateSourceProximityStatus,
+  climateSourceSubtitle,
+} from "../lib";
 import type { CreateClimateSourceRequest, ProjectClimateSource } from "../types";
 
 // The project's attached climate sources (D-CL-4): a roster with the
@@ -96,6 +101,8 @@ function SourceRow({
   onRemove: () => void;
 }) {
   const kindLabel = climateSourceKindLabel(source.kind);
+  const proximity = climateSourceProximity(source);
+  const proximityStatus = climateSourceProximityStatus(source);
   return (
     <li className="climate-source-row">
       <input
@@ -108,7 +115,16 @@ function SourceRow({
         aria-label={`Set ${kindLabel} source as default`}
       />
       <span className="climate-source-kind">{kindLabel}</span>
-      <span className="climate-source-label">{climateSourceSubtitle(source)}</span>
+      <span className="climate-source-label">
+        <span>{climateSourceSubtitle(source)}</span>
+        {proximity ? (
+          <span
+            className={`climate-source-proximity climate-source-proximity-${proximityStatus ?? "neutral"}`}
+          >
+            {proximity}
+          </span>
+        ) : null}
+      </span>
       {canEdit ? (
         <button
           type="button"

@@ -270,6 +270,11 @@ plus normalized address pieces; without a configured key it returns
 Area API with Census fallback, elevation from USGS EPQS with Open-Meteo
 fallback, and `climate_zone` from the bundled PNNL 2021 IECC county table.
 Derived values are persisted to `project_location` with per-field provenance.
+When seeded Phius/PHI reference datasets exist, the same call also
+auto-attaches or updates the nearest provider locations as
+`project_climate_source` rows. Their `data` includes the pinned dataset
+version, great-circle distance in miles, elevation delta in feet, and the
+Phius hard pass/fail or PHI advisory status/message.
 
 ### 9.10 Assets
 
