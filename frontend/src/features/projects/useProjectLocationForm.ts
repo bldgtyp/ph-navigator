@@ -2,18 +2,22 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useUnitPreference, type UnitSystem } from "../../lib/units";
 import {
   useParseProjectLocationEpwMutation,
+  useDeriveProjectLocationMutation,
+  useGeocodeProjectLocationMutation,
   useProjectLocationQuery,
   useUpdateProjectLocationMutation,
 } from "./hooks";
 import {
+  applyGeocodeCandidateToLocationValues,
   applyEpwSuggestionToLocationValues,
+  buildProjectLocationDerivePayload,
   buildProjectLocationPayload,
   emptyLocationFormValues,
   locationFormValuesFromLocation,
   reformatElevationForUnitSystem,
   type ProjectLocationFormValues,
 } from "./location-form";
-import type { EpwParseResponse, ProjectLocation } from "./types";
+import type { EpwParseResponse, GeocodeProjectLocationResponse, ProjectLocation } from "./types";
 
 export type ProjectLocationFormController = {
   location: ProjectLocation | undefined;
@@ -27,9 +31,14 @@ export type ProjectLocationFormController = {
   isSaving: boolean;
   canSave: boolean;
   saveError: Error | null;
+  isDeriving: boolean;
+  isGeocoding: boolean;
   isParsingEpw: boolean;
   updateField: (field: keyof ProjectLocationFormValues, value: string) => void;
   applyEpwSuggestion: (response: EpwParseResponse) => void;
+  applyGeocodeCandidate: (candidate: GeocodeProjectLocationResponse["candidates"][number]) => void;
+  geocodeAddress: (query: string) => Promise<GeocodeProjectLocationResponse>;
+  deriveLocation: () => Promise<void>;
   parseEpw: (assetId: string) => Promise<EpwParseResponse>;
   save: () => Promise<void>;
 };
@@ -50,6 +59,8 @@ export function useProjectLocationForm(projectId: string): ProjectLocationFormCo
 
   const locationQuery = useProjectLocationQuery(projectId);
   const updateMutation = useUpdateProjectLocationMutation(projectId);
+  const deriveMutation = useDeriveProjectLocationMutation(projectId);
+  const geocodeMutation = useGeocodeProjectLocationMutation(projectId);
   const parseEpwMutation = useParseProjectLocationEpwMutation(projectId);
 
   useEffect(() => {
@@ -99,6 +110,23 @@ export function useProjectLocationForm(projectId: string): ProjectLocationFormCo
     setValues((current) => applyEpwSuggestionToLocationValues(current, response, unitSystem));
   };
 
+  const applyGeocodeCandidate = (
+    candidate: GeocodeProjectLocationResponse["candidates"][number],
+  ) => {
+    locationEdited.current = true;
+    setValues((current) => applyGeocodeCandidateToLocationValues(current, candidate));
+  };
+
+  const deriveLocation = async (): Promise<void> => {
+    const derivePayload = buildProjectLocationDerivePayload(values);
+    if (!derivePayload.ok) throw new Error(derivePayload.error);
+    const response = await deriveMutation.mutateAsync(derivePayload.payload);
+    loadedLocation.current = response.location;
+    setValues(locationFormValuesFromLocation(response.location, unitSystem));
+    locationEdited.current = false;
+    setWarnings(response.warnings);
+  };
+
   const save = async (): Promise<void> => {
     if (!canSave) return;
     const response = await updateMutation.mutateAsync(payload);
@@ -120,9 +148,14 @@ export function useProjectLocationForm(projectId: string): ProjectLocationFormCo
     isSaving,
     canSave,
     saveError: updateMutation.isError ? updateMutation.error : null,
+    isDeriving: deriveMutation.isPending,
+    isGeocoding: geocodeMutation.isPending,
     isParsingEpw: parseEpwMutation.isPending,
     updateField,
     applyEpwSuggestion,
+    applyGeocodeCandidate,
+    geocodeAddress: (query) => geocodeMutation.mutateAsync(query),
+    deriveLocation,
     parseEpw: (assetId) => parseEpwMutation.mutateAsync(assetId),
     save,
   };

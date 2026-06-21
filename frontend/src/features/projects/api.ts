@@ -2,7 +2,9 @@ import { fetchJson } from "../../shared/api/client";
 import type {
   BtNumberAvailability,
   CreateProjectPayload,
+  DeriveProjectLocationPayload,
   EpwParseResponse,
+  GeocodeProjectLocationResponse,
   ProjectLocation,
   ProjectLocationUpdateResponse,
   ProjectBulkDeleteResponse,
@@ -85,6 +87,29 @@ export async function updateProjectLocation(
     method: "PUT",
     body: JSON.stringify(payload),
   });
+}
+
+export async function deriveProjectLocation(
+  projectId: string,
+  payload: DeriveProjectLocationPayload,
+): Promise<ProjectLocationUpdateResponse> {
+  return fetchJson<ProjectLocationUpdateResponse>(`/api/v1/projects/${projectId}/location/derive`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function geocodeProjectLocation(
+  projectId: string,
+  query: string,
+): Promise<GeocodeProjectLocationResponse> {
+  return fetchJson<GeocodeProjectLocationResponse>(
+    `/api/v1/projects/${projectId}/location/geocode`,
+    {
+      method: "POST",
+      body: JSON.stringify({ query }),
+    },
+  );
 }
 
 export async function parseProjectLocationEpw(

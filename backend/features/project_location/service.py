@@ -17,11 +17,15 @@ from features.auth.models import UserPublic
 from features.auth.service import client_ip, user_agent
 from features.model_viewer.schemas.ladybug import SunPathAndCompassDTOSchema
 from features.project_location import repository
+from features.project_location.derive import derive_location_geodata, geocode_address
 from features.project_location.epw import EPW_HEADER_PREFIX_BYTES, parse_epw_location_header
 from features.project_location.models import (
+    DeriveProjectLocationRequest,
     EpwDescriptor,
     EpwParsedLocation,
     EpwParseResponse,
+    GeocodeProjectLocationRequest,
+    GeocodeProjectLocationResponse,
     ProjectLocation,
     ProjectLocationUpdateResponse,
     UpdateProjectLocationRequest,
@@ -30,13 +34,15 @@ from features.project_location.sun_path import build_sun_path
 from features.projects.access import ProjectAccess
 from features.shared.errors import api_error
 
+COORDINATE_FIELDS = {"latitude", "longitude"}
 
-def get_project_location(project_id: UUID) -> ProjectLocation:
+
+def get_project_location(project_id: UUID, *, include_private: bool = True) -> ProjectLocation:
     """Read a project's location, synthesizing the initial unset shape."""
     with connection() as conn:
         row = repository.get_location(conn, project_id)
         epw = epw_descriptor_for_row(conn, project_id, row)
-    return project_location_from_row(row, epw)
+    return project_location_from_row(row, epw, include_private=include_private)
 
 
 def get_project_sun_path(project_id: UUID) -> SunPathAndCompassDTOSchema | None:
@@ -72,6 +78,7 @@ def update_project_location(
     with transaction() as conn:
         current = repository.get_location(conn, project_id)
         validate_epw_asset_reference(conn, project_id, values)
+        clear_derived_geodata_if_coordinates_change(values, current)
         changed_fields = changed_location_fields(values, current)
         if changed_fields:
             row = repository.upsert_location(conn, project_id, changed_fields, values)
@@ -93,6 +100,55 @@ def update_project_location(
         location=project_location_from_row(row, epw),
         warnings=epw_mismatch_warnings(row, epw),
     )
+
+
+def derive_project_location(
+    project_id: UUID,
+    payload: DeriveProjectLocationRequest,
+    user: UserPublic,
+    request_meta: Request | None,
+) -> ProjectLocationUpdateResponse:
+    """Derive and persist county/state, elevation, and IECC zone for coordinates."""
+    derived = derive_location_geodata(payload.latitude, payload.longitude)
+    values: dict[str, object] = {
+        "latitude": payload.latitude,
+        "longitude": payload.longitude,
+        "county": derived.county,
+        "county_fips": derived.county_fips,
+        "state": derived.state,
+        "country": derived.country,
+        "elevation_m": derived.elevation_m,
+        "climate_zone": derived.climate_zone,
+        "geodata_provenance": derived.geodata_provenance,
+    }
+    if payload.site_address is not None:
+        values["site_address"] = payload.site_address
+
+    with transaction() as conn:
+        current = repository.get_location(conn, project_id)
+        changed_fields = changed_location_fields(values, current)
+        row = repository.upsert_location(conn, project_id, changed_fields, values) if changed_fields else current
+        auth_repository.log_action(
+            conn,
+            action="project_location_derive",
+            user_id=user.id,
+            email=user.email,
+            session_id=None,
+            ip_address=client_ip(request_meta) if request_meta else None,
+            user_agent=user_agent(request_meta) if request_meta else None,
+            details={"project_id": str(project_id), "fields": sorted(changed_fields)},
+        )
+        epw = epw_descriptor_for_row(conn, project_id, row)
+
+    return ProjectLocationUpdateResponse(
+        location=project_location_from_row(row, epw),
+        warnings=[*derived.warnings, *epw_mismatch_warnings(row, epw)],
+    )
+
+
+def geocode_project_location(payload: GeocodeProjectLocationRequest) -> GeocodeProjectLocationResponse:
+    """Resolve editor-entered address text into candidate coordinates."""
+    return GeocodeProjectLocationResponse(candidates=geocode_address(payload.query))
 
 
 def parse_epw_location(access: ProjectAccess, asset_id: str, asset_service: AssetService) -> EpwParseResponse:
@@ -126,12 +182,37 @@ def changed_location_fields(values: dict[str, object], current: dict[str, Any] |
     return changed
 
 
-def project_location_from_row(row: dict[str, Any] | None, epw: EpwDescriptor | None = None) -> ProjectLocation:
+def clear_derived_geodata_if_coordinates_change(values: dict[str, object], current: dict[str, Any] | None) -> None:
+    """Clear county/zone derivations when raw coordinates are edited directly."""
+    changed_coordinates = COORDINATE_FIELDS.intersection(values)
+    if current is None or not changed_coordinates:
+        return
+    if not any(current[field] != values[field] for field in changed_coordinates):
+        return
+    values.update(
+        {
+            "county": None,
+            "county_fips": None,
+            "country": None,
+            "climate_zone": None,
+            "geodata_provenance": {},
+        }
+    )
+
+
+def project_location_from_row(
+    row: dict[str, Any] | None,
+    epw: EpwDescriptor | None = None,
+    *,
+    include_private: bool = True,
+) -> ProjectLocation:
     """Convert the optional persistence row into the stable API shape."""
     if row is None:
         return ProjectLocation(is_set=False, updated_at=None, epw=None)
 
-    values = {field: row[field] for field in UpdateProjectLocationRequest.model_fields}
+    values = {field: row[field] for field in ProjectLocation.model_fields if field in row}
+    if not include_private:
+        values["site_address"] = None
     return ProjectLocation.model_validate(
         {
             **values,

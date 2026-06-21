@@ -42,6 +42,11 @@ export const UNSET_LOCATION: ProjectLocation = {
   site_address: null,
   city: null,
   state: null,
+  county: null,
+  county_fips: null,
+  country: null,
+  climate_zone: null,
+  geodata_provenance: {},
   epw_asset_id: null,
   epw_source_url: null,
   updated_at: null,
@@ -59,6 +64,15 @@ export const SET_LOCATION: ProjectLocation = {
   site_address: "1 Main St",
   city: "West Stockbridge",
   state: "MA",
+  county: "Berkshire",
+  county_fips: "25003",
+  country: "US",
+  climate_zone: "5A",
+  geodata_provenance: {
+    county: "fcc_area_api",
+    elevation_m: "usgs_epqs",
+    climate_zone: "pnnl_2021_iecc",
+  },
   updated_at: "2026-06-12T18:00:00Z",
 };
 

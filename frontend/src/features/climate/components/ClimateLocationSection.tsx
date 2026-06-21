@@ -53,7 +53,12 @@ export function ClimateLocationSection({ project }: { project: ProjectDetail }) 
         unitSystem={form.unitSystem}
         projectId={project.id}
         isParsingEpw={form.isParsingEpw}
+        isGeocoding={form.isGeocoding}
+        isDeriving={form.isDeriving}
         onParseEpw={form.parseEpw}
+        onGeocodeAddress={form.geocodeAddress}
+        onApplyGeocodeCandidate={form.applyGeocodeCandidate}
+        onDeriveLocation={form.deriveLocation}
         onChange={form.updateField}
         onApplyEpwSuggestion={form.applyEpwSuggestion}
       />

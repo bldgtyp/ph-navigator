@@ -89,6 +89,32 @@ projects (
 ALTER TABLE projects ADD CONSTRAINT projects_cert_programs_allowed
     CHECK (cert_programs <@ ARRAY['phi','phius']::TEXT[]);
 
+project_location (
+    project_id          UUID PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
+    latitude            DOUBLE PRECISION,
+    longitude           DOUBLE PRECISION,
+    elevation_m         DOUBLE PRECISION,
+    time_zone           TEXT,
+    true_north_deg      DOUBLE PRECISION,
+    site_address        TEXT,
+                      -- editor-visible only; public/viewer API projection
+                      -- returns NULL for this field.
+    city                TEXT,
+    state               TEXT,
+    county              TEXT,
+    county_fips         TEXT,
+    country             TEXT,
+    climate_zone        TEXT,
+                      -- IECC zone derived from county FIPS via the bundled
+                      -- PNNL 2021 county lookup table.
+    geodata_provenance  JSONB NOT NULL DEFAULT '{}'::jsonb,
+                      -- per-field source/status metadata for derived values
+                      -- such as county, elevation, and climate_zone.
+    epw_asset_id        UUID REFERENCES project_assets(id),
+    epw_source_url      TEXT,
+    updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+)
+
 -- MCP/API bearer tokens for LLM clients. Required in V2 v1 because
 -- MCP is read/write capable from day 1. Tokens are issued by an
 -- authenticated editor, shown once, stored only as a hash, and

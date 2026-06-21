@@ -52,6 +52,18 @@ export function ProjectLocationSummary({
         <dd>{[location.city, location.state].filter(Boolean).join(", ") || "None"}</dd>
       </div>
       <div>
+        <dt>County</dt>
+        <dd>{location.county ?? "None"}</dd>
+      </div>
+      <div>
+        <dt>Country</dt>
+        <dd>{location.country ?? "None"}</dd>
+      </div>
+      <div>
+        <dt>Climate zone</dt>
+        <dd>{location.climate_zone ?? "None"}</dd>
+      </div>
+      <div>
         <dt>EPW</dt>
         <dd>
           {location.epw ? (

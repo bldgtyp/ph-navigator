@@ -6,10 +6,12 @@ from typing import Any
 from uuid import UUID
 
 from psycopg import Connection, sql
+from psycopg.types.json import Jsonb
 
 LOCATION_COLUMNS = """
     project_id, latitude, longitude, elevation_m, time_zone,
-    true_north_deg, site_address, city, state, epw_asset_id,
+    true_north_deg, site_address, city, state, county, county_fips,
+    country, climate_zone, geodata_provenance, epw_asset_id,
     epw_source_url, created_at, updated_at
 """
 
@@ -45,7 +47,7 @@ def upsert_location(
     update_assignments = sql.SQL(", ").join(
         sql.SQL("{} = EXCLUDED.{}").format(sql.Identifier(field), sql.Identifier(field)) for field in field_list
     )
-    params = {"project_id": project_id, **{field: values[field] for field in field_list}}
+    params = {"project_id": project_id, **{field: _adapt_value(field, values[field]) for field in field_list}}
 
     row = conn.execute(
         sql.SQL(
@@ -68,3 +70,9 @@ def upsert_location(
     if row is None:
         raise RuntimeError("Project location upsert did not return a row.")
     return row
+
+
+def _adapt_value(field: str, value: object) -> object:
+    if field == "geodata_provenance":
+        return Jsonb(value)
+    return value

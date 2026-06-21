@@ -58,6 +58,10 @@ class Settings(BaseSettings):
     asset_thumbnail_render_timeout_seconds: int = 10
     asset_max_file_size_mb_hard_cap: int = 100
 
+    # Project location geodata
+    maptiler_api_key: str = ""
+    location_derive_timeout_seconds: float = 4.0
+
     # Future at-rest field encryption. Not used by TB-01 session cookies,
     # which are opaque pointers to rows in the sessions table.
     fernet_secret_key: str = ""

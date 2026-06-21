@@ -7,9 +7,11 @@ import {
 } from "../../lib/units";
 import { parseDecimalInput, stripTrailingZeros } from "../../lib/units/format";
 import type {
+  DeriveProjectLocationPayload,
+  EditableProjectLocationFields,
   EpwParseResponse,
+  GeocodeProjectLocationCandidate,
   ProjectLocation,
-  ProjectLocationFields,
   UpdateProjectLocationPayload,
 } from "./types";
 
@@ -28,6 +30,10 @@ export type ProjectLocationFormValues = {
 
 export type ProjectLocationPayloadResult =
   | { ok: true; payload: UpdateProjectLocationPayload }
+  | { ok: false; error: string };
+
+export type ProjectLocationDerivePayloadResult =
+  | { ok: true; payload: DeriveProjectLocationPayload }
   | { ok: false; error: string };
 
 export const LOCATION_ELEVATION_UNITS: NumberUnitsConfig = {
@@ -70,6 +76,20 @@ export function locationFormValuesFromLocation(
     state: location.state ?? "",
     epwAssetId: location.epw_asset_id ?? "",
     epwSourceUrl: location.epw_source_url ?? "",
+  };
+}
+
+export function applyGeocodeCandidateToLocationValues(
+  current: ProjectLocationFormValues,
+  candidate: GeocodeProjectLocationCandidate,
+): ProjectLocationFormValues {
+  return {
+    ...current,
+    latitude: formatOptionalNumber(candidate.latitude, 6),
+    longitude: formatOptionalNumber(candidate.longitude, 6),
+    siteAddress: candidate.site_address ?? candidate.label,
+    city: candidate.city ?? current.city,
+    state: candidate.state ?? current.state,
   };
 }
 
@@ -144,21 +164,33 @@ export function buildProjectLocationPayload(
   return { ok: true, payload };
 }
 
+export function buildProjectLocationDerivePayload(
+  values: ProjectLocationFormValues,
+): ProjectLocationDerivePayloadResult {
+  const coordinates = parseLatitudeLongitude(values);
+  if (!coordinates.ok) return coordinates;
+  if (coordinates.latitude === null || coordinates.longitude === null) {
+    return {
+      ok: false,
+      error: "Latitude and longitude are required before populating climate data.",
+    };
+  }
+  return {
+    ok: true,
+    payload: {
+      latitude: coordinates.latitude,
+      longitude: coordinates.longitude,
+      site_address: trimmedOrNull(values.siteAddress),
+    },
+  };
+}
+
 function parseLocationFormValues(
   values: ProjectLocationFormValues,
   unitSystem: UnitSystem,
-): { ok: true; fields: ProjectLocationFields } | { ok: false; error: string } {
-  const latitude = parseOptionalDecimal(values.latitude, "Latitude");
-  if (!latitude.ok) return latitude;
-  if (latitude.value !== null && (latitude.value < -90 || latitude.value > 90)) {
-    return { ok: false, error: "Latitude must be between -90 and 90 degrees." };
-  }
-
-  const longitude = parseOptionalDecimal(values.longitude, "Longitude");
-  if (!longitude.ok) return longitude;
-  if (longitude.value !== null && (longitude.value < -180 || longitude.value > 180)) {
-    return { ok: false, error: "Longitude must be between -180 and 180 degrees." };
-  }
+): { ok: true; fields: EditableProjectLocationFields } | { ok: false; error: string } {
+  const coordinates = parseLatitudeLongitude(values);
+  if (!coordinates.ok) return coordinates;
 
   const elevation = parseNumberUnitsInput(values.elevation, LOCATION_ELEVATION_UNITS, unitSystem);
   if (elevation === undefined) return { ok: false, error: "Elevation must be a number." };
@@ -178,8 +210,8 @@ function parseLocationFormValues(
   return {
     ok: true,
     fields: {
-      latitude: latitude.value,
-      longitude: longitude.value,
+      latitude: coordinates.latitude,
+      longitude: coordinates.longitude,
       elevation_m: elevation,
       time_zone: trimmedOrNull(values.timeZone),
       true_north_deg: trueNorth.value,
@@ -203,7 +235,9 @@ function parseOptionalDecimal(
   return { ok: true, value: parsed };
 }
 
-function locationFields(location: ProjectLocation | null | undefined): ProjectLocationFields {
+function locationFields(
+  location: ProjectLocation | null | undefined,
+): EditableProjectLocationFields {
   return {
     latitude: location?.latitude ?? null,
     longitude: location?.longitude ?? null,
@@ -218,6 +252,24 @@ function locationFields(location: ProjectLocation | null | undefined): ProjectLo
   };
 }
 
+function parseLatitudeLongitude(
+  values: ProjectLocationFormValues,
+): { ok: true; latitude: number | null; longitude: number | null } | { ok: false; error: string } {
+  const latitude = parseOptionalDecimal(values.latitude, "Latitude");
+  if (!latitude.ok) return latitude;
+  if (latitude.value !== null && (latitude.value < -90 || latitude.value > 90)) {
+    return { ok: false, error: "Latitude must be between -90 and 90 degrees." };
+  }
+
+  const longitude = parseOptionalDecimal(values.longitude, "Longitude");
+  if (!longitude.ok) return longitude;
+  if (longitude.value !== null && (longitude.value < -180 || longitude.value > 180)) {
+    return { ok: false, error: "Longitude must be between -180 and 180 degrees." };
+  }
+
+  return { ok: true, latitude: latitude.value, longitude: longitude.value };
+}
+
 function trimmedOrNull(value: string): string | null {
   return value.trim() || null;
 }
@@ -230,8 +282,8 @@ function formatOptionalNumber(value: number | null, fractionDigits: number): str
 }
 
 function locationValuesEqual(
-  a: ProjectLocationFields[keyof ProjectLocationFields],
-  b: ProjectLocationFields[keyof ProjectLocationFields],
+  a: EditableProjectLocationFields[keyof EditableProjectLocationFields],
+  b: EditableProjectLocationFields[keyof EditableProjectLocationFields],
 ): boolean {
   if (typeof a === "number" && typeof b === "number") return Math.abs(a - b) < 1e-9;
   return a === b;
@@ -240,7 +292,7 @@ function locationValuesEqual(
 function assignLocationPayloadField(
   payload: UpdateProjectLocationPayload,
   field: (typeof EDITABLE_LOCATION_FIELD_NAMES)[number],
-  value: ProjectLocationFields[(typeof EDITABLE_LOCATION_FIELD_NAMES)[number]],
+  value: EditableProjectLocationFields[(typeof EDITABLE_LOCATION_FIELD_NAMES)[number]],
 ): void {
   switch (field) {
     case "latitude":

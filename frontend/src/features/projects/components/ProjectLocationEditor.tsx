@@ -1,5 +1,5 @@
 import { useRef, useState, type ChangeEvent } from "react";
-import { Check, Download, Upload } from "lucide-react";
+import { Check, Download, MapPin, Search, Upload } from "lucide-react";
 import type { UnitSystem } from "../../../lib/units";
 import { errorMessage } from "../../../shared/lib/errors";
 import { assetDownloadPath } from "../../assets/api";
@@ -9,7 +9,7 @@ import {
   formatReadOnlyCoordinate,
   type ProjectLocationFormValues,
 } from "../location-form";
-import type { EpwParseResponse, ProjectLocation } from "../types";
+import type { EpwParseResponse, GeocodeProjectLocationResponse, ProjectLocation } from "../types";
 
 type LocationFormField = keyof ProjectLocationFormValues;
 
@@ -32,7 +32,12 @@ export function ProjectLocationEditor({
   unitSystem,
   projectId,
   isParsingEpw,
+  isGeocoding,
+  isDeriving,
   onParseEpw,
+  onGeocodeAddress,
+  onApplyGeocodeCandidate,
+  onDeriveLocation,
   onChange,
   onApplyEpwSuggestion,
 }: {
@@ -41,12 +46,22 @@ export function ProjectLocationEditor({
   unitSystem: UnitSystem;
   projectId: string;
   isParsingEpw: boolean;
+  isGeocoding: boolean;
+  isDeriving: boolean;
   onParseEpw: (assetId: string) => Promise<EpwParseResponse>;
+  onGeocodeAddress: (query: string) => Promise<GeocodeProjectLocationResponse>;
+  onApplyGeocodeCandidate: (
+    candidate: GeocodeProjectLocationResponse["candidates"][number],
+  ) => void;
+  onDeriveLocation: () => Promise<void>;
   onChange: (field: LocationFormField, value: string) => void;
   onApplyEpwSuggestion: (response: EpwParseResponse) => void;
 }) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [geocodeError, setGeocodeError] = useState<string | null>(null);
+  const [deriveError, setDeriveError] = useState<string | null>(null);
+  const [candidates, setCandidates] = useState<GeocodeProjectLocationResponse["candidates"]>([]);
   const [parsedEpw, setParsedEpw] = useState<EpwParseResponse | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const handleChange = (field: LocationFormField) => (event: ChangeEvent<HTMLInputElement>) => {
@@ -71,6 +86,30 @@ export function ProjectLocationEditor({
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const geocodeAddress = async () => {
+    setGeocodeError(null);
+    setCandidates([]);
+    try {
+      const response = await onGeocodeAddress(values.siteAddress);
+      setCandidates(response.candidates);
+      if (response.candidates.length === 0) {
+        setGeocodeError("No address candidates found.");
+      }
+    } catch (error) {
+      setGeocodeError(errorMessage(error, "Could not geocode the address."));
+    }
+  };
+
+  const deriveLocation = async () => {
+    setDeriveError(null);
+    try {
+      await onDeriveLocation();
+      setCandidates([]);
+    } catch (error) {
+      setDeriveError(errorMessage(error, "Could not populate climate data."));
     }
   };
 
@@ -129,13 +168,43 @@ export function ProjectLocationEditor({
         </label>
         <label className="settings-location-wide">
           <span>Site address</span>
-          <input
-            value={values.siteAddress}
-            maxLength={500}
-            onChange={handleChange("siteAddress")}
-            placeholder="Street address"
-          />
+          <div className="settings-location-inline-control">
+            <input
+              value={values.siteAddress}
+              maxLength={500}
+              onChange={handleChange("siteAddress")}
+              placeholder="Street address"
+            />
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => void geocodeAddress()}
+              disabled={!values.siteAddress.trim() || isGeocoding}
+            >
+              <Search size={16} aria-hidden="true" />
+              {isGeocoding ? "Finding..." : "Find"}
+            </button>
+          </div>
         </label>
+        {candidates.length > 0 ? (
+          <div className="settings-location-wide settings-location-candidates">
+            {candidates.map((candidate) => (
+              <button
+                type="button"
+                className="secondary-button"
+                key={`${candidate.latitude}-${candidate.longitude}-${candidate.label}`}
+                onClick={() => {
+                  onApplyGeocodeCandidate(candidate);
+                  setCandidates([]);
+                }}
+              >
+                <MapPin size={16} aria-hidden="true" />
+                {candidate.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
+        {geocodeError ? <p className="form-error settings-location-wide">{geocodeError}</p> : null}
         <label>
           <span>City</span>
           <input value={values.city} maxLength={200} onChange={handleChange("city")} />
@@ -143,6 +212,14 @@ export function ProjectLocationEditor({
         <label>
           <span>State</span>
           <input value={values.state} maxLength={200} onChange={handleChange("state")} />
+        </label>
+        <label>
+          <span>County</span>
+          <input value={location?.county ?? ""} readOnly />
+        </label>
+        <label>
+          <span>Climate zone</span>
+          <input value={location?.climate_zone ?? ""} readOnly />
         </label>
         <label className="settings-location-wide">
           <span>EPW source URL</span>
@@ -153,6 +230,18 @@ export function ProjectLocationEditor({
             placeholder="https://climate.onebuilding.org/..."
           />
         </label>
+      </div>
+      <div className="settings-location-derived-actions">
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={() => void deriveLocation()}
+          disabled={isDeriving || !values.latitude.trim() || !values.longitude.trim()}
+        >
+          <MapPin size={16} aria-hidden="true" />
+          {isDeriving ? "Populating..." : "Populate climate data"}
+        </button>
+        {deriveError ? <p className="form-error">{deriveError}</p> : null}
       </div>
       <div className="settings-location-epw">
         <div className="settings-location-epw-row">
