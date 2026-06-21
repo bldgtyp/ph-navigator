@@ -140,6 +140,43 @@ class AssetService:
             expires_at=expires_at,
         )
 
+    def create_uploaded_asset_from_bytes(
+        self,
+        *,
+        project_id: UUID,
+        created_by: UUID,
+        asset_kind: str,
+        original_filename: str,
+        display_name: str,
+        content_type: str,
+        body: bytes,
+        metadata: dict[str, Any] | None = None,
+    ) -> AssetRow:
+        """Create an already-uploaded asset from trusted server-side bytes."""
+        asset_id = generated_asset_id()
+        ext = filename_extension(original_filename).lstrip(".") or _extension_from_content_type(content_type)
+        object_key = asset_object_key(project_id, asset_id, ext)
+        digest = hashlib.sha256(body).hexdigest()
+        r2_etag = self.r2.put_object(object_key, body, content_type)
+        with transaction() as conn:
+            asset = repository.insert_pending_asset(
+                conn,
+                asset_id=asset_id,
+                project_id=project_id,
+                asset_kind=asset_kind,
+                object_key=object_key,
+                original_filename=original_filename,
+                display_name=display_name,
+                content_type=content_type,
+                size_bytes=len(body),
+                content_hash_sha256=digest,
+                created_by=created_by,
+            )
+            uploaded = repository.mark_asset_uploaded(conn, project_id, asset.id, r2_etag=r2_etag)
+            if metadata is not None:
+                uploaded = repository.set_asset_metadata(conn, project_id, asset.id, metadata)
+        return uploaded
+
     def create_bulk_upload_intent(
         self,
         access: ProjectAccess,

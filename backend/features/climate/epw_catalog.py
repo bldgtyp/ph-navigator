@@ -1,0 +1,190 @@
+"""OneBuilding EPW catalog fetch, nearest lookup, and zip extraction."""
+
+from __future__ import annotations
+
+import io
+import re
+import zipfile
+from dataclasses import dataclass
+from dataclasses import replace as dataclass_replace
+from datetime import UTC, datetime, timedelta
+from functools import lru_cache
+from urllib.parse import urljoin
+
+import certifi
+import httpx
+from openpyxl import load_workbook
+
+from config import settings
+from features.climate.proximity import haversine_miles
+
+ONEBUILDING_BASE_URL = "https://climate.onebuilding.org/"
+DEFAULT_CATALOG_URLS = (
+    "https://climate.onebuilding.org/sources/Region1_Africa_TMYx_EPW_Processing_locations.xlsx",
+    "https://climate.onebuilding.org/sources/Region2_Asia_TMYx_EPW_Processing_locations.xlsx",
+    "https://climate.onebuilding.org/sources/Region3_South_America_TMYx_EPW_Processing_locations.xlsx",
+    "https://climate.onebuilding.org/sources/Region4_USA_TMYx_EPW_Processing_locations.xlsx",
+    "https://climate.onebuilding.org/sources/Region4_Canada_TMYx_EPW_Processing_locations.xlsx",
+    "https://climate.onebuilding.org/sources/Region4_NA_CA_Caribbean_TMYx_EPW_Processing_locations.xlsx",
+    "https://climate.onebuilding.org/sources/Region5_Southwest_Pacific_TMYx_EPW_Processing_locations.xlsx",
+    "https://climate.onebuilding.org/sources/Region6_Europe_TMYx_EPW_Processing_locations.xlsx",
+    "https://climate.onebuilding.org/sources/Region7_Antarctica_TMYx_EPW_Processing_locations.xlsx",
+)
+_CATALOG_TTL = timedelta(hours=24)
+_YEAR_SPAN_RE = re.compile(r"\.(\d{4})-(\d{4})\.zip$", re.IGNORECASE)
+
+
+@dataclass(frozen=True)
+class EpwCatalogEntry:
+    country: str | None
+    region: str | None
+    name: str
+    wmo: str | None
+    source_data: str | None
+    latitude: float
+    longitude: float
+    elevation_m: float | None
+    time_zone_offset_hours: float | None
+    url: str
+    distance_mi: float | None = None
+
+
+@dataclass(frozen=True)
+class EpwZipPayload:
+    entry: EpwCatalogEntry
+    epw_name: str
+    epw_bytes: bytes
+    stat_name: str | None
+    stat_text: str | None
+
+
+def nearest_epw_entry(latitude: float, longitude: float) -> EpwCatalogEntry | None:
+    entries = load_epw_catalog(catalog_urls())
+    if not entries:
+        return None
+    nearest = min(
+        entries,
+        key=lambda entry: (
+            round(haversine_miles(latitude, longitude, entry.latitude, entry.longitude), 6),
+            _source_rank(entry),
+        ),
+    )
+    return dataclass_replace(
+        nearest,
+        distance_mi=haversine_miles(latitude, longitude, nearest.latitude, nearest.longitude),
+    )
+
+
+def download_epw_zip(entry: EpwCatalogEntry) -> EpwZipPayload:
+    with httpx.Client(
+        timeout=settings.location_derive_timeout_seconds,
+        verify=certifi.where(),
+        follow_redirects=True,
+    ) as client:
+        response = client.get(entry.url)
+        response.raise_for_status()
+    return epw_zip_payload(entry, response.content)
+
+
+def epw_zip_payload(entry: EpwCatalogEntry, raw_zip: bytes) -> EpwZipPayload:
+    with zipfile.ZipFile(io.BytesIO(raw_zip)) as archive:
+        epw_name = next((name for name in archive.namelist() if name.lower().endswith(".epw")), None)
+        if epw_name is None:
+            raise ValueError("epw_zip_missing_epw")
+        stat_name = next((name for name in archive.namelist() if name.lower().endswith(".stat")), None)
+        stat_text = archive.read(stat_name).decode("utf-8-sig", errors="replace") if stat_name else None
+        return EpwZipPayload(
+            entry=entry,
+            epw_name=epw_name.rsplit("/", maxsplit=1)[-1],
+            epw_bytes=archive.read(epw_name),
+            stat_name=stat_name.rsplit("/", maxsplit=1)[-1] if stat_name else None,
+            stat_text=stat_text,
+        )
+
+
+def load_epw_catalog(urls: tuple[str, ...]) -> tuple[EpwCatalogEntry, ...]:
+    return _cached_catalog(urls, _ttl_bucket())
+
+
+def catalog_urls() -> tuple[str, ...]:
+    configured = [item.strip() for item in settings.epw_catalog_urls.split(",") if item.strip()]
+    return tuple(configured) if configured else DEFAULT_CATALOG_URLS
+
+
+@lru_cache(maxsize=4)
+def _cached_catalog(urls: tuple[str, ...], _ttl: int) -> tuple[EpwCatalogEntry, ...]:
+    entries: list[EpwCatalogEntry] = []
+    with httpx.Client(
+        timeout=settings.location_derive_timeout_seconds,
+        verify=certifi.where(),
+        follow_redirects=True,
+    ) as client:
+        for url in urls:
+            try:
+                response = client.get(url)
+                response.raise_for_status()
+            except httpx.HTTPError:
+                continue
+            entries.extend(parse_epw_catalog_xlsx(response.content, base_url=url))
+    return tuple(entries)
+
+
+def parse_epw_catalog_xlsx(raw: bytes, *, base_url: str = ONEBUILDING_BASE_URL) -> list[EpwCatalogEntry]:
+    workbook = load_workbook(io.BytesIO(raw), read_only=True, data_only=True)
+    sheet = workbook[workbook.sheetnames[0]]
+    rows = sheet.iter_rows(values_only=True)
+    headers = [str(value).strip().lower() if value is not None else "" for value in next(rows)]
+    index = {header: idx for idx, header in enumerate(headers)}
+    entries: list[EpwCatalogEntry] = []
+    for row in rows:
+        latitude = _float_at(row, index, "latitude (n+/s-)")
+        longitude = _float_at(row, index, "longitude (e+/w-)")
+        url = _text_at(row, index, "url")
+        name = _text_at(row, index, "city/station")
+        if latitude is None or longitude is None or not url or not name:
+            continue
+        entries.append(
+            EpwCatalogEntry(
+                country=_text_at(row, index, "country"),
+                region=_text_at(row, index, "state"),
+                name=name,
+                wmo=_text_at(row, index, "wmo"),
+                source_data=_text_at(row, index, "source data"),
+                latitude=latitude,
+                longitude=longitude,
+                elevation_m=_float_at(row, index, "elevation (m)"),
+                time_zone_offset_hours=_float_at(row, index, "time zone (gmt +/-)"),
+                url=urljoin(base_url, url),
+            )
+        )
+    return entries
+
+
+def _source_rank(entry: EpwCatalogEntry) -> tuple[int, int, str]:
+    source_penalty = 0 if (entry.source_data or "").startswith("SRC") else 1
+    match = _YEAR_SPAN_RE.search(entry.url)
+    end_year = int(match.group(2)) if match else 9999
+    return (source_penalty, -end_year, entry.url)
+
+
+def _text_at(row: tuple[object, ...], index: dict[str, int], header: str) -> str | None:
+    position = index.get(header)
+    if position is None or position >= len(row):
+        return None
+    value = row[position]
+    text = str(value).strip() if value is not None else ""
+    return text or None
+
+
+def _float_at(row: tuple[object, ...], index: dict[str, int], header: str) -> float | None:
+    text = _text_at(row, index, header)
+    if text is None:
+        return None
+    try:
+        return float(text)
+    except ValueError:
+        return None
+
+
+def _ttl_bucket() -> int:
+    return int(datetime.now(tz=UTC).timestamp() // _CATALOG_TTL.total_seconds())

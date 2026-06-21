@@ -61,6 +61,7 @@ class Settings(BaseSettings):
     # Project location geodata
     maptiler_api_key: str = ""
     location_derive_timeout_seconds: float = 4.0
+    epw_catalog_urls: str = ""
 
     # Future at-rest field encryption. Not used by TB-01 session cookies,
     # which are opaque pointers to rows in the sessions table.

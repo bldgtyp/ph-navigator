@@ -16,12 +16,14 @@ from features.project_climate_source.models import (
     CreateProjectClimateSourceRequest,
     ProjectClimateSourceListResponse,
     ProjectClimateSourcePublic,
+    RefreshAshraeDesignConditionsRequest,
     UpdateProjectClimateSourceRequest,
 )
 from features.project_climate_source.service import (
     create_project_climate_source,
     delete_project_climate_source,
     list_project_climate_sources,
+    refresh_ashrae_design_conditions,
     set_default_climate_source,
     update_project_climate_source,
 )
@@ -56,6 +58,17 @@ def post_source(
 ) -> ProjectClimateSourcePublic:
     user = require_editor_user(access)
     return create_project_climate_source(project_id, payload, user, request)
+
+
+@router.post("/{project_id}/climate/sources/ashrae/current", response_model=ProjectClimateSourcePublic)
+def post_current_ashrae(
+    project_id: UUID,
+    payload: RefreshAshraeDesignConditionsRequest,
+    request: Request,
+    access: ProjectEditAccess,
+) -> ProjectClimateSourcePublic:
+    user = require_editor_user(access)
+    return refresh_ashrae_design_conditions(project_id, payload, user, request)
 
 
 @router.patch("/{project_id}/climate/sources/{source_id}", response_model=ProjectClimateSourcePublic)

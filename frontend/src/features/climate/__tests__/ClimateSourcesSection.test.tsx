@@ -16,9 +16,32 @@ const ASHRAE_SOURCE: ProjectClimateSource = {
   ref: "725060",
   label: "ASHRAE A",
   is_default: true,
-  data: null,
+  data: {
+    design_conditions: {
+      basis: "ASHRAE Meteo 2025 / PITTSFIELD MUNI AP",
+      heating_996_db_c: -18.8,
+      cooling_010_db_c: 28.5,
+    },
+  },
   created_at: "2026-06-14T10:00:00Z",
   updated_at: "2026-06-14T10:00:00Z",
+};
+
+const EPW_SOURCE: ProjectClimateSource = {
+  ...ASHRAE_SOURCE,
+  id: "src-epw",
+  kind: "epw",
+  ref: "asset_epw",
+  label: "pittsfield.epw",
+  is_default: false,
+  data: {
+    stat_metrics: {
+      hdd65_f_days: 3884,
+      cdd50_f_days: 1275,
+      record_low_c: -22.9,
+      record_high_c: 32.3,
+    },
+  },
 };
 
 const PHIUS_SOURCE: ProjectClimateSource = {
@@ -102,7 +125,7 @@ describe("ClimateSourcesSection", () => {
     vi.stubGlobal("fetch", fetchMock);
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       if (String(input) === SOURCES_URL) {
-        return jsonResponse({ items: [ASHRAE_SOURCE, PHIUS_SOURCE] });
+        return jsonResponse({ items: [ASHRAE_SOURCE, PHIUS_SOURCE, EPW_SOURCE] });
       }
       return jsonResponse({}, 404);
     });
@@ -111,8 +134,12 @@ describe("ClimateSourcesSection", () => {
 
     expect(await screen.findByText("ASHRAE A")).toBeVisible();
     expect(screen.getByText("Worcester")).toBeVisible();
+    expect(screen.getByText("pittsfield.epw")).toBeVisible();
     expect(screen.getByText(/12.3 mi/)).toBeVisible();
     expect(screen.getByText(/88 ft elev delta/)).toBeVisible();
+    expect(screen.getByText(/Htg 99.6% -18.8 °C/)).toBeVisible();
+    expect(screen.getByText(/HDD65 3884/)).toBeVisible();
+    expect(screen.getByText(/CDD50 1275/)).toBeVisible();
     expect(screen.getByLabelText("Set ASHRAE source as default")).toBeChecked();
     expect(screen.getByLabelText("Set Phius source as default")).not.toBeChecked();
   });

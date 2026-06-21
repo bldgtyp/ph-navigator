@@ -16,6 +16,8 @@ from fastapi.testclient import TestClient
 from mcp.server.fastmcp import Context
 from mcp.server.fastmcp.exceptions import ToolError
 
+from features.climate.ashrae_meteo import AshraeMeteoResult
+from features.climate.design_conditions import ClimateDesignConditions
 from features.project_climate_source.mcp import (
     tool_list_project_climate_sources,
     tool_set_project_climate_source_default,
@@ -135,6 +137,53 @@ def test_epw_source_requires_existing_asset(clean_mcp_tables: None) -> None:
     response = _post(client, project_id, {"kind": "epw", "ref": "asset_missing"})
     assert response.status_code == 422
     assert response.json()["error_code"] == "climate_source_ref_not_found"
+
+
+def test_refresh_ashrae_design_conditions_uses_project_location(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fake_fetch(*, latitude: float, longitude: float, ashrae_version: str) -> AshraeMeteoResult:
+        assert latitude == 42.325
+        assert longitude == -73.367
+        assert ashrae_version == "2025"
+        return AshraeMeteoResult(
+            station_id="744104",
+            label="PITTSFIELD MUNI AP",
+            url="https://ashrae-meteo.info/v3.0/index.php?ashrae_version=2025&wmo=744104",
+            design_conditions=ClimateDesignConditions(
+                basis="ASHRAE Meteo 2025 / PITTSFIELD MUNI AP",
+                source="ashrae-meteo",
+                edition="2025",
+                heating_996_db_c=-18.8,
+                heating_990_db_c=-16.0,
+                cooling_010_db_c=28.5,
+                cooling_010_mcwb_c=20.8,
+            ),
+        )
+
+    monkeypatch.setattr("features.project_climate_source.service.fetch_nearest_ashrae_station_conditions", fake_fetch)
+    client = signed_in_client()
+    project_id = cast(str, create_project(client)["id"])
+    saved = client.put(
+        f"/api/v1/projects/{project_id}/location",
+        headers={"Origin": ORIGIN},
+        json={"latitude": 42.325, "longitude": -73.367},
+    )
+    assert saved.status_code == 200
+
+    response = client.post(
+        f"{_SOURCES.format(project_id=project_id)}/ashrae/current",
+        headers={"Origin": ORIGIN},
+        json={"ashrae_version": "2025"},
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["kind"] == "ashrae"
+    assert body["ref"] == "744104"
+    assert body["data"]["provider"] == "ashrae_meteo"
+    assert body["data"]["design_conditions"]["heating_996_db_c"] == -18.8
 
 
 def test_sources_are_project_scoped(clean_mcp_tables: None) -> None:

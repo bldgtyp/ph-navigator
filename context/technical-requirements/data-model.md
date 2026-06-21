@@ -115,6 +115,25 @@ project_location (
     updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 )
 
+project_climate_source (
+    id                  UUID PRIMARY KEY,
+    project_id          UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    kind                TEXT NOT NULL,
+                      -- 'phius' | 'phi' | 'ashrae' | 'epw' | 'custom'
+    ref                 TEXT,
+                      -- Phius/PHI climate_dataset_location id, ASHRAE station
+                      -- id/WMO, or EPW project_assets.id depending on kind.
+    label               TEXT,
+    is_default          BOOLEAN NOT NULL DEFAULT false,
+    data                JSONB,
+                      -- custom ClimateRecord, proximity metadata, EPW STAT
+                      -- metrics, and/or ASHRAE design conditions depending on
+                      -- kind. EPW/ASHRAE cached values carry basis/source URL,
+                      -- fetched_at, and missing-field flags.
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+)
+
 -- MCP/API bearer tokens for LLM clients. Required in V2 v1 because
 -- MCP is read/write capable from day 1. Tokens are issued by an
 -- authenticated editor, shown once, stored only as a hash, and

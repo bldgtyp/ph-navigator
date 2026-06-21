@@ -4,26 +4,36 @@ from __future__ import annotations
 
 import hashlib
 from typing import cast
+from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
 from mcp.server.fastmcp import Context
 from mcp.server.fastmcp.exceptions import ToolError
 
+from database import transaction
 from features.assets.routes import get_asset_service
 from features.assets.service import AssetService
+from features.climate.epw_catalog import EpwCatalogEntry, EpwZipPayload
 from features.climate.importers.phius import parse_phius_mon_file
 from features.climate.record import ClimateRecord
 from features.climate.service import seed_dataset
+from features.project_climate_source import repository as climate_source_repository
 from features.project_location.derive import DerivedLocationGeodata, lookup_climate_zone
 from features.project_location.mcp import tool_get_project_location
 from features.project_location.models import GeocodeProjectLocationCandidate, UpdateProjectLocationRequest
+from features.project_location.service import existing_weather_source_values
 from main import app
 from tests.test_assets_service import FakeR2Client, NoopThumbnailer
 from tests.test_climate_datasets import _STATION_FILE, clean_climate_tables
 from tests.test_mcp import ORIGIN, clean_mcp_tables, create_project, signed_in_client
 
 __all__ = ["clean_climate_tables", "clean_mcp_tables"]
+
+
+@pytest.fixture(autouse=True)
+def disable_weather_auto_attach(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("features.project_location.service.prepare_weather_sources", lambda **_kwargs: ([], {}, []))
 
 
 def issue_mcp_token(client: TestClient, project_id: str) -> str:
@@ -362,6 +372,95 @@ def test_derive_location_auto_attaches_certification_sources_idempotently(
 
     assert len(rerun_sources) == 2
     assert {source["id"] for source in rerun_sources} == {source["id"] for source in sources}
+
+
+def test_derive_location_auto_attaches_epw_and_ashrae_stat_sources(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake_r2 = FakeR2Client()
+    install_fake_asset_service(fake_r2)
+
+    def fake_prepare_weather_sources(
+        *,
+        project_id: UUID,
+        user,
+        asset_service: AssetService,
+        **_kwargs,
+    ):
+        from features.project_location.service import build_weather_source_payloads
+        from tests.test_climate_design_conditions import STAT_SAMPLE
+
+        payload = EpwZipPayload(
+            entry=EpwCatalogEntry(
+                country="USA",
+                region="MA",
+                name="Pittsfield.Muni.AP",
+                wmo="744104",
+                source_data="SRC-TMYx",
+                latitude=42.427,
+                longitude=-73.289,
+                elevation_m=364,
+                time_zone_offset_hours=-5,
+                url="https://climate.onebuilding.org/pittsfield.zip",
+                distance_mi=8.1,
+            ),
+            epw_name="pittsfield.epw",
+            epw_bytes=epw_bytes(latitude=42.427, longitude=-73.289, elevation_m=364),
+            stat_name="pittsfield.stat",
+            stat_text=STAT_SAMPLE,
+        )
+        sources = build_weather_source_payloads(project_id, user, asset_service, payload)
+        epw_source = next(source for source in sources if source["kind"] == "epw")
+        return sources, {"epw_asset_id": epw_source["ref"], "epw_source_url": payload.entry.url}, []
+
+    try:
+        monkeypatch.setattr("features.project_location.service.derive_location_geodata", west_stockbridge_geodata)
+        monkeypatch.setattr("features.project_location.service.prepare_weather_sources", fake_prepare_weather_sources)
+        client = signed_in_client()
+        project_id = cast(str, create_project(client)["id"])
+
+        response = client.post(
+            f"/api/v1/projects/{project_id}/location/derive",
+            headers={"Origin": ORIGIN},
+            json={"latitude": 42.325, "longitude": -73.367},
+        )
+
+        assert response.status_code == 200, response.text
+        location = response.json()["location"]
+        assert location["epw_asset_id"].startswith("asset_")
+        assert location["epw"]["filename"] == "pittsfield.epw"
+        sources = client.get(f"/api/v1/projects/{project_id}/climate/sources").json()["items"]
+        by_kind = {source["kind"]: source for source in sources}
+        assert by_kind["epw"]["label"] == "Pittsfield.Muni.AP"
+        assert by_kind["epw"]["data"]["stat_metrics"]["hdd65_f_days"] == 3884
+        assert by_kind["ashrae"]["ref"] == "744104"
+        assert by_kind["ashrae"]["data"]["design_conditions"]["cooling_010_db_c"] == 28.5
+    finally:
+        clear_fake_asset_service()
+
+
+def test_existing_weather_source_values_reuses_same_onebuilding_epw(clean_mcp_tables: None) -> None:
+    client = signed_in_client()
+    project_id = UUID(cast(str, create_project(client)["id"]))
+    with transaction() as conn:
+        climate_source_repository.insert_source(
+            conn,
+            source_id=uuid4(),
+            project_id=project_id,
+            kind="epw",
+            ref="asset_reused",
+            label="Pittsfield",
+            is_default=False,
+            data={"source_url": "https://climate.onebuilding.org/pittsfield.zip"},
+        )
+
+    values = existing_weather_source_values(project_id, "https://climate.onebuilding.org/pittsfield.zip")
+
+    assert values == {
+        "epw_asset_id": "asset_reused",
+        "epw_source_url": "https://climate.onebuilding.org/pittsfield.zip",
+    }
 
 
 def test_direct_coordinate_edit_clears_derived_geodata(

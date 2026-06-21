@@ -17,12 +17,13 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 ClimateSourceKind = Literal["phius", "phi", "ashrae", "epw", "custom"]
+AshraeVersion = Literal["2009", "2013", "2017", "2021", "2025"]
 
 # Kinds that point at something by ``ref`` rather than carrying a record.
 _REF_KINDS: frozenset[str] = frozenset({"phius", "phi", "ashrae", "epw"})
-# Kinds permitted to carry a ``data`` payload. Phius/PHI store derived
-# proximity metadata when auto-attached from the project location derive flow.
-_DATA_KINDS: frozenset[str] = frozenset({"custom", "ashrae", "phius", "phi"})
+# Kinds permitted to carry a ``data`` payload. Dataset and EPW pointers cache
+# small certification-load-bearing metadata when auto-attached.
+_DATA_KINDS: frozenset[str] = frozenset({"custom", "ashrae", "epw", "phius", "phi"})
 
 
 class ProjectClimateSourcePublic(BaseModel):
@@ -70,6 +71,14 @@ class UpdateProjectClimateSourceRequest(BaseModel):
     label: Annotated[str | None, Field(max_length=200)] = None
     ref: Annotated[str | None, Field(max_length=500)] = None
     data: dict[str, Any] | None = None
+
+
+class RefreshAshraeDesignConditionsRequest(BaseModel):
+    """On-demand current-edition ASHRAE pull for the project location."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    ashrae_version: AshraeVersion = "2025"
 
 
 def validate_source_shape(kind: str, ref: str | None, data: dict[str, Any] | None) -> None:
