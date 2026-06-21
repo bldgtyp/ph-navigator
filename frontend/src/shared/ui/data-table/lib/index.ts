@@ -22,6 +22,15 @@ export {
 } from "./paste/tsv";
 export { coercePasteWrites, planPaste, type CoercePasteResult } from "./paste/plan";
 
+export {
+  CSV_MIME_TYPE,
+  formatExportCellValue,
+  sanitizeFilename,
+  tableToCsv,
+  type CsvExport,
+  type TableToCsvParams,
+} from "./export/csv";
+
 export { applyFilters, defaultOperatorForField } from "./filter/apply";
 
 export { sortRows } from "./sort/sortRows";

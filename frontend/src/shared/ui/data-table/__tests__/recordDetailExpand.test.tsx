@@ -54,6 +54,7 @@ function renderTable(overrides: Partial<DataTableProps<Row>> = {}) {
   const [view, setView] = [emptyViewState(), vi.fn<(next: ViewState) => void>()];
   return render(
     <DataTable<Row>
+      tableName="Test"
       rows={ROWS}
       getRowId={(row) => row.id}
       fieldDefs={FIELD_DEFS}

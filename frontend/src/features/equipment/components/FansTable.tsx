@@ -210,6 +210,7 @@ export function FansTable({
 
   return (
     <DataTable
+      tableName="Fans"
       rows={sortedRows}
       columnDefs={columns}
       fieldDefs={fieldDefs}

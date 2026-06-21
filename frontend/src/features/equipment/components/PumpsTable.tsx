@@ -258,6 +258,7 @@ export function PumpsTable({
 
   return (
     <DataTable
+      tableName="Pumps"
       rows={sortedRows}
       columnDefs={columns}
       fieldDefs={dataTableFieldDefs}

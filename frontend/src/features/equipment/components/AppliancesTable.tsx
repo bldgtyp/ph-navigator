@@ -208,6 +208,7 @@ export function AppliancesTable({
 
   return (
     <DataTable
+      tableName="Appliances"
       rows={sortedRows}
       columnDefs={columns}
       fieldDefs={fieldDefs}

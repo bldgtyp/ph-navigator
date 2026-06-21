@@ -197,6 +197,7 @@ export function IndoorEquipTable({
         <p className="form-note">Loading table view...</p>
       ) : (
         <DataTable
+          tableName="Heat Pump Indoor Equipment"
           rows={rows}
           getRowId={(row) => row.id}
           fieldDefs={fieldDefs}

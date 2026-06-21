@@ -18,6 +18,7 @@ function renderToolbar(
   view: ViewState = emptyViewState(),
   handlers: {
     onResetView?: () => void;
+    onDownloadCsv?: () => void;
     onGroupChange?: () => void;
     onCollapseAllGroups?: () => void;
     onExpandAllGroups?: () => void;
@@ -39,6 +40,7 @@ function renderToolbar(
       onCollapseAllGroups={handlers.onCollapseAllGroups ?? vi.fn()}
       onExpandAllGroups={handlers.onExpandAllGroups ?? vi.fn()}
       onResetView={handlers.onResetView ?? vi.fn()}
+      onDownloadCsv={handlers.onDownloadCsv ?? vi.fn()}
       onHideFieldsChange={handlers.onHideFieldsChange ?? vi.fn()}
     />,
   );
@@ -154,6 +156,22 @@ describe("GridToolbar", () => {
     fireEvent.click(screen.getByRole("button", { name: "More view actions" }));
     fireEvent.click(screen.getByRole("button", { name: "Reset view" }));
     expect(onResetView).toHaveBeenCalledTimes(1);
+  });
+
+  test("Download CSV action in the overflow menu fires onDownloadCsv", () => {
+    const onDownloadCsv = vi.fn();
+    renderToolbar(emptyViewState(), { onDownloadCsv });
+    fireEvent.click(screen.getByRole("button", { name: "More view actions" }));
+    fireEvent.click(screen.getByRole("button", { name: "Download CSV" }));
+    expect(onDownloadCsv).toHaveBeenCalledTimes(1);
+  });
+
+  test("Download CSV stays enabled even with an empty view (it is a read action)", () => {
+    const onDownloadCsv = vi.fn();
+    renderToolbar(emptyViewState(), { onDownloadCsv });
+    fireEvent.click(screen.getByRole("button", { name: "More view actions" }));
+    const item = screen.getByRole("button", { name: "Download CSV" });
+    expect(item).toBeEnabled();
   });
 
   test("overflow trigger uses the shared icon-only toolbar style", () => {

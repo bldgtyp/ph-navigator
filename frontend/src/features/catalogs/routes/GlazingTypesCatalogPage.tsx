@@ -225,6 +225,7 @@ export function GlazingTypesCatalogPage({ session }: { session: AuthSession }) {
           </p>
         ) : (
           <DataTable<GlazingTypeRow>
+            tableName="Glazing Types"
             rows={rows}
             getRowId={(row) => row.id}
             columnDefs={COLUMN_DEFS}

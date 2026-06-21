@@ -28,6 +28,9 @@ export type GridToolbarProps = {
   onCollapseAllGroups: () => void;
   onExpandAllGroups: () => void;
   onResetView: () => void;
+  // Built-in CSV download for the current view. Required — see
+  // ViewMenuOverflowProps.onDownloadCsv (parent-owned iron-law affordance).
+  onDownloadCsv: () => void;
   onHideFieldsChange: (change: HideFieldsPanelChange) => void;
   overflowMenuActions?: ReactNode;
   actions?: ReactNode;
@@ -49,6 +52,7 @@ export function GridToolbar({
   onCollapseAllGroups,
   onExpandAllGroups,
   onResetView,
+  onDownloadCsv,
   onHideFieldsChange,
   overflowMenuActions,
   actions,
@@ -181,6 +185,7 @@ export function GridToolbar({
         <ViewMenuOverflow
           onReset={onResetView}
           canReset={canResetView}
+          onDownloadCsv={onDownloadCsv}
           actions={overflowMenuActions}
         />
       </div>

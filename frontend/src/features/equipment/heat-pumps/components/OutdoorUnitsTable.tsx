@@ -322,6 +322,7 @@ export function OutdoorUnitsTable({
         <p className="form-note">Loading table view...</p>
       ) : (
         <DataTable
+          tableName="Heat Pump Outdoor Units"
           rows={rows}
           getRowId={(row) => row.id}
           fieldDefs={fieldDefs}

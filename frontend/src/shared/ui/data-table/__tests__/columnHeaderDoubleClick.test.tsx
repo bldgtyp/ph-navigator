@@ -69,6 +69,7 @@ function renderTable(overrides: Partial<DataTableProps<Row>> = {}) {
   const [view, setView] = [emptyViewState(), vi.fn<(next: ViewState) => void>()];
   render(
     <DataTable<Row>
+      tableName="Test"
       rows={ROWS}
       getRowId={(row) => row.id}
       fieldDefs={FIELD_DEFS}
@@ -90,6 +91,7 @@ function renderCustomFieldTable(overrides: Partial<DataTableProps<CustomRow>> = 
   const [view, setView] = [emptyViewState(), vi.fn<(next: ViewState) => void>()];
   render(
     <DataTable<CustomRow>
+      tableName="Test"
       rows={CUSTOM_ROWS}
       getRowId={(row) => row.id}
       fieldDefs={CUSTOM_FIELD_DEFS}
@@ -185,6 +187,7 @@ describe("DataTable column header double-click trigger (plan 21)", () => {
     const [view, setView] = [emptyViewState(), vi.fn<(next: ViewState) => void>()];
     render(
       <DataTable<Row>
+        tableName="Test"
         rows={ROWS}
         getRowId={(row) => row.id}
         fieldDefs={[

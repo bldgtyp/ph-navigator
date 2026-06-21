@@ -255,6 +255,7 @@ export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
           </p>
         ) : (
           <DataTable<MaterialRow>
+            tableName="Materials"
             rows={rows}
             getRowId={(row) => row.id}
             columnDefs={COLUMN_DEFS}

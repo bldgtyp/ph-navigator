@@ -224,6 +224,7 @@ export function HotWaterHeatersTable({
 
   return (
     <DataTable
+      tableName="Hot Water Heaters"
       rows={sortedRows}
       columnDefs={columns}
       fieldDefs={fieldDefs}

@@ -26,6 +26,7 @@ describe("DataTable — ⌘D / ⌘R fill", () => {
     const onWrite = vi.fn();
     render(
       <DataTable<Row>
+        tableName="Test"
         rows={ROWS}
         getRowId={(row) => row.id}
         fieldDefs={FIELD_DEFS}
@@ -56,6 +57,7 @@ describe("DataTable — ⌘D / ⌘R fill", () => {
     const onWrite = vi.fn();
     render(
       <DataTable<Row>
+        tableName="Test"
         rows={ROWS}
         getRowId={(row) => row.id}
         fieldDefs={FIELD_DEFS}
@@ -76,6 +78,7 @@ describe("DataTable — ⌘D / ⌘R fill", () => {
     const onWrite = vi.fn();
     render(
       <DataTable<Row>
+        tableName="Test"
         rows={ROWS}
         getRowId={(row) => row.id}
         fieldDefs={FIELD_DEFS}
@@ -102,6 +105,7 @@ describe("DataTable — ⌘D / ⌘R fill", () => {
     const onWrite = vi.fn();
     render(
       <DataTable<Row>
+        tableName="Test"
         rows={ROWS}
         getRowId={(row) => row.id}
         fieldDefs={FIELD_DEFS}
@@ -135,6 +139,7 @@ describe("DataTable — ⌘D / ⌘R fill", () => {
     const onWrite = vi.fn();
     render(
       <DataTable<Row>
+        tableName="Test"
         rows={ROWS}
         getRowId={(row) => row.id}
         fieldDefs={FIELD_DEFS}
@@ -164,6 +169,7 @@ describe("DataTable — ⌘D / ⌘R fill", () => {
     const onWrite = vi.fn();
     render(
       <DataTable<Row>
+        tableName="Test"
         rows={ROWS}
         getRowId={(row) => row.id}
         fieldDefs={FIELD_DEFS}
@@ -184,6 +190,7 @@ describe("DataTable — ⌘D / ⌘R fill", () => {
     const onWrite = vi.fn();
     render(
       <DataTable<Row>
+        tableName="Test"
         rows={ROWS}
         getRowId={(row) => row.id}
         fieldDefs={FIELD_DEFS}
@@ -210,6 +217,7 @@ describe("DataTable — ⌘D / ⌘R fill", () => {
     const onWrite = vi.fn();
     render(
       <DataTable<Row>
+        tableName="Test"
         rows={ROWS}
         getRowId={(row) => row.id}
         fieldDefs={FIELD_DEFS}

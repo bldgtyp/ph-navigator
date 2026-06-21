@@ -35,6 +35,7 @@ planning/features_v1.1/<feature-slug>/
 | _(shipped in v1.0)_ Climate — reference-data ingest + seed | Complete | Shipped v1.0 (2026-06-15) and archived to `planning/archive/climate-reference-data-seeding/`. The former **PHI/PHPP importer** candidate was folded in as `phases/phase-02-phi-importer.md`. |
 | [Climate — Design conditions + metrics](climate-design-conditions/README.md) | Deferred (gated) | Build with a scheduled fRSI/comfort consumer; needs D-CL-5. Per-source, source-parameterized exterior-conditions contract. |
 | [Climate — tab follow-ups](climate-tab-followups/README.md) | Deferred | Small independent backlog: custom-record entry form, sun-path cardinal labels, attached-source charts, promote `ClimateRecord` to `context/`. |
+| [Table CSV Download — follow-ups](table-csv-download-followups/README.md) | Deferred | Optional tweaks left from the shipped v1 CSV export: formula-error cell text (F1), `linked_record` id→label resolution (F2), catalog JSON/CSV label reconciliation (F3), plus deferred non-goals (timestamps, CSV-injection). Promote per-item when real usage hits the trigger. |
 
 The **Climate** feature (a top-level tab that owns location/EPW + the
 sun-path service + climate design conditions) shipped its data store —

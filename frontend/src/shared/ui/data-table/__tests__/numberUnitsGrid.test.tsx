@@ -68,6 +68,7 @@ function renderWithUnits(unitSystem: "SI" | "IP", overrides?: { view?: ViewState
   return render(
     <UnitStub unitSystem={unitSystem}>
       <DataTable
+        tableName="Test"
         rows={rows}
         getRowId={(row) => row.id}
         fieldDefs={fieldDefs}
@@ -115,6 +116,7 @@ describe("number-with-units grid behavior (Phase 03)", () => {
     render(
       <UnitStub unitSystem="SI">
         <DataTable
+          tableName="Test"
           rows={[{ id: "r1", thickness: 1 }] as Row[]}
           getRowId={(row) => row.id}
           fieldDefs={[{ field_key: "thickness", field_type: "number", display_name: "Thickness" }]}
@@ -137,6 +139,7 @@ describe("number-with-units grid behavior (Phase 03)", () => {
     const { rerender } = render(
       <UnitStub unitSystem="SI">
         <DataTable
+          tableName="Test"
           rows={rows}
           getRowId={(row) => row.id}
           fieldDefs={fieldDefs}
@@ -158,6 +161,7 @@ describe("number-with-units grid behavior (Phase 03)", () => {
       rerender(
         <UnitStub unitSystem="SI">
           <DataTable
+            tableName="Test"
             rows={rows}
             getRowId={(row) => row.id}
             fieldDefs={nextFieldDefs}
@@ -207,6 +211,7 @@ describe("number-with-units grid behavior (Phase 03)", () => {
     const { rerender } = render(
       <UnitStub unitSystem="SI">
         <DataTable
+          tableName="Test"
           rows={densityRows}
           getRowId={(row) => row.id}
           fieldDefs={[densityField]}
@@ -222,6 +227,7 @@ describe("number-with-units grid behavior (Phase 03)", () => {
     rerender(
       <UnitStub unitSystem="IP">
         <DataTable
+          tableName="Test"
           rows={densityRows}
           getRowId={(row) => row.id}
           fieldDefs={[densityField]}
@@ -242,6 +248,7 @@ describe("number-with-units grid behavior (Phase 03)", () => {
     render(
       <UnitStub unitSystem="IP">
         <DataTable
+          tableName="Test"
           rows={[{ id: "r1", count: 7 }] as CountRow[]}
           getRowId={(row) => row.id}
           fieldDefs={[
@@ -271,6 +278,7 @@ describe("number-with-units grid behavior (Phase 03)", () => {
     render(
       <UnitStub unitSystem="IP">
         <DataTable
+          tableName="Test"
           rows={[{ id: "r1", thickness: 0 }] as Row[]}
           getRowId={(row) => row.id}
           fieldDefs={fieldDefs}

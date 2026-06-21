@@ -247,6 +247,7 @@ export function OutdoorEquipTable({
         <p className="form-note">Loading table view...</p>
       ) : (
         <DataTable
+          tableName="Heat Pump Outdoor Equipment"
           rows={rows}
           getRowId={(row) => row.id}
           fieldDefs={fieldDefs}

@@ -59,6 +59,7 @@ export function PlaceholderEquipmentTable({
 }) {
   return (
     <DataTable<PlaceholderEquipmentRow>
+      tableName="Equipment"
       rows={[]}
       getRowId={(row) => row.id}
       fieldDefs={PLACEHOLDER_FIELD_DEFS}

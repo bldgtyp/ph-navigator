@@ -92,6 +92,7 @@ describe("DataTable", () => {
   test("builds formula field references from fieldDefs when no registry prop is supplied", async () => {
     render(
       <DataTable
+        tableName="Test"
         rows={rows}
         getRowId={(row) => row.id}
         fieldDefs={[
@@ -473,6 +474,7 @@ describe("DataTable", () => {
     ];
     render(
       <DataTable
+        tableName="Test"
         rows={rows}
         getRowId={(row) => row.id}
         fieldDefs={readOnlyFieldDefs}
@@ -500,6 +502,7 @@ describe("DataTable", () => {
     ];
     render(
       <DataTable
+        tableName="Test"
         rows={rows}
         getRowId={(row) => row.id}
         fieldDefs={readOnlyFieldDefs}
@@ -537,6 +540,7 @@ describe("DataTable", () => {
     ];
     render(
       <DataTable
+        tableName="Test"
         rows={[{ id: "rm_1", floor: "opt_ground" }]}
         getRowId={(row) => row.id}
         fieldDefs={selectFieldDefs}
@@ -580,6 +584,7 @@ describe("DataTable", () => {
     ];
     render(
       <DataTable
+        tableName="Test"
         rows={[{ id: "rm_1", floor: "opt_ground" }]}
         getRowId={(row) => row.id}
         fieldDefs={selectFieldDefs}
@@ -616,6 +621,7 @@ describe("DataTable", () => {
     ];
     render(
       <DataTable
+        tableName="Test"
         rows={[{ id: "rm_1", floor: "opt_ground" }]}
         getRowId={(row) => row.id}
         fieldDefs={selectFieldDefs}
@@ -960,6 +966,7 @@ function renderTable({
 } = {}) {
   return render(
     <DataTable
+      tableName="Test"
       rows={rowsOverride ?? rows}
       getRowId={(row) => row.id}
       fieldDefs={fieldDefsOverride ?? fieldDefs}
