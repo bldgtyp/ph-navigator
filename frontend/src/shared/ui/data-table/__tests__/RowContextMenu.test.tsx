@@ -2,13 +2,14 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
 import { RowContextMenu, type RowContextMenuOpenState } from "../components/RowContextMenu";
 
-// Unit coverage for the row context menu. Single-row gestures cover
-// the three built-in items (Insert / Expand / Delete) plus the
-// conditional Expand item (only present when onOpen is wired). The
-// multi-row cases cover PRD §5 rules 1 / 2 / 3 plus the render-perf
-// freeze contract on `selectionCount` / `rowIsInSelection`. Delegated
-// `contextmenu` listener wiring is exercised by the GridBody /
-// DataTable integration tests and the Playwright e2e specs.
+// Unit coverage for the row context menu. Single-row gestures cover the
+// four built-in items (Insert / Duplicate / Expand / Delete). "Expand
+// record" is UNCONDITIONAL — `onOpen` is a required prop, never gated on
+// per-table wiring (DataTable always supplies a handler). The multi-row
+// cases cover PRD §5 rules 1 / 2 / 3 plus the render-perf freeze contract
+// on `selectionCount` / `rowIsInSelection`. Delegated `contextmenu`
+// listener wiring is exercised by the GridBody / DataTable integration
+// tests and the Playwright e2e specs.
 
 function defaultOpen(overrides: Partial<RowContextMenuOpenState> = {}): RowContextMenuOpenState {
   return {
@@ -41,7 +42,7 @@ function renderMenu(overrides: RenderOverrides = {}) {
       onClose={overrides.onClose ?? vi.fn()}
       onInsertBelow={overrides.onInsertBelow ?? vi.fn()}
       onDuplicate={overrides.onDuplicate ?? vi.fn()}
-      onOpen={overrides.onOpen}
+      onOpen={overrides.onOpen ?? vi.fn()}
       onDelete={overrides.onDelete ?? vi.fn()}
       onDeleteSelection={overrides.onDeleteSelection ?? vi.fn()}
     />,
@@ -49,7 +50,7 @@ function renderMenu(overrides: RenderOverrides = {}) {
 }
 
 describe("RowContextMenu — single-row branch", () => {
-  test("renders Insert / Duplicate / Expand / Delete when onOpen is wired", () => {
+  test("renders Insert / Duplicate / Expand / Delete in order", () => {
     renderMenu({ onOpen: vi.fn() });
     const items = screen.getAllByRole("menuitem").map((item) => item.textContent ?? "");
     expect(items).toEqual([
@@ -60,12 +61,16 @@ describe("RowContextMenu — single-row branch", () => {
     ]);
   });
 
-  test("hides Expand record when onOpen is undefined", () => {
+  test("Expand record is always present — the affordance is never gated", () => {
+    // No `onOpen` override here: the helper still supplies a handler
+    // because `onOpen` is a required prop. There is no code path that
+    // drops the item, so a table can never lose row-expand.
     renderMenu();
     const items = screen.getAllByRole("menuitem").map((item) => item.textContent ?? "");
     expect(items).toEqual([
       expect.stringContaining("Insert record"),
       expect.stringContaining("Duplicate record"),
+      expect.stringContaining("Expand record"),
       expect.stringContaining("Delete record"),
     ]);
   });

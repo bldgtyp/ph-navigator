@@ -13,10 +13,13 @@ export type GridGutterProps = {
   onSelectRow: () => void;
   onToggleSelected: (mode: RowSelectionMode) => void;
   // AirTable-style row-expand affordance: the icon reveals on row-hover
-  // in the right gutter lane. When wired, it invokes the consumer's
-  // row-open callback; otherwise it renders as a visual-only affordance
-  // so catalog and project tables keep the same gutter layout.
-  onExpandRow?: () => void;
+  // in the right gutter lane and opens the row's detail modal. This is a
+  // REQUIRED, always-wired handler — DataTable guarantees one for every
+  // table (the consumer's `onRowOpen`, else the built-in record-detail
+  // modal). There is deliberately no "unwired" branch: a gutter without a
+  // working expand button is the exact dead-affordance bug this contract
+  // forbids. See `check-data-table-contract.mjs`.
+  onExpandRow: () => void;
   // Phase 1 row-context-menu — Shift+F10 / ContextMenu on the gutter
   // number button opens the row menu anchored at the row's bottom-left.
   // The button itself stays tabIndex=-1 (PoC), but tests and consumer
@@ -44,7 +47,7 @@ export function GridGutter({
     // Stop the click from bubbling so the surrounding gutter cell
     // doesn't fire selectRow.
     event.stopPropagation();
-    onExpandRow?.();
+    onExpandRow();
   };
 
   const className = [
@@ -96,22 +99,16 @@ export function GridGutter({
             tabIndex={-1}
           />
         ) : null}
-        {onExpandRow ? (
-          <button
-            type="button"
-            className="data-table-gutter-expand"
-            aria-label={`Expand row ${rowNumber}`}
-            title="Expand row"
-            tabIndex={-1}
-            onClick={handleExpandClick}
-          >
-            <Maximize2 size={12} aria-hidden="true" />
-          </button>
-        ) : (
-          <span className="data-table-gutter-expand" aria-hidden="true">
-            <Maximize2 size={12} aria-hidden="true" />
-          </span>
-        )}
+        <button
+          type="button"
+          className="data-table-gutter-expand"
+          aria-label={`Expand row ${rowNumber}`}
+          title="Expand row"
+          tabIndex={-1}
+          onClick={handleExpandClick}
+        >
+          <Maximize2 size={12} aria-hidden="true" />
+        </button>
       </div>
     </th>
   );

@@ -1475,18 +1475,10 @@
   background: color-mix(in oklab, var(--accent) 12%, var(--bg-card));
 }
 
-.data-table-gutter-expand[aria-hidden="true"] {
-  cursor: default;
-}
-
 .data-table tbody tr:hover .data-table-gutter-expand,
 .data-table-gutter-expand:focus-visible {
   opacity: 1;
   pointer-events: auto;
-}
-
-.data-table tbody tr:hover .data-table-gutter-expand[aria-hidden="true"] {
-  pointer-events: none;
 }
 
 .data-table tbody tr:hover .data-table-gutter-selectable .data-table-gutter-checkbox,
@@ -3174,6 +3166,26 @@ td.data-table-cell-editing {
 
 .table-row-modal-grid__wide {
   grid-column: 1 / -1;
+}
+
+/* Read-only field rows in the built-in record-detail modal (computed,
+   attachment, linked-record, and any read_only field). Mirrors the
+   editable label layout but renders the value in a muted, non-interactive
+   box so the user can see — but not edit — those fields here. */
+.data-table-record-detail-readonly {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.data-table-record-detail-readonly-value {
+  min-height: var(--space-32);
+  padding: var(--space-6) var(--space-8);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input, var(--bg-card));
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  overflow-wrap: anywhere;
 }
 
 .data-table-modal-option-add-trigger {

@@ -97,13 +97,27 @@ describe("GridBody — row-expand affordance", () => {
     expect(cell).not.toHaveClass("data-table-cell-selected");
   });
 
-  test("renders a visual-only Expand affordance when onRowOpen is undefined", () => {
+  test("renders a real, clickable Expand button even when onRowOpen is omitted", () => {
     const { container } = renderTable();
 
-    expect(screen.queryByRole("button", { name: /Expand row/ })).not.toBeInTheDocument();
+    // The affordance is unconditional: one focusable button per row, and
+    // never a dead, non-interactive <span> decoration (the old bug).
+    expect(screen.getAllByRole("button", { name: /Expand row \d/ })).toHaveLength(ROWS.length);
+    expect(container.querySelectorAll("span.data-table-gutter-expand")).toHaveLength(0);
     expect(
       container.querySelectorAll(".data-table-gutter-expand[aria-hidden='true']"),
-    ).toHaveLength(ROWS.length);
+    ).toHaveLength(0);
+  });
+
+  test("clicking Expand with no onRowOpen opens the built-in record-detail modal", () => {
+    renderTable();
+
+    fireEvent.click(screen.getByRole("button", { name: "Expand row 1" }));
+
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText("Number")).toBeInTheDocument();
+    expect(within(dialog).getByText("Name")).toBeInTheDocument();
+    expect(within(dialog).getByText("Count")).toBeInTheDocument();
   });
 });
 

@@ -671,6 +671,32 @@ form shape fits the common scaffold:
 - Row-edit layout styles live in `DataTable.css`; shared row-edit
   components must not depend on feature-local CSS imports.
 
+**Row expand is intrinsic, never per-table.** Every DataTable instance
+always presents an identical, working row-expand affordance: the gutter
+Expand button, the "Expand record" row-context-menu item, and the keyboard
+open gesture. These are not opt-in — the internal handler props
+(`GridGutter.onExpandRow`, `GridBody.onRowExpand`, `RowContextMenu.onOpen`)
+are **required**, so a table physically cannot render the affordance
+unwired. DataTable always supplies the handler:
+
+- When a consumer passes `onRowOpen`, the affordances invoke that bespoke
+  modal (Rooms, Ventilators, heat-pump leaves, Materials).
+- When a consumer omits `onRowOpen`, they open the built-in generic
+  `RecordDetailModal`, assembled from the table's own `columnDefs` +
+  `fieldDefs`. It reads every visible field, edits the safe types
+  (`text` / `number` / `single_select`) through the normal `dispatchWrite`
+  + undo pipeline, and renders the rest read-only. Read-only tables (no
+  `onWrite`) open it view-only.
+
+Consumers must **not** add their own gutter/expand control or re-implement
+this affordance — `onRowOpen` is the single, optional override.
+`frontend/scripts/check-data-table-contract.mjs` (run in `check:all`)
+fails the build if the dead-decoration pattern or an optional
+expand-handler prop is reintroduced. The keyboard path is the one
+deliberate exception: in pure viewer mode (read-only with no consumer
+drawer) Enter stays inert, since there is nothing to edit and the explicit
+Expand button/menu already cover viewing.
+
 ## Regression Coverage
 
 The contracts above are guarded by a layered test suite. Fast shared tests
@@ -682,6 +708,7 @@ live next to the DataTable code; the slower browser matrix lives under
 | Contract | Where proven |
 |---|---|
 | Commit write/undo, coercion, null clears, option ids, link dedupe/`maxLinks` | `data-table/__tests__/sharedEditContract.test.ts` (React-free planners) |
+| Row-expand is always a live button (never a dead decoration) and opens the built-in record-detail modal with no `onRowOpen`; "Expand record" menu item always present; required internal props | `data-table/__tests__/{GridBody,recordDetailExpand,RowContextMenu}.test.tsx`; guard `scripts/check-data-table-contract.mjs` |
 | Every table mounts the grid with its columns, no console error | e2e `@table-smoke` (one test per table) |
 | Text / number / single-select edit → display → reload → persisted value shape | e2e `@table-behavior` |
 | Linked-record commit (grid picker + add-dialog), inverse column, persisted ids | e2e `@table-links` |

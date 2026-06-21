@@ -63,6 +63,7 @@ import type { HideFieldsPanelChange } from "./components/HideFieldsPanel";
 import { CreateFieldConfigModal } from "./components/CreateFieldConfigModal";
 import { ConfirmDestructiveDialog } from "./components/ConfirmDestructiveDialog";
 import { FieldConfigModal } from "./components/FieldConfigModal";
+import { RecordDetailModal } from "./components/RecordDetailModal";
 import type { FieldRegistryEntry } from "./lib/formula";
 import { mapToFormulaType } from "./lib/formula/mapToFormulaType";
 import { getCustomValue } from "./lib/customFieldAccessor";
@@ -70,6 +71,7 @@ import type {
   AddCustomFieldRequest,
   AxisRoleSubset,
   CellCoord,
+  CellWrite,
   DataTableColumnDef,
   DataTableProps,
   EditCustomFieldBundleRequest,
@@ -269,6 +271,43 @@ export function DataTable<TRow>({
   const headerCellRefByFieldKey = useRef(new Map<string, HTMLTableCellElement>()).current;
   const history = useGridHistory();
   const { dispatchWrite, undoOnce, redoOnce } = useGridWriteReducer({ history, onWrite });
+  // Row-expand is an intrinsic, always-on capability. `openRow` is the
+  // single handler behind all three affordances (gutter button, context
+  // menu, keyboard): it defers to the consumer's `onRowOpen` when given,
+  // otherwise opens the built-in record-detail modal. There is no path
+  // that leaves expand unwired — a table can never ship a dead button.
+  const [recordDetailRowId, setRecordDetailRowId] = useState<string | null>(null);
+  const openRow = useCallback(
+    (row: TRow) => {
+      if (onRowOpen) {
+        onRowOpen(row);
+        return;
+      }
+      setRecordDetailRowId(getRowId(row));
+    },
+    [onRowOpen, getRowId],
+  );
+  // Whether an IMPLICIT keyboard / double-click gesture on a non-editable
+  // cell should fall through to row-open. The explicit gutter Expand
+  // button and "Expand record" menu item are always available regardless;
+  // this gate only governs the implicit paths, which stay inert in pure
+  // viewer mode (readOnly with no consumer drawer) since there is nothing
+  // to edit and Enter would otherwise open a modal the user never asked
+  // for. Single source of truth so the two call sites cannot drift.
+  const canOpenRow = Boolean(onRowOpen) || !readOnly;
+  // Modal saves ride the same write chokepoint inline edits use, so a
+  // record-detail edit lands on the undo/redo history like any cell edit.
+  const commitRecordDetail = useCallback(
+    (writes: CellWrite[], inverses: CellWrite[]) =>
+      dispatchWrite({ kind: "cell", writes }, { kind: "cell", writes: inverses }),
+    [dispatchWrite],
+  );
+  // Resolve the open record by id (not by snapshot) so the modal tracks
+  // live row data and auto-closes if the row is deleted out from under it.
+  const recordDetailRow =
+    recordDetailRowId !== null
+      ? (visibleDataRows.find((row) => getRowId(row) === recordDetailRowId) ?? null)
+      : null;
   const selection = useGridSelection({ rowIds, fieldKeys });
   const rowSelection = useGridRowSelection({ rowIds });
   const edit = useGridEdit({
@@ -671,7 +710,8 @@ export function DataTable<TRow>({
     const fieldDef = column ? fieldDefByKey.get(column.fieldKey) : undefined;
     const editorKind = getFieldEditor(fieldDef).kind;
     if (readOnly || !onWrite || !column || editorKind === "none") {
-      onRowOpen?.(row);
+      // Fall through to row-open for non-editable cells (see `canOpenRow`).
+      if (canOpenRow) openRow(row);
       return;
     }
     edit.start({
@@ -783,10 +823,10 @@ export function DataTable<TRow>({
       void redoOnce().catch((error) => {
         setAnnounce(error instanceof Error ? error.message : "Redo failed.");
       }),
-    onRowOpen: onRowOpen
+    onRowOpen: canOpenRow
       ? () => {
           const row = visibleDataRows[selection.activeCell.rowIndex];
-          if (row) onRowOpen(row);
+          if (row) openRow(row);
         }
       : undefined,
     onBeginEdit: beginEditActiveCell,
@@ -1534,7 +1574,7 @@ export function DataTable<TRow>({
                     rowSelection.toggle(rowId, mode);
                     focusGrid();
                   }}
-                  onRowExpand={onRowOpen}
+                  onRowExpand={openRow}
                   onCommitAndMove={handleCommitAndMove}
                   fillSource={fill.source}
                   fillTargetPreview={fill.targetPreview}
@@ -1573,14 +1613,11 @@ export function DataTable<TRow>({
           onDuplicate={() => {
             if (rowMenu) void duplicateRowById(rowMenu.rowId);
           }}
-          onOpen={
-            onRowOpen && rowMenu
-              ? () => {
-                  const row = visibleDataRows.find((r) => getRowId(r) === rowMenu.rowId);
-                  if (row) onRowOpen(row);
-                }
-              : undefined
-          }
+          onOpen={() => {
+            if (!rowMenu) return;
+            const row = visibleDataRows.find((r) => getRowId(r) === rowMenu.rowId);
+            if (row) openRow(row);
+          }}
           onDelete={() => {
             if (rowMenu) void deleteRowById(rowMenu.rowId);
           }}
@@ -1588,6 +1625,18 @@ export function DataTable<TRow>({
             void deleteSelectedRows();
           }}
         />
+        {recordDetailRow ? (
+          <RecordDetailModal
+            row={recordDetailRow}
+            rowId={getRowId(recordDetailRow)}
+            columns={visibleColumnDefs}
+            fieldDefByKey={fieldDefByKey}
+            readOnly={readOnly || !onWrite}
+            unitSystem={unitSystem}
+            onCommit={commitRecordDetail}
+            onClose={() => setRecordDetailRowId(null)}
+          />
+        ) : null}
         <GroupHeaderContextMenu
           open={groupHeaderMenu}
           onClose={closeGroupHeaderMenu}

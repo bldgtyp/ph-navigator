@@ -41,7 +41,9 @@ export type RowContextMenuProps = {
   onClose: () => void;
   onInsertBelow: () => void;
   onDuplicate: () => void;
-  onOpen?: () => void;
+  // REQUIRED — the "Expand record" item is a guaranteed affordance, never
+  // gated on per-table wiring. DataTable always provides a handler.
+  onOpen: () => void;
   onDelete: () => void;
   onDeleteSelection: () => void;
 };
@@ -60,7 +62,7 @@ function buildBuiltInItems(args: {
   selectionCount: number;
   onInsertBelow: () => void;
   onDuplicate: () => void;
-  onOpen?: () => void;
+  onOpen: () => void;
   onDelete: () => void;
   onDeleteSelection: () => void;
 }): MenuItem[] {
@@ -90,14 +92,12 @@ function buildBuiltInItems(args: {
       onSelect: args.onDuplicate,
     },
   ];
-  if (args.onOpen) {
-    items.push({
-      key: "expand",
-      label: "Expand record",
-      icon: <Maximize2 size={14} aria-hidden="true" />,
-      onSelect: args.onOpen,
-    });
-  }
+  items.push({
+    key: "expand",
+    label: "Expand record",
+    icon: <Maximize2 size={14} aria-hidden="true" />,
+    onSelect: args.onOpen,
+  });
   items.push({
     key: "delete",
     label: "Delete record",
