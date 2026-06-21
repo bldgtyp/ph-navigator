@@ -61,6 +61,28 @@ def _list(client: TestClient, project_id: str) -> list[dict[str, object]]:
     return cast(list[dict[str, object]], response.json()["items"])
 
 
+def _set_location(
+    client: TestClient,
+    project_id: str,
+    *,
+    latitude: float,
+    longitude: float,
+    elevation_m: float | None = None,
+    state: str | None = None,
+) -> None:
+    body: dict[str, object] = {"latitude": latitude, "longitude": longitude}
+    if elevation_m is not None:
+        body["elevation_m"] = elevation_m
+    if state is not None:
+        body["state"] = state
+    response = client.put(
+        f"/api/v1/projects/{project_id}/location",
+        headers={"Origin": ORIGIN},
+        json=body,
+    )
+    assert response.status_code == 200, response.text
+
+
 def _first_phius_location_id(client: TestClient) -> str:
     datasets = client.get("/api/v1/climate/datasets").json()["items"]
     dataset_id = datasets[0]["id"]
@@ -100,6 +122,8 @@ def test_phius_source_validates_ref_and_provider(clean_mcp_tables: None, clean_c
     _seed_two_locations()
     client = signed_in_client()
     project_id = cast(str, create_project(client)["id"])
+    # A manual PH attach recomputes proximity server-side, so it needs a site.
+    _set_location(client, project_id, latitude=40.0, longitude=-75.0)
     location_id = _first_phius_location_id(client)
 
     created = _create(client, project_id, {"kind": "phius", "ref": location_id, "label": "Worcester"})

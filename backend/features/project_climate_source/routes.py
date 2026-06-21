@@ -9,10 +9,12 @@ from __future__ import annotations
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, Query, Request, Response
 from starlette import status
 
+from features.climate.proximity import PhDatasetProvider
 from features.project_climate_source.models import (
+    ClimateDatasetRosterResponse,
     CreateProjectClimateSourceRequest,
     ProjectClimateSourceListResponse,
     ProjectClimateSourcePublic,
@@ -22,6 +24,7 @@ from features.project_climate_source.models import (
 from features.project_climate_source.service import (
     create_project_climate_source,
     delete_project_climate_source,
+    get_project_dataset_roster,
     list_project_climate_sources,
     refresh_ashrae_design_conditions,
     set_default_climate_source,
@@ -43,6 +46,25 @@ ProjectEditAccess = Annotated[ProjectAccess, Depends(require_project_edit_access
 @router.get("/{project_id}/climate/sources", response_model=ProjectClimateSourceListResponse)
 def get_sources(project_id: UUID, _access: ProjectViewAccess) -> ProjectClimateSourceListResponse:
     return list_project_climate_sources(project_id)
+
+
+@router.get(
+    "/{project_id}/climate/datasets/{kind}/locations",
+    response_model=ClimateDatasetRosterResponse,
+)
+def get_dataset_roster(
+    project_id: UUID,
+    kind: PhDatasetProvider,
+    access: ProjectEditAccess,
+    region: Annotated[str | None, Query(description="State filter; defaults to the project's state")] = None,
+    near: Annotated[bool, Query(description="Order by nearest across all states (any-state mode)")] = False,
+    limit: Annotated[int, Query(ge=1, le=500)] = 100,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> ClimateDatasetRosterResponse:
+    """Authoritative picker feed: a PH dataset's stations for this project,
+    each with backend-computed proximity, sorted nearest-first. Editor-only."""
+    require_editor_user(access)
+    return get_project_dataset_roster(project_id, kind, region=region, near=near, limit=limit, offset=offset)
 
 
 @router.post(

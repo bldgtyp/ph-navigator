@@ -1,7 +1,8 @@
 ---
 DATE: 2026-06-21
 TIME: -
-STATUS: Draft — planned, not started.
+STATUS: DONE — implemented & tested 2026-06-21 (roster endpoint + server-
+  authoritative attach; focused pytest + full backend suite green).
 AUTHOR: Ed (via Claude)
 SCOPE: P1 — backend feed for the picker: a project-scoped dataset-roster
   endpoint returning each station with its proximity to the project, plus
@@ -88,3 +89,30 @@ station. P1 exposes it per-station for a state roster.
 The endpoint feeds the modal with authoritative, sorted, per-station proximity;
 manual attach stores a server-computed payload; proximity logic is shared with
 auto-attach (no second implementation); focused pytest + `make ci` green.
+
+## Outcome (2026-06-21)
+
+Shipped:
+
+- `GET /api/v1/projects/{project_id}/climate/datasets/{kind}/locations`
+  (`project_climate_source` router, **editor-only**) → `ClimateDatasetRosterResponse`
+  (`dataset | null`, `project`, `items` nearest-first, `total`). `region`
+  defaults to the project's state; `near=true` is the any-state nearest mode;
+  unseeded kind → `dataset:null`; no project location → 409
+  `project_location_required`.
+- **Server-authoritative attach:** `create_project_climate_source` recomputes
+  the proximity payload for `phius`/`phi` from the project site + referenced
+  station (`auto_attached:false`), discarding any client `data`. Requires a
+  project location.
+- **Shared proximity seam** (`features/climate/proximity.py`):
+  `ClimateProximityVerdict` (slim math result) + `evaluate_proximity` +
+  `build_location_roster`; `build_proximity_payload` now composes the verdict
+  with dataset/location identity and takes `auto_attached`. Auto-attach
+  (`project_location.service`) and the roster endpoint both consume
+  `build_location_roster` (auto-attach = roster of DB-nearest candidates, take
+  first); `latest_dataset_for_provider` moved to
+  `climate.repository.get_latest_dataset_for_provider`.
+- Tests: `backend/tests/test_climate_dataset_roster.py` (roster proximity +
+  gate boundary + region/explicit/near modes + unseeded + no-location guard +
+  manual-attach recompute); existing source/location/proximity suites updated
+  and green.

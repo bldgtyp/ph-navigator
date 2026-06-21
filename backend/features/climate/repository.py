@@ -47,6 +47,14 @@ def get_dataset_by_provider_version(conn: Connection[Any], provider: str, versio
     ).fetchone()
 
 
+def get_latest_dataset_for_provider(conn: Connection[Any], provider: str) -> dict[str, Any] | None:
+    """Return the most recently seeded dataset for a provider (the pinned release)."""
+    return conn.execute(
+        f"{_DATASET_SELECT} WHERE d.provider = %(provider)s ORDER BY d.created_at DESC, d.version DESC LIMIT 1",
+        {"provider": provider},
+    ).fetchone()
+
+
 def insert_dataset(
     conn: Connection[Any],
     *,

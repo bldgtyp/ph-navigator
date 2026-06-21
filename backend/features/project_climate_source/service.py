@@ -22,14 +22,21 @@ from features.assets import repository as asset_repository
 from features.auth import repository as auth_repository
 from features.auth.models import UserPublic
 from features.auth.service import client_ip, user_agent
+from features.climate import repository as climate_repository
 from features.climate.ashrae_meteo import fetch_nearest_ashrae_station_conditions
+from features.climate.models import ClimateLocationSummary
+from features.climate.proximity import PhDatasetProvider, build_location_roster, build_proximity_payload
 from features.climate.record import ClimateRecord
 from features.project_climate_source import repository
 from features.project_climate_source.models import (
+    ClimateDatasetRef,
+    ClimateDatasetRosterItem,
+    ClimateDatasetRosterResponse,
     CreateProjectClimateSourceRequest,
     ProjectClimateSourceListResponse,
     ProjectClimateSourcePublic,
     RefreshAshraeDesignConditionsRequest,
+    RosterProjectLocation,
     UpdateProjectClimateSourceRequest,
     validate_source_shape,
 )
@@ -43,6 +50,70 @@ def list_project_climate_sources(project_id: UUID) -> ProjectClimateSourceListRe
     return ProjectClimateSourceListResponse(items=[ProjectClimateSourcePublic.model_validate(row) for row in rows])
 
 
+def get_project_dataset_roster(
+    project_id: UUID,
+    kind: PhDatasetProvider,
+    *,
+    region: str | None,
+    near: bool,
+    limit: int,
+    offset: int,
+) -> ClimateDatasetRosterResponse:
+    """The picker feed: a PH dataset's stations for a project, proximity-ranked.
+
+    Resolves the project site (raising the no-location guard when unset), the
+    pinned dataset for ``kind`` (null when unseeded), and the candidate
+    stations — by ``region`` (defaulting to the project's state) or, when
+    ``near`` is set, the nearest across all states (O-DP-3). Each station is
+    paired with its backend-computed proximity verdict, nearest-first (D-DP-2).
+    """
+    with connection() as conn:
+        site = _load_project_site(conn, project_id)
+
+        dataset = climate_repository.get_latest_dataset_for_provider(conn, kind)
+        if dataset is None:
+            return ClimateDatasetRosterResponse(dataset=None, project=site, items=[], total=0)
+
+        if near:
+            rows = climate_repository.nearest_locations(
+                conn, dataset["id"], latitude=site.latitude, longitude=site.longitude, limit=limit
+            )
+            total = len(rows)
+        else:
+            effective_region = region if region is not None else site.state
+            rows = climate_repository.search_locations(
+                conn, dataset["id"], country=None, region=effective_region, limit=limit, offset=offset
+            )
+            total = climate_repository.count_locations(conn, dataset["id"], country=None, region=effective_region)
+
+    roster = build_location_roster(
+        provider=kind,
+        locations=[ClimateLocationSummary.model_validate(row) for row in rows],
+        site_latitude=site.latitude,
+        site_longitude=site.longitude,
+        site_elevation_m=site.elevation_m,
+    )
+    items = [
+        ClimateDatasetRosterItem(
+            id=location.id,
+            name=location.name,
+            station_id=location.station_id,
+            latitude=location.latitude,
+            longitude=location.longitude,
+            elevation_m=location.elevation_m,
+            climate_zone=location.climate_zone,
+            proximity=verdict,
+        )
+        for location, verdict in roster
+    ]
+    return ClimateDatasetRosterResponse(
+        dataset=ClimateDatasetRef.model_validate(dataset),
+        project=site,
+        items=items,
+        total=total,
+    )
+
+
 def create_project_climate_source(
     project_id: UUID,
     payload: CreateProjectClimateSourceRequest,
@@ -51,6 +122,11 @@ def create_project_climate_source(
 ) -> ProjectClimateSourcePublic:
     with transaction() as conn:
         _validate_source(conn, project_id, payload.kind, payload.ref, payload.data)
+        # PH dataset sources never trust client `data`: proximity is recomputed
+        # server-side against the project site so the stored gate stays honest (D-DP-3).
+        data = payload.data
+        if payload.kind in ("phius", "phi"):
+            data = _certification_source_data(conn, project_id, payload.kind, payload.ref)
         if payload.is_default:
             repository.clear_default(conn, project_id)
         row = repository.insert_source(
@@ -61,7 +137,7 @@ def create_project_climate_source(
             ref=payload.ref,
             label=payload.label,
             is_default=payload.is_default,
-            data=payload.data,
+            data=data,
         )
         _audit(
             conn,
@@ -246,6 +322,69 @@ def _validate_source(
         _validate_custom_record(data)
     # ashrae: `ref` is a free-text station id, `data` an optional pointer —
     # nothing to verify against live data.
+
+
+def _certification_source_data(
+    conn: Connection[Any],
+    project_id: UUID,
+    kind: PhDatasetProvider,
+    ref: str | None,
+) -> dict[str, Any]:
+    """Recompute the server-authoritative proximity payload for a PH dataset pick.
+
+    The stored ``data`` for a phius/phi source is always computed here from the
+    project site and the referenced station — never trusted from the client
+    (D-DP-3). The referent's existence/provider were already checked by
+    :func:`_validate_source`; this additionally requires a project location.
+    """
+    location_row = climate_repository.get_location(conn, _parse_ref_uuid(ref))
+    if location_row is None:
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "climate_source_ref_not_found",
+            "Referenced climate location was not found.",
+        )
+    location = ClimateLocationSummary.model_validate(location_row)
+    dataset = climate_repository.get_dataset(conn, location.dataset_id)
+    if dataset is None:
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "climate_source_ref_not_found",
+            "Referenced climate dataset was not found.",
+        )
+    site = _load_project_site(conn, project_id)
+    payload = build_proximity_payload(
+        provider=kind,
+        dataset=dataset,
+        location=location,
+        site_latitude=site.latitude,
+        site_longitude=site.longitude,
+        site_elevation_m=site.elevation_m,
+        auto_attached=False,
+    )
+    return payload.model_dump(mode="json")
+
+
+def _load_project_site(conn: Connection[Any], project_id: UUID) -> RosterProjectLocation:
+    """Load the project's site coordinates, raising the no-location guard when unset.
+
+    Proximity is undefined without a site, so both the picker roster and a manual
+    PH dataset attach require one. Returns the same shape the roster reports as its
+    distance origin (``project``).
+    """
+    site = location_repository.get_location(conn, project_id)
+    if site is None or site["latitude"] is None or site["longitude"] is None:
+        raise api_error(
+            status.HTTP_409_CONFLICT,
+            "project_location_required",
+            "Set the project location before browsing or attaching a climate dataset.",
+        )
+    return RosterProjectLocation(
+        latitude=float(site["latitude"]),
+        longitude=float(site["longitude"]),
+        elevation_m=float(site["elevation_m"]) if site["elevation_m"] is not None else None,
+        state=site["state"],
+    )
 
 
 def _parse_ref_uuid(ref: str | None) -> UUID:
