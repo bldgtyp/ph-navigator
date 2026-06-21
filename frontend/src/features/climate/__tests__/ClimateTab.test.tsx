@@ -110,7 +110,33 @@ describe("ClimateTab", () => {
 
     await user.click(screen.getByRole("button", { name: /Pittsfield ASHRAE/ }));
     expect(await screen.findByText("Htg 99.6% DB")).toBeVisible();
-    expect(screen.getByText("-18.8 °C")).toBeVisible();
+    expect(screen.getByText("-18.8 deg C")).toBeVisible();
     expect(screen.getByText("ASHRAE Meteo 2025 / PITTSFIELD MUNI AP")).toBeVisible();
+  });
+
+  test("renders the location facts, source status chips, and reveals the editor", async () => {
+    vi.stubGlobal("fetch", fetchMock);
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === LOCATION_URL) return jsonResponse(SET_LOCATION);
+      if (url === SOURCES_URL) return jsonResponse({ items: [EPW_SOURCE, ASHRAE_SOURCE] });
+      if (url === SUN_PATH_URL) return jsonResponse(null);
+      return jsonResponse({}, 404);
+    });
+    const user = userEvent.setup();
+
+    renderTab();
+
+    // Derived facts render read-first (county/state + climate zone). The zone
+    // shows both in the sidebar location pill and the facts grid.
+    expect(await screen.findByText("Berkshire · MA")).toBeVisible();
+    expect(screen.getAllByText("5A").length).toBeGreaterThanOrEqual(1);
+    // Both attached sources read as OK in the sidebar.
+    expect(screen.getAllByText("OK").length).toBeGreaterThanOrEqual(2);
+    // The full editor form is hidden until "Edit" is pressed.
+    expect(screen.queryByLabelText("Latitude")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: /Edit/ }));
+    expect(await screen.findByLabelText("Latitude")).toBeVisible();
   });
 });

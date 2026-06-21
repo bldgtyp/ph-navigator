@@ -1,3 +1,6 @@
+import type { UnitSystem } from "../../lib/units";
+import { formatTemperatureFromC } from "../../lib/units/temperature";
+import { elevationUnitLabel, formatLocationElevationDisplay } from "../projects/location-form";
 import type { ClimateRecord, ClimateSourceKind, ProjectClimateSource } from "./types";
 import type { ClimateLocationSummary } from "./types";
 
@@ -33,6 +36,16 @@ export function locationSubtitle(location: ClimateLocationSummary): string {
 export function formatLatLong(latitude: number | null, longitude: number | null): string {
   if (latitude === null || longitude === null) return "—";
   return `${latitude.toFixed(3)}, ${longitude.toFixed(3)}`;
+}
+
+// Elevation formatted for the app unit system with its unit label, or null
+// when unset. Shared by the sidebar location card and the location page.
+export function formatLocationElevationLabel(
+  elevationM: number | null | undefined,
+  unitSystem: UnitSystem,
+): string | null {
+  if (elevationM == null) return null;
+  return `${formatLocationElevationDisplay(elevationM, unitSystem)} ${elevationUnitLabel(unitSystem)}`;
 }
 
 // Round a SI radiation / energy value for display (kWh/m² monthly, W/m²
@@ -83,6 +96,84 @@ export function climateSourceProximityStatus(
   const status = stringValue(source.data?.status);
   if (status === "pass" || status === "warning" || status === "fail") return status;
   return null;
+}
+
+export type ClimateStatusTone = "pass" | "warning" | "fail";
+
+// The sidebar/header status chip for a source: a proximity verdict when one
+// is recorded (Phius/PHI), otherwise an attached source reads as OK.
+export function climateSourceStatusChip(source: ProjectClimateSource): {
+  tone: ClimateStatusTone;
+  label: string;
+} {
+  const status = climateSourceProximityStatus(source);
+  if (status === "fail") return { tone: "fail", label: "Fail" };
+  if (status === "warning") return { tone: "warning", label: "Check" };
+  return { tone: "pass", label: "OK" };
+}
+
+// The inline call-to-action cue shown on a flagged source's nav card. Returns
+// the cue text + its tone, or null when the source needs no action.
+export function climateSourceCta(
+  source: ProjectClimateSource,
+): { label: string; tone: ClimateStatusTone } | null {
+  const status = climateSourceProximityStatus(source);
+  if (status === "fail") {
+    return { label: source.kind === "phius" ? "custom req'd" : "review", tone: "fail" };
+  }
+  if (status === "warning") return { label: "confirm", tone: "warning" };
+  return null;
+}
+
+// A dataset edition/version suffix for the type badge ("2022", "10.6") when
+// the source carries one; never fabricated.
+export function climateSourceBadgeVersion(source: ProjectClimateSource): string | null {
+  return (
+    stringValue(source.data?.version) ??
+    stringValue(source.data?.edition) ??
+    stringValue(source.data?.dataset_version)
+  );
+}
+
+// The two compact attribute chips on a source's nav card. Proximity (mi/ft)
+// for Phius/PHI; localized design temps for ASHRAE; degree-days for EPW.
+export function climateSourceNavAttrs(
+  source: ProjectClimateSource,
+  unitSystem: UnitSystem,
+): string[] {
+  const data = source.data;
+  if (!data) return [];
+  if (source.kind === "phius" || source.kind === "phi") {
+    const distanceMi = numberValue(data.distance_mi);
+    const elevationDeltaFt = numberValue(data.elevation_delta_ft);
+    const attrs: string[] = [];
+    if (distanceMi !== null) attrs.push(`${distanceMi.toFixed(0)} mi`);
+    if (elevationDeltaFt !== null) attrs.push(`Δ ${formatSignedFt(elevationDeltaFt)}`);
+    return attrs;
+  }
+  if (source.kind === "ashrae") {
+    const design = recordValue(data.design_conditions);
+    const heating = numberValue(design?.heating_996_db_c);
+    const cooling = numberValue(design?.cooling_010_db_c);
+    const attrs: string[] = [];
+    if (heating !== null) attrs.push(`Htg ${formatTemperatureFromC(heating, { unitSystem })}`);
+    if (cooling !== null) attrs.push(`Clg ${formatTemperatureFromC(cooling, { unitSystem })}`);
+    return attrs;
+  }
+  if (source.kind === "epw") {
+    const stat = recordValue(data.stat_metrics);
+    const hdd65 = numberValue(stat?.hdd65_f_days);
+    const cdd50 = numberValue(stat?.cdd50_f_days);
+    const attrs: string[] = [];
+    if (hdd65 !== null) attrs.push(`HDD65 ${hdd65.toFixed(0)}`);
+    if (cdd50 !== null) attrs.push(`CDD50 ${cdd50.toFixed(0)}`);
+    return attrs;
+  }
+  return [];
+}
+
+function formatSignedFt(valueFt: number): string {
+  return `${valueFt > 0 ? "+" : ""}${valueFt.toFixed(0)} ft`;
 }
 
 export function climateSourceCachedMetrics(source: ProjectClimateSource): string | null {

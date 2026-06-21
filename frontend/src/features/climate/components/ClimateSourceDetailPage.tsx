@@ -1,19 +1,24 @@
+import { Trash2 } from "lucide-react";
 import type { UnitSystem } from "../../../lib/units";
+import { formatTemperatureFromC } from "../../../lib/units/temperature";
 import { assetDownloadPath } from "../../assets/api";
 import type { ProjectDetail } from "../../projects/types";
-import { useClimateLocationQuery } from "../hooks";
 import {
-  climateSourceCachedMetrics,
-  climateSourceKindLabel,
+  useClimateLocationQuery,
+  useDeleteClimateSourceMutation,
+  useSetClimateSourceDefaultMutation,
+} from "../hooks";
+import {
   climateSourceProximity,
   climateSourceProximityStatus,
+  climateSourceStatusChip,
   climateSourceSubtitle,
   formatSi,
   isClimateRecord,
 } from "../lib";
-import type { ProjectClimateSource } from "../types";
-import { ClimateRecordCharts } from "./ClimateRecordCharts";
-import { ClimateRecordTable } from "./ClimateRecordTable";
+import type { ClimatePeakLoad, ProjectClimateSource } from "../types";
+import { ClimateStatusChip, ClimateTypeBadge } from "./ClimateAtoms";
+import { ClimateRecordView } from "./ClimateRecordView";
 
 export function ClimateSourceDetailPage({
   project,
@@ -25,110 +30,244 @@ export function ClimateSourceDetailPage({
   unitSystem: UnitSystem;
 }) {
   if (source.kind === "phius" && climateSourceProximityStatus(source) === "fail") {
-    return <FailPage source={source} />;
+    return <FailPage project={project} source={source} />;
   }
   if (source.kind === "phius" || source.kind === "phi") {
-    return <PassiveHouseSourcePage source={source} unitSystem={unitSystem} />;
+    return <PassiveHouseSourcePage project={project} source={source} unitSystem={unitSystem} />;
   }
   if (source.kind === "ashrae") {
-    return <AshraeSourcePage source={source} />;
+    return <AshraeSourcePage project={project} source={source} unitSystem={unitSystem} />;
   }
   if (source.kind === "epw") {
-    return <EpwSourcePage projectId={project.id} source={source} />;
+    return <EpwSourcePage project={project} source={source} unitSystem={unitSystem} />;
   }
-  return <CustomSourcePage source={source} unitSystem={unitSystem} />;
+  return <CustomSourcePage project={project} source={source} unitSystem={unitSystem} />;
 }
 
-function SourceHeader({ source }: { source: ProjectClimateSource }) {
-  const proximity = climateSourceProximity(source);
-  const metrics = climateSourceCachedMetrics(source);
+// The shared page header (badge + status chip + title + metadata sub-row) and
+// the editor's default/remove actions, used by every source page.
+function SourceHeader({
+  project,
+  source,
+  title,
+  subItems,
+}: {
+  project: ProjectDetail;
+  source: ProjectClimateSource;
+  title?: string;
+  subItems?: (string | null)[];
+}) {
+  const canEdit = project.access_mode === "editor";
+  const status = climateSourceStatusChip(source);
+  const setDefault = useSetClimateSourceDefaultMutation(project.id);
+  const remove = useDeleteClimateSourceMutation(project.id);
+  const busy = setDefault.isPending || remove.isPending;
+  const items = (subItems ?? [climateSourceProximity(source)]).filter((item): item is string =>
+    Boolean(item),
+  );
   return (
-    <header className="climate-detail-header">
-      <span className="climate-source-kind">{climateSourceKindLabel(source.kind)}</span>
-      <h3>{climateSourceSubtitle(source)}</h3>
-      {source.is_default ? (
-        <span className="climate-status-chip climate-status-pass">Default</span>
+    <header className="climate-page-head">
+      <div>
+        <div className="climate-page-badges">
+          <ClimateTypeBadge source={source} />
+          <ClimateStatusChip tone={status.tone} label={status.label} />
+          {source.is_default ? (
+            <span className="chip chip--sm climate-status-chip climate-status-pass">★ Default</span>
+          ) : null}
+        </div>
+        <h3 className="climate-page-title">{title ?? climateSourceSubtitle(source)}</h3>
+        {items.length > 0 ? (
+          <div className="climate-page-sub">
+            {items.map((item) => (
+              <span key={item}>{item}</span>
+            ))}
+          </div>
+        ) : null}
+      </div>
+      {canEdit ? (
+        <div className="climate-page-head-actions">
+          {!source.is_default ? (
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => setDefault.mutate(source.id)}
+              disabled={busy}
+            >
+              ★ Set default
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => remove.mutate(source.id)}
+            disabled={busy}
+          >
+            <Trash2 size={16} aria-hidden="true" />
+            Remove
+          </button>
+        </div>
       ) : null}
-      {proximity ? <p>{proximity}</p> : null}
-      {metrics ? <p>{metrics}</p> : null}
     </header>
   );
 }
 
 function PassiveHouseSourcePage({
+  project,
   source,
   unitSystem,
 }: {
+  project: ProjectDetail;
   source: ProjectClimateSource;
   unitSystem: UnitSystem;
 }) {
   const datasetId = stringValue(source.data?.dataset_id);
   const locationId = source.ref ?? stringValue(source.data?.location_id) ?? undefined;
   const query = useClimateLocationQuery(datasetId ?? undefined, locationId);
+  const record = query.data?.record;
   return (
     <div className="climate-detail-page">
-      <SourceHeader source={source} />
+      <SourceHeader project={project} source={source} />
       {query.isLoading ? <p className="form-note">Loading climate record…</p> : null}
       {query.error ? <p className="form-error">Could not load climate record.</p> : null}
-      {query.data ? (
+      {record ? (
         <>
-          <ClimateRecordCharts record={query.data.record} unitSystem={unitSystem} />
-          <ClimateRecordTable record={query.data.record} unitSystem={unitSystem} />
+          <PeakLoads loads={record.climate.peak_loads} unitSystem={unitSystem} />
+          <ClimateRecordView record={record} unitSystem={unitSystem} />
         </>
       ) : null}
     </div>
   );
 }
 
-function AshraeSourcePage({ source }: { source: ProjectClimateSource }) {
+function PeakLoads({
+  loads,
+  unitSystem,
+}: {
+  loads: {
+    heat_load_1: ClimatePeakLoad;
+    heat_load_2: ClimatePeakLoad;
+    cooling_load_1: ClimatePeakLoad;
+    cooling_load_2: ClimatePeakLoad;
+  };
+  unitSystem: UnitSystem;
+}) {
+  return (
+    <section>
+      <p className="climate-subhead">Peak loads · design temperatures</p>
+      <div className="climate-metric-grid">
+        <Metric label="Heating 1" value={tempText(loads.heat_load_1.temp_c, unitSystem)} />
+        <Metric label="Heating 2" value={tempText(loads.heat_load_2.temp_c, unitSystem)} />
+        <Metric label="Cooling 1" value={tempText(loads.cooling_load_1.temp_c, unitSystem)} />
+        <Metric label="Cooling 2" value={tempText(loads.cooling_load_2.temp_c, unitSystem)} />
+      </div>
+    </section>
+  );
+}
+
+function AshraeSourcePage({
+  project,
+  source,
+  unitSystem,
+}: {
+  project: ProjectDetail;
+  source: ProjectClimateSource;
+  unitSystem: UnitSystem;
+}) {
   const design = recordValue(source.data?.design_conditions);
   const url = stringValue(source.data?.url) ?? stringValue(source.data?.source_url);
   return (
     <div className="climate-detail-page">
-      <SourceHeader source={source} />
+      <SourceHeader project={project} source={source} subItems={[stringValue(design?.basis)]} />
+      <p className="climate-subhead">Design conditions</p>
       <div className="climate-metric-grid">
-        <Metric label="Htg 99.6% DB" value={tempValue(design?.heating_996_db_c)} />
-        <Metric label="Htg 99% DB" value={tempValue(design?.heating_990_db_c)} />
-        <Metric label="Clg 1% DB" value={tempValue(design?.cooling_010_db_c)} />
-        <Metric label="Clg 1% MCWB" value={tempValue(design?.cooling_010_mcwb_c)} />
-        <Metric label="Dehum 1% DP" value={tempValue(design?.dehumidification_010_dp_c)} />
-        <Metric label="Dehum 1% MCDB" value={tempValue(design?.dehumidification_010_mcdb_c)} />
+        <Metric label="Htg 99.6% DB" value={tempText(design?.heating_996_db_c, unitSystem)} />
+        <Metric label="Htg 99% DB" value={tempText(design?.heating_990_db_c, unitSystem)} />
+        <Metric label="Clg 1% DB" value={tempText(design?.cooling_010_db_c, unitSystem)} />
+        <Metric label="Clg 1% MCWB" value={tempText(design?.cooling_010_mcwb_c, unitSystem)} />
+        <Metric
+          label="Dehum 1% DP"
+          value={tempText(design?.dehumidification_010_dp_c, unitSystem)}
+        />
+        <Metric
+          label="Dehum 1% MCDB"
+          value={tempText(design?.dehumidification_010_mcdb_c, unitSystem)}
+        />
       </div>
-      <p className="climate-section-note">{stringValue(design?.basis) ?? "Basis not recorded"}</p>
-      {url ? <a href={url}>Open ASHRAE source</a> : null}
+      {url ? (
+        <div className="climate-link-row">
+          <a className="secondary-button" href={url}>
+            Open ASHRAE source
+          </a>
+        </div>
+      ) : null}
     </div>
   );
 }
 
-function EpwSourcePage({ projectId, source }: { projectId: string; source: ProjectClimateSource }) {
+function EpwSourcePage({
+  project,
+  source,
+  unitSystem,
+}: {
+  project: ProjectDetail;
+  source: ProjectClimateSource;
+  unitSystem: UnitSystem;
+}) {
   const metrics = recordValue(source.data?.stat_metrics);
   const sourceUrl = stringValue(source.data?.source_url);
   return (
     <div className="climate-detail-page">
-      <SourceHeader source={source} />
+      <SourceHeader project={project} source={source} />
+      <p className="climate-subhead">Derived metrics</p>
       <div className="climate-metric-grid">
         <Metric label="HDD65" value={numberText(metrics?.hdd65_f_days, 0)} />
         <Metric label="CDD50" value={numberText(metrics?.cdd50_f_days, 0)} />
-        <Metric label="Record low" value={tempValue(metrics?.record_low_c)} />
-        <Metric label="Record high" value={tempValue(metrics?.record_high_c)} />
+        <Metric label="Record low" value={tempText(metrics?.record_low_c, unitSystem)} />
+        <Metric label="Record high" value={tempText(metrics?.record_high_c, unitSystem)} />
       </div>
       <div className="climate-link-row">
-        {sourceUrl ? <a href={sourceUrl}>Open OneBuilding source</a> : null}
+        {sourceUrl ? (
+          <a className="secondary-button" href={sourceUrl}>
+            Open OneBuilding source
+          </a>
+        ) : null}
         {source.ref ? (
-          <a href={assetDownloadPath(projectId, source.ref)}>Download stored EPW</a>
+          <a className="secondary-button" href={assetDownloadPath(project.id, source.ref)}>
+            Download stored EPW
+          </a>
         ) : null}
       </div>
     </div>
   );
 }
 
-function FailPage({ source }: { source: ProjectClimateSource }) {
+function FailPage({ project, source }: { project: ProjectDetail; source: ProjectClimateSource }) {
   const candidates = candidateRows(source.data?.nearest_candidates);
   return (
-    <div className="climate-detail-page climate-fail-page">
-      <SourceHeader source={source} />
-      <h3>Certification blocker</h3>
-      <p>{stringValue(source.data?.message) ?? "Custom climate set required."}</p>
+    <div className="climate-detail-page">
+      <SourceHeader
+        project={project}
+        source={source}
+        title="No qualifying Phius dataset"
+        subItems={["rule: ≤ 50 mi AND ≤ 400 ft", climateSourceProximity(source)]}
+      />
+      <div className="climate-fail-hero">
+        <ClimateStatusChip tone="fail" label="Certification blocker" />
+        <h4>A custom Phius climate set is required.</h4>
+        <p>
+          {stringValue(source.data?.message) ??
+            "The nearest Phius station is outside the 50 mi / 400 ft limit. Phius does not " +
+              "interpolate, so a custom climate data set must be requested, or the basis changed."}
+        </p>
+        <div className="climate-fail-actions">
+          <a className="primary-button" href="https://www.phius.org/climate-data">
+            Request custom set · $75
+          </a>
+          <a className="secondary-button" href="#climate-add-source">
+            Browse datasets to override
+          </a>
+        </div>
+      </div>
       {candidates.length > 0 ? (
         <table className="climate-table">
           <caption>Why — nearest candidates</caption>
@@ -136,8 +275,8 @@ function FailPage({ source }: { source: ProjectClimateSource }) {
             <tr>
               <th scope="col">Station</th>
               <th scope="col">Distance</th>
-              <th scope="col">Elev delta</th>
-              <th scope="col">Status</th>
+              <th scope="col">Δ elevation</th>
+              <th scope="col">Verdict</th>
             </tr>
           </thead>
           <tbody>
@@ -152,27 +291,29 @@ function FailPage({ source }: { source: ProjectClimateSource }) {
           </tbody>
         </table>
       ) : null}
-      <div className="climate-link-row">
-        <a href="https://www.phius.org/climate-data">Request custom set · $75</a>
-        <a href="#climate-add-source">Browse to override</a>
-      </div>
+      <p className="climate-section-note">
+        Prescriptive-path note: outside the limits, custom data is not allowed — performance path
+        only.
+      </p>
     </div>
   );
 }
 
 function CustomSourcePage({
+  project,
   source,
   unitSystem,
 }: {
+  project: ProjectDetail;
   source: ProjectClimateSource;
   unitSystem: UnitSystem;
 }) {
   const record = isClimateRecord(source.data) ? source.data : null;
   return (
     <div className="climate-detail-page">
-      <SourceHeader source={source} />
+      <SourceHeader project={project} source={source} />
       {record ? (
-        <ClimateRecordTable record={record} unitSystem={unitSystem} />
+        <ClimateRecordView record={record} unitSystem={unitSystem} />
       ) : (
         <p className="form-note">No custom climate record is stored.</p>
       )}
@@ -205,8 +346,10 @@ function numberText(value: unknown, fractionDigits = 1): string {
     : "—";
 }
 
-function tempValue(value: unknown): string {
-  return typeof value === "number" && Number.isFinite(value) ? `${value.toFixed(1)} °C` : "—";
+function tempText(value: unknown, unitSystem: UnitSystem): string {
+  return typeof value === "number" && Number.isFinite(value)
+    ? formatTemperatureFromC(value, { unitSystem })
+    : "—";
 }
 
 function candidateRows(value: unknown): {
