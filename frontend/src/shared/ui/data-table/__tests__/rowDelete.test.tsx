@@ -33,6 +33,7 @@ const buildEmptyRow: BuildEmptyRow<Row> = ({ rowId, fieldDefaults }) => ({
 function renderTable(onWrite: (op: unknown) => void | Promise<void>) {
   return render(
     <DataTable
+      tableName="Test"
       rows={rows}
       getRowId={(row) => row.id}
       fieldDefs={fieldDefs}

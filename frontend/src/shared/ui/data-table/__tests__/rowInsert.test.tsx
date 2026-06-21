@@ -41,6 +41,7 @@ function renderTable(overrides: {
   const { onWrite, readOnly = false, withBuildEmptyRow = true } = overrides;
   return render(
     <DataTable
+      tableName="Test"
       rows={rows}
       getRowId={(row) => row.id}
       fieldDefs={fieldDefs}

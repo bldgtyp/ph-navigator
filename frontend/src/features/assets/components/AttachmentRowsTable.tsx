@@ -118,6 +118,7 @@ export function AttachmentRowsTable({
 
   return (
     <DataTable
+      tableName={fieldLabel}
       rows={rows}
       getRowId={(row) => row.id}
       fieldDefs={fieldDefs}

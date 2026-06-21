@@ -155,6 +155,7 @@ export function ThermalBridgesTable({
 
   return (
     <DataTable
+      tableName="Thermal Bridges"
       rows={sortedRows}
       columnDefs={columns}
       fieldDefs={fieldDefs}

@@ -287,6 +287,7 @@ export function FrameTypesCatalogPage({ session }: { session: AuthSession }) {
           </p>
         ) : (
           <DataTable<FrameTypeRow>
+            tableName="Frame Types"
             rows={rows}
             getRowId={(row) => row.id}
             columnDefs={COLUMN_DEFS}

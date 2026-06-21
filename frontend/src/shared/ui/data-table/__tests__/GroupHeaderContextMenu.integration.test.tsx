@@ -26,6 +26,7 @@ const COLUMN_DEFS: DataTableColumnDef<Row>[] = [
 function renderGroupedTable(view: ViewState, onViewChange: (next: ViewState) => void) {
   render(
     <DataTable<Row>
+      tableName="Test"
       rows={ROWS}
       getRowId={(row) => row.id}
       fieldDefs={FIELD_DEFS}

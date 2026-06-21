@@ -436,6 +436,11 @@ export type DataTableProps<TRow> = {
   readOnly?: boolean;
   density?: "compact" | "comfortable";
   emptyMessage: string;
+  // Human-readable name of this table, used as the base of the CSV
+  // download filename (`${sanitizeFilename(tableName)}.csv`). REQUIRED so
+  // every table ships a meaningful filename — the "Download CSV" overflow
+  // affordance is a parent-owned, every-table iron-law (PRD §4.5).
+  tableName: string;
   // Optional OVERRIDE for the row-expand modal. Row-expand itself is NOT
   // optional: every table always renders a working gutter Expand button,
   // "Expand record" context-menu item, and keyboard open. When this is

@@ -34,6 +34,8 @@ import { resolveColumnWidth } from "./lib/columnWidths";
 import { buildSubsetCode } from "./tokens/data-table-tints";
 import { generatedId } from "../../lib/ids";
 import { stableEmptyArray } from "../../lib/stableEmpty";
+import { downloadBlob } from "../../lib/downloadBlob";
+import { CSV_MIME_TYPE, tableToCsv } from "./lib/export/csv";
 import { useGridHistory } from "./hooks/useGridHistory";
 import { useGridWriteReducer } from "./hooks/useGridWriteReducer";
 import { useGridSelection } from "./hooks/useGridSelection";
@@ -102,6 +104,7 @@ export function DataTable<TRow>({
   readOnly = false,
   density = "compact",
   emptyMessage,
+  tableName,
   onRowOpen,
   overflowMenuActions,
   bulkSelectionActions,
@@ -1276,6 +1279,22 @@ export function DataTable<TRow>({
     });
   }, [onResetView, onViewChange, view]);
 
+  // Download a CSV of exactly what is on screen (WYSIWYG): the
+  // filter+sort-resolved `filteredRows` × the ordered, hidden-excluded,
+  // identifier-pinned `visibleColumnDefs`, formatted in the active unit
+  // system. Pure serialization in `tableToCsv`; this only triggers the
+  // browser download. Works read-only and on an empty (header-only) table.
+  const handleDownloadCsv = useCallback(() => {
+    const { filename, content } = tableToCsv({
+      rows: filteredRows,
+      columns: visibleColumnDefs,
+      fieldDefByKey,
+      unitSystem,
+      tableName,
+    });
+    downloadBlob(new Blob([content], { type: CSV_MIME_TYPE }), filename);
+  }, [filteredRows, visibleColumnDefs, fieldDefByKey, unitSystem, tableName]);
+
   // Filter membership requires the rule to be contributing (dormant
   // rules don't tint, matching AirTable). Sort and group count as
   // soon as a rule exists.
@@ -1418,6 +1437,7 @@ export function DataTable<TRow>({
           onCollapseAllGroups={handleCollapseAllGroups}
           onExpandAllGroups={handleExpandAllGroups}
           onResetView={handleResetView}
+          onDownloadCsv={handleDownloadCsv}
           onHideFieldsChange={handleHideFieldsChange}
           overflowMenuActions={overflowMenuActions}
           actions={toolbarActions}

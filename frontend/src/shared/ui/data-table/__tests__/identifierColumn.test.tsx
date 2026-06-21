@@ -28,6 +28,7 @@ const pumpColumns: DataTableColumnDef<Pump>[] = [
 function renderPumps(view: ViewState = emptyViewState()) {
   return render(
     <DataTable<Pump>
+      tableName="Test"
       rows={pumpRows}
       getRowId={(row) => row.id}
       fieldDefs={pumpFieldDefs}
@@ -70,6 +71,7 @@ const roomColumns: DataTableColumnDef<Room>[] = [
 function renderRooms() {
   return render(
     <DataTable<Room>
+      tableName="Test"
       rows={roomRows}
       getRowId={(row) => row.id}
       fieldDefs={roomFieldDefs}
@@ -109,6 +111,7 @@ describe("DataTable identifier column", () => {
   test("no chip surfaces when no duplicates exist", () => {
     render(
       <DataTable<Pump>
+        tableName="Test"
         rows={[{ id: "pmp_1", record_id: "P-01", flow: 10 }]}
         getRowId={(row) => row.id}
         fieldDefs={pumpFieldDefs}

@@ -33,6 +33,7 @@ function renderTable(overrides: Partial<DataTableProps<Row>> = {}) {
   const [view, setView] = [emptyViewState(), vi.fn<(next: ViewState) => void>()];
   return render(
     <DataTable<Row>
+      tableName="Test"
       rows={ROWS}
       getRowId={(row) => row.id}
       fieldDefs={FIELD_DEFS}
@@ -280,6 +281,7 @@ describe("GridBody — fill handle (Phase 7)", () => {
     const onViewChange = vi.fn<(next: ViewState) => void>();
     render(
       <DataTable<Row>
+        tableName="Test"
         rows={ROWS}
         getRowId={(row) => row.id}
         fieldDefs={FIELD_DEFS}
@@ -338,6 +340,7 @@ describe("GridBody — single-select chevron (plan 05)", () => {
     const [view, setView] = [emptyViewState(), vi.fn<(next: ViewState) => void>()];
     render(
       <DataTable<SelectRow>
+        tableName="Test"
         rows={SELECT_ROWS}
         getRowId={(row) => row.id}
         fieldDefs={SELECT_FIELD_DEFS}
@@ -419,6 +422,7 @@ describe("GridBody — group accordion", () => {
     const onViewChange = vi.fn<(next: ViewState) => void>();
     render(
       <DataTable<Row>
+        tableName="Test"
         rows={ROWS}
         getRowId={(row) => row.id}
         fieldDefs={FIELD_DEFS}
@@ -445,6 +449,7 @@ describe("GridBody — group accordion", () => {
     const onViewChange = vi.fn<(next: ViewState) => void>();
     render(
       <DataTable<Row>
+        tableName="Test"
         rows={ROWS}
         getRowId={(row) => row.id}
         fieldDefs={FIELD_DEFS}
@@ -473,6 +478,7 @@ describe("GridBody — group accordion", () => {
     const onViewChange = vi.fn<(next: ViewState) => void>();
     render(
       <DataTable<Row>
+        tableName="Test"
         rows={ROWS}
         getRowId={(row) => row.id}
         fieldDefs={FIELD_DEFS}
@@ -538,6 +544,7 @@ describe("GridBody — linked_record dispatch", () => {
     };
     render(
       <DataTable<LinkedRow>
+        tableName="Test"
         rows={LINKED_ROWS}
         getRowId={(row) => row.id}
         fieldDefs={[{ field_key: "name", field_type: "text", display_name: "Name" }, LINKED_FIELD]}

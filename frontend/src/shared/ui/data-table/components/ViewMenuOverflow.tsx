@@ -15,10 +15,21 @@ export type ViewMenuOverflowProps = {
   // Disable Reset when there is nothing to clear (both stacks empty).
   // Keeps the menu honest and prevents a no-op onViewChange.
   canReset: boolean;
+  // Download a CSV of the current view. REQUIRED (not optional): this is a
+  // parent-owned, every-table affordance (the DataTable uniformity
+  // iron-law), so it can never be silently dropped per-table. Always
+  // enabled — download is a read action, valid read-only and on an empty
+  // (header-only) table. Pinned by scripts/check-data-table-contract.mjs.
+  onDownloadCsv: () => void;
   actions?: ReactNode;
 };
 
-export function ViewMenuOverflow({ onReset, canReset, actions }: ViewMenuOverflowProps) {
+export function ViewMenuOverflow({
+  onReset,
+  canReset,
+  onDownloadCsv,
+  actions,
+}: ViewMenuOverflowProps) {
   const [open, setOpen] = useState(false);
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
@@ -39,6 +50,16 @@ export function ViewMenuOverflow({ onReset, canReset, actions }: ViewMenuOverflo
           aria-label="View actions"
         >
           {actions}
+          <button
+            type="button"
+            className="data-table-overflow-menu-item"
+            onClick={() => {
+              onDownloadCsv();
+              setOpen(false);
+            }}
+          >
+            Download CSV
+          </button>
           <button
             type="button"
             className="data-table-overflow-menu-item"

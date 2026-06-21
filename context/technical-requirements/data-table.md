@@ -302,6 +302,28 @@ Implement the shared UX contract from `context/UI_UX.md` §1.7:
 Paste is disabled while grouped. Column overflow is dropped with a
 toast; row overflow prompts to append records when creation is allowed.
 
+### Download CSV (parent-owned overflow affordance)
+
+The `...` overflow menu always renders a built-in **Download CSV** item
+(in `ViewMenuOverflow`, alongside `Reset view`). Like row-expand, this is
+an iron-law affordance: it is parent-owned, never injected per-table via
+the consumer `actions`/`overflowMenuActions` slot, and is enforced by a
+required `onDownloadCsv` prop at every internal seam plus a structural
+guard (`scripts/check-data-table-contract.mjs`). Every consumer supplies
+a required `tableName` prop that becomes the download filename.
+
+It is always present and always enabled — including read-only/viewer mode
+(download is a read action) and an empty table (header-only CSV). The
+output is the current view (WYSIWYG): `filteredRows` × `visibleColumnDefs`
+(active sort, filter, hidden columns, column order; identifier pinned
+first; group headers excluded). Serialization (`lib/export/csv.ts`,
+`tableToCsv`) reuses the clipboard cell serializer — single-select →
+option label, number+units → active SI/IP value with the unit on the
+header — and adds a computed/formula branch (error cells → `""`). Format
+is RFC-4180 (comma-delimited, minimal double-quote quoting, `\r\n`
+records) as UTF-8 with a leading BOM so Excel renders `m²`, the Rooms
+em-dash, and accented names correctly.
+
 ## Write Pipeline
 
 All mutations collapse into one semantic `WriteOp` pipeline.

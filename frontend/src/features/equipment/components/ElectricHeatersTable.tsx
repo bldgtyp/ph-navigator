@@ -150,6 +150,7 @@ export function ElectricHeatersTable({
 
   return (
     <DataTable
+      tableName="Electric Heaters"
       rows={sortedRows}
       columnDefs={columns}
       fieldDefs={fieldDefs}

@@ -260,6 +260,7 @@ export function VentilatorsTable({
 
   return (
     <DataTable
+      tableName="Ventilators"
       rows={sortedRows}
       columnDefs={columns}
       fieldDefs={tableFieldDefs}

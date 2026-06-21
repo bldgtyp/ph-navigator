@@ -20,6 +20,7 @@ describe("DataTable bulkSelectionActions", () => {
     const renderer = vi.fn(() => null);
     render(
       <DataTable
+        tableName="Test"
         rows={rows}
         getRowId={(row) => row.id}
         fieldDefs={fieldDefs}
@@ -40,6 +41,7 @@ describe("DataTable bulkSelectionActions", () => {
     ));
     render(
       <DataTable
+        tableName="Test"
         rows={rows}
         getRowId={(row) => row.id}
         fieldDefs={fieldDefs}
@@ -64,6 +66,7 @@ describe("DataTable bulkSelectionActions", () => {
   test("renderer returning null hides the action while built-in Delete still shows", () => {
     render(
       <DataTable
+        tableName="Test"
         rows={rows}
         getRowId={(row) => row.id}
         fieldDefs={fieldDefs}

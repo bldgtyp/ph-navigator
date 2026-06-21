@@ -50,6 +50,7 @@ describe("DataTable → FieldConfigModal linkedRecordTargets forwarding", () => 
     const targets = [{ path: ["equipment", "pumps"], label: "Pumps" }];
     render(
       <DataTable
+        tableName="Test"
         rows={rows}
         getRowId={(row) => row.id}
         fieldDefs={fieldDefs}

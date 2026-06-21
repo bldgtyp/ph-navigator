@@ -139,6 +139,7 @@ export function SpaceTypesTable({
 
   return (
     <DataTable
+      tableName="Space Types"
       rows={spaceTypesSlice.space_types}
       columnDefs={columns}
       fieldDefs={dataTableFieldDefs}
