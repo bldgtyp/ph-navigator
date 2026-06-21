@@ -1,4 +1,4 @@
-import type { ClimateSourceKind, ProjectClimateSource } from "./types";
+import type { ClimateRecord, ClimateSourceKind, ProjectClimateSource } from "./types";
 import type { ClimateLocationSummary } from "./types";
 
 // Jan…Dec — the ordering of every `Monthly12` series in a ClimateRecord.
@@ -113,6 +113,13 @@ export function climateSourceCachedMetrics(source: ProjectClimateSource): string
     return parts.length ? parts.join(" · ") : null;
   }
   return null;
+}
+
+export function isClimateRecord(value: unknown): value is ClimateRecord {
+  const record = recordValue(value);
+  return Boolean(
+    record?.display_name && recordValue(record.climate) && recordValue(record.location),
+  );
 }
 
 function numberValue(value: unknown): number | null {

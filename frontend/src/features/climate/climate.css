@@ -123,6 +123,15 @@
   gap: var(--space-8);
 }
 
+.climate-source-form-wide {
+  flex: 1 1 20rem;
+}
+
+.climate-source-form textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+
 .climate-source-form-title {
   font-size: var(--fs-sm);
   color: var(--text-muted);
@@ -132,13 +141,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-8);
-}
-
-.climate-detail-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-12);
 }
 
 /* Dataset browser */
@@ -375,4 +377,10 @@
   stroke: var(--chart-1);
   stroke-width: 0.75;
   opacity: 0.85;
+}
+
+.climate-sun-path-labels text {
+  fill: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
 }

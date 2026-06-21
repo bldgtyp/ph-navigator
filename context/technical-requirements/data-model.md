@@ -134,6 +134,46 @@ project_climate_source (
     updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 )
 
+ClimateRecord JSON contract (
+    display_name        TEXT,
+    provider            TEXT,
+    version             TEXT,
+    station_id          TEXT,
+    phpp_codes          { country_code, region_code, dataset_name },
+    location            { latitude, longitude, site_elevation_m,
+                          climate_zone, hours_from_utc },
+    climate             {
+                            station_elevation_m,
+                            summer_daily_temperature_swing_k,
+                            average_wind_speed_ms,
+                            monthly_temps: {
+                              air_c[12], dewpoint_c[12],
+                              sky_c[12], ground_c[12]
+                            },
+                            monthly_radiation: {
+                              north[12], east[12], south[12],
+                              west[12], glob[12]
+                            },
+                            peak_loads: {
+                              heat_load_1, heat_load_2,
+                              cooling_load_1, cooling_load_2
+                            }
+                          },
+    aux                 { heating_degree_hours_12_20,
+                          cooling_degree_hours_24, wind_speed_jan_ms,
+                          wind_speed_jul_ms, temp_min_12h_c,
+                          summer_night_fraction_dry_pct,
+                          summer_night_fraction_humid_pct, albedo }
+)
+
+-- ClimateRecord is the standardized app climate payload used by imported
+-- Phius/PHI reference rows and custom project climate sources. Numeric values
+-- are stored in SI/source-native canonical units: temperatures in deg C,
+-- monthly radiation in kWh/m2, peak radiation in W/m2, wind speed in m/s, and
+-- elevations in m. UI renderers localize display units from the app-wide unit
+-- preference; HDD65/CDD50 values cached from EPW STAT files remain fixed
+-- deg F-days because that is the published convention.
+
 -- MCP/API bearer tokens for LLM clients. Required in V2 v1 because
 -- MCP is read/write capable from day 1. Tokens are issued by an
 -- authenticated editor, shown once, stored only as a hash, and

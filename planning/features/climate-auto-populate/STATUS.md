@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-21
-TIME: 13:33 EDT
-STATUS: Active — P3 complete on branch; P4 next.
+TIME: 13:52 EDT
+STATUS: Active — P4 implemented; final gates running.
   Design decisions accepted (D-CL-12..24, O-units). Open items are operational only.
 AUTHOR: Ed (via Claude)
 SCOPE: Current state of the climate auto-populate feature.
@@ -14,7 +14,8 @@ RELATED:
 
 ## Current state
 
-`Active — P3 complete`. PRD, decisions, research, and four phase plans logged.
+`Active — P4 implemented; final gates running`. PRD, decisions, research, and
+four phase plans logged.
 Phase 1 implementation now extends `project_location` with derived public
 geodata, editor-only geocode/derive endpoints, a committed PNNL 2021 IECC
 county-zone CSV, and a Climate-tab editor action that populates
@@ -27,18 +28,18 @@ and the dataset browser all exist and are reused. Phase 3 adds nearest
 OneBuilding EPW catalog lookup/download, server-side EPW asset creation, `.stat`
 metrics/design-condition parsing, auto-attached `epw` and `ashrae` source data,
 and an on-demand single-station `ashrae-meteo` current-edition refresh route.
+Phase 4 replaces the Climate tab with a master-detail sidebar, per-source
+detail pages, attached-source PH charts/tables, ASHRAE/EPW metric pages,
+custom-record override entry, fail-page CTA/candidate rendering, app-wide
+SI/IP radiation conversion, and N/E/S/W sun-path labels on the Location page.
 
 ## Next step
 
 Planning is complete — all design decisions accepted (D-CL-12..24, O-units).
-**Current implementation loop: start P4.** Suggested next entry points:
-
-1. **P4 (the new tab)** is next — nav
-   sidebar + per-type pages (D-CL-20), styled with app CSS/brand tokens (the
-   wireframe `working/climate-tab-wireframe-B2.html` is structure only).
-2. Before production reliance, confirm **O5** (seeded Phius/PHI dataset
-   versions are a valid current cert basis). Procure **O4** keys (MapTiler /
-   Open-Meteo) before relying on free tiers.
+**Current implementation loop: finish P4 gates, then close the packet.**
+Before production reliance, confirm **O5** (seeded Phius/PHI dataset versions
+are a valid current cert basis). Procure **O4** keys (MapTiler / Open-Meteo)
+before relying on free tiers.
 
 Remaining open items are operational only: O4 (API keys), O5 (dataset
 versions), O6 ("custom set required" workflow + custom-record editor), O7
@@ -121,3 +122,21 @@ contains the address string.
 - `make format` — passed.
 - `make ci` — passed: backend `935 passed, 2 skipped`; frontend `186` test
   files / `1784` tests passed; Vite build passed.
+
+## P4 verification (2026-06-21)
+
+- `cd frontend && pnpm exec vitest run src/features/climate/__tests__/ClimateRecordTable.test.tsx src/features/climate/__tests__/chart-data.test.ts src/features/climate/__tests__/ClimateSourcesSection.test.tsx src/features/climate/__tests__/ClimateTab.test.tsx src/features/climate/__tests__/sun-path.test.tsx` — 19 passed.
+- `cd frontend && pnpm exec tsc --noEmit` — passed.
+- Playwright live smoke on `http://localhost:5173` + backend `8000` —
+  passed. Smoke project `3a7d86b5-60b5-4186-998b-d0388f19852f`; derive
+  attached `phius`, `ashrae`, and `epw` rows; Location rendered the sun-path,
+  EPW rendered HDD/CDD + source/download links, and mobile ASHRAE rendered
+  design-condition tiles without header overlap. Dev DB still lacks a PHI
+  seed, so the smoke emitted the expected PHI warning. Screenshots:
+  `/tmp/phn-climate-p4-location.png`, `/tmp/phn-climate-p4-epw.png`,
+  `/tmp/phn-climate-p4-mobile-ashrae-fixed.png`.
+- `make format` — passed.
+- `make ci` — passed: backend `935 passed, 2 skipped`; frontend `187` test
+  files / `1787` tests passed; Vite build passed. Existing warnings only:
+  backend HTTP 413 deprecation, frontend fast-refresh/act warnings, and Vite
+  chunk-size warnings.

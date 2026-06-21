@@ -41,8 +41,8 @@ export function ClimateRecordCharts({
       />
       <MonthlyLineChart
         caption="Monthly radiation"
-        unitNote="kWh/m²"
-        rows={buildMonthlyRadiationRows(record)}
+        unitNote={unitSystem === "IP" ? "kBtu/ft²·mo" : "kWh/m²"}
+        rows={buildMonthlyRadiationRows(record, unitSystem)}
         series={RADIATION_SERIES}
       />
     </div>

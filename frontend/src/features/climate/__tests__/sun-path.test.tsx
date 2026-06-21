@@ -68,6 +68,7 @@ describe("SunPathDiagram", () => {
     renderDiagram();
 
     expect(await screen.findByRole("img", { name: /sun-path diagram/i })).toBeInTheDocument();
+    expect(screen.getByText("N")).toBeInTheDocument();
   });
 
   test("shows the empty state when the location is unset (null response)", async () => {

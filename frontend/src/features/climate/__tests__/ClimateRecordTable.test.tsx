@@ -30,10 +30,11 @@ describe("ClimateRecordTable", () => {
     expect(ipCell?.textContent).toContain("deg F");
   });
 
-  test("radiation stays SI regardless of unit system", () => {
+  test("radiation follows the SI/IP toggle", () => {
     render(<ClimateRecordTable record={makeClimateRecord()} unitSystem="IP" />);
+    expect(screen.getByText("kBtu/ft²·mo")).toBeInTheDocument();
+    expect(screen.getByText(/Btu\/h·ft²/)).toBeInTheDocument();
     const globalRow = screen.getByRole("row", { name: /^Global/ });
-    // Radiation has no IP form — the global series value is unchanged.
-    expect(within(globalRow).getAllByRole("cell")[0]?.textContent).toBe("120");
+    expect(within(globalRow).getAllByRole("cell")[0]?.textContent).toBe("38.0");
   });
 });

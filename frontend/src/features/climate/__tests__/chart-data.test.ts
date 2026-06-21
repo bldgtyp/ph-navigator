@@ -24,8 +24,8 @@ describe("buildMonthlyTemperatureRows", () => {
 });
 
 describe("buildMonthlyRadiationRows", () => {
-  test("stays SI regardless of unit system and maps every orientation", () => {
-    const rows = buildMonthlyRadiationRows(makeClimateRecord());
+  test("keeps SI by default and maps every orientation", () => {
+    const rows = buildMonthlyRadiationRows(makeClimateRecord(), "SI");
     expect(rows).toHaveLength(12);
     expect(rows[0]).toMatchObject({
       month: "Jan",
@@ -35,5 +35,10 @@ describe("buildMonthlyRadiationRows", () => {
       west: 60,
       glob: 120,
     });
+  });
+
+  test("converts monthly radiation to kBtu/ft²·mo for IP", () => {
+    const rows = buildMonthlyRadiationRows(makeClimateRecord(), "IP");
+    expect(rows[0]?.glob).toBeCloseTo(38.04);
   });
 });
