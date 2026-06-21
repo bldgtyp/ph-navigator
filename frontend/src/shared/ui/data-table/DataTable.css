@@ -330,32 +330,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Phase 6 §4.9: per-column overflow menu. Trigger sits in the header
-   row to the right of the label; hover-revealed to keep the chrome
-   quiet when the user isn't reaching for it. */
-.data-table-header-menu-trigger {
-  border: 0;
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-  padding: 0 var(--space-4);
-  font-size: 0.9em;
-  border-radius: var(--phn-radius);
-  opacity: 0;
-  transition: opacity 0.1s ease-out;
-  margin-left: auto;
-}
-
-.data-table-th:hover .data-table-header-menu-trigger,
-.data-table-header-menu-trigger:focus-visible,
-.data-table-th[data-field-editor-open="true"] .data-table-header-menu-trigger {
-  opacity: 1;
-}
-
-.data-table-header-menu-trigger:hover {
-  background: color-mix(in oklab, var(--text-primary) 8%, transparent);
-}
-
 .data-table-column-menu,
 .data-table-column-menu-submenu {
   background: var(--bg-card);

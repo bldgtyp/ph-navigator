@@ -158,7 +158,7 @@ function SummaryCell<TRow>({
             // Radix's open and immediately treat the same click as an
             // outside interaction, snapping the popover shut. Stopping
             // propagation at the trigger keeps the open click owned by
-            // Radix — mirrors the ColumnHeaderMenu trigger.
+            // Radix — mirrors the HeaderContextMenu trigger.
             onMouseDown={(event) => event.stopPropagation()}
             onClick={(event) => event.stopPropagation()}
           >
