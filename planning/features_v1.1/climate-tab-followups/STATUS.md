@@ -1,21 +1,32 @@
 ---
 DATE: 2026-06-14
 TIME: -
-STATUS: Deferred — independent backlog; no item blocks another.
+STATUS: Superseded (2026-06-21) — all items folded into
+  planning/features/climate-auto-populate (D-CL-25).
 AUTHOR: Claude (for Ed)
 SCOPE: Backlog table + acceptance notes for the Climate-tab follow-ups.
 RELATED:
   - README.md
+  - planning/features/climate-auto-populate/ (where these now live)
+  - planning/features/climate-auto-populate/decisions.md (D-CL-25)
 ---
 
 # Climate tab follow-ups — Status
 
 ## Current state
 
-**Deferred backlog.** Four independent refinements collected on 2026-06-14
-when the Climate feature was archived. No code written for any of them.
+**Superseded (2026-06-21).** All four items are folded into
+`planning/features/climate-auto-populate/` (decision **D-CL-25**); no code was
+written here. This folder is retained for history. Item → where it now lives:
 
-## Backlog
+| Item | Now in |
+|---|---|
+| Custom-record entry form | climate-auto-populate **P4** (＋ Add source / override) + **P2** (Phius-fail escape hatch) |
+| Sun-path cardinal labels | climate-auto-populate **P4** (Location page sun-path) |
+| Attached-source charts | climate-auto-populate **P4** (the per-type pages — this item, generalized) |
+| Promote `ClimateRecord` → `context/` | climate-auto-populate **P4** (docs task) |
+
+## Backlog (historical — for reference)
 
 | Item | Size | Where it plugs in | Acceptance |
 |---|---|---|---|
@@ -24,15 +35,7 @@ when the Climate feature was archived. No code written for any of them.
 | Attached-source charts | M | `frontend/src/features/climate/` — resolve a `ProjectClimateSource` to a `ClimateRecord` (phius/phi `ref`→record via the dataset detail endpoint; `custom` `data`→record), then feed the Phase-3c `ClimateRecordView` | Selecting an attached source shows its monthly graphs/tables; ashrae/epw (no standardized record yet) degrade gracefully |
 | Promote `ClimateRecord` to `context/` | S | `context/` (new reference doc) | The standardized-record contract has a single durable home in `context/`; the archived PRD §4.3 + `record.py` docstrings point to it |
 
-## Gate / depends on
-
-- **All independent.** The first three only need the shipped Climate frontend
-  + endpoints. The fourth is a pure docs move.
-- Attached-source charts overlap conceptually with
-  `../climate-design-conditions/` (both resolve a source to displayable data)
-  — coordinate if both are picked up together.
-
 ## Next step
 
-Pick any item; none blocks another. The custom-record form is the most
-user-visible (it closes the only D-CL-9 gap left from Phase 3b).
+None here — track these under `climate-auto-populate` (P2/P4). Folder kept for
+history only.

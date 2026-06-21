@@ -1,8 +1,8 @@
 ---
 DATE: 2026-06-14
 TIME: -
-STATUS: Deferred — a backlog of small, independent Climate-tab refinements,
-  each too small for its own feature folder.
+STATUS: Superseded (2026-06-21) — folded into
+  planning/features/climate-auto-populate (D-CL-25). Retained for history.
 AUTHOR: Claude (for Ed)
 SCOPE: Router for small follow-ups on the (complete) Climate tab — the
   custom-record entry form, sun-path cardinal labels, attached-source charts,
@@ -17,6 +17,10 @@ RELATED:
 ---
 
 # Climate tab — small follow-ups
+
+> **Superseded 2026-06-21** — all four items are folded into
+> `planning/features/climate-auto-populate/` (D-CL-25); see its P4/P2. This
+> folder is kept for history. Item→phase mapping in `STATUS.md`.
 
 A grab-bag of small, **independent** refinements left over from the completed
 Climate Phase 3. None is large enough to warrant its own feature folder; pick

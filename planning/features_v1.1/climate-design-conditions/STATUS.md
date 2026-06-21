@@ -1,8 +1,9 @@
 ---
 DATE: 2026-06-14
 TIME: -
-STATUS: Deferred (gated) — blocked on a scheduled fRSI/comfort consumer +
-  D-CL-5. Lags well behind the Climate data store (Phases 1–3, complete).
+STATUS: Deferred (gated, narrowed 2026-06-21) — the data PRODUCTION + tab
+  DISPLAY are now built under climate-auto-populate (P3/P4); only the
+  consumer-facing CONTRACT remains, still gated on fRSI/comfort + D-CL-5.
 AUTHOR: Claude (for Ed)
 SCOPE: Status + gate for the design-conditions contract.
 RELATED:
@@ -14,10 +15,15 @@ RELATED:
 
 ## Current state
 
-**Deferred (gated).** Pulled out of the (now archived, complete) Climate
-feature as its own v1.1 candidate on 2026-06-14. No code written. The PH
-datasets already carry the design columns this would expose; the contract
-itself, the EPW-metrics derivation, and the tab views are unbuilt.
+**Deferred (gated) — narrowed 2026-06-21 (D-CL-25).** The EPW-metrics
+derivation, ASHRAE fetch, per-source design-condition caching, and the tab
+display are now **built under `climate-auto-populate` (P3/P4)** — so the
+production + display half of this feature is absorbed there (avoids a second
+EPW parser). What **remains here**: the consumer-facing
+**source-parameterized contract endpoint** (`GET …/design-conditions?source=`)
++ MCP that fRSI / window-comfort read. That stays deferred — still gated on a
+scheduled consumer + D-CL-5 (don't build a contract with no reader). Once a
+consumer is scheduled it's a thin exposure layer over the data P3 caches.
 
 ## Gate / depends on
 
@@ -30,8 +36,10 @@ itself, the EPW-metrics derivation, and the tab views are unbuilt.
 ## Next step
 
 Hold until an fRSI or window-comfort feature is scheduled. When one is, scope
-this contract jointly with that consumer so the exterior/interior split
-(D-CL-5) is settled before building. See PRD §Scope.
+the contract jointly with that consumer (the D-CL-5 split) — building it as a
+thin read-layer over the per-source design conditions `climate-auto-populate`
+P3 already caches. See PRD §Scope (its production/display items are now built
+under `climate-auto-populate`, not here).
 
 ## Blockers
 
