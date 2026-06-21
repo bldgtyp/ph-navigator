@@ -14,6 +14,7 @@ import {
   climateSourceProximity,
   climateSourceProximityStatus,
   climateSourceSubtitle,
+  isClimateRecord,
 } from "../lib";
 import type { CreateClimateSourceRequest, ProjectClimateSource } from "../types";
 
@@ -82,8 +83,65 @@ export function ClimateSourcesSection({
         <div className="climate-source-attach">
           <AshraeAttachForm onAttach={onAttach} isAttaching={isAttaching} />
           <EpwAttachButton location={location} onAttach={onAttach} isAttaching={isAttaching} />
+          <CustomRecordAttachForm onAttach={onAttach} isAttaching={isAttaching} />
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function CustomRecordAttachForm({
+  onAttach,
+  isAttaching,
+}: {
+  onAttach: (body: CreateClimateSourceRequest) => void;
+  isAttaching: boolean;
+}) {
+  const [json, setJson] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const attach = () => {
+    setError(null);
+    try {
+      const parsed = JSON.parse(json) as unknown;
+      if (!isClimateRecord(parsed)) {
+        setError("Paste a standardized ClimateRecord JSON object.");
+        return;
+      }
+      onAttach({
+        kind: "custom",
+        label: parsed.display_name,
+        data: parsed as unknown as Record<string, unknown>,
+      });
+      setJson("");
+    } catch {
+      setError("ClimateRecord JSON is not valid.");
+    }
+  };
+
+  return (
+    <div className="climate-source-form climate-source-form-wide">
+      <span className="climate-source-form-title">Attach custom ClimateRecord</span>
+      <textarea
+        value={json}
+        onChange={(event) => setJson(event.target.value)}
+        placeholder='{"display_name":"Custom climate set", ...}'
+        aria-label="Custom ClimateRecord JSON"
+        rows={5}
+      />
+      {error ? (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      <button
+        type="button"
+        className="secondary-button"
+        onClick={attach}
+        disabled={!json.trim() || isAttaching}
+      >
+        Attach custom record
+      </button>
     </div>
   );
 }

@@ -1,0 +1,195 @@
+/* Phase 4 master-detail climate workspace */
+.climate-workspace {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: var(--space-16);
+  align-items: start;
+}
+
+.climate-sidebar {
+  position: sticky;
+  top: var(--space-16);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  max-height: calc(100vh - var(--space-32));
+  overflow-y: auto;
+}
+
+.climate-nav-card {
+  display: grid;
+  gap: var(--space-4);
+  width: 100%;
+  min-height: 5.75rem;
+  padding: var(--space-10) var(--space-12);
+  border: 1px solid var(--border-card);
+  border-radius: var(--phn-radius);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.climate-nav-card:hover {
+  background: var(--bg-elev);
+}
+
+.climate-nav-card.active {
+  border-color: var(--accent);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.climate-nav-card strong,
+.climate-nav-card span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.climate-nav-card strong {
+  font-size: var(--fs-sm);
+}
+
+.climate-nav-card span:not(.climate-source-kind) {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+}
+
+.climate-nav-pass {
+  border-color: color-mix(in oklab, var(--phn-success) 45%, var(--border-card));
+}
+
+.climate-nav-warning {
+  border-color: color-mix(in oklab, var(--phn-warning) 45%, var(--border-card));
+}
+
+.climate-nav-fail {
+  border-color: color-mix(in oklab, var(--phn-danger) 45%, var(--border-card));
+}
+
+.climate-main {
+  min-width: 0;
+}
+
+.climate-detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+}
+
+.climate-detail-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--space-8) var(--space-12);
+  align-items: baseline;
+}
+
+.climate-detail-header h3,
+.climate-detail-header p {
+  margin: 0;
+}
+
+.climate-detail-header h3 {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.climate-detail-header p {
+  grid-column: 2 / -1;
+  color: var(--text-secondary);
+}
+
+.climate-status-chip {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: var(--space-2) var(--space-8);
+  border-radius: 999px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+
+.climate-status-pass {
+  background: color-mix(in oklab, var(--phn-success) 14%, transparent);
+  color: var(--phn-success);
+}
+
+.climate-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-12);
+  margin: 0;
+}
+
+.climate-metric-card {
+  margin: 0;
+  padding: var(--space-10) var(--space-12);
+  border: 1px solid var(--border-card);
+  border-radius: var(--phn-radius);
+  background: var(--bg-card);
+}
+
+.climate-metric-card dt {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.climate-metric-card dd {
+  margin: var(--space-4) 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+}
+
+.climate-link-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-12);
+}
+
+.climate-fail-page {
+  padding: var(--space-16);
+  border: 1px solid color-mix(in oklab, var(--phn-danger) 45%, var(--border-card));
+  border-radius: var(--phn-radius);
+  background: color-mix(in oklab, var(--phn-danger) 6%, var(--bg-card));
+}
+
+.climate-fail-page h3,
+.climate-fail-page p {
+  margin: 0;
+}
+
+.climate-sunpath-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  align-items: flex-start;
+}
+
+@media (max-width: 880px) {
+  .climate-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .climate-sidebar {
+    position: static;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(210px, 1fr);
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: var(--space-4);
+  }
+}
+
+@media (max-width: 640px) {
+  .climate-detail-header {
+    grid-template-columns: 1fr;
+  }
+
+  .climate-detail-header p {
+    grid-column: 1;
+  }
+}

@@ -1,8 +1,7 @@
 ---
 DATE: 2026-06-21
-TIME: -
-STATUS: Planned — direction LOCKED (D-CL-20, Variant B-refined). Independent of
-  P1–P3; may lead.
+TIME: 13:52 EDT
+STATUS: Implemented — final gates running.
 AUTHOR: Ed (via Claude)
 SCOPE: P4 — rebuild the Climate tab as a nav-sidebar + per-type-page layout
   (D-CL-20). Replaces the existing tab (D-CL-24). Fixes today's orphaned-
@@ -27,6 +26,23 @@ its own page. **Replaces** the current tab (D-CL-24).
 Direction is **locked** (D-CL-20) — record at
 `working/climate-tab-wireframe-B2.html`. The wireframe conveys **structure
 only**; styling/typography/color come from the app CSS tokens + brand items.
+
+## Implementation notes
+
+- `ClimateTab` is now a local-state master-detail router with a sticky source
+  sidebar and one main detail page at a time.
+- `ClimateSourceDetailPage` renders PH/Phius reference records through
+  `ClimateRecordCharts` + `ClimateRecordTable`, ASHRAE design-condition tiles,
+  EPW STAT metric tiles + source/download links, custom records, and a Phius
+  fail page with custom-set CTA plus candidate rows when present in source
+  data.
+- `ClimateSourcesSection` remains the Add/re-populate surface and now includes
+  ASHRAE pointer attach, project EPW attach, custom `ClimateRecord` JSON attach,
+  and the dataset browser below it.
+- `ClimateRecordTable` and `ClimateRecordCharts` now localize radiation for
+  the app-wide unit preference: SI `kWh/m²` / `W/m²`; IP `kBtu/ft²·mo` /
+  `Btu/h·ft²`.
+- `SunPathDiagram` now renders N/E/S/W labels on the Location page.
 
 ## Locked layout (D-CL-20)
 
@@ -116,5 +132,21 @@ the old tab is replaced; gating + app-wide units hold; CI green.
 
 ## Open questions (phase-local)
 
-- Compare UX (overlay vs side-by-side) — confirm when building the PH page.
-- Route-driven selection vs local state.
+- Route-driven selection was intentionally deferred; local state keeps the P4
+  replacement narrow and avoids router churn.
+- The "nearest candidates" fail table renders when candidate rows are present
+  in source data; backend candidate-population can be expanded later without
+  another frontend surface change.
+
+## Verification
+
+- `cd frontend && pnpm exec vitest run src/features/climate/__tests__/ClimateRecordTable.test.tsx src/features/climate/__tests__/chart-data.test.ts src/features/climate/__tests__/ClimateSourcesSection.test.tsx src/features/climate/__tests__/ClimateTab.test.tsx src/features/climate/__tests__/sun-path.test.tsx` — 19 passed.
+- `cd frontend && pnpm exec tsc --noEmit` — passed.
+- Playwright live smoke on project
+  `3a7d86b5-60b5-4186-998b-d0388f19852f` — passed for Location, EPW, and mobile
+  ASHRAE pages. Screenshots: `/tmp/phn-climate-p4-location.png`,
+  `/tmp/phn-climate-p4-epw.png`,
+  `/tmp/phn-climate-p4-mobile-ashrae-fixed.png`.
+- `make format` — passed.
+- `make ci` — passed: backend `935 passed, 2 skipped`; frontend `187` test
+  files / `1787` tests passed; Vite build passed.

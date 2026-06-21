@@ -52,16 +52,22 @@ export function buildMonthlyTemperatureRows(
   }));
 }
 
-// Monthly N/E/S/W/global radiation (kWh/m²). Radiation has no IP form in the
-// units registry, so it stays SI regardless of the toggle (as in the tables).
-export function buildMonthlyRadiationRows(record: ClimateRecord): MonthlyChartRow[] {
+export const KWH_M2_TO_KBTU_FT2 = 0.317;
+export const W_M2_TO_BTU_H_FT2 = 0.317;
+
+// Monthly N/E/S/W/global radiation, converted to kBtu/ft²·mo in IP mode.
+export function buildMonthlyRadiationRows(
+  record: ClimateRecord,
+  unitSystem: UnitSystem = "SI",
+): MonthlyChartRow[] {
   const { monthly_radiation } = record.climate;
+  const toDisplay = (value: number) => (unitSystem === "IP" ? value * KWH_M2_TO_KBTU_FT2 : value);
   return MONTH_LABELS.map((month, index) => ({
     month,
-    north: monthly_radiation.north[index] ?? 0,
-    east: monthly_radiation.east[index] ?? 0,
-    south: monthly_radiation.south[index] ?? 0,
-    west: monthly_radiation.west[index] ?? 0,
-    glob: monthly_radiation.glob[index] ?? 0,
+    north: toDisplay(monthly_radiation.north[index] ?? 0),
+    east: toDisplay(monthly_radiation.east[index] ?? 0),
+    south: toDisplay(monthly_radiation.south[index] ?? 0),
+    west: toDisplay(monthly_radiation.west[index] ?? 0),
+    glob: toDisplay(monthly_radiation.glob[index] ?? 0),
   }));
 }

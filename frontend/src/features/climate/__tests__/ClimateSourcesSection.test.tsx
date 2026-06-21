@@ -1,10 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import type { ProjectDetail, ProjectLocation } from "../../projects/types";
 import { LOCATION_PROJECT as PROJECT, jsonResponse } from "../../projects/testing/locationFixtures";
 import { ClimateSourcesSection } from "../components/ClimateSourcesSection";
+import { makeClimateRecord } from "../testing/recordFixture";
 import type { ProjectClimateSource } from "../types";
 
 const fetchMock = vi.fn();
@@ -174,6 +175,25 @@ describe("ClimateSourcesSection", () => {
       kind: "epw",
       ref: "asset_epw",
       label: "west-stockbridge.epw",
+    });
+  });
+
+  test("attaches a custom standardized ClimateRecord", async () => {
+    vi.stubGlobal("fetch", fetchMock);
+    fetchMock.mockImplementation(() => jsonResponse({ items: [] }));
+    const user = userEvent.setup();
+    const { onAttach } = renderSection();
+    const record = makeClimateRecord({ display_name: "Custom Set" });
+
+    fireEvent.change(await screen.findByLabelText("Custom ClimateRecord JSON"), {
+      target: { value: JSON.stringify(record) },
+    });
+    await user.click(screen.getByRole("button", { name: "Attach custom record" }));
+
+    expect(onAttach).toHaveBeenCalledWith({
+      kind: "custom",
+      label: "Custom Set",
+      data: record,
     });
   });
 

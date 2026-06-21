@@ -54,6 +54,20 @@ function SunPathSvg({ data }: { data: SunPathAndCompass }) {
           <path key={`analemma:${index}`} d={path} fill="none" />
         ))}
       </g>
+      <g className="climate-sun-path-labels" aria-hidden="true">
+        <text x="120" y="12" textAnchor="middle">
+          N
+        </text>
+        <text x="228" y="124" textAnchor="middle">
+          E
+        </text>
+        <text x="120" y="236" textAnchor="middle">
+          S
+        </text>
+        <text x="12" y="124" textAnchor="middle">
+          W
+        </text>
+      </g>
     </svg>
   );
 }
