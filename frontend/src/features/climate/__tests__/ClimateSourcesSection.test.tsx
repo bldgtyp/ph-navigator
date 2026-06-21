@@ -28,6 +28,12 @@ const PHIUS_SOURCE: ProjectClimateSource = {
   ref: "loc-worcester",
   label: "Worcester",
   is_default: false,
+  data: {
+    distance_mi: 12.3,
+    elevation_delta_ft: 88,
+    status: "pass",
+    message: "Phius climate set is within 50 mi and 400 ft.",
+  },
 };
 
 const SOURCES_URL = `/api/v1/projects/${PROJECT.id}/climate/sources`;
@@ -105,6 +111,8 @@ describe("ClimateSourcesSection", () => {
 
     expect(await screen.findByText("ASHRAE A")).toBeVisible();
     expect(screen.getByText("Worcester")).toBeVisible();
+    expect(screen.getByText(/12.3 mi/)).toBeVisible();
+    expect(screen.getByText(/88 ft elev delta/)).toBeVisible();
     expect(screen.getByLabelText("Set ASHRAE source as default")).toBeChecked();
     expect(screen.getByLabelText("Set Phius source as default")).not.toBeChecked();
   });

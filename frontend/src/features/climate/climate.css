@@ -79,9 +79,30 @@
 .climate-source-label {
   flex: 1;
   min-width: 0;
+  display: grid;
+  gap: var(--space-2);
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.climate-source-proximity {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.climate-source-proximity-pass {
+  color: var(--phn-success);
+}
+
+.climate-source-proximity-warning {
+  color: var(--phn-warning);
+}
+
+.climate-source-proximity-fail {
+  color: var(--phn-danger);
 }
 
 .climate-source-remove {

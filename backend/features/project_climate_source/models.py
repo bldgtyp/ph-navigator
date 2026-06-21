@@ -20,8 +20,9 @@ ClimateSourceKind = Literal["phius", "phi", "ashrae", "epw", "custom"]
 
 # Kinds that point at something by ``ref`` rather than carrying a record.
 _REF_KINDS: frozenset[str] = frozenset({"phius", "phi", "ashrae", "epw"})
-# Kinds permitted to carry a ``data`` payload (custom record / ASHRAE pointer).
-_DATA_KINDS: frozenset[str] = frozenset({"custom", "ashrae"})
+# Kinds permitted to carry a ``data`` payload. Phius/PHI store derived
+# proximity metadata when auto-attached from the project location derive flow.
+_DATA_KINDS: frozenset[str] = frozenset({"custom", "ashrae", "phius", "phi"})
 
 
 class ProjectClimateSourcePublic(BaseModel):

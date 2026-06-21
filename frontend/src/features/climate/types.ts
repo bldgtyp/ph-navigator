@@ -120,9 +120,10 @@ export type ClimateLocationSearch = {
 
 // ---- Project-scoped climate sources (Phase 3b) ----
 // Mirrors backend `features/project_climate_source/models.py`. `ref`/`data`
-// are interpreted by `kind`: phius/phi → ref is a reference-location id;
-// epw → ref is the project EPW asset id; ashrae → ref is a station id (data
-// may hold {url}); custom → data is a standardized ClimateRecord.
+// are interpreted by `kind`: phius/phi → ref is a reference-location id and
+// data may hold proximity flags; epw → ref is the project EPW asset id;
+// ashrae → ref is a station id (data may hold {url}); custom → data is a
+// standardized ClimateRecord.
 export type ClimateSourceKind = "phius" | "phi" | "ashrae" | "epw" | "custom";
 
 export type ProjectClimateSource = {

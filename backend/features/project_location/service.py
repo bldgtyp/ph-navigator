@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import Request
 from psycopg import Connection
@@ -15,7 +15,11 @@ from features.assets.service import AssetService
 from features.auth import repository as auth_repository
 from features.auth.models import UserPublic
 from features.auth.service import client_ip, user_agent
+from features.climate import repository as climate_repository
+from features.climate.models import ClimateLocationSummary
+from features.climate.proximity import build_proximity_payload
 from features.model_viewer.schemas.ladybug import SunPathAndCompassDTOSchema
+from features.project_climate_source import repository as climate_source_repository
 from features.project_location import repository
 from features.project_location.derive import derive_location_geodata, geocode_address
 from features.project_location.epw import EPW_HEADER_PREFIX_BYTES, parse_epw_location_header
@@ -35,6 +39,7 @@ from features.projects.access import ProjectAccess
 from features.shared.errors import api_error
 
 COORDINATE_FIELDS = {"latitude", "longitude"}
+AUTO_ATTACH_PROVIDERS = ("phius", "phi")
 
 
 def get_project_location(project_id: UUID, *, include_private: bool = True) -> ProjectLocation:
@@ -128,6 +133,13 @@ def derive_project_location(
         current = repository.get_location(conn, project_id)
         changed_fields = changed_location_fields(values, current)
         row = repository.upsert_location(conn, project_id, changed_fields, values) if changed_fields else current
+        auto_attach_warnings = auto_attach_certification_sources(
+            conn,
+            project_id=project_id,
+            latitude=payload.latitude,
+            longitude=payload.longitude,
+            elevation_m=derived.elevation_m,
+        )
         auth_repository.log_action(
             conn,
             action="project_location_derive",
@@ -142,7 +154,7 @@ def derive_project_location(
 
     return ProjectLocationUpdateResponse(
         location=project_location_from_row(row, epw),
-        warnings=[*derived.warnings, *epw_mismatch_warnings(row, epw)],
+        warnings=[*derived.warnings, *auto_attach_warnings, *epw_mismatch_warnings(row, epw)],
     )
 
 
@@ -197,6 +209,94 @@ def clear_derived_geodata_if_coordinates_change(values: dict[str, object], curre
             "climate_zone": None,
             "geodata_provenance": {},
         }
+    )
+
+
+def auto_attach_certification_sources(
+    conn: Connection[Any],
+    *,
+    project_id: UUID,
+    latitude: float,
+    longitude: float,
+    elevation_m: float | None,
+) -> list[str]:
+    """Attach/update nearest Phius and PHI reference locations for a project."""
+    warnings: list[str] = []
+    for provider in AUTO_ATTACH_PROVIDERS:
+        dataset = latest_dataset_for_provider(conn, provider)
+        if dataset is None:
+            warnings.append(f"No seeded {provider.upper()} climate dataset is available for auto-attach.")
+            continue
+        nearest_rows = climate_repository.nearest_locations(
+            conn,
+            dataset["id"],
+            latitude=latitude,
+            longitude=longitude,
+            limit=1,
+        )
+        if not nearest_rows:
+            warnings.append(f"No {provider.upper()} climate locations are available for auto-attach.")
+            continue
+        location = ClimateLocationSummary.model_validate(nearest_rows[0])
+        payload = build_proximity_payload(
+            provider=provider,
+            dataset=dataset,
+            location=location,
+            site_latitude=latitude,
+            site_longitude=longitude,
+            site_elevation_m=elevation_m,
+        )
+        upsert_certification_source(
+            conn,
+            project_id=project_id,
+            kind=provider,
+            ref=str(location.id),
+            label=location.name,
+            data=payload.model_dump(mode="json"),
+        )
+    return warnings
+
+
+def latest_dataset_for_provider(conn: Connection[Any], provider: str) -> dict[str, Any] | None:
+    """Return the most recently seeded dataset for a provider."""
+    rows = [row for row in climate_repository.list_datasets(conn) if row["provider"] == provider]
+    if not rows:
+        return None
+    return max(rows, key=lambda row: (row["created_at"], row["version"]))
+
+
+def upsert_certification_source(
+    conn: Connection[Any],
+    *,
+    project_id: UUID,
+    kind: str,
+    ref: str,
+    label: str,
+    data: dict[str, object],
+) -> None:
+    existing = next(
+        (row for row in climate_source_repository.list_sources(conn, project_id) if row["kind"] == kind), None
+    )
+    if existing is None:
+        climate_source_repository.insert_source(
+            conn,
+            source_id=uuid4(),
+            project_id=project_id,
+            kind=kind,
+            ref=ref,
+            label=label,
+            is_default=False,
+            data=data,
+        )
+        return
+    climate_source_repository.update_source(
+        conn,
+        existing["id"],
+        {
+            "ref": ref,
+            "label": label,
+            "data": data,
+        },
     )
 
 

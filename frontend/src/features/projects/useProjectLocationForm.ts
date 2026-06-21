@@ -1,5 +1,7 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useUnitPreference, type UnitSystem } from "../../lib/units";
+import { climateQueryKeys } from "../climate/query-keys";
 import {
   useParseProjectLocationEpwMutation,
   useDeriveProjectLocationMutation,
@@ -48,6 +50,7 @@ export type ProjectLocationFormController = {
 // Extracted from the settings modal so the Climate tab can host the editor
 // (D-CL-3) while settings keeps only a read-only summary.
 export function useProjectLocationForm(projectId: string): ProjectLocationFormController {
+  const queryClient = useQueryClient();
   const { unitSystem } = useUnitPreference();
   const previousUnitSystem = useRef<UnitSystem>(unitSystem);
   const loadedLocation = useRef<ProjectLocation | undefined>(undefined);
@@ -125,6 +128,10 @@ export function useProjectLocationForm(projectId: string): ProjectLocationFormCo
     setValues(locationFormValuesFromLocation(response.location, unitSystem));
     locationEdited.current = false;
     setWarnings(response.warnings);
+    await queryClient.refetchQueries({
+      queryKey: climateQueryKeys.sources(projectId),
+      type: "active",
+    });
   };
 
   const save = async (): Promise<void> => {

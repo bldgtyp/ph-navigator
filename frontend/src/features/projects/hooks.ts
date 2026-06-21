@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import { climateQueryKeys } from "../climate/query-keys";
 import {
   bulkDeleteProjects,
   checkBtNumber,
@@ -147,6 +148,7 @@ export function useUpdateProjectLocationMutation(projectId: string) {
       updateProjectLocation(projectId, payload),
     onSuccess: (response) => {
       queryClient.setQueryData(projectQueryKeys.location(projectId), response.location);
+      queryClient.invalidateQueries({ queryKey: climateQueryKeys.sources(projectId) });
     },
   });
 }
