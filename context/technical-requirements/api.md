@@ -246,6 +246,7 @@ GET  /api/v1/projects/{pid}/location
 PUT  /api/v1/projects/{pid}/location
 POST /api/v1/projects/{pid}/location/geocode
 POST /api/v1/projects/{pid}/location/derive
+POST /api/v1/projects/{pid}/climate/sources/ashrae/current
 ```
 
 `GET /location` returns coordinates, coarse public geodata, EPW attachment
@@ -275,6 +276,26 @@ auto-attaches or updates the nearest provider locations as
 `project_climate_source` rows. Their `data` includes the pinned dataset
 version, great-circle distance in miles, elevation delta in feet, and the
 Phius hard pass/fail or PHI advisory status/message.
+
+The same derive call also resolves the nearest OneBuilding EPW station from
+the configured XLSX catalog URLs (or the built-in WMO-region defaults),
+downloads the station zip, stores the `.epw` bytes as a project EPW asset, and
+attaches/upserts:
+
+- `kind='epw'` with `ref=<asset_id>` and `data.stat_metrics` containing
+  HDD65, CDD50, record high/low, missing-field flags, station metadata,
+  source URL, and `fetched_at`.
+- `kind='ashrae'` with `ref=<WMO/station>` and
+  `data.design_conditions` from the zip's `.stat` file. The parser records the
+  basis/edition stated by the `.stat` file rather than assuming a fixed
+  edition.
+
+`POST /climate/sources/ashrae/current` is editor-only and performs the
+copyright-sensitive ashrae-meteo.info path for one nearest station only. It
+uses the saved project coordinates, accepts `{ "ashrae_version": "2009" |
+"2013" | "2017" | "2021" | "2025" }`, and upserts the project `ashrae`
+source with `data.provider='ashrae_meteo'`, a source URL, and the same
+`design_conditions` shape.
 
 ### 9.10 Assets
 

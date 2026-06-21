@@ -22,15 +22,18 @@ from features.assets import repository as asset_repository
 from features.auth import repository as auth_repository
 from features.auth.models import UserPublic
 from features.auth.service import client_ip, user_agent
+from features.climate.ashrae_meteo import fetch_nearest_ashrae_station_conditions
 from features.climate.record import ClimateRecord
 from features.project_climate_source import repository
 from features.project_climate_source.models import (
     CreateProjectClimateSourceRequest,
     ProjectClimateSourceListResponse,
     ProjectClimateSourcePublic,
+    RefreshAshraeDesignConditionsRequest,
     UpdateProjectClimateSourceRequest,
     validate_source_shape,
 )
+from features.project_location import repository as location_repository
 from features.shared.errors import api_error
 
 
@@ -137,6 +140,61 @@ def set_default_climate_source(
             request_meta,
             project_id,
             {"source_id": str(source_id)},
+        )
+    return ProjectClimateSourcePublic.model_validate(row)
+
+
+def refresh_ashrae_design_conditions(
+    project_id: UUID,
+    payload: RefreshAshraeDesignConditionsRequest,
+    user: UserPublic,
+    request_meta: Request | None,
+) -> ProjectClimateSourcePublic:
+    with connection() as conn:
+        location = location_repository.get_location(conn, project_id)
+    if location is None or location["latitude"] is None or location["longitude"] is None:
+        raise api_error(
+            status.HTTP_409_CONFLICT,
+            "project_location_required",
+            "Set the project location before pulling ASHRAE design conditions.",
+        )
+    result = fetch_nearest_ashrae_station_conditions(
+        latitude=float(location["latitude"]),
+        longitude=float(location["longitude"]),
+        ashrae_version=payload.ashrae_version,
+    )
+    source_data = {
+        "provider": "ashrae_meteo",
+        "url": result.url,
+        "design_conditions": result.design_conditions.model_dump(mode="json"),
+        "missing_fields": result.design_conditions.missing_fields,
+    }
+    with transaction() as conn:
+        existing = next((row for row in repository.list_sources(conn, project_id) if row["kind"] == "ashrae"), None)
+        if existing is None:
+            row = repository.insert_source(
+                conn,
+                source_id=uuid4(),
+                project_id=project_id,
+                kind="ashrae",
+                ref=result.station_id,
+                label=result.label,
+                is_default=False,
+                data=source_data,
+            )
+        else:
+            row = repository.update_source(
+                conn,
+                existing["id"],
+                {"ref": result.station_id, "label": result.label, "data": source_data},
+            )
+        _audit(
+            conn,
+            "project_climate_source_refresh_ashrae",
+            user,
+            request_meta,
+            project_id,
+            {"source_id": str(row["id"]), "ashrae_version": payload.ashrae_version},
         )
     return ProjectClimateSourcePublic.model_validate(row)
 

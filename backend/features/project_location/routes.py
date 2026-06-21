@@ -69,9 +69,10 @@ def derive_location(
     payload: DeriveProjectLocationRequest,
     request: Request,
     access: ProjectEditAccess,
+    asset_service: AssetServiceDep,
 ) -> ProjectLocationUpdateResponse:
     user = require_editor_user(access)
-    return derive_project_location(project_id, payload, user, request)
+    return derive_project_location(project_id, payload, user, request, asset_service)
 
 
 @router.post("/{project_id}/location/geocode", response_model=GeocodeProjectLocationResponse)

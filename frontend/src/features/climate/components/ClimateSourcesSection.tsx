@@ -9,6 +9,7 @@ import {
   useSetClimateSourceDefaultMutation,
 } from "../hooks";
 import {
+  climateSourceCachedMetrics,
   climateSourceKindLabel,
   climateSourceProximity,
   climateSourceProximityStatus,
@@ -103,6 +104,7 @@ function SourceRow({
   const kindLabel = climateSourceKindLabel(source.kind);
   const proximity = climateSourceProximity(source);
   const proximityStatus = climateSourceProximityStatus(source);
+  const cachedMetrics = climateSourceCachedMetrics(source);
   return (
     <li className="climate-source-row">
       <input
@@ -124,6 +126,7 @@ function SourceRow({
             {proximity}
           </span>
         ) : null}
+        {cachedMetrics ? <span className="climate-source-proximity">{cachedMetrics}</span> : null}
       </span>
       {canEdit ? (
         <button

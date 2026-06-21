@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-21
-TIME: 13:17 EDT
-STATUS: Active — P2 complete on branch; P3 next.
+TIME: 13:33 EDT
+STATUS: Active — P3 complete on branch; P4 next.
   Design decisions accepted (D-CL-12..24, O-units). Open items are operational only.
 AUTHOR: Ed (via Claude)
 SCOPE: Current state of the climate auto-populate feature.
@@ -14,7 +14,7 @@ RELATED:
 
 ## Current state
 
-`Active — P2 complete`. PRD, decisions, research, and four phase plans logged.
+`Active — P3 complete`. PRD, decisions, research, and four phase plans logged.
 Phase 1 implementation now extends `project_location` with derived public
 geodata, editor-only geocode/derive endpoints, a committed PNNL 2021 IECC
 county-zone CSV, and a Climate-tab editor action that populates
@@ -23,24 +23,26 @@ Phius/PHI nearest-source auto-attach on derive, haversine distance and
 elevation-delta source metadata, the Phius 50 mi / 400 ft hard gate, and the
 PHI representativeness advisory. Builds on the shipped climate store (archived
 Phases 1–3): app-wide Phius/PHI datasets, `project_climate_source`, sun-path,
-and the dataset browser all exist and are reused.
+and the dataset browser all exist and are reused. Phase 3 adds nearest
+OneBuilding EPW catalog lookup/download, server-side EPW asset creation, `.stat`
+metrics/design-condition parsing, auto-attached `epw` and `ashrae` source data,
+and an on-demand single-station `ashrae-meteo` current-edition refresh route.
 
 ## Next step
 
 Planning is complete — all design decisions accepted (D-CL-12..24, O-units).
-**Current implementation loop: start P3.** Suggested next entry points:
+**Current implementation loop: start P4.** Suggested next entry points:
 
-1. **P3 (ASHRAE/EPW pulls + design conditions)** is next after P2 gates.
-2. **P4 (the new tab)** can still proceed independently — nav
+1. **P4 (the new tab)** is next — nav
    sidebar + per-type pages (D-CL-20), styled with app CSS/brand tokens (the
    wireframe `working/climate-tab-wireframe-B2.html` is structure only).
-3. Before production reliance, confirm **O5** (seeded Phius/PHI dataset
+2. Before production reliance, confirm **O5** (seeded Phius/PHI dataset
    versions are a valid current cert basis). Procure **O4** keys (MapTiler /
    Open-Meteo) before relying on free tiers.
 
 Remaining open items are operational only: O4 (API keys), O5 (dataset
 versions), O6 ("custom set required" workflow + custom-record editor), O7
-(EPW catalog refresh cadence).
+(EPW catalog refresh cadence/storage beyond the in-process cached XLSX fetch).
 
 ## Blockers
 
@@ -101,4 +103,21 @@ contains the address string.
   `/tmp/phn-climate-p2-phius-source.png`.
 - `make format` — passed.
 - `make ci` — passed: backend `927 passed, 2 skipped`; frontend `186` test
+  files / `1784` tests passed; Vite build passed.
+
+## P3 verification (2026-06-21)
+
+- `cd backend && uv run ty check features/climate/design_conditions.py features/climate/stat_parser.py features/climate/epw_catalog.py features/climate/ashrae_meteo.py features/assets/service.py features/project_location/service.py features/project_location/routes.py features/project_climate_source/models.py features/project_climate_source/service.py features/project_climate_source/routes.py tests/test_climate_design_conditions.py tests/test_project_location.py tests/test_project_climate_source.py` — passed.
+- `cd backend && uv run pytest tests/test_climate_design_conditions.py tests/test_project_location.py tests/test_project_climate_source.py tests/test_climate_proximity.py` — 41 passed.
+- `cd frontend && pnpm exec vitest run src/features/climate/__tests__/ClimateSourcesSection.test.tsx src/features/climate/__tests__/lib.test.ts` — 11 passed.
+- `cd frontend && pnpm exec tsc --noEmit` — passed.
+- Playwright live smoke on `http://localhost:5173` + backend `8000` —
+  passed. Smoke project `6040674c-c700-4e4b-b79a-40732b670eba`; derive linked
+  `USA_MA_Pittsfield.Muni.AP.744104_TMYx.epw`, attached `epw`, `ashrae`, and
+  `phius` rows, and rendered Pittsfield/HDD65/ASHRAE/EPW in the Climate tab.
+  Dev DB still lacks a PHI seed, so the smoke emitted the expected PHI warning;
+  PHI remains covered by P2 synthetic pytest. Screenshot:
+  `/tmp/phn-climate-p3-roster.png`.
+- `make format` — passed.
+- `make ci` — passed: backend `935 passed, 2 skipped`; frontend `186` test
   files / `1784` tests passed; Vite build passed.
