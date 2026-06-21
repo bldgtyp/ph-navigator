@@ -5,6 +5,13 @@ Feature PRDs, implementation plans, dated reviews, progress ledgers,
 and temporary sequencing work live under `planning/` unless they have
 graduated into stable `context/` contracts.
 
+The repo-root `CLAUDE.md` is the always-loaded dispatch table: it routes by
+activity (backend / frontend / UI / env / logging / …) to the right doc here.
+Folder-local rules digests live as `.instructions.md` files next to the code
+they govern — `backend/.instructions.md`, `frontend/.instructions.md`,
+`ui/pages/.instructions.md`, `planning/.instructions.md`. This file is the full
+`context/` index behind that dispatch table.
+
 ## Default Startup Read
 
 Read these first:
@@ -30,10 +37,12 @@ Load these only when the task touches the relevant surface:
 - `technical-requirements/*.md` — detailed contracts for data model,
   save/versioning, API, MCP/schema, frontend/viewer/units, and
   stack/auth/migration. Load only the relevant file.
-- `UI_UX.md` — UI narrative and page / flow descriptions.
+- `UI_UX.md` — UI design intent, common elements (incl. the DataTable model
+  §1.7), multi-page flows, and the state-indicator cheatsheet. Per-page
+  narratives are split under `ui/pages/` — read only the page for the surface
+  you are building (see `ui/pages/.instructions.md`); the §2 index lists them.
   For visual-design tasks, also load the BLDGTYP design system:
-  <https://bldgtyp.github.io/branding/> and
-  <https://github.com/bldgtyp/branding>.
+  <https://github.com/bldgtyp/bt-branding>.
 - `CODING_STANDARDS.md` — backend Python and frontend TypeScript
   engineering standards: layer/feature boundaries, typing, module-size,
   documentation, state ownership, and quality gates.

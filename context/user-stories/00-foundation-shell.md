@@ -117,8 +117,8 @@ Ed doesn't override.
    logs `action='sign_out'`.
 
 ### UI/UX ref
-See `context/UI_UX.md` §2.1 *Sign-in page*
-and §1.6 *Session-expiry modal* (new).
+See `context/ui/pages/sign-in.md` (*Sign-in page*, UI_UX §2.1)
+and `context/UI_UX.md` §1.6 *Session-expiry modal* (new).
 
 ---
 

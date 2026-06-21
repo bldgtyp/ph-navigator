@@ -124,7 +124,7 @@ object metadata inspection, model switching, and measure/select tools,
 but redesign the surface as a full-bleed or near full-bleed technical
 viewer under the project header. Use a compact file selector, grouped
 tool rail, collapsible legend/filter rail, and selected-object inspector
-as described in `context/UI_UX.md` §2.9. Styling should use the BLDGTYP
+as described in `context/ui/pages/model-tab.md` (UI_UX §2.9). Styling should use the BLDGTYP
 design tokens rather than V1's MUI/default-blue/magenta semantics.
 
 ### Key V1 → V2 shifts

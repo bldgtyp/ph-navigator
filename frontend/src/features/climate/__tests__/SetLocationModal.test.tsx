@@ -103,9 +103,7 @@ describe("SetLocationModal", () => {
     expect(screen.getByRole("button", { name: /Locate Climate Data/ })).toBeDisabled();
     await user.type(await screen.findByLabelText("Site address"), "1 Main St");
     await user.click(screen.getByRole("button", { name: /Search/ }));
-    await user.click(
-      await screen.findByRole("button", { name: /1 MAIN ST, WEST STOCKBRIDGE/ }),
-    );
+    await user.click(await screen.findByRole("button", { name: /1 MAIN ST, WEST STOCKBRIDGE/ }));
 
     expect(screen.getByLabelText("Latitude")).toHaveValue("42.325");
     expect(screen.getByLabelText("Longitude")).toHaveValue("-73.367");
