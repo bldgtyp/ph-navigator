@@ -19,6 +19,7 @@ startup docs short and link here instead of duplicating these rules.
   signatures without reading the whole call chain.
 - Keep modules small enough that a feature can be reviewed in logical pieces.
 - Document the reason for behavior, not the shape already expressed by types.
+- Follow YAGNI principles, and one-liner solutions.
 
 ### Required Feature Shape
 

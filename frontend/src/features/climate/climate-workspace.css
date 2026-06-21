@@ -188,6 +188,16 @@
   --edge: var(--phn-danger);
 }
 
+/* A canonical type with no attached source: a dashed, muted "empty slot". */
+.climate-source-missing {
+  --edge: var(--border-strong);
+  border-style: dashed;
+}
+
+.climate-source-missing .climate-nav-name {
+  color: var(--text-muted);
+}
+
 .climate-source-card.active {
   border-color: var(--accent);
   box-shadow:

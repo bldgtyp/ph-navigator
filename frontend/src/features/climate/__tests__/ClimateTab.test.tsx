@@ -133,10 +133,15 @@ describe("ClimateTab", () => {
     expect(screen.getAllByText("5A").length).toBeGreaterThanOrEqual(1);
     // Both attached sources read as OK in the sidebar.
     expect(screen.getAllByText("OK").length).toBeGreaterThanOrEqual(2);
-    // The full editor form is hidden until "Edit" is pressed.
+    // The two unattached canonical types (Phius, PHI) still show as "Not set".
+    expect(screen.getByText("Phius")).toBeVisible();
+    expect(screen.getByText("PHI")).toBeVisible();
+    expect(screen.getAllByText("Not set").length).toBeGreaterThanOrEqual(2);
+    // The editor is a modal, opened from "Set Location".
     expect(screen.queryByLabelText("Latitude")).toBeNull();
 
-    await user.click(screen.getByRole("button", { name: /Edit/ }));
+    await user.click(screen.getByRole("button", { name: /Set Location/ }));
     expect(await screen.findByLabelText("Latitude")).toBeVisible();
+    expect(screen.getByRole("button", { name: /Locate Climate Data/ })).toBeVisible();
   });
 });

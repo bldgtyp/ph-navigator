@@ -98,7 +98,12 @@ export function climateSourceProximityStatus(
   return null;
 }
 
-export type ClimateStatusTone = "pass" | "warning" | "fail";
+export type ClimateStatusTone = "pass" | "warning" | "fail" | "missing";
+
+// The four climate-source types every project should establish, in their
+// canonical sidebar order. A type with no attached source still shows as a
+// "not set" slot so the gap is visible (e.g. no nearby PHI dataset).
+export const CANONICAL_CLIMATE_KINDS: ClimateSourceKind[] = ["phius", "phi", "ashrae", "epw"];
 
 // The sidebar/header status chip for a source: a proximity verdict when one
 // is recorded (Phius/PHI), otherwise an attached source reads as OK.

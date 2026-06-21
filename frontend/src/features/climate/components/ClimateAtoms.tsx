@@ -1,13 +1,20 @@
-import { climateSourceBadgeVersion, climateSourceKindLabel, type ClimateStatusTone } from "../lib";
-import type { ProjectClimateSource } from "../types";
+import { climateSourceKindLabel, type ClimateStatusTone } from "../lib";
+import type { ClimateSourceKind } from "../types";
 
 // Per-type colour badge (Phius / PHI / ASHRAE / EPW / Custom). Composes the
-// shared `.chip .chip--sm` primitive; colour comes from `data-kind`.
-export function ClimateTypeBadge({ source }: { source: ProjectClimateSource }) {
-  const version = climateSourceBadgeVersion(source);
+// shared `.chip .chip--sm` primitive; colour comes from `data-kind`. Takes a
+// bare kind (+ optional dataset version) so it renders for both attached
+// sources and the "not set" placeholder slots.
+export function ClimateTypeBadge({
+  kind,
+  version = null,
+}: {
+  kind: ClimateSourceKind;
+  version?: string | null;
+}) {
   return (
-    <span className="chip chip--sm climate-type-badge" data-kind={source.kind}>
-      {climateSourceKindLabel(source.kind)}
+    <span className="chip chip--sm climate-type-badge" data-kind={kind}>
+      {climateSourceKindLabel(kind)}
       {version ? ` ${version}` : null}
     </span>
   );

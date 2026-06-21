@@ -1,6 +1,8 @@
 import type { UnitSystem } from "../../../lib/units";
 import type { ProjectLocation } from "../../projects/types";
 import {
+  CANONICAL_CLIMATE_KINDS,
+  climateSourceBadgeVersion,
   climateSourceCta,
   climateSourceNavAttrs,
   climateSourceStatusChip,
@@ -8,7 +10,7 @@ import {
   formatLatLong,
   formatLocationElevationLabel,
 } from "../lib";
-import type { ProjectClimateSource } from "../types";
+import type { ClimateSourceKind, ProjectClimateSource } from "../types";
 import { ClimateStatusChip, ClimateTypeBadge, LocationPrivacyTag } from "./ClimateAtoms";
 
 export type ClimateSelection = "location" | "add" | string;
@@ -42,15 +44,39 @@ export function ClimateSourceSidebar({
         <span className="line" />
       </div>
 
-      {sources.map((source) => (
-        <SourceCard
-          key={source.id}
-          source={source}
-          unitSystem={unitSystem}
-          active={selected === source.id}
-          onSelect={() => onSelect(source.id)}
-        />
-      ))}
+      {CANONICAL_CLIMATE_KINDS.map((kind) => {
+        const kindSources = sources.filter((source) => source.kind === kind);
+        if (kindSources.length === 0) {
+          return (
+            <MissingSourceCard
+              key={kind}
+              kind={kind}
+              onSelect={canEdit ? () => onSelect("add") : undefined}
+            />
+          );
+        }
+        return kindSources.map((source) => (
+          <SourceCard
+            key={source.id}
+            source={source}
+            unitSystem={unitSystem}
+            active={selected === source.id}
+            onSelect={() => onSelect(source.id)}
+          />
+        ));
+      })}
+
+      {sources
+        .filter((source) => !CANONICAL_CLIMATE_KINDS.includes(source.kind))
+        .map((source) => (
+          <SourceCard
+            key={source.id}
+            source={source}
+            unitSystem={unitSystem}
+            active={selected === source.id}
+            onSelect={() => onSelect(source.id)}
+          />
+        ))}
 
       {canEdit ? (
         <button
@@ -137,7 +163,7 @@ function SourceCard({
       onClick={onSelect}
     >
       <span className="climate-nav-top">
-        <ClimateTypeBadge source={source} />
+        <ClimateTypeBadge kind={source.kind} version={climateSourceBadgeVersion(source)} />
         <span className="climate-default-star" data-default={source.is_default} aria-hidden="true">
           {source.is_default ? "★" : "☆"}
         </span>
@@ -160,6 +186,46 @@ function SourceCard({
           </span>
         ) : null}
       </span>
+    </button>
+  );
+}
+
+// A canonical climate type with no attached source. Rendered so the four
+// required bases are always visible as a checklist; editors can click through
+// to the add/re-populate surface.
+function MissingSourceCard({
+  kind,
+  onSelect,
+}: {
+  kind: ClimateSourceKind;
+  onSelect?: () => void;
+}) {
+  const className = "climate-nav-card climate-source-card climate-source-missing";
+  const body = (
+    <>
+      <span className="climate-nav-top">
+        <ClimateTypeBadge kind={kind} />
+        <span className="climate-default-star" aria-hidden="true">
+          ☆
+        </span>
+      </span>
+      <span className="climate-nav-name">No source attached</span>
+      <span className="climate-nav-foot">
+        <ClimateStatusChip tone="missing" label="Not set" />
+        {onSelect ? <span className="climate-nav-cta">add →</span> : null}
+      </span>
+    </>
+  );
+  if (!onSelect) {
+    return (
+      <div className={className} data-status="missing">
+        {body}
+      </div>
+    );
+  }
+  return (
+    <button type="button" className={className} data-status="missing" onClick={onSelect}>
+      {body}
     </button>
   );
 }

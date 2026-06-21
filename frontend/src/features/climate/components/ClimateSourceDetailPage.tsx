@@ -9,6 +9,7 @@ import {
   useSetClimateSourceDefaultMutation,
 } from "../hooks";
 import {
+  climateSourceBadgeVersion,
   climateSourceProximity,
   climateSourceProximityStatus,
   climateSourceStatusChip,
@@ -69,7 +70,7 @@ function SourceHeader({
     <header className="climate-page-head">
       <div>
         <div className="climate-page-badges">
-          <ClimateTypeBadge source={source} />
+          <ClimateTypeBadge kind={source.kind} version={climateSourceBadgeVersion(source)} />
           <ClimateStatusChip tone={status.tone} label={status.label} />
           {source.is_default ? (
             <span className="chip chip--sm climate-status-chip climate-status-pass">★ Default</span>
