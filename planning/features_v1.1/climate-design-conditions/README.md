@@ -18,6 +18,12 @@ RELATED:
 
 # Climate — Design conditions + metrics
 
+> **Narrowed 2026-06-21 (D-CL-25).** The data *production* (EPW/`.stat` +
+> ASHRAE) and *tab display* are now built under
+> `planning/features/climate-auto-populate/` (P3/P4). Only the consumer-facing
+> **contract endpoint** remains here, still gated on a scheduled fRSI/comfort
+> consumer + D-CL-5. See `STATUS.md`.
+
 Expose **per-source** design conditions — the PH datasets' design columns
 (already in the standardized record), EPW-derived percentiles, and ASHRAE
 fetched values — as a small, **source-parameterized** contract that

@@ -1,7 +1,9 @@
 ---
 DATE: 2026-06-21
 TIME: -
-STATUS: Deferred
+STATUS: Deferred (2026-06-21) — stays deferred; its EPW-metrics substrate is
+  now built under climate-auto-populate P3, so it becomes a small follow-on
+  (D-CL-25). Still gated on RX-1 (rainfall source).
 AUTHOR: Claude (for Ed)
 SCOPE: State + gate for the auto-derived rain-exposure-class Climate metric.
 RELATED:
@@ -18,11 +20,11 @@ framework + the PNNL BASC / BEMMI annual-rainfall thresholds.
 
 ## Gate / dependencies
 
-1. **EPW-metrics layer.** Cleanest to build on (or alongside)
-   `climate-design-conditions`, which already owns EPW parsing via
-   `ladybug-core`, the compute-once-by-EPW-asset-id pattern, and the per-source
-   `basis` contract. Could ship standalone, but would then duplicate that
-   parser — avoid.
+1. **EPW-metrics layer — now being built under `climate-auto-populate` P3**
+   (D-CL-25): EPW/`.stat` parsing via `ladybug-core`, compute-once-by-EPW-
+   asset-id, and per-source caching. Build rain-exposure on top of that once P3
+   lands (optionally capture annual rainfall during P3's parse to de-risk
+   RX-1). Don't stand up a second parser.
 2. **Annual-rainfall source decided (RX-1).** The one missing input. EPW's
    liquid-precipitation column is often blank/zero; pick a validated source +
    fallback before trusting the number.
