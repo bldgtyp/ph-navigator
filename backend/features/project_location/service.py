@@ -18,7 +18,7 @@ from features.auth.service import client_ip, user_agent
 from features.climate import repository as climate_repository
 from features.climate.epw_catalog import EpwZipPayload, download_epw_zip, nearest_epw_entry
 from features.climate.models import ClimateLocationSummary
-from features.climate.proximity import build_proximity_payload
+from features.climate.proximity import PhDatasetProvider, build_location_roster, build_proximity_payload
 from features.climate.stat_parser import parse_stat_file
 from features.model_viewer.schemas.ladybug import SunPathAndCompassDTOSchema
 from features.project_climate_source import repository as climate_source_repository
@@ -41,7 +41,9 @@ from features.projects.access import ProjectAccess
 from features.shared.errors import api_error
 
 COORDINATE_FIELDS = {"latitude", "longitude"}
-AUTO_ATTACH_PROVIDERS = ("phius", "phi")
+AUTO_ATTACH_PROVIDERS: tuple[PhDatasetProvider, ...] = ("phius", "phi")
+# DB-nearest candidates re-ranked by exact haversine before taking the closest.
+_AUTO_ATTACH_CANDIDATE_LIMIT = 8
 
 
 def get_project_location(project_id: UUID, *, include_private: bool = True) -> ProjectLocation:
@@ -240,21 +242,28 @@ def auto_attach_certification_sources(
     """Attach/update nearest Phius and PHI reference locations for a project."""
     warnings: list[str] = []
     for provider in AUTO_ATTACH_PROVIDERS:
-        dataset = latest_dataset_for_provider(conn, provider)
+        dataset = climate_repository.get_latest_dataset_for_provider(conn, provider)
         if dataset is None:
             warnings.append(f"No seeded {provider.upper()} climate dataset is available for auto-attach.")
             continue
-        nearest_rows = climate_repository.nearest_locations(
+        candidate_rows = climate_repository.nearest_locations(
             conn,
             dataset["id"],
             latitude=latitude,
             longitude=longitude,
-            limit=1,
+            limit=_AUTO_ATTACH_CANDIDATE_LIMIT,
         )
-        if not nearest_rows:
+        roster = build_location_roster(
+            provider=provider,
+            locations=[ClimateLocationSummary.model_validate(row) for row in candidate_rows],
+            site_latitude=latitude,
+            site_longitude=longitude,
+            site_elevation_m=elevation_m,
+        )
+        if not roster:
             warnings.append(f"No {provider.upper()} climate locations are available for auto-attach.")
             continue
-        location = ClimateLocationSummary.model_validate(nearest_rows[0])
+        location, _verdict = roster[0]
         payload = build_proximity_payload(
             provider=provider,
             dataset=dataset,
@@ -409,14 +418,6 @@ def auto_attach_weather_sources(
             label=str(source["label"]),
             data=cast(dict[str, object], source["data"] if isinstance(source["data"], dict) else {}),
         )
-
-
-def latest_dataset_for_provider(conn: Connection[Any], provider: str) -> dict[str, Any] | None:
-    """Return the most recently seeded dataset for a provider."""
-    rows = [row for row in climate_repository.list_datasets(conn) if row["provider"] == provider]
-    if not rows:
-        return None
-    return max(rows, key=lambda row: (row["created_at"], row["version"]))
 
 
 def upsert_certification_source(

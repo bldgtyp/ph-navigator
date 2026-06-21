@@ -1,7 +1,8 @@
 ---
 DATE: 2026-06-21
 TIME: -
-STATUS: Draft — O-DP-1..3 resolved (Ed, 2026-06-21); ready to start P1
+STATUS: P1 DONE (backend roster + authoritative attach); P2 blocked on O4.
+  O-DP-1..3 resolved (Ed, 2026-06-21)
 AUTHOR: Ed (via Claude)
 SCOPE: Manual climate-dataset picker — a map + state-filter modal to browse and
   attach a PH climate dataset, opened independently from the Phius and PHI
@@ -55,11 +56,11 @@ key-less fallback keeps CI/tests working.
 
 ## Phase map
 
-| Phase | Title | Gist | Depends on |
-| --- | --- | --- | --- |
-| P1 | Backend roster + authoritative attach | Project-scoped `…/datasets/{kind}/locations` with per-station proximity, sorted nearest-first; server-recomputed proximity on manual attach | — |
-| P2 | Picker modal + basemap | Generic `ClimateDatasetPickerModal(kind)`: state filter (default state + any-state), MapLibre/MapTiler basemap + station pins + 50 mi ring, nearest-first list, select→attach (failing-Phius allowed w/ warning); entry points; retire browser for phius/phi | P1 + **O4** |
-| P3 | App-wide map retrofit | Adopt the picker's `<ClimateMap>` for the Location / sidebar / Set-Location decorative maps; close O4 app-wide | P2 |
+| Phase | Status | Title | Gist | Depends on |
+| --- | --- | --- | --- | --- |
+| P1 | ✅ DONE | Backend roster + authoritative attach | Project-scoped `…/datasets/{kind}/locations` with per-station proximity, sorted nearest-first; server-recomputed proximity on manual attach | — |
+| P2 | ⛔ blocked on O4 | Picker modal + basemap | Generic `ClimateDatasetPickerModal(kind)`: state filter (default state + any-state), MapLibre/MapTiler basemap + station pins + 50 mi ring, nearest-first list, select→attach (failing-Phius allowed w/ warning); entry points; retire browser for phius/phi | P1 + **O4** |
+| P3 | ◻ planned | App-wide map retrofit | Adopt the picker's `<ClimateMap>` for the Location / sidebar / Set-Location decorative maps; close O4 app-wide | P2 |
 
 P2 delivers the user's full ask but is **gated on O4** (MapTiler key + a vetted
 map dependency + a tiles budget) — now on the critical path, since Ed chose the

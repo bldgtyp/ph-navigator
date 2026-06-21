@@ -16,6 +16,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from features.climate.proximity import ClimateProximityVerdict
+
 ClimateSourceKind = Literal["phius", "phi", "ashrae", "epw", "custom"]
 AshraeVersion = Literal["2009", "2013", "2017", "2021", "2025"]
 
@@ -79,6 +81,66 @@ class RefreshAshraeDesignConditionsRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     ashrae_version: AshraeVersion = "2025"
+
+
+# --- Dataset picker roster (project-scoped feed for manual attach) ---------
+#
+# The authoritative feed the climate dataset picker renders: a PH dataset's
+# candidate stations for a project, each with backend-computed proximity,
+# sorted nearest-first (D-DP-2). Distinct from the app-wide
+# ``climate_dataset_location`` listing, which knows nothing about a project.
+
+
+class ClimateDatasetRef(BaseModel):
+    """Identity of the pinned reference dataset a roster is drawn from."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    id: UUID
+    provider: str
+    version: str
+    label: str | None
+
+
+class RosterProjectLocation(BaseModel):
+    """The project's site — the origin every roster distance is measured from."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    latitude: float
+    longitude: float
+    elevation_m: float | None
+    state: str | None
+
+
+class ClimateDatasetRosterItem(BaseModel):
+    """One candidate station with its proximity verdict against the project."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    id: UUID
+    name: str
+    station_id: str | None
+    latitude: float | None
+    longitude: float | None
+    elevation_m: float | None
+    climate_zone: str | None
+    proximity: ClimateProximityVerdict
+
+
+class ClimateDatasetRosterResponse(BaseModel):
+    """The picker feed: the dataset, the project origin, and stations nearest-first.
+
+    ``dataset`` is null when the kind has no seeded dataset yet (e.g. PHI in
+    dev) so the modal can show an empty state rather than treating it as an error.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    dataset: ClimateDatasetRef | None
+    project: RosterProjectLocation
+    items: list[ClimateDatasetRosterItem]
+    total: int
 
 
 def validate_source_shape(kind: str, ref: str | None, data: dict[str, Any] | None) -> None:
