@@ -1,21 +1,21 @@
 ---
-DATE: 2026-06-20
+DATE: 2026-06-21
 TIME: 09:45 EDT
-STATUS: Active
+STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Current state of DataTable formula builder planning.
 RELATED:
-  - planning/features/data-table-formula-builder/README.md
-  - planning/features/data-table-formula-builder/PRD.md
-  - planning/features/data-table-formula-builder/PLAN.md
-  - planning/features/data-table-formula-builder/phases/phase-00-research-plan.md
+  - planning/archive/data-table-formula-builder/README.md
+  - planning/archive/data-table-formula-builder/PRD.md
+  - planning/archive/data-table-formula-builder/PLAN.md
+  - planning/archive/data-table-formula-builder/phases/phase-00-research-plan.md
 ---
 
 # DataTable Formula Builder - Status
 
 ## Current State
 
-`Implementation complete through Phase 06; feature packet is ready for review`.
+`Implementation complete through Phase 06; feature packet verified against current code and archived`.
 
 The current codebase already routes formula authoring through shared
 DataTable components:
@@ -30,8 +30,7 @@ DataTable components:
 
 Main confirmed gaps after Phase 06:
 
-- archive / PR handoff remains a workflow decision outside the implementation
-  phases.
+- None for the formula builder implementation packet.
 
 Phase 01 added:
 
@@ -107,8 +106,8 @@ Phase 06 added:
 
 ## Next Step
 
-Review the completed feature packet and decide whether to archive the planning
-folder or open a PR from the current commits.
+No active planning action remains. Future formula-builder changes should start
+a new feature or maintenance packet.
 
 ## Phase Status
 
@@ -245,3 +244,12 @@ Phase 06 closeout checks:
     Vitest (`184 files`, `1760 tests`), production build.
 - `graphify update .` passed after closeout.
 - `git diff --check` passed.
+
+Archive verification:
+
+- `cd backend && uv run pytest tests/test_project_document_formula_grammar.py tests/test_project_document_formula_evaluator.py tests/test_project_document_schema_mutations.py`
+  passed (`198 passed`).
+- `cd frontend && pnpm exec vitest run src/shared/ui/data-table/__tests__/formulaGrammarCorpus.test.ts src/shared/ui/data-table/__tests__/formulaEvaluatorCorpus.test.ts src/shared/ui/data-table/__tests__/formulaSuggestions.test.ts src/shared/ui/data-table/__tests__/FormulaSuggestionPanel.test.tsx src/shared/ui/data-table/__tests__/FormulaSourceEditor.test.tsx src/shared/ui/data-table/__tests__/CreateFieldConfigModal.test.tsx src/shared/ui/data-table/__tests__/FieldConfigModal.test.tsx`
+  passed (`203 passed`).
+- Feature packet moved from `planning/features/data-table-formula-builder/`
+  to `planning/archive/data-table-formula-builder/`.

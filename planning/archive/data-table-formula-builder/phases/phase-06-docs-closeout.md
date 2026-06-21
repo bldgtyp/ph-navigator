@@ -5,10 +5,10 @@ STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Durable docs update, closeout gates, graph update, and archive-ready status.
 RELATED:
-  - planning/features/data-table-formula-builder/README.md
-  - planning/features/data-table-formula-builder/PRD.md
-  - planning/features/data-table-formula-builder/PLAN.md
-  - planning/features/data-table-formula-builder/STATUS.md
+  - planning/archive/data-table-formula-builder/README.md
+  - planning/archive/data-table-formula-builder/PRD.md
+  - planning/archive/data-table-formula-builder/PLAN.md
+  - planning/archive/data-table-formula-builder/STATUS.md
   - context/technical-requirements/data-table.md
   - context/technical-requirements/data-model.md
   - context/UI_UX.md
@@ -46,11 +46,11 @@ Likely docs:
   - any coercion semantics for `&`.
 - `context/UI_UX.md`
   - field config modal formula authoring affordances if useful.
-- `planning/features/data-table-formula-builder/STATUS.md`
+- `planning/archive/data-table-formula-builder/STATUS.md`
   - final phase states;
   - exact verification commands and outcomes;
   - known follow-ups.
-- `planning/features/data-table-formula-builder/decisions.md`
+- `planning/archive/data-table-formula-builder/decisions.md`
   - create if implementation settles open decisions such as `&` precedence or
     autocomplete trigger behavior.
 
@@ -112,7 +112,7 @@ Likely docs:
   recorded in `STATUS.md`.
 - Graphify update is run after code changes. Complete: `graphify update .`
   was run after Phase 05 code changes; Phase 06 changed docs only.
-- The feature packet is internally consistent and ready for review/archive.
+- The feature packet is internally consistent and verified and archived.
   Complete.
 
 ## Verification

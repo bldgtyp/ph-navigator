@@ -5,9 +5,9 @@ STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Shared formula source editor UI, syntax highlighting, sizing, and resize behavior.
 RELATED:
-  - planning/features/data-table-formula-builder/README.md
-  - planning/features/data-table-formula-builder/PRD.md
-  - planning/features/data-table-formula-builder/PLAN.md
+  - planning/archive/data-table-formula-builder/README.md
+  - planning/archive/data-table-formula-builder/PRD.md
+  - planning/archive/data-table-formula-builder/PLAN.md
   - frontend/src/shared/ui/data-table/components/FieldConfigSectionFormula.tsx
   - frontend/src/shared/ui/data-table/components/FieldConfigModal.tsx
   - frontend/src/shared/ui/data-table/components/CreateFieldConfigModal.tsx

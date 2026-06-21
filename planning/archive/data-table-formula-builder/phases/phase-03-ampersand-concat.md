@@ -5,8 +5,8 @@ STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Add Airtable-style `&` text concatenation to frontend and backend formula engines.
 RELATED:
-  - planning/features/data-table-formula-builder/PRD.md
-  - planning/features/data-table-formula-builder/PLAN.md
+  - planning/archive/data-table-formula-builder/PRD.md
+  - planning/archive/data-table-formula-builder/PLAN.md
   - frontend/src/shared/ui/data-table/lib/formula/parser.ts
   - frontend/src/shared/ui/data-table/lib/formula/evaluator.ts
   - backend/features/project_document/formula/parser.py

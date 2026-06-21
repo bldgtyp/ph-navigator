@@ -1,13 +1,13 @@
 ---
 DATE: 2026-06-20
 TIME: 07:50 EDT
-STATUS: Active
+STATUS: Complete
 AUTHOR: Ed (via Codex)
 SCOPE: Phase plan for shared DataTable formula builder improvements.
 RELATED:
-  - planning/features/data-table-formula-builder/README.md
-  - planning/features/data-table-formula-builder/PRD.md
-  - planning/features/data-table-formula-builder/STATUS.md
+  - planning/archive/data-table-formula-builder/README.md
+  - planning/archive/data-table-formula-builder/PRD.md
+  - planning/archive/data-table-formula-builder/STATUS.md
   - frontend/src/shared/ui/data-table/DataTable.tsx
   - frontend/src/shared/ui/data-table/components/FieldConfigSectionFormula.tsx
   - frontend/src/shared/ui/data-table/lib/formula/parser.ts
