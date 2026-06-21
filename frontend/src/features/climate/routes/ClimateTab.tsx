@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { MapPin } from "lucide-react";
 import "../climate.css";
 import "../climate-workspace.css";
 import { useUnitPreference, type UnitSystem } from "../../../lib/units";
@@ -7,10 +8,10 @@ import { useProjectLocationQuery } from "../../projects/hooks";
 import type { ProjectDetail, ProjectLocation } from "../../projects/types";
 import { ClimateDatasetBrowser } from "../components/ClimateDatasetBrowser";
 import { LocationPrivacyTag } from "../components/ClimateAtoms";
-import { ClimateLocationSection } from "../components/ClimateLocationSection";
 import { ClimateSourceDetailPage } from "../components/ClimateSourceDetailPage";
 import { ClimateSourceSidebar, type ClimateSelection } from "../components/ClimateSourceSidebar";
 import { ClimateSourcesSection } from "../components/ClimateSourcesSection";
+import { SetLocationModal } from "../components/SetLocationModal";
 import { SunPathDiagram } from "../components/SunPathDiagram";
 import { useClimateSourcesQuery, useCreateClimateSourceMutation } from "../hooks";
 import { formatLatLong, formatLocationElevationLabel } from "../lib";
@@ -106,7 +107,7 @@ function LocationPage({
   canEdit: boolean;
   unitSystem: UnitSystem;
 }) {
-  const [editing, setEditing] = useState(false);
+  const [isModalOpen, setModalOpen] = useState(false);
   const isSet = location?.is_set ?? false;
   const countyState = [location?.county, location?.state].filter(Boolean).join(" · ");
   const elevation = formatLocationElevationLabel(location?.elevation_m, unitSystem) ?? "—";
@@ -125,13 +126,9 @@ function LocationPage({
         </div>
         {canEdit ? (
           <div className="climate-page-head-actions">
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => setEditing((value) => !value)}
-              aria-expanded={editing}
-            >
-              {editing ? "Done editing" : "Edit ▸"}
+            <button type="button" className="secondary-button" onClick={() => setModalOpen(true)}>
+              <MapPin size={16} aria-hidden="true" />
+              Set Location
             </button>
           </div>
         ) : null}
@@ -160,8 +157,6 @@ function LocationPage({
         </div>
       </dl>
 
-      {canEdit && editing ? <ClimateLocationSection project={project} /> : null}
-
       <div className="climate-sunpath-panel">
         <h3>Sun path</h3>
         <div className="climate-sun-wrap">
@@ -178,6 +173,10 @@ function LocationPage({
           </div>
         </div>
       </div>
+
+      {canEdit && isModalOpen ? (
+        <SetLocationModal projectId={project.id} onClose={() => setModalOpen(false)} />
+      ) : null}
     </section>
   );
 }

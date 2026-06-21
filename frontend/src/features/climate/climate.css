@@ -33,6 +33,49 @@
   justify-content: flex-end;
 }
 
+/* Set-location modal — address-first entry point to the climate basis.
+   Reuses the shared `.project-form` + `.settings-location-*` form styles;
+   these rules add only the map preview and the advanced disclosure. */
+.set-location-modal {
+  margin-top: var(--space-16);
+}
+
+.set-location-map {
+  display: grid;
+  place-items: center;
+  height: 150px;
+  border-radius: var(--phn-radius);
+}
+
+.set-location-map-note {
+  position: relative;
+  z-index: var(--z-base-elevated);
+  padding: var(--space-2) var(--space-8);
+  border-radius: var(--radius-xs);
+  background: color-mix(in oklab, var(--bg-card) 72%, transparent);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+}
+
+.set-location-advanced {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--space-12);
+}
+
+.set-location-advanced > summary {
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.set-location-advanced-body {
+  margin-top: var(--space-12);
+}
+
 /* Climate sources (Phase 3b) */
 .climate-sources {
   display: flex;
