@@ -129,15 +129,16 @@ def derive_location_geodata(
 
 
 def geocode_address(query: str, clients: DeriveClients | None = None) -> list[GeocodeProjectLocationCandidate]:
-    """Resolve an address string through MapTiler when an API key is configured."""
+    """Resolve an address string into candidate coordinates.
+
+    MapTiler gives better POI handling when configured. Local/dev installs
+    fall back to the Census geocoder so US address lookup does not require a
+    secret just to seed project coordinates.
+    """
+    resolved_clients = clients or DeriveClients()
     api_key = settings.maptiler_api_key.strip()
     if not api_key:
-        raise api_error(
-            status.HTTP_503_SERVICE_UNAVAILABLE,
-            "geocoder_not_configured",
-            "MapTiler geocoding is not configured.",
-        )
-    resolved_clients = clients or DeriveClients()
+        return _parse_census_address_candidates(resolved_clients.fetch_json(_census_address_url(query)), query)
     params = urlencode({"key": api_key, "limit": 5, "country": "us"})
     payload = resolved_clients.fetch_json(f"https://api.maptiler.com/geocoding/{quote(query)}.json?{params}")
     candidates: list[GeocodeProjectLocationCandidate] = []
@@ -162,6 +163,45 @@ def geocode_address(query: str, clients: DeriveClients | None = None) -> list[Ge
                 state=_context_value(context_items, "region"),
                 country=_context_value(context_items, "country"),
                 source="maptiler",
+            )
+        )
+    return candidates
+
+
+def _parse_census_address_candidates(
+    payload: dict[str, Any],
+    query: str,
+) -> list[GeocodeProjectLocationCandidate]:
+    result = payload.get("result")
+    if not isinstance(result, dict):
+        return []
+    matches = result.get("addressMatches")
+    if not isinstance(matches, list):
+        return []
+    candidates: list[GeocodeProjectLocationCandidate] = []
+    for match in matches[:5]:
+        if not isinstance(match, dict):
+            continue
+        coordinates = match.get("coordinates")
+        if not isinstance(coordinates, dict):
+            continue
+        longitude = coordinates.get("x")
+        latitude = coordinates.get("y")
+        if longitude is None or latitude is None:
+            continue
+        components = match.get("addressComponents")
+        component_items = components if isinstance(components, dict) else {}
+        matched_address = match.get("matchedAddress")
+        candidates.append(
+            GeocodeProjectLocationCandidate(
+                label=str(matched_address or query),
+                latitude=float(latitude),
+                longitude=float(longitude),
+                site_address=str(matched_address) if matched_address else None,
+                city=_optional_str(component_items.get("city")),
+                state=_optional_str(component_items.get("state")),
+                country="US",
+                source="census_geocoder",
             )
         )
     return candidates
@@ -294,6 +334,17 @@ def _census_url(latitude: float, longitude: float) -> str:
     return f"https://geocoding.geo.census.gov/geocoder/geographies/coordinates?{params}"
 
 
+def _census_address_url(query: str) -> str:
+    params = urlencode(
+        {
+            "address": query,
+            "benchmark": "Public_AR_Current",
+            "format": "json",
+        }
+    )
+    return f"https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?{params}"
+
+
 def _usgs_epqs_url(latitude: float, longitude: float) -> str:
     params = urlencode({"x": longitude, "y": latitude, "wkid": 4326, "units": "Meters", "output": "json"})
     return f"https://epqs.nationalmap.gov/v1/json?{params}"
@@ -314,3 +365,7 @@ def _context_value(items: list[object], prefix: str) -> str | None:
             value = item_dict.get("text") or item_dict.get("short_code")
             return str(value) if value else None
     return None
+
+
+def _optional_str(value: object) -> str | None:
+    return str(value) if value else None

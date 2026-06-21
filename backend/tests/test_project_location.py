@@ -19,7 +19,12 @@ from features.climate.importers.phius import parse_phius_mon_file
 from features.climate.record import ClimateRecord
 from features.climate.service import seed_dataset
 from features.project_climate_source import repository as climate_source_repository
-from features.project_location.derive import DerivedLocationGeodata, lookup_climate_zone
+from features.project_location.derive import (
+    DeriveClients,
+    DerivedLocationGeodata,
+    geocode_address,
+    lookup_climate_zone,
+)
 from features.project_location.mcp import tool_get_project_location
 from features.project_location.models import GeocodeProjectLocationCandidate, UpdateProjectLocationRequest
 from features.project_location.service import existing_weather_source_values
@@ -531,6 +536,40 @@ def test_geocode_location_requires_editor_and_returns_candidates(
     assert anon.status_code == 401
     assert response.status_code == 200
     assert response.json()["candidates"][0]["latitude"] == 42.325
+
+
+def test_geocode_address_falls_back_to_census_without_maptiler_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("features.project_location.derive.settings.maptiler_api_key", "")
+
+    def fake_fetch(url: str) -> dict[str, object]:
+        assert "geocoder/locations/onelineaddress" in url
+        assert "address=1+Main+St%2C+West+Stockbridge%2C+MA" in url
+        return {
+            "result": {
+                "addressMatches": [
+                    {
+                        "matchedAddress": "1 MAIN ST, WEST STOCKBRIDGE, MA, 01266",
+                        "coordinates": {"x": -73.367, "y": 42.325},
+                        "addressComponents": {"city": "WEST STOCKBRIDGE", "state": "MA"},
+                    }
+                ]
+            }
+        }
+
+    candidates = geocode_address("1 Main St, West Stockbridge, MA", DeriveClients(fetch_json=fake_fetch))
+
+    assert candidates == [
+        GeocodeProjectLocationCandidate(
+            label="1 MAIN ST, WEST STOCKBRIDGE, MA, 01266",
+            latitude=42.325,
+            longitude=-73.367,
+            site_address="1 MAIN ST, WEST STOCKBRIDGE, MA, 01266",
+            city="WEST STOCKBRIDGE",
+            state="MA",
+            country="US",
+            source="census_geocoder",
+        )
+    ]
 
 
 def test_epw_upload_parse_persists_metadata_and_suggests_location(clean_mcp_tables: None) -> None:
