@@ -11,8 +11,8 @@ import type { FieldDef } from "../types";
 // context menu (US-CF-9 criterion 2).
 //
 // Built on `@radix-ui/react-popover` so the bundle and pnpm
-// supply-chain surface match `ColumnHeaderMenu` rather than pulling
-// in `@radix-ui/react-dropdown-menu`. The trade is hand-rolled
+// supply-chain surface match the other data-table menus rather than
+// pulling in `@radix-ui/react-dropdown-menu`. The trade is hand-rolled
 // arrow-key focus management.
 
 export type HeaderContextMenuProps = {

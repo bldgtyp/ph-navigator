@@ -1,8 +1,8 @@
 import * as Popover from "@radix-ui/react-popover";
 import { useState } from "react";
 
-// Reuses `@radix-ui/react-popover` (already in the bundle for
-// `ColumnHeaderMenu`) rather than pulling in `@radix-ui/react-tooltip`.
+// Reuses `@radix-ui/react-popover` (already in the bundle for the
+// header/row context menus) rather than pulling in `@radix-ui/react-tooltip`.
 // Opens on hover or keyboard focus so the description is reachable
 // without a mouse.
 

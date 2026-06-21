@@ -10,7 +10,6 @@ import type { GridColumnResize } from "../hooks/useGridColumnResize";
 import { isAttributeLocked, isBuiltInField, isFieldDuplicable } from "../lib/locks";
 import type { AxisRoleSubset, DataTableColumnDef, FieldDef } from "../types";
 import { AddFieldTailCell } from "./AddFieldTailCell";
-import { ColumnHeaderMenu } from "./ColumnHeaderMenu";
 import { ColumnResizeHandle } from "./ColumnResizeHandle";
 import { CustomFieldDescriptionTooltip } from "./CustomFieldDescriptionTooltip";
 import { FieldTypeIcon } from "./FieldTypeIcon";
@@ -21,8 +20,8 @@ import { SortableHeaderCell } from "./SortableHeaderCell";
 // custom headers opens the field config modal.
 // Header `<th>` refs are captured into `headerCellRefByFieldKey` so
 // dialogs and header menus can return focus to the originating column.
-// `<ColumnHeaderMenu>` owns the show/hide decision for the `⋯` trigger
-// internally.
+// Field config is reached via the right-click `<HeaderContextMenu>`,
+// double-click, or Enter — there is no per-column `⋯` trigger.
 //
 // Plan 08: every non-primary header `<th>` is wrapped in
 // `<SortableHeaderCell>`. The `DndContext` + `SortableContext` live
@@ -273,13 +272,6 @@ function DataTableHeaderCell<TRow>({
           <CustomFieldDescriptionTooltip
             description={description}
             fieldDisplayName={fieldDef.display_name}
-          />
-        ) : null}
-        {fieldDef ? (
-          <ColumnHeaderMenu
-            fieldDef={fieldDef}
-            canEditOptions={canEditFieldConfig}
-            onEditOptions={() => onEditCustomFieldConfig?.()}
           />
         ) : null}
       </div>
