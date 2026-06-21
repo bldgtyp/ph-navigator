@@ -1,16 +1,19 @@
 import { useEffect, useState } from "react";
 import "../climate.css";
 import "../climate-workspace.css";
-import { useUnitPreference } from "../../../lib/units";
+import { useUnitPreference, type UnitSystem } from "../../../lib/units";
+import { formatReadOnlyCoordinate } from "../../projects/location-form";
 import { useProjectLocationQuery } from "../../projects/hooks";
-import type { ProjectDetail } from "../../projects/types";
+import type { ProjectDetail, ProjectLocation } from "../../projects/types";
 import { ClimateDatasetBrowser } from "../components/ClimateDatasetBrowser";
+import { LocationPrivacyTag } from "../components/ClimateAtoms";
 import { ClimateLocationSection } from "../components/ClimateLocationSection";
 import { ClimateSourceDetailPage } from "../components/ClimateSourceDetailPage";
 import { ClimateSourceSidebar, type ClimateSelection } from "../components/ClimateSourceSidebar";
 import { ClimateSourcesSection } from "../components/ClimateSourcesSection";
 import { SunPathDiagram } from "../components/SunPathDiagram";
 import { useClimateSourcesQuery, useCreateClimateSourceMutation } from "../hooks";
+import { formatLatLong, formatLocationElevationLabel } from "../lib";
 import type { CreateClimateSourceRequest } from "../types";
 
 // The Climate tab is a master-detail source browser: site location plus one
@@ -50,13 +53,21 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
           sources={sources}
           selected={selected}
           canEdit={canEdit}
+          unitSystem={unitSystem}
           onSelect={setSelected}
         />
         <main className="climate-main">
           {sourcesQuery.error ? (
             <p className="form-error">Could not load climate sources.</p>
           ) : null}
-          {selected === "location" ? <LocationPage project={project} /> : null}
+          {selected === "location" ? (
+            <LocationPage
+              project={project}
+              location={location}
+              canEdit={canEdit}
+              unitSystem={unitSystem}
+            />
+          ) : null}
           {selectedSource ? (
             <ClimateSourceDetailPage
               project={project}
@@ -82,14 +93,90 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
   );
 }
 
-function LocationPage({ project }: { project: ProjectDetail }) {
+// The location page is read-first: derived facts, the decorative site map, and
+// the sun-path. Editors reveal the full location editor inline via "Edit".
+function LocationPage({
+  project,
+  location,
+  canEdit,
+  unitSystem,
+}: {
+  project: ProjectDetail;
+  location: ProjectLocation | undefined;
+  canEdit: boolean;
+  unitSystem: UnitSystem;
+}) {
+  const [editing, setEditing] = useState(false);
+  const isSet = location?.is_set ?? false;
+  const countyState = [location?.county, location?.state].filter(Boolean).join(" · ");
+  const elevation = formatLocationElevationLabel(location?.elevation_m, unitSystem) ?? "—";
+
   return (
-    <section className="climate-section" aria-labelledby="climate-location-title">
-      <h3 id="climate-location-title">Project location</h3>
-      <ClimateLocationSection project={project} />
+    <section className="climate-detail-page" aria-labelledby="climate-location-title">
+      <header className="climate-page-head">
+        <div>
+          <h3 id="climate-location-title" className="climate-page-title">
+            Project location
+          </h3>
+          <div className="climate-page-sub">
+            {canEdit && location?.site_address ? <span>{location.site_address}</span> : null}
+            {isSet ? <LocationPrivacyTag /> : null}
+          </div>
+        </div>
+        {canEdit ? (
+          <div className="climate-page-head-actions">
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => setEditing((value) => !value)}
+              aria-expanded={editing}
+            >
+              {editing ? "Done editing" : "Edit ▸"}
+            </button>
+          </div>
+        ) : null}
+      </header>
+
+      <div className="climate-map-surface climate-big-map" aria-hidden="true">
+        <span className="climate-map-pin" style={{ left: "48%", top: "46%" }} />
+      </div>
+
+      <dl className="climate-facts">
+        <div className="climate-fact">
+          <dt>Coordinates</dt>
+          <dd>{formatLatLong(location?.latitude ?? null, location?.longitude ?? null)}</dd>
+        </div>
+        <div className="climate-fact">
+          <dt>County · State</dt>
+          <dd>{countyState || "—"}</dd>
+        </div>
+        <div className="climate-fact">
+          <dt>Elevation</dt>
+          <dd>{elevation}</dd>
+        </div>
+        <div className="climate-fact">
+          <dt>IECC climate zone</dt>
+          <dd>{location?.climate_zone ?? "—"}</dd>
+        </div>
+      </dl>
+
+      {canEdit && editing ? <ClimateLocationSection project={project} /> : null}
+
       <div className="climate-sunpath-panel">
         <h3>Sun path</h3>
-        <SunPathDiagram projectId={project.id} />
+        <div className="climate-sun-wrap">
+          <SunPathDiagram projectId={project.id} />
+          <div className="climate-sun-meta">
+            <div className="row">
+              <span className="k">Latitude</span>
+              <span>{formatReadOnlyCoordinate(location?.latitude ?? null)}</span>
+            </div>
+            <div className="row">
+              <span className="k">True-north offset</span>
+              <span>{formatReadOnlyCoordinate(location?.true_north_deg ?? null)}</span>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );

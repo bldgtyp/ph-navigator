@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-21
 TIME: 13:52 EDT
-STATUS: Implemented — final gates running.
+STATUS: Implemented — UI built to full wireframe-B2 fidelity; final gates running.
 AUTHOR: Ed (via Claude)
 SCOPE: P4 — rebuild the Climate tab as a nav-sidebar + per-type-page layout
   (D-CL-20). Replaces the existing tab (D-CL-24). Fixes today's orphaned-
@@ -28,6 +28,24 @@ Direction is **locked** (D-CL-20) — record at
 only**; styling/typography/color come from the app CSS tokens + brand items.
 
 ## Implementation notes
+
+> **UI fidelity pass (2026-06-21).** The first cut *approximated* the
+> wireframe; the tab now renders B2's full structure on app tokens —
+> sidebar location card (decorative map placeholder + coords/elev/zone
+> pills + privacy marker), a "Climate sources" divider, per-type colour
+> **badges** (token-driven via `data-kind`), status-colored card edges,
+> **default ★** markers, **OK/Check/Fail LED status chips**, inline CTAs,
+> and a dashed add affordance. Detail pages gained a shared page-head
+> (badge + status chip + metadata + Set-default/Remove actions), the
+> Phius/PHI **peak-load tiles**, and the fail-page **"Certification
+> blocker" hero** + candidate verdict table. The Location page is now
+> read-first (facts grid + map + sun-path) with an **Edit ▸** reveal of
+> the existing editor. The decorative map is a placeholder pending the
+> MapTiler key (O4). New shared atoms live in `components/ClimateAtoms.tsx`
+> (`ClimateTypeBadge`, `ClimateStatusChip`, `LocationPrivacyTag`).
+> **D-CL-21 fix:** ASHRAE/EPW/peak temperature tiles previously hardcoded
+> `°C`; they now route through `formatTemperatureFromC` and follow the
+> app-wide SI/IP preference.
 
 - `ClimateTab` is now a local-state master-detail router with a sticky source
   sidebar and one main detail page at a time.
@@ -139,6 +157,21 @@ the old tab is replaced; gating + app-wide units hold; CI green.
   another frontend surface change.
 
 ## Verification
+
+### UI fidelity pass (2026-06-21)
+
+- `cd frontend && pnpm exec vitest run src/features/climate` — 34 passed
+  (8 files); `pnpm exec tsc --noEmit` — passed.
+- `ClimateTab.test.tsx` extended: asserts the read-first location facts
+  (county/state + zone), the sidebar OK status chips, and the Edit-reveal
+  of the editor. The ASHRAE temp assertion moved from the old hardcoded
+  `-18.8 °C` to the app-units `-18.8 deg C` (D-CL-21).
+- Live Playwright (codex@example.com, project `3a7d86b5-…`): Location,
+  Phius (peak-load tiles + Table/Charts), and ASHRAE (design tiles) pages
+  render the B2 structure; the top-bar SI↔IP toggle flips every temperature
+  tile and the elevation pill (`290.6 m` ↔ `953.4 ft`).
+
+### Initial implementation (2026-06-21)
 
 - `cd frontend && pnpm exec vitest run src/features/climate/__tests__/ClimateRecordTable.test.tsx src/features/climate/__tests__/chart-data.test.ts src/features/climate/__tests__/ClimateSourcesSection.test.tsx src/features/climate/__tests__/ClimateTab.test.tsx src/features/climate/__tests__/sun-path.test.tsx` — 19 passed.
 - `cd frontend && pnpm exec tsc --noEmit` — passed.

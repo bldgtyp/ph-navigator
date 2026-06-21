@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-21
 TIME: 13:52 EDT
-STATUS: Active — P4 implemented; final gates running.
+STATUS: Active — P4 UI built to full wireframe-B2 fidelity; final gates running.
   Design decisions accepted (D-CL-12..24, O-units). Open items are operational only.
 AUTHOR: Ed (via Claude)
 SCOPE: Current state of the climate auto-populate feature.
@@ -32,6 +32,12 @@ Phase 4 replaces the Climate tab with a master-detail sidebar, per-source
 detail pages, attached-source PH charts/tables, ASHRAE/EPW metric pages,
 custom-record override entry, fail-page CTA/candidate rendering, app-wide
 SI/IP radiation conversion, and N/E/S/W sun-path labels on the Location page.
+The P4 UI now fully implements wireframe B2 on the app design tokens (was an
+approximation): per-type colour badges, OK/Check/Fail LED status chips,
+inline CTAs, the Phius/PHI peak-load tiles, the fail-page "Certification
+blocker" hero, and a read-first Location page with an Edit-reveal editor.
+The ASHRAE/EPW/peak temperature tiles, which had hardcoded `°C`, now follow
+the app-wide SI/IP preference (D-CL-21).
 
 ## Next step
 
@@ -140,3 +146,23 @@ contains the address string.
   files / `1787` tests passed; Vite build passed. Existing warnings only:
   backend HTTP 413 deprecation, frontend fast-refresh/act warnings, and Vite
   chunk-size warnings.
+
+## P4 UI fidelity pass (2026-06-21)
+
+Brought the Climate tab from an approximation to a full implementation of
+wireframe B2 on the app design tokens; fixed the D-CL-21 `°C` hardcode.
+
+- Rebuilt `ClimateSourceSidebar` (location card with decorative map + pills +
+  privacy marker, source cards with `data-kind` badges + status edges + ★ +
+  LED OK/Check/Fail chips + inline CTAs, dashed add affordance),
+  `ClimateSourceDetailPage` (shared page-head with Set-default/Remove actions,
+  Phius/PHI peak-load tiles, fail-page hero + candidate verdict table), and
+  the `ClimateTab` Location page (read-first facts + map + sun-path, Edit ▸
+  reveal). New atoms in `components/ClimateAtoms.tsx`. Badge tints are
+  token-derived (`--accent`/`--chart-*`); no new hex.
+- `cd frontend && pnpm exec vitest run src/features/climate` — 34 passed;
+  `pnpm exec tsc --noEmit` — passed.
+- Live Playwright (project `3a7d86b5-…`): Location / Phius / ASHRAE pages
+  render B2 structure; SI↔IP toggle flips every temp tile + elevation pill.
+- `simplify` skill applied (className/elevation/privacy/subItems cleanups).
+- Final `make format` + `make ci` are the closing gate (in progress).
