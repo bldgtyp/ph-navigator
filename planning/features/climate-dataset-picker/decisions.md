@@ -1,8 +1,8 @@
 ---
 DATE: 2026-06-21
 TIME: -
-STATUS: Draft — O-DP-1..3 resolved by Ed 2026-06-21; O-DP-4 recommended (Claude's
-  call unless Ed objects); O-DP-5 is a data/ops dependency, still open.
+STATUS: O-DP-1..4 resolved (Ed, 2026-06-21; O-DP-4 retired the browser in P2a);
+  O-DP-5 (PHI seed) is a data/ops dependency, still open.
 AUTHOR: Ed (via Claude)
 SCOPE: Decision ledger + open questions for the climate dataset picker. Uses a
   D-DP-* prefix; references the parent climate ledger (D-CL-*) where it builds
@@ -66,12 +66,11 @@ commissioned). PHI stays advisory. Folded into PRD §8.
 Filter defaults to the project's derived state, plus a "Nearest to project (any
 state)" mode (endpoint `near` ordering) for border sites. Folded into PRD §5/§4.2.
 
-## Open questions
+### O-DP-4 · Keep or retire `ClimateDatasetBrowser`? → **RETIRED (P2a)**
+Confirmed D-DP-4: the generic browser is **deleted**; phius/phi attach through the
+picker modal, and the "+ Add source" page keeps ASHRAE/EPW/custom. Done in P2a.
 
-### O-DP-4 · Keep or retire `ClimateDatasetBrowser`?
-Confirm D-DP-4: retire the generic browser for phius/phi in favor of the modal,
-keeping ASHRAE/EPW/custom attach on the add page. (Reversible.)
-**Recommend:** retire for phius/phi.
+## Open questions
 
 ### O-DP-5 · PHI dataset availability
 The PHI instance needs a seeded PHI dataset to exercise (dev DB has only

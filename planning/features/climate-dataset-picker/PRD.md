@@ -1,9 +1,10 @@
 ---
 DATE: 2026-06-21
 TIME: -
-STATUS: P1 DONE (backend roster + authoritative attach, §4/§10); P2 blocked on
-  O4. O-DP-1..3 resolved by Ed 2026-06-21 (real basemap; allow-failing-Phius-
-  with-warning; default-state + any-state). O-DP-4 recommended, O-DP-5 data/ops open.
+STATUS: P1 DONE (backend roster + attach, §4/§10); P2a DONE (key-less picker
+  scaffold, §3/§5/§8); P2b (live basemap, §6) blocked on O4. O-DP-1..4 resolved
+  by Ed 2026-06-21 (real basemap; allow-failing-Phius-with-warning; default-state
+  + any-state; browser retired). O-DP-5 (PHI seed) data/ops open.
 AUTHOR: Ed (via Claude)
 SCOPE: Product / behavior contract for the manual climate-dataset picker — a
   map + state-filter modal that lets an editor browse the available PH climate

@@ -1,10 +1,13 @@
 import { fetchJson } from "../../shared/api/client";
 import type {
   ClimateDatasetListResponse,
+  ClimateDatasetRosterResponse,
   ClimateLocationDetail,
   ClimateLocationListResponse,
   ClimateLocationSearch,
+  ClimateRosterSearch,
   CreateClimateSourceRequest,
+  PhClimateKind,
   ProjectClimateSource,
   ProjectClimateSourceListResponse,
   SunPathAndCompass,
@@ -60,6 +63,26 @@ export async function fetchProjectSunPath(
   signal?: AbortSignal,
 ): Promise<SunPathAndCompass | null> {
   return fetchJson<SunPathAndCompass | null>(`/api/v1/projects/${projectId}/sun-path`, { signal });
+}
+
+// The picker feed: a PH dataset's stations for a project, each with
+// backend-computed proximity, nearest-first. `region` filters by state
+// (default = project's state); `near` is the any-state nearest mode (O-DP-3).
+export async function fetchClimateDatasetRoster(
+  projectId: string,
+  kind: PhClimateKind,
+  search: ClimateRosterSearch,
+  signal?: AbortSignal,
+): Promise<ClimateDatasetRosterResponse> {
+  const params = new URLSearchParams();
+  if (search.region) params.set("region", search.region);
+  if (search.near) params.set("near", "true");
+  const query = params.toString();
+  const suffix = query ? `?${query}` : "";
+  return fetchJson<ClimateDatasetRosterResponse>(
+    `/api/v1/projects/${projectId}/climate/datasets/${kind}/locations${suffix}`,
+    { signal },
+  );
 }
 
 // ---- Project-scoped climate sources (Phase 3b) ----

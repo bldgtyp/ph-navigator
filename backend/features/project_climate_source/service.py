@@ -114,6 +114,37 @@ def get_project_dataset_roster(
     )
 
 
+def upsert_source_by_kind(
+    conn: Connection[Any],
+    *,
+    project_id: UUID,
+    kind: str,
+    ref: str | None,
+    label: str | None,
+    data: dict[str, Any],
+) -> dict[str, Any]:
+    """Insert a source for a kind, or update the existing one in place.
+
+    The one-source-per-kind path shared by the address-derived auto-attach
+    (Phius/PHI/EPW/ASHRAE) and the manual PH dataset picker: a project holds at
+    most one source per such kind, so re-attaching replaces rather than
+    duplicates. ``is_default`` is left untouched.
+    """
+    existing = next((row for row in repository.list_sources(conn, project_id) if row["kind"] == kind), None)
+    if existing is None:
+        return repository.insert_source(
+            conn,
+            source_id=uuid4(),
+            project_id=project_id,
+            kind=kind,
+            ref=ref,
+            label=label,
+            is_default=False,
+            data=data,
+        )
+    return repository.update_source(conn, existing["id"], {"ref": ref, "label": label, "data": data})
+
+
 def create_project_climate_source(
     project_id: UUID,
     payload: CreateProjectClimateSourceRequest,
@@ -122,30 +153,39 @@ def create_project_climate_source(
 ) -> ProjectClimateSourcePublic:
     with transaction() as conn:
         _validate_source(conn, project_id, payload.kind, payload.ref, payload.data)
-        # PH dataset sources never trust client `data`: proximity is recomputed
-        # server-side against the project site so the stored gate stays honest (D-DP-3).
-        data = payload.data
         if payload.kind in ("phius", "phi"):
+            # PH dataset sources are one-per-kind: recompute proximity server-side
+            # (never trust client `data`, D-DP-3) and replace any existing source of
+            # this kind, so the picker's "Replace dataset" reuses the create path.
             data = _certification_source_data(conn, project_id, payload.kind, payload.ref)
-        if payload.is_default:
-            repository.clear_default(conn, project_id)
-        row = repository.insert_source(
-            conn,
-            source_id=uuid4(),
-            project_id=project_id,
-            kind=payload.kind,
-            ref=payload.ref,
-            label=payload.label,
-            is_default=payload.is_default,
-            data=data,
-        )
+            row = upsert_source_by_kind(
+                conn,
+                project_id=project_id,
+                kind=payload.kind,
+                ref=payload.ref,
+                label=payload.label or str(data["location_name"]),
+                data=data,
+            )
+        else:
+            if payload.is_default:
+                repository.clear_default(conn, project_id)
+            row = repository.insert_source(
+                conn,
+                source_id=uuid4(),
+                project_id=project_id,
+                kind=payload.kind,
+                ref=payload.ref,
+                label=payload.label,
+                is_default=payload.is_default,
+                data=payload.data,
+            )
         _audit(
             conn,
             "project_climate_source_create",
             user,
             request_meta,
             project_id,
-            {"source_id": str(row["id"]), "kind": payload.kind, "is_default": payload.is_default},
+            {"source_id": str(row["id"]), "kind": payload.kind, "is_default": row["is_default"]},
         )
     return ProjectClimateSourcePublic.model_validate(row)
 

@@ -10,7 +10,7 @@ import {
   formatLatLong,
   formatLocationElevationLabel,
 } from "../lib";
-import type { ClimateSourceKind, ProjectClimateSource } from "../types";
+import type { ClimateSourceKind, PhClimateKind, ProjectClimateSource } from "../types";
 import { ClimateStatusChip, ClimateTypeBadge, LocationPrivacyTag } from "./ClimateAtoms";
 
 export type ClimateSelection = "location" | "add" | string;
@@ -22,6 +22,7 @@ export function ClimateSourceSidebar({
   canEdit,
   unitSystem,
   onSelect,
+  onOpenPicker,
 }: {
   location: ProjectLocation | undefined;
   sources: ProjectClimateSource[];
@@ -29,6 +30,7 @@ export function ClimateSourceSidebar({
   canEdit: boolean;
   unitSystem: UnitSystem;
   onSelect: (selection: ClimateSelection) => void;
+  onOpenPicker?: (kind: PhClimateKind) => void;
 }) {
   return (
     <aside className="climate-sidebar" aria-label="Climate pages">
@@ -47,13 +49,15 @@ export function ClimateSourceSidebar({
       {CANONICAL_CLIMATE_KINDS.map((kind) => {
         const kindSources = sources.filter((source) => source.kind === kind);
         if (kindSources.length === 0) {
-          return (
-            <MissingSourceCard
-              key={kind}
-              kind={kind}
-              onSelect={canEdit ? () => onSelect("add") : undefined}
-            />
-          );
+          // PH kinds open the dataset picker; ASHRAE/EPW route to the add page.
+          let onMissingSelect: (() => void) | undefined;
+          if (canEdit) {
+            onMissingSelect =
+              (kind === "phius" || kind === "phi") && onOpenPicker
+                ? () => onOpenPicker(kind)
+                : () => onSelect("add");
+          }
+          return <MissingSourceCard key={kind} kind={kind} onSelect={onMissingSelect} />;
         }
         return kindSources.map((source) => (
           <SourceCard

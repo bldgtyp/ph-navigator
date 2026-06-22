@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tansta
 import {
   createClimateSource,
   deleteClimateSource,
+  fetchClimateDatasetRoster,
   fetchClimateDatasets,
   fetchClimateLocation,
   fetchClimateLocations,
@@ -10,7 +11,12 @@ import {
   setClimateSourceDefault,
 } from "./api";
 import { climateQueryKeys } from "./query-keys";
-import type { ClimateLocationSearch, CreateClimateSourceRequest } from "./types";
+import type {
+  ClimateLocationSearch,
+  ClimateRosterSearch,
+  CreateClimateSourceRequest,
+  PhClimateKind,
+} from "./types";
 
 export { climateQueryKeys };
 
@@ -42,6 +48,21 @@ export function useClimateLocationQuery(
     queryFn: ({ signal }) =>
       fetchClimateLocation(datasetId as string, locationId as string, signal),
     enabled: Boolean(datasetId) && Boolean(locationId),
+  });
+}
+
+// The picker roster: a PH dataset's stations for a project, proximity-ranked.
+// Keyed by [projectId, kind, search] so changing the state filter refetches.
+export function useClimateDatasetRosterQuery(
+  projectId: string,
+  kind: PhClimateKind,
+  search: ClimateRosterSearch,
+  options: { enabled?: boolean } = {},
+) {
+  return useQuery({
+    queryKey: climateQueryKeys.datasetRoster(projectId, kind, search),
+    queryFn: ({ signal }) => fetchClimateDatasetRoster(projectId, kind, search, signal),
+    enabled: options.enabled ?? true,
   });
 }
 

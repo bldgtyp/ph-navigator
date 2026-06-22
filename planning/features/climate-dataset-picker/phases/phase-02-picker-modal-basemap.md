@@ -1,7 +1,11 @@
 ---
 DATE: 2026-06-21
 TIME: -
-STATUS: Draft — planned, not started. Depends on P1 + O4 (MapTiler key + vetted dep).
+STATUS: Split into P2a + P2b (Ed, 2026-06-21). **P2a DONE** (2026-06-21) — the
+  vendor-agnostic, key-less picker scaffold (modal + list + select→attach +
+  entry points + browser retirement) shipped on P1 alone; vitest + CI green.
+  **P2b BLOCKED on O4** — the live MapLibre/MapTiler basemap layered into
+  <ClimateMap>.
 AUTHOR: Ed (via Claude)
 SCOPE: P2 — the generic ClimateDatasetPickerModal(kind) with a real
   MapLibre/MapTiler basemap, state filter, nearest-first list, and select→attach;
@@ -18,6 +22,29 @@ RELATED:
 ---
 
 # Phase 2 — Picker modal + MapLibre/MapTiler basemap
+
+## P2a / P2b split (Ed, 2026-06-21)
+
+O4 (the MapTiler key + a vetted map dependency + a no-committed-key tile-serving
+strategy) is a procurement/architecture decision that gates the *live basemap*,
+not the rest of the picker. So P2 ships in two parts:
+
+- **P2a — key-less picker scaffold (this session, on P1 alone):** the generic
+  `ClimateDatasetPickerModal(kind)` against the P1 roster endpoint — state filter
+  (default project state + any-state), nearest-first list with status chips,
+  select→preview→attach (failing-Phius allowed with warning), the no-location /
+  unseeded-kind guards, editor gating, and the entry points from the Phius/PHI
+  pages + missing-source card + fail page. `<ClimateMap>` renders **only the
+  positioned-pin key-less fallback** (the pure pin-placement helper). The
+  `ClimateDatasetBrowser` is retired for phius/phi. vitest covers it against the
+  fallback; CI stays green with no key.
+- **P2b — live basemap (after O4):** swap MapLibre GL + MapTiler tiles into
+  `<ClimateMap>` behind the fallback, choose + vet the map dependency, and stand
+  up the tile proxy / referrer-scoped key so no secret is committed. The vendor
+  and tile-serving choices are deferred to when O4 is provisioned.
+
+The sections below describe the full P2 (P2a + P2b); P2a implements everything
+except the MapLibre tile layer.
 
 ## Goal
 
@@ -110,3 +137,34 @@ proximity-keyed pins and the 50 mi ring, pick one, and attach it (replacing any
 current one; failing-Phius allowed with warning); the old browser no longer
 handles phius/phi; no key is committed; the key-less fallback keeps CI green;
 gating holds; CI green.
+
+## Outcome — P2a (2026-06-21)
+
+Everything except the live tile layer shipped:
+
+- **`ClimateDatasetPickerModal({ projectId, kind, onClose, onRequestSetLocation })`**
+  (`components/ClimateDatasetPickerModal.tsx`) on `ModalDialog`: state filter
+  defaulting to the project's state with a "Nearest to project (any state)"
+  option (O-DP-3); nearest-first list (name · distance · Δelev · zone · status
+  chip, reusing `ClimateStatusChip`); select → proximity preview → **Attach** /
+  **Replace current dataset**; failing-Phius warning (O-DP-2); no-location guard
+  (→ `onRequestSetLocation`) and unseeded-kind empty state (O-DP-5); editor-only.
+- **`<ClimateMap>`** (`components/ClimateMap.tsx`) — the key-less fallback only:
+  the project pin + proximity-coloured station pins positioned by the pure
+  `placePins` helper over `.climate-map-surface`. **P2b** mounts MapLibre/MapTiler
+  behind these pins (the `placePins` geometry is shared); the vendor + tile-serving
+  choice are deferred to O4.
+- **Roster client layer:** `fetchClimateDatasetRoster` + `useClimateDatasetRosterQuery`
+  (keyed `[projectId, kind, search]`) + the roster wire types; `us-states.ts`.
+- **Attach = upsert-by-kind:** `upsert_source_by_kind` moved into
+  `project_climate_source.service` (shared by auto-attach + the picker); a project
+  holds one PH source per kind, so "Replace" reuses the create mutation.
+- **Entry points wired:** the Phius/PHI source-detail header gains **Change
+  dataset**; the sidebar missing-source card and the fail-page "Browse datasets
+  to override" open the picker. `ClimateDatasetBrowser` **deleted** (D-DP-4 /
+  O-DP-4); the "+ Add source" page keeps ASHRAE/EPW/custom.
+- **Tests:** `__tests__/ClimateDatasetPickerModal.test.tsx` (both kinds; default
+  filter; nearest-first + chips; refetch on state change; any-state; select→attach
+  posts `{kind, ref}`; failing-Phius warning; no-location guard; unseeded empty
+  state) + `__tests__/ClimateMap.test.ts` (`placePins`) + a ClimateTab viewer-gating
+  test. The Playwright/basemap pass is **P2b** (needs the keyed env).

@@ -6,8 +6,8 @@ import { useUnitPreference, type UnitSystem } from "../../../lib/units";
 import { formatReadOnlyCoordinate } from "../../projects/location-form";
 import { useProjectLocationQuery } from "../../projects/hooks";
 import type { ProjectDetail, ProjectLocation } from "../../projects/types";
-import { ClimateDatasetBrowser } from "../components/ClimateDatasetBrowser";
 import { LocationPrivacyTag } from "../components/ClimateAtoms";
+import { ClimateDatasetPickerModal } from "../components/ClimateDatasetPickerModal";
 import { ClimateSourceDetailPage } from "../components/ClimateSourceDetailPage";
 import { ClimateSourceSidebar, type ClimateSelection } from "../components/ClimateSourceSidebar";
 import { ClimateSourcesSection } from "../components/ClimateSourcesSection";
@@ -15,7 +15,7 @@ import { SetLocationModal } from "../components/SetLocationModal";
 import { SunPathDiagram } from "../components/SunPathDiagram";
 import { useClimateSourcesQuery, useCreateClimateSourceMutation } from "../hooks";
 import { formatLatLong, formatLocationElevationLabel } from "../lib";
-import type { CreateClimateSourceRequest } from "../types";
+import type { CreateClimateSourceRequest, PhClimateKind } from "../types";
 
 // The Climate tab is a master-detail source browser: site location plus one
 // page per attached climate source.
@@ -23,18 +23,18 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
   const { unitSystem } = useUnitPreference();
   const canEdit = project.access_mode === "editor";
   const [selected, setSelected] = useState<ClimateSelection>("location");
+  // The PH dataset picker (phius/phi) is a modal hoisted here so the sidebar,
+  // the source detail header, and the fail page can all open it.
+  const [pickerKind, setPickerKind] = useState<PhClimateKind | null>(null);
+  const openPicker = canEdit ? (kind: PhClimateKind) => setPickerKind(kind) : undefined;
   const locationQuery = useProjectLocationQuery(project.id);
   const location = locationQuery.data;
   const sourcesQuery = useClimateSourcesQuery(project.id);
   const sources = sourcesQuery.data ?? [];
-  const projectCoords =
-    location?.is_set && location.latitude !== null && location.longitude !== null
-      ? { latitude: location.latitude, longitude: location.longitude }
-      : null;
 
-  // One create mutation funnels every attach affordance (the dataset
-  // browser for Phius/PHI, the ASHRAE/EPW forms in the sources section); its
-  // error surfaces once, in the sources section, via `attachError`.
+  // One create mutation funnels the ASHRAE/EPW/custom attach forms in the
+  // sources section; its error surfaces there via `attachError`. (PH datasets
+  // attach through the picker modal's own mutation.)
   const createSource = useCreateClimateSourceMutation(project.id);
   const attachSource = (body: CreateClimateSourceRequest) => createSource.mutate(body);
   const selectedSource = sources.find((source) => source.id === selected) ?? null;
@@ -56,6 +56,7 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
           canEdit={canEdit}
           unitSystem={unitSystem}
           onSelect={setSelected}
+          onOpenPicker={openPicker}
         />
         <main className="climate-main">
           {sourcesQuery.error ? (
@@ -74,15 +75,13 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
               project={project}
               source={selectedSource}
               unitSystem={unitSystem}
+              onOpenPicker={openPicker}
             />
           ) : null}
           {selected === "add" ? (
             <AddSourcePage
               project={project}
               location={location}
-              unitSystem={unitSystem}
-              projectCoords={projectCoords}
-              canEdit={canEdit}
               onAttach={attachSource}
               isAttaching={createSource.isPending}
               attachError={createSource.error}
@@ -90,6 +89,15 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
           ) : null}
         </main>
       </div>
+      {pickerKind ? (
+        <ClimateDatasetPickerModal
+          key={pickerKind}
+          projectId={project.id}
+          kind={pickerKind}
+          onClose={() => setPickerKind(null)}
+          onRequestSetLocation={() => setSelected("location")}
+        />
+      ) : null}
     </section>
   );
 }
@@ -181,21 +189,17 @@ function LocationPage({
   );
 }
 
+// The "+ Add source" page covers the kinds the PH dataset picker does not:
+// ASHRAE, EPW, and custom records (D-DP-4). Phius/PHI attach through the picker.
 function AddSourcePage({
   project,
   location,
-  unitSystem,
-  projectCoords,
-  canEdit,
   onAttach,
   isAttaching,
   attachError,
 }: {
   project: ProjectDetail;
   location: ReturnType<typeof useProjectLocationQuery>["data"];
-  unitSystem: ReturnType<typeof useUnitPreference>["unitSystem"];
-  projectCoords: { latitude: number; longitude: number } | null;
-  canEdit: boolean;
   onAttach: (body: CreateClimateSourceRequest) => void;
   isAttaching: boolean;
   attachError: Error | null;
@@ -213,12 +217,6 @@ function AddSourcePage({
         onAttach={onAttach}
         isAttaching={isAttaching}
         attachError={attachError}
-      />
-      <ClimateDatasetBrowser
-        unitSystem={unitSystem}
-        projectCoords={projectCoords}
-        onAttach={canEdit ? onAttach : undefined}
-        attachPending={isAttaching}
       />
     </section>
   );

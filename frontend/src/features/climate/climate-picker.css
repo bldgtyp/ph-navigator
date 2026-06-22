@@ -1,0 +1,151 @@
+/* Climate dataset picker modal (D-DP-1). Layout + the key-less map fallback;
+   reuses the shared `.climate-map-surface` / status-chip / modal primitives. */
+
+.climate-picker-filter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-bottom: var(--space-12);
+}
+
+.climate-picker-filter > span {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.climate-picker-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: var(--space-12);
+}
+
+@media (max-width: 640px) {
+  .climate-picker-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Map (key-less fallback; P2b layers a real basemap behind these pins) --- */
+.climate-picker-map {
+  position: relative;
+  min-height: 220px;
+  border-radius: var(--phn-radius);
+}
+
+.climate-map-pin--project {
+  background: var(--accent);
+  z-index: var(--z-base-elevated);
+}
+
+.climate-map-station-pin {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid var(--bg-card);
+  background: var(--phn-success);
+  box-shadow: var(--shadow-elev-1);
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+}
+
+.climate-map-station-pin[data-status="warning"] {
+  background: var(--phn-warning);
+}
+
+.climate-map-station-pin[data-status="fail"] {
+  background: var(--phn-danger);
+}
+
+.climate-map-station-pin[data-selected="true"] {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* --- Station list --- */
+.climate-picker-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.climate-picker-row {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-8);
+  padding: var(--space-8);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  text-align: left;
+  cursor: pointer;
+}
+
+.climate-picker-row:hover {
+  border-color: var(--border-strong);
+}
+
+.climate-picker-row[data-selected="true"] {
+  border-color: var(--accent);
+  box-shadow: var(--phn-focus);
+}
+
+.climate-picker-row-name {
+  flex: 1 1 40%;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.climate-picker-row-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xs);
+  color: var(--text-secondary);
+}
+
+/* --- Selection preview --- */
+.climate-picker-preview {
+  margin-top: var(--space-12);
+  padding: var(--space-12);
+  border: 1px solid var(--border-card);
+  border-left: 3px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.climate-picker-preview[data-status="pass"] {
+  border-left-color: var(--phn-success);
+}
+
+.climate-picker-preview[data-status="warning"] {
+  border-left-color: var(--phn-warning);
+}
+
+.climate-picker-preview[data-status="fail"] {
+  border-left-color: var(--phn-danger);
+}
+
+.climate-picker-warning {
+  color: var(--phn-danger);
+  font-size: var(--fs-xs);
+}
+
+.climate-picker-guard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}

@@ -1,19 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { datasetLabel, formatLatLong, formatSi, locationSubtitle, MONTH_LABELS } from "../lib";
-import type { ClimateLocationSummary } from "../types";
-
-const LOCATION: ClimateLocationSummary = {
-  id: "loc-1",
-  dataset_id: "ds-1",
-  name: "Worcester",
-  country: "US",
-  region: "MA",
-  climate_zone: null,
-  latitude: 42.2671,
-  longitude: -71.8831,
-  elevation_m: 300,
-  station_id: "WORCHESTER_REGIONAL_ARPT_MA",
-};
+import { datasetLabel, formatLatLong, formatSi, MONTH_LABELS } from "../lib";
 
 describe("climate lib", () => {
   test("MONTH_LABELS is Jan…Dec", () => {
@@ -25,11 +11,6 @@ describe("climate lib", () => {
   test("datasetLabel prefers the explicit label, falls back to provider/version", () => {
     expect(datasetLabel("Phius 2022", "phius", "2022")).toBe("Phius 2022");
     expect(datasetLabel(null, "phi", "10.6")).toBe("phi 10.6");
-  });
-
-  test("locationSubtitle appends region/country when present", () => {
-    expect(locationSubtitle(LOCATION)).toBe("Worcester — MA, US");
-    expect(locationSubtitle({ ...LOCATION, region: null, country: null })).toBe("Worcester");
   });
 
   test("formatLatLong rounds to 3 dp, em dash on null", () => {
