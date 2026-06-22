@@ -73,9 +73,9 @@ site address — after which the app auto-derives and attaches everything else.
   zone; an "Edit location" button (editor only) that opens the address modal.
 - B. Climate sources roster: one row per attached source with a type badge
   (Phius / PHI / ASHRAE / EPW / Custom), the location name, the certification
-  status chip (status + distance + Δelevation), a "default source" selector
-  (one default), a small "fetched on / version" note, and an expand control.
-  A "Populate / Refresh climate data" action lives here.
+  status chip (status + distance + Δelevation), a small "fetched on / version"
+  note, and an expand/view control. A "Populate / Refresh climate data" action
+  lives here.
 - C. Source detail (when a row is expanded/selected): the Table/Charts toggle
   and the compare affordance.
 - D. Sun-path diagram.

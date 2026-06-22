@@ -456,7 +456,6 @@ def test_existing_weather_source_values_reuses_same_onebuilding_epw(clean_mcp_ta
             kind="epw",
             ref="asset_reused",
             label="Pittsfield",
-            is_default=False,
             data={"source_url": "https://climate.onebuilding.org/pittsfield.zip"},
         )
 

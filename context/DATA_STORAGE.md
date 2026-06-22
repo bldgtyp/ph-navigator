@@ -152,7 +152,7 @@ in-progress project work.
 | `project_jobs` | async job state (only `asset_bulk_download` in v1), `result_asset_id` | `0011`. |
 | `project_hbjson_files` | HBJSON viewer/extraction metadata keyed to an `asset_id`; cached geometry, dedup by content hash | `0022`. The file itself is a `project_assets` row of kind `hbjson`. |
 | `project_location` | site geodata (lat/long/elevation/tz), derived county/FIPS/climate-zone, `geodata_provenance` JSONB, `epw_asset_id` pointer | `0023`/`0032`. 1:1 with `projects`. |
-| `project_climate_source` | per-project climate selection (`kind`, `ref`, `data` JSONB) | `0026`. See §5. |
+| `project_climate_source` | per-project climate sources (`kind`, `ref`, `data` JSONB) | `0026`; `0033` removes the obsolete cross-kind default flag. See §5. |
 
 ### Per-user UI state
 | Table | Holds | Notes |
@@ -345,10 +345,10 @@ climate/{provider}/{version}/raw/…        (optional raw-source archive, proven
 > `(provider, version)` ships. Rows persist across restarts. (Runbook:
 > `ENVIRONMENT.md` → "Climate reference-data seed".)
 
-### 5.3 Per-project climate selection (`project_climate_source`)
+### 5.3 Per-project climate sources (`project_climate_source`)
 
-Distinct from the app-wide datasets: each project records which climate basis it
-evaluates against. `kind` dispatches the meaning of `ref` / `data`:
+Distinct from the app-wide datasets: each project records the climate bases it
+uses for different workflows. `kind` dispatches the meaning of `ref` / `data`:
 
 | `kind` | `ref` points at | `data` JSONB |
 |---|---|---|
@@ -357,9 +357,9 @@ evaluates against. `kind` dispatches the meaning of `ref` / `data`:
 | `ashrae` | station / WMO id | design conditions (fetched from ashrae-meteo.info) |
 | `custom` | — (null) | a full inline `ClimateRecord` |
 
-A partial-unique index enforces **at most one default source per project**, and
-proximity is **always recomputed server-side** on attach — never trusted from
-the client.
+There is no project-wide default source: Phius, PHI, ASHRAE, EPW, and custom
+sources answer different workflow questions. Proximity is **always recomputed
+server-side** on attach — never trusted from the client.
 
 ---
 

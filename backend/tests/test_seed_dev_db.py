@@ -98,7 +98,7 @@ def test_starter_project_document_seeds_electric_heater_datasheet_field() -> Non
 
 
 def test_pin_nearest_phi_source_attaches_closest_station(clean_mcp_tables: None, clean_climate_tables: None) -> None:
-    """The PHI seed pin attaches the nearest PHI station as a non-default source."""
+    """The PHI seed pin attaches the nearest PHI station as a project source."""
     phi = seed_dataset(
         "phi",
         "10.6",
@@ -116,12 +116,11 @@ def test_pin_nearest_phi_source_attaches_closest_station(clean_mcp_tables: None,
         assert location is not None
         assert location["name"] == "PHI-NEAR"  # nearest of the two, not the 120 mi station
         rows = conn.execute(
-            "SELECT kind, ref, label, is_default FROM project_climate_source WHERE project_id = %(pid)s",
+            "SELECT kind, ref, label FROM project_climate_source WHERE project_id = %(pid)s",
             {"pid": project_id},
         ).fetchall()
 
     phi_sources = [row for row in rows if row["kind"] == "phi"]
     assert len(phi_sources) == 1
     assert phi_sources[0]["ref"] == str(location["id"])
-    assert phi_sources[0]["is_default"] is False  # the Phius source stays the project default
     assert "(PHI 10.6)" in phi_sources[0]["label"]

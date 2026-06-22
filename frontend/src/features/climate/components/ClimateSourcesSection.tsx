@@ -3,11 +3,7 @@ import { Trash2 } from "lucide-react";
 import { errorMessage } from "../../../shared/lib/errors";
 import type { ProjectDetail } from "../../projects/types";
 import type { ProjectLocation } from "../../projects/types";
-import {
-  useClimateSourcesQuery,
-  useDeleteClimateSourceMutation,
-  useSetClimateSourceDefaultMutation,
-} from "../hooks";
+import { useClimateSourcesQuery, useDeleteClimateSourceMutation } from "../hooks";
 import {
   climateSourceCachedMetrics,
   climateSourceKindLabel,
@@ -18,10 +14,10 @@ import {
 } from "../lib";
 import type { CreateClimateSourceRequest, ProjectClimateSource } from "../types";
 
-// The project's attached climate sources (D-CL-4): a roster with the
-// default radio (D-CL-11) plus the non-dataset attach affordances (ASHRAE
-// pointer, the project EPW). Phius/PHI sources are attached from the
-// reference-dataset browser, which calls the same `onAttach`.
+// The project's attached climate sources (D-CL-4): a roster plus the
+// non-dataset attach affordances (ASHRAE pointer, the project EPW). Phius/PHI
+// sources are attached from the reference-dataset browser, which calls the
+// same `onAttach`.
 export function ClimateSourcesSection({
   project,
   location,
@@ -38,7 +34,6 @@ export function ClimateSourcesSection({
   const canEdit = project.access_mode === "editor";
   const sourcesQuery = useClimateSourcesQuery(project.id);
   const deleteMutation = useDeleteClimateSourceMutation(project.id);
-  const setDefaultMutation = useSetClimateSourceDefaultMutation(project.id);
 
   if (sourcesQuery.isLoading) {
     return <p className="form-note">Loading climate sources…</p>;
@@ -52,7 +47,7 @@ export function ClimateSourcesSection({
   }
 
   const sources = sourcesQuery.data ?? [];
-  const rosterError = deleteMutation.error ?? setDefaultMutation.error ?? attachError;
+  const rosterError = deleteMutation.error ?? attachError;
 
   return (
     <div className="climate-sources">
@@ -65,8 +60,7 @@ export function ClimateSourcesSection({
               key={source.id}
               source={source}
               canEdit={canEdit}
-              busy={setDefaultMutation.isPending || deleteMutation.isPending}
-              onSetDefault={() => setDefaultMutation.mutate(source.id)}
+              busy={deleteMutation.isPending}
               onRemove={() => deleteMutation.mutate(source.id)}
             />
           ))}
@@ -150,13 +144,11 @@ function SourceRow({
   source,
   canEdit,
   busy,
-  onSetDefault,
   onRemove,
 }: {
   source: ProjectClimateSource;
   canEdit: boolean;
   busy: boolean;
-  onSetDefault: () => void;
   onRemove: () => void;
 }) {
   const kindLabel = climateSourceKindLabel(source.kind);
@@ -165,15 +157,6 @@ function SourceRow({
   const cachedMetrics = climateSourceCachedMetrics(source);
   return (
     <li className="climate-source-row">
-      <input
-        type="radio"
-        name="climate-default-source"
-        className="climate-source-default"
-        checked={source.is_default}
-        disabled={!canEdit || busy}
-        onChange={onSetDefault}
-        aria-label={`Set ${kindLabel} source as default`}
-      />
       <span className="climate-source-kind">{kindLabel}</span>
       <span className="climate-source-label">
         <span>{climateSourceSubtitle(source)}</span>

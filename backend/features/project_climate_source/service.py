@@ -2,9 +2,8 @@
 
 Reads go through :func:`list_project_climate_sources`; mutations run in a
 single transaction, validate the source shape (and that any referenced
-reference-dataset location / EPW asset actually exists), enforce the
-one-default-per-project rule (D-CL-11), and append an audit-log entry —
-mirroring the ``project_location`` service.
+reference-dataset location / EPW asset actually exists), and append an
+audit-log entry — mirroring the ``project_location`` service.
 """
 
 from __future__ import annotations
@@ -128,7 +127,7 @@ def upsert_source_by_kind(
     The one-source-per-kind path shared by the address-derived auto-attach
     (Phius/PHI/EPW/ASHRAE) and the manual PH dataset picker: a project holds at
     most one source per such kind, so re-attaching replaces rather than
-    duplicates. ``is_default`` is left untouched.
+    duplicates.
     """
     existing = next((row for row in repository.list_sources(conn, project_id) if row["kind"] == kind), None)
     if existing is None:
@@ -139,7 +138,6 @@ def upsert_source_by_kind(
             kind=kind,
             ref=ref,
             label=label,
-            is_default=False,
             data=data,
         )
     return repository.update_source(conn, existing["id"], {"ref": ref, "label": label, "data": data})
@@ -167,8 +165,6 @@ def create_project_climate_source(
                 data=data,
             )
         else:
-            if payload.is_default:
-                repository.clear_default(conn, project_id)
             row = repository.insert_source(
                 conn,
                 source_id=uuid4(),
@@ -176,7 +172,6 @@ def create_project_climate_source(
                 kind=payload.kind,
                 ref=payload.ref,
                 label=payload.label,
-                is_default=payload.is_default,
                 data=payload.data,
             )
         _audit(
@@ -185,7 +180,7 @@ def create_project_climate_source(
             user,
             request_meta,
             project_id,
-            {"source_id": str(row["id"]), "kind": payload.kind, "is_default": row["is_default"]},
+            {"source_id": str(row["id"]), "kind": payload.kind},
         )
     return ProjectClimateSourcePublic.model_validate(row)
 
@@ -237,29 +232,6 @@ def delete_project_climate_source(
         )
 
 
-def set_default_climate_source(
-    project_id: UUID,
-    source_id: UUID,
-    user: UserPublic,
-    request_meta: Request | None,
-) -> ProjectClimateSourcePublic:
-    with transaction() as conn:
-        _load_owned_source(conn, project_id, source_id)
-        # Clear the prior default before setting the new one so the
-        # partial-unique index never sees two defaults mid-transaction.
-        repository.clear_default(conn, project_id)
-        row = repository.mark_default(conn, source_id)
-        _audit(
-            conn,
-            "project_climate_source_set_default",
-            user,
-            request_meta,
-            project_id,
-            {"source_id": str(source_id)},
-        )
-    return ProjectClimateSourcePublic.model_validate(row)
-
-
 def refresh_ashrae_design_conditions(
     project_id: UUID,
     payload: RefreshAshraeDesignConditionsRequest,
@@ -295,7 +267,6 @@ def refresh_ashrae_design_conditions(
                 kind="ashrae",
                 ref=result.station_id,
                 label=result.label,
-                is_default=False,
                 data=source_data,
             )
         else:

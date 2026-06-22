@@ -101,12 +101,3 @@ export async function createClimateSource(
 export async function deleteClimateSource(projectId: string, sourceId: string): Promise<void> {
   await fetchJson<void>(`${sourcesPath(projectId)}/${sourceId}`, { method: "DELETE" });
 }
-
-export async function setClimateSourceDefault(
-  projectId: string,
-  sourceId: string,
-): Promise<ProjectClimateSource> {
-  return fetchJson<ProjectClimateSource>(`${sourcesPath(projectId)}/${sourceId}/default`, {
-    method: "PUT",
-  });
-}

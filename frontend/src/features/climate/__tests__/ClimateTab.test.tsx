@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
+import type { UnitSystem } from "../../../lib/units";
 import { UnitPreferenceContext } from "../../../lib/units/preference-context";
 import {
   LOCATION_PROJECT as PROJECT,
@@ -25,7 +26,6 @@ const EPW_SOURCE: ProjectClimateSource = {
   kind: "epw",
   ref: "asset-epw",
   label: "Pittsfield.Muni.AP",
-  is_default: false,
   data: {
     source_url: "https://climate.onebuilding.org/pittsfield.zip",
     stat_metrics: {
@@ -45,7 +45,6 @@ const ASHRAE_SOURCE: ProjectClimateSource = {
   kind: "ashrae",
   ref: "725060",
   label: "Pittsfield ASHRAE",
-  is_default: true,
   data: {
     url: "https://ashrae-meteo.info/v3.0/",
     design_conditions: {
@@ -64,7 +63,6 @@ const PHIUS_SOURCE: ProjectClimateSource = {
   kind: "phius",
   ref: "location-phius",
   label: "NEW YORK CENTRAL PRK OBS BELV NY",
-  is_default: true,
   data: {
     dataset_id: "dataset-phius",
     dataset: { provider: "phius", version: "2022", label: "Phius 2022" },
@@ -77,7 +75,7 @@ const PHIUS_SOURCE: ProjectClimateSource = {
   },
 };
 
-function renderTab(project: typeof PROJECT = PROJECT) {
+function renderTab(project: typeof PROJECT = PROJECT, unitSystem: UnitSystem = "SI") {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
@@ -85,7 +83,7 @@ function renderTab(project: typeof PROJECT = PROJECT) {
     <QueryClientProvider client={queryClient}>
       <UnitPreferenceContext.Provider
         value={{
-          unitSystem: "SI",
+          unitSystem,
           source: "default",
           error: null,
           setUnitSystem: vi.fn(),
@@ -126,10 +124,10 @@ describe("ClimateTab", () => {
 
     const limitCheck = await screen.findByRole("table", { name: "Phius certification limits" });
     expect(
-      within(limitCheck).getByRole("row", { name: /^Distance 4\.2 mi 50 mi pass$/i }),
+      within(limitCheck).getByRole("row", { name: /^Distance 6\.8 km 80\.5 km pass$/i }),
     ).toBeVisible();
     expect(
-      within(limitCheck).getByRole("row", { name: /^Elevation 118 ft 400 ft pass$/i }),
+      within(limitCheck).getByRole("row", { name: /^Elevation 36 m 122 m pass$/i }),
     ).toBeVisible();
     expect(await screen.findByRole("heading", { name: "Monthly data" })).toBeVisible();
     expect(screen.getAllByText("Monthly temperatures").length).toBeGreaterThanOrEqual(2);
@@ -137,6 +135,35 @@ describe("ClimateTab", () => {
     expect(screen.getByRole("heading", { name: "Peak loads" })).toBeVisible();
     expect(screen.getByRole("row", { name: /^Heating 1/ })).toBeVisible();
     expect(screen.getByRole("row", { name: /^Cooling 1/ })).toBeVisible();
+  });
+
+  test("renders Phius limit checks in IP units when the app unit switch is IP", async () => {
+    vi.stubGlobal("fetch", fetchMock);
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === LOCATION_URL) return jsonResponse(SET_LOCATION);
+      if (url === SOURCES_URL) return jsonResponse({ items: [PHIUS_SOURCE] });
+      if (url === PHIUS_LOCATION_URL) {
+        return jsonResponse({
+          ...PHIUS_SOURCE,
+          record: makeClimateRecord({ display_name: "NEW YORK CENTRAL PRK OBS BELV NY" }),
+        });
+      }
+      return jsonResponse({}, 404);
+    });
+    const user = userEvent.setup();
+
+    renderTab(PROJECT, "IP");
+
+    await user.click(await screen.findByRole("button", { name: /NEW YORK CENTRAL/ }));
+
+    const limitCheck = await screen.findByRole("table", { name: "Phius certification limits" });
+    expect(
+      within(limitCheck).getByRole("row", { name: /^Distance 4\.2 mi 50 mi pass$/i }),
+    ).toBeVisible();
+    expect(
+      within(limitCheck).getByRole("row", { name: /^Elevation 118 ft 400 ft pass$/i }),
+    ).toBeVisible();
   });
 
   test("routes from location to attached EPW and ASHRAE detail pages", async () => {

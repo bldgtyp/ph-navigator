@@ -15,9 +15,6 @@
   --climate-badge-epw-fg: color-mix(in oklab, var(--chart-1) 72%, black);
   --climate-badge-custom-bg: var(--bg-elev);
   --climate-badge-custom-fg: var(--text-secondary);
-  /* Default-source star: amber, reusing the report "missing" hue so the
-     star reads as a featured marker without minting a new colour. */
-  --climate-star: var(--report-status-missing);
 }
 
 .climate-workspace {
@@ -209,17 +206,6 @@
   display: flex;
   align-items: center;
   gap: var(--space-8);
-}
-
-.climate-default-star {
-  margin-left: auto;
-  color: var(--text-muted);
-  font-size: var(--fs-md);
-  line-height: 1;
-}
-
-.climate-default-star[data-default="true"] {
-  color: var(--climate-star);
 }
 
 .climate-nav-name {

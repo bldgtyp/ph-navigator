@@ -1,9 +1,8 @@
 """Project-scoped climate-source contract tests (Climate Phase 3b).
 
-Covers source CRUD, the one-default-per-project rule, per-kind validation
-(phius ref existence + provider match, custom record validation, epw asset
-ref), project-scoping isolation, editor/viewer gating, and MCP parity +
-scope gating for the list / set-default tools.
+Covers source CRUD, per-kind validation (phius ref existence + provider match,
+custom record validation, epw asset ref), project-scoping isolation,
+editor/viewer gating, and MCP list parity.
 """
 
 from __future__ import annotations
@@ -14,14 +13,10 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 from mcp.server.fastmcp import Context
-from mcp.server.fastmcp.exceptions import ToolError
 
 from features.climate.ashrae_meteo import AshraeMeteoResult
 from features.climate.design_conditions import ClimateDesignConditions
-from features.project_climate_source.mcp import (
-    tool_list_project_climate_sources,
-    tool_set_project_climate_source_default,
-)
+from features.project_climate_source.mcp import tool_list_project_climate_sources
 from main import app
 from tests.test_climate_datasets import (
     _STATION_FILE,
@@ -90,32 +85,18 @@ def _first_phius_location_id(client: TestClient) -> str:
     return cast(str, locations[0]["id"])
 
 
-def test_create_list_and_set_default(clean_mcp_tables: None) -> None:
+def test_create_and_list_sources(clean_mcp_tables: None) -> None:
     client = signed_in_client()
     project_id = cast(str, create_project(client)["id"])
 
     first = _create(client, project_id, {"kind": "ashrae", "ref": "725060", "label": "ASHRAE A"})
-    second = _create(
-        client,
-        project_id,
-        {"kind": "ashrae", "ref": "725070", "label": "ASHRAE B", "is_default": True},
-    )
-    assert first["is_default"] is False
-    assert second["is_default"] is True
+    second = _create(client, project_id, {"kind": "ashrae", "ref": "725070", "label": "ASHRAE B"})
+    assert "is_default" not in first
+    assert "is_default" not in second
 
-    # Default is listed first.
+    # Sources are listed newest first.
     items = _list(client, project_id)
     assert [item["id"] for item in items] == [second["id"], first["id"]]
-
-    # Re-point the default; the prior default flips off (one default rule).
-    response = client.put(
-        f"{_SOURCES.format(project_id=project_id)}/{first['id']}/default",
-        headers={"Origin": ORIGIN},
-    )
-    assert response.status_code == 200
-    assert response.json()["is_default"] is True
-    defaults = [item["id"] for item in _list(client, project_id) if item["is_default"]]
-    assert defaults == [first["id"]]
 
 
 def test_phius_source_validates_ref_and_provider(clean_mcp_tables: None, clean_climate_tables: None) -> None:
@@ -260,7 +241,7 @@ def test_viewer_cannot_write(clean_mcp_tables: None) -> None:
     assert response.status_code == 401
 
 
-def test_mcp_list_and_set_default(clean_mcp_tables: None, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_mcp_list_project_climate_sources(clean_mcp_tables: None, monkeypatch: pytest.MonkeyPatch) -> None:
     client = signed_in_client()
     project_id = cast(str, create_project(client)["id"])
     first = _create(client, project_id, {"kind": "ashrae", "ref": "725060", "label": "A"})
@@ -272,19 +253,3 @@ def test_mcp_list_and_set_default(clean_mcp_tables: None, monkeypatch: pytest.Mo
     listed = tool_list_project_climate_sources(project_id, ctx, allow_env_token=True)
     listed_items = cast(list[dict[str, object]], listed["items"])
     assert {item["id"] for item in listed_items} == {first["id"], second["id"]}
-
-    result = tool_set_project_climate_source_default(project_id, cast(str, second["id"]), ctx, allow_env_token=True)
-    assert result["is_default"] is True
-    assert [item["id"] for item in _list(client, project_id) if item["is_default"]] == [second["id"]]
-
-
-def test_mcp_set_default_requires_write_scope(clean_mcp_tables: None, monkeypatch: pytest.MonkeyPatch) -> None:
-    client = signed_in_client()
-    project_id = cast(str, create_project(client)["id"])
-    source = _create(client, project_id, {"kind": "ashrae", "ref": "725060"})
-    ctx = cast(Context, None)
-
-    monkeypatch.setenv("PHN_MCP_TOKEN", _issue_token(client, project_id, ["project:read"]))
-
-    with pytest.raises(ToolError):
-        tool_set_project_climate_source_default(project_id, cast(str, source["id"]), ctx, allow_env_token=True)

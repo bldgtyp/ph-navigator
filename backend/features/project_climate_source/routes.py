@@ -1,4 +1,4 @@
-"""Project-scoped climate-source API routes (D-CL-4 / D-CL-11).
+"""Project-scoped climate-source API routes (D-CL-4).
 
 Reads require project view access; writes require an editor (signed-in)
 user, mirroring the ``project_location`` router.
@@ -27,7 +27,6 @@ from features.project_climate_source.service import (
     get_project_dataset_roster,
     list_project_climate_sources,
     refresh_ashrae_design_conditions,
-    set_default_climate_source,
     update_project_climate_source,
 )
 from features.projects.access import (
@@ -115,14 +114,3 @@ def delete_source(
     user = require_editor_user(access)
     delete_project_climate_source(project_id, source_id, user, request)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-@router.put("/{project_id}/climate/sources/{source_id}/default", response_model=ProjectClimateSourcePublic)
-def put_default(
-    project_id: UUID,
-    source_id: UUID,
-    request: Request,
-    access: ProjectEditAccess,
-) -> ProjectClimateSourcePublic:
-    user = require_editor_user(access)
-    return set_default_climate_source(project_id, source_id, user, request)

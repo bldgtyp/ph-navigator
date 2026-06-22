@@ -91,11 +91,6 @@
   border-bottom: none;
 }
 
-.climate-source-default {
-  flex: none;
-  margin: 0;
-}
-
 .climate-source-kind {
   flex: none;
   min-width: 4rem;

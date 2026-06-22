@@ -191,9 +191,6 @@ function SourceCard({
     >
       <span className="climate-nav-top">
         <ClimateTypeBadge kind={source.kind} version={climateSourceBadgeVersion(source)} />
-        <span className="climate-default-star" data-default={source.is_default} aria-hidden="true">
-          {source.is_default ? "★" : "☆"}
-        </span>
       </span>
       <span className="climate-nav-name">{climateSourceSubtitle(source)}</span>
       {attrs.length > 0 ? (
@@ -241,9 +238,6 @@ function MissingSourceCard({
     <>
       <span className="climate-nav-top">
         <ClimateTypeBadge kind={kind} />
-        <span className="climate-default-star" aria-hidden="true">
-          ☆
-        </span>
       </span>
       <span className="climate-nav-name">No source attached</span>
       <span className="climate-nav-foot">
