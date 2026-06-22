@@ -131,7 +131,28 @@ export function formatLocationElevationDisplay(
   unitSystem: UnitSystem,
 ): string {
   if (valueM === null) return "None";
+  return elevationInputFromMeters(valueM, unitSystem);
+}
+
+// Format a derived elevation (metres) for the editable elevation input in the
+// active unit system. Unlike `formatLocationElevationDisplay`, it returns a bare
+// value with no "None" placeholder — callers only invoke it on a real number.
+export function elevationInputFromMeters(valueM: number, unitSystem: UnitSystem): string {
   return formatNumberUnitsDisplay(valueM, LOCATION_ELEVATION_UNITS, unitSystem);
+}
+
+// Human label for the elevation provider behind an auto-fill suggestion.
+export function elevationSourceLabel(source: string | null): string | null {
+  if (source === "usgs_epqs") return "USGS 3DEP";
+  if (source === "open_meteo") return "Open-Meteo";
+  return source;
+}
+
+// Stable 6-dp key for a coordinate pair, or "" when either part is missing —
+// used to decide whether elevation should be re-derived after coordinates move.
+export function elevationCoordsKey(latitude: number | null, longitude: number | null): string {
+  if (latitude === null || longitude === null) return "";
+  return `${latitude.toFixed(6)},${longitude.toFixed(6)}`;
 }
 
 export function reformatElevationForUnitSystem(

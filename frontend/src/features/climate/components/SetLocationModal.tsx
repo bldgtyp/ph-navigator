@@ -172,15 +172,33 @@ export function SetLocationModal({
         <details className="set-location-advanced">
           <summary>Advanced — elevation, time zone, orientation</summary>
           <div className="settings-location-grid set-location-advanced-body">
-            <label>
-              <span>Elevation ({elevationUnitLabel(unitSystem)})</span>
-              <input
-                inputMode="decimal"
-                value={values.elevation}
-                onChange={handleField("elevation")}
-                placeholder={unitSystem === "IP" ? "1000" : "305"}
-              />
-            </label>
+            <div className="set-location-elevation">
+              <label>
+                <span>Elevation ({elevationUnitLabel(unitSystem)})</span>
+                <input
+                  inputMode="decimal"
+                  value={values.elevation}
+                  onChange={handleField("elevation")}
+                  placeholder={unitSystem === "IP" ? "1000" : "305"}
+                />
+              </label>
+              {/* Auto-filled from the site coordinates (USGS 3DEP → Open-Meteo);
+                  hand-editing the field above overrides it until "Reset to auto". */}
+              <div className="set-location-elevation-status">
+                {form.isLookingUpElevation ? (
+                  <span className="form-note">Looking up elevation…</span>
+                ) : form.elevationOverridden ? (
+                  <button type="button" className="link-button" onClick={form.resetElevationToAuto}>
+                    ↻ Reset to auto
+                  </button>
+                ) : form.elevationSource ? (
+                  <span className="form-note">Auto · {form.elevationSource}</span>
+                ) : null}
+                {form.elevationNote ? (
+                  <span className="form-error">{form.elevationNote}</span>
+                ) : null}
+              </div>
+            </div>
             <label>
               <span>Time zone</span>
               <input

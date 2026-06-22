@@ -10,6 +10,7 @@ import {
   geocodeProjectLocation,
   listDeletedProjects,
   listProjects,
+  lookupProjectElevation,
   parseProjectLocationEpw,
   patchVersion,
   restoreProject,
@@ -20,6 +21,7 @@ import { projectQueryKeys } from "./query-keys";
 import type {
   CreateProjectPayload,
   DeriveProjectLocationPayload,
+  ElevationLookupPayload,
   ProjectListResponse,
   UpdateProjectLocationPayload,
   UpdateProjectPayload,
@@ -168,6 +170,14 @@ export function useDeriveProjectLocationMutation(projectId: string) {
 export function useGeocodeProjectLocationMutation(projectId: string) {
   return useMutation({
     mutationFn: (query: string) => geocodeProjectLocation(projectId, query),
+  });
+}
+
+// Stateless elevation lookup for the Set Location modal's auto-fill: returns a
+// suggestion, so it writes nothing to the query cache.
+export function useLookupElevationMutation(projectId: string) {
+  return useMutation({
+    mutationFn: (payload: ElevationLookupPayload) => lookupProjectElevation(projectId, payload),
   });
 }
 

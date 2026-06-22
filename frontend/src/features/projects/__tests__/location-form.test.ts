@@ -1,6 +1,9 @@
 import { describe, expect, test } from "vitest";
 import {
   buildProjectLocationPayload,
+  elevationCoordsKey,
+  elevationInputFromMeters,
+  elevationSourceLabel,
   emptyLocationFormValues,
   locationFormValuesFromLocation,
   reformatElevationForUnitSystem,
@@ -71,5 +74,25 @@ describe("project location form helpers", () => {
       ok: false,
       error: "True north must be greater than or equal to 0 and less than 360 degrees.",
     });
+  });
+});
+
+describe("elevation auto-fill helpers", () => {
+  test("labels known elevation providers and passes others through", () => {
+    expect(elevationSourceLabel("usgs_epqs")).toBe("USGS 3DEP");
+    expect(elevationSourceLabel("open_meteo")).toBe("Open-Meteo");
+    expect(elevationSourceLabel("custom")).toBe("custom");
+    expect(elevationSourceLabel(null)).toBeNull();
+  });
+
+  test("coordinate key is stable to 6 dp and empty when a part is missing", () => {
+    expect(elevationCoordsKey(42.1, -73.2)).toBe("42.100000,-73.200000");
+    expect(elevationCoordsKey(null, -73.2)).toBe("");
+    expect(elevationCoordsKey(42.1, null)).toBe("");
+  });
+
+  test("formats a metre elevation into the active unit system", () => {
+    expect(elevationInputFromMeters(304.8, "SI")).toBe("304.8");
+    expect(elevationInputFromMeters(304.8, "IP")).toBe("1000.0");
   });
 });

@@ -143,19 +143,13 @@ class UpdateProjectLocationRequest(BaseModel):
         return value
 
 
-class DeriveProjectLocationRequest(BaseModel):
-    """Coordinates to use for server-side location geodata derivation."""
+class RequiredCoordinatesRequest(BaseModel):
+    """Required WGS84 coordinates with shared range validation."""
 
     model_config = ConfigDict(extra="forbid")
 
     latitude: float
     longitude: float
-    site_address: str | None = Field(default=None, max_length=500)
-
-    @field_validator("site_address", mode="before")
-    @classmethod
-    def strip_blank_address(cls, value: object) -> object:
-        return strip_blank_string(value)
 
     @field_validator("latitude")
     @classmethod
@@ -172,6 +166,35 @@ class DeriveProjectLocationRequest(BaseModel):
         if validated is None:
             raise ValueError("Longitude is required.")
         return validated
+
+
+class DeriveProjectLocationRequest(RequiredCoordinatesRequest):
+    """Coordinates to use for server-side location geodata derivation."""
+
+    site_address: str | None = Field(default=None, max_length=500)
+
+    @field_validator("site_address", mode="before")
+    @classmethod
+    def strip_blank_address(cls, value: object) -> object:
+        return strip_blank_string(value)
+
+
+class ElevationLookupRequest(RequiredCoordinatesRequest):
+    """Coordinates for a stateless site-elevation lookup (no persistence)."""
+
+
+class ElevationLookupResponse(BaseModel):
+    """Elevation suggestion for the Set Location modal's auto-fill.
+
+    `elevation_m` is null when neither provider answered; `warning` then carries
+    the human-readable reason so the editor can fall back to manual entry.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    elevation_m: float | None = None
+    source: str | None = None
+    warning: str | None = None
 
 
 class GeocodeProjectLocationRequest(BaseModel):

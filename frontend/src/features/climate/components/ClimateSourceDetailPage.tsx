@@ -229,7 +229,10 @@ function PhiusLimitWarning({ source }: { source: ProjectClimateSource }) {
         rationale before certification submission.
       </p>
       <div className="climate-fail-actions">
-        <a className="secondary-button climate-custom-set-link" href="https://www.phius.org/climate-data">
+        <a
+          className="secondary-button climate-custom-set-link"
+          href="https://www.phius.org/climate-data"
+        >
           Request custom set · $75
         </a>
       </div>

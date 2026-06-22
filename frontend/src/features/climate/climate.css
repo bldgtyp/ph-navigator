@@ -63,6 +63,20 @@
   margin-top: var(--space-12);
 }
 
+/* Elevation auto-fill status sits directly under its input (P5). */
+.set-location-elevation-status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+  min-height: 1.2em;
+  font-size: var(--fs-xs);
+}
+
+.set-location-elevation-status .link-button {
+  font-size: var(--fs-xs);
+}
+
 /* Climate sources (Phase 3b) */
 .climate-sources {
   display: flex;
