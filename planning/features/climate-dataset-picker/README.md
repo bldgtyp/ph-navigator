@@ -1,10 +1,11 @@
 ---
 DATE: 2026-06-22
 TIME: -
-STATUS: All phases DONE (2026-06-22) — P1 (backend roster + attach), P2a
+STATUS: All phases DONE (P1–P4, 2026-06-22) — P1 (backend roster + attach), P2a
   (key-less picker scaffold), P2b (live vanilla-Leaflet + keyless-OSM basemap),
-  P3 (app-wide map retrofit). O4 dissolved + closed app-wide (D-DP-6);
-  O-DP-1..4 resolved (Ed, 2026-06-21). Only O-DP-5 (PHI seed; data/ops) open.
+  P3 (app-wide map retrofit), P4 (PHI dev seed + verification). O4 dissolved +
+  closed app-wide (D-DP-6); O-DP-1..5 resolved. One open item: O-DP-6 (PHI
+  region-filter vocabulary mismatch, found during P4 verification).
 AUTHOR: Ed (via Claude)
 SCOPE: Manual climate-dataset picker — a map + state-filter modal to browse and
   attach a PH climate dataset, opened independently from the Phius and PHI
@@ -52,8 +53,8 @@ keeps CI/tests working and serves the deterministic unit-test path.
 
 1. `PRD.md` — user story, the one-component/two-instances model, data &
    endpoints, modal UX, the map decision, proximity semantics.
-2. `decisions.md` — decisions (D-DP-1..5; O-DP-1..3 resolved by Ed) and the
-   remaining **open questions** (O-DP-4 browser retirement, O-DP-5 PHI seed).
+2. `decisions.md` — decisions (D-DP-1..6; O-DP-1..5 resolved) and the remaining
+   **open question** (O-DP-6 PHI region-filter vocabulary mismatch).
 3. `STATUS.md` — current state and next step.
 4. `phases/` — implementation plans in dependency order.
 
@@ -65,7 +66,7 @@ keeps CI/tests working and serves the deterministic unit-test path.
 | P2a | ✅ DONE | Key-less picker scaffold | Generic `ClimateDatasetPickerModal(kind)`: state filter (default state + any-state), key-less map fallback, nearest-first list, select→attach (failing-Phius allowed w/ warning); entry points; browser retired for phius/phi | P1 |
 | P2b | ✅ DONE | Live basemap | Layered the **vanilla-Leaflet + keyless-OSM-raster** basemap + 50 mi ring into `<ClimateMap>` behind the `placePins` fallback (D-DP-6); O4 dissolved | P2a |
 | P3 | ✅ DONE | App-wide map retrofit | `<ClimateMap>` generalized into the app's one shared map; adopted by the Location big map, sidebar mini-map (static), and Set-Location pin-drop; O4 closed app-wide | P2 |
-| P4 | ◻ planned | PHI dataset seed + PHI picker verification | Seed a PHI dataset for the dev DB and exercise the PHI picker instance + advisory semantics end-to-end (O-DP-5). **Blocked on data/ops, not code**; not required to call the picker done | P1 + a PHI seed |
+| P4 | ✅ DONE | PHI dataset seed + PHI picker verification | Dev seed now seeds **every** published provider (prod's `seeding --all` path) — `phi/10.6` lands locally, nearest PHI station pinned; PHI picker + advisory semantics verified live (O-DP-5 resolved — was never data-blocked). Surfaced **O-DP-6** (PHI region-filter mismatch) | P1 |
 
 P2 delivers the user's full ask. O4 is **dissolved** (D-DP-6: vanilla Leaflet +
 keyless OSM raster — no key, no proxy, no committed secret); a `placePins`
@@ -81,4 +82,6 @@ prefix** and references D-CL-* where it builds on accepted parent decisions.
 ## Out of scope
 
 See PRD §11 — dataset re-seeding/version-switching, ASHRAE/EPW/custom attach,
-non-US datasets, and dev-DB PHI seeding are all out of scope here.
+and non-US datasets are out of scope here. (PRD §11 also listed dev-DB PHI
+seeding as out of scope; **P4 landed it** — the dev seed now seeds every
+published provider, so PHI seeds locally alongside Phius.)

@@ -4,9 +4,11 @@ TIME: -
 STATUS: All phases DONE (2026-06-22) — P1 (backend roster + attach, §4/§10),
   P2a (key-less picker scaffold, §3/§5/§8), P2b (live basemap, §6 — vanilla
   Leaflet + keyless OSM raster per D-DP-6, O4 dissolved), P3 (app-wide map
-  retrofit; O4 closed everywhere). O-DP-1..4 resolved by Ed 2026-06-21 (real
-  basemap; allow-failing-Phius-with-warning; default-state + any-state; browser
-  retired). Only O-DP-5 (PHI seed) data/ops open.
+  retrofit; O4 closed everywhere). P4 (PHI dev seed + verification). O-DP-1..4
+  resolved by Ed 2026-06-21 (real basemap; allow-failing-Phius-with-warning;
+  default-state + any-state; browser retired). O-DP-5 resolved (P4 — PHI seed
+  wired into dev + verified). One open item: O-DP-6 (PHI region-filter
+  vocabulary mismatch).
 AUTHOR: Ed (via Claude)
 SCOPE: Product / behavior contract for the manual climate-dataset picker — a
   map + state-filter modal that lets an editor browse the available PH climate
@@ -260,5 +262,9 @@ from the backend (§4), never recomputed client-side.
   "＋ Add source" page; the picker is PH-dataset-only.
 - **Non-US** datasets / international geocoding (US-first, as in the parent
   feature).
-- **PHI dataset seeding** for the dev DB (only Phius/NY is seeded today) — a
-  data/ops dependency for exercising the PHI instance, not a code item.
+- ~~**PHI dataset seeding** for the dev DB~~ — **done in P4** (2026-06-22). The
+  dev seed now seeds every published provider (prod's `seeding --all` path), so
+  `phi/10.6` lands locally alongside `phius/2022` and the PHI instance is
+  exercised end-to-end. (Was filed here as "a data/ops dependency, not a code
+  item" — that was stale: the PHI bundle was already published, and the fix was
+  a small dev-seed wiring change.)
