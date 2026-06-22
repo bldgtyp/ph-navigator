@@ -1,4 +1,4 @@
-// @size-exception: planning/features/climate-dataset-picker/PRD.md
+// @size-exception: planning/archive/climate-dataset-picker/PRD.md
 import { useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import { Check, Download, Trash2, Upload } from "lucide-react";
 import type { UnitSystem } from "../../../lib/units";

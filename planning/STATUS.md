@@ -1,7 +1,7 @@
 # Planning Status
 
-DATE: 2026-06-20
-TIME: 09:45 EDT
+DATE: 2026-06-22
+TIME: 16:36 EDT
 STATUS: Active routing index for tracked planning material.
 AUTHOR: Codex
 SCOPE: Current planning folder organization after moving dated docs to
@@ -24,6 +24,7 @@ feature-first planning.
 | DataTable Maintenance | Complete / cleanup follow-up implemented and archived | `archive/data-table-maintenance/STATUS.md` |
 | DataTable Regression Suite | Complete / all 7 phases implemented — layered e2e suite under `frontend/tests/e2e/table-regression/` (`@table-smoke` route matrix, `@table-behavior` cell behavior, `@table-links` linked-record flows, `@table-view-state` view-state persistence) over the React-free `sharedEditContract` seam; package scripts + run policy + CI decision recorded; not yet in default CI by decision; archived | `archive/data-table-regression-suite/STATUS.md` |
 | DataTable Field Config Modal | Complete / shared Add/Edit field modal select, markup, static guards, browser smoke, format, CI, graphify evidence; archived | `archive/data-table-field-config-modal/STATUS.md` |
+| Climate Dataset Picker | Complete / P1-P4 implemented and verified with focused backend/frontend tests plus `make ci`; O-DP-6 remains a documented non-blocking PHI region-filter follow-up; archived | `archive/climate-dataset-picker/STATUS.md` |
 
 ## Historical Material
 
@@ -47,6 +48,8 @@ feature-first planning.
   `archive/data-table-regression-suite/`.
 - Completed DataTable Field Config Modal refactor planning now lives under
   `archive/data-table-field-config-modal/`.
+- Completed Climate Dataset Picker planning now lives under
+  `archive/climate-dataset-picker/`.
 - Completed DataTable Formula Builder planning now lives under
   `archive/data-table-formula-builder/`.
 - Completed Attachments (v1) planning now lives under

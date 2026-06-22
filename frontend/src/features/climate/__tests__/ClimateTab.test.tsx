@@ -291,44 +291,47 @@ describe("ClimateTab", () => {
   test.each([
     { kind: "phius" as const, label: "Phius", tableName: "Phius certification limits" },
     { kind: "phi" as const, label: "PHI", tableName: "PHI advisory limits" },
-  ])("navigates to the $label page after selecting a dataset from the modal", async ({ kind, label, tableName }) => {
-    vi.stubGlobal("fetch", fetchMock);
-    let sources: ProjectClimateSource[] = [];
-    const attachedSource = sourceAfterAttach(kind);
-    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(input);
-      if (url === LOCATION_URL) return jsonResponse(SET_LOCATION);
-      if (url === SOURCES_URL && (init?.method ?? "GET") === "GET") {
-        return jsonResponse({ items: sources });
-      }
-      if (url === SOURCES_URL && init?.method === "POST") {
-        sources = [attachedSource];
-        return jsonResponse(attachedSource, 201);
-      }
-      if (url.startsWith(`/api/v1/projects/${PROJECT.id}/climate/datasets/${kind}/locations`)) {
-        return jsonResponse(rosterForAttach(kind));
-      }
-      if (url === (kind === "phius" ? PHIUS_LOCATION_URL : PHI_LOCATION_URL)) {
-        return jsonResponse({
-          ...attachedSource,
-          record: makeClimateRecord({ display_name: attachedSource.label ?? label }),
-        });
-      }
-      return jsonResponse({}, 404);
-    });
-    const user = userEvent.setup();
+  ])(
+    "navigates to the $label page after selecting a dataset from the modal",
+    async ({ kind, label, tableName }) => {
+      vi.stubGlobal("fetch", fetchMock);
+      let sources: ProjectClimateSource[] = [];
+      const attachedSource = sourceAfterAttach(kind);
+      fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url === LOCATION_URL) return jsonResponse(SET_LOCATION);
+        if (url === SOURCES_URL && (init?.method ?? "GET") === "GET") {
+          return jsonResponse({ items: sources });
+        }
+        if (url === SOURCES_URL && init?.method === "POST") {
+          sources = [attachedSource];
+          return jsonResponse(attachedSource, 201);
+        }
+        if (url.startsWith(`/api/v1/projects/${PROJECT.id}/climate/datasets/${kind}/locations`)) {
+          return jsonResponse(rosterForAttach(kind));
+        }
+        if (url === (kind === "phius" ? PHIUS_LOCATION_URL : PHI_LOCATION_URL)) {
+          return jsonResponse({
+            ...attachedSource,
+            record: makeClimateRecord({ display_name: attachedSource.label ?? label }),
+          });
+        }
+        return jsonResponse({}, 404);
+      });
+      const user = userEvent.setup();
 
-    renderTab(PROJECT, "IP");
+      renderTab(PROJECT, "IP");
 
-    const missingCard = (await screen.findByText(label)).closest("button");
-    expect(missingCard).not.toBeNull();
-    await user.click(missingCard as HTMLButtonElement);
-    await user.click(await screen.findByRole("button", { name: /^NEW YORK CENTRAL|^Boston/ }));
-    await user.click(screen.getByRole("button", { name: "Attach" }));
+      const missingCard = (await screen.findByText(label)).closest("button");
+      expect(missingCard).not.toBeNull();
+      await user.click(missingCard as HTMLButtonElement);
+      await user.click(await screen.findByRole("button", { name: /^NEW YORK CENTRAL|^Boston/ }));
+      await user.click(screen.getByRole("button", { name: "Attach" }));
 
-    expect(await screen.findByRole("table", { name: tableName })).toBeVisible();
-    expect(screen.queryByText(`Select ${label} climate dataset`)).toBeNull();
-  });
+      expect(await screen.findByRole("table", { name: tableName })).toBeVisible();
+      expect(screen.queryByText(`Select ${label} climate dataset`)).toBeNull();
+    },
+  );
 
   test("keeps failing Phius datasets on the normal data page with an override warning", async () => {
     vi.stubGlobal("fetch", fetchMock);

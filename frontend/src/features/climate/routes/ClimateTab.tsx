@@ -15,11 +15,10 @@ import {
   ProjectEpwToolsPage,
 } from "../components/ClimateSourceDetailPage";
 import { ClimateSourceSidebar, type ClimateSelection } from "../components/ClimateSourceSidebar";
-import { ClimateSourcesSection } from "../components/ClimateSourcesSection";
 import { SetLocationModal } from "../components/SetLocationModal";
-import { useClimateSourcesQuery, useCreateClimateSourceMutation } from "../hooks";
+import { useClimateSourcesQuery } from "../hooks";
 import { formatLatLong, formatLocationElevationLabel } from "../lib";
-import type { CreateClimateSourceRequest, PhClimateKind } from "../types";
+import type { PhClimateKind } from "../types";
 
 // The Climate tab is a master-detail source browser: site location plus one
 // page per attached climate source.
@@ -36,20 +35,10 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
   const sourcesQuery = useClimateSourcesQuery(project.id);
   const sources = sourcesQuery.data ?? [];
 
-  // One create mutation funnels the ASHRAE/EPW/custom attach forms in the
-  // sources section; its error surfaces there via `attachError`. (PH datasets
-  // attach through the picker modal's own mutation.)
-  const createSource = useCreateClimateSourceMutation(project.id);
-  const attachSource = (body: CreateClimateSourceRequest) => createSource.mutate(body);
   const selectedSource = sources.find((source) => source.id === selected) ?? null;
 
   useEffect(() => {
-    if (
-      selected !== "location" &&
-      selected !== "add" &&
-      selected !== "epw-tools" &&
-      !selectedSource
-    ) {
+    if (selected !== "location" && selected !== "epw-tools" && !selectedSource) {
       setSelected("location");
     }
   }, [selected, selectedSource]);
@@ -87,15 +76,6 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
             />
           ) : null}
           {selected === "epw-tools" ? <ProjectEpwToolsPage project={project} /> : null}
-          {selected === "add" ? (
-            <AddSourcePage
-              project={project}
-              location={location}
-              onAttach={attachSource}
-              isAttaching={createSource.isPending}
-              attachError={createSource.error}
-            />
-          ) : null}
         </main>
       </div>
       {pickerKind ? (
@@ -233,39 +213,6 @@ function LocationPage({
       {canEdit && isModalOpen ? (
         <SetLocationModal projectId={project.id} onClose={() => setModalOpen(false)} />
       ) : null}
-    </section>
-  );
-}
-
-// The "+ Add source" page covers the kinds the PH dataset picker does not:
-// ASHRAE, EPW, and custom records (D-DP-4). Phius/PHI attach through the picker.
-function AddSourcePage({
-  project,
-  location,
-  onAttach,
-  isAttaching,
-  attachError,
-}: {
-  project: ProjectDetail;
-  location: ReturnType<typeof useProjectLocationQuery>["data"];
-  onAttach: (body: CreateClimateSourceRequest) => void;
-  isAttaching: boolean;
-  attachError: Error | null;
-}) {
-  return (
-    <section
-      id="climate-add-source"
-      className="climate-section"
-      aria-labelledby="climate-add-title"
-    >
-      <h3 id="climate-add-title">Add source · re-populate</h3>
-      <ClimateSourcesSection
-        project={project}
-        location={location}
-        onAttach={onAttach}
-        isAttaching={isAttaching}
-        attachError={attachError}
-      />
     </section>
   );
 }
