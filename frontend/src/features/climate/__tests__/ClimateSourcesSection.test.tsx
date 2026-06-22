@@ -16,7 +16,6 @@ const ASHRAE_SOURCE: ProjectClimateSource = {
   kind: "ashrae",
   ref: "725060",
   label: "ASHRAE A",
-  is_default: true,
   data: {
     design_conditions: {
       basis: "ASHRAE Meteo 2025 / PITTSFIELD MUNI AP",
@@ -34,7 +33,6 @@ const EPW_SOURCE: ProjectClimateSource = {
   kind: "epw",
   ref: "asset_epw",
   label: "pittsfield.epw",
-  is_default: false,
   data: {
     stat_metrics: {
       hdd65_f_days: 3884,
@@ -51,7 +49,6 @@ const PHIUS_SOURCE: ProjectClimateSource = {
   kind: "phius",
   ref: "loc-worcester",
   label: "Worcester",
-  is_default: false,
   data: {
     distance_mi: 12.3,
     elevation_delta_ft: 88,
@@ -122,7 +119,7 @@ afterEach(() => {
 });
 
 describe("ClimateSourcesSection", () => {
-  test("renders the roster with the default reflected", async () => {
+  test("renders the roster with climate source metadata", async () => {
     vi.stubGlobal("fetch", fetchMock);
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       if (String(input) === SOURCES_URL) {
@@ -141,8 +138,6 @@ describe("ClimateSourcesSection", () => {
     expect(screen.getByText(/Htg 99.6% -18.8 °C/)).toBeVisible();
     expect(screen.getByText(/HDD65 3884/)).toBeVisible();
     expect(screen.getByText(/CDD50 1275/)).toBeVisible();
-    expect(screen.getByLabelText("Set ASHRAE source as default")).toBeChecked();
-    expect(screen.getByLabelText("Set Phius source as default")).not.toBeChecked();
   });
 
   test("attaches an ASHRAE station via onAttach", async () => {
@@ -197,32 +192,6 @@ describe("ClimateSourcesSection", () => {
     });
   });
 
-  test("sets a source as default", async () => {
-    vi.stubGlobal("fetch", fetchMock);
-    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(input);
-      if (url === `${SOURCES_URL}/${PHIUS_SOURCE.id}/default` && init?.method === "PUT") {
-        return jsonResponse({ ...PHIUS_SOURCE, is_default: true });
-      }
-      if (url === SOURCES_URL) return jsonResponse({ items: [ASHRAE_SOURCE, PHIUS_SOURCE] });
-      return jsonResponse({}, 404);
-    });
-    const user = userEvent.setup();
-    renderSection();
-
-    await user.click(await screen.findByLabelText("Set Phius source as default"));
-
-    await waitFor(() =>
-      expect(
-        fetchMock.mock.calls.some(
-          ([url, init]) =>
-            url === `${SOURCES_URL}/${PHIUS_SOURCE.id}/default` &&
-            (init as RequestInit | undefined)?.method === "PUT",
-        ),
-      ).toBe(true),
-    );
-  });
-
   test("removes a source", async () => {
     vi.stubGlobal("fetch", fetchMock);
     fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
@@ -259,7 +228,7 @@ describe("ClimateSourcesSection", () => {
     renderSection({ project: { ...PROJECT, access_mode: "viewer" } });
 
     expect(await screen.findByText("ASHRAE A")).toBeVisible();
-    expect(screen.getByLabelText("Set ASHRAE source as default")).toBeDisabled();
+    expect(screen.queryByLabelText("Set ASHRAE source as default")).toBeNull();
     expect(screen.queryByLabelText("Remove ASHRAE source")).toBeNull();
     expect(screen.queryByText("Attach ASHRAE station")).toBeNull();
   });

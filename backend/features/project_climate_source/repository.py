@@ -14,10 +14,9 @@ from uuid import UUID
 from psycopg import Connection, sql
 from psycopg.types.json import Jsonb
 
-SOURCE_COLUMNS = "id, project_id, kind, ref, label, is_default, data, created_at, updated_at"
+SOURCE_COLUMNS = "id, project_id, kind, ref, label, data, created_at, updated_at"
 
-# Columns a PATCH may touch; ``kind`` is immutable and ``is_default`` is
-# toggled through the dedicated default endpoint.
+# Columns a PATCH may touch; ``kind`` is immutable.
 _UPDATABLE_FIELDS = ("label", "ref", "data")
 
 
@@ -29,7 +28,7 @@ def list_sources(conn: Connection[Any], project_id: UUID) -> list[dict[str, Any]
             SELECT {SOURCE_COLUMNS}
             FROM project_climate_source
             WHERE project_id = %(project_id)s
-            ORDER BY is_default DESC, created_at DESC, id ASC
+            ORDER BY created_at DESC, id ASC
             """,
             {"project_id": project_id},
         ).fetchall()
@@ -51,13 +50,12 @@ def insert_source(
     kind: str,
     ref: str | None,
     label: str | None,
-    is_default: bool,
     data: dict[str, Any] | None,
 ) -> dict[str, Any]:
     row = conn.execute(
         f"""
-        INSERT INTO project_climate_source (id, project_id, kind, ref, label, is_default, data)
-        VALUES (%(id)s, %(project_id)s, %(kind)s, %(ref)s, %(label)s, %(is_default)s, %(data)s)
+        INSERT INTO project_climate_source (id, project_id, kind, ref, label, data)
+        VALUES (%(id)s, %(project_id)s, %(kind)s, %(ref)s, %(label)s, %(data)s)
         RETURNING {SOURCE_COLUMNS}
         """,
         {
@@ -66,7 +64,6 @@ def insert_source(
             "kind": kind,
             "ref": ref,
             "label": label,
-            "is_default": is_default,
             "data": Jsonb(data) if data is not None else None,
         },
     ).fetchone()
@@ -110,35 +107,6 @@ def update_source(conn: Connection[Any], source_id: UUID, values: dict[str, obje
 
 def delete_source(conn: Connection[Any], source_id: UUID) -> None:
     conn.execute("DELETE FROM project_climate_source WHERE id = %(id)s", {"id": source_id})
-
-
-def clear_default(conn: Connection[Any], project_id: UUID) -> None:
-    """Unset the project's current default, if any."""
-    conn.execute(
-        """
-        UPDATE project_climate_source
-        SET is_default = false, updated_at = now()
-        WHERE project_id = %(project_id)s AND is_default
-        """,
-        {"project_id": project_id},
-    )
-
-
-def mark_default(conn: Connection[Any], source_id: UUID) -> dict[str, Any]:
-    """Flag one source as the default. Caller must clear the prior default
-    first (see service) so the partial-unique index is never violated."""
-    row = conn.execute(
-        f"""
-        UPDATE project_climate_source
-        SET is_default = true, updated_at = now()
-        WHERE id = %(id)s
-        RETURNING {SOURCE_COLUMNS}
-        """,
-        {"id": source_id},
-    ).fetchone()
-    if row is None:
-        raise RuntimeError("Climate source default update did not return a row.")
-    return row
 
 
 def get_dataset_location_provider(conn: Connection[Any], location_id: UUID) -> str | None:

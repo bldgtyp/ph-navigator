@@ -178,7 +178,6 @@ describe("ClimateDatasetPickerModal", () => {
           kind: "phius",
           ref: "old",
           label: "Old station",
-          is_default: false,
           data: null,
           created_at: "2026-06-14T10:00:00Z",
           updated_at: "2026-06-14T10:00:00Z",

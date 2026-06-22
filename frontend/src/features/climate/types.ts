@@ -181,7 +181,6 @@ export type ProjectClimateSource = {
   kind: ClimateSourceKind;
   ref: string | null;
   label: string | null;
-  is_default: boolean;
   data: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
@@ -195,6 +194,5 @@ export type CreateClimateSourceRequest = {
   kind: ClimateSourceKind;
   ref?: string | null;
   label?: string | null;
-  is_default?: boolean;
   data?: Record<string, unknown> | null;
 };

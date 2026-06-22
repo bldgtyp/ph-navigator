@@ -205,7 +205,7 @@ def main() -> None:
     print("Seeded climate datasets: " + ", ".join(climate["seeded"]))
     if climate["skipped"]:
         print("  (not published, skipped: " + ", ".join(climate["skipped"]) + ")")
-    print(f"  default Phius source -> {climate['default_location_name']}")
+    print(f"  Phius source -> {climate['phius_location_name']}")
     if climate["phi_location_name"] is not None:
         print(f"  nearest PHI source   -> {climate['phi_location_name']}")
 
@@ -458,25 +458,25 @@ def _seed_climate(project_id: UUID) -> dict[str, Any]:
     if phius is None:
         raise SystemExit(
             "No Phius bundle is published in the object store, so the starter project's "
-            "default climate source cannot resolve. Publish phius/2022 with "
+            "Phius climate source cannot resolve. Publish phius/2022 with "
             "`make seed-climate-bundle` (see backend/seeds/climate/README.md)."
         )
 
     with transaction() as conn:
-        default_location = _pin_default_phius_source(conn, project_id, phius)
-        _upsert_starter_location(conn, project_id, default_location)
-        phi_location = _pin_nearest_phi_source(conn, project_id, results.get("phi"), default_location)
+        phius_location = _pin_phius_source(conn, project_id, phius)
+        _upsert_starter_location(conn, project_id, phius_location)
+        phi_location = _pin_nearest_phi_source(conn, project_id, results.get("phi"), phius_location)
 
     return {
         "seeded": [f"{result.provider} {result.version} ({result.location_count} locations)" for result in seeded],
         "skipped": [f"{provider} {version}" for provider, version in skipped],
-        "default_location_name": default_location["name"],
+        "phius_location_name": phius_location["name"],
         "phi_location_name": phi_location["name"] if phi_location is not None else None,
     }
 
 
-def _pin_default_phius_source(conn: Any, project_id: UUID, phius: SeedResult) -> dict[str, Any]:
-    """Pin the firm's home-turf Phius station as the project's default source."""
+def _pin_phius_source(conn: Any, project_id: UUID, phius: SeedResult) -> dict[str, Any]:
+    """Pin the firm's home-turf Phius station as the project's Phius source."""
     location = conn.execute(
         """
         SELECT id, name, latitude, longitude, elevation_m, region
@@ -490,8 +490,7 @@ def _pin_default_phius_source(conn: Any, project_id: UUID, phius: SeedResult) ->
             f"Climate seed station {CLIMATE_DEFAULT_STATION_ID!r} missing from the Phius dataset; "
             "check backend/seeds/climate/."
         )
-    climate_source_repository.clear_default(conn, project_id)
-    _insert_climate_source(conn, project_id, kind="phius", version=phius.version, location=location, is_default=True)
+    _insert_climate_source(conn, project_id, kind="phius", version=phius.version, location=location)
     return location
 
 
@@ -500,10 +499,9 @@ def _pin_nearest_phi_source(
 ) -> dict[str, Any] | None:
     """Attach the PHI station nearest the project site as the advisory PHI source.
 
-    Symmetric with the Phius default but non-default (a project has one default
-    source); reuses the backend nearest-station query so no proximity math lives
-    here. Returns ``None`` when PHI is unpublished or its dataset has no located
-    stations.
+    Symmetric with the Phius source; reuses the backend nearest-station query
+    so no proximity math lives here. Returns ``None`` when PHI is unpublished
+    or its dataset has no located stations.
     """
     if phi is None:
         return None
@@ -513,13 +511,11 @@ def _pin_nearest_phi_source(
     if not nearest:
         return None
     location = nearest[0]
-    _insert_climate_source(conn, project_id, kind="phi", version=phi.version, location=location, is_default=False)
+    _insert_climate_source(conn, project_id, kind="phi", version=phi.version, location=location)
     return location
 
 
-def _insert_climate_source(
-    conn: Any, project_id: UUID, *, kind: str, version: str, location: dict[str, Any], is_default: bool
-) -> None:
+def _insert_climate_source(conn: Any, project_id: UUID, *, kind: str, version: str, location: dict[str, Any]) -> None:
     """Attach one ``climate_dataset_location`` to the project as a ``kind`` source.
 
     ``data=None`` matches auto-attach: proximity is recomputed server-side on
@@ -533,13 +529,12 @@ def _insert_climate_source(
         kind=kind,
         ref=str(location["id"]),
         label=f"{location['name']} ({get_provider(kind).label_for(version)})",
-        is_default=is_default,
         data=None,
     )
 
 
 def _upsert_starter_location(conn: Any, project_id: UUID, location: dict[str, Any]) -> None:
-    """Set the starter project's site location from its default Phius station."""
+    """Set the starter project's site location from its seeded Phius station."""
     location_values: dict[str, object] = {
         "latitude": location["latitude"],
         "longitude": location["longitude"],

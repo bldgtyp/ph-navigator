@@ -46,7 +46,7 @@ reuses that and adds: the proximity math, the gate logic, and auto-attach.
 ## Reuse
 
 - `search_climate_locations(..., near=...)` and `climate_dataset_location`.
-- `project_climate_source` create/default + JSONB `data`.
+- `project_climate_source` create/update + JSONB `data`.
 
 ## New work
 

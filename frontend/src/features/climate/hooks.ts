@@ -7,7 +7,6 @@ import {
   fetchClimateLocation,
   fetchClimateLocations,
   fetchClimateSources,
-  setClimateSourceDefault,
 } from "./api";
 import { climateQueryKeys } from "./query-keys";
 import type {
@@ -91,14 +90,6 @@ export function useDeleteClimateSourceMutation(projectId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (sourceId: string) => deleteClimateSource(projectId, sourceId),
-    onSuccess: () => invalidateClimateSourceQueries(queryClient, projectId),
-  });
-}
-
-export function useSetClimateSourceDefaultMutation(projectId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (sourceId: string) => setClimateSourceDefault(projectId, sourceId),
     onSuccess: () => invalidateClimateSourceQueries(queryClient, projectId),
   });
 }

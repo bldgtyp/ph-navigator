@@ -1,3 +1,4 @@
+// @size-exception: planning/features/climate-dataset-picker/PRD.md
 import { useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import { Check, Download, Trash2, Upload } from "lucide-react";
 import type { UnitSystem } from "../../../lib/units";
@@ -9,11 +10,7 @@ import { formatReadOnlyCoordinate } from "../../projects/location-form";
 import type { ProjectDetail } from "../../projects/types";
 import type { EpwParseResponse } from "../../projects/types";
 import { useProjectLocationForm } from "../../projects/useProjectLocationForm";
-import {
-  useClimateLocationQuery,
-  useDeleteClimateSourceMutation,
-  useSetClimateSourceDefaultMutation,
-} from "../hooks";
+import { useClimateLocationQuery, useDeleteClimateSourceMutation } from "../hooks";
 import {
   climateSourceBadgeVersion,
   climateSourceProximity,
@@ -90,7 +87,7 @@ export function ClimateSourceDetailPage({
 }
 
 // The shared page header (badge + status chip + title + metadata sub-row) and
-// the editor's default/remove actions, used by every source page.
+// the editor's remove action, used by every source page.
 function SourceHeader({
   project,
   source,
@@ -108,9 +105,8 @@ function SourceHeader({
 }) {
   const canEdit = project.access_mode === "editor";
   const status = climateSourceStatusChip(source);
-  const setDefault = useSetClimateSourceDefaultMutation(project.id);
   const remove = useDeleteClimateSourceMutation(project.id);
-  const busy = setDefault.isPending || remove.isPending;
+  const busy = remove.isPending;
   const items = (subItems ?? [climateSourceProximity(source)]).filter((item): item is string =>
     Boolean(item),
   );
@@ -120,9 +116,6 @@ function SourceHeader({
         <div className="climate-page-badges">
           <ClimateTypeBadge kind={source.kind} version={climateSourceBadgeVersion(source)} />
           <ClimateStatusChip tone={status.tone} label={status.label} />
-          {source.is_default ? (
-            <span className="chip chip--sm climate-status-chip climate-status-pass">★ Default</span>
-          ) : null}
         </div>
         <h3 className="climate-page-title">{title ?? climateSourceSubtitle(source)}</h3>
         {items.length > 0 ? (
@@ -144,16 +137,6 @@ function SourceHeader({
               disabled={busy}
             >
               Change dataset
-            </button>
-          ) : null}
-          {!source.is_default ? (
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => setDefault.mutate(source.id)}
-              disabled={busy}
-            >
-              ★ Set default
             </button>
           ) : null}
           <button
@@ -191,7 +174,11 @@ function PassiveHouseSourcePage({
       <SourceHeader
         project={project}
         source={source}
-        detail={source.kind === "phius" ? <PhiusLimitCheck source={source} /> : undefined}
+        detail={
+          source.kind === "phius" ? (
+            <PhiusLimitCheck source={source} unitSystem={unitSystem} />
+          ) : undefined
+        }
         subItems={source.kind === "phius" ? [] : undefined}
         onChangeDataset={onChangeDataset}
       />
@@ -232,8 +219,16 @@ function PassiveHouseSourcePage({
 
 const PHIUS_DISTANCE_LIMIT_MI = 50;
 const PHIUS_ELEVATION_LIMIT_FT = 400;
+const KM_PER_MI = 1.609344;
+const M_PER_FT = 0.3048;
 
-function PhiusLimitCheck({ source }: { source: ProjectClimateSource }) {
+function PhiusLimitCheck({
+  source,
+  unitSystem,
+}: {
+  source: ProjectClimateSource;
+  unitSystem: UnitSystem;
+}) {
   const proximity = proximityRecord(source);
   const distanceMi = numberValue(proximity?.distance_mi);
   const elevationDeltaFt = numberValue(proximity?.elevation_delta_ft);
@@ -242,14 +237,14 @@ function PhiusLimitCheck({ source }: { source: ProjectClimateSource }) {
   const rows = [
     {
       metric: "Distance",
-      current: distanceMi === null ? "—" : `${distanceMi.toFixed(1)} mi`,
-      limit: `${PHIUS_DISTANCE_LIMIT_MI} mi`,
+      current: formatPhiusDistance(distanceMi, unitSystem),
+      limit: formatPhiusDistance(PHIUS_DISTANCE_LIMIT_MI, unitSystem),
       result: verdictLabel(distanceMi, PHIUS_DISTANCE_LIMIT_MI),
     },
     {
       metric: "Elevation",
-      current: elevationDeltaFt === null ? "—" : `${Math.abs(elevationDeltaFt).toFixed(0)} ft`,
-      limit: `${PHIUS_ELEVATION_LIMIT_FT} ft`,
+      current: formatPhiusElevationDelta(elevationDeltaFt, unitSystem),
+      limit: formatPhiusElevationDelta(PHIUS_ELEVATION_LIMIT_FT, unitSystem),
       result: verdictLabel(elevationDeltaFt, PHIUS_ELEVATION_LIMIT_FT),
     },
   ];
@@ -259,7 +254,7 @@ function PhiusLimitCheck({ source }: { source: ProjectClimateSource }) {
       <thead>
         <tr>
           <th scope="col">Metric</th>
-          <th scope="col">Current</th>
+          <th scope="col">Site vs climate data difference</th>
           <th scope="col">Phius limit</th>
           <th scope="col">Result</th>
         </tr>
@@ -280,6 +275,23 @@ function PhiusLimitCheck({ source }: { source: ProjectClimateSource }) {
       </tbody>
     </table>
   );
+}
+
+function formatPhiusDistance(valueMi: number | null, unitSystem: UnitSystem) {
+  if (valueMi === null) return "—";
+  if (unitSystem === "IP") return `${formatPhiusDecimal(valueMi)} mi`;
+  return `${(valueMi * KM_PER_MI).toFixed(1)} km`;
+}
+
+function formatPhiusElevationDelta(valueFt: number | null, unitSystem: UnitSystem) {
+  if (valueFt === null) return "—";
+  const absFt = Math.abs(valueFt);
+  if (unitSystem === "IP") return `${absFt.toFixed(0)} ft`;
+  return `${(absFt * M_PER_FT).toFixed(0)} m`;
+}
+
+function formatPhiusDecimal(value: number) {
+  return Number.isInteger(value) ? value.toFixed(0) : value.toFixed(1);
 }
 
 function verdictLabel(

@@ -124,7 +124,6 @@ project_climate_source (
                       -- Phius/PHI climate_dataset_location id, ASHRAE station
                       -- id/WMO, or EPW project_assets.id depending on kind.
     label               TEXT,
-    is_default          BOOLEAN NOT NULL DEFAULT false,
     data                JSONB,
                       -- custom ClimateRecord, proximity metadata, EPW STAT
                       -- metrics, and/or ASHRAE design conditions depending on

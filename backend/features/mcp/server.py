@@ -81,7 +81,6 @@ from features.mcp.tools import (
     tool_search_climate_locations,
     tool_set_custom_field_description,
     tool_set_custom_field_formula,
-    tool_set_project_climate_source_default,
     tool_start_bulk_download,
 )
 
@@ -132,11 +131,6 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
     def list_project_climate_sources(project_id: str, ctx: Context) -> dict[str, object]:
         """List the climate sources attached to one token-visible project."""
         return tool_list_project_climate_sources(project_id, ctx, allow_env_token=allow_env_token)
-
-    @mcp.tool()
-    def set_project_climate_source_default(project_id: str, source_id: str, ctx: Context) -> dict[str, object]:
-        """Mark one of the project's climate sources as the default (requires project:write)."""
-        return tool_set_project_climate_source_default(project_id, source_id, ctx, allow_env_token=allow_env_token)
 
     # App-wide climate reference datasets (Phius/PHI). These require a
     # valid token but gate on no single project — the datasets are shared.

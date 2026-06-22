@@ -38,7 +38,6 @@ class ProjectClimateSourcePublic(BaseModel):
     kind: ClimateSourceKind
     ref: str | None
     label: str | None
-    is_default: bool
     data: dict[str, Any] | None
     created_at: datetime
     updated_at: datetime
@@ -56,7 +55,6 @@ class CreateProjectClimateSourceRequest(BaseModel):
     kind: ClimateSourceKind
     ref: Annotated[str | None, Field(max_length=500)] = None
     label: Annotated[str | None, Field(max_length=200)] = None
-    is_default: bool = False
     data: dict[str, Any] | None = None
 
     @model_validator(mode="after")

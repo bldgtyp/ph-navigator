@@ -148,7 +148,7 @@ styling comes from app CSS/brand tokens):
 ## 8. Reuse vs. net-new
 
 - **Reused:** `ClimateRecord` schema; `climate_dataset_location` + its
-  nearest-to-coords search; `project_climate_source` CRUD/default/JSONB;
+  nearest-to-coords search; `project_climate_source` CRUD/JSONB;
   the existing `ClimateRecordView/Table/Charts` (re-pointed at attached
   sources); `project_location` EPW upload.
 - **Net-new:** address field + geocoding modal + public projection;
