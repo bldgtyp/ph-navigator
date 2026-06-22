@@ -1,12 +1,14 @@
 ---
 DATE: 2026-06-22
 TIME: -
-STATUS: **All phases DONE (2026-06-22).** P1 (backend roster + authoritative
-  attach); P2a (key-less picker scaffold); P2b (live Leaflet/OSM basemap); P3
-  (app-wide map retrofit — Location / sidebar / Set-Location pin-drop). All
+STATUS: **All phases DONE (P1–P4, 2026-06-22).** P1 (backend roster +
+  authoritative attach); P2a (key-less picker scaffold); P2b (live Leaflet/OSM
+  basemap); P3 (app-wide map retrofit); **P4 (PHI dev seed + verification)**. All
   tested green + verified live in-browser. D-DP-6 chose vanilla Leaflet + keyless
-  OSM raster, dissolving O4 (no key/proxy/secret), now closed app-wide. O-DP-1..4
-  resolved (Ed, 2026-06-21). Only **O-DP-5** (PHI dataset seed; data/ops) open.
+  OSM raster, dissolving O4, now closed app-wide. O-DP-1..5 resolved (O-DP-5 in
+  P4 — PHI was never truly data-blocked; the dev seed now mirrors prod's
+  `seeding --all`). One new open item: **O-DP-6** (PHI region-filter vocabulary
+  mismatch, found during P4 verification).
 AUTHOR: Ed (via Claude)
 SCOPE: Current state of the climate dataset picker feature.
 RELATED:
@@ -65,12 +67,20 @@ warning → O-DP-2; default the state filter to the project's state plus an
 
 ## Next step
 
-**The picker feature is complete** — all four implemented phases (P1, P2a, P2b,
-P3) shipped and verified. The only open item is **O-DP-5**, now tracked as a
-clearly-planned follow-up: **`phases/phase-04-phi-dataset-seed.md`** — seed a
-PHI dataset for the dev DB so the PHI instance of the picker can be exercised
-end-to-end (today only Phius/NY is seeded). That is a **data/ops** dependency,
-not code, and is **not** required to call the picker done.
+**The picker feature is complete** — P1–P4 shipped and verified. P4
+(`phases/phase-04-phi-dataset-seed.md`) wired the dev seed to seed **every**
+published provider (prod's `seeding --all` path) and generalized the bundle
+bootstrap, so `make db-seed` now seeds `phi/10.6` alongside `phius/2022`, pins
+the Phius default, and attaches the nearest PHI station. Verified live (DB + API
++ Playwright): the PHI picker resolves the dataset and shows advisory verdicts
+(`warning`, never `fail`).
+
+The one remaining item is **O-DP-6** (decisions.md): the picker's default state
+filter returns no PHI stations for a US project because PHI's `region` uses full
+names (`"New York"`) while the project state and Phius use 2-letter codes
+(`"NY"`). PHI still works via the "any state / nearest" mode; the default-filter
+fix is a design fork (region normalization, entangled with PHI's 82-country
+scope) left for Ed's call — not required to call the picker done.
 
 One small piece of acknowledged debt (P3 simplify review): the sidebar
 `LocationCard` is a `role="button"` div rather than a native `<button>` (so the
@@ -84,8 +94,11 @@ source cards. Revisit if the sidebar's cards are reworked.
   former Phase-2 blocker is gone. MapTiler remains only for geocoding (D-CL-15),
   never tiles. (Migrating to a vetted tile vendor later is a one-line tile-URL
   swap, not a blocker.)
-- **O-DP-5 / parent O5** — a PHI dataset seed is needed to exercise the PHI
-  instance end-to-end (dev DB has only Phius/NY).
+- **O-DP-5 — RESOLVED (P4, 2026-06-22).** The dev seed now seeds every published
+  provider; `phi/10.6` lands locally and the PHI picker was verified end-to-end.
+- **O-DP-6 — OPEN (non-blocking).** PHI's default state filter returns nothing
+  for a US project (region full-name vs. 2-letter-code mismatch); near/any-state
+  mode works. A design fork for Ed; does not block the feature.
 
 ## Verification plan
 

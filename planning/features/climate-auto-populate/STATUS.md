@@ -125,6 +125,10 @@ contains the address string.
   Dev DB still lacks a PHI seed, so the smoke emitted the expected PHI warning;
   PHI remains covered by P2 synthetic pytest. Screenshot:
   `/tmp/phn-climate-p3-roster.png`.
+  *(Update 2026-06-22: the dev DB now seeds PHI — the climate-dataset-picker P4
+  wired the dev seed to seed every published provider, so a re-run would no
+  longer warn. O5 below — confirming the seeded **versions** are a valid cert
+  basis — is a separate concern and stays open.)*
 - `make format` — passed.
 - `make ci` — passed: backend `935 passed, 2 skipped`; frontend `186` test
   files / `1784` tests passed; Vite build passed.

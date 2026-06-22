@@ -1,9 +1,20 @@
-"""Smoke tests for local-dev project seed assembly."""
+"""Smoke tests for local-dev project seed assembly + the climate source pins."""
 
 from __future__ import annotations
 
+from typing import cast
+from uuid import UUID
+
+from database import transaction
+from features.climate.service import seed_dataset
 from features.projects.models import CreateProjectRequest
-from scripts.seed_dev_db import _starter_project_document
+from scripts.seed_dev_db import _pin_nearest_phi_source, _starter_project_document
+from tests.test_climate_dataset_roster import _station
+from tests.test_climate_datasets import clean_climate_tables
+from tests.test_mcp import clean_mcp_tables, create_project, signed_in_client
+
+# Re-exported so the climate-table / mcp-table fixtures resolve in this module.
+__all__ = ["clean_climate_tables", "clean_mcp_tables"]
 
 
 def test_starter_project_document_seeds_two_envelope_assemblies() -> None:
@@ -84,3 +95,33 @@ def test_starter_project_document_seeds_electric_heater_datasheet_field() -> Non
     assert any(field.field_key == "datasheet_asset_ids" for field in electric_heaters.field_defs)
     assert electric_heaters.rows
     assert all(row.datasheet_asset_ids == [] for row in electric_heaters.rows)
+
+
+def test_pin_nearest_phi_source_attaches_closest_station(clean_mcp_tables: None, clean_climate_tables: None) -> None:
+    """The PHI seed pin attaches the nearest PHI station as a non-default source."""
+    phi = seed_dataset(
+        "phi",
+        "10.6",
+        [
+            _station(station_id="PHI-NEAR", miles_north=8.0, region="NY", provider="phi"),
+            _station(station_id="PHI-FAR", miles_north=120.0, region="NY", provider="phi"),
+        ],
+        label="PHI 10.6",
+    )
+    client = signed_in_client()
+    project_id = UUID(cast(str, create_project(client)["id"]))
+
+    with transaction() as conn:
+        location = _pin_nearest_phi_source(conn, project_id, phi, {"latitude": 40.0, "longitude": -75.0})
+        assert location is not None
+        assert location["name"] == "PHI-NEAR"  # nearest of the two, not the 120 mi station
+        rows = conn.execute(
+            "SELECT kind, ref, label, is_default FROM project_climate_source WHERE project_id = %(pid)s",
+            {"pid": project_id},
+        ).fetchall()
+
+    phi_sources = [row for row in rows if row["kind"] == "phi"]
+    assert len(phi_sources) == 1
+    assert phi_sources[0]["ref"] == str(location["id"])
+    assert phi_sources[0]["is_default"] is False  # the Phius source stays the project default
+    assert "(PHI 10.6)" in phi_sources[0]["label"]

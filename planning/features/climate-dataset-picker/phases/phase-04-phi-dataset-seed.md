@@ -1,84 +1,85 @@
 ---
 DATE: 2026-06-22
 TIME: -
-STATUS: **PLANNED** — not started. Pulled out of the shipped P1–P3 work as the
-  one remaining follow-up (O-DP-5). Blocked on a **data/ops** dependency (a PHI
-  dataset for the dev DB), not on code. No schedule.
+STATUS: **DONE** (2026-06-22). The dev seed now seeds **every** published
+  climate provider (prod's `seeding --all` semantics) — `phius/2022` + `phi/10.6`
+  both land in the local DB, the Phius default is pinned, and the **nearest PHI
+  station** is attached as the advisory PHI source. Verified live: the PHI picker
+  resolves `phi 10.6`, lists stations nearest-first, and shows advisory verdicts
+  (58.7 mi → `warning`, never `fail`). O-DP-5 closed. One new gap surfaced —
+  **O-DP-6** (PHI region-filter vocabulary mismatch). See **Outcome — P4** below.
 AUTHOR: Ed (via Claude)
-SCOPE: P4 — seed a PHI climate dataset in the dev DB and exercise the PHI
-  instance of the picker (and the PHI advisory proximity semantics) end-to-end.
-  The picker's PHI half is already built and shipped (shared component, P2b/P3)
-  but has never run against real PHI data, because the dev DB seeds only
-  Phius/NY today.
+SCOPE: P4 — seed PHI in the dev DB (mirroring prod) and exercise the PHI picker
+  + advisory proximity semantics end-to-end. The picker's PHI half was built in
+  P2b/P3 (shared component); this wired the dev seed so it runs against real
+  PHI data instead of the empty state.
 RELATED:
-  - ../PRD.md §3 (PHI advisory semantics), §11 (out of scope: dev-DB PHI seeding)
-  - ../decisions.md O-DP-5 (PHI dataset availability — the open question)
-  - ../STATUS.md (feature complete; O-DP-5 the only open item)
+  - ../PRD.md §3 (PHI advisory semantics), §11
+  - ../decisions.md O-DP-5 (resolved), O-DP-6 (new open item)
+  - ../STATUS.md
   - phases/phase-01 (the roster endpoint + dataset/location tables this reuses)
-  - planning/features/climate-auto-populate/ (parent O5 — same seed gap)
+  - planning/archive/climate-reference-data-seeding/ (built the PHI pipeline; D-CS-3/D-CS-7)
 ---
 
-# Phase 4 — PHI dataset seed + PHI picker verification (PLANNED)
+# Phase 4 — PHI dataset seed + PHI picker verification (DONE)
 
-> **Status: planned, not scheduled.** P1–P3 shipped the full picker — including
-> the PHI instance, which is the *same* generic `ClimateDatasetPickerModal` /
-> `<ClimateMap>` mounted with `kind="phi"`. What's missing is **data**: the dev
-> DB has only the Phius/NY dataset seeded, so the PHI path has only ever been
-> exercised against its empty-state (`dataset:null`). This phase lands once a
-> PHI dataset is available for dev (O-DP-5). It is **not** required to call the
-> picker feature done; it closes the last verification gap.
+> **Premise correction.** This phase was filed as "blocked on a **data/ops**
+> dependency (a PHI dataset for the dev DB)." That was **stale.** The archived
+> `climate-reference-data-seeding` feature already built, published, and verified
+> the full PHI pipeline (2026-06-15): `phi/10.6` (1002 records) sits in **both**
+> the real Cloudflare R2 dev bucket and local MinIO. The real gap was narrow and
+> code-side: the dev seed (`seed_dev_db._seed_climate`) hardcoded `phius/2022`
+> and never adopted prod's "seed every published provider" (`seeding --all`)
+> path, so PHI was simply never seeded into the local Postgres.
 
-## Goal
+## Goal (met)
 
-Run the PHI instance of the picker against a **real seeded PHI dataset** and
-confirm the PHI-specific behaviour the code already implements but that has
-never been seen live:
+Run the PHI picker against a **real seeded PHI dataset** and confirm the
+PHI-specific behaviour the code already implemented:
 
 - the roster endpoint resolves the pinned **PHI** dataset for `kind="phi"` and
-  returns its stations with per-station proximity;
+  returns its stations with per-station proximity; ✅
 - the picker lists PHI stations nearest-first, plots them on the basemap, and
   attaches the chosen one to the project's `kind="phi"` `project_climate_source`
-  row (independent of the Phius row, D-DP-1);
+  row, independent of the Phius row (D-DP-1); ✅
 - **PHI advisory semantics** (PRD §3/§8): distance/Δelev shown, a *soft*
-  50 mi/400 ft warning, no hard pass/fail gate — selecting a far station
-  attaches `status:"warning"` with the "confirm representativeness with the
-  certifier" note, never a blocking `status:"fail"`.
+  50 mi/400 ft warning, no hard pass/fail gate. ✅
 
-## Precondition — the PHI seed (O-DP-5, data/ops)
+## Outcome — P4 (2026-06-22)
 
-A PHI climate dataset must exist for the dev DB: one `climate_dataset` row
-(provider `phi`, pinned version) plus its `climate_dataset_location` rows
-(name/region/lat/long/elevation/zone/`data`=`ClimateRecord`). Source + license
-of the PHI station data is the open question (must respect the public-repo /
-licensed-data rule — route any licensed source data through the private object
-store, never commit it). Until this lands, the PHI picker correctly shows its
-"No PHI dataset is available yet" empty state.
+The dev seed now mirrors production; no new licensed data was added (both
+bundles were already in the private object store).
 
-## Work (once the seed exists)
+- **Seed-side (`seed_dev_db._seed_climate`)** now calls
+  `seed_all_from_object_store(...)` — the same provider-agnostic path the Render
+  job uses (`seeding --all`, PRD D-CS-7) — so it seeds every published bundle
+  (today `phius/2022` + `phi/10.6`). It pins the firm's home-turf Phius station
+  as the project default and attaches the **nearest PHI station** as a
+  non-default advisory PHI source (reusing `repository.nearest_locations`, no new
+  proximity math). Phius is required; PHI is pinned only when published.
+- **Bootstrap-side (`scripts.seed_climate_bundle`)** generalized from
+  Phius-only to a provider-spec list, so a fresh MinIO bootstraps each provider
+  with a local source: Phius (required, default `backend/seeds/climate/`,
+  `$CLIMATE_SOURCE_DIR`) and PHI (optional, default `backend/seeds/climate/phi/`,
+  `$CLIMATE_PHI_SOURCE_DIR`). The no-clobber rule is preserved per provider.
+- **Verified live (Playwright + DB + API).** `make db-seed` seeded
+  `phi 10.6 (1002)` + `phius 2022 (1007)`; the PHI source resolved to "New York
+  (PHI 10.6)", FK-consistent. The roster endpoint returns the `phi 10.6` dataset
+  nearest-first with advisory verdicts — "New York" 0.3 mi `pass`, "Poughkeepsie"
+  58.7 mi **`warning`** (beyond the band, never `fail`). The PHI picker opens
+  from the PHI source card and renders the seeded roster.
+- **Tests.** `tests/test_seed_climate_bundle.py` covers the multi-provider
+  bootstrap (Phius required → loud failure; PHI optional → graceful skip / reuse);
+  `tests/test_seed_dev_db.py` covers the nearest-PHI pin (closest station,
+  non-default, `(PHI 10.6)` label) against a DB-seeded PHI dataset. `make ci` green.
 
-1. **Seed path.** Add a dev seed for the PHI dataset mirroring the existing
-   Phius seed (same tables, same shape) — a script/fixture, not committed
-   licensed data.
-2. **Verify the roster endpoint** returns PHI stations with proximity for
-   `kind="phi"` (the math + sort are already the shared seam from P1; this is a
-   data-driven check, likely no code change).
-3. **Confirm advisory attach** writes `status:"warning"` (not `"fail"`) for a
-   far PHI station and surfaces the certifier note — fix the PHI branch only if
-   the live data exposes a gap.
+## Follow-up surfaced — O-DP-6 (PHI region-filter mismatch)
 
-## Tests
-
-- Backend: a focused pytest seeding a small PHI dataset and asserting the roster
-  endpoint + advisory attach payload for `kind="phi"`.
-- Frontend: the picker modal already has a `kind="phi"` test path; extend it /
-  the Playwright pass to drive a *seeded* PHI roster (today it only asserts the
-  unseeded empty state).
-- `make ci` green.
-
-## Exit criteria
-
-From the PHI page the editor opens the picker, sees real PHI stations on the
-basemap, and attaches one with advisory (`warning`, never `fail`) semantics;
-the PHI `project_climate_source` row is independent of the Phius one; backend +
-frontend tests cover the seeded PHI path; no licensed data is committed (public
-repo); `make ci` green. **O-DP-5 closed.**
+Exercising the PHI picker exposed one gap (see ../decisions.md O-DP-6): the
+default state filter returns **zero PHI stations** for a US project because the
+project's state is a 2-letter code (`"NY"`) while PHI's `region` is a full name
+(`"New York"`). Phius uses 2-letter codes, so its default filter works; PHI's
+does not (it populates only via the "any state / nearest" mode). The fix is a
+design fork (normalize PHI regions at import vs. map at query vs. per-provider
+default) entangled with PHI's 82-country scope — left for Ed's decision, not
+folded into this seed-wiring phase.

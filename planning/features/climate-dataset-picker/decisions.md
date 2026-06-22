@@ -4,8 +4,10 @@ TIME: -
 STATUS: O-DP-1..4 resolved (Ed, 2026-06-21; O-DP-4 retired the browser in P2a);
   D-DP-6 (Ed, 2026-06-21) re-chose the renderer + tiles as **vanilla Leaflet +
   keyless OSM raster**, superseding the MapLibre/MapTiler half of D-DP-5 and
-  **dissolving O4** (no key, no proxy, no committed secret); O-DP-5 (PHI seed)
-  is a data/ops dependency, still open.
+  **dissolving O4** (no key, no proxy, no committed secret); **O-DP-5 resolved**
+  (P4, 2026-06-22 — PHI seed wired into dev + verified live; was never truly
+  data-blocked). New open item **O-DP-6** (PHI region-filter vocabulary
+  mismatch, found during P4 verification).
 AUTHOR: Ed (via Claude)
 SCOPE: Decision ledger + open questions for the climate dataset picker. Uses a
   D-DP-* prefix; references the parent climate ledger (D-CL-*) where it builds
@@ -98,12 +100,33 @@ state)" mode (endpoint `near` ordering) for border sites. Folded into PRD §5/§
 Confirmed D-DP-4: the generic browser is **deleted**; phius/phi attach through the
 picker modal, and the "+ Add source" page keeps ASHRAE/EPW/custom. Done in P2a.
 
+## Resolved (P4, 2026-06-22)
+
+### O-DP-5 · PHI dataset availability → **SEEDED + VERIFIED (not data-blocked)**
+The premise that PHI was *data-blocked* turned out stale. The PHI dataset was
+already built, published, and verified by the archived
+`climate-reference-data-seeding` feature (2026-06-15): `phi/10.6` (1002 records)
+is in **both** the real R2 dev bucket and local MinIO. The only gap was that the
+dev seed (`seed_dev_db._seed_climate`) hardcoded `phius/2022` and never adopted
+prod's "seed every published provider" (`seeding --all`) path. P4 wired the dev
+seed to `seed_all_from_object_store(...)` and generalized
+`scripts.seed_climate_bundle` to bootstrap every provider with a local source
+(Phius required, PHI optional). `make db-seed` now seeds both datasets locally,
+pins the Phius default, and attaches the **nearest PHI station** as the advisory
+PHI source. Verified live: the PHI picker resolves `phi 10.6`, lists stations
+nearest-first, and shows **advisory** verdicts (a 58.7 mi station → `warning`,
+never `fail`). See `phases/phase-04-phi-dataset-seed.md`.
+
 ## Open questions
 
-### O-DP-5 · PHI dataset availability
-The PHI instance needs a seeded PHI dataset to exercise (dev DB has only
-Phius/NY today — same gap noted as parent O5). Is a PHI seed available for dev,
-or does the PHI picker ship behind the seed landing? *(Data/ops, not code.)*
-Now tracked as the planned follow-up **`phases/phase-04-phi-dataset-seed.md`**;
-the picker's PHI half shipped in P1–P3 and runs against its empty state until
-the seed lands.
+### O-DP-6 · PHI region-filter vocabulary mismatch (found during P4 verification)
+The picker's default state filter (O-DP-3 — default to the project's derived
+state) returns **zero PHI stations** for a US project: the project's state is a
+2-letter code (`"NY"`) but PHI's `region` column carries full names
+(`"New York"`). Phius regions are 2-letter codes, so its default filter works;
+PHI's does not (the PHI picker opens empty-by-default and only populates via the
+"any state / nearest" mode, which works — `near=true` returns 100). The fix is a
+design fork (normalize PHI regions to state codes at import — but PHI spans 82
+countries, so not all regions are US states; vs. map `code↔name` at query time;
+vs. change the picker's per-provider default). Out of scope for the P4 seed
+wiring; tracked here for Ed's call.

@@ -52,8 +52,13 @@ ELECTRIC_HEATERS_SEED_PATH: Final[pathlib.Path] = PROJECT_DIR / "electric-heater
 APPLIANCES_SEED_PATH: Final[pathlib.Path] = PROJECT_DIR / "appliances.json"
 HEAT_PUMPS_SEED_PATH: Final[pathlib.Path] = PROJECT_DIR / "heat-pumps.json"
 
-# Climate / Model-tab seed sources.
+# Climate / Model-tab seed sources. Phius ships a `-mon.txt` tree (the climate
+# dir root); PHI ships a single licensed `.xlsx` the importer finds by walking a
+# directory, so its default source is a dedicated `phi/` subdir (gitignored like
+# the rest of `seeds/climate/`). Both are overridable via env (see
+# `scripts.seed_climate_bundle`).
 CLIMATE_PHIUS_ROOT: Final[pathlib.Path] = CLIMATE_DIR
+CLIMATE_PHI_ROOT: Final[pathlib.Path] = CLIMATE_DIR / "phi"
 HBJSON_SEED_PATH: Final[pathlib.Path] = MODEL_DIR / "ph_nav_v2_example.hbjson"
 
 # Station id (filename minus `-mon.txt`) the starter project pins as its

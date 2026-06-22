@@ -43,6 +43,12 @@ Load these only when the task touches the relevant surface:
   you are building (see `ui/pages/.instructions.md`); the §2 index lists them.
   For visual-design tasks, also load the BLDGTYP design system:
   <https://github.com/bldgtyp/bt-branding>.
+- `DATA_STORAGE.md` — the map of where every kind of project data
+  physically lives: the two stores (Postgres / object store) and the four
+  data classes (relational metadata, versioned JSONB documents, dynamic
+  per-project assets, static climate bundles), the pointer/boundary table,
+  and the dev-vs-prod matrix. Load when deciding where new data should live
+  or debugging a store/registry mismatch.
 - `CODING_STANDARDS.md` — backend Python and frontend TypeScript
   engineering standards: layer/feature boundaries, typing, module-size,
   documentation, state ownership, and quality gates.

@@ -23,8 +23,11 @@ from pydantic import BaseModel, Field
 from config import settings
 from database import transaction
 from features.auth.service import create_or_update_user
+from features.climate import repository as climate_repository
+from features.climate.importers import get_provider
 from features.climate.object_store import ClimateBundleStore
-from features.climate.seeding import seed_from_object_store
+from features.climate.seeding import seed_all_from_object_store
+from features.climate.service import SeedResult
 from features.heat_pumps.models import (
     HeatPumpIndoorEquipRow,
     HeatPumpIndoorEquipTableEnvelope,
@@ -199,10 +202,12 @@ def main() -> None:
     climate = _seed_climate(project["id"])
 
     print(f"Seeded local dev database: user={user.email}, project={project['bt_number']} ({project['id']})")
-    print(
-        f"Seeded climate: {climate['dataset_label']} ({climate['location_count']} locations); "
-        f"default source -> {climate['default_location_name']}"
-    )
+    print("Seeded climate datasets: " + ", ".join(climate["seeded"]))
+    if climate["skipped"]:
+        print("  (not published, skipped: " + ", ".join(climate["skipped"]) + ")")
+    print(f"  default Phius source -> {climate['default_location_name']}")
+    if climate["phi_location_name"] is not None:
+        print(f"  nearest PHI source   -> {climate['phi_location_name']}")
 
 
 def _truncate_application_tables() -> None:
@@ -423,17 +428,22 @@ def _starter_project_document(payload: CreateProjectRequest) -> ProjectDocumentV
 
 
 def _seed_climate(project_id: UUID) -> dict[str, Any]:
-    """Seed the app-wide Phius dataset and pin a default project source.
+    """Seed every published climate dataset and pin the starter project's sources.
 
-    The truncate above wipes ``climate_dataset*`` and the project-scoped
+    Mirrors the production seed (``seeding --all``, PRD D-CS-7): the truncate
+    above wipes ``climate_dataset*`` plus the project-scoped
     ``project_climate_source`` / ``project_location`` rows, so this rebuilds
-    all three on every reseed. The standardized bundle is pulled from the
-    private object store (PRD D-CS-2) — ``make seed-climate-bundle`` puts it
-    there from the operator's local source — and seeded idempotently per
-    ``(provider, version)`` in its own transaction; we then look the chosen
-    station back up by ``station_id`` and attach it as the project's default
-    climate source plus a matching site location, so the Climate tab opens
-    with real data instead of an empty roster.
+    them from whatever standardized bundles are published in the private object
+    store (PRD D-CS-2) — today ``phius/2022`` and ``phi/10.6``, both put there by
+    ``make seed-climate-bundle``. It then pins the starter project's **default
+    Phius** source (the firm's home turf) plus a matching site location, and
+    attaches the **nearest PHI** station as the project's advisory PHI source,
+    so both the Phius and PHI Climate pickers open with real data instead of an
+    empty roster.
+
+    Phius is required — the starter default resolves against it. PHI is seeded
+    and pinned only when its bundle is published; without it the PHI picker
+    keeps its graceful empty state.
     """
     if not settings.r2_endpoint_url:
         raise SystemExit(
@@ -441,52 +451,106 @@ def _seed_climate(project_id: UUID) -> dict[str, Any]:
             "run `make object-store-init` and `make seed-climate-bundle` first."
         )
     store = ClimateBundleStore.from_settings()
-    result = seed_from_object_store(store, "phius", "2022")
+    seeded, skipped = seed_all_from_object_store(store)
+    results = {result.provider: result for result in seeded}
 
-    with transaction() as conn:
-        location = conn.execute(
-            """
-            SELECT id, name, latitude, longitude, elevation_m, region
-            FROM climate_dataset_location
-            WHERE dataset_id = %(dataset_id)s AND station_id = %(station_id)s
-            """,
-            {"dataset_id": result.dataset_id, "station_id": CLIMATE_DEFAULT_STATION_ID},
-        ).fetchone()
-        if location is None:
-            raise SystemExit(
-                f"Climate seed station {CLIMATE_DEFAULT_STATION_ID!r} missing from the Phius dataset; "
-                "check backend/seeds/climate/."
-            )
-
-        climate_source_repository.clear_default(conn, project_id)
-        climate_source_repository.insert_source(
-            conn,
-            source_id=uuid4(),
-            project_id=project_id,
-            kind="phius",
-            ref=str(location["id"]),
-            label=f"{location['name']} (Phius 2022)",
-            is_default=True,
-            data=None,
+    phius = results.get("phius")
+    if phius is None:
+        raise SystemExit(
+            "No Phius bundle is published in the object store, so the starter project's "
+            "default climate source cannot resolve. Publish phius/2022 with "
+            "`make seed-climate-bundle` (see backend/seeds/climate/README.md)."
         )
 
-        location_values: dict[str, object] = {
-            "latitude": location["latitude"],
-            "longitude": location["longitude"],
-            "elevation_m": location["elevation_m"],
-            "time_zone": "America/New_York",
-            "true_north_deg": 0.0,
-            "site_address": "Industry City, 220 36th St",
-            "city": "Brooklyn",
-            "state": location["region"],
-        }
-        project_location_repository.upsert_location(conn, project_id, set(location_values), location_values)
+    with transaction() as conn:
+        default_location = _pin_default_phius_source(conn, project_id, phius)
+        _upsert_starter_location(conn, project_id, default_location)
+        phi_location = _pin_nearest_phi_source(conn, project_id, results.get("phi"), default_location)
 
     return {
-        "dataset_label": f"{result.provider} {result.version}",
-        "location_count": result.location_count,
-        "default_location_name": location["name"],
+        "seeded": [f"{result.provider} {result.version} ({result.location_count} locations)" for result in seeded],
+        "skipped": [f"{provider} {version}" for provider, version in skipped],
+        "default_location_name": default_location["name"],
+        "phi_location_name": phi_location["name"] if phi_location is not None else None,
     }
+
+
+def _pin_default_phius_source(conn: Any, project_id: UUID, phius: SeedResult) -> dict[str, Any]:
+    """Pin the firm's home-turf Phius station as the project's default source."""
+    location = conn.execute(
+        """
+        SELECT id, name, latitude, longitude, elevation_m, region
+        FROM climate_dataset_location
+        WHERE dataset_id = %(dataset_id)s AND station_id = %(station_id)s
+        """,
+        {"dataset_id": phius.dataset_id, "station_id": CLIMATE_DEFAULT_STATION_ID},
+    ).fetchone()
+    if location is None:
+        raise SystemExit(
+            f"Climate seed station {CLIMATE_DEFAULT_STATION_ID!r} missing from the Phius dataset; "
+            "check backend/seeds/climate/."
+        )
+    climate_source_repository.clear_default(conn, project_id)
+    _insert_climate_source(conn, project_id, kind="phius", version=phius.version, location=location, is_default=True)
+    return location
+
+
+def _pin_nearest_phi_source(
+    conn: Any, project_id: UUID, phi: SeedResult | None, site: dict[str, Any]
+) -> dict[str, Any] | None:
+    """Attach the PHI station nearest the project site as the advisory PHI source.
+
+    Symmetric with the Phius default but non-default (a project has one default
+    source); reuses the backend nearest-station query so no proximity math lives
+    here. Returns ``None`` when PHI is unpublished or its dataset has no located
+    stations.
+    """
+    if phi is None:
+        return None
+    nearest = climate_repository.nearest_locations(
+        conn, phi.dataset_id, latitude=float(site["latitude"]), longitude=float(site["longitude"]), limit=1
+    )
+    if not nearest:
+        return None
+    location = nearest[0]
+    _insert_climate_source(conn, project_id, kind="phi", version=phi.version, location=location, is_default=False)
+    return location
+
+
+def _insert_climate_source(
+    conn: Any, project_id: UUID, *, kind: str, version: str, location: dict[str, Any], is_default: bool
+) -> None:
+    """Attach one ``climate_dataset_location`` to the project as a ``kind`` source.
+
+    ``data=None`` matches auto-attach: proximity is recomputed server-side on
+    read (D-DP-2), never trusted from a seeded snapshot. The label reuses the
+    provider registry so it reads "(Phius 2022)" / "(PHI 10.6)" without hardcoding.
+    """
+    climate_source_repository.insert_source(
+        conn,
+        source_id=uuid4(),
+        project_id=project_id,
+        kind=kind,
+        ref=str(location["id"]),
+        label=f"{location['name']} ({get_provider(kind).label_for(version)})",
+        is_default=is_default,
+        data=None,
+    )
+
+
+def _upsert_starter_location(conn: Any, project_id: UUID, location: dict[str, Any]) -> None:
+    """Set the starter project's site location from its default Phius station."""
+    location_values: dict[str, object] = {
+        "latitude": location["latitude"],
+        "longitude": location["longitude"],
+        "elevation_m": location["elevation_m"],
+        "time_zone": "America/New_York",
+        "true_north_deg": 0.0,
+        "site_address": "Industry City, 220 36th St",
+        "city": "Brooklyn",
+        "state": location["region"],
+    }
+    project_location_repository.upsert_location(conn, project_id, set(location_values), location_values)
 
 
 if __name__ == "__main__":

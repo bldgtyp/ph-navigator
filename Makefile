@@ -217,7 +217,7 @@ seed-dev-user: migrate ## Create/reset the default local editor login
 seed-agent-user: migrate ## Create/reset the dedicated local Codex/agent editor login
 	cd backend && uv run python -m scripts.seed_user --email codex@example.com --display-name "Codex Agent" --password "password"
 
-seed-climate-bundle: object-store-init ## Build the Phius climate bundle from local source + upload to MinIO (needs MinIO)
+seed-climate-bundle: object-store-init ## Build the Phius + PHI climate bundles from local source + upload to MinIO (needs MinIO)
 	cd backend && \
 	R2_ENDPOINT_URL="$(LOCAL_R2_ENDPOINT_URL)" \
 	R2_ACCESS_KEY_ID="$(LOCAL_R2_ACCESS_KEY_ID)" \
