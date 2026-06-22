@@ -2,7 +2,6 @@ import type { UnitSystem } from "../../lib/units";
 import { formatTemperatureFromC } from "../../lib/units/temperature";
 import { elevationUnitLabel, formatLocationElevationDisplay } from "../projects/location-form";
 import type { ClimateRecord, ClimateSourceKind, ProjectClimateSource } from "./types";
-import type { ClimateLocationSummary } from "./types";
 
 // Jan…Dec — the ordering of every `Monthly12` series in a ClimateRecord.
 export const MONTH_LABELS = [
@@ -24,12 +23,6 @@ export const MONTH_LABELS = [
 // provider/version when the dataset row has no explicit label.
 export function datasetLabel(label: string | null, provider: string, version: string): string {
   return label ?? `${provider} ${version}`;
-}
-
-// One-line location descriptor for list rows: "Name — REGION, COUNTRY".
-export function locationSubtitle(location: ClimateLocationSummary): string {
-  const place = [location.region, location.country].filter(Boolean).join(", ");
-  return place ? `${location.name} — ${place}` : location.name;
 }
 
 // Format a coordinate pair compactly; nulls render as an em dash.

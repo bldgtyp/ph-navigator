@@ -118,6 +118,55 @@ export type ClimateLocationSearch = {
   offset?: number;
 };
 
+// ---- Dataset picker roster (project-scoped feed for manual attach) ----
+// Mirrors backend `features/project_climate_source/models.py`. The picker
+// renders one PH dataset's stations for a project, each with backend-computed
+// proximity, nearest-first. Only the two PH kinds have a roster.
+export type PhClimateKind = "phius" | "phi";
+
+export type ClimateProximityVerdict = {
+  distance_mi: number;
+  elevation_delta_ft: number | null;
+  status: "pass" | "warning" | "fail";
+  message: string;
+};
+
+export type ClimateDatasetRef = {
+  id: string;
+  provider: string;
+  version: string;
+  label: string | null;
+};
+
+export type ClimateRosterProject = {
+  latitude: number;
+  longitude: number;
+  elevation_m: number | null;
+  state: string | null;
+};
+
+export type ClimateDatasetRosterItem = {
+  id: string;
+  name: string;
+  station_id: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  elevation_m: number | null;
+  climate_zone: string | null;
+  proximity: ClimateProximityVerdict;
+};
+
+// `dataset` is null when the kind has no seeded dataset yet (the modal shows an
+// empty state); `near` requests the any-state nearest mode (O-DP-3).
+export type ClimateDatasetRosterResponse = {
+  dataset: ClimateDatasetRef | null;
+  project: ClimateRosterProject;
+  items: ClimateDatasetRosterItem[];
+  total: number;
+};
+
+export type ClimateRosterSearch = { region?: string; near?: boolean };
+
 // ---- Project-scoped climate sources (Phase 3b) ----
 // Mirrors backend `features/project_climate_source/models.py`. `ref`/`data`
 // are interpreted by `kind`: phius/phi → ref is a reference-location id and

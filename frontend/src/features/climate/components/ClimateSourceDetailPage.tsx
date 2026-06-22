@@ -17,7 +17,7 @@ import {
   formatSi,
   isClimateRecord,
 } from "../lib";
-import type { ClimatePeakLoad, ProjectClimateSource } from "../types";
+import type { ClimatePeakLoad, PhClimateKind, ProjectClimateSource } from "../types";
 import { ClimateStatusChip, ClimateTypeBadge } from "./ClimateAtoms";
 import { ClimateRecordView } from "./ClimateRecordView";
 
@@ -25,16 +25,32 @@ export function ClimateSourceDetailPage({
   project,
   source,
   unitSystem,
+  onOpenPicker,
 }: {
   project: ProjectDetail;
   source: ProjectClimateSource;
   unitSystem: UnitSystem;
+  onOpenPicker?: (kind: PhClimateKind) => void;
 }) {
   if (source.kind === "phius" && climateSourceProximityStatus(source) === "fail") {
-    return <FailPage project={project} source={source} />;
+    return (
+      <FailPage
+        project={project}
+        source={source}
+        onChangeDataset={onOpenPicker ? () => onOpenPicker("phius") : undefined}
+      />
+    );
   }
   if (source.kind === "phius" || source.kind === "phi") {
-    return <PassiveHouseSourcePage project={project} source={source} unitSystem={unitSystem} />;
+    const kind = source.kind;
+    return (
+      <PassiveHouseSourcePage
+        project={project}
+        source={source}
+        unitSystem={unitSystem}
+        onChangeDataset={onOpenPicker ? () => onOpenPicker(kind) : undefined}
+      />
+    );
   }
   if (source.kind === "ashrae") {
     return <AshraeSourcePage project={project} source={source} unitSystem={unitSystem} />;
@@ -52,11 +68,13 @@ function SourceHeader({
   source,
   title,
   subItems,
+  onChangeDataset,
 }: {
   project: ProjectDetail;
   source: ProjectClimateSource;
   title?: string;
   subItems?: (string | null)[];
+  onChangeDataset?: () => void;
 }) {
   const canEdit = project.access_mode === "editor";
   const status = climateSourceStatusChip(source);
@@ -87,6 +105,16 @@ function SourceHeader({
       </div>
       {canEdit ? (
         <div className="climate-page-head-actions">
+          {onChangeDataset ? (
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={onChangeDataset}
+              disabled={busy}
+            >
+              Change dataset
+            </button>
+          ) : null}
           {!source.is_default ? (
             <button
               type="button"
@@ -116,10 +144,12 @@ function PassiveHouseSourcePage({
   project,
   source,
   unitSystem,
+  onChangeDataset,
 }: {
   project: ProjectDetail;
   source: ProjectClimateSource;
   unitSystem: UnitSystem;
+  onChangeDataset?: () => void;
 }) {
   const datasetId = stringValue(source.data?.dataset_id);
   const locationId = source.ref ?? stringValue(source.data?.location_id) ?? undefined;
@@ -127,7 +157,7 @@ function PassiveHouseSourcePage({
   const record = query.data?.record;
   return (
     <div className="climate-detail-page">
-      <SourceHeader project={project} source={source} />
+      <SourceHeader project={project} source={source} onChangeDataset={onChangeDataset} />
       {query.isLoading ? <p className="form-note">Loading climate record…</p> : null}
       {query.error ? <p className="form-error">Could not load climate record.</p> : null}
       {record ? (
@@ -242,7 +272,15 @@ function EpwSourcePage({
   );
 }
 
-function FailPage({ project, source }: { project: ProjectDetail; source: ProjectClimateSource }) {
+function FailPage({
+  project,
+  source,
+  onChangeDataset,
+}: {
+  project: ProjectDetail;
+  source: ProjectClimateSource;
+  onChangeDataset?: () => void;
+}) {
   const candidates = candidateRows(source.data?.nearest_candidates);
   return (
     <div className="climate-detail-page">
@@ -251,6 +289,7 @@ function FailPage({ project, source }: { project: ProjectDetail; source: Project
         source={source}
         title="No qualifying Phius dataset"
         subItems={["rule: ≤ 50 mi AND ≤ 400 ft", climateSourceProximity(source)]}
+        onChangeDataset={onChangeDataset}
       />
       <div className="climate-fail-hero">
         <ClimateStatusChip tone="fail" label="Certification blocker" />
@@ -264,9 +303,11 @@ function FailPage({ project, source }: { project: ProjectDetail; source: Project
           <a className="primary-button" href="https://www.phius.org/climate-data">
             Request custom set · $75
           </a>
-          <a className="secondary-button" href="#climate-add-source">
-            Browse datasets to override
-          </a>
+          {onChangeDataset ? (
+            <button type="button" className="secondary-button" onClick={onChangeDataset}>
+              Browse datasets to override
+            </button>
+          ) : null}
         </div>
       </div>
       {candidates.length > 0 ? (

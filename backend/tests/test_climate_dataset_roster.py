@@ -20,7 +20,13 @@ from features.climate.record import ClimateRecord
 from features.climate.service import seed_dataset
 from tests.test_climate_datasets import _STATION_FILE, clean_climate_tables
 from tests.test_mcp import clean_mcp_tables, create_project, signed_in_client
-from tests.test_project_climate_source import _create, _first_phius_location_id, _post, _set_location
+from tests.test_project_climate_source import (
+    _create,
+    _first_phius_location_id,
+    _list,
+    _post,
+    _set_location,
+)
 
 __all__ = ["clean_climate_tables", "clean_mcp_tables"]
 
@@ -211,6 +217,37 @@ def test_manual_attach_recomputes_proximity_server_side(clean_mcp_tables: None, 
     assert stored["distance_mi"] == 80.0
     assert stored["dataset_version"] == "2022"
     assert "bogus" not in stored
+
+
+def test_manual_attach_replaces_existing_source_of_the_same_kind(
+    clean_mcp_tables: None, clean_climate_tables: None
+) -> None:
+    seed_dataset(
+        "phius",
+        "2022",
+        [
+            _station(station_id="NEAR", miles_north=10.0, region="PA"),
+            _station(station_id="FAR", miles_north=80.0, region="PA"),
+        ],
+        label="Phius 2022",
+    )
+    client = signed_in_client()
+    project_id = cast(str, create_project(client)["id"])
+    _set_location(client, project_id, latitude=40.0, longitude=-75.0, elevation_m=100.0, state="PA")
+
+    roster = _roster_ok(client, project_id, "phius")
+    by_name = {item["name"]: item["id"] for item in cast(list[dict], roster["items"])}
+
+    first = _create(client, project_id, {"kind": "phius", "ref": by_name["NEAR"], "label": "NEAR"})
+    second = _create(client, project_id, {"kind": "phius", "ref": by_name["FAR"], "label": "FAR"})
+
+    # A project holds one Phius source: the second attach replaced the first in
+    # place (same row id), now pointing at FAR with the recomputed fail verdict.
+    phius_sources = [source for source in _list(client, project_id) if source["kind"] == "phius"]
+    assert len(phius_sources) == 1
+    assert second["id"] == first["id"]
+    assert phius_sources[0]["ref"] == by_name["FAR"]
+    assert cast(dict, phius_sources[0]["data"])["status"] == "fail"
 
 
 def test_manual_attach_without_location_is_guarded(clean_mcp_tables: None, clean_climate_tables: None) -> None:

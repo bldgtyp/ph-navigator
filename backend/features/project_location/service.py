@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from typing import Any, cast
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from fastapi import Request
 from psycopg import Connection
@@ -22,6 +22,7 @@ from features.climate.proximity import PhDatasetProvider, build_location_roster,
 from features.climate.stat_parser import parse_stat_file
 from features.model_viewer.schemas.ladybug import SunPathAndCompassDTOSchema
 from features.project_climate_source import repository as climate_source_repository
+from features.project_climate_source.service import upsert_source_by_kind
 from features.project_location import repository
 from features.project_location.derive import derive_location_geodata, geocode_address
 from features.project_location.epw import EPW_HEADER_PREFIX_BYTES, parse_epw_location_header
@@ -272,7 +273,7 @@ def auto_attach_certification_sources(
             site_longitude=longitude,
             site_elevation_m=elevation_m,
         )
-        upsert_certification_source(
+        upsert_source_by_kind(
             conn,
             project_id=project_id,
             kind=provider,
@@ -410,49 +411,14 @@ def auto_attach_weather_sources(
     sources: list[dict[str, object]],
 ) -> None:
     for source in sources:
-        upsert_certification_source(
+        upsert_source_by_kind(
             conn,
             project_id=project_id,
             kind=str(source["kind"]),
             ref=str(source["ref"]),
             label=str(source["label"]),
-            data=cast(dict[str, object], source["data"] if isinstance(source["data"], dict) else {}),
+            data=cast(dict[str, Any], source["data"] if isinstance(source["data"], dict) else {}),
         )
-
-
-def upsert_certification_source(
-    conn: Connection[Any],
-    *,
-    project_id: UUID,
-    kind: str,
-    ref: str,
-    label: str,
-    data: dict[str, object],
-) -> None:
-    existing = next(
-        (row for row in climate_source_repository.list_sources(conn, project_id) if row["kind"] == kind), None
-    )
-    if existing is None:
-        climate_source_repository.insert_source(
-            conn,
-            source_id=uuid4(),
-            project_id=project_id,
-            kind=kind,
-            ref=ref,
-            label=label,
-            is_default=False,
-            data=data,
-        )
-        return
-    climate_source_repository.update_source(
-        conn,
-        existing["id"],
-        {
-            "ref": ref,
-            "label": label,
-            "data": data,
-        },
-    )
 
 
 def project_location_from_row(

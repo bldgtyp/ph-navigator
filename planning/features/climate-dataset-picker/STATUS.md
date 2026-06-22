@@ -1,9 +1,10 @@
 ---
 DATE: 2026-06-21
 TIME: -
-STATUS: P1 DONE (backend roster + authoritative attach, tested green); P2 next
-  but BLOCKED on O4 (MapTiler key + vetted dep + tiles budget). O-DP-1..3
-  resolved by Ed (2026-06-21).
+STATUS: P1 DONE (backend roster + authoritative attach); P2a DONE (key-less
+  picker scaffold), both tested green; P2b (live basemap) BLOCKED on O4
+  (MapTiler key + vetted dep + tiles budget). O-DP-1..4 resolved by Ed
+  (2026-06-21).
 AUTHOR: Ed (via Claude)
 SCOPE: Current state of the climate dataset picker feature.
 RELATED:
@@ -15,32 +16,41 @@ RELATED:
 
 ## Current state
 
-**P1 shipped (2026-06-21).** The backend feed and authoritative attach are
-implemented and tested green (focused pytest + full backend suite). Delivered:
-the project-scoped roster endpoint
-(`GET …/projects/{id}/climate/datasets/{kind}/locations`, editor-only) with
-per-station backend proximity sorted nearest-first; region default = project
-state + `near` any-state mode; `dataset:null` when a kind is unseeded; the
-no-location 409 guard; and server-authoritative proximity recompute on manual
-`phius`/`phi` attach (client `data` discarded). Proximity math is now a shared
-verdict/roster seam reused by both auto-attach and the picker (see
-`phases/phase-01` Outcome). No frontend yet (P2).
+**P1 + P2a shipped (2026-06-21).**
 
-**Ed's design answers (2026-06-21):** real MapLibre/MapTiler basemap (not a
-schematic) → O-DP-1; allow selecting a failing Phius station with an explicit
-warning → O-DP-2; default the state filter to the project's state plus an
-"any-state" nearest mode → O-DP-3.
+- **P1 (backend):** the project-scoped roster endpoint
+  (`GET …/projects/{id}/climate/datasets/{kind}/locations`, editor-only) with
+  per-station backend proximity sorted nearest-first; region default = project
+  state + `near` any-state mode; `dataset:null` when unseeded; the no-location
+  409 guard; server-authoritative proximity recompute on manual attach. The
+  proximity math is a shared verdict/roster seam reused by auto-attach + the
+  picker (`phases/phase-01` Outcome).
+- **P2a (frontend, key-less scaffold):** the generic
+  `ClimateDatasetPickerModal(kind)` on the P1 roster endpoint — state filter
+  (default project state + any-state), nearest-first list with status chips,
+  select→preview→attach (failing-Phius warning), no-location + unseeded guards,
+  editor-only; `<ClimateMap>` in its key-less positioned-pin fallback; attach is
+  upsert-by-kind so "Replace" reuses the create path; entry points from the
+  Phius/PHI detail header, the sidebar missing-source card, and the fail page;
+  `ClimateDatasetBrowser` deleted (`phases/phase-02` Outcome). vitest + full CI
+  green.
+
+**Ed's design answers (2026-06-21):** real MapLibre/MapTiler basemap → O-DP-1;
+allow selecting a failing Phius station with a warning → O-DP-2; default the
+state filter to the project's state plus an "any-state" mode → O-DP-3; retire the
+browser for phius/phi → O-DP-4.
 
 ## Next step
 
-**Phase 2** (picker modal + MapLibre/MapTiler basemap) is the next phase, but it
-is **BLOCKED on O4** — the real basemap requires a MapTiler tile key, a
-pnpm-vetted map dependency, and a tiles proxy/budget, none of which are
-code-resolvable here. Unblock O4 (provision the key + vet the dep + stand up the
-tiles proxy/referrer-scoped key so no secret is committed), then build the
-generic `ClimateDatasetPickerModal(kind)` against the P1 roster endpoint with a
-key-less fallback for CI/tests. Also confirm O-DP-4 (retire the browser for
-phius/phi) and O-DP-5 (PHI seed availability).
+**P2b (live basemap)** is the only remaining picker work and is **BLOCKED on O4**:
+layer MapLibre GL + MapTiler tiles into `<ClimateMap>` behind the existing
+key-less fallback. Unblock O4 first — provision the MapTiler tile key (confirm
+tile terms + budget), vet + add the map dependency through the pnpm gate, and
+stand up the tile proxy / referrer-scoped key so no secret is committed
+(public repo). The vendor (MapLibre GL JS vs `@maptiler/sdk`) and tile-serving
+approach are Ed's calls, deferred to when O4 is provisioned. Then **P3** retrofits
+the app's other decorative maps to the same `<ClimateMap>`. Still open: O-DP-5
+(a PHI dataset seed to exercise the PHI picker end-to-end).
 
 ## Blockers
 

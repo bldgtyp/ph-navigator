@@ -56,7 +56,7 @@ const ASHRAE_SOURCE: ProjectClimateSource = {
   },
 };
 
-function renderTab() {
+function renderTab(project: typeof PROJECT = PROJECT) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
@@ -71,7 +71,7 @@ function renderTab() {
           toggleUnitSystem: vi.fn(),
         }}
       >
-        <ClimateTab project={PROJECT} />
+        <ClimateTab project={project} />
       </UnitPreferenceContext.Provider>
     </QueryClientProvider>,
   );
@@ -143,5 +143,23 @@ describe("ClimateTab", () => {
     await user.click(screen.getByRole("button", { name: /Set Location/ }));
     expect(await screen.findByLabelText("Latitude")).toBeVisible();
     expect(screen.getByRole("button", { name: /Locate Climate Data/ })).toBeVisible();
+  });
+
+  test("a viewer cannot open the dataset picker", async () => {
+    vi.stubGlobal("fetch", fetchMock);
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === LOCATION_URL) return jsonResponse(SET_LOCATION);
+      if (url === SOURCES_URL) return jsonResponse({ items: [] });
+      if (url === SUN_PATH_URL) return jsonResponse(null);
+      return jsonResponse({}, 404);
+    });
+
+    renderTab({ ...PROJECT, access_mode: "viewer" });
+
+    // The unattached Phius slot is shown, but as a static card — no picker entry.
+    expect(await screen.findByText("Phius")).toBeVisible();
+    expect(screen.queryByRole("button", { name: /No source attached/ })).toBeNull();
+    expect(screen.queryByText("Select Phius climate dataset")).toBeNull();
   });
 });
