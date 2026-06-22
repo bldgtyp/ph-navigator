@@ -2,7 +2,6 @@ import { fetchJson } from "../../shared/api/client";
 import type {
   BtNumberAvailability,
   CreateProjectPayload,
-  DeriveProjectLocationPayload,
   ElevationLookupPayload,
   ElevationLookupResult,
   EpwParseResponse,
@@ -87,16 +86,6 @@ export async function updateProjectLocation(
 ): Promise<ProjectLocationUpdateResponse> {
   return fetchJson<ProjectLocationUpdateResponse>(`/api/v1/projects/${projectId}/location`, {
     method: "PUT",
-    body: JSON.stringify(payload),
-  });
-}
-
-export async function deriveProjectLocation(
-  projectId: string,
-  payload: DeriveProjectLocationPayload,
-): Promise<ProjectLocationUpdateResponse> {
-  return fetchJson<ProjectLocationUpdateResponse>(`/api/v1/projects/${projectId}/location/derive`, {
-    method: "POST",
     body: JSON.stringify(payload),
   });
 }

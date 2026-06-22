@@ -1,4 +1,5 @@
 import { fetchJson } from "../../shared/api/client";
+import type { ProjectLocationUpdateResponse } from "../projects/types";
 import type {
   ClimateDatasetListResponse,
   ClimateDatasetRosterResponse,
@@ -6,6 +7,7 @@ import type {
   ClimateLocationListResponse,
   ClimateLocationSearch,
   ClimateRosterSearch,
+  ClimateSourceDeriveKind,
   CreateClimateSourceRequest,
   PhClimateKind,
   ProjectClimateSource,
@@ -100,4 +102,17 @@ export async function createClimateSource(
 
 export async function deleteClimateSource(projectId: string, sourceId: string): Promise<void> {
   await fetchJson<void>(`${sourcesPath(projectId)}/${sourceId}`, { method: "DELETE" });
+}
+
+// Attach one climate type from the nearest source for the project's saved
+// coordinates. `weather` covers EPW + ASHRAE together. The server reads the
+// stored location, so no coordinates are sent.
+export async function deriveClimateSource(
+  projectId: string,
+  kind: ClimateSourceDeriveKind,
+): Promise<ProjectLocationUpdateResponse> {
+  return fetchJson<ProjectLocationUpdateResponse>(
+    `/api/v1/projects/${projectId}/location/derive/${kind}`,
+    { method: "POST" },
+  );
 }

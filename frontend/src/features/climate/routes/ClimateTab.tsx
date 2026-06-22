@@ -3,31 +3,27 @@ import { MapPin } from "lucide-react";
 import "../climate.css";
 import "../climate-workspace.css";
 import { useUnitPreference, type UnitSystem } from "../../../lib/units";
-import { errorMessage } from "../../../shared/lib/errors";
 import { useProjectLocationQuery } from "../../projects/hooks";
 import type { ProjectDetail, ProjectLocation } from "../../projects/types";
-import { useProjectLocationForm } from "../../projects/useProjectLocationForm";
 import { LocationPrivacyTag } from "../components/ClimateAtoms";
 import { ClimateMap } from "../components/ClimateMap";
 import { ClimateDatasetPickerModal } from "../components/ClimateDatasetPickerModal";
-import {
-  ClimateSourceDetailPage,
-  ProjectEpwToolsPage,
-} from "../components/ClimateSourceDetailPage";
+import { ClimateSourceDetailPage, MissingSourcePage } from "../components/ClimateSourceDetailPage";
 import { ClimateSourceSidebar, type ClimateSelection } from "../components/ClimateSourceSidebar";
 import { SetLocationModal } from "../components/SetLocationModal";
 import { useClimateSourcesQuery } from "../hooks";
 import { formatLatLong, formatLocationElevationLabel } from "../lib";
-import type { PhClimateKind } from "../types";
+import type { ClimateSourceKind, PhClimateKind } from "../types";
 
 // The Climate tab is a master-detail source browser: site location plus one
-// page per attached climate source.
+// page per climate type — each type's page (attached or empty) owns its own
+// "set from nearest" action.
 export function ClimateTab({ project }: { project: ProjectDetail }) {
   const { unitSystem } = useUnitPreference();
   const canEdit = project.access_mode === "editor";
   const [selected, setSelected] = useState<ClimateSelection>("location");
   // The PH dataset picker (phius/phi) is a modal hoisted here so the sidebar,
-  // the source detail header, and the fail page can all open it.
+  // the source detail header, and the empty-state page can all open it.
   const [pickerKind, setPickerKind] = useState<PhClimateKind | null>(null);
   const openPicker = canEdit ? (kind: PhClimateKind) => setPickerKind(kind) : undefined;
   const locationQuery = useProjectLocationQuery(project.id);
@@ -36,12 +32,20 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
   const sources = sourcesQuery.data ?? [];
 
   const selectedSource = sources.find((source) => source.id === selected) ?? null;
+  // A `slot:<kind>` selection is the empty-state page for an unattached
+  // canonical type; once that type gains a source we hand off to its detail page.
+  const slotKind = selected.startsWith("slot:") ? (selected.slice(5) as ClimateSourceKind) : null;
+  const slotSource = slotKind ? (sources.find((source) => source.kind === slotKind) ?? null) : null;
 
   useEffect(() => {
-    if (selected !== "location" && selected !== "epw-tools" && !selectedSource) {
+    if (slotSource) {
+      setSelected(slotSource.id);
+      return;
+    }
+    if (selected !== "location" && slotKind === null && !selectedSource) {
       setSelected("location");
     }
-  }, [selected, selectedSource]);
+  }, [selected, slotKind, slotSource, selectedSource]);
 
   return (
     <section className="tab-panel climate-tab" aria-label="Climate">
@@ -53,7 +57,6 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
           canEdit={canEdit}
           unitSystem={unitSystem}
           onSelect={setSelected}
-          onOpenPicker={openPicker}
         />
         <main className="climate-main">
           {sourcesQuery.error ? (
@@ -75,7 +78,17 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
               onOpenPicker={openPicker}
             />
           ) : null}
-          {selected === "epw-tools" ? <ProjectEpwToolsPage project={project} /> : null}
+          {slotSource ? (
+            <ClimateSourceDetailPage
+              project={project}
+              source={slotSource}
+              unitSystem={unitSystem}
+              onOpenPicker={openPicker}
+            />
+          ) : null}
+          {slotKind && !slotSource ? (
+            <MissingSourcePage project={project} kind={slotKind} onOpenPicker={openPicker} />
+          ) : null}
         </main>
       </div>
       {pickerKind ? (
@@ -93,7 +106,9 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
 }
 
 // The location page is read-first: derived facts and the decorative site map.
-// Editors reveal the full location editor inline via "Set Location".
+// Editors reveal the full location editor inline via "Set Location"; saving the
+// location is what derives county/elevation/zone (climate sources attach from
+// each type's own page).
 function LocationPage({
   project,
   location,
@@ -106,8 +121,6 @@ function LocationPage({
   unitSystem: UnitSystem;
 }) {
   const [isModalOpen, setModalOpen] = useState(false);
-  const [deriveError, setDeriveError] = useState<string | null>(null);
-  const deriveForm = useProjectLocationForm(project.id);
   const isSet = location?.is_set ?? false;
   const countyState = [location?.county, location?.state].filter(Boolean).join(" · ");
   const cityState = [location?.city, location?.state].filter(Boolean).join(", ");
@@ -116,16 +129,6 @@ function LocationPage({
     location?.latitude != null && location?.longitude != null
       ? { latitude: location.latitude, longitude: location.longitude }
       : null;
-  const canLocateClimateData = canEdit && coords !== null;
-
-  const locateClimateData = async () => {
-    setDeriveError(null);
-    try {
-      await deriveForm.deriveLocation();
-    } catch (error) {
-      setDeriveError(errorMessage(error, "Could not locate climate data."));
-    }
-  };
 
   return (
     <section className="climate-detail-page" aria-labelledby="climate-location-title">
@@ -176,39 +179,6 @@ function LocationPage({
           <dd>{location?.climate_zone ?? "—"}</dd>
         </div>
       </dl>
-
-      {canEdit ? (
-        <div className="climate-location-derive">
-          <div>
-            <p className="climate-subhead">Climate data</p>
-            <p className="form-note">
-              Populate county, elevation, climate zone, and nearest climate sources from the saved
-              project coordinates.
-            </p>
-          </div>
-          <button
-            type="button"
-            className="primary-button"
-            onClick={() => void locateClimateData()}
-            disabled={!canLocateClimateData || deriveForm.isDeriving}
-          >
-            <MapPin size={16} aria-hidden="true" />
-            {deriveForm.isDeriving ? "Locating…" : "Locate Climate Data"}
-          </button>
-        </div>
-      ) : null}
-      {deriveError ? (
-        <p className="form-error" role="alert">
-          {deriveError}
-        </p>
-      ) : null}
-      {deriveForm.warnings.length > 0 ? (
-        <div className="draft-banner" role="status">
-          {deriveForm.warnings.map((warning) => (
-            <span key={warning}>{warning}</span>
-          ))}
-        </div>
-      ) : null}
 
       {canEdit && isModalOpen ? (
         <SetLocationModal projectId={project.id} onClose={() => setModalOpen(false)} />

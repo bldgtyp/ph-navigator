@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import type { UnitSystem } from "../../../lib/units";
@@ -17,7 +17,7 @@ const fetchMock = vi.fn();
 
 const SOURCES_URL = `/api/v1/projects/${PROJECT.id}/climate/sources`;
 const LOCATION_URL = `/api/v1/projects/${PROJECT.id}/location`;
-const DERIVE_URL = `${LOCATION_URL}/derive`;
+const deriveUrl = (kind: string) => `${LOCATION_URL}/derive/${kind}`;
 const PHIUS_LOCATION_URL = "/api/v1/climate/datasets/dataset-phius/locations/location-phius";
 const PHI_LOCATION_URL = "/api/v1/climate/datasets/dataset-phi/locations/location-phi";
 
@@ -325,6 +325,8 @@ describe("ClimateTab", () => {
       const missingCard = (await screen.findByText(label)).closest("button");
       expect(missingCard).not.toBeNull();
       await user.click(missingCard as HTMLButtonElement);
+      // The empty-state page hosts the manual picker entry point.
+      await user.click(await screen.findByRole("button", { name: "Choose a dataset manually" }));
       await user.click(await screen.findByRole("button", { name: /^NEW YORK CENTRAL|^Boston/ }));
       await user.click(screen.getByRole("button", { name: "Attach" }));
 
@@ -395,11 +397,8 @@ describe("ClimateTab", () => {
 
   test("renders the location facts, source status chips, and reveals the editor", async () => {
     vi.stubGlobal("fetch", fetchMock);
-    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
-      if (url === DERIVE_URL && init?.method === "POST") {
-        return jsonResponse({ location: SET_LOCATION, warnings: [] });
-      }
       if (url === LOCATION_URL) return jsonResponse(SET_LOCATION);
       if (url === SOURCES_URL) return jsonResponse({ items: [EPW_SOURCE, ASHRAE_SOURCE] });
       return jsonResponse({}, 404);
@@ -418,13 +417,8 @@ describe("ClimateTab", () => {
     expect(screen.getByText("Phius")).toBeVisible();
     expect(screen.getByText("PHI")).toBeVisible();
     expect(screen.getAllByText("Not set").length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByRole("button", { name: /Locate Climate Data/ })).toBeVisible();
-    await user.click(screen.getByRole("button", { name: /Locate Climate Data/ }));
-    await waitFor(() =>
-      expect(
-        fetchMock.mock.calls.some(([url, init]) => url === DERIVE_URL && init?.method === "POST"),
-      ).toBe(true),
-    );
+    // The bulk "Locate Climate Data" action is gone; sources attach per-type.
+    expect(screen.queryByRole("button", { name: /Locate Climate Data/ })).toBeNull();
     // The editor is a modal, opened from "Set Location".
     expect(screen.queryByLabelText("Latitude")).toBeNull();
 
@@ -432,7 +426,45 @@ describe("ClimateTab", () => {
     expect(await screen.findByLabelText("Latitude")).toBeVisible();
     const dialog = screen.getByRole("dialog", { name: /Set project location/ });
     expect(within(dialog).getByRole("button", { name: /Save Location/ })).toBeVisible();
-    expect(within(dialog).queryByRole("button", { name: /Locate Climate Data/ })).toBeNull();
+  });
+
+  test("attaches a Phius source from the empty page via Set from nearest", async () => {
+    vi.stubGlobal("fetch", fetchMock);
+    let sources: ProjectClimateSource[] = [];
+    const attached: ProjectClimateSource = { ...PHIUS_SOURCE, id: "src-derived-phius" };
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === LOCATION_URL) return jsonResponse(SET_LOCATION);
+      if (url === SOURCES_URL && (init?.method ?? "GET") === "GET") {
+        return jsonResponse({ items: sources });
+      }
+      if (url === deriveUrl("phius") && init?.method === "POST") {
+        sources = [attached];
+        return jsonResponse({ location: SET_LOCATION, warnings: [] });
+      }
+      if (url === PHIUS_LOCATION_URL) {
+        return jsonResponse({
+          ...attached,
+          record: makeClimateRecord({ display_name: attached.label ?? "Phius" }),
+        });
+      }
+      return jsonResponse({}, 404);
+    });
+    const user = userEvent.setup();
+
+    renderTab(PROJECT, "IP");
+
+    const missingCard = (await screen.findByText("Phius")).closest("button");
+    await user.click(missingCard as HTMLButtonElement);
+    await user.click(await screen.findByRole("button", { name: "Set from nearest" }));
+
+    // The derive call fires and the page hands off to the attached Phius detail.
+    expect(await screen.findByRole("table", { name: "Phius certification limits" })).toBeVisible();
+    expect(
+      fetchMock.mock.calls.some(
+        ([url, init]) => url === deriveUrl("phius") && init?.method === "POST",
+      ),
+    ).toBe(true);
   });
 
   test("a viewer cannot open the dataset picker", async () => {
