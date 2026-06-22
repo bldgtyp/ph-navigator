@@ -637,8 +637,15 @@
 .climate-custom-set-link.secondary-button {
   min-height: var(--phn-control-height);
   padding: 0 var(--space-14);
-  border: 1px solid var(--border-strong);
+  border: 1px solid color-mix(in oklab, var(--phn-danger) 58%, var(--border-strong));
   border-radius: var(--phn-control-radius);
+  color: var(--phn-danger);
+}
+
+.climate-custom-set-link.secondary-button:hover {
+  border-color: var(--phn-danger);
+  background: color-mix(in oklab, var(--phn-danger) 86%, black);
+  color: #ffffff;
 }
 
 @media (max-width: 880px) {

@@ -127,7 +127,7 @@ function SourceHeader({
           {onChangeDataset ? (
             <button
               type="button"
-              className="secondary-button"
+              className="primary-button"
               onClick={onChangeDataset}
               disabled={busy}
             >
