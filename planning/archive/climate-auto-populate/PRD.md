@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-21
 TIME: -
-STATUS: Active — planning (open questions O1–O5 pending Ed)
+STATUS: Complete — merged to main (2026-06-22); O4–O7 remain operational follow-ups
 AUTHOR: Ed (via Claude)
 SCOPE: Product / behavior contract for address-first climate auto-populate
   + the privacy model + the roster-first tab redesign. Extends the shipped

@@ -1,8 +1,8 @@
 ---
 DATE: 2026-06-21
 TIME: 13:52 EDT
-STATUS: Active — P4 UI built to full wireframe-B2 fidelity; final gates running.
-  Design decisions accepted (D-CL-12..24, O-units). Open items are operational only.
+STATUS: Complete — P1–P5 implemented and merged to main (2026-06-22); archived.
+  Remaining O4–O7 are operational follow-ups, not feature work.
 AUTHOR: Ed (via Claude)
 SCOPE: Current state of the climate auto-populate feature.
 RELATED:
@@ -14,8 +14,12 @@ RELATED:
 
 ## Current state
 
-`Active — P4 implemented; final gates running`. PRD, decisions, research, and
-four phase plans logged.
+`Complete — P1–P5 merged to main (2026-06-22)`. All five phases implemented and
+landed; P5 (elevation auto-fill on Set Location) merged as commit `21439428`.
+This folder is archived; remaining O4–O7 are operational follow-ups, not feature
+work. The history below is preserved as the implementation record.
+
+PRD, decisions, research, and five phase plans logged.
 Phase 1 implementation now extends `project_location` with derived public
 geodata, editor-only geocode/derive endpoints, a committed PNNL 2021 IECC
 county-zone CSV, and a Climate-tab editor action that populates

@@ -2,13 +2,13 @@
 DATE: 2026-06-14
 TIME: -
 STATUS: Superseded (2026-06-21) — all items folded into
-  planning/features/climate-auto-populate (D-CL-25).
+  planning/archive/climate-auto-populate (D-CL-25).
 AUTHOR: Claude (for Ed)
 SCOPE: Backlog table + acceptance notes for the Climate-tab follow-ups.
 RELATED:
   - README.md
-  - planning/features/climate-auto-populate/ (where these now live)
-  - planning/features/climate-auto-populate/decisions.md (D-CL-25)
+  - planning/archive/climate-auto-populate/ (where these now live)
+  - planning/archive/climate-auto-populate/decisions.md (D-CL-25)
 ---
 
 # Climate tab follow-ups — Status
@@ -16,7 +16,7 @@ RELATED:
 ## Current state
 
 **Superseded (2026-06-21).** All four items are folded into
-`planning/features/climate-auto-populate/` (decision **D-CL-25**); no code was
+`planning/archive/climate-auto-populate/` (decision **D-CL-25**); no code was
 written here. This folder is retained for history. Item → where it now lives:
 
 | Item | Now in |

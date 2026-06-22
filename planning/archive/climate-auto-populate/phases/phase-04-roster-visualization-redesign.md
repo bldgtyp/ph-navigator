@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-21
 TIME: 13:52 EDT
-STATUS: Implemented — UI built to full wireframe-B2 fidelity; final gates running.
+STATUS: Complete — merged to main (2026-06-22).
 AUTHOR: Ed (via Claude)
 SCOPE: P4 — rebuild the Climate tab as a nav-sidebar + per-type-page layout
   (D-CL-20). Replaces the existing tab (D-CL-24). Fixes today's orphaned-

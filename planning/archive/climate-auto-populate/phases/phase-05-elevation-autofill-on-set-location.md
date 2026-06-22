@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-22
 TIME: 13:25 EDT
-STATUS: Implemented on branch — feat/elevation-autofill (backend + frontend + tests green; merge/CI pending)
+STATUS: Complete — merged to main (2026-06-22, commit 21439428); CI green
 AUTHOR: Ed (via Claude)
 SCOPE: Auto-populate site elevation inside the Set Location modal the moment
   coordinates are set (address candidate, pin-drop, or valid manual lat/long),

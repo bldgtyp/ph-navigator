@@ -18,7 +18,7 @@ SCOPE: Product / behavior contract for the manual climate-dataset picker — a
   the climate-auto-populate finder.
 RELATED:
   - README.md, decisions.md, STATUS.md, phases/
-  - planning/features/climate-auto-populate/ (the auto-attach this complements;
+  - planning/archive/climate-auto-populate/ (the auto-attach this complements;
     D-CL-17 proximity rules, D-CL-24 browser-demotion, O4 map tiles, O6 override)
   - backend/features/climate/ (datasets, locations, proximity.py)
   - backend/features/project_climate_source/ (attach/CRUD)

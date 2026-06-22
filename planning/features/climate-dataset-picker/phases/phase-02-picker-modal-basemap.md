@@ -16,7 +16,7 @@ SCOPE: P2 — the generic ClimateDatasetPickerModal(kind) with a real
   phius/phi.
 RELATED:
   - ../PRD.md §3, §5, §6, §8; ../decisions.md D-DP-1, D-DP-4, D-DP-5
-  - planning/features/climate-auto-populate/ (O4; D-CL-15 MapTiler choice)
+  - planning/archive/climate-auto-populate/ (O4; D-CL-15 MapTiler choice)
   - backend/config.py (settings.maptiler_api_key)
   - frontend/src/features/climate/components/ (ClimateAtoms, ClimateSourceDetailPage,
     ClimateSourceSidebar, ClimateDatasetBrowser, ClimateSourcesSection)
