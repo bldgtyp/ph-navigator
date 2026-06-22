@@ -1,0 +1,205 @@
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import type { ClimateMapStation } from "./ClimateMap";
+
+// Imperative Leaflet wrapper for the app's live basemaps (D-DP-6: vanilla
+// Leaflet + keyless OSM raster — no key, no proxy, no committed secret). The
+// React shell (`ClimateMap`) lazy-imports this only in a real browser; unit
+// tests stay on the `placePins` fallback. Distances/verdicts are still computed
+// server-side (D-DP-2) — Leaflet only draws.
+//
+// One controller serves every consumer (P3): the dataset picker (interactive,
+// station roster + ring + selection), the Location page (project pin only), the
+// sidebar mini-map (static, non-interactive), and the Set-Location pin-drop
+// (`onPickPoint`). The handler bag is all-optional so a consumer wires only the
+// interactions it needs rather than the picker's contract leaking everywhere.
+
+const OSM_TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+const OSM_ATTRIBUTION =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
+// The pin colours, resolved from CSS custom properties so they track the active
+// theme. Keeping every colour in the CSS token layer means this module holds no
+// colour literals (the repo's no-hex guard covers .ts too); the fallbacks are
+// CSS colour *keywords*, never hex / colour-function literals.
+type Palette = {
+  accent: string;
+  bgCard: string;
+  border: string;
+  status: Record<ClimateMapStation["status"], string>;
+};
+
+// One `getComputedStyle` per call — resolve the whole palette up front rather
+// than re-reading the document root once per pin.
+function readPalette(): Palette {
+  const root = getComputedStyle(document.documentElement);
+  const read = (name: string, fallback: string): string =>
+    root.getPropertyValue(name).trim() || fallback;
+  return {
+    accent: read("--accent", "blue"),
+    bgCard: read("--bg-card", "white"),
+    border: read("--border-strong", "gray"),
+    status: {
+      pass: read("--phn-success", "green"),
+      warning: read("--phn-warning", "orange"),
+      fail: read("--phn-danger", "red"),
+    },
+  };
+}
+
+// The geometry + stroke that change when a station pin is (de)selected. Shared
+// by the initial build and the in-place restyle so the two can never drift.
+function selectionStyle(isSelected: boolean, palette: Palette): L.CircleMarkerOptions {
+  return {
+    radius: isSelected ? 9 : 6,
+    weight: isSelected ? 3 : 2,
+    color: isSelected ? palette.accent : palette.bgCard,
+  };
+}
+
+export type ClimateMapData = {
+  project: { latitude: number; longitude: number };
+  stations: ClimateMapStation[];
+  // The Phius/PHI 50 mi proximity gate, drawn as a reference ring; null = none.
+  limitRingMeters: number | null;
+};
+
+export type ClimateLeafletController = {
+  setData(data: ClimateMapData): void;
+  setSelected(selectedId: string | null): void;
+  destroy(): void;
+};
+
+// Optional per-consumer wiring. `interactive: false` is the static mini-map
+// (no pan/zoom/controls). `onSelectStation` is the picker's marker-click;
+// `onPickPoint` is the Set-Location pin-drop (click empty map → coordinate).
+export type ClimateLeafletOptions = {
+  interactive?: boolean;
+  onSelectStation?: (stationId: string) => void;
+  onPickPoint?: (latitude: number, longitude: number) => void;
+};
+
+type LocatedStation = ClimateMapStation & { latitude: number; longitude: number };
+
+function isLocated(station: ClimateMapStation): station is LocatedStation {
+  return station.latitude !== null && station.longitude !== null;
+}
+
+export function createClimateLeafletMap(
+  container: HTMLElement,
+  options: ClimateLeafletOptions = {},
+): ClimateLeafletController {
+  const { interactive = true, onSelectStation, onPickPoint } = options;
+  const map = L.map(container, {
+    attributionControl: interactive,
+    zoomControl: interactive,
+    dragging: interactive,
+    scrollWheelZoom: interactive,
+    doubleClickZoom: interactive,
+    boxZoom: interactive,
+    keyboard: interactive,
+    touchZoom: interactive,
+  });
+  // Establish a view immediately so the CRS projection is ready before any
+  // layer is added (Leaflet throws on projection calls with no view); setData's
+  // fitBounds then frames the actual data. Neutral default = US centroid.
+  map.setView([39.5, -98.35], 4);
+  L.tileLayer(OSM_TILE_URL, { maxZoom: 19, attribution: OSM_ATTRIBUTION }).addTo(map);
+  // Pin-drop: an empty-map click emits a coordinate the caller writes back.
+  if (onPickPoint) {
+    map.on("click", (event) => onPickPoint(event.latlng.lat, event.latlng.lng));
+  }
+
+  // One overlay group we can wipe + rebuild on each data change.
+  const overlay = L.layerGroup().addTo(map);
+  // Station markers kept by id so selection can restyle them in place.
+  const stationMarkers = new Map<string, L.CircleMarker>();
+  let selectedId: string | null = null;
+  // Whether setData has framed the view at least once (so single-point
+  // re-centres preserve the existing zoom rather than resetting it).
+  let framed = false;
+
+  function stationStyle(station: LocatedStation, palette: Palette): L.CircleMarkerOptions {
+    return {
+      ...selectionStyle(station.id === selectedId, palette),
+      fillColor: palette.status[station.status],
+      fillOpacity: 1,
+    };
+  }
+
+  function setData(data: ClimateMapData): void {
+    overlay.clearLayers();
+    stationMarkers.clear();
+    const palette = readPalette();
+
+    const projectLatLng = L.latLng(data.project.latitude, data.project.longitude);
+    const located = data.stations.filter(isLocated);
+    const bounds = L.latLngBounds([projectLatLng]);
+
+    if (data.limitRingMeters !== null) {
+      L.circle(projectLatLng, {
+        radius: data.limitRingMeters,
+        color: palette.border,
+        weight: 2,
+        dashArray: "5 5",
+        fillColor: palette.accent,
+        fillOpacity: 0.05,
+        interactive: false,
+      }).addTo(overlay);
+      // Extend the frame to the ring's footprint without touching the map
+      // projection: toBounds() is pure lat/long + metres geometry.
+      bounds.extend(projectLatLng.toBounds(data.limitRingMeters * 2));
+    }
+
+    L.circleMarker(projectLatLng, {
+      radius: 7,
+      weight: 3,
+      color: palette.bgCard,
+      fillColor: palette.accent,
+      fillOpacity: 1,
+      interactive: false,
+    }).addTo(overlay);
+
+    for (const station of located) {
+      const marker = L.circleMarker([station.latitude, station.longitude], {
+        ...stationStyle(station, palette),
+        interactive: onSelectStation !== undefined,
+      });
+      marker.bindTooltip(station.name, { direction: "top" });
+      if (onSelectStation) marker.on("click", () => onSelectStation(station.id));
+      marker.addTo(overlay);
+      stationMarkers.set(station.id, marker);
+      bounds.extend(marker.getLatLng());
+    }
+
+    if (bounds.isValid() && (located.length > 0 || data.limitRingMeters !== null)) {
+      map.fitBounds(bounds, { padding: [24, 24], maxZoom: 12 });
+    } else {
+      // Project-pin-only (Location page / mini-map / pin-drop): centre the single
+      // point. Keep the zoom the user/initial frame already settled on so a
+      // pin-drop re-centre doesn't reset their zoom — only the first frame picks
+      // the neutral neighbourhood zoom.
+      map.setView(projectLatLng, framed ? map.getZoom() : 11);
+    }
+    framed = true;
+    // The modal sizes its grid after mount; nudge Leaflet to remeasure so the
+    // first paint isn't a half-loaded tile grid.
+    map.invalidateSize();
+  }
+
+  function setSelected(nextSelectedId: string | null): void {
+    selectedId = nextSelectedId;
+    const palette = readPalette();
+    for (const [id, marker] of stationMarkers) {
+      const isSelected = id === selectedId;
+      marker.setStyle(selectionStyle(isSelected, palette));
+      if (isSelected) marker.bringToFront();
+    }
+  }
+
+  function destroy(): void {
+    map.remove();
+  }
+
+  return { setData, setSelected, destroy };
+}

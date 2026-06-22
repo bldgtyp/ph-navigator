@@ -10,7 +10,9 @@ import {
   type ProjectLocationFormValues,
 } from "../../projects/location-form";
 import { useProjectLocationForm } from "../../projects/useProjectLocationForm";
+import { parseNumberInput } from "../../../lib/units/format";
 import type { EpwParseResponse, GeocodeProjectLocationResponse } from "../../projects/types";
+import { ClimateMap } from "./ClimateMap";
 
 const COMMON_TIME_ZONES = [
   "America/New_York",
@@ -48,9 +50,18 @@ export function SetLocationModal({
   const [isUploading, setIsUploading] = useState(false);
 
   const hasCoords = values.latitude.trim() !== "" && values.longitude.trim() !== "";
+  const latitude = parseNumberInput(values.latitude);
+  const longitude = parseNumberInput(values.longitude);
+  const coords = latitude !== null && longitude !== null ? { latitude, longitude } : null;
   const busy = form.isDeriving || form.isSaving;
   const handleField = (field: LocationFormField) => (event: ChangeEvent<HTMLInputElement>) =>
     form.updateField(field, event.target.value);
+  // Pin-drop refines the coordinates: write the clicked point back into the
+  // lat/long fields (live map only — the fallback box has no projection).
+  const dropPin = (lat: number, lon: number) => {
+    form.updateField("latitude", lat.toFixed(6));
+    form.updateField("longitude", lon.toFixed(6));
+  };
 
   const linkedAssetId = values.epwAssetId || form.location?.epw_asset_id;
   const savedEpw = form.location?.epw;
@@ -161,15 +172,17 @@ export function SetLocationModal({
         ) : null}
         {geocodeError ? <p className="form-error">{geocodeError}</p> : null}
 
-        <div className="set-location-map climate-map-surface" aria-hidden="true">
-          {hasCoords ? (
-            <span className="climate-map-pin" style={{ left: "50%", top: "50%" }} />
-          ) : null}
-          <span className="set-location-map-note">
-            {hasCoords ? `${values.latitude}, ${values.longitude}` : "No location set yet"}
-          </span>
-        </div>
-        <p className="form-note">Map preview · interactive pin-drop arrives with map tiles.</p>
+        <ClimateMap
+          className="set-location-map"
+          ariaLabel="Project location pin-drop map"
+          project={coords}
+          onPickPoint={dropPin}
+        />
+        <p className="form-note">
+          {coords
+            ? "Click the map to drop a pin and refine the coordinates."
+            : "Set an address or coordinates below to place the project, then drop a pin to refine."}
+        </p>
 
         <div className="settings-location-grid">
           <label>

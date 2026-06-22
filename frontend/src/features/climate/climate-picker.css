@@ -1,5 +1,6 @@
-/* Climate dataset picker modal (D-DP-1). Layout + the key-less map fallback;
-   reuses the shared `.climate-map-surface` / status-chip / modal primitives. */
+/* Climate dataset picker modal (D-DP-1). Layout + the live Leaflet basemap and
+   its positioned-pin fallback; reuses the shared `.climate-map-surface` /
+   status-chip / modal primitives. */
 
 .climate-picker-filter {
   display: flex;
@@ -26,9 +27,10 @@
   }
 }
 
-/* --- Map (key-less fallback; P2b layers a real basemap behind these pins) --- */
+/* --- Map: the picker's size for the shared `<ClimateMap>` (chrome lives in
+   climate-map.css; live Leaflet basemap D-DP-6, positioned-pin fallback in
+   tests). --- */
 .climate-picker-map {
-  position: relative;
   min-height: 220px;
   border-radius: var(--phn-radius);
 }
