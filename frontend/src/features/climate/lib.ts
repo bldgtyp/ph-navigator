@@ -119,19 +119,6 @@ export function climateSourceStatusChip(source: ProjectClimateSource): {
   return { tone: "pass", label: "OK" };
 }
 
-// The inline call-to-action cue shown on a flagged source's nav card. Returns
-// the cue text + its tone, or null when the source needs no action.
-export function climateSourceCta(
-  source: ProjectClimateSource,
-): { label: string; tone: ClimateStatusTone } | null {
-  const status = climateSourceProximityStatus(source);
-  if (status === "fail") {
-    return { label: source.kind === "phius" ? "custom req'd" : "review", tone: "fail" };
-  }
-  if (status === "warning") return { label: "confirm", tone: "warning" };
-  return null;
-}
-
 // A dataset edition/version suffix for the type badge ("2022", "10.6") when
 // the source carries one; never fabricated.
 export function climateSourceBadgeVersion(source: ProjectClimateSource): string | null {

@@ -105,6 +105,7 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
           kind={pickerKind}
           onClose={() => setPickerKind(null)}
           onRequestSetLocation={() => setSelected("location")}
+          onAttached={(source) => setSelected(source.id)}
         />
       ) : null}
     </section>

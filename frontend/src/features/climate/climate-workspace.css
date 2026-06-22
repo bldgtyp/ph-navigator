@@ -229,22 +229,6 @@
   margin-top: var(--space-2);
 }
 
-.climate-nav-cta {
-  margin-left: auto;
-  font-family: var(--font-mono);
-  font-size: var(--fs-2xs);
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
-.climate-nav-cta[data-tone="fail"] {
-  color: var(--phn-danger);
-}
-
-.climate-nav-cta[data-tone="warning"] {
-  color: var(--phn-warning);
-}
-
 /* --- "Add source" dashed affordance --- */
 .climate-add-card {
   border-style: dashed;

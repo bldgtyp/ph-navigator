@@ -14,6 +14,8 @@ import type {
   ClimateRosterSearch,
   CreateClimateSourceRequest,
   PhClimateKind,
+  ProjectClimateSource,
+  ProjectClimateSourceListResponse,
 } from "./types";
 
 export { climateQueryKeys };
@@ -82,8 +84,26 @@ export function useCreateClimateSourceMutation(projectId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: CreateClimateSourceRequest) => createClimateSource(projectId, body),
-    onSuccess: () => invalidateClimateSourceQueries(queryClient, projectId),
+    onSuccess: (source) => {
+      queryClient.setQueryData<ProjectClimateSourceListResponse>(
+        climateQueryKeys.sources(projectId),
+        (current) => upsertClimateSource(current, source),
+      );
+      return invalidateClimateSourceQueries(queryClient, projectId);
+    },
   });
+}
+
+function upsertClimateSource(
+  current: ProjectClimateSourceListResponse | undefined,
+  source: ProjectClimateSource,
+): ProjectClimateSourceListResponse {
+  if (!current) return { items: [source] };
+  const replaced = current.items.some((item) => item.id === source.id);
+  if (replaced) {
+    return { items: current.items.map((item) => (item.id === source.id ? source : item)) };
+  }
+  return { items: [...current.items, source] };
 }
 
 export function useDeleteClimateSourceMutation(projectId: string) {

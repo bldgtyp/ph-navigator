@@ -168,6 +168,27 @@ def test_roster_region_default_explicit_and_near_modes(clean_mcp_tables: None, c
     assert {item["name"] for item in near_items} == {"PA-A", "CO-CLOSE", "CO-FAR"}
 
 
+def test_phi_roster_default_state_code_matches_full_state_name_regions(
+    clean_mcp_tables: None, clean_climate_tables: None
+) -> None:
+    seed_dataset(
+        "phi",
+        "10.6",
+        [
+            _station(station_id="BOSTON", miles_north=10.0, region="Massachusetts", provider="phi"),
+            _station(station_id="HUDSON", miles_north=2.0, region="New York", provider="phi"),
+        ],
+        label="PHI 10.6",
+    )
+    client = signed_in_client()
+    project_id = cast(str, create_project(client)["id"])
+    _set_location(client, project_id, latitude=40.0, longitude=-75.0, elevation_m=100.0, state="MA")
+
+    roster = _roster_ok(client, project_id, "phi")
+    assert roster["total"] == 1
+    assert [item["name"] for item in cast(list[dict], roster["items"])] == ["BOSTON"]
+
+
 def test_roster_unseeded_kind_returns_null_dataset(clean_mcp_tables: None, clean_climate_tables: None) -> None:
     seed_dataset("phius", "2022", [_station(station_id="PA-A", miles_north=10.0, region="PA")], label="Phius 2022")
     client = signed_in_client()

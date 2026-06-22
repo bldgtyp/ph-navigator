@@ -14,6 +14,7 @@ import type {
   ClimateProximityVerdict,
   ClimateRosterSearch,
   PhClimateKind,
+  ProjectClimateSource,
 } from "../types";
 import { US_STATES } from "../us-states";
 import { ClimateMap } from "./ClimateMap";
@@ -42,11 +43,13 @@ export function ClimateDatasetPickerModal({
   kind,
   onClose,
   onRequestSetLocation,
+  onAttached,
 }: {
   projectId: string;
   kind: PhClimateKind;
   onClose: () => void;
   onRequestSetLocation?: () => void;
+  onAttached?: (source: ProjectClimateSource) => void;
 }) {
   const kindLabel = climateSourceKindLabel(kind);
   const titleId = "climate-picker-title";
@@ -87,7 +90,15 @@ export function ClimateDatasetPickerModal({
 
   function attach(): void {
     if (!selected) return;
-    create.mutate({ kind, ref: selected.id, label: selected.name }, { onSuccess: onClose });
+    create.mutate(
+      { kind, ref: selected.id, label: selected.name },
+      {
+        onSuccess: (source) => {
+          onAttached?.(source);
+          onClose();
+        },
+      },
+    );
   }
 
   return (
