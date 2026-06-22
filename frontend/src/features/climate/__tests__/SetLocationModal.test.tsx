@@ -15,9 +15,35 @@ import { SetLocationModal } from "../components/SetLocationModal";
 const fetchMock = vi.fn();
 const LOCATION_URL = `/api/v1/projects/${PROJECT.id}/location`;
 const GEOCODE_URL = `${LOCATION_URL}/geocode`;
+const ELEVATION_URL = `${LOCATION_URL}/elevation`;
+
+const STOCKBRIDGE_CANDIDATE = {
+  label: "1 MAIN ST, WEST STOCKBRIDGE, MA, 01266",
+  latitude: 42.325,
+  longitude: -73.367,
+  site_address: "1 MAIN ST, WEST STOCKBRIDGE, MA, 01266",
+  city: "WEST STOCKBRIDGE",
+  state: "MA",
+  country: "US",
+  source: "census_geocoder",
+};
 
 function isMethod(init: unknown, method: string): boolean {
   return (init as RequestInit | undefined)?.method === method;
+}
+
+function elevationPostCount(): number {
+  return fetchMock.mock.calls.filter(
+    ([url, init]) => url === ELEVATION_URL && isMethod(init, "POST"),
+  ).length;
+}
+
+// Apply the one Stockbridge candidate through the address search flow, leaving
+// valid coordinates that drive the elevation auto-fill.
+async function applyCandidate(user: ReturnType<typeof userEvent.setup>): Promise<void> {
+  await user.type(await screen.findByLabelText("Site address"), "1 Main St");
+  await user.click(screen.getByRole("button", { name: /Search/ }));
+  await user.click(await screen.findByRole("button", { name: /1 MAIN ST, WEST STOCKBRIDGE/ }));
 }
 
 function renderModal({ unitSystem = "SI" }: { unitSystem?: UnitSystem } = {}) {
@@ -146,5 +172,110 @@ describe("SetLocationModal", () => {
 
     expect(screen.getByText("Latitude must be between -90 and 90 degrees.")).toBeVisible();
     expect(screen.getByRole("button", { name: /Save Location/ })).toBeDisabled();
+  });
+});
+
+describe("SetLocationModal — elevation auto-fill", () => {
+  test("auto-fills elevation from the coordinates after applying a candidate", async () => {
+    vi.stubGlobal("fetch", fetchMock);
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === ELEVATION_URL && isMethod(init, "POST")) {
+        return jsonResponse({ elevation_m: 302, source: "usgs_epqs", warning: null });
+      }
+      if (url === GEOCODE_URL) return jsonResponse({ candidates: [STOCKBRIDGE_CANDIDATE] });
+      if (url === LOCATION_URL) return jsonResponse(UNSET_LOCATION);
+      return jsonResponse({}, 404);
+    });
+    const user = userEvent.setup();
+    renderModal();
+
+    await applyCandidate(user);
+
+    await waitFor(() => expect(screen.getByLabelText(/Elevation/)).toHaveValue("302.0"), {
+      timeout: 2000,
+    });
+    expect(screen.getByText(/USGS 3DEP/)).toBeInTheDocument();
+  });
+
+  test("keeps a manual elevation override when coordinates change", async () => {
+    vi.stubGlobal("fetch", fetchMock);
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === ELEVATION_URL && isMethod(init, "POST")) {
+        return jsonResponse({ elevation_m: 999, source: "usgs_epqs", warning: null });
+      }
+      if (url === LOCATION_URL) return jsonResponse(UNSET_LOCATION);
+      return jsonResponse({}, 404);
+    });
+    const user = userEvent.setup();
+    renderModal();
+
+    await user.click(await screen.findByText(/Advanced/));
+    const elevation = screen.getByLabelText(/Elevation/);
+    await user.type(elevation, "250");
+    expect(await screen.findByRole("button", { name: /Reset to auto/ })).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("Latitude"), "42.3");
+    await user.type(screen.getByLabelText("Longitude"), "-73.3");
+
+    // Let the debounce window elapse: the override must suppress any lookup.
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    expect(elevation).toHaveValue("250");
+    expect(elevationPostCount()).toBe(0);
+  });
+
+  test("Reset to auto re-derives elevation after an override", async () => {
+    vi.stubGlobal("fetch", fetchMock);
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === ELEVATION_URL && isMethod(init, "POST")) {
+        return jsonResponse({ elevation_m: 302, source: "usgs_epqs", warning: null });
+      }
+      if (url === GEOCODE_URL) return jsonResponse({ candidates: [STOCKBRIDGE_CANDIDATE] });
+      if (url === LOCATION_URL) return jsonResponse(UNSET_LOCATION);
+      return jsonResponse({}, 404);
+    });
+    const user = userEvent.setup();
+    renderModal();
+
+    await applyCandidate(user);
+    await waitFor(() => expect(screen.getByLabelText(/Elevation/)).toHaveValue("302.0"), {
+      timeout: 2000,
+    });
+
+    await user.click(screen.getByText(/Advanced/));
+    const elevation = screen.getByLabelText(/Elevation/);
+    await user.clear(elevation);
+    await user.type(elevation, "250");
+
+    await user.click(await screen.findByRole("button", { name: /Reset to auto/ }));
+    await waitFor(() => expect(elevation).toHaveValue("302.0"), { timeout: 2000 });
+  });
+
+  test("a failed elevation lookup leaves the field editable with a note", async () => {
+    vi.stubGlobal("fetch", fetchMock);
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === ELEVATION_URL && isMethod(init, "POST")) {
+        return jsonResponse({
+          elevation_m: null,
+          source: null,
+          warning: "Could not derive site elevation from USGS EPQS or Open-Meteo.",
+        });
+      }
+      if (url === GEOCODE_URL) return jsonResponse({ candidates: [STOCKBRIDGE_CANDIDATE] });
+      if (url === LOCATION_URL) return jsonResponse(UNSET_LOCATION);
+      return jsonResponse({}, 404);
+    });
+    const user = userEvent.setup();
+    renderModal();
+
+    await applyCandidate(user);
+
+    expect(
+      await screen.findByText(/Could not derive site elevation/, undefined, { timeout: 2000 }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText(/Elevation/)).toHaveValue("");
   });
 });

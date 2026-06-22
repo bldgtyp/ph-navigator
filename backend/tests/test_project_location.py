@@ -22,6 +22,7 @@ from features.project_climate_source import repository as climate_source_reposit
 from features.project_location.derive import (
     DeriveClients,
     DerivedLocationGeodata,
+    fetch_elevation_geodata,
     geocode_address,
     lookup_climate_zone,
 )
@@ -596,6 +597,115 @@ def test_geocode_location_requires_editor_and_returns_candidates(
     assert anon.status_code == 401
     assert response.status_code == 200
     assert response.json()["candidates"][0]["latitude"] == 42.325
+
+
+def test_fetch_elevation_geodata_prefers_usgs_then_falls_back_to_open_meteo() -> None:
+    def usgs_ok(url: str) -> dict[str, object]:
+        assert "epqs.nationalmap.gov" in url
+        return {"value": 302.0}
+
+    primary, primary_warning = fetch_elevation_geodata(42.325, -73.367, usgs_ok)
+    assert primary_warning is None
+    assert primary is not None
+    assert primary.elevation_m == 302.0
+    assert primary.source == "usgs_epqs"
+
+    def usgs_down_open_meteo_ok(url: str) -> dict[str, object]:
+        if "epqs.nationalmap.gov" in url:
+            raise RuntimeError("USGS unavailable")
+        assert "api.open-meteo.com/v1/elevation" in url
+        return {"elevation": [301.5]}
+
+    fallback, fallback_warning = fetch_elevation_geodata(42.325, -73.367, usgs_down_open_meteo_ok)
+    assert fallback_warning is None
+    assert fallback is not None
+    assert fallback.elevation_m == 301.5
+    assert fallback.source == "open_meteo"
+
+    def both_down(_url: str) -> dict[str, object]:
+        raise RuntimeError("offline")
+
+    missing, missing_warning = fetch_elevation_geodata(42.325, -73.367, both_down)
+    assert missing is None
+    assert missing_warning == "Could not derive site elevation from USGS EPQS or Open-Meteo."
+
+
+def test_lookup_elevation_endpoint_returns_value_without_persisting(
+    clean_mcp_tables: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fake_fetch(url: str) -> dict[str, object]:
+        assert "epqs.nationalmap.gov" in url
+        return {"value": 415.0}
+
+    monkeypatch.setattr("features.project_location.service.fetch_json_url", fake_fetch)
+    client = signed_in_client()
+    project_id = cast(str, create_project(client)["id"])
+
+    response = client.post(
+        f"/api/v1/projects/{project_id}/location/elevation",
+        headers={"Origin": ORIGIN},
+        json={"latitude": 42.325, "longitude": -73.367},
+    )
+
+    assert response.status_code == 200, response.text
+    assert response.json() == {"elevation_m": 415.0, "source": "usgs_epqs", "warning": None}
+
+    # A lookup must never persist the value or attach climate sources.
+    location = client.get(f"/api/v1/projects/{project_id}/location").json()
+    assert location["elevation_m"] is None
+    assert location["is_set"] is False
+    sources = client.get(f"/api/v1/projects/{project_id}/climate/sources").json()["items"]
+    assert sources == []
+
+
+def test_lookup_elevation_endpoint_reports_warning_when_providers_miss(
+    clean_mcp_tables: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def offline(_url: str) -> dict[str, object]:
+        raise RuntimeError("offline")
+
+    monkeypatch.setattr("features.project_location.service.fetch_json_url", offline)
+    client = signed_in_client()
+    project_id = cast(str, create_project(client)["id"])
+
+    response = client.post(
+        f"/api/v1/projects/{project_id}/location/elevation",
+        headers={"Origin": ORIGIN},
+        json={"latitude": 42.0, "longitude": -73.0},
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["elevation_m"] is None
+    assert body["source"] is None
+    assert body["warning"] == "Could not derive site elevation from USGS EPQS or Open-Meteo."
+
+
+def test_lookup_elevation_requires_editor_session(clean_mcp_tables: None) -> None:
+    editor = signed_in_client()
+    project = create_project(editor)
+
+    response = TestClient(app).post(
+        f"/api/v1/projects/{project['id']}/location/elevation",
+        headers={"Origin": ORIGIN},
+        json={"latitude": 42.0, "longitude": -73.0},
+    )
+
+    assert response.status_code == 401
+    assert response.json()["error_code"] == "not_authenticated"
+
+
+def test_lookup_elevation_rejects_out_of_range_coordinates(clean_mcp_tables: None) -> None:
+    client = signed_in_client()
+    project_id = cast(str, create_project(client)["id"])
+
+    response = client.post(
+        f"/api/v1/projects/{project_id}/location/elevation",
+        headers={"Origin": ORIGIN},
+        json={"latitude": 200.0, "longitude": -73.0},
+    )
+
+    assert response.status_code == 422
 
 
 def test_geocode_address_falls_back_to_census_without_maptiler_key(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -23,10 +23,16 @@ from features.climate.stat_parser import parse_stat_file
 from features.project_climate_source import repository as climate_source_repository
 from features.project_climate_source.service import upsert_source_by_kind
 from features.project_location import repository
-from features.project_location.derive import derive_location_geodata, geocode_address
+from features.project_location.derive import (
+    derive_location_geodata,
+    fetch_elevation_geodata,
+    fetch_json_url,
+    geocode_address,
+)
 from features.project_location.epw import EPW_HEADER_PREFIX_BYTES, parse_epw_location_header
 from features.project_location.models import (
     DeriveProjectLocationRequest,
+    ElevationLookupResponse,
     EpwDescriptor,
     EpwParsedLocation,
     EpwParseResponse,
@@ -164,6 +170,20 @@ def derive_project_location(
 def geocode_project_location(payload: GeocodeProjectLocationRequest) -> GeocodeProjectLocationResponse:
     """Resolve editor-entered address text into candidate coordinates."""
     return GeocodeProjectLocationResponse(candidates=geocode_address(payload.query))
+
+
+def lookup_site_elevation(latitude: float, longitude: float) -> ElevationLookupResponse:
+    """Resolve site elevation for coordinates without persisting or attaching anything.
+
+    The Set Location modal calls this to auto-fill its elevation field the moment
+    coordinates change. Deliberately lighter than ``derive_project_location``: it
+    reuses the USGS-3DEP-then-Open-Meteo chain but writes no row and attaches no
+    climate sources, so setting a location has no surprise side effects.
+    """
+    elevation, warning = fetch_elevation_geodata(latitude, longitude, fetch_json_url)
+    if elevation is None:
+        return ElevationLookupResponse(warning=warning)
+    return ElevationLookupResponse(elevation_m=elevation.elevation_m, source=elevation.source)
 
 
 def parse_epw_location(access: ProjectAccess, asset_id: str, asset_service: AssetService) -> EpwParseResponse:

@@ -135,6 +135,29 @@ Explicit **"Populate climate data" button** (auto-run-once on first address
 set + manual re-run), not silent auto-run — external calls fail/are slow and
 we want an auditable `fetched_at` moment. **Confirmed.**
 
+## Accepted — P5 elevation auto-fill (confirmed with Ed, 2026-06-22)
+
+### D-CL-27 · Stateless elevation lookup, not `/derive`
+The Set Location modal auto-fills elevation via a dedicated
+`POST …/location/elevation` that reuses `fetch_elevation_geodata`
+(USGS 3DEP → Open-Meteo) but **persists nothing and attaches no climate
+sources**. Reusing `/derive` would re-bundle county/zone lookup + weather/
+certification-source auto-attach into the modal, undoing the 2026-06-22 scope
+split (and mutating project state on a transient pin). **Confirmed.**
+(phase-05)
+
+### D-CL-28 · Elevation lookup stays server-side
+The lookup runs in the backend, not a direct browser→USGS call — keeps the
+provider fallback, sentinel handling, timeout, and commercial/CORS concerns
+in one place (`derive.py`) per the "all data manipulation in the backend"
+rule, and lets us swap providers without touching the client. **Confirmed.**
+
+### D-CL-29 · Project-scoped + editor-gated endpoint
+The elevation route is project-scoped and reuses `require_project_edit_access`
+even though elevation is project-independent, so we reuse the standard auth
+guard and avoid standing up an unauthenticated open-elevation proxy.
+**Confirmed.**
+
 ## Open questions (to refine / discuss)
 
 - **O1–O3, O8, O-units — ✅ all RESOLVED 2026-06-21.** O1→D-CL-17 (PHI

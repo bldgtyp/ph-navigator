@@ -156,6 +156,19 @@ export type DeriveProjectLocationPayload = {
   site_address?: string | null;
 };
 
+export type ElevationLookupPayload = {
+  latitude: number;
+  longitude: number;
+};
+
+// Stateless elevation suggestion for the Set Location modal. `elevation_m` is
+// null when neither provider answered; `warning` then says why.
+export type ElevationLookupResult = {
+  elevation_m: number | null;
+  source: string | null;
+  warning: string | null;
+};
+
 export type GeocodeProjectLocationCandidate = {
   label: string;
   latitude: number;

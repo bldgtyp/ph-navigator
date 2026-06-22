@@ -3,6 +3,8 @@ import type {
   BtNumberAvailability,
   CreateProjectPayload,
   DeriveProjectLocationPayload,
+  ElevationLookupPayload,
+  ElevationLookupResult,
   EpwParseResponse,
   GeocodeProjectLocationResponse,
   ProjectLocation,
@@ -94,6 +96,16 @@ export async function deriveProjectLocation(
   payload: DeriveProjectLocationPayload,
 ): Promise<ProjectLocationUpdateResponse> {
   return fetchJson<ProjectLocationUpdateResponse>(`/api/v1/projects/${projectId}/location/derive`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function lookupProjectElevation(
+  projectId: string,
+  payload: ElevationLookupPayload,
+): Promise<ElevationLookupResult> {
+  return fetchJson<ElevationLookupResult>(`/api/v1/projects/${projectId}/location/elevation`, {
     method: "POST",
     body: JSON.stringify(payload),
   });

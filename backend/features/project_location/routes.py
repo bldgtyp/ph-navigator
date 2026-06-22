@@ -10,6 +10,8 @@ from fastapi import APIRouter, Depends, Request
 from features.assets.routes import AssetServiceDep
 from features.project_location.models import (
     DeriveProjectLocationRequest,
+    ElevationLookupRequest,
+    ElevationLookupResponse,
     EpwParseResponse,
     GeocodeProjectLocationRequest,
     GeocodeProjectLocationResponse,
@@ -21,6 +23,7 @@ from features.project_location.service import (
     derive_project_location,
     geocode_project_location,
     get_project_location,
+    lookup_site_elevation,
     parse_epw_location,
     update_project_location,
 )
@@ -73,6 +76,18 @@ def geocode_location(
 ) -> GeocodeProjectLocationResponse:
     require_editor_user(access)
     return geocode_project_location(payload)
+
+
+@router.post("/{project_id}/location/elevation", response_model=ElevationLookupResponse)
+def lookup_elevation(
+    project_id: UUID,
+    payload: ElevationLookupRequest,
+    access: ProjectEditAccess,
+) -> ElevationLookupResponse:
+    # Project-scoped + editor-gated even though elevation is project-independent:
+    # this reuses the standard access guard and avoids an open elevation proxy.
+    require_editor_user(access)
+    return lookup_site_elevation(payload.latitude, payload.longitude)
 
 
 @router.post("/{project_id}/location/epw/parse", response_model=EpwParseResponse)

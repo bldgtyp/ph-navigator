@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-22
 TIME: 13:25 EDT
-STATUS: Active — planning (proposed; not yet implemented)
+STATUS: Implemented on branch — feat/elevation-autofill (backend + frontend + tests green; merge/CI pending)
 AUTHOR: Ed (via Claude)
 SCOPE: Auto-populate site elevation inside the Set Location modal the moment
   coordinates are set (address candidate, pin-drop, or valid manual lat/long),
@@ -11,7 +11,7 @@ SCOPE: Auto-populate site elevation inside the Set Location modal the moment
 RELATED:
   - ../README.md — feature scope + phase map
   - ../STATUS.md — "Set Location modal scope split (2026-06-22)"
-  - ../decisions.md — D-CL ledger (this phase proposes D-CL-26..28)
+  - ../decisions.md — D-CL ledger (this phase added D-CL-27..29, accepted)
   - phase-01-address-geocoding-derived-geodata.md — built the derive endpoint + elevation derivation
   - backend/features/project_location/derive.py — `fetch_elevation_geodata` (reused)
   - backend/features/project_location/service.py — `derive_project_location` (NOT reused here, and why)
@@ -110,21 +110,21 @@ nothing and attaches nothing**:
   `(ElevationGeodata | None, warning)` tuple straight onto the response. No
   `transaction()`, no `asset_service`, no auto-attach.
 
-Why this shape (proposed decisions):
+Why this shape (accepted decisions):
 
-- **D-CL-26 — new elevation-only endpoint, do NOT reuse `/derive`.** `/derive`
+- **D-CL-27 — new elevation-only endpoint, do NOT reuse `/derive`.** `/derive`
   persists county/zone and auto-attaches weather + certification sources
   (`service.py:117-140`). Calling it from the modal would re-bundle the heavy
   work the 2026-06-22 scope split deliberately pulled out, and would mutate
   project state on a transient coordinate hover/pin. The modal needs *only*
   elevation, with no writes. A separate endpoint keeps the split intact and the
   call cheap (one external GET, no DB).
-- **D-CL-27 — keep the lookup in the backend, not a direct client→USGS call.**
+- **D-CL-28 — keep the lookup in the backend, not a direct client→USGS call.**
   Hard rule: all data manipulation lives in the backend. It also keeps the
   USGS→Open-Meteo fallback, sentinel handling, timeout, and User-Agent in one
   place (`derive.py`), avoids browser CORS/commercial-tier exposure, and lets us
   later swap providers without touching the client.
-- **D-CL-28 — project-scoped + editor-gated, even though elevation is
+- **D-CL-29 — project-scoped + editor-gated, even though elevation is
   project-independent.** Scoping to `{project_id}` reuses
   `require_project_edit_access` and avoids standing up an unauthenticated
   external-proxy endpoint that could be abused as an open elevation proxy.
@@ -212,5 +212,5 @@ Save → existing PUT …/location persists elevation_m (auto or overridden)
 ## Closeout gate
 
 `simplify` + `docs-pass` on the diff, `make format`, then `make ci` (backend +
-frontend). Fold accepted D-CL-26..28 into `../decisions.md` and update
-`../STATUS.md` + the README phase map in the same docs pass.
+frontend). Accepted D-CL-27..29 are folded into `../decisions.md`; `../STATUS.md`
+and the README phase map are updated in the same docs pass.

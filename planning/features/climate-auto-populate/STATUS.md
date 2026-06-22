@@ -196,19 +196,28 @@ wireframe B2 on the app design tokens; fixed the D-CL-21 `°C` hardcode.
   controls onto the EPW page placeholder/detail surface. Backend EPW routes are
   unchanged.
 
-## P5 planned — elevation auto-fill on Set Location (2026-06-22)
+## P5 implemented on branch — elevation auto-fill on Set Location (2026-06-22)
 
-- New phase logged: `phases/phase-05-elevation-autofill-on-set-location.md`.
-- Gap: the modal owns the elevation field but never fills it — elevation only
-  auto-derives via the Location-page `Locate Climate Data` (`/derive`), so a
-  freshly set site persists `elevation_m = NULL`.
-- Plan: a lightweight, side-effect-free `POST …/location/elevation` reusing
-  `fetch_elevation_geodata` (USGS 3DEP → Open-Meteo); the modal auto-fills the
-  elevation input on coordinate change and keeps the existing input as a sticky
-  user override. Does **not** re-bundle derive/source-attach into the modal.
-- Proposes D-CL-26 (separate endpoint, not `/derive`), D-CL-27 (backend lookup,
-  not client→USGS), D-CL-28 (project-scoped + editor-gated). Pending Ed's accept.
-- Status: planning only — not implemented.
+- Phase plan: `phases/phase-05-elevation-autofill-on-set-location.md`. Built on
+  branch `feat/elevation-autofill`.
+- Gap it closed: the modal owned the elevation field but never filled it —
+  elevation only auto-derived via the Location-page `Locate Climate Data`
+  (`/derive`), so a freshly set site persisted `elevation_m = NULL`.
+- Backend: new side-effect-free `POST …/location/elevation`
+  (`lookup_site_elevation`) reusing `fetch_elevation_geodata`
+  (USGS 3DEP → Open-Meteo); no persistence, no source attach. A shared
+  `RequiredCoordinatesRequest` base now backs both the derive and elevation
+  request models.
+- Frontend: `useProjectLocationForm` auto-fills the elevation input on a
+  coordinate change (candidate-apply / pin-drop / valid manual lat-long) via a
+  debounced watcher, with a sticky manual override and a "Reset to auto"
+  affordance in the Set Location modal. Applying a new geocode candidate clears
+  the override (fresh-location gesture).
+- Decisions accepted and folded into `decisions.md`: D-CL-27 (separate endpoint,
+  not `/derive`), D-CL-28 (server-side lookup, not client→USGS), D-CL-29
+  (project-scoped + editor-gated).
+- Tests green: backend `test_project_location.py` (25); frontend
+  `SetLocationModal` + `location-form` (14); `tsc` clean. Merge/full-CI pending.
 
 ## Phius/PHI source detail content (2026-06-22)
 
