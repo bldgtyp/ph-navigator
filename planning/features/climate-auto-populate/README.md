@@ -75,9 +75,15 @@ sources a project actually attaches).
 | P2 | Phius/PHI auto-pin + proximity flags | Reuse nearest-search; haversine gate + auto-attach (#5/6) | P1 |
 | P3 | ASHRAE + EPW pulls / design conditions | `.stat` + ashrae-meteo + EPW catalog; cached value-sets (#7/8) | P1 |
 | P4 | Roster visualization + tab redesign | Attached-source detail (table/charts/flags), roster-first layout | — (independent; may lead) |
+| P5 | Elevation auto-fill on Set Location | Lightweight elevation-only lookup fills the modal's elevation field on coordinate change; manual override preserved | P1 (reuses `fetch_elevation_geodata`) |
 
 P4 fixes a current bug (orphaned visualization) and does **not** depend on
 P1–P3 — it can be sequenced first if we want the UX win early.
+
+P5 closes a modal-UX gap left by the 2026-06-22 scope split: it adds a
+side-effect-free elevation lookup so elevation auto-populates when a site is
+set, without dragging the heavy `Locate Climate Data` derive back into the
+modal.
 
 ## Consolidates (D-CL-25)
 

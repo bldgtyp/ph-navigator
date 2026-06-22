@@ -68,6 +68,13 @@ def update_project_location(
         changed_fields = changed_location_fields(values, current)
         if changed_fields:
             row = repository.upsert_location(conn, project_id, changed_fields, values)
+            refresh_existing_certification_source_proximities(
+                conn,
+                project_id=project_id,
+                latitude=float(row["latitude"]) if row["latitude"] is not None else None,
+                longitude=float(row["longitude"]) if row["longitude"] is not None else None,
+                elevation_m=float(row["elevation_m"]) if row["elevation_m"] is not None else None,
+            )
             auth_repository.log_action(
                 conn,
                 action="project_location_update",
@@ -258,6 +265,52 @@ def auto_attach_certification_sources(
             data=payload.model_dump(mode="json"),
         )
     return warnings
+
+
+def refresh_existing_certification_source_proximities(
+    conn: Connection[Any],
+    *,
+    project_id: UUID,
+    latitude: float | None,
+    longitude: float | None,
+    elevation_m: float | None,
+) -> None:
+    """Recompute stored PHIUS/PHI proximity snapshots after a site-location edit.
+
+    This preserves the user's attached dataset/station and updates only the
+    site-vs-station distance/elevation verdict shown on the source detail page.
+    """
+    if latitude is None or longitude is None:
+        return
+
+    for source in climate_source_repository.list_sources(conn, project_id):
+        kind = source["kind"]
+        if kind not in AUTO_ATTACH_PROVIDERS or source["ref"] is None:
+            continue
+
+        location_row = climate_repository.get_location(conn, UUID(str(source["ref"])))
+        if location_row is None:
+            continue
+        location = ClimateLocationSummary.model_validate(location_row)
+        dataset = climate_repository.get_dataset(conn, location.dataset_id)
+        if dataset is None:
+            continue
+
+        existing_data = source["data"] if isinstance(source["data"], dict) else {}
+        payload = build_proximity_payload(
+            provider=cast(PhDatasetProvider, kind),
+            dataset=dataset,
+            location=location,
+            site_latitude=latitude,
+            site_longitude=longitude,
+            site_elevation_m=elevation_m,
+            auto_attached=bool(existing_data.get("auto_attached", True)),
+        )
+        climate_source_repository.update_source(
+            conn,
+            source["id"],
+            {"data": payload.model_dump(mode="json")},
+        )
 
 
 def prepare_weather_sources(

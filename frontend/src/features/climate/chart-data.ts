@@ -24,7 +24,6 @@ export const TEMPERATURE_SERIES: ChartSeries[] = [
   { key: "air", label: "Air", colorVar: "--chart-1" },
   { key: "dewpoint", label: "Dewpoint", colorVar: "--chart-2" },
   { key: "sky", label: "Sky", colorVar: "--chart-5" },
-  { key: "ground", label: "Ground", colorVar: "--chart-4" },
 ];
 
 export const RADIATION_SERIES: ChartSeries[] = [

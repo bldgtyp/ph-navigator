@@ -196,6 +196,20 @@ wireframe B2 on the app design tokens; fixed the D-CL-21 `°C` hardcode.
   controls onto the EPW page placeholder/detail surface. Backend EPW routes are
   unchanged.
 
+## P5 planned — elevation auto-fill on Set Location (2026-06-22)
+
+- New phase logged: `phases/phase-05-elevation-autofill-on-set-location.md`.
+- Gap: the modal owns the elevation field but never fills it — elevation only
+  auto-derives via the Location-page `Locate Climate Data` (`/derive`), so a
+  freshly set site persists `elevation_m = NULL`.
+- Plan: a lightweight, side-effect-free `POST …/location/elevation` reusing
+  `fetch_elevation_geodata` (USGS 3DEP → Open-Meteo); the modal auto-fills the
+  elevation input on coordinate change and keeps the existing input as a sticky
+  user override. Does **not** re-bundle derive/source-attach into the modal.
+- Proposes D-CL-26 (separate endpoint, not `/derive`), D-CL-27 (backend lookup,
+  not client→USGS), D-CL-28 (project-scoped + editor-gated). Pending Ed's accept.
+- Status: planning only — not implemented.
+
 ## Phius/PHI source detail content (2026-06-22)
 
 - Reworked the PH dataset detail page from the old table/chart toggle into two

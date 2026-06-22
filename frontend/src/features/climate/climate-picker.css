@@ -2,26 +2,60 @@
    its positioned-pin fallback; reuses the shared `.climate-map-surface` /
    status-chip / modal primitives. */
 
-.climate-picker-filter {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  margin-bottom: var(--space-12);
+#climate-picker.modal-panel {
+  width: min(94vw, 860px);
 }
 
-.climate-picker-filter > span {
+#climate-picker .modal-header {
+  align-items: flex-start;
+  margin-bottom: var(--space-16);
+}
+
+.climate-picker-content {
+  display: grid;
+  gap: var(--space-18);
+}
+
+.climate-picker-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+  align-items: end;
+  gap: var(--space-16);
+}
+
+.climate-picker-toolbar .modal-subtitle {
+  margin: 0;
+  padding-bottom: var(--space-8);
+}
+
+.climate-picker-filter.autocomplete-select {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.climate-picker-filter .autocomplete-select-label {
+  font-family: var(--font-mono);
   font-size: var(--fs-xs);
   font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
   color: var(--text-secondary);
 }
 
 .climate-picker-body {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
-  gap: var(--space-12);
+  gap: var(--space-16);
+  align-items: stretch;
 }
 
 @media (max-width: 640px) {
+  #climate-picker.modal-panel {
+    width: min(100%, 560px);
+  }
+
+  .climate-picker-toolbar,
   .climate-picker-body {
     grid-template-columns: 1fr;
   }
@@ -31,7 +65,7 @@
    climate-map.css; live Leaflet basemap D-DP-6, positioned-pin fallback in
    tests). --- */
 .climate-picker-map {
-  min-height: 220px;
+  min-height: 280px;
   border-radius: var(--phn-radius);
 }
 
@@ -71,20 +105,20 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: 320px;
+  max-height: 360px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-8);
 }
 
 .climate-picker-row {
   width: 100%;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-8);
-  padding: var(--space-8);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--space-8) var(--space-12);
+  padding: var(--space-12);
   border: 1px solid var(--border-card);
   border-radius: var(--radius-sm);
   background: var(--bg-card);
@@ -102,13 +136,14 @@
 }
 
 .climate-picker-row-name {
-  flex: 1 1 40%;
   font-size: var(--fs-sm);
   font-weight: 600;
+  line-height: 1.25;
   overflow-wrap: anywhere;
 }
 
 .climate-picker-row-metrics {
+  grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-8);
@@ -119,7 +154,6 @@
 
 /* --- Selection preview --- */
 .climate-picker-preview {
-  margin-top: var(--space-12);
   padding: var(--space-12);
   border: 1px solid var(--border-card);
   border-left: 3px solid var(--border-strong);

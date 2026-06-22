@@ -125,6 +125,13 @@ function renderPicker(
   return { onClose, onRequestSetLocation };
 }
 
+async function chooseState(user: ReturnType<typeof userEvent.setup>, label: string): Promise<void> {
+  const stateInput = screen.getByRole("combobox", { name: "State" });
+  await user.click(stateInput);
+  await user.type(stateInput, label);
+  await user.click(await screen.findByRole("option", { name: label }));
+}
+
 afterEach(() => {
   vi.unstubAllGlobals();
   fetchMock.mockReset();
@@ -137,7 +144,7 @@ describe("ClimateDatasetPickerModal", () => {
 
     expect(await screen.findByText("Phius 2022 · 2 stations")).toBeVisible();
     // The state filter defaults to the project's state.
-    expect((screen.getByRole("combobox") as HTMLSelectElement).value).toBe("MA");
+    expect(screen.getByRole("combobox", { name: "State" })).toHaveValue("Massachusetts");
 
     const rows = await screen.findAllByText(/Pittsfield|Albany/);
     expect(rows.map((node) => node.textContent)).toEqual(["Pittsfield", "Albany"]);
@@ -199,7 +206,7 @@ describe("ClimateDatasetPickerModal", () => {
     const user = userEvent.setup();
 
     await screen.findByRole("button", { name: /^Pittsfield/ });
-    await user.selectOptions(screen.getByRole("combobox"), "NY");
+    await chooseState(user, "New York");
 
     expect(await screen.findByRole("button", { name: /^New York City/ })).toBeVisible();
     expect(screen.queryByRole("button", { name: /^Pittsfield/ })).toBeNull();
@@ -217,7 +224,7 @@ describe("ClimateDatasetPickerModal", () => {
     const user = userEvent.setup();
 
     await screen.findByRole("button", { name: /^Pittsfield/ });
-    await user.selectOptions(screen.getByRole("combobox"), "Nearest to project (any state)");
+    await chooseState(user, "Nearest to project (any state)");
 
     await vi.waitFor(() => expect(seen.some((params) => params.get("near") === "true")).toBe(true));
   });

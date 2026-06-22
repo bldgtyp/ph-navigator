@@ -75,6 +75,19 @@ const PHIUS_SOURCE: ProjectClimateSource = {
   },
 };
 
+const FAILING_PHIUS_SOURCE: ProjectClimateSource = {
+  ...PHIUS_SOURCE,
+  data: {
+    ...PHIUS_SOURCE.data,
+    proximity: {
+      distance_mi: 113.8,
+      elevation_delta_ft: 115,
+      status: "fail",
+      message: "No Phius set within 50 mi / 400 ft — custom set required ($75).",
+    },
+  },
+};
+
 function renderTab(project: typeof PROJECT = PROJECT, unitSystem: UnitSystem = "SI") {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -132,6 +145,17 @@ describe("ClimateTab", () => {
     expect(await screen.findByRole("heading", { name: "Monthly data" })).toBeVisible();
     expect(screen.getAllByText("Monthly temperatures").length).toBeGreaterThanOrEqual(2);
     expect(screen.getAllByText("Monthly radiation").length).toBeGreaterThanOrEqual(2);
+    const temperatureElements = screen.getAllByText("Monthly temperatures");
+    const radiationElements = screen.getAllByText("Monthly radiation");
+    expect(
+      temperatureElements[0]?.compareDocumentPosition(temperatureElements[1] ?? document.body),
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(
+      temperatureElements[1]?.compareDocumentPosition(radiationElements[0] ?? document.body),
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(
+      radiationElements[0]?.compareDocumentPosition(radiationElements[1] ?? document.body),
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     expect(screen.getByRole("heading", { name: "Peak loads" })).toBeVisible();
     expect(screen.getByRole("row", { name: /^Heating 1/ })).toBeVisible();
     expect(screen.getByRole("row", { name: /^Cooling 1/ })).toBeVisible();
@@ -164,6 +188,34 @@ describe("ClimateTab", () => {
     expect(
       within(limitCheck).getByRole("row", { name: /^Elevation 118 ft 400 ft pass$/i }),
     ).toBeVisible();
+  });
+
+  test("keeps failing Phius datasets on the normal data page with an override warning", async () => {
+    vi.stubGlobal("fetch", fetchMock);
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === LOCATION_URL) return jsonResponse(SET_LOCATION);
+      if (url === SOURCES_URL) return jsonResponse({ items: [FAILING_PHIUS_SOURCE] });
+      if (url === PHIUS_LOCATION_URL) {
+        return jsonResponse({
+          ...FAILING_PHIUS_SOURCE,
+          record: makeClimateRecord({ display_name: "NEW YORK CENTRAL PRK OBS BELV NY" }),
+        });
+      }
+      return jsonResponse({}, 404);
+    });
+    const user = userEvent.setup();
+
+    renderTab(PROJECT, "IP");
+
+    await user.click(await screen.findByRole("button", { name: /NEW YORK CENTRAL/ }));
+
+    expect(await screen.findByRole("heading", { name: "Monthly data" })).toBeVisible();
+    expect(screen.getByRole("table", { name: "Phius certification limits" })).toBeVisible();
+    expect(
+      screen.getByText("This climate dataset is outside the Phius distance/elevation limits."),
+    ).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Use this dataset anyway" })).toBeNull();
   });
 
   test("routes from location to attached EPW and ASHRAE detail pages", async () => {

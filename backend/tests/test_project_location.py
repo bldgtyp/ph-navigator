@@ -94,6 +94,13 @@ def upload_epw(client: TestClient, fake_r2: FakeR2Client, project_id: str, body:
     return cast(str, asset["id"])
 
 
+def first_phius_location_id(client: TestClient) -> str:
+    datasets = client.get("/api/v1/climate/datasets").json()["items"]
+    dataset_id = datasets[0]["id"]
+    locations = client.get(f"/api/v1/climate/datasets/{dataset_id}/locations").json()["items"]
+    return cast(str, locations[0]["id"])
+
+
 def west_stockbridge_geodata(latitude: float, longitude: float) -> DerivedLocationGeodata:
     assert latitude == 42.325
     assert longitude == -73.367
@@ -377,6 +384,60 @@ def test_derive_location_auto_attaches_certification_sources_idempotently(
 
     assert len(rerun_sources) == 2
     assert {source["id"] for source in rerun_sources} == {source["id"] for source in sources}
+
+
+def test_direct_location_update_refreshes_attached_phius_proximity(
+    clean_mcp_tables: None,
+    clean_climate_tables: None,
+) -> None:
+    seed_dataset(
+        "phius",
+        "2022",
+        [
+            synthetic_climate_record(
+                provider="phius",
+                station_id="PHIUS-FIXED",
+                latitude=40.0,
+                longitude=-75.0,
+                elevation_m=100.0,
+            ),
+        ],
+        label="Phius 2022",
+    )
+    client = signed_in_client()
+    project_id = cast(str, create_project(client)["id"])
+    first_location = client.put(
+        f"/api/v1/projects/{project_id}/location",
+        headers={"Origin": ORIGIN},
+        json={"latitude": 40.0, "longitude": -75.0, "elevation_m": 100.0},
+    )
+    assert first_location.status_code == 200, first_location.text
+    location_id = first_phius_location_id(client)
+    attached = client.post(
+        f"/api/v1/projects/{project_id}/climate/sources",
+        headers={"Origin": ORIGIN},
+        json={"kind": "phius", "ref": location_id, "label": "PHIUS-FIXED"},
+    )
+    assert attached.status_code == 201, attached.text
+    source = attached.json()
+    assert source["data"]["status"] == "pass"
+    assert source["data"]["distance_mi"] == 0.0
+    assert source["data"]["auto_attached"] is False
+
+    moved_location = client.put(
+        f"/api/v1/projects/{project_id}/location",
+        headers={"Origin": ORIGIN},
+        json={"latitude": 41.0, "longitude": -75.0, "elevation_m": 100.0},
+    )
+    assert moved_location.status_code == 200, moved_location.text
+    sources = client.get(f"/api/v1/projects/{project_id}/climate/sources").json()["items"]
+    refreshed = next(item for item in sources if item["kind"] == "phius")
+
+    assert refreshed["id"] == source["id"]
+    assert refreshed["ref"] == location_id
+    assert refreshed["data"]["auto_attached"] is False
+    assert refreshed["data"]["distance_mi"] > 50
+    assert refreshed["data"]["status"] == "fail"
 
 
 def test_derive_location_auto_attaches_epw_and_ashrae_stat_sources(

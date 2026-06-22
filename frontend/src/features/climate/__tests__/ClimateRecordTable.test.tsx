@@ -10,6 +10,7 @@ describe("ClimateRecordTable", () => {
     expect(screen.getByText("Monthly temperatures")).toBeInTheDocument();
     expect(screen.getByText("Monthly radiation")).toBeInTheDocument();
     expect(screen.getByText("Design conditions")).toBeInTheDocument();
+    expect(screen.queryByRole("row", { name: /^Ground/ })).toBeNull();
 
     // Air row: 1 header cell + 12 month cells.
     const airRow = screen.getByRole("row", { name: /^Air/ });

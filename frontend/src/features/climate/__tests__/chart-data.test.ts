@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vitest";
-import { buildMonthlyRadiationRows, buildMonthlyTemperatureRows } from "../chart-data";
+import {
+  buildMonthlyRadiationRows,
+  buildMonthlyTemperatureRows,
+  TEMPERATURE_SERIES,
+} from "../chart-data";
 import { makeClimateRecord } from "../testing/recordFixture";
 
 describe("buildMonthlyTemperatureRows", () => {
@@ -20,6 +24,10 @@ describe("buildMonthlyTemperatureRows", () => {
   test("converts to Fahrenheit for IP (10 °C ⇒ 50 °F)", () => {
     const rows = buildMonthlyTemperatureRows(makeClimateRecord(), "IP");
     expect(rows[0]?.air).toBe(50);
+  });
+
+  test("plots only air, dewpoint, and sky temperature series", () => {
+    expect(TEMPERATURE_SERIES.map((series) => series.label)).toEqual(["Air", "Dewpoint", "Sky"]);
   });
 });
 

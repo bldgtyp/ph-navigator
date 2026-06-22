@@ -604,12 +604,12 @@
   gap: var(--space-12);
 }
 
-/* Fail page hero (e.g. Phius over the 400 ft elevation limit) */
+/* Phius limit warning banner (distance/elevation outside certification band). */
 .climate-fail-hero {
   display: flex;
   flex-direction: column;
-  gap: var(--space-12);
-  padding: var(--space-20);
+  gap: var(--space-10);
+  padding: var(--space-16);
   border: 1px solid color-mix(in oklab, var(--phn-danger) 40%, var(--border-card));
   border-radius: var(--phn-radius);
   background: var(--phn-danger-bg);
@@ -630,7 +630,15 @@
 .climate-fail-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-10);
+}
+
+.climate-custom-set-link.secondary-button {
+  min-height: var(--phn-control-height);
+  padding: 0 var(--space-14);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--phn-control-radius);
 }
 
 @media (max-width: 880px) {
