@@ -13,7 +13,7 @@ import type { ClimateSourceKind, PhClimateKind, ProjectClimateSource } from "../
 import { ClimateStatusChip, ClimateTypeBadge, LocationPrivacyTag } from "./ClimateAtoms";
 import { ClimateMap } from "./ClimateMap";
 
-export type ClimateSelection = "location" | "add" | "epw-tools" | string;
+export type ClimateSelection = "location" | "epw-tools" | string;
 
 export function ClimateSourceSidebar({
   location,
@@ -57,7 +57,7 @@ export function ClimateSourceSidebar({
                 ? () => onOpenPicker(kind)
                 : kind === "epw"
                   ? () => onSelect("epw-tools")
-                  : () => onSelect("add");
+                  : undefined;
           }
           return (
             <MissingSourceCard
@@ -90,19 +90,6 @@ export function ClimateSourceSidebar({
             onSelect={() => onSelect(source.id)}
           />
         ))}
-
-      {canEdit ? (
-        <button
-          type="button"
-          className={["climate-nav-card", "climate-add-card", selected === "add" && "active"]
-            .filter(Boolean)
-            .join(" ")}
-          onClick={() => onSelect("add")}
-        >
-          <strong>＋ Add source · re-populate</strong>
-          <span>Browse datasets or attach a custom record</span>
-        </button>
-      ) : null}
     </aside>
   );
 }
@@ -206,8 +193,7 @@ function SourceCard({
 }
 
 // A canonical climate type with no attached source. Rendered so the four
-// required bases are always visible as a checklist; editors can click through
-// to the add/re-populate surface.
+// required bases are always visible as a checklist.
 function MissingSourceCard({
   kind,
   active = false,

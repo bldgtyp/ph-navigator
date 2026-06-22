@@ -72,8 +72,9 @@
 }
 
 .climate-nav-card.active {
+  border-width: 2px;
   border-color: var(--accent);
-  box-shadow: inset 3px 0 0 var(--accent);
+  background: color-mix(in oklab, var(--accent) 7%, var(--bg-card));
 }
 
 /* --- Location nav card (mini map + facts pills) --- */
@@ -168,38 +169,17 @@
 
 /* --- Source nav cards --- */
 .climate-source-card {
-  --edge: var(--border-strong);
+  border: 1px solid var(--border-card);
   gap: var(--space-6);
-  box-shadow: inset 3px 0 0 var(--edge);
-}
-
-.climate-source-card[data-status="pass"] {
-  --edge: var(--phn-success);
-}
-
-.climate-source-card[data-status="warning"] {
-  --edge: var(--phn-warning);
-}
-
-.climate-source-card[data-status="fail"] {
-  --edge: var(--phn-danger);
 }
 
 /* A canonical type with no attached source: a dashed, muted "empty slot". */
 .climate-source-missing {
-  --edge: var(--border-strong);
   border-style: dashed;
 }
 
 .climate-source-missing .climate-nav-name {
   color: var(--text-muted);
-}
-
-.climate-source-card.active {
-  border-color: var(--accent);
-  box-shadow:
-    inset 3px 0 0 var(--edge),
-    var(--phn-focus);
 }
 
 .climate-nav-top {
@@ -227,21 +207,6 @@
   align-items: center;
   gap: var(--space-8);
   margin-top: var(--space-2);
-}
-
-/* --- "Add source" dashed affordance --- */
-.climate-add-card {
-  border-style: dashed;
-  border-color: var(--border-strong);
-  background: transparent;
-  color: var(--text-secondary);
-  text-align: center;
-  gap: var(--space-2);
-}
-
-.climate-add-card.active {
-  border-style: solid;
-  border-color: var(--accent);
 }
 
 /* ---------------- Shared atoms: badge + status chip ---------------- */
@@ -629,7 +594,7 @@
 .climate-custom-set-link.secondary-button:hover {
   border-color: var(--phn-danger);
   background: color-mix(in oklab, var(--phn-danger) 86%, black);
-  color: #ffffff;
+  color: var(--text-on-accent);
 }
 
 @media (max-width: 880px) {

@@ -4,23 +4,6 @@
   gap: var(--space-24);
 }
 
-.climate-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-12);
-}
-
-.climate-section h3 {
-  margin: 0;
-  font-size: var(--fs-lg);
-}
-
-.climate-section-note {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: var(--fs-md);
-}
-
 /* Project-location read-only card */
 .climate-location-editor {
   display: flex;
@@ -75,111 +58,6 @@
 
 .set-location-elevation-status .link-button {
   font-size: var(--fs-xs);
-}
-
-/* Climate sources (Phase 3b) */
-.climate-sources {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-12);
-}
-
-.climate-source-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  border: 1px solid var(--border-card);
-  border-radius: var(--phn-radius);
-  background: var(--bg-card);
-}
-
-.climate-source-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-12);
-  padding: var(--space-8) var(--space-12);
-  border-bottom: 1px solid var(--border-card);
-}
-
-.climate-source-row:last-child {
-  border-bottom: none;
-}
-
-.climate-source-kind {
-  flex: none;
-  min-width: 4rem;
-  font-family: var(--font-mono);
-  font-size: var(--fs-2xs);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.climate-source-label {
-  flex: 1;
-  min-width: 0;
-  display: grid;
-  gap: var(--space-2);
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.climate-source-proximity {
-  overflow: hidden;
-  color: var(--text-muted);
-  font-size: var(--fs-xs);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.climate-source-proximity-pass {
-  color: var(--phn-success);
-}
-
-.climate-source-proximity-warning {
-  color: var(--phn-warning);
-}
-
-.climate-source-proximity-fail {
-  color: var(--phn-danger);
-}
-
-.climate-source-remove {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-}
-
-.climate-source-attach {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-16);
-}
-
-.climate-source-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-8);
-}
-
-.climate-source-form-wide {
-  flex: 1 1 20rem;
-}
-
-.climate-source-form textarea {
-  min-height: 7rem;
-  resize: vertical;
-}
-
-.climate-source-form-title {
-  font-size: var(--fs-sm);
-  color: var(--text-muted);
-}
-
-.climate-source-form-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-8);
 }
 
 /* Dataset browser */
