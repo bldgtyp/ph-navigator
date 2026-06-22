@@ -16,7 +16,7 @@ RELATED:
   - decisions.md — provisional decisions (D-DP-*) + open questions (O-DP-*)
   - STATUS.md — current state, next step
   - phases/ — phased implementation plans
-  - planning/features/climate-auto-populate/ — the auto-attach this complements
+  - planning/archive/climate-auto-populate/ — the auto-attach this complements
   - backend/features/climate/, backend/features/project_climate_source/
   - frontend/src/features/climate/
 ---

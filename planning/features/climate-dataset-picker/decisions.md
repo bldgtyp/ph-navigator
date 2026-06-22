@@ -14,7 +14,7 @@ SCOPE: Decision ledger + open questions for the climate dataset picker. Uses a
   on accepted decisions.
 RELATED:
   - PRD.md, README.md
-  - planning/features/climate-auto-populate/decisions.md (D-CL-13/14/17/24, O4, O6)
+  - planning/archive/climate-auto-populate/decisions.md (D-CL-13/14/17/24, O4, O6)
 ---
 
 # Climate Dataset Picker — Decisions

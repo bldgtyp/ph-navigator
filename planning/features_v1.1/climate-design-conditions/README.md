@@ -20,7 +20,7 @@ RELATED:
 
 > **Narrowed 2026-06-21 (D-CL-25).** The data *production* (EPW/`.stat` +
 > ASHRAE) and *tab display* are now built under
-> `planning/features/climate-auto-populate/` (P3/P4). Only the consumer-facing
+> `planning/archive/climate-auto-populate/` (P3/P4). Only the consumer-facing
 > **contract endpoint** remains here, still gated on a scheduled fRSI/comfort
 > consumer + D-CL-5. See `STATUS.md`.
 

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-21
 TIME: -
-STATUS: Active — D-CL-12..24 all accepted; O-units resolved (2026-06-21).
+STATUS: Complete — D-CL-12..29 accepted (P5 added D-CL-27..29); merged to main (2026-06-22).
   Remaining open items are operational only (O4–O7).
 AUTHOR: Ed (via Claude)
 SCOPE: Decision ledger for climate auto-populate. Extends the archived

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-21
 TIME: -
-STATUS: Active — planning
+STATUS: Complete — P1–P5 implemented and merged to main (2026-06-22); archived
 AUTHOR: Ed (via Claude)
 SCOPE: Address-first auto-populate for the Climate tab — enter a site
   address once, derive and attach every climate basis (county, elevation,

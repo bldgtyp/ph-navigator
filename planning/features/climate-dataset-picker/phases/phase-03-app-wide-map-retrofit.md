@@ -11,7 +11,7 @@ SCOPE: P3 — adopt the picker's `<ClimateMap>` for the app's other decorative
   app-wide.
 RELATED:
   - ../PRD.md §6; ../decisions.md D-DP-5, O-DP-1
-  - planning/features/climate-auto-populate/ (O4; D-CL-15 MapTiler choice)
+  - planning/archive/climate-auto-populate/ (O4; D-CL-15 MapTiler choice)
   - frontend/src/features/climate/ (climate-map-surface placeholders)
   - frontend/src/features/climate/components/SetLocationModal.tsx (.set-location-map)
 ---
