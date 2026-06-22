@@ -1,10 +1,12 @@
 ---
-DATE: 2026-06-21
+DATE: 2026-06-22
 TIME: -
-STATUS: P1 DONE (backend roster + attach, §4/§10); P2a DONE (key-less picker
-  scaffold, §3/§5/§8); P2b (live basemap, §6) blocked on O4. O-DP-1..4 resolved
-  by Ed 2026-06-21 (real basemap; allow-failing-Phius-with-warning; default-state
-  + any-state; browser retired). O-DP-5 (PHI seed) data/ops open.
+STATUS: All phases DONE (2026-06-22) — P1 (backend roster + attach, §4/§10),
+  P2a (key-less picker scaffold, §3/§5/§8), P2b (live basemap, §6 — vanilla
+  Leaflet + keyless OSM raster per D-DP-6, O4 dissolved), P3 (app-wide map
+  retrofit; O4 closed everywhere). O-DP-1..4 resolved by Ed 2026-06-21 (real
+  basemap; allow-failing-Phius-with-warning; default-state + any-state; browser
+  retired). Only O-DP-5 (PHI seed) data/ops open.
 AUTHOR: Ed (via Claude)
 SCOPE: Product / behavior contract for the manual climate-dataset picker — a
   map + state-filter modal that lets an editor browse the available PH climate
@@ -165,6 +167,15 @@ No schema change — proximity lives in the existing `data` JSONB (D-CL-14).
   ASHRAE / EPW / custom-record attach, which the picker does not cover (O-DP-4).
 
 ## 6. The map (O-DP-1 → resolved: real basemap)
+
+> **Superseded + shipped (D-DP-6, P2b 2026-06-22):** the renderer is **vanilla
+> Leaflet** and tiles are **keyless OSM raster** — **not** MapLibre/MapTiler — so
+> **O4 is dissolved** (no key, no proxy, no committed secret; MapTiler stays for
+> geocoding only). Read "MapLibre/MapTiler", "the MapTiler key", and "before P2
+> ships / O4 on the critical path" below as the historical O-DP-1 framing; the
+> **product behaviour** (project pin, proximity-coloured station pins, 50 mi
+> ring, pin ↔ row selection, key-less fallback) is unchanged and is what shipped.
+> See `decisions.md` D-DP-6 and `phases/phase-02` Outcome — P2b.
 
 Ed chose the **real MapLibre/MapTiler basemap from the start** (2026-06-21), not
 a schematic. The picker map is a `<ClimateMap>` rendering MapLibre GL + MapTiler

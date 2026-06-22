@@ -41,21 +41,8 @@
 }
 
 .set-location-map {
-  display: grid;
-  place-items: center;
   height: 150px;
   border-radius: var(--phn-radius);
-}
-
-.set-location-map-note {
-  position: relative;
-  z-index: var(--z-base-elevated);
-  padding: var(--space-2) var(--space-8);
-  border-radius: var(--radius-xs);
-  background: color-mix(in oklab, var(--bg-card) 72%, transparent);
-  color: var(--text-secondary);
-  font-family: var(--font-mono);
-  font-size: var(--fs-xs);
 }
 
 .set-location-advanced {

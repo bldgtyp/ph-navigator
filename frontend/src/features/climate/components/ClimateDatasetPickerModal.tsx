@@ -23,11 +23,15 @@ import "../climate-picker.css";
 // 2-letter state code.
 const ANY_STATE = "__any__";
 
+// The 50 mi proximity gate (D-CL-17), drawn on the live basemap as a reference
+// ring. 50 mi = 80,467 m; both PH kinds reference the same distance.
+const PROXIMITY_LIMIT_METERS = 80_467;
+
 // The manual climate-dataset picker (D-DP-1): one generic modal mounted with
 // `kind="phius"` or `kind="phi"`. Browses a PH dataset's stations for the
 // project — filtered by state (default = the project's), each with the
 // backend-computed proximity verdict — and attaches the chosen one. The map is
-// the key-less fallback for now (P2b layers a real basemap once O4 lands).
+// the live Leaflet/OSM basemap (D-DP-6), with a positioned-pin fallback in tests.
 export function ClimateDatasetPickerModal({
   projectId,
   kind,
@@ -193,6 +197,8 @@ function PickerBody({
   return (
     <div className="climate-picker-body">
       <ClimateMap
+        className="climate-picker-map"
+        ariaLabel="Station map"
         project={project}
         stations={items.map((item) => ({
           id: item.id,
@@ -202,7 +208,8 @@ function PickerBody({
           status: item.proximity.status,
         }))}
         selectedId={selectedId}
-        onSelect={onSelect}
+        onSelectStation={onSelect}
+        limitRingMeters={PROXIMITY_LIMIT_METERS}
       />
       <ul className="climate-picker-list">
         {items.map((item) => {

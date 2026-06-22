@@ -1,8 +1,10 @@
 ---
-DATE: 2026-06-21
+DATE: 2026-06-22
 TIME: -
-STATUS: P1 DONE (backend roster + attach); P2a DONE (key-less picker scaffold);
-  P2b (live basemap) blocked on O4. O-DP-1..4 resolved (Ed, 2026-06-21)
+STATUS: All phases DONE (2026-06-22) — P1 (backend roster + attach), P2a
+  (key-less picker scaffold), P2b (live vanilla-Leaflet + keyless-OSM basemap),
+  P3 (app-wide map retrofit). O4 dissolved + closed app-wide (D-DP-6);
+  O-DP-1..4 resolved (Ed, 2026-06-21). Only O-DP-5 (PHI seed; data/ops) open.
 AUTHOR: Ed (via Claude)
 SCOPE: Manual climate-dataset picker — a map + state-filter modal to browse and
   attach a PH climate dataset, opened independently from the Phius and PHI
@@ -40,10 +42,11 @@ independently** — `kind="phius"` from the Phius page, `kind="phi"` from the PH
 page. Each attaches to its own `project_climate_source` row; they share only the
 UI. A new project-scoped backend endpoint returns a state's stations for a kind,
 each with backend-computed distance/Δelevation/pass-fail (honoring "all
-calculations live in the backend"). The map is a real **MapLibre/MapTiler
-basemap** (Ed's call, O-DP-1) with the project pin, station pins, and the 50 mi
-limit ring — so O4 (key + vetted dep + budget) is on the critical path; a
-key-less fallback keeps CI/tests working.
+calculations live in the backend"). The map is a real **vanilla-Leaflet +
+keyless-OSM-raster basemap** (D-DP-6, superseding the original MapLibre/MapTiler
+call) with the project pin, station pins, and the 50 mi limit ring — so **O4 is
+dissolved** (no key, no proxy, no committed secret); a `placePins` fallback
+keeps CI/tests working and serves the deterministic unit-test path.
 
 ## Read order
 
@@ -60,12 +63,13 @@ key-less fallback keeps CI/tests working.
 | --- | --- | --- | --- | --- |
 | P1 | ✅ DONE | Backend roster + authoritative attach | Project-scoped `…/datasets/{kind}/locations` with per-station proximity, sorted nearest-first; server-recomputed proximity on manual attach | — |
 | P2a | ✅ DONE | Key-less picker scaffold | Generic `ClimateDatasetPickerModal(kind)`: state filter (default state + any-state), key-less map fallback, nearest-first list, select→attach (failing-Phius allowed w/ warning); entry points; browser retired for phius/phi | P1 |
-| P2b | ⛔ blocked on O4 | Live basemap | Layer the MapLibre/MapTiler basemap + 50 mi ring into `<ClimateMap>` behind the fallback | P2a + **O4** |
-| P3 | ◻ planned | App-wide map retrofit | Adopt the picker's `<ClimateMap>` for the Location / sidebar / Set-Location decorative maps; close O4 app-wide | P2 |
+| P2b | ✅ DONE | Live basemap | Layered the **vanilla-Leaflet + keyless-OSM-raster** basemap + 50 mi ring into `<ClimateMap>` behind the `placePins` fallback (D-DP-6); O4 dissolved | P2a |
+| P3 | ✅ DONE | App-wide map retrofit | `<ClimateMap>` generalized into the app's one shared map; adopted by the Location big map, sidebar mini-map (static), and Set-Location pin-drop; O4 closed app-wide | P2 |
+| P4 | ◻ planned | PHI dataset seed + PHI picker verification | Seed a PHI dataset for the dev DB and exercise the PHI picker instance + advisory semantics end-to-end (O-DP-5). **Blocked on data/ops, not code**; not required to call the picker done | P1 + a PHI seed |
 
-P2 delivers the user's full ask but is **gated on O4** (MapTiler key + a vetted
-map dependency + a tiles budget) — now on the critical path, since Ed chose the
-real basemap over a schematic. A key-less fallback keeps CI/tests green.
+P2 delivers the user's full ask. O4 is **dissolved** (D-DP-6: vanilla Leaflet +
+keyless OSM raster — no key, no proxy, no committed secret); a `placePins`
+fallback keeps CI/tests green and serves the deterministic unit-test path.
 
 ## Relationship to climate-auto-populate
 

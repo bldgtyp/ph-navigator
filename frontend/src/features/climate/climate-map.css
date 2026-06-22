@@ -1,0 +1,22 @@
+/* Shared chrome for the one `<ClimateMap>` (D-DP-6, P3): the positioned frame
+   plus the element vanilla Leaflet owns. Consumers add a sizing class
+   (`.climate-picker-map`, `.climate-big-map`, `.climate-mini-map`,
+   `.set-location-map`) for height; `.climate-map-surface` paints the decorative
+   fallback backdrop behind the pins / under a loading tile grid. */
+
+.climate-map {
+  position: relative;
+  overflow: hidden; /* clip the Leaflet tile grid to the (rounded) frame */
+}
+
+/* The element vanilla Leaflet owns; fills the map frame. */
+.climate-map-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+/* The sidebar thumbnail is a static, non-interactive preview inside a clickable
+   nav card — let pointer events fall through to the card. */
+.climate-nav-loc .climate-map.climate-mini-map {
+  pointer-events: none;
+}

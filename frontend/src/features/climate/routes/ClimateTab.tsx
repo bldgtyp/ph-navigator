@@ -7,6 +7,7 @@ import { formatReadOnlyCoordinate } from "../../projects/location-form";
 import { useProjectLocationQuery } from "../../projects/hooks";
 import type { ProjectDetail, ProjectLocation } from "../../projects/types";
 import { LocationPrivacyTag } from "../components/ClimateAtoms";
+import { ClimateMap } from "../components/ClimateMap";
 import { ClimateDatasetPickerModal } from "../components/ClimateDatasetPickerModal";
 import { ClimateSourceDetailPage } from "../components/ClimateSourceDetailPage";
 import { ClimateSourceSidebar, type ClimateSelection } from "../components/ClimateSourceSidebar";
@@ -119,6 +120,10 @@ function LocationPage({
   const isSet = location?.is_set ?? false;
   const countyState = [location?.county, location?.state].filter(Boolean).join(" · ");
   const elevation = formatLocationElevationLabel(location?.elevation_m, unitSystem) ?? "—";
+  const coords =
+    location?.latitude != null && location?.longitude != null
+      ? { latitude: location.latitude, longitude: location.longitude }
+      : null;
 
   return (
     <section className="climate-detail-page" aria-labelledby="climate-location-title">
@@ -142,9 +147,7 @@ function LocationPage({
         ) : null}
       </header>
 
-      <div className="climate-map-surface climate-big-map" aria-hidden="true">
-        <span className="climate-map-pin" style={{ left: "48%", top: "46%" }} />
-      </div>
+      <ClimateMap className="climate-big-map" ariaLabel="Project location map" project={coords} />
 
       <dl className="climate-facts">
         <div className="climate-fact">

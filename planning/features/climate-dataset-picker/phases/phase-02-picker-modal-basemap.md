@@ -1,11 +1,14 @@
 ---
-DATE: 2026-06-21
+DATE: 2026-06-22
 TIME: -
 STATUS: Split into P2a + P2b (Ed, 2026-06-21). **P2a DONE** (2026-06-21) — the
   vendor-agnostic, key-less picker scaffold (modal + list + select→attach +
   entry points + browser retirement) shipped on P1 alone; vitest + CI green.
-  **P2b BLOCKED on O4** — the live MapLibre/MapTiler basemap layered into
-  <ClimateMap>.
+  **P2b DONE** (2026-06-22) — vanilla-Leaflet + keyless-OSM-raster basemap
+  layered into `<ClimateMap>` behind the `placePins` fallback (D-DP-6); O4
+  dissolved (no key/proxy/secret). vitest + build + guards green; verified live
+  in-browser (real OSM tiles, proximity pins, 50 mi ring, selection sync,
+  failing-Phius warning, replace). See **Outcome — P2b** below.
 AUTHOR: Ed (via Claude)
 SCOPE: P2 — the generic ClimateDatasetPickerModal(kind) with a real
   MapLibre/MapTiler basemap, state filter, nearest-first list, and select→attach;
@@ -24,6 +27,13 @@ RELATED:
 # Phase 2 — Picker modal + MapLibre/MapTiler basemap
 
 ## P2a / P2b split (Ed, 2026-06-21)
+
+> **Update (D-DP-6, 2026-06-21):** O4 is **dissolved**. The renderer is now
+> **vanilla Leaflet** (BSD-2) and tiles are **keyless OSM raster**, so there is
+> no key, no proxy, and no committed secret. References below to "MapLibre /
+> MapTiler", "the key", and "after O4" are superseded — read them as "Leaflet /
+> OSM" and "no longer gated". The two-part split still holds; P2b's content is
+> just simpler now.
 
 O4 (the MapTiler key + a vetted map dependency + a no-committed-key tile-serving
 strategy) is a procurement/architecture decision that gates the *live basemap*,
@@ -168,3 +178,40 @@ Everything except the live tile layer shipped:
   posts `{kind, ref}`; failing-Phius warning; no-location guard; unseeded empty
   state) + `__tests__/ClimateMap.test.ts` (`placePins`) + a ClimateTab viewer-gating
   test. The Playwright/basemap pass is **P2b** (needs the keyed env).
+
+## Outcome — P2b (2026-06-22)
+
+The live basemap shipped on **vanilla Leaflet + keyless OSM raster** (D-DP-6),
+not MapLibre/MapTiler — so there is no key, proxy, or committed secret, and the
+whole O4 procurement step is **dissolved**, not satisfied:
+
+- **`createClimateLeafletMap(container, { onSelect })`**
+  (`components/climateLeafletMap.ts`) — a small imperative Leaflet controller
+  returning `{ setData, setSelected, destroy }`. `setData` wipes + rebuilds a
+  layer group: OSM tile layer (`tile.openstreetmap.org`) with the required
+  attribution, the **project pin**, **proximity-coloured station `circleMarker`s**
+  (pass/warning/fail), the **50 mi `L.circle` ring** (80,467 m; framed via
+  `LatLng.toBounds`, map-projection-free), `fitBounds` + `invalidateSize`, and a
+  per-marker `click → onSelect`. `setSelected` restyles in place; selection
+  geometry is shared with the build via one `selectionStyle` helper. Colours
+  resolve from CSS tokens once per redraw via `readPalette()` (no hex literals;
+  theme-aware). A neutral initial `setView` is set at creation so Leaflet's CRS
+  is ready before any layer is added.
+- **`<ClimateMap>`** (`components/ClimateMap.tsx`) now mounts the controller via
+  a **lazy `import("./climateLeafletMap")`** inside an effect, gated on
+  `import.meta.env.MODE !== "test"` (same env signal as the model-viewer debug
+  hook). The unit-test runtime — and any Leaflet init failure (`catch →
+  setFailed`) — degrade to the existing `placePins` positioned-pin fallback, so
+  jsdom/vitest stay deterministic and the live path never runs there. Leaflet is
+  **code-split** into its own ~44 KB-gzip chunk, loaded only when the map mounts.
+  `<ClimateMap>` gained an optional `limitRingMeters` prop; the modal passes the
+  50 mi gate constant.
+- **Dependency:** `leaflet` (BSD-2-Clause, zero runtime deps) + `@types/leaflet`
+  added through the pnpm supply-chain gate. **Not** `react-leaflet` (its
+  Hippocratic License must not enter this public for-profit repo).
+- **Verification:** vitest (45 climate tests, all on the deterministic fallback)
+  + `pnpm build` + the hex/z-index/css-var/size guards green; **verified live
+  in-browser** via Playwright MCP from the Phius page — real OSM tiles, zoom
+  controls, OSM attribution, proximity pins, the 50 mi ring, selection ↔ row
+  sync, the failing-Phius warning (O-DP-2), and **Replace current dataset**;
+  console clean. (PHI end-to-end still gated on the O-DP-5 seed.)

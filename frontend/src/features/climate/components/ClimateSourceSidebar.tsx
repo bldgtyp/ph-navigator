@@ -12,6 +12,7 @@ import {
 } from "../lib";
 import type { ClimateSourceKind, PhClimateKind, ProjectClimateSource } from "../types";
 import { ClimateStatusChip, ClimateTypeBadge, LocationPrivacyTag } from "./ClimateAtoms";
+import { ClimateMap } from "./ClimateMap";
 
 export type ClimateSelection = "location" | "add" | string;
 
@@ -111,17 +112,30 @@ function LocationCard({
 }) {
   const place = [location?.city ?? location?.county, location?.state].filter(Boolean).join(", ");
   const elevation = formatLocationElevationLabel(location?.elevation_m, unitSystem);
+  const coords =
+    location?.latitude != null && location?.longitude != null
+      ? { latitude: location.latitude, longitude: location.longitude }
+      : null;
+  // A live `<ClimateMap>` is a <div>, which can't nest in a <button>, so the
+  // card is a role="button" div; the static mini-map (pointer-events: none) lets
+  // clicks fall through to it.
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
+      aria-pressed={active}
       className={["climate-nav-card", "climate-nav-loc", active && "active"]
         .filter(Boolean)
         .join(" ")}
       onClick={onSelect}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelect();
+        }
+      }}
     >
-      <span className="climate-map-surface climate-mini-map" aria-hidden="true">
-        <span className="climate-map-pin" style={{ left: "48%", top: "46%" }} />
-      </span>
+      <ClimateMap className="climate-mini-map" interactive={false} ariaHidden project={coords} />
       <span className="climate-nav-loc-body">
         <span className="climate-nav-loc-title">Project location</span>
         <span className="climate-nav-loc-place">
@@ -139,7 +153,7 @@ function LocationCard({
           {location?.climate_zone ? <b>{location.climate_zone}</b> : null}
         </span>
       </span>
-    </button>
+    </div>
   );
 }
 
