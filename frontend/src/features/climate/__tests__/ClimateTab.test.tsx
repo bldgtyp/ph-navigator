@@ -124,6 +124,13 @@ describe("ClimateTab", () => {
 
     await user.click(await screen.findByRole("button", { name: /NEW YORK CENTRAL/ }));
 
+    const limitCheck = await screen.findByRole("table", { name: "Phius certification limits" });
+    expect(
+      within(limitCheck).getByRole("row", { name: /^Distance 4\.2 mi 50 mi pass$/i }),
+    ).toBeVisible();
+    expect(
+      within(limitCheck).getByRole("row", { name: /^Elevation 118 ft 400 ft pass$/i }),
+    ).toBeVisible();
     expect(await screen.findByRole("heading", { name: "Monthly data" })).toBeVisible();
     expect(screen.getAllByText("Monthly temperatures").length).toBeGreaterThanOrEqual(2);
     expect(screen.getAllByText("Monthly radiation").length).toBeGreaterThanOrEqual(2);

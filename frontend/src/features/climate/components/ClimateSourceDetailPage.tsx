@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent } from "react";
+import { useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import { Check, Download, Trash2, Upload } from "lucide-react";
 import type { UnitSystem } from "../../../lib/units";
 import { formatTemperatureFromC } from "../../../lib/units/temperature";
@@ -96,12 +96,14 @@ function SourceHeader({
   source,
   title,
   subItems,
+  detail,
   onChangeDataset,
 }: {
   project: ProjectDetail;
   source: ProjectClimateSource;
   title?: string;
   subItems?: (string | null)[];
+  detail?: ReactNode;
   onChangeDataset?: () => void;
 }) {
   const canEdit = project.access_mode === "editor";
@@ -130,6 +132,7 @@ function SourceHeader({
             ))}
           </div>
         ) : null}
+        {detail}
       </div>
       {canEdit ? (
         <div className="climate-page-head-actions">
@@ -185,7 +188,13 @@ function PassiveHouseSourcePage({
   const record = query.data?.record;
   return (
     <div className="climate-detail-page">
-      <SourceHeader project={project} source={source} onChangeDataset={onChangeDataset} />
+      <SourceHeader
+        project={project}
+        source={source}
+        detail={source.kind === "phius" ? <PhiusLimitCheck source={source} /> : undefined}
+        subItems={source.kind === "phius" ? [] : undefined}
+        onChangeDataset={onChangeDataset}
+      />
       {!datasetId || !locationId ? (
         <p className="form-note">
           This source is missing the dataset pointer needed to load values.
@@ -219,6 +228,68 @@ function PassiveHouseSourcePage({
       ) : null}
     </div>
   );
+}
+
+const PHIUS_DISTANCE_LIMIT_MI = 50;
+const PHIUS_ELEVATION_LIMIT_FT = 400;
+
+function PhiusLimitCheck({ source }: { source: ProjectClimateSource }) {
+  const proximity = proximityRecord(source);
+  const distanceMi = numberValue(proximity?.distance_mi);
+  const elevationDeltaFt = numberValue(proximity?.elevation_delta_ft);
+  if (distanceMi === null && elevationDeltaFt === null) return null;
+
+  const rows = [
+    {
+      metric: "Distance",
+      current: distanceMi === null ? "—" : `${distanceMi.toFixed(1)} mi`,
+      limit: `${PHIUS_DISTANCE_LIMIT_MI} mi`,
+      result: verdictLabel(distanceMi, PHIUS_DISTANCE_LIMIT_MI),
+    },
+    {
+      metric: "Elevation",
+      current: elevationDeltaFt === null ? "—" : `${Math.abs(elevationDeltaFt).toFixed(0)} ft`,
+      limit: `${PHIUS_ELEVATION_LIMIT_FT} ft`,
+      result: verdictLabel(elevationDeltaFt, PHIUS_ELEVATION_LIMIT_FT),
+    },
+  ];
+
+  return (
+    <table className="climate-limit-check" aria-label="Phius certification limits">
+      <thead>
+        <tr>
+          <th scope="col">Metric</th>
+          <th scope="col">Current</th>
+          <th scope="col">Phius limit</th>
+          <th scope="col">Result</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.metric}>
+            <th scope="row">{row.metric}</th>
+            <td>{row.current}</td>
+            <td>{row.limit}</td>
+            <td>
+              <span className="climate-limit-result" data-status={row.result.status}>
+                {row.result.label}
+              </span>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function verdictLabel(
+  value: number | null,
+  limit: number,
+): { label: "pass" | "fail" | "check"; status: "pass" | "fail" | "warning" } {
+  if (value === null) return { label: "check", status: "warning" };
+  return Math.abs(value) <= limit
+    ? { label: "pass", status: "pass" }
+    : { label: "fail", status: "fail" };
 }
 
 function AshraeSourcePage({
@@ -547,14 +618,22 @@ function recordValue(value: unknown): Record<string, unknown> | null {
     : null;
 }
 
+function proximityRecord(source: ProjectClimateSource): Record<string, unknown> | null {
+  const data = recordValue(source.data);
+  return recordValue(data?.proximity) ?? data;
+}
+
 function stringValue(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value : null;
 }
 
+function numberValue(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
 function numberText(value: unknown, fractionDigits = 1): string {
-  return typeof value === "number" && Number.isFinite(value)
-    ? formatSi(value, fractionDigits)
-    : "—";
+  const valueNumber = numberValue(value);
+  return valueNumber !== null ? formatSi(valueNumber, fractionDigits) : "—";
 }
 
 function tempText(value: unknown, unitSystem: UnitSystem): string {
