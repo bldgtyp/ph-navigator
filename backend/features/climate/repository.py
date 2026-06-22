@@ -14,6 +14,61 @@ from uuid import UUID
 from psycopg import Connection
 from psycopg.types.json import Jsonb
 
+_US_STATE_CODE_TO_NAME = {
+    "AL": "Alabama",
+    "AK": "Alaska",
+    "AZ": "Arizona",
+    "AR": "Arkansas",
+    "CA": "California",
+    "CO": "Colorado",
+    "CT": "Connecticut",
+    "DE": "Delaware",
+    "DC": "District of Columbia",
+    "FL": "Florida",
+    "GA": "Georgia",
+    "HI": "Hawaii",
+    "ID": "Idaho",
+    "IL": "Illinois",
+    "IN": "Indiana",
+    "IA": "Iowa",
+    "KS": "Kansas",
+    "KY": "Kentucky",
+    "LA": "Louisiana",
+    "ME": "Maine",
+    "MD": "Maryland",
+    "MA": "Massachusetts",
+    "MI": "Michigan",
+    "MN": "Minnesota",
+    "MS": "Mississippi",
+    "MO": "Missouri",
+    "MT": "Montana",
+    "NE": "Nebraska",
+    "NV": "Nevada",
+    "NH": "New Hampshire",
+    "NJ": "New Jersey",
+    "NM": "New Mexico",
+    "NY": "New York",
+    "NC": "North Carolina",
+    "ND": "North Dakota",
+    "OH": "Ohio",
+    "OK": "Oklahoma",
+    "OR": "Oregon",
+    "PA": "Pennsylvania",
+    "RI": "Rhode Island",
+    "SC": "South Carolina",
+    "SD": "South Dakota",
+    "TN": "Tennessee",
+    "TX": "Texas",
+    "UT": "Utah",
+    "VT": "Vermont",
+    "VA": "Virginia",
+    "WA": "Washington",
+    "WV": "West Virginia",
+    "WI": "Wisconsin",
+    "WY": "Wyoming",
+}
+_US_STATE_NAME_TO_CODE = {name.casefold(): code for code, name in _US_STATE_CODE_TO_NAME.items()}
+
 _DATASET_SELECT = """
 SELECT
     d.id,
@@ -30,6 +85,26 @@ _LOCATION_COLUMNS = """
     id, dataset_id, name, country, region, climate_zone,
     latitude, longitude, elevation_m, station_id
 """
+
+
+def _region_filter_values(region: str | None) -> list[str] | None:
+    """Return accepted region labels for a filter.
+
+    Phius source rows use US state codes from the file-tree folder. PHI/PHPP
+    rows use full region names from the workbook. Accepting both lets the API
+    use the project's Census state code without hiding PHI stations.
+    """
+    if region is None:
+        return None
+    normalized = region.strip()
+    values = {normalized}
+    state_name = _US_STATE_CODE_TO_NAME.get(normalized.upper())
+    if state_name is not None:
+        values.add(state_name)
+    state_code = _US_STATE_NAME_TO_CODE.get(normalized.casefold())
+    if state_code is not None:
+        values.add(state_code)
+    return sorted(values)
 
 
 def list_datasets(conn: Connection[Any]) -> list[dict[str, Any]]:
@@ -127,15 +202,16 @@ def count_locations(
     country: str | None,
     region: str | None,
 ) -> int:
+    region_values = _region_filter_values(region)
     row = conn.execute(
         """
         SELECT count(*) AS n
         FROM climate_dataset_location
         WHERE dataset_id = %(dataset_id)s
           AND (%(country)s::text IS NULL OR country = %(country)s::text)
-          AND (%(region)s::text IS NULL OR region = %(region)s::text)
+          AND (%(region_values)s::text[] IS NULL OR region = ANY(%(region_values)s::text[]))
         """,
-        {"dataset_id": dataset_id, "country": country, "region": region},
+        {"dataset_id": dataset_id, "country": country, "region_values": region_values},
     ).fetchone()
     return int(row["n"]) if row else 0
 
@@ -150,6 +226,7 @@ def search_locations(
     offset: int,
 ) -> list[dict[str, Any]]:
     """List locations filtered by political geography, name-ordered."""
+    region_values = _region_filter_values(region)
     return list(
         conn.execute(
             f"""
@@ -157,14 +234,14 @@ def search_locations(
             FROM climate_dataset_location
             WHERE dataset_id = %(dataset_id)s
               AND (%(country)s::text IS NULL OR country = %(country)s::text)
-              AND (%(region)s::text IS NULL OR region = %(region)s::text)
+              AND (%(region_values)s::text[] IS NULL OR region = ANY(%(region_values)s::text[]))
             ORDER BY name ASC, id ASC
             LIMIT %(limit)s OFFSET %(offset)s
             """,
             {
                 "dataset_id": dataset_id,
                 "country": country,
-                "region": region,
+                "region_values": region_values,
                 "limit": limit,
                 "offset": offset,
             },

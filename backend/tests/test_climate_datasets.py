@@ -176,6 +176,20 @@ def _seed_two_locations() -> None:
     seed_dataset("phius", "2022", [home, denver], label="Phius 2022")
 
 
+def _seed_full_name_region_locations() -> None:
+    home = parse_phius_mon_file(_STATION_FILE)
+    boston = home.model_copy(
+        update={
+            "provider": "phi",
+            "display_name": "Boston",
+            "station_id": "US0035a",
+            "phpp_codes": home.phpp_codes.model_copy(update={"region_code": "Massachusetts"}),
+            "location": home.location.model_copy(update={"latitude": 42.33, "longitude": -71.07}),
+        }
+    )
+    seed_dataset("phi", "10.6", [boston], label="PHI 10.6")
+
+
 def test_routes_list_search_and_fetch(clean_climate_tables: None) -> None:
     _seed_two_locations()
     client = signed_in_client()
@@ -208,6 +222,24 @@ def test_routes_list_search_and_fetch(clean_climate_tables: None) -> None:
     ).json()
     assert detail["record"]["station_id"] == _STATION_ID
     assert len(detail["record"]["climate"]["monthly_temps"]["air_c"]) == 12
+
+
+def test_route_region_search_accepts_us_state_codes_for_full_state_name_rows(
+    clean_climate_tables: None,
+) -> None:
+    _seed_full_name_region_locations()
+    client = signed_in_client()
+
+    dataset = client.get("/api/v1/climate/datasets", headers={"Origin": ORIGIN}).json()["items"][0]
+    by_region = client.get(
+        f"/api/v1/climate/datasets/{dataset['id']}/locations",
+        params={"region": "MA"},
+        headers={"Origin": ORIGIN},
+    ).json()
+
+    assert by_region["total"] == 1
+    assert by_region["items"][0]["name"] == "Boston"
+    assert by_region["items"][0]["region"] == "Massachusetts"
 
 
 def test_route_unknown_dataset_is_404(clean_climate_tables: None) -> None:

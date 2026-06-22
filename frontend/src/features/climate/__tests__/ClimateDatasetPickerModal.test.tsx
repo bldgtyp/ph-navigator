@@ -157,13 +157,17 @@ describe("ClimateDatasetPickerModal", () => {
   test("attaches the selected station and closes", async () => {
     const posted: Record<string, unknown>[] = [];
     installFetch({ onPost: (body) => posted.push(body) });
-    const { onClose } = renderPicker("phius");
+    const onAttached = vi.fn();
+    const { onClose } = renderPicker("phius", { onAttached });
     const user = userEvent.setup();
 
     await user.click(await screen.findByRole("button", { name: /^Pittsfield/ }));
     await user.click(screen.getByRole("button", { name: "Attach" }));
 
     expect(posted).toEqual([{ kind: "phius", ref: "pittsfield", label: "Pittsfield" }]);
+    expect(onAttached).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "new", kind: "phius", ref: "pittsfield" }),
+    );
     expect(onClose).toHaveBeenCalled();
   });
 

@@ -20,7 +20,7 @@ import {
   formatSi,
   isClimateRecord,
 } from "../lib";
-import type { PhClimateKind, ProjectClimateSource } from "../types";
+import type { ClimateSourceKind, PhClimateKind, ProjectClimateSource } from "../types";
 import { ClimateStatusChip, ClimateTypeBadge } from "./ClimateAtoms";
 import { MonthlyRadiationChart, MonthlyTemperatureChart } from "./ClimateRecordCharts";
 import {
@@ -169,12 +169,8 @@ function PassiveHouseSourcePage({
       <SourceHeader
         project={project}
         source={source}
-        detail={
-          source.kind === "phius" ? (
-            <PhiusLimitCheck source={source} unitSystem={unitSystem} />
-          ) : undefined
-        }
-        subItems={source.kind === "phius" ? [] : undefined}
+        detail={<PhLimitCheck source={source} unitSystem={unitSystem} />}
+        subItems={[]}
         onChangeDataset={onChangeDataset}
       />
       {!datasetId || !locationId ? (
@@ -241,12 +237,12 @@ function PhiusLimitWarning({ source }: { source: ProjectClimateSource }) {
   );
 }
 
-const PHIUS_DISTANCE_LIMIT_MI = 50;
-const PHIUS_ELEVATION_LIMIT_FT = 400;
+const PH_DISTANCE_LIMIT_MI = 50;
+const PH_ELEVATION_LIMIT_FT = 400;
 const KM_PER_MI = 1.609344;
 const M_PER_FT = 0.3048;
 
-function PhiusLimitCheck({
+function PhLimitCheck({
   source,
   unitSystem,
 }: {
@@ -258,28 +254,32 @@ function PhiusLimitCheck({
   const elevationDeltaFt = numberValue(proximity?.elevation_delta_ft);
   if (distanceMi === null && elevationDeltaFt === null) return null;
 
+  const limitLabel = source.kind === "phius" ? "Phius limit" : "PHI advisory band";
   const rows = [
     {
       metric: "Distance",
-      current: formatPhiusDistance(distanceMi, unitSystem),
-      limit: formatPhiusDistance(PHIUS_DISTANCE_LIMIT_MI, unitSystem),
-      result: verdictLabel(distanceMi, PHIUS_DISTANCE_LIMIT_MI),
+      current: formatPhDistance(distanceMi, unitSystem),
+      limit: formatPhDistance(PH_DISTANCE_LIMIT_MI, unitSystem),
+      result: verdictLabel(source.kind, distanceMi, PH_DISTANCE_LIMIT_MI),
     },
     {
       metric: "Elevation",
-      current: formatPhiusElevationDelta(elevationDeltaFt, unitSystem),
-      limit: formatPhiusElevationDelta(PHIUS_ELEVATION_LIMIT_FT, unitSystem),
-      result: verdictLabel(elevationDeltaFt, PHIUS_ELEVATION_LIMIT_FT),
+      current: formatPhElevationDelta(elevationDeltaFt, unitSystem),
+      limit: formatPhElevationDelta(PH_ELEVATION_LIMIT_FT, unitSystem),
+      result: verdictLabel(source.kind, elevationDeltaFt, PH_ELEVATION_LIMIT_FT),
     },
   ];
 
   return (
-    <table className="climate-limit-check" aria-label="Phius certification limits">
+    <table
+      className="climate-limit-check"
+      aria-label={source.kind === "phius" ? "Phius certification limits" : "PHI advisory limits"}
+    >
       <thead>
         <tr>
           <th scope="col">Metric</th>
           <th scope="col">Site vs climate data difference</th>
-          <th scope="col">Phius limit</th>
+          <th scope="col">{limitLabel}</th>
           <th scope="col">Result</th>
         </tr>
       </thead>
@@ -301,13 +301,13 @@ function PhiusLimitCheck({
   );
 }
 
-function formatPhiusDistance(valueMi: number | null, unitSystem: UnitSystem) {
+function formatPhDistance(valueMi: number | null, unitSystem: UnitSystem) {
   if (valueMi === null) return "—";
   if (unitSystem === "IP") return `${formatPhiusDecimal(valueMi)} mi`;
   return `${(valueMi * KM_PER_MI).toFixed(1)} km`;
 }
 
-function formatPhiusElevationDelta(valueFt: number | null, unitSystem: UnitSystem) {
+function formatPhElevationDelta(valueFt: number | null, unitSystem: UnitSystem) {
   if (valueFt === null) return "—";
   const absFt = Math.abs(valueFt);
   if (unitSystem === "IP") return `${absFt.toFixed(0)} ft`;
@@ -319,10 +319,12 @@ function formatPhiusDecimal(value: number) {
 }
 
 function verdictLabel(
+  kind: ClimateSourceKind,
   value: number | null,
   limit: number,
 ): { label: "pass" | "fail" | "check"; status: "pass" | "fail" | "warning" } {
   if (value === null) return { label: "check", status: "warning" };
+  if (kind === "phi" && Math.abs(value) > limit) return { label: "check", status: "warning" };
   return Math.abs(value) <= limit
     ? { label: "pass", status: "pass" }
     : { label: "fail", status: "fail" };

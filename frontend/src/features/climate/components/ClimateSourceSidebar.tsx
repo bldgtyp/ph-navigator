@@ -3,7 +3,6 @@ import type { ProjectLocation } from "../../projects/types";
 import {
   CANONICAL_CLIMATE_KINDS,
   climateSourceBadgeVersion,
-  climateSourceCta,
   climateSourceNavAttrs,
   climateSourceStatusChip,
   climateSourceSubtitle,
@@ -178,7 +177,6 @@ function SourceCard({
   onSelect: () => void;
 }) {
   const status = climateSourceStatusChip(source);
-  const cta = climateSourceCta(source);
   const attrs = climateSourceNavAttrs(source, unitSystem);
   return (
     <button
@@ -202,13 +200,6 @@ function SourceCard({
       ) : null}
       <span className="climate-nav-foot">
         <ClimateStatusChip tone={status.tone} label={status.label} />
-        {active ? (
-          <span className="climate-nav-cta">viewing →</span>
-        ) : cta ? (
-          <span className="climate-nav-cta" data-tone={cta.tone}>
-            {cta.label} →
-          </span>
-        ) : null}
       </span>
     </button>
   );
@@ -242,7 +233,6 @@ function MissingSourceCard({
       <span className="climate-nav-name">No source attached</span>
       <span className="climate-nav-foot">
         <ClimateStatusChip tone="missing" label="Not set" />
-        {onSelect ? <span className="climate-nav-cta">add →</span> : null}
       </span>
     </>
   );

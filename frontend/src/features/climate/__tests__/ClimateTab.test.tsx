@@ -11,7 +11,7 @@ import {
 } from "../../projects/testing/locationFixtures";
 import { ClimateTab } from "../routes/ClimateTab";
 import { makeClimateRecord } from "../testing/recordFixture";
-import type { ProjectClimateSource } from "../types";
+import type { ClimateDatasetRosterResponse, PhClimateKind, ProjectClimateSource } from "../types";
 
 const fetchMock = vi.fn();
 
@@ -19,6 +19,7 @@ const SOURCES_URL = `/api/v1/projects/${PROJECT.id}/climate/sources`;
 const LOCATION_URL = `/api/v1/projects/${PROJECT.id}/location`;
 const DERIVE_URL = `${LOCATION_URL}/derive`;
 const PHIUS_LOCATION_URL = "/api/v1/climate/datasets/dataset-phius/locations/location-phius";
+const PHI_LOCATION_URL = "/api/v1/climate/datasets/dataset-phi/locations/location-phi";
 
 const EPW_SOURCE: ProjectClimateSource = {
   id: "src-epw",
@@ -87,6 +88,74 @@ const FAILING_PHIUS_SOURCE: ProjectClimateSource = {
     },
   },
 };
+
+const PHI_SOURCE: ProjectClimateSource = {
+  ...EPW_SOURCE,
+  id: "src-phi",
+  kind: "phi",
+  ref: "location-phi",
+  label: "Boston",
+  data: {
+    dataset_id: "dataset-phi",
+    dataset: { provider: "phi", version: "10.6", label: "PHI 10.6" },
+    proximity: {
+      distance_mi: 113.8,
+      elevation_delta_ft: 115,
+      status: "warning",
+      message: "Confirm PHI climate-set representativeness with the certifier.",
+    },
+  },
+};
+
+function sourceAfterAttach(kind: PhClimateKind): ProjectClimateSource {
+  return kind === "phius"
+    ? {
+        ...PHIUS_SOURCE,
+        id: "src-attached-phius",
+        ref: "location-phius",
+      }
+    : {
+        ...PHI_SOURCE,
+        id: "src-attached-phi",
+        ref: "location-phi",
+      };
+}
+
+function rosterForAttach(kind: PhClimateKind): ClimateDatasetRosterResponse {
+  return {
+    dataset:
+      kind === "phius"
+        ? { id: "dataset-phius", provider: "phius", version: "2022", label: "Phius 2022" }
+        : { id: "dataset-phi", provider: "phi", version: "10.6", label: "PHI 10.6" },
+    project: {
+      latitude: SET_LOCATION.latitude ?? 42.28,
+      longitude: SET_LOCATION.longitude ?? -73.36,
+      elevation_m: SET_LOCATION.elevation_m,
+      state: SET_LOCATION.state,
+    },
+    items: [
+      {
+        id: kind === "phius" ? "location-phius" : "location-phi",
+        name: kind === "phius" ? "NEW YORK CENTRAL PRK OBS BELV NY" : "Boston",
+        station_id: kind === "phius" ? "NYC" : "US0035a",
+        latitude: 42.3,
+        longitude: -73.3,
+        elevation_m: 300,
+        climate_zone: "5A",
+        proximity: {
+          distance_mi: 4.2,
+          elevation_delta_ft: 118,
+          status: kind === "phius" ? "pass" : "warning",
+          message:
+            kind === "phius"
+              ? "Phius climate set is within 50 mi and 400 ft."
+              : "Confirm PHI climate-set representativeness with the certifier.",
+        },
+      },
+    ],
+    total: 1,
+  };
+}
 
 function renderTab(project: typeof PROJECT = PROJECT, unitSystem: UnitSystem = "SI") {
   const queryClient = new QueryClient({
@@ -188,6 +257,77 @@ describe("ClimateTab", () => {
     expect(
       within(limitCheck).getByRole("row", { name: /^Elevation 118 ft 400 ft pass$/i }),
     ).toBeVisible();
+  });
+
+  test("renders PHI advisory checks with the same limit table UI", async () => {
+    vi.stubGlobal("fetch", fetchMock);
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === LOCATION_URL) return jsonResponse(SET_LOCATION);
+      if (url === SOURCES_URL) return jsonResponse({ items: [PHI_SOURCE] });
+      if (url === PHI_LOCATION_URL) {
+        return jsonResponse({
+          ...PHI_SOURCE,
+          record: makeClimateRecord({ display_name: "Boston" }),
+        });
+      }
+      return jsonResponse({}, 404);
+    });
+    const user = userEvent.setup();
+
+    renderTab(PROJECT, "IP");
+
+    await user.click(await screen.findByRole("button", { name: /Boston/ }));
+
+    const limitCheck = await screen.findByRole("table", { name: "PHI advisory limits" });
+    expect(
+      within(limitCheck).getByRole("row", { name: /^Distance 113\.8 mi 50 mi check$/i }),
+    ).toBeVisible();
+    expect(
+      within(limitCheck).getByRole("row", { name: /^Elevation 115 ft 400 ft pass$/i }),
+    ).toBeVisible();
+  });
+
+  test.each([
+    { kind: "phius" as const, label: "Phius", tableName: "Phius certification limits" },
+    { kind: "phi" as const, label: "PHI", tableName: "PHI advisory limits" },
+  ])("navigates to the $label page after selecting a dataset from the modal", async ({ kind, label, tableName }) => {
+    vi.stubGlobal("fetch", fetchMock);
+    let sources: ProjectClimateSource[] = [];
+    const attachedSource = sourceAfterAttach(kind);
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === LOCATION_URL) return jsonResponse(SET_LOCATION);
+      if (url === SOURCES_URL && (init?.method ?? "GET") === "GET") {
+        return jsonResponse({ items: sources });
+      }
+      if (url === SOURCES_URL && init?.method === "POST") {
+        sources = [attachedSource];
+        return jsonResponse(attachedSource, 201);
+      }
+      if (url.startsWith(`/api/v1/projects/${PROJECT.id}/climate/datasets/${kind}/locations`)) {
+        return jsonResponse(rosterForAttach(kind));
+      }
+      if (url === (kind === "phius" ? PHIUS_LOCATION_URL : PHI_LOCATION_URL)) {
+        return jsonResponse({
+          ...attachedSource,
+          record: makeClimateRecord({ display_name: attachedSource.label ?? label }),
+        });
+      }
+      return jsonResponse({}, 404);
+    });
+    const user = userEvent.setup();
+
+    renderTab(PROJECT, "IP");
+
+    const missingCard = (await screen.findByText(label)).closest("button");
+    expect(missingCard).not.toBeNull();
+    await user.click(missingCard as HTMLButtonElement);
+    await user.click(await screen.findByRole("button", { name: /^NEW YORK CENTRAL|^Boston/ }));
+    await user.click(screen.getByRole("button", { name: "Attach" }));
+
+    expect(await screen.findByRole("table", { name: tableName })).toBeVisible();
+    expect(screen.queryByText(`Select ${label} climate dataset`)).toBeNull();
   });
 
   test("keeps failing Phius datasets on the normal data page with an override warning", async () => {
