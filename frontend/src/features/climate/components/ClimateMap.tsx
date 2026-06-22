@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import type { ClimateProximityVerdict } from "../types";
-import type { ClimateLeafletController, ClimateMapData } from "./climateLeafletMap";
+import type {
+  ClimateBasemapStyle,
+  ClimateLeafletController,
+  ClimateMapData,
+} from "./climateLeafletMap";
 import "../climate-map.css";
 
 // One station as the map needs it: identity, coordinates (may be null), and its
@@ -81,6 +85,8 @@ type ClimateMapProps = {
   // Decorative use (e.g. the sidebar thumbnail): hide from the a11y tree and
   // drop the `group` role so it doesn't pollute an enclosing control's name.
   ariaHidden?: boolean;
+  // Defaults to CARTO Positron; callers can opt into the no-label or OSM style.
+  basemapStyle?: ClimateBasemapStyle;
 };
 
 // The app's one shared map (D-DP-6, P3). In a real browser it mounts a
@@ -100,6 +106,7 @@ export function ClimateMap({
   className,
   ariaLabel = "Map",
   ariaHidden = false,
+  basemapStyle = "carto-positron",
 }: ClimateMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const controllerRef = useRef<ClimateLeafletController | null>(null);
@@ -138,6 +145,7 @@ export function ClimateMap({
         const { data } = latestRef.current;
         if (cancelled || !containerRef.current || !data) return;
         controller = createClimateLeafletMap(containerRef.current, {
+          basemapStyle,
           interactive,
           onSelectStation: canSelectStation
             ? (id) => handlersRef.current.onSelectStation?.(id)
@@ -160,7 +168,7 @@ export function ClimateMap({
       controller?.destroy();
       controllerRef.current = null;
     };
-  }, [showLive, hasProject, interactive, canSelectStation, canPickPoint]);
+  }, [showLive, hasProject, basemapStyle, interactive, canSelectStation, canPickPoint]);
 
   // Redraw markers/ring when the roster or project moves; restyle on selection.
   const dataSignature = JSON.stringify({

@@ -21,13 +21,11 @@ describe("ClimateRecordTable", () => {
       <ClimateRecordTable record={makeClimateRecord()} unitSystem="SI" />,
     );
     const siCell = within(screen.getByRole("row", { name: /^Air/ })).getAllByRole("cell")[0];
-    expect(siCell?.textContent).toContain("10");
-    expect(siCell?.textContent).toContain("deg C");
+    expect(siCell?.textContent).toBe("10");
 
     rerender(<ClimateRecordTable record={makeClimateRecord()} unitSystem="IP" />);
     const ipCell = within(screen.getByRole("row", { name: /^Air/ })).getAllByRole("cell")[0];
-    expect(ipCell?.textContent).toContain("50");
-    expect(ipCell?.textContent).toContain("deg F");
+    expect(ipCell?.textContent).toBe("50");
   });
 
   test("radiation follows the SI/IP toggle", () => {

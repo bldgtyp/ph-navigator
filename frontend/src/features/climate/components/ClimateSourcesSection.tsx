@@ -280,7 +280,7 @@ function EpwAttachButton({
           Attach {epwName ?? "EPW"}
         </button>
       ) : (
-        <p className="form-note">Upload an EPW in the location editor above to attach it.</p>
+        <p className="form-note">Upload or link an EPW from the EPW page, then attach it here.</p>
       )}
     </div>
   );

@@ -160,7 +160,7 @@
 }
 
 .climate-big-map {
-  height: 168px;
+  height: 336px;
   border-radius: var(--phn-radius);
 }
 
@@ -396,6 +396,80 @@
   gap: var(--space-8);
 }
 
+.climate-location-head {
+  align-items: stretch;
+}
+
+.climate-location-head .climate-page-head-actions {
+  flex-shrink: 0;
+  margin-left: 0;
+  align-self: stretch;
+}
+
+.climate-location-head-copy {
+  min-width: 0;
+}
+
+.climate-location-head .climate-page-title {
+  margin-top: 0;
+}
+
+.climate-location-public,
+.climate-location-private {
+  margin: var(--space-4) 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  line-height: 1.35;
+}
+
+.climate-location-public {
+  color: var(--text-muted);
+}
+
+.climate-location-private {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  align-items: center;
+  color: var(--accent-text);
+}
+
+.climate-location-set-button {
+  align-self: stretch;
+  min-height: 100%;
+  padding-inline: var(--space-16);
+}
+
+.climate-location-derive,
+.climate-epw-tools {
+  display: flex;
+  gap: var(--space-14);
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: var(--space-14);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--phn-radius);
+  background: var(--bg-card);
+}
+
+.climate-location-derive > div,
+.climate-epw-tools > div:first-child {
+  min-width: 0;
+}
+
+.climate-location-derive .climate-subhead,
+.climate-epw-tools .climate-subhead {
+  margin-top: 0;
+}
+
+.climate-location-derive .primary-button {
+  flex-shrink: 0;
+}
+
+.climate-epw-tools {
+  flex-direction: column;
+}
+
 /* Derived-fact grid on the location page */
 .climate-facts {
   display: grid;
@@ -502,40 +576,6 @@
   gap: var(--space-10);
 }
 
-/* Location page: sun-path block */
-.climate-sunpath-panel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-8);
-  align-items: flex-start;
-}
-
-.climate-sun-wrap {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-20);
-  align-items: center;
-}
-
-.climate-sun-meta {
-  flex: 1;
-  min-width: 12rem;
-}
-
-.climate-sun-meta .row {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-16);
-  padding: var(--space-6) 0;
-  border-bottom: 1px dashed var(--border-subtle);
-  font-family: var(--font-mono);
-  font-size: var(--fs-xs);
-}
-
-.climate-sun-meta .row .k {
-  color: var(--text-muted);
-}
-
 @media (max-width: 880px) {
   .climate-workspace {
     grid-template-columns: 1fr;
@@ -560,6 +600,10 @@
 
   .climate-page-head-actions {
     margin-left: 0;
+  }
+
+  .climate-location-derive {
+    flex-direction: column;
   }
 
   .climate-facts {

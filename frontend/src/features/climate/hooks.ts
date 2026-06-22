@@ -7,7 +7,6 @@ import {
   fetchClimateLocation,
   fetchClimateLocations,
   fetchClimateSources,
-  fetchProjectSunPath,
   setClimateSourceDefault,
 } from "./api";
 import { climateQueryKeys } from "./query-keys";
@@ -63,15 +62,6 @@ export function useClimateDatasetRosterQuery(
     queryKey: climateQueryKeys.datasetRoster(projectId, kind, search),
     queryFn: ({ signal }) => fetchClimateDatasetRoster(projectId, kind, search, signal),
     enabled: options.enabled ?? true,
-  });
-}
-
-// The project's sun-path diagram. `data` is null when the location is unset
-// (the endpoint returns null), which the diagram renders as an empty state.
-export function useSunPathQuery(projectId: string) {
-  return useQuery({
-    queryKey: climateQueryKeys.sunPath(projectId),
-    queryFn: ({ signal }) => fetchProjectSunPath(projectId, signal),
   });
 }
 

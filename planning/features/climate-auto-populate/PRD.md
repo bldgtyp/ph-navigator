@@ -45,8 +45,7 @@ design conditions, and the UI redesign.
 ## 3. Privacy model (D-CL-13)
 
 - **Only the spelled-out street address is private.** Lat/long, county,
-  state, climate zone, and the sun-path are public — they are how we *show*
-  the location.
+  state, and climate zone are public — they are how we *show* the location.
 - The address string is entered/edited in an **auth-gated modal** and is
   **never rendered to viewers**. The public projection of the location
   returns `{ latitude, longitude, elevation_m, county, state, country,
@@ -55,8 +54,8 @@ design conditions, and the UI redesign.
   determined viewer can reverse-geocode them back to the address. If real
   privacy is ever wanted, the lever is rounding the *public* coordinates to
   ~2 decimals while the modal keeps exact coords (not built now).
-- The sun-path endpoint stays public (its geometry reveals only the latitude
-  band, consistent with public coords).
+- The former Climate-page sun-path endpoint was removed on 2026-06-22; sun
+  visualization belongs in the Model tab.
 
 ## 4. Store rule (three-tier) (D-CL-14)
 
@@ -133,8 +132,7 @@ styling comes from app CSS/brand tokens):
   type** (Phius, PHI, ASHRAE, EPW), each with key attributes, a status chip,
   the default ★, a status-colored edge, and an inline CTA when relevant.
 - **Main = one page at a time:** the selected item's page.
-  - **Location page:** map + derived facts + **sun-path** (lives here — it's a
-    site property, not a data type).
+  - **Location page:** map + derived facts + Set Location workflow.
   - **Phius/PHI page (D-CL-22):** monthly viz + a separate **peak-load**
     (heating/cooling) element.
   - **ASHRAE / EPW pages (D-CL-23):** values + a **link to the source**
@@ -142,8 +140,8 @@ styling comes from app CSS/brand tokens):
   - **Fail page:** the custom-set CTA + the "why — nearest candidates" table.
 - **Units (D-CL-21):** no per-tab toggle — obey the app-wide SI/IP preference;
   all data SI/IP-rendered (per-datapoint specifics open, O-units).
-- **Privacy:** public shows county/state/zone/coords + sun-path; the address
-  string + edit are behind the auth'd modal (§3).
+- **Privacy:** public shows county/state/zone/coords; the address string +
+  edit are behind the auth'd modal (§3).
 - **Replaces** the existing tab (D-CL-24); the dataset browser demotes to a
   manual "add/override" surface.
 
@@ -151,8 +149,8 @@ styling comes from app CSS/brand tokens):
 
 - **Reused:** `ClimateRecord` schema; `climate_dataset_location` + its
   nearest-to-coords search; `project_climate_source` CRUD/default/JSONB;
-  sun-path; the existing `ClimateRecordView/Table/Charts` (re-pointed at
-  attached sources); `project_location` EPW upload.
+  the existing `ClimateRecordView/Table/Charts` (re-pointed at attached
+  sources); `project_location` EPW upload.
 - **Net-new:** address field + geocoding modal + public projection;
   the derive service (external API clients #1–4); haversine proximity gate +
   auto-attach (#5/6); the EPW catalog + `.stat` parser + ashrae-meteo client

@@ -16,11 +16,6 @@ export function ClimateRecordTable({
   unitSystem: UnitSystem;
 }) {
   const { climate, aux, location } = record;
-  const temp = (value: number) => formatTemperatureFromC(value, { unitSystem });
-  const monthlyRadiation = (value: number) =>
-    formatSi(unitSystem === "IP" ? value * KWH_M2_TO_KBTU_FT2 : value, unitSystem === "IP" ? 1 : 0);
-  const peakRadiation = (value: number) =>
-    formatSi(unitSystem === "IP" ? value * W_M2_TO_BTU_H_FT2 : value, unitSystem === "IP" ? 1 : 0);
 
   return (
     <div className="climate-record">
@@ -37,6 +32,25 @@ export function ClimateRecordTable({
         <Scalar label="Albedo">{formatSi(aux.albedo, 2)}</Scalar>
       </dl>
 
+      <MonthlyClimateTables record={record} unitSystem={unitSystem} />
+      <ClimatePeakLoadsTable peaks={climate.peak_loads} unitSystem={unitSystem} />
+    </div>
+  );
+}
+
+export function MonthlyClimateTables({
+  record,
+  unitSystem,
+}: {
+  record: ClimateRecord;
+  unitSystem: UnitSystem;
+}) {
+  const { climate } = record;
+  const temp = (value: number) => formatTemperatureFromC(value, { unitSystem, showUnit: false });
+  const monthlyRadiation = (value: number) =>
+    formatSi(unitSystem === "IP" ? value * KWH_M2_TO_KBTU_FT2 : value, unitSystem === "IP" ? 1 : 0);
+  return (
+    <>
       <MonthlyTable
         caption="Monthly temperatures"
         unitNote={`°${unitSystem === "IP" ? "F" : "C"}`}
@@ -59,19 +73,7 @@ export function ClimateRecordTable({
           { label: "Global", values: climate.monthly_radiation.glob, format: monthlyRadiation },
         ]}
       />
-
-      <PeakLoadsTable
-        peaks={[
-          { label: "Heating 1", peak: climate.peak_loads.heat_load_1 },
-          { label: "Heating 2", peak: climate.peak_loads.heat_load_2 },
-          { label: "Cooling 1", peak: climate.peak_loads.cooling_load_1 },
-          { label: "Cooling 2", peak: climate.peak_loads.cooling_load_2 },
-        ]}
-        formatTemp={temp}
-        formatRadiation={peakRadiation}
-        unitSystem={unitSystem}
-      />
-    </div>
+    </>
   );
 }
 
@@ -122,17 +124,27 @@ function MonthlyTable({
   );
 }
 
-function PeakLoadsTable({
+export function ClimatePeakLoadsTable({
   peaks,
-  formatTemp,
-  formatRadiation,
   unitSystem,
 }: {
-  peaks: { label: string; peak: ClimatePeakLoad }[];
-  formatTemp: (value: number) => string;
-  formatRadiation: (value: number) => string;
+  peaks: {
+    heat_load_1: ClimatePeakLoad;
+    heat_load_2: ClimatePeakLoad;
+    cooling_load_1: ClimatePeakLoad;
+    cooling_load_2: ClimatePeakLoad;
+  };
   unitSystem: UnitSystem;
 }) {
+  const formatTemp = (value: number) => formatTemperatureFromC(value, { unitSystem });
+  const formatRadiation = (value: number) =>
+    formatSi(unitSystem === "IP" ? value * W_M2_TO_BTU_H_FT2 : value, unitSystem === "IP" ? 1 : 0);
+  const rows = [
+    { label: "Heating 1", peak: peaks.heat_load_1 },
+    { label: "Heating 2", peak: peaks.heat_load_2 },
+    { label: "Cooling 1", peak: peaks.cooling_load_1 },
+    { label: "Cooling 2", peak: peaks.cooling_load_2 },
+  ];
   return (
     <table className="climate-table">
       <caption>
@@ -153,7 +165,7 @@ function PeakLoadsTable({
         </tr>
       </thead>
       <tbody>
-        {peaks.map(({ label, peak }) => (
+        {rows.map(({ label, peak }) => (
           <tr key={label}>
             <th scope="row">{label}</th>
             <td>{formatTemp(peak.temp_c)}</td>

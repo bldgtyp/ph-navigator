@@ -23,10 +23,10 @@ full climate basis (#1–8, PRD §5). This inverts today's browser-hunt path.
 **Confirmed.**
 
 ### D-CL-13 · Privacy — only the spelled-out street address is private
-Lat/long, county, state, climate zone, and sun-path are public. The address
-string is auth-gated (edited in a modal) and never rendered to viewers; the
-public location projection omits it. Soft privacy accepted (exact public
-coords are reverse-geocodable; rounding lever noted, not built). **Confirmed.**
+Lat/long, county, state, and climate zone are public. The address string is
+auth-gated (edited in a modal) and never rendered to viewers; the public
+location projection omits it. Soft privacy accepted (exact public coords are
+reverse-geocodable; rounding lever noted, not built). **Confirmed.**
 
 ### D-CL-14 · Three-tier store rule
 Store small derived cert-values + EPW bytes; pointer + version-pin for the
@@ -54,8 +54,9 @@ The Climate tab is a master-detail layout (Variant B, refined): a left **nav
 sidebar** holds the **Location card** (top) + one **card per climate-data
 type** (Phius, PHI, ASHRAE, EPW), each showing key attributes, a status chip,
 the default ★, a status-colored edge, and an inline CTA when relevant; the
-**main window shows the selected item's page, one at a time**. The **sun-path
-moves onto the Location page** (it is a property of the site, not a data type).
+**main window shows the selected item's page, one at a time**. The **Location
+page carries site facts and mapping** (it is the site context page, not a data
+source page).
 Mockup of record: `working/climate-tab-wireframe-B2.html`. **Confirmed.**
 
 ### D-CL-21 · Units obey the app-wide SI/IP toggle — no per-tab toggle
@@ -87,17 +88,18 @@ station. Easy reference back to the authoritative source. **Confirmed.**
 ### D-CL-24 · This replaces the existing Climate tab
 The current tab (`frontend/src/features/climate/` — `ClimateTab`,
 `ClimateSourcesSection`, `ClimateDatasetBrowser`) is **updated/replaced** by
-this IA, not added alongside. `ClimateRecordView/Table/Charts`, sun-path, and
-the dataset search are **reused inside the new pages**. Styling/typography/
-color come from the app's CSS tokens + brand items — the wireframe conveys
-**structure only**, not the visual system. **Confirmed.**
+this IA, not added alongside. `ClimateRecordView/Table/Charts` and the dataset
+search are **reused inside the new pages**. Styling/typography/color come from
+the app's CSS tokens + brand items — the wireframe conveys **structure only**,
+not the visual system. **Confirmed.**
 
 ### D-CL-25 · Absorb deferred climate-tab-followups + design-conditions production
 Three v1.1 climate features are consolidated here (Ed 2026-06-21):
 - **climate-tab-followups → folded in (superseded):** custom-record entry form
-  (P4 add/override surface + P2 Phius-fail escape hatch), sun-path cardinal
-  labels (P4 Location page), attached-source charts (= P4, generalized), and
-  promoting `ClimateRecord` to a `context/` doc (P4 docs task).
+  (P4 add/override surface + P2 Phius-fail escape hatch), attached-source
+  charts (= P4, generalized), and promoting `ClimateRecord` to a `context/`
+  doc (P4 docs task). The earlier Location-page sun-path labels were
+  superseded by D-CL-26.
 - **climate-design-conditions → partial fold:** its EPW/`.stat` + ASHRAE
   production and tab display are built here (P3/P4); only the consumer-facing
   **source-parameterized contract endpoint** (+ MCP) stays deferred, still
@@ -106,6 +108,14 @@ Three v1.1 climate features are consolidated here (Ed 2026-06-21):
 - **climate-rain-exposure → stays deferred:** separable enclosure-risk metric
   with its own open rainfall-source question (RX-1); its EPW-metrics substrate
   is built here in P3, so it becomes a small follow-on. **Confirmed.**
+
+### D-CL-26 · Location page drops the 2D sun-path visual
+The Climate Location page no longer renders `climate-sunpath-panel` or the
+related 2D SVG sun-path endpoint/tooling. The page should stay focused on the
+site map, coordinates, elevation, county/state, climate zone, privacy, and the
+Set Location workflow. Sun-path visualization is available in the Model tab,
+where site/sun orientation is already part of the 3D workflow. **Confirmed
+2026-06-22.**
 
 ## Accepted — flags, fetch & trigger (confirmed with Ed, 2026-06-21)
 
