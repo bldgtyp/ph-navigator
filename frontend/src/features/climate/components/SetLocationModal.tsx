@@ -1,17 +1,11 @@
-import { useRef, useState, type ChangeEvent } from "react";
-import { Check, Download, MapPin, Search, Upload } from "lucide-react";
+import { useState, type ChangeEvent } from "react";
+import { MapPin, Search } from "lucide-react";
 import { errorMessage } from "../../../shared/lib/errors";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
-import { assetDownloadPath } from "../../assets/api";
-import { uploadAsset } from "../../assets/hooks";
-import {
-  elevationUnitLabel,
-  formatReadOnlyCoordinate,
-  type ProjectLocationFormValues,
-} from "../../projects/location-form";
+import { elevationUnitLabel, type ProjectLocationFormValues } from "../../projects/location-form";
 import { useProjectLocationForm } from "../../projects/useProjectLocationForm";
 import { parseNumberInput } from "../../../lib/units/format";
-import type { EpwParseResponse, GeocodeProjectLocationResponse } from "../../projects/types";
+import type { GeocodeProjectLocationResponse } from "../../projects/types";
 import { ClimateMap } from "./ClimateMap";
 
 const COMMON_TIME_ZONES = [
@@ -26,12 +20,10 @@ const COMMON_TIME_ZONES = [
 
 type LocationFormField = keyof ProjectLocationFormValues;
 
-// The address-first "Set location" modal: the single entry point that
-// establishes a project's climate basis. Find the site by address (or set
-// coordinates directly for an address-less rural site), then "Locate Climate
-// Data" runs the derive/repopulate finder — persisting the location, deriving
-// county/elevation/zone, and auto-attaching the nearest Phius/PHI/ASHRAE/EPW
-// sources. Mounted only while open, so Cancel discards in-progress edits.
+// The address-first "Set location" modal: find the site by address (or set
+// coordinates directly for an address-less rural site), then save the site
+// geometry. Climate-source derivation and EPW file management live on their
+// own Climate pages so this modal stays focused.
 export function SetLocationModal({
   projectId,
   onClose,
@@ -41,19 +33,15 @@ export function SetLocationModal({
 }) {
   const form = useProjectLocationForm(projectId);
   const { values, unitSystem } = form;
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [candidates, setCandidates] = useState<GeocodeProjectLocationResponse["candidates"]>([]);
   const [geocodeError, setGeocodeError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [parsedEpw, setParsedEpw] = useState<EpwParseResponse | null>(null);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
 
   const hasCoords = values.latitude.trim() !== "" && values.longitude.trim() !== "";
   const latitude = parseNumberInput(values.latitude);
   const longitude = parseNumberInput(values.longitude);
   const coords = latitude !== null && longitude !== null ? { latitude, longitude } : null;
-  const busy = form.isDeriving || form.isSaving;
+  const busy = form.isSaving;
   const handleField = (field: LocationFormField) => (event: ChangeEvent<HTMLInputElement>) =>
     form.updateField(field, event.target.value);
   // Pin-drop refines the coordinates: write the clicked point back into the
@@ -62,11 +50,6 @@ export function SetLocationModal({
     form.updateField("latitude", lat.toFixed(6));
     form.updateField("longitude", lon.toFixed(6));
   };
-
-  const linkedAssetId = values.epwAssetId || form.location?.epw_asset_id;
-  const savedEpw = form.location?.epw;
-  const linkedFilename =
-    parsedEpw?.filename ?? (savedEpw && linkedAssetId === savedEpw.id ? savedEpw.filename : null);
 
   const search = async () => {
     setGeocodeError(null);
@@ -87,32 +70,13 @@ export function SetLocationModal({
     }
   };
 
-  const uploadEpw = async (files: FileList | null) => {
-    const file = files?.[0];
-    if (!file) return;
-    setUploadError(null);
-    setIsUploading(true);
-    try {
-      const assetId = await uploadAsset(projectId, "epw", file);
-      setParsedEpw(await form.parseEpw(assetId));
-    } catch (error) {
-      setUploadError(errorMessage(error, "Could not upload or parse the EPW file."));
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  };
-
-  // The primary commit: persist any manual edits, then run the derive finder
-  // (which attaches the climate sources) and close on success.
-  const locateClimateData = async () => {
+  const saveLocation = async () => {
     setActionError(null);
     try {
-      if (form.canSave) await form.save();
-      await form.deriveLocation();
+      await form.save();
       onClose();
     } catch (error) {
-      setActionError(errorMessage(error, "Could not locate the climate data."));
+      setActionError(errorMessage(error, "Could not save the project location."));
     }
   };
 
@@ -206,7 +170,7 @@ export function SetLocationModal({
         </div>
 
         <details className="set-location-advanced">
-          <summary>Advanced — elevation, time zone, orientation, weather file</summary>
+          <summary>Advanced — elevation, time zone, orientation</summary>
           <div className="settings-location-grid set-location-advanced-body">
             <label>
               <span>Elevation ({elevationUnitLabel(unitSystem)})</span>
@@ -240,59 +204,6 @@ export function SetLocationModal({
                 placeholder="0"
               />
             </label>
-            <label className="settings-location-wide">
-              <span>EPW source URL</span>
-              <input
-                value={values.epwSourceUrl}
-                maxLength={1000}
-                onChange={handleField("epwSourceUrl")}
-                placeholder="https://climate.onebuilding.org/..."
-              />
-            </label>
-          </div>
-          <div className="settings-location-epw">
-            <div className="settings-location-epw-row">
-              <input
-                ref={fileInputRef}
-                className="attachment-file-input"
-                type="file"
-                accept=".epw,text/plain,application/octet-stream"
-                onChange={(event) => void uploadEpw(event.target.files)}
-              />
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading || form.isParsingEpw}
-              >
-                <Upload size={16} aria-hidden="true" />
-                {isUploading || form.isParsingEpw ? "Uploading…" : "Upload EPW"}
-              </button>
-              {linkedAssetId ? (
-                <a className="secondary-button" href={assetDownloadPath(projectId, linkedAssetId)}>
-                  <Download size={16} aria-hidden="true" />
-                  Download EPW
-                </a>
-              ) : null}
-              {linkedFilename ? <span className="form-note">{linkedFilename}</span> : null}
-            </div>
-            {parsedEpw ? (
-              <div className="settings-location-epw-suggestion">
-                <span>{formatEpwSuggestion(parsedEpw)}</span>
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={() => {
-                    form.applyEpwSuggestion(parsedEpw);
-                    setParsedEpw(null);
-                  }}
-                >
-                  <Check size={16} aria-hidden="true" />
-                  Apply EPW values
-                </button>
-              </div>
-            ) : null}
-            {uploadError ? <p className="form-error">{uploadError}</p> : null}
           </div>
         </details>
 
@@ -316,26 +227,15 @@ export function SetLocationModal({
           </button>
           <button
             type="button"
-            onClick={() => void locateClimateData()}
-            disabled={!hasCoords || busy || Boolean(form.validationError)}
+            className="primary-button"
+            onClick={() => void saveLocation()}
+            disabled={!hasCoords || !form.canSave || busy || Boolean(form.validationError)}
           >
             <MapPin size={16} aria-hidden="true" />
-            {busy ? "Locating…" : "Locate Climate Data"}
+            {busy ? "Saving…" : "Save Location"}
           </button>
         </div>
       </form>
     </ModalDialog>
   );
-}
-
-function formatEpwSuggestion(response: EpwParseResponse): string {
-  const suggestion = response.suggestion;
-  return [
-    suggestion.city,
-    suggestion.state,
-    formatReadOnlyCoordinate(suggestion.latitude),
-    formatReadOnlyCoordinate(suggestion.longitude),
-  ]
-    .filter((part) => part && part !== "None")
-    .join(" / ");
 }

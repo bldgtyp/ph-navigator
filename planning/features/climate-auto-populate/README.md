@@ -25,7 +25,7 @@ RELATED:
 
 The shipped Climate feature (`planning/archive/climate/`) built the climate
 **store**: app-wide versioned reference datasets (Phius / PHI), per-project
-`project_climate_source` rows, sun-path, and a dataset browser. This feature
+`project_climate_source` rows, and a dataset browser. This feature
 makes that store **address-driven** and fixes the tab's primary UX gaps.
 
 The spine is one user story: a designer enters the **site address** once;
@@ -82,8 +82,10 @@ P1–P3 — it can be sequenced first if we want the UX win early.
 ## Consolidates (D-CL-25)
 
 This feature absorbs the deferred v1.1 climate items:
-- **climate-tab-followups → folded in** (custom-record form, sun-path cardinal
-  labels, attached-source charts, ClimateRecord→`context/` doc) — P4/P2.
+- **climate-tab-followups → folded in** (custom-record form,
+  attached-source charts, ClimateRecord→`context/` doc) — P4/P2.
+  *(Update 2026-06-22: the 2D Location-page sun-path follow-up was removed;
+  site/sun visualization belongs in the Model tab.)*
 - **climate-design-conditions → partial** — its EPW/ASHRAE production + display
   are built here (P3/P4); only the consumer **contract endpoint** stays
   deferred (gated on fRSI/comfort + D-CL-5).

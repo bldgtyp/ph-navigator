@@ -3,7 +3,7 @@ import "leaflet/dist/leaflet.css";
 import type { ClimateMapStation } from "./ClimateMap";
 
 // Imperative Leaflet wrapper for the app's live basemaps (D-DP-6: vanilla
-// Leaflet + keyless OSM raster — no key, no proxy, no committed secret). The
+// Leaflet + keyless raster tiles — no key, no proxy, no committed secret). The
 // React shell (`ClimateMap`) lazy-imports this only in a real browser; unit
 // tests stay on the `placePins` fallback. Distances/verdicts are still computed
 // server-side (D-DP-2) — Leaflet only draws.
@@ -14,9 +14,40 @@ import type { ClimateMapStation } from "./ClimateMap";
 // (`onPickPoint`). The handler bag is all-optional so a consumer wires only the
 // interactions it needs rather than the picker's contract leaking everywhere.
 
-const OSM_TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+export type ClimateBasemapStyle = "carto-positron" | "carto-positron-no-labels" | "osm-standard";
+
+type ClimateBasemap = {
+  url: string;
+  attribution: string;
+  maxZoom: number;
+  subdomains?: string[];
+};
+
 const OSM_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+const CARTO_ATTRIBUTION = `${OSM_ATTRIBUTION} &copy; <a href="https://carto.com/attribution">CARTO</a>`;
+
+const CLIMATE_BASEMAPS: Record<ClimateBasemapStyle, ClimateBasemap> = {
+  "carto-positron": {
+    url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+    attribution: CARTO_ATTRIBUTION,
+    maxZoom: 20,
+    subdomains: ["a", "b", "c", "d"],
+  },
+  "carto-positron-no-labels": {
+    url: "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",
+    attribution: CARTO_ATTRIBUTION,
+    maxZoom: 20,
+    subdomains: ["a", "b", "c", "d"],
+  },
+  "osm-standard": {
+    url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    attribution: OSM_ATTRIBUTION,
+    maxZoom: 19,
+  },
+};
+
+const DEFAULT_BASEMAP_STYLE: ClimateBasemapStyle = "carto-positron";
 
 // The pin colours, resolved from CSS custom properties so they track the active
 // theme. Keeping every colour in the CSS token layer means this module holds no
@@ -74,6 +105,7 @@ export type ClimateLeafletController = {
 // (no pan/zoom/controls). `onSelectStation` is the picker's marker-click;
 // `onPickPoint` is the Set-Location pin-drop (click empty map → coordinate).
 export type ClimateLeafletOptions = {
+  basemapStyle?: ClimateBasemapStyle;
   interactive?: boolean;
   onSelectStation?: (stationId: string) => void;
   onPickPoint?: (latitude: number, longitude: number) => void;
@@ -89,7 +121,13 @@ export function createClimateLeafletMap(
   container: HTMLElement,
   options: ClimateLeafletOptions = {},
 ): ClimateLeafletController {
-  const { interactive = true, onSelectStation, onPickPoint } = options;
+  const {
+    basemapStyle = DEFAULT_BASEMAP_STYLE,
+    interactive = true,
+    onSelectStation,
+    onPickPoint,
+  } = options;
+  const basemap = CLIMATE_BASEMAPS[basemapStyle];
   const map = L.map(container, {
     attributionControl: interactive,
     zoomControl: interactive,
@@ -104,7 +142,12 @@ export function createClimateLeafletMap(
   // layer is added (Leaflet throws on projection calls with no view); setData's
   // fitBounds then frames the actual data. Neutral default = US centroid.
   map.setView([39.5, -98.35], 4);
-  L.tileLayer(OSM_TILE_URL, { maxZoom: 19, attribution: OSM_ATTRIBUTION }).addTo(map);
+  const tileOptions: L.TileLayerOptions = {
+    maxZoom: basemap.maxZoom,
+    attribution: basemap.attribution,
+  };
+  if (basemap.subdomains) tileOptions.subdomains = basemap.subdomains;
+  L.tileLayer(basemap.url, tileOptions).addTo(map);
   // Pin-drop: an empty-map click emits a coordinate the caller writes back.
   if (onPickPoint) {
     map.on("click", (event) => onPickPoint(event.latlng.lat, event.latlng.lng));

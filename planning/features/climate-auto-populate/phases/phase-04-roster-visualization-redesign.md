@@ -39,7 +39,7 @@ only**; styling/typography/color come from the app CSS tokens + brand items.
 > (badge + status chip + metadata + Set-default/Remove actions), the
 > Phius/PHI **peak-load tiles**, and the fail-page **"Certification
 > blocker" hero** + candidate verdict table. The Location page is now
-> read-first (facts grid + map + sun-path) with an **Edit ▸** reveal of
+> read-first (facts grid + map) with an **Edit ▸** reveal of
 > the existing editor. The decorative map is a placeholder pending the
 > MapTiler key (O4). New shared atoms live in `components/ClimateAtoms.tsx`
 > (`ClimateTypeBadge`, `ClimateStatusChip`, `LocationPrivacyTag`).
@@ -60,7 +60,8 @@ only**; styling/typography/color come from the app CSS tokens + brand items.
 - `ClimateRecordTable` and `ClimateRecordCharts` now localize radiation for
   the app-wide unit preference: SI `kWh/m²` / `W/m²`; IP `kBtu/ft²·mo` /
   `Btu/h·ft²`.
-- `SunPathDiagram` now renders N/E/S/W labels on the Location page.
+- *(Superseded 2026-06-22)* `SunPathDiagram` and the Climate-page 2D
+  sun-path panel were removed; site/sun visualization belongs in the Model tab.
 
 ## Locked layout (D-CL-20)
 
@@ -78,9 +79,9 @@ only**; styling/typography/color come from the app CSS tokens + brand items.
 ## Per-page specs
 
 - **Location page** — big map, the four derived facts (P1), and the
-  **sun-path** (moved here from the sidebar; it's a property of the site) with
-  **N/E/S/W cardinal labels** from project true-north (folded-in follow-up).
-  Edit opens the auth-gated address modal (P1).
+  auth-gated Set Location workflow. Edit opens the address modal (P1). The
+  former 2D sun-path visual was removed on 2026-06-22; use the Model tab for
+  site/sun visualization.
 - **Phius / PHI page (D-CL-22)** — the **monthly values as a chart/viz**
   (temperature, radiation) **plus a separate peak-load element** for the design
   conditions (heating + cooling) from `ClimateRecord.peak_loads`. Header shows
@@ -115,7 +116,7 @@ only**; styling/typography/color come from the app CSS tokens + brand items.
   `ClimateSourcesSection` (→ sidebar nav cards), `ClimateDatasetBrowser` (→ a
   manual "add/override" surface, reachable from "＋ Add source").
 - **Reuse inside pages:** `ClimateRecordTable` / `ClimateRecordCharts` (drop
-  the °C/°F toggle), `SunPathDiagram`, the dataset search, the
+  the °C/°F toggle), the dataset search, the
   `project_climate_source` hooks/mutations.
 - Selection can be route-driven (`/climate/:item`) or local state — decide in
   build; route-driven gives deep links per source.
@@ -126,7 +127,8 @@ Absorbed from the former `climate-tab-followups`:
 - **Custom-record entry form** — enter a standardized `ClimateRecord` for a
   `custom` source, in the "＋ Add source" / override surface; also the escape
   hatch when Phius fails (P2 fail page → "enter custom record").
-- **Sun-path cardinal labels** — N/E/S/W on the Location-page sun-path (above).
+- **Sun-path cardinal labels** — superseded 2026-06-22; the Climate Location
+  page no longer owns a 2D sun-path visual.
 - **Attached-source charts** — this phase *is* that item, generalized (each
   attached source renders its own record, not just a browsed reference).
 - **Docs:** promote the `ClimateRecord` contract to a `context/` reference doc
@@ -135,18 +137,19 @@ Absorbed from the former `climate-tab-followups`:
 ## Tests
 
 - vitest/Playwright: sidebar card per type with correct status/CTA; clicking
-  shows the right page; Location page shows sun-path; Phius/PHI page shows
-  monthly viz + peak-load element; ASHRAE/EPW pages show source links; fail
-  page shows the CTA + candidates; viewer read-only (no address, no edit);
-  units follow the app SI/IP toggle.
+  shows the right page; Location page shows the site map/facts and Set
+  Location workflow; Phius/PHI page shows monthly viz + peak-load element;
+  ASHRAE/EPW pages show source links; fail page shows the CTA + candidates;
+  viewer read-only (no address, no edit); units follow the app SI/IP toggle.
 - `make ci` green + Playwright MCP visual pass (editor + viewer).
 
 ## Exit criteria
 
 The tab renders as nav-sidebar + per-type pages; an attached source shows its
 viz inline (PH = monthly + peak-load; ASHRAE/EPW = values + source link); the
-Location page carries the sun-path; the fail page surfaces the custom-set CTA;
-the old tab is replaced; gating + app-wide units hold; CI green.
+Location page carries map/facts and the Set Location workflow; the fail page
+surfaces the custom-set CTA; the old tab is replaced; gating + app-wide units
+hold; CI green.
 
 ## Open questions (phase-local)
 
@@ -174,6 +177,8 @@ the old tab is replaced; gating + app-wide units hold; CI green.
 ### Initial implementation (2026-06-21)
 
 - `cd frontend && pnpm exec vitest run src/features/climate/__tests__/ClimateRecordTable.test.tsx src/features/climate/__tests__/chart-data.test.ts src/features/climate/__tests__/ClimateSourcesSection.test.tsx src/features/climate/__tests__/ClimateTab.test.tsx src/features/climate/__tests__/sun-path.test.tsx` — 19 passed.
+  *(Historical 2026-06-21 gate; `sun-path.test.tsx` was removed on 2026-06-22
+  with the Climate-page sun-path panel.)*
 - `cd frontend && pnpm exec tsc --noEmit` — passed.
 - Playwright live smoke on project
   `3a7d86b5-60b5-4186-998b-d0388f19852f` — passed for Location, EPW, and mobile

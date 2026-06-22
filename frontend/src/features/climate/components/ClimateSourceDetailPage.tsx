@@ -1,8 +1,14 @@
-import { Trash2 } from "lucide-react";
+import { useRef, useState, type ChangeEvent } from "react";
+import { Check, Download, Trash2, Upload } from "lucide-react";
 import type { UnitSystem } from "../../../lib/units";
 import { formatTemperatureFromC } from "../../../lib/units/temperature";
+import { errorMessage } from "../../../shared/lib/errors";
 import { assetDownloadPath } from "../../assets/api";
+import { uploadAsset } from "../../assets/hooks";
+import { formatReadOnlyCoordinate } from "../../projects/location-form";
 import type { ProjectDetail } from "../../projects/types";
+import type { EpwParseResponse } from "../../projects/types";
+import { useProjectLocationForm } from "../../projects/useProjectLocationForm";
 import {
   useClimateLocationQuery,
   useDeleteClimateSourceMutation,
@@ -17,9 +23,31 @@ import {
   formatSi,
   isClimateRecord,
 } from "../lib";
-import type { ClimatePeakLoad, PhClimateKind, ProjectClimateSource } from "../types";
+import type { PhClimateKind, ProjectClimateSource } from "../types";
 import { ClimateStatusChip, ClimateTypeBadge } from "./ClimateAtoms";
+import { ClimateRecordCharts } from "./ClimateRecordCharts";
+import { ClimatePeakLoadsTable, MonthlyClimateTables } from "./ClimateRecordTable";
 import { ClimateRecordView } from "./ClimateRecordView";
+
+export function ProjectEpwToolsPage({ project }: { project: ProjectDetail }) {
+  return (
+    <div className="climate-detail-page">
+      <header className="climate-page-head">
+        <div>
+          <div className="climate-page-badges">
+            <ClimateTypeBadge kind="epw" />
+            <ClimateStatusChip tone="missing" label="Not set" />
+          </div>
+          <h3 className="climate-page-title">EPW weather file</h3>
+          <div className="climate-page-sub">
+            <span>Upload or link the project weather file.</span>
+          </div>
+        </div>
+      </header>
+      <ProjectEpwControls project={project} />
+    </div>
+  );
+}
 
 export function ClimateSourceDetailPage({
   project,
@@ -158,40 +186,38 @@ function PassiveHouseSourcePage({
   return (
     <div className="climate-detail-page">
       <SourceHeader project={project} source={source} onChangeDataset={onChangeDataset} />
+      {!datasetId || !locationId ? (
+        <p className="form-note">
+          This source is missing the dataset pointer needed to load values.
+        </p>
+      ) : null}
       {query.isLoading ? <p className="form-note">Loading climate record…</p> : null}
       {query.error ? <p className="form-error">Could not load climate record.</p> : null}
       {record ? (
         <>
-          <PeakLoads loads={record.climate.peak_loads} unitSystem={unitSystem} />
-          <ClimateRecordView record={record} unitSystem={unitSystem} />
+          <section className="climate-record-section" aria-labelledby="climate-monthly-title">
+            <div className="climate-record-section-head">
+              <h4 id="climate-monthly-title">Monthly data</h4>
+              <p className="form-note">
+                Monthly temperatures and facade radiation from the selected climate station.
+              </p>
+            </div>
+            <ClimateRecordCharts record={record} unitSystem={unitSystem} />
+            <MonthlyClimateTables record={record} unitSystem={unitSystem} />
+          </section>
+
+          <section className="climate-record-section" aria-labelledby="climate-peaks-title">
+            <div className="climate-record-section-head">
+              <h4 id="climate-peaks-title">Peak loads</h4>
+              <p className="form-note">
+                Design temperature and peak radiation values used by PHPP/Phius workflows.
+              </p>
+            </div>
+            <ClimatePeakLoadsTable peaks={record.climate.peak_loads} unitSystem={unitSystem} />
+          </section>
         </>
       ) : null}
     </div>
-  );
-}
-
-function PeakLoads({
-  loads,
-  unitSystem,
-}: {
-  loads: {
-    heat_load_1: ClimatePeakLoad;
-    heat_load_2: ClimatePeakLoad;
-    cooling_load_1: ClimatePeakLoad;
-    cooling_load_2: ClimatePeakLoad;
-  };
-  unitSystem: UnitSystem;
-}) {
-  return (
-    <section>
-      <p className="climate-subhead">Peak loads · design temperatures</p>
-      <div className="climate-metric-grid">
-        <Metric label="Heating 1" value={tempText(loads.heat_load_1.temp_c, unitSystem)} />
-        <Metric label="Heating 2" value={tempText(loads.heat_load_2.temp_c, unitSystem)} />
-        <Metric label="Cooling 1" value={tempText(loads.cooling_load_1.temp_c, unitSystem)} />
-        <Metric label="Cooling 2" value={tempText(loads.cooling_load_2.temp_c, unitSystem)} />
-      </div>
-    </section>
   );
 }
 
@@ -268,8 +294,151 @@ function EpwSourcePage({
           </a>
         ) : null}
       </div>
+      {project.access_mode === "editor" ? <ProjectEpwControls project={project} /> : null}
     </div>
   );
+}
+
+function ProjectEpwControls({ project }: { project: ProjectDetail }) {
+  const form = useProjectLocationForm(project.id);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [parsedEpw, setParsedEpw] = useState<EpwParseResponse | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const linkedAssetId = form.values.epwAssetId || form.location?.epw_asset_id;
+  const savedEpw = form.location?.epw;
+  const linkedFilename =
+    parsedEpw?.filename ?? (savedEpw && linkedAssetId === savedEpw.id ? savedEpw.filename : null);
+
+  const uploadEpw = async (files: FileList | null) => {
+    const file = files?.[0];
+    if (!file) return;
+    setUploadError(null);
+    setSaveError(null);
+    setIsUploading(true);
+    try {
+      const assetId = await uploadAsset(project.id, "epw", file);
+      setParsedEpw(await form.parseEpw(assetId));
+    } catch (error) {
+      setUploadError(errorMessage(error, "Could not upload or parse the EPW file."));
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const saveWeatherFile = async () => {
+    setSaveError(null);
+    try {
+      await form.save();
+    } catch (error) {
+      setSaveError(errorMessage(error, "Could not save the EPW weather file settings."));
+    }
+  };
+
+  return (
+    <section className="climate-epw-tools" aria-labelledby="climate-epw-tools-title">
+      <div>
+        <p id="climate-epw-tools-title" className="climate-subhead">
+          Weather file
+        </p>
+        <p className="form-note">
+          Temporary home for EPW upload and source tracking while the EPW page is refactored.
+        </p>
+      </div>
+      <label className="settings-location-wide">
+        <span>EPW source URL</span>
+        <input
+          value={form.values.epwSourceUrl}
+          maxLength={1000}
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+            form.updateField("epwSourceUrl", event.target.value)
+          }
+          placeholder="https://climate.onebuilding.org/..."
+        />
+      </label>
+      <div className="settings-location-epw">
+        <div className="settings-location-epw-row">
+          <input
+            ref={fileInputRef}
+            className="attachment-file-input"
+            type="file"
+            accept=".epw,text/plain,application/octet-stream"
+            onChange={(event) => void uploadEpw(event.target.files)}
+          />
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading || form.isParsingEpw}
+          >
+            <Upload size={16} aria-hidden="true" />
+            {isUploading || form.isParsingEpw ? "Uploading…" : "Upload EPW"}
+          </button>
+          {linkedAssetId ? (
+            <a className="secondary-button" href={assetDownloadPath(project.id, linkedAssetId)}>
+              <Download size={16} aria-hidden="true" />
+              Download EPW
+            </a>
+          ) : null}
+          {linkedFilename ? <span className="form-note">{linkedFilename}</span> : null}
+        </div>
+        {parsedEpw ? (
+          <div className="settings-location-epw-suggestion">
+            <span>{formatEpwSuggestion(parsedEpw)}</span>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => {
+                form.applyEpwSuggestion(parsedEpw);
+                setParsedEpw(null);
+              }}
+            >
+              <Check size={16} aria-hidden="true" />
+              Apply EPW values
+            </button>
+          </div>
+        ) : null}
+        {uploadError ? <p className="form-error">{uploadError}</p> : null}
+      </div>
+      {form.validationError ? <p className="form-error">{form.validationError}</p> : null}
+      {saveError ? (
+        <p className="form-error" role="alert">
+          {saveError}
+        </p>
+      ) : null}
+      {form.warnings.length > 0 ? (
+        <div className="draft-banner" role="status">
+          {form.warnings.map((warning) => (
+            <span key={warning}>{warning}</span>
+          ))}
+        </div>
+      ) : null}
+      <div className="climate-link-row">
+        <button
+          type="button"
+          className="primary-button"
+          onClick={() => void saveWeatherFile()}
+          disabled={!form.canSave || form.isSaving || Boolean(form.validationError)}
+        >
+          {form.isSaving ? "Saving…" : "Save EPW Settings"}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function formatEpwSuggestion(response: EpwParseResponse): string {
+  const suggestion = response.suggestion;
+  return [
+    suggestion.city,
+    suggestion.state,
+    formatReadOnlyCoordinate(suggestion.latitude),
+    formatReadOnlyCoordinate(suggestion.longitude),
+  ]
+    .filter((part) => part && part !== "None")
+    .join(" / ");
 }
 
 function FailPage({

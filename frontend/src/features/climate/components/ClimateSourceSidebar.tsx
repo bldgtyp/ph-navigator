@@ -14,7 +14,7 @@ import type { ClimateSourceKind, PhClimateKind, ProjectClimateSource } from "../
 import { ClimateStatusChip, ClimateTypeBadge, LocationPrivacyTag } from "./ClimateAtoms";
 import { ClimateMap } from "./ClimateMap";
 
-export type ClimateSelection = "location" | "add" | string;
+export type ClimateSelection = "location" | "add" | "epw-tools" | string;
 
 export function ClimateSourceSidebar({
   location,
@@ -56,9 +56,18 @@ export function ClimateSourceSidebar({
             onMissingSelect =
               (kind === "phius" || kind === "phi") && onOpenPicker
                 ? () => onOpenPicker(kind)
-                : () => onSelect("add");
+                : kind === "epw"
+                  ? () => onSelect("epw-tools")
+                  : () => onSelect("add");
           }
-          return <MissingSourceCard key={kind} kind={kind} onSelect={onMissingSelect} />;
+          return (
+            <MissingSourceCard
+              key={kind}
+              kind={kind}
+              active={kind === "epw" && selected === "epw-tools"}
+              onSelect={onMissingSelect}
+            />
+          );
         }
         return kindSources.map((source) => (
           <SourceCard
@@ -211,8 +220,23 @@ function SourceCard({
 // A canonical climate type with no attached source. Rendered so the four
 // required bases are always visible as a checklist; editors can click through
 // to the add/re-populate surface.
-function MissingSourceCard({ kind, onSelect }: { kind: ClimateSourceKind; onSelect?: () => void }) {
-  const className = "climate-nav-card climate-source-card climate-source-missing";
+function MissingSourceCard({
+  kind,
+  active = false,
+  onSelect,
+}: {
+  kind: ClimateSourceKind;
+  active?: boolean;
+  onSelect?: () => void;
+}) {
+  const className = [
+    "climate-nav-card",
+    "climate-source-card",
+    "climate-source-missing",
+    active && "active",
+  ]
+    .filter(Boolean)
+    .join(" ");
   const body = (
     <>
       <span className="climate-nav-top">

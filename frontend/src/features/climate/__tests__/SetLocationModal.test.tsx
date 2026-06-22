@@ -14,7 +14,6 @@ import { SetLocationModal } from "../components/SetLocationModal";
 
 const fetchMock = vi.fn();
 const LOCATION_URL = `/api/v1/projects/${PROJECT.id}/location`;
-const DERIVE_URL = `${LOCATION_URL}/derive`;
 const GEOCODE_URL = `${LOCATION_URL}/geocode`;
 
 function isMethod(init: unknown, method: string): boolean {
@@ -50,11 +49,13 @@ afterEach(() => {
 });
 
 describe("SetLocationModal", () => {
-  test("locate climate data runs the derive finder and closes", async () => {
+  test("save location persists edits and closes", async () => {
     vi.stubGlobal("fetch", fetchMock);
-    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
-      if (url === DERIVE_URL) return jsonResponse({ location: SET_LOCATION, warnings: [] });
+      if (url === LOCATION_URL && isMethod(init, "PUT")) {
+        return jsonResponse({ location: SET_LOCATION, warnings: [] });
+      }
       if (url === LOCATION_URL) return jsonResponse(SET_LOCATION);
       return jsonResponse({}, 404);
     });
@@ -63,11 +64,13 @@ describe("SetLocationModal", () => {
 
     // Coordinates load from the saved location (async load-sync effect).
     await waitFor(() => expect(screen.getByLabelText("Latitude")).toHaveValue("42.2876"));
-    await user.click(screen.getByRole("button", { name: /Locate Climate Data/ }));
+    await user.clear(screen.getByLabelText("Latitude"));
+    await user.type(screen.getByLabelText("Latitude"), "42.3");
+    await user.click(screen.getByRole("button", { name: /Save Location/ }));
 
     await waitFor(() =>
       expect(
-        fetchMock.mock.calls.some(([url, init]) => url === DERIVE_URL && isMethod(init, "POST")),
+        fetchMock.mock.calls.some(([url, init]) => url === LOCATION_URL && isMethod(init, "PUT")),
       ).toBe(true),
     );
     await waitFor(() => expect(onClose).toHaveBeenCalled());
@@ -99,15 +102,15 @@ describe("SetLocationModal", () => {
     const user = userEvent.setup();
     renderModal();
 
-    // No coordinates yet → the primary action is disabled.
-    expect(screen.getByRole("button", { name: /Locate Climate Data/ })).toBeDisabled();
+    // No coordinates yet → the save action is disabled.
+    expect(screen.getByRole("button", { name: /Save Location/ })).toBeDisabled();
     await user.type(await screen.findByLabelText("Site address"), "1 Main St");
     await user.click(screen.getByRole("button", { name: /Search/ }));
     await user.click(await screen.findByRole("button", { name: /1 MAIN ST, WEST STOCKBRIDGE/ }));
 
     expect(screen.getByLabelText("Latitude")).toHaveValue("42.325");
     expect(screen.getByLabelText("Longitude")).toHaveValue("-73.367");
-    expect(screen.getByRole("button", { name: /Locate Climate Data/ })).toBeEnabled();
+    expect(screen.getByRole("button", { name: /Save Location/ })).toBeEnabled();
   });
 
   test("cancel closes the modal without persisting", async () => {
@@ -125,13 +128,11 @@ describe("SetLocationModal", () => {
 
     expect(onClose).toHaveBeenCalled();
     expect(
-      fetchMock.mock.calls.some(
-        ([url, init]) => url === DERIVE_URL || (url === LOCATION_URL && isMethod(init, "PUT")),
-      ),
+      fetchMock.mock.calls.some(([url, init]) => url === LOCATION_URL && isMethod(init, "PUT")),
     ).toBe(false);
   });
 
-  test("blocks locate on an out-of-range coordinate", async () => {
+  test("blocks save on an out-of-range coordinate", async () => {
     vi.stubGlobal("fetch", fetchMock);
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
@@ -144,6 +145,6 @@ describe("SetLocationModal", () => {
     await user.type(await screen.findByLabelText("Latitude"), "91");
 
     expect(screen.getByText("Latitude must be between -90 and 90 degrees.")).toBeVisible();
-    expect(screen.getByRole("button", { name: /Locate Climate Data/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Save Location/ })).toBeDisabled();
   });
 });

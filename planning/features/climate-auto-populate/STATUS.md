@@ -23,15 +23,15 @@ county/state/elevation/climate-zone from coordinates. Phase 2 adds
 Phius/PHI nearest-source auto-attach on derive, haversine distance and
 elevation-delta source metadata, the Phius 50 mi / 400 ft hard gate, and the
 PHI representativeness advisory. Builds on the shipped climate store (archived
-Phases 1–3): app-wide Phius/PHI datasets, `project_climate_source`, sun-path,
-and the dataset browser all exist and are reused. Phase 3 adds nearest
+Phases 1–3): app-wide Phius/PHI datasets, `project_climate_source`, and the
+dataset browser all exist and are reused. Phase 3 adds nearest
 OneBuilding EPW catalog lookup/download, server-side EPW asset creation, `.stat`
 metrics/design-condition parsing, auto-attached `epw` and `ashrae` source data,
 and an on-demand single-station `ashrae-meteo` current-edition refresh route.
 Phase 4 replaces the Climate tab with a master-detail sidebar, per-source
 detail pages, attached-source PH charts/tables, ASHRAE/EPW metric pages,
 custom-record override entry, fail-page CTA/candidate rendering, app-wide
-SI/IP radiation conversion, and N/E/S/W sun-path labels on the Location page.
+SI/IP radiation conversion, and the read-first Location page.
 The P4 UI now fully implements wireframe B2 on the app design tokens (was an
 approximation): per-type colour badges, OK/Check/Fail LED status chips,
 inline CTAs, the Phius/PHI peak-load tiles, the fail-page "Certification
@@ -135,12 +135,12 @@ contains the address string.
 
 ## P4 verification (2026-06-21)
 
-- `cd frontend && pnpm exec vitest run src/features/climate/__tests__/ClimateRecordTable.test.tsx src/features/climate/__tests__/chart-data.test.ts src/features/climate/__tests__/ClimateSourcesSection.test.tsx src/features/climate/__tests__/ClimateTab.test.tsx src/features/climate/__tests__/sun-path.test.tsx` — 19 passed.
+- `cd frontend && pnpm exec vitest run src/features/climate/__tests__/ClimateRecordTable.test.tsx src/features/climate/__tests__/chart-data.test.ts src/features/climate/__tests__/ClimateSourcesSection.test.tsx src/features/climate/__tests__/ClimateTab.test.tsx src/features/climate/__tests__/sun-path.test.tsx` — 19 passed. *(Historical 2026-06-21 gate; the Climate-page sun-path test was removed on 2026-06-22.)*
 - `cd frontend && pnpm exec tsc --noEmit` — passed.
 - Playwright live smoke on `http://localhost:5173` + backend `8000` —
   passed. Smoke project `3a7d86b5-60b5-4186-998b-d0388f19852f`; derive
-  attached `phius`, `ashrae`, and `epw` rows; Location rendered the sun-path,
-  EPW rendered HDD/CDD + source/download links, and mobile ASHRAE rendered
+  attached `phius`, `ashrae`, and `epw` rows; Location rendered the site
+  context, EPW rendered HDD/CDD + source/download links, and mobile ASHRAE rendered
   design-condition tiles without header overlap. Dev DB still lacks a PHI
   seed, so the smoke emitted the expected PHI warning. Screenshots:
   `/tmp/phn-climate-p4-location.png`, `/tmp/phn-climate-p4-epw.png`,
@@ -161,7 +161,7 @@ wireframe B2 on the app design tokens; fixed the D-CL-21 `°C` hardcode.
   LED OK/Check/Fail chips + inline CTAs, dashed add affordance),
   `ClimateSourceDetailPage` (shared page-head with Set-default/Remove actions,
   Phius/PHI peak-load tiles, fail-page hero + candidate verdict table), and
-  the `ClimateTab` Location page (read-first facts + map + sun-path, Edit ▸
+  the `ClimateTab` Location page (read-first facts + map, Edit ▸
   reveal). New atoms in `components/ClimateAtoms.tsx`. Badge tints are
   token-derived (`--accent`/`--chart-*`); no new hex.
 - `cd frontend && pnpm exec vitest run src/features/climate` — 34 passed;
@@ -170,3 +170,37 @@ wireframe B2 on the app design tokens; fixed the D-CL-21 `°C` hardcode.
   render B2 structure; SI↔IP toggle flips every temp tile + elevation pill.
 - `simplify` skill applied (className/elevation/privacy/subItems cleanups).
 - Final `make format` + `make ci` are the closing gate (in progress).
+
+## Location sun-path removal (2026-06-22)
+
+- Removed the entire `climate-sunpath-panel` from the Climate Location page.
+  The page now owns the site map, read-first derived facts, and Set Location
+  modal; sun visualization remains in the Model tab.
+- Removed the Climate-only frontend sun-path component/helpers/tests and the
+  backend project-location `/sun-path` route/service/MCP tool that served that
+  panel.
+- Focused verification passed: `cd frontend && pnpm exec vitest run src/features/climate/__tests__/ClimateTab.test.tsx`,
+  `cd frontend && pnpm run build`, `cd backend && uv run pytest tests/test_project_location.py tests/test_mcp.py`,
+  `make format`, `git diff --check`, and live browser verification on
+  `http://localhost:5173`.
+- Full `make ci` intentionally deferred until session close per Ed.
+
+## Set Location modal scope split (2026-06-22)
+
+- Simplified the Set Location modal to address search, pin-drop coordinates,
+  elevation, time zone, true-north, and Save Location only.
+- Moved `Locate Climate Data` to the main Location page so derive/repopulate
+  operates on the saved project location instead of being bundled into the
+  editor modal.
+- Moved the EPW source URL, EPW upload, EPW download, and parsed-header apply
+  controls onto the EPW page placeholder/detail surface. Backend EPW routes are
+  unchanged.
+
+## Phius/PHI source detail content (2026-06-22)
+
+- Reworked the PH dataset detail page from the old table/chart toggle into two
+  always-visible sections: Monthly data and Peak loads.
+- Monthly data now shows both line charts (temperature, radiation) and exact
+  monthly value tables. Peak loads now render as a table only.
+- Added a focused ClimateTab regression for the attached Phius detail path so
+  the page cannot silently render blank again.

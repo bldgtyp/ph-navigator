@@ -6,6 +6,7 @@
 
 .climate-map {
   position: relative;
+  isolation: isolate;
   overflow: hidden; /* clip the Leaflet tile grid to the (rounded) frame */
 }
 

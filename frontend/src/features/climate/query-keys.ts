@@ -14,6 +14,4 @@ export const climateQueryKeys = {
   // Project-scoped climate sources (keyed by projectId, unlike the
   // app-wide reference-dataset keys above).
   sources: (projectId: string) => [...climateQueryKeys.all, "sources", projectId] as const,
-  // Project sun-path diagram (Phase 1 endpoint; rendered in Phase 3c).
-  sunPath: (projectId: string) => [...climateQueryKeys.all, "sun-path", projectId] as const,
 };
