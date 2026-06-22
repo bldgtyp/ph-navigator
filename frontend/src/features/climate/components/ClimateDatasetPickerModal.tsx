@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
+import { AutocompleteSelect } from "../../../shared/ui/AutocompleteSelect";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { useProjectLocationQuery } from "../../projects/hooks";
 import {
@@ -22,6 +23,10 @@ import "../climate-picker.css";
 // Select sentinel for the any-state nearest mode (O-DP-3); distinct from a
 // 2-letter state code.
 const ANY_STATE = "__any__";
+const STATE_OPTIONS = [
+  { value: ANY_STATE, label: "Nearest to project (any state)" },
+  ...US_STATES.map((state) => ({ value: state.code, label: state.name })),
+];
 
 // The 50 mi proximity gate (D-CL-17), drawn on the live basemap as a reference
 // ring. 50 mi = 80,467 m; both PH kinds reference the same distance.
@@ -113,24 +118,27 @@ export function ClimateDatasetPickerModal({
           </div>
         </div>
       ) : (
-        <>
-          {roster?.dataset ? (
-            <p className="modal-subtitle">
-              {datasetLabel(roster.dataset.label, roster.dataset.provider, roster.dataset.version)}
-              {roster.total > 0 ? ` · ${roster.total} stations` : ""}
-            </p>
-          ) : null}
-          <label className="climate-picker-filter">
-            <span>State</span>
-            <select value={selectValue} onChange={(event) => changeRegion(event.target.value)}>
-              <option value={ANY_STATE}>Nearest to project (any state)</option>
-              {US_STATES.map((state) => (
-                <option key={state.code} value={state.code}>
-                  {state.name}
-                </option>
-              ))}
-            </select>
-          </label>
+        <div className="climate-picker-content">
+          <div className="climate-picker-toolbar">
+            {roster?.dataset ? (
+              <p className="modal-subtitle">
+                {datasetLabel(
+                  roster.dataset.label,
+                  roster.dataset.provider,
+                  roster.dataset.version,
+                )}
+                {roster.total > 0 ? ` · ${roster.total} stations` : ""}
+              </p>
+            ) : null}
+            <AutocompleteSelect
+              className="climate-picker-filter"
+              label="State"
+              value={selectValue}
+              options={STATE_OPTIONS}
+              emptyMessage="No states match"
+              onChange={changeRegion}
+            />
+          </div>
 
           <PickerBody
             isLoading={rosterQuery.isLoading}
@@ -158,7 +166,7 @@ export function ClimateDatasetPickerModal({
               {errorMessage(create.error, "Could not attach the dataset.")}
             </p>
           ) : null}
-        </>
+        </div>
       )}
     </ModalDialog>
   );

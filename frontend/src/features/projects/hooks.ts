@@ -160,6 +160,7 @@ export function useDeriveProjectLocationMutation(projectId: string) {
       deriveProjectLocation(projectId, payload),
     onSuccess: (response) => {
       queryClient.setQueryData(projectQueryKeys.location(projectId), response.location);
+      queryClient.invalidateQueries({ queryKey: climateQueryKeys.sources(projectId) });
     },
   });
 }

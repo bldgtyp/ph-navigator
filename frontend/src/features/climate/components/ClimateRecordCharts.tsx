@@ -30,22 +30,48 @@ export function ClimateRecordCharts({
   record: ClimateRecord;
   unitSystem: UnitSystem;
 }) {
-  const tempUnit = `°${unitSystem === "IP" ? "F" : "C"}`;
   return (
     <div className="climate-charts">
-      <MonthlyLineChart
-        caption="Monthly temperatures"
-        unitNote={tempUnit}
-        rows={buildMonthlyTemperatureRows(record, unitSystem)}
-        series={TEMPERATURE_SERIES}
-      />
-      <MonthlyLineChart
-        caption="Monthly radiation"
-        unitNote={unitSystem === "IP" ? "kBtu/ft²·mo" : "kWh/m²"}
-        rows={buildMonthlyRadiationRows(record, unitSystem)}
-        series={RADIATION_SERIES}
-      />
+      <MonthlyTemperatureChart record={record} unitSystem={unitSystem} />
+      <MonthlyRadiationChart record={record} unitSystem={unitSystem} />
     </div>
+  );
+}
+
+export function MonthlyTemperatureChart({
+  record,
+  unitSystem,
+}: {
+  record: ClimateRecord;
+  unitSystem: UnitSystem;
+}) {
+  const tempUnit = `°${unitSystem === "IP" ? "F" : "C"}`;
+  return (
+    <MonthlyLineChart
+      caption="Monthly temperatures"
+      unitNote={tempUnit}
+      rows={buildMonthlyTemperatureRows(record, unitSystem)}
+      series={TEMPERATURE_SERIES}
+      tooltipFractionDigits={1}
+    />
+  );
+}
+
+export function MonthlyRadiationChart({
+  record,
+  unitSystem,
+}: {
+  record: ClimateRecord;
+  unitSystem: UnitSystem;
+}) {
+  return (
+    <MonthlyLineChart
+      caption="Monthly radiation"
+      unitNote={unitSystem === "IP" ? "kBtu/ft²·mo" : "kWh/m²"}
+      rows={buildMonthlyRadiationRows(record, unitSystem)}
+      series={RADIATION_SERIES}
+      tooltipFractionDigits={unitSystem === "IP" ? 1 : 0}
+    />
   );
 }
 
@@ -54,11 +80,13 @@ function MonthlyLineChart({
   unitNote,
   rows,
   series,
+  tooltipFractionDigits,
 }: {
   caption: string;
   unitNote: string;
   rows: MonthlyChartRow[];
   series: ChartSeries[];
+  tooltipFractionDigits: number;
 }) {
   return (
     <figure className="climate-chart">
@@ -72,6 +100,7 @@ function MonthlyLineChart({
             <XAxis dataKey="month" stroke="var(--chart-axis)" fontSize={12} tickMargin={6} />
             <YAxis stroke="var(--chart-axis)" fontSize={12} width={44} />
             <Tooltip
+              formatter={(value) => formatTooltipValue(value, tooltipFractionDigits)}
               contentStyle={{
                 background: "var(--bg-card)",
                 border: "1px solid var(--chart-grid)",
@@ -97,4 +126,10 @@ function MonthlyLineChart({
       </div>
     </figure>
   );
+}
+
+function formatTooltipValue(value: unknown, fractionDigits: number) {
+  if (typeof value === "number" && Number.isFinite(value)) return value.toFixed(fractionDigits);
+  if (typeof value === "string") return value;
+  return "—";
 }

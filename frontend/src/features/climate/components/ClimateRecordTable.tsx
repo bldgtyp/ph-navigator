@@ -45,35 +45,58 @@ export function MonthlyClimateTables({
   record: ClimateRecord;
   unitSystem: UnitSystem;
 }) {
+  return (
+    <>
+      <MonthlyTemperatureTable record={record} unitSystem={unitSystem} />
+      <MonthlyRadiationTable record={record} unitSystem={unitSystem} />
+    </>
+  );
+}
+
+export function MonthlyTemperatureTable({
+  record,
+  unitSystem,
+}: {
+  record: ClimateRecord;
+  unitSystem: UnitSystem;
+}) {
   const { climate } = record;
   const temp = (value: number) => formatTemperatureFromC(value, { unitSystem, showUnit: false });
+  return (
+    <MonthlyTable
+      caption="Monthly temperatures"
+      unitNote={`°${unitSystem === "IP" ? "F" : "C"}`}
+      rows={[
+        { label: "Air", values: climate.monthly_temps.air_c, format: temp },
+        { label: "Dewpoint", values: climate.monthly_temps.dewpoint_c, format: temp },
+        { label: "Sky", values: climate.monthly_temps.sky_c, format: temp },
+      ]}
+    />
+  );
+}
+
+export function MonthlyRadiationTable({
+  record,
+  unitSystem,
+}: {
+  record: ClimateRecord;
+  unitSystem: UnitSystem;
+}) {
+  const { climate } = record;
   const monthlyRadiation = (value: number) =>
     formatSi(unitSystem === "IP" ? value * KWH_M2_TO_KBTU_FT2 : value, unitSystem === "IP" ? 1 : 0);
   return (
-    <>
-      <MonthlyTable
-        caption="Monthly temperatures"
-        unitNote={`°${unitSystem === "IP" ? "F" : "C"}`}
-        rows={[
-          { label: "Air", values: climate.monthly_temps.air_c, format: temp },
-          { label: "Dewpoint", values: climate.monthly_temps.dewpoint_c, format: temp },
-          { label: "Sky", values: climate.monthly_temps.sky_c, format: temp },
-          { label: "Ground", values: climate.monthly_temps.ground_c, format: temp },
-        ]}
-      />
-
-      <MonthlyTable
-        caption="Monthly radiation"
-        unitNote={unitSystem === "IP" ? "kBtu/ft²·mo" : "kWh/m²"}
-        rows={[
-          { label: "North", values: climate.monthly_radiation.north, format: monthlyRadiation },
-          { label: "East", values: climate.monthly_radiation.east, format: monthlyRadiation },
-          { label: "South", values: climate.monthly_radiation.south, format: monthlyRadiation },
-          { label: "West", values: climate.monthly_radiation.west, format: monthlyRadiation },
-          { label: "Global", values: climate.monthly_radiation.glob, format: monthlyRadiation },
-        ]}
-      />
-    </>
+    <MonthlyTable
+      caption="Monthly radiation"
+      unitNote={unitSystem === "IP" ? "kBtu/ft²·mo" : "kWh/m²"}
+      rows={[
+        { label: "North", values: climate.monthly_radiation.north, format: monthlyRadiation },
+        { label: "East", values: climate.monthly_radiation.east, format: monthlyRadiation },
+        { label: "South", values: climate.monthly_radiation.south, format: monthlyRadiation },
+        { label: "West", values: climate.monthly_radiation.west, format: monthlyRadiation },
+        { label: "Global", values: climate.monthly_radiation.glob, format: monthlyRadiation },
+      ]}
+    />
   );
 }
 

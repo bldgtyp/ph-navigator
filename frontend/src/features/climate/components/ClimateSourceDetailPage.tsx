@@ -22,8 +22,12 @@ import {
 } from "../lib";
 import type { PhClimateKind, ProjectClimateSource } from "../types";
 import { ClimateStatusChip, ClimateTypeBadge } from "./ClimateAtoms";
-import { ClimateRecordCharts } from "./ClimateRecordCharts";
-import { ClimatePeakLoadsTable, MonthlyClimateTables } from "./ClimateRecordTable";
+import { MonthlyRadiationChart, MonthlyTemperatureChart } from "./ClimateRecordCharts";
+import {
+  ClimatePeakLoadsTable,
+  MonthlyRadiationTable,
+  MonthlyTemperatureTable,
+} from "./ClimateRecordTable";
 import { ClimateRecordView } from "./ClimateRecordView";
 
 export function ProjectEpwToolsPage({ project }: { project: ProjectDetail }) {
@@ -57,15 +61,6 @@ export function ClimateSourceDetailPage({
   unitSystem: UnitSystem;
   onOpenPicker?: (kind: PhClimateKind) => void;
 }) {
-  if (source.kind === "phius" && climateSourceProximityStatus(source) === "fail") {
-    return (
-      <FailPage
-        project={project}
-        source={source}
-        onChangeDataset={onOpenPicker ? () => onOpenPicker("phius") : undefined}
-      />
-    );
-  }
   if (source.kind === "phius" || source.kind === "phi") {
     const kind = source.kind;
     return (
@@ -187,6 +182,9 @@ function PassiveHouseSourcePage({
           This source is missing the dataset pointer needed to load values.
         </p>
       ) : null}
+      {source.kind === "phius" && climateSourceProximityStatus(source) === "fail" ? (
+        <PhiusLimitWarning source={source} />
+      ) : null}
       {query.isLoading ? <p className="form-note">Loading climate record…</p> : null}
       {query.error ? <p className="form-error">Could not load climate record.</p> : null}
       {record ? (
@@ -198,8 +196,10 @@ function PassiveHouseSourcePage({
                 Monthly temperatures and facade radiation from the selected climate station.
               </p>
             </div>
-            <ClimateRecordCharts record={record} unitSystem={unitSystem} />
-            <MonthlyClimateTables record={record} unitSystem={unitSystem} />
+            <MonthlyTemperatureChart record={record} unitSystem={unitSystem} />
+            <MonthlyTemperatureTable record={record} unitSystem={unitSystem} />
+            <MonthlyRadiationChart record={record} unitSystem={unitSystem} />
+            <MonthlyRadiationTable record={record} unitSystem={unitSystem} />
           </section>
 
           <section className="climate-record-section" aria-labelledby="climate-peaks-title">
@@ -213,6 +213,30 @@ function PassiveHouseSourcePage({
           </section>
         </>
       ) : null}
+    </div>
+  );
+}
+
+function PhiusLimitWarning({ source }: { source: ProjectClimateSource }) {
+  const proximity = proximityRecord(source);
+  return (
+    <div className="climate-fail-hero" role="status">
+      <ClimateStatusChip tone="fail" label="Phius limit warning" />
+      <h4>This climate dataset is outside the Phius distance/elevation limits.</h4>
+      <p>
+        {stringValue(proximity?.message) ??
+          "The selected Phius station is outside the 50 mi / 400 ft limit. A custom climate " +
+            "set may be required for certification."}
+      </p>
+      <p>
+        You can keep using this dataset if the project has a justified exception. Document the
+        rationale before certification submission.
+      </p>
+      <div className="climate-fail-actions">
+        <a className="secondary-button climate-custom-set-link" href="https://www.phius.org/climate-data">
+          Request custom set · $75
+        </a>
+      </div>
     </div>
   );
 }
@@ -524,75 +548,6 @@ function formatEpwSuggestion(response: EpwParseResponse): string {
     .join(" / ");
 }
 
-function FailPage({
-  project,
-  source,
-  onChangeDataset,
-}: {
-  project: ProjectDetail;
-  source: ProjectClimateSource;
-  onChangeDataset?: () => void;
-}) {
-  const candidates = candidateRows(source.data?.nearest_candidates);
-  return (
-    <div className="climate-detail-page">
-      <SourceHeader
-        project={project}
-        source={source}
-        title="No qualifying Phius dataset"
-        subItems={["rule: ≤ 50 mi AND ≤ 400 ft", climateSourceProximity(source)]}
-        onChangeDataset={onChangeDataset}
-      />
-      <div className="climate-fail-hero">
-        <ClimateStatusChip tone="fail" label="Certification blocker" />
-        <h4>A custom Phius climate set is required.</h4>
-        <p>
-          {stringValue(source.data?.message) ??
-            "The nearest Phius station is outside the 50 mi / 400 ft limit. Phius does not " +
-              "interpolate, so a custom climate data set must be requested, or the basis changed."}
-        </p>
-        <div className="climate-fail-actions">
-          <a className="primary-button" href="https://www.phius.org/climate-data">
-            Request custom set · $75
-          </a>
-          {onChangeDataset ? (
-            <button type="button" className="secondary-button" onClick={onChangeDataset}>
-              Browse datasets to override
-            </button>
-          ) : null}
-        </div>
-      </div>
-      {candidates.length > 0 ? (
-        <table className="climate-table">
-          <caption>Why — nearest candidates</caption>
-          <thead>
-            <tr>
-              <th scope="col">Station</th>
-              <th scope="col">Distance</th>
-              <th scope="col">Δ elevation</th>
-              <th scope="col">Verdict</th>
-            </tr>
-          </thead>
-          <tbody>
-            {candidates.map((candidate) => (
-              <tr key={candidate.name}>
-                <th scope="row">{candidate.name}</th>
-                <td>{candidate.distance}</td>
-                <td>{candidate.elevation}</td>
-                <td>{candidate.status}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : null}
-      <p className="climate-section-note">
-        Prescriptive-path note: outside the limits, custom data is not allowed — performance path
-        only.
-      </p>
-    </div>
-  );
-}
-
 function CustomSourcePage({
   project,
   source,
@@ -652,27 +607,4 @@ function tempText(value: unknown, unitSystem: UnitSystem): string {
   return typeof value === "number" && Number.isFinite(value)
     ? formatTemperatureFromC(value, { unitSystem })
     : "—";
-}
-
-function candidateRows(value: unknown): {
-  name: string;
-  distance: string;
-  elevation: string;
-  status: string;
-}[] {
-  return Array.isArray(value)
-    ? value.flatMap((item) => {
-        const record = recordValue(item);
-        const name = stringValue(record?.name) ?? stringValue(record?.label);
-        if (!record || !name) return [];
-        return [
-          {
-            name,
-            distance: numberText(record.distance_mi, 1),
-            elevation: numberText(record.elevation_delta_ft, 0),
-            status: stringValue(record.status) ?? "check",
-          },
-        ];
-      })
-    : [];
 }

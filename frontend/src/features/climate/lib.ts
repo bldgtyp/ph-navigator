@@ -70,7 +70,7 @@ export function climateSourceSubtitle(source: ProjectClimateSource): string {
 }
 
 export function climateSourceProximity(source: ProjectClimateSource): string | null {
-  const data = source.data;
+  const data = climateSourceProximityData(source);
   if (!data || (source.kind !== "phius" && source.kind !== "phi")) return null;
   const distanceMi = numberValue(data.distance_mi);
   const elevationDeltaFt = numberValue(data.elevation_delta_ft);
@@ -86,9 +86,18 @@ export function climateSourceProximity(source: ProjectClimateSource): string | n
 export function climateSourceProximityStatus(
   source: ProjectClimateSource,
 ): "pass" | "warning" | "fail" | null {
-  const status = stringValue(source.data?.status);
+  const status = stringValue(climateSourceProximityData(source)?.status);
   if (status === "pass" || status === "warning" || status === "fail") return status;
   return null;
+}
+
+function climateSourceProximityData(source: ProjectClimateSource): Record<string, unknown> | null {
+  const data = source.data;
+  if (!data || typeof data !== "object" || Array.isArray(data)) return null;
+  const proximity = data.proximity;
+  return proximity && typeof proximity === "object" && !Array.isArray(proximity)
+    ? (proximity as Record<string, unknown>)
+    : data;
 }
 
 export type ClimateStatusTone = "pass" | "warning" | "fail" | "missing";
