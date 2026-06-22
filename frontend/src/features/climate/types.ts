@@ -196,3 +196,8 @@ export type CreateClimateSourceRequest = {
   label?: string | null;
   data?: Record<string, unknown> | null;
 };
+
+// The per-page "set from nearest" actions. `weather` attaches EPW + ASHRAE
+// together (ASHRAE rides the EPW's .stat companion). Mirrors the backend
+// `ClimateSourceDeriveKind` route enum.
+export type ClimateSourceDeriveKind = "phius" | "phi" | "weather";

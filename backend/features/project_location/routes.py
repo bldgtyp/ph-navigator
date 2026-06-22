@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from enum import StrEnum
 from typing import Annotated
 from uuid import UUID
 
@@ -9,7 +10,6 @@ from fastapi import APIRouter, Depends, Request
 
 from features.assets.routes import AssetServiceDep
 from features.project_location.models import (
-    DeriveProjectLocationRequest,
     ElevationLookupRequest,
     ElevationLookupResponse,
     EpwParseResponse,
@@ -20,7 +20,8 @@ from features.project_location.models import (
     UpdateProjectLocationRequest,
 )
 from features.project_location.service import (
-    derive_project_location,
+    derive_certification_source,
+    derive_weather_source,
     geocode_project_location,
     get_project_location,
     lookup_site_elevation,
@@ -33,6 +34,15 @@ from features.projects.access import (
     require_project_edit_access,
     require_project_view_access,
 )
+
+
+class ClimateSourceDeriveKind(StrEnum):
+    """Per-type "set from nearest" actions. ``weather`` covers EPW + ASHRAE."""
+
+    phius = "phius"
+    phi = "phi"
+    weather = "weather"
+
 
 router = APIRouter(prefix="/api/v1/projects", tags=["project-location"])
 
@@ -56,16 +66,22 @@ def put_location(
     return update_project_location(project_id, payload, user, request)
 
 
-@router.post("/{project_id}/location/derive", response_model=ProjectLocationUpdateResponse)
-def derive_location(
+@router.post("/{project_id}/location/derive/{kind}", response_model=ProjectLocationUpdateResponse)
+def derive_climate_source(
     project_id: UUID,
-    payload: DeriveProjectLocationRequest,
+    kind: ClimateSourceDeriveKind,
     request: Request,
     access: ProjectEditAccess,
     asset_service: AssetServiceDep,
 ) -> ProjectLocationUpdateResponse:
+    """Attach one climate type from the nearest source for the saved site.
+
+    Each Climate page owns its own action: Phius, PHI, and Weather (EPW + ASHRAE).
+    """
     user = require_editor_user(access)
-    return derive_project_location(project_id, payload, user, request, asset_service)
+    if kind is ClimateSourceDeriveKind.weather:
+        return derive_weather_source(project_id, user, request, asset_service)
+    return derive_certification_source(project_id, kind.value, user, request)
 
 
 @router.post("/{project_id}/location/geocode", response_model=GeocodeProjectLocationResponse)

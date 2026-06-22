@@ -59,7 +59,7 @@
   gap: var(--space-4);
   width: 100%;
   padding: var(--space-10) var(--space-12);
-  border: 1px solid var(--border-card);
+  border: 2px solid var(--border-card);
   border-radius: var(--phn-radius);
   background: var(--bg-card);
   color: var(--text-primary);
@@ -72,7 +72,6 @@
 }
 
 .climate-nav-card.active {
-  border-width: 2px;
   border-color: var(--accent);
   background: color-mix(in oklab, var(--accent) 7%, var(--bg-card));
 }
@@ -169,7 +168,6 @@
 
 /* --- Source nav cards --- */
 .climate-source-card {
-  border: 1px solid var(--border-card);
   gap: var(--space-6);
 }
 
@@ -446,34 +444,32 @@
   padding-inline: var(--space-16);
 }
 
-.climate-location-derive,
 .climate-epw-tools {
   display: flex;
+  flex-direction: column;
   gap: var(--space-14);
   align-items: flex-start;
-  justify-content: space-between;
   padding: var(--space-14);
   border: 1px solid var(--border-subtle);
   border-radius: var(--phn-radius);
   background: var(--bg-card);
 }
 
-.climate-location-derive > div,
 .climate-epw-tools > div:first-child {
   min-width: 0;
 }
 
-.climate-location-derive .climate-subhead,
 .climate-epw-tools .climate-subhead {
   margin-top: 0;
 }
 
-.climate-location-derive .primary-button {
-  flex-shrink: 0;
-}
-
-.climate-epw-tools {
+/* "Set from nearest" action shown on each climate type's page (attached or
+   empty): the action button stacked over its hint / derive warnings. */
+.climate-derive-action {
+  display: flex;
   flex-direction: column;
+  gap: var(--space-8);
+  align-items: flex-start;
 }
 
 /* Derived-fact grid on the location page */
@@ -626,10 +622,6 @@
   .climate-limit-check th,
   .climate-limit-check td {
     padding-right: var(--space-10);
-  }
-
-  .climate-location-derive {
-    flex-direction: column;
   }
 
   .climate-facts {

@@ -1,11 +1,8 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useUnitPreference, type UnitSystem } from "../../lib/units";
 import { parseNumberInput } from "../../lib/units/format";
-import { climateQueryKeys } from "../climate/query-keys";
 import {
   useParseProjectLocationEpwMutation,
-  useDeriveProjectLocationMutation,
   useGeocodeProjectLocationMutation,
   useLookupElevationMutation,
   useProjectLocationQuery,
@@ -14,7 +11,6 @@ import {
 import {
   applyGeocodeCandidateToLocationValues,
   applyEpwSuggestionToLocationValues,
-  buildProjectLocationDerivePayload,
   buildProjectLocationPayload,
   elevationCoordsKey,
   elevationInputFromMeters,
@@ -43,7 +39,6 @@ export type ProjectLocationFormController = {
   isSaving: boolean;
   canSave: boolean;
   saveError: Error | null;
-  isDeriving: boolean;
   isGeocoding: boolean;
   isParsingEpw: boolean;
   // True while a coordinate-driven elevation lookup is in flight.
@@ -59,7 +54,6 @@ export type ProjectLocationFormController = {
   applyEpwSuggestion: (response: EpwParseResponse) => void;
   applyGeocodeCandidate: (candidate: GeocodeProjectLocationResponse["candidates"][number]) => void;
   geocodeAddress: (query: string) => Promise<GeocodeProjectLocationResponse>;
-  deriveLocation: () => Promise<void>;
   parseEpw: (assetId: string) => Promise<EpwParseResponse>;
   // Re-enable elevation auto-fill after a manual override and re-pull for the current coordinates.
   resetElevationToAuto: () => void;
@@ -72,7 +66,6 @@ export type ProjectLocationFormController = {
 // modal so the Climate tab can host the editor (D-CL-3) while settings keeps
 // only a read-only summary.
 export function useProjectLocationForm(projectId: string): ProjectLocationFormController {
-  const queryClient = useQueryClient();
   const { unitSystem } = useUnitPreference();
   const previousUnitSystem = useRef<UnitSystem>(unitSystem);
   const loadedLocation = useRef<ProjectLocation | undefined>(undefined);
@@ -95,7 +88,6 @@ export function useProjectLocationForm(projectId: string): ProjectLocationFormCo
 
   const locationQuery = useProjectLocationQuery(projectId);
   const updateMutation = useUpdateProjectLocationMutation(projectId);
-  const deriveMutation = useDeriveProjectLocationMutation(projectId);
   const geocodeMutation = useGeocodeProjectLocationMutation(projectId);
   const parseEpwMutation = useParseProjectLocationEpwMutation(projectId);
   const elevationMutation = useLookupElevationMutation(projectId);
@@ -252,18 +244,6 @@ export function useProjectLocationForm(projectId: string): ProjectLocationFormCo
     resetElevationStatus();
   };
 
-  const deriveLocation = async (): Promise<void> => {
-    const derivePayload = buildProjectLocationDerivePayload(values);
-    if (!derivePayload.ok) throw new Error(derivePayload.error);
-    const response = await deriveMutation.mutateAsync(derivePayload.payload);
-    adoptServerLocation(response.location);
-    setWarnings(response.warnings);
-    await queryClient.refetchQueries({
-      queryKey: climateQueryKeys.sources(projectId),
-      type: "active",
-    });
-  };
-
   const save = async (): Promise<void> => {
     if (!canSave) return;
     const response = await updateMutation.mutateAsync(payload);
@@ -283,7 +263,6 @@ export function useProjectLocationForm(projectId: string): ProjectLocationFormCo
     isSaving,
     canSave,
     saveError: updateMutation.isError ? updateMutation.error : null,
-    isDeriving: deriveMutation.isPending,
     isGeocoding: geocodeMutation.isPending,
     isParsingEpw: parseEpwMutation.isPending,
     isLookingUpElevation: elevationMutation.isPending,
@@ -294,7 +273,6 @@ export function useProjectLocationForm(projectId: string): ProjectLocationFormCo
     applyEpwSuggestion,
     applyGeocodeCandidate,
     geocodeAddress: (query) => geocodeMutation.mutateAsync(query),
-    deriveLocation,
     parseEpw: (assetId) => parseEpwMutation.mutateAsync(assetId),
     resetElevationToAuto,
     save,

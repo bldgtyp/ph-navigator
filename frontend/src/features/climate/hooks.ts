@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import { projectQueryKeys } from "../projects/query-keys";
 import {
   createClimateSource,
   deleteClimateSource,
+  deriveClimateSource,
   fetchClimateDatasetRoster,
   fetchClimateDatasets,
   fetchClimateLocation,
@@ -12,6 +14,7 @@ import { climateQueryKeys } from "./query-keys";
 import type {
   ClimateLocationSearch,
   ClimateRosterSearch,
+  ClimateSourceDeriveKind,
   CreateClimateSourceRequest,
   PhClimateKind,
   ProjectClimateSource,
@@ -111,5 +114,19 @@ export function useDeleteClimateSourceMutation(projectId: string) {
   return useMutation({
     mutationFn: (sourceId: string) => deleteClimateSource(projectId, sourceId),
     onSuccess: () => invalidateClimateSourceQueries(queryClient, projectId),
+  });
+}
+
+// "Set from nearest" for one climate type. The server attaches the source(s)
+// off the saved coordinates and returns the (possibly updated) location, so we
+// refresh both the location cache and the source roster.
+export function useDeriveClimateSourceMutation(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (kind: ClimateSourceDeriveKind) => deriveClimateSource(projectId, kind),
+    onSuccess: (response) => {
+      queryClient.setQueryData(projectQueryKeys.location(projectId), response.location);
+      return invalidateClimateSourceQueries(queryClient, projectId);
+    },
   });
 }

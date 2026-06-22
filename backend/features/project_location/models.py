@@ -168,17 +168,6 @@ class RequiredCoordinatesRequest(BaseModel):
         return validated
 
 
-class DeriveProjectLocationRequest(RequiredCoordinatesRequest):
-    """Coordinates to use for server-side location geodata derivation."""
-
-    site_address: str | None = Field(default=None, max_length=500)
-
-    @field_validator("site_address", mode="before")
-    @classmethod
-    def strip_blank_address(cls, value: object) -> object:
-        return strip_blank_string(value)
-
-
 class ElevationLookupRequest(RequiredCoordinatesRequest):
     """Coordinates for a stateless site-elevation lookup (no persistence)."""
 

@@ -245,7 +245,8 @@ writes and derive actions are editor-only.
 GET  /api/v1/projects/{pid}/location
 PUT  /api/v1/projects/{pid}/location
 POST /api/v1/projects/{pid}/location/geocode
-POST /api/v1/projects/{pid}/location/derive
+POST /api/v1/projects/{pid}/location/elevation
+POST /api/v1/projects/{pid}/location/derive/{kind}   # kind: phius | phi | weather
 POST /api/v1/projects/{pid}/climate/sources/ashrae/current
 ```
 
@@ -258,37 +259,46 @@ same route returns `site_address: null` while preserving public fields such as
 `PUT /location` accepts only editable fields: coordinates, elevation, time
 zone, true north, site address, city/state, and EPW fields. Server-derived
 fields (`county`, `county_fips`, `country`, `climate_zone`,
-`geodata_provenance`) are excluded from the generic edit payload. If raw
-coordinates change through this route, derived geodata is cleared so stale
-county/climate-zone data is not retained.
+`geodata_provenance`) are not accepted from the client. Setting the location is
+the single front door for geodata: when raw coordinates change through this
+route, the server re-derives county/state/FIPS (FCC Area API → Census),
+elevation (USGS EPQS → Open-Meteo), and `climate_zone` (bundled PNNL 2021 IECC
+county table), and persists them with per-field provenance. A client-supplied
+`state` or `elevation_m` in the same write is preserved; clearing the
+coordinates clears the derived geodata. The heavy external lookups run before
+the write transaction is opened.
 
 `POST /location/geocode` is an editor-only backend proxy for address search.
 It uses `MAPTILER_API_KEY` when configured and returns candidate coordinates
 plus normalized address pieces; without a configured key it returns
 `503 geocoder_not_configured`.
 
-`POST /location/derive` is editor-only. It derives county/state/FIPS from FCC
-Area API with Census fallback, elevation from USGS EPQS with Open-Meteo
-fallback, and `climate_zone` from the bundled PNNL 2021 IECC county table.
-Derived values are persisted to `project_location` with per-field provenance.
-When seeded Phius/PHI reference datasets exist, the same call also
-auto-attaches or updates the nearest provider locations as
-`project_climate_source` rows. Their `data` includes the pinned dataset
-version, great-circle distance in miles, elevation delta in feet, and the
-Phius hard pass/fail or PHI advisory status/message.
+`POST /location/elevation` is an editor-only stateless lookup used by the Set
+Location modal to auto-fill the elevation field. It resolves elevation for the
+given coordinates (USGS EPQS → Open-Meteo) and returns a suggestion without
+persisting anything or attaching climate sources.
 
-The same derive call also resolves the nearest OneBuilding EPW station from
-the configured XLSX catalog URLs (or the built-in WMO-region defaults),
-downloads the station zip, stores the `.epw` bytes as a project EPW asset, and
-attaches/upserts:
+`POST /location/derive/{kind}` is editor-only and attaches one climate type from
+the nearest source for the project's *saved* coordinates (no coordinates are
+sent in the body); it returns `409 location_not_set` when the location is unset.
+Each Climate page owns its own action:
 
-- `kind='epw'` with `ref=<asset_id>` and `data.stat_metrics` containing
-  HDD65, CDD50, record high/low, missing-field flags, station metadata,
-  source URL, and `fetched_at`.
-- `kind='ashrae'` with `ref=<WMO/station>` and
-  `data.design_conditions` from the zip's `.stat` file. The parser records the
-  basis/edition stated by the `.stat` file rather than assuming a fixed
-  edition.
+- `kind=phius` / `kind=phi` — when the seeded provider dataset exists, attaches
+  or updates the nearest provider location as a `project_climate_source` row.
+  Its `data` includes the pinned dataset version, great-circle distance in
+  miles, elevation delta in feet, and the Phius hard pass/fail or PHI advisory
+  status/message.
+- `kind=weather` — resolves the nearest OneBuilding EPW station from the
+  configured XLSX catalog URLs (or the built-in WMO-region defaults), downloads
+  the station zip, stores the `.epw` bytes as a project EPW asset, records the
+  EPW reference on `project_location`, and attaches/upserts both:
+  - `kind='epw'` with `ref=<asset_id>` and `data.stat_metrics` containing
+    HDD65, CDD50, record high/low, missing-field flags, station metadata,
+    source URL, and `fetched_at`.
+  - `kind='ashrae'` with `ref=<WMO/station>` and `data.design_conditions` from
+    the zip's `.stat` file (the parser records the basis/edition stated by the
+    `.stat` file rather than assuming a fixed edition). EPW and ASHRAE are one
+    action because the ASHRAE conditions ride on the EPW's `.stat` companion.
 
 `POST /climate/sources/ashrae/current` is editor-only and performs the
 copyright-sensitive ashrae-meteo.info path for one nearest station only. It

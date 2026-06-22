@@ -150,12 +150,6 @@ export type ProjectLocationUpdateResponse = {
   warnings: string[];
 };
 
-export type DeriveProjectLocationPayload = {
-  latitude: number;
-  longitude: number;
-  site_address?: string | null;
-};
-
 export type ElevationLookupPayload = {
   latitude: number;
   longitude: number;

@@ -4,7 +4,6 @@ import {
   bulkDeleteProjects,
   checkBtNumber,
   createProject,
-  deriveProjectLocation,
   fetchProjectLocation,
   fetchProject,
   geocodeProjectLocation,
@@ -20,7 +19,6 @@ import {
 import { projectQueryKeys } from "./query-keys";
 import type {
   CreateProjectPayload,
-  DeriveProjectLocationPayload,
   ElevationLookupPayload,
   ProjectListResponse,
   UpdateProjectLocationPayload,
@@ -148,18 +146,6 @@ export function useUpdateProjectLocationMutation(projectId: string) {
   return useMutation({
     mutationFn: (payload: UpdateProjectLocationPayload) =>
       updateProjectLocation(projectId, payload),
-    onSuccess: (response) => {
-      queryClient.setQueryData(projectQueryKeys.location(projectId), response.location);
-      queryClient.invalidateQueries({ queryKey: climateQueryKeys.sources(projectId) });
-    },
-  });
-}
-
-export function useDeriveProjectLocationMutation(projectId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (payload: DeriveProjectLocationPayload) =>
-      deriveProjectLocation(projectId, payload),
     onSuccess: (response) => {
       queryClient.setQueryData(projectQueryKeys.location(projectId), response.location);
       queryClient.invalidateQueries({ queryKey: climateQueryKeys.sources(projectId) });

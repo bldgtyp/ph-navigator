@@ -1,16 +1,21 @@
 // @size-exception: planning/archive/climate-dataset-picker/PRD.md
 import { useRef, useState, type ChangeEvent, type ReactNode } from "react";
-import { Check, Download, Trash2, Upload } from "lucide-react";
+import { Check, Download, MapPin, Trash2, Upload } from "lucide-react";
 import type { UnitSystem } from "../../../lib/units";
 import { formatTemperatureFromC } from "../../../lib/units/temperature";
 import { errorMessage } from "../../../shared/lib/errors";
 import { assetDownloadPath } from "../../assets/api";
 import { uploadAsset } from "../../assets/hooks";
 import { formatReadOnlyCoordinate } from "../../projects/location-form";
+import { useProjectLocationQuery } from "../../projects/hooks";
 import type { ProjectDetail } from "../../projects/types";
 import type { EpwParseResponse } from "../../projects/types";
 import { useProjectLocationForm } from "../../projects/useProjectLocationForm";
-import { useClimateLocationQuery, useDeleteClimateSourceMutation } from "../hooks";
+import {
+  useClimateLocationQuery,
+  useDeleteClimateSourceMutation,
+  useDeriveClimateSourceMutation,
+} from "../hooks";
 import {
   climateSourceBadgeVersion,
   climateSourceProximity,
@@ -30,22 +35,142 @@ import {
 } from "./ClimateRecordTable";
 import { ClimateRecordView } from "./ClimateRecordView";
 
-export function ProjectEpwToolsPage({ project }: { project: ProjectDetail }) {
+const MISSING_SOURCE_COPY: Record<ClimateSourceKind, { title: string; subtitle: string }> = {
+  phius: {
+    title: "Phius climate dataset",
+    subtitle: "Attach the nearest Phius reference dataset for this site.",
+  },
+  phi: {
+    title: "PHI climate dataset",
+    subtitle: "Attach the nearest PHI / PHPP reference dataset for this site.",
+  },
+  ashrae: {
+    title: "ASHRAE design conditions",
+    subtitle: "Set design conditions from the nearest weather file.",
+  },
+  epw: {
+    title: "EPW weather file",
+    subtitle: "Set the nearest weather file, or upload one manually.",
+  },
+  custom: {
+    title: "Custom climate record",
+    subtitle: "Add a custom climate record.",
+  },
+};
+
+// The empty-state page for a canonical climate type with no attached source.
+// Each type's primary action is "Set from nearest"; PH types also offer the
+// manual dataset picker, and EPW keeps its upload controls.
+export function MissingSourcePage({
+  project,
+  kind,
+  onOpenPicker,
+}: {
+  project: ProjectDetail;
+  kind: ClimateSourceKind;
+  onOpenPicker?: (kind: PhClimateKind) => void;
+}) {
+  const canEdit = project.access_mode === "editor";
+  const isPh = kind === "phius" || kind === "phi";
+  const copy = MISSING_SOURCE_COPY[kind];
   return (
     <div className="climate-detail-page">
       <header className="climate-page-head">
         <div>
           <div className="climate-page-badges">
-            <ClimateTypeBadge kind="epw" />
+            <ClimateTypeBadge kind={kind} />
             <ClimateStatusChip tone="missing" label="Not set" />
           </div>
-          <h3 className="climate-page-title">EPW weather file</h3>
+          <h3 className="climate-page-title">{copy.title}</h3>
           <div className="climate-page-sub">
-            <span>Upload or link the project weather file.</span>
+            <span>{copy.subtitle}</span>
           </div>
         </div>
       </header>
-      <ProjectEpwControls project={project} />
+      <ClimateSetFromNearest
+        project={project}
+        kind={kind}
+        label={isPh ? "Set from nearest" : "Set from nearest weather file"}
+        variant="primary"
+      />
+      {canEdit && isPh && onOpenPicker ? (
+        <div className="climate-link-row">
+          <button type="button" className="secondary-button" onClick={() => onOpenPicker(kind)}>
+            Choose a dataset manually
+          </button>
+        </div>
+      ) : null}
+      {kind === "epw" ? <ProjectEpwControls project={project} /> : null}
+      {kind === "ashrae" ? (
+        <p className="form-note">
+          ASHRAE design conditions are set together with the EPW weather file.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+// "Set from nearest" action for one climate page: derives + attaches the type's
+// source from the project's saved coordinates, surfacing derive warnings and a
+// hint when the location is not yet set. `weather` covers EPW + ASHRAE. The
+// action is inherently editor-only, so it self-guards rather than asking every
+// caller to gate it.
+function ClimateSetFromNearest({
+  project,
+  kind,
+  label,
+  variant = "secondary",
+}: {
+  project: ProjectDetail;
+  kind: ClimateSourceKind;
+  label: string;
+  variant?: "primary" | "secondary";
+}) {
+  const derive = useDeriveClimateSourceMutation(project.id);
+  const location = useProjectLocationQuery(project.id).data;
+  const hasLocation = location?.latitude != null && location?.longitude != null;
+  const [error, setError] = useState<string | null>(null);
+  const [warnings, setWarnings] = useState<string[]>([]);
+  if (project.access_mode !== "editor") return null;
+  const deriveKind = kind === "phius" ? "phius" : kind === "phi" ? "phi" : "weather";
+
+  const run = async () => {
+    setError(null);
+    setWarnings([]);
+    try {
+      const response = await derive.mutateAsync(deriveKind);
+      setWarnings(response.warnings);
+    } catch (err) {
+      setError(errorMessage(err, "Could not set climate data from the nearest source."));
+    }
+  };
+
+  return (
+    <div className="climate-derive-action">
+      <button
+        type="button"
+        className={`${variant}-button`}
+        onClick={() => void run()}
+        disabled={!hasLocation || derive.isPending}
+      >
+        <MapPin size={16} aria-hidden="true" />
+        {derive.isPending ? "Setting…" : label}
+      </button>
+      {!hasLocation ? (
+        <p className="form-note">Set the project location first to find the nearest source.</p>
+      ) : null}
+      {error ? (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {warnings.length > 0 ? (
+        <div className="draft-banner" role="status">
+          {warnings.map((warning) => (
+            <span key={warning}>{warning}</span>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -173,6 +298,7 @@ function PassiveHouseSourcePage({
         subItems={[]}
         onChangeDataset={onChangeDataset}
       />
+      <ClimateSetFromNearest project={project} kind={source.kind} label="Set from nearest" />
       {!datasetId || !locationId ? (
         <p className="form-note">
           This source is missing the dataset pointer needed to load values.
@@ -347,6 +473,11 @@ function AshraeSourcePage({
   return (
     <div className="climate-detail-page">
       <SourceHeader project={project} source={source} subItems={[stringValue(design?.basis)]} />
+      <ClimateSetFromNearest
+        project={project}
+        kind={source.kind}
+        label="Set from nearest weather file"
+      />
       <p className="climate-subhead">Design conditions</p>
       <div className="climate-metric-grid">
         <Metric label="Htg 99.6% DB" value={tempText(design?.heating_996_db_c, unitSystem)} />
@@ -387,6 +518,11 @@ function EpwSourcePage({
   return (
     <div className="climate-detail-page">
       <SourceHeader project={project} source={source} />
+      <ClimateSetFromNearest
+        project={project}
+        kind={source.kind}
+        label="Set from nearest weather file"
+      />
       <p className="climate-subhead">Derived metrics</p>
       <div className="climate-metric-grid">
         <Metric label="HDD65" value={numberText(metrics?.hdd65_f_days, 0)} />

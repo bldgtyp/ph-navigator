@@ -7,7 +7,6 @@ import {
 } from "../../lib/units";
 import { parseDecimalInput, stripTrailingZeros } from "../../lib/units/format";
 import type {
-  DeriveProjectLocationPayload,
   EditableProjectLocationFields,
   EpwParseResponse,
   GeocodeProjectLocationCandidate,
@@ -30,10 +29,6 @@ export type ProjectLocationFormValues = {
 
 export type ProjectLocationPayloadResult =
   | { ok: true; payload: UpdateProjectLocationPayload }
-  | { ok: false; error: string };
-
-export type ProjectLocationDerivePayloadResult =
-  | { ok: true; payload: DeriveProjectLocationPayload }
   | { ok: false; error: string };
 
 export const LOCATION_ELEVATION_UNITS: NumberUnitsConfig = {
@@ -183,27 +178,6 @@ export function buildProjectLocationPayload(
     }
   }
   return { ok: true, payload };
-}
-
-export function buildProjectLocationDerivePayload(
-  values: ProjectLocationFormValues,
-): ProjectLocationDerivePayloadResult {
-  const coordinates = parseLatitudeLongitude(values);
-  if (!coordinates.ok) return coordinates;
-  if (coordinates.latitude === null || coordinates.longitude === null) {
-    return {
-      ok: false,
-      error: "Latitude and longitude are required before populating climate data.",
-    };
-  }
-  return {
-    ok: true,
-    payload: {
-      latitude: coordinates.latitude,
-      longitude: coordinates.longitude,
-      site_address: trimmedOrNull(values.siteAddress),
-    },
-  };
 }
 
 function parseLocationFormValues(

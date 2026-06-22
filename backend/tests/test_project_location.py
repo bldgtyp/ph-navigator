@@ -37,9 +37,26 @@ from tests.test_mcp import ORIGIN, clean_mcp_tables, create_project, signed_in_c
 __all__ = ["clean_climate_tables", "clean_mcp_tables"]
 
 
+def _default_geodata(latitude: float, longitude: float) -> DerivedLocationGeodata:
+    """No-network geodata default so a Set Location write never hits external APIs.
+
+    Tests asserting specific derived values override this with their own stub.
+    """
+    return DerivedLocationGeodata(
+        county="Test County",
+        county_fips="00000",
+        state="TS",
+        country="US",
+        elevation_m=None,
+        climate_zone=None,
+        geodata_provenance={},
+    )
+
+
 @pytest.fixture(autouse=True)
-def disable_weather_auto_attach(monkeypatch: pytest.MonkeyPatch) -> None:
+def stub_location_external_calls(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("features.project_location.service.prepare_weather_sources", lambda **_kwargs: ([], {}, []))
+    monkeypatch.setattr("features.project_location.service.derive_location_geodata", _default_geodata)
 
 
 def issue_mcp_token(client: TestClient, project_id: str) -> str:
@@ -260,8 +277,8 @@ def test_public_location_projection_omits_street_address(
     client = signed_in_client()
     project = create_project(client)
     project_id = cast(str, project["id"])
-    saved = client.post(
-        f"/api/v1/projects/{project_id}/location/derive",
+    saved = client.put(
+        f"/api/v1/projects/{project_id}/location",
         headers={"Origin": ORIGIN},
         json={
             "latitude": 42.325,
@@ -290,7 +307,7 @@ def test_climate_zone_lookup_uses_pnnl_2021_county_csv() -> None:
     assert zone.ba_zone == "Cold"
 
 
-def test_derive_location_persists_county_elevation_and_zone(
+def test_set_location_persists_county_elevation_and_zone(
     clean_mcp_tables: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -298,8 +315,8 @@ def test_derive_location_persists_county_elevation_and_zone(
     client = signed_in_client()
     project_id = cast(str, create_project(client)["id"])
 
-    response = client.post(
-        f"/api/v1/projects/{project_id}/location/derive",
+    response = client.put(
+        f"/api/v1/projects/{project_id}/location",
         headers={"Origin": ORIGIN},
         json={"latitude": 42.325, "longitude": -73.367, "site_address": "1 Main St"},
     )
@@ -314,7 +331,7 @@ def test_derive_location_persists_county_elevation_and_zone(
     assert location["geodata_provenance"]["climate_zone"] == "pnnl_2021_iecc"
 
 
-def test_derive_location_auto_attaches_certification_sources_idempotently(
+def test_per_type_derive_attaches_certification_sources_idempotently(
     clean_mcp_tables: None,
     clean_climate_tables: None,
     monkeypatch: pytest.MonkeyPatch,
@@ -357,13 +374,19 @@ def test_derive_location_auto_attaches_certification_sources_idempotently(
     monkeypatch.setattr("features.project_location.service.derive_location_geodata", synthetic_site_geodata)
     client = signed_in_client()
     project_id = cast(str, create_project(client)["id"])
-
-    first = client.post(
-        f"/api/v1/projects/{project_id}/location/derive",
+    located = client.put(
+        f"/api/v1/projects/{project_id}/location",
         headers={"Origin": ORIGIN},
         json={"latitude": 40.0, "longitude": -75.0},
     )
-    assert first.status_code == 200, first.text
+    assert located.status_code == 200, located.text
+
+    for kind in ("phius", "phi"):
+        attached = client.post(
+            f"/api/v1/projects/{project_id}/location/derive/{kind}",
+            headers={"Origin": ORIGIN},
+        )
+        assert attached.status_code == 200, attached.text
     sources = client.get(f"/api/v1/projects/{project_id}/climate/sources").json()["items"]
     by_kind = {source["kind"]: source for source in sources}
 
@@ -375,16 +398,54 @@ def test_derive_location_auto_attaches_certification_sources_idempotently(
     assert by_kind["phi"]["label"] == "PHI-NEAR"
     assert by_kind["phi"]["data"]["dataset_version"] == "10.6"
 
-    second = client.post(
-        f"/api/v1/projects/{project_id}/location/derive",
-        headers={"Origin": ORIGIN},
-        json={"latitude": 40.0, "longitude": -75.0},
-    )
-    assert second.status_code == 200, second.text
+    for kind in ("phius", "phi"):
+        rerun = client.post(
+            f"/api/v1/projects/{project_id}/location/derive/{kind}",
+            headers={"Origin": ORIGIN},
+        )
+        assert rerun.status_code == 200, rerun.text
     rerun_sources = client.get(f"/api/v1/projects/{project_id}/climate/sources").json()["items"]
 
     assert len(rerun_sources) == 2
     assert {source["id"] for source in rerun_sources} == {source["id"] for source in sources}
+
+
+def test_per_type_derive_requires_location_set(clean_mcp_tables: None) -> None:
+    client = signed_in_client()
+    project_id = cast(str, create_project(client)["id"])
+
+    response = client.post(
+        f"/api/v1/projects/{project_id}/location/derive/phius",
+        headers={"Origin": ORIGIN},
+    )
+
+    assert response.status_code == 409, response.text
+    assert response.json()["error_code"] == "location_not_set"
+
+
+def test_per_type_derive_rejects_unknown_kind(clean_mcp_tables: None) -> None:
+    client = signed_in_client()
+    project_id = cast(str, create_project(client)["id"])
+
+    response = client.post(
+        f"/api/v1/projects/{project_id}/location/derive/bogus",
+        headers={"Origin": ORIGIN},
+    )
+
+    assert response.status_code == 422
+
+
+def test_per_type_derive_requires_editor_session(clean_mcp_tables: None) -> None:
+    editor = signed_in_client()
+    project = create_project(editor)
+
+    response = TestClient(app).post(
+        f"/api/v1/projects/{project['id']}/location/derive/phius",
+        headers={"Origin": ORIGIN},
+    )
+
+    assert response.status_code == 401
+    assert response.json()["error_code"] == "not_authenticated"
 
 
 def test_direct_location_update_refreshes_attached_phius_proximity(
@@ -441,7 +502,7 @@ def test_direct_location_update_refreshes_attached_phius_proximity(
     assert refreshed["data"]["status"] == "fail"
 
 
-def test_derive_location_auto_attaches_epw_and_ashrae_stat_sources(
+def test_weather_derive_attaches_epw_and_ashrae_stat_sources(
     clean_mcp_tables: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -486,11 +547,16 @@ def test_derive_location_auto_attaches_epw_and_ashrae_stat_sources(
         monkeypatch.setattr("features.project_location.service.prepare_weather_sources", fake_prepare_weather_sources)
         client = signed_in_client()
         project_id = cast(str, create_project(client)["id"])
-
-        response = client.post(
-            f"/api/v1/projects/{project_id}/location/derive",
+        located = client.put(
+            f"/api/v1/projects/{project_id}/location",
             headers={"Origin": ORIGIN},
             json={"latitude": 42.325, "longitude": -73.367},
+        )
+        assert located.status_code == 200, located.text
+
+        response = client.post(
+            f"/api/v1/projects/{project_id}/location/derive/weather",
+            headers={"Origin": ORIGIN},
         )
 
         assert response.status_code == 200, response.text
@@ -529,21 +595,36 @@ def test_existing_weather_source_values_reuses_same_onebuilding_epw(clean_mcp_ta
     }
 
 
-def test_direct_coordinate_edit_clears_derived_geodata(
+def test_coordinate_edit_rederives_geodata(
     clean_mcp_tables: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr("features.project_location.service.derive_location_geodata", west_stockbridge_geodata)
+    def geodata_by_coords(latitude: float, longitude: float) -> DerivedLocationGeodata:
+        if (latitude, longitude) == (42.325, -73.367):
+            return west_stockbridge_geodata(latitude, longitude)
+        assert (latitude, longitude) == (42.4, -73.367)
+        return DerivedLocationGeodata(
+            county="Hampden",
+            county_fips="25013",
+            state="MA",
+            country="US",
+            elevation_m=250.0,
+            climate_zone="6A",
+            geodata_provenance={"county": "fcc_area_api", "climate_zone": "pnnl_2021_iecc"},
+        )
+
+    monkeypatch.setattr("features.project_location.service.derive_location_geodata", geodata_by_coords)
     client = signed_in_client()
     project_id = cast(str, create_project(client)["id"])
-    derived = client.post(
-        f"/api/v1/projects/{project_id}/location/derive",
+    set_location = client.put(
+        f"/api/v1/projects/{project_id}/location",
         headers={"Origin": ORIGIN},
         json={"latitude": 42.325, "longitude": -73.367},
     )
-    assert derived.status_code == 200
-    assert derived.json()["location"]["climate_zone"] == "5A"
+    assert set_location.status_code == 200
+    assert set_location.json()["location"]["climate_zone"] == "5A"
 
+    # A partial edit of latitude alone re-derives off the persisted longitude.
     edited = client.put(
         f"/api/v1/projects/{project_id}/location",
         headers={"Origin": ORIGIN},
@@ -553,11 +634,9 @@ def test_direct_coordinate_edit_clears_derived_geodata(
     assert edited.status_code == 200
     location = edited.json()["location"]
     assert location["latitude"] == 42.4
-    assert location["county"] is None
-    assert location["county_fips"] is None
-    assert location["country"] is None
-    assert location["climate_zone"] is None
-    assert location["geodata_provenance"] == {}
+    assert location["county"] == "Hampden"
+    assert location["county_fips"] == "25013"
+    assert location["climate_zone"] == "6A"
 
 
 def test_geocode_location_requires_editor_and_returns_candidates(
