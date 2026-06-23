@@ -22,7 +22,7 @@ import {
   formatSi,
   isClimateRecord,
 } from "../lib";
-import type { ClimateSourceKind, PhClimateKind, ProjectClimateSource } from "../types";
+import type { ClimateSourceKind, ProjectClimateSource } from "../types";
 import { ClimateStatusChip, ClimateTypeBadge } from "./ClimateAtoms";
 import { MonthlyRadiationChart, MonthlyTemperatureChart } from "./ClimateRecordCharts";
 import {
@@ -31,11 +31,6 @@ import {
   MonthlyTemperatureTable,
 } from "./ClimateRecordTable";
 import { ClimateRecordView } from "./ClimateRecordView";
-
-const PH_CLIMATE_SET_LABEL: Record<PhClimateKind, string> = {
-  phius: "Set Phius Climate Data",
-  phi: "Set PHI Climate Data",
-};
 
 const MISSING_SOURCE_COPY: Record<ClimateSourceKind, { title: string; subtitle: string }> = {
   phius: {
@@ -57,22 +52,14 @@ const MISSING_SOURCE_COPY: Record<ClimateSourceKind, { title: string; subtitle: 
 };
 
 // The empty-state page for a canonical climate type with no attached source.
-// PH types open the dataset modal, which owns both nearest and manual selection;
-// the weather file keeps its nearest + upload controls on the page.
+// PH and weather source actions live on their selected sidebar cards.
 export function MissingSourcePage({
   project,
   kind,
-  onOpenPicker,
-  onOpenWeatherPicker,
-  onOpenUploadModal,
 }: {
   project: Pick<ProjectDetail, "id" | "access_mode">;
   kind: ClimateSourceKind;
-  onOpenPicker?: (kind: PhClimateKind) => void;
-  onOpenWeatherPicker?: () => void;
-  onOpenUploadModal?: () => void;
 }) {
-  const canEdit = project.access_mode === "editor";
   const isPh = kind === "phius" || kind === "phi";
   const copy = MISSING_SOURCE_COPY[kind];
   return (
@@ -89,34 +76,13 @@ export function MissingSourcePage({
           </div>
         </div>
       </header>
-      {canEdit && isPh && onOpenPicker ? (
-        <div className="climate-link-row">
-          <button type="button" className="primary-button" onClick={() => onOpenPicker(kind)}>
-            {PH_CLIMATE_SET_LABEL[kind]}
-          </button>
-        </div>
-      ) : null}
-      {!isPh ? (
+      {!isPh && kind !== "weather" ? (
         <ClimateSetFromNearest
           project={project}
           kind={kind}
           label="Set from nearest weather file"
           variant="primary"
         />
-      ) : null}
-      {canEdit && kind === "weather" ? (
-        <div className="climate-link-row">
-          {onOpenWeatherPicker ? (
-            <button type="button" className="secondary-button" onClick={onOpenWeatherPicker}>
-              Select from map
-            </button>
-          ) : null}
-          {onOpenUploadModal ? (
-            <button type="button" className="secondary-button" onClick={onOpenUploadModal}>
-              Upload climate data
-            </button>
-          ) : null}
-        </div>
       ) : null}
     </div>
   );
@@ -194,38 +160,16 @@ export function ClimateSourceDetailPage({
   project,
   source,
   unitSystem,
-  onOpenPicker,
-  onOpenWeatherPicker,
-  onOpenUploadModal,
 }: {
   project: ProjectDetail;
   source: ProjectClimateSource;
   unitSystem: UnitSystem;
-  onOpenPicker?: (kind: PhClimateKind) => void;
-  onOpenWeatherPicker?: () => void;
-  onOpenUploadModal?: () => void;
 }) {
   if (source.kind === "phius" || source.kind === "phi") {
-    const kind = source.kind;
-    return (
-      <PassiveHouseSourcePage
-        project={project}
-        source={source}
-        unitSystem={unitSystem}
-        onChangeDataset={onOpenPicker ? () => onOpenPicker(kind) : undefined}
-      />
-    );
+    return <PassiveHouseSourcePage project={project} source={source} unitSystem={unitSystem} />;
   }
   if (source.kind === "weather") {
-    return (
-      <WeatherSourcePage
-        project={project}
-        source={source}
-        unitSystem={unitSystem}
-        onOpenWeatherPicker={onOpenWeatherPicker}
-        onOpenUploadModal={onOpenUploadModal}
-      />
-    );
+    return <WeatherSourcePage project={project} source={source} unitSystem={unitSystem} />;
   }
   return <CustomSourcePage project={project} source={source} unitSystem={unitSystem} />;
 }
@@ -239,6 +183,7 @@ function SourceHeader({
   subItems,
   detail,
   onChangeDataset,
+  showActions = true,
 }: {
   project: ProjectDetail;
   source: ProjectClimateSource;
@@ -246,6 +191,7 @@ function SourceHeader({
   subItems?: (string | null)[];
   detail?: ReactNode;
   onChangeDataset?: () => void;
+  showActions?: boolean;
 }) {
   const canEdit = project.access_mode === "editor";
   const status = climateSourceStatusChip(source);
@@ -271,7 +217,7 @@ function SourceHeader({
         ) : null}
         {detail}
       </div>
-      {canEdit ? (
+      {canEdit && showActions ? (
         <div className="climate-page-head-actions">
           {onChangeDataset ? (
             <button
@@ -280,9 +226,7 @@ function SourceHeader({
               onClick={onChangeDataset}
               disabled={busy}
             >
-              {source.kind === "phius" || source.kind === "phi"
-                ? PH_CLIMATE_SET_LABEL[source.kind]
-                : "Change dataset"}
+              Change dataset
             </button>
           ) : null}
           <button
@@ -304,12 +248,10 @@ function PassiveHouseSourcePage({
   project,
   source,
   unitSystem,
-  onChangeDataset,
 }: {
   project: ProjectDetail;
   source: ProjectClimateSource;
   unitSystem: UnitSystem;
-  onChangeDataset?: () => void;
 }) {
   const datasetId = stringValue(source.data?.dataset_id);
   const locationId = source.ref ?? stringValue(source.data?.location_id) ?? undefined;
@@ -324,7 +266,7 @@ function PassiveHouseSourcePage({
         title={title}
         detail={<PhLimitCheck source={source} unitSystem={unitSystem} />}
         subItems={[]}
-        onChangeDataset={onChangeDataset}
+        showActions={false}
       />
       {!datasetId || !locationId ? (
         <p className="form-note">
@@ -494,16 +436,11 @@ function WeatherSourcePage({
   project,
   source,
   unitSystem,
-  onOpenWeatherPicker,
-  onOpenUploadModal,
 }: {
   project: ProjectDetail;
   source: ProjectClimateSource;
   unitSystem: UnitSystem;
-  onOpenWeatherPicker?: () => void;
-  onOpenUploadModal?: () => void;
 }) {
-  const canEdit = project.access_mode === "editor";
   const metrics = recordValue(source.data?.stat_metrics);
   const design = recordValue(source.data?.design_conditions);
   const station = recordValue(source.data?.station);
@@ -518,26 +455,8 @@ function WeatherSourcePage({
         source={source}
         title={stationName ?? undefined}
         subItems={[stringValue(design?.basis)]}
+        showActions={false}
       />
-      <ClimateSetFromNearest
-        project={project}
-        kind={source.kind}
-        label="Set from nearest weather file"
-      />
-      {canEdit && (onOpenWeatherPicker || onOpenUploadModal) ? (
-        <div className="climate-link-row">
-          {onOpenWeatherPicker ? (
-            <button type="button" className="secondary-button" onClick={onOpenWeatherPicker}>
-              Select from map
-            </button>
-          ) : null}
-          {onOpenUploadModal ? (
-            <button type="button" className="secondary-button" onClick={onOpenUploadModal}>
-              Upload climate data
-            </button>
-          ) : null}
-        </div>
-      ) : null}
       <p className="climate-subhead">Performance</p>
       <div className="climate-metric-grid">
         <Metric label="HDD65" value={numberText(metrics?.hdd65_f_days, 0)} />

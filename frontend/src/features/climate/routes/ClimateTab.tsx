@@ -64,13 +64,16 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
       <div className="climate-body">
         <div className="climate-workspace">
           <ClimateSourceSidebar
+            projectId={project.id}
             location={location}
             sources={sources}
             selected={selected}
             canEdit={canEdit}
-            unitSystem={unitSystem}
             onSelect={setSelected}
             onOpenSetLocation={openLocationModal}
+            onOpenPicker={openPicker}
+            onOpenWeatherPicker={openWeatherPicker}
+            onOpenUploadModal={openUploadModal}
           />
           <main className="climate-main">
             {sourcesQuery.error ? (
@@ -84,9 +87,6 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
                 project={project}
                 source={selectedSource}
                 unitSystem={unitSystem}
-                onOpenPicker={openPicker}
-                onOpenWeatherPicker={openWeatherPicker}
-                onOpenUploadModal={openUploadModal}
               />
             ) : null}
             {slotSource ? (
@@ -94,19 +94,10 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
                 project={project}
                 source={slotSource}
                 unitSystem={unitSystem}
-                onOpenPicker={openPicker}
-                onOpenWeatherPicker={openWeatherPicker}
-                onOpenUploadModal={openUploadModal}
               />
             ) : null}
             {slotKind && !slotSource ? (
-              <MissingSourcePage
-                project={project}
-                kind={slotKind}
-                onOpenPicker={openPicker}
-                onOpenWeatherPicker={openWeatherPicker}
-                onOpenUploadModal={openUploadModal}
-              />
+              <MissingSourcePage project={project} kind={slotKind} />
             ) : null}
           </main>
         </div>

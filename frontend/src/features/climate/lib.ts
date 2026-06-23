@@ -148,35 +148,6 @@ export function climateSourceBadgeVersion(source: ProjectClimateSource): string 
   );
 }
 
-// The two compact attribute chips on a source's nav card. Proximity (mi/ft)
-// for Phius/PHI; degree-days (HDD65/CDD50) for the weather file.
-export function climateSourceNavAttrs(source: ProjectClimateSource): string[] {
-  const data = source.data;
-  if (!data) return [];
-  if (source.kind === "phius" || source.kind === "phi") {
-    const distanceMi = numberValue(data.distance_mi);
-    const elevationDeltaFt = numberValue(data.elevation_delta_ft);
-    const attrs: string[] = [];
-    if (distanceMi !== null) attrs.push(`${distanceMi.toFixed(0)} mi`);
-    if (elevationDeltaFt !== null) attrs.push(`Δ ${formatSignedFt(elevationDeltaFt)}`);
-    return attrs;
-  }
-  if (source.kind === "weather") {
-    const stat = recordValue(data.stat_metrics);
-    const hdd65 = numberValue(stat?.hdd65_f_days);
-    const cdd50 = numberValue(stat?.cdd50_f_days);
-    const attrs: string[] = [];
-    if (hdd65 !== null) attrs.push(`HDD65 ${hdd65.toFixed(0)}`);
-    if (cdd50 !== null) attrs.push(`CDD50 ${cdd50.toFixed(0)}`);
-    return attrs;
-  }
-  return [];
-}
-
-function formatSignedFt(valueFt: number): string {
-  return `${valueFt > 0 ? "+" : ""}${valueFt.toFixed(0)} ft`;
-}
-
 export function isClimateRecord(value: unknown): value is ClimateRecord {
   const record = recordValue(value);
   return Boolean(

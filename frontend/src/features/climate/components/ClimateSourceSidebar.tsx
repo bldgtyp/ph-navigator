@@ -1,16 +1,13 @@
-import { MapPin } from "lucide-react";
-import type { UnitSystem } from "../../../lib/units";
+import { MapPin, X } from "lucide-react";
 import type { ProjectLocation } from "../../projects/types";
 import {
   CANONICAL_CLIMATE_KINDS,
   climateSourceBadgeVersion,
-  climateSourceNavAttrs,
   climateSourceStatusChip,
   climateSourceSubtitle,
-  formatLatLong,
-  formatLocationElevationLabel,
 } from "../lib";
-import type { ClimateSourceKind, ProjectClimateSource } from "../types";
+import { useDeleteClimateSourceMutation } from "../hooks";
+import type { ClimateSourceKind, PhClimateKind, ProjectClimateSource } from "../types";
 import { ClimateStatusChip, ClimateTypeBadge } from "./ClimateAtoms";
 import { ClimateMap } from "./ClimateMap";
 
@@ -19,27 +16,33 @@ import { ClimateMap } from "./ClimateMap";
 export type ClimateSelection = "location" | string;
 
 export function ClimateSourceSidebar({
+  projectId,
   location,
   sources,
   selected,
   canEdit,
-  unitSystem,
   onSelect,
   onOpenSetLocation,
+  onOpenPicker,
+  onOpenWeatherPicker,
+  onOpenUploadModal,
 }: {
+  projectId: string;
   location: ProjectLocation | undefined;
   sources: ProjectClimateSource[];
   selected: ClimateSelection;
   canEdit: boolean;
-  unitSystem: UnitSystem;
   onSelect: (selection: ClimateSelection) => void;
   onOpenSetLocation?: () => void;
+  onOpenPicker?: (kind: PhClimateKind) => void;
+  onOpenWeatherPicker?: () => void;
+  onOpenUploadModal?: () => void;
 }) {
+  const remove = useDeleteClimateSourceMutation(projectId);
   return (
     <aside className="climate-sidebar" aria-label="Climate pages">
       <LocationCard
         location={location}
-        unitSystem={unitSystem}
         active={selected === "location"}
         canEdit={canEdit}
         onSelect={() => onSelect("location")}
@@ -63,17 +66,34 @@ export function ClimateSourceSidebar({
               kind={kind}
               active={selected === slot}
               onSelect={canEdit ? () => onSelect(slot) : undefined}
+              canEdit={canEdit}
+              onOpenPicker={
+                kind === "phius" || kind === "phi" ? () => onOpenPicker?.(kind) : undefined
+              }
+              onOpenWeatherPicker={kind === "weather" ? onOpenWeatherPicker : undefined}
+              onOpenUploadModal={kind === "weather" ? onOpenUploadModal : undefined}
             />
           );
         }
-        return kindSources.map((source) => (
-          <SourceCard
-            key={source.id}
-            source={source}
-            active={selected === source.id}
-            onSelect={() => onSelect(source.id)}
-          />
-        ));
+        return kindSources.map((source) => {
+          const phKind = source.kind === "phius" || source.kind === "phi" ? source.kind : null;
+          return (
+            <SourceCard
+              key={source.id}
+              source={source}
+              active={selected === source.id}
+              onSelect={() => onSelect(source.id)}
+              canEdit={canEdit}
+              isRemoving={remove.isPending}
+              onOpenPicker={phKind ? () => onOpenPicker?.(phKind) : undefined}
+              onOpenWeatherPicker={source.kind === "weather" ? onOpenWeatherPicker : undefined}
+              onOpenUploadModal={source.kind === "weather" ? onOpenUploadModal : undefined}
+              onRemove={
+                phKind || source.kind === "weather" ? () => remove.mutate(source.id) : undefined
+              }
+            />
+          );
+        });
       })}
 
       {sources
@@ -84,6 +104,8 @@ export function ClimateSourceSidebar({
             source={source}
             active={selected === source.id}
             onSelect={() => onSelect(source.id)}
+            canEdit={canEdit}
+            isRemoving={remove.isPending}
           />
         ))}
     </aside>
@@ -92,14 +114,12 @@ export function ClimateSourceSidebar({
 
 function LocationCard({
   location,
-  unitSystem,
   active,
   canEdit,
   onSelect,
   onOpenSetLocation,
 }: {
   location: ProjectLocation | undefined;
-  unitSystem: UnitSystem;
   active: boolean;
   canEdit: boolean;
   onSelect: () => void;
@@ -109,7 +129,6 @@ function LocationCard({
     .filter(Boolean)
     .join(", ");
   const place = [cityState, location?.postal_code].filter(Boolean).join(" ");
-  const elevation = formatLocationElevationLabel(location?.elevation_m, unitSystem);
   const coords =
     location?.latitude != null && location?.longitude != null
       ? { latitude: location.latitude, longitude: location.longitude }
@@ -126,7 +145,13 @@ function LocationCard({
         aria-pressed={active}
         onClick={onSelect}
       >
-        <ClimateMap className="climate-mini-map" interactive={false} ariaHidden project={coords} />
+        <ClimateMap
+          className="climate-mini-map"
+          interactive={false}
+          singlePointZoom={7}
+          ariaHidden
+          project={coords}
+        />
         <span className="climate-nav-loc-body">
           <span className="climate-nav-loc-title">Project location</span>
           {canEdit && location?.street_address ? (
@@ -136,17 +161,12 @@ function LocationCard({
             </span>
           ) : null}
           <span className="climate-nav-loc-place">{place || "Location unset"}</span>
-          <span className="climate-loc-pills">
-            <b>{formatLatLong(location?.latitude ?? null, location?.longitude ?? null)}</b>
-            {elevation ? <b>{elevation}</b> : null}
-            {location?.climate_zone ? <b>{location.climate_zone}</b> : null}
-          </span>
         </span>
       </button>
-      {canEdit && onOpenSetLocation ? (
+      {active && canEdit && onOpenSetLocation ? (
         <button
           type="button"
-          className="secondary-button climate-nav-loc-set-button"
+          className="primary-button climate-nav-loc-set-button"
           onClick={onOpenSetLocation}
         >
           <MapPin size={14} aria-hidden="true" />
@@ -161,37 +181,97 @@ function SourceCard({
   source,
   active,
   onSelect,
+  canEdit,
+  isRemoving,
+  onOpenPicker,
+  onOpenWeatherPicker,
+  onOpenUploadModal,
+  onRemove,
 }: {
   source: ProjectClimateSource;
   active: boolean;
   onSelect: () => void;
+  canEdit: boolean;
+  isRemoving: boolean;
+  onOpenPicker?: () => void;
+  onOpenWeatherPicker?: () => void;
+  onOpenUploadModal?: () => void;
+  onRemove?: () => void;
 }) {
   const status = climateSourceStatusChip(source);
-  const attrs = climateSourceNavAttrs(source);
+  const clearLabel = `Clear ${source.kind === "phius" ? "Phius" : climateSourceKindTitle(source.kind)} Climate Data from Project`;
+  const hasSourceActions =
+    active && canEdit && (onOpenPicker || onOpenWeatherPicker || onOpenUploadModal || onRemove);
   return (
-    <button
-      type="button"
-      className={["climate-nav-card", "climate-source-card", active && "active"]
+    <div
+      className={[
+        "climate-nav-card",
+        "climate-source-card",
+        hasSourceActions && "has-actions",
+        hasSourceActions && onRemove && "has-remove",
+        active && "active",
+      ]
         .filter(Boolean)
         .join(" ")}
       data-status={status.tone}
-      onClick={onSelect}
     >
-      <span className="climate-nav-top">
-        <ClimateTypeBadge kind={source.kind} version={climateSourceBadgeVersion(source)} />
-      </span>
-      <span className="climate-nav-name">{climateSourceSubtitle(source)}</span>
-      {attrs.length > 0 ? (
-        <span className="climate-nav-attrs">
-          {attrs.map((attr) => (
-            <span key={attr}>{attr}</span>
-          ))}
+      <button
+        type="button"
+        className="climate-source-select"
+        aria-pressed={active}
+        onClick={onSelect}
+      >
+        <span className="climate-nav-top">
+          <ClimateTypeBadge kind={source.kind} version={climateSourceBadgeVersion(source)} />
+          <span className="climate-nav-status-actions">
+            <ClimateStatusChip tone={status.tone} label={status.label} />
+          </span>
         </span>
+        <span className="climate-nav-name">{climateSourceSubtitle(source)}</span>
+      </button>
+      {hasSourceActions && onRemove ? (
+        <button
+          type="button"
+          className="climate-source-remove"
+          title={clearLabel}
+          aria-label={clearLabel}
+          onClick={onRemove}
+          disabled={isRemoving}
+        >
+          <X size={14} aria-hidden="true" />
+        </button>
       ) : null}
-      <span className="climate-nav-foot">
-        <ClimateStatusChip tone={status.tone} label={status.label} />
-      </span>
-    </button>
+      {hasSourceActions && onOpenPicker ? (
+        <button
+          type="button"
+          className="primary-button climate-source-set-button"
+          onClick={onOpenPicker}
+          disabled={isRemoving}
+        >
+          {source.kind === "phius" ? "Set Phius Climate Data" : "Set PHI Climate Data"}
+        </button>
+      ) : null}
+      {hasSourceActions && onOpenWeatherPicker ? (
+        <button
+          type="button"
+          className="primary-button climate-source-set-button"
+          onClick={onOpenWeatherPicker}
+          disabled={isRemoving}
+        >
+          Select from Map
+        </button>
+      ) : null}
+      {hasSourceActions && onOpenUploadModal ? (
+        <button
+          type="button"
+          className="primary-button climate-source-set-button"
+          onClick={onOpenUploadModal}
+          disabled={isRemoving}
+        >
+          Upload Climate Data
+        </button>
+      ) : null}
+    </div>
   );
 }
 
@@ -201,40 +281,91 @@ function MissingSourceCard({
   kind,
   active = false,
   onSelect,
+  canEdit,
+  onOpenPicker,
+  onOpenWeatherPicker,
+  onOpenUploadModal,
 }: {
   kind: ClimateSourceKind;
   active?: boolean;
   onSelect?: () => void;
+  canEdit: boolean;
+  onOpenPicker?: () => void;
+  onOpenWeatherPicker?: () => void;
+  onOpenUploadModal?: () => void;
 }) {
+  const hasSourceAction =
+    active && canEdit && (onOpenPicker || onOpenWeatherPicker || onOpenUploadModal);
   const className = [
     "climate-nav-card",
     "climate-source-card",
     "climate-source-missing",
+    hasSourceAction && "has-actions",
     active && "active",
   ]
     .filter(Boolean)
     .join(" ");
-  const body = (
+  const sourceContent = (
     <>
       <span className="climate-nav-top">
         <ClimateTypeBadge kind={kind} />
-      </span>
-      <span className="climate-nav-name">No source attached</span>
-      <span className="climate-nav-foot">
         <ClimateStatusChip tone="missing" label="Not set" />
       </span>
+      <span className="climate-nav-name">No source attached</span>
     </>
   );
-  if (!onSelect) {
-    return (
-      <div className={className} data-status="missing">
-        {body}
-      </div>
-    );
-  }
-  return (
-    <button type="button" className={className} data-status="missing" onClick={onSelect}>
-      {body}
-    </button>
+  const body = (
+    <>
+      {onSelect ? (
+        <button
+          type="button"
+          className="climate-source-select"
+          aria-pressed={active}
+          onClick={onSelect}
+        >
+          {sourceContent}
+        </button>
+      ) : (
+        <div className="climate-source-select climate-source-static">{sourceContent}</div>
+      )}
+      {hasSourceAction && onOpenPicker ? (
+        <button
+          type="button"
+          className="primary-button climate-source-set-button"
+          onClick={onOpenPicker}
+        >
+          {kind === "phius" ? "Set Phius Climate Data" : "Set PHI Climate Data"}
+        </button>
+      ) : null}
+      {hasSourceAction && onOpenWeatherPicker ? (
+        <button
+          type="button"
+          className="primary-button climate-source-set-button"
+          onClick={onOpenWeatherPicker}
+        >
+          Select from Map
+        </button>
+      ) : null}
+      {hasSourceAction && onOpenUploadModal ? (
+        <button
+          type="button"
+          className="primary-button climate-source-set-button"
+          onClick={onOpenUploadModal}
+        >
+          Upload Climate Data
+        </button>
+      ) : null}
+    </>
   );
+  return (
+    <div className={className} data-status="missing">
+      {body}
+    </div>
+  );
+}
+
+function climateSourceKindTitle(kind: ClimateSourceKind): "PHI" | "Weather File" | "Custom" {
+  if (kind === "phi") return "PHI";
+  if (kind === "weather") return "Weather File";
+  return "Custom";
 }
