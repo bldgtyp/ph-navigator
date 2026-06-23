@@ -1,8 +1,9 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Settled — D-SP-1 accepted (Ed 2026-06-13). Inherited items
-  restated for one-stop reading. No open decisions.
+STATUS: Settled — D-SP-1 accepted (Ed 2026-06-13); RECONCILED 2026-06-23
+  (backend home = project_location, not "Climate"; build/delete history
+  traced). Inherited items restated for one-stop reading. No open decisions.
 AUTHOR: Claude (for Ed)
 SCOPE: Decision ledger for the Model Viewer sun-path feature.
 RELATED:
@@ -116,7 +117,16 @@ shape.
 project's HBJSON files, with a matching frontend query invalidation.
 The plan flags every spot this diverges.
 
-## Climate feature — this feature was realigned (2026-06-13)
+## Climate feature — this feature was realigned (2026-06-13) — ⚠️ SUPERSEDED 2026-06-23
+
+> **Superseded by the 2026-06-23 reconciliation below.** This section
+> predicted the sun-path backend would live in a "Climate Phase 1"
+> module. In practice it was built in `project_location` (commit
+> `005839dc`), and the Climate work that actually shipped is app-wide
+> reference data (datasets / nearest-station lookup) that never owned the
+> sun path. The sun-path backend was then deleted on 2026-06-22. Read the
+> reconciliation section for the current, accurate picture; the text
+> below is retained only for historical context.
 
 Ed greenlit a project-scoped **Climate** top-level tab + service
 (`planning/archive/climate/`) and asked to build it **first**. The
@@ -137,6 +147,43 @@ Impact on this feature:
 - **Sequencing:** this feature now **depends on Climate Phase 1**.
   Build Climate Phase 1 → then this render and the Climate tab can
   proceed in parallel.
+
+## Reconciliation — backend home + build/delete history (2026-06-23)
+
+This supersedes the 2026-06-13 "realigned to Climate Phase 1" framing.
+The facts, traced from `main`:
+
+1. **The backend lived in `project_location`, never a separate Climate
+   module.** Commit `005839dc` (2026-06-13) added
+   `project_location/sun_path.py`, `service.get_project_sun_path`, the
+   `GET /projects/{id}/sun-path` route, and the MCP tool — all reading
+   the `project_location` row. This is correct: `project_location` owns
+   the coordinates the sun path is a pure function of.
+2. **It was deleted on 2026-06-22** (commit `0056f6df`) during the
+   Climate pages / PHI·Phius·EPW overhaul. The deletion removed the
+   builder, route, MCP tool, tests, **and** a *separate* Climate-page
+   sun-path panel (a second, since-retired consumer). The commit note:
+   "sun visualization remains in the Model tab" — confirming the
+   Model-Viewer render (this feature) is still wanted.
+3. **The Climate feature that shipped is app-wide reference data**
+   (`climate_dataset` / `climate_dataset_location`, nearest-station
+   lookup) — **not** project-scoped, and it does **not** store project
+   location or serve the sun path. The earlier assumption that Climate
+   would "own" a project-scoped sun-path endpoint never materialized.
+4. **Location data shape is unchanged for our purposes.** The overhaul
+   added derived geodata columns (`county`, `county_fips`, `country`,
+   `climate_zone`, `geodata_provenance`) and renamed `site_address` →
+   `street_address` + added `postal_code`, but
+   `latitude / longitude / elevation_m / true_north_deg / time_zone`
+   are intact and still read via `repository.get_location(...)`.
+
+**Decision:** rebuild the sun-path backend in **`project_location`**
+(Phase 0), as a faithful restore of `005839dc` re-verified against
+today's repo. D-SP-1 stands (decoupled, location-reactive endpoint, not
+baked into `/model_data`); only the *owning module* is clarified —
+`project_location`, the coordinate owner, not "Climate". The surviving
+wire DTOs in `model_viewer.schemas.ladybug` are reused as-is (no wire
+shape change), exactly as `005839dc` did.
 
 ## Open questions
 

@@ -300,7 +300,6 @@ export type SunPathAndCompassModelData = {
 export type CombinedModelData = {
   faces: FaceModelData[];
   spaces: SpaceModelData[];
-  sun_path: SunPathAndCompassModelData | null;
   hot_water_systems: HotWaterSystemModelData[];
   ventilation_systems: VentilationSystemModelData[];
   shading_elements: ShadeGroupModelData[];

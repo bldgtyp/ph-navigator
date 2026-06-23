@@ -128,7 +128,6 @@ def test_model_data_round_trip_headers_and_payload(clean_document_tables: None, 
     assert summary["spaces_extracted"] == 4
     assert summary["shade_groups_extracted"] == 5
     assert summary["air_boundaries_skipped"] == 0
-    assert payload["sun_path"] is None
 
     # D-12: all four thermal fields, opaque + window, on the wire.
     construction = payload["faces"][0]["properties"]["energy"]["construction"]

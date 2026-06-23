@@ -10,7 +10,6 @@ from features.model_viewer.schemas.honeybee_phhvac import (
     PhHotWaterSystemSchema,
     PhVentilationSystemSchema,
 )
-from features.model_viewer.schemas.ladybug import SunPathAndCompassDTOSchema
 
 
 class LoadSummarySchema(BaseModel):
@@ -31,14 +30,14 @@ class LoadSummarySchema(BaseModel):
 class CombinedModelDataSchema(BaseModel):
     """Everything the 3D viewer needs, in one payload, SI canonical.
 
-    Precomputed at upload and served as an immutable R2 artifact (D-15);
-    the viewer makes exactly one data call. `sun_path` stays null until
-    model-viewer wires project-location data into extraction (D-07).
+    Precomputed at upload and served as an immutable R2 artifact (D-15).
+    The sun path is intentionally NOT part of this artifact (D-SP-1): it is
+    location-reactive, so it is served separately by the project-scoped
+    `GET /projects/{id}/sun-path` endpoint and composed by the viewer.
     """
 
     faces: list[FaceSchema]
     spaces: list[SpaceSchema]
-    sun_path: SunPathAndCompassDTOSchema | None = None
     hot_water_systems: list[PhHotWaterSystemSchema]
     ventilation_systems: list[PhVentilationSystemSchema]
     shading_elements: list[ShadeGroupSchema]

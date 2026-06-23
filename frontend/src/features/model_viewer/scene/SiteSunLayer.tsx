@@ -1,4 +1,5 @@
 import { Html, Line } from "@react-three/drei";
+import { useThree } from "@react-three/fiber";
 import { useEffect, useMemo } from "react";
 import { Box3, Vector3 } from "three";
 import {
@@ -8,13 +9,30 @@ import {
   type ShadeMaterials,
 } from "../lib/colors";
 import type { BuildingModel, ShadeRenderable } from "../loaders/building";
+import type { SunPathAndCompassModelData } from "../types";
+import {
+  arc2dToPoints,
+  arc3dToPoints,
+  lineSegment2dToPoints,
+  type Point3,
+  SUN_PATH_DASH_SIZE,
+  SUN_PATH_GAP_SIZE,
+  sunPathFitTransform,
+} from "./sunPathGeometry";
 
 /**
- * The site-sun overlays: merged shade groups, the north compass, and the sun
- * path. The building context itself renders through `BatchedLens` (the site-sun
- * lens reuses `model.buildingObjects`), so this layer is overlays only.
+ * The site-sun overlays: merged shade groups, the north compass, and — when a
+ * project location is set — the annual sun-path diagram. The building context
+ * itself renders through `BatchedLens` (the site-sun lens reuses
+ * `model.buildingObjects`), so this layer is overlays only.
  */
-export function SiteSunLayer({ model }: { model: BuildingModel }) {
+export function SiteSunLayer({
+  model,
+  sunPath,
+}: {
+  model: BuildingModel;
+  sunPath: SunPathAndCompassModelData | null;
+}) {
   const materials = useMemo(() => createShadeMaterials(), []);
   useEffect(() => {
     return () => {
@@ -23,11 +41,19 @@ export function SiteSunLayer({ model }: { model: BuildingModel }) {
     };
   }, [materials]);
 
+  // The canvas runs `frameloop="demand"`, so a repaint only happens on
+  // interaction. The sun path arrives from an async query (and refetches when
+  // the location is edited), so nudge a frame when it resolves or changes.
+  const invalidate = useThree((state) => state.invalidate);
+  useEffect(() => {
+    invalidate();
+  }, [sunPath, invalidate]);
+
   return (
     <>
       <ShadeGroups shades={model.shadeObjects} materials={materials} />
       <SiteCompass bounds={model.bounds} />
-      {model.sunPath ? <SunPathLines model={model} /> : null}
+      {sunPath ? <SunPathDiagram bounds={model.bounds} sunPath={sunPath} /> : null}
     </>
   );
 }
@@ -63,18 +89,67 @@ function SiteCompass({ bounds }: { bounds: Box3 }) {
   );
 }
 
-function SunPathLines({ model }: { model: BuildingModel }) {
+/**
+ * The annual sun path + compass, drawn from the backend's unit-radius,
+ * origin-centered geometry and framed to the building via a uniform
+ * scale + translate (which preserves the baked true-north rotation). Every
+ * element is non-selectable (`raycast` disabled) per Q-VIEW-3.
+ */
+/** One polyline of the diagram. Sun-path curves are dashed; compass elements
+ *  are solid. Points are in the backend's unit-radius local space; the parent
+ *  group applies the fit transform. */
+type SunPathLine = { key: string; points: Point3[]; color: string; dashed: boolean };
+
+function SunPathDiagram({
+  bounds,
+  sunPath,
+}: {
+  bounds: Box3;
+  sunPath: SunPathAndCompassModelData;
+}) {
+  const fit = useMemo(() => sunPathFitTransform(bounds), [bounds]);
+  const lines = useMemo<SunPathLine[]>(() => {
+    const { sunpath, compass } = sunPath;
+    return [
+      ...sunpath.hourly_analemma_polyline3d.map((polyline, index) => ({
+        key: `analemma:${index}`,
+        points: polyline.vertices,
+        color: VIEWER_SUN_PATH_COLOR,
+        dashed: true,
+      })),
+      ...sunpath.monthly_day_arc3d.map((arc, index) => ({
+        key: `arc:${index}`,
+        points: arc3dToPoints(arc),
+        color: VIEWER_SUN_PATH_COLOR,
+        dashed: true,
+      })),
+      ...compass.all_boundary_circles.map((circle, index) => ({
+        key: `circle:${index}`,
+        points: arc2dToPoints(circle),
+        color: VIEWER_SITE_COMPASS_COLOR,
+        dashed: false,
+      })),
+      ...[...compass.major_azimuth_ticks, ...compass.minor_azimuth_ticks].map((tick, index) => ({
+        key: `tick:${index}`,
+        points: lineSegment2dToPoints(tick),
+        color: VIEWER_SITE_COMPASS_COLOR,
+        dashed: false,
+      })),
+    ];
+  }, [sunPath]);
+
   return (
-    <group name="site-sun-path">
-      {model.sunPath?.sunpath.hourly_analemma_polyline3d.map((polyline, index) => (
+    <group name="site-sun-path" position={fit.position} scale={fit.scale}>
+      {lines.map((line) => (
         <Line
-          key={`analemma:${index}`}
-          points={polyline.vertices}
-          color={VIEWER_SUN_PATH_COLOR}
+          key={line.key}
+          points={line.points}
+          color={line.color}
           lineWidth={1}
-          dashed
-          dashSize={1}
-          gapSize={0.5}
+          dashed={line.dashed}
+          dashSize={line.dashed ? SUN_PATH_DASH_SIZE : undefined}
+          gapSize={line.dashed ? SUN_PATH_GAP_SIZE : undefined}
+          raycast={() => null}
         />
       ))}
     </group>

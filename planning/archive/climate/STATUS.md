@@ -20,6 +20,16 @@ RELATED:
 
 # Climate — Status
 
+> **⚠️ Correction (2026-06-23): the "Phase 1 sun-path service" described
+> below was REMOVED from `main` on 2026-06-22** (commit `0056f6df`, with the
+> Climate-page sun-path panel) and is **not** the home of the sun path. The
+> sun-path builder + `GET /projects/{id}/sun-path` endpoint were rebuilt in
+> **`project_location`** (their actual data owner) and the diagram is a
+> **Model-tab** feature. Climate is app-wide reference data only and does not
+> own the sun path. For the live story see
+> `planning/features_v1.1/model-viewer-sun-path/STATUS.md`. The text below is
+> a frozen 2026-06-14 archive — do not trust its sun-path claims.
+
 ## Current state
 
 **Phase 1 + Phase 2 + Phase 3 implemented (3a + 3b + 3c all COMPLETE) —

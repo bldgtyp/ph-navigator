@@ -1,8 +1,12 @@
 ---
-DATE: 2026-06-13
+DATE: 2026-06-23
 TIME: -
-STATUS: Active — unblocked (Climate Phase 1 endpoint shipped 2026-06-13),
-  frontend not started.
+STATUS: Phases 0 + 1 IMPLEMENTED 2026-06-23 (branch
+  `feat/model-viewer-sun-path`), pending commit/merge. Backend pytest +
+  frontend tsc/vitest green; live Playwright deferred (needs worktree dev
+  servers). Background: the backend was built (2026-06-13), DELETED
+  (2026-06-22) during the Climate overhaul, and rebuilt here in
+  `project_location`. Phase 2 (scrubber) remains deferred.
 AUTHOR: Claude (for Ed)
 SCOPE: Status and gates for the sun-path feature.
 RELATED:
@@ -14,44 +18,109 @@ RELATED:
 
 # Sun Path — Status
 
-## Current state
+## Current state (2026-06-23)
 
-`Active — unblocked, not started. REALIGNED 2026-06-13` to frontend-only.
-PRD, decisions, plan, and both phase handoffs authored 2026-06-13. No
-frontend code written. The sun-path **backend** moved to Climate Phase 1
-(`planning/archive/climate/`), which **shipped the endpoint 2026-06-13**;
-this feature is now the Model Viewer **frontend** consumer and is ready to
-start.
+**Phases 0 + 1 implemented on `feat/model-viewer-sun-path` (pending merge).**
+Backend: `project_location/sun_path.py` builder, `service.get_project_sun_path`,
+`GET /projects/{id}/sun-path` route, MCP tool, and
+`tests/test_project_location_sun_path.py` (incl. the north-sign fixture) —
+9 focused tests + the MCP/location suites green. Frontend: `useSunPathQuery`,
+`sunPathGeometry.ts` (+ vitest), the completed `SiteSunLayer` render (arcs +
+compass, bounds-fit), prop threading, hint flip, and the extended Playwright
+spec — tsc clean + 50 vitest green. As cleanup, the dead always-null
+`sun_path` key was removed from the `/model_data` artifact (see below).
+**Remaining:** `make ci`, commit/merge, and a live Playwright run (the
+running dev servers serve `main`, not this worktree — see Blockers).
+
+### History (why this was a rebuild)
+
+The 2026-06-13 plan assumed a "Climate Phase 1" had shipped the
+`GET /projects/{id}/sun-path` endpoint and that this feature was
+**frontend-only**. Tracing the actual `main` history shows that framing
+is stale:
+
+1. The sun-path backend **was built** on 2026-06-13 (commit `005839dc`,
+   "Add sun-path service, route, and MCP tool") — in
+   **`backend/features/project_location/`** (not a "climate" module),
+   reading the `project_location` table.
+2. It was **deliberately removed** on 2026-06-22 (commit `0056f6df`,
+   "Remove sun-path service and refactor climate UI") as part of the
+   Climate pages / PHI·Phius·EPW data-shape overhaul. That commit
+   deleted the builder (`project_location/sun_path.py`), the
+   `/sun-path` route, the MCP tool, the pytest, and the (separate)
+   Climate-page sun-path UI. Its note states the removal was per Ed and
+   that **"sun visualization remains in the Model tab"** — i.e. *this*
+   feature (the Model-Viewer Site & Sun render) is still wanted; only
+   the Climate-page sun-path panel was retired.
+
+At the start of this work, on `main`: the wire DTOs survived
+(`model_viewer/schemas/ladybug.py` — `SunPathAndCompassDTOSchema` et al.,
+plus `ladybug_geometry.py`) and `CombinedModelData.sun_path` was an
+always-`null` key, but **there was no `/sun-path` endpoint and no
+builder**, and the frontend `SiteSunLayer` was the MVP stub (analemmas
+only, gated on the always-null `model.sunPath`). This work rebuilt the
+backend, completed the render, and removed that dead `sun_path` key.
+
+**Good news from the overhaul:** project location data did **not** move.
+`latitude / longitude / elevation_m / true_north_deg / time_zone` still
+live in the `project_location` table, read via
+`project_location.repository.get_location(...)` — the exact seam the
+deleted service used. So the backend rebuild is largely a faithful
+restore of `005839dc`, re-homed and re-verified against today's repo.
 
 ## Next step
 
-Implement `phases/phase-01-static-sun-path.md` — the gating Climate Phase
-1 `GET /projects/{id}/sun-path` endpoint now exists. The work here is the
-frontend render: query the endpoint, complete `SiteSunLayer` (monthly
-arcs + compass), fit to model bounds, flip the location hint. D-SP-1
-accepted; no decisions open for this feature.
+Both implementable phases are done. Remaining to close out:
+`make ci` green, commit/merge `feat/model-viewer-sun-path`, and a live
+Playwright run of `model-viewer-site-sun.spec.ts` against worktree dev
+servers (visual confirmation of the diagram + north orientation). Phase 2
+(scrubber) stays deferred until a concrete time/season need exists.
 
 ## Blockers
 
-- **None** — the only blocker (Climate Phase 1) is cleared. The
-  `GET /projects/{id}/sun-path` endpoint this feature consumes was
-  implemented 2026-06-13
-  (`planning/archive/climate/phases/phase-01-sun-path-service.md`,
-  `make ci` green, pending commit/merge).
+- **None for the implementation.** The former blocker ("Climate Phase 1
+  endpoint") was moot — the endpoint lives in `project_location` and was
+  rebuilt here.
+- **Live e2e is gated on environment, not code:** the running dev servers
+  (`:5173`/`:8000`) serve the `main` checkout, which lacks the new
+  endpoint, so `model-viewer-site-sun.spec.ts` must be run against
+  servers started from this worktree (or in CI on the merged branch).
 
 ## Prerequisites
 
-- **Climate Phase 1 (`planning/archive/climate/`) — implemented
-  2026-06-13** (pending merge). The gating prerequisite (owns the
-  sun-path endpoint) is met.
-- Model Viewer MVP Phases 2 + 6 merged (Site & Sun renderer stub; the
-  geometry/bounds this render fits to) — met.
-- `project-location` implemented + archived (data + setter UI) — met;
-  Climate Phase 1 consumes it.
+- `project_location` feature (data + setter UI) — **met.** Owns
+  `latitude/longitude/elevation_m/true_north_deg/time_zone`; the Set
+  Location flow already persists them via `PUT /projects/{id}/location`.
+- Model Viewer MVP (Site & Sun lens + geometry/bounds the render fits
+  to) — **met.** `SiteSunLayer.tsx` + `model.bounds` exist.
+- Climate reference-dataset feature — **orthogonal.** It is app-wide
+  reference data (Phius/PHI/EPW datasets, nearest-station lookup) and is
+  **not** project-scoped and does **not** own location or the sun path.
 
 ## Phase ledger
 
 | Phase | State | Gate |
 |---|---|---|
-| 1 — Site & Sun 3D render (frontend) | Planned | Climate Phase 1 merged |
+| 0 — Backend sun-path service (project_location) | **Implemented 2026-06-23** (pending merge); pytest green | Location data exists — met |
+| 1 — Site & Sun 3D render (frontend) | **Implemented 2026-06-23** (pending merge); tsc + vitest green, live e2e pending | Phase 0 (done) |
 | 2 — Scrubber | Deferred | Phase 1 merged + named time/season need |
+
+## Cleanup done + follow-ups
+
+- **Removed the dead `sun_path` key from the `/model_data` artifact.** The
+  MVP carried an always-`null` `sun_path` on `CombinedModelDataSchema` /
+  `CombinedModelData` (a placeholder for the rejected bake-into-artifact
+  option). With the sun path now served only by the dedicated endpoint
+  (D-SP-1), that key was dead; it was removed from `schemas/combined.py`,
+  `extraction.py`, the frontend `CombinedModelData` type, and the two
+  tests that asserted it null. Single source of truth now.
+- **Follow-up (deferred): relocate the sun-path wire DTOs.**
+  `SunPathSchema` / `CompassSchema` / `SunPathAndCompassDTOSchema` live in
+  `backend/features/model_viewer/schemas/ladybug.py` but, after the
+  cleanup above, are produced/consumed only by `project_location`'s
+  sun-path service — an ownership inversion. They were left in place
+  because the geometry primitives they reuse (`ladybug_geometry.py`:
+  `Arc2D/Arc3D/LineSegment2D/Polyline3D`) are genuinely shared with
+  `model_viewer`'s face/mesh schemas, so the right home (a shared schema
+  module vs. `project_location`) is a structural decision worth making
+  explicitly rather than mechanically. Not blocking; flagged for Ed.

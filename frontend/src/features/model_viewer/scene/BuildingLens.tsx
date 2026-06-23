@@ -12,7 +12,7 @@ import { isClickWithinDragTolerance, pointerPoint, type PointerPoint } from "../
 import { lineStyleDefinition } from "../lib/themes";
 import type { BuildingModel, GhostGeometry, LineRenderable } from "../loaders/building";
 import { useModelViewerStore } from "../store";
-import type { ModelViewerLens } from "../types";
+import type { ModelViewerLens, SunPathAndCompassModelData } from "../types";
 import { BatchedLens } from "./BatchedLens";
 import { MeasureOverlay } from "./MeasureOverlay";
 import { SiteSunLayer } from "./SiteSunLayer";
@@ -21,6 +21,7 @@ type BuildingLensProps = {
   model: BuildingModel;
   ghostMaterials: GhostMaterials;
   tokens: ViewerTokens;
+  sunPath: SunPathAndCompassModelData | null;
 };
 
 /** Lenses that render on the batched substrate (`BatchedLens`). site-sun also
@@ -33,7 +34,7 @@ const BATCHED_MESH_LENSES = new Set<ModelViewerLens>([
   "site-sun",
 ]);
 
-export function BuildingLens({ model, ghostMaterials, tokens }: BuildingLensProps) {
+export function BuildingLens({ model, ghostMaterials, tokens, sunPath }: BuildingLensProps) {
   const lens = useModelViewerStore((state) => state.lens);
   const measureActive = useModelViewerStore((state) => state.measureActive);
   useLineRaycastTolerance();
@@ -65,7 +66,7 @@ export function BuildingLens({ model, ghostMaterials, tokens }: BuildingLensProp
           ))}
         </group>
       )}
-      {lens === "site-sun" ? <SiteSunLayer model={model} /> : null}
+      {lens === "site-sun" ? <SiteSunLayer model={model} sunPath={sunPath} /> : null}
       <MeasureOverlay model={model} />
     </>
   );

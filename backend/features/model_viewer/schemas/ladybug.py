@@ -1,9 +1,11 @@
 """Pydantic mirrors of ladybug sun-path / compass DTOs.
 
-Phase 2 always serves `sun_path: null` — generation is blocked on
-model-viewer wiring against project-location data (D-07/OQ-1). The
-schemas exist now so the wire shape does not change when that wiring
-lands.
+These are the response shape of the project-scoped `GET /projects/{id}/sun-path`
+endpoint, produced by `features/project_location/sun_path.py`. They live under
+`model_viewer/schemas/` for historical reasons (and reuse the geometry
+primitives in `ladybug_geometry.py`, which `model_viewer` also uses for faces);
+relocating them to a home owned by the producer is a tracked follow-up — see
+planning/features_v1.1/model-viewer-sun-path/STATUS.md.
 """
 
 from __future__ import annotations
@@ -34,7 +36,7 @@ class SunPathSchema(BaseModel):
 
 
 class SunPathAndCompassDTOSchema(BaseModel):
-    """Sun path + compass, bundled as one nullable wire field."""
+    """Sun path + compass — the `/sun-path` endpoint response (null when unset)."""
 
     sunpath: SunPathSchema
     compass: CompassSchema

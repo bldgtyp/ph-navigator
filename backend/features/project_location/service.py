@@ -20,6 +20,7 @@ from features.climate.epw_catalog import download_epw_zip, nearest_epw_entry
 from features.climate.models import ClimateLocationSummary
 from features.climate.proximity import PhDatasetProvider, build_location_roster, build_proximity_payload
 from features.climate.weather_source import build_weather_source_payload
+from features.model_viewer.schemas.ladybug import SunPathAndCompassDTOSchema
 from features.project_climate_source import repository as climate_source_repository
 from features.project_climate_source.service import attach_weather_source, upsert_source_by_kind
 from features.project_location import repository
@@ -41,6 +42,7 @@ from features.project_location.models import (
     ProjectLocationUpdateResponse,
     UpdateProjectLocationRequest,
 )
+from features.project_location.sun_path import build_sun_path
 from features.projects.access import ProjectAccess
 from features.shared.errors import api_error
 
@@ -64,6 +66,28 @@ def get_project_location(project_id: UUID, *, include_private: bool = True) -> P
         row = repository.get_location(conn, project_id)
         epw = epw_descriptor_for_row(conn, project_id, row)
     return project_location_from_row(row, epw, include_private=include_private)
+
+
+def get_project_sun_path(project_id: UUID) -> SunPathAndCompassDTOSchema | None:
+    """Build the project's sun-path diagram, or None when the location is unset.
+
+    Returns None -- never raises -- when there is no location row or
+    latitude/longitude are unset, because the sun path is undefined without
+    coordinates. Optional fields fall back to neutral defaults: no elevation
+    -> sea level, no true north -> +Y, no time zone -> the meridian implied
+    by longitude.
+    """
+    with connection() as conn:
+        row = repository.get_location(conn, project_id)
+    if row is None or row["latitude"] is None or row["longitude"] is None:
+        return None
+    return build_sun_path(
+        latitude=row["latitude"],
+        longitude=row["longitude"],
+        elevation_m=row["elevation_m"] if row["elevation_m"] is not None else 0.0,
+        true_north_deg=row["true_north_deg"] if row["true_north_deg"] is not None else 0.0,
+        time_zone=row["time_zone"],
+    )
 
 
 def update_project_location(
