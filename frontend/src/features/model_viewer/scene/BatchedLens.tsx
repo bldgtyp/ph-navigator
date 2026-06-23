@@ -1,12 +1,18 @@
 import type { ThreeEvent } from "@react-three/fiber";
 import { useThree } from "@react-three/fiber";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Color, type BatchedMesh } from "three";
-import type { MaterialState, ViewerTokens } from "../lib/colors";
+import { Color, type BatchedMesh, type LineBasicMaterial } from "three";
+import {
+  VIEWER_FACE_EDGE_COLOR,
+  VIEWER_FILTER_WIREFRAME_COLOR,
+  type MaterialState,
+  type ViewerTokens,
+} from "../lib/colors";
+import { bucketKeyForMeta, isBucketHidden } from "../lib/legendFilter";
 import { isClickWithinDragTolerance, pointerPoint, type PointerPoint } from "../lib/selection";
 import type { BuildingModel, BuildingRenderable } from "../loaders/building";
 import { useModelViewerStore } from "../store";
-import type { ModelObjectMeta, ModelViewerLens, ModelViewerTheme } from "../types";
+import type { LegendFilter, ModelObjectMeta, ModelViewerLens, ModelViewerTheme } from "../types";
 import { buildLensBatch, resolveInstanceColor, type LensBatch } from "./LensBatch";
 
 type BatchedLensProps = {
@@ -43,6 +49,7 @@ export function BatchedLens({ model, lens, tokens }: BatchedLensProps) {
   }, [objects]);
 
   useBatchColors(batch, model.metaById, lens, tokens, invalidate);
+  useBatchFilter(batch, model.metaById, lens, invalidate);
   useLensFadeIn(batch, invalidate);
 
   const handlers = usePickHandlers(batch, interactive);
@@ -148,6 +155,57 @@ function affectedIds(
     if (id) ids.add(id);
   }
   return ids;
+}
+
+/**
+ * Applies the active legend filter to the batch (NEW-VIEW-2). A single store
+ * subscriber — mirroring `useBatchColors` — toggles per-instance visibility via
+ * `BatchedMesh.setVisibleAt` (hidden instances are skipped by the renderer *and*
+ * the raycaster, so picking is gated for free) and lightens the lens's one merged
+ * edge line to `VIEWER_FILTER_WIREFRAME_COLOR`, leaving the whole building as a
+ * faint wireframe context behind the solid matched bucket. Everything is restored
+ * to fully visible + the normal edge color whenever the filter clears (which the
+ * store forces on every lens/theme/file change).
+ */
+function useBatchFilter(
+  batch: LensBatch | null,
+  metaById: Map<string, ModelObjectMeta>,
+  lens: ModelViewerLens,
+  invalidate: () => void,
+): void {
+  useEffect(() => {
+    if (!batch) return;
+    const store = useModelViewerStore;
+    const edgeMaterial = batch.edges.material as LineBasicMaterial;
+
+    const apply = (filter: LegendFilter | null, theme: ModelViewerTheme) => {
+      const filtering = filter !== null && filter.theme === theme;
+      for (const [id, locations] of batch.batchForId) {
+        const meta = metaById.get(id);
+        const hidden =
+          filtering &&
+          (!meta || isBucketHidden(bucketKeyForMeta(meta, lens, theme), theme, filter));
+        for (const location of locations) location.mesh.setVisibleAt(location.instanceId, !hidden);
+      }
+      edgeMaterial.color.set(filtering ? VIEWER_FILTER_WIREFRAME_COLOR : VIEWER_FACE_EDGE_COLOR);
+      invalidate();
+    };
+
+    const read = () => {
+      const { legendFilter, themesByLens } = store.getState();
+      apply(legendFilter, themesByLens[lens]);
+    };
+
+    read(); // honor any filter the store already holds when the batch mounts
+    return store.subscribe((state, previous) => {
+      if (
+        state.legendFilter !== previous.legendFilter ||
+        state.themesByLens[lens] !== previous.themesByLens[lens]
+      ) {
+        read();
+      }
+    });
+  }, [batch, metaById, lens, invalidate]);
 }
 
 /** R3F pointer handlers shared by both batch primitives; picking reads `batchId`. */

@@ -36,6 +36,8 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
   const lens = useModelViewerStore((state) => state.lens);
   const setLens = useModelViewerStore((state) => state.setLens);
   const clearSelection = useModelViewerStore((state) => state.clearSelection);
+  const legendFilter = useModelViewerStore((state) => state.legendFilter);
+  const clearLegendFilter = useModelViewerStore((state) => state.clearLegendFilter);
   const requestCamera = useModelViewerStore((state) => state.requestCamera);
   const measureActive = useModelViewerStore((state) => state.measureActive);
   const setMeasureActive = useModelViewerStore((state) => state.setMeasureActive);
@@ -99,6 +101,10 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
           clearSelection();
           return;
         }
+        if (legendFilter) {
+          clearLegendFilter();
+          return;
+        }
         dispatchModelViewerPopoverEscape();
         return;
       }
@@ -130,7 +136,9 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [
+    clearLegendFilter,
     clearSelection,
+    legendFilter,
     measureActive,
     model,
     requestCamera,

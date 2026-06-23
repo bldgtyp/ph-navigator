@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Ready — implement.
+STATUS: Implemented — single-select isolate (tests green; unmerged).
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff — single-select legend isolation.
 RELATED:

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { DEFAULT_MODEL_VIEWER_THEMES, defaultThemeForLens } from "./lib/themes";
 import type {
+  LegendFilter,
   ModelViewerErrorKind,
   ModelViewerLens,
   ModelViewerMeasureLine,
@@ -17,6 +18,9 @@ type ModelViewerState = {
   themesByLens: Record<ModelViewerLens, ModelViewerTheme>;
   hoverId: string | null;
   selectionId: string | null;
+  /** Active legend filter (NEW-VIEW-2), or null when no row is isolated. Cleared
+   *  on every lens/theme/file change so a filter never outlives its context. */
+  legendFilter: LegendFilter | null;
   measureActive: boolean;
   measureSnap: ModelViewerMeasurePoint | null;
   measurePendingPoint: ModelViewerMeasurePoint | null;
@@ -28,6 +32,9 @@ type ModelViewerState = {
   setLens: (lens: ModelViewerLens) => void;
   setUrlViewState: (lens: ModelViewerLens, theme: ModelViewerTheme) => void;
   setTheme: (lens: ModelViewerLens, theme: ModelViewerTheme) => void;
+  /** Single-select toggle: isolate `key`, or clear if it is already the sole key. */
+  toggleLegendFilterKey: (theme: ModelViewerTheme, key: string) => void;
+  clearLegendFilter: () => void;
   setHoverId: (objectId: string | null) => void;
   setSelectionId: (objectId: string | null) => void;
   clearSelection: () => void;
@@ -46,6 +53,7 @@ export const useModelViewerStore = create<ModelViewerState>()((set) => ({
   themesByLens: DEFAULT_MODEL_VIEWER_THEMES,
   hoverId: null,
   selectionId: null,
+  legendFilter: null,
   measureActive: false,
   measureSnap: null,
   measurePendingPoint: null,
@@ -58,6 +66,7 @@ export const useModelViewerStore = create<ModelViewerState>()((set) => ({
       activeFileId: fileId,
       hoverId: null,
       selectionId: null,
+      legendFilter: null,
       errorKind: null,
       ...inactiveMeasureState(),
     }),
@@ -70,6 +79,7 @@ export const useModelViewerStore = create<ModelViewerState>()((set) => ({
         themesByLens: { ...state.themesByLens, [lens]: defaultTheme },
         hoverId: null,
         selectionId: null,
+        legendFilter: null,
         ...inactiveMeasureState(),
       };
     }),
@@ -81,6 +91,7 @@ export const useModelViewerStore = create<ModelViewerState>()((set) => ({
       return {
         lens,
         themesByLens: { ...state.themesByLens, [lens]: theme },
+        legendFilter: null,
         ...(sameLens ? {} : { hoverId: null, selectionId: null, ...inactiveMeasureState() }),
       };
     }),
@@ -88,8 +99,17 @@ export const useModelViewerStore = create<ModelViewerState>()((set) => ({
     set((state) =>
       state.themesByLens[lens] === theme
         ? state
-        : { themesByLens: { ...state.themesByLens, [lens]: theme } },
+        : { themesByLens: { ...state.themesByLens, [lens]: theme }, legendFilter: null },
     ),
+  toggleLegendFilterKey: (theme, key) =>
+    set((state) => {
+      const current = state.legendFilter;
+      const isSoleActiveKey =
+        current?.theme === theme && current.keys.size === 1 && current.keys.has(key);
+      return { legendFilter: isSoleActiveKey ? null : { theme, keys: new Set([key]) } };
+    }),
+  clearLegendFilter: () =>
+    set((state) => (state.legendFilter === null ? state : { legendFilter: null })),
   setHoverId: (objectId) =>
     set((state) => (state.hoverId === objectId ? state : { hoverId: objectId })),
   setSelectionId: (objectId) =>

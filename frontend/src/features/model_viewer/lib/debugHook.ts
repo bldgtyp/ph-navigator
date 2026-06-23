@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from "react";
+import { isHiddenByFilter } from "./legendFilter";
 import { distanceBetweenMeasurePoints } from "./measure";
 import { colorForThemedObject, legendForModel } from "./themes";
 import { emptyModelObjectCounts, type BuildingModel } from "../loaders/building";
@@ -34,6 +35,7 @@ function useModelViewerDebugHook(model: BuildingModel | null, sunPathReady: bool
   const errorKind = useModelViewerStore((state) => state.errorKind);
   const lens = useModelViewerStore((state) => state.lens);
   const theme = useModelViewerStore((state) => state.themesByLens[state.lens]);
+  const legendFilter = useModelViewerStore((state) => state.legendFilter);
   const selectionId = useModelViewerStore((state) => state.selectionId);
   const hoverId = useModelViewerStore((state) => state.hoverId);
   const measureActive = useModelViewerStore((state) => state.measureActive);
@@ -49,8 +51,11 @@ function useModelViewerDebugHook(model: BuildingModel | null, sunPathReady: bool
     [model?.objects],
   );
   const visibleObjectIds = useMemo(
-    () => selectableObjectsForLens(model, lens).map((object) => object.id),
-    [lens, model],
+    () =>
+      selectableObjectsForLens(model, lens)
+        .filter((object) => !isHiddenByFilter(object, lens, theme, legendFilter))
+        .map((object) => object.id),
+    [lens, model, theme, legendFilter],
   );
   const legend = useMemo(
     () => (model ? legendForModel(model, lens, theme) : null),
@@ -70,6 +75,9 @@ function useModelViewerDebugHook(model: BuildingModel | null, sunPathReady: bool
       lens,
       theme,
       legend,
+      legendFilter: legendFilter
+        ? { theme: legendFilter.theme, keys: [...legendFilter.keys] }
+        : null,
       selectionId,
       hoverId,
       measureActive,
@@ -132,6 +140,7 @@ function useModelViewerDebugHook(model: BuildingModel | null, sunPathReady: bool
     clearSelection,
     errorKind,
     hoverId,
+    legendFilter,
     lens,
     legend,
     loadPhase,

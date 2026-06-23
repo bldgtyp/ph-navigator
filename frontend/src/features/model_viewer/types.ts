@@ -400,6 +400,14 @@ export type ModelViewerLegend = {
   kind: "theme" | "mini-key";
 } | null;
 
+/** An active legend filter (NEW-VIEW-2): the matched bucket keys, stamped with
+ *  the theme they belong to so a filter left over from another theme is ignored
+ *  rather than wrongly applied. A single-element set is a single-select filter. */
+export type LegendFilter = {
+  theme: ModelViewerTheme;
+  keys: Set<string>;
+};
+
 export type ModelViewerMeasurePoint = {
   id: string;
   sourceObjectId: string;
@@ -425,6 +433,8 @@ export type ModelViewerDebugState = {
   lens: ModelViewerLens;
   theme: ModelViewerTheme;
   legend: ModelViewerLegend;
+  /** The active legend filter, keys as an array for `page.evaluate` round-trips. */
+  legendFilter: { theme: ModelViewerTheme; keys: string[] } | null;
   selectionId: string | null;
   hoverId: string | null;
   measureActive: boolean;
