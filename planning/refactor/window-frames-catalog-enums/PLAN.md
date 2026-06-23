@@ -9,9 +9,14 @@ RELATED: ./research.md, ./decisions.md, ./STATUS.md
 
 # PLAN — window-frames-catalog-enums
 
-Assumes the recommended decisions: D-1 all six single-select; D-2 option **store
+> **This file is the high-level overview.** Detailed, file-level implementation
+> plans (targets, signatures, SQL, tests, exit gates) now live under `phases/` —
+> one file per phase below. See the README phase map. Start at
+> `phases/phase-00-canonical-vocab-and-cleanup.md`.
+
+Assumes the resolved decisions: D-1 all six single-select; D-2 option **store
 (B)** with **label-string** storage; D-3 **backend-computed** name; D-5 default
-resolution **by id**. Adjust if Ed picks differently.
+resolution **by id**.
 
 All work is backend + catalog-frontend; **no aperture-consumer changes** beyond
 the default-frame lookup. Each phase is independently shippable and ends green on
