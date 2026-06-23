@@ -11,6 +11,19 @@
   background: transparent;
 }
 
+.envelope-body {
+  display: grid;
+  gap: var(--space-12);
+  width: calc(100% - 2 * clamp(var(--space-12), 2vw, var(--space-24)));
+  max-width: 1480px;
+  min-height: 620px;
+  margin: var(--space-20) auto var(--space-32);
+  padding: var(--space-14);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+}
+
 .envelope-sidebar-header {
   align-items: center;
   display: flex;
@@ -35,12 +48,18 @@
 
 .envelope-sidebar {
   border-right: 1px solid var(--border-subtle);
-  background: var(--bg-page);
+  background: var(--bg-card);
   display: flex;
   flex-direction: column;
+  margin: calc(-1 * var(--space-14)) 0 calc(-1 * var(--space-14)) calc(-1 * var(--space-14));
   min-width: 0;
   overflow-x: hidden;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
   width: 260px;
+}
+
+.envelope-command-banner + .envelope-workbench .envelope-sidebar {
+  margin-top: 0;
 }
 
 .envelope-sidebar.is-collapsed {
@@ -1236,6 +1255,11 @@
 }
 
 @media (max-width: 780px) {
+  .envelope-body {
+    margin-block: var(--space-16) var(--space-24);
+    padding: var(--space-12);
+  }
+
   .envelope-workbench {
     grid-template-columns: 1fr;
   }
@@ -1245,9 +1269,16 @@
   }
 
   .envelope-sidebar {
+    width: 100%;
+    margin: calc(-1 * var(--space-12)) calc(-1 * var(--space-12)) 0;
     border-right: 0;
     border-bottom: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
     padding: var(--space-12) 0;
+  }
+
+  .envelope-sidebar.is-collapsed {
+    width: 100%;
   }
 
   .assembly-workspace {

@@ -262,120 +262,122 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
           Materials
         </AppSubTabLink>
       </AppSubTabs>
-      {activeAssemblyDriftCount > 0 && isAssembliesRoute ? (
-        <div className="envelope-command-banner" role="status">
-          {activeAssemblyDriftCount} material{" "}
-          {activeAssemblyDriftCount === 1 ? "copy needs" : "copies need"} catalog review.
-          <NavLink
-            className="text-button"
-            to={{ pathname: envelopeMaterialsPath(project.id), search: location.search }}
-          >
-            Review all
-          </NavLink>
-        </div>
-      ) : null}
-      {isMaterialsRoute ? (
-        <MaterialsPanel
-          materials={query.data.project_materials}
-          driftByMaterialId={driftByMaterialId}
-          projectId={project.id}
-          isViewer={isViewer}
-          canEdit={canEdit}
-          busy={commandMutation.isPending || attachmentMutation.isPending}
-          error={commandError}
-          onCommand={(command) => void applyCommand(command)}
-          onAttachmentChange={(args) => applyAttachmentChange(args)}
-          onRefreshMaterial={setRefreshMaterialId}
-        />
-      ) : assemblies.length === 0 || !activeAssembly ? (
-        <div>
-          <EnvelopeEmptyState />
-          {canEdit ? (
-            <button
-              type="button"
-              className="primary-button envelope-empty-action"
-              onClick={() => setDialog({ kind: "create-assembly" })}
+      <div className="envelope-body">
+        {activeAssemblyDriftCount > 0 && isAssembliesRoute ? (
+          <div className="envelope-command-banner" role="status">
+            {activeAssemblyDriftCount} material{" "}
+            {activeAssemblyDriftCount === 1 ? "copy needs" : "copies need"} catalog review.
+            <NavLink
+              className="text-button"
+              to={{ pathname: envelopeMaterialsPath(project.id), search: location.search }}
             >
-              New assembly
-            </button>
-          ) : null}
-        </div>
-      ) : (
-        <AssemblyWorkspace
-          projectId={project.id}
-          assemblies={assemblies}
-          activeAssembly={activeAssembly}
-          materials={query.data.project_materials}
-          search={searchParams}
-          zoom={zoom}
-          canEdit={canEdit}
-          thermal={thermalQuery.data ?? null}
-          thermalLoading={thermalQuery.isFetching}
-          commandBusy={commandMutation.isPending}
-          paint={paintController}
-          onAddAssembly={() => setDialog({ kind: "create-assembly" })}
-          onRenameActive={(name) =>
-            void applyCommand({
-              kind: "rename_assembly",
-              assembly_id: activeAssembly.id,
-              name,
-            })
-          }
-          onZoomIn={() => setZoom(nextZoomStep)}
-          onZoomOut={() => setZoom(previousZoomStep)}
-          onRename={(assembly, name) =>
-            void applyCommand({
-              kind: "rename_assembly",
-              assembly_id: assembly.id,
-              name,
-            })
-          }
-          onTypeChange={(assembly) => setDialog({ kind: "type-assembly", assembly })}
-          onDuplicate={(assembly) => setDialog({ kind: "duplicate-assembly", assembly })}
-          onDelete={(assembly) => setDialog({ kind: "delete-assembly", assembly })}
-          onFlipOrientation={() =>
-            void applyCommand({ kind: "flip_orientation", assembly_id: activeAssembly.id })
-          }
-          onFlipLayers={() =>
-            void applyCommand({ kind: "flip_layers", assembly_id: activeAssembly.id })
-          }
-          onFlipSegments={() =>
-            void applyCommand({ kind: "flip_segments", assembly_id: activeAssembly.id })
-          }
-          onDeleteLayer={(layer) =>
-            setDialog({ kind: "delete-layer", assembly: activeAssembly, layer })
-          }
-          onUpdateLayerThickness={(layer, thicknessMm) =>
-            void applyCommand({
-              kind: "update_layer_thickness",
-              assembly_id: activeAssembly.id,
-              layer_id: layer.id,
-              thickness_mm: thicknessMm,
-            })
-          }
-          onAddLayer={(layer, position) =>
-            setDialog({ kind: "add-layer", assembly: activeAssembly, layer, position })
-          }
-          onEditSegment={(layer, segment) =>
-            setDialog({ kind: "segment", assembly: activeAssembly, layer, segment })
-          }
-          onAddSegment={(layer, segment, position) =>
-            setDialog({
-              kind: "add-segment",
-              assembly: activeAssembly,
-              layer,
-              segment,
-              position,
-            })
-          }
-        >
-          {commandError && !dialog ? (
-            <p className="form-error" role="alert">
-              {commandError}
-            </p>
-          ) : null}
-        </AssemblyWorkspace>
-      )}
+              Review all
+            </NavLink>
+          </div>
+        ) : null}
+        {isMaterialsRoute ? (
+          <MaterialsPanel
+            materials={query.data.project_materials}
+            driftByMaterialId={driftByMaterialId}
+            projectId={project.id}
+            isViewer={isViewer}
+            canEdit={canEdit}
+            busy={commandMutation.isPending || attachmentMutation.isPending}
+            error={commandError}
+            onCommand={(command) => void applyCommand(command)}
+            onAttachmentChange={(args) => applyAttachmentChange(args)}
+            onRefreshMaterial={setRefreshMaterialId}
+          />
+        ) : assemblies.length === 0 || !activeAssembly ? (
+          <div>
+            <EnvelopeEmptyState />
+            {canEdit ? (
+              <button
+                type="button"
+                className="primary-button envelope-empty-action"
+                onClick={() => setDialog({ kind: "create-assembly" })}
+              >
+                New assembly
+              </button>
+            ) : null}
+          </div>
+        ) : (
+          <AssemblyWorkspace
+            projectId={project.id}
+            assemblies={assemblies}
+            activeAssembly={activeAssembly}
+            materials={query.data.project_materials}
+            search={searchParams}
+            zoom={zoom}
+            canEdit={canEdit}
+            thermal={thermalQuery.data ?? null}
+            thermalLoading={thermalQuery.isFetching}
+            commandBusy={commandMutation.isPending}
+            paint={paintController}
+            onAddAssembly={() => setDialog({ kind: "create-assembly" })}
+            onRenameActive={(name) =>
+              void applyCommand({
+                kind: "rename_assembly",
+                assembly_id: activeAssembly.id,
+                name,
+              })
+            }
+            onZoomIn={() => setZoom(nextZoomStep)}
+            onZoomOut={() => setZoom(previousZoomStep)}
+            onRename={(assembly, name) =>
+              void applyCommand({
+                kind: "rename_assembly",
+                assembly_id: assembly.id,
+                name,
+              })
+            }
+            onTypeChange={(assembly) => setDialog({ kind: "type-assembly", assembly })}
+            onDuplicate={(assembly) => setDialog({ kind: "duplicate-assembly", assembly })}
+            onDelete={(assembly) => setDialog({ kind: "delete-assembly", assembly })}
+            onFlipOrientation={() =>
+              void applyCommand({ kind: "flip_orientation", assembly_id: activeAssembly.id })
+            }
+            onFlipLayers={() =>
+              void applyCommand({ kind: "flip_layers", assembly_id: activeAssembly.id })
+            }
+            onFlipSegments={() =>
+              void applyCommand({ kind: "flip_segments", assembly_id: activeAssembly.id })
+            }
+            onDeleteLayer={(layer) =>
+              setDialog({ kind: "delete-layer", assembly: activeAssembly, layer })
+            }
+            onUpdateLayerThickness={(layer, thicknessMm) =>
+              void applyCommand({
+                kind: "update_layer_thickness",
+                assembly_id: activeAssembly.id,
+                layer_id: layer.id,
+                thickness_mm: thicknessMm,
+              })
+            }
+            onAddLayer={(layer, position) =>
+              setDialog({ kind: "add-layer", assembly: activeAssembly, layer, position })
+            }
+            onEditSegment={(layer, segment) =>
+              setDialog({ kind: "segment", assembly: activeAssembly, layer, segment })
+            }
+            onAddSegment={(layer, segment, position) =>
+              setDialog({
+                kind: "add-segment",
+                assembly: activeAssembly,
+                layer,
+                segment,
+                position,
+              })
+            }
+          >
+            {commandError && !dialog ? (
+              <p className="form-error" role="alert">
+                {commandError}
+              </p>
+            ) : null}
+          </AssemblyWorkspace>
+        )}
+      </div>
       <EnvelopeEditorDialogs
         dialog={dialog}
         materials={query.data.project_materials}
