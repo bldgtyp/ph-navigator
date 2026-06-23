@@ -226,16 +226,17 @@
 }
 
 .envelope-sidebar-row-name {
+  align-items: center;
   color: inherit;
-  display: block;
+  display: grid;
   font-size: var(--fs-sm);
   font-weight: 500;
+  gap: var(--space-8);
+  grid-template-columns: 16px minmax(0, 1fr);
   line-height: 1.25;
   min-width: 0;
   overflow: hidden;
   text-decoration: none;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .envelope-sidebar-row-name::before {
@@ -243,6 +244,50 @@
   content: "";
   inset: 0;
   position: absolute;
+}
+
+.envelope-sidebar-row-type-icon {
+  color: var(--text-secondary);
+  opacity: 0.85;
+}
+
+.envelope-sidebar-row.active .envelope-sidebar-row-type-icon {
+  color: var(--accent-text);
+  opacity: 1;
+}
+
+.envelope-sidebar-row-name-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.envelope-sidebar-name-tooltip {
+  background: color-mix(in oklab, var(--text-primary) 90%, transparent);
+  border-radius: var(--radius-2xs);
+  color: var(--bg-card);
+  font-family: var(--font-primary);
+  font-size: 11px;
+  line-height: 1.25;
+  max-width: min(360px, calc(100vw - 32px));
+  overflow-wrap: anywhere;
+  padding: 5px 8px;
+  pointer-events: none;
+  position: fixed;
+  transform: translateY(-50%);
+  z-index: var(--z-tooltip);
+}
+
+.envelope-sidebar-name-tooltip::after {
+  border-bottom: 5px solid transparent;
+  border-right: 5px solid color-mix(in oklab, var(--text-primary) 90%, transparent);
+  border-top: 5px solid transparent;
+  content: "";
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .envelope-sidebar-row-actions {

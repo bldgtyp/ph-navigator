@@ -13,7 +13,7 @@ import {
 } from "./api";
 import { envelopeQueryKeys } from "./query-keys";
 import type {
-  EnvelopeAttachmentChangeArgs,
+  EnvelopeAttachmentChange,
   EnvelopeCommand,
   EnvelopeReadResponse,
   EnvelopeReadSource,
@@ -118,38 +118,41 @@ export function useEnvelopeAttachmentMutation({
       change,
     }: {
       current: EnvelopeReadResponse;
-      change: EnvelopeAttachmentChangeArgs;
+      change: EnvelopeAttachmentChange;
     }) => {
       if (!versionId) throw new Error("Select a version before editing envelope attachments.");
       let draftEtag = current.draft_etag;
-      const removed = change.currentAssetIds.filter(
-        (assetId) => !change.nextAssetIds.includes(assetId),
-      );
-      const added = change.nextAssetIds.filter(
-        (assetId) => !change.currentAssetIds.includes(assetId),
-      );
-      for (const assetId of removed) {
-        const response = await detachAssetFromDocument(projectId, assetId, {
-          version_id: versionId,
-          table_key: change.tableKey,
-          row_id: change.rowId,
-          field_key: change.fieldKey,
-          if_match: draftEtag,
-          if_match_version: draftEtag ? undefined : current.version_etag,
-        });
-        draftEtag = response.draft_etag;
-      }
-      for (const assetId of added) {
-        const response = await attachAssetToDocument(projectId, assetId, {
-          version_id: versionId,
-          table_key: change.tableKey,
-          row_id: change.rowId,
-          field_key: change.fieldKey,
-          index: change.nextAssetIds.indexOf(assetId),
-          if_match: draftEtag,
-          if_match_version: draftEtag ? undefined : current.version_etag,
-        });
-        draftEtag = response.draft_etag;
+      const changes = Array.isArray(change) ? change : [change];
+      for (const item of changes) {
+        const removed = item.currentAssetIds.filter(
+          (assetId) => !item.nextAssetIds.includes(assetId),
+        );
+        const added = item.nextAssetIds.filter(
+          (assetId) => !item.currentAssetIds.includes(assetId),
+        );
+        for (const assetId of removed) {
+          const response = await detachAssetFromDocument(projectId, assetId, {
+            version_id: versionId,
+            table_key: item.tableKey,
+            row_id: item.rowId,
+            field_key: item.fieldKey,
+            if_match: draftEtag,
+            if_match_version: draftEtag ? undefined : current.version_etag,
+          });
+          draftEtag = response.draft_etag;
+        }
+        for (const assetId of added) {
+          const response = await attachAssetToDocument(projectId, assetId, {
+            version_id: versionId,
+            table_key: item.tableKey,
+            row_id: item.rowId,
+            field_key: item.fieldKey,
+            index: item.nextAssetIds.indexOf(assetId),
+            if_match: draftEtag,
+            if_match_version: draftEtag ? undefined : current.version_etag,
+          });
+          draftEtag = response.draft_etag;
+        }
       }
       return { draftEtag };
     },

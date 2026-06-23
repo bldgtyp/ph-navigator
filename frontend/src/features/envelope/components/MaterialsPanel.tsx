@@ -30,13 +30,18 @@ import { ProjectMaterialEditorModal } from "./ProjectMaterialEditorModal";
 import { materialNeedsCatalogReview } from "../drift";
 import { sortProjectMaterials, viewerVisibleMaterials } from "../lib";
 import type {
+  EnvelopeAttachmentChange,
   EnvelopeCommand,
-  EnvelopeAttachmentChangeArgs,
   ProjectMaterial,
   ProjectMaterialDriftItem,
   SpecificationStatus,
 } from "../types";
 import { UseSiteRow } from "./materials/UseSiteRow";
+import {
+  buildUseSitePhotoChanges,
+  countGroupedUseSitePhotos,
+  groupMaterialUseSites,
+} from "./materials/use-site-groups";
 
 const STATUSES: SpecificationStatus[] = ["missing", "question", "complete", "na"];
 
@@ -67,7 +72,7 @@ export function MaterialsPanel({
   busy: boolean;
   error: string | null;
   onCommand: (command: EnvelopeCommand) => void;
-  onAttachmentChange: (args: EnvelopeAttachmentChangeArgs) => Promise<void> | void;
+  onAttachmentChange: (args: EnvelopeAttachmentChange) => Promise<void> | void;
   onRefreshMaterial: (projectMaterialId: string) => void;
 }) {
   const { unitSystem } = useUnitPreference();
@@ -196,11 +201,7 @@ export function MaterialsPanel({
       key: "photos",
       header: "Photos",
       width: "80px",
-      render: (m) => (
-        <AttachmentChipCell
-          count={m.use_sites.reduce((total, site) => total + site.photo_asset_ids.length, 0)}
-        />
-      ),
+      render: (m) => <AttachmentChipCell count={countGroupedUseSitePhotos(m.use_sites)} />,
     },
     {
       key: "status",
@@ -303,6 +304,7 @@ export function MaterialsPanel({
       }
       renderExpansion={(material) => {
         const driftItem = driftByMaterialId.get(material.id) ?? null;
+        const useSiteGroups = groupMaterialUseSites(material.use_sites);
         return (
           <div className="spec-expansion">
             <header className="spec-expansion__header">
@@ -355,20 +357,24 @@ export function MaterialsPanel({
                     <p className="spec-evidence__empty">Not used by an assembly.</p>
                   ) : (
                     <ul className="spec-expansion__use-sites">
-                      {material.use_sites.map((site) => {
-                        const siteKey = `${site.assembly_id}:${site.layer_id}:${site.segment_id}`;
+                      {useSiteGroups.map((group) => {
+                        const site = group.site;
                         return (
                           <UseSiteRow
-                            key={siteKey}
-                            siteKey={siteKey}
+                            key={group.key}
+                            siteKey={group.key}
                             site={site}
+                            whereLabel={group.whereLabel}
                             projectId={projectId}
                             assetUrlById={assetUrlById}
                             canEdit={canEdit}
+                            canEditNote={group.canEditNotes}
                             busy={busy}
-                            isEditing={editingSiteKey === siteKey}
+                            isEditing={editingSiteKey === group.key}
                             onToggleEdit={() =>
-                              setEditingSiteKey((current) => (current === siteKey ? null : siteKey))
+                              setEditingSiteKey((current) =>
+                                current === group.key ? null : group.key,
+                              )
                             }
                             onSubmit={(use_site_notes) =>
                               onCommand({
@@ -379,15 +385,13 @@ export function MaterialsPanel({
                                 use_site_notes,
                               })
                             }
-                            onPhotoChange={(nextAssetIds) =>
-                              onAttachmentChange({
-                                tableKey: "assembly_segments",
-                                rowId: site.segment_id,
-                                fieldKey: "photo_asset_ids",
-                                currentAssetIds: site.photo_asset_ids,
-                                nextAssetIds,
-                              })
-                            }
+                            onPhotoChange={(nextAssetIds) => {
+                              const changes = buildUseSitePhotoChanges(group, nextAssetIds);
+                              if (changes.length === 0) return undefined;
+                              return onAttachmentChange(
+                                changes.length === 1 ? changes[0]! : changes,
+                              );
+                            }}
                           />
                         );
                       })}

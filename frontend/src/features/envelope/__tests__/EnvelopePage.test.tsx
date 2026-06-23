@@ -235,6 +235,75 @@ describe("EnvelopePage", () => {
     );
   });
 
+  test("assembly sidebar renders type icons without changing link names", async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/envelope?")) {
+        return Promise.resolve(
+          jsonResponse({
+            ...envelopePayload,
+            assemblies: [
+              { ...envelopePayload.assemblies[0], id: "asm_wall", name: "Wall", type: "wall" },
+              { ...envelopePayload.assemblies[0], id: "asm_roof", name: "Roof", type: "roof" },
+              { ...envelopePayload.assemblies[0], id: "asm_floor", name: "Floor", type: "floor" },
+              { ...envelopePayload.assemblies[0], id: "asm_other", name: "Other", type: "other" },
+            ],
+          }),
+        );
+      }
+      return defaultFetchImplementation(url);
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall`);
+
+    expect(await screen.findByRole("link", { name: "Wall" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Roof" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Floor" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Other" })).toBeInTheDocument();
+    for (const type of ["wall", "roof", "floor", "other"]) {
+      expect(
+        document.querySelector(
+          `.envelope-sidebar-row-name[data-assembly-type="${type}"] .envelope-sidebar-row-type-icon`,
+        ),
+      ).toBeInTheDocument();
+    }
+  });
+
+  test("assembly sidebar shows the full assembly name on row hover", async () => {
+    const longName = "R-AT Attic Framing Over Existing Board Sheathing";
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/envelope?")) {
+        return Promise.resolve(
+          jsonResponse({
+            ...envelopePayload,
+            assemblies: [{ ...envelopePayload.assemblies[0], name: longName }],
+          }),
+        );
+      }
+      return defaultFetchImplementation(url);
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    const assemblyLink = await screen.findByRole("link", { name: longName });
+    await userEvent.hover(assemblyLink);
+
+    await waitFor(() =>
+      expect(
+        document.getElementById("assembly-sidebar-name-tooltip-asm_wall_c3"),
+      ).toHaveTextContent(longName),
+    );
+    expect(assemblyLink).toHaveAttribute(
+      "aria-describedby",
+      "assembly-sidebar-name-tooltip-asm_wall_c3",
+    );
+
+    await userEvent.unhover(assemblyLink);
+
+    await waitFor(() =>
+      expect(document.getElementById("assembly-sidebar-name-tooltip-asm_wall_c3")).toBeNull(),
+    );
+  });
+
   test("unit toggle changes labels without changing canvas dimensions", async () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
 
@@ -786,7 +855,14 @@ describe("EnvelopePage", () => {
           jsonResponse({
             ...envelopePayload,
             draft_etag: "draft-etag-2",
-            assemblies: [{ ...envelopePayload.assemblies[0], name: "F-CS", type: "floor" }],
+            assemblies: [
+              {
+                ...envelopePayload.assemblies[0],
+                id: "asm_floor_cs",
+                name: "F-CS",
+                type: "floor",
+              },
+            ],
           }),
         );
       }
@@ -811,6 +887,49 @@ describe("EnvelopePage", () => {
     expect(commandRequestBodies()).toContainEqual({
       command: { kind: "create_assembly", name: "F-CS", type: "floor" },
     });
+    await waitFor(() =>
+      expect(screen.getByTestId("location")).toHaveTextContent(
+        `/projects/${PROJECT_ID}/envelope/assemblies/asm_floor_cs`,
+      ),
+    );
+  });
+
+  test("duplicate assembly modal navigates to the copied assembly", async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/draft/envelope/commands")) {
+        return Promise.resolve(
+          jsonResponse({
+            ...envelopePayload,
+            draft_etag: "draft-etag-2",
+            assemblies: [
+              envelopePayload.assemblies[0],
+              {
+                ...envelopePayload.assemblies[0],
+                id: "asm_wall_c3_copy",
+                name: "WALL-C3 Copy",
+              },
+            ],
+          }),
+        );
+      }
+      return defaultFetchImplementation(url);
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    await userEvent.click(screen.getByRole("button", { name: "Duplicate assembly" }));
+    const dialog = await screen.findByRole("dialog", { name: "Duplicate assembly" });
+    await userEvent.click(within(dialog).getByRole("button", { name: "Apply" }));
+
+    expect(commandRequestBodies()).toContainEqual({
+      command: { kind: "duplicate_assembly", assembly_id: "asm_wall_c3", name: "WALL-C3 Copy" },
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId("location")).toHaveTextContent(
+        `/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3_copy`,
+      ),
+    );
   });
 
   test("rename command posts semantic payload with draft etag", async () => {

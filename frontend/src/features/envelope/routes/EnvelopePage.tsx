@@ -6,7 +6,7 @@
 // components so browser and MCP mutations share the semantic command boundary.
 import "../envelope.css";
 import { Download } from "lucide-react";
-import { Navigate, NavLink, useLocation, useSearchParams } from "react-router-dom";
+import { Navigate, NavLink, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
 import { AppSubTabLink, AppSubTabs } from "../../../shared/ui/AppSubTabs";
@@ -42,7 +42,7 @@ import {
 import { MaterialDriftDialog } from "../components/MaterialDrift";
 import { MaterialsPanel } from "../components/MaterialsPanel";
 import { nextZoomStep, previousZoomStep } from "../canvas-constants";
-import type { EnvelopeAttachmentChangeArgs, EnvelopeCommand } from "../types";
+import type { EnvelopeAttachmentChange, EnvelopeCommand, EnvelopeReadResponse } from "../types";
 import {
   countAssemblyMaterialDrift,
   exportErrorDetails,
@@ -51,6 +51,7 @@ import {
 
 export function EnvelopePage({ project }: { project: ProjectDetail }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isViewer = project.access_mode === "viewer";
   const isLocked = project.active_version?.locked ?? false;
@@ -192,8 +193,15 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     commandInFlightRef.current = true;
     setCommandError(null);
     try {
-      await commandMutation.mutateAsync({ current, command });
+      const next = await commandMutation.mutateAsync({ current, command });
       setDialog(null);
+      const createdAssemblyId = createdAssemblyIdFromCommand(command, current, next);
+      if (createdAssemblyId) {
+        navigate({
+          pathname: envelopeAssemblyPath(project.id, createdAssemblyId),
+          search: location.search,
+        });
+      }
       return true;
     } catch (error) {
       setCommandError(errorMessage(error, "Envelope command failed."));
@@ -220,7 +228,7 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     }
   }
 
-  async function applyAttachmentChange(change: EnvelopeAttachmentChangeArgs): Promise<void> {
+  async function applyAttachmentChange(change: EnvelopeAttachmentChange): Promise<void> {
     const current = query.data;
     if (!current) return;
     setCommandError(null);
@@ -406,4 +414,14 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
       ) : null}
     </section>
   );
+}
+
+function createdAssemblyIdFromCommand(
+  command: EnvelopeCommand,
+  current: EnvelopeReadResponse,
+  next: EnvelopeReadResponse,
+): string | null {
+  if (command.kind !== "create_assembly" && command.kind !== "duplicate_assembly") return null;
+  const currentAssemblyIds = new Set(current.assemblies.map((assembly) => assembly.id));
+  return next.assemblies.find((assembly) => !currentAssemblyIds.has(assembly.id))?.id ?? null;
 }
