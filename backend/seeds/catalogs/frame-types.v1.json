@@ -405,25 +405,6 @@
       "comments": null
     },
     {
-      "name": "Default",
-      "manufacturer": "Default",
-      "brand": null,
-      "use": null,
-      "operation": null,
-      "location": null,
-      "mull_type": null,
-      "prefix": null,
-      "suffix": null,
-      "material": null,
-      "width_mm": 100.0,
-      "u_value_w_m2k": 1.0,
-      "psi_g_w_mk": 0.04,
-      "psi_install_w_mk": null,
-      "color": null,
-      "source": null,
-      "comments": "Default"
-    },
-    {
       "name": "Internorm | HF510 - Home Pure | Window | Fixed | Head",
       "manufacturer": "Internorm",
       "brand": "HF510 - Home Pure",
@@ -1336,9 +1317,9 @@
       "comments": null
     },
     {
-      "name": "Mercury | CURRIES | Outswing | Head",
-      "manufacturer": "Mercury",
-      "brand": "CURRIES",
+      "name": "Curries | Mercury | Outswing | Head",
+      "manufacturer": "Curries",
+      "brand": "Mercury",
       "use": null,
       "operation": "Outswing",
       "location": "Head",
@@ -1355,9 +1336,9 @@
       "comments": null
     },
     {
-      "name": "Mercury | CURRIES | Outswing | Jamb",
-      "manufacturer": "Mercury",
-      "brand": "CURRIES",
+      "name": "Curries | Mercury | Outswing | Jamb",
+      "manufacturer": "Curries",
+      "brand": "Mercury",
       "use": null,
       "operation": "Outswing",
       "location": "Jamb",
@@ -1374,9 +1355,9 @@
       "comments": null
     },
     {
-      "name": "Mercury | CURRIES | Outswing | Sill",
-      "manufacturer": "Mercury",
-      "brand": "CURRIES",
+      "name": "Curries | Mercury | Outswing | Sill",
+      "manufacturer": "Curries",
+      "brand": "Mercury",
       "use": null,
       "operation": "Outswing",
       "location": "Sill",
@@ -2799,13 +2780,13 @@
       "comments": null
     },
     {
-      "name": "Viking | SW17 | Window | Tilt-Turn | Mull-V | OP-TO-FIX",
+      "name": "Viking | SW17 | Window | Tilt-Turn | Mull-V | OP-to-FX",
       "manufacturer": "Viking",
       "brand": "SW17",
       "use": "Window",
       "operation": "Tilt-Turn",
       "location": "Mull-V",
-      "mull_type": "OP-TO-FIX",
+      "mull_type": "OP-to-FX",
       "prefix": null,
       "suffix": null,
       "material": null,
@@ -3213,7 +3194,7 @@
       "psi_g_w_mk": 0.023,
       "psi_install_w_mk": null,
       "color": null,
-      "source": "manufacturer",
+      "source": "Manufacturer",
       "comments": null
     },
     {
@@ -3403,7 +3384,7 @@
       "psi_g_w_mk": 0.023,
       "psi_install_w_mk": null,
       "color": null,
-      "source": "manufacturer",
+      "source": "Manufacturer",
       "comments": null
     },
     {
@@ -3422,7 +3403,7 @@
       "psi_g_w_mk": 0.023,
       "psi_install_w_mk": null,
       "color": null,
-      "source": "manufacturer",
+      "source": "Manufacturer",
       "comments": null
     },
     {
@@ -3441,7 +3422,7 @@
       "psi_g_w_mk": 0.026,
       "psi_install_w_mk": null,
       "color": null,
-      "source": "manufacturer",
+      "source": "Manufacturer",
       "comments": null
     },
     {

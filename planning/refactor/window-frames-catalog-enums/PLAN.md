@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 17:51 EDT
-STATUS: Draft — gated on decisions.md D-2 / D-3 sign-off
+STATUS: Active — decisions resolved; Phase 0 complete, Phase 1 next
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phased implementation plan for window-frames-catalog-enums
 RELATED: ./research.md, ./decisions.md, ./STATUS.md
@@ -24,13 +24,16 @@ the default-frame lookup. Each phase is independently shippable and ends green o
 
 ---
 
-## Phase 0 — Decisions + data cleanup (no code)
+## Phase 0 — Canonical vocab + data cleanup ✅ Complete (2026-06-23)
 
-- Resolve `decisions.md` (esp. D-1, D-2, D-3, D-6).
-- Finalize the canonical option sets per field from research §1 (cleaned).
-- Decide the fate of the `Default` / swapped-`Mercury` seed rows (D-6).
+- Resolve `decisions.md` (esp. D-1, D-2, D-3, D-6). ✓
+- Finalize the canonical option sets per field from research §1 (cleaned), frozen
+  in `backend/features/catalogs/_option_seeds.py`. ✓
+- Resolve the `Default` / swapped-`Mercury` / `OP-TO-FIX` seed defects (D-6):
+  `backend/seeds/catalogs/frame-types.v1.json` cleaned (190→189 rows). ✓
 
-**Verify:** `decisions.md` STATUS flipped to resolved; option sets enumerated.
+**Verified:** every distinct seed value per field is canonical (cross-checked vs
+`FRAME_TYPE_OPTION_SEEDS`). See `phases/phase-00-…md` Completion section.
 
 ---
 
