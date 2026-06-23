@@ -16,7 +16,7 @@ RELATED:
   - phases/phase-03b-climate-source-attach-select.md (complete)
   - phases/phase-03c-climate-visualization.md (complete)
   - phases/phase-04-design-conditions-and-metrics.md (deferred)
-  - planning/features_v1.1/model-viewer-sun-path/ (Phase-1 consumer)
+  - planning/archive/model-viewer-sun-path/ (Phase-1 consumer)
 ---
 
 # Climate — PLAN
@@ -68,7 +68,7 @@ Small follow-ups (too small for their own phase):
 
 ```
 Climate P1 (sun-path service) ──unblocks──► Model Viewer sun-path render (frontend-only)
-                                            (planning/features_v1.1/model-viewer-sun-path)
+                                            (planning/archive/model-viewer-sun-path)
 
 Climate P1 + P2 (datasets) ──unblocks──► Climate P3 (tab: record + sources + graphs + sun path)
 

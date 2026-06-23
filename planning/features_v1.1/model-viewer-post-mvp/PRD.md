@@ -11,7 +11,7 @@ RELATED:
   - context/user-stories/40-model-viewer.md
   - planning/archive/model-viewer/PRD.md
   - planning/archive/model-viewer/decisions.md
-  - planning/features_v1.1/model-viewer-sun-path/PRD.md
+  - planning/archive/model-viewer-sun-path/PRD.md
   - planning/features_v1.1/model-viewer-legend-filter/PRD.md
   - planning/features_v1.1/model-viewer-clipping-planes/PRD.md
 ---
@@ -29,7 +29,7 @@ the Tier 3 items that are not yet ready for detailed phasing.
 ## Tier 1 — Ready (full plans in feature folders)
 
 ### Sun-Path (Site & Sun completion)
-→ **[`model-viewer-sun-path/PRD.md`](../model-viewer-sun-path/PRD.md)**
+→ **[`model-viewer-sun-path/PRD.md`](../../archive/model-viewer-sun-path/PRD.md)**
 
 Site & Sun already renders building geometry, grey non-selectable
 shades, a north marker, and a location hint. The feature populates and

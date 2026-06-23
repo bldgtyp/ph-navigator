@@ -8,7 +8,7 @@ SCOPE: Status and reopen gates for Model Viewer post-MVP work.
 RELATED:
   - README.md
   - PRD.md
-  - planning/features_v1.1/model-viewer-sun-path/
+  - planning/archive/model-viewer-sun-path/
   - planning/features_v1.1/model-viewer-legend-filter/
   - planning/features_v1.1/model-viewer-clipping-planes/
   - planning/archive/model-viewer/STATUS.md
@@ -28,8 +28,8 @@ on Ed's promotion.
 
 | Item | Tier | Plan | Reopen gate |
 |---|---|---|---|
-| Sun-path 3D render in Site & Sun | 1 | [`model-viewer-sun-path/`](../model-viewer-sun-path/) Phases 0 + 1 | **Implemented 2026-06-23** (branch `feat/model-viewer-sun-path`, pending merge). Backend (`project_location` — not Climate) + frontend render both done. D-SP-1 accepted. |
-| Sun-path scrubber | 1 (gated sub-phase) | [`model-viewer-sun-path/`](../model-viewer-sun-path/) Phase 2 | Phase 1 merged **and** a named time/season review need (Q-VIEW-6). |
+| Sun-path 3D render in Site & Sun | 1 | [`model-viewer-sun-path/`](../../archive/model-viewer-sun-path/) Phases 0 + 1 | **Implemented 2026-06-23** (merged + archived 2026-06-23). Backend (`project_location` — not Climate) + frontend render both done. D-SP-1 accepted. |
+| Sun-path scrubber | 1 (gated sub-phase) | [`model-viewer-sun-path/`](../../archive/model-viewer-sun-path/) Phase 2 | Phase 1 shipped 2026-06-23; reopen when a concrete time/season review need is named (Q-VIEW-6). |
 | NEW-VIEW-2 legend-as-filter | 1 (ready) | [`model-viewer-legend-filter/`](../model-viewer-legend-filter/) | None — ready. Ed-flagged near-priority. |
 | Section / clipping planes | 2 (gated) | [`model-viewer-clipping-planes/`](../model-viewer-clipping-planes/) | A named sectioned-inspection workflow (Q-VIEW-8). |
 | NEW-VIEW-1 HBJSON ↔ document cross-check | 3 (not phased) | `PRD.md` stub | Plan with the Rooms/equipment QA/QC family (NEW-ROOMS-1) so divergence rules can be defined against builder tables. |

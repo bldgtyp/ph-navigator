@@ -28,10 +28,10 @@ RELATED:
   - phases/phase-04-design-conditions-and-metrics.md (deferred)
   - ⚠️ phases/phase-01-sun-path-service.md is SUPERSEDED — the sun-path
     service was removed 2026-06-22 and rebuilt in `project_location`; see
-    planning/features_v1.1/model-viewer-sun-path/ and the STATUS.md banner.
+    planning/archive/model-viewer-sun-path/ and the STATUS.md banner.
   - PLAN.md → "Deferred work index" (the later-phase roadmap)
   - planning/archive/project-location/ (the data foundation this builds on)
-  - planning/features_v1.1/model-viewer-sun-path/ (a Phase-1 consumer)
+  - planning/archive/model-viewer-sun-path/ (a Phase-1 consumer)
 ---
 
 # Climate
@@ -92,7 +92,7 @@ fRSI, Window comfort.
 **Phase 1 (sun-path service) and Phase 2 (reference datasets +
 standardized format) are implemented (2026-06-13).** Phase 1 ships the
 `GET /projects/{id}/sun-path` endpoint that unblocks the Model Viewer
-Site & Sun 3D render (`planning/features_v1.1/model-viewer-sun-path/`, now
+Site & Sun 3D render (`planning/archive/model-viewer-sun-path/`, now
 frontend-only). Phase 2 ships the `ClimateRecord` schema, the app-wide
 `climate_dataset*` store, the Phius importer + seed routine, and the
 `GET /api/v1/climate/datasets…` read endpoints + MCP. The Phius importer

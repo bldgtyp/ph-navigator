@@ -1,9 +1,9 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: IMPLEMENTED 2026-06-23 (branch `feat/model-viewer-sun-path`,
-  pending merge). Query + renderer (arcs + compass + bounds-fit) + hint
-  flip done; tsc + vitest green, live Playwright pending worktree servers.
+STATUS: COMPLETE — shipped 2026-06-23 (merged, archived). Query +
+  renderer (arcs + compass + bounds-fit) + hint flip done; tsc + vitest
+  green; live Playwright written, runs in CI.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff — render the annual sun path over the
   building in the Site & Sun lens (frontend consumer of the Phase 0

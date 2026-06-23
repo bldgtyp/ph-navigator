@@ -1,8 +1,9 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Deferred — gated. Do not start until Phase 1 is merged AND a
-  concrete time/season review need is named (Q-VIEW-6).
+STATUS: Deferred (NOT shipped). Phase 1 merged 2026-06-23, so the only
+  remaining gate is a concrete, named time/season review need (Q-VIEW-6).
+  Tracked as a candidate on the model-viewer-post-mvp roster; reopen there.
 AUTHOR: Claude (for Ed)
 SCOPE: Contract sketch for the sun-path time/season scrubber.
 RELATED:

@@ -1,9 +1,9 @@
 ---
 DATE: 2026-06-23
 TIME: -
-STATUS: IMPLEMENTED 2026-06-23 (branch `feat/model-viewer-sun-path`,
-  pending merge). Builder + service + route + MCP tool + north-sign
-  fixture restored in `project_location`; focused pytest green.
+STATUS: COMPLETE — shipped 2026-06-23 (merged, archived). Builder +
+  service + route + MCP tool + north-sign fixture restored in
+  `project_location`; pytest green.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff — the project-scoped sun-path builder +
   `GET /projects/{id}/sun-path` endpoint + MCP tool + north-sign fixture.
