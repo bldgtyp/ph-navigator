@@ -65,7 +65,6 @@ export function ClimateSourceSidebar({
           <SourceCard
             key={source.id}
             source={source}
-            unitSystem={unitSystem}
             active={selected === source.id}
             onSelect={() => onSelect(source.id)}
           />
@@ -78,7 +77,6 @@ export function ClimateSourceSidebar({
           <SourceCard
             key={source.id}
             source={source}
-            unitSystem={unitSystem}
             active={selected === source.id}
             onSelect={() => onSelect(source.id)}
           />
@@ -147,17 +145,15 @@ function LocationCard({
 
 function SourceCard({
   source,
-  unitSystem,
   active,
   onSelect,
 }: {
   source: ProjectClimateSource;
-  unitSystem: UnitSystem;
   active: boolean;
   onSelect: () => void;
 }) {
   const status = climateSourceStatusChip(source);
-  const attrs = climateSourceNavAttrs(source, unitSystem);
+  const attrs = climateSourceNavAttrs(source);
   return (
     <button
       type="button"

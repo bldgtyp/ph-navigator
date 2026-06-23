@@ -1,7 +1,7 @@
 import { climateSourceKindLabel, type ClimateStatusTone } from "../lib";
 import type { ClimateSourceKind } from "../types";
 
-// Per-type colour badge (Phius / PHI / ASHRAE / EPW / Custom). Composes the
+// Per-type colour badge (Phius / PHI / Weather File / Custom). Composes the
 // shared `.chip .chip--sm` primitive; colour comes from `data-kind`. Takes a
 // bare kind (+ optional dataset version) so it renders for both attached
 // sources and the "not set" placeholder slots.

@@ -8,6 +8,8 @@ import type { ProjectDetail, ProjectLocation } from "../../projects/types";
 import { LocationPrivacyTag } from "../components/ClimateAtoms";
 import { ClimateMap } from "../components/ClimateMap";
 import { ClimateDatasetPickerModal } from "../components/ClimateDatasetPickerModal";
+import { WeatherStationPickerModal } from "../components/WeatherStationPickerModal";
+import { ClimateUploadModal } from "../components/ClimateUploadModal";
 import { ClimateSourceDetailPage, MissingSourcePage } from "../components/ClimateSourceDetailPage";
 import { ClimateSourceSidebar, type ClimateSelection } from "../components/ClimateSourceSidebar";
 import { SetLocationModal } from "../components/SetLocationModal";
@@ -26,6 +28,12 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
   // the source detail header, and the empty-state page can all open it.
   const [pickerKind, setPickerKind] = useState<PhClimateKind | null>(null);
   const openPicker = canEdit ? (kind: PhClimateKind) => setPickerKind(kind) : undefined;
+  // The weather "Select from map" picker is hoisted here too, mirroring the PH
+  // picker, so the Weather File page and its empty state can both open it.
+  const [weatherPickerOpen, setWeatherPickerOpen] = useState(false);
+  const openWeatherPicker = canEdit ? () => setWeatherPickerOpen(true) : undefined;
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const openUploadModal = canEdit ? () => setUploadModalOpen(true) : undefined;
   const locationQuery = useProjectLocationQuery(project.id);
   const location = locationQuery.data;
   const sourcesQuery = useClimateSourcesQuery(project.id);
@@ -76,6 +84,8 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
               source={selectedSource}
               unitSystem={unitSystem}
               onOpenPicker={openPicker}
+              onOpenWeatherPicker={openWeatherPicker}
+              onOpenUploadModal={openUploadModal}
             />
           ) : null}
           {slotSource ? (
@@ -84,10 +94,18 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
               source={slotSource}
               unitSystem={unitSystem}
               onOpenPicker={openPicker}
+              onOpenWeatherPicker={openWeatherPicker}
+              onOpenUploadModal={openUploadModal}
             />
           ) : null}
           {slotKind && !slotSource ? (
-            <MissingSourcePage project={project} kind={slotKind} onOpenPicker={openPicker} />
+            <MissingSourcePage
+              project={project}
+              kind={slotKind}
+              onOpenPicker={openPicker}
+              onOpenWeatherPicker={openWeatherPicker}
+              onOpenUploadModal={openUploadModal}
+            />
           ) : null}
         </main>
       </div>
@@ -98,6 +116,21 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
           kind={pickerKind}
           onClose={() => setPickerKind(null)}
           onRequestSetLocation={() => setSelected("location")}
+          onAttached={(source) => setSelected(source.id)}
+        />
+      ) : null}
+      {weatherPickerOpen ? (
+        <WeatherStationPickerModal
+          projectId={project.id}
+          onClose={() => setWeatherPickerOpen(false)}
+          onRequestSetLocation={() => setSelected("location")}
+          onAttached={(source) => setSelected(source.id)}
+        />
+      ) : null}
+      {uploadModalOpen ? (
+        <ClimateUploadModal
+          projectId={project.id}
+          onClose={() => setUploadModalOpen(false)}
           onAttached={(source) => setSelected(source.id)}
         />
       ) : null}

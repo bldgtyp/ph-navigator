@@ -185,3 +185,23 @@
   flex-direction: column;
   gap: var(--space-12);
 }
+
+/* Upload Climate Data modal — one row per file slot (EPW / STAT / DDY). */
+.climate-upload-slots {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  margin: var(--space-12) 0;
+}
+
+.climate-upload-slot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-8) var(--space-12);
+}
+
+.climate-upload-slot-label {
+  min-width: 12rem;
+  font-weight: 600;
+}

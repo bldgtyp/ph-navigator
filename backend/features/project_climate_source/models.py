@@ -1,9 +1,9 @@
 """API wire contracts for project-scoped climate sources.
 
 A *source* records "this project evaluates climate basis X" (D-CL-4): a
-pinned Phius/PHI reference-dataset location, an ASHRAE station pointer, the
-project EPW, or a custom standardized record. The interpretation of
-``ref`` / ``data`` depends on ``kind`` (see the migration); presence rules
+pinned Phius/PHI reference-dataset location, the project weather file (the
+EPW + STAT + DDY bundle), or a custom standardized record. The interpretation
+of ``ref`` / ``data`` depends on ``kind`` (see the migration); presence rules
 are enforced here, while existence checks (the referenced location/asset
 actually exists) live in the service where the DB is in scope.
 """
@@ -18,14 +18,14 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from features.climate.proximity import ClimateProximityVerdict
 
-ClimateSourceKind = Literal["phius", "phi", "ashrae", "epw", "custom"]
+ClimateSourceKind = Literal["phius", "phi", "weather", "custom"]
 AshraeVersion = Literal["2009", "2013", "2017", "2021", "2025"]
 
 # Kinds that point at something by ``ref`` rather than carrying a record.
-_REF_KINDS: frozenset[str] = frozenset({"phius", "phi", "ashrae", "epw"})
-# Kinds permitted to carry a ``data`` payload. Dataset and EPW pointers cache
-# small certification-load-bearing metadata when auto-attached.
-_DATA_KINDS: frozenset[str] = frozenset({"custom", "ashrae", "epw", "phius", "phi"})
+_REF_KINDS: frozenset[str] = frozenset({"phius", "phi", "weather"})
+# Kinds permitted to carry a ``data`` payload. Dataset and weather pointers
+# cache small certification-load-bearing metadata when auto-attached.
+_DATA_KINDS: frozenset[str] = frozenset({"custom", "weather", "phius", "phi"})
 
 
 class ProjectClimateSourcePublic(BaseModel):
@@ -139,6 +139,57 @@ class ClimateDatasetRosterResponse(BaseModel):
     project: RosterProjectLocation
     items: list[ClimateDatasetRosterItem]
     total: int
+
+
+# --- EPW catalog roster (weather "Select from map" picker) -----------------
+#
+# The OneBuilding EPW catalog's candidate stations for a project, nearest-first.
+# Parallels the PH dataset roster above but carries **no proximity verdict**
+# (D4) — distance / elevation delta are informational, not a certification gate.
+
+
+class EpwRosterItem(BaseModel):
+    """One OneBuilding EPW station, with distance/elevation vs the project site."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    wmo: str | None
+    region: str | None
+    latitude: float
+    longitude: float
+    elevation_m: float | None
+    distance_mi: float | None
+    elevation_delta_ft: float | None
+    source_url: str
+
+
+class EpwRosterResponse(BaseModel):
+    """The weather picker feed: the project origin + catalog stations nearest-first."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    project: RosterProjectLocation
+    items: list[EpwRosterItem]
+    total: int
+
+
+class AttachWeatherFromCatalogRequest(BaseModel):
+    """Attach the OneBuilding station the map picker selected, by its zip URL."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    url: Annotated[str, Field(min_length=1, max_length=1000)]
+
+
+class AttachWeatherFromUploadRequest(BaseModel):
+    """Attach a manually-uploaded weather bundle by its asset ids (EPW required)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    epw_asset_id: Annotated[str, Field(min_length=1, max_length=200)]
+    stat_asset_id: Annotated[str | None, Field(max_length=200)] = None
+    ddy_asset_id: Annotated[str | None, Field(max_length=200)] = None
 
 
 def validate_source_shape(kind: str, ref: str | None, data: dict[str, Any] | None) -> None:

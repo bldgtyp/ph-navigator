@@ -38,8 +38,13 @@ def test_stat_parser_extracts_degree_days_extremes_and_design_conditions() -> No
     )
     assert parsed.design_conditions.heating_996_db_c == -18.8
     assert parsed.design_conditions.heating_990_db_c == -16.0
+    # Cooling DB/MCWB across the three annual percentiles (0.4% / 1% / 2%).
+    assert parsed.design_conditions.cooling_004_db_c == 29.9
+    assert parsed.design_conditions.cooling_004_mcwb_c == 21.6
     assert parsed.design_conditions.cooling_010_db_c == 28.5
     assert parsed.design_conditions.cooling_010_mcwb_c == 20.8
+    assert parsed.design_conditions.cooling_020_db_c == 27.2
+    assert parsed.design_conditions.cooling_020_mcwb_c == 20.2
     assert parsed.design_conditions.dehumidification_010_dp_c == 20.8
     assert parsed.design_conditions.dehumidification_010_mcdb_c == 24.8
     assert parsed.metrics.missing_fields == []
@@ -126,8 +131,12 @@ def test_ashrae_meteo_station_mapping_supports_recorded_fixture_shape() -> None:
             "place": "PITTSFIELD MUNI AP",
             "heating_DB_996": "-18.8",
             "heating_DB_990": "-16.0",
+            "cooling_DB_MCWB_0_4_DB": "29.9",
+            "cooling_DB_MCWB_0_4_MCWB": "21.6",
             "cooling_DB_MCWB_1_DB": "28.5",
             "cooling_DB_MCWB_1_MCWB": "20.8",
+            "cooling_DB_MCWB_2_DB": "27.2",
+            "cooling_DB_MCWB_2_MCWB": "20.2",
             "dehumidification_DP_MCDB_1_DP": "20.8",
             "dehumidification_DP_MCDB_1_MCDB": "24.8",
             "extreme_annual_DB_min": "-22.9",
@@ -137,5 +146,7 @@ def test_ashrae_meteo_station_mapping_supports_recorded_fixture_shape() -> None:
     )
 
     assert design.basis == "ASHRAE Meteo 2025 / PITTSFIELD MUNI AP"
+    assert design.cooling_004_db_c == 29.9
     assert design.cooling_010_db_c == 28.5
+    assert design.cooling_020_db_c == 27.2
     assert design.missing_fields == []

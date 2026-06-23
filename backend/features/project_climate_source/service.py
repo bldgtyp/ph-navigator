@@ -8,7 +8,7 @@ audit-log entry — mirroring the ``project_location`` service.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 from uuid import UUID, uuid4
 
 from fastapi import Request
@@ -18,20 +18,35 @@ from starlette import status
 
 from database import connection, transaction
 from features.assets import repository as asset_repository
+from features.assets.service import AssetService
 from features.auth import repository as auth_repository
 from features.auth.models import UserPublic
 from features.auth.service import client_ip, user_agent
 from features.climate import repository as climate_repository
 from features.climate.ashrae_meteo import fetch_nearest_ashrae_station_conditions
+from features.climate.epw_catalog import (
+    download_epw_zip,
+    epw_entries_for_region,
+    find_entry_by_url,
+    nearest_epw_entries,
+)
 from features.climate.models import ClimateLocationSummary
-from features.climate.proximity import PhDatasetProvider, build_location_roster, build_proximity_payload
+from features.climate.proximity import (
+    PhDatasetProvider,
+    build_location_roster,
+    build_proximity_payload,
+    elevation_delta_ft,
+)
 from features.climate.record import ClimateRecord
+from features.climate.weather_source import build_weather_source_from_upload, build_weather_source_payload
 from features.project_climate_source import repository
 from features.project_climate_source.models import (
     ClimateDatasetRef,
     ClimateDatasetRosterItem,
     ClimateDatasetRosterResponse,
     CreateProjectClimateSourceRequest,
+    EpwRosterItem,
+    EpwRosterResponse,
     ProjectClimateSourceListResponse,
     ProjectClimateSourcePublic,
     RefreshAshraeDesignConditionsRequest,
@@ -40,6 +55,7 @@ from features.project_climate_source.models import (
     validate_source_shape,
 )
 from features.project_location import repository as location_repository
+from features.projects.access import ProjectAccess
 from features.shared.errors import api_error
 
 
@@ -113,6 +129,136 @@ def get_project_dataset_roster(
     )
 
 
+# v1 weather picker is USA + state filter (D4); the catalog tags US rows "USA".
+_WEATHER_CATALOG_COUNTRY = "USA"
+
+
+def get_project_epw_roster(
+    project_id: UUID,
+    *,
+    region: str | None,
+    near: bool,
+    limit: int,
+) -> EpwRosterResponse:
+    """The weather picker feed: OneBuilding EPW stations for a project, nearest-first.
+
+    Resolves the project site (raising the no-location guard when unset), then
+    filters the cached catalog by ``region`` (defaulting to the site's state) or,
+    when ``near`` is set, takes the nearest across the USA. Distance + elevation
+    delta are informational — there is **no** certification verdict (D4).
+    """
+    with connection() as conn:
+        site = _load_project_site(conn, project_id)
+
+    if near:
+        entries = nearest_epw_entries(site.latitude, site.longitude, country=_WEATHER_CATALOG_COUNTRY, limit=limit)
+    else:
+        effective_region = region if region is not None else site.state
+        entries = epw_entries_for_region(
+            country=_WEATHER_CATALOG_COUNTRY,
+            region=effective_region,
+            latitude=site.latitude,
+            longitude=site.longitude,
+            limit=limit,
+        )
+    items = [
+        EpwRosterItem(
+            name=entry.name,
+            wmo=entry.wmo,
+            region=entry.region,
+            latitude=entry.latitude,
+            longitude=entry.longitude,
+            elevation_m=entry.elevation_m,
+            distance_mi=round(entry.distance_mi, 1) if entry.distance_mi is not None else None,
+            elevation_delta_ft=elevation_delta_ft(site.elevation_m, entry.elevation_m),
+            source_url=entry.url,
+        )
+        for entry in entries
+    ]
+    return EpwRosterResponse(project=site, items=items, total=len(items))
+
+
+def attach_weather_source_from_catalog(
+    project_id: UUID,
+    url: str,
+    user: UserPublic,
+    request_meta: Request | None,
+    asset_service: AssetService,
+) -> ProjectClimateSourcePublic:
+    """Attach a specific OneBuilding station picked from the map.
+
+    Downloads + parses + stores the chosen catalog entry exactly as the nearest
+    auto-derive does, producing the single ``weather`` source.
+    """
+    entry = find_entry_by_url(url)
+    if entry is None:
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "epw_catalog_entry_not_found",
+            "The selected weather station is no longer in the catalog.",
+        )
+    payload = download_epw_zip(entry)
+    source = build_weather_source_payload(project_id, user, asset_service, payload)
+    with transaction() as conn:
+        attach_weather_source(conn, project_id=project_id, source=source)
+        # Parity with the nearest-derive path: the weather source is the project EPW.
+        location_repository.upsert_location(
+            conn,
+            project_id,
+            {"epw_asset_id", "epw_source_url"},
+            {"epw_asset_id": str(source["ref"]), "epw_source_url": entry.url},
+        )
+        row = repository.get_source_by_kind(conn, project_id, "weather")
+        _audit(
+            conn,
+            "project_climate_source_attach_from_catalog",
+            user,
+            request_meta,
+            project_id,
+            {"source_id": str(row["id"]) if row else None, "url": url},
+        )
+    return ProjectClimateSourcePublic.model_validate(row)
+
+
+def attach_weather_source_from_upload(
+    access: ProjectAccess,
+    *,
+    epw_asset_id: str,
+    stat_asset_id: str | None,
+    ddy_asset_id: str | None,
+    user: UserPublic,
+    request_meta: Request | None,
+    asset_service: AssetService,
+) -> ProjectClimateSourcePublic:
+    """Attach a manually-uploaded EPW + STAT + DDY bundle as the weather source.
+
+    The assets are already stored (uploaded by the client); this validates them,
+    parses the EPW header + STAT, and upserts the single ``weather`` source.
+    """
+    project_id = access.project_id
+    source = build_weather_source_from_upload(
+        access,
+        asset_service,
+        epw_asset_id=epw_asset_id,
+        stat_asset_id=stat_asset_id,
+        ddy_asset_id=ddy_asset_id,
+    )
+    with transaction() as conn:
+        attach_weather_source(conn, project_id=project_id, source=source)
+        # Parity with the derive / from-catalog paths: the weather source is the project EPW.
+        location_repository.upsert_location(conn, project_id, {"epw_asset_id"}, {"epw_asset_id": epw_asset_id})
+        row = repository.get_source_by_kind(conn, project_id, "weather")
+        _audit(
+            conn,
+            "project_climate_source_attach_from_upload",
+            user,
+            request_meta,
+            project_id,
+            {"source_id": str(row["id"]) if row else None, "epw_asset_id": epw_asset_id},
+        )
+    return ProjectClimateSourcePublic.model_validate(row)
+
+
 def upsert_source_by_kind(
     conn: Connection[Any],
     *,
@@ -125,11 +271,11 @@ def upsert_source_by_kind(
     """Insert a source for a kind, or update the existing one in place.
 
     The one-source-per-kind path shared by the address-derived auto-attach
-    (Phius/PHI/EPW/ASHRAE) and the manual PH dataset picker: a project holds at
+    (Phius/PHI/weather) and the manual PH dataset picker: a project holds at
     most one source per such kind, so re-attaching replaces rather than
     duplicates.
     """
-    existing = next((row for row in repository.list_sources(conn, project_id) if row["kind"] == kind), None)
+    existing = repository.get_source_by_kind(conn, project_id, kind)
     if existing is None:
         return repository.insert_source(
             conn,
@@ -141,6 +287,23 @@ def upsert_source_by_kind(
             data=data,
         )
     return repository.update_source(conn, existing["id"], {"ref": ref, "label": label, "data": data})
+
+
+def attach_weather_source(
+    conn: Connection[Any],
+    *,
+    project_id: UUID,
+    source: dict[str, object],
+) -> None:
+    """Upsert a built weather-source payload (the inverse of ``build_weather_source_payload``)."""
+    upsert_source_by_kind(
+        conn,
+        project_id=project_id,
+        kind=str(source["kind"]),
+        ref=str(source["ref"]),
+        label=str(source["label"]),
+        data=cast(dict[str, Any], source["data"] if isinstance(source["data"], dict) else {}),
+    )
 
 
 def create_project_climate_source(
@@ -238,43 +401,43 @@ def refresh_ashrae_design_conditions(
     user: UserPublic,
     request_meta: Request | None,
 ) -> ProjectClimateSourcePublic:
+    """Replace the weather source's design conditions with a current ASHRAE edition.
+
+    The design conditions live on the project's one ``weather`` source (the EPW
+    bundle), so this updates that source in place rather than creating a separate
+    record — the weather file must already be set (409 otherwise).
+    """
     with connection() as conn:
         location = location_repository.get_location(conn, project_id)
+        weather = repository.get_source_by_kind(conn, project_id, "weather")
     if location is None or location["latitude"] is None or location["longitude"] is None:
         raise api_error(
             status.HTTP_409_CONFLICT,
             "project_location_required",
             "Set the project location before pulling ASHRAE design conditions.",
         )
+    # Fail fast — before the network fetch — when there is no weather file to update.
+    if weather is None:
+        raise api_error(
+            status.HTTP_409_CONFLICT,
+            "weather_source_required",
+            "Set the weather file before pulling current ASHRAE design conditions.",
+        )
     result = fetch_nearest_ashrae_station_conditions(
         latitude=float(location["latitude"]),
         longitude=float(location["longitude"]),
         ashrae_version=payload.ashrae_version,
     )
-    source_data = {
+    data = dict(weather["data"]) if isinstance(weather["data"], dict) else {}
+    data["design_conditions"] = result.design_conditions.model_dump(mode="json")
+    data["design_conditions_source"] = {
         "provider": "ashrae_meteo",
         "url": result.url,
-        "design_conditions": result.design_conditions.model_dump(mode="json"),
+        "station_id": result.station_id,
         "missing_fields": result.design_conditions.missing_fields,
     }
     with transaction() as conn:
-        existing = next((row for row in repository.list_sources(conn, project_id) if row["kind"] == "ashrae"), None)
-        if existing is None:
-            row = repository.insert_source(
-                conn,
-                source_id=uuid4(),
-                project_id=project_id,
-                kind="ashrae",
-                ref=result.station_id,
-                label=result.label,
-                data=source_data,
-            )
-        else:
-            row = repository.update_source(
-                conn,
-                existing["id"],
-                {"ref": result.station_id, "label": result.label, "data": source_data},
-            )
+        row = repository.update_source(conn, weather["id"], {"data": data})
         _audit(
             conn,
             "project_climate_source_refresh_ashrae",
@@ -327,12 +490,10 @@ def _validate_source(
                 "climate_source_provider_mismatch",
                 f"Referenced location belongs to '{provider}', not '{kind}'.",
             )
-    elif kind == "epw":
-        _validate_epw_ref(conn, project_id, ref)
+    elif kind == "weather":
+        _validate_weather_ref(conn, project_id, ref)
     elif kind == "custom":
         _validate_custom_record(data)
-    # ashrae: `ref` is a free-text station id, `data` an optional pointer —
-    # nothing to verify against live data.
 
 
 def _certification_source_data(
@@ -409,7 +570,9 @@ def _parse_ref_uuid(ref: str | None) -> UUID:
         ) from exc
 
 
-def _validate_epw_ref(conn: Connection[Any], project_id: UUID, ref: str | None) -> None:
+def _validate_weather_ref(conn: Connection[Any], project_id: UUID, ref: str | None) -> None:
+    """A weather source's ``ref`` is its primary EPW file asset (the bundle's
+    `.stat` / `.ddy` asset ids ride in ``data``)."""
     asset = asset_repository.get_asset_by_id(conn, project_id, str(ref))
     if asset is None:
         raise api_error(

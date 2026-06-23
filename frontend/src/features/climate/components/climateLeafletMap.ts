@@ -1,6 +1,6 @@
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import type { ClimateMapStation } from "./ClimateMap";
+import type { ClimateMapPinStatus, ClimateMapStation } from "./ClimateMap";
 
 // Imperative Leaflet wrapper for the app's live basemaps (D-DP-6: vanilla
 // Leaflet + keyless raster tiles — no key, no proxy, no committed secret). The
@@ -57,7 +57,7 @@ type Palette = {
   accent: string;
   bgCard: string;
   border: string;
-  status: Record<ClimateMapStation["status"], string>;
+  status: Record<ClimateMapPinStatus, string>;
 };
 
 // One `getComputedStyle` per call — resolve the whole palette up front rather
@@ -74,6 +74,7 @@ function readPalette(): Palette {
       pass: read("--phn-success", "green"),
       warning: read("--phn-warning", "orange"),
       fail: read("--phn-danger", "red"),
+      neutral: read("--accent", "blue"),
     },
   };
 }
@@ -165,7 +166,7 @@ export function createClimateLeafletMap(
   function stationStyle(station: LocatedStation, palette: Palette): L.CircleMarkerOptions {
     return {
       ...selectionStyle(station.id === selectedId, palette),
-      fillColor: palette.status[station.status],
+      fillColor: palette.status[station.status ?? "neutral"],
       fillOpacity: 1,
     };
   }

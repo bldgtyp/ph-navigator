@@ -167,13 +167,37 @@ export type ClimateDatasetRosterResponse = {
 
 export type ClimateRosterSearch = { region?: string; near?: boolean };
 
+// ---- EPW catalog roster (weather "Select from map" picker) ----
+// Mirrors backend `features/project_climate_source/models.py`. Unlike the PH
+// roster above this carries **no proximity verdict** (D4) — distance and
+// elevation delta are informational, not a certification gate.
+export type EpwRosterItem = {
+  name: string;
+  wmo: string | null;
+  region: string | null;
+  latitude: number;
+  longitude: number;
+  elevation_m: number | null;
+  distance_mi: number | null;
+  elevation_delta_ft: number | null;
+  source_url: string;
+};
+
+export type EpwRosterResponse = {
+  project: ClimateRosterProject;
+  items: EpwRosterItem[];
+  total: number;
+};
+
+export type EpwRosterSearch = { region?: string; near?: boolean };
+
 // ---- Project-scoped climate sources (Phase 3b) ----
 // Mirrors backend `features/project_climate_source/models.py`. `ref`/`data`
 // are interpreted by `kind`: phius/phi → ref is a reference-location id and
-// data may hold proximity flags; epw → ref is the project EPW asset id and
-// data may hold STAT metrics; ashrae → ref is a station id and data may hold
-// design conditions; custom → data is a standardized ClimateRecord.
-export type ClimateSourceKind = "phius" | "phi" | "ashrae" | "epw" | "custom";
+// data may hold proximity flags; weather → ref is the project EPW asset id and
+// data holds the STAT metrics + ASHRAE design conditions for the EPW/STAT/DDY
+// bundle; custom → data is a standardized ClimateRecord.
+export type ClimateSourceKind = "phius" | "phi" | "weather" | "custom";
 
 export type ProjectClimateSource = {
   id: string;
@@ -197,7 +221,7 @@ export type CreateClimateSourceRequest = {
   data?: Record<string, unknown> | null;
 };
 
-// The per-page "set from nearest" actions. `weather` attaches EPW + ASHRAE
-// together (ASHRAE rides the EPW's .stat companion). Mirrors the backend
-// `ClimateSourceDeriveKind` route enum.
+// The per-page "set from nearest" actions. `weather` attaches the EPW + STAT
+// bundle as one source (the design conditions ride the EPW's .stat companion).
+// Mirrors the backend `ClimateSourceDeriveKind` route enum.
 export type ClimateSourceDeriveKind = "phius" | "phi" | "weather";

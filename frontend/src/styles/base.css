@@ -1155,25 +1155,6 @@ a:focus-visible {
   gap: var(--space-4);
 }
 
-.settings-location-epw {
-  display: grid;
-  gap: var(--space-10);
-}
-
-.settings-location-epw-row,
-.settings-location-epw-suggestion {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-10);
-}
-
-.settings-location-epw-suggestion {
-  border-left: 3px solid var(--accent);
-  padding-left: var(--space-10);
-  color: var(--text-secondary);
-}
-
 .settings-readonly-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }

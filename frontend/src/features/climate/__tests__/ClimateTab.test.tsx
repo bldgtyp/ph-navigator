@@ -21,45 +21,41 @@ const deriveUrl = (kind: string) => `${LOCATION_URL}/derive/${kind}`;
 const PHIUS_LOCATION_URL = "/api/v1/climate/datasets/dataset-phius/locations/location-phius";
 const PHI_LOCATION_URL = "/api/v1/climate/datasets/dataset-phi/locations/location-phi";
 
-const EPW_SOURCE: ProjectClimateSource = {
-  id: "src-epw",
+const WEATHER_SOURCE: ProjectClimateSource = {
+  id: "src-weather",
   project_id: PROJECT.id,
-  kind: "epw",
+  kind: "weather",
   ref: "asset-epw",
   label: "Pittsfield.Muni.AP",
   data: {
     source_url: "https://climate.onebuilding.org/pittsfield.zip",
+    station: { name: "Pittsfield.Muni.AP" },
     stat_metrics: {
       hdd65_f_days: 3884,
       cdd50_f_days: 1275,
       record_low_c: -22.9,
       record_high_c: 32.3,
     },
+    design_conditions: {
+      basis: "ASHRAE Meteo 2025 / PITTSFIELD MUNI AP",
+      heating_996_db_c: -18.8,
+      heating_990_db_c: -17.1,
+      cooling_004_db_c: 30.7,
+      cooling_004_mcwb_c: 21.6,
+      cooling_010_db_c: 28.5,
+      cooling_010_mcwb_c: 21.2,
+      cooling_020_db_c: 27.2,
+      cooling_020_mcwb_c: 20.2,
+      dehumidification_010_dp_c: 20.8,
+      dehumidification_010_mcdb_c: 24.8,
+    },
   },
   created_at: "2026-06-14T10:00:00Z",
   updated_at: "2026-06-14T10:00:00Z",
 };
 
-const ASHRAE_SOURCE: ProjectClimateSource = {
-  ...EPW_SOURCE,
-  id: "src-ashrae",
-  kind: "ashrae",
-  ref: "725060",
-  label: "Pittsfield ASHRAE",
-  data: {
-    url: "https://ashrae-meteo.info/v3.0/",
-    design_conditions: {
-      basis: "ASHRAE Meteo 2025 / PITTSFIELD MUNI AP",
-      heating_996_db_c: -18.8,
-      heating_990_db_c: -17.1,
-      cooling_010_db_c: 28.5,
-      cooling_010_mcwb_c: 21.2,
-    },
-  },
-};
-
 const PHIUS_SOURCE: ProjectClimateSource = {
-  ...EPW_SOURCE,
+  ...WEATHER_SOURCE,
   id: "src-phius",
   kind: "phius",
   ref: "location-phius",
@@ -90,7 +86,7 @@ const FAILING_PHIUS_SOURCE: ProjectClimateSource = {
 };
 
 const PHI_SOURCE: ProjectClimateSource = {
-  ...EPW_SOURCE,
+  ...WEATHER_SOURCE,
   id: "src-phi",
   kind: "phi",
   ref: "location-phi",
@@ -363,36 +359,38 @@ describe("ClimateTab", () => {
     expect(screen.queryByRole("button", { name: "Use this dataset anyway" })).toBeNull();
   });
 
-  test("routes from location to attached EPW and ASHRAE detail pages", async () => {
+  test("routes from location to the merged Weather File detail page", async () => {
     vi.stubGlobal("fetch", fetchMock);
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
       if (url === LOCATION_URL) return jsonResponse(SET_LOCATION);
-      if (url === SOURCES_URL) return jsonResponse({ items: [EPW_SOURCE, ASHRAE_SOURCE] });
+      if (url === SOURCES_URL) return jsonResponse({ items: [WEATHER_SOURCE] });
       return jsonResponse({}, 404);
     });
     const user = userEvent.setup();
 
     renderTab();
 
-    expect(await screen.findByRole("button", { name: /Pittsfield\.Muni\.AP/ })).toBeVisible();
-    expect(screen.getByRole("button", { name: /Pittsfield ASHRAE/ })).toBeVisible();
+    await user.click(await screen.findByRole("button", { name: /Pittsfield\.Muni\.AP/ }));
 
-    await user.click(screen.getByRole("button", { name: /Pittsfield\.Muni\.AP/ }));
+    // Performance metrics (STAT) and the full design-condition set (ASHRAE) now
+    // share one page.
     expect(await screen.findByText("HDD65")).toBeVisible();
     expect(screen.getByText("3884")).toBeVisible();
-    expect(screen.getByText("Weather file")).toBeVisible();
-    expect(screen.getByLabelText("EPW source URL")).toBeVisible();
-    expect(screen.getByRole("button", { name: /Upload EPW/ })).toBeVisible();
+    expect(screen.getByText("Htg 99.6% DB")).toBeVisible();
+    expect(screen.getByText("-18.8 deg C")).toBeVisible();
+    expect(screen.getByText("Clg 0.4% DB")).toBeVisible();
+    expect(screen.getByText("Clg 2% MCWB")).toBeVisible();
+    expect(screen.getByText("ASHRAE Meteo 2025 / PITTSFIELD MUNI AP")).toBeVisible();
+    // The three-action row (Set from nearest · Select from map · Upload) + the
+    // stored-file downloads.
+    expect(screen.getByRole("button", { name: "Select from map" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Upload climate data" })).toBeVisible();
+    expect(screen.getByText("Download EPW")).toBeVisible();
     expect(screen.getByText("Open OneBuilding source")).toHaveAttribute(
       "href",
       "https://climate.onebuilding.org/pittsfield.zip",
     );
-
-    await user.click(screen.getByRole("button", { name: /Pittsfield ASHRAE/ }));
-    expect(await screen.findByText("Htg 99.6% DB")).toBeVisible();
-    expect(screen.getByText("-18.8 deg C")).toBeVisible();
-    expect(screen.getByText("ASHRAE Meteo 2025 / PITTSFIELD MUNI AP")).toBeVisible();
   });
 
   test("renders the location facts, source status chips, and reveals the editor", async () => {
@@ -400,7 +398,7 @@ describe("ClimateTab", () => {
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
       if (url === LOCATION_URL) return jsonResponse(SET_LOCATION);
-      if (url === SOURCES_URL) return jsonResponse({ items: [EPW_SOURCE, ASHRAE_SOURCE] });
+      if (url === SOURCES_URL) return jsonResponse({ items: [WEATHER_SOURCE] });
       return jsonResponse({}, 404);
     });
     const user = userEvent.setup();
@@ -411,8 +409,8 @@ describe("ClimateTab", () => {
     // shows both in the sidebar location pill and the facts grid.
     expect(await screen.findByText("Berkshire · MA")).toBeVisible();
     expect(screen.getAllByText("5A").length).toBeGreaterThanOrEqual(1);
-    // Both attached sources read as OK in the sidebar.
-    expect(screen.getAllByText("OK").length).toBeGreaterThanOrEqual(2);
+    // The attached weather source reads as OK in the sidebar.
+    expect(screen.getAllByText("OK").length).toBeGreaterThanOrEqual(1);
     // The two unattached canonical types (Phius, PHI) still show as "Not set".
     expect(screen.getByText("Phius")).toBeVisible();
     expect(screen.getByText("PHI")).toBeVisible();

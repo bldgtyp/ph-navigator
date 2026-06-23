@@ -82,11 +82,19 @@ def design_conditions_from_ashrae_station(
     *,
     ashrae_version: str,
 ) -> ClimateDesignConditions:
+    # The 0.4% / 2% cooling key spellings are inferred from the confirmed 1%
+    # pattern (`cooling_DB_MCWB_1_*`); unmatched keys fall through to None and
+    # surface in ``missing_fields`` rather than failing the refresh. The `.stat`
+    # companion is the authoritative percentile source (see stat_parser).
     values = {
         "heating_996_db_c": _number(station, "heating_DB_996", "heating_99_6_DB", "heating_DB_99_6"),
         "heating_990_db_c": _number(station, "heating_DB_990", "heating_99_DB", "heating_DB_99"),
+        "cooling_004_db_c": _number(station, "cooling_DB_MCWB_0_4_DB", "cooling_DB_0_4_DB", "cooling_0_4_DB"),
+        "cooling_004_mcwb_c": _number(station, "cooling_DB_MCWB_0_4_MCWB", "cooling_DB_0_4_MCWB", "cooling_0_4_MCWB"),
         "cooling_010_db_c": _number(station, "cooling_DB_MCWB_1_DB", "cooling_DB_1_DB", "cooling_1_DB"),
         "cooling_010_mcwb_c": _number(station, "cooling_DB_MCWB_1_MCWB", "cooling_DB_1_MCWB", "cooling_1_MCWB"),
+        "cooling_020_db_c": _number(station, "cooling_DB_MCWB_2_DB", "cooling_DB_2_DB", "cooling_2_DB"),
+        "cooling_020_mcwb_c": _number(station, "cooling_DB_MCWB_2_MCWB", "cooling_DB_2_MCWB", "cooling_2_MCWB"),
         "dehumidification_010_dp_c": _number(station, "dehumidification_DP_MCDB_1_DP", "dehumidification_1_DP"),
         "dehumidification_010_mcdb_c": _number(station, "dehumidification_DP_MCDB_1_MCDB", "dehumidification_1_MCDB"),
         "record_low_c": _number(station, "extreme_annual_DB_min", "extreme_DB_min", "record_low_c"),

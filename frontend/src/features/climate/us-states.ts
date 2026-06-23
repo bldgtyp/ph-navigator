@@ -55,3 +55,14 @@ export const US_STATES: { code: string; name: string }[] = [
   { code: "WI", name: "Wisconsin" },
   { code: "WY", name: "Wyoming" },
 ];
+
+// Select sentinel for the any-state nearest mode; distinct from a state code.
+// Shared by both station pickers (PH dataset + weather catalog).
+export const ANY_STATE = "__any__";
+
+// The state-filter options every station picker shows: the any-state nearest
+// option, then every US state by name.
+export const STATE_FILTER_OPTIONS = [
+  { value: ANY_STATE, label: "Nearest to project (any state)" },
+  ...US_STATES.map((state) => ({ value: state.code, label: state.name })),
+];

@@ -20,15 +20,16 @@ from config import settings
 from database import connection, transaction
 from features.assets import repository
 from features.assets.registry import (
+    WEATHER_FILE_KINDS,
     all_asset_kinds,
     asset_matches_field,
     attachment_fields_for_asset_kind,
-    epw_upload_allowed,
     filename_extension,
     get_attachment_field,
     hbjson_upload_allowed,
     iter_rows_for_raw_tables,
     list_asset_references,
+    weather_file_upload_allowed,
 )
 from features.assets.schemas import (
     AssetRow,
@@ -481,8 +482,9 @@ class AssetService:
                     "Only .hbjson files are supported. Please drop a Honeybee Model JSON.",
                 )
             return
-        if payload.asset_kind == "epw":
-            if not epw_upload_allowed(
+        if payload.asset_kind in WEATHER_FILE_KINDS:
+            if not weather_file_upload_allowed(
+                asset_kind=payload.asset_kind,
                 content_type=payload.content_type,
                 original_filename=payload.original_filename,
                 size_bytes=payload.size_bytes,
@@ -490,7 +492,7 @@ class AssetService:
                 raise api_error(
                     status.HTTP_422_UNPROCESSABLE_CONTENT,
                     "asset_mime_not_allowed",
-                    "Only .epw weather files are supported.",
+                    f"Only .{payload.asset_kind} weather files are supported.",
                 )
             return
         if payload.asset_kind != "export_bundle":

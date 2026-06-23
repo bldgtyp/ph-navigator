@@ -25,6 +25,13 @@ EPW parser). What **remains here**: the consumer-facing
 scheduled consumer + D-CL-5 (don't build a contract with no reader). Once a
 consumer is scheduled it's a thin exposure layer over the data P3 caches.
 
+**Update 2026-06-22 (`climate-weather-file` P1):** the cached design-condition
+*shape* is now complete and lives on the single `weather` source (the old
+`epw`/`ashrae` source kinds merged). The cooling 0.4%/2% DB+MCWB percentiles now
+parse from the `.stat`, so the contract's canonical field set is settled. This
+advances the production layer but does **not** change the gate below — there is
+still no scheduled fRSI/comfort consumer.
+
 ## Gate / depends on
 
 - A **scheduled consumer** (Thermal-Bridges fRSI or Window thermal-comfort) —

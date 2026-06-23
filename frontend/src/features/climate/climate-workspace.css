@@ -9,10 +9,8 @@
   --climate-badge-phius-fg: var(--accent-dark);
   --climate-badge-phi-bg: color-mix(in oklab, var(--chart-5) 15%, var(--bg-card));
   --climate-badge-phi-fg: color-mix(in oklab, var(--chart-5) 72%, black);
-  --climate-badge-ashrae-bg: color-mix(in oklab, var(--chart-4) 17%, var(--bg-card));
-  --climate-badge-ashrae-fg: color-mix(in oklab, var(--chart-4) 70%, black);
-  --climate-badge-epw-bg: color-mix(in oklab, var(--chart-1) 15%, var(--bg-card));
-  --climate-badge-epw-fg: color-mix(in oklab, var(--chart-1) 72%, black);
+  --climate-badge-weather-bg: color-mix(in oklab, var(--chart-1) 15%, var(--bg-card));
+  --climate-badge-weather-fg: color-mix(in oklab, var(--chart-1) 72%, black);
   --climate-badge-custom-bg: var(--bg-elev);
   --climate-badge-custom-fg: var(--text-secondary);
 }
@@ -228,14 +226,9 @@
   color: var(--climate-badge-phi-fg);
 }
 
-.climate-type-badge[data-kind="ashrae"] {
-  background: var(--climate-badge-ashrae-bg);
-  color: var(--climate-badge-ashrae-fg);
-}
-
-.climate-type-badge[data-kind="epw"] {
-  background: var(--climate-badge-epw-bg);
-  color: var(--climate-badge-epw-fg);
+.climate-type-badge[data-kind="weather"] {
+  background: var(--climate-badge-weather-bg);
+  color: var(--climate-badge-weather-fg);
 }
 
 /* Compose `.chip .chip--sm`. OK / CHECK / FAIL with a leading LED dot. */
@@ -442,25 +435,6 @@
   align-self: stretch;
   min-height: 100%;
   padding-inline: var(--space-16);
-}
-
-.climate-epw-tools {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-14);
-  align-items: flex-start;
-  padding: var(--space-14);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--phn-radius);
-  background: var(--bg-card);
-}
-
-.climate-epw-tools > div:first-child {
-  min-width: 0;
-}
-
-.climate-epw-tools .climate-subhead {
-  margin-top: 0;
 }
 
 /* "Set from nearest" action shown on each climate type's page (attached or

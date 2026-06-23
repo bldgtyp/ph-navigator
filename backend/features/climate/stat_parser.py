@@ -34,11 +34,19 @@ def parse_stat_file(text: str) -> ParsedStatPayload:
             "record_high_c": record_high,
         }
     )
+    # Cooling row columns (after the "Cooling" label): [0] hottest month,
+    # [1] mean DB range, then DB/MCWB pairs per annual percentile —
+    # [2,3] 0.4%, [4,5] 1%, [6,7] 2% — followed by the dehumidification block
+    # whose 1% dew-point / MCDB land at [19] / [21].
     design_values = {
         "heating_996_db_c": _value_at(heating, 1),
         "heating_990_db_c": _value_at(heating, 2),
+        "cooling_004_db_c": _value_at(cooling, 2),
+        "cooling_004_mcwb_c": _value_at(cooling, 3),
         "cooling_010_db_c": _value_at(cooling, 4),
         "cooling_010_mcwb_c": _value_at(cooling, 5),
+        "cooling_020_db_c": _value_at(cooling, 6),
+        "cooling_020_mcwb_c": _value_at(cooling, 7),
         "dehumidification_010_dp_c": _value_at(cooling, 19),
         "dehumidification_010_mcdb_c": _value_at(cooling, 21),
         "record_low_c": record_low,
@@ -59,8 +67,12 @@ def parse_stat_file(text: str) -> ParsedStatPayload:
         edition=_edition(lines),
         heating_996_db_c=design_values["heating_996_db_c"],
         heating_990_db_c=design_values["heating_990_db_c"],
+        cooling_004_db_c=design_values["cooling_004_db_c"],
+        cooling_004_mcwb_c=design_values["cooling_004_mcwb_c"],
         cooling_010_db_c=design_values["cooling_010_db_c"],
         cooling_010_mcwb_c=design_values["cooling_010_mcwb_c"],
+        cooling_020_db_c=design_values["cooling_020_db_c"],
+        cooling_020_mcwb_c=design_values["cooling_020_mcwb_c"],
         dehumidification_010_dp_c=design_values["dehumidification_010_dp_c"],
         dehumidification_010_mcdb_c=design_values["dehumidification_010_mcdb_c"],
         record_low_c=design_values["record_low_c"],

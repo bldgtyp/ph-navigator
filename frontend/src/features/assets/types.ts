@@ -5,6 +5,8 @@ export type AssetKind =
   | "simulation_file"
   | "export_bundle"
   | "epw"
+  | "stat"
+  | "ddy"
   | "other";
 
 export type AssetMetadata = {

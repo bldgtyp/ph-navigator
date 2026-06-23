@@ -119,15 +119,15 @@ project_climate_source (
     id                  UUID PRIMARY KEY,
     project_id          UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     kind                TEXT NOT NULL,
-                      -- 'phius' | 'phi' | 'ashrae' | 'epw' | 'custom'
+                      -- 'phius' | 'phi' | 'weather' | 'custom'
     ref                 TEXT,
-                      -- Phius/PHI climate_dataset_location id, ASHRAE station
-                      -- id/WMO, or EPW project_assets.id depending on kind.
+                      -- Phius/PHI climate_dataset_location id, or the weather
+                      -- source's primary EPW project_assets.id, by kind.
     label               TEXT,
     data                JSONB,
-                      -- custom ClimateRecord, proximity metadata, EPW STAT
-                      -- metrics, and/or ASHRAE design conditions depending on
-                      -- kind. EPW/ASHRAE cached values carry basis/source URL,
+                      -- custom ClimateRecord, proximity metadata, or the weather
+                      -- bundle's STAT metrics + ASHRAE design conditions, by
+                      -- kind. Weather cached values carry basis/source URL,
                       -- fetched_at, and missing-field flags.
     created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -707,8 +707,8 @@ project_assets (
     project_id            UUID NOT NULL REFERENCES projects(id),
     asset_kind            TEXT NOT NULL,
                           -- v1: 'datasheet' | 'site_photo' | 'hbjson' |
-                          --     'simulation_file' | 'export_bundle' |
-                          --     'other'
+                          --     'simulation_file' | 'export_bundle' | 'epw' |
+                          --     'stat' | 'ddy' | 'other'
                           -- `attachments.md` §A2 maps each kind to its
                           -- referencing core fields. No generic
                           -- `attachment` kind exists in v1 because there

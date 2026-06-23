@@ -248,6 +248,9 @@ POST /api/v1/projects/{pid}/location/geocode
 POST /api/v1/projects/{pid}/location/elevation
 POST /api/v1/projects/{pid}/location/derive/{kind}   # kind: phius | phi | weather
 POST /api/v1/projects/{pid}/climate/sources/ashrae/current
+GET  /api/v1/projects/{pid}/climate/epw-roster                  # ?region= &near= &limit=
+POST /api/v1/projects/{pid}/climate/sources/weather/from-catalog
+POST /api/v1/projects/{pid}/climate/sources/weather/from-upload
 ```
 
 `GET /location` returns coordinates, coarse public geodata, EPW attachment
@@ -291,21 +294,43 @@ Each Climate page owns its own action:
 - `kind=weather` — resolves the nearest OneBuilding EPW station from the
   configured XLSX catalog URLs (or the built-in WMO-region defaults), downloads
   the station zip, stores the `.epw` bytes as a project EPW asset, records the
-  EPW reference on `project_location`, and attaches/upserts both:
-  - `kind='epw'` with `ref=<asset_id>` and `data.stat_metrics` containing
-    HDD65, CDD50, record high/low, missing-field flags, station metadata,
-    source URL, and `fetched_at`.
-  - `kind='ashrae'` with `ref=<WMO/station>` and `data.design_conditions` from
-    the zip's `.stat` file (the parser records the basis/edition stated by the
-    `.stat` file rather than assuming a fixed edition). EPW and ASHRAE are one
-    action because the ASHRAE conditions ride on the EPW's `.stat` companion.
+  EPW reference on `project_location`, and attaches/upserts a **single**
+  `kind='weather'` source (the EPW + STAT bundle): `ref=<asset_id>` (the primary
+  EPW file asset) with `data.stat_metrics` (HDD65, CDD50, record high/low,
+  missing-field flags) and `data.design_conditions` (heating + cooling DB/MCWB
+  at 0.4% / 1% / 2% plus the dehumidification pair) both parsed from the zip's
+  `.stat` companion, alongside station metadata, source URL, and `fetched_at`.
+  The parser records the basis/edition stated by the `.stat` file rather than
+  assuming a fixed edition.
 
 `POST /climate/sources/ashrae/current` is editor-only and performs the
-copyright-sensitive ashrae-meteo.info path for one nearest station only. It
-uses the saved project coordinates, accepts `{ "ashrae_version": "2009" |
-"2013" | "2017" | "2021" | "2025" }`, and upserts the project `ashrae`
-source with `data.provider='ashrae_meteo'`, a source URL, and the same
-`design_conditions` shape.
+copyright-sensitive ashrae-meteo.info path for one nearest station only. It uses
+the saved project coordinates, accepts `{ "ashrae_version": "2009" | "2013" |
+"2017" | "2021" | "2025" }`, and **replaces the `data.design_conditions` on the
+project's existing `weather` source in place** (recording a
+`data.design_conditions_source` with `provider='ashrae_meteo'` and a source
+URL). It returns `409 weather_source_required` when no weather file is set yet.
+
+`GET /climate/epw-roster` is the weather "Select from map" picker feed
+(editor-only): OneBuilding EPW catalog stations for the project, nearest-first,
+each with `distance_mi` and `elevation_delta_ft` against the site. `?region=`
+filters by US state (default = the project's state); `?near=true` sweeps the
+nearest across the USA (`?limit=` caps the page). It carries **no proximity
+verdict** — distance/elevation are informational only (the picker has no
+certification gate). Returns `409 project_location_required` without a site.
+
+`POST /climate/sources/weather/from-catalog` is editor-only and attaches the
+station the picker selected (`{ "url": "<catalog zip URL>" }`): it downloads +
+parses + stores the EPW + STAT bundle as the single `weather` source — the same
+shape as the nearest-derive — and writes the project EPW pointer onto the
+location. Unknown URLs return `422 epw_catalog_entry_not_found`.
+
+`POST /climate/sources/weather/from-upload` is editor-only and attaches a
+manually-uploaded bundle by its already-stored asset ids (`{ "epw_asset_id",
+"stat_asset_id"?, "ddy_asset_id"? }`). The EPW is required (its header supplies
+the station); the `.stat` (if given) is parsed into the same metrics + design
+conditions; the `.ddy` is stored by id only. The companions upload as `stat` /
+`ddy` asset kinds. A wrong-kind ref returns `422 asset_kind_mismatch`.
 
 ### 9.10 Assets
 

@@ -75,6 +75,57 @@ def nearest_epw_entry(latitude: float, longitude: float) -> EpwCatalogEntry | No
     )
 
 
+def nearest_epw_entries(
+    latitude: float, longitude: float, *, country: str | None = None, limit: int
+) -> list[EpwCatalogEntry]:
+    """Catalog entries nearest a point, nearest-first, each stamped with distance.
+
+    Generalizes :func:`nearest_epw_entry` to the top ``limit`` results; an
+    optional ``country`` narrows the search (the any-state weather picker mode).
+    """
+    entries = [entry for entry in load_epw_catalog(catalog_urls()) if _matches(entry.country, country)]
+    return _rank_nearest(entries, latitude, longitude, limit)
+
+
+def epw_entries_for_region(
+    *, country: str | None, region: str | None, latitude: float, longitude: float, limit: int
+) -> list[EpwCatalogEntry]:
+    """Catalog entries for a country/region (state), nearest-first with distance."""
+    entries = [
+        entry
+        for entry in load_epw_catalog(catalog_urls())
+        if _matches(entry.country, country) and _matches(entry.region, region)
+    ]
+    return _rank_nearest(entries, latitude, longitude, limit)
+
+
+def find_entry_by_url(url: str) -> EpwCatalogEntry | None:
+    """Resolve a catalog entry from its zip URL (for a from-catalog attach)."""
+    return next((entry for entry in load_epw_catalog(catalog_urls()) if entry.url == url), None)
+
+
+def _rank_nearest(
+    entries: list[EpwCatalogEntry], latitude: float, longitude: float, limit: int
+) -> list[EpwCatalogEntry]:
+    """Sort entries nearest-first (ties broken by source quality), take ``limit``,
+    and stamp each with its great-circle ``distance_mi``.
+
+    Distance is computed once per entry (decorate-sort-undecorate) and reused for
+    both the sort key and the stamp."""
+    decorated = sorted(
+        ((haversine_miles(latitude, longitude, entry.latitude, entry.longitude), entry) for entry in entries),
+        key=lambda pair: (round(pair[0], 6), _source_rank(pair[1])),
+    )
+    return [dataclass_replace(entry, distance_mi=distance) for distance, entry in decorated[: max(limit, 0)]]
+
+
+def _matches(value: str | None, target: str | None) -> bool:
+    """Case-insensitive equality; a ``None`` target matches anything (no filter)."""
+    if target is None:
+        return True
+    return value is not None and value.strip().casefold() == target.strip().casefold()
+
+
 def download_epw_zip(entry: EpwCatalogEntry) -> EpwZipPayload:
     with httpx.Client(
         timeout=settings.location_derive_timeout_seconds,
