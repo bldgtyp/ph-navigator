@@ -17,16 +17,16 @@ from ladybug.location import Location
 from ladybug.sunpath import Sunpath
 from ladybug_geometry.geometry2d.pointvector import Point2D
 
-from features.model_viewer.schemas.ladybug import (
-    CompassSchema,
-    SunPathAndCompassDTOSchema,
-    SunPathSchema,
-)
 from features.model_viewer.schemas.ladybug_geometry import (
     Arc2DSchema,
     Arc3DSchema,
     LineSegment2DSchema,
     Polyline3DSchema,
+)
+from features.project_location.sun_path_schemas import (
+    CompassSchema,
+    SunPathAndCompassDTOSchema,
+    SunPathSchema,
 )
 
 # Origin-centered, unit radius: the frontend scales the diagram to the model

@@ -114,13 +114,15 @@ servers (visual confirmation of the diagram + north orientation). Phase 2
   (D-SP-1), that key was dead; it was removed from `schemas/combined.py`,
   `extraction.py`, the frontend `CombinedModelData` type, and the two
   tests that asserted it null. Single source of truth now.
-- **Follow-up (deferred): relocate the sun-path wire DTOs.**
-  `SunPathSchema` / `CompassSchema` / `SunPathAndCompassDTOSchema` live in
-  `backend/features/model_viewer/schemas/ladybug.py` but, after the
-  cleanup above, are produced/consumed only by `project_location`'s
-  sun-path service — an ownership inversion. They were left in place
-  because the geometry primitives they reuse (`ladybug_geometry.py`:
-  `Arc2D/Arc3D/LineSegment2D/Polyline3D`) are genuinely shared with
-  `model_viewer`'s face/mesh schemas, so the right home (a shared schema
-  module vs. `project_location`) is a structural decision worth making
-  explicitly rather than mechanically. Not blocking; flagged for Ed.
+- **Relocated the sun-path wire DTOs (done 2026-06-23).**
+  `SunPathSchema` / `CompassSchema` / `SunPathAndCompassDTOSchema` moved
+  from `model_viewer/schemas/ladybug.py` (deleted) to
+  `project_location/sun_path_schemas.py`, next to their producer — fixing
+  the ownership inversion (the endpoint contract no longer lives in the
+  consumer feature). The low-level geometry primitives
+  (`model_viewer/schemas/ladybug_geometry.py`: `Arc2D/Arc3D/
+  LineSegment2D/Polyline3D`) were **deliberately left** there: they are
+  genuinely shared with `model_viewer`'s face/mesh schemas, so a
+  cross-feature import of *primitive value types* is acceptable (unlike an
+  endpoint contract). Promoting them to a shared schema module remains a
+  possible future tidy, but is not an inversion.
