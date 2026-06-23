@@ -18,10 +18,17 @@ from features.catalogs.frame_types.import_export.service import (
     preview_import,
 )
 from features.catalogs.frame_types.models import (
+    CatalogFieldOptionsResponse,
     CatalogFrameTypeCreateRequest,
     CatalogFrameTypeListResponse,
+    CatalogFrameTypeOptionsResponse,
     CatalogFrameTypePublic,
     CatalogFrameTypeUpdateRequest,
+    EditCatalogOptionsRequest,
+)
+from features.catalogs.frame_types.options_service import (
+    edit_frame_type_options,
+    list_frame_type_options,
 )
 from features.catalogs.frame_types.service import (
     create_frame_type,
@@ -83,6 +90,26 @@ def get_frame_manufacturers(auth: CurrentUser) -> CatalogManufacturerListRespons
 
     del auth
     return list_frame_manufacturers()
+
+
+# NOTE: `/options` must be declared before `/{record_id}` so it is not matched
+# as a record id (Starlette resolves routes in declaration order).
+@router.get("/options", response_model=CatalogFrameTypeOptionsResponse)
+def get_frame_type_options(auth: CurrentUser) -> CatalogFrameTypeOptionsResponse:
+    """All six single-select fields' option lists (the dropdown vocabularies)."""
+
+    del auth
+    return list_frame_type_options()
+
+
+@router.put("/options", response_model=CatalogFieldOptionsResponse)
+def put_frame_type_options(
+    payload: EditCatalogOptionsRequest, request: Request, auth: CurrentUser
+) -> CatalogFieldOptionsResponse:
+    """Full-replace one field's option list (add / rename / reorder / merge)."""
+
+    user, _expires_at = auth
+    return edit_frame_type_options(payload, user, request)
 
 
 @router.get("/{record_id}", response_model=CatalogFrameTypePublic)
