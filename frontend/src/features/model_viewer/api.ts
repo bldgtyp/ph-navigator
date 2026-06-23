@@ -5,6 +5,7 @@ import type {
   HbjsonFileCreatePayload,
   HbjsonFileListResponse,
   HbjsonFileUpdatePayload,
+  SunPathAndCompassModelData,
 } from "./types";
 
 export async function fetchHbjsonFiles(
@@ -57,4 +58,14 @@ export async function fetchModelData(
     `/api/v1/projects/${projectId}/hbjson-files/${fileId}/model_data`,
     { signal },
   );
+}
+
+/** The project's annual sun path, or `null` when no location is set. */
+export async function fetchSunPath(
+  projectId: string,
+  signal?: AbortSignal,
+): Promise<SunPathAndCompassModelData | null> {
+  return fetchJson<SunPathAndCompassModelData | null>(`/api/v1/projects/${projectId}/sun-path`, {
+    signal,
+  });
 }

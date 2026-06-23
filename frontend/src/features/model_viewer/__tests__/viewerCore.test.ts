@@ -216,7 +216,6 @@ function sampleModelData(): CombinedModelData {
       },
     ],
     spaces: [],
-    sun_path: null,
     hot_water_systems: [],
     ventilation_systems: [],
     shading_elements: [],

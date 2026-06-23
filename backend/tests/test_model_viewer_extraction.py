@@ -146,12 +146,6 @@ def test_primary_hot_water_tree_depth(primary_data: CombinedModelDataSchema) -> 
         assert segment.diameter_mm > 0
 
 
-def test_primary_sun_path_is_null(primary_data: CombinedModelDataSchema) -> None:
-    """D-07: sun-path generation is blocked on model-viewer wiring; the key
-    exists and is null so the wire shape won't change when wiring lands."""
-    assert primary_data.sun_path is None
-
-
 def test_primary_geometry_summary() -> None:
     summary = extract_geometry_summary(_load_primary_model())
     assert summary.volume_m3 == pytest.approx(1129.65, abs=0.5)

@@ -7,7 +7,7 @@ import { MODEL_VIEWER_LENSES } from "../lib/lenses";
 import { buildBuildingModel, disposeBuildingModel, type BuildingModel } from "../loaders/building";
 import { ViewerCanvas } from "../scene/ViewerCanvas";
 import { useModelViewerStore } from "../store";
-import { useModelDataQuery } from "../hooks";
+import { useModelDataQuery, useSunPathQuery } from "../hooks";
 import type { HbjsonFile, ModelViewerErrorKind } from "../types";
 import { CameraCluster } from "./CameraCluster";
 import { InspectorPanel } from "./InspectorPanel";
@@ -28,6 +28,9 @@ type RenderedModel = {
 
 export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProps) {
   const query = useModelDataQuery(projectId, activeFile.id);
+  // Project-scoped + location-reactive: independent of the active file.
+  const sunPathQuery = useSunPathQuery(projectId);
+  const sunPath = sunPathQuery.data ?? null;
   const setLoadState = useModelViewerStore((state) => state.setLoadState);
   const selectionId = useModelViewerStore((state) => state.selectionId);
   const lens = useModelViewerStore((state) => state.lens);
@@ -143,13 +146,16 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
 
   return (
     <>
-      {isModelViewerDebugHookEnabled() ? <ModelViewerDebugBridge model={model} /> : null}
+      {isModelViewerDebugHookEnabled() ? (
+        <ModelViewerDebugBridge model={model} sunPathReady={Boolean(sunPath)} />
+      ) : null}
       {renderedModel ? (
         <div className={measureActive ? "model-canvas-wrap measuring" : "model-canvas-wrap"}>
           <ViewerCanvas
             key={renderedModel.fileId}
             model={renderedModel.model}
             activeFileName={activeFile.display_name}
+            sunPath={sunPath}
           />
           {isModelViewerDebugHookEnabled() ? <ModelViewerPerfOverlay model={model} /> : null}
         </div>
@@ -173,7 +179,7 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
         activeFile={activeFile}
         loadSummary={query.data?.load_summary ?? null}
       />
-      {model && lens === "site-sun" && !model.sunPath && !measureActive ? (
+      {model && lens === "site-sun" && !sunPath && !measureActive ? (
         <div className="model-site-sun-hint">Set project location to see the sun path.</div>
       ) : null}
       {measureActive ? (

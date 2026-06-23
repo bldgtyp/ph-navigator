@@ -17,7 +17,6 @@ import type {
   PipeElementModelData,
   ShadeGroupModelData,
   SpaceModelData,
-  SunPathAndCompassModelData,
 } from "../types";
 
 export type BuildingRenderable = {
@@ -65,7 +64,6 @@ export type BuildingModel = {
   buildingObjects: BuildingRenderable[];
   ghost: GhostGeometry;
   shadeObjects: ShadeRenderable[];
-  sunPath: SunPathAndCompassModelData | null;
   metaById: Map<string, ModelObjectMeta>;
   bounds: Box3;
   objectCounts: ModelObjectCounts;
@@ -114,7 +112,6 @@ export function buildBuildingModel(data: CombinedModelData): BuildingModel {
     buildingObjects,
     ghost: buildGhostGeometry(buildingObjects),
     shadeObjects,
-    sunPath: data.sun_path,
     metaById,
     bounds: bounds.isEmpty() ? fallbackBounds(objects) : bounds,
     objectCounts: countObjects(objects),

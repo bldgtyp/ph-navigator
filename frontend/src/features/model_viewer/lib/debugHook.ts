@@ -17,12 +17,18 @@ export function isModelViewerDebugHookEnabled(): boolean {
   return DEBUG_HOOK_ENABLED;
 }
 
-export function ModelViewerDebugBridge({ model }: { model: BuildingModel | null }) {
-  useModelViewerDebugHook(model);
+export function ModelViewerDebugBridge({
+  model,
+  sunPathReady,
+}: {
+  model: BuildingModel | null;
+  sunPathReady: boolean;
+}) {
+  useModelViewerDebugHook(model, sunPathReady);
   return null;
 }
 
-function useModelViewerDebugHook(model: BuildingModel | null): void {
+function useModelViewerDebugHook(model: BuildingModel | null, sunPathReady: boolean): void {
   const activeFileId = useModelViewerStore((state) => state.activeFileId);
   const loadPhase = useModelViewerStore((state) => state.loadPhase);
   const errorKind = useModelViewerStore((state) => state.errorKind);
@@ -58,7 +64,7 @@ function useModelViewerDebugHook(model: BuildingModel | null): void {
       activeFileId,
       objectCounts: model?.objectCounts ?? emptyModelObjectCounts(),
       shadeCount: model?.shadeObjects.length ?? 0,
-      sunPathReady: Boolean(model?.sunPath),
+      sunPathReady,
       objectIds,
       visibleObjectIds,
       lens,
@@ -139,6 +145,7 @@ function useModelViewerDebugHook(model: BuildingModel | null): void {
     setMeasureActive,
     setSelectionId,
     setTheme,
+    sunPathReady,
     theme,
     visibleObjectIds,
   ]);
