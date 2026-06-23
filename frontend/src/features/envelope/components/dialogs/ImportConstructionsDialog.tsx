@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { DialogActions } from "../../../../shared/ui/DialogActions";
 import { ModalDialog } from "../../../../shared/ui/ModalDialog";
 import {
@@ -6,13 +6,19 @@ import {
   MATERIAL_DECISION_LABELS,
   importWarningLabel,
 } from "../../import-labels";
-import type { ImportConstructionsPreview } from "../../types";
+import type {
+  ConstructionImportAction,
+  ConstructionResolution,
+  ImportConstructionPlanItem,
+  ImportConstructionsPreview,
+} from "../../types";
 
 /**
  * Preview → confirm modal for "Upload constructions HBJSON". Shows the dry-run
- * plan (what lands, what is reused/created, any caveats) before the user
- * commits the import to the draft. Per-item overrides arrive in a later phase;
- * v1 confirms the backend's default resolutions.
+ * plan (what lands, what is reused/created, any caveats) and lets the user
+ * override each construction's collision action (Add new / Replace / Skip)
+ * before committing the import to the draft. Material decisions are resolved
+ * server-side and shown for transparency.
  */
 export function ImportConstructionsDialog({
   plan,
@@ -25,10 +31,32 @@ export function ImportConstructionsDialog({
   busy: boolean;
   error: string | null;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: (resolutions: ConstructionResolution[]) => void;
 }) {
   const { counts, constructions, materials, warnings } = plan;
-  const landingCount = counts.constructions_add + counts.constructions_replace;
+  // Per-construction action overrides, keyed by source assembly id. Foreign
+  // constructions carry no id and cannot be re-keyed server-side, so they keep
+  // their default action.
+  const [overrides, setOverrides] = useState<Record<string, ConstructionImportAction>>({});
+
+  const effectiveAction = (item: ImportConstructionPlanItem): ConstructionImportAction =>
+    item.source_assembly_id ? (overrides[item.source_assembly_id] ?? item.action) : item.action;
+
+  const landingCount = constructions.filter((item) => effectiveAction(item) !== "skip").length;
+
+  const resolutions = useMemo<ConstructionResolution[]>(
+    () =>
+      constructions
+        .filter((item): item is ImportConstructionPlanItem & { source_assembly_id: string } =>
+          Boolean(item.source_assembly_id),
+        )
+        .map((item) => ({
+          source_assembly_id: item.source_assembly_id,
+          action: overrides[item.source_assembly_id] ?? item.action,
+          target_assembly_id: item.target_assembly_id,
+        })),
+    [constructions, overrides],
+  );
 
   return (
     <ModalDialog
@@ -38,11 +66,7 @@ export function ImportConstructionsDialog({
     >
       <div className="modal-form envelope-import">
         <div className="envelope-import__chips">
-          <CountChip label="Add" value={counts.constructions_add} />
-          <CountChip label="Replace" value={counts.constructions_replace} />
-          {counts.constructions_skip > 0 ? (
-            <CountChip label="Skip" value={counts.constructions_skip} />
-          ) : null}
+          <CountChip label="Landing" value={landingCount} />
           <CountChip label="Reuse materials" value={counts.materials_reused} />
           <CountChip label="From catalog" value={counts.materials_picked_from_catalog} />
           <CountChip label="New materials" value={counts.materials_created} />
@@ -57,18 +81,24 @@ export function ImportConstructionsDialog({
         ) : null}
 
         <ImportSection title="Constructions" count={constructions.length}>
-          {constructions.map((item, index) => (
-            <li
-              key={`${item.source_assembly_id ?? "new"}-${index}`}
-              className="envelope-import__row"
-            >
-              <span className="envelope-import__name">{item.name}</span>
-              <span className="chip chip--sm chip--outline">
-                {CONSTRUCTION_ACTION_LABELS[item.action]}
-              </span>
-              <RowWarnings warnings={item.warnings} />
-            </li>
-          ))}
+          {constructions.map((item, index) => {
+            const sourceId = item.source_assembly_id;
+            return (
+              <li key={`${sourceId ?? "new"}-${index}`} className="envelope-import__row">
+                <span className="envelope-import__name">{item.name}</span>
+                <ActionControl
+                  item={item}
+                  value={effectiveAction(item)}
+                  onChange={
+                    sourceId
+                      ? (action) => setOverrides((prev) => ({ ...prev, [sourceId]: action }))
+                      : undefined
+                  }
+                />
+                <RowWarnings warnings={item.warnings} />
+              </li>
+            );
+          })}
         </ImportSection>
 
         <ImportSection title="Materials" count={materials.length}>
@@ -93,10 +123,44 @@ export function ImportConstructionsDialog({
           }
           submitDisabled={landingCount === 0}
           onClose={onClose}
-          onConfirm={onConfirm}
+          onConfirm={() => onConfirm(resolutions)}
         />
       </div>
     </ModalDialog>
+  );
+}
+
+function ActionControl({
+  item,
+  value,
+  onChange,
+}: {
+  item: ImportConstructionPlanItem;
+  value: ConstructionImportAction;
+  onChange?: (action: ConstructionImportAction) => void;
+}) {
+  // Foreign constructions (no source id, so no `onChange`) can only be added —
+  // show a static chip instead of an editable control.
+  if (!onChange) {
+    return <span className="chip chip--sm chip--outline">{CONSTRUCTION_ACTION_LABELS[value]}</span>;
+  }
+  // Replace is only offered when the file matched an existing assembly.
+  const options: ConstructionImportAction[] = item.target_assembly_id
+    ? ["replace", "add_new", "skip"]
+    : ["add_new", "skip"];
+  return (
+    <select
+      className="envelope-import__action"
+      aria-label={`Action for ${item.name}`}
+      value={value}
+      onChange={(event) => onChange(event.target.value as ConstructionImportAction)}
+    >
+      {options.map((action) => (
+        <option key={action} value={action}>
+          {CONSTRUCTION_ACTION_LABELS[action]}
+        </option>
+      ))}
+    </select>
   );
 }
 

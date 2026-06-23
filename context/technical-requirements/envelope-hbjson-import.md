@@ -122,9 +122,12 @@ a draft and surface in the preview, not as errors.
 
 The "Upload constructions HBJSON" menu item (editor-only) on Envelope →
 Assemblies drives this: `useEnvelopeHbjsonImport` reads the file and calls the
-preview route, `ImportConstructionsDialog` shows the plan, and confirming fires
-the `import_envelope_constructions` command on the existing envelope-command
-rail. See `frontend/src/features/envelope/` (`hooks/useEnvelopeHbjsonImport.ts`,
+preview route, `ImportConstructionsDialog` shows the plan and lets the user
+override each construction's action (Add new / Replace / Skip — Replace only
+when the file matched an existing assembly), and confirming fires the
+`import_envelope_constructions` command (with the chosen `resolutions`) on the
+existing envelope-command rail. See `frontend/src/features/envelope/`
+(`hooks/useEnvelopeHbjsonImport.ts`,
 `components/dialogs/ImportConstructionsDialog.tsx`).
 
 ## See also

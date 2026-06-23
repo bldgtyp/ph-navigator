@@ -60,7 +60,7 @@ function plan(overrides: Partial<ImportConstructionsPreview> = {}): ImportConstr
 }
 
 describe("ImportConstructionsDialog", () => {
-  test("renders the plan summary, action labels, and a name-match warning", () => {
+  test("renders the plan, a per-construction action control, and a name-match warning", () => {
     render(
       <ImportConstructionsDialog
         plan={plan()}
@@ -73,15 +73,16 @@ describe("ImportConstructionsDialog", () => {
 
     expect(screen.getByText("Import constructions")).toBeInTheDocument();
     expect(screen.getByText("WALL-A")).toBeInTheDocument();
-    expect(screen.getByText("Replace existing")).toBeInTheDocument();
+    // The matched construction defaults to Replace and is editable.
+    expect(screen.getByLabelText("Action for WALL-A")).toHaveValue("replace");
+    // The foreign construction (no source id) can only be added — static chip.
+    expect(screen.queryByLabelText("Action for W_NewWall")).not.toBeInTheDocument();
     expect(screen.getByText("Copy from catalog")).toBeInTheDocument();
-    // The fuzzy name match is surfaced for confirmation.
     expect(screen.getByText(/Matched an existing project material by name/)).toBeInTheDocument();
-    // 1 add + 1 replace land.
     expect(screen.getByRole("button", { name: "Import 2 constructions" })).toBeEnabled();
   });
 
-  test("confirm fires onConfirm", async () => {
+  test("confirm sends per-construction resolutions", async () => {
     const onConfirm = vi.fn();
     render(
       <ImportConstructionsDialog
@@ -94,21 +95,46 @@ describe("ImportConstructionsDialog", () => {
     );
 
     await userEvent.click(screen.getByRole("button", { name: "Import 2 constructions" }));
-    expect(onConfirm).toHaveBeenCalledOnce();
+    // Only the construction with a source id is addressable server-side.
+    expect(onConfirm).toHaveBeenCalledWith([
+      { source_assembly_id: "asm_a", action: "replace", target_assembly_id: "asm_a" },
+    ]);
   });
 
-  test("disables import when nothing lands (all skipped)", () => {
+  test("overriding an action to Skip drops it from the import", async () => {
+    const onConfirm = vi.fn();
+    render(
+      <ImportConstructionsDialog
+        plan={plan()}
+        busy={false}
+        error={null}
+        onClose={vi.fn()}
+        onConfirm={onConfirm}
+      />,
+    );
+
+    await userEvent.selectOptions(screen.getByLabelText("Action for WALL-A"), "skip");
+    // Only the foreign add_new construction now lands.
+    const button = screen.getByRole("button", { name: "Import 1 construction" });
+    await userEvent.click(button);
+    expect(onConfirm).toHaveBeenCalledWith([
+      { source_assembly_id: "asm_a", action: "skip", target_assembly_id: "asm_a" },
+    ]);
+  });
+
+  test("disables import when nothing lands", () => {
     render(
       <ImportConstructionsDialog
         plan={plan({
-          counts: {
-            constructions_add: 0,
-            constructions_replace: 0,
-            constructions_skip: 2,
-            materials_reused: 0,
-            materials_picked_from_catalog: 0,
-            materials_created: 0,
-          },
+          constructions: [
+            {
+              source_assembly_id: "asm_a",
+              name: "WALL-A",
+              action: "skip",
+              target_assembly_id: "asm_a",
+              warnings: [],
+            },
+          ],
         })}
         busy={false}
         error={null}
