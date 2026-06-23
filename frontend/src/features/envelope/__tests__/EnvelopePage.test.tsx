@@ -491,7 +491,9 @@ describe("EnvelopePage", () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
 
     const svg = await screen.findByTestId("assembly-svg-canvas");
+    const stage = screen.getByTestId("assembly-canvas-stage");
     expect(svg).toHaveAttribute("viewBox", "-1 -1 357.6 103.6");
+    expect(stage).toHaveStyle({ height: "102.6px" });
     const segments = screen.getAllByTestId("assembly-svg-segment");
 
     expect(segments).toHaveLength(2);

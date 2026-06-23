@@ -14,7 +14,12 @@ import { useUnitPreference } from "../../../lib/units";
 import { AssemblyCanvasOverlay, type AssemblyCanvasOverlayActions } from "./AssemblyCanvasOverlay";
 import { AssemblySvgCanvas } from "./AssemblySvgCanvas";
 import { buildAssemblyCanvasGeometry } from "../canvas-geometry";
-import { ASSEMBLY_CANVAS_ORIGIN_X_PX, fitZoomForCanvasWidth, pxFromMm } from "../canvas-constants";
+import {
+  ASSEMBLY_CANVAS_ORIGIN_X_PX,
+  SVG_STROKE_PADDING_MM,
+  fitZoomForCanvasWidth,
+  pxFromMm,
+} from "../canvas-constants";
 import type { AssemblyCanvasPaintController } from "../canvas-paint";
 import { materialById } from "../lib";
 import type { Assembly, AssemblyLayer, AssemblySegment, ProjectMaterial } from "../types";
@@ -67,8 +72,9 @@ export function AssemblyCanvas({
   const fittedAssemblyRef = useRef<string | null>(null);
   const svgWidth = pxFromMm(geometry.widthMm, zoom);
   const svgHeight = pxFromMm(geometry.heightMm, zoom);
+  const svgStrokePaddingPx = pxFromMm(SVG_STROKE_PADDING_MM, zoom);
   const stageWidth = ASSEMBLY_CANVAS_ORIGIN_X_PX + svgWidth;
-  const canvasHeight = svgHeight;
+  const canvasHeight = svgHeight + svgStrokePaddingPx;
   const actions: AssemblyCanvasOverlayActions = {
     onDeleteLayer,
     onUpdateLayerThickness,
@@ -86,7 +92,7 @@ export function AssemblyCanvas({
 
     function fitActiveAssembly(): void {
       if (fittedAssemblyRef.current === assembly.id) return;
-      const availableWidthPx = scrollElement.clientWidth;
+      const availableWidthPx = scrollRef.current?.clientWidth ?? 0;
       if (availableWidthPx <= 0) return;
       fittedAssemblyRef.current = assembly.id;
       onFitZoom(fitZoomForCanvasWidth(geometry.widthMm, availableWidthPx));

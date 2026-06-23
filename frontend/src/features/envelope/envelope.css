@@ -306,8 +306,9 @@
   gap: var(--space-8);
   min-height: 72px;
   min-width: 0;
-  overflow: hidden;
   padding: var(--space-10) 0 var(--space-12);
+  position: relative;
+  z-index: var(--z-sticky);
 }
 
 .assembly-header-main {
@@ -347,7 +348,6 @@
   margin: 0 0 0 auto;
   max-width: 100%;
   min-width: 0;
-  overflow: hidden;
 }
 
 .assembly-header-alerts {
