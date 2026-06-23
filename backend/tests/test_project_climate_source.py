@@ -380,11 +380,12 @@ def test_epw_roster_nearest_mode_sweeps_all_states(clean_mcp_tables: None, monke
     assert set(names) == {"Pittsfield.Muni.AP", "Boston.Logan", "Albany.Intl"}  # crosses states
 
 
-# OneBuilding lists each station once per dataset version (TMYx periods, TMY3,
-# …), all sharing the station name. The variants do NOT share exact coordinates
-# — a station's recorded lat/lon drifts a few hundred metres between source
-# periods. The picker shows every version, labelled, but must keep a station's
-# versions grouped (not interleaved with a neighbour in the same distance band).
+# OneBuilding lists a station's TMYx once per rolling period (2007-2021,
+# 2009-2023, 2011-2025, …) — only the most recent is useful — but a different
+# methodology (TMY3) is a distinct choice. The picker keeps one row per
+# (station, type): the newest dated period, plus each other type. Period
+# variants don't share exact coordinates (lat/lon drifts a few hundred metres),
+# so identity is keyed on region + name, not coordinates.
 _EPW_CATALOG_WITH_PERIOD_VARIANTS = (
     _epw_entry(
         "Pittsfield.Muni.AP",
@@ -392,24 +393,25 @@ _EPW_CATALOG_WITH_PERIOD_VARIANTS = (
         42.43,
         -73.29,
         364,
-        "https://climate.onebuilding.org/USA_MA_Pittsfield.Muni.AP.744104_TMYx.2004-2018.zip",
+        "https://climate.onebuilding.org/USA_MA_Pittsfield.Muni.AP.744104_TMYx.2007-2021.zip",
     ),
-    _epw_entry(
-        "Pittsfield.Muni.AP",
-        "MA",
-        42.43,
-        -73.29,
-        364,
-        "https://climate.onebuilding.org/USA_MA_Pittsfield.Muni.AP.744104_TMYx.2009-2023.zip",
-    ),
-    # Same station, all-years variant, but coordinates drift ~150 m from the spans above.
+    # Newest TMYx period — coordinates drift ~150 m from the older span above.
     _epw_entry(
         "Pittsfield.Muni.AP",
         "MA",
         42.4315,
         -73.2913,
         364,
-        "https://climate.onebuilding.org/USA_MA_Pittsfield.Muni.AP.744104_TMYx.zip",
+        "https://climate.onebuilding.org/USA_MA_Pittsfield.Muni.AP.744104_TMYx.2009-2023.zip",
+    ),
+    # Same station, different methodology (no period) — kept as its own row.
+    _epw_entry(
+        "Pittsfield.Muni.AP",
+        "MA",
+        42.43,
+        -73.29,
+        364,
+        "https://climate.onebuilding.org/USA_MA_Pittsfield.Muni.AP.744104_TMY3.zip",
     ),
     _epw_entry(
         "Boston.Logan",
@@ -417,12 +419,12 @@ _EPW_CATALOG_WITH_PERIOD_VARIANTS = (
         42.36,
         -71.01,
         6,
-        "https://climate.onebuilding.org/USA_MA_Boston.Logan.Intl.AP.725090_TMY3.zip",
+        "https://climate.onebuilding.org/USA_MA_Boston.Logan.Intl.AP.725090_TMYx.2011-2025.zip",
     ),
 )
 
 
-def test_epw_roster_lists_every_version_grouped_and_labeled(
+def test_epw_roster_keeps_most_recent_period_per_dataset_type(
     clean_mcp_tables: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(
@@ -435,21 +437,20 @@ def test_epw_roster_lists_every_version_grouped_and_labeled(
 
     body = client.get(f"/api/v1/projects/{project_id}/climate/epw-roster?region=MA").json()
 
-    # Every version is shown (nothing collapsed), and the count agrees.
-    assert body["total"] == 4
-    # Pittsfield's three versions stay grouped (nearer station first), then Boston;
-    # within the group the best-ranked all-years `_TMYx.zip` leads.
+    # Pittsfield's older 2007-2021 TMYx is dropped (only the newest period per
+    # type survives), but its TMY3 stays — so the roster is TMYx-newest + TMY3 +
+    # Boston's single TMYx = 3 rows.
+    assert body["total"] == 3
     assert [item["name"] for item in body["items"]] == [
-        "Pittsfield.Muni.AP",
         "Pittsfield.Muni.AP",
         "Pittsfield.Muni.AP",
         "Boston.Logan",
     ]
+    # Stations nearest-first; within a station the dated TMYx leads its TMY3.
     assert [item["version_label"] for item in body["items"]] == [
-        "TMYx",
         "TMYx 2009–2023",
-        "TMYx 2004–2018",
         "TMY3",
+        "TMYx 2011–2025",
     ]
 
 

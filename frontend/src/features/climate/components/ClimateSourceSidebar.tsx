@@ -1,3 +1,4 @@
+import { MapPin } from "lucide-react";
 import type { UnitSystem } from "../../../lib/units";
 import type { ProjectLocation } from "../../projects/types";
 import {
@@ -10,7 +11,7 @@ import {
   formatLocationElevationLabel,
 } from "../lib";
 import type { ClimateSourceKind, ProjectClimateSource } from "../types";
-import { ClimateStatusChip, ClimateTypeBadge, LocationPrivacyTag } from "./ClimateAtoms";
+import { ClimateStatusChip, ClimateTypeBadge } from "./ClimateAtoms";
 import { ClimateMap } from "./ClimateMap";
 
 // "location" | a source id | a `slot:<kind>` empty-state page for an
@@ -24,6 +25,7 @@ export function ClimateSourceSidebar({
   canEdit,
   unitSystem,
   onSelect,
+  onOpenSetLocation,
 }: {
   location: ProjectLocation | undefined;
   sources: ProjectClimateSource[];
@@ -31,6 +33,7 @@ export function ClimateSourceSidebar({
   canEdit: boolean;
   unitSystem: UnitSystem;
   onSelect: (selection: ClimateSelection) => void;
+  onOpenSetLocation?: () => void;
 }) {
   return (
     <aside className="climate-sidebar" aria-label="Climate pages">
@@ -38,7 +41,9 @@ export function ClimateSourceSidebar({
         location={location}
         unitSystem={unitSystem}
         active={selected === "location"}
+        canEdit={canEdit}
         onSelect={() => onSelect("location")}
+        onOpenSetLocation={onOpenSetLocation}
       />
 
       <div className="climate-side-divider">
@@ -89,56 +94,65 @@ function LocationCard({
   location,
   unitSystem,
   active,
+  canEdit,
   onSelect,
+  onOpenSetLocation,
 }: {
   location: ProjectLocation | undefined;
   unitSystem: UnitSystem;
   active: boolean;
+  canEdit: boolean;
   onSelect: () => void;
+  onOpenSetLocation?: () => void;
 }) {
-  const place = [location?.city ?? location?.county, location?.state].filter(Boolean).join(", ");
+  const cityState = [location?.city ?? location?.county, location?.state]
+    .filter(Boolean)
+    .join(", ");
+  const place = [cityState, location?.postal_code].filter(Boolean).join(" ");
   const elevation = formatLocationElevationLabel(location?.elevation_m, unitSystem);
   const coords =
     location?.latitude != null && location?.longitude != null
       ? { latitude: location.latitude, longitude: location.longitude }
       : null;
-  // A live `<ClimateMap>` is a <div>, which can't nest in a <button>, so the
-  // card is a role="button" div; the static mini-map (pointer-events: none) lets
-  // clicks fall through to it.
   return (
     <div
-      role="button"
-      tabIndex={0}
-      aria-pressed={active}
       className={["climate-nav-card", "climate-nav-loc", active && "active"]
         .filter(Boolean)
         .join(" ")}
-      onClick={onSelect}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onSelect();
-        }
-      }}
     >
-      <ClimateMap className="climate-mini-map" interactive={false} ariaHidden project={coords} />
-      <span className="climate-nav-loc-body">
-        <span className="climate-nav-loc-title">Project location</span>
-        <span className="climate-nav-loc-place">
-          {place || "Location unset"}
-          {location?.is_set ? (
-            <>
-              {" · "}
-              <LocationPrivacyTag />
-            </>
+      <button
+        type="button"
+        className="climate-nav-loc-select"
+        aria-pressed={active}
+        onClick={onSelect}
+      >
+        <ClimateMap className="climate-mini-map" interactive={false} ariaHidden project={coords} />
+        <span className="climate-nav-loc-body">
+          <span className="climate-nav-loc-title">Project location</span>
+          {canEdit && location?.street_address ? (
+            <span className="climate-nav-loc-private">
+              <span>{location.street_address}</span>
+              <span className="climate-privacy-tag">(private)</span>
+            </span>
           ) : null}
+          <span className="climate-nav-loc-place">{place || "Location unset"}</span>
+          <span className="climate-loc-pills">
+            <b>{formatLatLong(location?.latitude ?? null, location?.longitude ?? null)}</b>
+            {elevation ? <b>{elevation}</b> : null}
+            {location?.climate_zone ? <b>{location.climate_zone}</b> : null}
+          </span>
         </span>
-        <span className="climate-loc-pills">
-          <b>{formatLatLong(location?.latitude ?? null, location?.longitude ?? null)}</b>
-          {elevation ? <b>{elevation}</b> : null}
-          {location?.climate_zone ? <b>{location.climate_zone}</b> : null}
-        </span>
-      </span>
+      </button>
+      {canEdit && onOpenSetLocation ? (
+        <button
+          type="button"
+          className="secondary-button climate-nav-loc-set-button"
+          onClick={onOpenSetLocation}
+        >
+          <MapPin size={14} aria-hidden="true" />
+          Set Location
+        </button>
+      ) : null}
     </div>
   );
 }

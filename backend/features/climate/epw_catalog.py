@@ -69,7 +69,7 @@ def nearest_epw_entry(latitude: float, longitude: float) -> EpwCatalogEntry | No
         entries,
         key=lambda entry: (
             round(haversine_miles(latitude, longitude, entry.latitude, entry.longitude), 6),
-            _source_rank(entry),
+            _recency_rank(entry),
         ),
     )
     return dataclass_replace(
@@ -129,25 +129,42 @@ def epw_version_label(url: str) -> str:
 def _rank_nearest(
     entries: list[EpwCatalogEntry], latitude: float, longitude: float, limit: int | None
 ) -> list[EpwCatalogEntry]:
-    """Order catalog entries for the picker — stations nearest-first, with each
-    station's dataset versions (TMYx periods, TMY3, …) kept together and ranked
-    best-first — and stamp each with its great-circle ``distance_mi``.
+    """Order catalog entries for the picker and stamp each with its great-circle
+    ``distance_mi``.
 
-    The catalog lists a station once per version, all shown (labelled), so rows
-    are grouped by station identity to keep a station's versions adjacent rather
-    than interleaved with a neighbour that happens to fall in the same distance
-    band. ``limit`` caps the row count; ``None`` means no cap (region mode shows
-    a whole state)."""
+    First reduce to one row per (station, dataset type) — keeping the most recent
+    period when a type is dated (``TMYx 2007-2021``/``2009-2023``/``2011-2025`` →
+    just ``2011-2025``) while preserving distinct methodologies (TMYx, TMY3, …).
+    Then order stations nearest-first, keeping a station's remaining versions
+    adjacent and most-recent-first rather than interleaved with a neighbour in
+    the same distance band. ``limit`` caps the row count; ``None`` means no cap
+    (region mode shows a whole state)."""
+    reduced = _collapse_to_recent_per_type(entries)
     decorated = [
         (haversine_miles(latitude, longitude, entry.latitude, entry.longitude), _station_key(entry), entry)
-        for entry in entries
+        for entry in reduced
     ]
     nearest_per_station: dict[tuple[str, str, str], float] = {}
     for distance, key, _entry in decorated:
         nearest_per_station[key] = min(distance, nearest_per_station.get(key, distance))
-    decorated.sort(key=lambda row: (round(nearest_per_station[row[1]], 6), row[1], _source_rank(row[2])))
+    decorated.sort(key=lambda row: (round(nearest_per_station[row[1]], 6), row[1], _recency_rank(row[2])))
     capped = decorated if limit is None else decorated[: max(limit, 0)]
     return [dataclass_replace(entry, distance_mi=distance) for distance, _key, entry in capped]
+
+
+def _collapse_to_recent_per_type(entries: list[EpwCatalogEntry]) -> list[EpwCatalogEntry]:
+    """One entry per (station, dataset type): when a type carries dated periods,
+    keep only the most recent. OneBuilding lists a station's TMYx once per rolling
+    period (``…2007-2021``, ``…2009-2023``, ``…2011-2025``) — only the newest is
+    useful — but a different methodology (TMY3, …) is a distinct choice and is
+    kept. Selection is by :func:`_recency_rank` (dated-most-recent wins)."""
+    best: dict[tuple[tuple[str, str, str], str], EpwCatalogEntry] = {}
+    for entry in entries:
+        key = (_station_key(entry), _dataset_type(entry.url))
+        incumbent = best.get(key)
+        if incumbent is None or _recency_rank(entry) < _recency_rank(incumbent):
+            best[key] = entry
+    return list(best.values())
 
 
 def _station_key(entry: EpwCatalogEntry) -> tuple[str, str, str]:
@@ -159,6 +176,13 @@ def _station_key(entry: EpwCatalogEntry) -> tuple[str, str, str]:
         (entry.region or "").strip().casefold(),
         entry.name.strip().casefold(),
     )
+
+
+def _dataset_type(url: str) -> str:
+    """The methodology token of an EPW file (``TMYx``, ``TMY3``, …), casefolded
+    for grouping; ``""`` when the filename is off-convention."""
+    match = _VERSION_RE.search(url)
+    return match.group("type").casefold() if match else ""
 
 
 def _matches(value: str | None, target: str | None) -> bool:
@@ -253,11 +277,16 @@ def parse_epw_catalog_xlsx(raw: bytes, *, base_url: str = ONEBUILDING_BASE_URL) 
     return entries
 
 
-def _source_rank(entry: EpwCatalogEntry) -> tuple[int, int, str]:
-    source_penalty = 0 if (entry.source_data or "").startswith("SRC") else 1
+def _recency_rank(entry: EpwCatalogEntry) -> tuple[int, int, int, str]:
+    """Most-recent-first ordering key for a station's dataset versions: a dated
+    file beats an undated one, then the latest period end-year wins, then
+    SRC-backed source quality, then URL for determinism. Drives both the file the
+    picker keeps per (station, type) and the distance tie-break when auto-picking
+    the nearest station."""
     match = _YEAR_SPAN_RE.search(entry.url)
-    end_year = int(match.group(2)) if match else 9999
-    return (source_penalty, -end_year, entry.url)
+    end_year = int(match.group(2)) if match else 0
+    source_penalty = 0 if (entry.source_data or "").startswith("SRC") else 1
+    return (0 if match else 1, -end_year, source_penalty, entry.url)
 
 
 def _text_at(row: tuple[object, ...], index: dict[str, int], header: str) -> str | None:

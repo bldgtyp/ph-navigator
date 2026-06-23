@@ -80,6 +80,18 @@
   overflow: hidden;
 }
 
+.climate-nav-loc-select {
+  display: grid;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
 .climate-nav-loc .climate-nav-loc-body {
   display: grid;
   gap: var(--space-6);
@@ -91,14 +103,19 @@
   font-weight: 600;
 }
 
+.climate-nav-loc-private,
 .climate-nav-loc-place {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
   font-family: var(--font-mono);
   font-size: var(--fs-2xs);
   color: var(--text-muted);
 }
 
 .climate-privacy-tag {
-  color: var(--accent-text);
+  color: inherit;
 }
 
 .climate-loc-pills {
@@ -115,6 +132,12 @@
   font-family: var(--font-mono);
   font-size: var(--fs-2xs);
   font-weight: 600;
+}
+
+.climate-nav-loc-set-button {
+  justify-self: start;
+  margin: 0 var(--space-12) var(--space-12);
+  padding-inline: var(--space-8);
 }
 
 /* --- Map placeholder (decorative until a real tile provider lands, O4) --- */
@@ -394,50 +417,6 @@
   display: flex;
   align-items: center;
   gap: var(--space-8);
-}
-
-.climate-location-head {
-  align-items: stretch;
-}
-
-.climate-location-head .climate-page-head-actions {
-  flex-shrink: 0;
-  margin-left: 0;
-  align-self: stretch;
-}
-
-.climate-location-head-copy {
-  min-width: 0;
-}
-
-.climate-location-head .climate-page-title {
-  margin-top: 0;
-}
-
-.climate-location-public,
-.climate-location-private {
-  margin: var(--space-4) 0 0;
-  font-family: var(--font-mono);
-  font-size: var(--fs-sm);
-  line-height: 1.35;
-}
-
-.climate-location-public {
-  color: var(--text-muted);
-}
-
-.climate-location-private {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-8);
-  align-items: center;
-  color: var(--accent-text);
-}
-
-.climate-location-set-button {
-  align-self: stretch;
-  min-height: 100%;
-  padding-inline: var(--space-16);
 }
 
 /* "Set from nearest" action shown on each climate type's page (attached or

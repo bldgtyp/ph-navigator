@@ -23,6 +23,7 @@ export type ProjectLocationFormValues = {
   siteAddress: string;
   city: string;
   state: string;
+  postalCode: string;
   epwAssetId: string;
   epwSourceUrl: string;
 };
@@ -50,6 +51,7 @@ export function emptyLocationFormValues(): ProjectLocationFormValues {
     siteAddress: "",
     city: "",
     state: "",
+    postalCode: "",
     epwAssetId: "",
     epwSourceUrl: "",
   };
@@ -66,9 +68,10 @@ export function locationFormValuesFromLocation(
     elevation: formatNumberUnitsDisplay(location.elevation_m, LOCATION_ELEVATION_UNITS, unitSystem),
     timeZone: location.time_zone ?? "",
     trueNorth: formatOptionalNumber(location.true_north_deg, 2),
-    siteAddress: location.site_address ?? "",
+    siteAddress: location.street_address ?? "",
     city: location.city ?? "",
     state: location.state ?? "",
+    postalCode: location.postal_code ?? "",
     epwAssetId: location.epw_asset_id ?? "",
     epwSourceUrl: location.epw_source_url ?? "",
   };
@@ -82,9 +85,10 @@ export function applyGeocodeCandidateToLocationValues(
     ...current,
     latitude: formatOptionalNumber(candidate.latitude, 6),
     longitude: formatOptionalNumber(candidate.longitude, 6),
-    siteAddress: candidate.site_address ?? candidate.label,
+    siteAddress: candidate.street_address ?? candidate.label,
     city: candidate.city ?? current.city,
     state: candidate.state ?? current.state,
+    postalCode: candidate.postal_code ?? current.postalCode,
   };
 }
 
@@ -210,9 +214,10 @@ function parseLocationFormValues(
       elevation_m: elevation,
       time_zone: trimmedOrNull(values.timeZone),
       true_north_deg: trueNorth.value,
-      site_address: trimmedOrNull(values.siteAddress),
+      street_address: trimmedOrNull(values.siteAddress),
       city: trimmedOrNull(values.city),
       state: trimmedOrNull(values.state),
+      postal_code: trimmedOrNull(values.postalCode),
       epw_asset_id: trimmedOrNull(values.epwAssetId),
       epw_source_url: trimmedOrNull(values.epwSourceUrl),
     },
@@ -239,9 +244,10 @@ function locationFields(
     elevation_m: location?.elevation_m ?? null,
     time_zone: location?.time_zone ?? null,
     true_north_deg: location?.true_north_deg ?? null,
-    site_address: location?.site_address ?? null,
+    street_address: location?.street_address ?? null,
     city: location?.city ?? null,
     state: location?.state ?? null,
+    postal_code: location?.postal_code ?? null,
     epw_asset_id: location?.epw_asset_id ?? null,
     epw_source_url: location?.epw_source_url ?? null,
   };
@@ -297,9 +303,10 @@ function assignLocationPayloadField(
       payload[field] = value as number | null;
       return;
     case "time_zone":
-    case "site_address":
+    case "street_address":
     case "city":
     case "state":
+    case "postal_code":
     case "epw_asset_id":
     case "epw_source_url":
       payload[field] = value as string | null;
@@ -313,9 +320,10 @@ const EDITABLE_LOCATION_FIELD_NAMES = [
   "elevation_m",
   "time_zone",
   "true_north_deg",
-  "site_address",
+  "street_address",
   "city",
   "state",
+  "postal_code",
   "epw_asset_id",
   "epw_source_url",
 ] as const;

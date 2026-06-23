@@ -212,9 +212,11 @@ def test_public_get_returns_unset_shape(clean_mcp_tables: None) -> None:
         "elevation_m": None,
         "time_zone": None,
         "true_north_deg": None,
-        "site_address": None,
+        "street_address": None,
         "city": None,
         "state": None,
+        "postal_code": None,
+        "full_site_address": None,
         "county": None,
         "county_fips": None,
         "country": None,
@@ -242,9 +244,10 @@ def test_editor_can_upsert_and_clear_location_fields(clean_mcp_tables: None) -> 
             "elevation_m": 260.0,
             "time_zone": "America/New_York",
             "true_north_deg": 12.5,
-            "site_address": "West Stockbridge, MA",
+            "street_address": "1 Main St",
             "city": "West Stockbridge",
             "state": "MA",
+            "postal_code": "01266",
         },
     )
 
@@ -283,7 +286,10 @@ def test_public_location_projection_omits_street_address(
         json={
             "latitude": 42.325,
             "longitude": -73.367,
-            "site_address": "1 Main St, West Stockbridge, MA",
+            "street_address": "1 Main St",
+            "city": "West Stockbridge",
+            "state": "MA",
+            "postal_code": "01266",
         },
     )
     assert saved.status_code == 200
@@ -292,11 +298,13 @@ def test_public_location_projection_omits_street_address(
     editor = client.get(f"/api/v1/projects/{project_id}/location")
 
     assert public.status_code == 200
-    assert public.json()["site_address"] is None
+    assert public.json()["street_address"] is None
+    assert public.json()["full_site_address"] == "West Stockbridge, MA 01266"
     assert public.json()["county"] == "Berkshire"
     assert public.json()["climate_zone"] == "5A"
     assert editor.status_code == 200
-    assert editor.json()["site_address"] == "1 Main St, West Stockbridge, MA"
+    assert editor.json()["street_address"] == "1 Main St"
+    assert editor.json()["full_site_address"] == "1 Main St, West Stockbridge, MA 01266"
 
 
 def test_climate_zone_lookup_uses_pnnl_2021_county_csv() -> None:
@@ -318,12 +326,12 @@ def test_set_location_persists_county_elevation_and_zone(
     response = client.put(
         f"/api/v1/projects/{project_id}/location",
         headers={"Origin": ORIGIN},
-        json={"latitude": 42.325, "longitude": -73.367, "site_address": "1 Main St"},
+        json={"latitude": 42.325, "longitude": -73.367, "street_address": "1 Main St"},
     )
 
     assert response.status_code == 200, response.text
     location = response.json()["location"]
-    assert location["site_address"] == "1 Main St"
+    assert location["street_address"] == "1 Main St"
     assert location["county"] == "Berkshire"
     assert location["county_fips"] == "25003"
     assert location["elevation_m"] == 302.0
@@ -654,9 +662,10 @@ def test_geocode_location_requires_editor_and_returns_candidates(
                 label="1 Main St, West Stockbridge, Massachusetts",
                 latitude=42.325,
                 longitude=-73.367,
-                site_address="1 Main St, West Stockbridge, MA",
+                street_address="1 Main St",
                 city="West Stockbridge",
                 state="MA",
+                postal_code="01266",
                 country="US",
                 source="maptiler",
             )
@@ -803,7 +812,7 @@ def test_geocode_address_falls_back_to_census_without_maptiler_key(monkeypatch: 
                     {
                         "matchedAddress": "1 MAIN ST, WEST STOCKBRIDGE, MA, 01266",
                         "coordinates": {"x": -73.367, "y": 42.325},
-                        "addressComponents": {"city": "WEST STOCKBRIDGE", "state": "MA"},
+                        "addressComponents": {"city": "WEST STOCKBRIDGE", "state": "MA", "zip": "01266"},
                     }
                 ]
             }
@@ -816,9 +825,10 @@ def test_geocode_address_falls_back_to_census_without_maptiler_key(monkeypatch: 
             label="1 MAIN ST, WEST STOCKBRIDGE, MA, 01266",
             latitude=42.325,
             longitude=-73.367,
-            site_address="1 MAIN ST, WEST STOCKBRIDGE, MA, 01266",
+            street_address="1 MAIN ST",
             city="WEST STOCKBRIDGE",
             state="MA",
+            postal_code="01266",
             country="US",
             source="census_geocoder",
         )

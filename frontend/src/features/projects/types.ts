@@ -122,14 +122,16 @@ export type EditableProjectLocationFields = {
   elevation_m: number | null;
   time_zone: string | null;
   true_north_deg: number | null;
-  site_address: string | null;
+  street_address: string | null;
   city: string | null;
   state: string | null;
+  postal_code: string | null;
   epw_asset_id: string | null;
   epw_source_url: string | null;
 };
 
 export type ProjectLocationFields = EditableProjectLocationFields & {
+  full_site_address: string | null;
   county: string | null;
   county_fips: string | null;
   country: string | null;
@@ -167,9 +169,11 @@ export type GeocodeProjectLocationCandidate = {
   label: string;
   latitude: number;
   longitude: number;
-  site_address: string | null;
+  street_address: string | null;
   city: string | null;
   state: string | null;
+  postal_code: string | null;
+  full_site_address: string | null;
   country: string | null;
   source: string;
 };

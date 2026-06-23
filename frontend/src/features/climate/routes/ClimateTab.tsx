@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
-import { MapPin } from "lucide-react";
 import "../climate.css";
 import "../climate-workspace.css";
 import { useUnitPreference, type UnitSystem } from "../../../lib/units";
 import { useProjectLocationQuery } from "../../projects/hooks";
 import type { ProjectDetail, ProjectLocation } from "../../projects/types";
-import { LocationPrivacyTag } from "../components/ClimateAtoms";
 import { ClimateMap } from "../components/ClimateMap";
 import { ClimateDatasetPickerModal } from "../components/ClimateDatasetPickerModal";
 import { WeatherStationPickerModal } from "../components/WeatherStationPickerModal";
@@ -34,6 +32,12 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
   const openWeatherPicker = canEdit ? () => setWeatherPickerOpen(true) : undefined;
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const openUploadModal = canEdit ? () => setUploadModalOpen(true) : undefined;
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
+  const openLocationModal = canEdit ? () => setLocationModalOpen(true) : undefined;
+  const closeLocationModal = () => {
+    setLocationModalOpen(false);
+    setSelected("location");
+  };
   const locationQuery = useProjectLocationQuery(project.id);
   const location = locationQuery.data;
   const sourcesQuery = useClimateSourcesQuery(project.id);
@@ -65,18 +69,14 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
           canEdit={canEdit}
           unitSystem={unitSystem}
           onSelect={setSelected}
+          onOpenSetLocation={openLocationModal}
         />
         <main className="climate-main">
           {sourcesQuery.error ? (
             <p className="form-error">Could not load climate sources.</p>
           ) : null}
           {selected === "location" ? (
-            <LocationPage
-              project={project}
-              location={location}
-              canEdit={canEdit}
-              unitSystem={unitSystem}
-            />
+            <LocationPage location={location} unitSystem={unitSystem} />
           ) : null}
           {selectedSource ? (
             <ClimateSourceDetailPage
@@ -134,29 +134,22 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
           onAttached={(source) => setSelected(source.id)}
         />
       ) : null}
+      {locationModalOpen ? (
+        <SetLocationModal projectId={project.id} onClose={closeLocationModal} />
+      ) : null}
     </section>
   );
 }
 
 // The location page is read-first: derived facts and the decorative site map.
-// Editors reveal the full location editor inline via "Set Location"; saving the
-// location is what derives county/elevation/zone (climate sources attach from
-// each type's own page).
 function LocationPage({
-  project,
   location,
-  canEdit,
   unitSystem,
 }: {
-  project: ProjectDetail;
   location: ProjectLocation | undefined;
-  canEdit: boolean;
   unitSystem: UnitSystem;
 }) {
-  const [isModalOpen, setModalOpen] = useState(false);
-  const isSet = location?.is_set ?? false;
   const countyState = [location?.county, location?.state].filter(Boolean).join(" · ");
-  const cityState = [location?.city, location?.state].filter(Boolean).join(", ");
   const elevation = formatLocationElevationLabel(location?.elevation_m, unitSystem) ?? "—";
   const coords =
     location?.latitude != null && location?.longitude != null
@@ -164,34 +157,7 @@ function LocationPage({
       : null;
 
   return (
-    <section className="climate-detail-page" aria-labelledby="climate-location-title">
-      <header className="climate-page-head climate-location-head">
-        {canEdit ? (
-          <div className="climate-page-head-actions">
-            <button
-              type="button"
-              className="primary-button climate-location-set-button"
-              onClick={() => setModalOpen(true)}
-            >
-              <MapPin size={16} aria-hidden="true" />
-              Set Location
-            </button>
-          </div>
-        ) : null}
-        <div className="climate-location-head-copy">
-          <h3 id="climate-location-title" className="climate-page-title">
-            Project location
-          </h3>
-          <p className="climate-location-public">{cityState || "Location not set"}</p>
-          {canEdit && location?.site_address ? (
-            <p className="climate-location-private">
-              <span>{location.site_address}</span>
-              {isSet ? <LocationPrivacyTag /> : null}
-            </p>
-          ) : null}
-        </div>
-      </header>
-
+    <section className="climate-detail-page">
       <ClimateMap className="climate-big-map" ariaLabel="Project location map" project={coords} />
 
       <dl className="climate-facts">
@@ -212,10 +178,6 @@ function LocationPage({
           <dd>{location?.climate_zone ?? "—"}</dd>
         </div>
       </dl>
-
-      {canEdit && isModalOpen ? (
-        <SetLocationModal projectId={project.id} onClose={() => setModalOpen(false)} />
-      ) : null}
     </section>
   );
 }
