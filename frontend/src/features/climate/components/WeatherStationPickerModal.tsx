@@ -20,11 +20,13 @@ export function WeatherStationPickerModal({
   projectId,
   onClose,
   onRequestSetLocation,
+  onOpenUploadModal,
   onAttached,
 }: {
   projectId: string;
   onClose: () => void;
   onRequestSetLocation?: () => void;
+  onOpenUploadModal?: () => void;
   onAttached?: (source: ProjectClimateSource) => void;
 }) {
   const titleId = "weather-picker-title";
@@ -67,10 +69,15 @@ export function WeatherStationPickerModal({
     });
   }
 
+  function openUpload(): void {
+    onClose();
+    onOpenUploadModal?.();
+  }
+
   return (
     <ModalDialog
       id="weather-picker"
-      title="Select weather file (EPW)"
+      title="Set Hourly Climate Data"
       titleId={titleId}
       onClose={onClose}
     >
@@ -79,19 +86,28 @@ export function WeatherStationPickerModal({
       ) : !locationIsSet ? (
         <div className="climate-picker-guard">
           <p>Set the project location first — the nearest stations need a site.</p>
-          <div className="modal-actions">
-            <button type="button" className="secondary-button" onClick={onClose}>
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                onClose();
-                onRequestSetLocation?.();
-              }}
-            >
-              Set the project location
-            </button>
+          <div className="modal-actions climate-picker-actions">
+            <div className="climate-picker-actions-secondary">
+              <button type="button" className="secondary-button" onClick={onClose}>
+                Cancel
+              </button>
+              {onOpenUploadModal ? (
+                <button type="button" className="secondary-button" onClick={openUpload}>
+                  Upload Climate Data
+                </button>
+              ) : null}
+            </div>
+            <div className="climate-picker-actions-primary">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onRequestSetLocation?.();
+                }}
+              >
+                Set the project location
+              </button>
+            </div>
           </div>
         </div>
       ) : (
@@ -122,13 +138,22 @@ export function WeatherStationPickerModal({
 
           {selected ? <WeatherSelectionPreview item={selected} /> : null}
 
-          <div className="modal-actions">
-            <button type="button" className="secondary-button" onClick={onClose}>
-              Cancel
-            </button>
-            <button type="button" onClick={runAttach} disabled={!selected || attach.isPending}>
-              {attach.isPending ? "Attaching…" : "Attach weather file"}
-            </button>
+          <div className="modal-actions climate-picker-actions">
+            <div className="climate-picker-actions-secondary">
+              <button type="button" className="secondary-button" onClick={onClose}>
+                Cancel
+              </button>
+              {onOpenUploadModal ? (
+                <button type="button" className="secondary-button" onClick={openUpload}>
+                  Upload Climate Data
+                </button>
+              ) : null}
+            </div>
+            <div className="climate-picker-actions-primary">
+              <button type="button" onClick={runAttach} disabled={!selected || attach.isPending}>
+                {attach.isPending ? "Attaching…" : "Attach weather file"}
+              </button>
+            </div>
           </div>
           {attach.error ? (
             <p className="form-error">

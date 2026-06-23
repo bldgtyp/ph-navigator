@@ -385,21 +385,22 @@ describe("ClimateTab", () => {
     await user.click(await screen.findByRole("button", { name: /Pittsfield\.Muni\.AP/ }));
 
     expect(await screen.findByText("HDD65")).toBeVisible();
-    expect(screen.getByText("Htg 99.6% DB")).toBeVisible();
     expect(screen.getByText("-18.8 deg C")).toBeVisible();
-    expect(screen.getByText("Clg 0.4% DB")).toBeVisible();
     expect(screen.getByText("ASHRAE Meteo 2025 / PITTSFIELD MUNI AP")).toBeVisible();
-    const selectedWeatherCard = screen
-      .getByRole("button", { name: /Pittsfield\.Muni\.AP/ })
-      .closest(".climate-source-card") as HTMLElement;
-    const card = within(selectedWeatherCard);
-    expect(card.getByRole("button", { name: "Select from Map" })).toBeVisible();
-    expect(card.getByRole("button", { name: "Upload Climate Data" })).toBeVisible();
+    const card = within(
+      screen
+        .getByRole("button", { name: /Pittsfield\.Muni\.AP/ })
+        .closest(".climate-source-card") as HTMLElement,
+    );
+    expect(card.getByText("Hourly Data")).toBeVisible();
+    expect(card.getByRole("button", { name: "Set Hourly Climate Data" })).toBeVisible();
     expect(card.getByRole("button", { name: /Clear Weather File Climate Data/ })).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Remove" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Set from nearest weather file" })).toBeNull();
-    expect(screen.getByText("Download EPW")).toBeVisible();
-    expect(screen.getByText("Open OneBuilding source")).toBeVisible();
+    expect(card.queryByRole("button", { name: "Upload Climate Data" })).toBeNull();
+    expect(screen.queryByText("Open OneBuilding source")).toBeNull();
+    expect(screen.queryByText("Download EPW")).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Weather file actions" }));
+    expect(screen.getByRole("menuitem", { name: "Download OneBuilding .zip file" })).toBeVisible();
+    expect(screen.getByRole("menuitem", { name: "Download EPW" })).toBeVisible();
   });
 
   test("renders the location facts, source status chips, and reveals the editor", async () => {

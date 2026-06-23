@@ -276,7 +276,7 @@
 
 .climate-source-remove {
   position: absolute;
-  top: calc(var(--space-32) + var(--space-2));
+  top: calc(var(--space-10) + var(--space-20) + var(--space-6) + var(--space-6));
   right: var(--space-8);
   bottom: auto;
   display: grid;
@@ -386,6 +386,7 @@
 
 /* ---------------- Main detail pane ---------------- */
 .climate-main {
+  position: relative;
   min-width: 0;
   padding-left: var(--space-16);
 }
@@ -394,6 +395,21 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-16);
+}
+
+.climate-main-menu {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: var(--z-dropdown);
+}
+
+.climate-main-menu .app-menu__panel {
+  min-width: 260px;
+}
+
+.climate-detail-page--with-main-menu .climate-page-head {
+  padding-right: var(--space-48);
 }
 
 .climate-location-page {
@@ -608,12 +624,6 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-muted);
-}
-
-.climate-link-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-12);
 }
 
 /* Phius limit warning banner (distance/elevation outside certification band). */

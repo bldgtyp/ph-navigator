@@ -6,9 +6,22 @@
   width: min(94vw, 860px);
 }
 
+#weather-picker.modal-panel {
+  width: min(96vw, 1040px);
+  max-height: min(820px, calc(100vh - var(--space-32)));
+  padding: var(--space-24);
+}
+
 #climate-picker .modal-header {
   align-items: flex-start;
   margin-bottom: var(--space-16);
+}
+
+#weather-picker .modal-header {
+  align-items: flex-start;
+  margin-bottom: var(--space-18);
+  padding-bottom: var(--space-16);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .climate-picker-content {
@@ -26,6 +39,16 @@
 .climate-picker-toolbar .modal-subtitle {
   margin: 0;
   padding-bottom: var(--space-8);
+}
+
+#weather-picker .climate-picker-toolbar {
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+  gap: var(--space-20);
+}
+
+#weather-picker .climate-picker-toolbar .modal-subtitle {
+  padding: var(--space-4) 0 0;
+  line-height: 1.55;
 }
 
 .climate-picker-filter.autocomplete-select {
@@ -50,14 +73,52 @@
   align-items: stretch;
 }
 
+#weather-picker .climate-picker-body {
+  grid-template-columns: minmax(320px, 0.95fr) minmax(360px, 1.05fr);
+  gap: var(--space-18);
+  min-height: 390px;
+}
+
 @media (max-width: 640px) {
   #climate-picker.modal-panel {
     width: min(100%, 560px);
   }
 
+  #weather-picker.modal-panel {
+    width: min(100%, 620px);
+    padding: var(--space-18);
+  }
+
   .climate-picker-toolbar,
   .climate-picker-body {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 840px) {
+  #weather-picker .climate-picker-toolbar,
+  #weather-picker .climate-picker-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .climate-picker-actions {
+    align-items: stretch;
+  }
+
+  .climate-picker-actions-secondary,
+  .climate-picker-actions-primary {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .climate-picker-actions-primary {
+    margin-left: 0;
+  }
+
+  .climate-picker-actions-primary button {
+    width: 100%;
   }
 }
 
@@ -67,6 +128,12 @@
 .climate-picker-map {
   min-height: 280px;
   border-radius: var(--phn-radius);
+}
+
+#weather-picker .climate-picker-map {
+  min-height: 390px;
+  height: min(46vh, 440px);
+  border: 1px solid var(--border-card);
 }
 
 .climate-map-pin--project {
@@ -112,6 +179,11 @@
   gap: var(--space-8);
 }
 
+#weather-picker .climate-picker-list {
+  max-height: min(46vh, 440px);
+  padding-right: var(--space-4);
+}
+
 .climate-picker-row {
   width: 100%;
   display: grid;
@@ -126,12 +198,22 @@
   cursor: pointer;
 }
 
+#weather-picker .climate-picker-row {
+  min-height: 76px;
+  padding: var(--space-12) var(--space-14);
+  border-radius: var(--radius-md);
+}
+
 .climate-picker-row:hover {
   border-color: var(--border-strong);
 }
 
 .climate-picker-row[data-selected="true"] {
   border-color: var(--accent);
+}
+
+#weather-picker .climate-picker-row[data-selected="true"] {
+  background: color-mix(in oklab, var(--accent) 6%, var(--bg-card));
 }
 
 .climate-picker-row-name {
@@ -173,6 +255,40 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-8);
+}
+
+#weather-picker .climate-picker-preview {
+  padding: var(--space-10) var(--space-12);
+  border-radius: var(--radius-md);
+  background: var(--bg-elev);
+}
+
+#weather-picker .climate-picker-preview p {
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+
+.climate-picker-actions {
+  gap: var(--space-12);
+  margin-top: var(--space-2);
+  padding-top: var(--space-16);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.climate-picker-actions-secondary,
+.climate-picker-actions-primary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-10);
+}
+
+.climate-picker-actions-primary {
+  margin-left: auto;
+}
+
+.climate-picker-actions-primary button {
+  min-width: 180px;
 }
 
 .climate-picker-warning {
