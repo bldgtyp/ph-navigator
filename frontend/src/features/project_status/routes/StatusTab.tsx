@@ -90,18 +90,22 @@ export function StatusTab({ project }: { project: ProjectDetail }) {
 
   if (itemsQuery.isLoading) {
     return (
-      <section className="tab-panel" aria-labelledby="status-title">
-        <h2 id="status-title">Status</h2>
-        <p>Loading status items...</p>
+      <section className="tab-panel status-panel">
+        <div className="status-body">
+          <h2>Status</h2>
+          <p>Loading status items...</p>
+        </div>
       </section>
     );
   }
 
   if (itemsQuery.isError) {
     return (
-      <section className="tab-panel" aria-labelledby="status-title">
-        <h2 id="status-title">Status</h2>
-        <p role="alert">{errorMessage(itemsQuery.error, "Could not load status items.")}</p>
+      <section className="tab-panel status-panel">
+        <div className="status-body">
+          <h2>Status</h2>
+          <p role="alert">{errorMessage(itemsQuery.error, "Could not load status items.")}</p>
+        </div>
       </section>
     );
   }
@@ -110,49 +114,51 @@ export function StatusTab({ project }: { project: ProjectDetail }) {
   const currentItemId = items.find((item) => item.state === "todo")?.id ?? null;
 
   return (
-    <section className="tab-panel status-panel" aria-labelledby="status-title">
-      <div className="status-heading">
-        <div>
-          <h2 id="status-title">Status</h2>
-          {items.length > 0 ? <p>Track this project's lifecycle milestones.</p> : null}
+    <section className="tab-panel status-panel">
+      <div className="status-body">
+        <div className="status-heading">
+          <div>
+            <h2>Status</h2>
+            {items.length > 0 ? <p>Track this project's lifecycle milestones.</p> : null}
+          </div>
+          {isEditor && items.length > 0 ? (
+            <button type="button" onClick={() => setIsAdding(true)}>
+              Add item
+            </button>
+          ) : null}
         </div>
-        {isEditor && items.length > 0 ? (
-          <button type="button" onClick={() => setIsAdding(true)}>
-            Add item
-          </button>
+        {actionError ? (
+          <p className="form-error" role="alert">
+            {actionError}
+          </p>
         ) : null}
+        {items.length === 0 ? (
+          <StatusEmptyState
+            isEditor={isEditor}
+            projectId={project.id}
+            onApplyTemplate={applyTemplate}
+            onAddItem={() => setIsAdding(true)}
+          />
+        ) : (
+          <div className="status-timeline" aria-label="Project status items">
+            {items.map((item, index) => (
+              <StatusItemRow
+                key={item.id}
+                item={item}
+                isCurrent={item.id === currentItemId}
+                isEditor={isEditor}
+                canMoveUp={index > 0}
+                canMoveDown={index < items.length - 1}
+                onCycleState={() => cycleState(item)}
+                onEdit={() => setEditingItem(item)}
+                onDelete={() => setDeletingItem(item)}
+                onMove={(direction) => moveItem(item, direction)}
+                onDrop={(draggedItemId, placement) => dropItem(draggedItemId, item, placement)}
+              />
+            ))}
+          </div>
+        )}
       </div>
-      {actionError ? (
-        <p className="form-error" role="alert">
-          {actionError}
-        </p>
-      ) : null}
-      {items.length === 0 ? (
-        <StatusEmptyState
-          isEditor={isEditor}
-          projectId={project.id}
-          onApplyTemplate={applyTemplate}
-          onAddItem={() => setIsAdding(true)}
-        />
-      ) : (
-        <div className="status-timeline" aria-label="Project status items">
-          {items.map((item, index) => (
-            <StatusItemRow
-              key={item.id}
-              item={item}
-              isCurrent={item.id === currentItemId}
-              isEditor={isEditor}
-              canMoveUp={index > 0}
-              canMoveDown={index < items.length - 1}
-              onCycleState={() => cycleState(item)}
-              onEdit={() => setEditingItem(item)}
-              onDelete={() => setDeletingItem(item)}
-              onMove={(direction) => moveItem(item, direction)}
-              onDrop={(draggedItemId, placement) => dropItem(draggedItemId, item, placement)}
-            />
-          ))}
-        </div>
-      )}
       {isAdding ? (
         <StatusItemModal
           title="Add status item"

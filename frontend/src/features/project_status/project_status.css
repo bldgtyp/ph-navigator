@@ -1,3 +1,21 @@
+.status-panel {
+  padding-top: 0;
+  background-color: transparent;
+}
+
+.status-body {
+  display: grid;
+  gap: var(--space-16);
+  width: calc(100% - 2 * clamp(var(--space-12), 2vw, var(--space-24)));
+  max-width: 1480px;
+  min-height: 620px;
+  margin: var(--space-20) auto var(--space-32);
+  padding: var(--space-14);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+}
+
 .status-empty {
   position: relative;
   display: grid;
@@ -302,4 +320,11 @@
   font-family: var(--font-mono);
   font-size: var(--fs-sm);
   overflow-wrap: anywhere;
+}
+
+@media (max-width: 780px) {
+  .status-body {
+    margin-block: var(--space-16) var(--space-24);
+    padding: var(--space-12);
+  }
 }
