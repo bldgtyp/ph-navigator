@@ -11,7 +11,7 @@ RELATED:
   - ../PLAN.md
   - planning/archive/project-location/PRD.md §10 (the seam)
   - research/v1-3d-model-viewer-reference.md §2.3.3, §9.4, §10
-  - planning/features_v1.1/model-viewer-sun-path/ (the frontend consumer)
+  - planning/archive/model-viewer-sun-path/ (the frontend consumer)
 ---
 
 # Climate Phase 1 — Sun-path service
@@ -114,7 +114,7 @@ sun-path line of work.**
 - PRD §7 Phase 1 met.
 - North sign verified + documented inline.
 - The Model-Viewer sun-path render
-  (`planning/features_v1.1/model-viewer-sun-path` Phase 1) can consume
+  (`planning/archive/model-viewer-sun-path` Phase 1) can consume
   the endpoint with no further backend work — i.e. this phase fully
   owns the backend that feature originally drafted.
 

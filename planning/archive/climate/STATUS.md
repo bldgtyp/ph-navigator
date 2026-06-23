@@ -27,7 +27,7 @@ RELATED:
 > **`project_location`** (their actual data owner) and the diagram is a
 > **Model-tab** feature. Climate is app-wide reference data only and does not
 > own the sun path. For the live story see
-> `planning/features_v1.1/model-viewer-sun-path/STATUS.md`. The text below is
+> `planning/archive/model-viewer-sun-path/STATUS.md`. The text below is
 > a frozen 2026-06-14 archive — do not trust its sun-path claims.
 
 ## Current state
@@ -185,6 +185,6 @@ later phases.
 
 | Feature | Needs | Where |
 |---|---|---|
-| Model Viewer sun-path render | Phase 1 endpoint | `planning/features_v1.1/model-viewer-sun-path/` |
+| Model Viewer sun-path render | Phase 1 endpoint | `planning/archive/model-viewer-sun-path/` |
 | Thermal-Bridges fRSI | Phase 4 design conditions | future feature |
 | Window thermal-comfort | Phase 4 design heating temp | future feature |

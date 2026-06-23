@@ -1,12 +1,12 @@
 ---
 DATE: 2026-06-23
 TIME: -
-STATUS: Phases 0 + 1 IMPLEMENTED 2026-06-23 (branch
-  `feat/model-viewer-sun-path`), pending commit/merge. Backend pytest +
-  frontend tsc/vitest green; live Playwright deferred (needs worktree dev
-  servers). Background: the backend was built (2026-06-13), DELETED
-  (2026-06-22) during the Climate overhaul, and rebuilt here in
-  `project_location`. Phase 2 (scrubber) remains deferred.
+STATUS: COMPLETE — shipped 2026-06-23 (Phases 0 + 1), merged to `main`,
+  feature archived. `make ci` green (backend pytest + frontend
+  tsc/vitest/build). Phase 2 (scrubber) was never in scope here and
+  remains a deferred candidate on the model-viewer-post-mvp roster. Live
+  Playwright (`model-viewer-site-sun.spec.ts`) is written but was not run
+  locally (env-gated — needs dev servers); it runs in CI.
 AUTHOR: Claude (for Ed)
 SCOPE: Status and gates for the sun-path feature.
 RELATED:
@@ -18,9 +18,14 @@ RELATED:
 
 # Sun Path — Status
 
+> **COMPLETE — shipped 2026-06-23, merged to `main`, feature archived to
+> `planning/archive/model-viewer-sun-path/`.** The only open item is the
+> live Playwright walkthrough (env-gated, runs in CI). Phase 2 (scrubber)
+> stays a deferred candidate on the post-mvp roster.
+
 ## Current state (2026-06-23)
 
-**Phases 0 + 1 implemented on `feat/model-viewer-sun-path` (pending merge).**
+**Phases 0 + 1 implemented and shipped on `feat/model-viewer-sun-path`.**
 Backend: `project_location/sun_path.py` builder, `service.get_project_sun_path`,
 `GET /projects/{id}/sun-path` route, MCP tool, and
 `tests/test_project_location_sun_path.py` (incl. the north-sign fixture) —
@@ -101,8 +106,8 @@ servers (visual confirmation of the diagram + north orientation). Phase 2
 
 | Phase | State | Gate |
 |---|---|---|
-| 0 — Backend sun-path service (project_location) | **Implemented 2026-06-23** (pending merge); pytest green | Location data exists — met |
-| 1 — Site & Sun 3D render (frontend) | **Implemented 2026-06-23** (pending merge); tsc + vitest green, live e2e pending | Phase 0 (done) |
+| 0 — Backend sun-path service (project_location) | **Shipped 2026-06-23** (merged + archived); pytest green | Location data exists — met |
+| 1 — Site & Sun 3D render (frontend) | **Shipped 2026-06-23** (merged + archived); tsc + vitest green, live e2e pending | Phase 0 (done) |
 | 2 — Scrubber | Deferred | Phase 1 merged + named time/season need |
 
 ## Cleanup done + follow-ups
