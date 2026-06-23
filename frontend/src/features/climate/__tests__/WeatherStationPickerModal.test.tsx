@@ -110,6 +110,7 @@ describe("WeatherStationPickerModal", () => {
     installFetch({});
     renderPicker();
 
+    expect(await screen.findByRole("heading", { name: "Set Hourly Climate Data" })).toBeVisible();
     expect(await screen.findByText(/OneBuilding TMYx catalog · 2 weather files/)).toBeVisible();
     // The state filter defaults to the project's state.
     expect(screen.getByRole("combobox", { name: "State" })).toHaveValue("Massachusetts");
@@ -140,6 +141,19 @@ describe("WeatherStationPickerModal", () => {
       expect.objectContaining({ id: "new", kind: "weather" }),
     );
     expect(onClose).toHaveBeenCalled();
+  });
+
+  test("opens the upload flow from inside the picker", async () => {
+    installFetch({});
+    const onOpenUploadModal = vi.fn();
+    const { onClose } = renderPicker({ onOpenUploadModal });
+    const user = userEvent.setup();
+
+    await screen.findByText(/OneBuilding TMYx catalog/);
+    await user.click(screen.getByRole("button", { name: "Upload Climate Data" }));
+
+    expect(onClose).toHaveBeenCalled();
+    expect(onOpenUploadModal).toHaveBeenCalled();
   });
 
   test("refetches when the state filter changes", async () => {

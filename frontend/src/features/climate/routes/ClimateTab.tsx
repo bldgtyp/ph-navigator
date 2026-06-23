@@ -26,8 +26,8 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
   // the source detail header, and the empty-state page can all open it.
   const [pickerKind, setPickerKind] = useState<PhClimateKind | null>(null);
   const openPicker = canEdit ? (kind: PhClimateKind) => setPickerKind(kind) : undefined;
-  // The weather "Select from map" picker is hoisted here too, mirroring the PH
-  // picker, so the Weather File page and its empty state can both open it.
+  // The hourly climate data picker is hoisted here too, mirroring the PH picker,
+  // so the Weather File page and its empty state can both open it.
   const [weatherPickerOpen, setWeatherPickerOpen] = useState(false);
   const openWeatherPicker = canEdit ? () => setWeatherPickerOpen(true) : undefined;
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
@@ -73,7 +73,6 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
             onOpenSetLocation={openLocationModal}
             onOpenPicker={openPicker}
             onOpenWeatherPicker={openWeatherPicker}
-            onOpenUploadModal={openUploadModal}
           />
           <main className="climate-main">
             {sourcesQuery.error ? (
@@ -117,6 +116,7 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
           projectId={project.id}
           onClose={() => setWeatherPickerOpen(false)}
           onRequestSetLocation={() => setSelected("location")}
+          onOpenUploadModal={openUploadModal}
           onAttached={(source) => setSelected(source.id)}
         />
       ) : null}

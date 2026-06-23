@@ -4,6 +4,7 @@ import { Download, MapPin, Trash2 } from "lucide-react";
 import type { UnitSystem } from "../../../lib/units";
 import { formatTemperatureFromC } from "../../../lib/units/temperature";
 import { errorMessage } from "../../../shared/lib/errors";
+import { AppMenu, AppMenuLink } from "../../../shared/ui/AppMenu";
 import { assetDownloadPath } from "../../assets/api";
 import { useProjectLocationQuery } from "../../projects/hooks";
 import type { ProjectDetail } from "../../projects/types";
@@ -449,7 +450,14 @@ function WeatherSourcePage({
   const statAssetId = stringValue(source.data?.stat_asset_id);
   const ddyAssetId = stringValue(source.data?.ddy_asset_id);
   return (
-    <div className="climate-detail-page">
+    <div className="climate-detail-page climate-detail-page--with-main-menu">
+      <WeatherFileActionsMenu
+        projectId={project.id}
+        sourceUrl={sourceUrl}
+        epwAssetId={source.ref}
+        statAssetId={statAssetId}
+        ddyAssetId={ddyAssetId}
+      />
       <SourceHeader
         project={project}
         source={source}
@@ -483,27 +491,45 @@ function WeatherSourcePage({
           value={tempText(design?.dehumidification_010_mcdb_c, unitSystem)}
         />
       </div>
-      <div className="climate-link-row">
-        {sourceUrl ? (
-          <a className="secondary-button" href={sourceUrl}>
-            Open OneBuilding source
-          </a>
-        ) : null}
-        {source.ref ? (
-          <AssetDownloadLink projectId={project.id} assetId={source.ref} label="EPW" />
-        ) : null}
-        {statAssetId ? (
-          <AssetDownloadLink projectId={project.id} assetId={statAssetId} label="STAT" />
-        ) : null}
-        {ddyAssetId ? (
-          <AssetDownloadLink projectId={project.id} assetId={ddyAssetId} label="DDY" />
-        ) : null}
-      </div>
     </div>
   );
 }
 
-function AssetDownloadLink({
+function WeatherFileActionsMenu({
+  projectId,
+  sourceUrl,
+  epwAssetId,
+  statAssetId,
+  ddyAssetId,
+}: {
+  projectId: string;
+  sourceUrl: string | null;
+  epwAssetId: string | null;
+  statAssetId: string | null;
+  ddyAssetId: string | null;
+}) {
+  if (!sourceUrl && !epwAssetId && !statAssetId && !ddyAssetId) return null;
+  return (
+    <AppMenu label="Weather file actions" className="climate-main-menu">
+      {sourceUrl ? (
+        <AppMenuLink icon={Download} href={sourceUrl}>
+          Download OneBuilding .zip file
+        </AppMenuLink>
+      ) : null}
+      {epwAssetId ? (
+        <AssetDownloadMenuLink projectId={projectId} assetId={epwAssetId} label="EPW" />
+      ) : null}
+      {statAssetId ? (
+        <AssetDownloadMenuLink projectId={projectId} assetId={statAssetId} label="STAT" />
+      ) : null}
+      {ddyAssetId ? (
+        <AssetDownloadMenuLink projectId={projectId} assetId={ddyAssetId} label="DDY" />
+      ) : null}
+    </AppMenu>
+  );
+}
+
+function AssetDownloadMenuLink({
   projectId,
   assetId,
   label,
@@ -513,10 +539,9 @@ function AssetDownloadLink({
   label: string;
 }) {
   return (
-    <a className="secondary-button" href={assetDownloadPath(projectId, assetId)}>
-      <Download size={16} aria-hidden="true" />
+    <AppMenuLink icon={Download} href={assetDownloadPath(projectId, assetId)}>
       Download {label}
-    </a>
+    </AppMenuLink>
   );
 }
 

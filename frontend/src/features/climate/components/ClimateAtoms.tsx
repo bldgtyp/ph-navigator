@@ -8,13 +8,15 @@ import type { ClimateSourceKind } from "../types";
 export function ClimateTypeBadge({
   kind,
   version = null,
+  label,
 }: {
   kind: ClimateSourceKind;
   version?: string | null;
+  label?: string;
 }) {
   return (
     <span className="chip chip--sm climate-type-badge" data-kind={kind}>
-      {climateSourceKindLabel(kind)}
+      {label ?? climateSourceKindLabel(kind)}
       {version ? ` ${version}` : null}
     </span>
   );
