@@ -472,6 +472,101 @@ def test_hbjson_export_reverses_layers_when_last_layer_outside(
     assert material_names == ["MatC", "MatB", "MatA"]
 
 
+def test_hbjson_export_emits_homogeneous_round_trip_ph_nav(
+    clean_envelope_thermal_export_tables: None,
+) -> None:
+    """PRD §4: the export carries the assembly/layer/segment identity that the
+    Honeybee shape cannot express, so a future import re-creates it losslessly."""
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    write_saved_body(version_id, _thermal_fixture_body())
+
+    response = client.get(
+        f"/api/v1/projects/{project_id}/versions/{version_id}/envelope/export/hbjson",
+        headers={"Origin": ORIGIN},
+    )
+
+    assert response.status_code == 200
+    construction = response.json()["constructions"]["WALL_C3"]
+    assert construction["ph_nav"] == {
+        "assembly_id": "asm_wall_c3",
+        "assembly_type": "wall",
+        "orientation": "first_layer_outside",
+    }
+    layer_material = construction["materials"][0]
+    assert layer_material["ph_nav"]["layer_id"] == "lyr_insul"
+    assert layer_material["ph_nav"]["segment_id"] == "seg_insul"
+    assert layer_material["ph_nav"]["is_continuous_insulation"] is True
+
+
+def test_hbjson_export_emits_hybrid_layer_round_trip_ph_nav(
+    clean_envelope_thermal_export_tables: None,
+) -> None:
+    """A hybrid layer's parent material carries `layer_id`; each cell carries its
+    own `segment_id` + `is_continuous_insulation` for per-segment reconstruction."""
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    raw = envelope_body().model_dump(mode="json")
+    raw["tables"]["project_materials"] = [
+        project_material(id="pmat_cavity", name="Cavity insulation", conductivity_w_mk=0.04),
+        project_material(id="pmat_stud", name="Steel stud", conductivity_w_mk=50.0),
+    ]
+    raw["tables"]["assemblies"] = [
+        assembly(
+            id="asm_hybrid",
+            name="WALL-HYBRID",
+            layers=[
+                {
+                    "id": "lyr_hybrid",
+                    "order": 0,
+                    "thickness_mm": 140.0,
+                    "segments": [
+                        {
+                            "id": "seg_cavity",
+                            "order": 0,
+                            "width_mm": 850.0,
+                            "is_continuous_insulation": True,
+                            "steel_stud_spacing_mm": None,
+                            "project_material_id": "pmat_cavity",
+                            "photo_asset_ids": [],
+                            "use_site_notes": None,
+                        },
+                        {
+                            "id": "seg_stud",
+                            "order": 1,
+                            "width_mm": 150.0,
+                            "is_continuous_insulation": False,
+                            "steel_stud_spacing_mm": 406.4,
+                            "project_material_id": "pmat_stud",
+                            "photo_asset_ids": [],
+                            "use_site_notes": None,
+                        },
+                    ],
+                }
+            ],
+        )
+    ]
+    write_saved_body(version_id, ProjectDocumentV1.model_validate(raw))
+
+    response = client.get(
+        f"/api/v1/projects/{project_id}/versions/{version_id}/envelope/export/hbjson",
+        headers={"Origin": ORIGIN},
+    )
+
+    assert response.status_code == 200
+    hybrid_material = response.json()["constructions"]["WALL_HYBRID"]["materials"][0]
+    assert hybrid_material["ph_nav"]["layer_id"] == "lyr_hybrid"
+    cells = hybrid_material["properties"]["ph"]["divisions"]["cells"]
+    assert [cell["ph_nav"] for cell in cells] == [
+        {"segment_id": "seg_cavity", "is_continuous_insulation": True},
+        {"segment_id": "seg_stud", "is_continuous_insulation": False},
+    ]
+
+
 def _thermal_fixture_body(*, material: dict[str, object] | None = None) -> ProjectDocumentV1:
     raw = envelope_body().model_dump(mode="json")
     raw["tables"]["project_materials"] = [
