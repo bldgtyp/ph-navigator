@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 from fastapi import Request
+from psycopg import Connection
 from starlette import status
 
 from database import connection, transaction
 from features.auth.models import UserPublic
+from features.catalogs import _options_repository as options_repository
+from features.catalogs._option_seeds import FRAME_TYPE_SINGLE_SELECT_FIELDS
 from features.catalogs._shared import (
     CatalogManufacturerEntry,
     CatalogManufacturerListResponse,
@@ -27,6 +31,33 @@ from features.catalogs.frame_types.models import (
 from features.shared.errors import api_error
 
 CATALOG_TABLE = "frame_types"
+
+
+def _validate_single_selects(conn: Connection[Any], values: Mapping[str, object]) -> None:
+    """Reject any of the six single-select fields whose non-null value is not a
+    known option label (read live from the catalog option store, Phase 1).
+
+    null / empty is always allowed — the fields are nullable and a null part
+    simply drops from the composed name (Phase 3). New labels enter **only**
+    through the explicit option-add path (``PUT …/options``), never by silently
+    accepting an arbitrary string on a row write: the client adds the option
+    first, then writes the row. Comparison is exact-label because the store
+    enforces case-insensitive label uniqueness, so stored labels are canonical.
+    """
+    present = {field: values[field] for field in FRAME_TYPE_SINGLE_SELECT_FIELDS if values.get(field) not in (None, "")}
+    if not present:
+        return
+    known_by_field: dict[str, set[str]] = {}
+    for row in options_repository.list_all_for_table(conn, catalog_table=CATALOG_TABLE):
+        known_by_field.setdefault(row["field_key"], set()).add(row["label"])
+    for field, value in present.items():
+        if value not in known_by_field.get(field, set()):
+            raise api_error(
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
+                "catalog_option_unknown",
+                f"{field!r} value {value!r} is not a known option; add it via the field's options first.",
+                {"field": field, "value": value},
+            )
 
 
 def _to_public(row: dict[str, Any]) -> CatalogFrameTypePublic:
@@ -80,6 +111,7 @@ def create_frame_type(
 ) -> CatalogFrameTypePublic:
     record_id = new_catalog_record_id()
     with transaction() as conn:
+        _validate_single_selects(conn, payload.model_dump())
         repository.insert_frame_type(
             conn,
             record_id=record_id,
@@ -134,6 +166,7 @@ def update_frame_type(
                     "Catalog frame type not found.",
                 )
             return _to_public(row)
+        _validate_single_selects(conn, values)
         ok = repository.update_frame_type(conn, record_id, values, user.id)
         if not ok:
             raise api_error(
@@ -168,6 +201,9 @@ def duplicate_frame_type(record_id: str, user: UserPublic, request: Request) -> 
                 "catalog_frame_type_not_found",
                 "Catalog frame type not found.",
             )
+        # No _validate_single_selects here: the source row's labels are already
+        # valid (they passed validation on the original write), so a copy cannot
+        # introduce an unknown option.
         siblings = repository.list_sibling_names(conn, exclude_id=record_id)
         new_name = next_copy_suffix(src["name"], siblings)
         repository.insert_frame_type(

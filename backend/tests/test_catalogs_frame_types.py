@@ -2,14 +2,33 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+
 import pytest
 from fastapi.testclient import TestClient
 
-from database import connection
+from database import connection, transaction
 from features.auth.service import create_or_update_user
+from features.catalogs.frame_types.options_service import seed_frame_type_options
 from main import app
 
 ORIGIN = "http://localhost:5173"
+
+
+@pytest.fixture(autouse=True)
+def _reset_frame_options() -> Iterator[None]:
+    """Keep the frame-type option store at its canonical baseline around each
+    test. Frame writes are now strictly validated against this store (Phase 2),
+    so every test in this module needs the seeded options present, and the one
+    option-mutating test must not leak into the others."""
+    _seed_canonical_options()
+    yield
+    _seed_canonical_options()
+
+
+def _seed_canonical_options() -> None:
+    with transaction() as conn:
+        seed_frame_type_options(conn)
 
 
 def signed_in_client() -> TestClient:
@@ -27,8 +46,10 @@ def signed_in_client() -> TestClient:
 def _payload(name: str = "Skyline SR-3") -> dict[str, object]:
     return {
         "name": name,
-        "manufacturer": "Skyline",
-        "brand": "Ridge",
+        # Canonical single-select labels (seeded option store, Phase 0/1) — the
+        # six are now strictly validated on write (Phase 2).
+        "manufacturer": "Alpen",
+        "brand": "Tyrol",
         "use": "Window",
         "operation": "Casement",
         "location": "Head",
@@ -56,8 +77,8 @@ def test_create_returns_flat_row(clean_catalog_tables: None) -> None:
     assert response.status_code == 201, response.text
     body = response.json()
     assert body["name"] == "Skyline SR-3"
-    assert body["manufacturer"] == "Skyline"
-    assert body["brand"] == "Ridge"
+    assert body["manufacturer"] == "Alpen"
+    assert body["brand"] == "Tyrol"
     assert body["use"] == "Window"
     assert body["operation"] == "Casement"
     assert body["location"] == "Head"
@@ -254,9 +275,9 @@ def test_list_filters_by_location_operation_use_and_manufacturer(clean_catalog_t
         body.update({"location": location, "operation": operation, "use": use, "manufacturer": manufacturer})
         assert client.post("/api/v1/catalogs/frame-types", headers={"Origin": ORIGIN}, json=body).status_code == 201
 
-    _create("Head A", location="Head", operation="Casement", use="Window", manufacturer="Skyline")
-    _create("Sill B", location="Sill", operation="Fixed", use="Window", manufacturer="Skyline")
-    _create("Jamb C", location="Jamb", operation="Casement", use="Door", manufacturer="Other")
+    _create("Head A", location="Head", operation="Casement", use="Window", manufacturer="Alpen")
+    _create("Sill B", location="Sill", operation="Fixed", use="Window", manufacturer="Alpen")
+    _create("Jamb C", location="Jamb", operation="Casement", use="Door", manufacturer="Zola")
 
     def names_for(params: list[tuple[str, str | int | float | None]]) -> set[str]:
         return {item["name"] for item in client.get("/api/v1/catalogs/frame-types", params=params).json()["items"]}
@@ -264,11 +285,81 @@ def test_list_filters_by_location_operation_use_and_manufacturer(clean_catalog_t
     assert names_for([("location", "head")]) == {"Head A"}  # case-insensitive
     assert names_for([("operation", "Casement")]) == {"Head A", "Jamb C"}
     assert names_for([("use", "Door")]) == {"Jamb C"}
-    assert names_for([("manufacturers", "Skyline")]) == {"Head A", "Sill B"}
-    assert names_for([("manufacturers", "Skyline"), ("manufacturers", "Other")]) == {
+    assert names_for([("manufacturers", "Alpen")]) == {"Head A", "Sill B"}
+    assert names_for([("manufacturers", "Alpen"), ("manufacturers", "Zola")]) == {
         "Head A",
         "Sill B",
         "Jamb C",
     }
     # Combined filters AND together.
     assert names_for([("location", "Jamb"), ("operation", "Casement")]) == {"Jamb C"}
+
+
+# --------------------------------------------------------------------------- #
+# Phase 2 — strict single-select write validation.
+# --------------------------------------------------------------------------- #
+
+
+def test_create_rejects_unknown_single_select_value(clean_catalog_tables: None) -> None:
+    client = signed_in_client()
+    response = client.post(
+        "/api/v1/catalogs/frame-types",
+        headers={"Origin": ORIGIN},
+        json={**_payload(), "operation": "tilt turn"},  # not a seeded option
+    )
+    assert response.status_code == 422
+    assert response.json()["error_code"] == "catalog_option_unknown"
+
+
+def test_patch_rejects_unknown_single_select_value(clean_catalog_tables: None) -> None:
+    client = signed_in_client()
+    created = client.post("/api/v1/catalogs/frame-types", headers={"Origin": ORIGIN}, json=_payload()).json()
+
+    response = client.patch(
+        f"/api/v1/catalogs/frame-types/{created['id']}",
+        headers={"Origin": ORIGIN},
+        json={"location": "nowhere"},
+    )
+    assert response.status_code == 422
+    assert response.json()["error_code"] == "catalog_option_unknown"
+    # The rejected patch left the row untouched.
+    row = client.get(f"/api/v1/catalogs/frame-types/{created['id']}").json()
+    assert row["location"] == "Head"
+
+
+def test_null_single_select_is_allowed(clean_catalog_tables: None) -> None:
+    client = signed_in_client()
+    created = client.post(
+        "/api/v1/catalogs/frame-types",
+        headers={"Origin": ORIGIN},
+        json={**_payload(), "mull_type": None},
+    )
+    assert created.status_code == 201
+    patched = client.patch(
+        f"/api/v1/catalogs/frame-types/{created.json()['id']}",
+        headers={"Origin": ORIGIN},
+        json={"mull_type": None},
+    )
+    assert patched.status_code == 200
+
+
+def test_add_option_then_create_row_using_it(clean_catalog_tables: None) -> None:
+    client = signed_in_client()
+    options = client.get("/api/v1/catalogs/frame-types/options").json()["fields"]["brand"]
+    options.append({"id": "opt_vanguard01", "label": "Vanguard", "color": "#3b82f6", "order": float(len(options))})
+    assert (
+        client.put(
+            "/api/v1/catalogs/frame-types/options",
+            headers={"Origin": ORIGIN},
+            json={"field_key": "brand", "options": options, "replacements": {}},
+        ).status_code
+        == 200
+    )
+
+    response = client.post(
+        "/api/v1/catalogs/frame-types",
+        headers={"Origin": ORIGIN},
+        json={**_payload("Vanguard frame"), "brand": "Vanguard"},
+    )
+    assert response.status_code == 201, response.text
+    assert response.json()["brand"] == "Vanguard"
