@@ -5,7 +5,7 @@
 // hooks; canvas/sidebar/specification layout details stay in feature
 // components so browser and MCP mutations share the semantic command boundary.
 import "../envelope.css";
-import { Download } from "lucide-react";
+import { Download, Upload } from "lucide-react";
 import { Navigate, NavLink, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
@@ -32,8 +32,10 @@ import {
 } from "../paths";
 import { AssemblyWorkspace } from "../components/AssemblyWorkspace";
 import { EnvelopeEditorDialogs } from "../components/EnvelopeEditorDialogs";
+import { ImportConstructionsDialog } from "../components/dialogs/ImportConstructionsDialog";
 import { usePaintMode } from "../hooks/usePaintMode";
 import { useEnvelopeDialogs } from "../hooks/useEnvelopeDialogs";
+import { useEnvelopeHbjsonImport } from "../hooks/useEnvelopeHbjsonImport";
 import {
   EnvelopeEmptyState,
   EnvelopeErrorState,
@@ -78,6 +80,7 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
   } = useEnvelopeDialogs();
   const commandMutation = useEnvelopeCommandMutation(project.id, project.active_version_id);
   const exportMutation = useEnvelopeHbjsonExportMutation(project.id, project.active_version_id);
+  const importer = useEnvelopeHbjsonImport(project.id, project.active_version_id);
   const attachmentMutation = useEnvelopeAttachmentMutation({
     projectId: project.id,
     versionId: project.active_version_id,
@@ -228,6 +231,17 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     }
   }
 
+  async function confirmImport(): Promise<void> {
+    const pending = importer.plan;
+    if (!pending) return;
+    const applied = await applyCommand({
+      kind: "import_envelope_constructions",
+      file: pending.file,
+      resolutions: [],
+    });
+    if (applied) importer.reset();
+  }
+
   async function applyAttachmentChange(change: EnvelopeAttachmentChange): Promise<void> {
     const current = query.data;
     if (!current) return;
@@ -255,6 +269,16 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
               >
                 Download constructions HBJSON
               </AppMenuItem>
+              {canEdit ? (
+                <AppMenuItem
+                  id="assembly-builder-import-hbjson"
+                  icon={Upload}
+                  disabled={importer.previewing}
+                  onClick={importer.openFilePicker}
+                >
+                  Upload constructions HBJSON
+                </AppMenuItem>
+              ) : null}
             </AppMenu>
           ) : null
         }
@@ -273,7 +297,19 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
           Materials
         </AppSubTabLink>
       </AppSubTabs>
+      <input
+        ref={importer.inputRef}
+        type="file"
+        accept=".hbjson,.json,application/json"
+        hidden
+        onChange={(event) => void importer.onFileChange(event)}
+      />
       <div className="envelope-body">
+        {importer.error ? (
+          <p className="form-error" role="alert">
+            {importer.error}
+          </p>
+        ) : null}
         {activeAssemblyDriftCount > 0 && isAssembliesRoute ? (
           <div className="envelope-command-banner" role="status">
             {activeAssemblyDriftCount} material{" "}
@@ -410,6 +446,15 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
           error={commandError}
           onClose={closeRefresh}
           onCommand={(command) => void applyCommand(command)}
+        />
+      ) : null}
+      {importer.plan ? (
+        <ImportConstructionsDialog
+          plan={importer.plan.preview}
+          busy={commandMutation.isPending}
+          error={commandError}
+          onClose={importer.reset}
+          onConfirm={() => void confirmImport()}
         />
       ) : null}
     </section>

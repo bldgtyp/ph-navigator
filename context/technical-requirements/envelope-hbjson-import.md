@@ -118,6 +118,15 @@ recognizable honeybee construction) · `import_invalid_file` ·
 **not** block on thermal incompleteness — incomplete assemblies are legal in
 a draft and surface in the preview, not as errors.
 
+## Frontend
+
+The "Upload constructions HBJSON" menu item (editor-only) on Envelope →
+Assemblies drives this: `useEnvelopeHbjsonImport` reads the file and calls the
+preview route, `ImportConstructionsDialog` shows the plan, and confirming fires
+the `import_envelope_constructions` command on the existing envelope-command
+rail. See `frontend/src/features/envelope/` (`hooks/useEnvelopeHbjsonImport.ts`,
+`components/dialogs/ImportConstructionsDialog.tsx`).
+
 ## See also
 
 - `context/technical-requirements/envelope-hbjson-export.md` — the format

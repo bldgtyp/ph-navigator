@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 17:17 EDT
-STATUS: Implementing — Phases 0–2 DONE (full backend import); Phase 3 (frontend) next
+STATUS: Implementing — Phases 0–3 DONE (backend + frontend); Phase 4 (polish) next
 AUTHOR: Ed (via Claude)
 SCOPE: Status for Envelope HBJSON Import.
 ---
@@ -24,9 +24,10 @@ SCOPE: Status for Envelope HBJSON Import.
     catalog-repo logic (PRD §5).
   - Flow is **preview → confirm**, applied atomically through the existing
     `apply_envelope_command` pipeline (PRD §6).
-- **Implementation: in progress.** Phases 0–2 complete (see below): the
-  export round-trips losslessly and the full backend import (native + foreign
-  honeybee-PH, preview + apply) is live. Frontend (Phase 3) is next.
+- **Implementation: in progress.** Phases 0–3 complete (see below): the
+  export round-trips losslessly, the full backend import (native + foreign
+  honeybee-PH, preview + apply) is live, and the frontend upload/preview/confirm
+  flow is wired. Phase 4 (polish) is next.
 
 ## Decisions (2026-06-23)
 - **D1: both sources in v1** — PHN-native **and** raw Honeybee-PH.
@@ -56,10 +57,17 @@ SCOPE: Status for Envelope HBJSON Import.
   detection (honeybee stamps an empty `divisions` on every material); name-match
   rungs 4–5 (project + catalog, flagged for confirmation). 7 foreign tests. See
   `phases/phase-02-foreign-import.md`.
-- **Phase 3** — frontend: "Upload constructions HBJSON" menu item + hidden file
-  input + preview/confirm modal (report-status chips).
-- **Phase 4** — polish: conflict/ambiguity UX, drift warnings, cross-project
-  copy QA, browser smoke.
+- **Phase 3 — DONE (2026-06-23).** Frontend: "Upload constructions HBJSON"
+  menu item (editor-only) + hidden file input in `EnvelopePage.tsx`;
+  `useEnvelopeHbjsonImport` hook (FileReader-based read → multipart preview);
+  `previewEnvelopeHbjsonImport` api + hook; `client.ts` FormData support;
+  `ImportConstructionsDialog` preview/confirm modal (report-status chips,
+  counts + per-construction/-material plan + warnings); apply via the existing
+  command rail with the `import_envelope_constructions` kind. Dialog +
+  upload-flow + viewer-gating tests (full frontend suite green, 1852 tests).
+- **Phase 4** — polish: conflict/ambiguity UX (per-construction add/replace/skip
+  override; per-material override), drift warnings, cross-project copy QA,
+  browser smoke.
 
 ## Blockers
 - None for research. Remaining sub-decisions (schema_version bump in D2;

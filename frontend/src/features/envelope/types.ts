@@ -251,10 +251,65 @@ export type EnvelopeCommand =
       kind: "refresh_project_material_from_catalog";
       project_material_id: string;
       field_choices: ProjectMaterialRefreshChoice[];
+    }
+  | {
+      kind: "import_envelope_constructions";
+      file: Record<string, unknown>;
+      resolutions: ConstructionResolution[];
     };
 
 export type EnvelopeCommandBody = {
   command: EnvelopeCommand;
+};
+
+// --- HBJSON construction import (preview + apply) -------------------------
+
+export type ConstructionImportAction = "add_new" | "replace" | "skip";
+
+export type MaterialImportDecision =
+  | "reuse_project_material"
+  | "reuse_catalog_in_project"
+  | "pick_from_catalog"
+  | "create_new";
+
+export type ConstructionResolution = {
+  source_assembly_id: string;
+  action: ConstructionImportAction;
+  target_assembly_id?: string | null;
+};
+
+export type ImportConstructionPlanItem = {
+  source_assembly_id: string | null;
+  name: string;
+  action: ConstructionImportAction;
+  target_assembly_id: string | null;
+  warnings: string[];
+};
+
+export type ImportMaterialPlanItem = {
+  source_key: string;
+  name: string;
+  decision: MaterialImportDecision;
+  project_material_id: string;
+  catalog_record_id: string | null;
+  warnings: string[];
+};
+
+export type ImportPlanCounts = {
+  constructions_add: number;
+  constructions_replace: number;
+  constructions_skip: number;
+  materials_reused: number;
+  materials_picked_from_catalog: number;
+  materials_created: number;
+};
+
+export type ImportConstructionsPreview = BaseTableSlice & {
+  schema_version: number;
+  constructions: ImportConstructionPlanItem[];
+  materials: ImportMaterialPlanItem[];
+  counts: ImportPlanCounts;
+  warnings: string[];
 };
 
 export type EnvelopeAttachmentChangeArgs = {

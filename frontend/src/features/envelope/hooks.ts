@@ -10,6 +10,7 @@ import {
   fetchEnvelopeReadModel,
   fetchMaterialCatalogDrift,
   postEnvelopeCommand,
+  previewEnvelopeHbjsonImport,
 } from "./api";
 import { envelopeQueryKeys } from "./query-keys";
 import type {
@@ -89,6 +90,18 @@ export function useMaterialCatalogDriftQuery(
     queryFn: ({ signal }) =>
       fetchMaterialCatalogDrift(projectId, resolvedVersionId, source, signal),
     enabled: enabled && resolvedVersionId.length > 0,
+  });
+}
+
+export function useEnvelopeHbjsonImportPreviewMutation(
+  projectId: string,
+  versionId: string | null,
+) {
+  return useMutation({
+    mutationFn: (file: File) => {
+      if (!versionId) throw new Error("Select a version before importing constructions.");
+      return previewEnvelopeHbjsonImport(projectId, versionId, file);
+    },
   });
 }
 
@@ -217,4 +230,5 @@ const materialDriftInvalidationCommands = new Set<EnvelopeCommand["kind"]>([
   "refresh_project_material_from_catalog",
   "remove_unused_project_materials",
   "remove_project_material",
+  "import_envelope_constructions",
 ]);

@@ -5,6 +5,7 @@ import type {
   EnvelopeCommandBody,
   EnvelopeReadResponse,
   EnvelopeReadSource,
+  ImportConstructionsPreview,
   ProjectMaterialDriftReport,
 } from "./types";
 
@@ -63,4 +64,17 @@ export async function fetchMaterialCatalogDrift(
 
 export async function downloadEnvelopeHbjson(projectId: string, versionId: string): Promise<Blob> {
   return fetchBlob(`/api/v1/projects/${projectId}/versions/${versionId}/envelope/export/hbjson`);
+}
+
+export async function previewEnvelopeHbjsonImport(
+  projectId: string,
+  versionId: string,
+  file: File,
+): Promise<ImportConstructionsPreview> {
+  const form = new FormData();
+  form.append("file", file);
+  return fetchJson<ImportConstructionsPreview>(
+    `/api/v1/projects/${projectId}/versions/${versionId}/envelope/import/hbjson/preview`,
+    { method: "POST", body: form },
+  );
 }

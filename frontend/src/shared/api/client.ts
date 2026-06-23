@@ -67,7 +67,8 @@ async function fetchApiResponse(
 ): Promise<Response> {
   const headers = new Headers(options.headers);
   headers.set("X-Request-ID", requestId());
-  if (options.body && !headers.has("Content-Type")) {
+  // Let the browser set the multipart boundary for FormData; only default JSON.
+  if (options.body && !headers.has("Content-Type") && !(options.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }
 

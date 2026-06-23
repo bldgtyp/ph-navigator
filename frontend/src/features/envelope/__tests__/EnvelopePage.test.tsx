@@ -1,6 +1,6 @@
 // @size-exception: docs/code-reviews/2026-05-25/frontend-code-review.md#21-srp--file-length-violations
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState, type ReactNode } from "react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
@@ -1368,6 +1368,101 @@ describe("EnvelopePage", () => {
       expect.stringContaining("/envelope/export/hbjson"),
       expect.objectContaining({ credentials: "include" }),
     );
+  });
+
+  test("upload constructions previews the plan then applies an import command", async () => {
+    const previewPayload = {
+      project_id: PROJECT_ID,
+      version_id: VERSION_ID,
+      source: "draft",
+      version_etag: "version-etag",
+      draft_etag: "draft-etag",
+      schema_version: 4,
+      counts: {
+        constructions_add: 1,
+        constructions_replace: 0,
+        constructions_skip: 0,
+        materials_reused: 0,
+        materials_picked_from_catalog: 0,
+        materials_created: 1,
+      },
+      constructions: [
+        {
+          source_assembly_id: null,
+          name: "W_NewWall",
+          action: "add_new",
+          target_assembly_id: null,
+          warnings: [],
+        },
+      ],
+      materials: [
+        {
+          source_key: "m1",
+          name: "Batt",
+          decision: "create_new",
+          project_material_id: "pmat_new",
+          catalog_record_id: null,
+          warnings: [],
+        },
+      ],
+      warnings: [],
+    };
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/envelope/import/hbjson/preview")) {
+        return Promise.resolve(jsonResponse(previewPayload));
+      }
+      if (url.includes("/draft/envelope/commands")) {
+        return Promise.resolve(jsonResponse({ ...envelopePayload, draft_etag: "draft-etag-2" }));
+      }
+      return defaultFetchImplementation(url);
+    });
+
+    const { container } = renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+    await screen.findByRole("link", { name: /WALL-C3/ });
+
+    await userEvent.click(screen.getByRole("button", { name: "Assembly actions" }));
+    expect(
+      screen.getByRole("menuitem", { name: "Upload constructions HBJSON" }),
+    ).toBeInTheDocument();
+
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(
+      [JSON.stringify({ type: "OpaqueConstruction", identifier: "W_NewWall", materials: [] })],
+      "constructions.hbjson",
+      { type: "application/json" },
+    );
+    fireEvent.change(fileInput, { target: { files: [file] } });
+
+    expect(await screen.findByText("Import constructions")).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/envelope/import/hbjson/preview"),
+      expect.objectContaining({ method: "POST" }),
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /Import 1 construction/ }));
+
+    await waitFor(() => {
+      const commands = commandRequestBodies() as { command: { kind: string } }[];
+      expect(commands.some((body) => body.command.kind === "import_envelope_constructions")).toBe(
+        true,
+      );
+    });
+  });
+
+  test("viewer mode hides the upload constructions action", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`, {
+      projectOverride: { access_mode: "viewer" },
+    });
+    await screen.findByRole("link", { name: /WALL-C3/ });
+
+    await userEvent.click(screen.getByRole("button", { name: "Assembly actions" }));
+    expect(
+      screen.queryByRole("menuitem", { name: "Upload constructions HBJSON" }),
+    ).not.toBeInTheDocument();
+    // Download stays available to viewers.
+    expect(
+      screen.getByRole("menuitem", { name: "Download constructions HBJSON" }),
+    ).toBeInTheDocument();
   });
 });
 
