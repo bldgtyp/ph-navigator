@@ -16,12 +16,12 @@ from features.auth import repository as auth_repository
 from features.auth.models import UserPublic
 from features.auth.service import client_ip, user_agent
 from features.climate import repository as climate_repository
-from features.climate.epw_catalog import EpwZipPayload, download_epw_zip, nearest_epw_entry
+from features.climate.epw_catalog import download_epw_zip, nearest_epw_entry
 from features.climate.models import ClimateLocationSummary
 from features.climate.proximity import PhDatasetProvider, build_location_roster, build_proximity_payload
-from features.climate.stat_parser import parse_stat_file
+from features.climate.weather_source import build_weather_source_payload
 from features.project_climate_source import repository as climate_source_repository
-from features.project_climate_source.service import upsert_source_by_kind
+from features.project_climate_source.service import attach_weather_source, upsert_source_by_kind
 from features.project_location import repository
 from features.project_location.derive import (
     derive_location_geodata,
@@ -151,15 +151,16 @@ def derive_weather_source(
     request_meta: Request | None,
     asset_service: AssetService,
 ) -> ProjectLocationUpdateResponse:
-    """Attach the nearest EPW + its bundled ASHRAE design conditions for the site.
+    """Attach the nearest weather file (EPW + STAT bundle) for the saved site.
 
-    EPW and ASHRAE stay one action: the ASHRAE 2009 conditions ride free on the
-    EPW's ``.stat`` companion. Both the EPW and ASHRAE Climate pages trigger this.
+    The one ``weather`` source carries both the EPW pointer and the STAT-derived
+    metrics + ASHRAE design conditions (they ride free on the EPW's ``.stat``
+    companion). The Weather File Climate page triggers this.
     """
     with connection() as conn:
         row = repository.get_location(conn, project_id)
     latitude, longitude, _elevation_m = require_site_coordinates(row)
-    weather_sources, weather_values, weather_warnings = prepare_weather_sources(
+    weather_source, weather_values, weather_warnings = prepare_weather_source(
         project_id=project_id,
         latitude=latitude,
         longitude=longitude,
@@ -173,7 +174,8 @@ def derive_weather_source(
         row = (
             repository.upsert_location(conn, project_id, changed_fields, weather_values) if changed_fields else current
         )
-        auto_attach_weather_sources(conn, project_id=project_id, sources=weather_sources)
+        if weather_source is not None:
+            attach_weather_source(conn, project_id=project_id, source=weather_source)
         log_climate_source_derive(conn, project_id=project_id, kind="weather", user=user, request_meta=request_meta)
         epw = epw_descriptor_for_row(conn, project_id, row)
 
@@ -395,141 +397,60 @@ def refresh_existing_certification_source_proximities(
         )
 
 
-def prepare_weather_sources(
+def prepare_weather_source(
     *,
     project_id: UUID,
     latitude: float,
     longitude: float,
     user: UserPublic,
     asset_service: AssetService,
-) -> tuple[list[dict[str, object]], dict[str, object], list[str]]:
-    """Fetch nearest EPW + STAT data before opening the location transaction."""
+) -> tuple[dict[str, object] | None, dict[str, object], list[str]]:
+    """Fetch nearest EPW + STAT data before opening the location transaction.
+
+    Returns the weather source to attach (``None`` when nothing changes — no
+    catalog entry, or the same OneBuilding EPW is already attached), the location
+    fields to persist, and any warnings.
+    """
     warnings: list[str] = []
     try:
         entry = nearest_epw_entry(latitude, longitude)
     except Exception as exc:
-        return [], {}, [f"Nearest EPW lookup failed: {exc}"]
+        return None, {}, [f"Nearest EPW lookup failed: {exc}"]
     if entry is None:
-        return [], {}, ["No OneBuilding EPW catalog entries are available for auto-attach."]
+        return None, {}, ["No OneBuilding EPW catalog entries are available for auto-attach."]
     existing_values = existing_weather_source_values(project_id, entry.url)
     if existing_values is not None:
-        return [], existing_values, warnings
+        return None, existing_values, warnings
     try:
         epw_payload = download_epw_zip(entry)
     except Exception as exc:
-        return [], {}, [f"Nearest EPW download failed: {exc}"]
+        return None, {}, [f"Nearest EPW download failed: {exc}"]
     try:
-        sources = build_weather_source_payloads(project_id, user, asset_service, epw_payload)
-        values: dict[str, object] = {"epw_source_url": entry.url}
-        epw_source = next((source for source in sources if source["kind"] == "epw"), None)
-        if epw_source is not None:
-            values["epw_asset_id"] = str(epw_source["ref"])
-        return sources, values, warnings
+        source = build_weather_source_payload(project_id, user, asset_service, epw_payload)
+        values: dict[str, object] = {"epw_source_url": entry.url, "epw_asset_id": str(source["ref"])}
+        return source, values, warnings
     except Exception as exc:
-        return [], {}, [f"Nearest EPW parse/storage failed: {exc}"]
+        return None, {}, [f"Nearest EPW parse/storage failed: {exc}"]
 
 
 def existing_weather_source_values(project_id: UUID, source_url: str) -> dict[str, object] | None:
-    """Reuse an already-attached EPW from the same OneBuilding URL."""
+    """Reuse an already-attached weather source from the same OneBuilding URL."""
     with connection() as conn:
         sources = climate_source_repository.list_sources(conn, project_id)
-    epw_source = next(
+    weather_source = next(
         (
             source
             for source in sources
-            if source["kind"] == "epw"
+            if source["kind"] == "weather"
             and isinstance(source["data"], dict)
             and source["data"].get("source_url") == source_url
             and source["ref"]
         ),
         None,
     )
-    if epw_source is None:
+    if weather_source is None:
         return None
-    return {"epw_asset_id": str(epw_source["ref"]), "epw_source_url": source_url}
-
-
-def build_weather_source_payloads(
-    project_id: UUID,
-    user: UserPublic,
-    asset_service: AssetService,
-    epw_payload: EpwZipPayload,
-) -> list[dict[str, Any]]:
-    """Store the EPW bytes and build project_climate_source upsert payloads."""
-    epw_location = parse_epw_location_header(epw_payload.epw_bytes[:EPW_HEADER_PREFIX_BYTES])
-    asset = asset_service.create_uploaded_asset_from_bytes(
-        project_id=project_id,
-        created_by=user.id,
-        asset_kind="epw",
-        original_filename=epw_payload.epw_name,
-        display_name=epw_payload.entry.name,
-        content_type="text/plain",
-        body=epw_payload.epw_bytes,
-        metadata={"epw_location": epw_location.model_dump(mode="json"), "thumbnail_status": "na"},
-    )
-    fetched_at = asset.uploaded_at.isoformat() if asset.uploaded_at else None
-    stat_payload = parse_stat_file(epw_payload.stat_text) if epw_payload.stat_text else None
-    station = {
-        "name": epw_payload.entry.name,
-        "country": epw_payload.entry.country,
-        "region": epw_payload.entry.region,
-        "wmo": epw_payload.entry.wmo,
-        "latitude": epw_payload.entry.latitude,
-        "longitude": epw_payload.entry.longitude,
-        "elevation_m": epw_payload.entry.elevation_m,
-        "distance_mi": epw_payload.entry.distance_mi,
-    }
-    epw_data: dict[str, object] = {
-        "provider": "onebuilding",
-        "source_url": epw_payload.entry.url,
-        "stat_filename": epw_payload.stat_name,
-        "station": station,
-        "fetched_at": fetched_at,
-    }
-    if stat_payload is not None:
-        epw_data["stat_metrics"] = stat_payload.metrics.model_dump(mode="json")
-        epw_data["design_conditions"] = stat_payload.design_conditions.model_dump(mode="json")
-    sources: list[dict[str, Any]] = [
-        {
-            "kind": "epw",
-            "ref": asset.id,
-            "label": epw_payload.entry.name,
-            "data": epw_data,
-        }
-    ]
-    if stat_payload is not None:
-        sources.append(
-            {
-                "kind": "ashrae",
-                "ref": stat_payload.wmo or epw_payload.entry.wmo or epw_payload.entry.name,
-                "label": stat_payload.station_name or epw_payload.entry.name,
-                "data": {
-                    "provider": "onebuilding_stat",
-                    "source_url": epw_payload.entry.url,
-                    "design_conditions": stat_payload.design_conditions.model_dump(mode="json"),
-                    "missing_fields": stat_payload.design_conditions.missing_fields,
-                    "fetched_at": fetched_at,
-                },
-            }
-        )
-    return sources
-
-
-def auto_attach_weather_sources(
-    conn: Connection[Any],
-    *,
-    project_id: UUID,
-    sources: list[dict[str, object]],
-) -> None:
-    for source in sources:
-        upsert_source_by_kind(
-            conn,
-            project_id=project_id,
-            kind=str(source["kind"]),
-            ref=str(source["ref"]),
-            label=str(source["label"]),
-            data=cast(dict[str, Any], source["data"] if isinstance(source["data"], dict) else {}),
-        )
+    return {"epw_asset_id": str(weather_source["ref"]), "epw_source_url": source_url}
 
 
 def project_location_from_row(

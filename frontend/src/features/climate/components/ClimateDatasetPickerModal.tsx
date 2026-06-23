@@ -8,7 +8,12 @@ import {
   useClimateSourcesQuery,
   useCreateClimateSourceMutation,
 } from "../hooks";
-import { climateSourceKindLabel, datasetLabel, type ClimateStatusTone } from "../lib";
+import {
+  climateSourceKindLabel,
+  datasetLabel,
+  formatDeltaFt,
+  type ClimateStatusTone,
+} from "../lib";
 import type {
   ClimateDatasetRosterItem,
   ClimateProximityVerdict,
@@ -16,18 +21,10 @@ import type {
   PhClimateKind,
   ProjectClimateSource,
 } from "../types";
-import { US_STATES } from "../us-states";
+import { ANY_STATE, STATE_FILTER_OPTIONS } from "../us-states";
 import { ClimateMap } from "./ClimateMap";
 import { ClimateStatusChip } from "./ClimateAtoms";
 import "../climate-picker.css";
-
-// Select sentinel for the any-state nearest mode (O-DP-3); distinct from a
-// 2-letter state code.
-const ANY_STATE = "__any__";
-const STATE_OPTIONS = [
-  { value: ANY_STATE, label: "Nearest to project (any state)" },
-  ...US_STATES.map((state) => ({ value: state.code, label: state.name })),
-];
 
 // The 50 mi proximity gate (D-CL-17), drawn on the live basemap as a reference
 // ring. 50 mi = 80,467 m; both PH kinds reference the same distance.
@@ -145,7 +142,7 @@ export function ClimateDatasetPickerModal({
               className="climate-picker-filter"
               label="State"
               value={selectValue}
-              options={STATE_OPTIONS}
+              options={STATE_FILTER_OPTIONS}
               emptyMessage="No states match"
               onChange={changeRegion}
             />
@@ -291,8 +288,4 @@ function verdictChip(status: ClimateProximityVerdict["status"]): {
   label: string;
 } {
   return { tone: status, label: VERDICT_LABELS[status] };
-}
-
-function formatDeltaFt(elevationDeltaFt: number | null): string {
-  return elevationDeltaFt === null ? "Δ — ft" : `Δ ${elevationDeltaFt.toFixed(0)} ft`;
 }

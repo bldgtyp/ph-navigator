@@ -55,7 +55,7 @@ def _default_geodata(latitude: float, longitude: float) -> DerivedLocationGeodat
 
 @pytest.fixture(autouse=True)
 def stub_location_external_calls(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("features.project_location.service.prepare_weather_sources", lambda **_kwargs: ([], {}, []))
+    monkeypatch.setattr("features.project_location.service.prepare_weather_source", lambda **_kwargs: (None, {}, []))
     monkeypatch.setattr("features.project_location.service.derive_location_geodata", _default_geodata)
 
 
@@ -502,21 +502,21 @@ def test_direct_location_update_refreshes_attached_phius_proximity(
     assert refreshed["data"]["status"] == "fail"
 
 
-def test_weather_derive_attaches_epw_and_ashrae_stat_sources(
+def test_weather_derive_attaches_single_weather_source(
     clean_mcp_tables: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     fake_r2 = FakeR2Client()
     install_fake_asset_service(fake_r2)
 
-    def fake_prepare_weather_sources(
+    def fake_prepare_weather_source(
         *,
         project_id: UUID,
         user,
         asset_service: AssetService,
         **_kwargs,
     ):
-        from features.project_location.service import build_weather_source_payloads
+        from features.climate.weather_source import build_weather_source_payload
         from tests.test_climate_design_conditions import STAT_SAMPLE
 
         payload = EpwZipPayload(
@@ -538,13 +538,12 @@ def test_weather_derive_attaches_epw_and_ashrae_stat_sources(
             stat_name="pittsfield.stat",
             stat_text=STAT_SAMPLE,
         )
-        sources = build_weather_source_payloads(project_id, user, asset_service, payload)
-        epw_source = next(source for source in sources if source["kind"] == "epw")
-        return sources, {"epw_asset_id": epw_source["ref"], "epw_source_url": payload.entry.url}, []
+        source = build_weather_source_payload(project_id, user, asset_service, payload)
+        return source, {"epw_asset_id": source["ref"], "epw_source_url": payload.entry.url}, []
 
     try:
         monkeypatch.setattr("features.project_location.service.derive_location_geodata", west_stockbridge_geodata)
-        monkeypatch.setattr("features.project_location.service.prepare_weather_sources", fake_prepare_weather_sources)
+        monkeypatch.setattr("features.project_location.service.prepare_weather_source", fake_prepare_weather_source)
         client = signed_in_client()
         project_id = cast(str, create_project(client)["id"])
         located = client.put(
@@ -564,11 +563,16 @@ def test_weather_derive_attaches_epw_and_ashrae_stat_sources(
         assert location["epw_asset_id"].startswith("asset_")
         assert location["epw"]["filename"] == "pittsfield.epw"
         sources = client.get(f"/api/v1/projects/{project_id}/climate/sources").json()["items"]
+        # One merged weather source carries both the STAT metrics and the ASHRAE
+        # design conditions — no separate ashrae record.
         by_kind = {source["kind"]: source for source in sources}
-        assert by_kind["epw"]["label"] == "Pittsfield.Muni.AP"
-        assert by_kind["epw"]["data"]["stat_metrics"]["hdd65_f_days"] == 3884
-        assert by_kind["ashrae"]["ref"] == "744104"
-        assert by_kind["ashrae"]["data"]["design_conditions"]["cooling_010_db_c"] == 28.5
+        assert set(by_kind) == {"weather"}
+        weather = by_kind["weather"]
+        assert weather["label"] == "Pittsfield.Muni.AP"
+        assert weather["data"]["stat_metrics"]["hdd65_f_days"] == 3884
+        assert weather["data"]["design_conditions"]["cooling_004_db_c"] == 29.9
+        assert weather["data"]["design_conditions"]["cooling_010_db_c"] == 28.5
+        assert weather["data"]["design_conditions"]["cooling_020_db_c"] == 27.2
     finally:
         clear_fake_asset_service()
 
@@ -581,7 +585,7 @@ def test_existing_weather_source_values_reuses_same_onebuilding_epw(clean_mcp_ta
             conn,
             source_id=uuid4(),
             project_id=project_id,
-            kind="epw",
+            kind="weather",
             ref="asset_reused",
             label="Pittsfield",
             data={"source_url": "https://climate.onebuilding.org/pittsfield.zip"},

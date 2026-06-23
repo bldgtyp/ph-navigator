@@ -1,6 +1,9 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { projectQueryKeys } from "../projects/query-keys";
 import {
+  attachWeatherFromCatalog,
+  attachWeatherFromUpload,
+  type WeatherUploadRefs,
   createClimateSource,
   deleteClimateSource,
   deriveClimateSource,
@@ -9,6 +12,7 @@ import {
   fetchClimateLocation,
   fetchClimateLocations,
   fetchClimateSources,
+  fetchEpwRoster,
 } from "./api";
 import { climateQueryKeys } from "./query-keys";
 import type {
@@ -16,6 +20,7 @@ import type {
   ClimateRosterSearch,
   ClimateSourceDeriveKind,
   CreateClimateSourceRequest,
+  EpwRosterSearch,
   PhClimateKind,
   ProjectClimateSource,
   ProjectClimateSourceListResponse,
@@ -69,6 +74,20 @@ export function useClimateDatasetRosterQuery(
   });
 }
 
+// The weather picker roster: OneBuilding EPW stations for a project, nearest-first.
+// Keyed by [projectId, search] so changing the state filter refetches.
+export function useEpwRosterQuery(
+  projectId: string,
+  search: EpwRosterSearch,
+  options: { enabled?: boolean } = {},
+) {
+  return useQuery({
+    queryKey: climateQueryKeys.epwRoster(projectId, search),
+    queryFn: ({ signal }) => fetchEpwRoster(projectId, search, signal),
+    enabled: options.enabled ?? true,
+  });
+}
+
 // ---- Project-scoped climate sources (Phase 3b) ----
 
 function invalidateClimateSourceQueries(queryClient: QueryClient, projectId: string) {
@@ -114,6 +133,41 @@ export function useDeleteClimateSourceMutation(projectId: string) {
   return useMutation({
     mutationFn: (sourceId: string) => deleteClimateSource(projectId, sourceId),
     onSuccess: () => invalidateClimateSourceQueries(queryClient, projectId),
+  });
+}
+
+// Attach the map-picked OneBuilding weather station. The server stores the EPW
+// and writes the project EPW pointer onto the location, so we refresh both the
+// source roster and the location cache (like the derive mutation).
+export function useAttachWeatherFromCatalogMutation(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (url: string) => attachWeatherFromCatalog(projectId, url),
+    onSuccess: (source) => {
+      queryClient.setQueryData<ProjectClimateSourceListResponse>(
+        climateQueryKeys.sources(projectId),
+        (current) => upsertClimateSource(current, source),
+      );
+      void queryClient.invalidateQueries({ queryKey: projectQueryKeys.location(projectId) });
+      return invalidateClimateSourceQueries(queryClient, projectId);
+    },
+  });
+}
+
+// Attach a manually-uploaded EPW + STAT + DDY bundle (the files are already
+// stored as assets). Refreshes the source roster + the location cache.
+export function useAttachWeatherFromUploadMutation(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (refs: WeatherUploadRefs) => attachWeatherFromUpload(projectId, refs),
+    onSuccess: (source) => {
+      queryClient.setQueryData<ProjectClimateSourceListResponse>(
+        climateQueryKeys.sources(projectId),
+        (current) => upsertClimateSource(current, source),
+      );
+      void queryClient.invalidateQueries({ queryKey: projectQueryKeys.location(projectId) });
+      return invalidateClimateSourceQueries(queryClient, projectId);
+    },
   });
 }
 

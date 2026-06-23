@@ -18,8 +18,12 @@ class ClimateDesignConditions(BaseModel):
     edition: str | None = None
     heating_996_db_c: float | None = None
     heating_990_db_c: float | None = None
+    cooling_004_db_c: float | None = None
+    cooling_004_mcwb_c: float | None = None
     cooling_010_db_c: float | None = None
     cooling_010_mcwb_c: float | None = None
+    cooling_020_db_c: float | None = None
+    cooling_020_mcwb_c: float | None = None
     dehumidification_010_dp_c: float | None = None
     dehumidification_010_mcdb_c: float | None = None
     record_low_c: float | None = None

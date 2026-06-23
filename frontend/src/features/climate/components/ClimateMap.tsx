@@ -7,14 +7,18 @@ import type {
 } from "./climateLeafletMap";
 import "../climate-map.css";
 
-// One station as the map needs it: identity, coordinates (may be null), and its
-// proximity verdict's status (which colours the pin).
+// A station pin's colour tone. The PH picker passes the proximity verdict
+// status; the weather picker omits it (no verdict, D4) and gets the neutral pin.
+export type ClimateMapPinStatus = ClimateProximityVerdict["status"] | "neutral";
+
+// One station as the map needs it: identity, coordinates (may be null), and an
+// optional pin tone (omitted → neutral).
 export type ClimateMapStation = {
   id: string;
   name: string;
   latitude: number | null;
   longitude: number | null;
-  status: ClimateProximityVerdict["status"];
+  status?: ClimateMapPinStatus;
 };
 
 export type PinPlacement = { x: number; y: number };

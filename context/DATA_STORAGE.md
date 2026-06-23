@@ -258,7 +258,7 @@ projects/{project_id}/assets/_orphaned/{asset_id}/{name}    # GC-quarantined
 ### 4.3 Asset kinds (`features/assets/registry.py`)
 
 `datasheet` · `site_photo` · `hbjson` · `simulation_file` · `export_bundle` ·
-`epw` · `other`. A fixed registry maps each attachable document field
+`epw` · `stat` · `ddy` · `other`. A fixed registry maps each attachable document field
 (`project_materials.datasheet_asset_ids`, `assembly_segments.photo_asset_ids`,
 equipment/thermal-bridge datasheet fields, …) to its allowed kinds, MIME types,
 per-cell `max_count`, and per-file size cap.

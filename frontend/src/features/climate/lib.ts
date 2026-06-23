@@ -1,5 +1,4 @@
 import type { UnitSystem } from "../../lib/units";
-import { formatTemperatureFromC } from "../../lib/units/temperature";
 import { elevationUnitLabel, formatLocationElevationDisplay } from "../projects/location-form";
 import type { ClimateRecord, ClimateSourceKind, ProjectClimateSource } from "./types";
 
@@ -48,11 +47,16 @@ export function formatSi(value: number | null | undefined, fractionDigits = 0): 
   return value.toFixed(fractionDigits);
 }
 
+// A station's site-vs-station elevation delta, in feet. Shared by both station
+// pickers' list rows (PH dataset + weather catalog).
+export function formatDeltaFt(elevationDeltaFt: number | null): string {
+  return elevationDeltaFt === null ? "Δ — ft" : `Δ ${elevationDeltaFt.toFixed(0)} ft`;
+}
+
 const SOURCE_KIND_LABELS: Record<ClimateSourceKind, string> = {
   phius: "Phius",
   phi: "PHI",
-  ashrae: "ASHRAE",
-  epw: "EPW",
+  weather: "Weather File",
   custom: "Custom",
 };
 
@@ -102,10 +106,10 @@ function climateSourceProximityData(source: ProjectClimateSource): Record<string
 
 export type ClimateStatusTone = "pass" | "warning" | "fail" | "missing";
 
-// The four climate-source types every project should establish, in their
+// The three climate-source types every project should establish, in their
 // canonical sidebar order. A type with no attached source still shows as a
 // "not set" slot so the gap is visible (e.g. no nearby PHI dataset).
-export const CANONICAL_CLIMATE_KINDS: ClimateSourceKind[] = ["phius", "phi", "ashrae", "epw"];
+export const CANONICAL_CLIMATE_KINDS: ClimateSourceKind[] = ["phius", "phi", "weather"];
 
 // The sidebar/header status chip for a source: a proximity verdict when one
 // is recorded (Phius/PHI), otherwise an attached source reads as OK.
@@ -130,11 +134,8 @@ export function climateSourceBadgeVersion(source: ProjectClimateSource): string 
 }
 
 // The two compact attribute chips on a source's nav card. Proximity (mi/ft)
-// for Phius/PHI; localized design temps for ASHRAE; degree-days for EPW.
-export function climateSourceNavAttrs(
-  source: ProjectClimateSource,
-  unitSystem: UnitSystem,
-): string[] {
+// for Phius/PHI; degree-days (HDD65/CDD50) for the weather file.
+export function climateSourceNavAttrs(source: ProjectClimateSource): string[] {
   const data = source.data;
   if (!data) return [];
   if (source.kind === "phius" || source.kind === "phi") {
@@ -145,16 +146,7 @@ export function climateSourceNavAttrs(
     if (elevationDeltaFt !== null) attrs.push(`Δ ${formatSignedFt(elevationDeltaFt)}`);
     return attrs;
   }
-  if (source.kind === "ashrae") {
-    const design = recordValue(data.design_conditions);
-    const heating = numberValue(design?.heating_996_db_c);
-    const cooling = numberValue(design?.cooling_010_db_c);
-    const attrs: string[] = [];
-    if (heating !== null) attrs.push(`Htg ${formatTemperatureFromC(heating, { unitSystem })}`);
-    if (cooling !== null) attrs.push(`Clg ${formatTemperatureFromC(cooling, { unitSystem })}`);
-    return attrs;
-  }
-  if (source.kind === "epw") {
+  if (source.kind === "weather") {
     const stat = recordValue(data.stat_metrics);
     const hdd65 = numberValue(stat?.hdd65_f_days);
     const cdd50 = numberValue(stat?.cdd50_f_days);
@@ -168,36 +160,6 @@ export function climateSourceNavAttrs(
 
 function formatSignedFt(valueFt: number): string {
   return `${valueFt > 0 ? "+" : ""}${valueFt.toFixed(0)} ft`;
-}
-
-export function climateSourceCachedMetrics(source: ProjectClimateSource): string | null {
-  if (!source.data) return null;
-  if (source.kind === "epw") {
-    const stat = recordValue(source.data.stat_metrics);
-    const hdd65 = numberValue(stat?.hdd65_f_days);
-    const cdd50 = numberValue(stat?.cdd50_f_days);
-    const recordLow = numberValue(stat?.record_low_c);
-    const recordHigh = numberValue(stat?.record_high_c);
-    const parts = [];
-    if (hdd65 !== null) parts.push(`HDD65 ${hdd65.toFixed(0)}`);
-    if (cdd50 !== null) parts.push(`CDD50 ${cdd50.toFixed(0)}`);
-    if (recordLow !== null && recordHigh !== null) {
-      parts.push(`records ${recordLow.toFixed(1)} / ${recordHigh.toFixed(1)} °C`);
-    }
-    return parts.length ? parts.join(" · ") : null;
-  }
-  if (source.kind === "ashrae") {
-    const design = recordValue(source.data.design_conditions);
-    const heating = numberValue(design?.heating_996_db_c);
-    const cooling = numberValue(design?.cooling_010_db_c);
-    const basis = stringValue(design?.basis);
-    const parts = [];
-    if (heating !== null) parts.push(`Htg 99.6% ${heating.toFixed(1)} °C`);
-    if (cooling !== null) parts.push(`Clg 1% ${cooling.toFixed(1)} °C`);
-    if (basis !== null) parts.push(basis);
-    return parts.length ? parts.join(" · ") : null;
-  }
-  return null;
 }
 
 export function isClimateRecord(value: unknown): value is ClimateRecord {

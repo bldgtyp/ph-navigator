@@ -11,7 +11,9 @@ from typing import Any, Literal, cast
 
 from features.project_document.document import ProjectDocumentV1
 
-AssetKind = Literal["datasheet", "site_photo", "hbjson", "simulation_file", "export_bundle", "epw", "other"]
+AssetKind = Literal[
+    "datasheet", "site_photo", "hbjson", "simulation_file", "export_bundle", "epw", "stat", "ddy", "other"
+]
 
 
 @dataclass(frozen=True)
@@ -99,9 +101,17 @@ HEAT_PUMP_ATTACHMENT_TABLE_KEYS: dict[str, str] = {
 # `application/octet-stream` must be accepted alongside JSON.
 HBJSON_ALLOWED_EXTENSIONS = frozenset({".hbjson", ".json"})
 HBJSON_ALLOWED_CONTENT_TYPES = frozenset({"application/json", "application/octet-stream"})
-EPW_ALLOWED_EXTENSIONS = frozenset({".epw"})
-EPW_ALLOWED_CONTENT_TYPES = frozenset({"text/plain", "application/octet-stream"})
-EPW_MAX_FILE_SIZE_MB = 25
+# The weather-bundle text files: the EPW plus its EnergyPlus `.stat` (design
+# conditions / degree-days) and `.ddy` (design days) companions. They share one
+# text MIME + size policy; the extension is the per-kind discriminator.
+WEATHER_FILE_CONTENT_TYPES = frozenset({"text/plain", "application/octet-stream"})
+WEATHER_FILE_MAX_SIZE_MB = 25
+WEATHER_FILE_EXTENSIONS: dict[str, frozenset[str]] = {
+    "epw": frozenset({".epw"}),
+    "stat": frozenset({".stat"}),
+    "ddy": frozenset({".ddy"}),
+}
+WEATHER_FILE_KINDS: frozenset[str] = frozenset(WEATHER_FILE_EXTENSIONS)
 
 
 def hbjson_upload_allowed(*, content_type: str, original_filename: str) -> bool:
@@ -111,16 +121,20 @@ def hbjson_upload_allowed(*, content_type: str, original_filename: str) -> bool:
     )
 
 
-def epw_upload_allowed(*, content_type: str, original_filename: str, size_bytes: int) -> bool:
+def weather_file_upload_allowed(*, asset_kind: str, content_type: str, original_filename: str, size_bytes: int) -> bool:
+    """Validate an EPW / STAT / DDY upload (the weather-bundle text files)."""
+    extensions = WEATHER_FILE_EXTENSIONS.get(asset_kind, frozenset())
     return (
-        size_bytes <= EPW_MAX_FILE_SIZE_MB * 1024 * 1024
-        and content_type in EPW_ALLOWED_CONTENT_TYPES
-        and filename_extension(original_filename) in EPW_ALLOWED_EXTENSIONS
+        size_bytes <= WEATHER_FILE_MAX_SIZE_MB * 1024 * 1024
+        and content_type in WEATHER_FILE_CONTENT_TYPES
+        and filename_extension(original_filename) in extensions
     )
 
 
 def all_asset_kinds() -> frozenset[AssetKind]:
-    return frozenset({"datasheet", "site_photo", "hbjson", "simulation_file", "export_bundle", "epw", "other"})
+    return frozenset(
+        {"datasheet", "site_photo", "hbjson", "simulation_file", "export_bundle", "epw", "stat", "ddy", "other"}
+    )
 
 
 def get_attachment_field(table_key: str, field_key: str) -> AttachmentFieldConfig | None:

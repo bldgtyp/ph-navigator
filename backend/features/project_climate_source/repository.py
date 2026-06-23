@@ -42,6 +42,15 @@ def get_source(conn: Connection[Any], source_id: UUID) -> dict[str, Any] | None:
     ).fetchone()
 
 
+def get_source_by_kind(conn: Connection[Any], project_id: UUID, kind: str) -> dict[str, Any] | None:
+    """The project's single source of a given ``kind``, or None.
+
+    The shared lookup for the one-source-per-kind kinds (phius/phi/weather): a
+    project holds at most one, so the first match (if any) is the answer.
+    """
+    return next((row for row in list_sources(conn, project_id) if row["kind"] == kind), None)
+
+
 def insert_source(
     conn: Connection[Any],
     *,

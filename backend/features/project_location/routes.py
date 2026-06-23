@@ -37,7 +37,7 @@ from features.projects.access import (
 
 
 class ClimateSourceDeriveKind(StrEnum):
-    """Per-type "set from nearest" actions. ``weather`` covers EPW + ASHRAE."""
+    """Per-type "set from nearest" actions. ``weather`` is the EPW + STAT bundle."""
 
     phius = "phius"
     phi = "phi"
@@ -76,7 +76,7 @@ def derive_climate_source(
 ) -> ProjectLocationUpdateResponse:
     """Attach one climate type from the nearest source for the saved site.
 
-    Each Climate page owns its own action: Phius, PHI, and Weather (EPW + ASHRAE).
+    Each Climate page owns its own action: Phius, PHI, and Weather (the EPW + STAT bundle).
     """
     user = require_editor_user(access)
     if kind is ClimateSourceDeriveKind.weather:

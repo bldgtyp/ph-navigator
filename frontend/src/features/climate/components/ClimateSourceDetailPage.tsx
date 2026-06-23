@@ -1,16 +1,12 @@
 // @size-exception: planning/archive/climate-dataset-picker/PRD.md
-import { useRef, useState, type ChangeEvent, type ReactNode } from "react";
-import { Check, Download, MapPin, Trash2, Upload } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { Download, MapPin, Trash2 } from "lucide-react";
 import type { UnitSystem } from "../../../lib/units";
 import { formatTemperatureFromC } from "../../../lib/units/temperature";
 import { errorMessage } from "../../../shared/lib/errors";
 import { assetDownloadPath } from "../../assets/api";
-import { uploadAsset } from "../../assets/hooks";
-import { formatReadOnlyCoordinate } from "../../projects/location-form";
 import { useProjectLocationQuery } from "../../projects/hooks";
 import type { ProjectDetail } from "../../projects/types";
-import type { EpwParseResponse } from "../../projects/types";
-import { useProjectLocationForm } from "../../projects/useProjectLocationForm";
 import {
   useClimateLocationQuery,
   useDeleteClimateSourceMutation,
@@ -44,13 +40,9 @@ const MISSING_SOURCE_COPY: Record<ClimateSourceKind, { title: string; subtitle: 
     title: "PHI climate dataset",
     subtitle: "Attach the nearest PHI / PHPP reference dataset for this site.",
   },
-  ashrae: {
-    title: "ASHRAE design conditions",
-    subtitle: "Set design conditions from the nearest weather file.",
-  },
-  epw: {
-    title: "EPW weather file",
-    subtitle: "Set the nearest weather file, or upload one manually.",
+  weather: {
+    title: "Weather file",
+    subtitle: "Set the nearest EPW + STAT bundle, or upload one manually.",
   },
   custom: {
     title: "Custom climate record",
@@ -60,15 +52,19 @@ const MISSING_SOURCE_COPY: Record<ClimateSourceKind, { title: string; subtitle: 
 
 // The empty-state page for a canonical climate type with no attached source.
 // Each type's primary action is "Set from nearest"; PH types also offer the
-// manual dataset picker, and EPW keeps its upload controls.
+// manual dataset picker, and the weather file keeps its upload controls.
 export function MissingSourcePage({
   project,
   kind,
   onOpenPicker,
+  onOpenWeatherPicker,
+  onOpenUploadModal,
 }: {
   project: ProjectDetail;
   kind: ClimateSourceKind;
   onOpenPicker?: (kind: PhClimateKind) => void;
+  onOpenWeatherPicker?: () => void;
+  onOpenUploadModal?: () => void;
 }) {
   const canEdit = project.access_mode === "editor";
   const isPh = kind === "phius" || kind === "phi";
@@ -100,11 +96,19 @@ export function MissingSourcePage({
           </button>
         </div>
       ) : null}
-      {kind === "epw" ? <ProjectEpwControls project={project} /> : null}
-      {kind === "ashrae" ? (
-        <p className="form-note">
-          ASHRAE design conditions are set together with the EPW weather file.
-        </p>
+      {canEdit && kind === "weather" ? (
+        <div className="climate-link-row">
+          {onOpenWeatherPicker ? (
+            <button type="button" className="secondary-button" onClick={onOpenWeatherPicker}>
+              Select from map
+            </button>
+          ) : null}
+          {onOpenUploadModal ? (
+            <button type="button" className="secondary-button" onClick={onOpenUploadModal}>
+              Upload climate data
+            </button>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );
@@ -112,7 +116,7 @@ export function MissingSourcePage({
 
 // "Set from nearest" action for one climate page: derives + attaches the type's
 // source from the project's saved coordinates, surfacing derive warnings and a
-// hint when the location is not yet set. `weather` covers EPW + ASHRAE. The
+// hint when the location is not yet set. `weather` is the EPW + STAT bundle. The
 // action is inherently editor-only, so it self-guards rather than asking every
 // caller to gate it.
 function ClimateSetFromNearest({
@@ -180,11 +184,15 @@ export function ClimateSourceDetailPage({
   source,
   unitSystem,
   onOpenPicker,
+  onOpenWeatherPicker,
+  onOpenUploadModal,
 }: {
   project: ProjectDetail;
   source: ProjectClimateSource;
   unitSystem: UnitSystem;
   onOpenPicker?: (kind: PhClimateKind) => void;
+  onOpenWeatherPicker?: () => void;
+  onOpenUploadModal?: () => void;
 }) {
   if (source.kind === "phius" || source.kind === "phi") {
     const kind = source.kind;
@@ -197,11 +205,16 @@ export function ClimateSourceDetailPage({
       />
     );
   }
-  if (source.kind === "ashrae") {
-    return <AshraeSourcePage project={project} source={source} unitSystem={unitSystem} />;
-  }
-  if (source.kind === "epw") {
-    return <EpwSourcePage project={project} source={source} unitSystem={unitSystem} />;
+  if (source.kind === "weather") {
+    return (
+      <WeatherSourcePage
+        project={project}
+        source={source}
+        unitSystem={unitSystem}
+        onOpenWeatherPicker={onOpenWeatherPicker}
+        onOpenUploadModal={onOpenUploadModal}
+      />
+    );
   }
   return <CustomSourcePage project={project} source={source} unitSystem={unitSystem} />;
 }
@@ -459,31 +472,75 @@ function verdictLabel(
     : { label: "fail", status: "fail" };
 }
 
-function AshraeSourcePage({
+// The merged Weather File page: one station's EPW + STAT bundle. Shows the
+// location name, the STAT performance metrics (HDD/CDD/records), and the full
+// ASHRAE design-condition set (heating + cooling DB/MCWB across 0.4/1/2%), all
+// in the app's SI/IP unit system (D-CL-21).
+function WeatherSourcePage({
   project,
   source,
   unitSystem,
+  onOpenWeatherPicker,
+  onOpenUploadModal,
 }: {
   project: ProjectDetail;
   source: ProjectClimateSource;
   unitSystem: UnitSystem;
+  onOpenWeatherPicker?: () => void;
+  onOpenUploadModal?: () => void;
 }) {
+  const canEdit = project.access_mode === "editor";
+  const metrics = recordValue(source.data?.stat_metrics);
   const design = recordValue(source.data?.design_conditions);
-  const url = stringValue(source.data?.url) ?? stringValue(source.data?.source_url);
+  const station = recordValue(source.data?.station);
+  const stationName = stringValue(station?.name) ?? stringValue(source.label);
+  const sourceUrl = stringValue(source.data?.source_url);
+  const statAssetId = stringValue(source.data?.stat_asset_id);
+  const ddyAssetId = stringValue(source.data?.ddy_asset_id);
   return (
     <div className="climate-detail-page">
-      <SourceHeader project={project} source={source} subItems={[stringValue(design?.basis)]} />
+      <SourceHeader
+        project={project}
+        source={source}
+        title={stationName ?? undefined}
+        subItems={[stringValue(design?.basis)]}
+      />
       <ClimateSetFromNearest
         project={project}
         kind={source.kind}
         label="Set from nearest weather file"
       />
+      {canEdit && (onOpenWeatherPicker || onOpenUploadModal) ? (
+        <div className="climate-link-row">
+          {onOpenWeatherPicker ? (
+            <button type="button" className="secondary-button" onClick={onOpenWeatherPicker}>
+              Select from map
+            </button>
+          ) : null}
+          {onOpenUploadModal ? (
+            <button type="button" className="secondary-button" onClick={onOpenUploadModal}>
+              Upload climate data
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      <p className="climate-subhead">Performance</p>
+      <div className="climate-metric-grid">
+        <Metric label="HDD65" value={numberText(metrics?.hdd65_f_days, 0)} />
+        <Metric label="CDD50" value={numberText(metrics?.cdd50_f_days, 0)} />
+        <Metric label="Record low" value={tempText(metrics?.record_low_c, unitSystem)} />
+        <Metric label="Record high" value={tempText(metrics?.record_high_c, unitSystem)} />
+      </div>
       <p className="climate-subhead">Design conditions</p>
       <div className="climate-metric-grid">
         <Metric label="Htg 99.6% DB" value={tempText(design?.heating_996_db_c, unitSystem)} />
         <Metric label="Htg 99% DB" value={tempText(design?.heating_990_db_c, unitSystem)} />
+        <Metric label="Clg 0.4% DB" value={tempText(design?.cooling_004_db_c, unitSystem)} />
         <Metric label="Clg 1% DB" value={tempText(design?.cooling_010_db_c, unitSystem)} />
+        <Metric label="Clg 2% DB" value={tempText(design?.cooling_020_db_c, unitSystem)} />
+        <Metric label="Clg 0.4% MCWB" value={tempText(design?.cooling_004_mcwb_c, unitSystem)} />
         <Metric label="Clg 1% MCWB" value={tempText(design?.cooling_010_mcwb_c, unitSystem)} />
+        <Metric label="Clg 2% MCWB" value={tempText(design?.cooling_020_mcwb_c, unitSystem)} />
         <Metric
           label="Dehum 1% DP"
           value={tempText(design?.dehumidification_010_dp_c, unitSystem)}
@@ -493,43 +550,6 @@ function AshraeSourcePage({
           value={tempText(design?.dehumidification_010_mcdb_c, unitSystem)}
         />
       </div>
-      {url ? (
-        <div className="climate-link-row">
-          <a className="secondary-button" href={url}>
-            Open ASHRAE source
-          </a>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function EpwSourcePage({
-  project,
-  source,
-  unitSystem,
-}: {
-  project: ProjectDetail;
-  source: ProjectClimateSource;
-  unitSystem: UnitSystem;
-}) {
-  const metrics = recordValue(source.data?.stat_metrics);
-  const sourceUrl = stringValue(source.data?.source_url);
-  return (
-    <div className="climate-detail-page">
-      <SourceHeader project={project} source={source} />
-      <ClimateSetFromNearest
-        project={project}
-        kind={source.kind}
-        label="Set from nearest weather file"
-      />
-      <p className="climate-subhead">Derived metrics</p>
-      <div className="climate-metric-grid">
-        <Metric label="HDD65" value={numberText(metrics?.hdd65_f_days, 0)} />
-        <Metric label="CDD50" value={numberText(metrics?.cdd50_f_days, 0)} />
-        <Metric label="Record low" value={tempText(metrics?.record_low_c, unitSystem)} />
-        <Metric label="Record high" value={tempText(metrics?.record_high_c, unitSystem)} />
-      </div>
       <div className="climate-link-row">
         {sourceUrl ? (
           <a className="secondary-button" href={sourceUrl}>
@@ -537,156 +557,34 @@ function EpwSourcePage({
           </a>
         ) : null}
         {source.ref ? (
-          <a className="secondary-button" href={assetDownloadPath(project.id, source.ref)}>
-            Download stored EPW
-          </a>
+          <AssetDownloadLink projectId={project.id} assetId={source.ref} label="EPW" />
+        ) : null}
+        {statAssetId ? (
+          <AssetDownloadLink projectId={project.id} assetId={statAssetId} label="STAT" />
+        ) : null}
+        {ddyAssetId ? (
+          <AssetDownloadLink projectId={project.id} assetId={ddyAssetId} label="DDY" />
         ) : null}
       </div>
-      {project.access_mode === "editor" ? <ProjectEpwControls project={project} /> : null}
     </div>
   );
 }
 
-function ProjectEpwControls({ project }: { project: ProjectDetail }) {
-  const form = useProjectLocationForm(project.id);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [parsedEpw, setParsedEpw] = useState<EpwParseResponse | null>(null);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const linkedAssetId = form.values.epwAssetId || form.location?.epw_asset_id;
-  const savedEpw = form.location?.epw;
-  const linkedFilename =
-    parsedEpw?.filename ?? (savedEpw && linkedAssetId === savedEpw.id ? savedEpw.filename : null);
-
-  const uploadEpw = async (files: FileList | null) => {
-    const file = files?.[0];
-    if (!file) return;
-    setUploadError(null);
-    setSaveError(null);
-    setIsUploading(true);
-    try {
-      const assetId = await uploadAsset(project.id, "epw", file);
-      setParsedEpw(await form.parseEpw(assetId));
-    } catch (error) {
-      setUploadError(errorMessage(error, "Could not upload or parse the EPW file."));
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  };
-
-  const saveWeatherFile = async () => {
-    setSaveError(null);
-    try {
-      await form.save();
-    } catch (error) {
-      setSaveError(errorMessage(error, "Could not save the EPW weather file settings."));
-    }
-  };
-
+function AssetDownloadLink({
+  projectId,
+  assetId,
+  label,
+}: {
+  projectId: string;
+  assetId: string;
+  label: string;
+}) {
   return (
-    <section className="climate-epw-tools" aria-labelledby="climate-epw-tools-title">
-      <div>
-        <p id="climate-epw-tools-title" className="climate-subhead">
-          Weather file
-        </p>
-        <p className="form-note">
-          Temporary home for EPW upload and source tracking while the EPW page is refactored.
-        </p>
-      </div>
-      <label className="settings-location-wide">
-        <span>EPW source URL</span>
-        <input
-          value={form.values.epwSourceUrl}
-          maxLength={1000}
-          onChange={(event: ChangeEvent<HTMLInputElement>) =>
-            form.updateField("epwSourceUrl", event.target.value)
-          }
-          placeholder="https://climate.onebuilding.org/..."
-        />
-      </label>
-      <div className="settings-location-epw">
-        <div className="settings-location-epw-row">
-          <input
-            ref={fileInputRef}
-            className="attachment-file-input"
-            type="file"
-            accept=".epw,text/plain,application/octet-stream"
-            onChange={(event) => void uploadEpw(event.target.files)}
-          />
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading || form.isParsingEpw}
-          >
-            <Upload size={16} aria-hidden="true" />
-            {isUploading || form.isParsingEpw ? "Uploading…" : "Upload EPW"}
-          </button>
-          {linkedAssetId ? (
-            <a className="secondary-button" href={assetDownloadPath(project.id, linkedAssetId)}>
-              <Download size={16} aria-hidden="true" />
-              Download EPW
-            </a>
-          ) : null}
-          {linkedFilename ? <span className="form-note">{linkedFilename}</span> : null}
-        </div>
-        {parsedEpw ? (
-          <div className="settings-location-epw-suggestion">
-            <span>{formatEpwSuggestion(parsedEpw)}</span>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => {
-                form.applyEpwSuggestion(parsedEpw);
-                setParsedEpw(null);
-              }}
-            >
-              <Check size={16} aria-hidden="true" />
-              Apply EPW values
-            </button>
-          </div>
-        ) : null}
-        {uploadError ? <p className="form-error">{uploadError}</p> : null}
-      </div>
-      {form.validationError ? <p className="form-error">{form.validationError}</p> : null}
-      {saveError ? (
-        <p className="form-error" role="alert">
-          {saveError}
-        </p>
-      ) : null}
-      {form.warnings.length > 0 ? (
-        <div className="draft-banner" role="status">
-          {form.warnings.map((warning) => (
-            <span key={warning}>{warning}</span>
-          ))}
-        </div>
-      ) : null}
-      <div className="climate-link-row">
-        <button
-          type="button"
-          className="primary-button"
-          onClick={() => void saveWeatherFile()}
-          disabled={!form.canSave || form.isSaving || Boolean(form.validationError)}
-        >
-          {form.isSaving ? "Saving…" : "Save EPW Settings"}
-        </button>
-      </div>
-    </section>
+    <a className="secondary-button" href={assetDownloadPath(projectId, assetId)}>
+      <Download size={16} aria-hidden="true" />
+      Download {label}
+    </a>
   );
-}
-
-function formatEpwSuggestion(response: EpwParseResponse): string {
-  const suggestion = response.suggestion;
-  return [
-    suggestion.city,
-    suggestion.state,
-    formatReadOnlyCoordinate(suggestion.latitude),
-    formatReadOnlyCoordinate(suggestion.longitude),
-  ]
-    .filter((part) => part && part !== "None")
-    .join(" / ");
 }
 
 function CustomSourcePage({

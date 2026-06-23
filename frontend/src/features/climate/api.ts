@@ -9,6 +9,8 @@ import type {
   ClimateRosterSearch,
   ClimateSourceDeriveKind,
   CreateClimateSourceRequest,
+  EpwRosterResponse,
+  EpwRosterSearch,
   PhClimateKind,
   ProjectClimateSource,
   ProjectClimateSourceListResponse,
@@ -77,10 +79,58 @@ export async function fetchClimateDatasetRoster(
   );
 }
 
+// The weather picker feed: OneBuilding EPW stations for a project, nearest-first
+// (no proximity verdict). `region` filters by state (default = project's);
+// `near` is the any-state nearest mode.
+export async function fetchEpwRoster(
+  projectId: string,
+  search: EpwRosterSearch,
+  signal?: AbortSignal,
+): Promise<EpwRosterResponse> {
+  const params = new URLSearchParams();
+  if (search.region) params.set("region", search.region);
+  if (search.near) params.set("near", "true");
+  const query = params.toString();
+  const suffix = query ? `?${query}` : "";
+  return fetchJson<EpwRosterResponse>(`/api/v1/projects/${projectId}/climate/epw-roster${suffix}`, {
+    signal,
+  });
+}
+
 // ---- Project-scoped climate sources (Phase 3b) ----
 
 function sourcesPath(projectId: string): string {
   return `/api/v1/projects/${projectId}/climate/sources`;
+}
+
+// Attach the OneBuilding station the map picker selected, by its zip URL. The
+// server downloads + parses + stores it as the single weather source.
+export async function attachWeatherFromCatalog(
+  projectId: string,
+  url: string,
+): Promise<ProjectClimateSource> {
+  return fetchJson<ProjectClimateSource>(`${sourcesPath(projectId)}/weather/from-catalog`, {
+    method: "POST",
+    body: JSON.stringify({ url }),
+  });
+}
+
+// The manually-uploaded weather bundle: already-stored EPW (required) + optional
+// STAT / DDY asset ids. The server validates + parses them into the weather source.
+export type WeatherUploadRefs = {
+  epw_asset_id: string;
+  stat_asset_id?: string | null;
+  ddy_asset_id?: string | null;
+};
+
+export async function attachWeatherFromUpload(
+  projectId: string,
+  refs: WeatherUploadRefs,
+): Promise<ProjectClimateSource> {
+  return fetchJson<ProjectClimateSource>(`${sourcesPath(projectId)}/weather/from-upload`, {
+    method: "POST",
+    body: JSON.stringify(refs),
+  });
 }
 
 export async function fetchClimateSources(
