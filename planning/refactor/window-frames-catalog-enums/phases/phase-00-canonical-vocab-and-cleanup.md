@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 18:25 EDT
-STATUS: Active — decisions resolved; this is the canonical data spec the later phases consume
+STATUS: Complete (2026-06-23) — spec frozen in code; seed cleaned and verified
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phase 0 — freeze the canonical option vocabularies + the seed cleanup mapping
 RELATED:
@@ -126,3 +126,22 @@ done
 Diff the output against Deliverable A; every value must either appear as a
 canonical option or have a Deliverable B fold. Unmapped value ⇒ spec is
 incomplete, fix before Phase 1.
+
+## Completion (2026-06-23)
+
+- **Spec frozen in code:** `backend/features/catalogs/_option_seeds.py` —
+  `FRAME_TYPE_OPTION_SEEDS` (Deliverable A), `FRAME_TYPE_VALUE_FOLDS` +
+  `FRAME_TYPE_SWAPPED_MANUFACTURER_BRAND` + `FRAME_TYPE_DROP_MANUFACTURERS`
+  (Deliverable B), and `FRAME_TYPE_SINGLE_SELECT_FIELDS`. Phases 1 (seed) and 4
+  (import upgrade) consume these verbatim.
+- **Seed cleaned:** `backend/seeds/catalogs/frame-types.v1.json` — dropped 1
+  `Default` row, swapped 3 `Mercury | CURRIES` rows → `Curries | Mercury`, folded
+  1 `OP-TO-FIX` → `OP-to-FX`, title-cased 4 lowercase `source` values, and
+  recomposed `name` on the 4 rows whose parts changed. 190 → 189 rows.
+- **Verified:** every distinct seed value per field is now canonical (no EXTRA
+  values vs `FRAME_TYPE_OPTION_SEEDS`); `manufacturer` seed=12 ⊂ canon=13
+  (`Mercury` is a curated option not used as a manufacturer in any row — fine).
+- **Public-repo gate:** option lists are generic manufacturer/brand/use vocab —
+  no PHI/PHPP/licensed values.
+- **Note on D-1 sign-off:** the ~13/~24 cardinality is the resolved decision
+  (D-1 locked per STATUS.md); not re-litigated here.
