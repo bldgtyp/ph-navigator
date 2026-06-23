@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useLayoutEffect, useMemo, useRef } from "react";
 import {
   ArrowLeftRight,
   ArrowUpDown,
@@ -14,7 +14,7 @@ import { useUnitPreference } from "../../../lib/units";
 import { AssemblyCanvasOverlay, type AssemblyCanvasOverlayActions } from "./AssemblyCanvasOverlay";
 import { AssemblySvgCanvas } from "./AssemblySvgCanvas";
 import { buildAssemblyCanvasGeometry } from "../canvas-geometry";
-import { ASSEMBLY_CANVAS_ORIGIN_X_PX, MIN_CANVAS_WIDTH_PX, pxFromMm } from "../canvas-constants";
+import { ASSEMBLY_CANVAS_ORIGIN_X_PX, fitZoomForCanvasWidth, pxFromMm } from "../canvas-constants";
 import type { AssemblyCanvasPaintController } from "../canvas-paint";
 import { materialById } from "../lib";
 import type { Assembly, AssemblyLayer, AssemblySegment, ProjectMaterial } from "../types";
@@ -28,6 +28,7 @@ export function AssemblyCanvas({
   commandBusy,
   onZoomIn,
   onZoomOut,
+  onFitZoom,
   onFlipOrientation,
   onFlipLayers,
   onFlipSegments,
@@ -45,6 +46,7 @@ export function AssemblyCanvas({
   commandBusy: boolean;
   onZoomIn: () => void;
   onZoomOut: () => void;
+  onFitZoom: (zoom: number) => void;
   onFlipOrientation: () => void;
   onFlipLayers: () => void;
   onFlipSegments: () => void;
@@ -61,10 +63,11 @@ export function AssemblyCanvas({
   const { unitSystem } = useUnitPreference();
   const materialsById = useMemo(() => materialById(materials), [materials]);
   const geometry = useMemo(() => buildAssemblyCanvasGeometry(assembly), [assembly]);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const fittedAssemblyRef = useRef<string | null>(null);
   const svgWidth = pxFromMm(geometry.widthMm, zoom);
   const svgHeight = pxFromMm(geometry.heightMm, zoom);
   const stageWidth = ASSEMBLY_CANVAS_ORIGIN_X_PX + svgWidth;
-  const canvasWidth = Math.max(MIN_CANVAS_WIDTH_PX, stageWidth);
   const canvasHeight = svgHeight;
   const actions: AssemblyCanvasOverlayActions = {
     onDeleteLayer,
@@ -77,38 +80,56 @@ export function AssemblyCanvas({
     assembly.orientation === "first_layer_outside"
       ? ["Exterior", "Interior"]
       : ["Interior", "Exterior"];
-  const assemblyCenterPx = ASSEMBLY_CANVAS_ORIGIN_X_PX + svgWidth / 2;
+  useLayoutEffect(() => {
+    const scrollElement = scrollRef.current;
+    if (!scrollElement) return;
+
+    function fitActiveAssembly(): void {
+      if (fittedAssemblyRef.current === assembly.id) return;
+      const availableWidthPx = scrollElement.clientWidth;
+      if (availableWidthPx <= 0) return;
+      fittedAssemblyRef.current = assembly.id;
+      onFitZoom(fitZoomForCanvasWidth(geometry.widthMm, availableWidthPx));
+    }
+
+    fitActiveAssembly();
+
+    if (typeof ResizeObserver === "undefined") return;
+    const resizeObserver = new ResizeObserver(fitActiveAssembly);
+    resizeObserver.observe(scrollElement);
+    return () => resizeObserver.disconnect();
+  }, [assembly.id, geometry.widthMm, onFitZoom]);
 
   return (
     <div
       id="assembly-canvas-scroll"
       className="assembly-canvas-scroll"
       data-testid="assembly-canvas-scroll"
+      ref={scrollRef}
     >
       <div
         id="assembly-canvas"
         className="assembly-canvas"
         data-paint-mode={paint.mode}
         data-testid="assembly-canvas"
-        style={{ width: `${canvasWidth}px` }}
       >
+        <AssemblyCanvasToolbar
+          canEdit={canEdit}
+          commandBusy={commandBusy}
+          paint={paint}
+          zoom={zoom}
+          onZoomIn={onZoomIn}
+          onZoomOut={onZoomOut}
+          onFlipOrientation={onFlipOrientation}
+          onFlipLayers={onFlipLayers}
+          onFlipSegments={onFlipSegments}
+        />
         <div
           id="assembly-canvas-stage"
           className="assembly-canvas-stage"
+          data-testid="assembly-canvas-stage"
           style={{ width: `${stageWidth}px`, height: `${canvasHeight}px` }}
         >
-          <AssemblyCanvasToolbar
-            canEdit={canEdit}
-            commandBusy={commandBusy}
-            paint={paint}
-            zoom={zoom}
-            leftPx={assemblyCenterPx}
-            onZoomIn={onZoomIn}
-            onZoomOut={onZoomOut}
-            onFlipOrientation={onFlipOrientation}
-            onFlipLayers={onFlipLayers}
-            onFlipSegments={onFlipSegments}
-          />
           <div
             id="assembly-orientation-labels"
             className="assembly-orientation-labels"
@@ -150,7 +171,6 @@ function AssemblyCanvasToolbar({
   commandBusy,
   paint,
   zoom,
-  leftPx,
   onZoomIn,
   onZoomOut,
   onFlipOrientation,
@@ -161,7 +181,6 @@ function AssemblyCanvasToolbar({
   commandBusy: boolean;
   paint: AssemblyCanvasPaintController;
   zoom: number;
-  leftPx: number;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onFlipOrientation: () => void;
@@ -176,7 +195,6 @@ function AssemblyCanvasToolbar({
       id="assembly-canvas-toolbar"
       className="canvas-toolbar assembly-canvas-toolbar"
       aria-label="Assembly canvas tools"
-      style={{ left: `${leftPx}px` }}
     >
       <CanvasToolbarButton
         id="assembly-canvas-zoom-out"

@@ -11,6 +11,20 @@ export function pxFromMm(mm: number, zoom: number): number {
   return mm * BASE_PX_PER_MM * zoom;
 }
 
+export function fitZoomForCanvasWidth(widthMm: number, availableWidthPx: number): number {
+  const drawableWidthPx = availableWidthPx - ASSEMBLY_CANVAS_ORIGIN_X_PX;
+  if (widthMm <= 0 || drawableWidthPx <= 0) return ZOOM_MIN;
+
+  const maxFittingZoom = drawableWidthPx / (widthMm * BASE_PX_PER_MM);
+  const cappedZoom = Math.min(1, maxFittingZoom);
+
+  for (let index = ZOOM_STEPS.length - 1; index >= 0; index -= 1) {
+    const step = ZOOM_STEPS[index];
+    if (step !== undefined && step <= cappedZoom) return step;
+  }
+  return ZOOM_MIN;
+}
+
 export function nextZoomStep(current: number): number {
   return ZOOM_STEPS.find((step) => step > current) ?? ZOOM_MAX;
 }
