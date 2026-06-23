@@ -10,8 +10,8 @@ from psycopg.types.json import Jsonb
 
 LOCATION_COLUMNS = """
     project_id, latitude, longitude, elevation_m, time_zone,
-    true_north_deg, site_address, city, state, county, county_fips,
-    country, climate_zone, geodata_provenance, epw_asset_id,
+    true_north_deg, street_address, city, state, postal_code, county,
+    county_fips, country, climate_zone, geodata_provenance, epw_asset_id,
     epw_source_url, created_at, updated_at
 """
 

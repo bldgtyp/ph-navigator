@@ -416,25 +416,25 @@ describe("ClimateTab", () => {
 
     renderTab();
 
-    // Derived facts render read-first (county/state + climate zone). The zone
-    // shows both in the sidebar location pill and the facts grid.
     expect(await screen.findByText("Berkshire · MA")).toBeVisible();
+    expect(screen.getByText("1 Main St")).toBeVisible();
+    expect(screen.getByText("West Stockbridge, MA 01266")).toBeVisible();
+    expect(screen.getByText("(private)")).toBeVisible();
+    expect(screen.queryByText("1 Main St, West Stockbridge, MA, 01266")).toBeNull();
     expect(screen.getAllByText("5A").length).toBeGreaterThanOrEqual(1);
-    // The attached weather source reads as OK in the sidebar.
-    expect(screen.getAllByText("OK").length).toBeGreaterThanOrEqual(1);
-    // The two unattached canonical types (Phius, PHI) still show as "Not set".
-    expect(screen.getByText("Phius")).toBeVisible();
-    expect(screen.getByText("PHI")).toBeVisible();
-    expect(screen.getAllByText("Not set").length).toBeGreaterThanOrEqual(2);
-    // The bulk "Locate Climate Data" action is gone; sources attach per-type.
     expect(screen.queryByRole("button", { name: /Locate Climate Data/ })).toBeNull();
-    // The editor is a modal, opened from "Set Location".
-    expect(screen.queryByLabelText("Latitude")).toBeNull();
+
+    const weatherCard = screen.getByText("Pittsfield.Muni.AP").closest("button");
+    await user.click(weatherCard as HTMLButtonElement);
+    expect(await screen.findByRole("heading", { name: "Pittsfield.Muni.AP" })).toBeVisible();
 
     await user.click(screen.getByRole("button", { name: /Set Location/ }));
     expect(await screen.findByLabelText("Latitude")).toBeVisible();
     const dialog = screen.getByRole("dialog", { name: /Set project location/ });
     expect(within(dialog).getByRole("button", { name: /Save Location/ })).toBeVisible();
+    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    expect(await screen.findByRole("group", { name: "Project location map" })).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "Pittsfield.Muni.AP" })).toBeNull();
   });
 
   test("finds nearest in the climate-data modal, then attaches after confirmation", async () => {
@@ -492,6 +492,7 @@ describe("ClimateTab", () => {
 
     // The unattached Phius slot is shown, but as a static card — no picker entry.
     expect(await screen.findByText("Phius")).toBeVisible();
+    expect(screen.queryByText("1 Main St")).toBeNull();
     expect(screen.queryByRole("button", { name: /No source attached/ })).toBeNull();
     expect(screen.queryByText("Set Phius Climate Data")).toBeNull();
   });

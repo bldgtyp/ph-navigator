@@ -153,15 +153,21 @@ def geocode_address(query: str, clients: DeriveClients | None = None) -> list[Ge
             continue
         context = feature.get("context")
         context_items = context if isinstance(context, list) else []
+        city = _context_value(context_items, "place")
+        state = _context_value(context_items, "region")
+        postal_code = _context_value(context_items, "postcode")
+        country = _context_value(context_items, "country")
+        label = str(feature.get("place_name") or feature.get("text") or query)
         candidates.append(
             GeocodeProjectLocationCandidate(
-                label=str(feature.get("place_name") or feature.get("text") or query),
+                label=label,
                 latitude=float(coords[1]),
                 longitude=float(coords[0]),
-                site_address=str(feature.get("place_name")) if feature.get("place_name") else None,
-                city=_context_value(context_items, "place"),
-                state=_context_value(context_items, "region"),
-                country=_context_value(context_items, "country"),
+                street_address=street_address_from_full_address(label, city, state, postal_code, country),
+                city=city,
+                state=state,
+                postal_code=postal_code,
+                country=country,
                 source="maptiler",
             )
         )
@@ -192,14 +198,19 @@ def _parse_census_address_candidates(
         components = match.get("addressComponents")
         component_items = components if isinstance(components, dict) else {}
         matched_address = match.get("matchedAddress")
+        label = str(matched_address or query)
+        city = _optional_str(component_items.get("city"))
+        state = _optional_str(component_items.get("state"))
+        postal_code = _optional_str(component_items.get("zip"))
         candidates.append(
             GeocodeProjectLocationCandidate(
-                label=str(matched_address or query),
+                label=label,
                 latitude=float(latitude),
                 longitude=float(longitude),
-                site_address=str(matched_address) if matched_address else None,
-                city=_optional_str(component_items.get("city")),
-                state=_optional_str(component_items.get("state")),
+                street_address=street_address_from_full_address(label, city, state, postal_code),
+                city=city,
+                state=state,
+                postal_code=postal_code,
                 country="US",
                 source="census_geocoder",
             )
@@ -369,3 +380,25 @@ def _context_value(items: list[object], prefix: str) -> str | None:
 
 def _optional_str(value: object) -> str | None:
     return str(value) if value else None
+
+
+def street_address_from_full_address(
+    full_address: str | None,
+    city: str | None,
+    state: str | None,
+    postal_code: str | None,
+    country: str | None = None,
+) -> str | None:
+    """Strip trailing city/state/ZIP from a geocoder label, leaving street only."""
+    if not full_address:
+        return None
+    parts = [part.strip() for part in full_address.split(",") if part.strip()]
+    while parts and country and parts[-1].casefold() == country.casefold():
+        parts.pop()
+    while parts and postal_code and parts[-1].casefold() == postal_code.casefold():
+        parts.pop()
+    while parts and state and parts[-1].casefold() == state.casefold():
+        parts.pop()
+    while parts and city and parts[-1].casefold() == city.casefold():
+        parts.pop()
+    return ", ".join(parts) or None

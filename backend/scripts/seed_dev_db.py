@@ -541,7 +541,7 @@ def _upsert_starter_location(conn: Any, project_id: UUID, location: dict[str, An
         "elevation_m": location["elevation_m"],
         "time_zone": "America/New_York",
         "true_north_deg": 0.0,
-        "site_address": "Industry City, 220 36th St",
+        "street_address": "Industry City, 220 36th St",
         "city": "Brooklyn",
         "state": location["region"],
     }

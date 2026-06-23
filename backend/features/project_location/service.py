@@ -465,7 +465,7 @@ def project_location_from_row(
 
     values = {field: row[field] for field in ProjectLocation.model_fields if field in row}
     if not include_private:
-        values["site_address"] = None
+        values["street_address"] = None
     return ProjectLocation.model_validate(
         {
             **values,

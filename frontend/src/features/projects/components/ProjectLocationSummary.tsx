@@ -45,11 +45,18 @@ export function ProjectLocationSummary({
       </div>
       <div>
         <dt>Address</dt>
-        <dd>{location.site_address ?? "None"}</dd>
+        <dd>{location.full_site_address ?? "None"}</dd>
       </div>
       <div>
-        <dt>City / state</dt>
-        <dd>{[location.city, location.state].filter(Boolean).join(", ") || "None"}</dd>
+        <dt>City / state / ZIP</dt>
+        <dd>
+          {[
+            [location.city, location.state].filter(Boolean).join(", ") || null,
+            location.postal_code,
+          ]
+            .filter(Boolean)
+            .join(" ") || "None"}
+        </dd>
       </div>
       <div>
         <dt>County</dt>

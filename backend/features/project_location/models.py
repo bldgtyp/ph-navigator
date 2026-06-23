@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
 
 from features.shared.models import strip_blank_string
 
@@ -23,9 +23,10 @@ class LocationFields(BaseModel):
     elevation_m: float | None = None
     time_zone: str | None = None
     true_north_deg: float | None = None
-    site_address: str | None = Field(default=None, max_length=500)
+    street_address: str | None = Field(default=None, max_length=500)
     city: str | None = Field(default=None, max_length=200)
     state: str | None = Field(default=None, max_length=200)
+    postal_code: str | None = Field(default=None, max_length=40)
     county: str | None = Field(default=None, max_length=200)
     county_fips: str | None = Field(default=None, max_length=5)
     country: str | None = Field(default=None, max_length=80)
@@ -35,9 +36,10 @@ class LocationFields(BaseModel):
     epw_source_url: str | None = Field(default=None, max_length=1000)
 
     @field_validator(
-        "site_address",
+        "street_address",
         "city",
         "state",
+        "postal_code",
         "county",
         "county_fips",
         "country",
@@ -49,6 +51,11 @@ class LocationFields(BaseModel):
     @classmethod
     def strip_blank_strings(cls, value: object) -> object:
         return strip_blank_string(value)
+
+    @computed_field
+    @property
+    def full_site_address(self) -> str | None:
+        return compose_full_site_address(self.street_address, self.city, self.state, self.postal_code)
 
     @field_validator("latitude")
     @classmethod
@@ -96,13 +103,14 @@ class UpdateProjectLocationRequest(BaseModel):
     elevation_m: float | None = None
     time_zone: str | None = None
     true_north_deg: float | None = None
-    site_address: str | None = Field(default=None, max_length=500)
+    street_address: str | None = Field(default=None, max_length=500)
     city: str | None = Field(default=None, max_length=200)
     state: str | None = Field(default=None, max_length=200)
+    postal_code: str | None = Field(default=None, max_length=40)
     epw_asset_id: str | None = Field(default=None, max_length=200)
     epw_source_url: str | None = Field(default=None, max_length=1000)
 
-    @field_validator("site_address", "city", "state", "epw_asset_id", "epw_source_url", mode="before")
+    @field_validator("street_address", "city", "state", "postal_code", "epw_asset_id", "epw_source_url", mode="before")
     @classmethod
     def strip_blank_strings(cls, value: object) -> object:
         return strip_blank_string(value)
@@ -207,11 +215,17 @@ class GeocodeProjectLocationCandidate(BaseModel):
     label: str
     latitude: float
     longitude: float
-    site_address: str | None = None
+    street_address: str | None = None
     city: str | None = None
     state: str | None = None
+    postal_code: str | None = None
     country: str | None = None
     source: str
+
+    @computed_field
+    @property
+    def full_site_address(self) -> str | None:
+        return compose_full_site_address(self.street_address, self.city, self.state, self.postal_code)
 
 
 class GeocodeProjectLocationResponse(BaseModel):
@@ -287,3 +301,15 @@ def validate_longitude(value: float | None) -> float | None:
     if value is not None and not -180 <= value <= 180:
         raise ValueError("Longitude must be between -180 and 180 degrees.")
     return value
+
+
+def compose_full_site_address(
+    street_address: str | None,
+    city: str | None,
+    state: str | None,
+    postal_code: str | None,
+) -> str | None:
+    """Return the display-only complete address from stored address parts."""
+    city_state = ", ".join(part for part in (city, state) if part)
+    city_state_zip = " ".join(part for part in (city_state or None, postal_code) if part)
+    return ", ".join(part for part in (street_address, city_state_zip or None) if part) or None
