@@ -14,6 +14,7 @@ import {
 } from "../hooks";
 import {
   climateSourceBadgeVersion,
+  climateLocationTitle,
   climateSourceProximity,
   climateSourceProximityStatus,
   climateSourceStatusChip,
@@ -30,6 +31,11 @@ import {
   MonthlyTemperatureTable,
 } from "./ClimateRecordTable";
 import { ClimateRecordView } from "./ClimateRecordView";
+
+const PH_CLIMATE_SET_LABEL: Record<PhClimateKind, string> = {
+  phius: "Set Phius Climate Data",
+  phi: "Set PHI Climate Data",
+};
 
 const MISSING_SOURCE_COPY: Record<ClimateSourceKind, { title: string; subtitle: string }> = {
   phius: {
@@ -51,8 +57,8 @@ const MISSING_SOURCE_COPY: Record<ClimateSourceKind, { title: string; subtitle: 
 };
 
 // The empty-state page for a canonical climate type with no attached source.
-// Each type's primary action is "Set from nearest"; PH types also offer the
-// manual dataset picker, and the weather file keeps its upload controls.
+// PH types open the dataset modal, which owns both nearest and manual selection;
+// the weather file keeps its nearest + upload controls on the page.
 export function MissingSourcePage({
   project,
   kind,
@@ -60,7 +66,7 @@ export function MissingSourcePage({
   onOpenWeatherPicker,
   onOpenUploadModal,
 }: {
-  project: ProjectDetail;
+  project: Pick<ProjectDetail, "id" | "access_mode">;
   kind: ClimateSourceKind;
   onOpenPicker?: (kind: PhClimateKind) => void;
   onOpenWeatherPicker?: () => void;
@@ -83,18 +89,20 @@ export function MissingSourcePage({
           </div>
         </div>
       </header>
-      <ClimateSetFromNearest
-        project={project}
-        kind={kind}
-        label={isPh ? "Set from nearest" : "Set from nearest weather file"}
-        variant="primary"
-      />
       {canEdit && isPh && onOpenPicker ? (
         <div className="climate-link-row">
-          <button type="button" className="secondary-button" onClick={() => onOpenPicker(kind)}>
-            Choose a dataset manually
+          <button type="button" className="primary-button" onClick={() => onOpenPicker(kind)}>
+            {PH_CLIMATE_SET_LABEL[kind]}
           </button>
         </div>
+      ) : null}
+      {!isPh ? (
+        <ClimateSetFromNearest
+          project={project}
+          kind={kind}
+          label="Set from nearest weather file"
+          variant="primary"
+        />
       ) : null}
       {canEdit && kind === "weather" ? (
         <div className="climate-link-row">
@@ -119,16 +127,18 @@ export function MissingSourcePage({
 // hint when the location is not yet set. `weather` is the EPW + STAT bundle. The
 // action is inherently editor-only, so it self-guards rather than asking every
 // caller to gate it.
-function ClimateSetFromNearest({
+export function ClimateSetFromNearest({
   project,
   kind,
   label,
   variant = "secondary",
+  onDerived,
 }: {
-  project: ProjectDetail;
+  project: Pick<ProjectDetail, "id" | "access_mode">;
   kind: ClimateSourceKind;
   label: string;
   variant?: "primary" | "secondary";
+  onDerived?: () => void;
 }) {
   const derive = useDeriveClimateSourceMutation(project.id);
   const location = useProjectLocationQuery(project.id).data;
@@ -144,6 +154,7 @@ function ClimateSetFromNearest({
     try {
       const response = await derive.mutateAsync(deriveKind);
       setWarnings(response.warnings);
+      onDerived?.();
     } catch (err) {
       setError(errorMessage(err, "Could not set climate data from the nearest source."));
     }
@@ -269,7 +280,9 @@ function SourceHeader({
               onClick={onChangeDataset}
               disabled={busy}
             >
-              Change dataset
+              {source.kind === "phius" || source.kind === "phi"
+                ? PH_CLIMATE_SET_LABEL[source.kind]
+                : "Change dataset"}
             </button>
           ) : null}
           <button
@@ -302,16 +315,17 @@ function PassiveHouseSourcePage({
   const locationId = source.ref ?? stringValue(source.data?.location_id) ?? undefined;
   const query = useClimateLocationQuery(datasetId ?? undefined, locationId);
   const record = query.data?.record;
+  const title = climateLocationTitle(query.data, climateSourceSubtitle(source));
   return (
     <div className="climate-detail-page">
       <SourceHeader
         project={project}
         source={source}
+        title={title}
         detail={<PhLimitCheck source={source} unitSystem={unitSystem} />}
         subItems={[]}
         onChangeDataset={onChangeDataset}
       />
-      <ClimateSetFromNearest project={project} kind={source.kind} label="Set from nearest" />
       {!datasetId || !locationId ? (
         <p className="form-note">
           This source is missing the dataset pointer needed to load values.

@@ -165,6 +165,7 @@ def test_roster_region_default_explicit_and_near_modes(clean_mcp_tables: None, c
     nearest = _roster_ok(client, project_id, "phius", near=True)
     near_items = cast(list[dict], nearest["items"])
     assert near_items[0]["name"] == "CO-CLOSE"
+    assert near_items[0]["region"] == "CO"
     assert {item["name"] for item in near_items} == {"PA-A", "CO-CLOSE", "CO-FAR"}
 
 

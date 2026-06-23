@@ -17,7 +17,6 @@ const fetchMock = vi.fn();
 
 const SOURCES_URL = `/api/v1/projects/${PROJECT.id}/climate/sources`;
 const LOCATION_URL = `/api/v1/projects/${PROJECT.id}/location`;
-const deriveUrl = (kind: string) => `${LOCATION_URL}/derive/${kind}`;
 const PHIUS_LOCATION_URL = "/api/v1/climate/datasets/dataset-phius/locations/location-phius";
 const PHI_LOCATION_URL = "/api/v1/climate/datasets/dataset-phi/locations/location-phi";
 
@@ -133,6 +132,7 @@ function rosterForAttach(kind: PhClimateKind): ClimateDatasetRosterResponse {
       {
         id: kind === "phius" ? "location-phius" : "location-phi",
         name: kind === "phius" ? "NEW YORK CENTRAL PRK OBS BELV NY" : "Boston",
+        region: kind === "phius" ? "NY" : "MA",
         station_id: kind === "phius" ? "NYC" : "US0035a",
         latitude: 42.3,
         longitude: -73.3,
@@ -151,6 +151,35 @@ function rosterForAttach(kind: PhClimateKind): ClimateDatasetRosterResponse {
     ],
     total: 1,
   };
+}
+
+function climateLocationDetail(
+  source: ProjectClimateSource,
+  datasetId: string,
+  name: string,
+  region: string,
+) {
+  return {
+    ...source,
+    id: source.ref,
+    dataset_id: datasetId,
+    name,
+    region,
+    record: makeClimateRecord({ display_name: name }),
+  };
+}
+
+function phiusLocationDetail(source = PHIUS_SOURCE) {
+  return climateLocationDetail(
+    source,
+    "dataset-phius",
+    source.label ?? "NEW YORK CENTRAL PRK OBS BELV NY",
+    "NY",
+  );
+}
+
+function phiLocationDetail(source = PHI_SOURCE) {
+  return climateLocationDetail(source, "dataset-phi", source.label ?? "Boston", "MA");
 }
 
 function renderTab(project: typeof PROJECT = PROJECT, unitSystem: UnitSystem = "SI") {
@@ -186,12 +215,7 @@ describe("ClimateTab", () => {
       const url = String(input);
       if (url === LOCATION_URL) return jsonResponse(SET_LOCATION);
       if (url === SOURCES_URL) return jsonResponse({ items: [PHIUS_SOURCE] });
-      if (url === PHIUS_LOCATION_URL) {
-        return jsonResponse({
-          ...PHIUS_SOURCE,
-          record: makeClimateRecord({ display_name: "NEW YORK CENTRAL PRK OBS BELV NY" }),
-        });
-      }
+      if (url === PHIUS_LOCATION_URL) return jsonResponse(phiusLocationDetail());
       return jsonResponse({}, 404);
     });
     const user = userEvent.setup();
@@ -232,12 +256,7 @@ describe("ClimateTab", () => {
       const url = String(input);
       if (url === LOCATION_URL) return jsonResponse(SET_LOCATION);
       if (url === SOURCES_URL) return jsonResponse({ items: [PHIUS_SOURCE] });
-      if (url === PHIUS_LOCATION_URL) {
-        return jsonResponse({
-          ...PHIUS_SOURCE,
-          record: makeClimateRecord({ display_name: "NEW YORK CENTRAL PRK OBS BELV NY" }),
-        });
-      }
+      if (url === PHIUS_LOCATION_URL) return jsonResponse(phiusLocationDetail());
       return jsonResponse({}, 404);
     });
     const user = userEvent.setup();
@@ -261,12 +280,7 @@ describe("ClimateTab", () => {
       const url = String(input);
       if (url === LOCATION_URL) return jsonResponse(SET_LOCATION);
       if (url === SOURCES_URL) return jsonResponse({ items: [PHI_SOURCE] });
-      if (url === PHI_LOCATION_URL) {
-        return jsonResponse({
-          ...PHI_SOURCE,
-          record: makeClimateRecord({ display_name: "Boston" }),
-        });
-      }
+      if (url === PHI_LOCATION_URL) return jsonResponse(phiLocationDetail());
       return jsonResponse({}, 404);
     });
     const user = userEvent.setup();
@@ -307,10 +321,11 @@ describe("ClimateTab", () => {
           return jsonResponse(rosterForAttach(kind));
         }
         if (url === (kind === "phius" ? PHIUS_LOCATION_URL : PHI_LOCATION_URL)) {
-          return jsonResponse({
-            ...attachedSource,
-            record: makeClimateRecord({ display_name: attachedSource.label ?? label }),
-          });
+          return jsonResponse(
+            kind === "phius"
+              ? phiusLocationDetail(attachedSource)
+              : phiLocationDetail(attachedSource),
+          );
         }
         return jsonResponse({}, 404);
       });
@@ -321,13 +336,13 @@ describe("ClimateTab", () => {
       const missingCard = (await screen.findByText(label)).closest("button");
       expect(missingCard).not.toBeNull();
       await user.click(missingCard as HTMLButtonElement);
-      // The empty-state page hosts the manual picker entry point.
-      await user.click(await screen.findByRole("button", { name: "Choose a dataset manually" }));
+      // The empty-state page opens the climate-data modal, which hosts manual selection.
+      await user.click(await screen.findByRole("button", { name: `Set ${label} Climate Data` }));
       await user.click(await screen.findByRole("button", { name: /^NEW YORK CENTRAL|^Boston/ }));
       await user.click(screen.getByRole("button", { name: "Attach" }));
 
       expect(await screen.findByRole("table", { name: tableName })).toBeVisible();
-      expect(screen.queryByText(`Select ${label} climate dataset`)).toBeNull();
+      expect(screen.queryByRole("dialog", { name: `Set ${label} Climate Data` })).toBeNull();
     },
   );
 
@@ -337,12 +352,8 @@ describe("ClimateTab", () => {
       const url = String(input);
       if (url === LOCATION_URL) return jsonResponse(SET_LOCATION);
       if (url === SOURCES_URL) return jsonResponse({ items: [FAILING_PHIUS_SOURCE] });
-      if (url === PHIUS_LOCATION_URL) {
-        return jsonResponse({
-          ...FAILING_PHIUS_SOURCE,
-          record: makeClimateRecord({ display_name: "NEW YORK CENTRAL PRK OBS BELV NY" }),
-        });
-      }
+      if (url === PHIUS_LOCATION_URL)
+        return jsonResponse(phiusLocationDetail(FAILING_PHIUS_SOURCE));
       return jsonResponse({}, 404);
     });
     const user = userEvent.setup();
@@ -426,7 +437,7 @@ describe("ClimateTab", () => {
     expect(within(dialog).getByRole("button", { name: /Save Location/ })).toBeVisible();
   });
 
-  test("attaches a Phius source from the empty page via Set from nearest", async () => {
+  test("finds nearest in the climate-data modal, then attaches after confirmation", async () => {
     vi.stubGlobal("fetch", fetchMock);
     let sources: ProjectClimateSource[] = [];
     const attached: ProjectClimateSource = { ...PHIUS_SOURCE, id: "src-derived-phius" };
@@ -436,16 +447,14 @@ describe("ClimateTab", () => {
       if (url === SOURCES_URL && (init?.method ?? "GET") === "GET") {
         return jsonResponse({ items: sources });
       }
-      if (url === deriveUrl("phius") && init?.method === "POST") {
+      if (url === SOURCES_URL && init?.method === "POST") {
         sources = [attached];
-        return jsonResponse({ location: SET_LOCATION, warnings: [] });
+        return jsonResponse(attached, 201);
       }
-      if (url === PHIUS_LOCATION_URL) {
-        return jsonResponse({
-          ...attached,
-          record: makeClimateRecord({ display_name: attached.label ?? "Phius" }),
-        });
+      if (url.startsWith(`/api/v1/projects/${PROJECT.id}/climate/datasets/phius/locations`)) {
+        return jsonResponse(rosterForAttach("phius"));
       }
+      if (url === PHIUS_LOCATION_URL) return jsonResponse(phiusLocationDetail(attached));
       return jsonResponse({}, 404);
     });
     const user = userEvent.setup();
@@ -454,15 +463,20 @@ describe("ClimateTab", () => {
 
     const missingCard = (await screen.findByText("Phius")).closest("button");
     await user.click(missingCard as HTMLButtonElement);
-    await user.click(await screen.findByRole("button", { name: "Set from nearest" }));
+    await user.click(await screen.findByRole("button", { name: "Set Phius Climate Data" }));
+    await user.click(await screen.findByRole("button", { name: "Find Nearest" }));
 
-    // The derive call fires and the page hands off to the attached Phius detail.
+    expect(await screen.findByRole("button", { name: /^NEW YORK CENTRAL/ })).toHaveAttribute(
+      "data-selected",
+      "true",
+    );
+    await user.click(screen.getByRole("button", { name: "Attach" }));
+
+    // The nearest action only selects; the explicit attach hands off to detail.
     expect(await screen.findByRole("table", { name: "Phius certification limits" })).toBeVisible();
     expect(
-      fetchMock.mock.calls.some(
-        ([url, init]) => url === deriveUrl("phius") && init?.method === "POST",
-      ),
-    ).toBe(true);
+      screen.getByRole("heading", { name: "NEW YORK CENTRAL PRK OBS BELV NY, NY" }),
+    ).toBeVisible();
   });
 
   test("a viewer cannot open the dataset picker", async () => {
@@ -479,6 +493,6 @@ describe("ClimateTab", () => {
     // The unattached Phius slot is shown, but as a static card — no picker entry.
     expect(await screen.findByText("Phius")).toBeVisible();
     expect(screen.queryByRole("button", { name: /No source attached/ })).toBeNull();
-    expect(screen.queryByText("Select Phius climate dataset")).toBeNull();
+    expect(screen.queryByText("Set Phius Climate Data")).toBeNull();
   });
 });

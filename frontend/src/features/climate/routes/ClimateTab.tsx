@@ -112,7 +112,7 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
       {pickerKind ? (
         <ClimateDatasetPickerModal
           key={pickerKind}
-          projectId={project.id}
+          project={project}
           kind={pickerKind}
           onClose={() => setPickerKind(null)}
           onRequestSetLocation={() => setSelected("location")}

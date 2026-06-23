@@ -29,6 +29,7 @@ const PITTSFIELD: EpwRosterItem = {
   distance_mi: 8.1,
   elevation_delta_ft: 210,
   source_url: "https://climate.onebuilding.org/pittsfield.zip",
+  version_label: "TMYx 2009–2023",
 };
 const BOSTON: EpwRosterItem = {
   ...PITTSFIELD,
@@ -37,6 +38,7 @@ const BOSTON: EpwRosterItem = {
   distance_mi: 120.0,
   elevation_delta_ft: -965,
   source_url: "https://climate.onebuilding.org/boston.zip",
+  version_label: "TMY3",
 };
 const ALBANY: EpwRosterItem = {
   ...PITTSFIELD,
@@ -108,12 +110,14 @@ describe("WeatherStationPickerModal", () => {
     installFetch({});
     renderPicker();
 
-    expect(await screen.findByText(/OneBuilding TMYx catalog · 2 stations/)).toBeVisible();
+    expect(await screen.findByText(/OneBuilding TMYx catalog · 2 weather files/)).toBeVisible();
     // The state filter defaults to the project's state.
     expect(screen.getByRole("combobox", { name: "State" })).toHaveValue("Massachusetts");
     // List rows (name first → `^` distinguishes them from the map pins).
     expect(await screen.findByRole("button", { name: /^Pittsfield\.Muni\.AP/ })).toBeVisible();
     expect(screen.getByRole("button", { name: /^Boston\.Logan/ })).toBeVisible();
+    // Each row carries its dataset-version label so files of one station are distinguishable.
+    expect(screen.getByText("TMYx 2009–2023")).toBeVisible();
     // No certification verdict chips (D4).
     expect(screen.queryByText("Pass")).toBeNull();
     expect(screen.queryByText("Fail")).toBeNull();

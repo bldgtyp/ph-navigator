@@ -27,6 +27,7 @@ from features.climate.ashrae_meteo import fetch_nearest_ashrae_station_condition
 from features.climate.epw_catalog import (
     download_epw_zip,
     epw_entries_for_region,
+    epw_version_label,
     find_entry_by_url,
     nearest_epw_entries,
 )
@@ -112,6 +113,7 @@ def get_project_dataset_roster(
         ClimateDatasetRosterItem(
             id=location.id,
             name=location.name,
+            region=location.region,
             station_id=location.station_id,
             latitude=location.latitude,
             longitude=location.longitude,
@@ -144,8 +146,10 @@ def get_project_epw_roster(
 
     Resolves the project site (raising the no-location guard when unset), then
     filters the cached catalog by ``region`` (defaulting to the site's state) or,
-    when ``near`` is set, takes the nearest across the USA. Distance + elevation
-    delta are informational — there is **no** certification verdict (D4).
+    when ``near`` is set, takes the nearest ``limit`` across the USA. The picker
+    shows every dataset version per station (TMYx periods, TMY3, …), so a state's
+    full roster is returned uncapped; only the cross-USA nearest sweep is limited.
+    Distance + elevation delta are informational — no certification verdict (D4).
     """
     with connection() as conn:
         site = _load_project_site(conn, project_id)
@@ -159,7 +163,7 @@ def get_project_epw_roster(
             region=effective_region,
             latitude=site.latitude,
             longitude=site.longitude,
-            limit=limit,
+            limit=None,
         )
     items = [
         EpwRosterItem(
@@ -172,6 +176,7 @@ def get_project_epw_roster(
             distance_mi=round(entry.distance_mi, 1) if entry.distance_mi is not None else None,
             elevation_delta_ft=elevation_delta_ft(site.elevation_m, entry.elevation_m),
             source_url=entry.url,
+            version_label=epw_version_label(entry.url),
         )
         for entry in entries
     ]

@@ -32,6 +32,9 @@ DEFAULT_CATALOG_URLS = (
 )
 _CATALOG_TTL = timedelta(hours=24)
 _YEAR_SPAN_RE = re.compile(r"\.(\d{4})-(\d{4})\.zip$", re.IGNORECASE)
+# OneBuilding encodes the dataset version in the zip name after the WMO, e.g.
+# ``…744104_TMYx.2009-2023.zip`` (type + period) or ``…744104_TMY3.zip`` (type).
+_VERSION_RE = re.compile(r"_(?P<type>[A-Za-z0-9]+)(?:\.(?P<period>\d{4}-\d{4}))?\.zip$", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
@@ -76,21 +79,25 @@ def nearest_epw_entry(latitude: float, longitude: float) -> EpwCatalogEntry | No
 
 
 def nearest_epw_entries(
-    latitude: float, longitude: float, *, country: str | None = None, limit: int
+    latitude: float, longitude: float, *, country: str | None = None, limit: int | None
 ) -> list[EpwCatalogEntry]:
     """Catalog entries nearest a point, nearest-first, each stamped with distance.
 
-    Generalizes :func:`nearest_epw_entry` to the top ``limit`` results; an
-    optional ``country`` narrows the search (the any-state weather picker mode).
+    Generalizes :func:`nearest_epw_entry` to the top ``limit`` results (``None``
+    = no cap); an optional ``country`` narrows the search (the any-state weather
+    picker mode).
     """
     entries = [entry for entry in load_epw_catalog(catalog_urls()) if _matches(entry.country, country)]
     return _rank_nearest(entries, latitude, longitude, limit)
 
 
 def epw_entries_for_region(
-    *, country: str | None, region: str | None, latitude: float, longitude: float, limit: int
+    *, country: str | None, region: str | None, latitude: float, longitude: float, limit: int | None
 ) -> list[EpwCatalogEntry]:
-    """Catalog entries for a country/region (state), nearest-first with distance."""
+    """Catalog entries for a country/region (state), nearest-first with distance.
+
+    ``limit`` of ``None`` returns the whole state (the picker shows every dataset
+    version, so a state's full roster is the intent)."""
     entries = [
         entry
         for entry in load_epw_catalog(catalog_urls())
@@ -104,19 +111,54 @@ def find_entry_by_url(url: str) -> EpwCatalogEntry | None:
     return next((entry for entry in load_epw_catalog(catalog_urls()) if entry.url == url), None)
 
 
-def _rank_nearest(
-    entries: list[EpwCatalogEntry], latitude: float, longitude: float, limit: int
-) -> list[EpwCatalogEntry]:
-    """Sort entries nearest-first (ties broken by source quality), take ``limit``,
-    and stamp each with its great-circle ``distance_mi``.
+def epw_version_label(url: str) -> str:
+    """Human label for an EPW file's dataset version, parsed from its filename.
 
-    Distance is computed once per entry (decorate-sort-undecorate) and reused for
-    both the sort key and the stamp."""
-    decorated = sorted(
-        ((haversine_miles(latitude, longitude, entry.latitude, entry.longitude), entry) for entry in entries),
-        key=lambda pair: (round(pair[0], 6), _source_rank(pair[1])),
+    OneBuilding encodes the methodology and period in the zip name, e.g.
+    ``…_TMYx.2009-2023.zip`` → ``TMYx 2009–2023`` and ``…_TMY3.zip`` → ``TMY3``.
+    A station has several such files; the picker lists them all, labelled, so the
+    user can tell the versions apart. Falls back to ``EPW`` off-convention."""
+    match = _VERSION_RE.search(url)
+    if match is None:
+        return "EPW"
+    period = match.group("period")
+    dataset_type = match.group("type")
+    return f"{dataset_type} {period.replace('-', '–')}" if period else dataset_type
+
+
+def _rank_nearest(
+    entries: list[EpwCatalogEntry], latitude: float, longitude: float, limit: int | None
+) -> list[EpwCatalogEntry]:
+    """Order catalog entries for the picker — stations nearest-first, with each
+    station's dataset versions (TMYx periods, TMY3, …) kept together and ranked
+    best-first — and stamp each with its great-circle ``distance_mi``.
+
+    The catalog lists a station once per version, all shown (labelled), so rows
+    are grouped by station identity to keep a station's versions adjacent rather
+    than interleaved with a neighbour that happens to fall in the same distance
+    band. ``limit`` caps the row count; ``None`` means no cap (region mode shows
+    a whole state)."""
+    decorated = [
+        (haversine_miles(latitude, longitude, entry.latitude, entry.longitude), _station_key(entry), entry)
+        for entry in entries
+    ]
+    nearest_per_station: dict[tuple[str, str, str], float] = {}
+    for distance, key, _entry in decorated:
+        nearest_per_station[key] = min(distance, nearest_per_station.get(key, distance))
+    decorated.sort(key=lambda row: (round(nearest_per_station[row[1]], 6), row[1], _source_rank(row[2])))
+    capped = decorated if limit is None else decorated[: max(limit, 0)]
+    return [dataclass_replace(entry, distance_mi=distance) for distance, _key, entry in capped]
+
+
+def _station_key(entry: EpwCatalogEntry) -> tuple[str, str, str]:
+    """Identity of the physical station an entry belongs to — its catalog
+    country/region/name. Stable across a station's version rows, whose
+    coordinates can drift a few hundred metres between source periods."""
+    return (
+        (entry.country or "").strip().casefold(),
+        (entry.region or "").strip().casefold(),
+        entry.name.strip().casefold(),
     )
-    return [dataclass_replace(entry, distance_mi=distance) for distance, entry in decorated[: max(limit, 0)]]
 
 
 def _matches(value: str | None, target: str | None) -> bool:

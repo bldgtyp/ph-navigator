@@ -26,6 +26,7 @@ const PROJECT = { latitude: 42.28, longitude: -73.36, elevation_m: 300, state: "
 const PITTSFIELD: ClimateDatasetRosterItem = {
   id: "pittsfield",
   name: "Pittsfield",
+  region: "MA",
   station_id: "PIT",
   latitude: 42.4,
   longitude: -73.3,
@@ -42,6 +43,7 @@ const PITTSFIELD: ClimateDatasetRosterItem = {
 const ALBANY: ClimateDatasetRosterItem = {
   id: "albany",
   name: "Albany",
+  region: "NY",
   station_id: "ALB",
   latitude: 42.7,
   longitude: -73.8,
@@ -64,7 +66,7 @@ const MA_ROSTER: ClimateDatasetRosterResponse = {
 
 const NY_ROSTER: ClimateDatasetRosterResponse = {
   ...MA_ROSTER,
-  items: [{ ...PITTSFIELD, id: "nyc", name: "New York City", station_id: "NYC" }],
+  items: [{ ...PITTSFIELD, id: "hudson", name: "Hudson", region: "New York", station_id: "HUD" }],
   total: 1,
 };
 
@@ -92,6 +94,21 @@ function installFetch(scenario: FetchScenario): void {
       scenario.onPost?.(body);
       return jsonResponse({ id: "new", project_id: PROJECT_ID, ...body }, 201);
     }
+    if (url.startsWith("/api/v1/climate/datasets/") && url.includes("/locations/")) {
+      return jsonResponse({
+        id: "hudson",
+        dataset_id: "ds-phi",
+        name: "Hudson",
+        country: "US",
+        region: "New York",
+        climate_zone: "5A",
+        latitude: 42.25,
+        longitude: -73.79,
+        elevation_m: 50,
+        station_id: "HUD",
+        record: {},
+      });
+    }
     for (const kind of ["phius", "phi"] as PhClimateKind[]) {
       if (url.startsWith(rosterBase(kind))) {
         const params = new URLSearchParams(url.split("?")[1] ?? "");
@@ -114,7 +131,7 @@ function renderPicker(
   render(
     <QueryClientProvider client={queryClient}>
       <ClimateDatasetPickerModal
-        projectId={PROJECT_ID}
+        project={{ id: PROJECT_ID, access_mode: "editor" }}
         kind={kind}
         onClose={onClose}
         onRequestSetLocation={onRequestSetLocation}
@@ -212,7 +229,7 @@ describe("ClimateDatasetPickerModal", () => {
     await screen.findByRole("button", { name: /^Pittsfield/ });
     await chooseState(user, "New York");
 
-    expect(await screen.findByRole("button", { name: /^New York City/ })).toBeVisible();
+    expect(await screen.findByRole("button", { name: /^Hudson/ })).toBeVisible();
     expect(screen.queryByRole("button", { name: /^Pittsfield/ })).toBeNull();
   });
 
@@ -231,6 +248,60 @@ describe("ClimateDatasetPickerModal", () => {
     await chooseState(user, "Nearest to project (any state)");
 
     await vi.waitFor(() => expect(seen.some((params) => params.get("near") === "true")).toBe(true));
+  });
+
+  test("defaults the filter to the current dataset state", async () => {
+    const seen: URLSearchParams[] = [];
+    installFetch({
+      sources: [
+        {
+          id: "existing",
+          project_id: PROJECT_ID,
+          kind: "phi",
+          ref: "hudson",
+          label: "Hudson",
+          data: { dataset_id: "ds-phi" },
+          created_at: "2026-06-14T10:00:00Z",
+          updated_at: "2026-06-14T10:00:00Z",
+        },
+      ],
+      roster: (_kind, params) => {
+        seen.push(params);
+        return params.get("region") === "NY" ? NY_ROSTER : MA_ROSTER;
+      },
+    });
+    renderPicker("phi");
+
+    expect(await screen.findByRole("button", { name: /^Hudson/ })).toBeVisible();
+    expect(screen.getByRole("combobox", { name: "State" })).toHaveValue("New York");
+    expect(seen.some((params) => params.get("region") === "NY")).toBe(true);
+  });
+
+  test("finds the nearest station without attaching until confirmed", async () => {
+    const posted: Record<string, unknown>[] = [];
+    installFetch({
+      onPost: (body) => posted.push(body),
+      roster: (_kind, params) => {
+        if (params.get("near") === "true") return NY_ROSTER;
+        return params.get("region") === "NY" ? NY_ROSTER : MA_ROSTER;
+      },
+    });
+    const { onClose } = renderPicker("phi");
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole("button", { name: "Find Nearest" }));
+
+    expect(await screen.findByRole("button", { name: /^Hudson/ })).toHaveAttribute(
+      "data-selected",
+      "true",
+    );
+    expect(screen.getByRole("combobox", { name: "State" })).toHaveValue("New York");
+    expect(posted).toEqual([]);
+    expect(onClose).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Attach" }));
+    expect(posted).toEqual([{ kind: "phi", ref: "hudson", label: "Hudson" }]);
+    expect(onClose).toHaveBeenCalled();
   });
 
   test("guards when the project has no location", async () => {
@@ -256,6 +327,6 @@ describe("ClimateDatasetPickerModal", () => {
   test("drives both kinds from the same component (PHI header)", async () => {
     installFetch({});
     renderPicker("phi");
-    expect(await screen.findByText("Select PHI climate dataset")).toBeVisible();
+    expect(await screen.findByText("Set PHI Climate Data")).toBeVisible();
   });
 });

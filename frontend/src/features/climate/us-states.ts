@@ -66,3 +66,12 @@ export const STATE_FILTER_OPTIONS = [
   { value: ANY_STATE, label: "Nearest to project (any state)" },
   ...US_STATES.map((state) => ({ value: state.code, label: state.name })),
 ];
+
+export function stateCodeFromRegion(region: string | null | undefined): string | null {
+  const normalized = region?.trim();
+  if (!normalized) return null;
+  const upper = normalized.toUpperCase();
+  if (US_STATES.some((state) => state.code === upper)) return upper;
+  const match = US_STATES.find((state) => state.name.toUpperCase() === upper);
+  return match?.code ?? null;
+}

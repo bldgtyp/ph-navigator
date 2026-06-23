@@ -99,7 +99,7 @@ export function WeatherStationPickerModal({
           <div className="climate-picker-toolbar">
             <p className="modal-subtitle">
               OneBuilding TMYx catalog
-              {roster && roster.total > 0 ? ` · ${roster.total} stations` : ""}
+              {roster && roster.total > 0 ? ` · ${roster.total} weather files` : ""}
             </p>
             <AutocompleteSelect
               className="climate-picker-filter"
@@ -189,6 +189,7 @@ function WeatherPickerBody({
               onClick={() => onSelect(item.source_url)}
             >
               <span className="climate-picker-row-name">{item.name}</span>
+              <span className="climate-picker-row-version">{item.version_label}</span>
               <span className="climate-picker-row-metrics">
                 <span>{formatDistance(item.distance_mi)}</span>
                 <span>{formatDeltaFt(item.elevation_delta_ft)}</span>
@@ -206,7 +207,8 @@ function WeatherSelectionPreview({ item }: { item: EpwRosterItem }) {
   return (
     <div className="climate-picker-preview">
       <p>
-        {item.name} — {formatDistance(item.distance_mi)} · {formatDeltaFt(item.elevation_delta_ft)}
+        {item.name} ({item.version_label}) — {formatDistance(item.distance_mi)} ·{" "}
+        {formatDeltaFt(item.elevation_delta_ft)}
       </p>
     </div>
   );
