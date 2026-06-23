@@ -8,6 +8,8 @@ from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
+from honeybee_energy.construction.opaque import OpaqueConstruction
+from honeybee_energy.material.opaque import EnergyMaterial
 
 from database import transaction
 from features.project_document.document import ProjectDocumentV1
@@ -550,6 +552,120 @@ def test_preview_rejects_multi_row_divisions(clean_import_tables: None) -> None:
     preview = _preview(client, project_id, version_id, payload)
     assert preview.status_code == 422
     assert preview.json()["error_code"] == "import_unsupported_divisions"
+
+
+# --- foreign (raw honeybee-PH) files --------------------------------------
+
+
+def _hb_material(name: str, *, conductivity: float = 0.04, thickness_m: float = 0.1) -> EnergyMaterial:
+    return EnergyMaterial(name, thickness_m, conductivity, 40, 1000)
+
+
+def _hb_construction(identifier: str, *materials: EnergyMaterial) -> dict[str, Any]:
+    return OpaqueConstruction(identifier, list(materials)).to_dict()
+
+
+def test_foreign_single_construction_creates_assembly_and_material(clean_import_tables: None) -> None:
+    client = signed_in_client()
+    project_id, version_id = _empty_project(client)
+    payload = _hb_construction("W_ExtWall", _hb_material("Mineral Wool"))
+
+    preview = _preview(client, project_id, version_id, payload).json()
+    assert preview["constructions"][0]["action"] == "add_new"
+    assert preview["materials"][0]["decision"] == "create_new"
+
+    applied = _apply_from_preview(client, project_id, version_id, payload, preview).json()
+    assembly = applied["assemblies"][0]
+    # Type comes from the `W_` identifier prefix heuristic.
+    assert assembly["type"] == "wall"
+    created = applied["project_materials"][0]
+    assert created["name"] == "Mineral Wool"
+    assert created["catalog_origin"] is None
+    assert assembly["layers"][0]["segments"][0]["project_material_id"] == created["id"]
+
+
+def test_foreign_type_heuristic_covers_roof_and_floor(clean_import_tables: None) -> None:
+    client = signed_in_client()
+    project_id, version_id = _empty_project(client)
+    payload = {
+        "R_FlatRoof": _hb_construction("R_FlatRoof", _hb_material("Roof Insul")),
+        "F_SlabFloor": _hb_construction("F_SlabFloor", _hb_material("Sub-slab Insul")),
+    }
+
+    preview = _preview(client, project_id, version_id, payload).json()
+    applied = _apply_from_preview(client, project_id, version_id, payload, preview).json()
+    types = {item["name"]: item["type"] for item in applied["assemblies"]}
+    assert types == {"R_FlatRoof": "roof", "F_SlabFloor": "floor"}
+
+
+def test_foreign_model_sifts_opaque_constructions(clean_import_tables: None) -> None:
+    client = signed_in_client()
+    project_id, version_id = _empty_project(client)
+    payload = {
+        "type": "Model",
+        "identifier": "House",
+        "properties": {"energy": {"constructions": [_hb_construction("W_Wall", _hb_material("Batt"))]}},
+    }
+
+    preview = _preview(client, project_id, version_id, payload).json()
+    assert len(preview["constructions"]) == 1
+    applied = _apply_from_preview(client, project_id, version_id, payload, preview).json()
+    assert applied["assemblies"][0]["name"] == "W_Wall"
+
+
+def test_foreign_material_matches_existing_project_material_by_name(clean_import_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id, version_id = project["id"], project["active_version_id"]
+    existing = project_material(id="pmat_ply", name="Plywood", conductivity_w_mk=0.12, datasheet_asset_ids=[])
+    write_saved_body(version_id, _body([existing], []))
+    payload = _hb_construction("W_Wall", _hb_material("Plywood", conductivity=0.13))
+
+    preview = _preview(client, project_id, version_id, payload).json()
+    material_plan = preview["materials"][0]
+    assert material_plan["decision"] == "reuse_project_material"
+    assert material_plan["project_material_id"] == "pmat_ply"
+    assert "name_matched_project_material" in material_plan["warnings"]
+
+    applied = _apply_from_preview(client, project_id, version_id, payload, preview).json()
+    # The name match reuses the existing material — none created.
+    assert [material["id"] for material in applied["project_materials"]] == ["pmat_ply"]
+
+
+def test_foreign_material_matches_catalog_by_name(clean_import_tables: None) -> None:
+    client = signed_in_client()
+    client.post("/api/v1/catalogs/materials", headers={"Origin": ORIGIN}, json=_xps_payload())
+    project_id, version_id = _empty_project(client)
+    payload = _hb_construction("W_Wall", _hb_material("XPS", conductivity=0.029))
+
+    preview = _preview(client, project_id, version_id, payload).json()
+    material_plan = preview["materials"][0]
+    assert material_plan["decision"] == "pick_from_catalog"
+    assert "name_matched_catalog_material" in material_plan["warnings"]
+
+    applied = _apply_from_preview(client, project_id, version_id, payload, preview).json()
+    created = applied["project_materials"][0]
+    assert created["catalog_origin"] is not None
+    assert created["name"] == "XPS"
+
+
+def test_foreign_model_without_opaque_constructions_rejected(clean_import_tables: None) -> None:
+    client = signed_in_client()
+    project_id, version_id = _empty_project(client)
+    payload = {"type": "Model", "identifier": "Empty", "properties": {"energy": {"constructions": []}}}
+
+    preview = _preview(client, project_id, version_id, payload)
+    assert preview.status_code == 422
+    assert preview.json()["error_code"] == "import_no_constructions"
+
+
+def test_unrecognized_file_rejected_as_wrong_type(clean_import_tables: None) -> None:
+    client = signed_in_client()
+    project_id, version_id = _empty_project(client)
+
+    preview = _preview(client, project_id, version_id, {"hello": "world"})
+    assert preview.status_code == 422
+    assert preview.json()["error_code"] == "import_wrong_file_type"
 
 
 def test_apply_command_validates_etag(clean_import_tables: None) -> None:

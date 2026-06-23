@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 17:17 EDT
-STATUS: Implementing — Phases 0–1 DONE (native import); Phase 2 next
+STATUS: Implementing — Phases 0–2 DONE (full backend import); Phase 3 (frontend) next
 AUTHOR: Ed (via Claude)
 SCOPE: Status for Envelope HBJSON Import.
 ---
@@ -24,8 +24,9 @@ SCOPE: Status for Envelope HBJSON Import.
     catalog-repo logic (PRD §5).
   - Flow is **preview → confirm**, applied atomically through the existing
     `apply_envelope_command` pipeline (PRD §6).
-- **Implementation: in progress.** Phases 0–1 complete (see below): the
-  export round-trips losslessly and the native import (preview + apply) is live.
+- **Implementation: in progress.** Phases 0–2 complete (see below): the
+  export round-trips losslessly and the full backend import (native + foreign
+  honeybee-PH, preview + apply) is live. Frontend (Phase 3) is next.
 
 ## Decisions (2026-06-23)
 - **D1: both sources in v1** — PHN-native **and** raw Honeybee-PH.
@@ -48,9 +49,13 @@ SCOPE: Status for Envelope HBJSON Import.
   `steel_stud_spacing_mm` to the export `ph_nav` (reuse-path round-trip) and the
   `context/technical-requirements/envelope-hbjson-import.md` contract doc. See
   `phases/phase-01-native-import.md`.
-- **Phase 2** — backend foreign front-end: honeybee-ph parse + layer→segment
-  decomposition, matching rungs 4–5 (name/property), assembly-type handling,
-  tests.
+- **Phase 2 — DONE (2026-06-23).** Backend foreign front-end: raw honeybee-PH
+  files (single `OpaqueConstruction`, name-keyed group, or `Model`) normalize
+  into the **same** IR via `parse_construction_library`'s native/foreign
+  dispatch; `W_/R_/F_` identifier → assembly-type heuristic; cells-based hybrid
+  detection (honeybee stamps an empty `divisions` on every material); name-match
+  rungs 4–5 (project + catalog, flagged for confirmation). 7 foreign tests. See
+  `phases/phase-02-foreign-import.md`.
 - **Phase 3** — frontend: "Upload constructions HBJSON" menu item + hidden file
   input + preview/confirm modal (report-status chips).
 - **Phase 4** — polish: conflict/ambiguity UX, drift warnings, cross-project

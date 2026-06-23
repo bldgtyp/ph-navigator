@@ -5,9 +5,17 @@ file and re-create its assemblies (and the project materials they
 reference) inside the active version's **draft**. Two-step, preview →
 confirm, so nothing is written until the user accepts the plan.
 
-v1 reads the **PHN-native** `PHNavigatorOpaqueConstructionLibrary` shape
-(a direct reverse of the export — no honeybee dependency). The raw
-honeybee-PH path normalizes into the same IR and lands in Phase 2.
+Two source shapes normalize into one IR (`parse_construction_library`
+dispatches on the envelope):
+
+- **PHN-native** `PHNavigatorOpaqueConstructionLibrary` — a direct reverse
+  of the export; id/catalog provenance preserved.
+- **Raw honeybee-PH** — a single `OpaqueConstruction`, a name-keyed group
+  ("dump objects"), or a full `Model` (its opaque constructions are sifted).
+  No `ph_nav`; materials key on `identifier`, `catalog_origin = null`; the
+  assembly type comes from the `W_/R_/F_` identifier prefix (else `other`),
+  overridable in the preview. Parsed from the honeybee **dict shape**
+  directly — no honeybee runtime dependency.
 
 Implementation: `backend/features/envelope/hbjson_import.py` (parse → IR),
 `import_planning.py` (`build_import_plan`), `commands/envelope_import.py`
@@ -67,7 +75,15 @@ Run per distinct incoming material (deduped by
 3. **pick_from_catalog** — `catalog_record_id` resolves to an *active*
    `catalog_materials` row ⇒ a fresh copy via `project_material_from_catalog`
    (snapshots the **live catalog** values, not the file's — D3).
-4–5. name / property matches — **Phase 2**.
+4. **reuse_project_material (by name)** — incoming name matches exactly one
+   existing project material (normalized via the canonical
+   `normalize_display_name`) ⇒ reuse, flagged `name_matched_project_material`.
+   >1 ⇒ `ambiguous_name_in_project`, fall through.
+5. **pick_from_catalog (by name)** — matches an active `catalog_materials`
+   row by name ⇒ a fresh copy, flagged `name_matched_catalog_material`.
+
+   Name matches (4–5) are fuzzy by nature, so every hit carries a warning the
+   preview surfaces for confirmation. Property-tolerance matching is deferred.
 6. **create_new** — project-only `ProjectMaterial` (`catalog_origin = null`):
    copies the file's thermal props + color; `category` defaults to `"Other"`
    (not exported); `specification_status` carries the file's value if valid
@@ -94,7 +110,9 @@ datasheets.
 
 ## Rejections (typed 422 unless noted)
 
-`import_invalid_json` · `import_wrong_file_type` · `import_invalid_file` ·
+`import_invalid_json` · `import_wrong_file_type` (not native, and not a
+recognizable honeybee construction) · `import_invalid_file` ·
+`import_no_constructions` (a model with no opaque constructions) ·
 `import_schema_too_new` · `import_unsupported_divisions` (multi-row grid) ·
 `import_missing_cell_material` · `import_file_too_large` (413). Import does
 **not** block on thermal incompleteness — incomplete assemblies are legal in
