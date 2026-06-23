@@ -11,6 +11,105 @@
   background: transparent;
 }
 
+#envelope-assembly-dialog {
+  width: min(100%, 520px);
+  padding: var(--space-24);
+}
+
+.envelope-assembly-dialog-form {
+  display: grid;
+  gap: var(--space-24);
+  margin-top: var(--space-24);
+}
+
+.envelope-assembly-dialog-field,
+.envelope-assembly-type-field {
+  display: grid;
+  gap: var(--space-8);
+  min-width: 0;
+}
+
+.envelope-assembly-dialog-field > span,
+.envelope-assembly-type-field legend {
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.envelope-assembly-dialog-field input {
+  width: 100%;
+  min-height: 42px;
+  border-color: var(--border-strong);
+  border-radius: var(--phn-control-radius);
+  background: var(--bg-page);
+  padding-inline: var(--space-12);
+}
+
+.envelope-assembly-type-field {
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.envelope-assembly-type-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-8);
+}
+
+.envelope-assembly-type-option {
+  display: grid;
+  gap: var(--space-4);
+  min-height: 76px;
+  min-width: 0;
+  align-content: start;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--phn-control-radius);
+  background: var(--bg-page);
+  padding: var(--space-12);
+  cursor: pointer;
+  transition:
+    border-color 0.16s var(--ease),
+    box-shadow 0.16s var(--ease),
+    background 0.16s var(--ease);
+}
+
+.envelope-assembly-type-option:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-elev);
+}
+
+.envelope-assembly-type-option:has(input:focus-visible) {
+  border-color: var(--accent-text);
+  box-shadow: var(--phn-focus);
+}
+
+.envelope-assembly-type-option[data-selected="true"] {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 12%, var(--bg-card));
+}
+
+.envelope-assembly-type-option-label {
+  color: var(--text-primary);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.envelope-assembly-type-option-description {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.envelope-assembly-dialog-form .modal-actions {
+  margin-top: var(--space-2);
+  padding-top: var(--space-18);
+  border-top: 1px solid var(--border-subtle);
+}
+
 .envelope-body {
   display: grid;
   gap: var(--space-12);
@@ -190,6 +289,7 @@
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   min-width: 0;
+  overflow: hidden;
   padding: 18px 0 18px 26px;
 }
 
@@ -203,6 +303,8 @@
   display: flex;
   gap: var(--space-48);
   min-height: 56px;
+  min-width: 0;
+  overflow: hidden;
   padding: var(--space-8) 0;
 }
 
@@ -213,6 +315,8 @@
   letter-spacing: 0;
   line-height: 1.15;
   margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .assembly-header dt {
@@ -227,9 +331,13 @@
   align-items: center;
   display: flex;
   flex: 0 1 auto;
+  flex-wrap: wrap;
   gap: var(--space-12);
+  justify-content: flex-end;
   margin: 0 0 0 auto;
+  max-width: 100%;
   min-width: 0;
+  overflow: hidden;
 }
 
 .assembly-header-metrics > div {
@@ -239,12 +347,13 @@
   border-radius: var(--phn-control-radius);
   color: var(--text-secondary);
   display: inline-flex;
-  flex: 0 0 auto;
+  flex: 0 1 auto;
   font-size: var(--fs-sm);
   font-weight: 500;
   gap: var(--space-8);
   min-height: 30px;
   line-height: 1;
+  max-width: 100%;
   padding: 7px 10px 8px;
   white-space: nowrap;
 }
@@ -267,6 +376,9 @@
   color: var(--text-secondary);
   line-height: 1;
   margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -280,7 +392,9 @@
 .assembly-canvas-scroll {
   align-self: stretch;
   border-bottom: 1px solid var(--border-subtle);
-  overflow: auto;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: 96px 0 30px;
 }
 
@@ -293,8 +407,10 @@
 
   display: grid;
   gap: var(--space-10);
-  margin-inline: auto;
-  min-width: 360px;
+  margin-inline: 0;
+  min-width: 0;
+  position: relative;
+  width: 100%;
 }
 
 .assembly-canvas[data-paint-mode="picking"] {
@@ -333,14 +449,16 @@
 }
 
 .assembly-canvas-stage {
+  margin-inline: auto;
   position: relative;
 }
 
 /* Strip surface + button + divider now in
-   shared/ui/canvas/canvas-toolbar.css; envelope only sets placement (floats
-   above the canvas; `left` set inline). The hover-hint is in
-   canvas-hint-tooltip.css (both CSS rationalization Phase 7). */
+   shared/ui/canvas/canvas-toolbar.css; envelope only sets placement above the
+   canvas viewport. The hover-hint is in canvas-hint-tooltip.css (both CSS
+   rationalization Phase 7). */
 .assembly-canvas-toolbar {
+  left: 50%;
   position: absolute;
   top: -58px;
   transform: translateX(-50%);
@@ -1292,6 +1410,14 @@
 
   .assembly-header-metrics {
     justify-content: flex-start;
+  }
+
+  #envelope-assembly-dialog {
+    padding: var(--space-20);
+  }
+
+  .envelope-assembly-type-options {
+    grid-template-columns: 1fr;
   }
 
   .segment-geometry-grid {

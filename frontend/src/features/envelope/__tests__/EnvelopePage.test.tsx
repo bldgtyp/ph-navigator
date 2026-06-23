@@ -238,9 +238,9 @@ describe("EnvelopePage", () => {
   test("unit toggle changes labels without changing canvas dimensions", async () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
 
-    const canvas = await screen.findByTestId("assembly-canvas");
-    const initialWidth = canvas.getAttribute("style");
-    expect(canvas).toHaveStyle({ width: "880.8px" });
+    const stage = await screen.findByTestId("assembly-canvas-stage");
+    const initialWidth = stage.getAttribute("style");
+    expect(stage).toHaveStyle({ width: "880.8px" });
     expect(screen.getByTestId("total-thickness")).toHaveTextContent("88 mm");
 
     await userEvent.click(screen.getByRole("button", { name: "IP" }));
@@ -249,7 +249,7 @@ describe("EnvelopePage", () => {
     expect(await screen.findByTestId("assembly-thermal-label")).toHaveTextContent(
       "7.5 h-ft2-F/Btu",
     );
-    expect(screen.getByTestId("assembly-canvas").getAttribute("style")).toBe(initialWidth);
+    expect(screen.getByTestId("assembly-canvas-stage").getAttribute("style")).toBe(initialWidth);
   });
 
   test("material editor unit toggle updates modal values and posts canonical SI", async () => {
@@ -326,7 +326,7 @@ describe("EnvelopePage", () => {
 
     await screen.findByRole("link", { name: /WALL-C3/ });
     await userEvent.click(screen.getByRole("button", { name: "Zoom in" }));
-    const zoomedWidth = screen.getByTestId("assembly-canvas").getAttribute("style");
+    const zoomedWidth = screen.getByTestId("assembly-canvas-stage").getAttribute("style");
 
     await userEvent.click(screen.getByRole("button", { name: "Collapse assembly sidebar" }));
 
@@ -335,7 +335,7 @@ describe("EnvelopePage", () => {
       `/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`,
     );
     expect(screen.getByTestId("canvas-zoom")).toHaveTextContent("150%");
-    expect(screen.getByTestId("assembly-canvas").getAttribute("style")).toBe(zoomedWidth);
+    expect(screen.getByTestId("assembly-canvas-stage").getAttribute("style")).toBe(zoomedWidth);
 
     await userEvent.click(screen.getByRole("button", { name: "Expand assembly sidebar" }));
 
@@ -723,6 +723,40 @@ describe("EnvelopePage", () => {
     expect(screen.getByTestId("location")).toHaveTextContent(
       `/projects/${PROJECT_ID}/envelope/assemblies`,
     );
+  });
+
+  test("new assembly modal posts the selected type and name", async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/draft/envelope/commands")) {
+        return Promise.resolve(
+          jsonResponse({
+            ...envelopePayload,
+            draft_etag: "draft-etag-2",
+            assemblies: [{ ...envelopePayload.assemblies[0], name: "F-CS", type: "floor" }],
+          }),
+        );
+      }
+      if (url.includes("/envelope?")) {
+        return Promise.resolve(jsonResponse({ ...envelopePayload, assemblies: [] }));
+      }
+      return defaultFetchImplementation(url);
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies`);
+
+    await screen.findByText("No assemblies yet");
+    await userEvent.click(screen.getByRole("button", { name: "New assembly" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "New assembly" });
+    const nameInput = within(dialog).getByLabelText("Name");
+    await userEvent.clear(nameInput);
+    await userEvent.type(nameInput, "F-CS");
+    await userEvent.click(within(dialog).getByRole("radio", { name: /Floor/ }));
+    await userEvent.click(within(dialog).getByRole("button", { name: "Create assembly" }));
+
+    expect(commandRequestBodies()).toContainEqual({
+      command: { kind: "create_assembly", name: "F-CS", type: "floor" },
+    });
   });
 
   test("rename command posts semantic payload with draft etag", async () => {

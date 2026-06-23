@@ -30,6 +30,7 @@ export function AssemblyWorkspace({
   onRenameActive,
   onZoomIn,
   onZoomOut,
+  onFitZoom,
   onRename,
   onTypeChange,
   onDuplicate,
@@ -59,6 +60,7 @@ export function AssemblyWorkspace({
   onRenameActive: (name: string) => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
+  onFitZoom: (zoom: number) => void;
   onRename: (assembly: Assembly, name: string) => void;
   onTypeChange: (assembly: Assembly) => void;
   onDuplicate: (assembly: Assembly) => void;
@@ -134,6 +136,7 @@ export function AssemblyWorkspace({
             commandBusy={commandBusy}
             onZoomIn={onZoomIn}
             onZoomOut={onZoomOut}
+            onFitZoom={onFitZoom}
             onFlipOrientation={onFlipOrientation}
             onFlipLayers={onFlipLayers}
             onFlipSegments={onFlipSegments}

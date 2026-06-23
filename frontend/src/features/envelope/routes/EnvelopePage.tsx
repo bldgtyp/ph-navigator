@@ -7,7 +7,7 @@
 import "../envelope.css";
 import { Download } from "lucide-react";
 import { Navigate, NavLink, useLocation, useSearchParams } from "react-router-dom";
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
 import { AppSubTabLink, AppSubTabs } from "../../../shared/ui/AppSubTabs";
 import { AppMenu, AppMenuItem } from "../../../shared/ui/AppMenu";
@@ -83,6 +83,9 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     onError: setCommandError,
   });
   const [zoom, setZoom] = useState(1);
+  const fitZoom = useCallback((nextZoom: number) => {
+    setZoom((currentZoom) => (currentZoom === nextZoom ? currentZoom : nextZoom));
+  }, []);
   const commandInFlightRef = useRef(false);
   const catalogMaterialsQuery = useMaterialsQuery(
     canEdit && dialog?.kind === "segment" && catalogPickerOpen,
@@ -324,6 +327,7 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
             }
             onZoomIn={() => setZoom(nextZoomStep)}
             onZoomOut={() => setZoom(previousZoomStep)}
+            onFitZoom={fitZoom}
             onRename={(assembly, name) =>
               void applyCommand({
                 kind: "rename_assembly",
