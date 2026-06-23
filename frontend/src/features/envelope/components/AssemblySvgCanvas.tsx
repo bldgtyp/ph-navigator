@@ -1,10 +1,8 @@
 import { materialColor } from "../lib";
-import { ASSEMBLY_CANVAS_ORIGIN_X_PX } from "../canvas-constants";
+import { ASSEMBLY_CANVAS_ORIGIN_X_PX, SVG_STROKE_PADDING_MM } from "../canvas-constants";
 import { segmentCanvasKey, type AssemblyCanvasPaintMode } from "../canvas-paint";
 import type { AssemblyCanvasGeometry, AssemblyCanvasSegmentGeometry } from "../canvas-geometry";
 import type { Assembly, ProjectMaterial } from "../types";
-
-const SVG_STROKE_PADDING_MM = 1;
 
 export function AssemblySvgCanvas({
   assembly,
