@@ -20,7 +20,6 @@ from features.climate.epw_catalog import download_epw_zip, nearest_epw_entry
 from features.climate.models import ClimateLocationSummary
 from features.climate.proximity import PhDatasetProvider, build_location_roster, build_proximity_payload
 from features.climate.weather_source import build_weather_source_payload
-from features.model_viewer.schemas.ladybug import SunPathAndCompassDTOSchema
 from features.project_climate_source import repository as climate_source_repository
 from features.project_climate_source.service import attach_weather_source, upsert_source_by_kind
 from features.project_location import repository
@@ -43,6 +42,7 @@ from features.project_location.models import (
     UpdateProjectLocationRequest,
 )
 from features.project_location.sun_path import build_sun_path
+from features.project_location.sun_path_schemas import SunPathAndCompassDTOSchema
 from features.projects.access import ProjectAccess
 from features.shared.errors import api_error
 
