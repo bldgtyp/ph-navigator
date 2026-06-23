@@ -549,8 +549,10 @@ Properties of the document shape:
     multiple segments de-duplicates onto a single
     `project_materials` row (Q-ENV-2). This separation lets the
     same product carry one datasheet (the QA submittal) and one
-    spec-status across many uses, while still letting each
-    installation slot carry its own site photos.
+    spec-status across many uses. Site-photo refs remain stored on
+    assembly segments, while the Materials UI groups them into one
+    upload slot per material per assembly to avoid duplicate slots
+    when one assembly repeats the same material across segments.
 - **`catalog_origin` is informational metadata** — used by the
   refresh-from-catalog UX (§7.4), not for live resolution. A pick
   is a copy; the project's values do not change when the catalog

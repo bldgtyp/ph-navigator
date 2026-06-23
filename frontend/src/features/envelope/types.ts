@@ -264,3 +264,7 @@ export type EnvelopeAttachmentChangeArgs = {
   currentAssetIds: string[];
   nextAssetIds: string[];
 };
+
+export type EnvelopeAttachmentChange =
+  | EnvelopeAttachmentChangeArgs
+  | EnvelopeAttachmentChangeArgs[];

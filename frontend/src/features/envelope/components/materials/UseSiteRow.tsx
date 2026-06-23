@@ -8,9 +8,11 @@ import type { ProjectMaterialUseSite } from "../../types";
 export function UseSiteRow({
   siteKey,
   site,
+  whereLabel,
   projectId,
   assetUrlById,
   canEdit,
+  canEditNote = true,
   busy,
   isEditing,
   onToggleEdit,
@@ -19,9 +21,11 @@ export function UseSiteRow({
 }: {
   siteKey: string;
   site: ProjectMaterialUseSite;
+  whereLabel?: string;
   projectId: string;
   assetUrlById: ReadonlyMap<string, AssetUrls>;
   canEdit: boolean;
+  canEditNote?: boolean;
   busy: boolean;
   isEditing: boolean;
   onToggleEdit: () => void;
@@ -32,6 +36,7 @@ export function UseSiteRow({
   useEffect(() => setNotes(site.use_site_notes ?? ""), [siteKey, site.use_site_notes]);
   const trimmedNotes = notes.trim() || null;
   const canSave = trimmedNotes !== site.use_site_notes && !busy;
+  const canEditUseSiteNote = canEdit && canEditNote;
   return (
     <li className="use-site">
       <header className="use-site__header">
@@ -39,7 +44,7 @@ export function UseSiteRow({
           <Camera size={14} aria-hidden="true" />
           <strong>{site.assembly_name}</strong>
           <span className="use-site__where">
-            · layer {site.layer_order + 1}, segment {site.segment_order + 1}
+            · {whereLabel ?? `layer ${site.layer_order + 1}, segment ${site.segment_order + 1}`}
           </span>
         </span>
       </header>
@@ -54,7 +59,7 @@ export function UseSiteRow({
           onChange={onPhotoChange}
         />
       </div>
-      {canEdit ? (
+      {canEditUseSiteNote ? (
         <>
           {site.use_site_notes ? <em>{site.use_site_notes}</em> : null}
           <button type="button" className="secondary-button" onClick={onToggleEdit}>

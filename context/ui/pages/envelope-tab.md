@@ -218,23 +218,24 @@ material used across all assemblies in the project (auto-
 aggregated as the user edits assemblies), with per-material
 status: do we have the manufacturer datasheet on file? Has the
 design / construction team committed to using this product (spec
-status)? And per use of the material in each assembly: do we
-have a site-installation photo?
+status)? And per assembly that uses the material: do we have a
+site-installation photo?
 
 **V2 restructure vs V1:** V1 walked **per-segment** rows, so the
 same product appeared in the list multiple times (once per use)
 with redundant per-use datasheet upload zones. V2 flips to
 **per-material primary** — one card per unique product —
 because datasheets and spec-status are material-level questions,
-not segment-level (Q-ENV-2 model). Site photos stay segment-
-scoped because each installation slot needs its own photo.
+not segment-level (Q-ENV-2 model). Site photos are managed once
+per material per assembly, so repeated segments of the same
+material in one assembly do not create duplicate upload slots.
 
 **Top-of-page summary chip:**
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │  Project Materials   24 materials · 18 with datasheets · 21 with    │
-│                      site photos on every use                        │
+│                      site photos for every assembly use              │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -291,7 +292,7 @@ them explicitly.
 | **Header** | Bold material name (clickable → inline rename). Right side: 📚 Library badge when from catalog; ↻ refresh badge when drifted (click → refresh-from-catalog dialog). Sub-line: category + product data (resistivity in IP, conductivity in SI; respects active unit system). |
 | **QA bar** | Specification-status `<Select>` (states follow §1.8). `[+ Notes]` opens an inline notes editor. `⋯` overflow: "Edit material values…" (affects all uses), "Refresh from catalog…", "Delete material" (only enabled when no segments reference it). |
 | **Datasheets** | Drag-and-drop zone for one or more datasheets (PDFs / images). Missing state follows the evidence/status grammar in §1.8; disabled when status = N/A. **One zone per material**, not per use (V2 cleanup vs V1's per-segment redundancy). |
-| **"Used in N segments"** | Per-segment sub-rows. Each row shows the path (`Assembly · Layer N · seg N`, click jumps to the canvas) + a per-segment site-photo drag-and-drop zone (same component as V1's site-photo container, V1 ref §12.4). `⋯` per-row: Re-pick material…, Open in canvas →, Detach to a new material…. |
+| **"Used in N segments"** | Assembly-level sub-rows grouped by material + assembly. Each row shows the assembly path plus a compact segment summary (`layer N, segments 1, 3, 5`) and one site-photo drag-and-drop zone for that material in that assembly. Existing segment-level photo refs are still reconciled through the same asset attachment flow. |
 
 **Card sort order:**
 
@@ -307,7 +308,7 @@ them explicitly.
    if a segment starts referencing that material before the delete lands.
 
 **Drag-and-drop upload behavior** (for both datasheet zones and
-per-segment site-photo zones):
+assembly/material site-photo zones):
 
 - Drop zone activates on dragover (blue dashed border).
 - Multiple files supported; each uploads individually. On
@@ -419,7 +420,7 @@ use case per Ed's framing.
 
 **(Detailed in US-ENV-15.)**
 
-Contractor-facing reorganization of the same per-segment site
+Contractor-facing reorganization of the same segment-stored site
 photos that the Materials sub-tab manages — grouped by
 **assembly type** (Walls / Floors / Roofs / Other) instead of by
 material. Same data, different presentation. Useful for sharing
