@@ -1,4 +1,4 @@
-import { FormEvent } from "react";
+import { FormEvent, useLayoutEffect, useRef } from "react";
 import { DialogActions } from "../../../../shared/ui/DialogActions";
 import { ModalDialog } from "../../../../shared/ui/ModalDialog";
 import { useLengthDraft } from "../../hooks/useLengthDraft";
@@ -27,10 +27,18 @@ export function LengthDialog({
   onSubmit: (valueMm: number) => void;
 }) {
   const { unitSystem, setUnitSystem } = useUnitPreference();
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const length = useLengthDraft(initialValueMm, {
     followUnitPreference: true,
     unitLabelStyle: label === "Thickness" ? "long" : "short",
   });
+  useLayoutEffect(() => {
+    const input = inputRef.current;
+    if (!input) return;
+    input.focus();
+    input.select();
+  }, []);
+
   function submit(event: FormEvent) {
     event.preventDefault();
     const valueMm = length.parsePositive(label);
@@ -63,6 +71,7 @@ export function LengthDialog({
         <div className="length-dialog-input-row">
           <input
             id={fieldId}
+            ref={inputRef}
             aria-label={`${label} (${length.unitLabel})`}
             value={length.draft}
             onChange={(event) => length.setDraft(event.currentTarget.value)}

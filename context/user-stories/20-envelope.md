@@ -1530,8 +1530,8 @@ behavior — fixed in V2)
 
 > As an editor, when I've nailed the material assignment for
 > one segment, I want to apply that same assignment to other
-> segments in the active assembly with a two-click
-> eyedropper-then-paint-bucket gesture — without re-walking the
+> segments in the active assembly with an
+> eyedropper-then-target gesture — without re-walking the
 > material picker each time — so building out hybrid stud-and-
 > insulation layers stays fast.
 
@@ -1551,11 +1551,9 @@ behavior — fixed in V2)
 2. **State machine** (V1 ref §9.4 parity):
    - `idle` → click eyedropper → `picking` (cursor changes to
      eyedropper)
-   - `picking` → click source segment → `picked` (eyedropper
-     resets; paint-bucket lights up; source segment shows a
-     subtle "this is the source" highlight)
-   - `picked` → click paint-bucket → `pasting` (cursor changes
-     to paint-bucket)
+   - `picking` → click source segment → `pasting` (paint-bucket
+     lights up, cursor changes to paint-bucket, and source
+     segment shows a subtle "this is the source" highlight)
    - `pasting` → click target segment → paste applied + 600 ms
      paste-pulse animation on target → stays in `pasting`
      state (so user can keep clicking more targets without

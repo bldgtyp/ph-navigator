@@ -24,17 +24,28 @@ first non-sun-path candidate to build.
 
 ## Why this is cheap
 
-The MVP already did the staging work:
+The MVP staged the parts that matter, and the later batched-rendering
+refactor (`dbca4650`, 2026-06-19) turned out to *help* the visual
+mechanism — not hurt it:
 
 - **D-11:** legend rows are built as inert `<button>`s with a stable
   per-bucket `id` (`color.key`) and counts.
 - `lib/themes.ts:colorForThemedObject(meta, lens, theme)` already
   returns each object's bucket key — so "which objects match this
-  legend row" is a function that already exists. The filter is its
-  inversion: render an object iff its bucket key is in the active set.
+  legend row" is a function that already exists (the shared
+  `bucketKeyForObject` predicate is just a thin wrapper over it).
+- Mesh lenses now render on the batched substrate (`scene/BatchedLens.tsx`
+  → `scene/LensBatch.ts`): per-face visibility is `BatchedMesh.setVisibleAt`
+  (raycast skips hidden instances), and the lens draws **one** merged edge
+  `LineSegments` for the whole building (`scene/LensBatch.ts`).
 
-So this is mostly: add filter state, make the legend rows live, and
-gate per-object rendering in `scene/BuildingLens.tsx`.
+So the filter is: hide the non-matching *faces* (`setVisibleAt`) but keep
+that merged edge line drawn — recolored a lighter gray — so the rest of
+the building stays as a faint wireframe context behind the solid matched
+bucket. Add filter state, make the legend rows live, gate face visibility,
+recolor edges. See PRD §5 — this "isolate-with-wireframe-context" behavior
+replaced the original plain "hide", and it is cheap *because* we keep the
+merged edges instead of re-merging them per toggle.
 
 ## Read order
 

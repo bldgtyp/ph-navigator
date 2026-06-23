@@ -926,7 +926,22 @@ describe("EnvelopePage", () => {
     });
   });
 
-  test("canvas eyedropper and paint bucket post paste assignment command", async () => {
+  test("add layer dialog focuses and selects the thickness draft", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    await userEvent.click(screen.getByRole("button", { name: "Add layer below layer 1" }));
+
+    expect(await screen.findByRole("dialog", { name: "Add layer" })).toBeInTheDocument();
+    const thicknessInput = screen.getByRole("textbox", {
+      name: /Thickness/,
+    }) as HTMLInputElement;
+    await waitFor(() => expect(thicknessInput).toHaveFocus());
+    expect(thicknessInput.selectionStart).toBe(0);
+    expect(thicknessInput.selectionEnd).toBe(thicknessInput.value.length);
+  });
+
+  test("canvas eyedropper enters paint mode and posts paste assignment command", async () => {
     fetchMock.mockImplementation((url: string) => {
       if (url.includes("/draft/envelope/commands")) {
         return Promise.resolve(jsonResponse({ ...envelopePayload, draft_etag: "draft-etag-2" }));
@@ -945,7 +960,11 @@ describe("EnvelopePage", () => {
         name: "Pick assignment from Wood fiber board segment in layer 1",
       }),
     );
-    await userEvent.click(screen.getByRole("button", { name: "Paint picked assignment" }));
+    expect(screen.getByRole("button", { name: "Paint picked assignment" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByTestId("assembly-canvas")).toHaveAttribute("data-paint-mode", "pasting");
     await userEvent.click(
       screen.getByRole("button", { name: "Paint assignment to No material segment in layer 2" }),
     );
@@ -982,7 +1001,6 @@ describe("EnvelopePage", () => {
         name: "Pick assignment from Wood fiber board segment in layer 1",
       }),
     );
-    await userEvent.click(screen.getByRole("button", { name: "Paint picked assignment" }));
     const paintTarget = screen.getByRole("button", {
       name: "Paint assignment to No material segment in layer 2",
     });
@@ -1011,7 +1029,6 @@ describe("EnvelopePage", () => {
         name: "Pick assignment from Wood fiber board segment in layer 1",
       }),
     );
-    await userEvent.click(screen.getByRole("button", { name: "Paint picked assignment" }));
     await userEvent.click(
       screen.getByRole("button", { name: "Paint assignment to No material segment in layer 2" }),
     );
