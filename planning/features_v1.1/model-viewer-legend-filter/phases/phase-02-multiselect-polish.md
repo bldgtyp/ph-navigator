@@ -41,8 +41,8 @@ accessibility/polish pass.
 
 - **vitest**: union add/remove, empty-set-clears, plain-click-replaces.
 - **Playwright**: shift-click two Surface Type rows (e.g. Wall +
-  RoofCeiling), assert the union is visible and others hidden; shift-
-  click one off, assert it hides.
+  RoofCeiling), assert the union's faces stay solid and other faces drop
+  out (edges remain); shift-click one off, assert its faces hide.
 
 ## Exit criteria
 

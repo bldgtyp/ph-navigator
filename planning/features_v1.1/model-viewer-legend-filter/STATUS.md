@@ -14,9 +14,14 @@ RELATED:
 
 ## Current state
 
-`Active — planned.` PRD, plan, and both phase handoffs authored
-2026-06-13. No code written. No open decisions (hide-vs-dim resolved in
-PRD §5; this is frontend-only with no new data).
+`Active — planned; docs reconciled 2026-06-23.` PRD, plan, and both
+phase handoffs authored 2026-06-13, then reconciled to the batched-
+rendering refactor (`dbca4650`, 2026-06-19): the per-object render gate
+the plan assumed no longer exists, so isolation now hides non-matching
+*faces* on the batch (`setVisibleAt`) while keeping the merged edge line
+as wireframe context. No code written. No open decisions — PRD §5 settled
+on **isolate-with-wireframe-context** (was plain "hide"); frontend-only,
+no new data.
 
 ## Next step
 

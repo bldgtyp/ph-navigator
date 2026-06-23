@@ -84,7 +84,7 @@ export function usePaintMode(args: {
         sourceLayerId: layer.id,
         sourceSegmentId: segment.id,
       });
-      setMode("picked");
+      setMode("pasting");
     },
     [canEdit],
   );

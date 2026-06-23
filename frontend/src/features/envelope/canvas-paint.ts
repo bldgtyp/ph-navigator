@@ -1,6 +1,6 @@
 import type { AssemblyLayer, AssemblySegment, EnvelopeCommand } from "./types";
 
-export type AssemblyCanvasPaintMode = "idle" | "picking" | "picked" | "pasting";
+export type AssemblyCanvasPaintMode = "idle" | "picking" | "pasting";
 
 export type SegmentAssignment = {
   project_material_id: string | null;

@@ -216,6 +216,7 @@
   min-height: 38px;
   min-width: 0;
   padding: var(--space-6) var(--space-6) var(--space-6) var(--space-10);
+  position: relative;
   text-decoration: none;
 }
 
@@ -237,12 +238,21 @@
   white-space: nowrap;
 }
 
+.envelope-sidebar-row-name::before {
+  border-radius: inherit;
+  content: "";
+  inset: 0;
+  position: absolute;
+}
+
 .envelope-sidebar-row-actions {
   align-items: center;
   display: inline-flex;
   gap: var(--space-2);
   opacity: 0;
   pointer-events: none;
+  position: relative;
+  z-index: var(--z-base-elevated);
 }
 
 .envelope-sidebar-row:hover .envelope-sidebar-row-actions,

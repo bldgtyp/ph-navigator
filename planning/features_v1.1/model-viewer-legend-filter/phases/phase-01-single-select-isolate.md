@@ -16,18 +16,26 @@ to isolate matching geometry; clear to restore" behavior.
 
 ## 1. Required reading
 
-- `../PRD.md` (esp. §2 edge cases, §4 state, §5 hide-vs-dim).
+- `../PRD.md` (esp. §2 edge cases, §4 state, §5 isolate-with-wireframe).
 - Current code (read before writing — match patterns):
   - `frontend/src/features/model_viewer/lib/themes.ts` —
     `colorForThemedObject`, `legendForModel`, `lineStyleDefinition`.
+  - `frontend/src/features/model_viewer/scene/BatchedLens.tsx` +
+    `scene/LensBatch.ts` — the batched substrate for mesh lenses;
+    `useBatchColors` is the per-instance subscriber the visibility gate
+    mirrors, `batch.batchForId` maps object id → its instances, and
+    `batch.edges` is the single merged edge line to keep + recolor.
   - `frontend/src/features/model_viewer/scene/BuildingLens.tsx` —
-    `activeObjects.map(...)` render loop, `MeshObject` / `LineObject`.
+    `LineObject`, the per-object `<Line>` path kept for the line lenses
+    (ventilation/hot-water).
   - `frontend/src/features/model_viewer/components/LegendCard.tsx` —
     `LegendRows` (inert buttons today).
-  - `frontend/src/features/model_viewer/store.ts` — reset paths in
-    `setLens` / `setTheme` / `setActiveFileId`.
-  - `frontend/src/features/model_viewer/lib/events.ts` — the
-    centralized Esc cascade.
+  - `frontend/src/features/model_viewer/store.ts` — per-lens theme
+    (`themesByLens`) + reset paths in `setLens` / `setTheme` /
+    `setUrlViewState` / `setActiveFileId`.
+  - `frontend/src/features/model_viewer/components/ModelViewerStage.tsx`
+    — the `onKeyDown` Escape cascade (measure → selection → popovers);
+    `lib/events.ts` is only the popover-escape pub/sub it dispatches into.
 
 ## 2. Work
 
@@ -45,35 +53,49 @@ export function bucketKeyForObject(
 ```
 
 This is the single source of truth shared by the legend (which already
-groups by `color.key`) and the render gate. Mini-key rows use
+groups by `color.key`) and the visibility gate. Mini-key rows use
 `lineStyle` as their `id` (see `lineStyleLegendRows`), so the keys line
 up with legend row ids without translation.
 
 ### 2.2 Store (`store.ts`)
 
 - Add `legendFilter: { theme: ModelViewerTheme; keys: Set<string> } |
-  null`.
+  null`. Stamp `theme` with the active lens's theme (`themesByLens[lens]`)
+  so a stale filter is ignored after a theme switch.
 - Actions: `toggleLegendFilterKey(theme, key)` (single-select: replace
   set with `{key}`, or clear if the same single key is re-clicked) and
   `clearLegendFilter()`.
 - Reset `legendFilter` to `null` inside `setLens`, `setTheme`,
   `setUrlViewState` (lens/theme change branch), and `setActiveFileId`.
-- When the selection is hidden by a new filter, clear selection/hover —
-  either compute in the setter or let `BuildingLens` clear on render
-  (prefer the setter for predictability).
+- When a new filter hides the current selection's faces (it's outside the
+  set), clear selection/hover in the setter (predictable; a wireframe
+  ghost is not the inspected object).
 
-### 2.3 Render gate (`scene/BuildingLens.tsx`)
+### 2.3 Isolation: hide faces, keep wireframe
 
-- In the `activeObjects.map(...)` body, compute
-  `const hidden = isHiddenByFilter(object, lens, theme, legendFilter)`
-  and skip rendering (or render with `visible={false}` +
-  `raycast={() => null}`). Skipping is cleanest; ensure geometry
-  disposal is unaffected (geometries are owned by the loader/model, not
-  per-mount — confirm against the existing dispose-on-file-switch
-  logic).
-- `isHiddenByFilter` returns false when `legendFilter` is null or its
-  `theme` ≠ active theme (stale-filter guard).
+One shared predicate `isHiddenByFilter(object, lens, theme, legendFilter)`
+— true when a filter is active, its `theme` matches the active lens's
+theme (stale-filter guard, else false), and the object's
+`bucketKeyForObject` is **not** in the active set. Null filter → nothing
+hidden.
+
+- **Mesh lenses (batched — `scene/BatchedLens.tsx`).** Drive
+  `BatchedMesh.setVisibleAt(instanceId, visible)` off `legendFilter`,
+  mirroring the `useBatchColors` subscriber: walk `batch.batchForId`, and
+  for each object's `BatchLocation`s set `visible = !isHiddenByFilter(...)`.
+  Hidden instances are skipped by the renderer *and* the raycaster, so
+  picking is gated for free. Keep `batch.edges` drawn and recolor its
+  `LineBasicMaterial` to a lighter gray while a filter is active (restore
+  `VIEWER_FACE_EDGE_COLOR` on clear) — this is the wireframe context.
+  `invalidate()` after the writes (demand loop).
+- **Line lenses (per-object — `scene/BuildingLens.tsx`).** In `LineObject`,
+  recolor to the faint gray and set `raycast={() => null}` when
+  `isHiddenByFilter` is true (no faces/edges to keep here — the faint line
+  is the context).
 - The `SiteSunLayer` branch is exempt (no legend / no filter).
+- Restore on clear/reset: set every instance visible again and reset the
+  edge color; the existing fade-in/dispose paths are unaffected (the batch
+  is rebuilt on lens/file change, which already clears the filter).
 
 ### 2.4 Legend rows (`components/LegendCard.tsx`)
 
@@ -85,12 +107,13 @@ up with legend row ids without translation.
 - Counts (`row.count`) stay model totals (PRD §2.5) — do not recompute
   from the filtered set.
 
-### 2.5 Esc (`lib/events.ts`)
+### 2.5 Esc (`components/ModelViewerStage.tsx`)
 
-- Extend the centralized Esc cascade: clear the legend filter at the
-  appropriate priority (after Measure exit and selection clear, before
-  closing popovers, or wherever reads most natural — document the
-  order).
+- The Escape cascade is the `onKeyDown` handler in `ModelViewerStage.tsx`
+  (measure exit → selection clear → `dispatchModelViewerPopoverEscape()`).
+  Insert a legend-filter clear after the selection clear and before the
+  popover dispatch (`lib/events.ts` is just the popover pub/sub, not the
+  cascade).
 
 ## 3. Tests
 
@@ -99,14 +122,14 @@ up with legend row ids without translation.
   - `isHiddenByFilter` truth table incl. stale-theme guard and
     null-filter pass-through;
   - store reset paths clear the filter (lens/theme/file);
-  - selection clears when filtered away.
+  - selection clears when its faces are hidden.
 - **Playwright** (`model-viewer-legend-filter.spec.ts`, new): upload
   the canonical fixture, Building + Boundary theme, click the
-  "Outdoors" row, assert only Outdoors faces remain (use the debug hook
-  to read visible ids / counts), click Clear, assert all return.
+  "Outdoors" row, assert non-Outdoors objects drop out of the visible set
+  (use the debug hook), click Clear, assert all return.
 - Expose filter state on the `window.__phnModelViewer` debug hook
-  (`legendFilter`, visible-id list already exists) for deterministic
-  e2e.
+  (`legendFilter` + make `visibleObjectIds` filter-aware so it reflects
+  the isolated set) for deterministic e2e.
 
 ## 4. Exit criteria
 
