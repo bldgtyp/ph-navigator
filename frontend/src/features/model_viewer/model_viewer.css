@@ -662,6 +662,22 @@
   font: inherit;
   font-size: var(--fs-sm);
   text-align: left;
+  cursor: pointer;
+}
+
+.model-legend-rows button:hover {
+  background: color-mix(in oklab, var(--text-primary) 7%, transparent);
+}
+
+.model-legend-rows button:focus-visible {
+  outline: 2px solid var(--highlight);
+  outline-offset: -2px;
+}
+
+/* The isolated bucket(s) while a legend filter is active (NEW-VIEW-2). */
+.model-legend-rows button.is-active {
+  background: color-mix(in oklab, var(--highlight) 14%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--highlight) 45%, transparent);
 }
 
 .model-legend-swatch {

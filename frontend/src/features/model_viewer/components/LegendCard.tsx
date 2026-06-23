@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, Gauge, Info } from "lucide-react";
+import { ChevronDown, ChevronUp, Gauge, Info, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { formatProjectDateTime } from "../../../shared/lib/dates";
 import { isModelViewerDebugHookEnabled } from "../lib/debugHook";
@@ -7,7 +7,7 @@ import { useModelViewerPerfStore } from "../lib/perf";
 import { legendForModel } from "../lib/themes";
 import type { BuildingModel } from "../loaders/building";
 import { useModelViewerStore } from "../store";
-import type { HbjsonFile, LoadSummary, ModelViewerLegend } from "../types";
+import type { HbjsonFile, LoadSummary, ModelViewerLegend, ModelViewerTheme } from "../types";
 
 const LEGEND_COLLAPSED_KEY = "phn:model-viewer:legend-collapsed";
 
@@ -20,6 +20,8 @@ type LegendCardProps = {
 export function LegendCard({ model, activeFile, loadSummary }: LegendCardProps) {
   const lens = useModelViewerStore((state) => state.lens);
   const theme = useModelViewerStore((state) => state.themesByLens[state.lens]);
+  const legendFilter = useModelViewerStore((state) => state.legendFilter);
+  const clearLegendFilter = useModelViewerStore((state) => state.clearLegendFilter);
   const [collapsed, setCollapsed] = useState(readCollapsed);
   const [infoOpen, setInfoOpen] = useState(false);
   const closeInfo = useCallback(() => setInfoOpen(false), []);
@@ -55,6 +57,16 @@ export function LegendCard({ model, activeFile, loadSummary }: LegendCardProps) 
           {legend.kind === "mini-key" ? <small>Key</small> : null}
         </div>
         <div className="model-legend-title-actions">
+          {legendFilter?.theme === theme ? (
+            <button
+              type="button"
+              aria-label="Clear filter"
+              title="Clear filter"
+              onClick={clearLegendFilter}
+            >
+              <X size={15} aria-hidden />
+            </button>
+          ) : null}
           <InfoButton open={infoOpen} onClick={() => setInfoOpen((current) => !current)} />
           <PerfToggleButton />
           <button
@@ -72,21 +84,45 @@ export function LegendCard({ model, activeFile, loadSummary }: LegendCardProps) 
         </div>
       </div>
       {infoOpen ? <SceneInfoPopover activeFile={activeFile} loadSummary={loadSummary} /> : null}
-      {!collapsed ? <LegendRows legend={legend} /> : null}
+      {!collapsed ? <LegendRows legend={legend} theme={theme} /> : null}
     </div>
   );
 }
 
-function LegendRows({ legend }: { legend: Exclude<ModelViewerLegend, null> }) {
+/**
+ * The legend rows, live as a single-select filter group (NEW-VIEW-2). Clicking a
+ * row isolates its bucket; clicking the active row again clears it. Rows show
+ * model totals (not post-filter counts) — they are a model summary, not a filter
+ * readout (PRD §2.5).
+ */
+function LegendRows({
+  legend,
+  theme,
+}: {
+  legend: Exclude<ModelViewerLegend, null>;
+  theme: ModelViewerTheme;
+}) {
+  const legendFilter = useModelViewerStore((state) => state.legendFilter);
+  const toggleLegendFilterKey = useModelViewerStore((state) => state.toggleLegendFilterKey);
+  const activeKeys = legendFilter?.theme === theme ? legendFilter.keys : null;
   return (
-    <div className="model-legend-rows">
-      {legend.rows.map((row) => (
-        <button key={row.id} type="button" aria-disabled="true" tabIndex={-1}>
-          <span className="model-legend-swatch" style={{ backgroundColor: row.color }} />
-          <span className="model-legend-label">{row.label}</span>
-          <span className="model-legend-count">{row.count}</span>
-        </button>
-      ))}
+    <div className="model-legend-rows" role="group" aria-label={`Filter by ${legend.title}`}>
+      {legend.rows.map((row) => {
+        const active = activeKeys?.has(row.id) ?? false;
+        return (
+          <button
+            key={row.id}
+            type="button"
+            aria-pressed={active}
+            className={active ? "is-active" : undefined}
+            onClick={() => toggleLegendFilterKey(theme, row.id)}
+          >
+            <span className="model-legend-swatch" style={{ backgroundColor: row.color }} />
+            <span className="model-legend-label">{row.label}</span>
+            <span className="model-legend-count">{row.count}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
