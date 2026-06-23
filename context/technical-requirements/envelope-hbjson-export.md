@@ -137,7 +137,8 @@ Multi-segment (hybrid) layers emit a wrapper `EnergyMaterial` whose:
       "material": { ...EnergyMaterial for the segment material... },
       "ph_nav": {
         "segment_id": "<seg_id>",
-        "is_continuous_insulation": <bool>
+        "is_continuous_insulation": <bool>,
+        "steel_stud_spacing_mm": <float | null>
       }
     },
     ...
@@ -178,7 +179,8 @@ Consumers needing catalog provenance read it from there.
 For a **single-segment (homogeneous) layer** — where the layer is
 rendered directly as one `EnergyMaterial` — that same material `ph_nav`
 block additionally carries the layer/segment identity the import needs:
-`layer_id`, `segment_id`, and `is_continuous_insulation`. (Hybrid layers
+`layer_id`, `segment_id`, `is_continuous_insulation`, and
+`steel_stud_spacing_mm`. (Hybrid layers
 keep this identity on the wrapper and cell `ph_nav` blocks instead, since
 their materials map to individual segments.)
 

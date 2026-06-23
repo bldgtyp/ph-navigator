@@ -83,6 +83,7 @@ def _layer_material_payload(
                 "layer_id": layer.id,
                 "segment_id": segment.id,
                 "is_continuous_insulation": segment.is_continuous_insulation,
+                "steel_stud_spacing_mm": segment.steel_stud_spacing_mm,
             }
         )
         return payload
@@ -105,6 +106,7 @@ def _layer_material_payload(
                 "ph_nav": {
                     "segment_id": segment.id,
                     "is_continuous_insulation": segment.is_continuous_insulation,
+                    "steel_stud_spacing_mm": segment.steel_stud_spacing_mm,
                 },
             }
         )

@@ -6,9 +6,10 @@ import json
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, Query
+from fastapi import APIRouter, Depends, File, Header, Query, UploadFile
 
 from features.envelope.hbjson_export import export_hbjson_constructions
+from features.envelope.import_models import ImportConstructionsPreviewResponse
 from features.envelope.models import (
     AssemblyThermalResponse,
     EnvelopeCommandRequest,
@@ -16,10 +17,12 @@ from features.envelope.models import (
     ProjectMaterialDriftReport,
 )
 from features.envelope.service import (
+    MAX_IMPORT_FILE_BYTES,
     apply_envelope_command,
     get_assembly_thermal_model,
     get_envelope_read_model,
     get_project_material_drift_report,
+    preview_envelope_hbjson_import,
 )
 from features.project_document.models import ProjectDocumentSource
 from features.project_document.service import get_saved_document
@@ -74,6 +77,17 @@ def export_envelope_hbjson(
         json.dumps(payload, indent=2),
         f"envelope-constructions-{version_id}.hbjson",
     )
+
+
+@router.post("/envelope/import/hbjson/preview", response_model=ImportConstructionsPreviewResponse)
+def preview_envelope_import_hbjson(
+    version_id: UUID,
+    access: ProjectEditAccess,
+    file: Annotated[UploadFile, File()],
+) -> ImportConstructionsPreviewResponse:
+    # Read one byte past the cap so the service can reject oversize uploads
+    # without pulling an unbounded file into memory.
+    return preview_envelope_hbjson_import(version_id, access, file.file.read(MAX_IMPORT_FILE_BYTES + 1))
 
 
 @router.post("/draft/envelope/commands", response_model=EnvelopeReadResponse)

@@ -95,6 +95,23 @@ def replace_project_materials(body: ProjectDocumentV1, materials: list[ProjectMa
     return validate_document(raw)
 
 
+def replace_materials_and_assemblies(
+    body: ProjectDocumentV1,
+    materials: list[ProjectMaterial],
+    assemblies: list[Assembly],
+) -> ProjectDocumentV1:
+    """Swap both tables in one pass so the document is validated only once.
+
+    The combined document already carries the new materials, so the new
+    assemblies' references resolve in a single ``validate_document`` — no
+    intermediate dump+validate of a half-applied state (used by import).
+    """
+    raw = body.model_dump(mode="json")
+    raw["tables"]["project_materials"] = [material.model_dump(mode="json") for material in materials]
+    raw["tables"]["assemblies"] = [assembly.model_dump(mode="json") for assembly in assemblies]
+    return validate_document(raw)
+
+
 def find_assembly(assemblies: list[Assembly], assembly_id: str) -> Assembly:
     for assembly in assemblies:
         if assembly.id == assembly_id:

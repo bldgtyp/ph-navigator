@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 17:17 EDT
-STATUS: Implementing — Phase 0 (export enhancement) DONE; Phase 1 next
+STATUS: Implementing — Phases 0–1 DONE (native import); Phase 2 next
 AUTHOR: Ed (via Claude)
 SCOPE: Status for Envelope HBJSON Import.
 ---
@@ -24,7 +24,8 @@ SCOPE: Status for Envelope HBJSON Import.
     catalog-repo logic (PRD §5).
   - Flow is **preview → confirm**, applied atomically through the existing
     `apply_envelope_command` pipeline (PRD §6).
-- **Implementation: in progress.** Phase 0 complete (see below).
+- **Implementation: in progress.** Phases 0–1 complete (see below): the
+  export round-trips losslessly and the native import (preview + apply) is live.
 
 ## Decisions (2026-06-23)
 - **D1: both sources in v1** — PHN-native **and** raw Honeybee-PH.
@@ -39,9 +40,14 @@ SCOPE: Status for Envelope HBJSON Import.
   `is_continuous_insulation` on the material `ph_nav`; hybrid wrapper `layer_id`
   + per-cell `segment_id`/`is_continuous_insulation`. Round-trip export tests
   added; `envelope-hbjson-export.md` contract doc updated.
-- **Phase 1** — backend native front-end: reverse `hbjson_export.py` → IR,
-  matching ladder rungs 1–3 & 6, `ImportEnvelopeConstructionsCommand`, preview
-  route, tests.
+- **Phase 1 — DONE (2026-06-23).** Backend native front-end: `hbjson_import.py`
+  (reverse → IR), `import_planning.py` (matching ladder rungs 1–3 & 6 +
+  `build_import_plan`), `import_models.py`, `commands/envelope_import.py`
+  (`import_envelope_constructions`), preview route
+  `POST …/envelope/import/hbjson/preview`, 13 tests. Also added per-segment
+  `steel_stud_spacing_mm` to the export `ph_nav` (reuse-path round-trip) and the
+  `context/technical-requirements/envelope-hbjson-import.md` contract doc. See
+  `phases/phase-01-native-import.md`.
 - **Phase 2** — backend foreign front-end: honeybee-ph parse + layer→segment
   decomposition, matching rungs 4–5 (name/property), assembly-type handling,
   tests.
