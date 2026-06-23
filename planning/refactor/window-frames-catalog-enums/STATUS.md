@@ -32,10 +32,20 @@ frame-types only, store built generic for glazing/materials reuse.
 
 ## Next step
 
-Execute `PLAN.md` **Phase 1 — Catalog option store (backend)**: migration for
-`catalog_field_options`, shared repository, service + routes, Pydantic models,
-and the seed of cleaned initial option sets (research §1). Reuse
-`SingleSelectOption` + `project_document/options.py` validators.
+Detailed per-phase plans now exist under `phases/` (see README phase map). Start
+with `phases/phase-00-canonical-vocab-and-cleanup.md` (freeze the option sets +
+fold map — a short data spec), then execute
+`phases/phase-01-catalog-option-store.md`: migration for `catalog_field_options`,
+shared repository (`backend/features/catalogs/_options_repository.py`), service +
+routes under frame_types, Pydantic models, and the option seed. Reuse
+`SingleSelectOption` + `project_document/options.py` `validate_option_list` /
+`mint_option_id` (document accessors are **not** reusable — the catalog store is
+relational).
+
+**Note discovered while planning:** the frame catalog is seeded *through the
+import pipeline* (`scripts/seed_frame_catalog.py:64-78`), so the Phase 4 import
+upgrade step is the data-cleanup mechanism — **no in-place row migration needed**
+(no deploy/no users). See phase-00 and phase-04.
 
 ## Blockers
 
