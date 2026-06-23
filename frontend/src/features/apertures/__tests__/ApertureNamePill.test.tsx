@@ -81,35 +81,56 @@ describe("ApertureNamePill", () => {
 
   it("clicking the pill flips to an editable input", () => {
     renderPill();
-    fireEvent.mouseDown(screen.getByTestId("pill-aptel_1"));
-    const input = screen.getByTestId("pill-aptel_1") as HTMLInputElement;
+    fireEvent.click(screen.getByTestId("pill-aptel_1"));
+    const input = screen.getByTestId("pill-aptel_1-input") as HTMLInputElement;
     expect(input.tagName).toBe("INPUT");
     expect(input.value).toBe("W1");
+    expect(screen.getByRole("button", { name: "Save element name" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cancel element name edit" })).toBeInTheDocument();
   });
 
   it("Enter with a new name commits the trimmed value", () => {
     const { onCommit } = renderPill();
-    fireEvent.mouseDown(screen.getByTestId("pill-aptel_1"));
-    const input = screen.getByTestId("pill-aptel_1") as HTMLInputElement;
+    fireEvent.click(screen.getByTestId("pill-aptel_1"));
+    const input = screen.getByTestId("pill-aptel_1-input") as HTMLInputElement;
     fireEvent.change(input, { target: { value: "  W1-new  " } });
     fireEvent.keyDown(input, { key: "Enter" });
     expect(onCommit).toHaveBeenCalledWith("aptel_1", "W1-new");
   });
 
+  it("check button commits the trimmed value", () => {
+    const { onCommit } = renderPill();
+    fireEvent.click(screen.getByTestId("pill-aptel_1"));
+    const input = screen.getByTestId("pill-aptel_1-input") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "  W2  " } });
+    fireEvent.click(screen.getByRole("button", { name: "Save element name" }));
+    expect(onCommit).toHaveBeenCalledWith("aptel_1", "W2");
+  });
+
   it("Escape reverts to the prior name", () => {
     const { onCommit } = renderPill();
-    fireEvent.mouseDown(screen.getByTestId("pill-aptel_1"));
-    const input = screen.getByTestId("pill-aptel_1") as HTMLInputElement;
+    fireEvent.click(screen.getByTestId("pill-aptel_1"));
+    const input = screen.getByTestId("pill-aptel_1-input") as HTMLInputElement;
     fireEvent.change(input, { target: { value: "abandoned" } });
     fireEvent.keyDown(input, { key: "Escape" });
     expect(onCommit).not.toHaveBeenCalled();
     expect(screen.getByTestId("pill-aptel_1")).toHaveTextContent("W1");
   });
 
+  it("x button cancels without committing", () => {
+    const { onCommit } = renderPill();
+    fireEvent.click(screen.getByTestId("pill-aptel_1"));
+    const input = screen.getByTestId("pill-aptel_1-input") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "abandoned" } });
+    fireEvent.click(screen.getByRole("button", { name: "Cancel element name edit" }));
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(screen.getByTestId("pill-aptel_1")).toHaveTextContent("W1");
+  });
+
   it("empty input reverts silently", () => {
     const { onCommit } = renderPill();
-    fireEvent.mouseDown(screen.getByTestId("pill-aptel_1"));
-    const input = screen.getByTestId("pill-aptel_1") as HTMLInputElement;
+    fireEvent.click(screen.getByTestId("pill-aptel_1"));
+    const input = screen.getByTestId("pill-aptel_1-input") as HTMLInputElement;
     fireEvent.change(input, { target: { value: "   " } });
     fireEvent.keyDown(input, { key: "Enter" });
     expect(onCommit).not.toHaveBeenCalled();
@@ -117,7 +138,7 @@ describe("ApertureNamePill", () => {
 
   it("read-only when canEdit=false: click does nothing", () => {
     renderPill({ canEdit: false });
-    fireEvent.mouseDown(screen.getByTestId("pill-aptel_1"));
+    fireEvent.click(screen.getByTestId("pill-aptel_1"));
     const pill = screen.getByTestId("pill-aptel_1");
     expect(pill.tagName).toBe("DIV");
     expect(pill.getAttribute("data-readonly")).toBe("true");

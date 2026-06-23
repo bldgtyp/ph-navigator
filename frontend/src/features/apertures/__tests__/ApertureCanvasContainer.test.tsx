@@ -132,6 +132,34 @@ describe("ApertureCanvasContainer", () => {
     expect(caption.compareDocumentPosition(toolbar)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
+  it("preserves the user zoom level when switching aperture types", () => {
+    const clientWidthSpy = vi.spyOn(HTMLElement.prototype, "clientWidth", "get");
+    clientWidthSpy.mockReturnValue(500);
+
+    try {
+      const { rerender } = render(
+        <UnitStub>
+          <ApertureCanvasHarness entry={aperture({ id: "apt_1", name: "Type A" })} />
+        </UnitStub>,
+      );
+
+      expect(screen.getByTestId("aperture-canvas-zoom")).toHaveTextContent("300%");
+
+      fireEvent.click(screen.getByRole("button", { name: "Zoom out" }));
+      expect(screen.getByTestId("aperture-canvas-zoom")).toHaveTextContent("200%");
+
+      rerender(
+        <UnitStub>
+          <ApertureCanvasHarness entry={aperture({ id: "apt_2", name: "Type B" })} />
+        </UnitStub>,
+      );
+
+      expect(screen.getByTestId("aperture-canvas-zoom")).toHaveTextContent("200%");
+    } finally {
+      clientWidthSpy.mockRestore();
+    }
+  });
+
   it("renames an element card through the inline edit controls", () => {
     const onSetElementName = vi.fn();
     render(

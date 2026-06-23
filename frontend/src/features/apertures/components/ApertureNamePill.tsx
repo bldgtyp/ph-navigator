@@ -1,4 +1,5 @@
 import { useEffect, useState, type CSSProperties } from "react";
+import { Check, X } from "lucide-react";
 import type { RectMm } from "../aperture-geometry";
 import { pxFromMm } from "../canvas-constants";
 import type { ApertureElement } from "../types";
@@ -32,7 +33,7 @@ export function ApertureNamePill({
     top: `${pxFromMm(glazingRect.y - parentRect.y + glazingRect.height / 2, zoom)}px`,
   };
 
-  function commit() {
+  function commit(): void {
     const trimmed = draft.trim();
     if (!trimmed || trimmed === element.name) {
       setDraft(element.name);
@@ -43,36 +44,67 @@ export function ApertureNamePill({
     setEditing(false);
   }
 
-  function cancel() {
+  function cancel(): void {
     setDraft(element.name);
     setEditing(false);
   }
 
   if (editing) {
     return (
-      <input
+      <form
         className="aperture-name-pill aperture-name-pill--editing"
         data-testid={`pill-${element.id}`}
         data-pill="true"
         style={style}
-        autoFocus
-        value={draft}
-        onChange={(event) => setDraft(event.currentTarget.value)}
-        onFocus={(event) => event.currentTarget.select()}
         onMouseDown={(event) => event.stopPropagation()}
         onClick={(event) => event.stopPropagation()}
-        onKeyDown={(event) => {
-          event.stopPropagation();
-          if (event.key === "Enter") {
-            event.preventDefault();
-            commit();
-          } else if (event.key === "Escape") {
-            event.preventDefault();
-            cancel();
-          }
+        onSubmit={(event) => {
+          event.preventDefault();
+          commit();
         }}
-        onBlur={commit}
-      />
+      >
+        <input
+          className="aperture-name-pill__input"
+          data-testid={`pill-${element.id}-input`}
+          autoFocus
+          value={draft}
+          onChange={(event) => setDraft(event.currentTarget.value)}
+          onFocus={(event) => event.currentTarget.select()}
+          onBlur={commit}
+          onKeyDown={(event) => {
+            event.stopPropagation();
+            if (event.key === "Enter") {
+              event.preventDefault();
+              commit();
+            } else if (event.key === "Escape") {
+              event.preventDefault();
+              cancel();
+            }
+          }}
+          aria-label={`Element name ${element.name}`}
+        />
+        <button
+          type="submit"
+          className="aperture-name-pill__action"
+          aria-label="Save element name"
+          data-testid={`pill-${element.id}-save`}
+          onMouseDown={(event) => event.preventDefault()}
+          title="Save"
+        >
+          <Check size={12} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          className="aperture-name-pill__action"
+          aria-label="Cancel element name edit"
+          data-testid={`pill-${element.id}-cancel`}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={cancel}
+          title="Cancel"
+        >
+          <X size={12} aria-hidden="true" />
+        </button>
+      </form>
     );
   }
 
@@ -84,12 +116,14 @@ export function ApertureNamePill({
       data-readonly={canEdit ? undefined : "true"}
       style={style}
       onMouseDown={(event) => {
-        if (!canEdit) return;
+        if (canEdit) event.stopPropagation();
+      }}
+      onClick={(event) => {
         event.stopPropagation();
+        if (!canEdit) return;
         setDraft(element.name);
         setEditing(true);
       }}
-      onClick={(event) => event.stopPropagation()}
     >
       {element.name}
     </div>

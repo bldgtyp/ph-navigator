@@ -1,4 +1,4 @@
-import { FlipHorizontal2 } from "lucide-react";
+import { ArrowLeftRight } from "lucide-react";
 import type { ApertureViewDirection } from "./ApertureSvgCanvas";
 
 export function ViewDirectionToggle({
@@ -19,7 +19,8 @@ export function ViewDirectionToggle({
       data-view-direction={viewDirection}
       onClick={onToggle}
     >
-      <FlipHorizontal2 size={14} aria-hidden="true" />
+      <ArrowLeftRight size={14} aria-hidden="true" />
+      <span className="aperture-canvas-toolbar__view-label">{label}</span>
     </button>
   );
 }
