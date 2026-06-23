@@ -32,8 +32,10 @@ type ModelViewerState = {
   setLens: (lens: ModelViewerLens) => void;
   setUrlViewState: (lens: ModelViewerLens, theme: ModelViewerTheme) => void;
   setTheme: (lens: ModelViewerLens, theme: ModelViewerTheme) => void;
-  /** Single-select toggle: isolate `key`, or clear if it is already the sole key. */
-  toggleLegendFilterKey: (theme: ModelViewerTheme, key: string) => void;
+  /** Toggle a legend filter key. Plain (`additive` false): single-select — isolate
+   *  `key`, or clear if it is already the sole key. Shift (`additive` true): add or
+   *  remove `key` from the union, clearing the filter when the set empties. */
+  toggleLegendFilterKey: (theme: ModelViewerTheme, key: string, additive?: boolean) => void;
   clearLegendFilter: () => void;
   setHoverId: (objectId: string | null) => void;
   setSelectionId: (objectId: string | null) => void;
@@ -101,11 +103,18 @@ export const useModelViewerStore = create<ModelViewerState>()((set) => ({
         ? state
         : { themesByLens: { ...state.themesByLens, [lens]: theme }, legendFilter: null },
     ),
-  toggleLegendFilterKey: (theme, key) =>
+  toggleLegendFilterKey: (theme, key, additive = false) =>
     set((state) => {
       const current = state.legendFilter;
-      const isSoleActiveKey =
-        current?.theme === theme && current.keys.size === 1 && current.keys.has(key);
+      const activeKeys = current?.theme === theme ? current.keys : null;
+      if (additive) {
+        // Shift-click: flip membership in the union; an empty set is no filter.
+        const keys = new Set(activeKeys);
+        if (keys.has(key)) keys.delete(key);
+        else keys.add(key);
+        return { legendFilter: keys.size === 0 ? null : { theme, keys } };
+      }
+      const isSoleActiveKey = activeKeys !== null && activeKeys.size === 1 && activeKeys.has(key);
       return { legendFilter: isSoleActiveKey ? null : { theme, keys: new Set([key]) } };
     }),
   clearLegendFilter: () =>

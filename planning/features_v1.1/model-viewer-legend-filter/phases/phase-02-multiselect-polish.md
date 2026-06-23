@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Ready — implement after Phase 1.
+STATUS: Implemented — multi-select + polish (tests green; unmerged).
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff — multi-select + a11y/polish.
 RELATED:

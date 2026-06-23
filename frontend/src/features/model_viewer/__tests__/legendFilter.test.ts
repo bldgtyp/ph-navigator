@@ -125,6 +125,35 @@ describe("legend-filter store actions", () => {
     expect(useModelViewerStore.getState().legendFilter).toBeNull();
   });
 
+  test("shift-click builds a union and clears when the set empties (Phase 2)", () => {
+    const store = useModelViewerStore.getState();
+    store.toggleLegendFilterKey("surface-type", "Wall"); // plain → {Wall}
+    store.toggleLegendFilterKey("surface-type", "RoofCeiling", true); // add → union
+    expect(useModelViewerStore.getState().legendFilter).toEqual({
+      theme: "surface-type",
+      keys: new Set(["Wall", "RoofCeiling"]),
+    });
+
+    store.toggleLegendFilterKey("surface-type", "Wall", true); // remove → {RoofCeiling}
+    expect(useModelViewerStore.getState().legendFilter).toEqual({
+      theme: "surface-type",
+      keys: new Set(["RoofCeiling"]),
+    });
+
+    store.toggleLegendFilterKey("surface-type", "RoofCeiling", true); // remove last → null
+    expect(useModelViewerStore.getState().legendFilter).toBeNull();
+  });
+
+  test("shift-click under a different theme starts a fresh union (Phase 2)", () => {
+    const store = useModelViewerStore.getState();
+    store.toggleLegendFilterKey("boundary", "Outdoors");
+    store.toggleLegendFilterKey("surface-type", "Wall", true);
+    expect(useModelViewerStore.getState().legendFilter).toEqual({
+      theme: "surface-type",
+      keys: new Set(["Wall"]),
+    });
+  });
+
   test.each([
     ["setLens", () => useModelViewerStore.getState().setLens("spaces")],
     ["setTheme", () => useModelViewerStore.getState().setTheme("building", "construction")],

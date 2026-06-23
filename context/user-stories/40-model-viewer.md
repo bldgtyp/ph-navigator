@@ -269,8 +269,8 @@ what the builder tables say. Surfaces in the Model tab as
 inline warnings on suspect objects + a top-bar "5 divergences
 found" summary.
 
-**NEW-VIEW-2 — Legend-as-filter (Q-VIEW-7).** Status: in progress
-(v1.1 — Phase 1 single-select isolate implemented, unmerged) ·
+**NEW-VIEW-2 — Legend-as-filter (Q-VIEW-7).** Status: implemented
+(v1.1 — single-select + shift-click multi-select, unmerged) ·
 **near-priority post-MVP** per Ed 2026-05-10 ("definitely
 will want later"). As a CPHC reviewing a complex model, I
 want to click a swatch in the ColorByLegend to **hide all
