@@ -52,6 +52,14 @@ def _construction_payload(
         "identifier": identifier,
         "display_name": assembly.name,
         "properties": {"type": "OpaqueConstructionProperties", "ph": {"type": "OpaqueConstructionPhProperties"}},
+        # Additive round-trip block (PRD §4): carries the assembly fields the
+        # Honeybee shape cannot express, so import re-creates the assembly
+        # losslessly. Importers that read foreign files default these.
+        "ph_nav": {
+            "assembly_id": assembly.id,
+            "assembly_type": assembly.type,
+            "orientation": assembly.orientation,
+        },
         "materials": [_layer_material_payload(layer, materials_by_id) for layer in _layers_outside_to_inside(assembly)],
     }
 
@@ -63,11 +71,21 @@ def _layer_material_payload(
     if len(layer.segments) == 1:
         segment = layer.segments[0]
         material = materials_by_id[segment.project_material_id or ""]
-        return _energy_material_payload(
+        payload = _energy_material_payload(
             _material_identifier(material, layer.thickness_mm),
             material,
             layer.thickness_mm,
         )
+        # A homogeneous layer is rendered directly as one EnergyMaterial, so its
+        # layer/segment identity (PRD §4) rides on the material's ph_nav block.
+        payload["ph_nav"].update(
+            {
+                "layer_id": layer.id,
+                "segment_id": segment.id,
+                "is_continuous_insulation": segment.is_continuous_insulation,
+            }
+        )
+        return payload
 
     segments = sorted(layer.segments, key=lambda segment: segment.order)
     child_materials = []
@@ -84,7 +102,10 @@ def _layer_material_payload(
                     material,
                     layer.thickness_mm,
                 ),
-                "ph_nav": {"segment_id": segment.id},
+                "ph_nav": {
+                    "segment_id": segment.id,
+                    "is_continuous_insulation": segment.is_continuous_insulation,
+                },
             }
         )
         equivalent_conductivity += (segment.width_mm / total_width) * (material.conductivity_w_mk or 0.0)
@@ -96,6 +117,9 @@ def _layer_material_payload(
         layer.thickness_mm,
         conductivity=equivalent_conductivity,
     )
+    # The parent Hybrid material is discarded on import (rebuilt from cells),
+    # but its layer_id ties the reconstructed segments back to one layer.
+    payload["ph_nav"]["layer_id"] = layer.id
     payload["display_name"] = " + ".join(
         dict.fromkeys(materials_by_id[segment.project_material_id or ""].name for segment in segments)
     )

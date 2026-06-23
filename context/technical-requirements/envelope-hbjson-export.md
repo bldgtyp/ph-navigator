@@ -57,9 +57,21 @@ Per assembly:
     "type": "OpaqueConstructionProperties",
     "ph": { "type": "OpaqueConstructionPhProperties" }
   },
+  "ph_nav": {
+    "assembly_id": "<asm_id>",
+    "assembly_type": "wall | floor | roof | other",
+    "orientation": "first_layer_outside | last_layer_outside"
+  },
   "materials": [ ... layer materials, outside → inside ... ]
 }
 ```
+
+The construction-level `ph_nav` block carries the assembly fields the
+Honeybee shape cannot express (`type`, `orientation`) plus the native
+`assembly_id`. These are **additive round-trip fields** — Honeybee
+consumers ignore the `ph_nav` key, while the inverse import
+(`envelope-hbjson-import`) reads them to re-create the assembly
+losslessly. Same for the per-layer/segment `ph_nav` fields below.
 
 ## Identifier rules
 
@@ -123,7 +135,10 @@ Multi-segment (hybrid) layers emit a wrapper `EnergyMaterial` whose:
       "column_width": <segment_width_m>,
       "row_height": 1.0,
       "material": { ...EnergyMaterial for the segment material... },
-      "ph_nav": { "segment_id": "<seg_id>" }
+      "ph_nav": {
+        "segment_id": "<seg_id>",
+        "is_continuous_insulation": <bool>
+      }
     },
     ...
   ]
@@ -132,7 +147,9 @@ Multi-segment (hybrid) layers emit a wrapper `EnergyMaterial` whose:
 
 Segments are sorted by `order` before emission. `column_widths` is
 authoritative for cell layout; `column_width` on each cell repeats the
-value so a consumer reading only `cells[]` is self-sufficient.
+value so a consumer reading only `cells[]` is self-sufficient. The
+hybrid wrapper `EnergyMaterial` also carries `ph_nav.layer_id`; the
+per-cell `ph_nav` carries the segment identity (round-trip fields).
 
 ## Material reference status
 
@@ -157,6 +174,13 @@ Every emitted `EnergyMaterial` carries
 The top-level `ph_nav` block on each emitted material also carries
 `project_material_id` and a deep-cloned `catalog_origin` (or `null`).
 Consumers needing catalog provenance read it from there.
+
+For a **single-segment (homogeneous) layer** — where the layer is
+rendered directly as one `EnergyMaterial` — that same material `ph_nav`
+block additionally carries the layer/segment identity the import needs:
+`layer_id`, `segment_id`, and `is_continuous_insulation`. (Hybrid layers
+keep this identity on the wrapper and cell `ph_nav` blocks instead, since
+their materials map to individual segments.)
 
 ## Error response
 
