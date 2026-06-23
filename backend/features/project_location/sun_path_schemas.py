@@ -1,11 +1,11 @@
-"""Pydantic mirrors of ladybug sun-path / compass DTOs.
+"""Wire DTOs for the project sun-path service.
 
-These are the response shape of the project-scoped `GET /projects/{id}/sun-path`
-endpoint, produced by `features/project_location/sun_path.py`. They live under
-`model_viewer/schemas/` for historical reasons (and reuse the geometry
-primitives in `ladybug_geometry.py`, which `model_viewer` also uses for faces);
-relocating them to a home owned by the producer is a tracked follow-up — see
-planning/features_v1.1/model-viewer-sun-path/STATUS.md.
+These are the response shape of `GET /projects/{id}/sun-path`, produced by
+`sun_path.py` and consumed by the frontend over the wire. They live with
+their producer (`project_location`). The low-level ladybug geometry
+primitives they are built from are genuinely shared with `model_viewer`'s
+face/mesh extraction, so they continue to be imported from
+`model_viewer.schemas.ladybug_geometry` rather than duplicated here.
 """
 
 from __future__ import annotations

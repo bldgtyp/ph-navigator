@@ -9,7 +9,6 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Request, Response
 
 from features.assets.routes import AssetServiceDep
-from features.model_viewer.schemas.ladybug import SunPathAndCompassDTOSchema
 from features.project_location.models import (
     ElevationLookupRequest,
     ElevationLookupResponse,
@@ -30,6 +29,7 @@ from features.project_location.service import (
     parse_epw_location,
     update_project_location,
 )
+from features.project_location.sun_path_schemas import SunPathAndCompassDTOSchema
 from features.projects.access import (
     ProjectAccess,
     require_editor_user,
