@@ -33,7 +33,7 @@ versions are rejected with HTTP 409 (`viewer_read_only`,
 
 ## Command list
 
-23 command kinds, grouped by domain. JSON shapes live in
+24 command kinds, grouped by domain. JSON shapes live in
 `backend/features/envelope/models.py`; the table below cites the model
 class name.
 
@@ -83,6 +83,7 @@ class name.
 |------|-------|---------|-------------------|
 | `update_project_material` | `UpdateProjectMaterialCommand` | Patch any subset of project-material fields. Edits to catalog-bound fields auto-flag `local_overrides`. | `project_material_not_found` |
 | `remove_unused_project_materials` | `RemoveUnusedProjectMaterialsCommand` | Drop project materials no segment references. | — |
+| `remove_project_material` | `RemoveProjectMaterialCommand` | Drop one project material, only when no segment references it. Used by the Materials tab's Unused section row-level remove action. | `project_material_not_found`, `project_material_in_use` |
 | `refresh_project_material_from_catalog` | `RefreshProjectMaterialFromCatalogCommand` | Reconcile a drifted catalog-origin project material against the current catalog row using per-field `take_catalog` / `use_value` / `keep_mine` choices. **Touches DB**. See `envelope-catalog-drift.md`. | `project_material_has_no_catalog_origin`, `catalog_material_source_missing`, `catalog_material_source_deactivated`, `unknown_project_material_refresh_field` |
 
 ## Conflict code reference
@@ -104,6 +105,7 @@ Catalog of conflict codes raised by envelope commands:
   `project_material_not_found`
 - `last_layer`, `last_segment`
 - `segment_has_no_material`
+- `project_material_in_use`
 - `project_material_has_no_catalog_origin`
 - `catalog_material_not_found` (catalog row missing at pick time)
 - `catalog_material_source_missing`,

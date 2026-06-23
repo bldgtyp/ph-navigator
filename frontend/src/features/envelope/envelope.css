@@ -152,7 +152,7 @@
   flex-direction: column;
   margin: calc(-1 * var(--space-14)) 0 calc(-1 * var(--space-14)) calc(-1 * var(--space-14));
   min-width: 0;
-  overflow-x: hidden;
+  overflow: visible;
   border-radius: var(--radius-md) 0 0 var(--radius-md);
   width: 260px;
 }
@@ -856,6 +856,10 @@
   margin-top: var(--space-8);
 }
 
+.materials-panel__section--unused {
+  margin-top: var(--space-8);
+}
+
 .materials-panel__section--background .report-table {
   color: var(--text-muted, var(--text-secondary));
 }
@@ -876,6 +880,14 @@
 .materials-panel__section--background .report-attachment-chip,
 .materials-panel__section--background .report-status-dot {
   opacity: 0.62;
+}
+
+.materials-panel__remove-unused {
+  color: var(--text-secondary);
+}
+
+.materials-panel__remove-unused:hover:not(:disabled) {
+  color: var(--phn-danger);
 }
 
 .spec-expansion {

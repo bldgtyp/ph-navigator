@@ -13,6 +13,7 @@ from tests.envelope.test_envelope_document_contracts import (
     ORIGIN,
     create_project,
     envelope_body,
+    project_material,
     signed_in_client,
     write_saved_body,
 )
@@ -199,6 +200,48 @@ def test_material_edit_use_site_notes_detach_and_unused_cleanup(
     remaining_ids = {material["id"] for material in cleaned.json()["project_materials"]}
     assert custom["id"] not in remaining_ids
     assert detached_material["id"] in remaining_ids
+
+
+def test_remove_project_material_deletes_only_unused_materials(
+    clean_envelope_material_tables: None,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    saved_body = envelope_body()
+    raw = saved_body.model_dump(mode="json")
+    raw["tables"]["project_materials"].append(
+        project_material(id="pmat_unused", name="Unused air barrier", datasheet_asset_ids=[])
+    )
+    saved_body = saved_body.__class__.model_validate(raw)
+    write_saved_body(version_id, saved_body)
+
+    used = client.post(
+        command_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": document_etag(saved_body)},
+        json={"command": {"kind": "remove_project_material", "project_material_id": "pmat_insul"}},
+    )
+    assert used.status_code == 409
+    assert used.json()["error_code"] == "project_material_in_use"
+
+    unused = client.post(
+        command_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": document_etag(saved_body)},
+        json={"command": {"kind": "remove_project_material", "project_material_id": "pmat_unused"}},
+    )
+    assert unused.status_code == 200
+    remaining_ids = {material["id"] for material in unused.json()["project_materials"]}
+    assert "pmat_unused" not in remaining_ids
+    assert "pmat_insul" in remaining_ids
+
+    missing = client.post(
+        command_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match": unused.json()["draft_etag"]},
+        json={"command": {"kind": "remove_project_material", "project_material_id": "pmat_does_not_exist"}},
+    )
+    assert missing.status_code == 409
+    assert missing.json()["error_code"] == "project_material_not_found"
 
 
 def test_pick_project_material_assigns_existing_material_and_rejects_unknown(

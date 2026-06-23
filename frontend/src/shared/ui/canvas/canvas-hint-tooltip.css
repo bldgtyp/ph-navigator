@@ -22,7 +22,7 @@
   transition:
     opacity 0.12s var(--ease) 0.35s,
     transform 0.12s var(--ease) 0.35s;
-  z-index: calc(var(--z-base) + 4);
+  z-index: var(--z-tooltip);
 }
 
 [data-toolbar-tooltip]::before,

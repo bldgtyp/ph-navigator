@@ -246,6 +246,7 @@ export type EnvelopeCommand =
       segment_id: string;
     }
   | { kind: "remove_unused_project_materials" }
+  | { kind: "remove_project_material"; project_material_id: string }
   | {
       kind: "refresh_project_material_from_catalog";
       project_material_id: string;

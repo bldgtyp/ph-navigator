@@ -20,6 +20,7 @@ from features.envelope.models import (
     PickProjectMaterialCommand,
     ProjectMaterialRefreshChoice,
     RefreshProjectMaterialFromCatalogCommand,
+    RemoveProjectMaterialCommand,
     RemoveUnusedProjectMaterialsCommand,
     UpdateProjectMaterialCommand,
 )
@@ -189,6 +190,21 @@ def remove_unused_project_materials(
     return ops.replace_project_materials(body, used_project_materials(body))
 
 
+def remove_project_material(body: ProjectDocumentV1, command: RemoveProjectMaterialCommand) -> ProjectDocumentV1:
+    ops.find_project_material(body.tables.project_materials, command.project_material_id)
+    if command.project_material_id in used_project_material_ids(body):
+        raise api_error(
+            status.HTTP_409_CONFLICT,
+            "project_material_in_use",
+            "Only unused project materials can be removed.",
+            {"project_material_id": command.project_material_id},
+        )
+    return ops.replace_project_materials(
+        body,
+        [material for material in body.tables.project_materials if material.id != command.project_material_id],
+    )
+
+
 def refresh_project_material_from_catalog(
     conn: Connection[Any],
     body: ProjectDocumentV1,
@@ -315,11 +331,15 @@ def refresh_values(
 
 
 def used_project_materials(body: ProjectDocumentV1) -> list[ProjectMaterial]:
-    used_ids = {
+    used_ids = used_project_material_ids(body)
+    return [material for material in body.tables.project_materials if material.id in used_ids]
+
+
+def used_project_material_ids(body: ProjectDocumentV1) -> set[str]:
+    return {
         segment.project_material_id
         for assembly in body.tables.assemblies
         for layer in assembly.layers
         for segment in layer.segments
         if segment.project_material_id is not None
     }
-    return [material for material in body.tables.project_materials if material.id in used_ids]

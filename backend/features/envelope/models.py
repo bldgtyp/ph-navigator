@@ -386,6 +386,13 @@ class RemoveUnusedProjectMaterialsCommand(BaseModel):
     kind: Literal["remove_unused_project_materials"]
 
 
+class RemoveProjectMaterialCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["remove_project_material"]
+    project_material_id: str
+
+
 class RefreshProjectMaterialFromCatalogCommand(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -417,6 +424,7 @@ EnvelopeCommand = Annotated[
     | UpdateSegmentUseSiteNotesCommand
     | DetachSegmentMaterialCommand
     | RemoveUnusedProjectMaterialsCommand
+    | RemoveProjectMaterialCommand
     | RefreshProjectMaterialFromCatalogCommand,
     Field(discriminator="kind"),
 ]
