@@ -233,6 +233,9 @@
 
 /* Compose `.chip .chip--sm`. OK / CHECK / FAIL with a leading LED dot. */
 .climate-status-chip {
+  align-self: flex-start;
+  justify-self: start;
+  width: fit-content;
   font-family: var(--font-mono);
   font-weight: 600;
   letter-spacing: 0.04em;
