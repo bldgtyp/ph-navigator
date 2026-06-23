@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 18:25 EDT
-STATUS: Draft — depends on Phase 1
+STATUS: Complete (2026-06-23) — strict validation on create/patch; CI green
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phase 2 — strict option validation on create/patch for the six single-select fields
 RELATED:
@@ -112,3 +112,29 @@ Extend `backend/tests/test_catalog_frame_types*.py`:
   `list_all_for_table`. Not worth optimizing now.
 - **Import path reuses this:** Phase 4 calls the same helper after the upgrade
   step resolves labels, so there is exactly one validation rule.
+
+## Completion (2026-06-23)
+
+- `_validate_single_selects(conn, values)` added to `frame_types/service.py`;
+  reads the option store via **one** `options_repository.list_all_for_table`
+  (not six per-field queries — the §Risks note's optimization, taken up front),
+  skips null/empty, rejects unknown labels with `catalog_option_unknown` (422).
+- Wired into `create_frame_type` (validates `payload.model_dump()`) and
+  `update_frame_type` (validates the `exclude_unset` patch subset).
+  `duplicate_frame_type` intentionally skips it (copies already-valid labels —
+  commented in code).
+- **Import path is NOT yet validated** — `commit_import` bypasses
+  `create_frame_type`, so the seed (loaded via import) is unguarded until Phase 4
+  wires the same helper into the import pipeline. The seed is already canonical
+  (Phase 0), so this is safe in the interim.
+- **Existing tests updated to canonical values** (strict validation would reject
+  the old fixtures): `test_catalogs_frame_types.py` `_payload`
+  (`Skyline`/`Ridge`→`Alpen`/`Tyrol`) + filter test; `test_catalog_manufacturer_rosters.py`
+  roster test — the `Schüco`/`schüco` case-variant premise is now **obsolete**
+  (a controlled vocab + case-insensitive option uniqueness can't hold both), so
+  it uses distinct canonical manufacturers (`Alpen`×2, `Intus`, `Zola`).
+- Added an autouse option-reset fixture to `test_catalogs_frame_types.py` (frame
+  writes now depend on the seeded options; one test mutates them).
+- New tests: unknown-on-create→422, unknown-on-patch→422 (row untouched),
+  null single-select allowed, add-option-then-create-row round-trip.
+- **Verification:** full backend suite **982 passed, 2 skipped**; `ruff`/`ty` clean.

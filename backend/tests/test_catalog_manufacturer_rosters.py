@@ -65,11 +65,13 @@ def _glazing(name: str, manufacturer: str | None) -> dict[str, object]:
 
 def test_frame_manufacturers_roster_groups_and_counts(clean_catalog_tables: None) -> None:
     client = signed_in_client()
+    # Manufacturer is now a strictly-validated single-select (Phase 2), so values
+    # are canonical option labels — distinct manufacturers, not case-variants.
     for payload in (
         _frame("A1", "Alpen"),
         _frame("A2", "Alpen"),
-        _frame("S1", "Schüco"),
-        _frame("S2", "schüco"),  # distinct casing — distinct row
+        _frame("I1", "Intus"),
+        _frame("Z1", "Zola"),
         _frame("N1", None),  # null manufacturer — skipped
         _frame("B1", ""),  # blank — skipped
     ):
@@ -78,15 +80,13 @@ def test_frame_manufacturers_roster_groups_and_counts(clean_catalog_tables: None
     response = client.get("/api/v1/catalogs/frame-types/manufacturers")
     assert response.status_code == 200, response.text
     items = response.json()["items"]
-    # Sorted case-insensitively. Different-cased "Schüco"/"schüco" stay as
-    # two rows because the SQL GROUP BY is case-sensitive — the frontend
-    # normalises by casefold when checking in-use against the enabled list.
+    # Sorted case-insensitively; null / blank manufacturers are excluded.
     names = [item["manufacturer"] for item in items]
     assert names == sorted(names, key=str.lower)
     counts = {item["manufacturer"]: item["product_count"] for item in items}
     assert counts["Alpen"] == 2
-    assert counts["Schüco"] == 1
-    assert counts["schüco"] == 1
+    assert counts["Intus"] == 1
+    assert counts["Zola"] == 1
     assert "" not in counts
     assert None not in counts
 

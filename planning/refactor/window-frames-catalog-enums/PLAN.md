@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 17:51 EDT
-STATUS: Active — decisions resolved; Phases 0–1 complete, Phase 2 next
+STATUS: Active — decisions resolved; Phases 0–2 complete, Phase 3 next
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phased implementation plan for window-frames-catalog-enums
 RELATED: ./research.md, ./decisions.md, ./STATUS.md
@@ -62,7 +62,7 @@ list/add/remove reachable via API; seed produces the expected option sets.
 
 ---
 
-## Phase 2 — Strict write-validation on the six fields (backend)
+## Phase 2 — Strict write-validation on the six fields (backend) ✅ Complete (2026-06-23)
 
 - On create/patch, validate each of the six against its option list. Permissive
   **add-on-write** is allowed only through the explicit option-add path (D-4),

@@ -10,9 +10,9 @@ RELATED: ./README.md, ./research.md, ./decisions.md, ./PLAN.md
 # STATUS — window-frames-catalog-enums
 
 **State:** `Active` — research complete; **all decisions resolved (2026-06-23)**;
-**Phases 0–1 complete (2026-06-23)** — canonical vocab frozen + seed cleaned
-(P0); catalog option store (table, repo, service, routes, models, seed, 10
-tests) landed and CI-green (P1). **Next: Phase 2** (strict write-validation).
+**Phases 0–2 complete (2026-06-23)** — canonical vocab frozen + seed cleaned
+(P0); catalog option store landed (P1); strict single-select write-validation on
+create/patch (P2). All CI-green. **Next: Phase 3** (derived name + default-by-id).
 
 **Decisions locked:** D-1 all six strict single-select (incl. `brand`, to group
 on it) · D-2 new catalog app-scoped option store, label-string storage · D-3
@@ -34,15 +34,14 @@ frame-types only, store built generic for glazing/materials reuse.
 
 ## Next step
 
-Phases 0–1 are done. Execute `phases/phase-02-write-validation.md`: add
-`_validate_single_selects` (reads the option store) and wire it into
-`create_frame_type` / `update_frame_type`; reject unknown values with
-`catalog_option_unknown` (422). **Heads-up:** the existing
-`test_catalogs_frame_types.py` payloads use non-canonical values
-(`manufacturer="Skyline"`, `brand="Ridge"`) — Phase 2 must switch them to
-canonical option labels (or add the options) or strict validation will fail
-them. Phase 4 will call the same `_validate_single_selects` after the import
-upgrade resolves labels.
+Phases 0–2 are done. Execute `phases/phase-03-derived-name-and-default-by-id.md`:
+add `compose_frame_name(...)` (server-compute `name` from the parts, read-only),
+drop `name` from the create/update request models, backfill via migration, and
+switch `default_refs` from name lookup to **id** lookup
+(`recPHNDefFrame001`/`recPHNDefGlazng01`) — the highest-risk site
+(`default_refs.py:104`). Also drop `"name"` from the drift comparator's
+`_FRAME_KEYS`. The composer must reproduce every existing seed `name` (research
+§2 lossless proof) — that's the headline regression test.
 
 **Note discovered while planning:** the frame catalog is seeded *through the
 import pipeline* (`scripts/seed_frame_catalog.py:64-78`), so the Phase 4 import
@@ -64,4 +63,9 @@ upgrade step is the data-cleanup mechanism — **no in-place row migration neede
   `20260623_0038` (seed); `_options_repository.py`; `frame_types/options_service.py`;
   3 option models; `GET/PUT …/options` routes. `tests/test_catalog_field_options.py`
   (10 tests). Full backend suite **978 passed, 2 skipped**; single alembic head.
-- Phases 2–6: pending implementation.
+- **Phase 2 (2026-06-23):** `_validate_single_selects` in `frame_types/service.py`
+  wired into create/patch (`catalog_option_unknown` 422); existing frame/roster
+  test fixtures moved to canonical values + autouse option-reset; 4 new validation
+  tests. Full backend suite **982 passed, 2 skipped**. Import path still bypasses
+  validation (deferred to Phase 4).
+- Phases 3–6: pending implementation.
