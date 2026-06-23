@@ -64,8 +64,10 @@ const EMPTY_DISMISSED: readonly string[] = Object.freeze([]);
 // Phase 03 + 04 keep zoom + view direction as component-local state. The
 // phase plan calls for a user-preferences store key, but no such store
 // exists in V2 yet — promotion is deferred to the same cleanup phase that
-// introduces the store. Selection lives in the apertures builder Zustand
-// store so the toolbar and overlay subscribe to the same source.
+// introduces the store. Zoom auto-fits only on first mount; after that the
+// user's chosen scale persists while they move between aperture types.
+// Selection lives in the apertures builder Zustand store so the toolbar and
+// overlay subscribe to the same source.
 //
 // Phase 05 adds the dimension strips + format selector + edge-add /
 // row-column delete affordances. Dimension commands fan out through the
@@ -118,6 +120,7 @@ export function ApertureCanvasContainer({
   const [viewDirection, setViewDirection] = useState<ApertureViewDirection>("exterior");
   const [deleteTip, setDeleteTip] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<DimensionConfirm>(null);
+  const didInitialFitRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const selection = useApertureBuilderStore((state) => selectionForAperture(state, aperture.id));
@@ -179,9 +182,10 @@ export function ApertureCanvasContainer({
   }, [aperture]);
 
   useLayoutEffect(() => {
+    if (didInitialFitRef.current) return;
+    didInitialFitRef.current = true;
     fitZoom();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aperture.id]);
+  }, [fitZoom]);
 
   const rendered = useMemo(
     () => (viewDirection === "interior" ? mirrorApertureForInterior(aperture) : aperture),
