@@ -32,6 +32,7 @@ from features.envelope.import_models import (
     ImportPlanCounts,
     MaterialPlanItem,
 )
+from features.project_document.custom_fields import normalize_display_name
 from features.project_document.document import (
     Assembly,
     AssemblyLayer,
@@ -109,7 +110,7 @@ def build_import_plan(
     )
 
 
-# --- material matching ladder (PRD §5 rungs 1–3 & 6) ----------------------
+# --- material matching ladder (PRD §5 rungs 1–6) --------------------------
 
 
 def _resolve_materials(
@@ -119,46 +120,84 @@ def _resolve_materials(
 ) -> tuple[dict[str, str], list[ProjectMaterial], list[MaterialPlanItem]]:
     existing_ids = {material.id for material in body.tables.project_materials}
     by_catalog_record: dict[str, list[ProjectMaterial]] = {}
+    by_name: dict[str, list[ProjectMaterial]] = {}
     for material in body.tables.project_materials:
         if material.catalog_origin is not None:
             by_catalog_record.setdefault(material.catalog_origin.catalog_record_id, []).append(material)
+        by_name.setdefault(normalize_display_name(material.name), []).append(material)
 
-    # One lookup per distinct catalog record, even if several incoming
-    # materials share the same `catalog_record_id`.
-    catalog_rows: dict[str, dict[str, Any] | None] = {}
-
-    def catalog_row(record_id: str) -> dict[str, Any] | None:
-        if record_id not in catalog_rows:
-            catalog_rows[record_id] = catalog_materials_repository.get_material(conn, record_id)
-        return catalog_rows[record_id]
+    indexes = _MaterialIndexes(
+        existing_ids=existing_ids,
+        by_catalog_record=by_catalog_record,
+        by_name=by_name,
+        catalog_row=_memoized_catalog_row(conn),
+        catalog_by_name=_lazy_catalog_by_name(conn),
+    )
 
     resolution_map: dict[str, str] = {}
     new_materials: list[ProjectMaterial] = []
     items: list[MaterialPlanItem] = []
     for source_key, material in library.materials.items():
-        item = _resolve_one_material(material, existing_ids, by_catalog_record, catalog_row, new_materials)
+        item = _resolve_one_material(material, indexes, new_materials)
         resolution_map[source_key] = item.project_material_id
         items.append(item)
     return resolution_map, new_materials, items
 
 
+@dataclass(frozen=True)
+class _MaterialIndexes:
+    """Lookups shared across the matching ladder for one import."""
+
+    existing_ids: set[str]
+    by_catalog_record: dict[str, list[ProjectMaterial]]
+    by_name: dict[str, list[ProjectMaterial]]
+    catalog_row: Callable[[str], dict[str, Any] | None]
+    catalog_by_name: Callable[[str], dict[str, Any] | None]
+
+
+def _memoized_catalog_row(conn: Connection[Any]) -> Callable[[str], dict[str, Any] | None]:
+    """One catalog lookup per distinct record id, even across repeated calls."""
+    cache: dict[str, dict[str, Any] | None] = {}
+
+    def lookup(record_id: str) -> dict[str, Any] | None:
+        if record_id not in cache:
+            cache[record_id] = catalog_materials_repository.get_material(conn, record_id)
+        return cache[record_id]
+
+    return lookup
+
+
+def _lazy_catalog_by_name(conn: Connection[Any]) -> Callable[[str], dict[str, Any] | None]:
+    """Resolve an active catalog row by normalized name; loads the table once,
+    and only if a name-match rung is actually reached."""
+    index: dict[str, dict[str, Any]] | None = None
+
+    def lookup(normalized_name: str) -> dict[str, Any] | None:
+        nonlocal index
+        if index is None:
+            index = {}
+            for row in catalog_materials_repository.list_materials(conn):
+                index.setdefault(normalize_display_name(row["name"]), row)  # first active row wins
+        return index.get(normalized_name)
+
+    return lookup
+
+
 def _resolve_one_material(
     material: ImportedMaterial,
-    existing_ids: set[str],
-    by_catalog_record: dict[str, list[ProjectMaterial]],
-    catalog_row: Callable[[str], dict[str, Any] | None],
+    indexes: _MaterialIndexes,
     new_materials: list[ProjectMaterial],
 ) -> MaterialPlanItem:
     catalog_record_id = _materials_catalog_record_id(material.catalog_origin)
 
     # Rung 1 — by project material id (round-trip / same-project reuse).
-    if material.source_key in existing_ids:
+    if material.source_key in indexes.existing_ids:
         return _material_item(material, "reuse_project_material", material.source_key, catalog_record_id)
 
     warnings: list[str] = []
     if catalog_record_id is not None:
         # Rung 2 — an existing project material already came from this catalog row.
-        matches = by_catalog_record.get(catalog_record_id, [])
+        matches = indexes.by_catalog_record.get(catalog_record_id, [])
         if len(matches) == 1:
             return _material_item(material, "reuse_catalog_in_project", matches[0].id, catalog_record_id)
         if len(matches) > 1:
@@ -167,12 +206,31 @@ def _resolve_one_material(
             warnings.append("ambiguous_in_project_catalog_material")
 
         # Rung 3 — pick a fresh copy from the live global catalog (D3).
-        row = catalog_row(catalog_record_id)
+        row = indexes.catalog_row(catalog_record_id)
         if row is not None and row["is_active"]:
             created = project_material_from_catalog(row)
             new_materials.append(created)
             return _material_item(material, "pick_from_catalog", created.id, catalog_record_id, warnings)
         warnings.append("catalog_material_missing" if row is None else "catalog_material_inactive")
+
+    # Rungs 4–5 — name matches (foreign files / V1 fallback). Fuzzy by nature, so
+    # every hit carries a warning the preview surfaces for confirmation.
+    normalized = normalize_display_name(material.name)
+    name_matches = indexes.by_name.get(normalized, [])
+    if len(name_matches) == 1:
+        # Rung 4 — a single same-named project material → reuse it.
+        warnings.append("name_matched_project_material")
+        return _material_item(material, "reuse_project_material", name_matches[0].id, catalog_record_id, warnings)
+    if len(name_matches) > 1:
+        warnings.append("ambiguous_name_in_project")
+
+    catalog_named = indexes.catalog_by_name(normalized)
+    if catalog_named is not None:
+        # Rung 5 — a same-named active catalog row → pick a fresh copy.
+        created = project_material_from_catalog(catalog_named)
+        new_materials.append(created)
+        warnings.append("name_matched_catalog_material")
+        return _material_item(material, "pick_from_catalog", created.id, catalog_named["id"], warnings)
 
     # Rung 6 — hand-entered, project-only (D4).
     created = _create_project_material(material)

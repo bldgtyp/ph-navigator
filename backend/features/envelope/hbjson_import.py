@@ -32,6 +32,7 @@ LIBRARY_TYPE = "PHNavigatorOpaqueConstructionLibrary"
 DEFAULT_LAYER_WIDTH_MM = 1000.0
 
 _ASSEMBLY_TYPES = frozenset({"wall", "floor", "roof", "other"})
+_ASSEMBLY_TYPE_PREFIXES: dict[str, AssemblyType] = {"W_": "wall", "R_": "roof", "F_": "floor"}
 _ORIENTATIONS = frozenset({"first_layer_outside", "last_layer_outside"})
 _SPECIFICATION_STATUSES = frozenset({"complete", "missing", "question", "na"})
 
@@ -105,25 +106,29 @@ class ParsedConstructionLibrary:
 
 
 def parse_construction_library(raw: object, *, current_schema_version: int) -> ParsedConstructionLibrary:
-    """Reverse ``export_hbjson_constructions`` into the import IR.
+    """Parse a construction-library file into the import IR.
 
-    Raises :class:`ImportParseError` for a wrong file type, a schema newer
+    Dispatches on the envelope: the PHN-native
+    ``PHNavigatorOpaqueConstructionLibrary`` is the reverse of
+    ``export_hbjson_constructions`` (id/catalog provenance preserved); any
+    other shape is treated as raw honeybee-PH (a single ``OpaqueConstruction``,
+    a name-keyed group, or a full ``Model`` — PRD §2B). Both normalize into the
+    same :class:`ParsedConstructionLibrary`.
+
+    Raises :class:`ImportParseError` for an unreadable file, a schema newer
     than this app, multi-row divisions, or a cell referencing a missing
-    material. Tolerant of files that predate the additive ``ph_nav``
-    round-trip fields (Phase 0): each falls back to the documented default.
+    material.
     """
     if not isinstance(raw, dict):
         raise ImportParseError("import_invalid_file", "Construction library must be a JSON object.")
     envelope = cast(dict[str, Any], raw)
 
-    file_type = envelope.get("type")
-    if file_type != LIBRARY_TYPE:
-        raise ImportParseError(
-            "import_wrong_file_type",
-            f"File type must be {LIBRARY_TYPE!r}.",
-            {"type": file_type},
-        )
+    if envelope.get("type") == LIBRARY_TYPE:
+        return _parse_native_library(envelope, current_schema_version)
+    return _parse_foreign_constructions(envelope, current_schema_version)
 
+
+def _parse_native_library(envelope: dict[str, Any], current_schema_version: int) -> ParsedConstructionLibrary:
     schema_version = envelope.get("schema_version")
     if not isinstance(schema_version, int) or isinstance(schema_version, bool):
         raise ImportParseError("import_invalid_file", "schema_version must be an integer.")
@@ -140,13 +145,60 @@ def parse_construction_library(raw: object, *, current_schema_version: int) -> P
 
     materials: dict[str, ImportedMaterial] = {}
     constructions = [
-        _parse_construction(identifier, payload, materials) for identifier, payload in constructions_raw.items()
+        _parse_construction(identifier, payload, materials)
+        for identifier, payload in cast(dict[str, Any], constructions_raw).items()
     ]
+    return ParsedConstructionLibrary(schema_version=schema_version, constructions=constructions, materials=materials)
+
+
+def _parse_foreign_constructions(envelope: dict[str, Any], current_schema_version: int) -> ParsedConstructionLibrary:
+    materials: dict[str, ImportedMaterial] = {}
+    constructions = [
+        _parse_construction(identifier, payload, materials)
+        for identifier, payload in _foreign_constructions(envelope).items()
+    ]
+    # Foreign files carry no PHN schema; tag them with the current version so the
+    # preview/response shape is consistent (there is nothing to "upgrade").
     return ParsedConstructionLibrary(
-        schema_version=schema_version,
+        schema_version=current_schema_version,
         constructions=constructions,
         materials=materials,
     )
+
+
+def _foreign_constructions(envelope: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Extract ``{identifier: OpaqueConstruction-dict}`` from a honeybee file."""
+    file_type = envelope.get("type")
+    if file_type == "OpaqueConstruction":
+        return {_as_optional_str(envelope.get("identifier")) or "Imported construction": envelope}
+
+    if file_type == "Model":
+        opaque = _opaque_from_list(_as_dict(_as_dict(envelope.get("properties")).get("energy")).get("constructions"))
+        if not opaque:
+            raise ImportParseError("import_no_constructions", "The model has no opaque constructions to import.")
+        return opaque
+
+    # A honeybee "dump objects" group: a name-keyed dict of object dicts.
+    group = {
+        identifier: cast(dict[str, Any], value)
+        for identifier, value in envelope.items()
+        if isinstance(value, dict) and value.get("type") == "OpaqueConstruction"
+    }
+    if group:
+        return group
+    raise ImportParseError(
+        "import_wrong_file_type",
+        "File is not a PH-Navigator construction library or a recognizable honeybee opaque construction.",
+        {"type": file_type},
+    )
+
+
+def _opaque_from_list(value: object) -> dict[str, dict[str, Any]]:
+    return {
+        _as_optional_str(item.get("identifier")) or f"Imported construction {index}": cast(dict[str, Any], item)
+        for index, item in enumerate(_as_list(value))
+        if isinstance(item, dict) and item.get("type") == "OpaqueConstruction"
+    }
 
 
 def parse_or_422(file: object, *, current_schema_version: int) -> ParsedConstructionLibrary:
@@ -189,7 +241,7 @@ def _parse_construction(
     return ImportedConstruction(
         source_assembly_id=_as_optional_str(ph_nav.get("assembly_id")),
         name=str(name),
-        type=_coerce_assembly_type(ph_nav.get("assembly_type")),
+        type=_resolve_assembly_type(ph_nav.get("assembly_type"), identifier),
         orientation=orientation,
         layers=layers,
     )
@@ -205,7 +257,9 @@ def _parse_layer(
     thickness_mm = _meters_to_mm(material.get("thickness"))
     divisions = _as_dict(_as_dict(_as_dict(material.get("properties")).get("ph")).get("divisions"))
 
-    if divisions:
+    # honeybee-PH stamps an empty `divisions` block on every material; only a
+    # populated `cells` list marks a genuine hybrid (heterogeneous) layer.
+    if _as_list(divisions.get("cells")):
         return _parse_hybrid_layer(material, divisions, thickness_mm, materials)
     return _parse_homogeneous_layer(material, thickness_mm, materials)
 
@@ -309,10 +363,16 @@ def _ref_status(material: dict[str, Any]) -> object:
     return _as_dict(_as_dict(material.get("properties")).get("ref")).get("ref_status")
 
 
-def _coerce_assembly_type(value: object) -> AssemblyType:
-    if isinstance(value, str) and value in _ASSEMBLY_TYPES:
-        return cast(AssemblyType, value)
-    return "other"
+def _resolve_assembly_type(explicit: object, identifier: str) -> AssemblyType:
+    """Use an explicit native type when present, else the identifier prefix.
+
+    Honeybee-PH conventionally prefixes construction identifiers `W_`/`R_`/`F_`;
+    native exports always carry an explicit type, so the heuristic only fires on
+    foreign files (and the user can still override it in the preview).
+    """
+    if isinstance(explicit, str) and explicit in _ASSEMBLY_TYPES:
+        return cast(AssemblyType, explicit)
+    return _ASSEMBLY_TYPE_PREFIXES.get(identifier[:2].upper(), "other")
 
 
 def _coerce_orientation(value: object) -> AssemblyOrientation:
