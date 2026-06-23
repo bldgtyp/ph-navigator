@@ -115,7 +115,8 @@ function LegendRows({
             type="button"
             aria-pressed={active}
             className={active ? "is-active" : undefined}
-            onClick={() => toggleLegendFilterKey(theme, row.id)}
+            title={`Isolate ${row.label} — Shift-click to add to the filter`}
+            onClick={(event) => toggleLegendFilterKey(theme, row.id, event.shiftKey)}
           >
             <span className="model-legend-swatch" style={{ backgroundColor: row.color }} />
             <span className="model-legend-label">{row.label}</span>

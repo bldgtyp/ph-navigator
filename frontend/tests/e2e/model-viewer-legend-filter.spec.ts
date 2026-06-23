@@ -58,8 +58,67 @@ test("isolates a legend bucket as a filter and restores on clear / Escape", asyn
   await expect.poll(() => visibleCount(page)).toBe(baseline);
 });
 
+test("shift-click multi-selects legend buckets into a union (Phase 2)", async ({ page }) => {
+  await signIn(page, { email: "codex@example.com", password: "password" });
+
+  const suffix = Date.now().toString().slice(-8);
+  await createProject(page, {
+    name: `Model Viewer Legend Union ${suffix}`,
+    btNumber: `mvlu-${suffix}`,
+  });
+
+  await page.getByRole("link", { name: "Model", exact: true }).click();
+  await page
+    .locator(".model-empty-state input[type=file]")
+    .setInputFiles(MODEL_VIEWER_FIXTURE_PATH);
+  await waitForModelViewerReady(page);
+
+  await chooseTheme(page, "Surface Type");
+  await expect
+    .poll(() => page.evaluate(() => window.__phnModelViewer?.theme))
+    .toBe("surface-type");
+
+  const wallCount = await rowCount(page, "Wall");
+  const roofCount = await rowCount(page, "RoofCeiling");
+  expect(wallCount).toBeGreaterThan(0);
+  expect(roofCount).toBeGreaterThan(0);
+
+  const wallRow = legendRow(page, "Wall");
+  const roofRow = legendRow(page, "Roof / Ceiling");
+
+  await wallRow.click();
+  await expect.poll(() => visibleCount(page)).toBe(wallCount);
+
+  // Shift-click adds RoofCeiling to the filter → the union stays visible.
+  await roofRow.click({ modifiers: ["Shift"] });
+  await expect(wallRow).toHaveAttribute("aria-pressed", "true");
+  await expect(roofRow).toHaveAttribute("aria-pressed", "true");
+  await expect
+    .poll(() =>
+      page.evaluate(() => [...(window.__phnModelViewer?.legendFilter?.keys ?? [])].sort()),
+    )
+    .toEqual(["RoofCeiling", "Wall"]);
+  await expect.poll(() => visibleCount(page)).toBe(wallCount + roofCount);
+
+  // Shift-click Wall off → only RoofCeiling remains in the union.
+  await wallRow.click({ modifiers: ["Shift"] });
+  await expect(wallRow).toHaveAttribute("aria-pressed", "false");
+  await expect.poll(() => visibleCount(page)).toBe(roofCount);
+});
+
 function visibleCount(page: Page): Promise<number> {
   return page.evaluate(() => window.__phnModelViewer?.visibleObjectIds.length ?? 0);
+}
+
+function legendRow(page: Page, label: string) {
+  return page.locator(".model-legend-rows button").filter({ hasText: label });
+}
+
+function rowCount(page: Page, rowId: string): Promise<number> {
+  return page.evaluate(
+    (id) => window.__phnModelViewer?.legend?.rows.find((row) => row.id === id)?.count ?? 0,
+    rowId,
+  );
 }
 
 async function chooseTheme(page: Page, name: string): Promise<void> {
