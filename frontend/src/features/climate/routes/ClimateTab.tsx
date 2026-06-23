@@ -61,53 +61,55 @@ export function ClimateTab({ project }: { project: ProjectDetail }) {
 
   return (
     <section className="tab-panel climate-tab" aria-label="Climate">
-      <div className="climate-workspace">
-        <ClimateSourceSidebar
-          location={location}
-          sources={sources}
-          selected={selected}
-          canEdit={canEdit}
-          unitSystem={unitSystem}
-          onSelect={setSelected}
-          onOpenSetLocation={openLocationModal}
-        />
-        <main className="climate-main">
-          {sourcesQuery.error ? (
-            <p className="form-error">Could not load climate sources.</p>
-          ) : null}
-          {selected === "location" ? (
-            <LocationPage location={location} unitSystem={unitSystem} />
-          ) : null}
-          {selectedSource ? (
-            <ClimateSourceDetailPage
-              project={project}
-              source={selectedSource}
-              unitSystem={unitSystem}
-              onOpenPicker={openPicker}
-              onOpenWeatherPicker={openWeatherPicker}
-              onOpenUploadModal={openUploadModal}
-            />
-          ) : null}
-          {slotSource ? (
-            <ClimateSourceDetailPage
-              project={project}
-              source={slotSource}
-              unitSystem={unitSystem}
-              onOpenPicker={openPicker}
-              onOpenWeatherPicker={openWeatherPicker}
-              onOpenUploadModal={openUploadModal}
-            />
-          ) : null}
-          {slotKind && !slotSource ? (
-            <MissingSourcePage
-              project={project}
-              kind={slotKind}
-              onOpenPicker={openPicker}
-              onOpenWeatherPicker={openWeatherPicker}
-              onOpenUploadModal={openUploadModal}
-            />
-          ) : null}
-        </main>
+      <div className="climate-body">
+        <div className="climate-workspace">
+          <ClimateSourceSidebar
+            location={location}
+            sources={sources}
+            selected={selected}
+            canEdit={canEdit}
+            unitSystem={unitSystem}
+            onSelect={setSelected}
+            onOpenSetLocation={openLocationModal}
+          />
+          <main className="climate-main">
+            {sourcesQuery.error ? (
+              <p className="form-error">Could not load climate sources.</p>
+            ) : null}
+            {selected === "location" ? (
+              <LocationPage location={location} unitSystem={unitSystem} />
+            ) : null}
+            {selectedSource ? (
+              <ClimateSourceDetailPage
+                project={project}
+                source={selectedSource}
+                unitSystem={unitSystem}
+                onOpenPicker={openPicker}
+                onOpenWeatherPicker={openWeatherPicker}
+                onOpenUploadModal={openUploadModal}
+              />
+            ) : null}
+            {slotSource ? (
+              <ClimateSourceDetailPage
+                project={project}
+                source={slotSource}
+                unitSystem={unitSystem}
+                onOpenPicker={openPicker}
+                onOpenWeatherPicker={openWeatherPicker}
+                onOpenUploadModal={openUploadModal}
+              />
+            ) : null}
+            {slotKind && !slotSource ? (
+              <MissingSourcePage
+                project={project}
+                kind={slotKind}
+                onOpenPicker={openPicker}
+                onOpenWeatherPicker={openWeatherPicker}
+                onOpenUploadModal={openUploadModal}
+              />
+            ) : null}
+          </main>
+        </div>
       </div>
       {pickerKind ? (
         <ClimateDatasetPickerModal
