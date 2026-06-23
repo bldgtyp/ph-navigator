@@ -12,7 +12,7 @@ SCOPE: Decision ledger for the Climate feature.
 RELATED:
   - PRD.md
   - planning/archive/project-location/decisions.md (D-PL-1..5)
-  - planning/features_v1.1/model-viewer-sun-path/decisions.md (D-SP-1)
+  - planning/archive/model-viewer-sun-path/decisions.md (D-SP-1)
 ---
 
 # Climate — Decisions

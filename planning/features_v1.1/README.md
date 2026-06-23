@@ -28,7 +28,7 @@ planning/features_v1.1/<feature-slug>/
 | Feature | Status | Current next step |
 |---|---|---|
 | [Model Viewer post-MVP](model-viewer-post-mvp/README.md) | Active (router) | Umbrella router classifying the deferred Model Viewer candidates into the feature folders below. |
-| ⮑ [Model Viewer — Sun Path (3D render)](model-viewer-sun-path/README.md) | Active (planned) | **Frontend-only; depends on Climate Phase 1** (which owns the sun-path endpoint). Render the diagram over geometry once Climate ships it. Scrubber is a gated Phase 2. |
+| ⮑ [Model Viewer — Sun Path (3D render)](../archive/model-viewer-sun-path/README.md) | Complete | Shipped 2026-06-23 (Phases 0 + 1) and archived to `planning/archive/model-viewer-sun-path/`. Backend sun-path service rebuilt in `project_location` (not Climate); Site & Sun render done. Scrubber (Q-VIEW-6) stays a deferred Phase 2 candidate on the post-mvp roster. |
 | ⮑ [Model Viewer — Legend as Filter](model-viewer-legend-filter/README.md) | Active (planned) | Ready to build — Ed-flagged near-priority; frontend-only, no open decisions, no Climate dependency. |
 | ⮑ [Model Viewer — Clipping Planes](model-viewer-clipping-planes/README.md) | Deferred (gated) | Build when a named sectioned-inspection workflow exists; plan is ready. |
 | [User-defined attachment fields](user-defined-attachment-fields/README.md) | Deferred | Revisit after v1 ships and at least two real project workflows need ad hoc attachment columns. |

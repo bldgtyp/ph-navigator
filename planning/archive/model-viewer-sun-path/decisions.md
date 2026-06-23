@@ -1,9 +1,10 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Settled — D-SP-1 accepted (Ed 2026-06-13); RECONCILED 2026-06-23
-  (backend home = project_location, not "Climate"; build/delete history
-  traced). Inherited items restated for one-stop reading. No open decisions.
+STATUS: COMPLETE/Settled — D-SP-1 accepted (Ed 2026-06-13); RECONCILED
+  2026-06-23 (backend home = project_location, not "Climate"); shipped +
+  archived 2026-06-23. Inherited items restated for one-stop reading. No
+  open decisions.
 AUTHOR: Claude (for Ed)
 SCOPE: Decision ledger for the Model Viewer sun-path feature.
 RELATED:

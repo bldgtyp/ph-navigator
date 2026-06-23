@@ -9,7 +9,7 @@ SCOPE: Umbrella router for Model Viewer work left outside the
 RELATED:
   - STATUS.md
   - PRD.md
-  - planning/features_v1.1/model-viewer-sun-path/
+  - planning/archive/model-viewer-sun-path/
   - planning/features_v1.1/model-viewer-legend-filter/
   - planning/features_v1.1/model-viewer-clipping-planes/
   - planning/archive/model-viewer/ (completed MVP — source of truth)
@@ -33,7 +33,7 @@ with detailed phased plans.
 
 | Candidate | Feature folder | Notes |
 |---|---|---|
-| Sun-path **3D render** (D-07) **+** scrubber (Q-VIEW-6) | [`model-viewer-sun-path/`](../model-viewer-sun-path/) | **Phases 0 + 1 implemented 2026-06-23** (branch `feat/model-viewer-sun-path`, pending merge). The backend was briefly in Climate framing but actually lives in **`project_location`** (the coordinate owner); it was built, deleted 2026-06-22, and rebuilt here as Phase 0, with the Site & Sun render as Phase 1. D-SP-1 settled (decoupled, location-reactive endpoint). Scrubber (Q-VIEW-6) is the deferred Phase 2. |
+| Sun-path **3D render** (D-07) **+** scrubber (Q-VIEW-6) | [`model-viewer-sun-path/`](../../archive/model-viewer-sun-path/) | **Phases 0 + 1 implemented 2026-06-23** (merged + archived 2026-06-23). The backend was briefly in Climate framing but actually lives in **`project_location`** (the coordinate owner); it was built, deleted 2026-06-22, and rebuilt here as Phase 0, with the Site & Sun render as Phase 1. D-SP-1 settled (decoupled, location-reactive endpoint). Scrubber (Q-VIEW-6) is the deferred Phase 2. |
 | Legend-as-filter (NEW-VIEW-2 / Q-VIEW-7) | [`model-viewer-legend-filter/`](../model-viewer-legend-filter/) | Ed-flagged near-priority. Frontend-only; reuses the D-11 legend rows + existing bucket-key function. No open decisions. **No Climate dependency** — can go anytime. |
 
 ### Tier 2 — Plannable but gated (own folder, plan ready, idle)

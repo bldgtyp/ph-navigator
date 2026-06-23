@@ -1,11 +1,11 @@
 ---
 DATE: 2026-06-23
 TIME: -
-STATUS: Phases 0 + 1 IMPLEMENTED 2026-06-23 (branch
-  `feat/model-viewer-sun-path`, pending merge). Phase 0 rebuilt the backend
-  sun-path service in `project_location` (it was deleted 2026-06-22);
-  Phase 1 renders it in the Model-Viewer Site & Sun lens. D-SP-1 accepted.
-  Phase 2 (scrubber) deferred. See STATUS.md.
+STATUS: COMPLETE — Phases 0 + 1 shipped 2026-06-23, merged to `main`,
+  archived. Phase 0 rebuilt the backend sun-path service in
+  `project_location` (it was deleted 2026-06-22); Phase 1 renders it in the
+  Model-Viewer Site & Sun lens. D-SP-1 accepted. Phase 2 (scrubber)
+  deferred — see the model-viewer-post-mvp roster. See STATUS.md.
 AUTHOR: Claude (for Ed)
 SCOPE: The annual sun-path diagram in the Model Viewer Site & Sun lens —
   both the project-scoped backend service that computes it and the 3D

@@ -1,7 +1,8 @@
 ---
 DATE: 2026-06-23
 TIME: -
-STATUS: Active — implementation sequence (rebaselined 2026-06-23).
+STATUS: COMPLETE — Phases 0 + 1 shipped 2026-06-23 (merged, archived).
+  Phase 2 (scrubber) deferred. Sequence retained as the build record.
 AUTHOR: Claude (for Ed)
 SCOPE: Phase sequence and build order for the sun-path feature.
 RELATED:

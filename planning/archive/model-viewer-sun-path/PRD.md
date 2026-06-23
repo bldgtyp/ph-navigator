@@ -1,7 +1,8 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Active — behavior contract for the sun-path feature.
+STATUS: COMPLETE — shipped 2026-06-23 (merged, archived). Behavior
+  contract met for Phases 0 + 1; Phase 2 (scrubber) deferred.
 AUTHOR: Claude (for Ed)
 SCOPE: Product / behavior contract for rendering the annual sun path
   in the Model Viewer Site & Sun lens from project-location data.

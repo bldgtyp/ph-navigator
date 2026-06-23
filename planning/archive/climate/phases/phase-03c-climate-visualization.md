@@ -13,7 +13,7 @@ RELATED:
   - phase-03-climate-tab-ui.md (§0 decomposition; §2.4 visualization)
   - phase-03b-climate-source-attach-select.md (provides the active source)
   - phase-01-sun-path-service.md (the GET /projects/{id}/sun-path endpoint)
-  - ../../features_v1.1/model-viewer-sun-path/ (shares sun-path geometry)
+  - ../../model-viewer-sun-path/ (shares sun-path geometry)
   - ../decisions.md (D-CL-11 per-analysis default)
 ---
 
@@ -46,7 +46,7 @@ Two distinct pieces of new infrastructure, hence its own slice.
   sun path through a *different* combined model-data endpoint.
 - Add `useSunPathQuery(projectId)` (3a client conventions) against the
   Phase-1 endpoint; render the sun path + compass. **Coordinate with
-  `planning/features_v1.1/model-viewer-sun-path/`** — share the
+  `planning/archive/model-viewer-sun-path/`** — share the
   DTO→geometry conversion / `SiteSunLayer` geometry rather than
   duplicating it. 2D diagram vs. reusing the 3D layer is an open call;
   decide when scoping.
