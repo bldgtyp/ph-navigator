@@ -227,6 +227,9 @@
 .envelope-sidebar-row-name {
   color: inherit;
   display: block;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  line-height: 1.25;
   min-width: 0;
   overflow: hidden;
   text-decoration: none;
@@ -298,14 +301,20 @@
 }
 
 .assembly-header {
-  align-items: center;
   border-bottom: 1px solid var(--border-subtle);
-  display: flex;
-  gap: var(--space-48);
-  min-height: 56px;
+  display: grid;
+  gap: var(--space-8);
+  min-height: 72px;
   min-width: 0;
   overflow: hidden;
-  padding: var(--space-8) 0;
+  padding: var(--space-10) 0 var(--space-12);
+}
+
+.assembly-header-main {
+  align-items: center;
+  display: flex;
+  gap: var(--space-32);
+  min-width: 0;
 }
 
 .assembly-header h2 {
@@ -327,7 +336,8 @@
   margin-bottom: var(--space-4);
 }
 
-.assembly-header-metrics {
+.assembly-header-metrics,
+.assembly-header-alerts {
   align-items: center;
   display: flex;
   flex: 0 1 auto;
@@ -340,7 +350,12 @@
   overflow: hidden;
 }
 
-.assembly-header-metrics > div {
+.assembly-header-alerts {
+  margin-left: 0;
+}
+
+.assembly-header-metrics > div,
+.assembly-header-alerts > div {
   align-items: center;
   background: color-mix(in oklab, var(--accent) 5%, transparent);
   border: 1px solid color-mix(in oklab, var(--accent) 10%, var(--border-subtle));
@@ -358,7 +373,8 @@
   white-space: nowrap;
 }
 
-.assembly-header-metrics dt {
+.assembly-header-metrics dt,
+.assembly-header-alerts dt {
   align-items: center;
   color: var(--text-secondary);
   display: flex;
@@ -370,7 +386,8 @@
   white-space: nowrap;
 }
 
-.assembly-header-metrics dd {
+.assembly-header-metrics dd,
+.assembly-header-alerts dd {
   align-items: center;
   display: flex;
   color: var(--text-secondary);
@@ -1404,12 +1421,19 @@
   }
 
   .assembly-header {
-    align-items: flex-start;
-    flex-direction: column;
+    gap: var(--space-10);
   }
 
-  .assembly-header-metrics {
+  .assembly-header-main {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--space-10);
+  }
+
+  .assembly-header-metrics,
+  .assembly-header-alerts {
     justify-content: flex-start;
+    margin-left: 0;
   }
 
   #envelope-assembly-dialog {

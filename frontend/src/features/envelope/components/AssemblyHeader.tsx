@@ -31,21 +31,25 @@ export function AssemblyHeader({
     : statusLabel(activeAssembly.status.flags);
   return (
     <header id="assembly-builder-header" className="assembly-header" data-reveal-edit-on-hover>
-      <InlineHeaderNameEditor
-        value={activeAssembly.name}
-        canEdit={canEdit}
-        busy={busy}
-        editLabel="Edit assembly name"
-        inputLabel="Assembly name"
-        onSubmit={onRename}
-      />
-      <dl id="assembly-header-metrics" className="assembly-header-metrics">
-        <div id="assembly-total-thickness-metric">
-          <dt>Total thickness</dt>
-          <dd data-testid="total-thickness">
-            {formatLengthFromMm(totalThicknessMm(activeAssembly), { unitSystem })}
-          </dd>
-        </div>
+      <div className="assembly-header-main">
+        <InlineHeaderNameEditor
+          value={activeAssembly.name}
+          canEdit={canEdit}
+          busy={busy}
+          editLabel="Edit assembly name"
+          inputLabel="Assembly name"
+          onSubmit={onRename}
+        />
+        <dl id="assembly-header-metrics" className="assembly-header-metrics">
+          <div id="assembly-total-thickness-metric">
+            <dt>Total thickness</dt>
+            <dd data-testid="total-thickness">
+              {formatLengthFromMm(totalThicknessMm(activeAssembly), { unitSystem })}
+            </dd>
+          </div>
+        </dl>
+      </div>
+      <dl id="assembly-header-alerts" className="assembly-header-alerts">
         {assemblyWarning ? (
           <div id="assembly-status-warning" className="assembly-header-warning">
             <dt>Warning</dt>
