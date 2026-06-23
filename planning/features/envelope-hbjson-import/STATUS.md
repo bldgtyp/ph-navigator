@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 17:17 EDT
-STATUS: Implementing — Phases 0–3 DONE (backend + frontend); Phase 4 (polish) next
+STATUS: Feature complete (core) — Phases 0–4 DONE; follow-ups noted below
 AUTHOR: Ed (via Claude)
 SCOPE: Status for Envelope HBJSON Import.
 ---
@@ -65,9 +65,27 @@ SCOPE: Status for Envelope HBJSON Import.
   counts + per-construction/-material plan + warnings); apply via the existing
   command rail with the `import_envelope_constructions` kind. Dialog +
   upload-flow + viewer-gating tests (full frontend suite green, 1852 tests).
-- **Phase 4** — polish: conflict/ambiguity UX (per-construction add/replace/skip
-  override; per-material override), drift warnings, cross-project copy QA,
-  browser smoke.
+- **Phase 4 — DONE (2026-06-23).** Polish: per-construction **Add / Replace /
+  Skip** override in the preview modal (`ImportConstructionsDialog` is now
+  stateful; Replace offered only when the file matched an existing assembly;
+  foreign constructions stay add-only since the backend keys resolutions by
+  source assembly id) — selections flow to the `resolutions` the apply command
+  already supports. Cross-project copy QA is covered by backend tests
+  (pick-from-catalog + create-new across projects); matching-ladder warnings
+  surface per-row in the modal.
+
+## Follow-ups (deferred — out of the v1 "polish" scope)
+- **Per-material override** in the preview: needs the apply command to carry
+  per-material resolutions (currently material decisions are deterministic
+  server-side). Backend change.
+- **Material drift detection** in the import plan (reuse hit a material that has
+  `local_overrides` / values that differ from the file): surface a divergence
+  warning like the refresh-from-catalog model. Backend change.
+- **Skip for foreign constructions**: resolutions are keyed by source assembly
+  id, which honeybee files lack; key by identifier to allow it. Backend change.
+- **Live browser smoke**: validated via the vitest upload→preview→apply flow +
+  backend route/command tests; a manual end-to-end run against the dev stack is
+  still worth doing before release.
 
 ## Blockers
 - None for research. Remaining sub-decisions (schema_version bump in D2;

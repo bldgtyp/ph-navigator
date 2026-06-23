@@ -1648,3 +1648,12 @@
   color: var(--text-secondary);
   font-size: 12px;
 }
+
+.envelope-import__action {
+  min-height: 30px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--phn-control-radius);
+  background: var(--bg-page);
+  padding: var(--space-2) var(--space-8);
+  font-size: 12px;
+}
