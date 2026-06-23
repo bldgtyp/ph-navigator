@@ -205,6 +205,7 @@ const broadThermalInvalidationCommands = new Set<EnvelopeCommand["kind"]>([
   "update_project_material",
   "refresh_project_material_from_catalog",
   "remove_unused_project_materials",
+  "remove_project_material",
 ]);
 
 const materialDriftInvalidationCommands = new Set<EnvelopeCommand["kind"]>([
@@ -212,4 +213,5 @@ const materialDriftInvalidationCommands = new Set<EnvelopeCommand["kind"]>([
   "update_project_material",
   "refresh_project_material_from_catalog",
   "remove_unused_project_materials",
+  "remove_project_material",
 ]);

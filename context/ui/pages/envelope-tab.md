@@ -239,10 +239,13 @@ scoped because each installation slot needs its own photo.
 ```
 
 **Layout** — one scrollable column of **material cards**, split into
-two zones. The top zone holds in-scope materials with
-`specification_status` of `missing`, `question`, or `complete`. The lower
-zone holds `N/A` materials and visually recedes as background/reference
-items.
+three zones. The top zone holds in-scope materials that are referenced by
+at least one segment and have a `specification_status` of `missing`,
+`question`, or `complete`. The second zone holds referenced `N/A`
+materials and visually recedes as background/reference items. The bottom
+zone holds unused project materials with no segment references; these
+rows keep their datasheets and notes available until an editor removes
+them explicitly.
 
 **Material card** (the building block):
 
@@ -296,13 +299,12 @@ items.
    `missing` or `question` — within that group sorted by
    `naturalSortCompare(name)`.
 2. **Complete cards** — `specification_status == 'complete'`.
-3. **N/A cards** — `specification_status == 'na'`, in the lower muted
-   zone.
-4. **"Unused materials" section** at the bottom — orphan
-   `project_materials` rows (no segment references) with a
-   one-time inline note: *"These materials are no longer used
-   in any assembly. Their datasheets and notes are preserved
-   here in case you need them; clean up explicitly when ready."*
+3. **N/A cards** — referenced materials with
+   `specification_status == 'na'`, in the lower muted zone.
+4. **Unused materials** — orphan `project_materials` rows with no segment
+   references, in the bottom section. Editors see a row-level `X` action
+   that sends `remove_project_material`; the backend rejects the command
+   if a segment starts referencing that material before the delete lands.
 
 **Drag-and-drop upload behavior** (for both datasheet zones and
 per-segment site-photo zones):

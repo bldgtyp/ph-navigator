@@ -54,5 +54,6 @@ _COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "update_segment_use_site_notes": _body_only(layers.update_segment_use_site_notes),
     "detach_segment_material": _body_only(materials.detach_segment_material),
     "remove_unused_project_materials": _body_only(materials.remove_unused_project_materials),
+    "remove_project_material": _body_only(materials.remove_project_material),
     "refresh_project_material_from_catalog": cast(CommandHandler, materials.refresh_project_material_from_catalog),
 }

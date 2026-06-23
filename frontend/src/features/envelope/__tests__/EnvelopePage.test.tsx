@@ -602,13 +602,37 @@ describe("EnvelopePage", () => {
     expect(screen.queryByRole("button", { name: /Drop files here/ })).not.toBeInTheDocument();
   });
 
-  test("materials tab groups N/A materials in the muted lower section", async () => {
+  test("materials tab groups N/A and unused materials in lower sections", async () => {
+    const project_materials = envelopePayload.project_materials.map((material) =>
+      material.id === "pmat_cellulose"
+        ? ({ ...material, specification_status: "na" } as const)
+        : material,
+    );
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/envelope?")) {
+        return Promise.resolve(jsonResponse({ ...envelopePayload, project_materials }));
+      }
+      if (url.includes("/draft/envelope/commands")) {
+        return Promise.resolve(
+          jsonResponse({
+            ...envelopePayload,
+            draft_etag: "draft-etag-after-unused-remove",
+            project_materials: project_materials.filter(
+              (material) => material.id !== "pmat_unused",
+            ),
+          }),
+        );
+      }
+      return defaultFetchImplementation(url);
+    });
+
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/materials`);
 
     expect(await screen.findByText("Wood fiber board")).toBeInTheDocument();
 
     expect(screen.getByRole("heading", { name: "In scope" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "N/A" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Unused" })).toBeInTheDocument();
 
     const materialNames = Array.from(document.querySelectorAll(".report-table__cell--primary")).map(
       (cell) => cell.textContent,
@@ -621,13 +645,28 @@ describe("EnvelopePage", () => {
 
     const activeSection = screen.getByRole("heading", { name: "In scope" }).closest("section");
     const backgroundSection = screen.getByRole("heading", { name: "N/A" }).closest("section");
+    const unusedSection = screen.getByRole("heading", { name: "Unused" }).closest("section");
     expect(activeSection).not.toBeNull();
     expect(backgroundSection).not.toBeNull();
+    expect(unusedSection).not.toBeNull();
     expect(within(activeSection as HTMLElement).getByText("Wood fiber board")).toBeInTheDocument();
     expect(
-      within(backgroundSection as HTMLElement).getByText("Unused air barrier"),
+      within(backgroundSection as HTMLElement).getByText("Dense-pack cellulose"),
+    ).toBeInTheDocument();
+    expect(
+      within(unusedSection as HTMLElement).getByText("Unused air barrier"),
     ).toBeInTheDocument();
     expect(backgroundSection).toHaveClass("materials-panel__section--background");
+    expect(unusedSection).toHaveClass("materials-panel__section--unused");
+
+    await userEvent.click(
+      within(unusedSection as HTMLElement).getByRole("button", {
+        name: "Remove unused material Unused air barrier",
+      }),
+    );
+    expect(commandRequestBodies()).toContainEqual({
+      command: { kind: "remove_project_material", project_material_id: "pmat_unused" },
+    });
   });
 
   test("materials status selector opens options outside the clipped report table", async () => {

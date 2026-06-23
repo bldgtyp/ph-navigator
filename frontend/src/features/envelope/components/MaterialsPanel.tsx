@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Pencil } from "lucide-react";
+import { Pencil, X } from "lucide-react";
 import {
   formatConductivityFromWmK,
   formatDensityFromKgM3,
@@ -96,14 +96,16 @@ export function MaterialsPanel({
     if (statusFilter === "all") return visibleMaterials;
     return visibleMaterials.filter((m) => m.specification_status === statusFilter);
   }, [statusFilter, visibleMaterials]);
-  const { activeMaterials, backgroundMaterials } = useMemo(() => {
+  const { activeMaterials, backgroundMaterials, unusedMaterials } = useMemo(() => {
     const active: ProjectMaterial[] = [];
     const background: ProjectMaterial[] = [];
+    const unused: ProjectMaterial[] = [];
     for (const material of filteredMaterials) {
-      if (material.specification_status === "na") background.push(material);
+      if (material.use_sites.length === 0) unused.push(material);
+      else if (material.specification_status === "na") background.push(material);
       else active.push(material);
     }
-    return { activeMaterials: active, backgroundMaterials: background };
+    return { activeMaterials: active, backgroundMaterials: background, unusedMaterials: unused };
   }, [filteredMaterials]);
 
   const attachmentAssetIds = useMemo(
@@ -238,10 +240,55 @@ export function MaterialsPanel({
     editingMaterialId !== null
       ? (visibleMaterials.find((m) => m.id === editingMaterialId) ?? null)
       : null;
-  const showActiveSection = activeMaterials.length > 0 || statusFilter !== "na";
-  const showBackgroundSection = backgroundMaterials.length > 0 || statusFilter === "na";
+  const showActiveSection = activeMaterials.length > 0 || filteredMaterials.length === 0;
+  const showBackgroundSection =
+    backgroundMaterials.length > 0 || (filteredMaterials.length === 0 && statusFilter === "na");
+  const showUnusedSection = unusedMaterials.length > 0;
 
-  const renderMaterialTable = (rows: ProjectMaterial[], emptyMessage: string) => (
+  const renderMaterialRowAction = (material: ProjectMaterial, unused: boolean) => {
+    if (unused) {
+      return (
+        <button
+          type="button"
+          className="data-table-toolbar-button data-table-toolbar-button--icon materials-panel__remove-unused"
+          aria-label={`Remove unused material ${material.name}`}
+          title="Remove unused material from project"
+          disabled={busy}
+          onClick={(event) => {
+            event.stopPropagation();
+            onCommand({
+              kind: "remove_project_material",
+              project_material_id: material.id,
+            });
+          }}
+        >
+          <X size={16} aria-hidden="true" />
+        </button>
+      );
+    }
+
+    return (
+      <button
+        type="button"
+        className="data-table-toolbar-button data-table-toolbar-button--icon"
+        aria-label="Edit material attributes"
+        title="Edit material attributes"
+        disabled={busy}
+        onClick={(event) => {
+          event.stopPropagation();
+          setEditingMaterialId(material.id);
+        }}
+      >
+        <Pencil size={16} aria-hidden="true" />
+      </button>
+    );
+  };
+
+  const renderMaterialTable = (
+    rows: ProjectMaterial[],
+    emptyMessage: string,
+    options: { unused?: boolean } = {},
+  ) => (
     <ReportTable
       rows={rows}
       columns={columns}
@@ -251,21 +298,7 @@ export function MaterialsPanel({
       emptyMessage={emptyMessage}
       renderRowAction={
         canEdit
-          ? (material) => (
-              <button
-                type="button"
-                className="data-table-toolbar-button data-table-toolbar-button--icon"
-                aria-label="Edit material attributes"
-                title="Edit material attributes"
-                disabled={busy}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setEditingMaterialId(material.id);
-                }}
-              >
-                <Pencil size={16} aria-hidden="true" />
-              </button>
-            )
+          ? (material) => renderMaterialRowAction(material, options.unused === true)
           : undefined
       }
       renderExpansion={(material) => {
@@ -313,16 +346,6 @@ export function MaterialsPanel({
                 </section>
                 {!canEdit && material.comments ? (
                   <p className="spec-notes">{material.comments}</p>
-                ) : null}
-                {canEdit && material.use_sites.length === 0 ? (
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    disabled={busy}
-                    onClick={() => onCommand({ kind: "remove_unused_project_materials" })}
-                  >
-                    Remove unused project materials
-                  </button>
                 ) : null}
               </div>
               <div className="spec-expansion__right">
@@ -410,6 +433,20 @@ export function MaterialsPanel({
               <span>{backgroundMaterials.length}</span>
             </header>
             {renderMaterialTable(backgroundMaterials, "No N/A materials match the current filter.")}
+          </section>
+        ) : null}
+        {showUnusedSection ? (
+          <section
+            className="materials-panel__section materials-panel__section--unused"
+            aria-labelledby="materials-unused-heading"
+          >
+            <header className="materials-panel__section-header">
+              <h2 id="materials-unused-heading">Unused</h2>
+              <span>{unusedMaterials.length}</span>
+            </header>
+            {renderMaterialTable(unusedMaterials, "No unused materials match the current filter.", {
+              unused: true,
+            })}
           </section>
         ) : null}
       </div>
