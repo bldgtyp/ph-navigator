@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Implemented (Phases 1–2); unmerged.
+STATUS: Complete — implemented, merged to main, archived (v1.1).
 AUTHOR: Claude (for Ed)
 SCOPE: Status and gates for legend-as-filter.
 RELATED:
@@ -11,6 +11,10 @@ RELATED:
 ---
 
 # Legend as Filter — Status
+
+> **Complete & archived (2026-06-23).** Both phases implemented and landed
+> on `main`; this folder moved to `planning/archive/`. History below is
+> retained for reference.
 
 ## Current state
 
@@ -29,8 +33,8 @@ stack). Frontend-only, no new data, no open decisions.
 
 ## Next step
 
-Land it — open a PR from the `worktree-model-viewer-legend-filter` branch
-and let the e2e job exercise the new Playwright specs.
+Done — merged to `main` and archived. The Playwright specs
+(`model-viewer-legend-filter.spec.ts`) run in the e2e job.
 
 ## Blockers
 

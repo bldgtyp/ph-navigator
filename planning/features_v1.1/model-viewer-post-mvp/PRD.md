@@ -12,7 +12,7 @@ RELATED:
   - planning/archive/model-viewer/PRD.md
   - planning/archive/model-viewer/decisions.md
   - planning/archive/model-viewer-sun-path/PRD.md
-  - planning/features_v1.1/model-viewer-legend-filter/PRD.md
+  - planning/archive/model-viewer-legend-filter/PRD.md
   - planning/features_v1.1/model-viewer-clipping-planes/PRD.md
 ---
 
