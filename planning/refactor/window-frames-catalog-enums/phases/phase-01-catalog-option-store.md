@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 18:25 EDT
-STATUS: Active — cleared to start (next step per ../STATUS.md)
+STATUS: Complete (2026-06-23) — store + repo/service/routes/models + seed + tests landed; CI green
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phase 1 — build the generic, catalog-scoped, user-extensible single-select option store
 RELATED:
@@ -195,3 +195,41 @@ Two viable mechanisms; pick **migration data-seed** for determinism:
 - **Order type:** `SingleSelectOption.order` is `float`; column is
   `DOUBLE PRECISION` to match (allows fractional reordering without renumbering).
 - Keep all seed labels generic/public-repo-safe (no licensed product data).
+
+## Completion (2026-06-23)
+
+Built as planned, with these concrete decisions:
+
+- **Migrations:** `20260623_0037_catalog_field_options.py` (table + functional
+  unique index `ux_catalog_field_options_label` on
+  `(catalog_table, field_key, lower(btrim(label)))`); `20260623_0038_seed_…`
+  seeds the six frame-type fields from `_option_seeds.FRAME_TYPE_OPTION_SEEDS`
+  (`ON CONFLICT DO NOTHING`). Single alembic head `20260623_0038`. **No FK** to
+  the row tables (label-string storage) → options survive `clean_catalog_tables`.
+- **Repository** `features/catalogs/_options_repository.py` (shared, generic):
+  `list_options`, `list_all_for_table`, `replace_options` (full DELETE+INSERT —
+  lists are tiny, avoids upsert label-collision ordering), `count_rows_using_label`,
+  `rename_label`. Physical table from a fixed allowlist; `field_key` via
+  `sql.Identifier`.
+- **Service** `frame_types/options_service.py`: `list_frame_type_options`,
+  `edit_frame_type_options` (validate field ∈ six → `validate_option_list` →
+  in-place renames rewrite rows → delete/merge cascade → `replace_options`), and
+  the reusable `seed_frame_type_options(conn)` (also used by the test fixture).
+- **Models** added to `frame_types/models.py`: `CatalogFieldOptionsResponse`,
+  `CatalogFrameTypeOptionsResponse`, `EditCatalogOptionsRequest`.
+- **Routes** `GET/PUT /api/v1/catalogs/frame-types/options`, declared **before**
+  `/{record_id}` (Starlette declaration-order match).
+- **Errors:** `catalog_field_key_unknown` (422), `catalog_option_in_use` (409),
+  `catalog_option_replacement_unknown` (422); option-list shape reuses
+  `custom_field_option_list_invalid` (422).
+- **Tests:** `tests/test_catalog_field_options.py` (10) — canonical counts,
+  add, case-insensitive dup reject, delete-unused, cascade-guard, merge,
+  in-place rename, replacement-not-in-list, unknown-field-key, generic store.
+  Module autouse fixture resets `catalog_field_options` per test for isolation.
+- **Verification:** full backend suite **978 passed, 2 skipped**; `ruff`/`ty`
+  clean.
+
+**Note for Phase 2:** existing frame tests in `test_catalogs_frame_types.py` use
+non-canonical values (`manufacturer="Skyline"`, `brand="Ridge"`). They pass now
+(no write-validation yet) but Phase 2's strict check will reject them — Phase 2
+must update those payloads to canonical option values (or add the options).

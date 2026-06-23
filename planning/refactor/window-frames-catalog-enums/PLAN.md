@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 17:51 EDT
-STATUS: Active — decisions resolved; Phase 0 complete, Phase 1 next
+STATUS: Active — decisions resolved; Phases 0–1 complete, Phase 2 next
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phased implementation plan for window-frames-catalog-enums
 RELATED: ./research.md, ./decisions.md, ./STATUS.md
@@ -37,7 +37,7 @@ the default-frame lookup. Each phase is independently shippable and ends green o
 
 ---
 
-## Phase 1 — Catalog option store (backend, requirement #4 foundation)
+## Phase 1 — Catalog option store (backend, requirement #4 foundation) ✅ Complete (2026-06-23)
 
 Build the generic, catalog-scoped, user-extensible option store.
 

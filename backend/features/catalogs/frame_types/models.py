@@ -8,6 +8,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from features.catalogs._shared import strip_optional, strip_required
+from features.project_document.rows import SingleSelectOption
 from features.shared.colors import normalize_optional_hex_color
 
 # Soft-enum text fields (PRD D4): UI surfaces suggestions, server stores any
@@ -146,3 +147,42 @@ class CatalogFrameTypeUpdateRequest(_CatalogFrameTypeFields):
     @classmethod
     def _strip_optional_name(cls, value: object) -> object:
         return strip_optional(value)
+
+
+# --------------------------------------------------------------------------- #
+# Single-select option store (catalog_field_options) — see _options_repository.
+# --------------------------------------------------------------------------- #
+
+
+class CatalogFieldOptionsResponse(BaseModel):
+    """One field's option list — the PUT-edit response."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    field_key: str
+    options: list[SingleSelectOption]
+
+
+class CatalogFrameTypeOptionsResponse(BaseModel):
+    """All six frame-type fields' option lists in one fetch (one round-trip for
+    the whole grid). Keyed by ``field_key`` (e.g. ``manufacturer``)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    fields: dict[str, list[SingleSelectOption]]
+
+
+class EditCatalogOptionsRequest(BaseModel):
+    """Full-replacement edit of one field's option list.
+
+    ``replacements`` maps a *deleted* option's label to the surviving label its
+    in-use rows should fold into (the merge / ``OP-TO-FIX`` cleanup path). A
+    deleted label that is still referenced by an active row and has no
+    replacement is rejected (cascade guard).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    field_key: str
+    options: list[SingleSelectOption]
+    replacements: dict[str, str] = Field(default_factory=dict)
