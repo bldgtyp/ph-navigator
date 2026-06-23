@@ -29,7 +29,7 @@ planning/features_v1.1/<feature-slug>/
 |---|---|---|
 | [Model Viewer post-MVP](model-viewer-post-mvp/README.md) | Active (router) | Umbrella router classifying the deferred Model Viewer candidates into the feature folders below. |
 | ⮑ [Model Viewer — Sun Path (3D render)](../archive/model-viewer-sun-path/README.md) | Complete | Shipped 2026-06-23 (Phases 0 + 1) and archived to `planning/archive/model-viewer-sun-path/`. Backend sun-path service rebuilt in `project_location` (not Climate); Site & Sun render done. Scrubber (Q-VIEW-6) stays a deferred Phase 2 candidate on the post-mvp roster. |
-| ⮑ [Model Viewer — Legend as Filter](model-viewer-legend-filter/README.md) | Active (planned) | Ready to build — Ed-flagged near-priority; frontend-only, no open decisions, no Climate dependency. |
+| ⮑ [Model Viewer — Legend as Filter](../archive/model-viewer-legend-filter/README.md) | Complete | Shipped 2026-06-23 (Phases 1 + 2 — single-select isolate + shift-click multi-select) and archived to `planning/archive/model-viewer-legend-filter/`. Isolate-with-wireframe-context (PRD §5); frontend-only. |
 | ⮑ [Model Viewer — Clipping Planes](model-viewer-clipping-planes/README.md) | Deferred (gated) | Build when a named sectioned-inspection workflow exists; plan is ready. |
 | [User-defined attachment fields](user-defined-attachment-fields/README.md) | Deferred | Revisit after v1 ships and at least two real project workflows need ad hoc attachment columns. |
 | _(shipped in v1.0)_ Climate — reference-data ingest + seed | Complete | Shipped v1.0 (2026-06-15) and archived to `planning/archive/climate-reference-data-seeding/`. The former **PHI/PHPP importer** candidate was folded in as `phases/phase-02-phi-importer.md`. |
