@@ -24,7 +24,12 @@ from features.envelope.models import (
     RemoveUnusedProjectMaterialsCommand,
     UpdateProjectMaterialCommand,
 )
-from features.project_document.document import CatalogOrigin, ProjectDocumentV1, ProjectMaterial
+from features.project_document.document import (
+    CatalogOrigin,
+    ProjectDocumentV1,
+    ProjectMaterial,
+    SpecificationStatus,
+)
 from features.shared.errors import api_error
 
 DEFAULT_HAND_ENTERED_MATERIAL_COLOR = "#e6e6e6"
@@ -108,19 +113,47 @@ def pick_catalog_material(
     )
 
 
-def hand_enter_material(body: ProjectDocumentV1, command: HandEnterMaterialCommand) -> ProjectDocumentV1:
-    material = ProjectMaterial(
+def new_hand_entered_material(
+    *,
+    name: str,
+    category: str,
+    conductivity_w_mk: float | None,
+    density_kg_m3: float | None,
+    specific_heat_j_kgk: float | None,
+    emissivity: float | None,
+    color: str | None,
+    specification_status: SpecificationStatus = "missing",
+) -> ProjectMaterial:
+    """Build a fresh project-only material (no catalog origin, no datasheets).
+
+    Shared by the hand-enter command and the import create-new rung so the
+    project-material defaults (fresh id, fallback color, empty evidence) live
+    in one place.
+    """
+    return ProjectMaterial(
         id=new_id(ID_PREFIX_PROJECT_MATERIAL),
+        name=name,
+        category=category,
+        conductivity_w_mk=conductivity_w_mk,
+        density_kg_m3=density_kg_m3,
+        specific_heat_j_kgk=specific_heat_j_kgk,
+        emissivity=emissivity,
+        color=color or DEFAULT_HAND_ENTERED_MATERIAL_COLOR,
+        specification_status=specification_status,
+        datasheet_asset_ids=[],
+        catalog_origin=None,
+    )
+
+
+def hand_enter_material(body: ProjectDocumentV1, command: HandEnterMaterialCommand) -> ProjectDocumentV1:
+    material = new_hand_entered_material(
         name=command.name,
         category=command.category,
         conductivity_w_mk=command.conductivity_w_mk,
         density_kg_m3=command.density_kg_m3,
         specific_heat_j_kgk=command.specific_heat_j_kgk,
         emissivity=command.emissivity,
-        color=command.color or DEFAULT_HAND_ENTERED_MATERIAL_COLOR,
-        specification_status="missing",
-        datasheet_asset_ids=[],
-        catalog_origin=None,
+        color=command.color,
     )
     body_with_material = ops.replace_project_materials(body, [*body.tables.project_materials, material])
     return assign_segment_material(

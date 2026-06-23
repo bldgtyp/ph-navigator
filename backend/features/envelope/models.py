@@ -7,6 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from features.envelope.import_models import ConstructionResolution
 from features.project_document.document import (
     Assembly,
     AssemblyOrientation,
@@ -401,6 +402,21 @@ class RefreshProjectMaterialFromCatalogCommand(BaseModel):
     field_choices: list[ProjectMaterialRefreshChoice]
 
 
+class ImportEnvelopeConstructionsCommand(BaseModel):
+    """Apply a previewed HBJSON construction import to the draft (PRD §6).
+
+    Carries the parsed file the user previewed plus their per-construction
+    collision resolutions. The handler re-runs the same deterministic plan
+    server-side, so the applied result matches the confirmed preview.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["import_envelope_constructions"]
+    file: dict[str, Any]
+    resolutions: list[ConstructionResolution] = Field(default_factory=list)
+
+
 EnvelopeCommand = Annotated[
     CreateAssemblyCommand
     | RenameAssemblyCommand
@@ -425,7 +441,8 @@ EnvelopeCommand = Annotated[
     | DetachSegmentMaterialCommand
     | RemoveUnusedProjectMaterialsCommand
     | RemoveProjectMaterialCommand
-    | RefreshProjectMaterialFromCatalogCommand,
+    | RefreshProjectMaterialFromCatalogCommand
+    | ImportEnvelopeConstructionsCommand,
     Field(discriminator="kind"),
 ]
 

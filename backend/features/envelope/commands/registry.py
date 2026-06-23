@@ -8,7 +8,7 @@ from typing import Any, cast
 from psycopg import Connection
 from starlette import status
 
-from features.envelope.commands import assemblies, layers, materials
+from features.envelope.commands import assemblies, envelope_import, layers, materials
 from features.envelope.models import EnvelopeCommand
 from features.project_document.document import ProjectDocumentV1
 from features.shared.errors import api_error
@@ -56,4 +56,5 @@ _COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "remove_unused_project_materials": _body_only(materials.remove_unused_project_materials),
     "remove_project_material": _body_only(materials.remove_project_material),
     "refresh_project_material_from_catalog": cast(CommandHandler, materials.refresh_project_material_from_catalog),
+    "import_envelope_constructions": cast(CommandHandler, envelope_import.import_envelope_constructions),
 }

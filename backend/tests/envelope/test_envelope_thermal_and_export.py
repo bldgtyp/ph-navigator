@@ -499,6 +499,7 @@ def test_hbjson_export_emits_homogeneous_round_trip_ph_nav(
     assert layer_material["ph_nav"]["layer_id"] == "lyr_insul"
     assert layer_material["ph_nav"]["segment_id"] == "seg_insul"
     assert layer_material["ph_nav"]["is_continuous_insulation"] is True
+    assert layer_material["ph_nav"]["steel_stud_spacing_mm"] is None
 
 
 def test_hbjson_export_emits_hybrid_layer_round_trip_ph_nav(
@@ -562,8 +563,8 @@ def test_hbjson_export_emits_hybrid_layer_round_trip_ph_nav(
     assert hybrid_material["ph_nav"]["layer_id"] == "lyr_hybrid"
     cells = hybrid_material["properties"]["ph"]["divisions"]["cells"]
     assert [cell["ph_nav"] for cell in cells] == [
-        {"segment_id": "seg_cavity", "is_continuous_insulation": True},
-        {"segment_id": "seg_stud", "is_continuous_insulation": False},
+        {"segment_id": "seg_cavity", "is_continuous_insulation": True, "steel_stud_spacing_mm": None},
+        {"segment_id": "seg_stud", "is_continuous_insulation": False, "steel_stud_spacing_mm": 406.4},
     ]
 
 

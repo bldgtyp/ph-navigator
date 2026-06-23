@@ -12,6 +12,7 @@ helpers so browser and MCP callers share one mutation boundary.
 
 from __future__ import annotations
 
+import json
 from typing import Any, Literal
 from uuid import UUID
 
@@ -21,6 +22,9 @@ from starlette import status
 from database import transaction
 from features.envelope import drift, ops
 from features.envelope.commands.registry import apply_command as dispatch_envelope_command
+from features.envelope.hbjson_import import parse_or_422
+from features.envelope.import_models import ImportConstructionsPreviewResponse
+from features.envelope.import_planning import build_import_plan
 from features.envelope.models import (
     AssemblyThermalResponse,
     EnvelopeCommand,
@@ -237,6 +241,62 @@ def apply_envelope_command(
         assemblies=assemblies,
         project_materials=project_materials,
     )
+
+
+# Construction libraries are tiny (the example file is a few KB); this cap is a
+# DoS guard, matching the catalog import's body limit.
+MAX_IMPORT_FILE_BYTES = 8 * 1024 * 1024
+
+
+def preview_envelope_hbjson_import(
+    version_id: UUID,
+    access: ProjectAccess,
+    file_bytes: bytes,
+) -> ImportConstructionsPreviewResponse:
+    """Dry-run an HBJSON construction import against the current draft.
+
+    Parse + match + plan with no mutation (PRD §6 step 1). The returned
+    ETags are what the caller echoes back on the apply command so the import
+    lands on the same baseline it previewed.
+    """
+    require_editor_user(access)
+    if len(file_bytes) > MAX_IMPORT_FILE_BYTES:
+        raise api_error(
+            status.HTTP_413_CONTENT_TOO_LARGE,
+            "import_file_too_large",
+            "The construction library file is too large.",
+            {"max_bytes": MAX_IMPORT_FILE_BYTES},
+        )
+    view = get_current_document_view(version_id, access)
+    body = view.body
+
+    library = parse_or_422(_load_json(file_bytes), current_schema_version=body.schema_version)
+    with transaction() as conn:
+        plan = build_import_plan(conn, body, library, resolutions=[])
+
+    return ImportConstructionsPreviewResponse(
+        project_id=access.project_id,
+        version_id=version_id,
+        source=view.source,
+        version_etag=view.version_etag,
+        draft_etag=view.draft_etag,
+        schema_version=plan.schema_version,
+        constructions=plan.constructions,
+        materials=plan.materials,
+        counts=plan.counts,
+        warnings=plan.warnings,
+    )
+
+
+def _load_json(file_bytes: bytes) -> object:
+    try:
+        return json.loads(file_bytes)
+    except (json.JSONDecodeError, UnicodeDecodeError) as error:
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "import_invalid_json",
+            "The uploaded file is not valid JSON.",
+        ) from error
 
 
 def _load_command_context(
