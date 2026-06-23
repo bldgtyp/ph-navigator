@@ -96,6 +96,15 @@ export function MaterialsPanel({
     if (statusFilter === "all") return visibleMaterials;
     return visibleMaterials.filter((m) => m.specification_status === statusFilter);
   }, [statusFilter, visibleMaterials]);
+  const { activeMaterials, backgroundMaterials } = useMemo(() => {
+    const active: ProjectMaterial[] = [];
+    const background: ProjectMaterial[] = [];
+    for (const material of filteredMaterials) {
+      if (material.specification_status === "na") background.push(material);
+      else active.push(material);
+    }
+    return { activeMaterials: active, backgroundMaterials: background };
+  }, [filteredMaterials]);
 
   const attachmentAssetIds = useMemo(
     () => collectSpecificationAssetIds(visibleMaterials),
@@ -229,6 +238,146 @@ export function MaterialsPanel({
     editingMaterialId !== null
       ? (visibleMaterials.find((m) => m.id === editingMaterialId) ?? null)
       : null;
+  const showActiveSection = activeMaterials.length > 0 || statusFilter !== "na";
+  const showBackgroundSection = backgroundMaterials.length > 0 || statusFilter === "na";
+
+  const renderMaterialTable = (rows: ProjectMaterial[], emptyMessage: string) => (
+    <ReportTable
+      rows={rows}
+      columns={columns}
+      getRowId={(m) => m.id}
+      expandedRowId={expandedMaterialId}
+      onToggleExpand={(id) => setExpandedMaterialId((current) => (current === id ? null : id))}
+      emptyMessage={emptyMessage}
+      renderRowAction={
+        canEdit
+          ? (material) => (
+              <button
+                type="button"
+                className="data-table-toolbar-button data-table-toolbar-button--icon"
+                aria-label="Edit material attributes"
+                title="Edit material attributes"
+                disabled={busy}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setEditingMaterialId(material.id);
+                }}
+              >
+                <Pencil size={16} aria-hidden="true" />
+              </button>
+            )
+          : undefined
+      }
+      renderExpansion={(material) => {
+        const driftItem = driftByMaterialId.get(material.id) ?? null;
+        return (
+          <div className="spec-expansion">
+            <header className="spec-expansion__header">
+              <div>
+                <MaterialDriftBadge item={driftItem} />
+              </div>
+              <div className="spec-expansion__header-actions">
+                {canEdit && materialNeedsCatalogReview(driftItem) ? (
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={busy}
+                    onClick={() => onRefreshMaterial(material.id)}
+                  >
+                    Refresh from catalog
+                  </button>
+                ) : null}
+              </div>
+            </header>
+            <div className="spec-expansion__columns">
+              <div className="spec-expansion__left">
+                <section className="spec-evidence" aria-label={`${material.name} datasheets`}>
+                  <h3>Datasheets</h3>
+                  <AttachmentCell
+                    projectId={projectId}
+                    value={material.datasheet_asset_ids}
+                    config={DATASHEET_ATTACHMENT_CONFIG}
+                    readOnly={!canEdit || material.specification_status === "na" || busy}
+                    assetUrlById={assetUrlById}
+                    showInlineEmptyButton={canEdit && material.specification_status !== "na"}
+                    onChange={(nextAssetIds) =>
+                      onAttachmentChange({
+                        tableKey: "project_materials",
+                        rowId: material.id,
+                        fieldKey: "datasheet_asset_ids",
+                        currentAssetIds: material.datasheet_asset_ids,
+                        nextAssetIds,
+                      })
+                    }
+                  />
+                </section>
+                {!canEdit && material.comments ? (
+                  <p className="spec-notes">{material.comments}</p>
+                ) : null}
+                {canEdit && material.use_sites.length === 0 ? (
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={busy}
+                    onClick={() => onCommand({ kind: "remove_unused_project_materials" })}
+                  >
+                    Remove unused project materials
+                  </button>
+                ) : null}
+              </div>
+              <div className="spec-expansion__right">
+                <section className="spec-evidence" aria-label={`${material.name} site photos`}>
+                  <h3>Site photos</h3>
+                  {material.use_sites.length === 0 ? (
+                    <p className="spec-evidence__empty">Not used by an assembly.</p>
+                  ) : (
+                    <ul className="spec-expansion__use-sites">
+                      {material.use_sites.map((site) => {
+                        const siteKey = `${site.assembly_id}:${site.layer_id}:${site.segment_id}`;
+                        return (
+                          <UseSiteRow
+                            key={siteKey}
+                            siteKey={siteKey}
+                            site={site}
+                            projectId={projectId}
+                            assetUrlById={assetUrlById}
+                            canEdit={canEdit}
+                            busy={busy}
+                            isEditing={editingSiteKey === siteKey}
+                            onToggleEdit={() =>
+                              setEditingSiteKey((current) => (current === siteKey ? null : siteKey))
+                            }
+                            onSubmit={(use_site_notes) =>
+                              onCommand({
+                                kind: "update_segment_use_site_notes",
+                                assembly_id: site.assembly_id,
+                                layer_id: site.layer_id,
+                                segment_id: site.segment_id,
+                                use_site_notes,
+                              })
+                            }
+                            onPhotoChange={(nextAssetIds) =>
+                              onAttachmentChange({
+                                tableKey: "assembly_segments",
+                                rowId: site.segment_id,
+                                fieldKey: "photo_asset_ids",
+                                currentAssetIds: site.photo_asset_ids,
+                                nextAssetIds,
+                              })
+                            }
+                          />
+                        );
+                      })}
+                    </ul>
+                  )}
+                </section>
+              </div>
+            </div>
+          </div>
+        );
+      }}
+    />
+  );
 
   return (
     <>
@@ -238,143 +387,32 @@ export function MaterialsPanel({
         onChange={setStatusFilter}
         summary={`${resolvedCount}/${totalCount} resolved`}
       />
-      <ReportTable
-        rows={filteredMaterials}
-        columns={columns}
-        getRowId={(m) => m.id}
-        expandedRowId={expandedMaterialId}
-        onToggleExpand={(id) => setExpandedMaterialId((current) => (current === id ? null : id))}
-        emptyMessage="No materials match the current filter."
-        renderRowAction={
-          canEdit
-            ? (material) => (
-                <button
-                  type="button"
-                  className="data-table-toolbar-button data-table-toolbar-button--icon"
-                  aria-label="Edit material attributes"
-                  title="Edit material attributes"
-                  disabled={busy}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setEditingMaterialId(material.id);
-                  }}
-                >
-                  <Pencil size={16} aria-hidden="true" />
-                </button>
-              )
-            : undefined
-        }
-        renderExpansion={(material) => {
-          const driftItem = driftByMaterialId.get(material.id) ?? null;
-          return (
-            <div className="spec-expansion">
-              <header className="spec-expansion__header">
-                <div>
-                  <MaterialDriftBadge item={driftItem} />
-                </div>
-                <div className="spec-expansion__header-actions">
-                  {canEdit && materialNeedsCatalogReview(driftItem) ? (
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      disabled={busy}
-                      onClick={() => onRefreshMaterial(material.id)}
-                    >
-                      Refresh from catalog
-                    </button>
-                  ) : null}
-                </div>
-              </header>
-              <div className="spec-expansion__columns">
-                <div className="spec-expansion__left">
-                  <section className="spec-evidence" aria-label={`${material.name} datasheets`}>
-                    <h3>Datasheets</h3>
-                    <AttachmentCell
-                      projectId={projectId}
-                      value={material.datasheet_asset_ids}
-                      config={DATASHEET_ATTACHMENT_CONFIG}
-                      readOnly={!canEdit || material.specification_status === "na" || busy}
-                      assetUrlById={assetUrlById}
-                      showInlineEmptyButton={canEdit && material.specification_status !== "na"}
-                      onChange={(nextAssetIds) =>
-                        onAttachmentChange({
-                          tableKey: "project_materials",
-                          rowId: material.id,
-                          fieldKey: "datasheet_asset_ids",
-                          currentAssetIds: material.datasheet_asset_ids,
-                          nextAssetIds,
-                        })
-                      }
-                    />
-                  </section>
-                  {!canEdit && material.comments ? (
-                    <p className="spec-notes">{material.comments}</p>
-                  ) : null}
-                  {canEdit && material.use_sites.length === 0 ? (
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      disabled={busy}
-                      onClick={() => onCommand({ kind: "remove_unused_project_materials" })}
-                    >
-                      Remove unused project materials
-                    </button>
-                  ) : null}
-                </div>
-                <div className="spec-expansion__right">
-                  <section className="spec-evidence" aria-label={`${material.name} site photos`}>
-                    <h3>Site photos</h3>
-                    {material.use_sites.length === 0 ? (
-                      <p className="spec-evidence__empty">Not used by an assembly.</p>
-                    ) : (
-                      <ul className="spec-expansion__use-sites">
-                        {material.use_sites.map((site) => {
-                          const siteKey = `${site.assembly_id}:${site.layer_id}:${site.segment_id}`;
-                          return (
-                            <UseSiteRow
-                              key={siteKey}
-                              siteKey={siteKey}
-                              site={site}
-                              projectId={projectId}
-                              assetUrlById={assetUrlById}
-                              canEdit={canEdit}
-                              busy={busy}
-                              isEditing={editingSiteKey === siteKey}
-                              onToggleEdit={() =>
-                                setEditingSiteKey((current) =>
-                                  current === siteKey ? null : siteKey,
-                                )
-                              }
-                              onSubmit={(use_site_notes) =>
-                                onCommand({
-                                  kind: "update_segment_use_site_notes",
-                                  assembly_id: site.assembly_id,
-                                  layer_id: site.layer_id,
-                                  segment_id: site.segment_id,
-                                  use_site_notes,
-                                })
-                              }
-                              onPhotoChange={(nextAssetIds) =>
-                                onAttachmentChange({
-                                  tableKey: "assembly_segments",
-                                  rowId: site.segment_id,
-                                  fieldKey: "photo_asset_ids",
-                                  currentAssetIds: site.photo_asset_ids,
-                                  nextAssetIds,
-                                })
-                              }
-                            />
-                          );
-                        })}
-                      </ul>
-                    )}
-                  </section>
-                </div>
-              </div>
-            </div>
-          );
-        }}
-      />
+      <div className="materials-panel__sections">
+        {showActiveSection ? (
+          <section className="materials-panel__section" aria-labelledby="materials-active-heading">
+            <header className="materials-panel__section-header">
+              <h2 id="materials-active-heading">In scope</h2>
+              <span>{activeMaterials.length}</span>
+            </header>
+            {renderMaterialTable(
+              activeMaterials,
+              "No in-scope materials match the current filter.",
+            )}
+          </section>
+        ) : null}
+        {showBackgroundSection ? (
+          <section
+            className="materials-panel__section materials-panel__section--background"
+            aria-labelledby="materials-background-heading"
+          >
+            <header className="materials-panel__section-header">
+              <h2 id="materials-background-heading">N/A</h2>
+              <span>{backgroundMaterials.length}</span>
+            </header>
+            {renderMaterialTable(backgroundMaterials, "No N/A materials match the current filter.")}
+          </section>
+        ) : null}
+      </div>
       {editingMaterial ? (
         <ProjectMaterialEditorModal
           material={editingMaterial}

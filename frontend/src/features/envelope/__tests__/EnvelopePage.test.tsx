@@ -602,10 +602,13 @@ describe("EnvelopePage", () => {
     expect(screen.queryByRole("button", { name: /Drop files here/ })).not.toBeInTheDocument();
   });
 
-  test("materials tab sorts incomplete materials before complete materials and unused materials last", async () => {
+  test("materials tab groups N/A materials in the muted lower section", async () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/materials`);
 
     expect(await screen.findByText("Wood fiber board")).toBeInTheDocument();
+
+    expect(screen.getByRole("heading", { name: "In scope" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "N/A" })).toBeInTheDocument();
 
     const materialNames = Array.from(document.querySelectorAll(".report-table__cell--primary")).map(
       (cell) => cell.textContent,
@@ -615,6 +618,16 @@ describe("EnvelopePage", () => {
       "Dense-pack cellulose",
       "Unused air barrier",
     ]);
+
+    const activeSection = screen.getByRole("heading", { name: "In scope" }).closest("section");
+    const backgroundSection = screen.getByRole("heading", { name: "N/A" }).closest("section");
+    expect(activeSection).not.toBeNull();
+    expect(backgroundSection).not.toBeNull();
+    expect(within(activeSection as HTMLElement).getByText("Wood fiber board")).toBeInTheDocument();
+    expect(
+      within(backgroundSection as HTMLElement).getByText("Unused air barrier"),
+    ).toBeInTheDocument();
+    expect(backgroundSection).toHaveClass("materials-panel__section--background");
   });
 
   test("materials status selector opens options outside the clipped report table", async () => {
