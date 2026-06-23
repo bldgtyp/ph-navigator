@@ -1868,6 +1868,7 @@ button:disabled {
 }
 
 .tab-panel.rooms-panel,
+.tab-panel.spaces-panel,
 .tab-panel.equipment-panel {
   background: transparent;
 }

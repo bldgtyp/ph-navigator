@@ -108,6 +108,7 @@ export type ClimateLeafletController = {
 export type ClimateLeafletOptions = {
   basemapStyle?: ClimateBasemapStyle;
   interactive?: boolean;
+  singlePointZoom?: number;
   onSelectStation?: (stationId: string) => void;
   onPickPoint?: (latitude: number, longitude: number) => void;
 };
@@ -125,6 +126,7 @@ export function createClimateLeafletMap(
   const {
     basemapStyle = DEFAULT_BASEMAP_STYLE,
     interactive = true,
+    singlePointZoom = 11,
     onSelectStation,
     onPickPoint,
   } = options;
@@ -222,8 +224,8 @@ export function createClimateLeafletMap(
       // Project-pin-only (Location page / mini-map / pin-drop): centre the single
       // point. Keep the zoom the user/initial frame already settled on so a
       // pin-drop re-centre doesn't reset their zoom — only the first frame picks
-      // the neutral neighbourhood zoom.
-      map.setView(projectLatLng, framed ? map.getZoom() : 11);
+      // the consumer's configured project-only zoom.
+      map.setView(projectLatLng, framed ? map.getZoom() : singlePointZoom);
     }
     framed = true;
     // The modal sizes its grid after mount; nudge Leaflet to remeasure so the

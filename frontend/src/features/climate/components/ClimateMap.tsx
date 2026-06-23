@@ -82,6 +82,9 @@ type ClimateMapProps = {
   limitRingMeters?: number | null;
   // false → static basemap: no pan/zoom/controls (sidebar mini-map).
   interactive?: boolean;
+  // Initial zoom for project-pin-only maps. Main page keeps the default; the
+  // sidebar can opt into a wider regional thumbnail without affecting it.
+  singlePointZoom?: number;
   // Sizing class for the map frame (`.climate-big-map`, `.climate-mini-map`, …).
   className?: string;
   // Accessible label for the map region (ignored when `ariaHidden`).
@@ -107,6 +110,7 @@ export function ClimateMap({
   onPickPoint,
   limitRingMeters = null,
   interactive = true,
+  singlePointZoom = 11,
   className,
   ariaLabel = "Map",
   ariaHidden = false,
@@ -151,6 +155,7 @@ export function ClimateMap({
         controller = createClimateLeafletMap(containerRef.current, {
           basemapStyle,
           interactive,
+          singlePointZoom,
           onSelectStation: canSelectStation
             ? (id) => handlersRef.current.onSelectStation?.(id)
             : undefined,
@@ -172,7 +177,15 @@ export function ClimateMap({
       controller?.destroy();
       controllerRef.current = null;
     };
-  }, [showLive, hasProject, basemapStyle, interactive, canSelectStation, canPickPoint]);
+  }, [
+    showLive,
+    hasProject,
+    basemapStyle,
+    interactive,
+    singlePointZoom,
+    canSelectStation,
+    canPickPoint,
+  ]);
 
   // Redraw markers/ring when the roster or project moves; restyle on selection.
   const dataSignature = JSON.stringify({

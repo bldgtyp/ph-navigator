@@ -136,22 +136,6 @@
   color: inherit;
 }
 
-.climate-loc-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-4);
-}
-
-.climate-loc-pills b {
-  padding: 2px var(--space-6);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-xs);
-  background: var(--bg-elev);
-  font-family: var(--font-mono);
-  font-size: var(--fs-2xs);
-  font-weight: 600;
-}
-
 .climate-nav-loc-set-button {
   justify-self: start;
   margin: 0 var(--space-12) var(--space-12);
@@ -207,7 +191,45 @@
 
 /* --- Source nav cards --- */
 .climate-source-card {
+  position: relative;
   gap: var(--space-6);
+  cursor: default;
+}
+
+.climate-source-select {
+  appearance: none;
+  display: grid;
+  gap: var(--space-6);
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.climate-source-select:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+.climate-source-select:focus-visible {
+  outline: 2px solid var(--phn-focus);
+  outline-offset: var(--space-2);
+  box-shadow: none;
+}
+
+.climate-source-select:disabled {
+  cursor: default;
+}
+
+.climate-source-static {
+  cursor: default;
 }
 
 /* A canonical type with no attached source: a dashed, muted "empty slot". */
@@ -222,21 +244,27 @@
 .climate-nav-top {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-8);
+}
+
+.climate-nav-status-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: var(--space-4);
+  margin-left: auto;
 }
 
 .climate-nav-name {
   font-size: var(--fs-sm);
   overflow-wrap: anywhere;
+  margin-top: 10px;
+  margin-bottom: 15px;
 }
 
-.climate-nav-attrs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-8);
-  font-family: var(--font-mono);
-  font-size: var(--fs-2xs);
-  color: var(--text-secondary);
+.climate-source-card.has-remove .climate-nav-name {
+  padding-right: var(--space-32);
 }
 
 .climate-nav-foot {
@@ -244,6 +272,46 @@
   align-items: center;
   gap: var(--space-8);
   margin-top: var(--space-2);
+}
+
+.climate-source-remove {
+  position: absolute;
+  top: calc(var(--space-32) + var(--space-2));
+  right: var(--space-8);
+  bottom: auto;
+  display: grid;
+  place-items: center;
+  width: var(--space-24);
+  min-width: var(--space-24);
+  height: var(--space-24);
+  min-height: var(--space-24);
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.climate-source-remove:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-elev);
+  color: var(--text-primary);
+}
+
+.climate-source-remove:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.climate-source-set-button {
+  width: 100%;
+  min-height: var(--phn-control-height);
+  justify-content: center;
+  padding-inline: var(--space-8);
+  white-space: normal;
+  text-align: center;
+  line-height: 1.1;
 }
 
 /* ---------------- Shared atoms: badge + status chip ---------------- */
