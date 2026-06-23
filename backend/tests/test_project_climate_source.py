@@ -380,6 +380,79 @@ def test_epw_roster_nearest_mode_sweeps_all_states(clean_mcp_tables: None, monke
     assert set(names) == {"Pittsfield.Muni.AP", "Boston.Logan", "Albany.Intl"}  # crosses states
 
 
+# OneBuilding lists each station once per dataset version (TMYx periods, TMY3,
+# …), all sharing the station name. The variants do NOT share exact coordinates
+# — a station's recorded lat/lon drifts a few hundred metres between source
+# periods. The picker shows every version, labelled, but must keep a station's
+# versions grouped (not interleaved with a neighbour in the same distance band).
+_EPW_CATALOG_WITH_PERIOD_VARIANTS = (
+    _epw_entry(
+        "Pittsfield.Muni.AP",
+        "MA",
+        42.43,
+        -73.29,
+        364,
+        "https://climate.onebuilding.org/USA_MA_Pittsfield.Muni.AP.744104_TMYx.2004-2018.zip",
+    ),
+    _epw_entry(
+        "Pittsfield.Muni.AP",
+        "MA",
+        42.43,
+        -73.29,
+        364,
+        "https://climate.onebuilding.org/USA_MA_Pittsfield.Muni.AP.744104_TMYx.2009-2023.zip",
+    ),
+    # Same station, all-years variant, but coordinates drift ~150 m from the spans above.
+    _epw_entry(
+        "Pittsfield.Muni.AP",
+        "MA",
+        42.4315,
+        -73.2913,
+        364,
+        "https://climate.onebuilding.org/USA_MA_Pittsfield.Muni.AP.744104_TMYx.zip",
+    ),
+    _epw_entry(
+        "Boston.Logan",
+        "MA",
+        42.36,
+        -71.01,
+        6,
+        "https://climate.onebuilding.org/USA_MA_Boston.Logan.Intl.AP.725090_TMY3.zip",
+    ),
+)
+
+
+def test_epw_roster_lists_every_version_grouped_and_labeled(
+    clean_mcp_tables: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        "features.climate.epw_catalog.load_epw_catalog",
+        lambda _urls: _EPW_CATALOG_WITH_PERIOD_VARIANTS,
+    )
+    client = signed_in_client()
+    project_id = cast(str, create_project(client)["id"])
+    _set_location(client, project_id, latitude=42.33, longitude=-73.37, elevation_m=300.0, state="MA")
+
+    body = client.get(f"/api/v1/projects/{project_id}/climate/epw-roster?region=MA").json()
+
+    # Every version is shown (nothing collapsed), and the count agrees.
+    assert body["total"] == 4
+    # Pittsfield's three versions stay grouped (nearer station first), then Boston;
+    # within the group the best-ranked all-years `_TMYx.zip` leads.
+    assert [item["name"] for item in body["items"]] == [
+        "Pittsfield.Muni.AP",
+        "Pittsfield.Muni.AP",
+        "Pittsfield.Muni.AP",
+        "Boston.Logan",
+    ]
+    assert [item["version_label"] for item in body["items"]] == [
+        "TMYx",
+        "TMYx 2009–2023",
+        "TMYx 2004–2018",
+        "TMY3",
+    ]
+
+
 def test_epw_roster_requires_location(clean_mcp_tables: None) -> None:
     client = signed_in_client()
     project_id = cast(str, create_project(client)["id"])

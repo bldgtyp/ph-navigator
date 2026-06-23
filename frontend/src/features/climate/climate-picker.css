@@ -132,7 +132,6 @@
 
 .climate-picker-row[data-selected="true"] {
   border-color: var(--accent);
-  box-shadow: var(--phn-focus);
 }
 
 .climate-picker-row-name {
@@ -140,6 +139,20 @@
   font-weight: 600;
   line-height: 1.25;
   overflow-wrap: anywhere;
+}
+
+/* Dataset version badge (e.g. "TMYx 2009–2023"), right of the station name —
+   the differentiator between a station's multiple EPW files. */
+.climate-picker-row-version {
+  justify-self: end;
+  padding: 2px var(--space-8);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elev);
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xs);
+  color: var(--text-secondary);
+  white-space: nowrap;
 }
 
 .climate-picker-row-metrics {
@@ -156,23 +169,10 @@
 .climate-picker-preview {
   padding: var(--space-12);
   border: 1px solid var(--border-card);
-  border-left: 3px solid var(--border-strong);
   border-radius: var(--radius-sm);
   display: flex;
   flex-direction: column;
   gap: var(--space-8);
-}
-
-.climate-picker-preview[data-status="pass"] {
-  border-left-color: var(--phn-success);
-}
-
-.climate-picker-preview[data-status="warning"] {
-  border-left-color: var(--phn-warning);
-}
-
-.climate-picker-preview[data-status="fail"] {
-  border-left-color: var(--phn-danger);
 }
 
 .climate-picker-warning {

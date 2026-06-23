@@ -7,7 +7,12 @@ from io import BytesIO
 from openpyxl import Workbook
 
 from features.climate.ashrae_meteo import design_conditions_from_ashrae_station
-from features.climate.epw_catalog import EpwCatalogEntry, epw_zip_payload, parse_epw_catalog_xlsx
+from features.climate.epw_catalog import (
+    EpwCatalogEntry,
+    epw_version_label,
+    epw_zip_payload,
+    parse_epw_catalog_xlsx,
+)
 from features.climate.stat_parser import parse_stat_file
 
 STAT_SAMPLE = """
@@ -95,6 +100,16 @@ def test_epw_catalog_xlsx_parses_and_ranks_with_haversine() -> None:
             url="https://climate.onebuilding.org/sources/pitts.zip",
         )
     ]
+
+
+def test_epw_version_label_parses_type_and_period() -> None:
+    base = "https://climate.onebuilding.org/sources/USA_MA_Pittsfield.Muni.AP.744104"
+    # Period spans render type + en-dashed years; the bare TMYx/TMY3 files render just the type.
+    assert epw_version_label(f"{base}_TMYx.2009-2023.zip") == "TMYx 2009–2023"
+    assert epw_version_label(f"{base}_TMYx.zip") == "TMYx"
+    assert epw_version_label(f"{base}_TMY3.zip") == "TMY3"
+    # Off-convention names fall back rather than mislabel.
+    assert epw_version_label("https://example.org/pitts.zip") == "EPW"
 
 
 def test_epw_zip_payload_extracts_epw_and_stat() -> None:

@@ -118,6 +118,7 @@ class ClimateDatasetRosterItem(BaseModel):
 
     id: UUID
     name: str
+    region: str | None
     station_id: str | None
     latitude: float | None
     longitude: float | None
@@ -162,6 +163,7 @@ class EpwRosterItem(BaseModel):
     distance_mi: float | None
     elevation_delta_ft: float | None
     source_url: str
+    version_label: str
 
 
 class EpwRosterResponse(BaseModel):

@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { MapPin } from "lucide-react";
 import { errorMessage } from "../../../shared/lib/errors";
 import { AutocompleteSelect } from "../../../shared/ui/AutocompleteSelect";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { useProjectLocationQuery } from "../../projects/hooks";
+import type { ProjectDetail } from "../../projects/types";
 import {
   useClimateDatasetRosterQuery,
+  useClimateLocationQuery,
   useClimateSourcesQuery,
   useCreateClimateSourceMutation,
 } from "../hooks";
@@ -21,7 +24,7 @@ import type {
   PhClimateKind,
   ProjectClimateSource,
 } from "../types";
-import { ANY_STATE, STATE_FILTER_OPTIONS } from "../us-states";
+import { ANY_STATE, STATE_FILTER_OPTIONS, stateCodeFromRegion } from "../us-states";
 import { ClimateMap } from "./ClimateMap";
 import { ClimateStatusChip } from "./ClimateAtoms";
 import "../climate-picker.css";
@@ -36,19 +39,21 @@ const PROXIMITY_LIMIT_METERS = 80_467;
 // backend-computed proximity verdict — and attaches the chosen one. The map is
 // the live Leaflet/OSM basemap (D-DP-6), with a positioned-pin fallback in tests.
 export function ClimateDatasetPickerModal({
-  projectId,
+  project,
   kind,
   onClose,
   onRequestSetLocation,
   onAttached,
 }: {
-  projectId: string;
+  project: Pick<ProjectDetail, "id" | "access_mode">;
   kind: PhClimateKind;
   onClose: () => void;
   onRequestSetLocation?: () => void;
   onAttached?: (source: ProjectClimateSource) => void;
 }) {
+  const projectId = project.id;
   const kindLabel = climateSourceKindLabel(kind);
+  const modalTitle = kind === "phius" ? "Set Phius Climate Data" : "Set PHI Climate Data";
   const titleId = "climate-picker-title";
 
   const locationQuery = useProjectLocationQuery(projectId);
@@ -57,28 +62,57 @@ export function ClimateDatasetPickerModal({
     location?.is_set && location.latitude !== null && location.longitude !== null,
   );
 
-  // null = use the project's state (region omitted); ANY_STATE = nearest across
-  // all states; otherwise an explicit state code.
+  const existingSources = useClimateSourcesQuery(projectId).data ?? [];
+  const currentSource = existingSources.find((source) => source.kind === kind) ?? null;
+  const currentDatasetId = stringValue(currentSource?.data?.dataset_id);
+  const currentLocationId = currentSource?.ref ?? stringValue(currentSource?.data?.location_id);
+  const currentLocationQuery = useClimateLocationQuery(
+    currentDatasetId ?? undefined,
+    currentLocationId ?? undefined,
+  );
+  const currentSourceRegion = stateCodeFromRegion(currentLocationQuery.data?.region);
+
+  // null = use the current source's state when present, else the project's
+  // state; ANY_STATE = nearest across all states; otherwise an explicit state.
   const [regionMode, setRegionMode] = useState<string | null>(null);
   const search: ClimateRosterSearch =
-    regionMode === null ? {} : regionMode === ANY_STATE ? { near: true } : { region: regionMode };
+    regionMode === null
+      ? currentSourceRegion
+        ? { region: currentSourceRegion }
+        : {}
+      : regionMode === ANY_STATE
+        ? { near: true }
+        : { region: regionMode };
   const rosterQuery = useClimateDatasetRosterQuery(projectId, kind, search, {
     enabled: locationIsSet,
   });
   const roster = rosterQuery.data;
-  const items = roster?.items ?? [];
+  const items = useMemo(() => roster?.items ?? [], [roster?.items]);
 
-  const existingSources = useClimateSourcesQuery(projectId).data ?? [];
-  const hasExisting = existingSources.some((source) => source.kind === kind);
+  const hasExisting = currentSource !== null;
 
   const create = useCreateClimateSourceMutation(projectId);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [findNearestPending, setFindNearestPending] = useState(false);
   const selected = items.find((item) => item.id === selectedId) ?? null;
 
   // The select shows the explicit choice, else the project's own state (which
   // is the region the roster defaults to when none is passed).
-  const selectValue = regionMode ?? location?.state ?? roster?.project.state ?? "";
+  const selectValue =
+    regionMode ?? currentSourceRegion ?? location?.state ?? roster?.project.state ?? "";
+
+  useEffect(() => {
+    if (!findNearestPending || rosterQuery.isLoading || regionMode !== ANY_STATE) return;
+    const nearest = items[0];
+    if (!nearest) {
+      setFindNearestPending(false);
+      return;
+    }
+    setSelectedId(nearest.id);
+    setRegionMode(stateCodeFromRegion(nearest.region) ?? ANY_STATE);
+    setFindNearestPending(false);
+  }, [findNearestPending, items, regionMode, rosterQuery.isLoading]);
 
   function changeRegion(value: string): void {
     setRegionMode(value);
@@ -98,13 +132,14 @@ export function ClimateDatasetPickerModal({
     );
   }
 
+  function findNearest(): void {
+    setSelectedId(null);
+    setFindNearestPending(true);
+    setRegionMode(ANY_STATE);
+  }
+
   return (
-    <ModalDialog
-      id="climate-picker"
-      title={`Select ${kindLabel} climate dataset`}
-      titleId={titleId}
-      onClose={onClose}
-    >
+    <ModalDialog id="climate-picker" title={modalTitle} titleId={titleId} onClose={onClose}>
       {locationQuery.isLoading ? (
         <p className="form-note">Loading project location…</p>
       ) : !locationIsSet ? (
@@ -127,6 +162,17 @@ export function ClimateDatasetPickerModal({
         </div>
       ) : (
         <div className="climate-picker-content">
+          <div className="climate-derive-action">
+            <button
+              type="button"
+              className="primary-button"
+              onClick={findNearest}
+              disabled={rosterQuery.isLoading && regionMode === ANY_STATE}
+            >
+              <MapPin size={16} aria-hidden="true" />
+              {findNearestPending ? "Finding…" : "Find Nearest"}
+            </button>
+          </div>
           <div className="climate-picker-toolbar">
             {roster?.dataset ? (
               <p className="modal-subtitle">
@@ -288,4 +334,8 @@ function verdictChip(status: ClimateProximityVerdict["status"]): {
   label: string;
 } {
   return { tone: status, label: VERDICT_LABELS[status] };
+}
+
+function stringValue(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value : null;
 }

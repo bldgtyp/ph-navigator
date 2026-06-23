@@ -148,6 +148,7 @@ export type ClimateRosterProject = {
 export type ClimateDatasetRosterItem = {
   id: string;
   name: string;
+  region: string | null;
   station_id: string | null;
   latitude: number | null;
   longitude: number | null;
@@ -181,6 +182,9 @@ export type EpwRosterItem = {
   distance_mi: number | null;
   elevation_delta_ft: number | null;
   source_url: string;
+  // Dataset version, e.g. "TMYx 2009–2023" / "TMY3" — distinguishes a station's
+  // multiple EPW files in the picker list.
+  version_label: string;
 };
 
 export type EpwRosterResponse = {

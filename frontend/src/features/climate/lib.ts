@@ -1,6 +1,12 @@
 import type { UnitSystem } from "../../lib/units";
 import { elevationUnitLabel, formatLocationElevationDisplay } from "../projects/location-form";
-import type { ClimateRecord, ClimateSourceKind, ProjectClimateSource } from "./types";
+import type {
+  ClimateLocationSummary,
+  ClimateRecord,
+  ClimateSourceKind,
+  ProjectClimateSource,
+} from "./types";
+import { stateCodeFromRegion } from "./us-states";
 
 // Jan…Dec — the ordering of every `Monthly12` series in a ClimateRecord.
 export const MONTH_LABELS = [
@@ -71,6 +77,15 @@ export function climateSourceSubtitle(source: ProjectClimateSource): string {
   if (source.label) return source.label;
   if (source.kind === "custom") return "Custom record";
   return source.ref ?? "—";
+}
+
+export function climateLocationTitle(
+  location: Pick<ClimateLocationSummary, "name" | "region"> | null | undefined,
+  fallback: string,
+): string {
+  if (!location?.name) return fallback;
+  const stateCode = stateCodeFromRegion(location.region);
+  return stateCode ? `${location.name}, ${stateCode}` : location.name;
 }
 
 export function climateSourceProximity(source: ProjectClimateSource): string | null {
