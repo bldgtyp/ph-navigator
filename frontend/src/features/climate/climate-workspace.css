@@ -196,7 +196,7 @@
 }
 
 .climate-big-map {
-  height: 336px;
+  height: 100%;
   border-radius: var(--phn-radius);
 }
 
@@ -328,6 +328,23 @@
   gap: var(--space-16);
 }
 
+.climate-location-page {
+  min-height: min(760px, calc(100vh - 190px));
+}
+
+.climate-location-map-stage {
+  position: relative;
+  flex: 1;
+  min-height: min(760px, calc(100vh - 190px));
+  margin-bottom: var(--space-16);
+}
+
+.climate-location-map-stage .climate-big-map {
+  position: absolute;
+  inset: 0;
+  height: auto;
+}
+
 /* Page header (location + every source page) */
 .climate-page-head {
   display: flex;
@@ -447,21 +464,28 @@
   align-items: flex-start;
 }
 
-/* Derived-fact grid on the location page */
+/* Derived-fact chips float over the location map. */
 .climate-facts {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1px;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--phn-radius);
-  background: var(--border-subtle);
-  overflow: hidden;
+  position: absolute;
+  right: var(--space-16);
+  bottom: var(--space-16);
+  left: var(--space-16);
+  z-index: var(--z-base-elevated);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  margin: 0;
 }
 
 .climate-fact {
+  flex: 1 1 160px;
   margin: 0;
-  padding: var(--space-10) var(--space-14);
-  background: var(--bg-card);
+  min-width: min(180px, 100%);
+  padding: var(--space-8) var(--space-12);
+  border: 1px solid color-mix(in oklab, var(--border-strong) 72%, transparent);
+  border-radius: var(--phn-control-radius);
+  background: color-mix(in oklab, var(--bg-card) 92%, transparent);
+  backdrop-filter: blur(8px);
 }
 
 .climate-fact dt {
@@ -624,7 +648,8 @@
     padding-right: var(--space-10);
   }
 
-  .climate-facts {
-    grid-template-columns: 1fr;
+  .climate-location-page,
+  .climate-location-map-stage {
+    min-height: min(680px, calc(100vh - 170px));
   }
 }

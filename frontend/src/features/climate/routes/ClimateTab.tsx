@@ -159,27 +159,29 @@ function LocationPage({
       : null;
 
   return (
-    <section className="climate-detail-page">
-      <ClimateMap className="climate-big-map" ariaLabel="Project location map" project={coords} />
+    <section className="climate-detail-page climate-location-page">
+      <div className="climate-location-map-stage">
+        <ClimateMap className="climate-big-map" ariaLabel="Project location map" project={coords} />
 
-      <dl className="climate-facts">
-        <div className="climate-fact">
-          <dt>Coordinates</dt>
-          <dd>{formatLatLong(location?.latitude ?? null, location?.longitude ?? null)}</dd>
-        </div>
-        <div className="climate-fact">
-          <dt>County · State</dt>
-          <dd>{countyState || "—"}</dd>
-        </div>
-        <div className="climate-fact">
-          <dt>Elevation</dt>
-          <dd>{elevation}</dd>
-        </div>
-        <div className="climate-fact">
-          <dt>IECC climate zone</dt>
-          <dd>{location?.climate_zone ?? "—"}</dd>
-        </div>
-      </dl>
+        <dl className="climate-facts">
+          <div className="climate-fact">
+            <dt>Coordinates</dt>
+            <dd>{formatLatLong(location?.latitude ?? null, location?.longitude ?? null)}</dd>
+          </div>
+          <div className="climate-fact">
+            <dt>County · State</dt>
+            <dd>{countyState || "—"}</dd>
+          </div>
+          <div className="climate-fact">
+            <dt>Elevation</dt>
+            <dd>{elevation}</dd>
+          </div>
+          <div className="climate-fact">
+            <dt>IECC climate zone</dt>
+            <dd>{location?.climate_zone ?? "—"}</dd>
+          </div>
+        </dl>
+      </div>
     </section>
   );
 }
