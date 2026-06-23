@@ -821,6 +821,63 @@
   color: var(--phn-danger);
 }
 
+.materials-panel__sections {
+  display: grid;
+  gap: var(--space-18);
+}
+
+.materials-panel__section {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.materials-panel__section-header {
+  align-items: baseline;
+  color: var(--text-secondary);
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  gap: var(--space-8);
+  justify-content: space-between;
+  letter-spacing: 0.08em;
+  padding-inline: var(--space-2);
+  text-transform: uppercase;
+}
+
+.materials-panel__section-header h2 {
+  color: inherit;
+  font-size: inherit;
+  font-weight: 700;
+  letter-spacing: inherit;
+  margin: 0;
+}
+
+.materials-panel__section--background {
+  margin-top: var(--space-8);
+}
+
+.materials-panel__section--background .report-table {
+  color: var(--text-muted, var(--text-secondary));
+}
+
+.materials-panel__section--background .report-table__cell,
+.materials-panel__section--background .report-table__head-cell,
+.materials-panel__section--background .report-table__head-unit,
+.materials-panel__section--background .report-table__chevron,
+.materials-panel__section--background .autocomplete-select input {
+  color: var(--text-muted, var(--text-secondary));
+}
+
+.materials-panel__section--background .report-table__cell--primary {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.materials-panel__section--background .report-attachment-chip,
+.materials-panel__section--background .report-status-dot {
+  opacity: 0.62;
+}
+
 .spec-expansion {
   display: grid;
   gap: var(--space-16);

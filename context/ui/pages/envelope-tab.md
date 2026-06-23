@@ -238,10 +238,11 @@ scoped because each installation slot needs its own photo.
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-**Layout** — one scrollable column of **material cards**.
-Cards with `specification_status != 'complete'` first (pending
-QA), then `complete`, then an "Unused materials" section at the
-bottom.
+**Layout** — one scrollable column of **material cards**, split into
+two zones. The top zone holds in-scope materials with
+`specification_status` of `missing`, `question`, or `complete`. The lower
+zone holds `N/A` materials and visually recedes as background/reference
+items.
 
 **Material card** (the building block):
 
@@ -292,10 +293,12 @@ bottom.
 **Card sort order:**
 
 1. **Pending QA cards first** — `specification_status` of
-   `missing`, `question`, or `na` — within that group sorted by
+   `missing` or `question` — within that group sorted by
    `naturalSortCompare(name)`.
 2. **Complete cards** — `specification_status == 'complete'`.
-3. **"Unused materials" section** at the bottom — orphan
+3. **N/A cards** — `specification_status == 'na'`, in the lower muted
+   zone.
+4. **"Unused materials" section** at the bottom — orphan
    `project_materials` rows (no segment references) with a
    one-time inline note: *"These materials are no longer used
    in any assembly. Their datasheets and notes are preserved
@@ -454,4 +457,3 @@ one place," etc.
 - **Viewers** see this page populated and organized
   for trades-crew use — the primary motivation for the tab's
   existence.
-
