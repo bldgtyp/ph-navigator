@@ -1238,7 +1238,8 @@ schemas), §14.2 (pre-Pydantic airflow conversion — V2 fix),
    {
      "faces": [FaceSchema, ...],
      "spaces": [SpaceSchema, ...],
-     "sun_path": SunPathAndCompassDTOSchema | null,
+     // sun path is NOT here (D-SP-1): it is location-reactive and served by
+     // the separate GET /projects/{id}/sun-path endpoint.
      "hot_water_systems": [PhHotWaterSystemSchema, ...],
      "ventilation_systems": [PhVentilationSystemSchema, ...],
      "shading_elements": [ShadeGroupSchema, ...],

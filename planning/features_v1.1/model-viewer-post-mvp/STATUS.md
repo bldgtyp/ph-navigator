@@ -28,7 +28,7 @@ on Ed's promotion.
 
 | Item | Tier | Plan | Reopen gate |
 |---|---|---|---|
-| Sun-path 3D render in Site & Sun | 1 (frontend) | [`model-viewer-sun-path/`](../model-viewer-sun-path/) Phase 1 | **Climate Phase 1 merged** (`planning/archive/climate/`) — it owns the sun-path endpoint (realigned 2026-06-13). D-SP-1 accepted. Then this is a frontend render. |
+| Sun-path 3D render in Site & Sun | 1 | [`model-viewer-sun-path/`](../model-viewer-sun-path/) Phases 0 + 1 | **Implemented 2026-06-23** (branch `feat/model-viewer-sun-path`, pending merge). Backend (`project_location` — not Climate) + frontend render both done. D-SP-1 accepted. |
 | Sun-path scrubber | 1 (gated sub-phase) | [`model-viewer-sun-path/`](../model-viewer-sun-path/) Phase 2 | Phase 1 merged **and** a named time/season review need (Q-VIEW-6). |
 | NEW-VIEW-2 legend-as-filter | 1 (ready) | [`model-viewer-legend-filter/`](../model-viewer-legend-filter/) | None — ready. Ed-flagged near-priority. |
 | Section / clipping planes | 2 (gated) | [`model-viewer-clipping-planes/`](../model-viewer-clipping-planes/) | A named sectioned-inspection workflow (Q-VIEW-8). |
@@ -45,9 +45,10 @@ But `/model_data` is a D-15 immutable, upload-time, forever-cached
 artifact, while project location is a project-level variable edited
 independently and usually *after* upload — so a baked-in sun path would
 never update. Resolved: the sun path is **decoupled** into a separate,
-project-scoped, location-reactive endpoint + store; the `/model_data`
-artifact stays immutable with `sun_path` null
-(`model-viewer-sun-path/decisions.md`).
+project-scoped, location-reactive endpoint
+(`GET /projects/{id}/sun-path`, owned by `project_location`); the
+`/model_data` artifact stays immutable and (as of 2026-06-23) carries no
+`sun_path` key at all (`model-viewer-sun-path/decisions.md`).
 
 ## Notes
 

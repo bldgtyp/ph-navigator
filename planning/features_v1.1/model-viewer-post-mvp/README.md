@@ -33,7 +33,7 @@ with detailed phased plans.
 
 | Candidate | Feature folder | Notes |
 |---|---|---|
-| Sun-path **3D render** (D-07) **+** scrubber (Q-VIEW-6) | [`model-viewer-sun-path/`](../model-viewer-sun-path/) | **Realigned 2026-06-13 to frontend-only.** The sun-path *backend* moved to the new **[Climate](../../archive/climate/)** feature (Phase 1), which must ship first. This feature renders the diagram over geometry in Site & Sun. D-SP-1 settled (decoupled, location-reactive endpoint, now Climate-owned). |
+| Sun-path **3D render** (D-07) **+** scrubber (Q-VIEW-6) | [`model-viewer-sun-path/`](../model-viewer-sun-path/) | **Phases 0 + 1 implemented 2026-06-23** (branch `feat/model-viewer-sun-path`, pending merge). The backend was briefly in Climate framing but actually lives in **`project_location`** (the coordinate owner); it was built, deleted 2026-06-22, and rebuilt here as Phase 0, with the Site & Sun render as Phase 1. D-SP-1 settled (decoupled, location-reactive endpoint). Scrubber (Q-VIEW-6) is the deferred Phase 2. |
 | Legend-as-filter (NEW-VIEW-2 / Q-VIEW-7) | [`model-viewer-legend-filter/`](../model-viewer-legend-filter/) | Ed-flagged near-priority. Frontend-only; reuses the D-11 legend rows + existing bucket-key function. No open decisions. **No Climate dependency** — can go anytime. |
 
 ### Tier 2 — Plannable but gated (own folder, plan ready, idle)
@@ -61,11 +61,12 @@ with detailed phased plans.
 
 ## Recommended order if Ed promotes work
 
-1. **Climate Phase 1** (`planning/archive/climate/`) — the sun-path
-   *service*; the prerequisite for the sun-path 3D render and the
-   Climate tab. Build first (Ed, 2026-06-13).
-2. **Sun-path 3D render** — frontend render in Site & Sun, once Climate
-   Phase 1 ships. (Climate Phase 2 tab can proceed in parallel.)
+1. ~~**Climate Phase 1** — the sun-path *service*.~~ **Done differently:**
+   the sun-path service lives in `project_location` (not Climate); it was
+   removed 2026-06-22 and rebuilt 2026-06-23 as
+   `model-viewer-sun-path` Phase 0.
+2. **Sun-path 3D render** — **implemented 2026-06-23** (Phase 1), pending
+   merge. Renders the diagram in Site & Sun over geometry.
 3. **Legend-as-filter** — Ed's stated near-priority; cheapest high-value
    win; **no Climate dependency**, so it can also run anytime/in
    parallel.

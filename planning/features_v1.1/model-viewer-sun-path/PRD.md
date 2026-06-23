@@ -84,22 +84,33 @@ The geometry `/model_data` artifact is untouched; its `sun_path` key
 stays `null`. The two queries (model_data, sun-path) are independent;
 the lens composes them.
 
-## 5. Backend contract — owned by Climate Phase 1
+## 5. Backend contract — owned here, in `project_location` (Phase 0)
 
-> **Realigned 2026-06-13.** The sun-path builder + `GET
-> /projects/{id}/sun-path` endpoint + MCP tool live in **Climate
-> Phase 1** (`planning/archive/climate/phases/phase-01-sun-path-service.md`),
-> their proper home (climate-derived, multi-consumer — D-CL-2). The
-> contract this feature consumes:
+> **Rebaselined 2026-06-23.** This backend was built (2026-06-13) and
+> then deleted (2026-06-22) during the Climate overhaul; it never had a
+> separate "Climate" home — it lived in `project_location`, which owns
+> the coordinates. Phase 0 rebuilds it there. The app-wide Climate
+> feature (reference datasets) is **not** project-scoped and does not
+> serve this. See `decisions.md` (2026-06-23 reconciliation).
+
+Phase 0 (`phases/phase-00-backend-sun-path-service.md`) delivers:
 
 - `GET /api/v1/projects/{project_id}/sun-path` →
-  `SunPathAndCompassDTOSchema | null` (null when no location).
-  Public-readable, location-reactive, **unit radius / origin-centered**,
-  true-north verified (D-PL-4). Not the immutable-artifact treatment.
+  `SunPathAndCompassDTOSchema | null` (null when no location row, or
+  latitude/longitude unset). Project-scoped, view-access gated,
+  location-reactive, **unit radius / origin-centered**, true-north
+  verified against a known-orientation fixture (D-PL-4).
+  `Cache-Control: private, max-age=0` — **not** the immutable-artifact
+  treatment (D-15/D-SP-1), because location is editable in place.
+- `Sunpath.from_location(...)`-based builder
+  (`project_location/sun_path.py`), reading the existing
+  `project_location` row (`latitude`, `longitude`, `elevation_m`,
+  `true_north_deg`, `time_zone`) via `repository.get_location(...)`.
+- An MCP read tool (`tool_get_project_sun_path`) at parity with the route.
 
-This feature does **not** build backend; it consumes the above. (If
-Climate Phase 1 has not shipped when this is scheduled, build it there
-first.)
+The geometry `/model_data` artifact is untouched; its `sun_path` key
+stays `null`. The two queries (model_data, sun-path) are independent;
+the lens composes them.
 
 ## 6. Frontend contract
 
@@ -118,10 +129,13 @@ first.)
   - **Scale + translate** the diagram to `model.bounds`
     (bounding-sphere radius + center) so it frames the building,
     reusing the bounds math the MVP compass marker already uses.
-- **Source of `sunPath`:** today `BuildingModel.sunPath` is read from
-  `combinedData.sun_path` (always null). Switch the Site & Sun lens to
-  read the new query's result instead; the location-hint condition in
-  `ModelViewerStage.tsx` (`!model.sunPath`) becomes `!sunPathData`.
+- **Source of `sunPath`:** the MVP read `BuildingModel.sunPath` from the
+  always-null `combinedData.sun_path`. That dead field — and
+  `BuildingModel.sunPath` — were **removed**; the Site & Sun lens consumes
+  the `useSunPathQuery` result, and the location-hint condition in
+  `ModelViewerStage.tsx` is keyed on `!sunPath`. The sun path now has a
+  single source of truth (the dedicated endpoint), not a second dead key
+  on the `/model_data` artifact.
 - **No new chrome** — no scrubber, no legend entry, no toggle. The sun
   path is part of the fixed Site & Sun composition (PRD §4.1 table:
   Site & Sun has no theme menu).

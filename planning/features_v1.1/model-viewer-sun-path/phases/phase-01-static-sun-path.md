@@ -1,28 +1,28 @@
 ---
 DATE: 2026-06-13
 TIME: -
-STATUS: Ready (after Climate Phase 1). REALIGNED 2026-06-13 to
-  frontend-only — the backend moved to Climate Phase 1.
+STATUS: IMPLEMENTED 2026-06-23 (branch `feat/model-viewer-sun-path`,
+  pending merge). Query + renderer (arcs + compass + bounds-fit) + hint
+  flip done; tsc + vitest green, live Playwright pending worktree servers.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff — render the annual sun path over the
-  building in the Site & Sun lens (frontend consumer of the Climate
+  building in the Site & Sun lens (frontend consumer of the Phase 0
   endpoint).
 RELATED:
   - ../PRD.md
   - ../decisions.md (D-SP-1, D-PL-4)
   - ../PLAN.md
-  - planning/archive/climate/phases/phase-01-sun-path-service.md (the backend)
+  - phase-00-backend-sun-path-service.md (the backend this consumes)
   - research/v1-3d-model-viewer-reference.md §9.4, §10
 ---
 
 # Phase 1 — Site & Sun 3D render (frontend)
 
-> **Realigned 2026-06-13.** The backend (builder + `GET
-> /projects/{id}/sun-path` endpoint + MCP + the north-sign fixture)
-> moved to **Climate Phase 1**
-> (`planning/archive/climate/phases/phase-01-sun-path-service.md`).
-> This phase is now **frontend-only** and **depends on Climate Phase 1
-> shipping the endpoint.** It points the Site & Sun lens at that
+> **Rebaselined 2026-06-23.** The backend (builder + `GET
+> /projects/{id}/sun-path` endpoint + MCP + the north-sign fixture) is
+> **Phase 0** (`phase-00-backend-sun-path-service.md`), rebuilt in
+> `project_location`. This phase is **frontend-only** and **depends on
+> Phase 0 shipping the endpoint.** It points the Site & Sun lens at that
 > endpoint and completes the renderer.
 
 Connects the already-shipped renderer scaffold to the Climate sun-path
@@ -30,20 +30,20 @@ endpoint. The location setter UI already shipped with `project_location`
 (`ProjectLocationSettingsSection.tsx`); this phase only reads the
 computed sun path and draws it.
 
-## 0. Backend — see Climate Phase 1
+## 0. Backend — see Phase 0
 
 The builder (`Sunpath.from_location`, unit radius, origin-centered, DST
 off), the `GET /projects/{id}/sun-path` endpoint (null on no-location),
-the MCP tool, and the **true-north sign fixture** (D-PL-4) are all owned
-by Climate Phase 1. Do not build them here. This phase assumes that
+the MCP tool, and the **true-north sign fixture** (D-PL-4) are all
+delivered by **Phase 0** (`phase-00-backend-sun-path-service.md`), in
+`project_location`. Do not build them here. This phase assumes that
 endpoint exists and returns `SunPathAndCompassDTOSchema | null`.
 
 ## 1. Required reading
 
 - `../PRD.md` §5 (the consumed contract) + §6 (frontend contract).
-- `planning/archive/climate/phases/phase-01-sun-path-service.md` — the
-  endpoint shape + the unit-radius/origin-centered geometry convention
-  this render scales.
+- `phase-00-backend-sun-path-service.md` — the endpoint shape + the
+  unit-radius/origin-centered geometry convention this render scales.
 - V1 reference `research/v1-3d-model-viewer-reference.md`:
   - §9.4 `load_sun_path.tsx` — V1 rendered every polyline/arc in
     `sunpath` and `compass`, called `computeLineDistances()` for dashed
@@ -107,8 +107,8 @@ endpoint exists and returns `SunPathAndCompassDTOSchema | null`.
   the hint. Expose `sunPathReady` (already in the debug hook) to gate
   the assertion.
 - **`make format` + `make ci`** green.
-- (Backend pytest incl. the north-sign fixture is Climate Phase 1's
-  gate, not this feature's.)
+- (Backend pytest incl. the north-sign fixture is Phase 0's gate, not
+  this phase's.)
 
 ## 5. Exit criteria
 
@@ -116,6 +116,6 @@ endpoint exists and returns `SunPathAndCompassDTOSchema | null`.
 - Diagram frames the model at any scale (check both the 459 KB and the
   52 MB fixtures).
 - North orientation correct in the lens (visual confirmation; the sign
-  itself is locked by Climate Phase 1's fixture).
+  itself is locked by Phase 0's fixture).
 - Location-reactive: editing location + reload updates the diagram
   (manual browser check + the freshness note in STATUS).

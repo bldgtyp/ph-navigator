@@ -7,6 +7,7 @@ import { isModelViewerDebugHookEnabled } from "../lib/debugHook";
 import { labelForLens } from "../lib/lenses";
 import type { BuildingModel } from "../loaders/building";
 import { useModelViewerStore } from "../store";
+import type { SunPathAndCompassModelData } from "../types";
 import { BuildingLens } from "./BuildingLens";
 import { CameraRig } from "./CameraRig";
 import { ModelViewerPerfProbe } from "./PerfProbe";
@@ -14,6 +15,7 @@ import { ModelViewerPerfProbe } from "./PerfProbe";
 type ViewerCanvasProps = {
   model: BuildingModel;
   activeFileName: string;
+  sunPath: SunPathAndCompassModelData | null;
 };
 
 /**
@@ -23,7 +25,7 @@ type ViewerCanvasProps = {
  */
 const LARGE_MODEL_OBJECT_THRESHOLD = 1500;
 
-export function ViewerCanvas({ model, activeFileName }: ViewerCanvasProps) {
+export function ViewerCanvas({ model, activeFileName, sunPath }: ViewerCanvasProps) {
   const lens = useModelViewerStore((state) => state.lens);
   const clearSelection = useModelViewerStore((state) => state.clearSelection);
   const measureActive = useModelViewerStore((state) => state.measureActive);
@@ -86,7 +88,12 @@ export function ViewerCanvas({ model, activeFileName }: ViewerCanvasProps) {
         blur={2.8}
         far={30}
       />
-      <BuildingLens model={model} ghostMaterials={ghostMaterials} tokens={tokens} />
+      <BuildingLens
+        model={model}
+        ghostMaterials={ghostMaterials}
+        tokens={tokens}
+        sunPath={sunPath}
+      />
       <CameraRig model={model} />
       {isModelViewerDebugHookEnabled() ? <ModelViewerPerfProbe /> : null}
       {/* Post-FX only on light models; heavy models rely on MSAA above (F7). */}

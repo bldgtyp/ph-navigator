@@ -110,8 +110,8 @@ def extract_geometry_summary(model: Model) -> GeometrySummary:
 def extract_model_data(model: Model) -> CombinedModelDataSchema:
     """Build the full viewer payload from a parsed, Meters-normalized model.
 
-    `sun_path` is always None in this phase — generation is blocked on
-    model-viewer wiring against project-location data (D-07/OQ-1).
+    The sun path is not part of this artifact (D-SP-1): it is location-reactive
+    and served by the project-scoped `GET /projects/{id}/sun-path` endpoint.
     """
     summary = LoadSummarySchema()
     faces = _faces_from_model(model, summary)
@@ -123,7 +123,6 @@ def extract_model_data(model: Model) -> CombinedModelDataSchema:
     return CombinedModelDataSchema(
         faces=faces,
         spaces=spaces,
-        sun_path=None,
         hot_water_systems=_hot_water_systems_from_model(model, summary),
         ventilation_systems=_ventilation_systems_from_model(model, summary),
         shading_elements=shade_groups,

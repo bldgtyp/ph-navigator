@@ -2,7 +2,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ApiRequestError } from "../../shared/api/client";
 import { errorMessage } from "../../shared/lib/errors";
-import { deleteHbjsonFile, fetchHbjsonFiles, fetchModelData, updateHbjsonFile } from "./api";
+import {
+  deleteHbjsonFile,
+  fetchHbjsonFiles,
+  fetchModelData,
+  fetchSunPath,
+  updateHbjsonFile,
+} from "./api";
 import { sortFilesNewestFirst, uploadHbjsonFile, validateHbjsonFile } from "./lib";
 import { modelViewerQueryKeys } from "./query-keys";
 import type { HbjsonFile, HbjsonFileListResponse, HbjsonFileUpdatePayload } from "./types";
@@ -35,6 +41,21 @@ export function useModelDataQuery(projectId: string, fileId: string | null) {
       }
       return failureCount < 2;
     },
+  });
+}
+
+/**
+ * The project's annual sun path. Project-scoped and NOT pinned to
+ * `staleTime: Infinity` (unlike model data): project location is editable, so
+ * an edit must be reflected on the next view (D-SP-1). A resolved `null` means
+ * no location is set — a valid state, not an error.
+ */
+export function useSunPathQuery(projectId: string) {
+  return useQuery({
+    queryKey: modelViewerQueryKeys.sunPath(projectId),
+    queryFn: ({ signal }) => fetchSunPath(projectId, signal),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 }
 
