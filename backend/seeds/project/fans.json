@@ -4,6 +4,12 @@
       { "id": "opt_fan_exhaust", "label": "Exhaust", "color": "#0ea5e9", "order": 0 },
       { "id": "opt_fan_supply", "label": "Supply", "color": "#22c55e", "order": 1 },
       { "id": "opt_fan_kitchen_hood", "label": "Kitchen Hood", "color": "#f97316", "order": 2 }
+    ],
+    "fans.status": [
+      { "id": "opt_status_complete", "label": "Complete", "color": "#16a34a", "order": 0 },
+      { "id": "opt_status_needed", "label": "Needed", "color": "#d97706", "order": 1 },
+      { "id": "opt_status_question", "label": "Question", "color": "#0ea5b7", "order": 2 },
+      { "id": "opt_status_na", "label": "N/A", "color": "#9ca3af", "order": 3 }
     ]
   },
   "rows": [
@@ -24,7 +30,8 @@
         "amps": 0.1,
         "volts": 120,
         "power_factor": 0.8,
-        "watts": 6.3
+        "watts": 6.3,
+        "status": "opt_status_complete"
       }
     },
     {
@@ -44,7 +51,8 @@
         "amps": 0.1,
         "volts": 120,
         "power_factor": 0.8,
-        "watts": 6.3
+        "watts": 6.3,
+        "status": "opt_status_needed"
       }
     },
     {
@@ -64,7 +72,8 @@
         "amps": 1.6,
         "volts": 120,
         "power_factor": 0.8,
-        "watts": 154
+        "watts": 154,
+        "status": "opt_status_question"
       }
     },
     {
@@ -84,7 +93,8 @@
         "amps": 1.0,
         "volts": 120,
         "power_factor": 0.8,
-        "watts": 96
+        "watts": 96,
+        "status": "opt_status_na"
       }
     },
     {
@@ -104,7 +114,8 @@
         "amps": 1.2,
         "volts": 120,
         "power_factor": 0.8,
-        "watts": 115
+        "watts": 115,
+        "status": "opt_status_complete"
       }
     }
   ]

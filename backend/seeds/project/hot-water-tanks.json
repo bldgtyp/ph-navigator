@@ -7,6 +7,12 @@
     "hot_water_tanks.inside_outside": [
       { "id": "opt_hwt_inside", "label": "Inside", "color": "#3b82f6", "order": 0 },
       { "id": "opt_hwt_outside", "label": "Outside", "color": "#f97316", "order": 1 }
+    ],
+    "hot_water_tanks.status": [
+      { "id": "opt_status_complete", "label": "Complete", "color": "#16a34a", "order": 0 },
+      { "id": "opt_status_needed", "label": "Needed", "color": "#d97706", "order": 1 },
+      { "id": "opt_status_question", "label": "Question", "color": "#0ea5b7", "order": 2 },
+      { "id": "opt_status_na", "label": "N/A", "color": "#9ca3af", "order": 3 }
     ]
   },
   "rows": [
@@ -24,7 +30,8 @@
         "manufacturer": "Viessmann",
         "model": "Vitocell 300-B",
         "size_l": 300,
-        "heat_loss_rate_w_k": 1.8
+        "heat_loss_rate_w_k": 1.8,
+        "status": "opt_status_complete"
       }
     },
     {
@@ -41,7 +48,8 @@
         "manufacturer": "A.O. Smith",
         "model": "DRE-52",
         "size_l": 189,
-        "heat_loss_rate_w_k": 1.2
+        "heat_loss_rate_w_k": 1.2,
+        "status": "opt_status_needed"
       }
     },
     {
@@ -58,7 +66,8 @@
         "manufacturer": "Stiebel Eltron",
         "model": "SBP 200 E",
         "size_l": 200,
-        "heat_loss_rate_w_k": 1.5
+        "heat_loss_rate_w_k": 1.5,
+        "status": "opt_status_question"
       }
     },
     {
@@ -75,7 +84,8 @@
         "manufacturer": "Bradford White",
         "model": "SW-2-120",
         "size_l": 454,
-        "heat_loss_rate_w_k": 2.7
+        "heat_loss_rate_w_k": 2.7,
+        "status": "opt_status_na"
       }
     },
     {
@@ -92,7 +102,8 @@
         "manufacturer": "Lochinvar",
         "model": "TST-500",
         "size_l": 500,
-        "heat_loss_rate_w_k": 3.1
+        "heat_loss_rate_w_k": 3.1,
+        "status": "opt_status_complete"
       }
     }
   ]

@@ -4,6 +4,12 @@
       { "id": "opt_tb_ambient", "label": "15-Ambient", "color": "#0ea5e9", "order": 0 },
       { "id": "opt_tb_perimeter", "label": "16-Perimeter", "color": "#f97316", "order": 1 },
       { "id": "opt_tb_below_grade", "label": "17-Below-Grade", "color": "#64748b", "order": 2 }
+    ],
+    "thermal_bridges.status": [
+      { "id": "opt_status_complete", "label": "Complete", "color": "#16a34a", "order": 0 },
+      { "id": "opt_status_needed", "label": "Needed", "color": "#d97706", "order": 1 },
+      { "id": "opt_status_question", "label": "Question", "color": "#0ea5b7", "order": 2 },
+      { "id": "opt_status_na", "label": "N/A", "color": "#9ca3af", "order": 3 }
     ]
   },
   "rows": [
@@ -18,7 +24,8 @@
         "sheet_name": "A-501",
         "drawing_number": "4/A-501",
         "psi_value_w_mk": 0.094,
-        "frsi_value": 0.83
+        "frsi_value": 0.83,
+        "status": "opt_status_complete"
       }
     },
     {
@@ -32,7 +39,8 @@
         "sheet_name": "A-502",
         "drawing_number": "2/A-502",
         "psi_value_w_mk": 0.057,
-        "frsi_value": 0.79
+        "frsi_value": 0.79,
+        "status": "opt_status_needed"
       }
     },
     {
@@ -46,7 +54,8 @@
         "sheet_name": "S-301",
         "drawing_number": "1/S-301",
         "psi_value_w_mk": 0.112,
-        "frsi_value": 0.88
+        "frsi_value": 0.88,
+        "status": "opt_status_question"
       }
     },
     {
@@ -60,7 +69,8 @@
         "sheet_name": "A-503",
         "drawing_number": "7/A-503",
         "psi_value_w_mk": 0.181,
-        "frsi_value": 0.72
+        "frsi_value": 0.72,
+        "status": "opt_status_na"
       }
     },
     {
@@ -74,7 +84,8 @@
         "sheet_name": "A-504",
         "drawing_number": "5/A-504",
         "psi_value_w_mk": 0.139,
-        "frsi_value": 0.76
+        "frsi_value": 0.76,
+        "status": "opt_status_complete"
       }
     }
   ]

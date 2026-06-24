@@ -40,6 +40,7 @@ from features.project_document.tables._registry_helpers import (
     custom_option_lists_for_table,
     make_field_registry,
 )
+from features.project_document.tables._status_field import status_field_def
 from features.project_document.tables.contracts import (
     TableContract,
     TableFieldRegistry,
@@ -113,6 +114,7 @@ OUTDOOR_EQUIP_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
     built_in_field_def(field_key="ieer", display_name="IEER", field_type=CustomFieldType.number),
     built_in_field_def(field_key="datasheet_asset_ids", display_name="Datasheet", field_type=CustomFieldType.long_text),
     built_in_field_def(field_key="notes", display_name="Notes", field_type=CustomFieldType.long_text),
+    status_field_def(),
 )
 
 INDOOR_EQUIP_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
@@ -145,6 +147,7 @@ INDOOR_EQUIP_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
     built_in_field_def(field_key="hspf", display_name="HSPF", field_type=CustomFieldType.number),
     built_in_field_def(field_key="datasheet_asset_ids", display_name="Datasheet", field_type=CustomFieldType.long_text),
     built_in_field_def(field_key="notes", display_name="Notes", field_type=CustomFieldType.long_text),
+    status_field_def(),
 )
 
 OUTDOOR_UNITS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (

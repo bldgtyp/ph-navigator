@@ -39,6 +39,7 @@ from features.project_document.models import ProjectDocumentSource
 from features.project_document.options import option_list_key, read_option_list, replace_option_list
 from features.project_document.tables._built_in_seeds import built_in_field_def
 from features.project_document.tables._fingerprint import compute_table_schema_fingerprint
+from features.project_document.tables._status_field import status_field_def
 from features.project_document.tables.contracts import (
     InverseLinkField,
     TableContract,
@@ -99,6 +100,7 @@ PUMPS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
     ),
     built_in_field_def(field_key="link", display_name="Link", field_type=CustomFieldType.url),
     built_in_field_def(field_key="notes", display_name="Notes", field_type=CustomFieldType.long_text),
+    status_field_def(),
 )
 
 PUMPS_BUILT_IN_FIELD_KEYS: tuple[str, ...] = tuple(f.field_key for f in PUMPS_BUILT_IN_FIELD_DEFS)
