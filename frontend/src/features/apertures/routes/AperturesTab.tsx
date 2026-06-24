@@ -269,7 +269,6 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                     : "apertures-page__body"
                 }
               >
-                <div className="apertures-page__body-actions">{apertureActions}</div>
                 <ApertureSidebar
                   apertures={sorted}
                   activeApertureId={activeAperture?.id ?? null}
@@ -297,6 +296,7 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                     loading={uValueQuery.isLoading}
                     canEdit={canEdit}
                     busy={mutation.isPending}
+                    actions={apertureActions}
                     onRename={(newName) => {
                       if (!activeAperture) return;
                       void dispatch({
