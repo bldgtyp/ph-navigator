@@ -202,6 +202,32 @@ Hot Water Tanks, with per-table option namespaces
 currently expose it (Pumps, Fans, Hot Water Heaters), and Pydantic row
 validators enforce `phase in {1, 3}` wherever the column exists.
 
+A built-in cross-table `status` single-select rides on nine DataTables —
+Thermal Bridges plus most Equipment tables (Pumps, Fans, Hot Water
+Heaters, Hot Water Tanks, Electric Heaters, Appliances) and the Heat Pump
+Outdoor/Indoor **Equipment** leaves (not the Unit leaves, Ventilators,
+Rooms, or Space Types). Unlike `inside_outside`/`device_type`, its value
+is **not** a typed column: it lives in `row.custom_values["status"]`, and
+its option list is namespaced `<table_label>.status` (e.g. `pumps.status`,
+`thermal_bridges.status`, `heat_pumps_outdoor_equip.status`). That key is
+the same `<table_label>.<field_key>` namespace the generic-table validator
+resolves single-select *custom-value* option lists under — so a built-in
+single-select stored in `custom_values` is keyed by the table's validation
+label, not by the dotted `option_list_key(table_path, ...)` prefix used for
+`cf_*` custom fields. The FieldDef (default `opt_status_needed`; options
+Complete/Needed/Question/N/A, colored with the Materials/report-status
+palette), option list, and the in-scope table list (`STATUS_TABLE_NAMES`)
+have a single source of truth in
+`backend/features/project_document/tables/_status_field.py`; a module-load
+drift guard in `tables/registry.py` keeps `STATUS_TABLE_NAMES` in sync with
+the contracts that actually carry the field. On the frontend the shared
+equipment + thermal-bridges tables resolve the column through the normal
+`useTableSchema` `${tableKey}.${field_key}` path; the Heat Pump equipment
+leaves build FieldDefs from local factories and route the cell write via a
+`status → setCustomValue` seam because the value lives in `custom_values`.
+New rows default to `opt_status_needed`; duplicate preserves the source
+row's status.
+
 Attachment-capable equipment tables use their canonical rich table keys
 (`ventilators`, `pumps`, `fans`, `hot_water_heaters`,
 `hot_water_tanks`, `electric_heaters`, `appliances`) in the attachment
