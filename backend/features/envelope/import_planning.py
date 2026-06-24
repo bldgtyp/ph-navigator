@@ -218,7 +218,10 @@ def _resolve_one_material(
         matches = indexes.by_catalog_record.get(catalog_record_id, [])
         if len(matches) == 1:
             return _material_item(
-                material, "reuse_catalog_in_project", matches[0].id, catalog_record_id,
+                material,
+                "reuse_catalog_in_project",
+                matches[0].id,
+                catalog_record_id,
                 _drift_warnings(material, matches[0]),
             )
         if len(matches) > 1:
