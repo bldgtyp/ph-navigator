@@ -23,6 +23,8 @@ const IMPORT_WARNING_LABELS: Record<string, string> = {
   name_matched_project_material: "Matched an existing project material by name.",
   name_matched_catalog_material: "Matched a catalog material by name.",
   ambiguous_name_in_project: "Several project materials share this name.",
+  reused_material_values_differ:
+    "The reused project material's values differ from the file — the project's values are kept.",
 };
 
 export function importWarningLabel(code: string): string {

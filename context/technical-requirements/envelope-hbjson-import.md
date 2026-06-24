@@ -85,6 +85,11 @@ Run per distinct incoming material (deduped by
 
    Name matches (4–5) are fuzzy by nature, so every hit carries a warning the
    preview surfaces for confirmation. Property-tolerance matching is deferred.
+
+   Any reuse rung (1, 2, or 4) that keeps an existing project material whose
+   thermal values (`conductivity_w_mk`, `density_kg_m3`, `specific_heat_j_kgk`,
+   `emissivity`) differ from the file's adds a `reused_material_values_differ`
+   warning — informational; the project's values are kept.
 6. **create_new** — project-only `ProjectMaterial` (`catalog_origin = null`):
    copies the file's thermal props + color; `category` defaults to `"Other"`
    (not exported); `specification_status` carries the file's value if valid

@@ -9,6 +9,7 @@ confirmed is exactly what lands (PRD §6).
 
 from __future__ import annotations
 
+import math
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -119,7 +120,7 @@ def _resolve_materials(
     body: ProjectDocumentV1,
     library: ParsedConstructionLibrary,
 ) -> tuple[dict[str, str], list[ProjectMaterial], list[MaterialPlanItem]]:
-    existing_ids = {material.id for material in body.tables.project_materials}
+    by_id = {material.id: material for material in body.tables.project_materials}
     by_catalog_record: dict[str, list[ProjectMaterial]] = {}
     by_name: dict[str, list[ProjectMaterial]] = {}
     for material in body.tables.project_materials:
@@ -128,7 +129,7 @@ def _resolve_materials(
         by_name.setdefault(normalize_display_name(material.name), []).append(material)
 
     indexes = _MaterialIndexes(
-        existing_ids=existing_ids,
+        by_id=by_id,
         by_catalog_record=by_catalog_record,
         by_name=by_name,
         catalog_row=_memoized_catalog_row(conn),
@@ -149,7 +150,7 @@ def _resolve_materials(
 class _MaterialIndexes:
     """Lookups shared across the matching ladder for one import."""
 
-    existing_ids: set[str]
+    by_id: dict[str, ProjectMaterial]
     by_catalog_record: dict[str, list[ProjectMaterial]]
     by_name: dict[str, list[ProjectMaterial]]
     catalog_row: Callable[[str], dict[str, Any] | None]
@@ -192,15 +193,21 @@ def _resolve_one_material(
     catalog_record_id = _materials_catalog_record_id(material.catalog_origin)
 
     # Rung 1 — by project material id (round-trip / same-project reuse).
-    if material.source_key in indexes.existing_ids:
-        return _material_item(material, "reuse_project_material", material.source_key, catalog_record_id)
+    reused = indexes.by_id.get(material.source_key)
+    if reused is not None:
+        return _material_item(
+            material, "reuse_project_material", reused.id, catalog_record_id, _drift_warnings(material, reused)
+        )
 
     warnings: list[str] = []
     if catalog_record_id is not None:
         # Rung 2 — an existing project material already came from this catalog row.
         matches = indexes.by_catalog_record.get(catalog_record_id, [])
         if len(matches) == 1:
-            return _material_item(material, "reuse_catalog_in_project", matches[0].id, catalog_record_id)
+            return _material_item(
+                material, "reuse_catalog_in_project", matches[0].id, catalog_record_id,
+                _drift_warnings(material, matches[0]),
+            )
         if len(matches) > 1:
             # `pick_catalog_material` refuses to choose; rather than abort the
             # whole import, re-pick a fresh copy and surface the ambiguity.
@@ -221,6 +228,7 @@ def _resolve_one_material(
     if len(name_matches) == 1:
         # Rung 4 — a single same-named project material → reuse it.
         warnings.append("name_matched_project_material")
+        warnings.extend(_drift_warnings(material, name_matches[0]))
         return _material_item(material, "reuse_project_material", name_matches[0].id, catalog_record_id, warnings)
     if len(name_matches) > 1:
         warnings.append("ambiguous_name_in_project")
@@ -253,6 +261,25 @@ def _create_project_material(material: ImportedMaterial) -> ProjectMaterial:
         color=material.color,
         specification_status=material.specification_status or "missing",
     )
+
+
+# Thermal fields compared when a reuse rung keeps an existing material: if the
+# file's values diverge, the reuse still happens but the preview flags it (the
+# user may have edited the material since the file was exported, or this is a
+# cross-project copy).
+_DRIFT_FIELDS = ("conductivity_w_mk", "density_kg_m3", "specific_heat_j_kgk", "emissivity")
+
+
+def _drift_warnings(imported: ImportedMaterial, reused: ProjectMaterial) -> list[str]:
+    # `ImportedMaterial` and `ProjectMaterial` share these attribute names.
+    differs = any(not _numbers_match(getattr(imported, field), getattr(reused, field)) for field in _DRIFT_FIELDS)
+    return ["reused_material_values_differ"] if differs else []
+
+
+def _numbers_match(file_value: float | None, project_value: float | None) -> bool:
+    if file_value is None or project_value is None:
+        return file_value is None and project_value is None
+    return math.isclose(file_value, project_value, rel_tol=1e-9, abs_tol=1e-12)
 
 
 def _materials_catalog_record_id(catalog_origin: dict[str, Any] | None) -> str | None:

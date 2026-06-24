@@ -228,6 +228,24 @@ def test_native_round_trip_replaces_and_reuses_materials(clean_import_tables: No
     assert segment["is_continuous_insulation"] is True
 
 
+def test_reuse_flags_material_value_drift(clean_import_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id, version_id = project["id"], project["active_version_id"]
+    material = _complete_insulation()  # pmat_insul, conductivity 0.04
+    write_saved_body(version_id, _body([material], [_homogeneous_assembly()]))
+    payload = _export(client, project_id, version_id)  # the file captures 0.04
+
+    # The project material drifts to a different conductivity after the export.
+    drifted = {**material, "conductivity_w_mk": 0.08}
+    write_saved_body(version_id, _body([drifted], [_homogeneous_assembly()]))
+
+    preview = _preview(client, project_id, version_id, payload).json()
+    item = preview["materials"][0]
+    assert item["decision"] == "reuse_project_material"
+    assert "reused_material_values_differ" in item["warnings"]
+
+
 def test_preview_does_not_create_a_draft(clean_import_tables: None) -> None:
     client = signed_in_client()
     project = create_project(client)
