@@ -61,7 +61,9 @@ export function VersionShellControls({
         className="save-state dirty"
         data-tooltip={DIRTY_STATE_HELP}
         aria-description={DIRTY_STATE_HELP}
+        tabIndex={0}
       >
+        <span className="save-state-dot" aria-hidden="true" />
         Uncommitted changes
       </span>
       {isLocked ? (
