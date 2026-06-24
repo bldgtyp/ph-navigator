@@ -2,6 +2,7 @@
 // glazing-specific reported value set (U-value, g-value).
 
 import type { GlazingRef } from "../types";
+import { formatUValueFromWm2K, useUnitPreference } from "../../../lib/units";
 import { GlazingPicker } from "./GlazingPicker";
 
 export type GlazingRowProps = {
@@ -11,6 +12,8 @@ export type GlazingRowProps = {
 };
 
 export function GlazingRow({ glazing, canEdit, onPick }: GlazingRowProps) {
+  const { unitSystem } = useUnitPreference();
+
   return (
     <div
       className="aperture-element-table__row aperture-card-row aperture-card-row--glazing"
@@ -29,7 +32,7 @@ export function GlazingRow({ glazing, canEdit, onPick }: GlazingRowProps) {
         />
       </div>
       <div className="aperture-card-row__metric" role="cell">
-        {formatNumber(glazing?.u_value_w_m2k ?? null)}
+        {formatUValueFromWm2K(glazing?.u_value_w_m2k ?? null, { unitSystem, empty: "-" })}
       </div>
       <div className="aperture-card-row__metric" role="cell">
         -
