@@ -9,7 +9,9 @@ import type {
   CatalogGlazingType,
   CatalogGlazingTypeCreatePayload,
   CatalogGlazingTypeListResponse,
+  CatalogGlazingTypeOptionsResponse,
   CatalogGlazingTypeUpdatePayload,
+  EditCatalogGlazingTypeOptionsPayload,
   CatalogManufacturerListResponse,
   CatalogMaterial,
   CatalogMaterialCreatePayload,
@@ -196,6 +198,23 @@ export async function reactivateGlazingType(id: string): Promise<CatalogGlazingT
 export async function duplicateGlazingType(id: string): Promise<CatalogGlazingType> {
   return fetchJson<CatalogGlazingType>(`/api/v1/catalogs/glazing-types/${id}/duplicate`, {
     method: "POST",
+  });
+}
+
+export async function getGlazingTypeOptions(
+  signal?: AbortSignal,
+): Promise<CatalogGlazingTypeOptionsResponse> {
+  return fetchJson<CatalogGlazingTypeOptionsResponse>("/api/v1/catalogs/glazing-types/options", {
+    signal,
+  });
+}
+
+export async function putGlazingTypeOptions(
+  payload: EditCatalogGlazingTypeOptionsPayload,
+): Promise<unknown> {
+  return fetchJson<unknown>("/api/v1/catalogs/glazing-types/options", {
+    method: "PUT",
+    body: JSON.stringify(payload),
   });
 }
 

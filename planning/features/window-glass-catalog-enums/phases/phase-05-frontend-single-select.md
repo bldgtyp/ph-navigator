@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 16:10 EDT
-STATUS: Planned
+STATUS: Done (2026-06-24) — code implemented; tsc + vite build + vitest green (21 catalog tests). Browser smoke pending Phase 6.
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phase 5 — frontend: manufacturer + brand → single_select, read-only name, inline-add
 RELATED:

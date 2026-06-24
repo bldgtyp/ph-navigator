@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 16:10 EDT
-STATUS: Backend complete (Phases 0–4, committed + green) — PAUSED before Phase 5 (frontend) at Ed's direction 2026-06-24; Phase 6 closeout pending
+STATUS: Phases 0–5 complete (backend + frontend, committed + green) — Phase 6 closeout in progress (browser smoke + archive pending)
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: Window-Glazing catalog — promote `manufacturer` + `brand` text fields to
   user-extensible single-select, make `name` a derived field (manufacturer | brand | suffix)
@@ -66,8 +66,8 @@ glazing/materials adopt it next without a redesign."* This is that adoption.
 | 2 | `phases/phase-02-write-validation.md` | Reject unknown values on create/patch for `manufacturer` + `brand`. | ✅ Done |
 | 3 | `phases/phase-03-derived-name.md` | Server-compute read-only `name` (`manufacturer \| brand \| suffix`); drop `name` from the glazing drift keys. (Default-by-id is **already done**.) | ✅ Done |
 | 4 | `phases/phase-04-import-export-v2.md` | Import v2: fold legacy casing, compute name on import, auto-add unknown options, drop the missing-name gate. | ✅ Done |
-| 5 | `phases/phase-05-frontend-single-select.md` | Two fields → single_select, read-only name, inline-add wired to the store. (Manage-options modal inherits the shared v1.1 blocker.) | ⬜ Planned |
-| 6 | `phases/phase-06-cleanup-docs-closeout.md` | Fold decisions into `context/`, closeout gate, mark Complete. | ⬜ Planned |
+| 5 | `phases/phase-05-frontend-single-select.md` | Two fields → single_select, read-only name, inline-add wired to the store. (Manage-options modal inherits the shared v1.1 blocker.) | ✅ Done |
+| 6 | `phases/phase-06-cleanup-docs-closeout.md` | Fold decisions into `context/`, closeout gate, mark Complete. | 🚧 In progress |
 
 Dependency order: 0 → 1 → 2 → 3 → 4 → 5 → 6. Phases 1–4 are backend-only and each
 ends green on `make ci`; Phase 5 is the only frontend phase.

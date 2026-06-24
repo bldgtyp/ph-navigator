@@ -157,8 +157,9 @@ export type CatalogManufacturerEntry = {
 
 export type CatalogManufacturerListResponse = { items: CatalogManufacturerEntry[] };
 
+// `name` is server-derived from the parts (D-3) and rejected as an input
+// (`extra="forbid"`), so it is absent from both the create and update payloads.
 export type CatalogGlazingTypeCreatePayload = {
-  name: string;
   manufacturer?: string | null;
   brand?: string | null;
   suffix?: string | null;
@@ -171,3 +172,25 @@ export type CatalogGlazingTypeCreatePayload = {
 };
 
 export type CatalogGlazingTypeUpdatePayload = Partial<CatalogGlazingTypeCreatePayload>;
+
+// Single-select option store (catalog_field_options), shared shape with frame
+// types. Cells store the **label** (D-2); the frontend maps label↔id for the
+// grid. Glazing promotes two fields: `manufacturer` + `brand`.
+export type CatalogGlazingTypeOption = {
+  id: string;
+  label: string;
+  color: string;
+  order: number;
+};
+
+// `GET …/glazing-types/options` — both fields' lists keyed by field_key.
+export type CatalogGlazingTypeOptionsResponse = {
+  fields: Record<string, CatalogGlazingTypeOption[]>;
+};
+
+// `PUT …/glazing-types/options` — full-replace one field's list (+ merge map).
+export type EditCatalogGlazingTypeOptionsPayload = {
+  field_key: string;
+  options: CatalogGlazingTypeOption[];
+  replacements?: Record<string, string>;
+};
