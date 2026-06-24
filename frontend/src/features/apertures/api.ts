@@ -3,6 +3,7 @@ import { draftWriteHeaders } from "../project_document/table-slice";
 import type {
   ApertureCommand,
   ApertureElementFrames,
+  ApertureProductCommand,
   ApertureReadSource,
   ApertureSpecReportResponse,
   AperturesSlice,
@@ -10,6 +11,11 @@ import type {
   WireApertureElementFrames,
   WireAperturesSlice,
 } from "./types";
+
+type DraftWriteResult = {
+  version_id: string;
+  draft_etag: string | null;
+};
 
 export async function fetchAperturesSlice(
   projectId: string,
@@ -51,6 +57,38 @@ export async function fetchApertureSpecReport(
   return fetchJson<ApertureSpecReportResponse>(
     `/api/v1/projects/${projectId}/versions/${versionId}/apertures/spec-report?source=${source}`,
     { signal },
+  );
+}
+
+export async function applyApertureProductCommand(
+  projectId: string,
+  versionId: string,
+  current: ApertureSpecReportResponse,
+  command: ApertureProductCommand,
+): Promise<DraftWriteResult> {
+  return fetchJson<DraftWriteResult>(
+    `/api/v1/projects/${projectId}/versions/${versionId}/draft/envelope/commands`,
+    {
+      method: "POST",
+      headers: draftWriteHeaders(current),
+      body: JSON.stringify({ command }),
+    },
+  );
+}
+
+export async function applyApertureReportRefreshCommand(
+  projectId: string,
+  versionId: string,
+  current: ApertureSpecReportResponse,
+  command: Extract<ApertureCommand, { kind: "refreshRefFromCatalog" }>,
+): Promise<DraftWriteResult> {
+  return fetchJson<DraftWriteResult>(
+    `/api/v1/projects/${projectId}/versions/${versionId}/apertures/command`,
+    {
+      method: "POST",
+      headers: draftWriteHeaders(current),
+      body: JSON.stringify(command),
+    },
   );
 }
 

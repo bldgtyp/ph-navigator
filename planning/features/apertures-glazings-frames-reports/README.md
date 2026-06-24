@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
-TIME: 17:45 EDT
-STATUS: Active — Phase 1 complete; Phase 2 next
+TIME: 19:03 EDT
+STATUS: Active — Phase 2 complete; Phase 3 closeout next
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: Two new REPORTING pages — "Apertures → Glazings" and "Apertures → Frames"
   — that mirror the "Envelope → Materials" page exactly (same report-table look,
@@ -76,8 +76,8 @@ already designated glazing + frame as this primitive's next consumers.
 | --- | --- | --- |
 | 0 | `phases/phase-00-backend-read-api.md` | `build_apertures_read_parts` selector + `ProjectGlazingRead`/`ProjectFrameRead` + use-site DTOs + read endpoint + drift report. |
 | 1 | `phases/phase-01-frontend-routing-and-panels.md` | Route-based Apertures sub-tabs; `GlazingsPanel`/`FramesPanel` shells (MaterialsPanel clones); query hooks + api + types. |
-| 2 | `phases/phase-02-wire-and-retire-modal.md` | Columns, status chips, datasheet zones, use-sites, spec-status, drift; retire `ProjectRefsView` + `refsAggregation`. |
-| 3 | `phases/phase-03-closeout.md` | Browser smoke (sign in as Ed), UI_UX page docs, closeout gate. |
+| 2 | `phases/phase-02-wire-and-retire-modal.md` | Complete — columns, status chips, datasheet zones, use-sites, spec-status, drift; retired `ProjectRefsView` + `refsAggregation`. |
+| 3 | `phases/phase-03-closeout.md` | Next — UI_UX page docs, final `make ci`, archive/closeout gate. |
 
 ## Dependency
 

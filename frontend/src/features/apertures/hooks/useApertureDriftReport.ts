@@ -18,6 +18,7 @@ export function useApertureDriftReport(
   projectId: string,
   versionId: string | null,
   source: "draft" | "version",
+  enabled = true,
 ) {
   return useQuery<ApertureDriftReport>({
     queryKey: apertureDriftReportQueryKey(projectId, versionId, source),
@@ -26,7 +27,7 @@ export function useApertureDriftReport(
         `/api/v1/projects/${projectId}/versions/${versionId}/apertures/drift-report?source=${source}`,
         { signal },
       ),
-    enabled: Boolean(versionId),
+    enabled: enabled && Boolean(versionId),
     staleTime: 0,
   });
 }

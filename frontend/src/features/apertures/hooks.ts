@@ -1,11 +1,26 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { errorMessage } from "../../shared/lib/errors";
+import { attachAssetToDocument, detachAssetFromDocument } from "../assets/api";
 import { markLocalDraftTouched } from "../project_document/lib";
 import { projectDocumentQueryKeys } from "../project_document/query-keys";
-import { applyApertureCommand, fetchAperturesSlice, fetchApertureSpecReport } from "./api";
+import {
+  applyApertureCommand,
+  applyApertureProductCommand,
+  applyApertureReportRefreshCommand,
+  fetchAperturesSlice,
+  fetchApertureSpecReport,
+} from "./api";
 import { apertureDriftReportQueryKey } from "./hooks/useApertureDriftReport";
 import { apertureUValuesQueryKey } from "./hooks/useApertureUValues";
 import { apertureQueryKeys } from "./query-keys";
-import type { ApertureCommand, ApertureReadSource, AperturesSlice } from "./types";
+import type {
+  ApertureAttachmentChangeArgs,
+  ApertureCommand,
+  ApertureProductCommand,
+  ApertureReadSource,
+  ApertureSpecReportResponse,
+  AperturesSlice,
+} from "./types";
 
 /** Wire kinds whose audit envelope sets ``affects_u_value=true``. The
  *  list mirrors the backend audit flag; keeping it client-side keeps
@@ -77,6 +92,115 @@ export function useApertureSpecReportQuery(
   });
 }
 
+export function useApertureProductCommandMutation(projectId: string, versionId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      current,
+      command,
+    }: {
+      current: ApertureSpecReportResponse;
+      command: ApertureProductCommand;
+    }) => {
+      if (!versionId) {
+        throw new Error("Cannot apply an aperture product command without an active version.");
+      }
+      return applyApertureProductCommand(projectId, versionId, current, command);
+    },
+    onSuccess: async (result, variables) => {
+      const resolvedVersionId = result.version_id || variables.current.version_id;
+      if (result.draft_etag) markLocalDraftTouched(projectId, resolvedVersionId, result.draft_etag);
+      await invalidateApertureReportQueries(queryClient, projectId, resolvedVersionId);
+    },
+  });
+}
+
+export function useApertureReportRefreshMutation(projectId: string, versionId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      current,
+      command,
+    }: {
+      current: ApertureSpecReportResponse;
+      command: Extract<ApertureCommand, { kind: "refreshRefFromCatalog" }>;
+    }) => {
+      if (!versionId) {
+        throw new Error("Cannot refresh an aperture ref without an active version.");
+      }
+      return applyApertureReportRefreshCommand(projectId, versionId, current, command);
+    },
+    onSuccess: async (result, variables) => {
+      const resolvedVersionId = result.version_id || variables.current.version_id;
+      if (result.draft_etag) markLocalDraftTouched(projectId, resolvedVersionId, result.draft_etag);
+      await invalidateApertureReportQueries(queryClient, projectId, resolvedVersionId);
+    },
+  });
+}
+
+export function useApertureReportAttachmentMutation({
+  projectId,
+  versionId,
+  onError,
+}: {
+  projectId: string;
+  versionId: string | null;
+  onError: (message: string) => void;
+}) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      current,
+      change,
+    }: {
+      current: ApertureSpecReportResponse;
+      change: ApertureAttachmentChangeArgs;
+    }) => {
+      if (!versionId) throw new Error("Select a version before editing aperture attachments.");
+      let draftEtag = current.draft_etag;
+      const removed = change.currentAssetIds.filter(
+        (assetId) => !change.nextAssetIds.includes(assetId),
+      );
+      const added = change.nextAssetIds.filter(
+        (assetId) => !change.currentAssetIds.includes(assetId),
+      );
+      for (const assetId of removed) {
+        const response = await detachAssetFromDocument(projectId, assetId, {
+          version_id: versionId,
+          table_key: change.tableKey,
+          row_id: change.rowId,
+          field_key: change.fieldKey,
+          if_match: draftEtag,
+          if_match_version: draftEtag ? undefined : current.version_etag,
+        });
+        draftEtag = response.draft_etag;
+      }
+      for (const assetId of added) {
+        const response = await attachAssetToDocument(projectId, assetId, {
+          version_id: versionId,
+          table_key: change.tableKey,
+          row_id: change.rowId,
+          field_key: change.fieldKey,
+          index: change.nextAssetIds.indexOf(assetId),
+          if_match: draftEtag,
+          if_match_version: draftEtag ? undefined : current.version_etag,
+        });
+        draftEtag = response.draft_etag;
+      }
+      return { draftEtag, versionId };
+    },
+    onSuccess: async ({ draftEtag, versionId: resolvedVersionId }) => {
+      if (draftEtag) {
+        markLocalDraftTouched(projectId, resolvedVersionId, draftEtag);
+      }
+      await invalidateApertureReportQueries(queryClient, projectId, resolvedVersionId);
+    },
+    onError: (error) => {
+      onError(errorMessage(error, "Attachment update failed."));
+    },
+  });
+}
+
 export function useApplyApertureCommandMutation(projectId: string, versionId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -107,4 +231,22 @@ export function useApplyApertureCommandMutation(projectId: string, versionId: st
       }
     },
   });
+}
+
+async function invalidateApertureReportQueries(
+  queryClient: ReturnType<typeof useQueryClient>,
+  projectId: string,
+  versionId: string,
+): Promise<void> {
+  queryClient.invalidateQueries({
+    queryKey: projectDocumentQueryKeys.draftSummary(projectId, versionId),
+  });
+  await Promise.all([
+    queryClient.invalidateQueries({
+      queryKey: apertureQueryKeys.specReport(projectId, versionId, "draft"),
+    }),
+    queryClient.invalidateQueries({
+      queryKey: apertureDriftReportQueryKey(projectId, versionId, "draft"),
+    }),
+  ]);
 }
