@@ -81,10 +81,13 @@ SCOPE: Status for Envelope HBJSON Import.
   renders the Add/Replace/Skip select for **all** constructions (foreign get
   Add/Skip — no Replace without a target). +1 backend foreign-skip test;
   frontend dialog tests updated.
-- **Phase 6** — material drift detection in the import plan: when a reuse rung
-  hits an existing project material whose values differ from the file's, surface
-  a `reused_material_values_differ` warning (informational; still reuses).
-  Backend + frontend label.
+- **Phase 6 — DONE (2026-06-23).** Material drift detection: when a reuse rung
+  (by id, by in-project catalog record, or by name) keeps an existing project
+  material whose thermal values (`conductivity_w_mk`, `density_kg_m3`,
+  `specific_heat_j_kgk`, `emissivity`) differ from the file's, the material plan
+  item carries a `reused_material_values_differ` warning (informational — still
+  reuses). `_MaterialIndexes.by_id` replaced the id-set so the reused material is
+  available to compare. +1 backend drift test; frontend warning label added.
 - **Phase 7** — per-material override in the preview: let the user reject a
   match and force `create_new` (the false-positive name-match case). Apply
   command carries per-material resolutions; modal adds a per-material control.
