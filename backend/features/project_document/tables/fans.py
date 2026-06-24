@@ -14,6 +14,7 @@ from features.project_document.custom_fields import (
 )
 from features.project_document.document import (
     FAN_OPTION_KEYS,
+    FAN_STATUS_OPTION_KEY,
     FAN_TYPE_OPTION_KEY,
     FanRow,
     FansTableEnvelope,
@@ -104,6 +105,7 @@ class FansSliceOptions(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     fans_type: list[SingleSelectOption] = Field(alias=FAN_TYPE_OPTION_KEY)
+    fans_status: list[SingleSelectOption] = Field(alias=FAN_STATUS_OPTION_KEY)
 
     @model_validator(mode="after")
     def _validate_namespaced_extras(self) -> FansSliceOptions:
@@ -111,7 +113,7 @@ class FansSliceOptions(BaseModel):
         return self
 
     def by_option_key(self) -> dict[str, list[SingleSelectOption]]:
-        return {FAN_TYPE_OPTION_KEY: self.fans_type}
+        return {FAN_TYPE_OPTION_KEY: self.fans_type, FAN_STATUS_OPTION_KEY: self.fans_status}
 
     def custom_option_lists(self) -> dict[str, list[SingleSelectOption]]:
         return dict(self.__pydantic_extra__ or {})
@@ -186,6 +188,7 @@ def fans_response(
         field_defs=body.tables.equipment.fans.field_defs,
         single_select_options={
             FAN_TYPE_OPTION_KEY: body.single_select_options[FAN_TYPE_OPTION_KEY],
+            FAN_STATUS_OPTION_KEY: body.single_select_options[FAN_STATUS_OPTION_KEY],
             **custom_option_lists_for_table(body, _FANS_TABLE_PATH),
         },
         rows_computed=evaluate_table_formulas(fans_field_registry, body),
@@ -205,7 +208,10 @@ def extract_fans_diff_value(body: ProjectDocumentV1) -> dict[str, object]:
         "single_select_options": {
             FAN_TYPE_OPTION_KEY: [
                 option.model_dump(mode="json") for option in body.single_select_options[FAN_TYPE_OPTION_KEY]
-            ]
+            ],
+            FAN_STATUS_OPTION_KEY: [
+                option.model_dump(mode="json") for option in body.single_select_options[FAN_STATUS_OPTION_KEY]
+            ],
         },
     }
 

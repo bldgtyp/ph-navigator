@@ -15,6 +15,7 @@ from features.project_document.custom_fields import (
 from features.project_document.document import (
     APPLIANCE_ENERGY_STAR_OPTION_KEY,
     APPLIANCE_OPTION_KEYS,
+    APPLIANCE_STATUS_OPTION_KEY,
     APPLIANCE_TYPE_OPTION_KEY,
     ApplianceRow,
     AppliancesTableEnvelope,
@@ -109,6 +110,7 @@ class AppliancesSliceOptions(BaseModel):
 
     appliances_type: list[SingleSelectOption] = Field(alias=APPLIANCE_TYPE_OPTION_KEY)
     appliances_energy_star: list[SingleSelectOption] = Field(alias=APPLIANCE_ENERGY_STAR_OPTION_KEY)
+    appliances_status: list[SingleSelectOption] = Field(alias=APPLIANCE_STATUS_OPTION_KEY)
 
     @model_validator(mode="after")
     def _validate_namespaced_extras(self) -> AppliancesSliceOptions:
@@ -119,6 +121,7 @@ class AppliancesSliceOptions(BaseModel):
         return {
             APPLIANCE_TYPE_OPTION_KEY: self.appliances_type,
             APPLIANCE_ENERGY_STAR_OPTION_KEY: self.appliances_energy_star,
+            APPLIANCE_STATUS_OPTION_KEY: self.appliances_status,
         }
 
     def custom_option_lists(self) -> dict[str, list[SingleSelectOption]]:
@@ -195,6 +198,7 @@ def appliances_response(
         single_select_options={
             APPLIANCE_TYPE_OPTION_KEY: body.single_select_options[APPLIANCE_TYPE_OPTION_KEY],
             APPLIANCE_ENERGY_STAR_OPTION_KEY: body.single_select_options[APPLIANCE_ENERGY_STAR_OPTION_KEY],
+            APPLIANCE_STATUS_OPTION_KEY: body.single_select_options[APPLIANCE_STATUS_OPTION_KEY],
             **custom_option_lists_for_table(body, _APPLIANCES_TABLE_PATH),
         },
         rows_computed=evaluate_table_formulas(appliances_field_registry, body),

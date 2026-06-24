@@ -295,7 +295,7 @@ def test_phase_02_custom_single_select_options_use_nested_table_path_namespace(
             table_key="fans",
             fingerprint=field_defs_fingerprint(initial.json()["field_defs"]),
             field_key="cf_status",
-            display_name="Status",
+            display_name="QA State",
             field_type=CustomFieldType.single_select,
             initial_options=[{"id": "opt_status_basis", "label": "Basis", "color": "#0ea5e9", "order": 0}],
         ),

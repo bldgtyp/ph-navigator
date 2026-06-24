@@ -11,24 +11,28 @@ RELATED: planning/refactor/data-table-status-field/README.md, planning/refactor/
 
 ## Current State
 
-State: Active / Phase 01 (Contract And Seeds) complete; Phases 02-05 pending.
+State: Active / Phases 01-02 complete; Phases 03-05 pending.
 
-Phase 01 is implemented and committed: shared `tables/_status_field.py` helper,
-`status_field_def()` appended to the nine in-scope built-in FieldDef tuples,
-`<table>.status` option lists seeded into `empty_project_document()` and all
-eight equipment/thermal-bridge seed JSONs (rows exercise all four statuses), and
-a `STATUS_TABLE_NAMES` drift guard in `tables/registry.py`. The empty and full
-seed-assembled documents both pass `validate_document()`, and unknown status ids
-are rejected through the existing single-select path. Backend option-model and
-test wiring (Phase 02) has not been started; no DB reset/reseed yet (Phase 04).
+Phase 01 (contract + seeds) and Phase 02 (backend validation + tests) are
+implemented. Phase 01 added the shared `tables/_status_field.py` helper,
+`status_field_def()` on the nine in-scope FieldDef tuples, seeded
+`<table>.status` option lists + row values, and a `STATUS_TABLE_NAMES` drift
+guard. Phase 02 wired each table's slice `single_select_options` contract to
+accept/persist/emit its `<table_label>.status` key (via new
+`*_STATUS_OPTION_KEY` constants in `document.py` + `status` fields on the
+`*SliceOptions` models + Heat Pump leaf options), added `tests/
+status_field_helpers.py` and per-table status tests, and **`make check-backend`
+is green (1061 passed, 2 skipped)**. Frontend (Phase 03), DB reset/reseed +
+browser smoke (Phase 04), and closeout (Phase 05) are not started.
 
 ## Next Step
 
-Start `phases/phase-02-backend-validation-tests.md`: wire each in-scope table's
-`single_select_options` contract to accept/emit its `*.status` key (shared
-equipment slice option models + Heat Pump leaf option exposure), then add the
-backend table/validator/seed tests, including a guard that `STATUS_TABLE_NAMES`
-stays in sync with the registered contracts.
+Start `phases/phase-03-frontend-types-ui.md`: expose the backend `status`
+FieldDef as an editable DataTable single-select column — update the frontend
+option-map types so the namespaced `*.status` keys type-check, carry
+`fieldDefaults.status` into new-row `custom_values`, and reuse the shared
+`SingleSelectCell` (with an optional Materials-style color cue), with focused
+frontend tests.
 
 ## Open Questions
 
@@ -50,6 +54,14 @@ Phase 01 (2026-06-24):
   `coerce_custom_value` path (error: "single_select value ... is not a known
   option id"), confirming the `<table_label>.status` option-key wiring.
 
-Deferred to later phases: backend slice-option-model wiring + pytest coverage
-(Phase 02), frontend types/UI (Phase 03), DB reset/reseed + browser smoke
-(Phase 04), graph/docs closeout (Phase 05).
+Phase 02 (2026-06-24):
+
+- `make check-backend` green: **1061 passed, 2 skipped** (2 pre-existing
+  deprecation warnings, unrelated).
+- Every in-scope table slice round-trips `<table_label>.status` (GET exposes
+  the FieldDef + options; PUT persists `custom_values.status`; unknown ids 422).
+- Drift-guard test asserts `STATUS_TABLE_NAMES` == the registry contracts that
+  carry the status FieldDef.
+
+Deferred to later phases: frontend types/UI (Phase 03), DB reset/reseed +
+browser smoke (Phase 04), graph/docs closeout (Phase 05).

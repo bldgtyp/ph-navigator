@@ -40,7 +40,7 @@ from features.project_document.tables._registry_helpers import (
     custom_option_lists_for_table,
     make_field_registry,
 )
-from features.project_document.tables._status_field import status_field_def
+from features.project_document.tables._status_field import STATUS_FIELD_KEY, status_field_def
 from features.project_document.tables.contracts import (
     TableContract,
     TableFieldRegistry,
@@ -53,6 +53,13 @@ HEAT_PUMPS_OUTDOOR_EQUIP_TABLE_NAME = "heat_pumps_outdoor_equip"
 HEAT_PUMPS_INDOOR_EQUIP_TABLE_NAME = "heat_pumps_indoor_equip"
 HEAT_PUMPS_OUTDOOR_UNITS_TABLE_NAME = "heat_pumps_outdoor_units"
 HEAT_PUMPS_INDOOR_UNITS_TABLE_NAME = "heat_pumps_indoor_units"
+
+# Built-in `status` option keys for the two equip leaves. The leaf table_path
+# (e.g. `("equipment", "heat_pumps", "outdoor_equip")`) does not match the flat
+# `<table_label>.status` namespace the generic-table validator resolves under,
+# so these keys are registered explicitly in `built_in_option_key_by_field_key`.
+HEAT_PUMPS_OUTDOOR_EQUIP_STATUS_OPTION_KEY = f"{HEAT_PUMPS_OUTDOOR_EQUIP_TABLE_NAME}.status"
+HEAT_PUMPS_INDOOR_EQUIP_STATUS_OPTION_KEY = f"{HEAT_PUMPS_INDOOR_EQUIP_TABLE_NAME}.status"
 
 _OUTDOOR_EQUIP_PATH: tuple[str, ...] = ("equipment", "heat_pumps", "outdoor_equip")
 _INDOOR_EQUIP_PATH: tuple[str, ...] = ("equipment", "heat_pumps", "indoor_equip")
@@ -242,12 +249,14 @@ class OutdoorEquipOptions(HeatPumpLeafOptions):
     manufacturer: list[SingleSelectOption] = Field(alias=HEAT_PUMP_MANUFACTURER_OPTION_KEY)
     system_family: list[SingleSelectOption] = Field(alias=HEAT_PUMP_SYSTEM_FAMILY_OPTION_KEY)
     refrigerant: list[SingleSelectOption] = Field(alias=HEAT_PUMP_REFRIGERANT_OPTION_KEY)
+    status: list[SingleSelectOption] = Field(alias=HEAT_PUMPS_OUTDOOR_EQUIP_STATUS_OPTION_KEY)
 
     def built_in_options(self) -> dict[str, list[SingleSelectOption]]:
         return {
             HEAT_PUMP_MANUFACTURER_OPTION_KEY: self.manufacturer,
             HEAT_PUMP_SYSTEM_FAMILY_OPTION_KEY: self.system_family,
             HEAT_PUMP_REFRIGERANT_OPTION_KEY: self.refrigerant,
+            HEAT_PUMPS_OUTDOOR_EQUIP_STATUS_OPTION_KEY: self.status,
         }
 
 
@@ -258,12 +267,14 @@ class IndoorEquipOptions(HeatPumpLeafOptions):
     manufacturer: list[SingleSelectOption] = Field(alias=HEAT_PUMP_MANUFACTURER_OPTION_KEY)
     model_type: list[SingleSelectOption] = Field(alias=HEAT_PUMP_MODEL_TYPE_OPTION_KEY)
     install_type: list[SingleSelectOption] = Field(alias=HEAT_PUMP_INSTALL_TYPE_OPTION_KEY)
+    status: list[SingleSelectOption] = Field(alias=HEAT_PUMPS_INDOOR_EQUIP_STATUS_OPTION_KEY)
 
     def built_in_options(self) -> dict[str, list[SingleSelectOption]]:
         return {
             HEAT_PUMP_MANUFACTURER_OPTION_KEY: self.manufacturer,
             HEAT_PUMP_MODEL_TYPE_OPTION_KEY: self.model_type,
             HEAT_PUMP_INSTALL_TYPE_OPTION_KEY: self.install_type,
+            HEAT_PUMPS_INDOOR_EQUIP_STATUS_OPTION_KEY: self.status,
         }
 
 
@@ -389,6 +400,45 @@ def _replace_field_option_list(
     return replace_option_list(body, option_key, options)
 
 
+def _read_status_aware_option_value(
+    row: object,
+    field_key: str,
+    *,
+    row_model: type[RowWithCustomFields],
+    fallback: Callable[[object, str], str | None],
+) -> str | None:
+    """Read the shared `status` single-select value from `custom_values`.
+
+    `status` is registered in `built_in_option_key_by_field_key` only to pin
+    its option list under the flat `<table_label>.status` key, but the value
+    itself lives in `row.custom_values` (it has no typed column). Route it
+    there; every other key keeps the default typed-column accessor.
+    """
+    if field_key == STATUS_FIELD_KEY:
+        if not isinstance(row, row_model):
+            raise TypeError(f"expected {row_model.__name__}, got {type(row).__name__}")
+        value = row.custom_values.get(STATUS_FIELD_KEY)
+        return value if isinstance(value, str) else None
+    return fallback(row, field_key)
+
+
+def _set_status_aware_option_value(
+    row: object,
+    field_key: str,
+    value: str | None,
+    *,
+    row_model: type[RowWithCustomFields],
+    fallback: Callable[[object, str, str | None], object],
+) -> object:
+    if field_key == STATUS_FIELD_KEY:
+        if not isinstance(row, row_model):
+            raise TypeError(f"expected {row_model.__name__}, got {type(row).__name__}")
+        next_custom = dict(row.custom_values)
+        next_custom[STATUS_FIELD_KEY] = value
+        return row.model_copy(update={"custom_values": next_custom})
+    return fallback(row, field_key, value)
+
+
 def _make_registry(
     *,
     field_defs: tuple[TableFieldDef, ...],
@@ -406,6 +456,8 @@ def _make_registry(
         built_in_formula_types=built_in_formula_types,
         field_type_locked_keys=_locked_keys(field_defs),
     )
+    default_read_option_value = registry.read_built_in_option_value
+    default_set_option_value = registry.set_built_in_option_value
     return replace(
         registry,
         read_field_option_list=lambda body, field_key: _read_field_option_list(
@@ -420,6 +472,12 @@ def _make_registry(
             built_in_option_key_by_field_key=option_keys,
             field_key=field_key,
             options=options,
+        ),
+        read_built_in_option_value=lambda row, field_key: _read_status_aware_option_value(
+            row, field_key, row_model=row_model, fallback=default_read_option_value
+        ),
+        set_built_in_option_value=lambda row, field_key, value: _set_status_aware_option_value(
+            row, field_key, value, row_model=row_model, fallback=default_set_option_value
         ),
     )
 
@@ -555,6 +613,7 @@ outdoor_equip_field_registry = _make_registry(
         "manufacturer": HEAT_PUMP_MANUFACTURER_OPTION_KEY,
         "system_family": HEAT_PUMP_SYSTEM_FAMILY_OPTION_KEY,
         "refrigerant": HEAT_PUMP_REFRIGERANT_OPTION_KEY,
+        "status": HEAT_PUMPS_OUTDOOR_EQUIP_STATUS_OPTION_KEY,
     },
     built_in_formula_types=_formula_types_from_field_defs(OUTDOOR_EQUIP_BUILT_IN_FIELD_DEFS),
 )
@@ -566,6 +625,7 @@ indoor_equip_field_registry = _make_registry(
         "manufacturer": HEAT_PUMP_MANUFACTURER_OPTION_KEY,
         "model_type": HEAT_PUMP_MODEL_TYPE_OPTION_KEY,
         "install_type": HEAT_PUMP_INSTALL_TYPE_OPTION_KEY,
+        "status": HEAT_PUMPS_INDOOR_EQUIP_STATUS_OPTION_KEY,
     },
     built_in_formula_types=_formula_types_from_field_defs(INDOOR_EQUIP_BUILT_IN_FIELD_DEFS),
 )
@@ -597,6 +657,7 @@ heat_pumps_outdoor_equip_contract = TableContract(
             HEAT_PUMP_MANUFACTURER_OPTION_KEY,
             HEAT_PUMP_SYSTEM_FAMILY_OPTION_KEY,
             HEAT_PUMP_REFRIGERANT_OPTION_KEY,
+            HEAT_PUMPS_OUTDOOR_EQUIP_STATUS_OPTION_KEY,
         ),
     ),
     apply_replace=lambda body, payload: _apply_replace(
@@ -620,6 +681,7 @@ heat_pumps_outdoor_equip_contract = TableContract(
             HEAT_PUMP_MANUFACTURER_OPTION_KEY,
             HEAT_PUMP_SYSTEM_FAMILY_OPTION_KEY,
             HEAT_PUMP_REFRIGERANT_OPTION_KEY,
+            HEAT_PUMPS_OUTDOOR_EQUIP_STATUS_OPTION_KEY,
         ),
     ),
     table_path=_OUTDOOR_EQUIP_PATH,
@@ -640,6 +702,7 @@ heat_pumps_indoor_equip_contract = TableContract(
             HEAT_PUMP_MANUFACTURER_OPTION_KEY,
             HEAT_PUMP_MODEL_TYPE_OPTION_KEY,
             HEAT_PUMP_INSTALL_TYPE_OPTION_KEY,
+            HEAT_PUMPS_INDOOR_EQUIP_STATUS_OPTION_KEY,
         ),
     ),
     apply_replace=lambda body, payload: _apply_replace(
@@ -663,6 +726,7 @@ heat_pumps_indoor_equip_contract = TableContract(
             HEAT_PUMP_MANUFACTURER_OPTION_KEY,
             HEAT_PUMP_MODEL_TYPE_OPTION_KEY,
             HEAT_PUMP_INSTALL_TYPE_OPTION_KEY,
+            HEAT_PUMPS_INDOOR_EQUIP_STATUS_OPTION_KEY,
         ),
     ),
     table_path=_INDOOR_EQUIP_PATH,

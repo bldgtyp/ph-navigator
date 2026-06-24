@@ -145,7 +145,8 @@ def _pump_payload() -> dict[str, Any]:
         ],
         "field_defs": [field.model_dump(mode="json") for field in PUMPS_BUILT_IN_FIELD_DEFS],
         "single_select_options": {
-            "pumps.device_type": [{"id": "opt_circ", "label": "Circulator", "color": "#3b82f6", "order": 0}]
+            "pumps.device_type": [{"id": "opt_circ", "label": "Circulator", "color": "#3b82f6", "order": 0}],
+            "pumps.status": [],
         },
     }
 

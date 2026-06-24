@@ -114,35 +114,53 @@ ROOM_OPTION_KEYS: tuple[RoomOptionKey, ...] = (
     ROOM_FLOOR_LEVEL_OPTION_KEY,
     ROOM_BUILDING_ZONE_OPTION_KEY,
 )
+# Built-in `status` option keys. The string literals must equal
+# `status_option_key(<table_label>)` from `tables._status_field`. They are
+# hardcoded here (rather than imported) because `_status_field` imports
+# `SingleSelectOption` from this module — importing back would form a cycle.
 PUMP_DEVICE_TYPE_OPTION_KEY = "pumps.device_type"
-PumpOptionKey = Literal["pumps.device_type"]
-PUMP_OPTION_KEYS: tuple[PumpOptionKey, ...] = (PUMP_DEVICE_TYPE_OPTION_KEY,)
+PUMP_STATUS_OPTION_KEY = "pumps.status"
+PumpOptionKey = Literal["pumps.device_type", "pumps.status"]
+PUMP_OPTION_KEYS: tuple[PumpOptionKey, ...] = (PUMP_DEVICE_TYPE_OPTION_KEY, PUMP_STATUS_OPTION_KEY)
 VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY = "ventilators.inside_outside"
 VentilatorOptionKey = Literal["ventilators.inside_outside"]
 VENTILATOR_OPTION_KEYS: tuple[VentilatorOptionKey, ...] = (VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,)
 FAN_TYPE_OPTION_KEY = "fans.type"
-FanOptionKey = Literal["fans.type"]
-FAN_OPTION_KEYS: tuple[FanOptionKey, ...] = (FAN_TYPE_OPTION_KEY,)
+FAN_STATUS_OPTION_KEY = "fans.status"
+FanOptionKey = Literal["fans.type", "fans.status"]
+FAN_OPTION_KEYS: tuple[FanOptionKey, ...] = (FAN_TYPE_OPTION_KEY, FAN_STATUS_OPTION_KEY)
 HOT_WATER_HEATER_TYPE_OPTION_KEY = "hot_water_heaters.type"
-HotWaterHeaterOptionKey = Literal["hot_water_heaters.type"]
-HOT_WATER_HEATER_OPTION_KEYS: tuple[HotWaterHeaterOptionKey, ...] = (HOT_WATER_HEATER_TYPE_OPTION_KEY,)
+HOT_WATER_HEATER_STATUS_OPTION_KEY = "hot_water_heaters.status"
+HotWaterHeaterOptionKey = Literal["hot_water_heaters.type", "hot_water_heaters.status"]
+HOT_WATER_HEATER_OPTION_KEYS: tuple[HotWaterHeaterOptionKey, ...] = (
+    HOT_WATER_HEATER_TYPE_OPTION_KEY,
+    HOT_WATER_HEATER_STATUS_OPTION_KEY,
+)
 HOT_WATER_TANK_TYPE_OPTION_KEY = "hot_water_tanks.type"
 HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY = "hot_water_tanks.inside_outside"
-HotWaterTankOptionKey = Literal["hot_water_tanks.type", "hot_water_tanks.inside_outside"]
+HOT_WATER_TANK_STATUS_OPTION_KEY = "hot_water_tanks.status"
+HotWaterTankOptionKey = Literal["hot_water_tanks.type", "hot_water_tanks.inside_outside", "hot_water_tanks.status"]
 HOT_WATER_TANK_OPTION_KEYS: tuple[HotWaterTankOptionKey, ...] = (
     HOT_WATER_TANK_TYPE_OPTION_KEY,
     HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY,
+    HOT_WATER_TANK_STATUS_OPTION_KEY,
 )
 APPLIANCE_TYPE_OPTION_KEY = "appliances.type"
 APPLIANCE_ENERGY_STAR_OPTION_KEY = "appliances.energy_star"
-ApplianceOptionKey = Literal["appliances.type", "appliances.energy_star"]
+APPLIANCE_STATUS_OPTION_KEY = "appliances.status"
+ApplianceOptionKey = Literal["appliances.type", "appliances.energy_star", "appliances.status"]
 APPLIANCE_OPTION_KEYS: tuple[ApplianceOptionKey, ...] = (
     APPLIANCE_TYPE_OPTION_KEY,
     APPLIANCE_ENERGY_STAR_OPTION_KEY,
+    APPLIANCE_STATUS_OPTION_KEY,
 )
 THERMAL_BRIDGE_TYPE_OPTION_KEY = "thermal_bridges.type"
-ThermalBridgeOptionKey = Literal["thermal_bridges.type"]
-THERMAL_BRIDGE_OPTION_KEYS: tuple[ThermalBridgeOptionKey, ...] = (THERMAL_BRIDGE_TYPE_OPTION_KEY,)
+THERMAL_BRIDGE_STATUS_OPTION_KEY = "thermal_bridges.status"
+ThermalBridgeOptionKey = Literal["thermal_bridges.type", "thermal_bridges.status"]
+THERMAL_BRIDGE_OPTION_KEYS: tuple[ThermalBridgeOptionKey, ...] = (
+    THERMAL_BRIDGE_TYPE_OPTION_KEY,
+    THERMAL_BRIDGE_STATUS_OPTION_KEY,
+)
 ROOM_SPACE_TYPE_FIELD_KEY = "space_type_id"
 
 # v7 wire shape: Rooms adds a built-in linked-record FieldDef
@@ -674,6 +692,7 @@ __all__ = [
     "APERTURE_DEFAULT_GLAZING_NAME",
     "APPLIANCE_ENERGY_STAR_OPTION_KEY",
     "APPLIANCE_OPTION_KEYS",
+    "APPLIANCE_STATUS_OPTION_KEY",
     "APPLIANCE_TYPE_OPTION_KEY",
     "APPLIANCES_TYPED_COLUMN_FIELD_KEYS",
     "ApertureElement",
@@ -700,6 +719,7 @@ __all__ = [
     "ElectricHeatersTableEnvelope",
     "EmptyEquipmentTables",
     "FAN_OPTION_KEYS",
+    "FAN_STATUS_OPTION_KEY",
     "FAN_TYPE_OPTION_KEY",
     "FANS_TYPED_COLUMN_FIELD_KEYS",
     "FanOptionKey",
@@ -708,10 +728,12 @@ __all__ = [
     "FrameRef",
     "GlazingRef",
     "HOT_WATER_HEATER_OPTION_KEYS",
+    "HOT_WATER_HEATER_STATUS_OPTION_KEY",
     "HOT_WATER_HEATER_TYPE_OPTION_KEY",
     "HOT_WATER_HEATERS_TYPED_COLUMN_FIELD_KEYS",
     "HOT_WATER_TANK_OPTION_KEYS",
     "HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY",
+    "HOT_WATER_TANK_STATUS_OPTION_KEY",
     "HOT_WATER_TANK_TYPE_OPTION_KEY",
     "HOT_WATER_TANKS_TYPED_COLUMN_FIELD_KEYS",
     "HotWaterHeaterOptionKey",
@@ -732,6 +754,7 @@ __all__ = [
     "HeatPumpsTableSlice",
     "PUMP_DEVICE_TYPE_OPTION_KEY",
     "PUMP_OPTION_KEYS",
+    "PUMP_STATUS_OPTION_KEY",
     "PUMPS_TYPED_COLUMN_FIELD_KEYS",
     "ProjectDocumentProject",
     "ProjectDocumentTables",
@@ -754,6 +777,7 @@ __all__ = [
     "SpaceTypesTableEnvelope",
     "SpecificationStatus",
     "THERMAL_BRIDGE_OPTION_KEYS",
+    "THERMAL_BRIDGE_STATUS_OPTION_KEY",
     "THERMAL_BRIDGE_TYPE_OPTION_KEY",
     "THERMAL_BRIDGES_TYPED_COLUMN_FIELD_KEYS",
     "ThermalBridgeOptionKey",

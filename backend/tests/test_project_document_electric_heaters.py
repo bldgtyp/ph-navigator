@@ -15,6 +15,11 @@ from features.project_document.document import (
 )
 from features.project_document.tables.registry import get_table_contract
 from tests.project_document_helpers import empty_electric_heaters_table, empty_required_tables
+from tests.status_field_helpers import (
+    assert_status_field_def,
+    assert_status_options,
+    status_options_payload,
+)
 from tests.test_project_document import ORIGIN, create_project, signed_in_client
 
 
@@ -40,7 +45,7 @@ def electric_heater_payload(datasheet_asset_ids: list[str] | None = None) -> dic
                 },
             }
         ],
-        "single_select_options": {},
+        "single_select_options": {"electric_heaters.status": status_options_payload()},
     }
 
 
@@ -112,3 +117,54 @@ def test_legacy_equipment_electric_heaters_contract_is_not_registered() -> None:
     assert exc_info.value.status_code == 404
     detail = cast(dict[str, object], exc_info.value.detail)
     assert detail["error_code"] == "document_table_not_found"
+
+
+def test_electric_heaters_slice_exposes_status_field_and_options(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    initial = client.get(draft_electric_heaters_url(project["id"], project["active_version_id"]))
+
+    assert initial.status_code == 200
+    body = initial.json()
+    assert_status_field_def(body["field_defs"])
+    assert_status_options(body["single_select_options"], "electric_heaters")
+
+
+def test_electric_heaters_replace_persists_status_value(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+
+    initial = client.get(draft_electric_heaters_url(project_id, version_id))
+    payload = electric_heater_payload()
+    payload["electric_heaters"][0]["custom_values"]["status"] = "opt_status_question"
+
+    updated = client.put(
+        draft_electric_heaters_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
+        json=payload,
+    )
+    assert updated.status_code == 200, updated.text
+
+    refetch = client.get(draft_electric_heaters_url(project_id, version_id))
+    assert refetch.json()["electric_heaters"][0]["custom_values"]["status"] == "opt_status_question"
+    assert_status_options(refetch.json()["single_select_options"], "electric_heaters")
+
+
+def test_electric_heaters_replace_rejects_unknown_status_option(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+
+    initial = client.get(draft_electric_heaters_url(project_id, version_id))
+    payload = electric_heater_payload()
+    payload["electric_heaters"][0]["custom_values"]["status"] = "opt_status_bogus"
+
+    response = client.put(
+        draft_electric_heaters_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
+        json=payload,
+    )
+    assert response.status_code == 422

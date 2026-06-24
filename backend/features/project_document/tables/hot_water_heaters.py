@@ -14,6 +14,7 @@ from features.project_document.custom_fields import (
 )
 from features.project_document.document import (
     HOT_WATER_HEATER_OPTION_KEYS,
+    HOT_WATER_HEATER_STATUS_OPTION_KEY,
     HOT_WATER_HEATER_TYPE_OPTION_KEY,
     HotWaterHeaterRow,
     HotWaterHeatersTableEnvelope,
@@ -116,6 +117,7 @@ class HotWaterHeatersSliceOptions(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     hot_water_heaters_type: list[SingleSelectOption] = Field(alias=HOT_WATER_HEATER_TYPE_OPTION_KEY)
+    hot_water_heaters_status: list[SingleSelectOption] = Field(alias=HOT_WATER_HEATER_STATUS_OPTION_KEY)
 
     @model_validator(mode="after")
     def _validate_namespaced_extras(self) -> HotWaterHeatersSliceOptions:
@@ -127,7 +129,10 @@ class HotWaterHeatersSliceOptions(BaseModel):
         return self
 
     def by_option_key(self) -> dict[str, list[SingleSelectOption]]:
-        return {HOT_WATER_HEATER_TYPE_OPTION_KEY: self.hot_water_heaters_type}
+        return {
+            HOT_WATER_HEATER_TYPE_OPTION_KEY: self.hot_water_heaters_type,
+            HOT_WATER_HEATER_STATUS_OPTION_KEY: self.hot_water_heaters_status,
+        }
 
     def custom_option_lists(self) -> dict[str, list[SingleSelectOption]]:
         return dict(self.__pydantic_extra__ or {})
@@ -205,6 +210,7 @@ def hot_water_heaters_response(
         field_defs=body.tables.equipment.hot_water_heaters.field_defs,
         single_select_options={
             HOT_WATER_HEATER_TYPE_OPTION_KEY: body.single_select_options[HOT_WATER_HEATER_TYPE_OPTION_KEY],
+            HOT_WATER_HEATER_STATUS_OPTION_KEY: body.single_select_options[HOT_WATER_HEATER_STATUS_OPTION_KEY],
             **custom_option_lists_for_table(body, _HOT_WATER_HEATERS_TABLE_PATH),
         },
         rows_computed=evaluate_table_formulas(hot_water_heaters_field_registry, body),
@@ -225,7 +231,11 @@ def extract_hot_water_heaters_diff_value(body: ProjectDocumentV1) -> dict[str, o
             HOT_WATER_HEATER_TYPE_OPTION_KEY: [
                 option.model_dump(mode="json")
                 for option in body.single_select_options[HOT_WATER_HEATER_TYPE_OPTION_KEY]
-            ]
+            ],
+            HOT_WATER_HEATER_STATUS_OPTION_KEY: [
+                option.model_dump(mode="json")
+                for option in body.single_select_options[HOT_WATER_HEATER_STATUS_OPTION_KEY]
+            ],
         },
     }
 

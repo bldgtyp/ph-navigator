@@ -9,6 +9,11 @@ from pydantic import ValidationError
 
 from features.project_document.document import ProjectDocumentV1, ThermalBridgeRow
 from tests.project_document_helpers import empty_required_tables, empty_thermal_bridges_table
+from tests.status_field_helpers import (
+    assert_status_field_def,
+    assert_status_options,
+    status_options_payload,
+)
 from tests.test_project_document import ORIGIN, create_project, signed_in_client
 
 
@@ -45,7 +50,8 @@ def thermal_bridge_payload() -> dict[str, Any]:
                     "color": "#64748b",
                     "order": 2,
                 },
-            ]
+            ],
+            "thermal_bridges.status": status_options_payload(),
         },
     }
 
@@ -102,3 +108,54 @@ def test_first_thermal_bridges_replace_lazily_creates_draft(clean_document_table
     assert body["source"] == "draft"
     assert body["draft_etag"]
     assert body["thermal_bridges"][0]["custom_values"]["record_id"] == "TB-1"
+
+
+def test_thermal_bridges_slice_exposes_status_field_and_options(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    initial = client.get(draft_thermal_bridges_url(project["id"], project["active_version_id"]))
+
+    assert initial.status_code == 200
+    body = initial.json()
+    assert_status_field_def(body["field_defs"])
+    assert_status_options(body["single_select_options"], "thermal_bridges")
+
+
+def test_thermal_bridges_replace_persists_status_value(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+
+    initial = client.get(draft_thermal_bridges_url(project_id, version_id))
+    payload = thermal_bridge_payload()
+    payload["thermal_bridges"][0]["custom_values"]["status"] = "opt_status_question"
+
+    updated = client.put(
+        draft_thermal_bridges_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
+        json=payload,
+    )
+    assert updated.status_code == 200, updated.text
+
+    refetch = client.get(draft_thermal_bridges_url(project_id, version_id))
+    assert refetch.json()["thermal_bridges"][0]["custom_values"]["status"] == "opt_status_question"
+    assert_status_options(refetch.json()["single_select_options"], "thermal_bridges")
+
+
+def test_thermal_bridges_replace_rejects_unknown_status_option(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+
+    initial = client.get(draft_thermal_bridges_url(project_id, version_id))
+    payload = thermal_bridge_payload()
+    payload["thermal_bridges"][0]["custom_values"]["status"] = "opt_status_bogus"
+
+    response = client.put(
+        draft_thermal_bridges_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
+        json=payload,
+    )
+    assert response.status_code == 422

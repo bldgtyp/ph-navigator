@@ -7,6 +7,7 @@ from uuid import UUID
 
 from database import transaction
 from features.climate.service import seed_dataset
+from features.project_document.document import ProjectDocumentV1
 from features.projects.models import CreateProjectRequest
 from scripts.seed_dev_db import _pin_nearest_phi_source, _starter_project_document
 from tests.test_climate_dataset_roster import _station
@@ -124,3 +125,64 @@ def test_pin_nearest_phi_source_attaches_closest_station(clean_mcp_tables: None,
     assert len(phi_sources) == 1
     assert phi_sources[0]["ref"] == str(location["id"])
     assert "(PHI 10.6)" in phi_sources[0]["label"]
+
+
+def _starter_body() -> ProjectDocumentV1:
+    return _starter_project_document(
+        CreateProjectRequest(
+            name="PHN V2 Starter Project",
+            bt_number="DEV-0001",
+            client="BLDGTYP",
+            cert_programs=["phius"],
+            phius_number=None,
+            phius_dropbox_url=None,
+        )
+    )
+
+
+def test_starter_project_document_seeds_status_options_and_values() -> None:
+    from features.project_document.tables._status_field import (
+        STATUS_OPTION_IDS,
+        STATUS_TABLE_NAMES,
+        status_option_key,
+    )
+
+    body = _starter_body()
+
+    # Every in-scope table seeds its namespaced status option list with the
+    # canonical four options.
+    for table_name in STATUS_TABLE_NAMES:
+        options = body.single_select_options[status_option_key(table_name)]
+        assert [option.id for option in options] == list(STATUS_OPTION_IDS)
+
+    # Seeded rows collectively exercise all four status values.
+    seeded_status_values = {
+        row.custom_values.get("status")
+        for rows in (
+            body.tables.thermal_bridges.rows,
+            body.tables.equipment.pumps.rows,
+            body.tables.equipment.fans.rows,
+            body.tables.equipment.hot_water_heaters.rows,
+            body.tables.equipment.hot_water_tanks.rows,
+            body.tables.equipment.electric_heaters.rows,
+            body.tables.equipment.appliances.rows,
+            body.tables.equipment.heat_pumps.outdoor_equip.rows,
+            body.tables.equipment.heat_pumps.indoor_equip.rows,
+        )
+        for row in rows
+    }
+    assert set(STATUS_OPTION_IDS) <= seeded_status_values
+
+
+def test_status_table_names_match_registered_contracts() -> None:
+    """The STATUS_TABLE_NAMES source-of-truth list must stay in sync with the
+    table contracts that actually carry the built-in status FieldDef."""
+    from features.project_document.tables._status_field import STATUS_FIELD_KEY, STATUS_TABLE_NAMES
+    from features.project_document.tables.registry import iter_table_contracts
+
+    tables_with_status = {
+        contract.name
+        for contract in iter_table_contracts()
+        if contract.field_registry is not None and STATUS_FIELD_KEY in contract.field_registry.field_keys
+    }
+    assert tables_with_status == set(STATUS_TABLE_NAMES)

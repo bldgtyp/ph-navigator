@@ -15,6 +15,7 @@ from features.project_document.custom_fields import (
 from features.project_document.document import (
     HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY,
     HOT_WATER_TANK_OPTION_KEYS,
+    HOT_WATER_TANK_STATUS_OPTION_KEY,
     HOT_WATER_TANK_TYPE_OPTION_KEY,
     HotWaterTankRow,
     HotWaterTanksTableEnvelope,
@@ -110,6 +111,7 @@ class HotWaterTanksSliceOptions(BaseModel):
 
     hot_water_tanks_type: list[SingleSelectOption] = Field(alias=HOT_WATER_TANK_TYPE_OPTION_KEY)
     hot_water_tanks_inside_outside: list[SingleSelectOption] = Field(alias=HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY)
+    hot_water_tanks_status: list[SingleSelectOption] = Field(alias=HOT_WATER_TANK_STATUS_OPTION_KEY)
 
     @model_validator(mode="after")
     def _validate_namespaced_extras(self) -> HotWaterTanksSliceOptions:
@@ -124,6 +126,7 @@ class HotWaterTanksSliceOptions(BaseModel):
         return {
             HOT_WATER_TANK_TYPE_OPTION_KEY: self.hot_water_tanks_type,
             HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY: self.hot_water_tanks_inside_outside,
+            HOT_WATER_TANK_STATUS_OPTION_KEY: self.hot_water_tanks_status,
         }
 
     def custom_option_lists(self) -> dict[str, list[SingleSelectOption]]:
@@ -204,6 +207,7 @@ def hot_water_tanks_response(
             HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY: body.single_select_options[
                 HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY
             ],
+            HOT_WATER_TANK_STATUS_OPTION_KEY: body.single_select_options[HOT_WATER_TANK_STATUS_OPTION_KEY],
             **custom_option_lists_for_table(body, _HOT_WATER_TANKS_TABLE_PATH),
         },
         rows_computed=evaluate_table_formulas(hot_water_tanks_field_registry, body),
@@ -221,13 +225,8 @@ def extract_hot_water_tanks_diff_value(body: ProjectDocumentV1) -> dict[str, obj
     return {
         "hot_water_tanks": extract_hot_water_tanks_envelope(body),
         "single_select_options": {
-            HOT_WATER_TANK_TYPE_OPTION_KEY: [
-                option.model_dump(mode="json") for option in body.single_select_options[HOT_WATER_TANK_TYPE_OPTION_KEY]
-            ],
-            HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY: [
-                option.model_dump(mode="json")
-                for option in body.single_select_options[HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY]
-            ],
+            key: [option.model_dump(mode="json") for option in body.single_select_options[key]]
+            for key in HOT_WATER_TANK_OPTION_KEYS
         },
     }
 
