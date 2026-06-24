@@ -20,6 +20,7 @@ from features.catalogs._shared import (
     new_catalog_record_id,
 )
 from features.catalogs.frame_types import repository
+from features.catalogs.frame_types._name import _NAME_PART_ORDER, compose_frame_name
 from features.catalogs.frame_types.models import (
     CatalogFrameTypeCreateRequest,
     CatalogFrameTypeListItem,
@@ -57,40 +58,6 @@ def _validate_single_selects(conn: Connection[Any], values: Mapping[str, object]
                 f"{field!r} value {value!r} is not a known option; add it via the field's options first.",
                 {"field": field, "value": value},
             )
-
-
-_NAME_PART_ORDER: tuple[str, ...] = (
-    "manufacturer",
-    "prefix",
-    "brand",
-    "use",
-    "operation",
-    "location",
-    "mull_type",
-    "suffix",
-)
-
-
-def compose_frame_name(fields: Mapping[str, object]) -> str:
-    """Derive the read-only frame ``name`` from its parts (D-3).
-
-    Mirrors the AirTable formula: the non-empty parts joined by ``" | "`` in a
-    fixed order, ``material`` deliberately excluded, clamped to the 200-char
-    column width. This reproduces every existing seed ``name`` (research §2).
-
-    The all-null case yields ``""`` — which is why the built-in default frame
-    sentinel is resolved by **id** (``default_refs``), never by this name, and
-    why the name backfill skips that row.
-    """
-    parts: list[str] = []
-    for key in _NAME_PART_ORDER:
-        value = fields.get(key)
-        if value is None:
-            continue
-        text = str(value).strip()
-        if text:
-            parts.append(text)
-    return " | ".join(parts)[:200]
 
 
 def _to_public(row: dict[str, Any]) -> CatalogFrameTypePublic:

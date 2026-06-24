@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 18:25 EDT
-STATUS: Draft — depends on Phases 1–3
+STATUS: Complete (2026-06-23) — import v2: fold + compute-name + auto-add; CI green
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phase 4 — import schema v2: fold legacy values into options, compute name on import, drop missing-name gate
 RELATED:
@@ -127,3 +127,39 @@ transaction.
 - Auto-add during commit must be inside the commit transaction so a failed row
   doesn't leak a half-added option.
 - Keep the cleaned seed JSON public-repo-safe.
+
+## Completion (2026-06-23)
+
+**D-4 sub-policy decided by Ed: AUTO-ADD (frictionless).** An import value that
+is unknown after folding is added to the option store on commit (with a
+`new_option:<field>` preview warning), rather than erroring the row. (Asymmetric
+with create/patch, which reject unknown values — documented in
+`import_export/service.py`.)
+
+- **`file_format.CURRENT_SCHEMA_VERSION` 1→2.**
+- **`upgrade._upgrade_v1_to_v2`** (reads the frozen Phase 0 maps from
+  `_option_seeds`): drop the `Default` row (→ `None`, a new `dropped` count),
+  fix the transposed `Mercury/CURRIES` pair, then value-fold (`OP-TO-FIX →
+  OP-to-FX`, `source manufacturer → Manufacturer`). `upgrade_row` now returns
+  `dict | None`. Order: **drop → swap → fold**.
+- **`coerce`**: dropped `ERR_MISSING_NAME`; `name` is computed via
+  `compose_frame_name` (now a leaf `frame_types/_name.py` so coerce doesn't
+  import the service) on the folded+coerced parts; inbound `name` ignored.
+- **`pipeline.build_preview(known_options=…)`**: flags `new_option:<field>` for
+  unknown new-row values and collects them into `WriteSet.new_options`; threads a
+  `dropped` count.
+- **`service.commit_import`**: `_auto_add_new_options` delegates to the new
+  generic `_options_repository.append_options` (case-insensitive dedup against the
+  unique index), inside the insert transaction. `preview_import` snapshots
+  `known_options`.
+- **No export endpoint exists**, so §4.5 was N/A; the "round-trip" became a
+  **seed-parity** test (the cleaned seed imports clean through v2: 0 errored /
+  dropped, 189 new, 0 new-option).
+- **Tests:** v1 `OP-TO-FIX` fold + computed name; swapped-Mercury fix; `Default`
+  drop; auto-add + warning; missing-name now computed (not errored); seed parity;
+  `append_options` case-insensitive dedup. Import-module autouse option-reset.
+- **4-agent simplify review** caught + fixed a real case-insensitivity bug in
+  auto-add (two case-variant values would have collided on the unique index) and
+  extracted the leaf `_name.py` + the generic `append_options` helper.
+- **Verification:** full backend suite **991 passed, 2 skipped** (pre-simplify);
+  re-run green after the simplify fixes; head `20260623_0039`.

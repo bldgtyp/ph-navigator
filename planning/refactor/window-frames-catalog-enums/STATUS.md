@@ -10,16 +10,18 @@ RELATED: ./README.md, ./research.md, ./decisions.md, ./PLAN.md
 # STATUS — window-frames-catalog-enums
 
 **State:** `Active` — research complete; **all decisions resolved (2026-06-23)**;
-**Phases 0–3 complete (2026-06-23)** — canonical vocab + clean seed (P0); catalog
-option store (P1); strict write-validation (P2); derived read-only `name` +
-default-frame/glazing-by-id + option-rename name recompute (P3). All CI-green.
-**Next: Phase 4** (import/export v2).
+**Phases 0–4 complete (2026-06-23)** — canonical vocab + clean seed (P0); option
+store (P1); strict write-validation (P2); derived read-only `name` + default-by-id
+(P3); import v2 — fold legacy values, compute name, **auto-add unknown options**
+(D-4 sub-policy, Ed's choice) (P4). All CI-green. **Next: Phase 5** (frontend —
+the only frontend phase).
 
 **Decisions locked:** D-1 all six strict single-select (incl. `brand`, to group
 on it) · D-2 new catalog app-scoped option store, label-string storage · D-3
-`name` computed server-side per the formula, read-only · D-4 inline add-option ·
-D-5 default frame/glazing resolved by id · D-6 clean up seed artifacts · D-7
-frame-types only, store built generic for glazing/materials reuse.
+`name` computed server-side per the formula, read-only · D-4 inline add-option,
+**import auto-adds unknown values (frictionless — Ed, 2026-06-23)** · D-5 default
+frame/glazing resolved by id · D-6 clean up seed artifacts · D-7 frame-types only,
+store built generic for glazing/materials reuse.
 
 ## Done
 
@@ -35,20 +37,18 @@ frame-types only, store built generic for glazing/materials reuse.
 
 ## Next step
 
-Phases 0–3 are done. Execute `phases/phase-04-import-export-v2.md`: bump the
-catalog file `schema_version` 1→2; add `_upgrade_v1_to_v2` (fold legacy/typo
-values via `_option_seeds.FRAME_TYPE_VALUE_FOLDS` + the swapped-Mercury / drop-
-`Default` special cases); resolve the six to known options on import (auto-add vs
-flag — D-4 sub-policy still open, see phase-04 §4.3); drop `ERR_MISSING_NAME` and
-compute `name` via `compose_frame_name`; wire `_validate_single_selects` into the
-import commit so imports obey the same rule as create/patch. The committed seed is
-already clean (P0), so this mainly serves user-supplied v1 files + the seed
-re-load path.
+Phases 0–4 (all backend) are done. Execute
+`phases/phase-05-frontend-single-select.md` — the only frontend phase: promote the
+six `frame-types/fieldDefs.ts` fields `short_text` → `single_select` (options from
+the new `GET …/frame-types/options`, left **unlocked**); render `name`
+read-only/derived and drop it from the create payload; translate the DataTable
+single-select option-list mutations into the catalog REST store (`PUT …/options`)
+— **the core integration risk** (the DataTable machinery was built for the
+project-document pipeline, not catalogs); bump the import dialog to v2 (render the
+new `new_option` + `dropped` preview signals).
 
-**Note discovered while planning:** the frame catalog is seeded *through the
-import pipeline* (`scripts/seed_frame_catalog.py:64-78`), so the Phase 4 import
-upgrade step is the data-cleanup mechanism — **no in-place row migration needed**
-(no deploy/no users). See phase-00 and phase-04.
+**Backend is fully wired for it:** `GET/PUT …/frame-types/options`, derived name,
+strict validation, and auto-add-on-import all land.
 
 ## Blockers
 
@@ -76,4 +76,12 @@ upgrade step is the data-cleanup mechanism — **no in-place row migration neede
   `repository.recompute_names`; drift `_FRAME_KEYS` drops `name`. 4-agent simplify
   confirmed the 3 compose implementations agree. Full backend suite **986 passed,
   2 skipped**; head `20260623_0039`.
-- Phases 4–6: pending implementation.
+- **Phase 4 (2026-06-23):** import `schema_version` 1→2; `_upgrade_v1_to_v2`
+  (drop `Default` → `dropped` count, fix swapped Mercury, fold values); `name`
+  computed on import via leaf `frame_types/_name.py`; `new_option` preview flags +
+  `_options_repository.append_options` (case-insensitive) auto-add on commit
+  (**D-4: auto-add, Ed's choice**). 7 new/updated import tests incl. seed parity +
+  case-insensitive dedup. 4-agent simplify caught + fixed a real case-collision
+  bug and extracted `_name.py` + `append_options`. Full backend suite **992
+  passed, 2 skipped**.
+- Phases 5–6: pending implementation.

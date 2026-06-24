@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Iterator
 from typing import Any
 
@@ -15,7 +16,9 @@ from features.catalogs.frame_types.import_export.file_format import (
     CURRENT_SCHEMA_VERSION,
     FILE_KIND,
 )
+from features.catalogs.frame_types.options_service import seed_frame_type_options
 from main import app
+from scripts._seed_paths import FRAME_SEED_PATH
 
 ORIGIN = "http://localhost:5173"
 
@@ -38,6 +41,17 @@ def clean_state() -> Iterator[None]:
     with transaction() as conn:
         conn.execute(_TRUNCATE)
     tokens.reset_for_tests()
+
+
+@pytest.fixture(autouse=True)
+def _reset_frame_options() -> Iterator[None]:
+    """Keep the option store at its canonical baseline so `new_option` detection
+    is deterministic and the auto-add test doesn't leak into others."""
+    with transaction() as conn:
+        seed_frame_type_options(conn)
+    yield
+    with transaction() as conn:
+        seed_frame_type_options(conn)
 
 
 def _signed_in_client() -> TestClient:
@@ -86,7 +100,8 @@ def _good_row(name: str = "Alpen | Tyrol | Window | Casement | Head", **override
 
 def test_preview_then_commit_inserts_new_rows(clean_state: None) -> None:
     client = _signed_in_client()
-    body = _wrap([_good_row("A"), _good_row("B")])
+    # `name` is derived (Phase 3/4), so rows are differentiated by `suffix`.
+    body = _wrap([_good_row(suffix="A"), _good_row(suffix="B")])
 
     preview = client.post(
         "/api/v1/catalogs/frame-types/import/preview",
@@ -95,7 +110,7 @@ def test_preview_then_commit_inserts_new_rows(clean_state: None) -> None:
     )
     assert preview.status_code == 200, preview.text
     report = preview.json()
-    assert report["counts"] == {"new": 2, "matched": 0, "errored": 0, "warnings": 0}
+    assert report["counts"] == {"new": 2, "matched": 0, "errored": 0, "warnings": 0, "dropped": 0}
     token = report["token"]
 
     commit = client.post(
@@ -107,15 +122,18 @@ def test_preview_then_commit_inserts_new_rows(clean_state: None) -> None:
     assert commit.json()["inserted"] == 2
 
     listed = client.get("/api/v1/catalogs/frame-types").json()
-    assert {item["name"] for item in listed["items"]} == {"A", "B"}
-    by_name = {item["name"]: item for item in listed["items"]}
+    assert {item["name"] for item in listed["items"]} == {
+        "Alpen | Tyrol | Window | Casement | Head | A",
+        "Alpen | Tyrol | Window | Casement | Head | B",
+    }
+    by_suffix = {item["suffix"]: item for item in listed["items"]}
     # All seventeen typed columns round-trip on the way through the pipeline.
-    assert by_name["A"]["use"] == "Window"
-    assert by_name["A"]["operation"] == "Casement"
-    assert by_name["A"]["location"] == "Head"
-    assert by_name["A"]["material"] == "Aluminum"
-    assert by_name["A"]["width_mm"] == pytest.approx(109.5)
-    assert by_name["A"]["psi_g_w_mk"] == pytest.approx(0.025)
+    assert by_suffix["A"]["use"] == "Window"
+    assert by_suffix["A"]["operation"] == "Casement"
+    assert by_suffix["A"]["location"] == "Head"
+    assert by_suffix["A"]["material"] == "Aluminum"
+    assert by_suffix["A"]["width_mm"] == pytest.approx(109.5)
+    assert by_suffix["A"]["psi_g_w_mk"] == pytest.approx(0.025)
 
 
 def test_bad_envelope_kind_returns_400(clean_state: None) -> None:
@@ -216,7 +234,9 @@ def test_unknown_field_warns(clean_state: None) -> None:
     assert "unknown_field:made_up_column" in reasons
 
 
-def test_missing_name_marks_row_errored(clean_state: None) -> None:
+def test_missing_name_is_computed_not_errored(clean_state: None) -> None:
+    """`name` is derived from the parts (Phase 3/4), so a file with no/blank
+    `name` imports clean and the row's name is composed."""
     client = _signed_in_client()
     body = _wrap([{**_good_row(), "name": "   "}])
     preview = client.post(
@@ -224,9 +244,8 @@ def test_missing_name_marks_row_errored(clean_state: None) -> None:
         headers={"Origin": ORIGIN},
         json=body,
     ).json()
-    assert preview["counts"]["errored"] == 1
-    reasons = {err["reason"] for err in preview["errors"]}
-    assert "missing_name" in reasons
+    assert preview["counts"]["errored"] == 0
+    assert preview["rows_preview"][0]["name"] == "Alpen | Tyrol | Window | Casement | Head"
 
 
 def test_commit_token_is_one_shot(clean_state: None) -> None:
@@ -306,4 +325,98 @@ def test_round_trip_matched_rows_are_a_noop(clean_state: None) -> None:
         headers={"Origin": ORIGIN},
         json=_wrap(re_export_rows),
     ).json()
-    assert re_preview["counts"] == {"new": 0, "matched": 5, "errored": 0, "warnings": 0}
+    assert re_preview["counts"] == {"new": 0, "matched": 5, "errored": 0, "warnings": 0, "dropped": 0}
+
+
+# --------------------------------------------------------------------------- #
+# Phase 4 — schema v2 upgrade (fold legacy values) + auto-add on import.
+# --------------------------------------------------------------------------- #
+
+
+def _import(client: TestClient, body: dict[str, Any]) -> dict[str, Any]:
+    preview = client.post("/api/v1/catalogs/frame-types/import/preview", headers={"Origin": ORIGIN}, json=body).json()
+    commit = client.post(
+        "/api/v1/catalogs/frame-types/import/commit",
+        headers={"Origin": ORIGIN},
+        json={"token": preview["token"]},
+    )
+    assert commit.status_code == 200, commit.text
+    return preview
+
+
+def _rows(client: TestClient) -> list[dict[str, Any]]:
+    return client.get("/api/v1/catalogs/frame-types").json()["items"]
+
+
+def test_v1_op_to_fix_folds_to_canonical_and_computes_name(clean_state: None) -> None:
+    client = _signed_in_client()
+    # v1 file: legacy `OP-TO-FIX` typo + blank `name`.
+    body = _wrap([{**_good_row(suffix="V1"), "name": "  ", "mull_type": "OP-TO-FIX"}], schema_version=1)
+    preview = _import(client, body)
+    assert preview["counts"]["errored"] == 0
+
+    row = next(item for item in _rows(client) if item["suffix"] == "V1")
+    assert row["mull_type"] == "OP-to-FX"  # folded
+    assert row["name"] == "Alpen | Tyrol | Window | Casement | Head | OP-to-FX | V1"  # computed
+
+
+def test_v1_swapped_mercury_row_is_corrected(clean_state: None) -> None:
+    client = _signed_in_client()
+    body = _wrap([_good_row(suffix="SWAP", manufacturer="Mercury", brand="CURRIES")], schema_version=1)
+    _import(client, body)
+
+    row = next(item for item in _rows(client) if item["suffix"] == "SWAP")
+    assert row["manufacturer"] == "Curries"
+    assert row["brand"] == "Mercury"
+
+
+def test_v1_default_artifact_row_is_dropped(clean_state: None) -> None:
+    client = _signed_in_client()
+    body = _wrap(
+        [_good_row(suffix="KEEP"), _good_row(suffix="DROP", manufacturer="Default")],
+        schema_version=1,
+    )
+    preview = _import(client, body)
+    assert preview["counts"]["dropped"] == 1
+    assert preview["counts"]["new"] == 1
+
+    suffixes = {item["suffix"] for item in _rows(client)}
+    assert suffixes == {"KEEP"}
+
+
+def test_unknown_value_is_auto_added_with_warning(clean_state: None) -> None:
+    client = _signed_in_client()
+    body = _wrap([_good_row(suffix="NEW", brand="NewCo")])  # `NewCo` is not a seeded brand option
+    preview = _import(client, body)
+
+    reasons = {warning["reason"] for warning in preview["warnings"]}
+    assert "new_option:brand" in reasons
+
+    # The label was auto-added to the brand option store...
+    brand_labels = {
+        opt["label"] for opt in client.get("/api/v1/catalogs/frame-types/options").json()["fields"]["brand"]
+    }
+    assert "NewCo" in brand_labels
+    # ...and the row landed with it.
+    row = next(item for item in _rows(client) if item["suffix"] == "NEW")
+    assert row["brand"] == "NewCo"
+
+
+def test_committed_seed_imports_clean_through_v2_pipeline(clean_state: None) -> None:
+    """Seed parity: the committed (Phase 0-cleaned) seed file is schema_version=1;
+    it upgrades v1→v2 as a no-op (already canonical), every value is a known
+    option, and names compute to the stored values — 0 errored / dropped / new
+    options."""
+    client = _signed_in_client()
+    payload = json.loads(FRAME_SEED_PATH.read_text())
+    preview = client.post(
+        "/api/v1/catalogs/frame-types/import/preview",
+        headers={"Origin": ORIGIN},
+        json=payload,
+    ).json()
+    counts = preview["counts"]
+    assert counts["errored"] == 0
+    assert counts["dropped"] == 0
+    assert counts["new"] == len(payload["rows"])
+    new_option_warnings = [w["reason"] for w in preview["warnings"] if w["reason"].startswith("new_option")]
+    assert new_option_warnings == []
