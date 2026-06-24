@@ -3,7 +3,9 @@ import type {
   CatalogFrameType,
   CatalogFrameTypeCreatePayload,
   CatalogFrameTypeListResponse,
+  CatalogFrameTypeOptionsResponse,
   CatalogFrameTypeUpdatePayload,
+  EditCatalogFrameTypeOptionsPayload,
   CatalogGlazingType,
   CatalogGlazingTypeCreatePayload,
   CatalogGlazingTypeListResponse,
@@ -119,6 +121,23 @@ export async function reactivateFrameType(id: string): Promise<CatalogFrameType>
 export async function duplicateFrameType(id: string): Promise<CatalogFrameType> {
   return fetchJson<CatalogFrameType>(`/api/v1/catalogs/frame-types/${id}/duplicate`, {
     method: "POST",
+  });
+}
+
+export async function getFrameTypeOptions(
+  signal?: AbortSignal,
+): Promise<CatalogFrameTypeOptionsResponse> {
+  return fetchJson<CatalogFrameTypeOptionsResponse>("/api/v1/catalogs/frame-types/options", {
+    signal,
+  });
+}
+
+export async function putFrameTypeOptions(
+  payload: EditCatalogFrameTypeOptionsPayload,
+): Promise<unknown> {
+  return fetchJson<unknown>("/api/v1/catalogs/frame-types/options", {
+    method: "PUT",
+    body: JSON.stringify(payload),
   });
 }
 

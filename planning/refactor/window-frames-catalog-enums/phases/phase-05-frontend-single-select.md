@@ -37,6 +37,51 @@ changes into **catalog option-store REST calls** (`PUT …/frame-types/options`)
 not emit document schema-mutations. This translation is the real work of Phase 5;
 budget for it.
 
+## Scoping (2026-06-24) — id↔label impedance + sub-phase split
+
+A frontend exploration surfaced a complication the original plan under-weighted:
+**the DataTable single-select stores the option `id` as the cell value** (materials
+maps `opt_<id>`→its category id), but **frame-types stores the label string**
+(D-2). So this phase needs a **bidirectional id↔label translation** that exists in
+no current precedent:
+- **rows → grid:** map `row[field]` (label) → option `id` (via a label→id map
+  built from fetched options) so the pill renders;
+- **cell write → backend:** map the grid's option `id` → label before PATCH;
+- **inline add:** the cell op carries `newOptions[field]=[{id,label,color,order}]`
+  (a client-minted id) + a cell write whose value is that id → the controller must
+  `PUT …/options` (persist the option) **and** PATCH the row with the **label**;
+- **manage-options:** `schemaMutation`/`legacyOptions` `after.options` → `PUT
+  …/options`; option deletes cascade as `cellWrites` (id→id) that must map to the
+  backend's label-keyed `replacements`.
+
+Key WriteOp shapes (from `shared/ui/data-table/types.ts`): `FieldOption =
+{id,label,color,order}` (118-123); cell op `{kind:"cell",writes,newOptions?,
+removedOptions?}` (340-342); `{kind:"schemaMutation",variant:"legacyOptions",
+before,after,cellWrites?}` (358-367). Options are fed via the fieldDef/overlay
+`options: FieldOption[]`; the controller currently **throws** on `schemaMutation`
+(`controller.ts:147-150`).
+
+Because of the impedance + the editable-options translation, Phase 5 is **split
+into sub-phases** (each independently shippable):
+
+- **Phase 5a — single-select display + read-only name. ✅ Complete (2026-06-24).**
+  Options-fetch hook/api/types/query-key; promote the six `short_text` →
+  `single_select` with fetched options injected via overlay; id↔label translation
+  for row display + cell-pick writes; **inline-add** (cell `newOptions` → PUT +
+  PATCH label — couldn't be deferred since the popover create-footer isn't gated
+  by the `options` lock); `name` read-only (`read_only: true` + controller skips
+  name writes) + dropped from the create payload. Field-config manage-options
+  (`schemaMutation`) still locked/throwing → Phase 5b. 18 vitest tests. **Browser-
+  smoked** (Playwright MCP): pills render the right labels, derived name renders,
+  options API returns canonical counts. The smoke caught that the **dev DB was
+  unmigrated** (`0036`) — `make migrate` applied `0037`–`0039`.
+- **Phase 5b — editable options (the integration risk).** Unlock `options`; handle
+  inline-add (`cell.newOptions` → `PUT …/options` + PATCH label) and manage-options
+  (`schemaMutation`/`legacyOptions` → `PUT …/options` + `replacements`). Merge is
+  the `OP-TO-FIX` cleanup tool. Playwright MCP smoke.
+- **Phase 5c — import dialog v2.** Bump the frontend import schema to 2; render the
+  new `new_option:<field>` warnings + the `dropped` count from the preview.
+
 ## Work items
 
 ### 5.1 `fieldDefs.ts` — promote the six, fetch options, leave unlocked

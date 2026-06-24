@@ -1,9 +1,14 @@
 import { describe, expect, test } from "vitest";
 import {
+  buildFrameTypesFieldOverlay,
   FRAME_TYPES_BUILT_IN_FIELD_DEFS,
-  FRAME_TYPES_FIELD_OVERLAY,
+  FRAME_TYPES_SINGLE_SELECT_FIELDS,
   FRAME_TYPES_TABLE_KEY,
 } from "../fieldDefs";
+
+const OVERLAY = buildFrameTypesFieldOverlay({
+  manufacturer: [{ id: "opt_alpen", label: "Alpen", color: "#3b82f6", order: 0 }],
+});
 
 describe("frame-types field defs", () => {
   test("declares the seventeen catalog fields in PRD order", () => {
@@ -31,8 +36,32 @@ describe("frame-types field defs", () => {
     }
   });
 
+  test("the six categorization columns are single_select", () => {
+    for (const key of FRAME_TYPES_SINGLE_SELECT_FIELDS) {
+      const fieldDef = FRAME_TYPES_BUILT_IN_FIELD_DEFS.find((f) => f.field_key === key);
+      expect(fieldDef?.field_type).toBe("single_select");
+    }
+  });
+
+  test("name is read-only (server-derived); material stays free text", () => {
+    expect(FRAME_TYPES_BUILT_IN_FIELD_DEFS.find((f) => f.field_key === "name")?.field_type).toBe(
+      "short_text",
+    );
+    expect(OVERLAY.name?.read_only).toBe(true);
+    expect(
+      FRAME_TYPES_BUILT_IN_FIELD_DEFS.find((f) => f.field_key === "material")?.field_type,
+    ).toBe("short_text");
+  });
+
+  test("overlay injects fetched options and locks the options attribute (Phase 5a)", () => {
+    expect(OVERLAY.manufacturer?.options?.map((o) => o.label)).toEqual(["Alpen"]);
+    expect(OVERLAY.manufacturer?.locked).toContain("options");
+    // A field with no fetched options still gets an (empty) list, not undefined.
+    expect(OVERLAY.brand?.options).toEqual([]);
+  });
+
   test("width_mm carries fixed mm/in numberUnits", () => {
-    const overlay = FRAME_TYPES_FIELD_OVERLAY.width_mm;
+    const overlay = OVERLAY.width_mm;
     expect(overlay?.numberUnits?.mode).toBe("fixed");
     expect(overlay?.numberUnits?.unit_type).toBe("length_mm");
     expect(overlay?.numberUnits?.si_unit).toBe("mm");
@@ -40,7 +69,7 @@ describe("frame-types field defs", () => {
   });
 
   test("u_value_w_m2k carries fixed IP/SI numberUnits", () => {
-    const overlay = FRAME_TYPES_FIELD_OVERLAY.u_value_w_m2k;
+    const overlay = OVERLAY.u_value_w_m2k;
     expect(overlay?.numberUnits?.mode).toBe("fixed");
     expect(overlay?.numberUnits?.unit_type).toBe("u_value");
     expect(overlay?.numberUnits?.si_unit).toBe("w_m2_k");
@@ -49,18 +78,10 @@ describe("frame-types field defs", () => {
 
   test("psi columns use the conductivity W/(m·K) ↔ Btu/(h·ft·F) pair", () => {
     for (const key of ["psi_g_w_mk", "psi_install_w_mk"] as const) {
-      const overlay = FRAME_TYPES_FIELD_OVERLAY[key];
+      const overlay = OVERLAY[key];
       expect(overlay?.numberUnits?.unit_type).toBe("conductivity");
       expect(overlay?.numberUnits?.si_unit).toBe("w_m_k");
       expect(overlay?.numberUnits?.ip_unit).toBe("btu_h_ft_f");
-    }
-  });
-
-  test("soft-enum categorization columns stay short_text in v1 (PRD D4)", () => {
-    for (const key of ["use", "operation", "location", "mull_type", "material"] as const) {
-      const fieldDef = FRAME_TYPES_BUILT_IN_FIELD_DEFS.find((f) => f.field_key === key);
-      expect(fieldDef?.field_type).toBe("short_text");
-      expect(FRAME_TYPES_FIELD_OVERLAY[key]?.options).toBeUndefined();
     }
   });
 

@@ -85,8 +85,9 @@ export type CatalogFrameType = {
 
 export type CatalogFrameTypeListResponse = { items: CatalogFrameType[] };
 
+// `name` is server-derived from the parts (D-3) and rejected as an input, so it
+// is absent from both the create and update payloads.
 export type CatalogFrameTypeCreatePayload = {
-  name: string;
   manufacturer?: string | null;
   brand?: string | null;
   use?: string | null;
@@ -107,6 +108,28 @@ export type CatalogFrameTypeCreatePayload = {
 };
 
 export type CatalogFrameTypeUpdatePayload = Partial<CatalogFrameTypeCreatePayload>;
+
+// Single-select option store (catalog_field_options). The id/label/color/order
+// shape matches the DataTable `FieldOption`. Cells store the **label** (D-2);
+// the frontend maps label↔id for the grid.
+export type CatalogFrameTypeOption = {
+  id: string;
+  label: string;
+  color: string;
+  order: number;
+};
+
+// `GET …/frame-types/options` — all six fields' lists keyed by field_key.
+export type CatalogFrameTypeOptionsResponse = {
+  fields: Record<string, CatalogFrameTypeOption[]>;
+};
+
+// `PUT …/frame-types/options` — full-replace one field's list (+ merge map).
+export type EditCatalogFrameTypeOptionsPayload = {
+  field_key: string;
+  options: CatalogFrameTypeOption[];
+  replacements?: Record<string, string>;
+};
 
 export type CatalogGlazingType = {
   id: string;
