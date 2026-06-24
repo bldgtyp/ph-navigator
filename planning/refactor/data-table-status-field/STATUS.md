@@ -11,7 +11,7 @@ RELATED: planning/refactor/data-table-status-field/README.md, planning/refactor/
 
 ## Current State
 
-State: Active / Phases 01-03 complete; Phases 04-05 pending.
+State: Active / Phases 01-04 complete; Phase 05 (closeout) pending.
 
 Backend (Phases 01-02) and frontend (Phase 03) are implemented and green.
 Phase 01 added the shared `tables/_status_field.py` helper + seeds + a
@@ -24,20 +24,21 @@ resolve it through `useTableSchema` + `lib/statusColumn.ts`; the two heat-pump
 equip leaves use a parallel `heat-pumps/status-column.ts` + a `status →
 setCustomValue` cell-write seam. New rows default to `opt_status_needed`;
 duplicate preserves status (**`make frontend-dev-check` green; vitest 1887
-passed**). Remaining: DB reset/reseed + browser smoke (Phase 04) and closeout
-(Phase 05).
+passed**). Phase 04 reset/reseeded the live local dev DB and smoked the mounted
+app: the seeded project carries status options + values, the Thermal Bridges
+Status column edits and persists across reload in-browser, and out-of-scope
+tables show no Status column (full evidence in `phase-04`). Remaining: Phase 05
+closeout (graphify update + fold the durable contract into
+`context/technical-requirements/data-table.md` + final checks).
 
 ## Next Step
 
-Start `phases/phase-04-reset-reseed-smoke.md`: reset/reseed the local dev DB
-(`make db-reset-dev` → `make seed-agent-user` → `scripts.check_db`), then smoke
-the mounted app at `http://localhost:5173` (signed in as `codex@example.com`) —
-confirm the `Status` column appears, edits persist across reload on at least
-one shared table + both heat-pump equip leaves, and out-of-scope tables (Units,
-Ventilators) show no Status column. **Phase 04 needs a running stack
-(Docker/Postgres + Vite/FastAPI) and is the human-in-the-loop checkpoint** —
-the object-store-backed `make db-reset-dev` also requires the climate bundle /
-R2 prerequisites; if those block locally, record the exact blocker here.
+Start `phases/phase-05-closeout-docs.md`: run `graphify update .`, fold the
+reusable DataTable status contract (built-in single-select stored in
+`custom_values.status`, option list under `<table_label>.status`) into
+`context/technical-requirements/data-table.md`, run the final
+`make check-backend` + `make frontend-dev-check` (already green this session),
+and decide whether to archive the packet under `planning/archive/`.
 
 ## Open Questions
 
@@ -78,5 +79,21 @@ Phase 03 (2026-06-24):
 - Simplify pass deduped a local `readStatusDefault` into the shared
   `shared/lib/fieldDefaults.ts`; all checks remained green.
 
-Deferred to later phases: DB reset/reseed + browser smoke (Phase 04), graph/docs
-closeout (Phase 05).
+Phase 04 (2026-06-24):
+
+- `make db-reset-dev` + `make seed-agent-user` + `scripts.check_db`
+  (`database ok`) succeeded on the live stack (Postgres :5433, MinIO :9000,
+  backend :8000, Vite :5173).
+- API smoke (as `ed@example.com`, the seed project owner): `status` FieldDef +
+  `<table>.status` options + seeded row values present on pumps,
+  thermal_bridges, heat_pumps_outdoor_equip, heat_pumps_indoor_equip;
+  heat_pumps_outdoor_units (out of scope) has none.
+- Browser: Thermal Bridges Status column renders the four seeded values;
+  edit Complete→Question via the cell editor → PUT 200 → persisted after
+  reload. Ventilators (out of scope) shows no Status column; HP
+  Equipment-Outdoor renders via its parallel path.
+- Coverage honesty: only Thermal Bridges was fully clicked-through in-browser;
+  the other tables rely on the API smoke + automated suites + shared
+  single-select parity (recorded in `phase-04`).
+
+Deferred to Phase 05: graphify update + durable-doc fold-back + final checks.
