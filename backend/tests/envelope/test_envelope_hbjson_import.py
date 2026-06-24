@@ -79,6 +79,7 @@ def _apply(
     version_etag: str | None = None,
     draft_etag: str | None = None,
     resolutions: list[dict[str, Any]] | None = None,
+    material_resolutions: list[dict[str, Any]] | None = None,
 ) -> Any:
     headers = {"Origin": ORIGIN}
     if draft_etag is not None:
@@ -93,6 +94,7 @@ def _apply(
                 "kind": "import_envelope_constructions",
                 "file": payload,
                 "resolutions": resolutions or [],
+                "material_resolutions": material_resolutions or [],
             }
         },
     )
@@ -105,6 +107,7 @@ def _apply_from_preview(
     payload: object,
     preview_json: dict[str, Any],
     resolutions: list[dict[str, Any]] | None = None,
+    material_resolutions: list[dict[str, Any]] | None = None,
 ) -> Any:
     return _apply(
         client,
@@ -114,6 +117,7 @@ def _apply_from_preview(
         version_etag=preview_json["version_etag"],
         draft_etag=preview_json["draft_etag"],
         resolutions=resolutions,
+        material_resolutions=material_resolutions,
     )
 
 
@@ -244,6 +248,32 @@ def test_reuse_flags_material_value_drift(clean_import_tables: None) -> None:
     item = preview["materials"][0]
     assert item["decision"] == "reuse_project_material"
     assert "reused_material_values_differ" in item["warnings"]
+
+
+def test_material_override_forces_create_new_instead_of_reuse(clean_import_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id, version_id = project["id"], project["active_version_id"]
+    write_saved_body(version_id, _body([_complete_insulation()], [_homogeneous_assembly()]))
+    payload = _export(client, project_id, version_id)
+
+    preview = _preview(client, project_id, version_id, payload).json()
+    assert preview["materials"][0]["decision"] == "reuse_project_material"
+    assert preview["materials"][0]["source_key"] == "pmat_insul"
+
+    applied = _apply_from_preview(
+        client,
+        project_id,
+        version_id,
+        payload,
+        preview,
+        material_resolutions=[{"source_key": "pmat_insul", "action": "create_new"}],
+    ).json()
+    # A fresh project-only copy was made and the segment points at it.
+    fresh = [material for material in applied["project_materials"] if material["id"] != "pmat_insul"]
+    assert len(fresh) == 1
+    assert fresh[0]["catalog_origin"] is None
+    assert applied["assemblies"][0]["layers"][0]["segments"][0]["project_material_id"] == fresh[0]["id"]
 
 
 def test_preview_does_not_create_a_draft(clean_import_tables: None) -> None:

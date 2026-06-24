@@ -11,14 +11,16 @@ import type {
   ConstructionResolution,
   ImportConstructionPlanItem,
   ImportConstructionsPreview,
+  ImportMaterialPlanItem,
+  MaterialResolution,
 } from "../../types";
 
 /**
  * Preview → confirm modal for "Upload constructions HBJSON". Shows the dry-run
  * plan (what lands, what is reused/created, any caveats) and lets the user
- * override each construction's collision action (Add new / Replace / Skip)
- * before committing the import to the draft. Material decisions are resolved
- * server-side and shown for transparency.
+ * override each construction's collision action (Add new / Replace / Skip) and
+ * reject a material match in favour of a fresh copy, before committing the
+ * import to the draft.
  */
 export function ImportConstructionsDialog({
   plan,
@@ -31,15 +33,23 @@ export function ImportConstructionsDialog({
   busy: boolean;
   error: string | null;
   onClose: () => void;
-  onConfirm: (resolutions: ConstructionResolution[]) => void;
+  onConfirm: (
+    resolutions: ConstructionResolution[],
+    materialResolutions: MaterialResolution[],
+  ) => void;
 }) {
   const { counts, constructions, materials, warnings } = plan;
   // Per-construction action overrides, keyed by `resolution_key` so both native
   // and foreign constructions are addressable.
   const [overrides, setOverrides] = useState<Record<string, ConstructionImportAction>>({});
+  // Material source_keys the user forced into a fresh copy (rejecting the match).
+  const [forcedNewMaterials, setForcedNewMaterials] = useState<Record<string, boolean>>({});
 
   const effectiveAction = (item: ImportConstructionPlanItem): ConstructionImportAction =>
     overrides[item.resolution_key] ?? item.action;
+
+  const effectiveDecision = (item: ImportMaterialPlanItem) =>
+    forcedNewMaterials[item.source_key] ? "create_new" : item.decision;
 
   const landingCount = constructions.filter((item) => effectiveAction(item) !== "skip").length;
 
@@ -51,6 +61,14 @@ export function ImportConstructionsDialog({
         target_assembly_id: item.target_assembly_id,
       })),
     [constructions, overrides],
+  );
+
+  const materialResolutions = useMemo<MaterialResolution[]>(
+    () =>
+      materials
+        .filter((item) => forcedNewMaterials[item.source_key] && item.decision !== "create_new")
+        .map((item) => ({ source_key: item.source_key, action: "create_new" as const })),
+    [materials, forcedNewMaterials],
   );
 
   return (
@@ -96,8 +114,24 @@ export function ImportConstructionsDialog({
             <li key={item.source_key} className="envelope-import__row">
               <span className="envelope-import__name">{item.name}</span>
               <span className="chip chip--sm chip--outline">
-                {MATERIAL_DECISION_LABELS[item.decision]}
+                {MATERIAL_DECISION_LABELS[effectiveDecision(item)]}
               </span>
+              {item.decision !== "create_new" ? (
+                <label className="envelope-import__material-override">
+                  <input
+                    type="checkbox"
+                    aria-label={`Create a new copy of ${item.name}`}
+                    checked={Boolean(forcedNewMaterials[item.source_key])}
+                    onChange={(event) =>
+                      setForcedNewMaterials((prev) => ({
+                        ...prev,
+                        [item.source_key]: event.target.checked,
+                      }))
+                    }
+                  />
+                  Create new
+                </label>
+              ) : null}
               <RowWarnings warnings={item.warnings} />
             </li>
           ))}
@@ -113,7 +147,7 @@ export function ImportConstructionsDialog({
           }
           submitDisabled={landingCount === 0}
           onClose={onClose}
-          onConfirm={() => onConfirm(resolutions)}
+          onConfirm={() => onConfirm(resolutions, materialResolutions)}
         />
       </div>
     </ModalDialog>

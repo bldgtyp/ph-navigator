@@ -7,7 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from features.envelope.import_models import ConstructionResolution
+from features.envelope.import_models import ConstructionResolution, MaterialResolution
 from features.project_document.document import (
     Assembly,
     AssemblyOrientation,
@@ -415,6 +415,7 @@ class ImportEnvelopeConstructionsCommand(BaseModel):
     kind: Literal["import_envelope_constructions"]
     file: dict[str, Any]
     resolutions: list[ConstructionResolution] = Field(default_factory=list)
+    material_resolutions: list[MaterialResolution] = Field(default_factory=list)
 
 
 EnvelopeCommand = Annotated[

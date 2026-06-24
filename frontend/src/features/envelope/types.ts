@@ -256,6 +256,7 @@ export type EnvelopeCommand =
       kind: "import_envelope_constructions";
       file: Record<string, unknown>;
       resolutions: ConstructionResolution[];
+      material_resolutions: MaterialResolution[];
     };
 
 export type EnvelopeCommandBody = {
@@ -278,6 +279,12 @@ export type ConstructionResolution = {
   resolution_key: string;
   action: ConstructionImportAction;
   target_assembly_id?: string | null;
+};
+
+// The only material override: reject the auto-match and create a fresh copy.
+export type MaterialResolution = {
+  source_key: string;
+  action: "create_new";
 };
 
 export type ImportConstructionPlanItem = {

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 17:17 EDT
-STATUS: Implementing — Phases 0–4 DONE; Phases 5–7 (promoted follow-ups) in progress
+STATUS: Feature complete — Phases 0–7 DONE; only a manual browser smoke remains
 AUTHOR: Ed (via Claude)
 SCOPE: Status for Envelope HBJSON Import.
 ---
@@ -24,10 +24,12 @@ SCOPE: Status for Envelope HBJSON Import.
     catalog-repo logic (PRD §5).
   - Flow is **preview → confirm**, applied atomically through the existing
     `apply_envelope_command` pipeline (PRD §6).
-- **Implementation: core complete.** Phases 0–4 done (see below): the export
+- **Implementation: complete.** Phases 0–7 done (see below): the export
   round-trips losslessly, the full backend import (native + foreign honeybee-PH,
-  preview + apply) is live, and the frontend upload/preview/confirm flow with
-  per-construction overrides is wired. Deferred follow-ups are listed below.
+  preview + apply) is live, and the frontend upload/preview/confirm flow is wired
+  with per-construction Add/Replace/Skip overrides (native + foreign), reused-
+  material drift warnings, and per-material reject-the-match overrides. Only a
+  manual end-to-end browser smoke against the dev stack remains.
 
 ## Decisions (2026-06-23)
 - **D1: both sources in v1** — PHN-native **and** raw Honeybee-PH.
@@ -88,10 +90,13 @@ SCOPE: Status for Envelope HBJSON Import.
   item carries a `reused_material_values_differ` warning (informational — still
   reuses). `_MaterialIndexes.by_id` replaced the id-set so the reused material is
   available to compare. +1 backend drift test; frontend warning label added.
-- **Phase 7** — per-material override in the preview: let the user reject a
-  match and force `create_new` (the false-positive name-match case). Apply
-  command carries per-material resolutions; modal adds a per-material control.
-  Backend + frontend.
+- **Phase 7 — DONE (2026-06-23).** Per-material override: the user can reject an
+  auto-match and force a fresh project-only copy (the false-positive name-match
+  escape hatch). The apply command carries `material_resolutions`
+  (`{source_key, action: "create_new"}`); `_resolve_one_material` short-circuits
+  to create-new for forced source_keys. The modal adds a per-material "Create
+  new" checkbox (hidden when the decision is already create_new) and the row's
+  decision label reflects the override. +1 backend test, +1 dialog test.
 
 ## Follow-ups (deferred)
 - **Live browser smoke**: validated via the vitest upload→preview→apply flow +

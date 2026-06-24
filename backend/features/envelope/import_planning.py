@@ -32,6 +32,7 @@ from features.envelope.import_models import (
     ConstructionResolution,
     ImportPlanCounts,
     MaterialPlanItem,
+    MaterialResolution,
 )
 from features.project_document.custom_fields import normalize_display_name
 from features.project_document.document import (
@@ -58,8 +59,10 @@ def build_import_plan(
     body: ProjectDocumentV1,
     library: ParsedConstructionLibrary,
     resolutions: list[ConstructionResolution],
+    material_resolutions: list[MaterialResolution] | None = None,
 ) -> ImportPlanResult:
-    resolution_map, new_materials, material_items = _resolve_materials(conn, body, library)
+    forced_create_new = {resolution.source_key for resolution in material_resolutions or []}
+    resolution_map, new_materials, material_items = _resolve_materials(conn, body, library, forced_create_new)
 
     resolutions_by_key = {resolution.resolution_key: resolution for resolution in resolutions}
     existing_assembly_ids = {assembly.id for assembly in body.tables.assemblies}
@@ -119,6 +122,7 @@ def _resolve_materials(
     conn: Connection[Any],
     body: ProjectDocumentV1,
     library: ParsedConstructionLibrary,
+    forced_create_new: set[str],
 ) -> tuple[dict[str, str], list[ProjectMaterial], list[MaterialPlanItem]]:
     by_id = {material.id: material for material in body.tables.project_materials}
     by_catalog_record: dict[str, list[ProjectMaterial]] = {}
@@ -134,6 +138,7 @@ def _resolve_materials(
         by_name=by_name,
         catalog_row=_memoized_catalog_row(conn),
         catalog_by_name=_lazy_catalog_by_name(conn),
+        forced_create_new=forced_create_new,
     )
 
     resolution_map: dict[str, str] = {}
@@ -155,6 +160,8 @@ class _MaterialIndexes:
     by_name: dict[str, list[ProjectMaterial]]
     catalog_row: Callable[[str], dict[str, Any] | None]
     catalog_by_name: Callable[[str], dict[str, Any] | None]
+    # source_keys the user chose to force into a fresh project-only copy.
+    forced_create_new: set[str]
 
 
 def _memoized_catalog_row(conn: Connection[Any]) -> Callable[[str], dict[str, Any] | None]:
@@ -191,6 +198,12 @@ def _resolve_one_material(
     new_materials: list[ProjectMaterial],
 ) -> MaterialPlanItem:
     catalog_record_id = _materials_catalog_record_id(material.catalog_origin)
+
+    # Override — the user rejected the auto-match and forced a fresh copy.
+    if material.source_key in indexes.forced_create_new:
+        created = _create_project_material(material)
+        new_materials.append(created)
+        return _material_item(material, "create_new", created.id, catalog_record_id)
 
     # Rung 1 — by project material id (round-trip / same-project reuse).
     reused = indexes.by_id.get(material.source_key)
