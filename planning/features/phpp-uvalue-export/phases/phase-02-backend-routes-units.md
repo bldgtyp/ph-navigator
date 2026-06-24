@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 17:19 EDT
-STATUS: Planned
+STATUS: Done — implemented + tested 2026-06-24 (preflight + zip routes, `zip_download_response`, IP annotation)
 AUTHOR: Ed (via Claude)
 SCOPE: Backend HTTP — preflight + zip routes, zip response helper, IP unit
   annotation.

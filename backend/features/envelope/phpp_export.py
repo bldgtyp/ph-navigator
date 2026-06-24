@@ -26,8 +26,8 @@ import io
 import re
 import zipfile
 from dataclasses import dataclass, field
-from typing import Literal
 
+from features.envelope.phpp_types import ExportReason, UnitSystem
 from features.envelope.thermal import calculate_assembly_thermal
 from features.project_document.document import (
     Assembly,
@@ -49,9 +49,6 @@ FRACTION_TOLERANCE = 1e-6
 # thickness themselves stay metric in both unit systems (the worksheet is
 # metric). Only the annotation uses this conversion factor.
 MM_PER_IN = 25.4
-
-UnitSystem = Literal["IP", "SI"]
-ExportReason = Literal["too_many_layers", "too_many_pathways", "incomplete_materials"]
 
 # Thermal-status flags that mean "this assembly is missing the material data
 # PHPP needs" — collapsed into the single ``incomplete_materials`` reason.

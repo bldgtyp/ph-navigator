@@ -14,20 +14,24 @@ from features.envelope.models import (
     AssemblyThermalResponse,
     EnvelopeCommandRequest,
     EnvelopeReadResponse,
+    PhppPreflightResponse,
     ProjectMaterialDriftReport,
 )
+from features.envelope.phpp_export import build_phpp_zip
+from features.envelope.phpp_types import UnitSystem
 from features.envelope.service import (
     MAX_IMPORT_FILE_BYTES,
     apply_envelope_command,
     get_assembly_thermal_model,
     get_envelope_read_model,
+    get_phpp_export_preflight,
     get_project_material_drift_report,
     preview_envelope_hbjson_import,
 )
 from features.project_document.models import ProjectDocumentSource
 from features.project_document.service import get_saved_document
 from features.projects.access import ProjectAccess, require_project_edit_access, require_project_view_access
-from features.shared.responses import json_download_response
+from features.shared.responses import json_download_response, zip_download_response
 
 router = APIRouter(
     prefix="/api/v1/projects/{project_id}/versions/{version_id}",
@@ -77,6 +81,25 @@ def export_envelope_hbjson(
         json.dumps(payload, indent=2),
         f"envelope-constructions-{version_id}.hbjson",
     )
+
+
+@router.get("/envelope/export/phpp/preflight", response_model=PhppPreflightResponse)
+def preflight_envelope_phpp(
+    version_id: UUID,
+    access: ProjectViewAccess,
+) -> PhppPreflightResponse:
+    return get_phpp_export_preflight(version_id, access)
+
+
+@router.get("/envelope/export/phpp")
+def export_envelope_phpp(
+    version_id: UUID,
+    access: ProjectViewAccess,
+    units: Annotated[UnitSystem, Query()] = "SI",
+):
+    body = get_saved_document(version_id, access)
+    data = build_phpp_zip(body, units=units)
+    return zip_download_response(data, f"phpp-u-values-{units}-{version_id}.zip")
 
 
 @router.post("/envelope/import/hbjson/preview", response_model=ImportConstructionsPreviewResponse)

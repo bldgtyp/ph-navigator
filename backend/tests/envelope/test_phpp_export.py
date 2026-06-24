@@ -126,6 +126,26 @@ def test_single_segment_assembly_renders_golden_si_block() -> None:
     assert csv_text == expected
 
 
+def test_ip_units_annotate_material_names_only() -> None:
+    """IP mode appends ` [ <in> in ]` to each material name; λ stays W/(mK) and
+    thickness stays mm, so IP differs from SI only on the material rows."""
+    assembly, materials = _wcs_assembly()
+    plan = build_assembly_export_plan(assembly, materials)
+
+    ip_lines = render_assembly_csv(plan, units="IP").split(EOL)
+    si_lines = render_assembly_csv(plan, units="SI").split(EOL)
+
+    assert ip_lines[6:9] == [
+        "Concrete (Heavily Reinforced) [ 7.9 in ],2.300,,,,,200",
+        "Roxul ComfortBoard [ 3.9 in ],0.036,,,,,100",
+        "Roxul ComfortBoard [ 1.2 in ],0.036,,,,,30",
+    ]
+    # Every non-material row is byte-identical to SI; no annotation leaks in SI.
+    assert ip_lines[:6] == si_lines[:6]
+    assert ip_lines[9:] == si_lines[9:]
+    assert "in ]" not in render_assembly_csv(plan, units="SI")
+
+
 # --- golden: two-section split with broadcast -------------------------------
 
 

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 17:19 EDT
-STATUS: Implementing — Phase 1 (backend export core) done 2026-06-24; Phases 2–4 pending
+STATUS: Implementing — Phases 1–2 done 2026-06-24 (backend complete); Phases 3–4 pending
 AUTHOR: Ed (via Claude)
 SCOPE: Add "Download in PHPP format" to ENVELOPE → Assemblies (a second item in
   the existing "…" Assembly-actions menu, next to "Download constructions
