@@ -147,6 +147,28 @@ export type ApertureSpecReportResponse = BaseTableSlice & {
   project_frames: ProjectFrameRead[];
 };
 
+export type ApertureAttachmentChangeArgs = {
+  tableKey: "project_glazings" | "project_frames";
+  rowId: string;
+  fieldKey: "datasheet_asset_ids";
+  currentAssetIds: string[];
+  nextAssetIds: string[];
+};
+
+export type ApertureProductCommand =
+  | {
+      kind: "update_project_glazing";
+      project_glazing_id: string;
+      specification_status?: SpecificationStatus | null;
+    }
+  | {
+      kind: "update_project_frame";
+      project_frame_id: string;
+      specification_status?: SpecificationStatus | null;
+    }
+  | { kind: "remove_project_glazing"; project_glazing_id: string }
+  | { kind: "remove_project_frame"; project_frame_id: string };
+
 export type WireAperturesSlice = Omit<AperturesSlice, "apertures"> & {
   apertures: WireApertureTypeEntry[];
 };

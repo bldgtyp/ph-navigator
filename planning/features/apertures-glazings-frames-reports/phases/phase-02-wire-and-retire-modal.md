@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
-TIME: 17:45 EDT
-STATUS: Planned (Phases 0–1 complete)
+TIME: 19:03 EDT
+STATUS: Complete
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phase 2 — finish columns + datasheet/use-site/spec-status/drift wiring;
   retire the interim ProjectRefsView modal + refsAggregation.
@@ -9,6 +9,17 @@ RELATED: ./phase-01-frontend-routing-and-panels.md, ../PRD.md (Expanded row)
 ---
 
 # Phase 2 — Wire the panels + retire the interim modal
+
+## Result
+
+Complete as of 2026-06-24. `GlazingsPanel` and `FramesPanel` now render full
+Materials-parity report tables over the Phase 0 spec-report read model:
+status-filter chips, in-scope/N/A/unused grouping, product/manufacturer/numeric
+columns, datasheet chips and expanded `AttachmentCell` zones, use-site rows,
+catalog-drift badges and refresh actions, editable specification-status controls,
+unused-row removal, and viewer hiding for N/A/unused products. The interim
+`ProjectRefsView` modal, `refsAggregation.ts`, and `refsAggregation.test.ts`
+were removed.
 
 ## Columns (per PRD column maps)
 
@@ -57,11 +68,22 @@ Now that both pages exist, remove the stop-gap:
 
 ## Verification
 
-- `pnpm run format`; type-check; component tests for the two panels (status
-  filter, grouping, datasheet chip counts, use-site rendering).
-- `make frontend-dev-check`.
+- `cd frontend && pnpm exec vitest run src/features/apertures/__tests__/ApertureSpecReportPanel.test.tsx` — 3 passed.
+- `make frontend-dev-check` — passed with existing fast-refresh warnings and
+  Vite chunk-size warning only.
+- Playwright smoke on local Codex fixture
+  `846a42ac-cb2c-472f-8239-eabd05fe6d57` — glazings and frames report routes
+  rendered real rows, columns, expanded datasheet/use-site evidence, and did not
+  hit builder-only aperture slice or U-value APIs; bare `/apertures` redirected
+  to `/apertures/builder`.
+- Simplify pass — fixed duplicate draft-summary invalidation, indexed drift
+  lookups by `element_id:target`, constrained datasheet URL fetches to the
+  expanded row, and added typed product command config/status guarding.
 
 ## Exit criteria
 
 - Both pages are full Materials-parity reports; interim modal + aggregator gone;
   lint + type-check + tests green.
+
+Met. Phase 3 remains for final closeout docs/context and full closeout
+verification.

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
-TIME: 17:45 EDT
-STATUS: Active — Phase 1 complete; Phase 2 next
+TIME: 19:03 EDT
+STATUS: Active — Phase 2 complete; Phase 3 closeout next
 AUTHOR: Claude (Opus 4.8)
 SCOPE: apertures-glazings-frames-reports
 RELATED: ./README.md, ./PRD.md, ./PLAN.md, ./phases/,
@@ -10,7 +10,7 @@ RELATED: ./README.md, ./PRD.md, ./PLAN.md, ./phases/,
 
 # STATUS — Apertures → Glazings / Frames report pages
 
-**State:** `Active`. Phase 1 is complete; resume at Phase 2.
+**State:** `Active`. Phase 2 is complete; resume at Phase 3.
 
 ## Blocker
 
@@ -47,12 +47,18 @@ commands:
   `/apertures/glazings`, and `/apertures/frames` path helpers; added frontend
   spec-report API/query plumbing and read types; added Glazings/Frames report
   shell panels using the shared report-table/status-filter pattern.
+- **Phase 2 complete (2026-06-24):** wired full Materials-parity report panels
+  for glazings and frames: product/manufacturer/numeric columns, datasheet chips
+  and expanded `AttachmentCell` zones, status filters and editable
+  specification-status controls, grouped in-scope/N/A/unused sections, use-site
+  rows, catalog-drift badges and refresh actions, unused-row removal, viewer
+  hiding for N/A/unused rows, and report-route write mutations. Retired
+  `ProjectRefsView`, `refsAggregation.ts`, and its test.
 
 ## Next step — RESUME HERE
 
-**Phase 2:** finish Glazings/Frames columns, datasheet/use-site/spec-status/drift
-wiring, and retire `ProjectRefsView` + `refsAggregation`. See
-`phases/phase-02-wire-and-retire-modal.md`.
+**Phase 3:** closeout docs/UI page context, final verification, and archive
+decision. See `phases/phase-03-closeout.md`.
 
 ## Verification ledger
 
@@ -68,5 +74,18 @@ wiring, and retire `ProjectRefsView` + `refsAggregation`. See
     `846a42ac-cb2c-472f-8239-eabd05fe6d57` — `/apertures/glazings` and
     `/apertures/frames` rendered real report rows and status filters; bare
     `/apertures` redirected to `/apertures/builder`.
-- Phase 3 still carries the browser smoke (sign in as **Ed** only when isolated;
-  otherwise use the isolated smoke recipe in `planning/features/.instructions.md`).
+- 2026-06-24 Phase 2:
+  - `cd frontend && pnpm exec vitest run src/features/apertures/__tests__/ApertureSpecReportPanel.test.tsx` — 3 passed.
+  - `make frontend-dev-check` — passed with existing fast-refresh warnings and
+    Vite chunk-size warning only.
+  - Playwright smoke on local Codex fixture
+    `846a42ac-cb2c-472f-8239-eabd05fe6d57` — `/apertures/glazings` rendered
+    `Browser Smoke Triple Glazing` with U-value/g-value columns and expanded
+    datasheets/use-sites; `/apertures/frames` rendered `Browser Smoke Frame`
+    with Psi-install/Width columns and expanded use-sites; report routes did not
+    hit builder-only aperture slice or U-value APIs; bare `/apertures`
+    redirected to `/apertures/builder`.
+  - Simplify pass — fixed duplicate draft-summary invalidation, indexed drift
+    lookups by `element_id:target`, constrained datasheet URL fetches to the
+    expanded row, and added typed product command config/status guarding.
+- Phase 3 still carries final closeout verification and UI/context docs pass.

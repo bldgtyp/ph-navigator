@@ -1,6 +1,7 @@
+// @size-exception: planning/features/apertures-glazings-frames-reports/phases/phase-02-wire-and-retire-modal.md
 import "../apertures.css";
 import { useEffect, useMemo, useState } from "react";
-import { Filter, Waypoints } from "lucide-react";
+import { Filter } from "lucide-react";
 import { Navigate, useLocation } from "react-router-dom";
 import { errorMessage } from "../../../shared/lib/errors";
 import { AppMenu, AppMenuItem } from "../../../shared/ui/AppMenu";
@@ -17,11 +18,13 @@ import { ExportHbjsonAction } from "../components/ExportHbjsonAction";
 import { FramesPanel } from "../components/FramesPanel";
 import { GlazingsPanel } from "../components/GlazingsPanel";
 import { ManufacturerFiltersModal } from "../components/ManufacturerFiltersModal";
-import { ProjectRefsView } from "../components/ProjectRefsView";
 import { RefreshDialog } from "../components/RefreshDialog";
 import type { ApertureDriftEntry } from "../drift-types";
 import {
   useApplyApertureCommandMutation,
+  useApertureProductCommandMutation,
+  useApertureReportAttachmentMutation,
+  useApertureReportRefreshMutation,
   useApertureSpecReportQuery,
   useAperturesSliceQuery,
 } from "../hooks";
@@ -39,7 +42,9 @@ import {
   isApertureSubroute,
 } from "../paths";
 import type {
+  ApertureAttachmentChangeArgs,
   ApertureCommand,
+  ApertureProductCommand,
   ApertureReadSource,
   ApertureTypeEntry,
   AperturesSlice,
@@ -58,6 +63,15 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
   const isBuilderRoute = isApertureSubroute(subpath, "builder");
   const isGlazingsRoute = isApertureSubroute(subpath, "glazings");
   const isFramesRoute = isApertureSubroute(subpath, "frames");
+  const isReportRoute = isGlazingsRoute || isFramesRoute;
+
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [dialog, setDialog] = useState<DialogState>({ kind: "none" });
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [filtersModalOpen, setFiltersModalOpen] = useState(false);
+  const [refreshEntry, setRefreshEntry] = useState<ApertureDriftEntry | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const dimFormat = useApertureDimFormat();
 
   const sliceQuery = useAperturesSliceQuery(
     project.id,
@@ -72,15 +86,19 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
     isGlazingsRoute || isFramesRoute,
   );
   const mutation = useApplyApertureCommandMutation(project.id, project.active_version_id);
-
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [dialog, setDialog] = useState<DialogState>({ kind: "none" });
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [filtersModalOpen, setFiltersModalOpen] = useState(false);
-  const [refsViewOpen, setRefsViewOpen] = useState(false);
-  const [refreshEntry, setRefreshEntry] = useState<ApertureDriftEntry | null>(null);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const dimFormat = useApertureDimFormat();
+  const productCommandMutation = useApertureProductCommandMutation(
+    project.id,
+    project.active_version_id,
+  );
+  const reportRefreshMutation = useApertureReportRefreshMutation(
+    project.id,
+    project.active_version_id,
+  );
+  const reportAttachmentMutation = useApertureReportAttachmentMutation({
+    projectId: project.id,
+    versionId: project.active_version_id,
+    onError: setActionError,
+  });
 
   const slice = sliceQuery.data;
   const apertures = useMemo(() => slice?.apertures ?? [], [slice?.apertures]);
@@ -95,7 +113,12 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
   const uValueSource: "draft" | "version" = slice?.source === "draft" ? "draft" : "version";
   const builderVersionId = isBuilderRoute ? project.active_version_id : null;
   const uValueQuery = useApertureUValues(project.id, builderVersionId, uValueSource);
-  const driftQuery = useApertureDriftReport(project.id, builderVersionId, uValueSource);
+  const driftQuery = useApertureDriftReport(
+    project.id,
+    isBuilderRoute || isReportRoute ? project.active_version_id : null,
+    isBuilderRoute ? uValueSource : reportSource,
+    isBuilderRoute || isReportRoute,
+  );
   const driftEntries = driftQuery.data?.entries ?? [];
   const activeUValue =
     uValueQuery.data?.apertures.find((r) => r.aperture_type_id === activeAperture?.id) ?? null;
@@ -153,6 +176,53 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
     setSelectedId(remainder[0]?.id ?? null);
   };
 
+  const applyProductCommand = async (command: ApertureProductCommand): Promise<boolean> => {
+    const current = specReportQuery.data;
+    if (!current) return false;
+    setActionError(null);
+    try {
+      await productCommandMutation.mutateAsync({ current, command });
+      return true;
+    } catch (error) {
+      setActionError(errorMessage(error, "Could not update aperture specification."));
+      return false;
+    }
+  };
+
+  const applyReportAttachmentChange = async (
+    change: ApertureAttachmentChangeArgs,
+  ): Promise<void> => {
+    const current = specReportQuery.data;
+    if (!current) return;
+    setActionError(null);
+    await reportAttachmentMutation.mutateAsync({ current, change });
+  };
+
+  const handleRefreshSave = async (chosen: Record<string, string | number | null>) => {
+    if (!refreshEntry) return;
+    const command: Extract<ApertureCommand, { kind: "refreshRefFromCatalog" }> = {
+      kind: "refreshRefFromCatalog",
+      aperture_type_id: refreshEntry.aperture_type_id,
+      element_id: refreshEntry.element_id,
+      target: refreshEntry.target,
+      chosen_values: chosen,
+    };
+    if (isBuilderRoute) {
+      const result = await dispatch(command);
+      if (result) setRefreshEntry(null);
+      return;
+    }
+    const current = specReportQuery.data;
+    if (!current) return;
+    setActionError(null);
+    try {
+      await reportRefreshMutation.mutateAsync({ current, command });
+      setRefreshEntry(null);
+    } catch (error) {
+      setActionError(errorMessage(error, "Could not refresh aperture specification."));
+    }
+  };
+
   if (subpath === "" || subpath === "/") {
     return (
       <Navigate
@@ -198,9 +268,6 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
     !isViewer && project.active_version_id
       ? { onConfigureFilters: () => setFiltersModalOpen(true) }
       : null;
-  const refsContext = project.active_version_id
-    ? { onViewPickedRefs: () => setRefsViewOpen(true) }
-    : null;
   const apertureActions = (
     <>
       <DisplayFormatMenuGroup {...dimFormat} />
@@ -221,14 +288,13 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
             Configure manufacturer filters
           </AppMenuItem>
         ) : null}
-        {refsContext ? (
-          <AppMenuItem icon={Waypoints} onClick={refsContext.onViewPickedRefs}>
-            View picked frames &amp; glazings
-          </AppMenuItem>
-        ) : null}
       </AppMenu>
     </>
   );
+  const reportBusy =
+    productCommandMutation.isPending ||
+    reportAttachmentMutation.isPending ||
+    reportRefreshMutation.isPending;
 
   return (
     <ManufacturerFilterProvider
@@ -259,24 +325,9 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
           <RefreshDialog
             open={refreshEntry !== null}
             entry={refreshEntry}
-            busy={mutation.isPending}
             onClose={() => setRefreshEntry(null)}
-            onSave={async (chosen) => {
-              if (!refreshEntry) return;
-              const result = await dispatch({
-                kind: "refreshRefFromCatalog",
-                aperture_type_id: refreshEntry.aperture_type_id,
-                element_id: refreshEntry.element_id,
-                target: refreshEntry.target,
-                chosen_values: chosen,
-              });
-              if (result) setRefreshEntry(null);
-            }}
-          />
-          <ProjectRefsView
-            open={refsViewOpen}
-            apertures={sorted}
-            onClose={() => setRefsViewOpen(false)}
+            busy={mutation.isPending || reportRefreshMutation.isPending}
+            onSave={(chosen) => void handleRefreshSave(chosen)}
           />
           <ManufacturerFiltersModal
             open={filtersModalOpen}
@@ -299,7 +350,7 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                 {actionError}
               </p>
             ) : null}
-            {isGlazingsRoute || isFramesRoute ? (
+            {isReportRoute ? (
               <section
                 className="apertures-placeholder-panel"
                 aria-label={isGlazingsRoute ? "Glazings" : "Frames"}
@@ -319,10 +370,27 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                 ) : isGlazingsRoute ? (
                   <GlazingsPanel
                     glazings={specReportQuery.data.project_glazings}
+                    projectId={project.id}
                     isViewer={isViewer}
+                    canEdit={canEdit}
+                    busy={reportBusy}
+                    driftEntries={driftEntries}
+                    onCommand={(command) => void applyProductCommand(command)}
+                    onAttachmentChange={(change) => applyReportAttachmentChange(change)}
+                    onRefreshEntry={setRefreshEntry}
                   />
                 ) : (
-                  <FramesPanel frames={specReportQuery.data.project_frames} isViewer={isViewer} />
+                  <FramesPanel
+                    frames={specReportQuery.data.project_frames}
+                    projectId={project.id}
+                    isViewer={isViewer}
+                    canEdit={canEdit}
+                    busy={reportBusy}
+                    driftEntries={driftEntries}
+                    onCommand={(command) => void applyProductCommand(command)}
+                    onAttachmentChange={(change) => applyReportAttachmentChange(change)}
+                    onRefreshEntry={setRefreshEntry}
+                  />
                 )}
               </section>
             ) : null}

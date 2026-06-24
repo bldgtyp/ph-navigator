@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
-TIME: 17:45 EDT
-STATUS: Planning — blocked on prerequisite
+TIME: 19:03 EDT
+STATUS: Active — Phase 2 complete; Phase 3 closeout next
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phase sequence for the two aperture spec-report pages.
 RELATED: ./README.md, ./PRD.md, ./phases/
@@ -12,28 +12,24 @@ RELATED: ./README.md, ./PRD.md, ./phases/
 Four phases. Phase 0 backend, Phases 1–2 frontend, Phase 3 closeout.
 
 ```
-P0  Backend read API: build_apertures_read_parts + ProjectGlazingRead/ProjectFrameRead
+P0  COMPLETE — Backend read API: build_apertures_read_parts + ProjectGlazingRead/ProjectFrameRead
     + use-site DTOs + read endpoint + drift report
-P1  Frontend routing + panels: route-based Apertures sub-tabs; GlazingsPanel/FramesPanel
+P1  COMPLETE — Frontend routing + panels: route-based Apertures sub-tabs; GlazingsPanel/FramesPanel
     shells (MaterialsPanel clones); query hooks + api + types
-P2  Wire the panels: columns, status chips, datasheet zones, use-sites, spec-status,
+P2  COMPLETE — Wire the panels: columns, status chips, datasheet zones, use-sites, spec-status,
     drift; retire ProjectRefsView + refsAggregation
-P3  Closeout: browser smoke (sign in as Ed), UI_UX page docs, make ci
+P3  NEXT — Closeout: UI_UX page docs, final make ci, archive gate
 ```
 
 ## Dependency order
 
-**Hard prerequisite:** `glazing-frame-documentation` merged (or its Phases 0–2
-on the working branch), so `ProjectGlazing`/`ProjectFrame` exist, the apertures
-slice carries the flat tables, and the documentation commands +
-datasheet-registry extension are in place.
+**Prerequisite resolved in current checkout:** `ProjectGlazing`/`ProjectFrame`
+exist, the apertures slice carries the flat tables, and the documentation
+commands + datasheet-registry extension are in place.
 
-Within this feature: `P0 → P1 → P2 → P3`. P1 can scaffold against the P0 read
-shape; P2 needs P0 live to render real rows. P3 is the first phase to require a
-dev-server **browser smoke** — and per the dev-seed rule, that smoke signs in as
-**Ed** (the seeded project is `ed@example.com`'s; single active session — don't
-clobber Ed's session; use the isolated-worktree smoke recipe from
-`planning/features/.instructions.md` if his stack is up).
+Within this feature: `P0 → P1 → P2 → P3`. P0–P2 are complete. Phase 2 already
+ran an isolated Codex-fixture browser smoke for the two report routes; P3 should
+complete final docs/context updates and the full closeout gate.
 
 ## Reuse budget (the whole point)
 
