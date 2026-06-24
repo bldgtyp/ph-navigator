@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 16:10 EDT
-STATUS: Planned
+STATUS: Done (2026-06-24) — _validate_single_selects wired into create+update; unknown manufacturer/brand → catalog_option_unknown (422); test fixtures moved to canonical values + autouse option reset
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phase 2 — strict write-validation on manufacturer + brand
 RELATED:

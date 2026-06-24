@@ -72,7 +72,7 @@ glazing (research §0).
 
 ---
 
-## Phase 2 — Strict write-validation on `manufacturer` + `brand` ⬜
+## Phase 2 — Strict write-validation on `manufacturer` + `brand` ✅
 
 - `_validate_single_selects(conn, values)` in `glazing_types/service.py` (mirror
   `frame_types/service.py:36-60`), checking the two fields against the live option
