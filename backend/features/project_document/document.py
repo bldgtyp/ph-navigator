@@ -55,7 +55,9 @@ from features.project_document._validators import (
 )
 from features.project_document.custom_fields import TableFieldDef, normalize_display_name
 from features.project_document.envelope_models import (
+    APERTURE_DEFAULT_FRAME_ID,
     APERTURE_DEFAULT_FRAME_NAME,
+    APERTURE_DEFAULT_GLAZING_ID,
     APERTURE_DEFAULT_GLAZING_NAME,
     CATALOG_RECORD_ID_PATTERN,
     CATALOG_VERSION_ID_PATTERN,
@@ -666,7 +668,9 @@ class ProjectDocumentV1(BaseModel):
 # Backward-compatibility re-exports. Existing callers import every symbol
 # above from ``features.project_document.document``; preserve that surface.
 __all__ = [
+    "APERTURE_DEFAULT_FRAME_ID",
     "APERTURE_DEFAULT_FRAME_NAME",
+    "APERTURE_DEFAULT_GLAZING_ID",
     "APERTURE_DEFAULT_GLAZING_NAME",
     "APPLIANCE_ENERGY_STAR_OPTION_KEY",
     "APPLIANCE_OPTION_KEYS",

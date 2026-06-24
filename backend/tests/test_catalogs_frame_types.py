@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Iterator
 
 import pytest
@@ -10,7 +11,9 @@ from fastapi.testclient import TestClient
 from database import connection, transaction
 from features.auth.service import create_or_update_user
 from features.catalogs.frame_types.options_service import seed_frame_type_options
+from features.catalogs.frame_types.service import compose_frame_name
 from main import app
+from scripts._seed_paths import FRAME_SEED_PATH
 
 ORIGIN = "http://localhost:5173"
 
@@ -43,11 +46,22 @@ def signed_in_client() -> TestClient:
     return client
 
 
-def _payload(name: str = "Skyline SR-3") -> dict[str, object]:
+# Derived-name prefix for a default `_payload` row (everything before `suffix`).
+_NAME_PREFIX = "Alpen | Tyrol | Window | Casement | Head"
+
+
+def _expected_name(suffix: str = "TS") -> str:
+    """The server-derived `name` for a `_payload(suffix)` row (Phase 3). `name`
+    is composed from the parts, so the free-text `suffix` is the discriminator
+    tests vary to get distinct rows."""
+    return f"{_NAME_PREFIX} | {suffix}"
+
+
+def _payload(suffix: str = "TS") -> dict[str, object]:
     return {
-        "name": name,
-        # Canonical single-select labels (seeded option store, Phase 0/1) — the
-        # six are now strictly validated on write (Phase 2).
+        # `name` is server-derived (Phase 3) — clients must not send it. The
+        # six single-selects are canonical labels (strictly validated, Phase 2);
+        # `suffix` is free text and the per-row discriminator.
         "manufacturer": "Alpen",
         "brand": "Tyrol",
         "use": "Window",
@@ -55,7 +69,7 @@ def _payload(name: str = "Skyline SR-3") -> dict[str, object]:
         "location": "Head",
         "mull_type": None,
         "prefix": None,
-        "suffix": "TS",
+        "suffix": suffix,
         "material": "Aluminum",
         "width_mm": 100.0,
         "u_value_w_m2k": 0.85,
@@ -76,7 +90,7 @@ def test_create_returns_flat_row(clean_catalog_tables: None) -> None:
     )
     assert response.status_code == 201, response.text
     body = response.json()
-    assert body["name"] == "Skyline SR-3"
+    assert body["name"] == _expected_name()  # server-derived from the parts
     assert body["manufacturer"] == "Alpen"
     assert body["brand"] == "Tyrol"
     assert body["use"] == "Window"
@@ -105,13 +119,15 @@ def test_list_filters_inactive_by_default(clean_catalog_tables: None) -> None:
     client.post("/api/v1/catalogs/frame-types", headers={"Origin": ORIGIN}, json=_payload("B")).json()
 
     active = client.get("/api/v1/catalogs/frame-types").json()
-    assert {item["name"] for item in active["items"]} == {"A", "B"}
+    assert {item["name"] for item in active["items"]} == {_expected_name("A"), _expected_name("B")}
 
     assert client.delete(f"/api/v1/catalogs/frame-types/{created['id']}", headers={"Origin": ORIGIN}).status_code == 204
-    assert {item["name"] for item in client.get("/api/v1/catalogs/frame-types").json()["items"]} == {"B"}
+    assert {item["name"] for item in client.get("/api/v1/catalogs/frame-types").json()["items"]} == {
+        _expected_name("B")
+    }
     listed_inactive = client.get("/api/v1/catalogs/frame-types", params={"include_inactive": "true"}).json()
-    assert {item["name"] for item in listed_inactive["items"]} == {"A", "B"}
-    deactivated = next(item for item in listed_inactive["items"] if item["name"] == "A")
+    assert {item["name"] for item in listed_inactive["items"]} == {_expected_name("A"), _expected_name("B")}
+    deactivated = next(item for item in listed_inactive["items"] if item["name"] == _expected_name("A"))
     assert deactivated["is_active"] is False
 
 
@@ -153,12 +169,13 @@ def test_edit_in_place_does_not_touch_project_versions(clean_catalog_tables: Non
 
 def test_validation_rejects_invalid_values(clean_catalog_tables: None) -> None:
     client = signed_in_client()
-    blank = client.post(
+    # `name` is server-derived (Phase 3) — sending one is rejected as an extra field.
+    inbound_name = client.post(
         "/api/v1/catalogs/frame-types",
         headers={"Origin": ORIGIN},
-        json={**_payload(), "name": "   "},
+        json={**_payload(), "name": "Client supplied"},
     )
-    assert blank.status_code == 422
+    assert inbound_name.status_code == 422
 
     negative_u = client.post(
         "/api/v1/catalogs/frame-types",
@@ -201,7 +218,7 @@ def test_deactivate_is_idempotent_and_reactivate_restores(clean_catalog_tables: 
     assert reactivated.json()["is_active"] is True
 
 
-def test_duplicate_copies_fields_with_copy_suffix(clean_catalog_tables: None) -> None:
+def test_duplicate_copies_fields_with_same_derived_name(clean_catalog_tables: None) -> None:
     client = signed_in_client()
     created = client.post("/api/v1/catalogs/frame-types", headers={"Origin": ORIGIN}, json=_payload("Source")).json()
 
@@ -211,18 +228,14 @@ def test_duplicate_copies_fields_with_copy_suffix(clean_catalog_tables: None) ->
     )
     assert response.status_code == 201, response.text
     body = response.json()
-    assert body["name"] == "Source (copy)"
+    # `name` is derived from the parts, so a copy of identical parts has an
+    # identical name — duplicates are distinguished by id, not a `(copy)` suffix.
+    assert body["name"] == created["name"] == _expected_name("Source")
     assert body["id"] != created["id"]
     assert body["manufacturer"] == created["manufacturer"]
     assert body["use"] == created["use"]
     assert body["material"] == created["material"]
     assert body["u_value_w_m2k"] == pytest.approx(created["u_value_w_m2k"])
-
-    again = client.post(
-        f"/api/v1/catalogs/frame-types/{created['id']}/duplicate",
-        headers={"Origin": ORIGIN},
-    ).json()
-    assert again["name"] == "Source (copy 2)"
 
 
 def test_catalog_writes_emit_user_action_log_entries(clean_catalog_tables: None) -> None:
@@ -270,8 +283,10 @@ def test_list_filters_by_location_operation_use_and_manufacturer(clean_catalog_t
 
     client = signed_in_client()
 
-    def _create(name: str, *, location: str, operation: str, use: str, manufacturer: str) -> None:
-        body = _payload(name)
+    # `name` is derived, so rows are tagged for identification via the free-text
+    # `suffix` discriminator.
+    def _create(tag: str, *, location: str, operation: str, use: str, manufacturer: str) -> None:
+        body = _payload(tag)
         body.update({"location": location, "operation": operation, "use": use, "manufacturer": manufacturer})
         assert client.post("/api/v1/catalogs/frame-types", headers={"Origin": ORIGIN}, json=body).status_code == 201
 
@@ -279,20 +294,20 @@ def test_list_filters_by_location_operation_use_and_manufacturer(clean_catalog_t
     _create("Sill B", location="Sill", operation="Fixed", use="Window", manufacturer="Alpen")
     _create("Jamb C", location="Jamb", operation="Casement", use="Door", manufacturer="Zola")
 
-    def names_for(params: list[tuple[str, str | int | float | None]]) -> set[str]:
-        return {item["name"] for item in client.get("/api/v1/catalogs/frame-types", params=params).json()["items"]}
+    def tags_for(params: list[tuple[str, str | int | float | None]]) -> set[str]:
+        return {item["suffix"] for item in client.get("/api/v1/catalogs/frame-types", params=params).json()["items"]}
 
-    assert names_for([("location", "head")]) == {"Head A"}  # case-insensitive
-    assert names_for([("operation", "Casement")]) == {"Head A", "Jamb C"}
-    assert names_for([("use", "Door")]) == {"Jamb C"}
-    assert names_for([("manufacturers", "Alpen")]) == {"Head A", "Sill B"}
-    assert names_for([("manufacturers", "Alpen"), ("manufacturers", "Zola")]) == {
+    assert tags_for([("location", "head")]) == {"Head A"}  # case-insensitive
+    assert tags_for([("operation", "Casement")]) == {"Head A", "Jamb C"}
+    assert tags_for([("use", "Door")]) == {"Jamb C"}
+    assert tags_for([("manufacturers", "Alpen")]) == {"Head A", "Sill B"}
+    assert tags_for([("manufacturers", "Alpen"), ("manufacturers", "Zola")]) == {
         "Head A",
         "Sill B",
         "Jamb C",
     }
     # Combined filters AND together.
-    assert names_for([("location", "Jamb"), ("operation", "Casement")]) == {"Jamb C"}
+    assert tags_for([("location", "Jamb"), ("operation", "Casement")]) == {"Jamb C"}
 
 
 # --------------------------------------------------------------------------- #
@@ -363,3 +378,73 @@ def test_add_option_then_create_row_using_it(clean_catalog_tables: None) -> None
     )
     assert response.status_code == 201, response.text
     assert response.json()["brand"] == "Vanguard"
+
+
+# --------------------------------------------------------------------------- #
+# Phase 3 — derived (read-only) name.
+# --------------------------------------------------------------------------- #
+
+
+def test_name_is_recomputed_when_a_part_changes_on_patch(clean_catalog_tables: None) -> None:
+    client = signed_in_client()
+    created = client.post("/api/v1/catalogs/frame-types", headers={"Origin": ORIGIN}, json=_payload("X")).json()
+    assert created["name"] == _expected_name("X")
+
+    patched = client.patch(
+        f"/api/v1/catalogs/frame-types/{created['id']}",
+        headers={"Origin": ORIGIN},
+        json={"operation": "Fixed"},  # a name-part
+    )
+    assert patched.status_code == 200
+    assert patched.json()["name"] == "Alpen | Tyrol | Window | Fixed | Head | X"
+
+
+def test_patch_of_non_name_part_leaves_name_unchanged(clean_catalog_tables: None) -> None:
+    client = signed_in_client()
+    created = client.post("/api/v1/catalogs/frame-types", headers={"Origin": ORIGIN}, json=_payload("X")).json()
+
+    patched = client.patch(
+        f"/api/v1/catalogs/frame-types/{created['id']}",
+        headers={"Origin": ORIGIN},
+        json={"u_value_w_m2k": 0.5},  # not a name-part
+    )
+    assert patched.status_code == 200
+    assert patched.json()["name"] == _expected_name("X")
+
+
+def test_option_rename_recomputes_dependent_row_names(clean_catalog_tables: None) -> None:
+    client = signed_in_client()
+    created = client.post(
+        "/api/v1/catalogs/frame-types",
+        headers={"Origin": ORIGIN},
+        json={**_payload("X"), "operation": "Casement"},
+    ).json()
+    assert created["name"] == "Alpen | Tyrol | Window | Casement | Head | X"
+
+    # Rename the `Casement` operation option in place.
+    options = client.get("/api/v1/catalogs/frame-types/options").json()["fields"]["operation"]
+    for option in options:
+        if option["label"] == "Casement":
+            option["label"] = "Casement-X"
+    assert (
+        client.put(
+            "/api/v1/catalogs/frame-types/options",
+            headers={"Origin": ORIGIN},
+            json={"field_key": "operation", "options": options, "replacements": {}},
+        ).status_code
+        == 200
+    )
+
+    # The row's cell *and* its derived name follow the rename.
+    row = client.get(f"/api/v1/catalogs/frame-types/{created['id']}").json()
+    assert row["operation"] == "Casement-X"
+    assert row["name"] == "Alpen | Tyrol | Window | Casement-X | Head | X"
+
+
+def test_compose_frame_name_reproduces_every_seed_row_name() -> None:
+    """Lossless-derivation proof (research §2): the composer reproduces the
+    stored ``name`` of every row in the committed seed — so the backfill is a
+    no-op diff on clean data and the derivation never loses information."""
+    payload = json.loads(FRAME_SEED_PATH.read_text())
+    mismatches = [row["name"] for row in payload["rows"] if compose_frame_name(row) != row["name"]]
+    assert mismatches == []

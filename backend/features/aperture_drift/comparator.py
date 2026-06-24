@@ -15,11 +15,10 @@ from features.aperture_drift.models import RefFieldDelta
 from features.project_document.document import FrameRef, GlazingRef
 
 # Keys compared between FrameRef and a catalog frame row. ``name`` is
-# included because the catalog Name can be renamed in place (TB-09.a) and
-# the user benefits from seeing the change even though it is mostly
-# cosmetic.
+# excluded: it is now derived from the parts (D-3), so it cannot drift
+# independently of the parts already compared below — including it would only
+# duplicate a delta the parts already report.
 _FRAME_KEYS: tuple[str, ...] = (
-    "name",
     "manufacturer",
     "brand",
     "use",
