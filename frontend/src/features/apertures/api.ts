@@ -3,6 +3,8 @@ import { draftWriteHeaders } from "../project_document/table-slice";
 import type {
   ApertureCommand,
   ApertureElementFrames,
+  ApertureReadSource,
+  ApertureSpecReportResponse,
   AperturesSlice,
   ProjectFrame,
   WireApertureElementFrames,
@@ -38,6 +40,18 @@ export async function applyApertureCommand(
     },
   );
   return hydrateAperturesSlice(slice);
+}
+
+export async function fetchApertureSpecReport(
+  projectId: string,
+  versionId: string,
+  source: ApertureReadSource,
+  signal?: AbortSignal,
+): Promise<ApertureSpecReportResponse> {
+  return fetchJson<ApertureSpecReportResponse>(
+    `/api/v1/projects/${projectId}/versions/${versionId}/apertures/spec-report?source=${source}`,
+    { signal },
+  );
 }
 
 function hydrateAperturesSlice(slice: WireAperturesSlice): AperturesSlice {

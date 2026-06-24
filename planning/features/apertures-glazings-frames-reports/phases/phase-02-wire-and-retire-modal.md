@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 17:45 EDT
-STATUS: Planned (blocked on prerequisite + Phases 0–1)
+STATUS: Planned (Phases 0–1 complete)
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phase 2 — finish columns + datasheet/use-site/spec-status/drift wiring;
   retire the interim ProjectRefsView modal + refsAggregation.

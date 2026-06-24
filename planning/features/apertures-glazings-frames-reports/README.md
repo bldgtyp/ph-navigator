@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 17:45 EDT
-STATUS: Active — Phase 0 complete; Phase 1 next
+STATUS: Active — Phase 1 complete; Phase 2 next
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: Two new REPORTING pages — "Apertures → Glazings" and "Apertures → Frames"
   — that mirror the "Envelope → Materials" page exactly (same report-table look,

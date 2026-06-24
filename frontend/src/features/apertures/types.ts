@@ -1,4 +1,5 @@
 import type { CatalogOrigin } from "../project_document/catalog-origin";
+import type { BaseTableSlice } from "../project_document/table-slice";
 
 export type { CatalogOrigin, CatalogTableName } from "../project_document/catalog-origin";
 
@@ -50,6 +51,25 @@ export type ProjectGlazing = GlazingRef & {
   id: string;
   specification_status: SpecificationStatus;
   datasheet_asset_ids: string[];
+};
+
+export type ProjectGlazingUseSite = {
+  aperture_type_id: string;
+  aperture_type_name: string;
+  element_id: string;
+  element_name: string;
+};
+
+export type ProjectFrameUseSite = ProjectGlazingUseSite & {
+  side: ApertureSide;
+};
+
+export type ProjectGlazingRead = ProjectGlazing & {
+  use_sites: ProjectGlazingUseSite[];
+};
+
+export type ProjectFrameRead = ProjectFrame & {
+  use_sites: ProjectFrameUseSite[];
 };
 
 export type ApertureOperationType = "swing" | "slide";
@@ -118,6 +138,13 @@ export type AperturesSlice = {
   project_glazings: ProjectGlazing[];
   project_frames: ProjectFrame[];
   manufacturer_filters: ManufacturerFilters | null;
+};
+
+export type ApertureReadSource = "draft" | "version";
+
+export type ApertureSpecReportResponse = BaseTableSlice & {
+  project_glazings: ProjectGlazingRead[];
+  project_frames: ProjectFrameRead[];
 };
 
 export type WireAperturesSlice = Omit<AperturesSlice, "apertures"> & {
