@@ -369,17 +369,6 @@
   position: relative;
 }
 
-.assembly-workspace__actions {
-  align-items: center;
-  display: flex;
-  gap: var(--space-2);
-  justify-content: flex-end;
-  position: absolute;
-  right: var(--space-14);
-  top: var(--space-14);
-  z-index: calc(var(--z-dropdown) + 10);
-}
-
 .assembly-interaction-region {
   display: contents;
 }
@@ -390,15 +379,29 @@
   gap: var(--space-6);
   min-height: 62px;
   min-width: 0;
-  padding: var(--space-4) 56px var(--space-10) 0;
+  padding: var(--space-4) var(--space-4) var(--space-10) 0;
   position: relative;
-  z-index: var(--z-sticky);
+  z-index: calc(var(--z-dropdown) + 1);
 }
 
 .assembly-header-main {
   align-items: center;
   display: flex;
+  gap: var(--space-8);
+  justify-content: space-between;
   min-width: 0;
+}
+
+.assembly-header-main .inline-header-name-editor {
+  flex: 1 1 auto;
+}
+
+.assembly-header-actions {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--space-2);
+  justify-content: flex-end;
 }
 
 .assembly-header h2 {
@@ -444,19 +447,18 @@
 .assembly-header-metrics > div,
 .assembly-header-alerts > div {
   align-items: center;
-  background: color-mix(in oklab, var(--bg-card) 90%, var(--accent) 10%);
-  border: 1px solid var(--border-subtle);
+  background: color-mix(in oklab, var(--accent) 5%, transparent);
+  border: 1px solid color-mix(in oklab, var(--accent) 10%, var(--border-subtle));
   border-radius: var(--phn-control-radius);
   color: var(--text-secondary);
   display: inline-flex;
   flex: 0 1 auto;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-sm);
   font-weight: 500;
-  gap: var(--space-6);
-  min-height: 26px;
+  gap: var(--space-8);
   line-height: 1;
   max-width: 100%;
-  padding: 5px var(--space-8);
+  padding: 7px 10px 8px;
   white-space: nowrap;
 }
 
@@ -465,7 +467,7 @@
   align-items: center;
   color: var(--text-secondary);
   display: flex;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-sm);
   font-weight: 550;
   gap: var(--space-4);
   line-height: 1;
@@ -476,9 +478,9 @@
 .assembly-header-metrics dd,
 .assembly-header-alerts dd {
   align-items: center;
-  display: flex;
   color: var(--text-secondary);
-  font-weight: 650;
+  display: flex;
+  font-weight: 500;
   line-height: 1;
   margin: 0;
   min-width: 0;
@@ -1601,7 +1603,16 @@
 
   .assembly-header {
     gap: var(--space-10);
-    padding-right: 44px;
+    padding-right: 0;
+  }
+
+  .assembly-header-main {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .assembly-header-actions {
+    margin-left: auto;
   }
 
   .assembly-header-metrics,
