@@ -4,7 +4,6 @@
 // The card surfaces five dispatch callbacks that the parent stack
 // fans into the page-level command dispatch.
 
-import { useEffect, useRef } from "react";
 import { InlineHeaderNameEditor } from "../../../shared/ui/InlineHeaderNameEditor";
 import type { ApertureElement, ApertureSide, FrameRef, GlazingRef } from "../types";
 import type { ViewDirection } from "../frame-label-map";
@@ -21,8 +20,7 @@ export type ApertureElementCardProps = {
   element: ApertureElement;
   viewDirection: ViewDirection;
   canEdit: boolean;
-  /** Side selected by a region click → opens the matching picker (Phase 06). */
-  focusedSide?: ApertureSide | "glazing" | null;
+  isSelected: boolean;
   onSetName: (newName: string) => void;
   onPickFrame: (side: ApertureSide, frame: FrameRef) => void;
   onPickGlazing: (glazing: GlazingRef) => void;
@@ -38,7 +36,7 @@ export function ApertureElementCard({
   element,
   viewDirection,
   canEdit,
-  focusedSide,
+  isSelected,
   onSetName,
   onPickFrame,
   onPickGlazing,
@@ -48,18 +46,14 @@ export function ApertureElementCard({
   uValueWm2k,
 }: ApertureElementCardProps) {
   const { unitSystem } = useUnitPreference();
-  const cardRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (focusedSide && cardRef.current) {
-      cardRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }
-  }, [focusedSide]);
-
   const mismatched = mismatchedSides(element);
 
   return (
-    <div className="aperture-element-card" data-testid={`element-card-${element.id}`} ref={cardRef}>
+    <div
+      className="aperture-element-card"
+      data-testid={`element-card-${element.id}`}
+      data-selected={isSelected ? "true" : undefined}
+    >
       <div className="aperture-element-card__header" data-reveal-edit-on-hover>
         <InlineHeaderNameEditor
           className="aperture-element-card__name"

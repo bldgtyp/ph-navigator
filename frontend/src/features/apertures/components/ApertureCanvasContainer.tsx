@@ -33,10 +33,8 @@ import { usePickPasteHandlers } from "../hooks/usePickPasteHandlers";
 import type { ApertureTypeEntry } from "../types";
 import { ApertureCanvasOverlay } from "./ApertureCanvasOverlay";
 import { ApertureCanvasToolbar } from "./ApertureCanvasToolbar";
+import { ApertureElementCardStack } from "./ApertureElementCardStack";
 import { ApertureSvgCanvas, type ApertureViewDirection } from "./ApertureSvgCanvas";
-import { ApertureElementCardStack, type FocusedTarget } from "./ApertureElementCardStack";
-import { visualSideToCanonical } from "../frame-label-map";
-import type { ApertureRegionKind } from "./ApertureHitTarget";
 import type { ApertureSide, FrameRef, GlazingRef } from "../types";
 import { DeleteDimensionDialog } from "./DeleteDimensionDialog";
 import { HorizontalDimensionStrip } from "./HorizontalDimensionStrip";
@@ -115,7 +113,6 @@ export function ApertureCanvasContainer({
   ) => Promise<void> | void;
   uValueByElementId?: Map<string, number>;
 }) {
-  const [focusedTarget, setFocusedTarget] = useState<FocusedTarget>(null);
   const [zoom, setZoom] = useState(1);
   const [viewDirection, setViewDirection] = useState<ApertureViewDirection>("exterior");
   const [deleteTip, setDeleteTip] = useState<string | null>(null);
@@ -373,13 +370,6 @@ export function ApertureCanvasContainer({
                 viewDirection={viewDirection}
                 canEdit={canEdit}
                 onSetElementName={handleSetElementName}
-                onRegionClick={(elementId: string, region: ApertureRegionKind) => {
-                  // The overlay reports the *visible* side; map to canonical
-                  // before pointing the card stack at the matching picker.
-                  const canonical: ApertureSide | "glazing" =
-                    region === "glazing" ? "glazing" : visualSideToCanonical(region, viewDirection);
-                  setFocusedTarget({ elementId, region: canonical });
-                }}
                 pickPasteMode={pickPasteMode}
                 pickedSourceElementId={pickedAssignment?.source_element_id ?? null}
                 pasteFlashElementId={pasteFlashTargetId}
@@ -409,7 +399,7 @@ export function ApertureCanvasContainer({
           aperture={aperture}
           viewDirection={viewDirection}
           canEdit={canEdit}
-          focusedTarget={focusedTarget}
+          selectedElementIds={selection}
           onSetElementName={(elementId, newName) => handleSetElementName(elementId, newName)}
           onPickFrame={(elementId, side, frame) => onPickFrame?.(elementId, side, frame)}
           onPickGlazing={(elementId, glazing) => onPickGlazing?.(elementId, glazing)}

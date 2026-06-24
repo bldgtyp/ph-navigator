@@ -205,6 +205,66 @@ describe("ApertureCanvasContainer", () => {
     expect(useApertureBuilderStore.getState().selectionByAperture["apt_1"]).toEqual([]);
   });
 
+  it("bubbles the latest selected element card without scrolling the page", () => {
+    const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+    const scrollIntoView = vi.fn();
+    HTMLElement.prototype.scrollIntoView = scrollIntoView;
+
+    try {
+      render(
+        <UnitStub>
+          <ApertureCanvasHarness
+            entry={aperture({
+              elements: [
+                element({ id: "aptel_a", name: "A", column_span: [0, 0] }),
+                element({ id: "aptel_b", name: "B", column_span: [1, 1] }),
+                element({ id: "aptel_c", name: "C", column_span: [2, 2] }),
+              ],
+              column_widths_mm: [1000, 1000, 1000],
+            })}
+            onSetElementName={vi.fn()}
+          />
+        </UnitStub>,
+      );
+
+      expect(elementCardIds()).toEqual([
+        "element-card-aptel_a",
+        "element-card-aptel_b",
+        "element-card-aptel_c",
+      ]);
+
+      fireEvent.click(screen.getByTestId("hit-element-aptel_b"));
+      expect(elementCardIds()).toEqual([
+        "element-card-aptel_b",
+        "element-card-aptel_a",
+        "element-card-aptel_c",
+      ]);
+      expect(screen.getByTestId("element-card-aptel_b")).toHaveAttribute("data-selected", "true");
+      expect(screen.getByTestId("element-card-aptel_a")).not.toHaveAttribute("data-selected");
+
+      fireEvent.click(screen.getByTestId("hit-element-aptel_c"), { shiftKey: true });
+      expect(elementCardIds()).toEqual([
+        "element-card-aptel_c",
+        "element-card-aptel_a",
+        "element-card-aptel_b",
+      ]);
+      expect(screen.getByTestId("element-card-aptel_b")).toHaveAttribute("data-selected", "true");
+      expect(screen.getByTestId("element-card-aptel_c")).toHaveAttribute("data-selected", "true");
+
+      fireEvent.keyDown(screen.getByTestId("aperture-canvas-container"), { key: "Escape" });
+      expect(elementCardIds()).toEqual([
+        "element-card-aptel_a",
+        "element-card-aptel_b",
+        "element-card-aptel_c",
+      ]);
+      expect(screen.getByTestId("element-card-aptel_b")).not.toHaveAttribute("data-selected");
+      expect(screen.getByTestId("element-card-aptel_c")).not.toHaveAttribute("data-selected");
+      expect(scrollIntoView).not.toHaveBeenCalled();
+    } finally {
+      HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
+    }
+  });
+
   it("cancels an element card name edit when focus leaves the editor", () => {
     const onSetElementName = vi.fn();
     render(
@@ -267,3 +327,11 @@ describe("ApertureCanvasContainer", () => {
     expect(onEditDimension).toHaveBeenCalledWith("column", 2, 350);
   });
 });
+
+function elementCardIds(): string[] {
+  return Array.from(screen.getByTestId("aperture-element-card-stack").children).map((child) => {
+    const testId = child.getAttribute("data-testid");
+    if (!testId) throw new Error("Element card is missing data-testid.");
+    return testId;
+  });
+}
