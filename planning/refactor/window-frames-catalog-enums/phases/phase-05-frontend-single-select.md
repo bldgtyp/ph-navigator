@@ -75,10 +75,23 @@ into sub-phases** (each independently shippable):
   smoked** (Playwright MCP): pills render the right labels, derived name renders,
   options API returns canonical counts. The smoke caught that the **dev DB was
   unmigrated** (`0036`) — `make migrate` applied `0037`–`0039`.
-- **Phase 5b — editable options (the integration risk).** Unlock `options`; handle
-  inline-add (`cell.newOptions` → `PUT …/options` + PATCH label) and manage-options
-  (`schemaMutation`/`legacyOptions` → `PUT …/options` + `replacements`). Merge is
-  the `OP-TO-FIX` cleanup tool. Playwright MCP smoke.
+- **Phase 5b — editable options. 🚧 Logic complete + unit-tested (2026-06-24);
+  one open UI question.** Unlocked the `options` overlay attribute; the controller
+  now handles `schemaMutation`/`legacyOptions` → `PUT …/options`: add / rename /
+  reorder / delete-unused all derive from the new option list (the backend
+  reconciles by id), and a delete of an in-use option folds its rows into the
+  cascade's replacement label (`buildLabelReplacements` → backend
+  `replacements`, the `OP-TO-FIX` merge tool). 21 vitest tests (rename→PUT,
+  merge→PUT+replacements, custom-field reject). (Inline-add already shipped in
+  5a — the popover create-footer isn't gated by the lock.)
+  - **OPEN — field-config modal open affordance.** A browser smoke could not
+    locate the trigger to **open** the field-config "manage options" modal for a
+    catalog built-in single-select (header shows only "Hide fields" / "Add field —
+    coming soon"; `data-schema-locked="true"`). The materials precedent locks
+    options and never opens it, so this entry point may need shared-DataTable
+    wiring (out of the frame-types feature scope). The translation **logic** is
+    done and correct; verifying/enabling the modal-open path is the remaining 5b
+    work. (The dev servers went down mid-smoke; re-verify once back up.)
 - **Phase 5c — import dialog v2.** Bump the frontend import schema to 2; render the
   new `new_option:<field>` warnings + the `dropped` count from the preview.
 

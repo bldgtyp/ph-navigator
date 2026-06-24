@@ -185,6 +185,50 @@ function buildCreatePayload(
   return payload as CatalogFrameTypeCreatePayload;
 }
 
+type LegacyOptionsMutation = Extract<WriteOp, { kind: "schemaMutation"; variant: "legacyOptions" }>;
+
+function labelOfOption(optionId: string, mutation: LegacyOptionsMutation): string | null {
+  const inAfter = (mutation.after.options ?? []).find((o) => o.id === optionId);
+  const inBefore = (mutation.before.options ?? []).find((o) => o.id === optionId);
+  return inAfter?.label ?? inBefore?.label ?? null;
+}
+
+// Derive the backend label-keyed `replacements` from a field-config option edit.
+// Only an option deleted from the list while still in use needs one: the
+// DataTable cascades its rows to a single target (or null to clear), so map each
+// deleted option's label → the cascade target's label. Renames / reorders /
+// adds / unused-deletes carry no cascade and reconcile from the option list
+// alone (the backend matches by id).
+function buildLabelReplacements(mutation: LegacyOptionsMutation): Record<string, string> {
+  const afterIds = new Set((mutation.after.options ?? []).map((o) => o.id));
+  const deleted = (mutation.before.options ?? []).filter((o) => !afterIds.has(o.id));
+  if (deleted.length === 0 || !mutation.cellWrites?.length) return {};
+  const target = mutation.cellWrites.find((w) => typeof w.value === "string" && w.value)?.value;
+  if (typeof target !== "string") return {};
+  const targetLabel = labelOfOption(target, mutation);
+  if (!targetLabel) return {};
+  const replacements: Record<string, string> = {};
+  for (const option of deleted) replacements[option.label] = targetLabel;
+  return replacements;
+}
+
+async function editFrameTypeOptions(
+  mutation: LegacyOptionsMutation,
+  opts: WriteOptions,
+): Promise<void> {
+  await putFrameTypeOptions({
+    field_key: mutation.after.field_key,
+    options: (mutation.after.options ?? []).map((o) => ({
+      id: o.id,
+      label: o.label,
+      color: o.color,
+      order: o.order,
+    })),
+    replacements: buildLabelReplacements(mutation),
+  });
+  await opts.invalidate();
+}
+
 export type FrameTypesCatalogController = {
   view: ViewState;
   onViewChange: (next: ViewState) => void;
@@ -260,10 +304,19 @@ export function useFrameTypesCatalogController({
           await invalidate();
           return;
         }
-        case "schemaMutation":
-          // Field-config option editing (rename/merge/delete) lands in Phase 5b;
-          // until then the `options` attribute is locked so this can't fire.
-          throw new Error("Editing frame-type options is not available yet (Phase 5b).");
+        case "schemaMutation": {
+          // The only schema change frame-types supports is option editing
+          // (add/rename/reorder/merge) via the field-config modal — routed to
+          // the catalog option store. Custom fields are a non-goal.
+          if (op.variant !== "legacyOptions") {
+            throw new Error("Custom fields are not supported on the frame-types catalog.");
+          }
+          if (!SINGLE_SELECT_FIELDS.has(op.after.field_key)) {
+            throw new Error(`Cannot edit options for ${op.after.field_key}.`);
+          }
+          await editFrameTypeOptions(op, { invalidate });
+          return;
+        }
       }
     },
     [invalidate, maps, optionsByField],

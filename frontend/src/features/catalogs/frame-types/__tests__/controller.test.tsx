@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import type { FieldOption, WriteOp } from "../../../../shared/ui/data-table";
+import type { FieldDef, FieldOption, WriteOp } from "../../../../shared/ui/data-table";
 import * as api from "../../api";
 import {
   useFrameTypesCatalogController,
@@ -26,6 +26,10 @@ const CONTROLLER_ARGS: FrameTypesCatalogControllerArgs = {
   schemaFingerprint: "test-fp",
   optionsByField: OPTIONS,
 };
+
+function field(fieldKey: string, options: FieldOption[]): FieldDef {
+  return { field_key: fieldKey, field_type: "single_select", display_name: fieldKey, options };
+}
 
 function wrapper({ children }: { children: React.ReactNode }) {
   const queryClient = new QueryClient({
@@ -175,13 +179,65 @@ describe("useFrameTypesCatalogController.onWrite", () => {
     expect(api.duplicateFrameType).toHaveBeenCalledWith("rec_src");
   });
 
-  test("schemaMutation throws until Phase 5b", async () => {
+  test("option rename (legacyOptions) PUTs the new list with no replacements", async () => {
+    const { result } = renderHook(() => useFrameTypesCatalogController(CONTROLLER_ARGS), {
+      wrapper,
+    });
+    const before = field("mull_type", [
+      { id: "opt_x", label: "OP-TO-FIX", color: "#3b82f6", order: 0 },
+    ]);
+    const after = field("mull_type", [
+      { id: "opt_x", label: "OP-to-FX", color: "#3b82f6", order: 0 },
+    ]);
+    await act(async () => {
+      await result.current.onWrite({
+        kind: "schemaMutation",
+        variant: "legacyOptions",
+        before,
+        after,
+      });
+    });
+    expect(api.putFrameTypeOptions).toHaveBeenCalledWith({
+      field_key: "mull_type",
+      options: [{ id: "opt_x", label: "OP-to-FX", color: "#3b82f6", order: 0 }],
+      replacements: {},
+    });
+  });
+
+  test("merge (delete in-use option + cascade) PUTs label replacements", async () => {
+    const { result } = renderHook(() => useFrameTypesCatalogController(CONTROLLER_ARGS), {
+      wrapper,
+    });
+    const before = field("mull_type", [
+      { id: "opt_fix", label: "OP-TO-FIX", color: "#3b82f6", order: 0 },
+      { id: "opt_fx", label: "OP-to-FX", color: "#3b82f6", order: 1 },
+    ]);
+    const after = field("mull_type", [
+      { id: "opt_fx", label: "OP-to-FX", color: "#3b82f6", order: 0 },
+    ]);
+    await act(async () => {
+      await result.current.onWrite({
+        kind: "schemaMutation",
+        variant: "legacyOptions",
+        before,
+        after,
+        cellWrites: [{ rowId: "rec_a", fieldKey: "mull_type", value: "opt_fx" }],
+      });
+    });
+    expect(api.putFrameTypeOptions).toHaveBeenCalledWith({
+      field_key: "mull_type",
+      options: [{ id: "opt_fx", label: "OP-to-FX", color: "#3b82f6", order: 0 }],
+      replacements: { "OP-TO-FIX": "OP-to-FX" },
+    });
+  });
+
+  test("a typed schema mutation (custom field) is rejected", async () => {
     const { result } = renderHook(() => useFrameTypesCatalogController(CONTROLLER_ARGS), {
       wrapper,
     });
     const op: WriteOp = { kind: "schemaMutation", variant: "typed", mutation: {} as never };
     await act(async () => {
-      await expect(result.current.onWrite(op)).rejects.toThrow(/Phase 5b/);
+      await expect(result.current.onWrite(op)).rejects.toThrow(/Custom fields/);
     });
   });
 });
