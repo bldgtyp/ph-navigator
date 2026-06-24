@@ -1,13 +1,22 @@
-"""Single-select option-store service for the Window-Frame catalog.
+"""Single-select option-store service for the Window-Glazing catalog.
 
-Wraps the shared ``_options_repository`` with the frame-types policy: only the
-six promoted fields are editable, edits validate against the
-``project_document`` option-list rules, and deleting an in-use option requires a
-replacement label so its rows can fold into a survivor (the merge / ``OP-TO-FIX``
-cleanup path, D-4).
+Wraps the shared ``_options_repository`` with the glazing-types policy: only the
+two promoted fields (``manufacturer``, ``brand``, D-1) are editable, edits
+validate against the ``project_document`` option-list rules, and deleting an
+in-use option requires a replacement label so its rows can fold into a survivor
+(the merge / cleanup path, D-4).
 
-``seed_frame_type_options`` is the reusable canonical-reset used by tests; the
-same data ships in migration ``20260623_0038`` for fresh databases.
+``seed_glazing_type_options`` is the reusable canonical-reset used by tests; the
+same data ships in migration ``20260624_0041`` for fresh databases.
+
+A direct mirror of ``frame_types.options_service``. The one deliberate gap:
+``edit_glazing_type_options`` does **not** recompute derived names — glazing
+``name`` is still a stored text column until Phase 3, which adds the
+``recompute_names`` call here once the derived name exists.
+
+Follow-up (rule-of-three): once materials adopts the option store, the three
+near-identical per-catalog option services should fold into one parameterized
+service (catalog table + seeds + optional on-rows-rewritten hook).
 """
 
 from __future__ import annotations
@@ -21,19 +30,18 @@ from starlette import status
 from database import connection, transaction
 from features.auth.models import UserPublic
 from features.catalogs import _options_repository as options_repository
-from features.catalogs._option_seeds import FRAME_TYPE_OPTION_SEEDS, FRAME_TYPE_SINGLE_SELECT_FIELDS
+from features.catalogs._option_seeds import GLAZING_TYPE_OPTION_SEEDS, GLAZING_TYPE_SINGLE_SELECT_FIELDS
 from features.catalogs._shared import (
     CatalogFieldOptionsResponse,
     EditCatalogOptionsRequest,
     log_catalog_action,
 )
-from features.catalogs.frame_types import repository as frame_repository
-from features.catalogs.frame_types.models import CatalogFrameTypeOptionsResponse
+from features.catalogs.glazing_types.models import CatalogGlazingTypeOptionsResponse
 from features.project_document.options import validate_option_list
 from features.project_document.rows import SingleSelectOption
 from features.shared.errors import api_error
 
-CATALOG_TABLE = "frame_types"
+CATALOG_TABLE = "glazing_types"
 
 
 def _to_option(row: dict[str, Any]) -> SingleSelectOption:
@@ -45,19 +53,19 @@ def _to_option(row: dict[str, Any]) -> SingleSelectOption:
     )
 
 
-def list_frame_type_options() -> CatalogFrameTypeOptionsResponse:
-    """Return all six fields' option lists (one fetch for the grid). Fields with
-    no stored options still appear, with an empty list."""
+def list_glazing_type_options() -> CatalogGlazingTypeOptionsResponse:
+    """Return both single-select fields' option lists (one fetch for the grid).
+    Fields with no stored options still appear, with an empty list."""
 
     with connection() as conn:
         rows = options_repository.list_all_for_table(conn, catalog_table=CATALOG_TABLE)
-    fields: dict[str, list[SingleSelectOption]] = {field: [] for field in FRAME_TYPE_SINGLE_SELECT_FIELDS}
+    fields: dict[str, list[SingleSelectOption]] = {field: [] for field in GLAZING_TYPE_SINGLE_SELECT_FIELDS}
     for row in rows:
         fields.setdefault(row["field_key"], []).append(_to_option(row))
-    return CatalogFrameTypeOptionsResponse(fields=fields)
+    return CatalogGlazingTypeOptionsResponse(fields=fields)
 
 
-def edit_frame_type_options(
+def edit_glazing_type_options(
     payload: EditCatalogOptionsRequest, user: UserPublic, request: Request
 ) -> CatalogFieldOptionsResponse:
     """Full-replace one field's option list, cascading renames/merges to rows.
@@ -67,10 +75,13 @@ def edit_frame_type_options(
     label); for each deleted option still in use, fold its rows into the
     supplied replacement (else reject ``catalog_option_in_use``); then write the
     new option set.
+
+    Phase 3 adds a ``recompute_names`` call after the option write, once
+    glazing ``name`` becomes server-derived from these cells.
     """
 
     field_key = payload.field_key
-    if field_key not in FRAME_TYPE_SINGLE_SELECT_FIELDS:
+    if field_key not in GLAZING_TYPE_SINGLE_SELECT_FIELDS:
         raise api_error(
             status.HTTP_422_UNPROCESSABLE_CONTENT,
             "catalog_field_key_unknown",
@@ -90,12 +101,11 @@ def edit_frame_type_options(
         # Walk the stored options once: a kept option whose label changed
         # rewrites its rows in place; a removed option still in use folds its
         # rows into the supplied replacement (else reject).
-        rows_rewritten = False
         for option_id, old_label in stored_label_by_id.items():
             new_label = incoming_label_by_id.get(option_id)
             if new_label is not None:
                 if new_label != old_label:
-                    rewritten = options_repository.rename_label(
+                    options_repository.rename_label(
                         conn,
                         catalog_table=CATALOG_TABLE,
                         field_key=field_key,
@@ -103,7 +113,6 @@ def edit_frame_type_options(
                         new_label=new_label,
                         user_id=user.id,
                     )
-                    rows_rewritten = rows_rewritten or rewritten > 0
                 continue
             in_use = options_repository.count_rows_using_label(
                 conn, catalog_table=CATALOG_TABLE, field_key=field_key, label=old_label
@@ -132,15 +141,10 @@ def edit_frame_type_options(
                 new_label=replacement,
                 user_id=user.id,
             )
-            rows_rewritten = True
 
         options_repository.replace_options(
             conn, catalog_table=CATALOG_TABLE, field_key=field_key, options=payload.options
         )
-        if rows_rewritten:
-            # A rename/merge changed a field cell that feeds the derived name —
-            # recompute affected rows' names so they stay consistent (Phase 3).
-            frame_repository.recompute_names(conn)
         log_catalog_action(
             conn,
             "catalog_options_edit",
@@ -155,12 +159,12 @@ def edit_frame_type_options(
     return CatalogFieldOptionsResponse(field_key=field_key, options=[_to_option(row) for row in result])
 
 
-def seed_frame_type_options(conn: Connection[Any]) -> None:
-    """Reset the frame-type option lists to the canonical Phase 0 sets — a thin
+def seed_glazing_type_options(conn: Connection[Any]) -> None:
+    """Reset the glazing-type option lists to the canonical Phase 0 sets — a thin
     wrapper over the generic ``options_repository.seed_options``.
 
-    Tests call this to restore a known baseline; migration ``20260623_0038``
+    Tests call this to restore a known baseline; migration ``20260624_0041``
     ships the same data for fresh databases.
     """
 
-    options_repository.seed_options(conn, catalog_table=CATALOG_TABLE, option_seeds=FRAME_TYPE_OPTION_SEEDS)
+    options_repository.seed_options(conn, catalog_table=CATALOG_TABLE, option_seeds=GLAZING_TYPE_OPTION_SEEDS)

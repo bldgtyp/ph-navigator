@@ -56,6 +56,13 @@ this is just a second consumer.
   close it.
 - **Materials** is now the only un-migrated catalog (D-7) — a future, separate
   effort; the store is already generic for it.
+- **Unify the per-catalog option services (rule-of-three).** `frame_types` and
+  `glazing_types` now have ~95%-identical `options_service.py` modules (differing
+  only in catalog table, the editable-fields constant, the response model, and
+  frame's `recompute_names` hook). Deliberately left as parallel modules per the
+  codebase convention (Phase 1 altitude review). When **materials** adopts the
+  store — the third consumer — fold the three into one parameterized service
+  (catalog table + seeds + optional on-rows-rewritten hook). Not before.
 
 ## Exit criteria
 

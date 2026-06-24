@@ -8,6 +8,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from features.catalogs._shared import strip_optional, strip_required
+from features.project_document.rows import SingleSelectOption
 from features.shared.colors import normalize_optional_hex_color
 
 
@@ -111,3 +112,19 @@ class CatalogGlazingTypeUpdateRequest(_CatalogGlazingTypeFields):
     @classmethod
     def _strip_optional_name(cls, value: object) -> object:
         return strip_optional(value)
+
+
+# --------------------------------------------------------------------------- #
+# Single-select option store (catalog_field_options) — see _options_repository.
+# The generic option DTOs live in ``features.catalogs._shared``; only the
+# glazing-specific "all fields at once" aggregate lives here.
+# --------------------------------------------------------------------------- #
+
+
+class CatalogGlazingTypeOptionsResponse(BaseModel):
+    """Both glazing single-select fields' (manufacturer, brand) option lists in
+    one fetch (one round-trip for the grid). Keyed by ``field_key``."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    fields: dict[str, list[SingleSelectOption]]

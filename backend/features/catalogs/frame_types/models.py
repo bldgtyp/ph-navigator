@@ -141,16 +141,10 @@ class CatalogFrameTypeUpdateRequest(_CatalogFrameTypeFields):
 
 # --------------------------------------------------------------------------- #
 # Single-select option store (catalog_field_options) — see _options_repository.
+# The generic ``CatalogFieldOptionsResponse`` / ``EditCatalogOptionsRequest``
+# DTOs live in ``features.catalogs._shared`` (shared across catalogs); only the
+# frame-specific "all fields at once" aggregate lives here.
 # --------------------------------------------------------------------------- #
-
-
-class CatalogFieldOptionsResponse(BaseModel):
-    """One field's option list — the PUT-edit response."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    field_key: str
-    options: list[SingleSelectOption]
 
 
 class CatalogFrameTypeOptionsResponse(BaseModel):
@@ -160,19 +154,3 @@ class CatalogFrameTypeOptionsResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     fields: dict[str, list[SingleSelectOption]]
-
-
-class EditCatalogOptionsRequest(BaseModel):
-    """Full-replacement edit of one field's option list.
-
-    ``replacements`` maps a *deleted* option's label to the surviving label its
-    in-use rows should fold into (the merge / ``OP-TO-FIX`` cleanup path). A
-    deleted label that is still referenced by an active row and has no
-    replacement is rejected (cascade guard).
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    field_key: str
-    options: list[SingleSelectOption]
-    replacements: dict[str, str] = Field(default_factory=dict)

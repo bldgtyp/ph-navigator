@@ -35,6 +35,7 @@ def test_seed_file_parses_and_passes_the_pipeline_cleanly() -> None:
 
 def test_seed_file_carries_the_full_airtable_export() -> None:
     payload = json.loads(SEED_PATH.read_text())
-    # The CSV source has 43 rows after the header; bumping this number
-    # is intentional and should require a code change.
-    assert len(payload["rows"]) == 43
+    # The CSV source had 43 rows; window-glass-catalog-enums Phase 0 dropped the
+    # two `DEFAULT` artifact rows (D-6), leaving 41. Bumping this number is
+    # intentional and should require a code change.
+    assert len(payload["rows"]) == 41

@@ -9,7 +9,11 @@ from fastapi import APIRouter, Query, Request
 from starlette import status
 
 from features.auth.routes import CurrentUser
-from features.catalogs._shared import CatalogManufacturerListResponse
+from features.catalogs._shared import (
+    CatalogFieldOptionsResponse,
+    CatalogManufacturerListResponse,
+    EditCatalogOptionsRequest,
+)
 from features.catalogs.glazing_types.import_export.service import (
     CommitRequest,
     CommitResponse,
@@ -20,8 +24,13 @@ from features.catalogs.glazing_types.import_export.service import (
 from features.catalogs.glazing_types.models import (
     CatalogGlazingTypeCreateRequest,
     CatalogGlazingTypeListResponse,
+    CatalogGlazingTypeOptionsResponse,
     CatalogGlazingTypePublic,
     CatalogGlazingTypeUpdateRequest,
+)
+from features.catalogs.glazing_types.options_service import (
+    edit_glazing_type_options,
+    list_glazing_type_options,
 )
 from features.catalogs.glazing_types.service import (
     create_glazing_type,
@@ -69,6 +78,26 @@ def get_glazing_manufacturers(auth: CurrentUser) -> CatalogManufacturerListRespo
 
     del auth
     return list_glazing_manufacturers()
+
+
+# NOTE: `/options` must be declared before `/{record_id}` so it is not matched
+# as a record id (Starlette resolves routes in declaration order).
+@router.get("/options", response_model=CatalogGlazingTypeOptionsResponse)
+def get_glazing_type_options(auth: CurrentUser) -> CatalogGlazingTypeOptionsResponse:
+    """Both single-select fields' (manufacturer, brand) option lists."""
+
+    del auth
+    return list_glazing_type_options()
+
+
+@router.put("/options", response_model=CatalogFieldOptionsResponse)
+def put_glazing_type_options(
+    payload: EditCatalogOptionsRequest, request: Request, auth: CurrentUser
+) -> CatalogFieldOptionsResponse:
+    """Full-replace one field's option list (add / rename / reorder / merge)."""
+
+    user, _expires_at = auth
+    return edit_glazing_type_options(payload, user, request)
 
 
 @router.get("/{record_id}", response_model=CatalogGlazingTypePublic)
