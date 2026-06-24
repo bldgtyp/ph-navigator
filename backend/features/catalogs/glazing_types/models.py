@@ -112,8 +112,9 @@ class CatalogGlazingTypeUpdateRequest(_CatalogGlazingTypeFields):
 
 
 class CatalogGlazingTypeOptionsResponse(BaseModel):
-    """Both glazing single-select fields' (manufacturer, brand) option lists in
-    one fetch (one round-trip for the grid). Keyed by ``field_key``."""
+    """The glazing single-select field's (manufacturer) option list — `brand` is
+    free text, so the map has the one field. One fetch for the grid, keyed by
+    ``field_key``."""
 
     model_config = ConfigDict(extra="forbid")
 

@@ -1,10 +1,11 @@
 ---
 DATE: 2026-06-24
 TIME: 16:10 EDT
-STATUS: Complete (2026-06-24) — all phases shipped + green; context/ folded; archived to planning/archive/dated/2026-06-24/
+STATUS: Complete (2026-06-24), CORRECTED 2026-06-24 — `brand` reverted to free text; only `manufacturer` is single-select (see STATUS.md banner + decisions.md D-1)
 AUTHOR: Claude (Opus 4.8) with Ed May
-SCOPE: Window-Glazing catalog — promote `manufacturer` + `brand` text fields to
-  user-extensible single-select, make `name` a derived field (manufacturer | brand | suffix)
+SCOPE: Window-Glazing catalog — promote `manufacturer` text field to
+  user-extensible single-select, make `name` a derived field (manufacturer | brand | suffix).
+  (`brand` was briefly promoted too, then reverted to free text — see the STATUS correction banner.)
 RELATED:
   - planning/archive/dated/2026-06-23/window-frames-catalog-enums/ (the proven precedent this mirrors)
   - context/DATA_STORAGE.md + context/technical-requirements/data-model.md §6.6.4 (the catalog option store)

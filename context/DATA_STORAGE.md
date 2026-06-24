@@ -147,10 +147,11 @@ reference table keyed `(catalog_table, field_key)`, **storing the label string**
 (rows in the owning catalog table store the label too — D-2 of
 `planning/archive/dated/2026-06-23/window-frames-catalog-enums/`). Built generic (D-7) so glazing
 and materials can adopt it; **frame-types** (six fields: manufacturer / brand /
-use / operation / location / mull_type) and **glazing-types** (two fields:
-manufacturer / brand) are wired today — materials is the only un-migrated
-catalog. Both wired catalogs derive `name` **server-side** from its parts
-(read-only — `manufacturer | brand | suffix` for glazing) and resolve the
+use / operation / location / mull_type) and **glazing-types** (one field:
+manufacturer — `brand` stays free text, its values are near-unique per row) are
+wired today — materials is the only un-migrated catalog. Both wired catalogs
+derive `name` **server-side** from its parts (read-only — `manufacturer | brand
+| suffix` for glazing, where `brand` is a free-text part) and resolve the
 built-in default by **id** (`recPHNDefFrame001` / `recPHNDefGlazng01`), not name.
 
 ### Climate reference datasets (the Postgres side of class ④)

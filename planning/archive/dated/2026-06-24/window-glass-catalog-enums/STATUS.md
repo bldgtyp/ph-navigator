@@ -1,11 +1,23 @@
 ---
 DATE: 2026-06-24
 TIME: 16:10 EDT
-STATUS: Complete (2026-06-24) — all phases shipped, gate green, context/ folded, packet archived
+STATUS: Complete (2026-06-24) — all phases shipped, gate green, context/ folded, packet archived. CORRECTED 2026-06-24 — see banner.
 AUTHOR: Claude (Opus 4.8)
 SCOPE: window-glass-catalog-enums
 RELATED: ./README.md, ./research.md, ./decisions.md, ./PLAN.md, ./phases/
 ---
+
+> ## ⚠️ Post-ship correction (2026-06-24) — `brand` reverted to free text
+> Ed clarified that **only `manufacturer`** should be a single-select; promoting
+> `brand` was a mistake (its values are near-unique glass make-up strings, one per
+> row). `brand` was reverted to **free text** across backend and frontend:
+> `GLAZING_TYPE_SINGLE_SELECT_FIELDS` → `("manufacturer",)`, the 39 `brand` option
+> seeds removed, migration `20260624_0043` deletes the already-seeded `brand`
+> options, the frontend `brand` field returns to `short_text`, and the tests/docs
+> were updated. `brand` **remains a column and a derived-name part**
+> (`manufacturer | brand | suffix`) — only its single-select/option-store wiring is
+> gone. **The per-phase notes below describe the original (manufacturer + brand)
+> build; read them through this correction.** See `decisions.md` D-1.
 
 # STATUS — window-glass-catalog-enums
 

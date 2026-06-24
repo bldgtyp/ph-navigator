@@ -4,7 +4,7 @@ The mirror of ``test_catalog_field_options.py`` for the glazing-types
 ``GET/PUT …/options`` routes: seeded canonical sets, add/rename, the
 case-insensitive uniqueness guard, and the delete/merge cascade onto catalog
 rows. The store itself is generic (D-7); these cover the glazing wiring +
-policy (only ``manufacturer`` / ``brand`` are editable).
+policy (only ``manufacturer`` is a single-select — ``brand`` stays free text).
 """
 
 from __future__ import annotations
@@ -18,10 +18,10 @@ from database import transaction
 from features.catalogs.glazing_types.options_service import seed_glazing_type_options
 from tests.test_catalogs_glazing_types import ORIGIN, _payload, signed_in_client
 
-# Phase 0 canonical cardinalities (GLAZING_TYPE_OPTION_SEEDS).
+# Phase 0 canonical cardinalities (GLAZING_TYPE_OPTION_SEEDS). `brand` is free
+# text (not a single-select), so `manufacturer` is the only seeded field.
 _EXPECTED_COUNTS = {
     "manufacturer": 13,
-    "brand": 39,
 }
 
 
@@ -83,12 +83,12 @@ def test_list_returns_seeded_canonical_sets(clean_catalog_tables: None) -> None:
 
 def test_add_option_appears_in_list(clean_catalog_tables: None) -> None:
     client = signed_in_client()
-    options = _get_field_options(client, "brand")
-    options.append(_opt("New Make-Up 5/12/5", float(len(options)), option_id="opt_newbrand01"))
-    assert _put(client, "brand", options).status_code == 200
+    options = _get_field_options(client, "manufacturer")
+    options.append(_opt("New Glassmaker", float(len(options)), option_id="opt_newmaker01"))
+    assert _put(client, "manufacturer", options).status_code == 200
 
-    labels = [option["label"] for option in _get_field_options(client, "brand")]
-    assert "New Make-Up 5/12/5" in labels
+    labels = [option["label"] for option in _get_field_options(client, "manufacturer")]
+    assert "New Glassmaker" in labels
 
 
 def test_case_insensitive_duplicate_label_rejected(clean_catalog_tables: None) -> None:
@@ -102,30 +102,30 @@ def test_case_insensitive_duplicate_label_rejected(clean_catalog_tables: None) -
 
 def test_delete_unused_option_succeeds(clean_catalog_tables: None) -> None:
     client = signed_in_client()
-    options = _get_field_options(client, "brand")
+    options = _get_field_options(client, "manufacturer")
     removed = options.pop()  # nothing references it
-    assert _put(client, "brand", options).status_code == 200
-    assert removed["label"] not in [option["label"] for option in _get_field_options(client, "brand")]
+    assert _put(client, "manufacturer", options).status_code == 200
+    assert removed["label"] not in [option["label"] for option in _get_field_options(client, "manufacturer")]
 
 
 def test_delete_in_use_option_without_replacement_is_rejected(clean_catalog_tables: None) -> None:
     client = signed_in_client()
-    _create_glazing(client, "Uses GL-1", manufacturer="Kawneer", brand="GL-1")
-    options = [option for option in _get_field_options(client, "brand") if option["label"] != "GL-1"]
-    response = _put(client, "brand", options)
+    _create_glazing(client, "Uses Kawneer", manufacturer="Kawneer", brand="GL-1")
+    options = [option for option in _get_field_options(client, "manufacturer") if option["label"] != "Kawneer"]
+    response = _put(client, "manufacturer", options)
     assert response.status_code == 409
     assert response.json()["error_code"] == "catalog_option_in_use"
 
 
 def test_merge_rewrites_rows_to_replacement(clean_catalog_tables: None) -> None:
     client = signed_in_client()
-    created = _create_glazing(client, "Uses GL-1", manufacturer="Kawneer", brand="GL-1")
-    options = [option for option in _get_field_options(client, "brand") if option["label"] != "GL-1"]
-    assert _put(client, "brand", options, replacements={"GL-1": "GL-2"}).status_code == 200
+    created = _create_glazing(client, "Uses Kawneer", manufacturer="Kawneer", brand="GL-1")
+    options = [option for option in _get_field_options(client, "manufacturer") if option["label"] != "Kawneer"]
+    assert _put(client, "manufacturer", options, replacements={"Kawneer": "Alpen"}).status_code == 200
 
     row = client.get(f"/api/v1/catalogs/glazing-types/{created['id']}").json()
-    assert row["brand"] == "GL-2"
-    assert "GL-1" not in [option["label"] for option in _get_field_options(client, "brand")]
+    assert row["manufacturer"] == "Alpen"
+    assert "Kawneer" not in [option["label"] for option in _get_field_options(client, "manufacturer")]
 
 
 def test_in_place_rename_rewrites_rows(clean_catalog_tables: None) -> None:
@@ -141,8 +141,11 @@ def test_in_place_rename_rewrites_rows(clean_catalog_tables: None) -> None:
     assert row["manufacturer"] == "Intus Inc"
 
 
-def test_unknown_field_key_is_rejected(clean_catalog_tables: None) -> None:
+@pytest.mark.parametrize("field_key", ["brand", "suffix"])
+def test_free_text_field_key_is_rejected(clean_catalog_tables: None, field_key: str) -> None:
+    # `brand` and `suffix` are free text, not single-selects, so neither is an
+    # editable option field. (`brand` reverted from a single-select.)
     client = signed_in_client()
-    response = _put(client, "suffix", [_opt("T", 0.0)])  # `suffix` is free text, not a single-select
+    response = _put(client, field_key, [_opt("T", 0.0)])
     assert response.status_code == 422
     assert response.json()["error_code"] == "catalog_field_key_unknown"

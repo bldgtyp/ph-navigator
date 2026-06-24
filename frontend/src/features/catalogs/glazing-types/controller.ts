@@ -29,9 +29,10 @@ import {
   GLAZING_TYPES_TABLE_KEY,
 } from "./fieldDefs";
 
-// The grid cell value for a single-select field is the option **id**; the
-// backend stores the **label** (D-2). The controller maps id↔label at the REST
-// boundary using the fetched option lists.
+// The grid cell value for the `manufacturer` single-select is the option **id**;
+// the backend stores the **label** (D-2). The controller maps id↔label at the
+// REST boundary using the fetched option lists. (`brand` is free text and passes
+// through verbatim — it is not in GLAZING_TYPES_SINGLE_SELECT_FIELDS.)
 export type GlazingTypeRow = CatalogGlazingType;
 
 const SINGLE_SELECT_FIELDS = new Set<string>(GLAZING_TYPES_SINGLE_SELECT_FIELDS);
@@ -63,8 +64,8 @@ export function buildGlazingTypeOptionMaps(
   return { idToLabel, labelToId };
 }
 
-// Backend record (two fields hold labels) → grid row (two fields hold option
-// ids) so the single-select cells render their pills.
+// Backend record (`manufacturer` holds a label) → grid row (`manufacturer` holds
+// an option id) so the single-select cell renders its pill.
 export function toGlazingTypeRow(
   record: CatalogGlazingType,
   maps: GlazingTypeOptionMaps,

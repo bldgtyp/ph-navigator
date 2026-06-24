@@ -74,9 +74,9 @@ def _wrap(rows: list[dict[str, Any]], *, schema_version: int = CURRENT_SCHEMA_VE
 
 
 def _good_row(name: str = "Intus | 44.2_CG/12Ar/4/14Ar/CG_6", **overrides: Any) -> dict[str, Any]:
-    # manufacturer + brand are canonical option labels; `name` is derived
-    # (Phase 3/4) and any inbound value is ignored, so rows are differentiated by
-    # `suffix`.
+    # `manufacturer` is a canonical option label; `brand` is free text; `name` is
+    # derived (Phase 3/4) and any inbound value is ignored, so rows are
+    # differentiated by `suffix`.
     base: dict[str, Any] = {
         "name": name,
         "manufacturer": "Intus",
@@ -353,20 +353,36 @@ def test_v1_default_artifact_row_is_dropped(clean_state: None) -> None:
 
 def test_unknown_value_is_auto_added_with_warning(clean_state: None) -> None:
     client = _signed_in_client()
-    body = _wrap([_good_row(suffix="NEW", brand="BrandNewGlass")])  # not a seeded brand option
+    body = _wrap([_good_row(suffix="NEW", manufacturer="NewGlassmaker")])  # not a seeded manufacturer option
     preview = _import(client, body)
 
     reasons = {warning["reason"] for warning in preview["warnings"]}
-    assert "new_option:brand" in reasons
+    assert "new_option:manufacturer" in reasons
 
-    # The label was auto-added to the brand option store...
-    brand_labels = {
-        opt["label"] for opt in client.get("/api/v1/catalogs/glazing-types/options").json()["fields"]["brand"]
+    # The label was auto-added to the manufacturer option store...
+    manufacturer_labels = {
+        opt["label"] for opt in client.get("/api/v1/catalogs/glazing-types/options").json()["fields"]["manufacturer"]
     }
-    assert "BrandNewGlass" in brand_labels
+    assert "NewGlassmaker" in manufacturer_labels
     # ...and the row landed with it.
     row = next(item for item in _rows(client) if item["suffix"] == "NEW")
+    assert row["manufacturer"] == "NewGlassmaker"
+
+
+def test_unknown_brand_is_free_text_not_auto_added(clean_state: None) -> None:
+    # `brand` is free text — an unfamiliar value imports verbatim with no
+    # `new_option` warning and is not added to the option store.
+    client = _signed_in_client()
+    body = _wrap([_good_row(suffix="NEW", brand="BrandNewGlass")])
+    preview = _import(client, body)
+
+    reasons = {warning["reason"] for warning in preview["warnings"]}
+    assert "new_option:brand" not in reasons
+
+    row = next(item for item in _rows(client) if item["suffix"] == "NEW")
     assert row["brand"] == "BrandNewGlass"
+    fields = client.get("/api/v1/catalogs/glazing-types/options").json()["fields"]
+    assert "brand" not in fields
 
 
 def test_committed_seed_imports_clean_through_v2_pipeline(clean_state: None) -> None:

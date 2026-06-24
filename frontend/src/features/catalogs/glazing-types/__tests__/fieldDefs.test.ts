@@ -28,31 +28,35 @@ describe("glazing-types field defs", () => {
     }
   });
 
-  test("the two categorization columns are single_select", () => {
+  test("manufacturer is the only single_select field", () => {
+    expect([...GLAZING_TYPES_SINGLE_SELECT_FIELDS]).toEqual(["manufacturer"]);
     for (const key of GLAZING_TYPES_SINGLE_SELECT_FIELDS) {
       const fieldDef = GLAZING_TYPES_BUILT_IN_FIELD_DEFS.find((f) => f.field_key === key);
       expect(fieldDef?.field_type).toBe("single_select");
     }
   });
 
-  test("name is read-only (server-derived); suffix stays free text", () => {
+  test("name is read-only (server-derived); brand + suffix stay free text", () => {
     expect(GLAZING_TYPES_BUILT_IN_FIELD_DEFS.find((f) => f.field_key === "name")?.field_type).toBe(
       "short_text",
     );
     expect(OVERLAY.name?.read_only).toBe(true);
+    expect(GLAZING_TYPES_BUILT_IN_FIELD_DEFS.find((f) => f.field_key === "brand")?.field_type).toBe(
+      "short_text",
+    );
     expect(
       GLAZING_TYPES_BUILT_IN_FIELD_DEFS.find((f) => f.field_key === "suffix")?.field_type,
     ).toBe("short_text");
   });
 
-  test("overlay injects fetched options; options attribute is editable", () => {
+  test("overlay injects fetched options on manufacturer; brand has no options list", () => {
     expect(OVERLAY.manufacturer?.options?.map((o) => o.label)).toEqual(["Kawneer"]);
     // `options` is NOT locked — the field-config manage-options path edits the
     // catalog store. `field_type` stays locked (fixed built-ins).
     expect(OVERLAY.manufacturer?.locked).not.toContain("options");
     expect(OVERLAY.manufacturer?.locked).toContain("field_type");
-    // A field with no fetched options still gets an (empty) list, not undefined.
-    expect(OVERLAY.brand?.options).toEqual([]);
+    // `brand` is free text — a static overlay entry with no options list.
+    expect(OVERLAY.brand?.options).toBeUndefined();
   });
 
   test("u_value_w_m2k carries fixed IP/SI numberUnits", () => {

@@ -38,6 +38,16 @@ near-uniqueness proves annoying in use, `brand` can revert to free text later
 without touching `manufacturer` or the derived name (the composer treats both as
 plain strings). Not blocking.
 
+> **RESOLVED — reverted to manufacturer-only (Ed, 2026-06-24, post-ship).** The
+> flagged near-uniqueness cost was real: Ed confirmed `brand` should **not** be a
+> single-select. Reverted exactly as anticipated above — `brand` is back to free
+> text, `manufacturer` untouched, the derived name unchanged (still
+> `manufacturer | brand | suffix`, `brand` as a plain-string part). Implemented
+> by dropping `brand` from `GLAZING_TYPE_SINGLE_SELECT_FIELDS` + the option seeds,
+> migration `20260624_0043` (delete seeded `brand` options), and the matching
+> frontend/test/doc changes. **Final decision: only `manufacturer` is a glazing
+> single-select.**
+
 ## D-2 — Where do options live + how stored? — INHERITED: existing store, label-string
 
 No decision to make. The frame refactor built the catalog-scoped option store
