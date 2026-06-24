@@ -58,7 +58,7 @@ follow-up is unblocked.
 | 3 | `phases/phase-03-derived-name-and-default-by-id.md` | Server-compute read-only `name`; default frame/glazing lookup → by id. | ✅ Complete |
 | 4 | `phases/phase-04-import-export-v2.md` | Import v2: fold legacy values, compute name on import, drop missing-name gate. | ✅ Complete |
 | 5 | `phases/phase-05-frontend-single-select.md` | Six fields → single_select, read-only name, manage-options wired to the store. Split 5a/5b/5c (see phase doc). | 🚧 5a ✅; 5b logic ✅ (open: modal-open trigger); 5c ✅ (browser smokes pending — dev env down) |
-| 6 | `phases/phase-06-cleanup-docs-closeout.md` | Fold decisions into `context/`, flip PRD D4, closeout gate, mark Complete. | Pending |
+| 6 | `phases/phase-06-cleanup-docs-closeout.md` | Fold decisions into `context/`, flip PRD D4, closeout gate, mark Complete. | 🚧 docs folded; final "Complete" gated on 5b modal verification |
 
 Dependency order: 0 → 1 → 2 → 3 → 4 → 5 → 6. Phases 1–4 are backend-only and each
 ends green on `make ci`; Phase 5 is the only frontend phase.

@@ -82,11 +82,12 @@ confirm 190 rows render with the seventeen columns and that the
 IP/SI topbar toggle flips the four numeric performance columns.
 Once verified, merge `feat/frame-types-catalog` into `main`.
 Follow-up tickets (deferred from PRD): (a) promote soft-enum
-`use` / `operation` / `location` / `mull_type` / `material`
-columns to strict `single_select` once the live option
-distribution is observable; (b) extract the shared
-`import_export` plumbing across Materials / Glazing / Frames
-into a single abstraction (PRD §Out of scope).
+columns to strict `single_select` — **DONE** in
+`planning/refactor/window-frames-catalog-enums/` (manufacturer / brand / use /
+operation / location / mull_type are now single-select via the
+`catalog_field_options` store; `material` stays free text; `name` is derived);
+(b) extract the shared `import_export` plumbing across Materials / Glazing /
+Frames into a single abstraction (PRD §Out of scope).
 
 ## Blockers
 
