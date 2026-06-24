@@ -1,10 +1,10 @@
 ---
 DATE: 2026-06-24
 TIME: 00:00 EDT
-STATUS: Active
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Cross-table built-in `status` single-select field for DataTable-backed equipment and Thermal Bridges records.
-RELATED: planning/refactor/data-table-status-field/PRD.md, planning/refactor/data-table-status-field/PLAN.md, planning/refactor/data-table-status-field/STATUS.md
+RELATED: planning/archive/data-table-status-field/PRD.md, planning/archive/data-table-status-field/PLAN.md, planning/archive/data-table-status-field/STATUS.md
 ---
 
 # DataTable Status Field Refactor

@@ -4,7 +4,7 @@ TIME: 08:10 EDT
 STATUS: Complete
 AUTHOR: Codex
 SCOPE: Current status for the DataTable Status Field refactor packet.
-RELATED: planning/refactor/data-table-status-field/README.md, planning/refactor/data-table-status-field/PLAN.md
+RELATED: planning/archive/data-table-status-field/README.md, planning/archive/data-table-status-field/PLAN.md
 ---
 
 # Status - DataTable Status Field

@@ -4,7 +4,7 @@ TIME: 09:25 EDT
 STATUS: Complete
 AUTHOR: Codex
 SCOPE: Frontend DataTable type, default-row, payload, and UI plan for the status field.
-RELATED: planning/refactor/data-table-status-field/PLAN.md, planning/refactor/data-table-status-field/phases/phase-02-backend-validation-tests.md
+RELATED: planning/archive/data-table-status-field/PLAN.md, planning/archive/data-table-status-field/phases/phase-02-backend-validation-tests.md
 ---
 
 # Phase 03 - Frontend Types And UI

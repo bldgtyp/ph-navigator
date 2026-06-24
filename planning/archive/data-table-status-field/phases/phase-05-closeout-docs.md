@@ -4,7 +4,7 @@ TIME: 09:55 EDT
 STATUS: Complete
 AUTHOR: Codex
 SCOPE: Closeout, graph update, durable documentation, and final verification plan.
-RELATED: planning/refactor/data-table-status-field/PLAN.md, planning/refactor/data-table-status-field/phases/phase-04-reset-reseed-smoke.md
+RELATED: planning/archive/data-table-status-field/PLAN.md, planning/archive/data-table-status-field/phases/phase-04-reset-reseed-smoke.md
 ---
 
 # Phase 05 - Closeout And Docs
@@ -30,7 +30,7 @@ Close the refactor with documented evidence, graph freshness, and any durable Da
 ## Closeout Tasks
 
 - [x] Update every phase file checklist with actual completion state.
-- [x] Update `planning/refactor/data-table-status-field/STATUS.md` with:
+- [x] Update `planning/archive/data-table-status-field/STATUS.md` with:
   - final state
   - exact commands run
   - test/browser evidence

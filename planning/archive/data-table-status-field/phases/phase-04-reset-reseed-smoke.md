@@ -4,7 +4,7 @@ TIME: 09:46 EDT
 STATUS: Complete
 AUTHOR: Codex
 SCOPE: Local dev DB reset/reseed and mounted-app smoke plan for the DataTable status field.
-RELATED: planning/refactor/data-table-status-field/PLAN.md, planning/refactor/data-table-status-field/phases/phase-03-frontend-types-ui.md
+RELATED: planning/archive/data-table-status-field/PLAN.md, planning/archive/data-table-status-field/phases/phase-03-frontend-types-ui.md
 ---
 
 # Phase 04 - Reset, Reseed, And Smoke
