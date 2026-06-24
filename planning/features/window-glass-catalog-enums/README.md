@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 16:10 EDT
-STATUS: Planning — all decisions resolved (D-6 settled by Ed 2026-06-24); ready to execute
+STATUS: Backend complete (Phases 0–4, committed + green) — PAUSED before Phase 5 (frontend) at Ed's direction 2026-06-24; Phase 6 closeout pending
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: Window-Glazing catalog — promote `manufacturer` + `brand` text fields to
   user-extensible single-select, make `name` a derived field (manufacturer | brand | suffix)
