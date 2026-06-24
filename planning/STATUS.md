@@ -31,7 +31,7 @@ feature-first planning.
 
 | Refactor | State | Current pointer |
 |---|---|---|
-| DataTable Status Field | Active / phased implementation plan complete; implementation not started | `refactor/data-table-status-field/STATUS.md` |
+| DataTable Status Field | Complete / Phases 01-05 implemented and verified with `make ci` (backend 1061, frontend 1887), live reset/reseed + browser smoke, graphify, simplify, and docs-pass evidence; durable contract folded into `context/technical-requirements/data-table.md`; archived | `archive/data-table-status-field/STATUS.md` |
 
 ## Historical Material
 
@@ -64,6 +64,11 @@ feature-first planning.
   current in `context/technical-requirements/attachments.md`; the
   deferred v1.1 candidate stays in
   `planning/features_v1.1/user-defined-attachment-fields/`.
+- Completed DataTable Status Field refactor planning now lives under
+  `archive/data-table-status-field/`. The durable contract (built-in
+  cross-table `status` single-select stored in `custom_values.status`, option
+  list namespaced `<table_label>.status`) is folded into
+  `context/technical-requirements/data-table.md` § Backend Data Shapes.
 - Completed Model-Viewer rendering-performance refactor now lives under
   `archive/model-viewer-performance/` (Phases 00–05; Hillandale building
   lens 14 draw calls @ 60 FPS, was 32,045 @ 0.4). The reusable substrate

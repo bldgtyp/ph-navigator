@@ -4,7 +4,7 @@ TIME: 08:10 EDT
 STATUS: Complete
 AUTHOR: Codex
 SCOPE: First implementation phase for backend field contracts and local seed data.
-RELATED: planning/refactor/data-table-status-field/PLAN.md
+RELATED: planning/archive/data-table-status-field/PLAN.md
 ---
 
 # Phase 01 - Contract And Seeds

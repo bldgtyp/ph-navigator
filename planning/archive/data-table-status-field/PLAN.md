@@ -1,10 +1,10 @@
 ---
 DATE: 2026-06-24
 TIME: 00:00 EDT
-STATUS: Active
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Methodical implementation plan for the DataTable built-in status field.
-RELATED: planning/refactor/data-table-status-field/PRD.md, planning/refactor/data-table-status-field/STATUS.md
+RELATED: planning/archive/data-table-status-field/PRD.md, planning/archive/data-table-status-field/STATUS.md
 ---
 
 # Plan - DataTable Status Field

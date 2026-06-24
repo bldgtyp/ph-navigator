@@ -4,7 +4,7 @@ TIME: 08:50 EDT
 STATUS: Complete
 AUTHOR: Codex
 SCOPE: Backend validation, API, and seed-assembly test plan for the DataTable status field.
-RELATED: planning/refactor/data-table-status-field/PLAN.md, planning/refactor/data-table-status-field/phases/phase-01-contract-and-seeds.md
+RELATED: planning/archive/data-table-status-field/PLAN.md, planning/archive/data-table-status-field/phases/phase-01-contract-and-seeds.md
 ---
 
 # Phase 02 - Backend Validation And Tests

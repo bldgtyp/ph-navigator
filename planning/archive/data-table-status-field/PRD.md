@@ -1,10 +1,10 @@
 ---
 DATE: 2026-06-24
 TIME: 00:00 EDT
-STATUS: Active
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Product and data contract for DataTable record status tracking.
-RELATED: planning/refactor/data-table-status-field/README.md, planning/refactor/data-table-status-field/PLAN.md
+RELATED: planning/archive/data-table-status-field/README.md, planning/archive/data-table-status-field/PLAN.md
 ---
 
 # PRD - DataTable Status Field
