@@ -58,10 +58,19 @@ implemented + unit-tested (21 vitest), but has **one open item**:
   `frame-types-catalog` PRD D4 + STATUS flipped to SUPERSEDED/DONE.
 
 So all phase **code is implemented and committed (CI-green)** and the decisions
-are **folded into `context/`**. The only items left before marking this refactor
-**Complete** are **environment-dependent**: (a) resolve the **5b modal-open**
-question (the one real open item — see §5b) and (b) browser-smoke 5b + 5c once the
-dev servers are back. Everything else is done.
+are **folded into `context/`**. Before marking this refactor **Complete**:
+
+- **5b — wire the field-config modal for catalogs (the one real open item,
+  diagnosed in code — see phase-05 §5b).** The manage-options modal only renders
+  when the DataTable gets `onEditCustomFieldBundle` + `editConfigEnabled`; the
+  catalog pages pass neither (they use the bespoke `onWrite` controller), so the
+  modal is currently **unreachable**. The 5b *translation logic* (`legacyOptions`
+  → `PUT …/options`) is done + tested; wiring the modal-open path is a distinct
+  shared-DataTable piece — do it with the dev env up to verify.
+- **Browser smokes** for 5b (once wired) + 5c (import dialog) — dev servers were
+  down this session.
+
+Everything else (all backend, 5a, the 5b/5c logic, the context/ fold) is done.
 
 **Dev-env note:** the running dev DB was behind (`0036`); `make migrate` (or
 `make db-reset-dev`) applies `0037`–`0039`. The dev servers (`:8000`/`:5173`) went
