@@ -24,6 +24,7 @@ APT_ID_PATTERN = r"^apt_[A-Za-z0-9_-]+$"
 APTEL_ID_PATTERN = r"^aptel_[A-Za-z0-9_-]+$"
 
 ApertureSide = Literal["top", "right", "bottom", "left"]
+APERTURE_SIDES: tuple[ApertureSide, ...] = ("top", "right", "bottom", "left")
 
 
 class CreateApertureType(BaseModel):

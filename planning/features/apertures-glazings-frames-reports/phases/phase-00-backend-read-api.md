@@ -1,13 +1,16 @@
 ---
 DATE: 2026-06-24
 TIME: 17:45 EDT
-STATUS: Planned (blocked on prerequisite)
+STATUS: Complete
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phase 0 — backend read API for the two report pages.
 RELATED: ../PRD.md (Backend read API), ../../glazing-frame-documentation/
 ---
 
 # Phase 0 — Backend read API
+
+**Completed 2026-06-24.** The prerequisite backend entities were already present
+in this checkout, so this phase added the report read API and tests.
 
 Clone the envelope read-model machinery for apertures. Everything here mirrors a
 named Materials counterpart.
@@ -79,3 +82,21 @@ per-entity drift items the panel surfaces via a `MaterialDriftBadge`-style badge
 
 - Selector + endpoint + drift tests green; full backend suite green; `ruff` +
   `ty` clean.
+
+## Completion evidence
+
+- Added `backend/features/apertures/models.py` with
+  `ProjectGlazingRead`/`ProjectFrameRead`, use-site DTOs, and
+  `ApertureSpecReportResponse`.
+- Added `backend/features/apertures/selectors.py` with
+  `build_apertures_read_parts`.
+- Added `backend/features/apertures/service.py` and `routes.py` for
+  `GET /api/v1/projects/{project_id}/versions/{version_id}/apertures/spec-report`.
+- Reused the existing `GET .../apertures/drift-report` route backed by
+  `aperture_drift`.
+- Added `backend/tests/test_apertures_spec_report.py`.
+- Verification:
+  - `cd backend && uv run pytest tests/test_apertures_spec_report.py` — 2 passed.
+  - `cd backend && uv run pytest tests/test_aperture_drift_route.py tests/test_apertures_spec_report.py` — 5 passed.
+  - `cd backend && uv run ruff check features/apertures tests/test_apertures_spec_report.py main.py` — passed.
+  - `cd backend && uv run ty check features/apertures tests/test_apertures_spec_report.py` — passed.
