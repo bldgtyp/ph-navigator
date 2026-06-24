@@ -4,9 +4,33 @@ import type {
   HeatPumpOutdoorEquipRow,
   HeatPumpOutdoorUnitRow,
 } from "./types";
+import { STATUS_DEFAULT_OPTION_ID, STATUS_FIELD_KEY } from "../types";
 
-export function buildEmptyOutdoorEquipRow(overrides: Partial<HeatPumpOutdoorEquipRow> = {}) {
+// The built-in `status` single-select rides in `custom_values.status`, not as
+// a typed row column. New equipment rows default to `opt_status_needed`. The
+// DataTable insert path passes the grid `fieldDefaults` as top-level overrides
+// (`{ ...fieldDefaults, id: rowId }`), so a `status` default can arrive either
+// inside `overrides.custom_values` or as a stray top-level `status` key — lift
+// both into `custom_values` here so equipment-only tables stay consistent.
+function withStatusDefault<TRow extends { custom_values: Record<string, unknown> }>(
+  row: TRow & { status?: unknown },
+): TRow {
+  const { status: topLevelStatus, ...rest } = row;
+  const next = rest as TRow;
+  const existing = next.custom_values?.[STATUS_FIELD_KEY];
   return {
+    ...next,
+    custom_values: {
+      [STATUS_FIELD_KEY]: existing ?? topLevelStatus ?? STATUS_DEFAULT_OPTION_ID,
+      ...next.custom_values,
+    },
+  };
+}
+
+export function buildEmptyOutdoorEquipRow(
+  overrides: Partial<HeatPumpOutdoorEquipRow> & { status?: unknown } = {},
+) {
+  return withStatusDefault({
     id: heatPumpId("hpoe"),
     tag: "",
     manufacturer: null,
@@ -31,11 +55,13 @@ export function buildEmptyOutdoorEquipRow(overrides: Partial<HeatPumpOutdoorEqui
     custom_values: {},
     custom_links: {},
     ...overrides,
-  } satisfies HeatPumpOutdoorEquipRow;
+  }) satisfies HeatPumpOutdoorEquipRow;
 }
 
-export function buildEmptyIndoorEquipRow(overrides: Partial<HeatPumpIndoorEquipRow> = {}) {
-  return {
+export function buildEmptyIndoorEquipRow(
+  overrides: Partial<HeatPumpIndoorEquipRow> & { status?: unknown } = {},
+) {
+  return withStatusDefault({
     id: heatPumpId("hpie"),
     tag: "",
     manufacturer: null,
@@ -57,7 +83,7 @@ export function buildEmptyIndoorEquipRow(overrides: Partial<HeatPumpIndoorEquipR
     custom_values: {},
     custom_links: {},
     ...overrides,
-  } satisfies HeatPumpIndoorEquipRow;
+  }) satisfies HeatPumpIndoorEquipRow;
 }
 
 export function buildEmptyOutdoorUnitRow(overrides: Partial<HeatPumpOutdoorUnitRow> = {}) {

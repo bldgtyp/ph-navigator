@@ -55,10 +55,15 @@ import {
   ROOM_BUILDING_ZONE_COLUMN_ID,
   ROOM_FLOOR_LEVEL_COLUMN_ID,
   HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY,
+  PUMPS_STATUS_OPTION_KEY,
   ROOM_SPACE_TYPE_FIELD_KEY,
+  STATUS_DEFAULT_OPTION_ID,
+  STATUS_FIELD_KEY,
   type RoomRow,
   type RoomsSlice,
 } from "./types";
+import { makeBuildEmptyPumpRow } from "./lib/buildEmptyPumpRow";
+import { makeBuildEmptyApplianceRow } from "./lib/buildEmptyApplianceRow";
 import {
   buildAppliance,
   buildAppliancesSlice,
@@ -1528,5 +1533,100 @@ describe("appliances payload helpers", () => {
         ],
       }),
     ).toBe("Annual Energy must be zero or greater.");
+  });
+});
+
+describe("built-in status field", () => {
+  test("ships as a single-select built-in with the Needed default across in-scope tables", () => {
+    for (const fieldDefs of [
+      pumpsBuiltInFieldDefs,
+      fansBuiltInFieldDefs,
+      hotWaterHeatersBuiltInFieldDefs,
+      electricHeatersBuiltInFieldDefs,
+      appliancesBuiltInFieldDefs,
+    ]) {
+      const statusDef = fieldDefs.find((field) => field.field_key === STATUS_FIELD_KEY);
+      expect(statusDef?.field_type).toBe("single_select");
+      expect(statusDef?.origin).toBe("built_in");
+      expect(statusDef?.display_name).toBe("Status");
+      expect(statusDef?.config.default_option_id).toBe(STATUS_DEFAULT_OPTION_ID);
+    }
+  });
+
+  test("useTableSchema resolves <table>.status into the local status FieldDef as an editable single-select", () => {
+    const schema = schemaForPumps(buildPumpsSlice());
+    const statusField = schema.fieldDefs.find((field) => field.field_key === STATUS_FIELD_KEY);
+
+    expect(statusField?.field_type).toBe("single_select");
+    expect(statusField?.defaultOptionId).toBe(STATUS_DEFAULT_OPTION_ID);
+    // The namespaced option list is attached, so the cell renders the four pills.
+    expect(statusField?.options?.map((option) => option.id)).toEqual([
+      "opt_status_complete",
+      "opt_status_needed",
+      "opt_status_question",
+      "opt_status_na",
+    ]);
+    // Built-in, so it never lands in the user-managed custom-field stream.
+    expect(schema.customFields.some((field) => field.field_key === STATUS_FIELD_KEY)).toBe(false);
+  });
+
+  test("new rows default status to Needed in custom_values", () => {
+    const pump = makeBuildEmptyPumpRow()({ rowId: "pmp_new", fieldDefaults: {}, anchorRow: null });
+    expect(pump.custom_values[STATUS_FIELD_KEY]).toBe(STATUS_DEFAULT_OPTION_ID);
+
+    const appliance = makeBuildEmptyApplianceRow()({
+      rowId: "appl_new",
+      fieldDefaults: {},
+      anchorRow: null,
+    });
+    expect(appliance.custom_values[STATUS_FIELD_KEY]).toBe(STATUS_DEFAULT_OPTION_ID);
+  });
+
+  test("row insert honors an explicit status default from fieldDefaults", () => {
+    const pump = makeBuildEmptyPumpRow()({
+      rowId: "pmp_new",
+      fieldDefaults: { [STATUS_FIELD_KEY]: "opt_status_complete" },
+      anchorRow: null,
+    });
+    expect(pump.custom_values[STATUS_FIELD_KEY]).toBe("opt_status_complete");
+  });
+
+  test("status edits round-trip into custom_values and preserve the option list", () => {
+    const current = buildPumpsSlice({ pumps: [buildPump({ id: "pmp_1" })] });
+
+    const payload = pumpsPayloadFromCellWrites(
+      current,
+      [{ rowId: "pmp_1", fieldKey: STATUS_FIELD_KEY, value: "opt_status_question" }],
+      {},
+    );
+
+    expect(payload.pumps[0]?.custom_values[STATUS_FIELD_KEY]).toBe("opt_status_question");
+    expect(
+      payload.single_select_options[PUMPS_STATUS_OPTION_KEY]?.map((option) => option.id),
+    ).toEqual(["opt_status_complete", "opt_status_needed", "opt_status_question", "opt_status_na"]);
+  });
+
+  test("duplicate-row preserves the source row's status", () => {
+    const current = buildPumpsSlice({
+      pumps: [
+        buildPump({
+          id: "pmp_1",
+          custom_values: { ...buildPump().custom_values, status: "opt_status_complete" },
+        }),
+      ],
+    });
+
+    const duplicated = pumpsPayloadFromRowDuplicate(current, [
+      {
+        rowId: "pmp_dup",
+        sourceRowId: "pmp_1",
+        sourceRow: current.pumps[0]!,
+        anchorRowId: "pmp_1",
+      },
+    ]);
+
+    expect(
+      duplicated.pumps.find((pump) => pump.id === "pmp_dup")?.custom_values[STATUS_FIELD_KEY],
+    ).toBe("opt_status_complete");
   });
 });

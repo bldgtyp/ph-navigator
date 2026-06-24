@@ -6,10 +6,13 @@ import {
 } from "../../../shared/ui/data-table";
 import { ELECTRIC_HEATERS_COMPAT_BUILT_IN_FIELD_DEFS, electricHeatersFieldOverlay } from "../lib";
 import {
+  ELECTRIC_HEATERS_STATUS_OPTION_KEY,
   ELECTRIC_HEATERS_TABLE_NAME,
+  STATUS_DEFAULT_OPTION_ID,
   type ElectricHeaterRow,
   type ElectricHeatersSlice,
 } from "../types";
+import { STATUS_FIXTURE_OPTIONS } from "./statusFixtureOptions";
 
 function copyTableFieldDef(fieldDef: TableFieldDef): TableFieldDef {
   return { ...fieldDef, config: { ...fieldDef.config } };
@@ -35,6 +38,7 @@ export function buildElectricHeater(overrides: Partial<ElectricHeaterRow> = {}):
       model: "EH-1000",
       manufacturer: "Acme",
       watt: 1000,
+      status: STATUS_DEFAULT_OPTION_ID,
     },
     ...overrides,
   };
@@ -51,7 +55,9 @@ export function buildElectricHeatersSlice(
     draft_etag: "d1",
     electric_heaters: [],
     field_defs: electricHeatersFieldDefs(),
-    single_select_options: {},
+    single_select_options: {
+      [ELECTRIC_HEATERS_STATUS_OPTION_KEY]: [...STATUS_FIXTURE_OPTIONS],
+    },
     ...overrides,
   };
 }

@@ -79,6 +79,42 @@ describe("PumpsTable DataTable reuse", () => {
     expect(screen.getByText("6-DHW Circulation Pump")).toBeInTheDocument();
   });
 
+  test("renders the built-in Status column as a single-select pill", () => {
+    const slice = buildPumpsSlice({ pumps: [buildPump()] });
+    const tableSchema = schemaForPumps(slice);
+    const { container } = renderWithQueryClient(
+      <PumpsTable
+        pumpsSlice={slice}
+        tableSchema={tableSchema}
+        isEditor={false}
+        projectId="proj_1"
+        view={emptyViewState()}
+        onViewChange={() => undefined}
+        onWrite={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("columnheader", { name: /Status/ })).toBeInTheDocument();
+    // Seeded fixture rows default to Needed; the colored option pill renders.
+    expect(screen.getByText("Needed")).toBeInTheDocument();
+    const statusCell = container.querySelector<HTMLElement>(
+      'td[data-row-id="pmp_1"][data-field-key="status"]',
+    );
+    expect(statusCell).not.toBeNull();
+  });
+
+  test("exposes Status as an editable (non-locked) single-select field", () => {
+    const slice = buildPumpsSlice({ pumps: [buildPump()] });
+    const tableSchema = schemaForPumps(slice);
+    const statusField = tableSchema.fieldDefs.find((field) => field.field_key === "status");
+
+    expect(statusField?.field_type).toBe("single_select");
+    expect(statusField?.read_only).not.toBe(true);
+    // The value cell stays editable even though the option list is fixed;
+    // a fully read-only field would carry `read_only: true`.
+    expect(statusField?.options?.length).toBe(4);
+  });
+
   test("calls onWrite through inline cell editing", async () => {
     const user = userEvent.setup();
     const slice = buildPumpsSlice({ pumps: [buildPump()] });

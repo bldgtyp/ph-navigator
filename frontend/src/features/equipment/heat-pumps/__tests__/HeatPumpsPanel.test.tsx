@@ -43,6 +43,25 @@ describe("HeatPumpsPanel", () => {
     expect(screen.getByText("PUZ-A18NKA7")).toBeInTheDocument();
   });
 
+  test("renders the built-in Status single-select column on the outdoor-equipment leaf", async () => {
+    renderPanel();
+
+    const statusHeader = await screen.findByRole("columnheader", { name: /Status/ });
+    expect(statusHeader.querySelector('[data-field-type-icon="single_select"]')).toBeTruthy();
+    // The seeded row defaults to Needed, rendered as a colored option pill.
+    expect(screen.getAllByText("Needed").length).toBeGreaterThan(0);
+  });
+
+  test("renders the Status column on the indoor-equipment leaf", async () => {
+    const user = userEvent.setup();
+    renderPanel();
+
+    await user.click(await screen.findByRole("tab", { name: "Equipment - Indoor" }));
+
+    expect(await screen.findByRole("columnheader", { name: /Status/ })).toBeInTheDocument();
+    expect(screen.getAllByText("Needed").length).toBeGreaterThan(0);
+  });
+
   test("mounts the outdoor units table on the outdoor-units leaf", async () => {
     const user = userEvent.setup();
     renderPanel({ slice: heatPumpsSlice({ outdoor_units: [outdoorUnitRow()] }) });

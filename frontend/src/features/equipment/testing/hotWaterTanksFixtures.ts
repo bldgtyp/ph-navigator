@@ -8,10 +8,13 @@ import { HOT_WATER_TANKS_COMPAT_BUILT_IN_FIELD_DEFS, hotWaterTanksFieldOverlay }
 import {
   HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY,
   HOT_WATER_TANK_TYPE_OPTION_KEY,
+  HOT_WATER_TANKS_STATUS_OPTION_KEY,
   HOT_WATER_TANKS_TABLE_NAME,
+  STATUS_DEFAULT_OPTION_ID,
   type HotWaterTankRow,
   type HotWaterTanksSlice,
 } from "../types";
+import { STATUS_FIXTURE_OPTIONS } from "./statusFixtureOptions";
 
 function copyTableFieldDef(fieldDef: TableFieldDef): TableFieldDef {
   return { ...fieldDef, config: { ...fieldDef.config } };
@@ -41,6 +44,7 @@ export function buildHotWaterTank(overrides: Partial<HotWaterTankRow> = {}): Hot
       model: "ST-80",
       size_l: 302.8,
       heat_loss_rate_w_k: 1.8,
+      status: STATUS_DEFAULT_OPTION_ID,
     },
     ...overrides,
   };
@@ -66,6 +70,7 @@ export function buildHotWaterTanksSlice(
         { id: "opt_hwt_inside", label: "Inside", color: "#0ea5e9", order: 0 },
         { id: "opt_hwt_outside", label: "Outside", color: "#f97316", order: 1 },
       ],
+      [HOT_WATER_TANKS_STATUS_OPTION_KEY]: [...STATUS_FIXTURE_OPTIONS],
     },
     ...overrides,
   };

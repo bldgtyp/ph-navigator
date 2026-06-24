@@ -17,6 +17,7 @@ import {
   type CustomFieldTableActions,
 } from "../../../shared/ui/data-table/feature";
 import { customNumberValue, customTextValue } from "../../equipment/lib/customValueReaders";
+import { statusColumn } from "../../equipment/lib/statusColumn";
 import {
   THERMAL_BRIDGE_PDF_REPORT_FIELD_KEY,
   THERMAL_BRIDGE_TYPE_KEY,
@@ -148,6 +149,7 @@ export function ThermalBridgesTable({
         accessor: (row) => row.notes,
         defaultWidth: DATA_TABLE_COLUMN_WIDTHS.notes,
       },
+      statusColumn<ThermalBridgeRow>(fieldDefByKey),
       ...customColumns,
     ],
     [customColumns, fieldDefByKey, isEditor, onWrite, projectId, reportUrlById],

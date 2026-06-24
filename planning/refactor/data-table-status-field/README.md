@@ -54,6 +54,6 @@ This is a refactor packet because the change cuts across the shared project-docu
 |---|---|---|
 | Phase 01 | Done | Add built-in field definitions, option-list constants, new-document defaults, and seed JSON values. |
 | Phase 02 | Done | Prove backend reads, writes, validates, and seed assembly preserve the status field. |
-| Phase 03 | Planned | Prove frontend schemas, row builders, payload builders, and table UI expose/edit status. |
+| Phase 03 | Done | Prove frontend schemas, row builders, payload builders, and table UI expose/edit status. |
 | Phase 04 | Planned | Reset/reseed the local dev DB and smoke the mounted app. |
 | Phase 05 | Planned | Run graph/docs closeout and record evidence. |

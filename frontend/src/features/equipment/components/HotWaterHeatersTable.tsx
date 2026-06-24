@@ -16,6 +16,7 @@ import { useAssetUrls } from "../../assets/hooks";
 import { DATASHEET_ATTACHMENT_CONFIG } from "../../assets/lib";
 import { sortedHotWaterHeaters } from "../lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
+import { statusColumn } from "../lib/statusColumn";
 import {
   customFieldColumnDefs,
   type CustomFieldTableActions,
@@ -217,6 +218,7 @@ export function HotWaterHeatersTable({
         getRowId: (heater) => heater.id,
         onWrite,
       }),
+      statusColumn<HotWaterHeaterRow>(fieldDefByKey),
       ...customColumns,
     ],
     [customColumns, datasheetUrlById, fieldDefByKey, isEditor, onWrite, projectId],

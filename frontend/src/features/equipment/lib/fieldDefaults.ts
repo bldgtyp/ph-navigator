@@ -1,1 +1,5 @@
-export { readNumberDefault, readStringDefault } from "../../../shared/lib/fieldDefaults";
+export {
+  readNumberDefault,
+  readStatusDefault,
+  readStringDefault,
+} from "../../../shared/lib/fieldDefaults";

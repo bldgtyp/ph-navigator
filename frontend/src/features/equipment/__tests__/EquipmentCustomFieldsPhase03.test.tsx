@@ -258,19 +258,18 @@ describe("equipment custom fields Phase 03", () => {
   test.each(editableTableCases)(
     "$name opens Add field and dispatches submit",
     async ({ render }) => {
-      const onAddCustomField = vi.fn().mockResolvedValue({ newFieldKey: "cf_status" });
+      const onAddCustomField = vi.fn().mockResolvedValue({ newFieldKey: "cf_reviewer" });
       renderWithQueryClient(render(onAddCustomField));
 
       fireEvent.click(screen.getByRole("button", { name: "Add field" }));
       const dialog = await screen.findByRole("dialog", { name: "Add field" });
-      fireEvent.change(within(dialog).getByLabelText("Name"), {
-        target: { value: "Status" },
-      });
+      // "Reviewer", not "Status" — avoids colliding with the built-in Status field.
+      fireEvent.change(within(dialog).getByLabelText("Name"), { target: { value: "Reviewer" } });
       fireEvent.click(within(dialog).getByRole("button", { name: /Add field/ }));
 
       await waitFor(() => expect(onAddCustomField).toHaveBeenCalledTimes(1));
       const request = onAddCustomField.mock.calls[0]?.[0] as AddCustomFieldRequest;
-      expect(request.displayName).toBe("Status");
+      expect(request.displayName).toBe("Reviewer");
       expect(request.fieldType).toBe("short_text");
     },
   );
@@ -285,13 +284,13 @@ describe("equipment custom fields Phase 03", () => {
   });
 
   test("renders custom columns and exposes custom-field header actions", async () => {
-    const statusField = buildCustomField({ field_key: "cf_status", display_name: "Status" });
+    const reviewerField = buildCustomField({ field_key: "cf_reviewer", display_name: "Reviewer" });
     const heater = buildElectricHeater({
-      custom_values: { ...buildElectricHeater().custom_values, cf_status: "Installed" },
+      custom_values: { ...buildElectricHeater().custom_values, cf_reviewer: "Installed" },
     });
     const slice = buildElectricHeatersSlice({
       electric_heaters: [heater],
-      field_defs: [...buildElectricHeatersSlice().field_defs, statusField],
+      field_defs: [...buildElectricHeatersSlice().field_defs, reviewerField],
     });
     const onDeleteCustomField = vi.fn();
     const onDuplicateCustomField = vi.fn();
@@ -313,11 +312,11 @@ describe("equipment custom fields Phase 03", () => {
       />,
     );
 
-    const statusHeader = screen.getByRole("columnheader", { name: /^Status\b/ });
-    expect(statusHeader).toBeInTheDocument();
+    const reviewerHeader = screen.getByRole("columnheader", { name: /^Reviewer\b/ });
+    expect(reviewerHeader).toBeInTheDocument();
     expect(screen.getByText("Installed")).toBeInTheDocument();
 
-    fireEvent.contextMenu(statusHeader);
+    fireEvent.contextMenu(reviewerHeader);
     expect(await screen.findByRole("menuitem", { name: "Edit field…" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "Duplicate field" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "Delete field" })).toBeInTheDocument();

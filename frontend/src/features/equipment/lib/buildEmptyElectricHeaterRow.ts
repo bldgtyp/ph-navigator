@@ -1,8 +1,8 @@
 import type { BuildEmptyRow } from "../../../shared/ui/data-table";
 import { emptyElectricHeater } from "../lib";
-import type { ElectricHeaterRow } from "../types";
+import { STATUS_DEFAULT_OPTION_ID, STATUS_FIELD_KEY, type ElectricHeaterRow } from "../types";
 import { customNumberValue, customTextValueOrNull } from "./customValueReaders";
-import { readNumberDefault, readStringDefault } from "./fieldDefaults";
+import { readNumberDefault, readStatusDefault, readStringDefault } from "./fieldDefaults";
 
 export function makeBuildEmptyElectricHeaterRow(): BuildEmptyRow<ElectricHeaterRow> {
   return ({ rowId, fieldDefaults }) => {
@@ -24,6 +24,10 @@ export function makeBuildEmptyElectricHeaterRow(): BuildEmptyRow<ElectricHeaterR
           customTextValueOrNull(base, "manufacturer"),
         ),
         watt: readNumberDefault(fieldDefaults.watt, customNumberValue(base, "watt")),
+        [STATUS_FIELD_KEY]: readStatusDefault(
+          fieldDefaults[STATUS_FIELD_KEY],
+          STATUS_DEFAULT_OPTION_ID,
+        ),
       },
     };
   };

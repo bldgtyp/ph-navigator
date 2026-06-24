@@ -1,8 +1,14 @@
 import type { BuildEmptyRow } from "../../../shared/ui/data-table";
 import { emptyAppliance } from "../lib";
-import { APPLIANCE_ENERGY_STAR_KEY, APPLIANCE_TYPE_KEY, type ApplianceRow } from "../types";
+import {
+  APPLIANCE_ENERGY_STAR_KEY,
+  APPLIANCE_TYPE_KEY,
+  STATUS_DEFAULT_OPTION_ID,
+  STATUS_FIELD_KEY,
+  type ApplianceRow,
+} from "../types";
 import { customNumberValue, customTextValueOrNull } from "./customValueReaders";
-import { readNumberDefault, readStringDefault } from "./fieldDefaults";
+import { readNumberDefault, readStatusDefault, readStringDefault } from "./fieldDefaults";
 
 export function makeBuildEmptyApplianceRow(): BuildEmptyRow<ApplianceRow> {
   return ({ rowId, fieldDefaults }) => {
@@ -36,6 +42,10 @@ export function makeBuildEmptyApplianceRow(): BuildEmptyRow<ApplianceRow> {
         annual_energy_kwh: readNumberDefault(
           fieldDefaults.annual_energy_kwh,
           customNumberValue(base, "annual_energy_kwh"),
+        ),
+        [STATUS_FIELD_KEY]: readStatusDefault(
+          fieldDefaults[STATUS_FIELD_KEY],
+          STATUS_DEFAULT_OPTION_ID,
         ),
       },
     };

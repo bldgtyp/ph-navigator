@@ -8,6 +8,10 @@ import {
   type TableFieldRenderOverlay,
 } from "../../../shared/ui/data-table";
 import {
+  STATUS_DEFAULT_OPTION_ID,
+  STATUS_DISPLAY_NAME,
+  STATUS_FIELD_KEY,
+  THERMAL_BRIDGES_STATUS_OPTION_KEY,
   THERMAL_BRIDGES_TABLE_NAME,
   THERMAL_BRIDGE_PDF_REPORT_FIELD_KEY,
   THERMAL_BRIDGE_TYPE_KEY,
@@ -46,6 +50,11 @@ export const THERMAL_BRIDGE_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef(THERMAL_BRIDGE_TYPE_KEY, "Type", "single_select"),
   builtInFieldDef(THERMAL_BRIDGE_PDF_REPORT_FIELD_KEY, "PDF Report", "long_text"),
   builtInFieldDef("notes", "Notes", "long_text"),
+  {
+    ...builtInFieldDef(STATUS_FIELD_KEY, STATUS_DISPLAY_NAME, "single_select"),
+    default: STATUS_DEFAULT_OPTION_ID,
+    config: { default_option_id: STATUS_DEFAULT_OPTION_ID },
+  },
 ];
 
 export const THERMAL_BRIDGE_CUSTOM_VALUE_FIELD_KEYS = new Set([
@@ -55,6 +64,7 @@ export const THERMAL_BRIDGE_CUSTOM_VALUE_FIELD_KEYS = new Set([
   "drawing_number",
   "psi_value_w_mk",
   "frsi_value",
+  STATUS_FIELD_KEY,
 ]);
 
 export const THERMAL_BRIDGE_CONFLICT_MESSAGES = {
@@ -95,6 +105,10 @@ export function thermalBridgesFieldOverlay(
     },
     notes: {
       locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    [STATUS_FIELD_KEY]: {
+      options: slice.single_select_options[THERMAL_BRIDGES_STATUS_OPTION_KEY],
+      locked: ["field_type", "options", "delete", "duplicate"],
     },
   };
 }

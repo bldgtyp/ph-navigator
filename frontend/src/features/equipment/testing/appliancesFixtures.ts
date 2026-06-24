@@ -8,10 +8,13 @@ import { APPLIANCES_COMPAT_BUILT_IN_FIELD_DEFS, appliancesFieldOverlay } from ".
 import {
   APPLIANCE_ENERGY_STAR_OPTION_KEY,
   APPLIANCE_TYPE_OPTION_KEY,
+  APPLIANCES_STATUS_OPTION_KEY,
   APPLIANCES_TABLE_NAME,
+  STATUS_DEFAULT_OPTION_ID,
   type ApplianceRow,
   type AppliancesSlice,
 } from "../types";
+import { STATUS_FIXTURE_OPTIONS } from "./statusFixtureOptions";
 
 function copyTableFieldDef(fieldDef: TableFieldDef): TableFieldDef {
   return { ...fieldDef, config: { ...fieldDef.config } };
@@ -44,6 +47,7 @@ export function buildAppliance(overrides: Partial<ApplianceRow> = {}): Appliance
       imef: 2.76,
       mef: 2.2,
       annual_energy_kwh: 420,
+      status: STATUS_DEFAULT_OPTION_ID,
     },
     ...overrides,
   };
@@ -133,6 +137,7 @@ export function buildAppliancesSlice(overrides: Partial<AppliancesSlice> = {}): 
         { id: "opt_appl_energy_star_yes", label: "Yes", color: "#10b981", order: 0 },
         { id: "opt_appl_energy_star_no", label: "No", color: "#64748b", order: 1 },
       ],
+      [APPLIANCES_STATUS_OPTION_KEY]: [...STATUS_FIXTURE_OPTIONS],
     },
     ...overrides,
   };
