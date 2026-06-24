@@ -8,7 +8,7 @@ SCOPE: Behavior contract for opening the DataTable field-config "manage options"
   controller.
 RELATED:
   - ./README.md, ./STATUS.md
-  - planning/archive/window-frames-catalog-enums/phases/phase-05-frontend-single-select.md (§5b)
+  - planning/archive/dated/2026-06-23/window-frames-catalog-enums/phases/phase-05-frontend-single-select.md (§5b)
 ---
 
 # PRD — Catalog "Manage Options" Modal

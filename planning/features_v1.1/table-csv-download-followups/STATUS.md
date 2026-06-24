@@ -12,7 +12,7 @@ RELATED: ./README.md, ./PRD.md
 ## State
 
 `Deferred` — the parent feature shipped in v1 (archived at
-`planning/archive/table-csv-download/`). Everything here is optional; each
+`planning/archive/dated/2026-06-21/table-csv-download/`). Everything here is optional; each
 item has a safe v1 default in place.
 
 ## Disposition

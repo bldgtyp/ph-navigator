@@ -465,7 +465,7 @@ JSON document. Illustrative sketch (the canonical model is the
       "ervs":  [ /* see US-EQ-4 — name, manufacturer (single-select), model_number, unit_type (single-select), nominal_airflow_cfm, sensible_recovery_efficiency, electrical_power_w, datasheet_asset_ids, catalog_origin, notes */ ],
       "heat_pumps": {
         // Phase 0 backend foundation, 2026-06-09. See
-        // planning/archive/heat-pumps/PRD.md for full field lists.
+        // planning/archive/dated/2026-06-09/heat-pumps/PRD.md for full field lists.
         "outdoor_equip":  [ /* hpoe_* rows: manufacturer, model_number, paired_indoor_equip_id, system_family, refrigerant, heating/cooling performance, datasheet_asset_ids, notes */ ],
         "indoor_equip":   [ /* hpie_* rows: manufacturer, model_type, model_number, install_type, nominal/fan/performance fields, datasheet_asset_ids, notes */ ],
         "outdoor_units":  [ /* hpou_* rows: tag, outdoor_equip_id, building_zone, datasheet_asset_ids, notes */ ],
@@ -814,13 +814,13 @@ built-in fields whose locks permit it.
 
 Catalog tables (`catalog_materials`, frame, glazing) are **not** field-
 config-capable in v1 — catalog stability is foundational and revisited
-post-v1. Implementation plan: `planning/archive/editable-fields/PRD.md`.
+post-v1. Implementation plan: `planning/archive/dated/2026-06-04/editable-fields/PRD.md`.
 
 The contract gates below are the durable record of decisions
 plan-31 §P3 made about identity, shape, validation timing, and export
 shape. Phase-specific implementation lives under
-`planning/archive/editable-fields/phases/`, with completed predecessor
-plans under `planning/archive/editable-fields/archive/complete/`.
+`planning/archive/dated/2026-06-04/editable-fields/phases/`, with completed predecessor
+plans under `planning/archive/dated/2026-06-04/editable-fields/archive/complete/`.
 
 #### 6.6.1 Table envelope shape (v3)
 
@@ -959,7 +959,7 @@ only what the user can edit next.
 | `number` | SI semantics; per-field `precision` in config. **Unit dimension deferred** — start unitless to avoid coupling to the IP/SI machinery in v1. |
 | `url` | URL-validated; renders as a link. |
 | `single_select` | Options live in the existing `single_select_options` map under `<table_path>.<cf_id>` (see §6.6.4). Same lifecycle as core single-select option lists. |
-| `formula` | Read-only computed value. AirTable-style `{Display Name}` syntax parsed to a typed AST with ids resolved at commit. The grammar supports the `&` binary text-concatenation operator at the same precedence as `+` / `-`, left-associative; scalar operands coerce to text (`null` → `""`, text unchanged, finite numbers formatted through the shared number-to-text formatter, booleans as `true` / `false`). `&` formulas infer `result_type: "text"` and round-trip through the same frontend/backend parser, resolver, evaluator, and corpus parity tests as `concat(...)`. Record-linking Phase 3 adds backend row-set primitives `linked("field_key")` and `linked_from(table.path, "field_key")` with `count` / `sum` / `avg` rollups into the same `rows_computed` / `computed` overlay; backend document-level cross-table cycle validation is in place, while frontend authoring remains tracked in `planning/archive/record-linking/phases/phase-03-rollups.md`. See plan-13 §4.4 for base grammar, parity, and resource limits. |
+| `formula` | Read-only computed value. AirTable-style `{Display Name}` syntax parsed to a typed AST with ids resolved at commit. The grammar supports the `&` binary text-concatenation operator at the same precedence as `+` / `-`, left-associative; scalar operands coerce to text (`null` → `""`, text unchanged, finite numbers formatted through the shared number-to-text formatter, booleans as `true` / `false`). `&` formulas infer `result_type: "text"` and round-trip through the same frontend/backend parser, resolver, evaluator, and corpus parity tests as `concat(...)`. Record-linking Phase 3 adds backend row-set primitives `linked("field_key")` and `linked_from(table.path, "field_key")` with `count` / `sum` / `avg` rollups into the same `rows_computed` / `computed` overlay; backend document-level cross-table cycle validation is in place, while frontend authoring remains tracked in `planning/archive/dated/2026-06-09/record-linking/phases/phase-03-rollups.md`. See plan-13 §4.4 for base grammar, parity, and resource limits. |
 
 Future types (date, attachment, cross-table lookup, cross-row
 aggregations) are out of scope for v1; see plan-13 §6.
@@ -983,7 +983,7 @@ key is the `field_key`, not the display name.
 > **storing the label string** (the catalog row stores the label too). Same
 > `{id,label,color,order}` option shape and the same rename/merge lifecycle —
 > just a relational store instead of the document JSON map. See
-> `planning/archive/window-frames-catalog-enums/`.
+> `planning/archive/dated/2026-06-23/window-frames-catalog-enums/`.
 
 #### 6.6.5 Validation timing
 
@@ -1164,7 +1164,7 @@ Rules:
   wiring ships here.
 
 Full contract and rationale:
-`planning/archive/record-identity-model/PRD.md`.
+`planning/archive/dated/2026-06-17/record-identity-model/PRD.md`.
 
 ## 7. Catalog (bookshelf model)
 

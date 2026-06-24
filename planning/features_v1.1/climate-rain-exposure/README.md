@@ -12,7 +12,7 @@ RELATED:
   - STATUS.md
   - ../climate-design-conditions/PRD.md  (sibling EPW-derived metric layer)
   - ../climate-tab-followups/STATUS.md   (other small Climate-tab refinements)
-  - ../../archive/climate/ (the complete Climate feature this extends)
+  - ../../archive/dated/2026-06-14/climate/ (the complete Climate feature this extends)
   - backend/features/climate/record.py (ClimateRecord — already carries wind)
 ---
 

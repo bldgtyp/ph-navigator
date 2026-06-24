@@ -6,7 +6,7 @@ AUTHOR: Claude (for Ed May)
 SCOPE: Deferred evaluation items left over from the shipped v1 Table CSV
        Download feature (parent-level DataTable "Download CSV" affordance).
 RELATED:
-  - planning/archive/table-csv-download/PRD.md (§6 Open questions, §5 Non-goals)
+  - planning/archive/dated/2026-06-21/table-csv-download/PRD.md (§6 Open questions, §5 Non-goals)
   - context/technical-requirements/data-table.md (§ Download CSV)
   - frontend/src/shared/ui/data-table/lib/export/csv.ts
 ---
@@ -14,7 +14,7 @@ RELATED:
 # Table CSV Download — Follow-ups
 
 The v1 **Table CSV Download** feature shipped (archived at
-[`planning/archive/table-csv-download/`](../../archive/table-csv-download/README.md)):
+[`planning/archive/dated/2026-06-21/table-csv-download/`](../../archive/dated/2026-06-21/table-csv-download/README.md)):
 every DataTable exposes a built-in "Download CSV" overflow item that exports
 the current view as RFC-4180 / UTF-8-BOM CSV, with single-select labels,
 formula text, and active-system number-units values.

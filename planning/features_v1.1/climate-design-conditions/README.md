@@ -10,17 +10,17 @@ SCOPE: Router for the per-source climate design-conditions contract — the
 RELATED:
   - PRD.md
   - STATUS.md
-  - planning/archive/climate/ (the complete Climate feature this extends)
-  - planning/archive/climate/phases/phase-04-design-conditions-and-metrics.md
+  - planning/archive/dated/2026-06-14/climate/ (the complete Climate feature this extends)
+  - planning/archive/dated/2026-06-14/climate/phases/phase-04-design-conditions-and-metrics.md
     (the original handoff this folder supersedes)
-  - planning/archive/climate/decisions.md (D-CL-4/5/6/7/8/11)
+  - planning/archive/dated/2026-06-14/climate/decisions.md (D-CL-4/5/6/7/8/11)
 ---
 
 # Climate — Design conditions + metrics
 
 > **Narrowed 2026-06-21 (D-CL-25).** The data *production* (EPW/`.stat` +
 > ASHRAE) and *tab display* are now built under
-> `planning/archive/climate-auto-populate/` (P3/P4). Only the consumer-facing
+> `planning/archive/dated/2026-06-22/climate-auto-populate/` (P3/P4). Only the consumer-facing
 > **contract endpoint** remains here, still gated on a scheduled fRSI/comfort
 > consumer + D-CL-5. See `STATUS.md`.
 

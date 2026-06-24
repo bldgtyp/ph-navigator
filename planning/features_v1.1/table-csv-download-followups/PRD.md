@@ -4,7 +4,7 @@ TIME: 10:20 EDT
 STATUS: Deferred
 AUTHOR: Claude (for Ed May)
 SCOPE: Deferred behavior options for the Table CSV Download feature.
-RELATED: ./README.md, ./STATUS.md, planning/archive/table-csv-download/PRD.md
+RELATED: ./README.md, ./STATUS.md, planning/archive/dated/2026-06-21/table-csv-download/PRD.md
 ---
 
 # PRD — Table CSV Download Follow-ups

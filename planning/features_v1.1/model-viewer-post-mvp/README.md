@@ -9,17 +9,17 @@ SCOPE: Umbrella router for Model Viewer work left outside the
 RELATED:
   - STATUS.md
   - PRD.md
-  - planning/archive/model-viewer-sun-path/
-  - planning/archive/model-viewer-legend-filter/
+  - planning/archive/dated/2026-06-23/model-viewer-sun-path/
+  - planning/archive/dated/2026-06-23/model-viewer-legend-filter/
   - planning/features_v1.1/model-viewer-clipping-planes/
-  - planning/archive/model-viewer/ (completed MVP — source of truth)
+  - planning/archive/dated/2026-06-13/model-viewer/ (completed MVP — source of truth)
   - context/user-stories/40-model-viewer.md
 ---
 
 # Model Viewer Post-MVP
 
 Umbrella for Model Viewer work intentionally left outside the completed
-MVP feature (`planning/archive/model-viewer/`). The MVP Model tab
+MVP feature (`planning/archive/dated/2026-06-13/model-viewer/`). The MVP Model tab
 (Phases 1–6) is complete and archived; everything here is v1.1+
 candidate or product-validation work.
 
@@ -33,8 +33,8 @@ with detailed phased plans.
 
 | Candidate | Feature folder | Notes |
 |---|---|---|
-| Sun-path **3D render** (D-07) **+** scrubber (Q-VIEW-6) | [`model-viewer-sun-path/`](../../archive/model-viewer-sun-path/) | **Phases 0 + 1 implemented 2026-06-23** (merged + archived 2026-06-23). The backend was briefly in Climate framing but actually lives in **`project_location`** (the coordinate owner); it was built, deleted 2026-06-22, and rebuilt here as Phase 0, with the Site & Sun render as Phase 1. D-SP-1 settled (decoupled, location-reactive endpoint). Scrubber (Q-VIEW-6) is the deferred Phase 2. |
-| Legend-as-filter (NEW-VIEW-2 / Q-VIEW-7) | [`model-viewer-legend-filter/`](../../archive/model-viewer-legend-filter/) | **Implemented 2026-06-23** (merged + archived 2026-06-23). Both phases — single-select isolate + shift-click multi-select; isolate-with-wireframe-context (PRD §5). Reused the D-11 legend rows + bucket-key function as planned. |
+| Sun-path **3D render** (D-07) **+** scrubber (Q-VIEW-6) | [`model-viewer-sun-path/`](../../archive/dated/2026-06-23/model-viewer-sun-path/) | **Phases 0 + 1 implemented 2026-06-23** (merged + archived 2026-06-23). The backend was briefly in Climate framing but actually lives in **`project_location`** (the coordinate owner); it was built, deleted 2026-06-22, and rebuilt here as Phase 0, with the Site & Sun render as Phase 1. D-SP-1 settled (decoupled, location-reactive endpoint). Scrubber (Q-VIEW-6) is the deferred Phase 2. |
+| Legend-as-filter (NEW-VIEW-2 / Q-VIEW-7) | [`model-viewer-legend-filter/`](../../archive/dated/2026-06-23/model-viewer-legend-filter/) | **Implemented 2026-06-23** (merged + archived 2026-06-23). Both phases — single-select isolate + shift-click multi-select; isolate-with-wireframe-context (PRD §5). Reused the D-11 legend rows + bucket-key function as planned. |
 
 ### Tier 2 — Plannable but gated (own folder, plan ready, idle)
 

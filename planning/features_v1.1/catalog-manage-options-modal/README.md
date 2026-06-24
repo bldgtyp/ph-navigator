@@ -8,8 +8,8 @@ SCOPE: Wire the shared DataTable field-config "manage options" modal so it opens
   option edits as a `legacyOptions` schemaMutation through the catalog `onWrite`
   controller (translation logic already shipped).
 RELATED:
-  - planning/archive/window-frames-catalog-enums/phases/phase-05-frontend-single-select.md (§5b OPEN — origin of this item)
-  - planning/archive/window-frames-catalog-enums/decisions.md D-4 (inline add + manage-options)
+  - planning/archive/dated/2026-06-23/window-frames-catalog-enums/phases/phase-05-frontend-single-select.md (§5b OPEN — origin of this item)
+  - planning/archive/dated/2026-06-23/window-frames-catalog-enums/decisions.md D-4 (inline add + manage-options)
   - frontend/src/shared/ui/data-table/DataTable.tsx (1109 editConfigEnabled, 1175 onEditCustomFieldConfig, 1475 modal render)
   - frontend/src/shared/ui/data-table/GridHeader.tsx (~202-213 canEditFieldConfig open trigger)
   - frontend/src/features/catalogs/frame-types/controller.ts (editFrameTypeOptions — translation already handles legacyOptions)
@@ -20,7 +20,7 @@ RELATED:
 ## Why this exists
 
 The window-frames-catalog-enums feature shipped (archived at
-[`planning/archive/window-frames-catalog-enums/`](../../archive/window-frames-catalog-enums/README.md)).
+[`planning/archive/dated/2026-06-23/window-frames-catalog-enums/`](../../archive/dated/2026-06-23/window-frames-catalog-enums/README.md)).
 Phase 5b completed and unit-tested the **translation logic** that turns a
 DataTable `legacyOptions` `schemaMutation` (rename / reorder / delete-with-merge)
 into catalog option-store REST calls (`PUT …/frame-types/options` +

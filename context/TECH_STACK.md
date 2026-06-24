@@ -205,8 +205,8 @@ The canonical guide is `frontend/src/styles/README.md`; the short version:
 > **Superseded note (2026-06):** earlier drafts of this section prescribed a
 > remote BLDGTYP `tokens.css` / `tokens.json` fetch plus a Tailwind/shadcn
 > theme-variable mapping. That was not adopted — the brand tokens were
-> vendored (`planning/archive/css-brand-dependency-resilience/`) and the UI is
-> bespoke plain CSS (`planning/archive/css-structure-discoverability/`). See
+> vendored (`planning/archive/dated/2026-06-14/css-brand-dependency-resilience/`) and the UI is
+> bespoke plain CSS (`planning/archive/dated/2026-06-14/css-structure-discoverability/`). See
 > `context/UI_UX.md` §design-system and `frontend/src/styles/README.md`.
 
 ## Table-View Decision

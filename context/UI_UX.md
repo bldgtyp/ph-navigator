@@ -101,7 +101,7 @@ The brand assets are **vendored and self-hosted**, not fetched from
 `bldgtyp.github.io` / Google Fonts at runtime, so the app renders fully
 offline and in CI and a brand-side token rename surfaces as a reviewable
 diff. Refresh the vendored copies with `pnpm run sync:brand`. See
-`planning/archive/css-brand-dependency-resilience/`.
+`planning/archive/dated/2026-06-14/css-brand-dependency-resilience/`.
 
 **3-tier token system** (cascade order matters — each layer can override
 the previous):
@@ -184,7 +184,7 @@ idioms:
 Pixel-perfect mockups, final component variants, illustration,
 empty-state art, and animation specifics. Those land in the design pass.
 The brand-asset dependency (vendoring + self-hosting) is resolved — see
-`planning/archive/css-brand-dependency-resilience/`.
+`planning/archive/dated/2026-06-14/css-brand-dependency-resilience/`.
 
 ---
 
@@ -604,7 +604,7 @@ back to a user-story open question.
 | UX-Q6 | Empty-state primary action — single button or guided onboarding? | single button |
 | ~~UX-Q7~~ | ~~Viewer header — "Read-only" pill or banner?~~ | **Resolved 2026-05-11:** pill in normal project header |
 | UX-Q8 | Builder details placement — below canvas, right inspector, or adaptive? | adaptive by surface |
-| ~~UX-Q9~~ | ~~Model toolbar placement — bottom V1 rail or left/right modeling-app rail?~~ | **Resolved 2026-06-12:** neither — top-center lens bar + bottom-right camera/measure cluster (D-05; `planning/archive/model-viewer/UI_SPEC.md` §1) |
+| ~~UX-Q9~~ | ~~Model toolbar placement — bottom V1 rail or left/right modeling-app rail?~~ | **Resolved 2026-06-12:** neither — top-center lens bar + bottom-right camera/measure cluster (D-05; `planning/archive/dated/2026-06-13/model-viewer/UI_SPEC.md` §1) |
 | UX-Q10 | Evidence interaction model — checklist, table filters, or both? | both, via §1.8 |
 
 ---
