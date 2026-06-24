@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 16:10 EDT
-STATUS: Planned
+STATUS: Done (2026-06-24) — schema v1→v2: casing fold + DEFAULT-row drop on upgrade, name computed on import (missing-name gate gone), unknown options auto-added on commit, dropped/new_option preview counts; import tests reworked + seed-parity test
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phase 4 — import/export schema v2 (fold + derived name + auto-add)
 RELATED:

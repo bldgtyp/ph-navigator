@@ -7,7 +7,7 @@ from typing import Final, Literal
 
 from pydantic import BaseModel, ConfigDict
 
-CURRENT_SCHEMA_VERSION: Final[int] = 1
+CURRENT_SCHEMA_VERSION: Final[int] = 2
 
 FILE_KIND: Final[str] = "ph-navigator.catalog.glazing-types"
 

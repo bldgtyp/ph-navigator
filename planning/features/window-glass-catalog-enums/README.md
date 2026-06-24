@@ -65,7 +65,7 @@ glazing/materials adopt it next without a redesign."* This is that adoption.
 | 1 | `phases/phase-01-wire-option-store.md` | Wire glazing onto the **existing** `catalog_field_options` store: options service + models + routes + seed migration. **No new table.** | ✅ Done |
 | 2 | `phases/phase-02-write-validation.md` | Reject unknown values on create/patch for `manufacturer` + `brand`. | ✅ Done |
 | 3 | `phases/phase-03-derived-name.md` | Server-compute read-only `name` (`manufacturer \| brand \| suffix`); drop `name` from the glazing drift keys. (Default-by-id is **already done**.) | ✅ Done |
-| 4 | `phases/phase-04-import-export-v2.md` | Import v2: fold legacy casing, compute name on import, auto-add unknown options, drop the missing-name gate. | ⬜ Planned |
+| 4 | `phases/phase-04-import-export-v2.md` | Import v2: fold legacy casing, compute name on import, auto-add unknown options, drop the missing-name gate. | ✅ Done |
 | 5 | `phases/phase-05-frontend-single-select.md` | Two fields → single_select, read-only name, inline-add wired to the store. (Manage-options modal inherits the shared v1.1 blocker.) | ⬜ Planned |
 | 6 | `phases/phase-06-cleanup-docs-closeout.md` | Fold decisions into `context/`, closeout gate, mark Complete. | ⬜ Planned |
 

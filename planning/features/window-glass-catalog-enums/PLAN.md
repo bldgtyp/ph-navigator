@@ -111,7 +111,7 @@ longer reports name deltas. `make ci` green.
 
 ---
 
-## Phase 4 — Import / export v2 ⬜
+## Phase 4 — Import / export v2 ✅
 
 - Bump `glazing_types/import_export/file_format.CURRENT_SCHEMA_VERSION` 1 → 2.
 - `_name.py` import in `coerce.py`; **drop the `ERR_MISSING_NAME` gate**; compute

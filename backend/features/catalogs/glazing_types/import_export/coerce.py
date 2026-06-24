@@ -12,6 +12,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Final
 
+from features.catalogs.glazing_types._name import compose_glazing_name
+
 _CATALOG_ID_RE: Final[re.Pattern[str]] = re.compile(r"^rec[A-Za-z0-9]{14}$")
 
 _HEX_COLOR_RE: Final[re.Pattern[str]] = re.compile(r"^#[0-9A-Fa-f]{6}$")
@@ -26,11 +28,10 @@ WARN_G_VALUE_RANGE: Final[str] = "g_value_range"
 WARN_BAD_COLOR: Final[str] = "bad_color"
 WARN_FIELD_TOO_LONG: Final[str] = "field_too_long"
 ERR_BAD_ID: Final[str] = "bad_id"
-ERR_MISSING_NAME: Final[str] = "missing_name"
 
-# Mirrors `_CatalogGlazingTypeFields` in models.py.
+# Mirrors `_CatalogGlazingTypeFields` in models.py. `name` is derived (Phase 3),
+# not an input field, so it is absent here.
 _FIELD_MAX_LENGTHS: Final[dict[str, int]] = {
-    "name": 200,
     "manufacturer": 200,
     "brand": 200,
     "suffix": 80,
@@ -80,18 +81,6 @@ def coerce_row(raw: dict[str, object]) -> CoercedRow:
         else:
             row_id = raw_id
 
-    raw_name = raw.get("name")
-    name: str | None = None
-    if isinstance(raw_name, str):
-        stripped = raw_name.strip()
-        if stripped:
-            name = stripped
-    if name is not None and len(name) > _FIELD_MAX_LENGTHS["name"]:
-        warnings.append(f"{WARN_FIELD_TOO_LONG}:name")
-        name = None
-    if name is None:
-        errors.append(ERR_MISSING_NAME)
-
     if errors:
         return CoercedRow(row=None, id=row_id, warnings=warnings, errors=errors)
 
@@ -100,7 +89,6 @@ def coerce_row(raw: dict[str, object]) -> CoercedRow:
     color = _coerce_color(raw.get("color"), warnings)
 
     cleaned: dict[str, object] = {
-        "name": name,
         "manufacturer": _coerce_text(raw.get("manufacturer"), warnings, field_name="manufacturer"),
         "brand": _coerce_text(raw.get("brand"), warnings, field_name="brand"),
         "suffix": _coerce_text(raw.get("suffix"), warnings, field_name="suffix"),
@@ -111,6 +99,9 @@ def coerce_row(raw: dict[str, object]) -> CoercedRow:
         "datasheet_url": _coerce_text(raw.get("datasheet_url"), warnings, field_name="datasheet_url"),
         "comments": _coerce_text(raw.get("comments"), warnings, field_name="comments"),
     }
+    # `name` is derived from the parts (Phase 3), not taken from the file — any
+    # inbound `name` is ignored. Computed after the parts are folded + coerced.
+    cleaned["name"] = compose_glazing_name(cleaned)
     return CoercedRow(row=cleaned, id=row_id, warnings=warnings, errors=[])
 
 

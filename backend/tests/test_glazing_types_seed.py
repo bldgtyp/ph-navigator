@@ -23,7 +23,10 @@ SEED_PATH = GLAZING_SEED_PATH
 def test_seed_file_parses_and_passes_the_pipeline_cleanly() -> None:
     payload = json.loads(SEED_PATH.read_text())
     assert payload["kind"] == FILE_KIND
-    assert payload["schema_version"] == CURRENT_SCHEMA_VERSION
+    # The seed is a frozen v1 AirTable export; the importer upgrades it to the
+    # current schema on load, so it is intentionally older than CURRENT.
+    assert payload["schema_version"] == 1
+    assert payload["schema_version"] < CURRENT_SCHEMA_VERSION
 
     report = build_preview(payload, existing_ids={})
     assert report.counts.errored == 0, [error.reason for error in report.errors]
