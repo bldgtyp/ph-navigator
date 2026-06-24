@@ -793,6 +793,7 @@
   background: var(--bg-card);
   overflow: visible;
   padding: 0;
+  position: relative;
 }
 
 .aperture-element-card[data-selected="true"] {
@@ -800,6 +801,11 @@
   background: var(--aperture-selected-tint);
   outline: 2px solid var(--aperture-selected-ring);
   outline-offset: -2px;
+}
+
+.aperture-element-card[data-moving="true"] {
+  z-index: var(--z-base-elevated);
+  will-change: transform;
 }
 
 .aperture-element-card__header {
