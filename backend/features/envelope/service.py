@@ -29,8 +29,11 @@ from features.envelope.models import (
     AssemblyThermalResponse,
     EnvelopeCommand,
     EnvelopeReadResponse,
+    PhppPreflightItem,
+    PhppPreflightResponse,
     ProjectMaterialDriftReport,
 )
+from features.envelope.phpp_export import phpp_preflight
 from features.envelope.selectors import build_envelope_read_parts
 from features.envelope.thermal import calculate_assembly_thermal
 from features.project_document import repository
@@ -167,6 +170,26 @@ def get_project_material_drift_report(
             for material in body.tables.project_materials
             if material.catalog_origin is not None
         ],
+    )
+
+
+def get_phpp_export_preflight(version_id: UUID, access: ProjectAccess) -> PhppPreflightResponse:
+    """Project each saved assembly's PHPP export eligibility for the modal (PRD §9).
+
+    Export targets the saved version (like HBJSON), so this reads the committed
+    body and reshapes the pure ``phpp_preflight`` plans into the wire model.
+    """
+    body = get_saved_document(version_id, access)
+    return PhppPreflightResponse(
+        assemblies=[
+            PhppPreflightItem(
+                id=plan.assembly_id,
+                name=plan.assembly_name,
+                exportable=plan.exportable,
+                reason=plan.reason,
+            )
+            for plan in phpp_preflight(body)
+        ]
     )
 
 

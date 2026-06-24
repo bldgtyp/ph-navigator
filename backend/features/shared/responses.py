@@ -11,3 +11,11 @@ def json_download_response(content: str, filename: str) -> Response:
         media_type="application/json",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+def zip_download_response(data: bytes, filename: str) -> Response:
+    return Response(
+        content=data,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

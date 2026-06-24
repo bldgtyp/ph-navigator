@@ -8,6 +8,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from features.envelope.import_models import ConstructionResolution, MaterialResolution
+from features.envelope.phpp_types import ExportReason
 from features.project_document.document import (
     Assembly,
     AssemblyOrientation,
@@ -150,6 +151,23 @@ class ProjectMaterialDriftReport(BaseModel):
     version_etag: str
     draft_etag: str | None
     materials: list[ProjectMaterialDriftItem] = Field(default_factory=list)
+
+
+class PhppPreflightItem(BaseModel):
+    """Per-assembly export eligibility for the pre-download modal (PRD §9)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    name: str
+    exportable: bool
+    reason: ExportReason | None = None
+
+
+class PhppPreflightResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    assemblies: list[PhppPreflightItem] = Field(default_factory=list)
 
 
 class ProjectMaterialRefreshChoice(BaseModel):
