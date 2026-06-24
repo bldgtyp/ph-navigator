@@ -51,6 +51,7 @@ export function ApertureElementCard({
   return (
     <div
       className="aperture-element-card"
+      data-element-id={element.id}
       data-testid={`element-card-${element.id}`}
       data-selected={isSelected ? "true" : undefined}
     >

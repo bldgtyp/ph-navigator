@@ -207,8 +207,22 @@ describe("ApertureCanvasContainer", () => {
 
   it("bubbles the latest selected element card without scrolling the page", () => {
     const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+    const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect;
     const scrollIntoView = vi.fn();
+    const requestAnimationFrame = vi
+      .spyOn(window, "requestAnimationFrame")
+      .mockImplementation((callback) => {
+        callback(0);
+        return 1;
+      });
     HTMLElement.prototype.scrollIntoView = scrollIntoView;
+    HTMLElement.prototype.getBoundingClientRect = function () {
+      if (this instanceof HTMLElement && this.classList.contains("aperture-element-card")) {
+        const index = Array.from(this.parentElement?.children ?? []).indexOf(this);
+        return domRect({ top: index * 48, bottom: index * 48 + 40 });
+      }
+      return originalGetBoundingClientRect.call(this);
+    };
 
     try {
       render(
@@ -241,6 +255,11 @@ describe("ApertureCanvasContainer", () => {
       ]);
       expect(screen.getByTestId("element-card-aptel_b")).toHaveAttribute("data-selected", "true");
       expect(screen.getByTestId("element-card-aptel_a")).not.toHaveAttribute("data-selected");
+      expect(requestAnimationFrame).toHaveBeenCalled();
+      expect(screen.getByTestId("element-card-aptel_b")).toHaveAttribute("data-moving", "true");
+      expect(screen.getByTestId("element-card-aptel_b")).toHaveStyle({
+        transform: "translate(0, 0)",
+      });
 
       fireEvent.click(screen.getByTestId("hit-element-aptel_c"), { shiftKey: true });
       expect(elementCardIds()).toEqual([
@@ -262,6 +281,8 @@ describe("ApertureCanvasContainer", () => {
       expect(scrollIntoView).not.toHaveBeenCalled();
     } finally {
       HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
+      HTMLElement.prototype.getBoundingClientRect = originalGetBoundingClientRect;
+      requestAnimationFrame.mockRestore();
     }
   });
 
@@ -334,4 +355,18 @@ function elementCardIds(): string[] {
     if (!testId) throw new Error("Element card is missing data-testid.");
     return testId;
   });
+}
+
+function domRect(overrides: Partial<DOMRect> = {}): DOMRect {
+  return {
+    x: overrides.x ?? 0,
+    y: overrides.y ?? overrides.top ?? 0,
+    width: overrides.width ?? 320,
+    height: overrides.height ?? 40,
+    top: overrides.top ?? 0,
+    right: overrides.right ?? 320,
+    bottom: overrides.bottom ?? 40,
+    left: overrides.left ?? 0,
+    toJSON: () => ({}),
+  } as DOMRect;
 }
