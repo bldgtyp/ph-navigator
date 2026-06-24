@@ -1,7 +1,7 @@
 ---
-DATE: 2026-06-09
-TIME: 14:30
-STATUS: Active — planning
+DATE: 2026-06-24
+TIME: 19:20 EDT
+STATUS: Implemented — shared primitive consumed by Envelope Materials, Apertures Glazings, and Apertures Frames
 AUTHOR: Ed (via Claude)
 SCOPE: Shared "report-table" UI primitive + restyle Envelope → Specifications
   as the first consumer, plus global app background-token shift.
@@ -37,6 +37,11 @@ Both can coexist; pick by intent. Report-table components and styles
 live in `frontend/src/shared/ui/report-table/` so future consumers
 (window glazing, frame elements, etc.) get a consistent look out of the
 box.
+
+The first follow-on consumers landed in
+`planning/archive/dated/2026-06-24/apertures-glazings-frames-reports/`:
+Apertures → Glazings and Apertures → Frames reuse the report-table primitive for
+project glazing and frame specification reports.
 
 ## Read order
 

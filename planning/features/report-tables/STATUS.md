@@ -1,7 +1,7 @@
 ---
-DATE: 2026-06-09
-TIME: 14:30
-STATUS: Active — planning complete, awaiting implementation
+DATE: 2026-06-24
+TIME: 19:20 EDT
+STATUS: Implemented — shared primitive has multiple consumers
 AUTHOR: Ed (via Claude)
 SCOPE: Current state of the report-table primitive + Specifications restyle.
 RELATED:
@@ -14,8 +14,10 @@ RELATED:
 
 ## Current state
 
-`Active — planning complete`. PRD and decisions logged. No code
-changes yet.
+`Implemented`. The shared `frontend/src/shared/ui/report-table/` primitive is
+used by Envelope Materials/Specifications and now by Apertures → Glazings and
+Apertures → Frames
+(`planning/archive/dated/2026-06-24/apertures-glazings-frames-reports/`).
 
 ## Files expected to change
 
@@ -42,10 +44,9 @@ changes yet.
 
 ## Next step
 
-Implementation phase 1 — global background tokens, drop into all
-existing tabs via `make ci` + a Playwright MCP visual smoke pass to
-confirm no regressions. This is the safest first change and unblocks
-the rest of the work.
+No active report-table primitive work. Future additions should keep using this
+primitive for read-mostly specification rollups unless they need full
+AirTable-style `<DataTable>` behavior.
 
 ## Blockers
 

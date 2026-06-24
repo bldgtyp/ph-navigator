@@ -1,13 +1,21 @@
 ---
 DATE: 2026-06-24
-TIME: 17:45 EDT
-STATUS: Planned (blocked on prerequisite + Phases 0–2)
+TIME: 19:20 EDT
+STATUS: Complete
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phase 3 — browser smoke, UI/UX page docs, closeout gate.
 RELATED: ./phase-02-wire-and-retire-modal.md, ../../.instructions.md
 ---
 
 # Phase 3 — Closeout
+
+## Result
+
+Complete as of 2026-06-24. The UI/context docs now list Apertures Builder,
+Glazings, and Frames as route-addressable sub-tabs; the report-table planning
+packet notes that the planned glazing/frame consumers have landed; browser
+smoke passed on the Codex fixture; screenshots were captured under `assets/`;
+and the feature is ready for archive.
 
 ## Browser smoke (sign in as Ed)
 
@@ -29,6 +37,28 @@ Smoke checklist:
   thumbnail opens; detach works.
 - Change spec-status → persists; locked-version + viewer reads are read-only.
 - Capture before/after screenshots into `assets/`.
+
+### Smoke Evidence
+
+Used the repo-standard agent account (`codex@example.com`) on the local dev
+stack to avoid invalidating Ed's single active session.
+
+- Fixture project: `846a42ac-cb2c-472f-8239-eabd05fe6d57`.
+- `/apertures/glazings`: rendered `Browser Smoke Triple Glazing`, U-value and
+  g-value columns, status filters, expanded datasheet/use-site evidence.
+- Status changed to `Question`, survived reload, then was restored to `Missing`.
+- Datasheet upload rendered a PDF thumbnail; detach action was exercised.
+- `/apertures/frames`: rendered `Browser Smoke Frame`, Psi-install and Width
+  columns, expanded side-aware use-site evidence.
+- Report routes did not hit builder-only aperture slice or U-value APIs.
+- Bare `/apertures` redirected to `/apertures/builder`.
+
+Screenshots:
+
+- `assets/apertures-glazings-report.png`
+- `assets/apertures-glazings-expanded.png`
+- `assets/apertures-glazings-datasheet-upload.png`
+- `assets/apertures-frames-expanded.png`
 
 ## Docs
 
@@ -52,3 +82,6 @@ Smoke checklist:
 - Browser smoke passes with screenshots; `context/` page docs updated; closeout
   gate green. Mark the feature `Complete`; archive both feature folders per
   `planning/.instructions.md`.
+
+Met. Final gate evidence is recorded in `STATUS.md`; archive destination:
+`planning/archive/dated/2026-06-24/apertures-glazings-frames-reports/`.
