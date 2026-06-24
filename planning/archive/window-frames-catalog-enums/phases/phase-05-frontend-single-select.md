@@ -101,7 +101,9 @@ into sub-phases** (each independently shippable):
       `onWrite` (which the controller already handles — `editFrameTypeOptions`).
       This touches the shared (iron-law) DataTable surface + the catalog page; do
       it deliberately with the dev env up to verify. The translation **logic**
-      half is complete and tested.
+      half is complete and tested. **Tracked (2026-06-23) as a v1.1 candidate:**
+      `planning/features_v1.1/catalog-manage-options-modal/` — pulled out so this
+      open modal-wiring item isn't lost now that the feature is archived.
 - **Phase 5c — import dialog v2. ✅ Code complete + unit-tested (2026-06-24).**
   `CURRENT_SCHEMA_VERSION` 1→2 (export now writes v2; import upgrades v1→v2);
   added `dropped` to `PreviewCounts` and render it in the dialog when > 0; the
