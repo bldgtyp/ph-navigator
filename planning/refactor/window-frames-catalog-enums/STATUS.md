@@ -10,9 +10,10 @@ RELATED: ./README.md, ./research.md, ./decisions.md, ./PLAN.md
 # STATUS — window-frames-catalog-enums
 
 **State:** `Active` — research complete; **all decisions resolved (2026-06-23)**;
-**Phases 0–2 complete (2026-06-23)** — canonical vocab frozen + seed cleaned
-(P0); catalog option store landed (P1); strict single-select write-validation on
-create/patch (P2). All CI-green. **Next: Phase 3** (derived name + default-by-id).
+**Phases 0–3 complete (2026-06-23)** — canonical vocab + clean seed (P0); catalog
+option store (P1); strict write-validation (P2); derived read-only `name` +
+default-frame/glazing-by-id + option-rename name recompute (P3). All CI-green.
+**Next: Phase 4** (import/export v2).
 
 **Decisions locked:** D-1 all six strict single-select (incl. `brand`, to group
 on it) · D-2 new catalog app-scoped option store, label-string storage · D-3
@@ -34,14 +35,15 @@ frame-types only, store built generic for glazing/materials reuse.
 
 ## Next step
 
-Phases 0–2 are done. Execute `phases/phase-03-derived-name-and-default-by-id.md`:
-add `compose_frame_name(...)` (server-compute `name` from the parts, read-only),
-drop `name` from the create/update request models, backfill via migration, and
-switch `default_refs` from name lookup to **id** lookup
-(`recPHNDefFrame001`/`recPHNDefGlazng01`) — the highest-risk site
-(`default_refs.py:104`). Also drop `"name"` from the drift comparator's
-`_FRAME_KEYS`. The composer must reproduce every existing seed `name` (research
-§2 lossless proof) — that's the headline regression test.
+Phases 0–3 are done. Execute `phases/phase-04-import-export-v2.md`: bump the
+catalog file `schema_version` 1→2; add `_upgrade_v1_to_v2` (fold legacy/typo
+values via `_option_seeds.FRAME_TYPE_VALUE_FOLDS` + the swapped-Mercury / drop-
+`Default` special cases); resolve the six to known options on import (auto-add vs
+flag — D-4 sub-policy still open, see phase-04 §4.3); drop `ERR_MISSING_NAME` and
+compute `name` via `compose_frame_name`; wire `_validate_single_selects` into the
+import commit so imports obey the same rule as create/patch. The committed seed is
+already clean (P0), so this mainly serves user-supplied v1 files + the seed
+re-load path.
 
 **Note discovered while planning:** the frame catalog is seeded *through the
 import pipeline* (`scripts/seed_frame_catalog.py:64-78`), so the Phase 4 import
@@ -68,4 +70,10 @@ upgrade step is the data-cleanup mechanism — **no in-place row migration neede
   test fixtures moved to canonical values + autouse option-reset; 4 new validation
   tests. Full backend suite **982 passed, 2 skipped**. Import path still bypasses
   validation (deferred to Phase 4).
-- Phases 3–6: pending implementation.
+- **Phase 3 (2026-06-23):** derived `compose_frame_name`; `name` removed from
+  write models; backfill `20260623_0039`; default lookup → by id
+  (`default_refs` + `APERTURE_DEFAULT_FRAME_ID`/`_GLAZING_ID`); option-rename →
+  `repository.recompute_names`; drift `_FRAME_KEYS` drops `name`. 4-agent simplify
+  confirmed the 3 compose implementations agree. Full backend suite **986 passed,
+  2 skipped**; head `20260623_0039`.
+- Phases 4–6: pending implementation.

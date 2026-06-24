@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 17:51 EDT
-STATUS: Active — decisions resolved; Phases 0–2 complete, Phase 3 next
+STATUS: Active — decisions resolved; Phases 0–3 complete, Phase 4 next
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phased implementation plan for window-frames-catalog-enums
 RELATED: ./research.md, ./decisions.md, ./STATUS.md
@@ -74,7 +74,7 @@ option succeeds; adding an option then using it succeeds. `make ci` green.
 
 ---
 
-## Phase 3 — Derived `name` (backend) + default-frame-by-id
+## Phase 3 — Derived `name` (backend) + default-frame-by-id ✅ Complete (2026-06-23)
 
 - Implement `compose_frame_name(...)` in the service: `manufacturer | prefix |
   brand | use | operation | location | mull_type | suffix`, ` | ` separator,

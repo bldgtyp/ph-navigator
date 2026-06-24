@@ -17,8 +17,8 @@ from psycopg import sql as pgsql
 
 from features.project_document.apertures.factories import DefaultsCatalogReader
 from features.project_document.document import (
-    APERTURE_DEFAULT_FRAME_NAME,
-    APERTURE_DEFAULT_GLAZING_NAME,
+    APERTURE_DEFAULT_FRAME_ID,
+    APERTURE_DEFAULT_GLAZING_ID,
     CatalogOrigin,
     CatalogTableName,
     FrameRef,
@@ -64,15 +64,15 @@ class DatabaseDefaultsCatalog:
     """`DefaultsCatalogReader` implementation backed by the catalog tables.
 
     Constructed once per request from the active DB connection. Reads are
-    cheap (single-row lookup by indexed ``name`` column) so they happen
-    inline rather than being cached.
+    cheap (single-row lookup by primary-key ``id``) so they happen inline
+    rather than being cached.
     """
 
     def __init__(self, conn: Connection[Any]) -> None:
         self._conn = conn
 
     def get_default_frame(self) -> FrameRef | None:
-        row = self._fetch_by_name("catalog_frame_types", _FRAME_COLUMNS, APERTURE_DEFAULT_FRAME_NAME)
+        row = self._fetch_by_id("catalog_frame_types", _FRAME_COLUMNS, APERTURE_DEFAULT_FRAME_ID)
         if row is None:
             return None
         record_id = str(row.pop("id"))
@@ -84,7 +84,7 @@ class DatabaseDefaultsCatalog:
         )
 
     def get_default_glazing(self) -> GlazingRef | None:
-        row = self._fetch_by_name("catalog_glazing_types", _GLAZING_COLUMNS, APERTURE_DEFAULT_GLAZING_NAME)
+        row = self._fetch_by_id("catalog_glazing_types", _GLAZING_COLUMNS, APERTURE_DEFAULT_GLAZING_ID)
         if row is None:
             return None
         record_id = str(row.pop("id"))
@@ -95,17 +95,17 @@ class DatabaseDefaultsCatalog:
             }
         )
 
-    def _fetch_by_name(
+    def _fetch_by_id(
         self,
         table: str,
         columns: tuple[str, ...],
-        name: str,
+        record_id: str,
     ) -> dict[str, Any] | None:
-        query = pgsql.SQL("SELECT {columns} FROM {table} WHERE name = %(name)s AND deleted_at IS NULL LIMIT 1").format(
+        query = pgsql.SQL("SELECT {columns} FROM {table} WHERE id = %(id)s AND deleted_at IS NULL LIMIT 1").format(
             columns=pgsql.SQL(", ").join(pgsql.Identifier(col) for col in columns),
             table=pgsql.Identifier(table),
         )
-        row = self._conn.execute(query, {"name": name}).fetchone()
+        row = self._conn.execute(query, {"id": record_id}).fetchone()
         if row is None:
             return None
         return dict(row)

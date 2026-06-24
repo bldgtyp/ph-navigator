@@ -18,7 +18,6 @@ from features.catalogs._shared import (
     CatalogManufacturerListResponse,
     log_catalog_action,
     new_catalog_record_id,
-    next_copy_suffix,
 )
 from features.catalogs.frame_types import repository
 from features.catalogs.frame_types.models import (
@@ -58,6 +57,40 @@ def _validate_single_selects(conn: Connection[Any], values: Mapping[str, object]
                 f"{field!r} value {value!r} is not a known option; add it via the field's options first.",
                 {"field": field, "value": value},
             )
+
+
+_NAME_PART_ORDER: tuple[str, ...] = (
+    "manufacturer",
+    "prefix",
+    "brand",
+    "use",
+    "operation",
+    "location",
+    "mull_type",
+    "suffix",
+)
+
+
+def compose_frame_name(fields: Mapping[str, object]) -> str:
+    """Derive the read-only frame ``name`` from its parts (D-3).
+
+    Mirrors the AirTable formula: the non-empty parts joined by ``" | "`` in a
+    fixed order, ``material`` deliberately excluded, clamped to the 200-char
+    column width. This reproduces every existing seed ``name`` (research §2).
+
+    The all-null case yields ``""`` — which is why the built-in default frame
+    sentinel is resolved by **id** (``default_refs``), never by this name, and
+    why the name backfill skips that row.
+    """
+    parts: list[str] = []
+    for key in _NAME_PART_ORDER:
+        value = fields.get(key)
+        if value is None:
+            continue
+        text = str(value).strip()
+        if text:
+            parts.append(text)
+    return " | ".join(parts)[:200]
 
 
 def _to_public(row: dict[str, Any]) -> CatalogFrameTypePublic:
@@ -110,12 +143,13 @@ def create_frame_type(
     payload: CatalogFrameTypeCreateRequest, user: UserPublic, request: Request
 ) -> CatalogFrameTypePublic:
     record_id = new_catalog_record_id()
+    field_values = payload.model_dump()
     with transaction() as conn:
-        _validate_single_selects(conn, payload.model_dump())
+        _validate_single_selects(conn, field_values)
         repository.insert_frame_type(
             conn,
             record_id=record_id,
-            name=payload.name,
+            name=compose_frame_name(field_values),
             manufacturer=payload.manufacturer,
             brand=payload.brand,
             use=payload.use,
@@ -167,6 +201,19 @@ def update_frame_type(
                 )
             return _to_public(row)
         _validate_single_selects(conn, values)
+        if any(part in values for part in _NAME_PART_ORDER):
+            # A name-part changed — recompute the derived name from the merged
+            # row. Fetching here is also the load-bearing existence check for a
+            # name-part patch (validation above only checked option labels, not
+            # that the row exists / is active).
+            current = repository.get_frame_type(conn, record_id)
+            if current is None or not current["is_active"]:
+                raise api_error(
+                    status.HTTP_404_NOT_FOUND,
+                    "catalog_frame_type_not_found",
+                    "Catalog frame type not found.",
+                )
+            values["name"] = compose_frame_name({**current, **values})
         ok = repository.update_frame_type(conn, record_id, values, user.id)
         if not ok:
             raise api_error(
@@ -191,7 +238,13 @@ def update_frame_type(
 
 
 def duplicate_frame_type(record_id: str, user: UserPublic, request: Request) -> CatalogFrameTypePublic:
-    """Insert a copy of ``record_id`` with a ``(copy)`` suffix on ``name``."""
+    """Insert a copy of ``record_id``.
+
+    With ``name`` now derived from the parts (D-3), a copy has identical parts
+    and therefore an identical name — duplicates are distinguished by id, not by
+    a ``(copy)`` suffix (the active-name index is non-unique). The user renames
+    by editing a part afterwards.
+    """
     new_record_id = new_catalog_record_id()
     with transaction() as conn:
         src = repository.get_frame_type(conn, record_id)
@@ -204,12 +257,10 @@ def duplicate_frame_type(record_id: str, user: UserPublic, request: Request) -> 
         # No _validate_single_selects here: the source row's labels are already
         # valid (they passed validation on the original write), so a copy cannot
         # introduce an unknown option.
-        siblings = repository.list_sibling_names(conn, exclude_id=record_id)
-        new_name = next_copy_suffix(src["name"], siblings)
         repository.insert_frame_type(
             conn,
             record_id=new_record_id,
-            name=new_name,
+            name=compose_frame_name(src),
             manufacturer=src["manufacturer"],
             brand=src["brand"],
             use=src["use"],

@@ -55,8 +55,8 @@ follow-up is unblocked.
 | 0 | `phases/phase-00-canonical-vocab-and-cleanup.md` | Freeze canonical option sets + the dirty→canonical fold map (data spec + `_option_seeds.py` + clean seed). | ✅ Complete |
 | 1 | `phases/phase-01-catalog-option-store.md` | New global `catalog_field_options` store + repo/service/routes/models + seed. | ✅ Complete |
 | 2 | `phases/phase-02-write-validation.md` | Reject unknown values on create/patch for the six fields. | ✅ Complete |
-| 3 | `phases/phase-03-derived-name-and-default-by-id.md` | Server-compute read-only `name`; default frame/glazing lookup → by id. | Next |
-| 4 | `phases/phase-04-import-export-v2.md` | Import v2: fold legacy values, compute name on import, drop missing-name gate. | Pending |
+| 3 | `phases/phase-03-derived-name-and-default-by-id.md` | Server-compute read-only `name`; default frame/glazing lookup → by id. | ✅ Complete |
+| 4 | `phases/phase-04-import-export-v2.md` | Import v2: fold legacy values, compute name on import, drop missing-name gate. | Next |
 | 5 | `phases/phase-05-frontend-single-select.md` | Six fields → single_select (unlocked), read-only name, manage-options wired to the store. | Pending |
 | 6 | `phases/phase-06-cleanup-docs-closeout.md` | Fold decisions into `context/`, flip PRD D4, closeout gate, mark Complete. | Pending |
 

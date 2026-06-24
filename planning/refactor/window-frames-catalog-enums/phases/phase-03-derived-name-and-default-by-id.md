@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 18:25 EDT
-STATUS: Draft — depends on Phase 2 (clean values feed the name)
+STATUS: Complete (2026-06-23) — derived name + default-by-id; CI green
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phase 3 — server-compute `name` from parts (read-only) + switch default-frame/glazing lookup to by-id
 RELATED:
@@ -156,3 +156,41 @@ comparator is field-agnostic, so this only removes a duplicate delta).
   stale-merge bug.
 - Optional: mirror `compose_frame_name` in TS for optimistic display (Phase 5);
   backend stays the source of truth.
+
+## Completion (2026-06-23)
+
+- **`compose_frame_name`** (`service.py`) + `_NAME_PART_ORDER`: ` | `-join of
+  non-empty parts (manufacturer, prefix, brand, use, operation, location,
+  mull_type, suffix; `material` excluded), clamped to 200. Computed on create,
+  on patch **only when a name-part changed** (recomputed from the merged row),
+  and on duplicate.
+- **`name` removed from the write models** (`models.py`): `extra="forbid"`
+  rejects an inbound `name` (422). Read models keep it (computed).
+- **Duplicate** drops `next_copy_suffix`: a copy has identical parts → identical
+  derived name; identity is the id (D-3 recommendation (b)). `list_sibling_names`
+  removed (orphaned).
+- **Default lookup → by id** (`default_refs.py`): `_fetch_by_name` →
+  `_fetch_by_id` using new `APERTURE_DEFAULT_FRAME_ID`/`_GLAZING_ID`
+  (`envelope_models.py`, re-exported via `document.py`). **Required** because the
+  all-null sentinel composes to `""` and `FrameRef.name` needs `min_length=1`.
+- **Sentinel keeps its seeded `PHN-Default-Frame` name** — the backfill
+  (`20260623_0039`) and `repository.recompute_names` both skip
+  `recPHNDefFrame001`. So `test_seed_dev_db` is unchanged.
+- **Backfill `20260623_0039`** recomputes names from parts (SQL twin of the
+  composer); a near no-op in practice (catalog seeds via the import script after
+  migrations), kept for correctness on any pre-existing rows.
+- **Option rename/merge now recomputes dependent names**
+  (`options_service` → `repository.recompute_names`) — a Phase 1×Phase 3
+  interaction: a renamed label would otherwise leave row names stale.
+- **Drift comparator** drops `"name"` from `_FRAME_KEYS` (derived → can't drift
+  independently).
+- **Tests:** lossless-derivation proof over all 189 seed rows; name recompute on
+  patch; non-name-part patch leaves name; option-rename recomputes row name;
+  duplicate same-name; inbound-name rejected; default-by-id (via existing
+  `test_seed_dev_db`). Existing frame/roster/option/import fixtures moved off
+  client-supplied `name` (discriminate via free-text `suffix`).
+- **A 4-agent simplify review** verified the three name-composition
+  implementations (Python / repository SQL / migration SQL) are byte-for-byte
+  consistent; deduped the sentinel-id constant (repository imports the canonical).
+- **Verification:** full backend suite **986 passed, 2 skipped**; single alembic
+  head `20260623_0039`.

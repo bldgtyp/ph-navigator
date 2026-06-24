@@ -27,9 +27,10 @@ def signed_in_client() -> TestClient:
     return client
 
 
-def _frame(name: str, manufacturer: str | None) -> dict[str, object]:
+def _frame(tag: str, manufacturer: str | None) -> dict[str, object]:
+    # `name` is server-derived (Phase 3); `tag` rides `suffix` to keep rows
+    # distinct. The roster groups by manufacturer, so the name is incidental.
     return {
-        "name": name,
         "manufacturer": manufacturer,
         "brand": None,
         "use": None,
@@ -37,7 +38,7 @@ def _frame(name: str, manufacturer: str | None) -> dict[str, object]:
         "location": None,
         "mull_type": None,
         "prefix": None,
-        "suffix": None,
+        "suffix": tag,
         "material": None,
         "width_mm": 80.0,
         "u_value_w_m2k": 1.0,

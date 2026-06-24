@@ -29,6 +29,13 @@ SpecificationStatus = Literal["complete", "missing", "question", "na"]
 APERTURE_DEFAULT_FRAME_NAME = "PHN-Default-Frame"
 APERTURE_DEFAULT_GLAZING_NAME = "PHN-Default-Glazing"
 
+# Deterministic sentinel ids of the built-in default catalog rows (seeded by
+# migration 20260605_0018). The default frame/glazing are resolved by **id**,
+# not name: frame `name` is now derived from its parts (D-3) and the all-null
+# sentinel composes to an empty string, so a name lookup would fail.
+APERTURE_DEFAULT_FRAME_ID = "recPHNDefFrame001"
+APERTURE_DEFAULT_GLAZING_ID = "recPHNDefGlazng01"
+
 ApertureOperationType = Literal["swing", "slide"]
 ApertureOperationDirection = Literal["left", "right", "up", "down"]
 
