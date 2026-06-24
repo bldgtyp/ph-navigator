@@ -56,4 +56,4 @@ This is a refactor packet because the change cuts across the shared project-docu
 | Phase 02 | Done | Prove backend reads, writes, validates, and seed assembly preserve the status field. |
 | Phase 03 | Done | Prove frontend schemas, row builders, payload builders, and table UI expose/edit status. |
 | Phase 04 | Done | Reset/reseed the local dev DB and smoke the mounted app. |
-| Phase 05 | Planned | Run graph/docs closeout and record evidence. |
+| Phase 05 | Done | Run graph/docs closeout and record evidence. |

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 08:10 EDT
-STATUS: Active
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Current status for the DataTable Status Field refactor packet.
 RELATED: planning/refactor/data-table-status-field/README.md, planning/refactor/data-table-status-field/PLAN.md
@@ -11,7 +11,7 @@ RELATED: planning/refactor/data-table-status-field/README.md, planning/refactor/
 
 ## Current State
 
-State: Active / Phases 01-04 complete; Phase 05 (closeout) pending.
+State: **Complete** — all five phases done; packet ready to archive.
 
 Backend (Phases 01-02) and frontend (Phase 03) are implemented and green.
 Phase 01 added the shared `tables/_status_field.py` helper + seeds + a
@@ -27,18 +27,23 @@ duplicate preserves status (**`make frontend-dev-check` green; vitest 1887
 passed**). Phase 04 reset/reseeded the live local dev DB and smoked the mounted
 app: the seeded project carries status options + values, the Thermal Bridges
 Status column edits and persists across reload in-browser, and out-of-scope
-tables show no Status column (full evidence in `phase-04`). Remaining: Phase 05
-closeout (graphify update + fold the durable contract into
-`context/technical-requirements/data-table.md` + final checks).
+tables show no Status column (full evidence in `phase-04`). Phase 05 closed out
+the packet: durable contract folded into
+`context/technical-requirements/data-table.md`, `graphify update .` rebuilt the
+graph, and final `make ci` is green.
 
 ## Next Step
 
-Start `phases/phase-05-closeout-docs.md`: run `graphify update .`, fold the
-reusable DataTable status contract (built-in single-select stored in
-`custom_values.status`, option list under `<table_label>.status`) into
-`context/technical-requirements/data-table.md`, run the final
-`make check-backend` + `make frontend-dev-check` (already green this session),
-and decide whether to archive the packet under `planning/archive/`.
+None required — the feature is implemented, verified, and documented. Phase 05
+closed out: durable contract folded into
+`context/technical-requirements/data-table.md`, `graphify update .` rebuilt the
+graph, and **final `make ci` is green (backend 1061 passed/2 skipped; frontend
+1887 passed; exit 0)**. Optional follow-ups left for Ed: (1) archive this packet
+under `planning/archive/data-table-status-field/` and point `planning/STATUS.md`
+at it; (2) seed the starter project under `codex@example.com` (or document Ed as
+the seed owner) so future browser smokes match the `codex` guidance; (3) decide
+whether existing/non-dev persisted documents need a status backfill (currently
+scoped to new/seeded documents only).
 
 ## Open Questions
 
@@ -96,4 +101,11 @@ Phase 04 (2026-06-24):
   the other tables rely on the API smoke + automated suites + shared
   single-select parity (recorded in `phase-04`).
 
-Deferred to Phase 05: graphify update + durable-doc fold-back + final checks.
+Phase 05 (2026-06-24):
+
+- Durable status contract folded into
+  `context/technical-requirements/data-table.md` § Backend Data Shapes.
+- `graphify update .` rebuilt the graph (18096 nodes, 47148 edges).
+- **Final `make ci` green (exit 0): backend 1061 passed / 2 skipped; frontend
+  1887 passed (197 files).**
+- All phase ledgers, README phase map, and this STATUS reflect actual state.
