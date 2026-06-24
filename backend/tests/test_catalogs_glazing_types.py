@@ -2,14 +2,35 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+
 import pytest
 from fastapi.testclient import TestClient
 
-from database import connection
+from database import connection, transaction
 from features.auth.service import create_or_update_user
+from features.catalogs.glazing_types.options_service import seed_glazing_type_options
 from main import app
 
 ORIGIN = "http://localhost:5173"
+
+
+@pytest.fixture(autouse=True)
+def _reset_glazing_options() -> Iterator[None]:
+    """Keep the canonical glazing option lists present for write-validation.
+
+    ``catalog_field_options`` survives the ``clean_catalog_tables`` CASCADE
+    truncate, so reseeding here guarantees the canonical ``manufacturer`` /
+    ``brand`` labels exist (Phase 2 rejects a row whose value isn't an option).
+    """
+    _seed_canonical_options()
+    yield
+    _seed_canonical_options()
+
+
+def _seed_canonical_options() -> None:
+    with transaction() as conn:
+        seed_glazing_type_options(conn)
 
 
 def signed_in_client() -> TestClient:
@@ -25,10 +46,12 @@ def signed_in_client() -> TestClient:
 
 
 def _payload(name: str = "Triple-Pane LowE Argon") -> dict[str, object]:
+    # manufacturer + brand must be canonical option labels (Phase 2 validation);
+    # suffix stays free text.
     return {
         "name": name,
-        "manufacturer": "Cardinal",
-        "brand": "LoE-366",
+        "manufacturer": "Kawneer",
+        "brand": "GL-1",
         "suffix": "T",
         "u_value_w_m2k": 0.7,
         "g_value": 0.50,
@@ -48,7 +71,7 @@ def test_create_returns_flat_row(clean_catalog_tables: None) -> None:
     assert response.status_code == 201, response.text
     body = response.json()
     assert body["name"] == "Triple-Pane LowE Argon"
-    assert body["manufacturer"] == "Cardinal"
+    assert body["manufacturer"] == "Kawneer"
     assert body["suffix"] == "T"
     assert body["u_value_w_m2k"] == pytest.approx(0.7)
     assert body["g_value"] == pytest.approx(0.50)
@@ -139,6 +162,77 @@ def test_validation_rejects_invalid_values(clean_catalog_tables: None) -> None:
         json={**_payload(), "g_value": 1.2},
     )
     assert bad_g.status_code == 422
+
+
+def test_create_rejects_unknown_manufacturer(clean_catalog_tables: None) -> None:
+    client = signed_in_client()
+    response = client.post(
+        "/api/v1/catalogs/glazing-types",
+        headers={"Origin": ORIGIN},
+        json={**_payload(), "manufacturer": "NotASeededMaker"},
+    )
+    assert response.status_code == 422
+    assert response.json()["error_code"] == "catalog_option_unknown"
+
+
+def test_create_rejects_unknown_brand(clean_catalog_tables: None) -> None:
+    client = signed_in_client()
+    response = client.post(
+        "/api/v1/catalogs/glazing-types",
+        headers={"Origin": ORIGIN},
+        json={**_payload(), "brand": "NoSuchGlass"},
+    )
+    assert response.status_code == 422
+    assert response.json()["error_code"] == "catalog_option_unknown"
+
+
+def test_patch_rejects_unknown_option(clean_catalog_tables: None) -> None:
+    client = signed_in_client()
+    created = client.post("/api/v1/catalogs/glazing-types", headers={"Origin": ORIGIN}, json=_payload()).json()
+    response = client.patch(
+        f"/api/v1/catalogs/glazing-types/{created['id']}",
+        headers={"Origin": ORIGIN},
+        json={"brand": "NoSuchGlass"},
+    )
+    assert response.status_code == 422
+    assert response.json()["error_code"] == "catalog_option_unknown"
+
+
+def test_null_manufacturer_and_brand_allowed(clean_catalog_tables: None) -> None:
+    client = signed_in_client()
+    response = client.post(
+        "/api/v1/catalogs/glazing-types",
+        headers={"Origin": ORIGIN},
+        json={**_payload(), "manufacturer": None, "brand": None},
+    )
+    assert response.status_code == 201, response.text
+    body = response.json()
+    assert body["manufacturer"] is None
+    assert body["brand"] is None
+
+
+def test_add_option_then_use_it_succeeds(clean_catalog_tables: None) -> None:
+    client = signed_in_client()
+    # Add a new brand option via the options route; a row may then use it.
+    options = client.get("/api/v1/catalogs/glazing-types/options").json()["fields"]["brand"]
+    options.append(
+        {"id": "opt_newglass01", "label": "Custom Make-Up 9/12/9", "color": "#3b82f6", "order": float(len(options))}
+    )
+    assert (
+        client.put(
+            "/api/v1/catalogs/glazing-types/options",
+            headers={"Origin": ORIGIN},
+            json={"field_key": "brand", "options": options, "replacements": {}},
+        ).status_code
+        == 200
+    )
+    response = client.post(
+        "/api/v1/catalogs/glazing-types",
+        headers={"Origin": ORIGIN},
+        json={**_payload(), "brand": "Custom Make-Up 9/12/9"},
+    )
+    assert response.status_code == 201, response.text
+    assert response.json()["brand"] == "Custom Make-Up 9/12/9"
 
 
 def test_unauthenticated_read_and_write_rejected(clean_catalog_tables: None) -> None:

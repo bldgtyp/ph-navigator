@@ -9,9 +9,17 @@ RELATED: ./README.md, ./research.md, ./decisions.md, ./PLAN.md, ./phases/
 
 # STATUS — window-glass-catalog-enums
 
-**State:** `In progress` — Phases 0–1 done; Phase 2 next. All decisions resolved
+**State:** `In progress` — Phases 0–2 done; Phase 3 next. All decisions resolved
 (D-6 settled by Ed 2026-06-24: drop the two `DEFAULT` rows, keep one sentinel
 renamed `PHN-Default-Glass`).
+
+**Phase 2 (done 2026-06-24):** added `_validate_single_selects` to
+`glazing_types/service.py` (mirror of frame), wired into `create` + `update`;
+unknown `manufacturer`/`brand` → `catalog_option_unknown` (422); null/empty
+allowed; `duplicate` deliberately skips (source already validated). Moved the
+glazing test fixtures to canonical option values (Kawneer/GL-1) + added an
+autouse option-reset; 5 new validation tests. Full backend suite green
+(1079 passed); ruff/ty clean.
 
 **Phase 1 (done 2026-06-24):** wired glazing onto the existing
 `catalog_field_options` store — relocated the catalog-generic
@@ -52,10 +60,10 @@ cross-check clean (no EXTRA, no orphan options); fresh-migrate sentinel reads
 
 ## Next step
 
-Execute **Phase 2** (strict write-validation on `manufacturer` + `brand`: reject
-unknown option values on create/patch), then 3 → 6 in order. Phases 2–4 are
-backend-only and each ends green on `make ci`; Phase 5 is the frontend; Phase 6 is
-closeout + archive.
+Execute **Phase 3** (server-derived read-only `name` = `manufacturer | brand |
+suffix`: `compose_glazing_name`, SQL twin + `recompute_names`, drop `name` from
+write models + drift keys, backfill migration), then 4 → 6 in order. Phase 4 is
+the import-v2 backend work; Phase 5 is the frontend; Phase 6 is closeout + archive.
 
 Recommended execution: run via the `implement-loop` skill phase-by-phase, or
 `implement` per phase, with the closeout gate after the last code phase.
