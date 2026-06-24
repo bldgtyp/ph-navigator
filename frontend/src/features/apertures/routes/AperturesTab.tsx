@@ -1,9 +1,10 @@
 import "../apertures.css";
 import { useEffect, useMemo, useState } from "react";
 import { Filter, Waypoints } from "lucide-react";
+import { Navigate, useLocation } from "react-router-dom";
 import { errorMessage } from "../../../shared/lib/errors";
 import { AppMenu, AppMenuItem } from "../../../shared/ui/AppMenu";
-import { AppSubTabButton, AppSubTabs } from "../../../shared/ui/AppSubTabs";
+import { AppSubTabLink, AppSubTabs } from "../../../shared/ui/AppSubTabs";
 import type { ProjectDetail } from "../../projects/types";
 import { ApertureCanvasContainer } from "../components/ApertureCanvasContainer";
 import { ApertureEmptyState } from "../components/ApertureEmptyState";
@@ -13,19 +14,33 @@ import { BuilderDriftBanner } from "../components/BuilderDriftBanner";
 import { DeleteApertureDialog } from "../components/DeleteApertureDialog";
 import { DisplayFormatMenuGroup } from "../components/DisplayFormatSelector";
 import { ExportHbjsonAction } from "../components/ExportHbjsonAction";
+import { FramesPanel } from "../components/FramesPanel";
+import { GlazingsPanel } from "../components/GlazingsPanel";
 import { ManufacturerFiltersModal } from "../components/ManufacturerFiltersModal";
 import { ProjectRefsView } from "../components/ProjectRefsView";
 import { RefreshDialog } from "../components/RefreshDialog";
 import type { ApertureDriftEntry } from "../drift-types";
-import { useApplyApertureCommandMutation, useAperturesSliceQuery } from "../hooks";
+import {
+  useApplyApertureCommandMutation,
+  useApertureSpecReportQuery,
+  useAperturesSliceQuery,
+} from "../hooks";
 import { useApertureDriftReport } from "../hooks/useApertureDriftReport";
 import { useApertureDimFormat } from "../hooks/useApertureDimFormat";
 import { useApertureUValues } from "../hooks/useApertureUValues";
 import { DriftProvider } from "../hooks/useDriftContext";
 import { ManufacturerFilterProvider } from "../hooks/useManufacturerFilter";
 import { naturalSortApertures } from "../lib";
+import {
+  apertureSubpath,
+  aperturesBuilderPath,
+  aperturesFramesPath,
+  aperturesGlazingsPath,
+  isApertureSubroute,
+} from "../paths";
 import type {
   ApertureCommand,
+  ApertureReadSource,
   ApertureTypeEntry,
   AperturesSlice,
   ManufacturerFilters,
@@ -33,23 +48,28 @@ import type {
 
 type DialogState = { kind: "none" } | { kind: "delete"; aperture: ApertureTypeEntry };
 
-type AperturesSubtab = "apertures" | "glazings" | "frames";
-
-const APERTURE_SUBTABS: { id: AperturesSubtab; label: string }[] = [
-  { id: "apertures", label: "Apertures" },
-  { id: "glazings", label: "Glazings" },
-  { id: "frames", label: "Frames" },
-];
-
 export function AperturesTab({ project }: { project: ProjectDetail }) {
+  const location = useLocation();
   const isViewer = project.access_mode === "viewer";
   const isLocked = project.active_version?.locked ?? false;
   const canEdit = !isViewer && !isLocked && Boolean(project.active_version_id);
+  const reportSource: ApertureReadSource = isViewer || isLocked ? "version" : "draft";
+  const subpath = apertureSubpath(location.pathname, project.id);
+  const isBuilderRoute = isApertureSubroute(subpath, "builder");
+  const isGlazingsRoute = isApertureSubroute(subpath, "glazings");
+  const isFramesRoute = isApertureSubroute(subpath, "frames");
 
   const sliceQuery = useAperturesSliceQuery(
     project.id,
     project.active_version_id,
     isViewer ? "viewer" : "editor",
+    isBuilderRoute,
+  );
+  const specReportQuery = useApertureSpecReportQuery(
+    project.id,
+    project.active_version_id,
+    reportSource,
+    isGlazingsRoute || isFramesRoute,
   );
   const mutation = useApplyApertureCommandMutation(project.id, project.active_version_id);
 
@@ -60,7 +80,6 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
   const [refsViewOpen, setRefsViewOpen] = useState(false);
   const [refreshEntry, setRefreshEntry] = useState<ApertureDriftEntry | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [activeSubtab, setActiveSubtab] = useState<AperturesSubtab>("apertures");
   const dimFormat = useApertureDimFormat();
 
   const slice = sliceQuery.data;
@@ -74,8 +93,9 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
 
   const activeAperture = sorted.find((a) => a.id === selectedId) ?? null;
   const uValueSource: "draft" | "version" = slice?.source === "draft" ? "draft" : "version";
-  const uValueQuery = useApertureUValues(project.id, project.active_version_id, uValueSource);
-  const driftQuery = useApertureDriftReport(project.id, project.active_version_id, uValueSource);
+  const builderVersionId = isBuilderRoute ? project.active_version_id : null;
+  const uValueQuery = useApertureUValues(project.id, builderVersionId, uValueSource);
+  const driftQuery = useApertureDriftReport(project.id, builderVersionId, uValueSource);
   const driftEntries = driftQuery.data?.entries ?? [];
   const activeUValue =
     uValueQuery.data?.apertures.find((r) => r.aperture_type_id === activeAperture?.id) ?? null;
@@ -133,10 +153,28 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
     setSelectedId(remainder[0]?.id ?? null);
   };
 
-  if (sliceQuery.isLoading) {
+  if (subpath === "" || subpath === "/") {
+    return (
+      <Navigate
+        to={{ pathname: aperturesBuilderPath(project.id), search: location.search }}
+        replace
+      />
+    );
+  }
+
+  if (!isBuilderRoute && !isGlazingsRoute && !isFramesRoute) {
+    return (
+      <Navigate
+        to={{ pathname: aperturesBuilderPath(project.id), search: location.search }}
+        replace
+      />
+    );
+  }
+
+  if (isBuilderRoute && sliceQuery.isLoading) {
     return <section className="tab-panel">Loading apertures...</section>;
   }
-  if (sliceQuery.isError || !slice) {
+  if (isBuilderRoute && (sliceQuery.isError || !slice)) {
     return (
       <section className="tab-panel">
         <p role="alert">{errorMessage(sliceQuery.error, "Could not load apertures.")}</p>
@@ -195,22 +233,28 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
   return (
     <ManufacturerFilterProvider
       value={{
-        filters: slice.manufacturer_filters,
+        filters: slice?.manufacturer_filters ?? null,
         openManufacturerFilters: () => setFiltersModalOpen(true),
       }}
     >
       <DriftProvider value={{ entries: driftEntries, onOpenRefresh: setRefreshEntry }}>
         <section className="tab-panel apertures-page" aria-label="Apertures">
           <AppSubTabs id="aperture-subtabs" ariaLabel="Aperture views">
-            {APERTURE_SUBTABS.map((subtab) => (
-              <AppSubTabButton
-                key={subtab.id}
-                active={activeSubtab === subtab.id}
-                onClick={() => setActiveSubtab(subtab.id)}
-              >
-                {subtab.label}
-              </AppSubTabButton>
-            ))}
+            <AppSubTabLink
+              to={{ pathname: aperturesBuilderPath(project.id), search: location.search }}
+            >
+              Apertures
+            </AppSubTabLink>
+            <AppSubTabLink
+              to={{ pathname: aperturesGlazingsPath(project.id), search: location.search }}
+            >
+              Glazings
+            </AppSubTabLink>
+            <AppSubTabLink
+              to={{ pathname: aperturesFramesPath(project.id), search: location.search }}
+            >
+              Frames
+            </AppSubTabLink>
           </AppSubTabs>
           <RefreshDialog
             open={refreshEntry !== null}
@@ -237,7 +281,7 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
           <ManufacturerFiltersModal
             open={filtersModalOpen}
             apertures={sorted}
-            filters={slice.manufacturer_filters}
+            filters={slice?.manufacturer_filters ?? null}
             readOnly={!canEdit}
             onClose={() => setFiltersModalOpen(false)}
             onSave={async (next: ManufacturerFilters) => {
@@ -255,13 +299,34 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                 {actionError}
               </p>
             ) : null}
-            {activeSubtab !== "apertures" ? (
+            {isGlazingsRoute || isFramesRoute ? (
               <section
                 className="apertures-placeholder-panel"
-                aria-label={activeSubtab === "glazings" ? "Glazings" : "Frames"}
-              />
+                aria-label={isGlazingsRoute ? "Glazings" : "Frames"}
+              >
+                {specReportQuery.isLoading ? (
+                  <p>Loading {isGlazingsRoute ? "glazings" : "frames"}...</p>
+                ) : null}
+                {specReportQuery.isError || !specReportQuery.data ? (
+                  specReportQuery.isLoading ? null : (
+                    <p role="alert">
+                      {errorMessage(
+                        specReportQuery.error,
+                        "Could not load aperture specifications.",
+                      )}
+                    </p>
+                  )
+                ) : isGlazingsRoute ? (
+                  <GlazingsPanel
+                    glazings={specReportQuery.data.project_glazings}
+                    isViewer={isViewer}
+                  />
+                ) : (
+                  <FramesPanel frames={specReportQuery.data.project_frames} isViewer={isViewer} />
+                )}
+              </section>
             ) : null}
-            {activeSubtab === "apertures" ? (
+            {isBuilderRoute ? (
               <div
                 className={
                   sidebarCollapsed

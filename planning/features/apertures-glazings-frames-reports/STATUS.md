@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 17:45 EDT
-STATUS: Active — Phase 0 complete; Phase 1 next
+STATUS: Active — Phase 1 complete; Phase 2 next
 AUTHOR: Claude (Opus 4.8)
 SCOPE: apertures-glazings-frames-reports
 RELATED: ./README.md, ./PRD.md, ./PLAN.md, ./phases/,
@@ -10,7 +10,7 @@ RELATED: ./README.md, ./PRD.md, ./PLAN.md, ./phases/,
 
 # STATUS — Apertures → Glazings / Frames report pages
 
-**State:** `Active`. Phase 0 is complete; resume at Phase 1.
+**State:** `Active`. Phase 1 is complete; resume at Phase 2.
 
 ## Blocker
 
@@ -42,12 +42,17 @@ commands:
   `GET /api/v1/projects/{project_id}/versions/{version_id}/apertures/spec-report`;
   registered the router in `backend/main.py`; added
   `backend/tests/test_apertures_spec_report.py`.
+- **Phase 1 complete (2026-06-24):** converted the Apertures sub-tab bar to
+  route-based `AppSubTabLink`s; added `/apertures/builder`,
+  `/apertures/glazings`, and `/apertures/frames` path helpers; added frontend
+  spec-report API/query plumbing and read types; added Glazings/Frames report
+  shell panels using the shared report-table/status-filter pattern.
 
 ## Next step — RESUME HERE
 
-**Phase 1:** route-based Apertures sub-tabs, Glazings/Frames panel shells, query
-hooks, API functions, and frontend types. See
-`phases/phase-01-frontend-routing-and-panels.md`.
+**Phase 2:** finish Glazings/Frames columns, datasheet/use-site/spec-status/drift
+wiring, and retire `ProjectRefsView` + `refsAggregation`. See
+`phases/phase-02-wire-and-retire-modal.md`.
 
 ## Verification ledger
 
@@ -56,5 +61,12 @@ hooks, API functions, and frontend types. See
   - `cd backend && uv run pytest tests/test_aperture_drift_route.py tests/test_apertures_spec_report.py` — 5 passed.
   - `cd backend && uv run ruff check features/apertures tests/test_apertures_spec_report.py main.py` — passed.
   - `cd backend && uv run ty check features/apertures tests/test_apertures_spec_report.py` — passed.
+- 2026-06-24 Phase 1:
+  - `cd frontend && pnpm run format` — passed.
+  - `make frontend-dev-check` — passed with existing fast-refresh warnings only.
+  - Playwright smoke on local Codex fixture
+    `846a42ac-cb2c-472f-8239-eabd05fe6d57` — `/apertures/glazings` and
+    `/apertures/frames` rendered real report rows and status filters; bare
+    `/apertures` redirected to `/apertures/builder`.
 - Phase 3 still carries the browser smoke (sign in as **Ed** only when isolated;
   otherwise use the isolated smoke recipe in `planning/features/.instructions.md`).

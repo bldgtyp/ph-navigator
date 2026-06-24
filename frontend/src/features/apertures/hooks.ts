@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { markLocalDraftTouched } from "../project_document/lib";
 import { projectDocumentQueryKeys } from "../project_document/query-keys";
-import { applyApertureCommand, fetchAperturesSlice } from "./api";
+import { applyApertureCommand, fetchAperturesSlice, fetchApertureSpecReport } from "./api";
 import { apertureDriftReportQueryKey } from "./hooks/useApertureDriftReport";
 import { apertureUValuesQueryKey } from "./hooks/useApertureUValues";
 import { apertureQueryKeys } from "./query-keys";
-import type { ApertureCommand, AperturesSlice } from "./types";
+import type { ApertureCommand, ApertureReadSource, AperturesSlice } from "./types";
 
 /** Wire kinds whose audit envelope sets ``affects_u_value=true``. The
  *  list mirrors the backend audit flag; keeping it client-side keeps
@@ -59,6 +59,20 @@ export function useAperturesSliceQuery(
   return useQuery({
     queryKey: apertureQueryKeys.slice(projectId, resolvedVersionId, accessMode),
     queryFn: ({ signal }) => fetchAperturesSlice(projectId, resolvedVersionId, accessMode, signal),
+    enabled: enabled && resolvedVersionId.length > 0,
+  });
+}
+
+export function useApertureSpecReportQuery(
+  projectId: string,
+  versionId: string | null,
+  source: ApertureReadSource,
+  enabled = true,
+) {
+  const resolvedVersionId = versionId ?? "";
+  return useQuery({
+    queryKey: apertureQueryKeys.specReport(projectId, resolvedVersionId, source),
+    queryFn: ({ signal }) => fetchApertureSpecReport(projectId, resolvedVersionId, source, signal),
     enabled: enabled && resolvedVersionId.length > 0,
   });
 }
