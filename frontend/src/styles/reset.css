@@ -57,6 +57,10 @@ textarea {
     background 0.16s var(--ease);
 }
 
+:where([tabindex="-1"]:focus) {
+  outline: none;
+}
+
 /* Screen-reader-only utility: visually hidden, still announced. Used across
    features + shared/ui; promoted out of features/equipment/equipment.css. */
 .sr-only {

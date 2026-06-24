@@ -1587,6 +1587,11 @@ button:disabled {
   font-weight: 700;
 }
 
+.tabbar a.active:focus-visible {
+  box-shadow: none;
+  outline: none;
+}
+
 .app-subtabs {
   align-items: end;
   background: rgb(249, 250, 251);
@@ -1655,6 +1660,13 @@ button:disabled {
   border-bottom-color: var(--accent);
   font-weight: 700;
   color: var(--accent-text);
+}
+
+.app-subtabs__tab.active:focus-visible,
+.app-subtabs__tab[data-active="true"]:focus-visible,
+.app-subtabs__tab[aria-selected="true"]:focus-visible {
+  box-shadow: none;
+  outline: none;
 }
 
 .app-subtabs__actions {

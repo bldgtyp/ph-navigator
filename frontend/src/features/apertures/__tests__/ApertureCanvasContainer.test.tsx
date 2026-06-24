@@ -8,7 +8,8 @@ import { ApertureCanvasContainer } from "../components/ApertureCanvasContainer";
 import { DisplayFormatMenuGroup } from "../components/DisplayFormatSelector";
 import { useApertureDimFormat } from "../hooks/useApertureDimFormat";
 import { useApertureBuilderStore } from "../store/builder-store";
-import type { ApertureElement, ApertureTypeEntry } from "../types";
+import type { ApertureElement, ApertureTypeEntry, FrameRef, GlazingRef } from "../types";
+import type { UnitSystem } from "../../../lib/units";
 
 function element(overrides: Partial<ApertureElement> = {}): ApertureElement {
   return {
@@ -34,10 +35,16 @@ function aperture(overrides: Partial<ApertureTypeEntry> = {}): ApertureTypeEntry
   };
 }
 
-function UnitStub({ children }: { children: ReactNode }) {
+function UnitStub({
+  children,
+  unitSystem = "SI",
+}: {
+  children: ReactNode;
+  unitSystem?: UnitSystem;
+}) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const value: UnitPreferenceContextValue = {
-    unitSystem: "SI",
+    unitSystem,
     source: "default",
     error: null,
     setUnitSystem: vi.fn(),
@@ -48,6 +55,46 @@ function UnitStub({ children }: { children: ReactNode }) {
       <UnitPreferenceContext.Provider value={value}>{children}</UnitPreferenceContext.Provider>
     </QueryClientProvider>
   );
+}
+
+function frame(overrides: Partial<FrameRef> = {}): FrameRef {
+  return {
+    name: "Frame A",
+    manufacturer: null,
+    brand: null,
+    use: null,
+    operation: null,
+    location: null,
+    mull_type: null,
+    prefix: null,
+    suffix: null,
+    material: null,
+    width_mm: 25.4,
+    u_value_w_m2k: 1,
+    psi_g_w_mk: null,
+    psi_install_w_mk: null,
+    color: null,
+    source: null,
+    comments: null,
+    catalog_origin: null,
+    ...overrides,
+  };
+}
+
+function glazing(overrides: Partial<GlazingRef> = {}): GlazingRef {
+  return {
+    name: "Glazing A",
+    manufacturer: null,
+    brand: null,
+    suffix: null,
+    u_value_w_m2k: 1,
+    g_value: 0.5,
+    color: null,
+    source: null,
+    comments: null,
+    catalog_origin: null,
+    ...overrides,
+  };
 }
 
 function ApertureCanvasHarness({
@@ -176,6 +223,37 @@ describe("ApertureCanvasContainer", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save name" }));
 
     expect(onSetElementName).toHaveBeenCalledWith("aptel_named", "A-1");
+  });
+
+  it("updates element-card frame and glazing metrics when the app unit system changes", () => {
+    const entry = aperture({
+      elements: [
+        element({
+          glazing: glazing(),
+          frames: { top: frame(), right: null, bottom: null, left: null },
+        }),
+      ],
+    });
+
+    const { rerender } = render(
+      <UnitStub unitSystem="SI">
+        <ApertureCanvasHarness entry={entry} onSetElementName={vi.fn()} />
+      </UnitStub>,
+    );
+
+    expect(screen.getByTestId("glazing-row")).toHaveTextContent("1 W/(m2-K)");
+    expect(screen.getByTestId("frame-row-top")).toHaveTextContent("1 W/(m2-K)");
+    expect(screen.getByTestId("frame-row-top")).toHaveTextContent("25.4 mm");
+
+    rerender(
+      <UnitStub unitSystem="IP">
+        <ApertureCanvasHarness entry={entry} onSetElementName={vi.fn()} />
+      </UnitStub>,
+    );
+
+    expect(screen.getByTestId("glazing-row")).toHaveTextContent("0.176 Btu/(h-ft2-F)");
+    expect(screen.getByTestId("frame-row-top")).toHaveTextContent("0.176 Btu/(h-ft2-F)");
+    expect(screen.getByTestId("frame-row-top")).toHaveTextContent("1 in");
   });
 
   it("clears element selection on Escape", () => {

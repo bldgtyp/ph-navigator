@@ -4,6 +4,7 @@
 import type { ApertureSide, ApertureOperation, FrameRef } from "../types";
 import { FramePicker } from "./FramePicker";
 import { frameRowLabel, type ViewDirection } from "../frame-label-map";
+import { formatLengthFromMm, formatUValueFromWm2K, useUnitPreference } from "../../../lib/units";
 
 export type FrameRowProps = {
   side: ApertureSide;
@@ -27,6 +28,8 @@ export function FrameRow({
   mismatchIndicator,
   onPick,
 }: FrameRowProps) {
+  const { unitSystem } = useUnitPreference();
+
   return (
     <div
       className="aperture-element-table__row aperture-card-row aperture-card-row--frame"
@@ -57,18 +60,14 @@ export function FrameRow({
         )}
       </div>
       <div className="aperture-card-row__metric" role="cell">
-        {formatNumber(frame?.u_value_w_m2k ?? null)}
+        {formatUValueFromWm2K(frame?.u_value_w_m2k ?? null, { unitSystem, empty: "-" })}
       </div>
       <div className="aperture-card-row__metric" role="cell">
-        {formatNumber(frame?.width_mm ?? null)}
+        {formatLengthFromMm(frame?.width_mm ?? null, { unitSystem, empty: "-" })}
       </div>
       <div className="aperture-card-row__metric" role="cell">
         -
       </div>
     </div>
   );
-}
-
-function formatNumber(value: number | null): string {
-  return value == null ? "-" : `${value}`;
 }
