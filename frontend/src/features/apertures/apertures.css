@@ -96,6 +96,18 @@
   display: flex;
   flex: 1 1 auto;
   min-height: 0;
+  position: relative;
+}
+
+.apertures-page__body-actions {
+  align-items: center;
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+  position: absolute;
+  right: var(--space-14);
+  top: var(--space-14);
+  z-index: var(--z-dropdown);
 }
 
 .aperture-sidebar {
@@ -105,9 +117,11 @@
   flex-direction: column;
   margin: calc(-1 * var(--space-14)) 0 calc(-1 * var(--space-14)) calc(-1 * var(--space-14));
   min-width: 0;
-  overflow-x: hidden;
+  overflow: visible;
+  position: relative;
   border-radius: var(--radius-md) 0 0 var(--radius-md);
   width: 260px;
+  z-index: var(--z-dropdown);
 }
 
 .aperture-sidebar.is-collapsed {
@@ -115,6 +129,7 @@
   display: grid;
   gap: var(--space-10);
   justify-items: center;
+  overflow: visible;
   padding: var(--space-18) var(--space-10) var(--space-18) 0;
   width: 52px;
 }
@@ -154,7 +169,7 @@
   gap: var(--space-6);
   list-style: none;
   margin: var(--space-16) 0 0;
-  overflow-x: hidden;
+  overflow-x: visible;
   overflow-y: auto;
   padding: 0 var(--space-8) var(--space-8);
 }
@@ -184,6 +199,7 @@
 .aperture-sidebar__item-name {
   min-width: 0;
   overflow: hidden;
+  position: relative;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -243,20 +259,36 @@
   color: color-mix(in oklab, var(--text-secondary) 38%, transparent);
 }
 
-.aperture-sidebar__row-action[data-sidebar-tooltip]::before {
-  bottom: auto;
-  top: calc(100% + 8px);
-}
-
-.aperture-sidebar__row-action[data-sidebar-tooltip]::after {
-  border-bottom: 5px solid color-mix(in oklab, var(--text-primary) 88%, transparent);
-  border-top: 0;
-  bottom: auto;
-  top: calc(100% + 3px);
-}
-
 /* [data-sidebar-tooltip] hover-hint moved to
    shared/ui/canvas/canvas-hint-tooltip.css (CSS rationalization Phase 7). */
+
+.aperture-sidebar__floating-tooltip {
+  background: color-mix(in oklab, var(--text-primary) 88%, transparent);
+  border-radius: var(--radius-2xs);
+  color: var(--bg-card);
+  font-family: var(--font-primary);
+  font-size: 11px;
+  left: 0;
+  line-height: 1.2;
+  padding: 4px 7px;
+  pointer-events: none;
+  position: fixed;
+  top: 0;
+  transform: translate(-50%, -100%);
+  white-space: nowrap;
+  z-index: var(--z-tooltip);
+}
+
+.aperture-sidebar__floating-tooltip::after {
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid color-mix(in oklab, var(--text-primary) 88%, transparent);
+  content: "";
+  left: 50%;
+  position: absolute;
+  top: 100%;
+  transform: translateX(-50%);
+}
 
 .apertures-page__main {
   color: var(--text-secondary);
@@ -264,7 +296,7 @@
   flex: 1 1 auto;
   flex-direction: column;
   min-width: 0;
-  padding: 18px 0 18px 26px;
+  padding: 48px 0 18px 26px;
 }
 
 .apertures-page__main:has(.apertures-empty) {
@@ -1329,6 +1361,11 @@
     flex-direction: column;
   }
 
+  .apertures-page__body-actions {
+    right: 0;
+    top: var(--space-4);
+  }
+
   .aperture-sidebar {
     width: 100%;
     margin: calc(-1 * var(--space-12)) calc(-1 * var(--space-12)) 0;
@@ -1342,7 +1379,7 @@
   }
 
   .apertures-page__main {
-    padding: var(--space-16) 0 0;
+    padding: var(--space-48) 0 0;
   }
 
   .apertures-page__header {

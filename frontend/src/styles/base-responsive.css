@@ -7,7 +7,7 @@
   .topbar {
     grid-template-columns: 1fr;
     gap: var(--space-10);
-    padding: var(--space-12) var(--space-20);
+    padding: 38px var(--space-20) var(--space-12);
   }
 
   .brand {
