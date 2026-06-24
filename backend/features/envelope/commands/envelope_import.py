@@ -24,5 +24,5 @@ def import_envelope_constructions(
     all-or-nothing (no half-applied imports, unlike V1).
     """
     library = parse_or_422(command.file, current_schema_version=body.schema_version)
-    plan = build_import_plan(conn, body, library, command.resolutions)
+    plan = build_import_plan(conn, body, library, command.resolutions, command.material_resolutions)
     return plan.next_body

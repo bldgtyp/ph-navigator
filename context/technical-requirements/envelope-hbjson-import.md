@@ -32,9 +32,11 @@ Implementation: `backend/features/envelope/hbjson_import.py` (parse → IR),
   `import_file_too_large`.
 - **Apply:** the existing `POST …/draft/envelope/commands` with command
   `kind = "import_envelope_constructions"`, carrying `file` (the parsed
-  JSON object) + `resolutions` (per-construction overrides). ETag-guarded
-  like every envelope command; re-runs the same deterministic plan
-  server-side and performs **one** `replace_materials_and_assemblies`.
+  JSON object), `resolutions` (per-construction overrides, keyed by
+  `resolution_key`), and `material_resolutions` (per-material overrides —
+  `{source_key, action: "create_new"}`, the reject-the-match escape hatch).
+  ETag-guarded like every envelope command; re-runs the same deterministic
+  plan server-side and performs **one** `replace_materials_and_assemblies`.
 
 ## Preview response
 

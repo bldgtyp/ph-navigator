@@ -44,6 +44,21 @@ class ConstructionResolution(BaseModel):
     target_assembly_id: str | None = None
 
 
+# Material decisions are otherwise deterministic; the only override is "reject
+# the match and create a fresh project-only copy" — the false-positive
+# name-match escape hatch.
+MaterialOverrideAction = Literal["create_new"]
+
+
+class MaterialResolution(BaseModel):
+    """User override for one incoming material, keyed by its ``source_key``."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    source_key: str
+    action: MaterialOverrideAction = "create_new"
+
+
 class MaterialPlanItem(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

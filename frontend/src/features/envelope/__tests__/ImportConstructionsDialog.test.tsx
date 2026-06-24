@@ -97,10 +97,13 @@ describe("ImportConstructionsDialog", () => {
     );
 
     await userEvent.click(screen.getByRole("button", { name: "Import 2 constructions" }));
-    expect(onConfirm).toHaveBeenCalledWith([
-      { resolution_key: "WALL-A", action: "replace", target_assembly_id: "asm_a" },
-      { resolution_key: "W_NewWall", action: "add_new", target_assembly_id: null },
-    ]);
+    expect(onConfirm).toHaveBeenCalledWith(
+      [
+        { resolution_key: "WALL-A", action: "replace", target_assembly_id: "asm_a" },
+        { resolution_key: "W_NewWall", action: "add_new", target_assembly_id: null },
+      ],
+      [],
+    );
   });
 
   test("a foreign construction can be skipped", async () => {
@@ -118,9 +121,32 @@ describe("ImportConstructionsDialog", () => {
     await userEvent.selectOptions(screen.getByLabelText("Action for W_NewWall"), "skip");
     // Only the replace construction now lands.
     await userEvent.click(screen.getByRole("button", { name: "Import 1 construction" }));
-    expect(onConfirm).toHaveBeenCalledWith([
-      { resolution_key: "WALL-A", action: "replace", target_assembly_id: "asm_a" },
-      { resolution_key: "W_NewWall", action: "skip", target_assembly_id: null },
+    expect(onConfirm).toHaveBeenCalledWith(
+      [
+        { resolution_key: "WALL-A", action: "replace", target_assembly_id: "asm_a" },
+        { resolution_key: "W_NewWall", action: "skip", target_assembly_id: null },
+      ],
+      [],
+    );
+  });
+
+  test("rejecting a material match forces a fresh copy", async () => {
+    const onConfirm = vi.fn();
+    render(
+      <ImportConstructionsDialog
+        plan={plan()}
+        busy={false}
+        error={null}
+        onClose={vi.fn()}
+        onConfirm={onConfirm}
+      />,
+    );
+
+    // "Mineral wool" defaults to reuse; reject the match.
+    await userEvent.click(screen.getByLabelText("Create a new copy of Mineral wool"));
+    await userEvent.click(screen.getByRole("button", { name: "Import 2 constructions" }));
+    expect(onConfirm).toHaveBeenCalledWith(expect.any(Array), [
+      { source_key: "pmat_1", action: "create_new" },
     ]);
   });
 

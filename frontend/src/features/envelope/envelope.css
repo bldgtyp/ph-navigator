@@ -1657,3 +1657,12 @@
   padding: var(--space-2) var(--space-8);
   font-size: 12px;
 }
+
+.envelope-import__material-override {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  color: var(--text-secondary);
+  font-size: 12px;
+  white-space: nowrap;
+}

@@ -49,6 +49,7 @@ import type {
   EnvelopeAttachmentChange,
   EnvelopeCommand,
   EnvelopeReadResponse,
+  MaterialResolution,
 } from "../types";
 import {
   countAssemblyMaterialDrift,
@@ -236,13 +237,17 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     }
   }
 
-  async function confirmImport(resolutions: ConstructionResolution[]): Promise<void> {
+  async function confirmImport(
+    resolutions: ConstructionResolution[],
+    materialResolutions: MaterialResolution[],
+  ): Promise<void> {
     const pending = importer.plan;
     if (!pending) return;
     const applied = await applyCommand({
       kind: "import_envelope_constructions",
       file: pending.file,
       resolutions,
+      material_resolutions: materialResolutions,
     });
     if (applied) importer.reset();
   }
@@ -459,7 +464,9 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
           busy={commandMutation.isPending}
           error={commandError}
           onClose={importer.reset}
-          onConfirm={(resolutions) => void confirmImport(resolutions)}
+          onConfirm={(resolutions, materialResolutions) =>
+            void confirmImport(resolutions, materialResolutions)
+          }
         />
       ) : null}
     </section>
