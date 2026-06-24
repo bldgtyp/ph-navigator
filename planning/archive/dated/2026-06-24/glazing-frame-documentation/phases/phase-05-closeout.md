@@ -1,14 +1,19 @@
 ---
 DATE: 2026-06-24
-TIME: 17:30 EDT
-STATUS: Planned
-AUTHOR: Claude (Opus 4.8)
+TIME: 17:58 EDT
+STATUS: Complete locally
+AUTHOR: Codex
 SCOPE: Phase 5 — fold decisions into context/, run the closeout gate, hand off
   to the report-pages feature.
 RELATED: ../README.md, ../../apertures-glazings-frames-reports/
 ---
 
 # Phase 5 — Closeout
+
+Implementation through Phase 4 is complete locally. The final closeout pass
+ran: simplify, docs-pass, `graphify update .`, `make format`, and `make ci`.
+Commit/archive is pending a clean staging pass because the worktree already
+contains unrelated modified/untracked planning/context files.
 
 ## Fold decisions into `context/`
 
@@ -41,4 +46,5 @@ RELATED: ../README.md, ../../apertures-glazings-frames-reports/
 
 ## Exit criteria
 
-- `context/` updated; closeout gate green; STATUS reflects merge.
+- Met locally. `context/` updated; closeout gate green; STATUS reflects local
+  completion. Merge/archive still pending.

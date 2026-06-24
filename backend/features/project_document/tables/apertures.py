@@ -11,6 +11,8 @@ from features.project_document.document import (
     ApertureTypeEntry,
     ManufacturerFilters,
     ProjectDocumentV1,
+    ProjectFrame,
+    ProjectGlazing,
 )
 from features.project_document.models import ProjectDocumentSource
 from features.project_document.tables.contracts import TableContract
@@ -34,6 +36,8 @@ class AperturesSliceResponse(BaseModel):
     version_etag: str
     draft_etag: str | None
     apertures: list[ApertureTypeEntry]
+    project_glazings: list[ProjectGlazing]
+    project_frames: list[ProjectFrame]
     # Phase 11: enabled-list for the manufacturer-filter modal +
     # picker filtering. ``null`` means "all manufacturers enabled".
     manufacturer_filters: ManufacturerFilters | None = None
@@ -63,6 +67,8 @@ def apertures_response(
         version_etag=version_etag,
         draft_etag=draft_etag,
         apertures=body.tables.apertures,
+        project_glazings=body.tables.project_glazings,
+        project_frames=body.tables.project_frames,
         manufacturer_filters=body.tables.manufacturer_filters,
     )
 

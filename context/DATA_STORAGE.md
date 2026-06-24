@@ -189,7 +189,10 @@ This is the heart of V2 and the reason it left V1's relational entity model.
 The entire project model — assemblies, layers, segments, project materials,
 apertures, rooms, thermal bridges, equipment, option lists, the field-config
 registry — is **one Pydantic-validated JSON document** (`ProjectDocumentV1`,
-`schema_version` currently in the 7–8 range) stored as JSONB.
+`schema_version` **12** as of 2026-06-24 — the code constant
+`CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION` in
+`backend/features/project_document/document.py` is authoritative) stored as
+JSONB.
 
 ### 3.1 The tables
 
@@ -275,6 +278,7 @@ projects/{project_id}/assets/_orphaned/{asset_id}/{name}    # GC-quarantined
 `datasheet` · `site_photo` · `hbjson` · `simulation_file` · `export_bundle` ·
 `epw` · `stat` · `ddy` · `other`. A fixed registry maps each attachable document field
 (`project_materials.datasheet_asset_ids`, `assembly_segments.photo_asset_ids`,
+`project_glazings.datasheet_asset_ids`, `project_frames.datasheet_asset_ids`,
 equipment/thermal-bridge datasheet fields, …) to its allowed kinds, MIME types,
 per-cell `max_count`, and per-file size cap.
 

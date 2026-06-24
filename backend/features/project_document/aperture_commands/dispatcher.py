@@ -79,7 +79,7 @@ _HANDLERS: dict[str, _Handler] = {
 }
 
 # Commands declared in the union but intentionally not wired up.
-_NOT_IMPLEMENTED_KINDS: frozenset[str] = frozenset({"editFieldOverride"})
+_NOT_IMPLEMENTED_KINDS: frozenset[str] = frozenset()
 
 
 def apply_aperture_command(

@@ -19,7 +19,6 @@ locally so the structured error code is meaningful.
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
 
 from starlette import status
 
@@ -33,14 +32,10 @@ from features.project_document.aperture_commands.models import (
     MergeElements,
     SplitElement,
 )
-from features.project_document.apertures._ref_helpers import advance_origin
 from features.project_document.apertures.factories import DefaultsCatalogReader
 from features.project_document.document import (
     ApertureElement,
-    ApertureElementFrames,
     ApertureTypeEntry,
-    FrameRef,
-    GlazingRef,
     ProjectDocumentV1,
 )
 from features.shared.errors import api_error
@@ -63,7 +58,7 @@ def apply_merge_elements(
         row_span=union["row_span"],
         column_span=union["column_span"],
         frames=top_left.frames.model_copy(deep=True),
-        glazing=top_left.glazing.model_copy(deep=True) if top_left.glazing else None,
+        glazing_id=top_left.glazing_id,
         operation=top_left.operation.model_copy(deep=True) if top_left.operation else None,
     )
 
@@ -103,7 +98,6 @@ def apply_split_element(
             {"element_id": command.element_id},
         )
 
-    now = datetime.now(tz=UTC)
     new_elements: list[ApertureElement] = []
     for r in range(rs, re + 1):
         for c in range(cs, ce + 1):
@@ -113,8 +107,8 @@ def apply_split_element(
                     name=source.name,
                     row_span=(r, r),
                     column_span=(c, c),
-                    frames=_clone_frames(source.frames, synced_at=now),
-                    glazing=_clone_glazing(source.glazing, synced_at=now),
+                    frames=source.frames.model_copy(deep=True),
+                    glazing_id=source.glazing_id,
                     operation=source.operation.model_copy(deep=True) if source.operation else None,
                 )
             )
@@ -192,36 +186,6 @@ def _validate_rectangle(
 
 def _top_left(sources: list[ApertureElement]) -> ApertureElement:
     return min(sources, key=lambda el: (el.row_span[0], el.column_span[0]))
-
-
-# ---- Clone helpers --------------------------------------------------------
-
-
-def _clone_frames(frames: ApertureElementFrames, *, synced_at: datetime) -> ApertureElementFrames:
-    return ApertureElementFrames(
-        top=_clone_frame(frames.top, synced_at=synced_at),
-        right=_clone_frame(frames.right, synced_at=synced_at),
-        bottom=_clone_frame(frames.bottom, synced_at=synced_at),
-        left=_clone_frame(frames.left, synced_at=synced_at),
-    )
-
-
-def _clone_frame(frame: FrameRef | None, *, synced_at: datetime) -> FrameRef | None:
-    if frame is None:
-        return None
-    return frame.model_copy(
-        update={"catalog_origin": advance_origin(frame.catalog_origin, synced_at=synced_at)},
-        deep=True,
-    )
-
-
-def _clone_glazing(glazing: GlazingRef | None, *, synced_at: datetime) -> GlazingRef | None:
-    if glazing is None:
-        return None
-    return glazing.model_copy(
-        update={"catalog_origin": advance_origin(glazing.catalog_origin, synced_at=synced_at)},
-        deep=True,
-    )
 
 
 __all__ = ["apply_merge_elements", "apply_split_element"]

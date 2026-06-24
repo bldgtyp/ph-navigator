@@ -19,10 +19,12 @@ import json
 from collections import OrderedDict
 from typing import TypeVar
 
+from features.project_document.apertures.lookup import frame_by_id, glazing_by_id
 from features.project_document.document import (
     ApertureTypeEntry,
-    FrameRef,
-    GlazingRef,
+    ProjectDocumentTables,
+    ProjectFrame,
+    ProjectGlazing,
 )
 
 CACHE_MAX_ENTRIES = 256
@@ -72,7 +74,7 @@ def cache_clear() -> None:
     _RESULT_CACHE.clear()
 
 
-def content_hash_for_aperture(entry: ApertureTypeEntry) -> str:
+def content_hash_for_aperture(entry: ApertureTypeEntry, tables: ProjectDocumentTables) -> str:
     """Stable SHA-256 hex over the U-Value-affecting subtree.
 
     Element ``name`` and ``operation`` are excluded so changes to
@@ -90,12 +92,12 @@ def content_hash_for_aperture(entry: ApertureTypeEntry) -> str:
                 "row_span": list(el.row_span),
                 "column_span": list(el.column_span),
                 "frames": {
-                    "top": _frame_payload(el.frames.top),
-                    "right": _frame_payload(el.frames.right),
-                    "bottom": _frame_payload(el.frames.bottom),
-                    "left": _frame_payload(el.frames.left),
+                    "top": _frame_payload_for_id(tables, el.frames.top),
+                    "right": _frame_payload_for_id(tables, el.frames.right),
+                    "bottom": _frame_payload_for_id(tables, el.frames.bottom),
+                    "left": _frame_payload_for_id(tables, el.frames.left),
                 },
-                "glazing": _glazing_payload(el.glazing),
+                "glazing": _glazing_payload(glazing_by_id(tables, el.glazing_id)),
             }
             for el in sorted(entry.elements, key=lambda e: (e.row_span[0], e.column_span[0], e.id))
         ],
@@ -104,7 +106,11 @@ def content_hash_for_aperture(entry: ApertureTypeEntry) -> str:
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
-def _frame_payload(frame: FrameRef | None) -> dict[str, float | None] | None:
+def _frame_payload_for_id(tables: ProjectDocumentTables, frame_id: str | None) -> dict[str, float | None] | None:
+    return _frame_payload(frame_by_id(tables, frame_id))
+
+
+def _frame_payload(frame: ProjectFrame | None) -> dict[str, float | None] | None:
     if frame is None:
         return None
     return {
@@ -114,7 +120,7 @@ def _frame_payload(frame: FrameRef | None) -> dict[str, float | None] | None:
     }
 
 
-def _glazing_payload(glazing: GlazingRef | None) -> dict[str, float | None] | None:
+def _glazing_payload(glazing: ProjectGlazing | None) -> dict[str, float | None] | None:
     if glazing is None:
         return None
     return {"u_value_w_m2k": _round_opt(glazing.u_value_w_m2k)}

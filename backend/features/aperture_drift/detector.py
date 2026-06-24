@@ -22,12 +22,14 @@ from features.aperture_drift.models import (
     DriftTarget,
     RefFieldDelta,
 )
+from features.project_document.apertures.lookup import frame_by_id, glazing_by_id
 from features.project_document.document import (
     ApertureElement,
     ApertureTypeEntry,
-    FrameRef,
-    GlazingRef,
+    ProjectDocumentTables,
     ProjectDocumentV1,
+    ProjectFrame,
+    ProjectGlazing,
 )
 
 
@@ -50,24 +52,25 @@ def detect_aperture_drift(
     entries: list[ApertureDriftEntry] = []
     for aperture in body.tables.apertures:
         for element in aperture.elements:
-            entries.extend(_check_element(aperture, element, catalog))
+            entries.extend(_check_element(body.tables, aperture, element, catalog))
     return ApertureDriftReport(entries=entries)
 
 
 def _check_element(
+    tables: ProjectDocumentTables,
     aperture: ApertureTypeEntry,
     element: ApertureElement,
     catalog: CatalogRowReader,
 ) -> list[ApertureDriftEntry]:
     out: list[ApertureDriftEntry] = []
     for side in ("top", "right", "bottom", "left"):
-        frame = getattr(element.frames, side)
+        frame = frame_by_id(tables, getattr(element.frames, side))
         if frame is None or frame.catalog_origin is None:
             continue
         entry = _check_frame(aperture, element, side, frame, catalog)
         if entry is not None:
             out.append(entry)
-    glazing = element.glazing
+    glazing = glazing_by_id(tables, element.glazing_id)
     if glazing is not None and glazing.catalog_origin is not None:
         entry = _check_glazing(aperture, element, glazing, catalog)
         if entry is not None:
@@ -79,7 +82,7 @@ def _check_frame(
     aperture: ApertureTypeEntry,
     element: ApertureElement,
     side: str,
-    frame: FrameRef,
+    frame: ProjectFrame,
     catalog: CatalogRowReader,
 ) -> ApertureDriftEntry | None:
     assert frame.catalog_origin is not None  # narrowed by caller
@@ -97,7 +100,7 @@ def _check_frame(
 def _check_glazing(
     aperture: ApertureTypeEntry,
     element: ApertureElement,
-    glazing: GlazingRef,
+    glazing: ProjectGlazing,
     catalog: CatalogRowReader,
 ) -> ApertureDriftEntry | None:
     assert glazing.catalog_origin is not None

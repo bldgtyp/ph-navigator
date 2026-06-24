@@ -18,6 +18,7 @@ from features.aperture_u_value.cache import (
     content_hash_for_aperture,
 )
 from features.aperture_u_value.service import calculate_aperture_u_values
+from features.project_document.apertures._ref_helpers import ensure_project_frame, ensure_project_glazing
 from features.project_document.document import (
     ApertureElement,
     ApertureElementFrames,
@@ -26,6 +27,7 @@ from features.project_document.document import (
     CatalogOrigin,
     FrameRef,
     GlazingRef,
+    ProjectDocumentTables,
 )
 
 
@@ -61,6 +63,7 @@ def _glazing(*, u: float = 0.8) -> GlazingRef:
 
 def _element(
     *,
+    tables: ProjectDocumentTables,
     id: str = "aptel_X",
     name: str = "X",
     row_span: tuple[int, int] = (0, 0),
@@ -70,13 +73,15 @@ def _element(
     operation: ApertureOperation | None = None,
 ) -> ApertureElement:
     f = frame if frame is not None else _frame()
+    frame_id = ensure_project_frame(tables, f)
+    glazing_id = ensure_project_glazing(tables, glazing if glazing is not None else _glazing())
     return ApertureElement(
         id=id,
         name=name,
         row_span=row_span,
         column_span=column_span,
-        frames=ApertureElementFrames(top=f, right=f, bottom=f, left=f),
-        glazing=glazing if glazing is not None else _glazing(),
+        frames=ApertureElementFrames(top=frame_id, right=frame_id, bottom=frame_id, left=frame_id),
+        glazing_id=glazing_id,
         operation=operation,
     )
 
@@ -101,8 +106,9 @@ def test_1x1_aperture_u_value_matches_iso_formula() -> None:
     Ψg=0.04 W/mK, the composite U_w should be roughly between glazing
     and frame U-values (both contribute). Sanity-check the bounds."""
 
-    entry = _aperture([_element()], rows=[1000.0], cols=[1000.0])
-    result = calculate_aperture_u_values(entry)
+    tables = ProjectDocumentTables()
+    entry = _aperture([_element(tables=tables)], rows=[1000.0], cols=[1000.0])
+    result = calculate_aperture_u_values(entry, tables)
     assert 0.8 < result.window_u_value_w_m2k < 1.0
     assert result.warnings == []
     assert result.total_area_m2 == pytest.approx(1.0, rel=1e-3)
@@ -110,16 +116,18 @@ def test_1x1_aperture_u_value_matches_iso_formula() -> None:
 
 def test_missing_glazing_yields_warning_and_zero_value_for_element() -> None:
     f = _frame()
+    tables = ProjectDocumentTables()
+    frame_id = ensure_project_frame(tables, f)
     el = ApertureElement(
         id="aptel_NG",
         name="NG",
         row_span=(0, 0),
         column_span=(0, 0),
-        frames=ApertureElementFrames(top=f, right=f, bottom=f, left=f),
-        glazing=None,
+        frames=ApertureElementFrames(top=frame_id, right=frame_id, bottom=frame_id, left=frame_id),
+        glazing_id=None,
     )
     entry = _aperture([el], rows=[1000.0], cols=[1000.0])
-    result = calculate_aperture_u_values(entry)
+    result = calculate_aperture_u_values(entry, tables)
     kinds = {w.kind for w in result.warnings}
     assert "missing_glazing" in kinds
     # Element returns 0 (excluded from window aggregation).
@@ -128,53 +136,64 @@ def test_missing_glazing_yields_warning_and_zero_value_for_element() -> None:
 
 def test_missing_frame_side_yields_warning() -> None:
     f = _frame()
+    tables = ProjectDocumentTables()
+    frame_id = ensure_project_frame(tables, f)
+    glazing_id = ensure_project_glazing(tables, _glazing())
     el = ApertureElement(
         id="aptel_Y",
         name="Y",
         row_span=(0, 0),
         column_span=(0, 0),
-        frames=ApertureElementFrames(top=None, right=f, bottom=f, left=f),
-        glazing=_glazing(),
+        frames=ApertureElementFrames(top=None, right=frame_id, bottom=frame_id, left=frame_id),
+        glazing_id=glazing_id,
     )
     entry = _aperture([el], rows=[1000.0], cols=[1000.0])
-    result = calculate_aperture_u_values(entry)
+    result = calculate_aperture_u_values(entry, tables)
     assert any(w.kind == "missing_frame" and w.side == "top" for w in result.warnings)
 
 
 def test_content_hash_excludes_operation_and_name() -> None:
-    el_a = _element(name="A", operation=None)
-    el_b = _element(name="B", operation=ApertureOperation(type="swing", directions=["left"]))
+    tables_a = ProjectDocumentTables()
+    tables_b = ProjectDocumentTables()
+    el_a = _element(tables=tables_a, name="A", operation=None)
+    el_b = _element(tables=tables_b, name="B", operation=ApertureOperation(type="swing", directions=["left"]))
     entry_a = _aperture([el_a], rows=[1000.0], cols=[1000.0])
     entry_b = _aperture([el_b], rows=[1000.0], cols=[1000.0])
-    assert content_hash_for_aperture(entry_a) == content_hash_for_aperture(entry_b)
+    assert content_hash_for_aperture(entry_a, tables_a) == content_hash_for_aperture(entry_b, tables_b)
 
 
 def test_content_hash_differs_when_frame_u_value_changes() -> None:
-    el_a = _element(frame=_frame(u=1.0))
-    el_b = _element(frame=_frame(u=1.2))
+    tables_a = ProjectDocumentTables()
+    tables_b = ProjectDocumentTables()
+    el_a = _element(tables=tables_a, frame=_frame(u=1.0))
+    el_b = _element(tables=tables_b, frame=_frame(u=1.2))
     entry_a = _aperture([el_a], rows=[1000.0], cols=[1000.0])
     entry_b = _aperture([el_b], rows=[1000.0], cols=[1000.0])
-    assert content_hash_for_aperture(entry_a) != content_hash_for_aperture(entry_b)
+    assert content_hash_for_aperture(entry_a, tables_a) != content_hash_for_aperture(entry_b, tables_b)
 
 
 def test_cache_returns_same_instance_for_identical_aperture() -> None:
-    entry = _aperture([_element()], rows=[1000.0], cols=[1000.0])
-    first = calculate_aperture_u_values(entry)
-    second = calculate_aperture_u_values(entry)
+    tables = ProjectDocumentTables()
+    entry = _aperture([_element(tables=tables)], rows=[1000.0], cols=[1000.0])
+    first = calculate_aperture_u_values(entry, tables)
+    second = calculate_aperture_u_values(entry, tables)
     assert first is second
 
 
 def test_2x2_aperture_aggregates_window_value_as_area_weighted_mean() -> None:
     f = _frame()
     g = _glazing()
+    tables = ProjectDocumentTables()
+    frame_id = ensure_project_frame(tables, f)
+    glazing_id = ensure_project_glazing(tables, g)
     elements = [
         ApertureElement(
             id=f"aptel_{r}{c}",
             name=f"E{r}{c}",
             row_span=(r, r),
             column_span=(c, c),
-            frames=ApertureElementFrames(top=f, right=f, bottom=f, left=f),
-            glazing=g,
+            frames=ApertureElementFrames(top=frame_id, right=frame_id, bottom=frame_id, left=frame_id),
+            glazing_id=glazing_id,
         )
         for r in range(2)
         for c in range(2)
@@ -186,7 +205,7 @@ def test_2x2_aperture_aggregates_window_value_as_area_weighted_mean() -> None:
         column_widths_mm=[1000.0, 1000.0],
         elements=elements,
     )
-    result = calculate_aperture_u_values(entry)
+    result = calculate_aperture_u_values(entry, tables)
     # All four elements share the same payload → window U == element U.
     assert result.window_u_value_w_m2k == result.elements[0].u_value_w_m2k
     assert result.total_area_m2 == pytest.approx(4.0, rel=1e-3)

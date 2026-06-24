@@ -21,7 +21,6 @@ from features.project_document.aperture_commands.models import (
     DeleteRow,
     DuplicateApertureType,
     EditDimension,
-    EditFieldOverride,
     PickFrame,
     PickGlazing,
     RenameApertureType,
@@ -36,6 +35,7 @@ from features.project_document.apertures.factories import (
     DefaultsCatalogReader,
     build_default_aperture_type,
 )
+from features.project_document.apertures.lookup import frame_by_id, glazing_by_id
 from features.project_document.document import (
     APERTURE_DEFAULT_FRAME_NAME,
     APERTURE_DEFAULT_GLAZING_NAME,
@@ -46,6 +46,7 @@ from features.project_document.document import (
     CatalogOrigin,
     FrameRef,
     GlazingRef,
+    ProjectDocumentTables,
     ProjectDocumentV1,
 )
 from features.projects.models import CreateProjectRequest
@@ -113,7 +114,7 @@ def _element(
         row_span=row_span,
         column_span=column_span,
         frames=ApertureElementFrames(),
-        glazing=None,
+        glazing_id=None,
         operation=operation,
     )
 
@@ -178,7 +179,7 @@ def test_aperture_type_rejects_hole() -> None:
                 "row_span": [0, 0],
                 "column_span": [0, 0],
                 "frames": {"top": None, "right": None, "bottom": None, "left": None},
-                "glazing": None,
+                "glazing_id": None,
             }
         ],
     }
@@ -199,14 +200,14 @@ def test_aperture_type_rejects_overlap() -> None:
                 "row_span": [0, 0],
                 "column_span": [0, 1],
                 "frames": {"top": None, "right": None, "bottom": None, "left": None},
-                "glazing": None,
+                "glazing_id": None,
             },
             {
                 "id": "aptel_b",
                 "row_span": [0, 0],
                 "column_span": [1, 1],
                 "frames": {"top": None, "right": None, "bottom": None, "left": None},
-                "glazing": None,
+                "glazing_id": None,
             },
         ],
     }
@@ -227,7 +228,7 @@ def test_aperture_type_rejects_span_out_of_bounds() -> None:
                 "row_span": [0, 1],
                 "column_span": [0, 0],
                 "frames": {"top": None, "right": None, "bottom": None, "left": None},
-                "glazing": None,
+                "glazing_id": None,
             }
         ],
     }
@@ -244,7 +245,7 @@ def test_aperture_element_rejects_empty_name() -> None:
                 "row_span": [0, 0],
                 "column_span": [0, 0],
                 "frames": {"top": None, "right": None, "bottom": None, "left": None},
-                "glazing": None,
+                "glazing_id": None,
             }
         )
 
@@ -290,7 +291,8 @@ def test_document_rejects_duplicate_aperture_names_trim_case_insensitive() -> No
 
 
 def test_build_default_aperture_type_happy_path() -> None:
-    entry = build_default_aperture_type(_seeded_catalog(), name="Type A")
+    tables = ProjectDocumentTables()
+    entry = build_default_aperture_type(_seeded_catalog(), tables=tables, name="Type A")
     assert entry.name == "Type A"
     assert entry.row_heights_mm == [1000.0]
     assert entry.column_widths_mm == [1000.0]
@@ -300,24 +302,28 @@ def test_build_default_aperture_type_happy_path() -> None:
     assert element.frames.right is not None
     assert element.frames.bottom is not None
     assert element.frames.left is not None
-    assert element.glazing is not None
-    assert element.frames.top.catalog_origin is not None
-    assert element.frames.top.catalog_origin.catalog_schema_version == 1
-    assert element.glazing.catalog_origin is not None
-    assert element.glazing.catalog_origin.catalog_schema_version == 1
+    assert element.glazing_id is not None
+    frame = frame_by_id(tables, element.frames.top)
+    glazing = glazing_by_id(tables, element.glazing_id)
+    assert frame is not None
+    assert glazing is not None
+    assert frame.catalog_origin is not None
+    assert frame.catalog_origin.catalog_schema_version == 1
+    assert glazing.catalog_origin is not None
+    assert glazing.catalog_origin.catalog_schema_version == 1
 
 
 def test_build_default_aperture_type_raises_when_frame_seed_missing() -> None:
     catalog = _StubCatalog(frame=None, glazing=GlazingRef(name=APERTURE_DEFAULT_GLAZING_NAME))
     with pytest.raises(Exception) as exc:
-        build_default_aperture_type(catalog, name="X")
+        build_default_aperture_type(catalog, tables=ProjectDocumentTables(), name="X")
     assert "aperture_default_refs_missing" in str(exc.value) or "frame" in str(exc.value).lower()
 
 
 def test_build_default_aperture_type_raises_when_glazing_seed_missing() -> None:
     catalog = _StubCatalog(frame=FrameRef(name=APERTURE_DEFAULT_FRAME_NAME), glazing=None)
     with pytest.raises(Exception) as exc:
-        build_default_aperture_type(catalog, name="X")
+        build_default_aperture_type(catalog, tables=ProjectDocumentTables(), name="X")
     assert "aperture_default_refs_missing" in str(exc.value) or "glazing" in str(exc.value).lower()
 
 
@@ -483,7 +489,7 @@ def test_add_row_at_start_shifts_existing_elements_and_adds_default() -> None:
     assert spans == [((0, 0), (0, 0)), ((1, 1), (0, 0))]
     # default refs on the inserted element
     new_element = next(e for e in entry.elements if e.row_span == (0, 0))
-    assert new_element.glazing is not None
+    assert new_element.glazing_id is not None
     assert new_element.frames.top is not None
 
 
@@ -654,11 +660,13 @@ def test_pick_frame_writes_ref_and_refreshes_synced_at() -> None:
     )
     top = body.tables.apertures[0].elements[0].frames.top
     assert top is not None
-    assert top.name == "ABC Head"
-    assert top.catalog_origin is not None
-    assert top.catalog_origin.local_overrides == []
+    frame_row = frame_by_id(body.tables, top)
+    assert frame_row is not None
+    assert frame_row.name == "ABC Head"
+    assert frame_row.catalog_origin is not None
+    assert frame_row.catalog_origin.local_overrides == []
     # synced_at refreshed past the wire-shape timestamp.
-    assert top.catalog_origin.synced_at > datetime(2026, 1, 1, tzinfo=UTC)
+    assert frame_row.catalog_origin.synced_at > datetime(2026, 1, 1, tzinfo=UTC)
     payload = cast(dict[str, object], audit["payload"])
     assert payload["side"] == "top"
     assert payload["hand_enter"] is False
@@ -681,35 +689,10 @@ def test_pick_glazing_writes_ref() -> None:
         body,
         PickGlazing(aperture_type_id=apt_id, element_id=el_id, glazing=_picked_glazing()),
     )
-    glz = body.tables.apertures[0].elements[0].glazing
+    glz = glazing_by_id(body.tables, body.tables.apertures[0].elements[0].glazing_id)
     assert glz is not None
     assert glz.name == "Triple"
     assert glz.catalog_origin is not None
-
-
-def test_edit_field_override_reserved_command_rejected() -> None:
-    body, _ = _seeded_body_with_aperture()
-    apt_id, el_id = _seeded_element_id(body)
-    body, _ = _apply(
-        body,
-        PickFrame(aperture_type_id=apt_id, element_id=el_id, side="top", frame=_picked_frame()),
-    )
-    with pytest.raises(Exception) as exc:
-        _apply(
-            body,
-            EditFieldOverride(
-                aperture_type_id=apt_id,
-                element_id=el_id,
-                target="frame.top",
-                field_key="u_value_w_m2k",
-                new_value=0.95,
-            ),
-        )
-    assert "aperture_command_not_implemented" in str(exc.value)
-
-
-def test_edit_field_override_audit_kind_registered() -> None:
-    assert AUDIT_KIND_BY_APERTURE_COMMAND["editFieldOverride"] == "project_version_aperture_field_override"
 
 
 # ------------------------ Merge / split / paste (Phase 08) -------------------

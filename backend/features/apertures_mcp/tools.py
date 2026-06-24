@@ -114,7 +114,7 @@ def tool_calculate_aperture_u_values(
         else [_find_aperture(body, atid, ctx) for atid in aperture_type_ids]
     )
     return {
-        "apertures": [_calc_u_values(entry).model_dump(mode="json") for entry in targets],
+        "apertures": [_calc_u_values(entry, body.tables).model_dump(mode="json") for entry in targets],
     }
 
 

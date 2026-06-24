@@ -1,8 +1,8 @@
 ---
 DATE: 2026-06-24
-TIME: 17:30 EDT
-STATUS: Planning — plan complete; all decisions accepted (D-2 = Option A)
-AUTHOR: Claude (Opus 4.8) with Ed May
+TIME: 17:58 EDT
+STATUS: Complete — implementation and closeout gates green; archived
+AUTHOR: Codex with Ed May
 SCOPE: Promote aperture glazing/frame refs from inline per-element snapshots into
   flat, deduped, documented project entities (`ProjectGlazing` / `ProjectFrame`)
   that mirror `ProjectMaterial` — gaining datasheet "bookshelf" linking and

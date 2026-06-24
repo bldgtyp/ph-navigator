@@ -25,6 +25,14 @@ export type FrameRef = {
   catalog_origin: CatalogOrigin | null;
 };
 
+export type SpecificationStatus = "complete" | "missing" | "question" | "na";
+
+export type ProjectFrame = FrameRef & {
+  id: string;
+  specification_status: SpecificationStatus;
+  datasheet_asset_ids: string[];
+};
+
 export type GlazingRef = {
   name: string;
   manufacturer: string | null;
@@ -36,6 +44,12 @@ export type GlazingRef = {
   source: string | null;
   comments: string | null;
   catalog_origin: CatalogOrigin | null;
+};
+
+export type ProjectGlazing = GlazingRef & {
+  id: string;
+  specification_status: SpecificationStatus;
+  datasheet_asset_ids: string[];
 };
 
 export type ApertureOperationType = "swing" | "slide";
@@ -65,6 +79,22 @@ export type ApertureElement = {
   operation: ApertureOperation | null;
 };
 
+export type WireApertureElementFrames = {
+  top: string | null;
+  right: string | null;
+  bottom: string | null;
+  left: string | null;
+};
+
+export type WireApertureElement = Omit<ApertureElement, "frames" | "glazing"> & {
+  frames: WireApertureElementFrames;
+  glazing_id: string | null;
+};
+
+export type WireApertureTypeEntry = Omit<ApertureTypeEntry, "elements"> & {
+  elements: WireApertureElement[];
+};
+
 export type ApertureTypeEntry = {
   id: string;
   name: string;
@@ -85,7 +115,13 @@ export type AperturesSlice = {
   version_etag: string;
   draft_etag: string | null;
   apertures: ApertureTypeEntry[];
+  project_glazings: ProjectGlazing[];
+  project_frames: ProjectFrame[];
   manufacturer_filters: ManufacturerFilters | null;
+};
+
+export type WireAperturesSlice = Omit<AperturesSlice, "apertures"> & {
+  apertures: WireApertureTypeEntry[];
 };
 
 // Discriminated union mirroring the backend `ApertureCommand`. Five

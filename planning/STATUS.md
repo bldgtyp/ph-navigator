@@ -28,6 +28,7 @@ feature-first planning.
 | DataTable Field Config Modal | Complete / shared Add/Edit field modal select, markup, static guards, browser smoke, format, CI, graphify evidence; archived | `archive/dated/2026-06-20/data-table-field-config-modal/STATUS.md` |
 | Climate Dataset Picker | Complete / P1-P4 implemented and verified with focused backend/frontend tests plus `make ci`; O-DP-6 remains a documented non-blocking PHI region-filter follow-up; archived | `archive/dated/2026-06-22/climate-dataset-picker/STATUS.md` |
 | Envelope HBJSON Import | Research / design outline drafted; key decisions made (both PHN-native + raw Honeybee-PH sources, project-only new materials, Phase-0 export upgrade); phase planning next | `features/envelope-hbjson-import/STATUS.md` |
+| Glazing + Frame Documentation | Complete / Phases 0-5 implemented; flat `ProjectGlazing`/`ProjectFrame` tables, aperture FK migration/write path, docs commands, datasheet registry, frontend API hydration, docs-pass, graphify, and `make ci` verified; archived | `archive/dated/2026-06-24/glazing-frame-documentation/STATUS.md` |
 
 ## Active / Current Refactor Folders
 
@@ -61,6 +62,8 @@ feature-first planning.
   `archive/dated/2026-06-22/climate-dataset-picker/`.
 - Completed DataTable Formula Builder planning now lives under
   `archive/dated/2026-06-21/data-table-formula-builder/`.
+- Completed Glazing + Frame Documentation planning now lives under
+  `archive/dated/2026-06-24/glazing-frame-documentation/`.
 - Completed Attachments (v1) planning now lives under
   `archive/dated/2026-06-15/attachments/`. The stable implementation contract remains
   current in `context/technical-requirements/attachments.md`; the

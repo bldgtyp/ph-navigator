@@ -336,14 +336,27 @@ generation exists.
 when it was saved must remain openable forever. No production release
 ships if it breaks reads of any prior document `schema_version`.
 
-**Pre-MVP exception (active through Phase 1c of plan-31).** The MVP
-build is pre-deploy. Schema-version bumps land as clean cuts: the
-current `CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION` is `3` (Phase 1b
-cutover, 2026-05-26); bodies tagged `schema_version: 2` or below are
-rejected with a structured `invalid_project_document` error. Dev DBs
-rebuild on the phase boundary. The shim-chain machinery in items 5–9
-below is the post-MVP shape; before MVP, schema bumps simply assume
-no production data exists.
+**Pre-MVP exception (still active — pre-deploy).** The MVP build is
+pre-deploy. Schema-version bumps land as clean cuts: the current
+`CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION` is **`12`** as of 2026-06-24
+(the constant in `backend/features/project_document/document.py` is
+authoritative); bodies that fail current-schema validation are surfaced
+through the read-safe envelope rather than hard-rejected. Dev DBs rebuild on
+the phase boundary.
+
+> **Reality note (2026-06-24 review §4).** Two migration mechanisms already
+> exist and partly overlap, so the "shim-chain is purely post-MVP" framing
+> below is no longer literally true:
+> (1) a **read-time `mode="before"` shim** in `document.py` (today it only
+> transforms the v11→v12 aperture shape and blanket-stamps `schema_version`,
+> which is incomplete — see review DOC-5); and
+> (2) **deploy-time Alembic body-rewrite migrations** (`0027`–`0031`) that
+> mutate saved bodies in place.
+> The canonical mechanism (read-time forward-only shim chain in items 5–9, vs.
+> Alembic body-rewrite) must be **chosen and the golden-file corpus built
+> before the first real save**. Until then, treat "bump `schema_version`" as a
+> gated operation. See
+> `planning/code-reviews/2026-06-24/backend-data-architecture-review.md` §4.
 
 Mechanisms:
 

@@ -62,7 +62,7 @@ def _seed_aperture(version_id: str) -> dict[str, object]:
                     "row_span": [0, 0],
                     "column_span": [0, 0],
                     "frames": {"top": None, "right": None, "bottom": None, "left": None},
-                    "glazing": None,
+                    "glazing_id": None,
                     "operation": None,
                 }
             ],

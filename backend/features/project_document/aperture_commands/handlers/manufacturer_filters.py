@@ -14,6 +14,7 @@ from starlette import status
 from features.project_document.aperture_commands.handlers._shared import build_audit
 from features.project_document.aperture_commands.models import SetManufacturerFilters
 from features.project_document.apertures.factories import DefaultsCatalogReader
+from features.project_document.apertures.lookup import frame_by_id, glazing_by_id
 from features.project_document.document import (
     ManufacturerFilters,
     ProjectDocumentV1,
@@ -90,9 +91,10 @@ def _collect_in_use(body: ProjectDocumentV1) -> tuple[set[str], set[str]]:
     for aperture in body.tables.apertures:
         for element in aperture.elements:
             for side in ("top", "right", "bottom", "left"):
-                frame = getattr(element.frames, side)
+                frame = frame_by_id(body.tables, getattr(element.frames, side))
                 if frame is not None and frame.manufacturer:
                     frames.add(frame.manufacturer.strip())
-            if element.glazing is not None and element.glazing.manufacturer:
-                glazings.add(element.glazing.manufacturer.strip())
+            glazing = glazing_by_id(body.tables, element.glazing_id)
+            if glazing is not None and glazing.manufacturer:
+                glazings.add(glazing.manufacturer.strip())
     return frames, glazings

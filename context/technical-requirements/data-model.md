@@ -25,9 +25,17 @@ users (
                        -- Argon2id hash. TB-01 settings:
                        -- time_cost=3, memory_cost=65536,
                        -- parallelism=4.
-    is_active          BOOLEAN NOT NULL DEFAULT true,
+    units_preference   TEXT NOT NULL DEFAULT 'SI',
+                       -- 'SI' | 'IP'; per-user IP/SI display preference
+                       -- (0012). CHECK users_units_preference_allowed.
     created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at         TIMESTAMPTZ NOT NULL DEFAULT now()
+    updated_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+    deleted_at         TIMESTAMPTZ
+                       -- soft-delete; replaced is_active (0021). The
+                       -- email-unique and single-active-session indexes
+                       -- are intentionally NOT scoped to deleted_at
+                       -- (resurrect-user pattern via upsert_user
+                       -- ON CONFLICT DO UPDATE SET deleted_at = NULL).
 )
 
 -- Server-side sessions. Required for single-active-session-per-user
@@ -96,9 +104,12 @@ project_location (
     elevation_m         DOUBLE PRECISION,
     time_zone           TEXT,
     true_north_deg      DOUBLE PRECISION,
-    site_address        TEXT,
+    street_address      TEXT,
                       -- editor-visible only; public/viewer API projection
-                      -- returns NULL for this field.
+                      -- returns NULL for this field. Renamed from
+                      -- site_address (0036).
+    postal_code         TEXT,
+                      -- parsed out of the address string (0036).
     city                TEXT,
     state               TEXT,
     county              TEXT,
@@ -110,7 +121,10 @@ project_location (
     geodata_provenance  JSONB NOT NULL DEFAULT '{}'::jsonb,
                       -- per-field source/status metadata for derived values
                       -- such as county, elevation, and climate_zone.
-    epw_asset_id        UUID REFERENCES project_assets(id),
+    epw_asset_id        TEXT,
+                      -- points at project_assets.id (itself TEXT). UNENFORCED
+                      -- id — there is NO foreign key, so a purged asset can
+                      -- dangle here (2026-06-24 review REL-1).
     epw_source_url      TEXT,
     updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 )
@@ -305,10 +319,14 @@ CREATE INDEX ON project_versions (project_id, created_at);
 Catalog tables (full schema in §7):
 ```
 catalog_materials                       -- flat (§7.2 callout)
-catalog_frame_types, catalog_frame_type_versions
-catalog_glazing_types, catalog_glazing_type_versions
-catalog_audit_log
+catalog_frame_types                     -- flat; *_versions table dropped 0017
+catalog_glazing_types                   -- flat; *_versions table dropped 0016
+catalog_field_options                   -- per-(catalog_table, field_key)
+                                        -- single-select vocabularies (0037)
 ```
+> The old `catalog_*_versions` tables were dropped in the flatten migrations
+> (0015/0016/0017) — catalogs are now flat identity rows. There is no
+> `catalog_audit_log` table; catalog audit writes go to `user_action_log`.
 
 Object-storage pointers:
 ```
@@ -391,6 +409,48 @@ JSON document. Illustrative sketch (the canonical model is the
         }
       }
     ],
+    "project_glazings": [                         // v12 — per-project glazing products
+      {
+        "id": "pglz_...",
+        "name": "Triple pane IGU",
+        "manufacturer": "Glass Co",
+        "brand": null,
+        "suffix": null,
+        "u_value_w_m2k": 0.7,
+        "g_value": 0.5,
+        "color": "#dbeafe",
+        "source": "Manufacturer datasheet",
+        "comments": null,
+        "specification_status": "missing",
+        "datasheet_asset_ids": [],
+        "catalog_origin": { "catalog_table": "glazing_types", "catalog_record_id": "rec..." }
+      }
+    ],
+    "project_frames": [                           // v12 — per-project frame products
+      {
+        "id": "pfrm_...",
+        "name": "Wood frame",
+        "manufacturer": "Frame Co",
+        "brand": null,
+        "use": null,
+        "operation": null,
+        "location": null,
+        "mull_type": null,
+        "prefix": null,
+        "suffix": null,
+        "material": "wood",
+        "width_mm": 90.0,
+        "u_value_w_m2k": 1.1,
+        "psi_g_w_mk": 0.04,
+        "psi_install_w_mk": 0.02,
+        "color": "#aabbcc",
+        "source": "Manufacturer datasheet",
+        "comments": null,
+        "specification_status": "missing",
+        "datasheet_asset_ids": [],
+        "catalog_origin": { "catalog_table": "frame_types", "catalog_record_id": "rec..." }
+      }
+    ],
     "apertures": [
       {
         "id": "apt_...",
@@ -403,25 +463,33 @@ JSON document. Illustrative sketch (the canonical model is the
             "name": "Aptel 1",
             "row_span": [0, 0],
             "column_span": [0, 0],
-            "frames": {                          // each side: FrameRef | null
-              "top":    { /* FrameRef: see below */ },
+            "frames": {                          // each side: ProjectFrame id | null
+              "top":    "pfrm_...",
               "right":  null,
               "bottom": null,
               "left":   null
             },
-            "glazing": { /* GlazingRef | null: see below */ },
+            "glazing_id": "pglz_...",            // ProjectGlazing id | null
             "operation": null                    // null | { type: "swing"|"slide", directions: [...] }
           }
         ]
       }
     ],
-    // FrameRef fields (mirrors catalog_frame_types):
+    // ProjectFrame fields mirror catalog_frame_types and carry
+    // specification_status + datasheet_asset_ids. Pick commands still accept
+    // FrameRef DTOs, then upsert/dedup into project_frames by
+    // catalog_origin.catalog_record_id. Hand-entered refs append one project
+    // entity per occurrence.
+    // FrameRef fields:
     //   name, manufacturer, brand, use, operation, location, mull_type,
     //   prefix, suffix, material, width_mm, u_value_w_m2k, psi_g_w_mk,
     //   psi_install_w_mk, color, source, comments,
     //   catalog_origin (nullable for historical/imported data; aperture
     //   builder pick commands require catalog-sourced refs)
-    // GlazingRef fields (mirrors catalog_glazing_types):
+    // ProjectGlazing fields mirror catalog_glazing_types and carry
+    // specification_status + datasheet_asset_ids. Pick commands still accept
+    // GlazingRef DTOs, then upsert/dedup into project_glazings.
+    // GlazingRef fields:
     //   name, manufacturer, brand, suffix, u_value_w_m2k, g_value, color,
     //   source, comments, catalog_origin (nullable)
     // Authoritative schema: GET /api/v1/schemas/aperture-type/v1.json
@@ -745,6 +813,8 @@ Rules:
   `project_assets` row and a new R2 object.
 - Project documents store only asset ids, e.g.
   `project_materials[].datasheet_asset_ids[]`,
+  `project_glazings[].datasheet_asset_ids[]`,
+  `project_frames[].datasheet_asset_ids[]`,
   `assembly.segments[].photo_asset_ids[]`,
   `equipment.<table>.datasheet_asset_ids[]`, and
   `thermal_bridges.rows[].pdf_report_asset_ids[]`.
@@ -918,6 +988,20 @@ Rules (post-Phase 1b):
   user-handle hard blocks, and makes the hidden `row.id` uniqueness
   guard universal. Shipped as a reseed + version bump, **no
   body-migration** (no users / no deploy). See §6.6.10.
+- **`schema_version: 9–12`** (2026-06 → 2026-06-24). The authority for the
+  current value is the `backend/features/project_document/document.py` module
+  docstring (`CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 12`): **v10** moves
+  Heat Pumps from four flat row lists to four `{field_defs, rows}` leaf
+  envelopes under `equipment.heat_pumps`; **v11** adds the shared
+  `datasheet_asset_ids` field to Electric Heaters and Ventilators; **v12**
+  moves aperture glazings/frames from inline element snapshots to flat
+  `project_glazings` / `project_frames` tables referenced by id (v9 is an
+  intermediate dev bump). These shipped as reseed + version bump under the
+  pre-deploy posture; today the migrate-on-read shim only transforms v11→v12.
+  The schema-migration story (read-time shim chain vs. Alembic body-rewrite
+  migrations vs. the documented post-MVP intent) needs to be settled before
+  the first real save — see `planning/code-reviews/2026-06-24/backend-data-architecture-review.md`
+  §4.
 
 #### 6.6.2 `TableFieldDef` shape
 

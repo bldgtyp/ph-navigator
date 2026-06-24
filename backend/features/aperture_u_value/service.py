@@ -30,11 +30,13 @@ from features.aperture_u_value.models import (
     ApertureUValueResult,
     ApertureUValueWarning,
 )
+from features.project_document.apertures.lookup import frame_by_id, glazing_by_id
 from features.project_document.document import (
     ApertureElement,
     ApertureTypeEntry,
-    FrameRef,
-    GlazingRef,
+    ProjectDocumentTables,
+    ProjectFrame,
+    ProjectGlazing,
 )
 
 
@@ -45,8 +47,8 @@ class _FrameData:
     psi_g_w_mk: float
 
 
-def calculate_aperture_u_values(entry: ApertureTypeEntry) -> ApertureUValueResult:
-    cache_key = content_hash_for_aperture(entry)
+def calculate_aperture_u_values(entry: ApertureTypeEntry, tables: ProjectDocumentTables) -> ApertureUValueResult:
+    cache_key = content_hash_for_aperture(entry, tables)
     cached = cache_get(cache_key)
     if isinstance(cached, ApertureUValueResult):
         return cached
@@ -57,7 +59,7 @@ def calculate_aperture_u_values(entry: ApertureTypeEntry) -> ApertureUValueResul
     total_area = 0.0
 
     for element in entry.elements:
-        per_el = _calculate_element(entry, element)
+        per_el = _calculate_element(entry, element, tables)
         element_results.append(per_el)
         aggregate_warnings.extend(per_el.warnings)
         total_q += per_el.u_value_w_m2k * per_el.area_m2
@@ -80,6 +82,7 @@ def calculate_aperture_u_values(entry: ApertureTypeEntry) -> ApertureUValueResul
 def _calculate_element(
     entry: ApertureTypeEntry,
     element: ApertureElement,
+    tables: ProjectDocumentTables,
 ) -> ApertureElementUValue:
     width_m = _element_width_m(entry, element)
     height_m = _element_height_m(entry, element)
@@ -87,10 +90,10 @@ def _calculate_element(
 
     sides: tuple[Literal["top", "right", "bottom", "left"], ...] = ("top", "right", "bottom", "left")
     frames: dict[Literal["top", "right", "bottom", "left"], _FrameData | None] = {
-        "top": _frame_data(element.frames.top),
-        "right": _frame_data(element.frames.right),
-        "bottom": _frame_data(element.frames.bottom),
-        "left": _frame_data(element.frames.left),
+        "top": _frame_data(frame_by_id(tables, element.frames.top)),
+        "right": _frame_data(frame_by_id(tables, element.frames.right)),
+        "bottom": _frame_data(frame_by_id(tables, element.frames.bottom)),
+        "left": _frame_data(frame_by_id(tables, element.frames.left)),
     }
     warnings: list[ApertureUValueWarning] = []
     for side in sides:
@@ -104,7 +107,7 @@ def _calculate_element(
                 )
             )
 
-    glazing_u = _glazing_u_value(element.glazing)
+    glazing_u = _glazing_u_value(glazing_by_id(tables, element.glazing_id))
     if glazing_u is None:
         warnings.append(
             ApertureUValueWarning(
@@ -206,7 +209,7 @@ def _element_height_m(entry: ApertureTypeEntry, element: ApertureElement) -> flo
     return sum(entry.row_heights_mm[rs : re + 1]) / 1000.0
 
 
-def _frame_data(frame: FrameRef | None) -> _FrameData | None:
+def _frame_data(frame: ProjectFrame | None) -> _FrameData | None:
     if frame is None:
         return None
     if frame.width_mm is None or frame.u_value_w_m2k is None or frame.psi_g_w_mk is None:
@@ -218,7 +221,7 @@ def _frame_data(frame: FrameRef | None) -> _FrameData | None:
     )
 
 
-def _glazing_u_value(glazing: GlazingRef | None) -> float | None:
+def _glazing_u_value(glazing: ProjectGlazing | None) -> float | None:
     if glazing is None or glazing.u_value_w_m2k is None:
         return None
     return glazing.u_value_w_m2k

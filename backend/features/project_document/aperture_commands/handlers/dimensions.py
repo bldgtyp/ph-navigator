@@ -59,6 +59,8 @@ from features.project_document.aperture_commands.models import (
 from features.project_document.apertures._ref_helpers import (
     bookshelf_copy_frame,
     bookshelf_copy_glazing,
+    ensure_project_frame,
+    ensure_project_glazing,
 )
 from features.project_document.apertures.factories import (
     DefaultsCatalogReader,
@@ -71,6 +73,7 @@ from features.project_document.document import (
     ApertureTypeEntry,
     FrameRef,
     GlazingRef,
+    ProjectDocumentTables,
     ProjectDocumentV1,
 )
 from features.shared.errors import api_error
@@ -121,14 +124,16 @@ def apply_add_row(
     catalog: DefaultsCatalogReader,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
     aperture_idx, entry = find_entry(body, command.aperture_type_id)
+    next_tables = body.tables.model_copy(deep=True)
     next_entry = _add_along_axis(
         entry,
         axis="row",
         at_index=command.at_index,
         new_dim_mm=command.height_mm,
         catalog=catalog,
+        tables=next_tables,
     )
-    next_body = replace_aperture(body, aperture_idx, next_entry)
+    next_body = replace_aperture(body.model_copy(update={"tables": next_tables}), aperture_idx, next_entry)
     return next_body, build_audit(
         "addRow",
         actor_user_id,
@@ -146,14 +151,16 @@ def apply_add_column(
     catalog: DefaultsCatalogReader,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
     aperture_idx, entry = find_entry(body, command.aperture_type_id)
+    next_tables = body.tables.model_copy(deep=True)
     next_entry = _add_along_axis(
         entry,
         axis="column",
         at_index=command.at_index,
         new_dim_mm=command.width_mm,
         catalog=catalog,
+        tables=next_tables,
     )
-    next_body = replace_aperture(body, aperture_idx, next_entry)
+    next_body = replace_aperture(body.model_copy(update={"tables": next_tables}), aperture_idx, next_entry)
     return next_body, build_audit(
         "addColumn",
         actor_user_id,
@@ -210,6 +217,7 @@ def _add_along_axis(
     at_index: int,
     new_dim_mm: float,
     catalog: DefaultsCatalogReader,
+    tables: ProjectDocumentTables,
 ) -> ApertureTypeEntry:
     is_row = axis == "row"
     dims = list(entry.row_heights_mm if is_row else entry.column_widths_mm)
@@ -254,6 +262,8 @@ def _add_along_axis(
     frame_copy = bookshelf_copy_frame(frame, synced_at=synced_at)
     glazing_copy = bookshelf_copy_glazing(glazing, synced_at=synced_at)
     assert glazing_copy is not None  # glazing came from _read_defaults; non-None guaranteed
+    frame_id = ensure_project_frame(tables, frame_copy)
+    glazing_id = ensure_project_glazing(tables, glazing_copy)
 
     for c in range(cross_size):
         if c in extended_cross_cells:
@@ -261,8 +271,8 @@ def _add_along_axis(
         new_element = _build_seeded_element(
             row_span=(at_index, at_index) if is_row else (c, c),
             column_span=(c, c) if is_row else (at_index, at_index),
-            frame=frame_copy,
-            glazing=glazing_copy,
+            frame_id=frame_id,
+            glazing_id=glazing_id,
         )
         next_elements.append(new_element)
 
@@ -356,22 +366,15 @@ def _build_seeded_element(
     *,
     row_span: tuple[int, int],
     column_span: tuple[int, int],
-    frame: FrameRef,
-    glazing: GlazingRef,
+    frame_id: str,
+    glazing_id: str,
 ) -> ApertureElement:
-    # deep=True keeps each seeded element independent — see split handler
-    # for the same defensive stance against latent aliasing.
     return ApertureElement(
         id=f"aptel_{uuid.uuid4().hex[:12]}",
         name="Unnamed",
         row_span=row_span,
         column_span=column_span,
-        frames=ApertureElementFrames(
-            top=frame.model_copy(deep=True),
-            right=frame.model_copy(deep=True),
-            bottom=frame.model_copy(deep=True),
-            left=frame.model_copy(deep=True),
-        ),
-        glazing=glazing.model_copy(deep=True),
+        frames=ApertureElementFrames(top=frame_id, right=frame_id, bottom=frame_id, left=frame_id),
+        glazing_id=glazing_id,
         operation=None,
     )

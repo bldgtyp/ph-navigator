@@ -12,7 +12,7 @@ from __future__ import annotations
 from typing import Any
 
 from features.aperture_drift.models import RefFieldDelta
-from features.project_document.document import FrameRef, GlazingRef
+from features.project_document.document import FrameRef, GlazingRef, ProjectFrame, ProjectGlazing
 
 # Keys compared between FrameRef and a catalog frame row. ``name`` is
 # excluded: it is now derived from the parts (D-3), so it cannot drift
@@ -52,7 +52,7 @@ _GLAZING_KEYS: tuple[str, ...] = (
 )
 
 
-def compare_frame_ref(ref: FrameRef, row: dict[str, Any]) -> list[RefFieldDelta]:
+def compare_frame_ref(ref: FrameRef | ProjectFrame, row: dict[str, Any]) -> list[RefFieldDelta]:
     """Return the list of fields where ``ref`` differs from the catalog row.
 
     The catalog row is the repository's ``dict[str, Any]`` projection
@@ -64,12 +64,12 @@ def compare_frame_ref(ref: FrameRef, row: dict[str, Any]) -> list[RefFieldDelta]
     return _compare(ref, row, _FRAME_KEYS)
 
 
-def compare_glazing_ref(ref: GlazingRef, row: dict[str, Any]) -> list[RefFieldDelta]:
+def compare_glazing_ref(ref: GlazingRef | ProjectGlazing, row: dict[str, Any]) -> list[RefFieldDelta]:
     return _compare(ref, row, _GLAZING_KEYS)
 
 
 def _compare(
-    ref: FrameRef | GlazingRef,
+    ref: FrameRef | GlazingRef | ProjectFrame | ProjectGlazing,
     row: dict[str, Any],
     keys: tuple[str, ...],
 ) -> list[RefFieldDelta]:

@@ -45,9 +45,10 @@ def apply_create_aperture_type(
     catalog: DefaultsCatalogReader,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
     name = _autoname(body, command.proposed_name)
-    entry = build_default_aperture_type(catalog, name=name)
+    next_tables = body.tables.model_copy(deep=True)
+    entry = build_default_aperture_type(catalog, tables=next_tables, name=name)
     next_apertures = [*body.tables.apertures, entry]
-    next_body = body.model_copy(update={"tables": body.tables.model_copy(update={"apertures": next_apertures})})
+    next_body = body.model_copy(update={"tables": next_tables.model_copy(update={"apertures": next_apertures})})
     return next_body, build_audit("createApertureType", actor_user_id, aperture_type_id=entry.id, name=entry.name)
 
 

@@ -149,20 +149,23 @@ per-request context binding. The current middleware already:
 - sets `request.state.request_id`;
 - echoes `X-Request-ID` on the response.
 
-It is extended to also:
+As built (verified 2026-06-24), it also:
 
-1. `structlog.contextvars.bind_contextvars(request_id, method, path,
+1. ✅ `structlog.contextvars.bind_contextvars(request_id, method, path,
    client_ip)` at the top of the request. `path` is `request.url.path`
    only — query strings are deliberately excluded (see Security rules
    below). `client_ip` is the first entry of `X-Forwarded-For` when
    present (Render terminates TLS) else `request.client.host`.
-2. Bind `user_id` once auth resolves the session (from a downstream
-   dependency or by reading `request.state.user_id` if the auth layer
-   sets it).
-3. After `call_next`, emit one structured access log line:
-   `log.info("http.request", status=..., duration_ms=...,
-   request_id=..., method=..., path=...)`.
-4. `structlog.contextvars.clear_contextvars()` in a `finally` block.
+2. ⚠️ **Bind `user_id` once auth resolves the session — NOT yet wired.**
+   The middleware binds `request_id`/`method`/`path`/`client_ip` but does
+   not yet bind `user_id`. This is the one remaining item in this list
+   (2026-06-24 review OBS-7).
+3. ✅ After `call_next`, emit one structured access log line — and it carries
+   more than this sketch: `log.info("http.request", status=...,
+   duration_ms=..., request_bytes=..., response_bytes=...)` with `method` /
+   `path` inherited from contextvars, `perf_counter` timing, and `/health` +
+   openapi sampling gated by `log_sample_health`.
+4. ✅ `structlog.contextvars.clear_contextvars()` in a `finally` block.
 
 #### `X-Request-ID` trust boundary
 
@@ -300,6 +303,15 @@ PHN V2 uses raw `psycopg` v3 (see `context/TECH_STACK.md`). The driver
 does not log queries by default. Per-query logging belongs in the
 repository layer when explicitly desired; do not enable global
 `psycopg` debug logging in production.
+
+> **Gap (2026-06-24 review OBS-2/OBS-3).** There is currently **no** query
+> timing anywhere, including the whole-document JSONB read/write hot path.
+> Threshold-gated slow-query logging (`db.slow_query`, `duration_ms`, no
+> statement text/params) plus coarse hot-path timing/size in
+> `project_document/store.py` are recommended **before** the move to a remote
+> DB, where blob reads over a network hop are the most likely first perf
+> surprise. Postgres-side `pg_stat_statements` + `log_min_duration_statement`
+> on the Render DB give the server-side truth at near-zero code cost.
 
 Alembic uses SQLAlchemy internally for migrations. The `sqlalchemy.engine`
 logger is left at WARNING in normal operation. Setting `log_sql=true`

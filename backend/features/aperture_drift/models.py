@@ -15,8 +15,8 @@ DriftKind = Literal["field_delta", "catalog_row_missing"]
 
 
 # Which catalog-aware slot on an element drifted. ``frame.<side>`` matches
-# the ``editFieldOverride`` target shape so callers can route between
-# drift / override surfaces without re-mapping.
+# the refresh target shape so callers can route between drift and refresh
+# surfaces without re-mapping.
 DriftTarget = Literal[
     "frame.top",
     "frame.right",

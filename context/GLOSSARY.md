@@ -34,6 +34,8 @@
 | **Refresh from catalog**   | A per-entry UX that diffs a Project's copy against the live Catalog entry and lets the user reconcile     | Sync, pull updates, re-pick                 |
 | **catalog_schema_version** | Integer pinned at Pick time recording the Catalog's row schema at that moment; drives shim chains         | Catalog spec version, catalog format        |
 | **Project Material**       | A row in `tables.project_materials` — the Project's own copy of a Material, referenced by Segments by ID  | Material instance, used material            |
+| **Project Glazing**        | A row in `tables.project_glazings` — the Project's own documented copy of a Glazing Type, referenced by Aperture Elements by `glazing_id` | Glazing instance, used glazing              |
+| **Project Frame**          | A row in `tables.project_frames` — the Project's own documented copy of a Frame Type, referenced by Aperture Element frame-side ids | Frame instance, used frame                  |
 
 ## Envelope (assemblies & apertures)
 
@@ -45,7 +47,7 @@
 | **Material**          | A physical product with thermal properties (conductivity, density, etc.); lives in the Catalog           | Product, substance (when ambiguous, qualify it)    |
 | **Datasheet**         | A per-project QA submittal PDF attached to a Project Material; **never lives in the Catalog**             | Spec sheet (only if it's literally the PDF)        |
 | **Aperture Type**     | A named aperture family (doors, windows, skylights) defined by a row × column grid of Aperture Elements   | Window type, fenestration type                     |
-| **Aperture Element**  | One pane/cell within an Aperture Type, carrying inlined per-side Frame data (`top/right/bottom/left`) and Glazing data | Window element, sash, lite (lite = glass)   |
+| **Aperture Element**  | One pane/cell within an Aperture Type, carrying per-side Project Frame ids (`top/right/bottom/left`) and one Project Glazing id | Window element, sash, lite (lite = glass)   |
 | **Frame Type**        | A frame product (jamb, head, sill, mullion) with U-value, psi-install, etc.; catalogged                   | Profile, frame product                             |
 | **Glazing Type**      | A glazing assembly (IGU spec) with U-value, SHGC, etc.; catalogged                                        | Glass, IGU (unless literally referring to the IGU) |
 | **Thermal Bridge**    | A linear envelope discontinuity carrying a psi-value, optional simulation file, and length                | TB, junction (junction is the geometric thing)     |
@@ -113,10 +115,10 @@ label each row explicitly and state the film convention in tooltips.
 - A **Project** has one or more **Versions**; one is the **Active version**.
 - A **Version** holds one **Project document** (its `body`). Editing flows through a **Draft**, never the Version body directly.
 - **Save** overwrites the Active version; **Save As** creates a new Version. Locked Versions reject Save.
-- A **Project document** contains **Tables**: `assemblies`, `project_materials`, `apertures`, `rooms`, `thermal_bridges`, `equipment`, `manufacturer_filters`.
+- A **Project document** contains **Tables**: `assemblies`, `project_materials`, `project_glazings`, `project_frames`, `apertures`, `rooms`, `thermal_bridges`, `equipment`, `manufacturer_filters`.
 - An **Assembly** has ordered **Layers**; each Layer has **Segments**; each Segment references a **Project Material** by id.
 - A **Project Material** is the Project's copy of a Catalog **Material**, linked back via **catalog_origin**.
-- An **Aperture Type** is a grid of **Aperture Elements**, each inlining four side-specific **Frame Type** values and one **Glazing Type** (no `project_frame_types` table — frames are inlined, unlike Materials). Apertures cover all envelope openings — doors, windows, skylights.
+- An **Aperture Type** is a grid of **Aperture Elements**, each referencing four side-specific **Project Frame** rows and one **Project Glazing** row by id. Apertures cover all envelope openings — doors, windows, skylights.
 - **Catalog entries** have **Catalog versions**; Picking copies values in. A Project never references a Catalog version live.
 - **Heat Pumps** are modeled as four project-scoped tables under `tables.equipment`: `heat_pump_outdoor_equip` (types) ← `heat_pump_outdoor_units` (instances, 1:N) → `heat_pump_indoor_units` (instances, 1:N) → `heat_pump_indoor_equip` (types, N:1). Indoor units may additionally link to an **ERV** row via `linked_erv_unit_id` for **Integrated unit** cases.
 - **HBJSON** files are independent of Versions and never feed Builder tables.

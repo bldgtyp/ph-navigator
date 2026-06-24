@@ -29,6 +29,7 @@ from features.project_document.aperture_commands.models import (
     PickFrame,
     PickGlazing,
 )
+from features.project_document.apertures._ref_helpers import ensure_project_frame, ensure_project_glazing
 from features.project_document.apertures.factories import DefaultsCatalogReader
 from features.project_document.document import (
     FrameRef,
@@ -53,9 +54,13 @@ def apply_pick_frame(
     frame_origin = frame_ref.catalog_origin
     if frame_origin is None:
         raise AssertionError("catalog origin is required after stamping a picked frame ref")
-    next_frames = element.frames.model_copy(update={command.side: frame_ref})
+    next_tables = body.tables.model_copy(deep=True)
+    frame_id = ensure_project_frame(next_tables, frame_ref)
+    next_frames = element.frames.model_copy(update={command.side: frame_id})
     next_element = element.model_copy(update={"frames": next_frames})
-    next_body = replace_element(body, aperture_idx, aperture, element_idx, next_element)
+    next_body = replace_element(
+        body.model_copy(update={"tables": next_tables}), aperture_idx, aperture, element_idx, next_element
+    )
     return next_body, build_audit(
         "pickFrame",
         actor_user_id,
@@ -81,8 +86,12 @@ def apply_pick_glazing(
     glazing_origin = glazing_ref.catalog_origin
     if glazing_origin is None:
         raise AssertionError("catalog origin is required after stamping a picked glazing ref")
-    next_element = element.model_copy(update={"glazing": glazing_ref})
-    next_body = replace_element(body, aperture_idx, aperture, element_idx, next_element)
+    next_tables = body.tables.model_copy(deep=True)
+    glazing_id = ensure_project_glazing(next_tables, glazing_ref)
+    next_element = element.model_copy(update={"glazing_id": glazing_id})
+    next_body = replace_element(
+        body.model_copy(update={"tables": next_tables}), aperture_idx, aperture, element_idx, next_element
+    )
     return next_body, build_audit(
         "pickGlazing",
         actor_user_id,
