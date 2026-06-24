@@ -9,9 +9,22 @@ RELATED: ./README.md, ./research.md, ./decisions.md, ./PLAN.md, ./phases/
 
 # STATUS — window-glass-catalog-enums
 
-**State:** `In progress` — Phases 0–4 done; Phase 5 (frontend) next. All decisions
+**State:** `Backend complete — PAUSED before Phase 5 (frontend)`. The entire
+**backend** half of the refactor (Phases 0–4) is implemented, committed, and
+green (full backend suite 1087 passed; ruff/ty clean). Stopped here at Ed's
+direction (2026-06-24) — the only remaining work is **Phase 5 (frontend)** and
+**Phase 6 (closeout + archive)**, and Phase 5 overlaps a frontend area Ed is
+editing in parallel, so it is deferred until Ed resumes it. All decisions
 resolved (D-6 settled by Ed 2026-06-24: drop the two `DEFAULT` rows, keep one
 sentinel renamed `PHN-Default-Glass`).
+
+> **Commit-history note (2026-06-24):** Phase 4 landed in commit `4f6e95a1`
+> ("glazing-types: import v2 fold+auto-add options"), which a concurrent commit
+> on Ed's side **bundled together with unrelated frontend WIP** (apertures /
+> envelope) under an auto-generated message rather than the prepared Phase 4
+> message. Left as-is per Ed — the Phase 4 backend content is correct and
+> complete; the bundling is cosmetic. Phases 0–3 are clean single-purpose
+> commits (`344f8a65`, `125c4d95`, `f015b342`, `8aea9dfd`).
 
 **Phase 4 (done 2026-06-24):** glazing import/export upgraded schema **v1→v2**
 (mirror of frame). `file_format.CURRENT_SCHEMA_VERSION` 1→2; `upgrade.py` adds
@@ -79,13 +92,24 @@ cross-check clean (no EXTRA, no orphan options); fresh-migrate sentinel reads
 - File-level phase plans drafted, each a thin mirror of the merged frame code with
   cited `file:line` targets.
 
-## Next step
+## Next step — RESUME HERE (deferred at Ed's direction)
 
-Execute **Phase 5** (frontend: `manufacturer` + `brand` → single_select with
-options fetched from the store, read-only derived `name`, inline-add wired to
-`PUT …/options`; id↔label translation in the controller; import dialog shows the
-new `dropped` count). Then **Phase 6** closeout + archive. Phase 5 is the only
-frontend phase and the first to need a browser smoke (sign in as Ed).
+**Phase 5 (frontend)** is the next phase, deferred until Ed picks it back up
+(see `phases/phase-05-frontend-single-select.md` for the full plan):
+`manufacturer` + `brand` → `single_select` with options fetched from the store,
+read-only derived `name`, inline-add wired to `PUT …/options`; id↔label
+translation in `glazing-types/controller.ts`; import dialog shows the new
+`dropped` count. It is the only frontend phase and the first to need a dev-server
+**browser smoke** (sign in as Ed; the seeded project is `ed@example.com`'s). It
+overlaps a frontend area Ed is actively editing — coordinate before starting.
+
+Then **Phase 6** closeout: fold decisions into `context/`, run the
+`simplify` + `docs-pass` + `make ci` gate, mark Complete, and archive the packet
+to `planning/archive/dated/<date>/`.
+
+**Pre-resume sanity:** the backend is at migration head `20260624_0042`; a fresh
+`make db-seed` (clear DB first — seeds duplicate otherwise) loads the cleaned
+41-row glazing catalog + the 13 manufacturer / 39 brand options for the smoke.
 
 Recommended execution: run via the `implement-loop` skill phase-by-phase, or
 `implement` per phase, with the closeout gate after the last code phase.
