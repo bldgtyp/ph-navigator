@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 17:17 EDT
-STATUS: Research / design — outline only (no implementation yet)
+STATUS: Complete — implemented, tested, and live-smoke verified (see STATUS.md)
 AUTHOR: Ed (via Claude)
 SCOPE: Add "Upload HBJSON" to ENVELOPE → Assemblies, the inverse of the existing
   "Download HBJSON". Parse a PH-Navigator-native construction library file, match
