@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 17:17 EDT
-STATUS: D1/D2/D4 resolved 2026-06-23; D3/D5–D8 carry recommended defaults
+STATUS: Complete — all decisions resolved and implemented (recommended defaults adopted)
 AUTHOR: Ed (via Claude)
 SCOPE: Design decisions to confirm for Envelope HBJSON Import.
 ---

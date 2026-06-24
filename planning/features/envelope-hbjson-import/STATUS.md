@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 17:17 EDT
-STATUS: Feature complete — Phases 0–7 DONE; live browser smoke passed
+STATUS: Complete — Phases 0–7 implemented, tested, live-smoke verified; merged to main
 AUTHOR: Ed (via Claude)
 SCOPE: Status for Envelope HBJSON Import.
 ---

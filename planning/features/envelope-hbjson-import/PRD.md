@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 17:17 EDT
-STATUS: Research / design outline — pre-phasing
+STATUS: Complete — all phases implemented as designed (see STATUS.md)
 AUTHOR: Ed (via Claude)
 SCOPE: Design research for Envelope HBJSON Import. Synthesizes the export
   pipeline, the V2 document/command model, the catalog matching machinery, and
