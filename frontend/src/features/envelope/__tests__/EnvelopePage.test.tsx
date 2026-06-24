@@ -1388,6 +1388,7 @@ describe("EnvelopePage", () => {
       },
       constructions: [
         {
+          resolution_key: "W_NewWall",
           source_assembly_id: null,
           name: "W_NewWall",
           action: "add_new",

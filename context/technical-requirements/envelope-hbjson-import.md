@@ -44,7 +44,8 @@ Implementation: `backend/features/envelope/hbjson_import.py` (parse → IR),
   "source": "version | draft", "version_etag": "...", "draft_etag": "... | null",
   "schema_version": <int>,
   "constructions": [
-    { "source_assembly_id": "asm_… | null", "name": "...",
+    { "resolution_key": "<file construction identifier>",
+      "source_assembly_id": "asm_… | null", "name": "...",
       "action": "add_new | replace | skip",
       "target_assembly_id": "asm_… | null", "warnings": ["..."] }
   ],
@@ -94,9 +95,12 @@ Run per distinct incoming material (deduped by
 Per construction, default action: `ph_nav.assembly_id` matches an existing
 assembly ⇒ **replace**; otherwise **add_new** (name auto-suffixed on
 collision via `next_unique_name`). A `resolutions[]` entry
-(`source_assembly_id` + `action` + optional `target_assembly_id`) overrides
-the default. A `replace` whose target no longer exists falls back to
-`add_new` with a `replace_target_missing` warning. Never silently overwrite.
+(`resolution_key` + `action` + optional `target_assembly_id`) overrides the
+default. `resolution_key` is the file's construction identifier, present on
+every preview `ConstructionPlanItem`, so **foreign** constructions (which have
+no native assembly id) can be skipped/added too — they just have no `replace`
+option. A `replace` whose target no longer exists falls back to `add_new`
+with a `replace_target_missing` warning. Never silently overwrite.
 
 ## Round-trip fidelity
 

@@ -458,7 +458,7 @@ def test_skip_resolution_drops_the_construction(clean_import_tables: None) -> No
         version_id,
         payload,
         preview,
-        resolutions=[{"source_assembly_id": "asm_wall_c3", "action": "skip"}],
+        resolutions=[{"resolution_key": "WALL_C3", "action": "skip"}],
     )
     # Skipping the only construction leaves the body unchanged → no draft churn.
     assert applied.status_code == 200, applied.text
@@ -479,7 +479,7 @@ def test_add_new_resolution_keeps_existing_and_appends_suffixed_copy(clean_impor
         version_id,
         payload,
         preview,
-        resolutions=[{"source_assembly_id": "asm_wall_c3", "action": "add_new"}],
+        resolutions=[{"resolution_key": "WALL_C3", "action": "add_new"}],
     ).json()
 
     assemblies = applied["assemblies"]
@@ -647,6 +647,29 @@ def test_foreign_material_matches_catalog_by_name(clean_import_tables: None) -> 
     created = applied["project_materials"][0]
     assert created["catalog_origin"] is not None
     assert created["name"] == "XPS"
+
+
+def test_foreign_construction_skipped_by_resolution_key(clean_import_tables: None) -> None:
+    client = signed_in_client()
+    project_id, version_id = _empty_project(client)
+    payload = {
+        "W_Wall": _hb_construction("W_Wall", _hb_material("Batt")),
+        "R_Roof": _hb_construction("R_Roof", _hb_material("Roof Insul")),
+    }
+
+    preview = _preview(client, project_id, version_id, payload).json()
+    # Foreign constructions have no native id, but each carries a resolution_key.
+    assert {item["resolution_key"] for item in preview["constructions"]} == {"W_Wall", "R_Roof"}
+
+    applied = _apply_from_preview(
+        client,
+        project_id,
+        version_id,
+        payload,
+        preview,
+        resolutions=[{"resolution_key": "W_Wall", "action": "skip"}],
+    ).json()
+    assert {assembly["name"] for assembly in applied["assemblies"]} == {"R_Roof"}
 
 
 def test_foreign_model_without_opaque_constructions_rejected(clean_import_tables: None) -> None:

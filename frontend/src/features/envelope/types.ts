@@ -273,12 +273,15 @@ export type MaterialImportDecision =
   | "create_new";
 
 export type ConstructionResolution = {
-  source_assembly_id: string;
+  // The file's construction identifier — keys the override for native AND
+  // foreign constructions (foreign carry no source assembly id).
+  resolution_key: string;
   action: ConstructionImportAction;
   target_assembly_id?: string | null;
 };
 
 export type ImportConstructionPlanItem = {
+  resolution_key: string;
   source_assembly_id: string | null;
   name: string;
   action: ConstructionImportAction;

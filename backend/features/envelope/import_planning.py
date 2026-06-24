@@ -60,7 +60,7 @@ def build_import_plan(
 ) -> ImportPlanResult:
     resolution_map, new_materials, material_items = _resolve_materials(conn, body, library)
 
-    resolutions_by_source = {resolution.source_assembly_id: resolution for resolution in resolutions}
+    resolutions_by_key = {resolution.resolution_key: resolution for resolution in resolutions}
     existing_assembly_ids = {assembly.id for assembly in body.tables.assemblies}
 
     assemblies = list(body.tables.assemblies)
@@ -68,7 +68,7 @@ def build_import_plan(
     counts = ImportPlanCounts()
 
     for construction in library.constructions:
-        action, target_id, warnings = _decide_action(construction, resolutions_by_source, existing_assembly_ids)
+        action, target_id, warnings = _decide_action(construction, resolutions_by_key, existing_assembly_ids)
         if action == "skip":
             counts.constructions_skip += 1
         elif action == "replace":
@@ -82,6 +82,7 @@ def build_import_plan(
             counts.constructions_add += 1
         construction_items.append(
             ConstructionPlanItem(
+                resolution_key=construction.resolution_key,
                 source_assembly_id=construction.source_assembly_id,
                 name=construction.name,
                 action=action,
@@ -295,12 +296,12 @@ def _tally_material_counts(items: list[MaterialPlanItem], counts: ImportPlanCoun
 
 def _decide_action(
     construction: ImportedConstruction,
-    resolutions_by_source: dict[str, ConstructionResolution],
+    resolutions_by_key: dict[str, ConstructionResolution],
     existing_assembly_ids: set[str],
 ) -> tuple[Any, str | None, list[str]]:
     source_id = construction.source_assembly_id
     matches_existing = source_id is not None and source_id in existing_assembly_ids
-    resolution = resolutions_by_source.get(source_id) if source_id is not None else None
+    resolution = resolutions_by_key.get(construction.resolution_key)
     action = resolution.action if resolution is not None else ("replace" if matches_existing else "add_new")
 
     if action != "replace":

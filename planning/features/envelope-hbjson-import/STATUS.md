@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 17:17 EDT
-STATUS: Feature complete (core) — Phases 0–4 DONE; follow-ups noted below
+STATUS: Implementing — Phases 0–4 DONE; Phases 5–7 (promoted follow-ups) in progress
 AUTHOR: Ed (via Claude)
 SCOPE: Status for Envelope HBJSON Import.
 ---
@@ -24,10 +24,10 @@ SCOPE: Status for Envelope HBJSON Import.
     catalog-repo logic (PRD §5).
   - Flow is **preview → confirm**, applied atomically through the existing
     `apply_envelope_command` pipeline (PRD §6).
-- **Implementation: in progress.** Phases 0–3 complete (see below): the
-  export round-trips losslessly, the full backend import (native + foreign
-  honeybee-PH, preview + apply) is live, and the frontend upload/preview/confirm
-  flow is wired. Phase 4 (polish) is next.
+- **Implementation: core complete.** Phases 0–4 done (see below): the export
+  round-trips losslessly, the full backend import (native + foreign honeybee-PH,
+  preview + apply) is live, and the frontend upload/preview/confirm flow with
+  per-construction overrides is wired. Deferred follow-ups are listed below.
 
 ## Decisions (2026-06-23)
 - **D1: both sources in v1** — PHN-native **and** raw Honeybee-PH.
@@ -74,15 +74,23 @@ SCOPE: Status for Envelope HBJSON Import.
   (pick-from-catalog + create-new across projects); matching-ladder warnings
   surface per-row in the modal.
 
-## Follow-ups (deferred — out of the v1 "polish" scope)
-- **Per-material override** in the preview: needs the apply command to carry
-  per-material resolutions (currently material decisions are deterministic
-  server-side). Backend change.
-- **Material drift detection** in the import plan (reuse hit a material that has
-  `local_overrides` / values that differ from the file): surface a divergence
-  warning like the refresh-from-catalog model. Backend change.
-- **Skip for foreign constructions**: resolutions are keyed by source assembly
-  id, which honeybee files lack; key by identifier to allow it. Backend change.
+- **Phase 5 — DONE (2026-06-23).** Skip/override for foreign constructions:
+  construction resolutions are now keyed by a stable `resolution_key` (the
+  file's construction identifier) carried on every IR construction +
+  `ConstructionPlanItem`, replacing the `source_assembly_id` key. The modal
+  renders the Add/Replace/Skip select for **all** constructions (foreign get
+  Add/Skip — no Replace without a target). +1 backend foreign-skip test;
+  frontend dialog tests updated.
+- **Phase 6** — material drift detection in the import plan: when a reuse rung
+  hits an existing project material whose values differ from the file's, surface
+  a `reused_material_values_differ` warning (informational; still reuses).
+  Backend + frontend label.
+- **Phase 7** — per-material override in the preview: let the user reject a
+  match and force `create_new` (the false-positive name-match case). Apply
+  command carries per-material resolutions; modal adds a per-material control.
+  Backend + frontend.
+
+## Follow-ups (deferred)
 - **Live browser smoke**: validated via the vitest upload→preview→apply flow +
   backend route/command tests; a manual end-to-end run against the dev stack is
   still worth doing before release.

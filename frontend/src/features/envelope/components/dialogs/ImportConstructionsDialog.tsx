@@ -34,27 +34,22 @@ export function ImportConstructionsDialog({
   onConfirm: (resolutions: ConstructionResolution[]) => void;
 }) {
   const { counts, constructions, materials, warnings } = plan;
-  // Per-construction action overrides, keyed by source assembly id. Foreign
-  // constructions carry no id and cannot be re-keyed server-side, so they keep
-  // their default action.
+  // Per-construction action overrides, keyed by `resolution_key` so both native
+  // and foreign constructions are addressable.
   const [overrides, setOverrides] = useState<Record<string, ConstructionImportAction>>({});
 
   const effectiveAction = (item: ImportConstructionPlanItem): ConstructionImportAction =>
-    item.source_assembly_id ? (overrides[item.source_assembly_id] ?? item.action) : item.action;
+    overrides[item.resolution_key] ?? item.action;
 
   const landingCount = constructions.filter((item) => effectiveAction(item) !== "skip").length;
 
   const resolutions = useMemo<ConstructionResolution[]>(
     () =>
-      constructions
-        .filter((item): item is ImportConstructionPlanItem & { source_assembly_id: string } =>
-          Boolean(item.source_assembly_id),
-        )
-        .map((item) => ({
-          source_assembly_id: item.source_assembly_id,
-          action: overrides[item.source_assembly_id] ?? item.action,
-          target_assembly_id: item.target_assembly_id,
-        })),
+      constructions.map((item) => ({
+        resolution_key: item.resolution_key,
+        action: overrides[item.resolution_key] ?? item.action,
+        target_assembly_id: item.target_assembly_id,
+      })),
     [constructions, overrides],
   );
 
@@ -81,24 +76,19 @@ export function ImportConstructionsDialog({
         ) : null}
 
         <ImportSection title="Constructions" count={constructions.length}>
-          {constructions.map((item, index) => {
-            const sourceId = item.source_assembly_id;
-            return (
-              <li key={`${sourceId ?? "new"}-${index}`} className="envelope-import__row">
-                <span className="envelope-import__name">{item.name}</span>
-                <ActionControl
-                  item={item}
-                  value={effectiveAction(item)}
-                  onChange={
-                    sourceId
-                      ? (action) => setOverrides((prev) => ({ ...prev, [sourceId]: action }))
-                      : undefined
-                  }
-                />
-                <RowWarnings warnings={item.warnings} />
-              </li>
-            );
-          })}
+          {constructions.map((item) => (
+            <li key={item.resolution_key} className="envelope-import__row">
+              <span className="envelope-import__name">{item.name}</span>
+              <ActionControl
+                item={item}
+                value={effectiveAction(item)}
+                onChange={(action) =>
+                  setOverrides((prev) => ({ ...prev, [item.resolution_key]: action }))
+                }
+              />
+              <RowWarnings warnings={item.warnings} />
+            </li>
+          ))}
         </ImportSection>
 
         <ImportSection title="Materials" count={materials.length}>
@@ -137,14 +127,10 @@ function ActionControl({
 }: {
   item: ImportConstructionPlanItem;
   value: ConstructionImportAction;
-  onChange?: (action: ConstructionImportAction) => void;
+  onChange: (action: ConstructionImportAction) => void;
 }) {
-  // Foreign constructions (no source id, so no `onChange`) can only be added —
-  // show a static chip instead of an editable control.
-  if (!onChange) {
-    return <span className="chip chip--sm chip--outline">{CONSTRUCTION_ACTION_LABELS[value]}</span>;
-  }
-  // Replace is only offered when the file matched an existing assembly.
+  // Replace is only offered when the file matched an existing assembly; foreign
+  // constructions (no target) can be added or skipped.
   const options: ConstructionImportAction[] = item.target_assembly_id
     ? ["replace", "add_new", "skip"]
     : ["add_new", "skip"];
