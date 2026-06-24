@@ -375,7 +375,7 @@ renames are part of Phase 1, for cross-catalog parity with
 Materials.
 
 D4. **Soft-enum stays as `text`-with-suggestions** for v1. — **SUPERSEDED
-(2026-06-24)** by `planning/refactor/window-frames-catalog-enums/` (Phases
+(2026-06-24)** by `planning/archive/window-frames-catalog-enums/` (Phases
 0–5): the six categorization fields (manufacturer / brand / use / operation /
 location / mull_type — `material` stays free text) are now strict
 `single_select` backed by the `catalog_field_options` store, and `name` is

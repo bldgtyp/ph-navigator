@@ -983,7 +983,7 @@ key is the `field_key`, not the display name.
 > **storing the label string** (the catalog row stores the label too). Same
 > `{id,label,color,order}` option shape and the same rename/merge lifecycle —
 > just a relational store instead of the document JSON map. See
-> `planning/refactor/window-frames-catalog-enums/`.
+> `planning/archive/window-frames-catalog-enums/`.
 
 #### 6.6.5 Validation timing
 

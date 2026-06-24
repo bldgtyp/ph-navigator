@@ -145,7 +145,7 @@ store from the project-document `single_select_options` JSON map (data-model.md
 §6.6.4): catalogs are global app data, so their option lists are a relational
 reference table keyed `(catalog_table, field_key)`, **storing the label string**
 (rows in the owning catalog table store the label too — D-2 of
-`planning/refactor/window-frames-catalog-enums/`). Built generic (D-7) so glazing
+`planning/archive/window-frames-catalog-enums/`). Built generic (D-7) so glazing
 and materials can adopt it; only frame-types is wired today (its six fields:
 manufacturer / brand / use / operation / location / mull_type). Frame-type `name`
 is **server-derived** from its parts (read-only) and the built-in default

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 17:51 EDT
-STATUS: Active — decisions resolved; Phases 0–4 complete, Phase 5 (frontend) next
+STATUS: Complete (2026-06-24) — archived; all phases implemented (1 follow-up: 5b modal wiring, see STATUS.md)
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phased implementation plan for window-frames-catalog-enums
 RELATED: ./research.md, ./decisions.md, ./STATUS.md
