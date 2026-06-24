@@ -52,7 +52,6 @@ export type ApertureBuilderState = {
   dismissedOperationWarnings: Record<string, string[]>;
 
   selectSingle: (apertureId: string, elementId: string) => void;
-  extendSelection: (apertureId: string, elementId: string) => void;
   toggleSelection: (apertureId: string, elementId: string) => void;
   clearSelection: (apertureId: string) => void;
   clearAllSelections: () => void;
@@ -91,18 +90,6 @@ export const useApertureBuilderStore = create<ApertureBuilderState>((set, get) =
       const next = current.length === 1 && current[0] === elementId ? [] : [elementId];
       return {
         selectionByAperture: { ...state.selectionByAperture, [apertureId]: next },
-      };
-    }),
-
-  extendSelection: (apertureId, elementId) =>
-    set((state) => {
-      const current = state.selectionByAperture[apertureId] ?? [];
-      if (current.includes(elementId)) return state;
-      return {
-        selectionByAperture: {
-          ...state.selectionByAperture,
-          [apertureId]: [...current, elementId],
-        },
       };
     }),
 

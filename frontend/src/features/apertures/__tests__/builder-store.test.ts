@@ -28,20 +28,6 @@ describe("builder-store", () => {
     expect(useApertureBuilderStore.getState().selectionByAperture["apt_1"]).toEqual([]);
   });
 
-  it("extendSelection appends and is idempotent", () => {
-    initial.selectSingle("apt_1", "el_a");
-    initial.extendSelection("apt_1", "el_b");
-    expect(useApertureBuilderStore.getState().selectionByAperture["apt_1"]).toEqual([
-      "el_a",
-      "el_b",
-    ]);
-    initial.extendSelection("apt_1", "el_b");
-    expect(useApertureBuilderStore.getState().selectionByAperture["apt_1"]).toEqual([
-      "el_a",
-      "el_b",
-    ]);
-  });
-
   it("toggleSelection adds if missing and removes if present", () => {
     initial.toggleSelection("apt_1", "el_a");
     expect(useApertureBuilderStore.getState().selectionByAperture["apt_1"]).toEqual(["el_a"]);

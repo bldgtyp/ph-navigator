@@ -81,11 +81,15 @@ export function ApertureCanvasOverlay({
   const hoveredEl = useApertureBuilderStore((state) => state.hoveredElementId);
   const hoveredRegion = useApertureBuilderStore((state) => state.hoveredRegion);
   const selectSingle = useApertureBuilderStore((state) => state.selectSingle);
-  const extendSelection = useApertureBuilderStore((state) => state.extendSelection);
   const toggleSelection = useApertureBuilderStore((state) => state.toggleSelection);
   const clearSelection = useApertureBuilderStore((state) => state.clearSelection);
   const setHoveredElement = useApertureBuilderStore((state) => state.setHoveredElement);
   const setHoveredRegion = useApertureBuilderStore((state) => state.setHoveredRegion);
+
+  const handleElementSelection = (elementId: string, event: MouseEvent<HTMLElement>) => {
+    if (event.shiftKey || event.metaKey || event.ctrlKey) toggleSelection(aperture.id, elementId);
+    else selectSingle(aperture.id, elementId);
+  };
 
   const onElementClick = (element: ApertureElement, event: MouseEvent<HTMLDivElement>) => {
     // Ignore clicks that bubble from the pill input or a region hit so we
@@ -104,9 +108,24 @@ export function ApertureCanvasOverlay({
       onPasteElement?.(element);
       return;
     }
-    if (event.shiftKey) extendSelection(aperture.id, element.id);
-    else if (event.metaKey || event.ctrlKey) toggleSelection(aperture.id, element.id);
-    else selectSingle(aperture.id, element.id);
+    handleElementSelection(element.id, event);
+  };
+
+  const onRegionHitClick = (
+    element: ApertureElement,
+    region: ApertureRegionKind,
+    event: MouseEvent<HTMLDivElement>,
+  ) => {
+    if (pickPasteMode === "picking") {
+      onPickElement?.(element);
+      return;
+    }
+    if (pickPasteMode === "pasting") {
+      onPasteElement?.(element);
+      return;
+    }
+    handleElementSelection(element.id, event);
+    onRegionClick?.(element.id, region);
   };
 
   const onBackgroundClick = (event: MouseEvent<HTMLDivElement>) => {
@@ -199,7 +218,7 @@ export function ApertureCanvasOverlay({
                 isHovered={isRegionHovered(hoveredRegion, element.id, region)}
                 onMouseEnter={() => setHoveredRegion({ elementId: element.id, region })}
                 onMouseLeave={() => setHoveredRegion(null)}
-                onClick={onRegionClick ? () => onRegionClick(element.id, region) : undefined}
+                onClick={(event) => onRegionHitClick(element, region, event)}
               />
             ))}
             <ApertureNamePill

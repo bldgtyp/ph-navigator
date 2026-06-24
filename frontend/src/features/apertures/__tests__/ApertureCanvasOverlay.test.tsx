@@ -121,7 +121,7 @@ describe("ApertureCanvasOverlay", () => {
     expect(useApertureBuilderStore.getState().selectionByAperture["apt_1"]).toEqual(["aptel_1"]);
   });
 
-  it("shift-click extends the selection", () => {
+  it("shift-click toggles an element in and out of the selection", () => {
     const a = element({ id: "aptel_a", column_span: [0, 0] });
     const b = element({ id: "aptel_b", column_span: [1, 1] });
     renderOverlay({
@@ -133,6 +133,8 @@ describe("ApertureCanvasOverlay", () => {
       "aptel_a",
       "aptel_b",
     ]);
+    fireEvent.click(screen.getByTestId("hit-element-aptel_a"), { shiftKey: true });
+    expect(useApertureBuilderStore.getState().selectionByAperture["apt_1"]).toEqual(["aptel_b"]);
   });
 
   it("cmd-click toggles an element in and out of the selection", () => {
@@ -186,6 +188,24 @@ describe("ApertureCanvasOverlay", () => {
     renderOverlay({ onRegionClick });
     fireEvent.click(screen.getByTestId("hit-aptel_1-glazing"));
     expect(onRegionClick).toHaveBeenCalledWith("aptel_1", "glazing");
+    expect(useApertureBuilderStore.getState().selectionByAperture["apt_1"]).toEqual(["aptel_1"]);
+  });
+
+  it("shift-clicking a region toggles the owning element selection", () => {
+    const a = element({ id: "aptel_a", column_span: [0, 0] });
+    const b = element({ id: "aptel_b", column_span: [1, 1] });
+    renderOverlay({
+      aperture: entry({ column_widths_mm: [1000, 1000], elements: [a, b] }),
+    });
+    fireEvent.click(screen.getByTestId("hit-aptel_a-glazing"));
+    fireEvent.click(screen.getByTestId("hit-aptel_b-top"), { shiftKey: true });
+    expect(useApertureBuilderStore.getState().selectionByAperture["apt_1"]).toEqual([
+      "aptel_a",
+      "aptel_b",
+    ]);
+
+    fireEvent.click(screen.getByTestId("hit-aptel_a-glazing"), { shiftKey: true });
+    expect(useApertureBuilderStore.getState().selectionByAperture["apt_1"]).toEqual(["aptel_b"]);
   });
 
   it("inserts at an interior row line within a merged element", () => {
