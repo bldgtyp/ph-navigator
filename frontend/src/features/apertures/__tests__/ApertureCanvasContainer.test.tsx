@@ -178,6 +178,33 @@ describe("ApertureCanvasContainer", () => {
     expect(onSetElementName).toHaveBeenCalledWith("aptel_named", "A-1");
   });
 
+  it("clears element selection on Escape", () => {
+    render(
+      <UnitStub>
+        <ApertureCanvasHarness
+          entry={aperture({
+            elements: [
+              element({ id: "aptel_a", column_span: [0, 0] }),
+              element({ id: "aptel_b", column_span: [1, 1] }),
+            ],
+            column_widths_mm: [1000, 1000],
+          })}
+        />
+      </UnitStub>,
+    );
+
+    fireEvent.click(screen.getByTestId("hit-aptel_a-glazing"));
+    fireEvent.click(screen.getByTestId("hit-aptel_b-glazing"), { shiftKey: true });
+    expect(useApertureBuilderStore.getState().selectionByAperture["apt_1"]).toEqual([
+      "aptel_a",
+      "aptel_b",
+    ]);
+
+    fireEvent.keyDown(screen.getByTestId("aperture-canvas-container"), { key: "Escape" });
+
+    expect(useApertureBuilderStore.getState().selectionByAperture["apt_1"]).toEqual([]);
+  });
+
   it("cancels an element card name edit when focus leaves the editor", () => {
     const onSetElementName = vi.fn();
     render(

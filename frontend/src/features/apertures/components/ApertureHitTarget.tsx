@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, MouseEvent } from "react";
 import type { RectMm } from "../aperture-geometry";
 import { pxFromMm } from "../canvas-constants";
 import type { ApertureSide } from "../types";
@@ -22,7 +22,7 @@ export function ApertureHitTarget({
   parentRect: RectMm;
   zoom: number;
   isHovered: boolean;
-  onClick?: () => void;
+  onClick?: (event: MouseEvent<HTMLDivElement>) => void;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
 }) {
@@ -43,7 +43,7 @@ export function ApertureHitTarget({
       onMouseLeave={onMouseLeave}
       onClick={(event) => {
         event.stopPropagation();
-        onClick?.();
+        onClick?.(event);
       }}
     />
   );
