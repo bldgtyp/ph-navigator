@@ -1,7 +1,7 @@
 ---
-DATE: 2026-06-23
-TIME: 17:19 EDT
-STATUS: Implementing — Phases 1–3 done 2026-06-24 (backend + frontend); Phase 4 (verify/PHPP-paste/closeout) pending
+DATE: 2026-06-24
+TIME: 08:00 EDT
+STATUS: Complete (archived 2026-06-24) — Phases 1–4 done; real-PHPP paste + Playwright walkthrough waived, soft cells Q-A/Q-B/Q-C accepted on working defaults
 AUTHOR: Ed (via Claude)
 SCOPE: Add "Download in PHPP format" to ENVELOPE → Assemblies (a second item in
   the existing "…" Assembly-actions menu, next to "Download constructions
