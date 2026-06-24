@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 18:25 EDT
-STATUS: Draft — depends on Phases 1–4 (backend complete)
+STATUS: Complete (2026-06-24) — 5a + 5c done; 5b logic done. Follow-up: wire the manage-options modal + browser smokes (§5b)
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phase 5 — frontend: six fields → single_select (unlocked), read-only derived name, manage-options wired to the catalog store
 RELATED:

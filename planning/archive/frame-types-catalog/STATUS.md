@@ -83,7 +83,7 @@ IP/SI topbar toggle flips the four numeric performance columns.
 Once verified, merge `feat/frame-types-catalog` into `main`.
 Follow-up tickets (deferred from PRD): (a) promote soft-enum
 columns to strict `single_select` — **DONE** in
-`planning/refactor/window-frames-catalog-enums/` (manufacturer / brand / use /
+`planning/archive/window-frames-catalog-enums/` (manufacturer / brand / use /
 operation / location / mull_type are now single-select via the
 `catalog_field_options` store; `material` stays free text; `name` is derived);
 (b) extract the shared `import_export` plumbing across Materials / Glazing /

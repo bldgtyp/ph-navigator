@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 18:25 EDT
-STATUS: Docs folded (2026-06-24) — 6.1–6.4 done; 6.5 "mark Complete" gated on the 5b modal-open verification + browser smokes (dev env)
+STATUS: Complete (2026-06-24) — decisions folded into context/; PRD D4 flipped; refactor archived (5b modal wiring tracked as a follow-up in §5b)
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phase 6 — fold decisions into context/, flip PRD D4, run closeout gate, mark Complete
 RELATED:

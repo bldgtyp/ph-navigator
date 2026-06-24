@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 17:51 EDT
-STATUS: Active
+STATUS: Complete (2026-06-24) — archived
 AUTHOR: Claude (Opus 4.8)
 SCOPE: window-frames-catalog-enums
 RELATED: ./README.md, ./research.md, ./decisions.md, ./PLAN.md
@@ -9,12 +9,24 @@ RELATED: ./README.md, ./research.md, ./decisions.md, ./PLAN.md
 
 # STATUS — window-frames-catalog-enums
 
-**State:** `Active` — research complete; **all decisions resolved (2026-06-23)**;
-**Phases 0–4 (backend) complete (2026-06-23)** — canonical vocab + clean seed
+**State:** `Complete (2026-06-24)` — all phases implemented + committed
+(CI-green); decisions folded into `context/`. Archived to `planning/archive/`.
+
+> **One known follow-up (does not block archive).** The Phase 5b *option-editing
+> UI* is not wired end-to-end: the field-config "manage options" modal is
+> unreachable for catalog single-selects because the catalog pages don't pass the
+> DataTable's `onEditCustomFieldBundle`/`editConfigEnabled`
+> (`DataTable.tsx:1109,1475`). The 5b *translation logic* (`legacyOptions` →
+> `PUT …/options`, with merge `replacements`) is done + unit-tested. Wiring the
+> modal-open path is a distinct shared-DataTable task; browser smokes for 5b
+> (once wired) + 5c are also pending. See phase-05 §5b. Everyday flows (pick from
+> canonical options, inline-add, derived name) are done + browser-verified (5a).
+
+**Delivered:** **Phases 0–4 (backend)** — canonical vocab + clean seed
 (P0); option store (P1); strict write-validation (P2); derived read-only `name` +
 default-by-id (P3); import v2 — fold + compute-name + **auto-add unknown options**
-(D-4, Ed) (P4). **Phase 5a complete (2026-06-24)** — frontend single-select
-display + read-only name + inline-add (browser-smoked). All CI-green. **Next:
+(D-4, Ed) (P4). **Phase 5a** — frontend single-select
+display + read-only name + inline-add (browser-smoked). **Next (historical):
 Phase 5b** (editable options) then **5c** (import dialog v2).
 
 **Decisions locked:** D-1 all six strict single-select (incl. `brand`, to group

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 17:51 EDT
-STATUS: Active — research complete, awaiting decision sign-off
+STATUS: Complete (2026-06-24) — archived; one follow-up (5b modal wiring) — see STATUS.md
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: Window-frame-types catalog — promote six text fields to user-extensible
   single-select, make `name` a derived field
@@ -57,8 +57,8 @@ follow-up is unblocked.
 | 2 | `phases/phase-02-write-validation.md` | Reject unknown values on create/patch for the six fields. | ✅ Complete |
 | 3 | `phases/phase-03-derived-name-and-default-by-id.md` | Server-compute read-only `name`; default frame/glazing lookup → by id. | ✅ Complete |
 | 4 | `phases/phase-04-import-export-v2.md` | Import v2: fold legacy values, compute name on import, drop missing-name gate. | ✅ Complete |
-| 5 | `phases/phase-05-frontend-single-select.md` | Six fields → single_select, read-only name, manage-options wired to the store. Split 5a/5b/5c (see phase doc). | 🚧 5a ✅; 5b logic ✅ (open: modal-open trigger); 5c ✅ (browser smokes pending — dev env down) |
-| 6 | `phases/phase-06-cleanup-docs-closeout.md` | Fold decisions into `context/`, flip PRD D4, closeout gate, mark Complete. | 🚧 docs folded; final "Complete" gated on 5b modal verification |
+| 5 | `phases/phase-05-frontend-single-select.md` | Six fields → single_select, read-only name, manage-options wired to the store. Split 5a/5b/5c (see phase doc). | ✅ 5a + 5c; 5b logic done — **follow-up:** wire the manage-options modal + browser smokes (§5b) |
+| 6 | `phases/phase-06-cleanup-docs-closeout.md` | Fold decisions into `context/`, flip PRD D4, closeout gate, mark Complete. | ✅ Complete |
 
 Dependency order: 0 → 1 → 2 → 3 → 4 → 5 → 6. Phases 1–4 are backend-only and each
 ends green on `make ci`; Phase 5 is the only frontend phase.
