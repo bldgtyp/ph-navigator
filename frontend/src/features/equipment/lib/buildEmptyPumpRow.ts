@@ -1,8 +1,13 @@
 import type { BuildEmptyRow } from "../../../shared/ui/data-table";
 import { emptyPump } from "../lib";
-import { PUMP_DEVICE_TYPE_KEY, type PumpRow } from "../types";
+import {
+  PUMP_DEVICE_TYPE_KEY,
+  STATUS_DEFAULT_OPTION_ID,
+  STATUS_FIELD_KEY,
+  type PumpRow,
+} from "../types";
 import { customNumberValue, customTextValueOrNull } from "./customValueReaders";
-import { readNumberDefault, readStringDefault } from "./fieldDefaults";
+import { readNumberDefault, readStatusDefault, readStringDefault } from "./fieldDefaults";
 
 export function makeBuildEmptyPumpRow(): BuildEmptyRow<PumpRow> {
   return ({ rowId, fieldDefaults }) => {
@@ -36,6 +41,10 @@ export function makeBuildEmptyPumpRow(): BuildEmptyRow<PumpRow> {
         runtime_khr_yr: readNumberDefault(
           fieldDefaults.runtime_khr_yr,
           customNumberValue(base, "runtime_khr_yr"),
+        ),
+        [STATUS_FIELD_KEY]: readStatusDefault(
+          fieldDefaults[STATUS_FIELD_KEY],
+          STATUS_DEFAULT_OPTION_ID,
         ),
       },
     };

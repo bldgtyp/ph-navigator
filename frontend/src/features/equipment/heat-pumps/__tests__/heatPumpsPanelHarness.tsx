@@ -35,6 +35,13 @@ import {
   HEAT_PUMP_OUTDOOR_UNITS_TABLE_NAME,
   type HeatPumpsSlice,
 } from "../types";
+import { STATUS_OPTION_FIXTURES } from "./statusOptionFixtures";
+import {
+  HEAT_PUMPS_INDOOR_EQUIP_STATUS_OPTION_KEY,
+  HEAT_PUMPS_OUTDOOR_EQUIP_STATUS_OPTION_KEY,
+  STATUS_DEFAULT_OPTION_ID,
+  STATUS_FIELD_KEY,
+} from "../../types";
 
 export const fetchMock = vi.fn();
 
@@ -375,7 +382,10 @@ export function heatPumpsSlice(overrides: Partial<HeatPumpsSlice> = {}): HeatPum
     indoor_equip: [indoorEquipRow()],
     outdoor_units: [],
     indoor_units: [],
-    single_select_options: {},
+    single_select_options: {
+      [HEAT_PUMPS_OUTDOOR_EQUIP_STATUS_OPTION_KEY]: STATUS_OPTION_FIXTURES,
+      [HEAT_PUMPS_INDOOR_EQUIP_STATUS_OPTION_KEY]: STATUS_OPTION_FIXTURES,
+    },
     ...overrides,
   };
 }
@@ -415,6 +425,7 @@ export function outdoorEquipRow(overrides: Partial<HeatPumpsSlice["outdoor_equip
     datasheet_asset_ids: [],
     notes: null,
     catalog_origin: null,
+    custom_values: { [STATUS_FIELD_KEY]: STATUS_DEFAULT_OPTION_ID },
     ...overrides,
   } satisfies HeatPumpsSlice["outdoor_equip"][number];
 }
@@ -439,6 +450,7 @@ export function indoorEquipRow(overrides: Partial<HeatPumpsSlice["indoor_equip"]
     datasheet_asset_ids: [],
     notes: null,
     catalog_origin: null,
+    custom_values: { [STATUS_FIELD_KEY]: STATUS_DEFAULT_OPTION_ID },
     ...overrides,
   } satisfies HeatPumpsSlice["indoor_equip"][number];
 }

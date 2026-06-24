@@ -15,6 +15,7 @@ import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { useAssetUrls } from "../../assets/hooks";
 import { DATASHEET_ATTACHMENT_CONFIG } from "../../assets/lib";
 import { sortedFans } from "../lib";
+import { statusColumn } from "../lib/statusColumn";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
 import {
   customFieldColumnDefs,
@@ -203,6 +204,7 @@ export function FansTable({
         getRowId: (fan) => fan.id,
         onWrite,
       }),
+      statusColumn<FanRow>(fieldDefByKey),
       ...customColumns,
     ],
     [customColumns, datasheetUrlById, fieldDefByKey, isEditor, onWrite, projectId],

@@ -20,12 +20,15 @@ import {
 } from "../lib";
 import {
   FAN_TYPE_OPTION_KEY,
+  FANS_STATUS_OPTION_KEY,
   FANS_TABLE_NAME,
   PUMP_DEVICE_TYPE_OPTION_KEY,
+  PUMPS_STATUS_OPTION_KEY,
   PUMPS_TABLE_NAME,
   ROOMS_TABLE_NAME,
   ROOM_BUILDING_ZONE_OPTION_KEY,
   ROOM_FLOOR_LEVEL_OPTION_KEY,
+  STATUS_DEFAULT_OPTION_ID,
   VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,
   VENTILATORS_TABLE_NAME,
   type FanRow,
@@ -37,6 +40,9 @@ import {
   type VentilatorRow,
   type VentilatorsSlice,
 } from "../types";
+import { STATUS_FIXTURE_OPTIONS } from "./statusFixtureOptions";
+
+export { STATUS_FIXTURE_OPTIONS };
 
 const CREATED_AT = "2026-05-25T00:00:00Z";
 
@@ -154,6 +160,7 @@ export function buildPump(overrides: Partial<PumpRow> = {}): PumpRow {
       wattage: 45,
       flow_gpm: null,
       runtime_khr_yr: null,
+      status: STATUS_DEFAULT_OPTION_ID,
     },
     ...overrides,
   };
@@ -201,6 +208,7 @@ export function buildFan(overrides: Partial<FanRow> = {}): FanRow {
       volts: 120,
       power_factor: 0.8,
       watts: 120,
+      status: STATUS_DEFAULT_OPTION_ID,
     },
     ...overrides,
   };
@@ -338,6 +346,7 @@ export function buildPumpsSlice(overrides: Partial<PumpsSlice> = {}): PumpsSlice
         },
         { id: "opt_pump_other", label: "10-Other", color: "#64748b", order: 3 },
       ],
+      [PUMPS_STATUS_OPTION_KEY]: [...STATUS_FIXTURE_OPTIONS],
     },
     ...overrides,
   };
@@ -377,6 +386,7 @@ export function buildFansSlice(overrides: Partial<FansSlice> = {}): FansSlice {
         { id: "opt_kitchen_hood", label: "2-Kitchen Hood", color: "#0ea5e9", order: 1 },
         { id: "opt_user_defined", label: "3-User Defined", color: "#8b5cf6", order: 2 },
       ],
+      [FANS_STATUS_OPTION_KEY]: [...STATUS_FIXTURE_OPTIONS],
     },
     ...overrides,
   };

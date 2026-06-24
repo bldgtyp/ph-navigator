@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import { tableFieldDef } from "../../testing/testFixtures";
 import { buildEmptyOutdoorEquipRow, heatPumpOutdoorEquipPayloadBuilders } from "../lib";
 import type { HeatPumpOutdoorEquipSlice } from "../types";
+import { STATUS_DEFAULT_OPTION_ID, STATUS_FIELD_KEY } from "../../types";
 
 describe("heat pump payload builders", () => {
   test("routes custom value and linked-record writes through the custom bags", () => {
@@ -30,12 +31,45 @@ describe("heat pump payload builders", () => {
       {},
     );
 
-    expect(payload.outdoor_equip[0]?.custom_values).toEqual({ cf_voltage: 208 });
+    expect(payload.outdoor_equip[0]?.custom_values).toEqual({
+      [STATUS_FIELD_KEY]: STATUS_DEFAULT_OPTION_ID,
+      cf_voltage: 208,
+    });
     expect(payload.outdoor_equip[0]?.custom_links).toEqual({
       cf_rooms: ["room_a", "room_b"],
     });
     expect(payload.outdoor_equip[0]).not.toHaveProperty("cf_voltage");
     expect(payload.outdoor_equip[0]).not.toHaveProperty("cf_rooms");
+  });
+
+  test("new equipment rows default to the Needed status in custom_values", () => {
+    const outdoor = buildEmptyOutdoorEquipRow();
+    expect(outdoor.custom_values?.[STATUS_FIELD_KEY]).toBe(STATUS_DEFAULT_OPTION_ID);
+    expect(outdoor).not.toHaveProperty(STATUS_FIELD_KEY);
+  });
+
+  test("status cell writes round-trip into custom_values.status, not a top-level column", () => {
+    const slice = outdoorEquipSlice({
+      outdoor_equip: [outdoorEquipRow({ id: "hpoe_a" })],
+      field_defs: [
+        tableFieldDef({
+          field_key: STATUS_FIELD_KEY,
+          display_name: "Status",
+          field_type: "single_select",
+          origin: "built_in",
+        }),
+      ],
+    });
+
+    const payload = heatPumpOutdoorEquipPayloadBuilders.fromCellWrites(
+      slice,
+      [{ rowId: "hpoe_a", fieldKey: STATUS_FIELD_KEY, value: "opt_status_complete" }],
+      {},
+      {},
+    );
+
+    expect(payload.outdoor_equip[0]?.custom_values?.[STATUS_FIELD_KEY]).toBe("opt_status_complete");
+    expect(payload.outdoor_equip[0]).not.toHaveProperty(STATUS_FIELD_KEY);
   });
 
   test("carries inline single-select option deltas into the replace payload", () => {

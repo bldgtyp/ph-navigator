@@ -1,8 +1,8 @@
 import type { BuildEmptyRow } from "../../../shared/ui/data-table";
 import { emptyFan } from "../lib";
-import { FAN_TYPE_KEY, type FanRow } from "../types";
+import { FAN_TYPE_KEY, STATUS_DEFAULT_OPTION_ID, STATUS_FIELD_KEY, type FanRow } from "../types";
 import { customNumberValue, customTextValueOrNull } from "./customValueReaders";
-import { readNumberDefault, readStringDefault } from "./fieldDefaults";
+import { readNumberDefault, readStatusDefault, readStringDefault } from "./fieldDefaults";
 
 export function makeBuildEmptyFanRow(): BuildEmptyRow<FanRow> {
   return ({ rowId, fieldDefaults }) => {
@@ -41,6 +41,10 @@ export function makeBuildEmptyFanRow(): BuildEmptyRow<FanRow> {
           customNumberValue(base, "power_factor"),
         ),
         watts: readNumberDefault(fieldDefaults.watts, customNumberValue(base, "watts")),
+        [STATUS_FIELD_KEY]: readStatusDefault(
+          fieldDefaults[STATUS_FIELD_KEY],
+          STATUS_DEFAULT_OPTION_ID,
+        ),
       },
     };
   };

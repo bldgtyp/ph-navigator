@@ -8,10 +8,13 @@ import {
   type RowInsertPayload,
 } from "../../../shared/ui/data-table";
 import { normalizeOptionOrders } from "../../../shared/ui/data-table/lib";
+import { readStatusDefault } from "../../../shared/lib/fieldDefaults";
 import { readAttachmentAssetIds } from "../lib";
 import { nextCopySuffix } from "../../equipment/lib";
 import { customNumberValue } from "../../equipment/lib/customValueReaders";
 import {
+  STATUS_DEFAULT_OPTION_ID,
+  STATUS_FIELD_KEY,
   THERMAL_BRIDGE_PDF_REPORT_FIELD_KEY,
   THERMAL_BRIDGE_TYPE_KEY,
   THERMAL_BRIDGE_TYPE_OPTION_KEY,
@@ -173,6 +176,10 @@ export function makeBuildEmptyThermalBridgeRow(): BuildEmptyRow<ThermalBridgeRow
         drawing_number: readStringDefault(fieldDefaults.drawing_number, null),
         psi_value_w_mk: readNumberDefault(fieldDefaults.psi_value_w_mk, null),
         frsi_value: readNumberDefault(fieldDefaults.frsi_value, null),
+        [STATUS_FIELD_KEY]: readStatusDefault(
+          fieldDefaults[STATUS_FIELD_KEY],
+          STATUS_DEFAULT_OPTION_ID,
+        ),
       },
     });
 }

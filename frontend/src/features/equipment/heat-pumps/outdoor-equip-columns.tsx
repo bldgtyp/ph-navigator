@@ -30,6 +30,8 @@ import {
   type HeatPumpOutdoorUnitRow,
   type HeatPumpsSlice,
 } from "./types";
+import { statusColumnDef, statusFieldDef } from "./status-column";
+import { HEAT_PUMPS_OUTDOOR_EQUIP_STATUS_OPTION_KEY } from "../types";
 
 // The data-type dropdowns are hard-coded enums, not user-editable lists —
 // renaming would silently break Phius paste. Surface them as synthetic
@@ -98,6 +100,7 @@ export function outdoorEquipFieldDefs({
     heatPumpAttachmentField(OUTDOOR_EQUIP_DATASHEET_FIELD_KEY, "Datasheet"),
     incomingOutdoorUnitsFieldDef(),
     heatPumpTextField("notes", "Notes"),
+    statusFieldDef(options[HEAT_PUMPS_OUTDOOR_EQUIP_STATUS_OPTION_KEY] ?? []),
   ];
 }
 
@@ -245,5 +248,6 @@ export function outdoorEquipColumnDefs({
       accessor: (row) => row.notes,
       defaultWidth: 260,
     },
+    statusColumnDef<HeatPumpOutdoorEquipRow>(),
   ];
 }

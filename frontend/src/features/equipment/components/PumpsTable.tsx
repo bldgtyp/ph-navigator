@@ -20,6 +20,7 @@ import { DATASHEET_ATTACHMENT_CONFIG } from "../../assets/lib";
 import { sortedPumps } from "../lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
 import { isRoomsSource } from "../lib/inverseSource";
+import { statusColumn } from "../lib/statusColumn";
 import {
   customFieldColumnDefs,
   type CustomFieldTableActions,
@@ -227,6 +228,7 @@ export function PumpsTable({
         getRowId: (pump) => pump.id,
         onWrite,
       }),
+      statusColumn<PumpRow>(fieldDefByKey),
     ];
     const inverseColumns: DataTableColumnDef<PumpRow>[] = (inverseLinkFields ?? []).map((field) =>
       incomingLinkColumn({

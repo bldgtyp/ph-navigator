@@ -7,10 +7,13 @@ import {
 import { HOT_WATER_HEATERS_COMPAT_BUILT_IN_FIELD_DEFS, hotWaterHeatersFieldOverlay } from "../lib";
 import {
   HOT_WATER_HEATER_TYPE_OPTION_KEY,
+  HOT_WATER_HEATERS_STATUS_OPTION_KEY,
   HOT_WATER_HEATERS_TABLE_NAME,
+  STATUS_DEFAULT_OPTION_ID,
   type HotWaterHeaterRow,
   type HotWaterHeatersSlice,
 } from "../types";
+import { STATUS_FIXTURE_OPTIONS } from "./statusFixtureOptions";
 
 function copyTableFieldDef(fieldDef: TableFieldDef): TableFieldDef {
   return { ...fieldDef, config: { ...fieldDef.config } };
@@ -45,6 +48,7 @@ export function buildHotWaterHeater(overrides: Partial<HotWaterHeaterRow> = {}):
       power_factor: 0.8,
       watts: 120,
       uef: 0.92,
+      status: STATUS_DEFAULT_OPTION_ID,
     },
     ...overrides,
   };
@@ -86,6 +90,7 @@ export function buildHotWaterHeatersSlice(
           order: 6,
         },
       ],
+      [HOT_WATER_HEATERS_STATUS_OPTION_KEY]: [...STATUS_FIXTURE_OPTIONS],
     },
     ...overrides,
   };

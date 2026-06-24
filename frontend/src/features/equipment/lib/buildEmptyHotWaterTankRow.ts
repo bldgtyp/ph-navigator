@@ -3,10 +3,12 @@ import { emptyHotWaterTank } from "../lib";
 import {
   HOT_WATER_TANK_INSIDE_OUTSIDE_KEY,
   HOT_WATER_TANK_TYPE_KEY,
+  STATUS_DEFAULT_OPTION_ID,
+  STATUS_FIELD_KEY,
   type HotWaterTankRow,
 } from "../types";
 import { customNumberValue, customTextValueOrNull } from "./customValueReaders";
-import { readNumberDefault, readStringDefault } from "./fieldDefaults";
+import { readNumberDefault, readStatusDefault, readStringDefault } from "./fieldDefaults";
 
 export function makeBuildEmptyHotWaterTankRow(): BuildEmptyRow<HotWaterTankRow> {
   return ({ rowId, fieldDefaults }) => {
@@ -37,6 +39,10 @@ export function makeBuildEmptyHotWaterTankRow(): BuildEmptyRow<HotWaterTankRow> 
         heat_loss_rate_w_k: readNumberDefault(
           fieldDefaults.heat_loss_rate_w_k,
           customNumberValue(base, "heat_loss_rate_w_k"),
+        ),
+        [STATUS_FIELD_KEY]: readStatusDefault(
+          fieldDefaults[STATUS_FIELD_KEY],
+          STATUS_DEFAULT_OPTION_ID,
         ),
       },
     };

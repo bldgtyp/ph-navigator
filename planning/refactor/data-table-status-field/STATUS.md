@@ -11,33 +11,38 @@ RELATED: planning/refactor/data-table-status-field/README.md, planning/refactor/
 
 ## Current State
 
-State: Active / Phases 01-02 complete; Phases 03-05 pending.
+State: Active / Phases 01-03 complete; Phases 04-05 pending.
 
-Phase 01 (contract + seeds) and Phase 02 (backend validation + tests) are
-implemented. Phase 01 added the shared `tables/_status_field.py` helper,
-`status_field_def()` on the nine in-scope FieldDef tuples, seeded
-`<table>.status` option lists + row values, and a `STATUS_TABLE_NAMES` drift
-guard. Phase 02 wired each table's slice `single_select_options` contract to
-accept/persist/emit its `<table_label>.status` key (via new
-`*_STATUS_OPTION_KEY` constants in `document.py` + `status` fields on the
-`*SliceOptions` models + Heat Pump leaf options), added `tests/
-status_field_helpers.py` and per-table status tests, and **`make check-backend`
-is green (1061 passed, 2 skipped)**. Frontend (Phase 03), DB reset/reseed +
-browser smoke (Phase 04), and closeout (Phase 05) are not started.
+Backend (Phases 01-02) and frontend (Phase 03) are implemented and green.
+Phase 01 added the shared `tables/_status_field.py` helper + seeds + a
+`STATUS_TABLE_NAMES` drift guard. Phase 02 wired each table's slice
+`single_select_options` to accept/persist/emit its `<table_label>.status` key,
+with `tests/status_field_helpers.py` and per-table status tests
+(**`make check-backend` green: 1061 passed**). Phase 03 exposed `status` as an
+editable DataTable single-select column on all nine tables — shared tables
+resolve it through `useTableSchema` + `lib/statusColumn.ts`; the two heat-pump
+equip leaves use a parallel `heat-pumps/status-column.ts` + a `status →
+setCustomValue` cell-write seam. New rows default to `opt_status_needed`;
+duplicate preserves status (**`make frontend-dev-check` green; vitest 1887
+passed**). Remaining: DB reset/reseed + browser smoke (Phase 04) and closeout
+(Phase 05).
 
 ## Next Step
 
-Start `phases/phase-03-frontend-types-ui.md`: expose the backend `status`
-FieldDef as an editable DataTable single-select column — update the frontend
-option-map types so the namespaced `*.status` keys type-check, carry
-`fieldDefaults.status` into new-row `custom_values`, and reuse the shared
-`SingleSelectCell` (with an optional Materials-style color cue), with focused
-frontend tests.
+Start `phases/phase-04-reset-reseed-smoke.md`: reset/reseed the local dev DB
+(`make db-reset-dev` → `make seed-agent-user` → `scripts.check_db`), then smoke
+the mounted app at `http://localhost:5173` (signed in as `codex@example.com`) —
+confirm the `Status` column appears, edits persist across reload on at least
+one shared table + both heat-pump equip leaves, and out-of-scope tables (Units,
+Ventilators) show no Status column. **Phase 04 needs a running stack
+(Docker/Postgres + Vite/FastAPI) and is the human-in-the-loop checkpoint** —
+the object-store-backed `make db-reset-dev` also requires the climate bundle /
+R2 prerequisites; if those block locally, record the exact blocker here.
 
 ## Open Questions
 
-- Should existing non-dev persisted documents be backfilled, or is this intentionally scoped to new documents plus local dev reset/reseed?
-- Should the `Status` single-select cell render with Materials-style status dots immediately, or is the generic single-select pill acceptable until the splash dashboard is built?
+- Should existing non-dev persisted documents be backfilled, or is this intentionally scoped to new documents plus local dev reset/reseed? (Still open; scoped to new/seeded documents for now — no migration/backfill added.)
+- ~~Should the `Status` cell render with Materials-style status dots immediately, or is the generic single-select pill acceptable until the splash dashboard?~~ **Resolved (Phase 03):** the generic single-select pill is used; its four option colors already are the Materials/report-status palette, so no bespoke dot renderer was added.
 
 ## Verification
 
@@ -63,5 +68,15 @@ Phase 02 (2026-06-24):
 - Drift-guard test asserts `STATUS_TABLE_NAMES` == the registry contracts that
   carry the status FieldDef.
 
-Deferred to later phases: frontend types/UI (Phase 03), DB reset/reseed +
-browser smoke (Phase 04), graph/docs closeout (Phase 05).
+Phase 03 (2026-06-24):
+
+- `make frontend-dev-check` green (format/lint/check:all/tsc/build); full
+  `pnpm exec vitest run` = **1887 passed (197 files)**.
+- Status renders as an editable single-select column on all nine tables via
+  shared DataTable machinery; new rows default to Needed; duplicate preserves
+  status; the column flows through filter/sort/group/CSV/row-detail.
+- Simplify pass deduped a local `readStatusDefault` into the shared
+  `shared/lib/fieldDefaults.ts`; all checks remained green.
+
+Deferred to later phases: DB reset/reseed + browser smoke (Phase 04), graph/docs
+closeout (Phase 05).

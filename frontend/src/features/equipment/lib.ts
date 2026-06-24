@@ -42,25 +42,33 @@ import {
   APPLIANCE_TYPE_COLUMN_ID,
   APPLIANCE_TYPE_KEY,
   APPLIANCE_TYPE_OPTION_KEY,
+  APPLIANCES_STATUS_OPTION_KEY,
   ELECTRIC_HEATER_DATASHEET_FIELD_KEY,
   FAN_DATASHEET_FIELD_KEY,
   FAN_TYPE_COLUMN_ID,
   FAN_TYPE_KEY,
   FAN_TYPE_OPTION_KEY,
+  FANS_STATUS_OPTION_KEY,
   HOT_WATER_HEATER_DATASHEET_FIELD_KEY,
   HOT_WATER_HEATER_TYPE_COLUMN_ID,
   HOT_WATER_HEATER_TYPE_KEY,
   HOT_WATER_HEATER_TYPE_OPTION_KEY,
+  HOT_WATER_HEATERS_STATUS_OPTION_KEY,
   HOT_WATER_TANK_DATASHEET_FIELD_KEY,
   HOT_WATER_TANK_INSIDE_OUTSIDE_KEY,
   HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY,
   HOT_WATER_TANK_TYPE_COLUMN_ID,
   HOT_WATER_TANK_TYPE_KEY,
   HOT_WATER_TANK_TYPE_OPTION_KEY,
+  HOT_WATER_TANKS_STATUS_OPTION_KEY,
   PUMP_DATASHEET_FIELD_KEY,
   PUMP_DEVICE_TYPE_COLUMN_ID,
   PUMP_DEVICE_TYPE_KEY,
   PUMP_DEVICE_TYPE_OPTION_KEY,
+  PUMPS_STATUS_OPTION_KEY,
+  STATUS_DEFAULT_OPTION_ID,
+  STATUS_DISPLAY_NAME,
+  STATUS_FIELD_KEY,
   ROOM_BUILDING_ZONE_COLUMN_ID,
   ROOM_BUILDING_ZONE_KEY,
   ROOM_BUILDING_ZONE_OPTION_KEY,
@@ -248,6 +256,7 @@ const PUMP_CUSTOM_VALUE_FIELD_KEYS = new Set([
   "wattage",
   "flow_gpm",
   "runtime_khr_yr",
+  STATUS_FIELD_KEY,
 ]);
 const VENTILATOR_CUSTOM_VALUE_FIELD_KEYS = new Set([
   "record_id",
@@ -272,6 +281,7 @@ const FAN_CUSTOM_VALUE_FIELD_KEYS = new Set([
   "volts",
   "power_factor",
   "watts",
+  STATUS_FIELD_KEY,
 ]);
 const HOT_WATER_HEATER_CUSTOM_VALUE_FIELD_KEYS = new Set([
   "record_id",
@@ -286,6 +296,7 @@ const HOT_WATER_HEATER_CUSTOM_VALUE_FIELD_KEYS = new Set([
   "power_factor",
   "watts",
   "uef",
+  STATUS_FIELD_KEY,
 ]);
 const HOT_WATER_TANK_CUSTOM_VALUE_FIELD_KEYS = new Set([
   "record_id",
@@ -295,6 +306,7 @@ const HOT_WATER_TANK_CUSTOM_VALUE_FIELD_KEYS = new Set([
   "model",
   "size_l",
   "heat_loss_rate_w_k",
+  STATUS_FIELD_KEY,
 ]);
 const ELECTRIC_HEATER_CUSTOM_VALUE_FIELD_KEYS = new Set([
   "record_id",
@@ -302,6 +314,7 @@ const ELECTRIC_HEATER_CUSTOM_VALUE_FIELD_KEYS = new Set([
   "model",
   "manufacturer",
   "watt",
+  STATUS_FIELD_KEY,
 ]);
 const APPLIANCE_CUSTOM_VALUE_FIELD_KEYS = new Set([
   "record_id",
@@ -314,6 +327,7 @@ const APPLIANCE_CUSTOM_VALUE_FIELD_KEYS = new Set([
   "imef",
   "mef",
   "annual_energy_kwh",
+  STATUS_FIELD_KEY,
 ]);
 
 const BUILT_IN_FIELD_CREATED_AT = "2026-05-26T00:00:00Z";
@@ -334,6 +348,23 @@ function builtInFieldDef(
     origin: "built_in",
     created_at: BUILT_IN_FIELD_CREATED_AT,
     created_by: null,
+  };
+}
+
+// Shared compat FieldDef for the built-in `status` single-select. Carries
+// `config.default_option_id` (so `useTableSchema` reports the default
+// option) and `default` (so new-row insert seeds `custom_values.status`).
+// Used only as a fallback for stale/pre-seed payloads; live payloads carry
+// this FieldDef in `field_defs` straight from the backend.
+function statusBuiltInFieldDef(): TableFieldDef {
+  return {
+    ...builtInFieldDef(
+      STATUS_FIELD_KEY,
+      STATUS_DISPLAY_NAME,
+      "single_select",
+      STATUS_DEFAULT_OPTION_ID,
+    ),
+    config: { default_option_id: STATUS_DEFAULT_OPTION_ID },
   };
 }
 
@@ -373,6 +404,7 @@ export const PUMPS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("link", "Link", "url"),
   builtInFieldDef("notes", "Notes", "long_text"),
   builtInFieldDef(PUMP_DATASHEET_FIELD_KEY, "Datasheet", "long_text"),
+  statusBuiltInFieldDef(),
 ];
 
 export const VENTILATORS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
@@ -444,6 +476,7 @@ export const FANS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("url", "URL", "url"),
   builtInFieldDef("notes", "Notes", "long_text"),
   builtInFieldDef(FAN_DATASHEET_FIELD_KEY, "Datasheet", "long_text"),
+  statusBuiltInFieldDef(),
 ];
 
 export const HOT_WATER_HEATERS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
@@ -488,6 +521,7 @@ export const HOT_WATER_HEATERS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("url", "URL", "url"),
   builtInFieldDef("notes", "Notes", "long_text"),
   builtInFieldDef(HOT_WATER_HEATER_DATASHEET_FIELD_KEY, "Datasheet", "long_text"),
+  statusBuiltInFieldDef(),
 ];
 
 export const HOT_WATER_TANKS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
@@ -527,6 +561,7 @@ export const HOT_WATER_TANKS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef(HOT_WATER_TANK_DATASHEET_FIELD_KEY, "Datasheet", "long_text"),
   builtInFieldDef("url", "URL", "url"),
   builtInFieldDef("notes", "Notes", "long_text"),
+  statusBuiltInFieldDef(),
 ];
 
 export const ELECTRIC_HEATERS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
@@ -538,6 +573,7 @@ export const ELECTRIC_HEATERS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("url", "URL", "url"),
   builtInFieldDef("notes", "Notes", "long_text"),
   builtInFieldDef(ELECTRIC_HEATER_DATASHEET_FIELD_KEY, "Datasheet", "long_text"),
+  statusBuiltInFieldDef(),
 ];
 
 export const APPLIANCES_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
@@ -573,6 +609,7 @@ export const APPLIANCES_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("url", "URL", "url"),
   builtInFieldDef(APPLIANCE_DATASHEET_FIELD_KEY, "Datasheet", "long_text"),
   builtInFieldDef("notes", "Notes", "long_text"),
+  statusBuiltInFieldDef(),
 ];
 
 export function roomsFieldOverlay(roomsSlice: RoomsSlice): Record<string, TableFieldRenderOverlay> {
@@ -3493,6 +3530,7 @@ function powerFactorOrOriginal(
 function clonePumpOptions(current: PumpsSlice): PumpsReplacePayload["single_select_options"] {
   return {
     [PUMP_DEVICE_TYPE_OPTION_KEY]: [...current.single_select_options[PUMP_DEVICE_TYPE_OPTION_KEY]],
+    [PUMPS_STATUS_OPTION_KEY]: [...(current.single_select_options[PUMPS_STATUS_OPTION_KEY] ?? [])],
   };
 }
 
@@ -3509,6 +3547,7 @@ function cloneVentilatorOptions(
 function cloneFanOptions(current: FansSlice): FansReplacePayload["single_select_options"] {
   return {
     [FAN_TYPE_OPTION_KEY]: [...current.single_select_options[FAN_TYPE_OPTION_KEY]],
+    [FANS_STATUS_OPTION_KEY]: [...(current.single_select_options[FANS_STATUS_OPTION_KEY] ?? [])],
   };
 }
 
@@ -3518,6 +3557,9 @@ function cloneHotWaterHeaterOptions(
   return {
     [HOT_WATER_HEATER_TYPE_OPTION_KEY]: [
       ...current.single_select_options[HOT_WATER_HEATER_TYPE_OPTION_KEY],
+    ],
+    [HOT_WATER_HEATERS_STATUS_OPTION_KEY]: [
+      ...(current.single_select_options[HOT_WATER_HEATERS_STATUS_OPTION_KEY] ?? []),
     ],
   };
 }
@@ -3531,6 +3573,9 @@ function cloneHotWaterTankOptions(
     ],
     [HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY]: [
       ...current.single_select_options[HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY],
+    ],
+    [HOT_WATER_TANKS_STATUS_OPTION_KEY]: [
+      ...(current.single_select_options[HOT_WATER_TANKS_STATUS_OPTION_KEY] ?? []),
     ],
   };
 }
@@ -3550,6 +3595,9 @@ function cloneApplianceOptions(
     [APPLIANCE_TYPE_OPTION_KEY]: [...current.single_select_options[APPLIANCE_TYPE_OPTION_KEY]],
     [APPLIANCE_ENERGY_STAR_OPTION_KEY]: [
       ...current.single_select_options[APPLIANCE_ENERGY_STAR_OPTION_KEY],
+    ],
+    [APPLIANCES_STATUS_OPTION_KEY]: [
+      ...(current.single_select_options[APPLIANCES_STATUS_OPTION_KEY] ?? []),
     ],
   };
 }

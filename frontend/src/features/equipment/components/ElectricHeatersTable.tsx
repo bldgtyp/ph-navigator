@@ -16,6 +16,7 @@ import { useAssetUrls } from "../../assets/hooks";
 import { DATASHEET_ATTACHMENT_CONFIG } from "../../assets/lib";
 import { sortedElectricHeaters } from "../lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
+import { statusColumn } from "../lib/statusColumn";
 import {
   ELECTRIC_HEATER_DATASHEET_FIELD_KEY,
   type ElectricHeaterRow,
@@ -143,6 +144,7 @@ export function ElectricHeatersTable({
         getRowId: (heater) => heater.id,
         onWrite,
       }),
+      statusColumn<ElectricHeaterRow>(fieldDefByKey),
       ...customColumns,
     ],
     [customColumns, datasheetUrlById, fieldDefByKey, isEditor, onWrite, projectId],

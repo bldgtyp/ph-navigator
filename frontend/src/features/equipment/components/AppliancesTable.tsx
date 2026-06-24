@@ -16,6 +16,7 @@ import { useAssetUrls } from "../../assets/hooks";
 import { DATASHEET_ATTACHMENT_CONFIG } from "../../assets/lib";
 import { sortedAppliances } from "../lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
+import { statusColumn } from "../lib/statusColumn";
 import {
   customFieldColumnDefs,
   type CustomFieldTableActions,
@@ -201,6 +202,7 @@ export function AppliancesTable({
         accessor: (appliance) => appliance.notes,
         defaultWidth: DATA_TABLE_COLUMN_WIDTHS.notes,
       },
+      statusColumn<ApplianceRow>(fieldDefByKey),
       ...customColumns,
     ],
     [customColumns, datasheetUrlById, fieldDefByKey, isEditor, onWrite, projectId],

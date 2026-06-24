@@ -9,6 +9,28 @@ import type {
 export type SingleSelectOption = FieldOption;
 export type { CustomValue, InverseLinkField, InverseLinks, RowsComputed };
 
+// Built-in `status` single-select field shared across the nine in-scope
+// DataTables (Thermal Bridges, the two Heat-Pump *equipment* tables, and
+// the six shared equipment tables). The value rides in
+// `custom_values.status`; the option list is namespaced per table as
+// `<table_label>.status` in each slice's `single_select_options`. Mirrors
+// the backend `status_field_def` / `*_STATUS_OPTION_KEY` constants.
+export const STATUS_FIELD_KEY = "status";
+export const STATUS_DISPLAY_NAME = "Status";
+export const STATUS_DEFAULT_OPTION_ID = "opt_status_needed";
+
+// Namespaced status option-list keys, one per in-scope table. Match the
+// backend `status_option_key(<table_label>)` strings exactly.
+export const PUMPS_STATUS_OPTION_KEY = "pumps.status";
+export const FANS_STATUS_OPTION_KEY = "fans.status";
+export const HOT_WATER_HEATERS_STATUS_OPTION_KEY = "hot_water_heaters.status";
+export const HOT_WATER_TANKS_STATUS_OPTION_KEY = "hot_water_tanks.status";
+export const ELECTRIC_HEATERS_STATUS_OPTION_KEY = "electric_heaters.status";
+export const APPLIANCES_STATUS_OPTION_KEY = "appliances.status";
+export const THERMAL_BRIDGES_STATUS_OPTION_KEY = "thermal_bridges.status";
+export const HEAT_PUMPS_OUTDOOR_EQUIP_STATUS_OPTION_KEY = "heat_pumps_outdoor_equip.status";
+export const HEAT_PUMPS_INDOOR_EQUIP_STATUS_OPTION_KEY = "heat_pumps_indoor_equip.status";
+
 export type RoomRow = {
   id: string;
   floor_level: string | null;
@@ -90,7 +112,7 @@ export const PUMP_DEVICE_TYPE_KEY = "device_type";
 export const PUMP_DEVICE_TYPE_OPTION_KEY = "pumps.device_type";
 export const PUMP_DEVICE_TYPE_COLUMN_ID = "device_type";
 export const PUMP_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
-export const PUMP_OPTION_KEYS = [PUMP_DEVICE_TYPE_OPTION_KEY] as const;
+export const PUMP_OPTION_KEYS = [PUMP_DEVICE_TYPE_OPTION_KEY, PUMPS_STATUS_OPTION_KEY] as const;
 
 export type PumpOptionKey = (typeof PUMP_OPTION_KEYS)[number];
 
@@ -216,7 +238,7 @@ export const FAN_TYPE_KEY = "fan_type";
 export const FAN_TYPE_OPTION_KEY = "fans.type";
 export const FAN_TYPE_COLUMN_ID = "fan_type";
 export const FAN_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
-export const FAN_OPTION_KEYS = [FAN_TYPE_OPTION_KEY] as const;
+export const FAN_OPTION_KEYS = [FAN_TYPE_OPTION_KEY, FANS_STATUS_OPTION_KEY] as const;
 
 export type FanOptionKey = (typeof FAN_OPTION_KEYS)[number];
 
@@ -256,7 +278,10 @@ export const HOT_WATER_HEATER_TYPE_KEY = "heater_type";
 export const HOT_WATER_HEATER_TYPE_OPTION_KEY = "hot_water_heaters.type";
 export const HOT_WATER_HEATER_TYPE_COLUMN_ID = "heater_type";
 export const HOT_WATER_HEATER_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
-export const HOT_WATER_HEATER_OPTION_KEYS = [HOT_WATER_HEATER_TYPE_OPTION_KEY] as const;
+export const HOT_WATER_HEATER_OPTION_KEYS = [
+  HOT_WATER_HEATER_TYPE_OPTION_KEY,
+  HOT_WATER_HEATERS_STATUS_OPTION_KEY,
+] as const;
 
 export type HotWaterHeaterOptionKey = (typeof HOT_WATER_HEATER_OPTION_KEYS)[number];
 
@@ -301,6 +326,7 @@ export const HOT_WATER_TANK_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
 export const HOT_WATER_TANK_OPTION_KEYS = [
   HOT_WATER_TANK_TYPE_OPTION_KEY,
   HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY,
+  HOT_WATER_TANKS_STATUS_OPTION_KEY,
 ] as const;
 
 export type HotWaterTankOptionKey = (typeof HOT_WATER_TANK_OPTION_KEYS)[number];
@@ -379,6 +405,7 @@ export const APPLIANCE_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
 export const APPLIANCE_OPTION_KEYS = [
   APPLIANCE_TYPE_OPTION_KEY,
   APPLIANCE_ENERGY_STAR_OPTION_KEY,
+  APPLIANCES_STATUS_OPTION_KEY,
 ] as const;
 
 export type ApplianceOptionKey = (typeof APPLIANCE_OPTION_KEYS)[number];

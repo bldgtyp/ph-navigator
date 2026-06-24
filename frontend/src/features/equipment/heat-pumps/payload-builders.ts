@@ -14,6 +14,7 @@ import type {
   HeatPumpOwnedOptionKey,
 } from "./types";
 import { HEAT_PUMP_OWNED_OPTION_KEYS } from "./types";
+import { STATUS_FIELD_KEY } from "../types";
 import { parseNumberInput } from "../../../lib/units/format";
 import { setCustomLink, setCustomValue, type TableFieldDef } from "../../../shared/ui/data-table";
 import type {
@@ -169,6 +170,13 @@ function applyCellWrite<TRow extends HeatPumpPayloadRow>(
   write: CellWrite,
   fieldDef: TableFieldDef | undefined,
 ): TRow {
+  // `status` is a built-in single-select but, unlike the other built-ins,
+  // its value lives in `custom_values.status` rather than a typed row column.
+  // Route it through the custom-value bag so the write does not leak a stray
+  // top-level `status` property onto the row.
+  if (write.fieldKey === STATUS_FIELD_KEY) {
+    return setCustomValue(row, write.fieldKey, write.value);
+  }
   if (fieldDef?.origin === "custom") {
     if (fieldDef.field_type === "linked_record") {
       return setCustomLink(row, write.fieldKey, write.value);

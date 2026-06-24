@@ -16,6 +16,7 @@ import { useAssetUrls } from "../../assets/hooks";
 import { DATASHEET_ATTACHMENT_CONFIG } from "../../assets/lib";
 import { sortedHotWaterTanks } from "../lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
+import { statusColumn } from "../lib/statusColumn";
 import {
   customFieldColumnDefs,
   type CustomFieldTableActions,
@@ -177,6 +178,7 @@ export function HotWaterTanksTable({
         accessor: (tank) => tank.notes,
         defaultWidth: DATA_TABLE_COLUMN_WIDTHS.notes,
       },
+      statusColumn<HotWaterTankRow>(fieldDefByKey),
       ...customColumns,
     ],
     [customColumns, datasheetUrlById, fieldDefByKey, isEditor, onWrite, projectId],
