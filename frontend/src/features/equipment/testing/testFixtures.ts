@@ -30,6 +30,7 @@ import {
   ROOM_FLOOR_LEVEL_OPTION_KEY,
   STATUS_DEFAULT_OPTION_ID,
   VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,
+  VENTILATORS_STATUS_OPTION_KEY,
   VENTILATORS_TABLE_NAME,
   type FanRow,
   type FansSlice,
@@ -366,6 +367,7 @@ export function buildVentilatorsSlice(overrides: Partial<VentilatorsSlice> = {})
         { id: "opt_inside", label: "Inside", color: "#3b82f6", order: 0 },
         { id: "opt_outside", label: "Outside", color: "#10b981", order: 1 },
       ],
+      [VENTILATORS_STATUS_OPTION_KEY]: [...STATUS_FIXTURE_OPTIONS],
     },
     ...overrides,
   };

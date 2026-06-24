@@ -9,9 +9,10 @@ import type {
 export type SingleSelectOption = FieldOption;
 export type { CustomValue, InverseLinkField, InverseLinks, RowsComputed };
 
-// Built-in `status` single-select field shared across the nine in-scope
-// DataTables (Thermal Bridges, the two Heat-Pump *equipment* tables, and
-// the six shared equipment tables). The value rides in
+// Built-in `status` single-select field shared across the twelve in-scope
+// DataTables (every Datasheet-bearing table — the shared equipment tables
+// incl. Ventilators and all four Heat-Pump leaves — plus Thermal Bridges,
+// the lone status-without-Datasheet table). The value rides in
 // `custom_values.status`; the option list is namespaced per table as
 // `<table_label>.status` in each slice's `single_select_options`. Mirrors
 // the backend `status_field_def` / `*_STATUS_OPTION_KEY` constants.
@@ -30,6 +31,8 @@ export const APPLIANCES_STATUS_OPTION_KEY = "appliances.status";
 export const THERMAL_BRIDGES_STATUS_OPTION_KEY = "thermal_bridges.status";
 export const HEAT_PUMPS_OUTDOOR_EQUIP_STATUS_OPTION_KEY = "heat_pumps_outdoor_equip.status";
 export const HEAT_PUMPS_INDOOR_EQUIP_STATUS_OPTION_KEY = "heat_pumps_indoor_equip.status";
+export const HEAT_PUMPS_OUTDOOR_UNITS_STATUS_OPTION_KEY = "heat_pumps_outdoor_units.status";
+export const HEAT_PUMPS_INDOOR_UNITS_STATUS_OPTION_KEY = "heat_pumps_indoor_units.status";
 
 export type RoomRow = {
   id: string;
@@ -157,9 +160,13 @@ export type PumpsReplacePayload = {
 export const VENTILATORS_TABLE_NAME = "ventilators";
 export const VENTILATOR_INSIDE_OUTSIDE_KEY = "inside_outside";
 export const VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY = "ventilators.inside_outside";
+export const VENTILATORS_STATUS_OPTION_KEY = "ventilators.status";
 export const VENTILATOR_INSIDE_OUTSIDE_COLUMN_ID = "inside_outside";
 export const VENTILATOR_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
-export const VENTILATOR_OPTION_KEYS = [VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY] as const;
+export const VENTILATOR_OPTION_KEYS = [
+  VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,
+  VENTILATORS_STATUS_OPTION_KEY,
+] as const;
 
 export type VentilatorOptionKey = (typeof VENTILATOR_OPTION_KEYS)[number];
 

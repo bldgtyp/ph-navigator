@@ -209,11 +209,11 @@ const HEAT_PUMP_LEAF_FIXTURES: Record<
     rowKey: "indoor_equip",
   },
   [HEAT_PUMP_OUTDOOR_UNITS_TABLE_NAME]: {
-    fieldDefs: () => outdoorUnitFieldDefs(),
+    fieldDefs: (slice) => outdoorUnitFieldDefs(slice.single_select_options),
     rowKey: "outdoor_units",
   },
   [HEAT_PUMP_INDOOR_UNITS_TABLE_NAME]: {
-    fieldDefs: () => indoorUnitFieldDefs(),
+    fieldDefs: (slice) => indoorUnitFieldDefs(slice.single_select_options),
     rowKey: "indoor_units",
   },
 };

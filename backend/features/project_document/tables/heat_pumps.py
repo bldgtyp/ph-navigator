@@ -54,12 +54,15 @@ HEAT_PUMPS_INDOOR_EQUIP_TABLE_NAME = "heat_pumps_indoor_equip"
 HEAT_PUMPS_OUTDOOR_UNITS_TABLE_NAME = "heat_pumps_outdoor_units"
 HEAT_PUMPS_INDOOR_UNITS_TABLE_NAME = "heat_pumps_indoor_units"
 
-# Built-in `status` option keys for the two equip leaves. The leaf table_path
-# (e.g. `("equipment", "heat_pumps", "outdoor_equip")`) does not match the flat
-# `<table_label>.status` namespace the generic-table validator resolves under,
-# so these keys are registered explicitly in `built_in_option_key_by_field_key`.
+# Built-in `status` option keys for all four heat-pump leaves. The leaf
+# table_path (e.g. `("equipment", "heat_pumps", "outdoor_equip")`) does not
+# match the flat `<table_label>.status` namespace the generic-table validator
+# resolves under, so these keys are registered explicitly in
+# `built_in_option_key_by_field_key`.
 HEAT_PUMPS_OUTDOOR_EQUIP_STATUS_OPTION_KEY = f"{HEAT_PUMPS_OUTDOOR_EQUIP_TABLE_NAME}.status"
 HEAT_PUMPS_INDOOR_EQUIP_STATUS_OPTION_KEY = f"{HEAT_PUMPS_INDOOR_EQUIP_TABLE_NAME}.status"
+HEAT_PUMPS_OUTDOOR_UNITS_STATUS_OPTION_KEY = f"{HEAT_PUMPS_OUTDOOR_UNITS_TABLE_NAME}.status"
+HEAT_PUMPS_INDOOR_UNITS_STATUS_OPTION_KEY = f"{HEAT_PUMPS_INDOOR_UNITS_TABLE_NAME}.status"
 
 _OUTDOOR_EQUIP_PATH: tuple[str, ...] = ("equipment", "heat_pumps", "outdoor_equip")
 _INDOOR_EQUIP_PATH: tuple[str, ...] = ("equipment", "heat_pumps", "indoor_equip")
@@ -172,6 +175,7 @@ OUTDOOR_UNITS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
     ),
     built_in_field_def(field_key="datasheet_asset_ids", display_name="Datasheet", field_type=CustomFieldType.long_text),
     built_in_field_def(field_key="notes", display_name="Notes", field_type=CustomFieldType.long_text),
+    status_field_def(),
 )
 
 INDOOR_UNITS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
@@ -207,6 +211,7 @@ INDOOR_UNITS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
     ),
     built_in_field_def(field_key="datasheet_asset_ids", display_name="Datasheet", field_type=CustomFieldType.long_text),
     built_in_field_def(field_key="notes", display_name="Notes", field_type=CustomFieldType.long_text),
+    status_field_def(),
 )
 
 
@@ -278,19 +283,24 @@ class IndoorEquipOptions(HeatPumpLeafOptions):
         }
 
 
-class NoBuiltInOptions(HeatPumpLeafOptions):
-    def built_in_options(self) -> dict[str, list[SingleSelectOption]]:
-        return {}
-
-
-class OutdoorUnitsOptions(NoBuiltInOptions):
+class OutdoorUnitsOptions(HeatPumpLeafOptions):
     table_path: ClassVar[tuple[str, ...]] = _OUTDOOR_UNITS_PATH
     table_name: ClassVar[str] = HEAT_PUMPS_OUTDOOR_UNITS_TABLE_NAME
 
+    status: list[SingleSelectOption] = Field(alias=HEAT_PUMPS_OUTDOOR_UNITS_STATUS_OPTION_KEY)
 
-class IndoorUnitsOptions(NoBuiltInOptions):
+    def built_in_options(self) -> dict[str, list[SingleSelectOption]]:
+        return {HEAT_PUMPS_OUTDOOR_UNITS_STATUS_OPTION_KEY: self.status}
+
+
+class IndoorUnitsOptions(HeatPumpLeafOptions):
     table_path: ClassVar[tuple[str, ...]] = _INDOOR_UNITS_PATH
     table_name: ClassVar[str] = HEAT_PUMPS_INDOOR_UNITS_TABLE_NAME
+
+    status: list[SingleSelectOption] = Field(alias=HEAT_PUMPS_INDOOR_UNITS_STATUS_OPTION_KEY)
+
+    def built_in_options(self) -> dict[str, list[SingleSelectOption]]:
+        return {HEAT_PUMPS_INDOOR_UNITS_STATUS_OPTION_KEY: self.status}
 
 
 class OutdoorEquipReplaceRequest(BaseModel):
@@ -314,7 +324,7 @@ class OutdoorUnitsReplaceRequest(BaseModel):
 
     outdoor_units: list[HeatPumpOutdoorUnitRow]
     field_defs: list[TableFieldDef] = Field(default_factory=list)
-    single_select_options: OutdoorUnitsOptions = Field(default_factory=OutdoorUnitsOptions)
+    single_select_options: OutdoorUnitsOptions
 
 
 class IndoorUnitsReplaceRequest(BaseModel):
@@ -322,7 +332,7 @@ class IndoorUnitsReplaceRequest(BaseModel):
 
     indoor_units: list[HeatPumpIndoorUnitRow]
     field_defs: list[TableFieldDef] = Field(default_factory=list)
-    single_select_options: IndoorUnitsOptions = Field(default_factory=IndoorUnitsOptions)
+    single_select_options: IndoorUnitsOptions
 
 
 class HeatPumpLeafResponse(BaseModel):
@@ -633,12 +643,14 @@ outdoor_units_field_registry = _make_registry(
     field_defs=OUTDOOR_UNITS_BUILT_IN_FIELD_DEFS,
     table_path=_OUTDOOR_UNITS_PATH,
     row_model=HeatPumpOutdoorUnitRow,
+    built_in_option_key_by_field_key={"status": HEAT_PUMPS_OUTDOOR_UNITS_STATUS_OPTION_KEY},
     built_in_formula_types=_formula_types_from_field_defs(OUTDOOR_UNITS_BUILT_IN_FIELD_DEFS),
 )
 indoor_units_field_registry = _make_registry(
     field_defs=INDOOR_UNITS_BUILT_IN_FIELD_DEFS,
     table_path=_INDOOR_UNITS_PATH,
     row_model=HeatPumpIndoorUnitRow,
+    built_in_option_key_by_field_key={"status": HEAT_PUMPS_INDOOR_UNITS_STATUS_OPTION_KEY},
     built_in_formula_types=_formula_types_from_field_defs(INDOOR_UNITS_BUILT_IN_FIELD_DEFS),
 )
 
@@ -743,6 +755,7 @@ heat_pumps_outdoor_units_contract = TableContract(
         table_path=_OUTDOOR_UNITS_PATH,
         rows_attr="outdoor_units",
         registry=outdoor_units_field_registry,
+        built_in_option_keys=(HEAT_PUMPS_OUTDOOR_UNITS_STATUS_OPTION_KEY,),
     ),
     apply_replace=lambda body, payload: _apply_replace(
         body,
@@ -761,7 +774,7 @@ heat_pumps_outdoor_units_contract = TableContract(
         table_name=HEAT_PUMPS_OUTDOOR_UNITS_TABLE_NAME,
         table_path=_OUTDOOR_UNITS_PATH,
         registry=outdoor_units_field_registry,
-        built_in_option_keys=(),
+        built_in_option_keys=(HEAT_PUMPS_OUTDOOR_UNITS_STATUS_OPTION_KEY,),
     ),
     table_path=_OUTDOOR_UNITS_PATH,
     field_registry=outdoor_units_field_registry,
@@ -777,6 +790,7 @@ heat_pumps_indoor_units_contract = TableContract(
         table_path=_INDOOR_UNITS_PATH,
         rows_attr="indoor_units",
         registry=indoor_units_field_registry,
+        built_in_option_keys=(HEAT_PUMPS_INDOOR_UNITS_STATUS_OPTION_KEY,),
     ),
     apply_replace=lambda body, payload: _apply_replace(
         body,
@@ -795,7 +809,7 @@ heat_pumps_indoor_units_contract = TableContract(
         table_name=HEAT_PUMPS_INDOOR_UNITS_TABLE_NAME,
         table_path=_INDOOR_UNITS_PATH,
         registry=indoor_units_field_registry,
-        built_in_option_keys=(),
+        built_in_option_keys=(HEAT_PUMPS_INDOOR_UNITS_STATUS_OPTION_KEY,),
     ),
     table_path=_INDOOR_UNITS_PATH,
     field_registry=indoor_units_field_registry,

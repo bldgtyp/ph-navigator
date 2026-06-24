@@ -11,6 +11,8 @@ feature-first planning.
 
 | Feature | State | Current pointer |
 |---|---|---|
+| DataTable Status Field — Addendum | Complete — `status` extended to the 3 remaining Datasheet-bearing tables (Ventilators, HP Outdoor Units, HP Indoor Units); `make ci` green, live smoke done, committed `d8b59f28` (branch, not yet merged); archived | `archive/data-table-status-field-addendum/STATUS.md` |
+| DataTable Status Field — Backfill | Deferred — whether/how to backfill `status` onto pre-existing persisted documents across all 12 status tables; no migration yet (V2 pre-deploy, likely nothing to migrate); reactivate when the splash dashboard needs historical documents | `features/datatable-status-backfill/STATUS.md` |
 | Delete Project | In review | `features/delete-project/STATUS.md` |
 | DataTable Color Field | Complete / implemented on main with CI and browser smoke evidence | `features/color-field/STATUS.md` |
 | Attachments | Complete (v1) / implemented on main with automated coverage, R2 smoke, and full Render staging acceptance; Phase-5 polish deferred by decision; archived | `archive/attachments/STATUS.md` |

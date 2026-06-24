@@ -2,8 +2,9 @@ import type { DataTableColumnDef, FieldDef, FieldOption } from "../../../shared/
 import { STATUS_DEFAULT_OPTION_ID, STATUS_DISPLAY_NAME, STATUS_FIELD_KEY } from "../types";
 import { HEAT_PUMP_SELECT_LOCKS } from "./field-defs";
 
-// The built-in `status` single-select is shared by the two Heat-Pump
-// *equipment* tables. Its value lives in `custom_values.status`, so the
+// The built-in `status` single-select is shared by all four Heat-Pump
+// leaves (Outdoor/Indoor Equipment and Outdoor/Indoor Units). Its value
+// lives in `custom_values.status`, so the
 // column accessor reads the bag rather than a typed row column. The option
 // list (locked for editing) comes from the slice's namespaced
 // `<table>.status` option key; the generic DataTable single-select renderer

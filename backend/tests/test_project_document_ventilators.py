@@ -11,6 +11,11 @@ from pydantic import ValidationError
 from features.project_document.document import ProjectDocumentV1, VentilatorRow
 from features.project_document.tables.registry import get_table_contract
 from tests.project_document_helpers import empty_required_tables, empty_ventilators_table
+from tests.status_field_helpers import (
+    assert_status_field_def,
+    assert_status_options,
+    status_options_payload,
+)
 from tests.test_project_document import ORIGIN, create_project, signed_in_client
 
 
@@ -45,7 +50,8 @@ def ventilator_payload() -> dict[str, Any]:
             "ventilators.inside_outside": [
                 {"id": "opt_vent_inside", "label": "Inside", "color": "#3b82f6", "order": 0},
                 {"id": "opt_vent_outside", "label": "Outside", "color": "#10b981", "order": 1},
-            ]
+            ],
+            "ventilators.status": status_options_payload(),
         },
     }
 
@@ -105,6 +111,49 @@ def test_first_ventilators_replace_lazily_creates_draft(clean_document_tables: N
     assert body["draft_etag"]
     assert body["ventilators"][0]["custom_values"]["record_id"] == "ERV-1"
     assert body["ventilators"][0]["datasheet_asset_ids"] == []
+
+
+def test_ventilators_exposes_and_persists_status(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+
+    initial = client.get(draft_ventilators_url(project_id, version_id))
+    assert initial.status_code == 200, initial.text
+    assert_status_field_def(initial.json()["field_defs"])
+    assert_status_options(initial.json()["single_select_options"], "ventilators")
+
+    payload = ventilator_payload()
+    payload["ventilators"][0]["custom_values"]["status"] = "opt_status_question"
+    updated = client.put(
+        draft_ventilators_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
+        json=payload,
+    )
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["ventilators"][0]["custom_values"]["status"] == "opt_status_question"
+
+    refetch = client.get(draft_ventilators_url(project_id, version_id))
+    assert refetch.json()["ventilators"][0]["custom_values"]["status"] == "opt_status_question"
+    assert_status_options(refetch.json()["single_select_options"], "ventilators")
+
+
+def test_ventilators_rejects_unknown_status(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+
+    initial = client.get(draft_ventilators_url(project_id, version_id))
+    payload = ventilator_payload()
+    payload["ventilators"][0]["custom_values"]["status"] = "opt_status_bogus"
+    response = client.put(
+        draft_ventilators_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
+        json=payload,
+    )
+    assert response.status_code == 422
 
 
 def test_legacy_equipment_ervs_contract_is_not_registered() -> None:

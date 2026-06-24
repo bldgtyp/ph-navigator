@@ -7,8 +7,10 @@ done, still needed, blocked by a question, or intentionally not applicable.
 
 The field is byte-identical across every table, so its FieldDef, option
 list, option ids, and namespaced option key live here once instead of
-being copy-pasted into nine table modules (PRD/PLAN: "one shared helper
-to avoid nine copies drifting").
+being copy-pasted into every table module (PRD/PLAN: "one shared helper
+to avoid copies drifting"). Every DataTable-backed table that carries a
+`Datasheet` slot gets the field; Thermal Bridges is the lone status-
+without-Datasheet table (pure dashboard accounting).
 
 Storage contract:
 - the option value lives in `row.custom_values["status"]`;
@@ -55,8 +57,11 @@ STATUS_TABLE_NAMES: tuple[str, ...] = (
     "hot_water_tanks",
     "electric_heaters",
     "appliances",
+    "ventilators",
     "heat_pumps_outdoor_equip",
     "heat_pumps_indoor_equip",
+    "heat_pumps_outdoor_units",
+    "heat_pumps_indoor_units",
 )
 
 # `(option_id, label, color)` in display order. Colors mirror the

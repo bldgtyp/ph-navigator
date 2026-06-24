@@ -37,6 +37,18 @@
       { "id": "opt_status_needed", "label": "Needed", "color": "#d97706", "order": 1 },
       { "id": "opt_status_question", "label": "Question", "color": "#0ea5b7", "order": 2 },
       { "id": "opt_status_na", "label": "N/A", "color": "#9ca3af", "order": 3 }
+    ],
+    "heat_pumps_outdoor_units.status": [
+      { "id": "opt_status_complete", "label": "Complete", "color": "#16a34a", "order": 0 },
+      { "id": "opt_status_needed", "label": "Needed", "color": "#d97706", "order": 1 },
+      { "id": "opt_status_question", "label": "Question", "color": "#0ea5b7", "order": 2 },
+      { "id": "opt_status_na", "label": "N/A", "color": "#9ca3af", "order": 3 }
+    ],
+    "heat_pumps_indoor_units.status": [
+      { "id": "opt_status_complete", "label": "Complete", "color": "#16a34a", "order": 0 },
+      { "id": "opt_status_needed", "label": "Needed", "color": "#d97706", "order": 1 },
+      { "id": "opt_status_question", "label": "Question", "color": "#0ea5b7", "order": 2 },
+      { "id": "opt_status_na", "label": "N/A", "color": "#9ca3af", "order": 3 }
     ]
   },
   "outdoor_equip": [
@@ -226,31 +238,36 @@
       "id": "hpou_01J5RH4F1A0000000000000001",
       "tag": "HP-1",
       "outdoor_equip_id": "hpoe_01J5RH4F1A0000000000000001",
-      "notes": "Roof-mounted multi-split serving Level 1."
+      "notes": "Roof-mounted multi-split serving Level 1.",
+      "custom_values": { "status": "opt_status_complete" }
     },
     {
       "id": "hpou_01J5RH4F1A0000000000000002",
       "tag": "HP-2",
       "outdoor_equip_id": "hpoe_01J5RH4F1A0000000000000002",
-      "notes": "Single-zone outdoor at south side yard."
+      "notes": "Single-zone outdoor at south side yard.",
+      "custom_values": { "status": "opt_status_needed" }
     },
     {
       "id": "hpou_01J5RH4F1A0000000000000003",
       "tag": "HP-3",
       "outdoor_equip_id": "hpoe_01J5RH4F1A0000000000000003",
-      "notes": "Multi-split outdoor at north side yard."
+      "notes": "Multi-split outdoor at north side yard.",
+      "custom_values": { "status": "opt_status_question" }
     },
     {
       "id": "hpou_01J5RH4F1A0000000000000004",
       "tag": "HP-4",
       "outdoor_equip_id": "hpoe_01J5RH4F1A0000000000000004",
-      "notes": "Spare/secondary outdoor on shed roof; not currently piped."
+      "notes": "Spare/secondary outdoor on shed roof; not currently piped.",
+      "custom_values": { "status": "opt_status_na" }
     },
     {
       "id": "hpou_01J5RH4F1A0000000000000005",
       "tag": "HP-5",
       "outdoor_equip_id": "hpoe_01J5RH4F1A0000000000000005",
-      "notes": "Central ducted outdoor; serves whole-house air handler."
+      "notes": "Central ducted outdoor; serves whole-house air handler.",
+      "custom_values": { "status": "opt_status_complete" }
     }
   ],
   "indoor_units": [
@@ -259,7 +276,8 @@
       "tag": "IU-1.1",
       "indoor_equip_id": "hpie_01J5RH4F1A0000000000000001",
       "outdoor_unit_id": "hpou_01J5RH4F1A0000000000000001",
-      "served_room_ids": ["rm_101"]
+      "served_room_ids": ["rm_101"],
+      "custom_values": { "status": "opt_status_needed" }
     },
     {
       "id": "hpiu_01J5RH4F1A0000000000000002",
@@ -267,28 +285,32 @@
       "indoor_equip_id": "hpie_01J5RH4F1A0000000000000002",
       "outdoor_unit_id": "hpou_01J5RH4F1A0000000000000001",
       "linked_erv_unit_id": "vent_1",
-      "served_room_ids": ["rm_102"]
+      "served_room_ids": ["rm_102"],
+      "custom_values": { "status": "opt_status_complete" }
     },
     {
       "id": "hpiu_01J5RH4F1A0000000000000003",
       "tag": "IU-2.1",
       "indoor_equip_id": "hpie_01J5RH4F1A0000000000000003",
       "outdoor_unit_id": "hpou_01J5RH4F1A0000000000000002",
-      "served_room_ids": ["rm_103"]
+      "served_room_ids": ["rm_103"],
+      "custom_values": { "status": "opt_status_question" }
     },
     {
       "id": "hpiu_01J5RH4F1A0000000000000004",
       "tag": "IU-3.1",
       "indoor_equip_id": "hpie_01J5RH4F1A0000000000000004",
       "outdoor_unit_id": "hpou_01J5RH4F1A0000000000000003",
-      "served_room_ids": ["rm_104"]
+      "served_room_ids": ["rm_104"],
+      "custom_values": { "status": "opt_status_na" }
     },
     {
       "id": "hpiu_01J5RH4F1A0000000000000005",
       "tag": "IU-5.1",
       "indoor_equip_id": "hpie_01J5RH4F1A0000000000000005",
       "outdoor_unit_id": "hpou_01J5RH4F1A0000000000000005",
-      "served_room_ids": ["rm_101", "rm_102", "rm_103", "rm_104"]
+      "served_room_ids": ["rm_101", "rm_102", "rm_103", "rm_104"],
+      "custom_values": { "status": "opt_status_complete" }
     }
   ]
 }

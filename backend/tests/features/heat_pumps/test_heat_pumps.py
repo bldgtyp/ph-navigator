@@ -309,7 +309,7 @@ def test_heat_pumps_generic_contract_rejects_missing_fk(clean_document_tables: N
         json={
             "field_defs": initial.json()["field_defs"],
             "outdoor_units": [outdoor_unit()],
-            "single_select_options": {},
+            "single_select_options": {"heat_pumps_outdoor_units.status": status_options_payload()},
         },
     )
 
@@ -512,3 +512,88 @@ def test_heat_pumps_outdoor_equip_rejects_unknown_status(clean_document_tables: 
         json=payload,
     )
     assert response.status_code == 422
+
+
+def _seed_outdoor_equip(client: Any, project_id: object, version_id: object) -> None:
+    """PUT a single outdoor-equip row so outdoor-unit FKs resolve."""
+    initial = client.get(draft_table_url(project_id, version_id, "heat_pumps_outdoor_equip"))
+    put = client.put(
+        draft_table_url(project_id, version_id, "heat_pumps_outdoor_equip"),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
+        json={
+            "field_defs": initial.json()["field_defs"],
+            "outdoor_equip": [outdoor_equip()],
+            "single_select_options": {
+                "heat_pumps.manufacturer": [],
+                "heat_pumps.system_family": [],
+                "heat_pumps.refrigerant": [],
+                "heat_pumps_outdoor_equip.status": status_options_payload(),
+            },
+        },
+    )
+    assert put.status_code == 200, put.text
+
+
+def test_heat_pumps_outdoor_units_exposes_and_persists_status(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    table_name = "heat_pumps_outdoor_units"
+
+    initial = client.get(draft_table_url(project_id, version_id, table_name))
+    assert initial.status_code == 200, initial.text
+    assert_status_field_def(initial.json()["field_defs"])
+    assert_status_options(initial.json()["single_select_options"], "heat_pumps_outdoor_units")
+
+    _seed_outdoor_equip(client, project_id, version_id)
+
+    current = client.get(draft_table_url(project_id, version_id, table_name))
+    updated = client.put(
+        draft_table_url(project_id, version_id, table_name),
+        headers={"Origin": ORIGIN, "If-Match": current.json()["draft_etag"]},
+        json={
+            "field_defs": current.json()["field_defs"],
+            "outdoor_units": [{**outdoor_unit(), "custom_values": {"status": "opt_status_question"}}],
+            "single_select_options": {"heat_pumps_outdoor_units.status": status_options_payload()},
+        },
+    )
+    assert updated.status_code == 200, updated.text
+
+    refetch = client.get(draft_table_url(project_id, version_id, table_name))
+    assert refetch.json()["outdoor_units"][0]["custom_values"]["status"] == "opt_status_question"
+    assert_status_options(refetch.json()["single_select_options"], "heat_pumps_outdoor_units")
+
+
+def test_heat_pumps_outdoor_units_rejects_unknown_status(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    table_name = "heat_pumps_outdoor_units"
+
+    _seed_outdoor_equip(client, project_id, version_id)
+
+    current = client.get(draft_table_url(project_id, version_id, table_name))
+    response = client.put(
+        draft_table_url(project_id, version_id, table_name),
+        headers={"Origin": ORIGIN, "If-Match": current.json()["draft_etag"]},
+        json={
+            "field_defs": current.json()["field_defs"],
+            "outdoor_units": [{**outdoor_unit(), "custom_values": {"status": "opt_status_bogus"}}],
+            "single_select_options": {"heat_pumps_outdoor_units.status": status_options_payload()},
+        },
+    )
+    assert response.status_code == 422
+
+
+def test_heat_pumps_indoor_units_exposes_status(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+
+    initial = client.get(draft_table_url(project_id, version_id, "heat_pumps_indoor_units"))
+    assert initial.status_code == 200, initial.text
+    assert_status_field_def(initial.json()["field_defs"])
+    assert_status_options(initial.json()["single_select_options"], "heat_pumps_indoor_units")

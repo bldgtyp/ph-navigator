@@ -84,6 +84,7 @@ describe("VentilatorsTable DataTable reuse", () => {
     expect(screen.getByText("ERV-1")).toBeInTheDocument();
     expect(screen.getByText("Inside")).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: /HP indoor units/i })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: /Status/ })).toBeInTheDocument();
   });
 
   test("renders incoming HP indoor unit links from linked_erv_unit_id", () => {

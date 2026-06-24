@@ -15,6 +15,7 @@ from features.project_document.custom_fields import (
 from features.project_document.document import (
     VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,
     VENTILATOR_OPTION_KEYS,
+    VENTILATOR_STATUS_OPTION_KEY,
     ProjectDocumentV1,
     SingleSelectOption,
     VentilatorRow,
@@ -28,6 +29,7 @@ from features.project_document.tables._registry_helpers import (
     custom_option_lists_for_table,
     make_field_registry,
 )
+from features.project_document.tables._status_field import status_field_def
 from features.project_document.tables.contracts import TableContract
 from features.project_document.validation import validate_document
 
@@ -94,6 +96,7 @@ VENTILATORS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
     built_in_field_def(field_key="url", display_name="URL", field_type=CustomFieldType.url),
     built_in_field_def(field_key="notes", display_name="Notes", field_type=CustomFieldType.long_text),
     built_in_field_def(field_key="datasheet_asset_ids", display_name="Datasheet", field_type=CustomFieldType.long_text),
+    status_field_def(),
 )
 
 VENTILATORS_BUILT_IN_FIELD_KEYS: tuple[str, ...] = tuple(f.field_key for f in VENTILATORS_BUILT_IN_FIELD_DEFS)
@@ -114,6 +117,7 @@ class VentilatorsSliceOptions(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     ventilators_inside_outside: list[SingleSelectOption] = Field(alias=VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY)
+    ventilators_status: list[SingleSelectOption] = Field(alias=VENTILATOR_STATUS_OPTION_KEY)
 
     @model_validator(mode="after")
     def _validate_namespaced_extras(self) -> VentilatorsSliceOptions:
@@ -121,7 +125,10 @@ class VentilatorsSliceOptions(BaseModel):
         return self
 
     def by_option_key(self) -> dict[str, list[SingleSelectOption]]:
-        return {VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY: self.ventilators_inside_outside}
+        return {
+            VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY: self.ventilators_inside_outside,
+            VENTILATOR_STATUS_OPTION_KEY: self.ventilators_status,
+        }
 
     def custom_option_lists(self) -> dict[str, list[SingleSelectOption]]:
         return dict(self.__pydantic_extra__ or {})
@@ -223,6 +230,7 @@ def ventilators_response(
         field_defs=body.tables.equipment.ervs.field_defs,
         single_select_options={
             VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY: body.single_select_options[VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY],
+            VENTILATOR_STATUS_OPTION_KEY: body.single_select_options[VENTILATOR_STATUS_OPTION_KEY],
             **custom_option_lists_for_table(body, _VENTILATORS_TABLE_PATH),
         },
         rows_computed=evaluate_table_formulas(ventilators_field_registry, body),
@@ -243,6 +251,9 @@ def extract_ventilators_diff_value(body: ProjectDocumentV1) -> dict[str, object]
             VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY: [
                 option.model_dump(mode="json")
                 for option in body.single_select_options[VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY]
+            ],
+            VENTILATOR_STATUS_OPTION_KEY: [
+                option.model_dump(mode="json") for option in body.single_select_options[VENTILATOR_STATUS_OPTION_KEY]
             ],
         },
     }

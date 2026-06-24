@@ -24,6 +24,7 @@ import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { useAssetUrls } from "../../assets/hooks";
 import { DATASHEET_ATTACHMENT_CONFIG } from "../../assets/lib";
 import { sortedVentilators } from "../lib";
+import { statusColumn } from "../lib/statusColumn";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
 import {
   customFieldColumnDefs,
@@ -230,6 +231,7 @@ export function VentilatorsTable({
         onPillClick: onIncomingIndoorUnitOpen,
         onActivateEdit: isEditor ? onIncomingIndoorUnitsLinkEdit : undefined,
       }),
+      statusColumn<VentilatorRow>(fieldDefByKey),
       ...customColumns,
     ],
     [
