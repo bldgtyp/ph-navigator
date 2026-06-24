@@ -49,11 +49,18 @@ implemented + unit-tested (21 vitest), but has **one open item**:
   options). The translation logic is done; the modal-open path needs
   verifying/enabling. Re-smoke once the dev servers are back (they went down
   mid-session). See phase-05 §5b.
-- **Phase 5c** — import dialog v2: render the `new_option:<field>` warnings + the
-  `dropped` count the backend preview now returns.
+- **Phase 5c** ✅ code-complete — import file schema 1→2; `dropped` count + the
+  `new_option` warnings render in the dialog; export-v2 vitest. Browser smoke
+  pending (env).
+
+So all phase **code** is implemented; what remains is **environment-dependent
+verification + closeout**: (a) re-smoke 5b (modal-open trigger — the one real open
+question) and 5c (import dialog) once the dev servers are back; (b) **Phase 6**
+(fold decisions into `context/`, flip the archived PRD D4, mark Complete).
 
 **Dev-env note:** the running dev DB was behind (`0036`); `make migrate` (or
-`make db-reset-dev`) applies `0037`–`0039` (option store + seed + name backfill).
+`make db-reset-dev`) applies `0037`–`0039`. The dev servers (`:8000`/`:5173`) went
+down mid-session — restart for browser verification.
 
 ## Blockers
 

@@ -3,7 +3,10 @@
 // — keep this in sync with that module's file_format / service models.
 
 export const FILE_KIND = "ph-navigator.catalog.frame-types" as const;
-export const CURRENT_SCHEMA_VERSION = 1;
+// v2 (window-frames-catalog-enums): single-select values fold to the canonical
+// vocab on import, `name` is computed from the parts, and unknown values are
+// auto-added to the option store. See backend `import_export/upgrade.py`.
+export const CURRENT_SCHEMA_VERSION = 2;
 
 export type CatalogFileRow = {
   id: string;
@@ -41,6 +44,8 @@ export type PreviewCounts = {
   matched: number;
   errored: number;
   warnings: number;
+  // v2: rows dropped by the upgrade step (e.g. the legacy `Default` artifact).
+  dropped: number;
 };
 
 export type PreviewWarning = {
