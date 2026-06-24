@@ -48,6 +48,10 @@ styles. Future report-table consumers — window glazing, window-frame
 elements, additional spec rollups — reuse the same primitives so the
 visual style stays consistent across the app.
 
+2026-06-24 update: the window glazing and window-frame consumers are now
+realized as `Apertures → Glazings` and `Apertures → Frames`, implemented by
+`planning/archive/dated/2026-06-24/apertures-glazings-frames-reports/`.
+
 ### A4 — Status pill colors (2026-06-09)
 
 | Status   | Color role             |

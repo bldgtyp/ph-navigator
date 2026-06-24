@@ -517,7 +517,7 @@ are building **plus §1 (common elements) above**. See
 | 2.3 Catalog landing (`/catalog/{table_slug}`) | [`ui/pages/catalog.md`](ui/pages/catalog.md) |
 | 2.4 Project workspace — header, tab bar, version picker | [`ui/pages/project-workspace.md`](ui/pages/project-workspace.md) |
 | 2.5 Status tab (default landing) | [`ui/pages/status-tab.md`](ui/pages/status-tab.md) |
-| 2.6 Apertures tab | [`ui/pages/apertures-tab.md`](ui/pages/apertures-tab.md) |
+| 2.6 Apertures tab — builder, glazings report, frames report | [`ui/pages/apertures-tab.md`](ui/pages/apertures-tab.md) |
 | 2.7 Envelope tab — assemblies, materials, airtightness, site photos | [`ui/pages/envelope-tab.md`](ui/pages/envelope-tab.md) |
 | 2.8 Spaces & Equipment tabs | [`ui/pages/spaces-equipment-tab.md`](ui/pages/spaces-equipment-tab.md) |
 | 2.9 Model tab (HBJSON viewer) | [`ui/pages/model-tab.md`](ui/pages/model-tab.md) |
@@ -634,7 +634,7 @@ content review.
 | Version dropdown picker (header) | Drafted | MVP |
 | Locked-version edit lockout banner | Drafted | MVP |
 | Status tab (`/projects/{id}/status`) | Placeholder | MVP |
-| Apertures tab (`/projects/{id}/apertures`) | Shipped | MVP |
+| Apertures tab (`/projects/{id}/apertures`) — Builder, Glazings, Frames | Shipped | MVP |
 | Envelope tab (`/projects/{id}/envelope`) — sub-tab structure + Assemblies + Materials | Drafted | MVP |
 | Envelope · Airtightness sub-tab | Placeholder | MVP |
 | Envelope · Site Photos sub-tab | Placeholder | MVP |

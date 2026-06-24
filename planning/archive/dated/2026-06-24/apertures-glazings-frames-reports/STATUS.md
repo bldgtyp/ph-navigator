@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
-TIME: 19:03 EDT
-STATUS: Active — Phase 2 complete; Phase 3 closeout next
+TIME: 19:20 EDT
+STATUS: Complete — archived 2026-06-24
 AUTHOR: Claude (Opus 4.8)
 SCOPE: apertures-glazings-frames-reports
 RELATED: ./README.md, ./PRD.md, ./PLAN.md, ./phases/,
@@ -10,7 +10,8 @@ RELATED: ./README.md, ./PRD.md, ./PLAN.md, ./phases/,
 
 # STATUS — Apertures → Glazings / Frames report pages
 
-**State:** `Active`. Phase 2 is complete; resume at Phase 3.
+**State:** `Complete`. Phases 0–3 are implemented, verified, documented, and
+ready for archive under `planning/archive/dated/2026-06-24/`.
 
 ## Blocker
 
@@ -54,11 +55,18 @@ commands:
   rows, catalog-drift badges and refresh actions, unused-row removal, viewer
   hiding for N/A/unused rows, and report-route write mutations. Retired
   `ProjectRefsView`, `refsAggregation.ts`, and its test.
+- **Phase 3 complete (2026-06-24):** updated `context/UI_UX.md`,
+  `context/ui/pages/apertures-tab.md`, and the report-tables planning packet to
+  record Glazings/Frames as realized report-table consumers; captured closeout
+  screenshots under `assets/`; ran browser smoke for filters, expansion,
+  status persistence, datasheet upload/detach, report-route network guards, and
+  bare-route redirect.
 
-## Next step — RESUME HERE
+## Next step
 
-**Phase 3:** closeout docs/UI page context, final verification, and archive
-decision. See `phases/phase-03-closeout.md`.
+Archived. Future report-table cleanup candidates from simplify are shared
+helper extraction for attachment diff/apply loops and spec-report section/status
+helpers, but they are non-blocking follow-ups and not required for this feature.
 
 ## Verification ledger
 
@@ -88,4 +96,18 @@ decision. See `phases/phase-03-closeout.md`.
   - Simplify pass — fixed duplicate draft-summary invalidation, indexed drift
     lookups by `element_id:target`, constrained datasheet URL fetches to the
     expanded row, and added typed product command config/status guarding.
-- Phase 3 still carries final closeout verification and UI/context docs pass.
+- 2026-06-24 Phase 3:
+  - Playwright smoke on fixture `846a42ac-cb2c-472f-8239-eabd05fe6d57` —
+    filters, expansion, status persist/restore, datasheet upload/detach,
+    frames side-aware use-sites, report-route network guard, and bare-route
+    redirect passed.
+  - Screenshots captured:
+    `assets/apertures-glazings-report.png`,
+    `assets/apertures-glazings-expanded.png`,
+    `assets/apertures-glazings-datasheet-upload.png`,
+    `assets/apertures-frames-expanded.png`.
+  - `make format` — passed.
+  - `make ci` — passed: backend `1099 passed, 2 skipped, 1 warning`; frontend
+    `200 passed`, `1900 passed`; build succeeded with the existing Vite
+    chunk-size warning.
+  - `graphify update .` — passed.
