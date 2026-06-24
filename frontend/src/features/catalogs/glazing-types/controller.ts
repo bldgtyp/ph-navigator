@@ -5,6 +5,7 @@ import type {
   CellWrite,
   DataTableColumnDef,
   FieldDef,
+  FieldOption,
   ViewState,
   WriteOp,
 } from "../../../shared/ui/data-table";
@@ -13,6 +14,7 @@ import {
   createGlazingType,
   deactivateGlazingType,
   duplicateGlazingType,
+  putGlazingTypeOptions,
   updateGlazingType,
 } from "../api";
 import { catalogQueryKeys } from "../query-keys";
@@ -21,36 +23,146 @@ import type {
   CatalogGlazingTypeCreatePayload,
   CatalogGlazingTypeUpdatePayload,
 } from "../types";
-import { GLAZING_TYPES_BUILT_IN_FIELD_DEFS, GLAZING_TYPES_TABLE_KEY } from "./fieldDefs";
+import {
+  GLAZING_TYPES_BUILT_IN_FIELD_DEFS,
+  GLAZING_TYPES_SINGLE_SELECT_FIELDS,
+  GLAZING_TYPES_TABLE_KEY,
+} from "./fieldDefs";
 
+// The grid cell value for a single-select field is the option **id**; the
+// backend stores the **label** (D-2). The controller maps id↔label at the REST
+// boundary using the fetched option lists.
 export type GlazingTypeRow = CatalogGlazingType;
+
+const SINGLE_SELECT_FIELDS = new Set<string>(GLAZING_TYPES_SINGLE_SELECT_FIELDS);
 
 const GLAZING_BUILT_IN_KEYS = new Set(
   GLAZING_TYPES_BUILT_IN_FIELD_DEFS.map((fieldDef) => fieldDef.field_key),
 );
 
-export function toGlazingTypeRow(record: CatalogGlazingType): GlazingTypeRow {
-  return record;
+export type GlazingTypeOptionMaps = {
+  // field_key → (option id → label) and the inverse.
+  idToLabel: Record<string, Record<string, string>>;
+  labelToId: Record<string, Record<string, string>>;
+};
+
+export function buildGlazingTypeOptionMaps(
+  optionsByField: Record<string, FieldOption[]>,
+): GlazingTypeOptionMaps {
+  const idToLabel: Record<string, Record<string, string>> = {};
+  const labelToId: Record<string, Record<string, string>> = {};
+  for (const field of GLAZING_TYPES_SINGLE_SELECT_FIELDS) {
+    const options = optionsByField[field] ?? [];
+    idToLabel[field] = {};
+    labelToId[field] = {};
+    for (const option of options) {
+      idToLabel[field][option.id] = option.label;
+      labelToId[field][option.label] = option.id;
+    }
+  }
+  return { idToLabel, labelToId };
+}
+
+// Backend record (two fields hold labels) → grid row (two fields hold option
+// ids) so the single-select cells render their pills.
+export function toGlazingTypeRow(
+  record: CatalogGlazingType,
+  maps: GlazingTypeOptionMaps,
+): GlazingTypeRow {
+  const next: GlazingTypeRow = { ...record };
+  for (const field of GLAZING_TYPES_SINGLE_SELECT_FIELDS) {
+    const label = record[field];
+    if (typeof label === "string" && label.length > 0) {
+      // Fall back to the raw label if it has no option (shouldn't happen once
+      // values are validated) so data is never silently dropped.
+      next[field] = maps.labelToId[field]?.[label] ?? label;
+    }
+  }
+  return next;
 }
 
 type WriteOptions = {
   invalidate: () => Promise<void>;
 };
 
-function groupCellWritesByRow(writes: CellWrite[]): Map<string, Record<string, unknown>> {
+// Resolve a cell value for the catalog PATCH body. Single-selects map their
+// option id → label; `name` is derived (server-owned) so it is dropped.
+function valueForField(
+  fieldKey: string,
+  value: unknown,
+  idToLabel: Record<string, Record<string, string>>,
+): { include: boolean; value: unknown } {
+  if (fieldKey === "name") return { include: false, value: undefined };
+  if (SINGLE_SELECT_FIELDS.has(fieldKey)) {
+    if (value === null || value === undefined) return { include: true, value: null };
+    return { include: true, value: idToLabel[fieldKey]?.[String(value)] ?? null };
+  }
+  return { include: true, value };
+}
+
+function groupCellWritesByRow(
+  writes: CellWrite[],
+  idToLabel: Record<string, Record<string, string>>,
+): Map<string, Record<string, unknown>> {
   const grouped = new Map<string, Record<string, unknown>>();
   for (const write of writes) {
     if (!GLAZING_BUILT_IN_KEYS.has(write.fieldKey)) continue;
+    const resolved = valueForField(write.fieldKey, write.value, idToLabel);
+    if (!resolved.include) continue;
     const existing = grouped.get(write.rowId) ?? {};
-    existing[write.fieldKey] = write.value;
+    existing[write.fieldKey] = resolved.value;
     grouped.set(write.rowId, existing);
   }
   return grouped;
 }
 
-async function applyCellWrites(writes: CellWrite[], opts: WriteOptions): Promise<void> {
-  const grouped = groupCellWritesByRow(writes);
-  if (grouped.size === 0) return;
+// An inline "+ Add option" cell op carries the newly-minted option in
+// `newOptions`. Persist it to the option store **before** the row write so the
+// label is a known option by the time the PATCH lands (Phase 2 contract).
+async function persistNewOptions(
+  newOptions: Record<string, FieldOption[]> | undefined,
+  optionsByField: Record<string, FieldOption[]>,
+): Promise<void> {
+  if (!newOptions) return;
+  for (const [fieldKey, created] of Object.entries(newOptions)) {
+    if (!SINGLE_SELECT_FIELDS.has(fieldKey) || created.length === 0) continue;
+    const current = optionsByField[fieldKey] ?? [];
+    await putGlazingTypeOptions({
+      field_key: fieldKey,
+      options: [...current, ...created],
+    });
+  }
+}
+
+// id→label that also resolves freshly-created options (not yet in the fetched
+// map) from the op's `newOptions`.
+function idToLabelWithNew(
+  idToLabel: Record<string, Record<string, string>>,
+  newOptions: Record<string, FieldOption[]> | undefined,
+): Record<string, Record<string, string>> {
+  if (!newOptions) return idToLabel;
+  const merged: Record<string, Record<string, string>> = { ...idToLabel };
+  for (const [fieldKey, created] of Object.entries(newOptions)) {
+    merged[fieldKey] = { ...(merged[fieldKey] ?? {}) };
+    for (const option of created) merged[fieldKey][option.id] = option.label;
+  }
+  return merged;
+}
+
+async function applyCellWrites(
+  op: Extract<WriteOp, { kind: "cell" | "fill" | "paste" }>,
+  optionsByField: Record<string, FieldOption[]>,
+  maps: GlazingTypeOptionMaps,
+  opts: WriteOptions,
+): Promise<void> {
+  const newOptions = "newOptions" in op ? op.newOptions : undefined;
+  await persistNewOptions(newOptions, optionsByField);
+  const idToLabel = idToLabelWithNew(maps.idToLabel, newOptions);
+  const grouped = groupCellWritesByRow(op.writes, idToLabel);
+  if (grouped.size === 0) {
+    if (newOptions) await opts.invalidate();
+    return;
+  }
   await Promise.all(
     Array.from(grouped.entries()).map(([rowId, body]) =>
       updateGlazingType(rowId, body as CatalogGlazingTypeUpdatePayload),
@@ -59,26 +171,65 @@ async function applyCellWrites(writes: CellWrite[], opts: WriteOptions): Promise
   await opts.invalidate();
 }
 
-// Shift-Enter row insert with empty defaults POSTs with a safe name
-// placeholder so the user can edit in place rather than block on a modal.
-const DEFAULT_NEW_GLAZING_NAME = "New glazing type";
-
+// Shift-Enter row insert: `name` is server-derived (empty until parts are
+// filled), so the create payload omits it; single-select defaults map id→label.
 function buildCreatePayload(
   fieldDefaults: Record<string, unknown>,
+  idToLabel: Record<string, Record<string, string>>,
 ): CatalogGlazingTypeCreatePayload {
-  const nameRaw = fieldDefaults.name;
-  const name =
-    typeof nameRaw === "string" && nameRaw.trim().length > 0
-      ? nameRaw.trim()
-      : DEFAULT_NEW_GLAZING_NAME;
-  const extras: Record<string, unknown> = {};
+  const payload: Record<string, unknown> = {};
   for (const fieldDef of GLAZING_TYPES_BUILT_IN_FIELD_DEFS) {
     if (fieldDef.field_key === "name") continue;
     const value = fieldDefaults[fieldDef.field_key];
     if (value === undefined) continue;
-    extras[fieldDef.field_key] = value;
+    const resolved = valueForField(fieldDef.field_key, value, idToLabel);
+    if (resolved.include) payload[fieldDef.field_key] = resolved.value;
   }
-  return { name, ...extras };
+  return payload as CatalogGlazingTypeCreatePayload;
+}
+
+type LegacyOptionsMutation = Extract<WriteOp, { kind: "schemaMutation"; variant: "legacyOptions" }>;
+
+function labelOfOption(optionId: string, mutation: LegacyOptionsMutation): string | null {
+  const inAfter = (mutation.after.options ?? []).find((o) => o.id === optionId);
+  const inBefore = (mutation.before.options ?? []).find((o) => o.id === optionId);
+  return inAfter?.label ?? inBefore?.label ?? null;
+}
+
+// Derive the backend label-keyed `replacements` from a field-config option edit.
+// Only an option deleted from the list while still in use needs one: the
+// DataTable cascades its rows to a single target (or null to clear), so map each
+// deleted option's label → the cascade target's label. Renames / reorders /
+// adds / unused-deletes carry no cascade and reconcile from the option list
+// alone (the backend matches by id).
+function buildLabelReplacements(mutation: LegacyOptionsMutation): Record<string, string> {
+  const afterIds = new Set((mutation.after.options ?? []).map((o) => o.id));
+  const deleted = (mutation.before.options ?? []).filter((o) => !afterIds.has(o.id));
+  if (deleted.length === 0 || !mutation.cellWrites?.length) return {};
+  const target = mutation.cellWrites.find((w) => typeof w.value === "string" && w.value)?.value;
+  if (typeof target !== "string") return {};
+  const targetLabel = labelOfOption(target, mutation);
+  if (!targetLabel) return {};
+  const replacements: Record<string, string> = {};
+  for (const option of deleted) replacements[option.label] = targetLabel;
+  return replacements;
+}
+
+async function editGlazingTypeOptions(
+  mutation: LegacyOptionsMutation,
+  opts: WriteOptions,
+): Promise<void> {
+  await putGlazingTypeOptions({
+    field_key: mutation.after.field_key,
+    options: (mutation.after.options ?? []).map((o) => ({
+      id: o.id,
+      label: o.label,
+      color: o.color,
+      order: o.order,
+    })),
+    replacements: buildLabelReplacements(mutation),
+  });
+  await opts.invalidate();
 }
 
 export type GlazingTypesCatalogController = {
@@ -93,6 +244,7 @@ export type GlazingTypesCatalogControllerArgs = {
   columns: DataTableColumnDef<GlazingTypeRow>[];
   fieldDefs: FieldDef[];
   schemaFingerprint: string;
+  optionsByField: Record<string, FieldOption[]>;
 };
 
 export function useGlazingTypesCatalogController({
@@ -100,6 +252,7 @@ export function useGlazingTypesCatalogController({
   columns,
   fieldDefs,
   schemaFingerprint,
+  optionsByField,
 }: GlazingTypesCatalogControllerArgs): GlazingTypesCatalogController {
   const defaults = useMemo(() => emptyViewState(), []);
   const {
@@ -119,10 +272,14 @@ export function useGlazingTypesCatalogController({
     schemaFingerprint,
   });
   const queryClient = useQueryClient();
-  const invalidate = useCallback(
-    () => queryClient.invalidateQueries({ queryKey: catalogQueryKeys.glazingTypes() }),
-    [queryClient],
-  );
+  const maps = useMemo(() => buildGlazingTypeOptionMaps(optionsByField), [optionsByField]);
+  const invalidate = useCallback(async () => {
+    // Cell/option writes can change both the rows and the option store.
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: catalogQueryKeys.glazingTypes() }),
+      queryClient.invalidateQueries({ queryKey: catalogQueryKeys.glazingTypeOptions() }),
+    ]);
+  }, [queryClient]);
 
   const onWrite = useCallback<GlazingTypesCatalogController["onWrite"]>(
     async (op) => {
@@ -130,12 +287,14 @@ export function useGlazingTypesCatalogController({
         case "cell":
         case "fill":
         case "paste":
-          await applyCellWrites(op.writes, { invalidate });
+          await applyCellWrites(op, optionsByField, maps, { invalidate });
           return;
         case "rowInsert": {
           if (op.rows.length === 0) return;
           await Promise.all(
-            op.rows.map((row) => createGlazingType(buildCreatePayload(row.fieldDefaults))),
+            op.rows.map((row) =>
+              createGlazingType(buildCreatePayload(row.fieldDefaults, maps.idToLabel)),
+            ),
           );
           await invalidate();
           return;
@@ -151,13 +310,22 @@ export function useGlazingTypesCatalogController({
           await invalidate();
           return;
         }
-        case "schemaMutation":
-          throw new Error(
-            "Custom fields are not supported on the glazing-types catalog (PRD §non-goals).",
-          );
+        case "schemaMutation": {
+          // The only schema change glazing-types supports is option editing
+          // (add/rename/reorder/merge) via the field-config modal — routed to
+          // the catalog option store. Custom fields are a non-goal.
+          if (op.variant !== "legacyOptions") {
+            throw new Error("Custom fields are not supported on the glazing-types catalog.");
+          }
+          if (!SINGLE_SELECT_FIELDS.has(op.after.field_key)) {
+            throw new Error(`Cannot edit options for ${op.after.field_key}.`);
+          }
+          await editGlazingTypeOptions(op, { invalidate });
+          return;
+        }
       }
     },
-    [invalidate],
+    [invalidate, maps, optionsByField],
   );
 
   return { view, onViewChange, onResetView, onWrite };

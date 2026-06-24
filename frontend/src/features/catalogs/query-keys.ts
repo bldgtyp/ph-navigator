@@ -15,4 +15,5 @@ export const catalogQueryKeys = {
   glazingTypesList: () => [...catalogQueryKeys.glazingTypes(), "list"] as const,
   glazingType: (id: string) => [...catalogQueryKeys.glazingTypes(), "detail", id] as const,
   glazingTypeManufacturers: () => [...catalogQueryKeys.glazingTypes(), "manufacturers"] as const,
+  glazingTypeOptions: () => [...catalogQueryKeys.glazingTypes(), "options"] as const,
 };

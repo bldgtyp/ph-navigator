@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 16:10 EDT
-STATUS: Planning — plan complete; all decisions resolved; ready to execute
+STATUS: Phases 0–5 done (backend + frontend, committed + green) — Phase 6 closeout in progress; browser smoke pending
 AUTHOR: Claude (Opus 4.8)
 SCOPE: window-glass-catalog-enums
 RELATED: ./README.md, ./research.md, ./decisions.md, ./PLAN.md, ./phases/
@@ -9,14 +9,32 @@ RELATED: ./README.md, ./research.md, ./decisions.md, ./PLAN.md, ./phases/
 
 # STATUS — window-glass-catalog-enums
 
-**State:** `Backend complete — PAUSED before Phase 5 (frontend)`. The entire
-**backend** half of the refactor (Phases 0–4) is implemented, committed, and
-green (full backend suite 1087 passed; ruff/ty clean). Stopped here at Ed's
-direction (2026-06-24) — the only remaining work is **Phase 5 (frontend)** and
-**Phase 6 (closeout + archive)**, and Phase 5 overlaps a frontend area Ed is
-editing in parallel, so it is deferred until Ed resumes it. All decisions
-resolved (D-6 settled by Ed 2026-06-24: drop the two `DEFAULT` rows, keep one
-sentinel renamed `PHN-Default-Glass`).
+**State:** `Phases 0–5 done — Phase 6 closeout in progress`. The **backend**
+(Phases 0–4) and the **frontend** (Phase 5) are both implemented and green.
+Phase 5 was resumed 2026-06-24 when Ed re-ran the implement-loop on this packet;
+it shipped the glazing single-select wiring as a faithful mirror of the merged
+frame-types code. All decisions resolved (D-6 settled by Ed 2026-06-24: drop the
+two `DEFAULT` rows, keep one sentinel renamed `PHN-Default-Glass`).
+
+> **Concurrent-edit note (2026-06-24):** while Phase 5 was implemented, Ed had
+> unrelated frontend WIP (envelope: `AssemblyHeader.tsx`, `AssemblyWorkspace.tsx`,
+> `envelope.css`) in the working tree. The Phase 5 commit was scoped to
+> `frontend/src/features/catalogs/` only, leaving that WIP unstaged.
+
+**Phase 5 (done 2026-06-24):** glazing-types DataTable now renders `manufacturer`
++ `brand` as `single_select` fed from the catalog option store, `name` as a
+read-only server-derived cell, and inline "+ Add option" persisting to
+`PUT …/glazing-types/options` before the row PATCH. Added the shared FE plumbing
+(`getGlazingTypeOptions`/`putGlazingTypeOptions`, `glazingTypeOptions` query key,
+`useGlazingTypeOptionsQuery`, glazing option types in `types.ts`; dropped `name`
+from the create payload). Rewrote `glazing-types/{fieldDefs,controller}.ts` and
+the `GlazingTypesCatalogPage` wiring with id↔label translation at the REST
+boundary; bumped import schema v1→v2 (`dropped` count surfaced in `ImportDialog`).
+Reworked `fieldDefs`/`controller` tests + added `export.test.ts` (21 catalog tests
+green). Verified: `tsc -b` + `vite build` clean; `make frontend-dev-check` green.
+The `simplify` pass found no code changes (one reuse note — `CatalogGlazingTypeOption`
+vs shared `FieldOption` — deferred to the v1.1 shared-abstraction task to preserve
+mirror symmetry). **Browser smoke still pending** (Phase 6).
 
 > **Commit-history note (2026-06-24):** Phase 4 landed in commit `4f6e95a1`
 > ("glazing-types: import v2 fold+auto-add options"), which a concurrent commit
@@ -92,20 +110,15 @@ cross-check clean (no EXTRA, no orphan options); fresh-migrate sentinel reads
 - File-level phase plans drafted, each a thin mirror of the merged frame code with
   cited `file:line` targets.
 
-## Next step — RESUME HERE (deferred at Ed's direction)
+## Next step — Phase 6 closeout
 
-**Phase 5 (frontend)** is the next phase, deferred until Ed picks it back up
-(see `phases/phase-05-frontend-single-select.md` for the full plan):
-`manufacturer` + `brand` → `single_select` with options fetched from the store,
-read-only derived `name`, inline-add wired to `PUT …/options`; id↔label
-translation in `glazing-types/controller.ts`; import dialog shows the new
-`dropped` count. It is the only frontend phase and the first to need a dev-server
-**browser smoke** (sign in as Ed; the seeded project is `ed@example.com`'s). It
-overlaps a frontend area Ed is actively editing — coordinate before starting.
-
-Then **Phase 6** closeout: fold decisions into `context/`, run the
-`simplify` + `docs-pass` + `make ci` gate, mark Complete, and archive the packet
-to `planning/archive/dated/<date>/`.
+**Phase 6** is all that remains (see `phases/phase-06-cleanup-docs-closeout.md`):
+fold the resolved decisions into `context/` (DATA_STORAGE / data-model §6.6.4),
+run the dev-server **browser smoke** (sign in as Ed — the seeded project is
+`ed@example.com`'s: pick a manufacturer/brand option, add a new option and
+confirm it persists across reload, edit `brand` and confirm `name` recomposes,
+confirm `name` is not editable), run the full `make ci` gate, mark the packet
+Complete, and archive it to `planning/archive/dated/<date>/`.
 
 **Pre-resume sanity:** the backend is at migration head `20260624_0042`; a fresh
 `make db-seed` (clear DB first — seeds duplicate otherwise) loads the cleaned

@@ -11,13 +11,14 @@ import { useSignOutMutation } from "../../auth/hooks";
 import type { AuthSession } from "../../auth/types";
 import { CatalogMenu } from "../components/CatalogMenu";
 import {
+  buildGlazingTypeOptionMaps,
   toGlazingTypeRow,
   useGlazingTypesCatalogController,
   type GlazingTypeRow,
 } from "../glazing-types/controller";
 import {
+  buildGlazingTypesFieldOverlay,
   GLAZING_TYPES_BUILT_IN_FIELD_DEFS,
-  GLAZING_TYPES_FIELD_OVERLAY,
   GLAZING_TYPES_TABLE_KEY,
 } from "../glazing-types/fieldDefs";
 import { ImportDialog } from "../glazing-types/import_export/ImportDialog";
@@ -27,7 +28,11 @@ import {
   serializeCatalog,
   triggerCatalogDownload,
 } from "../glazing-types/import_export/export";
-import { useGlazingTypesQuery, useReactivateGlazingTypeMutation } from "../hooks";
+import {
+  useGlazingTypeOptionsQuery,
+  useGlazingTypesQuery,
+  useReactivateGlazingTypeMutation,
+} from "../hooks";
 import { catalogPath } from "../lib";
 import type { CatalogGlazingType } from "../types";
 
@@ -37,7 +42,8 @@ const PLACEHOLDER_TIMESTAMP = "1970-01-01T00:00:00Z";
 function buildEmptyGlazingTypeRow({ rowId }: { rowId: string }): GlazingTypeRow {
   return {
     id: rowId,
-    name: "New glazing type",
+    // `name` is server-derived; an empty row composes to "" until parts fill in.
+    name: "",
     manufacturer: null,
     brand: null,
     suffix: null,
@@ -119,8 +125,12 @@ export function GlazingTypesCatalogPage({ session }: { session: AuthSession }) {
   const [importOpen, setImportOpen] = useState(false);
   const [bulkReactivating, setBulkReactivating] = useState(false);
   const glazingTypesQuery = useGlazingTypesQuery();
+  const optionsQuery = useGlazingTypeOptionsQuery();
   const signOutMutation = useSignOutMutation();
   const reactivateMutation = useReactivateGlazingTypeMutation();
+
+  const optionsByField = useMemo(() => optionsQuery.data ?? {}, [optionsQuery.data]);
+  const optionMaps = useMemo(() => buildGlazingTypeOptionMaps(optionsByField), [optionsByField]);
 
   function handleExport() {
     const file = serializeCatalog(glazingTypes, {
@@ -135,21 +145,25 @@ export function GlazingTypesCatalogPage({ session }: { session: AuthSession }) {
     () => (includeInactive ? allGlazingTypes : allGlazingTypes.filter((g) => g.is_active)),
     [allGlazingTypes, includeInactive],
   );
-  const rows = useMemo<GlazingTypeRow[]>(() => glazingTypes.map(toGlazingTypeRow), [glazingTypes]);
+  const rows = useMemo<GlazingTypeRow[]>(
+    () => glazingTypes.map((glazing) => toGlazingTypeRow(glazing, optionMaps)),
+    [glazingTypes, optionMaps],
+  );
   const tableSchema = useMemo(
     () =>
       buildTableSchema({
         tableKey: GLAZING_TYPES_TABLE_KEY,
         fieldDefs: GLAZING_TYPES_BUILT_IN_FIELD_DEFS,
-        fieldOverlay: GLAZING_TYPES_FIELD_OVERLAY,
+        fieldOverlay: buildGlazingTypesFieldOverlay(optionsByField),
       }),
-    [],
+    [optionsByField],
   );
   const controller = useGlazingTypesCatalogController({
     userId: session.user.id,
     columns: COLUMN_DEFS,
     fieldDefs: tableSchema.fieldDefs,
     schemaFingerprint: tableSchema.schemaFingerprint,
+    optionsByField,
   });
 
   const isActiveById = useMemo(() => {

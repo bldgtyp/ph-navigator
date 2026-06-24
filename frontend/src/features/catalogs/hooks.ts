@@ -7,6 +7,7 @@ import {
   deactivateGlazingType,
   deactivateMaterial,
   getFrameTypeOptions,
+  getGlazingTypeOptions,
   listFrameTypes,
   listGlazingTypes,
   listMaterials,
@@ -148,6 +149,18 @@ export function useGlazingTypesQuery(enabled = true) {
     queryFn: ({ signal }) => listGlazingTypes(true, signal),
     enabled,
     select: (payload) => payload.items,
+  });
+}
+
+// The two single-select fields' option lists (manufacturer, brand), keyed by
+// field_key. Drives the grid dropdowns + the label↔id mapping. Long-lived
+// (curated vocab); option edits invalidate explicitly.
+export function useGlazingTypeOptionsQuery(enabled = true) {
+  return useQuery({
+    queryKey: catalogQueryKeys.glazingTypeOptions(),
+    queryFn: ({ signal }) => getGlazingTypeOptions(signal),
+    select: (payload) => payload.fields,
+    enabled,
   });
 }
 

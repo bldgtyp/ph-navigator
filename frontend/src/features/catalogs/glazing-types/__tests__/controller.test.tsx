@@ -1,19 +1,31 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import type { WriteOp } from "../../../../shared/ui/data-table";
+import type { FieldDef, FieldOption, WriteOp } from "../../../../shared/ui/data-table";
 import * as api from "../../api";
 import {
   useGlazingTypesCatalogController,
   type GlazingTypesCatalogControllerArgs,
 } from "../controller";
 
+// The grid stores option ids; the controller maps them to labels for the REST
+// boundary. Fixtures mirror the seeded canonical options.
+const OPTIONS: Record<string, FieldOption[]> = {
+  manufacturer: [{ id: "opt_kawneer", label: "Kawneer", color: "#3b82f6", order: 0 }],
+  brand: [{ id: "opt_gl1", label: "GL-1", color: "#3b82f6", order: 0 }],
+};
+
 const CONTROLLER_ARGS: GlazingTypesCatalogControllerArgs = {
   userId: "user-test",
   columns: [],
   fieldDefs: [],
   schemaFingerprint: "test-fp",
+  optionsByField: OPTIONS,
 };
+
+function field(fieldKey: string, options: FieldOption[]): FieldDef {
+  return { field_key: fieldKey, field_type: "single_select", display_name: fieldKey, options };
+}
 
 function wrapper({ children }: { children: React.ReactNode }) {
   const queryClient = new QueryClient({
@@ -28,6 +40,7 @@ beforeEach(() => {
   vi.spyOn(api, "createGlazingType").mockResolvedValue({ id: "rec_new" } as never);
   vi.spyOn(api, "deactivateGlazingType").mockResolvedValue();
   vi.spyOn(api, "duplicateGlazingType").mockResolvedValue({ id: "rec_dup" } as never);
+  vi.spyOn(api, "putGlazingTypeOptions").mockResolvedValue({} as never);
 });
 
 afterEach(() => {
@@ -35,91 +48,118 @@ afterEach(() => {
 });
 
 describe("useGlazingTypesCatalogController.onWrite", () => {
-  test("cell op for u_value_w_m2k PATCHes the SI value verbatim", async () => {
+  test("non-option cell value (u_value) PATCHes verbatim", async () => {
     const { result } = renderHook(() => useGlazingTypesCatalogController(CONTROLLER_ARGS), {
       wrapper,
     });
-    const op: WriteOp = {
-      kind: "cell",
-      writes: [{ rowId: "rec_xyz", fieldKey: "u_value_w_m2k", value: 0.625 }],
-    };
     await act(async () => {
-      await result.current.onWrite(op);
+      await result.current.onWrite({
+        kind: "cell",
+        writes: [{ rowId: "rec_xyz", fieldKey: "u_value_w_m2k", value: 0.625 }],
+      });
     });
     expect(api.updateGlazingType).toHaveBeenCalledWith("rec_xyz", { u_value_w_m2k: 0.625 });
   });
 
-  test("multiple cell writes on the same row collapse into one PATCH", async () => {
+  test("single-select cell writes map option id → label and collapse into one PATCH", async () => {
     const { result } = renderHook(() => useGlazingTypesCatalogController(CONTROLLER_ARGS), {
       wrapper,
     });
-    const op: WriteOp = {
-      kind: "cell",
-      writes: [
-        { rowId: "rec_abc", fieldKey: "name", value: "Updated name" },
-        { rowId: "rec_abc", fieldKey: "manufacturer", value: "INTUS" },
-      ],
-    };
     await act(async () => {
-      await result.current.onWrite(op);
+      await result.current.onWrite({
+        kind: "cell",
+        writes: [
+          { rowId: "rec_abc", fieldKey: "manufacturer", value: "opt_kawneer" },
+          { rowId: "rec_abc", fieldKey: "brand", value: "opt_gl1" },
+        ],
+      });
     });
     expect(api.updateGlazingType).toHaveBeenCalledTimes(1);
     expect(api.updateGlazingType).toHaveBeenCalledWith("rec_abc", {
-      name: "Updated name",
-      manufacturer: "INTUS",
+      manufacturer: "Kawneer",
+      brand: "GL-1",
     });
   });
 
-  test("rowInsert with name → POST", async () => {
+  test("a write to the derived name cell is dropped (never PATCHed)", async () => {
     const { result } = renderHook(() => useGlazingTypesCatalogController(CONTROLLER_ARGS), {
       wrapper,
     });
-    const op: WriteOp = {
-      kind: "rowInsert",
-      rows: [
-        {
-          rowId: "rec_temp",
-          fieldDefaults: { name: "Triple LowE", u_value_w_m2k: 0.6 },
-          anchorRowId: null,
-        },
-      ],
-    };
     await act(async () => {
-      await result.current.onWrite(op);
+      await result.current.onWrite({
+        kind: "cell",
+        writes: [{ rowId: "rec_abc", fieldKey: "name", value: "hand typed" }],
+      });
+    });
+    expect(api.updateGlazingType).not.toHaveBeenCalled();
+  });
+
+  test("inline-add persists the new option before the row PATCH (with its label)", async () => {
+    const { result } = renderHook(() => useGlazingTypesCatalogController(CONTROLLER_ARGS), {
+      wrapper,
+    });
+    const newOption: FieldOption = { id: "opt_new", label: "GL-9", color: "#10b981", order: 1 };
+    await act(async () => {
+      await result.current.onWrite({
+        kind: "cell",
+        writes: [{ rowId: "rec_abc", fieldKey: "brand", value: "opt_new" }],
+        newOptions: { brand: [newOption] },
+      });
+    });
+    expect(api.putGlazingTypeOptions).toHaveBeenCalledWith({
+      field_key: "brand",
+      options: [{ id: "opt_gl1", label: "GL-1", color: "#3b82f6", order: 0 }, newOption],
+    });
+    expect(api.updateGlazingType).toHaveBeenCalledWith("rec_abc", { brand: "GL-9" });
+  });
+
+  test("rowInsert omits the derived name and maps option defaults to labels", async () => {
+    const { result } = renderHook(() => useGlazingTypesCatalogController(CONTROLLER_ARGS), {
+      wrapper,
+    });
+    await act(async () => {
+      await result.current.onWrite({
+        kind: "rowInsert",
+        rows: [
+          {
+            rowId: "rec_temp",
+            fieldDefaults: { manufacturer: "opt_kawneer", u_value_w_m2k: 0.6 },
+            anchorRowId: null,
+          },
+        ],
+      });
     });
     expect(api.createGlazingType).toHaveBeenCalledWith({
-      name: "Triple LowE",
+      manufacturer: "Kawneer",
       u_value_w_m2k: 0.6,
     });
   });
 
-  test("rowInsert with empty fieldDefaults POSTs with a safe name placeholder", async () => {
+  test("rowInsert with empty fieldDefaults POSTs an empty payload (name derives)", async () => {
     const { result } = renderHook(() => useGlazingTypesCatalogController(CONTROLLER_ARGS), {
       wrapper,
     });
-    const op: WriteOp = {
-      kind: "rowInsert",
-      rows: [{ rowId: "rec_temp", fieldDefaults: {}, anchorRowId: null }],
-    };
     await act(async () => {
-      await result.current.onWrite(op);
+      await result.current.onWrite({
+        kind: "rowInsert",
+        rows: [{ rowId: "rec_temp", fieldDefaults: {}, anchorRowId: null }],
+      });
     });
-    expect(api.createGlazingType).toHaveBeenCalledWith({ name: "New glazing type" });
+    expect(api.createGlazingType).toHaveBeenCalledWith({});
   });
 
   test("rowDelete op calls DELETE per rowId", async () => {
     const { result } = renderHook(() => useGlazingTypesCatalogController(CONTROLLER_ARGS), {
       wrapper,
     });
-    const op: WriteOp = {
-      kind: "rowDelete",
-      rows: [
-        { rowId: "rec_a", row: {}, anchorRowId: null },
-        { rowId: "rec_b", row: {}, anchorRowId: null },
-      ],
-    };
     await act(async () => {
-      await result.current.onWrite(op);
+      await result.current.onWrite({
+        kind: "rowDelete",
+        rows: [
+          { rowId: "rec_a", row: {}, anchorRowId: null },
+          { rowId: "rec_b", row: {}, anchorRowId: null },
+        ],
+      });
     });
     expect(api.deactivateGlazingType).toHaveBeenCalledWith("rec_a");
     expect(api.deactivateGlazingType).toHaveBeenCalledWith("rec_b");
@@ -129,25 +169,72 @@ describe("useGlazingTypesCatalogController.onWrite", () => {
     const { result } = renderHook(() => useGlazingTypesCatalogController(CONTROLLER_ARGS), {
       wrapper,
     });
-    const op: WriteOp = {
-      kind: "rowDuplicate",
-      rows: [{ rowId: "rec_new", sourceRowId: "rec_src", sourceRow: {}, anchorRowId: null }],
-    };
     await act(async () => {
-      await result.current.onWrite(op);
+      await result.current.onWrite({
+        kind: "rowDuplicate",
+        rows: [{ rowId: "rec_new", sourceRowId: "rec_src", sourceRow: {}, anchorRowId: null }],
+      });
     });
     expect(api.duplicateGlazingType).toHaveBeenCalledWith("rec_src");
   });
 
-  test("schemaMutation throws (PRD non-goal)", async () => {
+  test("option rename (legacyOptions) PUTs the new list with no replacements", async () => {
     const { result } = renderHook(() => useGlazingTypesCatalogController(CONTROLLER_ARGS), {
       wrapper,
     });
-    const op: WriteOp = {
-      kind: "schemaMutation",
-      variant: "typed",
-      mutation: {} as never,
-    };
+    const before = field("manufacturer", [
+      { id: "opt_x", label: "intus", color: "#3b82f6", order: 0 },
+    ]);
+    const after = field("manufacturer", [
+      { id: "opt_x", label: "INTUS", color: "#3b82f6", order: 0 },
+    ]);
+    await act(async () => {
+      await result.current.onWrite({
+        kind: "schemaMutation",
+        variant: "legacyOptions",
+        before,
+        after,
+      });
+    });
+    expect(api.putGlazingTypeOptions).toHaveBeenCalledWith({
+      field_key: "manufacturer",
+      options: [{ id: "opt_x", label: "INTUS", color: "#3b82f6", order: 0 }],
+      replacements: {},
+    });
+  });
+
+  test("merge (delete in-use option + cascade) PUTs label replacements", async () => {
+    const { result } = renderHook(() => useGlazingTypesCatalogController(CONTROLLER_ARGS), {
+      wrapper,
+    });
+    const before = field("manufacturer", [
+      { id: "opt_lower", label: "intus", color: "#3b82f6", order: 0 },
+      { id: "opt_upper", label: "INTUS", color: "#3b82f6", order: 1 },
+    ]);
+    const after = field("manufacturer", [
+      { id: "opt_upper", label: "INTUS", color: "#3b82f6", order: 0 },
+    ]);
+    await act(async () => {
+      await result.current.onWrite({
+        kind: "schemaMutation",
+        variant: "legacyOptions",
+        before,
+        after,
+        cellWrites: [{ rowId: "rec_a", fieldKey: "manufacturer", value: "opt_upper" }],
+      });
+    });
+    expect(api.putGlazingTypeOptions).toHaveBeenCalledWith({
+      field_key: "manufacturer",
+      options: [{ id: "opt_upper", label: "INTUS", color: "#3b82f6", order: 0 }],
+      replacements: { intus: "INTUS" },
+    });
+  });
+
+  test("a typed schema mutation (custom field) is rejected", async () => {
+    const { result } = renderHook(() => useGlazingTypesCatalogController(CONTROLLER_ARGS), {
+      wrapper,
+    });
+    const op: WriteOp = { kind: "schemaMutation", variant: "typed", mutation: {} as never };
     await act(async () => {
       await expect(result.current.onWrite(op)).rejects.toThrow(/Custom fields/);
     });
