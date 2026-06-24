@@ -194,12 +194,20 @@
   gap: var(--space-2);
   opacity: 0;
   pointer-events: none;
+  position: relative;
+  z-index: var(--z-base-elevated);
 }
 
 .aperture-sidebar__item:hover .aperture-sidebar__row-actions,
 .aperture-sidebar__item:focus-within .aperture-sidebar__row-actions {
   opacity: 1;
   pointer-events: auto;
+}
+
+.aperture-sidebar__item:hover,
+.aperture-sidebar__item:focus-within {
+  position: relative;
+  z-index: var(--z-dropdown);
 }
 
 .aperture-sidebar__row-action {
@@ -233,6 +241,18 @@
 
 .aperture-sidebar__row-action:disabled {
   color: color-mix(in oklab, var(--text-secondary) 38%, transparent);
+}
+
+.aperture-sidebar__row-action[data-sidebar-tooltip]::before {
+  bottom: auto;
+  top: calc(100% + 8px);
+}
+
+.aperture-sidebar__row-action[data-sidebar-tooltip]::after {
+  border-bottom: 5px solid color-mix(in oklab, var(--text-primary) 88%, transparent);
+  border-top: 0;
+  bottom: auto;
+  top: calc(100% + 3px);
 }
 
 /* [data-sidebar-tooltip] hover-hint moved to
