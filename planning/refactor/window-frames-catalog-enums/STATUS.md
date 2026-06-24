@@ -52,11 +52,16 @@ implemented + unit-tested (21 vitest), but has **one open item**:
 - **Phase 5c** ✅ code-complete — import file schema 1→2; `dropped` count + the
   `new_option` warnings render in the dialog; export-v2 vitest. Browser smoke
   pending (env).
+- **Phase 6** ✅ docs folded (2026-06-24) — `context/DATA_STORAGE.md` +
+  `data-model.md` §6.6.4 document the `catalog_field_options` store (relational,
+  label-string, generic for D-7) + derived name + default-by-id; archived
+  `frame-types-catalog` PRD D4 + STATUS flipped to SUPERSEDED/DONE.
 
-So all phase **code** is implemented; what remains is **environment-dependent
-verification + closeout**: (a) re-smoke 5b (modal-open trigger — the one real open
-question) and 5c (import dialog) once the dev servers are back; (b) **Phase 6**
-(fold decisions into `context/`, flip the archived PRD D4, mark Complete).
+So all phase **code is implemented and committed (CI-green)** and the decisions
+are **folded into `context/`**. The only items left before marking this refactor
+**Complete** are **environment-dependent**: (a) resolve the **5b modal-open**
+question (the one real open item — see §5b) and (b) browser-smoke 5b + 5c once the
+dev servers are back. Everything else is done.
 
 **Dev-env note:** the running dev DB was behind (`0036`); `make migrate` (or
 `make db-reset-dev`) applies `0037`–`0039`. The dev servers (`:8000`/`:5173`) went

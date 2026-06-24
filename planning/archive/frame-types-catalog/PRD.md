@@ -374,7 +374,14 @@ D3. **`source_provenance` → `source` and `notes` → `comments`**
 renames are part of Phase 1, for cross-catalog parity with
 Materials.
 
-D4. **Soft-enum stays as `text`-with-suggestions** for v1.
+D4. **Soft-enum stays as `text`-with-suggestions** for v1. — **SUPERSEDED
+(2026-06-24)** by `planning/refactor/window-frames-catalog-enums/` (Phases
+0–5): the six categorization fields (manufacturer / brand / use / operation /
+location / mull_type — `material` stays free text) are now strict
+`single_select` backed by the `catalog_field_options` store, and `name` is
+server-derived. The deferral below is the original v1 rationale, kept for
+history.
+
 Strict-enum (`single_select`) promotion for `use` / `operation`
 / `location` / `mull_type` / `material` is deferred to a
 follow-up that runs after the Phase 4 seed lands, when the real

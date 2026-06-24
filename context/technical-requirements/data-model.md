@@ -976,6 +976,15 @@ option shape, rename / reorder / delete / merge lifecycle, and
 custom. Renaming a field never touches the option-list key because the
 key is the `field_key`, not the display name.
 
+> **Catalogs use a parallel store, not this map.** The shared *catalog* tables
+> (materials / frame-types / glazing — `DATA_STORAGE.md` §1, class ①) are global
+> app data, not project documents, so their single-select vocabularies live in a
+> relational `catalog_field_options` table keyed `(catalog_table, field_key)`,
+> **storing the label string** (the catalog row stores the label too). Same
+> `{id,label,color,order}` option shape and the same rename/merge lifecycle —
+> just a relational store instead of the document JSON map. See
+> `planning/refactor/window-frames-catalog-enums/`.
+
 #### 6.6.5 Validation timing
 
 Custom-field validation is **immediate at draft mutation acceptance,
