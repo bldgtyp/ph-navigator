@@ -86,7 +86,7 @@ succeeds. Import path still bypasses validation (handled in Phase 4). `make ci` 
 
 ---
 
-## Phase 3 — Derived `name` ⬜
+## Phase 3 — Derived `name` ✅
 
 - `glazing_types/_name.py` — `compose_glazing_name(fields)`: parts `("manufacturer",
   "brand", "suffix")`, ` | ` join, drop null/empty, clamp 200. Mirror `frame_types/_name.py`.

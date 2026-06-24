@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Iterator
 
 import pytest
@@ -9,8 +10,10 @@ from fastapi.testclient import TestClient
 
 from database import connection, transaction
 from features.auth.service import create_or_update_user
+from features.catalogs.glazing_types._name import compose_glazing_name
 from features.catalogs.glazing_types.options_service import seed_glazing_type_options
 from main import app
+from scripts._seed_paths import GLAZING_SEED_PATH
 
 ORIGIN = "http://localhost:5173"
 
@@ -45,20 +48,26 @@ def signed_in_client() -> TestClient:
     return client
 
 
-def _payload(name: str = "Triple-Pane LowE Argon") -> dict[str, object]:
-    # manufacturer + brand must be canonical option labels (Phase 2 validation);
-    # suffix stays free text.
+def _payload(suffix: str = "T") -> dict[str, object]:
+    # `name` is server-derived (Phase 3) — clients must not send it. manufacturer
+    # + brand are canonical option labels (strictly validated, Phase 2); `suffix`
+    # is free text and the per-row discriminator.
     return {
-        "name": name,
         "manufacturer": "Kawneer",
         "brand": "GL-1",
-        "suffix": "T",
+        "suffix": suffix,
         "u_value_w_m2k": 0.7,
         "g_value": 0.50,
         "color": "#b4dceb",
         "source": "Manufacturer datasheet 2024-Q2",
         "comments": "Argon-filled, two LowE coatings",
     }
+
+
+def _expected_name(suffix: str = "T") -> str:
+    """The server-derived `name` for a `_payload(suffix)` row (Phase 3): the
+    composed `manufacturer | brand | suffix`, with `suffix` the discriminator."""
+    return compose_glazing_name(_payload(suffix))
 
 
 def test_create_returns_flat_row(clean_catalog_tables: None) -> None:
@@ -70,7 +79,7 @@ def test_create_returns_flat_row(clean_catalog_tables: None) -> None:
     )
     assert response.status_code == 201, response.text
     body = response.json()
-    assert body["name"] == "Triple-Pane LowE Argon"
+    assert body["name"] == _expected_name()  # server-derived from the parts
     assert body["manufacturer"] == "Kawneer"
     assert body["suffix"] == "T"
     assert body["u_value_w_m2k"] == pytest.approx(0.7)
@@ -93,15 +102,17 @@ def test_list_filters_inactive_by_default(clean_catalog_tables: None) -> None:
     client.post("/api/v1/catalogs/glazing-types", headers={"Origin": ORIGIN}, json=_payload("B")).json()
 
     active = client.get("/api/v1/catalogs/glazing-types").json()
-    assert {item["name"] for item in active["items"]} == {"A", "B"}
+    assert {item["name"] for item in active["items"]} == {_expected_name("A"), _expected_name("B")}
 
     assert (
         client.delete(f"/api/v1/catalogs/glazing-types/{created['id']}", headers={"Origin": ORIGIN}).status_code == 204
     )
-    assert {item["name"] for item in client.get("/api/v1/catalogs/glazing-types").json()["items"]} == {"B"}
+    assert {item["name"] for item in client.get("/api/v1/catalogs/glazing-types").json()["items"]} == {
+        _expected_name("B")
+    }
     listed_inactive = client.get("/api/v1/catalogs/glazing-types", params={"include_inactive": "true"}).json()
-    assert {item["name"] for item in listed_inactive["items"]} == {"A", "B"}
-    deactivated = next(item for item in listed_inactive["items"] if item["name"] == "A")
+    assert {item["name"] for item in listed_inactive["items"]} == {_expected_name("A"), _expected_name("B")}
+    deactivated = next(item for item in listed_inactive["items"] if item["name"] == _expected_name("A"))
     assert deactivated["is_active"] is False
 
 
@@ -142,12 +153,13 @@ def test_edit_in_place_does_not_touch_project_versions(clean_catalog_tables: Non
 
 def test_validation_rejects_invalid_values(clean_catalog_tables: None) -> None:
     client = signed_in_client()
-    blank = client.post(
+    # `name` is server-derived (Phase 3) — sending one is rejected as an extra field.
+    inbound_name = client.post(
         "/api/v1/catalogs/glazing-types",
         headers={"Origin": ORIGIN},
-        json={**_payload(), "name": "   "},
+        json={**_payload(), "name": "Client supplied"},
     )
-    assert blank.status_code == 422
+    assert inbound_name.status_code == 422
 
     negative_u = client.post(
         "/api/v1/catalogs/glazing-types",
@@ -266,7 +278,7 @@ def test_deactivate_is_idempotent_and_reactivate_restores(clean_catalog_tables: 
     assert reactivated.json()["is_active"] is True
 
 
-def test_duplicate_copies_fields_with_copy_suffix(clean_catalog_tables: None) -> None:
+def test_duplicate_copies_fields_with_same_derived_name(clean_catalog_tables: None) -> None:
     client = signed_in_client()
     created = client.post("/api/v1/catalogs/glazing-types", headers={"Origin": ORIGIN}, json=_payload("Source")).json()
 
@@ -276,16 +288,12 @@ def test_duplicate_copies_fields_with_copy_suffix(clean_catalog_tables: None) ->
     )
     assert response.status_code == 201, response.text
     body = response.json()
-    assert body["name"] == "Source (copy)"
+    # `name` is derived from the parts, so a copy of identical parts has an
+    # identical name — duplicates are distinguished by id, not a `(copy)` suffix.
+    assert body["name"] == created["name"] == _expected_name("Source")
     assert body["id"] != created["id"]
     assert body["manufacturer"] == created["manufacturer"]
     assert body["u_value_w_m2k"] == pytest.approx(created["u_value_w_m2k"])
-
-    again = client.post(
-        f"/api/v1/catalogs/glazing-types/{created['id']}/duplicate",
-        headers={"Origin": ORIGIN},
-    ).json()
-    assert again["name"] == "Source (copy 2)"
 
 
 def test_catalog_writes_emit_user_action_log_entries(clean_catalog_tables: None) -> None:
@@ -326,3 +334,74 @@ def test_catalog_writes_emit_user_action_log_entries(clean_catalog_tables: None)
     for row in rows:
         assert '"catalog_table": "glazing_types"' in row["details_text"]
         assert record_id in row["details_text"]
+
+
+# --------------------------------------------------------------------------- #
+# Phase 3 — derived (read-only) name.
+# --------------------------------------------------------------------------- #
+
+
+def test_name_is_recomputed_when_a_part_changes_on_patch(clean_catalog_tables: None) -> None:
+    client = signed_in_client()
+    created = client.post("/api/v1/catalogs/glazing-types", headers={"Origin": ORIGIN}, json=_payload("X")).json()
+    assert created["name"] == _expected_name("X")
+
+    patched = client.patch(
+        f"/api/v1/catalogs/glazing-types/{created['id']}",
+        headers={"Origin": ORIGIN},
+        json={"brand": "GL-2"},  # a name-part
+    )
+    assert patched.status_code == 200
+    assert patched.json()["name"] == "Kawneer | GL-2 | X"
+
+
+def test_patch_of_non_name_part_leaves_name_unchanged(clean_catalog_tables: None) -> None:
+    client = signed_in_client()
+    created = client.post("/api/v1/catalogs/glazing-types", headers={"Origin": ORIGIN}, json=_payload("X")).json()
+
+    patched = client.patch(
+        f"/api/v1/catalogs/glazing-types/{created['id']}",
+        headers={"Origin": ORIGIN},
+        json={"u_value_w_m2k": 0.5},  # not a name-part
+    )
+    assert patched.status_code == 200
+    assert patched.json()["name"] == _expected_name("X")
+
+
+def test_option_rename_recomputes_dependent_row_names(clean_catalog_tables: None) -> None:
+    client = signed_in_client()
+    created = client.post(
+        "/api/v1/catalogs/glazing-types",
+        headers={"Origin": ORIGIN},
+        json={**_payload("X"), "manufacturer": "Intus"},
+    ).json()
+    assert created["name"] == "Intus | GL-1 | X"
+
+    # Rename the `Intus` manufacturer option in place.
+    options = client.get("/api/v1/catalogs/glazing-types/options").json()["fields"]["manufacturer"]
+    for option in options:
+        if option["label"] == "Intus":
+            option["label"] = "Intus Inc"
+    assert (
+        client.put(
+            "/api/v1/catalogs/glazing-types/options",
+            headers={"Origin": ORIGIN},
+            json={"field_key": "manufacturer", "options": options, "replacements": {}},
+        ).status_code
+        == 200
+    )
+
+    # The row's cell *and* its derived name follow the rename.
+    row = client.get(f"/api/v1/catalogs/glazing-types/{created['id']}").json()
+    assert row["manufacturer"] == "Intus Inc"
+    assert row["name"] == "Intus Inc | GL-1 | X"
+
+
+def test_compose_glazing_name_reproduces_every_seed_row_name() -> None:
+    """Lossless-derivation proof (research §2): the composer reproduces the
+    stored ``name`` of every row in the committed (cleaned) seed — so the
+    backfill is a no-op diff on clean data and the derivation never loses
+    information."""
+    payload = json.loads(GLAZING_SEED_PATH.read_text())
+    mismatches = [row["name"] for row in payload["rows"] if compose_glazing_name(row) != row["name"]]
+    assert mismatches == []

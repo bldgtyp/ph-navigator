@@ -50,12 +50,13 @@ def _frame(tag: str, manufacturer: str | None) -> dict[str, object]:
     }
 
 
-def _glazing(name: str, manufacturer: str | None) -> dict[str, object]:
+def _glazing(tag: str, manufacturer: str | None) -> dict[str, object]:
+    # `name` is server-derived (Phase 3); `tag` rides `suffix` to keep rows
+    # distinct. The roster groups by manufacturer, so the name is incidental.
     return {
-        "name": name,
         "manufacturer": manufacturer,
         "brand": None,
-        "suffix": None,
+        "suffix": tag,
         "u_value_w_m2k": 0.8,
         "g_value": 0.5,
         "color": None,

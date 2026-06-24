@@ -12,6 +12,7 @@ from features.catalogs._shared import (
     reactivate_catalog_record,
     soft_delete_catalog_record,
 )
+from features.project_document.envelope_models import APERTURE_DEFAULT_GLAZING_ID
 
 _TABLE = "catalog_glazing_types"
 
@@ -100,15 +101,6 @@ def get_glazing_type(conn: Connection[Any], record_id: str) -> dict[str, Any] | 
     return conn.execute(query, {"id": record_id}).fetchone()
 
 
-def list_sibling_names(conn: Connection[Any], *, exclude_id: str) -> list[str]:
-    """Return names of all active rows except ``exclude_id``."""
-    rows = conn.execute(
-        "SELECT name FROM catalog_glazing_types WHERE deleted_at IS NULL AND id <> %(exclude_id)s",
-        {"exclude_id": exclude_id},
-    ).fetchall()
-    return [row["name"] for row in rows]
-
-
 def insert_glazing_type(
     conn: Connection[Any],
     *,
@@ -187,6 +179,43 @@ def update_glazing_type(
         params,
     ).fetchone()
     return row is not None
+
+
+# SQL twin of `_name.compose_glazing_name` (and migration 20260624_0042): the
+# non-empty parts joined by ' | ' in the fixed order, clamped to 200 chars.
+# `concat_ws` skips NULLs; `NULLIF(btrim(x),'')` folds blank → NULL. Keep in
+# sync with `_name._NAME_PART_ORDER` (all three implementations must agree).
+_COMPOSE_NAME_SQL = """
+left(
+    concat_ws(
+        ' | ',
+        NULLIF(btrim(manufacturer), ''),
+        NULLIF(btrim(brand), ''),
+        NULLIF(btrim(suffix), '')
+    ),
+    200
+)
+"""
+
+
+def recompute_names(conn: Connection[Any]) -> None:
+    """Recompute the derived ``name`` for every active glazing row from its parts.
+
+    Used after an option rename/merge rewrites field cells (the row's name
+    embeds the renamed label and would otherwise go stale). Skips the default
+    sentinel — its parts are all null so its derived name would be empty, but
+    ``GlazingRef.name`` requires ``min_length=1``; it keeps its seeded label and
+    is resolved by id. Cheap (a few dozen rows), so a full recompute is simpler
+    than tracking exactly which rows moved.
+    """
+    conn.execute(
+        f"""
+        UPDATE catalog_glazing_types
+        SET name = {_COMPOSE_NAME_SQL}
+        WHERE deleted_at IS NULL AND id <> %(default_id)s
+        """,
+        {"default_id": APERTURE_DEFAULT_GLAZING_ID},
+    )
 
 
 def soft_delete_glazing_type(conn: Connection[Any], record_id: str, user_id: UUID) -> bool:

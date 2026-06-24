@@ -9,10 +9,7 @@ in-use option requires a replacement label so its rows can fold into a survivor
 ``seed_glazing_type_options`` is the reusable canonical-reset used by tests; the
 same data ships in migration ``20260624_0041`` for fresh databases.
 
-A direct mirror of ``frame_types.options_service``. The one deliberate gap:
-``edit_glazing_type_options`` does **not** recompute derived names — glazing
-``name`` is still a stored text column until Phase 3, which adds the
-``recompute_names`` call here once the derived name exists.
+A direct mirror of ``frame_types.options_service``.
 
 Follow-up (rule-of-three): once materials adopts the option store, the three
 near-identical per-catalog option services should fold into one parameterized
@@ -36,6 +33,7 @@ from features.catalogs._shared import (
     EditCatalogOptionsRequest,
     log_catalog_action,
 )
+from features.catalogs.glazing_types import repository as glazing_repository
 from features.catalogs.glazing_types.models import CatalogGlazingTypeOptionsResponse
 from features.project_document.options import validate_option_list
 from features.project_document.rows import SingleSelectOption
@@ -74,10 +72,7 @@ def edit_glazing_type_options(
     well-formed; rewrite row cells for any in-place rename (kept id, changed
     label); for each deleted option still in use, fold its rows into the
     supplied replacement (else reject ``catalog_option_in_use``); then write the
-    new option set.
-
-    Phase 3 adds a ``recompute_names`` call after the option write, once
-    glazing ``name`` becomes server-derived from these cells.
+    new option set and recompute affected rows' derived names.
     """
 
     field_key = payload.field_key
@@ -101,11 +96,12 @@ def edit_glazing_type_options(
         # Walk the stored options once: a kept option whose label changed
         # rewrites its rows in place; a removed option still in use folds its
         # rows into the supplied replacement (else reject).
+        rows_rewritten = False
         for option_id, old_label in stored_label_by_id.items():
             new_label = incoming_label_by_id.get(option_id)
             if new_label is not None:
                 if new_label != old_label:
-                    options_repository.rename_label(
+                    rewritten = options_repository.rename_label(
                         conn,
                         catalog_table=CATALOG_TABLE,
                         field_key=field_key,
@@ -113,6 +109,7 @@ def edit_glazing_type_options(
                         new_label=new_label,
                         user_id=user.id,
                     )
+                    rows_rewritten = rows_rewritten or rewritten > 0
                 continue
             in_use = options_repository.count_rows_using_label(
                 conn, catalog_table=CATALOG_TABLE, field_key=field_key, label=old_label
@@ -141,10 +138,15 @@ def edit_glazing_type_options(
                 new_label=replacement,
                 user_id=user.id,
             )
+            rows_rewritten = True
 
         options_repository.replace_options(
             conn, catalog_table=CATALOG_TABLE, field_key=field_key, options=payload.options
         )
+        if rows_rewritten:
+            # A rename/merge changed a field cell that feeds the derived name —
+            # recompute affected rows' names so they stay consistent.
+            glazing_repository.recompute_names(conn)
         log_catalog_action(
             conn,
             "catalog_options_edit",

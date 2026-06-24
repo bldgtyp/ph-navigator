@@ -152,10 +152,11 @@ def test_upgrade_v0_renames_legacy_keys(clean_state: None) -> None:
 
 def test_matched_id_classifies_as_matched_and_skips(clean_state: None) -> None:
     client = _signed_in_client()
+    # `name` is server-derived (Phase 3) — this row only needs an id to match on.
     created = client.post(
         "/api/v1/catalogs/glazing-types",
         headers={"Origin": ORIGIN},
-        json={"name": "Existing", "u_value_w_m2k": 0.7, "g_value": 0.4},
+        json={"u_value_w_m2k": 0.7, "g_value": 0.4},
     ).json()
 
     body = _wrap([_good_row("Existing", id=created["id"]), _good_row("Fresh")])
