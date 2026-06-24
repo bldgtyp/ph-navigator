@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 18:05 EDT
-STATUS: Active — awaiting Ed's confirmation on D1, D2, D5.
+STATUS: D1, D2, D5 RESOLVED (Ed, 2026-06-24). D3/D4 pre-resolved. All clear to execute.
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: The forks that shape the phases. Recommendations given; confirm before Phase 3+.
 RELATED: ./PRD.md, ./PLAN.md
@@ -14,7 +14,7 @@ and the **alternative** it displaces. Mark `RESOLVED: <choice> (Ed, <date>)`
 when confirmed. Phases 1–2 do not depend on any open decision; **D1/D2/D5 gate
 Phases 3–5.**
 
-## D1 — Squash the 43 migrations into one clean baseline? `[OPEN]`
+## D1 — Squash the 43 migrations into one clean baseline? `RESOLVED: YES (Ed, 2026-06-24)`
 
 **Recommendation: YES.** With no deployed DB, collapse `0001`–`0043` into a
 single `0001_baseline` that reflects the current end-state schema, authored
@@ -32,7 +32,7 @@ seed migrations (`0038`/`0041`) in one move, and bakes in REL-1/REL-4/REL-5/REL-
 - **Cost if deferred:** after a deploy this becomes effectively impossible
   (the baseline must match a live DB's applied history).
 
-## D2 — Reset `schema_version` to 1 and delete the read-time shims? `[OPEN]`
+## D2 — Reset `schema_version` to 1 and delete the read-time shims? `RESOLVED: YES — reset to 1 + delete shims (Ed, 2026-06-24)`
 
 **Recommendation: YES (reset to 1) + delete shims.** `schema_version` is at 12
 purely from dev reseed-and-bump churn. Delete `_migrate_v11_aperture_refs` and
@@ -66,9 +66,18 @@ a documented thin-feature exemption); (b) `routes.py` must not import
 Phase 1 (rules written) and is enforced from Phase 5 onward once all violations
 are cleared. Keeps the cleanup from regressing.
 
-## D5 — Scope of the write-architecture unification (DOC-4). `[OPEN]`
+## D5 — Scope of the write-architecture unification (DOC-4). `RESOLVED: YES, and PROMOTED to its own refactor (Ed, 2026-06-24)`
 
-**Recommendation: unify heat-pumps onto the registered table-contract surface;
+> **Promoted out.** Ed agreed to the unification *and* to breaking it out as a
+> separate refactor, since it is cross-stack (significant heat-pumps frontend
+> rewire — verified: `src/features/equipment/heat-pumps/{api,payload-builders,
+> types}.ts` is bespoke) and a distinct concern (write-path architecture, not
+> DB-schema). It now lives at
+> `planning/refactor/table-write-architecture-unification/`. This folder's
+> `phases/phase-04-*.md` is a redirect stub; the scope decision below is the
+> agreed shape, carried into the sibling refactor's PRD.
+
+**Agreed shape: unify heat-pumps onto the registered table-contract surface;
 keep the aperture/envelope semantic-command paths but extract their shared
 plumbing.** Heat-pumps is an *unjustified* exception — it is CRUD over four
 sub-tables and belongs on the generic `replace_table_slice` surface like every
@@ -85,4 +94,5 @@ spine.
   contract too — rejected; it would distort genuine semantic operations into
   awkward row-replacement.
 - **Dependency:** after the aperture v12 WIP (it is actively changing the
-  aperture-command path). Sequenced in Phase 4.
+  aperture-command path). Sequenced in the sibling
+  `table-write-architecture-unification` refactor.

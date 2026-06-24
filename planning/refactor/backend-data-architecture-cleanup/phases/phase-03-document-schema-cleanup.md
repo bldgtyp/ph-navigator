@@ -45,9 +45,11 @@ failure mode.
 Add a `MAX_BODY_BYTES` setting and enforce it (→ HTTP 413
 `project_document_too_large`) at every write boundary that persists a body:
 `drafts.py` save/save-as/upsert, and any path that bypasses
-`replace_table_slice` (the heat-pump/aperture/envelope write entry points —
-note Phase 4 collapses these to one boundary, so re-check coverage there). The
-size helper already exists (`validation.py:28` `body_size_bytes`); reuse it.
+`replace_table_slice` (the heat-pump/aperture/envelope write entry points). The
+sibling `table-write-architecture-unification` refactor later collapses these to
+one spine and re-homes the guard there — so install it on the current boundaries
+now and re-check coverage when the spine lands. The size helper already exists
+(`validation.py:28` `body_size_bytes`); reuse it.
 
 ### 3.4 Single canonical serialization (DOC-6)
 `validation.py:18-29` computes `document_etag` (`json.dumps(..., sort_keys=True)`)

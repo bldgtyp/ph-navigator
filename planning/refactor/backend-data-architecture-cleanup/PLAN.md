@@ -18,13 +18,20 @@ by theme and are ordered by dependency + risk + the no-backcompat thesis
 ```
             (in-flight: aperture v12 WIP — external)
                          │ must land first ↓
-  Phase 1 ──► Phase 2 ───┼───► Phase 3 ──► Phase 4 ──► Phase 5 ──► (Phase 7, deferred)
-  (repo/      (module     │     (doc        (write-     (migration   (schema-migration
-   layer       splits)    │      schema      arch        squash)      mechanism — pre-
-   consistency)           │      cleanup)    unify)                   first-deploy gate)
-                          │
+  Phase 1 ──► Phase 2 ───┼───► Phase 3 ──────► Phase 5 ──► (Phase 7, deferred)
+  (repo/      (module     │     (doc            (relational  (schema-migration
+   layer       splits)    │      schema          squash)      mechanism — pre-
+   consistency)           │      cleanup)                     first-deploy gate)
+                          │          └──► [SIBLING REFACTOR:
+                          │                table-write-architecture-unification]
+                          │                (heat-pumps onto registry + frontend)
   Phase 6 (pre-deploy hardening: pool + observability) — independent; run any time
 ```
+
+> **Phase 4 was promoted out (D5)** to
+> `planning/refactor/table-write-architecture-unification/`. It depends on
+> Phase 3 here and runs in parallel with Phase 5 (independent surfaces).
+> `phases/phase-04-*.md` is a redirect stub; 05/06/07 keep their numbers.
 
 - **Phases 1, 2, 6 are WIP-independent** (they touch non-aperture files) and can
   start immediately, in any order.
@@ -50,8 +57,9 @@ Move SQL-in-service into repositories (REPO-1: `assets`, `projects`,
 ### Phase 2 — Module splits  *(WIP-safe for the non-aperture set, low risk)*
 Split `assets/service.py` (by workflow), `formula/evaluator.py` (single-cell vs
 document-graph), `mcp/tools.py` (by domain). Defer `document.py` split to
-Phase 3 and `heat_pumps.py` split to Phase 4 (they fall out of those phases and
-both files are WIP-hot). Pure behavior-preserving refactor.
+Phase 3 and `heat_pumps.py` split to the sibling write-unification refactor
+(they fall out of those efforts and both files are WIP-hot). Pure
+behavior-preserving refactor.
 → `phases/phase-02-module-splits.md`
 
 ### Phase 3 — Document schema cleanup  *(after aperture WIP; medium risk)*
@@ -62,14 +70,13 @@ the cross-table validator out of `document.py` into `document_validation.py`
 (the `document.py` split). Reseed + regenerate fixtures at the new baseline.
 → `phases/phase-03-document-schema-cleanup.md`
 
-### Phase 4 — Unify the table-write architecture  *(after aperture WIP; higher risk)*
-Fold heat-pumps add/replace/delete + cascade + dry-run preview onto the
-registered table-contract `apply_replace` surface; remove the bespoke
-`apply_patch`/`JsonPatchOp` service (DOC-4, D5); the `heat_pumps.py` split falls
-out here; drop the heat-pumps double-validate (DOC-3); extract the shared
-draft/ETag/size plumbing so aperture/envelope semantic commands share one spine;
-make the Phase-3 size guard apply through the single write boundary.
-→ `phases/phase-04-unify-table-write-architecture.md`
+### Phase 4 — Unify the table-write architecture  → **PROMOTED TO ITS OWN REFACTOR (D5)**
+Cross-stack (heat-pumps frontend rewire) + distinct concern, so it moved to
+`planning/refactor/table-write-architecture-unification/` (DOC-3, DOC-4). Covers:
+fold heat-pumps onto the registered contract, one shared backend write spine,
+drop the double-validate, and rewire the heat-pumps frontend client. Depends on
+this folder's Phase 3; parallel-safe with Phase 5.
+→ redirect stub: `phases/phase-04-unify-table-write-architecture.md`
 
 ### Phase 5 — Relational clean baseline  *(near-last; medium risk)*
 Squash 43 migrations → one baseline (D1) with `naming_convention` + explicit
@@ -101,16 +108,18 @@ stays a gated reseed operation until it ships.
 
 ## Sequencing constraints
 
-1. **Aperture v12 WIP must land before Phases 3 & 4.** The working tree shows
-   active edits to `document.py`, `tables/apertures.py`,
-   `project_document/aperture_commands/*`, `project_document/apertures/*`,
-   `assets/registry.py`, and `envelope/commands/registry.py`. Starting 3/4
-   before that merges guarantees conflicts. Phases 1, 2, 6 avoid these files.
-2. **D1/D2/D5 confirmed before their phases.** Phase 3 needs D2; Phase 4 needs
-   D5; Phase 5 needs D1. Phases 1–2 need none.
-3. **Squash last among schema-touching work.** Run Phase 5 after Phase 3/4 so
-   no later phase reopens the baseline. (Phases 3/4 don't change relational DDL,
-   but Phase 5 also folds in REL-1's FK, so it wants to be the final DDL word.)
+1. **Aperture v12 WIP must land before Phase 3 (and the sibling
+   write-unification refactor).** The working tree shows active edits to
+   `document.py`, `tables/apertures.py`, `project_document/aperture_commands/*`,
+   `project_document/apertures/*`, `assets/registry.py`, and
+   `envelope/commands/registry.py`. Starting those before it merges guarantees
+   conflicts. Phases 1, 2, 6 avoid these files.
+2. **Decisions are all resolved (D1/D2/D5, Ed 2026-06-24).** Phase 3 applies D2;
+   Phase 5 applies D1; D5 moved to the sibling refactor. Phases 1–2 need none.
+3. **Squash last among schema-touching work.** Run Phase 5 after Phase 3 so no
+   later phase reopens the baseline. (Phase 3 and the sibling write-unification
+   refactor don't change relational DDL, but Phase 5 also folds in REL-1's FK,
+   so it wants to be the final DDL word.)
 4. **One phase per PR, each green.** Per `CLAUDE.md` closeout gate: `simplify` +
    `docs-pass` on the diff, `make format`, `make ci` before each phase is
    "done." Reseed/fixture regen is part of the phase that changes the shape.
@@ -118,6 +127,7 @@ stays a gated reseed operation until it ships.
 ## Estimated shape (not a schedule)
 
 Phases 1, 2, 6 are each ~1 session of mechanical work. Phase 3 is ~1–2
-(validation is core). Phase 4 is the deepest, ~2–3 (heat-pumps cascade/preview
-must be preserved exactly). Phase 5 is ~1 but verification-heavy. Phase 7 is
-deferred. Sequence, not calendar — driven by when the aperture WIP lands.
+(validation is core). Phase 5 is ~1 but verification-heavy. Phase 7 is deferred.
+The promoted sibling refactor (old Phase 4) is the deepest, ~2–3 sessions across
+backend + frontend (heat-pumps cascade/preview must be preserved exactly).
+Sequence, not calendar — driven by when the aperture WIP lands.

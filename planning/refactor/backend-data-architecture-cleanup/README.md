@@ -45,10 +45,16 @@ the first real save makes clean cuts expensive.
 | 1 | Repository & layer consistency | consistency | mostly (coordinate `assets`) |
 | 2 | Module splits | maintainability | yes (non-aperture files) |
 | 3 | Document schema cleanup | cleanliness | **after aperture WIP lands** |
-| 4 | Unify the table-write architecture | extensibility | **after aperture WIP lands** |
+| 4 | ~~Unify the table-write architecture~~ → **promoted to its own refactor** | extensibility | see below |
 | 5 | Relational clean baseline (migration squash) | cleanliness | near-last |
 | 6 | Pre-deploy operational hardening (pool + observability) | operational | independent track |
 | 7 | Schema-migration mechanism | *deferred gate* | **pre-first-deploy only** |
+
+> **Sibling refactor (D5).** The table-write-architecture unification (old
+> Phase 4) was promoted to `planning/refactor/table-write-architecture-unification/`
+> because it is cross-stack (heat-pumps frontend rewire) and a distinct concern.
+> `phases/phase-04-*.md` here is a redirect stub; the phase numbers 05/06/07 are
+> retained for stable references.
 
 ## What this refactor is NOT
 
