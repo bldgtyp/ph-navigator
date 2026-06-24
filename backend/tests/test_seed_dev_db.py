@@ -7,6 +7,7 @@ from uuid import UUID
 
 from database import transaction
 from features.climate.service import seed_dataset
+from features.project_document.apertures.lookup import frame_by_id, glazing_by_id
 from features.project_document.document import ProjectDocumentV1
 from features.projects.models import CreateProjectRequest
 from scripts.seed_dev_db import _pin_nearest_phi_source, _starter_project_document
@@ -68,12 +69,18 @@ def test_starter_project_document_seeds_default_aperture() -> None:
     [element] = aperture.elements
     assert element.row_span == (0, 0)
     assert element.column_span == (0, 0)
-    assert element.glazing is not None
-    assert element.glazing.name == "PHN-Default-Glass"
+    glazing = glazing_by_id(body.tables, element.glazing_id)
+    assert glazing is not None
+    assert glazing.name == "PHN-Default-Glass"
 
     frame_names = {
         frame.name
-        for frame in (element.frames.top, element.frames.right, element.frames.bottom, element.frames.left)
+        for frame in (
+            frame_by_id(body.tables, element.frames.top),
+            frame_by_id(body.tables, element.frames.right),
+            frame_by_id(body.tables, element.frames.bottom),
+            frame_by_id(body.tables, element.frames.left),
+        )
         if frame is not None
     }
     assert frame_names == {"PHN-Default-Frame"}

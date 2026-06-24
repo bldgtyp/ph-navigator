@@ -1,8 +1,8 @@
 ---
 DATE: 2026-06-24
-TIME: 17:30 EDT
-STATUS: Planned
-AUTHOR: Claude (Opus 4.8)
+TIME: 17:58 EDT
+STATUS: Complete
+AUTHOR: Codex
 SCOPE: Phase 1 — v11→v12 document migration (inline refs → flat tables + FK),
   seeds/templates, golden-corpus test. Co-lands with Phase 0.
 RELATED: ./phase-00-models-and-tables.md, ../decisions.md (D-7)
@@ -66,7 +66,7 @@ where:
 
 ## Exit criteria
 
-- Golden-corpus migration test green; idempotency test green.
-- Fresh `make db-seed` produces a v12 dev project; the aperture builder renders
-  unchanged (manual sanity, full smoke deferred to the report-pages feature).
-- Full backend suite green; `ruff` + `ty` clean.
+- Met for migration/idempotency and backend seed construction. Verified with
+  `tests/test_project_document_aperture_entities.py`, focused aperture backend
+  tests, touched-file `ruff check`, and full backend `uv run pytest` (1097
+  passed, 2 skipped).

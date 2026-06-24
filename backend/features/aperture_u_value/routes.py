@@ -42,7 +42,7 @@ def get_aperture_u_values(
 ) -> AperturesUValueListResponse:
     del project_id  # Path arg only — access carries the project id.
     body = load_document_body(version_id, access, source)
-    results = [calculate_aperture_u_values(entry) for entry in body.tables.apertures]
+    results = [calculate_aperture_u_values(entry, body.tables) for entry in body.tables.apertures]
     return AperturesUValueListResponse(
         project_id=access.project_id,
         version_id=version_id,

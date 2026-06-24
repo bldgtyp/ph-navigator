@@ -1,8 +1,8 @@
 ---
 DATE: 2026-06-24
-TIME: 17:30 EDT
-STATUS: Planning — ready to execute
-AUTHOR: Claude (Opus 4.8)
+TIME: 17:58 EDT
+STATUS: Complete locally — phases 0-5 implemented and verified; commit/archive pending clean staging
+AUTHOR: Codex
 SCOPE: High-level phased sequence for glazing+frame documentation.
 RELATED: ./README.md, ./PRD.md, ./decisions.md, ./phases/
 ---

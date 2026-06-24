@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from features.aperture_drift.detector import detect_aperture_drift
+from features.project_document.apertures._ref_helpers import ensure_project_frame, ensure_project_glazing
 from features.project_document.document import (
     ApertureElement,
     ApertureElementFrames,
@@ -13,6 +14,7 @@ from features.project_document.document import (
     CatalogOrigin,
     FrameRef,
     GlazingRef,
+    ProjectDocumentTables,
     ProjectDocumentV1,
 )
 from features.projects.models import CreateProjectRequest
@@ -82,7 +84,7 @@ def _frame_ref(**kwargs: Any) -> FrameRef:
     return FrameRef(**defaults)
 
 
-def _body_with(elements: list[ApertureElement]) -> ProjectDocumentV1:
+def _body_with(elements: list[ApertureElement], tables: ProjectDocumentTables) -> ProjectDocumentV1:
     body = empty_project_document(CreateProjectRequest(name="P", bt_number="BT-1", cert_programs=[]))
     aperture = ApertureTypeEntry(
         id="apt_A",
@@ -91,30 +93,38 @@ def _body_with(elements: list[ApertureElement]) -> ProjectDocumentV1:
         column_widths_mm=[1000.0],
         elements=elements,
     )
-    return body.model_copy(update={"tables": body.tables.model_copy(update={"apertures": [aperture]})})
+    return body.model_copy(update={"tables": tables.model_copy(update={"apertures": [aperture]})})
 
 
-def _element(frame: FrameRef | None = None, glazing: GlazingRef | None = None) -> ApertureElement:
+def _element(
+    tables: ProjectDocumentTables,
+    frame: FrameRef | None = None,
+    glazing: GlazingRef | None = None,
+) -> ApertureElement:
     f = frame if frame is not None else _frame_ref()
+    frame_id = ensure_project_frame(tables, f)
+    glazing_id = ensure_project_glazing(tables, glazing) if glazing is not None else None
     return ApertureElement(
         id="aptel_A1",
         name="One",
         row_span=(0, 0),
         column_span=(0, 0),
-        frames=ApertureElementFrames(top=f, right=f, bottom=f, left=f),
-        glazing=glazing,
+        frames=ApertureElementFrames(top=frame_id, right=frame_id, bottom=frame_id, left=frame_id),
+        glazing_id=glazing_id,
     )
 
 
 def test_no_drift_when_ref_matches_catalog_row() -> None:
-    body = _body_with([_element()])
+    tables = ProjectDocumentTables()
+    body = _body_with([_element(tables)], tables)
     catalog = _StubCatalog(frame_rows={"rec000000000FRAME": _frame_row()})
     report = detect_aperture_drift(body, catalog)
     assert report.entries == []
 
 
 def test_field_delta_surfaces_one_entry_per_drifted_side() -> None:
-    body = _body_with([_element()])
+    tables = ProjectDocumentTables()
+    body = _body_with([_element(tables)], tables)
     catalog = _StubCatalog(frame_rows={"rec000000000FRAME": _frame_row(u_value_w_m2k=1.2)})
     report = detect_aperture_drift(body, catalog)
     # Same ref reused on four sides → four entries (one per side).
@@ -128,14 +138,16 @@ def test_field_delta_surfaces_one_entry_per_drifted_side() -> None:
 
 def test_hand_entered_refs_are_skipped() -> None:
     hand = _frame_ref(catalog_origin=None)
-    body = _body_with([_element(frame=hand)])
+    tables = ProjectDocumentTables()
+    body = _body_with([_element(tables, frame=hand)], tables)
     catalog = _StubCatalog()
     report = detect_aperture_drift(body, catalog)
     assert report.entries == []
 
 
 def test_missing_catalog_row_reports_catalog_row_missing() -> None:
-    body = _body_with([_element()])
+    tables = ProjectDocumentTables()
+    body = _body_with([_element(tables)], tables)
     catalog = _StubCatalog()  # no rows
     report = detect_aperture_drift(body, catalog)
     assert all(e.kind == "catalog_row_missing" for e in report.entries)
@@ -154,7 +166,8 @@ def test_glazing_drift_reported_separately() -> None:
             synced_at=datetime(2026, 1, 1, tzinfo=UTC),
         ),
     )
-    body = _body_with([_element(glazing=glazing)])
+    tables = ProjectDocumentTables()
+    body = _body_with([_element(tables, glazing=glazing)], tables)
     catalog = _StubCatalog(
         frame_rows={"rec000000000FRAME": _frame_row()},
         glazing_rows={

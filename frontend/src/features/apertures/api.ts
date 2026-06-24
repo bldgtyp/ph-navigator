@@ -1,6 +1,13 @@
 import { fetchJson } from "../../shared/api/client";
 import { draftWriteHeaders } from "../project_document/table-slice";
-import type { ApertureCommand, AperturesSlice } from "./types";
+import type {
+  ApertureCommand,
+  ApertureElementFrames,
+  AperturesSlice,
+  ProjectFrame,
+  WireApertureElementFrames,
+  WireAperturesSlice,
+} from "./types";
 
 export async function fetchAperturesSlice(
   projectId: string,
@@ -12,7 +19,8 @@ export async function fetchAperturesSlice(
     accessMode === "editor"
       ? `/api/v1/projects/${projectId}/versions/${versionId}/draft/tables/apertures`
       : `/api/v1/projects/${projectId}/versions/${versionId}/document/tables/apertures`;
-  return fetchJson<AperturesSlice>(path, { signal });
+  const slice = await fetchJson<WireAperturesSlice>(path, { signal });
+  return hydrateAperturesSlice(slice);
 }
 
 export async function applyApertureCommand(
@@ -21,7 +29,7 @@ export async function applyApertureCommand(
   current: AperturesSlice,
   command: ApertureCommand,
 ): Promise<AperturesSlice> {
-  return fetchJson<AperturesSlice>(
+  const slice = await fetchJson<WireAperturesSlice>(
     `/api/v1/projects/${projectId}/versions/${versionId}/apertures/command`,
     {
       method: "POST",
@@ -29,4 +37,37 @@ export async function applyApertureCommand(
       body: JSON.stringify(command),
     },
   );
+  return hydrateAperturesSlice(slice);
+}
+
+function hydrateAperturesSlice(slice: WireAperturesSlice): AperturesSlice {
+  const framesById = new Map(slice.project_frames.map((frame) => [frame.id, frame]));
+  const glazingsById = new Map(slice.project_glazings.map((glazing) => [glazing.id, glazing]));
+  return {
+    ...slice,
+    apertures: slice.apertures.map((aperture) => ({
+      ...aperture,
+      elements: aperture.elements.map((element) => ({
+        id: element.id,
+        name: element.name,
+        row_span: element.row_span,
+        column_span: element.column_span,
+        frames: hydrateFrames(element.frames, framesById),
+        glazing: element.glazing_id ? (glazingsById.get(element.glazing_id) ?? null) : null,
+        operation: element.operation,
+      })),
+    })),
+  };
+}
+
+function hydrateFrames(
+  frameIds: WireApertureElementFrames,
+  framesById: Map<string, ProjectFrame>,
+): ApertureElementFrames {
+  return {
+    top: frameIds.top ? (framesById.get(frameIds.top) ?? null) : null,
+    right: frameIds.right ? (framesById.get(frameIds.right) ?? null) : null,
+    bottom: frameIds.bottom ? (framesById.get(frameIds.bottom) ?? null) : null,
+    left: frameIds.left ? (framesById.get(frameIds.left) ?? null) : null,
+  };
 }

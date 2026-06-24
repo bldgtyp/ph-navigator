@@ -269,6 +269,125 @@ class ProjectMaterial(BaseModel):
         return self
 
 
+class ProjectGlazing(BaseModel):
+    """A project-owned glazing product referenced by aperture elements."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(pattern=r"^pglz_[A-Za-z0-9_-]+$", max_length=80)
+    name: str = Field(min_length=1, max_length=200)
+    manufacturer: str | None = Field(default=None, max_length=200)
+    brand: str | None = Field(default=None, max_length=200)
+    suffix: str | None = Field(default=None, max_length=80)
+    u_value_w_m2k: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    g_value: float | None = Field(default=None, ge=0.0, le=1.0, allow_inf_nan=False)
+    color: str | None = Field(default=None, max_length=40)
+    source: str | None = Field(default=None, max_length=400)
+    comments: str | None = Field(default=None, max_length=4000)
+    specification_status: SpecificationStatus = "missing"
+    datasheet_asset_ids: list[str] = Field(default_factory=list)
+    catalog_origin: CatalogOrigin | None = None
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def _strip_required_strings(cls, value: object) -> object:
+        if isinstance(value, str):
+            return value.strip()
+        return value
+
+    @field_validator("manufacturer", "brand", "suffix", "source", "comments", mode="before")
+    @classmethod
+    def _strip_optional_text(cls, value: object) -> object:
+        if isinstance(value, str):
+            stripped = value.strip()
+            return stripped or None
+        return value
+
+    @field_validator("color", mode="before")
+    @classmethod
+    def _normalize_color(cls, value: object) -> object:
+        return normalize_optional_hex_color(value)
+
+    @model_validator(mode="after")
+    def _validate_catalog_origin_family(self) -> ProjectGlazing:
+        require_catalog_origin_family(
+            self.catalog_origin,
+            expected_table="glazing_types",
+            expected_version_prefix=None,
+        )
+        return self
+
+
+class ProjectFrame(BaseModel):
+    """A project-owned frame product referenced by aperture frame slots."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(pattern=r"^pfrm_[A-Za-z0-9_-]+$", max_length=80)
+    name: str = Field(min_length=1, max_length=200)
+    manufacturer: str | None = Field(default=None, max_length=200)
+    brand: str | None = Field(default=None, max_length=200)
+    use: str | None = Field(default=None, max_length=40)
+    operation: str | None = Field(default=None, max_length=40)
+    location: str | None = Field(default=None, max_length=40)
+    mull_type: str | None = Field(default=None, max_length=40)
+    prefix: str | None = Field(default=None, max_length=80)
+    suffix: str | None = Field(default=None, max_length=80)
+    material: str | None = Field(default=None, max_length=80)
+    width_mm: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    u_value_w_m2k: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    psi_g_w_mk: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    psi_install_w_mk: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    color: str | None = Field(default=None, max_length=40)
+    source: str | None = Field(default=None, max_length=400)
+    comments: str | None = Field(default=None, max_length=4000)
+    specification_status: SpecificationStatus = "missing"
+    datasheet_asset_ids: list[str] = Field(default_factory=list)
+    catalog_origin: CatalogOrigin | None = None
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def _strip_required_strings(cls, value: object) -> object:
+        if isinstance(value, str):
+            return value.strip()
+        return value
+
+    @field_validator(
+        "manufacturer",
+        "brand",
+        "use",
+        "operation",
+        "location",
+        "mull_type",
+        "prefix",
+        "suffix",
+        "material",
+        "source",
+        "comments",
+        mode="before",
+    )
+    @classmethod
+    def _strip_optional_text(cls, value: object) -> object:
+        if isinstance(value, str):
+            stripped = value.strip()
+            return stripped or None
+        return value
+
+    @field_validator("color", mode="before")
+    @classmethod
+    def _normalize_color(cls, value: object) -> object:
+        return normalize_optional_hex_color(value)
+
+    @model_validator(mode="after")
+    def _validate_catalog_origin_family(self) -> ProjectFrame:
+        require_catalog_origin_family(
+            self.catalog_origin,
+            expected_table="frame_types",
+            expected_version_prefix=None,
+        )
+        return self
+
+
 class ApertureOperation(BaseModel):
     """Aperture-element operation (Fixed when omitted at the element level).
 
@@ -294,10 +413,10 @@ class ApertureElementFrames(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    top: FrameRef | None = None
-    right: FrameRef | None = None
-    bottom: FrameRef | None = None
-    left: FrameRef | None = None
+    top: str | None = Field(default=None, pattern=r"^pfrm_[A-Za-z0-9_-]+$", max_length=80)
+    right: str | None = Field(default=None, pattern=r"^pfrm_[A-Za-z0-9_-]+$", max_length=80)
+    bottom: str | None = Field(default=None, pattern=r"^pfrm_[A-Za-z0-9_-]+$", max_length=80)
+    left: str | None = Field(default=None, pattern=r"^pfrm_[A-Za-z0-9_-]+$", max_length=80)
 
 
 class ApertureElement(BaseModel):
@@ -317,7 +436,7 @@ class ApertureElement(BaseModel):
     row_span: tuple[int, int]
     column_span: tuple[int, int]
     frames: ApertureElementFrames = Field(default_factory=ApertureElementFrames)
-    glazing: GlazingRef | None = None
+    glazing_id: str | None = Field(default=None, pattern=r"^pglz_[A-Za-z0-9_-]+$", max_length=80)
     operation: ApertureOperation | None = None
 
     @field_validator("name", mode="before")

@@ -1,8 +1,8 @@
 ---
 DATE: 2026-06-24
-TIME: 17:30 EDT
-STATUS: Planned
-AUTHOR: Claude (Opus 4.8)
+TIME: 17:58 EDT
+STATUS: Complete
+AUTHOR: Codex
 SCOPE: Phase 3 — documentation commands (spec-status + field edits + remove),
   datasheet asset-registry extension, write-validation. Backend-only; no UI yet.
 RELATED: ./phase-02-rewire-write-path.md, ../PRD.md (Datasheet bookshelf)
@@ -65,5 +65,7 @@ wants parity — flag, don't block.
 
 ## Exit criteria
 
-- Documentation + datasheet flows pass at the API/integration level (no UI).
-- Full backend suite green; `ruff` + `ty` clean.
+- Met. `tests/test_project_document_aperture_documentation_commands.py` covers
+  update/remove commands and datasheet attachment through HTTP; `tests/test_assets_registry.py`
+  covers registration/reference discovery. Touched-file `ruff check` and full
+  backend `uv run pytest` passed.

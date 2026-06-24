@@ -177,27 +177,6 @@ OverrideTarget = Literal[
 ]
 
 
-class EditFieldOverride(BaseModel):
-    """Inline-edit one field on a per-side frame or glazing ref.
-
-    The new value is coerced into the target ref via ``model_copy`` so
-    Pydantic's per-field validators run on the change. When the target
-    carries a ``catalog_origin``, the edited ``field_key`` is appended
-    (deduped, ordering preserved by first edit) to
-    ``catalog_origin.local_overrides`` so the Phase 12 refresh dialog
-    can default to ``Keep mine``. Hand-entered refs (null origin) take
-    the value without touching ``local_overrides``.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-    kind: Literal["editFieldOverride"] = "editFieldOverride"
-    aperture_type_id: str = Field(pattern=APT_ID_PATTERN, max_length=80)
-    element_id: str = Field(pattern=APTEL_ID_PATTERN, max_length=80)
-    target: OverrideTarget
-    field_key: str = Field(min_length=1, max_length=80)
-    new_value: str | float | int | None = None
-
-
 class PasteAssignment(BaseModel):
     model_config = ConfigDict(extra="forbid")
     kind: Literal["pasteAssignment"] = "pasteAssignment"
@@ -260,7 +239,6 @@ ApertureCommand = Annotated[
         | SplitElement
         | PickFrame
         | PickGlazing
-        | EditFieldOverride
         | PasteAssignment
         | RefreshRefFromCatalog
         | SetManufacturerFilters
@@ -283,7 +261,6 @@ AUDIT_KIND_BY_APERTURE_COMMAND: dict[str, str] = {
     "deleteColumn": "project_version_aperture_column_delete",
     "pickFrame": "project_version_aperture_frame_pick",
     "pickGlazing": "project_version_aperture_glazing_pick",
-    "editFieldOverride": "project_version_aperture_field_override",
     "mergeElements": "project_version_aperture_elements_merge",
     "splitElement": "project_version_aperture_element_split",
     "pasteAssignment": "project_version_aperture_assignment_paste",

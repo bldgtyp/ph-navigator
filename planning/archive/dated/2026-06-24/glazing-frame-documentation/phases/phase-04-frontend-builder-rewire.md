@@ -1,8 +1,8 @@
 ---
 DATE: 2026-06-24
-TIME: 17:30 EDT
-STATUS: Planned
-AUTHOR: Claude (Opus 4.8)
+TIME: 17:58 EDT
+STATUS: Complete
+AUTHOR: Codex
 SCOPE: Phase 4 — aperture builder frontend reads FK + resolves against flat
   tables; types updated; visual parity; no user-facing change.
 RELATED: ./phase-02-rewire-write-path.md, ../README.md (Sequencing)
@@ -78,5 +78,9 @@ pages. Do not delete here to avoid leaving the builder without its current
 
 ## Exit criteria
 
-- Frontend type-check + lint clean; apertures tests green.
-- Builder visually unchanged; no console errors picking/clearing glazing/frame.
+- Met via API-boundary hydration: the wire response remains normalized
+  (`glazing_id` / frame FK ids plus flat tables), and `apertures/api.ts`
+  resolves it into the existing builder component shape for visual parity.
+- Aperture frontend tests passed: 6 files / 32 tests.
+- `make frontend-dev-check` passed. Existing fast-refresh lint warnings and
+  Vite large-chunk warning remain warnings only.

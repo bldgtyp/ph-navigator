@@ -113,10 +113,12 @@ backend/
       models.py
       service.py
       repository.py
-  db/
-    connection.py
-    migrations/   # Alembic
+  database.py     # connection pool + connection()/transaction() helpers
+  alembic/        # migrations (there is no backend/db/ package)
 ```
+
+> **As-built note (2026-06-24).** The DB wiring lives at `backend/database.py`
+> (not `backend/db/connection.py`) and migrations live under `backend/alembic/`.
 
 Repository functions should accept primitive IDs / typed request objects and return Pydantic models or simple scalars. SQL must be parameterized. No f-string SQL with user input.
 
@@ -138,6 +140,14 @@ def get_project_version(conn: Connection, version_id: UUID) -> ProjectVersion:
 
     return ProjectVersion.model_validate(dict(row))
 ```
+
+> **Convention note (2026-06-24 review).** The example shows the repository
+> returning a Pydantic model, but the *prevailing* in-code convention is the
+> opposite: repository functions return raw `dict[str, Any]` / scalars and
+> `model_validate()` happens in the **service** layer. Only `features/assets/`
+> currently matches the "repo returns Pydantic" shape (and it also uniquely
+> names its boundary file `schemas.py` instead of `models.py`). Treat "repo
+> returns dict, service validates" as the norm for new code.
 
 Tradeoffs:
 

@@ -18,13 +18,22 @@ because the original 13-phase build duplicated them under one name
 
 from __future__ import annotations
 
+import uuid
 from datetime import datetime
+from typing import Any, Protocol, cast
 
-from features.project_document.document import (
+from features.project_document.envelope_models import (
     CatalogOrigin,
     FrameRef,
     GlazingRef,
+    ProjectFrame,
+    ProjectGlazing,
 )
+
+
+class TablesWithApertureRefs(Protocol):
+    project_glazings: list[ProjectGlazing]
+    project_frames: list[ProjectFrame]
 
 
 def reset_origin(origin: CatalogOrigin | None, *, synced_at: datetime) -> CatalogOrigin | None:
@@ -83,3 +92,110 @@ def bookshelf_copy_glazing(glazing: GlazingRef | None, *, synced_at: datetime) -
         update={"catalog_origin": reset_origin(glazing.catalog_origin, synced_at=synced_at)},
         deep=True,
     )
+
+
+def ensure_project_glazing(tables: TablesWithApertureRefs, ref: GlazingRef) -> str:
+    """Upsert a picked glazing ref into the flat project glazing table."""
+
+    existing_id = _find_existing_catalog_entity_id(tables.project_glazings, ref.catalog_origin)
+    if existing_id is not None:
+        return existing_id
+    glazing = project_glazing_from_ref(ref, id=f"pglz_{_short_uuid()}")
+    tables.project_glazings.append(glazing)
+    return glazing.id
+
+
+def ensure_project_frame(tables: TablesWithApertureRefs, ref: FrameRef) -> str:
+    """Upsert a picked frame ref into the flat project frame table."""
+
+    existing_id = _find_existing_catalog_entity_id(tables.project_frames, ref.catalog_origin)
+    if existing_id is not None:
+        return existing_id
+    frame = project_frame_from_ref(ref, id=f"pfrm_{_short_uuid()}")
+    tables.project_frames.append(frame)
+    return frame.id
+
+
+def ensure_raw_project_glazing(tables: dict[str, Any], ref: GlazingRef) -> str:
+    """Raw-dict variant used before Pydantic validates a legacy document."""
+
+    rows = cast(list[dict[str, Any]], tables.setdefault("project_glazings", []))
+    existing_id = _find_existing_raw_catalog_entity_id(rows, ref.catalog_origin)
+    if existing_id is not None:
+        return existing_id
+    glazing = project_glazing_from_ref(ref, id=f"pglz_{_short_uuid()}")
+    rows.append(glazing.model_dump(mode="json"))
+    return glazing.id
+
+
+def ensure_raw_project_frame(tables: dict[str, Any], ref: FrameRef) -> str:
+    """Raw-dict variant used before Pydantic validates a legacy document."""
+
+    rows = cast(list[dict[str, Any]], tables.setdefault("project_frames", []))
+    existing_id = _find_existing_raw_catalog_entity_id(rows, ref.catalog_origin)
+    if existing_id is not None:
+        return existing_id
+    frame = project_frame_from_ref(ref, id=f"pfrm_{_short_uuid()}")
+    rows.append(frame.model_dump(mode="json"))
+    return frame.id
+
+
+def project_glazing_from_ref(ref: GlazingRef, *, id: str) -> ProjectGlazing:
+    payload = ref.model_dump(mode="python", exclude={"datasheet_url"})
+    return ProjectGlazing(
+        **payload,
+        id=id,
+        specification_status="missing",
+        datasheet_asset_ids=[],
+    )
+
+
+def project_frame_from_ref(ref: FrameRef, *, id: str) -> ProjectFrame:
+    payload = ref.model_dump(mode="python", exclude={"datasheet_url"})
+    return ProjectFrame(
+        **payload,
+        id=id,
+        specification_status="missing",
+        datasheet_asset_ids=[],
+    )
+
+
+def _find_existing_catalog_entity_id(
+    rows: list[ProjectGlazing] | list[ProjectFrame],
+    origin: CatalogOrigin | None,
+) -> str | None:
+    if origin is None:
+        return None
+    for row in rows:
+        row_origin = row.catalog_origin
+        if row_origin is None:
+            continue
+        if (
+            row_origin.catalog_table == origin.catalog_table
+            and row_origin.catalog_record_id == origin.catalog_record_id
+        ):
+            return row.id
+    return None
+
+
+def _find_existing_raw_catalog_entity_id(
+    rows: list[dict[str, Any]],
+    origin: CatalogOrigin | None,
+) -> str | None:
+    if origin is None:
+        return None
+    for row in rows:
+        row_origin = row.get("catalog_origin")
+        if not isinstance(row_origin, dict):
+            continue
+        if (
+            row_origin.get("catalog_table") == origin.catalog_table
+            and row_origin.get("catalog_record_id") == origin.catalog_record_id
+        ):
+            row_id = row.get("id")
+            return row_id if isinstance(row_id, str) else None
+    return None
+
+
+def _short_uuid() -> str:
+    return uuid.uuid4().hex[:12]

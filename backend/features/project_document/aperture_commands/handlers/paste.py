@@ -68,7 +68,7 @@ def apply_paste_assignment(
         next_elements[idx] = target.model_copy(
             update={
                 "operation": source.operation.model_copy(deep=True) if source.operation else None,
-                "glazing": source.glazing.model_copy(deep=True) if source.glazing else None,
+                "glazing_id": source.glazing_id,
                 "frames": source.frames.model_copy(deep=True),
             }
         )

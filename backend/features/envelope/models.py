@@ -412,6 +412,72 @@ class RemoveProjectMaterialCommand(BaseModel):
     project_material_id: str
 
 
+class UpdateProjectGlazingCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["update_project_glazing"]
+    project_glazing_id: str
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    manufacturer: str | None = Field(default=None, max_length=200)
+    brand: str | None = Field(default=None, max_length=200)
+    suffix: str | None = Field(default=None, max_length=80)
+    u_value_w_m2k: float | None = Field(default=None, gt=0, allow_inf_nan=False)
+    g_value: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
+    color: str | None = Field(default=None, max_length=40)
+    source: str | None = Field(default=None, max_length=400)
+    comments: str | None = Field(default=None, max_length=4000)
+    specification_status: SpecificationStatus | None = None
+
+    @field_validator("color", mode="before")
+    @classmethod
+    def _normalize_color(cls, value: object) -> object:
+        return normalize_optional_hex_color(value)
+
+
+class UpdateProjectFrameCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["update_project_frame"]
+    project_frame_id: str
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    manufacturer: str | None = Field(default=None, max_length=200)
+    brand: str | None = Field(default=None, max_length=200)
+    use: str | None = Field(default=None, max_length=120)
+    operation: str | None = Field(default=None, max_length=120)
+    location: str | None = Field(default=None, max_length=120)
+    mull_type: str | None = Field(default=None, max_length=120)
+    prefix: str | None = Field(default=None, max_length=80)
+    suffix: str | None = Field(default=None, max_length=80)
+    material: str | None = Field(default=None, max_length=120)
+    width_mm: float | None = Field(default=None, gt=0, allow_inf_nan=False)
+    u_value_w_m2k: float | None = Field(default=None, gt=0, allow_inf_nan=False)
+    psi_g_w_mk: float | None = Field(default=None, allow_inf_nan=False)
+    psi_install_w_mk: float | None = Field(default=None, allow_inf_nan=False)
+    color: str | None = Field(default=None, max_length=40)
+    source: str | None = Field(default=None, max_length=400)
+    comments: str | None = Field(default=None, max_length=4000)
+    specification_status: SpecificationStatus | None = None
+
+    @field_validator("color", mode="before")
+    @classmethod
+    def _normalize_color(cls, value: object) -> object:
+        return normalize_optional_hex_color(value)
+
+
+class RemoveProjectGlazingCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["remove_project_glazing"]
+    project_glazing_id: str
+
+
+class RemoveProjectFrameCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["remove_project_frame"]
+    project_frame_id: str
+
+
 class RefreshProjectMaterialFromCatalogCommand(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -460,6 +526,10 @@ EnvelopeCommand = Annotated[
     | DetachSegmentMaterialCommand
     | RemoveUnusedProjectMaterialsCommand
     | RemoveProjectMaterialCommand
+    | UpdateProjectGlazingCommand
+    | UpdateProjectFrameCommand
+    | RemoveProjectGlazingCommand
+    | RemoveProjectFrameCommand
     | RefreshProjectMaterialFromCatalogCommand
     | ImportEnvelopeConstructionsCommand,
     Field(discriminator="kind"),

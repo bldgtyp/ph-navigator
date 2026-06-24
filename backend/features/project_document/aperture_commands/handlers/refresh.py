@@ -28,20 +28,23 @@ from features.project_document.aperture_commands.handlers._shared import (
     build_audit,
     find_element,
     find_entry,
-    replace_element,
 )
 from features.project_document.aperture_commands.models import RefreshRefFromCatalog
 from features.project_document.apertures.factories import DefaultsCatalogReader
+from features.project_document.apertures.lookup import frame_by_id, glazing_by_id
 from features.project_document.document import (
     FrameRef,
     GlazingRef,
+    ProjectDocumentTables,
     ProjectDocumentV1,
+    ProjectFrame,
+    ProjectGlazing,
 )
 from features.shared.errors import api_error
 
 _FRAME_SIDES = ("top", "right", "bottom", "left")
 _THERMAL_FIELDS = frozenset({"u_value_w_m2k", "g_value", "width_mm", "psi_g_w_mk", "psi_install_w_mk"})
-_RefT = TypeVar("_RefT", FrameRef, GlazingRef)
+_RefT = TypeVar("_RefT", FrameRef, GlazingRef, ProjectFrame, ProjectGlazing)
 
 
 def apply_refresh_ref_from_catalog(
@@ -50,16 +53,16 @@ def apply_refresh_ref_from_catalog(
     actor_user_id: str,
     _catalog: DefaultsCatalogReader,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
-    aperture_idx, aperture = find_entry(body, command.aperture_type_id)
-    element_idx, element = find_element(aperture, command.element_id)
+    _, aperture = find_entry(body, command.aperture_type_id)
+    _, element = find_element(aperture, command.element_id)
     target = command.target
 
     if target == "glazing":
-        current = element.glazing
+        current = glazing_by_id(body.tables, element.glazing_id)
         if current is None:
             raise _target_unset_error(element.id, target)
         next_ref = _apply_chosen(current, command.chosen_values)
-        next_element = element.model_copy(update={"glazing": next_ref})
+        next_tables = _replace_project_glazing(body.tables, next_ref)
     else:
         side = target.split(".", 1)[1]
         if side not in _FRAME_SIDES:
@@ -69,14 +72,13 @@ def apply_refresh_ref_from_catalog(
                 "Unknown refresh target side.",
                 {"target": target},
             )
-        current_frame: FrameRef | None = getattr(element.frames, side)
+        current_frame = frame_by_id(body.tables, getattr(element.frames, side))
         if current_frame is None:
             raise _target_unset_error(element.id, target)
         next_ref = _apply_chosen(current_frame, command.chosen_values)
-        next_frames = element.frames.model_copy(update={side: next_ref})
-        next_element = element.model_copy(update={"frames": next_frames})
+        next_tables = _replace_project_frame(body.tables, next_ref)
 
-    next_body = replace_element(body, aperture_idx, aperture, element_idx, next_element)
+    next_body = body.model_copy(update={"tables": next_tables})
     return next_body, build_audit(
         "refreshRefFromCatalog",
         actor_user_id,
@@ -127,6 +129,24 @@ def _apply_chosen(ref: _RefT, chosen_values: Mapping[str, object]) -> _RefT:
     assert refreshed_origin is not None
     refreshed_origin = refreshed_origin.model_copy(update={"synced_at": datetime.now(tz=UTC)})
     return next_ref.model_copy(update={"catalog_origin": refreshed_origin})
+
+
+def _replace_project_glazing(tables: ProjectDocumentTables, glazing: ProjectGlazing) -> ProjectDocumentTables:
+    rows = list(tables.project_glazings)
+    for idx, row in enumerate(rows):
+        if row.id == glazing.id:
+            rows[idx] = glazing
+            return tables.model_copy(update={"project_glazings": rows})
+    raise _target_unset_error(glazing.id, "glazing")
+
+
+def _replace_project_frame(tables: ProjectDocumentTables, frame: ProjectFrame) -> ProjectDocumentTables:
+    rows = list(tables.project_frames)
+    for idx, row in enumerate(rows):
+        if row.id == frame.id:
+            rows[idx] = frame
+            return tables.model_copy(update={"project_frames": rows})
+    raise _target_unset_error(frame.id, "frame")
 
 
 def _target_unset_error(element_id: str, target: str) -> Exception:

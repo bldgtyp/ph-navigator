@@ -12,7 +12,9 @@ from features.project_document.aperture_commands.dispatcher import (
     apply_aperture_command,
 )
 from features.project_document.aperture_commands.models import RefreshRefFromCatalog
+from features.project_document.apertures._ref_helpers import ensure_project_frame
 from features.project_document.apertures.factories import DefaultsCatalogReader
+from features.project_document.apertures.lookup import frame_by_id
 from features.project_document.document import (
     ApertureElement,
     ApertureElementFrames,
@@ -62,13 +64,14 @@ def _frame(u: float = 1.0, local_overrides: list[str] | None = None) -> FrameRef
 
 def _body_with_frame(frame: FrameRef) -> ProjectDocumentV1:
     body = empty_project_document(CreateProjectRequest(name="P", bt_number="BT-1", cert_programs=[]))
+    frame_id = ensure_project_frame(body.tables, frame)
     element = ApertureElement(
         id="aptel_A1",
         name="One",
         row_span=(0, 0),
         column_span=(0, 0),
-        frames=ApertureElementFrames(top=frame, right=frame, bottom=frame, left=frame),
-        glazing=None,
+        frames=ApertureElementFrames(top=frame_id, right=frame_id, bottom=frame_id, left=frame_id),
+        glazing_id=None,
     )
     aperture = ApertureTypeEntry(
         id="apt_A",
@@ -101,8 +104,9 @@ def test_take_catalog_values_overwrite_ref() -> None:
         ),
     )
     top = next_body.tables.apertures[0].elements[0].frames.top
-    assert top is not None
-    assert top.u_value_w_m2k == 1.4
+    frame = frame_by_id(next_body.tables, top)
+    assert frame is not None
+    assert frame.u_value_w_m2k == 1.4
 
 
 def test_synced_at_advances_to_now() -> None:
@@ -118,8 +122,9 @@ def test_synced_at_advances_to_now() -> None:
         ),
     )
     top = next_body.tables.apertures[0].elements[0].frames.top
-    assert top is not None and top.catalog_origin is not None
-    assert top.catalog_origin.synced_at >= before
+    frame = frame_by_id(next_body.tables, top)
+    assert frame is not None and frame.catalog_origin is not None
+    assert frame.catalog_origin.synced_at >= before
 
 
 def test_local_overrides_preserved_verbatim() -> None:
@@ -134,8 +139,9 @@ def test_local_overrides_preserved_verbatim() -> None:
         ),
     )
     top = next_body.tables.apertures[0].elements[0].frames.top
-    assert top is not None and top.catalog_origin is not None
-    assert top.catalog_origin.local_overrides == ["color"]
+    frame = frame_by_id(next_body.tables, top)
+    assert frame is not None and frame.catalog_origin is not None
+    assert frame.catalog_origin.local_overrides == ["color"]
 
 
 def test_invalid_third_value_raises_422() -> None:

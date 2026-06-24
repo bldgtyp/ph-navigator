@@ -89,6 +89,18 @@ def test_ventilators_datasheet_field_is_registered() -> None:
     assert field.asset_kinds == frozenset({"datasheet"})
 
 
+def test_project_aperture_product_datasheet_fields_are_registered() -> None:
+    glazing = get_attachment_field("project_glazings", "datasheet_asset_ids")
+    frame = get_attachment_field("project_frames", "datasheet_asset_ids")
+
+    assert glazing is not None
+    assert glazing.key == "project_glazings.datasheet_asset_ids"
+    assert glazing.asset_kinds == frozenset({"datasheet"})
+    assert frame is not None
+    assert frame.key == "project_frames.datasheet_asset_ids"
+    assert frame.asset_kinds == frozenset({"datasheet"})
+
+
 def test_pumps_datasheet_field_matches_allowed_assets() -> None:
     field = get_attachment_field("pumps", "datasheet_asset_ids")
     assert field is not None
@@ -163,6 +175,66 @@ def test_equipment_pump_datasheet_references_are_discoverable() -> None:
     ]
     assert asset_referenced_by_document(body, "asset_pdf_1")
     assert not asset_referenced_by_document(body, "asset_missing")
+
+
+def test_project_aperture_product_datasheet_references_are_discoverable() -> None:
+    raw = base_document().model_dump(mode="json")
+    raw["tables"]["project_glazings"] = [
+        {
+            "id": "pglz_a",
+            "name": "Triple pane",
+            "manufacturer": "Glass Co",
+            "brand": None,
+            "suffix": None,
+            "u_value_w_m2k": 0.7,
+            "g_value": 0.5,
+            "color": None,
+            "source": None,
+            "comments": None,
+            "specification_status": "missing",
+            "datasheet_asset_ids": ["asset_glazing_pdf"],
+            "catalog_origin": None,
+        }
+    ]
+    raw["tables"]["project_frames"] = [
+        {
+            "id": "pfrm_a",
+            "name": "Wood frame",
+            "manufacturer": "Frame Co",
+            "brand": None,
+            "use": None,
+            "operation": None,
+            "location": None,
+            "mull_type": None,
+            "prefix": None,
+            "suffix": None,
+            "material": None,
+            "width_mm": 90.0,
+            "u_value_w_m2k": 1.1,
+            "psi_g_w_mk": 0.04,
+            "psi_install_w_mk": 0.02,
+            "color": None,
+            "source": None,
+            "comments": None,
+            "specification_status": "missing",
+            "datasheet_asset_ids": ["asset_frame_pdf"],
+            "catalog_origin": None,
+        }
+    ]
+    body = ProjectDocumentV1.model_validate(raw)
+
+    references = list_asset_references(body, kind="datasheet")
+
+    assert {
+        (ref["table_key"], ref["field_key"], ref["row_id"], ref["asset_id"])
+        for ref in references
+        if ref["table_key"] in {"project_glazings", "project_frames"}
+    } == {
+        ("project_glazings", "datasheet_asset_ids", "pglz_a", "asset_glazing_pdf"),
+        ("project_frames", "datasheet_asset_ids", "pfrm_a", "asset_frame_pdf"),
+    }
+    assert asset_referenced_by_document(body, "asset_glazing_pdf")
+    assert asset_referenced_by_document(body, "asset_frame_pdf")
 
 
 def test_equipment_pump_datasheet_references_filter_by_asset_id() -> None:

@@ -1,8 +1,8 @@
 ---
 DATE: 2026-06-24
-TIME: 17:30 EDT
-STATUS: Planned
-AUTHOR: Claude (Opus 4.8)
+TIME: 17:58 EDT
+STATUS: Complete
+AUTHOR: Codex
 SCOPE: Phase 2 — rewire every inline-ref construction site to upsert a flat
   entity + set the element FK; re-source the drift comparator.
 RELATED: ./phase-00-models-and-tables.md, ../decisions.md (D-2, D-3, D-6)
@@ -109,5 +109,6 @@ Simplest: add the two arrays to the slice response.
 
 ## Exit criteria
 
-- All aperture command + drift + HBJSON-import tests green.
-- Full backend suite green; `ruff` + `ty` clean.
+- Met. Focused aperture command/U-value/HBJSON/drift/refresh/manufacturer tests
+  passed, touched-file `ruff check` passed, and full backend `uv run pytest`
+  passed (1097 passed, 2 skipped).

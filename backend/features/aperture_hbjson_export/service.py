@@ -33,9 +33,11 @@ from features.aperture_hbjson_export.identifiers import (
     escape_hbjson_identifier,
 )
 from features.aperture_u_value.service import calculate_aperture_u_values
+from features.project_document.apertures.lookup import glazing_by_id
 from features.project_document.document import (
     ApertureElement,
     ApertureTypeEntry,
+    ProjectDocumentTables,
     ProjectDocumentV1,
 )
 from features.shared.errors import api_error
@@ -49,10 +51,10 @@ def export_aperture_window_constructions(body: ProjectDocumentV1) -> dict[str, d
     apertures table of a document body. See ``export_apertures`` for the
     lower-level entry point that callers can use with a bare list."""
 
-    return export_apertures(body.tables.apertures)
+    return export_apertures(body.tables.apertures, body.tables)
 
 
-def export_apertures(apertures: list[ApertureTypeEntry]) -> dict[str, dict[str, Any]]:
+def export_apertures(apertures: list[ApertureTypeEntry], tables: ProjectDocumentTables) -> dict[str, dict[str, Any]]:
     """Lower-level entry point that operates on an apertures list directly.
 
     Raises ``aperture_hbjson_identifier_collision`` (422) if any two
@@ -65,7 +67,7 @@ def export_apertures(apertures: list[ApertureTypeEntry]) -> dict[str, dict[str, 
 
     for entry in apertures:
         escaped_name = escape_hbjson_identifier(entry.name)
-        u_values = calculate_aperture_u_values(entry)
+        u_values = calculate_aperture_u_values(entry, tables)
         u_by_element = {e.element_id: e.u_value_w_m2k for e in u_values.elements}
 
         for element in entry.elements:
@@ -74,7 +76,7 @@ def export_apertures(apertures: list[ApertureTypeEntry]) -> dict[str, dict[str, 
             payloads[ident] = _build_construction_dict(
                 identifier=ident,
                 u_factor=u_by_element.get(element.id, 0.0),
-                shgc=_glazing_shgc(element),
+                shgc=_glazing_shgc(element, tables),
                 vt=_DEFAULT_VT,
             )
 
@@ -96,10 +98,11 @@ def _element_identifier(escaped_aperture_name: str, element: ApertureElement) ->
     return f"{escaped_aperture_name}_C{column}_R{row}"
 
 
-def _glazing_shgc(element: ApertureElement) -> float:
-    if element.glazing is None or element.glazing.g_value is None:
+def _glazing_shgc(element: ApertureElement, tables: ProjectDocumentTables) -> float:
+    glazing = glazing_by_id(tables, element.glazing_id)
+    if glazing is None or glazing.g_value is None:
         return _DEFAULT_SHGC
-    return element.glazing.g_value
+    return glazing.g_value
 
 
 def _build_construction_dict(

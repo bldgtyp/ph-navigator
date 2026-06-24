@@ -1,8 +1,8 @@
 ---
 DATE: 2026-06-24
-TIME: 17:30 EDT
-STATUS: Planned
-AUTHOR: Claude (Opus 4.8)
+TIME: 17:58 EDT
+STATUS: Complete
+AUTHOR: Codex
 SCOPE: Phase 0 — ProjectGlazing/ProjectFrame models, flat tables, element FK
   fields, cross-table validation, ensure_project_* upsert helpers.
 RELATED: ../PRD.md, ./phase-01-document-migration.md
@@ -87,7 +87,5 @@ scheme.
 
 ## Exit criteria
 
-- New models + tables compile; `ty` + `ruff` clean.
-- Full backend suite green **with Phase 1 migration applied** (this phase alone
-  breaks existing apertures fixtures — that is expected and resolved by Phase 1;
-  do not merge without Phase 1).
+- Met. Verified with focused backend tests, touched-file `ruff check`, and full
+  backend `uv run pytest` (1097 passed, 2 skipped).

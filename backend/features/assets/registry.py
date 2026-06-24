@@ -40,6 +40,26 @@ ATTACHMENT_FIELDS: tuple[AttachmentFieldConfig, ...] = (
         max_file_size_mb=25,
     ),
     AttachmentFieldConfig(
+        key="project_glazings.datasheet_asset_ids",
+        table_key="project_glazings",
+        field_key="datasheet_asset_ids",
+        asset_kinds=frozenset({"datasheet"}),
+        allowed_content_types=frozenset({"application/pdf", "image/png", "image/jpeg", "image/webp"}),
+        allowed_extensions=frozenset(),
+        max_count=5,
+        max_file_size_mb=25,
+    ),
+    AttachmentFieldConfig(
+        key="project_frames.datasheet_asset_ids",
+        table_key="project_frames",
+        field_key="datasheet_asset_ids",
+        asset_kinds=frozenset({"datasheet"}),
+        allowed_content_types=frozenset({"application/pdf", "image/png", "image/jpeg", "image/webp"}),
+        allowed_extensions=frozenset(),
+        max_count=5,
+        max_file_size_mb=25,
+    ),
+    AttachmentFieldConfig(
         key="assembly_segments.photo_asset_ids",
         table_key="assembly_segments",
         field_key="photo_asset_ids",
@@ -224,6 +244,10 @@ def iter_rows_for_table(body: ProjectDocumentV1, table_key: str) -> list[dict[st
 def iter_rows_for_raw_tables(tables: dict[str, Any], table_key: str) -> list[dict[str, Any]]:
     if table_key == "project_materials":
         return _dict_rows(tables.get("project_materials"))
+    if table_key == "project_glazings":
+        return _dict_rows(tables.get("project_glazings"))
+    if table_key == "project_frames":
+        return _dict_rows(tables.get("project_frames"))
     if table_key == "thermal_bridges":
         return _dict_rows(tables.get("thermal_bridges"))
     if equipment_key := EQUIPMENT_ATTACHMENT_TABLE_KEYS.get(table_key):

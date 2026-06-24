@@ -18,6 +18,8 @@ from typing import Protocol
 from features.project_document.apertures._ref_helpers import (
     bookshelf_copy_frame,
     bookshelf_copy_glazing,
+    ensure_project_frame,
+    ensure_project_glazing,
 )
 from features.project_document.document import (
     APERTURE_DEFAULT_FRAME_NAME,
@@ -27,6 +29,7 @@ from features.project_document.document import (
     ApertureTypeEntry,
     FrameRef,
     GlazingRef,
+    ProjectDocumentTables,
 )
 from features.shared.errors import api_error
 
@@ -47,6 +50,7 @@ class DefaultsCatalogReader(Protocol):
 def build_default_aperture_type(
     catalog: DefaultsCatalogReader,
     *,
+    tables: ProjectDocumentTables,
     name: str,
     aperture_id: str | None = None,
 ) -> ApertureTypeEntry:
@@ -79,6 +83,8 @@ def build_default_aperture_type(
     frame_copy = bookshelf_copy_frame(frame, synced_at=now)
     glazing_copy = bookshelf_copy_glazing(glazing, synced_at=now)
     assert glazing_copy is not None  # glazing was not-None above; helper passes through
+    frame_id = ensure_project_frame(tables, frame_copy)
+    glazing_id = ensure_project_glazing(tables, glazing_copy)
 
     aperture_id_final = aperture_id or f"apt_{_short_uuid()}"
     element_id = f"aptel_{_short_uuid()}"
@@ -94,13 +100,8 @@ def build_default_aperture_type(
                 name="Unnamed",
                 row_span=(0, 0),
                 column_span=(0, 0),
-                frames=ApertureElementFrames(
-                    top=frame_copy.model_copy(deep=True),
-                    right=frame_copy.model_copy(deep=True),
-                    bottom=frame_copy.model_copy(deep=True),
-                    left=frame_copy.model_copy(deep=True),
-                ),
-                glazing=glazing_copy,
+                frames=ApertureElementFrames(top=frame_id, right=frame_id, bottom=frame_id, left=frame_id),
+                glazing_id=glazing_id,
                 operation=None,
             )
         ],

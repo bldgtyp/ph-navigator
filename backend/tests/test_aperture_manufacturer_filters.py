@@ -16,6 +16,7 @@ from features.project_document.aperture_commands.dispatcher import (
     apply_aperture_command,
 )
 from features.project_document.aperture_commands.models import SetManufacturerFilters
+from features.project_document.apertures._ref_helpers import ensure_project_frame, ensure_project_glazing
 from features.project_document.apertures.factories import DefaultsCatalogReader
 from features.project_document.document import (
     ApertureElement,
@@ -83,13 +84,15 @@ def _body_with_picks(*, frame_manu: str | None, glazing_manu: str | None) -> Pro
     body = _empty_body()
     f = _frame(frame_manu)
     g = _glazing(glazing_manu)
+    frame_id = ensure_project_frame(body.tables, f)
+    glazing_id = ensure_project_glazing(body.tables, g)
     element = ApertureElement(
         id="aptel_A1",
         name="One",
         row_span=(0, 0),
         column_span=(0, 0),
-        frames=ApertureElementFrames(top=f, right=f, bottom=f, left=f),
-        glazing=g,
+        frames=ApertureElementFrames(top=frame_id, right=frame_id, bottom=frame_id, left=frame_id),
+        glazing_id=glazing_id,
     )
     aperture = ApertureTypeEntry(
         id="apt_A",

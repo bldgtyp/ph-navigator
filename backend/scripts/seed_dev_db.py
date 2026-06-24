@@ -404,10 +404,6 @@ def _starter_project_document(payload: CreateProjectRequest) -> ProjectDocumentV
     next_tables = ProjectDocumentTables(
         assemblies=[Assembly.model_validate(row) for row in envelope_seed.assemblies],
         project_materials=[ProjectMaterial.model_validate(row) for row in envelope_seed.project_materials],
-        apertures=[
-            build_default_aperture_type(_SeedDefaultsCatalog(), name=row.name, aperture_id=row.id)
-            for row in apertures_seed.rows
-        ],
         rooms=RoomsTableEnvelope(
             field_defs=list(ROOMS_BUILT_IN_FIELD_DEFS),
             rows=[RoomRow.model_validate(row) for row in rooms_seed.rows],
@@ -422,6 +418,10 @@ def _starter_project_document(payload: CreateProjectRequest) -> ProjectDocumentV
         ),
         equipment=next_equipment,
     )
+    next_tables.apertures = [
+        build_default_aperture_type(_SeedDefaultsCatalog(), tables=next_tables, name=row.name, aperture_id=row.id)
+        for row in apertures_seed.rows
+    ]
     return validate_document(
         body.model_copy(update={"tables": next_tables, "single_select_options": next_options}).model_dump(mode="json")
     )

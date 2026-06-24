@@ -52,6 +52,11 @@ from features.project_document._validators import (
     validate_generic_table,
     validate_table_row_ids,
     validate_typed_option_refs,
+    validate_unique_ids,
+)
+from features.project_document.apertures._ref_helpers import (
+    ensure_raw_project_frame,
+    ensure_raw_project_glazing,
 )
 from features.project_document.custom_fields import TableFieldDef, normalize_display_name
 from features.project_document.envelope_models import (
@@ -76,6 +81,8 @@ from features.project_document.envelope_models import (
     CatalogTableName,
     FrameRef,
     GlazingRef,
+    ProjectFrame,
+    ProjectGlazing,
     ProjectMaterial,
     SpecificationStatus,
     require_catalog_origin_family,
@@ -194,7 +201,11 @@ ROOM_SPACE_TYPE_FIELD_KEY = "space_type_id"
 # v11: Electric Heaters and Ventilators gain the shared Datasheet
 # attachment field (`datasheet_asset_ids`) to match the other Equipment
 # tables.
-CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 11
+#
+# v12: aperture glazings/frames move from inline element snapshots to flat,
+# documented project tables (`project_glazings` / `project_frames`) referenced
+# by FK ids from each aperture element.
+CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 12
 
 # Field keys that have a typed Pydantic column on the row model. Used
 # to split read/write paths between typed columns and the
@@ -266,6 +277,8 @@ class ProjectDocumentTables(BaseModel):
 
     assemblies: list[Assembly] = Field(default_factory=list)
     project_materials: list[ProjectMaterial] = Field(default_factory=list)
+    project_glazings: list[ProjectGlazing] = Field(default_factory=list)
+    project_frames: list[ProjectFrame] = Field(default_factory=list)
     apertures: list[ApertureTypeEntry] = Field(default_factory=list)
     rooms: RoomsTableEnvelope = Field(default_factory=RoomsTableEnvelope)
     space_types: SpaceTypesTableEnvelope = Field(default_factory=SpaceTypesTableEnvelope)
@@ -287,10 +300,54 @@ class ProjectDocumentTables(BaseModel):
         return data
 
 
+def _has_legacy_aperture_refs(raw: dict[str, Any], tables: dict[str, Any]) -> bool:
+    schema_version = raw.get("schema_version")
+    if isinstance(schema_version, int) and schema_version < CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION:
+        return True
+    for aperture in tables.get("apertures", []):
+        if not isinstance(aperture, dict):
+            continue
+        for element in aperture.get("elements", []):
+            if not isinstance(element, dict):
+                continue
+            if isinstance(element.get("glazing"), dict):
+                return True
+            frames = element.get("frames")
+            if isinstance(frames, dict) and any(isinstance(frames.get(side), dict) for side in _FRAME_SIDES):
+                return True
+    return False
+
+
+_FRAME_SIDES: tuple[str, str, str, str] = ("top", "right", "bottom", "left")
+
+
+def _migrate_aperture_element_refs(tables: dict[str, Any], element: dict[str, Any]) -> dict[str, Any]:
+    migrated = {**element}
+    inline_glazing = migrated.pop("glazing", None)
+    if isinstance(inline_glazing, dict):
+        migrated["glazing_id"] = ensure_raw_project_glazing(tables, GlazingRef.model_validate(inline_glazing))
+    else:
+        migrated.setdefault("glazing_id", inline_glazing if isinstance(inline_glazing, str) else None)
+
+    frames = migrated.get("frames")
+    if isinstance(frames, dict):
+        migrated_frames: dict[str, str | None] = {}
+        for side in _FRAME_SIDES:
+            frame_value = frames.get(side)
+            if isinstance(frame_value, dict):
+                migrated_frames[side] = ensure_raw_project_frame(tables, FrameRef.model_validate(frame_value))
+            elif isinstance(frame_value, str):
+                migrated_frames[side] = frame_value
+            else:
+                migrated_frames[side] = None
+        migrated["frames"] = migrated_frames
+    return migrated
+
+
 class ProjectDocumentV1(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: Literal[11] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
+    schema_version: Literal[12] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     project: ProjectDocumentProject
     tables: ProjectDocumentTables = Field(default_factory=ProjectDocumentTables)
     single_select_options: dict[str, list[SingleSelectOption]] = Field(
@@ -308,6 +365,42 @@ class ProjectDocumentV1(BaseModel):
             THERMAL_BRIDGE_TYPE_OPTION_KEY: [],
         }
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _migrate_v11_aperture_refs(cls, data: object) -> object:
+        if not isinstance(data, dict):
+            return data
+        raw = cast(dict[str, Any], data)
+        schema_version = raw.get("schema_version")
+        if isinstance(schema_version, int) and schema_version > CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION:
+            return data
+        tables = raw.get("tables")
+        if not isinstance(tables, dict):
+            return data
+
+        if not _has_legacy_aperture_refs(raw, tables):
+            return data
+
+        migrated_tables = {**tables}
+        migrated_tables.setdefault("project_glazings", [])
+        migrated_tables.setdefault("project_frames", [])
+        migrated_apertures: list[object] = []
+        for aperture in migrated_tables.get("apertures", []):
+            if not isinstance(aperture, dict):
+                migrated_apertures.append(aperture)
+                continue
+            migrated_aperture = {**aperture}
+            migrated_elements: list[object] = []
+            for element in aperture.get("elements", []):
+                if not isinstance(element, dict):
+                    migrated_elements.append(element)
+                    continue
+                migrated_elements.append(_migrate_aperture_element_refs(migrated_tables, element))
+            migrated_aperture["elements"] = migrated_elements
+            migrated_apertures.append(migrated_aperture)
+        migrated_tables["apertures"] = migrated_apertures
+        return {**raw, "schema_version": CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION, "tables": migrated_tables}
 
     @model_validator(mode="after")
     def validate_document_references(self) -> ProjectDocumentV1:
@@ -615,6 +708,10 @@ class ProjectDocumentV1(BaseModel):
 
         aperture_ids: set[str] = set()
         aperture_names: set[str] = set()
+        project_glazing_ids = {glazing.id for glazing in self.tables.project_glazings}
+        project_frame_ids = {frame.id for frame in self.tables.project_frames}
+        validate_unique_ids("project glazing", [glazing.id for glazing in self.tables.project_glazings])
+        validate_unique_ids("project frame", [frame.id for frame in self.tables.project_frames])
         for aperture in self.tables.apertures:
             if aperture.id in aperture_ids:
                 raise ValueError(f"Duplicate aperture id: {aperture.id}")
@@ -624,6 +721,12 @@ class ProjectDocumentV1(BaseModel):
             if normalized_aperture_name in aperture_names:
                 raise ValueError(f"Duplicate aperture name: {aperture.name}")
             aperture_names.add(normalized_aperture_name)
+            for element in aperture.elements:
+                if element.glazing_id is not None and element.glazing_id not in project_glazing_ids:
+                    raise ValueError(f"Unknown glazing_id {element.glazing_id!r} on aperture element {element.id}")
+                for side, frame_id in element.frames.model_dump(mode="python").items():
+                    if frame_id is not None and frame_id not in project_frame_ids:
+                        raise ValueError(f"Unknown frame_id {frame_id!r} on aperture element {element.id} side {side}")
 
         validate_envelope_references(self.tables.project_materials, self.tables.assemblies)
         self._validate_document_formula_graph()
@@ -763,6 +866,8 @@ __all__ = [
     "ProjectDocumentProject",
     "ProjectDocumentTables",
     "ProjectDocumentV1",
+    "ProjectFrame",
+    "ProjectGlazing",
     "ProjectMaterial",
     "PumpOptionKey",
     "PumpRow",
