@@ -202,11 +202,14 @@ Hot Water Tanks, with per-table option namespaces
 currently expose it (Pumps, Fans, Hot Water Heaters), and Pydantic row
 validators enforce `phase in {1, 3}` wherever the column exists.
 
-A built-in cross-table `status` single-select rides on nine DataTables —
-Thermal Bridges plus most Equipment tables (Pumps, Fans, Hot Water
-Heaters, Hot Water Tanks, Electric Heaters, Appliances) and the Heat Pump
-Outdoor/Indoor **Equipment** leaves (not the Unit leaves, Ventilators,
-Rooms, or Space Types). Unlike `inside_outside`/`device_type`, its value
+A built-in cross-table `status` single-select rides on twelve DataTables.
+The rule is **Datasheet-driven**: every DataTable-backed table that carries
+a `Datasheet` field gets `status` — Pumps, Fans, Hot Water Heaters, Hot
+Water Tanks, Electric Heaters, Appliances, Ventilators, and all four Heat
+Pump leaves (Outdoor/Indoor **Equipment** and Outdoor/Indoor **Units**).
+Thermal Bridges is the lone exception — it carries `status` *without* a
+Datasheet (pure dashboard accounting). Rooms and Space Types stay out.
+Unlike `inside_outside`/`device_type`, its value
 is **not** a typed column: it lives in `row.custom_values["status"]`, and
 its option list is namespaced `<table_label>.status` (e.g. `pumps.status`,
 `thermal_bridges.status`, `heat_pumps_outdoor_equip.status`). That key is
@@ -221,10 +224,11 @@ have a single source of truth in
 `backend/features/project_document/tables/_status_field.py`; a module-load
 drift guard in `tables/registry.py` keeps `STATUS_TABLE_NAMES` in sync with
 the contracts that actually carry the field. On the frontend the shared
-equipment + thermal-bridges tables resolve the column through the normal
-`useTableSchema` `${tableKey}.${field_key}` path; the Heat Pump equipment
-leaves build FieldDefs from local factories and route the cell write via a
-`status → setCustomValue` seam because the value lives in `custom_values`.
+equipment + thermal-bridges tables (including Ventilators) resolve the
+column through the normal `useTableSchema` `${tableKey}.${field_key}` path;
+the four Heat Pump leaves build FieldDefs from local factories and route the
+cell write via a `status → setCustomValue` seam because the value lives in
+`custom_values`.
 New rows default to `opt_status_needed`; duplicate preserves the source
 row's status.
 

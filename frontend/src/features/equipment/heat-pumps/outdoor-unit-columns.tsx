@@ -14,11 +14,13 @@ import {
   incomingIndoorUnitColumnDef,
   incomingIndoorUnitsFieldDef,
 } from "./link-fields";
+import { statusColumnDef, statusFieldDef } from "./status-column";
 import { type HeatPumpOutdoorUnitRow, type HeatPumpsSlice } from "./types";
+import { HEAT_PUMPS_OUTDOOR_UNITS_STATUS_OPTION_KEY } from "../types";
 
 export const OUTDOOR_UNIT_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
 
-export function outdoorUnitFieldDefs(): FieldDef[] {
+export function outdoorUnitFieldDefs(options: HeatPumpsSlice["single_select_options"]): FieldDef[] {
   return [
     heatPumpTagField(),
     heatPumpLinkedRecordField({
@@ -31,6 +33,7 @@ export function outdoorUnitFieldDefs(): FieldDef[] {
     heatPumpAttachmentField(OUTDOOR_UNIT_DATASHEET_FIELD_KEY, "Datasheet"),
     incomingIndoorUnitsFieldDef(),
     heatPumpTextField("notes", "Notes"),
+    statusFieldDef(options[HEAT_PUMPS_OUTDOOR_UNITS_STATUS_OPTION_KEY] ?? []),
   ];
 }
 
@@ -105,5 +108,6 @@ export function outdoorUnitColumnDefs({
       accessor: (row) => row.notes,
       defaultWidth: 260,
     },
+    statusColumnDef<HeatPumpOutdoorUnitRow>(),
   ];
 }

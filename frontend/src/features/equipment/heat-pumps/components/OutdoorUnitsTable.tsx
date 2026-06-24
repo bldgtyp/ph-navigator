@@ -145,8 +145,12 @@ export function OutdoorUnitsTable({
     [slice.outdoor_equip],
   );
   const fieldDefs = useMemo(
-    () => fieldDefsWithRenderOverrides(controller.tableSchema.fieldDefs, outdoorUnitFieldDefs()),
-    [controller.tableSchema.fieldDefs],
+    () =>
+      fieldDefsWithRenderOverrides(
+        controller.tableSchema.fieldDefs,
+        outdoorUnitFieldDefs(slice.single_select_options),
+      ),
+    [controller.tableSchema.fieldDefs, slice.single_select_options],
   );
   const tableSchema = controller.tableSchema;
   const manufacturerOptions =

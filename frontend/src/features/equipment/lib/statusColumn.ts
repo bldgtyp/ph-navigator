@@ -13,7 +13,7 @@ type RowWithStatus = {
 // value rides in `custom_values.status`; the accessor yields the raw
 // option id so the generic single-select cell resolves the colored pill
 // from the FieldDef's `<table>.status` option list. One definition keeps
-// the column uniform across the nine tables (no per-table fork).
+// the column uniform across the in-scope tables (no per-table fork).
 export function statusColumn<TRow extends RowWithStatus>(
   fieldDefByKey: ReadonlyMap<string, FieldDef>,
   width = 130,

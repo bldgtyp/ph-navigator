@@ -109,8 +109,12 @@ export function IndoorUnitsTable({
   const readOnly = !controller.canEdit;
   const noEquip = slice.indoor_equip.length === 0;
   const fieldDefs = useMemo(
-    () => fieldDefsWithRenderOverrides(controller.tableSchema.fieldDefs, indoorUnitFieldDefs()),
-    [controller.tableSchema.fieldDefs],
+    () =>
+      fieldDefsWithRenderOverrides(
+        controller.tableSchema.fieldDefs,
+        indoorUnitFieldDefs(slice.single_select_options),
+      ),
+    [controller.tableSchema.fieldDefs, slice.single_select_options],
   );
   const tableSchema = controller.tableSchema;
   const columns = useMemo(() => {

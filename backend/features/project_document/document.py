@@ -123,8 +123,12 @@ PUMP_STATUS_OPTION_KEY = "pumps.status"
 PumpOptionKey = Literal["pumps.device_type", "pumps.status"]
 PUMP_OPTION_KEYS: tuple[PumpOptionKey, ...] = (PUMP_DEVICE_TYPE_OPTION_KEY, PUMP_STATUS_OPTION_KEY)
 VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY = "ventilators.inside_outside"
-VentilatorOptionKey = Literal["ventilators.inside_outside"]
-VENTILATOR_OPTION_KEYS: tuple[VentilatorOptionKey, ...] = (VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,)
+VENTILATOR_STATUS_OPTION_KEY = "ventilators.status"
+VentilatorOptionKey = Literal["ventilators.inside_outside", "ventilators.status"]
+VENTILATOR_OPTION_KEYS: tuple[VentilatorOptionKey, ...] = (
+    VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,
+    VENTILATOR_STATUS_OPTION_KEY,
+)
 FAN_TYPE_OPTION_KEY = "fans.type"
 FAN_STATUS_OPTION_KEY = "fans.status"
 FanOptionKey = Literal["fans.type", "fans.status"]
@@ -784,6 +788,7 @@ __all__ = [
     "ThermalBridgeRow",
     "ThermalBridgesTableEnvelope",
     "VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY",
+    "VENTILATOR_STATUS_OPTION_KEY",
     "VENTILATOR_OPTION_KEYS",
     "VENTILATORS_TYPED_COLUMN_FIELD_KEYS",
     "VentilatorOptionKey",

@@ -11,11 +11,13 @@ import {
 } from "./field-defs";
 import { roomLabel, ventilatorLabel } from "./lib";
 import { HEAT_PUMP_LINK_TARGETS } from "./link-fields";
-import { type HeatPumpIndoorUnitRow } from "./types";
+import { statusColumnDef, statusFieldDef } from "./status-column";
+import { type HeatPumpIndoorUnitRow, type HeatPumpsSlice } from "./types";
+import { HEAT_PUMPS_INDOOR_UNITS_STATUS_OPTION_KEY } from "../types";
 
 export const INDOOR_UNIT_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
 
-export function indoorUnitFieldDefs(): FieldDef[] {
+export function indoorUnitFieldDefs(options: HeatPumpsSlice["single_select_options"]): FieldDef[] {
   return [
     heatPumpTagField(),
     heatPumpLinkedRecordField({
@@ -47,6 +49,7 @@ export function indoorUnitFieldDefs(): FieldDef[] {
     }),
     heatPumpAttachmentField(INDOOR_UNIT_DATASHEET_FIELD_KEY, "Datasheet"),
     heatPumpTextField("notes", "Notes"),
+    statusFieldDef(options[HEAT_PUMPS_INDOOR_UNITS_STATUS_OPTION_KEY] ?? []),
   ];
 }
 
@@ -153,5 +156,6 @@ export function indoorUnitColumnDefs({
       accessor: (row) => row.notes,
       defaultWidth: 260,
     },
+    statusColumnDef<HeatPumpIndoorUnitRow>(),
   ];
 }

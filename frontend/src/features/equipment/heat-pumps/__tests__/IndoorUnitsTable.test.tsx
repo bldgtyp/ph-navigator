@@ -14,6 +14,8 @@ import type {
   HeatPumpOutdoorUnitsSlice,
   HeatPumpsSlice,
 } from "../types";
+import { HEAT_PUMPS_INDOOR_UNITS_STATUS_OPTION_KEY } from "../../types";
+import { STATUS_FIXTURE_OPTIONS } from "../../testing/statusFixtureOptions";
 import { heatPumpTestController } from "./heatPumpControllerTestUtils";
 
 const fetchMock = vi.fn();
@@ -163,13 +165,38 @@ describe("IndoorUnitsTable", () => {
     expect(await screen.findByRole("dialog", { name: /Ventilator: ERV-A/ })).toBeInTheDocument();
     expect(screen.getByLabelText("Name")).toHaveValue("ERV-A unit");
   });
+
+  test("renders the built-in Status column with the seeded option value", async () => {
+    const slice = baseSlice({
+      indoor_units: [indoorUnit({ custom_values: { status: "opt_status_question" } })],
+      single_select_options: {
+        [HEAT_PUMPS_INDOOR_UNITS_STATUS_OPTION_KEY]: STATUS_FIXTURE_OPTIONS,
+      },
+    });
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/assets/bulk-urls")) return jsonResponse({ items: [] });
+      if (url.endsWith("/api/v1/projects/proj_1/versions/ver_1/draft/tables/rooms")) {
+        return jsonResponse(roomsSlice());
+      }
+      if (url.endsWith("/api/v1/projects/proj_1/versions/ver_1/draft/tables/ventilators")) {
+        return jsonResponse({ ventilators: [] });
+      }
+      return jsonResponse({});
+    });
+
+    renderTable(slice);
+
+    expect(await screen.findByRole("columnheader", { name: /Status/ })).toBeInTheDocument();
+    expect(screen.getByText("Question")).toBeInTheDocument();
+  });
 });
 
 function renderTable(slice: HeatPumpsSlice, options: { writes?: WriteOp[] } = {}) {
   const queryClient = createQueryClient();
   const leafSlice = indoorUnitsLeafSlice(slice);
   const controller = heatPumpTestController<HeatPumpIndoorUnitsSlice>({
-    fieldDefs: indoorUnitFieldDefs(),
+    fieldDefs: indoorUnitFieldDefs(slice.single_select_options),
     onWrite: (op) => {
       options.writes?.push(op);
     },

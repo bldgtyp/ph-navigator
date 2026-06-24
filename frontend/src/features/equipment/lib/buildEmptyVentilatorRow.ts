@@ -1,8 +1,13 @@
 import type { BuildEmptyRow } from "../../../shared/ui/data-table";
 import { emptyVentilator } from "../lib";
-import { VENTILATOR_INSIDE_OUTSIDE_KEY, type VentilatorRow } from "../types";
+import {
+  STATUS_DEFAULT_OPTION_ID,
+  STATUS_FIELD_KEY,
+  VENTILATOR_INSIDE_OUTSIDE_KEY,
+  type VentilatorRow,
+} from "../types";
 import { customNumberValue, customTextValueOrNull } from "./customValueReaders";
-import { readNumberDefault, readStringDefault } from "./fieldDefaults";
+import { readNumberDefault, readStatusDefault, readStringDefault } from "./fieldDefaults";
 
 export function makeBuildEmptyVentilatorRow(): BuildEmptyRow<VentilatorRow> {
   return ({ rowId, fieldDefaults }) => {
@@ -46,6 +51,10 @@ export function makeBuildEmptyVentilatorRow(): BuildEmptyRow<VentilatorRow> {
         filter_merv_rating: readNumberDefault(
           fieldDefaults.filter_merv_rating,
           customNumberValue(base, "filter_merv_rating"),
+        ),
+        [STATUS_FIELD_KEY]: readStatusDefault(
+          fieldDefaults[STATUS_FIELD_KEY],
+          STATUS_DEFAULT_OPTION_ID,
         ),
       },
     };

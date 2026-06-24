@@ -3,6 +3,12 @@
     "ventilators.inside_outside": [
       { "id": "opt_vent_inside", "label": "Inside", "color": "#3b82f6", "order": 0 },
       { "id": "opt_vent_outside", "label": "Outside", "color": "#10b981", "order": 1 }
+    ],
+    "ventilators.status": [
+      { "id": "opt_status_complete", "label": "Complete", "color": "#16a34a", "order": 0 },
+      { "id": "opt_status_needed", "label": "Needed", "color": "#d97706", "order": 1 },
+      { "id": "opt_status_question", "label": "Question", "color": "#0ea5b7", "order": 2 },
+      { "id": "opt_status_na", "label": "N/A", "color": "#9ca3af", "order": 3 }
     ]
   },
   "rows": [
@@ -21,7 +27,8 @@
         "heat_recovery_percent": 84,
         "moisture_recovery_percent": 70,
         "electrical_efficiency_wh_m3": 0.42,
-        "filter_merv_rating": 13
+        "filter_merv_rating": 13,
+        "status": "opt_status_complete"
       }
     },
     {
@@ -39,7 +46,8 @@
         "heat_recovery_percent": 82,
         "moisture_recovery_percent": 68,
         "electrical_efficiency_wh_m3": 0.48,
-        "filter_merv_rating": 13
+        "filter_merv_rating": 13,
+        "status": "opt_status_needed"
       }
     },
     {
@@ -57,7 +65,8 @@
         "heat_recovery_percent": 76,
         "moisture_recovery_percent": 55,
         "electrical_efficiency_wh_m3": 0.55,
-        "filter_merv_rating": 8
+        "filter_merv_rating": 8,
+        "status": "opt_status_question"
       }
     },
     {
@@ -75,7 +84,8 @@
         "heat_recovery_percent": 80,
         "moisture_recovery_percent": 60,
         "electrical_efficiency_wh_m3": 0.45,
-        "filter_merv_rating": 13
+        "filter_merv_rating": 13,
+        "status": "opt_status_na"
       }
     },
     {
@@ -93,7 +103,8 @@
         "heat_recovery_percent": 72,
         "moisture_recovery_percent": 0,
         "electrical_efficiency_wh_m3": 0.6,
-        "filter_merv_rating": 8
+        "filter_merv_rating": 8,
+        "status": "opt_status_complete"
       }
     }
   ]

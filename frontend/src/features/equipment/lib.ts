@@ -81,6 +81,7 @@ import {
   VENTILATOR_INSIDE_OUTSIDE_COLUMN_ID,
   VENTILATOR_INSIDE_OUTSIDE_KEY,
   VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,
+  VENTILATORS_STATUS_OPTION_KEY,
 } from "./types";
 import type {
   BuildEmptyRow,
@@ -268,6 +269,7 @@ const VENTILATOR_CUSTOM_VALUE_FIELD_KEYS = new Set([
   "moisture_recovery_percent",
   "electrical_efficiency_wh_m3",
   "filter_merv_rating",
+  STATUS_FIELD_KEY,
 ]);
 const FAN_CUSTOM_VALUE_FIELD_KEYS = new Set([
   "record_id",
@@ -445,6 +447,7 @@ export const VENTILATORS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("url", "URL", "url"),
   builtInFieldDef("notes", "Notes", "long_text"),
   builtInFieldDef(VENTILATOR_DATASHEET_FIELD_KEY, "Datasheet", "long_text"),
+  statusBuiltInFieldDef(),
 ];
 
 export const FANS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
@@ -3540,6 +3543,9 @@ function cloneVentilatorOptions(
   return {
     [VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY]: [
       ...current.single_select_options[VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY],
+    ],
+    [VENTILATORS_STATUS_OPTION_KEY]: [
+      ...(current.single_select_options[VENTILATORS_STATUS_OPTION_KEY] ?? []),
     ],
   };
 }

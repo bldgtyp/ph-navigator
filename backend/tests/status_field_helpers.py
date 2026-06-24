@@ -1,8 +1,9 @@
 """Shared assertions for the built-in DataTable `status` single-select field.
 
-The same four-option `status` field rides on nine DataTables (Thermal Bridges
-plus most Equipment tables). These helpers keep the per-table tests from
-copy-pasting the FieldDef / option-list / namespaced-key checks.
+The same four-option `status` field rides on twelve DataTables (every
+Datasheet-bearing table plus Thermal Bridges). These helpers keep the
+per-table tests from copy-pasting the FieldDef / option-list /
+namespaced-key checks.
 """
 
 from __future__ import annotations

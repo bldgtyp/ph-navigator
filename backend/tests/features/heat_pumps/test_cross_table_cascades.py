@@ -22,6 +22,7 @@ from features.project_document.tables.rooms import (
 )
 from features.project_document.tables.ventilators import (
     VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,
+    VENTILATOR_STATUS_OPTION_KEY,
     VentilatorsSliceReplaceRequest,
     apply_ventilators_replace,
 )
@@ -158,6 +159,9 @@ def _ventilators_payload(body: ProjectDocumentV1, ventilators: list[dict[str, An
             "single_select_options": {
                 VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY: [
                     opt.model_dump() for opt in body.single_select_options[VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY]
+                ],
+                VENTILATOR_STATUS_OPTION_KEY: [
+                    opt.model_dump() for opt in body.single_select_options[VENTILATOR_STATUS_OPTION_KEY]
                 ],
             },
             "field_defs": [field.model_dump(mode="json") for field in body.tables.equipment.ervs.field_defs],

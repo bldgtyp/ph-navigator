@@ -86,8 +86,10 @@ export function buildEmptyIndoorEquipRow(
   }) satisfies HeatPumpIndoorEquipRow;
 }
 
-export function buildEmptyOutdoorUnitRow(overrides: Partial<HeatPumpOutdoorUnitRow> = {}) {
-  return {
+export function buildEmptyOutdoorUnitRow(
+  overrides: Partial<HeatPumpOutdoorUnitRow> & { status?: unknown } = {},
+) {
+  return withStatusDefault({
     id: heatPumpId("hpou"),
     tag: "",
     outdoor_equip_id: "",
@@ -96,11 +98,13 @@ export function buildEmptyOutdoorUnitRow(overrides: Partial<HeatPumpOutdoorUnitR
     custom_values: {},
     custom_links: {},
     ...overrides,
-  } satisfies HeatPumpOutdoorUnitRow;
+  }) satisfies HeatPumpOutdoorUnitRow;
 }
 
-export function buildEmptyIndoorUnitRow(overrides: Partial<HeatPumpIndoorUnitRow> = {}) {
-  return {
+export function buildEmptyIndoorUnitRow(
+  overrides: Partial<HeatPumpIndoorUnitRow> & { status?: unknown } = {},
+) {
+  return withStatusDefault({
     id: heatPumpId("hpiu"),
     tag: "",
     indoor_equip_id: "",
@@ -112,7 +116,7 @@ export function buildEmptyIndoorUnitRow(overrides: Partial<HeatPumpIndoorUnitRow
     custom_values: {},
     custom_links: {},
     ...overrides,
-  } satisfies HeatPumpIndoorUnitRow;
+  }) satisfies HeatPumpIndoorUnitRow;
 }
 
 function heatPumpId(prefix: "hpoe" | "hpie" | "hpou" | "hpiu"): string {

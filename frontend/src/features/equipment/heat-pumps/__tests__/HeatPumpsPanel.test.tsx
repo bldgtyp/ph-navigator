@@ -343,8 +343,8 @@ describe("HeatPumpsPanel", () => {
           "cf_outdoor_equip_note",
         ),
         heat_pumps_indoor_equip: customOnlyView(indoorEquipFieldDefs({}), "cf_indoor_equip_note"),
-        heat_pumps_outdoor_units: customOnlyView(outdoorUnitFieldDefs(), "cf_outdoor_unit_note"),
-        heat_pumps_indoor_units: customOnlyView(indoorUnitFieldDefs(), "cf_indoor_unit_note"),
+        heat_pumps_outdoor_units: customOnlyView(outdoorUnitFieldDefs({}), "cf_outdoor_unit_note"),
+        heat_pumps_indoor_units: customOnlyView(indoorUnitFieldDefs({}), "cf_indoor_unit_note"),
       },
       customFieldsByLeaf: {
         heat_pumps_outdoor_equip: [

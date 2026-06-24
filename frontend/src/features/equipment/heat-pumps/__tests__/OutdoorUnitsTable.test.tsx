@@ -13,6 +13,8 @@ import type {
   HeatPumpOutdoorUnitsSlice,
   HeatPumpsSlice,
 } from "../types";
+import { HEAT_PUMPS_OUTDOOR_UNITS_STATUS_OPTION_KEY } from "../../types";
+import { STATUS_FIXTURE_OPTIONS } from "../../testing/statusFixtureOptions";
 import { heatPumpTestController } from "./heatPumpControllerTestUtils";
 
 const fetchMock = vi.fn();
@@ -172,6 +174,25 @@ describe("OutdoorUnitsTable", () => {
     });
   });
 
+  test("renders the built-in Status column with the seeded option value", async () => {
+    const slice = baseSlice({
+      outdoor_units: [outdoorUnit({ custom_values: { status: "opt_status_complete" } })],
+      single_select_options: {
+        [HEAT_PUMPS_OUTDOOR_UNITS_STATUS_OPTION_KEY]: STATUS_FIXTURE_OPTIONS,
+      },
+    });
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/assets/bulk-urls")) return jsonResponse({ items: [] });
+      return jsonResponse({});
+    });
+
+    renderTable(slice);
+
+    expect(await screen.findByRole("columnheader", { name: /Status/ })).toBeInTheDocument();
+    expect(screen.getByText("Complete")).toBeInTheDocument();
+  });
+
   test("skips preview dialog when no indoor units would be affected", async () => {
     const user = userEvent.setup();
     const slice = baseSlice({
@@ -207,7 +228,7 @@ function renderTable(slice: HeatPumpsSlice, options: { writes?: WriteOp[] } = {}
   const queryClient = createQueryClient();
   const leafSlice = outdoorUnitsLeafSlice(slice);
   const controller = heatPumpTestController<HeatPumpOutdoorUnitsSlice>({
-    fieldDefs: outdoorUnitFieldDefs(),
+    fieldDefs: outdoorUnitFieldDefs(slice.single_select_options),
     onWrite: (op) => {
       options.writes?.push(op);
     },
