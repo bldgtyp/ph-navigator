@@ -5,6 +5,7 @@ how and when each feature packet landed. Newest first. Grep by slug.
 
 ## 2026-06-24
 
+- `archive-dated-reorg` - dated archive buckets and chronological archive index. (286e9486)
 - `data-table-status-field` - per-row status enum and chip column. (618fc21f)
 - `data-table-status-field-addendum` - status field follow-up addendum. (6aa8114c)
 - `phpp-uvalue-export` - PHPP U-value export with accepted soft-cell handling. (07fcd1cb)
