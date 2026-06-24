@@ -25,6 +25,7 @@ export function AssemblyWorkspace({
   thermalLoading,
   commandBusy,
   paint,
+  actions,
   children,
   onAddAssembly,
   onRenameActive,
@@ -55,6 +56,7 @@ export function AssemblyWorkspace({
   thermalLoading: boolean;
   commandBusy: boolean;
   paint: AssemblyCanvasPaintController;
+  actions?: ReactNode;
   children?: ReactNode;
   onAddAssembly: () => void;
   onRenameActive: (name: string) => void;
@@ -113,6 +115,7 @@ export function AssemblyWorkspace({
         onDelete={onDelete}
       />
       <div id="assembly-builder-workspace" className="assembly-workspace">
+        {actions ? <div className="assembly-workspace__actions">{actions}</div> : null}
         <div
           id="assembly-builder-interaction-region"
           ref={interactionRef}

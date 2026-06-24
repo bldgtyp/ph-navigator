@@ -364,8 +364,20 @@
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   min-width: 0;
-  overflow: hidden;
-  padding: 18px 0 18px 26px;
+  overflow: visible;
+  padding: var(--space-10) 0 18px 26px;
+  position: relative;
+}
+
+.assembly-workspace__actions {
+  align-items: center;
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+  position: absolute;
+  right: var(--space-14);
+  top: var(--space-14);
+  z-index: calc(var(--z-dropdown) + 10);
 }
 
 .assembly-interaction-region {
@@ -375,10 +387,10 @@
 .assembly-header {
   border-bottom: 1px solid var(--border-subtle);
   display: grid;
-  gap: var(--space-8);
-  min-height: 72px;
+  gap: var(--space-6);
+  min-height: 62px;
   min-width: 0;
-  padding: var(--space-10) 0 var(--space-12);
+  padding: var(--space-4) 56px var(--space-10) 0;
   position: relative;
   z-index: var(--z-sticky);
 }
@@ -386,19 +398,26 @@
 .assembly-header-main {
   align-items: center;
   display: flex;
-  gap: var(--space-32);
   min-width: 0;
 }
 
 .assembly-header h2 {
   color: var(--text-primary);
-  font-size: var(--fs-3xl);
+  font-size: var(--fs-2xl);
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1.15;
   margin: 0;
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+.assembly-header-summary {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  min-width: 0;
 }
 
 .assembly-header dt {
@@ -415,33 +434,29 @@
   display: flex;
   flex: 0 1 auto;
   flex-wrap: wrap;
-  gap: var(--space-12);
-  justify-content: flex-end;
-  margin: 0 0 0 auto;
+  gap: var(--space-6);
+  justify-content: flex-start;
+  margin: 0;
   max-width: 100%;
   min-width: 0;
-}
-
-.assembly-header-alerts {
-  margin-left: 0;
 }
 
 .assembly-header-metrics > div,
 .assembly-header-alerts > div {
   align-items: center;
-  background: color-mix(in oklab, var(--accent) 5%, transparent);
-  border: 1px solid color-mix(in oklab, var(--accent) 10%, var(--border-subtle));
+  background: color-mix(in oklab, var(--bg-card) 90%, var(--accent) 10%);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--phn-control-radius);
   color: var(--text-secondary);
   display: inline-flex;
   flex: 0 1 auto;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-xs);
   font-weight: 500;
-  gap: var(--space-8);
-  min-height: 30px;
+  gap: var(--space-6);
+  min-height: 26px;
   line-height: 1;
   max-width: 100%;
-  padding: 7px 10px 8px;
+  padding: 5px var(--space-8);
   white-space: nowrap;
 }
 
@@ -450,7 +465,7 @@
   align-items: center;
   color: var(--text-secondary);
   display: flex;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-xs);
   font-weight: 550;
   gap: var(--space-4);
   line-height: 1;
@@ -463,6 +478,7 @@
   align-items: center;
   display: flex;
   color: var(--text-secondary);
+  font-weight: 650;
   line-height: 1;
   margin: 0;
   min-width: 0;
@@ -838,14 +854,14 @@
 
 .material-legend-table {
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: var(--fs-xs);
   min-width: min(100%, 540px);
 }
 
 .material-legend-table th,
 .material-legend-table td {
   border-bottom: 1px solid var(--border-subtle);
-  padding: var(--space-8) var(--space-16);
+  padding: var(--space-6) var(--space-14);
   text-align: left;
 }
 
@@ -857,7 +873,7 @@
 .material-legend-table th:first-child,
 .material-legend-table td:first-child {
   padding-left: 0;
-  width: 64px;
+  width: 54px;
 }
 
 .material-legend-table th:nth-child(n + 3),
@@ -875,8 +891,8 @@
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xs);
   display: block;
-  height: 26px;
-  width: 26px;
+  height: 22px;
+  width: 22px;
 }
 
 .material-legend-table .is-missing {
@@ -1563,12 +1579,7 @@
 
   .assembly-header {
     gap: var(--space-10);
-  }
-
-  .assembly-header-main {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: var(--space-10);
+    padding-right: 44px;
   }
 
   .assembly-header-metrics,
