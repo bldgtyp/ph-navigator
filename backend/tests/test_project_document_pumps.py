@@ -18,6 +18,11 @@ from tests.project_document_helpers import (
     empty_required_tables,
     field_defs_fingerprint,
 )
+from tests.status_field_helpers import (
+    assert_status_field_def,
+    assert_status_options,
+    status_options_payload,
+)
 from tests.test_project_document import ORIGIN, create_project, signed_in_client
 
 
@@ -77,7 +82,8 @@ def pump_payload() -> dict[str, Any]:
             }
         ],
         "single_select_options": {
-            "pumps.device_type": [{"id": "opt_circ", "label": "Circulator", "color": "#3b82f6", "order": 0}]
+            "pumps.device_type": [{"id": "opt_circ", "label": "Circulator", "color": "#3b82f6", "order": 0}],
+            "pumps.status": status_options_payload(),
         },
     }
 
@@ -304,3 +310,54 @@ def test_pumps_custom_value_and_datasheet_survive_replace_refetch(clean_document
     row = refetch.json()["pumps"][0]
     assert row["custom_values"]["cf_notes"] == "Primary recirc pump"
     assert row["datasheet_asset_ids"] == ["asset_01HXABCDEF0123456789ABCD"]
+
+
+def test_pumps_slice_exposes_status_field_and_options(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    initial = client.get(draft_pumps_url(project["id"], project["active_version_id"]))
+
+    assert initial.status_code == 200
+    body = initial.json()
+    assert_status_field_def(body["field_defs"])
+    assert_status_options(body["single_select_options"], "pumps")
+
+
+def test_pumps_replace_persists_status_value(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+
+    initial = client.get(draft_pumps_url(project_id, version_id))
+    payload = pump_payload()
+    payload["pumps"][0]["custom_values"]["status"] = "opt_status_complete"
+
+    updated = client.put(
+        draft_pumps_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
+        json=payload,
+    )
+    assert updated.status_code == 200, updated.text
+
+    refetch = client.get(draft_pumps_url(project_id, version_id))
+    assert refetch.json()["pumps"][0]["custom_values"]["status"] == "opt_status_complete"
+    assert_status_options(refetch.json()["single_select_options"], "pumps")
+
+
+def test_pumps_replace_rejects_unknown_status_option(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+
+    initial = client.get(draft_pumps_url(project_id, version_id))
+    payload = pump_payload()
+    payload["pumps"][0]["custom_values"]["status"] = "opt_status_bogus"
+
+    response = client.put(
+        draft_pumps_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
+        json=payload,
+    )
+    assert response.status_code == 422

@@ -84,7 +84,8 @@ def _put_pumps(client: TestClient, project_id: object, version_id: object, datas
             "pumps": [_pump_row(datasheet_asset_ids)],
             "field_defs": [field.model_dump(mode="json") for field in PUMPS_BUILT_IN_FIELD_DEFS],
             "single_select_options": {
-                "pumps.device_type": [{"id": "opt_circ", "label": "Circulator", "color": "#3b82f6", "order": 0}]
+                "pumps.device_type": [{"id": "opt_circ", "label": "Circulator", "color": "#3b82f6", "order": 0}],
+                "pumps.status": [],
             },
         },
     )

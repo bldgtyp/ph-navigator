@@ -32,6 +32,12 @@ from features.project_document.validation import validate_document
 ELECTRIC_HEATERS_TABLE_NAME = "electric_heaters"
 _ELECTRIC_HEATERS_TABLE_PATH: tuple[str, ...] = ("equipment", "electric_heaters")
 
+# Built-in `status` option key. Electric Heaters has no typed single-select
+# slice model, so the dict-shaped replace path round-trips this key on write;
+# the response/diff must surface it explicitly (the cf_-only
+# `custom_option_lists_for_table` does not).
+ELECTRIC_HEATERS_STATUS_OPTION_KEY = "electric_heaters.status"
+
 
 ELECTRIC_HEATERS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
     built_in_field_def(
@@ -128,7 +134,10 @@ def electric_heaters_response(
         draft_etag=draft_etag,
         electric_heaters=body.tables.equipment.electric_heaters.rows,
         field_defs=body.tables.equipment.electric_heaters.field_defs,
-        single_select_options=custom_option_lists_for_table(body, _ELECTRIC_HEATERS_TABLE_PATH),
+        single_select_options={
+            ELECTRIC_HEATERS_STATUS_OPTION_KEY: body.single_select_options.get(ELECTRIC_HEATERS_STATUS_OPTION_KEY, []),
+            **custom_option_lists_for_table(body, _ELECTRIC_HEATERS_TABLE_PATH),
+        },
         rows_computed=evaluate_table_formulas(electric_heaters_field_registry, body),
     )
 
@@ -141,7 +150,15 @@ def extract_electric_heaters_envelope(body: ProjectDocumentV1) -> dict[str, obje
 
 
 def extract_electric_heaters_diff_value(body: ProjectDocumentV1) -> dict[str, object]:
-    return {"electric_heaters": extract_electric_heaters_envelope(body)}
+    return {
+        "electric_heaters": extract_electric_heaters_envelope(body),
+        "single_select_options": {
+            ELECTRIC_HEATERS_STATUS_OPTION_KEY: [
+                option.model_dump(mode="json")
+                for option in body.single_select_options.get(ELECTRIC_HEATERS_STATUS_OPTION_KEY, [])
+            ],
+        },
+    }
 
 
 electric_heaters_field_registry = make_field_registry(

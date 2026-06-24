@@ -121,7 +121,8 @@ def _save_pump_row(client: TestClient, project_id: object, version_id: object, d
             "pumps": [row],
             "field_defs": [field.model_dump(mode="json") for field in PUMPS_BUILT_IN_FIELD_DEFS],
             "single_select_options": {
-                "pumps.device_type": [{"id": "opt_circ", "label": "Circulator", "color": "#3b82f6", "order": 0}]
+                "pumps.device_type": [{"id": "opt_circ", "label": "Circulator", "color": "#3b82f6", "order": 0}],
+                "pumps.status": [],
             },
         },
     )

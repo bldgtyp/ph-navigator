@@ -26,6 +26,7 @@ from features.project_document.custom_fields import (
 from features.project_document.document import (
     PUMP_DEVICE_TYPE_OPTION_KEY,
     PUMP_OPTION_KEYS,
+    PUMP_STATUS_OPTION_KEY,
     ProjectDocumentV1,
     PumpRow,
     PumpsTableEnvelope,
@@ -116,9 +117,13 @@ class PumpsSliceOptions(BaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     pumps_device_type: list[SingleSelectOption] = Field(alias=PUMP_DEVICE_TYPE_OPTION_KEY)
+    pumps_status: list[SingleSelectOption] = Field(alias=PUMP_STATUS_OPTION_KEY)
 
     def by_option_key(self) -> dict[str, list[SingleSelectOption]]:
-        return {PUMP_DEVICE_TYPE_OPTION_KEY: self.pumps_device_type}
+        return {
+            PUMP_DEVICE_TYPE_OPTION_KEY: self.pumps_device_type,
+            PUMP_STATUS_OPTION_KEY: self.pumps_status,
+        }
 
 
 class PumpsSliceReplaceRequest(BaseModel):
@@ -189,7 +194,10 @@ def pumps_response(
         draft_etag=draft_etag,
         pumps=body.tables.equipment.pumps.rows,
         field_defs=body.tables.equipment.pumps.field_defs,
-        single_select_options={PUMP_DEVICE_TYPE_OPTION_KEY: body.single_select_options[PUMP_DEVICE_TYPE_OPTION_KEY]},
+        single_select_options={
+            PUMP_DEVICE_TYPE_OPTION_KEY: body.single_select_options[PUMP_DEVICE_TYPE_OPTION_KEY],
+            PUMP_STATUS_OPTION_KEY: body.single_select_options[PUMP_STATUS_OPTION_KEY],
+        },
         rows_computed=rows_computed,
         inverse_links=inverse_view.inverse_links,
         inverse_link_fields=inverse_view.inverse_link_fields,
@@ -223,6 +231,9 @@ def extract_pumps_diff_value(body: ProjectDocumentV1) -> dict[str, object]:
         "single_select_options": {
             PUMP_DEVICE_TYPE_OPTION_KEY: [
                 option.model_dump(mode="json") for option in body.single_select_options[PUMP_DEVICE_TYPE_OPTION_KEY]
+            ],
+            PUMP_STATUS_OPTION_KEY: [
+                option.model_dump(mode="json") for option in body.single_select_options[PUMP_STATUS_OPTION_KEY]
             ],
         },
     }

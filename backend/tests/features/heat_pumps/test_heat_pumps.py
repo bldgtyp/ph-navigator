@@ -11,6 +11,11 @@ from features.heat_pumps.models import HeatPumpOutdoorEquipRow
 from features.project_document.custom_fields import CustomFieldType
 from features.project_document.document import ProjectDocumentV1
 from tests.project_document_helpers import empty_required_tables, field_defs_fingerprint
+from tests.status_field_helpers import (
+    assert_status_field_def,
+    assert_status_options,
+    status_options_payload,
+)
 from tests.test_project_document import ORIGIN, create_project, signed_in_client
 
 HPOE_1 = "hpoe_01HX0000000000000000000001"
@@ -248,6 +253,7 @@ def test_heat_pumps_outdoor_equip_generic_contract_replace_and_schema_mutation(
         "heat_pumps.manufacturer",
         "heat_pumps.system_family",
         "heat_pumps.refrigerant",
+        "heat_pumps_outdoor_equip.status",
     }
 
     schema_response = client.post(
@@ -276,6 +282,7 @@ def test_heat_pumps_outdoor_equip_generic_contract_replace_and_schema_mutation(
             "heat_pumps.manufacturer": [],
             "heat_pumps.system_family": [],
             "heat_pumps.refrigerant": [],
+            "heat_pumps_outdoor_equip.status": status_options_payload(),
         },
     }
     updated = client.put(
@@ -412,3 +419,96 @@ def test_heat_pumps_dry_run_previews_and_confirm_cascades(clean_document_tables:
     assert confirmed.status_code == 200
     assert confirmed.json()["indoor_equip"] == []
     assert confirmed.json()["outdoor_equip"][0]["paired_indoor_equip_id"] is None
+
+
+def test_heat_pumps_outdoor_equip_exposes_and_persists_status(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    table_name = "heat_pumps_outdoor_equip"
+
+    initial = client.get(draft_table_url(project_id, version_id, table_name))
+    assert initial.status_code == 200, initial.text
+    assert_status_field_def(initial.json()["field_defs"])
+    assert_status_options(initial.json()["single_select_options"], "heat_pumps_outdoor_equip")
+
+    payload = {
+        "field_defs": initial.json()["field_defs"],
+        "outdoor_equip": [{**outdoor_equip(), "custom_values": {"status": "opt_status_question"}}],
+        "single_select_options": {
+            "heat_pumps.manufacturer": [],
+            "heat_pumps.system_family": [],
+            "heat_pumps.refrigerant": [],
+            "heat_pumps_outdoor_equip.status": status_options_payload(),
+        },
+    }
+    updated = client.put(
+        draft_table_url(project_id, version_id, table_name),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
+        json=payload,
+    )
+    assert updated.status_code == 200, updated.text
+
+    refetch = client.get(draft_table_url(project_id, version_id, table_name))
+    assert refetch.json()["outdoor_equip"][0]["custom_values"]["status"] == "opt_status_question"
+    assert_status_options(refetch.json()["single_select_options"], "heat_pumps_outdoor_equip")
+
+
+def test_heat_pumps_indoor_equip_exposes_and_persists_status(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    table_name = "heat_pumps_indoor_equip"
+
+    initial = client.get(draft_table_url(project_id, version_id, table_name))
+    assert initial.status_code == 200, initial.text
+    assert_status_field_def(initial.json()["field_defs"])
+    assert_status_options(initial.json()["single_select_options"], "heat_pumps_indoor_equip")
+
+    payload = {
+        "field_defs": initial.json()["field_defs"],
+        "indoor_equip": [{**indoor_equip(), "custom_values": {"status": "opt_status_na"}}],
+        "single_select_options": {
+            "heat_pumps.manufacturer": [],
+            "heat_pumps.model_type": [],
+            "heat_pumps.install_type": [],
+            "heat_pumps_indoor_equip.status": status_options_payload(),
+        },
+    }
+    updated = client.put(
+        draft_table_url(project_id, version_id, table_name),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
+        json=payload,
+    )
+    assert updated.status_code == 200, updated.text
+
+    refetch = client.get(draft_table_url(project_id, version_id, table_name))
+    assert refetch.json()["indoor_equip"][0]["custom_values"]["status"] == "opt_status_na"
+
+
+def test_heat_pumps_outdoor_equip_rejects_unknown_status(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    table_name = "heat_pumps_outdoor_equip"
+
+    initial = client.get(draft_table_url(project_id, version_id, table_name))
+    payload = {
+        "field_defs": initial.json()["field_defs"],
+        "outdoor_equip": [{**outdoor_equip(), "custom_values": {"status": "opt_status_bogus"}}],
+        "single_select_options": {
+            "heat_pumps.manufacturer": [],
+            "heat_pumps.system_family": [],
+            "heat_pumps.refrigerant": [],
+            "heat_pumps_outdoor_equip.status": status_options_payload(),
+        },
+    }
+    response = client.put(
+        draft_table_url(project_id, version_id, table_name),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
+        json=payload,
+    )
+    assert response.status_code == 422

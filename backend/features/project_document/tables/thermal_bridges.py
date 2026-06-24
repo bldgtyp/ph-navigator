@@ -14,6 +14,7 @@ from features.project_document.custom_fields import (
 )
 from features.project_document.document import (
     THERMAL_BRIDGE_OPTION_KEYS,
+    THERMAL_BRIDGE_STATUS_OPTION_KEY,
     THERMAL_BRIDGE_TYPE_OPTION_KEY,
     ProjectDocumentV1,
     SingleSelectOption,
@@ -99,6 +100,7 @@ class ThermalBridgesSliceOptions(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     thermal_bridges_type: list[SingleSelectOption] = Field(alias=THERMAL_BRIDGE_TYPE_OPTION_KEY)
+    thermal_bridges_status: list[SingleSelectOption] = Field(alias=THERMAL_BRIDGE_STATUS_OPTION_KEY)
 
     @model_validator(mode="after")
     def _validate_namespaced_extras(self) -> ThermalBridgesSliceOptions:
@@ -110,7 +112,10 @@ class ThermalBridgesSliceOptions(BaseModel):
         return self
 
     def by_option_key(self) -> dict[str, list[SingleSelectOption]]:
-        return {THERMAL_BRIDGE_TYPE_OPTION_KEY: self.thermal_bridges_type}
+        return {
+            THERMAL_BRIDGE_TYPE_OPTION_KEY: self.thermal_bridges_type,
+            THERMAL_BRIDGE_STATUS_OPTION_KEY: self.thermal_bridges_status,
+        }
 
     def custom_option_lists(self) -> dict[str, list[SingleSelectOption]]:
         return dict(self.__pydantic_extra__ or {})
@@ -186,6 +191,7 @@ def thermal_bridges_response(
         field_defs=body.tables.thermal_bridges.field_defs,
         single_select_options={
             THERMAL_BRIDGE_TYPE_OPTION_KEY: body.single_select_options[THERMAL_BRIDGE_TYPE_OPTION_KEY],
+            THERMAL_BRIDGE_STATUS_OPTION_KEY: body.single_select_options[THERMAL_BRIDGE_STATUS_OPTION_KEY],
             **custom_option_lists_for_table(body, _THERMAL_BRIDGES_TABLE_PATH),
         },
         rows_computed=evaluate_table_formulas(thermal_bridges_field_registry, body),
@@ -203,9 +209,8 @@ def extract_thermal_bridges_diff_value(body: ProjectDocumentV1) -> dict[str, obj
     return {
         "thermal_bridges": extract_thermal_bridges_envelope(body),
         "single_select_options": {
-            THERMAL_BRIDGE_TYPE_OPTION_KEY: [
-                option.model_dump(mode="json") for option in body.single_select_options[THERMAL_BRIDGE_TYPE_OPTION_KEY]
-            ],
+            key: [option.model_dump(mode="json") for option in body.single_select_options[key]]
+            for key in THERMAL_BRIDGE_OPTION_KEYS
         },
     }
 
