@@ -258,48 +258,44 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     await attachmentMutation.mutateAsync({ current, change });
   }
 
+  const assemblyActions = (
+    <AppMenu label="Assembly actions">
+      <AppMenuItem
+        id="assembly-builder-export-hbjson"
+        icon={Download}
+        disabled={exportMutation.isPending}
+        onClick={() => void exportHbjson()}
+      >
+        Download constructions HBJSON
+      </AppMenuItem>
+      <AppMenuItem
+        id="assembly-builder-export-phpp"
+        icon={FileSpreadsheet}
+        disabled={phpp.busy}
+        onClick={() => void phpp.start(query.data)}
+      >
+        Download in PHPP format
+      </AppMenuItem>
+      {canEdit ? (
+        <AppMenuItem
+          id="assembly-builder-import-hbjson"
+          icon={Upload}
+          disabled={importer.previewing}
+          onClick={importer.openFilePicker}
+        >
+          Upload constructions HBJSON
+        </AppMenuItem>
+      ) : null}
+    </AppMenu>
+  );
+
   return (
     <section
       id="envelope-assembly-builder-panel"
       className="tab-panel envelope-panel"
       aria-label="Assembly Builder"
     >
-      <AppSubTabs
-        id="envelope-subtabs"
-        ariaLabel="Envelope views"
-        actions={
-          isAssembliesRoute ? (
-            <AppMenu label="Assembly actions">
-              <AppMenuItem
-                id="assembly-builder-export-hbjson"
-                icon={Download}
-                disabled={exportMutation.isPending}
-                onClick={() => void exportHbjson()}
-              >
-                Download constructions HBJSON
-              </AppMenuItem>
-              <AppMenuItem
-                id="assembly-builder-export-phpp"
-                icon={FileSpreadsheet}
-                disabled={phpp.busy}
-                onClick={() => void phpp.start(query.data)}
-              >
-                Download in PHPP format
-              </AppMenuItem>
-              {canEdit ? (
-                <AppMenuItem
-                  id="assembly-builder-import-hbjson"
-                  icon={Upload}
-                  disabled={importer.previewing}
-                  onClick={importer.openFilePicker}
-                >
-                  Upload constructions HBJSON
-                </AppMenuItem>
-              ) : null}
-            </AppMenu>
-          ) : null
-        }
-      >
+      <AppSubTabs id="envelope-subtabs" ariaLabel="Envelope views">
         <AppSubTabLink
           to={{ pathname: envelopeAssembliesPath(project.id), search: location.search }}
         >
@@ -383,6 +379,7 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
             thermalLoading={thermalQuery.isFetching}
             commandBusy={commandMutation.isPending}
             paint={paintController}
+            actions={assemblyActions}
             onAddAssembly={() => setDialog({ kind: "create-assembly" })}
             onRenameActive={(name) =>
               void applyCommand({

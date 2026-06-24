@@ -40,6 +40,8 @@ export function AssemblyHeader({
           inputLabel="Assembly name"
           onSubmit={onRename}
         />
+      </div>
+      <div className="assembly-header-summary">
         <dl id="assembly-header-metrics" className="assembly-header-metrics">
           <div id="assembly-total-thickness-metric">
             <dt>Total thickness</dt>
@@ -48,35 +50,36 @@ export function AssemblyHeader({
             </dd>
           </div>
         </dl>
-      </div>
-      <dl id="assembly-header-alerts" className="assembly-header-alerts">
-        {assemblyWarning ? (
-          <div id="assembly-status-warning" className="assembly-header-warning">
-            <dt>Warning</dt>
-            <dd>{assemblyWarning}</dd>
+        <dl id="assembly-header-alerts" className="assembly-header-alerts">
+          {assemblyWarning ? (
+            <div id="assembly-status-warning" className="assembly-header-warning">
+              <dt>Warning</dt>
+              <dd>{assemblyWarning}</dd>
+            </div>
+          ) : null}
+          <div id="assembly-thermal-metric">
+            <dt className="assembly-header-metric-label">
+              <span>Thermal</span>
+              <InfoTooltip
+                id="assembly-thermal-info-button"
+                label="Effective Thermal Resistance details"
+              >
+                <strong>Effective Thermal Resistance</strong>
+                <span>
+                  Calculated using the Passive House method: the average of the Parallel-Path and
+                  Isothermal-Planes methods.
+                </span>
+                <span>
+                  Note: Surface film resistances (air films) are NOT included in the value shown
+                  here.
+                </span>
+                <em>Reference: ASHRAE Handbook - Fundamentals, Chapter 27</em>
+              </InfoTooltip>
+            </dt>
+            <dd data-testid="assembly-thermal-label">{thermalLabel}</dd>
           </div>
-        ) : null}
-        <div id="assembly-thermal-metric">
-          <dt className="assembly-header-metric-label">
-            <span>Thermal</span>
-            <InfoTooltip
-              id="assembly-thermal-info-button"
-              label="Effective Thermal Resistance details"
-            >
-              <strong>Effective Thermal Resistance</strong>
-              <span>
-                Calculated using the Passive House method: the average of the Parallel-Path and
-                Isothermal-Planes methods.
-              </span>
-              <span>
-                Note: Surface film resistances (air films) are NOT included in the value shown here.
-              </span>
-              <em>Reference: ASHRAE Handbook - Fundamentals, Chapter 27</em>
-            </InfoTooltip>
-          </dt>
-          <dd data-testid="assembly-thermal-label">{thermalLabel}</dd>
-        </div>
-      </dl>
+        </dl>
+      </div>
     </header>
   );
 }
@@ -101,5 +104,5 @@ function formatThermalLabel(
           unitSystem,
           fractionDigits: 3,
         });
-  return thermal.status.is_complete ? value : `${value} (${statusLabel(thermal.status.flags)})`;
+  return value;
 }
