@@ -128,10 +128,11 @@ deploy**, after all clean-cut work above is done:
 
 ## 8. Risks & mitigations
 
-- **Collision with the in-flight aperture v12 WIP.** Phases 3/4 touch
-  `document.py`, the registries, and write paths that the aperture work is
-  actively changing. Mitigation: Phases 1/2/6 are WIP-independent and go first;
-  Phases 3/4 start only after the aperture WIP lands (see `PLAN.md`).
+- **Collision with the in-flight aperture v12 WIP.** Phase 3 (and the promoted
+  write-unification refactor) touch `document.py`, the registries, and write
+  paths that the aperture work is actively changing. Mitigation: Phases 1/2/6
+  are WIP-independent and go first; Phase 3 and the sibling refactor start only
+  after the aperture WIP lands (see `PLAN.md`).
 - **Migration squash must reproduce the schema exactly.** Mitigation: verify by
   diffing a `pg_dump --schema-only` of `upgrade head` against the current head
   before deleting the old migrations; keep the old chain in git history.

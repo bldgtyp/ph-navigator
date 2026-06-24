@@ -1,12 +1,13 @@
 ---
 DATE: 2026-06-24
 TIME: 18:05 EDT
-STATUS: Blocked (confirm D1; run after Phases 3/4)
+STATUS: Blocked (run after Phase 3; D1 resolved)
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: Phase 5 — squash migrations to one clean baseline + relational hygiene.
 RELATED: ../decisions.md (D1, D4), ../PLAN.md,
          planning/code-reviews/2026-06-24/backend-data-architecture-review.md (REL-1..6, §7)
-DEPENDS_ON: D1 resolved; run after Phases 3/4 so the baseline captures final state.
+DEPENDS_ON: D1 resolved; run after Phase 3 (and parallel-safe with the sibling
+            write-unification refactor) so the baseline captures final state.
 ---
 
 # Phase 5 — Relational Clean Baseline
@@ -81,4 +82,5 @@ Phase 6).
 ## Risks
 - **The squash must reproduce the schema exactly.** The dump-diff gate is the
   safety net; do not delete the old chain until it passes.
-- Sequencing: run after Phases 3/4 so no later phase reopens the baseline.
+- Sequencing: run after Phase 3 so no later phase reopens the baseline
+  (parallel-safe with the sibling write-unification refactor).

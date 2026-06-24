@@ -5,7 +5,7 @@ STATUS: Ready
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: Phase 2 — split the oversized modules (non-aperture set).
 RELATED: ../PLAN.md, planning/code-reviews/2026-06-24/backend-data-architecture-review.md (§6.3)
-DEPENDS_ON: none for this set. `document.py` split → Phase 3; `heat_pumps.py` split → Phase 4.
+DEPENDS_ON: none for this set. `document.py` split → Phase 3; `heat_pumps.py` split → sibling write-unification refactor.
 ---
 
 # Phase 2 — Module Splits
@@ -49,8 +49,9 @@ split, group the registrations per-domain in `server.py` but do not split it.
 ## Deferred to their thematic phases (do NOT do here)
 - `project_document/document.py` (900) → split happens in **Phase 3** (extract
   the cross-table validator to `document_validation.py`); the file is WIP-hot.
-- `project_document/tables/heat_pumps.py` (843) → split falls out of **Phase 4**
-  (it shrinks once the bespoke write path is removed).
+- `project_document/tables/heat_pumps.py` (843) → split falls out of the
+  **sibling `table-write-architecture-unification` refactor** (it shrinks once
+  the bespoke write path is removed).
 
 ## Step sequence
 1. 2.2 (formula — self-contained, no WIP overlap).
