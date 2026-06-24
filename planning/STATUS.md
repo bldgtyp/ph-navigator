@@ -27,6 +27,12 @@ feature-first planning.
 | Climate Dataset Picker | Complete / P1-P4 implemented and verified with focused backend/frontend tests plus `make ci`; O-DP-6 remains a documented non-blocking PHI region-filter follow-up; archived | `archive/climate-dataset-picker/STATUS.md` |
 | Envelope HBJSON Import | Research / design outline drafted; key decisions made (both PHN-native + raw Honeybee-PH sources, project-only new materials, Phase-0 export upgrade); phase planning next | `features/envelope-hbjson-import/STATUS.md` |
 
+## Active / Current Refactor Folders
+
+| Refactor | State | Current pointer |
+|---|---|---|
+| DataTable Status Field | Active / phased implementation plan complete; implementation not started | `refactor/data-table-status-field/STATUS.md` |
+
 ## Historical Material
 
 - Legacy dated planning files now live under `archive/dated/<date>/...`.
