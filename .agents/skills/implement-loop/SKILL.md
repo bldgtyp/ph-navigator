@@ -5,7 +5,7 @@ description: Read the docs indicated by the user and implement the entire featur
 
 # Arguments
 
-- path (required): Directory to read and review. Must be supplied — see "Path guard" below.
+- path (required): Directory to read and review. Must be supplied -- see "Path guard" below.
 
 # Path guard
 
@@ -13,7 +13,7 @@ Never silently default to the current working directory. Project folders can be 
 
 If no path is supplied:
 
-1. **Stop before doing any work** — do not scan, walk, or read anything.
+1. **Stop before doing any work** -- do not scan, walk, or read anything.
 2. **Ask the user to confirm the target.** Show the CWD as a candidate but require an explicit yes before proceeding: e.g. "No path given. Did you mean to index the CWD `<cwd>`? Or supply a different path."
 3. Only proceed once the user confirms or supplies a path.
 
@@ -22,7 +22,7 @@ If no path is supplied:
 - First, review the planned feature or refactor documents indicated by the user. Start by reading any `PRD` or `STATUS` documents which outline the feature from the high level.
 - Search within the provided folder for a `phases` or `plans` sub-folder, and look for clear phased step-by-step implementation plan documents to review. If found, read them.
 - If no `phases` or `plans` folder and no `PRD` or `STATUS` documents are found, stop and ask the user to provide the location of the planning documents or confirm the folder to search before proceeding.
-- Identify the next phase whose status is not marked as complete (e.g. not labeled DONE, COMPLETE, or ✅ in the planning document). If no status markers exist, read the implementation plan and compare it against the current codebase to determine what has not yet been implemented.
+- Identify the next phase whose status is not marked as complete (e.g. not labeled DONE or COMPLETE in the planning document). If no status markers exist, read the implementation plan and compare it against the current codebase to determine what has not yet been implemented.
 - If all phases are marked complete or the codebase already reflects every planned step, run the Final Completion Cleanup below before stopping.
 - Proceed to implement only the identified next phase.
 - After that phase is complete, re-run the planning review against the same path and identify the next incomplete phase.

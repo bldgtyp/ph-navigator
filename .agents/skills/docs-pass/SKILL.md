@@ -43,7 +43,7 @@ Check for an existing tracker item, plan, or linked work artifact that matches t
 - Update the linked plan file when the next slice, open question, or follow-up work changed.
 - Prefer updating an existing tracker item over creating a new one.
 - Create a new tracker item only when the task exposed a real follow-up that needs durable ownership and no current item fits.
-- Never mark items `done` or `completed` unless the user explicitly asked for that. Use `in-review` or `in-progress` when appropriate.
+- Never mark items `done` or `completed` unless the user explicitly asked for that or the active `implement-loop` Final Completion Cleanup is archiving a fully complete planning packet. Use `in-review` or `in-progress` when appropriate.
 
 ## 5. Close the pass
 

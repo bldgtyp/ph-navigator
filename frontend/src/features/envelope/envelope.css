@@ -306,6 +306,11 @@
   pointer-events: auto;
 }
 
+.envelope-sidebar-row:hover,
+.envelope-sidebar-row:focus-within {
+  z-index: var(--z-dropdown);
+}
+
 .envelope-sidebar-row-action {
   align-items: center;
   background: transparent;
@@ -337,6 +342,18 @@
 
 .envelope-sidebar-row-action:disabled {
   color: color-mix(in oklab, var(--text-secondary) 38%, transparent);
+}
+
+.envelope-sidebar-row-action[data-sidebar-tooltip]::before {
+  bottom: auto;
+  top: calc(100% + 8px);
+}
+
+.envelope-sidebar-row-action[data-sidebar-tooltip]::after {
+  border-bottom: 5px solid color-mix(in oklab, var(--text-primary) 88%, transparent);
+  border-top: 0;
+  bottom: auto;
+  top: calc(100% + 3px);
 }
 
 .envelope-sidebar-list small {

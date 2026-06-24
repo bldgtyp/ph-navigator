@@ -1605,6 +1605,10 @@ button:disabled {
   z-index: var(--z-sticky);
 }
 
+.app-subtabs:has(.app-menu__panel) {
+  z-index: var(--z-dropdown);
+}
+
 .app-subtabs__list {
   align-items: end;
   display: flex;

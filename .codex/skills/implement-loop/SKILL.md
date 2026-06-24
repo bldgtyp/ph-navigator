@@ -23,7 +23,7 @@ If no path is supplied:
 - Search within the provided folder for a `phases` or `plans` sub-folder, and look for clear phased step-by-step implementation plan documents to review. If found, read them.
 - If no `phases` or `plans` folder and no `PRD` or `STATUS` documents are found, stop and ask the user to provide the location of the planning documents or confirm the folder to search before proceeding.
 - Identify the next phase whose status is not marked as complete (e.g. not labeled DONE, COMPLETE, or ✅ in the planning document). If no status markers exist, read the implementation plan and compare it against the current codebase to determine what has not yet been implemented.
-- If all phases are marked complete or the codebase already reflects every planned step, stop and report to the user that implementation appears complete, listing the phases that were found and their status.
+- If all phases are marked complete or the codebase already reflects every planned step, run the Final Completion Cleanup below before stopping.
 - Proceed to implement only the identified next phase.
 - After that phase is complete, re-run the planning review against the same path and identify the next incomplete phase.
 - Continue implementing phase after phase until all planning documents are marked complete or the codebase already reflects every planned step.
@@ -53,3 +53,14 @@ If no path is supplied:
 
 - After completing the checklist for one phase, return to the top of the Implement Loop with the same path and the updated planning docs.
 - Do not stop after the first phase unless the planning docs are fully complete or the codebase already reflects every planned step.
+
+## Final Completion Cleanup
+
+Run this only when the whole requested planning scope is fully implemented and verified, not after an intermediate phase.
+
+1. Mark every relevant planning document in the feature/refactor packet as complete/done, including phase documents, `PLAN.md`, `STATUS.md`, and any checklist/status summaries that still show active or in-progress work.
+2. Preserve useful evidence in those docs before archiving: final verification commands, browser checks, known residual risks, and deliberately deferred follow-up work if any.
+3. Move the completed planning packet out of the active planning area and into `planning/archive/{date}/`, where `{date}` is today's date in `YYYY-MM-DD` format. Preserve the packet folder name under that date folder when moving a whole feature directory.
+4. Update any planning index/status files that pointed at the active packet so they now point at the archived path and clearly show the work as complete/archived.
+5. Run a final grep for the old active planning path and fix stale links or references introduced by the move.
+6. Commit the final planning-status and archive-move cleanup with a descriptive commit message.
