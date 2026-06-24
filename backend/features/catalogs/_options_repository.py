@@ -176,3 +176,45 @@ def seed_options(
             for index, label in enumerate(labels)
         ]
         replace_options(conn, catalog_table=catalog_table, field_key=field_key, options=options)
+
+
+def append_options(
+    conn: Connection[Any],
+    *,
+    catalog_table: str,
+    field_key: str,
+    new_labels: list[str],
+) -> list[str]:
+    """Append labels to a field's option list, skipping any that already exist.
+
+    De-duplication is **case-insensitive on the trimmed label** — matching the
+    ``ux_catalog_field_options_label`` unique index — so neither a stale
+    snapshot nor two case-variant labels in one batch can collide on insert.
+    Mints a fresh id + cycles the color palette per added label. Returns the
+    labels actually added. The auto-add-on-import path (D-4) is the caller.
+    """
+    current = list_options(conn, catalog_table=catalog_table, field_key=field_key)
+    options = [
+        SingleSelectOption(id=row["option_id"], label=row["label"], color=row["color"], order=row["order"])
+        for row in current
+    ]
+    seen = {option.label.strip().lower() for option in options}
+    next_order = max((option.order for option in options), default=-1.0) + 1.0
+    added: list[str] = []
+    for label in new_labels:
+        key = label.strip().lower()
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        options.append(
+            SingleSelectOption(
+                id=mint_option_id(),
+                label=label,
+                color=OPTION_COLOR_PALETTE[len(options) % len(OPTION_COLOR_PALETTE)],
+                order=next_order + len(added),
+            )
+        )
+        added.append(label)
+    if added:
+        replace_options(conn, catalog_table=catalog_table, field_key=field_key, options=options)
+    return added

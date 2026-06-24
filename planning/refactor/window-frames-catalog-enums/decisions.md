@@ -105,6 +105,13 @@ config persists to the catalog option store and is immediately shared.
 lightweight field-config "manage options" path for rename/merge/reorder/delete.
 Merge is the cleanup tool (e.g. select `OP-TO-FIX`, merge into `OP-to-FX`).
 
+**Import sub-policy — RESOLVED (Ed, 2026-06-23): AUTO-ADD.** On import, a value
+that is unknown after typo-folding is **auto-added** to the option store on
+commit (with a `new_option:<field>` preview warning), not flagged/blocked. This
+is asymmetric with create/patch (which reject unknown values) — import is the
+frictionless batch/cleanup path. Implemented in Phase 4
+(`import_export/service.py` → `_options_repository.append_options`).
+
 ## D-5 — Default-frame / default-glazing resolution — RESOLVED (2026-06-23): by id (technical fix)
 
 > Direct consequence of D-3 (derived name can't reproduce the sentinel). Adopt

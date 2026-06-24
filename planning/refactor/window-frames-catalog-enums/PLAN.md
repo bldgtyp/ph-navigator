@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 17:51 EDT
-STATUS: Active — decisions resolved; Phases 0–3 complete, Phase 4 next
+STATUS: Active — decisions resolved; Phases 0–4 complete, Phase 5 (frontend) next
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phased implementation plan for window-frames-catalog-enums
 RELATED: ./research.md, ./decisions.md, ./STATUS.md
@@ -94,7 +94,7 @@ longer reports name deltas. `make ci` green.
 
 ---
 
-## Phase 4 — Import / export v2 (backend)
+## Phase 4 — Import / export v2 (backend) ✅ Complete (2026-06-23)
 
 - Bump `schema_version` 1 → 2 (`import_export/file_format.py`,
   `tokens.py`/`upgrade.py`).

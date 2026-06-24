@@ -239,10 +239,10 @@ def update_frame_type(
     return row is not None
 
 
-# SQL twin of `service.compose_frame_name` (and migration 20260623_0039): the
+# SQL twin of `_name.compose_frame_name` (and migration 20260623_0039): the
 # non-empty parts joined by ' | ' in the fixed order, clamped to 200 chars.
 # `concat_ws` skips NULLs; `NULLIF(btrim(x),'')` folds blank → NULL. Keep in
-# sync with `service._NAME_PART_ORDER` (all three implementations must agree).
+# sync with `_name._NAME_PART_ORDER` (all three implementations must agree).
 _COMPOSE_NAME_SQL = """
 left(
     concat_ws(

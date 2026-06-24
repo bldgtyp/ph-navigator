@@ -162,6 +162,26 @@ def test_unknown_field_key_is_rejected(clean_catalog_tables: None) -> None:
     assert response.json()["error_code"] == "catalog_field_key_unknown"
 
 
+def test_append_options_dedupes_case_insensitively(clean_catalog_tables: None) -> None:
+    """`append_options` (the import auto-add path) must not insert a label that
+    collides case-insensitively with an existing one or another in the batch —
+    that would violate the case-insensitive unique index."""
+    with transaction() as conn:
+        added = options_repository.append_options(
+            conn,
+            catalog_table="frame_types",
+            field_key="brand",
+            new_labels=["NewCo", "newco", "  NEWCO  ", "Tyrol"],  # 3 case-dups + 1 already seeded
+        )
+        labels = [
+            row["label"]
+            for row in options_repository.list_options(conn, catalog_table="frame_types", field_key="brand")
+        ]
+    assert added == ["NewCo"]
+    assert labels.count("NewCo") == 1
+    assert "newco" not in labels
+
+
 def test_store_is_field_key_generic(clean_catalog_tables: None) -> None:
     """The repository works for any catalog_table (D-7) — glazing isn't wired
     through routes yet, but the store must not assume frame-types."""
