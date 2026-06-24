@@ -24,11 +24,12 @@ from uuid import UUID
 
 from fastapi import Request
 from psycopg import Connection, sql
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from features.auth import repository as auth_repository
 from features.auth.models import UserPublic
 from features.auth.service import client_ip, user_agent
+from features.project_document.rows import SingleSelectOption
 
 
 class CatalogManufacturerEntry(BaseModel):
@@ -49,6 +50,40 @@ class CatalogManufacturerListResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     items: list[CatalogManufacturerEntry]
+
+
+# --------------------------------------------------------------------------- #
+# Single-select option store (catalog_field_options) — see _options_repository.
+# These two DTOs are catalog-generic (no frame/glazing/materials specifics), so
+# every catalog's options service/routes imports them from here. The per-catalog
+# "all fields at once" aggregate (e.g. CatalogFrameTypeOptionsResponse) stays in
+# that catalog's own models module.
+# --------------------------------------------------------------------------- #
+
+
+class CatalogFieldOptionsResponse(BaseModel):
+    """One field's option list — the PUT-edit response."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    field_key: str
+    options: list[SingleSelectOption]
+
+
+class EditCatalogOptionsRequest(BaseModel):
+    """Full-replacement edit of one field's option list.
+
+    ``replacements`` maps a *deleted* option's label to the surviving label its
+    in-use rows should fold into (the merge / cleanup path). A deleted label
+    that is still referenced by an active row and has no replacement is rejected
+    (cascade guard).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    field_key: str
+    options: list[SingleSelectOption]
+    replacements: dict[str, str] = Field(default_factory=dict)
 
 
 _COPY_SUFFIX_RE: Final = re.compile(r"^(.*?)\s*\(copy(?:\s+(\d+))?\)$")

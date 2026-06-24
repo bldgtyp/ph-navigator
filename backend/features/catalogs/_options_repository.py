@@ -4,7 +4,8 @@ Backs ``catalog_field_options`` (migration ``20260623_0037``) — the
 catalog-scoped vocabulary registry the window-frames-catalog-enums refactor
 introduces. Shared by all three bookshelf catalogs (D-7): keys are
 ``(catalog_table, field_key)`` so glazing-types and materials reuse it with no
-redesign. Frame-types is the only wired consumer today.
+redesign. Frame-types and glazing-types are wired; materials is the remaining
+adopter.
 
 Rows store the option **label string** (D-2). Rename/merge is therefore a
 row-rewrite over the owning catalog table — which is exactly the cleanup tool

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 16:10 EDT
-STATUS: Planned
+STATUS: Done (2026-06-24) — options service + models + routes + seed migration 20260624_0041; generic DTOs relocated to _shared.py; 44 contract tests green
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phase 1 — wire glazing onto the EXISTING catalog option store
 RELATED:

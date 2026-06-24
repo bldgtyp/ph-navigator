@@ -9,9 +9,19 @@ RELATED: ./README.md, ./research.md, ./decisions.md, ./PLAN.md, ./phases/
 
 # STATUS — window-glass-catalog-enums
 
-**State:** `In progress` — Phase 0 done; Phase 1 next. All decisions resolved
+**State:** `In progress` — Phases 0–1 done; Phase 2 next. All decisions resolved
 (D-6 settled by Ed 2026-06-24: drop the two `DEFAULT` rows, keep one sentinel
 renamed `PHN-Default-Glass`).
+
+**Phase 1 (done 2026-06-24):** wired glazing onto the existing
+`catalog_field_options` store — relocated the catalog-generic
+`CatalogFieldOptionsResponse`/`EditCatalogOptionsRequest` DTOs to
+`catalogs/_shared.py` (frame import sites repointed), added
+`CatalogGlazingTypeOptionsResponse`, `glazing_types/options_service.py` (mirror
+of frame, minus the Phase-3 `recompute_names` call), `GET/PUT
+…/glazing-types/options` routes, and seed migration `20260624_0041`. Verified:
+fresh-migrate seeds 13 manufacturer + 39 brand options; 44 contract/option tests
+green; full backend suite green; ruff/ty clean.
 
 **Phase 0 (done 2026-06-24):** added `GLAZING_TYPE_OPTION_SEEDS` (13
 manufacturers + 39 brands), `GLAZING_TYPE_SINGLE_SELECT_FIELDS`,
@@ -42,10 +52,10 @@ cross-check clean (no EXTRA, no orphan options); fresh-migrate sentinel reads
 
 ## Next step
 
-Execute **Phase 1** (wire glazing onto the existing `catalog_field_options` store:
-options service + models + routes + seed migration; **no new table**), then 2 → 6
-in order. Phases 1–4 are backend-only and each ends green on `make ci`; Phase 5 is
-the frontend; Phase 6 is closeout + archive.
+Execute **Phase 2** (strict write-validation on `manufacturer` + `brand`: reject
+unknown option values on create/patch), then 3 → 6 in order. Phases 2–4 are
+backend-only and each ends green on `make ci`; Phase 5 is the frontend; Phase 6 is
+closeout + archive.
 
 Recommended execution: run via the `implement-loop` skill phase-by-phase, or
 `implement` per phase, with the closeout gate after the last code phase.

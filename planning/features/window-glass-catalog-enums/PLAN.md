@@ -45,7 +45,7 @@ archive when in doubt.
 
 ---
 
-## Phase 1 — Wire glazing onto the existing option store ⬜
+## Phase 1 — Wire glazing onto the existing option store ✅
 
 **No new table** — `catalog_field_options` + `_options_repository.py` already serve
 glazing (research §0).

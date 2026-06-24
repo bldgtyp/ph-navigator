@@ -9,7 +9,11 @@ from fastapi import APIRouter, Query, Request
 from starlette import status
 
 from features.auth.routes import CurrentUser
-from features.catalogs._shared import CatalogManufacturerListResponse
+from features.catalogs._shared import (
+    CatalogFieldOptionsResponse,
+    CatalogManufacturerListResponse,
+    EditCatalogOptionsRequest,
+)
 from features.catalogs.frame_types.import_export.service import (
     CommitRequest,
     CommitResponse,
@@ -18,13 +22,11 @@ from features.catalogs.frame_types.import_export.service import (
     preview_import,
 )
 from features.catalogs.frame_types.models import (
-    CatalogFieldOptionsResponse,
     CatalogFrameTypeCreateRequest,
     CatalogFrameTypeListResponse,
     CatalogFrameTypeOptionsResponse,
     CatalogFrameTypePublic,
     CatalogFrameTypeUpdateRequest,
-    EditCatalogOptionsRequest,
 )
 from features.catalogs.frame_types.options_service import (
     edit_frame_type_options,
