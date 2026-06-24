@@ -50,6 +50,8 @@ export function GlazingPicker({
         compact
         disabled={disabled}
         emptyMessage="No catalog glazings available."
+        listboxClassName="aperture-picker__listbox"
+        listboxPlacement="portal"
         placeholder={currentName ?? "Pick a glazing..."}
         value={currentCatalogId ?? ""}
         options={options}

@@ -63,6 +63,8 @@ export function FramePicker({
         compact
         disabled={disabled}
         emptyMessage="No catalog frames available."
+        listboxClassName="aperture-picker__listbox"
+        listboxPlacement="portal"
         placeholder={currentName ?? "Pick a frame..."}
         value={currentCatalogId ?? ""}
         options={options}

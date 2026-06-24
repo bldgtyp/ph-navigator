@@ -944,6 +944,11 @@
   font-size: var(--fs-xs);
 }
 
+.autocomplete-select-listbox.aperture-picker__listbox [role="option"],
+.autocomplete-select-listbox.aperture-picker__listbox .autocomplete-select-empty {
+  font-size: var(--fs-xs);
+}
+
 /* ---- Phase 07: operation row, type menu, warning banner ------------------ */
 
 .aperture-operation-row__main {

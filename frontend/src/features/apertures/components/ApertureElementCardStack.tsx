@@ -48,17 +48,22 @@ export function ApertureElementCardStack({
 }: ApertureElementCardStackProps) {
   const stackRef = useRef<HTMLDivElement | null>(null);
   const previousRectsRef = useRef<Map<string, DOMRect>>(new Map());
+  const previousOrderKeyRef = useRef<string | null>(null);
   const latestSelectedElementId = selectedElementIds.at(-1) ?? null;
   const selectedElementIdSet = new Set(selectedElementIds);
   const ordered = orderedElements(aperture.elements, latestSelectedElementId);
+  const orderKey = ordered.map((element) => element.id).join("\n");
 
   useLayoutEffect(() => {
     const stack = stackRef.current;
     if (!stack) return;
     const currentRects = measureCardRects(stack);
     const previousRects = previousRectsRef.current;
+    const previousOrderKey = previousOrderKeyRef.current;
     previousRectsRef.current = currentRects;
-    if (prefersReducedMotion()) return;
+    previousOrderKeyRef.current = orderKey;
+    if (previousOrderKey === null || previousOrderKey === orderKey || prefersReducedMotion())
+      return;
 
     for (const card of stack.querySelectorAll<HTMLElement>(".aperture-element-card")) {
       const elementId = card.dataset.elementId;
