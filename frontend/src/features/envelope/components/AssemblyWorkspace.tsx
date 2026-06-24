@@ -115,7 +115,6 @@ export function AssemblyWorkspace({
         onDelete={onDelete}
       />
       <div id="assembly-builder-workspace" className="assembly-workspace">
-        {actions ? <div className="assembly-workspace__actions">{actions}</div> : null}
         <div
           id="assembly-builder-interaction-region"
           ref={interactionRef}
@@ -127,6 +126,7 @@ export function AssemblyWorkspace({
             thermalLoading={thermalLoading}
             canEdit={canEdit}
             busy={commandBusy}
+            actions={actions}
             onRename={onRenameActive}
           />
           {children}

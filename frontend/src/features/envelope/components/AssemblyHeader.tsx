@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import {
   formatLengthFromMm,
   formatRValueFromM2KPerW,
@@ -15,6 +16,7 @@ export function AssemblyHeader({
   thermalLoading,
   canEdit,
   busy,
+  actions,
   onRename,
 }: {
   activeAssembly: Assembly;
@@ -22,6 +24,7 @@ export function AssemblyHeader({
   thermalLoading: boolean;
   canEdit: boolean;
   busy: boolean;
+  actions?: ReactNode;
   onRename: (name: string) => void;
 }) {
   const { unitSystem } = useUnitPreference();
@@ -40,6 +43,7 @@ export function AssemblyHeader({
           inputLabel="Assembly name"
           onSubmit={onRename}
         />
+        {actions ? <div className="assembly-header-actions">{actions}</div> : null}
       </div>
       <div className="assembly-header-summary">
         <dl id="assembly-header-metrics" className="assembly-header-metrics">
