@@ -10,9 +10,9 @@ import {
 
 // The grid stores option ids; the controller maps them to labels for the REST
 // boundary. Fixtures mirror the seeded canonical options.
+// `manufacturer` is the only single-select; `brand` is free text (no options).
 const OPTIONS: Record<string, FieldOption[]> = {
   manufacturer: [{ id: "opt_kawneer", label: "Kawneer", color: "#3b82f6", order: 0 }],
-  brand: [{ id: "opt_gl1", label: "GL-1", color: "#3b82f6", order: 0 }],
 };
 
 const CONTROLLER_ARGS: GlazingTypesCatalogControllerArgs = {
@@ -61,7 +61,7 @@ describe("useGlazingTypesCatalogController.onWrite", () => {
     expect(api.updateGlazingType).toHaveBeenCalledWith("rec_xyz", { u_value_w_m2k: 0.625 });
   });
 
-  test("single-select cell writes map option id → label and collapse into one PATCH", async () => {
+  test("manufacturer cell write maps option id → label; free-text brand passes verbatim", async () => {
     const { result } = renderHook(() => useGlazingTypesCatalogController(CONTROLLER_ARGS), {
       wrapper,
     });
@@ -70,14 +70,15 @@ describe("useGlazingTypesCatalogController.onWrite", () => {
         kind: "cell",
         writes: [
           { rowId: "rec_abc", fieldKey: "manufacturer", value: "opt_kawneer" },
-          { rowId: "rec_abc", fieldKey: "brand", value: "opt_gl1" },
+          { rowId: "rec_abc", fieldKey: "brand", value: "Any Make-Up" },
         ],
       });
     });
     expect(api.updateGlazingType).toHaveBeenCalledTimes(1);
+    // manufacturer is mapped id → label; brand (free text) is sent as typed.
     expect(api.updateGlazingType).toHaveBeenCalledWith("rec_abc", {
       manufacturer: "Kawneer",
-      brand: "GL-1",
+      brand: "Any Make-Up",
     });
   });
 
@@ -94,23 +95,23 @@ describe("useGlazingTypesCatalogController.onWrite", () => {
     expect(api.updateGlazingType).not.toHaveBeenCalled();
   });
 
-  test("inline-add persists the new option before the row PATCH (with its label)", async () => {
+  test("inline-add persists the new manufacturer option before the row PATCH (with its label)", async () => {
     const { result } = renderHook(() => useGlazingTypesCatalogController(CONTROLLER_ARGS), {
       wrapper,
     });
-    const newOption: FieldOption = { id: "opt_new", label: "GL-9", color: "#10b981", order: 1 };
+    const newOption: FieldOption = { id: "opt_new", label: "Vanguard", color: "#10b981", order: 1 };
     await act(async () => {
       await result.current.onWrite({
         kind: "cell",
-        writes: [{ rowId: "rec_abc", fieldKey: "brand", value: "opt_new" }],
-        newOptions: { brand: [newOption] },
+        writes: [{ rowId: "rec_abc", fieldKey: "manufacturer", value: "opt_new" }],
+        newOptions: { manufacturer: [newOption] },
       });
     });
     expect(api.putGlazingTypeOptions).toHaveBeenCalledWith({
-      field_key: "brand",
-      options: [{ id: "opt_gl1", label: "GL-1", color: "#3b82f6", order: 0 }, newOption],
+      field_key: "manufacturer",
+      options: [{ id: "opt_kawneer", label: "Kawneer", color: "#3b82f6", order: 0 }, newOption],
     });
-    expect(api.updateGlazingType).toHaveBeenCalledWith("rec_abc", { brand: "GL-9" });
+    expect(api.updateGlazingType).toHaveBeenCalledWith("rec_abc", { manufacturer: "Vanguard" });
   });
 
   test("rowInsert omits the derived name and maps option defaults to labels", async () => {

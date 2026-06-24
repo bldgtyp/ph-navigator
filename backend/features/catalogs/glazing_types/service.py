@@ -34,9 +34,9 @@ CATALOG_TABLE = "glazing_types"
 
 
 def _validate_single_selects(conn: Connection[Any], values: Mapping[str, object]) -> None:
-    """Reject any single-select field (``manufacturer``, ``brand``) whose
-    non-null value is not a known option label (read live from the catalog
-    option store, Phase 1).
+    """Reject any single-select field (``manufacturer`` — the only one for
+    glazing; ``brand`` is free text) whose non-null value is not a known option
+    label (read live from the catalog option store, Phase 1).
 
     null / empty is always allowed — the fields are nullable and a null part
     simply drops from the composed name (Phase 3). New labels enter **only**

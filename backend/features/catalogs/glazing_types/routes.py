@@ -84,7 +84,7 @@ def get_glazing_manufacturers(auth: CurrentUser) -> CatalogManufacturerListRespo
 # as a record id (Starlette resolves routes in declaration order).
 @router.get("/options", response_model=CatalogGlazingTypeOptionsResponse)
 def get_glazing_type_options(auth: CurrentUser) -> CatalogGlazingTypeOptionsResponse:
-    """Both single-select fields' (manufacturer, brand) option lists."""
+    """The single-select field's (manufacturer) option list — `brand` is free text."""
 
     del auth
     return list_glazing_type_options()
