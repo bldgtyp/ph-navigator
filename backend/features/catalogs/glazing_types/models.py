@@ -7,7 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from features.catalogs._shared import strip_optional, strip_required
+from features.catalogs._shared import strip_optional
 from features.project_document.rows import SingleSelectOption
 from features.shared.colors import normalize_optional_hex_color
 
@@ -95,23 +95,13 @@ class _CatalogGlazingTypeFields(BaseModel):
 
 
 class CatalogGlazingTypeCreateRequest(_CatalogGlazingTypeFields):
-    name: str = Field(min_length=1, max_length=200)
-
-    @field_validator("name", mode="before")
-    @classmethod
-    def _strip_required_name(cls, value: object) -> object:
-        return strip_required(value)
+    """Create payload. ``name`` is **server-derived** from the parts (D-3), so it
+    is not accepted here — sending one is rejected by ``extra="forbid"``."""
 
 
 class CatalogGlazingTypeUpdateRequest(_CatalogGlazingTypeFields):
-    """Patch identity (name) + the typed fields in place."""
-
-    name: str | None = Field(default=None, min_length=1, max_length=200)
-
-    @field_validator("name", mode="before")
-    @classmethod
-    def _strip_optional_name(cls, value: object) -> object:
-        return strip_optional(value)
+    """Patch the typed fields in place. ``name`` is derived and recomputed
+    server-side whenever a name-part changes; an inbound ``name`` is rejected."""
 
 
 # --------------------------------------------------------------------------- #

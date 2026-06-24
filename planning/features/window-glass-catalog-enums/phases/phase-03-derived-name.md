@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 16:10 EDT
-STATUS: Planned
+STATUS: Done (2026-06-24) — compose_glazing_name + SQL twin + recompute_names; name dropped from write models (extra=forbid) + drift keys; backfill migration 20260624_0042; duplicate copies derived name; option-rename recompute wired
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phase 3 — server-derived read-only `name` (manufacturer | brand | suffix)
 RELATED:

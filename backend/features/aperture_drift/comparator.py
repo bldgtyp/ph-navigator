@@ -37,8 +37,10 @@ _FRAME_KEYS: tuple[str, ...] = (
     "comments",
 )
 
+# ``name`` is excluded for the same reason as ``_FRAME_KEYS``: it is now derived
+# from the parts (D-3), so it cannot drift independently of the parts already
+# compared below — including it would only duplicate a delta the parts report.
 _GLAZING_KEYS: tuple[str, ...] = (
-    "name",
     "manufacturer",
     "brand",
     "suffix",

@@ -18,9 +18,9 @@ from features.catalogs._shared import (
     CatalogManufacturerListResponse,
     log_catalog_action,
     new_catalog_record_id,
-    next_copy_suffix,
 )
 from features.catalogs.glazing_types import repository
+from features.catalogs.glazing_types._name import _NAME_PART_ORDER, compose_glazing_name
 from features.catalogs.glazing_types.models import (
     CatalogGlazingTypeCreateRequest,
     CatalogGlazingTypeListItem,
@@ -103,12 +103,13 @@ def create_glazing_type(
     payload: CatalogGlazingTypeCreateRequest, user: UserPublic, request: Request
 ) -> CatalogGlazingTypePublic:
     record_id = new_catalog_record_id()
+    field_values = payload.model_dump()
     with transaction() as conn:
-        _validate_single_selects(conn, payload.model_dump())
+        _validate_single_selects(conn, field_values)
         repository.insert_glazing_type(
             conn,
             record_id=record_id,
-            name=payload.name,
+            name=compose_glazing_name(field_values),
             manufacturer=payload.manufacturer,
             brand=payload.brand,
             suffix=payload.suffix,
@@ -152,6 +153,19 @@ def update_glazing_type(
                 )
             return _to_public(row)
         _validate_single_selects(conn, values)
+        if any(part in values for part in _NAME_PART_ORDER):
+            # A name-part changed — recompute the derived name from the merged
+            # row. Fetching here is also the load-bearing existence check for a
+            # name-part patch (validation above only checked option labels, not
+            # that the row exists / is active).
+            current = repository.get_glazing_type(conn, record_id)
+            if current is None or not current["is_active"]:
+                raise api_error(
+                    status.HTTP_404_NOT_FOUND,
+                    "catalog_glazing_type_not_found",
+                    "Catalog glazing type not found.",
+                )
+            values["name"] = compose_glazing_name({**current, **values})
         ok = repository.update_glazing_type(conn, record_id, values, user.id)
         if not ok:
             raise api_error(
@@ -176,7 +190,13 @@ def update_glazing_type(
 
 
 def duplicate_glazing_type(record_id: str, user: UserPublic, request: Request) -> CatalogGlazingTypePublic:
-    """Insert a copy of ``record_id`` with a ``(copy)`` suffix on ``name``."""
+    """Insert a copy of ``record_id``.
+
+    With ``name`` now derived from the parts (D-3), a copy has identical parts
+    and therefore an identical name — duplicates are distinguished by id, not by
+    a ``(copy)`` suffix (the active-name index is non-unique). The user renames
+    by editing a part afterwards.
+    """
     new_record_id = new_catalog_record_id()
     with transaction() as conn:
         source = repository.get_glazing_type(conn, record_id)
@@ -186,15 +206,13 @@ def duplicate_glazing_type(record_id: str, user: UserPublic, request: Request) -
                 "catalog_glazing_type_not_found",
                 "Catalog glazing type not found.",
             )
-        siblings = repository.list_sibling_names(conn, exclude_id=record_id)
-        new_name = next_copy_suffix(source["name"], siblings)
         # No _validate_single_selects here: the source row's labels are already
         # valid (they passed validation on the original write), so a copy cannot
         # introduce an unknown option.
         repository.insert_glazing_type(
             conn,
             record_id=new_record_id,
-            name=new_name,
+            name=compose_glazing_name(source),
             manufacturer=source["manufacturer"],
             brand=source["brand"],
             suffix=source["suffix"],

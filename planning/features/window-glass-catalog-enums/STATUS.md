@@ -9,9 +9,20 @@ RELATED: ./README.md, ./research.md, ./decisions.md, ./PLAN.md, ./phases/
 
 # STATUS — window-glass-catalog-enums
 
-**State:** `In progress` — Phases 0–2 done; Phase 3 next. All decisions resolved
+**State:** `In progress` — Phases 0–3 done; Phase 4 next. All decisions resolved
 (D-6 settled by Ed 2026-06-24: drop the two `DEFAULT` rows, keep one sentinel
 renamed `PHN-Default-Glass`).
+
+**Phase 3 (done 2026-06-24):** `name` is now server-derived/read-only
+(`manufacturer | brand | suffix`). Added `glazing_types/_name.py`
+(`compose_glazing_name`), `repository._COMPOSE_NAME_SQL` + `recompute_names`
+(skips the sentinel by id), backfill migration `20260624_0042`. Dropped `name`
+from the create/update models (`extra="forbid"` rejects inbound name) and from
+the drift comparator `_GLAZING_KEYS`. Service computes name on create, recomputes
+on a name-part patch, and `duplicate` copies the derived name (removed the
+`(copy)` suffix + orphaned `list_sibling_names`). Wired `recompute_names` into
+`edit_glazing_type_options` (the Phase-1 deferral). Verified: composer is lossless
+against the cleaned seed; full backend suite green (1083 passed); ruff/ty clean.
 
 **Phase 2 (done 2026-06-24):** added `_validate_single_selects` to
 `glazing_types/service.py` (mirror of frame), wired into `create` + `update`;
@@ -60,10 +71,11 @@ cross-check clean (no EXTRA, no orphan options); fresh-migrate sentinel reads
 
 ## Next step
 
-Execute **Phase 3** (server-derived read-only `name` = `manufacturer | brand |
-suffix`: `compose_glazing_name`, SQL twin + `recompute_names`, drop `name` from
-write models + drift keys, backfill migration), then 4 → 6 in order. Phase 4 is
-the import-v2 backend work; Phase 5 is the frontend; Phase 6 is closeout + archive.
+Execute **Phase 4** (import/export schema v1→v2: fold legacy `INTUS`/`ZOLA`
+casing, drop `DEFAULT` rows on import, compute name on import + drop the
+missing-name gate, auto-add unknown options, surface `dropped`/`new_option`
+counts), then 5 → 6 in order. Phase 5 is the frontend; Phase 6 is closeout +
+archive.
 
 Recommended execution: run via the `implement-loop` skill phase-by-phase, or
 `implement` per phase, with the closeout gate after the last code phase.
