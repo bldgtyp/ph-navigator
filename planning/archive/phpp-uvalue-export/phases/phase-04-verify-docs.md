@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 17:19 EDT
-STATUS: In progress — autonomous parts done 2026-06-24; PHPP paste + Playwright walkthrough await Ed
+STATUS: Done (2026-06-24) — autonomous parts complete; §1 real-PHPP paste + §2 Playwright walkthrough waived by Ed, soft cells Q-A/Q-B/Q-C accepted on working defaults
 AUTHOR: Ed (via Claude)
 SCOPE: End-to-end verification, PHPP paste validation, closeout gate, docs.
 RELATED: ../PRD.md (§10 acceptance), ../decisions.md (open Q-A…Q-C)

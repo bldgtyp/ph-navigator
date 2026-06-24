@@ -1,7 +1,7 @@
 ---
-DATE: 2026-06-23
-TIME: 17:19 EDT
-STATUS: Active — Phases 1–3 implemented (backend + frontend); only Phase 4 (verify/paste/closeout) pending
+DATE: 2026-06-24
+TIME: 08:00 EDT
+STATUS: Complete (archived) — Phases 1–4 done. Soft cells Q-A/Q-B/Q-C accepted on working defaults (Ed, 2026-06-24); real-PHPP paste alignment + Playwright walkthrough waived
 AUTHOR: Ed (via Claude)
 SCOPE: State tracker for the PHPP U-Value export feature.
 RELATED: README.md, PRD.md, decisions.md, research.md, phases/
@@ -39,16 +39,16 @@ Q-A…Q-G still carry working defaults to lock against a real PHPP paste in Phas
 
 ## Next step
 
-Start **Phase 4** (`phases/phase-04-verify-docs.md`): paste a real exported CSV
-into a live PHPP U-Values worksheet to lock the soft cells (Q-A…Q-C), run the
-Playwright walkthrough, the full closeout gate (`make ci`), and the
-`context/` docs fold-back. Much of Phase 4 needs a running stack and Ed's manual
-PHPP validation, so it is the natural human-in-the-loop stopping point.
+None — feature complete and archived. The two remaining human-in-the-loop
+Phase 4 items (real-PHPP copy/paste alignment of the soft cells Q-A/Q-B/Q-C, and
+the Playwright E2E walkthrough) were **waived by Ed on 2026-06-24**: the
+working-default CSV column layout, IP annotation scope, and percentage precision
+are accepted as shipped. If a future real-PHPP paste shows misalignment, revisit
+Q-A/Q-B/Q-C in `decisions.md` and the golden CSVs.
 
 ## Blockers
 
-None hard. Soft: the exact CSV cell columns (Q-A) and IP annotation scope (Q-B)
-won't be fully locked until a real PHPP copy/paste test in Phase 4.
+None.
 
 ## Verification plan
 
@@ -64,4 +64,4 @@ won't be fully locked until a real PHPP copy/paste test in Phase 4.
 | 1 — Backend export core | Done (2026-06-24) |
 | 2 — Backend routes + units | Done (2026-06-24) |
 | 3 — Frontend wiring | Done (2026-06-24) |
-| 4 — Verify + docs + closeout | Planned (needs live PHPP paste + Ed) |
+| 4 — Verify + docs + closeout | Done (2026-06-24) — autonomous parts complete; real-PHPP paste + Playwright waived by Ed |
