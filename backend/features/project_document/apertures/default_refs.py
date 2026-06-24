@@ -1,6 +1,6 @@
 """DB-backed `DefaultsCatalogReader` adapter.
 
-Resolves the seeded ``PHN-Default-Frame`` and ``PHN-Default-Glazing``
+Resolves the seeded ``PHN-Default-Frame`` and ``PHN-Default-Glass``
 catalog rows to ``FrameRef`` / ``GlazingRef`` instances so the
 aperture-command dispatcher can bookshelf-copy them into new aperture
 elements. Returns ``None`` when the seed row is missing, which the

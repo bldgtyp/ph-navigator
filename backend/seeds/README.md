@@ -86,7 +86,7 @@ project document validator.
 `project/apertures.json` names the starter aperture row. The seed script
 builds the full 1000 mm x 1000 mm aperture through the same default
 aperture factory used by the UI, so it bookshelf-copies
-`PHN-Default-Frame` and `PHN-Default-Glazing`.
+`PHN-Default-Frame` and `PHN-Default-Glass`.
 
 ## Reset & reseed (one command)
 

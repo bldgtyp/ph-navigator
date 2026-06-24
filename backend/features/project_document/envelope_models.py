@@ -27,7 +27,7 @@ AssemblyOrientation = Literal["first_layer_outside", "last_layer_outside"]
 SpecificationStatus = Literal["complete", "missing", "question", "na"]
 
 APERTURE_DEFAULT_FRAME_NAME = "PHN-Default-Frame"
-APERTURE_DEFAULT_GLAZING_NAME = "PHN-Default-Glazing"
+APERTURE_DEFAULT_GLAZING_NAME = "PHN-Default-Glass"
 
 # Deterministic sentinel ids of the built-in default catalog rows (seeded by
 # migration 20260605_0018). The default frame/glazing are resolved by **id**,
