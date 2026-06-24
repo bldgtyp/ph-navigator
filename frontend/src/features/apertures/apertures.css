@@ -795,6 +795,13 @@
   padding: 0;
 }
 
+.aperture-element-card[data-selected="true"] {
+  border-color: var(--aperture-selected-ring);
+  background: var(--aperture-selected-tint);
+  outline: 2px solid var(--aperture-selected-ring);
+  outline-offset: -2px;
+}
+
 .aperture-element-card__header {
   display: flex;
   align-items: center;

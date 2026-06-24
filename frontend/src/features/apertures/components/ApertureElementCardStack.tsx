@@ -14,16 +14,11 @@ import type {
 import type { ViewDirection } from "../frame-label-map";
 import { ApertureElementCard } from "./ApertureElementCard";
 
-export type FocusedTarget = {
-  elementId: string;
-  region: ApertureSide | "glazing";
-} | null;
-
 export type ApertureElementCardStackProps = {
   aperture: ApertureTypeEntry;
   viewDirection: ViewDirection;
   canEdit: boolean;
-  focusedTarget: FocusedTarget;
+  selectedElementIds: readonly string[];
   onSetElementName: (elementId: string, newName: string) => void;
   onPickFrame: (elementId: string, side: ApertureSide, frame: FrameRef) => void;
   onPickGlazing: (elementId: string, glazing: GlazingRef) => void;
@@ -37,7 +32,7 @@ export function ApertureElementCardStack({
   aperture,
   viewDirection,
   canEdit,
-  focusedTarget,
+  selectedElementIds,
   onSetElementName,
   onPickFrame,
   onPickGlazing,
@@ -46,7 +41,9 @@ export function ApertureElementCardStack({
   onDismissOperationWarning,
   uValueByElementId,
 }: ApertureElementCardStackProps) {
-  const ordered = orderedElements(aperture.elements);
+  const latestSelectedElementId = selectedElementIds.at(-1) ?? null;
+  const selectedElementIdSet = new Set(selectedElementIds);
+  const ordered = orderedElements(aperture.elements, latestSelectedElementId);
   return (
     <div className="aperture-element-card-stack" data-testid="aperture-element-card-stack">
       {ordered.map((element) => (
@@ -55,9 +52,7 @@ export function ApertureElementCardStack({
           element={element}
           viewDirection={viewDirection}
           canEdit={canEdit}
-          focusedSide={
-            focusedTarget && focusedTarget.elementId === element.id ? focusedTarget.region : null
-          }
+          isSelected={selectedElementIdSet.has(element.id)}
           onSetName={(n) => onSetElementName(element.id, n)}
           onPickFrame={(side, frame) => onPickFrame(element.id, side, frame)}
           onPickGlazing={(glazing) => onPickGlazing(element.id, glazing)}
@@ -71,9 +66,18 @@ export function ApertureElementCardStack({
   );
 }
 
-export function orderedElements(elements: ApertureElement[]): ApertureElement[] {
-  return [...elements].sort((a, b) => {
+export function orderedElements(
+  elements: ApertureElement[],
+  priorityElementId: string | null = null,
+): ApertureElement[] {
+  const ordered = [...elements].sort((a, b) => {
     if (a.column_span[0] !== b.column_span[0]) return a.column_span[0] - b.column_span[0];
     return a.row_span[0] - b.row_span[0];
   });
+  if (priorityElementId === null) return ordered;
+  const priorityIndex = ordered.findIndex((element) => element.id === priorityElementId);
+  if (priorityIndex <= 0) return ordered;
+  const priority = ordered[priorityIndex];
+  if (priority === undefined) return ordered;
+  return [priority, ...ordered.slice(0, priorityIndex), ...ordered.slice(priorityIndex + 1)];
 }
