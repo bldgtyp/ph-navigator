@@ -5,7 +5,7 @@ how and when each feature packet landed. Newest first. Grep by slug.
 
 ## 2026-06-24
 
-- `window-glass-catalog-enums` - glazing catalog manufacturer/brand → single-select, server-derived name, import v2. (PENDING)
+- `window-glass-catalog-enums` - glazing catalog manufacturer/brand → single-select, server-derived name, import v2. (f5c4a89b)
 - `archive-dated-reorg` - dated archive buckets and chronological archive index. (286e9486)
 - `data-table-status-field` - per-row status enum and chip column. (618fc21f)
 - `data-table-status-field-addendum` - status field follow-up addendum. (6aa8114c)
