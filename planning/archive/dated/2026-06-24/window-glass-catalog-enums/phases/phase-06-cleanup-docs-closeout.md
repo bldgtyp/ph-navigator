@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 16:10 EDT
-STATUS: Planned
+STATUS: Done (2026-06-24) — context/ folded; closeout gate green; smoke run; packet archived
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phase 6 — fold decisions into context/, run the closeout gate, mark Complete
 RELATED:
