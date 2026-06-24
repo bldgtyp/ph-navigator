@@ -163,6 +163,34 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
   const refsContext = project.active_version_id
     ? { onViewPickedRefs: () => setRefsViewOpen(true) }
     : null;
+  const apertureActions = (
+    <>
+      <DisplayFormatMenuGroup {...dimFormat} />
+      <AppMenu label="Aperture actions">
+        {exportContext ? (
+          <ExportHbjsonAction
+            projectId={exportContext.projectId}
+            versionId={exportContext.versionId}
+            source={exportContext.source}
+            projectBtNumber={exportContext.projectBtNumber}
+            versionLabel={exportContext.versionLabel}
+            disabled={!exportContext.hasApertures}
+            onError={exportContext.onError}
+          />
+        ) : null}
+        {filtersContext ? (
+          <AppMenuItem icon={Filter} onClick={filtersContext.onConfigureFilters}>
+            Configure manufacturer filters
+          </AppMenuItem>
+        ) : null}
+        {refsContext ? (
+          <AppMenuItem icon={Waypoints} onClick={refsContext.onViewPickedRefs}>
+            View picked frames &amp; glazings
+          </AppMenuItem>
+        ) : null}
+      </AppMenu>
+    </>
+  );
 
   return (
     <ManufacturerFilterProvider
@@ -173,38 +201,7 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
     >
       <DriftProvider value={{ entries: driftEntries, onOpenRefresh: setRefreshEntry }}>
         <section className="tab-panel apertures-page" aria-label="Apertures">
-          <AppSubTabs
-            id="aperture-subtabs"
-            ariaLabel="Aperture views"
-            actions={
-              <>
-                <DisplayFormatMenuGroup {...dimFormat} />
-                <AppMenu label="Aperture actions">
-                  {exportContext ? (
-                    <ExportHbjsonAction
-                      projectId={exportContext.projectId}
-                      versionId={exportContext.versionId}
-                      source={exportContext.source}
-                      projectBtNumber={exportContext.projectBtNumber}
-                      versionLabel={exportContext.versionLabel}
-                      disabled={!exportContext.hasApertures}
-                      onError={exportContext.onError}
-                    />
-                  ) : null}
-                  {filtersContext ? (
-                    <AppMenuItem icon={Filter} onClick={filtersContext.onConfigureFilters}>
-                      Configure manufacturer filters
-                    </AppMenuItem>
-                  ) : null}
-                  {refsContext ? (
-                    <AppMenuItem icon={Waypoints} onClick={refsContext.onViewPickedRefs}>
-                      View picked frames &amp; glazings
-                    </AppMenuItem>
-                  ) : null}
-                </AppMenu>
-              </>
-            }
-          >
+          <AppSubTabs id="aperture-subtabs" ariaLabel="Aperture views">
             {APERTURE_SUBTABS.map((subtab) => (
               <AppSubTabButton
                 key={subtab.id}
@@ -272,6 +269,7 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                     : "apertures-page__body"
                 }
               >
+                <div className="apertures-page__body-actions">{apertureActions}</div>
                 <ApertureSidebar
                   apertures={sorted}
                   activeApertureId={activeAperture?.id ?? null}

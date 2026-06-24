@@ -9,7 +9,7 @@
         db-create-test db-migrate-test \
         migrate makemigration test test-backend test-frontend coverage typecheck \
         lint check ci ci-backend ci-frontend check-backend check-frontend frontend-dev-check build-frontend format format-check \
-        smoke seed-dev-user seed-agent-user seed-climate-bundle seed-dev-data seed-materials seed-glazing seed-frames seed-hbjson db-seed e2e e2e-report clean graphify-prune
+        smoke seed-dev-user seed-agent-user seed-agent-browser seed-climate-bundle seed-dev-data seed-materials seed-glazing seed-frames seed-hbjson db-seed e2e e2e-report clean graphify-prune
 
 # Local Postgres URL for the dedicated pytest database. Mirrors the dev
 # URL in backend/.env.example with the database name swapped to *_test.
@@ -216,6 +216,9 @@ seed-dev-user: migrate ## Create/reset the default local editor login
 
 seed-agent-user: migrate ## Create/reset the dedicated local Codex/agent editor login
 	cd backend && uv run python -m scripts.seed_user --email codex@example.com --display-name "Codex Agent" --password "password"
+
+seed-agent-browser: migrate ## Create/repair the Codex browser-test project and dirty draft; prints the test URL
+	cd backend && uv run python -m scripts.seed_agent_browser_fixture
 
 seed-climate-bundle: object-store-init ## Build the Phius + PHI climate bundles from local source + upload to MinIO (needs MinIO)
 	cd backend && \

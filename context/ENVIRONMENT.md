@@ -70,6 +70,13 @@ inspection:
 - Frontend: `http://localhost:5173`.
 - Backend API: `http://localhost:8000`.
 - Dedicated agent login: `codex@example.com` / `password`.
+- Dedicated browser fixture: run `make seed-agent-browser`, then open the
+  printed `sign-in route`. In a clean browser profile, the raw project route
+  renders read-only instead of redirecting, so the `sign-in?next=...` URL is
+  the reliable path to editor controls. The fixture project uses BT number
+  `AGENT-BROWSER`, is owned by `codex@example.com`, and includes a real dirty
+  Rooms draft so the app-wide "Uncommitted changes" / "Save Version" controls
+  render immediately after sign-in.
 
 Setup/repair sequence:
 
@@ -77,7 +84,7 @@ Setup/repair sequence:
 make dev
 make backend
 make frontend
-make seed-agent-user
+make seed-agent-browser
 ```
 
 Run `make backend` and `make frontend` in separate long-lived terminals.
@@ -113,6 +120,17 @@ single-active-session rule per user, so logging in as Ed from an
 isolated Playwright browser can invalidate the user's own live browser
 session. The dedicated agent user avoids that collision while still
 exercising the authenticated UI.
+
+Use `make seed-agent-browser` before visual/browser checks that need a
+mounted project-document route, version controls, dirty-draft controls, or a
+known non-empty dashboard. In a fresh Playwright context, navigate to the
+printed `sign-in route`, fill `codex@example.com` / `password`, wait for the
+redirect, then assert the dirty controls. `make seed-agent-user` is auth-only:
+it creates the login but does not create or share any projects, so the Codex
+dashboard may be empty after a DB reset. Do not use screenshot project slugs
+such as `DEV-0001` as agent test URLs unless the project is confirmed visible
+to `codex@example.com`; those routes may belong to Ed's local account and
+return `PROJECT UNAVAILABLE` for the dedicated agent session.
 
 If the Playwright MCP browser profile is locked, use the Node REPL
 Playwright fallback with `frontend/node_modules` and an isolated browser
@@ -418,6 +436,13 @@ service would use `ph-navigator-v2-prod`). Trigger when a new
 
 - `make seed-dev-user` creates/resets local editor
   `ed@example.com` / `password` with display name `Ed May`.
+- `make seed-agent-browser` creates/resets local editor
+  `codex@example.com` / `password`, creates or repairs the `AGENT-BROWSER`
+  project, restores it if soft-deleted, resets its active Working version,
+  creates a dirty Rooms draft for Codex, and prints the exact browser route
+  plus a clean-profile sign-in route to open for UI inspection.
+- `make seed-agent-user` creates/resets only the Codex login. Use it for
+  auth-only checks; use `make seed-agent-browser` for browser UI checks.
 - The seed script refuses to run outside local environments
   (`development`, `test`, `local`) unless `--allow-staging` is used
   with `ENVIRONMENT=staging`.
@@ -441,6 +466,8 @@ service would use `ph-navigator-v2-prod`). Trigger when a new
 - `make test`, `make typecheck`, `make lint`, `make format`,
   `make migrate`, `make smoke`
 - `make seed-dev-user` — seed the local editor account for browser/E2E auth
+- `make seed-agent-browser` — seed the dedicated Codex browser fixture and
+  print a route that has a dirty draft/version controls
 - `make e2e` — Playwright end-to-end (frontend must be running)
 - `make e2e-report` — open the last Playwright HTML report
 - See `Makefile` for the full list (or `make help`).

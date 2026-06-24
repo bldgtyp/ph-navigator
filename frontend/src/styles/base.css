@@ -398,12 +398,12 @@ a:focus-visible {
 
 .topbar-document-controls {
   position: absolute;
-  top: 50%;
+  top: 0;
   left: 50%;
   display: flex;
   min-width: 0;
   justify-content: center;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
 }
 
 .topbar-global-actions {
