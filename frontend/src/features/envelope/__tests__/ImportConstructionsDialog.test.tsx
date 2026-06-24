@@ -22,6 +22,7 @@ function plan(overrides: Partial<ImportConstructionsPreview> = {}): ImportConstr
     },
     constructions: [
       {
+        resolution_key: "WALL-A",
         source_assembly_id: "asm_a",
         name: "WALL-A",
         action: "replace",
@@ -29,6 +30,7 @@ function plan(overrides: Partial<ImportConstructionsPreview> = {}): ImportConstr
         warnings: [],
       },
       {
+        resolution_key: "W_NewWall",
         source_assembly_id: null,
         name: "W_NewWall",
         action: "add_new",
@@ -75,14 +77,14 @@ describe("ImportConstructionsDialog", () => {
     expect(screen.getByText("WALL-A")).toBeInTheDocument();
     // The matched construction defaults to Replace and is editable.
     expect(screen.getByLabelText("Action for WALL-A")).toHaveValue("replace");
-    // The foreign construction (no source id) can only be added — static chip.
-    expect(screen.queryByLabelText("Action for W_NewWall")).not.toBeInTheDocument();
+    // The foreign construction is now editable too (Add new / Skip).
+    expect(screen.getByLabelText("Action for W_NewWall")).toHaveValue("add_new");
     expect(screen.getByText("Copy from catalog")).toBeInTheDocument();
     expect(screen.getByText(/Matched an existing project material by name/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Import 2 constructions" })).toBeEnabled();
   });
 
-  test("confirm sends per-construction resolutions", async () => {
+  test("confirm sends a resolution per construction, keyed by resolution_key", async () => {
     const onConfirm = vi.fn();
     render(
       <ImportConstructionsDialog
@@ -95,13 +97,13 @@ describe("ImportConstructionsDialog", () => {
     );
 
     await userEvent.click(screen.getByRole("button", { name: "Import 2 constructions" }));
-    // Only the construction with a source id is addressable server-side.
     expect(onConfirm).toHaveBeenCalledWith([
-      { source_assembly_id: "asm_a", action: "replace", target_assembly_id: "asm_a" },
+      { resolution_key: "WALL-A", action: "replace", target_assembly_id: "asm_a" },
+      { resolution_key: "W_NewWall", action: "add_new", target_assembly_id: null },
     ]);
   });
 
-  test("overriding an action to Skip drops it from the import", async () => {
+  test("a foreign construction can be skipped", async () => {
     const onConfirm = vi.fn();
     render(
       <ImportConstructionsDialog
@@ -113,12 +115,12 @@ describe("ImportConstructionsDialog", () => {
       />,
     );
 
-    await userEvent.selectOptions(screen.getByLabelText("Action for WALL-A"), "skip");
-    // Only the foreign add_new construction now lands.
-    const button = screen.getByRole("button", { name: "Import 1 construction" });
-    await userEvent.click(button);
+    await userEvent.selectOptions(screen.getByLabelText("Action for W_NewWall"), "skip");
+    // Only the replace construction now lands.
+    await userEvent.click(screen.getByRole("button", { name: "Import 1 construction" }));
     expect(onConfirm).toHaveBeenCalledWith([
-      { source_assembly_id: "asm_a", action: "skip", target_assembly_id: "asm_a" },
+      { resolution_key: "WALL-A", action: "replace", target_assembly_id: "asm_a" },
+      { resolution_key: "W_NewWall", action: "skip", target_assembly_id: null },
     ]);
   });
 
@@ -128,6 +130,7 @@ describe("ImportConstructionsDialog", () => {
         plan={plan({
           constructions: [
             {
+              resolution_key: "WALL-A",
               source_assembly_id: "asm_a",
               name: "WALL-A",
               action: "skip",

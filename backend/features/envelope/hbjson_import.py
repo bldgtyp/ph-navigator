@@ -90,6 +90,10 @@ class ImportedLayer:
 
 @dataclass(frozen=True)
 class ImportedConstruction:
+    # Stable per-file identity used to match user resolutions to constructions.
+    # The file's construction identifier works for both native and foreign
+    # files (`source_assembly_id` is null for foreign, so it cannot serve here).
+    resolution_key: str
     source_assembly_id: str | None
     name: str
     type: AssemblyType
@@ -239,6 +243,7 @@ def _parse_construction(
 
     name = construction.get("display_name") or identifier
     return ImportedConstruction(
+        resolution_key=identifier,
         source_assembly_id=_as_optional_str(ph_nav.get("assembly_id")),
         name=str(name),
         type=_resolve_assembly_type(ph_nav.get("assembly_type"), identifier),

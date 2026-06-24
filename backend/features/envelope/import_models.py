@@ -31,11 +31,15 @@ MaterialDecision = Literal[
 
 
 class ConstructionResolution(BaseModel):
-    """User (or default) decision for one incoming construction."""
+    """User (or default) decision for one incoming construction.
+
+    Keyed by ``resolution_key`` (the file's construction identifier) so foreign
+    constructions — which carry no native assembly id — can be addressed too.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
-    source_assembly_id: str
+    resolution_key: str
     action: ConstructionAction
     target_assembly_id: str | None = None
 
@@ -54,6 +58,7 @@ class MaterialPlanItem(BaseModel):
 class ConstructionPlanItem(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    resolution_key: str
     source_assembly_id: str | None
     name: str
     action: ConstructionAction
