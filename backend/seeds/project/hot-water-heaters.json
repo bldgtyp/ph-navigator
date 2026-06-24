@@ -8,6 +8,12 @@
       { "id": "opt_hwh_heat_pump_annual_cop", "label": "5-Heat Pump (Annual COP)", "color": "#10b981", "order": 4 },
       { "id": "opt_hwh_heat_pump_monthly_cop", "label": "6-Heat Pump (Monthly COP)", "color": "#14b8a6", "order": 5 },
       { "id": "opt_hwh_heat_pump_inside", "label": "7-Heat Pump (Inside)", "color": "#0ea5e9", "order": 6 }
+    ],
+    "hot_water_heaters.status": [
+      { "id": "opt_status_complete", "label": "Complete", "color": "#16a34a", "order": 0 },
+      { "id": "opt_status_needed", "label": "Needed", "color": "#d97706", "order": 1 },
+      { "id": "opt_status_question", "label": "Question", "color": "#0ea5b7", "order": 2 },
+      { "id": "opt_status_na", "label": "N/A", "color": "#9ca3af", "order": 3 }
     ]
   },
   "rows": [
@@ -30,7 +36,8 @@
         "phase": 1,
         "power_factor": 0.8,
         "watts": 4500,
-        "uef": 4.0
+        "uef": 4.0,
+        "status": "opt_status_complete"
       }
     },
     {
@@ -52,7 +59,8 @@
         "phase": 1,
         "power_factor": 0.8,
         "watts": 4500,
-        "uef": 3.88
+        "uef": 3.88,
+        "status": "opt_status_needed"
       }
     },
     {
@@ -74,7 +82,8 @@
         "phase": 1,
         "power_factor": 0.8,
         "watts": 4500,
-        "uef": 0.92
+        "uef": 0.92,
+        "status": "opt_status_question"
       }
     },
     {
@@ -96,7 +105,8 @@
         "phase": null,
         "power_factor": 0.8,
         "watts": null,
-        "uef": null
+        "uef": null,
+        "status": "opt_status_na"
       }
     },
     {
@@ -118,7 +128,8 @@
         "phase": null,
         "power_factor": 0.8,
         "watts": null,
-        "uef": 0.65
+        "uef": 0.65,
+        "status": "opt_status_complete"
       }
     }
   ]

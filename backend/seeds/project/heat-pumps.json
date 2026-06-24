@@ -25,6 +25,18 @@
       { "id": "opt_wall_mounted", "label": "Wall Mounted", "color": "#3b82f6", "order": 0 },
       { "id": "opt_ceiling_recessed", "label": "Ceiling Recessed", "color": "#10b981", "order": 1 },
       { "id": "opt_ducted_central", "label": "Ducted Central", "color": "#a16207", "order": 2 }
+    ],
+    "heat_pumps_outdoor_equip.status": [
+      { "id": "opt_status_complete", "label": "Complete", "color": "#16a34a", "order": 0 },
+      { "id": "opt_status_needed", "label": "Needed", "color": "#d97706", "order": 1 },
+      { "id": "opt_status_question", "label": "Question", "color": "#0ea5b7", "order": 2 },
+      { "id": "opt_status_na", "label": "N/A", "color": "#9ca3af", "order": 3 }
+    ],
+    "heat_pumps_indoor_equip.status": [
+      { "id": "opt_status_complete", "label": "Complete", "color": "#16a34a", "order": 0 },
+      { "id": "opt_status_needed", "label": "Needed", "color": "#d97706", "order": 1 },
+      { "id": "opt_status_question", "label": "Question", "color": "#0ea5b7", "order": 2 },
+      { "id": "opt_status_na", "label": "N/A", "color": "#9ca3af", "order": 3 }
     ]
   },
   "outdoor_equip": [
@@ -45,7 +57,8 @@
       "cooling_data_type": "EER2/SEER2",
       "eer": 11.5,
       "seer": 19.0,
-      "notes": "Ductless multi-zone outdoor; serves bedrooms + living."
+      "notes": "Ductless multi-zone outdoor; serves bedrooms + living.",
+      "custom_values": { "status": "opt_status_complete" }
     },
     {
       "id": "hpoe_01J5RH4F1A0000000000000002",
@@ -63,7 +76,8 @@
       "cooling_data_type": "EER2/SEER2",
       "eer": 12.0,
       "seer": 20.3,
-      "notes": "Single-zone wall cassette outdoor."
+      "notes": "Single-zone wall cassette outdoor.",
+      "custom_values": { "status": "opt_status_needed" }
     },
     {
       "id": "hpoe_01J5RH4F1A0000000000000003",
@@ -80,7 +94,8 @@
       "cooling_data_type": "EER2/SEER2",
       "eer": 11.0,
       "seer": 18.5,
-      "notes": "Multi-split outdoor; no specific paired indoor."
+      "notes": "Multi-split outdoor; no specific paired indoor.",
+      "custom_values": { "status": "opt_status_question" }
     },
     {
       "id": "hpoe_01J5RH4F1A0000000000000004",
@@ -97,7 +112,8 @@
       "cooling_data_type": "EER/SEER",
       "eer": 10.0,
       "seer": 16.0,
-      "notes": "Halcyon single-zone; cold-climate variant. Pre-2023 AHRI rating sheet on file."
+      "notes": "Halcyon single-zone; cold-climate variant. Pre-2023 AHRI rating sheet on file.",
+      "custom_values": { "status": "opt_status_na" }
     },
     {
       "id": "hpoe_01J5RH4F1A0000000000000005",
@@ -114,7 +130,8 @@
       "cooling_cap_kw_95f": 10.55,
       "cooling_data_type": "IEER",
       "ieer": 16.5,
-      "notes": "Central ducted outdoor; paired with FB4CNF air handler."
+      "notes": "Central ducted outdoor; paired with FB4CNF air handler.",
+      "custom_values": { "status": "opt_status_complete" }
     }
   ],
   "indoor_equip": [
@@ -132,7 +149,8 @@
       "heating_btuh_17f": 7200,
       "heating_cop": 3.2,
       "seer": 26.0,
-      "notes": "Hyper-heat wall cassette."
+      "notes": "Hyper-heat wall cassette.",
+      "custom_values": { "status": "opt_status_complete" }
     },
     {
       "id": "hpie_01J5RH4F1A0000000000000002",
@@ -148,7 +166,8 @@
       "heating_btuh_17f": 9000,
       "heating_cop": 3.1,
       "seer": 25.5,
-      "notes": "Hyper-heat wall cassette."
+      "notes": "Hyper-heat wall cassette.",
+      "custom_values": { "status": "opt_status_needed" }
     },
     {
       "id": "hpie_01J5RH4F1A0000000000000003",
@@ -164,7 +183,8 @@
       "heating_btuh_17f": 7800,
       "heating_cop": 3.3,
       "seer": 24.0,
-      "notes": "Emura-style designer wall unit."
+      "notes": "Emura-style designer wall unit.",
+      "custom_values": { "status": "opt_status_question" }
     },
     {
       "id": "hpie_01J5RH4F1A0000000000000004",
@@ -180,7 +200,8 @@
       "heating_btuh_17f": 6500,
       "heating_cop": 3.0,
       "seer": 22.0,
-      "notes": "4-way ceiling cassette."
+      "notes": "4-way ceiling cassette.",
+      "custom_values": { "status": "opt_status_na" }
     },
     {
       "id": "hpie_01J5RH4F1A0000000000000005",
@@ -196,7 +217,8 @@
       "heating_btuh_17f": 24000,
       "heating_cop": 2.6,
       "seer": 17.0,
-      "notes": "Central air handler matched to 38MAQB36-3 outdoor."
+      "notes": "Central air handler matched to 38MAQB36-3 outdoor.",
+      "custom_values": { "status": "opt_status_complete" }
     }
   ],
   "outdoor_units": [

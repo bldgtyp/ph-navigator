@@ -88,6 +88,12 @@
     "appliances.energy_star": [
       { "id": "opt_es_yes", "label": "Energy Star", "color": "#10b981", "order": 0 },
       { "id": "opt_es_no", "label": "Not Energy Star", "color": "#9ca3af", "order": 1 }
+    ],
+    "appliances.status": [
+      { "id": "opt_status_complete", "label": "Complete", "color": "#16a34a", "order": 0 },
+      { "id": "opt_status_needed", "label": "Needed", "color": "#d97706", "order": 1 },
+      { "id": "opt_status_question", "label": "Question", "color": "#0ea5b7", "order": 2 },
+      { "id": "opt_status_na", "label": "N/A", "color": "#9ca3af", "order": 3 }
     ]
   },
   "rows": [
@@ -107,7 +113,8 @@
         "cef": null,
         "imef": null,
         "mef": null,
-        "annual_energy_kwh": 240
+        "annual_energy_kwh": 240,
+        "status": "opt_status_complete"
       }
     },
     {
@@ -126,7 +133,8 @@
         "cef": null,
         "imef": 2.92,
         "mef": null,
-        "annual_energy_kwh": 100
+        "annual_energy_kwh": 100,
+        "status": "opt_status_needed"
       }
     },
     {
@@ -145,7 +153,8 @@
         "cef": 5.16,
         "imef": null,
         "mef": null,
-        "annual_energy_kwh": 320
+        "annual_energy_kwh": 320,
+        "status": "opt_status_question"
       }
     },
     {
@@ -164,7 +173,8 @@
         "cef": null,
         "imef": null,
         "mef": null,
-        "annual_energy_kwh": 760
+        "annual_energy_kwh": 760,
+        "status": "opt_status_na"
       }
     },
     {
@@ -183,7 +193,8 @@
         "cef": null,
         "imef": null,
         "mef": null,
-        "annual_energy_kwh": 540
+        "annual_energy_kwh": 540,
+        "status": "opt_status_complete"
       }
     }
   ]

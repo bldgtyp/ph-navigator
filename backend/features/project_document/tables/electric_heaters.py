@@ -25,6 +25,7 @@ from features.project_document.tables._registry_helpers import (
     custom_option_lists_for_table,
     make_field_registry,
 )
+from features.project_document.tables._status_field import status_field_def
 from features.project_document.tables.contracts import TableContract
 from features.project_document.validation import validate_document
 
@@ -46,6 +47,7 @@ ELECTRIC_HEATERS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
     built_in_field_def(field_key="url", display_name="URL", field_type=CustomFieldType.url),
     built_in_field_def(field_key="notes", display_name="Notes", field_type=CustomFieldType.long_text),
     built_in_field_def(field_key="datasheet_asset_ids", display_name="Datasheet", field_type=CustomFieldType.long_text),
+    status_field_def(),
 )
 
 ELECTRIC_HEATERS_BUILT_IN_FIELD_KEYS: tuple[str, ...] = tuple(f.field_key for f in ELECTRIC_HEATERS_BUILT_IN_FIELD_DEFS)

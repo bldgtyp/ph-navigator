@@ -10,6 +10,7 @@ from features.envelope.table_contracts import (
     assembly_segments_contract,
     project_materials_contract,
 )
+from features.project_document.tables._status_field import STATUS_FIELD_KEY, STATUS_TABLE_NAMES
 from features.project_document.tables.apertures import apertures_contract
 from features.project_document.tables.appliances import appliances_contract
 from features.project_document.tables.contracts import TableContract
@@ -84,3 +85,22 @@ _TABLES: dict[str, TableContract] = {
     thermal_bridges_contract.name: thermal_bridges_contract,
     apertures_contract.name: apertures_contract,
 }
+
+
+# Drift guard: the set of tables whose built-in FieldDefs include the shared
+# `status` field must exactly match `STATUS_TABLE_NAMES`. `empty_project_
+# document` seeds a `<table>.status` option list for every name in that tuple,
+# and the generic-table validator rejects a `custom_values.status` value with no
+# matching option list — so a table that grows the field but is missing from the
+# tuple (or vice versa) would break document validation. This module-load check
+# keeps the two in sync, mirroring the per-table `record_id` seed assertion.
+_tables_with_status_field = {
+    contract.name
+    for contract in _TABLES.values()
+    if contract.field_registry is not None and STATUS_FIELD_KEY in contract.field_registry.field_keys
+}
+assert _tables_with_status_field == set(STATUS_TABLE_NAMES), (
+    "STATUS_TABLE_NAMES is out of sync with the tables carrying the status field: "
+    f"tables with field={sorted(_tables_with_status_field)}, "
+    f"STATUS_TABLE_NAMES={sorted(STATUS_TABLE_NAMES)}"
+)

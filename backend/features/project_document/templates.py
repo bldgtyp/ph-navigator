@@ -34,6 +34,11 @@ from features.project_document.document import (
     ThermalBridgesTableEnvelope,
     VentilatorsTableEnvelope,
 )
+from features.project_document.tables._status_field import (
+    STATUS_TABLE_NAMES,
+    status_option_key,
+    status_option_list,
+)
 from features.project_document.tables.appliances import APPLIANCES_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.electric_heaters import ELECTRIC_HEATERS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.fans import FANS_BUILT_IN_FIELD_DEFS
@@ -198,5 +203,9 @@ def empty_project_document(payload: CreateProjectRequest) -> ProjectDocumentV1:
                 SingleSelectOption(id="opt_appl_energy_star_yes", label="Yes", color="#10b981", order=0),
                 SingleSelectOption(id="opt_appl_energy_star_no", label="No", color="#64748b", order=1),
             ],
+            # Built-in `status` option lists for every DataTable that carries
+            # the field. Keyed `<table_label>.status` to match the generic-
+            # table validator (see `_status_field` / `validate_rows_custom_values`).
+            **{status_option_key(name): status_option_list() for name in STATUS_TABLE_NAMES},
         },
     )

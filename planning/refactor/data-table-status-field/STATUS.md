@@ -1,6 +1,6 @@
 ---
 DATE: 2026-06-24
-TIME: 00:00 EDT
+TIME: 08:10 EDT
 STATUS: Active
 AUTHOR: Codex
 SCOPE: Current status for the DataTable Status Field refactor packet.
@@ -11,13 +11,24 @@ RELATED: planning/refactor/data-table-status-field/README.md, planning/refactor/
 
 ## Current State
 
-State: Active / phased implementation plan complete, implementation not started.
+State: Active / Phase 01 (Contract And Seeds) complete; Phases 02-05 pending.
 
-The planning packet is ready for implementation. No application code, seed JSON, tests, or database state has been changed as part of this planning pass.
+Phase 01 is implemented and committed: shared `tables/_status_field.py` helper,
+`status_field_def()` appended to the nine in-scope built-in FieldDef tuples,
+`<table>.status` option lists seeded into `empty_project_document()` and all
+eight equipment/thermal-bridge seed JSONs (rows exercise all four statuses), and
+a `STATUS_TABLE_NAMES` drift guard in `tables/registry.py`. The empty and full
+seed-assembled documents both pass `validate_document()`, and unknown status ids
+are rejected through the existing single-select path. Backend option-model and
+test wiring (Phase 02) has not been started; no DB reset/reseed yet (Phase 04).
 
 ## Next Step
 
-Start `phases/phase-01-contract-and-seeds.md` by adding the shared `status` FieldDef / option helper, then wire it into the shared table modules and Heat Pump Outdoor/Indoor Equipment FieldDef lists.
+Start `phases/phase-02-backend-validation-tests.md`: wire each in-scope table's
+`single_select_options` contract to accept/emit its `*.status` key (shared
+equipment slice option models + Heat Pump leaf option exposure), then add the
+backend table/validator/seed tests, including a guard that `STATUS_TABLE_NAMES`
+stays in sync with the registered contracts.
 
 ## Open Questions
 
@@ -26,12 +37,19 @@ Start `phases/phase-01-contract-and-seeds.md` by adding the shared `status` Fiel
 
 ## Verification
 
-Planning-only validation performed:
+Phase 01 (2026-06-24):
 
-- Read `planning/.instructions.md`.
-- Read `planning/features/.instructions.md` for reusable folder-shape and browser-work rules.
-- Used Graphify first per repo guidance; the query was too sparse for this field contract, so source inspection followed.
-- Inspected current shared table FieldDef patterns, Heat Pump leaf table patterns, Materials status UI precedent, local seed layout, and reset/reseed Make targets.
-- Expanded the PRD into Phase 01 through Phase 05 implementation plans.
+- `uv run ruff format` / `ruff check` clean on the touched table modules,
+  `templates.py`, `registry.py`, and `scripts/seed_dev_db.py`.
+- `empty_project_document()` builds with `status` FieldDefs on all nine
+  in-scope tables and `<table>.status` option lists for each.
+- The full seed-assembled starter document (`_starter_project_document`)
+  passes `validate_document()`; seeded rows exercise all four statuses across
+  the target tables.
+- An unknown `status` option id is rejected via the existing single-select
+  `coerce_custom_value` path (error: "single_select value ... is not a known
+  option id"), confirming the `<table_label>.status` option-key wiring.
 
-Runtime verification not performed because implementation has not started.
+Deferred to later phases: backend slice-option-model wiring + pytest coverage
+(Phase 02), frontend types/UI (Phase 03), DB reset/reseed + browser smoke
+(Phase 04), graph/docs closeout (Phase 05).

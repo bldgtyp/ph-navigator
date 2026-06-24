@@ -1,5 +1,12 @@
 {
-  "options": {},
+  "options": {
+    "electric_heaters.status": [
+      { "id": "opt_status_complete", "label": "Complete", "color": "#16a34a", "order": 0 },
+      { "id": "opt_status_needed", "label": "Needed", "color": "#d97706", "order": 1 },
+      { "id": "opt_status_question", "label": "Question", "color": "#0ea5b7", "order": 2 },
+      { "id": "opt_status_na", "label": "N/A", "color": "#9ca3af", "order": 3 }
+    ]
+  },
   "rows": [
     {
       "id": "heatr_1",
@@ -11,7 +18,8 @@
         "name": "Bath Heater 1",
         "model": "Com-Pak 2000W",
         "manufacturer": "Cadet",
-        "watt": 2000
+        "watt": 2000,
+        "status": "opt_status_complete"
       }
     },
     {
@@ -24,7 +32,8 @@
         "name": "Bath Heater 2",
         "model": "Com-Pak 2000W",
         "manufacturer": "Cadet",
-        "watt": 2000
+        "watt": 2000,
+        "status": "opt_status_needed"
       }
     },
     {
@@ -37,7 +46,8 @@
         "name": "Toe-kick Heater",
         "model": "TK1500",
         "manufacturer": "King",
-        "watt": 1500
+        "watt": 1500,
+        "status": "opt_status_question"
       }
     },
     {
@@ -50,7 +60,8 @@
         "name": "Garage Heater",
         "model": "PAW4842",
         "manufacturer": "Marley",
-        "watt": 4800
+        "watt": 4800,
+        "status": "opt_status_na"
       }
     },
     {
@@ -63,7 +74,8 @@
         "name": "Walkway Mat",
         "model": "WM-120",
         "manufacturer": "WarmlyYours",
-        "watt": 720
+        "watt": 720,
+        "status": "opt_status_complete"
       }
     }
   ]
