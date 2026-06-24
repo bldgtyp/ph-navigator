@@ -1,13 +1,22 @@
 ---
 DATE: 2026-06-23
 TIME: 17:19 EDT
-STATUS: Planned
+STATUS: In progress — autonomous parts done 2026-06-24; PHPP paste + Playwright walkthrough await Ed
 AUTHOR: Ed (via Claude)
 SCOPE: End-to-end verification, PHPP paste validation, closeout gate, docs.
 RELATED: ../PRD.md (§10 acceptance), ../decisions.md (open Q-A…Q-C)
 ---
 
 # Phase 4 — Verify, validate paste, docs, closeout
+
+> **Progress (2026-06-24).** Done autonomously: the closeout gate (`simplify` +
+> `docs-pass` run per phase, full `make ci` green — backend + 1874 frontend
+> tests + build), the `context/ui/pages/envelope-tab.md` docs fold-back, and the
+> decisions fold-back (Q-D/E/F/G locked by the implementation in `decisions.md`).
+> **Still needs Ed / a running stack:** §1 real PHPP copy/paste to lock the soft
+> cells Q-A/Q-B/Q-C, and §2 the Playwright E2E walkthrough. The deterministic
+> backend route tests + frontend EnvelopePage tests already cover the §10
+> acceptance criteria short of the manual PHPP-paste alignment.
 
 ## 1. PHPP paste validation (locks the open cells)
 
