@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 17:45 EDT
-STATUS: Planning — plan complete; BLOCKED on glazing-frame-documentation
+STATUS: Active — Phase 0 complete; Phase 1 next
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: Two new REPORTING pages — "Apertures → Glazings" and "Apertures → Frames"
   — that mirror the "Envelope → Materials" page exactly (same report-table look,
@@ -81,7 +81,7 @@ already designated glazing + frame as this primitive's next consumers.
 
 ## Dependency
 
-**Hard-blocked on `glazing-frame-documentation`.** These pages present
-`ProjectGlazing`/`ProjectFrame` and depend on the apertures slice exposing the
-flat tables. Do not start Phase 0 until that feature is merged (or at minimum
-its Phases 0–2 are on the working branch).
+The original packet was hard-blocked on `glazing-frame-documentation`, but the
+current checkout already includes the required `ProjectGlazing`/`ProjectFrame`
+entities, flat tables, commands, and datasheet registry entries. Phase 0 used
+those seams and is complete.

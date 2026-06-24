@@ -1,0 +1,1 @@
+"""Aperture report read models."""

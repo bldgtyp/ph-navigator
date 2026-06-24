@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 17:45 EDT
-STATUS: Planning — plan complete; BLOCKED on glazing-frame-documentation
+STATUS: Active — Phase 0 complete; Phase 1 next
 AUTHOR: Claude (Opus 4.8)
 SCOPE: apertures-glazings-frames-reports
 RELATED: ./README.md, ./PRD.md, ./PLAN.md, ./phases/,
@@ -10,15 +10,13 @@ RELATED: ./README.md, ./PRD.md, ./PLAN.md, ./phases/,
 
 # STATUS — Apertures → Glazings / Frames report pages
 
-**State:** `Planning — plan complete; BLOCKED`. The pages are thin clones of
-`MaterialsPanel`, but they present `ProjectGlazing`/`ProjectFrame` entities that
-do not exist yet. They are hard-blocked on the prerequisite feature
-`glazing-frame-documentation`.
+**State:** `Active`. Phase 0 is complete; resume at Phase 1.
 
 ## Blocker
 
-`glazing-frame-documentation` must land first (or its Phases 0–2 must be on the
-working branch). Required from it:
+`glazing-frame-documentation` was listed as a blocker in the original packet,
+but the current checkout already includes the required backend entities and
+commands:
 
 - `ProjectGlazing` / `ProjectFrame` document entities + flat tables.
 - The apertures slice exposing `project_glazings` / `project_frames`.
@@ -39,14 +37,24 @@ working branch). Required from it:
   to retire.
 - Mapped the backend read template (`build_envelope_read_parts`) + the envelope
   read route to clone.
+- **Phase 0 complete (2026-06-24):** added
+  `backend/features/apertures/` read DTOs, selector, service, and route for
+  `GET /api/v1/projects/{project_id}/versions/{version_id}/apertures/spec-report`;
+  registered the router in `backend/main.py`; added
+  `backend/tests/test_apertures_spec_report.py`.
 
-## Next step — RESUME HERE (after the blocker clears)
+## Next step — RESUME HERE
 
-**Phase 0:** add `build_apertures_read_parts` + `ProjectGlazingRead` /
-`ProjectFrameRead` + use-site DTOs + the read endpoint + the glazing/frame drift
-report. See `phases/phase-00-backend-read-api.md`.
+**Phase 1:** route-based Apertures sub-tabs, Glazings/Frames panel shells, query
+hooks, API functions, and frontend types. See
+`phases/phase-01-frontend-routing-and-panels.md`.
 
 ## Verification ledger
 
-- Planning only. Phase 3 carries the browser smoke (sign in as **Ed**; isolated
-  smoke recipe in `planning/features/.instructions.md`).
+- 2026-06-24 Phase 0:
+  - `cd backend && uv run pytest tests/test_apertures_spec_report.py` — 2 passed.
+  - `cd backend && uv run pytest tests/test_aperture_drift_route.py tests/test_apertures_spec_report.py` — 5 passed.
+  - `cd backend && uv run ruff check features/apertures tests/test_apertures_spec_report.py main.py` — passed.
+  - `cd backend && uv run ty check features/apertures tests/test_apertures_spec_report.py` — passed.
+- Phase 3 still carries the browser smoke (sign in as **Ed** only when isolated;
+  otherwise use the isolated smoke recipe in `planning/features/.instructions.md`).

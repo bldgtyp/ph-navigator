@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 17:45 EDT
-STATUS: Planned (blocked on prerequisite + Phase 0)
+STATUS: Planned (Phase 0 complete)
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phase 1 — route-based Apertures sub-tabs + panel shells + query plumbing.
 RELATED: ./phase-00-backend-read-api.md, ../PRD.md
