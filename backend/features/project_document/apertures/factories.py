@@ -3,7 +3,7 @@
 The Aperture Builder never starts an element from "no frame" — every new
 type bookshelf-copies a known-default catalog frame into all four sides
 and a known-default catalog glazing into the centre. The two defaults
-(`PHN-Default-Frame`, `PHN-Default-Glazing`) are seeded by Alembic
+(`PHN-Default-Frame`, `PHN-Default-Glass`) are seeded by Alembic
 alongside the catalog tables; if either is missing at creation time the
 factory raises a structured error so the route layer reports a 503
 rather than letting the picker show a confusing "null frame" element.

@@ -230,15 +230,15 @@ def _truncate_application_tables() -> None:
         _reseed_aperture_default_catalog_rows(conn)
 
 
-# Mirrors alembic revision ``20260605_0018`` — the truncate above clears
-# the Alembic-seeded ``PHN-Default-Frame`` / ``PHN-Default-Glazing`` rows
-# that the Aperture Builder bookshelf-copies, so we re-insert them here
-# in the same transaction. Idempotent via the ``WHERE NOT EXISTS`` guard
-# so a ``--no-reset`` run is also safe.
+# Mirrors alembic revisions ``20260605_0018`` + ``20260624_0040`` — the
+# truncate above clears the Alembic-seeded ``PHN-Default-Frame`` /
+# ``PHN-Default-Glass`` rows that the Aperture Builder bookshelf-copies, so we
+# re-insert them here in the same transaction. Idempotent via the
+# ``WHERE NOT EXISTS`` guard so a ``--no-reset`` run is also safe.
 _APERTURE_DEFAULT_FRAME_ID = "recPHNDefFrame001"
 _APERTURE_DEFAULT_FRAME_NAME = "PHN-Default-Frame"
 _APERTURE_DEFAULT_GLAZING_ID = "recPHNDefGlazng01"
-_APERTURE_DEFAULT_GLAZING_NAME = "PHN-Default-Glazing"
+_APERTURE_DEFAULT_GLAZING_NAME = "PHN-Default-Glass"
 
 
 class _SeedDefaultsCatalog:

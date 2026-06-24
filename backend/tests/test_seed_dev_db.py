@@ -69,7 +69,7 @@ def test_starter_project_document_seeds_default_aperture() -> None:
     assert element.row_span == (0, 0)
     assert element.column_span == (0, 0)
     assert element.glazing is not None
-    assert element.glazing.name == "PHN-Default-Glazing"
+    assert element.glazing.name == "PHN-Default-Glass"
 
     frame_names = {
         frame.name
