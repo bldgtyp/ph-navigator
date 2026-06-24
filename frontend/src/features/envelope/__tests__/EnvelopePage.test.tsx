@@ -1370,6 +1370,85 @@ describe("EnvelopePage", () => {
     );
   });
 
+  test("PHPP export downloads directly when every assembly is exportable, passing the active units", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    await userEvent.click(screen.getByRole("button", { name: "Assembly actions" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Download in PHPP format" }));
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining("/envelope/export/phpp?units=SI"),
+        expect.objectContaining({ credentials: "include" }),
+      ),
+    );
+  });
+
+  test("PHPP export warns about blocked assemblies, then downloads on confirm", async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/envelope/export/phpp/preflight")) {
+        return Promise.resolve(
+          jsonResponse({
+            assemblies: [
+              { id: "asm_wall_c3", name: "WALL-C3", exportable: true, reason: null },
+              { id: "asm_big", name: "Thick Wall", exportable: false, reason: "too_many_layers" },
+            ],
+          }),
+        );
+      }
+      return defaultFetchImplementation(url);
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    await userEvent.click(screen.getByRole("button", { name: "Assembly actions" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Download in PHPP format" }));
+
+    // The modal lists the blocked assembly and its reason; nothing downloaded yet.
+    expect(await screen.findByText("Thick Wall")).toBeInTheDocument();
+    expect(screen.getByText(/more than 8 layers/)).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      expect.stringContaining("/envelope/export/phpp?units="),
+      expect.anything(),
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Download anyway" }));
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining("/envelope/export/phpp?units=SI"),
+        expect.objectContaining({ credentials: "include" }),
+      ),
+    );
+  });
+
+  test("PHPP export modal Cancel aborts without downloading", async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/envelope/export/phpp/preflight")) {
+        return Promise.resolve(
+          jsonResponse({
+            assemblies: [
+              { id: "asm_big", name: "Thick Wall", exportable: false, reason: "too_many_layers" },
+            ],
+          }),
+        );
+      }
+      return defaultFetchImplementation(url);
+    });
+
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    await userEvent.click(screen.getByRole("button", { name: "Assembly actions" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Download in PHPP format" }));
+
+    await userEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+    expect(screen.queryByText("Thick Wall")).not.toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      expect.stringContaining("/envelope/export/phpp?units="),
+      expect.anything(),
+    );
+  });
+
   test("upload constructions previews the plan then applies an import command", async () => {
     const previewPayload = {
       project_id: PROJECT_ID,
@@ -1609,6 +1688,16 @@ function defaultFetchImplementation(url: string): Promise<Response> {
   }
   if (url.includes("/envelope/export/hbjson")) {
     return Promise.resolve(jsonResponse({ constructions: {} }));
+  }
+  if (url.includes("/envelope/export/phpp/preflight")) {
+    return Promise.resolve(
+      jsonResponse({
+        assemblies: [{ id: "asm_wall_c3", name: "WALL-C3", exportable: true, reason: null }],
+      }),
+    );
+  }
+  if (url.includes("/envelope/export/phpp")) {
+    return Promise.resolve(new Response(new Blob(["zip"]), { status: 200 }));
   }
   throw new Error(`Unhandled fetch in EnvelopePage test: ${url}`);
 }

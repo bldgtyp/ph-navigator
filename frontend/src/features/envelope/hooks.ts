@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import type { UnitSystem } from "../../lib/units/types";
 import { downloadBlob } from "../../shared/lib/downloadBlob";
 import { errorMessage } from "../../shared/lib/errors";
 import { attachAssetToDocument, detachAssetFromDocument } from "../assets/api";
@@ -6,9 +7,11 @@ import { markLocalDraftTouched } from "../project_document/lib";
 import { projectDocumentQueryKeys } from "../project_document/query-keys";
 import {
   downloadEnvelopeHbjson,
+  downloadEnvelopePhpp,
   fetchAssemblyThermal,
   fetchEnvelopeReadModel,
   fetchMaterialCatalogDrift,
+  fetchPhppPreflight,
   postEnvelopeCommand,
   previewEnvelopeHbjsonImport,
 } from "./api";
@@ -111,6 +114,25 @@ export function useEnvelopeHbjsonExportMutation(projectId: string, versionId: st
       if (!versionId) throw new Error("Select a version before exporting envelope assemblies.");
       const blob = await downloadEnvelopeHbjson(projectId, versionId);
       downloadBlob(blob, `envelope-constructions-${versionId}.hbjson`);
+    },
+  });
+}
+
+export function useEnvelopePhppPreflightMutation(projectId: string, versionId: string | null) {
+  return useMutation({
+    mutationFn: () => {
+      if (!versionId) throw new Error("Select a version before exporting envelope assemblies.");
+      return fetchPhppPreflight(projectId, versionId);
+    },
+  });
+}
+
+export function useEnvelopePhppExportMutation(projectId: string, versionId: string | null) {
+  return useMutation({
+    mutationFn: async (units: UnitSystem) => {
+      if (!versionId) throw new Error("Select a version before exporting envelope assemblies.");
+      const blob = await downloadEnvelopePhpp(projectId, versionId, units);
+      downloadBlob(blob, `phpp-u-values-${units}-${versionId}.zip`);
     },
   });
 }

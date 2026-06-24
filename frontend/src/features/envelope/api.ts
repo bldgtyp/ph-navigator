@@ -1,3 +1,4 @@
+import type { UnitSystem } from "../../lib/units/types";
 import { fetchBlob, fetchJson } from "../../shared/api/client";
 import { draftWriteHeaders } from "../project_document/table-slice";
 import type {
@@ -6,6 +7,7 @@ import type {
   EnvelopeReadResponse,
   EnvelopeReadSource,
   ImportConstructionsPreview,
+  PhppPreflightResponse,
   ProjectMaterialDriftReport,
 } from "./types";
 
@@ -64,6 +66,27 @@ export async function fetchMaterialCatalogDrift(
 
 export async function downloadEnvelopeHbjson(projectId: string, versionId: string): Promise<Blob> {
   return fetchBlob(`/api/v1/projects/${projectId}/versions/${versionId}/envelope/export/hbjson`);
+}
+
+export async function fetchPhppPreflight(
+  projectId: string,
+  versionId: string,
+  signal?: AbortSignal,
+): Promise<PhppPreflightResponse> {
+  return fetchJson<PhppPreflightResponse>(
+    `/api/v1/projects/${projectId}/versions/${versionId}/envelope/export/phpp/preflight`,
+    { signal },
+  );
+}
+
+export async function downloadEnvelopePhpp(
+  projectId: string,
+  versionId: string,
+  units: UnitSystem,
+): Promise<Blob> {
+  return fetchBlob(
+    `/api/v1/projects/${projectId}/versions/${versionId}/envelope/export/phpp?units=${units}`,
+  );
 }
 
 export async function previewEnvelopeHbjsonImport(
