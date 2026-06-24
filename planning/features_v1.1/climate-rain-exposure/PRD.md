@@ -9,7 +9,7 @@ RELATED:
   - README.md
   - STATUS.md
   - ../climate-design-conditions/PRD.md
-  - ../../archive/climate/PRD.md (§4.3 ClimateRecord; §5.4 design conditions)
+  - ../../archive/dated/2026-06-14/climate/PRD.md (§4.3 ClimateRecord; §5.4 design conditions)
   - backend/features/climate/record.py
 ---
 

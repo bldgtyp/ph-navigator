@@ -121,7 +121,7 @@ profile. Keep the same `5173`/`8000` URLs and the same agent login.
 For Model Viewer-specific browser troubleshooting (in-app Browser
 clipboard/text-entry limits, restricted evaluate sandbox, HttpOnly auth
 cookie constraints, and debug-hook access), read
-`planning/archive/model-viewer/AGENT_BROWSER_NOTES.md` before starting
+`planning/archive/dated/2026-06-13/model-viewer/AGENT_BROWSER_NOTES.md` before starting
 manual browser verification.
 
 ### Cloudflare R2

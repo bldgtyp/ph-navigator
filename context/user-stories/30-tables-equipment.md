@@ -944,7 +944,7 @@ inline DataTable editing, so modal-badge deep-links remain
 descoped and tracked as **Q-HP-FOLLOWUP-7** (post-v1): revisit
 when / if Ventilators grows a row-detail modal. ·
 **Priority:** MVP (Phase 4 of the Heat Pumps rollout — see
-`planning/archive/heat-pumps/PRD.md` §5.4)
+`planning/archive/dated/2026-06-09/heat-pumps/PRD.md` §5.4)
 **Driver:** Heat Pumps feature requires the ERV sub-tab to expose
 the reverse side of the HP-indoor ↔ ERV link captured by
 `heat_pump_indoor_units[*].linked_erv_unit_id`.
@@ -970,7 +970,7 @@ the reverse side of the HP-indoor ↔ ERV link captured by
    `linked_erv_unit_id` on every HP indoor unit that referenced
    it before re-validating the document. No pre-delete dialog or
    post-delete toast (scope amendment 2026-06-09 — see
-   `planning/archive/heat-pumps/phases/phase-04-erv-and-rooms-cross-link.md`
+   `planning/archive/dated/2026-06-09/heat-pumps/phases/phase-04-erv-and-rooms-cross-link.md`
    "Scope amendment"). The historical "US-EQ-2 cascade still nulls
    `rooms[*].erv_unit_ids`" claim is obsolete — no `erv_unit_ids`
    field exists on rooms in the V2 codebase.
@@ -997,7 +997,7 @@ the reverse side of the HP-indoor ↔ ERV link captured by
 ### Cross-references
 - HP indoor side: US-EQ-11 (HP Units — Indoor) criterion 6.
 - Storage shape: `tables.equipment.heat_pump_indoor_units[*].linked_erv_unit_id`
-  per `planning/archive/heat-pumps/PRD.md` §4.5.
+  per `planning/archive/dated/2026-06-09/heat-pumps/PRD.md` §4.5.
 
 ---
 
@@ -1048,7 +1048,7 @@ states until US-EQ-9..11 land.
 
 ### Resolved questions
 All directional questions resolved in
-`planning/archive/heat-pumps/decisions.md`. No open questions on
+`planning/archive/dated/2026-06-09/heat-pumps/decisions.md`. No open questions on
 this story.
 
 ---

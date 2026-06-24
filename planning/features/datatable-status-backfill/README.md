@@ -4,7 +4,7 @@ TIME: 12:00 EDT
 STATUS: Deferred
 AUTHOR: Claude
 SCOPE: Decide whether (and how) to backfill the built-in DataTable `status` field onto pre-existing persisted project documents that predate the status feature, across all 12 status-bearing tables.
-RELATED: planning/archive/data-table-status-field/STATUS.md, planning/features/data-table-status-field-addendum/STATUS.md, context/technical-requirements/data-table.md
+RELATED: planning/archive/dated/2026-06-24/data-table-status-field/STATUS.md, planning/archive/dated/2026-06-24/data-table-status-field-addendum/STATUS.md, context/technical-requirements/data-table.md
 ---
 
 # DataTable Status Field — Backfill of Existing Documents
@@ -12,9 +12,9 @@ RELATED: planning/archive/data-table-status-field/STATUS.md, planning/features/d
 ## Why this exists
 
 The built-in `status` single-select was added to DataTable records in two
-passes — the original [data-table-status-field](../../archive/data-table-status-field/STATUS.md)
+passes — the original [data-table-status-field](../../archive/dated/2026-06-24/data-table-status-field/STATUS.md)
 feature (9 tables) and the
-[data-table-status-field-addendum](../data-table-status-field-addendum/STATUS.md)
+[data-table-status-field-addendum](../../archive/dated/2026-06-24/data-table-status-field-addendum/STATUS.md)
 (3 more: Ventilators + the two Heat-Pump Unit leaves, for 12 total). **Both
 passes intentionally scoped the change to new/seeded documents plus the local
 dev reset/reseed, and deferred any migration of pre-existing persisted

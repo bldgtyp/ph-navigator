@@ -12,7 +12,7 @@ RELATED: ./README.md, ./PRD.md
 ## State
 
 `Deferred` — pulled out of the completed
-[`window-frames-catalog-enums`](../../archive/window-frames-catalog-enums/README.md)
+[`window-frames-catalog-enums`](../../archive/dated/2026-06-23/window-frames-catalog-enums/README.md)
 feature (Phase 5b open item) so it isn't lost. The parent feature shipped: the
 six fields are single-select, `name` is derived, inline add works, and the
 rename/merge/reorder **translation logic is complete and unit-tested** in

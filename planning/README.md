@@ -10,6 +10,7 @@ Read order:
 3. `ROADMAP.html` for the historical tracer-bullet roadmap.
 4. `features/<feature>/README.md` and `features/<feature>/STATUS.md`
    for the active feature.
+5. `archive/README.md` for completed feature packets.
 
 ## Layout
 
@@ -19,8 +20,9 @@ Read order:
   ledgers that are intentionally outside the current v1 scope.
 - `code-reviews/<YYYY-MM-DD>/` - dated review artifacts that are not
   feature-local.
-- `archive/dated/<YYYY-MM-DD>/` - historical dated plans preserved for
-  reference.
+- `archive/README.md` - chronological index of completed feature packets.
+- `archive/dated/<YYYY-MM-DD>/` - historical dated plans and completed feature
+  packets preserved for reference.
 - `ROADMAP.html` - active/historical implementation roadmap.
 
 Stable contracts live in `context/`. Local scratch lives in gitignored

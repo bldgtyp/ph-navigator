@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 10:45
-STATUS: Planned (not started)
+STATUS: Complete
 AUTHOR: Ed May + Claude
 SCOPE: Reorganize planning/archive into dated buckets + add a chronological index
 RELATED:
@@ -37,13 +37,11 @@ index handles discovery.
    pulled from each feature's `STATUS.md`/`README.md` at execution time.
 4. **No domain buckets.** Flat-by-date only.
 
-## Guardrail — DO NOT run on the current feature branch
+## Execution Note
 
-This is ~48 folder moves + doc edits and must NOT clutter the active
-`data-table-status-field-addendum` PR. Execute on a dedicated branch off `main`
-(e.g. `chore/planning-archive-dated-reorg`), as its own small PR. This PLAN file
-is currently untracked; it travels with a branch checkout and should be
-committed on the reorg branch, not the addendum branch.
+This was executed on a dedicated branch off `main` so the folder moves and doc
+edits stayed separate from feature work. Current `main` had 51 flat archived
+feature folders at execution time.
 
 ## Execution steps
 
@@ -78,7 +76,7 @@ committed on the reorg branch, not the addendum branch.
    ```
 5. **Update `planning/.instructions.md`.** Extend the archive rules so
    *completed feature folders* (not just loose dated plans) archive to
-   `archive/dated/<completion-date>/<slug>/`, and the going-forward archival
+   `archive/dated/<archival-date>/<slug>/`, and the going-forward archival
    step names that path. Update the "Naming" line accordingly.
 6. **Update `planning/README.md`.** In Layout, change the `archive/dated/…`
    bullet to cover completed feature packets, and add `archive/README.md` to the
@@ -88,18 +86,19 @@ committed on the reorg branch, not the addendum branch.
 ## Going-forward convention (fold into `.instructions.md` in step 5)
 
 When a feature completes, move `planning/features/<slug>/` →
-`planning/archive/dated/<YYYY-MM-DD>/<slug>/` (date = completion/merge date) and
-add one line to `archive/README.md`. Never re-bucket or re-date afterward.
+`planning/archive/dated/<YYYY-MM-DD>/<slug>/` (date = archival date, usually the
+completion or merge date) and add one line to `archive/README.md`. Never
+re-bucket or re-date afterward.
 
 ## Verification
 
 - `ls planning/archive/` shows only `dated/` and `README.md` (+ untracked
   `.DS_Store`). No flat feature folders remain.
-- Count check: feature folders under `dated/` (excluding pre-existing loose
-  plans) == 48.
-- `git log --follow` on a sampled moved folder still reaches its original
-  history (rename preserved).
-- Every slug in the mapping table appears exactly once in `archive/README.md`.
+- Count check: feature folders moved under `dated/` (excluding pre-existing
+  loose dated plans) == 51 on current `main`.
+- `git log` on sampled original archive paths reaches original history; `git mv`
+  records the new paths as renames.
+- Every moved slug appears exactly once in `archive/README.md`.
 - `make format` clean; no code touched so `make ci` not required (docs-only).
 
 ## Date → slug mapping (move targets)
@@ -186,9 +185,12 @@ Target path = `planning/archive/dated/<DATE>/<slug>/`.
 
 ### 2026-06-24
 - data-table-status-field
+- data-table-status-field-addendum
 - phpp-uvalue-export
 
-**Total: 48 feature folders.**
+**Original planned total: 48 feature folders. Current `main` had 51 flat
+feature folders at execution time, including `data-table-status-field-addendum`
+and the full assembly-builder cleanup packets; all 51 were moved.**
 
 > Note: a few folders (`climate`, `frame-types-catalog`, `heat-pumps`,
 > `model-viewer`, `assembly-builder`) have later last-commit dates than their

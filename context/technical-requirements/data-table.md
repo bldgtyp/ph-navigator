@@ -508,7 +508,7 @@ The DataTable separates **identity** (a hidden machine key) from the
 **human label** shown in the pinned leading column. This is the Honeybee
 model: the hidden `row.id` maps to HB `identifier`; the pinned
 **Display Name** maps to HB `display_name`. The settled contract lives
-in `planning/archive/record-identity-model/`.
+in `planning/archive/dated/2026-06-17/record-identity-model/`.
 
 Two layers, applied uniformly across every project DataTable:
 
@@ -564,9 +564,9 @@ Rules:
   the data-table-consolidation refactor); they flag no `isIdentifier`
   column and show no pinned Display Name or warning chip in the interim.
 
-See `planning/archive/record-identity-model/PRD.md` for the full
+See `planning/archive/dated/2026-06-17/record-identity-model/PRD.md` for the full
 identity contract, and
-`planning/archive/editable-fields/archive/complete/plan-30-datatable-identifier-column.md`
+`planning/archive/dated/2026-06-04/editable-fields/archive/complete/plan-30-datatable-identifier-column.md`
 for the original identifier-column rollout that this model supersedes.
 
 ## Layout, Styling, And Accessibility
@@ -755,7 +755,7 @@ The contracts above are guarded by a layered test suite. Fast shared tests
 live next to the DataTable code; the slower browser matrix lives under
 `frontend/tests/e2e/table-regression/` and is described once as data in
 `tableMatrix.ts` (one entry per project table). See
-`planning/archive/data-table-regression-suite/` for the full design.
+`planning/archive/dated/2026-06-19/data-table-regression-suite/` for the full design.
 
 | Contract | Where proven |
 |---|---|
