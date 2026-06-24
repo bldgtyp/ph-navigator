@@ -84,14 +84,24 @@ into sub-phases** (each independently shippable):
   `replacements`, the `OP-TO-FIX` merge tool). 21 vitest tests (rename→PUT,
   merge→PUT+replacements, custom-field reject). (Inline-add already shipped in
   5a — the popover create-footer isn't gated by the lock.)
-  - **OPEN — field-config modal open affordance.** A browser smoke could not
-    locate the trigger to **open** the field-config "manage options" modal for a
-    catalog built-in single-select (header shows only "Hide fields" / "Add field —
-    coming soon"; `data-schema-locked="true"`). The materials precedent locks
-    options and never opens it, so this entry point may need shared-DataTable
-    wiring (out of the frame-types feature scope). The translation **logic** is
-    done and correct; verifying/enabling the modal-open path is the remaining 5b
-    work. (The dev servers went down mid-smoke; re-verify once back up.)
+  - **OPEN — field-config modal not wired for catalogs (diagnosed in code).**
+    The field-config "manage options" modal only **renders** when the DataTable
+    receives `onEditCustomFieldBundle`, and the header **open trigger**
+    (`canEditFieldConfig`) needs `editConfigEnabled` →
+    `onEditCustomFieldConfig` (`DataTable.tsx:1175,1475`;
+    `GridHeader.tsx:202-213`). The catalog pages (frame-types **and** materials)
+    pass **neither** — they drive the grid with the bespoke `onWrite` controller,
+    not the project-document custom-field bundle path. So the manage-options modal
+    is currently **unreachable** for a catalog single-select, which is why the
+    smoke found no trigger. Note `canEditFieldConfig` does **not** require a custom
+    field — a built-in single-select qualifies once the handler is wired.
+    - **Remaining 5b work (a distinct, shared-DataTable piece):** wire the catalog
+      DataTable usage so the field-config modal opens for the six fields and its
+      option-edit save dispatches as a `legacyOptions` `schemaMutation` through
+      `onWrite` (which the controller already handles — `editFrameTypeOptions`).
+      This touches the shared (iron-law) DataTable surface + the catalog page; do
+      it deliberately with the dev env up to verify. The translation **logic**
+      half is complete and tested.
 - **Phase 5c — import dialog v2. ✅ Code complete + unit-tested (2026-06-24).**
   `CURRENT_SCHEMA_VERSION` 1→2 (export now writes v2; import upgrades v1→v2);
   added `dropped` to `PreviewCounts` and render it in the dialog when > 0; the
