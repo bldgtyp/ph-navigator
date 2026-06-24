@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 17:17 EDT
-STATUS: Feature complete — Phases 0–7 DONE; only a manual browser smoke remains
+STATUS: Feature complete — Phases 0–7 DONE; live browser smoke passed
 AUTHOR: Ed (via Claude)
 SCOPE: Status for Envelope HBJSON Import.
 ---
@@ -28,8 +28,7 @@ SCOPE: Status for Envelope HBJSON Import.
   round-trips losslessly, the full backend import (native + foreign honeybee-PH,
   preview + apply) is live, and the frontend upload/preview/confirm flow is wired
   with per-construction Add/Replace/Skip overrides (native + foreign), reused-
-  material drift warnings, and per-material reject-the-match overrides. Only a
-  manual end-to-end browser smoke against the dev stack remains.
+  material drift warnings, and per-material reject-the-match overrides.
 
 ## Decisions (2026-06-23)
 - **D1: both sources in v1** — PHN-native **and** raw Honeybee-PH.
@@ -98,10 +97,16 @@ SCOPE: Status for Envelope HBJSON Import.
   new" checkbox (hidden when the decision is already create_new) and the row's
   decision label reflects the override. +1 backend test, +1 dialog test.
 
-## Follow-ups (deferred)
-- **Live browser smoke**: validated via the vitest upload→preview→apply flow +
-  backend route/command tests; a manual end-to-end run against the dev stack is
-  still worth doing before release.
+## Verification
+- **Live browser smoke — PASSED (2026-06-23).** Ran the worktree stack in
+  isolation (backend :8001, frontend :5173, fresh `*_wt` DB, agent login) to
+  avoid disrupting the running dev stack. Confirmed in a real browser: the
+  "Upload constructions HBJSON" menu item renders, and a raw honeybee-PH
+  `OpaqueConstruction` (`W_SmokeWall`, 2 layers) imports end-to-end — preview
+  200 (foreign path → add_new, type `wall` from the `W_` prefix, both materials
+  create_new), apply 200, and the assembly renders in the builder with correct
+  thickness (112 mm), U-value, and material rows, landing in the draft with the
+  "Uncommitted changes / Save Version" banner. Isolated env torn down after.
 
 ## Blockers
 - None for research. Remaining sub-decisions (schema_version bump in D2;
