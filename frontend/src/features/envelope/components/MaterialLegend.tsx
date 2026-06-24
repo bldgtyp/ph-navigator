@@ -12,13 +12,26 @@ function formatEmissivity(value: number | null): string {
   return value === null ? "-" : value.toLocaleString(undefined, { maximumFractionDigits: 3 });
 }
 
+type MaterialLegendHeader = {
+  label: string;
+  unit?: string;
+};
+
 export function MaterialLegend({ materials }: { materials: ProjectMaterial[] }) {
   const { unitSystem } = useUnitPreference();
   if (materials.length === 0) return null;
-  const valueHeader = unitSystem === "IP" ? "Resistivity [R/inch]" : "Conductivity [W/(m-K)]";
-  const densityHeader = unitSystem === "IP" ? "Density [lb/ft3]" : "Density [kg/m3]";
-  const specificHeatHeader =
-    unitSystem === "IP" ? "Specific heat [Btu/(lb-F)]" : "Specific heat [J/(kg-K)]";
+  const valueHeader: MaterialLegendHeader =
+    unitSystem === "IP"
+      ? { label: "Resistivity", unit: "R/inch" }
+      : { label: "Conductivity", unit: "W/(m-K)" };
+  const densityHeader: MaterialLegendHeader =
+    unitSystem === "IP"
+      ? { label: "Density", unit: "lb/ft3" }
+      : { label: "Density", unit: "kg/m3" };
+  const specificHeatHeader: MaterialLegendHeader =
+    unitSystem === "IP"
+      ? { label: "Specific heat", unit: "Btu/(lb-F)" }
+      : { label: "Specific heat", unit: "J/(kg-K)" };
   return (
     <aside className="material-legend" aria-label="Material legend">
       <table className="material-legend-table">
@@ -26,9 +39,15 @@ export function MaterialLegend({ materials }: { materials: ProjectMaterial[] }) 
           <tr>
             <th scope="col">Color</th>
             <th scope="col">Material</th>
-            <th scope="col">{valueHeader}</th>
-            <th scope="col">{densityHeader}</th>
-            <th scope="col">{specificHeatHeader}</th>
+            <th scope="col" aria-label={materialLegendHeaderLabel(valueHeader)}>
+              <MaterialLegendHeaderCell header={valueHeader} />
+            </th>
+            <th scope="col" aria-label={materialLegendHeaderLabel(densityHeader)}>
+              <MaterialLegendHeaderCell header={densityHeader} />
+            </th>
+            <th scope="col" aria-label={materialLegendHeaderLabel(specificHeatHeader)}>
+              <MaterialLegendHeaderCell header={specificHeatHeader} />
+            </th>
             <th scope="col">Emissivity</th>
           </tr>
         </thead>
@@ -89,4 +108,17 @@ export function MaterialLegend({ materials }: { materials: ProjectMaterial[] }) 
       </table>
     </aside>
   );
+}
+
+function MaterialLegendHeaderCell({ header }: { header: MaterialLegendHeader }) {
+  return (
+    <span className="material-legend-heading">
+      <span>{header.label}</span>
+      {header.unit ? <span className="material-legend-unit">[{header.unit}]</span> : null}
+    </span>
+  );
+}
+
+function materialLegendHeaderLabel(header: MaterialLegendHeader): string {
+  return header.unit ? `${header.label} [${header.unit}]` : header.label;
 }

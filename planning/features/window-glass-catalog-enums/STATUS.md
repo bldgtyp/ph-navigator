@@ -9,9 +9,19 @@ RELATED: ./README.md, ./research.md, ./decisions.md, ./PLAN.md, ./phases/
 
 # STATUS — window-glass-catalog-enums
 
-**State:** `In progress` — Phases 0–3 done; Phase 4 next. All decisions resolved
-(D-6 settled by Ed 2026-06-24: drop the two `DEFAULT` rows, keep one sentinel
-renamed `PHN-Default-Glass`).
+**State:** `In progress` — Phases 0–4 done; Phase 5 (frontend) next. All decisions
+resolved (D-6 settled by Ed 2026-06-24: drop the two `DEFAULT` rows, keep one
+sentinel renamed `PHN-Default-Glass`).
+
+**Phase 4 (done 2026-06-24):** glazing import/export upgraded schema **v1→v2**
+(mirror of frame). `file_format.CURRENT_SCHEMA_VERSION` 1→2; `upgrade.py` adds
+`_upgrade_v1_to_v2` (drops `DEFAULT` rows → `None`/`dropped` count, folds
+`INTUS`/`ZOLA` casing); `coerce.py` computes `name` from the folded parts and
+drops the missing-name gate; `pipeline.py` flags `new_option:<field>` + carries
+`dropped`/`new_options`; `service.py` reads known options for the preview and
+auto-adds unknowns on commit (the import path stays lenient — create/patch reject,
+D-4). Reworked the import tests for v2 + added a seed-parity test. Verified: full
+backend suite green (1087 passed); ruff/ty clean.
 
 **Phase 3 (done 2026-06-24):** `name` is now server-derived/read-only
 (`manufacturer | brand | suffix`). Added `glazing_types/_name.py`
@@ -71,11 +81,11 @@ cross-check clean (no EXTRA, no orphan options); fresh-migrate sentinel reads
 
 ## Next step
 
-Execute **Phase 4** (import/export schema v1→v2: fold legacy `INTUS`/`ZOLA`
-casing, drop `DEFAULT` rows on import, compute name on import + drop the
-missing-name gate, auto-add unknown options, surface `dropped`/`new_option`
-counts), then 5 → 6 in order. Phase 5 is the frontend; Phase 6 is closeout +
-archive.
+Execute **Phase 5** (frontend: `manufacturer` + `brand` → single_select with
+options fetched from the store, read-only derived `name`, inline-add wired to
+`PUT …/options`; id↔label translation in the controller; import dialog shows the
+new `dropped` count). Then **Phase 6** closeout + archive. Phase 5 is the only
+frontend phase and the first to need a browser smoke (sign in as Ed).
 
 Recommended execution: run via the `implement-loop` skill phase-by-phase, or
 `implement` per phase, with the closeout gate after the last code phase.

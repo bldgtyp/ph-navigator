@@ -581,9 +581,17 @@ describe("EnvelopePage", () => {
 
     const legend = await screen.findByRole("complementary", { name: "Material legend" });
     expect(within(legend).getByText("Wood fiber board")).toBeInTheDocument();
-    expect(within(legend).getByText("Conductivity [W/(m-K)]")).toBeInTheDocument();
-    expect(within(legend).getByText("Density [kg/m3]")).toBeInTheDocument();
-    expect(within(legend).getByText("Specific heat [J/(kg-K)]")).toBeInTheDocument();
+    const conductivityHeader = within(legend).getByRole("columnheader", {
+      name: "Conductivity [W/(m-K)]",
+    });
+    expect(within(conductivityHeader).getByText("Conductivity")).toBeInTheDocument();
+    expect(within(conductivityHeader).getByText("[W/(m-K)]")).toHaveClass("material-legend-unit");
+    expect(within(legend).getByRole("columnheader", { name: "Density [kg/m3]" })).toHaveTextContent(
+      "Density[kg/m3]",
+    );
+    expect(
+      within(legend).getByRole("columnheader", { name: "Specific heat [J/(kg-K)]" }),
+    ).toHaveTextContent("Specific heat[J/(kg-K)]");
     expect(within(legend).getByText("Emissivity")).toBeInTheDocument();
     expect(within(legend).getByText("0.038")).toBeInTheDocument();
     expect(within(legend).getByText("160")).toBeInTheDocument();
@@ -594,9 +602,15 @@ describe("EnvelopePage", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "IP" }));
 
-    expect(within(legend).getByText("Resistivity [R/inch]")).toBeInTheDocument();
-    expect(within(legend).getByText("Density [lb/ft3]")).toBeInTheDocument();
-    expect(within(legend).getByText("Specific heat [Btu/(lb-F)]")).toBeInTheDocument();
+    expect(
+      within(legend).getByRole("columnheader", { name: "Resistivity [R/inch]" }),
+    ).toHaveTextContent("Resistivity[R/inch]");
+    expect(
+      within(legend).getByRole("columnheader", { name: "Density [lb/ft3]" }),
+    ).toHaveTextContent("Density[lb/ft3]");
+    expect(
+      within(legend).getByRole("columnheader", { name: "Specific heat [Btu/(lb-F)]" }),
+    ).toHaveTextContent("Specific heat[Btu/(lb-F)]");
     expect(within(legend).getByText("3.795")).toBeInTheDocument();
     expect(within(legend).getByText("10")).toBeInTheDocument();
     expect(within(legend).getByText("0.502")).toBeInTheDocument();

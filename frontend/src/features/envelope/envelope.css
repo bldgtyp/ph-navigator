@@ -847,15 +847,19 @@
 }
 
 .material-legend {
-  display: grid;
-  justify-content: center;
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
   padding-top: var(--space-14);
 }
 
 .material-legend-table {
   border-collapse: collapse;
   font-size: var(--fs-xs);
+  margin-inline: auto;
   min-width: min(100%, 540px);
+  width: max-content;
 }
 
 .material-legend-table th,
@@ -870,6 +874,21 @@
   font-weight: 500;
 }
 
+.material-legend-heading {
+  align-items: flex-end;
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.material-legend-unit {
+  color: var(--text-secondary);
+  font-size: var(--fs-2xs);
+  font-weight: 400;
+}
+
 .material-legend-table th:first-child,
 .material-legend-table td:first-child {
   padding-left: 0;
@@ -879,6 +898,9 @@
 .material-legend-table th:nth-child(n + 3),
 .material-legend-table td:nth-child(n + 3) {
   text-align: right;
+}
+
+.material-legend-table td:nth-child(n + 3) {
   white-space: nowrap;
 }
 

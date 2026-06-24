@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Final, cast
 
+from features.catalogs._option_seeds import GLAZING_TYPE_SINGLE_SELECT_FIELDS
 from features.catalogs.glazing_types.import_export.coerce import CoercedRow, coerce_row
 from features.catalogs.glazing_types.import_export.file_format import (
     CURRENT_SCHEMA_VERSION,
@@ -34,6 +35,7 @@ class PreviewCounts:
     matched: int
     errored: int
     warnings: int
+    dropped: int = 0
 
 
 @dataclass(frozen=True)
@@ -62,7 +64,19 @@ class PreviewReport:
     write_set: WriteSet
 
 
-def build_preview(body: object, existing_ids: dict[str, bool]) -> PreviewReport:
+def build_preview(
+    body: object,
+    existing_ids: dict[str, bool],
+    known_options: dict[str, set[str]] | None = None,
+) -> PreviewReport:
+    """Upgrade → coerce → classify the import rows.
+
+    ``known_options`` (field_key → known labels) enables the auto-add path (D-4):
+    a new row whose single-select value is not yet an option is flagged
+    ``new_option:<field>`` and the value is collected into the write-set so the
+    commit can add it to the option store. Pass ``None`` to skip option
+    awareness entirely.
+    """
     if not isinstance(body, dict):
         raise EnvelopeError("file body must be a JSON object")
     envelope = cast(dict[str, Any], body)
@@ -87,15 +101,20 @@ def build_preview(body: object, existing_ids: dict[str, bool]) -> PreviewReport:
         raise EnvelopeError("rows must be a JSON array")
 
     coerced_rows: list[tuple[int, CoercedRow]] = []
+    dropped_count = 0
     for index, raw in enumerate(raw_rows):
         if not isinstance(raw, dict):
             coerced_rows.append((index, CoercedRow(row=None, id=None, errors=["bad_row_shape"])))
             continue
         raw_dict = cast(dict[str, Any], raw)
         upgraded = upgrade_row(dict(raw_dict), from_version=schema_version)
+        if upgraded is None:
+            dropped_count += 1  # upgrade dropped the row (e.g. a `DEFAULT` artifact)
+            continue
         coerced_rows.append((index, coerce_row(upgraded)))
 
     new_rows: list[dict[str, object]] = []
+    new_options: dict[str, list[str]] = {}
     new_count = 0
     matched_count = 0
     errored_count = 0
@@ -139,6 +158,12 @@ def build_preview(body: object, existing_ids: dict[str, bool]) -> PreviewReport:
             if coerced.id is not None:
                 insert_payload["id"] = coerced.id
             new_rows.append(insert_payload)
+            for field_key in _new_option_fields(coerced.row, known_options):
+                value = cast(str, coerced.row[field_key])
+                warning_total += 1
+                warnings_by_reason.setdefault(f"new_option:{field_key}", []).append(index)
+                if value not in new_options.setdefault(field_key, []):
+                    new_options[field_key].append(value)
 
         if len(summaries) < PREVIEW_ROW_LIMIT:
             summaries.append(
@@ -156,6 +181,7 @@ def build_preview(body: object, existing_ids: dict[str, bool]) -> PreviewReport:
         matched=matched_count,
         errored=errored_count,
         warnings=warning_total,
+        dropped=dropped_count,
     )
     return PreviewReport(
         schema_version=schema_version,
@@ -163,8 +189,24 @@ def build_preview(body: object, existing_ids: dict[str, bool]) -> PreviewReport:
         warnings=_group(warnings_by_reason),
         errors=_group(errors_by_reason),
         rows_preview=summaries,
-        write_set=WriteSet(rows_to_insert=new_rows),
+        write_set=WriteSet(rows_to_insert=new_rows, new_options=new_options),
     )
+
+
+def _new_option_fields(
+    row: dict[str, object] | None,
+    known_options: dict[str, set[str]] | None,
+) -> list[str]:
+    """Return the single-select fields whose value is a non-empty label not yet
+    in the option store (so the commit can auto-add it)."""
+    if row is None or known_options is None:
+        return []
+    fields: list[str] = []
+    for field_key in GLAZING_TYPE_SINGLE_SELECT_FIELDS:
+        value = row.get(field_key)
+        if isinstance(value, str) and value and value not in known_options.get(field_key, set()):
+            fields.append(field_key)
+    return fields
 
 
 def _group(by_reason: dict[str, list[int]]) -> list[PreviewWarning]:

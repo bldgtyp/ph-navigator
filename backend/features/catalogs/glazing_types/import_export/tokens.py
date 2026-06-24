@@ -9,7 +9,7 @@ from __future__ import annotations
 import secrets
 import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Final
 
 TOKEN_TTL_SECONDS: Final[float] = 600.0
@@ -18,6 +18,9 @@ TOKEN_TTL_SECONDS: Final[float] = 600.0
 @dataclass(frozen=True)
 class WriteSet:
     rows_to_insert: list[dict[str, object]]
+    # Auto-add (D-4): field_key → labels seen on import that are not yet options.
+    # Committed (added to the option store) before the rows insert.
+    new_options: dict[str, list[str]] = field(default_factory=dict)
 
 
 @dataclass

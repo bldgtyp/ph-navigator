@@ -12,6 +12,8 @@ from starlette import status
 
 from database import connection, transaction
 from features.auth.models import UserPublic
+from features.catalogs import _options_repository as options_repository
+from features.catalogs._option_seeds import GLAZING_TYPE_SINGLE_SELECT_FIELDS
 from features.catalogs._shared import log_catalog_action, new_catalog_record_id
 from features.catalogs.glazing_types import repository
 from features.catalogs.glazing_types.import_export.pipeline import (
@@ -33,6 +35,10 @@ from features.catalogs.glazing_types.import_export.upgrade import (
 )
 from features.shared.errors import api_error
 
+# ASYMMETRY (D-4): the import path *auto-adds* unknown single-select values to
+# the option store (see `_auto_add_new_options`), whereas create/patch/duplicate
+# *reject* them (`service._validate_single_selects`). Intentional — import is a
+# frictionless batch/cleanup operation; interactive UI writes stay strict.
 CATALOG_TABLE = "glazing_types"
 
 
@@ -43,6 +49,7 @@ class PreviewCountsResponse(BaseModel):
     matched: int
     errored: int
     warnings: int
+    dropped: int = 0
 
 
 class PreviewWarningResponse(BaseModel):
@@ -91,10 +98,11 @@ class CommitResponse(BaseModel):
 def preview_import(body: dict[str, Any], user: UserPublic) -> PreviewResponse:
     with connection() as conn:
         existing_rows = repository.list_glazing_types(conn, include_inactive=True)
+        known_options = _read_known_options(conn)
     existing_ids: dict[str, bool] = {str(row["id"]): bool(row["is_active"]) for row in existing_rows}
 
     try:
-        report = build_preview(body, existing_ids)
+        report = build_preview(body, existing_ids, known_options)
     except EnvelopeError as exc:
         raise api_error(
             status.HTTP_400_BAD_REQUEST,
@@ -140,6 +148,12 @@ def commit_import(token: str, user: UserPublic, request: Request) -> CommitRespo
     skipped_conflict_ids: list[str] = []
 
     with transaction() as conn:
+        # Auto-add (D-4): grow the option store with the new single-select labels
+        # this import introduced, in the same transaction as the inserts (so they
+        # roll back together if the whole commit aborts). A row skipped on an
+        # id-conflict may leave its option unused — harmless; options don't
+        # require a backing row.
+        _auto_add_new_options(conn, result.write_set.new_options)
         for index, payload in enumerate(rows_to_insert):
             record_id = _id_for_insert(payload)
             savepoint = sql.Identifier(f"import_row_{index}")
@@ -148,7 +162,9 @@ def commit_import(token: str, user: UserPublic, request: Request) -> CommitRespo
                 repository.insert_glazing_type(
                     conn,
                     record_id=record_id,
-                    name=_required_str(payload, "name"),
+                    # `name` is the computed value from coerce (may be "" for an
+                    # all-null row, same as the create path).
+                    name=_optional_str(payload, "name") or "",
                     manufacturer=_optional_str(payload, "manufacturer"),
                     brand=_optional_str(payload, "brand"),
                     suffix=_optional_str(payload, "suffix"),
@@ -189,15 +205,25 @@ def _id_for_insert(payload: dict[str, object]) -> str:
     return new_catalog_record_id()
 
 
-def _required_str(payload: dict[str, object], key: str) -> str:
-    value = payload.get(key)
-    if not isinstance(value, str) or not value:
-        raise api_error(
-            status.HTTP_400_BAD_REQUEST,
-            "catalog_import_field_required",
-            f"{key} is required and was not coerced to a value; fix the file and re-upload.",
-        )
-    return value
+def _read_known_options(conn: Any) -> dict[str, set[str]]:
+    """Snapshot the current option labels per single-select field — fed to the
+    preview so it can flag (and the commit can auto-add) unknown values."""
+    known: dict[str, set[str]] = {field: set() for field in GLAZING_TYPE_SINGLE_SELECT_FIELDS}
+    for row in options_repository.list_all_for_table(conn, catalog_table=CATALOG_TABLE):
+        bucket = known.get(str(row["field_key"]))
+        if bucket is not None:
+            bucket.add(str(row["label"]))
+    return known
+
+
+def _auto_add_new_options(conn: Any, new_options: dict[str, list[str]]) -> None:
+    """Grow each single-select field's option store with the labels this import
+    introduced (D-4 auto-add). Delegates the case-insensitive append to the
+    shared repository helper; non-single-select keys are ignored."""
+    for field_key, labels in new_options.items():
+        if field_key not in GLAZING_TYPE_SINGLE_SELECT_FIELDS:
+            continue
+        options_repository.append_options(conn, catalog_table=CATALOG_TABLE, field_key=field_key, new_labels=labels)
 
 
 def _optional_str(payload: dict[str, object], key: str) -> str | None:
@@ -224,6 +250,7 @@ def _counts_to_response(counts: PreviewCounts) -> PreviewCountsResponse:
         matched=counts.matched,
         errored=counts.errored,
         warnings=counts.warnings,
+        dropped=counts.dropped,
     )
 
 
