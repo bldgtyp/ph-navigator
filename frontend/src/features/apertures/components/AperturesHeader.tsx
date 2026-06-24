@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useUnitPreference } from "../../../lib/units";
 import { InlineHeaderNameEditor } from "../../../shared/ui/InlineHeaderNameEditor";
 import { nameCollides } from "../lib";
@@ -12,6 +13,7 @@ export function AperturesHeader({
   loading = false,
   canEdit,
   busy,
+  actions,
   onRename,
 }: {
   activeAperture: ApertureTypeEntry | null;
@@ -20,6 +22,7 @@ export function AperturesHeader({
   loading?: boolean;
   canEdit: boolean;
   busy: boolean;
+  actions?: ReactNode;
   onRename: (name: string) => void;
 }) {
   const { unitSystem } = useUnitPreference();
@@ -41,6 +44,7 @@ export function AperturesHeader({
           }}
           onSubmit={onRename}
         />
+        {actions ? <div className="apertures-page__header-actions">{actions}</div> : null}
       </div>
       <div className="apertures-page__header-summary">
         <UValueChip
