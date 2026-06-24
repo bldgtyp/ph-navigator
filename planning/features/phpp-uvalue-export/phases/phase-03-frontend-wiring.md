@@ -1,10 +1,16 @@
 ---
 DATE: 2026-06-23
 TIME: 17:19 EDT
-STATUS: Planned
+STATUS: Done — implemented + tested 2026-06-24 (menu item, preflight→modal flow, blob download)
 AUTHOR: Ed (via Claude)
 SCOPE: Frontend — API client, export hook + preflight, menu item, draft
   warning, confirm/cancel error modal, blob download.
+
+> Built note: the preflight→modal→download flow is encapsulated in a
+> `useEnvelopePhppExport` controller hook (mirroring `useEnvelopeHbjsonImport`)
+> rather than inline in `EnvelopePage.tsx`; the page consumes `phpp.start()` /
+> `phpp.confirm()` / `phpp.reset()` / `phpp.blocked`. The draft-export warning
+> is the shared `confirmDraftExport` helper in `page-helpers.ts`.
 RELATED: ../PRD.md (§2, §9), ../research.md (§1, §6, §8)
 ---
 

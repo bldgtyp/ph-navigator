@@ -1666,3 +1666,16 @@
   font-size: 12px;
   white-space: nowrap;
 }
+
+.phpp-export-warning-list {
+  margin: var(--space-8) 0;
+  padding-left: var(--space-16);
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.phpp-export-warning-list strong {
+  color: var(--text-primary);
+}

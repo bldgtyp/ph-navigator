@@ -333,3 +333,17 @@ export type EnvelopeAttachmentChangeArgs = {
 export type EnvelopeAttachmentChange =
   | EnvelopeAttachmentChangeArgs
   | EnvelopeAttachmentChangeArgs[];
+
+// Mirrors `backend/features/envelope/phpp_types.ExportReason`.
+export type PhppExportReason = "too_many_layers" | "too_many_pathways" | "incomplete_materials";
+
+export type PhppPreflightItem = {
+  id: string;
+  name: string;
+  exportable: boolean;
+  reason: PhppExportReason | null;
+};
+
+export type PhppPreflightResponse = {
+  assemblies: PhppPreflightItem[];
+};

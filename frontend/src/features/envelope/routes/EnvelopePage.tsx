@@ -5,7 +5,7 @@
 // hooks; canvas/sidebar/specification layout details stay in feature
 // components so browser and MCP mutations share the semantic command boundary.
 import "../envelope.css";
-import { Download, Upload } from "lucide-react";
+import { Download, FileSpreadsheet, Upload } from "lucide-react";
 import { Navigate, NavLink, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
@@ -32,10 +32,12 @@ import {
 } from "../paths";
 import { AssemblyWorkspace } from "../components/AssemblyWorkspace";
 import { EnvelopeEditorDialogs } from "../components/EnvelopeEditorDialogs";
+import { PhppExportWarningDialog } from "../components/PhppExportWarningDialog";
 import { ImportConstructionsDialog } from "../components/dialogs/ImportConstructionsDialog";
 import { usePaintMode } from "../hooks/usePaintMode";
 import { useEnvelopeDialogs } from "../hooks/useEnvelopeDialogs";
 import { useEnvelopeHbjsonImport } from "../hooks/useEnvelopeHbjsonImport";
+import { useEnvelopePhppExport } from "../hooks/useEnvelopePhppExport";
 import {
   EnvelopeEmptyState,
   EnvelopeErrorState,
@@ -52,6 +54,7 @@ import type {
   MaterialResolution,
 } from "../types";
 import {
+  confirmDraftExport,
   countAssemblyMaterialDrift,
   exportErrorDetails,
   hasCatalogOriginMaterials,
@@ -86,6 +89,7 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
   } = useEnvelopeDialogs();
   const commandMutation = useEnvelopeCommandMutation(project.id, project.active_version_id);
   const exportMutation = useEnvelopeHbjsonExportMutation(project.id, project.active_version_id);
+  const phpp = useEnvelopePhppExport(project.id, project.active_version_id);
   const importer = useEnvelopeHbjsonImport(project.id, project.active_version_id);
   const attachmentMutation = useEnvelopeAttachmentMutation({
     projectId: project.id,
@@ -223,12 +227,7 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
   async function exportHbjson(): Promise<void> {
     const current = query.data;
     if (!current) return;
-    if (current.source === "draft" && current.draft_etag) {
-      const confirmed = window.confirm(
-        "Download constructions reads the last committed version, not your current draft. Save Version or Save As first if the draft should be included. Continue with the saved version?",
-      );
-      if (!confirmed) return;
-    }
+    if (!confirmDraftExport(current, "Download constructions")) return;
     setCommandError(null);
     try {
       await exportMutation.mutateAsync();
@@ -279,6 +278,14 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
               >
                 Download constructions HBJSON
               </AppMenuItem>
+              <AppMenuItem
+                id="assembly-builder-export-phpp"
+                icon={FileSpreadsheet}
+                disabled={phpp.busy}
+                onClick={() => void phpp.start(query.data)}
+              >
+                Download in PHPP format
+              </AppMenuItem>
               {canEdit ? (
                 <AppMenuItem
                   id="assembly-builder-import-hbjson"
@@ -318,6 +325,11 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
         {importer.error ? (
           <p className="form-error" role="alert">
             {importer.error}
+          </p>
+        ) : null}
+        {phpp.error ? (
+          <p className="form-error" role="alert">
+            {phpp.error}
           </p>
         ) : null}
         {activeAssemblyDriftCount > 0 && isAssembliesRoute ? (
@@ -467,6 +479,15 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
           onConfirm={(resolutions, materialResolutions) =>
             void confirmImport(resolutions, materialResolutions)
           }
+        />
+      ) : null}
+      {phpp.blocked ? (
+        <PhppExportWarningDialog
+          blocked={phpp.blocked}
+          busy={phpp.busy}
+          error={phpp.error}
+          onClose={phpp.reset}
+          onConfirm={() => void phpp.confirm()}
         />
       ) : null}
     </section>

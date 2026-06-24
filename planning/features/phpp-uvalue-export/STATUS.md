@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 17:19 EDT
-STATUS: Active — Phases 1–2 implemented (backend complete); Phases 3–4 pending
+STATUS: Active — Phases 1–3 implemented (backend + frontend); only Phase 4 (verify/paste/closeout) pending
 AUTHOR: Ed (via Claude)
 SCOPE: State tracker for the PHPP U-Value export feature.
 RELATED: README.md, PRD.md, decisions.md, research.md, phases/
@@ -11,9 +11,10 @@ RELATED: README.md, PRD.md, decisions.md, research.md, phases/
 
 ## Current state
 
-**Backend complete (Phases 1–2, 2026-06-24).** The whole server side is
-implemented and tested:
+**Backend + frontend complete (Phases 1–3, 2026-06-24).** The feature works
+end-to-end against the local stack; only Phase 4 verification remains.
 
+Backend:
 - `backend/features/envelope/phpp_export.py` — segment→section mapping,
   eligibility (≤8 rows, ≤3 consistent pathways, complete materials), full-block
   SI/IP CSV render, error CSVs, filename sanitize/dedupe, in-memory ZIP.
@@ -22,19 +23,27 @@ implemented and tested:
 - Routes: `GET …/envelope/export/phpp/preflight` (eligibility JSON) and
   `GET …/envelope/export/phpp?units=IP|SI` (streamed ZIP), both `ProjectViewAccess`.
 
-Tests: `test_phpp_export.py` (pure logic + SI/IP goldens) and
-`test_envelope_phpp_routes.py` (route-level) green; `make ci-backend` passes.
-**No frontend yet.**
+Frontend:
+- `api.ts` (`fetchPhppPreflight`, `downloadEnvelopePhpp`), `hooks.ts` mutations,
+  and a `useEnvelopePhppExport` controller hook (start→preflight→modal-or-download).
+- `EnvelopePage.tsx` "Download in PHPP format" menu item + the
+  `PhppExportWarningDialog` confirm/cancel modal; shared `confirmDraftExport`
+  draft warning.
 
-Design context unchanged: codebase researched (`research.md`), Q1–Q4 resolved
-(`decisions.md`), open details Q-A…Q-G still carry working defaults to lock
-against a real PHPP paste in Phase 4.
+Tests: backend `test_phpp_export.py` + `test_envelope_phpp_routes.py`; frontend
+`usePhppExport.test.tsx`, `PhppExportWarningDialog.test.tsx`, and EnvelopePage
+menu/modal tests — all green. `make ci-backend` + `vitest` pass.
+
+Design context unchanged: Q1–Q4 resolved (`decisions.md`); open details
+Q-A…Q-G still carry working defaults to lock against a real PHPP paste in Phase 4.
 
 ## Next step
 
-Start **Phase 3** (`phases/phase-03-frontend-wiring.md`): the `api.ts` calls,
-export + preflight hooks, the new menu item, draft-version warning, and the
-confirm/cancel error modal.
+Start **Phase 4** (`phases/phase-04-verify-docs.md`): paste a real exported CSV
+into a live PHPP U-Values worksheet to lock the soft cells (Q-A…Q-C), run the
+Playwright walkthrough, the full closeout gate (`make ci`), and the
+`context/` docs fold-back. Much of Phase 4 needs a running stack and Ed's manual
+PHPP validation, so it is the natural human-in-the-loop stopping point.
 
 ## Blockers
 
@@ -54,5 +63,5 @@ won't be fully locked until a real PHPP copy/paste test in Phase 4.
 | --- | --- |
 | 1 — Backend export core | Done (2026-06-24) |
 | 2 — Backend routes + units | Done (2026-06-24) |
-| 3 — Frontend wiring | Planned |
-| 4 — Verify + docs + closeout | Planned |
+| 3 — Frontend wiring | Done (2026-06-24) |
+| 4 — Verify + docs + closeout | Planned (needs live PHPP paste + Ed) |

@@ -1,4 +1,27 @@
-import type { Assembly, ProjectMaterial, ProjectMaterialDriftItem } from "../types";
+import type {
+  Assembly,
+  EnvelopeReadResponse,
+  ProjectMaterial,
+  ProjectMaterialDriftItem,
+} from "../types";
+
+/**
+ * Exports read the last committed version, never the draft. When a draft
+ * exists, ask the user to confirm before exporting the saved version, and
+ * return whether the export should proceed. `action` names the menu item in
+ * the prompt (e.g. "Download constructions", "Download in PHPP format").
+ */
+export function confirmDraftExport(
+  current: Pick<EnvelopeReadResponse, "source" | "draft_etag">,
+  action: string,
+): boolean {
+  if (current.source === "draft" && current.draft_etag) {
+    return window.confirm(
+      `${action} reads the last committed version, not your current draft. Save Version or Save As first if the draft should be included. Continue with the saved version?`,
+    );
+  }
+  return true;
+}
 
 export function exportErrorDetails(error: unknown): string | null {
   if (!(error instanceof Error) || !("details" in error)) return null;
