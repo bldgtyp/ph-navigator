@@ -210,6 +210,12 @@ function ImportReport({
           <dt>Warnings</dt>
           <dd>{counts.warnings}</dd>
         </div>
+        {counts.dropped > 0 ? (
+          <div>
+            <dt>Dropped</dt>
+            <dd>{counts.dropped}</dd>
+          </div>
+        ) : null}
       </dl>
 
       {errors.length > 0 ? (

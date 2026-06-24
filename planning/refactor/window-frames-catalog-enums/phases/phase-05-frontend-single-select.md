@@ -92,8 +92,11 @@ into sub-phases** (each independently shippable):
     wiring (out of the frame-types feature scope). The translation **logic** is
     done and correct; verifying/enabling the modal-open path is the remaining 5b
     work. (The dev servers went down mid-smoke; re-verify once back up.)
-- **Phase 5c — import dialog v2.** Bump the frontend import schema to 2; render the
-  new `new_option:<field>` warnings + the `dropped` count from the preview.
+- **Phase 5c — import dialog v2. ✅ Code complete + unit-tested (2026-06-24).**
+  `CURRENT_SCHEMA_VERSION` 1→2 (export now writes v2; import upgrades v1→v2);
+  added `dropped` to `PreviewCounts` and render it in the dialog when > 0; the
+  `new_option:<field>` warnings already flow through the generic `ReasonList`.
+  Export-v2 vitest added. Browser smoke of the dialog pending (dev servers down).
 
 ## Work items
 
