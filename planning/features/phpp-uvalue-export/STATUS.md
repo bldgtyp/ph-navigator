@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 17:19 EDT
-STATUS: Active — research/design complete, implementation not started
+STATUS: Active — Phase 1 implemented (backend export core); Phases 2–4 pending
 AUTHOR: Ed (via Claude)
 SCOPE: State tracker for the PHPP U-Value export feature.
 RELATED: README.md, PRD.md, decisions.md, research.md, phases/
@@ -11,16 +11,22 @@ RELATED: README.md, PRD.md, decisions.md, research.md, phases/
 
 ## Current state
 
-Design complete. Codebase fully researched (`research.md`), the four pivotal
-design questions resolved by Ed (`decisions.md` Q1–Q4), and the work broken
-into four phases. **No code written yet.**
+**Phase 1 done (2026-06-24).** `backend/features/envelope/phpp_export.py` is
+implemented and tested: segment→section mapping, eligibility (≤8 rows, ≤3
+consistent pathways, complete materials), full-block SI CSV render, error CSVs,
+filename sanitize/dedupe, in-memory ZIP, and `phpp_preflight`. The IP inch
+annotation logic is wired (the route + IP golden test land in Phase 2).
+`backend/tests/envelope/test_phpp_export.py` has 11 golden/logic tests green;
+`make typecheck` clean. No HTTP routes or frontend yet.
+
+Design context unchanged: codebase researched (`research.md`), Q1–Q4 resolved
+(`decisions.md`), open details Q-A…Q-G still carry working defaults to lock
+against a real PHPP paste in Phase 4.
 
 ## Next step
 
-Confirm the open details in `decisions.md` (**Q-A…Q-G** — all have working
-defaults, so Phase 1 can begin even if some are deferred to the Phase-4 PHPP
-paste check), then start **Phase 1** (`phases/phase-01-backend-export-core.md`):
-the pure `phpp_export.py` module + golden CSV tests.
+Start **Phase 2** (`phases/phase-02-backend-routes-units.md`): the preflight +
+zip routes, `zip_download_response` helper, and the IP golden-CSV test variant.
 
 ## Blockers
 
@@ -38,7 +44,7 @@ won't be fully locked until a real PHPP copy/paste test in Phase 4.
 
 | Phase | Status |
 | --- | --- |
-| 1 — Backend export core | Planned |
+| 1 — Backend export core | Done (2026-06-24) |
 | 2 — Backend routes + units | Planned |
 | 3 — Frontend wiring | Planned |
 | 4 — Verify + docs + closeout | Planned |

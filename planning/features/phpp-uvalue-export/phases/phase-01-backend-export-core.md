@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-23
 TIME: 17:19 EDT
-STATUS: Planned
+STATUS: Done — implemented + tested 2026-06-24 (`phpp_export.py` + 11 golden/logic tests green)
 AUTHOR: Ed (via Claude)
 SCOPE: Backend export core — mapping, eligibility, CSV render, zip. Pure
   functions, no HTTP. New module `backend/features/envelope/phpp_export.py`.
