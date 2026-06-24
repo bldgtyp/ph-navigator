@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 16:10 EDT
-STATUS: Phases 0–5 done ✅ (backend + frontend, committed + green) — Phase 6 closeout in progress
+STATUS: Complete (2026-06-24) ✅ — all phases shipped + green; archived to planning/archive/dated/2026-06-24/
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phased implementation plan for window-glass-catalog-enums
 RELATED: ./research.md, ./decisions.md, ./README.md, ./phases/

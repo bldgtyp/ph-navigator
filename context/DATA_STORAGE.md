@@ -132,7 +132,7 @@ that introduced each table in parentheses):
 | `catalog_materials` | material thermal/optical props | `0007`, flattened `0015`. |
 | `catalog_frame_types` | window frame PH performance | `0009`, flattened `0017`, default seed `0018`. |
 | `catalog_glazing_types` | glazing U/g performance | `0009`, flattened `0016`, default seed `0018`. |
-| `catalog_field_options` | per-field single-select vocabularies for the catalogs above | `0037` (table) + `0038` (frame-type seed). Keyed `(catalog_table, field_key, option_id)`; case-insensitive unique label index. |
+| `catalog_field_options` | per-field single-select vocabularies for the catalogs above | `0037` (table) + `0038` (frame-type seed) + `20260624_0041` (glazing-type seed). Keyed `(catalog_table, field_key, option_id)`; case-insensitive unique label index. |
 
 Catalog PK ids are AirTable-shaped (`rec` + 14 base62 chars) so a row is
 portable across databases via JSON import/export. **Catalog picks are *copied*
@@ -146,11 +146,12 @@ store from the project-document `single_select_options` JSON map (data-model.md
 reference table keyed `(catalog_table, field_key)`, **storing the label string**
 (rows in the owning catalog table store the label too — D-2 of
 `planning/archive/dated/2026-06-23/window-frames-catalog-enums/`). Built generic (D-7) so glazing
-and materials can adopt it; only frame-types is wired today (its six fields:
-manufacturer / brand / use / operation / location / mull_type). Frame-type `name`
-is **server-derived** from its parts (read-only) and the built-in default
-frame/glazing are resolved by **id** (`recPHNDefFrame001` / `recPHNDefGlazng01`),
-not name.
+and materials can adopt it; **frame-types** (six fields: manufacturer / brand /
+use / operation / location / mull_type) and **glazing-types** (two fields:
+manufacturer / brand) are wired today — materials is the only un-migrated
+catalog. Both wired catalogs derive `name` **server-side** from its parts
+(read-only — `manufacturer | brand | suffix` for glazing) and resolve the
+built-in default by **id** (`recPHNDefFrame001` / `recPHNDefGlazng01`), not name.
 
 ### Climate reference datasets (the Postgres side of class ④)
 | Table | Holds | Notes |

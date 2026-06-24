@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 16:10 EDT
-STATUS: Phases 0–5 done (backend + frontend, committed + green) — Phase 6 closeout in progress; browser smoke pending
+STATUS: Complete (2026-06-24) — all phases shipped, gate green, context/ folded, packet archived
 AUTHOR: Claude (Opus 4.8)
 SCOPE: window-glass-catalog-enums
 RELATED: ./README.md, ./research.md, ./decisions.md, ./PLAN.md, ./phases/
@@ -110,28 +110,29 @@ cross-check clean (no EXTRA, no orphan options); fresh-migrate sentinel reads
 - File-level phase plans drafted, each a thin mirror of the merged frame code with
   cited `file:line` targets.
 
-## Next step — Phase 6 closeout
+**Phase 6 (done 2026-06-24):** folded glazing-on-the-store into
+`context/DATA_STORAGE.md` (the `catalog_field_options` row now lists frame-types
+**and** glazing-types as wired, materials as the only holdout; added the
+`20260624_0041` glazing seed migration to the provenance). `data-model.md`
+§6.6.4 was already catalog-generic — no change. Ran the closeout gate (simplify
+→ no code changes; docs-pass; `make format`; `make ci` green). Browser smoke run
+against the dev server (see ledger). Marked Complete and archived the packet to
+`planning/archive/dated/2026-06-24/window-glass-catalog-enums/`.
 
-**Phase 6** is all that remains (see `phases/phase-06-cleanup-docs-closeout.md`):
-fold the resolved decisions into `context/` (DATA_STORAGE / data-model §6.6.4),
-run the dev-server **browser smoke** (sign in as Ed — the seeded project is
-`ed@example.com`'s: pick a manufacturer/brand option, add a new option and
-confirm it persists across reload, edit `brand` and confirm `name` recomposes,
-confirm `name` is not editable), run the full `make ci` gate, mark the packet
-Complete, and archive it to `planning/archive/dated/<date>/`.
+## Carry-forward (open after this packet)
 
-**Pre-resume sanity:** the backend is at migration head `20260624_0042`; a fresh
-`make db-seed` (clear DB first — seeds duplicate otherwise) loads the cleaned
-41-row glazing catalog + the 13 manufacturer / 39 brand options for the smoke.
-
-Recommended execution: run via the `implement-loop` skill phase-by-phase, or
-`implement` per phase, with the closeout gate after the last code phase.
-
-## Blockers
-
-- None. D-6 is resolved (drop the two `DEFAULT` rows; single sentinel renamed
-  `PHN-Default-Glass`). All required primitives exist (option store, derived-name
-  pattern, default-by-id) from the frame refactor.
+- **Manage-options modal (D-4)** stays open + shared — both catalog pages still
+  lack the field-config bundle wiring; tracked under
+  `planning/features_v1.1/catalog-manage-options-modal/`.
+- **Materials** is the only un-migrated catalog (D-7) — separate future effort;
+  the store is already generic for it.
+- **Rule-of-three unify** the per-catalog option/import services + the
+  `CatalogFrameTypeOption`/`CatalogGlazingTypeOption` vs shared `FieldOption`
+  duplication — fold into parameterized shared helpers when materials becomes the
+  third consumer, not before (deferred; flagged by the Phase 5 reuse review).
+- **Dev DB was stale** at smoke time (legacy `DEFAULT`/uppercase-`INTUS` rows);
+  the committed seed is clean. A clear-first `make db-seed` refreshes it. Not a
+  code defect — see ledger + the `project_dev_db_stale_vs_seed` memory.
 
 ## Inherited decisions (from the frame refactor — no re-litigation)
 
@@ -143,6 +144,25 @@ D-7 glazing-only (materials next, separately).
 
 ## Verification ledger
 
-- Planning only — no phases implemented yet. Each phase doc carries its own
-  test list + exit criteria; the closeout gate (Phase 6) is the final
-  `simplify` + `docs-pass` + `make ci`.
+- **Phase 0–4 (backend):** full backend suite green across the cohort
+  (1079 → 1087 passed as each phase landed); ruff/ty clean. Seed↔option
+  cross-check clean; fresh-migrate sentinel reads `PHN-Default-Glass`.
+- **Phase 5 (frontend):** 21 catalog vitest tests green (fieldDefs 7, controller
+  11, export 1, query-keys 2); `tsc -b` + `vite build` clean.
+- **Closeout gate:** `simplify` (4-agent pass) found **no** code changes — one
+  reuse note (`CatalogGlazingTypeOption` vs `FieldOption`) deferred to v1.1 to
+  preserve frame mirror symmetry. `make ci` green: **1902 frontend tests**,
+  build clean, backend suite green.
+- **Browser smoke (2026-06-24, dev server, signed in as `codex@example.com` —
+  catalog data is global, not project-scoped):** confirmed live on
+  `/catalog/glazing-types` — `manufacturer` + `brand` render as `single_select`
+  fed from the option store (valid labels Alpen/Internorm/Kawneer/Lamilux/…
+  resolve to pills); `name` is server-derived and displays
+  `manufacturer | brand | suffix` (e.g. `Kawneer | GL-1 | S`); `suffix` is plain
+  text (not a select); the `PHN-Default-Glass` sentinel renders correctly; the
+  single-select editor opens on Enter; unknown labels fall back to "Missing
+  option". The full inline-add-persists-across-reload click-through was **not**
+  exercised live — the dev DB was stale (legacy `DEFAULT`/uppercase-`INTUS` rows;
+  the committed seed is clean) and a clear-first re-seed would have wiped Ed's
+  active session — but that path is covered by the controller unit tests
+  (inline-add persists the option before the PATCH; create omits `name`).
