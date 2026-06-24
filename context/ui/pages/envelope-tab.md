@@ -108,6 +108,24 @@ V1 reference screenshot supplied 2026-05-10. Adjusted in V2 to:
    manager is reached via the global header "Catalogs ▾"
    dropdown, and drift is surfaced inline per US-ENV-11.)
 
+**Assemblies actions menu (`⋯`, Assemblies sub-tab only):**
+
+- **Download constructions HBJSON** — exports the saved version's assemblies
+  as a Honeybee construction library.
+- **Download in PHPP format** — exports one CSV per assembly, laid out to mirror
+  the PHPP **U-Values** worksheet, bundled into a ZIP
+  (`phpp-u-values-<IP|SI>-<versionId>.zip`), in the live IP/SI unit system. An
+  assembly that can't be represented in PHPP (>8 layers, >3 / inconsistent
+  heat-flow pathways, or incomplete materials) is written as a one-line error
+  CSV rather than dropped. When any assembly is blocked, a confirm/cancel modal
+  (`PhppExportWarningDialog`) lists them with friendly reasons before the
+  download proceeds ("Download anyway" / "Cancel").
+- **Upload constructions HBJSON** (editors only).
+
+Both downloads target the **saved version**, not the draft; if an unsaved draft
+exists they first warn ("…reads the last committed version…"). Read-only
+viewers can still export. See `planning/features/phpp-uvalue-export/`.
+
 **Layer rendering (US-ENV-4 / US-ENV-5):**
 
 - Each layer is a horizontal strip whose height in CSS px equals
