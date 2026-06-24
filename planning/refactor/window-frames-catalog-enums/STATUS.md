@@ -10,11 +10,12 @@ RELATED: ./README.md, ./research.md, ./decisions.md, ./PLAN.md
 # STATUS — window-frames-catalog-enums
 
 **State:** `Active` — research complete; **all decisions resolved (2026-06-23)**;
-**Phases 0–4 complete (2026-06-23)** — canonical vocab + clean seed (P0); option
-store (P1); strict write-validation (P2); derived read-only `name` + default-by-id
-(P3); import v2 — fold legacy values, compute name, **auto-add unknown options**
-(D-4 sub-policy, Ed's choice) (P4). All CI-green. **Next: Phase 5** (frontend —
-the only frontend phase).
+**Phases 0–4 (backend) complete (2026-06-23)** — canonical vocab + clean seed
+(P0); option store (P1); strict write-validation (P2); derived read-only `name` +
+default-by-id (P3); import v2 — fold + compute-name + **auto-add unknown options**
+(D-4, Ed) (P4). **Phase 5a complete (2026-06-24)** — frontend single-select
+display + read-only name + inline-add (browser-smoked). All CI-green. **Next:
+Phase 5b** (editable options) then **5c** (import dialog v2).
 
 **Decisions locked:** D-1 all six strict single-select (incl. `brand`, to group
 on it) · D-2 new catalog app-scoped option store, label-string storage · D-3
@@ -37,18 +38,18 @@ store built generic for glazing/materials reuse.
 
 ## Next step
 
-Phases 0–4 (all backend) are done. Execute
-`phases/phase-05-frontend-single-select.md` — the only frontend phase: promote the
-six `frame-types/fieldDefs.ts` fields `short_text` → `single_select` (options from
-the new `GET …/frame-types/options`, left **unlocked**); render `name`
-read-only/derived and drop it from the create payload; translate the DataTable
-single-select option-list mutations into the catalog REST store (`PUT …/options`)
-— **the core integration risk** (the DataTable machinery was built for the
-project-document pipeline, not catalogs); bump the import dialog to v2 (render the
-new `new_option` + `dropped` preview signals).
+Phases 0–4 (backend) + **Phase 5a** (frontend single-select display + read-only
+name + inline-add) are done. Phase 5 was split (see phase-05 §Scoping). Next:
 
-**Backend is fully wired for it:** `GET/PUT …/frame-types/options`, derived name,
-strict validation, and auto-add-on-import all land.
+- **Phase 5b** — editable options: unlock the field-config `options` attribute and
+  handle the `schemaMutation`/`legacyOptions` op → `PUT …/options` with
+  `replacements` (rename/merge/reorder/delete; merge = the `OP-TO-FIX` cleanup
+  tool). Controller currently throws on `schemaMutation`.
+- **Phase 5c** — import dialog v2: render the `new_option:<field>` warnings + the
+  `dropped` count the backend preview now returns.
+
+**Dev-env note:** the running dev DB was behind (`0036`); `make migrate` (or
+`make db-reset-dev`) applies `0037`–`0039` (option store + seed + name backfill).
 
 ## Blockers
 

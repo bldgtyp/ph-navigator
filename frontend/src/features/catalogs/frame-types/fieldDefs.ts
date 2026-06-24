@@ -1,7 +1,22 @@
 import { DEFAULT_BUILT_IN_LOCKS } from "../../../shared/ui/data-table/lib/locks";
-import type { TableFieldDef, TableFieldRenderOverlays } from "../../../shared/ui/data-table";
+import type {
+  FieldOption,
+  TableFieldDef,
+  TableFieldRenderOverlay,
+  TableFieldRenderOverlays,
+} from "../../../shared/ui/data-table";
 
 export const FRAME_TYPES_TABLE_KEY = "catalog_frame_types";
+
+// The six promoted single-select fields (backend `FRAME_TYPE_SINGLE_SELECT_FIELDS`).
+export const FRAME_TYPES_SINGLE_SELECT_FIELDS = [
+  "manufacturer",
+  "brand",
+  "use",
+  "operation",
+  "location",
+  "mull_type",
+] as const;
 
 const BUILT_IN_FIELD_CREATED_AT = "2026-06-04T00:00:00Z";
 
@@ -24,12 +39,12 @@ function builtInFieldDef(
 
 export const FRAME_TYPES_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("name", "Name", "short_text"),
-  builtInFieldDef("manufacturer", "Manufacturer", "short_text"),
-  builtInFieldDef("brand", "Brand", "short_text"),
-  builtInFieldDef("use", "Use", "short_text"),
-  builtInFieldDef("operation", "Operation", "short_text"),
-  builtInFieldDef("location", "Location", "short_text"),
-  builtInFieldDef("mull_type", "Mull type", "short_text"),
+  builtInFieldDef("manufacturer", "Manufacturer", "single_select"),
+  builtInFieldDef("brand", "Brand", "single_select"),
+  builtInFieldDef("use", "Use", "single_select"),
+  builtInFieldDef("operation", "Operation", "single_select"),
+  builtInFieldDef("location", "Location", "single_select"),
+  builtInFieldDef("mull_type", "Mull type", "single_select"),
   builtInFieldDef("prefix", "Prefix", "short_text"),
   builtInFieldDef("suffix", "Suffix", "short_text"),
   builtInFieldDef("material", "Material", "short_text"),
@@ -42,18 +57,16 @@ export const FRAME_TYPES_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("comments", "Comments", "long_text"),
 ];
 
-// Soft-enum columns (PRD D4) ship as plain `short_text` in v1 so the
-// AirTable seed import absorbs any value verbatim. The PRD calls out
-// promotion to strict `single_select` as a follow-up once the seeded
-// option distribution is observable.
-export const FRAME_TYPES_FIELD_OVERLAY: TableFieldRenderOverlays = {
-  name: { locked: DEFAULT_BUILT_IN_LOCKS, required: true },
-  manufacturer: { locked: DEFAULT_BUILT_IN_LOCKS },
-  brand: { locked: DEFAULT_BUILT_IN_LOCKS },
-  use: { locked: DEFAULT_BUILT_IN_LOCKS },
-  operation: { locked: DEFAULT_BUILT_IN_LOCKS },
-  location: { locked: DEFAULT_BUILT_IN_LOCKS },
-  mull_type: { locked: DEFAULT_BUILT_IN_LOCKS },
+// The six categorization fields are strict single-selects (window-frames-catalog-
+// enums) whose options come from the catalog option store at runtime. `name` is
+// server-derived (D-3) so it renders read-only. Phase 5a keeps the `options`
+// attribute locked (pick-from-canonical only); Phase 5b unlocks editing.
+const SINGLE_SELECT_BASE_OVERLAY: TableFieldRenderOverlay = {
+  locked: [...DEFAULT_BUILT_IN_LOCKS, "field_type", "options"],
+};
+
+const FRAME_TYPES_STATIC_OVERLAY: TableFieldRenderOverlays = {
+  name: { locked: DEFAULT_BUILT_IN_LOCKS, read_only: true },
   prefix: { locked: DEFAULT_BUILT_IN_LOCKS },
   suffix: { locked: DEFAULT_BUILT_IN_LOCKS },
   material: { locked: DEFAULT_BUILT_IN_LOCKS },
@@ -105,3 +118,18 @@ export const FRAME_TYPES_FIELD_OVERLAY: TableFieldRenderOverlays = {
   source: { locked: DEFAULT_BUILT_IN_LOCKS },
   comments: { locked: DEFAULT_BUILT_IN_LOCKS },
 };
+
+// Build the render overlay with the fetched option lists injected into the six
+// single-select fields. Called per-render from the page with the options query.
+export function buildFrameTypesFieldOverlay(
+  optionsByField: Record<string, FieldOption[]>,
+): TableFieldRenderOverlays {
+  const singleSelects: TableFieldRenderOverlays = {};
+  for (const field of FRAME_TYPES_SINGLE_SELECT_FIELDS) {
+    singleSelects[field] = {
+      ...SINGLE_SELECT_BASE_OVERLAY,
+      options: optionsByField[field] ?? [],
+    };
+  }
+  return { ...singleSelects, ...FRAME_TYPES_STATIC_OVERLAY };
+}

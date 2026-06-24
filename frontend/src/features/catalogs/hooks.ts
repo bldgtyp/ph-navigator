@@ -6,6 +6,7 @@ import {
   deactivateFrameType,
   deactivateGlazingType,
   deactivateMaterial,
+  getFrameTypeOptions,
   listFrameTypes,
   listGlazingTypes,
   listMaterials,
@@ -87,6 +88,18 @@ export function useFrameTypesQuery(enabled = true) {
     queryKey: catalogQueryKeys.frameTypesList(),
     queryFn: ({ signal }) => listFrameTypes(true, signal),
     select: (payload) => payload.items,
+    enabled,
+  });
+}
+
+// The six single-select fields' option lists, keyed by field_key. Drives the
+// grid dropdowns + the label↔id mapping. Long-lived (curated vocab), so a
+// generous staleTime avoids refetch churn; option edits invalidate explicitly.
+export function useFrameTypeOptionsQuery(enabled = true) {
+  return useQuery({
+    queryKey: catalogQueryKeys.frameTypeOptions(),
+    queryFn: ({ signal }) => getFrameTypeOptions(signal),
+    select: (payload) => payload.fields,
     enabled,
   });
 }

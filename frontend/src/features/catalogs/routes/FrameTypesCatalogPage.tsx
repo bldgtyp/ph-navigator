@@ -11,13 +11,14 @@ import { useSignOutMutation } from "../../auth/hooks";
 import type { AuthSession } from "../../auth/types";
 import { CatalogMenu } from "../components/CatalogMenu";
 import {
+  buildFrameTypeOptionMaps,
   toFrameTypeRow,
   useFrameTypesCatalogController,
   type FrameTypeRow,
 } from "../frame-types/controller";
 import {
+  buildFrameTypesFieldOverlay,
   FRAME_TYPES_BUILT_IN_FIELD_DEFS,
-  FRAME_TYPES_FIELD_OVERLAY,
   FRAME_TYPES_TABLE_KEY,
 } from "../frame-types/fieldDefs";
 import { ImportDialog } from "../frame-types/import_export/ImportDialog";
@@ -27,7 +28,11 @@ import {
   serializeCatalog,
   triggerCatalogDownload,
 } from "../frame-types/import_export/export";
-import { useFrameTypesQuery, useReactivateFrameTypeMutation } from "../hooks";
+import {
+  useFrameTypeOptionsQuery,
+  useFrameTypesQuery,
+  useReactivateFrameTypeMutation,
+} from "../hooks";
 import { catalogPath } from "../lib";
 import type { CatalogFrameType } from "../types";
 
@@ -37,7 +42,8 @@ const PLACEHOLDER_TIMESTAMP = "1970-01-01T00:00:00Z";
 function buildEmptyFrameTypeRow({ rowId }: { rowId: string }): FrameTypeRow {
   return {
     id: rowId,
-    name: "New frame type",
+    // `name` is server-derived; an empty row composes to "" until parts fill in.
+    name: "",
     manufacturer: null,
     brand: null,
     use: null,
@@ -181,8 +187,12 @@ export function FrameTypesCatalogPage({ session }: { session: AuthSession }) {
   const [importOpen, setImportOpen] = useState(false);
   const [bulkReactivating, setBulkReactivating] = useState(false);
   const frameTypesQuery = useFrameTypesQuery();
+  const optionsQuery = useFrameTypeOptionsQuery();
   const signOutMutation = useSignOutMutation();
   const reactivateMutation = useReactivateFrameTypeMutation();
+
+  const optionsByField = useMemo(() => optionsQuery.data ?? {}, [optionsQuery.data]);
+  const optionMaps = useMemo(() => buildFrameTypeOptionMaps(optionsByField), [optionsByField]);
 
   function handleExport() {
     const file = serializeCatalog(frameTypes, {
@@ -197,21 +207,25 @@ export function FrameTypesCatalogPage({ session }: { session: AuthSession }) {
     () => (includeInactive ? allFrameTypes : allFrameTypes.filter((f) => f.is_active)),
     [allFrameTypes, includeInactive],
   );
-  const rows = useMemo<FrameTypeRow[]>(() => frameTypes.map(toFrameTypeRow), [frameTypes]);
+  const rows = useMemo<FrameTypeRow[]>(
+    () => frameTypes.map((frame) => toFrameTypeRow(frame, optionMaps)),
+    [frameTypes, optionMaps],
+  );
   const tableSchema = useMemo(
     () =>
       buildTableSchema({
         tableKey: FRAME_TYPES_TABLE_KEY,
         fieldDefs: FRAME_TYPES_BUILT_IN_FIELD_DEFS,
-        fieldOverlay: FRAME_TYPES_FIELD_OVERLAY,
+        fieldOverlay: buildFrameTypesFieldOverlay(optionsByField),
       }),
-    [],
+    [optionsByField],
   );
   const controller = useFrameTypesCatalogController({
     userId: session.user.id,
     columns: COLUMN_DEFS,
     fieldDefs: tableSchema.fieldDefs,
     schemaFingerprint: tableSchema.schemaFingerprint,
+    optionsByField,
   });
 
   const isActiveById = useMemo(() => {
