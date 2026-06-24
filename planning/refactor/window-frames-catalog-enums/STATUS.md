@@ -38,13 +38,17 @@ store built generic for glazing/materials reuse.
 
 ## Next step
 
-Phases 0–4 (backend) + **Phase 5a** (frontend single-select display + read-only
-name + inline-add) are done. Phase 5 was split (see phase-05 §Scoping). Next:
+Phases 0–4 (backend) + **Phase 5a** (single-select display + read-only name +
+inline-add, browser-verified) are done. **Phase 5b logic** (option-edit
+translation: `legacyOptions` → `PUT …/options` + label `replacements`) is
+implemented + unit-tested (21 vitest), but has **one open item**:
 
-- **Phase 5b** — editable options: unlock the field-config `options` attribute and
-  handle the `schemaMutation`/`legacyOptions` op → `PUT …/options` with
-  `replacements` (rename/merge/reorder/delete; merge = the `OP-TO-FIX` cleanup
-  tool). Controller currently throws on `schemaMutation`.
+- **5b open — field-config modal open affordance.** The smoke couldn't find the
+  UI trigger to open the "manage options" modal for a catalog built-in
+  single-select (may need shared-DataTable wiring; the materials precedent locks
+  options). The translation logic is done; the modal-open path needs
+  verifying/enabling. Re-smoke once the dev servers are back (they went down
+  mid-session). See phase-05 §5b.
 - **Phase 5c** — import dialog v2: render the `new_option:<field>` warnings + the
   `dropped` count the backend preview now returns.
 

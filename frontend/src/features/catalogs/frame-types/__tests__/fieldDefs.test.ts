@@ -53,9 +53,12 @@ describe("frame-types field defs", () => {
     ).toBe("short_text");
   });
 
-  test("overlay injects fetched options and locks the options attribute (Phase 5a)", () => {
+  test("overlay injects fetched options; options attribute is editable (Phase 5b)", () => {
     expect(OVERLAY.manufacturer?.options?.map((o) => o.label)).toEqual(["Alpen"]);
-    expect(OVERLAY.manufacturer?.locked).toContain("options");
+    // `options` is NOT locked — the field-config manage-options path edits the
+    // catalog store. `field_type` stays locked (fixed built-ins).
+    expect(OVERLAY.manufacturer?.locked).not.toContain("options");
+    expect(OVERLAY.manufacturer?.locked).toContain("field_type");
     // A field with no fetched options still gets an (empty) list, not undefined.
     expect(OVERLAY.brand?.options).toEqual([]);
   });

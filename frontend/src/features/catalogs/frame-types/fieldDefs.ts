@@ -59,10 +59,12 @@ export const FRAME_TYPES_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
 
 // The six categorization fields are strict single-selects (window-frames-catalog-
 // enums) whose options come from the catalog option store at runtime. `name` is
-// server-derived (D-3) so it renders read-only. Phase 5a keeps the `options`
-// attribute locked (pick-from-canonical only); Phase 5b unlocks editing.
+// server-derived (D-3) so it renders read-only. The `options` attribute is
+// unlocked (Phase 5b) so the field-config "manage options" path can add / rename
+// / reorder / merge, routed to the REST store by the controller. `field_type`
+// stays locked (these are fixed built-ins).
 const SINGLE_SELECT_BASE_OVERLAY: TableFieldRenderOverlay = {
-  locked: [...DEFAULT_BUILT_IN_LOCKS, "field_type", "options"],
+  locked: [...DEFAULT_BUILT_IN_LOCKS, "field_type"],
 };
 
 const FRAME_TYPES_STATIC_OVERLAY: TableFieldRenderOverlays = {
