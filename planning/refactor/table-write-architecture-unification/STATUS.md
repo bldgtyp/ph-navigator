@@ -38,24 +38,26 @@ half of the refactor is done.**
 | 1 | outdoor-units delete-cascade → generic `previewReplace` (3a route) + generic delete | `Done` (commit `6b6ae359`; tsc + 78 vitest green; live smoke deferred) |
 | 2a | option-delete = AirTable parity (clear refs to null): generalize the existing `editOptions` cascade (`apply_edit_options`) to clear across **all** tables sharing the option `namespace_key` (heat-pump `manufacturer` is shared across 2 leaves) + tests | `Done` (shared-namespace cascade in `options_ops.py`; `test_shared_option_cascade.py`; BE suite green) |
 | 2b | point the 4 components' inline option add/edit/remove at the generic `editOptions` schema mutation (drop `useHeatPumpOptionMutation`) | `Done` (shared `makeHeatPumpOptionCreator` in `option-helpers.ts`; units tables route through the sibling equip controller; `useHeatPumpOptionMutation`/`HeatPumpOptionPatchOp` removed; tsc + 1907 vitest green) |
-| 3 | rewire `VentilatorsTableSlot` off the bespoke HP client onto the generic indoor-units feature | `Pending` |
+| 3 | rewire `VentilatorsTableSlot` off the bespoke HP client onto the generic indoor-units feature | `Done` (3 generic leaf queries replace `useHeatPumpsQuery`; indoor-unit save + link-picker batch through `useReplaceSliceMutation` + `fromCellWrites`; `useHeatPumpsQuery`/`useHeatPumpPatchMutation` now have zero consumers; tsc + 1907 vitest green) |
 | 4 | drop bespoke FE client (`heat-pumps/api.ts` 3 hooks + `heatPumpsQueryKeys`); fix `hooks.ts` invalidation | `Pending` |
 | 5 | remove backend PATCH shim (`apply_patch`/`apply_option_patch`/`HeatPumpRowPatch`/`OptionPatchOp` + routes); rename `dependent_link_delete_blocked` | `Pending` (needs full `make ci`) |
 | 6 | tests + browser smoke as Ed (all four leaves) | `Pending` |
 
 ## Next step
-Resume Phase 3b at increment **3** (rewire `equipment/components/VentilatorsTableSlot.tsx`
-off `useHeatPumpsQuery` + `useHeatPumpPatchMutation` onto the generic indoor-units
-slice feature — the `IndoorUnitRowModal` save + the "Link HP indoor units"
-multi-row picker). 2a + 2b landed: option add now flows through the generic
-`editOptions` schema mutation (shared `makeHeatPumpOptionCreator`), and a deleted
-option clears across every `(table, field)` bound to the shared namespace.
-Remaining FE work: increment 3 (VentilatorsTableSlot) then 4 (drop the rest of the
-bespoke client — `useHeatPumpsQuery`/`useHeatPumpPatchMutation`/`previewHeatPumpDelete`/
-`fetchHeatPumps`/`heatPumpsQueryKeys` — once nothing reads the aggregate). Backend
-increment 5 (remove the PATCH shim incl. the `/options` endpoint + error-code
-rename) needs a clean full `make ci`; 3/4 use targeted gates (tsc + vitest). The
-tree is clean now, so a real Equipment-tab browser smoke is available throughout.
+Resume Phase 3b at increment **4** (drop the now-dead bespoke FE client). After
+inc 3, `useHeatPumpsQuery` + `useHeatPumpPatchMutation` have **zero** consumers,
+and `previewHeatPumpDelete`/`fetchHeatPumps`/`heatPumpsQueryKeys` are only kept
+alive by `project_document/hooks.ts` (`invalidateProjectDocumentQueries` invalidates
+`heatPumpsQueryKeys.all`) and `HeatPumpsPanel`'s `invalidateHeatPumpsAggregate`
+callback — both vestigial once the aggregate query is gone. Increment 4: delete the
+five aggregate symbols from `heat-pumps/api.ts`, drop the `invalidateHeatPumpsAggregate`
+plumbing in `HeatPumpsPanel`, and remove the `heatPumpsQueryKeys` coupling in
+`hooks.ts`; prune dead `types.ts`. Then backend increment 5 (remove the PATCH shim
+incl. the `/options` endpoint + error-code rename — needs a clean full `make ci`),
+and 6 (browser smoke as Ed + e2e). 4 uses targeted gates (tsc + vitest); 5/6 need a
+full `make ci` and the FE+BE error-code rename must land together. The tree is clean
+now (modulo the concurrent DataTable-UI WIP), so a real Equipment-tab browser smoke
+is available throughout.
 
 ## Blockers
 - None. The concurrent DataTable-UI WIP landed (it ended up bundled into the

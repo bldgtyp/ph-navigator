@@ -83,10 +83,16 @@ endpoints); the error-code rename in 5 must land FE+BE together.
      edit/recolor/reorder/delete from these modals never existed — only add; the
      generic editOptions delete-clears references when wired into the grid editor.)
 
-3. **Rewire `equipment/components/VentilatorsTableSlot.tsx`** off `useHeatPumpsQuery`
-   + `useHeatPumpPatchMutation` (it edits HP indoor units from the ventilator side:
-   the `IndoorUnitRowModal` save + the "Link HP indoor units" multi-row picker)
-   onto the generic indoor-units slice feature.
+3. **Rewire `equipment/components/VentilatorsTableSlot.tsx`** ✅ DONE. Off
+   `useHeatPumpsQuery` + `useHeatPumpPatchMutation` onto the generic indoor-units
+   slice feature: three `useSliceQuery` reads (indoor-units + the sibling
+   indoor-equip / outdoor-units leaves the `IndoorUnitRowModal` references) and a
+   `useReplaceSliceMutation`. The `IndoorUnitRowModal` save and the "Link HP indoor
+   units" multi-row picker both build `CellWrite[]` and go through one atomic
+   `fromCellWrites` replace (batched — the leaf endpoint rewrites the whole rows
+   list, so a per-row loop would hit a stale etag on its second write). tsc + 1907
+   vitest green. `useHeatPumpsQuery`/`useHeatPumpPatchMutation` now have no
+   consumers (removed in increment 4).
 4. **Drop the bespoke frontend client**: `heat-pumps/api.ts` (`useHeatPumpsQuery`,
    `useHeatPumpPatchMutation`, `previewHeatPumpDelete`, `useHeatPumpOptionMutation`,
    `fetchHeatPumps`) + `heatPumpsQueryKeys`; fix `project_document/hooks.ts`
