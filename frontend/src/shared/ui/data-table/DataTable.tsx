@@ -1630,7 +1630,9 @@ export function DataTable<TRow>({
                 {renderedFooterAction}
                 <span className="data-table-footer-record-count">
                   <span className="data-table-footer-record-count-label">Count</span>
-                  <span className="data-table-footer-record-count-value">{filteredRows.length}</span>
+                  <span className="data-table-footer-record-count-value">
+                    {filteredRows.length}
+                  </span>
                 </span>
                 <span
                   className="data-table-footer-status"

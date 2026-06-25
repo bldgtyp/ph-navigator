@@ -24,9 +24,7 @@
 
 .data-table-scroll {
   overflow: auto;
-  max-height: calc(
-    100dvh - var(--data-table-page-chrome) - var(--data-table-footer-height)
-  );
+  max-height: calc(100dvh - var(--data-table-page-chrome) - var(--data-table-footer-height));
   background: var(--bg-card);
 }
 
@@ -52,7 +50,7 @@
   gap: 0;
   background: var(--bg-card);
   border-radius: var(--radius-lg);
-  box-shadow: 2px 4px 25px 2px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-workspace-shell);
 }
 
 .data-table-shell:has(.room-option-popover) {
