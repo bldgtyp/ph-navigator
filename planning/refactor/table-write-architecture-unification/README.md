@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 18:25 EDT
-STATUS: Active — Phases 1–2 (backend) complete; Phase 3 (frontend rewire) ready.
+STATUS: Active — Phases 1, 2, 3a complete (all backend); Phase 3b (frontend rewire) is the only remaining work.
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: Router for the table-write-architecture unification refactor (cross-stack).
 RELATED:

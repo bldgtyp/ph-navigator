@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-25
-TIME: 01:15 EDT
-STATUS: Active — Phases 1–2 (backend) complete; Phase 3 (frontend rewire) ready.
+TIME: 02:00 EDT
+STATUS: Active — Phases 1, 2, 3a complete (all backend); Phase 3b (frontend rewire) is the only remaining work, needs an interactive app pass.
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: State, blockers, sequencing for the table-write-architecture unification.
 RELATED: ./README.md, ./PRD.md, planning/archive/dated/2026-06-24/backend-data-architecture-cleanup/
@@ -29,17 +29,22 @@ half of the refactor is done.**
 |---|---|---|
 | 1 — backend write spine | `Complete` | none — `make ci` green |
 | 2 — heat-pumps onto registry (backend) | `Complete` | none — `make ci` green (BE 1111, FE 1900) |
-| 3 — frontend heat-pumps rewire | `Ready` | none (Phase 2 done; old endpoint kept alive) |
+| 3a — generic table-replace cascade preview (backend) | `Complete` | none — `:preview-replace` route; BE suite 1113 |
+| 3b — frontend heat-pumps rewire + shim removal | `Ready` | none — needs an interactive app pass (Vitest/Playwright as Ed) |
 
 ## Next step
-Start Phase 3 (frontend, cross-stack closeout): point the four heat-pump leaf
-tables at the generic table-write client (Ventilators/Pumps pattern), preserve
-the cascade-confirm + dry-run-preview affordances, then remove the old PATCH
-endpoints + the `service.py` translation shim. When the frontend no longer keys
-on it, rename the `heat_pump_delete_blocked` error code to a neutral one.
+Phase 3b (the only remaining work) — the interactive frontend rewire. Follow the
+ordered 6-step plan in `phases/phase-03-*.md` §"Phase 3b — ordered plan":
+options→generic replace, delete-cascade→`:preview-replace`, rewire
+`VentilatorsTableSlot`, drop the bespoke FE client + `heatPumpsQueryKeys`, remove
+the backend PATCH shim + rename `dependent_link_delete_blocked`, tests + browser
+smoke. **Do it with the app running** — it's UX-critical and the endpoint removal
+must co-land with the frontend so the live Equipment tab never breaks. A
+fresh-budget implementation pass judged a blind (no-browser) rewire too risky.
 
 ## Blockers
-- None. Phase 3 is frontend-only + the old-endpoint removal.
+- None technical. 3b is gated only on doing it as a verified interactive pass
+  (running app) rather than autonomously, per the keep-the-app-green principle.
 
 ## Deferred follow-ups (recorded)
 - **Module split** of `tables/heat_pumps.py` (~982 lines): soft target, high-churn

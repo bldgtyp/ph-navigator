@@ -63,6 +63,26 @@ class TableRowsResponse(BaseModel):
     rows: list[dict[str, object]]
 
 
+class CascadePreviewRef(BaseModel):
+    """One dependent row a proposed delete would clear (or that blocks it)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    table: str
+    row_id: str
+    tag: str
+    field: str
+
+
+class TableReplacePreviewResponse(BaseModel):
+    """Dry-run result for a table replace: the optional dependent links that the
+    removed rows *would* clear. A blocked (required) link raises 409 instead."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    affected: list[CascadePreviewRef]
+
+
 class InverseLinkField(BaseModel):
     """Metadata for one server-computed inverse-link column."""
 

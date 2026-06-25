@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 18:25 EDT
-STATUS: Ready (Phases 1–2 complete 2026-06-25) — backend on the generic contract, old PATCH endpoint still alive
+STATUS: Split (2026-06-25) — 3a (backend preview enabler) COMPLETE; 3b (frontend rewire) READY, needs an interactive app pass.
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: Phase 3 — rewire the heat-pumps frontend onto the generic table-write client.
 RELATED: ../PRD.md, context/technical-requirements/data-table.md,
@@ -10,6 +10,53 @@ DEPENDS_ON: Phase 2 (backend heat-pumps on the generic contract, old endpoint st
 ---
 
 # Phase 3 — Frontend Heat-Pumps Rewire (cross-stack closeout)
+
+> **Phase split (2026-06-25).** Mapping the frontend showed the table cell/row
+> edits already run through the generic `useSliceTableController` → `PUT
+> /draft/tables/heat_pumps_*` path, but the rewire is more entangled than the
+> original plan assumed (cross-feature coupling, no generic option-edit hook,
+> shared query-key registry) and the endpoint removal + error-code rename must
+> co-land with the frontend or the live app breaks. It was therefore split:
+>
+> - **Phase 3a — backend preview enabler (COMPLETE).** A generic dry-run cascade
+>   preview on the table-replace surface: `POST /draft/tables/{table_name}:preview-replace`
+>   → `preview_table_replace` (drafts.py) reuses `apply_replace` (cascade + 409
+>   block + validate) to derive the removed set, then `preview_dependent_link_cascade`;
+>   returns `TableReplacePreviewResponse {affected}`. `CascadePreviewRef`/
+>   `TableReplacePreviewResponse` in contracts.py. Generic — any contract with
+>   `dependent_links`. Backend suite green (1113). This is the enabling piece so
+>   the delete-confirm UX can drop the bespoke heat-pump dry-run PATCH.
+> - **Phase 3b — frontend rewire + shim removal (READY).** The interactive UI
+>   pass below; needs a running app + Vitest/Playwright as Ed.
+
+## Phase 3b — ordered plan (do interactively, app running)
+Sequence (each step verified in-app before the next; keep the app green):
+1. **Option editing onto the generic replace.** Replace `useHeatPumpOptionMutation`
+   (PATCH `/options/{key}`) in all four table components' `createOption()` with the
+   generic whole-slice replace carrying `single_select_options` (payload-builders
+   already has `replaceOptions`). Preserve the option-in-use 409. No generic
+   option-edit hook exists to copy — this defines the pattern.
+2. **Delete-cascade onto the generic surface.** Replace `previewHeatPumpDelete`
+   (bespoke dry-run PATCH) with the new `:preview-replace` route (3a), and the
+   bespoke `patchMutation` remove with the generic `replaceMutation` (PUT the slice
+   minus the row; the backend cascade clears optional links). Keep
+   `CascadePreviewDialog` + `BlockedDeleteDialog` UX identical.
+3. **Rewire `equipment/components/VentilatorsTableSlot.tsx`** off `useHeatPumpsQuery`
+   + `useHeatPumpPatchMutation` (it edits HP indoor units from the ventilator side:
+   the `IndoorUnitRowModal` save + the "Link HP indoor units" multi-row picker)
+   onto the generic indoor-units slice feature.
+4. **Drop the bespoke frontend client**: `heat-pumps/api.ts` (3 hooks) +
+   `heatPumpsQueryKeys`; fix `project_document/hooks.ts` invalidation coupling.
+   Keep field-defs/columns/types/row-builders/payload-builders.
+5. **Remove the backend write shim**: `apply_patch`/`apply_option_patch`/
+   `HeatPumpRowPatch`/`OptionPatchOp` + the two PATCH routes in
+   `features/heat_pumps/routes.py` (KEEP the GET + `export-phius` + `read_slice`/
+   `compose_read`). Then rename `DEPENDENT_LINK_DELETE_BLOCKED` →
+   `"dependent_link_delete_blocked"` (update the FE handler + the two BE tests).
+6. **Tests**: update `heat-pumps/__tests__/` for the generic write paths; add an
+   e2e spec mirroring the Pumps pattern; `make ci` green; browser smoke as Ed
+   (Equipment → Heat Pumps: add/edit/delete-with-cascade-confirm/option-edit on
+   all four leaves).
 
 ## Goal
 Heat-pumps editing uses the same generic table-write client and `<DataTable>`

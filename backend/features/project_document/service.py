@@ -9,6 +9,7 @@ from features.project_document.downloads import table_download_body
 from features.project_document.drafts import (
     apply_schema_mutation_to_draft,
     discard_draft,
+    preview_table_replace,
     replace_table_slice,
     save_draft,
     save_draft_as,
@@ -43,6 +44,7 @@ __all__ = [
     "get_saved_table_slice",
     "next_draft_etag",
     "patch_version",
+    "preview_table_replace",
     "replace_table_slice",
     "save_draft",
     "save_draft_as",
