@@ -1,3 +1,4 @@
+// @size-exception: planning/features/data-table-ui/phases/phase-01-numeric-alignment-and-precision.md
 import { describe, expect, test } from "vitest";
 import { applyFilters, defaultOperatorForField } from "../lib/filter/apply";
 import {
@@ -494,5 +495,49 @@ describe("DataTable helpers", () => {
 
     expect(formatDisplayCellValue("opt_missing", fieldDef)).toBe("Missing option");
     expect(formatClipboardCellValue("opt_missing", fieldDef)).toBe("");
+  });
+
+  test("formats plain number display values with configured precision", () => {
+    const fieldDef: FieldDef = {
+      field_key: "cf_load",
+      field_type: "number",
+      display_name: "Load",
+      numberPrecision: 2,
+    };
+
+    expect(formatDisplayCellValue(12.3, fieldDef)).toBe("12.30");
+    expect(formatDisplayCellValue("12.345", { ...fieldDef, numberPrecision: 1 })).toBe("12.3");
+    expect(formatDisplayCellValue(12.9, { ...fieldDef, numberPrecision: 0 })).toBe("13");
+  });
+
+  test("keeps plain number clipboard values on the display precision seam", () => {
+    const fieldDef: FieldDef = {
+      field_key: "cf_load",
+      field_type: "number",
+      display_name: "Load",
+      numberPrecision: 3,
+    };
+
+    expect(formatClipboardCellValue(1.2, fieldDef)).toBe("1.200");
+  });
+
+  test("formats number-with-units values with active-system precision", () => {
+    const fieldDef: FieldDef = {
+      field_key: "thickness",
+      field_type: "number",
+      display_name: "Thickness",
+      numberPrecision: 0,
+      numberUnits: {
+        mode: "editable",
+        unit_type: "length",
+        si_unit: "m",
+        ip_unit: "ft",
+        precision_si: 3,
+        precision_ip: 1,
+      },
+    };
+
+    expect(formatDisplayCellValue(1, fieldDef, "SI")).toBe("1.000");
+    expect(formatDisplayCellValue(1, fieldDef, "IP")).toBe("3.3");
   });
 });

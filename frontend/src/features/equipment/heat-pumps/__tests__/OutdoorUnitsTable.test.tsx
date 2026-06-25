@@ -126,36 +126,29 @@ describe("OutdoorUnitsTable", () => {
       outdoor_units: [outdoorUnit()],
       indoor_units: [indoorUnit({ id: "hpiu_aaaaaaaaaaaaaaaaaaaaaaaaaa", tag: "AHU-1" })],
     });
-    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+    // The cascade preview now rides the generic `:preview-replace` dry-run; the
+    // real delete goes through the controller's generic replace (recorded as a
+    // `rowDelete` write op by the test controller, not a fetch).
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes("/assets/bulk-urls")) return jsonResponse({ items: [] });
-      if (url.includes("?dry-run=true")) {
+      if (url.includes(":preview-replace")) {
         return jsonResponse({
-          ...slice,
-          cascade_preview: {
-            affected: [
-              {
-                table: "indoor-units",
-                row_id: "hpiu_aaaaaaaaaaaaaaaaaaaaaaaaaa",
-                tag: "AHU-1",
-                field: "outdoor_unit_id",
-              },
-            ],
-          },
-        });
-      }
-      if (init?.method === "PATCH") {
-        return jsonResponse({
-          ...slice,
-          outdoor_units: [],
-          source: "draft",
-          draft_etag: "draft_2",
+          affected: [
+            {
+              table: "indoor-units",
+              row_id: "hpiu_aaaaaaaaaaaaaaaaaaaaaaaaaa",
+              tag: "AHU-1",
+              field: "outdoor_unit_id",
+            },
+          ],
         });
       }
       return jsonResponse({});
     });
 
-    renderTable(slice);
+    const writes: WriteOp[] = [];
+    renderTable(slice, { writes });
     await user.click(await screen.findByRole("button", { name: /Expand row 1/i }));
     await user.click(await screen.findByRole("button", { name: "Delete outdoor unit" }));
 
@@ -165,12 +158,7 @@ describe("OutdoorUnitsTable", () => {
     await user.click(screen.getByRole("button", { name: "Delete and clear links" }));
 
     await waitFor(() => {
-      const realDelete = fetchMock.mock.calls.find(
-        ([url, init]) =>
-          String(url).endsWith("/equipment/heat-pumps/outdoor-units") &&
-          (init as RequestInit | undefined)?.method === "PATCH",
-      );
-      expect(realDelete).toBeTruthy();
+      expect(writes.some((op) => op.kind === "rowDelete")).toBe(true);
     });
   });
 
@@ -202,23 +190,21 @@ describe("OutdoorUnitsTable", () => {
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes("/assets/bulk-urls")) return jsonResponse({ items: [] });
-      if (url.includes("?dry-run=true")) {
-        return jsonResponse({ ...slice, cascade_preview: { affected: [] } });
+      if (url.includes(":preview-replace")) {
+        return jsonResponse({ affected: [] });
       }
-      return jsonResponse({ ...slice, outdoor_units: [], source: "draft", draft_etag: "draft_2" });
+      return jsonResponse({});
     });
 
-    renderTable(slice);
+    const writes: WriteOp[] = [];
+    renderTable(slice, { writes });
     await user.click(await screen.findByRole("button", { name: /Expand row 1/i }));
     await user.click(await screen.findByRole("button", { name: "Delete outdoor unit" }));
 
+    // No affected links → no dialog; the delete fires immediately through the
+    // generic replace path (recorded as a rowDelete write op).
     await waitFor(() => {
-      const realDelete = fetchMock.mock.calls.find(
-        ([url, init]) =>
-          String(url).endsWith("/equipment/heat-pumps/outdoor-units") &&
-          (init as RequestInit | undefined)?.method === "PATCH",
-      );
-      expect(realDelete).toBeTruthy();
+      expect(writes.some((op) => op.kind === "rowDelete")).toBe(true);
     });
     expect(screen.queryByText(/clear the outdoor link/i)).not.toBeInTheDocument();
   });

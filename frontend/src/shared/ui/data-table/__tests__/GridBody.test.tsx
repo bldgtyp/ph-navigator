@@ -11,7 +11,7 @@ import {
   type ViewState,
 } from "../types";
 
-type Row = { id: string; number: string; name: string; count: number };
+type Row = { id: string; number: string; name: string; count: number | null };
 
 const ROWS: Row[] = [
   { id: "rm_1", number: "101", name: "Living", count: 1 },
@@ -65,6 +65,24 @@ describe("GridBody — DOM hit-test attrs", () => {
     const otherCell = getBodyCell(2, 2);
     expect(otherCell.dataset.rowId).toBe("rm_3");
     expect(otherCell.dataset.fieldKey).toBe("count");
+  });
+
+  test("number cells expose a shared numeric marker and alignment class", () => {
+    renderTable();
+
+    const cell = getBodyCell(0, 2);
+    expect(cell).toHaveAttribute("data-numeric-cell", "true");
+    expect(cell).toHaveClass("data-table-numeric-cell");
+  });
+
+  test("empty number cells render a muted dash without changing stored values", () => {
+    renderTable({
+      rows: [{ id: "rm_1", number: "101", name: "Living", count: null }],
+    });
+
+    const cell = getBodyCell(0, 2);
+    expect(cell).toHaveTextContent("—");
+    expect(cell.querySelector(".data-table-numeric-empty")).not.toBeNull();
   });
 });
 

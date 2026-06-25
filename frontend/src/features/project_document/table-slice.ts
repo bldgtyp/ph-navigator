@@ -24,6 +24,22 @@ export type OnAcceptedTableSlice<TSlice extends BaseTableSlice> = (
   previous: TableSliceVersionGuard,
 ) => void | Promise<void>;
 
+// One dependent row a proposed delete would clear (or that would block it).
+// Mirrors the backend `CascadePreviewRef`.
+export type CascadePreviewRef = {
+  table: string;
+  row_id: string;
+  tag: string;
+  field: string;
+};
+
+// Dry-run result of a table replace: the optional dependent links the removed
+// rows would clear. A required (blocking) link makes `:preview-replace` 409
+// instead, exactly as the real write would.
+export type TableReplacePreview = {
+  affected: CascadePreviewRef[];
+};
+
 export function createTableSliceFeature<TSlice extends BaseTableSlice, TReplaceBody>(options: {
   tableName: string;
   missingVersionMessage: string;
@@ -64,6 +80,24 @@ export function createTableSliceFeature<TSlice extends BaseTableSlice, TReplaceB
       `/api/v1/projects/${projectId}/versions/${versionId}/draft/tables/${tableName}`,
       {
         method: "PUT",
+        headers: draftWriteHeaders(current),
+        body: JSON.stringify(payload),
+      },
+    );
+  }
+
+  async function previewReplace(
+    projectId: string,
+    versionId: string,
+    current: TSlice,
+    payload: TReplaceBody,
+  ): Promise<TableReplacePreview> {
+    // Dry-run the same replace the real write would do, reporting the dependent
+    // links the removed rows would clear (or 409 if a required link blocks it).
+    return fetchJson<TableReplacePreview>(
+      `/api/v1/projects/${projectId}/versions/${versionId}/draft/tables/${tableName}:preview-replace`,
+      {
+        method: "POST",
         headers: draftWriteHeaders(current),
         body: JSON.stringify(payload),
       },
@@ -190,6 +224,7 @@ export function createTableSliceFeature<TSlice extends BaseTableSlice, TReplaceB
     queryKeys,
     fetchSlice,
     replaceSlice,
+    previewReplace,
     mutateSchema,
     useSliceQuery,
     useReplaceSliceMutation,

@@ -1,5 +1,6 @@
 import { formatNumberUnitsDisplay, type UnitSystem } from "../../../../../lib/units";
 import type { FieldDef, FieldOption } from "../../types";
+import { formatPlainNumberDisplay } from "../numberDisplay";
 import { formatClipboardValue } from "../paste/tsv";
 
 // `unitSystem` is only consulted for number fields whose FieldDef carries
@@ -16,6 +17,9 @@ export function formatDisplayCellValue(
   }
   if (fieldDef?.field_type === "number" && fieldDef.numberUnits) {
     return formatNumberUnitsDisplay(value, fieldDef.numberUnits, unitSystem);
+  }
+  if (fieldDef?.field_type === "number") {
+    return formatPlainNumberDisplay(value, fieldDef);
   }
   return formatClipboardValue(value);
 }

@@ -2,6 +2,7 @@ import { formatNumberUnitsDisplay, type UnitSystem } from "../../../../../lib/un
 import type { CellRange, DataTableColumnDef, FieldDef } from "../../types";
 import { fieldDefForColumn } from "../internal/fieldDefForColumn";
 import { fieldKeyFieldDefMap } from "../internal/fieldKeyFieldDefMap";
+import { formatPlainNumberDisplay } from "../numberDisplay";
 import { normalizeRange } from "../range/normalize";
 
 export function formatClipboardValue(value: unknown): string {
@@ -26,6 +27,9 @@ export function formatClipboardCellValue(
   }
   if (fieldDef?.field_type === "number" && fieldDef.numberUnits) {
     return formatNumberUnitsDisplay(value, fieldDef.numberUnits, unitSystem);
+  }
+  if (fieldDef?.field_type === "number") {
+    return formatPlainNumberDisplay(value, fieldDef);
   }
   return formatClipboardValue(value);
 }

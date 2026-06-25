@@ -3,6 +3,7 @@ import {
   numberUnitPrecision,
   type UnitSystem,
 } from "../../../../lib/units";
+import { clampNumberPrecision } from "../lib/numberPrecision";
 import type { FieldDef } from "../types";
 
 // Per-field-type aggregation catalogue + pure formatter. Mirrors the
@@ -119,6 +120,9 @@ export function formatAggregation(
     const display =
       unitSystem === "IP" ? convertNumberUnitsToDisplay(result, fieldDef.numberUnits) : result;
     return display.toFixed(numberUnitPrecision(fieldDef.numberUnits, unitSystem));
+  }
+  if (fieldDef?.field_type === "number" && fieldDef.numberPrecision !== undefined) {
+    return result.toFixed(clampNumberPrecision(fieldDef.numberPrecision));
   }
   return formatNumber(result);
 }
