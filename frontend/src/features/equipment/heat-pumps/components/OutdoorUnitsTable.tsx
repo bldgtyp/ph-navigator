@@ -15,14 +15,14 @@ import {
 import { useAssetUrls } from "../../../assets/hooks";
 import { ventilatorsSliceFeature } from "../../api";
 import type { VentilatorRow } from "../../types";
-import { heatPumpOutdoorUnitsSliceFeature, useHeatPumpOptionMutation } from "../api";
+import { heatPumpOutdoorUnitsSliceFeature } from "../api";
 import {
   buildEmptyOutdoorEquipRow,
   buildEmptyOutdoorUnitRow,
-  buildNewHeatPumpOption,
   deleteHeatPumpRow,
   heatPumpOutdoorUnitsPayloadBuilders,
   insertHeatPumpRow,
+  makeHeatPumpOptionCreator,
   outdoorEquipLabel,
   replaceHeatPumpRow,
   sortedIndoorUnits,
@@ -45,7 +45,6 @@ import {
   type HeatPumpOutdoorEquipSlice,
   type HeatPumpOutdoorUnitsSlice,
   type HeatPumpOutdoorUnitRow,
-  type HeatPumpOwnedOptionKey,
   type HeatPumpsSlice,
 } from "../types";
 import { OutdoorEquipRowModal } from "./OutdoorEquipRowModal";
@@ -93,7 +92,6 @@ export function OutdoorUnitsTable({
     message: string;
     affected: CascadeReference[];
   } | null>(null);
-  const optionMutation = useHeatPumpOptionMutation(projectId);
   const accessMode = controller.canEdit ? "editor" : "viewer";
   const indoorUnitModalOpen = modal?.kind === "indoor-unit";
   const ventilatorsQuery = ventilatorsSliceFeature.useSliceQuery(
@@ -205,18 +203,14 @@ export function OutdoorUnitsTable({
   ]);
   const tableView = controller;
 
-  // OutdoorEquipRowModal opens here for paired equipment and still gets a
-  // createOption callback for the manufacturer/system_family/refrigerant lists.
-  async function createOption(optionKey: HeatPumpOwnedOptionKey, label: string): Promise<string> {
-    const existing = slice.single_select_options[optionKey] ?? [];
-    const newOption = buildNewHeatPumpOption(label, existing);
-    await optionMutation.mutateAsync({
-      current: slice,
-      optionKey,
-      patch: { op: "add", option: newOption },
-    });
-    return newOption.id;
-  }
+  // The paired OutdoorEquipRowModal creates manufacturer/system_family/
+  // refrigerant options — all owned by the outdoor-equip leaf — so the generic
+  // editOptions mutation routes through the sibling outdoor-equip controller.
+  const createOption = makeHeatPumpOptionCreator({
+    controller: outdoorEquipController,
+    tableKey: "heat_pumps_outdoor_equip",
+    optionsByKey: slice.single_select_options,
+  });
 
   async function addUnit(row: HeatPumpOutdoorUnitRow) {
     const tag = uniqueTagForAdd(row.tag, slice.outdoor_units);

@@ -111,8 +111,8 @@ export type HeatPumpSingleSelectOption = {
 /**
  * Single-select option keys exposed on the heat-pumps slice response. Mirrors
  * `HEAT_PUMP_VISIBLE_OPTION_KEYS` in backend/features/heat_pumps/models.py.
- * These `heat_pumps.*` keys are owned by this slice and editable through
- * {@link useHeatPumpOptionMutation}.
+ * These `heat_pumps.*` keys are owned by the equip leaves and edited through the
+ * generic `editOptions` schema mutation (see `makeHeatPumpOptionCreator`).
  */
 export const HEAT_PUMP_OPTION_KEYS = {
   manufacturer: "heat_pumps.manufacturer",
@@ -131,11 +131,6 @@ export const HEAT_PUMP_OWNED_OPTION_KEYS = [
 ] as const;
 
 export type HeatPumpOwnedOptionKey = (typeof HEAT_PUMP_OWNED_OPTION_KEYS)[number];
-
-export type HeatPumpOptionPatchOp = {
-  op: "add" | "replace" | "remove";
-  option: HeatPumpSingleSelectOption;
-};
 
 export type HeatPumpLeafSlice<TRow> = BaseTableSlice & {
   field_defs: TableFieldDef[];

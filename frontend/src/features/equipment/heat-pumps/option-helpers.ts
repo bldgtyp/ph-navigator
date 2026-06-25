@@ -1,5 +1,31 @@
-import { OPTION_COLOR_PALETTE } from "../../../shared/ui/data-table";
-import type { HeatPumpSingleSelectOption } from "./types";
+import {
+  OPTION_COLOR_PALETTE,
+  buildEditOptionsMutation,
+  type WriteOp,
+} from "../../../shared/ui/data-table";
+import type { SliceTableController } from "../../../shared/ui/data-table/feature";
+import type { BaseTableSlice } from "../../project_document/table-slice";
+import {
+  HEAT_PUMP_OPTION_KEYS,
+  type HeatPumpOwnedOptionKey,
+  type HeatPumpSingleSelectOption,
+} from "./types";
+
+// Each heat-pump-owned option-list namespace is read by one built-in field key
+// on the equip leaves. The generic `editOptions` mutation routes by
+// `(tableKey, fieldId)`, so the namespace key alone can't address it.
+const OPTION_KEY_TO_FIELD_ID: Record<HeatPumpOwnedOptionKey, string> = {
+  [HEAT_PUMP_OPTION_KEYS.manufacturer]: "manufacturer",
+  [HEAT_PUMP_OPTION_KEYS.systemFamily]: "system_family",
+  [HEAT_PUMP_OPTION_KEYS.refrigerant]: "refrigerant",
+  [HEAT_PUMP_OPTION_KEYS.modelType]: "model_type",
+  [HEAT_PUMP_OPTION_KEYS.installType]: "install_type",
+};
+
+export type HeatPumpOptionCreator = (
+  optionKey: HeatPumpOwnedOptionKey,
+  label: string,
+) => Promise<string>;
 
 /**
  * Resolve the human-readable label for an option id from an explicit option
@@ -52,6 +78,36 @@ export function buildNewHeatPumpOption(
   const color = OPTION_COLOR_PALETTE[existing.length % OPTION_COLOR_PALETTE.length] ?? "#3b82f6";
   const order = existing.length === 0 ? 0 : Math.max(...existing.map((option) => option.order)) + 1;
   return { id, label: trimmed, color, order };
+}
+
+/**
+ * Build an option-create callback that adds a heat-pump single-select option
+ * through the GENERIC `editOptions` schema mutation — the same path custom
+ * single-selects use — instead of the bespoke `/options` endpoint.
+ *
+ * `controller` must own `fieldId` for the edited list: the equip-leaf tables
+ * pass their own controller; the units tables pass the sibling equip controller
+ * (units leaves don't carry the manufacturer/model lists). The shared
+ * `manufacturer` list resolves to one namespace from either equip leaf.
+ */
+export function makeHeatPumpOptionCreator<TSlice extends BaseTableSlice>(args: {
+  controller: SliceTableController<TSlice>;
+  tableKey: string;
+  optionsByKey: Record<string, readonly HeatPumpSingleSelectOption[]>;
+}): HeatPumpOptionCreator {
+  return async (optionKey, label) => {
+    const existing = args.optionsByKey[optionKey] ?? [];
+    const newOption = buildNewHeatPumpOption(label, existing);
+    const mutation = buildEditOptionsMutation({
+      tableKey: args.tableKey,
+      fieldId: OPTION_KEY_TO_FIELD_ID[optionKey],
+      nextOptions: [...existing, newOption],
+      schemaFingerprint: args.controller.tableSchema.schemaFingerprint,
+    });
+    const writeOp: WriteOp = { kind: "schemaMutation", variant: "typed", mutation };
+    await args.controller.onWrite(writeOp);
+    return newOption.id;
+  };
 }
 
 function randomSuffix(length: number): string {

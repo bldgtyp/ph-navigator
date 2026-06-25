@@ -71,10 +71,17 @@ endpoints); the error-code rename in 5 must land FE+BE together.
      no longer dangles → `422`. Tests in `tests/features/heat_pumps/test_shared_
      option_cascade.py` (manufacturer cleared on both leaves from one edit; rename
      leaves rows untouched). Needs the full `make ci` gate at commit.
-   - **2b (frontend):** point the four components' inline option add/edit/remove at
-     the generic `editOptions` schema-mutation path (the same one custom
-     single-selects use), replacing `useHeatPumpOptionMutation`. No bespoke option
-     client, no option-in-use error handling.
+   - **2b (frontend) — ✅ DONE.** A shared `makeHeatPumpOptionCreator`
+     (`option-helpers.ts`) builds an option-add through the generic `editOptions`
+     schema mutation, routing by `(tableKey, fieldId)` with the controller's
+     schema fingerprint and dispatching via `controller.onWrite({kind:
+     "schemaMutation", variant:"typed"})`. The two equip tables use their own
+     controller; the two units tables route through the sibling equip controller
+     (units leaves don't carry the manufacturer/model lists). `useHeatPumpOptionMutation`
+     and `HeatPumpOptionPatchOp` removed; `api.test.ts` (which only covered that
+     hook) replaced by `option-helpers.test.ts`. tsc + 1907 vitest green. (Inline
+     edit/recolor/reorder/delete from these modals never existed — only add; the
+     generic editOptions delete-clears references when wired into the grid editor.)
 
 3. **Rewire `equipment/components/VentilatorsTableSlot.tsx`** off `useHeatPumpsQuery`
    + `useHeatPumpPatchMutation` (it edits HP indoor units from the ventilator side:

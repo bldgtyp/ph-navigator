@@ -13,12 +13,11 @@ import {
 import { useAssetUrls } from "../../../assets/hooks";
 import { ventilatorsSliceFeature } from "../../api";
 import type { VentilatorRow } from "../../types";
-import { useHeatPumpOptionMutation } from "../api";
 import {
   buildEmptyIndoorEquipRow,
-  buildNewHeatPumpOption,
   deleteHeatPumpRow,
   insertHeatPumpRow,
+  makeHeatPumpOptionCreator,
   replaceHeatPumpRow,
   sortedIndoorEquip,
   sortedIndoorUnits,
@@ -35,7 +34,6 @@ import {
   type HeatPumpIndoorEquipRow,
   type HeatPumpIndoorUnitsSlice,
   type HeatPumpIndoorUnitRow,
-  type HeatPumpOwnedOptionKey,
   type HeatPumpsSlice,
 } from "../types";
 import { addRowButton } from "../../routes/equipmentRowActions";
@@ -65,7 +63,6 @@ export function IndoorEquipTable({
 }) {
   const [modal, setModal] = useState<ModalState>(null);
   const [linkPickerRow, setLinkPickerRow] = useState<HeatPumpIndoorEquipRow | null>(null);
-  const optionMutation = useHeatPumpOptionMutation(projectId);
   const accessMode = controller.canEdit ? "editor" : "viewer";
   const indoorUnitModalOpen = modal?.kind === "unit";
   const ventilatorsQuery = ventilatorsSliceFeature.useSliceQuery(
@@ -148,16 +145,13 @@ export function IndoorEquipTable({
   ]);
   const tableView = controller;
 
-  async function createOption(optionKey: HeatPumpOwnedOptionKey, label: string): Promise<string> {
-    const existing = slice.single_select_options[optionKey] ?? [];
-    const newOption = buildNewHeatPumpOption(label, existing);
-    await optionMutation.mutateAsync({
-      current: slice,
-      optionKey,
-      patch: { op: "add", option: newOption },
-    });
-    return newOption.id;
-  }
+  // Indoor-equip owns manufacturer / model_type / install_type; create options
+  // through the generic editOptions mutation on this leaf's controller.
+  const createOption = makeHeatPumpOptionCreator({
+    controller,
+    tableKey: "heat_pumps_indoor_equip",
+    optionsByKey: slice.single_select_options,
+  });
 
   async function addIndoorRow(row: HeatPumpIndoorEquipRow) {
     const tag = uniqueTagForAdd(row.tag, slice.indoor_equip);
