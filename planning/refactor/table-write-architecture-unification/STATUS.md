@@ -30,7 +30,7 @@ half of the refactor is done.**
 | 1 — backend write spine | `Complete` | none — `make ci` green |
 | 2 — heat-pumps onto registry (backend) | `Complete` | none — `make ci` green (BE 1111, FE 1900) |
 | 3a — generic table-replace cascade preview (backend) | `Complete` | none — `:preview-replace` route; BE suite 1113 |
-| 3b — frontend heat-pumps rewire + shim removal | `In progress` | concurrent DataTable-UI WIP blocks a clean full-CI gate + browser smoke for the remaining increments |
+| 3b — frontend heat-pumps rewire + shim removal | `In progress` | none — tree clean again; increments 2–6 ready |
 
 ### Phase 3b increments
 | # | Increment | State |
@@ -51,12 +51,13 @@ so do it once the concurrent DataTable-UI WIP has landed. Browser-smoke the
 Equipment → Heat Pumps tab once the tree is clean of that WIP.
 
 ## Blockers
-- **Concurrent DataTable-UI WIP** is uncommitted in the working tree (shared
-  `shared/ui/data-table/*` internals + a `tsc` error in `GridBody.test.tsx`),
-  which blocks a clean full `make ci` and a clean Equipment-tab browser smoke.
-  Increment 1 was committed atomically (only its 3 files) to avoid entangling the
-  two. See [[feedback_concurrent_committer]]. Resume the CI-gated parts once that
-  WIP lands.
+- None. The concurrent DataTable-UI WIP landed (it ended up bundled into the
+  increment-1 commit `6b6ae359` — accepted as-is by Ed rather than rewriting
+  history; `tsc -b` clean). The tree is clean, so increments 2–6 can resume with
+  clean full-`make ci` gates + a real Equipment-tab browser smoke. See
+  [[feedback_concurrent_committer]] — when committing alongside the concurrent
+  committer, use `git commit -- <paths>` (path-scoped) so a pre-staged index from
+  the other party can't get swept into the commit.
 
 ## Deferred follow-ups (recorded)
 - **Module split** of `tables/heat_pumps.py` (~982 lines): soft target, high-churn
