@@ -117,7 +117,7 @@ def invalidate_active_sessions(
     return list(rows)
 
 
-def create_session(
+def insert_session(
     conn: Connection[Any],
     session_id: UUID,
     user_id: UUID,

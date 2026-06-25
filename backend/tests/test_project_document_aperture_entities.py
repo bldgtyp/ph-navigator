@@ -192,9 +192,8 @@ def test_ensure_project_entities_dedup_catalog_refs_and_append_hand_entered_refs
     assert len(tables.project_frames) == 3
 
 
-def test_v11_inline_refs_migrate_to_flat_tables_and_fk_slots() -> None:
+def test_legacy_inline_refs_are_rejected_without_read_time_migration() -> None:
     raw = _empty_raw_document()
-    raw["schema_version"] = 11
     default_frame = _frame_ref()
     hand_frame = _hand_frame_ref()
     raw["tables"]["apertures"] = [
@@ -244,22 +243,11 @@ def test_v11_inline_refs_migrate_to_flat_tables_and_fk_slots() -> None:
         },
     ]
 
-    migrated = ProjectDocumentV1.model_validate(raw)
-
-    assert migrated.schema_version == 12
-    assert len(migrated.tables.project_frames) == 2
-    assert len(migrated.tables.project_glazings) == 1
-    default_frame_id = next(frame.id for frame in migrated.tables.project_frames if frame.catalog_origin is not None)
-    hand_frame_id = next(frame.id for frame in migrated.tables.project_frames if frame.catalog_origin is None)
-    assert migrated.tables.apertures[0].elements[0].frames.top == default_frame_id
-    assert migrated.tables.apertures[0].elements[0].frames.left == hand_frame_id
-    assert migrated.tables.apertures[1].elements[0].frames.left == default_frame_id
-    assert migrated.tables.apertures[0].elements[0].glazing_id == migrated.tables.project_glazings[0].id
-
-    assert ProjectDocumentV1.model_validate(migrated.model_dump(mode="json")) == migrated
+    with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
+        ProjectDocumentV1.model_validate(raw)
 
 
-def test_v12_aperture_models_accept_fk_fields_directly() -> None:
+def test_current_aperture_models_accept_fk_fields_directly() -> None:
     element = ApertureElement(
         id="aptel_direct",
         name="Direct",

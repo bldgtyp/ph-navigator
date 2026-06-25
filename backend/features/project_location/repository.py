@@ -28,6 +28,19 @@ def get_location(conn: Connection[Any], project_id: UUID) -> dict[str, Any] | No
     ).fetchone()
 
 
+def get_epw_asset_id(conn: Connection[Any], project_id: UUID) -> str | None:
+    row = conn.execute(
+        """
+        SELECT epw_asset_id
+        FROM project_location
+        WHERE project_id = %(project_id)s
+          AND epw_asset_id IS NOT NULL
+        """,
+        {"project_id": project_id},
+    ).fetchone()
+    return str(row["epw_asset_id"]) if row else None
+
+
 def upsert_location(
     conn: Connection[Any],
     project_id: UUID,

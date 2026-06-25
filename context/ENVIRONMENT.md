@@ -223,9 +223,15 @@ an ephemeral local shell for the opt-in smoke.
   full reference): `LOG_LEVEL` (default `INFO`), `LOG_FORMAT`
   (`console` locally, `json` on Render), `LOG_SQL`
   (default `false`), `LOG_SAMPLE_HEALTH` (default `false`),
-  `GIT_SHA` (Render's `RENDER_GIT_COMMIT`).
+  `SLOW_QUERY_MS` (default `500`), `PROJECT_DOCUMENT_MAX_BODY_BYTES`
+  (default `8388608`), `GIT_SHA` (Render's `RENDER_GIT_COMMIT`).
 - Local backend defaults:
   - `DATABASE_URL=postgresql://phn:phn_local_only@localhost:5433/ph_navigator_v2`
+  - `DATABASE_POOL_MIN_SIZE=2`
+  - `DATABASE_POOL_MAX_SIZE=10`
+  - `DATABASE_POOL_TIMEOUT_SECONDS=10`
+  - `SLOW_QUERY_MS=500`
+  - `PROJECT_DOCUMENT_MAX_BODY_BYTES=8388608`
   - `SESSION_COOKIE_NAME=phn_session`
   - `SESSION_LIFETIME_MINUTES=60`
   - `SESSION_COOKIE_SAMESITE=lax`
@@ -314,6 +320,11 @@ The verbatim service/DB config (also encoded in `render.yaml`):
     - `LOG_LEVEL=INFO`
     - `GIT_SHA` mapped from Render's `RENDER_GIT_COMMIT`
     - `DATABASE_URL=<Render internal database URL>`
+    - `DATABASE_POOL_MIN_SIZE=2`
+    - `DATABASE_POOL_MAX_SIZE=10`
+    - `DATABASE_POOL_TIMEOUT_SECONDS=10`
+    - `SLOW_QUERY_MS=500`
+    - `PROJECT_DOCUMENT_MAX_BODY_BYTES=8388608`
     - `CORS_ORIGINS=https://ph-navigator-v2-staging.onrender.com`
     - `SESSION_COOKIE_NAME=phn_session`
     - `SESSION_LIFETIME_MINUTES=60`
@@ -333,6 +344,17 @@ The verbatim service/DB config (also encoded in `render.yaml`):
       entries from them automatically.
     - `FERNET_SECRET_KEY=<generated Fernet key>`
 - Postgres service: `ph-navigator-v2-staging-db`
+
+### Render Postgres Observability
+
+Before production or a long-lived staging DB carries real project data,
+enable `pg_stat_statements` and set `log_min_duration_statement` around
+`500 ms` on the Render Postgres service. App logs now emit
+threshold-gated `db.slow_query` events without SQL text/params, plus
+coarse `project_document.loaded` / `project_document.saved` timing for
+JSONB document reads/writes. Render/Postgres-side stats remain the
+source of truth for lock waits, plan regressions, and server time that
+the app process cannot see.
   - Database: `ph_navigator_v2` (Render auto-suffixes the internal db
     name for uniqueness, e.g. `ph_navigator_v2_annq`; the app connects via
     the full `DATABASE_URL`, so the literal name does not matter)

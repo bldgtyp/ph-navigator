@@ -6,6 +6,7 @@ import hashlib
 import json
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
+from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import Any, cast
 
@@ -22,6 +23,15 @@ class InverseTableView:
     inverse_links: TableInverseLinks
     inverse_link_fields: list[InverseLinkField]
     fingerprint: str
+
+
+_INVERSE_TABLE_VIEW_CACHE: ContextVar[dict[tuple[int, tuple[str, ...]], InverseTableView] | None] = ContextVar(
+    "inverse_table_view_cache", default=None
+)
+
+
+def reset_inverse_view_cache() -> None:
+    _INVERSE_TABLE_VIEW_CACHE.set({})
 
 
 def build_snapshot_row_ids(body: ProjectDocumentV1) -> dict[tuple[str, ...], frozenset[str]]:
@@ -113,12 +123,19 @@ def build_inverse_table_view(body: ProjectDocumentV1, target_table_path: Sequenc
     """Build inverse overlay, metadata, and fingerprint for one target table."""
 
     target_path = tuple(target_table_path)
+    cache_key = (id(body), target_path)
+    cache = _INVERSE_TABLE_VIEW_CACHE.get()
+    if cache is not None and cache_key in cache:
+        return cache[cache_key]
     overlay: dict[str, dict[str, list[str]]] = defaultdict(lambda: defaultdict(list))
     metadata: list[InverseLinkField] = []
     row_ids_by_path = build_snapshot_row_ids(body)
     target_ids = row_ids_by_path.get(target_path, frozenset())
     if not target_ids:
-        return InverseTableView(inverse_links={}, inverse_link_fields=[], fingerprint=fingerprint_inverse_links({}))
+        empty = InverseTableView(inverse_links={}, inverse_link_fields=[], fingerprint=fingerprint_inverse_links({}))
+        if cache is not None:
+            cache[cache_key] = empty
+        return empty
 
     for contract in _iter_unique_table_contracts():
         if not contract.table_path:
@@ -145,11 +162,14 @@ def build_inverse_table_view(body: ProjectDocumentV1, target_table_path: Sequenc
         target_row_id: {source_key: list(source_row_ids) for source_key, source_row_ids in by_source.items()}
         for target_row_id, by_source in overlay.items()
     }
-    return InverseTableView(
+    view = InverseTableView(
         inverse_links=inverse_links,
         inverse_link_fields=metadata,
         fingerprint=fingerprint_inverse_links(inverse_links),
     )
+    if cache is not None:
+        cache[cache_key] = view
+    return view
 
 
 def fingerprint_inverse_links(inverse: Mapping[str, Mapping[str, Sequence[str]]]) -> str:

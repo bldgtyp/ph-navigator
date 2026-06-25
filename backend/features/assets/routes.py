@@ -9,7 +9,7 @@ from fastapi.responses import RedirectResponse, Response
 from starlette import status
 
 from config import settings
-from features.assets.schemas import (
+from features.assets.models import (
     AssetRow,
     AssetUrlsResponse,
     AttachAssetRequest,

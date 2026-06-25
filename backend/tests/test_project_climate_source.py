@@ -15,6 +15,7 @@ import pytest
 from fastapi.testclient import TestClient
 from mcp.server.fastmcp import Context
 
+from database import transaction
 from features.climate.ashrae_meteo import AshraeMeteoResult
 from features.climate.design_conditions import ClimateDesignConditions
 from features.climate.epw_catalog import EpwCatalogEntry, EpwZipPayload
@@ -139,6 +140,24 @@ def test_phius_source_validates_ref_and_provider(clean_mcp_tables: None, clean_c
     mismatch = _post(client, project_id, {"kind": "phi", "ref": location_id})
     assert mismatch.status_code == 422
     assert mismatch.json()["error_code"] == "climate_source_provider_mismatch"
+
+
+def test_phius_source_read_tolerates_dangling_reference(clean_mcp_tables: None, clean_climate_tables: None) -> None:
+    _seed_two_locations()
+    client = signed_in_client()
+    project_id = cast(str, create_project(client)["id"])
+    _set_location(client, project_id, latitude=40.0, longitude=-75.0)
+    location_id = _first_phius_location_id(client)
+    created = _create(client, project_id, {"kind": "phius", "ref": location_id, "label": "Worcester"})
+
+    with transaction() as conn:
+        conn.execute("DELETE FROM climate_dataset_location WHERE id = %(id)s", {"id": location_id})
+
+    items = _list(client, project_id)
+    assert items[0]["id"] == created["id"]
+    assert items[0]["kind"] == "phius"
+    assert items[0]["ref"] == location_id
+    assert cast(dict[str, object], items[0]["data"])["status"] in {"pass", "fail"}
 
 
 def test_custom_source_record_validation(clean_mcp_tables: None) -> None:

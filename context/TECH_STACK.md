@@ -34,8 +34,8 @@ Use a boring, explicit stack:
 | Backend framework | FastAPI |
 | API / validation model | Pydantic v2 |
 | DB | Postgres 16 |
-| DB access | Raw parameterized SQL through narrow repository modules; no ORM entity layer |
-| Migrations | Alembic retained for schema migrations |
+| DB access | Raw parameterized SQL through narrow repository modules; no ORM entity layer. App access goes through a lifespan-managed `psycopg_pool.ConnectionPool` with explicit sizing, checkout validation, `/ready` DB probe, and threshold slow-query logging |
+| Migrations | Alembic retained for schema migrations; current pre-deploy history is squashed into baseline `20260624_0001` |
 | App document model | Pydantic-validated JSONB document versions |
 | Frontend | Vite + TypeScript + React |
 | UI kit | Hand-written plain CSS + Radix UI behavior primitives (no Tailwind, no shadcn/ui). See `frontend/src/styles/README.md` |
@@ -172,6 +172,8 @@ load testing or long-running I/O proves async is necessary.
 Alembic remains for migrations. Alembic may use SQLAlchemy internally,
 but application code does not use SQLAlchemy ORM/Core for persistence.
 Migrations are manual revisions; no autogenerate from ORM metadata.
+Before first deploy, the accreted migration chain was squashed into
+`20260624_0001`; future schema changes layer on top of that baseline.
 
 ## Frontend Decision
 
@@ -310,6 +312,8 @@ Backend:
 - Use transactions around save/version/draft operations.
 - Store all physical quantities in SI. Frontend handles IP display and input conversion.
 - Write regression tests around schema migration, JSONB document validation, diff, save/version behavior, and catalog refresh.
+- Backend CI runs `python -m scripts.check_backend_boundaries` to guard the
+  documented route/service/repository import boundaries.
 
 Frontend:
 

@@ -62,6 +62,9 @@ Optional modules are allowed when they make a boundary clearer:
 - Uses explicit field names matching the API contract.
 - Keeps API-facing schemas separate from persistence row shapes when those
   shapes diverge.
+- Is the required boundary filename for feature DTOs. Do not add `schemas.py`
+  aliases in feature packages; external schema mirrors may use a nested
+  `schemas/` package when the imported domain naming is part of the contract.
 
 `service.py`:
 
@@ -70,13 +73,18 @@ Optional modules are allowed when they make a boundary clearer:
   rules, and orchestration across repositories.
 - Raises structured API errors from `features.shared.errors`.
 - Converts repository rows into Pydantic models at the service boundary.
+- Translates domain/library exceptions into API-shaped errors at the boundary.
+  This is the intended pattern for `mcp`, `climate`, and catalog import/export
+  workflows, where lower-level helpers should stay HTTP-agnostic.
 
 `repository.py`:
 
 - Owns raw SQL only. SQL must be parameterized.
 - Accepts a connection plus primitive IDs or typed request objects.
-- Returns rows, row lists, simple scalars, or narrowly typed persistence
-  results.
+- Returns raw `dict[str, Any]` rows, row lists, simple scalars, or narrowly
+  typed persistence results. Repository code does not instantiate API Pydantic
+  response models; services validate returned rows before data crosses the
+  service boundary.
 - Does not import FastAPI request/response objects, set cookies, enforce
   workflow policy, or raise HTTP-shaped errors.
 
@@ -201,9 +209,16 @@ Current enforced controls live in `backend/pyproject.toml`:
 
 Near-term controls to add as the backend grows:
 
-- Feature-shape check: every feature package has the required layer files.
+- Feature-shape check: every feature package has the required layer files
+  (`routes.py`, `models.py`, `service.py`, `repository.py`) or an explicit
+  documented exemption for declarative/schema-mirror packages. The check should
+  reject feature-level `schemas.py` files.
 - Boundary check: route modules do not import `database`; repository modules
-  do not import FastAPI request/response types.
+  do not import FastAPI request/response types; raw SQL (`conn.execute`,
+  cursors, `psycopg.sql`) appears only in `repository.py` or documented shared
+  repository equivalents such as `catalogs/_shared.py` and
+  `catalogs/_options_repository.py`. SAVEPOINT/ROLLBACK/RELEASE transaction
+  control may remain in import/export services.
 - Size check: warn at the soft limits above and fail at the hard limit unless
   the exception is documented.
 - Docstring check: require behavior-bearing public functions to document why.
@@ -373,7 +388,7 @@ Preferred split direction:
 
 ### DataTable Identity Convention
 
-Every project DataTable follows one identity model (schema v8; full
+Every project DataTable follows one identity model (current clean baseline; full
 contract in `context/technical-requirements/data-table.md` §
 *Identifier Column* and `data-model.md` §6.6.10):
 

@@ -5,12 +5,17 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import uuid4
 
+import pytest
+
+import features.project_document.inverse_view as inverse_view
 from features.project_document.custom_fields import CustomFieldType, TableFieldDef
 from features.project_document.document import ProjectDocumentV1, PumpRow, RoomRow
 from features.project_document.inverse_view import (
     build_inverse_links,
+    build_inverse_table_view,
     build_snapshot_row_ids,
     inverse_fingerprint_for_table,
+    reset_inverse_view_cache,
 )
 from features.project_document.tables.pumps import pumps_response
 from features.projects.models import CreateProjectRequest
@@ -191,3 +196,23 @@ def test_inverse_fingerprint_changes_only_when_target_incoming_links_change() ->
         }
     )
     assert inverse_fingerprint_for_table(link_change, ("equipment", "pumps")) != baseline
+
+
+def test_inverse_table_view_cache_reuses_per_table_result(monkeypatch: pytest.MonkeyPatch) -> None:
+    body = _body_with_rooms_to_pumps()
+    calls = 0
+    original = inverse_view.build_snapshot_row_ids
+
+    def wrapped_build_snapshot_row_ids(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(inverse_view, "build_snapshot_row_ids", wrapped_build_snapshot_row_ids)
+
+    reset_inverse_view_cache()
+    first = build_inverse_table_view(body, ("equipment", "pumps"))
+    second = build_inverse_table_view(body, ("equipment", "pumps"))
+
+    assert first is second
+    assert calls == 1

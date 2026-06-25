@@ -7,12 +7,16 @@ point boto3 at Cloudflare R2 via endpoint_url.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from time import perf_counter
 from uuid import UUID
 
 import boto3
+import structlog
 from botocore.client import Config
 
 from config import Settings
+
+log = structlog.get_logger(__name__)
 
 
 def asset_object_key(project_id: UUID, asset_id: str, ext: str) -> str:
@@ -55,11 +59,12 @@ class R2Client:
         size_bytes: int,
         expires_in_seconds: int = 600,
     ) -> str:
-        return self.client.generate_presigned_url(
-            "put_object",
-            Params={"Bucket": self.bucket, "Key": object_key, "ContentType": content_type},
-            ExpiresIn=expires_in_seconds,
-        )
+        with _timed_r2_op("presign_put", bytes_count=size_bytes):
+            return self.client.generate_presigned_url(
+                "put_object",
+                Params={"Bucket": self.bucket, "Key": object_key, "ContentType": content_type},
+                ExpiresIn=expires_in_seconds,
+            )
 
     def generate_signed_get_url(
         self,
@@ -70,29 +75,40 @@ class R2Client:
         params: dict[str, str] = {"Bucket": self.bucket, "Key": object_key}
         if response_content_disposition:
             params["ResponseContentDisposition"] = response_content_disposition
-        return self.client.generate_presigned_url("get_object", Params=params, ExpiresIn=expires_in_seconds)
+        with _timed_r2_op("presign_get"):
+            return self.client.generate_presigned_url("get_object", Params=params, ExpiresIn=expires_in_seconds)
 
     def head_object(self, object_key: str) -> dict[str, object]:
-        return self.client.head_object(Bucket=self.bucket, Key=object_key)
+        with _timed_r2_op("head"):
+            return self.client.head_object(Bucket=self.bucket, Key=object_key)
 
     def get_object_prefix(self, object_key: str, byte_range: tuple[int, int]) -> bytes:
         start, end = byte_range
-        response = self.client.get_object(Bucket=self.bucket, Key=object_key, Range=f"bytes={start}-{end}")
-        return bytes(response["Body"].read())
+        with _timed_r2_op("get_prefix", bytes_count=max(0, end - start + 1)):
+            response = self.client.get_object(Bucket=self.bucket, Key=object_key, Range=f"bytes={start}-{end}")
+            return bytes(response["Body"].read())
 
     def get_object(self, object_key: str) -> bytes:
+        start = perf_counter()
         response = self.client.get_object(Bucket=self.bucket, Key=object_key)
-        return bytes(response["Body"].read())
+        body = bytes(response["Body"].read())
+        _log_r2_op("get", start, bytes_count=len(body))
+        return body
 
     def put_object(self, object_key: str, body: bytes, content_type: str) -> str:
-        response = self.client.put_object(Bucket=self.bucket, Key=object_key, Body=body, ContentType=content_type)
-        return str(response.get("ETag", "")).strip('"')
+        with _timed_r2_op("put", bytes_count=len(body)):
+            response = self.client.put_object(Bucket=self.bucket, Key=object_key, Body=body, ContentType=content_type)
+            return str(response.get("ETag", "")).strip('"')
 
     def copy_object(self, source_key: str, dest_key: str) -> None:
-        self.client.copy_object(Bucket=self.bucket, CopySource={"Bucket": self.bucket, "Key": source_key}, Key=dest_key)
+        with _timed_r2_op("copy"):
+            self.client.copy_object(
+                Bucket=self.bucket, CopySource={"Bucket": self.bucket, "Key": source_key}, Key=dest_key
+            )
 
     def delete_object(self, object_key: str) -> None:
-        self.client.delete_object(Bucket=self.bucket, Key=object_key)
+        with _timed_r2_op("delete"):
+            self.client.delete_object(Bucket=self.bucket, Key=object_key)
 
     def list_object_keys(self, prefix: str) -> list[str]:
         keys: list[str] = []
@@ -101,7 +117,8 @@ class R2Client:
             params: dict[str, object] = {"Bucket": self.bucket, "Prefix": prefix}
             if continuation_token:
                 params["ContinuationToken"] = continuation_token
-            response = self.client.list_objects_v2(**params)
+            with _timed_r2_op("list"):
+                response = self.client.list_objects_v2(**params)
             keys.extend(str(item["Key"]) for item in response.get("Contents", []))
             if not response.get("IsTruncated"):
                 return keys
@@ -114,10 +131,31 @@ class R2Client:
             chunk = object_keys[index : index + 1000]
             if not chunk:
                 continue
-            response = self.client.delete_objects(
-                Bucket=self.bucket,
-                Delete={"Objects": [{"Key": key} for key in chunk], "Quiet": False},
-            )
+            with _timed_r2_op("delete_batch"):
+                response = self.client.delete_objects(
+                    Bucket=self.bucket,
+                    Delete={"Objects": [{"Key": key} for key in chunk], "Quiet": False},
+                )
             deleted += len(response.get("Deleted", []))
             failed.extend(str(item.get("Key", "")) for item in response.get("Errors", []))
         return DeleteObjectsResult(deleted_object_count=deleted, failed_object_keys=[key for key in failed if key])
+
+
+class _timed_r2_op:
+    def __init__(self, op: str, *, bytes_count: int | None = None):
+        self.op = op
+        self.bytes_count = bytes_count
+        self.start = 0.0
+
+    def __enter__(self) -> None:
+        self.start = perf_counter()
+
+    def __exit__(self, exc_type: object, exc: object, tb: object) -> None:
+        _log_r2_op(self.op, self.start, bytes_count=self.bytes_count)
+
+
+def _log_r2_op(op: str, start: float, *, bytes_count: int | None = None) -> None:
+    fields: dict[str, object] = {"op": op, "duration_ms": round((perf_counter() - start) * 1000, 2)}
+    if bytes_count is not None:
+        fields["bytes"] = bytes_count
+    log.info("r2.op", **fields)

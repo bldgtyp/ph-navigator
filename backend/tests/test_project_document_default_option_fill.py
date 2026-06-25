@@ -62,7 +62,7 @@ def _body_with_default_field() -> ProjectDocumentV1:
     heat_pumps = empty_required_tables()["equipment"]["heat_pumps"]
     return ProjectDocumentV1.model_validate(
         {
-            "schema_version": 11,
+            "schema_version": 1,
             "project": ProjectDocumentProject(name="t", bt_number="1", cert_programs=[]).model_dump(mode="json"),
             "tables": {
                 "rooms": envelope.model_dump(mode="json"),

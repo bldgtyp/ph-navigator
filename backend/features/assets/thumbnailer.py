@@ -14,7 +14,8 @@ from PIL import Image, ImageOps
 from config import settings
 from database import transaction
 from features.assets import repository
-from features.assets.schemas import AssetRow
+from features.assets.mapping import asset_row
+from features.assets.models import AssetRow
 from features.assets.storage_r2 import R2Client, asset_thumbnail_object_key
 
 log = structlog.get_logger(__name__)
@@ -26,10 +27,11 @@ class Thumbnailer:
 
     def render_for_asset(self, project_id: UUID, asset_id: str) -> None:
         with transaction() as conn:
-            asset = repository.get_asset_by_id(conn, project_id, asset_id)
-        if asset is None:
+            asset_data = repository.get_asset_by_id(conn, project_id, asset_id)
+        if asset_data is None:
             log.warning("assets.thumbnail.asset_missing", asset_id=asset_id)
             return
+        asset = asset_row(asset_data)
 
         with ThreadPoolExecutor(max_workers=1) as executor:
             future = executor.submit(self._render_bytes, asset)

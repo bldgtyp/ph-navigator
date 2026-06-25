@@ -44,9 +44,9 @@ from features.project_document.service import (
     document_etag,
     get_current_document_view,
     get_saved_document,
-    next_draft_etag,
     validate_document,
 )
+from features.project_document.validation import enforce_document_body_size, next_draft_etag_from_etag
 from features.projects.access import ProjectAccess, require_editor_user
 from features.shared.errors import api_error
 
@@ -235,14 +235,16 @@ def apply_envelope_command(
                 project_materials=project_materials,
             )
 
+        serialized_next = enforce_document_body_size(next_body)
         draft_etag = repository.upsert_draft(
             conn,
             version_id,
             user.id,
             next_body,
             base_version_etag,
-            next_draft_etag(next_body),
+            next_draft_etag_from_etag(serialized_next.etag),
             updated_via=updated_via,
+            serialized_body=serialized_next,
         )
         log_document_action(
             conn,

@@ -300,18 +300,20 @@ already exist.
 ## Database
 
 PHN V2 uses raw `psycopg` v3 (see `context/TECH_STACK.md`). The driver
-does not log queries by default. Per-query logging belongs in the
-repository layer when explicitly desired; do not enable global
-`psycopg` debug logging in production.
+does not log queries by default. PHN wraps pooled `conn.execute(...)`
+calls and emits `db.slow_query` only when runtime exceeds
+`SLOW_QUERY_MS` (default `500`). The event carries `duration_ms` and an
+operation label only — never SQL text or params.
 
-> **Gap (2026-06-24 review OBS-2/OBS-3).** There is currently **no** query
-> timing anywhere, including the whole-document JSONB read/write hot path.
-> Threshold-gated slow-query logging (`db.slow_query`, `duration_ms`, no
-> statement text/params) plus coarse hot-path timing/size in
-> `project_document/store.py` are recommended **before** the move to a remote
-> DB, where blob reads over a network hop are the most likely first perf
-> surprise. Postgres-side `pg_stat_statements` + `log_min_duration_statement`
-> on the Render DB give the server-side truth at near-zero code cost.
+Whole-document JSONB hot paths emit one coarse line per document op:
+`project_document.loaded` / `project_document.saved` with `bytes` and
+`db_ms`. Project-document writes reject bodies above
+`PROJECT_DOCUMENT_MAX_BODY_BYTES` before persistence, returning
+`project_document_too_large` with the measured `size_bytes` and
+`limit_bytes`. R2 operations emit `r2.op` with `op`, `duration_ms`, and
+`bytes` when known. Postgres-side `pg_stat_statements` +
+`log_min_duration_statement` on the Render DB remain the server-side
+truth for lock waits and plan regressions.
 
 Alembic uses SQLAlchemy internally for migrations. The `sqlalchemy.engine`
 logger is left at WARNING in normal operation. Setting `log_sql=true`
@@ -323,6 +325,8 @@ logger is left at WARNING in normal operation. Setting `log_sql=true`
 |---|---|
 | Backend `LOG_FORMAT` | `json` in `ph-navigator-v2-api-staging` env (and any future prod). |
 | Backend `LOG_LEVEL` | `INFO` default. Bump to `DEBUG` only for short investigation windows; revert after. |
+| `SLOW_QUERY_MS` | Backend threshold for `db.slow_query`; default `500`. |
+| `PROJECT_DOCUMENT_MAX_BODY_BYTES` | Backend project-document JSONB write limit; default `8388608`. |
 | `GIT_SHA` | Map from Render's `RENDER_GIT_COMMIT` (already set by Render on every deploy). Bound into every log line so "did my fix ship?" is answerable from logs. |
 | `ENVIRONMENT` | `staging` or `production`; already required by `Settings`. |
 | Log search | Use Render's per-service log viewer. Filter by `request_id=...`, then by `event=...`. |
@@ -341,6 +345,8 @@ the database service; PHN does not need a duplicate copy.
 | `LOG_FORMAT` | `console` (default). Colorized key=value, human-readable. |
 | `LOG_LEVEL` | `INFO` default; raise to `DEBUG` per terminal as needed: `LOG_LEVEL=DEBUG make backend`. |
 | `LOG_SQL` | `false` default; toggle on while debugging a repository. |
+| `SLOW_QUERY_MS` | `500` default; lower only in a local shell while diagnosing DB latency. |
+| `PROJECT_DOCUMENT_MAX_BODY_BYTES` | `8388608` default; lower in tests only to exercise `project_document_too_large`. |
 | Tests | `caplog` already works because structlog flows through stdlib `logging`. Tests should assert on event names, not on free-text message strings. |
 
 ## Security And Privacy Rules

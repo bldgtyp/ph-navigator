@@ -9,8 +9,6 @@ from uuid import UUID
 from psycopg import Connection
 from psycopg.types.json import Jsonb
 
-from features.assets.schemas import AssetRow, JobResponse
-
 ASSET_COLUMNS = """
 id, project_id::text, asset_kind, object_key, original_filename, display_name,
 content_type, size_bytes, content_hash_sha256, r2_etag, upload_status,
@@ -36,7 +34,7 @@ def insert_pending_asset(
     size_bytes: int,
     content_hash_sha256: str,
     created_by: UUID,
-) -> AssetRow:
+) -> dict[str, Any]:
     row = conn.execute(
         f"""
         INSERT INTO project_assets (
@@ -66,10 +64,12 @@ def insert_pending_asset(
     ).fetchone()
     if row is None:
         raise RuntimeError("Asset insert did not return a row.")
-    return AssetRow.model_validate(row)
+    return dict(row)
 
 
-def find_asset_by_content_hash(conn: Connection[Any], project_id: UUID, content_hash_sha256: str) -> AssetRow | None:
+def find_asset_by_content_hash(
+    conn: Connection[Any], project_id: UUID, content_hash_sha256: str
+) -> dict[str, Any] | None:
     row = conn.execute(
         f"""
         SELECT {ASSET_COLUMNS}
@@ -82,12 +82,12 @@ def find_asset_by_content_hash(conn: Connection[Any], project_id: UUID, content_
         """,
         {"project_id": project_id, "content_hash_sha256": content_hash_sha256.lower()},
     ).fetchone()
-    return AssetRow.model_validate(row) if row else None
+    return dict(row) if row else None
 
 
 def get_asset_by_id(
     conn: Connection[Any], project_id: UUID, asset_id: str, *, include_deleted: bool = False
-) -> AssetRow | None:
+) -> dict[str, Any] | None:
     deleted_clause = "" if include_deleted else "AND deleted_at IS NULL"
     row = conn.execute(
         f"""
@@ -99,10 +99,10 @@ def get_asset_by_id(
         """,
         {"project_id": project_id, "asset_id": asset_id},
     ).fetchone()
-    return AssetRow.model_validate(row) if row else None
+    return dict(row) if row else None
 
 
-def get_asset_by_id_any_project(conn: Connection[Any], asset_id: str) -> AssetRow | None:
+def get_asset_by_id_any_project(conn: Connection[Any], asset_id: str) -> dict[str, Any] | None:
     row = conn.execute(
         f"""
         SELECT {ASSET_COLUMNS}
@@ -112,10 +112,10 @@ def get_asset_by_id_any_project(conn: Connection[Any], asset_id: str) -> AssetRo
         """,
         {"asset_id": asset_id},
     ).fetchone()
-    return AssetRow.model_validate(row) if row else None
+    return dict(row) if row else None
 
 
-def list_assets(conn: Connection[Any], project_id: UUID, *, kind: str | None = None) -> list[AssetRow]:
+def list_assets(conn: Connection[Any], project_id: UUID, *, kind: str | None = None) -> list[dict[str, Any]]:
     kind_clause = "AND asset_kind = %(kind)s" if kind else ""
     rows = conn.execute(
         f"""
@@ -128,7 +128,7 @@ def list_assets(conn: Connection[Any], project_id: UUID, *, kind: str | None = N
         """,
         {"project_id": project_id, "kind": kind},
     ).fetchall()
-    return [AssetRow.model_validate(row) for row in rows]
+    return [dict(row) for row in rows]
 
 
 def list_asset_gc_candidates(
@@ -136,7 +136,7 @@ def list_asset_gc_candidates(
     project_id: UUID,
     *,
     pending_expired_before: datetime,
-) -> list[AssetRow]:
+) -> list[dict[str, Any]]:
     rows = conn.execute(
         f"""
         SELECT {ASSET_COLUMNS}
@@ -153,10 +153,10 @@ def list_asset_gc_candidates(
         """,
         {"project_id": project_id, "pending_expired_before": pending_expired_before},
     ).fetchall()
-    return [AssetRow.model_validate(row) for row in rows]
+    return [dict(row) for row in rows]
 
 
-def list_assets_by_ids(conn: Connection[Any], project_id: UUID, asset_ids: list[str]) -> list[AssetRow]:
+def list_assets_by_ids(conn: Connection[Any], project_id: UUID, asset_ids: list[str]) -> list[dict[str, Any]]:
     if not asset_ids:
         return []
     rows = conn.execute(
@@ -169,11 +169,11 @@ def list_assets_by_ids(conn: Connection[Any], project_id: UUID, asset_ids: list[
         """,
         {"project_id": project_id, "asset_ids": asset_ids},
     ).fetchall()
-    by_id = {row["id"]: AssetRow.model_validate(row) for row in rows}
+    by_id = {row["id"]: dict(row) for row in rows}
     return [by_id[asset_id] for asset_id in asset_ids if asset_id in by_id]
 
 
-def mark_asset_uploaded(conn: Connection[Any], project_id: UUID, asset_id: str, *, r2_etag: str) -> AssetRow:
+def mark_asset_uploaded(conn: Connection[Any], project_id: UUID, asset_id: str, *, r2_etag: str) -> dict[str, Any]:
     row = conn.execute(
         f"""
         UPDATE project_assets
@@ -189,10 +189,10 @@ def mark_asset_uploaded(conn: Connection[Any], project_id: UUID, asset_id: str, 
     ).fetchone()
     if row is None:
         raise LookupError("asset_not_found")
-    return AssetRow.model_validate(row)
+    return dict(row)
 
 
-def mark_asset_failed(conn: Connection[Any], project_id: UUID, asset_id: str, *, reason: str) -> AssetRow:
+def mark_asset_failed(conn: Connection[Any], project_id: UUID, asset_id: str, *, reason: str) -> dict[str, Any]:
     row = conn.execute(
         f"""
         UPDATE project_assets
@@ -207,12 +207,12 @@ def mark_asset_failed(conn: Connection[Any], project_id: UUID, asset_id: str, *,
     ).fetchone()
     if row is None:
         raise LookupError("asset_not_found")
-    return AssetRow.model_validate(row)
+    return dict(row)
 
 
 def set_asset_metadata(
     conn: Connection[Any], project_id: UUID, asset_id: str, metadata_patch: dict[str, Any]
-) -> AssetRow:
+) -> dict[str, Any]:
     row = conn.execute(
         f"""
         UPDATE project_assets
@@ -226,10 +226,12 @@ def set_asset_metadata(
     ).fetchone()
     if row is None:
         raise LookupError("asset_not_found")
-    return AssetRow.model_validate(row)
+    return dict(row)
 
 
-def patch_asset_display_name(conn: Connection[Any], project_id: UUID, asset_id: str, display_name: str) -> AssetRow:
+def patch_asset_display_name(
+    conn: Connection[Any], project_id: UUID, asset_id: str, display_name: str
+) -> dict[str, Any]:
     row = conn.execute(
         f"""
         UPDATE project_assets
@@ -243,7 +245,7 @@ def patch_asset_display_name(conn: Connection[Any], project_id: UUID, asset_id: 
     ).fetchone()
     if row is None:
         raise LookupError("asset_not_found")
-    return AssetRow.model_validate(row)
+    return dict(row)
 
 
 def soft_delete_asset(conn: Connection[Any], project_id: UUID, asset_id: str, *, deleted_by: UUID) -> None:
@@ -266,7 +268,7 @@ def mark_asset_orphaned(
     *,
     object_key: str,
     metadata_patch: dict[str, Any],
-) -> AssetRow:
+) -> dict[str, Any]:
     row = conn.execute(
         f"""
         UPDATE project_assets
@@ -285,12 +287,12 @@ def mark_asset_orphaned(
     ).fetchone()
     if row is None:
         raise LookupError("asset_not_found")
-    return AssetRow.model_validate(row)
+    return dict(row)
 
 
 def insert_job(
     conn: Connection[Any], *, job_id: str, project_id: UUID, created_by: UUID, metadata: dict[str, Any]
-) -> JobResponse:
+) -> dict[str, Any]:
     row = conn.execute(
         f"""
         INSERT INTO project_jobs (id, project_id, job_type, created_by, metadata)
@@ -301,7 +303,7 @@ def insert_job(
     ).fetchone()
     if row is None:
         raise RuntimeError("Job insert did not return a row.")
-    return JobResponse.model_validate(row)
+    return dict(row)
 
 
 def update_job(
@@ -314,7 +316,7 @@ def update_job(
     result_asset_id: str | None = None,
     error_code: str | None = None,
     error_details: dict[str, Any] | None = None,
-) -> JobResponse:
+) -> dict[str, Any]:
     row = conn.execute(
         f"""
         UPDATE project_jobs
@@ -341,10 +343,10 @@ def update_job(
     ).fetchone()
     if row is None:
         raise LookupError("job_not_found")
-    return JobResponse.model_validate(row)
+    return dict(row)
 
 
-def get_job(conn: Connection[Any], project_id: UUID, job_id: str) -> JobResponse | None:
+def get_job(conn: Connection[Any], project_id: UUID, job_id: str) -> dict[str, Any] | None:
     row = conn.execute(
         f"""
         SELECT {JOB_COLUMNS}
@@ -354,4 +356,4 @@ def get_job(conn: Connection[Any], project_id: UUID, job_id: str) -> JobResponse
         """,
         {"project_id": project_id, "job_id": job_id},
     ).fetchone()
-    return JobResponse.model_validate(row) if row else None
+    return dict(row) if row else None

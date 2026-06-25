@@ -46,6 +46,11 @@ class Settings(BaseSettings):
 
     # Database
     database_url: str = Field(default="postgresql://phn:phn_local_only@localhost:5433/ph_navigator_v2")
+    database_pool_min_size: int = 2
+    database_pool_max_size: int = 10
+    database_pool_timeout_seconds: float = 10.0
+    slow_query_ms: float = 500.0
+    project_document_max_body_bytes: int = 8 * 1024 * 1024
 
     # Object storage (R2)
     r2_account_id: str = ""

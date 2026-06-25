@@ -108,31 +108,31 @@ metadata* (identity, project metadata, registries, audit) and **do not shadow
 the project-document tables** (assemblies, apertures, rooms, equipment, etc. —
 those live in class ②).
 
-Grouped by concern (full column-level schema in `data-model.md` §6.1; migration
-that introduced each table in parentheses):
+Grouped by concern (full column-level schema in `data-model.md` §6.1; current
+relational baseline is `20260624_0001`):
 
 ### Auth & audit
 | Table | Holds | Notes |
 |---|---|---|
-| `users` | identity, `password_hash` (**Argon2id**), `units_preference`, soft-delete | `0002`; email unique via `uq_users_email_lower`. `deleted_at` replaced `is_active` (`0021`). |
-| `sessions` | server-side sessions (opaque cookie → row) | `0002`; partial unique index = one active session per user. |
-| `user_action_log` | append-only audit trail (`details` JSONB) | `0002`; never deleted. |
+| `users` | identity, `password_hash` (**Argon2id**), `units_preference`, soft-delete | Email unique via `uq_users_email_lower`. |
+| `sessions` | server-side sessions (opaque cookie → row) | Partial unique index = one active session per user. |
+| `user_action_log` | append-only audit trail (`details` JSONB) | Indexed by `created_at` and `(user_id, created_at)`; never deleted. |
 
 ### Projects & lifecycle (metadata only — content is class ②)
 | Table | Holds | Notes |
 |---|---|---|
-| `projects` | name, `bt_number` (unique), `cert_programs[]`, `owner_id`, `active_version_id`, denormalized `last_saved_at`, soft-delete + `hard_delete_after` | `0003`/`0013`. `owner_id` is a dashboard concept, **not** an ACL. |
-| `project_status_items` | lifecycle checklist (`todo`/`done`/`na`), fractional `order_index` | `0004`. Intentionally outside the document body — status is "where is this project," not a versioned model property. |
+| `projects` | name, `bt_number` (unique), `cert_programs[]`, `owner_id`, `active_version_id`, denormalized `last_saved_at`, soft-delete + `hard_delete_after` | `owner_id` is a dashboard concept, **not** an ACL. |
+| `project_status_items` | lifecycle checklist (`todo`/`done`/`na`), fractional `order_index` | Intentionally outside the document body — status is "where is this project," not a versioned model property. |
 | `user_project_preferences` | per-user pin/order on the dashboard | personal, so not on `projects`. |
-| `mcp_tokens` | project-scoped LLM bearer tokens, **hashed** (`token_hash`), `scopes[]`, revocable | `0006`. Plaintext token never stored. |
+| `mcp_tokens` | project-scoped LLM bearer tokens, **hashed** (`token_hash`), `scopes[]`, revocable | Plaintext token never stored. |
 
 ### Catalogs (immutable shared libraries — the "bookshelf")
 | Table | Holds | Notes |
 |---|---|---|
-| `catalog_materials` | material thermal/optical props | `0007`, flattened `0015`. |
-| `catalog_frame_types` | window frame PH performance | `0009`, flattened `0017`, default seed `0018`. |
-| `catalog_glazing_types` | glazing U/g performance | `0009`, flattened `0016`, default seed `0018`. |
-| `catalog_field_options` | per-field single-select vocabularies for the catalogs above | `0037` (table) + `0038` (frame-type seed) + `20260624_0041` (glazing-type seed). Keyed `(catalog_table, field_key, option_id)`; case-insensitive unique label index. |
+| `catalog_materials` | material thermal/optical props | Flat current table. |
+| `catalog_frame_types` | window frame PH performance | Includes the built-in default frame row. |
+| `catalog_glazing_types` | glazing U/g performance | Includes the built-in default glass row. |
+| `catalog_field_options` | per-field single-select vocabularies for the catalogs above | Baseline-seeded for frame-types and glazing-types. Keyed `(catalog_table, field_key, option_id)`; case-insensitive unique label index. |
 
 Catalog PK ids are AirTable-shaped (`rec` + 14 base62 chars) so a row is
 portable across databases via JSON import/export. **Catalog picks are *copied*
@@ -157,22 +157,22 @@ built-in default by **id** (`recPHNDefFrame001` / `recPHNDefGlazng01`), not name
 ### Climate reference datasets (the Postgres side of class ④)
 | Table | Holds | Notes |
 |---|---|---|
-| `climate_dataset` | one row per `(provider, version)` release; `label`, `source` | `0025`; `UNIQUE(provider, version)`. |
-| `climate_dataset_location` | one row per weather station; `data` JSONB = full standardized `ClimateRecord` | `0025`; geo + lat/long indexes for nearest-station search. |
+| `climate_dataset` | one row per `(provider, version)` release; `label`, `source` | `UNIQUE(provider, version)`. |
+| `climate_dataset_location` | one row per weather station; `data` JSONB = full standardized `ClimateRecord` | Geo + lat/long indexes for nearest-station search. |
 
 ### Registries / pointers into the object store (classes ③/④)
 | Table | Holds | Notes |
 |---|---|---|
-| `project_assets` | **the canonical pointer row for every uploaded file** — `object_key`, `content_hash_sha256`, `content_type`, `size_bytes`, `upload_status`, `metadata` JSONB (thumbnail/orphan state) | `0011`; EPW kind added `0024`. See §4. |
-| `project_jobs` | async job state (only `asset_bulk_download` in v1), `result_asset_id` | `0011`. |
-| `project_hbjson_files` | HBJSON viewer/extraction metadata keyed to an `asset_id`; cached geometry, dedup by content hash | `0022`. The file itself is a `project_assets` row of kind `hbjson`. |
-| `project_location` | site geodata (lat/long/elevation/tz), derived county/FIPS/climate-zone, `geodata_provenance` JSONB, `epw_asset_id` pointer | `0023`/`0032`. 1:1 with `projects`. |
-| `project_climate_source` | per-project climate sources (`kind`, `ref`, `data` JSONB) | `0026`; `0033` removes the obsolete cross-kind default flag. See §5. |
+| `project_assets` | **the canonical pointer row for every uploaded file** — `object_key`, `content_hash_sha256`, `content_type`, `size_bytes`, `upload_status`, `metadata` JSONB (thumbnail/orphan state) | See §4. |
+| `project_jobs` | async job state (only `asset_bulk_download` in v1), `result_asset_id` | Result asset is indexed. |
+| `project_hbjson_files` | HBJSON viewer/extraction metadata keyed to an `asset_id`; cached geometry, dedup by content hash | The file itself is a `project_assets` row of kind `hbjson`. |
+| `project_location` | site geodata (lat/long/elevation/tz), derived county/FIPS/climate-zone, `geodata_provenance` JSONB, `epw_asset_id` pointer | 1:1 with `projects`; `epw_asset_id` is an FK to `project_assets(id)` with `ON DELETE SET NULL`. |
+| `project_climate_source` | per-project climate sources (`kind`, `ref`, `data` JSONB) | See §5. |
 
 ### Per-user UI state
 | Table | Holds | Notes |
 |---|---|---|
-| `user_table_views` | DataTable column widths/filters/sort per `(user, project, table)`; `view_state` JSONB (≤64 KiB) | `0010`. **Hard-deleted** (a cache — no audit value), unlike everything else, which soft-deletes. |
+| `user_table_views` | DataTable column widths/filters/sort per `(user, project, table)`; `view_state` JSONB (≤64 KiB) | **Hard-deleted** (a cache — no audit value), unlike everything else, which soft-deletes. |
 
 > **Note on the JSONB columns above.** Several relational rows carry a JSONB
 > column (`details`, `metadata`, `data`, `geodata_provenance`, `view_state`).
@@ -189,8 +189,8 @@ This is the heart of V2 and the reason it left V1's relational entity model.
 The entire project model — assemblies, layers, segments, project materials,
 apertures, rooms, thermal bridges, equipment, option lists, the field-config
 registry — is **one Pydantic-validated JSON document** (`ProjectDocumentV1`,
-`schema_version` **12** as of 2026-06-24 — the code constant
-`CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION` in
+`schema_version` **1** after the 2026-06-24 clean baseline reset; the code
+constant `CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION` in
 `backend/features/project_document/document.py` is authoritative) stored as
 JSONB.
 
@@ -372,13 +372,15 @@ uses for different workflows. `kind` dispatches the meaning of `ref` / `data`:
 | `kind` | `ref` points at | `data` JSONB |
 |---|---|---|
 | `phius` / `phi` | `climate_dataset_location.id` | **server-computed** proximity (distance, elevation delta, pass/fail) |
-| `epw` | `project_assets.id` (an EPW upload, class ③) | optional STAT metrics (HDD/CDD, source URL) |
-| `ashrae` | station / WMO id | design conditions (fetched from ashrae-meteo.info) |
+| `weather` | `project_assets.id` (the primary EPW asset, class ③) | EPW/STAT/DDY bundle metadata, HDD/CDD, source URL, and ASHRAE design conditions when fetched |
 | `custom` | — (null) | a full inline `ClimateRecord` |
 
-There is no project-wide default source: Phius, PHI, ASHRAE, EPW, and custom
+There is no project-wide default source: Phius, PHI, weather, and custom
 sources answer different workflow questions. Proximity is **always recomputed
-server-side** on attach — never trusted from the client.
+server-side** on attach — never trusted from the client. Phius/PHI read paths
+tolerate a stale `ref` after reference-dataset reseeds by returning the stored
+source row and cached proximity `data`; create/update still validates that the
+referenced dataset location exists.
 
 ---
 
@@ -396,7 +398,7 @@ Every cross-store reference in the system, in one place:
 | `project_assets.metadata.thumbnail_object_key` | `…/thumb.png` | Postgres → object store | object key |
 | `project_hbjson_files.asset_id` | `project_assets.id` | within Postgres | FK (1:1) |
 | `project_location.epw_asset_id` | `project_assets.id` | within Postgres | FK |
-| `project_climate_source.ref` (epw) | `project_assets.id` | within Postgres | id string |
+| `project_climate_source.ref` (weather) | `project_assets.id` | within Postgres | id string |
 | `project_climate_source.ref` (phius/phi) | `climate_dataset_location.id` | within Postgres | id string |
 | `climate_dataset (provider,version)` | `climate/{provider}/{version}/dataset.json` | Postgres → object store | derived object key |
 | document catalog rows (`catalog_origin`) | `catalog_*` row id | document → catalog | **copied value** + origin id (no live join) |

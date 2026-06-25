@@ -28,7 +28,12 @@ from features.project_document.schema_mutations import (
 )
 from features.project_document.store import raise_project_version_not_found
 from features.project_document.tables import get_table_contract
-from features.project_document.validation import body_size_bytes, document_etag, next_draft_etag, validate_document
+from features.project_document.validation import (
+    document_etag,
+    enforce_document_body_size,
+    next_draft_etag_from_etag,
+    validate_document,
+)
 from features.projects.access import ProjectAccess, require_editor_user
 from features.projects.service import version_public
 from features.shared.errors import api_error
@@ -126,13 +131,15 @@ def replace_table_slice(
             )
 
         validate_document_asset_references(conn, project_id=access.project_id, body=next_body)
+        serialized_next = enforce_document_body_size(next_body)
         draft_etag = repository.upsert_draft(
             conn,
             version_id,
             user.id,
             next_body,
             base_version_etag,
-            next_draft_etag(next_body),
+            next_draft_etag_from_etag(serialized_next.etag),
+            serialized_body=serialized_next,
         )
 
     return contract.build_response(access.project_id, version_id, "draft", version_etag, draft_etag, next_body)
@@ -220,14 +227,16 @@ def apply_schema_mutation_to_draft(
             )
             return response, audit_payload
 
+        serialized_next = enforce_document_body_size(next_body)
         draft_etag = repository.upsert_draft(
             conn,
             version_id,
             user.id,
             next_body,
             base_version_etag,
-            next_draft_etag(next_body),
+            next_draft_etag_from_etag(serialized_next.etag),
             updated_via=updated_via,
+            serialized_body=serialized_next,
         )
 
         action = AUDIT_KIND_BY_MUTATION[mutation.kind]
@@ -277,13 +286,15 @@ def save_draft(version_id: UUID, access: ProjectAccess, if_match: str | None, re
 
         draft_body = validate_document(draft["body"])
         validate_document_asset_references(conn, project_id=access.project_id, body=draft_body)
+        serialized_draft = enforce_document_body_size(draft_body)
         saved_row = repository.save_draft_to_version(
             conn,
             access.project_id,
             version_id,
             user.id,
             draft_body,
-            body_size_bytes(draft_body),
+            serialized_draft.size_bytes,
+            serialized_body=serialized_draft,
         )
         repository.delete_draft(conn, version_id, user.id)
         log_document_action(conn, "project_version_save", access, version_id, user.id, request)
@@ -292,7 +303,7 @@ def save_draft(version_id: UUID, access: ProjectAccess, if_match: str | None, re
     return SaveDraftResponse(
         project_id=access.project_id,
         version=version_public_model,
-        version_etag=document_etag(draft_body),
+        version_etag=serialized_draft.etag,
     )
 
 
@@ -321,6 +332,7 @@ def save_draft_as(
             draft = repository.get_draft_for_update(conn, version_id, user.id)
             source_body = validate_document(draft["body"]) if draft is not None else version_body
             validate_document_asset_references(conn, project_id=access.project_id, body=source_body)
+            serialized_source = enforce_document_body_size(source_body)
             saved_row = repository.insert_version_from_body(
                 conn,
                 access.project_id,
@@ -330,7 +342,8 @@ def save_draft_as(
                 payload.kind,
                 locked,
                 source_body,
-                body_size_bytes(source_body),
+                serialized_source.size_bytes,
+                serialized_body=serialized_source,
             )
             repository.delete_draft(conn, version_id, user.id)
             log_document_action(
@@ -354,7 +367,7 @@ def save_draft_as(
     return SaveDraftResponse(
         project_id=access.project_id,
         version=version_public_model,
-        version_etag=document_etag(source_body),
+        version_etag=serialized_source.etag,
     )
 
 

@@ -9,6 +9,7 @@ from psycopg import Connection, sql
 from psycopg.types.json import Jsonb
 
 from features.project_document.document import ProjectDocumentV1
+from features.project_document.validation import SerializedProjectDocument, serialize_document
 from features.projects.models import CreateProjectRequest, UpdateProjectRequest
 
 PROJECT_COLUMNS = """
@@ -78,6 +79,19 @@ def get_project_detail_by_id(conn: Connection[Any], project_id: UUID) -> dict[st
         """,
         {"project_id": project_id},
     ).fetchone()
+
+
+def get_owner_display_name(conn: Connection[Any], project_id: UUID) -> str | None:
+    row = conn.execute(
+        """
+        SELECT users.display_name AS owner_display_name
+        FROM projects
+        JOIN users ON users.id = projects.owner_id
+        WHERE projects.id = %(project_id)s
+        """,
+        {"project_id": project_id},
+    ).fetchone()
+    return row["owner_display_name"] if row and isinstance(row["owner_display_name"], str) else None
 
 
 def list_deleted_projects_for_owner(conn: Connection[Any], owner_id: UUID) -> list[dict[str, Any]]:
@@ -261,7 +275,10 @@ def insert_project_with_initial_version(
     owner_id: UUID,
     body: ProjectDocumentV1,
     body_size_bytes: int,
+    *,
+    serialized_body: SerializedProjectDocument | None = None,
 ) -> dict[str, Any]:
+    serialized = serialized_body or serialize_document(body)
     project = conn.execute(
         """
         INSERT INTO projects (
@@ -303,7 +320,7 @@ def insert_project_with_initial_version(
         """,
         {
             "project_id": project["id"],
-            "body": Jsonb(body.model_dump(mode="json")),
+            "body": Jsonb(serialized.json_value),
             "schema_version": body.schema_version,
             "body_size_bytes": body_size_bytes,
             "user_id": owner_id,

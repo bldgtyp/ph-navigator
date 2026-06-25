@@ -13,7 +13,7 @@ from uuid import UUID
 
 from starlette import status
 
-from features.assets.schemas import AssetRow
+from features.assets.models import AssetRow
 from features.assets.service import AssetService
 from features.auth.models import UserPublic
 from features.climate.design_conditions import ParsedStatPayload
