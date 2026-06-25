@@ -202,9 +202,12 @@ test.describe("frontend perf matrix", () => {
       window.__PHN_ENABLE_REACT_PROFILER__ = true;
       window.__PHN_REACT_PROFILER__ = [];
       window.__PHN_PERF_LONG_TASKS__ = [];
+      window.__PHN_PERF_LONG_TASKS_RESET_AT__ = 0;
       window.__PHN_PERF_LCP__ = null;
+      window.__PHN_PERF_LCP_ENTRY__ = null;
       const observer = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
+          if (entry.startTime < window.__PHN_PERF_LONG_TASKS_RESET_AT__) continue;
           window.__PHN_PERF_LONG_TASKS__.push({
             name: entry.name,
             startTime: entry.startTime,
@@ -218,7 +221,27 @@ test.describe("frontend perf matrix", () => {
         const entries = list.getEntries();
         const last = entries.at(-1);
         if (last) {
-          window.__PHN_PERF_LCP__ = last.startTime;
+          const lcpEntry = last as PerformanceEntry & {
+            renderTime?: number;
+            loadTime?: number;
+            size?: number;
+            element?: Element | null;
+          };
+          window.__PHN_PERF_LCP__ = lcpEntry.startTime;
+          const element = lcpEntry.element ?? null;
+          window.__PHN_PERF_LCP_ENTRY__ = {
+            startTime: lcpEntry.startTime,
+            renderTime: lcpEntry.renderTime ?? null,
+            loadTime: lcpEntry.loadTime ?? null,
+            size: lcpEntry.size ?? null,
+            elementTag: element instanceof Element ? element.tagName.toLowerCase() : null,
+            elementId: element instanceof Element ? element.id || null : null,
+            elementClass:
+              element instanceof Element && typeof element.className === "string"
+                ? element.className || null
+                : null,
+            elementText: element instanceof Element ? element.textContent?.trim().slice(0, 160) : null,
+          };
         }
       });
       lcpObserver.observe({ type: "largest-contentful-paint", buffered: true });
@@ -254,6 +277,8 @@ test.describe("frontend perf matrix", () => {
       await perfPage.ready(page);
       await page.evaluate(() => {
         window.__PHN_REACT_PROFILER__ = [];
+        window.__PHN_PERF_LONG_TASKS__ = [];
+        window.__PHN_PERF_LONG_TASKS_RESET_AT__ = performance.now();
       });
 
       const startedAt = Date.now();
@@ -267,6 +292,7 @@ test.describe("frontend perf matrix", () => {
             navigation,
             interactionMs,
             lcpMs: window.__PHN_PERF_LCP__,
+            lcpEntry: window.__PHN_PERF_LCP_ENTRY__,
             longTasks: window.__PHN_PERF_LONG_TASKS__,
             reactCommits: window.__PHN_REACT_PROFILER__,
             resourceBytes: performance
@@ -303,6 +329,17 @@ declare global {
       commitTime: number;
     }>;
     __PHN_PERF_LONG_TASKS__: Array<{ name: string; startTime: number; duration: number }>;
+    __PHN_PERF_LONG_TASKS_RESET_AT__: number;
     __PHN_PERF_LCP__: number | null;
+    __PHN_PERF_LCP_ENTRY__: {
+      startTime: number;
+      renderTime: number | null;
+      loadTime: number | null;
+      size: number | null;
+      elementTag: string | null;
+      elementId: string | null;
+      elementClass: string | null;
+      elementText: string | null;
+    } | null;
   }
 }
