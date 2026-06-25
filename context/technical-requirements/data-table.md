@@ -299,10 +299,11 @@ helpers, backend round-trip) lives in `frontend-viewer-units.md`
 §11.5.5; this section captures only what's specific to the DataTable
 grid surface.
 
-- **Header chip.** When `FieldDef.numberUnits` is present the column
-  header shows the active unit label (`m` / `ft`, `kg/m3` / `lb/ft3`,
-  …) as a quiet chip. Cells render the bare displayed value at the
-  active system's precision — no per-cell suffix.
+- **Header unit badge.** When `FieldDef.numberUnits` is present the
+  column header uses the shared two-line header layout: field name on
+  the primary line, active unit label (`m` / `ft`, `kg/m3` / `lb/ft3`,
+  …) as a quiet badge below it. Cells render the bare displayed value
+  at the active system's precision — no per-cell suffix.
 - **Cell pipeline.** Render, inline-editor seed, paste coerce, copy,
   filter compare, and aggregation all go through the §11.5.5 shared
   format/parse helpers against the active `unitSystem`. Aggregates
@@ -313,6 +314,11 @@ grid surface.
   stored filter values were typed in the prior system and would be
   ambiguous after a swap. Sort, group, widths, hidden columns, and
   filters on other fields are preserved.
+
+Header field descriptions render as a compact icon trigger beside the
+field name, not a full text `"?"` control. The trigger remains a real
+button with the accessible name `Description for <field>` and opens the
+description tooltip on hover or keyboard focus.
 
 **Field identity rule.** For core fields, `FieldDef.field_key` is the
 declared core key (e.g. `"name"`, `"floor_level"`). For user-defined

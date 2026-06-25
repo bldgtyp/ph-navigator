@@ -99,7 +99,9 @@ describe("number-with-units grid behavior (Phase 03)", () => {
       "unit",
     );
     expect(screen.getByTestId("data-table-field-type-icon")).toHaveAttribute("title", "Unit field");
-    expect(screen.getByTestId("data-table-header-units").textContent).toBe("m");
+    const units = screen.getByTestId("data-table-header-units");
+    expect(units.textContent).toBe("m");
+    expect(units.closest("th")).toHaveClass("data-table-th--with-units");
     expect(getBodyCellText(0, 0)).toBe("1.000");
     expect(getBodyCellText(1, 0)).toBe("2.000");
   });

@@ -1,4 +1,5 @@
 import * as Popover from "@radix-ui/react-popover";
+import { Info } from "lucide-react";
 import { useState } from "react";
 
 // Reuses `@radix-ui/react-popover` (already in the bundle for the
@@ -32,7 +33,7 @@ export function CustomFieldDescriptionTooltip({
           onClick={(event) => event.stopPropagation()}
           onMouseDown={(event) => event.stopPropagation()}
         >
-          ?
+          <Info aria-hidden size={10} strokeWidth={2.4} />
         </button>
       </Popover.Trigger>
       <Popover.Portal>
