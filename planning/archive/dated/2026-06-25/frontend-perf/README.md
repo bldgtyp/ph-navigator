@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
-TIME: 22:24 EDT
-STATUS: Active - Phase 04D implemented and measured.
+TIME: 22:32 EDT
+STATUS: Complete - archived after Phases 0-4.
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: Router for the frontend performance eval — a durable, repeatable method
   for finding re-render / payload / runtime low-hanging fruit across every page.
@@ -22,11 +22,11 @@ page — so we can find and fix the *low-hanging fruit* (wasted re-renders,
 oversized payloads, obvious runtime stalls) without missing any screen and
 without large re-architectures.
 
-This folder is the **method**, not a completed audit. Decided 2026-06-24 (Ed):
-write the plan first, then execute. Phase 0 now installs the approved dev-only
-tooling (`rollup-plugin-visualizer` + `react-scan`), wires the opt-in analyze /
-scan commands, adds a skipped-by-default Playwright perf matrix, and seeds a
-separate `PERF-STRESS` project for stress-tier table runs.
+This folder preserves the completed first performance audit pass. Decided
+2026-06-24 (Ed): write the plan first, then execute. Phase 0 installed the
+approved dev-only tooling (`rollup-plugin-visualizer` + `react-scan`), wired the
+opt-in analyze / scan commands, added a skipped-by-default Playwright perf
+matrix, and seeded a separate `PERF-STRESS` project for stress-tier table runs.
 
 ## What this is NOT
 

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
-TIME: 19:49 EDT
-STATUS: Active — methodology written; execution not started.
+TIME: 22:32 EDT
+STATUS: Complete — methodology executed; archived.
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: The durable frontend performance testing methodology — layers, matrix,
   tooling, scorecard, thresholds, phasing, suspects, triage rubric.
@@ -170,7 +170,7 @@ Column sources:
 - `check:sizes` guard pattern in `frontend/scripts/*.mjs` — the template for a
   future CI byte-budget check.
 
-### To add (dev-only; APPROVED 2026-06-24, install at Phase 0 — not yet done)
+### Added (dev-only; APPROVED 2026-06-24, installed at Phase 0)
 Respect the supply-chain rules: `pnpm` only, 24h `minimumReleaseAge`, strict
 min-age, `blockExoticSubdeps`. Both are `devDependencies`.
 

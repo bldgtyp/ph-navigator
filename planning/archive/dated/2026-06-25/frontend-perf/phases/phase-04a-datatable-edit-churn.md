@@ -5,8 +5,8 @@ STATUS: Complete - first cut implemented and measured
 AUTHOR: Codex
 SCOPE: Shared DataTable edit-pipeline performance plan for Spaces and Equipment stress edits
 RELATED:
-  - planning/refactor/frontend-perf/phases/phase-04-ranking.md
-  - planning/refactor/frontend-perf/scorecard-2026-06-24.md
+  - planning/archive/dated/2026-06-25/frontend-perf/phases/phase-04-ranking.md
+  - planning/archive/dated/2026-06-25/frontend-perf/scorecard-2026-06-24.md
   - frontend/src/shared/ui/data-table/DataTable.tsx
   - frontend/src/shared/ui/data-table/hooks/useGridEdit.ts
   - frontend/src/shared/ui/data-table/hooks/useGridWriteReducer.ts
@@ -181,7 +181,7 @@ sibling-table refetches.
 - `cd frontend && pnpm exec vitest run src/shared/ui/data-table/feature/useSliceTableController.test.ts` if present after discovery.
 - `cd frontend && pnpm exec vitest run src/features/project_document/table-slice.test.ts`
 - `make e2e-perf PERF_PROJECT_ID=3d56d037-806d-498b-b559-7f505e0e3498`
-- Update `planning/refactor/frontend-perf/scorecard-2026-06-24.md` or create a new dated scorecard with before/after rows.
+- Update `planning/archive/dated/2026-06-25/frontend-perf/scorecard-2026-06-24.md` or create a new dated scorecard with before/after rows.
 
 ## Stop Conditions
 

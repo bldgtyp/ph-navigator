@@ -5,8 +5,8 @@ STATUS: Complete - route payload splits implemented and measured
 AUTHOR: Codex
 SCOPE: Route and project-tab payload splitting plan for main bundle reduction
 RELATED:
-  - planning/refactor/frontend-perf/phases/phase-04-ranking.md
-  - planning/refactor/frontend-perf/scorecard-2026-06-24.md
+  - planning/archive/dated/2026-06-25/frontend-perf/phases/phase-04-ranking.md
+  - planning/archive/dated/2026-06-25/frontend-perf/scorecard-2026-06-24.md
   - frontend/src/app/router.tsx
   - frontend/src/features/projects/components/ProjectTabContent.tsx
   - frontend/src/features/project_status/components/StatusDescription.tsx

@@ -1,7 +1,7 @@
 # Planning Status
 
-DATE: 2026-06-24
-TIME: 19:47 EDT
+DATE: 2026-06-25
+TIME: 00:00 EDT
 STATUS: Active routing index for tracked planning material.
 AUTHOR: Codex
 SCOPE: Current planning folder organization after moving dated docs to
@@ -38,6 +38,7 @@ feature-first planning.
 |---|---|---|
 | Backend Data-Architecture Cleanup | Complete / Phases 1–3, 5, and 6 implemented and verified with `make ci`; old Phase 4 promoted to `table-write-architecture-unification`; Phase 7 deferred to pre-first-deploy gate; archived | `archive/dated/2026-06-24/backend-data-architecture-cleanup/STATUS.md` |
 | DataTable Status Field | Complete / Phases 01-05 implemented and verified with `make ci` (backend 1061, frontend 1887), live reset/reseed + browser smoke, graphify, simplify, and docs-pass evidence; durable contract folded into `context/technical-requirements/data-table.md`; archived | `archive/dated/2026-06-24/data-table-status-field/STATUS.md` |
+| Frontend Performance Eval | Complete / Phases 0-4 implemented and measured; route/project-tab payloads split, DataTable edit invalidation narrowed, Model route shell split to 7.00 kB gzip, secondary runtime candidates rejected after corrected attribution; archived | `archive/dated/2026-06-25/frontend-perf/STATUS.md` |
 
 ## Historical Material
 
@@ -85,6 +86,10 @@ feature-first planning.
   OQ-3 opaque-shell look review) are recorded in that folder's `STATUS.md`
   "Next step"; model-viewer feature backlog stays under
   `planning/features_v1.1/model-viewer-*`.
+- Completed Frontend Performance Eval planning now lives under
+  `archive/dated/2026-06-25/frontend-perf/` (Phases 0-4; perf harness, stress
+  seed, route payload splits, DataTable edit invalidation narrowing, Model route
+  shell split, and secondary-runtime attribution correction).
 
 ## Update Rule
 

@@ -1,23 +1,23 @@
 ---
 DATE: 2026-06-24
-TIME: 21:13 EDT
-STATUS: Ranked - implementation deferred by request
+TIME: 22:32 EDT
+STATUS: Complete - ranking implemented through Phase 04D
 AUTHOR: Codex
 SCOPE: Phase 4 ranking for the frontend performance refactor after static, runtime, and render profiling
 RELATED:
-  - planning/refactor/frontend-perf/README.md
-  - planning/refactor/frontend-perf/PLAN.md
-  - planning/refactor/frontend-perf/STATUS.md
-  - planning/refactor/frontend-perf/scorecard-2026-06-24.md
-  - planning/refactor/frontend-perf/phases/phase-04a-datatable-edit-churn.md
-  - planning/refactor/frontend-perf/phases/phase-04b-route-payload-splits.md
-  - planning/refactor/frontend-perf/phases/phase-04c-model-payload.md
-  - planning/refactor/frontend-perf/phases/phase-04d-secondary-runtime.md
+  - planning/archive/dated/2026-06-25/frontend-perf/README.md
+  - planning/archive/dated/2026-06-25/frontend-perf/PLAN.md
+  - planning/archive/dated/2026-06-25/frontend-perf/STATUS.md
+  - planning/archive/dated/2026-06-25/frontend-perf/scorecard-2026-06-24.md
+  - planning/archive/dated/2026-06-25/frontend-perf/phases/phase-04a-datatable-edit-churn.md
+  - planning/archive/dated/2026-06-25/frontend-perf/phases/phase-04b-route-payload-splits.md
+  - planning/archive/dated/2026-06-25/frontend-perf/phases/phase-04c-model-payload.md
+  - planning/archive/dated/2026-06-25/frontend-perf/phases/phase-04d-secondary-runtime.md
 ---
 
 # Phase 4 Ranking
 
-This is a docs-only ranking. No implementation has started.
+This ranking was implemented through Phase 04D.
 
 ## Input Evidence
 
@@ -40,8 +40,8 @@ This is a docs-only ranking. No implementation has started.
 | 3 | Project-tab payload splits | P1 | `ProjectTabContent` lazy-loads only Climate and Model. Status, Apertures, Spaces, Equipment, Thermal Bridges, and Envelope still enter the project-shell payload eagerly. This is adjacent to Rank 2 and should usually follow the router split in the same implementation window. | `frontend/src/features/projects/components/ProjectTabContent.tsx:2`, `frontend/src/features/projects/components/ProjectTabContent.tsx:11`, `frontend/src/features/projects/components/ProjectTabContent.tsx:17`, `frontend/src/features/projects/components/ProjectTabContent.tsx:21` |
 | 4 | Status markdown split | P2 | `react-markdown` and `rehype-sanitize` are imported synchronously for status descriptions. This is a clean split candidate, but smaller than the route-level page imports and less directly tied to measured interaction pain. | `frontend/src/features/project_status/components/StatusDescription.tsx:2`, `frontend/src/features/project_status/components/StatusDescription.tsx:3`, `frontend/src/features/project_status/components/StatusDescription.tsx:12` |
 | 5 | Model viewer payload | P2 | The Model lazy chunk is 350.06 kB gzip, but the runtime pass did not show matching interaction pain. Defer until after the app/project route boundaries, unless model load becomes the user-facing target. | `frontend/src/features/projects/components/ProjectTabContent.tsx:11`, `frontend/src/features/projects/components/ProjectTabContent.tsx:54` |
-| 6 | Envelope first-view trace | P3 | Envelope has the highest measured LCP at 928 ms, but no long tasks and only 15.1 ms of React render. This needs a focused LCP attribution trace before refactor work. | `planning/refactor/frontend-perf/scorecard-2026-06-24.md` |
-| 7 | Catalog hover long tasks | P3 | Catalog hover routes have small scripts, zero React commits, and modest long tasks. Keep as secondary unless regressions appear after route splitting or shared table changes. | `planning/refactor/frontend-perf/scorecard-2026-06-24.md` |
+| 6 | Envelope first-view trace | P3 | Envelope has the highest measured LCP at 928 ms, but no long tasks and only 15.1 ms of React render. This needs a focused LCP attribution trace before refactor work. | `planning/archive/dated/2026-06-25/frontend-perf/scorecard-2026-06-24.md` |
+| 7 | Catalog hover long tasks | P3 | Catalog hover routes have small scripts, zero React commits, and modest long tasks. Keep as secondary unless regressions appear after route splitting or shared table changes. | `planning/archive/dated/2026-06-25/frontend-perf/scorecard-2026-06-24.md` |
 
 ## Decision
 
@@ -51,7 +51,9 @@ Ranks 2-4 can be batched as a route-payload phase because they share the same im
 
 Rank 5 should not be mixed into the initial route split. The existing Model tab is already lazy-loaded; its remaining issue is vendor/viewer payload inside that lazy boundary.
 
-Ranks 6-7 are trace-first. They have measured signals, but not enough evidence for a refactor-first change.
+Ranks 6-7 were resolved in Phase 04D as metrics-backed attribution work. The
+catalog hover signal was a harness attribution issue; the Envelope LCP signal
+was a recovered-draft message, so no production refactor was promoted.
 
 ## Implementation Sequence
 

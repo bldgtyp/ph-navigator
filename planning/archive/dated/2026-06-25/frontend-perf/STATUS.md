@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
-TIME: 22:24 EDT
-STATUS: Active - Phase 04D implemented and measured.
+TIME: 22:32 EDT
+STATUS: Complete - Phases 0-4 implemented, measured, and archived.
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: State, next step, and the deferred-findings log for the frontend perf eval.
 RELATED: ./README.md, ./PLAN.md
@@ -64,8 +64,7 @@ Decisions taken 2026-06-24 (Ed):
 
 ## Next step
 
-Run final completion cleanup for this packet if no new Phase 4 follow-up is
-added.
+Archive this packet after final verification.
 
 Confirmed flags so far:
 - Payload: `assets/index-C-de3sCl.js` is 391.28 kB gzip.
