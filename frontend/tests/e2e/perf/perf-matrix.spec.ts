@@ -1,3 +1,5 @@
+import { writeFile } from "node:fs/promises";
+
 import { expect, test, type Page } from "@playwright/test";
 import { signIn } from "../_helpers";
 import { commitCellEdit, firstGridCellForField } from "../table-regression/tableHelpers";
@@ -15,6 +17,14 @@ type PerfPage = {
   scenario: (page: Page) => Promise<void>;
 };
 
+type NetworkResponseMetric = {
+  url: string;
+  method: string;
+  resourceType: string;
+  status: number;
+  contentLength: number | null;
+};
+
 const projectRoute = (tab: string) => {
   if (!PERF_PROJECT_ID) return `/__missing_perf_project_id__/${tab}`;
   return `/projects/${PERF_PROJECT_ID}/${tab}`;
@@ -28,6 +38,19 @@ async function editFirstNameCell(page: Page): Promise<void> {
 
 async function hoverFirstGridCell(page: Page): Promise<void> {
   await page.locator('td[role="gridcell"]').first().hover();
+}
+
+async function discardRecoveredDraft(page: Page): Promise<void> {
+  const dialog = page.getByRole("dialog", { name: "Recovered draft found" });
+  const appeared = await dialog
+    .waitFor({ state: "visible", timeout: 1_000 })
+    .then(() => true)
+    .catch(() => false);
+
+  if (!appeared) return;
+
+  await dialog.getByRole("button", { name: "Discard draft" }).click();
+  await expect(dialog).toBeHidden();
 }
 
 async function dragPrimaryCanvas(
@@ -47,10 +70,10 @@ const perfPages: PerfPage[] = [
     label: "Dashboard",
     route: "/dashboard",
     ready: async (page) => {
-      await expect(page.getByRole("heading", { name: "My Projects", exact: true })).toBeVisible();
+      await expect(page.getByRole("region", { name: "All projects" })).toBeVisible();
     },
     scenario: async (page) => {
-      await page.getByRole("link").filter({ hasText: "PERF-STRESS" }).first().hover();
+      await page.getByRole("link", { name: "PERF-STRESS - Frontend Perf Stress Fixture" }).hover();
     },
   },
   {
@@ -80,7 +103,7 @@ const perfPages: PerfPage[] = [
     label: "Apertures",
     route: projectRoute("apertures"),
     ready: async (page) => {
-      await expect(page.getByRole("heading", { name: "Apertures" })).toBeVisible();
+      await expect(page.getByRole("region", { name: "Apertures" })).toBeVisible();
     },
     scenario: async (page) => {
       await dragPrimaryCanvas(page, { x: 240, y: 240 }, { x: 520, y: 360 });
@@ -91,7 +114,7 @@ const perfPages: PerfPage[] = [
     label: "Envelope",
     route: projectRoute("envelope"),
     ready: async (page) => {
-      await expect(page.getByRole("heading", { name: "Envelope" })).toBeVisible();
+      await expect(page.getByRole("region", { name: "Assembly Builder" })).toBeVisible();
     },
     scenario: async (page) => {
       await dragPrimaryCanvas(page, { x: 260, y: 260 }, { x: 560, y: 380 });
@@ -102,7 +125,7 @@ const perfPages: PerfPage[] = [
     label: "Climate",
     route: projectRoute("climate"),
     ready: async (page) => {
-      await expect(page.getByRole("heading", { name: "Climate" })).toBeVisible();
+      await expect(page.getByRole("region", { name: "Climate" })).toBeVisible();
     },
     scenario: async (page) => {
       await page.getByRole("button").first().hover();
@@ -111,9 +134,9 @@ const perfPages: PerfPage[] = [
   {
     id: "model-viewer",
     label: "Model Viewer",
-    route: projectRoute("model-viewer"),
+    route: projectRoute("model"),
     ready: async (page) => {
-      await expect(page.getByRole("heading", { name: "Model Viewer" })).toBeVisible();
+      await expect(page.getByRole("region", { name: "Model" })).toBeVisible();
     },
     scenario: async (page) => {
       await dragPrimaryCanvas(page, { x: 420, y: 320 }, { x: 560, y: 360 });
@@ -124,7 +147,7 @@ const perfPages: PerfPage[] = [
     label: "Materials Catalog",
     route: "/catalog/materials",
     ready: async (page) => {
-      await expect(page.getByRole("heading", { name: "Materials Catalog" })).toBeVisible();
+      await expect(page.getByRole("region", { name: "Materials catalog" })).toBeVisible();
     },
     scenario: async (page) => {
       await hoverFirstGridCell(page);
@@ -135,7 +158,9 @@ const perfPages: PerfPage[] = [
     label: "Frame Types Catalog",
     route: "/catalog/frame-types",
     ready: async (page) => {
-      await expect(page.getByRole("heading", { name: "Frame Types" })).toBeVisible();
+      await expect(
+        page.getByRole("region", { name: "Window-Frame Elements catalog" }),
+      ).toBeVisible();
     },
     scenario: async (page) => {
       await hoverFirstGridCell(page);
@@ -146,7 +171,7 @@ const perfPages: PerfPage[] = [
     label: "Glazing Types Catalog",
     route: "/catalog/glazing-types",
     ready: async (page) => {
-      await expect(page.getByRole("heading", { name: "Glazing Types" })).toBeVisible();
+      await expect(page.getByRole("region", { name: "Window-Glazing catalog" })).toBeVisible();
     },
     scenario: async (page) => {
       await hoverFirstGridCell(page);
@@ -164,6 +189,7 @@ test.describe("frontend perf matrix", () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
       window.__PHN_PERF_LONG_TASKS__ = [];
+      window.__PHN_PERF_LCP__ = null;
       const observer = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
           window.__PHN_PERF_LONG_TASKS__.push({
@@ -174,6 +200,15 @@ test.describe("frontend perf matrix", () => {
         }
       });
       observer.observe({ type: "longtask", buffered: true });
+
+      const lcpObserver = new PerformanceObserver((list) => {
+        const entries = list.getEntries();
+        const last = entries.at(-1);
+        if (last) {
+          window.__PHN_PERF_LCP__ = last.startTime;
+        }
+      });
+      lcpObserver.observe({ type: "largest-contentful-paint", buffered: true });
     });
     await signIn(page, { email: PERF_EMAIL, password: PERF_PASSWORD });
     await page.evaluate(() => {
@@ -183,29 +218,56 @@ test.describe("frontend perf matrix", () => {
 
   for (const perfPage of perfPages) {
     test(`${perfPage.id}: cold load + scripted interaction`, async ({ page }, testInfo) => {
+      const networkResponses: NetworkResponseMetric[] = [];
+      page.on("response", (response) => {
+        if (!response.url().startsWith("http://localhost:8000/")) return;
+
+        const headers = response.headers();
+        const contentLength = Number(headers["content-length"]);
+        networkResponses.push({
+          url: response.url(),
+          method: response.request().method(),
+          resourceType: response.request().resourceType(),
+          status: response.status(),
+          contentLength: Number.isFinite(contentLength) ? contentLength : null,
+        });
+      });
+
       await page.goto(perfPage.route);
+      await discardRecoveredDraft(page);
       await perfPage.ready(page);
       await page.waitForLoadState("networkidle");
+      await discardRecoveredDraft(page);
+      await perfPage.ready(page);
 
       const startedAt = Date.now();
       await perfPage.scenario(page);
       await page.waitForTimeout(250);
 
-      const metrics = await page.evaluate((interactionMs) => {
-        const navigation = performance.getEntriesByType("navigation")[0]?.toJSON();
-        return {
-          navigation,
-          interactionMs,
-          longTasks: window.__PHN_PERF_LONG_TASKS__,
-          resourceBytes: performance
-            .getEntriesByType("resource")
-            .map((entry) => entry.toJSON())
-            .filter((entry) => entry.transferSize || entry.encodedBodySize),
-        };
-      }, Date.now() - startedAt);
+      const metrics = await page.evaluate(
+        ({ interactionMs, networkResponses }) => {
+          const navigation = performance.getEntriesByType("navigation")[0]?.toJSON();
+          return {
+            navigation,
+            interactionMs,
+            lcpMs: window.__PHN_PERF_LCP__,
+            longTasks: window.__PHN_PERF_LONG_TASKS__,
+            resourceBytes: performance
+              .getEntriesByType("resource")
+              .map((entry) => entry.toJSON())
+              .filter((entry) => entry.transferSize || entry.encodedBodySize),
+            networkResponses,
+          };
+        },
+        { interactionMs: Date.now() - startedAt, networkResponses },
+      );
+
+      const metricsJson = JSON.stringify(metrics, null, 2);
+      const metricsPath = testInfo.outputPath(`${perfPage.id}-metrics.json`);
+      await writeFile(metricsPath, metricsJson);
 
       await testInfo.attach(`${perfPage.id}-metrics.json`, {
-        body: JSON.stringify(metrics, null, 2),
+        path: metricsPath,
         contentType: "application/json",
       });
     });
@@ -215,5 +277,6 @@ test.describe("frontend perf matrix", () => {
 declare global {
   interface Window {
     __PHN_PERF_LONG_TASKS__: Array<{ name: string; startTime: number; duration: number }>;
+    __PHN_PERF_LCP__: number | null;
   }
 }
