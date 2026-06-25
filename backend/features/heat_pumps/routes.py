@@ -3,24 +3,22 @@
 from __future__ import annotations
 
 from typing import Annotated, Literal
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, Query, Response
 from starlette import status
 
-from database import connection
 from features.heat_pumps.phius_export import (
     PhiusExportResponse,
     compute_phius_payload,
     serialize_csv,
 )
-from features.heat_pumps.repository import get_active_version_id
 from features.heat_pumps.service import (
     HeatPumpsPatchResponse,
     HeatPumpsReadResponse,
     HeatPumpTableKey,
     JsonPatchOp,
     OptionPatchOp,
+    active_version_id_for_project,
     apply_option_patch,
     apply_patch,
     compose_read,
@@ -39,7 +37,7 @@ PhiusExportFormat = Literal["json", "raw-csv", "xlsx-paste"]
 
 @router.get("", response_model=HeatPumpsReadResponse)
 def get_heat_pumps(access: ProjectViewAccess) -> HeatPumpsReadResponse:
-    return compose_read(_active_version_id(access.project_id), access)
+    return compose_read(active_version_id_for_project(access.project_id), access)
 
 
 @router.patch("/{table}", response_model=HeatPumpsPatchResponse)
@@ -52,7 +50,7 @@ def patch_heat_pumps_table(
     dry_run: Annotated[bool, Query(alias="dry-run")] = False,
 ) -> HeatPumpsPatchResponse:
     return apply_patch(
-        _active_version_id(access.project_id),
+        active_version_id_for_project(access.project_id),
         table,
         payload,
         access,
@@ -71,7 +69,7 @@ def patch_heat_pumps_option(
     if_match_version: Annotated[str | None, Header()] = None,
 ) -> HeatPumpsReadResponse:
     return apply_option_patch(
-        _active_version_id(access.project_id),
+        active_version_id_for_project(access.project_id),
         option_key,
         payload,
         access,
@@ -100,7 +98,7 @@ def export_phius_estimator(
             "phius_export_format_unsupported",
             "xlsx-paste payload is deferred (OPQ-3); use json or raw-csv.",
         )
-    slice_ = read_slice(_active_version_id(access.project_id), access)
+    slice_ = read_slice(active_version_id_for_project(access.project_id), access)
     payload = compute_phius_payload(slice_)
     csv_bytes = serialize_csv(payload)
     if export_format == "raw-csv":
@@ -110,15 +108,3 @@ def export_phius_estimator(
         warnings=payload.warnings,
         csv=csv_bytes.decode("utf-8"),
     )
-
-
-def _active_version_id(project_id: UUID) -> UUID:
-    with connection() as conn:
-        version_id = get_active_version_id(conn, project_id)
-    if version_id is None:
-        raise api_error(
-            status.HTTP_404_NOT_FOUND,
-            "project_active_version_not_found",
-            "Active project version not found.",
-        )
-    return version_id

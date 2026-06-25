@@ -11,6 +11,7 @@ from starlette import status
 
 from database import connection, transaction
 from features.assets import repository as asset_repository
+from features.assets.mapping import asset_row
 from features.assets.service import AssetService
 from features.auth import repository as auth_repository
 from features.auth.models import UserPublic
@@ -506,9 +507,10 @@ def validate_epw_asset_reference(conn: Connection[Any], project_id: UUID, values
         return
     if not isinstance(asset_id, str):
         raise api_error(status.HTTP_422_UNPROCESSABLE_CONTENT, "asset_invalid", "EPW asset id must be a string.")
-    asset = asset_repository.get_asset_by_id(conn, project_id, asset_id)
-    if asset is None:
+    asset_data = asset_repository.get_asset_by_id(conn, project_id, asset_id)
+    if asset_data is None:
         raise api_error(status.HTTP_422_UNPROCESSABLE_CONTENT, "asset_not_found", "EPW asset was not found.")
+    asset = asset_row(asset_data)
     if asset.asset_kind != "epw":
         raise api_error(status.HTTP_422_UNPROCESSABLE_CONTENT, "asset_kind_mismatch", "Asset is not an EPW file.")
     if asset.upload_status != "uploaded":
@@ -521,9 +523,10 @@ def epw_descriptor_for_row(conn: Connection[Any], project_id: UUID, row: dict[st
     asset_id = row.get("epw_asset_id")
     if not isinstance(asset_id, str):
         return None
-    asset = asset_repository.get_asset_by_id(conn, project_id, asset_id)
-    if asset is None:
+    asset_data = asset_repository.get_asset_by_id(conn, project_id, asset_id)
+    if asset_data is None:
         return None
+    asset = asset_row(asset_data)
     parsed_raw = asset.metadata.epw_location
     parsed = EpwParsedLocation.model_validate(parsed_raw) if isinstance(parsed_raw, dict) else None
     return EpwDescriptor(

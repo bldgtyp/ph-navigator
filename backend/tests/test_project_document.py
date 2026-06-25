@@ -2,20 +2,27 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
+from uuid import UUID
 
 import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from psycopg.types.json import Jsonb
 from pydantic import ValidationError
 
+from config import settings
 from database import connection, transaction
 from features.auth.service import create_or_update_user
 from features.project_document.document import CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION, ProjectDocumentV1
+from features.project_document.drafts import apply_schema_mutation_to_draft
+from features.project_document.schema_mutations import AddFieldMutation
 from features.project_document.tables.rooms import ROOMS_BUILT_IN_FIELD_DEFS
-from features.projects.models import CreateProjectRequest
+from features.projects.access import ProjectAccess
+from features.projects.models import CreateProjectRequest, ProjectSummary
 from features.projects.service import empty_project_document
 from main import app
+from tests.project_document_helpers import field_defs_fingerprint
 
 ORIGIN = "http://localhost:5173"
 
@@ -493,6 +500,83 @@ def test_rooms_validation_allows_duplicate_room_numbers(
     assert [room["custom_values"]["number"] for room in body["rooms"]] == ["101", "101"]
 
 
+def test_rooms_replace_rejects_project_document_over_size_limit(
+    clean_document_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    initial = client.get(draft_rooms_url(project_id, version_id))
+    assert initial.status_code == 200
+    monkeypatch.setattr(settings, "project_document_max_body_bytes", 1)
+
+    response = client.put(
+        draft_rooms_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
+        json=room_payload(),
+    )
+
+    assert response.status_code == 413
+    body = response.json()
+    assert body["error_code"] == "project_document_too_large"
+    assert body["details"]["size_bytes"] > body["details"]["limit_bytes"]
+
+
+def test_mcp_schema_mutation_rejects_project_document_over_size_limit(
+    clean_document_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    user = create_or_update_user(email="ed@example.com", display_name="Ed May", password="password")
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    initial = client.get(draft_rooms_url(project_id, version_id)).json()
+    mutation = AddFieldMutation.model_validate(
+        {
+            "kind": "addField",
+            "table_key": "rooms",
+            "after": {
+                "field_key": "cf_mcp_too_large",
+                "display_name": "MCP Notes",
+                "field_type": "short_text",
+                "config": {},
+                "description": None,
+                "created_at": "2026-06-24T20:00:00Z",
+                "created_by": None,
+            },
+            "expected_schema_fingerprint": field_defs_fingerprint(initial["field_defs"]),
+        }
+    )
+    access = ProjectAccess(
+        project_id=UUID(str(project_id)),
+        mode="edit",
+        user=user,
+        project=ProjectSummary.model_validate({field: project[field] for field in ProjectSummary.model_fields}),
+    )
+    monkeypatch.setattr(settings, "project_document_max_body_bytes", 1)
+
+    with pytest.raises(HTTPException) as exc_info:
+        apply_schema_mutation_to_draft(
+            UUID(str(version_id)),
+            "rooms",
+            mutation,
+            access,
+            if_match=None,
+            if_match_version=initial["version_etag"],
+            request=None,
+            updated_via="mcp",
+        )
+
+    assert exc_info.value.status_code == 413
+    detail = cast(dict[str, Any], exc_info.value.detail)
+    assert detail["error_code"] == "project_document_too_large"
+    details = cast(dict[str, int], detail["details"])
+    assert details["size_bytes"] > details["limit_bytes"]
+
+
 def test_public_viewer_can_read_rooms_but_not_write(
     clean_document_tables: None,
 ) -> None:
@@ -889,7 +973,7 @@ def test_rooms_envelope_rejects_unknown_custom_key(
 
 def test_rooms_custom_field_duplicate_display_name_rejected() -> None:
     body = {
-        "schema_version": 11,
+        "schema_version": 1,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             "rooms": {
@@ -929,7 +1013,7 @@ def test_rooms_custom_field_duplicate_display_name_rejected() -> None:
 
 def test_rooms_custom_field_collides_with_core_display_name_rejected() -> None:
     body = {
-        "schema_version": 11,
+        "schema_version": 1,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             "rooms": {

@@ -11,6 +11,7 @@ from typing import Literal, cast
 
 import pytest
 from fastapi import HTTPException
+from pydantic import ValidationError
 
 from features.project_document.aperture_commands.dispatcher import (
     apply_aperture_command,
@@ -122,9 +123,9 @@ def test_default_tables_manufacturer_filters_is_none() -> None:
     assert body.tables.manufacturer_filters is None
 
 
-def test_legacy_list_placeholder_migrates_to_none() -> None:
-    tables = ProjectDocumentTables.model_validate({"manufacturer_filters": []})
-    assert tables.manufacturer_filters is None
+def test_legacy_list_placeholder_is_rejected_without_read_time_migration() -> None:
+    with pytest.raises(ValidationError, match="manufacturer_filters"):
+        ProjectDocumentTables.model_validate({"manufacturer_filters": []})
 
 
 # ----------------------------- happy paths --------------------------------

@@ -160,6 +160,7 @@ ci-backend: db-wait db-create-test ## Run the backend GitHub Actions job locally
 	cd backend && uv sync --locked
 	cd backend && uv run ruff format --check .
 	cd backend && uv run ruff check .
+	cd backend && uv run python -m scripts.check_backend_boundaries
 	cd backend && uv run ty check
 	cd backend && DATABASE_URL="$(TEST_DATABASE_URL)" uv run alembic upgrade head
 	cd backend && DATABASE_URL="$(TEST_DATABASE_URL)" uv run pytest -n $(PYTEST_WORKERS)

@@ -17,7 +17,8 @@ from starlette import status
 
 from database import connection, transaction
 from features.assets import repository as assets_repository
-from features.assets.schemas import AssetRow, AssetUrlsResponse
+from features.assets.mapping import asset_row_or_none
+from features.assets.models import AssetRow, AssetUrlsResponse
 from features.assets.service import AssetService, AssetStorage
 from features.model_viewer import model_data, repository
 from features.model_viewer.models import (
@@ -161,7 +162,8 @@ def get_download_urls(file_id: UUID, access: ProjectAccess, asset_service: Asset
 
 
 def _validated_hbjson_asset(conn: Any, access: ProjectAccess, asset_id: str) -> AssetRow:
-    asset = assets_repository.get_asset_by_id(conn, access.project_id, asset_id)
+    asset_row = assets_repository.get_asset_by_id(conn, access.project_id, asset_id)
+    asset = asset_row_or_none(asset_row)
     if asset is None:
         raise api_error(status.HTTP_404_NOT_FOUND, "hbjson_asset_not_found", "Uploaded asset not found.")
     if asset.asset_kind != "hbjson":

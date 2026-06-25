@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from datetime import datetime
+from time import perf_counter
 from typing import NoReturn
 from uuid import UUID
 
@@ -45,11 +47,15 @@ class CurrentDocumentParts:
 
 
 def get_saved_document(version_id: UUID, access: ProjectAccess) -> ProjectDocumentV1:
+    start = perf_counter()
     with connection() as conn:
         version = repository.get_project_version(conn, access.project_id, version_id)
         if version is None:
             raise_project_version_not_found()
-        return validate_document(version["body"])
+    db_ms = _duration_ms(start)
+    body = validate_document(version["body"])
+    _log_loaded(access.project_id, version_id, "version", version["body"], db_ms)
+    return body
 
 
 def load_document_body(
@@ -73,30 +79,36 @@ def load_document_body(
 def get_saved_document_or_read_safe(
     version_id: UUID, access: ProjectAccess, request_id: str
 ) -> ProjectDocumentV1 | ProjectDocumentReadSafeEnvelope:
+    start = perf_counter()
     with connection() as conn:
         version = repository.get_project_version(conn, access.project_id, version_id)
         if version is None:
             raise_project_version_not_found()
-        document, errors = validate_document_with_errors(version["body"])
-        if document is not None:
-            return document
-        return read_safe_envelope(
-            access.project_id,
-            version_id,
-            "version",
-            raw_json_value(version["body"]),
-            request_id,
-            errors if access.mode == "edit" else [],
-            row_schema_version=version["schema_version"],
-        )
+    db_ms = _duration_ms(start)
+    document, errors = validate_document_with_errors(version["body"])
+    if document is not None:
+        _log_loaded(access.project_id, version_id, "version", version["body"], db_ms)
+        return document
+    return read_safe_envelope(
+        access.project_id,
+        version_id,
+        "version",
+        raw_json_value(version["body"]),
+        request_id,
+        errors if access.mode == "edit" else [],
+        row_schema_version=version["schema_version"],
+    )
 
 
 def get_raw_saved_document(version_id: UUID, access: ProjectAccess) -> JsonValue:
+    start = perf_counter()
     with connection() as conn:
         version = repository.get_project_version(conn, access.project_id, version_id)
         if version is None:
             raise_project_version_not_found()
-        return raw_json_value(version["body"])
+    db_ms = _duration_ms(start)
+    _log_loaded(access.project_id, version_id, "version", version["body"], db_ms)
+    return raw_json_value(version["body"])
 
 
 def get_current_document_view(version_id: UUID, access: ProjectAccess) -> ProjectDocumentView:
@@ -207,20 +219,30 @@ def draft_summary(version_id: UUID, project_id: UUID, parts: CurrentDocumentPart
 
 def load_current_document_parts(version_id: UUID, access: ProjectAccess) -> CurrentDocumentParts:
     user = require_editor_user(access)
+    start = perf_counter()
     with connection() as conn:
         version = repository.get_project_version(conn, access.project_id, version_id)
         if version is None:
             raise_project_version_not_found()
-        version_body = validate_document(version["body"])
         draft = repository.get_draft(conn, version_id, user.id)
-        return CurrentDocumentParts(
-            version_body=version_body,
-            version_etag=document_etag(version_body),
-            version_locked=bool(version["locked"]),
-            draft_body=validate_document(draft["body"]) if draft is not None else None,
-            draft_etag=draft["draft_etag"] if draft is not None else None,
-            last_patched_at=draft["last_patched_at"] if draft is not None else None,
-        )
+    db_ms = _duration_ms(start)
+    version_body = validate_document(version["body"])
+    draft_body = validate_document(draft["body"]) if draft is not None else None
+    _log_loaded(
+        access.project_id,
+        version_id,
+        "draft" if draft is not None else "version",
+        draft["body"] if draft is not None else version["body"],
+        db_ms,
+    )
+    return CurrentDocumentParts(
+        version_body=version_body,
+        version_etag=document_etag(version_body),
+        version_locked=bool(version["locked"]),
+        draft_body=draft_body,
+        draft_etag=draft["draft_etag"] if draft is not None else None,
+        last_patched_at=draft["last_patched_at"] if draft is not None else None,
+    )
 
 
 def current_document_view(
@@ -289,3 +311,28 @@ def schema_version_from_raw(raw_body: JsonValue, row_schema_version: object) -> 
     if isinstance(row_schema_version, int) and not isinstance(row_schema_version, bool):
         return row_schema_version
     return None
+
+
+def _log_loaded(
+    project_id: UUID,
+    version_id: UUID,
+    source: ProjectDocumentSource,
+    raw_body: object,
+    db_ms: float,
+) -> None:
+    log.info(
+        "project_document.loaded",
+        project_id=str(project_id),
+        version_id=str(version_id),
+        source=source,
+        bytes=_json_size_bytes(raw_body),
+        db_ms=db_ms,
+    )
+
+
+def _json_size_bytes(raw_body: object) -> int:
+    return len(json.dumps(raw_body, separators=(",", ":"), default=str).encode("utf-8"))
+
+
+def _duration_ms(start: float) -> float:
+    return round((perf_counter() - start) * 1000, 2)

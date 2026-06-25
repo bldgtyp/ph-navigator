@@ -2,14 +2,10 @@
 
 from __future__ import annotations
 
-import csv
 import hashlib
-import io
 import json
-import re
-import zipfile
 from datetime import UTC, datetime, timedelta
-from typing import Any, Protocol, cast
+from typing import Any, cast
 from uuid import UUID
 
 from fastapi import BackgroundTasks
@@ -19,6 +15,24 @@ from starlette import status
 from config import settings
 from database import connection, transaction
 from features.assets import repository
+from features.assets.base import (
+    AssetStorage,
+    AssetThumbnailer,
+    asset_not_found,
+    generated_asset_id,
+    location_asset_ids_for_project,
+)
+from features.assets.downloads import AssetBulkDownloadWorkflow, find_row
+from features.assets.mapping import asset_row, asset_row_or_none, asset_rows
+from features.assets.models import (
+    AssetRow,
+    AssetUrlsResponse,
+    BulkUploadIntentItem,
+    BulkUploadIntentResponse,
+    UploadIntentRequest,
+    UploadIntentResponse,
+)
+from features.assets.orphan_sweeper import AssetOrphanSweepWorkflow
 from features.assets.registry import (
     WEATHER_FILE_KINDS,
     all_asset_kinds,
@@ -27,72 +41,24 @@ from features.assets.registry import (
     filename_extension,
     get_attachment_field,
     hbjson_upload_allowed,
-    iter_rows_for_raw_tables,
     list_asset_references,
     weather_file_upload_allowed,
 )
-from features.assets.schemas import (
-    AssetRow,
-    AssetUrlsResponse,
-    BulkDownloadFilter,
-    BulkDownloadRequest,
-    BulkUploadIntentItem,
-    BulkUploadIntentResponse,
-    JobResponse,
-    UploadIntentRequest,
-    UploadIntentResponse,
-)
-from features.assets.storage_r2 import asset_object_key, orphaned_asset_object_key
+from features.assets.storage_r2 import asset_object_key
+from features.project_document import repository as document_repository
 from features.project_document.drafts import load_draft_context
 from features.project_document.store import get_saved_document
-from features.project_document.validation import next_draft_etag, validate_document
+from features.project_document.validation import (
+    enforce_document_body_size,
+    next_draft_etag_from_etag,
+    validate_document,
+)
 from features.project_location.epw import epw_header_looks_valid
 from features.projects.access import ProjectAccess, require_editor_user
 from features.shared.errors import api_error
 
 
-def generated_asset_id() -> str:
-    return f"asset_{datetime.now(tz=UTC).strftime('%Y%m%d%H%M%S%f')}"
-
-
-def generated_job_id() -> str:
-    return f"job_{datetime.now(tz=UTC).strftime('%Y%m%d%H%M%S%f')}"
-
-
-class AssetStorage(Protocol):
-    def generate_signed_put_url(
-        self,
-        object_key: str,
-        content_type: str,
-        size_bytes: int,
-        expires_in_seconds: int = 600,
-    ) -> str: ...
-
-    def generate_signed_get_url(
-        self,
-        object_key: str,
-        expires_in_seconds: int,
-        response_content_disposition: str | None = None,
-    ) -> str: ...
-
-    def head_object(self, object_key: str) -> dict[str, object]: ...
-
-    def get_object_prefix(self, object_key: str, byte_range: tuple[int, int]) -> bytes: ...
-
-    def get_object(self, object_key: str) -> bytes: ...
-
-    def put_object(self, object_key: str, body: bytes, content_type: str) -> str: ...
-
-    def copy_object(self, source_key: str, dest_key: str) -> None: ...
-
-    def delete_object(self, object_key: str) -> None: ...
-
-
-class AssetThumbnailer(Protocol):
-    def render_for_asset(self, project_id: UUID, asset_id: str) -> None: ...
-
-
-class AssetService:
+class AssetService(AssetBulkDownloadWorkflow, AssetOrphanSweepWorkflow):
     def __init__(self, r2: AssetStorage, thumbnailer: AssetThumbnailer):
         self.r2 = r2
         self.thumbnailer = thumbnailer
@@ -116,23 +82,27 @@ class AssetService:
         asset_id = generated_asset_id()
         object_key = asset_object_key(access.project_id, asset_id, ext)
         with transaction() as conn:
-            duplicate = repository.find_asset_by_content_hash(conn, access.project_id, payload.content_hash_sha256)
+            duplicate = asset_row_or_none(
+                repository.find_asset_by_content_hash(conn, access.project_id, payload.content_hash_sha256)
+            )
             if duplicate is not None:
                 return UploadIntentResponse(
                     asset=duplicate, upload_url=None, expires_at=None, duplicate_of=duplicate.id
                 )
-            asset = repository.insert_pending_asset(
-                conn,
-                asset_id=asset_id,
-                project_id=access.project_id,
-                asset_kind=payload.asset_kind,
-                object_key=object_key,
-                original_filename=payload.original_filename,
-                display_name=payload.display_name or payload.original_filename,
-                content_type=payload.content_type,
-                size_bytes=payload.size_bytes,
-                content_hash_sha256=payload.content_hash_sha256,
-                created_by=user.id,
+            asset = asset_row(
+                repository.insert_pending_asset(
+                    conn,
+                    asset_id=asset_id,
+                    project_id=access.project_id,
+                    asset_kind=payload.asset_kind,
+                    object_key=object_key,
+                    original_filename=payload.original_filename,
+                    display_name=payload.display_name or payload.original_filename,
+                    content_type=payload.content_type,
+                    size_bytes=payload.size_bytes,
+                    content_hash_sha256=payload.content_hash_sha256,
+                    created_by=user.id,
+                )
             )
         expires_at = datetime.now(tz=UTC) + timedelta(minutes=10)
         return UploadIntentResponse(
@@ -160,7 +130,7 @@ class AssetService:
         digest = hashlib.sha256(body).hexdigest()
         r2_etag = self.r2.put_object(object_key, body, content_type)
         with transaction() as conn:
-            asset = repository.insert_pending_asset(
+            repository.insert_pending_asset(
                 conn,
                 asset_id=asset_id,
                 project_id=project_id,
@@ -173,9 +143,9 @@ class AssetService:
                 content_hash_sha256=digest,
                 created_by=created_by,
             )
-            uploaded = repository.mark_asset_uploaded(conn, project_id, asset.id, r2_etag=r2_etag)
+            uploaded = asset_row(repository.mark_asset_uploaded(conn, project_id, asset_id, r2_etag=r2_etag))
             if metadata is not None:
-                uploaded = repository.set_asset_metadata(conn, project_id, asset.id, metadata)
+                uploaded = asset_row(repository.set_asset_metadata(conn, project_id, asset_id, metadata))
         return uploaded
 
     def create_bulk_upload_intent(
@@ -228,9 +198,9 @@ class AssetService:
         """
         require_editor_user(access)
         with connection() as conn:
-            asset = repository.get_asset_by_id(conn, access.project_id, asset_id)
+            asset = asset_row_or_none(repository.get_asset_by_id(conn, access.project_id, asset_id))
         if asset is None:
-            raise _asset_not_found()
+            raise asset_not_found()
         try:
             head = self.r2.head_object(asset.object_key)
             size = int(cast(int | str, head.get("ContentLength", -1)))
@@ -249,11 +219,13 @@ class AssetService:
             ) from exc
 
         with transaction() as conn:
-            uploaded = repository.mark_asset_uploaded(
-                conn,
-                access.project_id,
-                asset_id,
-                r2_etag=str(head.get("ETag", "")).strip('"'),
+            uploaded = asset_row(
+                repository.mark_asset_uploaded(
+                    conn,
+                    access.project_id,
+                    asset_id,
+                    r2_etag=str(head.get("ETag", "")).strip('"'),
+                )
             )
         if uploaded.asset_kind != "epw":
             background_tasks.add_task(self.thumbnailer.render_for_asset, access.project_id, asset_id)
@@ -261,9 +233,9 @@ class AssetService:
 
     def get_asset(self, access: ProjectAccess, asset_id: str) -> AssetRow:
         with connection() as conn:
-            asset = repository.get_asset_by_id(conn, access.project_id, asset_id)
+            asset = asset_row_or_none(repository.get_asset_by_id(conn, access.project_id, asset_id))
         if asset is None:
-            raise _asset_not_found()
+            raise asset_not_found()
         return asset
 
     def read_asset_prefix(self, access: ProjectAccess, asset_id: str, byte_count: int) -> tuple[AssetRow, bytes]:
@@ -276,23 +248,23 @@ class AssetService:
         require_editor_user(access)
         with transaction() as conn:
             try:
-                return repository.set_asset_metadata(conn, access.project_id, asset_id, metadata_patch)
+                return asset_row(repository.set_asset_metadata(conn, access.project_id, asset_id, metadata_patch))
             except LookupError as exc:
-                raise _asset_not_found() from exc
+                raise asset_not_found() from exc
 
     def list_assets(self, access: ProjectAccess, kind: str | None = None) -> list[AssetRow]:
         if kind and kind not in all_asset_kinds():
             raise api_error(status.HTTP_422_UNPROCESSABLE_CONTENT, "asset_unknown_kind", "Unknown asset kind.")
         with connection() as conn:
-            return repository.list_assets(conn, access.project_id, kind=kind)
+            return asset_rows(repository.list_assets(conn, access.project_id, kind=kind))
 
     def patch_display_name(self, access: ProjectAccess, asset_id: str, display_name: str) -> AssetRow:
         require_editor_user(access)
         with transaction() as conn:
             try:
-                return repository.patch_asset_display_name(conn, access.project_id, asset_id, display_name)
+                return asset_row(repository.patch_asset_display_name(conn, access.project_id, asset_id, display_name))
             except LookupError as exc:
-                raise _asset_not_found() from exc
+                raise asset_not_found() from exc
 
     def soft_delete(self, access: ProjectAccess, asset_id: str) -> None:
         """Soft-delete an asset row; R2 object cleanup is deferred to GC.
@@ -324,7 +296,7 @@ class AssetService:
         if len(asset_ids) > 100:
             raise api_error(status.HTTP_400_BAD_REQUEST, "asset_bulk_overflow", "bulk-urls accepts at most 100 ids.")
         with connection() as conn:
-            assets = repository.list_assets_by_ids(conn, access.project_id, asset_ids)
+            assets = asset_rows(repository.list_assets_by_ids(conn, access.project_id, asset_ids))
         if access.user is None:
             referenced = self._referenced_asset_ids_for_access(access)
             assets = [asset for asset in assets if asset.id in referenced]
@@ -335,132 +307,6 @@ class AssetService:
 
     def detach_asset(self, access: ProjectAccess, asset_id: str, payload) -> dict[str, object]:
         return self._mutate_attachment_array(access, asset_id, payload, mode="detach")
-
-    def start_bulk_download(self, access: ProjectAccess, payload: BulkDownloadRequest) -> JobResponse:
-        """Run a bulk-download job synchronously, exposing job-style status.
-
-        Three transactions: insert the ``pending`` job row, run the
-        bundle build + R2 upload outside any DB transaction, then write
-        either ``completed`` (with ``result_asset_id``) or ``failed``
-        (with ``error_details``). Despite the name and the JobResponse
-        return type, today this runs to completion before returning —
-        the route returns a 200 with status already set. The job row
-        exists so the same API surface can later move to a background
-        worker without changing clients.
-        """
-        user = require_editor_user(access)
-        job_id = generated_job_id()
-        with transaction() as conn:
-            job = repository.insert_job(
-                conn,
-                job_id=job_id,
-                project_id=access.project_id,
-                created_by=user.id,
-                metadata=payload.model_dump(mode="json"),
-            )
-        try:
-            result_asset_id = self._run_bulk_download(
-                access, payload.filter, payload.filename_pattern, payload.include_manifest_csv, user.id
-            )
-            with transaction() as conn:
-                job = repository.update_job(
-                    conn,
-                    project_id=access.project_id,
-                    job_id=job_id,
-                    status="completed",
-                    progress=100,
-                    result_asset_id=result_asset_id,
-                )
-        except Exception as exc:
-            with transaction() as conn:
-                job = repository.update_job(
-                    conn,
-                    project_id=access.project_id,
-                    job_id=job_id,
-                    status="failed",
-                    progress=100,
-                    error_code="asset_bulk_download_failed",
-                    error_details={"message": str(exc)},
-                )
-        return job.model_copy(update={"status_url": f"/api/v1/projects/{access.project_id}/jobs/{job.id}"})
-
-    def get_job(self, access: ProjectAccess, job_id: str) -> JobResponse:
-        with connection() as conn:
-            job = repository.get_job(conn, access.project_id, job_id)
-        if job is None:
-            raise api_error(status.HTTP_404_NOT_FOUND, "job_not_found", "Job not found.")
-        return job.model_copy(update={"status_url": f"/api/v1/projects/{access.project_id}/jobs/{job.id}"})
-
-    def sweep_orphaned_assets(
-        self,
-        project_id: UUID,
-        *,
-        dry_run: bool = True,
-        pending_max_age_hours: int = 24,
-    ) -> dict[str, object]:
-        """Move unreferenced/expired assets to the orphan R2 prefix.
-
-        Read-only ``connection()`` enumerates candidates and the live
-        reference set in one snapshot; each candidate is then processed
-        outside any DB transaction so a single slow R2 call does not
-        block the others. Per-candidate, a small ``transaction()``
-        writes ``orphaned_status='moved'`` metadata only after the R2
-        move succeeds, so a network failure leaves the DB and R2 state
-        consistent (row still points at the original key). ``dry_run``
-        skips the R2 + DB mutation but still reports the planned move.
-        Default 24-hour ``pending_max_age_hours`` matches the upload-
-        intent expiry window plus headroom; callers may shorten it for
-        manual cleanup.
-        """
-        pending_expired_before = datetime.now(tz=UTC) - timedelta(hours=pending_max_age_hours)
-        with connection() as conn:
-            candidates = repository.list_asset_gc_candidates(
-                conn,
-                project_id,
-                pending_expired_before=pending_expired_before,
-            )
-            referenced_ids = self._referenced_asset_ids_for_project(conn, project_id)
-
-        results: list[dict[str, object]] = []
-        errors: list[dict[str, object]] = []
-        for asset in candidates:
-            if asset.id in referenced_ids:
-                continue
-            reason = _gc_reason(asset, pending_expired_before)
-            if reason is None:
-                continue
-            target_key = orphaned_asset_object_key(project_id, asset.id, asset.object_key)
-            result: dict[str, object] = {
-                "asset_id": asset.id,
-                "reason": reason,
-                "from": asset.object_key,
-                "to": target_key,
-            }
-            if dry_run:
-                results.append(result)
-                continue
-            try:
-                moved_thumbnail_key = self._move_asset_object_to_orphan_prefix(asset, target_key)
-                metadata_patch: dict[str, object] = {
-                    "orphaned_status": "moved",
-                    "orphaned_at": datetime.now(tz=UTC).isoformat(),
-                    "orphaned_reason": reason,
-                    "original_object_key": asset.object_key,
-                }
-                if moved_thumbnail_key:
-                    metadata_patch["thumbnail_object_key"] = moved_thumbnail_key
-                with transaction() as conn:
-                    repository.mark_asset_orphaned(
-                        conn,
-                        project_id,
-                        asset.id,
-                        object_key=target_key,
-                        metadata_patch=metadata_patch,
-                    )
-                results.append(result)
-            except Exception as exc:
-                errors.append({"asset_id": asset.id, "reason": reason, "error": str(exc)})
-        return {"dry_run": dry_run, "moved": results, "errors": errors}
 
     def _validate_upload_intent_payload(self, payload: UploadIntentRequest) -> None:
         if payload.asset_kind not in all_asset_kinds():
@@ -579,49 +425,8 @@ class AssetService:
             asset_ids.update(self._location_asset_ids_for_project(conn, access.project_id))
         return asset_ids
 
-    def _referenced_asset_ids_for_project(self, conn: Connection[Any], project_id: UUID) -> set[str]:
-        rows = conn.execute(
-            """
-            SELECT body
-            FROM project_versions
-            WHERE project_id = %(project_id)s
-            UNION ALL
-            SELECT d.body
-            FROM project_version_drafts d
-            JOIN project_versions v ON v.id = d.version_id
-            WHERE v.project_id = %(project_id)s
-            """,
-            {"project_id": project_id},
-        ).fetchall()
-        referenced: set[str] = set()
-        for row in rows:
-            body = validate_document(row["body"])
-            referenced.update(str(ref["asset_id"]) for ref in list_asset_references(body))
-        referenced.update(self._location_asset_ids_for_project(conn, project_id))
-        return referenced
-
     def _location_asset_ids_for_project(self, conn: Connection[Any], project_id: UUID) -> set[str]:
-        rows = conn.execute(
-            """
-            SELECT epw_asset_id
-            FROM project_location
-            WHERE project_id = %(project_id)s
-              AND epw_asset_id IS NOT NULL
-            """,
-            {"project_id": project_id},
-        ).fetchall()
-        return {str(row["epw_asset_id"]) for row in rows}
-
-    def _move_asset_object_to_orphan_prefix(self, asset: AssetRow, target_key: str) -> str | None:
-        self.r2.copy_object(asset.object_key, target_key)
-        self.r2.delete_object(asset.object_key)
-        thumbnail_key = asset.metadata.thumbnail_object_key
-        if not thumbnail_key:
-            return None
-        target_thumbnail_key = target_key.rsplit("/", maxsplit=1)[0] + "/thumb.png"
-        self.r2.copy_object(thumbnail_key, target_thumbnail_key)
-        self.r2.delete_object(thumbnail_key)
-        return target_thumbnail_key
+        return location_asset_ids_for_project(conn, project_id)
 
     def _mutate_attachment_array(
         self, access: ProjectAccess, asset_id: str, payload, *, mode: str
@@ -633,16 +438,16 @@ class AssetService:
                 status.HTTP_422_UNPROCESSABLE_CONTENT, "asset_attachment_field_unknown", "Unknown attachment field."
             )
         with transaction() as conn:
-            asset = repository.get_asset_by_id(conn, access.project_id, asset_id)
+            asset = asset_row_or_none(repository.get_asset_by_id(conn, access.project_id, asset_id))
             if asset is None:
-                other = repository.get_asset_by_id_any_project(conn, asset_id)
+                other = asset_row_or_none(repository.get_asset_by_id_any_project(conn, asset_id))
                 if other is not None:
                     raise api_error(
                         status.HTTP_422_UNPROCESSABLE_CONTENT,
                         "asset_cross_project_reference",
                         "Asset belongs to another project.",
                     )
-                raise _asset_not_found()
+                raise asset_not_found()
             if asset.upload_status != "uploaded":
                 raise api_error(status.HTTP_409_CONFLICT, "asset_upload_incomplete", "Asset upload is not complete.")
             if not asset_matches_field(
@@ -667,7 +472,7 @@ class AssetService:
                 draft_etag_mismatch_message="The draft changed before this attachment update was applied.",
             )
             next_raw = base_body.model_dump(mode="json")
-            row = _find_row(next_raw, payload.table_key, payload.row_id)
+            row = find_row(next_raw, payload.table_key, payload.row_id)
             values = row.get(payload.field_key)
             if not isinstance(values, list):
                 values = []
@@ -684,11 +489,17 @@ class AssetService:
                 values = [value for value in values if value != asset_id]
             row[payload.field_key] = values
             next_body = validate_document(next_raw)
-            draft_etag = next_draft_etag(next_body)
-            from features.project_document import repository as document_repository
+            serialized_next = enforce_document_body_size(next_body)
+            draft_etag = next_draft_etag_from_etag(serialized_next.etag)
 
             document_repository.upsert_draft(
-                conn, UUID(payload.version_id), user.id, next_body, base_version_etag, draft_etag
+                conn,
+                UUID(payload.version_id),
+                user.id,
+                next_body,
+                base_version_etag,
+                draft_etag,
+                serialized_body=serialized_next,
             )
         return {
             "version_etag": version_etag,
@@ -696,139 +507,6 @@ class AssetService:
             "source": "draft" if draft else "version",
             "asset_ids": values,
         }
-
-    def _run_bulk_download(
-        self,
-        access: ProjectAccess,
-        filter_: BulkDownloadFilter,
-        filename_pattern: str,
-        include_manifest_csv: bool,
-        created_by: UUID,
-    ) -> str:
-        version_id = access.project.active_version_id
-        if version_id is None:
-            raise ValueError("No active version.")
-        body = get_saved_document(version_id, access)
-        asset_ids = set(filter_.asset_ids or [])
-        references = list_asset_references(
-            body,
-            asset_ids=asset_ids or None,
-            table_key=filter_.table_key,
-            column_key=filter_.column_key,
-            kind=filter_.kind,
-        )
-        if not references:
-            raise ValueError("No matching assets.")
-        ordered_ids = [str(ref["asset_id"]) for ref in references]
-        with connection() as conn:
-            assets = {asset.id: asset for asset in repository.list_assets_by_ids(conn, access.project_id, ordered_ids)}
-        zip_buffer = io.BytesIO()
-        manifest_rows: list[dict[str, object]] = []
-        used_paths: set[str] = set()
-        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
-            for ref in references:
-                asset = assets.get(str(ref["asset_id"]))
-                if asset is None or asset.upload_status != "uploaded":
-                    continue
-                path = _dedupe_path(
-                    _render_filename_pattern(filename_pattern, ref, asset),
-                    used_paths,
-                )
-                used_paths.add(path)
-                zf.writestr(path, self.r2.get_object(asset.object_key))
-                manifest_rows.append(
-                    {
-                        **ref,
-                        "original_filename": asset.original_filename,
-                        "content_type": asset.content_type,
-                        "size_bytes": asset.size_bytes,
-                        "zip_path": path,
-                    }
-                )
-            if include_manifest_csv:
-                manifest = io.StringIO()
-                writer = csv.DictWriter(
-                    manifest,
-                    fieldnames=[
-                        "table_key",
-                        "row_id",
-                        "row_name",
-                        "field_key",
-                        "asset_id",
-                        "index",
-                        "original_filename",
-                        "content_type",
-                        "size_bytes",
-                        "zip_path",
-                    ],
-                )
-                writer.writeheader()
-                writer.writerows(manifest_rows)
-                zf.writestr("MANIFEST.csv", manifest.getvalue())
-
-        digest = hashlib.sha256(zip_buffer.getvalue()).hexdigest()
-        asset_id = generated_asset_id()
-        object_key = asset_object_key(access.project_id, asset_id, "zip")
-        self.r2.put_object(object_key, zip_buffer.getvalue(), "application/zip")
-        with transaction() as conn:
-            asset = repository.insert_pending_asset(
-                conn,
-                asset_id=asset_id,
-                project_id=access.project_id,
-                asset_kind="export_bundle",
-                object_key=object_key,
-                original_filename="attachments.zip",
-                display_name="Attachments export",
-                content_type="application/zip",
-                size_bytes=len(zip_buffer.getvalue()),
-                content_hash_sha256=digest,
-                created_by=created_by,
-            )
-            repository.mark_asset_uploaded(conn, access.project_id, asset.id, r2_etag="")
-        return asset_id
-
-
-def _find_row(document: dict[str, object], table_key: str, row_id: str) -> dict[str, object]:
-    tables = cast(dict[str, object], document["tables"])
-    if not isinstance(tables, dict):
-        raise ValueError("invalid_tables")
-    if table_key == "assembly_segments":
-        for assembly in _dict_rows(tables.get("assemblies")):
-            for layer in _dict_rows(assembly.get("layers")):
-                for segment in _dict_rows(layer.get("segments")):
-                    if segment.get("id") == row_id:
-                        return segment
-        rows = []
-    else:
-        rows = iter_rows_for_raw_tables(tables, table_key)
-    for row in rows:
-        if row.get("id") == row_id:
-            return row
-    raise api_error(status.HTTP_404_NOT_FOUND, "document_row_not_found", "Document row not found.")
-
-
-def _dict_rows(value: object) -> list[dict[str, object]]:
-    if not isinstance(value, list):
-        return []
-    return [cast(dict[str, object], item) for item in value if isinstance(item, dict)]
-
-
-def _asset_not_found():
-    return api_error(status.HTTP_404_NOT_FOUND, "asset_not_found", "Asset not found.")
-
-
-def _gc_reason(asset: AssetRow, pending_expired_before: datetime) -> str | None:
-    if asset.object_key.startswith(f"projects/{asset.project_id}/assets/_orphaned/"):
-        return None
-    if asset.deleted_at is not None:
-        return "soft_deleted"
-    if asset.upload_status == "failed":
-        return "failed_upload"
-    if asset.upload_status == "pending" and asset.created_at < pending_expired_before:
-        return "expired_pending_upload"
-    if asset.upload_status == "uploaded":
-        return "unreferenced_upload"
-    return None
 
 
 def _extension_from_content_type(content_type: str) -> str:
@@ -844,32 +522,3 @@ def _extension_from_content_type(content_type: str) -> str:
 
 def _safe_header_filename(filename: str) -> str:
     return filename.replace('"', "'").replace("\r", "").replace("\n", "")
-
-
-def _sanitize_path_part(value: object) -> str:
-    text = str(value or "unnamed").strip()
-    text = re.sub(r"[\\/]+", "-", text)
-    text = re.sub(r"[^A-Za-z0-9._ -]+", "", text)
-    return text or "unnamed"
-
-
-def _render_filename_pattern(pattern: str, ref: dict[str, object], asset: AssetRow) -> str:
-    return (
-        pattern.replace("{table}", _sanitize_path_part(ref.get("table_key")))
-        .replace("{row.name}", _sanitize_path_part(ref.get("row_name")))
-        .replace("{field}", _sanitize_path_part(ref.get("field_key")))
-        .replace("{filename}", _sanitize_path_part(asset.original_filename))
-    )
-
-
-def _dedupe_path(path: str, used: set[str]) -> str:
-    clean = "/".join(_sanitize_path_part(part) for part in path.split("/") if part not in {"", ".", ".."})
-    if clean not in used:
-        return clean
-    stem, dot, suffix = clean.rpartition(".")
-    base = stem if dot else clean
-    ext = f".{suffix}" if dot else ""
-    index = 2
-    while f"{base} ({index}){ext}" in used:
-        index += 1
-    return f"{base} ({index}){ext}"

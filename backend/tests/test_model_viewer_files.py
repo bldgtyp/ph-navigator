@@ -241,7 +241,8 @@ def test_unique_index_backstop_maps_to_409_and_discards_orphan(
             content_hash_sha256=content_hash,
             created_by=user_row["id"],
         )
-        assets_repository.mark_asset_uploaded(conn, UUID(str(project["id"])), orphan.id, r2_etag="race")
+        orphan_id = str(orphan["id"])
+        assets_repository.mark_asset_uploaded(conn, UUID(str(project["id"])), orphan_id, r2_etag="race")
 
     original_finder = mv_repository.find_active_file_by_content_hash
     calls = {"n": 0}
@@ -254,13 +255,13 @@ def test_unique_index_backstop_maps_to_409_and_discards_orphan(
 
     monkeypatch.setattr(mv_repository, "find_active_file_by_content_hash", skip_first_lookup)
 
-    rejected = _link_file(client, project["id"], orphan.id)
+    rejected = _link_file(client, project["id"], orphan_id)
     assert rejected.status_code == 409
     assert rejected.json()["error_code"] == "hbjson_duplicate_file"
     assert rejected.json()["details"] == {"id": existing["id"], "display_name": "Round 1 model"}
 
     # The racing duplicate's asset is orphaned and discarded for R2 GC.
-    orphan_after = client.get(f"/api/v1/projects/{project['id']}/assets/{orphan.id}")
+    orphan_after = client.get(f"/api/v1/projects/{project['id']}/assets/{orphan_id}")
     assert orphan_after.status_code == 404
 
 

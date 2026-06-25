@@ -27,9 +27,10 @@ All endpoints live under a versioned prefix: `/api/v1/...`. Hard rules:
   Removing or renaming a field is breaking; adding one is not.
 - **OpenAPI per version.** `/api/v1/openapi.json`, `/api/v2/openapi.json`.
 - **Document body schema versioning is independent** from API
-  versioning. `/api/v1` may serve project documents at
-  `schema_version: 1` *or* `schema_version: 2`; clients that don't
-  know v2 must check and refuse, or upgrade. See §10.5.
+  versioning. Before first deploy, `/api/v1` serves only the current
+  clean-baseline project-document shape (`schema_version: 1`) and
+  rejects non-current bodies. Future body-schema bumps require the
+  deferred pre-deploy schema-migration mechanism in §10.5.
 - **Deprecation marking.** Endpoints scheduled for removal carry a
   `Deprecation: true` response header and an entry in
   `/api/v1/deprecations`.

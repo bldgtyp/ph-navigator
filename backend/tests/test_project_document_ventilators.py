@@ -69,7 +69,7 @@ def test_document_rejects_missing_inside_outside_option() -> None:
     first = ventilator_payload()["ventilators"][0]
     tables = empty_required_tables()
     body = {
-        "schema_version": 11,
+        "schema_version": 1,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             **tables,

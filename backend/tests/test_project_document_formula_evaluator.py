@@ -22,6 +22,7 @@ from typing import Any
 
 import pytest
 
+import features.project_document.formula.document_evaluator as document_evaluator
 from features.project_document.formula.ast_nodes import (
     BinaryOp,
     FieldRef,
@@ -37,6 +38,8 @@ from features.project_document.formula.evaluator import (
     evaluate,
 )
 from features.project_document.formula.parser import parse
+from features.projects.models import CreateProjectRequest
+from features.projects.service import empty_project_document
 
 CORPUS_PATH = Path(__file__).parent / "fixtures" / "formula_evaluator_corpus.json"
 
@@ -132,3 +135,31 @@ def test_evaluator_corpus_case(case: dict[str, Any]) -> None:
         assert result.code == expected["code"], (
             f"{case['name']!r} error code mismatch: expected {expected['code']!r}, got {result.code!r}"
         )
+
+
+def test_document_formula_overlay_cache_reuses_whole_document_eval(monkeypatch: pytest.MonkeyPatch) -> None:
+    body = empty_project_document(
+        CreateProjectRequest(
+            name="t",
+            bt_number="1",
+            cert_programs=[],
+            phius_number=None,
+            phius_dropbox_url=None,
+        )
+    )
+    calls = 0
+    original = document_evaluator._formula_contexts
+
+    def wrapped_formula_contexts(*args: Any, **kwargs: Any):
+        nonlocal calls
+        calls += 1
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(document_evaluator, "_formula_contexts", wrapped_formula_contexts)
+
+    document_evaluator.reset_formula_overlay_cache()
+    first = document_evaluator.evaluate_document_formulas(body)
+    second = document_evaluator.evaluate_document_formulas(body)
+
+    assert first is second
+    assert calls == 1

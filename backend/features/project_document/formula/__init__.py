@@ -30,6 +30,7 @@ from features.project_document.formula.ast_nodes import (
     ast_from_json,
     ast_to_json,
 )
+from features.project_document.formula.document_evaluator import evaluate_table_formulas, reset_formula_overlay_cache
 from features.project_document.formula.errors import (
     FormulaCycleError,
     FormulaInvalidLinkedArgError,
@@ -46,7 +47,6 @@ from features.project_document.formula.evaluator import (
     EvalResult,
     EvalSuccess,
     evaluate,
-    evaluate_table_formulas,
 )
 from features.project_document.formula.limits import (
     AST_DEPTH_MAX,
@@ -107,5 +107,6 @@ __all__ = [
     "infer_result_type",
     "parse",
     "resolve_refs",
+    "reset_formula_overlay_cache",
     "validate_document_formula_graph",
 ]

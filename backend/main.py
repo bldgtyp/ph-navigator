@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
 from config import settings
+from database import close_pool, open_pool
 from features.aperture_drift.routes import router as aperture_drift_router
 from features.aperture_hbjson_export.routes import router as aperture_hbjson_export_router
 from features.aperture_u_value.routes import router as aperture_u_value_router
@@ -45,8 +46,12 @@ configure_logging(settings)
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    open_pool()
     async with phn_mcp.session_manager.run():
-        yield
+        try:
+            yield
+        finally:
+            close_pool()
 
 
 app = FastAPI(

@@ -18,6 +18,7 @@ from starlette import status
 
 from database import connection, transaction
 from features.assets import repository as asset_repository
+from features.assets.mapping import asset_row
 from features.assets.service import AssetService
 from features.auth import repository as auth_repository
 from features.auth.models import UserPublic
@@ -578,11 +579,12 @@ def _parse_ref_uuid(ref: str | None) -> UUID:
 def _validate_weather_ref(conn: Connection[Any], project_id: UUID, ref: str | None) -> None:
     """A weather source's ``ref`` is its primary EPW file asset (the bundle's
     `.stat` / `.ddy` asset ids ride in ``data``)."""
-    asset = asset_repository.get_asset_by_id(conn, project_id, str(ref))
-    if asset is None:
+    asset_data = asset_repository.get_asset_by_id(conn, project_id, str(ref))
+    if asset_data is None:
         raise api_error(
             status.HTTP_422_UNPROCESSABLE_CONTENT, "climate_source_ref_not_found", "EPW asset was not found."
         )
+    asset = asset_row(asset_data)
     if asset.asset_kind != "epw":
         raise api_error(status.HTTP_422_UNPROCESSABLE_CONTENT, "asset_kind_mismatch", "Asset is not an EPW file.")
     if asset.upload_status != "uploaded":

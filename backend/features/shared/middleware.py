@@ -11,6 +11,8 @@ from fastapi import Request, Response
 from starlette import status
 
 from config import settings
+from features.project_document.formula import reset_formula_overlay_cache
+from features.project_document.inverse_view import reset_inverse_view_cache
 from features.shared.errors import error_response
 from features.shared.http import client_ip
 
@@ -53,6 +55,8 @@ async def request_context_middleware(request: Request, call_next: CallNext) -> R
         path=request.url.path,
         client_ip=client_ip(request),
     )
+    reset_formula_overlay_cache()
+    reset_inverse_view_cache()
 
     start = perf_counter()
     status_code: int | None = None

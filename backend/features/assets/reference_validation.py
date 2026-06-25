@@ -8,6 +8,7 @@ from psycopg import Connection
 from starlette import status
 
 from features.assets import repository
+from features.assets.mapping import asset_rows
 from features.assets.registry import ATTACHMENT_FIELDS, asset_matches_field, list_asset_references
 from features.project_document.document import ProjectDocumentV1
 from features.shared.errors import api_error
@@ -42,7 +43,8 @@ def validate_document_asset_references(
                 )
 
     ordered_asset_ids = list(dict.fromkeys(str(ref["asset_id"]) for ref in references))
-    assets_by_id = {asset.id: asset for asset in repository.list_assets_by_ids(conn, project_id, ordered_asset_ids)}
+    assets = asset_rows(repository.list_assets_by_ids(conn, project_id, ordered_asset_ids))
+    assets_by_id = {asset.id: asset for asset in assets}
     for ref in references:
         field = fields_by_key.get(f"{ref['table_key']}.{ref['field_key']}")
         if field is None:

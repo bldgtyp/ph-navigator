@@ -11,6 +11,11 @@ they share three concerns:
   catalog's Pydantic request models.
 - Audit. Catalog writes land in ``user_action_log`` per US-OPS-1 and
   data-model.md §7.3.
+
+Repository note: the two SQL helpers in this module are the shared repository
+surface for catalog tables whose concrete repositories only differ by table
+name. Feature-specific catalog repositories remain the preferred home for
+table-specific SQL.
 """
 
 from __future__ import annotations

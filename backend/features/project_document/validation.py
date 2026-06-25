@@ -4,20 +4,44 @@ from __future__ import annotations
 
 import hashlib
 import json
-from typing import TypeAlias, cast
+from dataclasses import dataclass
+from typing import Any, TypeAlias, cast
 from uuid import uuid4
 
 from pydantic import ValidationError
+from starlette import status
 
+from config import settings
 from features.project_document.document import ProjectDocumentV1
 from features.shared.errors import api_error
 
 JsonValue: TypeAlias = None | bool | int | float | str | list["JsonValue"] | dict[str, "JsonValue"]
 
 
-def document_etag(body: ProjectDocumentV1) -> str:
-    payload = json.dumps(body.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+@dataclass(frozen=True)
+class SerializedProjectDocument:
+    json_value: dict[str, Any]
+    json_text: str
+    json_bytes: bytes
+    etag: str
+    size_bytes: int
+
+
+def serialize_document(body: ProjectDocumentV1) -> SerializedProjectDocument:
+    json_value = body.model_dump(mode="json")
+    json_text = json.dumps(json_value, sort_keys=True, separators=(",", ":"))
+    json_bytes = json_text.encode("utf-8")
+    return SerializedProjectDocument(
+        json_value=json_value,
+        json_text=json_text,
+        json_bytes=json_bytes,
+        etag=hashlib.sha256(json_bytes).hexdigest(),
+        size_bytes=len(json_bytes),
+    )
+
+
+def document_etag(body: ProjectDocumentV1, serialized: SerializedProjectDocument | None = None) -> str:
+    return (serialized or serialize_document(body)).etag
 
 
 def next_draft_etag(body: ProjectDocumentV1) -> str:
@@ -25,8 +49,31 @@ def next_draft_etag(body: ProjectDocumentV1) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
-def body_size_bytes(body: ProjectDocumentV1) -> int:
-    return len(body.model_dump_json().encode("utf-8"))
+def next_draft_etag_from_etag(etag: str) -> str:
+    payload = f"{etag}:{uuid4()}"
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def body_size_bytes(body: ProjectDocumentV1, serialized: SerializedProjectDocument | None = None) -> int:
+    if serialized is not None:
+        return serialized.size_bytes
+    return serialize_document(body).size_bytes
+
+
+def enforce_document_body_size(
+    body: ProjectDocumentV1,
+    serialized: SerializedProjectDocument | None = None,
+) -> SerializedProjectDocument:
+    serialized_body = serialized or serialize_document(body)
+    limit = settings.project_document_max_body_bytes
+    if serialized_body.size_bytes > limit:
+        raise api_error(
+            status.HTTP_413_CONTENT_TOO_LARGE,
+            "project_document_too_large",
+            "Project document body exceeds the configured size limit.",
+            {"size_bytes": serialized_body.size_bytes, "limit_bytes": limit},
+        )
+    return serialized_body
 
 
 def validate_document(raw_body: object) -> ProjectDocumentV1:

@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Any, Protocol
+from typing import Protocol
 from uuid import UUID
 
 from fastapi import HTTPException, Request
-from psycopg import Connection
 from psycopg.errors import UniqueViolation
 from starlette import status
 
@@ -18,7 +17,7 @@ from features.auth import repository as auth_repository
 from features.auth.models import UserPublic
 from features.auth.service import client_ip, user_agent
 from features.project_document.templates import empty_project_document
-from features.project_document.validation import body_size_bytes
+from features.project_document.validation import enforce_document_body_size
 from features.projects import repository
 from features.projects.models import (
     AccessMode,
@@ -121,7 +120,7 @@ def create_project(payload: CreateProjectRequest, user: UserPublic, request_meta
     project's id when known.
     """
     body = empty_project_document(payload)
-    size = body_size_bytes(body)
+    serialized_body = enforce_document_body_size(body)
     try:
         with transaction() as conn:
             existing = repository.get_project_by_bt_number(conn, payload.bt_number)
@@ -132,7 +131,14 @@ def create_project(payload: CreateProjectRequest, user: UserPublic, request_meta
                     "BT number is already assigned to another project.",
                     {"project_id": str(existing["id"]), "name": existing["name"]},
                 )
-            project = repository.insert_project_with_initial_version(conn, payload, user.id, body, size)
+            project = repository.insert_project_with_initial_version(
+                conn,
+                payload,
+                user.id,
+                body,
+                serialized_body.size_bytes,
+                serialized_body=serialized_body,
+            )
             auth_repository.log_action(
                 conn,
                 action="project_create",
@@ -361,7 +367,7 @@ def restore_project(project_id: UUID, user: UserPublic, request_meta: Request | 
         _ensure_project_owner(current, user)
         if current["deleted_at"] is None:
             project = project_summary(current)
-            owner_display_name = _owner_display_name(conn, project_id)
+            owner_display_name = repository.get_owner_display_name(conn, project_id)
             return get_project_detail(
                 project_id,
                 access_mode="editor",
@@ -386,7 +392,7 @@ def restore_project(project_id: UUID, user: UserPublic, request_meta: Request | 
             user_agent=_user_agent(request_meta),
             details={"project_id": str(project_id), "bt_number": restored["bt_number"], "name": restored["name"]},
         )
-        owner_display_name = _owner_display_name(conn, project_id)
+        owner_display_name = repository.get_owner_display_name(conn, project_id)
     return get_project_detail(
         project_id,
         access_mode="editor",
@@ -565,19 +571,6 @@ def project_deleted_error(row: dict[str, object]) -> HTTPException:
 def _ensure_project_owner(project: dict[str, object], user: UserPublic) -> None:
     if project["owner_id"] != user.id:
         raise api_error(status.HTTP_404_NOT_FOUND, "project_not_found", "Project not found.")
-
-
-def _owner_display_name(conn: Connection[Any], project_id: UUID) -> str | None:
-    row = conn.execute(
-        """
-        SELECT users.display_name AS owner_display_name
-        FROM projects
-        JOIN users ON users.id = projects.owner_id
-        WHERE projects.id = %(project_id)s
-        """,
-        {"project_id": project_id},
-    ).fetchone()
-    return row["owner_display_name"] if row and isinstance(row["owner_display_name"], str) else None
 
 
 def _isoformat(value: object) -> str | None:

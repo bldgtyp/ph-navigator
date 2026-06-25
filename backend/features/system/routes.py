@@ -6,6 +6,7 @@ from fastapi import APIRouter
 
 from config import settings
 from features.system.models import HealthResponse, VersionResponse
+from features.system.service import readiness
 
 router = APIRouter(prefix="/api/v1", tags=["system"])
 
@@ -18,6 +19,11 @@ def health() -> HealthResponse:
         phase="tb-00",
         api_version="v1",
     )
+
+
+@router.get("/ready")
+def ready() -> dict[str, object]:
+    return readiness()
 
 
 @router.get("/version", response_model=VersionResponse)

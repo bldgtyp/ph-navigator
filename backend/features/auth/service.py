@@ -154,7 +154,7 @@ def authenticate(email: str, password: str, request: Request) -> tuple[UserPubli
 
             session_id = uuid4()
             expires_at = session_expires_at(now)
-            repository.create_session(
+            repository.insert_session(
                 conn,
                 session_id=session_id,
                 user_id=user_id,

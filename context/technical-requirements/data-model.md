@@ -892,7 +892,7 @@ shape. Phase-specific implementation lives under
 `planning/archive/dated/2026-06-04/editable-fields/phases/`, with completed predecessor
 plans under `planning/archive/dated/2026-06-04/editable-fields/archive/complete/`.
 
-#### 6.6.1 Table envelope shape (v3)
+#### 6.6.1 Table envelope shape
 
 Every field-config-capable table carries `{ field_defs, rows }`:
 
@@ -952,11 +952,17 @@ Rules (post-Phase 1b):
     - `locked` arrays — render-time overlay, NOT persisted (see §6.6.2);
     - the canonical ordered list of built-in `field_key`s — drives the
       schema fingerprint's built-in slice.
-- **`schema_version: 5`** (record-linking Phase 1, 2026-06-08) adds the
-  parallel `custom_links: dict[str, list[str]]` bag on every
-  FieldDef-capable row, retires the typed `RoomRow.erv_unit_ids` column,
-  and admits `CustomFieldType.linked_record`.
-- **Record-linking Phase 2** (2026-06-09) keeps storage normalized on
+- **Current clean-baseline contract:** `schema_version: 1` is the only
+  supported pre-deploy project-document schema. The prior dev-only bump
+  history through v12 was squashed back to one current schema because no real
+  project bodies exist. There are no read-time project-document shims before
+  first deploy; invalid bodies surface through the read-safe envelope. The
+  schema-migration mechanism is deferred to the pre-first-deploy gate.
+- **Record links** store values in
+  `custom_links: dict[str, list[str]]` on every FieldDef-capable row. The
+  storage model admits `CustomFieldType.linked_record` and does not use typed
+  row columns for links such as Rooms-to-Space-Types.
+- **Record-linking read overlays** keep storage normalized on
   `custom_links` and adds a read-only inverse overlay to table slice
   responses/download envelopes. The overlay is not persisted on row
   models. Current Rooms/Pumps responses expose top-level
@@ -964,44 +970,14 @@ Rules (post-Phase 1b):
   `inverse_links_fingerprint`; JSON table envelopes attach per-row
   `inverse_links` for exports. Write concurrency still uses the
   document-level `version_etag` / `draft_etag`.
-- `schema_version: 4` (superseded by v5 above) is the v4 wire shape
-  (Phase 2). v4 promotes the
-  pinned identifier to a real `record_id` FieldDef on every
-  FieldDef-capable table: Rooms ships a formula seed
-  (`concat({Number}, " — ", {Name})`); Pumps' Phase-1b `tag` seed is
-  renamed to `record_id` (display label "Tag"). `validate_document_
-  references` enforces that every FieldDef-capable table contains a
-  `record_id` entry, and `apply_add_field` / `apply_duplicate_field`
-  reject `field_key="record_id"` on custom-side writes. No back-compat
-  reader for v2 / v3 — pre-deploy posture.
-- **`schema_version: 7`** (Spaces refactor, 2026-06-16) adds
-  `tables.space_types`, seeds its Tag/Name FieldDefs, adds the Rooms
-  built-in `space_type_id` linked-record FieldDef targeting
-  `["space_types"]`, and exposes inverse Rooms links on Space-Types
-  table-slice responses/download envelopes.
-- **`schema_version: 8`** (record-identity model, 2026-06-17) makes the
-  descriptive `name` field the pinned **Display Name** identifier on
-  every FieldDef-capable table and demotes `record_id` to an ordinary
-  **Tag** field (Rooms keeps `record_id` as the `{Number} — {Name}`
-  Display Name formula; Pumps gains an empty Display Name). It retires
-  the "Name" label, removes the Heat Pumps and Space-Types
-  user-handle hard blocks, and makes the hidden `row.id` uniqueness
-  guard universal. Shipped as a reseed + version bump, **no
-  body-migration** (no users / no deploy). See §6.6.10.
-- **`schema_version: 9–12`** (2026-06 → 2026-06-24). The authority for the
-  current value is the `backend/features/project_document/document.py` module
-  docstring (`CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 12`): **v10** moves
-  Heat Pumps from four flat row lists to four `{field_defs, rows}` leaf
-  envelopes under `equipment.heat_pumps`; **v11** adds the shared
-  `datasheet_asset_ids` field to Electric Heaters and Ventilators; **v12**
-  moves aperture glazings/frames from inline element snapshots to flat
-  `project_glazings` / `project_frames` tables referenced by id (v9 is an
-  intermediate dev bump). These shipped as reseed + version bump under the
-  pre-deploy posture; today the migrate-on-read shim only transforms v11→v12.
-  The schema-migration story (read-time shim chain vs. Alembic body-rewrite
-  migrations vs. the documented post-MVP intent) needs to be settled before
-  the first real save — see `planning/code-reviews/2026-06-24/backend-data-architecture-review.md`
-  §4.
+- **Space-Types** live in `tables.space_types` with Tag/Name FieldDefs. Rooms
+  expose a built-in `space_type_id` linked-record FieldDef targeting
+  `["space_types"]`; Space-Types table-slice responses/download envelopes expose
+  inverse Rooms links.
+- **Row identity** uses the descriptive `name` field as the pinned
+  **Display Name** identifier on every FieldDef-capable table and treats
+  `record_id` as an ordinary **Tag** field. Hidden `row.id` uniqueness is
+  universal. See §6.6.10.
 
 #### 6.6.2 `TableFieldDef` shape
 
@@ -1043,10 +1019,12 @@ only what the user can edit next.
 | `number` | SI semantics; per-field `precision` in config. **Unit dimension deferred** — start unitless to avoid coupling to the IP/SI machinery in v1. |
 | `url` | URL-validated; renders as a link. |
 | `single_select` | Options live in the existing `single_select_options` map under `<table_path>.<cf_id>` (see §6.6.4). Same lifecycle as core single-select option lists. |
+| `color` | Hex color value normalized by the backend; used for row color fields and color-cell UI. |
 | `formula` | Read-only computed value. AirTable-style `{Display Name}` syntax parsed to a typed AST with ids resolved at commit. The grammar supports the `&` binary text-concatenation operator at the same precedence as `+` / `-`, left-associative; scalar operands coerce to text (`null` → `""`, text unchanged, finite numbers formatted through the shared number-to-text formatter, booleans as `true` / `false`). `&` formulas infer `result_type: "text"` and round-trip through the same frontend/backend parser, resolver, evaluator, and corpus parity tests as `concat(...)`. Record-linking Phase 3 adds backend row-set primitives `linked("field_key")` and `linked_from(table.path, "field_key")` with `count` / `sum` / `avg` rollups into the same `rows_computed` / `computed` overlay; backend document-level cross-table cycle validation is in place, while frontend authoring remains tracked in `planning/archive/dated/2026-06-09/record-linking/phases/phase-03-rollups.md`. See plan-13 §4.4 for base grammar, parity, and resource limits. |
+| `linked_record` | Stores target row ids in `custom_links[field_key]`; config declares the target table path and link cardinality. Display uses linked-record chips plus inverse-link overlays on read paths. |
 
-Future types (date, attachment, cross-table lookup, cross-row
-aggregations) are out of scope for v1; see plan-13 §6.
+Future types (date, attachment, cross-table lookup beyond linked records, and
+additional cross-row aggregations) are out of scope for v1; see plan-13 §6.
 
 #### 6.6.4 Option lists for single-select fields
 
@@ -1152,7 +1130,7 @@ get an accurate view of mutable-type fields' wire shape; per-field
 domain invariants only survive on fields whose `field_type` lock is
 declared in the feature seed.
 
-#### 6.6.9 `field_type` conversion policy matrix (v4)
+#### 6.6.9 `field_type` conversion policy matrix
 
 `changeType` and the `editFieldBundle` field-type change branch
 consult a closed `(from_type, to_type) -> policy` matrix to decide
@@ -1206,7 +1184,7 @@ entries with a `row_changes_truncated: True` flag past the cap), so
 discards and lossy conversions are recoverable from the action log
 within the audit retention window.
 
-#### 6.6.10 Row identity model (schema v8)
+#### 6.6.10 Row identity model
 
 Every FieldDef-capable table separates three concerns, mirroring the
 Honeybee model (HB `identifier` ↔ hidden `row.id`; HB `display_name` ↔

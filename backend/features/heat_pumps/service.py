@@ -9,8 +9,9 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, ValidationError
 from starlette import status
 
-from database import transaction
+from database import connection, transaction
 from features.assets.reference_validation import validate_document_asset_references
+from features.heat_pumps import repository
 from features.heat_pumps.models import (
     HEAT_PUMP_OWNED_OPTION_KEYS,
     HEAT_PUMP_VISIBLE_OPTION_KEYS,
@@ -30,7 +31,11 @@ from features.project_document.options import (
 )
 from features.project_document.rows import SingleSelectOption
 from features.project_document.service import get_current_document_view
-from features.project_document.validation import next_draft_etag, validate_document
+from features.project_document.validation import (
+    enforce_document_body_size,
+    next_draft_etag_from_etag,
+    validate_document,
+)
 from features.projects.access import ProjectAccess, require_editor_user
 from features.shared.errors import api_error
 
@@ -92,6 +97,18 @@ _TABLE_SPECS: dict[HeatPumpTableKey, _TableSpec] = {
     "outdoor-units": _TableSpec("outdoor_units", HeatPumpOutdoorUnitRow),
     "indoor-units": _TableSpec("indoor_units", HeatPumpIndoorUnitRow),
 }
+
+
+def active_version_id_for_project(project_id: UUID) -> UUID:
+    with connection() as conn:
+        version_id = repository.get_active_version_id(conn, project_id)
+    if version_id is None:
+        raise api_error(
+            status.HTTP_404_NOT_FOUND,
+            "project_active_version_not_found",
+            "Active project version not found.",
+        )
+    return version_id
 
 
 def compose_read(version_id: UUID, access: ProjectAccess) -> HeatPumpsReadResponse:
@@ -156,13 +173,15 @@ def apply_patch(
                 None,
             )
         validate_document_asset_references(conn, project_id=access.project_id, body=next_body)
+        serialized_next = enforce_document_body_size(next_body)
         draft_etag = document_repository.upsert_draft(
             conn,
             version_id,
             user.id,
             next_body,
             base_version_etag,
-            next_draft_etag(next_body),
+            next_draft_etag_from_etag(serialized_next.etag),
+            serialized_body=serialized_next,
         )
     return _patch_response(access.project_id, version_id, "draft", version_etag, draft_etag, next_body, preview)
 
@@ -466,13 +485,15 @@ def apply_option_patch(
                 draft["draft_etag"] if draft is not None else None,
                 base_body,
             )
+        serialized_next = enforce_document_body_size(next_body)
         draft_etag = document_repository.upsert_draft(
             conn,
             version_id,
             user.id,
             next_body,
             base_version_etag,
-            next_draft_etag(next_body),
+            next_draft_etag_from_etag(serialized_next.etag),
+            serialized_body=serialized_next,
         )
     return _response(access.project_id, version_id, "draft", version_etag, draft_etag, next_body)
 

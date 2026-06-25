@@ -5,6 +5,7 @@ how and when each feature packet landed. Newest first. Grep by slug.
 
 ## 2026-06-24
 
+- `backend-data-architecture-cleanup` - repository/module/schema cleanup, clean relational Alembic baseline, backend boundary lint, and pre-deploy hardening; Phase 4 promoted, Phase 7 deferred. (391da061)
 - `apertures-glazings-frames-reports` - route-based Materials-parity glazing and frame specification reports, with datasheets, status, use-sites, drift, screenshots, and old refs modal retired. (closeout)
 - `glazing-frame-documentation` - flat documented project glazing/frame entities with aperture FK migration, datasheet links, spec status, and builder hydration. (main closeout)
 - `window-glass-catalog-enums` - glazing catalog manufacturer → single-select, server-derived name, import v2 (brand reverted to free text post-ship). (f5c4a89b)
