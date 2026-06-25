@@ -26,12 +26,8 @@ HPIU_1 = "hpiu_01HX0000000000000000000001"
 
 
 def heat_pumps_url(project_id: object) -> str:
+    """Heat-pumps equipment URL prefix (the `export-phius` route hangs off it)."""
     return f"/api/v1/projects/{project_id}/equipment/heat-pumps"
-
-
-def heat_pumps_table_url(project_id: object, table: str, *, dry_run: bool = False) -> str:
-    suffix = "?dry-run=true" if dry_run else ""
-    return f"{heat_pumps_url(project_id)}/{table}{suffix}"
 
 
 def draft_table_url(project_id: object, version_id: object, table_name: str) -> str:
@@ -122,12 +118,36 @@ def indoor_unit(**overrides: object) -> dict[str, Any]:
     return row
 
 
-def add_patch(value: dict[str, Any]) -> dict[str, Any]:
-    return {"op": "add", "path": "/-", "value": value}
+def seed_leaf_rows(
+    client: Any,
+    project_id: object,
+    version_id: object,
+    table_name: str,
+    rows_attr: str,
+    rows: list[dict[str, Any]],
+) -> str:
+    """PUT `rows` onto a heat-pump leaf through the generic draft-table endpoint.
 
-
-def remove_patch(row_id: str) -> dict[str, Any]:
-    return {"op": "remove", "path": f"/{row_id}"}
+    Echoes the leaf's current field_defs + option lists unchanged and returns the
+    new draft_etag so callers can seed several leaves in sequence.
+    """
+    current = client.get(draft_table_url(project_id, version_id, table_name)).json()
+    headers = (
+        {"Origin": ORIGIN, "If-Match": current["draft_etag"]}
+        if current["draft_etag"]
+        else {"Origin": ORIGIN, "If-Match-Version": current["version_etag"]}
+    )
+    response = client.put(
+        draft_table_url(project_id, version_id, table_name),
+        headers=headers,
+        json={
+            "field_defs": current["field_defs"],
+            rows_attr: rows,
+            "single_select_options": current["single_select_options"],
+        },
+    )
+    assert response.status_code == 200, response.text
+    return response.json()["draft_etag"]
 
 
 def add_field_mutation(*, table_key: str, fingerprint: str) -> dict[str, Any]:
@@ -214,27 +234,6 @@ def test_document_rejects_bad_heat_pump_fk() -> None:
         _heat_pump_document(tables)
 
 
-def test_heat_pumps_get_and_patch_add_round_trip(clean_document_tables: None) -> None:
-    client = signed_in_client()
-    project = create_project(client)
-
-    initial = client.get(heat_pumps_url(project["id"]))
-    assert initial.status_code == 200
-    assert initial.json()["outdoor_equip"] == []
-
-    added = client.patch(
-        heat_pumps_table_url(project["id"], "outdoor-equip"),
-        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
-        json=add_patch(outdoor_equip()),
-    )
-
-    assert added.status_code == 200
-    assert added.json()["source"] == "draft"
-    assert added.json()["outdoor_equip"][0]["model_number"] == "PUZ-A18NKA7"
-    refetched = client.get(heat_pumps_url(project["id"]))
-    assert refetched.json()["outdoor_equip"][0]["id"] == HPOE_1
-
-
 def test_heat_pumps_outdoor_equip_generic_contract_replace_and_schema_mutation(
     clean_document_tables: None,
 ) -> None:
@@ -316,113 +315,6 @@ def test_heat_pumps_generic_contract_rejects_missing_fk(clean_document_tables: N
     assert response.status_code == 422
     assert response.json()["error_code"] == "invalid_project_document"
     assert "Missing heat-pump outdoor equip" in response.json()["details"]["errors"][0]
-
-
-def test_heat_pumps_rejects_unknown_option_id(clean_document_tables: None) -> None:
-    client = signed_in_client()
-    project = create_project(client)
-    initial = client.get(heat_pumps_url(project["id"]))
-
-    response = client.patch(
-        heat_pumps_table_url(project["id"], "outdoor-equip"),
-        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
-        json=add_patch(outdoor_equip(manufacturer="opt_missing")),
-    )
-
-    assert response.status_code == 422
-    assert response.json()["error_code"] == "invalid_project_document"
-    assert "Missing heat-pump option heat_pumps.manufacturer" in response.json()["details"]["errors"][0]
-
-
-def test_heat_pumps_rejects_missing_fk(clean_document_tables: None) -> None:
-    client = signed_in_client()
-    project = create_project(client)
-    initial = client.get(heat_pumps_url(project["id"]))
-
-    response = client.patch(
-        heat_pumps_table_url(project["id"], "outdoor-units"),
-        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
-        json=add_patch(outdoor_unit()),
-    )
-
-    # The patch endpoint now routes through the registered contract → spine, so a
-    # dangling FK is caught by the shared document validator (invalid_project_
-    # document) rather than the old bespoke per-slice check (heat_pump_validation_
-    # error). Same 422, unified error envelope — matches the generic PUT path.
-    assert response.status_code == 422
-    assert response.json()["error_code"] == "invalid_project_document"
-    assert "Missing heat-pump outdoor equip" in response.json()["details"]["errors"][0]
-
-
-def test_heat_pumps_blocks_delete_referenced_outdoor_equip(clean_document_tables: None) -> None:
-    client = signed_in_client()
-    project = create_project(client)
-    etag = client.get(heat_pumps_url(project["id"])).json()["version_etag"]
-    for table, row in [("outdoor-equip", outdoor_equip()), ("outdoor-units", outdoor_unit())]:
-        headers = (
-            {"Origin": ORIGIN, "If-Match-Version": etag}
-            if table == "outdoor-equip"
-            else {"Origin": ORIGIN, "If-Match": etag}
-        )
-        response = client.patch(
-            heat_pumps_table_url(project["id"], table),
-            headers=headers,
-            json=add_patch(row),
-        )
-        assert response.status_code == 200
-        etag = response.json()["draft_etag"]
-
-    blocked = client.patch(
-        heat_pumps_table_url(project["id"], "outdoor-equip"),
-        headers={"Origin": ORIGIN, "If-Match": etag},
-        json=remove_patch(HPOE_1),
-    )
-
-    assert blocked.status_code == 409
-    assert blocked.json()["error_code"] == "heat_pump_delete_blocked"
-    assert blocked.json()["details"]["referenced_by"][0]["tag"] == "HP-1"
-
-
-def test_heat_pumps_dry_run_previews_and_confirm_cascades(clean_document_tables: None) -> None:
-    client = signed_in_client()
-    project = create_project(client)
-    etag = client.get(heat_pumps_url(project["id"])).json()["version_etag"]
-    rows = [
-        ("indoor-equip", indoor_equip()),
-        ("outdoor-equip", outdoor_equip(paired_indoor_equip_id=HPIE_1)),
-    ]
-    for table, row in rows:
-        headers = (
-            {"Origin": ORIGIN, "If-Match-Version": etag}
-            if table == "indoor-equip"
-            else {"Origin": ORIGIN, "If-Match": etag}
-        )
-        response = client.patch(
-            heat_pumps_table_url(project["id"], table),
-            headers=headers,
-            json=add_patch(row),
-        )
-        assert response.status_code == 200
-        etag = response.json()["draft_etag"]
-
-    preview = client.patch(
-        heat_pumps_table_url(project["id"], "indoor-equip", dry_run=True),
-        headers={"Origin": ORIGIN, "If-Match": etag},
-        json=remove_patch(HPIE_1),
-    )
-    assert preview.status_code == 200
-    assert preview.json()["cascade_preview"]["affected"][0]["field"] == "paired_indoor_equip_id"
-    assert preview.json()["outdoor_equip"][0]["paired_indoor_equip_id"] == HPIE_1
-
-    confirmed = client.patch(
-        heat_pumps_table_url(project["id"], "indoor-equip"),
-        headers={"Origin": ORIGIN, "If-Match": etag},
-        json=remove_patch(HPIE_1),
-    )
-
-    assert confirmed.status_code == 200
-    assert confirmed.json()["indoor_equip"] == []
-    assert confirmed.json()["outdoor_equip"][0]["paired_indoor_equip_id"] is None
 
 
 def test_heat_pumps_outdoor_equip_exposes_and_persists_status(clean_document_tables: None) -> None:
@@ -539,18 +431,15 @@ def test_generic_preview_replace_reports_optional_cascade(clean_document_tables:
     project = create_project(client)
     project_id = project["id"]
     version_id = project["active_version_id"]
-    etag = client.get(heat_pumps_url(project_id)).json()["version_etag"]
-    for table, row, header in [
-        ("indoor-equip", indoor_equip(), "If-Match-Version"),
-        ("outdoor-equip", outdoor_equip(paired_indoor_equip_id=HPIE_1), "If-Match"),
-    ]:
-        response = client.patch(
-            heat_pumps_table_url(project_id, table),
-            headers={"Origin": ORIGIN, header: etag},
-            json=add_patch(row),
-        )
-        assert response.status_code == 200, response.text
-        etag = response.json()["draft_etag"]
+    seed_leaf_rows(client, project_id, version_id, "heat_pumps_indoor_equip", "indoor_equip", [indoor_equip()])
+    seed_leaf_rows(
+        client,
+        project_id,
+        version_id,
+        "heat_pumps_outdoor_equip",
+        "outdoor_equip",
+        [outdoor_equip(paired_indoor_equip_id=HPIE_1)],
+    )
 
     slice_json = client.get(draft_table_url(project_id, version_id, "heat_pumps_indoor_equip")).json()
     preview = client.post(
@@ -574,18 +463,8 @@ def test_generic_preview_replace_blocks_required_link(clean_document_tables: Non
     project = create_project(client)
     project_id = project["id"]
     version_id = project["active_version_id"]
-    etag = client.get(heat_pumps_url(project_id)).json()["version_etag"]
-    for table, row, header in [
-        ("outdoor-equip", outdoor_equip(), "If-Match-Version"),
-        ("outdoor-units", outdoor_unit(), "If-Match"),
-    ]:
-        response = client.patch(
-            heat_pumps_table_url(project_id, table),
-            headers={"Origin": ORIGIN, header: etag},
-            json=add_patch(row),
-        )
-        assert response.status_code == 200, response.text
-        etag = response.json()["draft_etag"]
+    seed_leaf_rows(client, project_id, version_id, "heat_pumps_outdoor_equip", "outdoor_equip", [outdoor_equip()])
+    seed_leaf_rows(client, project_id, version_id, "heat_pumps_outdoor_units", "outdoor_units", [outdoor_unit()])
 
     slice_json = client.get(draft_table_url(project_id, version_id, "heat_pumps_outdoor_equip")).json()
     blocked = client.post(
@@ -595,7 +474,7 @@ def test_generic_preview_replace_blocks_required_link(clean_document_tables: Non
     )
 
     assert blocked.status_code == 409
-    assert blocked.json()["error_code"] == "heat_pump_delete_blocked"
+    assert blocked.json()["error_code"] == "dependent_link_delete_blocked"
     assert blocked.json()["details"]["referenced_by"][0]["tag"] == "HP-1"
 
 

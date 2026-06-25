@@ -495,11 +495,10 @@ def _csv_format(value: float) -> str:
 # ---- HTTP integration -------------------------------------------------------
 
 from tests.features.heat_pumps.test_heat_pumps import (  # noqa: E402  (import below module body to keep transform tests at top)
-    add_patch,
-    heat_pumps_table_url,
     heat_pumps_url,
     outdoor_equip,
     outdoor_unit,
+    seed_leaf_rows,
 )
 from tests.test_project_document import ORIGIN, create_project, signed_in_client  # noqa: E402
 
@@ -510,18 +509,10 @@ def _export_url(project_id: object, *, format: str | None = None) -> str:
 
 
 def _seed_one_outdoor_equip(client: Any, project: dict[str, Any]) -> None:
-    initial = client.get(heat_pumps_url(project["id"]))
-    client.patch(
-        heat_pumps_table_url(project["id"], "outdoor-equip"),
-        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
-        json=add_patch(outdoor_equip()),
-    )
-    refreshed = client.get(heat_pumps_url(project["id"]))
-    client.patch(
-        heat_pumps_table_url(project["id"], "outdoor-units"),
-        headers={"Origin": ORIGIN, "If-Match": refreshed.json()["draft_etag"]},
-        json=add_patch(outdoor_unit()),
-    )
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    seed_leaf_rows(client, project_id, version_id, "heat_pumps_outdoor_equip", "outdoor_equip", [outdoor_equip()])
+    seed_leaf_rows(client, project_id, version_id, "heat_pumps_outdoor_units", "outdoor_units", [outdoor_unit()])
 
 
 def test_export_phius_json_returns_rows_warnings_and_csv(clean_document_tables: None) -> None:
