@@ -105,16 +105,20 @@ endpoints); the error-code rename in 5 must land FE+BE together.
    `HeatPumpsPatchResponse`; kept `CascadeReference`). Kept `requestPhiusExport`, the
    four slice features, and field-defs/columns/row-builders/payload-builders. tsc +
    1906 vitest green; FE greps clean for every removed symbol.
-5. **Remove the backend write shim** (`features/heat_pumps/`): `apply_patch`,
-   `apply_option_patch` (+ `_apply_option_patch_to_body`, `_option_is_referenced`,
-   `_OPTION_KEY_TO_CELL`), `HeatPumpRowPatch`, `OptionPatchOp`, the patch→replace
-   glue (`_rows_after_patch`; and `build_leaf_replace_payload`/`leaf_contract_for`/
-   `_LeafWriteSpec` in `tables/heat_pumps.py`), and the two `PATCH` routes (incl.
-   `/options/{key}` and its `heat_pump_option_in_use` 409). Confirm nothing reads
-   the aggregate `GET /equipment/heat-pumps` after step 4, then remove
-   `compose_read` + that route too; KEEP `read_slice` + `export-phius` +
-   `active_version_id_for_project`. Then rename `DEPENDENT_LINK_DELETE_BLOCKED` →
-   `"dependent_link_delete_blocked"` (FE 409 handler + the two BE tests).
+5. **Remove the backend write shim** ✅ DONE. `features/heat_pumps/service.py` is now
+   `active_version_id_for_project` + `read_slice` only (406→40 lines); removed
+   `apply_patch`, `apply_option_patch` (+ `_apply_option_patch_to_body`,
+   `_option_is_referenced`, `_OPTION_KEY_TO_CELL`), `compose_read`, `HeatPumpRowPatch`,
+   `OptionPatchOp`, the patch/response models, and all patch helpers. `routes.py` keeps
+   only `POST /export-phius` (the two `PATCH` routes incl. `/options/{key}` +
+   `heat_pump_option_in_use`, and the aggregate `GET`, are gone). Removed the
+   patch→replace glue (`_LeafWriteSpec`/`_LEAF_WRITE_SPECS`/`leaf_contract_for`/
+   `build_leaf_replace_payload`) from `tables/heat_pumps.py`. Renamed
+   `DEPENDENT_LINK_DELETE_BLOCKED`'s value → `"dependent_link_delete_blocked"`
+   (**backend-only** — the FE keys the dialog off HTTP 409 + details, not the string).
+   Deleted 5 redundant PATCH-shim tests; migrated the two `:preview-replace` tests and
+   the phius-export integration test onto a generic `seed_leaf_rows` helper. `make
+   ci-backend` green (1110).
 6. **Tests + closeout**: update `heat-pumps/__tests__/` for the generic paths; add
    an e2e spec mirroring the Pumps pattern; full `make ci` green; greps clean for
    every deleted symbol; browser smoke as Ed (Equipment → Heat Pumps, all four

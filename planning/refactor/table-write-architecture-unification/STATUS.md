@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-25
-TIME: 09:25 EDT
-STATUS: Active — backend complete (Phases 1, 2, 3a); Phase 3b frontend done (increments 1–4); remaining = backend increment 5 (PATCH-shim removal + error-code rename, needs full `make ci`) and closeout 6 (e2e + browser smoke as Ed).
+TIME: 10:05 EDT
+STATUS: Active — all code increments done (Phases 1–3a; Phase 3b increments 1–5). Only closeout 6 remains: e2e spec (mirror Pumps) + browser smoke as Ed, then archive the packet.
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: State, blockers, sequencing for the table-write-architecture unification.
 RELATED: ./README.md, ./PRD.md, planning/archive/dated/2026-06-24/backend-data-architecture-cleanup/
@@ -30,7 +30,7 @@ half of the refactor is done.**
 | 1 — backend write spine | `Complete` | none — `make ci` green |
 | 2 — heat-pumps onto registry (backend) | `Complete` | none — `make ci` green (BE 1111, FE 1900) |
 | 3a — generic table-replace cascade preview (backend) | `Complete` | none — `:preview-replace` route; BE suite 1113 |
-| 3b — frontend heat-pumps rewire + shim removal | `In progress` | none — FE done (inc 1–4); BE inc 5 + closeout 6 remain |
+| 3b — frontend heat-pumps rewire + shim removal | `In progress` | none — all code done (inc 1–5); only closeout 6 (e2e + browser smoke) remains |
 
 ### Phase 3b increments
 | # | Increment | State |
@@ -40,35 +40,28 @@ half of the refactor is done.**
 | 2b | point the 4 components' inline option add/edit/remove at the generic `editOptions` schema mutation (drop `useHeatPumpOptionMutation`) | `Done` (shared `makeHeatPumpOptionCreator` in `option-helpers.ts`; units tables route through the sibling equip controller; `useHeatPumpOptionMutation`/`HeatPumpOptionPatchOp` removed; tsc + 1907 vitest green) |
 | 3 | rewire `VentilatorsTableSlot` off the bespoke HP client onto the generic indoor-units feature | `Done` (3 generic leaf queries replace `useHeatPumpsQuery`; indoor-unit save + link-picker batch through `useReplaceSliceMutation` + `fromCellWrites`; `useHeatPumpsQuery`/`useHeatPumpPatchMutation` now have zero consumers; tsc + 1907 vitest green) |
 | 4 | drop bespoke FE client (`heat-pumps/api.ts` 3 hooks + `heatPumpsQueryKeys`); fix `hooks.ts` invalidation | `Done` (api.ts = 4 slice features + `requestPhiusExport` only; `heatPumpsQueryKeys` coupling gone from `hooks.ts` + `HeatPumpsPanel`; obsolete `hooks.test.ts` aggregate-invalidation test removed; dead `types.ts` pruned; tsc + 1906 vitest green) |
-| 5 | remove backend PATCH shim (`apply_patch`/`apply_option_patch`/`HeatPumpRowPatch`/`OptionPatchOp` + routes); rename `dependent_link_delete_blocked` | `Pending` (needs full `make ci`) |
-| 6 | tests + browser smoke as Ed (all four leaves) | `Pending` |
+| 5 | remove backend PATCH shim (`apply_patch`/`apply_option_patch`/`HeatPumpRowPatch`/`OptionPatchOp` + routes); rename `dependent_link_delete_blocked` | `Done` (service.py 406→40 lines = `active_version_id_for_project` + `read_slice` only; 2 PATCH routes + aggregate GET removed, only `export-phius` left; glue removed from `tables/heat_pumps.py`; error code renamed; 5 redundant shim tests deleted, preview/phius tests migrated to generic seeding; `make ci-backend` green, **1110**) |
+| 6 | tests + browser smoke as Ed (all four leaves) | `Pending` (e2e spec + interactive smoke) |
 
 ## Next step
-The whole **frontend** half of Phase 3b is done (increments 1–4). The bespoke
-heat-pump FE write client is gone: `grep` is clean across the FE for
-`useHeatPumpsQuery`/`useHeatPumpPatchMutation`/`previewHeatPumpDelete`/`fetchHeatPumps`/
-`heatPumpsQueryKeys`/`useHeatPumpOptionMutation` and the dead patch/preview types.
+**All code increments are done (1–5).** Heat-pumps now lives entirely on the generic
+registered-contract + spine on both stacks; the bespoke FE client and BE PATCH shim are
+gone. greps clean across FE+BE for the removed symbols and the old error code.
 
-Remaining = **backend** increment **5** + closeout **6**:
-- **5 (backend, needs full `make ci`).** Remove the PATCH shim in `features/heat_pumps/`:
-  `apply_patch`, `apply_option_patch` (+ `_apply_option_patch_to_body`,
-  `_option_is_referenced`, `_OPTION_KEY_TO_CELL`), `HeatPumpRowPatch`, `OptionPatchOp`,
-  the patch→replace glue (`_rows_after_patch`; `build_leaf_replace_payload`/
-  `leaf_contract_for`/`_LeafWriteSpec` in `tables/heat_pumps.py`), and the two `PATCH`
-  routes (incl. `/options/{key}` + its `heat_pump_option_in_use` 409). Confirm nothing
-  reads the aggregate `GET /equipment/heat-pumps` (the FE no longer does), then remove
-  `compose_read` + that route; KEEP `read_slice` + `export-phius` +
-  `active_version_id_for_project`. Then rename `DEPENDENT_LINK_DELETE_BLOCKED`'s value
-  (`dependent_links.py:39`, currently `"heat_pump_delete_blocked"`) →
-  `"dependent_link_delete_blocked"`. **Correction to the original plan: this rename is
-  BACKEND-ONLY.** The FE blocked-delete handler keys on the HTTP **409 status** + the
-  details payload (`OutdoorUnitsTable.tsx:301` `err.status === 409`), NOT the
-  `error_code` string — grep for `heat_pump_delete_blocked`/`dependent_link_delete_blocked`
-  in `frontend/src` is empty. So only the two BE tests (`test_heat_pumps.py`,
-  `test_dependent_link_cascade.py`) reference the literal and need updating.
-  Test migration is the bulk of inc 5: of `test_heat_pumps.py`'s 20 tests, ~half hit
-  the PATCH shim (`heat_pumps_table_url`/`/options/`/aggregate `heat_pumps_url`) — most
-  are redundant with the generic-path coverage and can be deleted rather than migrated.
+Only **closeout 6** remains, and it's the interactive/verification step:
+- **e2e spec** mirroring the Pumps pattern for the heat-pump leaves (add/edit, delete-
+  with-cascade-confirm, blocked-delete 409, option add + delete-clears-references,
+  ventilator-side link picker).
+- **Browser smoke as Ed** (the seed-project owner) — Equipment → Heat Pumps, all four
+  leaves. Sign in as `ed@example.com` (single active session per user; do NOT re-seed,
+  it wipes Ed's session). Catalog data is global, so catalog-only checks can smoke as
+  `codex@example.com`.
+- Then the **Final Completion Cleanup**: mark every packet doc done and move the packet
+  to `planning/archive/2026-06-25/table-write-architecture-unification/`, fixing the
+  index/links.
+
+No further automated gates are blocking — `make ci` backend (1110) + frontend (1906)
+are both green. The remaining work is the human-in-the-loop browser pass + archive.
 - **6 (closeout).** Generic-path tests + e2e (mirror Pumps); full `make ci` green;
   greps clean for every deleted symbol; **browser smoke as Ed** (Equipment → Heat
   Pumps, all four leaves: add/edit, delete-with-cascade-confirm, blocked-delete 409,

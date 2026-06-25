@@ -92,7 +92,7 @@ def test_required_dependent_link_blocks_delete() -> None:
 
     assert exc_info.value.status_code == 409
     detail = cast(dict[str, object], exc_info.value.detail)
-    assert detail["error_code"] == "heat_pump_delete_blocked"
+    assert detail["error_code"] == "dependent_link_delete_blocked"
     referenced_by = cast(list[dict[str, str]], cast(dict[str, object], detail["details"])["referenced_by"])
     assert referenced_by[0]["tag"] == "HP-1"
     assert referenced_by[0]["field"] == "outdoor_equip_id"
