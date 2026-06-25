@@ -173,9 +173,10 @@ describe("ApertureElementCardStack", () => {
         "element-card-aptel_a",
         "element-card-aptel_c",
       ]);
-      expect(
+      const frameCells = within(
         within(screen.getByTestId("element-card-aptel_b")).getByTestId("frame-row-top"),
-      ).toHaveTextContent("50 mm");
+      ).getAllByRole("cell");
+      expect(frameCells[3]).toHaveTextContent("50");
       expect(requestAnimationFrame).not.toHaveBeenCalled();
     } finally {
       HTMLElement.prototype.getBoundingClientRect = originalGetBoundingClientRect;
