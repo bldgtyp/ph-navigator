@@ -3,13 +3,12 @@
    split is planned, not yet landed (see styles/README.md). */
 .data-table-wrap {
   --data-table-gutter-width: 72px;
-  --data-table-header-height-units: 50px;
+  --data-table-footer-height: 34px;
   --data-table-gutter-hover-bg: var(--data-table-hover-bg);
   --data-table-gutter-selected-bg: var(--data-table-selected-bg);
   --data-table-group-row-bg: color-mix(in oklab, var(--accent-light) 18%, var(--bg-card));
-  overflow: auto;
-  /* The wrap MUST be the scroll container for the row virtualizer to
-     work. Without an explicit ceiling, the wrap expands to its
+  /* The inner `.data-table-scroll` MUST be the scroll container for the
+     row virtualizer to work. Without an explicit ceiling, the scroll element expands to its
      `scrollHeight` (every row mounted), the window scrolls, and the
      virtualizer mounts the full table. The chrome offset accounts for
      topbar + page padding + heading + toolbar on the standard
@@ -17,21 +16,33 @@
      a parent for tighter panels. `dvh` so mobile chrome resize
      doesn't clip the table. */
   --data-table-page-chrome: 220px;
-  max-height: calc(100dvh - var(--data-table-page-chrome));
   background: var(--bg-card);
   border: 1px solid var(--border-card);
-  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  overflow: hidden;
 }
 
-.data-table-wrap:focus {
+.data-table-scroll {
+  overflow: auto;
+  max-height: calc(
+    100dvh - var(--data-table-page-chrome) - var(--data-table-footer-height)
+  );
+  background: var(--bg-card);
+}
+
+.data-table-scroll:focus {
   outline: none;
+}
+
+.data-table-scroll:has(.room-option-popover) {
+  overflow: visible;
 }
 
 .data-table-wrap:has(.room-option-popover) {
   overflow: visible;
 }
 
-.data-table-wrap[data-column-resizing="true"] {
+.data-table-scroll[data-column-resizing="true"] {
   cursor: col-resize;
   user-select: none;
 }
@@ -40,7 +51,8 @@
   display: grid;
   gap: 0;
   background: var(--bg-card);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
+  box-shadow: 2px 4px 25px 2px rgba(0, 0, 0, 0.1);
 }
 
 .data-table-shell:has(.room-option-popover) {
@@ -56,7 +68,7 @@
   border: 1px solid var(--border-card);
   border-bottom: 0;
   border-radius: var(--radius-md) var(--radius-md) 0 0;
-  background: var(--data-table-header-bg);
+  background: var(--bg-card);
   padding: var(--space-10) var(--space-12);
   color: var(--text-secondary);
   font-family: var(--font-mono);
@@ -111,7 +123,7 @@
    side-by-side with Sort. */
 .data-table-toolbar-buttons {
   display: flex;
-  gap: var(--space-4);
+  gap: var(--space-8);
   align-items: center;
 }
 
@@ -119,10 +131,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-6);
-  min-width: 26px;
+  gap: var(--space-2);
+  min-width: 20px;
   padding: var(--space-4) var(--space-10);
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-md);
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   font-family: inherit;
@@ -131,6 +143,10 @@
   text-transform: uppercase;
   color: var(--text-primary);
   cursor: pointer;
+}
+
+.data-table-toolbar-button span {
+  border: 0;
 }
 
 .data-table-toolbar-button:hover {
@@ -682,13 +698,58 @@
 
 .data-table-footer-row {
   display: flex;
-  position: sticky;
-  left: 0;
-  z-index: calc(var(--z-sticky) + 1);
-  width: var(--data-table-gutter-width);
+  align-items: center;
+  width: 100%;
+  min-height: var(--data-table-footer-height);
   border-top: 1px solid var(--border-subtle);
-  border-right: 1px solid var(--border-subtle);
-  background: var(--bg-card);
+  background: var(--data-table-header-bg);
+}
+
+.data-table-footer-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-6);
+  margin-left: auto;
+  margin-right: var(--space-12);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: calc(var(--fs-xs) * 0.75);
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.data-table-footer-record-count {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-6);
+  margin-left: var(--space-12);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  line-height: 1;
+}
+
+.data-table-footer-record-count-label {
+  font-size: calc(var(--fs-xs) * 0.75);
+  text-transform: uppercase;
+}
+
+.data-table-footer-record-count-value {
+  color: var(--text-primary);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+
+.data-table-footer-status::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-text);
+}
+
+.data-table-footer-status[data-mode="read-only"]::before {
+  background: var(--text-muted);
 }
 
 .data-table-add-row-button {
@@ -700,8 +761,9 @@
   height: 34px;
   min-height: 34px;
   border: 0;
+  border-right: 1px solid var(--border-subtle);
   border-radius: 0;
-  background: var(--bg-card);
+  background: inherit;
   color: var(--text-primary);
   padding: 0;
   font-family: var(--font-mono);
@@ -1522,16 +1584,6 @@
   min-height: calc(var(--data-table-header-height) - 2px);
 }
 
-.data-table-th--with-units {
-  height: var(--data-table-header-height-units);
-}
-
-.data-table-th--with-units .data-table-header-row {
-  align-items: flex-start;
-  min-height: calc(var(--data-table-header-height-units) - 2px);
-  padding-block: var(--space-4);
-}
-
 .data-table-field-type-icon {
   display: inline-flex;
   align-items: center;
@@ -1553,10 +1605,9 @@
   flex: 1 1 auto;
   min-width: 0;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: var(--space-4);
 }
 
 .data-table-header-main {
@@ -1587,8 +1638,8 @@
   white-space: nowrap;
 }
 
-/* Number-with-units header badge. It sits below the label so the active
-   unit (SI vs IP) stays visible without consuming field-name width. */
+/* Number-with-units header badge. The active unit (SI vs IP) stays
+   visible beside the field label without moving onto a second line. */
 .data-table-header-units {
   display: inline-flex;
   align-items: center;
@@ -1668,8 +1719,8 @@
   flex: 0 0 auto;
   width: 14px;
   height: 14px;
-  border: 1px solid color-mix(in oklab, var(--text-secondary) 42%, transparent);
-  background: color-mix(in oklab, var(--text-primary) 3%, transparent);
+  border: 0;
+  background: transparent;
   color: var(--text-secondary);
   cursor: help;
   padding: 0;
@@ -1684,6 +1735,17 @@
 .data-table-header-description-trigger:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
+  box-shadow: none;
+}
+
+.data-table-header-description-trigger:hover,
+.data-table-header-description-trigger[data-state="open"],
+.data-table-header-description-trigger:focus:not(:focus-visible),
+.data-table-header-description-trigger[data-state="open"]:focus-visible {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
 }
 
 .data-table-header-description-tooltip {
@@ -2218,6 +2280,10 @@ body[data-grid-fill-active="true"] {
   font-variant-numeric: tabular-nums;
 }
 
+.data-table-numeric-cell .data-table-cell-content {
+  text-align: right;
+}
+
 .data-table-numeric-empty {
   color: var(--text-muted);
 }
@@ -2637,9 +2703,9 @@ td.data-table-cell-editing {
 }
 
 /* Plan 06 — AirTable-style summary bar. Pinned <tfoot> at the bottom
-   of the table; one cell per visible column. First cell shows
-   `Count: N` over the post-filter row set; subsequent cells either
-   show the picked aggregate or expose a "Calculate" click target. */
+   of the table; one cell per visible column. Each cell either shows
+   the picked aggregate or exposes a "Calculate" click target. The
+   global record count lives in the DataTable footer strip. */
 .data-table-summary-bar {
   position: sticky;
   bottom: 0;
@@ -2671,32 +2737,6 @@ td.data-table-cell-editing {
   font-variant-numeric: tabular-nums;
   vertical-align: middle;
   white-space: nowrap;
-}
-
-.data-table-summary-cell.data-table-frozen {
-  text-align: left;
-}
-
-.data-table-summary-count {
-  color: var(--text-primary);
-}
-
-.data-table-summary-count-inner {
-  display: inline-flex;
-  align-items: baseline;
-  gap: var(--space-6);
-}
-
-.data-table-summary-count-label {
-  color: var(--text-secondary);
-  font-weight: 400;
-  font-size: var(--fs-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.data-table-summary-count-value {
-  font-weight: 600;
 }
 
 .data-table-summary-trigger {

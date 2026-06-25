@@ -1429,7 +1429,6 @@ export function DataTable<TRow>({
     <DataTableErrorBoundary>
       <div className={`data-table-shell data-table-shell-${density}`}>
         <GridToolbar
-          readOnly={readOnly}
           view={view}
           fieldDefByKey={fieldDefByKey}
           filterableFieldDefs={filterableFieldDefs}
@@ -1523,109 +1522,123 @@ export function DataTable<TRow>({
           onDragEnd={handleColumnDragEnd}
         >
           <SortableContext items={sortableColumnIds} strategy={horizontalListSortingStrategy}>
-            <div
-              ref={wrapperRef}
-              className="data-table-wrap"
-              role="grid"
-              aria-rowcount={bodyPlan.length + 1}
-              aria-colcount={visibleColumnDefs.length}
-              tabIndex={0}
-              onKeyDown={keyboard.onKeyDown}
-              onPaste={handlePasteEvent}
-            >
-              <table className="data-table">
-                {/* Propagate column widths to every row so the sticky frozen
+            <div className="data-table-wrap">
+              <div
+                ref={wrapperRef}
+                className="data-table-scroll"
+                role="grid"
+                aria-rowcount={bodyPlan.length + 1}
+                aria-colcount={visibleColumnDefs.length}
+                tabIndex={0}
+                onKeyDown={keyboard.onKeyDown}
+                onPaste={handlePasteEvent}
+              >
+                <table className="data-table">
+                  {/* Propagate column widths to every row so the sticky frozen
               cell renders at the same horizontal position as its header.
               Without a colgroup, the body cell width is auto-derived and
               the sticky frozen cell can overlap the adjacent column. */}
-                <colgroup>
-                  <col className="data-table-gutter-col" />
-                  {visibleColumnDefs.map((column) => {
-                    const width = resolveColumnWidth(
-                      column,
-                      fieldDefByKey.get(column.fieldKey),
-                      view,
-                    );
-                    return <col key={column.id} style={{ width: `${width}px` }} />;
-                  })}
-                  <col className="data-table-tail-col" />
-                </colgroup>
-                <GridHeader
-                  table={table}
-                  visibleColumnDefs={visibleColumnDefs}
-                  fieldDefByKey={fieldDefByKey}
-                  axisRolesByFieldKey={axisRolesByFieldKey}
-                  onColumnMouseDown={pointerDrag.onColumnMouseDown}
-                  readOnly={readOnly}
-                  hasWriteHandler={Boolean(onWrite)}
-                  headerCellRefByFieldKey={headerCellRefByFieldKey}
-                  columnDragKeyboard={columnDragKeyboard}
-                  columnResize={columnResize}
-                  headerActions={headerActions}
-                  onAddFieldFromTail={addFieldEnabled ? openAddFieldFromTail : undefined}
-                  tailCellRef={tailCellRef}
-                  unitSystem={unitSystem}
-                />
-                <GridBody
-                  table={table}
-                  visibleColumnDefs={visibleColumnDefs}
-                  fieldDefByKey={fieldDefByKey}
-                  rowIds={rowIds}
-                  fieldKeys={fieldKeys}
-                  normalizedActiveRange={selection.normalizedRange}
-                  hasExplicitRange={selection.hasExplicitRange}
-                  activeCell={selection.activeCell}
-                  edit={edit}
-                  rowSelection={rowSelection}
-                  showRowCheckbox={!readOnly}
-                  emptyMessage={emptyMessage}
-                  totalRowCount={rows.length}
-                  axisRolesByFieldKey={axisRolesByFieldKey}
-                  bodyPlan={bodyPlan}
-                  rowVirtualizer={rowVirtualizer}
-                  bodyPlanIndexByDataRowIndex={bodyPlanIndexByDataRowIndex}
-                  onGroupToggle={handleToggleGroup}
-                  onCellActivate={(rowId, fieldKey) => {
-                    selection.setActive({ rowId, fieldKey });
-                    focusGrid();
-                  }}
-                  onCellMouseDown={pointerDrag.onCellMouseDown}
-                  onCellOpen={startInlineEdit}
-                  onRowSelect={(rowId) => {
-                    selection.selectRow(rowId);
-                    focusGrid();
-                  }}
-                  onRowToggleSelected={(rowId, mode) => {
-                    rowSelection.toggle(rowId, mode);
-                    focusGrid();
-                  }}
-                  onRowExpand={openRow}
-                  onCommitAndMove={handleCommitAndMove}
-                  fillSource={fill.source}
-                  fillTargetPreview={fill.targetPreview}
-                  fillHandleVisible={fill.handleVisible}
-                  onFillHandleMouseDown={fill.onHandleMouseDown}
-                  cellsWritable={!readOnly && Boolean(onWrite)}
-                  identifierColumnId={pinnedColumnId}
-                  identifierDuplicates={identifierDuplicates}
-                  onRowContextMenu={!readOnly && onWrite ? openRowMenu : undefined}
-                  onGroupHeaderContextMenu={view.group.length > 0 ? openGroupHeaderMenu : undefined}
-                  editingActive={Boolean(edit.editing)}
-                  linkedRecordOps={linkedRecordOps}
-                />
-                <SummaryBar
-                  columns={visibleColumnDefs}
-                  visibleRows={filteredRows}
-                  aggregations={view.aggregations}
-                  fieldDefByKey={fieldDefByKey}
-                  readOnly={readOnly}
-                  onAggregationChange={handleAggregationChange}
-                  unitSystem={unitSystem}
-                />
-              </table>
-              {renderedFooterAction ? (
-                <div className="data-table-footer-row">{renderedFooterAction}</div>
-              ) : null}
+                  <colgroup>
+                    <col className="data-table-gutter-col" />
+                    {visibleColumnDefs.map((column) => {
+                      const width = resolveColumnWidth(
+                        column,
+                        fieldDefByKey.get(column.fieldKey),
+                        view,
+                      );
+                      return <col key={column.id} style={{ width: `${width}px` }} />;
+                    })}
+                    <col className="data-table-tail-col" />
+                  </colgroup>
+                  <GridHeader
+                    table={table}
+                    visibleColumnDefs={visibleColumnDefs}
+                    fieldDefByKey={fieldDefByKey}
+                    axisRolesByFieldKey={axisRolesByFieldKey}
+                    onColumnMouseDown={pointerDrag.onColumnMouseDown}
+                    readOnly={readOnly}
+                    hasWriteHandler={Boolean(onWrite)}
+                    headerCellRefByFieldKey={headerCellRefByFieldKey}
+                    columnDragKeyboard={columnDragKeyboard}
+                    columnResize={columnResize}
+                    headerActions={headerActions}
+                    onAddFieldFromTail={addFieldEnabled ? openAddFieldFromTail : undefined}
+                    tailCellRef={tailCellRef}
+                    unitSystem={unitSystem}
+                  />
+                  <GridBody
+                    table={table}
+                    visibleColumnDefs={visibleColumnDefs}
+                    fieldDefByKey={fieldDefByKey}
+                    rowIds={rowIds}
+                    fieldKeys={fieldKeys}
+                    normalizedActiveRange={selection.normalizedRange}
+                    hasExplicitRange={selection.hasExplicitRange}
+                    activeCell={selection.activeCell}
+                    edit={edit}
+                    rowSelection={rowSelection}
+                    showRowCheckbox={!readOnly}
+                    emptyMessage={emptyMessage}
+                    totalRowCount={rows.length}
+                    axisRolesByFieldKey={axisRolesByFieldKey}
+                    bodyPlan={bodyPlan}
+                    rowVirtualizer={rowVirtualizer}
+                    bodyPlanIndexByDataRowIndex={bodyPlanIndexByDataRowIndex}
+                    onGroupToggle={handleToggleGroup}
+                    onCellActivate={(rowId, fieldKey) => {
+                      selection.setActive({ rowId, fieldKey });
+                      focusGrid();
+                    }}
+                    onCellMouseDown={pointerDrag.onCellMouseDown}
+                    onCellOpen={startInlineEdit}
+                    onRowSelect={(rowId) => {
+                      selection.selectRow(rowId);
+                      focusGrid();
+                    }}
+                    onRowToggleSelected={(rowId, mode) => {
+                      rowSelection.toggle(rowId, mode);
+                      focusGrid();
+                    }}
+                    onRowExpand={openRow}
+                    onCommitAndMove={handleCommitAndMove}
+                    fillSource={fill.source}
+                    fillTargetPreview={fill.targetPreview}
+                    fillHandleVisible={fill.handleVisible}
+                    onFillHandleMouseDown={fill.onHandleMouseDown}
+                    cellsWritable={!readOnly && Boolean(onWrite)}
+                    identifierColumnId={pinnedColumnId}
+                    identifierDuplicates={identifierDuplicates}
+                    onRowContextMenu={!readOnly && onWrite ? openRowMenu : undefined}
+                    onGroupHeaderContextMenu={
+                      view.group.length > 0 ? openGroupHeaderMenu : undefined
+                    }
+                    editingActive={Boolean(edit.editing)}
+                    linkedRecordOps={linkedRecordOps}
+                  />
+                  <SummaryBar
+                    columns={visibleColumnDefs}
+                    visibleRows={filteredRows}
+                    aggregations={view.aggregations}
+                    fieldDefByKey={fieldDefByKey}
+                    readOnly={readOnly}
+                    onAggregationChange={handleAggregationChange}
+                    unitSystem={unitSystem}
+                  />
+                </table>
+              </div>
+              <div className="data-table-footer-row">
+                {renderedFooterAction}
+                <span className="data-table-footer-record-count">
+                  <span className="data-table-footer-record-count-label">Count</span>
+                  <span className="data-table-footer-record-count-value">{filteredRows.length}</span>
+                </span>
+                <span
+                  className="data-table-footer-status"
+                  data-mode={readOnly ? "read-only" : "editable"}
+                >
+                  {readOnly ? "Read-only" : "Editable"}
+                </span>
+              </div>
             </div>
           </SortableContext>
         </DndContext>

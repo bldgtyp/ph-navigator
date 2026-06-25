@@ -728,23 +728,25 @@ describe("DataTable", () => {
       { id: "rm_3", number: "103", name: "Bedroom", count: 3 },
     ];
 
-    test("renders Count: N over the post-filter row set", () => {
-      renderTable({ rowsOverride: moreRows });
-      const bar = screen.getByTestId("data-table-summary-bar");
-      expect(bar).toHaveTextContent("Count");
-      expect(bar).toHaveTextContent("3");
+    test("renders Count: N in the footer status bar over the post-filter row set", () => {
+      const { container } = renderTable({ rowsOverride: moreRows });
+      const count = container.querySelector(".data-table-footer-record-count");
+      expect(count).not.toBeNull();
+      expect(count as HTMLElement).toHaveTextContent("Count");
+      expect(count as HTMLElement).toHaveTextContent("3");
     });
 
-    test("Count recomputes when a filter trims the visible set", () => {
-      renderTable({
+    test("footer Count recomputes when a filter trims the visible set", () => {
+      const { container } = renderTable({
         rowsOverride: moreRows,
         view: {
           ...emptyViewState(),
           filter: [{ fieldKey: "name", operator: "contains", value: "Liv" }],
         },
       });
-      const bar = screen.getByTestId("data-table-summary-bar");
-      expect(bar).toHaveTextContent("1");
+      const count = container.querySelector(".data-table-footer-record-count");
+      expect(count).not.toBeNull();
+      expect(count as HTMLElement).toHaveTextContent("1");
     });
 
     test("picking Sum on the count column fires onViewChange with the new aggregation", () => {
