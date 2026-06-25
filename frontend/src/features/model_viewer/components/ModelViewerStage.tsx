@@ -15,6 +15,7 @@ import { LegendCard } from "./LegendCard";
 import { LensBar } from "./LensBar";
 import { LoadingChip } from "./LoadingChip";
 import { ModelViewerPerfOverlay } from "./PerfOverlay";
+import { ModelViewerStagePlaceholder } from "./ModelViewerStagePlaceholder";
 
 type ModelViewerStageProps = {
   projectId: string;
@@ -168,9 +169,7 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
           {isModelViewerDebugHookEnabled() ? <ModelViewerPerfOverlay model={model} /> : null}
         </div>
       ) : (
-        <div className="model-viewer-placeholder">
-          <p className="model-viewer-placeholder-title">Preparing 3D scene</p>
-        </div>
+        <ModelViewerStagePlaceholder />
       )}
       <LoadingChip
         phase={loadPhase}

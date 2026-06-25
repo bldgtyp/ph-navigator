@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { DEFAULT_MODEL_VIEWER_THEMES, defaultThemeForLens } from "./lib/themes";
+import { DEFAULT_MODEL_VIEWER_THEMES, defaultThemeForLens } from "./lib/themeState";
 import type {
   LegendFilter,
   ModelViewerErrorKind,
@@ -9,7 +9,7 @@ import type {
   ModelViewerTheme,
   ViewerLoadPhase,
 } from "./types";
-import { distanceBetweenMeasurePoints } from "./lib/measure";
+import { distanceBetweenMeasurePoints } from "./lib/measureDistance";
 
 /** Cross-component viewer state shared by controls, overlays, and the 3D scene. */
 type ModelViewerState = {

@@ -13,7 +13,7 @@ import {
 import { useOutsidePointerDown } from "../../../shared/ui/useOutsidePointerDown";
 import { useModelViewerPopoverEscape } from "../lib/events";
 import { disabledLensReason, MODEL_VIEWER_LENSES } from "../lib/lenses";
-import { hasThemeMenu, themeLabel, themesForLens } from "../lib/themes";
+import { hasThemeMenu, themeLabel, themesForLens } from "../lib/themeState";
 import type { LensAvailability } from "../loaders/building";
 import { useModelViewerStore } from "../store";
 import type { ModelViewerLens, ModelViewerTheme } from "../types";

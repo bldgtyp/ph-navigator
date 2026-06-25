@@ -14,6 +14,7 @@ const COLOR_FUNCTION_PATTERN = /\b(?:rgb|rgba|hsl|hsla)\(\s*[^)]*\)/i;
 const SANCTIONED_COLOR_LITERAL_FILES = new Set([
   "src/features/catalogs/materials/fieldDefs.ts",
   "src/features/equipment/heat-pumps/option-helpers.ts",
+  "src/features/model_viewer/lib/colorTokens.ts",
   "src/features/model_viewer/lib/colors.ts",
   "src/features/model_viewer/lib/themes.ts",
   "src/shared/ui/data-table/lib/options/create.ts",
