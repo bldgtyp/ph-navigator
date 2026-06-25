@@ -1405,6 +1405,192 @@
   color: var(--text-muted);
 }
 
+.aperture-use-sites-summary {
+  align-items: center;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--phn-control-radius);
+  display: flex;
+  gap: var(--space-12);
+  justify-content: space-between;
+  padding: var(--space-10) var(--space-12);
+}
+
+.aperture-use-sites-summary p {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin: 0;
+}
+
+.aperture-use-sites-summary__button {
+  min-height: 30px;
+  padding: var(--space-4) var(--space-10);
+}
+
+.aperture-use-sites-drawer__backdrop {
+  background: color-mix(in oklab, var(--scrim) 30%, transparent);
+  inset: 0;
+  position: fixed;
+  z-index: var(--z-modal);
+}
+
+.aperture-use-sites-drawer {
+  background: color-mix(in oklab, var(--bg-card) 96%, transparent);
+  border-left: 1px solid var(--border-card);
+  bottom: 0;
+  box-shadow: var(--shadow-model-inspector);
+  display: flex;
+  flex-direction: column;
+  max-width: 92vw;
+  min-width: 320px;
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: min(420px, 40vw);
+}
+
+.aperture-use-sites-drawer__header {
+  align-items: start;
+  border-bottom: 1px solid var(--border-card);
+  display: flex;
+  gap: var(--space-12);
+  justify-content: space-between;
+  padding: var(--space-18) var(--space-16) var(--space-12);
+}
+
+.aperture-use-sites-drawer__header p,
+.aperture-use-sites-drawer__header h2 {
+  margin: 0;
+}
+
+.aperture-use-sites-drawer__header p {
+  color: var(--highlight);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.aperture-use-sites-drawer__header h2 {
+  font-size: var(--fs-lg);
+  line-height: 1.25;
+  margin-top: 3px;
+}
+
+.aperture-use-sites-drawer__header span {
+  color: var(--text-secondary);
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  margin-top: var(--space-4);
+}
+
+.aperture-use-sites-drawer__header .icon-button {
+  flex: 0 0 auto;
+  height: 30px;
+  padding: 0;
+  width: 30px;
+}
+
+.aperture-use-sites-drawer__body {
+  display: grid;
+  gap: var(--space-12);
+  overflow-y: auto;
+  padding: var(--space-12) var(--space-16) var(--space-16);
+}
+
+.aperture-use-sites-group {
+  border-bottom: 1px solid var(--border-card);
+  display: grid;
+  gap: var(--space-8);
+  padding: 0 0 var(--space-12);
+}
+
+.aperture-use-sites-group:last-child {
+  border-bottom: 0;
+}
+
+.aperture-use-sites-group header {
+  align-items: baseline;
+  display: flex;
+  gap: var(--space-10);
+  justify-content: space-between;
+}
+
+.aperture-use-sites-group h3 {
+  font-size: var(--fs-md);
+  line-height: 1.25;
+  margin: 0;
+}
+
+.aperture-use-sites-group header span {
+  color: var(--text-muted);
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+}
+
+.aperture-use-sites-tree,
+.aperture-use-sites-aperture ul {
+  display: grid;
+  gap: var(--space-6);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.aperture-use-sites-aperture {
+  background: var(--bg-elev);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--phn-control-radius);
+  display: grid;
+  gap: var(--space-10);
+  padding: var(--space-8) var(--space-10);
+}
+
+.aperture-use-sites-aperture__header {
+  align-items: center;
+  display: flex;
+  gap: var(--space-10);
+  justify-content: space-between;
+  min-height: 24px;
+}
+
+.aperture-use-sites-aperture__header span {
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.aperture-use-sites-aperture__header em {
+  color: var(--text-muted);
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-style: normal;
+}
+
+.aperture-use-sites-aperture ul {
+  border-left: 1px solid var(--border-subtle);
+  margin-left: var(--space-6);
+  padding-left: var(--space-10);
+}
+
+.aperture-use-sites-aperture li {
+  align-items: center;
+  display: flex;
+  justify-content: flex-start;
+  min-height: 24px;
+}
+
+.aperture-use-sites-aperture li span {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  color: var(--text-secondary);
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  padding: var(--space-2) var(--space-8);
+}
+
 @media (max-width: 780px) {
   .apertures-body {
     margin-block: var(--space-16) var(--space-24);
