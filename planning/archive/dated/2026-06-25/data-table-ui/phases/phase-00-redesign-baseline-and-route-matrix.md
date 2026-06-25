@@ -5,9 +5,9 @@ STATUS: Complete
 AUTHOR: Codex
 SCOPE: Baseline capture and DataTable surface inventory before UI changes.
 RELATED:
-  - planning/features/data-table-ui/PLAN.md
-  - planning/features/data-table-ui/reviews/table-redesign-review.md
-  - planning/features/data-table-ui/ROUTE_MATRIX.md
+  - planning/archive/dated/2026-06-25/data-table-ui/PLAN.md
+  - planning/archive/dated/2026-06-25/data-table-ui/reviews/table-redesign-review.md
+  - planning/archive/dated/2026-06-25/data-table-ui/ROUTE_MATRIX.md
   - frontend/src/shared/ui/data-table/DataTable.tsx
 ---
 
@@ -33,9 +33,9 @@ RELATED:
 ## Acceptance
 
 - Complete: the route matrix is recorded in
-  `planning/features/data-table-ui/ROUTE_MATRIX.md`.
+  `planning/archive/dated/2026-06-25/data-table-ui/ROUTE_MATRIX.md`.
 - Complete: a written baseline checklist exists in
-  `planning/features/data-table-ui/ROUTE_MATRIX.md`; screenshots were
+  `planning/archive/dated/2026-06-25/data-table-ui/ROUTE_MATRIX.md`; screenshots were
   deliberately deferred to later browser review.
 - Complete: implementation phases can verify against the representative
   browser route set in `ROUTE_MATRIX.md`.

@@ -5,7 +5,7 @@ STATUS: Complete
 AUTHOR: Codex
 SCOPE: Header layout, notes affordance, and unit sublabels.
 RELATED:
-  - planning/features/data-table-ui/PLAN.md
+  - planning/archive/dated/2026-06-25/data-table-ui/PLAN.md
   - frontend/src/shared/ui/data-table/components/SortableHeaderCell.tsx
   - frontend/src/shared/ui/data-table/components/CustomFieldDescriptionTooltip.tsx
   - frontend/src/shared/ui/data-table/DataTable.css

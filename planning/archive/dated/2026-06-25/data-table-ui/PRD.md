@@ -5,10 +5,10 @@ STATUS: Complete - requirements implemented
 AUTHOR: Ed (via Codex)
 SCOPE: Product and rendering contract for shared DataTable UI polish.
 RELATED:
-  - planning/features/data-table-ui/README.md
-  - planning/features/data-table-ui/reviews/table-redesign-review.md
-  - planning/features/data-table-ui/table-redesign/Equipment Table - Handoff.md
-  - planning/features/data-table-ui/PLAN.md
+  - planning/archive/dated/2026-06-25/data-table-ui/README.md
+  - planning/archive/dated/2026-06-25/data-table-ui/reviews/table-redesign-review.md
+  - planning/archive/dated/2026-06-25/data-table-ui/table-redesign/Equipment Table - Handoff.md
+  - planning/archive/dated/2026-06-25/data-table-ui/PLAN.md
   - context/technical-requirements/data-table.md
 ---
 
@@ -31,9 +31,9 @@ should read like an engineering schedule, not like a generic form grid.
 
 Primary reference:
 
-- `planning/features/data-table-ui/table-redesign/Equipment Table - Handoff.md`
-- `planning/features/data-table-ui/table-redesign/Equipment Table.dc.html`
-- screenshot PNG in `planning/features/data-table-ui/table-redesign/`
+- `planning/archive/dated/2026-06-25/data-table-ui/table-redesign/Equipment Table - Handoff.md`
+- `planning/archive/dated/2026-06-25/data-table-ui/table-redesign/Equipment Table.dc.html`
+- screenshot PNG in `planning/archive/dated/2026-06-25/data-table-ui/table-redesign/`
 
 The visual direction is accepted: clean engineering schedule, compact
 modern toolbar, cooler mono headers, right-aligned numeric rhythm,

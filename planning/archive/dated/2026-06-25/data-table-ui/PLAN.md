@@ -5,8 +5,8 @@ STATUS: Complete - implemented in five phases
 AUTHOR: Codex
 SCOPE: Implementation sequence and verification strategy for DataTable UI.
 RELATED:
-  - planning/features/data-table-ui/PRD.md
-  - planning/features/data-table-ui/STATUS.md
+  - planning/archive/dated/2026-06-25/data-table-ui/PRD.md
+  - planning/archive/dated/2026-06-25/data-table-ui/STATUS.md
 ---
 
 # DataTable UI - Plan
