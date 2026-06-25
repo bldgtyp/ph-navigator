@@ -2,6 +2,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
 import { DataTable } from "../DataTable";
+import { STATUS_FIELD_KEY, STATUS_OPTION_COMPLETE, STATUS_OPTION_NEEDED } from "../status";
 import {
   emptyViewState,
   type DataTableColumnDef,
@@ -326,7 +327,12 @@ describe("GridBody — fill handle (Phase 7)", () => {
 });
 
 describe("GridBody — single-select chevron (plan 05)", () => {
-  type SelectRow = { id: string; floor: string; name: string };
+  type SelectRow = {
+    id: string;
+    floor: string;
+    name: string;
+    custom_values?: Record<string, unknown>;
+  };
   const SELECT_ROWS: SelectRow[] = [
     { id: "rm_1", floor: "opt_ground", name: "Living" },
     { id: "rm_2", floor: "opt_mez", name: "Kitchen" },
@@ -389,6 +395,59 @@ describe("GridBody — single-select chevron (plan 05)", () => {
     expect(pill).toHaveTextContent("Ground");
     expect(pill?.getAttribute("style")).toContain("--option-color: #3b82f6");
     expect(cell).not.toHaveTextContent("plain opt_ground");
+    expect(pill).not.toHaveClass("single-select-pill--status");
+    expect(pill).not.toHaveAttribute("data-status-option");
+  });
+
+  test("built-in status cells render semantic status pills without changing ordinary selects", () => {
+    renderSelectTable({
+      rows: [
+        {
+          id: "rm_1",
+          floor: "unused",
+          name: "Living",
+          custom_values: { [STATUS_FIELD_KEY]: STATUS_OPTION_COMPLETE },
+        },
+        {
+          id: "rm_2",
+          floor: "unused",
+          name: "Kitchen",
+          custom_values: { [STATUS_FIELD_KEY]: STATUS_OPTION_NEEDED },
+        },
+      ],
+      fieldDefs: [
+        {
+          field_key: STATUS_FIELD_KEY,
+          field_type: "single_select",
+          display_name: "Status",
+          built_in: true,
+          options: [
+            { id: STATUS_OPTION_COMPLETE, label: "Complete", color: "#16a34a", order: 0 },
+            { id: STATUS_OPTION_NEEDED, label: "Needed", color: "#d97706", order: 1 },
+          ],
+        },
+        { field_key: "name", field_type: "text", display_name: "Name" },
+      ],
+      columnDefs: [
+        {
+          id: STATUS_FIELD_KEY,
+          fieldKey: STATUS_FIELD_KEY,
+          header: "Status",
+          accessor: (row) => row.custom_values?.[STATUS_FIELD_KEY] ?? null,
+        },
+        { id: "name", fieldKey: "name", header: "Name", accessor: (row) => row.name },
+      ],
+    });
+
+    const completePill = getSelectCell(0, 0).querySelector(".single-select-pill");
+    const neededPill = getSelectCell(1, 0).querySelector(".single-select-pill");
+
+    expect(completePill).toHaveClass("single-select-pill--status");
+    expect(completePill).toHaveAttribute("data-status-option", "complete");
+    expect(completePill?.querySelector("[data-status-chip-icon='complete']")).not.toBeNull();
+    expect(neededPill).toHaveClass("single-select-pill--status");
+    expect(neededPill).toHaveAttribute("data-status-option", "needed");
+    expect(neededPill?.querySelector("[data-status-chip-icon='needed']")).not.toBeNull();
   });
 
   test("writable single-select cells render the chevron (visibility gated by CSS hover/active)", () => {

@@ -2382,6 +2382,43 @@ td.data-table-cell-editing {
   white-space: nowrap;
 }
 
+.single-select-pill--status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  border-color: transparent;
+  background: color-mix(in oklab, var(--option-color, var(--text-muted)) 90%, var(--text-primary));
+  color: var(--text-on-accent);
+  padding: 1px 8px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.single-select-pill--status[data-status-option="question"] {
+  background: color-mix(in oklab, var(--option-color, var(--text-muted)) 82%, var(--accent));
+}
+
+.single-select-pill--status[data-status-option="na"] {
+  border-color: color-mix(
+    in oklab,
+    var(--option-color, var(--text-muted)) 46%,
+    var(--border-subtle)
+  );
+  background: color-mix(in oklab, var(--option-color, var(--text-muted)) 18%, var(--bg-card));
+  color: var(--text-secondary);
+}
+
+.single-select-pill__status-icon {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.single-select-pill__status-icon svg {
+  display: block;
+}
+
 .single-select-pill.missing {
   border-color: var(--phn-danger);
   background: color-mix(in oklab, var(--phn-danger) 12%, var(--bg-card));

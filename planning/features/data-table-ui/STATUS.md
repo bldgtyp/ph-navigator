@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-25
-TIME: 01:12 EDT
-STATUS: Active - Phase 02 complete; Phase 03 next
+TIME: 01:24 EDT
+STATUS: Active - Phase 03 complete; Phase 04 next
 AUTHOR: Codex
 SCOPE: Current state, next step, blockers, and verification for DataTable UI.
 RELATED:
@@ -33,6 +33,10 @@ layout with the active unit badge below the field name, and field
 descriptions use a compact accessible icon trigger instead of the larger
 `"?"` marker.
 
+Phase 03 is complete. Built-in `status` cells now use semantic
+status-only solid chip styling with Complete / Needed icons, while
+ordinary `single_select` pills keep the quieter tinted treatment.
+
 Captured requests:
 
 - right-align all numeric DataTable cells;
@@ -48,9 +52,8 @@ Captured requests:
 
 ## Next step
 
-Start Phase 03 by improving status chip typography/color/iconography
-and documenting whether solid chip styling applies globally or only to
-status-like semantic states.
+Start Phase 04 by doing the restrained frontend-design polish pass over
+table density, padding, row/selection states, and visual hierarchy.
 
 ## Blockers
 
@@ -61,9 +64,8 @@ Open decisions:
 - Global search is deferred; adding it needs a separate behavior
   contract for formatted-cell matching, `ViewState` persistence, and
   interaction with existing filters/groups.
-- Whether single-select prefix hiding needs a new explicit display rule.
-- Whether solid chips apply globally or only to status-like semantic
-  states.
+- Any future single-select prefix hiding needs an explicit display rule;
+  no global stripping is allowed.
 
 ## Verification so far
 
@@ -97,3 +99,11 @@ Phase 02 verification:
 - `cd frontend && pnpm exec vitest run src/shared/ui/data-table/__tests__/CustomFieldDescriptionTooltip.test.tsx src/shared/ui/data-table/__tests__/numberUnitsGrid.test.tsx src/shared/ui/data-table/__tests__/SortableHeaderCell.test.tsx src/shared/ui/data-table/__tests__/columnHeaderDoubleClick.test.tsx`
   passed 33 tests, with existing React `act(...)` warnings in
   `numberUnitsGrid.test.tsx`.
+
+Phase 03 verification:
+
+- `cd frontend && pnpm exec vitest run src/shared/ui/data-table/__tests__/GridBody.test.tsx src/shared/ui/data-table/__tests__/lib.test.ts src/features/equipment/__tests__/PumpsTable.reuse.test.tsx src/features/equipment/lib.test.ts src/features/equipment/heat-pumps/__tests__/outdoor-equip-columns.test.ts`
+  passed 155 tests.
+- `make frontend-dev-check` passed. Lint still reports the repo's
+  existing 14 fast-refresh warnings; no errors.
+- `graphify update .`
