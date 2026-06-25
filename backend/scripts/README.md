@@ -18,3 +18,12 @@ make seed-agent-browser
 It creates or repairs the `codex@example.com` login plus the `AGENT-BROWSER`
 project with a dirty draft, then prints both a clean-profile sign-in route and
 the direct `localhost:5173` project route.
+
+For frontend performance sweeps, seed the non-destructive stress fixture:
+
+```bash
+make seed-perf-stress
+```
+
+It creates or repairs the `codex@example.com` login plus the `PERF-STRESS`
+project, then prints the `PERF_PROJECT_ID` needed by `make e2e-perf`.

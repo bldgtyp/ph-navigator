@@ -9,7 +9,7 @@
         db-create-test db-migrate-test \
         migrate makemigration test test-backend test-frontend coverage typecheck \
         lint check ci ci-backend ci-frontend check-backend check-frontend frontend-dev-check build-frontend format format-check \
-        smoke seed-dev-user seed-agent-user seed-agent-browser seed-climate-bundle seed-dev-data seed-materials seed-glazing seed-frames seed-hbjson db-seed e2e e2e-report clean graphify-prune
+        smoke seed-dev-user seed-agent-user seed-agent-browser seed-perf-stress seed-climate-bundle seed-dev-data seed-materials seed-glazing seed-frames seed-hbjson db-seed e2e e2e-perf e2e-report clean graphify-prune
 
 # Local Postgres URL for the dedicated pytest database. Mirrors the dev
 # URL in backend/.env.example with the database name swapped to *_test.
@@ -178,6 +178,10 @@ check-backend: ci-backend ## Alias for backend CI parity checks
 e2e: ## Run Playwright end-to-end tests (frontend must be running)
 	cd frontend && pnpm run test:e2e
 
+e2e-perf: ## Run opt-in frontend perf matrix (set PERF_PROJECT_ID; frontend/backend must be running)
+	test -n "$(PERF_PROJECT_ID)" || { echo "PERF_PROJECT_ID is required. Run make seed-perf-stress first."; exit 1; }
+	cd frontend && PHN_PERF=1 PERF_PROJECT_ID="$(PERF_PROJECT_ID)" E2E_EMAIL="$${E2E_EMAIL:-codex@example.com}" E2E_PASSWORD="$${E2E_PASSWORD:-password}" pnpm run test:e2e -- tests/e2e/perf
+
 e2e-report: ## Open the last Playwright HTML report
 	cd frontend && pnpm exec playwright show-report
 
@@ -220,6 +224,9 @@ seed-agent-user: migrate ## Create/reset the dedicated local Codex/agent editor 
 
 seed-agent-browser: migrate ## Create/repair the Codex browser-test project and dirty draft; prints the test URL
 	cd backend && uv run python -m scripts.seed_agent_browser_fixture
+
+seed-perf-stress: migrate ## Create/repair the Codex-owned frontend perf stress project; prints PERF_PROJECT_ID
+	cd backend && uv run python -m scripts.seed_perf_stress_fixture
 
 seed-climate-bundle: object-store-init ## Build the Phius + PHI climate bundles from local source + upload to MinIO (needs MinIO)
 	cd backend && \
