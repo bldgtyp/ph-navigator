@@ -111,10 +111,10 @@ the exact emitted chunk gzip.
 ## Confirmed Layer-B Findings
 
 1. **Stress table edits are the clearest runtime problem.**
-   - Spaces Rooms cell edit: 1,973 ms scripted interaction, 5 long tasks, max
-     244 ms, largest API response 25.6 kB from `/draft/tables/rooms`.
-   - Equipment Pumps cell edit: 3,117 ms scripted interaction, 4 long tasks, max
-     261 ms, largest API response 5.5 kB from `/draft/tables/appliances`.
+   - Spaces Rooms cell edit: 2,033 ms scripted interaction, 5 long tasks, max
+     208 ms, largest API response 25.6 kB from `/draft/tables/rooms`.
+   - Equipment Pumps cell edit: 3,152 ms scripted interaction, 5 long tasks, max
+     263 ms, largest API response 5.5 kB from `/draft/tables/appliances`.
    - Interpretation: Layer C confirms render churn is part of the stall; Phase
      4 should separate render work from grid edit pipeline work and
      mutation/refetch behavior.
@@ -125,8 +125,8 @@ the exact emitted chunk gzip.
      main-thread stall, but this needs trace confirmation before ranking.
 
 3. **Catalog pages show small but repeatable long-task clusters.**
-   - Materials: 2 long tasks, max 98 ms.
-   - Frame Types: 3 long tasks, max 109 ms.
+   - Materials: 2 long tasks, max 97 ms.
+   - Frame Types: 3 long tasks, max 112 ms.
    - Glazing Types: 2 long tasks, max 101 ms.
    - Interpretation: visible enough to track, lower priority than stress table
      edits because Layer C did not show React commits during catalog hover.
@@ -160,9 +160,11 @@ the exact emitted chunk gzip.
    - Interpretation: their current runtime flags are lower priority than
      stress table edits.
 
-## Candidate Fixes To Triage In Phase 4
+## Candidate Fixes Triaged In Phase 4
 
-Do not implement these until Layers B/C are captured and findings are ranked.
+Ranking and phased implementation plans now live in
+`phases/phase-04-ranking.md`. Do not implement these until a Phase 4 track is
+explicitly selected.
 
 | Candidate | Expected impact | Ease | Notes |
 |---|---|---|---|
@@ -175,4 +177,5 @@ Do not implement these until Layers B/C are captured and findings are ranked.
 
 ## Deferred Until Later Phases
 
-- No payload fixes yet; Phase 4 ranks confirmed findings across all layers.
+- No payload fixes yet; Phase 4 ranked confirmed findings across all layers in
+  `phases/phase-04-ranking.md`.
