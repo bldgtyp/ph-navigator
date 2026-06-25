@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { projectQueryKeys } from "../projects/query-keys";
 import { envelopeQueryKeys } from "../envelope/query-keys";
-import { heatPumpsQueryKeys } from "../equipment/heat-pumps/api";
 import {
   discardDraft,
   fetchDiff,
@@ -31,12 +30,6 @@ export async function invalidateProjectDocumentQueries(
     queryClient.invalidateQueries({ queryKey: projectDocumentQueryKeys.project(projectId) }),
   );
   invalidations.push(queryClient.invalidateQueries({ queryKey: envelopeQueryKeys.all(projectId) }));
-  // heat-pumps uses a custom query-key registry (not the generic
-  // projectDocumentTableQueryKeys), so save/discard would otherwise leave
-  // its cached `draft_etag` pointing at a draft the server has dropped.
-  invalidations.push(
-    queryClient.invalidateQueries({ queryKey: heatPumpsQueryKeys.all(projectId) }),
-  );
   if (tables) {
     invalidations.push(
       queryClient.invalidateQueries({ queryKey: projectDocumentTableQueryKeys.project(projectId) }),

@@ -2,8 +2,6 @@ import type { BaseTableSlice } from "../../project_document/table-slice";
 import type { CustomValue, RowsComputed } from "../../project_document/table-types";
 import type { TableFieldDef } from "../../../shared/ui/data-table";
 
-export type HeatPumpTableKey = "outdoor-equip" | "indoor-equip" | "outdoor-units" | "indoor-units";
-
 export const HEAT_PUMP_OUTDOOR_EQUIP_TABLE_NAME = "heat_pumps_outdoor_equip";
 export const HEAT_PUMP_INDOOR_EQUIP_TABLE_NAME = "heat_pumps_indoor_equip";
 export const HEAT_PUMP_OUTDOOR_UNITS_TABLE_NAME = "heat_pumps_outdoor_units";
@@ -183,30 +181,13 @@ export type HeatPumpIndoorUnitsReplacePayload = {
   single_select_options: Record<string, HeatPumpSingleSelectOption[]>;
 };
 
-export type HeatPumpPatchOp =
-  | { op: "add"; path: "/-"; value: HeatPumpPatchRow }
-  | { op: "replace"; path: `/${string}`; value: HeatPumpPatchRow }
-  | { op: "remove"; path: `/${string}`; value?: null };
-
-export type HeatPumpPatchRow =
-  | HeatPumpOutdoorEquipRow
-  | HeatPumpIndoorEquipRow
-  | HeatPumpOutdoorUnitRow
-  | HeatPumpIndoorUnitRow;
-
+// One dependent row a heat-pump delete would clear (or that would block it).
+// Surfaced in the cascade-preview / blocked-delete dialogs.
 export type CascadeReference = {
   table: string;
   row_id: string;
   tag: string;
   field: string;
-};
-
-export type CascadePreview = {
-  affected: CascadeReference[];
-};
-
-export type HeatPumpsPatchResponse = HeatPumpsSlice & {
-  cascade_preview?: CascadePreview | null;
 };
 
 export type PhiusExportWarningField = "heating" | "cooling" | "qty";

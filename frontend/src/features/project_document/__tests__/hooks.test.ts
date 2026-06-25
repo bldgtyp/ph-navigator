@@ -1,7 +1,6 @@
 import { QueryClient } from "@tanstack/react-query";
 import { describe, expect, test } from "vitest";
 import { envelopeQueryKeys } from "../../envelope/query-keys";
-import { heatPumpsQueryKeys } from "../../equipment/heat-pumps/api";
 import { projectQueryKeys } from "../../projects/query-keys";
 import {
   invalidateProjectDocumentQueries,
@@ -61,20 +60,5 @@ describe("invalidateProjectDocumentQueries", () => {
     expect(queryClient.getQueryState(detailKey)?.isInvalidated).toBe(false);
     expect(queryClient.getQueryState(tableKey)?.isInvalidated).toBe(false);
     expect(queryClient.getQueryState(envelopeReadKey)?.isInvalidated).toBe(true);
-  });
-
-  test("invalidates the heat-pumps slice so discard/save clears its stale draft_etag", async () => {
-    // Regression: heat-pumps uses a custom query-key registry rather than the
-    // generic projectDocumentTableQueryKeys. Without explicit invalidation
-    // here, a discardDraft/saveDraft would leave the heat-pumps cache holding
-    // a draft_etag that the server no longer recognises — the next PATCH then
-    // 409s with version_etag_mismatch.
-    const queryClient = new QueryClient();
-    const heatPumpsKey = heatPumpsQueryKeys.slice(PROJECT_ID, "editor");
-    queryClient.setQueryData(heatPumpsKey, { draft_etag: "stale-from-prior-session" });
-
-    await invalidateProjectDocumentQueries(queryClient, PROJECT_ID);
-
-    expect(queryClient.getQueryState(heatPumpsKey)?.isInvalidated).toBe(true);
   });
 });
