@@ -1,5 +1,5 @@
 // @size-exception: planning/features/apertures-glazings-frames-reports/phases/phase-02-wire-and-retire-modal.md
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { X } from "lucide-react";
 import {
   formatLengthFromMm,
@@ -43,6 +43,17 @@ import type {
 type ApertureSpecProduct = ProjectGlazingRead | ProjectFrameRead;
 type ApertureUseSite = ProjectGlazingUseSite | ProjectFrameUseSite;
 type ProductKind = "glazing" | "frame";
+type UseSiteApertureGroup = {
+  id: string;
+  name: string;
+  sites: ApertureUseSite[];
+};
+type UseSiteTypeGroup = {
+  id: string;
+  name: string;
+  apertures: UseSiteApertureGroup[];
+  siteCount: number;
+};
 
 const STATUSES: SpecificationStatus[] = ["missing", "question", "complete", "na"];
 
@@ -124,6 +135,7 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
 }) {
   const { unitSystem } = useUnitPreference();
   const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
+  const [useSitesProductId, setUseSitesProductId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilterValue<ReportStatusKey>>("all");
   const productConfig = PRODUCT_CONFIG[kind];
 
@@ -172,12 +184,20 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
     () => visibleRows.find((row) => row.id === expandedProductId) ?? null,
     [expandedProductId, visibleRows],
   );
+  const useSitesRow = useMemo(
+    () => visibleRows.find((row) => row.id === useSitesProductId) ?? null,
+    [useSitesProductId, visibleRows],
+  );
   const assetIds = expandedRow?.datasheet_asset_ids ?? [];
   const assetUrls = useAssetUrls(projectId, assetIds);
   const assetUrlById = useMemo(
     () => new Map((assetUrls.data ?? []).map((item) => [item.asset_id, item])),
     [assetUrls.data],
   );
+
+  useEffect(() => {
+    if (useSitesProductId && !useSitesRow) setUseSitesProductId(null);
+  }, [useSitesProductId, useSitesRow]);
 
   if (visibleRows.length === 0) {
     return (
@@ -278,18 +298,23 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
               </div>
               <div className="spec-expansion__right">
                 <section className="spec-evidence" aria-label={`${row.name} use sites`}>
-                  <h3>Used in {row.use_sites.length} elements</h3>
+                  <h3>{formatUseSitesCount(row.use_sites.length)}</h3>
                   {row.use_sites.length === 0 ? (
                     <p className="spec-evidence__empty">Not used by an aperture element.</p>
                   ) : (
-                    <ul className="spec-expansion__use-sites">
-                      {row.use_sites.map((site) => (
-                        <li key={formatUseSiteKey(site)}>
-                          <strong>{site.aperture_type_name}</strong>
-                          <span>{formatUseSite(site)}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    <div className="aperture-use-sites-summary">
+                      <p>{summarizeUseSiteGroups(row.use_sites)}</p>
+                      <button
+                        type="button"
+                        className="secondary-button aperture-use-sites-summary__button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setUseSitesProductId(row.id);
+                        }}
+                      >
+                        View
+                      </button>
+                    </div>
                   )}
                 </section>
                 {rowDriftEntries.length > 0 ? (
@@ -371,7 +396,94 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
           </section>
         ) : null}
       </div>
+      {useSitesRow ? (
+        <ApertureUseSitesDrawer
+          row={useSitesRow}
+          kind={kind}
+          onClose={() => setUseSitesProductId(null)}
+        />
+      ) : null}
     </>
+  );
+}
+
+function ApertureUseSitesDrawer({
+  row,
+  kind,
+  onClose,
+}: {
+  row: ApertureSpecProduct;
+  kind: ProductKind;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent): void {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      onClose();
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  const groups = groupUseSites(row.use_sites);
+
+  return (
+    <div className="aperture-use-sites-drawer__backdrop" role="presentation" onClick={onClose}>
+      <aside
+        className="aperture-use-sites-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="aperture-use-sites-drawer-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <header className="aperture-use-sites-drawer__header">
+          <div>
+            <p>{kind === "glazing" ? "Glazing use sites" : "Frame use sites"}</p>
+            <h2 id="aperture-use-sites-drawer-title">{row.name}</h2>
+            <span>{formatUseSitesCount(row.use_sites.length)}</span>
+          </div>
+          <button
+            type="button"
+            className="icon-button"
+            aria-label="Close use sites"
+            onClick={onClose}
+          >
+            <X size={16} aria-hidden="true" />
+          </button>
+        </header>
+        <div className="aperture-use-sites-drawer__body">
+          {groups.map((group) => (
+            <section key={group.id} className="aperture-use-sites-group">
+              <header>
+                <h3>{group.name}</h3>
+                <span>{formatApertureGroupCount(group)}</span>
+              </header>
+              <ul className="aperture-use-sites-tree">
+                {group.apertures.map((aperture) => (
+                  <li key={aperture.id} className="aperture-use-sites-aperture">
+                    <div className="aperture-use-sites-aperture__header">
+                      <span>{aperture.name}</span>
+                      <em>{formatNestedUseSiteCount(aperture.sites, kind)}</em>
+                    </div>
+                    {aperture.sites.some((site) => "side" in site) ? (
+                      <ul>
+                        {aperture.sites.map((site) => (
+                          <li key={formatUseSiteKey(site)}>
+                            {"side" in site ? <span>{SIDE_LABEL[site.side]}</span> : null}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
+      </aside>
+    </div>
   );
 }
 
@@ -591,10 +703,71 @@ function formatUseSiteKey(site: ApertureUseSite): string {
     : `${site.aperture_type_id}:${site.element_id}`;
 }
 
-function formatUseSite(site: ApertureUseSite): string {
-  const element = site.element_name;
-  if ("side" in site) return `${element} · ${SIDE_LABEL[site.side]}`;
-  return element;
+function formatUseSitesCount(count: number): string {
+  return `Used in ${count} ${count === 1 ? "element" : "elements"}`;
+}
+
+function summarizeUseSiteGroups(sites: ApertureUseSite[]): string {
+  const groups = groupUseSites(sites);
+  const onlyGroup = groups[0];
+  if (groups.length === 1 && onlyGroup) {
+    return `Grouped under ${onlyGroup.name} across ${onlyGroup.apertures.length} ${
+      onlyGroup.apertures.length === 1 ? "aperture" : "apertures"
+    }.`;
+  }
+  return `Grouped under ${groups.length} aperture types.`;
+}
+
+function formatApertureGroupCount(group: UseSiteTypeGroup): string {
+  const apertureLabel = group.apertures.length === 1 ? "aperture" : "apertures";
+  return `${group.apertures.length} ${apertureLabel} · ${formatUseSitesCount(group.siteCount)}`;
+}
+
+function formatNestedUseSiteCount(sites: ApertureUseSite[], kind: ProductKind): string {
+  if (kind === "frame") return `${sites.length} ${sites.length === 1 ? "side" : "sides"}`;
+  return formatUseSitesCount(sites.length);
+}
+
+function groupUseSites(sites: ApertureUseSite[]): UseSiteTypeGroup[] {
+  const groups = new Map<
+    string,
+    {
+      id: string;
+      name: string;
+      apertures: Map<string, UseSiteApertureGroup>;
+      siteCount: number;
+    }
+  >();
+  for (const site of sites) {
+    let group = groups.get(site.aperture_type_id);
+    if (!group) {
+      group = {
+        id: site.aperture_type_id,
+        name: site.aperture_type_name,
+        apertures: new Map(),
+        siteCount: 0,
+      };
+      groups.set(site.aperture_type_id, group);
+    }
+    group.siteCount += 1;
+
+    const existingAperture = group.apertures.get(site.element_id);
+    if (existingAperture) {
+      existingAperture.sites.push(site);
+    } else {
+      group.apertures.set(site.element_id, {
+        id: site.element_id,
+        name: site.element_name,
+        sites: [site],
+      });
+    }
+  }
+  return Array.from(groups.values()).map((group) => ({
+    id: group.id,
+    name: group.name,
+    apertures: Array.from(group.apertures.values()),
+    siteCount: group.siteCount,
+  }));
 }
 
 function formatDriftEntry(entry: ApertureDriftEntry): string {

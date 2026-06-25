@@ -41,7 +41,8 @@ main columns are Glazing, Manufacturer, U-value, g-value, Datasheet, and Status.
 The expanded row shows:
 
 - Datasheets via the shared `AttachmentCell` and datasheet attachment config.
-- "Used in N elements" with aperture type and element names.
+- "Used in N elements" as a compact summary, with a View action that opens a
+  right-side use-sites sheet grouped by aperture type, then aperture element.
 - Catalog drift evidence, including refresh actions where the catalog row still
   exists and fields differ.
 
@@ -54,9 +55,10 @@ hidden or disabled. Viewer mode hides N/A and unused glazing rows.
 
 Frames mirrors Glazings but lists flat `project_frames` products. The main
 columns are Frame, Manufacturer, U-value, Psi-install, Width, Datasheet, and
-Status. The expanded use-site rows include aperture type, element name, and the
-frame side (Top/Right/Bottom/Left), because a frame product can be referenced by
-different sides of an aperture element.
+Status. The use-sites sheet groups rows by aperture type, then aperture element,
+and keeps the frame side (Top/Right/Bottom/Left) visible under each element,
+because a frame product can be referenced by different sides of an aperture
+element.
 
 Frames uses the same report-table/status/evidence behavior as Glazings and
 Envelope → Materials. Editors can update status, attach/detach datasheets,

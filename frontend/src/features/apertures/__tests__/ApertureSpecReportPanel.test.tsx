@@ -218,12 +218,18 @@ describe("ApertureSpecReportPanel", () => {
 
     fireEvent.click(activeRow);
     expect(screen.getByRole("region", { name: "Triple Pane A datasheets" })).toBeInTheDocument();
-    expect(screen.getByText("Used in 1 elements")).toBeInTheDocument();
-    expect(screen.getByText("Window Type A")).toBeInTheDocument();
-    expect(screen.getAllByText("Center lite").length).toBeGreaterThan(0);
+    const useSitesRegion = screen.getByRole("region", { name: "Triple Pane A use sites" });
+    expect(within(useSitesRegion).getByText("Used in 1 element")).toBeInTheDocument();
+    expect(screen.getByText("Grouped under Window Type A across 1 aperture.")).toBeInTheDocument();
+    expect(within(useSitesRegion).queryByText("Center lite")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "View" }));
+    const drawer = screen.getByRole("dialog", { name: "Triple Pane A" });
+    expect(within(drawer).getByText("Window Type A")).toBeInTheDocument();
+    expect(within(drawer).getByText("Center lite")).toBeInTheDocument();
     expect(screen.getByText("1 catalog drift")).toBeInTheDocument();
     expect(screen.getByText("Glazing · 1 field differs")).toBeInTheDocument();
 
+    fireEvent.click(within(drawer).getByRole("button", { name: "Close use sites" }));
     fireEvent.click(screen.getByRole("button", { name: /Missing\s+1/ }));
     expect(screen.getByText("Triple Pane A")).toBeInTheDocument();
     expect(screen.queryByText("Background Glazing")).not.toBeInTheDocument();
@@ -231,7 +237,33 @@ describe("ApertureSpecReportPanel", () => {
   });
 
   it("renders frame-only columns and side-aware use sites", () => {
-    renderFrames([frame()]);
+    renderFrames([
+      frame({
+        use_sites: [
+          {
+            aperture_type_id: "apt_1",
+            aperture_type_name: "Window Type A",
+            element_id: "el_1",
+            element_name: "A",
+            side: "left",
+          },
+          {
+            aperture_type_id: "apt_1",
+            aperture_type_name: "Window Type A",
+            element_id: "el_1",
+            element_name: "A",
+            side: "right",
+          },
+          {
+            aperture_type_id: "apt_1",
+            aperture_type_name: "Window Type A",
+            element_id: "el_2",
+            element_name: "B",
+            side: "top",
+          },
+        ],
+      }),
+    ]);
 
     expect(screen.getByRole("columnheader", { name: /Psi-install/ })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: /Width/ })).toBeInTheDocument();
@@ -240,8 +272,20 @@ describe("ApertureSpecReportPanel", () => {
     expect(within(row).getByLabelText("Attached")).toBeInTheDocument();
     fireEvent.click(row);
 
-    expect(screen.getByRole("region", { name: "Insulated Frame A use sites" })).toBeInTheDocument();
-    expect(screen.getByText("Center lite · Left")).toBeInTheDocument();
+    const useSitesRegion = screen.getByRole("region", { name: "Insulated Frame A use sites" });
+    expect(screen.getByText("Grouped under Window Type A across 2 apertures.")).toBeInTheDocument();
+    expect(within(useSitesRegion).queryByText("A")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "View" }));
+    const drawer = screen.getByRole("dialog", { name: "Insulated Frame A" });
+    expect(within(drawer).getByText("Window Type A")).toBeInTheDocument();
+    expect(within(drawer).getByText("2 apertures · Used in 3 elements")).toBeInTheDocument();
+    expect(within(drawer).getByText("A")).toBeInTheDocument();
+    expect(within(drawer).getByText("2 sides")).toBeInTheDocument();
+    expect(within(drawer).getByText("B")).toBeInTheDocument();
+    expect(within(drawer).getByText("1 side")).toBeInTheDocument();
+    expect(within(drawer).getByText("Left")).toBeInTheDocument();
+    expect(within(drawer).getByText("Right")).toBeInTheDocument();
+    expect(within(drawer).getByText("Top")).toBeInTheDocument();
     expect(screen.getByText("Frame Left · 1 field differs")).toBeInTheDocument();
   });
 
