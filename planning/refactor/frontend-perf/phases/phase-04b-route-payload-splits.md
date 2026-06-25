@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 21:13 EDT
-STATUS: Planned - implementation not started
+STATUS: Complete - route payload splits implemented and measured
 AUTHOR: Codex
 SCOPE: Route and project-tab payload splitting plan for main bundle reduction
 RELATED:
@@ -21,6 +21,19 @@ Bring the main route chunk below the 250 kB gzip warning threshold or produce a 
 Primary before number:
 
 - `assets/index-C-de3sCl.js`: 391.28 kB gzip.
+
+Measured result (`scorecard-2026-06-24-phase-04b.md`):
+
+- `assets/index-CobF5RQf.js`: 94.10 kB gzip.
+- Top-level route modules now split into async chunks:
+  `Dashboard-CvDlYn0l.js`, `MaterialsCatalogPage-D6c2i4it.js`,
+  `FrameTypesCatalogPage-HzZWL23i.js`, `GlazingTypesCatalogPage-qqfWVmWs.js`,
+  and `ProjectShell-gJilV-Cq.js`.
+- Project tabs now split into async chunks for Status, Spaces, Equipment,
+  Apertures, Thermal Bridges, Envelope, Climate, and Model.
+- Status markdown sanitation is folded into the lazy Status tab chunk
+  (`StatusTab-Ckfn9crh.js`, 41.86 kB gzip), isolated from non-status routes
+  without adding a nested async markdown request.
 
 ## Breadcrumbs
 
@@ -60,6 +73,10 @@ Implementation constraints:
 
 Expected win: reduce initial app chunk by removing route page trees from the shared route module.
 
+Result: implemented in `frontend/src/app/router.tsx` with lazy Dashboard,
+catalog pages, and ProjectShell. Auth guards and redirect routes remain
+synchronous.
+
 ### 2. Split Non-Default Project Tabs
 
 `ProjectTabContent` already lazy-loads Climate and Model. Apply the same route-module boundary to Status, Apertures, Spaces, Equipment, Thermal Bridges, and Envelope.
@@ -71,6 +88,10 @@ Implementation constraints:
 - Do not move data fetching out of the current tab components during this phase.
 
 Expected win: project shell should no longer pay for every tab implementation up front.
+
+Result: implemented in
+`frontend/src/features/projects/components/ProjectTabContent.tsx` with per-tab
+`Suspense` fallbacks preserving `tab-panel` styling.
 
 ### 3. Split Status Markdown Renderer
 
@@ -84,6 +105,11 @@ Implementation constraints:
 
 Expected win: smaller project/status-adjacent chunk and less markdown payload in routes that do not render descriptions.
 
+Result: implemented by moving the sanitized markdown renderer to
+`frontend/src/features/project_status/components/StatusMarkdown.tsx`. The
+renderer is imported by the already lazy Status tab path, avoiding a nested
+route-data-markdown waterfall.
+
 ### 4. Re-Measure Before Manual Chunks
 
 Run bundle analysis after route boundaries and compare:
@@ -95,12 +121,24 @@ Run bundle analysis after route boundaries and compare:
 
 Only consider `manualChunks` after the route-boundary wins are known.
 
+Result: no manual chunks added. Route boundaries alone moved the main chunk
+well below the 250 kB gzip threshold. Remaining oversize chunks are deferred to
+Phase 04C/04D where they have narrower owners.
+
 ## Verification
 
 - `cd frontend && pnpm run analyze`
 - `cd frontend && pnpm run check:sizes`
 - `make frontend-dev-check`
 - Browser smoke: `/dashboard`, `/catalog/materials`, `/catalog/frame-types`, `/catalog/glazing-types`, `/projects/:projectId/status`, `/projects/:projectId/spaces/space-types`, `/projects/:projectId/equipment`, `/projects/:projectId/model`.
+
+Completed verification:
+
+- `cd frontend && pnpm run analyze` - passed; `bundle-stats.html` emitted.
+- `cd frontend && pnpm run check:sizes` - passed.
+- `make frontend-dev-check` - passed with existing Fast Refresh warnings only.
+- `cd frontend && pnpm exec vitest run src/features/project_status/components/StatusDescription.test.tsx src/App.test.tsx` - 32/32 passed.
+- `make e2e-perf PERF_PROJECT_ID=3d56d037-806d-498b-b559-7f505e0e3498` - 11/11 passed after adding Status to the opt-in matrix.
 
 ## Stop Conditions
 

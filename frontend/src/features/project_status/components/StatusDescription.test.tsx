@@ -35,6 +35,7 @@ describe("StatusDescription", () => {
       <StatusDescription description={'<img src="x" onerror="alert(1)">'} />,
     );
 
+    expect(container.querySelector(".status-description")).toBeEmptyDOMElement();
     expect(container.querySelector("img")).toBeNull();
   });
 

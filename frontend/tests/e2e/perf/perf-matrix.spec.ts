@@ -77,6 +77,17 @@ const perfPages: PerfPage[] = [
     },
   },
   {
+    id: "status",
+    label: "Status",
+    route: projectRoute("status"),
+    ready: async (page) => {
+      await expect(page.getByRole("heading", { name: "Status" })).toBeVisible();
+    },
+    scenario: async (page) => {
+      await page.getByRole("heading", { name: "Status" }).hover();
+    },
+  },
+  {
     id: "spaces",
     label: "Spaces",
     route: projectRoute("spaces/rooms"),

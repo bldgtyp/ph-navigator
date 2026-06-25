@@ -301,7 +301,7 @@ describe("App", () => {
     ).toBeVisible();
     expect(screen.queryByRole("button", { name: "Save Version" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "2426 - West Stockbridge House" })).toBeVisible();
-    expect(screen.getByRole("heading", { name: "Status" })).toBeVisible();
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Status" })).toBeVisible());
     const projectTabs = screen.getByRole("navigation", { name: "Project tabs" });
     expect(within(projectTabs).getByRole("link", { name: "Spaces" })).toBeVisible();
     expect(within(projectTabs).queryByRole("link", { name: "Rooms" })).not.toBeInTheDocument();
