@@ -1,4 +1,24 @@
 import type { FieldOption, TableFieldDef } from "../../shared/ui/data-table";
+import {
+  APPLIANCES_STATUS_OPTION_KEY,
+  ELECTRIC_HEATERS_STATUS_OPTION_KEY,
+  FANS_STATUS_OPTION_KEY,
+  HEAT_PUMPS_INDOOR_EQUIP_STATUS_OPTION_KEY,
+  HEAT_PUMPS_INDOOR_UNITS_STATUS_OPTION_KEY,
+  HEAT_PUMPS_OUTDOOR_EQUIP_STATUS_OPTION_KEY,
+  HEAT_PUMPS_OUTDOOR_UNITS_STATUS_OPTION_KEY,
+  HOT_WATER_HEATERS_STATUS_OPTION_KEY,
+  HOT_WATER_TANKS_STATUS_OPTION_KEY,
+  PUMPS_STATUS_OPTION_KEY,
+  STATUS_DEFAULT_OPTION_ID,
+  STATUS_DISPLAY_NAME,
+  STATUS_FIELD_KEY,
+  STATUS_OPTION_COMPLETE,
+  STATUS_OPTION_NA,
+  STATUS_OPTION_NEEDED,
+  STATUS_OPTION_QUESTION,
+  THERMAL_BRIDGES_STATUS_OPTION_KEY,
+} from "../../shared/ui/data-table/status";
 import type {
   CustomValue,
   InverseLinkField,
@@ -16,23 +36,26 @@ export type { CustomValue, InverseLinkField, InverseLinks, RowsComputed };
 // `custom_values.status`; the option list is namespaced per table as
 // `<table_label>.status` in each slice's `single_select_options`. Mirrors
 // the backend `status_field_def` / `*_STATUS_OPTION_KEY` constants.
-export const STATUS_FIELD_KEY = "status";
-export const STATUS_DISPLAY_NAME = "Status";
-export const STATUS_DEFAULT_OPTION_ID = "opt_status_needed";
-
-// Namespaced status option-list keys, one per in-scope table. Match the
-// backend `status_option_key(<table_label>)` strings exactly.
-export const PUMPS_STATUS_OPTION_KEY = "pumps.status";
-export const FANS_STATUS_OPTION_KEY = "fans.status";
-export const HOT_WATER_HEATERS_STATUS_OPTION_KEY = "hot_water_heaters.status";
-export const HOT_WATER_TANKS_STATUS_OPTION_KEY = "hot_water_tanks.status";
-export const ELECTRIC_HEATERS_STATUS_OPTION_KEY = "electric_heaters.status";
-export const APPLIANCES_STATUS_OPTION_KEY = "appliances.status";
-export const THERMAL_BRIDGES_STATUS_OPTION_KEY = "thermal_bridges.status";
-export const HEAT_PUMPS_OUTDOOR_EQUIP_STATUS_OPTION_KEY = "heat_pumps_outdoor_equip.status";
-export const HEAT_PUMPS_INDOOR_EQUIP_STATUS_OPTION_KEY = "heat_pumps_indoor_equip.status";
-export const HEAT_PUMPS_OUTDOOR_UNITS_STATUS_OPTION_KEY = "heat_pumps_outdoor_units.status";
-export const HEAT_PUMPS_INDOOR_UNITS_STATUS_OPTION_KEY = "heat_pumps_indoor_units.status";
+export {
+  APPLIANCES_STATUS_OPTION_KEY,
+  ELECTRIC_HEATERS_STATUS_OPTION_KEY,
+  FANS_STATUS_OPTION_KEY,
+  HEAT_PUMPS_INDOOR_EQUIP_STATUS_OPTION_KEY,
+  HEAT_PUMPS_INDOOR_UNITS_STATUS_OPTION_KEY,
+  HEAT_PUMPS_OUTDOOR_EQUIP_STATUS_OPTION_KEY,
+  HEAT_PUMPS_OUTDOOR_UNITS_STATUS_OPTION_KEY,
+  HOT_WATER_HEATERS_STATUS_OPTION_KEY,
+  HOT_WATER_TANKS_STATUS_OPTION_KEY,
+  PUMPS_STATUS_OPTION_KEY,
+  STATUS_DEFAULT_OPTION_ID,
+  STATUS_DISPLAY_NAME,
+  STATUS_FIELD_KEY,
+  STATUS_OPTION_COMPLETE,
+  STATUS_OPTION_NA,
+  STATUS_OPTION_NEEDED,
+  STATUS_OPTION_QUESTION,
+  THERMAL_BRIDGES_STATUS_OPTION_KEY,
+};
 
 export type RoomRow = {
   id: string;

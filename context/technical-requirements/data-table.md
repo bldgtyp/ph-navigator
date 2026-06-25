@@ -232,6 +232,17 @@ cell write via a `status → setCustomValue` seam because the value lives in
 New rows default to `opt_status_needed`; duplicate preserves the source
 row's status.
 
+On the shared frontend renderer, only the built-in `field_key === "status"`
+single-select gets semantic status-chip treatment: Complete and Needed
+render as compact solid chips with decorative scan icons; Question remains
+visually distinct; N/A stays neutral and quiet. Ordinary `single_select`
+fields, linked-record pills, toolbar chips, and filter/group chips keep the
+quieter tinted-pill treatment. A full solid-fill/white-text chip conversion
+is intentionally rejected for dense tables until a separate design decision
+changes that scope. Numeric-prefix hiding for single-select labels is also
+not global; any future prefix stripping needs an explicit field/list-level
+presentation rule.
+
 Attachment-capable equipment tables use their canonical rich table keys
 (`ventilators`, `pumps`, `fans`, `hot_water_heaters`,
 `hot_water_tanks`, `electric_heaters`, `appliances`) in the attachment
