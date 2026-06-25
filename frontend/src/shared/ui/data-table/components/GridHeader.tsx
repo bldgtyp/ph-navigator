@@ -174,7 +174,12 @@ function DataTableHeaderCell<TRow>({
   // "has at least one author-declared lock" so it stays correct if a
   // future custom-field author exposes locks.
   const schemaLocked = isBuiltInField(fieldDef);
-  const className = ["data-table-th", isPrimary ? "data-table-frozen" : ""]
+  const hasUnitHeader = fieldDef?.field_type === "number" && Boolean(fieldDef.numberUnits);
+  const className = [
+    "data-table-th",
+    isPrimary ? "data-table-frozen" : "",
+    hasUnitHeader ? "data-table-th--with-units" : "",
+  ]
     .filter(Boolean)
     .join(" ");
   const columnDragKeyDown =
@@ -260,20 +265,24 @@ function DataTableHeaderCell<TRow>({
     >
       <div className="data-table-header-row">
         {fieldDef ? <FieldTypeIcon fieldDef={fieldDef} /> : null}
-        <span className="data-table-header-label">
-          {flexRender(header.column.columnDef.header, header.getContext())}
-        </span>
-        {fieldDef?.field_type === "number" && fieldDef.numberUnits ? (
-          <span className="data-table-header-units" data-testid="data-table-header-units">
-            {numberUnitLabel(numberUnitForSystem(fieldDef.numberUnits, unitSystem))}
+        <span className="data-table-header-title">
+          <span className="data-table-header-main">
+            <span className="data-table-header-label">
+              {flexRender(header.column.columnDef.header, header.getContext())}
+            </span>
+            {description && fieldDef ? (
+              <CustomFieldDescriptionTooltip
+                description={description}
+                fieldDisplayName={fieldDef.display_name}
+              />
+            ) : null}
           </span>
-        ) : null}
-        {description && fieldDef ? (
-          <CustomFieldDescriptionTooltip
-            description={description}
-            fieldDisplayName={fieldDef.display_name}
-          />
-        ) : null}
+          {hasUnitHeader && fieldDef?.numberUnits ? (
+            <span className="data-table-header-units" data-testid="data-table-header-units">
+              {numberUnitLabel(numberUnitForSystem(fieldDef.numberUnits, unitSystem))}
+            </span>
+          ) : null}
+        </span>
       </div>
       {fieldDef ? (
         <HeaderContextMenu

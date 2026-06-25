@@ -10,10 +10,11 @@ describe("CustomFieldDescriptionTooltip", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  test("renders an accessible `?` trigger when description is non-empty", () => {
+  test("renders an accessible compact note trigger when description is non-empty", () => {
     render(<CustomFieldDescriptionTooltip description="Optional notes" fieldDisplayName="Notes" />);
     const trigger = screen.getByRole("button", { name: "Description for Notes" });
-    expect(trigger.textContent).toBe("?");
+    expect(trigger).toHaveClass("data-table-header-description-trigger");
+    expect(trigger).not.toHaveTextContent("?");
   });
 
   test("hovering the trigger reveals the trimmed description in a tooltip role", () => {

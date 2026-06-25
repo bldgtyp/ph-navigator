@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-25
-TIME: 01:04 EDT
-STATUS: Active - Phase 01 complete; Phase 02 next
+TIME: 01:12 EDT
+STATUS: Active - Phase 02 complete; Phase 03 next
 AUTHOR: Codex
 SCOPE: Current state, next step, blockers, and verification for DataTable UI.
 RELATED:
@@ -28,6 +28,11 @@ unit-system specific; semantic numeric cells emit a shared marker/class;
 and empty numeric display cells render a muted em dash without changing
 stored values.
 
+Phase 02 is complete. Unit-bearing headers use a deliberate two-line
+layout with the active unit badge below the field name, and field
+descriptions use a compact accessible icon trigger instead of the larger
+`"?"` marker.
+
 Captured requests:
 
 - right-align all numeric DataTable cells;
@@ -43,9 +48,9 @@ Captured requests:
 
 ## Next step
 
-Start Phase 02 by redesigning the shared header layout, replacing the
-large description `"?"` marker, and moving number-with-units labels under
-field names with a stable two-line header mode.
+Start Phase 03 by improving status chip typography/color/iconography
+and documenting whether solid chip styling applies globally or only to
+status-like semantic states.
 
 ## Blockers
 
@@ -86,3 +91,9 @@ Phase 01 verification:
 - `make frontend-dev-check` passed. Lint still reports the repo's
   existing 14 fast-refresh warnings; no errors.
 - `graphify update .`
+
+Phase 02 verification:
+
+- `cd frontend && pnpm exec vitest run src/shared/ui/data-table/__tests__/CustomFieldDescriptionTooltip.test.tsx src/shared/ui/data-table/__tests__/numberUnitsGrid.test.tsx src/shared/ui/data-table/__tests__/SortableHeaderCell.test.tsx src/shared/ui/data-table/__tests__/columnHeaderDoubleClick.test.tsx`
+  passed 33 tests, with existing React `act(...)` warnings in
+  `numberUnitsGrid.test.tsx`.

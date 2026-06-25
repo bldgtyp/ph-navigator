@@ -3,6 +3,7 @@
    split is planned, not yet landed (see styles/README.md). */
 .data-table-wrap {
   --data-table-gutter-width: 72px;
+  --data-table-header-height-units: 48px;
   --data-table-gutter-hover-bg: color-mix(in oklab, var(--accent) 8%, var(--bg-card));
   --data-table-gutter-selected-bg: color-mix(in oklab, var(--accent) 11%, var(--bg-card));
   --data-table-group-row-bg: color-mix(in oklab, var(--accent-light) 18%, var(--bg-card));
@@ -1509,6 +1510,16 @@
   min-height: calc(var(--data-table-header-height) - 2px);
 }
 
+.data-table-th--with-units {
+  height: var(--data-table-header-height-units);
+}
+
+.data-table-th--with-units .data-table-header-row {
+  align-items: flex-start;
+  min-height: calc(var(--data-table-header-height-units) - 2px);
+  padding-block: var(--space-4);
+}
+
 .data-table-field-type-icon {
   display: inline-flex;
   align-items: center;
@@ -1526,8 +1537,25 @@
   height: 14px;
 }
 
-.data-table-header-label {
+.data-table-header-title {
   flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+}
+
+.data-table-header-main {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.data-table-header-label {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1547,22 +1575,21 @@
   white-space: nowrap;
 }
 
-/* Number-with-units header chip. Sits to the right of the label so the
-   active unit (SI vs IP) is always visible without crowding the label
-   ellipsis. Quiet typography: matches the header's own muted secondary
-   color so it reads as metadata, not a value. */
+/* Number-with-units header badge. It sits below the label so the active
+   unit (SI vs IP) stays visible without consuming field-name width. */
 .data-table-header-units {
-  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
   padding: 1px 6px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-xs);
   background: color-mix(in oklab, var(--text-primary) 6%, transparent);
   color: var(--text-secondary);
   font-family: var(--font-mono);
   font-size: var(--fs-2xs);
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0;
   text-transform: none;
-  line-height: 1.4;
+  line-height: 1.2;
   white-space: nowrap;
 }
 
@@ -1623,14 +1650,23 @@
 }
 
 .data-table-header-description-trigger {
-  border: 0;
-  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  border: 1px solid color-mix(in oklab, var(--text-secondary) 42%, transparent);
+  background: color-mix(in oklab, var(--text-primary) 3%, transparent);
   color: var(--text-secondary);
   cursor: help;
-  padding: 0 var(--space-2);
-  font-size: var(--fs-sm);
+  padding: 0;
   line-height: 1;
-  border-radius: var(--phn-radius);
+  border-radius: var(--radius-pill);
+}
+
+.data-table-header-description-trigger svg {
+  display: block;
 }
 
 .data-table-header-description-trigger:focus-visible {
