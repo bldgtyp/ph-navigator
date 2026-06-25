@@ -5,9 +5,9 @@ STATUS: Complete - secondary runtime attribution measured; no production refacto
 AUTHOR: Codex
 SCOPE: Secondary runtime attribution plan for Envelope LCP and catalog hover long tasks
 RELATED:
-  - planning/refactor/frontend-perf/phases/phase-04-ranking.md
-  - planning/refactor/frontend-perf/scorecard-2026-06-24.md
-  - planning/refactor/frontend-perf/scorecard-2026-06-24-phase-04d.md
+  - planning/archive/dated/2026-06-25/frontend-perf/phases/phase-04-ranking.md
+  - planning/archive/dated/2026-06-25/frontend-perf/scorecard-2026-06-24.md
+  - planning/archive/dated/2026-06-25/frontend-perf/scorecard-2026-06-24-phase-04d.md
   - frontend/tests/e2e/perf/perf-matrix.spec.ts
 ---
 

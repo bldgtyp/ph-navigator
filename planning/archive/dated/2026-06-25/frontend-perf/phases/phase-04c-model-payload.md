@@ -5,9 +5,9 @@ STATUS: Complete - model stage payload split implemented and measured
 AUTHOR: Codex
 SCOPE: Model viewer lazy chunk payload investigation and split plan
 RELATED:
-  - planning/refactor/frontend-perf/phases/phase-04-ranking.md
-  - planning/refactor/frontend-perf/scorecard-2026-06-24.md
-  - planning/refactor/frontend-perf/scorecard-2026-06-24-phase-04c.md
+  - planning/archive/dated/2026-06-25/frontend-perf/phases/phase-04-ranking.md
+  - planning/archive/dated/2026-06-25/frontend-perf/scorecard-2026-06-24.md
+  - planning/archive/dated/2026-06-25/frontend-perf/scorecard-2026-06-24-phase-04c.md
   - frontend/src/features/projects/components/ProjectTabContent.tsx
   - frontend/src/features/model_viewer/routes/ModelTab.tsx
 ---
@@ -31,7 +31,7 @@ Runtime context:
 
 - `frontend/src/features/projects/components/ProjectTabContent.tsx:11` lazy-loads `ModelTab`.
 - `frontend/src/features/projects/components/ProjectTabContent.tsx:54` renders the Model tab branch.
-- `planning/refactor/frontend-perf/scorecard-2026-06-24.md` records the 350.06 kB gzip lazy chunk.
+- `planning/archive/dated/2026-06-25/frontend-perf/scorecard-2026-06-24.md` records the 350.06 kB gzip lazy chunk.
 
 ## Phase Plan
 

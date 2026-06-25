@@ -5,7 +5,7 @@ STATUS: Phase 04C model payload delta captured
 AUTHOR: Codex
 SCOPE: Bundle/runtime scorecard for the Model route payload split.
 RELATED:
-  - planning/refactor/frontend-perf/phases/phase-04c-model-payload.md
+  - planning/archive/dated/2026-06-25/frontend-perf/phases/phase-04c-model-payload.md
   - frontend/src/features/model_viewer/routes/ModelTab.tsx
 ---
 

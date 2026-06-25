@@ -5,7 +5,7 @@ STATUS: Phase 04D secondary runtime attribution captured
 AUTHOR: Codex
 SCOPE: Corrected interaction long-task attribution and secondary runtime decision.
 RELATED:
-  - planning/refactor/frontend-perf/phases/phase-04d-secondary-runtime.md
+  - planning/archive/dated/2026-06-25/frontend-perf/phases/phase-04d-secondary-runtime.md
   - frontend/tests/e2e/perf/perf-matrix.spec.ts
 ---
 
