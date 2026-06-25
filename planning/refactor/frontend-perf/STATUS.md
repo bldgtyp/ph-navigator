@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
-TIME: 20:24 EDT
-STATUS: Active — Phase 0 harness implemented; Phase 1 static sweep is next.
+TIME: 20:38 EDT
+STATUS: Active — Phase 1 static sweep complete; Phase 2 runtime sweep is next.
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: State, next step, and the deferred-findings log for the frontend perf eval.
 RELATED: ./README.md, ./PLAN.md
@@ -24,8 +24,9 @@ Methodology written (`PLAN.md`). Phase 0 harness is implemented:
 - Local default stress fixture seeded:
   `PERF_PROJECT_ID=3d56d037-806d-498b-b559-7f505e0e3498`.
 
-No scorecard has been produced yet; Phase 1 should read the treemap and create
-the first Layer-A flag list.
+First scorecard produced: `scorecard-2026-06-24.md`. Layer A is filled from
+`pnpm run analyze`; runtime/render/API columns remain intentionally unmeasured
+until Phases 2 and 3.
 
 Decisions taken 2026-06-24 (Ed):
 - **Scope = written plan doc only** initially; execution later greenlit via the
@@ -37,21 +38,25 @@ Decisions taken 2026-06-24 (Ed):
 | Phase | State | Note |
 |---|---|---|
 | 0 — Harness (deps, analyze script, scenarios, stress seed) | `Complete` | `pnpm run analyze`, skipped perf matrix, `PERF-STRESS` seed all verified |
-| 1 — Static sweep (bundle treemap) | `Active` | read `frontend/dist/bundle-stats.html`; first payload suspects already visible from build output |
-| 2 — Runtime sweep (traces / Lighthouse) | `Deferred` | — |
+| 1 — Static sweep (bundle treemap) | `Complete` | `scorecard-2026-06-24.md` logs the Layer-A flag list |
+| 2 — Runtime sweep (traces / Lighthouse) | `Active` | run the perf matrix and capture traces/Lighthouse for Layers A+B |
 | 3 — Render sweep (react-scan / Profiler) | `Deferred` | — |
 | 4 — Triage & fix | `Deferred` | — |
 
 ## Next step
-Start **Phase 1 — Static sweep**:
-1. Run `cd frontend && pnpm run analyze`.
-2. Open `frontend/dist/bundle-stats.html`.
-3. Create the first `scorecard-<YYYY-MM-DD>.md` row set for Layer A.
-4. Log route/chunk suspects before making any payload fixes.
+Start **Phase 2 — Runtime sweep**:
+1. Ensure backend/frontend are running on `:8000` / `:5173`.
+2. Use the seeded stress fixture:
+   `PERF_PROJECT_ID=3d56d037-806d-498b-b559-7f505e0e3498`.
+3. Run the opt-in perf matrix for trace/attachment capture:
+   `make e2e-perf PERF_PROJECT_ID=3d56d037-806d-498b-b559-7f505e0e3498`.
+4. Capture Lighthouse / DevTools traces for the route matrix and update
+   `scorecard-2026-06-24.md` or create a new dated scorecard if the sweep runs
+   on a later date.
 
-Known from the verified build output: `index-BCK7l2Eo.js` is ~391 kB gzip and
-`ModelTab-s2BTARnm.js` is ~350 kB gzip, both above the starting 250 kB gzip
-flag threshold in `PLAN.md` §7.
+Phase 1 confirmed two threshold-crossing payload flags:
+- `assets/index-C-de3sCl.js` is 391.28 kB gzip.
+- `assets/ModelTab-st-s-3xR.js` is 350.06 kB gzip.
 
 ## Open questions (resolve at execution time)
 - Stress-seed mechanism: extend the existing seed, or a dedicated perf fixture?
