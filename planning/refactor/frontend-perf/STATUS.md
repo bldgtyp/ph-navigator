@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
-TIME: 20:57 EDT
-STATUS: Active — Phase 2 runtime sweep complete; Phase 3 render sweep is next.
+TIME: 21:04 EDT
+STATUS: Active — Phase 3 render sweep complete; Phase 4 triage/fix is next.
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: State, next step, and the deferred-findings log for the frontend perf eval.
 RELATED: ./README.md, ./PLAN.md
@@ -26,10 +26,10 @@ Methodology written (`PLAN.md`). Phase 0 harness is implemented:
 
 First scorecard produced: `scorecard-2026-06-24.md`. Layer A is filled from
 `pnpm run analyze`; Layer B is filled from the Playwright perf matrix using the
-seeded stress fixture. Render-commit columns remain intentionally unmeasured
-until Phase 3.
+seeded stress fixture. Layer C is filled from the same perf matrix with the
+dev-only root React Profiler enabled by a browser init flag.
 
-Phase 2 harness corrections landed during execution:
+Harness corrections landed during Phase 2/3 execution:
 - Perf readiness selectors now match current page regions instead of stale
   headings.
 - The Model route uses `/projects/:id/model`.
@@ -37,6 +37,8 @@ Phase 2 harness corrections landed during execution:
   scenarios do not poison later rows.
 - Metrics JSON files are written under gitignored
   `frontend/test-results/perf-*/<page>-metrics.json`.
+- Dev-only React Profiler metrics are captured in those JSON files as
+  `reactCommits`.
 
 Decisions taken 2026-06-24 (Ed):
 - **Scope = written plan doc only** initially; execution later greenlit via the
@@ -50,28 +52,27 @@ Decisions taken 2026-06-24 (Ed):
 | 0 — Harness (deps, analyze script, scenarios, stress seed) | `Complete` | `pnpm run analyze`, skipped perf matrix, `PERF-STRESS` seed all verified |
 | 1 — Static sweep (bundle treemap) | `Complete` | `scorecard-2026-06-24.md` logs the Layer-A flag list |
 | 2 — Runtime sweep (traces / Lighthouse) | `Complete` | `make e2e-perf PERF_PROJECT_ID=3d56d037-806d-498b-b559-7f505e0e3498` passed 10/10; Layer-B rows logged |
-| 3 — Render sweep (react-scan / Profiler) | `Active` | use `pnpm run dev:scan` / Profiler on the stress table-edit suspects |
-| 4 — Triage & fix | `Deferred` | — |
+| 3 — Render sweep (react-scan / Profiler) | `Complete` | profiler-enabled perf matrix passed 10/10; stress table-edit commits logged |
+| 4 — Triage & fix | `Active` | rank fixes across Layers A/B/C; start with shared DataTable edit churn |
 
 ## Next step
-Start **Phase 3 — Render sweep**:
-1. Ensure backend/frontend are running on `:8000` / `:5173`.
-2. Use the seeded stress fixture and codex user:
-   `PERF_PROJECT_ID=3d56d037-806d-498b-b559-7f505e0e3498`.
-3. Run `cd frontend && pnpm run dev:scan` if the current dev server is not
-   already scan-enabled.
-4. Capture React render evidence for the highest Layer-B suspects:
-   - Spaces Rooms cell edit: 1,973 ms, 5 long tasks, max 244 ms.
-   - Equipment Pumps cell edit: 3,117 ms, 4 long tasks, max 261 ms.
-   - Catalog hover rows: 2-3 long tasks, max 98-109 ms.
-5. Update `scorecard-2026-06-24.md` render-commit columns before ranking
-   fixes in Phase 4.
+Start **Phase 4 — Triage & fix**:
+1. Rank the confirmed findings in `scorecard-2026-06-24.md`.
+2. Start with shared DataTable edit churn unless a simpler payload split is
+   deliberately chosen first.
+3. Inspect `useGridEdit`, `useGridWriteReducer`, row-model derivation, slice
+   table controllers, and mutation/refetch invalidation for Spaces/Equipment.
+4. Keep payload splits as separate, measurable fixes:
+   - AppRouter/project-shell lazy boundaries for the 391.28 kB main chunk.
+   - Model route payload for the 350.06 kB lazy chunk.
 
 Confirmed flags so far:
 - Payload: `assets/index-C-de3sCl.js` is 391.28 kB gzip.
 - Payload: `assets/ModelTab-st-s-3xR.js` is 350.06 kB gzip.
 - Runtime: stress Spaces Rooms cell edit is 1,973 ms with 5 long tasks.
 - Runtime: stress Equipment Pumps cell edit is 3,117 ms with 4 long tasks.
+- Render: stress Spaces Rooms edit is 25 commits / 446.1 ms actual duration.
+- Render: stress Equipment Pumps edit is 28 commits / 565.3 ms actual duration.
 
 ## Open questions (resolve at execution time)
 - Lighthouse/DevTools traces were not separately captured in Phase 2; the
@@ -83,7 +84,7 @@ Confirmed flags so far:
 
 ## Deferred findings log
 - Phase 4 candidate: investigate shared DataTable edit path for stress Spaces
-  and Equipment; both show multi-second scripted cell edits and >50 ms long
-  tasks.
+  and Equipment; both show multi-second scripted cell edits, >50 ms long tasks,
+  and 25-28 React commits per edit.
 - Phase 4 candidate: keep Envelope LCP (928 ms local dev) on the ranking list,
   but below table-edit stalls unless Phase 3 shows broad render churn.

@@ -1,9 +1,9 @@
 ---
 DATE: 2026-06-24
-TIME: 20:38 EDT
-STATUS: Phase 2 runtime sweep complete — Layers A+B.
+TIME: 21:04 EDT
+STATUS: Phase 3 render sweep complete — Layers A+B+C.
 AUTHOR: Codex
-SCOPE: Frontend payload and runtime scorecard from `pnpm run analyze` plus `make e2e-perf`.
+SCOPE: Frontend payload, runtime, and render scorecard from `pnpm run analyze` plus `make e2e-perf`.
 RELATED: ./PLAN.md, ./STATUS.md, frontend/dist/bundle-stats.html
 ---
 
@@ -17,12 +17,14 @@ RELATED: ./PLAN.md, ./STATUS.md, frontend/dist/bundle-stats.html
 - Phase 2 command:
   `make e2e-perf PERF_PROJECT_ID=3d56d037-806d-498b-b559-7f505e0e3498`
 - Phase 2 result: 10/10 Playwright perf matrix rows passed in 40.7s.
-- Phase 2 artifacts: gitignored
+- Phase 3 result: 10/10 Playwright perf matrix rows passed in 41.2s with
+  dev-only React Profiler capture enabled.
+- Perf artifacts: gitignored
   `frontend/test-results/perf-*/<page>-metrics.json` files.
-- Scope: **Layers A+B**. LCP comes from browser
+- Scope: **Layers A+B+C**. LCP comes from browser
   `largest-contentful-paint`; long tasks come from `PerformanceObserver`;
-  API payloads come from Playwright response headers. Render commits remain
-  unmeasured until Phase 3.
+  API payloads come from Playwright response headers. Render commits come from a
+  dev-only root `React.Profiler` enabled by the perf matrix.
 - Caveat: this is local Vite dev-server evidence, not a Lighthouse production
   audit. Treat absolute LCP values as directional.
 
@@ -44,28 +46,28 @@ the exact emitted chunk gzip.
 | `assets/climateLeafletMap-CIGW-MKW.css` | 15.61 | 6.46 | ok |
 | `assets/ModelTab-BGNsE96K.css` | 14.71 | 2.87 | ok |
 
-## Route Matrix — Layers A+B
+## Route Matrix — Layers A+B+C
 
 | Page | Tier | Route chunk (kB gz) | LCP | INP (key interaction) | Long tasks > 50ms | Render commits / interaction | Largest API payload | Flags |
 |---|---|---:|---|---|---|---|---|---|
-| Dashboard (`/dashboard`) | realistic | 391.28 | 188 ms | script 278 ms | 0 | Not measured | 0.4 kB `/api/v1/projects` | **Main chunk over budget.** Runtime clean in local harness. |
+| Dashboard (`/dashboard`) | realistic | 391.28 | 188 ms | script 277 ms | 0 | 0 commits | 0.4 kB `/api/v1/projects` | **Main chunk over budget.** Runtime clean in local harness. |
 | Apertures (`/projects/:id/apertures`) | realistic | 391.28 | Not measured | Not measured | Not measured | Not measured | Not measured | **Main chunk over budget.** Realistic fixture not run in Phase 2. |
-| Apertures (`/projects/:id/apertures`) | stress | 391.28 | 208 ms | script 274 ms | 1; max 50 ms | Not measured | 6.4 kB `/api/v1/catalogs/frame-types` | **Main chunk over budget.** Runtime mostly clean; one threshold long task. |
+| Apertures (`/projects/:id/apertures`) | stress | 391.28 | 208 ms | script 275 ms | 1; max 51 ms | 4 commits; 6.4 ms total; max 2.0 ms | 6.4 kB `/api/v1/catalogs/frame-types` | **Main chunk over budget.** Runtime/render mostly clean; one threshold long task. |
 | Envelope (`/projects/:id/envelope`) | realistic | 391.28 | Not measured | Not measured | Not measured | Not measured | Not measured | **Main chunk over budget.** Realistic fixture not run in Phase 2. |
-| Envelope (`/projects/:id/envelope`) | stress | 391.28 | 928 ms | script 290 ms | 0 | Not measured | 1.2 kB `/envelope?source=draft` | **Main chunk over budget.** Highest observed local LCP. |
+| Envelope (`/projects/:id/envelope`) | stress | 391.28 | 928 ms | script 289 ms | 0 | 3 commits; 15.1 ms total; max 5.2 ms | 1.2 kB `/envelope?source=draft` | **Main chunk over budget.** Highest observed local LCP; interaction render clean. |
 | Spaces (`/projects/:id/spaces`) | realistic | 391.28 | Not measured | Not measured | Not measured | Not measured | Not measured | **Main chunk over budget.** Realistic fixture not run in Phase 2. |
-| Spaces (`/projects/:id/spaces`) | stress | 391.28 | 184 ms | script 1,973 ms | 5; max 244 ms | Not measured | 25.6 kB `/draft/tables/rooms` | **Main chunk over budget. Interaction over 1s with long tasks.** |
-| Climate (`/projects/:id/climate`) | realistic | 391.28 + 120.83; map adds 44.63 | 176 ms | script 286 ms | 0 | Not measured | 0.4 kB `/api/v1/projects/:id` | Climate split works; runtime clean in local harness. Base app chunk still over budget. |
+| Spaces (`/projects/:id/spaces`) | stress | 391.28 | 184 ms | script 2,033 ms | 5; max 208 ms | **25 commits; 446.1 ms total; max 62.8 ms** | 25.6 kB `/draft/tables/rooms` | **Main chunk over budget. Interaction over 1s with render churn and long tasks.** |
+| Climate (`/projects/:id/climate`) | realistic | 391.28 + 120.83; map adds 44.63 | 176 ms | script 281 ms | 0 | 0 commits | 0.4 kB `/api/v1/projects/:id` | Climate split works; runtime/render clean in local harness. Base app chunk still over budget. |
 | Equipment (`/projects/:id/equipment`) | realistic | 391.28 | Not measured | Not measured | Not measured | Not measured | Not measured | **Main chunk over budget.** Realistic fixture not run in Phase 2. |
-| Equipment (`/projects/:id/equipment`) | stress | 391.28 | 192 ms | script 3,117 ms | 4; max 261 ms | Not measured | 5.5 kB `/draft/tables/appliances` | **Main chunk over budget. Interaction over 3s with long tasks.** |
+| Equipment (`/projects/:id/equipment`) | stress | 391.28 | 192 ms | script 3,152 ms | 5; max 263 ms | **28 commits; 565.3 ms total; max 88.5 ms** | 5.5 kB `/draft/tables/appliances` | **Main chunk over budget. Interaction over 3s with render churn and long tasks.** |
 | Model Viewer (`/projects/:id/model`) | realistic | 391.28 + 350.06 | Not measured | Not measured | Not measured | Not measured | Not measured | **Model route chunk over budget.** Realistic fixture not run in Phase 2. |
-| Model Viewer (`/projects/:id/model`) | stress | 391.28 + 350.06 | 196 ms | script 266 ms | 1; max 69 ms | Not measured | 0.4 kB `/api/v1/projects/:id` | **Model route chunk over budget.** Runtime clean in local harness. |
-| Materials catalog (`/catalog/materials`) | realistic | 391.28 | 172 ms | script 276 ms | 2; max 98 ms | Not measured | 10.9 kB `/api/v1/catalogs/materials?include_inactive=true` | **Main chunk over budget.** Catalog has small long-task cluster. |
-| Materials catalog (`/catalog/materials`) | stress | 391.28 | 172 ms | script 276 ms | 2; max 98 ms | Not measured | 10.9 kB `/api/v1/catalogs/materials?include_inactive=true` | Same catalog dataset; not project-tiered in current matrix. |
-| Frame Types catalog (`/catalog/frame-types`) | realistic | 391.28 | 172 ms | script 282 ms | 3; max 109 ms | Not measured | 6.4 kB `/api/v1/catalogs/frame-types?include_inactive=true` | **Main chunk over budget.** Catalog has small long-task cluster. |
-| Frame Types catalog (`/catalog/frame-types`) | stress | 391.28 | 172 ms | script 282 ms | 3; max 109 ms | Not measured | 6.4 kB `/api/v1/catalogs/frame-types?include_inactive=true` | Same catalog dataset; not project-tiered in current matrix. |
-| Glazing Types catalog (`/catalog/glazing-types`) | realistic | 391.28 | 184 ms | script 281 ms | 2; max 101 ms | Not measured | 2.0 kB `/api/v1/catalogs/glazing-types?include_inactive=true` | **Main chunk over budget.** Catalog has small long-task cluster. |
-| Glazing Types catalog (`/catalog/glazing-types`) | stress | 391.28 | 184 ms | script 281 ms | 2; max 101 ms | Not measured | 2.0 kB `/api/v1/catalogs/glazing-types?include_inactive=true` | Same catalog dataset; not project-tiered in current matrix. |
+| Model Viewer (`/projects/:id/model`) | stress | 391.28 + 350.06 | 196 ms | script 264 ms | 1; max 75 ms | 0 commits | 0.4 kB `/api/v1/projects` | **Model route chunk over budget.** Runtime/render clean in local harness. |
+| Materials catalog (`/catalog/materials`) | realistic | 391.28 | 172 ms | script 274 ms | 2; max 97 ms | 0 commits | 10.9 kB `/api/v1/catalogs/materials?include_inactive=true` | **Main chunk over budget.** Catalog long tasks are not React commits in this scenario. |
+| Materials catalog (`/catalog/materials`) | stress | 391.28 | 172 ms | script 274 ms | 2; max 97 ms | 0 commits | 10.9 kB `/api/v1/catalogs/materials?include_inactive=true` | Same catalog dataset; not project-tiered in current matrix. |
+| Frame Types catalog (`/catalog/frame-types`) | realistic | 391.28 | 172 ms | script 274 ms | 3; max 112 ms | 0 commits | 6.4 kB `/api/v1/catalogs/frame-types?include_inactive=true` | **Main chunk over budget.** Catalog long tasks are not React commits in this scenario. |
+| Frame Types catalog (`/catalog/frame-types`) | stress | 391.28 | 172 ms | script 274 ms | 3; max 112 ms | 0 commits | 6.4 kB `/api/v1/catalogs/frame-types?include_inactive=true` | Same catalog dataset; not project-tiered in current matrix. |
+| Glazing Types catalog (`/catalog/glazing-types`) | realistic | 391.28 | 184 ms | script 281 ms | 2; max 101 ms | 0 commits | 2.0 kB `/api/v1/catalogs/glazing-types?include_inactive=true` | **Main chunk over budget.** Catalog long tasks are not React commits in this scenario. |
+| Glazing Types catalog (`/catalog/glazing-types`) | stress | 391.28 | 184 ms | script 281 ms | 2; max 101 ms | 0 commits | 2.0 kB `/api/v1/catalogs/glazing-types?include_inactive=true` | Same catalog dataset; not project-tiered in current matrix. |
 
 ## Confirmed Layer-A Findings
 
@@ -113,8 +115,9 @@ the exact emitted chunk gzip.
      244 ms, largest API response 25.6 kB from `/draft/tables/rooms`.
    - Equipment Pumps cell edit: 3,117 ms scripted interaction, 4 long tasks, max
      261 ms, largest API response 5.5 kB from `/draft/tables/appliances`.
-   - Interpretation: Phase 3 should verify whether the stall is render churn,
-     grid edit pipeline work, API mutation/refetch behavior, or a combination.
+   - Interpretation: Layer C confirms render churn is part of the stall; Phase
+     4 should separate render work from grid edit pipeline work and
+     mutation/refetch behavior.
 
 2. **Envelope has the highest observed local LCP.**
    - Stress Envelope route: 928 ms LCP with no >50 ms long tasks.
@@ -126,12 +129,36 @@ the exact emitted chunk gzip.
    - Frame Types: 3 long tasks, max 109 ms.
    - Glazing Types: 2 long tasks, max 101 ms.
    - Interpretation: visible enough to track, lower priority than stress table
-     edits unless Phase 3 shows broad DataTable render churn.
+     edits because Layer C did not show React commits during catalog hover.
 
 4. **Model Viewer runtime was clean despite its large payload.**
-   - Stress Model route: 196 ms LCP, 266 ms scripted drag, 1 long task at 69 ms.
-   - Interpretation: current priority remains payload size unless Phase 3
-     reveals render churn during model interactions.
+   - Stress Model route: 196 ms LCP, 264 ms scripted drag, 1 long task at 75 ms,
+     0 React commits.
+   - Interpretation: current priority remains payload size, not render churn.
+
+## Confirmed Layer-C Findings
+
+1. **Stress table edits are confirmed render-churn problems.**
+   - Spaces Rooms edit: 25 React update commits, 446.1 ms total actual render
+     duration, max commit 62.8 ms.
+   - Equipment Pumps edit: 28 React update commits, 565.3 ms total actual
+     render duration, max commit 88.5 ms.
+   - Interpretation: Phase 4 should start at the shared DataTable edit path,
+     slice controller updates, row-model derivation, and mutation/refetch
+     invalidation boundaries before page-specific fixes.
+
+2. **Catalog hover long tasks are not React commit churn.**
+   - Materials, Frame Types, and Glazing Types catalog hover scenarios recorded
+     0 React commits despite 2-3 >50 ms long tasks.
+   - Interpretation: do not prioritize React memoization for the catalog hover
+     row based on this evidence; inspect pointer/hover CSS, grid DOM work, or
+     browser-level work only if it remains a ranked Phase 4 target.
+
+3. **Envelope and Apertures interactions have low render cost.**
+   - Envelope drag: 3 commits, 15.1 ms total actual render duration.
+   - Apertures drag: 4 commits, 6.4 ms total actual render duration.
+   - Interpretation: their current runtime flags are lower priority than
+     stress table edits.
 
 ## Candidate Fixes To Triage In Phase 4
 
@@ -139,6 +166,7 @@ Do not implement these until Layers B/C are captured and findings are ranked.
 
 | Candidate | Expected impact | Ease | Notes |
 |---|---|---|---|
+| Investigate shared DataTable edit pipeline (`useGridEdit`, write reducer, row-model derivation, slice invalidation) | High for stress Spaces/Equipment | Medium/hard | Confirmed by Layer B+C: 25-28 commits and 446-565 ms render work per edit. |
 | Lazy-load top-level AppRouter pages (`Dashboard`, catalog pages, `ProjectShell`) | High for first-load/dashboard/catalogs | Easy/medium | Would keep project-document surfaces out of the dashboard/catalog initial route. |
 | Lazy-load non-default project tabs in `ProjectTabContent` | High for project routes | Medium | Apertures, Envelope, Spaces, Equipment, Thermal Bridges can follow the existing Model/Climate `React.lazy` pattern. |
 | Lazy-load Status markdown renderer | Medium | Easy | Could split `react-markdown`/sanitizer from non-status routes, or make Status tab lazy. |
@@ -147,5 +175,4 @@ Do not implement these until Layers B/C are captured and findings are ranked.
 
 ## Deferred Until Later Phases
 
-- No render-commit interpretation yet; that is Phase 3.
 - No payload fixes yet; Phase 4 ranks confirmed findings across all layers.

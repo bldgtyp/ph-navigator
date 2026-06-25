@@ -188,6 +188,8 @@ test.describe("frontend perf matrix", () => {
 
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
+      window.__PHN_ENABLE_REACT_PROFILER__ = true;
+      window.__PHN_REACT_PROFILER__ = [];
       window.__PHN_PERF_LONG_TASKS__ = [];
       window.__PHN_PERF_LCP__ = null;
       const observer = new PerformanceObserver((list) => {
@@ -239,6 +241,9 @@ test.describe("frontend perf matrix", () => {
       await page.waitForLoadState("networkidle");
       await discardRecoveredDraft(page);
       await perfPage.ready(page);
+      await page.evaluate(() => {
+        window.__PHN_REACT_PROFILER__ = [];
+      });
 
       const startedAt = Date.now();
       await perfPage.scenario(page);
@@ -252,6 +257,7 @@ test.describe("frontend perf matrix", () => {
             interactionMs,
             lcpMs: window.__PHN_PERF_LCP__,
             longTasks: window.__PHN_PERF_LONG_TASKS__,
+            reactCommits: window.__PHN_REACT_PROFILER__,
             resourceBytes: performance
               .getEntriesByType("resource")
               .map((entry) => entry.toJSON())
@@ -276,6 +282,15 @@ test.describe("frontend perf matrix", () => {
 
 declare global {
   interface Window {
+    __PHN_ENABLE_REACT_PROFILER__?: boolean;
+    __PHN_REACT_PROFILER__?: Array<{
+      id: string;
+      phase: "mount" | "update" | "nested-update";
+      actualDuration: number;
+      baseDuration: number;
+      startTime: number;
+      commitTime: number;
+    }>;
     __PHN_PERF_LONG_TASKS__: Array<{ name: string; startTime: number; duration: number }>;
     __PHN_PERF_LCP__: number | null;
   }
