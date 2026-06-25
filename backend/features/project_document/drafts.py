@@ -15,7 +15,6 @@ from database import transaction
 from features.assets.reference_validation import validate_document_asset_references
 from features.project_document import repository
 from features.project_document.audit import log_document_action
-from features.project_document.document import ProjectDocumentV1
 from features.project_document.models import (
     AUTO_LOCKED_VERSION_KINDS,
     DiscardDraftResponse,
@@ -31,69 +30,12 @@ from features.project_document.tables import get_table_contract
 from features.project_document.validation import (
     document_etag,
     enforce_document_body_size,
-    next_draft_etag_from_etag,
     validate_document,
 )
+from features.project_document.write_spine import apply_document_write
 from features.projects.access import ProjectAccess, require_editor_user
 from features.projects.service import version_public
 from features.shared.errors import api_error
-
-
-def load_draft_context(
-    conn: Connection[Any],
-    project_id: UUID,
-    version_id: UUID,
-    user_id: UUID,
-    if_match: str | None,
-    if_match_version: str | None,
-    *,
-    draft_etag_mismatch_message: str,
-) -> tuple[ProjectDocumentV1, str, str, dict[str, Any] | None]:
-    """Load + ETag-gate the draft basis used by every mutating draft op.
-
-    Locks the version row, rejects writes against a locked version, then
-    decides whether the basis is the saved version body (no draft yet) or
-    the current draft. The right ETag header is checked depending on which
-    basis we're using.
-
-    Returns ``(base_body, base_version_etag, version_etag, draft_or_none)``.
-    `version_etag` is always the hash of the *saved* version body — useful
-    for the no-op response branch that still needs to advertise it.
-    """
-    version = repository.get_project_version_for_update(conn, project_id, version_id)
-    if version is None:
-        raise_project_version_not_found()
-    if version["locked"]:
-        raise api_error(
-            status.HTTP_409_CONFLICT,
-            "version_locked",
-            "Locked versions cannot be edited.",
-        )
-
-    version_body = validate_document(version["body"])
-    version_etag = document_etag(version_body)
-    draft = repository.get_draft_for_update(conn, version_id, user_id)
-
-    if draft is None:
-        if if_match_version != version_etag:
-            raise api_error(
-                status.HTTP_409_CONFLICT,
-                "version_etag_mismatch",
-                "The saved version changed before this draft was created.",
-                {"expected": version_etag},
-            )
-        return version_body, version_etag, version_etag, None
-
-    if if_match != draft["draft_etag"]:
-        raise api_error(
-            status.HTTP_409_CONFLICT,
-            "draft_etag_mismatch",
-            draft_etag_mismatch_message,
-            {"expected": draft["draft_etag"]},
-        )
-    base_body = validate_document(draft["body"])
-    base_version_etag = str(draft["base_version_etag"])
-    return base_body, base_version_etag, version_etag, draft
 
 
 def replace_table_slice(
@@ -108,41 +50,24 @@ def replace_table_slice(
     contract = get_table_contract(table_name)
     payload = contract.parse_replace_payload(raw_payload)
 
-    with transaction() as conn:
-        base_body, base_version_etag, version_etag, draft = load_draft_context(
-            conn,
-            access.project_id,
-            version_id,
-            user.id,
-            if_match,
-            if_match_version,
-            draft_etag_mismatch_message="The draft changed before this table update was applied.",
-        )
-
-        next_body = contract.apply_replace(base_body, payload)
-        if next_body == base_body:
-            return contract.build_response(
-                access.project_id,
-                version_id,
-                "draft" if draft is not None else "version",
-                version_etag,
-                draft["draft_etag"] if draft is not None else None,
-                base_body,
-            )
-
-        validate_document_asset_references(conn, project_id=access.project_id, body=next_body)
-        serialized_next = enforce_document_body_size(next_body)
-        draft_etag = repository.upsert_draft(
-            conn,
-            version_id,
-            user.id,
-            next_body,
-            base_version_etag,
-            next_draft_etag_from_etag(serialized_next.etag),
-            serialized_body=serialized_next,
-        )
-
-    return contract.build_response(access.project_id, version_id, "draft", version_etag, draft_etag, next_body)
+    result = apply_document_write(
+        access,
+        version_id,
+        user.id,
+        if_match=if_match,
+        if_match_version=if_match_version,
+        mutate=lambda _conn, base_body: (contract.apply_replace(base_body, payload), None),
+        draft_etag_mismatch_message="The draft changed before this table update was applied.",
+        validate_asset_references=True,
+    )
+    return contract.build_response(
+        access.project_id,
+        version_id,
+        result.source,
+        result.version_etag,
+        result.draft_etag,
+        result.body,
+    )
 
 
 def apply_schema_mutation_to_draft(
@@ -198,62 +123,43 @@ def apply_schema_mutation_to_draft(
             {"table_key": mutation.table_key, "path_table_name": table_name},
         )
 
-    with transaction() as conn:
-        base_body, base_version_etag, version_etag, draft = load_draft_context(
-            conn,
-            access.project_id,
-            version_id,
-            user.id,
-            if_match,
-            if_match_version,
-            draft_etag_mismatch_message="The draft changed before this schema mutation was applied.",
-        )
+    custom_fields = contract.custom_fields
 
-        next_body, audit_payload = contract.custom_fields.apply_schema_mutation(base_body, mutation, user.id.hex)
-
-        if next_body == base_body:
-            # The only mutation that can no-op is `setDescription` to
-            # the same value. Return the current envelope without
-            # touching the draft or audit log; the audit payload is
-            # still passed through so the caller (REST / MCP) can
-            # surface "no-op" diagnostics if it wants.
-            response = contract.build_response(
-                access.project_id,
-                version_id,
-                "draft" if draft is not None else "version",
-                version_etag,
-                draft["draft_etag"] if draft is not None else None,
-                base_body,
-            )
-            return response, audit_payload
-
-        serialized_next = enforce_document_body_size(next_body)
-        draft_etag = repository.upsert_draft(
-            conn,
-            version_id,
-            user.id,
-            next_body,
-            base_version_etag,
-            next_draft_etag_from_etag(serialized_next.etag),
-            updated_via=updated_via,
-            serialized_body=serialized_next,
-        )
-
-        action = AUDIT_KIND_BY_MUTATION[mutation.kind]
+    def on_persisted(conn: Connection[Any], details: dict[str, object] | None) -> None:
+        # `setDescription` to the same value is the only no-op mutation; on a
+        # real write we audit-log the typed action with the mutation channel.
         log_document_action(
             conn,
-            action,
+            AUDIT_KIND_BY_MUTATION[mutation.kind],
             access,
             version_id,
             user.id,
             request,
-            extra_details={**audit_payload, "updated_via": updated_via},
+            extra_details={**(details or {}), "updated_via": updated_via},
         )
 
-    return (
-        contract.build_response(access.project_id, version_id, "draft", version_etag, draft_etag, next_body),
-        audit_payload,
+    result = apply_document_write(
+        access,
+        version_id,
+        user.id,
+        if_match=if_match,
+        if_match_version=if_match_version,
+        mutate=lambda _conn, base_body: custom_fields.apply_schema_mutation(base_body, mutation, user.id.hex),
+        draft_etag_mismatch_message="The draft changed before this schema mutation was applied.",
+        updated_via=updated_via,
+        on_persisted=on_persisted,
     )
+    # The audit payload is passed through even on a no-op so the caller
+    # (REST / MCP) can surface "no-op" diagnostics if it wants.
+    response = contract.build_response(
+        access.project_id,
+        version_id,
+        result.source,
+        result.version_etag,
+        result.draft_etag,
+        result.body,
+    )
+    return response, result.details or {}
 
 
 def save_draft(version_id: UUID, access: ProjectAccess, if_match: str | None, request: Request) -> SaveDraftResponse:

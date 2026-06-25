@@ -36,7 +36,6 @@ from features.envelope.models import (
 from features.envelope.phpp_export import phpp_preflight
 from features.envelope.selectors import build_envelope_read_parts
 from features.envelope.thermal import calculate_assembly_thermal
-from features.project_document import repository
 from features.project_document.audit import log_document_action
 from features.project_document.document import ProjectDocumentV1
 from features.project_document.models import ProjectDocumentSource
@@ -44,9 +43,8 @@ from features.project_document.service import (
     document_etag,
     get_current_document_view,
     get_saved_document,
-    validate_document,
 )
-from features.project_document.validation import enforce_document_body_size, next_draft_etag_from_etag
+from features.project_document.write_spine import apply_document_write
 from features.projects.access import ProjectAccess, require_editor_user
 from features.shared.errors import api_error
 
@@ -211,58 +209,30 @@ def apply_envelope_command(
     """
     user = require_editor_user(access)
 
-    with transaction() as conn:
-        base_body, base_version_etag, version_etag, draft = _load_command_context(
-            conn,
-            access.project_id,
-            version_id,
-            user.id,
-            if_match,
-            if_match_version,
-        )
-        next_body = dispatch_envelope_command(conn, base_body, command)
+    def mutate(conn: Connection[Any], base_body: ProjectDocumentV1) -> tuple[ProjectDocumentV1, dict[str, object]]:
+        return dispatch_envelope_command(conn, base_body, command), {"command_kind": command.kind}
 
-        if next_body == base_body:
-            source: ProjectDocumentSource = "draft" if draft is not None else "version"
-            assemblies, project_materials = build_envelope_read_parts(base_body)
-            return EnvelopeReadResponse(
-                project_id=access.project_id,
-                version_id=version_id,
-                source=source,
-                version_etag=version_etag,
-                draft_etag=draft["draft_etag"] if draft is not None else None,
-                assemblies=assemblies,
-                project_materials=project_materials,
-            )
+    def on_persisted(conn: Connection[Any], details: dict[str, object] | None) -> None:
+        log_document_action(conn, "envelope_command", access, version_id, user.id, None, extra_details=details)
 
-        serialized_next = enforce_document_body_size(next_body)
-        draft_etag = repository.upsert_draft(
-            conn,
-            version_id,
-            user.id,
-            next_body,
-            base_version_etag,
-            next_draft_etag_from_etag(serialized_next.etag),
-            updated_via=updated_via,
-            serialized_body=serialized_next,
-        )
-        log_document_action(
-            conn,
-            "envelope_command",
-            access,
-            version_id,
-            user.id,
-            None,
-            extra_details={"command_kind": command.kind},
-        )
-
-    assemblies, project_materials = build_envelope_read_parts(next_body)
+    result = apply_document_write(
+        access,
+        version_id,
+        user.id,
+        if_match=if_match,
+        if_match_version=if_match_version,
+        mutate=mutate,
+        draft_etag_mismatch_message="The draft changed before this envelope command was applied.",
+        updated_via=updated_via,
+        on_persisted=on_persisted,
+    )
+    assemblies, project_materials = build_envelope_read_parts(result.body)
     return EnvelopeReadResponse(
         project_id=access.project_id,
         version_id=version_id,
-        source="draft",
-        version_etag=version_etag,
-        draft_etag=draft_etag,
+        source=result.source,
+        version_etag=result.version_etag,
+        draft_etag=result.draft_etag,
         assemblies=assemblies,
         project_materials=project_materials,
     )
@@ -322,47 +292,3 @@ def _load_json(file_bytes: bytes) -> object:
             "import_invalid_json",
             "The uploaded file is not valid JSON.",
         ) from error
-
-
-def _load_command_context(
-    conn: Connection[Any],
-    project_id: UUID,
-    version_id: UUID,
-    user_id: UUID,
-    if_match: str | None,
-    if_match_version: str | None,
-) -> tuple[ProjectDocumentV1, str, str, dict[str, Any] | None]:
-    """Load the locked command baseline and raise structured conflict errors.
-
-    Missing versions are 404s, locked versions are 409s, and stale draft
-    or version ETags are 409s with an `expected` payload so clients can
-    refresh against the current document identity instead of guessing.
-    """
-    version = repository.get_project_version_for_update(conn, project_id, version_id)
-    if version is None:
-        raise api_error(status.HTTP_404_NOT_FOUND, "project_version_not_found", "Project version not found.")
-    if version["locked"]:
-        raise api_error(status.HTTP_409_CONFLICT, "version_locked", "Locked versions cannot be edited.")
-
-    version_body = validate_document(version["body"])
-    version_etag = document_etag(version_body)
-    draft = repository.get_draft_for_update(conn, version_id, user_id)
-
-    if draft is None:
-        if if_match_version != version_etag:
-            raise api_error(
-                status.HTTP_409_CONFLICT,
-                "version_etag_mismatch",
-                "The saved version changed before this envelope command was applied.",
-                {"expected": version_etag},
-            )
-        return version_body, version_etag, version_etag, None
-
-    if if_match != draft["draft_etag"]:
-        raise api_error(
-            status.HTTP_409_CONFLICT,
-            "draft_etag_mismatch",
-            "The draft changed before this envelope command was applied.",
-            {"expected": draft["draft_etag"]},
-        )
-    return validate_document(draft["body"]), str(draft["base_version_etag"]), version_etag, draft

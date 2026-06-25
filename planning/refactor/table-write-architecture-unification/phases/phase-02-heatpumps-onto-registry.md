@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 18:25 EDT
-STATUS: Blocked (Phase 1 here)
+STATUS: Ready (Phase 1 complete 2026-06-25) — next phase to implement
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: Phase 2 — fold heat-pumps backend onto the registered contract + spine.
 RELATED: ../PRD.md, planning/code-reviews/2026-06-24/backend-data-architecture-review.md (DOC-3, DOC-4),

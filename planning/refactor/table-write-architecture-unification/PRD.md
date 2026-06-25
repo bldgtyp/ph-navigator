@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 18:25 EDT
-STATUS: Active — planning.
+STATUS: Active — Phase 1 implemented (shared write spine); Phases 2–3 pending.
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: Product/behavior contract for the table-write-architecture unification.
 RELATED: ./README.md, ./STATUS.md,

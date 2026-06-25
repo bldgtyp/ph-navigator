@@ -46,13 +46,13 @@ from features.assets.registry import (
 )
 from features.assets.storage_r2 import asset_object_key
 from features.project_document import repository as document_repository
-from features.project_document.drafts import load_draft_context
 from features.project_document.store import get_saved_document
 from features.project_document.validation import (
     enforce_document_body_size,
     next_draft_etag_from_etag,
     validate_document,
 )
+from features.project_document.write_spine import load_draft_context
 from features.project_location.epw import epw_header_looks_valid
 from features.projects.access import ProjectAccess, require_editor_user
 from features.shared.errors import api_error

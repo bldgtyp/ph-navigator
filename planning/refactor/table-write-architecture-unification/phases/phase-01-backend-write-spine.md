@@ -1,14 +1,34 @@
 ---
 DATE: 2026-06-24
 TIME: 18:25 EDT
-STATUS: Blocked (aperture v12 WIP; sibling Phase 3)
+STATUS: Complete (2026-06-25) — spine extracted; four surfaces converted; suite green.
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: Phase 1 — extract the shared backend write spine.
 RELATED: ../PRD.md, planning/code-reviews/2026-06-24/backend-data-architecture-review.md (DOC-1, DOC-3, DOC-4)
-DEPENDS_ON: aperture v12 WIP merged; sibling refactor Phase 3 (single validator + size guard) landed.
+DEPENDS_ON: aperture v12 WIP merged; sibling refactor Phase 3 (single validator + size guard) landed. ✅ both cleared.
 ---
 
 # Phase 1 — Backend Write Spine
+
+## Outcome (2026-06-25)
+- Added `features/project_document/write_spine.py`: `apply_document_write`
+  (load/ETag-gate → mutate → no-op short-circuit → optional asset-ref check →
+  size guard → persist → ETag bump → optional `on_persisted` audit hook),
+  plus `load_draft_context` moved in from `drafts.py` (drafts → spine is a
+  single import direction; no cycle).
+- Converted onto the spine: `replace_table_slice` and
+  `apply_schema_mutation_to_draft` (`drafts.py`), `apply_aperture_command_to_draft`
+  (`aperture_commands/service.py`), and `apply_envelope_command`
+  (`envelope/service.py`). Deleted envelope's duplicate `_load_command_context`.
+  Net −133 lines.
+- Body-size guard now lives once, on the spine. Added 413 tests for the
+  aperture/MCP and envelope command surfaces; table-replace + MCP-schema-mutation
+  were already covered.
+- Verification: `ty` clean on all changed modules; full backend suite
+  **1107 passed, 2 skipped** (2 pre-existing warnings).
+- Surgical-scope notes recorded in `../STATUS.md`: spine kept to a two-outcome
+  (persist/no-op) model — heat-pumps dry-run preview fits it via an unchanged
+  body + `details`; `apply_option_patch`/assets/save-paths left bespoke by scope.
 
 ## Goal
 One place that owns the write lifecycle every document-write surface shares:
