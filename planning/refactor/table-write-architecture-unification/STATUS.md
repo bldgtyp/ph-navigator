@@ -36,7 +36,7 @@ half of the refactor is done.**
 | # | Increment | State |
 |---|---|---|
 | 1 | outdoor-units delete-cascade → generic `previewReplace` (3a route) + generic delete | `Done` (commit `6b6ae359`; tsc + 78 vitest green; live smoke deferred) |
-| 2a | option-delete = AirTable parity (clear refs to null): generalize the existing `editOptions` cascade (`apply_edit_options`) to clear across **all** tables sharing the option `namespace_key` (heat-pump `manufacturer` is shared across 2 leaves) + tests | `Pending` (needs full `make ci`) |
+| 2a | option-delete = AirTable parity (clear refs to null): generalize the existing `editOptions` cascade (`apply_edit_options`) to clear across **all** tables sharing the option `namespace_key` (heat-pump `manufacturer` is shared across 2 leaves) + tests | `Done` (shared-namespace cascade in `options_ops.py`; `test_shared_option_cascade.py`; BE suite green) |
 | 2b | point the 4 components' inline option add/edit/remove at the generic `editOptions` schema mutation (drop `useHeatPumpOptionMutation`) | `Pending` |
 | 3 | rewire `VentilatorsTableSlot` off the bespoke HP client onto the generic indoor-units feature | `Pending` |
 | 4 | drop bespoke FE client (`heat-pumps/api.ts` 3 hooks + `heatPumpsQueryKeys`); fix `hooks.ts` invalidation | `Pending` |
@@ -44,15 +44,15 @@ half of the refactor is done.**
 | 6 | tests + browser smoke as Ed (all four leaves) | `Pending` |
 
 ## Next step
-Resume Phase 3b at increment 2 (ordered plan in `phases/phase-03-*.md`
-§"Phase 3b — ordered plan"). Start with **2a** (backend: generalize the
-`editOptions` cascade to shared option keys — this is the AirTable-parity
-"delete option ⇒ null the references" behavior Ed chose; the bespoke `/options`
-endpoint is redundant and gets removed in increment 5), then **2b** (point the
-heat-pump option editor at the generic `editOptions` mutation). 2a + 5 are
-backend changes that need a clean full `make ci`; 2b/3/4 can use targeted gates
-(tsc + vitest). The tree is clean now, so a real Equipment-tab browser smoke is
-available throughout.
+Resume Phase 3b at increment **2b** (point the four heat-pump components' inline
+option add/edit/remove at the generic `editOptions` schema mutation, dropping
+`useHeatPumpOptionMutation`). 2a landed: `apply_edit_options` now clears deleted
+options across every `(table, field)` bound to the shared option `namespace_key`
+(heat-pump `manufacturer` clears on both equip leaves from one edit). Remaining
+backend work is increment 5 (remove the PATCH shim incl. the `/options` endpoint
++ error-code rename). 2a + 5 are backend changes that need a clean full `make ci`;
+2b/3/4 can use targeted gates (tsc + vitest). The tree is clean now, so a real
+Equipment-tab browser smoke is available throughout.
 
 ## Blockers
 - None. The concurrent DataTable-UI WIP landed (it ended up bundled into the
