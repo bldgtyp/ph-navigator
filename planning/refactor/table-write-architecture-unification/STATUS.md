@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-25
-TIME: 02:00 EDT
-STATUS: Active — Phases 1, 2, 3a complete (all backend); Phase 3b (frontend rewire) is the only remaining work, needs an interactive app pass.
+TIME: 01:15 EDT
+STATUS: Active — backend complete (Phases 1, 2, 3a); Phase 3b in progress (increment 1/6 done); remaining increments paused on a concurrent DataTable-UI WIP in the tree.
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: State, blockers, sequencing for the table-write-architecture unification.
 RELATED: ./README.md, ./PRD.md, planning/archive/dated/2026-06-24/backend-data-architecture-cleanup/
@@ -30,21 +30,33 @@ half of the refactor is done.**
 | 1 — backend write spine | `Complete` | none — `make ci` green |
 | 2 — heat-pumps onto registry (backend) | `Complete` | none — `make ci` green (BE 1111, FE 1900) |
 | 3a — generic table-replace cascade preview (backend) | `Complete` | none — `:preview-replace` route; BE suite 1113 |
-| 3b — frontend heat-pumps rewire + shim removal | `Ready` | none — needs an interactive app pass (Vitest/Playwright as Ed) |
+| 3b — frontend heat-pumps rewire + shim removal | `In progress` | concurrent DataTable-UI WIP blocks a clean full-CI gate + browser smoke for the remaining increments |
+
+### Phase 3b increments
+| # | Increment | State |
+|---|---|---|
+| 1 | outdoor-units delete-cascade → generic `previewReplace` (3a route) + generic delete | `Done` (commit `6b6ae359`; tsc + 78 vitest green; live smoke deferred) |
+| 2 | option-list edits → generic whole-slice replace (`replaceOptions`) in all 4 components | `Pending` |
+| 3 | rewire `VentilatorsTableSlot` off the bespoke HP client onto the generic indoor-units feature | `Pending` |
+| 4 | drop bespoke FE client (`heat-pumps/api.ts` 3 hooks + `heatPumpsQueryKeys`); fix `hooks.ts` invalidation | `Pending` |
+| 5 | remove backend PATCH shim (`apply_patch`/`apply_option_patch`/`HeatPumpRowPatch`/`OptionPatchOp` + routes); rename `dependent_link_delete_blocked` | `Pending` (needs full `make ci`) |
+| 6 | tests + browser smoke as Ed (all four leaves) | `Pending` |
 
 ## Next step
-Phase 3b (the only remaining work) — the interactive frontend rewire. Follow the
-ordered 6-step plan in `phases/phase-03-*.md` §"Phase 3b — ordered plan":
-options→generic replace, delete-cascade→`:preview-replace`, rewire
-`VentilatorsTableSlot`, drop the bespoke FE client + `heatPumpsQueryKeys`, remove
-the backend PATCH shim + rename `dependent_link_delete_blocked`, tests + browser
-smoke. **Do it with the app running** — it's UX-critical and the endpoint removal
-must co-land with the frontend so the live Equipment tab never breaks. A
-fresh-budget implementation pass judged a blind (no-browser) rewire too risky.
+Resume Phase 3b increments 2–6 (ordered plan in `phases/phase-03-*.md`
+§"Phase 3b — ordered plan"). Increments 2–4 are isolated from the concurrent
+DataTable-UI work and can proceed with targeted gates (tsc on changed files +
+vitest); increment 5 (backend shim removal + rename) needs a clean full `make ci`,
+so do it once the concurrent DataTable-UI WIP has landed. Browser-smoke the
+Equipment → Heat Pumps tab once the tree is clean of that WIP.
 
 ## Blockers
-- None technical. 3b is gated only on doing it as a verified interactive pass
-  (running app) rather than autonomously, per the keep-the-app-green principle.
+- **Concurrent DataTable-UI WIP** is uncommitted in the working tree (shared
+  `shared/ui/data-table/*` internals + a `tsc` error in `GridBody.test.tsx`),
+  which blocks a clean full `make ci` and a clean Equipment-tab browser smoke.
+  Increment 1 was committed atomically (only its 3 files) to avoid entangling the
+  two. See [[feedback_concurrent_committer]]. Resume the CI-gated parts once that
+  WIP lands.
 
 ## Deferred follow-ups (recorded)
 - **Module split** of `tables/heat_pumps.py` (~982 lines): soft target, high-churn
