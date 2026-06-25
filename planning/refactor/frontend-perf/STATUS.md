@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
-TIME: 22:08 EDT
-STATUS: Active - Phase 04C implemented and measured.
+TIME: 22:24 EDT
+STATUS: Active - Phase 04D implemented and measured.
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: State, next step, and the deferred-findings log for the frontend perf eval.
 RELATED: ./README.md, ./PLAN.md
@@ -32,7 +32,9 @@ ranked and planned in `phases/`; Phase 04A has a first cut implemented and
 measured in `scorecard-2026-06-24-phase-04a.md`. Phase 04B route payload splits
 are implemented and measured in `scorecard-2026-06-24-phase-04b.md`. Phase 04C
 Model payload splitting is implemented and measured in
-`scorecard-2026-06-24-phase-04c.md`.
+`scorecard-2026-06-24-phase-04c.md`. Phase 04D secondary runtime attribution is
+implemented and measured in `scorecard-2026-06-24-phase-04d.md`; no production
+refactor was promoted.
 
 Harness corrections landed during Phase 2/3 execution:
 - Perf readiness selectors now match current page regions instead of stale
@@ -58,12 +60,12 @@ Decisions taken 2026-06-24 (Ed):
 | 1 — Static sweep (bundle treemap) | `Complete` | `scorecard-2026-06-24.md` logs the Layer-A flag list |
 | 2 — Runtime sweep (traces / Lighthouse) | `Complete` | `make e2e-perf PERF_PROJECT_ID=3d56d037-806d-498b-b559-7f505e0e3498` passed 10/10; Layer-B rows logged |
 | 3 — Render sweep (react-scan / Profiler) | `Complete` | profiler-enabled perf matrix passed 10/10; stress table-edit commits logged |
-| 4 — Triage & fix | `In progress` | Phase 04A, 04B, and 04C implemented/measured; continue with Phase 04D secondary runtime |
+| 4 — Triage & fix | `Complete` | Phase 04A, 04B, 04C, and 04D implemented/measured; no Phase 04D production refactor promoted |
 
 ## Next step
 
-Continue with the next ranked Phase 4 track:
-1. `phases/phase-04d-secondary-runtime.md` — P3 trace-first Envelope/catalog runtime follow-up.
+Run final completion cleanup for this packet if no new Phase 4 follow-up is
+added.
 
 Confirmed flags so far:
 - Payload: `assets/index-C-de3sCl.js` is 391.28 kB gzip.
@@ -76,6 +78,9 @@ Confirmed flags so far:
   at 7.00 kB gzip; the active 3D scene stack is isolated in
   `assets/ModelViewerStage-Bu_u64p4.js` at 345.06 kB gzip and preloaded once
   an active model file exists.
+- Secondary runtime after Phase 04D harness correction: catalog scripted hovers
+  show 0 long tasks and 0 React commits; Envelope LCP is a recovered-draft
+  message, not Assembly Builder rendering.
 - Payload: `assets/ModelTab-st-s-3xR.js` is 350.06 kB gzip.
 - Runtime: stress Spaces Rooms cell edit improved from 1,986 ms reproduced to
   1,505 ms after Phase 04A first cut; original scorecard baseline was 2,033 ms.
@@ -101,6 +106,12 @@ Confirmed flags so far:
   gzip; remaining route payload work shifts to async chunks, especially Model.
 - Phase 04C reduced the Model route shell from 350.29 kB gzip after Phase 04B
   to 7.00 kB gzip; the remaining active-viewer chunk is the coherent 3D stack.
+- Phase 04D found the catalog long-task signal was a harness attribution issue:
+  long tasks were accumulated during cold route load before the hover scenario.
+  The harness now resets long tasks before each scripted interaction.
+- Phase 04D found the Envelope LCP signal is currently contaminated by a
+  recovered-draft message. Do not promote an Envelope render refactor from this
+  packet without first measuring a clean no-draft route load.
 
 ## Deferred findings log
 - Phase 04A remaining candidate: investigate active DataTable row/model

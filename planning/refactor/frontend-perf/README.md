@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
-TIME: 22:08 EDT
-STATUS: Active - Phase 04C implemented and measured.
+TIME: 22:24 EDT
+STATUS: Active - Phase 04D implemented and measured.
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: Router for the frontend performance eval — a durable, repeatable method
   for finding re-render / payload / runtime low-hanging fruit across every page.
@@ -47,11 +47,12 @@ separate `PERF-STRESS` project for stress-tier table runs.
 4. `scorecard-2026-06-24-phase-04a.md` — Phase 04A before/after delta.
 5. `scorecard-2026-06-24-phase-04b.md` — Phase 04B route-split bundle/browser evidence.
 6. `scorecard-2026-06-24-phase-04c.md` — Phase 04C Model payload evidence.
-7. `phases/phase-04-ranking.md` — ranked Phase 4 findings and implementation sequence.
-8. `phases/phase-04a-datatable-edit-churn.md` — P0 shared DataTable edit plan.
-9. `phases/phase-04b-route-payload-splits.md` — P1 route/project-tab payload plan.
-10. `phases/phase-04c-model-payload.md` — P2 Model lazy-chunk payload plan.
-11. `phases/phase-04d-secondary-runtime.md` — P3 trace-first secondary runtime plan.
+7. `scorecard-2026-06-24-phase-04d.md` — Phase 04D secondary-runtime evidence.
+8. `phases/phase-04-ranking.md` — ranked Phase 4 findings and implementation sequence.
+9. `phases/phase-04a-datatable-edit-churn.md` — P0 shared DataTable edit plan.
+10. `phases/phase-04b-route-payload-splits.md` — P1 route/project-tab payload plan.
+11. `phases/phase-04c-model-payload.md` — P2 Model lazy-chunk payload plan.
+12. `phases/phase-04d-secondary-runtime.md` — P3 trace-first secondary runtime plan.
 
 ## One-paragraph summary
 
