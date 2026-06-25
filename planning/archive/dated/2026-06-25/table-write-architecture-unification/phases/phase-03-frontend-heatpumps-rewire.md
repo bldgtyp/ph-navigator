@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 18:25 EDT
-STATUS: Split (2026-06-25) — 3a (backend preview enabler) COMPLETE; 3b (frontend rewire) READY, needs an interactive app pass.
+STATUS: Complete (2026-06-25) — 3a (backend preview enabler) + 3b increments 1–6 all landed; heat-pumps fully on the generic client; `make ci` BE 1110 / FE 1906 green; browser smoke as Ed passed.
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: Phase 3 — rewire the heat-pumps frontend onto the generic table-write client.
 RELATED: ../PRD.md, context/technical-requirements/data-table.md,

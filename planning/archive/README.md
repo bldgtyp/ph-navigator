@@ -5,6 +5,7 @@ how and when each feature packet landed. Newest first. Grep by slug.
 
 ## 2026-06-25
 
+- `table-write-architecture-unification` - collapse heat-pumps' parallel write path onto the generic registered-contract + shared write spine (BE) and generic table-write client (FE); shared backend write spine, shared option-list delete cascade, bespoke service/FE-client/PATCH-shim removed, `dependent_link_delete_blocked` rename. (f760c31e)
 - `data-table-ui` - shared DataTable rendering polish: number precision/alignment, unit sublabels, status chips, tokenized table rhythm, and route-smoke verification. (closeout)
 
 ## 2026-06-24

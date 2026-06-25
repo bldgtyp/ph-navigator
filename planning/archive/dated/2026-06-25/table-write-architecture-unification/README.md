@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 18:25 EDT
-STATUS: Active — Phases 1, 2, 3a complete (all backend); Phase 3b (frontend rewire) is the only remaining work.
+STATUS: Complete (2026-06-25) — all phases (1, 2, 3a, 3b inc 1–6) landed; heat-pumps unified onto the generic table-write path on both stacks; `make ci` green; browser smoke as Ed passed. Archived.
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: Router for the table-write-architecture unification refactor (cross-stack).
 RELATED:

@@ -37,7 +37,7 @@ feature-first planning.
 | Refactor | State | Current pointer |
 |---|---|---|
 | Backend Data-Architecture Cleanup | Complete / Phases 1–3, 5, and 6 implemented and verified with `make ci`; old Phase 4 promoted to `table-write-architecture-unification`; Phase 7 deferred to pre-first-deploy gate; archived | `archive/dated/2026-06-24/backend-data-architecture-cleanup/STATUS.md` |
-| Table-Write-Architecture Unification | Active / Backend complete (Phases 1, 2, 3a) — shared `write_spine.py` (all draft-write surfaces) + heat-pumps folded onto the registered contract with a generic `dependent_links` cross-table cascade + a generic `:preview-replace` dry-run; bespoke heat-pump write service deleted, old PATCH endpoint kept as a thin shim; `make ci` green (BE 1113, FE 1900). Only Phase 3b (frontend rewire + shim removal) remains — an interactive app pass | `refactor/table-write-architecture-unification/STATUS.md` |
+| Table-Write-Architecture Unification | Complete / all phases (1, 2, 3a, 3b inc 1–6) landed — heat-pumps fully unified onto the generic registered-contract + spine (BE) and generic table-write client (FE); bespoke write service, FE client, and PATCH shim all removed; shared option-list delete cascade + `dependent_link_delete_blocked` rename; `make ci` green (BE 1110, FE 1906), browser smoke as Ed passed; archived | `archive/dated/2026-06-25/table-write-architecture-unification/STATUS.md` |
 | DataTable Status Field | Complete / Phases 01-05 implemented and verified with `make ci` (backend 1061, frontend 1887), live reset/reseed + browser smoke, graphify, simplify, and docs-pass evidence; durable contract folded into `context/technical-requirements/data-table.md`; archived | `archive/dated/2026-06-24/data-table-status-field/STATUS.md` |
 | Frontend Performance Eval | Complete / Phases 0-4 implemented and measured; route/project-tab payloads split, DataTable edit invalidation narrowed, Model route shell split to 7.00 kB gzip, secondary runtime candidates rejected after corrected attribution; archived | `archive/dated/2026-06-25/frontend-perf/STATUS.md` |
 
@@ -94,6 +94,11 @@ feature-first planning.
 - Completed DataTable UI planning now lives under
   `archive/dated/2026-06-25/data-table-ui/` (numeric precision, unit headers,
   status chips, shared visual rhythm, and route-smoke verification).
+- Completed Table-Write-Architecture Unification planning now lives under
+  `archive/dated/2026-06-25/table-write-architecture-unification/` (shared backend
+  write spine; heat-pumps folded onto the registered contract + generic table-write
+  client on both stacks; bespoke service/FE-client/PATCH-shim removed; shared
+  option-list delete cascade; `dependent_link_delete_blocked` rename).
 
 ## Update Rule
 
