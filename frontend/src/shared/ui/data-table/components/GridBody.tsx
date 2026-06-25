@@ -7,6 +7,7 @@ import { describeDuplicateRows } from "../lib/identifier/recordId";
 import type { DuplicateIdentifierRows } from "../lib/identifier/recordId";
 import { isCellInNormalizedRange, type NormalizedRange } from "../lib/range/normalize";
 import { isPointerInActiveEditor } from "../lib/eventTargets";
+import { isEmptyNumericValue, isNumericFieldDef } from "../lib/numberDisplay";
 import type {
   AxisRoleSubset,
   BodyPlanItem,
@@ -382,6 +383,7 @@ export function GridBody<TRow>({
               // formatting are hoisted to the per-row scope above.
               const showDuplicateChip =
                 columnIndex === identifierColumnIndex && duplicateTooltip !== "";
+              const isNumericCell = isNumericFieldDef(fieldDef);
               return (
                 <td
                   key={cell.id}
@@ -392,12 +394,14 @@ export function GridBody<TRow>({
                   data-row-id={rowId}
                   data-field-key={fieldKey || undefined}
                   data-cell-error={cellError ? "true" : undefined}
+                  data-numeric-cell={isNumericCell ? "true" : undefined}
                   data-axis-tint={axisTint}
                   data-fill-handle={isFillSourceCorner ? "true" : undefined}
                   data-fill-target={isFillTarget ? "true" : undefined}
                   data-row-edge={isLastDataRow ? "bottom" : undefined}
                   className={[
                     visibleColumnDefs[columnIndex]?.className,
+                    isNumericCell ? "data-table-numeric-cell" : "",
                     columnIndex === 0 ? "data-table-frozen" : "",
                     selected ? "data-table-cell-selected" : "",
                     selectionEdgeTop ? "data-table-selection-edge-top" : "",
@@ -539,6 +543,13 @@ function renderCellContent<TRow>(args: {
   } = args;
   if (!edit.isEditingCell(rowId, fieldKey) || !edit.editing) {
     if (fieldDef?.field_type === "color") return <ColorCell value={cellValue} />;
+    if (fieldDef?.field_type === "number" && isEmptyNumericValue(cellValue)) {
+      return (
+        <span className="data-table-cell-content data-table-numeric-empty" aria-label="Empty">
+          —
+        </span>
+      );
+    }
     if (fieldDef?.field_type === "single_select") {
       return <SingleSelectCell value={cellValue} fieldDef={fieldDef} />;
     }

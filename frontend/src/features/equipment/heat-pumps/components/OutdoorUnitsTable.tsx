@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { ApiRequestError } from "../../../../shared/api/client";
 import { errorMessage } from "../../../../shared/lib/errors";
 import {
@@ -16,16 +15,13 @@ import {
 import { useAssetUrls } from "../../../assets/hooks";
 import { ventilatorsSliceFeature } from "../../api";
 import type { VentilatorRow } from "../../types";
-import {
-  heatPumpsQueryKeys,
-  previewHeatPumpDelete,
-  useHeatPumpOptionMutation,
-  useHeatPumpPatchMutation,
-} from "../api";
+import { heatPumpOutdoorUnitsSliceFeature, useHeatPumpOptionMutation } from "../api";
 import {
   buildEmptyOutdoorEquipRow,
   buildEmptyOutdoorUnitRow,
   buildNewHeatPumpOption,
+  deleteHeatPumpRow,
+  heatPumpOutdoorUnitsPayloadBuilders,
   insertHeatPumpRow,
   outdoorEquipLabel,
   replaceHeatPumpRow,
@@ -97,9 +93,7 @@ export function OutdoorUnitsTable({
     message: string;
     affected: CascadeReference[];
   } | null>(null);
-  const patchMutation = useHeatPumpPatchMutation(projectId);
   const optionMutation = useHeatPumpOptionMutation(projectId);
-  const queryClient = useQueryClient();
   const accessMode = controller.canEdit ? "editor" : "viewer";
   const indoorUnitModalOpen = modal?.kind === "indoor-unit";
   const ventilatorsQuery = ventilatorsSliceFeature.useSliceQuery(
@@ -271,13 +265,20 @@ export function OutdoorUnitsTable({
   async function startDelete(row: HeatPumpOutdoorUnitRow) {
     setModal(null);
     try {
-      const preview = await previewHeatPumpDelete(projectId, slice, "outdoor-units", row.id);
+      // Dry-run the generic slice-replace (minus this row) to surface the
+      // cascade before the user confirms. The backend clears the dependent
+      // links on the real delete below; here we only preview them.
+      const previewPayload = heatPumpOutdoorUnitsPayloadBuilders.fromRowDelete(leafSlice, [
+        { rowId: row.id, row, anchorRowId: null },
+      ]);
+      const preview = await heatPumpOutdoorUnitsSliceFeature.previewReplace(
+        projectId,
+        slice.version_id,
+        leafSlice,
+        previewPayload,
+      );
       if (preview.affected.length === 0) {
-        await patchMutation.mutateAsync({
-          current: slice,
-          table: "outdoor-units",
-          patch: { op: "remove", path: `/${row.id}` },
-        });
+        await deleteHeatPumpRow(controller.onWrite, row);
         return;
       }
       setDeleteState({ kind: "preview", row, affected: preview.affected });
@@ -290,17 +291,11 @@ export function OutdoorUnitsTable({
   }
 
   async function confirmDelete(row: HeatPumpOutdoorUnitRow) {
-    // Re-read the slice from cache so the etag/draft_etag headers reflect any
-    // mutation that landed while the confirmation dialog was open.
-    const current =
-      queryClient.getQueryData<HeatPumpsSlice>(heatPumpsQueryKeys.slice(projectId, "editor")) ??
-      slice;
+    // The generic replace path reads the controller's live slice, so its
+    // etag headers already reflect any mutation that landed while the
+    // confirmation dialog was open.
     try {
-      await patchMutation.mutateAsync({
-        current,
-        table: "outdoor-units",
-        patch: { op: "remove", path: `/${row.id}` },
-      });
+      await deleteHeatPumpRow(controller.onWrite, row);
       setDeleteState(null);
     } catch (err) {
       setDeleteState(null);
@@ -454,7 +449,7 @@ export function OutdoorUnitsTable({
           description={`This will clear the outdoor link on ${deleteState.affected.length} indoor unit(s):`}
           affected={deleteState.affected}
           confirmLabel="Delete and clear links"
-          isConfirming={patchMutation.isPending}
+          isConfirming={controller.isReplacePending}
           onCancel={() => setDeleteState(null)}
           onConfirm={() => void confirmDelete(deleteState.row)}
         />

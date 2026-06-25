@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-25
-TIME: 00:57 EDT
-STATUS: Active - Phase 00 complete; Phase 01 next
+TIME: 01:04 EDT
+STATUS: Active - Phase 01 complete; Phase 02 next
 AUTHOR: Codex
 SCOPE: Current state, next step, blockers, and verification for DataTable UI.
 RELATED:
@@ -22,6 +22,12 @@ then updated after reviewing the DESIGN-agent mockup under
 Phase 00 is complete. The source-backed route matrix and written
 baseline checklist live in `ROUTE_MATRIX.md`.
 
+Phase 01 is complete. Plain number display/copy/aggregation now honors
+`FieldDef.numberPrecision`; number-with-units precision remains active
+unit-system specific; semantic numeric cells emit a shared marker/class;
+and empty numeric display cells render a muted em dash without changing
+stored values.
+
 Captured requests:
 
 - right-align all numeric DataTable cells;
@@ -37,8 +43,9 @@ Captured requests:
 
 ## Next step
 
-Start Phase 01 by writing/updating focused shared DataTable tests that
-reproduce the decimal precision issue and cover numeric right alignment.
+Start Phase 02 by redesigning the shared header layout, replacing the
+large description `"?"` marker, and moving number-with-units labels under
+field names with a stable two-line header mode.
 
 ## Blockers
 
@@ -64,3 +71,18 @@ Phase 00 docs/source verification:
 No browser screenshots were captured in Phase 00; the written baseline
 checklist in `ROUTE_MATRIX.md` is the pre-change reference until the
 later browser polish pass.
+
+Phase 01 verification:
+
+- failing reproduction before fix:
+  `cd frontend && pnpm exec vitest run src/shared/ui/data-table/__tests__/lib.test.ts src/shared/ui/data-table/__tests__/GridBody.test.tsx`
+- passing focused coverage:
+  `cd frontend && pnpm exec vitest run src/shared/ui/data-table/__tests__/lib.test.ts src/shared/ui/data-table/__tests__/GridBody.test.tsx src/shared/ui/data-table/__tests__/numberUnitsGrid.test.tsx src/shared/ui/data-table/__tests__/aggregations.test.ts`
+  passed 83 tests, with existing React `act(...)` warnings in
+  `numberUnitsGrid.test.tsx`.
+- passing adjacent coverage:
+  `cd frontend && pnpm exec vitest run src/shared/ui/data-table/__tests__/csv.test.ts src/shared/ui/data-table/__tests__/filterOperators.test.ts src/shared/ui/data-table/__tests__/useTableSchema.test.ts`
+  passed 32 tests.
+- `make frontend-dev-check` passed. Lint still reports the repo's
+  existing 14 fast-refresh warnings; no errors.
+- `graphify update .`

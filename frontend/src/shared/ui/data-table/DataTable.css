@@ -2160,8 +2160,14 @@ body[data-grid-fill-active="true"] {
   cursor: crosshair;
 }
 
-.numeric-cell {
+.numeric-cell,
+.data-table-numeric-cell {
   text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.data-table-numeric-empty {
+  color: var(--text-muted);
 }
 
 /* Plan 02 — pin editor to cell box so edit-start never reflows the

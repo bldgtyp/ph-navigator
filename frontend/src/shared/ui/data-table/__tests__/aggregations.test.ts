@@ -111,4 +111,11 @@ describe("formatAggregation", () => {
     expect(formatAggregation("mean", [1, 2])).toBe("1.50");
     expect(formatAggregation("sum", [0.1, 0.2])).toMatch(/^0\.30/);
   });
+
+  test("plain number aggregations honor configured precision", () => {
+    expect(formatAggregation("mean", [1, 2], { ...numberField, numberPrecision: 3 })).toBe("1.500");
+    expect(formatAggregation("sum", [0.1, 0.2], { ...numberField, numberPrecision: 1 })).toBe(
+      "0.3",
+    );
+  });
 });

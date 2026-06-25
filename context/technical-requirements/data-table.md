@@ -166,7 +166,7 @@ V2 v1 field types:
 | Type | Requirement |
 |---|---|
 | `text` | Plain text with contains/is/empty-style operators. |
-| `number` | SI in document. Plain numbers render raw and have no unit chrome. Optional `numberUnits` config (see "Number with Units" below) wires a single Number field into the global SI/IP toggle without inventing a separate type. |
+| `number` | SI or dimensionless numeric value in document. Plain numbers render with `FieldDef.numberPrecision` when configured and have no unit chrome. Optional `numberUnits` config (see "Number with Units" below) wires a single Number field into the global SI/IP toggle without inventing a separate type. |
 | `single_select` | Project-defined options, pill renderer, popover editor, match-or-create paste, sort by option order. |
 | `computed` | Backend-owned read overlay; frontend renders ready/stale/loading/error states and never reimplements PH calculations. |
 | `attachment` | Cell value is `string[]` of `asset_id`s referencing `project_assets` rows (`data-model.md` §6.5). Rendered by `<AttachmentCell>` — mousewheel-scrolled thumbnail strip, fixed cell height, "📎 Drop files here" pill-button in the empty active state, preview modal on double-click, select-and-Delete detach gesture. **Pre-set core fields only in v1** — not in the user-extensible custom-field set; the roster of attachment-capable cells lives in `attachments.md` §A2. **Clipboard semantics in v1: copy/paste of attachment cells is disabled.** Fill propagates the array verbatim within the same column. Aggregations: Count, Count Unique. Sort: by array length. Filter: `is_empty`, `is_not_empty`, `count_gte`, `count_lte`. **No** schema-mutation menu entries — `addField` / `deleteField` / `changeType` / `setFormula` do not apply. Write paths reject asset ids that are missing, pending/failed, cross-project, invalid for the field policy, or over the field's max-count. Full UX contract: `attachments.md`. |
@@ -277,11 +277,22 @@ editable cell and committing an emptied inline editor for `text`,
 `number`, `single_select`, and `color` fields. Required fields reject the clear
 and keep the prior value.
 
+Number cells carry the shared `data-table-numeric-cell` class /
+`data-numeric-cell="true"` marker so numeric alignment is semantic, not
+table-local. Empty rendered number cells show a muted em dash in display
+state only; clipboard, paste, and writes continue to use the nullable
+value contract above.
+
+Plain `number` cells with `FieldDef.numberPrecision` render, copy, CSV
+export, and aggregate at that configured precision without mutating the
+stored value. Numeric filter comparisons and paste normalization still
+parse numeric values, not formatted strings.
+
 ### Number with Units
 
 Per-field opt-in extension that wires a single `number` field into the
 global SI/IP toggle. Not a separate `field_type` — the picker still
-shows "Number", and plain Number behavior is unchanged when
+shows "Number", and plain Number fields stay unitless when
 `numberUnits` is absent. Full contract (registry, `FieldDef.numberUnits`
 shape, `editable` / `fixed` modes, SI-canonical storage, format/parse
 helpers, backend round-trip) lives in `frontend-viewer-units.md`
@@ -348,11 +359,12 @@ output is the current view (WYSIWYG): `filteredRows` × `visibleColumnDefs`
 (active sort, filter, hidden columns, column order; identifier pinned
 first; group headers excluded). Serialization (`lib/export/csv.ts`,
 `tableToCsv`) reuses the clipboard cell serializer — single-select →
-option label, number+units → active SI/IP value with the unit on the
-header — and adds a computed/formula branch (error cells → `""`). Format
-is RFC-4180 (comma-delimited, minimal double-quote quoting, `\r\n`
-records) as UTF-8 with a leading BOM so Excel renders `m²`, the Rooms
-em-dash, and accented names correctly.
+option label, plain number → configured precision, number+units → active
+SI/IP value with the unit on the header — and adds a computed/formula
+branch (error cells → `""`). Format is RFC-4180 (comma-delimited,
+minimal double-quote quoting, `\r\n` records) as UTF-8 with a leading
+BOM so Excel renders `m²`, the Rooms em-dash, and accented names
+correctly.
 
 ## Write Pipeline
 
