@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-25
-TIME: 01:24 EDT
-STATUS: Active - Phase 03 complete; Phase 04 next
+TIME: 01:36 EDT
+STATUS: Complete - all phases implemented; archive cleanup next
 AUTHOR: Codex
 SCOPE: Current state, next step, blockers, and verification for DataTable UI.
 RELATED:
@@ -33,9 +33,15 @@ layout with the active unit badge below the field name, and field
 descriptions use a compact accessible icon trigger instead of the larger
 `"?"` marker.
 
-Phase 03 is complete. Built-in `status` cells now use semantic
-status-only solid chip styling with Complete / Needed icons, while
-ordinary `single_select` pills keep the quieter tinted treatment.
+Phase 03 is complete. Built-in `status` cells now use semantic status-only
+solid chip styling with Complete / Needed icons, while ordinary
+`single_select` pills keep the quieter tinted treatment.
+
+Phase 04 is complete. The shared table visual rhythm now uses tokenized
+38px data rows, 38px normal headers, 50px unit-bearing headers, quieter
+row dividers, restrained hover/selection tints, tuned active-cell focus,
+and softened summary/gutter/chip chrome while preserving fixed layout and
+row virtualization.
 
 Captured requests:
 
@@ -52,8 +58,9 @@ Captured requests:
 
 ## Next step
 
-Start Phase 04 by doing the restrained frontend-design polish pass over
-table density, padding, row/selection states, and visual hierarchy.
+Run final completion cleanup: archive this planning packet under
+`planning/archive/dated/2026-06-25/data-table-ui/`, update planning indexes,
+and commit the archive move.
 
 ## Blockers
 
@@ -107,3 +114,16 @@ Phase 03 verification:
 - `make frontend-dev-check` passed. Lint still reports the repo's
   existing 14 fast-refresh warnings; no errors.
 - `graphify update .`
+
+Phase 04 verification:
+
+- `cd frontend && pnpm exec vitest run src/shared/ui/data-table/__tests__/GridBody.test.tsx src/shared/ui/data-table/__tests__/DataTable.test.tsx src/shared/ui/data-table/__tests__/numberUnitsGrid.test.tsx src/shared/ui/data-table/__tests__/GridToolbar.test.tsx src/shared/ui/data-table/__tests__/SummaryBar.test.tsx`
+  passed 121 tests. Existing React `act(...)` warnings remain in the
+  number-units/DataTable tests.
+- `make frontend-dev-check` passed. Lint still reports the repo's
+  existing 14 fast-refresh warnings; no errors.
+- `git diff --check` passed.
+- `graphify update .`
+- `E2E_EMAIL=codex@example.com E2E_PASSWORD=password pnpm exec playwright test tests/e2e/table-regression --grep @table-smoke`
+  passed 14 route-smoke tests across Space Types, Rooms, Equipment,
+  Heat Pump leaves, and Thermal Bridges.

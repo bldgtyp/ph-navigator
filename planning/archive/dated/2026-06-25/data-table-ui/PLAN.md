@@ -1,7 +1,7 @@
 ---
-DATE: 2026-06-24
-TIME: 20:44 EDT
-STATUS: Active - phased plan drafted
+DATE: 2026-06-25
+TIME: 01:36 EDT
+STATUS: Complete - implemented in five phases
 AUTHOR: Codex
 SCOPE: Implementation sequence and verification strategy for DataTable UI.
 RELATED:
@@ -19,13 +19,19 @@ through the existing shared DataTable mechanics:
 - keep fixed `colgroup` widths, column resize, sticky frozen columns,
   and virtualization;
 - port mockup values into tokens and shared classes;
-- make density explicit (`comfortable` about 44px, `compact` about
-  34px);
+- standardize the current shared density around a 38px row/header rhythm
+  while leaving any future comfortable/compact variants as a separate
+  behavior decision;
 - use the mockup's faint unit badge styling on a two-line header;
 - restyle existing toolbar controls before adding new toolbar behavior;
 - defer global search until search semantics are specified.
 
-## Phase Sequence
+## Implemented Phase Sequence
+
+The original design translation listed seven possible slices. During
+implementation those collapsed into five committed phases because the shared
+CSS/token, body-row, chip, toolbar, footer, and browser-polish work landed
+cleanly together without needing separate behavior phases.
 
 1. **Phase 00 - Redesign baseline and route matrix**
    - Capture current screenshots for representative DataTables.
@@ -46,17 +52,7 @@ through the existing shared DataTable mechanics:
    - Render empty numeric cells as muted em dash without changing stored
      values.
 
-3. **Phase 02 - Tokens, density, and table shell**
-   - Add DataTable-specific tokens for comfortable/compact row padding,
-     header background, row border, accent hover tint, primary-column
-     accent line, footer background, and muted numeric empty value.
-   - Make `data-table-shell-comfortable` and
-     `data-table-shell-compact` real CSS variants.
-   - Keep the table radius within the app system; translate the mockup's
-     larger radius/shadow into restrained table-surface styling.
-   - Preserve fixed layout; do not switch to `table-layout: auto`.
-
-4. **Phase 03 - Header density and unit sublabels**
+3. **Phase 02 - Header density and unit sublabels**
    - Redesign the header content layout in the shared header path.
    - Replace the large description `"?"` trigger with a compact accessible
      marker.
@@ -65,17 +61,7 @@ through the existing shared DataTable mechanics:
    - Tune `FieldTypeIcon` scale/color to match the mockup without
      losing accessible field-type meaning.
 
-5. **Phase 04 - Body rows, add-row, and selection states**
-   - Apply row typography, padding, right-aligned numeric rhythm,
-     primary identifier accent edge, lighter row dividers, and softened
-     hover/selection fills.
-   - Convert the default add-row affordance from the footer plus button
-     to a full-width ghost row when `buildEmptyRow` is available.
-   - Preserve keyboard row insertion, queued edit on the first editable
-     field, row context menu insertion, row selection, fill handle, and
-     grouped-row behavior.
-
-6. **Phase 05 - Chip system**
+4. **Phase 03 - Chip system**
    - Improve `status` chip colors, typography, and iconography.
    - Evaluate solid chip styling across `single_select`, linked-record,
      status, and toolbar chips.
@@ -83,23 +69,19 @@ through the existing shared DataTable mechanics:
    - Do not globally strip numeric prefixes from labels; add an explicit
      presentation hook if a specific option list needs it.
 
-7. **Phase 06 - Toolbar and footer**
-   - Restyle existing Filter / Sort / Group / Hide fields / overflow
-     controls to the mockup's ghost-button treatment.
-   - Move read-only/editable state from the top status chip into a quiet
-     footer status indicator.
-   - Add a footer summary row compatible with the existing summary bar
-     and custom `footerAction`.
-   - Keep global search deferred; do not add a search control until a
-     separate behavior contract defines formatted visible-cell matching,
-     persistence, and interaction with existing filters.
-
-8. **Phase 07 - Frontend-design polish and browser review**
+5. **Phase 04 - Frontend-design polish and browser review**
+   - Add tokenized shared table density: 38px data rows, 38px normal
+     headers, 50px unit-bearing headers, 12px horizontal padding, and
+     4px vertical cell padding.
+   - Keep fixed `colgroup` layout and synchronize the virtualizer data-row
+     estimate with `--data-table-row-height`.
+   - Restyle existing toolbar, row, selection, active-cell, gutter, summary,
+     unit-badge, field-icon, and ordinary single-select pill chrome.
    - Tune density, padding, borders, type scale, tint contrast, chips,
      and shell rhythm across representative tables.
    - Verify multiple real routes: Rooms / Space Types, Equipment tables,
-     Heat Pump leaf tables, Materials/Catalog, Apertures/Frames/Glazings,
-     and Thermal Bridges.
+     Heat Pump leaf tables, and Thermal Bridges through the route-smoke
+     matrix.
    - Fold durable decisions into `context/technical-requirements/data-table.md`.
 
 ## Likely implementation seams
@@ -134,9 +116,8 @@ through the existing shared DataTable mechanics:
 - Existing focused frontend check:
   - `cd frontend && pnpm exec vitest run <relevant files>`
   - `make frontend-dev-check`
-- Browser/Playwright visual pass on representative DataTables before
+- Browser/Playwright route pass on representative DataTables before
   closeout.
 - `graphify update .` after code changes.
 
-Full `make ci` is a closeout gate once implementation is done, not a
-requirement for this docs-only planning capture.
+Full `make ci` is the closeout gate once implementation is done.

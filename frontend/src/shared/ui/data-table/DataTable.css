@@ -3,9 +3,9 @@
    split is planned, not yet landed (see styles/README.md). */
 .data-table-wrap {
   --data-table-gutter-width: 72px;
-  --data-table-header-height-units: 48px;
-  --data-table-gutter-hover-bg: color-mix(in oklab, var(--accent) 8%, var(--bg-card));
-  --data-table-gutter-selected-bg: color-mix(in oklab, var(--accent) 11%, var(--bg-card));
+  --data-table-header-height-units: 50px;
+  --data-table-gutter-hover-bg: var(--data-table-hover-bg);
+  --data-table-gutter-selected-bg: var(--data-table-selected-bg);
   --data-table-group-row-bg: color-mix(in oklab, var(--accent-light) 18%, var(--bg-card));
   overflow: auto;
   /* The wrap MUST be the scroll container for the row virtualizer to
@@ -19,6 +19,8 @@
   --data-table-page-chrome: 220px;
   max-height: calc(100dvh - var(--data-table-page-chrome));
   background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
 }
 
 .data-table-wrap:focus {
@@ -38,6 +40,7 @@
   display: grid;
   gap: 0;
   background: var(--bg-card);
+  border-radius: var(--radius-md);
 }
 
 .data-table-shell:has(.room-option-popover) {
@@ -52,13 +55,13 @@
   align-items: center;
   border: 1px solid var(--border-card);
   border-bottom: 0;
-  border-radius: var(--phn-radius) var(--phn-radius) 0 0;
-  background: var(--bg-card);
-  padding: var(--space-8);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  background: var(--data-table-header-bg);
+  padding: var(--space-10) var(--space-12);
   color: var(--text-secondary);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -79,26 +82,26 @@
 
 .data-table-toolbar span {
   border: 1px solid var(--border-subtle);
-  border-radius: var(--phn-radius);
-  padding: 5px 7px;
-  background: var(--bg-page);
+  border-radius: var(--radius-xs);
+  padding: 4px 7px;
+  background: var(--bg-card);
 }
 
 .data-table-toolbar-actions button {
   border: 1px solid var(--border-subtle);
-  border-radius: var(--phn-radius);
+  border-radius: var(--radius-xs);
   padding: 5px 10px;
-  background: var(--bg-page);
+  background: var(--bg-card);
   color: var(--text-primary);
   font-family: inherit;
   font-size: var(--fs-xs);
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
   text-transform: uppercase;
   cursor: pointer;
 }
 
 .data-table-toolbar-actions button:hover {
-  background: color-mix(in oklab, var(--accent) 12%, var(--bg-page));
+  background: var(--data-table-hover-bg);
 }
 
 /* Phase 4 §4.8: right-aligned axis buttons (Filter / Sort / overflow).
@@ -119,12 +122,12 @@
   gap: var(--space-6);
   min-width: 26px;
   padding: var(--space-4) var(--space-10);
-  border-radius: var(--phn-radius);
-  background: transparent;
-  border: 1px solid transparent;
+  border-radius: var(--radius-xs);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
   font-family: inherit;
   font-size: var(--fs-xs);
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
   text-transform: uppercase;
   color: var(--text-primary);
   cursor: pointer;
@@ -1241,10 +1244,10 @@
 .data-table th,
 .data-table td {
   box-sizing: border-box;
-  border-right: 1px solid var(--border-subtle);
-  border-bottom: 1px solid var(--border-subtle);
+  border-right: 1px solid var(--data-table-row-border);
+  border-bottom: 1px solid var(--data-table-row-border);
   height: var(--data-table-row-height);
-  padding: 0 var(--data-table-cell-padding-x);
+  padding: var(--data-table-cell-padding-y) var(--data-table-cell-padding-x);
   text-align: left;
   vertical-align: middle;
 }
@@ -1260,13 +1263,12 @@
   z-index: calc(var(--z-base) + 3);
   height: var(--data-table-header-height);
   padding: 0 var(--data-table-header-padding-x);
-  --data-table-header-bg: var(--bg-card);
   background: var(--data-table-header-bg);
   color: var(--text-secondary);
-  font-family: var(--font-table, var(--font-primary));
+  font-family: var(--font-mono);
   font-size: var(--data-table-header-font-size);
-  font-weight: 500;
-  letter-spacing: 0.02em;
+  font-weight: 600;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -1298,16 +1300,24 @@
 .data-table td {
   position: relative;
   --data-table-cell-bg: var(--bg-card);
-  --data-table-row-hover-bg: color-mix(in oklab, var(--accent) 8%, var(--data-table-cell-bg));
-  --data-table-row-selected-bg: color-mix(in oklab, var(--accent) 11%, var(--data-table-cell-bg));
+  --data-table-row-hover-bg: color-mix(
+    in oklab,
+    var(--data-table-hover-bg) 70%,
+    var(--data-table-cell-bg)
+  );
+  --data-table-row-selected-bg: color-mix(
+    in oklab,
+    var(--data-table-selected-bg) 74%,
+    var(--data-table-cell-bg)
+  );
   --data-table-cell-block-selected-bg: color-mix(
     in oklab,
-    var(--accent-text) 4%,
+    var(--accent-text) 5%,
     var(--data-table-cell-bg)
   );
   --data-table-cell-block-active-bg: color-mix(
     in oklab,
-    var(--accent-text) 8%,
+    var(--accent-text) 10%,
     var(--data-table-cell-bg)
   );
   background: var(--data-table-cell-bg);
@@ -1337,10 +1347,12 @@
   width: var(--data-table-gutter-width);
   min-width: var(--data-table-gutter-width);
   max-width: var(--data-table-gutter-width);
-  border-right: 1px solid var(--border-subtle);
+  border-right: 1px solid var(--data-table-row-border);
   background: var(--bg-card);
   color: var(--text-muted);
   text-align: right;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
 }
 
 .data-table tbody .data-table-gutter {
@@ -1350,7 +1362,7 @@
 
 .data-table thead .data-table-gutter {
   z-index: calc(var(--z-base) + 9);
-  background: var(--data-table-header-bg, var(--bg-card));
+  background: var(--data-table-header-bg);
 }
 
 .data-table-gutter-inner {
@@ -1527,8 +1539,8 @@
   flex: 0 0 16px;
   width: 16px;
   height: 16px;
-  color: var(--text-secondary);
-  opacity: 0.9;
+  color: var(--text-muted);
+  opacity: 0.95;
 }
 
 .data-table-field-type-icon svg {
@@ -1582,7 +1594,7 @@
   align-items: center;
   padding: 1px 6px;
   border-radius: var(--radius-xs);
-  background: color-mix(in oklab, var(--text-primary) 6%, transparent);
+  background: color-mix(in oklab, var(--text-muted) 12%, transparent);
   color: var(--text-secondary);
   font-family: var(--font-mono);
   font-size: var(--fs-2xs);
@@ -2008,7 +2020,7 @@
    Single active cells keep the normal bordered cursor treatment below. */
 .data-table td.data-table-cell-selected {
   background: var(--data-table-cell-block-selected-bg) !important;
-  --data-table-selection-border: color-mix(in oklab, var(--accent-text) 46%, transparent);
+  --data-table-selection-border: color-mix(in oklab, var(--accent-text) 52%, transparent);
   --data-table-selection-edge-top-shadow: inset 0 0 0 0 transparent;
   --data-table-selection-edge-right-shadow: inset 0 0 0 0 transparent;
   --data-table-selection-edge-bottom-shadow: inset 0 0 0 0 transparent;
@@ -2046,12 +2058,16 @@
 
 .data-table td.data-table-cell-active:not(.data-table-cell-selected) {
   background: var(--data-table-cell-bg);
-  box-shadow: inset 0 0 0 2px var(--accent-text);
+  box-shadow:
+    inset 0 0 0 2px var(--accent-text),
+    inset 0 0 0 4px color-mix(in oklab, var(--accent) 10%, transparent);
 }
 
 .data-table td.data-table-cell-active.data-table-cell-selected {
   background: var(--data-table-cell-block-active-bg) !important;
-  box-shadow: inset 0 0 0 2px var(--accent-text) !important;
+  box-shadow:
+    inset 0 0 0 2px var(--accent-text),
+    inset 0 0 0 4px color-mix(in oklab, var(--accent) 10%, transparent) !important;
 }
 
 .data-table td.data-table-cell-error {
@@ -2366,7 +2382,8 @@ td.data-table-cell-editing {
 }
 
 .single-select-pill {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   box-sizing: border-box;
   max-width: 100%;
   border: 1px solid
@@ -2374,9 +2391,10 @@ td.data-table-cell-editing {
   border-radius: var(--radius-pill);
   background: color-mix(in oklab, var(--option-color, var(--text-muted)) 16%, var(--bg-card));
   color: var(--text-primary);
-  padding: 1px 10px;
-  font-size: 13px;
-  line-height: 1.4;
+  padding: 1px 9px;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  line-height: 1.35;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2625,7 +2643,7 @@ td.data-table-cell-editing {
 .data-table-summary-bar {
   position: sticky;
   bottom: 0;
-  background: var(--bg-card);
+  background: var(--data-table-header-bg);
   z-index: calc(var(--z-base) + 2);
 }
 
@@ -2634,8 +2652,8 @@ td.data-table-cell-editing {
 }
 
 .data-table-summary-gutter {
-  background: var(--bg-card);
-  border-top: 2px solid var(--border-subtle);
+  background: var(--data-table-header-bg);
+  border-top: 1px solid var(--border-subtle);
 }
 
 /* Match body `.data-table td` padding so the summary content baseline-
@@ -2647,8 +2665,8 @@ td.data-table-cell-editing {
   padding: 0 var(--data-table-cell-padding-x);
   font-size: inherit;
   color: var(--text-secondary);
-  background: var(--bg-card);
-  border-top: 2px solid var(--border-subtle);
+  background: var(--data-table-header-bg);
+  border-top: 1px solid var(--border-subtle);
   text-align: right;
   font-variant-numeric: tabular-nums;
   vertical-align: middle;
