@@ -486,6 +486,24 @@ describe("GridBody — single-select chevron (plan 05)", () => {
     expect(screen.getByRole("textbox", { name: "Search options" })).toBeInTheDocument();
   });
 
+  test("clicking an already-active single-select cell opens the popover", () => {
+    renderSelectTable({ onWrite: vi.fn() });
+    const active = getSelectCell(0, 0);
+    fireEvent.click(active);
+    expect(screen.getByRole("textbox", { name: "Search options" })).toBeInTheDocument();
+  });
+
+  test("inactive single-select cells select first and open on the next click", () => {
+    renderSelectTable({ onWrite: vi.fn() });
+    const inactive = getSelectCell(1, 0);
+
+    fireEvent.click(inactive);
+    expect(screen.queryByRole("textbox", { name: "Search options" })).toBeNull();
+
+    fireEvent.click(inactive);
+    expect(screen.getByRole("textbox", { name: "Search options" })).toBeInTheDocument();
+  });
+
   test("chevron disappears while the popover is open (cell is editing)", () => {
     renderSelectTable({ onWrite: vi.fn() });
     const active = getSelectCell(0, 0);

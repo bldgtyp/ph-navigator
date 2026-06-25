@@ -429,6 +429,10 @@ export function GridBody<TRow>({
                     // popover's search input — Radix would then fire
                     // focus-outside and close the popover immediately.
                     if (editing) return;
+                    if (active && cellsWritable && fieldDef?.field_type === "single_select") {
+                      onCellOpen(tanstackRow.original, columnIndex);
+                      return;
+                    }
                     if (rowId !== undefined && fieldKey) onCellActivate(rowId, fieldKey);
                   }}
                   onDoubleClick={
