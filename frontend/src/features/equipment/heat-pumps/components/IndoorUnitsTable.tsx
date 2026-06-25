@@ -15,14 +15,13 @@ import { useAssetUrls } from "../../../assets/hooks";
 import { roomsSliceFeature, ventilatorsSliceFeature } from "../../api";
 import { LinkedRoomDialogHost } from "../../components/LinkedRoomDialogHost";
 import type { RoomRow, VentilatorRow } from "../../types";
-import { useHeatPumpOptionMutation } from "../api";
 import {
   buildEmptyIndoorEquipRow,
   buildEmptyIndoorUnitRow,
-  buildNewHeatPumpOption,
   deleteHeatPumpRow,
   indoorEquipLabel,
   insertHeatPumpRow,
+  makeHeatPumpOptionCreator,
   outdoorUnitLabel,
   replaceHeatPumpRow,
   roomLabel,
@@ -41,7 +40,6 @@ import {
   type HeatPumpIndoorUnitRow,
   type HeatPumpOutdoorUnitsSlice,
   type HeatPumpOutdoorUnitRow,
-  type HeatPumpOwnedOptionKey,
   type HeatPumpsSlice,
 } from "../types";
 import { IndoorEquipRowModal } from "./IndoorEquipRowModal";
@@ -83,7 +81,6 @@ export function IndoorUnitsTable({
     affected: CascadeReference[];
   } | null>(null);
   const [linkedRoomId, setLinkedRoomId] = useState<string | null>(null);
-  const optionMutation = useHeatPumpOptionMutation(projectId);
   const accessMode = controller.canEdit ? "editor" : "viewer";
   const ventilatorsQuery = ventilatorsSliceFeature.useSliceQuery(
     projectId,
@@ -236,19 +233,15 @@ export function IndoorUnitsTable({
   ]);
 
   // IndoorUnitRowModal does not expose inline-create for any options.
-  // IndoorEquipRowModal — opened from this table for equip-create — still
-  // gets a createOption for the manufacturer / model_type / install_type
-  // lists owned by the heat-pumps slice.
-  async function createOption(optionKey: HeatPumpOwnedOptionKey, label: string): Promise<string> {
-    const existing = slice.single_select_options[optionKey] ?? [];
-    const newOption = buildNewHeatPumpOption(label, existing);
-    await optionMutation.mutateAsync({
-      current: slice,
-      optionKey,
-      patch: { op: "add", option: newOption },
-    });
-    return newOption.id;
-  }
+  // IndoorEquipRowModal — opened from this table for equip-create — creates
+  // manufacturer / model_type / install_type options, all owned by the
+  // indoor-equip leaf, so the generic editOptions mutation routes through the
+  // sibling indoor-equip controller.
+  const createOption = makeHeatPumpOptionCreator({
+    controller: indoorEquipController,
+    tableKey: "heat_pumps_indoor_equip",
+    optionsByKey: slice.single_select_options,
+  });
 
   async function addUnit(row: HeatPumpIndoorUnitRow) {
     const tag = uniqueTagForAdd(row.tag, slice.indoor_units);

@@ -13,12 +13,10 @@ import type {
   HeatPumpIndoorEquipSlice,
   HeatPumpIndoorUnitsReplacePayload,
   HeatPumpIndoorUnitsSlice,
-  HeatPumpOptionPatchOp,
   HeatPumpOutdoorEquipReplacePayload,
   HeatPumpOutdoorEquipSlice,
   HeatPumpOutdoorUnitsReplacePayload,
   HeatPumpOutdoorUnitsSlice,
-  HeatPumpOwnedOptionKey,
   HeatPumpPatchOp,
   HeatPumpTableKey,
   HeatPumpsPatchResponse,
@@ -144,50 +142,6 @@ export async function previewHeatPumpDelete(
     },
   );
   return response.cascade_preview ?? { affected: [] };
-}
-
-/**
- * Mutates one of the heat-pumps-owned single-select option lists. The backend
- * validates uniqueness + format; the same draft-etag dance as row patches
- * guards against stale writes. On success we refresh the slice in-place so
- * the new option is immediately visible to every consumer (SingleSelectPopover,
- * column accessors, modals).
- */
-export function useHeatPumpOptionMutation(projectId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      current,
-      optionKey,
-      patch,
-    }: {
-      current: HeatPumpsSlice;
-      optionKey: HeatPumpOwnedOptionKey;
-      patch: HeatPumpOptionPatchOp;
-    }) => {
-      const fresh =
-        queryClient.getQueryData<HeatPumpsSlice>(heatPumpsQueryKeys.slice(projectId, "editor")) ??
-        current;
-      return fetchJson<HeatPumpsSlice>(
-        `/api/v1/projects/${projectId}/equipment/heat-pumps/options/${optionKey}`,
-        {
-          method: "PATCH",
-          headers: draftWriteHeaders(fresh),
-          body: JSON.stringify(patch),
-        },
-      );
-    },
-    onSuccess: async (slice) => {
-      markLocalDraftTouched(projectId, slice.version_id, slice.draft_etag);
-      queryClient.setQueryData(heatPumpsQueryKeys.slice(projectId, "editor"), slice);
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: projectDocumentQueryKeys.draftSummary(projectId, slice.version_id),
-        }),
-        invalidateProjectDocumentEditorTableSlices(queryClient, projectId, slice.version_id),
-      ]);
-    },
-  });
 }
 
 export async function requestPhiusExport(projectId: string): Promise<PhiusExportResponse> {

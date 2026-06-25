@@ -11,13 +11,12 @@ import {
   type SliceTableController,
 } from "../../../../shared/ui/data-table/feature";
 import { useAssetUrls } from "../../../assets/hooks";
-import { useHeatPumpOptionMutation } from "../api";
 import {
   buildEmptyOutdoorEquipRow,
-  buildNewHeatPumpOption,
   deleteHeatPumpRow,
   indoorEquipLabel,
   insertHeatPumpRow,
+  makeHeatPumpOptionCreator,
   replaceHeatPumpRow,
   sortedOutdoorEquip,
   sortedOutdoorUnits,
@@ -37,7 +36,6 @@ import {
   type HeatPumpIndoorEquipRow,
   type HeatPumpOutdoorUnitsSlice,
   type HeatPumpOutdoorUnitRow,
-  type HeatPumpOwnedOptionKey,
   type HeatPumpsSlice,
 } from "../types";
 import { addRowButton } from "../../routes/equipmentRowActions";
@@ -75,7 +73,6 @@ export function OutdoorEquipTable({
   const [modal, setModal] = useState<ModalState>(null);
   const [linkPickerRow, setLinkPickerRow] = useState<HeatPumpOutdoorEquipRow | null>(null);
   const [phiusDialogOpen, setPhiusDialogOpen] = useState(false);
-  const optionMutation = useHeatPumpOptionMutation(projectId);
   const rows = useMemo(() => sortedOutdoorEquip(slice.outdoor_equip), [slice.outdoor_equip]);
   const outdoorUnits = useMemo(
     () => sortedOutdoorUnits(slice.outdoor_units),
@@ -188,21 +185,13 @@ export function OutdoorEquipTable({
   ]);
   const tableView = controller;
 
-  /**
-   * Persists a new option onto one of the heat-pumps-owned single-select lists.
-   * Returns the new option id so the caller (modal field, or the grid
-   * cell-write below) can update the row reference in the same draft cycle.
-   */
-  async function createOption(optionKey: HeatPumpOwnedOptionKey, label: string): Promise<string> {
-    const existing = slice.single_select_options[optionKey] ?? [];
-    const newOption = buildNewHeatPumpOption(label, existing);
-    await optionMutation.mutateAsync({
-      current: slice,
-      optionKey,
-      patch: { op: "add", option: newOption },
-    });
-    return newOption.id;
-  }
+  // Outdoor-equip owns manufacturer / system_family / refrigerant; create
+  // options through the generic editOptions mutation on this leaf's controller.
+  const createOption = makeHeatPumpOptionCreator({
+    controller,
+    tableKey: "heat_pumps_outdoor_equip",
+    optionsByKey: slice.single_select_options,
+  });
 
   async function addOutdoorRow(row: HeatPumpOutdoorEquipRow) {
     const tag = uniqueTagForAdd(row.tag, slice.outdoor_equip);
