@@ -1,4 +1,4 @@
-import { StrictMode } from "react";
+import { Profiler, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./app/App";
 
@@ -16,8 +16,40 @@ void enableReactScan().catch((error: unknown) => {
 const rootEl = document.getElementById("root");
 if (!rootEl) throw new Error("Root element #root not found");
 
-createRoot(rootEl).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+const app = <App />;
+const profiledApp =
+  import.meta.env.DEV && window.__PHN_ENABLE_REACT_PROFILER__ === true ? (
+    <Profiler
+      id="PHNavigator"
+      onRender={(id, phase, actualDuration, baseDuration, startTime, commitTime) => {
+        window.__PHN_REACT_PROFILER__?.push({
+          id,
+          phase,
+          actualDuration,
+          baseDuration,
+          startTime,
+          commitTime,
+        });
+      }}
+    >
+      {app}
+    </Profiler>
+  ) : (
+    app
+  );
+
+createRoot(rootEl).render(<StrictMode>{profiledApp}</StrictMode>);
+
+declare global {
+  interface Window {
+    __PHN_ENABLE_REACT_PROFILER__?: boolean;
+    __PHN_REACT_PROFILER__?: Array<{
+      id: string;
+      phase: "mount" | "update" | "nested-update";
+      actualDuration: number;
+      baseDuration: number;
+      startTime: number;
+      commitTime: number;
+    }>;
+  }
+}
