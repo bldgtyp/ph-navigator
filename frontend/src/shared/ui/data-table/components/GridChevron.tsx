@@ -30,6 +30,10 @@ export function GridChevron({ onMouseDown, ariaLabel = "Open options" }: GridChe
         event.preventDefault();
         onMouseDown(event);
       }}
+      onClick={(event) => {
+        event.stopPropagation();
+        event.preventDefault();
+      }}
     >
       <ChevronDown />
     </button>

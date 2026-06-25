@@ -2450,12 +2450,11 @@ td.data-table-cell-editing {
   align-items: center;
   box-sizing: border-box;
   max-width: 100%;
-  border: 1px solid
-    color-mix(in oklab, var(--option-color, var(--text-muted)) 52%, var(--border-subtle));
+  border: 0;
   border-radius: var(--radius-pill);
-  background: color-mix(in oklab, var(--option-color, var(--text-muted)) 16%, var(--bg-card));
-  color: var(--text-primary);
-  padding: 1px 9px;
+  background: color-mix(in oklab, var(--option-color, var(--text-muted)) 18%, var(--bg-card));
+  color: color-mix(in oklab, var(--option-color, var(--text-muted)) 72%, var(--text-primary));
+  padding: 2px 10px;
   font-size: var(--fs-xs);
   font-weight: 500;
   line-height: 1.35;
@@ -2468,9 +2467,8 @@ td.data-table-cell-editing {
   display: inline-flex;
   align-items: center;
   gap: var(--space-4);
-  border-color: transparent;
-  background: color-mix(in oklab, var(--option-color, var(--text-muted)) 90%, var(--text-primary));
-  color: var(--text-on-accent);
+  background: color-mix(in oklab, var(--option-color, var(--text-muted)) 18%, var(--bg-card));
+  color: color-mix(in oklab, var(--option-color, var(--text-muted)) 76%, var(--text-primary));
   padding: 1px 8px;
   font-size: var(--fs-xs);
   font-weight: 700;
@@ -2478,17 +2476,12 @@ td.data-table-cell-editing {
 }
 
 .single-select-pill--status[data-status-option="question"] {
-  background: color-mix(in oklab, var(--option-color, var(--text-muted)) 82%, var(--accent));
+  background: color-mix(in oklab, var(--option-color, var(--text-muted)) 18%, var(--bg-card));
 }
 
 .single-select-pill--status[data-status-option="na"] {
-  border-color: color-mix(
-    in oklab,
-    var(--option-color, var(--text-muted)) 46%,
-    var(--border-subtle)
-  );
   background: color-mix(in oklab, var(--option-color, var(--text-muted)) 18%, var(--bg-card));
-  color: var(--text-secondary);
+  color: color-mix(in oklab, var(--option-color, var(--text-muted)) 70%, var(--text-secondary));
 }
 
 .single-select-pill__status-icon {
