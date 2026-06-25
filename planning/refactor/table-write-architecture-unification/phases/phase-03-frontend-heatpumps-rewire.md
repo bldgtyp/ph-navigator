@@ -93,11 +93,18 @@ endpoints); the error-code rename in 5 must land FE+BE together.
    list, so a per-row loop would hit a stale etag on its second write). tsc + 1907
    vitest green. `useHeatPumpsQuery`/`useHeatPumpPatchMutation` now have no
    consumers (removed in increment 4).
-4. **Drop the bespoke frontend client**: `heat-pumps/api.ts` (`useHeatPumpsQuery`,
+4. **Drop the bespoke frontend client** ✅ DONE. `heat-pumps/api.ts` is now just
+   the four slice features + `requestPhiusExport` — `useHeatPumpsQuery`,
    `useHeatPumpPatchMutation`, `previewHeatPumpDelete`, `useHeatPumpOptionMutation`,
-   `fetchHeatPumps`) + `heatPumpsQueryKeys`; fix `project_document/hooks.ts`
-   invalidation coupling; prune now-dead `types.ts`. Keep `requestPhiusExport` +
-   the four slice features + field-defs/columns/row-builders/payload-builders.
+   `fetchHeatPumps`, and `heatPumpsQueryKeys` are gone. Removed the
+   `heatPumpsQueryKeys` invalidation coupling in `project_document/hooks.ts` and the
+   `invalidateHeatPumpsAggregate` plumbing in `HeatPumpsPanel` (the generic leaf
+   queries self-refresh via the shared `applyAcceptedSlice` path); deleted the now-
+   obsolete aggregate-invalidation test in `hooks.test.ts`. Pruned dead `types.ts`
+   (`HeatPumpTableKey`, `HeatPumpPatchOp`, `HeatPumpPatchRow`, `CascadePreview`,
+   `HeatPumpsPatchResponse`; kept `CascadeReference`). Kept `requestPhiusExport`, the
+   four slice features, and field-defs/columns/row-builders/payload-builders. tsc +
+   1906 vitest green; FE greps clean for every removed symbol.
 5. **Remove the backend write shim** (`features/heat_pumps/`): `apply_patch`,
    `apply_option_patch` (+ `_apply_option_patch_to_body`, `_option_is_referenced`,
    `_OPTION_KEY_TO_CELL`), `HeatPumpRowPatch`, `OptionPatchOp`, the patch→replace

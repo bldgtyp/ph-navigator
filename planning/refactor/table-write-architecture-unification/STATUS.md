@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-25
-TIME: 01:15 EDT
-STATUS: Active — backend complete (Phases 1, 2, 3a); Phase 3b in progress (increment 1/6 done); remaining increments paused on a concurrent DataTable-UI WIP in the tree.
+TIME: 09:25 EDT
+STATUS: Active — backend complete (Phases 1, 2, 3a); Phase 3b frontend done (increments 1–4); remaining = backend increment 5 (PATCH-shim removal + error-code rename, needs full `make ci`) and closeout 6 (e2e + browser smoke as Ed).
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: State, blockers, sequencing for the table-write-architecture unification.
 RELATED: ./README.md, ./PRD.md, planning/archive/dated/2026-06-24/backend-data-architecture-cleanup/
@@ -30,7 +30,7 @@ half of the refactor is done.**
 | 1 — backend write spine | `Complete` | none — `make ci` green |
 | 2 — heat-pumps onto registry (backend) | `Complete` | none — `make ci` green (BE 1111, FE 1900) |
 | 3a — generic table-replace cascade preview (backend) | `Complete` | none — `:preview-replace` route; BE suite 1113 |
-| 3b — frontend heat-pumps rewire + shim removal | `In progress` | none — tree clean again; increments 2–6 ready |
+| 3b — frontend heat-pumps rewire + shim removal | `In progress` | none — FE done (inc 1–4); BE inc 5 + closeout 6 remain |
 
 ### Phase 3b increments
 | # | Increment | State |
@@ -39,25 +39,36 @@ half of the refactor is done.**
 | 2a | option-delete = AirTable parity (clear refs to null): generalize the existing `editOptions` cascade (`apply_edit_options`) to clear across **all** tables sharing the option `namespace_key` (heat-pump `manufacturer` is shared across 2 leaves) + tests | `Done` (shared-namespace cascade in `options_ops.py`; `test_shared_option_cascade.py`; BE suite green) |
 | 2b | point the 4 components' inline option add/edit/remove at the generic `editOptions` schema mutation (drop `useHeatPumpOptionMutation`) | `Done` (shared `makeHeatPumpOptionCreator` in `option-helpers.ts`; units tables route through the sibling equip controller; `useHeatPumpOptionMutation`/`HeatPumpOptionPatchOp` removed; tsc + 1907 vitest green) |
 | 3 | rewire `VentilatorsTableSlot` off the bespoke HP client onto the generic indoor-units feature | `Done` (3 generic leaf queries replace `useHeatPumpsQuery`; indoor-unit save + link-picker batch through `useReplaceSliceMutation` + `fromCellWrites`; `useHeatPumpsQuery`/`useHeatPumpPatchMutation` now have zero consumers; tsc + 1907 vitest green) |
-| 4 | drop bespoke FE client (`heat-pumps/api.ts` 3 hooks + `heatPumpsQueryKeys`); fix `hooks.ts` invalidation | `Pending` |
+| 4 | drop bespoke FE client (`heat-pumps/api.ts` 3 hooks + `heatPumpsQueryKeys`); fix `hooks.ts` invalidation | `Done` (api.ts = 4 slice features + `requestPhiusExport` only; `heatPumpsQueryKeys` coupling gone from `hooks.ts` + `HeatPumpsPanel`; obsolete `hooks.test.ts` aggregate-invalidation test removed; dead `types.ts` pruned; tsc + 1906 vitest green) |
 | 5 | remove backend PATCH shim (`apply_patch`/`apply_option_patch`/`HeatPumpRowPatch`/`OptionPatchOp` + routes); rename `dependent_link_delete_blocked` | `Pending` (needs full `make ci`) |
 | 6 | tests + browser smoke as Ed (all four leaves) | `Pending` |
 
 ## Next step
-Resume Phase 3b at increment **4** (drop the now-dead bespoke FE client). After
-inc 3, `useHeatPumpsQuery` + `useHeatPumpPatchMutation` have **zero** consumers,
-and `previewHeatPumpDelete`/`fetchHeatPumps`/`heatPumpsQueryKeys` are only kept
-alive by `project_document/hooks.ts` (`invalidateProjectDocumentQueries` invalidates
-`heatPumpsQueryKeys.all`) and `HeatPumpsPanel`'s `invalidateHeatPumpsAggregate`
-callback — both vestigial once the aggregate query is gone. Increment 4: delete the
-five aggregate symbols from `heat-pumps/api.ts`, drop the `invalidateHeatPumpsAggregate`
-plumbing in `HeatPumpsPanel`, and remove the `heatPumpsQueryKeys` coupling in
-`hooks.ts`; prune dead `types.ts`. Then backend increment 5 (remove the PATCH shim
-incl. the `/options` endpoint + error-code rename — needs a clean full `make ci`),
-and 6 (browser smoke as Ed + e2e). 4 uses targeted gates (tsc + vitest); 5/6 need a
-full `make ci` and the FE+BE error-code rename must land together. The tree is clean
-now (modulo the concurrent DataTable-UI WIP), so a real Equipment-tab browser smoke
-is available throughout.
+The whole **frontend** half of Phase 3b is done (increments 1–4). The bespoke
+heat-pump FE write client is gone: `grep` is clean across the FE for
+`useHeatPumpsQuery`/`useHeatPumpPatchMutation`/`previewHeatPumpDelete`/`fetchHeatPumps`/
+`heatPumpsQueryKeys`/`useHeatPumpOptionMutation` and the dead patch/preview types.
+
+Remaining = **backend** increment **5** + closeout **6**:
+- **5 (backend, needs full `make ci`).** Remove the PATCH shim in `features/heat_pumps/`:
+  `apply_patch`, `apply_option_patch` (+ `_apply_option_patch_to_body`,
+  `_option_is_referenced`, `_OPTION_KEY_TO_CELL`), `HeatPumpRowPatch`, `OptionPatchOp`,
+  the patch→replace glue (`_rows_after_patch`; `build_leaf_replace_payload`/
+  `leaf_contract_for`/`_LeafWriteSpec` in `tables/heat_pumps.py`), and the two `PATCH`
+  routes (incl. `/options/{key}` + its `heat_pump_option_in_use` 409). Confirm nothing
+  reads the aggregate `GET /equipment/heat-pumps` (the FE no longer does), then remove
+  `compose_read` + that route; KEEP `read_slice` + `export-phius` +
+  `active_version_id_for_project`. Then rename `DEPENDENT_LINK_DELETE_BLOCKED` →
+  `"dependent_link_delete_blocked"` — **FE 409 handler + the two BE tests must land
+  together**. (The FE `heat_pump_delete_blocked` handler is the one cross-stack co-land.)
+- **6 (closeout).** Generic-path tests + e2e (mirror Pumps); full `make ci` green;
+  greps clean for every deleted symbol; **browser smoke as Ed** (Equipment → Heat
+  Pumps, all four leaves: add/edit, delete-with-cascade-confirm, blocked-delete 409,
+  option add/edit/**delete-clears-references**, ventilator-side link picker). Then the
+  Final Completion Cleanup (archive the packet).
+
+5 needs a clean full `make ci`. The tree is clean now (modulo the concurrent
+DataTable-UI WIP), so the Equipment-tab browser smoke is available.
 
 ## Blockers
 - None. The concurrent DataTable-UI WIP landed (it ended up bundled into the

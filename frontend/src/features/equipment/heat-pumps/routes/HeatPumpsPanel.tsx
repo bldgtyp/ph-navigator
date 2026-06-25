@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppSubTabButton, AppSubTabs } from "../../../../shared/ui/AppSubTabs";
 import { useSliceTableController } from "../../../../shared/ui/data-table/feature";
@@ -8,7 +7,6 @@ import type { ProjectDetail } from "../../../projects/types";
 import {
   heatPumpIndoorEquipSliceFeature,
   heatPumpIndoorUnitsSliceFeature,
-  heatPumpsQueryKeys,
   heatPumpOutdoorEquipSliceFeature,
   heatPumpOutdoorUnitsSliceFeature,
 } from "../api";
@@ -44,7 +42,6 @@ const HEAT_PUMP_CONFLICT_MESSAGES = {
 };
 
 export function HeatPumpsPanel({ project }: { project: ProjectDetail }) {
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const params = useParams();
   const nestedPath = params["*"] ?? "";
@@ -69,49 +66,37 @@ export function HeatPumpsPanel({ project }: { project: ProjectDetail }) {
     project.active_version_id,
     project.access_mode,
   );
-  const invalidateHeatPumpsAggregate = useCallback(
-    () => queryClient.invalidateQueries({ queryKey: heatPumpsQueryKeys.all(project.id) }),
-    [project.id, queryClient],
-  );
   const outdoorEquipMutation = heatPumpOutdoorEquipSliceFeature.useReplaceSliceMutation(
     project.id,
     project.active_version_id,
-    invalidateHeatPumpsAggregate,
   );
   const indoorEquipMutation = heatPumpIndoorEquipSliceFeature.useReplaceSliceMutation(
     project.id,
     project.active_version_id,
-    invalidateHeatPumpsAggregate,
   );
   const outdoorUnitsMutation = heatPumpOutdoorUnitsSliceFeature.useReplaceSliceMutation(
     project.id,
     project.active_version_id,
-    invalidateHeatPumpsAggregate,
   );
   const indoorUnitsMutation = heatPumpIndoorUnitsSliceFeature.useReplaceSliceMutation(
     project.id,
     project.active_version_id,
-    invalidateHeatPumpsAggregate,
   );
   const outdoorEquipSchemaMutation = heatPumpOutdoorEquipSliceFeature.useSchemaMutationMutation(
     project.id,
     project.active_version_id,
-    invalidateHeatPumpsAggregate,
   );
   const indoorEquipSchemaMutation = heatPumpIndoorEquipSliceFeature.useSchemaMutationMutation(
     project.id,
     project.active_version_id,
-    invalidateHeatPumpsAggregate,
   );
   const outdoorUnitsSchemaMutation = heatPumpOutdoorUnitsSliceFeature.useSchemaMutationMutation(
     project.id,
     project.active_version_id,
-    invalidateHeatPumpsAggregate,
   );
   const indoorUnitsSchemaMutation = heatPumpIndoorUnitsSliceFeature.useSchemaMutationMutation(
     project.id,
     project.active_version_id,
-    invalidateHeatPumpsAggregate,
   );
   const [activeLeaf, setActiveLeaf] = useState<HeatPumpLeafKey>(
     () => requestedLeaf ?? readRememberedHeatPumpLeaf(project.id) ?? DEFAULT_HEAT_PUMP_LEAF,
