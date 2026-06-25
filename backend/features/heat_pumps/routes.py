@@ -1,10 +1,14 @@
-"""REST routes for Heat Pumps equipment."""
+"""REST routes for Heat Pumps equipment.
+
+Heat-pump CRUD runs through the generic registered-contract table routes; the
+only heat-pump-specific endpoint is the Phius export below.
+"""
 
 from __future__ import annotations
 
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Header, Query, Response
+from fastapi import APIRouter, Depends, Query, Response
 from starlette import status
 
 from features.heat_pumps.phius_export import (
@@ -12,70 +16,15 @@ from features.heat_pumps.phius_export import (
     compute_phius_payload,
     serialize_csv,
 )
-from features.heat_pumps.service import (
-    HeatPumpRowPatch,
-    HeatPumpsPatchResponse,
-    HeatPumpsReadResponse,
-    HeatPumpTableKey,
-    OptionPatchOp,
-    active_version_id_for_project,
-    apply_option_patch,
-    apply_patch,
-    compose_read,
-    read_slice,
-)
-from features.projects.access import ProjectAccess, require_project_edit_access, require_project_view_access
+from features.heat_pumps.service import active_version_id_for_project, read_slice
+from features.projects.access import ProjectAccess, require_project_view_access
 from features.shared.errors import api_error
 
 router = APIRouter(prefix="/api/v1/projects/{project_id}/equipment/heat-pumps", tags=["heat-pumps"])
 
 ProjectViewAccess = Annotated[ProjectAccess, Depends(require_project_view_access)]
-ProjectEditAccess = Annotated[ProjectAccess, Depends(require_project_edit_access)]
 
 PhiusExportFormat = Literal["json", "raw-csv", "xlsx-paste"]
-
-
-@router.get("", response_model=HeatPumpsReadResponse)
-def get_heat_pumps(access: ProjectViewAccess) -> HeatPumpsReadResponse:
-    return compose_read(active_version_id_for_project(access.project_id), access)
-
-
-@router.patch("/{table}", response_model=HeatPumpsPatchResponse)
-def patch_heat_pumps_table(
-    table: HeatPumpTableKey,
-    payload: HeatPumpRowPatch,
-    access: ProjectEditAccess,
-    if_match: Annotated[str | None, Header()] = None,
-    if_match_version: Annotated[str | None, Header()] = None,
-    dry_run: Annotated[bool, Query(alias="dry-run")] = False,
-) -> HeatPumpsPatchResponse:
-    return apply_patch(
-        active_version_id_for_project(access.project_id),
-        table,
-        payload,
-        access,
-        if_match=if_match,
-        if_match_version=if_match_version,
-        dry_run=dry_run,
-    )
-
-
-@router.patch("/options/{option_key:path}", response_model=HeatPumpsReadResponse)
-def patch_heat_pumps_option(
-    option_key: str,
-    payload: OptionPatchOp,
-    access: ProjectEditAccess,
-    if_match: Annotated[str | None, Header()] = None,
-    if_match_version: Annotated[str | None, Header()] = None,
-) -> HeatPumpsReadResponse:
-    return apply_option_patch(
-        active_version_id_for_project(access.project_id),
-        option_key,
-        payload,
-        access,
-        if_match=if_match,
-        if_match_version=if_match_version,
-    )
 
 
 @router.post("/export-phius", response_model=None)

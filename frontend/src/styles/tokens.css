@@ -79,6 +79,7 @@
   --shadow-hud-2: 0 4px 18px rgb(0 0 0 / 12%);
   --shadow-hud-3: 0 8px 28px rgb(0 0 0 / 14%);
   /* Exact-value feature/shared shadows kept as tokens to avoid pixel drift. */
+  --shadow-workspace-shell: 2px 4px 25px 2px rgb(0 0 0 / 10%);
   --shadow-dialog-strong: 0 20px 60px rgb(0 0 0 / 25%);
   --shadow-dialog-slate-strong: 0 20px 60px rgb(15 23 42 / 35%);
   --shadow-alert: 0 12px 32px rgb(0 0 0 / 20%);

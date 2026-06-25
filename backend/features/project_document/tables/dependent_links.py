@@ -33,10 +33,11 @@ from features.project_document.tables.contracts import (
 )
 from features.shared.errors import api_error
 
-# Error code kept stable for existing clients/tests; it reads heat-pump-flavored
-# but the mechanism is generic — any table with a required dependent link uses it.
-# Phase 3 follow-up: rename to a neutral code once the frontend is rewired.
-DEPENDENT_LINK_DELETE_BLOCKED = "heat_pump_delete_blocked"
+# Generic delete-block error code: any table with a required dependent link
+# raises it when a delete would orphan that link. The frontend keys the
+# blocked-delete dialog off the HTTP 409 status + details payload, not this
+# string (so the value is backend-only).
+DEPENDENT_LINK_DELETE_BLOCKED = "dependent_link_delete_blocked"
 
 __all__ = [
     "DEPENDENT_LINK_DELETE_BLOCKED",
