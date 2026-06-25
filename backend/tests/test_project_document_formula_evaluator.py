@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -163,3 +163,33 @@ def test_document_formula_overlay_cache_reuses_whole_document_eval(monkeypatch: 
 
     assert first is second
     assert calls == 1
+
+
+def test_document_formula_overlay_cache_ignores_recycled_id_collision() -> None:
+    """A stale entry under a recycled `id(body)` must not be served to a
+    different document. Python reuses ids of freed objects, so an active
+    cache (set by the request middleware and leaking across direct calls)
+    could otherwise return another document's overlay."""
+
+    body = empty_project_document(
+        CreateProjectRequest(
+            name="t",
+            bt_number="1",
+            cert_programs=[],
+            phius_number=None,
+            phius_dropbox_url=None,
+        )
+    )
+
+    document_evaluator.reset_formula_overlay_cache()
+    cache = document_evaluator._DOCUMENT_FORMULA_CACHE.get()
+    assert cache is not None
+    # Plant a poisoned entry under this body's id, paired with a *different*
+    # object — exactly what an id recycled from a freed document looks like.
+    sentinel = {("equipment", "pumps"): {"STALE_ROW": {}}}
+    cache[id(body)] = cast("Any", (object(), sentinel))
+
+    result = document_evaluator.evaluate_document_formulas(body)
+
+    assert result is not sentinel
+    assert "STALE_ROW" not in result.get(("equipment", "pumps"), {})

@@ -60,10 +60,18 @@ export function FrameRow({
         )}
       </div>
       <div className="aperture-card-row__metric" role="cell">
-        {formatUValueFromWm2K(frame?.u_value_w_m2k ?? null, { unitSystem, empty: "-" })}
+        {formatUValueFromWm2K(frame?.u_value_w_m2k ?? null, {
+          unitSystem,
+          empty: "-",
+          showUnit: false,
+        })}
       </div>
       <div className="aperture-card-row__metric" role="cell">
-        {formatLengthFromMm(frame?.width_mm ?? null, { unitSystem, empty: "-" })}
+        {formatLengthFromMm(frame?.width_mm ?? null, {
+          unitSystem,
+          empty: "-",
+          showUnit: false,
+        })}
       </div>
       <div className="aperture-card-row__metric" role="cell">
         -

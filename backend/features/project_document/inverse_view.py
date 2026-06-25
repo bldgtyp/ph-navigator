@@ -25,9 +25,14 @@ class InverseTableView:
     fingerprint: str
 
 
-_INVERSE_TABLE_VIEW_CACHE: ContextVar[dict[tuple[int, tuple[str, ...]], InverseTableView] | None] = ContextVar(
-    "inverse_table_view_cache", default=None
-)
+# The cache value pairs the source document with its view. Keying on `id(body)`
+# alone is unsafe — Python recycles ids of freed objects, so a later document can
+# collide with a stale entry. Holding a reference to `body` keeps it alive for the
+# cache's lifetime (the request, reset by middleware) so its id cannot be reused,
+# and the identity check on read rejects any collision that slips through.
+_INVERSE_TABLE_VIEW_CACHE: ContextVar[
+    dict[tuple[int, tuple[str, ...]], tuple[ProjectDocumentV1, InverseTableView]] | None
+] = ContextVar("inverse_table_view_cache", default=None)
 
 
 def reset_inverse_view_cache() -> None:
@@ -125,8 +130,10 @@ def build_inverse_table_view(body: ProjectDocumentV1, target_table_path: Sequenc
     target_path = tuple(target_table_path)
     cache_key = (id(body), target_path)
     cache = _INVERSE_TABLE_VIEW_CACHE.get()
-    if cache is not None and cache_key in cache:
-        return cache[cache_key]
+    if cache is not None:
+        cached = cache.get(cache_key)
+        if cached is not None and cached[0] is body:
+            return cached[1]
     overlay: dict[str, dict[str, list[str]]] = defaultdict(lambda: defaultdict(list))
     metadata: list[InverseLinkField] = []
     row_ids_by_path = build_snapshot_row_ids(body)
@@ -134,7 +141,7 @@ def build_inverse_table_view(body: ProjectDocumentV1, target_table_path: Sequenc
     if not target_ids:
         empty = InverseTableView(inverse_links={}, inverse_link_fields=[], fingerprint=fingerprint_inverse_links({}))
         if cache is not None:
-            cache[cache_key] = empty
+            cache[cache_key] = (body, empty)
         return empty
 
     for contract in _iter_unique_table_contracts():
@@ -168,7 +175,7 @@ def build_inverse_table_view(body: ProjectDocumentV1, target_table_path: Sequenc
         fingerprint=fingerprint_inverse_links(inverse_links),
     )
     if cache is not None:
-        cache[cache_key] = view
+        cache[cache_key] = (body, view)
     return view
 
 

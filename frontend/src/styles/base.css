@@ -318,7 +318,7 @@ a:focus-visible {
 .topbar {
   position: sticky;
   top: 0;
-  z-index: calc(var(--z-sticky) + 10);
+  z-index: calc(var(--z-dropdown) + 30);
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
@@ -1564,6 +1564,8 @@ button:disabled {
   padding-inline: max(16px, calc((100vw - 1440px) / 2));
   min-height: 36px;
   align-items: flex-end;
+  position: relative;
+  z-index: calc(var(--z-dropdown) + 20);
 }
 
 .tabbar a {
@@ -1607,11 +1609,11 @@ button:disabled {
   padding-inline: max(16px, calc((100vw - 1440px) / 2));
   position: sticky;
   top: 0;
-  z-index: var(--z-sticky);
+  z-index: calc(var(--z-dropdown) + 10);
 }
 
 .app-subtabs:has(.app-menu__panel) {
-  z-index: var(--z-dropdown);
+  z-index: calc(var(--z-dropdown) + 20);
 }
 
 .app-subtabs__list {

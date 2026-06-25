@@ -32,7 +32,11 @@ export function GlazingRow({ glazing, canEdit, onPick }: GlazingRowProps) {
         />
       </div>
       <div className="aperture-card-row__metric" role="cell">
-        {formatUValueFromWm2K(glazing?.u_value_w_m2k ?? null, { unitSystem, empty: "-" })}
+        {formatUValueFromWm2K(glazing?.u_value_w_m2k ?? null, {
+          unitSystem,
+          empty: "-",
+          showUnit: false,
+        })}
       </div>
       <div className="aperture-card-row__metric" role="cell">
         -

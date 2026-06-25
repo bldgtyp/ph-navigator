@@ -868,8 +868,8 @@
 }
 
 .aperture-element-table {
-  --aperture-table-columns: minmax(112px, 0.7fr) minmax(220px, 3fr) minmax(72px, 0.5fr)
-    minmax(72px, 0.5fr) minmax(72px, 0.5fr);
+  --aperture-table-columns: minmax(112px, 0.7fr) minmax(220px, 2.6fr) minmax(104px, 0.7fr)
+    minmax(64px, 0.42fr) minmax(64px, 0.42fr);
   display: grid;
   overflow: visible;
   padding: 0 var(--space-8) var(--space-8);
@@ -883,22 +883,35 @@
 
 .aperture-element-table__head {
   border-bottom: 1px solid var(--border-subtle);
-  color: var(--text-secondary);
+  color: var(--text-primary);
   font-size: var(--fs-2xs);
-  font-weight: 650;
+  font-weight: 500;
   letter-spacing: 0;
-  line-height: 1;
+  line-height: 1.15;
   min-height: 20px;
 }
 
-.aperture-element-table__head span {
+.aperture-element-table__head > span {
   align-items: end;
   display: flex;
-  padding: 0 8px 5px;
+  padding: 0 var(--space-8) var(--space-6);
 }
 
-.aperture-element-table__head span:nth-child(n + 3) {
-  justify-content: center;
+.aperture-element-table__head > span:nth-child(n + 3) {
+  justify-content: flex-end;
+}
+
+.aperture-element-table__head > span[aria-label] {
+  align-items: flex-end;
+  flex-direction: column;
+  gap: var(--space-2);
+  white-space: nowrap;
+}
+
+.aperture-element-table__head-unit {
+  color: var(--text-secondary);
+  font-size: var(--fs-2xs);
+  font-weight: 400;
 }
 
 .aperture-card-row {
@@ -933,7 +946,7 @@
   min-width: 0;
   overflow: hidden;
   padding: 0 var(--space-8);
-  text-align: center;
+  text-align: right;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

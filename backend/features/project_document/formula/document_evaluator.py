@@ -50,9 +50,15 @@ if TYPE_CHECKING:
     from features.project_document.document import ProjectDocumentV1
     from features.project_document.tables.contracts import TableFieldRegistry
 
-_DOCUMENT_FORMULA_CACHE: ContextVar[dict[int, dict[tuple[str, ...], dict[str, dict[str, object]]]] | None] = ContextVar(
-    "document_formula_cache", default=None
-)
+# Cache entries pair the source document with its overlay. The `id(body)` key
+# alone is unsafe: Python recycles ids of freed objects, so a later document can
+# collide with a stale entry and read the wrong overlay. Holding a reference to
+# `body` keeps it alive for the cache's lifetime (the request, reset by
+# middleware) so its id cannot be reused, and the identity check on read rejects
+# any collision that slips through.
+_DOCUMENT_FORMULA_CACHE: ContextVar[
+    dict[int, tuple[ProjectDocumentV1, dict[tuple[str, ...], dict[str, dict[str, object]]]]] | None
+] = ContextVar("document_formula_cache", default=None)
 
 
 def reset_formula_overlay_cache() -> None:
@@ -77,14 +83,16 @@ def evaluate_document_formulas(body: ProjectDocumentV1) -> dict[tuple[str, ...],
     """Return computed formula overlays for every formula-capable table."""
     body_key = id(body)
     cache = _DOCUMENT_FORMULA_CACHE.get()
-    if cache is not None and body_key in cache:
-        return cache[body_key]
+    if cache is not None:
+        cached = cache.get(body_key)
+        if cached is not None and cached[0] is body:
+            return cached[1]
 
     contexts = _formula_contexts(body)
     if not any(ctx.formula_fields for ctx in contexts.values()):
         empty = {table_path: {row_id: {} for row_id in ctx.rows_by_id} for table_path, ctx in contexts.items()}
         if cache is not None:
-            cache[body_key] = empty
+            cache[body_key] = (body, empty)
         return empty
     out: dict[tuple[str, ...], dict[str, dict[str, object]]] = {
         table_path: {row_id: {} for row_id in ctx.rows_by_id} for table_path, ctx in contexts.items()
@@ -104,7 +112,7 @@ def evaluate_document_formulas(body: ProjectDocumentV1) -> dict[tuple[str, ...],
                 except _EvalErrorSignal:
                     continue
     if cache is not None:
-        cache[body_key] = out
+        cache[body_key] = (body, out)
     return out
 
 
