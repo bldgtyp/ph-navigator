@@ -13,10 +13,10 @@ from features.heat_pumps.phius_export import (
     serialize_csv,
 )
 from features.heat_pumps.service import (
+    HeatPumpRowPatch,
     HeatPumpsPatchResponse,
     HeatPumpsReadResponse,
     HeatPumpTableKey,
-    JsonPatchOp,
     OptionPatchOp,
     active_version_id_for_project,
     apply_option_patch,
@@ -43,7 +43,7 @@ def get_heat_pumps(access: ProjectViewAccess) -> HeatPumpsReadResponse:
 @router.patch("/{table}", response_model=HeatPumpsPatchResponse)
 def patch_heat_pumps_table(
     table: HeatPumpTableKey,
-    payload: JsonPatchOp,
+    payload: HeatPumpRowPatch,
     access: ProjectEditAccess,
     if_match: Annotated[str | None, Header()] = None,
     if_match_version: Annotated[str | None, Header()] = None,

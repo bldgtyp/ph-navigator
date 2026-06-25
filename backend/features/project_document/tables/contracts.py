@@ -32,6 +32,24 @@ if TYPE_CHECKING:
 UnitQuantity = Literal["length", "conductivity", "density", "specific_heat"]
 
 
+@dataclass(frozen=True)
+class DependentLink:
+    """One sibling field that references rows of the table declaring it.
+
+    Declared on a ``TableContract`` so a slice-replace that removes rows can
+    block (required) or clear (optional) the references; the generic cascade
+    lives in `dependent_links.py`. ``dependent_table_path`` + ``field_key``
+    locate the referencing cell; ``dependent_table_label`` is the client-facing
+    table name echoed in cascade previews / block errors. ``required`` rows
+    cannot drop the reference (delete is blocked); optional rows have it cleared.
+    """
+
+    dependent_table_path: tuple[str, ...]
+    dependent_table_label: str
+    field_key: str
+    required: bool
+
+
 class TableRowsResponse(BaseModel):
     """Generic `{rows}` response envelope for non-FieldDef table contracts."""
 
@@ -234,6 +252,11 @@ class TableContract:
     # rejects any linked_record field that targets this contract.
     # Defaults True; future per-table opt-outs are a one-line change.
     link_targetable: bool = True
+    # Sibling tables that reference rows of THIS table. A slice-replace that
+    # removes rows blocks on required links and clears optional ones via
+    # `dependent_links.apply_dependent_link_cascade`. Empty for tables with no
+    # inbound references; heat-pump leaves opt in. See `dependent_links.py`.
+    dependent_links: tuple[DependentLink, ...] = ()
 
     @property
     def custom_fields(self) -> TableFieldRegistry | None:

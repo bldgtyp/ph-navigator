@@ -47,6 +47,10 @@ from features.project_document.tables.contracts import (
     read_table_envelope,
     replace_table_envelope,
 )
+from features.project_document.tables.dependent_links import (
+    DependentLink,
+    apply_dependent_link_cascade,
+)
 from features.project_document.validation import validate_document
 
 HEAT_PUMPS_OUTDOOR_EQUIP_TABLE_NAME = "heat_pumps_outdoor_equip"
@@ -499,6 +503,7 @@ def _apply_replace(
     envelope_model: type[BaseModel],
     payload: BaseModel,
     rows_attr: str,
+    dependent_links: tuple[DependentLink, ...] = (),
 ) -> ProjectDocumentV1:
     payload_any = cast(Any, payload)
     options_payload = cast(HeatPumpLeafOptions, payload_any.single_select_options)
@@ -523,6 +528,10 @@ def _apply_replace(
     next_body = replace_table_envelope(body, table_path, next_envelope).model_copy(
         update={"single_select_options": options}
     )
+    # Block (required) or clear (optional) sibling links to any rows this
+    # replace removed, before the document validator would reject a dangling
+    # reference. This is the generic form of the old heat-pump delete-cascade.
+    next_body = apply_dependent_link_cascade(body, next_body, table_path=table_path, dependent_links=dependent_links)
     return validate_document(next_body.model_dump(mode="json"))
 
 
@@ -655,11 +664,48 @@ indoor_units_field_registry = _make_registry(
 )
 
 
+# Sibling links pointing back at each leaf. Required links block a delete (the
+# referencing row can't drop a mandatory FK); optional links are cleared. This
+# is the declarative form of the old `_delete_preview`/`_apply_delete_cascades`.
+_OUTDOOR_EQUIP_DEPENDENT_LINKS: tuple[DependentLink, ...] = (
+    DependentLink(
+        dependent_table_path=_OUTDOOR_UNITS_PATH,
+        dependent_table_label="outdoor-units",
+        field_key="outdoor_equip_id",
+        required=True,
+    ),
+)
+_INDOOR_EQUIP_DEPENDENT_LINKS: tuple[DependentLink, ...] = (
+    DependentLink(
+        dependent_table_path=_INDOOR_UNITS_PATH,
+        dependent_table_label="indoor-units",
+        field_key="indoor_equip_id",
+        required=True,
+    ),
+    DependentLink(
+        dependent_table_path=_OUTDOOR_EQUIP_PATH,
+        dependent_table_label="outdoor-equip",
+        field_key="paired_indoor_equip_id",
+        required=False,
+    ),
+)
+_OUTDOOR_UNITS_DEPENDENT_LINKS: tuple[DependentLink, ...] = (
+    DependentLink(
+        dependent_table_path=_INDOOR_UNITS_PATH,
+        dependent_table_label="indoor-units",
+        field_key="outdoor_unit_id",
+        required=False,
+    ),
+)
+_INDOOR_UNITS_DEPENDENT_LINKS: tuple[DependentLink, ...] = ()
+
+
 heat_pumps_outdoor_equip_contract = TableContract(
     name=HEAT_PUMPS_OUTDOOR_EQUIP_TABLE_NAME,
     schema_slug="heat_pump_outdoor_equip",
     schema_model=HeatPumpOutdoorEquipRow,
     replace_request_model=OutdoorEquipReplaceRequest,
+    dependent_links=_OUTDOOR_EQUIP_DEPENDENT_LINKS,
     build_response=_response_factory(
         response_model=OutdoorEquipResponse,
         table_path=_OUTDOOR_EQUIP_PATH,
@@ -678,6 +724,7 @@ heat_pumps_outdoor_equip_contract = TableContract(
         envelope_model=HeatPumpOutdoorEquipTableEnvelope,
         payload=payload,
         rows_attr="outdoor_equip",
+        dependent_links=_OUTDOOR_EQUIP_DEPENDENT_LINKS,
     ),
     extract_rows=lambda body: _extract_envelope(
         body,
@@ -705,6 +752,7 @@ heat_pumps_indoor_equip_contract = TableContract(
     schema_slug="heat_pump_indoor_equip",
     schema_model=HeatPumpIndoorEquipRow,
     replace_request_model=IndoorEquipReplaceRequest,
+    dependent_links=_INDOOR_EQUIP_DEPENDENT_LINKS,
     build_response=_response_factory(
         response_model=IndoorEquipResponse,
         table_path=_INDOOR_EQUIP_PATH,
@@ -723,6 +771,7 @@ heat_pumps_indoor_equip_contract = TableContract(
         envelope_model=HeatPumpIndoorEquipTableEnvelope,
         payload=payload,
         rows_attr="indoor_equip",
+        dependent_links=_INDOOR_EQUIP_DEPENDENT_LINKS,
     ),
     extract_rows=lambda body: _extract_envelope(
         body,
@@ -750,6 +799,7 @@ heat_pumps_outdoor_units_contract = TableContract(
     schema_slug="heat_pump_outdoor_unit",
     schema_model=HeatPumpOutdoorUnitRow,
     replace_request_model=OutdoorUnitsReplaceRequest,
+    dependent_links=_OUTDOOR_UNITS_DEPENDENT_LINKS,
     build_response=_response_factory(
         response_model=OutdoorUnitsResponse,
         table_path=_OUTDOOR_UNITS_PATH,
@@ -763,6 +813,7 @@ heat_pumps_outdoor_units_contract = TableContract(
         envelope_model=HeatPumpOutdoorUnitsTableEnvelope,
         payload=payload,
         rows_attr="outdoor_units",
+        dependent_links=_OUTDOOR_UNITS_DEPENDENT_LINKS,
     ),
     extract_rows=lambda body: _extract_envelope(
         body,
@@ -785,6 +836,7 @@ heat_pumps_indoor_units_contract = TableContract(
     schema_slug="heat_pump_indoor_unit",
     schema_model=HeatPumpIndoorUnitRow,
     replace_request_model=IndoorUnitsReplaceRequest,
+    dependent_links=_INDOOR_UNITS_DEPENDENT_LINKS,
     build_response=_response_factory(
         response_model=IndoorUnitsResponse,
         table_path=_INDOOR_UNITS_PATH,
@@ -814,6 +866,92 @@ heat_pumps_indoor_units_contract = TableContract(
     table_path=_INDOOR_UNITS_PATH,
     field_registry=indoor_units_field_registry,
 )
+
+
+@dataclass(frozen=True)
+class _LeafWriteSpec:
+    """Per-leaf glue for translating a single-row patch into a slice-replace."""
+
+    contract: TableContract
+    rows_attr: str
+    table_path: tuple[str, ...]
+    # Option keys the leaf's replace request model requires; echoed unchanged
+    # when a row patch rebuilds the full payload from the current draft.
+    option_keys: tuple[str, ...]
+
+
+_LEAF_WRITE_SPECS: dict[str, _LeafWriteSpec] = {
+    "outdoor-equip": _LeafWriteSpec(
+        contract=heat_pumps_outdoor_equip_contract,
+        rows_attr="outdoor_equip",
+        table_path=_OUTDOOR_EQUIP_PATH,
+        option_keys=(
+            HEAT_PUMP_MANUFACTURER_OPTION_KEY,
+            HEAT_PUMP_SYSTEM_FAMILY_OPTION_KEY,
+            HEAT_PUMP_REFRIGERANT_OPTION_KEY,
+            HEAT_PUMPS_OUTDOOR_EQUIP_STATUS_OPTION_KEY,
+        ),
+    ),
+    "indoor-equip": _LeafWriteSpec(
+        contract=heat_pumps_indoor_equip_contract,
+        rows_attr="indoor_equip",
+        table_path=_INDOOR_EQUIP_PATH,
+        option_keys=(
+            HEAT_PUMP_MANUFACTURER_OPTION_KEY,
+            HEAT_PUMP_MODEL_TYPE_OPTION_KEY,
+            HEAT_PUMP_INSTALL_TYPE_OPTION_KEY,
+            HEAT_PUMPS_INDOOR_EQUIP_STATUS_OPTION_KEY,
+        ),
+    ),
+    "outdoor-units": _LeafWriteSpec(
+        contract=heat_pumps_outdoor_units_contract,
+        rows_attr="outdoor_units",
+        table_path=_OUTDOOR_UNITS_PATH,
+        option_keys=(HEAT_PUMPS_OUTDOOR_UNITS_STATUS_OPTION_KEY,),
+    ),
+    "indoor-units": _LeafWriteSpec(
+        contract=heat_pumps_indoor_units_contract,
+        rows_attr="indoor_units",
+        table_path=_INDOOR_UNITS_PATH,
+        option_keys=(HEAT_PUMPS_INDOOR_UNITS_STATUS_OPTION_KEY,),
+    ),
+}
+
+
+def leaf_contract_for(table_key: str) -> TableContract:
+    """Registered contract for a heat-pump leaf table key (e.g. ``outdoor-equip``)."""
+    return _LEAF_WRITE_SPECS[table_key].contract
+
+
+def build_leaf_replace_payload(
+    table_key: str, base_body: ProjectDocumentV1, next_rows: list[dict[str, Any]]
+) -> BaseModel:
+    """Build a leaf slice-replace payload from the current draft + the new rows.
+
+    Echoes the leaf's current field_defs and option lists unchanged so a
+    single-row patch becomes an ordinary whole-slice replace through the
+    registered contract — the cascade/validation then live in one place.
+    """
+    spec = _LEAF_WRITE_SPECS[table_key]
+    envelope = cast(Any, read_table_envelope(base_body, spec.table_path))
+    options: dict[str, Any] = {
+        key: [opt.model_dump(mode="json") for opt in base_body.single_select_options.get(key, [])]
+        for key in spec.option_keys
+    }
+    options.update(
+        {
+            key: [opt.model_dump(mode="json") for opt in value]
+            for key, value in custom_option_lists_for_table(base_body, spec.table_path).items()
+        }
+    )
+    return spec.contract.parse_replace_payload(
+        {
+            spec.rows_attr: next_rows,
+            "field_defs": [field.model_dump(mode="json") for field in envelope.field_defs],
+            "single_select_options": options,
+        }
+    )
+
 
 HEAT_PUMP_LEAF_VALIDATION_SPECS: tuple[HeatPumpLeafValidationSpec, ...] = (
     HeatPumpLeafValidationSpec(

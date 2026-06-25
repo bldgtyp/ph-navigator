@@ -345,9 +345,13 @@ def test_heat_pumps_rejects_missing_fk(clean_document_tables: None) -> None:
         json=add_patch(outdoor_unit()),
     )
 
+    # The patch endpoint now routes through the registered contract → spine, so a
+    # dangling FK is caught by the shared document validator (invalid_project_
+    # document) rather than the old bespoke per-slice check (heat_pump_validation_
+    # error). Same 422, unified error envelope — matches the generic PUT path.
     assert response.status_code == 422
-    assert response.json()["error_code"] == "heat_pump_validation_error"
-    assert response.json()["details"]["field"] == "outdoor_equip_id"
+    assert response.json()["error_code"] == "invalid_project_document"
+    assert "Missing heat-pump outdoor equip" in response.json()["details"]["errors"][0]
 
 
 def test_heat_pumps_blocks_delete_referenced_outdoor_equip(clean_document_tables: None) -> None:

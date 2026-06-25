@@ -185,6 +185,12 @@ def apply_ventilators_replace(body: ProjectDocumentV1, payload: BaseModel) -> Pr
     # preview, no dialog. The strict-referential-integrity validator in
     # `document.py` is the only thing that blocks a save with a
     # *dangling* link; legitimate deletes never trip it.
+    # FOLLOW-UP: this is now an optional `DependentLink` (field
+    # `linked_erv_unit_id`, required=False) — it could migrate onto the
+    # generic `dependent_links` cascade (see `dependent_links.py`),
+    # collapsing the three remaining hand-rolled cascades into one. Kept
+    # bespoke for now to keep this refactor scoped to heat-pumps; migrating
+    # must preserve the *silent* (no-preview) UX.
     prior_ids = {row.id for row in body.tables.equipment.ervs.rows}
     next_ids = {row.id for row in ventilators_payload.ventilators}
     removed_ids = prior_ids - next_ids
