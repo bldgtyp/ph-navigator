@@ -89,7 +89,7 @@
   margin: 0;
   overflow: hidden;
   color: var(--text-primary);
-  font-family: var(--font-sans);
+  font-family: var(--font-primary);
   font-size: var(--fs-lg);
   font-weight: 650;
   line-height: 1.2;

@@ -15,6 +15,7 @@ import type { ApertureOperation } from "../types";
 import { mismatchedSides } from "../operation-frame-match";
 import { UValueChip } from "./UValueChip";
 import { useUnitPreference } from "../../../lib/units";
+import type { UnitSystem } from "../../../lib/units";
 
 export type ApertureElementCardProps = {
   element: ApertureElement;
@@ -47,6 +48,8 @@ export function ApertureElementCard({
 }: ApertureElementCardProps) {
   const { unitSystem } = useUnitPreference();
   const mismatched = mismatchedSides(element);
+  const uValueUnit = uValueUnitLabel(unitSystem);
+  const widthUnit = widthUnitLabel(unitSystem);
 
   return (
     <div
@@ -84,8 +87,8 @@ export function ApertureElementCard({
         <div className="aperture-element-table__head" role="row">
           <span role="columnheader">Element</span>
           <span role="columnheader">Name</span>
-          <span role="columnheader">U-Value</span>
-          <span role="columnheader">Width</span>
+          <MetricColumnHeader label="U-Value" unit={uValueUnit} />
+          <MetricColumnHeader label="Width" unit={widthUnit} />
           <span role="columnheader">g-Value</span>
         </div>
         <GlazingRow glazing={element.glazing} canEdit={canEdit} onPick={onPickGlazing} />
@@ -118,6 +121,23 @@ export function ApertureElementCard({
       )}
     </div>
   );
+}
+
+function MetricColumnHeader({ label, unit }: { label: string; unit: string }) {
+  return (
+    <span role="columnheader" aria-label={`${label} [${unit}]`}>
+      <span>{label}</span>
+      <span className="aperture-element-table__head-unit">[{unit}]</span>
+    </span>
+  );
+}
+
+function uValueUnitLabel(unitSystem: UnitSystem): string {
+  return unitSystem === "IP" ? "Btu/(h-ft2-F)" : "W/(m2-K)";
+}
+
+function widthUnitLabel(unitSystem: UnitSystem): string {
+  return unitSystem === "IP" ? "in" : "mm";
 }
 
 function mismatchTooltip(
