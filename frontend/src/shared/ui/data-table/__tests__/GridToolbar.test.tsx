@@ -27,6 +27,7 @@ function renderToolbar(
 ) {
   render(
     <GridToolbar
+      tableName="Rooms"
       view={view}
       fieldDefByKey={new Map(FIELDS.map((def) => [def.field_key, def]))}
       filterableFieldDefs={FIELDS}
@@ -46,6 +47,11 @@ function renderToolbar(
 }
 
 describe("GridToolbar", () => {
+  test("renders the table name as the toolbar title", () => {
+    renderToolbar();
+    expect(screen.getByRole("heading", { name: "Rooms" })).toHaveClass("data-table-toolbar-title");
+  });
+
   test("renders a neutral Filter button when no rules are present", () => {
     renderToolbar();
     const button = screen.getByRole("button", { name: "Filter" });
