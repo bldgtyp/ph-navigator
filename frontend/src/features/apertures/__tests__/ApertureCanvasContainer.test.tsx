@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -241,9 +241,14 @@ describe("ApertureCanvasContainer", () => {
       </UnitStub>,
     );
 
-    expect(screen.getByTestId("glazing-row")).toHaveTextContent("1 W/(m2-K)");
-    expect(screen.getByTestId("frame-row-top")).toHaveTextContent("1 W/(m2-K)");
-    expect(screen.getByTestId("frame-row-top")).toHaveTextContent("25.4 mm");
+    expect(screen.getByRole("columnheader", { name: "U-Value [W/(m2-K)]" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Width [mm]" })).toBeInTheDocument();
+    expect(within(screen.getByTestId("glazing-row")).getAllByRole("cell")[2]).toHaveTextContent(
+      "1",
+    );
+    const frameCellsSi = within(screen.getByTestId("frame-row-top")).getAllByRole("cell");
+    expect(frameCellsSi[2]).toHaveTextContent("1");
+    expect(frameCellsSi[3]).toHaveTextContent("25.4");
 
     rerender(
       <UnitStub unitSystem="IP">
@@ -251,9 +256,16 @@ describe("ApertureCanvasContainer", () => {
       </UnitStub>,
     );
 
-    expect(screen.getByTestId("glazing-row")).toHaveTextContent("0.176 Btu/(h-ft2-F)");
-    expect(screen.getByTestId("frame-row-top")).toHaveTextContent("0.176 Btu/(h-ft2-F)");
-    expect(screen.getByTestId("frame-row-top")).toHaveTextContent("1 in");
+    expect(
+      screen.getByRole("columnheader", { name: "U-Value [Btu/(h-ft2-F)]" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Width [in]" })).toBeInTheDocument();
+    expect(within(screen.getByTestId("glazing-row")).getAllByRole("cell")[2]).toHaveTextContent(
+      "0.176",
+    );
+    const frameCellsIp = within(screen.getByTestId("frame-row-top")).getAllByRole("cell");
+    expect(frameCellsIp[2]).toHaveTextContent("0.176");
+    expect(frameCellsIp[3]).toHaveTextContent("1");
   });
 
   it("clears element selection on Escape", () => {
