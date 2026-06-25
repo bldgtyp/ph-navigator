@@ -36,11 +36,13 @@ Sequence (each step verified in-app before the next; keep the app green):
    generic whole-slice replace carrying `single_select_options` (payload-builders
    already has `replaceOptions`). Preserve the option-in-use 409. No generic
    option-edit hook exists to copy — this defines the pattern.
-2. **Delete-cascade onto the generic surface.** Replace `previewHeatPumpDelete`
-   (bespoke dry-run PATCH) with the new `:preview-replace` route (3a), and the
-   bespoke `patchMutation` remove with the generic `replaceMutation` (PUT the slice
-   minus the row; the backend cascade clears optional links). Keep
-   `CascadePreviewDialog` + `BlockedDeleteDialog` UX identical.
+2. **Delete-cascade onto the generic surface.** ✅ DONE (commit `6b6ae359`).
+   Added a generic `previewReplace()` on the slice feature (POSTs to the 3a
+   `:preview-replace` route); `OutdoorUnitsTable` (the only leaf still on the
+   bespoke delete) now dry-runs via `previewReplace` and deletes via the generic
+   `deleteHeatPumpRow(controller.onWrite)`. `CascadePreviewDialog`/
+   `BlockedDeleteDialog` UX unchanged. tsc + 78 vitest green; live smoke deferred
+   to the closeout (concurrent DataTable-UI WIP in the tree).
 3. **Rewire `equipment/components/VentilatorsTableSlot.tsx`** off `useHeatPumpsQuery`
    + `useHeatPumpPatchMutation` (it edits HP indoor units from the ventilator side:
    the `IndoorUnitRowModal` save + the "Link HP indoor units" multi-row picker)
