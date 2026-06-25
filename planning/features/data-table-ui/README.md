@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 20:44 EDT
-STATUS: Active - planning recorded; implementation not started
+STATUS: Active - Phase 00 complete; Phase 01 next
 AUTHOR: Ed (via Codex)
 SCOPE: Shared DataTable rendering polish for numeric alignment, decimal
   precision, header notes, unit labels, status chips, and dense visual styling.
@@ -46,9 +46,11 @@ The requested changes are:
 1. `PRD.md` - desired behavior and acceptance criteria.
 2. `reviews/table-redesign-review.md` - review of the DESIGN-agent
    mockup and implementation translation.
-3. `PLAN.md` - proposed implementation sequence and verification.
-4. `STATUS.md` - current state, next step, blockers.
-5. Phase files under `phases/` when implementation starts.
+3. `ROUTE_MATRIX.md` - Phase 00 source-backed DataTable consumer matrix
+   and written baseline.
+4. `PLAN.md` - proposed implementation sequence and verification.
+5. `STATUS.md` - current state, next step, blockers.
+6. Phase files under `phases/` when implementation starts.
 
 ## Non-goals
 
