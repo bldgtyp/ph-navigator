@@ -7,9 +7,15 @@ import {
 import {
   IncomingLinkPicker,
   type BuildEmptyRow,
+  type CellWrite,
   type ViewState,
 } from "../../../shared/ui/data-table";
-import { useHeatPumpPatchMutation, useHeatPumpsQuery } from "../heat-pumps/api";
+import {
+  heatPumpIndoorEquipSliceFeature,
+  heatPumpIndoorUnitsSliceFeature,
+  heatPumpOutdoorUnitsSliceFeature,
+} from "../heat-pumps/api";
+import { heatPumpIndoorUnitsPayloadBuilders } from "../heat-pumps/lib";
 import { incomingIndoorUnitIds } from "../heat-pumps/link-fields";
 import { IndoorUnitRowModal } from "../heat-pumps/components/IndoorUnitRowModal";
 import type { HeatPumpIndoorUnitRow } from "../heat-pumps/types";
@@ -34,19 +40,56 @@ export function VentilatorsTableSlot(props: VentilatorsTableSlotProps) {
   const [activeVentilator, setActiveVentilator] = useState<VentilatorRow | null>(null);
   const [activeIndoorUnit, setActiveIndoorUnit] = useState<HeatPumpIndoorUnitRow | null>(null);
   const [linkPickerRow, setLinkPickerRow] = useState<VentilatorRow | null>(null);
-  const heatPumpsQuery = useHeatPumpsQuery(
+  // The ventilator side edits HP indoor units through the generic indoor-units
+  // slice feature: read the leaf (+ the sibling equip / outdoor-unit leaves the
+  // modal references for labels) and replace rows through the shared write path.
+  const accessMode = controller.canEdit ? "editor" : "viewer";
+  const indoorUnitsQuery = heatPumpIndoorUnitsSliceFeature.useSliceQuery(
     projectId,
-    Boolean(activeVersionId),
-    controller.canEdit ? "editor" : "viewer",
+    activeVersionId,
+    accessMode,
   );
-  const heatPumpPatchMutation = useHeatPumpPatchMutation(projectId);
+  const indoorEquipQuery = heatPumpIndoorEquipSliceFeature.useSliceQuery(
+    projectId,
+    activeVersionId,
+    accessMode,
+  );
+  const outdoorUnitsQuery = heatPumpOutdoorUnitsSliceFeature.useSliceQuery(
+    projectId,
+    activeVersionId,
+    accessMode,
+  );
+  const indoorUnitsReplace = heatPumpIndoorUnitsSliceFeature.useReplaceSliceMutation(
+    projectId,
+    activeVersionId,
+  );
   if (controller.viewLoading) {
     return <p className="form-note">Loading table view...</p>;
   }
-  const heatPumpsSlice = heatPumpsQuery.data ?? null;
-  const indoorUnits = heatPumpsSlice?.indoor_units ?? [];
+  const indoorUnitsSlice = indoorUnitsQuery.data ?? null;
+  const indoorUnits = indoorUnitsSlice?.indoor_units ?? [];
   const incomingIndoorUnitIdsByVentilatorId = groupIndoorUnitIdsByVentilator(indoorUnits);
   const readOnly = !controller.canEdit;
+  // The indoor-unit modal reads its own option lists plus the sibling equip /
+  // outdoor-unit lists referenced for display labels.
+  const heatPumpOptions = {
+    ...indoorUnitsSlice?.single_select_options,
+    ...indoorEquipQuery.data?.single_select_options,
+    ...outdoorUnitsQuery.data?.single_select_options,
+  };
+  // One atomic replace for any number of indoor-unit row edits — the leaf
+  // replace endpoint rewrites the whole rows list, so batching avoids the stale
+  // etag a per-row loop would hit on its second write.
+  const replaceIndoorUnitRows = async (writes: CellWrite[]) => {
+    if (!indoorUnitsSlice || writes.length === 0) return;
+    const payload = heatPumpIndoorUnitsPayloadBuilders.fromCellWrites(
+      indoorUnitsSlice,
+      writes,
+      {},
+      {},
+    );
+    await indoorUnitsReplace.mutateAsync({ current: indoorUnitsSlice, payload });
+  };
   const saveVentilator = async (row: VentilatorRow) => {
     await controller.onWrite({
       kind: "cell",
@@ -55,27 +98,15 @@ export function VentilatorsTableSlot(props: VentilatorsTableSlotProps) {
     setActiveVentilator(null);
   };
   const saveIndoorUnit = async (row: HeatPumpIndoorUnitRow) => {
-    if (!heatPumpsSlice) return;
-    await heatPumpPatchMutation.mutateAsync({
-      current: heatPumpsSlice,
-      table: "indoor-units",
-      patch: { op: "replace", path: `/${row.id}`, value: row },
-    });
+    await replaceIndoorUnitRows(cellWritesForIndoorUnit(row));
     setActiveIndoorUnit(null);
   };
   const linkIndoorUnits = async (ventilator: VentilatorRow, unitIds: readonly string[]) => {
-    if (!heatPumpsSlice) return;
     const selected = new Set(unitIds);
-    const writes = indoorUnits
+    const writes: CellWrite[] = indoorUnits
       .filter((unit) => selected.has(unit.id) && unit.linked_erv_unit_id !== ventilator.id)
-      .map((unit) => ({ ...unit, linked_erv_unit_id: ventilator.id }));
-    for (const row of writes) {
-      await heatPumpPatchMutation.mutateAsync({
-        current: heatPumpsSlice,
-        table: "indoor-units",
-        patch: { op: "replace", path: `/${row.id}`, value: row },
-      });
-    }
+      .map((unit) => ({ rowId: unit.id, fieldKey: "linked_erv_unit_id", value: ventilator.id }));
+    await replaceIndoorUnitRows(writes);
     setLinkPickerRow(null);
   };
   return (
@@ -111,15 +142,15 @@ export function VentilatorsTableSlot(props: VentilatorsTableSlotProps) {
           onSubmit={saveVentilator}
         />
       ) : null}
-      {activeIndoorUnit && heatPumpsSlice ? (
+      {activeIndoorUnit && indoorUnitsSlice ? (
         <IndoorUnitRowModal
           mode="edit"
           row={activeIndoorUnit}
-          indoorEquip={heatPumpsSlice.indoor_equip}
-          outdoorUnits={heatPumpsSlice.outdoor_units}
+          indoorEquip={indoorEquipQuery.data?.indoor_equip ?? []}
+          outdoorUnits={outdoorUnitsQuery.data?.outdoor_units ?? []}
           ventilators={ventilatorsSlice.ventilators}
-          existingUnits={heatPumpsSlice.indoor_units}
-          options={heatPumpsSlice.single_select_options}
+          existingUnits={indoorUnits}
+          options={heatPumpOptions}
           readOnly={readOnly}
           onCancel={() => setActiveIndoorUnit(null)}
           onSubmit={saveIndoorUnit}
@@ -147,6 +178,14 @@ export function VentilatorsTableSlot(props: VentilatorsTableSlotProps) {
       />
     </>
   );
+}
+
+// Mirror `replaceHeatPumpRow`: a full-row replace expressed as one cell write
+// per field (the leaf replace endpoint rebuilds the row from these).
+function cellWritesForIndoorUnit(row: HeatPumpIndoorUnitRow): CellWrite[] {
+  return Object.entries(row)
+    .filter(([fieldKey]) => fieldKey !== "id")
+    .map(([fieldKey, value]) => ({ rowId: row.id, fieldKey, value }));
 }
 
 function groupIndoorUnitIdsByVentilator(
