@@ -1,15 +1,21 @@
 import "../model_viewer.css";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { errorMessage } from "../../../shared/lib/errors";
 import type { ProjectDetail } from "../../projects/types";
 import { FileChip } from "../components/FileChip";
 import { ModelEmptyState } from "../components/ModelEmptyState";
-import { ModelViewerStage } from "../components/ModelViewerStage";
+import { ModelViewerStagePlaceholder } from "../components/ModelViewerStagePlaceholder";
 import { useHbjsonFilesQuery, useHbjsonUploadFlow } from "../hooks";
 import { parseModelViewerLens } from "../lib/lenses";
-import { parseModelViewerTheme } from "../lib/themes";
+import { parseModelViewerTheme } from "../lib/themeState";
 import { useModelViewerStore } from "../store";
+
+const loadModelViewerStage = () =>
+  import("../components/ModelViewerStage").then((module) => ({
+    default: module.ModelViewerStage,
+  }));
+const ModelViewerStage = lazy(loadModelViewerStage);
 
 /** `?file=`, `&lens=`, and `&theme=` are the shareable viewer state. */
 export function ModelTab({ project }: { project: ProjectDetail }) {
@@ -35,6 +41,11 @@ export function ModelTab({ project }: { project: ProjectDetail }) {
   useEffect(() => {
     setUrlViewState(requestedLens, requestedTheme);
   }, [requestedLens, requestedTheme, setUrlViewState]);
+
+  useEffect(() => {
+    if (!activeFileId) return;
+    void loadModelViewerStage();
+  }, [activeFileId]);
 
   useEffect(() => {
     setSearchParams(
@@ -98,7 +109,9 @@ export function ModelTab({ project }: { project: ProjectDetail }) {
           onDeleted={handleDeleted}
         />
         {activeFile ? (
-          <ModelViewerStage projectId={project.id} activeFile={activeFile} />
+          <Suspense fallback={<ModelViewerStagePlaceholder />}>
+            <ModelViewerStage projectId={project.id} activeFile={activeFile} />
+          </Suspense>
         ) : (
           <ModelEmptyState isEditor={isEditor} uploadFlow={uploadFlow} />
         )}

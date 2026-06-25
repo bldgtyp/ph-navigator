@@ -1,10 +1,9 @@
 import { afterEach, describe, expect, test } from "vitest";
+import { DEFAULT_MODEL_VIEWER_THEMES, parseModelViewerTheme } from "../lib/themeState";
 import {
-  DEFAULT_MODEL_VIEWER_THEMES,
   constructionColor,
   cyrb53,
   legendForModel,
-  parseModelViewerTheme,
   ventilationAirflowCategory,
   weightingFactorCategory,
 } from "../lib/themes";

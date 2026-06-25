@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "vitest";
 import { bucketKeyForObject, isBucketHidden, isHiddenByFilter } from "../lib/legendFilter";
-import { DEFAULT_MODEL_VIEWER_THEMES } from "../lib/themes";
+import { DEFAULT_MODEL_VIEWER_THEMES } from "../lib/themeState";
 import type { ModelRenderable } from "../loaders/building";
 import { useModelViewerStore } from "../store";
 import type { LegendFilter } from "../types";

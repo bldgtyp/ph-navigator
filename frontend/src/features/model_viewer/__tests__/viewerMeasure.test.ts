@@ -5,7 +5,7 @@ import {
   nearestMeasureSnap,
   type MeasureSnapCandidate,
 } from "../lib/measure";
-import { DEFAULT_MODEL_VIEWER_THEMES } from "../lib/themes";
+import { DEFAULT_MODEL_VIEWER_THEMES } from "../lib/themeState";
 import { useModelViewerStore } from "../store";
 
 afterEach(() => {

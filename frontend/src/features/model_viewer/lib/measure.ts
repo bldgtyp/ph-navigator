@@ -3,6 +3,7 @@ import { stripTrailingZeros } from "../../../lib/units/format";
 import { formatFeetInches } from "../../../lib/units/length/formatFeetInches";
 import type { UnitSystem } from "../../../lib/units";
 import type { ModelViewerMeasurePoint } from "../types";
+export { distanceBetweenMeasurePoints } from "./measureDistance";
 
 export type MeasureViewport = {
   left: number;
@@ -44,17 +45,6 @@ export function nearestMeasureSnap(
   }
 
   return best?.candidate ?? null;
-}
-
-export function distanceBetweenMeasurePoints(
-  start: ModelViewerMeasurePoint,
-  end: ModelViewerMeasurePoint,
-): number {
-  return Math.hypot(
-    end.position[0] - start.position[0],
-    end.position[1] - start.position[1],
-    end.position[2] - start.position[2],
-  );
 }
 
 export function formatMeasureDistance(distanceM: number, unitSystem: UnitSystem): string {

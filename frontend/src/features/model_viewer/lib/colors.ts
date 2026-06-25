@@ -1,11 +1,28 @@
-import {
-  Color,
-  DoubleSide,
-  LineBasicMaterial,
-  MeshBasicMaterial,
-  MeshStandardMaterial,
-} from "three";
+import { DoubleSide, LineBasicMaterial, MeshBasicMaterial, MeshStandardMaterial } from "three";
 import type { ModelObjectType } from "../types";
+import { mixHexColor } from "./colorMath";
+import {
+  VIEWER_GHOST_EDGE_COLOR,
+  VIEWER_HIGHLIGHT_FALLBACK,
+  VIEWER_SHADE_COLOR,
+  VIEWER_SHADE_EDGE_COLOR,
+} from "./colorTokens";
+export {
+  VIEWER_DUCT_EXHAUST_COLOR,
+  VIEWER_DUCT_SUPPLY_COLOR,
+  VIEWER_FACE_EDGE_COLOR,
+  VIEWER_FILTER_DIM_LINE_COLOR,
+  VIEWER_FILTER_WIREFRAME_COLOR,
+  VIEWER_GHOST_EDGE_COLOR,
+  VIEWER_HIGHLIGHT_FALLBACK,
+  VIEWER_LINE_HOVER_COLOR,
+  VIEWER_PIPE_DISTRIBUTION_COLOR,
+  VIEWER_PIPE_RECIRC_COLOR,
+  VIEWER_SHADE_COLOR,
+  VIEWER_SHADE_EDGE_COLOR,
+  VIEWER_SITE_COMPASS_COLOR,
+  VIEWER_SUN_PATH_COLOR,
+} from "./colorTokens";
 
 export type ViewerTokens = {
   highlight: string;
@@ -13,25 +30,6 @@ export type ViewerTokens = {
 };
 
 export type MaterialState = "base" | "hovered" | "selected";
-
-export const VIEWER_HIGHLIGHT_FALLBACK = "#E23489";
-export const VIEWER_FACE_EDGE_COLOR = "#8b8177";
-export const VIEWER_GHOST_EDGE_COLOR = "#6d736f";
-/** Lighter edge color while a legend filter isolates faces: the kept-but-hidden
- *  faces read as a faint wireframe context behind the solid matched bucket. */
-export const VIEWER_FILTER_WIREFRAME_COLOR = "#cdc8bf";
-/** Faint color for a line object dimmed out by a legend filter (line lenses have
- *  no faces/edges, so the line itself is dimmed rather than hidden). */
-export const VIEWER_FILTER_DIM_LINE_COLOR = "#bdb8af";
-export const VIEWER_LINE_HOVER_COLOR = "#f0a8cb";
-export const VIEWER_DUCT_SUPPLY_COLOR = "#2674d9";
-export const VIEWER_DUCT_EXHAUST_COLOR = "#d94a3a";
-export const VIEWER_PIPE_DISTRIBUTION_COLOR = "#9a4f1f";
-export const VIEWER_PIPE_RECIRC_COLOR = "#d4952f";
-export const VIEWER_SHADE_COLOR = "#a8aca7";
-export const VIEWER_SHADE_EDGE_COLOR = "#7d837d";
-export const VIEWER_SITE_COMPASS_COLOR = "#5f6760";
-export const VIEWER_SUN_PATH_COLOR = "#d49b35";
 
 /**
  * Crease angle (degrees) above which an edge line is drawn. Shared by the merged
@@ -45,7 +43,7 @@ export function resolveViewerTokens(root: HTMLElement = document.documentElement
   const highlight = cssVar(styles, "--highlight") || VIEWER_HIGHLIGHT_FALLBACK;
   return {
     highlight,
-    highlightSoft: cssVar(styles, "--highlight-light") || mixColor(highlight, "#ffffff", 0.58),
+    highlightSoft: cssVar(styles, "--highlight-light") || mixHexColor(highlight, "#ffffff", 0.58),
   };
 }
 
@@ -156,10 +154,4 @@ function baseColor(type: ModelObjectType): string {
 
 function cssVar(styles: CSSStyleDeclaration, name: string): string {
   return styles.getPropertyValue(name).trim();
-}
-
-function mixColor(from: string, to: string, fraction: number): string {
-  const source = new Color(from);
-  source.lerp(new Color(to), fraction);
-  return `#${source.getHexString()}`;
 }

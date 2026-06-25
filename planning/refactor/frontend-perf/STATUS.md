@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
-TIME: 21:24 EDT
-STATUS: Active - Phase 04B implemented and measured.
+TIME: 22:08 EDT
+STATUS: Active - Phase 04C implemented and measured.
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: State, next step, and the deferred-findings log for the frontend perf eval.
 RELATED: ./README.md, ./PLAN.md
@@ -30,7 +30,9 @@ seeded stress fixture. Layer C is filled from the same perf matrix with the
 dev-only root React Profiler enabled by a browser init flag. Phase 4 is now
 ranked and planned in `phases/`; Phase 04A has a first cut implemented and
 measured in `scorecard-2026-06-24-phase-04a.md`. Phase 04B route payload splits
-are implemented and measured in `scorecard-2026-06-24-phase-04b.md`.
+are implemented and measured in `scorecard-2026-06-24-phase-04b.md`. Phase 04C
+Model payload splitting is implemented and measured in
+`scorecard-2026-06-24-phase-04c.md`.
 
 Harness corrections landed during Phase 2/3 execution:
 - Perf readiness selectors now match current page regions instead of stale
@@ -56,13 +58,12 @@ Decisions taken 2026-06-24 (Ed):
 | 1 — Static sweep (bundle treemap) | `Complete` | `scorecard-2026-06-24.md` logs the Layer-A flag list |
 | 2 — Runtime sweep (traces / Lighthouse) | `Complete` | `make e2e-perf PERF_PROJECT_ID=3d56d037-806d-498b-b559-7f505e0e3498` passed 10/10; Layer-B rows logged |
 | 3 — Render sweep (react-scan / Profiler) | `Complete` | profiler-enabled perf matrix passed 10/10; stress table-edit commits logged |
-| 4 — Triage & fix | `In progress` | Phase 04A and 04B implemented/measured; continue with Phase 04C Model payload |
+| 4 — Triage & fix | `In progress` | Phase 04A, 04B, and 04C implemented/measured; continue with Phase 04D secondary runtime |
 
 ## Next step
 
 Continue with the next ranked Phase 4 track:
-1. `phases/phase-04c-model-payload.md` — P2 Model lazy chunk.
-2. `phases/phase-04d-secondary-runtime.md` — P3 trace-first Envelope/catalog runtime follow-up.
+1. `phases/phase-04d-secondary-runtime.md` — P3 trace-first Envelope/catalog runtime follow-up.
 
 Confirmed flags so far:
 - Payload: `assets/index-C-de3sCl.js` is 391.28 kB gzip.
@@ -71,6 +72,10 @@ Confirmed flags so far:
   oversize async chunks are `ModelTab-B6gf8QNJ.js` (350.29 kB gzip),
   `ClimateTab-BVw4AAgI.js` (120.96 kB gzip), and
   `types-DaVrxnmF.js` (108.01 kB gzip).
+- Payload after Phase 04C: Model route shell is `assets/ModelTab-COXU4CvF.js`
+  at 7.00 kB gzip; the active 3D scene stack is isolated in
+  `assets/ModelViewerStage-Bu_u64p4.js` at 345.06 kB gzip and preloaded once
+  an active model file exists.
 - Payload: `assets/ModelTab-st-s-3xR.js` is 350.06 kB gzip.
 - Runtime: stress Spaces Rooms cell edit improved from 1,986 ms reproduced to
   1,505 ms after Phase 04A first cut; original scorecard baseline was 2,033 ms.
@@ -92,8 +97,10 @@ Confirmed flags so far:
 - Remaining Phase 04A render work is still visible: after removing eager sibling
   table refetches, Spaces remains at 23 commits / 421.2 ms and Equipment remains
   at 22 commits / 498.9 ms on the stress edit path.
-- Phase 04B reduced the main JS route chunk from 391.28 kB gzip to 94.34 kB
+- Phase 04B reduced the main JS route chunk from 391.28 kB gzip to 94.10 kB
   gzip; remaining route payload work shifts to async chunks, especially Model.
+- Phase 04C reduced the Model route shell from 350.29 kB gzip after Phase 04B
+  to 7.00 kB gzip; the remaining active-viewer chunk is the coherent 3D stack.
 
 ## Deferred findings log
 - Phase 04A remaining candidate: investigate active DataTable row/model
