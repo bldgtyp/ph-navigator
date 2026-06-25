@@ -2,12 +2,17 @@
 
 Resolves a target field key to its option-list namespace (built-in or
 custom), validates the next option list, cascades deletions to row
-values, and rewrites `body.single_select_options`. The helpers
-`resolve_option_target` and `validate_default_option_id` are reused by
-`type_conversion` and `bundle`.
+values, and rewrites `body.single_select_options`. A built-in option
+list shared across tables (e.g. `heat_pumps.manufacturer` on both equip
+leaves) cascades the row-clear to *every* `(table, field)` bound to that
+namespace, not just the edited one. The helpers `resolve_option_target`
+and `validate_default_option_id` are reused by `type_conversion` and
+`bundle`.
 """
 
 from __future__ import annotations
+
+from dataclasses import dataclass
 
 from starlette import status
 
@@ -72,6 +77,91 @@ def resolve_option_target(
         "Field id was not found as a single-select column.",
         {"field_id": field_key, "table_key": table_key},
     )
+
+
+@dataclass(frozen=True)
+class _OptionFieldBinding:
+    """One `(table, field)` whose single-select reads from a shared option list."""
+
+    table_key: str
+    registry: TableFieldRegistry
+    field_key: str
+    in_custom_values: bool
+
+
+def _option_field_bindings(
+    namespace_key: str,
+    *,
+    in_custom_values: bool,
+    table_key: str,
+    field_id: str,
+    capability: TableFieldRegistry,
+) -> list[_OptionFieldBinding]:
+    """Every `(table, field)` whose option-list namespace is ``namespace_key``.
+
+    A custom (or mutable built-in) single-select keeps a per-table option list —
+    the namespace embeds the ``table_path``, so it can never collide with another
+    table's. Its delete-cascade is local: just the originating table.
+
+    A locked-type built-in single-select may instead share one document-level
+    list across tables (``heat_pumps.manufacturer`` is referenced by both the
+    outdoor- and indoor-equip leaves). Editing that list must clear deleted
+    options on *every* binding, or a sibling leaf's rows are left pointing at an
+    option that no longer exists and the document validator rejects the write.
+    """
+    if in_custom_values:
+        return [_OptionFieldBinding(table_key, capability, field_id, in_custom_values=True)]
+
+    # Function-local import: `tables.registry` pulls in every table module, and
+    # those modules import this one transitively — matching `guards.py`.
+    from features.project_document.tables.registry import iter_table_contracts
+
+    bindings: list[_OptionFieldBinding] = []
+    for contract in iter_table_contracts():
+        registry = contract.field_registry
+        if registry is None:
+            continue
+        for bound_field_key, bound_key in registry.built_in_option_key_by_field_key.items():
+            if bound_key == namespace_key:
+                bindings.append(_OptionFieldBinding(contract.name, registry, bound_field_key, in_custom_values=False))
+    return bindings
+
+
+def _clear_option_refs(
+    body: ProjectDocumentV1,
+    binding: _OptionFieldBinding,
+    deleted_ids: set[str],
+    replacements: dict[str, str],
+) -> tuple[ProjectDocumentV1, int]:
+    """Clear (or replace) deleted option ids out of one binding's rows.
+
+    Returns ``(next_body, cleared_row_count)``; ``body`` is returned unchanged
+    when no row referenced a deleted option.
+    """
+    rows = read_rows_from_envelope(body, binding.table_key)
+    cleared = 0
+    next_rows: list[object] = []
+    for row in rows:
+        if binding.in_custom_values:
+            custom_values = binding.registry.read_row_custom_values(row)
+            current_value = custom_values.get(binding.field_key)
+            if isinstance(current_value, str) and current_value in deleted_ids:
+                cleared += 1
+                new_custom = dict(custom_values)
+                new_custom[binding.field_key] = None
+                next_rows.append(binding.registry.set_row_custom_values(row, new_custom))
+                continue
+        else:
+            current_value = binding.registry.read_built_in_option_value(row, binding.field_key)
+            if isinstance(current_value, str) and current_value in deleted_ids:
+                cleared += 1
+                replacement = replacements.get(current_value)
+                next_rows.append(binding.registry.set_built_in_option_value(row, binding.field_key, replacement))
+                continue
+        next_rows.append(row)
+    if cleared == 0:
+        return body, 0
+    return replace_rows_in_envelope(body, binding.table_key, next_rows), cleared
 
 
 def validate_default_option_id(field: TableFieldDef, next_option_ids: set[str]) -> None:
@@ -161,32 +251,21 @@ def apply_edit_options(
                     },
                 )
 
-    # Cascade deletes into row values atomically.
+    # Cascade deletes into row values atomically — across every table bound to
+    # the (possibly shared) option list, not just the edited one.
     cleared_row_count = 0
     next_body = body
     if deleted_ids:
-        rows = read_rows_from_envelope(next_body, mutation.table_key)
-        next_rows: list[object] = []
-        for row in rows:
-            if in_custom_values:
-                custom_values = capability.read_row_custom_values(row)
-                current_value = custom_values.get(mutation.field_id)
-                if isinstance(current_value, str) and current_value in deleted_ids:
-                    cleared_row_count += 1
-                    new_custom = dict(custom_values)
-                    new_custom[mutation.field_id] = None
-                    next_rows.append(capability.set_row_custom_values(row, new_custom))
-                else:
-                    next_rows.append(row)
-            else:
-                current_value = capability.read_built_in_option_value(row, mutation.field_id)
-                if isinstance(current_value, str) and current_value in deleted_ids:
-                    cleared_row_count += 1
-                    replacement = mutation.replacements.get(current_value)
-                    next_rows.append(capability.set_built_in_option_value(row, mutation.field_id, replacement))
-                else:
-                    next_rows.append(row)
-        next_body = replace_rows_in_envelope(next_body, mutation.table_key, next_rows)
+        bindings = _option_field_bindings(
+            namespace_key,
+            in_custom_values=in_custom_values,
+            table_key=mutation.table_key,
+            field_id=mutation.field_id,
+            capability=capability,
+        )
+        for binding in bindings:
+            next_body, cleared = _clear_option_refs(next_body, binding, deleted_ids, mutation.replacements)
+            cleared_row_count += cleared
 
     next_options = list(mutation.next_options)
     next_map = dict(next_body.single_select_options)

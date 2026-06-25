@@ -61,14 +61,16 @@ endpoints); the error-code rename in 5 must land FE+BE together.
      guard the non-UI (MCP / hand-crafted) case. So the cascade needs no new
      nullable-detection — it clears the clearable set and leaves the required set
      to the existing replacement guard.
-   - **2a (backend, needs full `make ci`):** generalize `apply_edit_options`'s
-     row-clear cascade to clear across **every** `(table, field)` whose option-list
-     `namespace_key` matches the edited list — not just `mutation.table_key`.
-     `heat_pumps.manufacturer` is one shared document-level list referenced by BOTH
-     the outdoor-equip and indoor-equip leaves, so a single-table clear leaves the
-     sibling leaf's rows dangling → `422`. Resolve all fields bound to the key via
-     the registry. Tests: generic shared-key clear + heat-pump manufacturer cleared
-     on both leaves from one edit.
+   - **2a (backend) — ✅ DONE.** `apply_edit_options` now resolves *every*
+     `(table, field)` whose option-list `namespace_key` matches the edited list
+     (via `_option_field_bindings` over `iter_table_contracts()`) and clears
+     deleted options on all of them — not just `mutation.table_key`. A custom /
+     mutable built-in single-select stays table-local (its namespace embeds the
+     `table_path`); a locked-type built-in (`heat_pumps.manufacturer`, shared by
+     the outdoor- and indoor-equip leaves) cascades to both, so the sibling leaf
+     no longer dangles → `422`. Tests in `tests/features/heat_pumps/test_shared_
+     option_cascade.py` (manufacturer cleared on both leaves from one edit; rename
+     leaves rows untouched). Needs the full `make ci` gate at commit.
    - **2b (frontend):** point the four components' inline option add/edit/remove at
      the generic `editOptions` schema-mutation path (the same one custom
      single-selects use), replacing `useHeatPumpOptionMutation`. No bespoke option
