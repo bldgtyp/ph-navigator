@@ -166,6 +166,7 @@ export function createTableSliceFeature<TSlice extends BaseTableSlice, TReplaceB
       }),
       invalidateProjectDocumentEditorTableSlices(queryClient, projectId, slice.version_id, {
         excludeTableName: acceptedTableName,
+        refetchActiveSlices: false,
       }),
     ];
     if (
@@ -210,10 +211,11 @@ export function invalidateProjectDocumentEditorTableSlices(
   queryClient: QueryClient,
   projectId: string,
   versionId: string,
-  options: { excludeTableName?: string } = {},
+  options: { excludeTableName?: string; refetchActiveSlices?: boolean } = {},
 ): Promise<void> {
   return queryClient.invalidateQueries({
     queryKey: projectDocumentTableQueryKeys.project(projectId),
+    refetchType: options.refetchActiveSlices === false ? "none" : undefined,
     predicate: (query) =>
       isEditorTableSliceQueryKey(query.queryKey, projectId, versionId, options.excludeTableName),
   });

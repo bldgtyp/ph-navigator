@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
-TIME: 21:13 EDT
-STATUS: Planned - implementation not started
+TIME: 21:24 EDT
+STATUS: In review - first cut implemented and measured
 AUTHOR: Codex
 SCOPE: Shared DataTable edit-pipeline performance plan for Spaces and Equipment stress edits
 RELATED:
@@ -26,6 +26,15 @@ Primary before numbers:
 
 - Spaces stress edit: 2,033 ms scripted interaction, 5 long tasks, 208 ms max long task, 25 React update commits, 446.1 ms actual render.
 - Equipment stress edit: 3,152 ms scripted interaction, 5 long tasks, 263 ms max long task, 28 React update commits, 565.3 ms actual render.
+
+First-cut result (`scorecard-2026-06-24-phase-04a.md`):
+
+- Spaces stress edit: reproduced 1,986 ms / 26 commits / 458.8 ms render; after
+  change 1,505 ms / 23 commits / 421.2 ms render. Post-edit sibling
+  `/draft/tables/pumps` and `/draft/tables/space_types` GETs are gone.
+- Equipment stress edit: reproduced 3,159 ms / 27 commits / 549.0 ms render;
+  after change 1,647 ms / 22 commits / 498.9 ms render. Post-edit sibling
+  Equipment table GETs are gone.
 
 ## Working Theory
 
@@ -89,6 +98,12 @@ The first implementation step should prove which part dominates before changing 
 
 Exit condition: identify whether most time is active table render, inactive Equipment controller recomputation, mutation/refetch/query invalidation, or derived row-model churn.
 
+Result: mutation/refetch/query invalidation was a confirmed dominant path.
+Accepted table writes updated the changed slice from the mutation response, then
+eager-refetched every active sibling editor table slice. Spaces refetched Pumps
+and Space-Types after a Rooms edit; Equipment refetched six inactive Equipment
+tables after a Pumps edit.
+
 ### 2. Stabilize Active Table Inputs
 
 Candidate changes, in order of caution:
@@ -124,6 +139,33 @@ Candidate changes only after measurement:
 
 Exit condition: no stale ETag regressions, no undo/redo regressions, no lost error messages.
 
+Result: first cut keeps same-table accepted slice cache updates synchronous and
+keeps draft-summary invalidation synchronous, but marks sibling editor table
+slices stale without active refetch. Later use still sees stale sibling queries,
+while the current edit no longer blocks on, or immediately renders, unrelated
+sibling-table refetches.
+
+## Implementation Notes
+
+- Changed `frontend/src/features/project_document/table-slice.ts` so generic
+  table-slice replacement writes call
+  `invalidateProjectDocumentEditorTableSlices(..., { refetchActiveSlices: false })`
+  for sibling editor table slices.
+- Extended `invalidateProjectDocumentEditorTableSlices` with an optional
+  `refetchActiveSlices` parameter. Existing heat-pump callers keep the default
+  eager invalidation behavior.
+- Added an active-observer regression assertion in
+  `frontend/src/features/project_document/table-slice.test.ts` so sibling table
+  slices are invalidated but not immediately refetched after an accepted generic
+  table write.
+
+## Remaining Work
+
+- Active-table render churn remains significant after the refetch fix:
+  23 commits / 421.2 ms for Spaces and 22 commits / 498.9 ms for Equipment.
+- If Phase 04A continues, inspect DataTable row/body derivation and
+  EquipmentPageBody controller construction next.
+
 ## Guardrails
 
 - Preserve undo/redo stack semantics in `useGridWriteReducer`.
@@ -137,6 +179,7 @@ Exit condition: no stale ETag regressions, no undo/redo regressions, no lost err
 
 - `cd frontend && pnpm exec vitest run src/shared/ui/data-table/__tests__/useGridEdit.test.ts`
 - `cd frontend && pnpm exec vitest run src/shared/ui/data-table/feature/useSliceTableController.test.ts` if present after discovery.
+- `cd frontend && pnpm exec vitest run src/features/project_document/table-slice.test.ts`
 - `make e2e-perf PERF_PROJECT_ID=3d56d037-806d-498b-b559-7f505e0e3498`
 - Update `planning/refactor/frontend-perf/scorecard-2026-06-24.md` or create a new dated scorecard with before/after rows.
 

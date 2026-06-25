@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, QueryObserver } from "@tanstack/react-query";
 import { act, renderHook } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 import type { FieldSchemaMutation } from "../../shared/ui/data-table/lib/customFieldMutations";
@@ -159,21 +159,33 @@ describe("createTableSliceFeature", () => {
     queryClient.setQueryData(siblingViewerKey, makeSlice({ rows: ["saved-sibling"] }));
     queryClient.setQueryData(siblingOtherVersionKey, makeSlice({ version_id: "v2" }));
     queryClient.setQueryData(draftSummaryKey, { draft_etag: "draft-old" });
+    const siblingRefetch = vi.fn(async () => makeSlice({ rows: ["refetched-sibling"] }));
+    const siblingObserver = new QueryObserver(queryClient, {
+      queryKey: siblingEditorKey,
+      queryFn: siblingRefetch,
+      staleTime: Infinity,
+    });
+    const unsubscribe = siblingObserver.subscribe(() => undefined);
     fetchMock.mockResolvedValueOnce(jsonResponse(accepted));
 
-    const { result } = renderHook(
-      () => sourceFeature.useReplaceSliceMutation(projectId, versionId),
-      {
-        wrapper: queryWrapper(queryClient),
-      },
-    );
-    await act(async () => {
-      await result.current.mutateAsync({ current, payload: { rows: ["new-source"] } });
-    });
+    try {
+      const { result } = renderHook(
+        () => sourceFeature.useReplaceSliceMutation(projectId, versionId),
+        {
+          wrapper: queryWrapper(queryClient),
+        },
+      );
+      await act(async () => {
+        await result.current.mutateAsync({ current, payload: { rows: ["new-source"] } });
+      });
+    } finally {
+      unsubscribe();
+    }
 
     expect(queryClient.getQueryData(sourceEditorKey)).toEqual(accepted);
     expect(queryClient.getQueryState(sourceEditorKey)?.isInvalidated).toBe(false);
     expect(queryClient.getQueryState(siblingEditorKey)?.isInvalidated).toBe(true);
+    expect(siblingRefetch).not.toHaveBeenCalled();
     expect(queryClient.getQueryState(siblingViewerKey)?.isInvalidated).toBe(false);
     expect(queryClient.getQueryState(siblingOtherVersionKey)?.isInvalidated).toBe(false);
     expect(queryClient.getQueryState(draftSummaryKey)?.isInvalidated).toBe(true);

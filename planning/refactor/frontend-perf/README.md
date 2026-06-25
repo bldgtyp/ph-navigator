@@ -44,11 +44,12 @@ separate `PERF-STRESS` project for stress-tier table runs.
    phasing, and the a-priori suspect list.
 2. `STATUS.md` — current state, what's done, the next concrete step.
 3. `scorecard-2026-06-24.md` — measured Layer A/B/C evidence.
-4. `phases/phase-04-ranking.md` — ranked Phase 4 findings and implementation sequence.
-5. `phases/phase-04a-datatable-edit-churn.md` — P0 shared DataTable edit plan.
-6. `phases/phase-04b-route-payload-splits.md` — P1 route/project-tab payload plan.
-7. `phases/phase-04c-model-payload.md` — P2 Model lazy-chunk payload plan.
-8. `phases/phase-04d-secondary-runtime.md` — P3 trace-first secondary runtime plan.
+4. `scorecard-2026-06-24-phase-04a.md` — Phase 04A before/after delta.
+5. `phases/phase-04-ranking.md` — ranked Phase 4 findings and implementation sequence.
+6. `phases/phase-04a-datatable-edit-churn.md` — P0 shared DataTable edit plan.
+7. `phases/phase-04b-route-payload-splits.md` — P1 route/project-tab payload plan.
+8. `phases/phase-04c-model-payload.md` — P2 Model lazy-chunk payload plan.
+9. `phases/phase-04d-secondary-runtime.md` — P3 trace-first secondary runtime plan.
 
 ## One-paragraph summary
 
