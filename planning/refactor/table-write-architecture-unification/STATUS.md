@@ -58,9 +58,17 @@ Remaining = **backend** increment **5** + closeout **6**:
   routes (incl. `/options/{key}` + its `heat_pump_option_in_use` 409). Confirm nothing
   reads the aggregate `GET /equipment/heat-pumps` (the FE no longer does), then remove
   `compose_read` + that route; KEEP `read_slice` + `export-phius` +
-  `active_version_id_for_project`. Then rename `DEPENDENT_LINK_DELETE_BLOCKED` →
-  `"dependent_link_delete_blocked"` — **FE 409 handler + the two BE tests must land
-  together**. (The FE `heat_pump_delete_blocked` handler is the one cross-stack co-land.)
+  `active_version_id_for_project`. Then rename `DEPENDENT_LINK_DELETE_BLOCKED`'s value
+  (`dependent_links.py:39`, currently `"heat_pump_delete_blocked"`) →
+  `"dependent_link_delete_blocked"`. **Correction to the original plan: this rename is
+  BACKEND-ONLY.** The FE blocked-delete handler keys on the HTTP **409 status** + the
+  details payload (`OutdoorUnitsTable.tsx:301` `err.status === 409`), NOT the
+  `error_code` string — grep for `heat_pump_delete_blocked`/`dependent_link_delete_blocked`
+  in `frontend/src` is empty. So only the two BE tests (`test_heat_pumps.py`,
+  `test_dependent_link_cascade.py`) reference the literal and need updating.
+  Test migration is the bulk of inc 5: of `test_heat_pumps.py`'s 20 tests, ~half hit
+  the PATCH shim (`heat_pumps_table_url`/`/options/`/aggregate `heat_pumps_url`) — most
+  are redundant with the generic-path coverage and can be deleted rather than migrated.
 - **6 (closeout).** Generic-path tests + e2e (mirror Pumps); full `make ci` green;
   greps clean for every deleted symbol; **browser smoke as Ed** (Equipment → Heat
   Pumps, all four leaves: add/edit, delete-with-cascade-confirm, blocked-delete 409,
