@@ -30,35 +30,75 @@ DEPENDS_ON: Phase 2 (backend heat-pumps on the generic contract, old endpoint st
 >   pass below; needs a running app + Vitest/Playwright as Ed.
 
 ## Phase 3b — ordered plan (do interactively, app running)
-Sequence (each step verified in-app before the next; keep the app green):
-1. **Option editing onto the generic replace.** Replace `useHeatPumpOptionMutation`
-   (PATCH `/options/{key}`) in all four table components' `createOption()` with the
-   generic whole-slice replace carrying `single_select_options` (payload-builders
-   already has `replaceOptions`). Preserve the option-in-use 409. No generic
-   option-edit hook exists to copy — this defines the pattern.
-2. **Delete-cascade onto the generic surface.** ✅ DONE (commit `6b6ae359`).
+Sequence (each increment verified in-app before the next; keep the app green).
+Numbering matches the increment ledger in `../STATUS.md`. Ordering constraint:
+2 and 3 (last FE consumers) before 4 (drop FE client) before 5 (remove BE
+endpoints); the error-code rename in 5 must land FE+BE together.
+
+1. **Delete-cascade onto the generic surface.** ✅ DONE (commit `6b6ae359`).
    Added a generic `previewReplace()` on the slice feature (POSTs to the 3a
    `:preview-replace` route); `OutdoorUnitsTable` (the only leaf still on the
    bespoke delete) now dry-runs via `previewReplace` and deletes via the generic
    `deleteHeatPumpRow(controller.onWrite)`. `CascadePreviewDialog`/
    `BlockedDeleteDialog` UX unchanged. tsc + 78 vitest green; live smoke deferred
-   to the closeout (concurrent DataTable-UI WIP in the tree).
+   to the closeout.
+
+2. **Option editing via the generic `editOptions` mutation — AirTable parity.**
+   **Decision (Ed, 2026-06-25):** deleting a single-select option must **unset it
+   on the records** (set the cell to `null`), NOT block the delete. That is
+   AirTable parity and the correct UX. The bespoke `/options/{key}` endpoint
+   (which 409s `heat_pump_option_in_use` on an in-use delete) is therefore the
+   *wrong* behavior — and redundant: the generic `editOptions` schema mutation
+   (`mutations/options_ops.py::apply_edit_options`) **already does exactly this**:
+   it diffs `deleted_ids = current − next`, cascade-clears those ids out of row
+   values (sets the cell to `None` for a normal single-select), and for built-ins
+   in `required_field_keys` demands an explicit *replacement* instead of clearing.
+   - **Nullable-vs-locked is already encoded** (Ed's rule): user-editable owned
+     options (`manufacturer`, `system_family`, `refrigerant`, `model_type`,
+     `install_type`) are nullable → clearable. `status` (and any locked
+     single-select) is required / not user-option-editable, so its options are
+     never deleted through the UI; `required_field_keys` + `validate_default_option_id`
+     guard the non-UI (MCP / hand-crafted) case. So the cascade needs no new
+     nullable-detection — it clears the clearable set and leaves the required set
+     to the existing replacement guard.
+   - **2a (backend, needs full `make ci`):** generalize `apply_edit_options`'s
+     row-clear cascade to clear across **every** `(table, field)` whose option-list
+     `namespace_key` matches the edited list — not just `mutation.table_key`.
+     `heat_pumps.manufacturer` is one shared document-level list referenced by BOTH
+     the outdoor-equip and indoor-equip leaves, so a single-table clear leaves the
+     sibling leaf's rows dangling → `422`. Resolve all fields bound to the key via
+     the registry. Tests: generic shared-key clear + heat-pump manufacturer cleared
+     on both leaves from one edit.
+   - **2b (frontend):** point the four components' inline option add/edit/remove at
+     the generic `editOptions` schema-mutation path (the same one custom
+     single-selects use), replacing `useHeatPumpOptionMutation`. No bespoke option
+     client, no option-in-use error handling.
+
 3. **Rewire `equipment/components/VentilatorsTableSlot.tsx`** off `useHeatPumpsQuery`
    + `useHeatPumpPatchMutation` (it edits HP indoor units from the ventilator side:
    the `IndoorUnitRowModal` save + the "Link HP indoor units" multi-row picker)
    onto the generic indoor-units slice feature.
-4. **Drop the bespoke frontend client**: `heat-pumps/api.ts` (3 hooks) +
-   `heatPumpsQueryKeys`; fix `project_document/hooks.ts` invalidation coupling.
-   Keep field-defs/columns/types/row-builders/payload-builders.
-5. **Remove the backend write shim**: `apply_patch`/`apply_option_patch`/
-   `HeatPumpRowPatch`/`OptionPatchOp` + the two PATCH routes in
-   `features/heat_pumps/routes.py` (KEEP the GET + `export-phius` + `read_slice`/
-   `compose_read`). Then rename `DEPENDENT_LINK_DELETE_BLOCKED` →
-   `"dependent_link_delete_blocked"` (update the FE handler + the two BE tests).
-6. **Tests**: update `heat-pumps/__tests__/` for the generic write paths; add an
-   e2e spec mirroring the Pumps pattern; `make ci` green; browser smoke as Ed
-   (Equipment → Heat Pumps: add/edit/delete-with-cascade-confirm/option-edit on
-   all four leaves).
+4. **Drop the bespoke frontend client**: `heat-pumps/api.ts` (`useHeatPumpsQuery`,
+   `useHeatPumpPatchMutation`, `previewHeatPumpDelete`, `useHeatPumpOptionMutation`,
+   `fetchHeatPumps`) + `heatPumpsQueryKeys`; fix `project_document/hooks.ts`
+   invalidation coupling; prune now-dead `types.ts`. Keep `requestPhiusExport` +
+   the four slice features + field-defs/columns/row-builders/payload-builders.
+5. **Remove the backend write shim** (`features/heat_pumps/`): `apply_patch`,
+   `apply_option_patch` (+ `_apply_option_patch_to_body`, `_option_is_referenced`,
+   `_OPTION_KEY_TO_CELL`), `HeatPumpRowPatch`, `OptionPatchOp`, the patch→replace
+   glue (`_rows_after_patch`; and `build_leaf_replace_payload`/`leaf_contract_for`/
+   `_LeafWriteSpec` in `tables/heat_pumps.py`), and the two `PATCH` routes (incl.
+   `/options/{key}` and its `heat_pump_option_in_use` 409). Confirm nothing reads
+   the aggregate `GET /equipment/heat-pumps` after step 4, then remove
+   `compose_read` + that route too; KEEP `read_slice` + `export-phius` +
+   `active_version_id_for_project`. Then rename `DEPENDENT_LINK_DELETE_BLOCKED` →
+   `"dependent_link_delete_blocked"` (FE 409 handler + the two BE tests).
+6. **Tests + closeout**: update `heat-pumps/__tests__/` for the generic paths; add
+   an e2e spec mirroring the Pumps pattern; full `make ci` green; greps clean for
+   every deleted symbol; browser smoke as Ed (Equipment → Heat Pumps, all four
+   leaves: add/edit, delete-with-cascade-confirm, blocked-delete 409, option
+   add/edit/**delete-clears-references**, ventilator-side link picker). Then the
+   Final Completion Cleanup (archive the packet).
 
 ## Goal
 Heat-pumps editing uses the same generic table-write client and `<DataTable>`
