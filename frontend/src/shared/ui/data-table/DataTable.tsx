@@ -1429,6 +1429,7 @@ export function DataTable<TRow>({
     <DataTableErrorBoundary>
       <div className={`data-table-shell data-table-shell-${density}`}>
         <GridToolbar
+          tableName={tableName}
           view={view}
           fieldDefByKey={fieldDefByKey}
           filterableFieldDefs={filterableFieldDefs}

@@ -13,6 +13,7 @@ import type { FieldDef, FilterCondition, GroupRule, SortRule, ViewState } from "
 // toolbar row so a destructive action never overlaps the Sort / Filter
 // / overflow controls reaching for the same area.
 export type GridToolbarProps = {
+  tableName: string;
   view: ViewState;
   fieldDefByKey: Map<string, FieldDef>;
   filterableFieldDefs: FieldDef[];
@@ -38,6 +39,7 @@ export type GridToolbarProps = {
 type AxisRule = { fieldKey: string };
 
 export function GridToolbar({
+  tableName,
   view,
   fieldDefByKey,
   filterableFieldDefs,
@@ -88,6 +90,9 @@ export function GridToolbar({
   return (
     <div className="data-table-toolbar" aria-label="Table view controls">
       <div className="data-table-toolbar-status">
+        <h2 className="data-table-toolbar-title" title={tableName}>
+          {tableName}
+        </h2>
         {groupActive ? <span>Ungroup to paste</span> : null}
       </div>
       <div className="data-table-toolbar-buttons">

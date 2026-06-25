@@ -80,7 +80,22 @@
   flex-wrap: wrap;
   gap: var(--space-8);
   align-items: center;
+  min-width: 0;
   flex: 1 1 auto;
+}
+
+.data-table-toolbar .data-table-toolbar-title {
+  display: block;
+  margin: 0;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--fs-lg);
+  font-weight: 650;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  text-transform: none;
+  white-space: nowrap;
 }
 
 .data-table-toolbar-actions {
@@ -159,6 +174,7 @@
   min-width: 28px;
   padding: 0;
   width: 28px;
+  border: 0px;
 }
 
 .data-table-toolbar-button--icon:hover,
@@ -2464,15 +2480,9 @@ td.data-table-cell-editing {
 }
 
 .single-select-pill--status {
-  display: inline-flex;
-  align-items: center;
   gap: var(--space-4);
   background: color-mix(in oklab, var(--option-color, var(--text-muted)) 18%, var(--bg-card));
   color: color-mix(in oklab, var(--option-color, var(--text-muted)) 76%, var(--text-primary));
-  padding: 1px 8px;
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  line-height: 1.35;
 }
 
 .single-select-pill--status[data-status-option="question"] {
