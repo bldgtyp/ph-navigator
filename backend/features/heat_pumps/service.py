@@ -1,16 +1,24 @@
-"""Service rules for the Heat Pumps equipment slice."""
+"""Service rules for the Heat Pumps equipment slice.
+
+Heat-pump writes go through the generic registered-contract path (the four
+leaf `TableContract`s) and the shared write spine — exactly like every other
+equipment table. The legacy single-row `PATCH` endpoints survive only as a thin
+translation shim (`apply_patch` / `apply_option_patch`) until the Phase-3
+frontend rewires onto the generic table-write client; they hold no bespoke
+draft/ETag/persist plumbing of their own. Delete-cascade and dry-run preview are
+generic `TableContract.dependent_links` capabilities (see `dependent_links.py`),
+not heat-pump specials.
+"""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any, Literal, cast
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic import BaseModel, ConfigDict
 from starlette import status
 
 from database import connection, transaction
-from features.assets.reference_validation import validate_document_asset_references
 from features.heat_pumps import repository
 from features.heat_pumps.models import (
     HEAT_PUMP_OWNED_OPTION_KEYS,
@@ -21,7 +29,6 @@ from features.heat_pumps.models import (
     HeatPumpOutdoorUnitRow,
     HeatPumpsTableSlice,
 )
-from features.project_document import repository as document_repository
 from features.project_document.document import ProjectDocumentV1
 from features.project_document.options import (
     read_option_list,
@@ -30,20 +37,27 @@ from features.project_document.options import (
 )
 from features.project_document.rows import SingleSelectOption
 from features.project_document.service import get_current_document_view
-from features.project_document.validation import (
-    enforce_document_body_size,
-    next_draft_etag_from_etag,
-    validate_document,
-)
-from features.project_document.write_spine import load_draft_context
+from features.project_document.tables.contracts import read_table_envelope
+from features.project_document.tables.dependent_links import preview_dependent_link_cascade
+from features.project_document.tables.heat_pumps import build_leaf_replace_payload, leaf_contract_for
+from features.project_document.validation import validate_document
+from features.project_document.write_spine import apply_document_write, load_draft_context
 from features.projects.access import ProjectAccess, require_editor_user
 from features.shared.errors import api_error
 
 HeatPumpTableKey = Literal["outdoor-equip", "indoor-equip", "outdoor-units", "indoor-units"]
 PatchOpName = Literal["add", "replace", "remove"]
 
+_DRAFT_MISMATCH_MESSAGE = "The draft changed before this heat-pump update was applied."
 
-class JsonPatchOp(BaseModel):
+
+class HeatPumpRowPatch(BaseModel):
+    """Single-row add/replace/remove for the legacy heat-pump PATCH endpoint.
+
+    A thin wire shape translated into a whole-slice replace; removed once the
+    Phase-3 frontend posts full-table payloads through the generic client.
+    """
+
     model_config = ConfigDict(extra="forbid")
 
     op: PatchOpName
@@ -85,20 +99,6 @@ class HeatPumpsPatchResponse(HeatPumpsReadResponse):
     cascade_preview: CascadePreview | None = None
 
 
-@dataclass(frozen=True)
-class _TableSpec:
-    attr: Literal["outdoor_equip", "indoor_equip", "outdoor_units", "indoor_units"]
-    row_model: type[HeatPumpOutdoorEquipRow | HeatPumpIndoorEquipRow | HeatPumpOutdoorUnitRow | HeatPumpIndoorUnitRow]
-
-
-_TABLE_SPECS: dict[HeatPumpTableKey, _TableSpec] = {
-    "outdoor-equip": _TableSpec("outdoor_equip", HeatPumpOutdoorEquipRow),
-    "indoor-equip": _TableSpec("indoor_equip", HeatPumpIndoorEquipRow),
-    "outdoor-units": _TableSpec("outdoor_units", HeatPumpOutdoorUnitRow),
-    "indoor-units": _TableSpec("indoor_units", HeatPumpIndoorUnitRow),
-}
-
-
 def active_version_id_for_project(project_id: UUID) -> UUID:
     with connection() as conn:
         version_id = repository.get_active_version_id(conn, project_id)
@@ -132,27 +132,42 @@ def read_slice(version_id: UUID, access: ProjectAccess) -> HeatPumpsTableSlice:
 def apply_patch(
     version_id: UUID,
     table_key: HeatPumpTableKey,
-    patch: JsonPatchOp,
+    patch: HeatPumpRowPatch,
     access: ProjectAccess,
     *,
     if_match: str | None,
     if_match_version: str | None,
     dry_run: bool,
 ) -> HeatPumpsPatchResponse:
+    """Apply one row patch by translating it into a generic slice-replace.
+
+    The real write runs through the registered contract → spine (cascade,
+    validation, and the size guard all live there). A dry run computes the
+    delete cascade preview without persisting; a delete blocked by a required
+    dependent link raises 409 in both modes.
+    """
     user = require_editor_user(access)
     _validate_patch_path(patch)
-    with transaction() as conn:
-        base_body, base_version_etag, version_etag, draft = load_draft_context(
-            conn,
-            access.project_id,
-            version_id,
-            user.id,
-            if_match,
-            if_match_version,
-            draft_etag_mismatch_message="The draft changed before this heat-pump update was applied.",
-        )
-        next_body, preview = _apply_patch_to_body(base_body, table_key, patch, dry_run=dry_run)
-        if dry_run and preview is not None:
+    contract = leaf_contract_for(table_key)
+
+    if dry_run:
+        with transaction() as conn:
+            base_body, _base_version_etag, version_etag, draft = load_draft_context(
+                conn,
+                access.project_id,
+                version_id,
+                user.id,
+                if_match,
+                if_match_version,
+                draft_etag_mismatch_message=_DRAFT_MISMATCH_MESSAGE,
+            )
+            affected = preview_dependent_link_cascade(
+                base_body,
+                table_path=contract.table_path,
+                removed=_removed_ids_for_patch(patch),
+                dependent_links=contract.dependent_links,
+            )
+            preview = CascadePreview(affected=[CascadeReference(**ref.as_dict()) for ref in affected])
             return _patch_response(
                 access.project_id,
                 version_id,
@@ -162,213 +177,63 @@ def apply_patch(
                 base_body,
                 preview,
             )
-        if next_body == base_body:
-            return _patch_response(
-                access.project_id,
-                version_id,
-                "draft" if draft is not None else "version",
-                version_etag,
-                draft["draft_etag"] if draft is not None else None,
-                base_body,
-                None,
-            )
-        validate_document_asset_references(conn, project_id=access.project_id, body=next_body)
-        serialized_next = enforce_document_body_size(next_body)
-        draft_etag = document_repository.upsert_draft(
-            conn,
-            version_id,
-            user.id,
-            next_body,
-            base_version_etag,
-            next_draft_etag_from_etag(serialized_next.etag),
-            serialized_body=serialized_next,
+
+    def mutate(_conn: object, base_body: ProjectDocumentV1) -> tuple[ProjectDocumentV1, None]:
+        payload = build_leaf_replace_payload(
+            table_key, base_body, _rows_after_patch(base_body, contract.table_path, patch)
         )
-    return _patch_response(access.project_id, version_id, "draft", version_etag, draft_etag, next_body, preview)
+        return contract.apply_replace(base_body, payload), None
+
+    result = apply_document_write(
+        access,
+        version_id,
+        user.id,
+        if_match=if_match,
+        if_match_version=if_match_version,
+        mutate=mutate,
+        draft_etag_mismatch_message=_DRAFT_MISMATCH_MESSAGE,
+        validate_asset_references=True,
+    )
+    return _patch_response(
+        access.project_id,
+        version_id,
+        result.source,
+        result.version_etag,
+        result.draft_etag,
+        result.body,
+        None,
+    )
 
 
-def _apply_patch_to_body(
-    body: ProjectDocumentV1, table_key: HeatPumpTableKey, patch: JsonPatchOp, *, dry_run: bool
-) -> tuple[ProjectDocumentV1, CascadePreview | None]:
-    slice_ = body.tables.equipment.heat_pumps
-    spec = _TABLE_SPECS[table_key]
-    envelope = getattr(slice_, spec.attr)
-    rows = list(envelope.rows)
+def _rows_after_patch(
+    base_body: ProjectDocumentV1, table_path: tuple[str, ...], patch: HeatPumpRowPatch
+) -> list[dict[str, Any]]:
+    """Apply the row patch to the leaf's current rows, returning JSON row dicts."""
+    envelope = cast(Any, read_table_envelope(base_body, table_path))
+    rows = [row.model_dump(mode="json") for row in envelope.rows]
     if patch.op == "add":
         if patch.value is None:
             raise _validation_error("value", "Add operations require a value.")
-        row = _validate_row(spec.row_model, patch.value)
-        rows.append(row)
-    elif patch.op == "replace":
+        rows.append(patch.value)
+        return rows
+
+    row_id = _row_id_from_path(patch.path)
+    if not any(row["id"] == row_id for row in rows):
+        raise _validation_error("path", "Patch path did not match an existing row.", {"row_id": row_id})
+    if patch.op == "replace":
         if patch.value is None:
             raise _validation_error("value", "Replace operations require a value.")
-        row_id = _row_id_from_path(patch.path)
-        row = _validate_row(spec.row_model, patch.value)
-        if row.id != row_id:
+        if patch.value.get("id") != row_id:
             raise _validation_error("id", "Replacement row id must match the patch path.", {"row_id": row_id})
-        rows = _replace_row(rows, row_id, row)
-    else:
-        row_id = _row_id_from_path(patch.path)
-        preview = _delete_preview(slice_, table_key, row_id)
-        if preview.affected and dry_run:
-            return body, preview
-        rows = _remove_row(rows, row_id)
-        slice_ = _apply_delete_cascades(slice_, table_key, row_id)
-
-    next_slice = slice_.model_copy(update={spec.attr: envelope.model_copy(update={"rows": rows})})
-    _validate_slice(next_slice)
-    next_equipment = body.tables.equipment.model_copy(update={"heat_pumps": next_slice})
-    next_tables = body.tables.model_copy(update={"equipment": next_equipment})
-    return validate_document(body.model_copy(update={"tables": next_tables}).model_dump(mode="json")), None
+        return [patch.value if row["id"] == row_id else row for row in rows]
+    return [row for row in rows if row["id"] != row_id]
 
 
-def _validate_row(row_model: type[Any], value: dict[str, Any]) -> Any:
-    try:
-        return row_model.model_validate(value)
-    except ValidationError as exc:
-        raise _validation_error(
-            "row",
-            "Heat-pump row failed validation.",
-            {"errors": [str(error["msg"]) for error in exc.errors()]},
-        ) from exc
+def _removed_ids_for_patch(patch: HeatPumpRowPatch) -> set[str]:
+    return {_row_id_from_path(patch.path)} if patch.op == "remove" else set()
 
 
-def _validate_slice(slice_: HeatPumpsTableSlice) -> None:
-    for table_key, spec in _TABLE_SPECS.items():
-        rows = getattr(slice_, spec.attr).rows
-        seen_ids: set[str] = set()
-        for row in rows:
-            if row.id in seen_ids:
-                raise _validation_error("id", "Duplicate row id.", {"table": table_key, "row_id": row.id})
-            seen_ids.add(row.id)
-
-    indoor_equip_ids = {row.id for row in slice_.indoor_equip.rows}
-    outdoor_equip_ids = {row.id for row in slice_.outdoor_equip.rows}
-    outdoor_unit_ids = {row.id for row in slice_.outdoor_units.rows}
-    for row in slice_.outdoor_equip.rows:
-        if row.paired_indoor_equip_id is not None and row.paired_indoor_equip_id not in indoor_equip_ids:
-            raise _validation_error(
-                "paired_indoor_equip_id",
-                "Paired indoor equipment does not exist.",
-                {"row_id": row.id, "missing_id": row.paired_indoor_equip_id},
-            )
-    for row in slice_.outdoor_units.rows:
-        if row.outdoor_equip_id not in outdoor_equip_ids:
-            raise _validation_error(
-                "outdoor_equip_id",
-                "Outdoor equipment does not exist.",
-                {"row_id": row.id, "missing_id": row.outdoor_equip_id},
-            )
-    for row in slice_.indoor_units.rows:
-        if row.indoor_equip_id not in indoor_equip_ids:
-            raise _validation_error(
-                "indoor_equip_id",
-                "Indoor equipment does not exist.",
-                {"row_id": row.id, "missing_id": row.indoor_equip_id},
-            )
-        if row.outdoor_unit_id is not None and row.outdoor_unit_id not in outdoor_unit_ids:
-            raise _validation_error(
-                "outdoor_unit_id",
-                "Outdoor unit does not exist.",
-                {"row_id": row.id, "missing_id": row.outdoor_unit_id},
-            )
-
-
-def _delete_preview(slice_: HeatPumpsTableSlice, table_key: HeatPumpTableKey, row_id: str) -> CascadePreview:
-    affected: list[CascadeReference] = []
-    if table_key == "outdoor-equip":
-        for row in slice_.outdoor_units.rows:
-            if row.outdoor_equip_id == row_id:
-                affected.append(
-                    CascadeReference(
-                        table="outdoor-units",
-                        row_id=row.id,
-                        tag=row.tag,
-                        field="outdoor_equip_id",
-                    )
-                )
-        if affected:
-            raise api_error(
-                status.HTTP_409_CONFLICT,
-                "heat_pump_delete_blocked",
-                "Outdoor equipment is referenced by outdoor units.",
-                {"referenced_by": [item.model_dump(mode="json") for item in affected]},
-            )
-    elif table_key == "indoor-equip":
-        blockers = [
-            CascadeReference(table="indoor-units", row_id=row.id, tag=row.tag, field="indoor_equip_id")
-            for row in slice_.indoor_units.rows
-            if row.indoor_equip_id == row_id
-        ]
-        if blockers:
-            raise api_error(
-                status.HTTP_409_CONFLICT,
-                "heat_pump_delete_blocked",
-                "Indoor equipment is referenced by indoor units.",
-                {"referenced_by": [item.model_dump(mode="json") for item in blockers]},
-            )
-        affected.extend(
-            CascadeReference(table="outdoor-equip", row_id=row.id, tag=row.tag, field="paired_indoor_equip_id")
-            for row in slice_.outdoor_equip.rows
-            if row.paired_indoor_equip_id == row_id
-        )
-    elif table_key == "outdoor-units":
-        affected.extend(
-            CascadeReference(table="indoor-units", row_id=row.id, tag=row.tag, field="outdoor_unit_id")
-            for row in slice_.indoor_units.rows
-            if row.outdoor_unit_id == row_id
-        )
-    return CascadePreview(affected=affected)
-
-
-def _apply_delete_cascades(
-    slice_: HeatPumpsTableSlice, table_key: HeatPumpTableKey, row_id: str
-) -> HeatPumpsTableSlice:
-    if table_key == "indoor-equip":
-        return slice_.model_copy(
-            update={
-                "outdoor_equip": slice_.outdoor_equip.model_copy(
-                    update={
-                        "rows": [
-                            row.model_copy(update={"paired_indoor_equip_id": None})
-                            if row.paired_indoor_equip_id == row_id
-                            else row
-                            for row in slice_.outdoor_equip.rows
-                        ]
-                    }
-                )
-            }
-        )
-    if table_key == "outdoor-units":
-        return slice_.model_copy(
-            update={
-                "indoor_units": slice_.indoor_units.model_copy(
-                    update={
-                        "rows": [
-                            row.model_copy(update={"outdoor_unit_id": None}) if row.outdoor_unit_id == row_id else row
-                            for row in slice_.indoor_units.rows
-                        ]
-                    }
-                )
-            }
-        )
-    return slice_
-
-
-def _replace_row(rows: list[Any], row_id: str, replacement: Any) -> list[Any]:
-    for index, row in enumerate(rows):
-        if row.id == row_id:
-            return [*rows[:index], replacement, *rows[index + 1 :]]
-    raise _validation_error("path", "Patch path did not match an existing row.", {"row_id": row_id})
-
-
-def _remove_row(rows: list[Any], row_id: str) -> list[Any]:
-    next_rows = [row for row in rows if row.id != row_id]
-    if len(next_rows) == len(rows):
-        raise _validation_error("path", "Patch path did not match an existing row.", {"row_id": row_id})
-    return next_rows
-
-
-def _validate_patch_path(patch: JsonPatchOp) -> None:
+def _validate_patch_path(patch: HeatPumpRowPatch) -> None:
     if patch.op == "add" and patch.path == "/-":
         return
     _row_id_from_path(patch.path)
@@ -465,37 +330,23 @@ def apply_option_patch(
         )
 
     user = require_editor_user(access)
-    with transaction() as conn:
-        base_body, base_version_etag, version_etag, draft = load_draft_context(
-            conn,
-            access.project_id,
-            version_id,
-            user.id,
-            if_match,
-            if_match_version,
-            draft_etag_mismatch_message="The draft changed before this heat-pump option update was applied.",
-        )
-        next_body = _apply_option_patch_to_body(base_body, option_key, patch)
-        if next_body == base_body:
-            return _response(
-                access.project_id,
-                version_id,
-                "draft" if draft is not None else "version",
-                version_etag,
-                draft["draft_etag"] if draft is not None else None,
-                base_body,
-            )
-        serialized_next = enforce_document_body_size(next_body)
-        draft_etag = document_repository.upsert_draft(
-            conn,
-            version_id,
-            user.id,
-            next_body,
-            base_version_etag,
-            next_draft_etag_from_etag(serialized_next.etag),
-            serialized_body=serialized_next,
-        )
-    return _response(access.project_id, version_id, "draft", version_etag, draft_etag, next_body)
+    result = apply_document_write(
+        access,
+        version_id,
+        user.id,
+        if_match=if_match,
+        if_match_version=if_match_version,
+        mutate=lambda _conn, base_body: (_apply_option_patch_to_body(base_body, option_key, patch), None),
+        draft_etag_mismatch_message="The draft changed before this heat-pump option update was applied.",
+    )
+    return _response(
+        access.project_id,
+        version_id,
+        result.source,
+        result.version_etag,
+        result.draft_etag,
+        result.body,
+    )
 
 
 def _apply_option_patch_to_body(body: ProjectDocumentV1, option_key: str, patch: OptionPatchOp) -> ProjectDocumentV1:

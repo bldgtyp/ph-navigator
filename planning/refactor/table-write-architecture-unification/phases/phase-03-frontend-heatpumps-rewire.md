@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 18:25 EDT
-STATUS: Blocked (Phase 2 here)
+STATUS: Ready (Phases 1–2 complete 2026-06-25) — backend on the generic contract, old PATCH endpoint still alive
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: Phase 3 — rewire the heat-pumps frontend onto the generic table-write client.
 RELATED: ../PRD.md, context/technical-requirements/data-table.md,

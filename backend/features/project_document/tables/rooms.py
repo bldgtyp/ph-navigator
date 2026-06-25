@@ -294,6 +294,11 @@ def apply_rooms_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectD
     # the indoor unit's identity is unchanged. `prior_row_ids` is the
     # same set computed for the defaults-backfill path above; reusing
     # it avoids walking `body.tables.rooms.rows` twice.
+    # FOLLOW-UP: this is now an optional list-valued `DependentLink` (field
+    # `served_room_ids`, required=False) — `dependent_links._clear_link`
+    # already handles the list+dedup case, so this could migrate onto the
+    # generic cascade (see `dependent_links.py`). Kept bespoke for now to
+    # keep this refactor scoped to heat-pumps; migration must stay silent.
     next_ids = {room.id for room in rooms_payload.rooms}
     removed_ids = prior_row_ids - next_ids
     if removed_ids:
