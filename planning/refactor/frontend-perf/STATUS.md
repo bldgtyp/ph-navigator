@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
-TIME: 21:13 EDT
-STATUS: Active — Phase 4 ranked/planned; implementation not started.
+TIME: 21:24 EDT
+STATUS: Active — Phase 04A first cut implemented; remaining table render churn tracked.
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: State, next step, and the deferred-findings log for the frontend perf eval.
 RELATED: ./README.md, ./PLAN.md
@@ -28,7 +28,8 @@ First scorecard produced: `scorecard-2026-06-24.md`. Layer A is filled from
 `pnpm run analyze`; Layer B is filled from the Playwright perf matrix using the
 seeded stress fixture. Layer C is filled from the same perf matrix with the
 dev-only root React Profiler enabled by a browser init flag. Phase 4 is now
-ranked and planned in `phases/`; no refactor implementation has started.
+ranked and planned in `phases/`; Phase 04A has a first cut implemented and
+measured in `scorecard-2026-06-24-phase-04a.md`.
 
 Harness corrections landed during Phase 2/3 execution:
 - Perf readiness selectors now match current page regions instead of stale
@@ -54,23 +55,27 @@ Decisions taken 2026-06-24 (Ed):
 | 1 — Static sweep (bundle treemap) | `Complete` | `scorecard-2026-06-24.md` logs the Layer-A flag list |
 | 2 — Runtime sweep (traces / Lighthouse) | `Complete` | `make e2e-perf PERF_PROJECT_ID=3d56d037-806d-498b-b559-7f505e0e3498` passed 10/10; Layer-B rows logged |
 | 3 — Render sweep (react-scan / Profiler) | `Complete` | profiler-enabled perf matrix passed 10/10; stress table-edit commits logged |
-| 4 — Triage & fix | `Ranked/planned` | `phases/phase-04-ranking.md` ranks shared DataTable edit churn first; implementation deferred by request |
+| 4 — Triage & fix | `In review` | Phase 04A first cut marks sibling table slices stale without eager refetch; rerun passed 10/10 and reduced Spaces/Equipment edit latency |
 
 ## Next step
 
-Await explicit approval to implement one of the Phase 4 tracks:
-1. `phases/phase-04a-datatable-edit-churn.md` — P0 shared DataTable edit churn.
-2. `phases/phase-04b-route-payload-splits.md` — P1 top-level route and project-tab payload splits.
-3. `phases/phase-04c-model-payload.md` — P2 Model lazy chunk.
-4. `phases/phase-04d-secondary-runtime.md` — P3 trace-first Envelope/catalog runtime follow-up.
+Finish Phase 04A closeout, then continue with the next ranked Phase 4 track:
+1. `phases/phase-04b-route-payload-splits.md` — P1 top-level route and project-tab payload splits.
+2. `phases/phase-04c-model-payload.md` — P2 Model lazy chunk.
+3. `phases/phase-04d-secondary-runtime.md` — P3 trace-first Envelope/catalog runtime follow-up.
 
 Confirmed flags so far:
 - Payload: `assets/index-C-de3sCl.js` is 391.28 kB gzip.
 - Payload: `assets/ModelTab-st-s-3xR.js` is 350.06 kB gzip.
-- Runtime: stress Spaces Rooms cell edit is 2,033 ms with 5 long tasks.
-- Runtime: stress Equipment Pumps cell edit is 3,152 ms with 5 long tasks.
-- Render: stress Spaces Rooms edit is 25 commits / 446.1 ms actual duration.
-- Render: stress Equipment Pumps edit is 28 commits / 565.3 ms actual duration.
+- Runtime: stress Spaces Rooms cell edit improved from 1,986 ms reproduced to
+  1,505 ms after Phase 04A first cut; original scorecard baseline was 2,033 ms.
+- Runtime: stress Equipment Pumps cell edit improved from 3,159 ms reproduced to
+  1,647 ms after Phase 04A first cut; original scorecard baseline was 3,152 ms.
+- Render: stress Spaces Rooms edit improved from 26 commits / 458.8 ms reproduced
+  to 23 commits / 421.2 ms; original baseline was 25 commits / 446.1 ms.
+- Render: stress Equipment Pumps edit improved from 27 commits / 549.0 ms
+  reproduced to 22 commits / 498.9 ms; original baseline was 28 commits /
+  565.3 ms.
 
 ## Open questions (resolve at execution time)
 - Lighthouse/DevTools traces were not separately captured in Phase 2; the
@@ -79,11 +84,14 @@ Confirmed flags so far:
 - Coordinate any Equipment-page (page 6) render fix with the in-flight
   `table-write-architecture-unification` refactor (it rewires the heat-pumps
   frontend client).
+- Remaining Phase 04A render work is still visible: after removing eager sibling
+  table refetches, Spaces remains at 23 commits / 421.2 ms and Equipment remains
+  at 22 commits / 498.9 ms on the stress edit path.
 
 ## Deferred findings log
-- Phase 4 candidate: investigate shared DataTable edit path for stress Spaces
-  and Equipment; both show multi-second scripted cell edits, >50 ms long tasks,
-  and 25-28 React commits per edit.
+- Phase 04A remaining candidate: investigate active DataTable row/model
+  derivation and Equipment controller construction; the first cut removed
+  redundant sibling refetches but did not eliminate active-table render churn.
 - Phase 4 candidate: keep Envelope LCP (928 ms local dev) on the ranking list,
   but below table-edit stalls unless Phase 3 shows broad render churn.
 - Phase 4 ranking: `phases/phase-04-ranking.md` promotes shared DataTable edit
