@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-24
 TIME: 18:25 EDT
-STATUS: Active — planning. No code changed yet.
+STATUS: Active — Phase 1 (backend write spine) implemented; Phases 2–3 pending.
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: Router for the table-write-architecture unification refactor (cross-stack).
 RELATED:
@@ -49,11 +49,11 @@ the next equipment/table type is a uniform, documented, one-place change.
 4. `phases/phase-02-heatpumps-onto-registry.md` — fold heat-pumps (backend).
 5. `phases/phase-03-frontend-heatpumps-rewire.md` — frontend onto the generic client.
 
-## Sequencing (depends on two external things)
-- **After the aperture/glazing-frame v12 WIP lands** — it owns the
-  aperture-command path and the registries this refactor extracts from.
-- **After `backend-data-architecture-cleanup` Phase 3** (document schema
-  cleanup / single validator) — this builds on the single current-schema
-  validator and the body-size guard that Phase 3 installs on the current write
-  boundaries; Phase 1 here re-homes that guard onto the shared spine.
-- **Parallel-safe with** that refactor's relational squash (independent surfaces).
+## Sequencing (both external dependencies satisfied ✅)
+- **Aperture/glazing-frame v12 WIP** — landed on main; this refactor's Phase 1
+  rebased onto its final dispatcher shape.
+- **`backend-data-architecture-cleanup` Phase 3** (document schema cleanup /
+  single validator) — complete and archived; Phase 1 re-homed the body-size
+  guard it installed onto the shared spine.
+- Phase 1 (backend write spine) is implemented; Phase 2 (heat-pumps backend) is
+  the next phase to start, Phase 3 (frontend rewire) follows it.

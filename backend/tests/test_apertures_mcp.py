@@ -15,6 +15,7 @@ from mcp.server.fastmcp import Context
 from mcp.server.fastmcp.exceptions import ToolError
 from psycopg.types.json import Jsonb
 
+from config import settings
 from database import connection, transaction
 from features.apertures_mcp.tools import (
     tool_apply_aperture_command,
@@ -215,6 +216,31 @@ def test_apply_aperture_command_renames_aperture_and_tags_audit_with_mcp(
         ).fetchone()
     assert draft is not None
     assert draft["updated_via"] == "mcp"
+
+
+def test_apply_aperture_command_rejects_project_document_over_size_limit(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The shared write spine enforces the body-size guard on the aperture/MCP surface."""
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = cast(str, project["id"])
+    version_id = cast(str, project["active_version_id"])
+    body = _seed_aperture(version_id)
+    saved_etag = document_etag(ProjectDocumentV1.model_validate(body))
+    _issue_token(client, project_id, monkeypatch, ["project:read", "project:write"])
+    monkeypatch.setattr(settings, "project_document_max_body_bytes", 1)
+
+    with pytest.raises(ToolError, match="project_document_too_large"):
+        tool_apply_aperture_command(
+            project_id,
+            version_id,
+            {"kind": "renameApertureType", "aperture_type_id": "apt_A", "new_name": "Type A MCP"},
+            cast(Context, None),
+            allow_env_token=True,
+            if_match_version=saved_etag,
+        )
 
 
 def test_apply_aperture_command_validation_error_is_fatal(

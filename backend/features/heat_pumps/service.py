@@ -23,7 +23,6 @@ from features.heat_pumps.models import (
 )
 from features.project_document import repository as document_repository
 from features.project_document.document import ProjectDocumentV1
-from features.project_document.drafts import load_draft_context
 from features.project_document.options import (
     read_option_list,
     replace_option_list,
@@ -36,6 +35,7 @@ from features.project_document.validation import (
     next_draft_etag_from_etag,
     validate_document,
 )
+from features.project_document.write_spine import load_draft_context
 from features.projects.access import ProjectAccess, require_editor_user
 from features.shared.errors import api_error
 

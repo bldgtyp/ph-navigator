@@ -8,13 +8,12 @@ the seeded catalog defaults from the live DB connection.
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID
 
 from fastapi import Request
+from psycopg import Connection
 
-from database import transaction
-from features.project_document import repository
 from features.project_document.aperture_commands.dispatcher import (
     apply_aperture_command,
 )
@@ -24,12 +23,12 @@ from features.project_document.aperture_commands.models import (
 )
 from features.project_document.apertures.default_refs import DatabaseDefaultsCatalog
 from features.project_document.audit import log_document_action
-from features.project_document.drafts import load_draft_context
+from features.project_document.document import ProjectDocumentV1
 from features.project_document.tables.apertures import (
     AperturesSliceResponse,
     apertures_response,
 )
-from features.project_document.validation import enforce_document_body_size, next_draft_etag_from_etag
+from features.project_document.write_spine import apply_document_write
 from features.projects.access import ProjectAccess, require_editor_user
 
 
@@ -44,50 +43,13 @@ def apply_aperture_command_to_draft(
     updated_via: Literal["browser", "mcp"] = "browser",
 ) -> tuple[AperturesSliceResponse, dict[str, object]]:
     user = require_editor_user(access)
+    kind = command.kind  # type: ignore[union-attr]
 
-    with transaction() as conn:
-        base_body, base_version_etag, version_etag, draft = load_draft_context(
-            conn,
-            access.project_id,
-            version_id,
-            user.id,
-            if_match,
-            if_match_version,
-            draft_etag_mismatch_message="The draft changed before this aperture command was applied.",
-        )
-
+    def mutate(conn: Connection[Any], base_body: ProjectDocumentV1) -> tuple[ProjectDocumentV1, dict[str, object]]:
         catalog = DatabaseDefaultsCatalog(conn)
-        next_body, audit_payload = apply_aperture_command(
-            base_body,
-            command,
-            actor_user_id=user.id.hex,
-            catalog=catalog,
-        )
+        return apply_aperture_command(base_body, command, actor_user_id=user.id.hex, catalog=catalog)
 
-        if next_body == base_body:
-            response = apertures_response(
-                access.project_id,
-                version_id,
-                "draft" if draft is not None else "version",
-                version_etag,
-                draft["draft_etag"] if draft is not None else None,
-                base_body,
-            )
-            return response, audit_payload
-
-        serialized_next = enforce_document_body_size(next_body)
-        draft_etag = repository.upsert_draft(
-            conn,
-            version_id,
-            user.id,
-            next_body,
-            base_version_etag,
-            next_draft_etag_from_etag(serialized_next.etag),
-            updated_via=updated_via,
-            serialized_body=serialized_next,
-        )
-
-        kind = command.kind  # type: ignore[union-attr]
+    def on_persisted(conn: Connection[Any], details: dict[str, object] | None) -> None:
         log_document_action(
             conn,
             AUDIT_KIND_BY_APERTURE_COMMAND[kind],
@@ -95,15 +57,26 @@ def apply_aperture_command_to_draft(
             version_id,
             user.id,
             request,
-            extra_details={**audit_payload, "updated_via": updated_via},
+            extra_details={**(details or {}), "updated_via": updated_via},
         )
 
+    result = apply_document_write(
+        access,
+        version_id,
+        user.id,
+        if_match=if_match,
+        if_match_version=if_match_version,
+        mutate=mutate,
+        draft_etag_mismatch_message="The draft changed before this aperture command was applied.",
+        updated_via=updated_via,
+        on_persisted=on_persisted,
+    )
     response = apertures_response(
         access.project_id,
         version_id,
-        "draft",
-        version_etag,
-        draft_etag,
-        next_body,
+        result.source,
+        result.version_etag,
+        result.draft_etag,
+        result.body,
     )
-    return response, audit_payload
+    return response, result.details or {}

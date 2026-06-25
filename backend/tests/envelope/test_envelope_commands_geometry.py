@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import pytest
+
+from config import settings
 from features.project_document.document import ProjectDocumentV1
 from features.project_document.validation import document_etag
 from tests.envelope.test_envelope_document_contracts import (
@@ -90,6 +93,39 @@ def test_envelope_command_creates_draft_and_edits_geometry(clean_document_tables
     )
     assert updated.status_code == 200
     assert updated.json()["assemblies"][-1]["layers"][0]["thickness_mm"] == 175
+
+
+def test_envelope_command_rejects_project_document_over_size_limit(
+    clean_document_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The shared write spine enforces the body-size guard on the command surface."""
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    saved_body = envelope_body()
+    write_saved_body(version_id, saved_body)
+    monkeypatch.setattr(settings, "project_document_max_body_bytes", 1)
+
+    response = client.post(
+        command_url(project_id, version_id),
+        headers={"Origin": ORIGIN, "If-Match-Version": document_etag(saved_body)},
+        json={
+            "command": {
+                "kind": "create_assembly",
+                "name": "FLOOR-F1",
+                "type": "floor",
+                "thickness_mm": 150,
+                "width_mm": 1200,
+            }
+        },
+    )
+
+    assert response.status_code == 413
+    body = response.json()
+    assert body["error_code"] == "project_document_too_large"
+    assert body["details"]["size_bytes"] > body["details"]["limit_bytes"]
 
 
 def test_envelope_command_rejects_stale_and_locked_versions(clean_document_tables: None) -> None:
