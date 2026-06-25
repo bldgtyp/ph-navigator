@@ -1,14 +1,14 @@
 ---
 DATE: 2026-06-25
-TIME: 01:36 EDT
-STATUS: Complete - all phases implemented; archive cleanup next
+TIME: 01:45 EDT
+STATUS: Complete - archived
 AUTHOR: Codex
 SCOPE: Current state, next step, blockers, and verification for DataTable UI.
 RELATED:
-  - planning/features/data-table-ui/README.md
-  - planning/features/data-table-ui/PRD.md
-  - planning/features/data-table-ui/PLAN.md
-  - planning/features/data-table-ui/ROUTE_MATRIX.md
+  - planning/archive/dated/2026-06-25/data-table-ui/README.md
+  - planning/archive/dated/2026-06-25/data-table-ui/PRD.md
+  - planning/archive/dated/2026-06-25/data-table-ui/PLAN.md
+  - planning/archive/dated/2026-06-25/data-table-ui/ROUTE_MATRIX.md
 ---
 
 # DataTable UI - Status
@@ -17,7 +17,7 @@ RELATED:
 
 Planning packet created from Ed's requested DataTable rendering tweaks,
 then updated after reviewing the DESIGN-agent mockup under
-`planning/features/data-table-ui/table-redesign/`.
+`planning/archive/dated/2026-06-25/data-table-ui/table-redesign/`.
 
 Phase 00 is complete. The source-backed route matrix and written
 baseline checklist live in `ROUTE_MATRIX.md`.
@@ -58,9 +58,9 @@ Captured requests:
 
 ## Next step
 
-Run final completion cleanup: archive this planning packet under
-`planning/archive/dated/2026-06-25/data-table-ui/`, update planning indexes,
-and commit the archive move.
+No active implementation work remains in this packet. Future table UI work
+should start from `context/technical-requirements/data-table.md` plus a new
+feature/refactor packet if behavior changes.
 
 ## Blockers
 
@@ -127,3 +127,10 @@ Phase 04 verification:
 - `E2E_EMAIL=codex@example.com E2E_PASSWORD=password pnpm exec playwright test tests/e2e/table-regression --grep @table-smoke`
   passed 14 route-smoke tests across Space Types, Rooms, Equipment,
   Heat Pump leaves, and Thermal Bridges.
+
+Final closeout verification:
+
+- `make ci` passed. Backend: 1113 passed, 2 skipped, 1 existing
+  deprecation warning. Frontend: 200 test files passed, 1907 tests passed,
+  with the existing Fast Refresh lint warnings and React `act(...)` /
+  zero-size chart test warnings; production build completed.

@@ -5,7 +5,7 @@ STATUS: Complete
 AUTHOR: Codex
 SCOPE: Status chip styling and global chip-style decision.
 RELATED:
-  - planning/features/data-table-ui/PLAN.md
+  - planning/archive/dated/2026-06-25/data-table-ui/PLAN.md
   - frontend/src/shared/ui/data-table/components/SingleSelectCell.tsx
   - context/technical-requirements/data-table.md
 ---

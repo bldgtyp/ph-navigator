@@ -5,7 +5,7 @@ STATUS: Complete
 AUTHOR: Codex
 SCOPE: Restrained frontend-design pass and browser verification.
 RELATED:
-  - planning/features/data-table-ui/PLAN.md
+  - planning/archive/dated/2026-06-25/data-table-ui/PLAN.md
   - frontend/src/shared/ui/data-table/DataTable.css
 ---
 

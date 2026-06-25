@@ -5,10 +5,10 @@ STATUS: Active - redesign reviewed; implementation plan folded into PLAN.md
 AUTHOR: Codex
 SCOPE: Review of the DESIGN-agent DataTable mockup and handoff.
 RELATED:
-  - planning/features/data-table-ui/table-redesign/Equipment Table - Handoff.md
-  - planning/features/data-table-ui/table-redesign/Equipment Table.dc.html
-  - planning/features/data-table-ui/table-redesign/
-  - planning/features/data-table-ui/PLAN.md
+  - planning/archive/dated/2026-06-25/data-table-ui/table-redesign/Equipment Table - Handoff.md
+  - planning/archive/dated/2026-06-25/data-table-ui/table-redesign/Equipment Table.dc.html
+  - planning/archive/dated/2026-06-25/data-table-ui/table-redesign/
+  - planning/archive/dated/2026-06-25/data-table-ui/PLAN.md
   - frontend/src/shared/ui/data-table/DataTable.css
   - frontend/src/shared/ui/data-table/DataTable.tsx
 ---

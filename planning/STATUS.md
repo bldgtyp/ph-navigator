@@ -13,7 +13,7 @@ feature-first planning.
 |---|---|---|
 | DataTable Status Field — Addendum | Complete — `status` extended to the 3 remaining Datasheet-bearing tables (Ventilators, HP Outdoor Units, HP Indoor Units); `make ci` green, live smoke done, committed `d8b59f28` (branch, not yet merged); archived | `archive/dated/2026-06-24/data-table-status-field-addendum/STATUS.md` |
 | DataTable Status Field — Backfill | Deferred — whether/how to backfill `status` onto pre-existing persisted documents across all 12 status tables; no migration yet (V2 pre-deploy, likely nothing to migrate); reactivate when the splash dashboard needs historical documents | `features/datatable-status-backfill/STATUS.md` |
-| DataTable UI | Active / Phases 00-03 complete; Phase 04 frontend-design polish next | `features/data-table-ui/STATUS.md` |
+| DataTable UI | Complete / numeric precision, unit headers, status chips, shared visual rhythm, route-smoke verification, final `make ci`, and archive cleanup landed | `archive/dated/2026-06-25/data-table-ui/STATUS.md` |
 | Delete Project | In review | `features/delete-project/STATUS.md` |
 | DataTable Color Field | Complete / implemented on main with CI and browser smoke evidence | `features/color-field/STATUS.md` |
 | Attachments | Complete (v1) / implemented on main with automated coverage, R2 smoke, and full Render staging acceptance; Phase-5 polish deferred by decision; archived | `archive/dated/2026-06-15/attachments/STATUS.md` |
@@ -91,6 +91,9 @@ feature-first planning.
   `archive/dated/2026-06-25/frontend-perf/` (Phases 0-4; perf harness, stress
   seed, route payload splits, DataTable edit invalidation narrowing, Model route
   shell split, and secondary-runtime attribution correction).
+- Completed DataTable UI planning now lives under
+  `archive/dated/2026-06-25/data-table-ui/` (numeric precision, unit headers,
+  status chips, shared visual rhythm, and route-smoke verification).
 
 ## Update Rule
 

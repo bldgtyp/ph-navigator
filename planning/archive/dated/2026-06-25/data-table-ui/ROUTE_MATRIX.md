@@ -5,8 +5,8 @@ STATUS: Phase 00 complete - route matrix and written baseline captured
 AUTHOR: Codex
 SCOPE: Representative DataTable consumers, high-risk behaviors, and written visual baseline for the DataTable UI redesign.
 RELATED:
-  - planning/features/data-table-ui/phases/phase-00-redesign-baseline-and-route-matrix.md
-  - planning/features/data-table-ui/PLAN.md
+  - planning/archive/dated/2026-06-25/data-table-ui/phases/phase-00-redesign-baseline-and-route-matrix.md
+  - planning/archive/dated/2026-06-25/data-table-ui/PLAN.md
   - frontend/src/shared/ui/data-table/DataTable.tsx
   - frontend/src/app/router.tsx
 ---

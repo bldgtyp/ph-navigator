@@ -5,7 +5,7 @@ STATUS: Complete
 AUTHOR: Codex
 SCOPE: Numeric alignment plus decimal precision bug investigation.
 RELATED:
-  - planning/features/data-table-ui/PLAN.md
+  - planning/archive/dated/2026-06-25/data-table-ui/PLAN.md
   - frontend/src/shared/ui/data-table/components/FieldConfigSectionNumber.tsx
   - frontend/src/shared/ui/data-table/components/FieldConfigSectionNumberUnits.tsx
   - frontend/src/shared/ui/data-table/lib/numberDisplay.ts
