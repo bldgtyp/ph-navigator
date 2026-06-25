@@ -52,14 +52,14 @@ function getLatestCells() {
 }
 
 describe("SummaryBar", () => {
-  test("first cell shows Count: N for the supplied row set", () => {
+  test("first cell renders as an ordinary empty aggregation cell", () => {
     renderBar();
     const cells = getCells();
-    expect(cells[0]).toHaveTextContent("Count");
-    expect(cells[0]).toHaveTextContent("3");
+    const trigger = within(cells[0] as HTMLElement).getByRole("button");
+    expect(trigger).toHaveTextContent(/^▾$/);
   });
 
-  test("non-first cells render only the chevron when no aggregation picked", () => {
+  test("cells render only the chevron when no aggregation picked", () => {
     renderBar();
     const cells = getCells();
     const trigger = within(cells[1] as HTMLElement).getByRole("button");
@@ -102,7 +102,7 @@ describe("SummaryBar", () => {
       </table>,
     );
     expect(getCells()[1]).toHaveTextContent("3.00");
-    expect(getCells()[0]).toHaveTextContent("2");
+    expect(getCells()[0]).not.toHaveTextContent("2");
   });
 
   test("clicking an empty summary cell opens the picker", () => {

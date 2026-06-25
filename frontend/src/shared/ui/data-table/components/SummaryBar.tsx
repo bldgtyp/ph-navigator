@@ -6,13 +6,12 @@ import { computeAggregate } from "../hooks/useGridAggregations";
 import type { DataTableColumnDef, FieldDef } from "../types";
 import { AddFieldTailCell } from "./AddFieldTailCell";
 
-// Plan 06: pinned <tfoot> rendered at the bottom of the table. The
-// first column always shows `Count: N` over the post-filter visible
-// row set; subsequent columns show the user-picked aggregate (Sum /
-// Mean / etc.) or empty. Clicking a non-first cell opens a picker
-// that re-uses the same per-field-type catalogue as the (now retired)
-// column-header menu. Read-only mode disables the picker but still
-// renders the values.
+// Plan 06: pinned <tfoot> rendered at the bottom of the table. Each
+// visible column shows the user-picked aggregate (Sum / Mean / etc.)
+// or empty. The global record count lives in the DataTable footer
+// status bar. Clicking a summary cell opens a picker that re-uses the
+// same per-field-type catalogue as the (now retired) column-header
+// menu. Read-only mode disables the picker but still renders values.
 
 const KIND_LABELS: Record<AggregationKind, string> = {
   none: "None",
@@ -48,34 +47,18 @@ export function SummaryBar<TRow>({
     <tfoot className="data-table-summary-bar" data-testid="data-table-summary-bar">
       <tr role="row">
         <td className="data-table-gutter data-table-summary-gutter" aria-hidden />
-        {columns.map((column, idx) => {
-          if (idx === 0) {
-            return (
-              <td
-                key={column.id}
-                className="data-table-summary-cell data-table-summary-count data-table-frozen"
-                data-field-key={column.fieldKey}
-              >
-                <span className="data-table-summary-count-inner">
-                  <span className="data-table-summary-count-label">Count</span>
-                  <span className="data-table-summary-count-value">{visibleRows.length}</span>
-                </span>
-              </td>
-            );
-          }
-          return (
-            <SummaryCell
-              key={column.id}
-              column={column}
-              fieldDef={fieldDefByKey.get(column.fieldKey)}
-              visibleRows={visibleRows}
-              aggregation={normalizeKind(aggregations[column.fieldKey])}
-              readOnly={readOnly}
-              onPick={(next) => onAggregationChange(column.fieldKey, next)}
-              unitSystem={unitSystem}
-            />
-          );
-        })}
+        {columns.map((column) => (
+          <SummaryCell
+            key={column.id}
+            column={column}
+            fieldDef={fieldDefByKey.get(column.fieldKey)}
+            visibleRows={visibleRows}
+            aggregation={normalizeKind(aggregations[column.fieldKey])}
+            readOnly={readOnly}
+            onPick={(next) => onAggregationChange(column.fieldKey, next)}
+            unitSystem={unitSystem}
+          />
+        ))}
         <AddFieldTailCell variant="td" />
       </tr>
     </tfoot>

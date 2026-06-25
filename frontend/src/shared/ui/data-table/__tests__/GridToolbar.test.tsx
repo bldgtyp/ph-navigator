@@ -27,7 +27,6 @@ function renderToolbar(
 ) {
   render(
     <GridToolbar
-      readOnly={false}
       view={view}
       fieldDefByKey={new Map(FIELDS.map((def) => [def.field_key, def]))}
       filterableFieldDefs={FIELDS}
@@ -75,16 +74,14 @@ describe("GridToolbar", () => {
     expect(screen.getByRole("button", { name: "Filtered by 2 fields" })).toBeInTheDocument();
   });
 
-  test("status chips collapse when filter chip moves into the button label", () => {
+  test("status chips collapse when state moves into button labels and footer chrome", () => {
     renderToolbar();
     // Phase 4 §4.8: the old `No filters` / `Sorted by 0 fields` chips
     // were removed. Phase 6: the `Ungrouped` chip is also removed —
     // the Group ▾ button label now carries the grouping info, and the
     // "Ungroup to paste" banner moves out of the status row (only
-    // surfaces on a paste attempt). The status row only carries
-    // editability + the grouped paste banner when applicable.
+    // surfaces on a paste attempt). Editability lives in the table footer.
     expect(screen.queryByText(/No filters/)).not.toBeInTheDocument();
-    expect(screen.getByText("Editable")).toBeInTheDocument();
     expect(screen.queryByText("Ungrouped")).not.toBeInTheDocument();
     expect(screen.queryByText("Ungroup to paste")).not.toBeInTheDocument();
   });

@@ -118,7 +118,7 @@
   --data-table-cell-padding-x: 12px;
   --data-table-cell-padding-y: 4px;
   --data-table-header-padding-x: 12px;
-  --data-table-header-bg: color-mix(in oklab, var(--accent) 2%, var(--bg-page));
+  --data-table-header-bg: color-mix(in oklab, var(--accent) 1%, var(--bg-page) 50%);
   --data-table-row-border: color-mix(in oklab, var(--border-subtle) 58%, var(--bg-card));
   --data-table-hover-bg: color-mix(in oklab, var(--accent) 6%, var(--bg-card));
   --data-table-selected-bg: color-mix(in oklab, var(--accent) 8%, var(--bg-card));
