@@ -243,6 +243,19 @@ changes that scope. Numeric-prefix hiding for single-select labels is also
 not global; any future prefix stripping needs an explicit field/list-level
 presentation rule.
 
+**Shared table visual rhythm.** DataTable density is tokenized in
+`frontend/src/styles/tokens.css` and consumed by the shared
+`DataTable.css` surface. Current defaults are 38px data rows, 38px normal
+headers, 50px unit-bearing headers, 12px horizontal cell/header padding,
+and 4px vertical cell padding. The row virtualizer's data-row estimate must
+stay synchronized with `--data-table-row-height`; grouped rows may keep a
+separate estimate. The grid continues to use fixed `colgroup` widths for
+persisted sizing, resize, sticky frozen columns, and virtualization. Unit
+labels render as quiet second-line header badges, plain/unit-aware numeric
+cells right-align, empty numeric displays render the muted dash, and the
+toolbar, gutter, row hover/selection, active cell, and summary bar use the
+shared table tokens instead of table-local one-off chrome.
+
 Attachment-capable equipment tables use their canonical rich table keys
 (`ventilators`, `pumps`, `fans`, `hot_water_heaters`,
 `hot_water_tanks`, `electric_heaters`, `appliances`) in the attachment

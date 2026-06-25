@@ -89,6 +89,8 @@ import type {
 // invalidate `useGridColumns`'s memo every render. Shared sentinel lives
 // in `shared/lib/stableEmpty`.
 const EMPTY_ID_LIST = stableEmptyArray<string>() as string[];
+const DATA_TABLE_DATA_ROW_ESTIMATE = 38;
+const DATA_TABLE_GROUP_ROW_ESTIMATE = 40;
 
 export function DataTable<TRow>({
   rows,
@@ -409,7 +411,10 @@ export function DataTable<TRow>({
   const rowVirtualizer = useVirtualizer({
     count: bodyPlan.length,
     getScrollElement: () => wrapperRef.current,
-    estimateSize: (index) => (bodyPlan[index]?.kind === "group" ? 40 : 32),
+    estimateSize: (index) =>
+      bodyPlan[index]?.kind === "group"
+        ? DATA_TABLE_GROUP_ROW_ESTIMATE
+        : DATA_TABLE_DATA_ROW_ESTIMATE,
     overscan: 12,
     getItemKey: (index) => {
       const item = bodyPlan[index];

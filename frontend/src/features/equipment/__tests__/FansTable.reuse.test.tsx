@@ -78,7 +78,9 @@ describe("FansTable DataTable reuse", () => {
     expect(screen.getByText("m3/h")).toBeInTheDocument();
     expect(screen.getByText("F-1")).toBeInTheDocument();
     expect(screen.getByText("2-Kitchen Hood")).toBeInTheDocument();
-    expect(screen.getByText("0.8")).toBeInTheDocument();
+    expect(
+      document.querySelector('[data-row-id="fan_1"][data-field-key="power_factor"]'),
+    ).toHaveTextContent("0.8");
   });
 
   test("calls onWrite through inline cell editing", async () => {
