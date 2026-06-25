@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any, Literal, cast
 from uuid import UUID
 
 from fastapi import Request
@@ -15,6 +15,7 @@ from database import transaction
 from features.assets.reference_validation import validate_document_asset_references
 from features.project_document import repository
 from features.project_document.audit import log_document_action
+from features.project_document.document import ProjectDocumentV1
 from features.project_document.models import (
     AUTO_LOCKED_VERSION_KINDS,
     DiscardDraftResponse,
@@ -27,12 +28,18 @@ from features.project_document.schema_mutations import (
 )
 from features.project_document.store import raise_project_version_not_found
 from features.project_document.tables import get_table_contract
+from features.project_document.tables.contracts import (
+    CascadePreviewRef,
+    TableReplacePreviewResponse,
+    read_table_envelope,
+)
+from features.project_document.tables.dependent_links import preview_dependent_link_cascade
 from features.project_document.validation import (
     document_etag,
     enforce_document_body_size,
     validate_document,
 )
-from features.project_document.write_spine import apply_document_write
+from features.project_document.write_spine import apply_document_write, load_draft_context
 from features.projects.access import ProjectAccess, require_editor_user
 from features.projects.service import version_public
 from features.shared.errors import api_error
@@ -68,6 +75,51 @@ def replace_table_slice(
         result.draft_etag,
         result.body,
     )
+
+
+def preview_table_replace(
+    version_id: UUID,
+    table_name: str,
+    raw_payload: object,
+    access: ProjectAccess,
+    if_match: str | None,
+    if_match_version: str | None,
+) -> TableReplacePreviewResponse:
+    """Dry-run a table replace: report the dependent links the removed rows would
+    clear, without persisting. A removed row still held by a *required* dependent
+    link raises the same 409 the real write would. Generic — any contract with
+    `dependent_links` (today: the heat-pump leaves) gets a delete-cascade preview.
+    """
+    user = require_editor_user(access)
+    contract = get_table_contract(table_name)
+    payload = contract.parse_replace_payload(raw_payload)
+
+    with transaction() as conn:
+        base_body, _base_version_etag, _version_etag, _draft = load_draft_context(
+            conn,
+            access.project_id,
+            version_id,
+            user.id,
+            if_match,
+            if_match_version,
+            draft_etag_mismatch_message="The draft changed before this delete preview was computed.",
+        )
+        # `apply_replace` normalizes the payload into a body (validating it and
+        # raising 409 on a required-link block) so the removed set is derived the
+        # same way the real write derives it.
+        next_body = contract.apply_replace(base_body, payload)
+        removed = _table_row_ids(base_body, contract.table_path) - _table_row_ids(next_body, contract.table_path)
+        affected = preview_dependent_link_cascade(
+            base_body,
+            table_path=contract.table_path,
+            removed=removed,
+            dependent_links=contract.dependent_links,
+        )
+    return TableReplacePreviewResponse(affected=[CascadePreviewRef(**ref.as_dict()) for ref in affected])
+
+
+def _table_row_ids(body: ProjectDocumentV1, table_path: tuple[str, ...]) -> set[str]:
+    return {row.id for row in cast(Any, read_table_envelope(body, table_path)).rows}
 
 
 def apply_schema_mutation_to_draft(

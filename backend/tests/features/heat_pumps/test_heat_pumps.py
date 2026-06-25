@@ -518,6 +518,87 @@ def test_heat_pumps_outdoor_equip_rejects_unknown_status(clean_document_tables: 
     assert response.status_code == 422
 
 
+def preview_replace_url(project_id: object, version_id: object, table_name: str) -> str:
+    return f"{draft_table_url(project_id, version_id, table_name)}:preview-replace"
+
+
+def _slice_replace_payload(slice_json: dict[str, Any], rows_attr: str, rows: list[Any]) -> dict[str, Any]:
+    """Build a generic table-replace payload from a fetched draft slice, swapping rows."""
+    return {
+        "field_defs": slice_json["field_defs"],
+        rows_attr: rows,
+        "single_select_options": slice_json["single_select_options"],
+    }
+
+
+def test_generic_preview_replace_reports_optional_cascade(clean_document_tables: None) -> None:
+    """The generic :preview-replace route surfaces the dependent-link cascade a
+    delete would trigger, without persisting — the same analysis the heat-pump
+    delete-confirm UX consumes, now on the generic surface."""
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    etag = client.get(heat_pumps_url(project_id)).json()["version_etag"]
+    for table, row, header in [
+        ("indoor-equip", indoor_equip(), "If-Match-Version"),
+        ("outdoor-equip", outdoor_equip(paired_indoor_equip_id=HPIE_1), "If-Match"),
+    ]:
+        response = client.patch(
+            heat_pumps_table_url(project_id, table),
+            headers={"Origin": ORIGIN, header: etag},
+            json=add_patch(row),
+        )
+        assert response.status_code == 200, response.text
+        etag = response.json()["draft_etag"]
+
+    slice_json = client.get(draft_table_url(project_id, version_id, "heat_pumps_indoor_equip")).json()
+    preview = client.post(
+        preview_replace_url(project_id, version_id, "heat_pumps_indoor_equip"),
+        headers={"Origin": ORIGIN, "If-Match": slice_json["draft_etag"]},
+        json=_slice_replace_payload(slice_json, "indoor_equip", []),
+    )
+
+    assert preview.status_code == 200, preview.text
+    affected = preview.json()["affected"]
+    assert [ref["field"] for ref in affected] == ["paired_indoor_equip_id"]
+    # Pure dry-run: the draft still holds the row + the live link.
+    refetch = client.get(draft_table_url(project_id, version_id, "heat_pumps_indoor_equip")).json()
+    assert len(refetch["indoor_equip"]) == 1
+
+
+def test_generic_preview_replace_blocks_required_link(clean_document_tables: None) -> None:
+    """A delete that would orphan a required link 409s in the preview, exactly as
+    the real replace would."""
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    etag = client.get(heat_pumps_url(project_id)).json()["version_etag"]
+    for table, row, header in [
+        ("outdoor-equip", outdoor_equip(), "If-Match-Version"),
+        ("outdoor-units", outdoor_unit(), "If-Match"),
+    ]:
+        response = client.patch(
+            heat_pumps_table_url(project_id, table),
+            headers={"Origin": ORIGIN, header: etag},
+            json=add_patch(row),
+        )
+        assert response.status_code == 200, response.text
+        etag = response.json()["draft_etag"]
+
+    slice_json = client.get(draft_table_url(project_id, version_id, "heat_pumps_outdoor_equip")).json()
+    blocked = client.post(
+        preview_replace_url(project_id, version_id, "heat_pumps_outdoor_equip"),
+        headers={"Origin": ORIGIN, "If-Match": slice_json["draft_etag"]},
+        json=_slice_replace_payload(slice_json, "outdoor_equip", []),
+    )
+
+    assert blocked.status_code == 409
+    assert blocked.json()["error_code"] == "heat_pump_delete_blocked"
+    assert blocked.json()["details"]["referenced_by"][0]["tag"] == "HP-1"
+
+
 def _seed_outdoor_equip(client: Any, project_id: object, version_id: object) -> None:
     """PUT a single outdoor-equip row so outdoor-unit FKs resolve."""
     initial = client.get(draft_table_url(project_id, version_id, "heat_pumps_outdoor_equip"))

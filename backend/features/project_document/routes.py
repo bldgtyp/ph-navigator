@@ -33,6 +33,7 @@ from features.project_document.service import (
     get_saved_document_or_read_safe,
     get_saved_table_slice,
     patch_version,
+    preview_table_replace,
     replace_table_slice,
     save_draft,
     save_draft_as,
@@ -40,6 +41,7 @@ from features.project_document.service import (
 )
 from features.project_document.tables import RegisteredTableResponse
 from features.project_document.tables.apertures import AperturesSliceResponse
+from features.project_document.tables.contracts import TableReplacePreviewResponse
 from features.projects.access import (
     ProjectAccess,
     require_project_edit_access,
@@ -103,6 +105,29 @@ def put_draft_table(
     if_match_version: Annotated[str | None, Header()] = None,
 ) -> Any:
     return replace_table_slice(
+        version_id,
+        table_name,
+        payload,
+        access,
+        if_match=if_match,
+        if_match_version=if_match_version,
+    )
+
+
+# Dry-run sibling of the PUT replace: report the dependent-link cascade a
+# proposed replace would trigger (e.g. deleting a heat-pump row that other rows
+# link to) without persisting. Generic — driven by the contract's
+# `dependent_links`; tables with none always return an empty `affected` list.
+@router.post("/draft/tables/{table_name}:preview-replace", response_model=TableReplacePreviewResponse)
+def preview_draft_table_replace(
+    version_id: UUID,
+    table_name: str,
+    payload: dict[str, Any],
+    access: ProjectEditAccess,
+    if_match: Annotated[str | None, Header()] = None,
+    if_match_version: Annotated[str | None, Header()] = None,
+) -> TableReplacePreviewResponse:
+    return preview_table_replace(
         version_id,
         table_name,
         payload,
