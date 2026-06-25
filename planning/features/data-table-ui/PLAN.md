@@ -90,9 +90,9 @@ through the existing shared DataTable mechanics:
      footer status indicator.
    - Add a footer summary row compatible with the existing summary bar
      and custom `footerAction`.
-   - Decide whether global search is in scope; if yes, define search
-     over formatted visible cell text, persistence, and interaction with
-     existing filters.
+   - Keep global search deferred; do not add a search control until a
+     separate behavior contract defines formatted visible-cell matching,
+     persistence, and interaction with existing filters.
 
 8. **Phase 07 - Frontend-design polish and browser review**
    - Tune density, padding, borders, type scale, tint contrast, chips,

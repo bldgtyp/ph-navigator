@@ -1,13 +1,14 @@
 ---
-DATE: 2026-06-24
-TIME: 20:44 EDT
-STATUS: Active - redesign reviewed; implementation not started
+DATE: 2026-06-25
+TIME: 00:57 EDT
+STATUS: Active - Phase 00 complete; Phase 01 next
 AUTHOR: Codex
 SCOPE: Current state, next step, blockers, and verification for DataTable UI.
 RELATED:
   - planning/features/data-table-ui/README.md
   - planning/features/data-table-ui/PRD.md
   - planning/features/data-table-ui/PLAN.md
+  - planning/features/data-table-ui/ROUTE_MATRIX.md
 ---
 
 # DataTable UI - Status
@@ -18,7 +19,8 @@ Planning packet created from Ed's requested DataTable rendering tweaks,
 then updated after reviewing the DESIGN-agent mockup under
 `planning/features/data-table-ui/table-redesign/`.
 
-No implementation has started.
+Phase 00 is complete. The source-backed route matrix and written
+baseline checklist live in `ROUTE_MATRIX.md`.
 
 Captured requests:
 
@@ -35,8 +37,7 @@ Captured requests:
 
 ## Next step
 
-Start Phase 00 by capturing the route matrix and baseline screenshots,
-then Phase 01 by writing/updating focused shared DataTable tests that
+Start Phase 01 by writing/updating focused shared DataTable tests that
 reproduce the decimal precision issue and cover numeric right alignment.
 
 ## Blockers
@@ -45,12 +46,21 @@ None.
 
 Open decisions:
 
-- Whether global search is in scope for this redesign or deferred.
+- Global search is deferred; adding it needs a separate behavior
+  contract for formatted-cell matching, `ViewState` persistence, and
+  interaction with existing filters/groups.
 - Whether single-select prefix hiding needs a new explicit display rule.
 - Whether solid chips apply globally or only to status-like semantic
   states.
 
 ## Verification so far
 
-Docs-only planning capture. No code or runtime checks have been run for
-this feature.
+Phase 00 docs/source verification:
+
+- `graphify query "DataTable consumers and routes for data-table-ui route matrix"`
+- `rg -n "<DataTable|DataTable\\(" frontend/src --glob '*.{tsx,ts}'`
+- targeted source reads of route owners and DataTable consumer props.
+
+No browser screenshots were captured in Phase 00; the written baseline
+checklist in `ROUTE_MATRIX.md` is the pre-change reference until the
+later browser polish pass.

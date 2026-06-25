@@ -1,12 +1,13 @@
 ---
-DATE: 2026-06-24
-TIME: 21:22 EDT
-STATUS: Planned
+DATE: 2026-06-25
+TIME: 00:57 EDT
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Baseline capture and DataTable surface inventory before UI changes.
 RELATED:
   - planning/features/data-table-ui/PLAN.md
   - planning/features/data-table-ui/reviews/table-redesign-review.md
+  - planning/features/data-table-ui/ROUTE_MATRIX.md
   - frontend/src/shared/ui/data-table/DataTable.tsx
 ---
 
@@ -31,7 +32,16 @@ RELATED:
 
 ## Acceptance
 
-- The route matrix is recorded in this feature folder.
-- Baseline screenshots or a written baseline checklist exists for the
-  representative tables.
-- Implementation phases can verify against the same route list.
+- Complete: the route matrix is recorded in
+  `planning/features/data-table-ui/ROUTE_MATRIX.md`.
+- Complete: a written baseline checklist exists in
+  `planning/features/data-table-ui/ROUTE_MATRIX.md`; screenshots were
+  deliberately deferred to later browser review.
+- Complete: implementation phases can verify against the representative
+  browser route set in `ROUTE_MATRIX.md`.
+
+## Verification
+
+- `graphify query "DataTable consumers and routes for data-table-ui route matrix"`
+- `rg -n "<DataTable|DataTable\\(" frontend/src --glob '*.{tsx,ts}'`
+- Targeted source reads of route owners and DataTable consumer props.
