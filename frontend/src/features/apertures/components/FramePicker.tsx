@@ -6,8 +6,9 @@ import type { CatalogFrameType } from "../../catalogs/types";
 import type { FrameRef } from "../types";
 import type { ApertureSide } from "../types";
 import { useFrameCatalog } from "../hooks/useFrameCatalog";
+import { useFramePickerFilters } from "../hooks/useFramePickerFilters";
 import { useManufacturerFilter } from "../hooks/useManufacturerFilter";
-import { locationForSide, operationForElement, type FrameLocation } from "../picker-filters";
+import { filterFrameRows } from "../picker-filters";
 import { catalogRowToFrameRef } from "../ref-builders";
 
 export type FramePickerProps = {
@@ -29,19 +30,21 @@ export function FramePicker({
   manufacturers,
   onPick,
 }: FramePickerProps) {
-  const location: FrameLocation = locationForSide(side);
-  const operationFilter = operationForElement(operation).type;
+  const pickerFilters = useFramePickerFilters();
   const contextFilter = useManufacturerFilter("frame_types");
   const effectiveManufacturers = manufacturers ?? contextFilter;
-  const { rows: filteredRows } = useFrameCatalog({
-    location,
-    operation: operationFilter,
+  const { rows: manufacturerRows, totalRows } = useFrameCatalog({
     manufacturers: effectiveManufacturers,
   });
   // Unfiltered lookup so the current-value chip survives even when the
   // active manufacturer/location/operation filters would drop it.
   const { rows: allRows } = useFrameCatalog();
-  const visible = filteredRows;
+  const visible = filterFrameRows(manufacturerRows, {
+    side,
+    operation,
+    filterFramesBySide: pickerFilters.filterFramesBySide,
+    filterFramesByOperation: pickerFilters.filterFramesByOperation,
+  });
   const selectedRow = currentCatalogId
     ? allRows.find((row) => row.id === currentCatalogId)
     : undefined;
@@ -62,7 +65,9 @@ export function FramePicker({
         className="aperture-picker__autocomplete"
         compact
         disabled={disabled}
-        emptyMessage="No catalog frames available."
+        emptyMessage={
+          totalRows === 0 ? "No catalog frames available." : "No frames match current filters."
+        }
         listboxClassName="aperture-picker__listbox"
         listboxPlacement="portal"
         placeholder={currentName ?? "Pick a frame..."}
