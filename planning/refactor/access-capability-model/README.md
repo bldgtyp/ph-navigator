@@ -1,11 +1,12 @@
 ---
 DATE: 2026-06-27
 TIME: 16:10 ET
-STATUS: Active — Phases 1–4 landed (schema + resolver + backend beta deltas +
-        frontend beta deltas). Capability-based access model replacing the
+STATUS: Active — the whole beta (Phases 1–4b) landed (schema + resolver +
+        backend beta deltas + frontend beta deltas + CP-5 read-only
+        canvas-inspect modal). Capability-based access model replacing the
         binary editor/viewer check, future-proofed for multi-tenant teams +
-        viewer shares. Phase 4b (CP-5 read-only canvas-inspect modal) next;
-        Phase 5 deferred to the RBC trigger.
+        viewer shares. Only Phase 5 (tenancy) remains, deferred to the RBC
+        trigger.
 AUTHOR: Claude (Opus 4.8) + Ed
 SCOPE: Router for the access-capability-model refactor.
 RELATED:
@@ -53,7 +54,7 @@ duplicated, here.
 
 ## Status
 
-**Phases 1–4 landed.** Phase 1: columns + `user_grants` (migration
+**Phases 1–4b landed (the whole beta).** Phase 1: columns + `user_grants` (migration
 `20260627_0003`), `features/access/`, the `manage_user_access` CLI. Phase 2: the
 capability resolver (`principals` + `capabilities` + `require_capability`) behind
 the `features/projects/access.py` seam, reproducing today's binary allow/deny.
@@ -62,5 +63,6 @@ metadata redaction, and the `catalog.edit` write gate. Phase 4 (frontend match):
 the `client` viewer is pinned to the latest version with no version/Settings UI
 and loses every bulk-export/download affordance (HBJSON/PHPP/Phius/model/CSV/
 project-JSON), all gated on the access class so a locked-version editor keeps
-export. Next is **Phase 4b** (the CP-5 read-only canvas-inspect modal) — see
-STATUS.md.
+export. Phase 4b adds the CP-5 read-only canvas-inspect modal (click an envelope
+segment for a read-only material/width detail). The whole beta is done; only
+**Phase 5** (tenancy) remains, deferred to the RBC trigger — see STATUS.md.

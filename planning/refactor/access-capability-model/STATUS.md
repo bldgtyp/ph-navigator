@@ -1,10 +1,10 @@
 ---
 DATE: 2026-06-27
-TIME: 21:40 ET
-STATUS: Active — Phases 1–4 landed (schema + resolver + backend beta deltas +
-        frontend beta deltas). Phase 4b (CP-5 read-only canvas-inspect modal)
-        and Phase 5 (tenancy) are the remaining work; Phase 5 deferred to the
-        RBC trigger.
+TIME: 22:30 ET
+STATUS: Active — Phases 1–4b landed (schema + resolver + backend beta deltas +
+        frontend beta deltas + CP-5 read-only canvas-inspect modal). The entire
+        beta is implemented; only Phase 5 (tenancy + certifier shares) remains,
+        deferred to the RBC trigger.
 AUTHOR: Claude (Opus 4.8) + Ed
 SCOPE: State tracker for the access-capability-model refactor.
 RELATED:
@@ -14,14 +14,17 @@ RELATED:
 
 # STATUS — Access Capability Model
 
-**State:** Active. Phases 1–4 are implemented and green. Phases 1–2 (schema +
-resolver) were behavior-neutral; Phase 3 (backend beta deltas) and Phase 4
-(frontend beta deltas) are the *observable* changes — anonymous/`client`
-exports are gated front and back, `client` viewers get redacted project
-metadata, are pinned to the latest version with no version/Settings UI, and lose
-every bulk-export/download affordance (HBJSON/PHPP/Phius/model/CSV/project-JSON);
-catalog writes require `catalog.edit`. The model/schema/decisions were agreed
-with Ed on 2026-06-27 and the phase sequence lives in `PLAN.md`.
+**State:** Active. The whole beta (Phases 1–4b) is implemented and green.
+Phases 1–2 (schema + resolver) were behavior-neutral; Phase 3 (backend beta
+deltas) and Phase 4 (frontend beta deltas) are the *observable* changes —
+anonymous/`client` exports are gated front and back, `client` viewers get
+redacted project metadata, are pinned to the latest version with no
+version/Settings UI, and lose every bulk-export/download affordance
+(HBJSON/PHPP/Phius/model/CSV/project-JSON); catalog writes require
+`catalog.edit`. Phase 4b adds the CP-5 read-only canvas-inspect modal so viewers
+can click an envelope segment for a read-only material/width detail. The
+model/schema/decisions were agreed with Ed on 2026-06-27 and the phase sequence
+lives in `PLAN.md`. Only Phase 5 (tenancy) remains, deferred to the RBC trigger.
 
 ## Where things stand
 
@@ -77,11 +80,20 @@ with Ed on 2026-06-27 and the phase sequence lives in `PLAN.md`.
   through the `customFieldActionsForController` seam (`controller.isEditor`).
   (3) Project Settings entry removed from the viewer chrome (§4.9). Tests:
   `csvDownload.test.tsx` (the gate + locked-editor-keeps-CSV), reconciled
-  envelope/model viewer tests; full frontend suite (1410) green; `tsc`/`eslint`/
-  DataTable-contract-checker clean. **CP-5 (read-only canvas-inspect modal) was
-  split to Phase 4b** — see below.
-- **Phase 4b — CP-5 read-only canvas-inspect modal: not started.** **Phase 5
-  (tenancy): deferred (RBC trigger).**
+  envelope/model-viewer/App viewer tests; full frontend suite green; `tsc`/
+  `eslint`/DataTable-contract-checker clean. **CP-5 (read-only canvas-inspect
+  modal) landed in Phase 4b** — see below.
+- **Phase 4b — CP-5 read-only canvas-inspect modal: DONE.** The envelope
+  segment hit-target is always clickable; the overlay reports a single
+  `onSegmentActivate`, and `EnvelopePage` routes it by its own `canEdit` — the
+  editing picker for editors, the read-only `SegmentDetailDialog` (material,
+  width, continuous-insulation, stud spacing, layer) for viewers and
+  locked-version editors. The overlay's blanket `aria-hidden={!canEdit}` was
+  removed (editor-only dimension/segment-add controls stay separately gated).
+  Apertures verified as already viewer-inspectable (selection is an ungated
+  viewing aid; spec panels are T0) — no new modal. `EnvelopePage.test.tsx`
+  covers the viewer inspect path; full suite (1943) green.
+- **Phase 5 (tenancy + certifier shares): deferred (RBC trigger).**
 
 ## Decided (locked)
 
@@ -99,14 +111,14 @@ with Ed on 2026-06-27 and the phase sequence lives in `PLAN.md`.
 
 ## Next step
 
-**Phase 4b — CP-5 read-only canvas-inspect modal** (PLAN.md §Phase 4b): let a
-viewer click an envelope/aperture canvas element to open a *read-only* detail
-(material + width + stud spacing + layer). *Verified during Phase 4:* the
-envelope segment hit-target is `disabled={!canEdit}` and its overlay is
-`aria-hidden={!canEdit}`, so viewers can't click-inspect; material + width are
-already viewer-visible via the segment `title` tooltip + the read-only Materials
-sidebar, so the gap is a dedicated inspect modal (net-new canvas UI), not a
-missing capability. Then Phase 5 stays deferred to the RBC trigger.
+**The entire beta (Phases 1–4b) is implemented and green — no active next
+step.** The only remaining phase is **Phase 5 (tenancy + certifier shares)**,
+which is **deferred to the RBC partnership trigger** (not implementable now);
+its held DDL sits in `backend/alembic/held/` and the resolver's principal/bundle
+shape is already in place for it. A browser logged-out walkthrough of a seeded
+project + a Playwright smoke are recommended before deploy (the worktree now has
+the frontend toolchain installed). The packet is **not** archived because
+Phase 5 remains open.
 
 ## Verification
 
@@ -121,8 +133,12 @@ missing capability. Then Phase 5 stays deferred to the RBC trigger.
   (every export/download route 401s anonymous), and catalog gating; catalog tests
   reconciled to sign in as a staff catalog-admin.
 - Phase 4: frontend `tsc` + `eslint` + `node scripts/check-data-table-contract.mjs`
-  + full vitest suite (1410) green. `csvDownload.test.tsx` locks the CSV gate
+  + full vitest suite green. `csvDownload.test.tsx` locks the CSV gate
   (hidden when `canDownloadCsv=false`) and the locked-editor-keeps-CSV contract;
-  envelope + model-viewer viewer tests assert the export menus are gone for
-  viewers. Browser logged-out walkthrough + Playwright smoke recommended before
-  deploy. Later phase gates in PLAN.md.
+  envelope + model-viewer + App viewer tests assert the export menus are gone for
+  viewers.
+- Phase 4b: frontend `tsc` + `eslint` + `make frontend-dev-check` + full vitest
+  (1943) green. `EnvelopePage.test.tsx` asserts a viewer clicking a segment gets
+  the read-only `SegmentDetailDialog` (material + width, no picker/delete) while
+  the editor segment-edit path is unchanged. Browser logged-out walkthrough +
+  Playwright smoke recommended before deploy. Phase 5 gate in PLAN.md.

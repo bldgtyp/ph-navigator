@@ -433,8 +433,14 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
             onAddLayer={(layer, position) =>
               setDialog({ kind: "add-layer", assembly: activeAssembly, layer, position })
             }
-            onEditSegment={(layer, segment) =>
-              setDialog({ kind: "segment", assembly: activeAssembly, layer, segment })
+            onSegmentActivate={(layer, segment) =>
+              // Editors get the material-editing picker; viewers and
+              // locked-version editors get the read-only detail (CP-5).
+              setDialog(
+                canEdit
+                  ? { kind: "segment", assembly: activeAssembly, layer, segment }
+                  : { kind: "segment-detail", layer, segment },
+              )
             }
             onAddSegment={(layer, segment, position) =>
               setDialog({

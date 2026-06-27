@@ -92,9 +92,10 @@ URL; member behavior unchanged; `tests/test_access_phase3_deltas.py`; full suite
 - ✅ **Hide Project Settings entry** from viewers entirely: the
   `VersionControls` viewer branch no longer renders the "Project settings"
   button (§4.9).
-- ◻ **CP-5 read-only canvas-inspect modal → Phase 4b.** *Verified:* the
-  envelope segment hit-target is `disabled={!canEdit}` and its overlay is
-  `aria-hidden={!canEdit}`, so viewers can't click-to-inspect; material + width
+- ✅ **CP-5 read-only canvas-inspect modal → landed in Phase 4b (below).**
+  *At Phase 4 the gap was:* the envelope segment hit-target was
+  `disabled={!canEdit}` and its overlay `aria-hidden={!canEdit}`, so viewers
+  couldn't click-to-inspect; material + width
   are already viewer-accessible via the segment `title` tooltip and the
   read-only Materials sidebar (`viewerVisibleMaterials`), and apertures expose
   specs through the viewer-visible spec panels. The *dedicated* read-only
@@ -108,21 +109,27 @@ frontend vitest suite (1410) green; the CSV gate is covered by
 Logged-out browser walkthrough + Playwright smoke still recommended before
 deploy.
 
-## Phase 4b — CP-5 read-only canvas-inspect modal
+## Phase 4b — CP-5 read-only canvas-inspect modal ✅ DONE
 **Goal:** a viewer can click an aperture/envelope canvas element to open a
 **read-only** detail (material + width + stud spacing + layer), satisfying CP-5
 ("inspection is a read-only view; only mutation is gated").
-- Add an `onInspectSegment` action to the envelope canvas overlay; route the
-  segment hit-target to it when `!canEdit` (enable the button for viewers) and
-  to the existing edit picker when `canEdit`.
-- Render a read-only segment-detail dialog (reuse the EnvelopePage `dialog`
-  state machine; new `kind: "segment-detail"`). Stop blanket-`aria-hidden`ing
-  the viewer overlay so the inspect affordance is reachable by assistive tech.
-- Apertures: confirm element selection / spec inspection is reachable read-only
-  (spec panels already viewer-visible); add a parallel read-only detail only if
-  a gap remains.
-**Verify:** viewer can open the detail and sees no mutation controls; editor
-flow (paint/pick/assign-material) unchanged; `make frontend-dev-check`.
+- ✅ **Envelope:** the segment hit-target is always clickable (was
+  `disabled={!canEdit}`); the overlay reports a single `onSegmentActivate`
+  action and `EnvelopePage` routes it by its own `canEdit` — the editing picker
+  (`kind: "segment"`) for editors, the read-only `SegmentDetailDialog`
+  (`kind: "segment-detail"`) for viewers and locked-version editors. The
+  overlay's blanket `aria-hidden={!canEdit}` was removed so the inspect
+  affordance is reachable by assistive tech (editor-only dimension/segment-add
+  controls stay separately `canEdit`-gated, so nothing leaks).
+- ✅ **Apertures:** verified no gap — element selection (`selectSingle`) is a
+  viewing aid not gated on `canEdit`, the overlay renders for all principals,
+  and glazing/frame/U-value spec panels are already viewer-visible (T0). No new
+  modal needed.
+**Verify:** ✅ viewer opens the detail and sees no mutation controls; editor
+edit/paint flow unchanged; `tsc` + `eslint` + full vitest (1943) green;
+`make frontend-dev-check` clean. `EnvelopePage.test.tsx` covers the viewer
+inspect path (read-only detail, no picker/delete) alongside the editor
+segment-edit test.
 
 ## Phase 5 — Tenancy + shares (DEFERRED to multi-tenant trigger)
 **Goal:** enforce roles, certifier shares, staff.
