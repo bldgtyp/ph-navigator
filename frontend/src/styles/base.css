@@ -1878,6 +1878,33 @@ button:disabled {
   background: currentcolor;
 }
 
+.app-menu__checkbox-item {
+  color: var(--text-secondary);
+}
+
+.app-menu__checkbox-item[aria-checked="true"] {
+  color: var(--accent-text);
+  font-weight: 700;
+}
+
+.app-menu__checkbox-mark {
+  align-items: center;
+  border: 1px solid currentcolor;
+  border-radius: var(--radius-2xs);
+  display: inline-flex;
+  height: 10px;
+  justify-content: center;
+  width: 10px;
+}
+
+.app-menu__checkbox-item[aria-checked="true"] .app-menu__checkbox-mark::after {
+  background: currentcolor;
+  border-radius: var(--radius-2xs);
+  content: "";
+  height: 6px;
+  width: 6px;
+}
+
 .tab-panel {
   min-height: 280px;
   border: 0;

@@ -203,3 +203,35 @@ export function AppMenuRadioItem({
     </button>
   );
 }
+
+export function AppMenuCheckboxItem({
+  checked,
+  children,
+  closeOnSelect = false,
+  onClick,
+  ...buttonProps
+}: Omit<ButtonHTMLAttributes<HTMLButtonElement>, "className"> & {
+  checked: boolean;
+  children: ReactNode;
+  closeOnSelect?: boolean;
+}) {
+  const close = useAppMenuClose();
+  return (
+    <button
+      {...buttonProps}
+      type={buttonProps.type ?? "button"}
+      className="app-menu__item app-menu__checkbox-item"
+      role="menuitemcheckbox"
+      aria-checked={checked}
+      onClick={(event) => {
+        if (closeOnSelect) close();
+        onClick?.(event);
+      }}
+    >
+      <span className="app-menu__item-icon" aria-hidden="true">
+        <span className="app-menu__checkbox-mark" />
+      </span>
+      <span className="app-menu__item-label">{children}</span>
+    </button>
+  );
+}
