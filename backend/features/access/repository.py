@@ -46,6 +46,27 @@ def insert_grant(
     return row
 
 
+def active_global_capabilities_for_user(conn: Connection[Any], user_id: UUID) -> frozenset[str]:
+    """Return the distinct capability keys a user holds via active **global** grants.
+
+    Beta only resolves global grants (e.g. catalog-admin); a project/team-scoped
+    grant is a no-op until scope-aware resolution lands with tenancy (Phase 5).
+    Filtering on ``scope_type = 'global'`` makes that safe by construction — an
+    accidental scoped grant can't leak across every project.
+    """
+    rows = conn.execute(
+        """
+        SELECT DISTINCT capability
+        FROM user_grants
+        WHERE user_id = %(user_id)s
+          AND scope_type = 'global'
+          AND revoked_at IS NULL
+        """,
+        {"user_id": user_id},
+    ).fetchall()
+    return frozenset(row["capability"] for row in rows)
+
+
 def list_active_grants_for_user(conn: Connection[Any], user_id: UUID) -> list[dict[str, Any]]:
     """Return every non-revoked grant for a user (the resolver's grant input)."""
     rows = conn.execute(

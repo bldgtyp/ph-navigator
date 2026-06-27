@@ -71,6 +71,43 @@ def test_set_user_is_staff_toggles_flag(clean_access_tables: None) -> None:
     assert disabled["is_staff"] is False
 
 
+def test_get_user_is_staff_reflects_flag(clean_access_tables: None) -> None:
+    user_id = _make_user()
+    with connection() as conn:
+        assert auth_repository.get_user_is_staff(conn, user_id) is False
+    with transaction() as conn:
+        auth_repository.set_user_is_staff(conn, user_id, True)
+    with connection() as conn:
+        assert auth_repository.get_user_is_staff(conn, user_id) is True
+
+
+def test_active_global_capabilities_for_user_returns_granted_keys(clean_access_tables: None) -> None:
+    user_id = _make_user()
+    with connection() as conn:
+        assert access_repository.active_global_capabilities_for_user(conn, user_id) == frozenset()
+    with transaction() as conn:
+        _grant_global(conn, user_id, CATALOG_EDIT)
+    with connection() as conn:
+        assert access_repository.active_global_capabilities_for_user(conn, user_id) == frozenset({CATALOG_EDIT})
+
+
+def test_active_global_capabilities_excludes_scoped_grants(clean_access_tables: None) -> None:
+    # A project-scoped grant must NOT leak into the global capability set; beta
+    # only resolves global grants (scope-aware resolution is Phase 5).
+    user_id = _make_user()
+    with transaction() as conn:
+        access_repository.insert_grant(
+            conn,
+            user_id=user_id,
+            capability="document.edit",
+            scope_type="project",
+            scope_id=uuid4(),
+            granted_by=user_id,
+        )
+    with connection() as conn:
+        assert access_repository.active_global_capabilities_for_user(conn, user_id) == frozenset()
+
+
 def test_projects_team_id_is_nullable_with_no_default() -> None:
     with connection() as conn:
         row = conn.execute(

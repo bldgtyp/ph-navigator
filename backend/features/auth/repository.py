@@ -51,6 +51,15 @@ def get_user_by_id(conn: Connection[Any], user_id: UUID) -> dict[str, Any] | Non
     ).fetchone()
 
 
+def get_user_is_staff(conn: Connection[Any], user_id: UUID) -> bool:
+    """Return the bldgtyp cross-tenant ``is_staff`` flag for a user."""
+    row = conn.execute(
+        "SELECT is_staff FROM users WHERE id = %(user_id)s",
+        {"user_id": user_id},
+    ).fetchone()
+    return bool(row and row["is_staff"])
+
+
 def upsert_user(conn: Connection[Any], email: str, display_name: str, password_hash: str) -> dict[str, Any]:
     row = conn.execute(
         """

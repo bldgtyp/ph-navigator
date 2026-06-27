@@ -40,18 +40,20 @@ detail (earlier drafts referenced a `phases/` sub-folder that was never written)
 green; `tests/test_access_user_grants.py`; no behavior change (nothing reads the
 new columns yet).
 
-## Phase 2 — Capability resolver in the seam
+## Phase 2 — Capability resolver in the seam ✅ DONE
 **Goal:** `access.py` answers capability questions; behavior unchanged.
-- Add `capabilities_for(principal, project)` + `require_capability(access, cap)`
-  + capability constants and the `CLIENT_CAPS` / `MEMBER_CAPS` bundles (PRD §3, §4).
-- `identify_principal`: cookie→user, none→`client`; (share/token branches stubbed
-  for P5).
-- `is_editor` becomes a derived helper over `MEMBER_CAPS` so existing call sites
-  keep working; **migrate the high-value gates** (the routes touched in P3) to
-  `require_capability`. Bulk call-site migration is incremental, not big-bang (D-rejected).
-**Verify:** capability bundles reproduce today's allow/deny exactly; auth test
-suite green; add resolver unit tests (anon→client caps, session→member caps,
-`is_staff`/grant honored).
+- `capabilities_for(principal)` + `require_capability(access, cap)` + capability
+  constants and the `CLIENT_CAPS` / `MEMBER_CAPS` bundles, in `features/access/`.
+- Principal resolution: cookie→`UserPrincipal` (with `is_staff` + global grants),
+  none→`ViewerPrincipal("client")`. (Certifier/admin/staff/token → Phase 5.)
+- `is_editor` is derived (`PROJECT_EDIT ∈ caps`); `require_editor_user` and the
+  MCP `project_access_for_user` path flow through `require_capability`, so all
+  ~83 route call-sites keep working unchanged. Per-route migration to explicit
+  capabilities is deferred to P3 (where it changes behavior) — incremental, not
+  big-bang (D-rejected).
+**Verify:** ✅ bundles reproduce today's allow/deny exactly; full suite (1155)
+green → behavior-neutral; `tests/test_access_resolver.py` covers anon→client,
+session→member, is_staff/grant honored, and the 401-viewer/403-user contract.
 
 ## Phase 3 — Backend beta deltas (the observable backend changes)
 **Goal:** close the leaks/gaps the walkthrough found.
