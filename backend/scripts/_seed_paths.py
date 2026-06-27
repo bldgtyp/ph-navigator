@@ -21,6 +21,7 @@ from config import settings
 # Every reset/reseed script guards on these before touching data, so a stray
 # `ENVIRONMENT` or `DATABASE_URL` can never wipe a non-dev database.
 LOCAL_ENVIRONMENTS: Final[frozenset[str]] = frozenset({"development", "test", "local"})
+STAGING_ENVIRONMENT: Final[str] = "staging"
 _LOCAL_DEV_DB_NAME: Final[str] = "ph_navigator_v2"
 
 SEEDS_DIR: Final[pathlib.Path] = pathlib.Path(__file__).resolve().parent.parent / "seeds"
@@ -69,6 +70,24 @@ CLIMATE_DEFAULT_STATION_ID: Final[str] = "NEW_YORK_CENTRAL_PRK_OBS_BELV_NY"
 def default_user_kwargs() -> dict[str, str]:
     """Return `{email, display_name, password}` from `seeds/user.json`."""
     return json.loads(USER_SEED_PATH.read_text())
+
+
+def assert_local_or_staging(allow_staging: bool) -> None:
+    """Guard for create/modify tools that may also run on staging.
+
+    Looser than `assert_local_dev_database`: it does not pin the dev DB name
+    (these tools create or modify a named account/grant, they do not wipe the
+    DB), but still refuses production outright and refuses staging unless the
+    caller passed `--allow-staging`.
+    """
+    can_run = settings.environment in LOCAL_ENVIRONMENTS or (
+        settings.environment == STAGING_ENVIRONMENT and allow_staging
+    )
+    if not can_run:
+        raise SystemExit(
+            "Refusing to run outside local environments without explicit staging approval. "
+            f"Current ENVIRONMENT={settings.environment!r}."
+        )
 
 
 def assert_local_dev_database() -> None:
