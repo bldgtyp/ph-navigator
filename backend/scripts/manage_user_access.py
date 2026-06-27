@@ -1,7 +1,7 @@
 """Grant/revoke capabilities and toggle the staff flag for a user.
 
 Local/staging seed + admin tooling for the access capability model
-(planning/refactor/access-capability-model). The first real use is the
+(planning/archive/dated/2026-06-27/access-capability-model). The first real use is the
 catalog-admin grant:
 
     uv run python -m scripts.manage_user_access grant \

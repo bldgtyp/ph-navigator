@@ -8,9 +8,9 @@ They exist so a future feature is a *fill-in* rather than a re-design: the
 schema was reviewed and agreed when the surrounding decision was made, and is
 kept ready to drop into a real migration when its consumer lands.
 
-| File | Applies when | Decision |
+| File | Applies when | Decision / build spec |
 | --- | --- | --- |
-| `phase5_tenancy_and_shares.sql` | multi-tenant teams + certifier shares land (RBC trigger) | `planning/refactor/access-capability-model/` PRD §5.1/§5.3, decision D9 |
+| `phase5_tenancy_and_shares.sql` | multi-tenant teams + certifier shares land (RBC trigger) | Decision: `planning/archive/dated/2026-06-27/access-capability-model/` PRD §5.1/§5.3, D9. Build spec: `planning/features_v2.0/access-capability-enforcement/` |
 
 To apply held DDL: create a normal Alembic revision (`make makemigration name=...`),
 paste the statements into `upgrade()`, and write the matching `downgrade()`.

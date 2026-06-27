@@ -1,7 +1,7 @@
 """access capability model: schema foundation
 
 Phase 1 of the access-capability-model refactor
-(planning/refactor/access-capability-model). Lays down the additive,
+(planning/archive/dated/2026-06-27/access-capability-model). Lays down the additive,
 behavior-neutral schema the capability resolver builds on:
 
 - ``projects.team_id``  — nullable, no FK yet. The ``teams`` table is held

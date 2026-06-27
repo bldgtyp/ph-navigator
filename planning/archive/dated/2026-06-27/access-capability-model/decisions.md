@@ -1,8 +1,10 @@
 ---
 DATE: 2026-06-27
 TIME: 16:10 ET
-STATUS: Active — accepted decisions for the access-capability-model refactor,
-        folded from the 2026-06-27 review + page-by-page walkthrough with Ed.
+STATUS: COMPLETE / ARCHIVED — accepted decisions for the access-capability-model
+        refactor (beta shipped Phases 1–4b; Phase 5 deferred in
+        planning/features_v2.0/access-capability-enforcement/). Folded from the
+        2026-06-27 review + page-by-page walkthrough with Ed.
 AUTHOR: Claude (Opus 4.8) + Ed
 SCOPE: The agreed decisions + rationale. Per-surface exposure tables are NOT
         duplicated here — they live in the decisions ledger (RELATED) and are

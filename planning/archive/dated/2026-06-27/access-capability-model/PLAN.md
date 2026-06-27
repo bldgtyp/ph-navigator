@@ -1,7 +1,9 @@
 ---
 DATE: 2026-06-27
 TIME: 16:10 ET
-STATUS: Active — phased implementation sequence. No phase started.
+STATUS: COMPLETE / ARCHIVED — Phases 1–4b shipped (the whole beta). Phase 5
+        (enforcement) extracted to
+        planning/features_v2.0/access-capability-enforcement/, deferred.
 AUTHOR: Claude (Opus 4.8) + Ed
 SCOPE: How the capability model gets built. Maps the decisions-ledger §5
         punch-list onto ordered phases. Each phase is independently shippable
@@ -131,16 +133,16 @@ edit/paint flow unchanged; `tsc` + `eslint` + full vitest (1943) green;
 inspect path (read-only detail, no picker/delete) alongside the editor
 segment-edit test.
 
-## Phase 5 — Tenancy + shares (DEFERRED to multi-tenant trigger)
-**Goal:** enforce roles, certifier shares, staff.
-- Apply held DDL (`teams`, `team_members`, `project_shares`).
-- Add `CERTIFIER_CAPS`, `ADMIN_CAPS`, `STAFF_CAPS`; wire `role_in` to
-  `team_members`; wire share-token → `ViewerPrincipal(audience, version_scope)`.
-- Certifier link issuance UI (mirror MCP token UI); version-pinned shares.
-- Cross-tenant denial tests (multi-tenant R1); token-as-principal audit (every
-  token path runs through the seam).
-- Topbar de-conflates `viewer == anonymous`.
-**Gated on:** the RBC partnership / first external member (multi-tenant STATUS).
+## Phase 5 — Tenancy + shares (DEFERRED — EXTRACTED to its own feature)
+Phase 5 is the enforcement half of this model (apply the held DDL; add
+`CERTIFIER`/`ADMIN`/`STAFF` bundles; wire `role_in`→`team_members` and
+share-token→`ViewerPrincipal`; certifier link UI; cross-tenant denial tests;
+topbar de-conflation). It is **gated on the RBC trigger** and was lifted out of
+this (now-archived) packet into its own deferred feature so the build spec has a
+durable home:
+
+> **→ `planning/features_v2.0/access-capability-enforcement/`** (README + PRD +
+> STATUS). The held DDL is `backend/alembic/held/phase5_tenancy_and_shares.sql`.
 
 ## Cross-cutting (any phase that touches the area)
 - `?next=` same-origin allowlist (M-10) when sign-in is touched.
