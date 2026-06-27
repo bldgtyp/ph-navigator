@@ -39,8 +39,11 @@ Primary outcomes:
 - Add a project-document migrations package.
 - Add a no-op v1 baseline step and current-schema validation path.
 - Add typed errors for future or malformed schema versions.
-- Wire saved-version and draft reads through the upgrade path in memory.
-- Preserve no DB mutation on read.
+- Insert the upgrade seam in the single validation funnel so all read consumers
+  (table slices, diff, MCP, exports) inherit it - not just top-level reads.
+- Apply D6 draft semantics (upgrade-in-place allowed for drafts; versions exempt
+  from D2's no-rewrite rule only because drafts are cache).
+- Preserve no DB mutation on read for `project_versions` (drafts exempt per D6).
 - Preserve save/save-as writes at current schema.
 
 Phase doc: `phases/phase-01-upgrade-harness.md`
@@ -52,10 +55,13 @@ Lock the serialized v1 project-document contract before beta data exists.
 Primary outcomes:
 
 - Add raw JSON fixtures for representative v1 project documents.
+- Commit expected upgraded-output snapshots and assert byte-equality, not just
+  "validates."
 - Test every fixture through upgrade, validation, canonical serialization, body
   size, and idempotence.
 - Add at least one artificial future-version rejection test.
-- Document how future schema bumps add fixtures.
+- Document how future schema bumps add fixtures, and the frozen-fixture (never
+  regenerate old fixtures) rule.
 
 Phase doc: `phases/phase-02-golden-corpus.md`
 
@@ -78,11 +84,15 @@ Make built-in table contract drift reviewable.
 
 Primary outcomes:
 
-- Add a built-in `FieldDef` drift reporter.
+- Add a built-in `FieldDef` drift reporter (classify by `TableFieldDef.origin`).
 - Distinguish built-in product fields from user custom fields.
-- Add schema-bump checklist docs.
+- Add a structural schema-bump guard test (fingerprint change without a version
+  bump + fixture fails CI), plus the schema-bump checklist docs.
 - Reconcile current technical requirements that still describe Phase 7 as
-  deferred instead of a beta gate.
+  deferred instead of a beta gate, including editing `llm-mcp-schema.md` §10.5
+  item 9 to match D8 (no per-version models).
+- Note the catalog-derived-row drift scope boundary and the full versioned
+  structure inventory (incl. `BUNDLE_SCHEMA_VERSION`).
 - Add optional table-view stale-state cleanup guidance only if cheap.
 
 Phase doc: `phases/phase-04-fielddef-drift-docs.md`
