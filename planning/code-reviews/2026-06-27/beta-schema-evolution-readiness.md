@@ -1,10 +1,12 @@
 ---
 DATE: 2026-06-27
-STATUS: Active - planning recommendations recorded; no implementation in this pass.
+TIME: 10:46 EDT
+STATUS: Promoted - recommendations accepted and turned into `planning/features/beta-schema-evolution/`.
 AUTHOR: Codex with Ed May
 SCOPE: Beta rollout data-structure flexibility, project-document schema evolution, updater mechanisms, recovery posture, and related table/cache contracts.
 METHOD: Graphify query plus targeted source review of project-document models, validation, write spine, table contracts, table-view persistence, catalog upgrade chains, and existing planning/technical requirements.
 RELATED:
+  - planning/features/beta-schema-evolution/
   - planning/code-reviews/2026-06-24/backend-data-architecture-review.md
   - planning/archive/dated/2026-06-24/backend-data-architecture-cleanup/phases/phase-07-schema-migration-mechanism.md
   - context/technical-requirements/llm-mcp-schema.md
@@ -425,22 +427,25 @@ This is a planning artifact, not an implementation request. If/when we start, I 
 
 This is small enough to do as one focused feature packet, but it should be done before real beta users create durable project versions.
 
-## Open Decisions
+## Accepted Decisions
+
+Accepted by Ed on 2026-06-27 and folded into
+`planning/features/beta-schema-evolution/decisions.md`.
 
 1. **When is beta data considered real?**
-   - My recommendation: the first project created by someone other than us for an actual BLDGTYP job counts as real and activates the forever-readable guarantee.
+   - Decision: the first project created by someone other than the development agents for an actual BLDGTYP job counts as real and activates the forever-readable guarantee.
 
 2. **Should old saved versions remain stored in old schema forever?**
-   - My recommendation: yes. Upgrade on read and write current schema only when saving a draft/save-as/manual repair.
+   - Decision: yes. Upgrade on read and write current schema only when saving a draft, save-as, or explicit manual repair.
 
 3. **Should we ever run a DB body rewrite?**
-   - My recommendation: only as an explicit maintenance operation with export, audit, backup, and rollback. Not the normal deploy path.
+   - Decision: only as an explicit maintenance operation with export, audit, backup, and rollback. It is not the normal deploy path.
 
 4. **Do we need a UI importer for repaired project JSON before beta?**
-   - My recommendation: no. Raw download plus CLI repair is enough for early beta. Add importer only if recovery happens more than once.
+   - Decision: no. Raw download plus CLI repair is enough for early beta. Add importer only if recovery happens often enough to justify it.
 
 5. **How strict should field display-name migration be?**
-   - My recommendation: treat built-in field display names as product schema, but preserve explicit custom/user-created field names. The drift reporter should distinguish built-in origin from custom origin.
+   - Decision: built-in field display names are product schema, but explicit custom/user-created field names are preserved. The drift reporter must distinguish built-in origin from custom origin.
 
 ## Source Breadcrumbs
 
@@ -475,4 +480,3 @@ Planning and requirements references:
 - `context/technical-requirements/llm-mcp-schema.md`
 - `context/technical-requirements/data-model.md`
 - `context/technical-requirements/save-versioning.md`
-

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import {
@@ -195,6 +195,27 @@ describe("ClimateDatasetPickerModal", () => {
 
     await user.click(await screen.findByRole("button", { name: /^Albany/ }));
     expect(screen.getByText(/custom climate set is required for certification/)).toBeVisible();
+  });
+
+  test("centers the selected station row when picked from the map", async () => {
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: scrollIntoView,
+    });
+    installFetch({});
+    renderPicker("phius");
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole("button", { name: "Select Albany" }));
+
+    await waitFor(() =>
+      expect(scrollIntoView).toHaveBeenCalledWith({ block: "center", inline: "nearest" }),
+    );
+    expect(screen.getByRole("button", { name: /^Albany/ })).toHaveAttribute(
+      "data-selected",
+      "true",
+    );
   });
 
   test("offers to replace when a source of the kind is already attached", async () => {

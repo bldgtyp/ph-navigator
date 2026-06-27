@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MapPin } from "lucide-react";
 import { errorMessage } from "../../../shared/lib/errors";
 import { AutocompleteSelect } from "../../../shared/ui/AutocompleteSelect";
@@ -245,6 +245,12 @@ function PickerBody({
   selectedId: string | null;
   onSelect: (stationId: string) => void;
 }) {
+  const selectedRowRef = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    if (!selectedId) return;
+    selectedRowRef.current?.scrollIntoView?.({ block: "center", inline: "nearest" });
+  }, [selectedId]);
+
   if (isLoading) return <p className="form-note">Loading stations…</p>;
   if (error) {
     return <p className="form-error">{errorMessage(error, "Could not load climate stations.")}</p>;
@@ -279,6 +285,7 @@ function PickerBody({
           return (
             <li key={item.id}>
               <button
+                ref={item.id === selectedId ? selectedRowRef : null}
                 type="button"
                 className="climate-picker-row"
                 data-selected={item.id === selectedId}
