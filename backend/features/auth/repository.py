@@ -93,6 +93,24 @@ def update_user_units_preference(conn: Connection[Any], user_id: UUID, units_pre
     return row
 
 
+def set_user_is_staff(conn: Connection[Any], user_id: UUID, is_staff: bool) -> dict[str, Any]:
+    """Set the bldgtyp cross-tenant ``is_staff`` flag and return the user row."""
+    row = conn.execute(
+        """
+        UPDATE users
+        SET is_staff = %(is_staff)s,
+            updated_at = now()
+        WHERE id = %(user_id)s
+        RETURNING id, email, display_name, is_staff,
+                  (deleted_at IS NULL) AS is_active, units_preference
+        """,
+        {"user_id": user_id, "is_staff": is_staff},
+    ).fetchone()
+    if row is None:
+        raise RuntimeError("User is_staff update did not return a row.")
+    return row
+
+
 def invalidate_active_sessions(
     conn: Connection[Any],
     user_id: UUID,

@@ -397,7 +397,7 @@ def test_seed_user_refuses_non_local_environments(monkeypatch: pytest.MonkeyPatc
         ],
     )
 
-    with pytest.raises(SystemExit, match="Refusing to seed/reset"):
+    with pytest.raises(SystemExit, match="Refusing to run outside local environments"):
         seed_user.main()
 
 
