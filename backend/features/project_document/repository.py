@@ -150,6 +150,44 @@ def delete_draft(conn: Connection[Any], version_id: UUID, user_id: UUID) -> bool
     return row is not None
 
 
+def rewrite_draft_body(
+    conn: Connection[Any],
+    version_id: UUID,
+    user_id: UUID,
+    body: ProjectDocumentV1,
+    draft_etag: str,
+    *,
+    serialized_body: SerializedProjectDocument | None = None,
+) -> dict[str, Any]:
+    """Rewrite a stale draft cache row after a read-time document upgrade."""
+
+    serialized = serialized_body or serialize_document(body)
+    start = perf_counter()
+    row = conn.execute(
+        """
+        UPDATE project_version_drafts
+        SET body = %(body)s,
+            schema_version = %(schema_version)s,
+            draft_etag = %(draft_etag)s,
+            last_patched_at = now()
+        WHERE version_id = %(version_id)s
+          AND user_id = %(user_id)s
+        RETURNING draft_etag, last_patched_at
+        """,
+        {
+            "version_id": version_id,
+            "user_id": user_id,
+            "body": Jsonb(serialized.json_value),
+            "schema_version": body.schema_version,
+            "draft_etag": draft_etag,
+        },
+    ).fetchone()
+    if row is None:
+        raise RuntimeError("Draft rewrite did not return a row.")
+    _log_saved(version_id, "draft", body_size_bytes=serialized.size_bytes, db_ms=_duration_ms(start))
+    return dict(row)
+
+
 def save_draft_to_version(
     conn: Connection[Any],
     project_id: UUID,

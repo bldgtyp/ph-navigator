@@ -6,16 +6,18 @@ import json
 from dataclasses import dataclass
 from datetime import datetime
 from time import perf_counter
-from typing import NoReturn
+from typing import Any, NoReturn
 from uuid import UUID
 
 import structlog
+from psycopg import Connection
 from pydantic import BaseModel
 from starlette import status
 
-from database import connection
+from database import connection, transaction
 from features.project_document import repository
 from features.project_document.document import ProjectDocumentV1
+from features.project_document.migrations import UpgradeResult
 from features.project_document.models import (
     ProjectDocumentReadSafeEnvelope,
     ProjectDocumentSource,
@@ -26,7 +28,10 @@ from features.project_document.tables import get_table_contract, iter_table_cont
 from features.project_document.validation import (
     JsonValue,
     document_etag,
+    next_draft_etag_from_etag,
     raw_json_value,
+    serialize_document,
+    upgrade_document_with_errors,
     validate_document,
     validate_document_with_errors,
 )
@@ -125,12 +130,12 @@ def get_draft_summary_or_read_safe(
     version_id: UUID, access: ProjectAccess, request_id: str
 ) -> ProjectDraftSummary | ProjectDocumentReadSafeEnvelope:
     user = require_editor_user(access)
-    with connection() as conn:
+    with transaction() as conn:
         version = repository.get_project_version(conn, access.project_id, version_id)
         if version is None:
             raise_project_version_not_found()
-        version_body, version_errors = validate_document_with_errors(version["body"])
-        if version_body is None:
+        version_result, version_errors = upgrade_document_with_errors(version["body"])
+        if version_result is None:
             return read_safe_envelope(
                 access.project_id,
                 version_id,
@@ -140,11 +145,13 @@ def get_draft_summary_or_read_safe(
                 version_errors,
                 row_schema_version=version["schema_version"],
             )
-        draft = repository.get_draft(conn, version_id, user.id)
+        draft = repository.get_draft_for_update(conn, version_id, user.id)
         draft_body: ProjectDocumentV1 | None = None
+        draft_etag: str | None = None
+        last_patched_at: datetime | None = None
         if draft is not None:
-            draft_body, draft_errors = validate_document_with_errors(draft["body"])
-            if draft_body is None:
+            draft_result, draft_errors = upgrade_document_with_errors(draft["body"])
+            if draft_result is None:
                 return read_safe_envelope(
                     access.project_id,
                     version_id,
@@ -154,6 +161,8 @@ def get_draft_summary_or_read_safe(
                     draft_errors,
                     row_schema_version=draft["schema_version"],
                 )
+            draft_body, draft_etag, last_patched_at = rewrite_draft_if_upgraded(conn, draft, draft_result)
+        version_body = version_result.document
         return draft_summary(
             version_id,
             access.project_id,
@@ -162,8 +171,8 @@ def get_draft_summary_or_read_safe(
                 version_etag=document_etag(version_body),
                 version_locked=bool(version["locked"]),
                 draft_body=draft_body,
-                draft_etag=draft["draft_etag"] if draft is not None else None,
-                last_patched_at=draft["last_patched_at"] if draft is not None else None,
+                draft_etag=draft_etag,
+                last_patched_at=last_patched_at,
             ),
         )
 
@@ -220,14 +229,26 @@ def draft_summary(version_id: UUID, project_id: UUID, parts: CurrentDocumentPart
 def load_current_document_parts(version_id: UUID, access: ProjectAccess) -> CurrentDocumentParts:
     user = require_editor_user(access)
     start = perf_counter()
-    with connection() as conn:
+    with transaction() as conn:
         version = repository.get_project_version(conn, access.project_id, version_id)
         if version is None:
             raise_project_version_not_found()
-        draft = repository.get_draft(conn, version_id, user.id)
+        draft = repository.get_draft_for_update(conn, version_id, user.id)
+        version_body = validate_document(version["body"])
+        draft_body: ProjectDocumentV1 | None = None
+        draft_etag: str | None = None
+        last_patched_at: datetime | None = None
+        if draft is not None:
+            draft_result, draft_errors = upgrade_document_with_errors(draft["body"])
+            if draft_result is None:
+                raise api_error(
+                    status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    "invalid_project_document",
+                    "Project document failed validation.",
+                    {"errors": draft_errors},
+                )
+            draft_body, draft_etag, last_patched_at = rewrite_draft_if_upgraded(conn, draft, draft_result)
     db_ms = _duration_ms(start)
-    version_body = validate_document(version["body"])
-    draft_body = validate_document(draft["body"]) if draft is not None else None
     _log_loaded(
         access.project_id,
         version_id,
@@ -240,8 +261,37 @@ def load_current_document_parts(version_id: UUID, access: ProjectAccess) -> Curr
         version_etag=document_etag(version_body),
         version_locked=bool(version["locked"]),
         draft_body=draft_body,
-        draft_etag=draft["draft_etag"] if draft is not None else None,
-        last_patched_at=draft["last_patched_at"] if draft is not None else None,
+        draft_etag=draft_etag,
+        last_patched_at=last_patched_at,
+    )
+
+
+def rewrite_draft_if_upgraded(
+    conn: Connection[Any],
+    draft: dict[str, object],
+    result: UpgradeResult,
+) -> tuple[ProjectDocumentV1, str, datetime | None]:
+    """Persist current-shape draft cache rows while saved versions stay immutable."""
+
+    draft_etag = str(draft["draft_etag"])
+    last_patched_at = draft["last_patched_at"] if isinstance(draft["last_patched_at"], datetime) else None
+    if not result.requires_persisted_rewrite:
+        return result.document, draft_etag, last_patched_at
+
+    serialized = serialize_document(result.document)
+    rewritten = repository.rewrite_draft_body(
+        conn,
+        UUID(str(draft["version_id"])),
+        UUID(str(draft["user_id"])),
+        result.document,
+        next_draft_etag_from_etag(serialized.etag),
+        serialized_body=serialized,
+    )
+    rewritten_at = rewritten["last_patched_at"]
+    return (
+        result.document,
+        str(rewritten["draft_etag"]),
+        rewritten_at if isinstance(rewritten_at, datetime) else None,
     )
 
 

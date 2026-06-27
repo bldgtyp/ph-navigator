@@ -1,5 +1,8 @@
 from typing import Any
 
+from psycopg.types.json import Jsonb
+
+from database import connection, transaction
 from features.project_document.custom_fields import CustomFieldDef
 from features.project_document.tables._fingerprint import compute_table_schema_fingerprint
 from features.projects.models import CreateProjectRequest
@@ -80,3 +83,80 @@ def empty_appliances_table(rows: list[dict[str, Any]] | None = None) -> dict[str
 
 def empty_required_tables() -> dict[str, Any]:
     return _empty_document_tables()
+
+
+def set_saved_version_schema(version_id: object, schema_version: int) -> None:
+    with transaction() as conn:
+        row = conn.execute(
+            """
+            SELECT body
+            FROM project_versions
+            WHERE id = %(version_id)s
+            """,
+            {"version_id": version_id},
+        ).fetchone()
+        assert row is not None
+        raw_body = dict(row["body"])
+        raw_body["schema_version"] = schema_version
+        conn.execute(
+            """
+            UPDATE project_versions
+            SET body = %(body)s,
+                schema_version = %(schema_version)s
+            WHERE id = %(version_id)s
+            """,
+            {"body": Jsonb(raw_body), "schema_version": schema_version, "version_id": version_id},
+        )
+
+
+def set_draft_schema(version_id: object, schema_version: int) -> str:
+    with transaction() as conn:
+        row = conn.execute(
+            """
+            SELECT body, draft_etag
+            FROM project_version_drafts
+            WHERE version_id = %(version_id)s
+            """,
+            {"version_id": version_id},
+        ).fetchone()
+        assert row is not None
+        raw_body = dict(row["body"])
+        raw_body["schema_version"] = schema_version
+        conn.execute(
+            """
+            UPDATE project_version_drafts
+            SET body = %(body)s,
+                schema_version = %(schema_version)s
+            WHERE version_id = %(version_id)s
+            """,
+            {"body": Jsonb(raw_body), "schema_version": schema_version, "version_id": version_id},
+        )
+    return str(row["draft_etag"])
+
+
+def project_version_schema(version_id: object) -> tuple[int, int]:
+    with connection() as conn:
+        row = conn.execute(
+            """
+            SELECT schema_version, body
+            FROM project_versions
+            WHERE id = %(version_id)s
+            """,
+            {"version_id": version_id},
+        ).fetchone()
+    assert row is not None
+    return int(row["schema_version"]), int(row["body"]["schema_version"])
+
+
+def draft_schema_and_etag(version_id: object) -> tuple[int, int, str]:
+    with connection() as conn:
+        row = conn.execute(
+            """
+            SELECT schema_version, body, draft_etag
+            FROM project_version_drafts
+            WHERE version_id = %(version_id)s
+            """,
+            {"version_id": version_id},
+        ).fetchone()
+    assert row is not None
+    return int(row["schema_version"]), int(row["body"]["schema_version"]), str(row["draft_etag"])

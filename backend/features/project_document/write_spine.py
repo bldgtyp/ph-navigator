@@ -26,11 +26,12 @@ from features.assets.reference_validation import validate_document_asset_referen
 from features.project_document import repository
 from features.project_document.document import ProjectDocumentV1
 from features.project_document.models import ProjectDocumentSource
-from features.project_document.store import raise_project_version_not_found
+from features.project_document.store import raise_project_version_not_found, rewrite_draft_if_upgraded
 from features.project_document.validation import (
     document_etag,
     enforce_document_body_size,
     next_draft_etag_from_etag,
+    upgrade_document_with_errors,
     validate_document,
 )
 from features.projects.access import ProjectAccess
@@ -94,16 +95,34 @@ def load_draft_context(
             )
         return version_body, version_etag, version_etag, None
 
-    if if_match != draft["draft_etag"]:
+    stored_draft_etag = str(draft["draft_etag"])
+    if if_match != stored_draft_etag:
         raise api_error(
             status.HTTP_409_CONFLICT,
             "draft_etag_mismatch",
             draft_etag_mismatch_message,
-            {"expected": draft["draft_etag"]},
+            {"expected": stored_draft_etag},
         )
-    base_body = validate_document(draft["body"])
+
+    draft_result, draft_errors = upgrade_document_with_errors(draft["body"])
+    if draft_result is None:
+        raise api_error(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "invalid_project_document",
+            "Project document failed validation.",
+            {"errors": draft_errors},
+        )
+    base_body, draft_etag, _last_patched_at = rewrite_draft_if_upgraded(conn, draft, draft_result)
+
+    if stored_draft_etag != draft_etag:
+        raise api_error(
+            status.HTTP_409_CONFLICT,
+            "draft_etag_mismatch",
+            draft_etag_mismatch_message,
+            {"expected": draft_etag},
+        )
     base_version_etag = str(draft["base_version_etag"])
-    return base_body, base_version_etag, version_etag, draft
+    return base_body, base_version_etag, version_etag, {**draft, "draft_etag": draft_etag}
 
 
 @dataclass(frozen=True)

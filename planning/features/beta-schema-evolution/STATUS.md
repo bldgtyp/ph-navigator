@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
 TIME: 11:00 EDT
-STATUS: Active - feature packet created; ready for implementation planning or Phase 1 start.
+STATUS: Active - Phase 1 implemented on branch; Phase 2 next.
 AUTHOR: Codex with Ed May
 SCOPE: Current state, next step, blockers, verification for beta schema evolution.
 RELATED:
@@ -19,7 +19,7 @@ RELATED:
   project-document architecture and adding a small schema-evolution lane.
 - Ed accepted all open-decision recommendations on 2026-06-27.
 - This active feature packet now owns the beta schema-evolution work.
-- Implementation has not started.
+- Phase 1 is implemented on branch as of 2026-06-27 11:59 EDT.
 
 ## Decision Ledger
 
@@ -40,18 +40,18 @@ RELATED:
 
 | Phase | State | Blocker |
 |---|---|---|
-| 1 - project-document upgrade harness | Planned | none |
-| 2 - golden corpus and regression tests | Planned | Phase 1 API shape |
+| 1 - project-document upgrade harness | Implemented on branch | none |
+| 2 - golden corpus and regression tests | Planned | none |
 | 3 - audit CLI and recovery runbook | Planned | Phase 1 API shape |
 | 4 - FieldDef drift and schema-bump docs | Planned | none |
 | 5 - beta gate drill and closeout | Planned | Phases 1-4 |
 
 ## Next Step
 
-Start Phase 1 when implementation is requested:
+Start Phase 2 after the Phase 1 closeout commit:
 
 ```text
-planning/features/beta-schema-evolution/phases/phase-01-upgrade-harness.md
+planning/features/beta-schema-evolution/phases/phase-02-golden-corpus.md
 ```
 
 ## Blockers
@@ -76,3 +76,14 @@ For implementation phases:
 - appropriate broader gates at closeout;
 - `graphify update .` after code changes.
 
+## Verification Evidence
+
+Phase 1:
+
+```bash
+cd backend && uv run ruff check tests/test_project_document.py tests/test_mcp.py tests/project_document_helpers.py features/project_document/migrations features/project_document/validation.py features/project_document/store.py features/project_document/repository.py features/project_document/write_spine.py
+cd backend && uv run ty check tests/test_project_document.py tests/test_mcp.py tests/project_document_helpers.py features/project_document/migrations features/project_document/validation.py features/project_document/store.py features/project_document/repository.py features/project_document/write_spine.py
+cd backend && uv run pytest tests/test_project_document.py tests/test_mcp.py::test_mcp_read_tools_return_document_and_structured_write_rejection
+```
+
+Result: 38 passed.
