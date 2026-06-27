@@ -326,6 +326,26 @@ def test_create_rejects_unknown_single_select_value(clean_catalog_tables: None) 
     assert response.json()["error_code"] == "catalog_option_unknown"
 
 
+def test_create_accepts_awning_and_hopper_operation_options(clean_catalog_tables: None) -> None:
+    client = signed_in_client()
+
+    awning = client.post(
+        "/api/v1/catalogs/frame-types",
+        headers={"Origin": ORIGIN},
+        json={**_payload("Awning frame"), "operation": "Awning"},
+    )
+    hopper = client.post(
+        "/api/v1/catalogs/frame-types",
+        headers={"Origin": ORIGIN},
+        json={**_payload("Hopper frame"), "operation": "Hopper"},
+    )
+
+    assert awning.status_code == 201, awning.text
+    assert awning.json()["operation"] == "Awning"
+    assert hopper.status_code == 201, hopper.text
+    assert hopper.json()["operation"] == "Hopper"
+
+
 def test_patch_rejects_unknown_single_select_value(clean_catalog_tables: None) -> None:
     client = signed_in_client()
     created = client.post("/api/v1/catalogs/frame-types", headers={"Origin": ORIGIN}, json=_payload()).json()
