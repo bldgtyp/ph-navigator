@@ -73,5 +73,7 @@ Out of scope:
 - automatic DB body rewrites as the normal path;
 - a recovery/import UI before beta;
 - broad catalog import/export redesign;
+- climate bundle schema (`BUNDLE_SCHEMA_VERSION`) - static object-store asset on
+  its own evolution lane (named in Phase 4's inventory so it is not missed);
 - product-facing schema editing UX.
 

@@ -34,15 +34,32 @@ backend/tests/project_document_schema/fixtures/v1/
   - apertures/glazings/frames references;
   - custom fields, formulas, and option lists.
 - Add tests that load fixture files as raw JSON, not Python factories.
+- For each input fixture, commit the **expected upgraded output** as a canonical
+  JSON snapshot, and assert byte-equality (not just "validates"). A future step
+  that silently drops a field or writes a wrong default must turn the build red,
+  which a validation-only check would miss (`llm-mcp-schema.md` §10.5 item 6).
 - Document fixture expectations for future schema bumps.
+
+## Frozen-Fixture Rule
+
+Old-version input fixtures are frozen artifacts. They are committed by hand as
+raw JSON and are **never** regenerated from current models or factories. When
+`CURRENT` bumps, add new fixtures for the old shape; do not rewrite existing
+ones. Regenerating an old fixture from current code silently destroys the very
+contract it was protecting.
 
 ## Acceptance Criteria
 
 - Every v1 fixture upgrades to current schema.
 - Every upgraded fixture validates as `ProjectDocument`.
+- Each fixture's upgraded output matches its committed canonical snapshot
+  byte-for-byte.
 - Canonical serialization succeeds.
 - Body size remains under configured limits.
 - Running upgrade on a current body is idempotent.
+- The corpus tests run as ordinary `pytest`, so `make ci` exercises the whole
+  corpus on every PR (this is the per-PR half of §10.5; the staging-snapshot
+  drill in Phase 5 is the production-corpus half).
 - Future schema bumps must add at least one fixture for the old shape they
   change.
 

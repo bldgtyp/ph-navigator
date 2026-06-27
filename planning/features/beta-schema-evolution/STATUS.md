@@ -31,6 +31,10 @@ RELATED:
 | D3 - DB body rewrites explicit maintenance only | Resolved |
 | D4 - no repair/import UI before beta | Resolved |
 | D5 - built-in display names are product schema | Resolved |
+| D6 - drafts may be upgraded in place; versions may not | Resolved |
+| D7 - ETag describes the upgraded body | Resolved |
+| D8 - dict-to-dict steps only; no per-version models | Resolved |
+| D9 - raw JSON download stays un-upgraded | Resolved |
 
 ## Phase Ledger
 

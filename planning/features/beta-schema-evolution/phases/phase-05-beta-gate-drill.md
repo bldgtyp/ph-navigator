@@ -23,7 +23,9 @@ and record evidence that known project document bodies can upgrade.
 - Run fixture corpus upgrade tests.
 - Run audit CLI against fixtures.
 - Run audit CLI against local/demo project versions and drafts.
-- If a staging/demo DB exists, run the audit against that corpus.
+- If a staging/demo DB exists, run the audit against that corpus. This is the
+  production-corpus drill half of `llm-mcp-schema.md` §10.5 (item 7); the per-PR
+  fixture-corpus half (item 6) is the Phase 2 `pytest` that `make ci` runs.
 - Verify read-safe recovery still handles unrecoverable invalid bodies.
 - Update final docs and status.
 - Run `graphify update .` after code changes.
