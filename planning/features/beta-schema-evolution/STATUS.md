@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
-TIME: 13:05 EDT
-STATUS: Active - Phases 1-4 implemented on branch; Phase 5 next.
+TIME: 13:15 EDT
+STATUS: Complete on branch - beta gate drill passed.
 AUTHOR: Codex with Ed May
 SCOPE: Current state, next step, blockers, verification for beta schema evolution.
 RELATED:
@@ -23,6 +23,8 @@ RELATED:
 - Phase 2 is implemented on branch as of 2026-06-27 12:21 EDT.
 - Phase 3 is implemented on branch as of 2026-06-27 12:37 EDT.
 - Phase 4 is implemented on branch as of 2026-06-27 13:05 EDT.
+- Phase 5 is implemented on branch as of 2026-06-27 13:15 EDT.
+- The beta gate drill passed against fixtures and the local DB corpus.
 
 ## Decision Ledger
 
@@ -47,14 +49,14 @@ RELATED:
 | 2 - golden corpus and regression tests | Implemented on branch | none |
 | 3 - audit CLI and recovery runbook | Implemented on branch | none |
 | 4 - FieldDef drift and schema-bump docs | Implemented on branch | none |
-| 5 - beta gate drill and closeout | Planned | Phases 1-4 |
+| 5 - beta gate drill and closeout | Implemented on branch | none |
 
 ## Next Step
 
-Start Phase 5 after the Phase 4 closeout commit:
+Review and merge the feature branch when ready:
 
 ```text
-planning/features/beta-schema-evolution/phases/phase-05-beta-gate-drill.md
+codex/beta-schema-evolution-loop
 ```
 
 ## Blockers
@@ -115,3 +117,18 @@ cd backend && uv run pytest tests/test_project_document_fielddef_drift.py tests/
 ```
 
 Result: 12 passed.
+
+Phase 5:
+
+```bash
+make format
+cd backend && uv run pytest tests/test_project_document_schema_migrations.py tests/test_project_document_fielddef_drift.py tests/test_project_document_schema_guard.py tests/test_project_document_upgrade_audit_cli.py
+cd backend && uv run python scripts/check_project_document_upgrade.py --fixtures --fielddef-drift --strict
+cd backend && uv run python scripts/check_project_document_upgrade.py --db --fielddef-drift --strict
+make ci
+```
+
+Result: focused schema/audit tests 14 passed; fixture audit passed for 2
+fixture bodies with 0 FieldDef drift; local DB audit passed for 2 saved-version
+bodies and 0 draft bodies with 0 FieldDef drift; `make ci` passed with backend
+1133 passed / 2 skipped, frontend 1941 passed, and frontend build succeeded.
