@@ -27,3 +27,10 @@ make seed-perf-stress
 
 It creates or repairs the `codex@example.com` login plus the `PERF-STRESS`
 project, then prints the `PERF_PROJECT_ID` needed by `make e2e-perf`.
+
+For project-document schema bump checks:
+
+```bash
+cd backend && uv run python scripts/check_project_document_upgrade.py --fixtures --strict
+cd backend && uv run python scripts/check_project_document_upgrade.py --db --strict
+```
