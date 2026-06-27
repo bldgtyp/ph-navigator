@@ -12,7 +12,7 @@ export type FramePickerFilterPreferencesState = FramePickerFilterPreferences & {
   setFilterFramesByOperation: (enabled: boolean) => void;
 };
 
-const DEFAULT_FRAME_PICKER_FILTER_PREFERENCES: FramePickerFilterPreferences = {
+export const DEFAULT_FRAME_PICKER_FILTER_PREFERENCES: FramePickerFilterPreferences = {
   filterFramesBySide: true,
   filterFramesByOperation: false,
 };
@@ -91,6 +91,7 @@ export function useFramePickerFilterPreferences(
 
   useEffect(() => {
     const stored = readProjectPreferences(projectId);
+    if (preferencesEqual(preferencesRef.current, stored)) return;
     preferencesRef.current = stored;
     setPreferences(stored);
   }, [projectId]);
