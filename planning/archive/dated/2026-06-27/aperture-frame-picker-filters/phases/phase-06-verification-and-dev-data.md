@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
-TIME: 08:56 EDT
-STATUS: Planned
+TIME: 10:12 EDT
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Focused tests, browser smoke, local dev data refresh, and final gates.
 RELATED:
@@ -125,3 +125,68 @@ This follows the repo rule to keep `graphify-out/` current after code edits.
 - Browser smoke confirms defaults, toggle persistence, Any-location visibility,
   Double-Hung dual-family behavior, and no assignment clearing.
 - Final response names any gates that were not run.
+
+## Completion Evidence
+
+Local dev data was reset and seeded:
+
+```bash
+make db-reset-dev
+make seed-agent-user
+make seed-agent-browser
+```
+
+`make db-reset-dev` inserted 189 frame catalog rows. `make seed-agent-browser`
+created/repaired `AGENT-BROWSER` at
+`http://localhost:5173/projects/258e3617-f6a9-4ab5-b89b-9452c282f5f1/apertures`.
+`curl -i http://localhost:8000/api/v1/auth/session` returned the expected
+signed-out `401` / `not_authenticated` health response.
+
+The live smoke initially exposed that an already-migrated dev DB did not receive
+`Awning` and `Hopper` from the edited baseline alone. Added and applied forward
+migration `20260627_0002_add_awning_hopper_frame_operations.py`, then verified
+the live option-store labels through the authenticated frontend proxy:
+
+```text
+Inswing, Outswing, Casement, Awning, Hopper, Fixed, Tilt-Turn, Sliding, Double-Hung
+```
+
+Browser smoke passed against the seeded project with `codex@example.com`:
+
+- Actions menu defaults: side filter checked; operation filter unchecked.
+- Top picker with side filter: `Head` and `Any` visible; `Sill` hidden.
+- Right picker with side filter: `Jamb` and `Any` visible; `Head` hidden.
+- Side filter off: `Head`, `Jamb`, `Sill`, and `Any` visible in the top picker.
+- Operation filter off on Swing: broad rows including `Fixed`, `Sliding`, and
+  `Casement` remain visible.
+- Operation filter on for Swing: `Inswing`, `Outswing`, `Casement`,
+  `Tilt-Turn`, and `Double-Hung` visible; `Fixed` and `Sliding` hidden.
+- Operation filter on for Slide: `Sliding` and `Double-Hung` visible;
+  `Casement` hidden.
+- A selected `Casement` frame remains assigned and visible after changing the
+  element to Fixed, and the operation warning appears.
+- Turning operation filtering off restores broad rows without clearing the
+  assignment.
+- The frame-type operation option store exposes `Awning` and `Hopper`.
+
+Screenshot: `/tmp/phn-aperture-frame-picker-smoke.png`.
+
+Focused gates passed:
+
+```bash
+cd frontend && pnpm exec vitest run src/shared/ui/__tests__/AppMenu.test.tsx src/features/apertures/__tests__/picker-filters.test.ts src/features/apertures/__tests__/operation-frame-match.test.ts src/features/apertures/__tests__/PickerPortal.test.tsx src/features/apertures/__tests__/FramePickerFilterEngine.test.tsx src/features/apertures/__tests__/FramePickerFilterMenuItems.test.tsx src/features/apertures/__tests__/useFramePickerFilterPreferences.test.ts src/features/apertures/__tests__/useFramePickerFilters.test.tsx
+cd backend && DATABASE_URL="postgresql://phn:phn_local_only@localhost:5433/ph_navigator_v2_test" uv run pytest tests/test_catalog_field_options.py tests/test_catalogs_frame_types.py
+```
+
+Results: 38 frontend tests passed; 29 backend tests passed.
+
+Final gates passed:
+
+```bash
+make frontend-dev-check
+make ci
+```
+
+`make frontend-dev-check` passed with existing fast-refresh lint warnings only.
+`make ci` passed: backend `1112 passed, 2 skipped`; frontend `204 passed` test
+files / `1939 passed` tests; production build passed.
