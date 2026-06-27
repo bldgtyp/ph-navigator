@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
 TIME: 13:15 EDT
-STATUS: Complete on branch - beta gate drill passed.
+STATUS: Complete - archived after beta gate drill passed.
 AUTHOR: Codex with Ed May
 SCOPE: Current state, next step, blockers, verification for beta schema evolution.
 RELATED:
@@ -45,11 +45,11 @@ RELATED:
 
 | Phase | State | Blocker |
 |---|---|---|
-| 1 - project-document upgrade harness | Implemented on branch | none |
-| 2 - golden corpus and regression tests | Implemented on branch | none |
-| 3 - audit CLI and recovery runbook | Implemented on branch | none |
-| 4 - FieldDef drift and schema-bump docs | Implemented on branch | none |
-| 5 - beta gate drill and closeout | Implemented on branch | none |
+| 1 - project-document upgrade harness | Complete | none |
+| 2 - golden corpus and regression tests | Complete | none |
+| 3 - audit CLI and recovery runbook | Complete | none |
+| 4 - FieldDef drift and schema-bump docs | Complete | none |
+| 5 - beta gate drill and closeout | Complete | none |
 
 ## Next Step
 

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
 TIME: 12:30 EDT
-STATUS: Active beta recovery runbook for project-document schema evolution.
+STATUS: Complete - recovery runbook archived as the beta schema reference.
 AUTHOR: Codex with Ed May
 SCOPE: Operator steps for auditing and recovering project-document JSON during beta.
 RELATED:
