@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
 TIME: 11:00 EDT
-STATUS: Active - Phases 1-2 implemented on branch; Phase 3 next.
+STATUS: Active - Phases 1-3 implemented on branch; Phase 4 next.
 AUTHOR: Codex with Ed May
 SCOPE: Current state, next step, blockers, verification for beta schema evolution.
 RELATED:
@@ -21,6 +21,7 @@ RELATED:
 - This active feature packet now owns the beta schema-evolution work.
 - Phase 1 is implemented on branch as of 2026-06-27 11:59 EDT.
 - Phase 2 is implemented on branch as of 2026-06-27 12:21 EDT.
+- Phase 3 is implemented on branch as of 2026-06-27 12:37 EDT.
 
 ## Decision Ledger
 
@@ -43,16 +44,16 @@ RELATED:
 |---|---|---|
 | 1 - project-document upgrade harness | Implemented on branch | none |
 | 2 - golden corpus and regression tests | Implemented on branch | none |
-| 3 - audit CLI and recovery runbook | Planned | Phase 1 API shape and Phase 2 fixtures |
-| 4 - FieldDef drift and schema-bump docs | Planned | none |
+| 3 - audit CLI and recovery runbook | Implemented on branch | none |
+| 4 - FieldDef drift and schema-bump docs | Planned | Phase 3 audit CLI |
 | 5 - beta gate drill and closeout | Planned | Phases 1-4 |
 
 ## Next Step
 
-Start Phase 3 after the Phase 2 closeout commit:
+Start Phase 4 after the Phase 3 closeout commit:
 
 ```text
-planning/features/beta-schema-evolution/phases/phase-03-audit-cli-runbook.md
+planning/features/beta-schema-evolution/phases/phase-04-fielddef-drift-docs.md
 ```
 
 ## Blockers
@@ -90,3 +91,16 @@ cd backend && uv run pytest tests/test_project_document_schema_migrations.py
 ```
 
 Result: 2 passed.
+
+Phase 3:
+
+```bash
+cd backend && uv run ruff check scripts/check_project_document_upgrade.py tests/test_project_document_upgrade_audit_cli.py
+cd backend && uv run ty check scripts/check_project_document_upgrade.py tests/test_project_document_upgrade_audit_cli.py
+cd backend && uv run pytest tests/test_project_document_upgrade_audit_cli.py
+cd backend && uv run python scripts/check_project_document_upgrade.py --fixtures --strict
+cd backend && uv run python scripts/check_project_document_upgrade.py --db --strict
+```
+
+Result: 5 passed; fixture audit passed for 2 fixture bodies; local DB audit
+passed for 2 saved-version bodies and 0 draft bodies.

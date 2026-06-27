@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
 TIME: 11:00 EDT
-STATUS: Active - Phases 1-2 implemented on branch; Phase 3 next.
+STATUS: Active - Phases 1-3 implemented on branch; Phase 4 next.
 AUTHOR: Codex with Ed May
 SCOPE: Router for the beta schema-evolution feature.
 RELATED:
@@ -53,7 +53,7 @@ mechanism.
 |---|---|---|---|
 | 1 | Project-document upgrade harness | Establish the forward-only upgrader and wire read/save semantics | Implemented on branch |
 | 2 | Golden corpus and regression tests | Lock v1 serialized fixtures and prove upgrade/idempotence behavior | Implemented on branch |
-| 3 | Audit CLI and recovery runbook | Give beta operators a repeatable corpus/DB drill without DB mutation | Planned |
+| 3 | Audit CLI and recovery runbook | Give beta operators a repeatable corpus/DB drill without DB mutation | Implemented on branch |
 | 4 | FieldDef drift and schema-bump docs | Make persisted built-in field changes visible and reviewable | Planned |
 | 5 | Beta gate drill and closeout | Run the full drill before the first real beta save | Planned |
 
