@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
 import { AutocompleteSelect } from "../../../shared/ui/AutocompleteSelect";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
@@ -181,6 +181,12 @@ function WeatherPickerBody({
   selectedUrl: string | null;
   onSelect: (url: string) => void;
 }) {
+  const selectedRowRef = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    if (!selectedUrl) return;
+    selectedRowRef.current?.scrollIntoView?.({ block: "center", inline: "nearest" });
+  }, [selectedUrl]);
+
   if (isLoading) return <p className="form-note">Loading stations…</p>;
   if (error) {
     return <p className="form-error">{errorMessage(error, "Could not load weather stations.")}</p>;
@@ -208,6 +214,7 @@ function WeatherPickerBody({
         {items.map((item) => (
           <li key={item.source_url}>
             <button
+              ref={item.source_url === selectedUrl ? selectedRowRef : null}
               type="button"
               className="climate-picker-row"
               data-selected={item.source_url === selectedUrl}

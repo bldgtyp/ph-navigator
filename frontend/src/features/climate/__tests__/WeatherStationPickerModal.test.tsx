@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import {
@@ -141,6 +141,27 @@ describe("WeatherStationPickerModal", () => {
       expect.objectContaining({ id: "new", kind: "weather" }),
     );
     expect(onClose).toHaveBeenCalled();
+  });
+
+  test("centers the selected station row when picked from the map", async () => {
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: scrollIntoView,
+    });
+    installFetch({});
+    renderPicker();
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole("button", { name: "Select Boston.Logan" }));
+
+    await waitFor(() =>
+      expect(scrollIntoView).toHaveBeenCalledWith({ block: "center", inline: "nearest" }),
+    );
+    expect(screen.getByRole("button", { name: /^Boston\.Logan/ })).toHaveAttribute(
+      "data-selected",
+      "true",
+    );
   });
 
   test("opens the upload flow from inside the picker", async () => {
