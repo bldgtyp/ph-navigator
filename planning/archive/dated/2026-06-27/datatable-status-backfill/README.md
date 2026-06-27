@@ -1,10 +1,10 @@
 ---
 DATE: 2026-06-27
-TIME: 10:10 EDT
-STATUS: Deferred
+TIME: 10:55 EDT
+STATUS: Complete
 AUTHOR: Claude
-SCOPE: Decide whether (and how) to backfill the built-in DataTable `status` field onto pre-existing persisted project documents that predate the status feature, across all 12 status-bearing tables.
-RELATED: planning/archive/dated/2026-06-24/data-table-status-field/STATUS.md, planning/archive/dated/2026-06-24/data-table-status-field-addendum/STATUS.md, context/technical-requirements/data-table.md
+SCOPE: Resolved the deferred DataTable `status` backfill as unnecessary before first deploy because PHN has no users and no old project documents.
+RELATED: planning/archive/dated/2026-06-27/datatable-status-backfill/PLAN.md, planning/archive/dated/2026-06-24/data-table-status-field/STATUS.md, planning/archive/dated/2026-06-24/data-table-status-field-addendum/STATUS.md, context/technical-requirements/data-table.md
 ---
 
 # DataTable Status Field — Backfill of Existing Documents
@@ -12,9 +12,9 @@ RELATED: planning/archive/dated/2026-06-24/data-table-status-field/STATUS.md, pl
 ## Why this exists
 
 The built-in `status` single-select was added to DataTable records in two
-passes — the original [data-table-status-field](../../archive/dated/2026-06-24/data-table-status-field/STATUS.md)
+passes — the original [data-table-status-field](../../2026-06-24/data-table-status-field/STATUS.md)
 feature (9 tables) and the
-[data-table-status-field-addendum](../../archive/dated/2026-06-24/data-table-status-field-addendum/STATUS.md)
+[data-table-status-field-addendum](../../2026-06-24/data-table-status-field-addendum/STATUS.md)
 (3 more: Ventilators + the two Heat-Pump Unit leaves, for 12 total). **Both
 passes intentionally scoped the change to new/seeded documents plus the local
 dev reset/reseed, and deferred any migration of pre-existing persisted
@@ -60,6 +60,11 @@ historical-body migration. The existing `/projects/{id}/status` tab is the
 separate project lifecycle tracker backed by `project_status_items`; it is not
 the DataTable completeness dashboard this field was added to support.
 
+Ed clarified on 2026-06-27 that there are **no users and no old projects to
+update**; PHN is starting fresh. The feature is therefore complete as a
+fresh-start/no-migration closeout, not a historical data migration. Verification
+passed with the focused backend tests named in `PLAN.md`.
+
 ## Likely shape of the work (when picked up)
 
 Documents are versioned JSONB with a `schema_version`. The natural mechanism is a
@@ -84,11 +89,11 @@ dashboard's "remaining work" accounting depends on this choice.)
 
 ## Decision owner
 
-Ed — this is a product call (does the dashboard need historical documents
-upgraded, and what should pre-existing rows default to). No code is needed until
-that call is made; this folder just preserves the thread.
+Ed answered the current product call on 2026-06-27: no historical project
+documents exist, so no backfill is needed before first deploy.
 
 ## Files
 
 - `README.md` — this file (scope + the deferred decision).
 - `STATUS.md` — current state and the trigger that would reactivate it.
+- `PLAN.md` — fresh-start/no-migration implementation and closeout plan.

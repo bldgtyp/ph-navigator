@@ -137,7 +137,7 @@
 }
 
 .climate-map-pin--project {
-  background: var(--accent);
+  background: var(--climate-map-project-pin);
   z-index: var(--z-base-elevated);
 }
 
@@ -148,18 +148,18 @@
   padding: 0;
   border-radius: 50%;
   border: 2px solid var(--bg-card);
-  background: var(--phn-success);
+  background: var(--climate-map-station-pin);
   box-shadow: var(--shadow-elev-1);
   transform: translate(-50%, -50%);
   cursor: pointer;
 }
 
 .climate-map-station-pin[data-status="warning"] {
-  background: var(--phn-warning);
+  background: var(--climate-map-station-pin-muted);
 }
 
 .climate-map-station-pin[data-status="fail"] {
-  background: var(--phn-danger);
+  background: var(--climate-map-station-pin-muted);
 }
 
 .climate-map-station-pin[data-selected="true"] {

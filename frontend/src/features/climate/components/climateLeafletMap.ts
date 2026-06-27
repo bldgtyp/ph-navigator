@@ -57,24 +57,32 @@ type Palette = {
   accent: string;
   bgCard: string;
   border: string;
+  project: string;
   status: Record<ClimateMapPinStatus, string>;
 };
 
 // One `getComputedStyle` per call — resolve the whole palette up front rather
 // than re-reading the document root once per pin.
-function readPalette(): Palette {
+function readPalette(scope: Element = document.documentElement): Palette {
+  const scoped = getComputedStyle(scope);
   const root = getComputedStyle(document.documentElement);
   const read = (name: string, fallback: string): string =>
-    root.getPropertyValue(name).trim() || fallback;
+    scoped.getPropertyValue(name).trim() || root.getPropertyValue(name).trim() || fallback;
+  const stationPin = read("--climate-map-station-pin", read("--accent", "blue"));
+  const mutedStationPin = read(
+    "--climate-map-station-pin-muted",
+    read("--accent-light", stationPin),
+  );
   return {
     accent: read("--accent", "blue"),
     bgCard: read("--bg-card", "white"),
     border: read("--border-strong", "gray"),
+    project: read("--climate-map-project-pin", read("--highlight", "red")),
     status: {
-      pass: read("--phn-success", "green"),
-      warning: read("--phn-warning", "orange"),
-      fail: read("--phn-danger", "red"),
-      neutral: read("--accent", "blue"),
+      pass: stationPin,
+      warning: mutedStationPin,
+      fail: mutedStationPin,
+      neutral: stationPin,
     },
   };
 }
@@ -176,7 +184,7 @@ export function createClimateLeafletMap(
   function setData(data: ClimateMapData): void {
     overlay.clearLayers();
     stationMarkers.clear();
-    const palette = readPalette();
+    const palette = readPalette(container);
 
     const projectLatLng = L.latLng(data.project.latitude, data.project.longitude);
     const located = data.stations.filter(isLocated);
@@ -201,7 +209,7 @@ export function createClimateLeafletMap(
       radius: 7,
       weight: 3,
       color: palette.bgCard,
-      fillColor: palette.accent,
+      fillColor: palette.project,
       fillOpacity: 1,
       interactive: false,
     }).addTo(overlay);
@@ -235,7 +243,7 @@ export function createClimateLeafletMap(
 
   function setSelected(nextSelectedId: string | null): void {
     selectedId = nextSelectedId;
-    const palette = readPalette();
+    const palette = readPalette(container);
     for (const [id, marker] of stationMarkers) {
       const isSelected = id === selectedId;
       marker.setStyle(selectionStyle(isSelected, palette));

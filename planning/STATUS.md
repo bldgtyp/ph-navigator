@@ -12,7 +12,7 @@ feature-first planning.
 | Feature | State | Current pointer |
 |---|---|---|
 | DataTable Status Field — Addendum | Complete — `status` extended to the 3 remaining Datasheet-bearing tables (Ventilators, HP Outdoor Units, HP Indoor Units); `make ci` green, live smoke done, committed `d8b59f28` (branch, not yet merged); archived | `archive/dated/2026-06-24/data-table-status-field-addendum/STATUS.md` |
-| DataTable Status Field — Backfill | Deferred — whether/how to backfill `status` onto pre-existing persisted documents across all 12 status tables; no migration yet (V2 pre-deploy, likely nothing to migrate); reactivate when the splash dashboard needs historical documents | `features/datatable-status-backfill/STATUS.md` |
+| DataTable Status Field — Backfill | Complete / resolved-unneeded before first deploy: no users or old project documents exist, focused status-field fresh-start verification passed, no migration/backfill written | `archive/dated/2026-06-27/datatable-status-backfill/STATUS.md` |
 | DataTable UI | Complete / numeric precision, unit headers, status chips, shared visual rhythm, route-smoke verification, final `make ci`, and archive cleanup landed | `archive/dated/2026-06-25/data-table-ui/STATUS.md` |
 | Delete Project | In review | `features/delete-project/STATUS.md` |
 | DataTable Color Field | Complete / implemented on main with CI and browser smoke evidence | `features/color-field/STATUS.md` |
@@ -73,6 +73,10 @@ feature-first planning.
   `archive/dated/2026-06-24/glazing-frame-documentation/`.
 - Completed Report Tables planning now lives under
   `archive/dated/2026-06-27/report-tables/`.
+- Completed DataTable Status Field Backfill planning now lives under
+  `archive/dated/2026-06-27/datatable-status-backfill/` (resolved-unneeded before
+  first deploy; no users or old project documents exist, so no historical
+  migration/backfill was written).
 - Completed Attachments (v1) planning now lives under
   `archive/dated/2026-06-15/attachments/`. The stable implementation contract remains
   current in `context/technical-requirements/attachments.md`; the

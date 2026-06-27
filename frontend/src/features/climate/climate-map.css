@@ -5,6 +5,10 @@
    fallback backdrop behind the pins / under a loading tile grid. */
 
 .climate-map {
+  --climate-map-project-pin: var(--highlight);
+  --climate-map-station-pin: var(--accent);
+  --climate-map-station-pin-muted: var(--accent-light);
+
   position: relative;
   isolation: isolate;
   overflow: hidden; /* clip the Leaflet tile grid to the (rounded) frame */
