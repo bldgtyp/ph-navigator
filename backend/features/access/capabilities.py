@@ -15,7 +15,7 @@ Beta collapses the model to today's binary behavior:
 So `CLIENT_CAPS` ≈ today's viewer and `MEMBER_CAPS` ≈ today's editor. The
 `certifier`/`admin`/`staff` bundles and finer per-tab/export capabilities are
 added in later phases without changing this shape (see
-`planning/refactor/access-capability-model/PRD.md` §3–§4, §6).
+`planning/archive/dated/2026-06-27/access-capability-model/PRD.md` §3–§4, §6).
 """
 
 from __future__ import annotations

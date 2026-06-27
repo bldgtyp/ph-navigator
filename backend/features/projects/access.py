@@ -9,7 +9,7 @@ gates migrate to explicit capabilities incrementally.
 Beta behavior is identical to the old binary check: anonymous → `client`
 (read-only), any session → `member` (read + write). See
 `features/access/capabilities.py` and
-`planning/refactor/access-capability-model/PRD.md` §4.
+`planning/archive/dated/2026-06-27/access-capability-model/PRD.md` §4.
 """
 
 from __future__ import annotations

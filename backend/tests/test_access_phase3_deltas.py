@@ -2,7 +2,7 @@
 
 Locks the three deltas the capability model introduces over today's behavior:
 metadata redaction for `client` viewers, export-route gating, and the catalog
-write grant. See planning/refactor/access-capability-model/PLAN.md §Phase 3.
+write grant. See planning/archive/dated/2026-06-27/access-capability-model/PLAN.md §Phase 3.
 """
 
 from __future__ import annotations

@@ -1,12 +1,13 @@
 ---
 DATE: 2026-06-27
 TIME: 16:10 ET
-STATUS: Active — the whole beta (Phases 1–4b) landed (schema + resolver +
-        backend beta deltas + frontend beta deltas + CP-5 read-only
-        canvas-inspect modal). Capability-based access model replacing the
-        binary editor/viewer check, future-proofed for multi-tenant teams +
-        viewer shares. Only Phase 5 (tenancy) remains, deferred to the RBC
-        trigger.
+STATUS: COMPLETE / ARCHIVED (2026-06-27) — the whole beta (Phases 1–4b) shipped:
+        capability-based access model replacing the binary editor/viewer check,
+        future-proofed for multi-tenant teams + viewer shares. Phase 5
+        (enforcement) was extracted to
+        planning/features_v2.0/access-capability-enforcement/ (deferred to the
+        RBC trigger). Archived under
+        planning/archive/dated/2026-06-27/access-capability-model/.
 AUTHOR: Claude (Opus 4.8) + Ed
 SCOPE: Router for the access-capability-model refactor.
 RELATED:
@@ -64,5 +65,7 @@ the `client` viewer is pinned to the latest version with no version/Settings UI
 and loses every bulk-export/download affordance (HBJSON/PHPP/Phius/model/CSV/
 project-JSON), all gated on the access class so a locked-version editor keeps
 export. Phase 4b adds the CP-5 read-only canvas-inspect modal (click an envelope
-segment for a read-only material/width detail). The whole beta is done; only
-**Phase 5** (tenancy) remains, deferred to the RBC trigger — see STATUS.md.
+segment for a read-only material/width detail). The whole beta is done and this
+packet is **archived**; the deferred Phase 5 enforcement lives at
+`planning/features_v2.0/access-capability-enforcement/` (gated on the RBC
+trigger) — see STATUS.md.

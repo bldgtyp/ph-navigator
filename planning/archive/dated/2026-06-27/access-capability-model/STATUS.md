@@ -1,10 +1,11 @@
 ---
 DATE: 2026-06-27
-TIME: 22:30 ET
-STATUS: Active — Phases 1–4b landed (schema + resolver + backend beta deltas +
-        frontend beta deltas + CP-5 read-only canvas-inspect modal). The entire
-        beta is implemented; only Phase 5 (tenancy + certifier shares) remains,
-        deferred to the RBC trigger.
+TIME: 23:10 ET
+STATUS: COMPLETE / ARCHIVED — the entire beta (Phases 1–4b) shipped and is
+        green. Phase 5 (tenancy + certifier shares enforcement) was extracted to
+        planning/features_v2.0/access-capability-enforcement/ (deferred to the
+        RBC trigger). This packet is archived under
+        planning/archive/dated/2026-06-27/access-capability-model/.
 AUTHOR: Claude (Opus 4.8) + Ed
 SCOPE: State tracker for the access-capability-model refactor.
 RELATED:
@@ -14,7 +15,7 @@ RELATED:
 
 # STATUS — Access Capability Model
 
-**State:** Active. The whole beta (Phases 1–4b) is implemented and green.
+**State:** COMPLETE / ARCHIVED (2026-06-27). The whole beta (Phases 1–4b) is implemented and green.
 Phases 1–2 (schema + resolver) were behavior-neutral; Phase 3 (backend beta
 deltas) and Phase 4 (frontend beta deltas) are the *observable* changes —
 anonymous/`client` exports are gated front and back, `client` viewers get
@@ -93,7 +94,13 @@ lives in `PLAN.md`. Only Phase 5 (tenancy) remains, deferred to the RBC trigger.
   Apertures verified as already viewer-inspectable (selection is an ungated
   viewing aid; spec panels are T0) — no new modal. `EnvelopePage.test.tsx`
   covers the viewer inspect path; full suite (1943) green.
-- **Phase 5 (tenancy + certifier shares): deferred (RBC trigger).**
+- **Phase 5 (tenancy + certifier shares): extracted, deferred.** The enforcement
+  work — apply the held DDL, add `CERTIFIER`/`ADMIN`/`STAFF` capability bundles,
+  wire `role_in`→`team_members` and share-token→`ViewerPrincipal`, certifier
+  link UI, cross-tenant denial tests — now lives as its own deferred feature:
+  `planning/features_v2.0/access-capability-enforcement/`. Gated on the RBC
+  trigger; the held DDL (`backend/alembic/held/phase5_tenancy_and_shares.sql`)
+  and the resolver's principal/bundle shape are ready for it.
 
 ## Decided (locked)
 
@@ -111,14 +118,12 @@ lives in `PLAN.md`. Only Phase 5 (tenancy) remains, deferred to the RBC trigger.
 
 ## Next step
 
-**The entire beta (Phases 1–4b) is implemented and green — no active next
-step.** The only remaining phase is **Phase 5 (tenancy + certifier shares)**,
-which is **deferred to the RBC partnership trigger** (not implementable now);
-its held DDL sits in `backend/alembic/held/` and the resolver's principal/bundle
-shape is already in place for it. A browser logged-out walkthrough of a seeded
-project + a Playwright smoke are recommended before deploy (the worktree now has
-the frontend toolchain installed). The packet is **not** archived because
-Phase 5 remains open.
+**None — this packet is complete and archived.** The beta (Phases 1–4b) shipped;
+Phase 5 enforcement was extracted to
+`planning/features_v2.0/access-capability-enforcement/` and is deferred to the
+RBC trigger. Before deploy, a browser logged-out walkthrough of a seeded project
++ a Playwright smoke are recommended (the frontend toolchain is installed in the
+build worktree).
 
 ## Verification
 

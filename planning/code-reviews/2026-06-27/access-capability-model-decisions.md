@@ -3,11 +3,14 @@ DATE: 2026-06-27
 TIME: 15:10 ET
 STATUS: DECISIONS LEDGER — page-by-page access classification against the full
         role matrix. **Page walkthrough COMPLETE (all 12 surfaces, 2026-06-27).**
-        **GRADUATED** to `planning/refactor/access-capability-model/` (README /
-        PRD / decisions / PLAN / STATUS), where the schema was finalized
-        (fine-grained `user_grants`) and a 5-phase build plan written. This ledger
-        remains the **authoritative per-surface exposure record** the refactor
-        references; forward-looking contract + plan live in the refactor folder.
+        **GRADUATED** to the access-capability-model packet (README / PRD /
+        decisions / PLAN / STATUS), where the schema was finalized (fine-grained
+        `user_grants`) and a 5-phase build plan written. The **beta (Phases
+        1–4b) shipped**; Phase 5 enforcement is deferred in
+        `planning/features_v2.0/access-capability-enforcement/`. This ledger
+        remains the **authoritative per-surface exposure record**; the contract +
+        plan live in the now-archived packet
+        (`planning/archive/dated/2026-06-27/access-capability-model/`).
 AUTHOR: Claude (Opus 4.8) + Ed
 SCOPE: Defines (1) the access principals + capability taxonomy, (2) a
         provisional additive/nullable schema scaffold to reserve now, and
@@ -533,7 +536,7 @@ PUBLIC entry point.
 ## 5. Implementation punch-list (deltas from today's behavior)
 
 > This is the original walkthrough punch-list. Build status is tracked in
-> `planning/refactor/access-capability-model/{PLAN,STATUS}.md`, not by the boxes
+> `planning/archive/dated/2026-06-27/access-capability-model/{PLAN,STATUS}.md`, not by the boxes
 > below — as of Phases 1–3 the backend-beta items here are done (the catalog gate
 > shipped via the `user_grants` / `catalog.edit` mechanism of decision D8, not the
 > `users.can_edit_catalog` boolean this list originally proposed).

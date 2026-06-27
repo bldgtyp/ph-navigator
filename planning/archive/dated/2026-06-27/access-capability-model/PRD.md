@@ -1,12 +1,11 @@
 ---
 DATE: 2026-06-27
 TIME: 16:10 ET
-STATUS: Active — behavior contract for the capability-based access model that
-        replaces the current binary editor/viewer check. Schema designed to
-        future-proof for multi-tenant teams + viewer shares while shipping a
-        binary-equivalent beta. Phases 1–3 (schema, resolver, backend beta
-        deltas) are implemented; this remains the contract the remaining phases
-        build to.
+STATUS: COMPLETE / ARCHIVED — behavior contract for the capability-based access
+        model that replaced the binary editor/viewer check. The whole beta
+        (Phases 1–4b) shipped to this contract; Phase 5 enforcement is deferred
+        in planning/features_v2.0/access-capability-enforcement/. This remains
+        the canonical model/decision record for both.
 AUTHOR: Claude (Opus 4.8) + Ed
 SCOPE: The access/authorization model end-to-end — principals, capabilities,
         the resolution algorithm, the schema (teams, team_members, user_grants,

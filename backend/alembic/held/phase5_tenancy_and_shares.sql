@@ -4,7 +4,7 @@
 -- alembic/held/README.md. Apply by pasting into a real revision when the
 -- multi-tenant teams + certifier-share features land (the RBC trigger).
 --
--- Source of truth: planning/refactor/access-capability-model/PRD.md §5.1/§5.3,
+-- Source of truth: planning/archive/dated/2026-06-27/access-capability-model/PRD.md §5.1/§5.3,
 -- decision D9 (reserve schema now, enforce when the consumer exists). Phase 1
 -- already added projects.team_id as a plain nullable column; the foreign key to
 -- teams is deferred to here so the column could land before the table existed.
