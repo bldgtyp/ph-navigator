@@ -1,10 +1,11 @@
 ---
 DATE: 2026-06-27
 TIME: 16:10 ET
-STATUS: Active — Phases 1–3 landed (schema + resolver + backend beta deltas).
-        Capability-based access model replacing the binary editor/viewer check,
-        future-proofed for multi-tenant teams + viewer shares. Phase 4 (frontend)
-        next; Phase 5 deferred to the RBC trigger.
+STATUS: Active — Phases 1–4 landed (schema + resolver + backend beta deltas +
+        frontend beta deltas). Capability-based access model replacing the
+        binary editor/viewer check, future-proofed for multi-tenant teams +
+        viewer shares. Phase 4b (CP-5 read-only canvas-inspect modal) next;
+        Phase 5 deferred to the RBC trigger.
 AUTHOR: Claude (Opus 4.8) + Ed
 SCOPE: Router for the access-capability-model refactor.
 RELATED:
@@ -52,10 +53,14 @@ duplicated, here.
 
 ## Status
 
-**Phases 1–3 landed.** Phase 1: columns + `user_grants` (migration
+**Phases 1–4 landed.** Phase 1: columns + `user_grants` (migration
 `20260627_0003`), `features/access/`, the `manage_user_access` CLI. Phase 2: the
 capability resolver (`principals` + `capabilities` + `require_capability`) behind
 the `features/projects/access.py` seam, reproducing today's binary allow/deny.
-Phase 3 (first *observable* deltas): anonymous-export gating, `client`-viewer
-metadata redaction, and the `catalog.edit` write gate. Next is Phase 4 (the
-frontend match) — see STATUS.md.
+Phase 3 (backend observable deltas): anonymous-export gating, `client`-viewer
+metadata redaction, and the `catalog.edit` write gate. Phase 4 (frontend match):
+the `client` viewer is pinned to the latest version with no version/Settings UI
+and loses every bulk-export/download affordance (HBJSON/PHPP/Phius/model/CSV/
+project-JSON), all gated on the access class so a locked-version editor keeps
+export. Next is **Phase 4b** (the CP-5 read-only canvas-inspect modal) — see
+STATUS.md.

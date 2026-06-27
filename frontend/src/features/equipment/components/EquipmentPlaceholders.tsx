@@ -67,6 +67,9 @@ export function PlaceholderEquipmentTable({
       view={view}
       onViewChange={onViewChange}
       readOnly
+      // Placeholder for a not-yet-implemented equipment type: always empty, so
+      // there is nothing to export — hide the CSV affordance for everyone.
+      canDownloadCsv={false}
       emptyMessage={emptyMessage}
     />
   );

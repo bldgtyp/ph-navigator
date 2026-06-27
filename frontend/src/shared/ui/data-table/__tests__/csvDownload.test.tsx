@@ -103,6 +103,9 @@ describe("DataTable CSV download", () => {
   });
 
   test("download works in read-only mode (it is a read action)", () => {
+    // `readOnly` covers a locked-version editor as well as a viewer; CSV stays
+    // available here because the export gate is `canDownloadCsv`, not
+    // `readOnly` — an editor on a locked version keeps export (CP-7).
     renderTable({ readOnly: true });
     openMenu();
     fireEvent.click(screen.getByRole("button", { name: "Download CSV" }));
@@ -110,5 +113,13 @@ describe("DataTable CSV download", () => {
     const { filename, lines } = readDownloadedCsv();
     expect(filename).toBe("Rooms.csv");
     expect(lines[0]).toBe("Name,Count");
+  });
+
+  test("canDownloadCsv=false hides the item (CSV is editor-only per CP-7)", () => {
+    renderTable({ canDownloadCsv: false });
+    openMenu();
+    expect(screen.queryByRole("button", { name: "Download CSV" })).not.toBeInTheDocument();
+    // The rest of the overflow menu still works.
+    expect(screen.getByRole("button", { name: "Reset view" })).toBeInTheDocument();
   });
 });

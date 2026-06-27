@@ -73,20 +73,56 @@ session→member, is_staff/grant honored, and the 401-viewer/403-user contract.
 URL; member behavior unchanged; `tests/test_access_phase3_deltas.py`; full suite
 (1161) green.
 
-## Phase 4 — Frontend beta deltas
+## Phase 4 — Frontend beta deltas ✅ DONE (CP-5 modal carved to Phase 4b)
 **Goal:** the viewer UI matches the decided model.
-- **Pin `client` to latest committed version**: hide version switcher/history/diff
-  for viewers; lock to latest (ledger §4.9 / CP-8). Strip the version list from the
-  client payload.
-- **Hide bulk-export/download buttons** from `client` (CSV/HBJSON/PHPP/model);
-  attachments stay view+download for all (CP-7).
-- **Hide Project Settings entry** from viewers entirely (today `isViewer`→read-only
-  modal → not-rendered).
-- **Verify CP-5**: aperture + envelope canvas inspection click is not `canEdit`-
-  gated; add read-only detail-modal variant if needed.
+- ✅ **Pin `client` to latest committed version**: `ProjectShell` ignores any
+  `?version=` override for viewers (auto-follows `active_version`); the
+  `VersionControls` viewer branch renders no path controls / switcher / diff;
+  the read-safe recovery panel hides its version list from viewers
+  (ledger §4.9 / CP-8).
+- ✅ **Hide bulk-export/download buttons** from `client` (CP-7), all gated on
+  `!isViewer` so an editor on a locked version keeps export: envelope HBJSON +
+  PHPP menu (whole menu hidden for viewers), apertures HBJSON (already gated),
+  heat-pump Phius export, model `.hbjson` download (whole file-actions menu
+  hidden for viewers), per-table **CSV** (new `canDownloadCsv` gate threaded
+  DataTable→GridToolbar→ViewMenuOverflow; the slice-controller seam
+  `customFieldActionsForController` carries it to every slice table via
+  `isEditor`), and the project-JSON download (VersionControls + read-safe
+  panel). Attachments stay view+download for all (CP-7).
+- ✅ **Hide Project Settings entry** from viewers entirely: the
+  `VersionControls` viewer branch no longer renders the "Project settings"
+  button (§4.9).
+- ◻ **CP-5 read-only canvas-inspect modal → Phase 4b.** *Verified:* the
+  envelope segment hit-target is `disabled={!canEdit}` and its overlay is
+  `aria-hidden={!canEdit}`, so viewers can't click-to-inspect; material + width
+  are already viewer-accessible via the segment `title` tooltip and the
+  read-only Materials sidebar (`viewerVisibleMaterials`), and apertures expose
+  specs through the viewer-visible spec panels. The *dedicated* read-only
+  detail modal the ledger calls for does not exist for any principal (editors
+  get an edit picker). Building it is net-new canvas UI touching the
+  paint/edit flow, so it is split to Phase 4b to keep Phase 4 shippable.
 - (No change) IP/SI toggle (CP-9), pan/zoom (CP-1) already viewer-safe.
-**Verify:** logged-out walkthrough of a seeded project shows exactly the decided
-client surface; `make frontend-dev-check` + Playwright smoke.
+**Verify:** ✅ `tsc`, `eslint`, the DataTable contract checker, and the full
+frontend vitest suite (1410) green; the CSV gate is covered by
+`csvDownload.test.tsx`, the export-hiding by the envelope + model viewer tests.
+Logged-out browser walkthrough + Playwright smoke still recommended before
+deploy.
+
+## Phase 4b — CP-5 read-only canvas-inspect modal
+**Goal:** a viewer can click an aperture/envelope canvas element to open a
+**read-only** detail (material + width + stud spacing + layer), satisfying CP-5
+("inspection is a read-only view; only mutation is gated").
+- Add an `onInspectSegment` action to the envelope canvas overlay; route the
+  segment hit-target to it when `!canEdit` (enable the button for viewers) and
+  to the existing edit picker when `canEdit`.
+- Render a read-only segment-detail dialog (reuse the EnvelopePage `dialog`
+  state machine; new `kind: "segment-detail"`). Stop blanket-`aria-hidden`ing
+  the viewer overlay so the inspect affordance is reachable by assistive tech.
+- Apertures: confirm element selection / spec inspection is reachable read-only
+  (spec panels already viewer-visible); add a parallel read-only detail only if
+  a gap remains.
+**Verify:** viewer can open the detail and sees no mutation controls; editor
+flow (paint/pick/assign-material) unchanged; `make frontend-dev-check`.
 
 ## Phase 5 — Tenancy + shares (DEFERRED to multi-tenant trigger)
 **Goal:** enforce roles, certifier shares, staff.

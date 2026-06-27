@@ -104,6 +104,7 @@ export function DataTable<TRow>({
   generateRowId,
   sessionKey,
   readOnly = false,
+  canDownloadCsv = true,
   density = "compact",
   emptyMessage,
   tableName,
@@ -1443,6 +1444,7 @@ export function DataTable<TRow>({
           onExpandAllGroups={handleExpandAllGroups}
           onResetView={handleResetView}
           onDownloadCsv={handleDownloadCsv}
+          canDownloadCsv={canDownloadCsv}
           onHideFieldsChange={handleHideFieldsChange}
           overflowMenuActions={overflowMenuActions}
           actions={toolbarActions}

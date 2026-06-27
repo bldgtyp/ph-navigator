@@ -17,10 +17,14 @@ export type ViewMenuOverflowProps = {
   canReset: boolean;
   // Download a CSV of the current view. REQUIRED (not optional): this is a
   // parent-owned, every-table affordance (the DataTable uniformity
-  // iron-law), so it can never be silently dropped per-table. Always
-  // enabled — download is a read action, valid read-only and on an empty
-  // (header-only) table. Pinned by scripts/check-data-table-contract.mjs.
+  // iron-law), so it can never be silently dropped per-table. Pinned by
+  // scripts/check-data-table-contract.mjs.
   onDownloadCsv: () => void;
+  // Whether the Download CSV item is visible. A CSV export is a bulk export →
+  // editor/certifier-only (CP-7), hidden from `client` viewers. The handler
+  // stays REQUIRED/wired (the iron-law); only its visibility is access-gated.
+  // When shown it is always enabled — a read action valid on an empty table.
+  canDownloadCsv: boolean;
   actions?: ReactNode;
 };
 
@@ -28,6 +32,7 @@ export function ViewMenuOverflow({
   onReset,
   canReset,
   onDownloadCsv,
+  canDownloadCsv,
   actions,
 }: ViewMenuOverflowProps) {
   const [open, setOpen] = useState(false);
@@ -50,16 +55,18 @@ export function ViewMenuOverflow({
           aria-label="View actions"
         >
           {actions}
-          <button
-            type="button"
-            className="data-table-overflow-menu-item"
-            onClick={() => {
-              onDownloadCsv();
-              setOpen(false);
-            }}
-          >
-            Download CSV
-          </button>
+          {canDownloadCsv ? (
+            <button
+              type="button"
+              className="data-table-overflow-menu-item"
+              onClick={() => {
+                onDownloadCsv();
+                setOpen(false);
+              }}
+            >
+              Download CSV
+            </button>
+          ) : null}
           <button
             type="button"
             className="data-table-overflow-menu-item"

@@ -129,26 +129,25 @@ export function FileRow({
           </span>
         </button>
       )}
-      <AppMenu label={`Actions for ${file.display_name}`}>
-        {isEditor ? (
-          <>
-            <AppMenuItem icon={Pencil} onClick={() => setEditing("name")}>
-              Rename
-            </AppMenuItem>
-            <AppMenuItem icon={NotebookPen} onClick={() => setEditing("notes")}>
-              Edit notes
-            </AppMenuItem>
-          </>
-        ) : null}
-        <AppMenuLink icon={Download} href={hbjsonFileDownloadPath(projectId, file.id)}>
-          Download
-        </AppMenuLink>
-        {isEditor ? (
+      {/* Every action — rename/notes/delete (mutations) AND the raw .hbjson
+          download (a bulk export → editor-only, CP-7) — is editor-only, so
+          viewers get no actions menu at all. */}
+      {isEditor ? (
+        <AppMenu label={`Actions for ${file.display_name}`}>
+          <AppMenuItem icon={Pencil} onClick={() => setEditing("name")}>
+            Rename
+          </AppMenuItem>
+          <AppMenuItem icon={NotebookPen} onClick={() => setEditing("notes")}>
+            Edit notes
+          </AppMenuItem>
+          <AppMenuLink icon={Download} href={hbjsonFileDownloadPath(projectId, file.id)}>
+            Download
+          </AppMenuLink>
           <AppMenuItem icon={Trash2} danger onClick={() => onRequestDelete(file)}>
             Delete
           </AppMenuItem>
-        ) : null}
-      </AppMenu>
+        </AppMenu>
+      ) : null}
     </div>
   );
 }

@@ -65,14 +65,15 @@ describe("FilePopover", () => {
     expect(screen.getByRole("menuitem", { name: /Delete/ })).toBeInTheDocument();
   });
 
-  test("viewers get no drop zone and a download-only menu", async () => {
+  test("viewers get no drop zone and no actions menu", () => {
+    // The raw .hbjson download is a bulk export → editor-only (CP-7), and every
+    // other file action (rename/notes/delete) mutates, so viewers get no
+    // actions menu at all.
     renderPopover({ isEditor: false });
     expect(screen.queryByText(/Drop a/)).not.toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole("button", { name: "Actions for Round 1 model" }));
-    expect(screen.getByRole("menuitem", { name: /Download/ })).toBeInTheDocument();
-    expect(screen.queryByRole("menuitem", { name: /Rename/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole("menuitem", { name: /Delete/ })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Actions for Round 1 model" }),
+    ).not.toBeInTheDocument();
   });
 
   test("newest row carries (Latest) independent of the active checkmark", () => {

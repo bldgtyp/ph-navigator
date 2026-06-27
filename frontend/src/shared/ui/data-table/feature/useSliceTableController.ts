@@ -385,6 +385,10 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
     actionError,
     setActionError,
     canEdit,
+    // `isEditor` is the access-principal class (member+), independent of the
+    // version lock. Export affordances (CSV/Phius) gate on this, NOT `canEdit`,
+    // so an editor browsing a locked version can still export (CP-7).
+    isEditor,
     isLocked,
     reloadDraft,
     isReplacePending: replaceMutation.isPending,

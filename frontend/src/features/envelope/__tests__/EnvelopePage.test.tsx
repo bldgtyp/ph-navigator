@@ -1641,20 +1641,16 @@ describe("EnvelopePage", () => {
     });
   });
 
-  test("viewer mode hides the upload constructions action", async () => {
+  test("viewer mode hides the whole assembly-actions menu", async () => {
+    // HBJSON/PHPP are bulk exports → editor-only (CP-7) and upload is a
+    // mutation, so a viewer's assembly-actions menu has nothing to show and the
+    // trigger itself is not rendered.
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`, {
       projectOverride: { access_mode: "viewer" },
     });
     await screen.findByRole("link", { name: /WALL-C3/ });
 
-    await userEvent.click(screen.getByRole("button", { name: "Assembly actions" }));
-    expect(
-      screen.queryByRole("menuitem", { name: "Upload constructions HBJSON" }),
-    ).not.toBeInTheDocument();
-    // Download stays available to viewers.
-    expect(
-      screen.getByRole("menuitem", { name: "Download constructions HBJSON" }),
-    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Assembly actions" })).not.toBeInTheDocument();
   });
 });
 

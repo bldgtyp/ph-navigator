@@ -85,6 +85,12 @@ if (/data-table-gutter-expand\[aria-hidden/.test(css)) {
 // via the consumer `actions` slot), and its handler prop must be REQUIRED
 // at every seam so a table cannot silently ship without it. See
 // planning/features/table-csv-download/PRD.md §7.
+//
+// Its *visibility* is access-gated (the `canDownloadCsv` prop): a CSV export
+// is a bulk export → editor/certifier-only, hidden from `client` viewers
+// (CP-7, access-capability-model). That gate does not weaken this contract —
+// the handler stays required/wired and the built-in "Download CSV" item stays
+// present in source; viewers simply don't render it.
 const overflowMenu = read(path.join("components", "ViewMenuOverflow.tsx"));
 
 if (/data-table-overflow-menu-item[\s\S]{0,300}?Download CSV/.test(overflowMenu) === false) {

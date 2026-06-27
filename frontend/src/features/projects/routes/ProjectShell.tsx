@@ -33,14 +33,17 @@ export function ProjectShell() {
   const signOutMutation = useSignOutMutation();
   const projectQuery = useProjectQuery(projectId);
   const projectData = projectQuery.data;
-  const requestedVersionId = searchParams.get("version");
+  const isViewer = projectData?.access_mode === "viewer";
+  // Viewers (beta `client`) are pinned to the latest committed version with no
+  // version UI (CP-8 / ledger §4.9): ignore any `?version=` override so they
+  // auto-follow `active_version` and cannot reach older versions by URL.
+  const requestedVersionId = isViewer ? null : searchParams.get("version");
   const openVersion = projectData
     ? (projectData.versions.find((version) => version.id === requestedVersionId) ??
       projectData.active_version ??
       null)
     : null;
   const activeVersionId = openVersion?.id ?? null;
-  const isViewer = projectData?.access_mode === "viewer";
   const editorDraftStatusQuery = useDraftSummaryQuery(
     projectData?.id ?? "",
     activeVersionId,
@@ -227,21 +230,27 @@ function ReadSafeRecoveryPanel({
             <h1>{projectName}</h1>
           </div>
         </div>
-        <a
-          className="secondary-button download-link"
-          href={projectDownloadUrl(projectId, activeVersionId)}
-        >
-          Project JSON
-        </a>
+        {/* Raw project-JSON download is a bulk export → editor-only (CP-7); the
+            backend route 401s viewers, so don't surface the link to them. */}
+        {!isViewer ? (
+          <a
+            className="secondary-button download-link"
+            href={projectDownloadUrl(projectId, activeVersionId)}
+          >
+            Project JSON
+          </a>
+        ) : null}
       </div>
       <div className="read-safe-panel">
         <h2 id="read-safe-title">Project format recovery</h2>
         <p>{envelope.message}</p>
-        <div className="read-safe-actions">
-          <a className="download-link" href={projectDownloadUrl(projectId, activeVersionId)}>
-            Download raw project JSON
-          </a>
-        </div>
+        {!isViewer ? (
+          <div className="read-safe-actions">
+            <a className="download-link" href={projectDownloadUrl(projectId, activeVersionId)}>
+              Download raw project JSON
+            </a>
+          </div>
+        ) : null}
         {!isViewer ? (
           <dl className="metadata-grid read-safe-diagnostics" aria-label="Diagnostic details">
             <div>
@@ -266,22 +275,26 @@ function ReadSafeRecoveryPanel({
             </div>
           </dl>
         ) : null}
-        <div className="read-safe-versions">
-          <h3>Open another version</h3>
-          <div className="read-safe-version-list">
-            {versions.map((version) => (
-              <button
-                key={version.id}
-                type="button"
-                className="secondary-button"
-                onClick={() => onOpenVersion(version.id)}
-                disabled={version.id === activeVersionId}
-              >
-                {version.name}
-              </button>
-            ))}
+        {/* Version switching is editor/certifier-only; viewers are pinned to
+            the latest committed version (CP-8), so hide the version list. */}
+        {!isViewer ? (
+          <div className="read-safe-versions">
+            <h3>Open another version</h3>
+            <div className="read-safe-version-list">
+              {versions.map((version) => (
+                <button
+                  key={version.id}
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => onOpenVersion(version.id)}
+                  disabled={version.id === activeVersionId}
+                >
+                  {version.name}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        ) : null}
       </div>
     </section>
   );

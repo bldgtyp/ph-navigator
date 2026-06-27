@@ -434,6 +434,15 @@ export type DataTableProps<TRow> = {
   // consumers whose rows array reidentifies after a successful write).
   sessionKey?: string;
   readOnly?: boolean;
+  // Whether the "Download CSV" overflow affordance is offered. A CSV export is
+  // a bulk export → editor/certifier-only (CP-7), so viewer-reachable tables
+  // pass `false` for `client` viewers. Defaults to `true`: the affordance is
+  // still parent-owned and always WIRED (contract-enforced); this only gates
+  // its visibility. Gate on the access principal (`isEditor`), NOT `readOnly`,
+  // so an editor on a locked version keeps export. CSV is a client-side
+  // serialization of already-visible rows, so this is UX-consistency with the
+  // server-side export gates, not a confidentiality boundary.
+  canDownloadCsv?: boolean;
   density?: "compact" | "comfortable";
   emptyMessage: string;
   // Human-readable name of this table, used as the base of the CSV

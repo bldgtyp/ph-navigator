@@ -262,7 +262,11 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     await attachmentMutation.mutateAsync({ current, change });
   }
 
-  const assemblyActions = (
+  // HBJSON/PHPP exports are bulk exports → editor-only in beta (CP-7); they
+  // gate on `!isViewer` rather than `canEdit` so an editor browsing a locked
+  // version can still export. Upload is a mutation → `canEdit`. Viewers get no
+  // assembly-actions menu at all (every item is hidden for them).
+  const assemblyActions = isViewer ? null : (
     <AppMenu label="Assembly actions">
       <AppMenuItem
         id="assembly-builder-export-hbjson"
