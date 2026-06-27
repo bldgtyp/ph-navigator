@@ -21,11 +21,18 @@ cd backend
 uv run python scripts/check_project_document_upgrade.py --fixtures --strict
 ```
 
+Include built-in `field_defs` drift in schema-bump drills:
+
+```bash
+cd backend
+uv run python scripts/check_project_document_upgrade.py --fixtures --fielddef-drift --strict
+```
+
 Run the local DB audit before a beta deploy or drill:
 
 ```bash
 cd backend
-uv run python scripts/check_project_document_upgrade.py --db --strict
+uv run python scripts/check_project_document_upgrade.py --db --fielddef-drift --strict
 ```
 
 Both commands are read-only. A nonzero strict exit means at least one body needs
