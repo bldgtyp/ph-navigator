@@ -48,20 +48,20 @@ function element(overrides: Partial<ApertureElement> = {}): ApertureElement {
 }
 
 describe("mismatchedSides", () => {
-  it("all four sides aligned → empty", () => {
+  it("treats Swing-family frame operations as aligned with swing elements", () => {
     const el = element({
       operation: { type: "swing", directions: ["left"] },
       frames: {
-        top: frame("Swing (Left)"),
-        right: frame("Swing (Left)"),
-        bottom: frame("Swing (Left)"),
+        top: frame("Casement"),
+        right: frame("Tilt-Turn"),
+        bottom: frame("Double-Hung"),
         left: frame("Swing (Left)"),
       },
     });
     expect(mismatchedSides(el)).toEqual([]);
   });
 
-  it("element Swing+Left vs top frame Fixed → ['top']", () => {
+  it("warns when a frame operation is outside the element operation family", () => {
     const el = element({
       operation: { type: "swing", directions: ["left"] },
       frames: {
@@ -72,6 +72,32 @@ describe("mismatchedSides", () => {
       },
     });
     expect(mismatchedSides(el)).toEqual(["top"]);
+  });
+
+  it("treats Slide-family frame operations as aligned with slide elements", () => {
+    const el = element({
+      operation: { type: "slide", directions: ["left"] },
+      frames: {
+        top: frame("Sliding"),
+        right: frame("Double-Hung"),
+        bottom: frame("Slide"),
+        left: frame("Fixed"),
+      },
+    });
+    expect(mismatchedSides(el)).toEqual(["left"]);
+  });
+
+  it("treats null element operation as Fixed", () => {
+    const el = element({
+      operation: null,
+      frames: {
+        top: frame("Fixed"),
+        right: frame("Casement"),
+        bottom: null,
+        left: null,
+      },
+    });
+    expect(mismatchedSides(el)).toEqual(["right"]);
   });
 
   it("hand-entered frames are skipped", () => {
