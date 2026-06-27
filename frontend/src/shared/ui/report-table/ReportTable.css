@@ -1,5 +1,5 @@
 /* Report-table primitive — dense, read-mostly view tables.
-   See planning/features/report-tables/PRD.md.
+   See planning/archive/dated/2026-06-27/report-tables/PRD.md.
    Distinct from <DataTable> (the AirTable-style data-entry grid). */
 
 .report-table {

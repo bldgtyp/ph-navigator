@@ -767,6 +767,7 @@
 .canvas-add-button:hover,
 .canvas-add-button:focus-visible {
   transform: var(--add-button-transform) scale(1.08);
+  z-index: var(--z-tooltip);
 }
 
 .assembly-layer-dimension:hover .canvas-add-button,

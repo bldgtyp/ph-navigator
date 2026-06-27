@@ -5,6 +5,8 @@ const initial = useApertureBuilderStore.getState();
 
 function reset() {
   useApertureBuilderStore.setState({
+    canvasZoom: 1,
+    hasCanvasZoom: false,
     selectionByAperture: {},
     hoveredElementId: null,
     hoveredRegion: null,
@@ -53,5 +55,14 @@ describe("builder-store", () => {
     expect(state.hoveredElementId).toBe("el_b");
     expect(state.hoveredRegion).toEqual({ elementId: "el_b", region: "top" });
     expect(state.selectionByAperture["apt_1"]).toEqual(["el_a"]);
+  });
+
+  it("stores canvas zoom as session-scoped builder UI state", () => {
+    initial.setCanvasZoom(2);
+    expect(useApertureBuilderStore.getState().canvasZoom).toBe(2);
+    expect(useApertureBuilderStore.getState().hasCanvasZoom).toBe(true);
+
+    initial.setCanvasZoom((current) => current - 0.5);
+    expect(useApertureBuilderStore.getState().canvasZoom).toBe(1.5);
   });
 });

@@ -1,6 +1,6 @@
 ---
-DATE: 2026-06-24
-TIME: 12:00 EDT
+DATE: 2026-06-27
+TIME: 10:10 EDT
 STATUS: Deferred
 AUTHOR: Claude
 SCOPE: Decide whether (and how) to backfill the built-in DataTable `status` field onto pre-existing persisted project documents that predate the status feature, across all 12 status-bearing tables.
@@ -47,6 +47,18 @@ the dev project gets it via reseed. **This is why it is Deferred, not Active:**
 there is likely nothing to migrate yet. It becomes real if/when (a) long-lived
 documents accumulate before the dashboard ships, or (b) a document predates this
 work and must show Status.
+
+Review on 2026-06-27 against the current code base did **not** find this
+implemented elsewhere. `CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION` remains `1`,
+the project-document read path validates bodies directly and falls back to
+read-safe envelopes (`schema_validation_failed_after_migration`) on invalid
+bodies, and there is no project-document upgrade chain or status-backfill script
+under `backend/features/project_document/`, `backend/scripts/`, or Alembic.
+Current tests cover the forward path (`test_starter_project_document_seeds_status_options_and_values`,
+per-table status slice tests, and the `STATUS_TABLE_NAMES` drift guard), not a
+historical-body migration. The existing `/projects/{id}/status` tab is the
+separate project lifecycle tracker backed by `project_status_items`; it is not
+the DataTable completeness dashboard this field was added to support.
 
 ## Likely shape of the work (when picked up)
 

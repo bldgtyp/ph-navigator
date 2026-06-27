@@ -9,9 +9,9 @@ SCOPE: Promote aperture glazing/frame refs from inline per-element snapshots int
   `specification_status`. Backend data-model + write-path refactor plus the
   aperture-builder frontend rewire. No user-visible builder change.
 RELATED:
-  - planning/features/apertures-glazings-frames-reports/ (the consumer feature — the
+  - planning/archive/dated/2026-06-24/apertures-glazings-frames-reports/ (the consumer feature — the
     two report pages; BLOCKED on this one)
-  - planning/features/report-tables/ (the report-table primitive; names glazing +
+  - planning/archive/dated/2026-06-27/report-tables/ (the report-table primitive; names glazing +
     frame as the intended next consumers)
   - planning/features/window-glass-catalog-enums/ (glazing catalog enums; its
     Phase 5 frontend is still pending — coordinate, see "Sequencing")

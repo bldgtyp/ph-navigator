@@ -1,7 +1,7 @@
 # Planning Status
 
-DATE: 2026-06-25
-TIME: 00:00 EDT
+DATE: 2026-06-27
+TIME: 09:06 EDT
 STATUS: Active routing index for tracked planning material.
 AUTHOR: Codex
 SCOPE: Current planning folder organization after moving dated docs to
@@ -20,6 +20,8 @@ feature-first planning.
 | IP/SI Unit Switching | Planned / implementation plan drafted | `features/ip-si-unit-switching/STATUS.md` |
 | DataTable Formula Builder | Complete / Phases 01-06 implemented for shared formula editor UI, structured error cards, `&` concat grammar, autocomplete, all-table formula regression coverage, durable docs, and focused re-verification; archived | `archive/dated/2026-06-21/data-table-formula-builder/STATUS.md` |
 | Apertures / Aperture Builder | Planned / PRD updated with review decisions; phase planning not started | `features/apertures/STATUS.md` |
+| Aperture Frame Picker Filters | Planned / research, PRD, high-level plan, and detailed phase handoffs drafted; ready for implementation | `features/aperture-frame-picker-filters/STATUS.md` |
+| Report Tables | Complete / shared read-mostly report-table primitive verified against current code; archived after source reconciliation | `archive/dated/2026-06-27/report-tables/STATUS.md` |
 | Apertures → Glazings / Frames Reports | Complete / route-based Materials-parity glazings + frames spec reports with browser smoke, screenshots, context docs, CI, and archive evidence | `archive/dated/2026-06-24/apertures-glazings-frames-reports/STATUS.md` |
 | CSS Token Guard Sweep | Complete / implemented on main worktree with format + CI evidence; archived | `archive/dated/2026-06-14/css-token-guard-sweep/STATUS.md` |
 | Heat Pump Link Fields | Complete / implemented on main with format, CI, graphify update, browser smoke evidence; archived | `archive/dated/2026-06-16/heat-pump-link-fields/STATUS.md` |
@@ -69,6 +71,8 @@ feature-first planning.
   `archive/dated/2026-06-21/data-table-formula-builder/`.
 - Completed Glazing + Frame Documentation planning now lives under
   `archive/dated/2026-06-24/glazing-frame-documentation/`.
+- Completed Report Tables planning now lives under
+  `archive/dated/2026-06-27/report-tables/`.
 - Completed Attachments (v1) planning now lives under
   `archive/dated/2026-06-15/attachments/`. The stable implementation contract remains
   current in `context/technical-requirements/attachments.md`; the
