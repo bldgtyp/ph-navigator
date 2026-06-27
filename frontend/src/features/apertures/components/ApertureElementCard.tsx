@@ -47,7 +47,7 @@ export function ApertureElementCard({
   uValueWm2k,
 }: ApertureElementCardProps) {
   const { unitSystem } = useUnitPreference();
-  const mismatched = mismatchedSides(element);
+  const mismatched = operationWarningDismissed ? [] : mismatchedSides(element);
   const uValueUnit = uValueUnitLabel(unitSystem);
   const widthUnit = widthUnitLabel(unitSystem);
 

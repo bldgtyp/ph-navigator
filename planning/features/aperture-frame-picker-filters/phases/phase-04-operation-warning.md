@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
 TIME: 08:56 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Align operation mismatch warning with the picker operation-family
   matcher.
@@ -36,7 +36,7 @@ backend enforcement or frame clearing.
    - no frame -> no mismatch;
    - hand-entered frame (`catalog_origin === null`) -> no mismatch;
    - frame operation missing/null -> no mismatch;
-   - element operation unavailable -> no mismatch.
+   - null element operation -> compare as Fixed.
 4. Keep warning copy and dismissal behavior unchanged unless tests show copy is
    tightly coupled to exact matching.
 
@@ -72,3 +72,23 @@ backend enforcement or frame clearing.
 - Picker and warning use one shared operation-family definition.
 - A frame that the operation filter intentionally allows does not immediately
   trigger an operation mismatch warning.
+
+## Completion evidence
+
+Implemented on 2026-06-27:
+
+- Replaced exact-string warning comparison in `operation-frame-match.ts` with
+  the shared picker `frameOperationMatchesElement` helper.
+- Kept skip rules for empty frames, hand-entered frames, and missing frame
+  operation values.
+- Normalized legacy parenthetical operation labels such as `Swing (Left)` to
+  their family prefix.
+- Skipped mismatch computation after the per-element warning has been dismissed.
+- Added detector coverage for Swing-family, Slide-family, Fixed, mismatch, and
+  skip behavior.
+
+Verification passed:
+
+```bash
+cd frontend && pnpm exec vitest run src/features/apertures/__tests__/operation-frame-match.test.ts src/features/apertures/__tests__/picker-filters.test.ts src/features/apertures/__tests__/ApertureElementCardStack.test.tsx
+```

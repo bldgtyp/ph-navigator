@@ -110,6 +110,7 @@ export function filterFrameRows(
 function normalizeCatalogLabel(value: string): string {
   return value
     .trim()
+    .replace(/\s*\([^)]*\)\s*$/, "")
     .toLowerCase()
     .replace(/[\s_-]+/g, "");
 }
