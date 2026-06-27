@@ -1,7 +1,8 @@
 ---
 DATE: 2026-06-27
-TIME: 17:30 ET
-STATUS: Active — Phase 1 (schema foundation) landed. Phases 2–5 not started.
+TIME: 18:30 ET
+STATUS: Active — Phases 1–2 landed (schema + resolver, behavior-neutral).
+        Phases 3–5 not started.
 AUTHOR: Claude (Opus 4.8) + Ed
 SCOPE: State tracker for the access-capability-model refactor.
 RELATED:
@@ -11,9 +12,10 @@ RELATED:
 
 # STATUS — Access Capability Model
 
-**State:** Active. Phase 1 (schema foundation) is implemented and green; the
-model/schema/decisions were agreed with Ed on 2026-06-27 and the phase sequence
-lives in `PLAN.md`.
+**State:** Active. Phases 1–2 (schema foundation + capability resolver) are
+implemented and green — both behavior-neutral (the binary check now flows through
+the resolver). The model/schema/decisions were agreed with Ed on 2026-06-27 and
+the phase sequence lives in `PLAN.md`.
 
 ## Where things stand
 
@@ -35,7 +37,16 @@ lives in `PLAN.md`.
   (grant/revoke/set-staff), held Phase-5 DDL in `backend/alembic/held/`, and
   `tests/test_access_user_grants.py`. Behavior-neutral: nothing reads the new
   columns yet. `ty`/`ruff`/`pytest`/boundary-check green; up/down/up clean.
-- **Phases 2–5: not started.**
+- **Phase 2 — capability resolver: DONE.** `features/access/principals.py`
+  (`ViewerPrincipal`/`UserPrincipal`) + `capabilities.py` (`PROJECT_VIEW`/
+  `PROJECT_EDIT`/`CATALOG_EDIT`, `CLIENT_CAPS`/`MEMBER_CAPS`, `capabilities_for`).
+  The seam (`features/projects/access.py`) resolves a principal, derives
+  `capabilities`/`is_editor`, and gates via `require_capability`; `require_editor_user`
+  and the MCP path (`project_access_for_user`) flow through it. Beta reproduces
+  today's allow/deny exactly (anonymous→`client`, session→`member`) — full suite
+  (1155) green, behavior-neutral. Grant resolution is scope-filtered to global
+  grants (scope-aware resolution deferred to Phase 5).
+- **Phases 3–5: not started.**
 
 ## Decided (locked)
 
@@ -53,16 +64,18 @@ lives in `PLAN.md`.
 
 ## Next step
 
-**Phase 2 — capability resolver in the seam** (PLAN.md §Phase 2). Grow
-`capabilities_for` / `require_capability` in `features/projects/access.py`, with
-the `CLIENT_CAPS` / `MEMBER_CAPS` bundles and capability constants in
-`features/access/` (the home Phase 1 created). Resolver defaults to today's
-behavior, so P1+P2 land invisibly; P3+P4 are the only observable beta changes;
-P5 stays deferred to the RBC trigger.
+**Phase 3 — backend beta deltas** (PLAN.md §Phase 3): the first *observable*
+changes. Add export/private capabilities (not in `CLIENT_CAPS`) and migrate the
+specific routes onto `require_capability`: gate the anon-readable exports
+(apertures/envelope/equipment/model/document downloads), redact
+`phius_dropbox_url` + `client` from `client` viewers, and gate catalog writes on
+`catalog.edit`. P4 is the frontend match; P5 stays deferred to the RBC trigger.
 
 ## Verification
 
-- Phase 1: `make ci` gate green (`ty`/`ruff`/`pytest`/boundary-check);
-  `tests/test_access_user_grants.py` covers the migration columns, grant
-  insert/list/revoke, active-grant uniqueness, and the global-scope CHECK;
-  alembic up/down/up roundtrip clean. Later phase gates are defined in PLAN.md.
+- Phase 1: `make ci` gate green; `tests/test_access_user_grants.py` covers the
+  migration columns, grant insert/list/revoke, active-grant uniqueness, and the
+  global-scope CHECK; alembic up/down/up roundtrip clean.
+- Phase 2: backend CI green; `tests/test_access_resolver.py` pins the beta
+  bundles + the 401-viewer/403-user contract; full suite (1155) unchanged →
+  behavior-neutral. Later phase gates are defined in PLAN.md.

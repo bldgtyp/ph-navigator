@@ -1,10 +1,10 @@
 ---
 DATE: 2026-06-27
 TIME: 16:10 ET
-STATUS: Active — Phase 1 (schema foundation) landed. Capability-based access
-        model replacing the binary editor/viewer check, future-proofed for
-        multi-tenant teams + viewer shares. Contract + schema + phased plan in
-        place; behavior-neutral schema migrated.
+STATUS: Active — Phases 1–2 landed (schema foundation + capability resolver,
+        both behavior-neutral). Capability-based access model replacing the
+        binary editor/viewer check, future-proofed for multi-tenant teams +
+        viewer shares. Phases 3–5 not started.
 AUTHOR: Claude (Opus 4.8) + Ed
 SCOPE: Router for the access-capability-model refactor.
 RELATED:
@@ -52,6 +52,9 @@ duplicated, here.
 
 ## Status
 
-**Phase 1 (schema foundation) landed** — behavior-neutral columns + `user_grants`
-(migration `20260627_0003`), `features/access/`, and the `manage_user_access` CLI.
-Next is Phase 2 (the capability resolver in the seam) — see STATUS.md.
+**Phases 1–2 landed** — the behavior-neutral foundation. Phase 1: columns +
+`user_grants` (migration `20260627_0003`), `features/access/`, the
+`manage_user_access` CLI. Phase 2: the capability resolver (`principals` +
+`capabilities` + `require_capability`) behind the `features/projects/access.py`
+seam, reproducing today's binary allow/deny. Next is Phase 3 (the first
+observable backend deltas) — see STATUS.md.

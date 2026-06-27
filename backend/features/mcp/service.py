@@ -25,7 +25,7 @@ from features.mcp.models import (
     McpTokenRecord,
 )
 from features.projects import repository as projects_repository
-from features.projects.access import ProjectAccess, require_editor_user
+from features.projects.access import ProjectAccess, project_access_for_user, require_editor_user
 from features.projects.models import ProjectSummary
 from features.shared.errors import api_error
 
@@ -158,13 +158,12 @@ def project_access_for_token(token: McpTokenRecord, project_id: UUID, scope: Mcp
         raise McpProjectDeletedError(project_row)
     if user_row is None:
         raise PermissionError("mcp_issuing_user_not_found")
-    user_fields = UserPublic.model_fields.keys()
-    return ProjectAccess(
-        project_id=project_id,
-        mode="view",
-        user=UserPublic.model_validate({key: user_row[key] for key in user_fields}),
-        project=ProjectSummary.model_validate({key: project_row[key] for key in ProjectSummary.model_fields}),
-    )
+    # The token acts as its issuer: resolve the issuer's capabilities the same
+    # way the request seam does. (Token-scope intersection is Phase 5; today the
+    # project/scope boundary is enforced by require_token_scope above.)
+    user = UserPublic.model_validate({key: user_row[key] for key in UserPublic.model_fields})
+    project = ProjectSummary.model_validate({key: project_row[key] for key in ProjectSummary.model_fields})
+    return project_access_for_user(user, project, "view")
 
 
 class PhNavigatorTokenVerifier(TokenVerifier):

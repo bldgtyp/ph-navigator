@@ -25,7 +25,7 @@ from features.project_document.migrations import (
 from features.project_document.schema_mutations import AddFieldMutation
 from features.project_document.tables.rooms import ROOMS_BUILT_IN_FIELD_DEFS
 from features.project_document.validation import document_etag, validate_document
-from features.projects.access import ProjectAccess
+from features.projects.access import project_access_for_user
 from features.projects.models import CreateProjectRequest, ProjectSummary
 from features.projects.service import empty_project_document
 from main import app
@@ -605,11 +605,10 @@ def test_mcp_schema_mutation_rejects_project_document_over_size_limit(
             "expected_schema_fingerprint": field_defs_fingerprint(initial["field_defs"]),
         }
     )
-    access = ProjectAccess(
-        project_id=UUID(str(project_id)),
-        mode="edit",
-        user=user,
-        project=ProjectSummary.model_validate({field: project[field] for field in ProjectSummary.model_fields}),
+    access = project_access_for_user(
+        user,
+        ProjectSummary.model_validate({field: project[field] for field in ProjectSummary.model_fields}),
+        "edit",
     )
     monkeypatch.setattr(settings, "project_document_max_body_bytes", 1)
 
