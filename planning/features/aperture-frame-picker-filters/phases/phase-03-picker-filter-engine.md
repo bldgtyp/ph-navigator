@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
 TIME: 08:56 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Side and operation-family filtering used by frame picker dropdown rows.
 RELATED:
@@ -133,3 +133,20 @@ reasonable. Do not rewrite stored catalog labels.
 - Users can turn side filtering off to browse all frame locations.
 - Users can turn operation filtering on to narrow by operation family.
 - Existing assignments are never cleared by these filters.
+
+## Completion evidence
+
+Implemented on 2026-06-27:
+
+- Added side and operation-family helpers in `picker-filters.ts`.
+- Switched `FramePicker` to fetch manufacturer-scoped active rows and apply
+  side/operation filters client-side.
+- Preserved selected-row prepending when active filters would otherwise hide the
+  current assignment.
+- Added a filter-aware empty message for rows excluded by current filters.
+
+Verification passed:
+
+```bash
+cd frontend && pnpm exec vitest run src/features/apertures/__tests__/picker-filters.test.ts src/features/apertures/__tests__/FramePickerFilterEngine.test.tsx src/features/apertures/__tests__/PickerPortal.test.tsx
+```

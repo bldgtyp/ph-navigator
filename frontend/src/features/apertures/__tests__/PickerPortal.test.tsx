@@ -57,7 +57,7 @@ function QueryStub({ children }: { children: ReactNode }) {
   queryClient.setQueryData(
     [
       ...catalogQueryKeys.frameTypesList(),
-      { location: "head", operation: "Fixed", manufacturers: null },
+      { location: null, operation: null, manufacturers: null },
     ],
     { items: [FRAME_ROW] },
   );
