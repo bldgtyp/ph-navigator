@@ -16,13 +16,26 @@ from database import connection, transaction
 from features.auth.service import create_or_update_user
 from features.project_document.document import CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION, ProjectDocumentV1
 from features.project_document.drafts import apply_schema_mutation_to_draft
+from features.project_document.migrations import (
+    SchemaVersionInvalidError,
+    SchemaVersionMissingError,
+    SchemaVersionTooNewError,
+    upgrade_project_document,
+)
 from features.project_document.schema_mutations import AddFieldMutation
 from features.project_document.tables.rooms import ROOMS_BUILT_IN_FIELD_DEFS
+from features.project_document.validation import document_etag, validate_document
 from features.projects.access import ProjectAccess
 from features.projects.models import CreateProjectRequest, ProjectSummary
 from features.projects.service import empty_project_document
 from main import app
-from tests.project_document_helpers import field_defs_fingerprint
+from tests.project_document_helpers import (
+    draft_schema_and_etag,
+    field_defs_fingerprint,
+    project_version_schema,
+    set_draft_schema,
+    set_saved_version_schema,
+)
 
 ORIGIN = "http://localhost:5173"
 
@@ -200,6 +213,48 @@ def test_empty_project_document_has_rooms_and_option_lists() -> None:
     assert body.tables.rooms.field_defs
     assert body.single_select_options["rooms.floor_level"] == []
     assert body.single_select_options["rooms.building_zone"] == []
+
+
+def test_project_document_upgrade_entrypoint_accepts_current_and_v0_baseline() -> None:
+    raw = empty_project_document(
+        CreateProjectRequest(name="West Stockbridge House", bt_number="2426", cert_programs=[])
+    ).model_dump(mode="json")
+
+    current = upgrade_project_document(raw)
+    assert current.original_schema_version == CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
+    assert current.target_schema_version == CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
+    assert current.applied_steps == ()
+    assert current.document == ProjectDocumentV1.model_validate(raw)
+
+    old = {**raw, "schema_version": 0}
+    upgraded = upgrade_project_document(old)
+    assert upgraded.original_schema_version == 0
+    assert upgraded.target_schema_version == CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
+    assert upgraded.applied_steps == ("_upgrade_v0_to_v1",)
+    assert upgraded.document.schema_version == CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
+    assert upgraded.requires_persisted_rewrite is True
+
+
+def test_project_document_upgrade_rejects_malformed_and_future_versions() -> None:
+    raw = empty_project_document(
+        CreateProjectRequest(name="West Stockbridge House", bt_number="2426", cert_programs=[])
+    ).model_dump(mode="json")
+
+    missing = dict(raw)
+    del missing["schema_version"]
+    with pytest.raises(SchemaVersionMissingError, match="schema_version is required"):
+        upgrade_project_document(missing)
+
+    with pytest.raises(SchemaVersionInvalidError, match="must be an integer"):
+        upgrade_project_document({**raw, "schema_version": "1"})
+
+    with pytest.raises(SchemaVersionTooNewError, match="newer than this app"):
+        upgrade_project_document({**raw, "schema_version": CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION + 1})
+
+    with pytest.raises(HTTPException) as exc_info:
+        validate_document(missing)
+    assert exc_info.value.status_code == 422
+    assert "schema_version is required" in str(exc_info.value.detail)
 
 
 def test_first_rooms_replace_lazily_creates_draft(clean_document_tables: None) -> None:
@@ -708,6 +763,121 @@ def test_save_as_creates_active_version_from_draft_and_downloads_json(
     assert rooms_json.json()["rooms"]["field_defs"]
 
 
+def test_v0_saved_version_upgrades_on_read_without_mutating_stored_version(
+    clean_document_tables: None,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    set_saved_version_schema(version_id, 0)
+
+    document = client.get(document_url(project_id, version_id))
+    assert document.status_code == 200
+    assert document.json()["schema_version"] == CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
+
+    rooms = client.get(saved_rooms_url(project_id, version_id))
+    assert rooms.status_code == 200
+    assert rooms.json()["source"] == "version"
+    assert rooms.json()["version_etag"] == document_etag(ProjectDocumentV1.model_validate(document.json()))
+
+    project_json = client.get(download_url(project_id, version_id))
+    assert project_json.status_code == 200
+    assert project_json.json()["schema_version"] == 0
+    assert project_version_schema(version_id) == (0, 0)
+
+
+def test_v0_saved_version_inherits_upgrade_for_draft_and_diff_reads(
+    clean_document_tables: None,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    set_saved_version_schema(version_id, 0)
+
+    draft = create_rooms_draft(client, project_id, version_id)
+    assert draft["initial"]["source"] == "version"
+    assert draft["created"]["source"] == "draft"
+
+    diff = client.get(f"/api/v1/projects/{project_id}/diff?from={version_id}&to=draft")
+    assert diff.status_code == 200
+    assert diff.json()["tables"][0]["table"] == "rooms"
+    assert project_version_schema(version_id) == (0, 0)
+
+
+def test_v0_persisted_draft_rewrites_to_current_schema_on_read(
+    clean_document_tables: None,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    create_rooms_draft(client, project_id, version_id)
+    old_draft_etag = set_draft_schema(version_id, 0)
+
+    draft = client.get(draft_url(project_id, version_id))
+    assert draft.status_code == 200
+    assert draft.json()["source"] == "draft"
+    assert draft.json()["draft_etag"] != old_draft_etag
+    assert draft_schema_and_etag(version_id)[:2] == (
+        CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION,
+        CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION,
+    )
+
+    rooms = client.get(draft_rooms_url(project_id, version_id))
+    assert rooms.status_code == 200
+    assert rooms.json()["source"] == "draft"
+    assert rooms.json()["rooms"][0]["id"] == "rm_living"
+
+
+def test_save_as_from_v0_saved_version_persists_current_schema(
+    clean_document_tables: None,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    set_saved_version_schema(version_id, 0)
+
+    saved_as = client.post(
+        save_as_url(project_id, version_id),
+        headers={"Origin": ORIGIN},
+        json={"name": "Current Shape Copy", "kind": "working", "locked": False},
+    )
+
+    assert saved_as.status_code == 200
+    copied_id = saved_as.json()["version"]["id"]
+    copied_raw = client.get(download_url(project_id, copied_id))
+    assert copied_raw.status_code == 200
+    assert copied_raw.json()["schema_version"] == CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
+    assert project_version_schema(version_id) == (0, 0)
+
+
+def test_save_as_from_v0_saved_version_rejects_upgraded_body_over_size_limit(
+    clean_document_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    set_saved_version_schema(version_id, 0)
+    monkeypatch.setattr(settings, "project_document_max_body_bytes", 1)
+
+    response = client.post(
+        save_as_url(project_id, version_id),
+        headers={"Origin": ORIGIN},
+        json={"name": "Too Large Copy", "kind": "working", "locked": False},
+    )
+
+    assert response.status_code == 413
+    body = response.json()
+    assert body["error_code"] == "project_document_too_large"
+    assert body["details"]["size_bytes"] > body["details"]["limit_bytes"]
+    assert project_version_schema(version_id) == (0, 0)
+
+
 def test_project_download_returns_raw_body_when_schema_is_invalid(
     clean_document_tables: None,
 ) -> None:
@@ -721,6 +891,7 @@ def test_project_download_returns_raw_body_when_schema_is_invalid(
     rooms = client.get(saved_rooms_url(project_id, version_id))
     assert rooms.status_code == 422
     assert rooms.json()["error_code"] == "invalid_project_document"
+    assert "newer than this app" in rooms.json()["details"]["errors"][0]
 
     document = client.get(document_url(project_id, version_id), headers={"X-Request-ID": "schema-safe"})
     assert document.status_code == 200

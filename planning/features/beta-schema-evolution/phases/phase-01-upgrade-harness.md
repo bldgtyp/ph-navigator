@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
 TIME: 11:00 EDT
-STATUS: Planned - implementation not started.
+STATUS: Implemented on branch.
 AUTHOR: Codex with Ed May
 SCOPE: Phase 1 - project-document upgrade harness.
 RELATED:
@@ -111,3 +111,30 @@ Focused backend tests should cover:
 - upgraded body over the size limit;
 - save/save-as current-schema persistence.
 
+## Implementation Notes
+
+Implemented 2026-06-27:
+
+- Added `backend/features/project_document/migrations/` with a typed
+  `UpgradeResult`, migration error hierarchy, no-op current-schema path, future
+  version rejection, malformed version rejection, and a synthetic pre-beta
+  `0 -> 1` step that stamps current `schema_version` for seam testing.
+- Wired `validation.py` through the upgrade entry point so table slices, diff,
+  MCP reads, and export/read helpers inherit the same current-shape validation
+  funnel.
+- Kept raw full-document download on `get_raw_saved_document()` un-upgraded per
+  D9.
+- Added read-time draft rewrite support for older `project_version_drafts` rows
+  while leaving `project_versions` immutable on read per D2/D6.
+- Preserved save/save-as current-schema writes through the existing repository
+  serialization paths.
+
+## Verification Evidence
+
+```bash
+cd backend && uv run ruff check tests/test_project_document.py tests/test_mcp.py tests/project_document_helpers.py features/project_document/migrations features/project_document/validation.py features/project_document/store.py features/project_document/repository.py features/project_document/write_spine.py
+cd backend && uv run ty check tests/test_project_document.py tests/test_mcp.py tests/project_document_helpers.py features/project_document/migrations features/project_document/validation.py features/project_document/store.py features/project_document/repository.py features/project_document/write_spine.py
+cd backend && uv run pytest tests/test_project_document.py tests/test_mcp.py::test_mcp_read_tools_return_document_and_structured_write_rejection
+```
+
+Result: 38 passed.

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
 TIME: 11:00 EDT
-STATUS: Active - planning packet created; implementation not started.
+STATUS: Active - Phase 1 implemented on branch; Phase 2 next.
 AUTHOR: Codex with Ed May
 SCOPE: Router for the beta schema-evolution feature.
 RELATED:
@@ -51,7 +51,7 @@ mechanism.
 
 | Phase | Title | Purpose | State |
 |---|---|---|---|
-| 1 | Project-document upgrade harness | Establish the forward-only upgrader and wire read/save semantics | Planned |
+| 1 | Project-document upgrade harness | Establish the forward-only upgrader and wire read/save semantics | Implemented on branch |
 | 2 | Golden corpus and regression tests | Lock v1 serialized fixtures and prove upgrade/idempotence behavior | Planned |
 | 3 | Audit CLI and recovery runbook | Give beta operators a repeatable corpus/DB drill without DB mutation | Planned |
 | 4 | FieldDef drift and schema-bump docs | Make persisted built-in field changes visible and reviewable | Planned |
@@ -76,4 +76,3 @@ Out of scope:
 - climate bundle schema (`BUNDLE_SCHEMA_VERSION`) - static object-store asset on
   its own evolution lane (named in Phase 4's inventory so it is not missed);
 - product-facing schema editing UX.
-

@@ -32,6 +32,7 @@ from features.mcp.tools import (
 from features.project_document.validation import document_etag
 from main import app
 from tests.envelope.test_envelope_document_contracts import envelope_body, write_saved_body
+from tests.project_document_helpers import set_saved_version_schema
 
 ORIGIN = "http://localhost:5173"
 
@@ -405,6 +406,7 @@ async def test_mcp_read_tools_return_document_and_structured_write_rejection(cle
     project = create_project(client)
     project_id = project["id"]
     version_id = project["active_version_id"]
+    set_saved_version_schema(version_id, 0)
     issued = client.post(
         f"/api/v1/projects/{project_id}/mcp-tokens",
         headers={"Origin": ORIGIN},
@@ -451,6 +453,7 @@ async def test_mcp_read_tools_return_document_and_structured_write_rejection(cle
                     saved_document = json.loads(tool_text(saved_document_result))
                     assert saved_document["source"] == "version"
                     assert saved_document["draft_etag"] is None
+                    assert saved_document["body"]["schema_version"] == 1
 
                     draft_url = f"/api/v1/projects/{project_id}/versions/{version_id}/draft/tables/rooms"
                     initial = client.get(draft_url)

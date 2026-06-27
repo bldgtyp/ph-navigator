@@ -13,6 +13,11 @@ from starlette import status
 
 from config import settings
 from features.project_document.document import ProjectDocumentV1
+from features.project_document.migrations import (
+    ProjectDocumentMigrationError,
+    UpgradeResult,
+    upgrade_project_document,
+)
 from features.shared.errors import api_error
 
 JsonValue: TypeAlias = None | bool | int | float | str | list["JsonValue"] | dict[str, "JsonValue"]
@@ -77,9 +82,9 @@ def enforce_document_body_size(
 
 
 def validate_document(raw_body: object) -> ProjectDocumentV1:
-    document, errors = validate_document_with_errors(raw_body)
-    if document is not None:
-        return document
+    result, errors = upgrade_document_with_errors(raw_body)
+    if result is not None:
+        return result.document
     raise api_error(
         422,
         "invalid_project_document",
@@ -89,8 +94,15 @@ def validate_document(raw_body: object) -> ProjectDocumentV1:
 
 
 def validate_document_with_errors(raw_body: object) -> tuple[ProjectDocumentV1 | None, list[str]]:
+    result, errors = upgrade_document_with_errors(raw_body)
+    return (result.document if result is not None else None), errors
+
+
+def upgrade_document_with_errors(raw_body: object) -> tuple[UpgradeResult | None, list[str]]:
     try:
-        return ProjectDocumentV1.model_validate(raw_body), []
+        return upgrade_project_document(raw_body), []
+    except ProjectDocumentMigrationError as exc:
+        return None, [str(exc)]
     except ValidationError as exc:
         return None, [str(error["msg"]) for error in exc.errors()]
 
