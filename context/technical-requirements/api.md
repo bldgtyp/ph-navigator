@@ -29,8 +29,9 @@ All endpoints live under a versioned prefix: `/api/v1/...`. Hard rules:
 - **Document body schema versioning is independent** from API
   versioning. Before first deploy, `/api/v1` serves only the current
   clean-baseline project-document shape (`schema_version: 1`) and
-  rejects non-current bodies. Future body-schema bumps require the
-  deferred pre-deploy schema-migration mechanism in §10.5.
+  rejects unsupported bodies. Future body-schema bumps use the beta
+  schema-evolution lane in §10.5: forward-only project-document upgraders,
+  fixtures, and the audit CLI.
 - **Deprecation marking.** Endpoints scheduled for removal carry a
   `Deprecation: true` response header and an entry in
   `/api/v1/deprecations`.

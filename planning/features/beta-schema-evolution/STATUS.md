@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
-TIME: 11:00 EDT
-STATUS: Active - Phases 1-3 implemented on branch; Phase 4 next.
+TIME: 13:05 EDT
+STATUS: Active - Phases 1-4 implemented on branch; Phase 5 next.
 AUTHOR: Codex with Ed May
 SCOPE: Current state, next step, blockers, verification for beta schema evolution.
 RELATED:
@@ -22,6 +22,7 @@ RELATED:
 - Phase 1 is implemented on branch as of 2026-06-27 11:59 EDT.
 - Phase 2 is implemented on branch as of 2026-06-27 12:21 EDT.
 - Phase 3 is implemented on branch as of 2026-06-27 12:37 EDT.
+- Phase 4 is implemented on branch as of 2026-06-27 13:05 EDT.
 
 ## Decision Ledger
 
@@ -45,15 +46,15 @@ RELATED:
 | 1 - project-document upgrade harness | Implemented on branch | none |
 | 2 - golden corpus and regression tests | Implemented on branch | none |
 | 3 - audit CLI and recovery runbook | Implemented on branch | none |
-| 4 - FieldDef drift and schema-bump docs | Planned | Phase 3 audit CLI |
+| 4 - FieldDef drift and schema-bump docs | Implemented on branch | none |
 | 5 - beta gate drill and closeout | Planned | Phases 1-4 |
 
 ## Next Step
 
-Start Phase 4 after the Phase 3 closeout commit:
+Start Phase 5 after the Phase 4 closeout commit:
 
 ```text
-planning/features/beta-schema-evolution/phases/phase-04-fielddef-drift-docs.md
+planning/features/beta-schema-evolution/phases/phase-05-beta-gate-drill.md
 ```
 
 ## Blockers
@@ -104,3 +105,13 @@ cd backend && uv run python scripts/check_project_document_upgrade.py --db --str
 
 Result: 5 passed; fixture audit passed for 2 fixture bodies; local DB audit
 passed for 2 saved-version bodies and 0 draft bodies.
+
+Phase 4:
+
+```bash
+cd backend && uv run ruff check features/project_document/fielddef_drift.py scripts/check_project_document_upgrade.py tests/test_project_document_fielddef_drift.py tests/test_project_document_schema_guard.py tests/test_project_document_upgrade_audit_cli.py
+cd backend && uv run ty check features/project_document/fielddef_drift.py scripts/check_project_document_upgrade.py tests/test_project_document_fielddef_drift.py tests/test_project_document_schema_guard.py tests/test_project_document_upgrade_audit_cli.py
+cd backend && uv run pytest tests/test_project_document_fielddef_drift.py tests/test_project_document_schema_guard.py tests/test_project_document_upgrade_audit_cli.py
+```
+
+Result: 12 passed.

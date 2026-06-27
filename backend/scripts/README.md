@@ -32,5 +32,7 @@ For project-document schema bump checks:
 
 ```bash
 cd backend && uv run python scripts/check_project_document_upgrade.py --fixtures --strict
+cd backend && uv run python scripts/check_project_document_upgrade.py --fixtures --fielddef-drift --strict
 cd backend && uv run python scripts/check_project_document_upgrade.py --db --strict
+cd backend && uv run python scripts/check_project_document_upgrade.py --db --fielddef-drift --strict
 ```

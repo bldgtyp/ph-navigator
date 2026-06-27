@@ -952,12 +952,12 @@ Rules (post-Phase 1b):
     - `locked` arrays — render-time overlay, NOT persisted (see §6.6.2);
     - the canonical ordered list of built-in `field_key`s — drives the
       schema fingerprint's built-in slice.
-- **Current clean-baseline contract:** `schema_version: 1` is the only
-  supported pre-deploy project-document schema. The prior dev-only bump
-  history through v12 was squashed back to one current schema because no real
-  project bodies exist. There are no read-time project-document shims before
-  first deploy; invalid bodies surface through the read-safe envelope. The
-  schema-migration mechanism is deferred to the pre-first-deploy gate.
+- **Current clean-baseline contract:** `schema_version: 1` is the current
+  project-document schema after the prior dev-only bump history through v12 was
+  squashed back to one baseline. Future project-document schema changes use the
+  beta schema-evolution lane: dict-to-dict read-time upgraders, committed
+  fixture snapshots, the audit CLI, and the schema-bump checklist. Invalid
+  bodies still surface through the read-safe envelope.
 - **Record links** store values in
   `custom_links: dict[str, list[str]]` on every FieldDef-capable row. The
   storage model admits `CustomFieldType.linked_record` and does not use typed

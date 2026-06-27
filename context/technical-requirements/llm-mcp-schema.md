@@ -332,23 +332,16 @@ generation exists.
 
 ### 10.5 Schema versioning — open-old-projects safety
 
-**The hard guarantee** (post-MVP): a project version that was openable
+**The hard guarantee** (activated for real beta data): a project version that was openable
 when it was saved must remain openable forever. No production release
 ships if it breaks reads of any prior document `schema_version`.
 
-**Pre-MVP exception (still active — pre-deploy).** The MVP build is
-pre-deploy. Schema-version bumps land as clean cuts: Phase 3 of
-`backend-data-architecture-cleanup` reset
-`CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION` to **`1`** and deleted the partial
-read-time shims. Bodies that fail current-schema validation are surfaced
-through the read-safe envelope rather than hard-rejected. Dev DBs and fixtures
-rebuild on the phase boundary.
-
-The canonical post-save migration mechanism (read-time forward-only shim chain
-in items 5–9, vs. Alembic body-rewrite) must be **chosen and the golden-file
-corpus built before the first real save**. Until then, treat "bump
-`schema_version`" as a gated operation. See Phase 7 in
-`planning/archive/dated/2026-06-24/backend-data-architecture-cleanup/phases/phase-07-schema-migration-mechanism.md`.
+**Beta gate.** The current clean baseline is
+`CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION == 1`. Before the first real BLDGTYP
+beta project save, schema bumps are still allowed, but every bump now uses the
+project-document upgrade lane: a read-time forward-only shim chain, committed
+fixtures, an audit CLI drill, and the schema-bump checklist in
+`planning/features/beta-schema-evolution/schema-bump-checklist.md`.
 
 Mechanisms:
 
@@ -371,28 +364,26 @@ Mechanisms:
    we couldn't fully migrate — please contact admin" view that **still
    permits JSON download**. This is useful in Phase 1 but is not the
    full schema-migration product guarantee.
-5. **Forward-only upgrade shims (post-MVP).** Pure functions, one per
-   version step: `upgrade_v1_to_v2.py`, `upgrade_v2_to_v3.py`, ... On
-   read, if `body.schema_version < CURRENT`, apply shims in sequence
-   and return the upgraded view. **The original row is not mutated.**
-   Lazy migration — only when the user explicitly Saves does the new
-   body land at `CURRENT`.
-6. **Golden-file corpus (post-MVP).** `tests/document_schema/fixtures/v1/*.json`,
-   `v2/*.json`, etc. CI runs every fixture through every applicable
-   shim chain on every PR. New shims must produce identical results
-   to the previous CI run on the same corpus, and round-trip through
-   Pydantic validation.
-7. **Production-corpus drill before bumping schema_version (post-MVP).** Before
-   merging a new `CURRENT`, a CI job runs the new shim against every
-   live project body in a staging snapshot. Any failure blocks the
-   merge.
-8. **Deprecation marker on schema_version, never removal (post-MVP).** A version
+5. **Forward-only upgrade shims.** Pure dict-to-dict functions, one per
+   version step. On read, if `body.schema_version < CURRENT`, apply shims in
+   sequence and return the upgraded view. **The original saved version row is
+   not mutated.** Lazy migration happens only when the user explicitly saves a
+   draft or saves as a new version.
+6. **Golden-file corpus.** `backend/tests/project_document_schema/fixtures/v1`,
+   `v2`, etc. CI runs every fixture through every applicable shim chain on every
+   PR. New shims must preserve old fixture inputs, produce committed upgraded
+   snapshots, and round-trip through current Pydantic validation.
+7. **Corpus drill before bumping schema_version.** Before merging a new
+   `CURRENT`, run `scripts/check_project_document_upgrade.py` against fixtures
+   and the available local/staging project bodies. Any failure blocks the bump.
+8. **Deprecation marker on schema_version, never removal.** A version
    N's shims are kept indefinitely. We do not "drop support for old
    schema versions" — there's no upside, only risk.
-9. **Pydantic models per schema version (post-MVP).** `ProjectDocumentV1`,
-   `ProjectDocumentV2`, ..., living side-by-side. Code that reads
-   "current" pins to the latest; code that handles raw old bodies
-   uses the matching version model.
+9. **No per-version Pydantic model stack.** Upgrade steps operate on raw dicts
+   and validation happens once against the current `ProjectDocument` model after
+   all steps apply. Do not maintain `ProjectDocumentV1`, `ProjectDocumentV2`,
+   ... side by side unless a future real-data recovery case proves the smaller
+   lane insufficient.
 
 This is the **only** migration path for project-side schema. No
 ALTER TABLE for project entities. All evolution flows through the
