@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
 TIME: 11:00 EDT
-STATUS: Active - Phase 1 implemented on branch; Phase 2 next.
+STATUS: Active - Phases 1-2 implemented on branch; Phase 3 next.
 AUTHOR: Codex with Ed May
 SCOPE: Current state, next step, blockers, verification for beta schema evolution.
 RELATED:
@@ -20,6 +20,7 @@ RELATED:
 - Ed accepted all open-decision recommendations on 2026-06-27.
 - This active feature packet now owns the beta schema-evolution work.
 - Phase 1 is implemented on branch as of 2026-06-27 11:59 EDT.
+- Phase 2 is implemented on branch as of 2026-06-27 12:21 EDT.
 
 ## Decision Ledger
 
@@ -41,34 +42,26 @@ RELATED:
 | Phase | State | Blocker |
 |---|---|---|
 | 1 - project-document upgrade harness | Implemented on branch | none |
-| 2 - golden corpus and regression tests | Planned | none |
-| 3 - audit CLI and recovery runbook | Planned | Phase 1 API shape |
+| 2 - golden corpus and regression tests | Implemented on branch | none |
+| 3 - audit CLI and recovery runbook | Planned | Phase 1 API shape and Phase 2 fixtures |
 | 4 - FieldDef drift and schema-bump docs | Planned | none |
 | 5 - beta gate drill and closeout | Planned | Phases 1-4 |
 
 ## Next Step
 
-Start Phase 2 after the Phase 1 closeout commit:
+Start Phase 3 after the Phase 2 closeout commit:
 
 ```text
-planning/features/beta-schema-evolution/phases/phase-02-golden-corpus.md
+planning/features/beta-schema-evolution/phases/phase-03-audit-cli-runbook.md
 ```
 
 ## Blockers
 
 None for planning.
 
-Implementation should not start until explicitly requested; this packet was
-created as a planning step.
+None for implementation.
 
 ## Verification Posture
-
-For this docs-only packet:
-
-- run `git diff --check` on the new planning files;
-- no runtime/backend/frontend tests are required.
-
-For implementation phases:
 
 - focused backend tests for project document validation, drafts, saved versions,
   migration errors, and fixtures;
@@ -87,3 +80,13 @@ cd backend && uv run pytest tests/test_project_document.py tests/test_mcp.py::te
 ```
 
 Result: 38 passed.
+
+Phase 2:
+
+```bash
+cd backend && uv run ruff check tests/test_project_document_schema_migrations.py
+cd backend && uv run ty check tests/test_project_document_schema_migrations.py
+cd backend && uv run pytest tests/test_project_document_schema_migrations.py
+```
+
+Result: 2 passed.
