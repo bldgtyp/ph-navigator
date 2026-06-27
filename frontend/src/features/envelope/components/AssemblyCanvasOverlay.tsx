@@ -385,14 +385,16 @@ function SegmentAddControls({
       <CanvasAddButton
         id={`assembly-segment-add-before-${layerId}-${segmentId}`}
         label={`Add segment before ${segmentLabel}`}
-        tooltip="Add Segment Before"
+        tooltip="Add segment before"
+        tooltipPlacement="start"
         className="segment-add-button add-left"
         onClick={onAddLeft}
       />
       <CanvasAddButton
         id={`assembly-segment-add-after-${layerId}-${segmentId}`}
         label={`Add segment after ${segmentLabel}`}
-        tooltip="Add Segment After"
+        tooltip="Add segment after"
+        tooltipPlacement="end"
         className="segment-add-button add-right"
         onClick={onAddRight}
       />
@@ -404,12 +406,14 @@ function CanvasAddButton({
   id,
   label,
   tooltip,
+  tooltipPlacement,
   className,
   onClick,
 }: {
   id?: string;
   label: string;
   tooltip?: string;
+  tooltipPlacement?: "start" | "end";
   className?: string;
   onClick: (event: MouseEvent<HTMLButtonElement>) => void;
 }) {
@@ -420,7 +424,8 @@ function CanvasAddButton({
       type="button"
       className={buttonClassName}
       aria-label={label}
-      data-tooltip={tooltip || undefined}
+      data-toolbar-tooltip={tooltip || undefined}
+      data-toolbar-tooltip-placement={tooltipPlacement}
       onClick={onClick}
     >
       <Plus size={15} aria-hidden="true" />

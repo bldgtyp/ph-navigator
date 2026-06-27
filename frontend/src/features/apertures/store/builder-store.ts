@@ -15,6 +15,7 @@ export type ApertureHoveredRegion = {
 };
 
 export type AperturePickPasteMode = "idle" | "picking" | "picked" | "pasting";
+export type CanvasZoomUpdate = number | ((current: number) => number);
 
 /** The 6-field assignment payload captured by the Eyedropper. Mirrors
  *  PRD §13 — ``id`` / ``row_span`` / ``column_span`` / ``name`` are not
@@ -40,6 +41,8 @@ export type PasteUndoEntry = {
 export const PASTE_UNDO_STACK_LIMIT = 20;
 
 export type ApertureBuilderState = {
+  canvasZoom: number;
+  hasCanvasZoom: boolean;
   selectionByAperture: Record<string, string[]>;
   hoveredElementId: string | null;
   hoveredRegion: ApertureHoveredRegion | null;
@@ -51,6 +54,7 @@ export type ApertureBuilderState = {
    *  or version switch — purely ephemeral. */
   dismissedOperationWarnings: Record<string, string[]>;
 
+  setCanvasZoom: (next: CanvasZoomUpdate) => void;
   selectSingle: (apertureId: string, elementId: string) => void;
   toggleSelection: (apertureId: string, elementId: string) => void;
   clearSelection: (apertureId: string) => void;
@@ -76,6 +80,8 @@ export type ApertureBuilderState = {
 };
 
 export const useApertureBuilderStore = create<ApertureBuilderState>((set, get) => ({
+  canvasZoom: 1,
+  hasCanvasZoom: false,
   selectionByAperture: {},
   hoveredElementId: null,
   hoveredRegion: null,
@@ -83,6 +89,13 @@ export const useApertureBuilderStore = create<ApertureBuilderState>((set, get) =
   pickedAssignment: null,
   undoStacksByAperture: {},
   dismissedOperationWarnings: {},
+
+  setCanvasZoom: (next) =>
+    set((state) => {
+      const nextZoom = typeof next === "function" ? next(state.canvasZoom) : next;
+      if (state.hasCanvasZoom && state.canvasZoom === nextZoom) return state;
+      return { canvasZoom: nextZoom, hasCanvasZoom: true };
+    }),
 
   selectSingle: (apertureId, elementId) =>
     set((state) => {

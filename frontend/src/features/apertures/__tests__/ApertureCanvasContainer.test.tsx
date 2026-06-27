@@ -125,6 +125,8 @@ function ApertureCanvasHarness({
 beforeEach(() => {
   window.localStorage.clear();
   useApertureBuilderStore.setState({
+    canvasZoom: 1,
+    hasCanvasZoom: false,
     selectionByAperture: {},
     hoveredElementId: null,
     hoveredRegion: null,
@@ -198,6 +200,34 @@ describe("ApertureCanvasContainer", () => {
       rerender(
         <UnitStub>
           <ApertureCanvasHarness entry={aperture({ id: "apt_2", name: "Type B" })} />
+        </UnitStub>,
+      );
+
+      expect(screen.getByTestId("aperture-canvas-zoom")).toHaveTextContent("200%");
+    } finally {
+      clientWidthSpy.mockRestore();
+    }
+  });
+
+  it("preserves the user zoom level after the canvas unmounts and remounts", () => {
+    const clientWidthSpy = vi.spyOn(HTMLElement.prototype, "clientWidth", "get");
+    clientWidthSpy.mockReturnValue(500);
+
+    try {
+      const { rerender } = render(
+        <UnitStub>
+          <ApertureCanvasHarness entry={aperture({ id: "apt_1", name: "Type A" })} />
+        </UnitStub>,
+      );
+
+      expect(screen.getByTestId("aperture-canvas-zoom")).toHaveTextContent("300%");
+      fireEvent.click(screen.getByRole("button", { name: "Zoom out" }));
+      expect(screen.getByTestId("aperture-canvas-zoom")).toHaveTextContent("200%");
+
+      rerender(<UnitStub>{null}</UnitStub>);
+      rerender(
+        <UnitStub>
+          <ApertureCanvasHarness entry={aperture({ id: "apt_1", name: "Type A" })} />
         </UnitStub>,
       );
 

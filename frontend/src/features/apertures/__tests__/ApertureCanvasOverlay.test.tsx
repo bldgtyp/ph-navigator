@@ -97,6 +97,8 @@ function mockBounds(element: HTMLElement, width: number, height: number) {
 
 beforeEach(() => {
   useApertureBuilderStore.setState({
+    canvasZoom: 1,
+    hasCanvasZoom: false,
     selectionByAperture: {},
     hoveredElementId: null,
     hoveredRegion: null,

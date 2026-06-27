@@ -2,7 +2,7 @@
 :root {
   color-scheme: light;
 
-  /* Surface stack — see planning/features/report-tables/PRD.md §D2.
+  /* Surface stack — see planning/archive/dated/2026-06-27/report-tables/PRD.md §D2.
      Outer chrome (topbar, project tabs) is --bg-card (#fff); the
      project-page workspace body is --bg-page; the app-subtabs strip
      and other slightly-elevated surfaces are --bg-elev. */

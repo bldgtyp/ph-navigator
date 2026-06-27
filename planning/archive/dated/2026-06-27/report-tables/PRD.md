@@ -1,14 +1,14 @@
 ---
-DATE: 2026-06-09
-TIME: 14:30
-STATUS: Active — planning
+DATE: 2026-06-27
+TIME: 09:06 EDT
+STATUS: Complete — original PRD with current-code reconciliation notes
 AUTHOR: Ed (via Claude)
 SCOPE: Product/behavior contract for the report-table primitive and the
-  Envelope → Specifications restyle.
+  Envelope Materials restyle.
 RELATED:
-  - planning/features/report-tables/README.md
-  - planning/features/report-tables/decisions.md
-  - frontend/src/features/envelope/components/SpecificationsPanel.tsx
+  - planning/archive/dated/2026-06-27/report-tables/README.md
+  - planning/archive/dated/2026-06-27/report-tables/decisions.md
+  - frontend/src/features/envelope/components/MaterialsPanel.tsx
   - frontend/src/styles/tokens.css
 ---
 
@@ -24,11 +24,12 @@ characteristics:
 - Off-white shell, lighter surface for the table area, no heavy cell
   borders — separation is by row gap + light hairlines.
 - Status as a colored-dot pill (Missing/Question/Complete/N/A).
-- Attachment columns render as compact `📎 +` / `📎 N` chips.
+- Attachment columns render compact presence chips.
 - Top-of-page filter chip row replaces the old summary band; each chip
   is a status with a count.
-- Expanding a row reveals the detail/editor inline (datasheets +
-  use-sites + editor) — same data the current card layout exposes.
+- Expanding a row reveals the detail/evidence content inline
+  (datasheets + use-sites + drift/comments) — same evidence the previous
+  card layout exposed.
 
 ## Confirmed decisions
 
@@ -39,7 +40,9 @@ These four calls were confirmed by Ed before planning was recorded; see
 
 `DriftSummary` (`frontend/src/features/envelope/components/specifications/DriftSummary.tsx`)
 is removed from the Specifications view and replaced by a new
-`SpecStatusFilters` chip row:
+status-filter chip row. In current code this is the shared
+`StatusFilterChips` primitive, not a feature-local `SpecStatusFilters`
+component:
 
 - One chip per `SpecificationStatus`: `All`, `Missing`, `Question`,
   `Complete`, `N/A`, each with a live count.
@@ -77,7 +80,7 @@ at the call site.
 
 ### D3 — Report-table is a distinct primitive, NOT `<DataTable>`
 
-Specifications is a **reporting/view table**, not a data-entry table. It
+Materials is a **reporting/view table**, not a data-entry table. It
 uses a unique, dense, read-mostly visual style and must NOT be built on
 top of `<DataTable>` (which is the AirTable-style data-entry grid
 documented in `context/technical-requirements/data-table.md`).
@@ -90,18 +93,19 @@ frontend/src/shared/ui/report-table/
   ReportTable.css          # shared report-table styles
   StatusPill.tsx           # colored-dot + label pill
   StatusFilterChips.tsx    # chip-row filter primitive
-  AttachmentChipCell.tsx   # compact 📎 +/N variant of AttachmentCell
+  AttachmentChipCell.tsx   # compact presence-chip variant of AttachmentCell
   index.ts                 # public exports
 ```
 
-The Specifications page consumes these via column-config. Future
-consumers (window glazing, window-frame elements, additional spec
-rollups) reuse the same primitives so the visual style stays
-consistent.
+The Materials page consumes these via column-config. Follow-on consumers
+(Apertures Glazings, Apertures Frames, additional spec rollups) reuse the
+same primitives so the visual style stays consistent.
 
 Editing inside a report-table happens by expanding the row to reveal
-the existing per-feature editor component (`ProjectMaterialEditor`,
-`UseSiteRow`, etc.); the row itself stays display-only.
+the existing per-feature evidence/use-site components (`AttachmentCell`,
+`UseSiteRow`, etc.); the row itself stays display-only. Current
+implementation opens material attribute editing through the row action and
+`ProjectMaterialEditorModal`.
 
 ### D4 — Background palette stack
 
@@ -120,7 +124,7 @@ Thermal Bridges, Model) inherit the new background automatically; the
 mandatory closeout gate (`make ci`, plus visual smoke through
 Playwright MCP) verifies nothing regresses.
 
-## Specifications page after restyle
+## Materials page after restyle
 
 Columns (left → right):
 
@@ -141,10 +145,12 @@ Columns (left → right):
 Expanded row content:
 
 - Left column: `Datasheets` block (full `AttachmentCell`),
-  `ProjectMaterialEditor` (when editing), comments, drift-refresh
-  affordance.
+  comments, drift-refresh affordance.
 - Right column: `Use-sites & site photos` — reuses `UseSiteRow`
   components, tightened to drop the card chrome.
+
+Current implementation note: material attribute editing is not embedded in the
+expanded row; it opens through the row action as `ProjectMaterialEditorModal`.
 
 ## Behavior (unchanged)
 
@@ -158,5 +164,5 @@ Expanded row content:
 
 - Sort / multi-filter machinery beyond the status chips.
 - Column resize, reorder, hide.
-- Pagination — Specifications is bounded by project material count.
+- Pagination — Materials is bounded by project material count.
 - Touching the V1 codebase.

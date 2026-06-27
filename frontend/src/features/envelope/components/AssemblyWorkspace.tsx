@@ -20,6 +20,7 @@ export function AssemblyWorkspace({
   materials,
   search,
   zoom,
+  autoFitOnMount,
   canEdit,
   thermal,
   thermalLoading,
@@ -51,6 +52,7 @@ export function AssemblyWorkspace({
   materials: ProjectMaterial[];
   search: URLSearchParams;
   zoom: number;
+  autoFitOnMount: boolean;
   canEdit: boolean;
   thermal: AssemblyThermalResponse | null;
   thermalLoading: boolean;
@@ -134,6 +136,7 @@ export function AssemblyWorkspace({
             assembly={activeAssembly}
             materials={materials}
             zoom={zoom}
+            autoFitOnMount={autoFitOnMount}
             canEdit={canEdit}
             paint={paint}
             commandBusy={commandBusy}

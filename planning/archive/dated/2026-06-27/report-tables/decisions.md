@@ -1,23 +1,23 @@
 ---
-DATE: 2026-06-09
-TIME: 14:30
-STATUS: Active
+DATE: 2026-06-27
+TIME: 09:06 EDT
+STATUS: Complete — archived with current-code reconciliation notes
 AUTHOR: Ed (via Claude)
 SCOPE: Accepted/rejected design calls for the report-table primitive
-  and the Envelope → Specifications restyle.
+  and the Envelope Materials restyle.
 RELATED:
-  - planning/features/report-tables/PRD.md
+  - planning/archive/dated/2026-06-27/report-tables/PRD.md
 ---
 
 # Report-Tables — Decisions Log
 
 ## Accepted
 
-### A1 — `DriftSummary` is replaced by `SpecStatusFilters` chip row (2026-06-09)
+### A1 — `DriftSummary` is replaced by a status-filter chip row (2026-06-09)
 
-The top-of-page summary band on Specifications becomes a chip-row
-filter (`All`/`Missing`/`Question`/`Complete`/`N/A` with counts) plus
-an `N/M resolved` indicator on the right.
+The top-of-page summary band on Materials becomes a shared
+`StatusFilterChips` chip-row filter (`All`/`Missing`/`Question`/`Complete`/`N/A`
+with counts) plus an `N/M resolved` indicator on the right.
 
 Per-material drift information continues to surface via
 `MaterialDriftBadge` and the "Refresh from catalog" affordance, but
@@ -41,7 +41,7 @@ globally.
 
 ### A3 — Report-table is its own primitive, not `<DataTable>` (2026-06-09)
 
-The Specifications view is a **reporting/view-table**, semantically
+The Materials view is a **reporting/view-table**, semantically
 distinct from the existing `<DataTable>` data-entry grid. It gets its
 own home under `frontend/src/shared/ui/report-table/` with its own
 styles. Future report-table consumers — window glazing, window-frame
@@ -49,8 +49,12 @@ elements, additional spec rollups — reuse the same primitives so the
 visual style stays consistent across the app.
 
 2026-06-24 update: the window glazing and window-frame consumers are now
-realized as `Apertures → Glazings` and `Apertures → Frames`, implemented by
+realized as `Apertures -> Glazings` and `Apertures -> Frames`, implemented by
 `planning/archive/dated/2026-06-24/apertures-glazings-frames-reports/`.
+
+2026-06-27 reconciliation: current code confirms the primitive is consumed by
+`frontend/src/features/envelope/components/MaterialsPanel.tsx` and
+`frontend/src/features/apertures/components/ApertureSpecReportPanel.tsx`.
 
 ### A4 — Status pill colors (2026-06-09)
 
@@ -65,7 +69,7 @@ A new `--phn-info` token is added if no existing token fits.
 
 ## Rejected / Deferred
 
-### R1 — Adopt `<DataTable>` for Specifications
+### R1 — Adopt `<DataTable>` for Materials
 
 Rejected. `<DataTable>` is the AirTable-style data-entry grid; carrying
 its inline-editing, cell-tint, sort/filter/group machinery into a

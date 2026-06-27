@@ -7,7 +7,7 @@
 import "../envelope.css";
 import { Download, FileSpreadsheet, Upload } from "lucide-react";
 import { Navigate, NavLink, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
 import { AppSubTabLink, AppSubTabs } from "../../../shared/ui/AppSubTabs";
 import { AppMenu, AppMenuItem } from "../../../shared/ui/AppMenu";
@@ -36,6 +36,7 @@ import { PhppExportWarningDialog } from "../components/PhppExportWarningDialog";
 import { ImportConstructionsDialog } from "../components/dialogs/ImportConstructionsDialog";
 import { usePaintMode } from "../hooks/usePaintMode";
 import { useEnvelopeDialogs } from "../hooks/useEnvelopeDialogs";
+import { useEnvelopeCanvasZoom } from "../hooks/useEnvelopeCanvasZoom";
 import { useEnvelopeHbjsonImport } from "../hooks/useEnvelopeHbjsonImport";
 import { useEnvelopePhppExport } from "../hooks/useEnvelopePhppExport";
 import {
@@ -96,10 +97,13 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
     versionId: project.active_version_id,
     onError: setCommandError,
   });
-  const [zoom, setZoom] = useState(1);
-  const fitZoom = useCallback((nextZoom: number) => {
-    setZoom((currentZoom) => (currentZoom === nextZoom ? currentZoom : nextZoom));
-  }, []);
+  const { zoom, setZoom, hasSessionZoom } = useEnvelopeCanvasZoom();
+  const fitZoom = useCallback(
+    (nextZoom: number) => {
+      setZoom((currentZoom) => (currentZoom === nextZoom ? currentZoom : nextZoom));
+    },
+    [setZoom],
+  );
   const commandInFlightRef = useRef(false);
   const catalogMaterialsQuery = useMaterialsQuery(
     canEdit && dialog?.kind === "segment" && catalogPickerOpen,
@@ -374,6 +378,7 @@ export function EnvelopePage({ project }: { project: ProjectDetail }) {
             materials={query.data.project_materials}
             search={searchParams}
             zoom={zoom}
+            autoFitOnMount={!hasSessionZoom}
             canEdit={canEdit}
             thermal={thermalQuery.data ?? null}
             thermalLoading={thermalQuery.isFetching}

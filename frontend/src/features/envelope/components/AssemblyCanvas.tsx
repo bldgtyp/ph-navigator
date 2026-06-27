@@ -28,6 +28,7 @@ export function AssemblyCanvas({
   assembly,
   materials,
   zoom,
+  autoFitOnMount,
   canEdit,
   paint,
   commandBusy,
@@ -46,6 +47,7 @@ export function AssemblyCanvas({
   assembly: Assembly;
   materials: ProjectMaterial[];
   zoom: number;
+  autoFitOnMount: boolean;
   canEdit: boolean;
   paint: AssemblyCanvasPaintController;
   commandBusy: boolean;
@@ -69,7 +71,7 @@ export function AssemblyCanvas({
   const materialsById = useMemo(() => materialById(materials), [materials]);
   const geometry = useMemo(() => buildAssemblyCanvasGeometry(assembly), [assembly]);
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const fittedAssemblyRef = useRef<string | null>(null);
+  const didInitialFitRef = useRef(!autoFitOnMount);
   const svgWidth = pxFromMm(geometry.widthMm, zoom);
   const svgHeight = pxFromMm(geometry.heightMm, zoom);
   const svgStrokePaddingPx = pxFromMm(SVG_STROKE_PADDING_MM, zoom);
@@ -91,10 +93,10 @@ export function AssemblyCanvas({
     if (!scrollElement) return;
 
     function fitActiveAssembly(): void {
-      if (fittedAssemblyRef.current === assembly.id) return;
+      if (didInitialFitRef.current) return;
       const availableWidthPx = scrollRef.current?.clientWidth ?? 0;
       if (availableWidthPx <= 0) return;
-      fittedAssemblyRef.current = assembly.id;
+      didInitialFitRef.current = true;
       onFitZoom(fitZoomForCanvasWidth(geometry.widthMm, availableWidthPx));
     }
 
@@ -104,7 +106,7 @@ export function AssemblyCanvas({
     const resizeObserver = new ResizeObserver(fitActiveAssembly);
     resizeObserver.observe(scrollElement);
     return () => resizeObserver.disconnect();
-  }, [assembly.id, geometry.widthMm, onFitZoom]);
+  }, [geometry.widthMm, onFitZoom]);
 
   return (
     <div

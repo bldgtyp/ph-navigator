@@ -59,13 +59,9 @@ type DimensionConfirm = { axis: "row" | "column"; index: number; customizedCount
 // snapshot loop guard doesn't churn on fresh ``[]`` references.
 const EMPTY_DISMISSED: readonly string[] = Object.freeze([]);
 
-// Phase 03 + 04 keep zoom + view direction as component-local state. The
-// phase plan calls for a user-preferences store key, but no such store
-// exists in V2 yet — promotion is deferred to the same cleanup phase that
-// introduces the store. Zoom auto-fits only on first mount; after that the
-// user's chosen scale persists while they move between aperture types.
-// Selection lives in the apertures builder Zustand store so the toolbar and
-// overlay subscribe to the same source.
+// Phase 03 + 04 keep view direction as component-local state. Zoom and
+// selection live in the apertures builder Zustand store so they survive
+// route-level unmounts while staying ephemeral to the browser session.
 //
 // Phase 05 adds the dimension strips + format selector + edge-add /
 // row-column delete affordances. Dimension commands fan out through the
@@ -113,13 +109,15 @@ export function ApertureCanvasContainer({
   ) => Promise<void> | void;
   uValueByElementId?: Map<string, number>;
 }) {
-  const [zoom, setZoom] = useState(1);
   const [viewDirection, setViewDirection] = useState<ApertureViewDirection>("exterior");
   const [deleteTip, setDeleteTip] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<DimensionConfirm>(null);
-  const didInitialFitRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
+  const zoom = useApertureBuilderStore((state) => state.canvasZoom);
+  const hasSessionZoom = useApertureBuilderStore((state) => state.hasCanvasZoom);
+  const setZoom = useApertureBuilderStore((state) => state.setCanvasZoom);
+  const didInitialFitRef = useRef(hasSessionZoom);
   const selection = useApertureBuilderStore((state) => selectionForAperture(state, aperture.id));
   const clearSelection = useApertureBuilderStore((state) => state.clearSelection);
   const dismissedOpWarnings = useApertureBuilderStore(
@@ -176,7 +174,7 @@ export function ApertureCanvasContainer({
     if (availablePx <= 0) return;
     const targetZoom = availablePx / (widthMm * BASE_PX_PER_MM);
     setZoom(snapZoomToStep(targetZoom));
-  }, [aperture]);
+  }, [aperture, setZoom]);
 
   useLayoutEffect(() => {
     if (didInitialFitRef.current) return;

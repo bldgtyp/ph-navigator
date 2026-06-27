@@ -3,11 +3,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState, type ReactNode } from "react";
-import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { UnitPreferenceContext } from "../../../lib/units/preference-context";
 import type { UnitSystem } from "../../../lib/units";
 import type { ProjectDetail } from "../../projects/types";
+import { resetEnvelopeCanvasZoomForTests } from "../hooks/useEnvelopeCanvasZoom";
 import { EnvelopePage } from "../routes/EnvelopePage";
 import type { EnvelopeReadResponse } from "../types";
 import {
@@ -204,6 +205,7 @@ const driftPayload = {
 };
 
 beforeEach(() => {
+  resetEnvelopeCanvasZoomForTests();
   fetchMock.mockReset();
   fetchMock.mockImplementation(defaultFetchImplementation);
   vi.stubGlobal("fetch", fetchMock);
@@ -412,6 +414,83 @@ describe("EnvelopePage", () => {
     expect(screen.getByTestId("canvas-zoom")).toHaveTextContent("150%");
   });
 
+  test("switching active assemblies preserves the user zoom level", async () => {
+    const clientWidthSpy = vi.spyOn(HTMLElement.prototype, "clientWidth", "get");
+    clientWidthSpy.mockReturnValue(1000);
+    const secondAssembly = {
+      ...envelopePayload.assemblies[0]!,
+      id: "asm_roof_r1",
+      name: "ROOF-R1",
+      type: "roof" as const,
+      layers: [
+        {
+          ...envelopePayload.assemblies[0]!.layers[0]!,
+          id: "lyr_roof",
+          thickness_mm: 80,
+          segments: [
+            {
+              ...envelopePayload.assemblies[0]!.layers[0]!.segments[0]!,
+              id: "seg_roof",
+              width_mm: 300,
+            },
+          ],
+        },
+      ],
+    };
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/envelope?")) {
+        return Promise.resolve(
+          jsonResponse({
+            ...envelopePayload,
+            assemblies: [envelopePayload.assemblies[0]!, secondAssembly],
+          }),
+        );
+      }
+      return defaultFetchImplementation(url);
+    });
+
+    try {
+      renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+      await screen.findByRole("link", { name: /ROOF-R1/ });
+      await userEvent.click(screen.getByRole("button", { name: "Zoom in" }));
+      expect(screen.getByTestId("canvas-zoom")).toHaveTextContent("150%");
+
+      await userEvent.click(screen.getByRole("link", { name: /ROOF-R1/ }));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("location")).toHaveTextContent(
+          `/projects/${PROJECT_ID}/envelope/assemblies/asm_roof_r1`,
+        );
+      });
+      expect(screen.getByTestId("canvas-zoom")).toHaveTextContent("150%");
+    } finally {
+      clientWidthSpy.mockRestore();
+    }
+  });
+
+  test("returning to envelope from another project page preserves the user zoom level", async () => {
+    const clientWidthSpy = vi.spyOn(HTMLElement.prototype, "clientWidth", "get");
+    clientWidthSpy.mockReturnValue(1000);
+
+    try {
+      renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+      await screen.findByRole("link", { name: /WALL-C3/ });
+      await userEvent.click(screen.getByRole("button", { name: "Zoom in" }));
+      expect(screen.getByTestId("canvas-zoom")).toHaveTextContent("150%");
+
+      await userEvent.click(screen.getByRole("button", { name: "Go climate" }));
+      expect(screen.getByTestId("location")).toHaveTextContent(`/projects/${PROJECT_ID}/climate`);
+
+      await userEvent.click(screen.getByRole("button", { name: "Go envelope" }));
+      await screen.findByRole("link", { name: /WALL-C3/ });
+      expect(screen.getByTestId("canvas-zoom")).toHaveTextContent("150%");
+    } finally {
+      clientWidthSpy.mockRestore();
+    }
+  });
+
   test("flip segments posts semantic assembly command", async () => {
     fetchMock.mockImplementation((url: string) => {
       if (url.includes("/draft/envelope/commands")) {
@@ -574,6 +653,25 @@ describe("EnvelopePage", () => {
     expect(
       Number(segments[1]!.getAttribute("width")) / Number(segments[0]!.getAttribute("width")),
     ).toBeCloseTo(7);
+  });
+
+  test("segment add controls use canvas hover-hint tooltips with inward endpoint placement", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    const addBefore = screen.getByRole("button", {
+      name: "Add segment before Wood fiber board segment in layer 1",
+    });
+    const addAfter = screen.getByRole("button", {
+      name: "Add segment after Wood fiber board segment in layer 1",
+    });
+
+    expect(addBefore).toHaveAttribute("data-toolbar-tooltip", "Add segment before");
+    expect(addBefore).toHaveAttribute("data-toolbar-tooltip-placement", "start");
+    expect(addBefore).not.toHaveAttribute("data-tooltip");
+    expect(addAfter).toHaveAttribute("data-toolbar-tooltip", "Add segment after");
+    expect(addAfter).toHaveAttribute("data-toolbar-tooltip-placement", "end");
+    expect(addAfter).not.toHaveAttribute("data-tooltip");
   });
 
   test("assembly legend is scoped to active materials and follows the unit preference", async () => {
@@ -1577,8 +1675,10 @@ function renderEnvelope(
               path="/projects/:projectId/envelope/*"
               element={<EnvelopePage project={testProject} />}
             />
+            <Route path="/projects/:projectId/climate" element={<section>Climate</section>} />
           </Routes>
           <LocationProbe />
+          <NavigationProbe />
         </MemoryRouter>
       </UnitHarness>
     </QueryClientProvider>,
@@ -1608,6 +1708,23 @@ function UnitHarness({ children }: { children: ReactNode }) {
 function LocationProbe() {
   const location = useLocation();
   return <div data-testid="location">{location.pathname}</div>;
+}
+
+function NavigationProbe() {
+  const navigate = useNavigate();
+  return (
+    <>
+      <button type="button" onClick={() => navigate(`/projects/${PROJECT_ID}/climate`)}>
+        Go climate
+      </button>
+      <button
+        type="button"
+        onClick={() => navigate(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`)}
+      >
+        Go envelope
+      </button>
+    </>
+  );
 }
 
 function jsonResponse(body: unknown): Response {

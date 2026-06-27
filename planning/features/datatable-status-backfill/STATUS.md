@@ -1,6 +1,6 @@
 ---
-DATE: 2026-06-24
-TIME: 12:00 EDT
+DATE: 2026-06-27
+TIME: 10:10 EDT
 STATUS: Deferred
 AUTHOR: Claude
 SCOPE: Current state of the deferred DataTable status-field backfill decision.
@@ -11,11 +11,34 @@ RELATED: planning/features/datatable-status-backfill/README.md
 
 ## Current state
 
-State: **Deferred.** Both status-field implementation passes (original 9-table
-feature + the 3-table addendum, now 12 tables total) intentionally scoped to
-new/seeded documents and left a backfill of pre-existing persisted documents out
-of scope. No migration exists. Pulled out of the addendum packet so the thread is
-not lost when that packet is archived.
+State: **Deferred / not implemented.** Current-code review on 2026-06-27 found
+the packet is still accurate: both status-field implementation passes (original
+9-table feature + the 3-table addendum, now 12 tables total) intentionally
+scoped to new/seeded documents and left a backfill of pre-existing persisted
+documents out of scope.
+
+Evidence from the current code base:
+
+- `backend/features/project_document/tables/_status_field.py` still owns the
+  12-table `STATUS_TABLE_NAMES` registry and shared FieldDef / option-list
+  helpers.
+- `backend/features/project_document/templates.py` still seeds
+  `<table>.status` option lists for fresh documents from `STATUS_TABLE_NAMES`.
+- `backend/features/project_document/document.py` still has
+  `CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 1`; there is no version bump for a
+  status backfill.
+- `backend/features/project_document/store.py` validates stored bodies directly
+  and only returns a read-safe envelope on invalid bodies; it does not upgrade
+  documents on read.
+- No status-backfill script or Alembic migration exists under
+  `backend/scripts/` or `backend/alembic/versions/`.
+- The active `/projects/{id}/status` feature is the separate
+  `project_status_items` lifecycle tracker, not a DataTable completeness
+  dashboard.
+
+Conclusion: this is not "done"; it is still intentionally unnecessary until a
+real historical project document or a DataTable completeness dashboard needs
+pre-status documents to expose the field.
 
 ## Trigger to reactivate
 
@@ -32,10 +55,11 @@ already get the field).
 
 ## Next step
 
-None — awaiting Ed's product call (see `README.md` § Decision owner). If picked
-up: write a document migration driven off `STATUS_TABLE_NAMES` /
-`status_field_def` / `status_option_list`, and decide whether pre-existing rows
-default to `opt_status_needed` or stay unset.
+None — awaiting Ed's product call or a concrete historical document. If picked
+up: write an idempotent document migration driven off `STATUS_TABLE_NAMES` /
+`status_field_def` / `status_option_list`, decide whether pre-existing rows
+default to `opt_status_needed` or stay unset, and add tests that build a legacy
+body missing the status FieldDefs / option lists before proving the migration.
 
 ## Open questions
 

@@ -15,7 +15,7 @@
 [data-toolbar-tooltip]::after,
 [data-sidebar-tooltip]::before,
 [data-sidebar-tooltip]::after {
-  left: 50%;
+  left: var(--canvas-hint-tooltip-left, 50%);
   opacity: 0;
   pointer-events: none;
   position: absolute;
@@ -35,7 +35,7 @@
   font-size: 11px;
   line-height: 1.2;
   padding: 4px 7px;
-  transform: translate(-50%, 2px);
+  transform: translate(var(--canvas-hint-tooltip-x, -50%), 2px);
   white-space: nowrap;
 }
 
@@ -54,7 +54,19 @@
   border-top: 5px solid color-mix(in oklab, var(--text-primary) 88%, transparent);
   bottom: calc(100% + 3px);
   content: "";
-  transform: translate(-50%, 2px);
+  transform: translate(var(--canvas-hint-tooltip-x, -50%), 2px);
+}
+
+[data-toolbar-tooltip-placement="start"],
+[data-sidebar-tooltip-placement="start"] {
+  --canvas-hint-tooltip-left: 100%;
+  --canvas-hint-tooltip-x: 0;
+}
+
+[data-toolbar-tooltip-placement="end"],
+[data-sidebar-tooltip-placement="end"] {
+  --canvas-hint-tooltip-left: 0;
+  --canvas-hint-tooltip-x: -100%;
 }
 
 [data-toolbar-tooltip]:hover::before,
@@ -66,5 +78,5 @@
 [data-sidebar-tooltip]:focus-visible::before,
 [data-sidebar-tooltip]:focus-visible::after {
   opacity: 1;
-  transform: translate(-50%, 0);
+  transform: translate(var(--canvas-hint-tooltip-x, -50%), 0);
 }

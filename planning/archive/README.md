@@ -3,6 +3,10 @@
 Append-only audit trail. Durable decisions live in `context/`; this records
 how and when each feature packet landed. Newest first. Grep by slug.
 
+## 2026-06-27
+
+- `report-tables` - shared dense read-mostly report-table primitive for Materials and aperture specification rollups; current code confirmed in `shared/ui/report-table`, `MaterialsPanel`, and `ApertureSpecReportPanel`. (docs reconciliation)
+
 ## 2026-06-25
 
 - `table-write-architecture-unification` - collapse heat-pumps' parallel write path onto the generic registered-contract + shared write spine (BE) and generic table-write client (FE); shared backend write spine, shared option-list delete cascade, bespoke service/FE-client/PATCH-shim removed, `dependent_link_delete_blocked` rename. (f760c31e)

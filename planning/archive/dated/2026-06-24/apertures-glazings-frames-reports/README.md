@@ -9,7 +9,7 @@ SCOPE: Two new REPORTING pages — "Apertures → Glazings" and "Apertures → F
 RELATED:
   - planning/features/glazing-frame-documentation/ (PREREQUISITE — builds the
     ProjectGlazing/ProjectFrame entities these pages present)
-  - planning/features/report-tables/ (the report-table primitive these pages reuse;
+  - planning/archive/dated/2026-06-27/report-tables/ (the report-table primitive these pages reuse;
     it explicitly names glazing + frame as the intended next consumers)
   - context/ui/pages/envelope-tab.md §2.7.3 (Materials/Specifications page — the
     page being mirrored)
