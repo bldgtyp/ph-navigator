@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
 TIME: 11:00 EDT
-STATUS: Implemented on branch.
+STATUS: Complete - archived after closeout.
 AUTHOR: Codex with Ed May
 SCOPE: Phase 2 - golden corpus and regression tests.
 RELATED:

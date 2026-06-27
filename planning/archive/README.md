@@ -5,6 +5,7 @@ how and when each feature packet landed. Newest first. Grep by slug.
 
 ## 2026-06-27
 
+- `beta-schema-evolution` - project-document schema evolution lane with read-time forward-only upgrader, v1 golden corpus, audit CLI, built-in FieldDef drift guard, schema-bump checklist, recovery runbook, and closeout gate (`make ci`, fixture audit, local DB audit). (branch closeout)
 - `datatable-status-backfill` - resolved deferred DataTable status-field backfill as unnecessary before first deploy; no users or old project documents exist, focused fresh-start verification passed, and no migration/backfill was written. (docs closeout)
 - `report-tables` - shared dense read-mostly report-table primitive for Materials and aperture specification rollups; current code confirmed in `shared/ui/report-table`, `MaterialsPanel`, and `ApertureSpecReportPanel`. (docs reconciliation)
 

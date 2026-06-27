@@ -11,7 +11,7 @@ feature-first planning.
 
 | Feature | State | Current pointer |
 |---|---|---|
-| Beta Schema Evolution | Complete on branch / beta gate drill passed with fixture audit, local DB audit, and `make ci`; ready for review | `features/beta-schema-evolution/STATUS.md` |
+| Beta Schema Evolution | Complete / archived after beta gate drill passed with fixture audit, local DB audit, and `make ci` | `archive/dated/2026-06-27/beta-schema-evolution/STATUS.md` |
 | DataTable Status Field — Addendum | Complete — `status` extended to the 3 remaining Datasheet-bearing tables (Ventilators, HP Outdoor Units, HP Indoor Units); `make ci` green, live smoke done, committed `d8b59f28` (branch, not yet merged); archived | `archive/dated/2026-06-24/data-table-status-field-addendum/STATUS.md` |
 | DataTable Status Field — Backfill | Complete / resolved-unneeded before first deploy: no users or old project documents exist, focused status-field fresh-start verification passed, no migration/backfill written | `archive/dated/2026-06-27/datatable-status-backfill/STATUS.md` |
 | DataTable UI | Complete / numeric precision, unit headers, status chips, shared visual rhythm, route-smoke verification, final `make ci`, and archive cleanup landed | `archive/dated/2026-06-25/data-table-ui/STATUS.md` |
@@ -78,6 +78,10 @@ feature-first planning.
   `archive/dated/2026-06-27/datatable-status-backfill/` (resolved-unneeded before
   first deploy; no users or old project documents exist, so no historical
   migration/backfill was written).
+- Completed Beta Schema Evolution planning now lives under
+  `archive/dated/2026-06-27/beta-schema-evolution/` (read-time upgrader, golden
+  corpus, audit CLI, FieldDef drift guard, schema-bump checklist, recovery
+  runbook, fixture/local DB drills, and `make ci` closeout).
 - Completed Attachments (v1) planning now lives under
   `archive/dated/2026-06-15/attachments/`. The stable implementation contract remains
   current in `context/technical-requirements/attachments.md`; the

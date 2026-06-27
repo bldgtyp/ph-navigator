@@ -2,7 +2,7 @@
 DATE: 2026-06-27
 TIME: 11:00 EDT
 UPDATED: 2026-06-27 - added D6-D9 from the code-grounded readiness review follow-up.
-STATUS: Active - decisions locked by Ed on 2026-06-27.
+STATUS: Complete - decisions implemented and archived.
 AUTHOR: Codex with Ed May
 SCOPE: Accepted decisions for beta schema evolution.
 RELATED:

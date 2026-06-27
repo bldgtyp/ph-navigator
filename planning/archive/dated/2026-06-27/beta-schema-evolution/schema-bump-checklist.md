@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
 TIME: 13:05 EDT
-STATUS: Active checklist for future project-document schema bumps.
+STATUS: Complete - checklist archived as the future schema-bump reference.
 AUTHOR: Codex with Ed May
 SCOPE: Required steps before changing persisted project-document structure.
 RELATED:
