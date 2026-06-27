@@ -8,6 +8,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Request
 from starlette import status
 
+from features.access.capabilities import PROJECT_VIEW_PRIVATE
 from features.auth.routes import CurrentUser
 from features.projects.access import (
     ProjectAccess,
@@ -113,7 +114,11 @@ def get_project(
     access: ProjectViewAccess,
 ) -> ProjectDetail:
     access_mode: AccessMode = "editor" if access.is_editor else "viewer"
-    return get_project_detail(project_id, access_mode=access_mode)
+    return get_project_detail(
+        project_id,
+        access_mode=access_mode,
+        can_view_private_metadata=access.has_capability(PROJECT_VIEW_PRIVATE),
+    )
 
 
 @router.patch("/{project_id}", response_model=ProjectDetail)

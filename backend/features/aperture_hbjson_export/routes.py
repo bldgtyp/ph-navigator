@@ -18,11 +18,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 
+from features.access.capabilities import APERTURES_EXPORT_HBJSON
 from features.aperture_hbjson_export.service import export_aperture_window_constructions
 from features.project_document.models import ProjectDocumentSource
 from features.project_document.store import load_document_body
 from features.projects.access import (
     ProjectAccess,
+    require_capability,
     require_project_view_access,
 )
 
@@ -42,5 +44,6 @@ def get_aperture_window_constructions_hbjson(
     source: Annotated[ProjectDocumentSource, Query(pattern=r"^(draft|version)$")] = "draft",
 ) -> dict[str, dict[str, Any]]:
     del project_id  # Path arg only — access carries the project id.
+    require_capability(access, APERTURES_EXPORT_HBJSON)
     body = load_document_body(version_id, access, source)
     return export_aperture_window_constructions(body)

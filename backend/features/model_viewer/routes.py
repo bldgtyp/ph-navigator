@@ -9,6 +9,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Header, Response
 from fastapi.responses import JSONResponse, RedirectResponse
 from starlette import status
 
+from features.access.capabilities import MODEL_EXPORT
 from features.assets.routes import get_asset_service
 from features.assets.service import AssetService
 from features.model_viewer import model_data
@@ -25,7 +26,12 @@ from features.model_viewer.service import (
     list_files,
     update_file,
 )
-from features.projects.access import ProjectAccess, require_project_edit_access, require_project_view_access
+from features.projects.access import (
+    ProjectAccess,
+    require_capability,
+    require_project_edit_access,
+    require_project_view_access,
+)
 
 router = APIRouter(prefix="/api/v1/projects/{project_id}/hbjson-files", tags=["model-viewer"])
 
@@ -69,6 +75,7 @@ def download_hbjson_file(
     access: ProjectViewAccess,
     service: AssetServiceDep,
 ) -> RedirectResponse:
+    require_capability(access, MODEL_EXPORT)
     urls = get_download_urls(file_id, access, service)
     return RedirectResponse(urls.download_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
 

@@ -16,13 +16,13 @@ import pytest
 from fastapi.testclient import TestClient
 
 from database import transaction
-from features.auth.service import create_or_update_user
 from features.catalogs.materials.import_export import tokens
 from features.catalogs.materials.import_export.file_format import (
     CURRENT_SCHEMA_VERSION,
     FILE_KIND,
 )
 from main import app
+from tests.catalog_helpers import create_catalog_admin
 
 ORIGIN = "http://localhost:5173"
 
@@ -52,7 +52,7 @@ def _signed_in_client(
     *,
     raise_server_exceptions: bool = True,
 ) -> TestClient:
-    create_or_update_user(email=email, display_name=name, password="password")
+    create_catalog_admin(email=email, display_name=name)
     client = TestClient(app, raise_server_exceptions=raise_server_exceptions)
     response = client.post(
         "/api/v1/auth/login",

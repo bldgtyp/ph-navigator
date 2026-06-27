@@ -421,7 +421,13 @@ def get_project_detail(
     access_mode: AccessMode,
     project: ProjectSummary | None = None,
     owner_display_name: str | None = None,
+    can_view_private_metadata: bool | None = None,
 ) -> ProjectDetail:
+    # Default the private-metadata gate to the editor/viewer binary; the project
+    # route overrides it with the precise capability (so a future `certifier`
+    # viewer can see private metadata without being an editor).
+    if can_view_private_metadata is None:
+        can_view_private_metadata = access_mode == "editor"
     with connection() as conn:
         if project is None:
             project_row = repository.get_project_detail_by_id(conn, project_id)
@@ -437,8 +443,14 @@ def get_project_detail(
         versions = [version_public(row) for row in repository.list_versions_for_project(conn, project_id)]
 
     active_version = next((version for version in versions if version.id == project.active_version_id), None)
+    fields = project.model_dump()
+    if not can_view_private_metadata:
+        # Redact internal metadata from `client` viewers (keep `phius_number`,
+        # `name`, `bt_number` public). Ledger §4.9.
+        fields["client"] = None
+        fields["phius_dropbox_url"] = None
     return ProjectDetail(
-        **project.model_dump(),
+        **fields,
         versions=versions,
         active_version=active_version,
         access_mode=access_mode,

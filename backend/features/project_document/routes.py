@@ -8,6 +8,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
 
+from features.access.capabilities import DOCUMENT_EXPORT
 from features.project_document.aperture_commands.models import ApertureCommand
 from features.project_document.aperture_commands.service import (
     apply_aperture_command_to_draft,
@@ -44,6 +45,7 @@ from features.project_document.tables.apertures import AperturesSliceResponse
 from features.project_document.tables.contracts import TableReplacePreviewResponse
 from features.projects.access import (
     ProjectAccess,
+    require_capability,
     require_project_edit_access,
     require_project_view_access,
 )
@@ -232,6 +234,7 @@ def download_document(
     version_id: UUID,
     access: ProjectViewAccess,
 ) -> Response:
+    require_capability(access, DOCUMENT_EXPORT)
     document = get_raw_saved_document(version_id, access)
     return json_download_response(json.dumps(document, separators=(",", ":")), f"project-{version_id}.json")
 
@@ -242,6 +245,7 @@ def download_table(
     table_name: str,
     access: ProjectViewAccess,
 ) -> Response:
+    require_capability(access, DOCUMENT_EXPORT)
     content = table_download_body(version_id, table_name, access)
     return json_download_response(json.dumps(content, indent=2), f"{table_name}-{version_id}.json")
 

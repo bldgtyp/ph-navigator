@@ -11,13 +11,14 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends, Query, Response
 from starlette import status
 
+from features.access.capabilities import EQUIPMENT_EXPORT_PHIUS
 from features.heat_pumps.phius_export import (
     PhiusExportResponse,
     compute_phius_payload,
     serialize_csv,
 )
 from features.heat_pumps.service import active_version_id_for_project, read_slice
-from features.projects.access import ProjectAccess, require_project_view_access
+from features.projects.access import ProjectAccess, require_capability, require_project_view_access
 from features.shared.errors import api_error
 
 router = APIRouter(prefix="/api/v1/projects/{project_id}/equipment/heat-pumps", tags=["heat-pumps"])
@@ -41,6 +42,7 @@ def export_phius_estimator(
     is not implemented in this slice.
     """
 
+    require_capability(access, EQUIPMENT_EXPORT_PHIUS)
     if export_format == "xlsx-paste":
         raise api_error(
             status.HTTP_501_NOT_IMPLEMENTED,

@@ -55,18 +55,23 @@ new columns yet).
 green → behavior-neutral; `tests/test_access_resolver.py` covers anon→client,
 session→member, is_staff/grant honored, and the 401-viewer/403-user contract.
 
-## Phase 3 — Backend beta deltas (the observable backend changes)
+## Phase 3 — Backend beta deltas (the observable backend changes) ✅ DONE
 **Goal:** close the leaks/gaps the walkthrough found.
-- **Metadata redaction** (ledger §4.9): extend `get_project_detail` to redact
-  `phius_dropbox_url` + `client` from `client` viewers; keep `phius_number` public.
-- **Gate anon-readable exports** (CP-4/CP-7): `apertures/hbjson`,
+- ✅ **Metadata redaction** (ledger §4.9): `get_project_detail` redacts
+  `phius_dropbox_url` + `client` from `client` viewers (capability-driven via
+  `PROJECT_VIEW_PRIVATE`); `phius_number` stays public.
+- ✅ **Gate anon-readable exports** (CP-4/CP-7): `apertures/hbjson`,
   `envelope/export/hbjson`, `envelope/export/phpp[/preflight]`,
-  `equipment/heat-pumps/export-phius`, table CSV, model `.hbjson` → require the
-  export capability (beta: editor-only; `certifier`+ when shares land).
-- **Catalog write grant** (D7/C-4): gate catalog create/edit/delete/import on
-  `catalog.edit` (grant or `is_staff`).
-**Verify:** anon cannot fetch the gated exports or see the internal Dropbox URL;
-member behavior unchanged; new tests for each gate.
+  `equipment/heat-pumps/export-phius`, model `.hbjson` download, **and the two
+  project-document JSON downloads** (`/download`, `/download/tables/{t}`) now
+  require their export capability (beta: editor-only; `certifier`+ later).
+  Per-surface client-side table CSVs are a frontend concern (P4). A coverage test
+  asserts every export/download route 401s anonymous.
+- ✅ **Catalog write grant** (D7/C-4): a `CatalogEditor` dependency on the ~23
+  catalog write routes requires `catalog.edit` (grant or `is_staff`).
+**Verify:** ✅ anon cannot fetch the gated exports or see the internal Dropbox
+URL; member behavior unchanged; `tests/test_access_phase3_deltas.py`; full suite
+(1161) green.
 
 ## Phase 4 — Frontend beta deltas
 **Goal:** the viewer UI matches the decided model.

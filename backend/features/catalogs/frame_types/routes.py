@@ -14,6 +14,7 @@ from features.catalogs._shared import (
     CatalogManufacturerListResponse,
     EditCatalogOptionsRequest,
 )
+from features.catalogs.access import CatalogEditor
 from features.catalogs.frame_types.import_export.service import (
     CommitRequest,
     CommitResponse,
@@ -80,7 +81,7 @@ def get_frame_types(
 
 @router.post("", response_model=CatalogFrameTypePublic, status_code=status.HTTP_201_CREATED)
 def post_frame_type(
-    payload: CatalogFrameTypeCreateRequest, request: Request, auth: CurrentUser
+    payload: CatalogFrameTypeCreateRequest, request: Request, auth: CatalogEditor
 ) -> CatalogFrameTypePublic:
     user, _expires_at = auth
     return create_frame_type(payload, user, request)
@@ -106,7 +107,7 @@ def get_frame_type_options(auth: CurrentUser) -> CatalogFrameTypeOptionsResponse
 
 @router.put("/options", response_model=CatalogFieldOptionsResponse)
 def put_frame_type_options(
-    payload: EditCatalogOptionsRequest, request: Request, auth: CurrentUser
+    payload: EditCatalogOptionsRequest, request: Request, auth: CatalogEditor
 ) -> CatalogFieldOptionsResponse:
     """Full-replace one field's option list (add / rename / reorder / merge)."""
 
@@ -125,20 +126,20 @@ def patch_frame_type(
     record_id: str,
     payload: CatalogFrameTypeUpdateRequest,
     request: Request,
-    auth: CurrentUser,
+    auth: CatalogEditor,
 ) -> CatalogFrameTypePublic:
     user, _expires_at = auth
     return update_frame_type(record_id, payload, user, request)
 
 
 @router.delete("/{record_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_frame_type_route(record_id: str, request: Request, auth: CurrentUser) -> None:
+def delete_frame_type_route(record_id: str, request: Request, auth: CatalogEditor) -> None:
     user, _expires_at = auth
     deactivate_frame_type(record_id, user, request)
 
 
 @router.post("/{record_id}/reactivate", response_model=CatalogFrameTypePublic)
-def reactivate_frame_type_route(record_id: str, request: Request, auth: CurrentUser) -> CatalogFrameTypePublic:
+def reactivate_frame_type_route(record_id: str, request: Request, auth: CatalogEditor) -> CatalogFrameTypePublic:
     user, _expires_at = auth
     return reactivate_frame_type(record_id, user, request)
 
@@ -151,7 +152,7 @@ def reactivate_frame_type_route(record_id: str, request: Request, auth: CurrentU
 def post_frame_type_duplicate(
     record_id: str,
     request: Request,
-    auth: CurrentUser,
+    auth: CatalogEditor,
 ) -> CatalogFrameTypePublic:
     user, _expires_at = auth
     return duplicate_frame_type(record_id, user, request)
@@ -160,7 +161,7 @@ def post_frame_type_duplicate(
 @router.post("/import/preview", response_model=PreviewResponse)
 async def post_import_preview(
     request: Request,
-    auth: CurrentUser,
+    auth: CatalogEditor,
 ) -> PreviewResponse:
     """Dry-run an import: parse, upgrade, coerce, dedup, return a report."""
     body_bytes = await _read_body_with_limit(request)
@@ -186,7 +187,7 @@ async def post_import_preview(
 def post_import_commit(
     payload: CommitRequest,
     request: Request,
-    auth: CurrentUser,
+    auth: CatalogEditor,
 ) -> CommitResponse:
     """Insert the rows cached under a preview token (single transaction)."""
     user, _expires_at = auth

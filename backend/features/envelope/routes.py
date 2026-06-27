@@ -8,6 +8,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Header, Query, UploadFile
 
+from features.access.capabilities import ENVELOPE_EXPORT_HBJSON, ENVELOPE_EXPORT_PHPP
 from features.envelope.hbjson_export import export_hbjson_constructions
 from features.envelope.import_models import ImportConstructionsPreviewResponse
 from features.envelope.models import (
@@ -30,7 +31,12 @@ from features.envelope.service import (
 )
 from features.project_document.models import ProjectDocumentSource
 from features.project_document.service import get_saved_document
-from features.projects.access import ProjectAccess, require_project_edit_access, require_project_view_access
+from features.projects.access import (
+    ProjectAccess,
+    require_capability,
+    require_project_edit_access,
+    require_project_view_access,
+)
 from features.shared.responses import json_download_response, zip_download_response
 
 router = APIRouter(
@@ -75,6 +81,7 @@ def export_envelope_hbjson(
     version_id: UUID,
     access: ProjectViewAccess,
 ):
+    require_capability(access, ENVELOPE_EXPORT_HBJSON)
     body = get_saved_document(version_id, access)
     payload = export_hbjson_constructions(body)
     return json_download_response(
@@ -88,6 +95,7 @@ def preflight_envelope_phpp(
     version_id: UUID,
     access: ProjectViewAccess,
 ) -> PhppPreflightResponse:
+    require_capability(access, ENVELOPE_EXPORT_PHPP)
     return get_phpp_export_preflight(version_id, access)
 
 
@@ -97,6 +105,7 @@ def export_envelope_phpp(
     access: ProjectViewAccess,
     units: Annotated[UnitSystem, Query()] = "SI",
 ):
+    require_capability(access, ENVELOPE_EXPORT_PHPP)
     body = get_saved_document(version_id, access)
     data = build_phpp_zip(body, units=units)
     return zip_download_response(data, f"phpp-u-values-{units}-{version_id}.zip")

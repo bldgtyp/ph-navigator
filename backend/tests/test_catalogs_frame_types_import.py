@@ -10,7 +10,6 @@ import pytest
 from fastapi.testclient import TestClient
 
 from database import transaction
-from features.auth.service import create_or_update_user
 from features.catalogs.frame_types.import_export import tokens
 from features.catalogs.frame_types.import_export.file_format import (
     CURRENT_SCHEMA_VERSION,
@@ -19,6 +18,7 @@ from features.catalogs.frame_types.import_export.file_format import (
 from features.catalogs.frame_types.options_service import seed_frame_type_options
 from main import app
 from scripts._seed_paths import FRAME_SEED_PATH
+from tests.catalog_helpers import create_catalog_admin
 
 ORIGIN = "http://localhost:5173"
 
@@ -55,7 +55,7 @@ def _reset_frame_options() -> Iterator[None]:
 
 
 def _signed_in_client() -> TestClient:
-    create_or_update_user(email="ed@example.com", display_name="Ed May", password="password")
+    create_catalog_admin()
     client = TestClient(app)
     response = client.post(
         "/api/v1/auth/login",
