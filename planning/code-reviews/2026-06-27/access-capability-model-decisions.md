@@ -566,11 +566,11 @@ enforced when certifier/teams arrive.
   editor keeps export). Attachments stay view+download for all (CP-7).
 - [x] **Hide Project Settings entry** from viewers entirely (the
   `VersionControls` viewer branch no longer renders it) (§4.9).
-- [ ] **CP-5 read-only canvas-inspect modal → Phase 4b.** *Verified:* the
-  envelope segment click is `canEdit`-gated (disabled + `aria-hidden` for
-  viewers); material + width are already viewer-visible via the segment tooltip
-  + the read-only Materials sidebar, so the gap is a dedicated inspect modal
-  (net-new canvas UI), split out to keep Phase 4 shippable.
+- [x] **CP-5 read-only canvas-inspect modal — landed in Phase 4b.** The
+  envelope segment hit-target is always clickable; `EnvelopePage` routes the
+  click by `canEdit` to the editor picker or a read-only `SegmentDetailDialog`
+  (material/width/CI/stud-spacing/layer). Apertures verified already
+  viewer-inspectable (ungated selection + T0 spec panels) — no new modal.
 - [x] (No change) IP/SI toggle already viewer-safe (CP-9); pan/zoom client-side
   (CP-1).
 

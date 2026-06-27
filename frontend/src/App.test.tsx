@@ -910,7 +910,9 @@ describe("App", () => {
     expect(screen.getByText("Read-only")).toBeVisible();
     // The raw project-JSON download is a bulk export → editor-only (CP-7), so a
     // viewer's recovery panel shows the message but no download link.
-    expect(screen.queryByRole("link", { name: "Download raw project JSON" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Download raw project JSON" }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Project JSON" })).not.toBeInTheDocument();
     expect(screen.queryByText("Saved schema")).not.toBeInTheDocument();
     expect(screen.queryByText("schema-safe")).not.toBeInTheDocument();

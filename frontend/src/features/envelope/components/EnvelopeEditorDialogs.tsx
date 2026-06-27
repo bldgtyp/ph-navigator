@@ -13,6 +13,7 @@ import type {
 import { AssemblyNameDialog } from "./dialogs/AssemblyNameDialog";
 import { ConfirmDialog } from "./dialogs/ConfirmDialog";
 import { LengthDialog } from "./dialogs/LengthDialog";
+import { SegmentDetailDialog } from "./dialogs/SegmentDetailDialog";
 import { SegmentDialog } from "./dialogs/SegmentDialog";
 
 type DialogState =
@@ -23,6 +24,9 @@ type DialogState =
   | { kind: "add-layer"; assembly: Assembly; layer: AssemblyLayer; position: "above" | "below" }
   | { kind: "delete-layer"; assembly: Assembly; layer: AssemblyLayer }
   | { kind: "segment"; assembly: Assembly; layer: AssemblyLayer; segment: AssemblySegment }
+  // Read-only inspect (CP-5) — opened when the segment is clicked without edit
+  // rights (viewer, or editor on a locked version).
+  | { kind: "segment-detail"; layer: AssemblyLayer; segment: AssemblySegment }
   | {
       kind: "add-segment";
       assembly: Assembly;
@@ -152,6 +156,16 @@ export function EnvelopeEditorDialogs({
             layer_id: dialog.layer.id,
           })
         }
+      />
+    );
+  }
+  if (dialog.kind === "segment-detail") {
+    return (
+      <SegmentDetailDialog
+        segment={dialog.segment}
+        layer={dialog.layer}
+        materials={materials}
+        onClose={onClose}
       />
     );
   }

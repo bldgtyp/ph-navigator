@@ -22,7 +22,10 @@ export type AssemblyCanvasOverlayActions = {
   onDeleteLayer: (layer: AssemblyLayer) => void;
   onUpdateLayerThickness: (layer: AssemblyLayer, thicknessMm: number) => void;
   onAddLayer: (layer: AssemblyLayer, position: "above" | "below") => void;
-  onEditSegment: (layer: AssemblyLayer, segment: AssemblySegment) => void;
+  // A segment was activated (clicked / keyboard). The host decides what that
+  // means from its own access state: the editing picker when it can edit, the
+  // read-only detail (CP-5) for viewers and locked-version editors.
+  onSegmentActivate: (layer: AssemblyLayer, segment: AssemblySegment) => void;
   onAddSegment: (
     layer: AssemblyLayer,
     segment: AssemblySegment,
@@ -48,12 +51,7 @@ export function AssemblyCanvasOverlay({
   actions: AssemblyCanvasOverlayActions;
 }) {
   return (
-    <div
-      id="assembly-canvas-overlay"
-      className="assembly-canvas-overlay"
-      data-mode={paint.mode}
-      aria-hidden={!canEdit}
-    >
+    <div id="assembly-canvas-overlay" className="assembly-canvas-overlay" data-mode={paint.mode}>
       {canEdit
         ? geometry.layers.map((layerGeometry) => (
             <LayerDimensionControls
@@ -282,7 +280,12 @@ function SegmentOverlay({
   const isPickedSource = paint.pickedSourceKey === currentSegmentKey;
   const isPulseTarget = paint.pastePulseKey === currentSegmentKey;
   const showAddControls = canEdit && paint.mode !== "picking" && paint.mode !== "pasting";
-  const ariaLabel = canEdit ? segmentActionLabel(segmentLabel, paint.mode) : undefined;
+  // The hit target is always clickable: editors get the edit/paint action,
+  // everyone else (viewers, locked-version editors) gets a read-only inspect
+  // (CP-5), so the label reflects which.
+  const ariaLabel = canEdit
+    ? segmentActionLabel(segmentLabel, paint.mode)
+    : `View details for ${segmentLabel}`;
 
   return (
     <div
@@ -303,7 +306,6 @@ function SegmentOverlay({
         id={`assembly-segment-hit-target-${layer.id}-${segment.id}`}
         type="button"
         className="assembly-segment-hit-target"
-        disabled={!canEdit}
         aria-label={ariaLabel}
         onClick={() => {
           handleSegmentAction({ canEdit, paint, actions, layer, segment });
@@ -352,7 +354,12 @@ function handleSegmentAction({
   layer: AssemblyLayer;
   segment: AssemblySegment;
 }): void {
-  if (!canEdit) return;
+  // No edit rights → activate straight away; the host opens the read-only
+  // detail (CP-5). The paint machine is editor-only, so it is bypassed here.
+  if (!canEdit) {
+    actions.onSegmentActivate(layer, segment);
+    return;
+  }
   if (paint.mode === "picking") {
     paint.pickSegment(layer, segment);
     return;
@@ -361,7 +368,7 @@ function handleSegmentAction({
     paint.paintSegment(layer, segment);
     return;
   }
-  actions.onEditSegment(layer, segment);
+  actions.onSegmentActivate(layer, segment);
 }
 
 function SegmentAddControls({

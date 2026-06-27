@@ -1652,6 +1652,25 @@ describe("EnvelopePage", () => {
 
     expect(screen.queryByRole("button", { name: "Assembly actions" })).not.toBeInTheDocument();
   });
+
+  test("viewer clicking a segment opens a read-only detail (CP-5), not the editor", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`, {
+      projectOverride: { access_mode: "viewer" },
+    });
+    await screen.findByRole("link", { name: /WALL-C3/ });
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "View details for Wood fiber board segment in layer 1" }),
+    );
+
+    const detail = await screen.findByRole("dialog", { name: "Segment details" });
+    expect(within(detail).getByText("Wood fiber board")).toBeInTheDocument();
+    expect(within(detail).getByText("Width")).toBeInTheDocument();
+    // It is the read-only inspect, not the editor: no material picker or delete.
+    expect(screen.queryByRole("dialog", { name: "Segment properties" })).not.toBeInTheDocument();
+    expect(within(detail).queryByRole("button", { name: /Delete/ })).not.toBeInTheDocument();
+    expect(within(detail).queryByRole("button", { name: /catalog/i })).not.toBeInTheDocument();
+  });
 });
 
 function renderEnvelope(

@@ -43,7 +43,7 @@ export function AssemblyWorkspace({
   onDeleteLayer,
   onUpdateLayerThickness,
   onAddLayer,
-  onEditSegment,
+  onSegmentActivate,
   onAddSegment,
 }: {
   projectId: string;
@@ -75,7 +75,7 @@ export function AssemblyWorkspace({
   onDeleteLayer: (layer: AssemblyLayer) => void;
   onUpdateLayerThickness: (layer: AssemblyLayer, thicknessMm: number) => void;
   onAddLayer: (layer: AssemblyLayer, position: "above" | "below") => void;
-  onEditSegment: (layer: AssemblyLayer, segment: AssemblySegment) => void;
+  onSegmentActivate: (layer: AssemblyLayer, segment: AssemblySegment) => void;
   onAddSegment: (
     layer: AssemblyLayer,
     segment: AssemblySegment,
@@ -149,7 +149,7 @@ export function AssemblyWorkspace({
             onDeleteLayer={onDeleteLayer}
             onUpdateLayerThickness={onUpdateLayerThickness}
             onAddLayer={onAddLayer}
-            onEditSegment={onEditSegment}
+            onSegmentActivate={onSegmentActivate}
             onAddSegment={onAddSegment}
           />
         </div>

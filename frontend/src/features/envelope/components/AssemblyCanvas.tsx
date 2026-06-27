@@ -41,7 +41,7 @@ export function AssemblyCanvas({
   onDeleteLayer,
   onUpdateLayerThickness,
   onAddLayer,
-  onEditSegment,
+  onSegmentActivate,
   onAddSegment,
 }: {
   assembly: Assembly;
@@ -60,7 +60,7 @@ export function AssemblyCanvas({
   onDeleteLayer: (layer: AssemblyLayer) => void;
   onUpdateLayerThickness: (layer: AssemblyLayer, thicknessMm: number) => void;
   onAddLayer: (layer: AssemblyLayer, position: "above" | "below") => void;
-  onEditSegment: (layer: AssemblyLayer, segment: AssemblySegment) => void;
+  onSegmentActivate: (layer: AssemblyLayer, segment: AssemblySegment) => void;
   onAddSegment: (
     layer: AssemblyLayer,
     segment: AssemblySegment,
@@ -81,7 +81,7 @@ export function AssemblyCanvas({
     onDeleteLayer,
     onUpdateLayerThickness,
     onAddLayer,
-    onEditSegment,
+    onSegmentActivate,
     onAddSegment,
   };
   const [outsideLabel, insideLabel] =
