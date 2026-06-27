@@ -22,7 +22,7 @@ from tests.test_catalogs_frame_types import ORIGIN, _payload, signed_in_client
 # Phase 0 canonical cardinalities (FRAME_TYPE_OPTION_SEEDS).
 _EXPECTED_COUNTS = {
     "use": 6,
-    "operation": 7,
+    "operation": 9,
     "location": 6,
     "mull_type": 3,
     "manufacturer": 13,
@@ -83,6 +83,17 @@ def test_list_returns_seeded_canonical_sets(clean_catalog_tables: None) -> None:
     client = signed_in_client()
     fields = client.get("/api/v1/catalogs/frame-types/options").json()["fields"]
     assert {key: len(value) for key, value in fields.items()} == _EXPECTED_COUNTS
+    assert [option["label"] for option in fields["operation"]] == [
+        "Inswing",
+        "Outswing",
+        "Casement",
+        "Awning",
+        "Hopper",
+        "Fixed",
+        "Tilt-Turn",
+        "Sliding",
+        "Double-Hung",
+    ]
     assert [option["label"] for option in fields["mull_type"]] == ["OP-to-OP", "OP-to-FX", "FX-to-FX"]
 
 

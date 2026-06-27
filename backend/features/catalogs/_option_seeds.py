@@ -39,6 +39,8 @@ FRAME_TYPE_OPTION_SEEDS: Final[dict[str, list[str]]] = {
         "Inswing",
         "Outswing",
         "Casement",
+        "Awning",
+        "Hopper",
         "Fixed",
         "Tilt-Turn",
         "Sliding",

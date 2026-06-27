@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
 TIME: 08:56 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Add Awning and Hopper as valid frame catalog operation options.
 RELATED:
@@ -84,3 +84,19 @@ make db-migrate-test
 - `Awning` and `Hopper` appear as valid frame operation options.
 - Existing frame catalog import/export behavior remains unchanged except for
   accepting the two new labels.
+
+## Completion evidence
+
+Implemented on 2026-06-27:
+
+- Added `Awning` and `Hopper` to `FRAME_TYPE_OPTION_SEEDS["operation"]`.
+- Updated the current baseline bootstrap option rows to include the same labels
+  and display order.
+- Updated focused backend tests for the canonical operation option list and row
+  creation with both new labels.
+
+Verification passed:
+
+```bash
+cd backend && DATABASE_URL="postgresql://phn:phn_local_only@localhost:5433/ph_navigator_v2_test" uv run pytest tests/test_catalog_field_options.py tests/test_catalogs_frame_types.py
+```
