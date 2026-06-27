@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { Filter, Ruler } from "lucide-react";
 import { describe, expect, it, vi } from "vitest";
-import { AppMenu, AppMenuItem } from "../AppMenu";
+import { AppMenu, AppMenuCheckboxItem, AppMenuItem } from "../AppMenu";
 
 describe("AppMenu", () => {
   it("uses the shared overflow trigger and icon-text item layout", () => {
@@ -78,5 +78,46 @@ describe("AppMenu", () => {
     fireEvent.click(screen.getByRole("menuitem", { name: "Configure filters" }));
     expect(onClick).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("menuitem", { name: "Configure filters" })).not.toBeInTheDocument();
+  });
+
+  it("renders checkbox items without closing the menu by default", () => {
+    const onClick = vi.fn();
+    render(
+      <AppMenu label="Aperture actions" defaultOpen>
+        <AppMenuCheckboxItem
+          checked
+          title="Filter by frame side"
+          aria-description="Show side-appropriate frame rows."
+          data-tooltip="Show side-appropriate frame rows."
+          onClick={onClick}
+        >
+          Filter frames by side
+        </AppMenuCheckboxItem>
+      </AppMenu>,
+    );
+
+    const item = screen.getByRole("menuitemcheckbox", { name: "Filter frames by side" });
+    expect(item).toHaveClass("app-menu__checkbox-item");
+    expect(item).toHaveAttribute("aria-checked", "true");
+    expect(item).toHaveAttribute("title", "Filter by frame side");
+    expect(item).toHaveAttribute("data-tooltip", "Show side-appropriate frame rows.");
+    fireEvent.click(item);
+    expect(onClick).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("menuitemcheckbox", { name: "Filter frames by side" })).toBeVisible();
+  });
+
+  it("can close checkbox items on select when requested", () => {
+    render(
+      <AppMenu label="Aperture actions" defaultOpen>
+        <AppMenuCheckboxItem checked={false} closeOnSelect>
+          Filter frames by operation
+        </AppMenuCheckboxItem>
+      </AppMenu>,
+    );
+
+    fireEvent.click(screen.getByRole("menuitemcheckbox", { name: "Filter frames by operation" }));
+    expect(
+      screen.queryByRole("menuitemcheckbox", { name: "Filter frames by operation" }),
+    ).not.toBeInTheDocument();
   });
 });
