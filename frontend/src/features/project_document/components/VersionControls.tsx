@@ -2,7 +2,6 @@ import "../version-controls.css";
 import { useEffect, useRef, type ReactNode } from "react";
 import { useOutsidePointerDown } from "../../../shared/ui/useOutsidePointerDown";
 import type { ProjectDetail } from "../../projects/types";
-import { projectDownloadUrl } from "../api";
 import { useDiffQuery, useDraftSummaryQuery } from "../hooks";
 import { draftLooksRecovered, isReadSafeProjectDocument, wasLocalDraftTouched } from "../lib";
 import { useDraftLifecycle } from "../hooks/useDraftLifecycle";
@@ -107,25 +106,12 @@ export function VersionControls({
   ]);
 
   if (!isEditor) {
-    const documentControls = (
-      <div className="shell-controls viewer-controls">
-        <span>Edit controls hidden</span>
-        {onOpenProjectSettings ? (
-          <button type="button" className="secondary-button" onClick={onOpenProjectSettings}>
-            Project settings
-          </button>
-        ) : null}
-        {activeVersionId ? (
-          <a
-            className="secondary-button download-link"
-            href={projectDownloadUrl(project.id, activeVersionId)}
-          >
-            Project JSON
-          </a>
-        ) : null}
-      </div>
-    );
-    return <>{children ? children({ pathControls: null, documentControls }) : documentControls}</>;
+    // Viewers (beta `client`) get no document controls: no version switcher —
+    // they are pinned to the latest committed version (CP-8); no Project
+    // Settings entry (ledger §4.9 — hidden entirely from viewers); and no
+    // Project-JSON download (a bulk export → editor-only, CP-7, and the route
+    // 401s viewers anyway). The top-bar "Read-only" pill is the sole chrome.
+    return <>{children ? children({ pathControls: null, documentControls: null }) : null}</>;
   }
 
   const toggleLock = async () => {

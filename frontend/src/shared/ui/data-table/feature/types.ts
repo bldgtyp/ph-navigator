@@ -116,6 +116,10 @@ export interface SliceTableController<TSlice> {
   actionError: string | null;
   setActionError: (message: string | null) => void;
   canEdit: boolean;
+  // Access-principal class (member+), independent of the version lock. Export
+  // affordances (CSV/Phius) gate on this so an editor on a locked version can
+  // still export (CP-7); mutations gate on `canEdit`.
+  isEditor: boolean;
   isLocked: boolean;
   reloadDraft: () => Promise<void>;
   // Surfaced for consumers that compose a wrapper modal-save path

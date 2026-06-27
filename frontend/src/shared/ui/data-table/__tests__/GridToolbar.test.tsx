@@ -41,6 +41,7 @@ function renderToolbar(
       onExpandAllGroups={handlers.onExpandAllGroups ?? vi.fn()}
       onResetView={handlers.onResetView ?? vi.fn()}
       onDownloadCsv={handlers.onDownloadCsv ?? vi.fn()}
+      canDownloadCsv
       onHideFieldsChange={handlers.onHideFieldsChange ?? vi.fn()}
     />,
   );

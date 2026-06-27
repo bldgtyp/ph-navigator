@@ -255,15 +255,20 @@ export function OutdoorEquipTable({
             setModal({ kind: "outdoor", mode: "add", row: buildEmptyOutdoorEquipRow() }),
           )}
           overflowMenuActions={
-            <button
-              type="button"
-              className="data-table-menu-item"
-              disabled={rows.length === 0}
-              title={rows.length === 0 ? "Add an outdoor heat-pump model first." : undefined}
-              onClick={() => setPhiusDialogOpen(true)}
-            >
-              Export to Phius HP Estimator...
-            </button>
+            // Phius export is a bulk export → editor-only (CP-7); hidden from
+            // viewers. Gates on `isEditor` (access class), not `canEdit`, so an
+            // editor on a locked version can still export.
+            controller.isEditor ? (
+              <button
+                type="button"
+                className="data-table-menu-item"
+                disabled={rows.length === 0}
+                title={rows.length === 0 ? "Add an outdoor heat-pump model first." : undefined}
+                onClick={() => setPhiusDialogOpen(true)}
+              >
+                Export to Phius HP Estimator...
+              </button>
+            ) : null
           }
           {...customFieldActionsForController(controller)}
         />

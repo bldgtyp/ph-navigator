@@ -557,16 +557,21 @@ enforced when certifier/teams arrive.
 - [ ] Confirm `street_address` stays the only redacted location field;
   city/state/postal/county/country stay public (no change expected).
 
-### Frontend — Beta
-- [ ] **Pin `client` to latest committed version**: hide the version
-  switcher/history/diff for viewers; lock to latest committed (§4.9 / CP-8).
-- [ ] **Hide bulk-export/download buttons** from `client` (CSV, HBJSON, PHPP,
-  model). Attachments stay view+download for all (CP-7).
-- [ ] **Hide Project Settings entry** from viewers entirely (today `isViewer` →
-  read-only modal; change to not-rendered) (§4.9).
-- [ ] **Verify CP-5**: aperture + envelope canvas inspection click is NOT gated on
-  `canEdit`; add a read-only detail-modal variant if it is.
-- [ ] (No change) IP/SI toggle already viewer-safe (CP-9); pan/zoom client-side
+### Frontend — Beta (Phase 4 landed; build status tracked in PLAN/STATUS)
+- [x] **Pin `client` to latest committed version**: `ProjectShell` ignores
+  `?version=` for viewers; the `VersionControls` viewer branch renders no
+  switcher/history/diff; the read-safe panel hides its version list (§4.9 / CP-8).
+- [x] **Hide bulk-export/download buttons** from `client` (CSV, HBJSON, PHPP,
+  Phius, model, project-JSON), all gated on the access class (so a locked-version
+  editor keeps export). Attachments stay view+download for all (CP-7).
+- [x] **Hide Project Settings entry** from viewers entirely (the
+  `VersionControls` viewer branch no longer renders it) (§4.9).
+- [ ] **CP-5 read-only canvas-inspect modal → Phase 4b.** *Verified:* the
+  envelope segment click is `canEdit`-gated (disabled + `aria-hidden` for
+  viewers); material + width are already viewer-visible via the segment tooltip
+  + the read-only Materials sidebar, so the gap is a dedicated inspect modal
+  (net-new canvas UI), split out to keep Phase 4 shippable.
+- [x] (No change) IP/SI toggle already viewer-safe (CP-9); pan/zoom client-side
   (CP-1).
 
 ### Reserved (schema/seam shaped now; enforced later)

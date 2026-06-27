@@ -1,8 +1,10 @@
 ---
 DATE: 2026-06-27
-TIME: 19:15 ET
-STATUS: Active — Phases 1–3 landed (schema + resolver + backend beta deltas).
-        Phase 4 (frontend) next; Phase 5 deferred to the RBC trigger.
+TIME: 21:40 ET
+STATUS: Active — Phases 1–4 landed (schema + resolver + backend beta deltas +
+        frontend beta deltas). Phase 4b (CP-5 read-only canvas-inspect modal)
+        and Phase 5 (tenancy) are the remaining work; Phase 5 deferred to the
+        RBC trigger.
 AUTHOR: Claude (Opus 4.8) + Ed
 SCOPE: State tracker for the access-capability-model refactor.
 RELATED:
@@ -12,12 +14,14 @@ RELATED:
 
 # STATUS — Access Capability Model
 
-**State:** Active. Phases 1–3 are implemented and green. Phases 1–2 (schema +
-resolver) were behavior-neutral; Phase 3 (backend beta deltas) is the first
-*observable* change — anonymous exports are gated, `client` viewers get redacted
-project metadata, and catalog writes require `catalog.edit`. The
-model/schema/decisions were agreed with Ed on 2026-06-27 and the phase sequence
-lives in `PLAN.md`.
+**State:** Active. Phases 1–4 are implemented and green. Phases 1–2 (schema +
+resolver) were behavior-neutral; Phase 3 (backend beta deltas) and Phase 4
+(frontend beta deltas) are the *observable* changes — anonymous/`client`
+exports are gated front and back, `client` viewers get redacted project
+metadata, are pinned to the latest version with no version/Settings UI, and lose
+every bulk-export/download affordance (HBJSON/PHPP/Phius/model/CSV/project-JSON);
+catalog writes require `catalog.edit`. The model/schema/decisions were agreed
+with Ed on 2026-06-27 and the phase sequence lives in `PLAN.md`.
 
 ## Where things stand
 
@@ -60,7 +64,24 @@ lives in `PLAN.md`.
   `features/catalogs/access.py` is the gate. Tests: `test_access_phase3_deltas.py`
   (redaction + an export coverage-guard + catalog gating) plus reconciled catalog
   tests via `tests/catalog_helpers.create_catalog_admin`. Full suite (1161) green.
-- **Phase 4 (frontend): not started. Phase 5: deferred (RBC trigger).**
+- **Phase 4 — frontend beta deltas: DONE.** The viewer UI now matches the
+  decided `client` surface. (1) Version pin: `ProjectShell` ignores `?version=`
+  for viewers (auto-follows `active_version`); the `VersionControls` viewer
+  branch renders no path controls/switcher/diff; the read-safe recovery panel
+  hides its version list from viewers (CP-8). (2) Bulk-export hiding (CP-7), all
+  gated on `!isViewer`/`isEditor` (the access class, NOT `canEdit`, so a
+  locked-version editor keeps export): envelope HBJSON+PHPP menu, heat-pump
+  Phius export, model `.hbjson` download, project-JSON download, and per-table
+  **CSV** via a new `canDownloadCsv` prop threaded
+  DataTable→GridToolbar→ViewMenuOverflow and carried to every slice table
+  through the `customFieldActionsForController` seam (`controller.isEditor`).
+  (3) Project Settings entry removed from the viewer chrome (§4.9). Tests:
+  `csvDownload.test.tsx` (the gate + locked-editor-keeps-CSV), reconciled
+  envelope/model viewer tests; full frontend suite (1410) green; `tsc`/`eslint`/
+  DataTable-contract-checker clean. **CP-5 (read-only canvas-inspect modal) was
+  split to Phase 4b** — see below.
+- **Phase 4b — CP-5 read-only canvas-inspect modal: not started.** **Phase 5
+  (tenancy): deferred (RBC trigger).**
 
 ## Decided (locked)
 
@@ -72,19 +93,20 @@ lives in `PLAN.md`.
 ## Blockers / dependencies
 
 - **Phase 5 (tenancy + certifier shares)** is gated on the RBC partnership firming
-  up (see `planning/features_v2.0/multi-tenant-teams/STATUS.md`). Phases 1–4 have
+  up (see `planning/features_v2.0/multi-tenant-teams/STATUS.md`). Phases 1–4b have
   no external blocker.
-- No decision blockers remain for Phases 1–4.
+- No decision blockers remain for Phases 1–4b.
 
 ## Next step
 
-**Phase 4 — frontend beta deltas** (PLAN.md §Phase 4): make the viewer UI match
-the decided model. Pin `client` to the latest committed version (hide the version
-switcher/history/diff), hide bulk-export/download buttons + the Project Settings
-entry from viewers, and verify CP-5 (canvas inspect click isn't `canEdit`-gated).
-**Note:** this worktree has no frontend `node_modules`, so `make ci-frontend`
-can't run here — Phase 4 needs an environment with the frontend toolchain
-installed. P5 stays deferred to the RBC trigger.
+**Phase 4b — CP-5 read-only canvas-inspect modal** (PLAN.md §Phase 4b): let a
+viewer click an envelope/aperture canvas element to open a *read-only* detail
+(material + width + stud spacing + layer). *Verified during Phase 4:* the
+envelope segment hit-target is `disabled={!canEdit}` and its overlay is
+`aria-hidden={!canEdit}`, so viewers can't click-inspect; material + width are
+already viewer-visible via the segment `title` tooltip + the read-only Materials
+sidebar, so the gap is a dedicated inspect modal (net-new canvas UI), not a
+missing capability. Then Phase 5 stays deferred to the RBC trigger.
 
 ## Verification
 
@@ -97,4 +119,10 @@ installed. P5 stays deferred to the RBC trigger.
 - Phase 3: backend CI green (ruff/format/boundary/ty + full suite, 1161);
   `tests/test_access_phase3_deltas.py` locks redaction, the export coverage-guard
   (every export/download route 401s anonymous), and catalog gating; catalog tests
-  reconciled to sign in as a staff catalog-admin. Later phase gates in PLAN.md.
+  reconciled to sign in as a staff catalog-admin.
+- Phase 4: frontend `tsc` + `eslint` + `node scripts/check-data-table-contract.mjs`
+  + full vitest suite (1410) green. `csvDownload.test.tsx` locks the CSV gate
+  (hidden when `canDownloadCsv=false`) and the locked-editor-keeps-CSV contract;
+  envelope + model-viewer viewer tests assert the export menus are gone for
+  viewers. Browser logged-out walkthrough + Playwright smoke recommended before
+  deploy. Later phase gates in PLAN.md.

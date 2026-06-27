@@ -11,23 +11,38 @@ export type CustomFieldRow = {
   custom_links?: Record<string, string[]> | null | undefined;
 };
 
+// Controller-derived DataTable props that every slice table forwards via
+// `{...customFieldActions}`: the custom-field edit handlers (present only when
+// editable) plus `canDownloadCsv` (the CP-7 export gate, always present).
 export type CustomFieldTableActions<TRow> = Pick<
   DataTableProps<TRow>,
-  "onDeleteCustomField" | "onAddCustomField" | "onDuplicateCustomField" | "onEditCustomFieldBundle"
+  | "onDeleteCustomField"
+  | "onAddCustomField"
+  | "onDuplicateCustomField"
+  | "onEditCustomFieldBundle"
+  | "canDownloadCsv"
 >;
 
 export function customFieldActionsForController<TSlice>(
   controller: Pick<
     SliceTableController<TSlice>,
     | "canEdit"
+    | "isEditor"
     | "handleDeleteCustomField"
     | "handleAddCustomField"
     | "handleDuplicateCustomField"
     | "handleEditCustomFieldBundle"
   >,
 ) {
-  if (!controller.canEdit) return {};
+  // CSV download is a bulk export → editor/certifier-only (CP-7). Gate on the
+  // access principal (`isEditor`), NOT `canEdit`, so an editor browsing a
+  // locked version still keeps export. Custom-field edit handlers stay
+  // `canEdit`-gated (they mutate). This is the single seam through which every
+  // slice table inherits both rules.
+  const exportGate = { canDownloadCsv: controller.isEditor };
+  if (!controller.canEdit) return exportGate;
   return {
+    ...exportGate,
     onDeleteCustomField: controller.handleDeleteCustomField,
     onAddCustomField: controller.handleAddCustomField,
     onDuplicateCustomField: controller.handleDuplicateCustomField,

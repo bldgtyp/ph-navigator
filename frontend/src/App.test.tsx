@@ -521,9 +521,12 @@ describe("App", () => {
     render(<App />);
 
     expect(await screen.findByText("Read-only")).toBeVisible();
-    expect(screen.getByText("Edit controls hidden")).toBeVisible();
+    // Viewers get no document controls: no version/edit controls, and — per the
+    // access-capability model — no Project Settings entry (§4.9) and no
+    // project-JSON download (CP-7). The "Read-only" pill is the only chrome.
     expect(screen.queryByRole("button", { name: "Save Version" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Project settings" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Project settings" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Project JSON" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
       "href",
       `/sign-in?next=${encodeURIComponent(
@@ -905,7 +908,10 @@ describe("App", () => {
 
     expect(await screen.findByRole("heading", { name: "Project format recovery" })).toBeVisible();
     expect(screen.getByText("Read-only")).toBeVisible();
-    expect(screen.getByRole("link", { name: "Download raw project JSON" })).toBeVisible();
+    // The raw project-JSON download is a bulk export → editor-only (CP-7), so a
+    // viewer's recovery panel shows the message but no download link.
+    expect(screen.queryByRole("link", { name: "Download raw project JSON" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Project JSON" })).not.toBeInTheDocument();
     expect(screen.queryByText("Saved schema")).not.toBeInTheDocument();
     expect(screen.queryByText("schema-safe")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Save Version" })).not.toBeInTheDocument();

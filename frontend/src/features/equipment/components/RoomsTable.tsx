@@ -45,6 +45,7 @@ export function RoomsTable({
   onAddCustomField,
   onDuplicateCustomField,
   onEditCustomFieldBundle,
+  canDownloadCsv,
   formulaFieldRegistry,
   getFormulaRowValues,
   rowsComputed,
@@ -71,6 +72,10 @@ export function RoomsTable({
   onAddCustomField?: DataTableProps<RoomRow>["onAddCustomField"];
   onDuplicateCustomField?: DataTableProps<RoomRow>["onDuplicateCustomField"];
   onEditCustomFieldBundle?: DataTableProps<RoomRow>["onEditCustomFieldBundle"];
+  // CSV export gate (CP-7), supplied by the slot via
+  // `customFieldActionsForController` so it tracks the access principal
+  // (`controller.isEditor`), independent of the version lock.
+  canDownloadCsv?: DataTableProps<RoomRow>["canDownloadCsv"];
   formulaFieldRegistry?: DataTableProps<RoomRow>["formulaFieldRegistry"];
   getFormulaRowValues?: DataTableProps<RoomRow>["getFormulaRowValues"];
   rowsComputed?: Record<string, Record<string, unknown>>;
@@ -183,6 +188,7 @@ export function RoomsTable({
       getRowId={(room) => room.id}
       emptyMessage={isEditor ? "No rooms yet." : "No rooms are published in this version."}
       readOnly={!isEditor}
+      canDownloadCsv={canDownloadCsv}
       view={view}
       onViewChange={onViewChange}
       onWrite={onWrite}

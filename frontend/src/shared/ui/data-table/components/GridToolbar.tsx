@@ -31,6 +31,9 @@ export type GridToolbarProps = {
   // Built-in CSV download for the current view. Required — see
   // ViewMenuOverflowProps.onDownloadCsv (parent-owned iron-law affordance).
   onDownloadCsv: () => void;
+  // Whether the Download CSV item is shown (CP-7: hidden from viewers). The
+  // handler stays required/wired; only visibility is access-gated.
+  canDownloadCsv: boolean;
   onHideFieldsChange: (change: HideFieldsPanelChange) => void;
   overflowMenuActions?: ReactNode;
   actions?: ReactNode;
@@ -53,6 +56,7 @@ export function GridToolbar({
   onExpandAllGroups,
   onResetView,
   onDownloadCsv,
+  canDownloadCsv,
   onHideFieldsChange,
   overflowMenuActions,
   actions,
@@ -188,6 +192,7 @@ export function GridToolbar({
           onReset={onResetView}
           canReset={canResetView}
           onDownloadCsv={onDownloadCsv}
+          canDownloadCsv={canDownloadCsv}
           actions={overflowMenuActions}
         />
       </div>

@@ -127,6 +127,10 @@ export function AttachmentRowsTable({
       onViewChange={() => undefined}
       onWrite={readOnly ? undefined : onWrite}
       readOnly={readOnly}
+      // CSV export is editor-only (CP-7). Here `readOnly` tracks the viewer
+      // access class (attachment rows have no version lock), so it doubles as
+      // the export gate.
+      canDownloadCsv={!readOnly}
       emptyMessage="No rows are available for this attachment field."
       overflowMenuActions={
         <button type="button" onClick={() => void downloadAll()}>

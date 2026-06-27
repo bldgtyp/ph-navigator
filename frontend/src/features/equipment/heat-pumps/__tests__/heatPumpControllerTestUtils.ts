@@ -26,6 +26,7 @@ export function heatPumpTestController<TSlice>({
       await onWrite(op);
     }),
     canEdit: true,
+    isEditor: true,
     isLocked: false,
     editBlocker: null,
     setEditBlocker: vi.fn(),
