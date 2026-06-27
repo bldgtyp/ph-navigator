@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
 TIME: 08:56 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Apertures actions menu wiring and picker preference context.
 RELATED:
@@ -83,3 +83,20 @@ type FramePickerFilterContextValue = {
 - `FramePicker` can read the preferences but can still render without a
   provider.
 - No project document mutation fires when either checkbox is toggled.
+
+## Completion evidence
+
+Implemented on 2026-06-27:
+
+- Added `FramePickerFilterMenuItems` to the existing `Aperture actions` menu.
+- Wired `useFramePickerFilterPreferences(project.id)` in `AperturesTab`.
+- Added `FramePickerFilterProvider` / `useFramePickerFilters` with defaults for
+  isolated picker renders.
+- Updated `FramePicker` to consume the provider state without changing catalog
+  filtering yet.
+
+Verification passed:
+
+```bash
+cd frontend && pnpm exec vitest run src/shared/ui/__tests__/AppMenu.test.tsx src/features/apertures/__tests__/FramePickerFilterMenuItems.test.tsx src/features/apertures/__tests__/useFramePickerFilters.test.tsx src/features/apertures/__tests__/useFramePickerFilterPreferences.test.ts
+```

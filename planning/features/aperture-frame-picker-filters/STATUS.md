@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
 TIME: 08:56 EDT
-STATUS: Active - Phase 01 implemented
+STATUS: Active - Phase 02 implemented
 AUTHOR: Codex
 SCOPE: Current state of the Apertures frame-picker filter controls planning
   packet.
@@ -18,8 +18,8 @@ RELATED:
 ## Current state
 
 State: **Active.** Research, PRD, high-level plan, and detailed phase handoff
-files are drafted. Phase 00 decisions are confirmed. Phase 01 source work is
-implemented and verified with focused frontend tests.
+files are drafted. Phase 00 decisions are confirmed. Phases 01 and 02 source
+work are implemented and verified with focused frontend tests.
 
 ## Findings
 
@@ -48,7 +48,7 @@ implemented and verified with focused frontend tests.
 
 ## Next step
 
-Continue with `phases/phase-02-actions-menu-context.md`.
+Continue with `phases/phase-03-picker-filter-engine.md`.
 
 ## Verification so far
 
@@ -60,3 +60,11 @@ cd frontend && pnpm exec vitest run src/features/apertures/__tests__/useFramePic
 ```
 
 Both commands passed on 2026-06-27.
+
+Phase 02 focused verification:
+
+```bash
+cd frontend && pnpm exec vitest run src/shared/ui/__tests__/AppMenu.test.tsx src/features/apertures/__tests__/FramePickerFilterMenuItems.test.tsx src/features/apertures/__tests__/useFramePickerFilters.test.tsx src/features/apertures/__tests__/useFramePickerFilterPreferences.test.ts
+```
+
+The command passed on 2026-06-27.
