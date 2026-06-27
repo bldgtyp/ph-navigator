@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
 TIME: 11:00 EDT
-STATUS: Planned - implementation not started.
+STATUS: Implemented on branch.
 AUTHOR: Codex with Ed May
 SCOPE: Phase 2 - golden corpus and regression tests.
 RELATED:
@@ -71,5 +71,32 @@ Focused backend test module, likely under:
 backend/tests/test_project_document_schema_migrations.py
 ```
 
-or a similarly named package-local test.
+## Implementation Notes
 
+Implemented 2026-06-27:
+
+- Added frozen v1 JSON fixture pairs under
+  `backend/tests/project_document_schema/fixtures/v1/inputs/` and
+  `backend/tests/project_document_schema/fixtures/v1/expected/`.
+- Added `empty_seeded_project` and `representative_design` fixtures. The
+  representative body covers project metadata, rooms, Space-Types linked
+  records, custom fields, custom single-select option lists, pump unit fields,
+  datasheet IDs, project glazings/frames, aperture references, and manufacturer
+  filters.
+- Added fixture README guidance that old-version inputs are frozen artifacts and
+  future schema bumps add new old-shape fixtures instead of regenerating prior
+  ones.
+- Added `backend/tests/test_project_document_schema_migrations.py` to discover
+  `v*/inputs/*.json` fixture cases, run the upgrader, validate the document,
+  compare canonical serialized output byte-for-byte against committed snapshots,
+  enforce body-size safety through the production helper, and prove idempotence.
+
+## Verification Evidence
+
+```bash
+cd backend && uv run ruff check tests/test_project_document_schema_migrations.py
+cd backend && uv run ty check tests/test_project_document_schema_migrations.py
+cd backend && uv run pytest tests/test_project_document_schema_migrations.py
+```
+
+Result: 2 passed.
