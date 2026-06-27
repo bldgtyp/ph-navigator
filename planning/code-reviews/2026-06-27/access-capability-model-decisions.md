@@ -532,6 +532,12 @@ PUBLIC entry point.
 
 ## 5. Implementation punch-list (deltas from today's behavior)
 
+> This is the original walkthrough punch-list. Build status is tracked in
+> `planning/refactor/access-capability-model/{PLAN,STATUS}.md`, not by the boxes
+> below — as of Phases 1–3 the backend-beta items here are done (the catalog gate
+> shipped via the `user_grants` / `catalog.edit` mechanism of decision D8, not the
+> `users.can_edit_catalog` boolean this list originally proposed).
+
 Concrete code changes the decisions imply. **Beta** = needed for the read-only
 launch (binary `client`/`member`); **Reserved** = schema/seam shaped now,
 enforced when certifier/teams arrive.

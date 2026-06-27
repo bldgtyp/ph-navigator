@@ -17,18 +17,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 from functools import cached_property
-from typing import Any, Literal
+from typing import Literal
 from uuid import UUID
 
 from fastapi import HTTPException, Request
-from psycopg import Connection
 from starlette import status
 
 from database import connection
-from features.access import repository as access_repository
 from features.access.capabilities import PROJECT_EDIT, capabilities_for
 from features.access.principals import Principal, UserPrincipal, ViewerPrincipal
-from features.auth import repository as auth_repository
+from features.access.user_capabilities import build_user_principal
 from features.auth.models import UserPublic
 from features.auth.service import current_user_from_request
 from features.projects import repository
@@ -58,6 +56,10 @@ class ProjectAccess:
     def is_editor(self) -> bool:
         return PROJECT_EDIT in self.capabilities
 
+    def has_capability(self, capability: str) -> bool:
+        """Non-raising capability check, for redaction/branching at call sites."""
+        return capability in self.capabilities
+
 
 def optional_current_user(request: Request) -> UserPublic | None:
     try:
@@ -65,20 +67,6 @@ def optional_current_user(request: Request) -> UserPublic | None:
     except HTTPException:
         return None
     return user
-
-
-def _user_principal(conn: Connection[Any], user: UserPublic) -> UserPrincipal:
-    """Build a `UserPrincipal` with the resolver inputs (is_staff + grants).
-
-    Two small indexed point-lookups per authenticated request. With no users or
-    traffic yet that cost is irrelevant; folding `is_staff` into the session JOIN
-    and/or caching the principal per request are deferred optimizations.
-    """
-    return UserPrincipal(
-        user=user,
-        is_staff=auth_repository.get_user_is_staff(conn, user.id),
-        granted_capabilities=access_repository.active_global_capabilities_for_user(conn, user.id),
-    )
 
 
 def require_project_access(project_id: UUID, request: Request, mode: ProjectAccessMode) -> ProjectAccess:
@@ -105,7 +93,7 @@ def require_project_access(project_id: UUID, request: Request, mode: ProjectAcce
                 },
             )
         project = ProjectSummary.model_validate({field: project_row[field] for field in ProjectSummary.model_fields})
-        principal: Principal = _user_principal(conn, user) if user is not None else ViewerPrincipal()
+        principal: Principal = build_user_principal(conn, user) if user is not None else ViewerPrincipal()
 
     access = ProjectAccess(project_id=project_id, mode=mode, principal=principal, project=project)
     if mode == "edit":
@@ -121,7 +109,7 @@ def project_access_for_user(user: UserPublic, project: ProjectSummary, mode: Pro
     (is_staff + grants) exactly as the request seam does.
     """
     with connection() as conn:
-        principal = _user_principal(conn, user)
+        principal = build_user_principal(conn, user)
     return ProjectAccess(project_id=project.id, mode=mode, principal=principal, project=project)
 
 

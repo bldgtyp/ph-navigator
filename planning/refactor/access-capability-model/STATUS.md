@@ -1,8 +1,8 @@
 ---
 DATE: 2026-06-27
-TIME: 18:30 ET
-STATUS: Active — Phases 1–2 landed (schema + resolver, behavior-neutral).
-        Phases 3–5 not started.
+TIME: 19:15 ET
+STATUS: Active — Phases 1–3 landed (schema + resolver + backend beta deltas).
+        Phase 4 (frontend) next; Phase 5 deferred to the RBC trigger.
 AUTHOR: Claude (Opus 4.8) + Ed
 SCOPE: State tracker for the access-capability-model refactor.
 RELATED:
@@ -12,10 +12,12 @@ RELATED:
 
 # STATUS — Access Capability Model
 
-**State:** Active. Phases 1–2 (schema foundation + capability resolver) are
-implemented and green — both behavior-neutral (the binary check now flows through
-the resolver). The model/schema/decisions were agreed with Ed on 2026-06-27 and
-the phase sequence lives in `PLAN.md`.
+**State:** Active. Phases 1–3 are implemented and green. Phases 1–2 (schema +
+resolver) were behavior-neutral; Phase 3 (backend beta deltas) is the first
+*observable* change — anonymous exports are gated, `client` viewers get redacted
+project metadata, and catalog writes require `catalog.edit`. The
+model/schema/decisions were agreed with Ed on 2026-06-27 and the phase sequence
+lives in `PLAN.md`.
 
 ## Where things stand
 
@@ -46,7 +48,19 @@ the phase sequence lives in `PLAN.md`.
   today's allow/deny exactly (anonymous→`client`, session→`member`) — full suite
   (1155) green, behavior-neutral. Grant resolution is scope-filtered to global
   grants (scope-aware resolution deferred to Phase 5).
-- **Phases 3–5: not started.**
+- **Phase 3 — backend beta deltas: DONE.** Capability constants + bundles
+  (`EXPORT_CAPS`, `PROJECT_VIEW_PRIVATE`, per-surface export keys). (1) Metadata
+  redaction: `get_project_detail` redacts `client` + `phius_dropbox_url` from
+  `client` viewers (`phius_number` stays public). (2) Export gating: the 8
+  anon-readable export/download routes (apertures/envelope/equipment/model HBJSON-
+  PHPP-Phius + the two project-document JSON downloads) now require their export
+  capability — editor-only in beta. (3) Catalog writes: a `CatalogEditor`
+  dependency on the ~23 write routes requires `catalog.edit` (grant or `is_staff`);
+  `features/access/user_capabilities.py` resolves the non-project capability and
+  `features/catalogs/access.py` is the gate. Tests: `test_access_phase3_deltas.py`
+  (redaction + an export coverage-guard + catalog gating) plus reconciled catalog
+  tests via `tests/catalog_helpers.create_catalog_admin`. Full suite (1161) green.
+- **Phase 4 (frontend): not started. Phase 5: deferred (RBC trigger).**
 
 ## Decided (locked)
 
@@ -64,12 +78,13 @@ the phase sequence lives in `PLAN.md`.
 
 ## Next step
 
-**Phase 3 — backend beta deltas** (PLAN.md §Phase 3): the first *observable*
-changes. Add export/private capabilities (not in `CLIENT_CAPS`) and migrate the
-specific routes onto `require_capability`: gate the anon-readable exports
-(apertures/envelope/equipment/model/document downloads), redact
-`phius_dropbox_url` + `client` from `client` viewers, and gate catalog writes on
-`catalog.edit`. P4 is the frontend match; P5 stays deferred to the RBC trigger.
+**Phase 4 — frontend beta deltas** (PLAN.md §Phase 4): make the viewer UI match
+the decided model. Pin `client` to the latest committed version (hide the version
+switcher/history/diff), hide bulk-export/download buttons + the Project Settings
+entry from viewers, and verify CP-5 (canvas inspect click isn't `canEdit`-gated).
+**Note:** this worktree has no frontend `node_modules`, so `make ci-frontend`
+can't run here — Phase 4 needs an environment with the frontend toolchain
+installed. P5 stays deferred to the RBC trigger.
 
 ## Verification
 
@@ -78,4 +93,8 @@ specific routes onto `require_capability`: gate the anon-readable exports
   global-scope CHECK; alembic up/down/up roundtrip clean.
 - Phase 2: backend CI green; `tests/test_access_resolver.py` pins the beta
   bundles + the 401-viewer/403-user contract; full suite (1155) unchanged →
-  behavior-neutral. Later phase gates are defined in PLAN.md.
+  behavior-neutral.
+- Phase 3: backend CI green (ruff/format/boundary/ty + full suite, 1161);
+  `tests/test_access_phase3_deltas.py` locks redaction, the export coverage-guard
+  (every export/download route 401s anonymous), and catalog gating; catalog tests
+  reconciled to sign in as a staff catalog-admin. Later phase gates in PLAN.md.

@@ -29,6 +29,7 @@ from features.projects.access import project_access_for_user
 from features.projects.models import CreateProjectRequest, ProjectSummary
 from features.projects.service import empty_project_document
 from main import app
+from tests.catalog_helpers import create_catalog_admin
 from tests.project_document_helpers import (
     draft_schema_and_etag,
     field_defs_fingerprint,
@@ -41,7 +42,10 @@ ORIGIN = "http://localhost:5173"
 
 
 def signed_in_client() -> TestClient:
-    create_or_update_user(email="ed@example.com", display_name="Ed May", password="password")
+    # Catalog admin (is_staff): envelope tests that chain off this client create
+    # catalog materials, which now require `catalog.edit`. Harmless elsewhere —
+    # in beta `is_staff` only adds the catalog capability.
+    create_catalog_admin()
     client = TestClient(app)
     response = client.post(
         "/api/v1/auth/login",

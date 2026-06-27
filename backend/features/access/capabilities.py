@@ -30,15 +30,46 @@ from features.access.principals import Principal, UserPrincipal, ViewerPrincipal
 PROJECT_VIEW = "project.view"
 # Any mutation of the project document or its backend state (today's "editor").
 PROJECT_EDIT = "project.edit"
+# Read the redacted project metadata — client name + internal Dropbox URL
+# (`certifier`+; redacted from `client`). `phius_number`/`name`/`bt_number`
+# stay public; `owner_display_name` is gated separately on edit (member+).
+PROJECT_VIEW_PRIVATE = "project.view.private_metadata"
+
+# Bulk exports/downloads — `certifier`+ (CP-7), beta: editor-only. One key per
+# export surface, matching the decisions-ledger §4 taxonomy. The per-surface
+# split buys no behavioral difference in beta (members hold all, clients none);
+# it is intentional forward investment for the certifier bundle (Phase 5).
+APERTURES_EXPORT_HBJSON = "apertures.export.hbjson"
+ENVELOPE_EXPORT_HBJSON = "envelope.export.hbjson"
+ENVELOPE_EXPORT_PHPP = "envelope.export.phpp"
+EQUIPMENT_EXPORT_PHIUS = "equipment.export.phius"
+MODEL_EXPORT = "model.export"
+DOCUMENT_EXPORT = "document.export"
+
 # Write access to the shared catalog library — a grantable capability, not a
-# role tier (decision D7). Enforced in Phase 3; defined here so staff and
-# `user_grants` rows can carry it.
+# role tier (decision D7), satisfied by a `catalog.edit` grant or `is_staff`.
 CATALOG_EDIT = "catalog.edit"
 
 # --- Beta bundles ----------------------------------------------------------
 
 CLIENT_CAPS: frozenset[str] = frozenset({PROJECT_VIEW})
-MEMBER_CAPS: frozenset[str] = frozenset({PROJECT_VIEW, PROJECT_EDIT})
+
+# Every bulk export — grouped so the future certifier bundle (read + private +
+# exports, no writes) reuses it instead of re-listing the keys.
+EXPORT_CAPS: frozenset[str] = frozenset(
+    {
+        APERTURES_EXPORT_HBJSON,
+        ENVELOPE_EXPORT_HBJSON,
+        ENVELOPE_EXPORT_PHPP,
+        EQUIPMENT_EXPORT_PHIUS,
+        MODEL_EXPORT,
+        DOCUMENT_EXPORT,
+    }
+)
+
+# A member is today's editor: everything a client can read, plus writes, the
+# redacted metadata, and every bulk export.
+MEMBER_CAPS: frozenset[str] = CLIENT_CAPS | EXPORT_CAPS | frozenset({PROJECT_EDIT, PROJECT_VIEW_PRIVATE})
 
 # A staff user additionally holds the catalog-admin capability (D7). The full
 # cross-tenant staff bundle (admin/seat/cross-team reads) lands in Phase 5.

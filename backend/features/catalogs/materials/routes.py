@@ -14,6 +14,7 @@ from fastapi import APIRouter, Query, Request
 from starlette import status
 
 from features.auth.routes import CurrentUser
+from features.catalogs.access import CatalogEditor
 from features.catalogs.materials.import_export.service import (
     CommitRequest,
     CommitResponse,
@@ -56,7 +57,9 @@ def get_materials(
 
 
 @router.post("", response_model=CatalogMaterialPublic, status_code=status.HTTP_201_CREATED)
-def post_material(payload: CatalogMaterialCreateRequest, request: Request, auth: CurrentUser) -> CatalogMaterialPublic:
+def post_material(
+    payload: CatalogMaterialCreateRequest, request: Request, auth: CatalogEditor
+) -> CatalogMaterialPublic:
     user, _expires_at = auth
     return create_material(payload, user, request)
 
@@ -72,20 +75,20 @@ def patch_material(
     material_id: str,
     payload: CatalogMaterialUpdateRequest,
     request: Request,
-    auth: CurrentUser,
+    auth: CatalogEditor,
 ) -> CatalogMaterialPublic:
     user, _expires_at = auth
     return update_material(material_id, payload, user, request)
 
 
 @router.delete("/{material_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_material_route(material_id: str, request: Request, auth: CurrentUser) -> None:
+def delete_material_route(material_id: str, request: Request, auth: CatalogEditor) -> None:
     user, _expires_at = auth
     deactivate_material(material_id, user, request)
 
 
 @router.post("/{material_id}/reactivate", response_model=CatalogMaterialPublic)
-def reactivate_material_route(material_id: str, request: Request, auth: CurrentUser) -> CatalogMaterialPublic:
+def reactivate_material_route(material_id: str, request: Request, auth: CatalogEditor) -> CatalogMaterialPublic:
     user, _expires_at = auth
     return reactivate_material(material_id, user, request)
 
@@ -98,7 +101,7 @@ def reactivate_material_route(material_id: str, request: Request, auth: CurrentU
 def post_material_duplicate(
     material_id: str,
     request: Request,
-    auth: CurrentUser,
+    auth: CatalogEditor,
 ) -> CatalogMaterialPublic:
     user, _expires_at = auth
     return duplicate_material(material_id, user, request)
@@ -107,7 +110,7 @@ def post_material_duplicate(
 @router.post("/import/preview", response_model=PreviewResponse)
 async def post_import_preview(
     request: Request,
-    auth: CurrentUser,
+    auth: CatalogEditor,
 ) -> PreviewResponse:
     """Dry-run an import: parse, upgrade, coerce, dedup, return a report.
 
@@ -144,7 +147,7 @@ async def post_import_preview(
 def post_import_commit(
     payload: CommitRequest,
     request: Request,
-    auth: CurrentUser,
+    auth: CatalogEditor,
 ) -> CommitResponse:
     """Insert the rows cached under a preview token (single transaction)."""
     user, _expires_at = auth

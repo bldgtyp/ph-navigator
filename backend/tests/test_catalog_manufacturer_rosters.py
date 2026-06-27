@@ -9,14 +9,14 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from features.auth.service import create_or_update_user
 from main import app
+from tests.catalog_helpers import create_catalog_admin
 
 ORIGIN = "http://localhost:5173"
 
 
 def signed_in_client() -> TestClient:
-    create_or_update_user(email="ed@example.com", display_name="Ed May", password="password")
+    create_catalog_admin()
     client = TestClient(app)
     response = client.post(
         "/api/v1/auth/login",

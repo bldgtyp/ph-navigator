@@ -312,16 +312,21 @@ def test_viewer_can_read_but_not_mutate(clean_document_tables: None, fake_r2: Fa
         assert response.json()["error_code"] == "not_authenticated"
 
 
-def test_anonymous_viewer_can_resolve_download(clean_document_tables: None, fake_r2: FakeR2Client) -> None:
-    """HBJSON assets are never document-referenced, so the download route
-    must not trip the asset layer's anonymous reference gate."""
+def test_model_download_requires_export_capability(clean_document_tables: None, fake_r2: FakeR2Client) -> None:
+    """The model `.hbjson` download is editor-only (`model.export`, certifier+
+    later). An anonymous `client` viewer is blocked; the editor download must
+    still resolve without tripping the asset layer's anonymous reference gate
+    (HBJSON assets are never document-referenced)."""
     editor = signed_in_client()
     project = create_project(editor)
     asset = _upload_hbjson_asset(editor, fake_r2, project["id"], HBJSON_BODY)["asset"]
     file_id = _link_file(editor, project["id"], asset["id"]).json()["id"]
 
     viewer = TestClient(app)
-    download = viewer.get(_files_url(project["id"], f"/{file_id}/download"), follow_redirects=False)
+    blocked = viewer.get(_files_url(project["id"], f"/{file_id}/download"), follow_redirects=False)
+    assert blocked.status_code == 401
+
+    download = editor.get(_files_url(project["id"], f"/{file_id}/download"), follow_redirects=False)
     assert download.status_code == 307
     assert download.headers["location"].startswith("https://fake-r2.test/")
 
