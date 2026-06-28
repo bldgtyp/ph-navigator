@@ -259,6 +259,11 @@ No open Step 1 decisions remain.
   `frontend/.env.example`; Ed confirmed there is no existing MapTiler key in
   Render either. Removed `MAPTILER_API_KEY` from `render.prod.yaml` so Blueprint
   apply does not prompt for it. Address geocoding will use the Census fallback.
+- 2026-06-27 23:49 EDT — Committed and pushed production apply prep to
+  `origin/main` at `23e19c2e`. `render.prod.yaml` validates (`valid:true`) and
+  creates `ph-navigator-db`, `ph-navigator-api`, and `ph-navigator-web`. Render
+  Dashboard apply should use repo `bldgtyp/ph-navigator-v2`, branch `main`, and
+  **Blueprint Path** `render.prod.yaml`.
 - 2026-06-27 — DNS: `www`→V0 static (200), apex→Render anycast→301 www;
   `api`/`v0` absent. Dashboard: 1 project, V0=Production (paid PG16, Ohio),
   new app=Staging (3 services suspended by Ed), Hobby workspace. Render free-Postgres

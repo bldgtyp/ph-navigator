@@ -300,6 +300,9 @@ logged-in project view renders.
    - Draft complete in `render.prod.yaml` and validated with Render CLI
      (`valid:true`). It is not applied yet.
 3. **Apply** the blueprint → new prod services build; Alembic runs on start.
+   In Render Dashboard use `New` → `Blueprint`, select
+   `bldgtyp/ph-navigator-v2`, branch `main`, and set **Blueprint Path** to
+   `render.prod.yaml`.
    Enter the Apple Passwords-backed production secret values when Render prompts for
    `sync:false` env vars, including `R2_ACCOUNT_ID`, `R2_ENDPOINT_URL`,
    `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `FERNET_SECRET_KEY`,
