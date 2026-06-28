@@ -223,7 +223,13 @@ part of Phase 0/1 below (not a separate feature). It mirrors
             `ph-navigator-v2-staging.onrender.com` successfully performed
             admin writes against `ph-navigator-v2.onrender.com` with cookies +
             `X-PHN-CSRF`; missing header and untrusted Origin were rejected.
-      - [ ] Production `www.ph-nav.com` → `api.ph-nav.com` check pending.
+      - [x] Production public API guard negatives pass:
+            `csrf_header_missing` without `X-PHN-CSRF`,
+            `origin_not_allowed` from `https://evil.test`, and trusted origin +
+            header reaches auth (`401 not_authenticated`) when no cookie is
+            present.
+      - [ ] Production signed-in browser cookie/admin check pending on
+            `www.ph-nav.com`.
 - [x] Browser smoke `/admin/users` (admin sees the nav + page; a normal user is
       blocked).
       - [x] Staging admin sees `Users` nav/page; staging normal user reaches
@@ -429,6 +435,9 @@ still serves V0.
          returns 200, trusted CORS from `https://www.ph-nav.com` to
          `https://api.ph-nav.com` is accepted, and `https://evil.test` is
          rejected.
+   - [x] Public API CSRF guard negatives against `api.ph-nav.com`:
+         `csrf_header_missing`, `origin_not_allowed`, and trusted-origin
+         header/no-cookie -> `not_authenticated`.
    - [ ] Browser login + `/admin/users` smoke on `www.ph-nav.com` after Ed signs
          in on the new domain.
 **Rollback:** re-add `www`/apex to V0's static + revert the `www` CNAME — V0 is
