@@ -92,17 +92,22 @@ and hand `v2-production-rollout` a clean unblock checklist.
   production account exists, is inactive, has a password set, has no active
   Admin capability, and has all required audit actions.
 
-**Remaining (manual, require DNS/custom-domain staging):**
+**Remaining (manual, require custom-domain browser sign-in):**
 
 1. [x] Add DreamHost DNS records for the Render-pre-staged domains:
    CNAME `api` -> `ph-navigator-api.onrender.com` and CNAME `v0` ->
    `ph-dash-frontend.onrender.com`; wait for Render verification/TLS.
-2. [ ] Verify cookie/Origin/CSRF on the real split-origin deployment shape
-   (`www.ph-nav.com` → `api.ph-nav.com`), confirming `SameSite=Lax`.
-3. [ ] Re-run a small `/admin/users` browser smoke after custom-domain cutover if
+2. [x] Move public custom domains to V1:
+   `www.ph-nav.com` and apex `ph-nav.com` now belong to V1 static service
+   `srv-d909olr7uimc7396slr0`; DreamHost CNAME `www` and ALIAS `@` point at
+   `ph-navigator-web.onrender.com`; Render verified DNS and issued certs.
+3. [ ] Verify cookie/Origin/CSRF on the real split-origin deployment shape
+   (`www.ph-nav.com` → `api.ph-nav.com`), confirming `SameSite=Lax` after Ed
+   signs in on the new domain.
+4. [ ] Re-run a small `/admin/users` browser smoke after custom-domain cutover if
    the frontend/API URLs change.
 
-Because the real custom-domain cookie/CSRF shape is still unverified, this
-packet stays in active planning (not archived); the rollout gate's *code* and
-prod-onrender rehearsal are ready, while the Phase 2 custom-domain verification
-is still open.
+Because the real custom-domain browser cookie/CSRF shape is still unverified,
+this packet stays in active planning (not archived); the rollout gate's *code*
+and prod-onrender rehearsal are ready, while the final Phase 2 browser
+verification is still open.

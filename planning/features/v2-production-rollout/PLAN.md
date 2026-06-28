@@ -384,23 +384,53 @@ Pre-stage (no disruption — `www` still serves V0 throughout):
    - [x] `https://api.ph-nav.com/api/v1/health` and `/ready` return 200.
 3. Repoint V1 env to final hosts: `VITE_API_BASE_URL=https://api.ph-nav.com`,
    `CORS_ORIGINS=https://www.ph-nav.com` (+ apex if not redirected), MCP URLs →
-   `https://api.ph-nav.com`; rebuild V1 static + redeploy V1 API. Update R2 CORS
-   to drop the temporary onrender origin.
-   - [ ] Patch/validate/sync `render.prod.yaml` Phase 2 URL values and
+   `https://api.ph-nav.com`; rebuild V1 static + redeploy V1 API. Keep R2 CORS
+   allowing the temporary Render frontend until the custom-domain browser upload
+   smoke passes, then drop the temporary onrender origin.
+   - [x] Patch/validate/sync `render.prod.yaml` Phase 2 URL values and
          `SESSION_COOKIE_SAMESITE=lax` after `api.ph-nav.com` resolves.
-   - [ ] Verify the static bundle references `https://api.ph-nav.com`.
-   - [ ] Run health/ready and error-log checks after redeploy.
+         Commit `fa40334c`; API deploy `dep-d90h9go0697c73cossf0` and web
+         deploy `dep-d90h9go0697c73cosscg` are live from Blueprint sync.
+   - [x] Verify the static bundle references `https://api.ph-nav.com`.
+         `https://www.ph-nav.com` serves `/assets/index-DTLHwExq.js`, which
+         references `https://api.ph-nav.com` and not the old Render API URL.
+   - [x] Run health/ready and error-log checks after redeploy.
+         `GET https://api.ph-nav.com/api/v1/health` and `/ready` returned 200
+         (`db:true`). Recent API logs showed only the expected signed-out
+         `401 not_authenticated` from opening `/admin/users` before Ed signed
+         in on `www`.
+   - [ ] Drop temporary R2 CORS origin
+         `https://ph-navigator-web.onrender.com` after the `www` browser upload
+         smoke passes.
 
 Cutover (brief window):
 4. In Render, **remove** `www.ph-nav.com` + apex `ph-nav.com` from V0's static
    service; **add** both to the V1 prod static service.
-5. At DreamHost: point `www` CNAME → V1 static's Render target; keep apex A
-   records on Render's anycast (DreamHost has no clean apex ALIAS) — Render
-   re-issues the apex→www redirect for the V1 service.
+   - [x] V0 static `srv-cv6sj8t2ng1s7380ljpg` now retains only
+         `v0.ph-nav.com`.
+   - [x] V1 static `srv-d909olr7uimc7396slr0` now owns `www.ph-nav.com` and
+         apex `ph-nav.com`; Render verified DNS and issued both certificates.
+5. At DreamHost: point `www` CNAME → V1 static's Render target and apex `@`
+   ALIAS → the same V1 static target. Render re-issues the apex→www redirect
+   for the V1 service.
+   - [x] DreamHost custom records now include CNAME `www` ->
+         `ph-navigator-web.onrender.com` and ALIAS `@` ->
+         `ph-navigator-web.onrender.com`; `api` and `v0` remain pointed at their
+         existing Render targets.
 6. Wait for DNS propagation + Render TLS issuance on the V1 service.
+   - [x] All three DreamHost authoritative nameservers answer
+         `www.ph-nav.com CNAME ph-navigator-web.onrender.com`; Render shows
+         `Verified` / `Certificate Issued` for both `www` and apex.
 **Verify:** `https://www.ph-nav.com` and `https://ph-nav.com` serve V1 with a
 valid cert; login + a project flow work end-to-end; `https://v0.ph-nav.com`
 still serves V0.
+   - [x] Network/domain checks: `https://www.ph-nav.com` returns 200,
+         `https://ph-nav.com` returns 301 to `www`, `https://v0.ph-nav.com`
+         returns 200, trusted CORS from `https://www.ph-nav.com` to
+         `https://api.ph-nav.com` is accepted, and `https://evil.test` is
+         rejected.
+   - [ ] Browser login + `/admin/users` smoke on `www.ph-nav.com` after Ed signs
+         in on the new domain.
 **Rollback:** re-add `www`/apex to V0's static + revert the `www` CNAME — V0 is
 back at root within a propagation cycle.
 

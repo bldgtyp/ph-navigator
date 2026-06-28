@@ -17,16 +17,14 @@ Goal: get a **real** production deployment of the new PH-Navigator V1 live at
 the root domain (`www.ph-nav.com` + apex `ph-nav.com`), move the legacy V0 app
 to `v0.ph-nav.com`, and run both side-by-side on Render for as long as Ed wants.
 
-**Current gate:** Phase 0 staging/admin rehearsal is complete and Phase 1
-production services are live on Render URLs. The production R2 bucket is
-configured, production R2 credentials are stored in Apple Passwords, and the
-paid DB/API/static services exist. The first production admin bootstrap is
-complete, and the Render-host production admin lifecycle smoke is complete with
-the disposable smoke user left inactive/non-admin. Phase 2 pre-cutover domain
-staging is complete: `api.ph-nav.com` serves the V1 API, `v0.ph-nav.com` serves
-V0, and V0 backend CORS accepts `https://v0.ph-nav.com`. The active blocker is
-the public `www.ph-nav.com` move to the V1 static service plus Blueprint retarget
-before the real `www.ph-nav.com` -> `api.ph-nav.com` cookie/CSRF smoke. Repo
+**Current gate:** Phase 0 staging/admin rehearsal, Phase 1 production services,
+and the Phase 2 Render/DNS public-domain cutover are complete. The production R2
+bucket is configured, production R2 credentials are stored in Apple Passwords,
+the paid DB/API/static services exist, `api.ph-nav.com` serves the V1 API,
+`www.ph-nav.com` serves the V1 static site, apex redirects to `www`, and
+`v0.ph-nav.com` still serves V0. The remaining blocker is the browser
+cookie/CSRF smoke after Ed signs in on `www.ph-nav.com` so the real
+`www.ph-nav.com` -> `api.ph-nav.com` `SameSite=Lax` path can be verified. Repo
 canonicalization remains a later gate.
 
 ## Naming convention

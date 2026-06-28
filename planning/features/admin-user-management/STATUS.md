@@ -21,12 +21,13 @@ RELATED:
 green). The full two-user MVP — bootstrap, invite, admin reset link,
 deactivate/reactivate, Admin grant/revoke, last-admin protection, CSRF/Origin
 guard, capability-gated UI, and audit — is built and tested end-to-end.
-**Remaining before the rollout gate clears:** custom-domain cookie/CSRF smoke
-after the `www.ph-nav.com` -> `api.ph-nav.com` cutover is staged. Staging and
+**Remaining before the rollout gate clears:** custom-domain browser
+cookie/CSRF smoke after Ed signs in on `www.ph-nav.com`. Staging and
 prod-onrender lifecycle rehearsals + `/admin/users` browser smokes are complete.
-`api.ph-nav.com` and `v0.ph-nav.com` pre-cutover DNS/TLS are verified; the V0
-fallback path is live. The remaining gate is the public `www.ph-nav.com` move to
-V1 plus `SameSite=Lax` cookie/CSRF smoke (see
+`api.ph-nav.com`, `www.ph-nav.com`, apex `ph-nav.com`, and `v0.ph-nav.com`
+DNS/TLS are verified at the Render/DNS/network layer; the V0 fallback path is
+live. The remaining gate is the `SameSite=Lax` browser smoke on the real
+`www.ph-nav.com` -> `api.ph-nav.com` split-origin shape (see
 `phases/phase-06-production-rehearsal.md`).
 
 ## Why This Exists
