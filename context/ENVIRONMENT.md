@@ -278,12 +278,11 @@ an ephemeral local shell for the opt-in smoke.
 
 ## Render staging
 
-The staging environment is declared as Infrastructure-as-Code in
-`render.yaml` at the repo root (a Render Blueprint). That file is the
-source of truth for both services + the Postgres database; the listing
-below documents the same values in prose. `DATABASE_URL` auto-wires from
-the database block via `fromDatabase`, and all secrets are `sync: false`
-(entered once in Render, never committed — the repo is public).
+The temporary staging environment used for the production rollout was deleted on
+2026-06-28 after production launch, custom-domain smoke, repo canonicalization,
+and cleanup completed. `render.yaml` remains the staging Blueprint if a future
+rehearsal/debug surface is needed. The listing below documents the most recent
+staging shape before deletion; it is not an active Render stack.
 
 ### Re-provision via the `render.yaml` Blueprint
 
@@ -396,23 +395,23 @@ GitHub repo wiring after the 2026-06-28 canonicalization:
 
 - Current PH-Navigator repo: `https://github.com/bldgtyp/ph-navigator`
 - Legacy V0 repo: `https://github.com/bldgtyp/ph-navigator_v0`
-- Render V1 services (`ph-navigator-api`, `ph-navigator-web`, and the retained
-  `*-staging` services until Phase 4 cleanup) point at
+- Render V1 services (`ph-navigator-api`, `ph-navigator-web`) point at
   `https://github.com/bldgtyp/ph-navigator`.
 - Render V0 services (`ph-navigator-backend`, legacy static `ph-navigator`)
   point at `https://github.com/bldgtyp/ph-navigator_v0`.
 
 - Static frontend service: `ph-navigator-web`
   - Phase 1 URL: `https://ph-navigator-web.onrender.com`
-  - Phase 2 custom domains: `https://www.ph-nav.com` and `https://ph-nav.com`
+  - Production custom domains: `https://www.ph-nav.com` and
+    `https://ph-nav.com`
   - Root directory: `frontend`
   - Build command: `pnpm install --frozen-lockfile && pnpm run build`
   - Publish directory: `dist`
   - Rewrite rule: `/*` -> `/index.html`
-  - Phase 1 env: `VITE_API_BASE_URL=https://ph-navigator-api.onrender.com`
+  - Current env: `VITE_API_BASE_URL=https://api.ph-nav.com`
 - Backend web service: `ph-navigator-api`
   - Phase 1 URL: `https://ph-navigator-api.onrender.com`
-  - Phase 2 custom domain: `https://api.ph-nav.com`
+  - Production custom domain: `https://api.ph-nav.com`
   - Plan: `standard` (1 CPU / 2 GB), matching the legacy V0 backend for the
     initial cutover.
   - Root directory: `backend`
@@ -430,18 +429,16 @@ GitHub repo wiring after the 2026-06-28 canonicalization:
     - `DATABASE_POOL_TIMEOUT_SECONDS=10`
     - `SLOW_QUERY_MS=500`
     - `PROJECT_DOCUMENT_MAX_BODY_BYTES=8388608`
-    - `CORS_ORIGINS=https://ph-navigator-web.onrender.com`
+    - `CORS_ORIGINS=https://www.ph-nav.com,https://ph-nav.com`
     - `SESSION_COOKIE_NAME=phn_session`
     - `SESSION_LIFETIME_MINUTES=60`
-    - `SESSION_COOKIE_SAMESITE=none` during Phase 1 Render-host smoke;
-      retarget to `lax` during the Phase 2 `www.ph-nav.com` ->
-      `api.ph-nav.com` custom-domain cutover.
-    - `FRONTEND_BASE_URL=https://ph-navigator-web.onrender.com`
-    - `MCP_ISSUER_URL=https://ph-navigator-api.onrender.com`
-    - `MCP_RESOURCE_SERVER_URL=https://ph-navigator-api.onrender.com/mcp`
+    - `SESSION_COOKIE_SAMESITE=lax`
+    - `FRONTEND_BASE_URL=https://www.ph-nav.com`
+    - `MCP_ISSUER_URL=https://api.ph-nav.com`
+    - `MCP_RESOURCE_SERVER_URL=https://api.ph-nav.com/mcp`
     - `MCP_ENABLE_DNS_REBINDING_PROTECTION=true`
-    - `MCP_ALLOWED_HOSTS=ph-navigator-api.onrender.com`
-    - `MCP_ALLOWED_ORIGINS=https://ph-navigator-web.onrender.com`
+    - `MCP_ALLOWED_HOSTS=api.ph-nav.com`
+    - `MCP_ALLOWED_ORIGINS=https://www.ph-nav.com,https://ph-nav.com`
     - `R2_BUCKET=ph-navigator-prod`
     - `R2_ACCOUNT_ID=<Render secret>`
     - `R2_ACCESS_KEY_ID=<Render secret>`
