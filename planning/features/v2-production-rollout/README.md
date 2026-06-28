@@ -22,11 +22,12 @@ production services are live on Render URLs. The production R2 bucket is
 configured, production R2 credentials are stored in Apple Passwords, and the
 paid DB/API/static services exist. The first production admin bootstrap is
 complete, and the Render-host production admin lifecycle smoke is complete with
-the disposable smoke user left inactive/non-admin. Phase 2 Render-side custom
-domains are pre-staged for `api.ph-nav.com` and `v0.ph-nav.com`; the active
-blocker is DreamHost DNS + TLS verification before the real
-`www.ph-nav.com` -> `api.ph-nav.com` cookie/CSRF smoke. Public `www` cutover and
-repo canonicalization remain later gates.
+the disposable smoke user left inactive/non-admin. Phase 2 pre-cutover domain
+staging is complete: `api.ph-nav.com` serves the V1 API, `v0.ph-nav.com` serves
+V0, and V0 backend CORS accepts `https://v0.ph-nav.com`. The active blocker is
+the public `www.ph-nav.com` move to the V1 static service plus Blueprint retarget
+before the real `www.ph-nav.com` -> `api.ph-nav.com` cookie/CSRF smoke. Repo
+canonicalization remains a later gate.
 
 ## Naming convention
 
