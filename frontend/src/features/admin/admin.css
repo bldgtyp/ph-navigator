@@ -1,0 +1,137 @@
+/* Admin user-management page. Reuses shared button/modal/form recipes from
+   styles/base.css; only the page layout, table, and status/role chips are
+   admin-specific. */
+
+.admin-page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: var(--space-24);
+}
+
+.admin-page__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-20);
+}
+
+.admin-page__heading h1 {
+  font-size: var(--fs-lg, 1.25rem);
+  margin: 0;
+}
+
+.admin-users-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+
+.admin-users-table th,
+.admin-users-table td {
+  text-align: left;
+  padding: var(--space-10) var(--space-12);
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: middle;
+}
+
+.admin-users-table th {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.admin-users-table__actions {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.admin-chip {
+  display: inline-block;
+  padding: var(--space-2) var(--space-10);
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.admin-chip--active {
+  color: var(--phn-success);
+  border-color: color-mix(in oklab, var(--phn-success) 40%, transparent);
+  background: color-mix(in oklab, var(--phn-success) 8%, transparent);
+}
+
+.admin-chip--invited {
+  color: var(--phn-warning);
+  border-color: color-mix(in oklab, var(--phn-warning) 40%, transparent);
+  background: color-mix(in oklab, var(--phn-warning) 8%, transparent);
+}
+
+.admin-chip--inactive {
+  color: var(--text-muted);
+  background: var(--bg-elev);
+}
+
+.admin-chip--role-admin {
+  color: var(--accent);
+  border-color: var(--accent-edge);
+  background: color-mix(in oklab, var(--accent) 8%, transparent);
+}
+
+/* Modal extras layered on the shared .modal-body recipe. */
+.admin-form label {
+  display: block;
+  margin-bottom: var(--space-12);
+}
+
+.admin-form label span {
+  display: block;
+  margin-bottom: var(--space-4);
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}
+
+.admin-form input,
+.admin-form select {
+  width: 100%;
+}
+
+.admin-link-warning {
+  color: var(--phn-warning);
+  font-size: var(--fs-sm);
+}
+
+.admin-link-row {
+  display: flex;
+  gap: var(--space-8);
+  margin: var(--space-12) 0;
+}
+
+.admin-link-input {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+}
+
+.admin-audit-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.admin-audit-item {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-8) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.admin-audit-action {
+  font-weight: 600;
+  font-size: var(--fs-sm);
+}
+
+.admin-audit-meta {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+}

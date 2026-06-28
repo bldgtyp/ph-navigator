@@ -156,6 +156,7 @@ function sessionResponse() {
   return jsonResponse({
     user: userPayload,
     expires_at: "2026-05-12T18:00:00Z",
+    capabilities: [],
   });
 }
 

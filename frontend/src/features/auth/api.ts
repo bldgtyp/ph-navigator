@@ -23,3 +23,22 @@ export async function updateUnitsPreference(unitsPreference: UnitSystem): Promis
     body: JSON.stringify({ units_preference: unitsPreference }),
   });
 }
+
+export type AccountCompletionMode = "invite" | "reset";
+
+const COMPLETION_PATHS: Record<AccountCompletionMode, string> = {
+  invite: "/api/v1/auth/invite/complete",
+  reset: "/api/v1/auth/reset/complete",
+};
+
+/** Set a password from an invite/reset link. The raw token comes from the URL fragment. */
+export async function completeAccount(
+  mode: AccountCompletionMode,
+  token: string,
+  password: string,
+): Promise<void> {
+  await fetchJson<void>(COMPLETION_PATHS[mode], {
+    method: "POST",
+    body: JSON.stringify({ token, password }),
+  });
+}

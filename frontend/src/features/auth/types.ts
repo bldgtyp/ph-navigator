@@ -10,4 +10,7 @@ export type User = {
 export type AuthSession = {
   user: User;
   expires_at: string;
+  // Resolved global capability keys for affordance gating (e.g. the admin nav).
+  // Authorization is always re-checked server-side; this only hides UI.
+  capabilities: string[];
 };
