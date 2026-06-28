@@ -111,6 +111,26 @@ def revoke_token(conn: Connection[Any], project_id: UUID, token_id: UUID) -> dic
     ).fetchone()
 
 
+def revoke_tokens_for_user(conn: Connection[Any], issued_by_user_id: UUID) -> list[UUID]:
+    """Revoke every active token a user issued, across all projects.
+
+    Used when a user is deactivated or completes a password reset: any MCP token
+    attributable to them stops working immediately. Already-revoked tokens are
+    left untouched. Returns the ids of the tokens revoked.
+    """
+    rows = conn.execute(
+        """
+        UPDATE mcp_tokens
+        SET revoked_at = now()
+        WHERE issued_by_user_id = %(user_id)s
+          AND revoked_at IS NULL
+        RETURNING id
+        """,
+        {"user_id": issued_by_user_id},
+    ).fetchall()
+    return [row["id"] for row in rows]
+
+
 def token_has_scope(token: dict[str, Any], scope: McpScope) -> bool:
     scopes = token.get("scopes") or []
     return scope in scopes

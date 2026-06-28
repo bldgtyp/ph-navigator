@@ -50,6 +50,13 @@ DOCUMENT_EXPORT = "document.export"
 # role tier (decision D7), satisfied by a `catalog.edit` grant or `is_staff`.
 CATALOG_EDIT = "catalog.edit"
 
+# Admin user-management surface (invite/reset-link/deactivate/admin-grant). A
+# grantable capability backing the MVP `Admin` role preset, held via an active
+# global `user_grants` row — never a hard-coded superuser. Deliberately separate
+# from `catalog.edit`; holding one does not imply the other. See
+# planning/features/admin-user-management/PRD.md.
+ADMIN_USERS_MANAGE = "admin.users.manage"
+
 # --- Beta bundles ----------------------------------------------------------
 
 CLIENT_CAPS: frozenset[str] = frozenset({PROJECT_VIEW})

@@ -45,6 +45,21 @@ class Settings(BaseSettings):
     # client sends it on every request; the backend enforces it for the
     # `/api/v1/admin/` surface. See features/shared/middleware.py.
     csrf_header_name: str = "X-PHN-CSRF"
+
+    # Admin user-management account tokens (invite / password-reset). Lifetimes
+    # were locked in admin-user-management Phase 00; they are Settings fields so
+    # they can be tuned without a migration.
+    account_invite_token_ttl_hours: int = 168  # 7 days
+    account_reset_token_ttl_minutes: int = 30
+    # Keyed-hash secret for account tokens. Raw tokens are never stored; the DB
+    # holds HMAC-SHA256(secret, raw). Must be set (sync: false) in production so
+    # a DB-only reader cannot forge a usable token from a stolen hash. Empty in
+    # local/test falls back to an unkeyed digest, which is fine off-production.
+    account_token_secret: str = ""
+    # Canonical frontend base URL used to build invite/reset links. Links are
+    # always built from this configured value, never from the request Host, so a
+    # spoofed Host header cannot point a recovery link at an attacker origin.
+    frontend_base_url: str = "http://localhost:5173"
     password_argon2_time_cost: int = 3
     password_argon2_memory_cost: int = 65536
     password_argon2_parallelism: int = 4
