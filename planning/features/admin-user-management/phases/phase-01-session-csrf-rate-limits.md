@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
 TIME: 19:59 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex (for Ed May)
 SCOPE: Cookie posture and unsafe admin mutation protection for the MVP.
 RELATED:
@@ -60,3 +60,28 @@ Deferred:
   browser request.
 - Production rollout cookie setting is updated or consciously paired with the
   MVP mutation guard.
+
+## Outcome (2026-06-27)
+
+- **Cookie posture:** `Settings.session_cookie_samesite` already defaults to
+  `lax` and `session_cookie_secure` is true outside dev/test/local, so the
+  preferred production posture is the code default. The production rollout PLAN
+  already sets `SESSION_COOKIE_SAMESITE=lax`. Staging verification of the
+  `www -> api` shape is a Phase 06 rehearsal step, but the gate does not depend
+  on it because the custom-header guard ships unconditionally.
+- **Origin guard:** already enforced for all mutating `/api/` requests in
+  `features/shared/middleware.py` (rejects any `Origin` outside the CORS
+  allow-list with `origin_not_allowed`). Refactored into `_reject_unsafe_request`
+  for clarity.
+- **Custom-header guard:** added an app-only `X-PHN-CSRF` requirement on the
+  `/api/v1/admin/` surface (`csrf_header_missing` on absence). Header name is the
+  `Settings.csrf_header_name` field. Scoped to the admin surface because the
+  global Origin guard already protects the other ~57 mutating endpoints and a
+  global header requirement would churn the whole suite for no added security.
+- **Frontend:** `fetchApiResponse` now sends `X-PHN-CSRF: 1` on every request
+  (multipart uploads keep browser-set `Content-Type`). Constant
+  `CSRF_HEADER_NAME` mirrors the backend setting.
+- **Tests:** `backend/tests/test_csrf_guard.py` (missing header → 403; present
+  header passes the guard; untrusted origin rejected first; non-admin route not
+  header-gated; safe method skipped). `frontend/src/shared/api/client.test.ts`
+  (header + request id sent; multipart untouched).

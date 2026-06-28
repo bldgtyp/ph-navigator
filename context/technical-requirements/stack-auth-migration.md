@@ -143,7 +143,11 @@ AirTable-bound project is migrated.
 - **Browser request protection** — all mutating browser requests require
   an allowed `Origin` header. Allowed origins are the exact production
   frontend origin plus local dev origins; no wildcard credentialed CORS.
-  SameSite cookies are defense-in-depth, not the whole CSRF policy.
+  SameSite cookies are defense-in-depth, not the whole CSRF policy. The
+  admin user-management surface (`/api/v1/admin/`) adds a second layer: a
+  mutating request must also carry the app-only `X-PHN-CSRF` header
+  (`Settings.csrf_header_name`), which the frontend API client sends on
+  every request. See `features/shared/middleware.py`.
 - **CORS** — deny by default. Credentialed requests are allowed only
   from configured frontend origins. Public read endpoints are still
   ordinary API routes; CORS does not use `*` with credentials.
