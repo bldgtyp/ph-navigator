@@ -14,14 +14,16 @@ RELATED:
 
 # Status — PH-Navigator V1 Production Rollout
 
-**State:** Phase 0 staging/admin rehearsal is complete and Phase 1 production
-infra is live on Render URLs (2026-06-28). Render account, V0 hosting,
-domain/DNS setup, naming policy, and cost-sizing facts are mapped and verified.
-The production R2 bucket/CORS/lifecycle work is complete, production R2
-credentials are stored in Apple Passwords, and the paid production Blueprint
-created the DB/API/static services. The Phase 1 URL-env Blueprint sync is live
-on commit `41c522bc`; the next manual gate is the first production admin
-bootstrap and admin lifecycle rehearsal on the prod Render URLs.
+**State:** Phase 0 staging/admin rehearsal, Phase 1 production infra, and the
+Phase 2 public domain cutover are complete at the Render/DNS/network layer
+(2026-06-28). Render account, V0 hosting, domain/DNS setup, naming policy, and
+cost-sizing facts are mapped and verified. The production R2 bucket/CORS/
+lifecycle work is complete, production R2 credentials are stored in Apple
+Passwords, and the paid production Blueprint created the DB/API/static services.
+The Phase 2 custom-domain Blueprint sync is live on commit `fa40334c`; the
+remaining manual gate is Ed signing in on `https://www.ph-nav.com` so the
+browser `SameSite=Lax` `/admin/users` smoke can be completed against
+`https://api.ph-nav.com`.
 
 **Gate update (2026-06-27):** the admin-user-management MVP is **built and tested
 end-to-end** (Phases 00–06, `make ci` green); the gate is not yet cleared — it
@@ -48,10 +50,10 @@ through the audited production rehearsal. The gate's two-user MVP capability is
 - ✅ audit logging for sensitive user actions.
 
 **Remaining to clear the gate** is a production-verification checklist, not new
-build — it runs as a discrete step inside Phase 0/1 (see `PLAN.md` → "Gate —
+build — it runs as a discrete step inside the rollout (see `PLAN.md` → "Gate —
 Admin user management" and the admin-user-management Phase 06 doc). The staging
-and prod-onrender rehearsals are complete; custom-domain verification is still
-pending:
+and prod-onrender rehearsals are complete; custom-domain Render/DNS/network
+verification is complete; browser sign-in smoke on `www` is pending:
 
 - [x] Set staging/prod env `ACCOUNT_TOKEN_SECRET` + `FRONTEND_BASE_URL`
       (staging service set and redeployed; production Blueprint applied with
@@ -133,17 +135,13 @@ The work splits into two surfaces:
 
 Decisions are settled (above), the admin-user-management capability is built,
 and the staging admin lifecycle rehearsal plus non-admin product smoke are
-complete. Production DB/API/static services are live on Render URLs, and the
-Phase 1 URL-env + cookie correction sync is complete. Backend bootstrap,
-Ed sign-in, production `/admin/users` admin/normal-user smoke, and the
-disposable production test-user lifecycle are complete. Phase 2 pre-cutover
-domain staging is complete: `api.ph-nav.com` is verified and healthy on
-`ph-navigator-api`, `v0.ph-nav.com` is verified and serves V0, and the V0 backend
-accepts `https://v0.ph-nav.com` CORS after deploy `dep-d90h51gk1i2s73fm4li0`.
-Next manual gate is the public `www.ph-nav.com` move to the V1 static service
-plus production Blueprint retarget to final custom-domain env values.
-Production custom-domain cookie/CSRF smoke remains pending until the
-`www.ph-nav.com` → `api.ph-nav.com` split-origin cutover is staged.
+complete. Production DB/API/static services are live, and the Phase 2 custom
+domain retarget/cutover is complete: `www.ph-nav.com` serves V1,
+`ph-nav.com` redirects to `www`, `api.ph-nav.com` is healthy/ready, and
+`v0.ph-nav.com` still serves V0 with V0 backend CORS. The remaining manual gate
+is Ed signing in on `https://www.ph-nav.com` so the `SameSite=Lax`
+`www.ph-nav.com` → `api.ph-nav.com` browser `/admin/users` and unsafe-mutation
+smoke can finish.
 Do not delete the old V1 `*-staging` trio yet; it is Phase 4 cleanup after
 production smoke, DNS cutover, and repo reconnect verification. Suspending the
 staging services can be considered earlier if cost needs to be reduced, but
@@ -397,6 +395,38 @@ No open Step 1 decisions remain.
   `Origin: https://v0.ph-nav.com` now returns 200 with
   `access-control-allow-origin: https://v0.ph-nav.com`. Public `www` still
   points at V0; final Blueprint retarget and `www` move remain pending.
+- 2026-06-28 09:00 EDT — Completed the Phase 2 production Blueprint retarget
+  and public domain cutover at the Render/DNS/network layer. Patched
+  `render.prod.yaml` to final custom-domain values:
+  `VITE_API_BASE_URL=https://api.ph-nav.com`,
+  `FRONTEND_BASE_URL=https://www.ph-nav.com`,
+  `CORS_ORIGINS=https://www.ph-nav.com,https://ph-nav.com`, MCP issuer/resource
+  URLs on `https://api.ph-nav.com`, `MCP_ALLOWED_HOSTS=api.ph-nav.com`,
+  `MCP_ALLOWED_ORIGINS=https://www.ph-nav.com,https://ph-nav.com`, and
+  `SESSION_COOKIE_SAMESITE=lax`. `render blueprints validate ./render.prod.yaml
+  -o json` returned `valid:true`; Blueprint sync deployed API
+  `dep-d90h9go0697c73cossf0` and web `dep-d90h9go0697c73cosscg` live on commit
+  `fa40334c`. The V1 static bundle served from `https://www.ph-nav.com`
+  references `https://api.ph-nav.com` and not the old Render API URL. Render
+  custom-domain ownership moved `www.ph-nav.com` + apex `ph-nav.com` from V0
+  static service `srv-cv6sj8t2ng1s7380ljpg` to V1 static service
+  `srv-d909olr7uimc7396slr0`; V0 retains only `v0.ph-nav.com`. DreamHost now
+  has CNAME `www` -> `ph-navigator-web.onrender.com`, CNAME `api` ->
+  `ph-navigator-api.onrender.com`, CNAME `v0` ->
+  `ph-dash-frontend.onrender.com`, and ALIAS `@` ->
+  `ph-navigator-web.onrender.com`. All three DreamHost nameservers answer
+  `www.ph-nav.com CNAME ph-navigator-web.onrender.com`; Render verified both
+  `www.ph-nav.com` and `ph-nav.com` and issued certificates. HTTP checks:
+  `https://www.ph-nav.com` returned 200, `https://ph-nav.com` returned 301 to
+  `https://www.ph-nav.com/`, `https://v0.ph-nav.com` returned 200,
+  `GET https://api.ph-nav.com/api/v1/health` returned 200, and `GET /ready`
+  returned 200 with `db:true`. CORS preflight from
+  `Origin: https://www.ph-nav.com` to `https://api.ph-nav.com` returned 200
+  with `access-control-allow-origin: https://www.ph-nav.com`; the same preflight
+  from `https://evil.test` returned 400 `Disallowed CORS origin`. Recent API
+  logs only showed the expected signed-out `401 not_authenticated` from opening
+  `/admin/users` before Ed signed in on the new domain. Browser smoke remains
+  pending Ed sign-in on `https://www.ph-nav.com`.
 - 2026-06-27 — DNS: `www`→V0 static (200), apex→Render anycast→301 www;
   `api`/`v0` absent. Dashboard: 1 project, V0=Production (paid PG16, Ohio),
   new app=Staging (3 services suspended by Ed), Hobby workspace. Render free-Postgres
@@ -406,10 +436,10 @@ No open Step 1 decisions remain.
 
 ## Notes / wrinkles to fix in prod blueprint
 
-- Production `render.prod.yaml` intentionally uses prod `onrender.com` hosts for
-  Phase 1. Phase 2 retargets `VITE_API_BASE_URL`, `FRONTEND_BASE_URL`, CORS,
-  and MCP URLs/hosts/origins to `www.ph-nav.com` / `api.ph-nav.com` during DNS
-  cutover.
+- Production `render.prod.yaml` now uses the final Phase 2 custom-domain hosts:
+  `www.ph-nav.com` / apex for the frontend and `api.ph-nav.com` for API/MCP.
+  The Phase 1 `onrender.com` hosts remain reachable as Render subdomains but
+  are no longer the production env targets.
 - Product/repo naming now differs from the local checkout name until the rename
   phase completes: legacy app = V0, new app = V1, current local folder still
   `ph-navigator-v2`.
