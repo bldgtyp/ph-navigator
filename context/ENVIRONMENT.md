@@ -148,7 +148,7 @@ Canonical PHN bucket plan:
 
 - Region: **ENAM**.
 - Staging/dev bucket: `ph-navigator-v2-dev`.
-- Production bucket: `ph-navigator-v2-prod`.
+- Production bucket: `ph-navigator-prod`.
 - Public access: off. PHN uses signed PUT/GET URLs only.
 - Object keys are backend-controlled:
   - `projects/{project_id}/assets/{asset_id}/file.{ext}`
@@ -164,7 +164,7 @@ smoke test:
 - `R2_ACCESS_KEY_ID=<R2 API token access key id>`
 - `R2_SECRET_ACCESS_KEY=<R2 API token secret access key>`
 - `R2_BUCKET=ph-navigator-v2-dev` for staging/dev, or
-  `ph-navigator-v2-prod` for production
+  `ph-navigator-prod` for production
 - `R2_ENDPOINT_URL=https://<account-id>.r2.cloudflarestorage.com`
 
 Credential note: PHN uses boto3's S3-compatible client, so Render needs
@@ -270,11 +270,10 @@ the database block via `fromDatabase`, and all secrets are `sync: false`
 
 ### Re-provision via the `render.yaml` Blueprint
 
-When the free Postgres expires (it lasts ~30 days) or staging needs a
-clean rebuild, re-provision from the Blueprint instead of re-entering
-variables by hand:
+When staging needs a clean rebuild or full re-provision, use the Blueprint
+instead of re-entering variables by hand:
 
-1. **Free the names first.** In the Render dashboard, delete the expired
+1. **Free the names first.** In the Render dashboard, delete the target
    `ph-navigator-v2-staging-db` (staging data is synthetic seed data —
    nothing to preserve). A Blueprint creates a database of the same name,
    so the dead one must be gone to avoid a name collision.
@@ -309,6 +308,8 @@ The verbatim service/DB config (also encoded in `render.yaml`):
   - Env: `VITE_API_BASE_URL=https://ph-navigator-v2.onrender.com`
 - Backend web service: `ph-navigator-v2-api-staging`
   - URL: `https://ph-navigator-v2.onrender.com`
+  - Plan: `starter` (512 MB / 0.5 CPU) so staging can run Render Shell,
+    SSH, and one-off jobs for production-rehearsal tasks.
   - Root directory: `backend`
   - Build command: `pip install uv && uv sync --frozen --no-dev`
   - Start command:
@@ -329,6 +330,7 @@ The verbatim service/DB config (also encoded in `render.yaml`):
     - `SESSION_COOKIE_NAME=phn_session`
     - `SESSION_LIFETIME_MINUTES=60`
     - `SESSION_COOKIE_SAMESITE=none`
+    - `FRONTEND_BASE_URL=https://ph-navigator-v2-staging.onrender.com`
     - `MCP_ISSUER_URL=https://ph-navigator-v2.onrender.com`
     - `MCP_RESOURCE_SERVER_URL=https://ph-navigator-v2.onrender.com/mcp`
     - `MCP_ENABLE_DNS_REBINDING_PROTECTION=true`
@@ -339,6 +341,7 @@ The verbatim service/DB config (also encoded in `render.yaml`):
     - `R2_SECRET_ACCESS_KEY=<Render secret>`
     - `R2_BUCKET=ph-navigator-v2-dev`
     - `R2_ENDPOINT_URL=https://<account-id>.r2.cloudflarestorage.com`
+    - `ACCOUNT_TOKEN_SECRET=<Render secret>`
     - Render also sets `RENDER_EXTERNAL_URL` and
       `RENDER_EXTERNAL_HOSTNAME`; the backend derives MCP Host allowlist
       entries from them automatically.
@@ -360,10 +363,71 @@ the app process cannot see.
     the full `DATABASE_URL`, so the literal name does not matter)
   - Runtime: PostgreSQL 16
   - Region: Ohio (US East)
-  - Free instance; expires ~30 days after creation. Recreated fresh on
-    2026-06-15 (the prior free DB expired), so the current instance lapses
-    around 2026-07-15 — re-provision via the Blueprint runbook above when
-    it does.
+  - Plan: `basic_256mb` with 1 GB disk (`basic-256mb` in Blueprint YAML).
+    Upgraded in place from Render `free` on 2026-06-27 after the empty staging
+    DB was reset for the squashed Alembic baseline; Render reports no
+    `expiresAt`.
+
+## Render production draft
+
+Production is drafted in `render.prod.yaml` but should not be applied until the
+rollout reaches Phase 1 execution. The draft uses canonical, unversioned service
+names and the production domains:
+
+- Static frontend service: `ph-navigator-web`
+  - Target custom domains: `https://www.ph-nav.com` and `https://ph-nav.com`
+  - Root directory: `frontend`
+  - Build command: `pnpm install --frozen-lockfile && pnpm run build`
+  - Publish directory: `dist`
+  - Rewrite rule: `/*` -> `/index.html`
+  - Env: `VITE_API_BASE_URL=https://api.ph-nav.com`
+- Backend web service: `ph-navigator-api`
+  - Target custom domain: `https://api.ph-nav.com`
+  - Plan: `standard` (1 CPU / 2 GB), matching the legacy V0 backend for the
+    initial cutover.
+  - Root directory: `backend`
+  - Build command: `pip install uv && uv sync --frozen --no-dev`
+  - Start command:
+    `export GIT_SHA="$RENDER_GIT_COMMIT" && uv run alembic upgrade head && uv run uvicorn main:app --host 0.0.0.0 --port $PORT`
+  - Env:
+    - `ENVIRONMENT=production`
+    - `APP_VERSION=0.1.0`
+    - `LOG_FORMAT=json`
+    - `LOG_LEVEL=INFO`
+    - `DATABASE_URL=<Render internal database URL>`
+    - `DATABASE_POOL_MIN_SIZE=2`
+    - `DATABASE_POOL_MAX_SIZE=10`
+    - `DATABASE_POOL_TIMEOUT_SECONDS=10`
+    - `SLOW_QUERY_MS=500`
+    - `PROJECT_DOCUMENT_MAX_BODY_BYTES=8388608`
+    - `CORS_ORIGINS=https://www.ph-nav.com,https://ph-nav.com`
+    - `SESSION_COOKIE_NAME=phn_session`
+    - `SESSION_LIFETIME_MINUTES=60`
+    - `SESSION_COOKIE_SAMESITE=lax`
+    - `FRONTEND_BASE_URL=https://www.ph-nav.com`
+    - `MCP_ISSUER_URL=https://api.ph-nav.com`
+    - `MCP_RESOURCE_SERVER_URL=https://api.ph-nav.com/mcp`
+    - `MCP_ENABLE_DNS_REBINDING_PROTECTION=true`
+    - `MCP_ALLOWED_HOSTS=api.ph-nav.com`
+    - `MCP_ALLOWED_ORIGINS=https://www.ph-nav.com,https://ph-nav.com`
+    - `R2_BUCKET=ph-navigator-prod`
+    - `R2_ACCOUNT_ID=<Render secret>`
+    - `R2_ACCESS_KEY_ID=<Render secret>`
+    - `R2_SECRET_ACCESS_KEY=<Render secret>`
+    - `R2_ENDPOINT_URL=https://<account-id>.r2.cloudflarestorage.com`
+    - `FERNET_SECRET_KEY=<generated Fernet key>`
+    - `ACCOUNT_TOKEN_SECRET=<Render secret>`
+    - `MAPTILER_API_KEY=<Render secret, optional but configured for prod>`
+- Postgres service: `ph-navigator-db`
+  - Database: `ph_navigator`
+  - Runtime: PostgreSQL 16
+  - Region: Ohio (US East)
+  - Plan: `basic_256mb` with 1 GB disk (`basic-256mb` in Blueprint YAML).
+
+Validated 2026-06-27 with
+`render blueprints validate ./render.prod.yaml -o json`: Render reported
+`valid: true` and create actions for `ph-navigator-db`, `ph-navigator-api`, and
+`ph-navigator-web`.
 
 Do not copy Render database credentials into `backend/.env` for normal
 local development. Local dev should keep using Docker Postgres. For a
@@ -408,8 +472,8 @@ The seed is the same provider-agnostic CLI used in dev
 the backend service env (the object store serves attachments + EPW there).
 **Publish the bundle to the same R2 bucket the target service reads** — the
 deployed `ph-navigator-v2-api-staging` service uses `R2_BUCKET=ph-navigator-v2-dev`,
-so that is the bucket to publish to for staging (a future dedicated prod
-service would use `ph-navigator-v2-prod`). Trigger when a new
+so that is the bucket to publish to for staging (the production service uses
+`ph-navigator-prod`). Trigger when a new
 `(provider, version)` bundle is published:
 
 1. **Publish the bundle(s) to R2.** From a local shell with the real Cloudflare

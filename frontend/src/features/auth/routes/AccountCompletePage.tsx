@@ -5,7 +5,9 @@ import { Link, useLocation } from "react-router-dom";
 import { errorMessage } from "../../../shared/lib/errors";
 import { type AccountCompletionMode, completeAccount } from "../api";
 
-const COPY: Record<AccountCompletionMode, { title: string; eyebrow: string; cta: string }> = {
+type AccountCompletionCopy = { title: string; eyebrow: string; cta: string };
+
+const COPY: Record<AccountCompletionMode, AccountCompletionCopy> = {
   invite: { title: "Set your password", eyebrow: "Welcome to PH-Navigator", cta: "Set password" },
   reset: { title: "Choose a new password", eyebrow: "PH-Navigator", cta: "Update password" },
 };
@@ -20,9 +22,34 @@ function tokenFromHash(hash: string): string {
 export function AccountCompletePage({ mode }: { mode: AccountCompletionMode }) {
   const location = useLocation();
   const token = tokenFromHash(location.hash);
+  const copy = COPY[mode];
+
+  if (!token) {
+    return (
+      <main className="auth-page">
+        <section className="auth-panel">
+          <p className="eyebrow">{copy.eyebrow}</p>
+          <h1>Link not valid</h1>
+          <p>This link is missing its token. Ask an admin for a new link.</p>
+        </section>
+      </main>
+    );
+  }
+
+  return <AccountCompletionForm key={`${mode}:${token}`} mode={mode} token={token} copy={copy} />;
+}
+
+function AccountCompletionForm({
+  mode,
+  token,
+  copy,
+}: {
+  mode: AccountCompletionMode;
+  token: string;
+  copy: AccountCompletionCopy;
+}) {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const copy = COPY[mode];
 
   const completion = useMutation({
     mutationFn: () => completeAccount(mode, token, password),
@@ -40,18 +67,6 @@ export function AccountCompletePage({ mode }: { mode: AccountCompletionMode }) {
     if (localError) return;
     completion.mutate();
   };
-
-  if (!token) {
-    return (
-      <main className="auth-page">
-        <section className="auth-panel">
-          <p className="eyebrow">{copy.eyebrow}</p>
-          <h1>Link not valid</h1>
-          <p>This link is missing its token. Ask an admin for a new link.</p>
-        </section>
-      </main>
-    );
-  }
 
   if (completion.isSuccess) {
     return (
