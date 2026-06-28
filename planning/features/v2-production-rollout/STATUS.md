@@ -23,7 +23,10 @@ Passwords, and the paid production Blueprint created the DB/API/static services.
 The Phase 2 custom-domain Blueprint sync is live on commit `fa40334c`; public
 API CORS/CSRF negative checks pass on `api.ph-nav.com`, and the signed-in
 browser `SameSite=Lax` `/admin/users` smoke passed on
-`https://www.ph-nav.com` against `https://api.ph-nav.com`.
+`https://www.ph-nav.com` against `https://api.ph-nav.com`. The production
+`www.ph-nav.com` model upload/R2 smoke passed, and the temporary
+`https://ph-navigator-web.onrender.com` origin has been removed from the
+production R2 bucket CORS policy.
 
 **Gate update (2026-06-27):** the admin-user-management MVP is **built and tested
 end-to-end** (Phases 00–06, `make ci` green); the production-verification gate
@@ -71,9 +74,8 @@ email, durable reset/invite-resend rate limiting, fresh admin re-authentication,
 MFA/passkeys, external users, richer IAM, and audit export — tracked in
 `planning/features_v2.0/`.
 
-With this gate clear, Phase 3 repo canonicalization can proceed after the
-remaining production-smoke housekeeping (notably production upload/R2 CORS
-cleanup) is handled.
+With this gate clear and production upload/R2 housekeeping handled, Phase 3
+repo canonicalization can proceed.
 
 ## Decisions — settled (2026-06-27)
 
@@ -136,17 +138,17 @@ and the staging admin lifecycle rehearsal plus non-admin product smoke are
 complete. Production DB/API/static services are live, and the Phase 2 custom
 domain retarget/cutover is complete: `www.ph-nav.com` serves V1,
 `ph-nav.com` redirects to `www`, `api.ph-nav.com` is healthy/ready, and
-`v0.ph-nav.com` still serves V0 with V0 backend CORS. The remaining manual gate
-is Ed signing in on `https://www.ph-nav.com` so the `SameSite=Lax`
-`www.ph-nav.com` → `api.ph-nav.com` browser `/admin/users` and unsafe-mutation
-smoke can finish.
+`v0.ph-nav.com` still serves V0 with V0 backend CORS. The `SameSite=Lax`
+`www.ph-nav.com` -> `api.ph-nav.com` browser `/admin/users` smoke is complete,
+and production model upload/R2 smoke is complete.
 Do not delete the old V1 `*-staging` trio yet; it is Phase 4 cleanup after
 production smoke, DNS cutover, and repo reconnect verification. Suspending the
 staging services can be considered earlier if cost needs to be reduced, but
 deletion should wait until the fallback/debug surface is no longer useful.
-The next concrete rollout step is production upload/R2 smoke on `www.ph-nav.com`,
-then remove the temporary `ph-navigator-web.onrender.com` CORS origin from the
-prod R2 bucket before Phase 3 repo canonicalization.
+The next concrete rollout step is Phase 3 repo canonicalization: rename/reconnect
+the GitHub repos and Render Blueprint connections so the new app becomes the
+canonical `bldgtyp/ph-navigator` repo and the legacy app becomes
+`bldgtyp/ph-navigator_v0`.
 
 No open Step 1 decisions remain.
 
@@ -444,6 +446,25 @@ No open Step 1 decisions remain.
   200, `OPTIONS /api/v1/admin/users` 200, and `GET /api/v1/admin/users` 200
   from Ed's browser IP, proving the real `www.ph-nav.com` -> `api.ph-nav.com`
   `SameSite=Lax` cookie path.
+- 2026-06-28 09:41 EDT — Completed production upload/R2 smoke on the public
+  custom domain. Created disposable project
+  `PROD-20260628-0919 - R2 Upload Smoke`
+  (`1c11786d-3a6f-414a-b1d5-b9caca348454`) on `https://www.ph-nav.com` and
+  uploaded `backend/seeds/model/ph_nav_v2_example.hbjson` through the browser UI.
+  The model viewer rendered `ph_nav_v2_example · Jun 28, 2026` with active file
+  `45bcc07f-234a-45f2-b743-304df4b48c17`. Render API logs on
+  `srv-d909p1b7uimc7396t580` showed `POST /assets/upload-intent` 200 with
+  `r2.op presign_put` for 469354 bytes, `POST /complete-upload` 200 with
+  `r2.op head/get_prefix`, `POST /hbjson-files` 201 with
+  `model_viewer.hbjson_file_linked`, `model_viewer.extraction.succeeded`
+  (`faces=25`, `spaces=4`), and `GET /model_data` 200. No API error or 5xx logs
+  appeared in the smoke window, and `https://api.ph-nav.com/api/v1/ready`
+  returned 200 (`db:true`). After the smoke, updated Cloudflare R2 bucket
+  `ph-navigator-prod` CORS to remove temporary
+  `https://ph-navigator-web.onrender.com`; read-back now allows only
+  `https://www.ph-nav.com` and `https://ph-nav.com` for `PUT`, `GET`, and
+  `HEAD`, with `headers=["*"]`, `exposeHeaders=["ETag"]`, and
+  `maxAgeSeconds=3600`.
 - 2026-06-27 — DNS: `www`→V0 static (200), apex→Render anycast→301 www;
   `api`/`v0` absent. Dashboard: 1 project, V0=Production (paid PG16, Ohio),
   new app=Staging (3 services suspended by Ed), Hobby workspace. Render free-Postgres

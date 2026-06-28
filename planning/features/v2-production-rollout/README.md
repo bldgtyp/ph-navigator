@@ -24,8 +24,10 @@ the paid DB/API/static services exist, `api.ph-nav.com` serves the V1 API,
 `www.ph-nav.com` serves the V1 static site, apex redirects to `www`, and
 `v0.ph-nav.com` still serves V0. The real `www.ph-nav.com` ->
 `api.ph-nav.com` `SameSite=Lax` browser smoke passed after Ed signed in as
-`ed@example.com`; the admin-user-management production gate is clear. Repo
-canonicalization remains a later gate.
+`ed@example.com`; the production `www.ph-nav.com` model upload/R2 smoke also
+passed, and the temporary `https://ph-navigator-web.onrender.com` R2 CORS origin
+has been removed. The admin-user-management production gate is clear. Phase 3
+repo canonicalization is next.
 
 ## Naming convention
 

@@ -404,9 +404,14 @@ Pre-stage (no disruption — `www` still serves V0 throughout):
          (`db:true`). Recent API logs showed only the expected signed-out
          `401 not_authenticated` from opening `/admin/users` before Ed signed
          in on `www`.
-   - [ ] Drop temporary R2 CORS origin
+   - [x] Drop temporary R2 CORS origin
          `https://ph-navigator-web.onrender.com` after the `www` browser upload
          smoke passes.
+         Completed 2026-06-28 after production browser upload smoke on
+         `https://www.ph-nav.com`: Cloudflare R2 CORS now allows only
+         `https://www.ph-nav.com` and `https://ph-nav.com` for `PUT`, `GET`,
+         and `HEAD`, preserving `headers=["*"]`, `exposeHeaders=["ETag"]`, and
+         `maxAgeSeconds=3600`.
 
 Cutover (brief window):
 4. In Render, **remove** `www.ph-nav.com` + apex `ph-nav.com` from V0's static
