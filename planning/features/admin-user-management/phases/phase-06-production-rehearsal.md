@@ -103,7 +103,10 @@ and hand `v2-production-rollout` a clean unblock checklist.
    `ph-navigator-web.onrender.com`; Render verified DNS and issued certs.
 3. [ ] Verify cookie/Origin/CSRF on the real split-origin deployment shape
    (`www.ph-nav.com` → `api.ph-nav.com`), confirming `SameSite=Lax` after Ed
-   signs in on the new domain.
+   signs in on the new domain. Public API guard negatives already pass:
+   `csrf_header_missing` without `X-PHN-CSRF`, `origin_not_allowed` from
+   `https://evil.test`, and trusted origin + header reaches auth when no cookie
+   is present.
 4. [ ] Re-run a small `/admin/users` browser smoke after custom-domain cutover if
    the frontend/API URLs change.
 

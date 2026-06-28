@@ -20,9 +20,10 @@ Phase 2 public domain cutover are complete at the Render/DNS/network layer
 cost-sizing facts are mapped and verified. The production R2 bucket/CORS/
 lifecycle work is complete, production R2 credentials are stored in Apple
 Passwords, and the paid production Blueprint created the DB/API/static services.
-The Phase 2 custom-domain Blueprint sync is live on commit `fa40334c`; the
-remaining manual gate is Ed signing in on `https://www.ph-nav.com` so the
-browser `SameSite=Lax` `/admin/users` smoke can be completed against
+The Phase 2 custom-domain Blueprint sync is live on commit `fa40334c`; public
+API CORS/CSRF negative checks pass on `api.ph-nav.com`, and the remaining
+manual gate is Ed signing in on `https://www.ph-nav.com` so the browser
+`SameSite=Lax` `/admin/users` smoke can be completed against
 `https://api.ph-nav.com`.
 
 **Gate update (2026-06-27):** the admin-user-management MVP is **built and tested
@@ -63,7 +64,8 @@ verification is complete; browser sign-in smoke on `www` is pending:
       + Ed sign-in + test-user invite → reset → deactivate/reactivate →
       grant/revoke → audit complete on staging; production backend bootstrap
       + Ed browser sign-in + disposable test-user lifecycle complete).
-- [ ] Confirm cookie/Origin/CSRF on the real `www → api` split origin.
+- [ ] Confirm cookie/Origin/CSRF on the real `www → api` split origin (public
+      API guard negatives pass; signed-in browser cookie smoke pending).
 - [x] Browser smoke `/admin/users` (staging admin/normal-user smoke complete;
       production admin/normal-user smoke complete).
 
@@ -427,6 +429,13 @@ No open Step 1 decisions remain.
   logs only showed the expected signed-out `401 not_authenticated` from opening
   `/admin/users` before Ed signed in on the new domain. Browser smoke remains
   pending Ed sign-in on `https://www.ph-nav.com`.
+- 2026-06-28 09:09 EDT — Confirmed production custom-domain CSRF guard
+  negatives directly against `https://api.ph-nav.com`: trusted
+  `Origin: https://www.ph-nav.com` without `X-PHN-CSRF` returned 403
+  `csrf_header_missing`; trusted origin with `X-PHN-CSRF: 1` but no browser
+  session reached auth and returned 401 `not_authenticated`; untrusted
+  `Origin: https://evil.test` with the header returned 403 `origin_not_allowed`.
+  The signed-in `www.ph-nav.com` browser cookie/admin smoke remains pending.
 - 2026-06-27 — DNS: `www`→V0 static (200), apex→Render anycast→301 www;
   `api`/`v0` absent. Dashboard: 1 project, V0=Production (paid PG16, Ohio),
   new app=Staging (3 services suspended by Ed), Hobby workspace. Render free-Postgres
