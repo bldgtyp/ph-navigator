@@ -10,7 +10,7 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from features.auth.account_tokens import AccountTokenType
 
@@ -61,3 +61,41 @@ class AdminAuditEntry(BaseModel):
     ip_address: str | None
     created_at: datetime
     details: dict[str, Any]
+
+
+# --- Request bodies --------------------------------------------------------
+
+
+class InviteUserRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    email: EmailStr
+    display_name: str = Field(min_length=1, max_length=200)
+    role: AdminUserRolePreset = "user"
+
+
+class SetAdminRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    make_admin: bool
+
+
+# --- Response envelopes carrying a one-time link ---------------------------
+
+
+class InviteUserResponse(BaseModel):
+    """Invite result. The raw link appears here only — never in list/detail."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    user: AdminUserRow
+    link: IssuedAccountLink
+
+
+class ReactivateUserResponse(BaseModel):
+    """Reactivate result, including the fresh one-time link."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    user: AdminUserRow
+    link: IssuedAccountLink

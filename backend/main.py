@@ -14,6 +14,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 
 from config import settings
 from database import close_pool, open_pool
+from features.admin.routes import router as admin_router
 from features.aperture_drift.routes import router as aperture_drift_router
 from features.aperture_hbjson_export.routes import router as aperture_hbjson_export_router
 from features.aperture_u_value.routes import router as aperture_u_value_router
@@ -77,6 +78,7 @@ app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
 app.include_router(auth_router)
+app.include_router(admin_router)
 app.include_router(projects_router)
 app.include_router(project_location_router)
 app.include_router(project_climate_source_router)
