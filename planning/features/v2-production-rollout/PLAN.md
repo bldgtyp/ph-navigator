@@ -212,7 +212,12 @@ logged-in project view renders.
      `SESSION_COOKIE_SECURE=true`, and the admin-user-management Phase 01
      cookie/CSRF decision (`SESSION_COOKIE_SAMESITE=lax` if verified; otherwise
      `none` paired with CSRF middleware).
-   - Secrets (`R2_*`, `FERNET_SECRET_KEY`, `MAPTILER_API_KEY`) `sync: false`.
+   - `FRONTEND_BASE_URL=https://www.ph-nav.com` (canonical base for invite/reset
+     links; never the request Host).
+   - Secrets (`R2_*`, `FERNET_SECRET_KEY`, `MAPTILER_API_KEY`,
+     `ACCOUNT_TOKEN_SECRET`) `sync: false`. `ACCOUNT_TOKEN_SECRET` keys the
+     invite/reset token hashes (admin-user-management); without it a DB-only
+     reader could forge tokens from stolen hashes.
 3. **Apply** the blueprint → new prod services build; Alembic runs on start.
 4. **Bootstrap first production admin**: use the audited Admin User Management
    bootstrap path to create/repair Ed's initial admin and issue an invite/reset
