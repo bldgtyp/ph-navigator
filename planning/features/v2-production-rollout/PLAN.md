@@ -74,7 +74,7 @@ repo/domain rename every time the product version changes:
   GitHub releases, changelogs, and migration versions for normal evolution.
   Do not create new repos/domains for ordinary major/minor product releases.
 
-## 2. Current state (verified 2026-06-27, Render dashboard + live DNS/HTTP)
+## 2. Initial state (verified 2026-06-27, Render dashboard + live DNS/HTTP)
 
 Single Render project **PH-Navigator** · workspace "Ed May's Workspace"
 (**Hobby**, 1 member) · everything in **Ohio**.
@@ -95,7 +95,9 @@ Single Render project **PH-Navigator** · workspace "Ed May's Workspace"
 | `ph-navigator-v2-api-staging` | Python 3 web | Ohio | Suspended (free tier) |
 | `ph-navigator-v2-staging` | Static site | Global | Suspended (free tier) |
 
-Plus one dead legacy service `ph-ep-runner` (suspended ~2yr) — delete during cleanup.
+Early screenshots also suggested one dead legacy service `ph-ep-runner`
+(suspended ~2yr); Phase 4 later verified no active/preview Render resource with
+that name was present.
 
 **Domain / DNS (DreamHost nameservers):**
 - `www.ph-nav.com` → CNAME → V0 static (`ph-dash-frontend.onrender.com`), HTTP 200.
@@ -492,11 +494,16 @@ rename/reconnect verification are complete. Until then, the `*-staging` trio is
 a useful fallback/debug surface; suspend rather than delete if cost needs to be
 reduced earlier.
 
-1. Delete the three `*-staging` services and the staging DB. As of 2026-06-28,
+**Status (2026-06-28):** Complete. The old V1 staging DB and two staging
+services were deleted; `ph-ep-runner` was not present in the active/preview
+Render resource list; final production values are recorded in
+`context/ENVIRONMENT.md` and `render.prod.yaml` is already committed.
+
+1. [x] Delete the two `*-staging` services and the staging DB. As of 2026-06-28,
    staging is no longer free: `ph-navigator-v2-api-staging` is `starter` and
    `ph-navigator-v2-staging-db` is `basic_256mb`.
-2. Delete the dead `ph-ep-runner` legacy service.
-3. Fold the final prod values into `context/ENVIRONMENT.md` (new "Render
+2. [x] Delete or verify absent the dead `ph-ep-runner` legacy service.
+3. [x] Fold the final prod values into `context/ENVIRONMENT.md` (new "Render
    production" section) and commit `render.prod.yaml`.
 
 ### Phase 5 — V0 decommission (run ONLY on Ed's word; no date)

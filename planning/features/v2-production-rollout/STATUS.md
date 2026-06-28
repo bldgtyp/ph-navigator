@@ -14,19 +14,19 @@ RELATED:
 
 # Status — PH-Navigator V1 Production Rollout
 
-**State:** Phase 0 staging/admin rehearsal, Phase 1 production infra, and the
-Phase 2 public domain cutover are complete at the Render/DNS/network layer
-(2026-06-28). Render account, V0 hosting, domain/DNS setup, naming policy, and
-cost-sizing facts are mapped and verified. The production R2 bucket/CORS/
-lifecycle work is complete, production R2 credentials are stored in Apple
-Passwords, and the paid production Blueprint created the DB/API/static services.
-The Phase 2 custom-domain Blueprint sync is live on commit `fa40334c`; public
-API CORS/CSRF negative checks pass on `api.ph-nav.com`, and the signed-in
-browser `SameSite=Lax` `/admin/users` smoke passed on
-`https://www.ph-nav.com` against `https://api.ph-nav.com`. The production
-`www.ph-nav.com` model upload/R2 smoke passed, and the temporary
-`https://ph-navigator-web.onrender.com` origin has been removed from the
-production R2 bucket CORS policy.
+**State:** Phase 0 staging/admin rehearsal, Phase 1 production infra, Phase 2
+public domain cutover, Phase 3 repo canonicalization, and Phase 4 old-staging
+cleanup are complete (2026-06-28). Render account, V0 hosting, domain/DNS setup,
+naming policy, and cost-sizing facts are mapped and verified. The production R2
+bucket/CORS/lifecycle work is complete, production R2 credentials are stored in
+Apple Passwords, and the paid production Blueprint created the DB/API/static
+services. The Phase 2 custom-domain Blueprint sync is live on commit `fa40334c`;
+public API CORS/CSRF negative checks pass on `api.ph-nav.com`, and the signed-in
+browser `SameSite=Lax` `/admin/users` smoke passed on `https://www.ph-nav.com`
+against `https://api.ph-nav.com`. The production `www.ph-nav.com` model
+upload/R2 smoke passed, the temporary `https://ph-navigator-web.onrender.com`
+origin has been removed from the production R2 bucket CORS policy, and the old
+V1 staging services/DB have been deleted.
 
 **Gate update (2026-06-27):** the admin-user-management MVP is **built and tested
 end-to-end** (Phases 00–06, `make ci` green); the production-verification gate
@@ -141,13 +141,13 @@ domain retarget/cutover is complete: `www.ph-nav.com` serves V1,
 `v0.ph-nav.com` still serves V0 with V0 backend CORS. The `SameSite=Lax`
 `www.ph-nav.com` -> `api.ph-nav.com` browser `/admin/users` smoke is complete,
 and production model upload/R2 smoke is complete.
-Phase 3 repo canonicalization is complete. GitHub repo names, repo metadata,
-local `origin` remotes, Render service repo URLs, V1 no-op deploys, V0
-backend/static redeploys, and public URL checks now verify
-V1=`bldgtyp/ph-navigator` and V0=`bldgtyp/ph-navigator_v0`.
-The next concrete rollout step is Phase 4 cleanup: retire the old V1
-`*-staging` trio and the dead `ph-ep-runner` service, then fold final production
-values into durable environment docs.
+Phase 3 repo canonicalization and Phase 4 old-staging cleanup are complete.
+GitHub repo names, repo metadata, local `origin` remotes, Render service repo
+URLs, V1 no-op deploys, V0 backend/static redeploys, public URL checks, and
+post-cleanup Render resource inventory now verify V1=`bldgtyp/ph-navigator` and
+V0=`bldgtyp/ph-navigator_v0`.
+The rollout is complete through V1 production launch. Phase 5 V0 decommission
+is explicitly future-only and should run only on Ed's word.
 
 No open Step 1 decisions remain.
 
@@ -482,6 +482,19 @@ No open Step 1 decisions remain.
   `https://api.ph-nav.com/api/v1/ready` returned 200 with `db:true`,
   `https://ph-nav.com` returned 301 to `https://www.ph-nav.com/`, and
   `https://v0.ph-nav.com` returned 200.
+- 2026-06-28 10:43 EDT — Completed Phase 4 old-staging cleanup. Deleted staging
+  Postgres `ph-navigator-v2-staging-db` (`dpg-d8o46uhkh4rs73ebvvgg-a`) with
+  Render CLI `render ea pg delete`; the command returned `deleted:true`. Deleted
+  staging static service `ph-navigator-v2-staging` (`srv-d81oqhgg4nts738a4e50`)
+  and staging API service `ph-navigator-v2-api-staging`
+  (`srv-d81op9vlk1mc73b1kk50`) through the Render API; both DELETE requests
+  returned HTTP 204. `render services --include-previews` now lists only V0
+  production (`ph-navigator`, `ph-navigator-backend`, `ph_navigator`) and V1
+  production (`ph-navigator-web`, `ph-navigator-api`, `ph-navigator-db`).
+  No active/preview Render resource named `ph-ep-runner` is present. Post-cleanup
+  public checks passed: `https://www.ph-nav.com` returned 200,
+  `https://api.ph-nav.com/api/v1/ready` returned 200 with `db:true`, and
+  `https://v0.ph-nav.com` returned 200.
 - 2026-06-27 — DNS: `www`→V0 static (200), apex→Render anycast→301 www;
   `api`/`v0` absent. Dashboard: 1 project, V0=Production (paid PG16, Ohio),
   new app=Staging (3 services suspended by Ed), Hobby workspace. Render free-Postgres
@@ -495,6 +508,8 @@ No open Step 1 decisions remain.
   `www.ph-nav.com` / apex for the frontend and `api.ph-nav.com` for API/MCP.
   The Phase 1 `onrender.com` hosts remain reachable as Render subdomains but
   are no longer the production env targets.
+- The old V1 staging Render stack has been deleted; use production or recreate
+  staging from `render.yaml` only if a future rehearsal/debug surface is needed.
 - Product/repo canonicalization is complete, but local folder names may lag:
   legacy app = V0 (`bldgtyp/ph-navigator_v0`), new app = V1/current
   (`bldgtyp/ph-navigator`), and this active local folder may still be

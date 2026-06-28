@@ -18,16 +18,17 @@ the root domain (`www.ph-nav.com` + apex `ph-nav.com`), move the legacy V0 app
 to `v0.ph-nav.com`, and run both side-by-side on Render for as long as Ed wants.
 
 **Current gate:** Phase 0 staging/admin rehearsal, Phase 1 production services,
-and the Phase 2 Render/DNS public-domain cutover are complete. The production R2
-bucket is configured, production R2 credentials are stored in Apple Passwords,
-the paid DB/API/static services exist, `api.ph-nav.com` serves the V1 API,
+Phase 2 Render/DNS public-domain cutover, Phase 3 repo canonicalization, and
+Phase 4 old-staging cleanup are complete. The production R2 bucket is
+configured, production R2 credentials are stored in Apple Passwords, the paid
+DB/API/static services exist, `api.ph-nav.com` serves the V1 API,
 `www.ph-nav.com` serves the V1 static site, apex redirects to `www`, and
 `v0.ph-nav.com` still serves V0. The real `www.ph-nav.com` ->
 `api.ph-nav.com` `SameSite=Lax` browser smoke passed after Ed signed in as
 `ed@example.com`; the production `www.ph-nav.com` model upload/R2 smoke also
 passed, and the temporary `https://ph-navigator-web.onrender.com` R2 CORS origin
-has been removed. The admin-user-management production gate is clear. Phase 3
-repo canonicalization is next.
+has been removed. The old V1 `*-staging` services and staging DB have been
+deleted. Phase 5 V0 decommission is future-only and requires Ed's explicit word.
 
 ## Naming convention
 
@@ -59,11 +60,11 @@ repo canonicalization is next.
 
 ## One-paragraph situation
 
-Everything lives in a single Render project (**PH-Navigator**, Hobby
-workspace, Ohio). Legacy V0 is the `Production` environment group (live, paid
-Postgres). New V1 already exists as the `Production`-project's `Staging`
-environment group under the old `v2` service names, but is **suspended by Ed**
-(free DB + free web). The rollout turns the new app into its own real
-production environment, performs a DNS + custom-domain cutover at DreamHost,
-then performs the GitHub repo rename/reorg. There is no automatic V0→V1 data
-migration — V1 launches fresh; V0 stays reachable at `v0.ph-nav.com`.
+Everything lives in a single Render project (**PH-Navigator**, Hobby workspace,
+Ohio). Current V1 production is the canonical `ph-navigator-web`,
+`ph-navigator-api`, and `ph-navigator-db` stack, serving `www.ph-nav.com`,
+apex `ph-nav.com`, and `api.ph-nav.com`. Legacy V0 remains live in parallel as
+`ph-navigator`, `ph-navigator-backend`, and `ph_navigator`, serving
+`v0.ph-nav.com`. The old V1 staging stack used for rollout rehearsal has been
+deleted. There is no automatic V0→V1 data migration — V1 launches fresh; V0
+stays reachable at `v0.ph-nav.com`.
