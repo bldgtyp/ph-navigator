@@ -76,18 +76,30 @@ and hand `v2-production-rollout` a clean unblock checklist.
 - Production rollout docs updated: the MVP gate's **implementation** is complete;
   see `../../v2-production-rollout/STATUS.md`.
 
-**Remaining (manual, require Ed + infra — not codeable this session):**
+## Production-Onrender Rehearsal (2026-06-28)
 
-1. Rehearse on staging / prod-onrender URLs before DNS cutover: bootstrap Ed,
-   invite a test user, complete invite, generate + complete a reset link,
-   deactivate/reactivate, grant/revoke, inspect audit rows.
-2. Verify cookie/Origin/CSRF on the real split-origin deployment shape
+**Staging and prod-onrender manual rehearsal: complete.**
+
+- Staging rehearsal completed the full lifecycle with a disposable test user:
+  bootstrap, invite completion, admin reset-link completion,
+  deactivate/reactivate, Admin grant/revoke, non-admin block, and audit rows.
+- Production onrender rehearsal completed the same lifecycle with
+  `codex-prod-smoke@example.com`; final state is inactive/non-admin.
+- Production onrender invite/reset completions required trusted
+  `Origin: https://ph-navigator-web.onrender.com` plus `X-PHN-CSRF: 1`; a
+  no-Origin completion attempt returned `origin_not_allowed`.
+- Read-only Render job `job-d90aju6rnols73egvh30` confirmed the disposable
+  production account exists, is inactive, has a password set, has no active
+  Admin capability, and has all required audit actions.
+
+**Remaining (manual, require DNS/custom-domain staging):**
+
+1. Verify cookie/Origin/CSRF on the real split-origin deployment shape
    (`www.ph-nav.com` → `api.ph-nav.com`), confirming `SameSite=Lax`.
-3. Browser smoke of `/admin/users` (the Claude-in-Chrome extension is unpaired
-   this session; deferred from Phase 05).
-4. Set `ACCOUNT_TOKEN_SECRET` and `FRONTEND_BASE_URL` (sync:false) in the prod
-   blueprint.
+2. Re-run a small `/admin/users` browser smoke after custom-domain cutover if
+   the frontend/API URLs change.
 
-Because items 1–3 are unverified in a real deployment, this packet stays in
-active planning (not archived); the rollout gate's *code* is ready, its
-*production verification* is not.
+Because the real custom-domain cookie/CSRF shape is still unverified, this
+packet stays in active planning (not archived); the rollout gate's *code* and
+prod-onrender rehearsal are ready, while the Phase 2 custom-domain verification
+is still open.

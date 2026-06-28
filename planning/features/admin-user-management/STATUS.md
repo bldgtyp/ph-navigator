@@ -21,8 +21,10 @@ RELATED:
 green). The full two-user MVP — bootstrap, invite, admin reset link,
 deactivate/reactivate, Admin grant/revoke, last-admin protection, CSRF/Origin
 guard, capability-gated UI, and audit — is built and tested end-to-end.
-**Remaining before the rollout gate clears:** the manual staging/prod-shape
-rehearsal + browser smoke (Ed; see `phases/phase-06-production-rehearsal.md`).
+**Remaining before the rollout gate clears:** custom-domain cookie/CSRF smoke
+after the `www.ph-nav.com` -> `api.ph-nav.com` cutover is staged. Staging and
+prod-onrender lifecycle rehearsals + `/admin/users` browser smokes are complete
+(see `phases/phase-06-production-rehearsal.md`).
 
 ## Why This Exists
 
@@ -140,4 +142,5 @@ Planning + implementation (Phases 00–06), `make ci` green throughout:
 - Phase 05 — admin UI + completion pages (`frontend/src/features/admin/__tests__`,
   `frontend/src/features/auth/routes/__tests__/AccountCompletePage.test.tsx`).
 - Phase 06 — runbook in `context/ENVIRONMENT.md`; `scripts.bootstrap_admin`
-  smoke-checked. **Manual staging rehearsal + browser smoke still pending.**
+  smoke-checked; staging and prod-onrender manual rehearsals complete. Real
+  `www.ph-nav.com` -> `api.ph-nav.com` cookie/CSRF smoke remains pending.

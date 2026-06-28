@@ -191,7 +191,7 @@ part of Phase 0/1 below (not a separate feature). It mirrors
             supplied both values; follow-up Blueprint sync `41c522bc` retargeted
             `FRONTEND_BASE_URL` to the Phase 1 prod Render frontend until DNS
             cutover.
-- [ ] Rehearse the full lifecycle on staging / prod-onrender URLs: bootstrap Ed
+- [x] Rehearse the full lifecycle on staging / prod-onrender URLs: bootstrap Ed
       (`scripts.bootstrap_admin`; add `--confirm-production` only when
       `ENVIRONMENT=production`), invite a test user, complete the invite,
       generate + complete a reset link, deactivate/reactivate, grant/revoke
@@ -204,18 +204,18 @@ part of Phase 0/1 below (not a separate feature). It mirrors
       - [x] Deactivate/reactivate on staging.
       - [x] Grant/revoke Admin on staging.
       - [x] Inspect audit rows on staging.
-      - [ ] Repeat on the production onrender/custom-domain environment before
+      - [x] Repeat on the production onrender environment before
             public cutover.
       - [x] Bootstrap Ed on production with `scripts.bootstrap_admin
             --confirm-production`; DB verification shows Ed active, password set,
             and `admin.users.manage` present.
       - [x] Complete Ed sign-in on production.
-      - [ ] Invite a test user on production.
-      - [ ] Complete test-user invite on production.
-      - [ ] Generate + complete a reset link on production.
-      - [ ] Deactivate/reactivate on production.
-      - [ ] Grant/revoke Admin on production.
-      - [ ] Inspect audit rows on production.
+      - [x] Invite a test user on production.
+      - [x] Complete test-user invite on production.
+      - [x] Generate + complete a reset link on production.
+      - [x] Deactivate/reactivate on production.
+      - [x] Grant/revoke Admin on production.
+      - [x] Inspect audit rows on production.
 - [ ] Confirm cookie/Origin/CSRF on the real split-origin shape
       (`www.ph-nav.com` → `api.ph-nav.com`): `SameSite=Lax` holds and unsafe
       `/api/v1/admin/` writes require a trusted Origin + `X-PHN-CSRF`.
@@ -224,13 +224,14 @@ part of Phase 0/1 below (not a separate feature). It mirrors
             admin writes against `ph-navigator-v2.onrender.com` with cookies +
             `X-PHN-CSRF`; missing header and untrusted Origin were rejected.
       - [ ] Production `www.ph-nav.com` → `api.ph-nav.com` check pending.
-- [ ] Browser smoke `/admin/users` (admin sees the nav + page; a normal user is
+- [x] Browser smoke `/admin/users` (admin sees the nav + page; a normal user is
       blocked).
       - [x] Staging admin sees `Users` nav/page; staging normal user reaches
             `Not authorized` / `You do not have permission to manage users.`
       - [x] Production admin sees `/admin/users` with `Ed May` /
             `ed@example.com` as `Active` / `Admin`.
-      - [ ] Production normal-user `/admin/users` block pending.
+      - [x] Production normal user reaches `Not authorized` /
+            `You do not have permission to manage users.`
 
 When every box is checked, mark the gate cleared in `STATUS.md` and archive the
 admin-user-management packet. If the rehearsal surfaces real rework (e.g.
@@ -341,7 +342,7 @@ logged-in project view renders.
    Synced on commit `41c522bc`: API deploy `dep-d909ujn7f7vs73cgf79g` and web
    deploy `dep-d909ujn7f7vs73cgf7b0` are live; the static bundle contains
    `https://ph-navigator-api.onrender.com`; health/ready/static root return 200.
-5. [ ] **Bootstrap first production admin**: use the audited Admin User Management
+5. [x] **Bootstrap first production admin**: use the audited Admin User Management
    bootstrap path to create/repair Ed's initial admin and issue an invite/reset
    link. Then invite John and any test account through `/admin/users`. Do **not**
    use the local/staging seed convention `ed@example.com` / `password` or
@@ -351,6 +352,8 @@ logged-in project view renders.
    - [x] Ed account DB verification: active, password set, and
          `admin.users.manage` present.
    - [x] Browser sign-in as Ed and `/admin/users` admin smoke complete.
+   - [x] Disposable production test-user lifecycle complete; final state is
+         inactive/non-admin.
 6. **Seed reference data**: seed/license the climate reference bundles into R2 +
    DB (on-demand, per ENVIRONMENT.md).
 7. **Smoke** on the prod onrender URLs: health/ready, login, project CRUD,
