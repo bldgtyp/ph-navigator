@@ -491,8 +491,12 @@ No open Step 1 decisions remain.
   returned HTTP 204. `render services --include-previews` now lists only V0
   production (`ph-navigator`, `ph-navigator-backend`, `ph_navigator`) and V1
   production (`ph-navigator-web`, `ph-navigator-api`, `ph-navigator-db`).
-  No active/preview Render resource named `ph-ep-runner` is present. Post-cleanup
-  public checks passed: `https://www.ph-nav.com` returned 200,
+  Deleted the now-empty Render `Staging` environment group
+  (`evm-d81om93eo5us73fkqpqg`) through the Render API; the DELETE request
+  returned HTTP 204, and `render environments prj-d0mcajhr0fns73bkq7gg` now
+  lists only `Production` (`evm-d0mcajhr0fns73bkq7h0`). No active/preview Render
+  resource named `ph-ep-runner` is present. Post-cleanup public checks passed:
+  `https://www.ph-nav.com` returned 200,
   `https://api.ph-nav.com/api/v1/ready` returned 200 with `db:true`, and
   `https://v0.ph-nav.com` returned 200.
 - 2026-06-27 — DNS: `www`→V0 static (200), apex→Render anycast→301 www;

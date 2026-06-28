@@ -494,10 +494,10 @@ rename/reconnect verification are complete. Until then, the `*-staging` trio is
 a useful fallback/debug surface; suspend rather than delete if cost needs to be
 reduced earlier.
 
-**Status (2026-06-28):** Complete. The old V1 staging DB and two staging
-services were deleted; `ph-ep-runner` was not present in the active/preview
-Render resource list; final production values are recorded in
-`context/ENVIRONMENT.md` and `render.prod.yaml` is already committed.
+**Status (2026-06-28):** Complete. The old V1 staging DB, two staging services,
+and empty Staging environment group were deleted; `ph-ep-runner` was not present
+in the active/preview Render resource list; final production values are recorded
+in `context/ENVIRONMENT.md` and `render.prod.yaml` is already committed.
 
 1. [x] Delete the two `*-staging` services and the staging DB. As of 2026-06-28,
    staging is no longer free: `ph-navigator-v2-api-staging` is `starter` and
