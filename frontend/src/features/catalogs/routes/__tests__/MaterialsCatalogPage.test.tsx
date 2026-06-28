@@ -41,6 +41,7 @@ const SESSION: AuthSession = {
     units_preference: "SI",
   },
   expires_at: "2026-06-04T12:00:00Z",
+  capabilities: [],
 };
 
 const WOOD_FIBER: CatalogMaterial = {

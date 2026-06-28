@@ -53,7 +53,7 @@ accounts, and audit exports are split into deferred `features_v2.0/` packets.
 | 02 | Account lifecycle schema, token storage, and bootstrap command | Complete |
 | 03 | Backend MVP account-token and user-admin services | Complete |
 | 04 | Admin/API authorization contracts for MVP routes | Complete |
-| 05 | Minimal admin dashboard and invite/reset-link frontend flows | Planned |
+| 05 | Minimal admin dashboard and invite/reset-link frontend flows | Complete |
 | 06 | Production rehearsal, runbook, and rollout unblock | Planned |
 
 ## Deferred Feature Packets

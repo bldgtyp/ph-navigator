@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
 TIME: 19:59 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex (for Ed May)
 SCOPE: Minimal admin dashboard and invite/reset-link frontend flows.
 RELATED:
@@ -69,3 +69,28 @@ Deferred:
 - Normal users cannot see or use admin affordances.
 - Frontend never displays raw reset/invite tokens after the one-time create
   response is dismissed.
+
+## Outcome (2026-06-27)
+
+New `frontend/src/features/admin/` feature + the public completion page:
+
+- `AuthSession` gained `capabilities`; `canManageUsers(session)` gates the
+  "Users" nav link on the Dashboard topbar and the `/admin/users` page itself
+  (non-admins get a plain "Not authorized" shell, and the API still 403s).
+- `routes/AdminUsersPage.tsx` — compact table (name/email/status/role/created/
+  last-action) with a per-row action menu, driven by TanStack Query hooks.
+- Modals: `InviteUserModal` (email/display name/role), `ConfirmActionModal`
+  (deactivate/reactivate/grant/revoke — generic, parent owns the mutation),
+  `UserAuditModal` (recent activity, no secrets), and `OneTimeLinkModal` which
+  shows the raw invite/reset/reactivation link **once** with a copy button and
+  no persistence (state cleared on dismiss).
+- Public `auth/routes/AccountCompletePage.tsx` (`/invite`, `/reset`) reads the
+  token from the URL **fragment**, validates length + match client-side, POSTs
+  to the completion endpoints, and on success points the user at sign-in.
+- Styling reuses shared button/modal/form recipes; only `admin.css` (layout,
+  table, status/role chips) is feature-specific, on the 3-tier tokens.
+- Tests: `admin/__tests__/lib.test.ts` (capability gate + labels),
+  `admin/__tests__/AdminUsersTable.test.tsx` (chips + status-specific actions),
+  `auth/routes/__tests__/AccountCompletePage.test.tsx` (missing token, mismatch
+  guard, token-from-fragment POST + success). Browser smoke deferred to Phase 06
+  (the rehearsal step) since the extension is unpaired this session.

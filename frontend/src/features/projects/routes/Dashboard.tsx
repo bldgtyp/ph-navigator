@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Box, Layers3, SquareStack, type LucideIcon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { WorkspaceTopbar, TopbarAccountMenu } from "../../../shared/ui/WorkspaceTopbar";
+import { ADMIN_USERS_PATH, canManageUsers } from "../../admin/lib";
 import { useSignOutMutation } from "../../auth/hooks";
 import { catalogPath, type CatalogSlug } from "../../catalogs/lib";
 import type { AuthSession } from "../../auth/types";
@@ -104,6 +105,7 @@ export function Dashboard({ session }: { session: AuthSession }) {
   return (
     <main className="workspace-shell">
       <WorkspaceTopbar
+        primaryNav={canManageUsers(session) ? <Link to={ADMIN_USERS_PATH}>Users</Link> : undefined}
         accountSlot={
           <TopbarAccountMenu label={session.user.display_name} onSignOut={handleSignOut} />
         }

@@ -1,5 +1,6 @@
 import { lazy, Suspense, type ReactNode } from "react";
 import { Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
+import { AccountCompletePage } from "../features/auth/routes/AccountCompletePage";
 import { RequireAuth } from "../features/auth/routes/RequireAuth";
 import { SignInPage } from "../features/auth/routes/SignInPage";
 import type { AuthSession } from "../features/auth/types";
@@ -30,11 +31,28 @@ const ProjectShell = lazy(() =>
     default: module.ProjectShell,
   })),
 );
+const AdminUsersPage = lazy(() =>
+  import("../features/admin/routes/AdminUsersPage").then((module) => ({
+    default: module.AdminUsersPage,
+  })),
+);
 
 export function AppRouter() {
   return (
     <Routes>
       <Route path="/sign-in" element={<SignInPage />} />
+      <Route path="/invite" element={<AccountCompletePage mode="invite" />} />
+      <Route path="/reset" element={<AccountCompletePage mode="reset" />} />
+      <Route
+        path="/admin/users"
+        element={authenticatedRoute(
+          (session) => (
+            <AdminUsersPage session={session} />
+          ),
+          "Users",
+          "Loading users...",
+        )}
+      />
       <Route
         path="/dashboard"
         element={authenticatedRoute(
