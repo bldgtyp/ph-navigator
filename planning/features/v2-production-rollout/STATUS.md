@@ -136,9 +136,11 @@ and the staging admin lifecycle rehearsal plus non-admin product smoke are
 complete. Production DB/API/static services are live on Render URLs, and the
 Phase 1 URL-env + cookie correction sync is complete. Backend bootstrap,
 Ed sign-in, production `/admin/users` admin/normal-user smoke, and the
-disposable production test-user lifecycle are complete. Next manual step is the
-Phase 2 custom-domain cookie/CSRF smoke once `www.ph-nav.com` ->
-`api.ph-nav.com` is staged.
+disposable production test-user lifecycle are complete. Render-side Phase 2
+custom domains are pre-staged: `api.ph-nav.com` is on `ph-navigator-api`, and
+`v0.ph-nav.com` is on the V0 static service. Next manual step is DreamHost DNS:
+add CNAME `api` -> `ph-navigator-api.onrender.com` and CNAME `v0` ->
+`ph-dash-frontend.onrender.com`, then verify Render DNS/TLS.
 Production custom-domain cookie/CSRF smoke remains pending until the
 `www.ph-nav.com` → `api.ph-nav.com` split-origin cutover is staged.
 Do not delete the old V1 `*-staging` trio yet; it is Phase 4 cleanup after
@@ -370,6 +372,17 @@ No open Step 1 decisions remain.
   job `job-d90aju6rnols73egvh30` confirmed final DB state:
   `exists=true`, `is_active=false`, `password_set=true`, `capabilities=[]`,
   with the same audit action set.
+- 2026-06-28 01:12 EDT — Pre-staged Phase 2 Render custom domains without
+  moving public traffic. Added `api.ph-nav.com` to V1 API service
+  `ph-navigator-api` (`srv-d909p1b7uimc7396t580`); Render shows
+  `Waiting for DNS` / `Waiting for Verification` and requests CNAME host `api`
+  target `ph-navigator-api.onrender.com`. Added `v0.ph-nav.com` to V0 static
+  service `ph-navigator` (`srv-cv6sj8t2ng1s7380ljpg`); Render shows
+  `Waiting for DNS` / `Waiting for Verification` and requests CNAME host `v0`
+  target `ph-dash-frontend.onrender.com`. `dig` still shows
+  `www.ph-nav.com` on V0 and no `api`/`v0` records. DreamHost is not signed in
+  in Chrome, so DNS edits remain manual before Blueprint retarget and final
+  `SameSite=Lax` cookie/CSRF smoke.
 - 2026-06-27 — DNS: `www`→V0 static (200), apex→Render anycast→301 www;
   `api`/`v0` absent. Dashboard: 1 project, V0=Production (paid PG16, Ohio),
   new app=Staging (3 services suspended by Ed), Hobby workspace. Render free-Postgres

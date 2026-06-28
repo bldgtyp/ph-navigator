@@ -369,12 +369,25 @@ Pre-stage (no disruption — `www` still serves V0 throughout):
    Add `https://v0.ph-nav.com` to V0 backend `CORS_ORIGINS` (and `cors.json`
    for GCS if browser uploads are used); redeploy V0 backend. Confirm V0 loads
    at `v0.ph-nav.com`.
-2. **V1 API domain**: add `api.ph-nav.com` to the V1 prod web service; create
-   the CNAME at DreamHost → V1 web's Render target; wait for Render TLS.
+   - [x] Render custom domain added to V0 static service
+         `srv-cv6sj8t2ng1s7380ljpg`; DNS/TLS waiting.
+   - [ ] DreamHost CNAME: host `v0` → `ph-dash-frontend.onrender.com`.
+   - [ ] V0 backend CORS redeploy includes `https://v0.ph-nav.com`.
+   - [ ] `https://v0.ph-nav.com` loads V0.
+2. **V1 API domain**: add `api.ph-nav.com` to the V1 prod API web service;
+   create the CNAME at DreamHost → the V1 API Render target; wait for Render TLS.
+   - [x] Render custom domain added to V1 API service
+         `srv-d909p1b7uimc7396t580`; DNS/TLS waiting.
+   - [ ] DreamHost CNAME: host `api` → `ph-navigator-api.onrender.com`.
+   - [ ] Render verifies DNS and issues the `api.ph-nav.com` certificate.
 3. Repoint V1 env to final hosts: `VITE_API_BASE_URL=https://api.ph-nav.com`,
    `CORS_ORIGINS=https://www.ph-nav.com` (+ apex if not redirected), MCP URLs →
    `https://api.ph-nav.com`; rebuild V1 static + redeploy V1 API. Update R2 CORS
    to drop the temporary onrender origin.
+   - [ ] Patch/validate/sync `render.prod.yaml` Phase 2 URL values and
+         `SESSION_COOKIE_SAMESITE=lax` after `api.ph-nav.com` resolves.
+   - [ ] Verify the static bundle references `https://api.ph-nav.com`.
+   - [ ] Run health/ready and error-log checks after redeploy.
 
 Cutover (brief window):
 4. In Render, **remove** `www.ph-nav.com` + apex `ph-nav.com` from V0's static
@@ -495,8 +508,9 @@ if needed); redeploy. No frontend change required (backend onrender URL is
 unchanged). Rename GitHub repo to `bldgtyp/ph-navigator_v0`. Optionally add a
 "you're on V0" banner.
 
-**DNS (DreamHost):** add `v0` CNAME → V0 static; add `api` CNAME → V1 web; flip
-`www` CNAME → V1 static; keep apex A-records on Render anycast (rebind service).
+**DNS (DreamHost):** add `v0` CNAME → V0 static (`ph-dash-frontend.onrender.com`);
+add `api` CNAME → V1 API (`ph-navigator-api.onrender.com`); flip `www` CNAME →
+V1 static during cutover; keep apex A-records on Render anycast (rebind service).
 
 **Render custom domains:** add `v0.ph-nav.com` to V0 static; add
-`api.ph-nav.com` to V1 web; move `www.ph-nav.com`+apex from V0 static to V1 static.
+`api.ph-nav.com` to V1 API; move `www.ph-nav.com`+apex from V0 static to V1 static.
