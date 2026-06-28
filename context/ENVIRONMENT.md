@@ -270,9 +270,11 @@ an ephemeral local shell for the opt-in smoke.
   - `FERNET_SECRET_KEY` is reserved for future at-rest field
     encryption; TB-01 session cookies are opaque DB row pointers, not
     signed/encrypted payload cookies.
-- Split-origin staging, such as separate Render frontend/backend
+- Split-origin staging or Render-hosted production smoke, such as separate
+  Render frontend/backend
   subdomains, must set `SESSION_COOKIE_SAMESITE=none` with HTTPS so the
-  browser stores the API session cookie.
+  browser stores the API session cookie. The custom-domain production target
+  (`www.ph-nav.com` -> `api.ph-nav.com`) returns to `SameSite=Lax`.
 
 ## Render staging
 
@@ -421,7 +423,9 @@ same canonical services to `www.ph-nav.com`, apex `ph-nav.com`, and
     - `CORS_ORIGINS=https://ph-navigator-web.onrender.com`
     - `SESSION_COOKIE_NAME=phn_session`
     - `SESSION_LIFETIME_MINUTES=60`
-    - `SESSION_COOKIE_SAMESITE=lax`
+    - `SESSION_COOKIE_SAMESITE=none` during Phase 1 Render-host smoke;
+      retarget to `lax` during the Phase 2 `www.ph-nav.com` ->
+      `api.ph-nav.com` custom-domain cutover.
     - `FRONTEND_BASE_URL=https://ph-navigator-web.onrender.com`
     - `MCP_ISSUER_URL=https://ph-navigator-api.onrender.com`
     - `MCP_RESOURCE_SERVER_URL=https://ph-navigator-api.onrender.com/mcp`

@@ -143,10 +143,12 @@ bucket `ph-navigator-prod` with browser CORS allowing `https://www.ph-nav.com`.
    (drop the staging/prod split for V1; reintroduce a staging env later if
    needed). Simplest for a solo team and avoids paying for two V1 DBs.
 4. **Session cookie / CSRF**: superseded by the Admin User Management Phase 01
-   gate. Preferred production posture is proving `SameSite=Lax` works for
-   `www.ph-nav.com` -> `api.ph-nav.com`; if `SameSite=None; Secure` remains,
-   it must be paired with explicit CSRF/origin protection before admin
-   mutations ship.
+   gate. Phase 1 Render-host smoke uses `SameSite=None; Secure` because
+   `ph-navigator-web.onrender.com` -> `ph-navigator-api.onrender.com` is
+   cross-site in browsers. Preferred custom-domain production posture remains
+   proving `SameSite=Lax` works for `www.ph-nav.com` -> `api.ph-nav.com`; if
+   `SameSite=None; Secure` remains after Phase 2, it must be paired with
+   explicit CSRF/origin protection before admin mutations ship.
 5. **V0 lifetime**: keep V0 at `v0.ph-nav.com` **indefinitely**; no
    decommission date set. Phase 5 is a checklist to run only on Ed's word.
 6. **Blueprint strategy**: author a separate **`render.prod.yaml`** (or convert
@@ -301,10 +303,11 @@ logged-in project view renders.
      custom domains in Phase 2): `CORS_ORIGINS`, `VITE_API_BASE_URL`,
      `MCP_ISSUER_URL`, `MCP_RESOURCE_SERVER_URL`, `MCP_ALLOWED_HOSTS`,
      `MCP_ALLOWED_ORIGINS`, `ENVIRONMENT=production`, `R2_BUCKET=ph-navigator-prod`,
-     and the admin-user-management Phase 01 cookie/CSRF decision
-     (`SESSION_COOKIE_SAMESITE=lax` if verified; otherwise `none` paired with
-     CSRF middleware). `SESSION_COOKIE_SECURE` is derived true by the backend
-     when `ENVIRONMENT=production`.
+     and the admin-user-management Phase 01 cookie/CSRF decision. Phase 1
+     Render-host smoke uses `SESSION_COOKIE_SAMESITE=none`; Phase 2 custom
+     domains retarget to `lax` if verified, otherwise `none` remains paired
+     with CSRF middleware. `SESSION_COOKIE_SECURE` is derived true by the
+     backend when `ENVIRONMENT=production`.
    - Phase 1: `FRONTEND_BASE_URL=https://ph-navigator-web.onrender.com`
      (base for invite/reset links; never the request Host). Phase 2 retargets
      this to `https://www.ph-nav.com` during DNS cutover.

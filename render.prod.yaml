@@ -75,8 +75,11 @@ services:
         value: phn_session
       - key: SESSION_LIFETIME_MINUTES
         value: "60"
+      # Phase 1 runs on separate onrender.com app hosts, which are cross-site
+      # to browsers. Phase 2 retargets this to lax after www/api.ph-nav.com
+      # custom-domain cutover.
       - key: SESSION_COOKIE_SAMESITE
-        value: lax
+        value: none
       - key: FRONTEND_BASE_URL
         value: https://ph-navigator-web.onrender.com
       - key: MCP_ISSUER_URL
