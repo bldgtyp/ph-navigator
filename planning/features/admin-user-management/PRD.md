@@ -35,6 +35,25 @@ This is a required precondition for the production rollout. The rollout can
 rehearse infrastructure, but it should not cut `www.ph-nav.com` over to the new
 app until the MVP account invite/reset-link/revoke/admin-grant flows pass.
 
+## Locked MVP Parameters (Phase 00, 2026-06-27)
+
+These are settled and should not be re-litigated during implementation:
+
+- **Token lifetimes:** invite tokens expire after **7 days**; admin-generated
+  reset tokens after **30 minutes**. Both are single-use and stored only as
+  keyed hashes. Lifetimes are `Settings` fields (no migration to retune).
+- **Manual link handling:** the raw one-time link is surfaced **both** in the
+  immediate create/reset-link API response (shown once in the admin UI with a
+  copy affordance) **and** by the bootstrap/break-glass command output. It is
+  never persisted, re-displayed, audited, or logged.
+- **Cookie / CSRF posture:** defense-in-depth. Production defaults to
+  `SameSite=Lax`, **and** every unsafe credentialed admin mutation is
+  independently gated by a trusted-`Origin` allow-list plus an app-only custom
+  header (`X-PHN-CSRF`). The guard ships regardless of the staging `SameSite`
+  verification result.
+- **Role presets:** MVP exposes only `User` and `Admin` (the latter backed by
+  `admin.users.manage`). `Catalog Admin` and `is_staff` editing stay deferred.
+
 ## Primary MVP Use Cases
 
 1. **Bootstrap first production admin** - an operator creates/repairs Ed's

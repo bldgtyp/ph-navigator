@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
 TIME: 19:59 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex (for Ed May)
 SCOPE: Lock MVP decisions, threat model, rollout gate, and deferred-feature links.
 RELATED:
@@ -87,3 +87,17 @@ internet-facing rate limiting, move to `features_v2.0/public-account-recovery/`.
 - Production rollout docs say this MVP, not broad IAM/account recovery, is
   blocking.
 - Phase 01 can start without re-litigating the cookie/CSRF direction.
+
+## Outcome (2026-06-27)
+
+- Decisions locked in `../STATUS.md` ("Locked Decisions") and `../PRD.md`
+  ("Locked MVP Parameters"): invite 7 d / reset 30 min token lifetimes; raw
+  links surfaced once in both API create-response and bootstrap command output;
+  defense-in-depth cookie posture (`SameSite=Lax` default **plus** an always-on
+  Origin allow-list + `X-PHN-CSRF` custom-header guard on unsafe admin
+  mutations); `User`/`Admin` presets only.
+- Rollout docs (`../../v2-production-rollout/STATUS.md` + `PLAN.md`) already
+  scope this MVP, not broad IAM/account recovery, as the blocker.
+- Deferred `features_v2.0/` packets exist and are linked:
+  `public-account-recovery`, `account-security-hardening`,
+  `access-capability-enforcement`, `multi-tenant-teams`.
