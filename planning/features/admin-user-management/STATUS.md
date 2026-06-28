@@ -23,8 +23,10 @@ deactivate/reactivate, Admin grant/revoke, last-admin protection, CSRF/Origin
 guard, capability-gated UI, and audit — is built and tested end-to-end.
 **Remaining before the rollout gate clears:** custom-domain cookie/CSRF smoke
 after the `www.ph-nav.com` -> `api.ph-nav.com` cutover is staged. Staging and
-prod-onrender lifecycle rehearsals + `/admin/users` browser smokes are complete
-(see `phases/phase-06-production-rehearsal.md`).
+prod-onrender lifecycle rehearsals + `/admin/users` browser smokes are complete.
+Render-side custom domains for `api.ph-nav.com` and `v0.ph-nav.com` are
+pre-staged; DreamHost DNS + Render TLS verification are pending (see
+`phases/phase-06-production-rehearsal.md`).
 
 ## Why This Exists
 
@@ -143,4 +145,5 @@ Planning + implementation (Phases 00–06), `make ci` green throughout:
   `frontend/src/features/auth/routes/__tests__/AccountCompletePage.test.tsx`).
 - Phase 06 — runbook in `context/ENVIRONMENT.md`; `scripts.bootstrap_admin`
   smoke-checked; staging and prod-onrender manual rehearsals complete. Real
-  `www.ph-nav.com` -> `api.ph-nav.com` cookie/CSRF smoke remains pending.
+  `www.ph-nav.com` -> `api.ph-nav.com` cookie/CSRF smoke remains pending on
+  DreamHost DNS/TLS.

@@ -94,9 +94,12 @@ and hand `v2-production-rollout` a clean unblock checklist.
 
 **Remaining (manual, require DNS/custom-domain staging):**
 
-1. Verify cookie/Origin/CSRF on the real split-origin deployment shape
+1. Add DreamHost DNS records for the Render-pre-staged domains:
+   CNAME `api` -> `ph-navigator-api.onrender.com` and CNAME `v0` ->
+   `ph-dash-frontend.onrender.com`; wait for Render verification/TLS.
+2. Verify cookie/Origin/CSRF on the real split-origin deployment shape
    (`www.ph-nav.com` → `api.ph-nav.com`), confirming `SameSite=Lax`.
-2. Re-run a small `/admin/users` browser smoke after custom-domain cutover if
+3. Re-run a small `/admin/users` browser smoke after custom-domain cutover if
    the frontend/API URLs change.
 
 Because the real custom-domain cookie/CSRF shape is still unverified, this
