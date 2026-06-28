@@ -17,8 +17,9 @@ RELATED:
 
 # Status - Admin User Management MVP
 
-**State:** Planned / production-rollout blocker for the **two-user internal
-MVP**. Product/security contract drafted; implementation has not started.
+**State:** Phase 00 complete (MVP decisions locked). Production-rollout blocker
+for the **two-user internal MVP**. Product/security contract drafted;
+implementation of Phases 01-06 in progress.
 
 ## Why This Exists
 
@@ -79,10 +80,10 @@ for normal production operations:
 10. **Production bootstrap is audited and narrow** - the only acceptable
     production operator path creates or repairs the first admin and issues an
     invite/reset link; it must not set a reusable temporary password.
-11. **Cookie/Origin posture is still a blocker** - do not ship admin mutations
-    with credentialed cookies unless unsafe methods reject untrusted origins and
-    require an app-only CSRF/custom header, or production cookies are proven to
-    work with `SameSite=Lax`.
+11. **Cookie/Origin posture is locked (defense-in-depth)** - production defaults
+    to `SameSite=Lax` **and** every unsafe credentialed admin mutation is gated
+    by a trusted-`Origin` allow-list plus an app-only custom header
+    (`X-PHN-CSRF`). The guard ships regardless of the staging `SameSite` check.
 
 ## Deferred Out Of MVP
 
@@ -98,21 +99,26 @@ for normal production operations:
 | `Catalog Admin`, `is_staff` editing UI, richer roles/IAM | `planning/features_v2.0/access-capability-enforcement/` |
 | Teams, external members, client/certifier accounts | `planning/features_v2.0/multi-tenant-teams/` and `planning/features_v2.0/access-capability-enforcement/` |
 
-## Open Decisions
+## Locked Decisions (Phase 00, 2026-06-27)
 
-1. **MVP token lifetimes** - proposed defaults: invite 7 days; admin-generated
-   reset 30 minutes.
-2. **Manual link handling** - decide whether MVP reset/invite links are shown
-   once in the admin UI, printed only by bootstrap/break-glass commands, or both.
-3. **Cookie hardening path** - decide in Phase 01 whether production moves to
-   `SameSite=Lax` for `www.ph-nav.com` -> `api.ph-nav.com`, or keeps
-   `SameSite=None` with explicit CSRF/Origin/custom-header protection.
+1. **MVP token lifetimes** - LOCKED: invite tokens live **7 days**;
+   admin-generated reset tokens live **30 minutes**. Both single-use and hashed.
+   Lifetimes are `Settings` fields so they can be tuned without a migration.
+2. **Manual link handling** - LOCKED: **both**. The raw one-time link is returned
+   exactly once in the immediate create/reset-link API response (shown once in the
+   admin UI with a copy affordance) **and** printed once by the bootstrap/
+   break-glass command. It is never persisted, re-displayed, audited, or logged.
+3. **Cookie hardening path** - LOCKED: **defense-in-depth, not either/or**.
+   Production defaults to `SameSite=Lax` for `www.ph-nav.com` ->
+   `api.ph-nav.com`, **and** every unsafe credentialed admin mutation is
+   independently gated by a trusted-`Origin` allow-list plus an app-only custom
+   header (`X-PHN-CSRF`). The guard ships regardless of the staging `SameSite`
+   verification result, so the rollout gate cannot be blocked on that one check.
 
 ## Next Step
 
-Phase 00: lock the MVP/deferred boundary, token lifetimes, manual link-handling
-policy, and cookie/CSRF approach. Then start Phase 01 before admin mutation
-routes.
+Phase 00 is complete. Start **Phase 01** (Origin/custom-header guard middleware +
+frontend custom-header wiring) before any admin mutation routes land.
 
 ## Verification
 
