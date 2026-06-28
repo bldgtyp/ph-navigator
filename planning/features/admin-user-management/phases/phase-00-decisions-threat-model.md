@@ -3,7 +3,7 @@ DATE: 2026-06-27
 TIME: 19:59 EDT
 STATUS: Planned
 AUTHOR: Codex (for Ed May)
-SCOPE: Lock decisions, threat model, and rollout gate before implementation.
+SCOPE: Lock MVP decisions, threat model, rollout gate, and deferred-feature links.
 RELATED:
   - ../README.md
   - ../PRD.md
@@ -11,25 +11,29 @@ RELATED:
   - ../STATUS.md
   - ../reviews/2026-06-27-security-use-case-review.md
   - ../../v2-production-rollout/STATUS.md
+  - ../../../features_v2.0/public-account-recovery/
+  - ../../../features_v2.0/account-security-hardening/
 ---
 
-# Phase 00 - Decisions / Threat Model
+# Phase 00 - MVP Decisions / Threat Model
 
 ## Goal
 
-Turn the planning packet into a locked implementation contract and make the
-production-rollout dependency explicit.
+Turn the planning packet into a locked MVP implementation contract and make the
+reduced production-rollout dependency explicit.
 
 ## Decisions To Lock
 
-1. Email provider: Postmark, Resend, SMTP, or another provider.
-2. Token lifetimes: proposed invite 7 days, reset 30 minutes, fresh admin re-auth
-   10 minutes.
-3. Role presets: `User`, `Admin`, and whether `Catalog Admin` appears as a
-   first-pass preset or lower-level capability control.
-4. Cookie/CSRF path: prefer production `SameSite=Lax` if verified; otherwise
-   keep `SameSite=None` only with CSRF middleware.
-5. MFA/passkeys: explicitly deferred until Phase 08 / before external accounts.
+1. Token lifetimes: proposed invite 7 days, admin-generated reset 30 minutes.
+2. Manual link handling: show one-time invite/reset links in admin UI, command
+   output, or both.
+3. Cookie/CSRF path: prefer production `SameSite=Lax` if verified; otherwise
+   keep `SameSite=None` only with Origin/custom-header protection.
+4. Role presets: MVP includes only `User` and `Admin`.
+5. Deferred split:
+   - public reset/email/rate limiting -> `features_v2.0/public-account-recovery`;
+   - re-auth/MFA/session inventory/audit export -> `features_v2.0/account-security-hardening`;
+   - richer IAM/external users -> existing v2.0 access/tenancy packets.
 
 ## Threat Model
 
@@ -45,31 +49,31 @@ Assets:
 
 Primary attackers:
 
-- unauthenticated internet user probing reset/invite endpoints;
 - authenticated normal user attempting admin endpoints;
 - browser-based CSRF from a malicious site;
 - stale or compromised staff account;
 - DB-only reader who sees token hashes;
-- operator mistake during production bootstrap.
+- operator mistake during production bootstrap or manual link delivery.
 
 Security goals:
 
-- no user enumeration from public reset;
 - no admin mutation from untrusted origins;
 - no admin-visible temporary passwords;
 - no reusable or logged account-recovery token;
 - no last-admin lockout;
 - immediate session/MCP-token revocation on deactivate/reset;
-- durable audit trail for sensitive lifecycle changes.
+- durable audit trail for sensitive MVP lifecycle changes.
+
+Deferred public-reset goals, including no user enumeration and durable
+internet-facing rate limiting, move to `features_v2.0/public-account-recovery/`.
 
 ## Implementation Tasks
 
 1. Update `planning/features/v2-production-rollout/STATUS.md` and `PLAN.md` so
-   admin-user-management is a blocker after infrastructure rehearsal.
+   Admin User Management is a blocker only for the MVP threshold.
 2. Confirm the decisions above in `STATUS.md`.
-3. Add any accepted decision notes to `PRD.md`.
-4. Check whether `context/ENVIRONMENT.md` needs an early note that production
-   account lifecycle is blocked pending this feature.
+3. Add accepted scope decisions to `PRD.md`.
+4. Confirm deferred v2.0 packets exist and are linked from this feature.
 
 ## Verification
 
@@ -78,6 +82,8 @@ Security goals:
 
 ## Exit Criteria
 
-- Open decisions are either settled or assigned to a later phase with an owner.
-- Production rollout docs say this feature is blocking.
-- Phase 01 can start without re-litigating cookie/CSRF direction.
+- MVP decisions are settled.
+- Deferred work has a named `features_v2.0/` home.
+- Production rollout docs say this MVP, not broad IAM/account recovery, is
+  blocking.
+- Phase 01 can start without re-litigating the cookie/CSRF direction.

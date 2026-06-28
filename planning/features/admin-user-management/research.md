@@ -45,8 +45,10 @@ OWASP's reset guidance maps directly to this feature:
 - after reset, notify the user and require normal login rather than
   automatically logging them in.
 
-Planning implication: no admin-set temporary passwords. Admin-triggered reset
-creates the same email reset flow as self-service reset.
+Planning implication: no admin-set temporary passwords. The MVP uses the same
+secure reset-token foundation for admin-generated reset links, but defers public
+self-service reset and email delivery to
+`planning/features_v2.0/public-account-recovery/`.
 
 ### Authorization
 
@@ -80,10 +82,11 @@ requests without trusted Origin and an app-only CSRF/custom header.
 
 OWASP and NIST both call out reauthentication around sensitive account changes.
 
-Planning implication: do not leave admin re-auth as optional. Changing another
-user's password-reset state, deactivation state, `admin.users.manage`,
-`catalog.edit`, or `is_staff` needs a fresh admin password check or fresh-auth
-session marker.
+Planning implication: fresh admin re-auth is the right later control for
+changing another user's password-reset state, deactivation state,
+`admin.users.manage`, `catalog.edit`, or `is_staff`. It is deferred out of the
+Ed/John MVP and tracked in
+`planning/features_v2.0/account-security-hardening/`.
 
 ### Authenticator Lifecycle
 
@@ -154,9 +157,11 @@ Frontend:
 2. `is_staff` should stay useful, but sensitive actions should check
    `admin.users.manage`.
 3. A token table is the main missing backend primitive.
-4. Email delivery is the main missing infrastructure dependency.
+4. Email delivery is the main missing infrastructure dependency for public
+   account recovery, not for the two-user MVP.
 5. Session invalidation and audit logging already have usable seams.
-6. CSRF/rate-limit/fresh-auth controls are not optional add-ons; they are part
-   of the security foundation for public reset and admin mutations.
+6. CSRF/Origin controls are part of the MVP security foundation for admin
+   mutations; durable public rate limiting and fresh-auth controls are deferred
+   until their corresponding public recovery / hardening features are promoted.
 7. Pending-invite account state needs a schema change because current users
    require `password_hash`.

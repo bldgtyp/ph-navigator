@@ -8,6 +8,8 @@ RELATED:
   - ./PLAN.md
   - ./README.md
   - ../admin-user-management/STATUS.md
+  - ../../features_v2.0/public-account-recovery/STATUS.md
+  - ../../features_v2.0/account-security-hardening/STATUS.md
 ---
 
 # Status — PH-Navigator V1 Production Rollout
@@ -21,20 +23,23 @@ verified. Production rollout execution is blocked behind
 
 Do not proceed to paid V1 production services, production account creation, DNS
 cutover, or GitHub repo canonicalization until Admin User Management reaches the
-agreed production-ready threshold. The gate is tracked in
+agreed **two-user MVP** threshold. The gate is tracked in
 `planning/features/admin-user-management/` and must include, at minimum:
 
 - invite-only user creation;
-- password reset without temporary admin-set passwords;
-- admin user dashboard;
+- admin-generated reset links without temporary admin-set passwords;
+- minimal admin user dashboard;
 - user deactivation/reactivation;
 - `admin.users.manage` capability enforcement;
 - CSRF/origin protection or verified `SameSite=Lax` production cookie posture
   for unsafe credentialed admin mutations;
-- public reset/invite resend rate limiting;
-- fresh admin re-authentication for sensitive user lifecycle actions;
 - last-admin lockout protection;
 - audit logging for sensitive user actions.
+
+Not part of this rollout gate: public self-service reset, transactional email,
+durable public reset/invite-resend rate limiting, fresh admin re-authentication,
+MFA/passkeys, external users, richer IAM, and audit export. Those are tracked in
+`planning/features_v2.0/`.
 
 Allowed before this gate clears: local development, planning, `render.prod.yaml`
 drafting, and optional Phase 0 staging sanity checks that do not create the real
@@ -97,7 +102,7 @@ The work splits into two surfaces:
 ## Next concrete step
 
 Decisions are settled (above). Next: complete the
-`planning/features/admin-user-management/` gate. Optional, non-production
+`planning/features/admin-user-management/` MVP gate. Optional, non-production
 pre-work can continue: resume the suspended new-app `*-staging` services for a
 Phase 0 sanity check and/or draft `render.prod.yaml`, but Phase 1+ production
 execution waits until the gate clears.
@@ -125,7 +130,9 @@ No open Step 1 decisions remain.
 - Production account seeding must not reuse local/staging credentials. Verified
   2026-06-27 that `seed_user.py`, `seed_dev_db.py`, agent fixture seeds, and
   catalog seed scripts refuse production after the catalog-script guard fix.
-- Admin user management is now a hard gate, tracked separately in
+- Admin user management is now a hard MVP gate, tracked separately in
   `planning/features/admin-user-management/`. Initial prod account creation no
   longer proceeds as the normal rollout path; production launch waits for
-  invite/reset/revoke/role management to meet the gate.
+  bootstrap, invite, admin reset-link, deactivate/reactivate, admin-grant, and
+  audit flows to meet the gate. Public reset/email and hardening are v2.0
+  follow-ups.
