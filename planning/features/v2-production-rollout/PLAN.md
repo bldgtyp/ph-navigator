@@ -165,20 +165,35 @@ bucket `ph-navigator-prod` with browser CORS allowing `https://www.ph-nav.com`.
 **Why:** production needs an in-app way to add, reset, revoke, and audit users
 without relying on local/staging-only scripts or reused seed credentials.
 
-Required before Phase 1:
+**Build: DONE (2026-06-27).** `planning/features/admin-user-management/` Phases
+00–06 are implemented and tested end-to-end (`make ci` green): invite,
+admin-generated single-use/expiring reset links (no admin-set passwords),
+deactivate/reactivate, Admin grant/revoke, server-side `admin.users.manage`
+enforcement, transactional last-admin lockout, Origin + `X-PHN-CSRF` guard,
+capability-gated UI, audited bootstrap, and audit logging. Public reset/email,
+durable rate limiting, re-auth, MFA, and broader IAM remain deferred in
+`planning/features_v2.0/`.
 
-1. `planning/features/admin-user-management/` reaches its agreed two-user MVP
-   production-ready threshold.
-2. Admin user lifecycle exists for invite, admin-generated reset links,
-   deactivate/reactivate, and Admin grant/revoke.
-3. `admin.users.manage` is enforced server-side for admin operations.
-4. Invite/reset links use single-use expiring tokens; admins do not set
-   temporary passwords.
-5. Last-admin lockout and audit logging are tested.
-6. CSRF/origin protection or verified `SameSite=Lax` production cookie posture
-   exists for unsafe credentialed admin mutations.
-7. Public reset/email, durable public rate limiting, fresh admin re-auth,
-   MFA/passkeys, and broader IAM remain deferred in `planning/features_v2.0/`.
+**Gate verification — the discrete step that clears this gate.** The capability
+is built; clearing the gate is now a production-verification checklist, run as
+part of Phase 0/1 below (not a separate feature). It mirrors
+`planning/features/admin-user-management/phases/phase-06-production-rehearsal.md`:
+
+- [ ] Set prod env: `ACCOUNT_TOKEN_SECRET` and `FRONTEND_BASE_URL` (sync:false).
+- [ ] Rehearse the full lifecycle on staging / prod-onrender URLs: bootstrap Ed
+      (`scripts.bootstrap_admin --confirm-production`), invite a test user,
+      complete the invite, generate + complete a reset link,
+      deactivate/reactivate, grant/revoke Admin, and inspect audit rows.
+- [ ] Confirm cookie/Origin/CSRF on the real split-origin shape
+      (`www.ph-nav.com` → `api.ph-nav.com`): `SameSite=Lax` holds and unsafe
+      `/api/v1/admin/` writes require a trusted Origin + `X-PHN-CSRF`.
+- [ ] Browser smoke `/admin/users` (admin sees the nav + page; a normal user is
+      blocked).
+
+When every box is checked, mark the gate cleared in `STATUS.md` and archive the
+admin-user-management packet. If the rehearsal surfaces real rework (e.g.
+`SameSite=Lax` fails and split-origin auth needs redesign), spin that out as its
+own feature rather than expanding this checklist.
 
 Allowed before this gate clears: Phase 0 staging sanity checks, prod blueprint
 drafting, and docs/runbook work. Not allowed: Phase 1 paid production apply,

@@ -19,34 +19,41 @@ hosting, domain/DNS setup, naming policy, and cost-sizing facts are mapped and
 verified. Production rollout execution is blocked behind
 `planning/features/admin-user-management/`.
 
-**Gate update (2026-06-27):** the admin-user-management MVP is **implemented and
-tested end-to-end** (Phases 00–06, `make ci` green) — invite, admin reset link,
-deactivate/reactivate, Admin grant/revoke, last-admin protection, Origin +
-`X-PHN-CSRF` guard, capability-gated UI, audited bootstrap. The gate is not yet
-cleared: it still needs the manual staging/prod-shape rehearsal + browser smoke
-(see `../admin-user-management/phases/phase-06-production-rehearsal.md`). New
-prod env vars to set (sync:false): `ACCOUNT_TOKEN_SECRET`, `FRONTEND_BASE_URL`.
+**Gate update (2026-06-27):** the admin-user-management MVP is **built and tested
+end-to-end** (Phases 00–06, `make ci` green); the gate is not yet cleared — it
+needs the production-verification checklist below. See "Production-readiness
+gate".
 
 ## Production-readiness gate
 
 Do not proceed to paid V1 production services, production account creation, DNS
-cutover, or GitHub repo canonicalization until Admin User Management reaches the
-agreed **two-user MVP** threshold. The gate is tracked in
-`planning/features/admin-user-management/` and must include, at minimum:
+cutover, or GitHub repo canonicalization until the Admin User Management gate
+clears. The gate's two-user MVP capability is **built** in
+`planning/features/admin-user-management/` (Phases 00–06, `make ci` green):
 
-- invite-only user creation;
-- admin-generated reset links without temporary admin-set passwords;
-- minimal admin user dashboard;
-- user deactivation/reactivation;
-- `admin.users.manage` capability enforcement;
-- CSRF/origin protection or verified `SameSite=Lax` production cookie posture
-  for unsafe credentialed admin mutations;
-- last-admin lockout protection;
-- audit logging for sensitive user actions.
+- ✅ invite-only user creation;
+- ✅ admin-generated reset links without temporary admin-set passwords;
+- ✅ minimal admin user dashboard;
+- ✅ user deactivation/reactivation;
+- ✅ `admin.users.manage` capability enforcement;
+- ✅ Origin + `X-PHN-CSRF` guard on unsafe admin mutations (production defaults
+  to `SameSite=Lax`);
+- ✅ last-admin lockout protection;
+- ✅ audit logging for sensitive user actions.
 
-Not part of this rollout gate: public self-service reset, transactional email,
-durable public reset/invite-resend rate limiting, fresh admin re-authentication,
-MFA/passkeys, external users, richer IAM, and audit export. Those are tracked in
+**Remaining to clear the gate** is a production-verification checklist, not new
+build — it runs as a discrete step inside Phase 0/1 (see `PLAN.md` → "Gate —
+Admin user management" and the admin-user-management Phase 06 doc):
+
+1. Set prod env `ACCOUNT_TOKEN_SECRET` + `FRONTEND_BASE_URL` (sync:false).
+2. Rehearse the full lifecycle on staging / prod-onrender URLs (bootstrap →
+   invite → complete → reset → deactivate/reactivate → grant/revoke → audit).
+3. Confirm cookie/Origin/CSRF on the real `www → api` split origin.
+4. Browser smoke `/admin/users`.
+
+Not part of this rollout gate at all: public self-service reset, transactional
+email, durable reset/invite-resend rate limiting, fresh admin re-authentication,
+MFA/passkeys, external users, richer IAM, and audit export — tracked in
 `planning/features_v2.0/`.
 
 Allowed before this gate clears: local development, planning, `render.prod.yaml`
@@ -109,11 +116,13 @@ The work splits into two surfaces:
 
 ## Next concrete step
 
-Decisions are settled (above). Next: complete the
-`planning/features/admin-user-management/` MVP gate. Optional, non-production
-pre-work can continue: resume the suspended new-app `*-staging` services for a
-Phase 0 sanity check and/or draft `render.prod.yaml`, but Phase 1+ production
-execution waits until the gate clears.
+Decisions are settled (above) and the admin-user-management capability is built.
+Next: run the **gate-verification checklist** (see "Production-readiness gate")
+during a Phase 0 staging rehearsal — set `ACCOUNT_TOKEN_SECRET` /
+`FRONTEND_BASE_URL`, exercise the full account lifecycle on the staging /
+prod-onrender shape, confirm split-origin cookie/CSRF, and browser-smoke
+`/admin/users`. Drafting `render.prod.yaml` can proceed in parallel, but Phase
+1+ production execution waits until those boxes are checked.
 
 No open Step 1 decisions remain.
 
