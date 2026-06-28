@@ -209,7 +209,7 @@ part of Phase 0/1 below (not a separate feature). It mirrors
       - [x] Bootstrap Ed on production with `scripts.bootstrap_admin
             --confirm-production`; DB verification shows Ed active, password set,
             and `admin.users.manage` present.
-      - [ ] Complete Ed sign-in on production.
+      - [x] Complete Ed sign-in on production.
       - [ ] Invite a test user on production.
       - [ ] Complete test-user invite on production.
       - [ ] Generate + complete a reset link on production.
@@ -228,7 +228,9 @@ part of Phase 0/1 below (not a separate feature). It mirrors
       blocked).
       - [x] Staging admin sees `Users` nav/page; staging normal user reaches
             `Not authorized` / `You do not have permission to manage users.`
-      - [ ] Production browser smoke pending.
+      - [x] Production admin sees `/admin/users` with `Ed May` /
+            `ed@example.com` as `Active` / `Admin`.
+      - [ ] Production normal-user `/admin/users` block pending.
 
 When every box is checked, mark the gate cleared in `STATUS.md` and archive the
 admin-user-management packet. If the rehearsal surfaces real rework (e.g.
@@ -348,7 +350,7 @@ logged-in project view renders.
    - [x] Bootstrap job `job-d90a1bjtqb8s73fjsrm0` succeeded.
    - [x] Ed account DB verification: active, password set, and
          `admin.users.manage` present.
-   - [ ] Browser sign-in as Ed and `/admin/users` smoke pending.
+   - [x] Browser sign-in as Ed and `/admin/users` admin smoke complete.
 6. **Seed reference data**: seed/license the climate reference bundles into R2 +
    DB (on-demand, per ENVIRONMENT.md).
 7. **Smoke** on the prod onrender URLs: health/ready, login, project CRUD,

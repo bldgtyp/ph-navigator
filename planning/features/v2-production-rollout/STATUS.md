@@ -59,10 +59,10 @@ rehearsal is complete; production/custom-domain verification is still pending:
 - [ ] Rehearse the full lifecycle on staging / prod-onrender URLs (bootstrap
       + Ed sign-in + test-user invite → reset → deactivate/reactivate →
       grant/revoke → audit complete on staging; production backend bootstrap
-      complete, browser sign-in/lifecycle pending).
+      and Ed browser sign-in complete, lifecycle pending).
 - [ ] Confirm cookie/Origin/CSRF on the real `www → api` split origin.
 - [ ] Browser smoke `/admin/users` (staging admin/normal-user smoke complete;
-      production smoke pending).
+      production admin smoke complete; production normal-user block pending).
 
 Not part of this rollout gate at all: public self-service reset, transactional
 email, durable reset/invite-resend rate limiting, fresh admin re-authentication,
@@ -134,9 +134,10 @@ Decisions are settled (above), the admin-user-management capability is built,
 and the staging admin lifecycle rehearsal plus non-admin product smoke are
 complete. Production DB/API/static services are live on Render URLs, and the
 Phase 1 URL-env + cookie correction sync is complete. Backend bootstrap is
-complete; next manual step is signing in again as Ed on
-`https://ph-navigator-web.onrender.com`, then verifying `/admin/users` and
-running the production admin lifecycle rehearsal.
+complete; Ed sign-in and production `/admin/users` admin smoke are complete.
+Next manual step is confirming the disposable production test-user lifecycle
+smoke, then inviting/resetting/deactivating/reactivating/granting/revoking that
+test user and inspecting audit rows.
 Production custom-domain cookie/CSRF smoke remains pending until the
 `www.ph-nav.com` → `api.ph-nav.com` split-origin cutover is staged.
 Do not delete the old V1 `*-staging` trio yet; it is Phase 4 cleanup after
@@ -344,6 +345,12 @@ No open Step 1 decisions remain.
   `{"session_cookie_samesite":"none","environment":"production"}`. Next: Ed
   signs in again so Chrome receives a fresh `SameSite=None` session cookie,
   then rerun `/admin/users` and the production lifecycle rehearsal.
+- 2026-06-28 00:47 EDT — Ed signed in again after the cookie correction.
+  Production `/admin/users` now renders authenticated admin content instead of
+  `401 not_authenticated`: the page shows `Account: Ed May`, the `Invite user`
+  button, and row `Ed May / ed@example.com / Active / Admin`. Render logs for
+  `/api/v1/admin/users` over the verification window returned no 401 rows.
+  Production normal-user block and test-user lifecycle smoke remain pending.
 - 2026-06-27 — DNS: `www`→V0 static (200), apex→Render anycast→301 www;
   `api`/`v0` absent. Dashboard: 1 project, V0=Production (paid PG16, Ohio),
   new app=Staging (3 services suspended by Ed), Hobby workspace. Render free-Postgres
