@@ -27,6 +27,17 @@ def now_utc() -> datetime:
     return datetime.now(UTC)
 
 
+def has_usable_password(user_row: dict[str, object] | None) -> bool:
+    """True when a user row has a set, usable password.
+
+    An *invited*/pending user has ``NULL`` ``password_hash`` and
+    ``password_set_at`` and must not be able to sign in. This single predicate
+    keeps the invited-vs-active distinction from drifting between the login path
+    and the bootstrap command.
+    """
+    return bool(user_row and user_row["password_hash"] and user_row["password_set_at"])
+
+
 def session_expires_at(now: datetime | None = None) -> datetime:
     return (now or now_utc()) + timedelta(minutes=settings.session_lifetime_minutes)
 
@@ -97,8 +108,12 @@ def authenticate(email: str, password: str, request: Request) -> tuple[UserPubli
 
     with connection() as conn:
         user_row = repository.get_user_by_email(conn, email)
-    password_hash = str(user_row["password_hash"]) if user_row else DUMMY_PASSWORD_HASH
-    password_valid = verify_password(password, password_hash)
+    # An invited/pending user has no usable password yet. Verify against the
+    # dummy hash to keep the timing constant, then force the result invalid so
+    # they cannot sign in.
+    can_authenticate = has_usable_password(user_row)
+    password_hash = str(user_row["password_hash"]) if (can_authenticate and user_row) else DUMMY_PASSWORD_HASH
+    password_valid = verify_password(password, password_hash) and can_authenticate
     user_is_active = bool(user_row and user_row["is_active"])
 
     if user_row is None or not user_is_active or not password_valid:
