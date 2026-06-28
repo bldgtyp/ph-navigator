@@ -6,6 +6,7 @@ from typing import Any
 from uuid import UUID
 
 from psycopg import Connection
+from psycopg.errors import UniqueViolation
 
 from features.access.models import GrantScopeType
 
@@ -44,6 +45,27 @@ def insert_grant(
     if row is None:
         raise RuntimeError("Grant insert did not return a row.")
     return row
+
+
+def ensure_global_grant(conn: Connection[Any], *, user_id: UUID, capability: str, granted_by: UUID | None) -> bool:
+    """Grant a global capability if the user does not already hold it.
+
+    Returns True when a new grant was inserted, False when one was already
+    active (the ``uq_user_grants_active`` index makes the duplicate a no-op). The
+    idempotent shape both the admin service and the bootstrap command need.
+    """
+    try:
+        insert_grant(
+            conn,
+            user_id=user_id,
+            capability=capability,
+            scope_type="global",
+            scope_id=None,
+            granted_by=granted_by,
+        )
+    except UniqueViolation:
+        return False
+    return True
 
 
 def active_global_capabilities_for_user(conn: Connection[Any], user_id: UUID) -> frozenset[str]:
