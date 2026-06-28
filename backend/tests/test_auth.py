@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import sys
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from types import SimpleNamespace
@@ -18,7 +18,7 @@ from database import connection, transaction
 from features.auth.passwords import hash_password, verify_password
 from features.auth.service import create_or_update_user, now_utc, session_expires_at, set_session_cookie
 from main import app
-from scripts import seed_user
+from scripts import seed_frame_catalog, seed_glazing_catalog, seed_materials_catalog, seed_user
 
 ORIGIN = "http://localhost:5173"
 
@@ -399,6 +399,26 @@ def test_seed_user_refuses_non_local_environments(monkeypatch: pytest.MonkeyPatc
 
     with pytest.raises(SystemExit, match="Refusing to run outside local environments"):
         seed_user.main()
+
+
+@pytest.mark.parametrize(
+    ("main", "command"),
+    [
+        (seed_materials_catalog.main, "seed_materials_catalog"),
+        (seed_glazing_catalog.main, "seed_glazing_catalog"),
+        (seed_frame_catalog.main, "seed_frame_catalog"),
+    ],
+)
+def test_catalog_seed_scripts_refuse_non_local_environments(
+    monkeypatch: pytest.MonkeyPatch,
+    main: Callable[[], None],
+    command: str,
+) -> None:
+    monkeypatch.setattr(settings, "environment", "production")
+    monkeypatch.setattr(sys, "argv", [command])
+
+    with pytest.raises(SystemExit, match="Refusing to seed ENVIRONMENT='production'"):
+        main()
 
 
 def test_seed_user_allows_staging_with_explicit_flag(monkeypatch: pytest.MonkeyPatch) -> None:

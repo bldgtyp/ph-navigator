@@ -19,7 +19,7 @@ from fastapi import Request
 
 from features.auth.service import create_or_update_user
 from features.catalogs.materials.import_export.service import commit_import, preview_import
-from scripts._seed_paths import MATERIALS_SEED_PATH, default_user_kwargs
+from scripts._seed_paths import MATERIALS_SEED_PATH, assert_local_dev_database, default_user_kwargs
 
 DEFAULT_SEED_PATH = MATERIALS_SEED_PATH
 _DEFAULTS = default_user_kwargs()
@@ -52,6 +52,8 @@ def main() -> None:
     parser.add_argument("--display-name", default=DEFAULT_DISPLAY_NAME)
     parser.add_argument("--password", default=DEFAULT_PASSWORD)
     args = parser.parse_args()
+
+    assert_local_dev_database()
 
     if not args.seed.is_file():
         print(f"Seed file not found: {args.seed}", file=sys.stderr)

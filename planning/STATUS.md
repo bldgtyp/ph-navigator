@@ -11,6 +11,8 @@ feature-first planning.
 
 | Feature | State | Current pointer |
 |---|---|---|
+| Admin User Management | Planned / production-rollout blocker; security/use-case review added; Phases 00-07 now cover CSRF/cookie posture, durable rate limiting, account-token schema, first-admin bootstrap, invite/reset/revoke/admin grants, email, UI, audit, and rollout rehearsal | `features/admin-user-management/STATUS.md` |
+| V1 Production Rollout | Blocked / Step 1 assumptions locked; paid prod services, production account creation, DNS cutover, and repo canonicalization gated behind Admin User Management | `features/v2-production-rollout/STATUS.md` |
 | Beta Schema Evolution | Complete / archived after beta gate drill passed with fixture audit, local DB audit, and `make ci` | `archive/dated/2026-06-27/beta-schema-evolution/STATUS.md` |
 | DataTable Status Field — Addendum | Complete — `status` extended to the 3 remaining Datasheet-bearing tables (Ventilators, HP Outdoor Units, HP Indoor Units); `make ci` green, live smoke done, committed `d8b59f28` (branch, not yet merged); archived | `archive/dated/2026-06-24/data-table-status-field-addendum/STATUS.md` |
 | DataTable Status Field — Backfill | Complete / resolved-unneeded before first deploy: no users or old project documents exist, focused status-field fresh-start verification passed, no migration/backfill written | `archive/dated/2026-06-27/datatable-status-backfill/STATUS.md` |
