@@ -204,6 +204,16 @@ part of Phase 0/1 below (not a separate feature). It mirrors
       - [x] Inspect audit rows on staging.
       - [ ] Repeat on the production onrender/custom-domain environment before
             public cutover.
+      - [x] Bootstrap Ed on production with `scripts.bootstrap_admin
+            --confirm-production`; DB verification shows Ed active, password set,
+            and `admin.users.manage` present.
+      - [ ] Complete Ed sign-in on production.
+      - [ ] Invite a test user on production.
+      - [ ] Complete test-user invite on production.
+      - [ ] Generate + complete a reset link on production.
+      - [ ] Deactivate/reactivate on production.
+      - [ ] Grant/revoke Admin on production.
+      - [ ] Inspect audit rows on production.
 - [ ] Confirm cookie/Origin/CSRF on the real split-origin shape
       (`www.ph-nav.com` → `api.ph-nav.com`): `SameSite=Lax` holds and unsafe
       `/api/v1/admin/` writes require a trusted Origin + `X-PHN-CSRF`.
@@ -326,12 +336,16 @@ logged-in project view renders.
    Synced on commit `41c522bc`: API deploy `dep-d909ujn7f7vs73cgf79g` and web
    deploy `dep-d909ujn7f7vs73cgf7b0` are live; the static bundle contains
    `https://ph-navigator-api.onrender.com`; health/ready/static root return 200.
-5. **Bootstrap first production admin**: use the audited Admin User Management
+5. [ ] **Bootstrap first production admin**: use the audited Admin User Management
    bootstrap path to create/repair Ed's initial admin and issue an invite/reset
    link. Then invite John and any test account through `/admin/users`. Do **not**
    use the local/staging seed convention `ed@example.com` / `password` or
    `codex@example.com` / `password` on the prod DB, and do not manually seed
    reusable production passwords as the normal account lifecycle.
+   - [x] Bootstrap job `job-d90a1bjtqb8s73fjsrm0` succeeded.
+   - [x] Ed account DB verification: active, password set, and
+         `admin.users.manage` present.
+   - [ ] Browser sign-in as Ed and `/admin/users` smoke pending.
 6. **Seed reference data**: seed/license the climate reference bundles into R2 +
    DB (on-demand, per ENVIRONMENT.md).
 7. **Smoke** on the prod onrender URLs: health/ready, login, project CRUD,

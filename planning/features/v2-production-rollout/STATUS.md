@@ -58,7 +58,8 @@ rehearsal is complete; production/custom-domain verification is still pending:
       points at the Phase 1 prod Render URL).
 - [ ] Rehearse the full lifecycle on staging / prod-onrender URLs (bootstrap
       + Ed sign-in + test-user invite → reset → deactivate/reactivate →
-      grant/revoke → audit complete on staging; repeat on production pending).
+      grant/revoke → audit complete on staging; production backend bootstrap
+      complete, browser sign-in/lifecycle pending).
 - [ ] Confirm cookie/Origin/CSRF on the real `www → api` split origin.
 - [ ] Browser smoke `/admin/users` (staging admin/normal-user smoke complete;
       production smoke pending).
@@ -132,10 +133,11 @@ The work splits into two surfaces:
 Decisions are settled (above), the admin-user-management capability is built,
 and the staging admin lifecycle rehearsal plus non-admin product smoke are
 complete. Production DB/API/static services are live on Render URLs, and the
-Phase 1 URL-env sync is complete. Next: bootstrap the first production admin and
-run the production admin lifecycle rehearsal on the prod onrender URLs.
-Production custom-domain cookie/CSRF and `/admin/users` smoke remain pending
-until the `www.ph-nav.com` → `api.ph-nav.com` split-origin cutover is staged.
+Phase 1 URL-env sync is complete. Backend bootstrap is complete; next manual
+step is signing in as Ed on `https://ph-navigator-web.onrender.com`, then
+verifying `/admin/users` and running the production admin lifecycle rehearsal.
+Production custom-domain cookie/CSRF smoke remains pending until the
+`www.ph-nav.com` → `api.ph-nav.com` split-origin cutover is staged.
 Do not delete the old V1 `*-staging` trio yet; it is Phase 4 cleanup after
 production smoke, DNS cutover, and repo reconnect verification. Suspending the
 staging services can be considered earlier if cost needs to be reduced, but
@@ -315,6 +317,14 @@ No open Step 1 decisions remain.
   paid (`starter` API and `basic_256mb` DB), so suspend can be considered for
   cost control, but deletion waits until production smoke/DNS/repo verification
   is complete.
+- 2026-06-28 00:28 EDT — Ran production first-admin bootstrap on
+  `ph-navigator-api` (`srv-d909p1b7uimc7396t580`) with one-off job
+  `job-d90a1bjtqb8s73fjsrm0`; the job succeeded. Opened the one-time link in
+  Chrome without storing or copying the raw token into docs/chat. Follow-up
+  read-only verification job `job-d90a5dr7uimc73976220` confirmed
+  `ed@example.com` exists, is active, has `password_set=true`, and holds
+  `admin.users.manage`. Browser reload currently lands on the sign-in form, so
+  Ed sign-in and `/admin/users` production smoke remain next.
 - 2026-06-27 — DNS: `www`→V0 static (200), apex→Render anycast→301 www;
   `api`/`v0` absent. Dashboard: 1 project, V0=Production (paid PG16, Ohio),
   new app=Staging (3 services suspended by Ed), Hobby workspace. Render free-Postgres
