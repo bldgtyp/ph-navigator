@@ -114,6 +114,38 @@ def upsert_invited_user(conn: Connection[Any], email: str, display_name: str) ->
     return row
 
 
+def get_user_account_for_update(conn: Connection[Any], user_id: UUID) -> dict[str, Any] | None:
+    """Lock and return a user's account row for an admin lifecycle mutation."""
+    return conn.execute(
+        """
+        SELECT id, email, display_name, password_hash, password_set_at,
+               (deleted_at IS NULL) AS is_active, units_preference
+        FROM users
+        WHERE id = %(user_id)s
+        FOR UPDATE
+        """,
+        {"user_id": user_id},
+    ).fetchone()
+
+
+def set_user_active(conn: Connection[Any], user_id: UUID, *, active: bool) -> dict[str, Any]:
+    """Soft-deactivate (``active=False`` -> set ``deleted_at``) or reactivate a user."""
+    row = conn.execute(
+        """
+        UPDATE users
+        SET deleted_at = CASE WHEN %(active)s THEN NULL ELSE now() END,
+            updated_at = now()
+        WHERE id = %(user_id)s
+        RETURNING id, email, display_name,
+                  (deleted_at IS NULL) AS is_active, units_preference
+        """,
+        {"user_id": user_id, "active": active},
+    ).fetchone()
+    if row is None:
+        raise RuntimeError("User active-state update did not return a row.")
+    return row
+
+
 def set_user_password(conn: Connection[Any], user_id: UUID, password_hash: str) -> dict[str, Any]:
     """Set a user's password hash and stamp ``password_set_at`` to now."""
     row = conn.execute(

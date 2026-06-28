@@ -26,11 +26,6 @@ The raw link is printed once to stdout for the operator and never persisted.
 from __future__ import annotations
 
 import argparse
-from typing import Any
-from uuid import UUID
-
-from psycopg import Connection
-from psycopg.errors import UniqueViolation
 
 from config import settings
 from database import transaction
@@ -51,22 +46,6 @@ def _assert_environment_allowed(confirm_production: bool) -> None:
             "Refusing to bootstrap a production admin without --confirm-production. "
             "Re-run with that flag once you are sure this is the intended database."
         )
-
-
-def _ensure_admin_grant(conn: Connection[Any], user_id: UUID) -> bool:
-    """Grant ``admin.users.manage`` globally if missing. Returns True if granted."""
-    try:
-        access_repository.insert_grant(
-            conn,
-            user_id=user_id,
-            capability=ADMIN_USERS_MANAGE,
-            scope_type="global",
-            scope_id=None,
-            granted_by=None,
-        )
-    except UniqueViolation:
-        return False
-    return True
 
 
 def main() -> None:
@@ -92,7 +71,9 @@ def main() -> None:
         # a brand-new or still-invited user gets an invite.
         token_type: AccountTokenType = "password_reset" if has_usable_password(existing) else "invite"
 
-        granted = _ensure_admin_grant(conn, user_id)
+        granted = access_repository.ensure_global_grant(
+            conn, user_id=user_id, capability=ADMIN_USERS_MANAGE, granted_by=None
+        )
         if granted:
             auth_repository.log_action(
                 conn,
