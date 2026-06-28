@@ -141,14 +141,13 @@ domain retarget/cutover is complete: `www.ph-nav.com` serves V1,
 `v0.ph-nav.com` still serves V0 with V0 backend CORS. The `SameSite=Lax`
 `www.ph-nav.com` -> `api.ph-nav.com` browser `/admin/users` smoke is complete,
 and production model upload/R2 smoke is complete.
-Do not delete the old V1 `*-staging` trio yet; it is Phase 4 cleanup after
-production smoke, DNS cutover, and repo reconnect verification. Suspending the
-staging services can be considered earlier if cost needs to be reduced, but
-deletion should wait until the fallback/debug surface is no longer useful.
-The next concrete rollout step is Phase 3 repo canonicalization: rename/reconnect
-the GitHub repos and Render Blueprint connections so the new app becomes the
-canonical `bldgtyp/ph-navigator` repo and the legacy app becomes
-`bldgtyp/ph-navigator_v0`.
+Phase 3 repo canonicalization is complete. GitHub repo names, repo metadata,
+local `origin` remotes, Render service repo URLs, V1 no-op deploys, V0
+backend/static redeploys, and public URL checks now verify
+V1=`bldgtyp/ph-navigator` and V0=`bldgtyp/ph-navigator_v0`.
+The next concrete rollout step is Phase 4 cleanup: retire the old V1
+`*-staging` trio and the dead `ph-ep-runner` service, then fold final production
+values into durable environment docs.
 
 No open Step 1 decisions remain.
 
@@ -465,6 +464,24 @@ No open Step 1 decisions remain.
   `https://www.ph-nav.com` and `https://ph-nav.com` for `PUT`, `GET`, and
   `HEAD`, with `headers=["*"]`, `exposeHeaders=["ETag"]`, and
   `maxAgeSeconds=3600`.
+- 2026-06-28 10:11 EDT — Completed Phase 3 repo canonicalization. Renamed
+  GitHub repos so current V1 is `https://github.com/bldgtyp/ph-navigator` and
+  legacy V0 is `https://github.com/bldgtyp/ph-navigator_v0`; repo descriptions
+  now read `PH-Navigator` and `PH-Navigator V0 legacy app`. Updated local
+  `origin` remotes for both checkouts without changing the V0 local branch.
+  Render service repo URLs now point V1 services (`ph-navigator-api`,
+  `ph-navigator-web`, retained `*-staging`) at
+  `https://github.com/bldgtyp/ph-navigator` and V0 services
+  (`ph-navigator-backend`, legacy static `ph-navigator`) at
+  `https://github.com/bldgtyp/ph-navigator_v0`. Verified deploy routing with
+  V1 API deploy `dep-d90im0ugvqtc739ih29g` and V1 web deploy
+  `dep-d90im0ok1i2s73fnarjg` from commit `e0fb7822`; both are `live`.
+  Verified V0 backend deploy `dep-d90ik93tqb8s73fsjpgg` and V0 static deploy
+  `dep-d90ik968bjmc7398kl1g` from commit `01e72fe`; both are `live`.
+  Post-rename public checks passed: `https://www.ph-nav.com` returned 200,
+  `https://api.ph-nav.com/api/v1/ready` returned 200 with `db:true`,
+  `https://ph-nav.com` returned 301 to `https://www.ph-nav.com/`, and
+  `https://v0.ph-nav.com` returned 200.
 - 2026-06-27 — DNS: `www`→V0 static (200), apex→Render anycast→301 www;
   `api`/`v0` absent. Dashboard: 1 project, V0=Production (paid PG16, Ohio),
   new app=Staging (3 services suspended by Ed), Hobby workspace. Render free-Postgres
@@ -478,9 +495,10 @@ No open Step 1 decisions remain.
   `www.ph-nav.com` / apex for the frontend and `api.ph-nav.com` for API/MCP.
   The Phase 1 `onrender.com` hosts remain reachable as Render subdomains but
   are no longer the production env targets.
-- Product/repo naming now differs from the local checkout name until the rename
-  phase completes: legacy app = V0, new app = V1, current local folder still
-  `ph-navigator-v2`.
+- Product/repo canonicalization is complete, but local folder names may lag:
+  legacy app = V0 (`bldgtyp/ph-navigator_v0`), new app = V1/current
+  (`bldgtyp/ph-navigator`), and this active local folder may still be
+  `ph-navigator-v2` until the optional folder rename is safe.
 - Production account seeding must not reuse local/staging credentials. Verified
   2026-06-27 that `seed_user.py`, `seed_dev_db.py`, agent fixture seeds, and
   catalog seed scripts refuse production after the catalog-script guard fix.

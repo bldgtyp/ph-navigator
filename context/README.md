@@ -1,9 +1,14 @@
-# PHN-V2 `context/` — Canonical Reference
+# PHN `context/` — Canonical Reference
 
-This folder is the stable description layer for PH-Navigator V2.
+This folder is the stable description layer for PH-Navigator.
 Feature PRDs, implementation plans, dated reviews, progress ledgers,
 and temporary sequencing work live under `planning/` unless they have
 graduated into stable `context/` contracts.
+
+The repo was originally developed as `ph-navigator-v2` and became the canonical
+`bldgtyp/ph-navigator` repo during the 2026-06 production rollout. Older context
+documents may still use "V2" to describe the rewrite generation; prefer
+"PH-Navigator" for current product/repo naming and "V0" for the legacy app.
 
 The repo-root `CLAUDE.md` is the always-loaded dispatch table: it routes by
 activity (backend / frontend / UI / env / logging / …) to the right doc here.

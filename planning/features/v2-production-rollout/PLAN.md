@@ -451,24 +451,30 @@ back at root within a propagation cycle.
 Run after the production URL cutover is verified, so domain/infra issues and
 GitHub rename issues are isolated.
 
-1. Freeze deploys briefly; make sure both repos have clean `main` branches and
+**Status (2026-06-28):** Complete. GitHub repo renames, repo descriptions,
+local `origin` remotes, Render service repo URLs, V1 no-op deploys, V0
+backend/static redeploys, and public URL checks are verified. Local folder
+renames are deferred until this active Codex workspace can be moved safely; that
+is not a production gate.
+
+1. [x] Freeze deploys briefly; make sure both repos have clean `main` branches and
    no unpushed release-critical commits.
-2. Rename the legacy GitHub repo:
+2. [x] Rename the legacy GitHub repo:
    `bldgtyp/ph-navigator` → `bldgtyp/ph-navigator_v0`.
-3. Rename the new GitHub repo:
+3. [x] Rename the new GitHub repo:
    current new-app repo (`bldgtyp/ph-navigator-v2`, or whatever exact remote is
    active at that point) → `bldgtyp/ph-navigator`.
-4. Update local clone folder names when convenient:
+4. [ ] Update local clone folder names when convenient:
    `../ph-navigator` → `../ph-navigator_v0`; this checkout
    `../ph-navigator-v2` → `../ph-navigator`.
-5. Check Render's GitHub connections for both stacks. If webhook/repo redirects
+5. [x] Check Render's GitHub connections for both stacks. If webhook/repo redirects
    did not update cleanly, reconnect:
    - V0 services → `bldgtyp/ph-navigator_v0`
    - V1 services → `bldgtyp/ph-navigator`
-6. Update durable docs that still refer to "V2" as the product/repo name:
+6. [x] Update durable docs that still refer to "V2" as the product/repo name:
    `CLAUDE.md`, `AGENTS.md` if needed, `context/README.md`,
    `context/GLOSSARY.md`, and Render/environment docs.
-7. Trigger or observe one no-op deploy on V1 and one V0 backend/static redeploy
+7. [x] Trigger or observe one no-op deploy on V1 and one V0 backend/static redeploy
    from the renamed repos so webhook routing is verified.
 
 **Verify:** GitHub URLs, local `origin` remotes, Render deploy links, and docs
