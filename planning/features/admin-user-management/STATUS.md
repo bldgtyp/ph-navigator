@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
 TIME: 20:18 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex (for Ed May)
 SCOPE: Current state and decisions for the Admin User Management MVP.
 RELATED:
@@ -17,18 +17,16 @@ RELATED:
 
 # Status - Admin User Management MVP
 
-**State:** Phases 00–05 complete and Phase 06 implementation complete (`make ci`
-green). The full two-user MVP — bootstrap, invite, admin reset link,
-deactivate/reactivate, Admin grant/revoke, last-admin protection, CSRF/Origin
-guard, capability-gated UI, and audit — is built and tested end-to-end.
-**Remaining before the rollout gate clears:** custom-domain browser
-cookie/CSRF smoke after Ed signs in on `www.ph-nav.com`. Staging and
-prod-onrender lifecycle rehearsals + `/admin/users` browser smokes are complete,
-and public API CSRF guard negatives pass on `api.ph-nav.com`.
+**State:** Complete. Phases 00–06 are implemented and verified. The full
+two-user MVP — bootstrap, invite, admin reset link, deactivate/reactivate, Admin
+grant/revoke, last-admin protection, CSRF/Origin guard, capability-gated UI, and
+audit — is built and tested end-to-end. Staging, prod-onrender, and
+custom-domain `www.ph-nav.com` browser smokes are complete, and public API CSRF
+guard negatives pass on `api.ph-nav.com`.
 `api.ph-nav.com`, `www.ph-nav.com`, apex `ph-nav.com`, and `v0.ph-nav.com`
 DNS/TLS are verified at the Render/DNS/network layer; the V0 fallback path is
-live. The remaining gate is the `SameSite=Lax` browser smoke on the real
-`www.ph-nav.com` -> `api.ph-nav.com` split-origin shape (see
+live. The `SameSite=Lax` browser smoke on the real `www.ph-nav.com` ->
+`api.ph-nav.com` split-origin shape passed on 2026-06-28 (see
 `phases/phase-06-production-rehearsal.md`).
 
 ## Why This Exists
@@ -127,10 +125,9 @@ for normal production operations:
 
 ## Next Step
 
-Implementation is complete. The remaining work is the manual
-staging/prod-shape rehearsal + browser smoke owned by Ed, tracked in
-`phases/phase-06-production-rehearsal.md`. Once that passes, mark the
-`v2-production-rollout` MVP gate cleared and archive this packet.
+Implementation and production verification are complete. The operational
+runbook is in `context/ENVIRONMENT.md`; broader account-security scopes remain
+deferred in the linked `features_v2.0/` packets.
 
 ## Verification
 
@@ -148,5 +145,5 @@ Planning + implementation (Phases 00–06), `make ci` green throughout:
   `frontend/src/features/auth/routes/__tests__/AccountCompletePage.test.tsx`).
 - Phase 06 — runbook in `context/ENVIRONMENT.md`; `scripts.bootstrap_admin`
   smoke-checked; staging and prod-onrender manual rehearsals complete; public
-  `api.ph-nav.com` CSRF guard negatives pass. Real `www.ph-nav.com` ->
-  `api.ph-nav.com` signed-in browser cookie/admin smoke remains pending.
+  `api.ph-nav.com` CSRF guard negatives pass; real `www.ph-nav.com` ->
+  `api.ph-nav.com` signed-in browser cookie/admin smoke passed.

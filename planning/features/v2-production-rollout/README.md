@@ -22,9 +22,9 @@ and the Phase 2 Render/DNS public-domain cutover are complete. The production R2
 bucket is configured, production R2 credentials are stored in Apple Passwords,
 the paid DB/API/static services exist, `api.ph-nav.com` serves the V1 API,
 `www.ph-nav.com` serves the V1 static site, apex redirects to `www`, and
-`v0.ph-nav.com` still serves V0. The remaining blocker is the browser
-cookie/CSRF smoke after Ed signs in on `www.ph-nav.com` so the real
-`www.ph-nav.com` -> `api.ph-nav.com` `SameSite=Lax` path can be verified. Repo
+`v0.ph-nav.com` still serves V0. The real `www.ph-nav.com` ->
+`api.ph-nav.com` `SameSite=Lax` browser smoke passed after Ed signed in as
+`ed@example.com`; the admin-user-management production gate is clear. Repo
 canonicalization remains a later gate.
 
 ## Naming convention

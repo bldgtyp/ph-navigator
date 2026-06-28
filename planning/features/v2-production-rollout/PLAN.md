@@ -216,7 +216,7 @@ part of Phase 0/1 below (not a separate feature). It mirrors
       - [x] Deactivate/reactivate on production.
       - [x] Grant/revoke Admin on production.
       - [x] Inspect audit rows on production.
-- [ ] Confirm cookie/Origin/CSRF on the real split-origin shape
+- [x] Confirm cookie/Origin/CSRF on the real split-origin shape
       (`www.ph-nav.com` → `api.ph-nav.com`): `SameSite=Lax` holds and unsafe
       `/api/v1/admin/` writes require a trusted Origin + `X-PHN-CSRF`.
       - [x] Staging onrender split-origin path works:
@@ -228,8 +228,9 @@ part of Phase 0/1 below (not a separate feature). It mirrors
             `origin_not_allowed` from `https://evil.test`, and trusted origin +
             header reaches auth (`401 not_authenticated`) when no cookie is
             present.
-      - [ ] Production signed-in browser cookie/admin check pending on
-            `www.ph-nav.com`.
+      - [x] Production signed-in browser cookie/admin check passed on
+            `www.ph-nav.com`: Ed's browser loaded `/admin/users`, and Render
+            logs showed 200 for login, admin CORS preflight, and admin GET.
 - [x] Browser smoke `/admin/users` (admin sees the nav + page; a normal user is
       blocked).
       - [x] Staging admin sees `Users` nav/page; staging normal user reaches
@@ -239,16 +240,14 @@ part of Phase 0/1 below (not a separate feature). It mirrors
       - [x] Production normal user reaches `Not authorized` /
             `You do not have permission to manage users.`
 
-When every box is checked, mark the gate cleared in `STATUS.md` and archive the
-admin-user-management packet. If the rehearsal surfaces real rework (e.g.
+When every box is checked, mark the gate cleared in `STATUS.md`; archive the
+admin-user-management packet during rollout closeout. If the rehearsal surfaces real rework (e.g.
 `SameSite=Lax` fails and split-origin auth needs redesign), spin that out as its
 own feature rather than expanding this checklist.
 
-Allowed before this gate clears: Phase 0 staging sanity checks, production R2
-bucket/CORS/lifecycle prep, Phase 1 URL-env Blueprint sync, deploy monitoring,
-and docs/runbook work. Not allowed: production user lifecycle beyond the audited
-first-admin bootstrap/rehearsal path, public DNS cutover, or GitHub repo
-canonicalization.
+Gate is cleared as of 2026-06-28. Phase 3 repo canonicalization can proceed
+after production upload/R2 CORS cleanup and any desired staging-service
+cost-control decision.
 
 ### Phase 0 — Sanity check on free infra (cheap, optional but recommended)
 **Why:** confirm the new app actually boots end-to-end (migrations, R2, auth, MCP)
@@ -438,8 +437,8 @@ still serves V0.
    - [x] Public API CSRF guard negatives against `api.ph-nav.com`:
          `csrf_header_missing`, `origin_not_allowed`, and trusted-origin
          header/no-cookie -> `not_authenticated`.
-   - [ ] Browser login + `/admin/users` smoke on `www.ph-nav.com` after Ed signs
-         in on the new domain.
+   - [x] Browser login + `/admin/users` smoke on `www.ph-nav.com` after Ed
+         signed in on the new domain.
 **Rollback:** re-add `www`/apex to V0's static + revert the `www` CNAME — V0 is
 back at root within a propagation cycle.
 

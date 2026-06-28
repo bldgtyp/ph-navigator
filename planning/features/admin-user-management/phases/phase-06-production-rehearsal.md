@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
 TIME: 19:59 EDT
-STATUS: Implementation complete; manual staging rehearsal pending (Ed)
+STATUS: Complete
 AUTHOR: Codex (for Ed May)
 SCOPE: Production rehearsal, MVP account lifecycle runbook, and rollout unblock.
 RELATED:
@@ -92,7 +92,7 @@ and hand `v2-production-rollout` a clean unblock checklist.
   production account exists, is inactive, has a password set, has no active
   Admin capability, and has all required audit actions.
 
-**Remaining (manual, require custom-domain browser sign-in):**
+**Final production verification (2026-06-28):**
 
 1. [x] Add DreamHost DNS records for the Render-pre-staged domains:
    CNAME `api` -> `ph-navigator-api.onrender.com` and CNAME `v0` ->
@@ -101,16 +101,17 @@ and hand `v2-production-rollout` a clean unblock checklist.
    `www.ph-nav.com` and apex `ph-nav.com` now belong to V1 static service
    `srv-d909olr7uimc7396slr0`; DreamHost CNAME `www` and ALIAS `@` point at
    `ph-navigator-web.onrender.com`; Render verified DNS and issued certs.
-3. [ ] Verify cookie/Origin/CSRF on the real split-origin deployment shape
+3. [x] Verify cookie/Origin/CSRF on the real split-origin deployment shape
    (`www.ph-nav.com` → `api.ph-nav.com`), confirming `SameSite=Lax` after Ed
    signs in on the new domain. Public API guard negatives already pass:
    `csrf_header_missing` without `X-PHN-CSRF`, `origin_not_allowed` from
    `https://evil.test`, and trusted origin + header reaches auth when no cookie
    is present.
-4. [ ] Re-run a small `/admin/users` browser smoke after custom-domain cutover if
+   Signed-in browser smoke passed on 2026-06-28: `/admin/users` loaded on
+   `www.ph-nav.com` for `ed@example.com`, and Render logs showed 200 for login,
+   admin CORS preflight, and admin GET.
+4. [x] Re-run a small `/admin/users` browser smoke after custom-domain cutover if
    the frontend/API URLs change.
 
-Because the real custom-domain browser cookie/CSRF shape is still unverified,
-this packet stays in active planning (not archived); the rollout gate's *code*
-and prod-onrender rehearsal are ready, while the final Phase 2 browser
-verification is still open.
+The real custom-domain browser cookie/CSRF shape is verified; the rollout gate
+is cleared.

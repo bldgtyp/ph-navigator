@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import type { UnitSystem } from "../../../lib/units";
@@ -467,10 +467,8 @@ describe("ClimateTab", () => {
     await user.click(await screen.findByRole("button", { name: "Set Phius Climate Data" }));
     await user.click(await screen.findByRole("button", { name: "Find Nearest" }));
 
-    expect(await screen.findByRole("button", { name: /^NEW YORK CENTRAL/ })).toHaveAttribute(
-      "data-selected",
-      "true",
-    );
+    const nearestCandidate = await screen.findByRole("button", { name: /^NEW YORK CENTRAL/ });
+    await waitFor(() => expect(nearestCandidate).toHaveAttribute("data-selected", "true"));
     await user.click(screen.getByRole("button", { name: "Attach" }));
 
     // The nearest action only selects; the explicit attach hands off to detail.

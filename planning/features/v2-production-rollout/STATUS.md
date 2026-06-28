@@ -21,15 +21,13 @@ cost-sizing facts are mapped and verified. The production R2 bucket/CORS/
 lifecycle work is complete, production R2 credentials are stored in Apple
 Passwords, and the paid production Blueprint created the DB/API/static services.
 The Phase 2 custom-domain Blueprint sync is live on commit `fa40334c`; public
-API CORS/CSRF negative checks pass on `api.ph-nav.com`, and the remaining
-manual gate is Ed signing in on `https://www.ph-nav.com` so the browser
-`SameSite=Lax` `/admin/users` smoke can be completed against
-`https://api.ph-nav.com`.
+API CORS/CSRF negative checks pass on `api.ph-nav.com`, and the signed-in
+browser `SameSite=Lax` `/admin/users` smoke passed on
+`https://www.ph-nav.com` against `https://api.ph-nav.com`.
 
 **Gate update (2026-06-27):** the admin-user-management MVP is **built and tested
-end-to-end** (Phases 00–06, `make ci` green); the gate is not yet cleared — it
-needs the production-verification checklist below. See "Production-readiness
-gate".
+end-to-end** (Phases 00–06, `make ci` green); the production-verification gate
+is now cleared. See "Production-readiness gate".
 
 ## Production-readiness gate
 
@@ -50,11 +48,10 @@ through the audited production rehearsal. The gate's two-user MVP capability is
 - ✅ last-admin lockout protection;
 - ✅ audit logging for sensitive user actions.
 
-**Remaining to clear the gate** is a production-verification checklist, not new
-build — it runs as a discrete step inside the rollout (see `PLAN.md` → "Gate —
-Admin user management" and the admin-user-management Phase 06 doc). The staging
-and prod-onrender rehearsals are complete; custom-domain Render/DNS/network
-verification is complete; browser sign-in smoke on `www` is pending:
+**Gate cleared (2026-06-28):** the production-verification checklist is complete.
+It ran as a discrete rollout step (see `PLAN.md` → "Gate — Admin user
+management" and the admin-user-management Phase 06 doc). The staging,
+prod-onrender, and custom-domain browser smokes are complete:
 
 - [x] Set staging/prod env `ACCOUNT_TOKEN_SECRET` + `FRONTEND_BASE_URL`
       (staging service set and redeployed; production Blueprint applied with
@@ -64,8 +61,8 @@ verification is complete; browser sign-in smoke on `www` is pending:
       + Ed sign-in + test-user invite → reset → deactivate/reactivate →
       grant/revoke → audit complete on staging; production backend bootstrap
       + Ed browser sign-in + disposable test-user lifecycle complete).
-- [ ] Confirm cookie/Origin/CSRF on the real `www → api` split origin (public
-      API guard negatives pass; signed-in browser cookie smoke pending).
+- [x] Confirm cookie/Origin/CSRF on the real `www → api` split origin (public
+      API guard negatives pass; signed-in browser cookie smoke passed).
 - [x] Browser smoke `/admin/users` (staging admin/normal-user smoke complete;
       production admin/normal-user smoke complete).
 
@@ -74,10 +71,9 @@ email, durable reset/invite-resend rate limiting, fresh admin re-authentication,
 MFA/passkeys, external users, richer IAM, and audit export — tracked in
 `planning/features_v2.0/`.
 
-Allowed before this gate clears: local development, planning,
-`render.prod.yaml` correction/sync, production R2 bucket/CORS/lifecycle prep,
-deploy monitoring, and optional Phase 0 staging sanity checks that do not move
-public domains.
+With this gate clear, Phase 3 repo canonicalization can proceed after the
+remaining production-smoke housekeeping (notably production upload/R2 CORS
+cleanup) is handled.
 
 ## Decisions — settled (2026-06-27)
 
@@ -148,6 +144,9 @@ Do not delete the old V1 `*-staging` trio yet; it is Phase 4 cleanup after
 production smoke, DNS cutover, and repo reconnect verification. Suspending the
 staging services can be considered earlier if cost needs to be reduced, but
 deletion should wait until the fallback/debug surface is no longer useful.
+The next concrete rollout step is production upload/R2 smoke on `www.ph-nav.com`,
+then remove the temporary `ph-navigator-web.onrender.com` CORS origin from the
+prod R2 bucket before Phase 3 repo canonicalization.
 
 No open Step 1 decisions remain.
 
@@ -436,6 +435,15 @@ No open Step 1 decisions remain.
   session reached auth and returned 401 `not_authenticated`; untrusted
   `Origin: https://evil.test` with the header returned 403 `origin_not_allowed`.
   The signed-in `www.ph-nav.com` browser cookie/admin smoke remains pending.
+- 2026-06-28 09:13 EDT — Confirmed signed-in custom-domain browser smoke after
+  Ed signed in as `ed@example.com` on `https://www.ph-nav.com`. Browser DOM at
+  `/admin/users` showed `Account: Ed May`, the `Invite user` button, row
+  `Ed May / ed@example.com / Active / Admin`, and the disposable
+  `Codex Prod Smoke / codex-prod-smoke@example.com / Inactive / User` row.
+  Render logs on `srv-d909p1b7uimc7396t580` showed `POST /api/v1/auth/login`
+  200, `OPTIONS /api/v1/admin/users` 200, and `GET /api/v1/admin/users` 200
+  from Ed's browser IP, proving the real `www.ph-nav.com` -> `api.ph-nav.com`
+  `SameSite=Lax` cookie path.
 - 2026-06-27 — DNS: `www`→V0 static (200), apex→Render anycast→301 www;
   `api`/`v0` absent. Dashboard: 1 project, V0=Production (paid PG16, Ohio),
   new app=Staging (3 services suspended by Ed), Hobby workspace. Render free-Postgres
