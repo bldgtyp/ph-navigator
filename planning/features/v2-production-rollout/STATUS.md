@@ -136,11 +136,12 @@ and the staging admin lifecycle rehearsal plus non-admin product smoke are
 complete. Production DB/API/static services are live on Render URLs, and the
 Phase 1 URL-env + cookie correction sync is complete. Backend bootstrap,
 Ed sign-in, production `/admin/users` admin/normal-user smoke, and the
-disposable production test-user lifecycle are complete. Render-side Phase 2
-custom domains are pre-staged: `api.ph-nav.com` is on `ph-navigator-api`, and
-`v0.ph-nav.com` is on the V0 static service. Next manual step is DreamHost DNS:
-add CNAME `api` -> `ph-navigator-api.onrender.com` and CNAME `v0` ->
-`ph-dash-frontend.onrender.com`, then verify Render DNS/TLS.
+disposable production test-user lifecycle are complete. Phase 2 pre-cutover
+domain staging is complete: `api.ph-nav.com` is verified and healthy on
+`ph-navigator-api`, `v0.ph-nav.com` is verified and serves V0, and the V0 backend
+accepts `https://v0.ph-nav.com` CORS after deploy `dep-d90h51gk1i2s73fm4li0`.
+Next manual gate is the public `www.ph-nav.com` move to the V1 static service
+plus production Blueprint retarget to final custom-domain env values.
 Production custom-domain cookie/CSRF smoke remains pending until the
 `www.ph-nav.com` → `api.ph-nav.com` split-origin cutover is staged.
 Do not delete the old V1 `*-staging` trio yet; it is Phase 4 cleanup after
@@ -383,6 +384,19 @@ No open Step 1 decisions remain.
   `www.ph-nav.com` on V0 and no `api`/`v0` records. DreamHost is not signed in
   in Chrome, so DNS edits remain manual before Blueprint retarget and final
   `SameSite=Lax` cookie/CSRF smoke.
+- 2026-06-28 08:27 EDT — Completed Phase 2 pre-cutover domain staging. Ed added
+  DreamHost records CNAME `api` -> `ph-navigator-api.onrender.com`, CNAME `v0`
+  -> `ph-dash-frontend.onrender.com`, and existing apex ALIAS still targets the
+  V0 static service. Render verified `api.ph-nav.com`; `GET
+  https://api.ph-nav.com/api/v1/health` returned 200 and `GET /api/v1/ready`
+  returned 200 with `db:true`. Render verified `v0.ph-nav.com`;
+  `https://v0.ph-nav.com` returned 200 serving the V0 static bundle. Updated the
+  V0 repo (`bldgtyp/ph-navigator`) on `main` commit `01e72fe` to add
+  `https://v0.ph-nav.com` to FastAPI CORS and legacy `backend/cors.json`; manual
+  V0 backend deploy `dep-d90h51gk1i2s73fm4li0` is live and CORS preflight from
+  `Origin: https://v0.ph-nav.com` now returns 200 with
+  `access-control-allow-origin: https://v0.ph-nav.com`. Public `www` still
+  points at V0; final Blueprint retarget and `www` move remain pending.
 - 2026-06-27 — DNS: `www`→V0 static (200), apex→Render anycast→301 www;
   `api`/`v0` absent. Dashboard: 1 project, V0=Production (paid PG16, Ohio),
   new app=Staging (3 services suspended by Ed), Hobby workspace. Render free-Postgres

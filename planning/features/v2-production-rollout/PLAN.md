@@ -370,16 +370,18 @@ Pre-stage (no disruption — `www` still serves V0 throughout):
    for GCS if browser uploads are used); redeploy V0 backend. Confirm V0 loads
    at `v0.ph-nav.com`.
    - [x] Render custom domain added to V0 static service
-         `srv-cv6sj8t2ng1s7380ljpg`; DNS/TLS waiting.
-   - [ ] DreamHost CNAME: host `v0` → `ph-dash-frontend.onrender.com`.
-   - [ ] V0 backend CORS redeploy includes `https://v0.ph-nav.com`.
-   - [ ] `https://v0.ph-nav.com` loads V0.
+         `srv-cv6sj8t2ng1s7380ljpg`; DNS/TLS verified.
+   - [x] DreamHost CNAME: host `v0` → `ph-dash-frontend.onrender.com`.
+   - [x] V0 backend CORS redeploy includes `https://v0.ph-nav.com`
+         (`dep-d90h51gk1i2s73fm4li0` live from commit `01e72fe`).
+   - [x] `https://v0.ph-nav.com` loads V0.
 2. **V1 API domain**: add `api.ph-nav.com` to the V1 prod API web service;
    create the CNAME at DreamHost → the V1 API Render target; wait for Render TLS.
    - [x] Render custom domain added to V1 API service
-         `srv-d909p1b7uimc7396t580`; DNS/TLS waiting.
-   - [ ] DreamHost CNAME: host `api` → `ph-navigator-api.onrender.com`.
-   - [ ] Render verifies DNS and issues the `api.ph-nav.com` certificate.
+         `srv-d909p1b7uimc7396t580`; DNS/TLS verified.
+   - [x] DreamHost CNAME: host `api` → `ph-navigator-api.onrender.com`.
+   - [x] Render verifies DNS and issues the `api.ph-nav.com` certificate.
+   - [x] `https://api.ph-nav.com/api/v1/health` and `/ready` return 200.
 3. Repoint V1 env to final hosts: `VITE_API_BASE_URL=https://api.ph-nav.com`,
    `CORS_ORIGINS=https://www.ph-nav.com` (+ apex if not redirected), MCP URLs →
    `https://api.ph-nav.com`; rebuild V1 static + redeploy V1 API. Update R2 CORS
