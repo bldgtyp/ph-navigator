@@ -2,8 +2,8 @@
 #
 # Declares the full Render `Staging` environment so it can be re-provisioned
 # from code instead of manual dashboard entry. `DATABASE_URL` auto-wires from
-# the database block via `fromDatabase`, so replacing the (free, monthly-
-# expiring) Postgres is a one-click re-apply with NO copy/paste.
+# the database block via `fromDatabase`, so replacing or rebuilding Postgres is
+# a one-click re-apply with NO copy/paste.
 #
 # PUBLIC REPO RULE: this file is committed and the repo is public. It contains
 # ONLY non-secret config. Every secret (R2 credentials, R2 account id /
@@ -17,7 +17,8 @@
 databases:
   - name: ph-navigator-v2-staging-db
     databaseName: ph_navigator_v2
-    plan: free # staging is synthetic seed data only; paid Postgres comes at prod
+    plan: basic-256mb # Blueprint spelling; Render API reports basic_256mb
+    diskSizeGB: 1
     region: ohio # US East — must match the backend service for the internal URL
     postgresMajorVersion: "16"
 
@@ -30,7 +31,7 @@ services:
     name: ph-navigator-v2-api-staging
     runtime: python
     rootDir: backend
-    plan: free
+    plan: starter # enables one-off jobs/Shell/SSH for staging rollout rehearsal
     region: ohio # same region as the DB so the internal connection string works
     healthCheckPath: /api/v1/health
     buildCommand: pip install uv && uv sync --frozen --no-dev
@@ -76,6 +77,8 @@ services:
       # SameSite=None + HTTPS so the browser stores the API session cookie.
       - key: SESSION_COOKIE_SAMESITE
         value: none
+      - key: FRONTEND_BASE_URL
+        value: https://ph-navigator-v2-staging.onrender.com
       - key: MCP_ISSUER_URL
         value: https://ph-navigator-v2.onrender.com
       - key: MCP_RESOURCE_SERVER_URL
@@ -98,6 +101,8 @@ services:
       - key: R2_SECRET_ACCESS_KEY
         sync: false
       - key: FERNET_SECRET_KEY
+        sync: false
+      - key: ACCOUNT_TOKEN_SECRET
         sync: false
       # Render also injects RENDER_EXTERNAL_URL / RENDER_EXTERNAL_HOSTNAME /
       # RENDER_GIT_COMMIT automatically; the backend derives MCP host allowlist

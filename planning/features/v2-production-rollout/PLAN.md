@@ -179,16 +179,39 @@ is built; clearing the gate is now a production-verification checklist, run as
 part of Phase 0/1 below (not a separate feature). It mirrors
 `planning/features/admin-user-management/phases/phase-06-production-rehearsal.md`:
 
-- [ ] Set prod env: `ACCOUNT_TOKEN_SECRET` and `FRONTEND_BASE_URL` (sync:false).
+- [ ] Set staging/prod env:
+      - [x] Staging API service has `FRONTEND_BASE_URL` and
+            `ACCOUNT_TOKEN_SECRET`.
+      - [ ] Production Blueprint/service has `FRONTEND_BASE_URL` and
+            `ACCOUNT_TOKEN_SECRET` before production bootstrap.
 - [ ] Rehearse the full lifecycle on staging / prod-onrender URLs: bootstrap Ed
-      (`scripts.bootstrap_admin --confirm-production`), invite a test user,
-      complete the invite, generate + complete a reset link,
-      deactivate/reactivate, grant/revoke Admin, and inspect audit rows.
+      (`scripts.bootstrap_admin`; add `--confirm-production` only when
+      `ENVIRONMENT=production`), invite a test user, complete the invite,
+      generate + complete a reset link, deactivate/reactivate, grant/revoke
+      Admin, and inspect audit rows.
+      - [x] Bootstrap Ed on staging with `scripts.bootstrap_admin`.
+      - [x] Complete Ed's invite and sign in on staging.
+      - [x] Invite a test user on staging.
+      - [x] Complete test-user invite on staging.
+      - [x] Generate + complete a reset link on staging.
+      - [x] Deactivate/reactivate on staging.
+      - [x] Grant/revoke Admin on staging.
+      - [x] Inspect audit rows on staging.
+      - [ ] Repeat on the production onrender/custom-domain environment before
+            public cutover.
 - [ ] Confirm cookie/Origin/CSRF on the real split-origin shape
       (`www.ph-nav.com` → `api.ph-nav.com`): `SameSite=Lax` holds and unsafe
       `/api/v1/admin/` writes require a trusted Origin + `X-PHN-CSRF`.
+      - [x] Staging onrender split-origin path works:
+            `ph-navigator-v2-staging.onrender.com` successfully performed
+            admin writes against `ph-navigator-v2.onrender.com` with cookies +
+            `X-PHN-CSRF`; missing header and untrusted Origin were rejected.
+      - [ ] Production `www.ph-nav.com` → `api.ph-nav.com` check pending.
 - [ ] Browser smoke `/admin/users` (admin sees the nav + page; a normal user is
       blocked).
+      - [x] Staging admin sees `Users` nav/page; staging normal user reaches
+            `Not authorized` / `You do not have permission to manage users.`
+      - [ ] Production browser smoke pending.
 
 When every box is checked, mark the gate cleared in `STATUS.md` and archive the
 admin-user-management packet. If the rehearsal surfaces real rework (e.g.
@@ -202,10 +225,31 @@ production user creation, DNS cutover, or GitHub repo canonicalization.
 ### Phase 0 — Sanity check on free infra (cheap, optional but recommended)
 **Why:** confirm the new app actually boots end-to-end (migrations, R2, auth, MCP)
 before paying for prod infra.
-1. Resume the three suspended `*-staging` services in Render.
-2. Confirm `/api/v1/health` and `/api/v1/ready` go green; load the static site;
-   sign in; exercise one project read/write; confirm an R2 signed-URL upload.
-3. Note any boot/secret gaps to fix before Phase 1.
+1. [x] Resume the three `*-staging` services in Render.
+2. [x] Reset the empty staging DB after the Alembic squash left it pointing at
+   removed revision `20260624_0043`.
+3. [x] Upgrade staging Postgres in place to `basic_256mb` (`basic-256mb` in
+   Blueprint YAML) so the 2026-07-15 free-DB expiry no longer applies.
+4. [x] Confirm `/api/v1/health` and `/api/v1/ready` go green after the DB reset
+   and paid-plan resize.
+5. [x] Apply/sync the staging Blueprint/env update for `FRONTEND_BASE_URL` and
+   `ACCOUNT_TOKEN_SECRET`, then redeploy/restart the API.
+6. [x] Bootstrap Ed with `scripts.bootstrap_admin` using service env. Required
+   upgrading staging API from Render web `free` to `starter` so one-off jobs
+   could run.
+7. [x] Load the static site (`https://ph-navigator-v2-staging.onrender.com`
+   returned HTTP 200).
+8. [x] Sign in; exercise one project read/write; confirm an R2 signed-URL
+   upload.
+   - [x] Project read/write smoke passed on staging: created
+         `STG-20260627-2250 - Codex Staging Smoke`, edited it to
+         `Codex Staging Smoke Updated`, and read it back from the staging DB
+         under project id `ec58eec4-2d9f-40a0-99a2-018521d6e225`.
+   - [x] R2/model upload smoke passed manually in the staging UI after signing
+         back in: `ph_nav_v2_example` uploaded and rendered in the Model viewer.
+9. [x] Note any boot/secret gaps to fix before Phase 1. No new staging blocker
+   surfaced; carry the known production Blueprint/R2/custom-domain items into
+   Phase 1.
 **Verify:** `https://ph-navigator-v2-staging.onrender.com` returns 200 and a
 logged-in project view renders.
 **Then:** re-suspend or leave running until Phase 1; either way it's retired in Phase 4.
@@ -215,7 +259,8 @@ logged-in project view renders.
    90-day orphan lifecycle rule. Set browser CORS to include
    `https://www.ph-nav.com` (and temporarily the prod static's onrender URL for
    pre-cutover testing). Mint prod R2 credentials → 1Password.
-2. **Prod blueprint**: author `render.prod.yaml` from `render.yaml` with:
+2. [x] **Prod blueprint draft**: author `render.prod.yaml` from `render.yaml`
+   with:
    - DB `plan: free` → **paid Basic-256mb** + 1 GB disk, prod name + Ohio.
    - Web `plan: free` → **paid always-on** (match V0 `Standard` 1 CPU / 2 GB
      unless Phase 1 intentionally proves a smaller tier is enough), prod name +
@@ -224,15 +269,18 @@ logged-in project view renders.
      custom domains in Phase 2): `CORS_ORIGINS`, `VITE_API_BASE_URL`,
      `MCP_ISSUER_URL`, `MCP_RESOURCE_SERVER_URL`, `MCP_ALLOWED_HOSTS`,
      `MCP_ALLOWED_ORIGINS`, `ENVIRONMENT=production`, `R2_BUCKET=ph-navigator-prod`,
-     `SESSION_COOKIE_SECURE=true`, and the admin-user-management Phase 01
-     cookie/CSRF decision (`SESSION_COOKIE_SAMESITE=lax` if verified; otherwise
-     `none` paired with CSRF middleware).
+     and the admin-user-management Phase 01 cookie/CSRF decision
+     (`SESSION_COOKIE_SAMESITE=lax` if verified; otherwise `none` paired with
+     CSRF middleware). `SESSION_COOKIE_SECURE` is derived true by the backend
+     when `ENVIRONMENT=production`.
    - `FRONTEND_BASE_URL=https://www.ph-nav.com` (canonical base for invite/reset
      links; never the request Host).
    - Secrets (`R2_*`, `FERNET_SECRET_KEY`, `MAPTILER_API_KEY`,
      `ACCOUNT_TOKEN_SECRET`) `sync: false`. `ACCOUNT_TOKEN_SECRET` keys the
      invite/reset token hashes (admin-user-management); without it a DB-only
      reader could forge tokens from stolen hashes.
+   - Draft complete in `render.prod.yaml` and validated with Render CLI
+     (`valid:true`). It is not applied yet.
 3. **Apply** the blueprint → new prod services build; Alembic runs on start.
 4. **Bootstrap first production admin**: use the audited Admin User Management
    bootstrap path to create/repair Ed's initial admin and issue an invite/reset
