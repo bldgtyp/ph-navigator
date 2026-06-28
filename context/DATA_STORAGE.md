@@ -270,7 +270,7 @@ key scheme.
 ```
 projects/{project_id}/assets/{asset_id}/file.{ext}          # the file
 projects/{project_id}/assets/{asset_id}/thumb.png           # generated thumbnail
-projects/{project_id}/assets/_orphaned/{asset_id}/{name}    # GC-quarantined
+projects/_orphaned/{project_id}/{asset_id}/{name}           # GC-quarantined
 ```
 
 ### 4.3 Asset kinds (`features/assets/registry.py`)
@@ -423,8 +423,8 @@ change. The whole point of the MinIO + Docker setup is that the storage
 | **Migrations** | `uv run alembic upgrade head` | run in the backend service **start command** before uvicorn |
 | **Object store** | MinIO `http://localhost:9000` (console `:9001`) | Cloudflare R2, region **ENAM** |
 | **`R2_ENDPOINT_URL`** | set to the MinIO URL | the `https://{account}.r2.cloudflarestorage.com` endpoint |
-| **Bucket** | `ph-navigator-v2-dev` (created by `make object-store-init`) | `ph-navigator-v2-dev` (staging today); `ph-navigator-v2-prod` is the planned prod bucket |
-| **Credentials** | fixed local stand-ins (`phn_minio` / `phn_minio_local_only`) | R2 S3-token creds via Render secrets / 1Password — **never committed** (public repo) |
+| **Bucket** | `ph-navigator-v2-dev` (created by `make object-store-init`) | `ph-navigator-v2-dev` (staging today); `ph-navigator-prod` is the planned prod bucket |
+| **Credentials** | fixed local stand-ins (`phn_minio` / `phn_minio_local_only`) | R2 S3-token creds via Render secrets / Apple Passwords — **never committed** (public repo) |
 | **CORS** | MinIO wildcard `*` for signed PUT/GET (local only — never copy to R2) | R2 bucket CORS allows the Vite origins + the staging origin for `PUT/GET/HEAD` |
 | **Public access** | n/a | **off** — signed URLs only |
 | **Orphan lifecycle** | not enforced (manual sweep) | bucket rule auto-deletes `…/_orphaned/*` after 90 days; multipart abort after 7 days |

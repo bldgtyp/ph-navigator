@@ -33,7 +33,7 @@ RELATED:
   just because the app version changes.
 - **Two-user blast radius** (Ed + John). Short cutover downtime is acceptable;
   optimize for simplicity over zero-downtime engineering.
-- **Public repo**: every secret stays `sync: false` in Render / 1Password,
+- **Public repo**: every secret stays `sync: false` in Render / Apple Passwords,
   never committed.
 
 ## 1.1 Nomenclature
@@ -219,8 +219,9 @@ admin-user-management packet. If the rehearsal surfaces real rework (e.g.
 own feature rather than expanding this checklist.
 
 Allowed before this gate clears: Phase 0 staging sanity checks, prod blueprint
-drafting, and docs/runbook work. Not allowed: Phase 1 paid production apply,
-production user creation, DNS cutover, or GitHub repo canonicalization.
+drafting, production R2 bucket/CORS/lifecycle prep, and docs/runbook work. Not
+allowed: Phase 1 paid production apply, production user creation, DNS cutover,
+or GitHub repo canonicalization.
 
 ### Phase 0 — Sanity check on free infra (cheap, optional but recommended)
 **Why:** confirm the new app actually boots end-to-end (migrations, R2, auth, MCP)
@@ -255,10 +256,25 @@ logged-in project view renders.
 **Then:** re-suspend or leave running until Phase 1; either way it's retired in Phase 4.
 
 ### Phase 1 — Stand up V1 Production (on onrender URLs first, no domain yet)
-1. **R2 prod bucket**: create `ph-navigator-prod` (private, ENAM). Add the
+1. [x] **R2 prod bucket**: create `ph-navigator-prod` (private, ENAM). Add the
    90-day orphan lifecycle rule. Set browser CORS to include
    `https://www.ph-nav.com` (and temporarily the prod static's onrender URL for
-   pre-cutover testing). Mint prod R2 credentials → 1Password.
+   pre-cutover testing). Mint prod R2 credentials → Apple Passwords.
+   - [x] Bucket created: `ph-navigator-prod`, ENAM, Standard storage,
+         public `r2.dev` access disabled.
+   - [x] Browser CORS set for `https://www.ph-nav.com`,
+         `https://ph-nav.com`, and temporary
+         `https://ph-navigator-web.onrender.com`; methods `PUT`, `GET`,
+         `HEAD`; headers `*`; exposed `ETag`; max age `3600`.
+   - [x] Lifecycle set to abort multipart uploads after 7 days and delete only
+         objects under `projects/_orphaned/` after 90 days. The orphan key shape
+         was corrected before applying the rule so production does not inherit
+         the older dev bucket's broad `projects/` delete filter.
+   - [x] R2 S3 API token minted with **Object Read & Write** scoped to
+         `ph-navigator-prod`; Ed stored the one-time Access Key ID and Secret
+         Access Key in Apple Passwords. Use
+         `R2_ACCOUNT_ID=f9d264cceb6b9b13ad80ff784318975f` and
+         `R2_ENDPOINT_URL=https://f9d264cceb6b9b13ad80ff784318975f.r2.cloudflarestorage.com`.
 2. [x] **Prod blueprint draft**: author `render.prod.yaml` from `render.yaml`
    with:
    - DB `plan: free` → **paid Basic-256mb** + 1 GB disk, prod name + Ohio.
@@ -275,13 +291,19 @@ logged-in project view renders.
      when `ENVIRONMENT=production`.
    - `FRONTEND_BASE_URL=https://www.ph-nav.com` (canonical base for invite/reset
      links; never the request Host).
-   - Secrets (`R2_*`, `FERNET_SECRET_KEY`, `MAPTILER_API_KEY`,
-     `ACCOUNT_TOKEN_SECRET`) `sync: false`. `ACCOUNT_TOKEN_SECRET` keys the
+   - Secrets (`R2_*`, `FERNET_SECRET_KEY`, `ACCOUNT_TOKEN_SECRET`)
+     `sync: false`. `ACCOUNT_TOKEN_SECRET` keys the
      invite/reset token hashes (admin-user-management); without it a DB-only
      reader could forge tokens from stolen hashes.
+     `MAPTILER_API_KEY` is intentionally omitted; PHN falls back to Census
+     geocoding without it.
    - Draft complete in `render.prod.yaml` and validated with Render CLI
      (`valid:true`). It is not applied yet.
 3. **Apply** the blueprint → new prod services build; Alembic runs on start.
+   Enter the Apple Passwords-backed production secret values when Render prompts for
+   `sync:false` env vars, including `R2_ACCOUNT_ID`, `R2_ENDPOINT_URL`,
+   `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `FERNET_SECRET_KEY`,
+   and `ACCOUNT_TOKEN_SECRET`.
 4. **Bootstrap first production admin**: use the audited Admin User Management
    bootstrap path to create/repair Ed's initial admin and issue an invite/reset
    link. Then invite John and any test account through `/admin/users`. Do **not**

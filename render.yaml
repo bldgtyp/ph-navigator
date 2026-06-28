@@ -9,7 +9,7 @@
 # ONLY non-secret config. Every secret (R2 credentials, R2 account id /
 # endpoint, Fernet key) is `sync: false` — Render prompts for the value once on
 # first apply and stores it server-side; it is never written here. Keep secrets
-# in 1Password (PH-Navigator R2 / Fernet items) and paste into Render only.
+# in Apple Passwords (PH-Navigator R2 / Fernet items) and paste into Render only.
 #
 # Source of truth for the values below: context/ENVIRONMENT.md → "Render staging".
 # Apply / re-provision runbook: same file → "Render staging" (Blueprint apply).

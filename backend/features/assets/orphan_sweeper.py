@@ -106,7 +106,9 @@ class AssetOrphanSweepWorkflow:
 
 
 def _gc_reason(asset: AssetRow, pending_expired_before: datetime) -> str | None:
-    if asset.object_key.startswith(f"projects/{asset.project_id}/assets/_orphaned/"):
+    if asset.object_key.startswith(f"projects/_orphaned/{asset.project_id}/") or asset.object_key.startswith(
+        f"projects/{asset.project_id}/assets/_orphaned/"
+    ):
         return None
     if asset.deleted_at is not None:
         return "soft_deleted"
