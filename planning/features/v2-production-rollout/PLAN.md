@@ -401,8 +401,14 @@ auto-deploy/reconnect the affected Render service to the correct repo; use DNS
 rollback only if the served app itself regressed.
 
 ### Phase 4 — Retire old staging + tidy
-1. Delete the three `*-staging` services and the free staging DB (the
-   workspace's free-Postgres slot frees up).
+Run only after Phase 1 production smoke, Phase 2 DNS cutover, and Phase 3 repo
+rename/reconnect verification are complete. Until then, the `*-staging` trio is
+a useful fallback/debug surface; suspend rather than delete if cost needs to be
+reduced earlier.
+
+1. Delete the three `*-staging` services and the staging DB. As of 2026-06-28,
+   staging is no longer free: `ph-navigator-v2-api-staging` is `starter` and
+   `ph-navigator-v2-staging-db` is `basic_256mb`.
 2. Delete the dead `ph-ep-runner` legacy service.
 3. Fold the final prod values into `context/ENVIRONMENT.md` (new "Render
    production" section) and commit `render.prod.yaml`.

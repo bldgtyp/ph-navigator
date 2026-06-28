@@ -136,6 +136,10 @@ Phase 1 URL-env sync is complete. Next: bootstrap the first production admin and
 run the production admin lifecycle rehearsal on the prod onrender URLs.
 Production custom-domain cookie/CSRF and `/admin/users` smoke remain pending
 until the `www.ph-nav.com` → `api.ph-nav.com` split-origin cutover is staged.
+Do not delete the old V1 `*-staging` trio yet; it is Phase 4 cleanup after
+production smoke, DNS cutover, and repo reconnect verification. Suspending the
+staging services can be considered earlier if cost needs to be reduced, but
+deletion should wait until the fallback/debug surface is no longer useful.
 
 No open Step 1 decisions remain.
 
@@ -303,6 +307,14 @@ No open Step 1 decisions remain.
   `db:true`, `pool_min=2`, and `pool_max=10`; the static root returned HTTP
   200. Render error-log queries for the API and web services over the deploy
   window returned no rows.
+- 2026-06-28 00:23 EDT — Confirmed the workspace now has three active V1
+  production Blueprint resources (`ph-navigator-api`, `ph-navigator-web`,
+  `ph-navigator-db`) plus the older V1 staging trio in the `PH-Navigator`
+  project (`ph-navigator-v2-api-staging`, `ph-navigator-v2-staging`,
+  `ph-navigator-v2-staging-db`). Keep staging until Phase 4 cleanup; it is now
+  paid (`starter` API and `basic_256mb` DB), so suspend can be considered for
+  cost control, but deletion waits until production smoke/DNS/repo verification
+  is complete.
 - 2026-06-27 — DNS: `www`→V0 static (200), apex→Render anycast→301 www;
   `api`/`v0` absent. Dashboard: 1 project, V0=Production (paid PG16, Ohio),
   new app=Staging (3 services suspended by Ed), Hobby workspace. Render free-Postgres
