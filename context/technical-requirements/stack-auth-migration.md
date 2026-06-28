@@ -135,7 +135,17 @@ AirTable-bound project is migrated.
 - **Editor login** — email + password. Server-side sessions stored in
   Postgres (`sessions` table, §6.1). HTTP-only, Secure cookies
   referencing the session row. `SESSION_COOKIE_SAMESITE` defaults to
-  `lax`; split-origin staging deployments use `none`.
+  `lax`; split-origin staging deployments use `none`. The `/api/v1/auth/session`
+  response carries the user's resolved global `capabilities` so the frontend can
+  hide affordances (e.g. the `/admin/users` nav) it cannot use; authorization is
+  still re-checked server-side on every route.
+- **Admin user management** — invite-only accounts, admin-generated reset links,
+  deactivate/reactivate, and the `Admin` preset (`admin.users.manage`) live under
+  `/api/v1/admin/users`, gated server-side by that capability. Invited users have
+  a `NULL` `password_hash`/`password_set_at` and cannot sign in until they
+  complete a single-use, hashed, expiring `account_tokens` link via
+  `/api/v1/auth/invite/complete` or `/reset/complete`. See
+  `planning/features/admin-user-management/`.
 - **Password hashing** — Argon2id is the planned default, with memory,
   time, and parallelism parameters exposed in backend Settings and
   tested in the auth scaffold. If Argon2id causes installation friction

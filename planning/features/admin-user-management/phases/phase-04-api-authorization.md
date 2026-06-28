@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
 TIME: 19:59 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex (for Ed May)
 SCOPE: MVP admin/auth HTTP routes, backend authorization gates, and OpenAPI contracts.
 RELATED:
@@ -60,3 +60,28 @@ authorization and predictable error contracts.
 - MVP HTTP surface exists and is deny-by-default.
 - Frontend can discover admin affordance state.
 - Admin routes have focused test coverage.
+
+## Outcome (2026-06-27)
+
+- `features/admin/routes.py` exposes the full surface under `/api/v1/admin`
+  (`GET /users`, `POST /users/invite`, `POST /users/{id}/reset-link`,
+  `POST /users/{id}/deactivate`, `POST /users/{id}/reactivate`,
+  `PATCH /users/{id}/admin`, `GET /users/{id}/audit`), wired into `main.py`.
+- `require_admin` dependency resolves the session cookie (401 anonymous) then
+  requires `admin.users.manage` (403 signed-in non-admin) — deny-by-default,
+  never trusting the frontend. Combined with the Phase 01 guard, unsafe admin
+  routes also require a trusted Origin + `X-PHN-CSRF`.
+- Public completion routes `POST /api/v1/auth/invite/complete` and
+  `POST /api/v1/auth/reset/complete` accept the raw token in the JSON body
+  (`AccountCompletionRequest`, password `min_length=8`) and return 204; the user
+  then signs in normally.
+- `/api/v1/auth/session` (and login/preferences) now return `capabilities` so
+  the frontend can hide admin nav; authorization stays server-side.
+- All request/response models use `extra="forbid"`. Raw invite/reset links
+  appear only in the invite/reset-link/reactivate create responses, never in
+  list or audit reads (asserted in tests).
+- No OpenAPI snapshot test exists in this repo, so none to update.
+- Tests: `backend/tests/test_admin_routes.py` (12) — anonymous 401, normal-user
+  403, admin 200, session capability exposure, missing-CSRF 403, invite→
+  complete→sign-in, link-not-in-list, deactivate/reactivate, last-admin demote
+  guard, audit without secrets, invalid-token 400, short-password 422.
