@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
 TIME: 20:18 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex (for Ed May)
 SCOPE: Router for the near-term Admin User Management MVP planning packet.
 RELATED:
@@ -27,7 +27,8 @@ invite-only Ed/John account creation, admin-generated reset links, user
 revocation/reactivation, `admin.users.manage` grants, minimal audit evidence,
 and the production rollout unblock path.
 
-This is still a planning packet only. No implementation has started.
+This packet is complete. The implementation landed in the app, and the staging,
+prod-onrender, and final custom-domain production rehearsals passed.
 
 This feature is a **production-rollout prerequisite**, but only for the
 two-person internal MVP threshold described here. Broader account recovery,
@@ -54,7 +55,7 @@ accounts, and audit exports are split into deferred `features_v2.0/` packets.
 | 03 | Backend MVP account-token and user-admin services | Complete |
 | 04 | Admin/API authorization contracts for MVP routes | Complete |
 | 05 | Minimal admin dashboard and invite/reset-link frontend flows | Complete |
-| 06 | Production rehearsal, runbook, and rollout unblock | Staging/prod-onrender rehearsal complete; custom-domain smoke pending |
+| 06 | Production rehearsal, runbook, and rollout unblock | Complete |
 
 ## Deferred Feature Packets
 
@@ -72,8 +73,7 @@ accounts, and audit exports are split into deferred `features_v2.0/` packets.
 
 ## Current Recommendation
 
-Complete Phases 00-06 before executing the production rollout. The only manual
-operator action that should remain is the audited, one-time bootstrap of the
-first admin account; normal Ed/John account creation, reset-link generation,
-deactivation/reactivation, and admin grant/revoke flows should be exercised
-through the app before `www.ph-nav.com` is cut over.
+Keep the production runbook in `context/ENVIRONMENT.md` as the operational
+source of truth. Public self-service reset, email delivery, MFA/passkeys, richer
+IAM, external users, and audit export remain deferred in the `features_v2.0/`
+packets listed above.
