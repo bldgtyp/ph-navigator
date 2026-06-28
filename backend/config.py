@@ -76,6 +76,8 @@ class Settings(BaseSettings):
     r2_account_id: str = ""
     r2_access_key_id: str = ""
     r2_secret_access_key: str = ""
+    # Local/dev default. Production overrides this to `ph-navigator-prod` in
+    # render.prod.yaml; optional recreated staging also uses ph-navigator-v2-dev.
     r2_bucket: str = "ph-navigator-v2-dev"
     r2_endpoint_url: str = ""
     asset_signed_url_ttl_preview_seconds: int = 15 * 60

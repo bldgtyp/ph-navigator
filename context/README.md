@@ -21,10 +21,12 @@ they govern — `backend/.instructions.md`, `frontend/.instructions.md`,
 
 Read these first:
 
-1. `ENVIRONMENT.md` — command / environment card.
-2. `PRD.md` — concise product and high-level architecture PRD.
-3. `TECH_STACK.md` — stack and persistence decisions.
-4. `GLOSSARY.md` — canonical terms when naming is ambiguous.
+1. `ENVIRONMENT.md` — local command / environment card.
+2. `PRODUCTION_DEPLOYMENT.md` — live Render/DNS/R2/auth/MCP deployment source of truth.
+3. `DEVELOPMENT_WORKFLOW.md` — branch, CI, and Render deploy discipline.
+4. `PRD.md` — concise product and high-level architecture PRD.
+5. `TECH_STACK.md` — stack and persistence decisions.
+6. `GLOSSARY.md` — canonical terms when naming is ambiguous.
 
 ## On-Demand Reference
 
@@ -61,6 +63,12 @@ Load these only when the task touches the relevant surface:
   request-id propagation, dev vs Render production behavior, security
   rules, and the convention for event names and levels. Load when
   adding/changing log output or troubleshooting deployed runs.
+- `PRODUCTION_DEPLOYMENT.md` — current production URLs, Render service IDs,
+  Blueprint/env vars, DNS records, R2 bucket/CORS, cookie/CSRF posture, runtime
+  MCP endpoint, deleted staging resources, and public smoke commands.
+- `DEVELOPMENT_WORKFLOW.md` — branch policy, build-minute discipline, CI
+  expectations, and deploy-aware closeout rules now that `main` triggers Render
+  production deploys.
 - `technical-requirements/data-table.md` — shared `<DataTable>`
   implementation contract. Load with `UI_UX.md` §1.7 and
   `user-stories/30-tables-equipment.md` when touching table behavior.

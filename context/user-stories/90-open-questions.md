@@ -41,7 +41,7 @@ to the per-story sections above.
 | ~~Q-STATUS-6~~ | ~~US-Status~~ | ~~Empty-state UX for brand-new project?~~ | **Resolved 2026-05-10 (via Q-LANDDEFAULT-1):** centered card with 3 CTAs — "Apply BLDGTYP default template" (primary) / "+ Add custom item" (secondary) / "Skip to Envelope" (link) |
 | ~~Q-STATUS-7~~ | ~~US-Status~~ | ~~`completion_date` editing — auto-populate or always-editable?~~ | **Resolved 2026-05-10:** auto-populate to today on `done` flip; user-editable thereafter (so they can backdate). Clearing to null supported via the edit form |
 | Q-LOG-1 | C-1 | Log retention? | keep forever |
-| Q-URL-1 | (meta) | V2 URL? | `ph-navigator-v2.onrender.com` for staging, custom domain later |
+| ~~Q-URL-1~~ | ~~(meta)~~ | ~~V2 URL?~~ | **Resolved 2026-06-28:** current PH-Navigator serves `https://www.ph-nav.com`, API `https://api.ph-nav.com`, legacy V0 `https://v0.ph-nav.com`; see `context/PRODUCTION_DEPLOYMENT.md`. |
 | Q-APT-1 | US-Builder-Apertures | Element span representation? | **Lean:** range form `[start, end]` inclusive, per PRD §6.2 sketch |
 | ~~Q-APT-2~~ | ~~US-Builder-Apertures~~ | ~~Per-side frames or single-frame per element?~~ | **Resolved 2026-05-11:** four sides (`top/right/bottom/left`) — matches V1 and PRD §6.2; per-side U / Ψ-g needed for Phius / WUFI |
 | Q-APT-3 | US-Builder-Apertures | Default frame / glazing on element create? | **Lean:** null + Save-time validation; explicit pick required |

@@ -10,6 +10,11 @@ available at `https://v0.ph-nav.com`.
 `https://api.ph-nav.com`. Some historical planning and requirements docs still
 use "V2" to refer to the rewrite generation.
 
+Production deployment details are centralized in
+`context/PRODUCTION_DEPLOYMENT.md`. Development and deploy workflow rules live in
+`context/DEVELOPMENT_WORKFLOW.md`; ordinary work should happen on feature
+branches because `main` deploys production on Render.
+
 ## Quickstart (one-time)
 
 ```bash
@@ -67,7 +72,9 @@ See `Makefile` (`make help`) for the full recipe list.
    `psql`.
 4. **Env files:** `backend/.env` and `frontend/.env.local`. No
    overlays, no `.env.poc`.
-5. **Testing UIs:** Playwright MCP (`mcp__plugin_playwright_playwright__*`)
+5. **Branches/deploys:** feature branches by default; merge to `main` only when
+   ready for a production Render deploy.
+6. **Testing UIs:** Playwright MCP (`mcp__plugin_playwright_playwright__*`)
    is available; use it to drive the frontend in a browser.
 
 Full rules: `CLAUDE.md`, `AGENTS.md`, `context/ENVIRONMENT.md`.

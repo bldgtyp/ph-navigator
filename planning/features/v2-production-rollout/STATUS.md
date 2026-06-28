@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
 TIME: 16:34 EDT
-STATUS: Active
+STATUS: Complete through Phase 4
 AUTHOR: Claude (for Ed May)
 SCOPE: Live status + open decisions for the new PH-Navigator V1 production rollout.
 RELATED:
@@ -14,7 +14,7 @@ RELATED:
 
 # Status — PH-Navigator V1 Production Rollout
 
-**State:** Phase 0 staging/admin rehearsal, Phase 1 production infra, Phase 2
+**State:** Complete through Phase 4. Phase 0 staging/admin rehearsal, Phase 1 production infra, Phase 2
 public domain cutover, Phase 3 repo canonicalization, and Phase 4 old-staging
 cleanup are complete (2026-06-28). Render account, V0 hosting, domain/DNS setup,
 naming policy, and cost-sizing facts are mapped and verified. The production R2

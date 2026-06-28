@@ -19,7 +19,7 @@ from features.projects.service import hard_delete_project, project_delete_counts
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Dry-run or hard-delete a PH-Navigator V2 project.")
+    parser = argparse.ArgumentParser(description="Dry-run or hard-delete a PH-Navigator project.")
     parser.add_argument("project_id", type=UUID)
     parser.add_argument("--dry-run", action="store_true", help="Report what would be deleted.")
     parser.add_argument("--hard", action="store_true", help="Physically delete project DB rows and object storage.")

@@ -21,6 +21,8 @@ precedent, **not** importable) · `working/` (gitignored scratch).
 serves `https://api.ph-nav.com`. Treat the production database and R2 bucket as
 real infrastructure. Do not assume backwards compatibility is irrelevant just
 because an older doc says this was pre-launch.
+Current production architecture, service IDs, DNS, R2, auth/cookie posture, and
+Render verification live in `context/PRODUCTION_DEPLOYMENT.md`.
 
 ## Hard rules (apply to all work)
 
@@ -35,6 +37,10 @@ because an older doc says this was pre-launch.
 - **This repo is public.** Never commit PHI / Phius / PHPP / WUFI-derived or
   otherwise licensed data; route source-of-truth through the private object
   store.
+- **Main deploys production.** Render tracks `main` for the production API and
+  web services. Do normal work on feature branches, aggregate small edits, and
+  merge/push `main` only when the change is ready to deploy. See
+  `context/DEVELOPMENT_WORKFLOW.md`.
 
 ## Closeout gate (after any code-changing session)
 
@@ -63,6 +69,7 @@ always-loaded fast-path.
 | deciding **where data lives** / storage boundaries | `context/DATA_STORAGE.md` | two stores (Postgres / object store), four classes (relational, versioned JSONB docs, dynamic assets, static climate bundles); Postgres owns *references*, object store owns *bytes*; signed-URL-only, private bucket |
 | changing **architecture / data model** | `context/PRD.md` + `context/technical-requirements/*` | JSON-document model; versioned immutable-by-discipline saves; linear history; design for human + LLM use |
 | adding/altering **logs** | `context/LOGGING.md` | structlog → JSON to stdout; `request_id` bound via middleware; never log secrets or request bodies |
+| changing **production deploy / Render / DNS / R2 / cookies / MCP URLs** | `context/PRODUCTION_DEPLOYMENT.md` + `context/DEVELOPMENT_WORKFLOW.md` | production lives at `www.ph-nav.com` + `api.ph-nav.com`; `main` deploys Render; staging is deleted unless recreated from `render.yaml` |
 | **naming** / domain terms | `context/GLOSSARY.md` | — |
 | picking up a **story / phase** | `context/USER_STORIES.md` → `context/user-stories/*` | — |
 

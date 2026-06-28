@@ -1,4 +1,8 @@
-# Environment (PHN-V2) — agent quick-card
+# Environment (PH-Navigator) — agent quick-card
+
+This file covers local/dev commands, env vars, and operator recipes. Current
+production Render/DNS/R2/auth/MCP facts live in
+`context/PRODUCTION_DEPLOYMENT.md`.
 
 ## Python: ALWAYS uv
 
@@ -144,10 +148,11 @@ manual browser verification.
 
 ### Cloudflare R2
 
-Canonical PHN bucket plan:
+Canonical PHN buckets:
 
 - Region: **ENAM**.
-- Staging/dev bucket: `ph-navigator-v2-dev`.
+- Local/dev bucket: `ph-navigator-v2-dev`.
+- Optional recreated staging bucket: `ph-navigator-v2-dev`.
 - Production bucket: `ph-navigator-prod`.
 - Public access: off. PHN uses signed PUT/GET URLs only.
 - Object keys are backend-controlled:
@@ -163,7 +168,7 @@ smoke test:
 - `R2_ACCOUNT_ID=<Cloudflare account id>`
 - `R2_ACCESS_KEY_ID=<R2 API token access key id>`
 - `R2_SECRET_ACCESS_KEY=<R2 API token secret access key>`
-- `R2_BUCKET=ph-navigator-v2-dev` for staging/dev, or
+- `R2_BUCKET=ph-navigator-v2-dev` for local/dev or optional recreated staging, or
   `ph-navigator-prod` for production
 - `R2_ENDPOINT_URL=https://<account-id>.r2.cloudflarestorage.com`
 
@@ -181,7 +186,8 @@ may show four values: `Token value`, `Access Key ID`,
 
 Capture these values once, then store them only in Apple Passwords/Render.
 
-Bucket CORS for direct browser signed uploads/downloads:
+Local/dev plus optional recreated staging bucket CORS for direct browser signed
+uploads/downloads:
 
 ```json
 [
@@ -199,9 +205,10 @@ Bucket CORS for direct browser signed uploads/downloads:
 ]
 ```
 
-Cloudflare dashboard setup confirmed on 2026-05-26:
+Cloudflare dev/staging bucket setup confirmed on 2026-05-26:
 
-- bucket `ph-navigator-v2-dev` exists for dev/staging attachment work;
+- bucket `ph-navigator-v2-dev` exists for local/dev and optional staging attachment
+  work;
 - public access is disabled;
 - CORS allows local Vite origins plus
   `https://ph-navigator-v2-staging.onrender.com` for `PUT`, `GET`, and
@@ -386,10 +393,10 @@ the app process cannot see.
 
 ## Render production
 
-Production is managed by `render.prod.yaml`. Phase 1 uses the production
-Render URLs for smoke/admin rehearsal before DNS cutover; Phase 2 retargets the
-same canonical services to `www.ph-nav.com`, apex `ph-nav.com`, and
-`api.ph-nav.com`.
+Production is managed by `render.prod.yaml`; see
+`context/PRODUCTION_DEPLOYMENT.md` for the canonical service IDs, DNS records,
+R2/CORS posture, verification commands, and deploy workflow. The summary below
+is kept here as the environment-variable quick card.
 
 GitHub repo wiring after the 2026-06-28 canonicalization:
 
@@ -501,8 +508,8 @@ rotate if that ever matters.)
 ### Climate reference-data seed (on-demand)
 
 Climate reference data (`phius`, `phi`) is **app-wide, immutable, and
-idempotent** per `(provider, version)`, so production seeds it **on demand —
-when a new bundle is published — not on every restart** (PRD D-CS-7). The
+idempotent** per `(provider, version)`, so production seeds it **on demand -
+when a new bundle is published - not on every restart** (PRD D-CS-7). The
 backend Start command stays migrations + uvicorn only; do **not** add a climate
 seed to it. Rows persist in the Render Postgres across restarts.
 
@@ -510,9 +517,9 @@ The seed is the same provider-agnostic CLI used in dev
 (`features.climate.seeding`). `R2_*` and `DATABASE_URL` are already present in
 the backend service env (the object store serves attachments + EPW there).
 **Publish the bundle to the same R2 bucket the target service reads** — the
-deployed `ph-navigator-v2-api-staging` service uses `R2_BUCKET=ph-navigator-v2-dev`,
-so that is the bucket to publish to for staging (the production service uses
-`ph-navigator-prod`). Trigger when a new
+production `ph-navigator-api` service uses `R2_BUCKET=ph-navigator-prod`; an
+optional recreated `ph-navigator-v2-api-staging` service from `render.yaml` uses
+`R2_BUCKET=ph-navigator-v2-dev`. Trigger when a new
 `(provider, version)` bundle is published:
 
 1. **Publish the bundle(s) to R2.** From a local shell with the real Cloudflare
@@ -525,7 +532,7 @@ so that is the bucket to publish to for staging (the production service uses
    export R2_ACCOUNT_ID='<account id>'
    export R2_ACCESS_KEY_ID='<access key id>'
    export R2_SECRET_ACCESS_KEY='<secret>'
-   export R2_BUCKET='ph-navigator-v2-dev'   # the bucket the staging service reads
+   export R2_BUCKET='ph-navigator-prod'     # production; use ph-navigator-v2-dev only for optional staging
    export R2_ENDPOINT_URL="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
    uv run python -m features.climate.processing --provider phius --version 2022 --src <raw -mon.txt tree> --upload
    uv run python -m features.climate.processing --provider phi   --version 10.6 --src <dir with the .xlsx> --upload
@@ -537,18 +544,19 @@ so that is the bucket to publish to for staging (the production service uses
    provider is picked up once its bundle is uploaded). Two routes:
 
    - **Render Shell / one-off Job** (preferred — no DB exposure): in the
-     `ph-navigator-v2-api-staging` service (Root directory `backend`, env
-     already set, internal `DATABASE_URL`), run
+     `ph-navigator-api` service (Root directory `backend`, env already set,
+     internal `DATABASE_URL`), run
      `uv run python -m features.climate.seeding --all`. Requires the service
-     plan to offer a Shell or Jobs.
-   - **Local shell against the external DB** (what was used 2026-06-15): Render
+     plan to offer a Shell or Jobs. If staging is recreated, use
+     `ph-navigator-v2-api-staging` instead.
+   - **Local shell against the external DB** (avoid unless necessary): Render
      managed Postgres blocks external traffic by default, so first add your IP
      under the DB → **Networking → Inbound IP Rules** (remove it afterward).
      Then, keeping the `R2_*` exports from step 1:
 
      ```bash
      export DATABASE_URL='<Render External Database URL>?sslmode=require'
-     export ENVIRONMENT=staging
+     export ENVIRONMENT=production
      uv run python -m features.climate.seeding --all
      unset DATABASE_URL ENVIRONMENT R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET R2_ENDPOINT_URL
      ```

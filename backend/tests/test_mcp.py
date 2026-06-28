@@ -381,23 +381,23 @@ def test_mcp_hard_delete_tool_uses_exact_confirmation_and_storage(
 
 def test_mcp_transport_security_settings_include_deployed_hosts() -> None:
     deployed = Settings(
-        mcp_issuer_url="https://ph-navigator-v2.onrender.com",
-        mcp_resource_server_url="https://ph-navigator-v2.onrender.com/mcp",
-        cors_origins="https://ph-navigator-v2.onrender.com,https://ph-navigator-v2-staging.onrender.com",
-        mcp_allowed_hosts="ph-navigator-v2-staging.onrender.com",
-        mcp_allowed_origins="https://ph-navigator-v2-staging.onrender.com",
-        render_external_url="https://ph-navigator-v2-api-staging.onrender.com",
-        render_external_hostname="ph-navigator-v2-api-staging.onrender.com",
+        mcp_issuer_url="https://api.ph-nav.com",
+        mcp_resource_server_url="https://api.ph-nav.com/mcp",
+        cors_origins="https://www.ph-nav.com,https://ph-nav.com",
+        mcp_allowed_hosts="api.ph-nav.com",
+        mcp_allowed_origins="https://www.ph-nav.com",
+        render_external_url="https://ph-navigator-api.onrender.com",
+        render_external_hostname="ph-navigator-api.onrender.com",
     )
 
-    assert "ph-navigator-v2.onrender.com" in deployed.mcp_allowed_hosts_list
-    assert "ph-navigator-v2.onrender.com:*" in deployed.mcp_allowed_hosts_list
-    assert "ph-navigator-v2-staging.onrender.com" in deployed.mcp_allowed_hosts_list
-    assert "ph-navigator-v2-api-staging.onrender.com" in deployed.mcp_allowed_hosts_list
-    assert "ph-navigator-v2-api-staging.onrender.com:*" in deployed.mcp_allowed_hosts_list
+    assert "api.ph-nav.com" in deployed.mcp_allowed_hosts_list
+    assert "api.ph-nav.com:*" in deployed.mcp_allowed_hosts_list
+    assert "ph-navigator-api.onrender.com" in deployed.mcp_allowed_hosts_list
+    assert "ph-navigator-api.onrender.com:*" in deployed.mcp_allowed_hosts_list
     assert "localhost:*" in deployed.mcp_allowed_hosts_list
-    assert "https://ph-navigator-v2.onrender.com" in deployed.mcp_allowed_origins_list
-    assert "https://ph-navigator-v2-staging.onrender.com" in deployed.mcp_allowed_origins_list
+    assert "https://api.ph-nav.com" in deployed.mcp_allowed_origins_list
+    assert "https://www.ph-nav.com" in deployed.mcp_allowed_origins_list
+    assert "https://ph-nav.com" in deployed.mcp_allowed_origins_list
 
 
 @pytest.mark.asyncio

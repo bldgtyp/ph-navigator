@@ -1,9 +1,11 @@
-# render.yaml — PH-Navigator V2 staging Blueprint (Infrastructure-as-Code)
+# render.yaml — PH-Navigator optional staging Blueprint (Infrastructure-as-Code)
 #
-# Declares the full Render `Staging` environment so it can be re-provisioned
-# from code instead of manual dashboard entry. `DATABASE_URL` auto-wires from
-# the database block via `fromDatabase`, so replacing or rebuilding Postgres is
-# a one-click re-apply with NO copy/paste.
+# The 2026-06 production-rollout staging stack was deleted after production was
+# verified. This dormant Blueprint is retained only for a future rehearsal/debug
+# surface. It declares the full Render staging stack so it can be re-provisioned
+# from code instead of manual dashboard entry. `DATABASE_URL` auto-wires from the
+# database block via `fromDatabase`, so replacing or rebuilding Postgres is a
+# one-click re-apply with NO copy/paste.
 #
 # PUBLIC REPO RULE: this file is committed and the repo is public. It contains
 # ONLY non-secret config. Every secret (R2 credentials, R2 account id /
@@ -11,8 +13,8 @@
 # first apply and stores it server-side; it is never written here. Keep secrets
 # in Apple Passwords (PH-Navigator R2 / Fernet items) and paste into Render only.
 #
-# Source of truth for the values below: context/ENVIRONMENT.md → "Render staging".
-# Apply / re-provision runbook: same file → "Render staging" (Blueprint apply).
+# Source of truth for the current production stack: context/PRODUCTION_DEPLOYMENT.md.
+# Optional staging re-provision runbook: context/ENVIRONMENT.md → "Render staging".
 
 databases:
   - name: ph-navigator-v2-staging-db
