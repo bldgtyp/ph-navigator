@@ -1,1 +1,1 @@
-"""Shared API infrastructure for PHN-V2 feature modules."""
+"""Shared API infrastructure for PH-Navigator feature modules."""

@@ -69,7 +69,7 @@ def test_versioned_openapi_endpoint_includes_schema_and_inspectability_routes() 
     assert response.status_code == 200
     assert response.headers["X-Request-ID"] == "openapi-schema"
     body = response.json()
-    assert body["info"]["title"] == "PH-Navigator V2"
+    assert body["info"]["title"] == "PH-Navigator"
     paths = body["paths"]
     assert "/api/v1/schemas/project-document/v1.json" in paths
     assert "/api/v1/schemas/room/v1.json" in paths

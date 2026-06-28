@@ -854,11 +854,10 @@ acceptance, but each shapes a downstream decision:
 19. ~~**"Last modified" definition** (US-1 Q4).~~ **Resolved
     2026-05-10:** denormalized `projects.last_saved_at`, updated on
     every Save / Save As.
-20. **V2 URL** — `ph-dash-frontend.onrender.com` is the existing
-    PH-Dash URL, not PHN. Pick one for V2: staging on Render
-    (`ph-navigator-v2.onrender.com`) → custom domain
-    (`nav.bldgtyp.com` or similar) when ready. Lean: stage on
-    Render, custom domain post-MVP.
+20. ~~**V2 URL**~~ — **Resolved 2026-06-28:** current PH-Navigator
+    serves `https://www.ph-nav.com` + apex `https://ph-nav.com`; the API
+    serves `https://api.ph-nav.com`; legacy V0 serves `https://v0.ph-nav.com`.
+    See `context/PRODUCTION_DEPLOYMENT.md`.
 21. **User-action-log retention** (US-C1) — keep forever vs. roll
     off. Lean: keep forever (volume trivial).
 22. ~~**Project landing page layout** (US-3 Q1).~~ **Resolved

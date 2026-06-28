@@ -1,4 +1,4 @@
-"""FastMCP server definition for PH-Navigator V2.
+"""FastMCP server definition for PH-Navigator.
 
 Tool implementations live in `features.mcp.tools`; helpers live in
 `features.mcp.helpers`. `build_mcp_server` here is the wiring layer:
@@ -91,8 +91,8 @@ __all__ = ["build_mcp_server", "mcp"]
 def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
     """Create the MCP tool server used by HTTP and stdio transports."""
     mcp = FastMCP(
-        "PH-Navigator V2",
-        instructions="Project-scoped PH-Navigator V2 tools. All tokens are scoped to one project.",
+        "PH-Navigator",
+        instructions="Project-scoped PH-Navigator tools. All tokens are scoped to one project.",
         json_response=True,
         streamable_http_path="/",
         stateless_http=True,

@@ -1,4 +1,4 @@
-# render.prod.yaml — PH-Navigator V1 production Blueprint
+# render.prod.yaml — PH-Navigator production Blueprint
 #
 # Phase 1 smoke hosts before DNS cutover (completed):
 # - Frontend: https://ph-navigator-web.onrender.com
@@ -13,7 +13,7 @@
 # ONLY non-secret config. Every secret or account-identifying value is
 # `sync: false` and must be entered in Render/Apple Passwords, never committed.
 #
-# URL env is now retargeted for Phase 2 custom-domain smoke/cutover.
+# Current URL env targets the custom-domain production stack. `main` deploys it.
 
 databases:
   - name: ph-navigator-db

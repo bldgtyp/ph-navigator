@@ -1,4 +1,4 @@
-"""PH-Navigator V2 FastAPI entrypoint.
+"""PH-Navigator FastAPI entrypoint.
 
 Feature routes are added incrementally by tracer-bullet slice.
 """
@@ -56,9 +56,9 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(
-    title="PH-Navigator V2",
+    title="PH-Navigator",
     version=settings.app_version,
-    description="PH-Navigator V2 API.",
+    description="PH-Navigator API.",
     openapi_url="/api/v1/openapi.json",
     lifespan=lifespan,
 )
