@@ -17,9 +17,11 @@ RELATED:
 ## 1. Goal & guardrails
 
 - **Production-readiness gate:** this rollout is blocked behind
-  `planning/features/admin-user-management/`. Do not create the real paid V1
-  production environment, move public domains, or canonicalize repos until that
-  feature reaches the agreed production-ready threshold.
+  `planning/features/admin-user-management/`. The paid Phase 1 Render
+  production environment now exists after Ed's explicit apply confirmation; do
+  not proceed to production account lifecycle, public DNS cutover, or repo
+  canonicalization until the admin verification checklist reaches the agreed
+  production-ready threshold.
 - **Promote new V1 to the root domain**: `www.ph-nav.com` + apex `ph-nav.com`.
 - **Relocate legacy V0** to `v0.ph-nav.com`; keep it fully running in parallel,
   indefinitely, until Ed decides to decommission.
@@ -183,7 +185,10 @@ part of Phase 0/1 below (not a separate feature). It mirrors
       - [x] Staging API service has `FRONTEND_BASE_URL` and
             `ACCOUNT_TOKEN_SECRET`.
       - [ ] Production Blueprint/service has `FRONTEND_BASE_URL` and
-            `ACCOUNT_TOKEN_SECRET` before production bootstrap.
+            `ACCOUNT_TOKEN_SECRET` before production bootstrap. The initial
+            production apply supplied both values, but the Blueprint must sync
+            once more so `FRONTEND_BASE_URL` points at the Phase 1 prod Render
+            frontend until DNS cutover.
 - [ ] Rehearse the full lifecycle on staging / prod-onrender URLs: bootstrap Ed
       (`scripts.bootstrap_admin`; add `--confirm-production` only when
       `ENVIRONMENT=production`), invite a test user, complete the invite,
@@ -218,10 +223,11 @@ admin-user-management packet. If the rehearsal surfaces real rework (e.g.
 `SameSite=Lax` fails and split-origin auth needs redesign), spin that out as its
 own feature rather than expanding this checklist.
 
-Allowed before this gate clears: Phase 0 staging sanity checks, prod blueprint
-drafting, production R2 bucket/CORS/lifecycle prep, and docs/runbook work. Not
-allowed: Phase 1 paid production apply, production user creation, DNS cutover,
-or GitHub repo canonicalization.
+Allowed before this gate clears: Phase 0 staging sanity checks, production R2
+bucket/CORS/lifecycle prep, Phase 1 URL-env Blueprint sync, deploy monitoring,
+and docs/runbook work. Not allowed: production user lifecycle beyond the audited
+first-admin bootstrap/rehearsal path, public DNS cutover, or GitHub repo
+canonicalization.
 
 ### Phase 0 — Sanity check on free infra (cheap, optional but recommended)
 **Why:** confirm the new app actually boots end-to-end (migrations, R2, auth, MCP)
@@ -289,8 +295,9 @@ logged-in project view renders.
      (`SESSION_COOKIE_SAMESITE=lax` if verified; otherwise `none` paired with
      CSRF middleware). `SESSION_COOKIE_SECURE` is derived true by the backend
      when `ENVIRONMENT=production`.
-   - `FRONTEND_BASE_URL=https://www.ph-nav.com` (canonical base for invite/reset
-     links; never the request Host).
+   - Phase 1: `FRONTEND_BASE_URL=https://ph-navigator-web.onrender.com`
+     (base for invite/reset links; never the request Host). Phase 2 retargets
+     this to `https://www.ph-nav.com` during DNS cutover.
    - Secrets (`R2_*`, `FERNET_SECRET_KEY`, `ACCOUNT_TOKEN_SECRET`)
      `sync: false`. `ACCOUNT_TOKEN_SECRET` keys the
      invite/reset token hashes (admin-user-management); without it a DB-only
@@ -298,8 +305,8 @@ logged-in project view renders.
      `MAPTILER_API_KEY` is intentionally omitted; PHN falls back to Census
      geocoding without it.
    - Draft complete in `render.prod.yaml` and validated with Render CLI
-     (`valid:true`). It is not applied yet.
-3. **Apply** the blueprint → new prod services build; Alembic runs on start.
+     (`valid:true`).
+3. [x] **Apply** the blueprint → new prod services build; Alembic runs on start.
    In Render Dashboard use `New` → `Blueprint`, select
    `bldgtyp/ph-navigator-v2`, branch `main`, and set **Blueprint Path** to
    `render.prod.yaml`.
@@ -307,15 +314,24 @@ logged-in project view renders.
    `sync:false` env vars, including `R2_ACCOUNT_ID`, `R2_ENDPOINT_URL`,
    `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `FERNET_SECRET_KEY`,
    and `ACCOUNT_TOKEN_SECRET`.
-4. **Bootstrap first production admin**: use the audited Admin User Management
+   Created `ph-navigator-db`, `ph-navigator-api`, and `ph-navigator-web` on
+   commit `7aa208f`; API and static deploys reached `live`; API health/ready and
+   static root returned 200.
+4. [ ] **Sync Phase 1 URL env**: apply the `render.prod.yaml` correction that
+   keeps pre-cutover production on `https://ph-navigator-web.onrender.com` and
+   `https://ph-navigator-api.onrender.com` for `FRONTEND_BASE_URL`,
+   `VITE_API_BASE_URL`, CORS, and MCP URL/host/origin env. Do this before
+   generating invite/reset links or browser-smoke testing the production static
+   site.
+5. **Bootstrap first production admin**: use the audited Admin User Management
    bootstrap path to create/repair Ed's initial admin and issue an invite/reset
    link. Then invite John and any test account through `/admin/users`. Do **not**
    use the local/staging seed convention `ed@example.com` / `password` or
    `codex@example.com` / `password` on the prod DB, and do not manually seed
    reusable production passwords as the normal account lifecycle.
-5. **Seed reference data**: seed/license the climate reference bundles into R2 +
+6. **Seed reference data**: seed/license the climate reference bundles into R2 +
    DB (on-demand, per ENVIRONMENT.md).
-6. **Smoke** on the prod onrender URLs: health/ready, login, project CRUD,
+7. **Smoke** on the prod onrender URLs: health/ready, login, project CRUD,
    asset upload/download via signed URL, model viewer, MCP token issue.
 **Verify:** prod API `/api/v1/ready` green against the **paid** DB; bootstrap,
 invite, admin reset-link, deactivate/reactivate, admin-grant, audit, and full

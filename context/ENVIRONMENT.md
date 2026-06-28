@@ -383,21 +383,24 @@ the app process cannot see.
     DB was reset for the squashed Alembic baseline; Render reports no
     `expiresAt`.
 
-## Render production draft
+## Render production
 
-Production is drafted in `render.prod.yaml` but should not be applied until the
-rollout reaches Phase 1 execution. The draft uses canonical, unversioned service
-names and the production domains:
+Production is managed by `render.prod.yaml`. Phase 1 uses the production
+Render URLs for smoke/admin rehearsal before DNS cutover; Phase 2 retargets the
+same canonical services to `www.ph-nav.com`, apex `ph-nav.com`, and
+`api.ph-nav.com`.
 
 - Static frontend service: `ph-navigator-web`
-  - Target custom domains: `https://www.ph-nav.com` and `https://ph-nav.com`
+  - Phase 1 URL: `https://ph-navigator-web.onrender.com`
+  - Phase 2 custom domains: `https://www.ph-nav.com` and `https://ph-nav.com`
   - Root directory: `frontend`
   - Build command: `pnpm install --frozen-lockfile && pnpm run build`
   - Publish directory: `dist`
   - Rewrite rule: `/*` -> `/index.html`
-  - Env: `VITE_API_BASE_URL=https://api.ph-nav.com`
+  - Phase 1 env: `VITE_API_BASE_URL=https://ph-navigator-api.onrender.com`
 - Backend web service: `ph-navigator-api`
-  - Target custom domain: `https://api.ph-nav.com`
+  - Phase 1 URL: `https://ph-navigator-api.onrender.com`
+  - Phase 2 custom domain: `https://api.ph-nav.com`
   - Plan: `standard` (1 CPU / 2 GB), matching the legacy V0 backend for the
     initial cutover.
   - Root directory: `backend`
@@ -415,16 +418,16 @@ names and the production domains:
     - `DATABASE_POOL_TIMEOUT_SECONDS=10`
     - `SLOW_QUERY_MS=500`
     - `PROJECT_DOCUMENT_MAX_BODY_BYTES=8388608`
-    - `CORS_ORIGINS=https://www.ph-nav.com,https://ph-nav.com`
+    - `CORS_ORIGINS=https://ph-navigator-web.onrender.com`
     - `SESSION_COOKIE_NAME=phn_session`
     - `SESSION_LIFETIME_MINUTES=60`
     - `SESSION_COOKIE_SAMESITE=lax`
-    - `FRONTEND_BASE_URL=https://www.ph-nav.com`
-    - `MCP_ISSUER_URL=https://api.ph-nav.com`
-    - `MCP_RESOURCE_SERVER_URL=https://api.ph-nav.com/mcp`
+    - `FRONTEND_BASE_URL=https://ph-navigator-web.onrender.com`
+    - `MCP_ISSUER_URL=https://ph-navigator-api.onrender.com`
+    - `MCP_RESOURCE_SERVER_URL=https://ph-navigator-api.onrender.com/mcp`
     - `MCP_ENABLE_DNS_REBINDING_PROTECTION=true`
-    - `MCP_ALLOWED_HOSTS=api.ph-nav.com`
-    - `MCP_ALLOWED_ORIGINS=https://www.ph-nav.com,https://ph-nav.com`
+    - `MCP_ALLOWED_HOSTS=ph-navigator-api.onrender.com`
+    - `MCP_ALLOWED_ORIGINS=https://ph-navigator-web.onrender.com`
     - `R2_BUCKET=ph-navigator-prod`
     - `R2_ACCOUNT_ID=<Render secret>`
     - `R2_ACCESS_KEY_ID=<Render secret>`
@@ -440,10 +443,19 @@ names and the production domains:
   - Region: Ohio (US East)
   - Plan: `basic_256mb` with 1 GB disk (`basic-256mb` in Blueprint YAML).
 
-Validated 2026-06-27 with
+Validated 2026-06-28 with
 `render blueprints validate ./render.prod.yaml -o json`: Render reported
-`valid: true` and create actions for `ph-navigator-db`, `ph-navigator-api`, and
-`ph-navigator-web`.
+`valid: true`.
+
+Phase 2 domain cutover retargets:
+
+- `VITE_API_BASE_URL=https://api.ph-nav.com`
+- `CORS_ORIGINS=https://www.ph-nav.com,https://ph-nav.com`
+- `FRONTEND_BASE_URL=https://www.ph-nav.com`
+- `MCP_ISSUER_URL=https://api.ph-nav.com`
+- `MCP_RESOURCE_SERVER_URL=https://api.ph-nav.com/mcp`
+- `MCP_ALLOWED_HOSTS=api.ph-nav.com`
+- `MCP_ALLOWED_ORIGINS=https://www.ph-nav.com,https://ph-nav.com`
 
 Do not copy Render database credentials into `backend/.env` for normal
 local development. Local dev should keep using Docker Postgres. For a
