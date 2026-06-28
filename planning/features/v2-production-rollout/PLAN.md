@@ -184,11 +184,11 @@ part of Phase 0/1 below (not a separate feature). It mirrors
 - [ ] Set staging/prod env:
       - [x] Staging API service has `FRONTEND_BASE_URL` and
             `ACCOUNT_TOKEN_SECRET`.
-      - [ ] Production Blueprint/service has `FRONTEND_BASE_URL` and
-            `ACCOUNT_TOKEN_SECRET` before production bootstrap. The initial
-            production apply supplied both values, but the Blueprint must sync
-            once more so `FRONTEND_BASE_URL` points at the Phase 1 prod Render
-            frontend until DNS cutover.
+      - [x] Production Blueprint/service has `FRONTEND_BASE_URL` and
+            `ACCOUNT_TOKEN_SECRET` before production bootstrap. Initial apply
+            supplied both values; follow-up Blueprint sync `41c522bc` retargeted
+            `FRONTEND_BASE_URL` to the Phase 1 prod Render frontend until DNS
+            cutover.
 - [ ] Rehearse the full lifecycle on staging / prod-onrender URLs: bootstrap Ed
       (`scripts.bootstrap_admin`; add `--confirm-production` only when
       `ENVIRONMENT=production`), invite a test user, complete the invite,
@@ -317,12 +317,15 @@ logged-in project view renders.
    Created `ph-navigator-db`, `ph-navigator-api`, and `ph-navigator-web` on
    commit `7aa208f`; API and static deploys reached `live`; API health/ready and
    static root returned 200.
-4. [ ] **Sync Phase 1 URL env**: apply the `render.prod.yaml` correction that
+4. [x] **Sync Phase 1 URL env**: apply the `render.prod.yaml` correction that
    keeps pre-cutover production on `https://ph-navigator-web.onrender.com` and
    `https://ph-navigator-api.onrender.com` for `FRONTEND_BASE_URL`,
    `VITE_API_BASE_URL`, CORS, and MCP URL/host/origin env. Do this before
    generating invite/reset links or browser-smoke testing the production static
    site.
+   Synced on commit `41c522bc`: API deploy `dep-d909ujn7f7vs73cgf79g` and web
+   deploy `dep-d909ujn7f7vs73cgf7b0` are live; the static bundle contains
+   `https://ph-navigator-api.onrender.com`; health/ready/static root return 200.
 5. **Bootstrap first production admin**: use the audited Admin User Management
    bootstrap path to create/repair Ed's initial admin and issue an invite/reset
    link. Then invite John and any test account through `/admin/users`. Do **not**

@@ -20,9 +20,10 @@ to `v0.ph-nav.com`, and run both side-by-side on Render for as long as Ed wants.
 **Current gate:** Phase 0 staging/admin rehearsal is complete and Phase 1
 production services are live on Render URLs. The production R2 bucket is
 configured, production R2 credentials are stored in Apple Passwords, and the
-paid DB/API/static services exist. The next gate is one Blueprint sync that
-keeps pre-cutover env on the prod Render URLs before the first production admin
-bootstrap. Public DNS cutover and repo canonicalization remain later gates.
+paid DB/API/static services exist. The Phase 1 URL-env Blueprint sync is live
+on commit `41c522bc`; the next gate is the first production admin bootstrap and
+admin lifecycle rehearsal on the prod Render URLs. Public DNS cutover and repo
+canonicalization remain later gates.
 
 ## Naming convention
 
