@@ -19,9 +19,9 @@ infra is live on Render URLs (2026-06-28). Render account, V0 hosting,
 domain/DNS setup, naming policy, and cost-sizing facts are mapped and verified.
 The production R2 bucket/CORS/lifecycle work is complete, production R2
 credentials are stored in Apple Passwords, and the paid production Blueprint
-created the DB/API/static services. The next manual gate is syncing the
-Blueprint correction that keeps Phase 1 env on the prod `onrender.com` hosts
-until DNS cutover.
+created the DB/API/static services. The Phase 1 URL-env Blueprint sync is live
+on commit `41c522bc`; the next manual gate is the first production admin
+bootstrap and admin lifecycle rehearsal on the prod Render URLs.
 
 **Gate update (2026-06-27):** the admin-user-management MVP is **built and tested
 end-to-end** (Phases 00–06, `make ci` green); the gate is not yet cleared — it
@@ -52,10 +52,10 @@ build — it runs as a discrete step inside Phase 0/1 (see `PLAN.md` → "Gate �
 Admin user management" and the admin-user-management Phase 06 doc). The staging
 rehearsal is complete; production/custom-domain verification is still pending:
 
-- [ ] Set staging/prod env `ACCOUNT_TOKEN_SECRET` + `FRONTEND_BASE_URL`
+- [x] Set staging/prod env `ACCOUNT_TOKEN_SECRET` + `FRONTEND_BASE_URL`
       (staging service set and redeployed; production Blueprint applied with
-      both values but needs one sync to switch production `FRONTEND_BASE_URL`
-      from the future custom domain to the Phase 1 prod Render URL).
+      both values, then synced on `41c522bc` so production `FRONTEND_BASE_URL`
+      points at the Phase 1 prod Render URL).
 - [ ] Rehearse the full lifecycle on staging / prod-onrender URLs (bootstrap
       + Ed sign-in + test-user invite → reset → deactivate/reactivate →
       grant/revoke → audit complete on staging; repeat on production pending).
@@ -131,14 +131,11 @@ The work splits into two surfaces:
 
 Decisions are settled (above), the admin-user-management capability is built,
 and the staging admin lifecycle rehearsal plus non-admin product smoke are
-complete. Production DB/API/static services are live on Render URLs. Next:
-commit/push and sync the `render.prod.yaml` correction that retargets Phase 1
-env from future custom domains to `https://ph-navigator-web.onrender.com` and
-`https://ph-navigator-api.onrender.com`; then bootstrap the first production
-admin and run the production admin lifecycle rehearsal on the prod onrender
-URLs. Production custom-domain cookie/CSRF and `/admin/users` smoke remain
-pending until the `www.ph-nav.com` → `api.ph-nav.com` split-origin cutover is
-staged.
+complete. Production DB/API/static services are live on Render URLs, and the
+Phase 1 URL-env sync is complete. Next: bootstrap the first production admin and
+run the production admin lifecycle rehearsal on the prod onrender URLs.
+Production custom-domain cookie/CSRF and `/admin/users` smoke remain pending
+until the `www.ph-nav.com` → `api.ph-nav.com` split-origin cutover is staged.
 
 No open Step 1 decisions remain.
 
@@ -295,6 +292,17 @@ No open Step 1 decisions remain.
   (`https://ph-navigator-web.onrender.com` and
   `https://ph-navigator-api.onrender.com`) before production admin bootstrap.
   Requires one Blueprint sync/redeploy before using invite/reset links.
+- 2026-06-28 00:17 EDT — Synced the Phase 1 URL-env Blueprint correction after
+  commit `41c522bc`. Render reports API deploy `dep-d909ujn7f7vs73cgf79g`
+  (`srv-d909p1b7uimc7396t580`) and web deploy `dep-d909ujn7f7vs73cgf7b0`
+  (`srv-d909olr7uimc7396slr0`) are `live`, both triggered by `blueprint_sync`
+  from `Retarget prod blueprint to Render smoke URLs`. The served static bundle
+  `/assets/index-CWJJsIH8.js` contains
+  `https://ph-navigator-api.onrender.com` and no `https://api.ph-nav.com`.
+  `GET /api/v1/health` returned 200; `GET /api/v1/ready` returned 200 with
+  `db:true`, `pool_min=2`, and `pool_max=10`; the static root returned HTTP
+  200. Render error-log queries for the API and web services over the deploy
+  window returned no rows.
 - 2026-06-27 — DNS: `www`→V0 static (200), apex→Render anycast→301 www;
   `api`/`v0` absent. Dashboard: 1 project, V0=Production (paid PG16, Ohio),
   new app=Staging (3 services suspended by Ed), Hobby workspace. Render free-Postgres
