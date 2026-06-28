@@ -1,12 +1,14 @@
-# Project Guide for Claude — PH-Navigator V2
+# Project Guide for Claude — PH-Navigator
 
 ## Project
 
-PH-Navigator V2 is a webapp for viewing and managing Passive House project
-data during design — a rebuild of V1 around a **JSON-document data model**
-with **versioned, immutable-by-discipline saves**. PHN owns all project data
-(moving off AirTable). V1 (`../ph-navigator/`) still runs unchanged; V2 is a
-parallel fresh-start build.
+PH-Navigator is a webapp for viewing and managing Passive House project data
+during design. This repo is the current canonical app, built around a
+**JSON-document data model** with **versioned, immutable-by-discipline saves**.
+PHN owns all project data (moving off AirTable). The legacy app is V0 in
+`bldgtyp/ph-navigator_v0` and remains available at `https://v0.ph-nav.com`.
+This codebase was historically named `ph-navigator-v2`; older context/planning
+docs may still use "V2" for the rewrite generation.
 
 Repo map: `backend/` (FastAPI + raw SQL + Alembic) · `frontend/` (Vite + React
 + TS) · `context/` (canonical reference — `context/README.md` is the full
@@ -15,8 +17,10 @@ precedent, **not** importable) · `working/` (gitignored scratch).
 
 ## Status
 
-**Planning / scaffold.** No users and no deploy yet, so backwards compatibility
-is **not** required. (If this looks stale, confirm with Ed.)
+**Production live.** The current app serves `https://www.ph-nav.com`; the API
+serves `https://api.ph-nav.com`. Treat the production database and R2 bucket as
+real infrastructure. Do not assume backwards compatibility is irrelevant just
+because an older doc says this was pre-launch.
 
 ## Hard rules (apply to all work)
 
@@ -74,7 +78,9 @@ scratch is the gitignored `working/`.
 
 ## Things to avoid
 
-- Don't touch `../ph-navigator/` (V1) — V2 is fully independent.
+- Don't touch the legacy V0 repo (`bldgtyp/ph-navigator_v0`; local folder may
+  still be `../ph-navigator` until the folder rename is done) unless the user
+  explicitly asks for V0 work.
 - Don't import from `research/` — it's precedent only; rewrite into `backend/`
   or `frontend/src/` if you need the code.
 - No `requirements.txt` (deps live in `pyproject.toml` + `uv.lock`); no `.env`

@@ -1,12 +1,14 @@
-# PH-Navigator V2
+# PH-Navigator
 
-A JSON-document / versioned-save rebuild of PH-Navigator's project
-layer. The catalog stays relational (curated starting library). V1
-(`../ph-navigator/`) continues to run untouched; V2 is a fresh-start
-sibling, not a migration in place.
+The current PH-Navigator web app for viewing and managing Passive House project
+data. It is the JSON-document / versioned-save rebuild that became the
+canonical `bldgtyp/ph-navigator` repo during the 2026-06 production rollout.
+The legacy app is preserved as V0 in `bldgtyp/ph-navigator_v0` and remains
+available at `https://v0.ph-nav.com`.
 
-**Status:** planning / scaffold. No feature code yet. See
-`context/PRD.md` for the canonical PRD.
+**Status:** production is live at `https://www.ph-nav.com`, with the API at
+`https://api.ph-nav.com`. Some historical planning and requirements docs still
+use "V2" to refer to the rewrite generation.
 
 ## Quickstart (one-time)
 
@@ -48,7 +50,7 @@ See `Makefile` (`make help`) for the full recipe list.
 | `backend/` | FastAPI server, raw SQL repositories, Alembic migrations |
 | `frontend/` | Vite + React + TypeScript app |
 | `context/` | **Read this first.** Canonical PRD and stable reference docs |
-| `research/` | POC artifacts from V1's catalog spike (precedent only — not on import path) |
+| `research/` | POC artifacts from the legacy app's catalog spike (precedent only — not on import path) |
 | `planning/` | Feature PRDs, phase plans, status ledgers, reviews, and planning archives |
 | `docs/` | Stable supporting docs that do not belong in startup context |
 | `working/` | Gitignored local scratch for handoffs, logs, screenshots, and temporary notes |

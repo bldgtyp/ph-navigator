@@ -6,6 +6,11 @@
 > names, and docs. When a
 > term here conflicts with a term elsewhere, this file wins — fix the
 > other one.
+>
+> Naming note (2026-06-28): the rewrite formerly developed as
+> `ph-navigator-v2` is now the canonical `bldgtyp/ph-navigator` repo and public
+> app. Use **V0** only for the legacy repo/app (`bldgtyp/ph-navigator_v0`,
+> `v0.ph-nav.com`).
 
 ## Project & versioning
 

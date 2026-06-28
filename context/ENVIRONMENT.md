@@ -392,6 +392,16 @@ Render URLs for smoke/admin rehearsal before DNS cutover; Phase 2 retargets the
 same canonical services to `www.ph-nav.com`, apex `ph-nav.com`, and
 `api.ph-nav.com`.
 
+GitHub repo wiring after the 2026-06-28 canonicalization:
+
+- Current PH-Navigator repo: `https://github.com/bldgtyp/ph-navigator`
+- Legacy V0 repo: `https://github.com/bldgtyp/ph-navigator_v0`
+- Render V1 services (`ph-navigator-api`, `ph-navigator-web`, and the retained
+  `*-staging` services until Phase 4 cleanup) point at
+  `https://github.com/bldgtyp/ph-navigator`.
+- Render V0 services (`ph-navigator-backend`, legacy static `ph-navigator`)
+  point at `https://github.com/bldgtyp/ph-navigator_v0`.
+
 - Static frontend service: `ph-navigator-web`
   - Phase 1 URL: `https://ph-navigator-web.onrender.com`
   - Phase 2 custom domains: `https://www.ph-nav.com` and `https://ph-nav.com`

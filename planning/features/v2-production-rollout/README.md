@@ -7,7 +7,7 @@ SCOPE: Deploy the new PH-Navigator V1 to production on Render, promote it to www
 RELATED:
   - context/ENVIRONMENT.md (Render staging runbook, env vars, R2 CORS)
   - render.yaml (current staging blueprint — basis for the prod blueprint)
-  - ../../../CLAUDE.md (status/naming note: repo still says V2 until rename phase)
+  - ../../../CLAUDE.md (current repo/status guide)
   - V0 repo: ~/Dropbox/bldgtyp-00/00_PH_Tools/ph-navigator
 ---
 
@@ -34,9 +34,10 @@ repo canonicalization is next.
 - **V0 / legacy PH-Navigator** = the currently live app and repo presently named
   `ph-navigator`; target deprecated repo name `ph-navigator_v0`; target URL
   `v0.ph-nav.com`.
-- **V1 / current PH-Navigator** = this new app, currently still checked out as
-  `ph-navigator-v2`; target canonical repo name `ph-navigator`; target URLs
-  `www.ph-nav.com`, apex `ph-nav.com`, and `api.ph-nav.com`.
+- **V1 / current PH-Navigator** = this new app, now the canonical GitHub repo
+  `bldgtyp/ph-navigator`; target URLs `www.ph-nav.com`, apex `ph-nav.com`, and
+  `api.ph-nav.com`. Some active local worktrees may still be folder-named
+  `ph-navigator-v2` until the optional local folder rename is done.
 - Use release/version numbers inside the new canonical repo from here forward;
   do not create a new repo for each future product version.
 - Keep current/canonical names unversioned (`ph-navigator`, `www.ph-nav.com`,
