@@ -214,16 +214,16 @@ Production R2 setup confirmed on 2026-06-27:
 
 - bucket `ph-navigator-prod` exists in ENAM with Standard storage;
 - public `r2.dev` access is disabled;
-- CORS allows `https://www.ph-nav.com`, `https://ph-nav.com`, and temporary
-  `https://ph-navigator-web.onrender.com` for `PUT`, `GET`, and `HEAD`;
+- CORS allows `https://www.ph-nav.com` and `https://ph-nav.com` for `PUT`,
+  `GET`, and `HEAD`; the temporary `https://ph-navigator-web.onrender.com`
+  origin was removed after the 2026-06-28 public-domain upload smoke;
 - lifecycle aborts multipart uploads after 7 days and deletes only
   `projects/_orphaned/` objects after 90 days.
 
-Production still needs an R2 S3 API token. Create it from Cloudflare R2 →
-Manage R2 API Tokens, preferably as an account token with **Object Read &
-Write** scoped to `ph-navigator-prod`. Store the one-time Secret Access Key and
-Access Key ID in Apple Passwords and Render; do not paste either into this repo or
-chat.
+Production has an R2 S3 API token with **Object Read & Write** scoped to
+`ph-navigator-prod`; Ed stored the one-time Secret Access Key and Access Key ID
+in Apple Passwords and entered them into Render during the production Blueprint
+apply. Do not paste either into this repo or chat.
 
 Do not store `R2_SECRET_ACCESS_KEY` in this repo. Store the R2 token in
 Apple Passwords under the PH-Navigator R2 item and copy it only into Render or
