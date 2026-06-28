@@ -19,9 +19,53 @@ from features.shared.http import client_ip
 CallNext = Callable[[Request], Awaitable[Response]]
 
 MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+# Admin user-management mutations get defense-in-depth CSRF hardening on top of
+# the global Origin allow-list: they must also carry an app-only custom header.
+# Cross-site markup cannot set a custom header without a CORS preflight, and our
+# CORS allow-list rejects untrusted origins, so a present header proves the
+# request came from first-party application code. See
+# planning/features/admin-user-management/phases/phase-01-session-csrf-rate-limits.md.
+CSRF_PROTECTED_PREFIX = "/api/v1/admin/"
 _REQUEST_ID_MAX = 64
 
 log = structlog.get_logger(__name__)
+
+
+def _reject_unsafe_request(request: Request) -> Response | None:
+    """Return a 403 response when a mutating browser write fails CSRF policy.
+
+    Two independent gates apply to mutating ``/api/`` requests:
+
+    1. **Origin allow-list (all routes).** Browsers always send ``Origin`` on
+       cross-origin writes; rejecting any origin outside the CORS allow-list
+       blocks classic CSRF. Non-browser write clients must use a dedicated token
+       surface such as MCP rather than bypassing this policy.
+    2. **Custom header (admin routes).** The admin user-management surface adds
+       an app-only ``X-PHN-CSRF`` header requirement for belt-and-suspenders
+       protection on sensitive account mutations.
+    """
+    origin = request.headers.get("Origin")
+    if origin not in settings.cors_origins_set:
+        log.warning("api.origin_not_allowed", origin=origin)
+        return error_response(
+            request=request,
+            status_code=status.HTTP_403_FORBIDDEN,
+            error_code="origin_not_allowed",
+            message="Mutating browser requests must come from an allowed origin.",
+            details={"origin": origin},
+        )
+
+    if request.url.path.startswith(CSRF_PROTECTED_PREFIX) and not request.headers.get(settings.csrf_header_name):
+        log.warning("api.csrf_header_missing", path=request.url.path)
+        return error_response(
+            request=request,
+            status_code=status.HTTP_403_FORBIDDEN,
+            error_code="csrf_header_missing",
+            message="Admin mutations require the application CSRF header.",
+            details={"header": settings.csrf_header_name},
+        )
+
+    return None
 
 
 def _accept_request_id(raw: str | None) -> str:
@@ -63,19 +107,9 @@ async def request_context_middleware(request: Request, call_next: CallNext) -> R
     response: Response | None = None
     try:
         if request.url.path.startswith("/api/") and request.method in MUTATING_METHODS:
-            origin = request.headers.get("Origin")
-            # Browser-origin protection is intentional for cookie-authenticated
-            # REST writes. Non-browser write clients should use dedicated token
-            # surfaces such as MCP rather than bypassing this policy.
-            if origin not in settings.cors_origins_set:
-                log.warning("api.origin_not_allowed", origin=origin)
-                response = error_response(
-                    request=request,
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    error_code="origin_not_allowed",
-                    message="Mutating browser requests must come from an allowed origin.",
-                    details={"origin": origin},
-                )
+            rejection = _reject_unsafe_request(request)
+            if rejection is not None:
+                response = rejection
                 status_code = response.status_code
                 response.headers["X-Request-ID"] = request_id
                 return response

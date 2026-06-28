@@ -40,6 +40,11 @@ class Settings(BaseSettings):
     session_touch_throttle_seconds: int = 60
     session_cookie_name: str = "phn_session"
     session_cookie_samesite: Literal["lax", "strict", "none"] = "lax"
+    # App-only custom header required on admin user-management mutations, on top
+    # of the global Origin allow-list (defense-in-depth CSRF). The frontend API
+    # client sends it on every request; the backend enforces it for the
+    # `/api/v1/admin/` surface. See features/shared/middleware.py.
+    csrf_header_name: str = "X-PHN-CSRF"
     password_argon2_time_cost: int = 3
     password_argon2_memory_cost: int = 65536
     password_argon2_parallelism: int = 4

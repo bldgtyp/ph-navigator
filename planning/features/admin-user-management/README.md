@@ -49,7 +49,7 @@ accounts, and audit exports are split into deferred `features_v2.0/` packets.
 | Phase | Goal | Status |
 | --- | --- | --- |
 | 00 | Lock MVP decisions, threat model, rollout gate, and deferred-feature links | Complete |
-| 01 | Cookie/Origin/CSRF posture for credentialed admin mutations | Planned |
+| 01 | Cookie/Origin/CSRF posture for credentialed admin mutations | Complete |
 | 02 | Account lifecycle schema, token storage, and bootstrap command | Planned |
 | 03 | Backend MVP account-token and user-admin services | Planned |
 | 04 | Admin/API authorization contracts for MVP routes | Planned |

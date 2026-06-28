@@ -23,6 +23,9 @@ export class ApiRequestError extends Error {
   }
 }
 
+// Must match `Settings.csrf_header_name` in backend/config.py.
+export const CSRF_HEADER_NAME = "X-PHN-CSRF";
+
 export function getApiBaseUrl(): string {
   return import.meta.env.VITE_API_BASE_URL ?? "";
 }
@@ -67,6 +70,11 @@ async function fetchApiResponse(
 ): Promise<Response> {
   const headers = new Headers(options.headers);
   headers.set("X-Request-ID", requestId());
+  // App-only custom header for the backend's defense-in-depth CSRF guard. A
+  // custom header cannot be set cross-origin without a CORS preflight, so its
+  // presence proves the request came from first-party code. Sent on every
+  // request; the backend enforces it on the `/api/v1/admin/` surface.
+  headers.set(CSRF_HEADER_NAME, "1");
   // Let the browser set the multipart boundary for FormData; only default JSON.
   if (options.body && !headers.has("Content-Type") && !(options.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
