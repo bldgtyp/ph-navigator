@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
 TIME: 19:59 EDT
-STATUS: Planned
+STATUS: Implementation complete; manual staging rehearsal pending (Ed)
 AUTHOR: Codex (for Ed May)
 SCOPE: Production rehearsal, MVP account lifecycle runbook, and rollout unblock.
 RELATED:
@@ -57,3 +57,37 @@ and hand `v2-production-rollout` a clean unblock checklist.
 - Ed can bootstrap and manage production users without manual password seeding.
 - All sensitive MVP actions are audited.
 - `v2-production-rollout` can proceed to production cutover.
+
+## Outcome (2026-06-27)
+
+**Implementation + automated rehearsal: complete.**
+
+- Account-lifecycle runbook added to `context/ENVIRONMENT.md` ("Admin
+  user-management runbook (production)"): first-admin bootstrap/break-glass,
+  invite John, generate reset link, deactivate/reactivate, grant/revoke admin,
+  revoking stale sessions/MCP tokens, and the cookie/CSRF/secret posture.
+- `scripts.bootstrap_admin` verified runnable (`--help`; production requires
+  `--confirm-production`).
+- The Phase 02–05 test suites are the automated end-to-end rehearsal: they
+  exercise bootstrap → invite → complete → sign-in, admin reset link + session
+  invalidation, deactivate (revokes sessions + MCP tokens) / reactivate,
+  grant/revoke with transactional last-admin protection, CSRF/Origin rejection,
+  and deny-by-default authorization. `make ci` green.
+- Production rollout docs updated: the MVP gate's **implementation** is complete;
+  see `../../v2-production-rollout/STATUS.md`.
+
+**Remaining (manual, require Ed + infra — not codeable this session):**
+
+1. Rehearse on staging / prod-onrender URLs before DNS cutover: bootstrap Ed,
+   invite a test user, complete invite, generate + complete a reset link,
+   deactivate/reactivate, grant/revoke, inspect audit rows.
+2. Verify cookie/Origin/CSRF on the real split-origin deployment shape
+   (`www.ph-nav.com` → `api.ph-nav.com`), confirming `SameSite=Lax`.
+3. Browser smoke of `/admin/users` (the Claude-in-Chrome extension is unpaired
+   this session; deferred from Phase 05).
+4. Set `ACCOUNT_TOKEN_SECRET` and `FRONTEND_BASE_URL` (sync:false) in the prod
+   blueprint.
+
+Because items 1–3 are unverified in a real deployment, this packet stays in
+active planning (not archived); the rollout gate's *code* is ready, its
+*production verification* is not.

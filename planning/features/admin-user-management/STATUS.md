@@ -17,9 +17,12 @@ RELATED:
 
 # Status - Admin User Management MVP
 
-**State:** Phase 00 complete (MVP decisions locked). Production-rollout blocker
-for the **two-user internal MVP**. Product/security contract drafted;
-implementation of Phases 01-06 in progress.
+**State:** Phases 00–05 complete and Phase 06 implementation complete (`make ci`
+green). The full two-user MVP — bootstrap, invite, admin reset link,
+deactivate/reactivate, Admin grant/revoke, last-admin protection, CSRF/Origin
+guard, capability-gated UI, and audit — is built and tested end-to-end.
+**Remaining before the rollout gate clears:** the manual staging/prod-shape
+rehearsal + browser smoke (Ed; see `phases/phase-06-production-rehearsal.md`).
 
 ## Why This Exists
 
@@ -117,17 +120,24 @@ for normal production operations:
 
 ## Next Step
 
-Phase 00 is complete. Start **Phase 01** (Origin/custom-header guard middleware +
-frontend custom-header wiring) before any admin mutation routes land.
+Implementation is complete. The remaining work is the manual
+staging/prod-shape rehearsal + browser smoke owned by Ed, tracked in
+`phases/phase-06-production-rehearsal.md`. Once that passes, mark the
+`v2-production-rollout` MVP gate cleared and archive this packet.
 
 ## Verification
 
-Docs-only pass so far:
+Planning + implementation (Phases 00–06), `make ci` green throughout:
 
-- Current backend auth/access files inspected.
-- OWASP/NIST guidance reviewed and summarized in `research.md`.
-- Security/use-case review added in
-  `reviews/2026-06-27-security-use-case-review.md`.
-- Deferred scopes split into `planning/features_v2.0/`.
-- Phase plans updated under `phases/`.
-- No code or runtime verification performed for this feature.
+- OWASP/NIST guidance reviewed in `research.md`; security/use-case review in
+  `reviews/2026-06-27-security-use-case-review.md`; deferred scopes split into
+  `planning/features_v2.0/`.
+- Phase 01 — Origin + `X-PHN-CSRF` guard (`backend/tests/test_csrf_guard.py`,
+  `frontend/src/shared/api/client.test.ts`).
+- Phase 02 — schema/bootstrap (`backend/tests/test_admin_account_schema.py`).
+- Phase 03 — services + completion (`backend/tests/test_admin_service.py`).
+- Phase 04 — routes + authorization (`backend/tests/test_admin_routes.py`).
+- Phase 05 — admin UI + completion pages (`frontend/src/features/admin/__tests__`,
+  `frontend/src/features/auth/routes/__tests__/AccountCompletePage.test.tsx`).
+- Phase 06 — runbook in `context/ENVIRONMENT.md`; `scripts.bootstrap_admin`
+  smoke-checked. **Manual staging rehearsal + browser smoke still pending.**

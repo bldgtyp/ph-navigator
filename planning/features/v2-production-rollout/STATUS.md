@@ -19,6 +19,14 @@ hosting, domain/DNS setup, naming policy, and cost-sizing facts are mapped and
 verified. Production rollout execution is blocked behind
 `planning/features/admin-user-management/`.
 
+**Gate update (2026-06-27):** the admin-user-management MVP is **implemented and
+tested end-to-end** (Phases 00–06, `make ci` green) — invite, admin reset link,
+deactivate/reactivate, Admin grant/revoke, last-admin protection, Origin +
+`X-PHN-CSRF` guard, capability-gated UI, audited bootstrap. The gate is not yet
+cleared: it still needs the manual staging/prod-shape rehearsal + browser smoke
+(see `../admin-user-management/phases/phase-06-production-rehearsal.md`). New
+prod env vars to set (sync:false): `ACCOUNT_TOKEN_SECRET`, `FRONTEND_BASE_URL`.
+
 ## Production-readiness gate
 
 Do not proceed to paid V1 production services, production account creation, DNS

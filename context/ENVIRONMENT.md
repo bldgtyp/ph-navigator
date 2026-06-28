@@ -473,6 +473,51 @@ service would use `ph-navigator-v2-prod`). Trigger when a new
   `make test-backend`. Re-seed only after `make db-reset` or if you
   manually delete the dev user.
 
+## Admin user-management runbook (production)
+
+The `make seed-*` recipes above are local/staging-only and refuse production.
+Production user lifecycle runs through the **Admin User Management** feature
+(`planning/features/admin-user-management/`). All sensitive actions write
+`user_action_log` rows; raw invite/reset links are shown **once** and never
+stored.
+
+**First-admin bootstrap / break-glass (the only production operator command):**
+
+```bash
+# from backend/ — production requires the explicit confirmation flag
+uv run python -m scripts.bootstrap_admin \
+    --email ed@example.com --display-name "Ed May" --confirm-production
+```
+
+It creates (or repairs) the admin in the *invited* state, ensures the
+`admin.users.manage` grant, and prints a one-time **invite** link (or a
+**reset** link if the account already has a password). It never sets or prints a
+reusable password. Hand the link to the admin out-of-band; they open it and set
+their own password, then sign in normally.
+
+**Everything else happens in the app** at `/admin/users` (visible only to users
+with `admin.users.manage`):
+
+- **Invite John** — *Invite user* → email + display name + role (User/Admin).
+  Copy the one-time invite link from the dialog and deliver it; John opens
+  `/invite#token=…`, sets a password, and signs in.
+- **Generate a reset link** — row action *Generate reset link*; copy the
+  one-time `/reset#token=…` link and deliver it.
+- **Deactivate / reactivate** — deactivating revokes the user's sessions,
+  account tokens, and attributable MCP tokens immediately; reactivating issues a
+  fresh invite/reset link. The backend refuses to deactivate or demote the last
+  active admin (`last_admin`, HTTP 409).
+- **Grant / revoke Admin** — row action toggles the `admin.users.manage` grant.
+- **Revoke stale sessions / MCP tokens** — deactivate then reactivate, or issue
+  a reset link and have the user complete it (completion revokes prior sessions
+  and MCP tokens).
+
+**Cookie / CSRF posture:** production defaults to `SameSite=Lax` + `Secure`, and
+every unsafe `/api/v1/admin/` request additionally requires a trusted `Origin`
+and the app-only `X-PHN-CSRF` header (the frontend client sends it). Set
+`ACCOUNT_TOKEN_SECRET` (sync:false) and `FRONTEND_BASE_URL` in production so
+token hashes are keyed and links use the canonical origin.
+
 ## Make recipes
 
 - `make setup` — first-time install
