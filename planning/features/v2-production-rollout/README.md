@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
 TIME: 16:34 EDT
-STATUS: Blocked
+STATUS: Active
 AUTHOR: Claude (for Ed May)
 SCOPE: Deploy the new PH-Navigator V1 to production on Render, promote it to www.ph-nav.com / apex, and relocate the legacy V0 app to v0.ph-nav.com — running both in parallel.
 RELATED:
@@ -17,11 +17,11 @@ Goal: get a **real** production deployment of the new PH-Navigator V1 live at
 the root domain (`www.ph-nav.com` + apex `ph-nav.com`), move the legacy V0 app
 to `v0.ph-nav.com`, and run both side-by-side on Render for as long as Ed wants.
 
-**Current gate:** production rollout is blocked behind
-`planning/features/admin-user-management/`. Phase 0 staging sanity checks and
-blueprint drafting can continue, but the paid production environment, public DNS
-cutover, and repo canonicalization wait until the admin user-management gate
-clears.
+**Current gate:** Phase 0 staging/admin rehearsal is complete and Phase 1 prep is
+active. The production Blueprint validates and the production R2 bucket is
+configured, and production R2 credentials are stored in Apple Passwords. Paid
+production services now wait for Ed's explicit Blueprint-apply confirmation.
+Public DNS cutover and repo canonicalization remain later gates.
 
 ## Naming convention
 

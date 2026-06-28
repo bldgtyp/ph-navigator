@@ -50,7 +50,7 @@ Provider:
 - choose and document provider: Resend, Postmark, SMTP, or another production
   path;
 - configure SPF/DKIM/DMARC as required;
-- store production secrets in Render/1Password, never git.
+- store production secrets in Render/Apple Passwords, never git.
 
 Mailer abstraction:
 

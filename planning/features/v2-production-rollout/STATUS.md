@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
 TIME: 16:34 EDT
-STATUS: Blocked
+STATUS: Active
 AUTHOR: Claude (for Ed May)
 SCOPE: Live status + open decisions for the new PH-Navigator V1 production rollout.
 RELATED:
@@ -14,10 +14,12 @@ RELATED:
 
 # Status — PH-Navigator V1 Production Rollout
 
-**State:** Step 1 complete, then **gated** (2026-06-27). Render account, V0
-hosting, domain/DNS setup, naming policy, and cost-sizing facts are mapped and
-verified. Production rollout execution is blocked behind
-`planning/features/admin-user-management/`.
+**State:** Phase 0 staging/admin rehearsal is complete and Phase 1 prep is
+active (2026-06-27). Render account, V0 hosting, domain/DNS setup, naming
+policy, and cost-sizing facts are mapped and verified. The production Blueprint
+validates, production R2 bucket/CORS/lifecycle work is complete, and production
+R2 credentials are stored in Apple Passwords. The next manual gate is Ed's explicit
+confirmation to apply the paid production Blueprint.
 
 **Gate update (2026-06-27):** the admin-user-management MVP is **built and tested
 end-to-end** (Phases 00–06, `make ci` green); the gate is not yet cleared — it
@@ -61,8 +63,9 @@ MFA/passkeys, external users, richer IAM, and audit export — tracked in
 `planning/features_v2.0/`.
 
 Allowed before this gate clears: local development, planning, `render.prod.yaml`
-drafting, and optional Phase 0 staging sanity checks that do not create the real
-paid production environment or move public domains.
+drafting, production R2 bucket/CORS/lifecycle prep, and optional Phase 0 staging
+sanity checks that do not create the real paid production environment or move
+public domains.
 
 ## Decisions — settled (2026-06-27)
 
@@ -123,11 +126,15 @@ The work splits into two surfaces:
 Decisions are settled (above), the admin-user-management capability is built,
 and the staging admin lifecycle rehearsal plus non-admin product smoke are
 complete. `render.prod.yaml` is drafted and validates with the Render CLI.
-Next: create/configure the production R2 bucket and prepare the Dashboard
-Blueprint apply; do not apply paid production services until Ed explicitly
-confirms Phase 1 execution. Phase 1+ production execution still needs production
-env values, production/custom-domain cookie/CSRF, and production `/admin/users`
-smoke.
+Next: prepare the Dashboard Blueprint apply; do not apply paid production
+services until Ed explicitly confirms Phase 1 execution. The V1 production
+Render services do not exist yet, so Apple Passwords-backed `sync:false` values must
+be entered manually during Blueprint apply: `R2_ACCOUNT_ID`, `R2_ENDPOINT_URL`,
+`R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `FERNET_SECRET_KEY`,
+and `ACCOUNT_TOKEN_SECRET`. `MAPTILER_API_KEY` is intentionally omitted because
+PHN has no existing MapTiler account/key and falls back to Census geocoding.
+Phase 1+ production execution still needs production env values,
+production/custom-domain cookie/CSRF, and production `/admin/users` smoke.
 
 No open Step 1 decisions remain.
 
@@ -216,6 +223,42 @@ No open Step 1 decisions remain.
   account-identifying R2 values are `sync:false`; production bucket target is
   `ph-navigator-prod`. `render blueprints validate ./render.prod.yaml -o json`
   returned `valid:true` with three create actions.
+- 2026-06-27 23:18 EDT — Created and configured Cloudflare R2 bucket
+  `ph-navigator-prod` in account `f9d264cceb6b9b13ad80ff784318975f`
+  (Phtools@bldgtyp.com). Bucket creation returned ENAM + Standard storage;
+  managed `r2.dev` public access is disabled. CORS allows
+  `https://www.ph-nav.com`, `https://ph-nav.com`, and temporary
+  `https://ph-navigator-web.onrender.com` for `PUT`, `GET`, and `HEAD`, with
+  `ETag` exposed and max age `3600`. Fixed the orphan-object key shape to
+  `projects/_orphaned/{project_id}/{asset_id}/{filename}`, then set lifecycle
+  on both `ph-navigator-prod` and `ph-navigator-v2-dev`: abort multipart
+  uploads after 7 days and delete only `projects/_orphaned/` objects after
+  90 days. The previous dev lifecycle rule's broad `projects/` delete filter
+  is no longer present. Remaining R2 task at this point: mint/store prod S3
+  credentials.
+- 2026-06-27 23:25 EDT — Credential handoff preflight complete. `op` is not
+  installed/available in the Codex shell, `OP_SERVICE_ACCOUNT_TOKEN` and
+  `RENDER_API_KEY` are unset, and `render services -o json` shows only V0
+  production plus V1 staging resources; V1 production services have not been
+  created yet. Keep the R2 credential subtask open until Ed creates the
+  Cloudflare R2 token and stores the one-time Secret Access Key in Apple Passwords.
+- 2026-06-27 23:35 EDT — Ed confirmed production R2 credentials are created
+  and stored in Apple Passwords. Marked the R2 bucket/CORS/lifecycle/credential-prep
+  item complete. The values still need to be entered into Render when the
+  production Blueprint is applied.
+- 2026-06-27 23:37 EDT — Blueprint secret preflight: Render will also prompt for
+  `FERNET_SECRET_KEY` and `ACCOUNT_TOKEN_SECRET` because they are `sync:false`
+  in `render.prod.yaml`. `FERNET_SECRET_KEY` must be a
+  Fernet key generated with
+  `uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`.
+  `ACCOUNT_TOKEN_SECRET` should be a high-entropy random secret; it keys
+  invite/reset token hashes.
+- 2026-06-27 23:42 EDT — Ed generated the production `FERNET_SECRET_KEY` and
+  `ACCOUNT_TOKEN_SECRET`. Local env check found no `MAPTILER_API_KEY` in
+  `backend/.env`, `backend/.env.example`, `frontend/.env.local`, or
+  `frontend/.env.example`; Ed confirmed there is no existing MapTiler key in
+  Render either. Removed `MAPTILER_API_KEY` from `render.prod.yaml` so Blueprint
+  apply does not prompt for it. Address geocoding will use the Census fallback.
 - 2026-06-27 — DNS: `www`→V0 static (200), apex→Render anycast→301 www;
   `api`/`v0` absent. Dashboard: 1 project, V0=Production (paid PG16, Ohio),
   new app=Staging (3 services suspended by Ed), Hobby workspace. Render free-Postgres

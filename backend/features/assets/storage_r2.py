@@ -30,7 +30,7 @@ def asset_thumbnail_object_key(project_id: UUID, asset_id: str) -> str:
 
 def orphaned_asset_object_key(project_id: UUID, asset_id: str, object_key: str) -> str:
     filename = object_key.rsplit("/", maxsplit=1)[-1] or "file.bin"
-    return f"projects/{project_id}/assets/_orphaned/{asset_id}/{filename}"
+    return f"projects/_orphaned/{project_id}/{asset_id}/{filename}"
 
 
 @dataclass(frozen=True)

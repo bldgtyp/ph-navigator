@@ -101,7 +101,7 @@ Backend hard caps (apply regardless of per-field config):
 ## A3. Storage backend
 
 **Cloudflare R2**, S3-compatible. Region: **ENAM**. Single bucket per
-environment (`ph-navigator-v2-dev`, `ph-navigator-v2-prod`).
+environment (`ph-navigator-v2-dev`, `ph-navigator-prod`).
 
 R2 wiring already declared in `backend/.env.example` (`R2_ACCOUNT_ID`,
 `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`,
@@ -111,13 +111,14 @@ Bucket configuration:
 - public access OFF (signed URLs only);
 - CORS: `AllowedOrigins: [<frontend origin>]`,
   `AllowedMethods: [PUT, GET, HEAD]`, `ExposeHeaders: [ETag]`;
-- lifecycle rule: `projects/{pid}/assets/_orphaned/` auto-deletes
+- lifecycle rule: `projects/_orphaned/` auto-deletes
   after 90 days (the GC service moves orphans into that prefix).
 
 Object-key layout:
 ```
 projects/{project_id}/assets/{asset_id}/file.{ext}     # original
 projects/{project_id}/assets/{asset_id}/thumb.png       # generated
+projects/_orphaned/{project_id}/{asset_id}/{filename}   # GC-quarantined
 ```
 
 Object keys are server-controlled and never derived from

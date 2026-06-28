@@ -153,9 +153,9 @@ Canonical PHN bucket plan:
 - Object keys are backend-controlled:
   - `projects/{project_id}/assets/{asset_id}/file.{ext}`
   - `projects/{project_id}/assets/{asset_id}/thumb.png`
-  - `projects/{project_id}/assets/_orphaned/{asset_id}/{filename}`
+  - `projects/_orphaned/{project_id}/{asset_id}/{filename}`
 - Lifecycle rule: auto-delete objects under
-  `projects/*/assets/_orphaned/` after 90 days.
+  `projects/_orphaned/` after 90 days.
 
 Required R2 environment variables for Render or an opt-in real-R2
 smoke test:
@@ -176,10 +176,10 @@ may show four values: `Token value`, `Access Key ID`,
 - `Account ID` -> `R2_ACCOUNT_ID`
 - `Access Key ID` -> `R2_ACCESS_KEY_ID`
 - `Secret Access Key` -> `R2_SECRET_ACCESS_KEY`
-- `Token value` -> store in 1Password for Cloudflare API/token
+- `Token value` -> store in Apple Passwords for Cloudflare API/token
   management; PHN does not use it for boto3 signed upload/download URLs.
 
-Capture these values once, then store them only in 1Password/Render.
+Capture these values once, then store them only in Apple Passwords/Render.
 
 Bucket CORS for direct browser signed uploads/downloads:
 
@@ -207,11 +207,26 @@ Cloudflare dashboard setup confirmed on 2026-05-26:
   `https://ph-navigator-v2-staging.onrender.com` for `PUT`, `GET`, and
   `HEAD`;
 - the default multipart abort rule is enabled after 7 days;
-- a staging/dev cleanup lifecycle rule deletes objects under `projects/`
-  after 90 days.
+- a staging/dev cleanup lifecycle rule deletes objects under
+  `projects/_orphaned/` after 90 days.
+
+Production R2 setup confirmed on 2026-06-27:
+
+- bucket `ph-navigator-prod` exists in ENAM with Standard storage;
+- public `r2.dev` access is disabled;
+- CORS allows `https://www.ph-nav.com`, `https://ph-nav.com`, and temporary
+  `https://ph-navigator-web.onrender.com` for `PUT`, `GET`, and `HEAD`;
+- lifecycle aborts multipart uploads after 7 days and deletes only
+  `projects/_orphaned/` objects after 90 days.
+
+Production still needs an R2 S3 API token. Create it from Cloudflare R2 →
+Manage R2 API Tokens, preferably as an account token with **Object Read &
+Write** scoped to `ph-navigator-prod`. Store the one-time Secret Access Key and
+Access Key ID in Apple Passwords and Render; do not paste either into this repo or
+chat.
 
 Do not store `R2_SECRET_ACCESS_KEY` in this repo. Store the R2 token in
-1Password under the PH-Navigator R2 item and copy it only into Render or
+Apple Passwords under the PH-Navigator R2 item and copy it only into Render or
 an ephemeral local shell for the opt-in smoke.
 
 ## Env files
@@ -284,7 +299,7 @@ instead of re-entering variables by hand:
    names — link them to the Blueprint rather than creating duplicates.
 3. **Enter secrets once.** Render prompts for each `sync: false` var on
    first apply — `R2_ACCOUNT_ID`, `R2_ENDPOINT_URL`, `R2_ACCESS_KEY_ID`,
-   `R2_SECRET_ACCESS_KEY` (1Password → PH-Navigator R2),
+   `R2_SECRET_ACCESS_KEY` (Apple Passwords → PH-Navigator R2),
    `FERNET_SECRET_KEY` (generate with
    `uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`).
    These persist across future re-applies.
@@ -417,7 +432,8 @@ names and the production domains:
     - `R2_ENDPOINT_URL=https://<account-id>.r2.cloudflarestorage.com`
     - `FERNET_SECRET_KEY=<generated Fernet key>`
     - `ACCOUNT_TOKEN_SECRET=<Render secret>`
-    - `MAPTILER_API_KEY=<Render secret, optional but configured for prod>`
+    - `MAPTILER_API_KEY` is intentionally unset unless PHN later adopts
+      MapTiler; address lookup falls back to the Census geocoder without it.
 - Postgres service: `ph-navigator-db`
   - Database: `ph_navigator`
   - Runtime: PostgreSQL 16
@@ -477,7 +493,7 @@ so that is the bucket to publish to for staging (the production service uses
 `(provider, version)` bundle is published:
 
 1. **Publish the bundle(s) to R2.** From a local shell with the real Cloudflare
-   R2 credentials (1Password → PH-Navigator R2, or copy them from the target
+   R2 credentials (Apple Passwords → PH-Navigator R2, or copy them from the target
    service's Environment tab so the bucket matches), run the process step with
    `--upload` for each provider:
 

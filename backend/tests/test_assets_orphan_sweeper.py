@@ -129,6 +129,7 @@ def test_sweep_dry_run_protects_saved_and_draft_references(clean_document_tables
         assert moved_ids == {asset_orphan}
         orphan_entry = next(entry for entry in report["moved"] if entry["asset_id"] == asset_orphan)
         assert orphan_entry["reason"] == "unreferenced_upload"
+        assert orphan_entry["to"] == f"projects/_orphaned/{project_id}/{asset_orphan}/file.pdf"
         # The original object is untouched in dry-run mode.
         assert fake_r2.objects, "dry-run must not move objects"
     finally:

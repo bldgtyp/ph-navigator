@@ -7,7 +7,7 @@
 #
 # PUBLIC REPO RULE: this file is committed and the repo is public. It contains
 # ONLY non-secret config. Every secret or account-identifying value is
-# `sync: false` and must be entered in Render/1Password, never committed.
+# `sync: false` and must be entered in Render/Apple Passwords, never committed.
 #
 # This file is a draft for Phase 1. Do not apply it until the production R2
 # bucket exists and the Admin User Management production gate is ready to run.
@@ -96,8 +96,6 @@ services:
       - key: FERNET_SECRET_KEY
         sync: false
       - key: ACCOUNT_TOKEN_SECRET
-        sync: false
-      - key: MAPTILER_API_KEY
         sync: false
 
   # ----------------------------------------------------------------------------

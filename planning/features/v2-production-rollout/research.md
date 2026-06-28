@@ -21,7 +21,7 @@ earlier inference was wrong, the correction is called out.
 
 > Public-repo note: V0's `backend/alembic.ini` contains a hard-coded **local
 > dev** Postgres credential (localhost:5432). It is intentionally **not**
-> reproduced here. Production secrets live only in Render + 1Password.
+> reproduced here. Production secrets live only in Render + Apple Passwords.
 
 ---
 
