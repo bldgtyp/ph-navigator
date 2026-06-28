@@ -134,8 +134,9 @@ Decisions are settled (above), the admin-user-management capability is built,
 and the staging admin lifecycle rehearsal plus non-admin product smoke are
 complete. Production DB/API/static services are live on Render URLs, and the
 Phase 1 URL-env sync is complete. Backend bootstrap is complete; next manual
-step is signing in as Ed on `https://ph-navigator-web.onrender.com`, then
-verifying `/admin/users` and running the production admin lifecycle rehearsal.
+step is syncing the Phase 1 cookie correction, signing in again as Ed on
+`https://ph-navigator-web.onrender.com`, then verifying `/admin/users` and
+running the production admin lifecycle rehearsal.
 Production custom-domain cookie/CSRF smoke remains pending until the
 `www.ph-nav.com` → `api.ph-nav.com` split-origin cutover is staged.
 Do not delete the old V1 `*-staging` trio yet; it is Phase 4 cleanup after
@@ -325,6 +326,15 @@ No open Step 1 decisions remain.
   `ed@example.com` exists, is active, has `password_set=true`, and holds
   `admin.users.manage`. Browser reload currently lands on the sign-in form, so
   Ed sign-in and `/admin/users` production smoke remain next.
+- 2026-06-28 00:34 EDT — Production browser sign-in reached the app shell as
+  `Ed May`, but authenticated reads failed immediately afterward:
+  `POST /api/v1/auth/login` returned 200, then `/api/v1/auth/session`,
+  `/api/v1/projects`, `/api/v1/projects/deleted`, and `/api/v1/admin/users`
+  returned `401 not_authenticated`. Cause: Phase 1 runs the frontend and API
+  on two sibling `onrender.com` hosts, which are cross-site to browsers, while
+  `render.prod.yaml` still set `SESSION_COOKIE_SAMESITE=lax`. Patch the
+  production Blueprint to temporary `SESSION_COOKIE_SAMESITE=none`, sync, have
+  Ed sign in again, then rerun `/admin/users` and the lifecycle rehearsal.
 - 2026-06-27 — DNS: `www`→V0 static (200), apex→Render anycast→301 www;
   `api`/`v0` absent. Dashboard: 1 project, V0=Production (paid PG16, Ohio),
   new app=Staging (3 services suspended by Ed), Hobby workspace. Render free-Postgres
