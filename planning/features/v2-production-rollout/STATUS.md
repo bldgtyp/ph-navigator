@@ -50,19 +50,20 @@ through the audited production rehearsal. The gate's two-user MVP capability is
 **Remaining to clear the gate** is a production-verification checklist, not new
 build — it runs as a discrete step inside Phase 0/1 (see `PLAN.md` → "Gate —
 Admin user management" and the admin-user-management Phase 06 doc). The staging
-rehearsal is complete; production/custom-domain verification is still pending:
+and prod-onrender rehearsals are complete; custom-domain verification is still
+pending:
 
 - [x] Set staging/prod env `ACCOUNT_TOKEN_SECRET` + `FRONTEND_BASE_URL`
       (staging service set and redeployed; production Blueprint applied with
       both values, then synced on `41c522bc` so production `FRONTEND_BASE_URL`
       points at the Phase 1 prod Render URL).
-- [ ] Rehearse the full lifecycle on staging / prod-onrender URLs (bootstrap
+- [x] Rehearse the full lifecycle on staging / prod-onrender URLs (bootstrap
       + Ed sign-in + test-user invite → reset → deactivate/reactivate →
       grant/revoke → audit complete on staging; production backend bootstrap
-      and Ed browser sign-in complete, lifecycle pending).
+      + Ed browser sign-in + disposable test-user lifecycle complete).
 - [ ] Confirm cookie/Origin/CSRF on the real `www → api` split origin.
-- [ ] Browser smoke `/admin/users` (staging admin/normal-user smoke complete;
-      production admin smoke complete; production normal-user block pending).
+- [x] Browser smoke `/admin/users` (staging admin/normal-user smoke complete;
+      production admin/normal-user smoke complete).
 
 Not part of this rollout gate at all: public self-service reset, transactional
 email, durable reset/invite-resend rate limiting, fresh admin re-authentication,
@@ -133,11 +134,11 @@ The work splits into two surfaces:
 Decisions are settled (above), the admin-user-management capability is built,
 and the staging admin lifecycle rehearsal plus non-admin product smoke are
 complete. Production DB/API/static services are live on Render URLs, and the
-Phase 1 URL-env + cookie correction sync is complete. Backend bootstrap is
-complete; Ed sign-in and production `/admin/users` admin smoke are complete.
-Next manual step is confirming the disposable production test-user lifecycle
-smoke, then inviting/resetting/deactivating/reactivating/granting/revoking that
-test user and inspecting audit rows.
+Phase 1 URL-env + cookie correction sync is complete. Backend bootstrap,
+Ed sign-in, production `/admin/users` admin/normal-user smoke, and the
+disposable production test-user lifecycle are complete. Next manual step is the
+Phase 2 custom-domain cookie/CSRF smoke once `www.ph-nav.com` ->
+`api.ph-nav.com` is staged.
 Production custom-domain cookie/CSRF smoke remains pending until the
 `www.ph-nav.com` → `api.ph-nav.com` split-origin cutover is staged.
 Do not delete the old V1 `*-staging` trio yet; it is Phase 4 cleanup after
@@ -351,6 +352,24 @@ No open Step 1 decisions remain.
   button, and row `Ed May / ed@example.com / Active / Admin`. Render logs for
   `/api/v1/admin/users` over the verification window returned no 401 rows.
   Production normal-user block and test-user lifecycle smoke remain pending.
+- 2026-06-28 00:59 EDT — Completed the production onrender admin-user
+  lifecycle smoke with disposable account `codex-prod-smoke@example.com`.
+  Admin UI actions created the invite, generated an admin reset link,
+  deactivated/reactivated the user, granted and revoked Admin, and performed a
+  final cleanup deactivation so the account is left `Inactive / User`. Invite
+  and reset completions were redeemed through the public completion endpoints
+  with trusted `Origin: https://ph-navigator-web.onrender.com` and
+  `X-PHN-CSRF: 1`; a no-Origin completion attempt was rejected with
+  `origin_not_allowed`, confirming the production guard path. An isolated
+  browser context signed in as the disposable user and verified `/admin/users`
+  shows `Not authorized` / `You do not have permission to manage users.`
+  UI audit contained `admin_user_invited`, `account_invite_completed`,
+  `admin_reset_link_generated`, `password_reset_completed`,
+  `admin_user_deactivated`, `admin_user_reactivated`,
+  `admin_capability_granted`, and `admin_capability_revoked`. Read-only Render
+  job `job-d90aju6rnols73egvh30` confirmed final DB state:
+  `exists=true`, `is_active=false`, `password_set=true`, `capabilities=[]`,
+  with the same audit action set.
 - 2026-06-27 — DNS: `www`→V0 static (200), apex→Render anycast→301 www;
   `api`/`v0` absent. Dashboard: 1 project, V0=Production (paid PG16, Ohio),
   new app=Staging (3 services suspended by Ed), Hobby workspace. Render free-Postgres
