@@ -133,8 +133,8 @@ The work splits into two surfaces:
 Decisions are settled (above), the admin-user-management capability is built,
 and the staging admin lifecycle rehearsal plus non-admin product smoke are
 complete. Production DB/API/static services are live on Render URLs, and the
-Phase 1 URL-env sync is complete. Backend bootstrap is complete; next manual
-step is syncing the Phase 1 cookie correction, signing in again as Ed on
+Phase 1 URL-env + cookie correction sync is complete. Backend bootstrap is
+complete; next manual step is signing in again as Ed on
 `https://ph-navigator-web.onrender.com`, then verifying `/admin/users` and
 running the production admin lifecycle rehearsal.
 Production custom-domain cookie/CSRF smoke remains pending until the
@@ -335,6 +335,15 @@ No open Step 1 decisions remain.
   `render.prod.yaml` still set `SESSION_COOKIE_SAMESITE=lax`. Patch the
   production Blueprint to temporary `SESSION_COOKIE_SAMESITE=none`, sync, have
   Ed sign in again, then rerun `/admin/users` and the lifecycle rehearsal.
+- 2026-06-28 00:41 EDT — Synced the Phase 1 cookie correction after commit
+  `08e134ff`. Render reports API deploy `dep-d90aaj77f7vs73cgltkg` is `live`
+  on `08e134ff` (`Fix prod onrender session cookie`); the static deploy remains
+  live on `41c522bc` because no static-site config changed. `GET /api/v1/health`
+  returned 200; `GET /api/v1/ready` returned 200 with `db:true`. Read-only
+  one-off job `job-d90abmbtqb8s73fk5li0` confirmed
+  `{"session_cookie_samesite":"none","environment":"production"}`. Next: Ed
+  signs in again so Chrome receives a fresh `SameSite=None` session cookie,
+  then rerun `/admin/users` and the production lifecycle rehearsal.
 - 2026-06-27 — DNS: `www`→V0 static (200), apex→Render anycast→301 www;
   `api`/`v0` absent. Dashboard: 1 project, V0=Production (paid PG16, Ohio),
   new app=Staging (3 services suspended by Ed), Hobby workspace. Render free-Postgres
