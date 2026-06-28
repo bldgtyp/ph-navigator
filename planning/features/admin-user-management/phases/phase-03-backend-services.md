@@ -3,7 +3,7 @@ DATE: 2026-06-27
 TIME: 19:59 EDT
 STATUS: Planned
 AUTHOR: Codex (for Ed May)
-SCOPE: Backend services for invite, reset, deactivate/reactivate, grants, and audit.
+SCOPE: Backend MVP services for invite, reset link, deactivate/reactivate, grants, and audit.
 RELATED:
   - ../PRD.md
   - backend/features/auth/service.py
@@ -16,8 +16,8 @@ RELATED:
 
 ## Goal
 
-Implement the backend workflow rules behind account lifecycle operations before
-exposing HTTP routes.
+Implement the backend workflow rules behind MVP account lifecycle operations
+before exposing HTTP routes.
 
 ## Implementation Tasks
 
@@ -26,31 +26,29 @@ exposing HTTP routes.
    - store keyed hashes only;
    - revoke-and-replace duplicate active tokens;
    - consume tokens atomically with `FOR UPDATE`;
-   - use constant-time token-hash comparison where applicable.
+   - use constant-time token-hash comparison where applicable;
+   - return raw links only to the immediate caller, never from persisted state.
 2. User listing service:
    - list users with `active`, `invited`, `inactive`;
-   - include role preset, `is_staff`, active session count, last login, and
-     recent admin action timestamp without exposing secrets/session ids.
+   - include role preset and recent admin action timestamp if cheap without
+     exposing secrets/session ids.
 3. Invite service:
    - create or reactivate users;
-   - assign initial capabilities after validation;
-   - create invite token;
-   - enqueue/send invite email through the Phase 05 mailer abstraction.
-4. Reset service:
-   - self-service reset request with generic response;
-   - admin-triggered reset request with audit;
+   - assign initial `admin.users.manage` capability when requested;
+   - create invite token/link for manual delivery.
+4. Reset-link service:
+   - admin-triggered reset-link generation with audit;
    - reset completion hashes password with the existing Argon2id path;
    - invalidate active sessions and attributable MCP tokens.
 5. Deactivate/reactivate service:
    - deactivate sets `deleted_at`, revokes sessions, account tokens, and MCP
      tokens;
-   - reactivate clears `deleted_at` and sends a reset/invite link;
+   - reactivate clears `deleted_at` and issues a reset/invite link;
    - never silently restores sessions/tokens.
 6. Grant service:
    - grant/revoke `admin.users.manage`;
-   - grant/revoke `catalog.edit` if in first-pass scope;
-   - toggle `is_staff` only with fresh admin re-auth;
-   - enforce last-admin protection transactionally.
+   - enforce last-admin protection transactionally;
+   - keep `catalog.edit` / `is_staff` out of MVP.
 7. Audit service:
    - centralize admin action logging;
    - scrub tokens/passwords;
@@ -67,6 +65,6 @@ exposing HTTP routes.
 
 ## Exit Criteria
 
-- All lifecycle rules work at service/repository level without HTTP routes.
+- MVP lifecycle rules work at service/repository level without HTTP routes.
 - Sensitive mutations are atomic and audited.
-- No raw token or password appears in stored rows or logs.
+- No raw token or password appears in stored rows, audit rows, or logs.

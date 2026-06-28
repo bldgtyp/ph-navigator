@@ -167,19 +167,18 @@ without relying on local/staging-only scripts or reused seed credentials.
 
 Required before Phase 1:
 
-1. `planning/features/admin-user-management/` reaches its agreed
+1. `planning/features/admin-user-management/` reaches its agreed two-user MVP
    production-ready threshold.
-2. Admin user lifecycle exists for invite, reset, deactivate/reactivate, and
-   role/capability management.
+2. Admin user lifecycle exists for invite, admin-generated reset links,
+   deactivate/reactivate, and Admin grant/revoke.
 3. `admin.users.manage` is enforced server-side for admin operations.
-4. Password reset uses single-use expiring tokens; admins do not set temporary
-   passwords.
+4. Invite/reset links use single-use expiring tokens; admins do not set
+   temporary passwords.
 5. Last-admin lockout and audit logging are tested.
 6. CSRF/origin protection or verified `SameSite=Lax` production cookie posture
    exists for unsafe credentialed admin mutations.
-7. Public reset/invite resend rate limiting is implemented.
-8. Fresh admin re-authentication protects reset, deactivate/reactivate, and
-   capability/staff changes.
+7. Public reset/email, durable public rate limiting, fresh admin re-auth,
+   MFA/passkeys, and broader IAM remain deferred in `planning/features_v2.0/`.
 
 Allowed before this gate clears: Phase 0 staging sanity checks, prod blueprint
 drafting, and docs/runbook work. Not allowed: Phase 1 paid production apply,
@@ -226,8 +225,8 @@ logged-in project view renders.
 6. **Smoke** on the prod onrender URLs: health/ready, login, project CRUD,
    asset upload/download via signed URL, model viewer, MCP token issue.
 **Verify:** prod API `/api/v1/ready` green against the **paid** DB; bootstrap,
-invite, reset, deactivate/reactivate, admin-grant, audit, and full logged-in
-flows work on the onrender URLs.
+invite, admin reset-link, deactivate/reactivate, admin-grant, audit, and full
+logged-in flows work on the onrender URLs.
 
 ### Phase 2 — Domain cutover (the only user-visible moment)
 Pre-stage (no disruption — `www` still serves V0 throughout):
@@ -345,9 +344,10 @@ Starter estimate, but with fewer production-sizing unknowns.
 
 **V1 (this repo/new canonical repo):** `render.prod.yaml`; prod env values
 (CORS/VITE/MCP/cookie); R2 prod bucket + CORS; prod secrets in Render; Admin
-User Management complete for invite/reset/revoke/roles/audit; audited first
-admin bootstrap + invite John through the app; climate seed; GitHub rename to
-`bldgtyp/ph-navigator`; local/docs cleanup of old `V2` naming.
+User Management MVP complete for invite/admin-reset-link/revoke/admin-grant/
+audit; audited first admin bootstrap + invite John through the app; climate
+seed; GitHub rename to `bldgtyp/ph-navigator`; local/docs cleanup of old `V2`
+naming.
 
 **V0 (`~/Dropbox/bldgtyp-00/00_PH_Tools/ph-navigator` before rename):** add
 `https://v0.ph-nav.com` to `backend/config.py` `CORS_ORIGINS` (and `cors.json`

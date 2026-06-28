@@ -11,8 +11,8 @@ feature-first planning.
 
 | Feature | State | Current pointer |
 |---|---|---|
-| Admin User Management | Planned / production-rollout blocker; security/use-case review added; Phases 00-07 now cover CSRF/cookie posture, durable rate limiting, account-token schema, first-admin bootstrap, invite/reset/revoke/admin grants, email, UI, audit, and rollout rehearsal | `features/admin-user-management/STATUS.md` |
-| V1 Production Rollout | Blocked / Step 1 assumptions locked; paid prod services, production account creation, DNS cutover, and repo canonicalization gated behind Admin User Management | `features/v2-production-rollout/STATUS.md` |
+| Admin User Management MVP | Planned / two-user production-rollout blocker; deferred scope split to `features_v2.0/`; Phases 00-06 now cover CSRF/cookie posture, account-token schema, first-admin bootstrap, invite/admin-reset-link/deactivate/admin grants, minimal UI, audit, and rollout rehearsal | `features/admin-user-management/STATUS.md` |
+| V1 Production Rollout | Blocked / Step 1 assumptions locked; paid prod services, production account creation, DNS cutover, and repo canonicalization gated behind Admin User Management MVP | `features/v2-production-rollout/STATUS.md` |
 | Beta Schema Evolution | Complete / archived after beta gate drill passed with fixture audit, local DB audit, and `make ci` | `archive/dated/2026-06-27/beta-schema-evolution/STATUS.md` |
 | DataTable Status Field — Addendum | Complete — `status` extended to the 3 remaining Datasheet-bearing tables (Ventilators, HP Outdoor Units, HP Indoor Units); `make ci` green, live smoke done, committed `d8b59f28` (branch, not yet merged); archived | `archive/dated/2026-06-24/data-table-status-field-addendum/STATUS.md` |
 | DataTable Status Field — Backfill | Complete / resolved-unneeded before first deploy: no users or old project documents exist, focused status-field fresh-start verification passed, no migration/backfill written | `archive/dated/2026-06-27/datatable-status-backfill/STATUS.md` |
@@ -45,6 +45,13 @@ feature-first planning.
 | Table-Write-Architecture Unification | Complete / all phases (1, 2, 3a, 3b inc 1–6) landed — heat-pumps fully unified onto the generic registered-contract + spine (BE) and generic table-write client (FE); bespoke write service, FE client, and PATCH shim all removed; shared option-list delete cascade + `dependent_link_delete_blocked` rename; `make ci` green (BE 1110, FE 1906), browser smoke as Ed passed; archived | `archive/dated/2026-06-25/table-write-architecture-unification/STATUS.md` |
 | DataTable Status Field | Complete / Phases 01-05 implemented and verified with `make ci` (backend 1061, frontend 1887), live reset/reseed + browser smoke, graphify, simplify, and docs-pass evidence; durable contract folded into `context/technical-requirements/data-table.md`; archived | `archive/dated/2026-06-24/data-table-status-field/STATUS.md` |
 | Frontend Performance Eval | Complete / Phases 0-4 implemented and measured; route/project-tab payloads split, DataTable edit invalidation narrowed, Model route shell split to 7.00 kB gzip, secondary runtime candidates rejected after corrected attribution; archived | `archive/dated/2026-06-25/frontend-perf/STATUS.md` |
+
+## Deferred v2.0 Feature Folders
+
+| Feature | State | Current pointer |
+|---|---|---|
+| Public Account Recovery / Email Delivery | Deferred / post-MVP; owns public forgot-password, transactional invite/reset emails, durable public reset/invite-resend rate limiting, and account notices after the Ed/John rollout | `features_v2.0/public-account-recovery/STATUS.md` |
+| Account Security Hardening | Deferred / post-MVP; owns fresh admin re-auth, MFA/passkeys, session/device inventory, suspicious activity alerts, automated token cleanup, and audit export | `features_v2.0/account-security-hardening/STATUS.md` |
 
 ## Historical Material
 
