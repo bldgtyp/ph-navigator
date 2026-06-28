@@ -7,6 +7,7 @@ SCOPE: Phased plan to deploy the new PH-Navigator V1 to production, cut the root
 RELATED:
   - ./README.md
   - ./STATUS.md
+  - ../admin-user-management/STATUS.md
   - context/ENVIRONMENT.md
   - render.yaml
 ---
@@ -15,6 +16,10 @@ RELATED:
 
 ## 1. Goal & guardrails
 
+- **Production-readiness gate:** this rollout is blocked behind
+  `planning/features/admin-user-management/`. Do not create the real paid V1
+  production environment, move public domains, or canonicalize repos until that
+  feature reaches the agreed production-ready threshold.
 - **Promote new V1 to the root domain**: `www.ph-nav.com` + apex `ph-nav.com`.
 - **Relocate legacy V0** to `v0.ph-nav.com`; keep it fully running in parallel,
   indefinitely, until Ed decides to decommission.
@@ -116,29 +121,30 @@ paid prod DB (see Phase 1) and the staging one retired.
 | Host | Serves | Render service | Cookie/CORS |
 | --- | --- | --- | --- |
 | `www.ph-nav.com` + `ph-nav.com` | **V1 frontend** | new V1 prod static | — |
-| `api.ph-nav.com` | **V1 backend** | new V1 prod web | `SameSite=None; Secure`, CORS allow `https://www.ph-nav.com` |
+| `api.ph-nav.com` | **V1 backend** | new V1 prod web | Admin Phase 01 cookie/CSRF decision; CORS allow `https://www.ph-nav.com` |
 | `v0.ph-nav.com` | **V0 frontend** | existing `ph-navigator` static | V0 backend CORS adds this origin |
 | `ph-dash-0cye.onrender.com` | V0 backend (unchanged) | existing `ph-navigator-backend` | — |
 
 V1 backend + paid Postgres in Ohio; V1 static on Render's global CDN. R2 prod
 bucket `ph-navigator-prod` with browser CORS allowing `https://www.ph-nav.com`.
 
-## 5. Key decisions (recommendation = default; ★ = needs Ed's explicit OK)
+## 5. Locked decisions
 
-1. **★ Data**: V1 launches with **fresh data**; no V0→V1 import. V0 remains the
+1. **Data**: V1 launches with **fresh data**; no V0→V1 import. V0 remains the
    system of record for existing projects at `v0.ph-nav.com` until each project
    is (manually) recreated in V1. — *Confirmed 2026-06-27.*
-2. **★ API domain**: give the V1 backend a real subdomain **`api.ph-nav.com`**
+2. **API domain**: give the V1 backend a real subdomain **`api.ph-nav.com`**
    (cleaner than calling an `onrender.com` URL cross-origin; lets us tidy the
    `VITE_API_BASE_URL`/MCP naming wrinkle). Alternative: keep V1 backend on its
    `onrender.com` URL (one fewer DNS record, uglier).
 3. **Environment model**: run V1 as a **single production environment** now
    (drop the staging/prod split for V1; reintroduce a staging env later if
    needed). Simplest for a solo team and avoids paying for two V1 DBs.
-4. **Session cookie**: keep **`SameSite=None; Secure`** for the split-origin
-   `www` ↔ `api` setup — **no code change**. Follow-up hardening option: add a
-   `session_cookie_domain=.ph-nav.com` setting + `SameSite=Lax` (small backend
-   change) for a tighter cookie. Deferred, not on the critical path.
+4. **Session cookie / CSRF**: superseded by the Admin User Management Phase 01
+   gate. Preferred production posture is proving `SameSite=Lax` works for
+   `www.ph-nav.com` -> `api.ph-nav.com`; if `SameSite=None; Secure` remains,
+   it must be paired with explicit CSRF/origin protection before admin
+   mutations ship.
 5. **V0 lifetime**: keep V0 at `v0.ph-nav.com` **indefinitely**; no
    decommission date set. Phase 5 is a checklist to run only on Ed's word.
 6. **Blueprint strategy**: author a separate **`render.prod.yaml`** (or convert
@@ -154,6 +160,30 @@ bucket `ph-navigator-prod` with browser CORS allowing `https://www.ph-nav.com`.
    as the API contract path until a real breaking API contract needs `/api/v2`.
 
 ## 6. Phased plan
+
+### Gate — Admin user management
+**Why:** production needs an in-app way to add, reset, revoke, and audit users
+without relying on local/staging-only scripts or reused seed credentials.
+
+Required before Phase 1:
+
+1. `planning/features/admin-user-management/` reaches its agreed
+   production-ready threshold.
+2. Admin user lifecycle exists for invite, reset, deactivate/reactivate, and
+   role/capability management.
+3. `admin.users.manage` is enforced server-side for admin operations.
+4. Password reset uses single-use expiring tokens; admins do not set temporary
+   passwords.
+5. Last-admin lockout and audit logging are tested.
+6. CSRF/origin protection or verified `SameSite=Lax` production cookie posture
+   exists for unsafe credentialed admin mutations.
+7. Public reset/invite resend rate limiting is implemented.
+8. Fresh admin re-authentication protects reset, deactivate/reactivate, and
+   capability/staff changes.
+
+Allowed before this gate clears: Phase 0 staging sanity checks, prod blueprint
+drafting, and docs/runbook work. Not allowed: Phase 1 paid production apply,
+production user creation, DNS cutover, or GitHub repo canonicalization.
 
 ### Phase 0 — Sanity check on free infra (cheap, optional but recommended)
 **Why:** confirm the new app actually boots end-to-end (migrations, R2, auth, MCP)
@@ -172,21 +202,32 @@ logged-in project view renders.
    `https://www.ph-nav.com` (and temporarily the prod static's onrender URL for
    pre-cutover testing). Mint prod R2 credentials → 1Password.
 2. **Prod blueprint**: author `render.prod.yaml` from `render.yaml` with:
-   - DB `plan: free` → **paid** (Basic; size per §7), prod name + Ohio.
-   - Web `plan: free` → **paid Starter** (always-on), prod name + Ohio.
+   - DB `plan: free` → **paid Basic-256mb** + 1 GB disk, prod name + Ohio.
+   - Web `plan: free` → **paid always-on** (match V0 `Standard` 1 CPU / 2 GB
+     unless Phase 1 intentionally proves a smaller tier is enough), prod name +
+     Ohio.
    - Env values retargeted (initially to the prod onrender hosts, then to the
      custom domains in Phase 2): `CORS_ORIGINS`, `VITE_API_BASE_URL`,
      `MCP_ISSUER_URL`, `MCP_RESOURCE_SERVER_URL`, `MCP_ALLOWED_HOSTS`,
      `MCP_ALLOWED_ORIGINS`, `ENVIRONMENT=production`, `R2_BUCKET=ph-navigator-prod`,
-     `SESSION_COOKIE_SECURE=true`, `SESSION_COOKIE_SAMESITE=none`.
+     `SESSION_COOKIE_SECURE=true`, and the admin-user-management Phase 01
+     cookie/CSRF decision (`SESSION_COOKIE_SAMESITE=lax` if verified; otherwise
+     `none` paired with CSRF middleware).
    - Secrets (`R2_*`, `FERNET_SECRET_KEY`, `MAPTILER_API_KEY`) `sync: false`.
 3. **Apply** the blueprint → new prod services build; Alembic runs on start.
-4. **Seed**: production user(s) for Ed + John; seed/license the climate
-   reference bundles into R2 + DB (on-demand, per ENVIRONMENT.md).
-5. **Smoke** on the prod onrender URLs: health/ready, login, project CRUD,
+4. **Bootstrap first production admin**: use the audited Admin User Management
+   bootstrap path to create/repair Ed's initial admin and issue an invite/reset
+   link. Then invite John and any test account through `/admin/users`. Do **not**
+   use the local/staging seed convention `ed@example.com` / `password` or
+   `codex@example.com` / `password` on the prod DB, and do not manually seed
+   reusable production passwords as the normal account lifecycle.
+5. **Seed reference data**: seed/license the climate reference bundles into R2 +
+   DB (on-demand, per ENVIRONMENT.md).
+6. **Smoke** on the prod onrender URLs: health/ready, login, project CRUD,
    asset upload/download via signed URL, model viewer, MCP token issue.
-**Verify:** prod API `/api/v1/ready` green against the **paid** DB; full
-logged-in flow works on the onrender URLs.
+**Verify:** prod API `/api/v1/ready` green against the **paid** DB; bootstrap,
+invite, reset, deactivate/reactivate, admin-grant, audit, and full logged-in
+flows work on the onrender URLs.
 
 ### Phase 2 — Domain cutover (the only user-visible moment)
 Pre-stage (no disruption — `www` still serves V0 throughout):
@@ -261,27 +302,33 @@ bases still in use; suspend V0 services; after a cooling-off, delete V0
 services, the `ph_navigator` DB, and the `v0` DNS record. Keep a final DB dump
 in cold storage.
 
-## 7. Cost (estimate — confirm exact tiers in dashboard)
+## 7. Cost
 
 V1 prod adds, on top of V0's existing spend:
-- Paid Postgres: **~$6/mo** (Basic-256mb, 1 GB) up to **~$19/mo** (Basic-1gb)
-  — 2 users need very little; start small, resize live if needed.
-- Always-on web (Starter): **~$7/mo**. (Free tier would spin down after 15 min
-  idle — unacceptable for a tool you open ad hoc; pay for Starter.)
+- Paid Postgres: match V0's `Basic-256mb` + 1 GB disk (screenshot MTD charge:
+  `$5.67`, rate shown as `$0.0083/hr` DB + `$0.0004/hr` disk).
+- Always-on web: V0 currently uses `Standard`, `1 CPU`, `2 GB` (screenshot MTD
+  service charge: `$22.49`). Use this for V1 if we want parity with the known
+  working V0 production tier; start smaller only if Phase 1 smoke/performance
+  checks are acceptable.
 - Static site: **free**.
 - R2: pennies at this scale.
 
-**≈ $13–26/mo added.** *To finalize: read V0's `ph_navigator` DB tier and
-`ph-navigator-backend` plan from the dashboard so we match/right-size.*
+**Expected V1 added cost:** roughly the V1 paid Postgres + the chosen always-on
+web tier. If matching V0 exactly, expect a higher added cost than the earlier
+Starter estimate, but with fewer production-sizing unknowns.
 
 ## 8. Risks & mitigations
 
 - **Cutover cert/propagation gap** — brief `www` outage while Render issues the
   V1 cert. Mitigate: pre-stage everything; do the swap when convenient; rollback
   is one DNS/Render revert. Two users, low stakes.
-- **Cookie/CORS misconfig on split origin** — `SameSite=None; Secure` + exact
-  `CORS_ORIGINS` (scheme-exact, no trailing slash) + `allow_credentials=True`.
-  Validate login on the onrender URLs in Phase 1 before domains are involved.
+- **Cookie/CORS/CSRF misconfig on split origin** — admin-user-management Phase 01
+  chooses the production cookie/CSRF posture. Preferred: prove
+  `SameSite=Lax` works for `www.ph-nav.com` -> `api.ph-nav.com`; otherwise keep
+  `SameSite=None; Secure` only with explicit CSRF/origin protection. Validate
+  login and unsafe admin mutations on the onrender URLs before domains are
+  involved.
 - **R2 CORS** — browser signed-URL PUT/GET fails if `www.ph-nav.com` isn't in
   the bucket CORS. Set it in Phase 1; verify an upload before cutover.
 - **DreamHost apex** — no ALIAS/ANAME; keep apex on Render A-records (anycast)
@@ -297,9 +344,10 @@ V1 prod adds, on top of V0's existing spend:
 ## 9. Change checklists (quick reference)
 
 **V1 (this repo/new canonical repo):** `render.prod.yaml`; prod env values
-(CORS/VITE/MCP/cookie); R2 prod bucket + CORS; prod secrets in Render; prod user
-+ climate seed; GitHub rename to `bldgtyp/ph-navigator`; local/docs cleanup of
-old `V2` naming.
+(CORS/VITE/MCP/cookie); R2 prod bucket + CORS; prod secrets in Render; Admin
+User Management complete for invite/reset/revoke/roles/audit; audited first
+admin bootstrap + invite John through the app; climate seed; GitHub rename to
+`bldgtyp/ph-navigator`; local/docs cleanup of old `V2` naming.
 
 **V0 (`~/Dropbox/bldgtyp-00/00_PH_Tools/ph-navigator` before rename):** add
 `https://v0.ph-nav.com` to `backend/config.py` `CORS_ORIGINS` (and `cors.json`
