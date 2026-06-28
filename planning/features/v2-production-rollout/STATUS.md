@@ -14,12 +14,14 @@ RELATED:
 
 # Status — PH-Navigator V1 Production Rollout
 
-**State:** Phase 0 staging/admin rehearsal is complete and Phase 1 prep is
-active (2026-06-27). Render account, V0 hosting, domain/DNS setup, naming
-policy, and cost-sizing facts are mapped and verified. The production Blueprint
-validates, production R2 bucket/CORS/lifecycle work is complete, and production
-R2 credentials are stored in Apple Passwords. The next manual gate is Ed's explicit
-confirmation to apply the paid production Blueprint.
+**State:** Phase 0 staging/admin rehearsal is complete and Phase 1 production
+infra is live on Render URLs (2026-06-28). Render account, V0 hosting,
+domain/DNS setup, naming policy, and cost-sizing facts are mapped and verified.
+The production R2 bucket/CORS/lifecycle work is complete, production R2
+credentials are stored in Apple Passwords, and the paid production Blueprint
+created the DB/API/static services. The next manual gate is syncing the
+Blueprint correction that keeps Phase 1 env on the prod `onrender.com` hosts
+until DNS cutover.
 
 **Gate update (2026-06-27):** the admin-user-management MVP is **built and tested
 end-to-end** (Phases 00–06, `make ci` green); the gate is not yet cleared — it
@@ -28,10 +30,12 @@ gate".
 
 ## Production-readiness gate
 
-Do not proceed to paid V1 production services, production account creation, DNS
-cutover, or GitHub repo canonicalization until the Admin User Management gate
-clears. The gate's two-user MVP capability is **built** in
-`planning/features/admin-user-management/` (Phases 00–06, `make ci` green):
+The paid Phase 1 production environment now exists after Ed's explicit Blueprint
+apply confirmation. Do not proceed to production account lifecycle, DNS cutover,
+or GitHub repo canonicalization until the Admin User Management gate progresses
+through the audited production rehearsal. The gate's two-user MVP capability is
+**built** in `planning/features/admin-user-management/` (Phases 00–06,
+`make ci` green):
 
 - ✅ invite-only user creation;
 - ✅ admin-generated reset links without temporary admin-set passwords;
@@ -49,7 +53,9 @@ Admin user management" and the admin-user-management Phase 06 doc). The staging
 rehearsal is complete; production/custom-domain verification is still pending:
 
 - [ ] Set staging/prod env `ACCOUNT_TOKEN_SECRET` + `FRONTEND_BASE_URL`
-      (staging service set and redeployed; production env still pending).
+      (staging service set and redeployed; production Blueprint applied with
+      both values but needs one sync to switch production `FRONTEND_BASE_URL`
+      from the future custom domain to the Phase 1 prod Render URL).
 - [ ] Rehearse the full lifecycle on staging / prod-onrender URLs (bootstrap
       + Ed sign-in + test-user invite → reset → deactivate/reactivate →
       grant/revoke → audit complete on staging; repeat on production pending).
@@ -62,9 +68,9 @@ email, durable reset/invite-resend rate limiting, fresh admin re-authentication,
 MFA/passkeys, external users, richer IAM, and audit export — tracked in
 `planning/features_v2.0/`.
 
-Allowed before this gate clears: local development, planning, `render.prod.yaml`
-drafting, production R2 bucket/CORS/lifecycle prep, and optional Phase 0 staging
-sanity checks that do not create the real paid production environment or move
+Allowed before this gate clears: local development, planning,
+`render.prod.yaml` correction/sync, production R2 bucket/CORS/lifecycle prep,
+deploy monitoring, and optional Phase 0 staging sanity checks that do not move
 public domains.
 
 ## Decisions — settled (2026-06-27)
@@ -108,9 +114,9 @@ always-on tier during Phase 1 smoke/performance checks.
 The work splits into two surfaces:
 
 - **In-repo (Claude can do now, no dashboard):**
-  - Author `render.prod.yaml` (paid DB + always-on web, prod env values,
-    `api.ph-nav.com` / `www.ph-nav.com`, consistent MCP naming, prod secrets as
-    `sync: false`).
+  - Author/update `render.prod.yaml` (paid DB + always-on web, Phase 1 prod
+    Render URLs first, later `api.ph-nav.com` / `www.ph-nav.com`, consistent
+    MCP naming, prod secrets as `sync: false`).
   - Stage the one-line V0 CORS change (`https://v0.ph-nav.com`) in the V0 repo.
   - Add the GitHub repo rename/reorg choreography to the rollout phase plan.
   - Update `context/ENVIRONMENT.md` with a "Render production" section (Phase 4).
@@ -125,16 +131,14 @@ The work splits into two surfaces:
 
 Decisions are settled (above), the admin-user-management capability is built,
 and the staging admin lifecycle rehearsal plus non-admin product smoke are
-complete. `render.prod.yaml` is drafted and validates with the Render CLI.
-Next: prepare the Dashboard Blueprint apply; do not apply paid production
-services until Ed explicitly confirms Phase 1 execution. The V1 production
-Render services do not exist yet, so Apple Passwords-backed `sync:false` values must
-be entered manually during Blueprint apply: `R2_ACCOUNT_ID`, `R2_ENDPOINT_URL`,
-`R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `FERNET_SECRET_KEY`,
-and `ACCOUNT_TOKEN_SECRET`. `MAPTILER_API_KEY` is intentionally omitted because
-PHN has no existing MapTiler account/key and falls back to Census geocoding.
-Phase 1+ production execution still needs production env values,
-production/custom-domain cookie/CSRF, and production `/admin/users` smoke.
+complete. Production DB/API/static services are live on Render URLs. Next:
+commit/push and sync the `render.prod.yaml` correction that retargets Phase 1
+env from future custom domains to `https://ph-navigator-web.onrender.com` and
+`https://ph-navigator-api.onrender.com`; then bootstrap the first production
+admin and run the production admin lifecycle rehearsal on the prod onrender
+URLs. Production custom-domain cookie/CSRF and `/admin/users` smoke remain
+pending until the `www.ph-nav.com` → `api.ph-nav.com` split-origin cutover is
+staged.
 
 No open Step 1 decisions remain.
 
@@ -264,6 +268,33 @@ No open Step 1 decisions remain.
   creates `ph-navigator-db`, `ph-navigator-api`, and `ph-navigator-web`. Render
   Dashboard apply should use repo `bldgtyp/ph-navigator-v2`, branch `main`, and
   **Blueprint Path** `render.prod.yaml`.
+- 2026-06-27 23:58 EDT — Started the Render Dashboard Blueprint apply. Selected
+  repo `bldgtyp/ph-navigator-v2`, branch `main`, set **Blueprint Path** to
+  `render.prod.yaml`, and confirmed the review changed from staging
+  associations to creating `ph-navigator-db`, `ph-navigator-api`, and
+  `ph-navigator-web` (`$31.30/month` estimate shown). Entered the fixed
+  non-secret `R2_ACCOUNT_ID` and `R2_ENDPOINT_URL` fields. Pending manual
+  secret entry from Apple Passwords: `R2_ACCESS_KEY_ID`,
+  `R2_SECRET_ACCESS_KEY`, `FERNET_SECRET_KEY`, and `ACCOUNT_TOKEN_SECRET`.
+- 2026-06-28 00:05 EDT — Ed entered all remaining production secrets and clicked
+  **Deploy Blueprint**. Render created `ph-navigator-db`
+  (`dpg-d909olr7uimc7396sls0-a`, `basic_256mb`, Ohio, available),
+  `ph-navigator-api` (`srv-d909p1b7uimc7396t580`,
+  `https://ph-navigator-api.onrender.com`), and `ph-navigator-web`
+  (`srv-d909olr7uimc7396slr0`, `https://ph-navigator-web.onrender.com`).
+  Deploy `dep-d909p1r7uimc7396t6c0` for the API and deploy
+  `dep-d909om37uimc7396smbg` for the static site both reached `live` on commit
+  `7aa208f`. `GET /api/v1/health` returned 200; `GET /api/v1/ready` returned
+  200 with `db:true` and `pool_min=2`/`pool_max=10`; the static site returned
+  HTTP 200. Recent Render error-log query for both services returned no rows.
+- 2026-06-28 00:12 EDT — Found a Phase 1/Phase 2 URL mismatch after the initial
+  production apply: `render.prod.yaml` still pointed `FRONTEND_BASE_URL`,
+  `VITE_API_BASE_URL`, CORS, and MCP URL/host/origin env at future custom
+  domains (`www.ph-nav.com` / `api.ph-nav.com`) even though DNS cutover is a
+  later Phase 2 gate. Patched the Blueprint back to the prod Render hosts
+  (`https://ph-navigator-web.onrender.com` and
+  `https://ph-navigator-api.onrender.com`) before production admin bootstrap.
+  Requires one Blueprint sync/redeploy before using invite/reset links.
 - 2026-06-27 — DNS: `www`→V0 static (200), apex→Render anycast→301 www;
   `api`/`v0` absent. Dashboard: 1 project, V0=Production (paid PG16, Ohio),
   new app=Staging (3 services suspended by Ed), Hobby workspace. Render free-Postgres
@@ -273,10 +304,10 @@ No open Step 1 decisions remain.
 
 ## Notes / wrinkles to fix in prod blueprint
 
-- Staging `render.yaml` points `VITE_API_BASE_URL`/MCP URLs at
-  `ph-navigator-v2.onrender.com` while the API service is
-  `ph-navigator-v2-api-staging` — make these consistent in `render.prod.yaml`
-  (target `api.ph-nav.com`).
+- Production `render.prod.yaml` intentionally uses prod `onrender.com` hosts for
+  Phase 1. Phase 2 retargets `VITE_API_BASE_URL`, `FRONTEND_BASE_URL`, CORS,
+  and MCP URLs/hosts/origins to `www.ph-nav.com` / `api.ph-nav.com` during DNS
+  cutover.
 - Product/repo naming now differs from the local checkout name until the rename
   phase completes: legacy app = V0, new app = V1, current local folder still
   `ph-navigator-v2`.

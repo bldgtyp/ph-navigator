@@ -1,6 +1,10 @@
-# render.prod.yaml — PH-Navigator V1 production Blueprint draft
+# render.prod.yaml — PH-Navigator V1 production Blueprint
 #
-# Target production end-state after repo/domain canonicalization:
+# Phase 1 smoke hosts before DNS cutover:
+# - Frontend: https://ph-navigator-web.onrender.com
+# - Backend API: https://ph-navigator-api.onrender.com
+#
+# Target production end-state after DNS/repo canonicalization:
 # - Frontend: https://www.ph-nav.com + https://ph-nav.com
 # - Backend API: https://api.ph-nav.com
 # - R2 bucket: ph-navigator-prod
@@ -9,8 +13,9 @@
 # ONLY non-secret config. Every secret or account-identifying value is
 # `sync: false` and must be entered in Render/Apple Passwords, never committed.
 #
-# This file is a draft for Phase 1. Do not apply it until the production R2
-# bucket exists and the Admin User Management production gate is ready to run.
+# Phase 2 retargets the URL env vars below from the Render hosts to the custom
+# domains. Keep Phase 1 on Render hosts so invite/reset links and frontend API
+# calls work before DNS cutover.
 
 databases:
   - name: ph-navigator-db
@@ -23,7 +28,8 @@ databases:
 services:
   # ----------------------------------------------------------------------------
   # Backend — FastAPI (uv) web service
-  # Target custom domain: https://api.ph-nav.com
+  # Phase 1 URL: https://ph-navigator-api.onrender.com
+  # Phase 2 custom domain: https://api.ph-nav.com
   # ----------------------------------------------------------------------------
   - type: web
     name: ph-navigator-api
@@ -64,7 +70,7 @@ services:
       - key: PROJECT_DOCUMENT_MAX_BODY_BYTES
         value: "8388608"
       - key: CORS_ORIGINS
-        value: https://www.ph-nav.com,https://ph-nav.com
+        value: https://ph-navigator-web.onrender.com
       - key: SESSION_COOKIE_NAME
         value: phn_session
       - key: SESSION_LIFETIME_MINUTES
@@ -72,17 +78,17 @@ services:
       - key: SESSION_COOKIE_SAMESITE
         value: lax
       - key: FRONTEND_BASE_URL
-        value: https://www.ph-nav.com
+        value: https://ph-navigator-web.onrender.com
       - key: MCP_ISSUER_URL
-        value: https://api.ph-nav.com
+        value: https://ph-navigator-api.onrender.com
       - key: MCP_RESOURCE_SERVER_URL
-        value: https://api.ph-nav.com/mcp
+        value: https://ph-navigator-api.onrender.com/mcp
       - key: MCP_ENABLE_DNS_REBINDING_PROTECTION
         value: "true"
       - key: MCP_ALLOWED_HOSTS
-        value: api.ph-nav.com
+        value: ph-navigator-api.onrender.com
       - key: MCP_ALLOWED_ORIGINS
-        value: https://www.ph-nav.com,https://ph-nav.com
+        value: https://ph-navigator-web.onrender.com
       - key: R2_BUCKET
         value: ph-navigator-prod
       - key: R2_ACCOUNT_ID
@@ -100,7 +106,8 @@ services:
 
   # ----------------------------------------------------------------------------
   # Frontend — Vite/React static site
-  # Target custom domains: https://www.ph-nav.com and https://ph-nav.com
+  # Phase 1 URL: https://ph-navigator-web.onrender.com
+  # Phase 2 custom domains: https://www.ph-nav.com and https://ph-nav.com
   # ----------------------------------------------------------------------------
   - type: web
     name: ph-navigator-web
@@ -114,4 +121,4 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://api.ph-nav.com
+        value: https://ph-navigator-api.onrender.com
