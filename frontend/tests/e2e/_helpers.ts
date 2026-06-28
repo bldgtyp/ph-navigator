@@ -7,8 +7,8 @@ export const FRAME_TYPES_TABLE = "frame_types";
 export const GLAZING_TYPES_TABLE = "glazing_types";
 
 const DEFAULT_BASE_URL = "http://localhost:5173";
-const STAGING_FRONTEND_URL = "https://ph-navigator-v2-staging.onrender.com";
-const STAGING_API_URL = "https://ph-navigator-v2.onrender.com";
+const PRODUCTION_FRONTEND_URL = "https://www.ph-nav.com";
+const PRODUCTION_API_URL = "https://api.ph-nav.com";
 
 // TB-01's mutating-route Origin check rejects API requests without an
 // allowed Origin header; `page.request` doesn't add one by default.
@@ -20,7 +20,7 @@ export function apiUrl(baseURL: string | undefined, path: string): string {
   const configured = process.env.E2E_API_BASE_URL;
   if (configured) return new URL(path, configured).toString();
   const frontendBase = (baseURL ?? DEFAULT_BASE_URL).replace(/\/$/, "");
-  if (frontendBase === STAGING_FRONTEND_URL) return new URL(path, STAGING_API_URL).toString();
+  if (frontendBase === PRODUCTION_FRONTEND_URL) return new URL(path, PRODUCTION_API_URL).toString();
   return new URL(path, frontendBase).toString();
 }
 

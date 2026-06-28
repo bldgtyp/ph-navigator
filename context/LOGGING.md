@@ -9,9 +9,9 @@ RELATED:
   - context/PRD.md
 ---
 
-# PH-Navigator V2 Logging Architecture
+# PH-Navigator Logging Architecture
 
-This file is the canonical description of how PH-Navigator V2 emits,
+This file is the canonical description of how PH-Navigator emits,
 shapes, and ships logs across the backend (FastAPI on Render), the
 frontend (Vite/React static site on Render), and the Postgres database.
 It is the reference for both dev-time feature work and production
@@ -323,7 +323,7 @@ logger is left at WARNING in normal operation. Setting `log_sql=true`
 
 | Concern | Setting |
 |---|---|
-| Backend `LOG_FORMAT` | `json` in `ph-navigator-v2-api-staging` env (and any future prod). |
+| Backend `LOG_FORMAT` | `json` in production `ph-navigator-api` and any optional recreated staging service. |
 | Backend `LOG_LEVEL` | `INFO` default. Bump to `DEBUG` only for short investigation windows; revert after. |
 | `SLOW_QUERY_MS` | Backend threshold for `db.slow_query`; default `500`. |
 | `PROJECT_DOCUMENT_MAX_BODY_BYTES` | Backend project-document JSONB write limit; default `8388608`. |

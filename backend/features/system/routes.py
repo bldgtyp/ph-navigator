@@ -1,4 +1,4 @@
-"""Health and version endpoints for bootstrapping PHN-V2 clients."""
+"""Health and version endpoints for bootstrapping PH-Navigator clients."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ router = APIRouter(prefix="/api/v1", tags=["system"])
 def health() -> HealthResponse:
     return HealthResponse(
         status="ok",
-        service="ph-navigator-v2",
+        service="ph-navigator",
         phase="tb-00",
         api_version="v1",
     )
@@ -29,7 +29,7 @@ def ready() -> dict[str, object]:
 @router.get("/version", response_model=VersionResponse)
 def version() -> VersionResponse:
     return VersionResponse(
-        service="ph-navigator-v2",
+        service="ph-navigator",
         app_version=settings.app_version,
         api_version="v1",
         environment=settings.environment,

@@ -1,8 +1,8 @@
-# Backend — PH-Navigator V2
+# Backend — PH-Navigator
 
-FastAPI service for versioned project documents. Currently a scaffold —
-real route surface lands during feature work (see `context/USER_STORIES.md`
-and the relevant `context/user-stories/*.md` file).
+FastAPI service for versioned project documents, auth/admin surfaces, project
+assets, climate data, HBJSON/model-viewer processing, and the runtime MCP
+endpoint.
 
 ## Run
 
@@ -35,6 +35,7 @@ Non-CRUD actions use the slash-verb style:
 Do not use the Google `:verb` style — every route under `features/` was
 unified on slash-verb in the 2026-06-09 hygiene pass.
 
-See `context/ENVIRONMENT.md` for the full env contract and
+See `context/ENVIRONMENT.md` for the local env contract,
+`context/PRODUCTION_DEPLOYMENT.md` for Render production, and
 `context/CODING_STANDARDS.md` for the backend layer, typing, module-size,
 documentation, and quality-gate standard.
