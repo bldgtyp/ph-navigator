@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
-TIME: 17:35 EDT
-STATUS: P01 complete - production R2 bundles published and verified; P02 is next.
+TIME: 17:39 EDT
+STATUS: P02 complete - production Render Postgres seeded and verified; P03 is next.
 AUTHOR: Codex
 SCOPE: Current state and next step for production climate data enablement.
 RELATED:
@@ -17,7 +17,7 @@ RELATED:
 ## Current state
 
 P00 production readiness audit is complete. P01 production R2 bundle publishing
-is complete. No production DB writes have been performed in this session.
+is complete. P02 production Render Postgres seeding is complete.
 
 Current code/docs already support the target workflow:
 
@@ -75,19 +75,29 @@ Read-only checks completed:
       content type `application/json`, ETag present.
     - `climate/phi/10.6/dataset.json`: size `4775302`,
       content type `application/json`, ETag present.
+- Production seed on 2026-06-29 at 17:37 EDT:
+  - Render one-off job `job-d91eb7favr4c73fgdglg` on
+    `ph-navigator-api` / `srv-d909p1b7uimc7396t580`.
+  - Command:
+    `uv run python -m features.climate.seeding --all --no-replace`.
+  - Job status: `succeeded`; started `2026-06-29T21:37:33Z`, finished
+    `2026-06-29T21:38:17Z`.
+  - `render psql dpg-d909olr7uimc7396sls0-a` verification:
+    - `phi / 10.6 / PHI 10.6`: 1002 locations.
+    - `phius / 2022 / Phius 2022`: 1007 locations.
+    - `project_climate_source` for `phius`, `phi`, and `weather`: no rows yet.
+  - Auxiliary Python verification job `job-d91eblq8qa3s73fu7nqg` failed, so
+    the accepted SQL evidence is the direct `render psql` output above.
 
 ## Next step
 
-Start P02: `phases/phase-02-seed-render-postgres.md`.
+Start P03: `phases/phase-03-production-ui-and-api-smoke.md`.
 
-Chosen P02 seed mode after upload:
+P02 used the chosen first production seed mode:
 
 ```bash
 uv run python -m features.climate.seeding --all --no-replace
 ```
-
-This is the correct first production seed mode because production currently has
-no `climate_dataset` rows and no PHIUS/PHI/weather project sources.
 
 ## Blockers
 
@@ -95,7 +105,6 @@ No code blocker. No current P01 blocker remains.
 
 Later phase prerequisites:
 
-- Render Shell or one-off Job for `ph-navigator-api` is available for P02.
 - Permission to sign in to the production app for P03 browser smoke.
 
 ## Success gates by phase
@@ -104,7 +113,7 @@ Later phase prerequisites:
 |---|---|
 | P00 | Complete: audit note with current DB/object-store state and chosen seed mode |
 | P01 | Complete: R2 HEAD confirms both production bundle objects |
-| P02 | Production SQL counts confirm seeded provider/version rows |
+| P02 | Complete: production SQL counts confirm seeded provider/version rows |
 | P03 | Live app screenshot/log notes confirm PHIUS, PHI, and Hourly attach workflows |
 | P04 | Runbook and this status file updated with exact date, counts, commands, and follow-ups |
 

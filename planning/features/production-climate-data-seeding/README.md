@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
-TIME: 17:35 EDT
-STATUS: Active implementation packet - P01 production R2 bundles published; P02 is next.
+TIME: 17:39 EDT
+STATUS: Active implementation packet - P02 production DB seed complete; P03 is next.
 AUTHOR: Codex
 SCOPE: Production climate data enablement for the first Beta production environment: publish PHIUS/PHI reference bundles to Cloudflare R2, seed Render Postgres, and verify PHIUS, PHI, and Hourly climate workflows on www.ph-nav.com.
 RELATED:
@@ -64,8 +64,8 @@ upload, stored as `project_assets` in the same private object store.
 |---|---|---|---|---|
 | P00 | Complete | Production readiness audit | Confirm Render env, R2 bucket posture, current DB state, source inputs, and rerun policy before touching production | Audit recorded in `STATUS.md`: production DB has no climate rows/sources yet; production R2 env is configured; both climate bundle keys are missing; full local sources parse cleanly |
 | P01 | Complete | Publish R2 reference bundles | Build full PHIUS/PHI bundles from licensed sources and upload to `ph-navigator-prod` | R2 has `climate/phius/2022/dataset.json` and `climate/phi/10.6/dataset.json`; local parse counts are non-empty and expected |
-| P02 | Next | Seed Render Postgres | Run provider-agnostic seeder in `ph-navigator-api` Render Shell / one-off job | Production DB reports PHIUS and PHI rows with expected location counts |
-| P03 | Planned | Live app smoke | Verify PHIUS, PHI, and Hourly Data workflows through `www.ph-nav.com` | PHIUS/PHI pickers show stations and can attach; Hourly weather source can attach and creates R2-backed asset rows |
+| P02 | Complete | Seed Render Postgres | Run provider-agnostic seeder in `ph-navigator-api` Render Shell / one-off job | Production DB reports PHIUS and PHI rows with expected location counts |
+| P03 | Next | Live app smoke | Verify PHIUS, PHI, and Hourly Data workflows through `www.ph-nav.com` | PHIUS/PHI pickers show stations and can attach; Hourly weather source can attach and creates R2-backed asset rows |
 | P04 | Planned | Runbook closeout | Fold evidence and rerun rules into durable docs | STATUS and production runbook record exact date, counts, commands, and any follow-up |
 
 ## Local evidence already gathered
@@ -84,6 +84,15 @@ Production R2 upload evidence from P01:
   1007 records, HEAD size `4807491`, content type `application/json`.
 - `climate/phi/10.6/dataset.json`: uploaded from the full PHI source,
   1002 records, HEAD size `4775302`, content type `application/json`.
+
+Production DB seed evidence from P02:
+
+- Render one-off job `job-d91eb7favr4c73fgdglg` succeeded with
+  `uv run python -m features.climate.seeding --all --no-replace`.
+- `phi / 10.6 / PHI 10.6`: 1002 locations.
+- `phius / 2022 / Phius 2022`: 1007 locations.
+- `project_climate_source` still has no `phius`, `phi`, or `weather` rows;
+  those are expected to appear during P03 live app smoke.
 
 ## Out of scope
 
