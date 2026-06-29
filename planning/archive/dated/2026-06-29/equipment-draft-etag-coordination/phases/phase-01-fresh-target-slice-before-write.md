@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 16:52 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Generic frontend fix for write-time target slice freshness.
 RELATED:
@@ -80,10 +80,17 @@ next table the user actually writes.
 
 ## Exit Criteria
 
-- The reported Fans -> Hot-water Tanks workflow no longer reaches
-  `draft_etag_mismatch`.
-- Sibling queries remain invalidated but are not eagerly refetched after the
-  first write.
-- The target sibling table refetches at most once immediately before its next
-  write.
-- Payload builders receive the fresh target slice.
+- ✅ The shared controller now checks the target editor-slice query before each
+  table write. If that query is invalidated, it refetches only that target
+  slice and uses the returned slice as the write basis.
+- ✅ Sibling queries still remain invalidated but are not eagerly refetched
+  after an accepted write; the invalidation policy in
+  `applyAcceptedSlice(...)` is unchanged.
+- ✅ Payload builders for cell, paste, fill, row insert/delete/duplicate, and
+  legacy option replacement receive the resolved writable slice before the
+  mutation runs.
+- ✅ Typed schema mutations send headers from the resolved writable slice.
+- ✅ Heat-pump outdoor-unit cascade previews, which run before the controller's
+  row-delete write, now use the same resolved writable slice.
+- Browser proof for the reported Fans -> Hot-water Tanks workflow is deferred
+  to P03 after regression coverage lands.

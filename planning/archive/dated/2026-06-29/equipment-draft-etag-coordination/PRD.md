@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 16:52 EDT
-STATUS: Planned - behavior contract for same-session slice-backed table edits.
+STATUS: Complete - behavior contract implemented and verified.
 AUTHOR: Codex
 SCOPE: User-facing and technical acceptance criteria for stale draft ETag coordination.
 RELATED:

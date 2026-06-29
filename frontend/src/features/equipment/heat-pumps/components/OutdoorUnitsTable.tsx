@@ -262,13 +262,14 @@ export function OutdoorUnitsTable({
       // Dry-run the generic slice-replace (minus this row) to surface the
       // cascade before the user confirms. The backend clears the dependent
       // links on the real delete below; here we only preview them.
-      const previewPayload = heatPumpOutdoorUnitsPayloadBuilders.fromRowDelete(leafSlice, [
+      const writableLeafSlice = await controller.resolveSliceForWrite();
+      const previewPayload = heatPumpOutdoorUnitsPayloadBuilders.fromRowDelete(writableLeafSlice, [
         { rowId: row.id, row, anchorRowId: null },
       ]);
       const preview = await heatPumpOutdoorUnitsSliceFeature.previewReplace(
         projectId,
-        slice.version_id,
-        leafSlice,
+        writableLeafSlice.version_id,
+        writableLeafSlice,
         previewPayload,
       );
       if (preview.affected.length === 0) {

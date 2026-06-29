@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 16:52 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Reproduce the stale sibling table draft ETag failure and freeze the root cause.
 RELATED:
@@ -66,15 +66,21 @@ Prove the exact stale-guard sequence before changing code.
 
 ## Exit Criteria
 
-- Evidence shows the first write advanced the document `draft_etag`.
-- Evidence shows the second table used a stale guard from its cached slice.
-- Backend behavior is confirmed as correct.
-- P01 can proceed without backend changes.
+- ✅ Evidence shows the first accepted write updates only the source table cache,
+  records the new document-scoped `draft_etag`, and invalidates sibling editor
+  slices without active refetch.
+- ✅ Evidence shows the next sibling write path builds payloads and headers from
+  the controller's cached `slice` prop, so an invalidated sibling can send its
+  stale guard.
+- ✅ Backend behavior is confirmed as correct: `load_draft_context(...)`
+  rejects a mismatched `If-Match` against the stored draft ETag.
+- ✅ P01 can proceed without backend changes.
 
 ## Deliverables
 
-- Add a short evidence section to `../STATUS.md`.
-- Note whether the reproduction was manual, Playwright-driven, or unit-harness
-  driven.
-- Link any screenshot or trace artifact from `planning/features/.../assets/` if
-  durable evidence is worth keeping.
+- Added a short evidence section to `../STATUS.md`.
+- Reproduction mode: deterministic code/test harness plus existing focused
+  Vitest coverage. Manual browser reproduction is deferred to P03 after the fix
+  is in place.
+- No screenshot or trace artifact was created for this phase; the durable
+  evidence is the focused test output and source-line references.

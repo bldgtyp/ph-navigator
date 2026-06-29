@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 16:52 EDT
-STATUS: Planned - phased implementation sequence.
+STATUS: Complete - phased implementation and verification finished.
 AUTHOR: Codex
 SCOPE: Implementation and verification plan for stale sibling table draft ETags.
 RELATED:
