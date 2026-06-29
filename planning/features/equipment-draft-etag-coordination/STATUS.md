@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 16:52 EDT
-STATUS: Planned - root cause identified; implementation not started.
+STATUS: Active - P00 complete; P01 fresh target-slice write seam next.
 AUTHOR: Codex
 SCOPE: Current state, next step, blockers, and verification for the stale draft ETag fix.
 RELATED:
@@ -15,7 +15,8 @@ RELATED:
 
 ## Current State
 
-Docs-only planning packet created. No application code has been changed.
+P00 reproduction/root-cause pass completed. No application code has been
+changed yet.
 
 Root cause identified from current code:
 
@@ -33,26 +34,66 @@ Root cause identified from current code:
 The bug appears to be a frontend cache-freshness regression, not a backend
 concurrency policy bug.
 
-## Next Step
+## Phase 00 Evidence
 
-Start P00:
+Recorded 2026-06-29 17:25 EDT.
 
-```text
-phases/phase-00-reproduce-and-root-cause.md
+Reproduction mode: deterministic code/test harness and source-line evidence.
+The local backend baseline was available and returned the expected signed-out
+health response:
+
+```bash
+curl -i --max-time 3 http://localhost:8000/api/v1/auth/session
+# HTTP/1.1 401 Unauthorized
+# {"error_code":"not_authenticated", ...}
 ```
 
-Use the reported workflow and/or a deterministic test harness to capture:
+Root-cause evidence:
 
-- first Equipment write request and response,
-- new `draft_etag` after the first write,
-- second Equipment write request headers,
-- `409 draft_etag_mismatch` response when using the stale guard.
+- `frontend/src/features/project_document/table-slice.ts:195-204` records the
+  accepted table slice, marks the local draft touched with the accepted
+  `draft_etag`, then invalidates sibling editor table slices with
+  `refetchActiveSlices: false`.
+- `frontend/src/features/project_document/table-slice.ts:251-254` maps that
+  option to TanStack Query `refetchType: "none"`, so mounted sibling queries
+  are stale but not refreshed.
+- `frontend/src/shared/ui/data-table/feature/useSliceTableController.ts:253-265`
+  sends `replaceMutation` and typed schema mutations with `current: slice`.
+- `frontend/src/shared/ui/data-table/feature/useSliceTableController.ts:282-339`
+  builds cell, row insert/delete/duplicate, and legacy option replacement
+  payloads from that same cached `slice` before mutation.
+- `backend/features/project_document/write_spine.py:98-104` rejects a stale
+  `If-Match` against the stored document-scoped `draft_etag` with
+  `draft_etag_mismatch`.
+
+Focused verification:
+
+```bash
+cd frontend && pnpm exec vitest run src/features/project_document/table-slice.test.ts
+# ✓ src/features/project_document/table-slice.test.ts (5 tests)
+```
+
+That existing test includes the current performance assertion: an accepted
+source-table write invalidates the sibling editor slice, does not actively
+refetch it, and invalidates only the matching editor slice for the same
+project/version.
+
+## Next Step
+
+Start P01:
+
+```text
+phases/phase-01-fresh-target-slice-before-write.md
+```
+
+Implement a generic write-time fresh target-slice seam before payload
+construction in `useSliceTableController`.
 
 ## Blockers
 
 None for implementation planning.
 
-Useful but not required for P00:
+Useful but not required until P03 browser verification:
 
 - local dev backend/frontend running on `localhost:8000` / `localhost:5173`;
 - project fixture with editable Equipment tables;
@@ -72,14 +113,18 @@ Broaden only if the implementation touches wider shared table behavior:
 - `cd frontend && pnpm run test:e2e:tables`
 - `make ci`
 
-## Verification Performed For This Planning Packet
+## Verification Performed
 
 - Planning instructions read:
   `planning/.instructions.md` and `planning/features/.instructions.md`.
 - Current root-cause code paths reviewed.
 - `git diff --check` passed.
-- No runtime app tests were run because this pass created the implementation
-  plan only.
+- Backend health baseline checked:
+  `curl -i --max-time 3 http://localhost:8000/api/v1/auth/session`
+  returned the expected signed-out `401 not_authenticated` response.
+- Focused frontend test run:
+  `cd frontend && pnpm exec vitest run src/features/project_document/table-slice.test.ts`
+  passed with 5 tests.
 
 ## Notes
 
