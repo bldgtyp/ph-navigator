@@ -82,8 +82,9 @@ is `20260627_0004`):
   supports active lookup + expired-token sweeps. `token_hash` is globally unique.
 - `user_action_log` gains `target_user_id` (FK) + `target_email` and
   `ix_user_action_log_target_created` for per-target admin history.
-- Capability `ADMIN_USERS_MANAGE = "admin.users.manage"` added (grantable, kept
-  separate from `catalog.edit`).
+- Capability `ADMIN_USERS_MANAGE = "admin.users.manage"` added (grantable).
+  It remains the only stored Admin grant; the resolver derives `catalog.edit`
+  from the Admin preset for catalog maintenance.
 - `mcp_repository.revoke_tokens_for_user()` revokes every active token a user
   issued, across projects (only that user's).
 - Token primitives split for reuse by Phase 03: `features/auth/account_tokens.py`

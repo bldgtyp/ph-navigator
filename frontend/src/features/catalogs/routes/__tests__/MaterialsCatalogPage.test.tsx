@@ -1,11 +1,13 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { UnitPreferenceContext } from "../../../../lib/units/preference-context";
 import type { AuthSession } from "../../../auth/types";
 import * as api from "../../api";
+import { CATALOG_EDIT } from "../../lib";
 import type { CatalogMaterial } from "../../types";
 import { MaterialsCatalogPage } from "../MaterialsCatalogPage";
 
@@ -20,11 +22,18 @@ vi.mock("../../../../shared/ui/data-table", async () => {
     DataTable: ({
       rows,
       onRowOpen,
+      overflowMenuActions,
+      readOnly,
     }: {
       rows: MockMaterialRow[];
       onRowOpen?: (row: MockMaterialRow) => void;
+      overflowMenuActions?: ReactNode;
+      readOnly?: boolean;
     }) => (
-      <div data-testid="materials-grid">
+      <div data-testid="materials-grid" data-read-only={readOnly ? "true" : "false"}>
+        {overflowMenuActions ? (
+          <div data-testid="overflow-actions">{overflowMenuActions}</div>
+        ) : null}
         <button type="button" onClick={() => rows[0] && onRowOpen?.(rows[0])}>
           Expand first material
         </button>
@@ -61,7 +70,7 @@ const WOOD_FIBER: CatalogMaterial = {
   updated_at: "2026-06-04T12:00:00Z",
 };
 
-function renderPage() {
+function renderPage(session: AuthSession = SESSION) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
@@ -77,7 +86,7 @@ function renderPage() {
         }}
       >
         <MemoryRouter>
-          <MaterialsCatalogPage session={SESSION} />
+          <MaterialsCatalogPage session={session} />
         </MemoryRouter>
       </UnitPreferenceContext.Provider>
     </QueryClientProvider>,
@@ -92,12 +101,35 @@ beforeEach(() => {
 });
 
 describe("MaterialsCatalogPage", () => {
+  test("renders non-catalog editors in read-only mode without import", async () => {
+    vi.spyOn(api, "listMaterials").mockResolvedValue({ items: [WOOD_FIBER] });
+
+    renderPage();
+
+    expect(await screen.findByText("1 material")).toBeInTheDocument();
+    expect(screen.getByTestId("materials-grid")).toHaveAttribute("data-read-only", "true");
+    expect(screen.queryByRole("button", { name: "New Material +" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Export JSON" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Import JSON…" })).not.toBeInTheDocument();
+  });
+
+  test("renders catalog editors with import and write affordances", async () => {
+    vi.spyOn(api, "listMaterials").mockResolvedValue({ items: [WOOD_FIBER] });
+
+    renderPage({ ...SESSION, capabilities: [CATALOG_EDIT] });
+
+    expect(await screen.findByText("1 material")).toBeInTheDocument();
+    expect(screen.getByTestId("materials-grid")).toHaveAttribute("data-read-only", "false");
+    expect(screen.getByRole("button", { name: "New Material +" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Import JSON…" })).toBeInTheDocument();
+  });
+
   test("opens the new material modal from the top-left action", async () => {
     const user = userEvent.setup();
     vi.spyOn(api, "listMaterials").mockResolvedValue({ items: [] });
     vi.spyOn(api, "createMaterial").mockResolvedValue(WOOD_FIBER);
 
-    renderPage();
+    renderPage({ ...SESSION, capabilities: [CATALOG_EDIT] });
 
     expect(screen.queryByRole("heading", { name: "Materials" })).not.toBeInTheDocument();
     expect(screen.queryByText(/Curated starting library/i)).not.toBeInTheDocument();
@@ -133,7 +165,7 @@ describe("MaterialsCatalogPage", () => {
       name: "Dense wood fiber board",
     });
 
-    renderPage();
+    renderPage({ ...SESSION, capabilities: [CATALOG_EDIT] });
 
     await screen.findByText("1 material");
     await user.click(await screen.findByRole("button", { name: "Expand first material" }));

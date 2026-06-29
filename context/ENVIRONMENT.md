@@ -604,7 +604,9 @@ It creates (or repairs) the admin in the *invited* state, ensures the
 `admin.users.manage` grant, and prints a one-time **invite** link (or a
 **reset** link if the account already has a password). It never sets or prints a
 reusable password. Hand the link to the admin out-of-band; they open it and set
-their own password, then sign in normally.
+their own password, then sign in normally. The Admin preset stores only
+`admin.users.manage`; the capability resolver also derives `catalog.edit` from
+that preset so production admins can maintain the shared catalogs.
 
 **Everything else happens in the app** at `/admin/users` (visible only to users
 with `admin.users.manage`):
@@ -618,7 +620,8 @@ with `admin.users.manage`):
   account tokens, and attributable MCP tokens immediately; reactivating issues a
   fresh invite/reset link. The backend refuses to deactivate or demote the last
   active admin (`last_admin`, HTTP 409).
-- **Grant / revoke Admin** — row action toggles the `admin.users.manage` grant.
+- **Grant / revoke Admin** — row action toggles the `admin.users.manage` grant;
+  resolved Admin sessions also receive `catalog.edit`.
 - **Revoke stale sessions / MCP tokens** — deactivate then reactivate, or issue
   a reset link and have the user complete it (completion revokes prior sessions
   and MCP tokens).

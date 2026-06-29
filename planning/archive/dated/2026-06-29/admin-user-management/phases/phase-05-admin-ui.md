@@ -49,7 +49,7 @@ Deferred:
 - forgot-password request page;
 - transactional email status;
 - fresh admin re-auth prompt;
-- `Catalog Admin` and `is_staff` controls;
+- separate `Catalog Admin` and `is_staff` controls;
 - full audit drawer/export.
 
 ## Verification
