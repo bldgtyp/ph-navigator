@@ -215,15 +215,36 @@ function renderTable(slice: HeatPumpsSlice, options: { writes?: WriteOp[] } = {}
   const leafSlice = outdoorUnitsLeafSlice(slice);
   const controller = heatPumpTestController<HeatPumpOutdoorUnitsSlice>({
     fieldDefs: outdoorUnitFieldDefs(slice.single_select_options),
+    slice: leafSlice,
     onWrite: (op) => {
       options.writes?.push(op);
     },
   });
   const indoorUnitsController = heatPumpTestController<HeatPumpIndoorUnitsSlice>({
     fieldDefs: [],
+    slice: {
+      project_id: slice.project_id,
+      version_id: slice.version_id,
+      source: slice.source,
+      version_etag: slice.version_etag,
+      draft_etag: slice.draft_etag,
+      indoor_units: slice.indoor_units,
+      field_defs: [],
+      single_select_options: {},
+    },
   });
   const outdoorEquipController = heatPumpTestController<HeatPumpOutdoorEquipSlice>({
     fieldDefs: [],
+    slice: {
+      project_id: slice.project_id,
+      version_id: slice.version_id,
+      source: slice.source,
+      version_etag: slice.version_etag,
+      draft_etag: slice.draft_etag,
+      outdoor_equip: slice.outdoor_equip,
+      field_defs: [],
+      single_select_options: {},
+    },
   });
   return render(
     <QueryClientProvider client={queryClient}>

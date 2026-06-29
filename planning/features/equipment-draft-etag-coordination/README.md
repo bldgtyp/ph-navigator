@@ -93,7 +93,7 @@ fresh target slice.
 | Phase | State | Title | Purpose | Success Gate |
 |---|---|---|---|---|
 | P00 | Complete | Reproduce and root cause | Capture failing network/header sequence and confirm no backend behavior change is needed | Evidence shows first table write bumps `draft_etag`; second table write sends stale guard from cached sibling slice |
-| P01 | Planned | Fresh target slice before write | Add a generic freshness gate before payload construction for invalidated editor table slices | Sequential writes across two mounted sibling tables use the latest `draft_etag` without eager sibling refetch |
+| P01 | Complete | Fresh target slice before write | Add a generic freshness gate before payload construction for invalidated editor table slices | Sequential writes across two mounted sibling tables use the latest `draft_etag` without eager sibling refetch |
 | P02 | Planned | Regression coverage | Add focused unit and e2e coverage for stale sibling writes | Tests fail on current code and pass after P01 |
 | P03 | Planned | Browser and performance verification | Smoke the reported route and verify the June 25 perf fix is not undone | Fans -> Hot-water Tanks works in-browser; perf/network check shows no eager refetch fan-out |
 
