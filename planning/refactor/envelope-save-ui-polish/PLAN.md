@@ -312,6 +312,9 @@ Testing:
 
 ## Phase 6 - Final Verification
 
+Status: Complete on branch `codex/envelope-save-ui-polish` on 2026-06-29.
+`make format` and `make ci` passed after Phases 1-5 landed.
+
 Frontend implementation gate:
 
 - `make frontend-dev-check`

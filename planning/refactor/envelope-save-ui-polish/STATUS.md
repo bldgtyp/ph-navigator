@@ -1,8 +1,8 @@
 # Apertures, Envelope, Climate + Tooltip UI Polish Refactor Status
 
 DATE: 2026-06-29
-TIME: 18:28 EDT
-STATUS: Active - Phase 5 implemented on branch
+TIME: 18:32 EDT
+STATUS: Complete - verified on branch
 AUTHOR: Codex
 SCOPE: Implementation handoff for six UI fixes: shared tooltip consolidation,
 Envelope sidebar tooltip layering, project-document Save Version progress
@@ -15,8 +15,8 @@ planning/refactor/envelope-save-ui-polish/PLAN.md
 
 ## Current State
 
-Phases 1, 2, 3, 4, and 5 are implemented on branch
-`codex/envelope-save-ui-polish`.
+Phases 1, 2, 3, 4, 5, and 6 are complete on branch
+`codex/envelope-save-ui-polish`. Final closeout verification passed.
 
 Completed in Phase 1:
 
@@ -99,7 +99,17 @@ Completed in Phase 5:
   `U-Value` chip, and no `No aperture types yet.` copy. The temporary project
   was soft-deleted after the check.
 
-Next active implementation slice: Phase 6, final verification and closeout.
+Completed in Phase 6:
+
+- Ran `make format`; backend Ruff format and frontend Prettier left files
+  unchanged.
+- Ran full `make ci`; backend format/lint/boundary/type/migration gates
+  passed, backend pytest passed, frontend format/lint/structural guards passed,
+  frontend Vitest passed, and production build completed.
+- Confirmed the only lint output remains the pre-existing 14 Fast Refresh
+  warnings in unrelated Apertures, Climate, and DataTable files.
+
+No active implementation slices remain for this packet.
 
 ## Evidence Reviewed
 
@@ -191,8 +201,8 @@ Next active implementation slice: Phase 6, final verification and closeout.
 
 ## Next Step
 
-Run Phase 6 from `PLAN.md`: final verification, docs-pass, Graphify update,
-and closeout commit for the complete UI polish packet.
+No next implementation step remains. Archive/merge cleanup can happen after
+the branch is reviewed or merged.
 
 ## Verification So Far
 
@@ -281,3 +291,15 @@ Phase 5 implementation verification:
 - `make frontend-dev-check` passed. ESLint still reports the same
   pre-existing `react-refresh/only-export-components` warnings in unrelated
   Apertures, Climate, and DataTable files; no errors.
+
+Phase 6 final verification:
+
+- `make format` passed; backend `ruff format` reported `468 files left
+  unchanged`, and frontend Prettier left files unchanged.
+- `make ci` passed:
+  - backend: Docker test DB, Python 3.11 sync, Ruff format check, Ruff lint,
+    backend boundary check, `ty check`, Alembic upgrade, and pytest
+    (`1213 passed`, `2 skipped`, `1` existing deprecation warning);
+  - frontend: frozen pnpm install, format check, ESLint (`14` pre-existing
+    Fast Refresh warnings, no errors), structural guards, Vitest (`212` files,
+    `1973` tests passed), and production build.
