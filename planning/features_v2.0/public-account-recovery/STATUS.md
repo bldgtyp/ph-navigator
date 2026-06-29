@@ -7,7 +7,7 @@ SCOPE: State tracker for public account recovery and transactional email.
 RELATED:
   - README.md
   - PRD.md
-  - ../../features/admin-user-management/STATUS.md
+  - ../../archive/dated/2026-06-29/admin-user-management/STATUS.md
 ---
 
 # STATUS - Public Account Recovery / Email Delivery

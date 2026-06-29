@@ -25,6 +25,8 @@ from features.admin.models import (
     IssuedAccountLink,
     ReactivateUserResponse,
     SetAdminRequest,
+    UpdateUserEmailRequest,
+    UpdateUserNameRequest,
 )
 from features.auth.models import UserPublic
 from features.auth.service import current_user_from_request, user_agent
@@ -89,6 +91,30 @@ def set_admin(user_id: UUID, payload: SetAdminRequest, request: Request, admin: 
         admin,
         target_user_id=user_id,
         make_admin=payload.make_admin,
+        ip_address=client_ip(request),
+        user_agent=user_agent(request),
+    )
+
+
+@router.patch("/users/{user_id}/name", response_model=AdminUserRow)
+def update_user_name(user_id: UUID, payload: UpdateUserNameRequest, request: Request, admin: AdminUser) -> AdminUserRow:
+    return service.update_user_name(
+        admin,
+        target_user_id=user_id,
+        display_name=payload.display_name,
+        ip_address=client_ip(request),
+        user_agent=user_agent(request),
+    )
+
+
+@router.patch("/users/{user_id}/email", response_model=AdminUserRow)
+def update_user_email(
+    user_id: UUID, payload: UpdateUserEmailRequest, request: Request, admin: AdminUser
+) -> AdminUserRow:
+    return service.update_user_email(
+        admin,
+        target_user_id=user_id,
+        email=str(payload.email),
         ip_address=client_ip(request),
         user_agent=user_agent(request),
     )

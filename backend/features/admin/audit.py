@@ -24,6 +24,8 @@ ADMIN_USER_INVITED = "admin_user_invited"
 ADMIN_RESET_LINK_GENERATED = "admin_reset_link_generated"
 ADMIN_USER_DEACTIVATED = "admin_user_deactivated"
 ADMIN_USER_REACTIVATED = "admin_user_reactivated"
+ADMIN_USER_NAME_CHANGED = "admin_user_name_changed"
+ADMIN_USER_EMAIL_CHANGED = "admin_user_email_changed"
 ADMIN_CAPABILITY_GRANTED = "admin_capability_granted"
 ADMIN_CAPABILITY_REVOKED = "admin_capability_revoked"
 

@@ -10,7 +10,7 @@ RELATED:
   - ../PLAN.md
   - ../STATUS.md
   - ../research.md
-  - ../../../archive/dated/2026-06-28/v2-production-rollout/PLAN.md
+  - ../../../2026-06-28/v2-production-rollout/PLAN.md
 ---
 
 # Security / Use-Case Review - Admin User Management MVP
@@ -18,7 +18,7 @@ RELATED:
 ## MVP Split Addendum
 
 Ed narrowed this packet on 2026-06-27 to the near-term Ed/John production MVP.
-The active feature now keeps the durable foundations and core admin operations:
+This feature kept the durable foundations and core admin operations:
 first-admin bootstrap, invite John, admin-generated reset links,
 deactivate/reactivate, `admin.users.manage` grant/revoke, last-admin protection,
 Origin/CSRF posture for admin mutations, and audit rows.

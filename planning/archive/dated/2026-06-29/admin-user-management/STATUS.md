@@ -11,8 +11,8 @@ RELATED:
   - ./research.md
   - ./reviews/2026-06-27-security-use-case-review.md
   - ./phases/
-  - ../../features_v2.0/public-account-recovery/
-  - ../../features_v2.0/account-security-hardening/
+  - ../../../../features_v2.0/public-account-recovery/
+  - ../../../../features_v2.0/account-security-hardening/
 ---
 
 # Status - Admin User Management MVP

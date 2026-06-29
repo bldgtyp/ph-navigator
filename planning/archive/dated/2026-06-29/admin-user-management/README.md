@@ -10,11 +10,11 @@ RELATED:
   - ./STATUS.md
   - ./research.md
   - ./reviews/2026-06-27-security-use-case-review.md
-  - ../../archive/dated/2026-06-28/v2-production-rollout/PLAN.md
-  - ../../features_v2.0/public-account-recovery/
-  - ../../features_v2.0/account-security-hardening/
-  - ../../features_v2.0/access-capability-enforcement/
-  - ../../features_v2.0/multi-tenant-teams/
+  - ../2026-06-28/v2-production-rollout/PLAN.md
+  - ../../../../features_v2.0/public-account-recovery/
+  - ../../../../features_v2.0/account-security-hardening/
+  - ../../../../features_v2.0/access-capability-enforcement/
+  - ../../../../features_v2.0/multi-tenant-teams/
 ---
 
 # Admin User Management MVP

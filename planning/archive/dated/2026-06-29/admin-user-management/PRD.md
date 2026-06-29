@@ -9,8 +9,8 @@ RELATED:
   - ./PLAN.md
   - ./STATUS.md
   - ./research.md
-  - ../../features_v2.0/public-account-recovery/
-  - ../../features_v2.0/account-security-hardening/
+  - ../../../../features_v2.0/public-account-recovery/
+  - ../../../../features_v2.0/account-security-hardening/
 ---
 
 # PRD - Admin User Management MVP
