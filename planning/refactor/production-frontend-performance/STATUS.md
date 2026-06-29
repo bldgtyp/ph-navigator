@@ -1,6 +1,6 @@
 ---
 DATE: 2026-06-29
-TIME: 17:49 EDT
+TIME: 18:56 EDT
 STATUS: Implemented locally through Phase 03 setup path; production run held.
 AUTHOR: Codex
 SCOPE: Current state and handoff for production frontend performance testing.
@@ -142,8 +142,8 @@ Not needed:
 
 ## Next Step
 
-When Ed approves live setup, run the guarded fixture command in the production
-API environment:
+The next live action is fixture setup, not the performance run. When Ed approves
+live setup, run the guarded fixture command in the production API environment:
 
 ```bash
 cd backend
@@ -156,6 +156,25 @@ uv run python -m scripts.seed_perf_stress_fixture \
 
 Use the printed `PERF_PROJECT_ID` for Phase 04. Hold the actual authenticated
 performance run until explicitly approved.
+
+## Next Actions
+
+1. Choose or generate the runtime-only password for `codex@testing.com`.
+2. Run the guarded production fixture setup command above from the production
+   API environment.
+3. Record the printed `PERF_PROJECT_ID` here:
+   - `PERF_PROJECT_ID`: TBD
+4. Confirm whether to run the read-only production matrix.
+5. If approved, run Phase 04 with `PHN_PERF_PRODUCTION=1` and
+   `PHN_PERF_READONLY=1`.
+6. Write the first production scorecard under this refactor packet.
+
+Do not run:
+
+- `make e2e-perf` against production.
+- The production matrix without `PHN_PERF_PRODUCTION=1`.
+- Fixture writes outside `codex@testing.com` / `PERF-STRESS`.
+- Write-path timing without a separate explicit approval.
 
 ## Verification So Far
 

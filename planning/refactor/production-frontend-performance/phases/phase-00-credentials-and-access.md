@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
-TIME: 17:30 EDT
-STATUS: Decision recorded - dedicated testing account plus seeded fixture approved.
+TIME: 18:56 EDT
+STATUS: Decision recorded - implementation exists; production fixture setup pending.
 AUTHOR: Codex
 SCOPE: Access, credential, account, and production-safety decisions required
   before running authenticated frontend performance tests against production.
@@ -174,9 +174,11 @@ Do not request these for frontend performance testing:
 - After the run, scorecards should record account role and project scope, not
   credentials.
 
-## Proposed First Read-Only Command Shape
+## First Read-Only Command Shape
 
-After Phase 01 harness guards exist:
+Phase 01 harness guards now exist. Use this command only after the production
+fixture setup command prints a `PERF_PROJECT_ID` and Ed approves the read-only
+production matrix:
 
 ```bash
 cd frontend
@@ -191,36 +193,36 @@ PHN_PERF_READONLY=1 \
 pnpm run test:e2e -- tests/e2e/perf/perf-matrix.spec.ts
 ```
 
-## Decision Record Template
+## Decision Record
 
-Fill this before Phase 03:
+Current decisions and remaining runtime values:
 
 | Decision | Value |
 |---|---|
 | Production testing account email | `codex@testing.com` |
 | Account role | Viewer for read-only, Editor only on fixture for write timing |
-| Approved project id | TBD after fixture creation |
+| Approved project id | TBD after production fixture setup command runs |
 | Fixture project id/name | `PERF-STRESS` |
 | Fixture row counts | 250 rows per seeded table |
 | Fixture content | Include Climate, Envelope, Apertures; exclude 3D Model |
 | Fixture reset policy | Reset same fixture in place before formal runs |
-| Read-only matrix approved | Yes, once harness guards exist |
+| Read-only matrix approved | Pending explicit run approval |
 | Write-path production testing approved | TBD - fixture only |
 | Observability access needed | TBD |
 | Run window | TBD |
 | Cleanup/retention plan | TBD |
 
-## Recommended Default
+## Recommended Next Sequence
 
-Start with:
-
-- public anonymous baseline,
-- dedicated production `testing` account,
-- one seeded testing fixture project named `PERF-STRESS`,
-- guarded read-only route matrix first,
-- browser-side timing only,
-- no Render/Cloudflare tokens,
-- no writes outside the testing fixture.
+1. Choose or generate the runtime-only password for `codex@testing.com`.
+2. Run the guarded production fixture setup command from the production API
+   environment.
+3. Record the printed `PERF_PROJECT_ID` in `STATUS.md`.
+4. Run the guarded read-only route matrix only after explicit approval.
+5. Keep browser-side timing as the first scorecard source.
+6. Do not request Render/Cloudflare tokens unless the first scorecard needs
+   backend/edge attribution.
+7. Do not run writes outside the testing fixture.
 
 Escalate only if the first scorecard shows a performance issue that needs
 backend/edge attribution or live write-path confirmation.
