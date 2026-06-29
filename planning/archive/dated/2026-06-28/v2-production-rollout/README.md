@@ -1,17 +1,23 @@
 ---
 DATE: 2026-06-27
 TIME: 16:34 EDT
-STATUS: Active
+STATUS: Complete through Phase 4 / archived
 AUTHOR: Claude (for Ed May)
 SCOPE: Deploy the new PH-Navigator V1 to production on Render, promote it to www.ph-nav.com / apex, and relocate the legacy V0 app to v0.ph-nav.com — running both in parallel.
 RELATED:
-  - context/ENVIRONMENT.md (Render staging runbook, env vars, R2 CORS)
-  - render.yaml (current staging blueprint — basis for the prod blueprint)
-  - ../../../CLAUDE.md (current repo/status guide)
+  - context/PRODUCTION_DEPLOYMENT.md (current production source of truth)
+  - context/ENVIRONMENT.md (local/operator environment card)
+  - render.prod.yaml (production blueprint)
+  - render.yaml (dormant optional staging blueprint)
+  - CLAUDE.md (current repo/status guide)
   - V0 repo: ~/Dropbox/bldgtyp-00/00_PH_Tools/ph-navigator
 ---
 
 # PH-Navigator V1 Production Rollout — Router
+
+> Archived 2026-06-28: rollout Phases 0-4 are complete. Current operational
+> facts live in `context/PRODUCTION_DEPLOYMENT.md`. Phase 5 V0 decommission is
+> future-only and must run only on Ed's explicit instruction.
 
 Goal: get a **real** production deployment of the new PH-Navigator V1 live at
 the root domain (`www.ph-nav.com` + apex `ph-nav.com`), move the legacy V0 app
@@ -32,11 +38,10 @@ deleted. Phase 5 V0 decommission is future-only and requires Ed's explicit word.
 
 ## Naming convention
 
-- **V0 / legacy PH-Navigator** = the currently live app and repo presently named
-  `ph-navigator`; target deprecated repo name `ph-navigator_v0`; target URL
-  `v0.ph-nav.com`.
-- **V1 / current PH-Navigator** = this new app, now the canonical GitHub repo
-  `bldgtyp/ph-navigator`; target URLs `www.ph-nav.com`, apex `ph-nav.com`, and
+- **V0 / legacy PH-Navigator** = the displaced legacy app, now at
+  `v0.ph-nav.com` with repo `bldgtyp/ph-navigator_v0`.
+- **V1 / current PH-Navigator** = the current app, now the canonical GitHub repo
+  `bldgtyp/ph-navigator`; URLs `www.ph-nav.com`, apex `ph-nav.com`, and
   `api.ph-nav.com`. Some active local worktrees may still be folder-named
   `ph-navigator-v2` until the optional local folder rename is done.
 - Use release/version numbers inside the new canonical repo from here forward;
@@ -64,7 +69,7 @@ Everything lives in a single Render project (**PH-Navigator**, Hobby workspace,
 Ohio). Current V1 production is the canonical `ph-navigator-web`,
 `ph-navigator-api`, and `ph-navigator-db` stack, serving `www.ph-nav.com`,
 apex `ph-nav.com`, and `api.ph-nav.com`. Legacy V0 remains live in parallel as
-`ph-navigator`, `ph-navigator-backend`, and `ph_navigator`, serving
-`v0.ph-nav.com`. The old V1 staging stack used for rollout rehearsal has been
-deleted. There is no automatic V0→V1 data migration — V1 launches fresh; V0
-stays reachable at `v0.ph-nav.com`.
+Render services `ph-navigator`, `ph-navigator-backend`, and `ph_navigator`,
+repo `bldgtyp/ph-navigator_v0`, serving `v0.ph-nav.com`. The old V1 staging
+stack used for rollout rehearsal has been deleted. There is no automatic V0→V1
+data migration — V1 launches fresh; V0 stays reachable at `v0.ph-nav.com`.

@@ -10,7 +10,7 @@ RELATED:
   - ../PLAN.md
   - ../STATUS.md
   - ../reviews/2026-06-27-security-use-case-review.md
-  - ../../v2-production-rollout/STATUS.md
+  - ../../../archive/dated/2026-06-28/v2-production-rollout/STATUS.md
   - ../../../features_v2.0/public-account-recovery/
   - ../../../features_v2.0/account-security-hardening/
 ---
@@ -69,7 +69,7 @@ internet-facing rate limiting, move to `features_v2.0/public-account-recovery/`.
 
 ## Implementation Tasks
 
-1. Update `planning/features/v2-production-rollout/STATUS.md` and `PLAN.md` so
+1. Update `planning/archive/dated/2026-06-28/v2-production-rollout/STATUS.md` and `PLAN.md` so
    Admin User Management is a blocker only for the MVP threshold.
 2. Confirm the decisions above in `STATUS.md`.
 3. Add accepted scope decisions to `PRD.md`.
@@ -96,7 +96,7 @@ internet-facing rate limiting, move to `features_v2.0/public-account-recovery/`.
   defense-in-depth cookie posture (`SameSite=Lax` default **plus** an always-on
   Origin allow-list + `X-PHN-CSRF` custom-header guard on unsafe admin
   mutations); `User`/`Admin` presets only.
-- Rollout docs (`../../v2-production-rollout/STATUS.md` + `PLAN.md`) already
+- Rollout docs (`../../../archive/dated/2026-06-28/v2-production-rollout/STATUS.md` + `PLAN.md`) already
   scope this MVP, not broad IAM/account recovery, as the blocker.
 - Deferred `features_v2.0/` packets exist and are linked:
   `public-account-recovery`, `account-security-hardening`,

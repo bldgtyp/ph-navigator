@@ -3,6 +3,10 @@
 Append-only audit trail. Durable decisions live in `context/`; this records
 how and when each feature packet landed. Newest first. Grep by slug.
 
+## 2026-06-28
+
+- `v2-production-rollout` - Render production rollout completed through Phase 4: current PH-Navigator live at `www.ph-nav.com` and `api.ph-nav.com`, legacy V0 retained at `v0.ph-nav.com`, GitHub repo canonicalized, production R2 upload smoke passed, old V1 staging services deleted, and stable deployment facts moved to `context/PRODUCTION_DEPLOYMENT.md`. (8038c57a + archive closeout)
+
 ## 2026-06-27
 
 - `access-capability-model` - replace the binary `is_editor = (user is not None)` check with a capability model (principals → capability bundles → `require_capability` seam). Beta (Phases 1–4b) shipped: reserved tenancy/shares schema + resolver, anonymous/`client` export gating front and back, viewer metadata redaction, `catalog.edit` grant, viewer version-pin + Settings/export hiding, and the CP-5 read-only canvas-inspect modal. Phase 5 enforcement (roles, certifier shares, held DDL) extracted to `planning/features_v2.0/access-capability-enforcement/`, deferred to the RBC trigger. (07b6f8bd + docs closeout)
