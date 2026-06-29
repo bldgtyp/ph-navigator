@@ -267,6 +267,11 @@ Testing:
 
 ## Phase 5 - Apertures Zero-Type Empty State
 
+Status: Implemented on branch `codex/envelope-save-ui-polish` on
+2026-06-29. Phase 5 gates the builder header/canvas behind a concrete active
+aperture type and reduces the zero-type editor main panel to one primary
+`Add aperture type` action.
+
 Goal: simplify the empty `Apertures > Apertures` builder state to one obvious
 creation action.
 

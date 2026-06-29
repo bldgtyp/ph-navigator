@@ -1,8 +1,8 @@
 # Apertures, Envelope, Climate + Tooltip UI Polish Refactor Status
 
 DATE: 2026-06-29
-TIME: 18:14 EDT
-STATUS: Active - Phase 4 implemented on branch
+TIME: 18:28 EDT
+STATUS: Active - Phase 5 implemented on branch
 AUTHOR: Codex
 SCOPE: Implementation handoff for six UI fixes: shared tooltip consolidation,
 Envelope sidebar tooltip layering, project-document Save Version progress
@@ -15,7 +15,7 @@ planning/refactor/envelope-save-ui-polish/PLAN.md
 
 ## Current State
 
-Phases 1, 2, 3, and 4 are implemented on branch
+Phases 1, 2, 3, 4, and 5 are implemented on branch
 `codex/envelope-save-ui-polish`.
 
 Completed in Phase 1:
@@ -82,8 +82,24 @@ Completed in Phase 4:
   map spinners appeared while 22 tile requests were held and cleared after the
   delayed responses completed.
 
-Next active implementation slice: Phase 5, the Apertures zero-type empty
-state.
+Completed in Phase 5:
+
+- Changed `AperturesTab` so the builder header, U-value chip, drift banner,
+  and canvas render only when a real active aperture type exists.
+- Removed the stale `AperturesHeader` null/fallback contract; the header now
+  requires a concrete `ApertureTypeEntry`.
+- Changed `ApertureEmptyState` to render no explanatory copy and, for editors,
+  one main-panel primary `Add aperture type` button with the existing
+  `createApertureType` dispatch path.
+- Kept viewer/read-only zero-type state quiet with no creation affordance.
+- Added a route-level zero-type test covering the main-panel DOM and add
+  command dispatch.
+- Browser-smoked a temporary empty project at `Apertures > Apertures`; the main
+  panel had exactly one primary add action, no fallback `Apertures` heading, no
+  `U-Value` chip, and no `No aperture types yet.` copy. The temporary project
+  was soft-deleted after the check.
+
+Next active implementation slice: Phase 6, final verification and closeout.
 
 ## Evidence Reviewed
 
@@ -169,12 +185,14 @@ state.
 - Phase 4 uses Leaflet tile layer events as the source of truth for loading
   state and keeps the visual treatment at the shared `ClimateMap` layer so the
   main project-location map and sidebar mini-map stay consistent.
+- Phase 5 removes the fallback title at the type level, not only through route
+  conditionals, so `AperturesHeader` cannot accidentally reintroduce the empty
+  builder header.
 
 ## Next Step
 
-Implement Phase 5 from `PLAN.md`: simplify the zero-aperture
-`Apertures > Apertures` builder state to one primary `Add aperture type`
-action in the main panel.
+Run Phase 6 from `PLAN.md`: final verification, docs-pass, Graphify update,
+and closeout commit for the complete UI polish packet.
 
 ## Verification So Far
 
@@ -250,3 +268,16 @@ Phase 4 implementation verification:
   pre-existing `react-refresh/only-export-components` warnings in unrelated
   Apertures, Climate, and DataTable files; no errors.
 - `git diff --check` passed.
+
+Phase 5 implementation verification:
+
+- `pnpm exec vitest run src/features/apertures/__tests__/AperturesTab.empty-state.test.tsx src/features/apertures/__tests__/AperturesHeader.test.tsx`
+  passed: 2 files, 5 tests.
+- Browser smoke on `http://localhost:5173` created temporary project
+  `578f2f7f-1f35-4076-abc5-c34895f2d767` (`COD-APT-71970728`), verified the
+  `Apertures > Apertures` zero-type main panel, saved screenshot
+  `/tmp/phn-apertures-zero-state-phase5.png`, and soft-deleted the temporary
+  project afterward.
+- `make frontend-dev-check` passed. ESLint still reports the same
+  pre-existing `react-refresh/only-export-components` warnings in unrelated
+  Apertures, Climate, and DataTable files; no errors.

@@ -16,7 +16,7 @@ export function AperturesHeader({
   actions,
   onRename,
 }: {
-  activeAperture: ApertureTypeEntry | null;
+  activeAperture: ApertureTypeEntry;
   apertures: ApertureTypeEntry[];
   uValue?: ApertureUValueResult | null;
   loading?: boolean;
@@ -26,18 +26,17 @@ export function AperturesHeader({
   onRename: (name: string) => void;
 }) {
   const { unitSystem } = useUnitPreference();
-  const activeName = activeAperture?.name ?? "Apertures";
   return (
     <header className="apertures-page__header" data-reveal-edit-on-hover>
       <div className="apertures-page__header-main">
         <InlineHeaderNameEditor
-          value={activeName}
-          canEdit={canEdit && activeAperture !== null}
+          value={activeAperture.name}
+          canEdit={canEdit}
           busy={busy}
           editLabel="Edit aperture type name"
           inputLabel="Aperture type name"
           getValidationMessage={(name) => {
-            if (!activeAperture || !nameCollides(apertures, name.trim(), activeAperture.id)) {
+            if (!nameCollides(apertures, name.trim(), activeAperture.id)) {
               return null;
             }
             return `An aperture type named '${name.trim()}' already exists in this version.`;

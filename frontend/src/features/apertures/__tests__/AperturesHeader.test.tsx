@@ -15,7 +15,7 @@ const initialApertures: ApertureTypeEntry[] = [
 
 function Harness({ onRename }: { onRename?: (name: string) => void }) {
   const [apertures, setApertures] = useState(initialApertures);
-  const activeAperture = apertures[0] ?? null;
+  const activeAperture = apertures[0]!;
   const renameActive = (name: string) => {
     onRename?.(name);
     setApertures((current) =>
@@ -36,7 +36,7 @@ function Harness({ onRename }: { onRename?: (name: string) => void }) {
       />
       <ApertureSidebar
         apertures={apertures}
-        activeApertureId={activeAperture?.id ?? null}
+        activeApertureId={activeAperture.id}
         canEdit
         actionDisabled={false}
         collapsed={false}
