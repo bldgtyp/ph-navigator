@@ -7,7 +7,7 @@ SCOPE: Product/security contract for post-MVP account-security hardening.
 RELATED:
   - README.md
   - STATUS.md
-  - ../../features/admin-user-management/PRD.md
+  - ../../archive/dated/2026-06-29/admin-user-management/PRD.md
 ---
 
 # PRD - Account Security Hardening

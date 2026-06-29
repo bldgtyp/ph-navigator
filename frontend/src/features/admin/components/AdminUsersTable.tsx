@@ -1,9 +1,20 @@
-import { KeyRound, Power, ShieldCheck, ShieldOff, History, RotateCcw } from "lucide-react";
+import {
+  AtSign,
+  History,
+  KeyRound,
+  Pencil,
+  Power,
+  RotateCcw,
+  ShieldCheck,
+  ShieldOff,
+} from "lucide-react";
 import { AppMenu, AppMenuItem } from "../../../shared/ui/AppMenu";
 import { roleLabel, statusLabel } from "../lib";
 import type { AdminUser } from "../types";
 
 export type AdminUserActions = {
+  onChangeName: (user: AdminUser) => void;
+  onChangeEmail: (user: AdminUser) => void;
   onResetLink: (user: AdminUser) => void;
   onDeactivate: (user: AdminUser) => void;
   onReactivate: (user: AdminUser) => void;
@@ -54,6 +65,12 @@ export function AdminUsersTable({
             <td>{formatDate(user.last_action_at)}</td>
             <td className="admin-users-table__actions">
               <AppMenu label={`Actions for ${user.email}`}>
+                <AppMenuItem icon={Pencil} onClick={() => actions.onChangeName(user)}>
+                  Change Name
+                </AppMenuItem>
+                <AppMenuItem icon={AtSign} onClick={() => actions.onChangeEmail(user)}>
+                  Change Email
+                </AppMenuItem>
                 {user.status !== "inactive" ? (
                   <AppMenuItem icon={KeyRound} onClick={() => actions.onResetLink(user)}>
                     Generate reset link

@@ -146,6 +146,42 @@ def set_user_active(conn: Connection[Any], user_id: UUID, *, active: bool) -> di
     return row
 
 
+def set_user_display_name(conn: Connection[Any], user_id: UUID, display_name: str) -> dict[str, Any]:
+    """Set a user's display name and return the public account row."""
+    row = conn.execute(
+        """
+        UPDATE users
+        SET display_name = %(display_name)s,
+            updated_at = now()
+        WHERE id = %(user_id)s
+        RETURNING id, email, display_name,
+                  (deleted_at IS NULL) AS is_active, units_preference
+        """,
+        {"user_id": user_id, "display_name": display_name},
+    ).fetchone()
+    if row is None:
+        raise RuntimeError("User display-name update did not return a row.")
+    return row
+
+
+def set_user_email(conn: Connection[Any], user_id: UUID, email: str) -> dict[str, Any]:
+    """Set a user's normalized email and return the public account row."""
+    row = conn.execute(
+        """
+        UPDATE users
+        SET email = %(email)s,
+            updated_at = now()
+        WHERE id = %(user_id)s
+        RETURNING id, email, display_name,
+                  (deleted_at IS NULL) AS is_active, units_preference
+        """,
+        {"user_id": user_id, "email": normalize_email(email)},
+    ).fetchone()
+    if row is None:
+        raise RuntimeError("User email update did not return a row.")
+    return row
+
+
 def set_user_password(conn: Connection[Any], user_id: UUID, password_hash: str) -> dict[str, Any]:
     """Set a user's password hash and stamp ``password_set_at`` to now."""
     row = conn.execute(

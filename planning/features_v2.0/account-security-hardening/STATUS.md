@@ -7,7 +7,7 @@ SCOPE: State tracker for account-security hardening.
 RELATED:
   - README.md
   - PRD.md
-  - ../../features/admin-user-management/STATUS.md
+  - ../../archive/dated/2026-06-29/admin-user-management/STATUS.md
 ---
 
 # STATUS - Account Security Hardening

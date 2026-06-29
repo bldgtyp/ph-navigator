@@ -7,9 +7,11 @@ import {
   inviteUser,
   reactivateUser,
   setUserAdmin,
+  updateUserEmail,
+  updateUserName,
 } from "./api";
 import { adminQueryKeys } from "./query-keys";
-import type { InviteUserPayload } from "./types";
+import type { InviteUserPayload, UpdateUserEmailPayload, UpdateUserNamePayload } from "./types";
 
 export function useAdminUsersQuery() {
   return useQuery({
@@ -67,6 +69,23 @@ export function useSetUserAdminMutation() {
   return useMutation({
     mutationFn: ({ userId, makeAdmin }: { userId: string; makeAdmin: boolean }) =>
       setUserAdmin(userId, makeAdmin),
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpdateUserNameMutation() {
+  const invalidate = useInvalidateUsers();
+  return useMutation({
+    mutationFn: ({ userId, displayName }: UpdateUserNamePayload) =>
+      updateUserName(userId, displayName),
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpdateUserEmailMutation() {
+  const invalidate = useInvalidateUsers();
+  return useMutation({
+    mutationFn: ({ userId, email }: UpdateUserEmailPayload) => updateUserEmail(userId, email),
     onSuccess: invalidate,
   });
 }

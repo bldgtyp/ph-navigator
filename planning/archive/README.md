@@ -3,6 +3,10 @@
 Append-only audit trail. Durable decisions live in `context/`; this records
 how and when each feature packet landed. Newest first. Grep by slug.
 
+## 2026-06-29
+
+- `admin-user-management` - two-user production account lifecycle MVP: audited first-admin bootstrap, invite/admin-reset-link/deactivate/reactivate/admin grants, last-admin protection, CSRF/Origin guard, capability-gated UI, Admin-derived `catalog.edit`, audit, runbook, and production smoke evidence. (docs closeout)
+
 ## 2026-06-28
 
 - `v2-production-rollout` - Render production rollout completed through Phase 4: current PH-Navigator live at `www.ph-nav.com` and `api.ph-nav.com`, legacy V0 retained at `v0.ph-nav.com`, GitHub repo canonicalized, production R2 upload smoke passed, old V1 staging services deleted, and stable deployment facts moved to `context/PRODUCTION_DEPLOYMENT.md`. (8038c57a + archive closeout)

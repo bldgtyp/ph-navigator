@@ -7,7 +7,7 @@ SCOPE: Phased plan to deploy the new PH-Navigator V1 to production, cut the root
 RELATED:
   - ./README.md
   - ./STATUS.md
-  - planning/features/admin-user-management/STATUS.md
+  - planning/archive/dated/2026-06-29/admin-user-management/STATUS.md
   - context/PRODUCTION_DEPLOYMENT.md
   - context/ENVIRONMENT.md
   - render.prod.yaml
@@ -175,7 +175,7 @@ bucket `ph-navigator-prod` with browser CORS allowing `https://www.ph-nav.com`.
 **Why:** production needs an in-app way to add, reset, revoke, and audit users
 without relying on local/staging-only scripts or reused seed credentials.
 
-**Build: DONE (2026-06-27).** `planning/features/admin-user-management/` Phases
+**Build: DONE (2026-06-27).** `planning/archive/dated/2026-06-29/admin-user-management/` Phases
 00–06 are implemented and tested end-to-end (`make ci` green): invite,
 admin-generated single-use/expiring reset links (no admin-set passwords),
 deactivate/reactivate, Admin grant/revoke, server-side `admin.users.manage`
@@ -187,7 +187,7 @@ durable rate limiting, re-auth, MFA, and broader IAM remain deferred in
 **Gate verification — the discrete step that clears this gate.** The capability
 is built; clearing the gate is now a production-verification checklist, run as
 part of Phase 0/1 below (not a separate feature). It mirrors
-`planning/features/admin-user-management/phases/phase-06-production-rehearsal.md`:
+`planning/archive/dated/2026-06-29/admin-user-management/phases/phase-06-production-rehearsal.md`:
 
 - [x] Set staging/prod env:
       - [x] Staging API service has `FRONTEND_BASE_URL` and

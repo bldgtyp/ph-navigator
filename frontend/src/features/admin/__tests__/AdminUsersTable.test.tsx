@@ -20,6 +20,8 @@ function buildUser(overrides: Partial<AdminUser> = {}): AdminUser {
 
 function noopActions(overrides: Partial<AdminUserActions> = {}): AdminUserActions {
   return {
+    onChangeName: vi.fn(),
+    onChangeEmail: vi.fn(),
     onResetLink: vi.fn(),
     onDeactivate: vi.fn(),
     onReactivate: vi.fn(),
@@ -50,6 +52,26 @@ describe("AdminUsersTable", () => {
     await user.click(screen.getByRole("menuitem", { name: "Deactivate" }));
 
     expect(onDeactivate).toHaveBeenCalledTimes(1);
+  });
+
+  it("offers Change Name and Change Email actions", async () => {
+    const user = userEvent.setup();
+    const onChangeName = vi.fn();
+    const onChangeEmail = vi.fn();
+    render(
+      <AdminUsersTable
+        users={[buildUser()]}
+        actions={noopActions({ onChangeName, onChangeEmail })}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /Actions for john@example.com/ }));
+    await user.click(screen.getByRole("menuitem", { name: "Change Name" }));
+    expect(onChangeName).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByRole("button", { name: /Actions for john@example.com/ }));
+    await user.click(screen.getByRole("menuitem", { name: "Change Email" }));
+    expect(onChangeEmail).toHaveBeenCalledTimes(1);
   });
 
   it("offers Reactivate for an inactive user instead of Deactivate", async () => {

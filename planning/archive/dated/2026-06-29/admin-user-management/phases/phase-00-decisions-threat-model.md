@@ -10,9 +10,9 @@ RELATED:
   - ../PLAN.md
   - ../STATUS.md
   - ../reviews/2026-06-27-security-use-case-review.md
-  - ../../../archive/dated/2026-06-28/v2-production-rollout/STATUS.md
-  - ../../../features_v2.0/public-account-recovery/
-  - ../../../features_v2.0/account-security-hardening/
+  - ../../../2026-06-28/v2-production-rollout/STATUS.md
+  - ../../../../../features_v2.0/public-account-recovery/
+  - ../../../../../features_v2.0/account-security-hardening/
 ---
 
 # Phase 00 - MVP Decisions / Threat Model
@@ -96,7 +96,7 @@ internet-facing rate limiting, move to `features_v2.0/public-account-recovery/`.
   defense-in-depth cookie posture (`SameSite=Lax` default **plus** an always-on
   Origin allow-list + `X-PHN-CSRF` custom-header guard on unsafe admin
   mutations); `User`/`Admin` presets only.
-- Rollout docs (`../../../archive/dated/2026-06-28/v2-production-rollout/STATUS.md` + `PLAN.md`) already
+- Rollout docs (`../../../2026-06-28/v2-production-rollout/STATUS.md` + `PLAN.md`) already
   scope this MVP, not broad IAM/account recovery, as the blocker.
 - Deferred `features_v2.0/` packets exist and are linked:
   `public-account-recovery`, `account-security-hardening`,
