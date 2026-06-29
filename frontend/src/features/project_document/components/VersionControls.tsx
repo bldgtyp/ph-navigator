@@ -1,5 +1,6 @@
 import "../version-controls.css";
 import { useEffect, useRef, type ReactNode } from "react";
+import { BlockingProgressOverlay } from "../../../shared/ui";
 import { useOutsidePointerDown } from "../../../shared/ui/useOutsidePointerDown";
 import type { ProjectDetail } from "../../projects/types";
 import { useDiffQuery, useDraftSummaryQuery } from "../hooks";
@@ -266,6 +267,9 @@ export function VersionControls({
             state.setDiffOpen(false);
           }}
         />
+      ) : null}
+      {lifecycle.savingVersion ? (
+        <BlockingProgressOverlay label="Saving version..." title="Saving version" />
       ) : null}
     </>
   );

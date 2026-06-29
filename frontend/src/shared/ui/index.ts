@@ -7,6 +7,7 @@
 export * from "./AppMenu";
 export * from "./AppSubTabs";
 export * from "./AutocompleteSelect";
+export * from "./BlockingProgressOverlay";
 export * from "./DialogActions";
 export * from "./InlineHeaderNameEditor";
 export * from "./ModalDialog";

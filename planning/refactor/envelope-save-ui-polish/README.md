@@ -1,8 +1,8 @@
 # Apertures, Envelope, Climate + Tooltip UI Polish Refactor
 
 DATE: 2026-06-29
-TIME: 17:09 EDT
-STATUS: Active - Phase 1 implemented on branch
+TIME: 17:56 EDT
+STATUS: Active - Phase 2 implemented on branch
 AUTHOR: Codex
 SCOPE: Small UI reliability pass covering shared tooltip behavior,
 Envelope/Assemblies sidebar tooltips, project-document Save Version feedback,

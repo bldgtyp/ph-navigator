@@ -1,8 +1,8 @@
 # Apertures, Envelope, Climate + Tooltip UI Polish Refactor Status
 
 DATE: 2026-06-29
-TIME: 17:09 EDT
-STATUS: Active - Phase 1 implemented on branch
+TIME: 17:56 EDT
+STATUS: Active - Phase 2 implemented on branch
 AUTHOR: Codex
 SCOPE: Implementation handoff for six UI fixes: shared tooltip consolidation,
 Envelope sidebar tooltip layering, project-document Save Version progress
@@ -15,7 +15,7 @@ planning/refactor/envelope-save-ui-polish/PLAN.md
 
 ## Current State
 
-Phase 1 is implemented on branch `codex/envelope-save-ui-polish`.
+Phases 1 and 2 are implemented on branch `codex/envelope-save-ui-polish`.
 
 Completed in Phase 1:
 
@@ -31,8 +31,24 @@ Completed in Phase 1:
 - Left the Envelope long-name tooltip and canvas toolbar hover hints in place
   because they are separate surfaces; remaining migrations stay follow-up work.
 
-Next active implementation slice: Phase 2, the blocking Save Version progress
-overlay.
+Completed in Phase 2:
+
+- Added `frontend/src/shared/ui/BlockingProgressOverlay.tsx` and
+  `BlockingProgressOverlay.css` as a shared full-viewport blocking progress
+  overlay rendered through `createPortal(document.body)`.
+- Exposed `savingVersion` from
+  `frontend/src/features/project_document/hooks/useDraftLifecycle.ts`, tied to
+  the draft-save mutation rather than broad document-control `busy` state.
+- Rendered the overlay from `VersionControls` while `Save Version` or
+  `Save then open` waits on `/draft/save` and the mutation success
+  invalidation path.
+- Preserved stale/locked/generic save error handling; the stale-save dialog
+  remains authoritative once the save mutation errors.
+- Extended `frontend/src/App.test.tsx` with delayed-save coverage for direct
+  Save Version and save-before-switch, plus stale-save overlay cleanup.
+
+Next active implementation slice: Phase 3, the Assembly SVG bottom-stroke
+safety gutter.
 
 ## Evidence Reviewed
 
@@ -108,12 +124,16 @@ overlay.
 - Phase 1 used Radix Popover for the shared tooltip instead of custom viewport
   math, matching the existing DataTable field-description tooltip precedent and
   avoiding a bespoke placement engine.
+- Phase 2 uses the existing TanStack mutation pending state for
+  `/draft/save`; because the mutation `onSuccess` returns
+  `invalidateProjectDocumentQueries`, the overlay stays mounted through cache
+  invalidation without adding a separate timer or optimistic state.
 
 ## Next Step
 
-Implement Phase 2 from `PLAN.md`: add the full-app blocking `Save Version`
-progress overlay and preserve existing stale/locked/generic save error
-handling.
+Implement Phase 3 from `PLAN.md`: reserve enough real SVG/stage gutter for the
+bottom Assembly segment stroke to remain visible in production and browser
+rounding cases.
 
 ## Verification So Far
 
@@ -148,3 +168,14 @@ Phase 1 implementation verification:
   extracted project action menu tooltip helpers. Rejected one efficiency note
   to keep version controls on CSS-only tooltips because Phase 1 explicitly
   targets header/menu viewport collision, not only sidebar overflow clipping.
+
+Phase 2 implementation verification:
+
+- `pnpm exec vitest run src/App.test.tsx` passed: 1 file, 28 tests.
+- `pnpm run format` completed after implementation.
+- `make frontend-dev-check` passed. ESLint still reports the same
+  pre-existing `react-refresh/only-export-components` warnings in unrelated
+  Apertures, Climate, and DataTable files; no errors.
+- `git diff --check` passed.
+- Simplify pass tightened the progress overlay to a single visible
+  `Saving version...` status line while keeping an accessible dialog name.

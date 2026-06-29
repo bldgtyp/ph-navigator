@@ -125,6 +125,10 @@ Testing:
 
 ## Phase 2 - Blocking Save Version Progress Overlay
 
+Status: Implemented on branch `codex/envelope-save-ui-polish` on
+2026-06-29. Phase 2 adds a shared blocking progress overlay and drives it from
+the specific `/draft/save` mutation pending state.
+
 Goal: clicking `Save Version` visibly freezes the app until the version commit
 and cache invalidation finish.
 
