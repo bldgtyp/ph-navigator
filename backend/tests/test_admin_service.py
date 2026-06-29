@@ -134,6 +134,57 @@ def test_generate_reset_link_for_active_user(clean_admin_tables: None) -> None:
     assert "admin_reset_link_generated" in _audit_actions(target.id)
 
 
+def test_update_user_name_changes_row_and_audits(clean_admin_tables: None) -> None:
+    actor = _make_admin()
+    target = create_or_update_user(email="john@example.com", display_name="John", password="pw")
+
+    row = service.update_user_name(
+        actor,
+        target_user_id=target.id,
+        display_name="  John Mitchell  ",
+        ip_address=None,
+        user_agent=None,
+    )
+
+    assert row.display_name == "John Mitchell"
+    assert "admin_user_name_changed" in _audit_actions(target.id)
+
+
+def test_update_user_email_changes_login_email_and_audits(clean_admin_tables: None) -> None:
+    actor = _make_admin()
+    target = create_or_update_user(email="john@example.com", display_name="John", password="pw")
+
+    row = service.update_user_email(
+        actor,
+        target_user_id=target.id,
+        email="  John.Mitchell@Example.COM  ",
+        ip_address=None,
+        user_agent=None,
+    )
+
+    assert row.email == "john.mitchell@example.com"
+    assert "admin_user_email_changed" in _audit_actions(target.id)
+    signed_in, _s, _e = authenticate("john.mitchell@example.com", "pw", _fake_request())
+    assert signed_in.id == target.id
+
+
+def test_update_user_email_rejects_duplicate_email(clean_admin_tables: None) -> None:
+    actor = _make_admin()
+    target = create_or_update_user(email="john@example.com", display_name="John", password="pw")
+    create_or_update_user(email="jane@example.com", display_name="Jane", password="pw")
+
+    with pytest.raises(HTTPException) as excinfo:
+        service.update_user_email(
+            actor,
+            target_user_id=target.id,
+            email="JANE@example.com",
+            ip_address=None,
+            user_agent=None,
+        )
+    assert excinfo.value.status_code == 409
+    assert _error_code(excinfo.value) == "email_taken"
+
+
 def test_reset_completion_invalidates_existing_sessions(clean_admin_tables: None) -> None:
     actor = _make_admin()
     target = create_or_update_user(email="john@example.com", display_name="John", password="old-password")

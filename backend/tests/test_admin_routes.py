@@ -176,6 +176,35 @@ def test_grant_and_last_admin_demote_guard(clean_admin_tables: None) -> None:
     assert promote.json()["role"] == "admin"
 
 
+def test_change_name_and_email_routes(clean_admin_tables: None) -> None:
+    _make_user("admin@example.com", admin=True)
+    target = _make_user("john@example.com", admin=False)
+    client = _client()
+    _login(client, "admin@example.com")
+
+    renamed = client.patch(f"/api/v1/admin/users/{target.id}/name", json={"display_name": "John Mitchell"})
+    assert renamed.status_code == 200
+    assert renamed.json()["display_name"] == "John Mitchell"
+
+    emailed = client.patch(f"/api/v1/admin/users/{target.id}/email", json={"email": "john@bldgtyp.com"})
+    assert emailed.status_code == 200
+    assert emailed.json()["email"] == "john@bldgtyp.com"
+
+    _login(_client(), "john@bldgtyp.com")
+
+
+def test_change_email_route_rejects_duplicate(clean_admin_tables: None) -> None:
+    _make_user("admin@example.com", admin=True)
+    target = _make_user("john@example.com", admin=False)
+    _make_user("jane@example.com", admin=False)
+    client = _client()
+    _login(client, "admin@example.com")
+
+    response = client.patch(f"/api/v1/admin/users/{target.id}/email", json={"email": "JANE@example.com"})
+    assert response.status_code == 409
+    assert response.json()["error_code"] == "email_taken"
+
+
 def test_audit_route_returns_entries_without_secrets(clean_admin_tables: None) -> None:
     _make_user("admin@example.com", admin=True)
     target = _make_user("john@example.com", admin=False)

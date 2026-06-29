@@ -7,7 +7,7 @@ SCOPE: Router for public account recovery and transactional account email.
 RELATED:
   - PRD.md
   - STATUS.md
-  - ../../features/admin-user-management/
+  - ../../archive/dated/2026-06-29/admin-user-management/
   - ../../archive/dated/2026-06-28/v2-production-rollout/
 ---
 
@@ -29,7 +29,7 @@ becomes operational friction.
 
 1. `STATUS.md` - current state, trigger, dependencies.
 2. `PRD.md` - behavior/security contract.
-3. `planning/features/admin-user-management/` - the MVP foundation this builds
+3. `planning/archive/dated/2026-06-29/admin-user-management/` - the MVP foundation this builds
    on.
 
 ## Status

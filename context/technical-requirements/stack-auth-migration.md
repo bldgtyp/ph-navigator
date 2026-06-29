@@ -145,7 +145,7 @@ AirTable-bound project is migrated.
   a `NULL` `password_hash`/`password_set_at` and cannot sign in until they
   complete a single-use, hashed, expiring `account_tokens` link via
   `/api/v1/auth/invite/complete` or `/reset/complete`. See
-  `planning/features/admin-user-management/`. The Admin preset is stored as the
+  `planning/archive/dated/2026-06-29/admin-user-management/`. The Admin preset is stored as the
   single `admin.users.manage` grant; resolved sessions also receive
   `catalog.edit` so admins can maintain shared catalogs.
 - **Password hashing** — Argon2id is the planned default, with memory,

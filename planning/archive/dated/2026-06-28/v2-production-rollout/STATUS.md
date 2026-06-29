@@ -8,7 +8,7 @@ RELATED:
   - ./PLAN.md
   - ./README.md
   - context/PRODUCTION_DEPLOYMENT.md
-  - planning/features/admin-user-management/STATUS.md
+  - planning/archive/dated/2026-06-29/admin-user-management/STATUS.md
   - planning/features_v2.0/public-account-recovery/STATUS.md
   - planning/features_v2.0/account-security-hardening/STATUS.md
 ---
@@ -40,7 +40,7 @@ is now cleared. See "Production-readiness gate".
 
 The Admin User Management gate cleared on 2026-06-28 after the audited staging,
 prod-onrender, and final custom-domain production rehearsals. The gate's
-two-user MVP capability is built in `planning/features/admin-user-management/`
+two-user MVP capability is built in `planning/archive/dated/2026-06-29/admin-user-management/`
 (Phases 00-06, `make ci` green):
 
 - ✅ invite-only user creation;
@@ -524,7 +524,7 @@ No open Step 1 decisions remain.
   2026-06-27 that `seed_user.py`, `seed_dev_db.py`, agent fixture seeds, and
   catalog seed scripts refuse production after the catalog-script guard fix.
 - Admin user management is now a hard MVP gate, tracked separately in
-  `planning/features/admin-user-management/`. Initial prod account creation no
+  `planning/archive/dated/2026-06-29/admin-user-management/`. Initial prod account creation no
   longer proceeds as the normal rollout path; production launch waits for
   bootstrap, invite, admin reset-link, deactivate/reactivate, admin-grant, and
   audit flows to meet the gate. Public reset/email and hardening are v2.0

@@ -80,6 +80,18 @@ class SetAdminRequest(BaseModel):
     make_admin: bool
 
 
+class UpdateUserNameRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    display_name: str = Field(min_length=1, max_length=200)
+
+
+class UpdateUserEmailRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    email: EmailStr
+
+
 # --- Response envelopes carrying a one-time link ---------------------------
 
 

@@ -35,6 +35,16 @@ export type InviteUserPayload = {
   role: AdminUserRolePreset;
 };
 
+export type UpdateUserNamePayload = {
+  userId: string;
+  displayName: string;
+};
+
+export type UpdateUserEmailPayload = {
+  userId: string;
+  email: string;
+};
+
 export type InviteUserResult = {
   user: AdminUser;
   link: IssuedAccountLink;

@@ -1,7 +1,7 @@
 # Planning Status
 
-DATE: 2026-06-27
-TIME: 09:06 EDT
+DATE: 2026-06-29
+TIME: 08:10 EDT
 STATUS: Active routing index for tracked planning material.
 AUTHOR: Codex
 SCOPE: Current planning folder organization after moving dated docs to
@@ -11,7 +11,7 @@ feature-first planning.
 
 | Feature | State | Current pointer |
 |---|---|---|
-| Admin User Management MVP | Planned / two-user production-rollout blocker; deferred scope split to `features_v2.0/`; Phases 00-06 now cover CSRF/cookie posture, account-token schema, first-admin bootstrap, invite/admin-reset-link/deactivate/admin grants, minimal UI, audit, and rollout rehearsal | `features/admin-user-management/STATUS.md` |
+| Admin User Management MVP | Complete / archived after Phases 00-06 implemented and verified: first-admin bootstrap, invite/admin-reset-link/deactivate/reactivate/admin grants, last-admin protection, CSRF/Origin guard, capability-gated UI, Admin-derived `catalog.edit`, audit, runbook, and production smoke evidence | `archive/dated/2026-06-29/admin-user-management/STATUS.md` |
 | V1 Production Rollout | Archived / complete through Phase 4: production live at `www.ph-nav.com` + `api.ph-nav.com`, V0 retained at `v0.ph-nav.com`, repo canonicalized, old staging deleted; stable deployment facts moved to `context/PRODUCTION_DEPLOYMENT.md` | `archive/dated/2026-06-28/v2-production-rollout/STATUS.md` |
 | Beta Schema Evolution | Complete / archived after beta gate drill passed with fixture audit, local DB audit, and `make ci` | `archive/dated/2026-06-27/beta-schema-evolution/STATUS.md` |
 | DataTable Status Field — Addendum | Complete — `status` extended to the 3 remaining Datasheet-bearing tables (Ventilators, HP Outdoor Units, HP Indoor Units); `make ci` green, live smoke done, committed `d8b59f28` (branch, not yet merged); archived | `archive/dated/2026-06-24/data-table-status-field-addendum/STATUS.md` |
@@ -58,6 +58,10 @@ feature-first planning.
 - Legacy dated planning files now live under `archive/dated/<date>/...`.
 - Dated code reviews now live under `code-reviews/<date>/...`.
 - Feature-specific dated bundles now live under `features/<feature>/...`.
+- Completed Admin User Management MVP planning now lives under
+  `archive/dated/2026-06-29/admin-user-management/` (two-user production
+  account lifecycle, CSRF/Origin guard, `admin.users.manage` Admin preset,
+  Admin-derived `catalog.edit`, audit, runbook, and production smoke evidence).
 - Completed Assembly Builder canvas-refactor planning now lives under
   `archive/dated/2026-06-04/assembly-builder/`; older foundation precedent remains
   under `archive/dated/2026-06-04/assembly-builder-foundation/`.

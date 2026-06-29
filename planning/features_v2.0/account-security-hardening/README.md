@@ -7,7 +7,7 @@ SCOPE: Router for account-security hardening beyond the Admin User Management MV
 RELATED:
   - PRD.md
   - STATUS.md
-  - ../../features/admin-user-management/
+  - ../../archive/dated/2026-06-29/admin-user-management/
   - ../public-account-recovery/
   - ../access-capability-enforcement/
 ---
@@ -29,7 +29,7 @@ surface, or external access model justifies it.
 
 1. `STATUS.md` - current state, trigger, dependencies.
 2. `PRD.md` - hardening candidates and acceptance boundaries.
-3. `planning/features/admin-user-management/` - MVP account lifecycle foundation.
+3. `planning/archive/dated/2026-06-29/admin-user-management/` - MVP account lifecycle foundation.
 
 ## Status
 

@@ -40,6 +40,20 @@ export async function setUserAdmin(userId: string, makeAdmin: boolean): Promise<
   });
 }
 
+export async function updateUserName(userId: string, displayName: string): Promise<AdminUser> {
+  return fetchJson<AdminUser>(`${BASE}/${userId}/name`, {
+    method: "PATCH",
+    body: JSON.stringify({ display_name: displayName }),
+  });
+}
+
+export async function updateUserEmail(userId: string, email: string): Promise<AdminUser> {
+  return fetchJson<AdminUser>(`${BASE}/${userId}/email`, {
+    method: "PATCH",
+    body: JSON.stringify({ email }),
+  });
+}
+
 export async function fetchUserAudit(
   userId: string,
   signal?: AbortSignal,

@@ -14,6 +14,7 @@ from typing import Any
 from uuid import UUID
 
 from psycopg import Connection
+from psycopg.errors import UniqueViolation
 from starlette import status
 
 from database import transaction
@@ -323,4 +324,76 @@ def set_admin(
                     user_agent=user_agent,
                     details={"capability": ADMIN_USERS_MANAGE},
                 )
+        return _require_user_row(conn, target_user_id)
+
+
+def update_user_name(
+    actor: UserPublic,
+    *,
+    target_user_id: UUID,
+    display_name: str,
+    ip_address: str | None,
+    user_agent: str | None,
+) -> AdminUserRow:
+    """Update a user's display name and audit the change."""
+    next_name = display_name.strip()
+    if not next_name:
+        raise api_error(status.HTTP_422_UNPROCESSABLE_CONTENT, "display_name_required", "Display name is required.")
+
+    with transaction() as conn:
+        user = auth_repository.get_user_account_for_update(conn, target_user_id)
+        if user is None:
+            raise api_error(status.HTTP_404_NOT_FOUND, "user_not_found", "No such user.")
+        old_name = str(user["display_name"])
+        if old_name == next_name:
+            return _require_user_row(conn, target_user_id)
+
+        auth_repository.set_user_display_name(conn, target_user_id, next_name)
+        audit.log_admin_action(
+            conn,
+            action=audit.ADMIN_USER_NAME_CHANGED,
+            actor=actor,
+            target_user_id=target_user_id,
+            target_email=str(user["email"]),
+            ip_address=ip_address,
+            user_agent=user_agent,
+            details={"old_display_name": old_name, "new_display_name": next_name},
+        )
+        return _require_user_row(conn, target_user_id)
+
+
+def update_user_email(
+    actor: UserPublic,
+    *,
+    target_user_id: UUID,
+    email: str,
+    ip_address: str | None,
+    user_agent: str | None,
+) -> AdminUserRow:
+    """Update a user's login email and audit the change."""
+    next_email = auth_repository.normalize_email(email)
+    with transaction() as conn:
+        user = auth_repository.get_user_account_for_update(conn, target_user_id)
+        if user is None:
+            raise api_error(status.HTTP_404_NOT_FOUND, "user_not_found", "No such user.")
+        old_email = str(user["email"])
+        if auth_repository.normalize_email(old_email) == next_email:
+            return _require_user_row(conn, target_user_id)
+
+        try:
+            auth_repository.set_user_email(conn, target_user_id, next_email)
+        except UniqueViolation as exc:
+            raise api_error(
+                status.HTTP_409_CONFLICT, "email_taken", "Email is already assigned to another user."
+            ) from exc
+        audit.log_admin_action(
+            conn,
+            action=audit.ADMIN_USER_EMAIL_CHANGED,
+            actor=actor,
+            target_user_id=target_user_id,
+            target_email=next_email,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            details={"old_email": old_email, "new_email": next_email},
+        )
         return _require_user_row(conn, target_user_id)

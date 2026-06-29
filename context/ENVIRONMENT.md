@@ -588,7 +588,7 @@ optional recreated `ph-navigator-v2-api-staging` service from `render.yaml` uses
 
 The `make seed-*` recipes above are local/staging-only and refuse production.
 Production user lifecycle runs through the **Admin User Management** feature
-(`planning/features/admin-user-management/`). All sensitive actions write
+(`planning/archive/dated/2026-06-29/admin-user-management/`). All sensitive actions write
 `user_action_log` rows; raw invite/reset links are shown **once** and never
 stored.
 

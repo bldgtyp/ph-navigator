@@ -8,6 +8,7 @@ import { useSignOutMutation } from "../../auth/hooks";
 import type { AuthSession } from "../../auth/types";
 import { AdminUsersTable } from "../components/AdminUsersTable";
 import { ConfirmActionModal } from "../components/ConfirmActionModal";
+import { EditUserFieldModal } from "../components/EditUserFieldModal";
 import { InviteUserModal } from "../components/InviteUserModal";
 import { OneTimeLinkModal } from "../components/OneTimeLinkModal";
 import { UserAuditModal } from "../components/UserAuditModal";
@@ -27,6 +28,7 @@ type ActiveModal =
   | { kind: "invite" }
   | { kind: "link"; title: string; description: string; link: string }
   | { kind: "audit"; user: AdminUser }
+  | { kind: "edit"; field: "name" | "email"; user: AdminUser }
   | { kind: "confirm"; action: ConfirmKind; user: AdminUser }
   | null;
 
@@ -116,6 +118,8 @@ export function AdminUsersPage({ session }: { session: AuthSession }) {
   };
 
   const tableActions = {
+    onChangeName: (user: AdminUser) => setModal({ kind: "edit", field: "name", user }),
+    onChangeEmail: (user: AdminUser) => setModal({ kind: "edit", field: "email", user }),
     onResetLink: handleResetLink,
     onDeactivate: (user: AdminUser) => setModal({ kind: "confirm", action: "deactivate", user }),
     onReactivate: (user: AdminUser) => setModal({ kind: "confirm", action: "reactivate", user }),
@@ -189,6 +193,9 @@ export function AdminUsersPage({ session }: { session: AuthSession }) {
       ) : null}
       {modal?.kind === "audit" ? (
         <UserAuditModal user={modal.user} onClose={() => setModal(null)} />
+      ) : null}
+      {modal?.kind === "edit" ? (
+        <EditUserFieldModal user={modal.user} field={modal.field} onClose={() => setModal(null)} />
       ) : null}
       {modal?.kind === "confirm" && confirm ? (
         <ConfirmActionModal
