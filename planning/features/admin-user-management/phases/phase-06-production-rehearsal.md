@@ -7,8 +7,8 @@ SCOPE: Production rehearsal, MVP account lifecycle runbook, and rollout unblock.
 RELATED:
   - ../README.md
   - ../STATUS.md
-  - ../../v2-production-rollout/PLAN.md
-  - ../../v2-production-rollout/STATUS.md
+  - ../../../archive/dated/2026-06-28/v2-production-rollout/PLAN.md
+  - ../../../archive/dated/2026-06-28/v2-production-rollout/STATUS.md
   - context/ENVIRONMENT.md
 ---
 
@@ -38,7 +38,7 @@ and hand `v2-production-rollout` a clean unblock checklist.
    - grant/revoke Admin;
    - inspect audit rows.
 3. Verify cookie/Origin/CSRF behavior on the actual deployment origin shape.
-4. Update `planning/features/v2-production-rollout/STATUS.md` when unblocked.
+4. Update `planning/archive/dated/2026-06-28/v2-production-rollout/STATUS.md` when unblocked.
 5. Run closeout:
    - simplify skill;
    - docs-pass skill;
@@ -74,7 +74,7 @@ and hand `v2-production-rollout` a clean unblock checklist.
   grant/revoke with transactional last-admin protection, CSRF/Origin rejection,
   and deny-by-default authorization. `make ci` green.
 - Production rollout docs updated: the MVP gate's **implementation** is complete;
-  see `../../v2-production-rollout/STATUS.md`.
+  see `../../../archive/dated/2026-06-28/v2-production-rollout/STATUS.md`.
 
 ## Production-Onrender Rehearsal (2026-06-28)
 

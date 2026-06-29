@@ -7,7 +7,7 @@ RELATED:
   - context/DEVELOPMENT_WORKFLOW.md
   - render.prod.yaml
   - render.yaml
-  - planning/features/v2-production-rollout/STATUS.md
+  - planning/archive/dated/2026-06-28/v2-production-rollout/STATUS.md
 ---
 
 # PH-Navigator Production Deployment
