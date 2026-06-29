@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
-TIME: 16:38 EDT
-STATUS: Draft decision ledger for production climate-data enablement.
+TIME: 17:55 EDT
+STATUS: Complete decision ledger for production climate-data enablement.
 AUTHOR: Codex
 SCOPE: Accepted operational decisions and open questions for production climate data seeding.
 RELATED:
@@ -66,15 +66,16 @@ asset verification.
 it has 24 Phius `-mon.txt` files and no PHI workbook. Production publishing must
 use full licensed sources.
 
-## Open questions
+## Resolved questions
 
 ### O-PCDS-1 - Where should final production seed evidence live?
 
-Recommended: record concise evidence in this packet's `STATUS.md`, then fold
-durable command/count facts into `context/PRODUCTION_DEPLOYMENT.md` if the
-current runbook lacks anything discovered during execution.
+Resolved: concise evidence is recorded in this packet's `STATUS.md`. Existing
+stable runbook guidance in `context/PRODUCTION_DEPLOYMENT.md` and
+`context/ENVIRONMENT.md` was sufficient; no durable context patch was required.
 
 ### O-PCDS-2 - Do we need a production admin diagnostic endpoint?
 
-Not required for this run. SQL plus existing app UI is enough. Consider only if
-operators repeatedly need a non-SQL readout of seeded climate providers.
+Resolved: not required for this run. SQL plus existing app UI was enough.
+Consider only if operators repeatedly need a non-SQL readout of seeded climate
+providers.

@@ -12,7 +12,7 @@ feature-first planning.
 | Feature | State | Current pointer |
 |---|---|---|
 | Admin User Management MVP | Complete / archived after Phases 00-06 implemented and verified: first-admin bootstrap, invite/admin-reset-link/deactivate/reactivate/admin grants, last-admin protection, CSRF/Origin guard, capability-gated UI, Admin-derived `catalog.edit`, audit, runbook, and production smoke evidence | `archive/dated/2026-06-29/admin-user-management/STATUS.md` |
-| Production Climate Data Seeding | P00 complete / production readiness audit found production DB climate rows empty, R2 env configured, private R2 bucket/CORS posture confirmed, and climate namespace empty; P01 blocked on local production R2 credentials for bundle upload | `features/production-climate-data-seeding/STATUS.md` |
+| Production Climate Data Seeding | Complete / production R2 PHIUS+PHI bundles published, Render Postgres seeded (`phi/10.6` 1002 locations, `phius/2022` 1007 locations), and PHIUS, PHI, and Hourly Climate workflows manually verified on production; archived | `archive/dated/2026-06-29/production-climate-data-seeding/STATUS.md` |
 | Equipment Draft ETag Coordination | Planned / active docs-only packet for stale `draft_etag` regression across mounted Equipment sub-tabs; root cause identified as lazy sibling slice invalidation without write-time target freshness | `features/equipment-draft-etag-coordination/STATUS.md` |
 | V1 Production Rollout | Archived / complete through Phase 4: production live at `www.ph-nav.com` + `api.ph-nav.com`, V0 retained at `v0.ph-nav.com`, repo canonicalized, old staging deleted; stable deployment facts moved to `context/PRODUCTION_DEPLOYMENT.md` | `archive/dated/2026-06-28/v2-production-rollout/STATUS.md` |
 | Beta Schema Evolution | Complete / archived after beta gate drill passed with fixture audit, local DB audit, and `make ci` | `archive/dated/2026-06-27/beta-schema-evolution/STATUS.md` |
@@ -66,6 +66,10 @@ feature-first planning.
   `archive/dated/2026-06-29/admin-user-management/` (two-user production
   account lifecycle, CSRF/Origin guard, `admin.users.manage` Admin preset,
   Admin-derived `catalog.edit`, audit, runbook, and production smoke evidence).
+- Completed Production Climate Data Seeding planning now lives under
+  `archive/dated/2026-06-29/production-climate-data-seeding/` (production R2
+  PHIUS/PHI bundles, Render Postgres climate dataset seed, SQL verification,
+  manual production PHIUS/PHI/Hourly Climate smoke, and runbook evidence).
 - Completed Assembly Builder canvas-refactor planning now lives under
   `archive/dated/2026-06-04/assembly-builder/`; older foundation precedent remains
   under `archive/dated/2026-06-04/assembly-builder-foundation/`.
