@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
-TIME: 17:35 EDT
-STATUS: Next
+TIME: 17:39 EDT
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Seed production Render Postgres from published R2 climate bundles.
 RELATED:
@@ -18,6 +18,35 @@ RELATED:
 
 Populate production `climate_dataset` and `climate_dataset_location` rows from
 the PHIUS and PHI bundles published in P01.
+
+## Outcome
+
+Complete on 2026-06-29 at 17:39 EDT.
+
+Production DB write performed:
+
+- Render one-off job `job-d91eb7favr4c73fgdglg` on `ph-navigator-api`
+  (`srv-d909p1b7uimc7396t580`).
+- Command:
+  `uv run python -m features.climate.seeding --all --no-replace`.
+- Status: `succeeded`; started `2026-06-29T21:37:33Z`, finished
+  `2026-06-29T21:38:17Z`.
+
+Verification:
+
+```text
+provider,version,label,locations
+phi,10.6,PHI 10.6,1002
+phius,2022,Phius 2022,1007
+```
+
+Project climate sources remain empty before P03 smoke:
+
+```text
+kind,sources
+```
+
+Proceed to P03 live app smoke.
 
 ## Preconditions
 
