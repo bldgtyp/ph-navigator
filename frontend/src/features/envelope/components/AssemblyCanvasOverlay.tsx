@@ -41,6 +41,8 @@ export function AssemblyCanvasOverlay({
   canEdit,
   paint,
   actions,
+  topPx = 0,
+  heightPx,
 }: {
   geometry: AssemblyCanvasGeometry;
   materialsById: ReadonlyMap<string, ProjectMaterial>;
@@ -49,9 +51,19 @@ export function AssemblyCanvasOverlay({
   canEdit: boolean;
   paint: AssemblyCanvasPaintController;
   actions: AssemblyCanvasOverlayActions;
+  topPx?: number;
+  heightPx?: number;
 }) {
   return (
-    <div id="assembly-canvas-overlay" className="assembly-canvas-overlay" data-mode={paint.mode}>
+    <div
+      id="assembly-canvas-overlay"
+      className="assembly-canvas-overlay"
+      data-mode={paint.mode}
+      style={{
+        top: `${topPx}px`,
+        height: heightPx === undefined ? undefined : `${heightPx}px`,
+      }}
+    >
       {canEdit
         ? geometry.layers.map((layerGeometry) => (
             <LayerDimensionControls

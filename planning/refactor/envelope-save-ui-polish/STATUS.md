@@ -1,8 +1,8 @@
 # Apertures, Envelope, Climate + Tooltip UI Polish Refactor Status
 
 DATE: 2026-06-29
-TIME: 17:56 EDT
-STATUS: Active - Phase 2 implemented on branch
+TIME: 18:08 EDT
+STATUS: Active - Phase 3 implemented on branch
 AUTHOR: Codex
 SCOPE: Implementation handoff for six UI fixes: shared tooltip consolidation,
 Envelope sidebar tooltip layering, project-document Save Version progress
@@ -15,7 +15,8 @@ planning/refactor/envelope-save-ui-polish/PLAN.md
 
 ## Current State
 
-Phases 1 and 2 are implemented on branch `codex/envelope-save-ui-polish`.
+Phases 1, 2, and 3 are implemented on branch
+`codex/envelope-save-ui-polish`.
 
 Completed in Phase 1:
 
@@ -47,8 +48,22 @@ Completed in Phase 2:
 - Extended `frontend/src/App.test.tsx` with delayed-save coverage for direct
   Save Version and save-before-switch, plus stale-save overlay cleanup.
 
-Next active implementation slice: Phase 3, the Assembly SVG bottom-stroke
-safety gutter.
+Completed in Phase 3:
+
+- Added `ASSEMBLY_CANVAS_BOTTOM_SAFETY_GUTTER_PX` and changed Assembly canvas
+  stage sizing to reserve the full padded SVG bounds plus a 2px bottom guard.
+- Kept segment and layer geometry math unchanged by shifting the overlay plane
+  and orientation labels down by the SVG stroke padding, while positioning the
+  SVG itself at `top: 0`.
+- Extended `EnvelopePage.test.tsx` to assert the new padded stage height,
+  visible SVG height, `top: 0` SVG placement, and aligned overlay/label
+  geometry plane.
+- Browser-smoked the rendered canvas in Chromium on this worktree's
+  `http://localhost:5173` route; the SVG starts inside the stage, its bottom
+  leaves the 2px guard, and the bottom segment sits inside the SVG padding.
+
+Next active implementation slice: Phase 4, the Climate map tile-loading
+spinner.
 
 ## Evidence Reviewed
 
@@ -128,12 +143,15 @@ safety gutter.
   `/draft/save`; because the mutation `onSuccess` returns
   `invalidateProjectDocumentQueries`, the overlay stays mounted through cache
   invalidation without adding a separate timer or optimistic state.
+- Phase 3 separates the padded stage bounds from the unpadded geometry plane
+  rather than changing segment dimensions. This keeps controls aligned to the
+  model geometry while giving the SVG stroke real layout space.
 
 ## Next Step
 
-Implement Phase 3 from `PLAN.md`: reserve enough real SVG/stage gutter for the
-bottom Assembly segment stroke to remain visible in production and browser
-rounding cases.
+Implement Phase 4 from `PLAN.md`: add shared Climate map tile-loading feedback
+for live Leaflet maps, including the main project-location map and sidebar
+mini-map.
 
 ## Verification So Far
 
@@ -179,3 +197,18 @@ Phase 2 implementation verification:
 - `git diff --check` passed.
 - Simplify pass tightened the progress overlay to a single visible
   `Saving version...` status line while keeping an accessible dialog name.
+
+Phase 3 implementation verification:
+
+- `pnpm exec vitest run src/features/envelope/__tests__/EnvelopePage.test.tsx`
+  passed: 1 file, 47 tests.
+- Browser smoke on `http://localhost:5173` with project
+  `d8ec633a-f1b5-458d-b0db-650778849ace` passed geometry guards:
+  SVG `top: 0px`, SVG bottom at least 2px above stage bottom, bottom segment
+  inside SVG padding, overlay and labels aligned to the geometry plane.
+  Screenshot saved at `/tmp/phn-assembly-bottom-stroke-phase3.png`.
+- `pnpm run format` completed after implementation.
+- `make frontend-dev-check` passed. ESLint still reports the same
+  pre-existing `react-refresh/only-export-components` warnings in unrelated
+  Apertures, Climate, and DataTable files; no errors.
+- `git diff --check` passed.

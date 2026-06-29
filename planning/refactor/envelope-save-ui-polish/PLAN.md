@@ -172,6 +172,10 @@ Testing:
 
 ## Phase 3 - Assembly SVG Bottom Stroke Safety Gutter
 
+Status: Implemented on branch `codex/envelope-save-ui-polish` on
+2026-06-29. Phase 3 gives the SVG full padded layout bounds plus a 2px bottom
+guard while keeping controls on an offset, unpadded geometry plane.
+
 Goal: reserve enough real layout space for SVG stroke padding so the bottom
 segment border cannot be clipped by the scroll container or production browser
 rounding.
