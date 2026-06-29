@@ -8,6 +8,31 @@ const RUN_PERF = process.env.PHN_PERF === "1";
 const PERF_PROJECT_ID = process.env.PERF_PROJECT_ID;
 const PERF_EMAIL = process.env.E2E_EMAIL ?? "codex@example.com";
 const PERF_PASSWORD = process.env.E2E_PASSWORD ?? "password";
+const DEFAULT_FRONTEND_BASE_URL = "http://localhost:5173";
+const DEFAULT_LOCAL_API_BASE_URL = "http://localhost:8000";
+const PRODUCTION_API_BASE_URL = "https://api.ph-nav.com";
+const FRONTEND_BASE_URL = normalizeBaseUrl(process.env.E2E_BASE_URL ?? DEFAULT_FRONTEND_BASE_URL);
+const API_BASE_URL = normalizeBaseUrl(
+  process.env.E2E_API_BASE_URL ??
+    (isProductionPhNavigatorUrl(FRONTEND_BASE_URL)
+      ? PRODUCTION_API_BASE_URL
+      : DEFAULT_LOCAL_API_BASE_URL),
+);
+const API_ORIGIN = originFor(API_BASE_URL);
+const IS_PRODUCTION_TARGET =
+  isProductionPhNavigatorUrl(FRONTEND_BASE_URL) || isProductionPhNavigatorUrl(API_BASE_URL);
+const PERF_PRODUCTION = process.env.PHN_PERF_PRODUCTION === "1";
+const PERF_READONLY = process.env.PHN_PERF_READONLY === "1";
+const PERF_ALLOW_PRODUCTION_WRITES = process.env.PHN_PERF_ALLOW_PRODUCTION_WRITES === "1";
+const INCLUDE_MODEL_VIEWER = !IS_PRODUCTION_TARGET || process.env.PHN_PERF_INCLUDE_MODEL === "1";
+const PERF_TARGET_METADATA = {
+  frontendBaseUrl: FRONTEND_BASE_URL,
+  apiBaseUrl: API_BASE_URL,
+  productionTarget: IS_PRODUCTION_TARGET,
+  readOnly: PERF_READONLY,
+  productionWritesAllowed: PERF_ALLOW_PRODUCTION_WRITES,
+  modelViewerIncluded: INCLUDE_MODEL_VIEWER,
+};
 
 type PerfPage = {
   id: string;
@@ -25,6 +50,56 @@ type NetworkResponseMetric = {
   contentLength: number | null;
 };
 
+function normalizeBaseUrl(value: string): string {
+  return value.replace(/\/+$/, "");
+}
+
+function originFor(value: string): string {
+  try {
+    return new URL(value).origin;
+  } catch {
+    return value;
+  }
+}
+
+function isProductionPhNavigatorUrl(value: string): boolean {
+  try {
+    const hostname = new URL(value).hostname.toLowerCase();
+    return hostname === "ph-nav.com" || hostname.endsWith(".ph-nav.com");
+  } catch {
+    return false;
+  }
+}
+
+function assertPerfEnvironment(): void {
+  if (!IS_PRODUCTION_TARGET) return;
+  if (!PERF_PRODUCTION) {
+    throw new Error(
+      "Production PH-Navigator perf targets require PHN_PERF_PRODUCTION=1. " +
+        `Detected frontend=${FRONTEND_BASE_URL}, api=${API_BASE_URL}.`,
+    );
+  }
+  if (!process.env.E2E_EMAIL || !process.env.E2E_PASSWORD) {
+    throw new Error(
+      "Production PH-Navigator perf runs require explicit E2E_EMAIL and E2E_PASSWORD.",
+    );
+  }
+  if (!PERF_READONLY && !PERF_ALLOW_PRODUCTION_WRITES) {
+    throw new Error(
+      "Production PH-Navigator perf runs must set PHN_PERF_READONLY=1 or " +
+        "PHN_PERF_ALLOW_PRODUCTION_WRITES=1.",
+    );
+  }
+}
+
+function responseMatchesApiOrigin(responseUrl: string): boolean {
+  try {
+    return new URL(responseUrl).origin === API_ORIGIN;
+  } catch {
+    return false;
+  }
+}
+
 const projectRoute = (tab: string) => {
   if (!PERF_PROJECT_ID) return `/__missing_perf_project_id__/${tab}`;
   return `/projects/${PERF_PROJECT_ID}/${tab}`;
@@ -40,6 +115,14 @@ async function hoverFirstGridCell(page: Page): Promise<void> {
   await page.locator('td[role="gridcell"]').first().hover();
 }
 
+async function exerciseFirstNameCell(page: Page): Promise<void> {
+  if (PERF_READONLY) {
+    await hoverFirstGridCell(page);
+    return;
+  }
+  await editFirstNameCell(page);
+}
+
 async function discardRecoveredDraft(page: Page): Promise<void> {
   const dialog = page.getByRole("dialog", { name: "Recovered draft found" });
   const appeared = await dialog
@@ -48,6 +131,12 @@ async function discardRecoveredDraft(page: Page): Promise<void> {
     .catch(() => false);
 
   if (!appeared) return;
+
+  if (PERF_READONLY) {
+    throw new Error(
+      "Recovered draft dialog appeared during a read-only perf run; reset the fixture first.",
+    );
+  }
 
   await dialog.getByRole("button", { name: "Discard draft" }).click();
   await expect(dialog).toBeHidden();
@@ -64,7 +153,7 @@ async function dragPrimaryCanvas(
   await page.mouse.up();
 }
 
-const perfPages: PerfPage[] = [
+const basePerfPages: PerfPage[] = [
   {
     id: "dashboard",
     label: "Dashboard",
@@ -95,7 +184,7 @@ const perfPages: PerfPage[] = [
       await expect(page.getByRole("region", { name: "Rooms" })).toBeVisible();
     },
     scenario: async (page) => {
-      await editFirstNameCell(page);
+      await exerciseFirstNameCell(page);
     },
   },
   {
@@ -106,7 +195,7 @@ const perfPages: PerfPage[] = [
       await expect(page.getByRole("region", { name: "Equipment" })).toBeVisible();
     },
     scenario: async (page) => {
-      await editFirstNameCell(page);
+      await exerciseFirstNameCell(page);
     },
   },
   {
@@ -189,6 +278,9 @@ const perfPages: PerfPage[] = [
     },
   },
 ];
+const perfPages: PerfPage[] = basePerfPages.filter(
+  (perfPage) => INCLUDE_MODEL_VIEWER || perfPage.id !== "model-viewer",
+);
 
 test.describe("frontend perf matrix", () => {
   test.skip(!RUN_PERF, "Set PHN_PERF=1 and PERF_PROJECT_ID=<seeded project id> to run.");
@@ -196,6 +288,10 @@ test.describe("frontend perf matrix", () => {
     RUN_PERF && !PERF_PROJECT_ID,
     "PERF_PROJECT_ID is required for project-route perf cells.",
   );
+
+  test.beforeAll(() => {
+    assertPerfEnvironment();
+  });
 
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
@@ -240,7 +336,8 @@ test.describe("frontend perf matrix", () => {
               element instanceof Element && typeof element.className === "string"
                 ? element.className || null
                 : null,
-            elementText: element instanceof Element ? element.textContent?.trim().slice(0, 160) : null,
+            elementText:
+              element instanceof Element ? element.textContent?.trim().slice(0, 160) : null,
           };
         }
       });
@@ -256,7 +353,7 @@ test.describe("frontend perf matrix", () => {
     test(`${perfPage.id}: cold load + scripted interaction`, async ({ page }, testInfo) => {
       const networkResponses: NetworkResponseMetric[] = [];
       page.on("response", (response) => {
-        if (!response.url().startsWith("http://localhost:8000/")) return;
+        if (!responseMatchesApiOrigin(response.url())) return;
 
         const headers = response.headers();
         const contentLength = Number(headers["content-length"]);
@@ -286,7 +383,7 @@ test.describe("frontend perf matrix", () => {
       await page.waitForTimeout(250);
 
       const metrics = await page.evaluate(
-        ({ interactionMs, networkResponses }) => {
+        ({ interactionMs, networkResponses, target }) => {
           const navigation = performance.getEntriesByType("navigation")[0]?.toJSON();
           return {
             navigation,
@@ -300,9 +397,10 @@ test.describe("frontend perf matrix", () => {
               .map((entry) => entry.toJSON())
               .filter((entry) => entry.transferSize || entry.encodedBodySize),
             networkResponses,
+            target,
           };
         },
-        { interactionMs: Date.now() - startedAt, networkResponses },
+        { interactionMs: Date.now() - startedAt, networkResponses, target: PERF_TARGET_METADATA },
       );
 
       const metricsJson = JSON.stringify(metrics, null, 2);
