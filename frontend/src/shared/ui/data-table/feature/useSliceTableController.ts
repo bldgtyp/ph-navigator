@@ -29,7 +29,10 @@ import { useQueryClient, type UseMutationResult } from "@tanstack/react-query";
 import { errorMessage } from "../../../lib/errors";
 import { useTableSchema } from "../index";
 import { isDraftStaleError, isVersionLockedError } from "../../../../features/project_document/lib";
-import { projectDocumentQueryKeys } from "../../../../features/project_document/query-keys";
+import {
+  projectDocumentQueryKeys,
+  projectDocumentTableQueryKeys,
+} from "../../../../features/project_document/query-keys";
 import { projectQueryKeys } from "../../../../features/projects/query-keys";
 import { useProjectTableViewState } from "../../../../features/table_views/hooks";
 import type { TableSliceAccessMode } from "../../../../features/project_document/table-slice";
@@ -82,7 +85,9 @@ export type UseSliceTableControllerArgs<TSlice, TRow extends { id: string }, TPa
   replaceMutation: SliceTableReplaceMutation<TSlice, TPayload>;
   schemaMutation: SliceTableSchemaMutation<TSlice>;
   // Returns a fresh slice from the network. Used by reload-draft and
-  // by the stale-draft conflict path.
+  // by the stale-draft conflict path. TanStack Query's observer refetch
+  // returns `{ data }`; the broader return type keeps modal/test callers
+  // with custom fetch shims compatible.
   refetch: () => Promise<unknown>;
   // Column ids hidden on first load. Applied only when the user has no
   // saved view state for this table; subsequent toggles persist as
@@ -160,6 +165,18 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
 
   const isLocked = editBlocker?.kind === "version-locked" || versionLocked;
   const canEdit = isEditor && !isLocked && !editBlocker && Boolean(activeVersionId);
+  const editorSliceQueryKey = useMemo(
+    () =>
+      activeVersionId
+        ? ([
+            ...projectDocumentTableQueryKeys.table(projectId, tableKey),
+            "slice",
+            activeVersionId,
+            "editor",
+          ] as const)
+        : null,
+    [activeVersionId, projectId, tableKey],
+  );
 
   useEffect(() => {
     setEditBlocker(null);
@@ -243,30 +260,55 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
     [canEdit, handleStaleDraftConflict, handleVersionLockedConflict],
   );
 
+  const resolveSliceForWrite = useCallback(async (): Promise<TSlice> => {
+    if (!isEditor || !editorSliceQueryKey) return slice;
+    const queryState = queryClient.getQueryState(editorSliceQueryKey);
+    if (!queryState?.isInvalidated) return slice;
+    const result = await refetch();
+    const refetched = refetchResultData<TSlice>(result);
+    if (refetched) return refetched;
+    return queryClient.getQueryData<TSlice>(editorSliceQueryKey) ?? slice;
+  }, [editorSliceQueryKey, isEditor, queryClient, refetch, slice]);
+
   const commitPayloadOrThrow = useCallback(
-    (payload: TPayload, conflictMessage: string, fallbackMessage: string) => {
-      const validationMessage = payloadBuilders.validate(payload);
-      if (validationMessage) {
-        setActionError(validationMessage);
-        throw new Error(validationMessage);
-      }
-      return runWithConflictHandling(
-        () => replaceMutation.mutateAsync({ current: slice, payload }),
+    (
+      buildPayload: (writableSlice: TSlice) => TPayload,
+      conflictMessage: string,
+      fallbackMessage: string,
+    ) =>
+      runWithConflictHandling(
+        async () => {
+          const writableSlice = await resolveSliceForWrite();
+          const payload = buildPayload(writableSlice);
+          const validationMessage = payloadBuilders.validate(payload);
+          if (validationMessage) {
+            setActionError(validationMessage);
+            throw new Error(validationMessage);
+          }
+          return replaceMutation.mutateAsync({ current: writableSlice, payload });
+        },
         conflictMessage,
         fallbackMessage,
-      );
-    },
-    [payloadBuilders, replaceMutation, runWithConflictHandling, slice],
+      ),
+    [payloadBuilders, replaceMutation, resolveSliceForWrite, runWithConflictHandling],
   );
 
   const commitSchemaMutation = useCallback(
     (mutation: FieldSchemaMutation) =>
       runWithConflictHandling(
-        () => schemaMutation.mutateAsync({ current: slice, mutation }),
+        async () => {
+          const writableSlice = await resolveSliceForWrite();
+          return schemaMutation.mutateAsync({ current: writableSlice, mutation });
+        },
         conflictMessages.activeRowConflict,
         "Could not update custom-field schema.",
       ),
-    [conflictMessages.activeRowConflict, runWithConflictHandling, schemaMutation, slice],
+    [
+      conflictMessages.activeRowConflict,
+      resolveSliceForWrite,
+      runWithConflictHandling,
+      schemaMutation,
+    ],
   );
 
   const onWrite = useCallback(
@@ -280,7 +322,8 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
           op.kind === "paste" ? op.newOptions : op.kind === "cell" ? (op.newOptions ?? {}) : {};
         const removedOptions = op.kind === "fill" ? {} : (op.removedOptions ?? {});
         await commitPayloadOrThrow(
-          payloadBuilders.fromCellWrites(slice, op.writes, newOptions, removedOptions),
+          (writableSlice) =>
+            payloadBuilders.fromCellWrites(writableSlice, op.writes, newOptions, removedOptions),
           conflictMessages.activeRowConflict,
           "Could not update table values.",
         );
@@ -288,7 +331,7 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
       }
       if (op.kind === "rowInsert") {
         await commitPayloadOrThrow(
-          payloadBuilders.fromRowInsert(slice, op.rows, buildEmptyRow),
+          (writableSlice) => payloadBuilders.fromRowInsert(writableSlice, op.rows, buildEmptyRow),
           conflictMessages.activeRowConflict,
           "Could not insert row.",
         );
@@ -296,7 +339,7 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
       }
       if (op.kind === "rowDelete") {
         await commitPayloadOrThrow(
-          payloadBuilders.fromRowDelete(slice, op.rows),
+          (writableSlice) => payloadBuilders.fromRowDelete(writableSlice, op.rows),
           conflictMessages.activeRowConflict,
           conflictMessages.deleteConflict,
         );
@@ -304,7 +347,7 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
       }
       if (op.kind === "rowDuplicate") {
         await commitPayloadOrThrow(
-          payloadBuilders.fromRowDuplicate(slice, op.rows),
+          (writableSlice) => payloadBuilders.fromRowDuplicate(writableSlice, op.rows),
           conflictMessages.activeRowConflict,
           "Could not duplicate row.",
         );
@@ -330,22 +373,22 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
         const collapse =
           payloadBuilders.collapseCellWritesToReplacements ??
           (() => ({}) as Record<string, string | null>);
-        const replacements = collapse(slice, after.field_key, op.cellWrites);
-        let payload: TPayload;
-        try {
-          payload = payloadBuilders.replaceOptions(
-            slice,
-            after.field_key,
-            after.options ?? [],
-            replacements,
-          );
-        } catch (error) {
-          const message = errorMessage(error, "Could not update options.");
-          setActionError(message);
-          throw new Error(message);
-        }
         await commitPayloadOrThrow(
-          payload,
+          (writableSlice) => {
+            const replacements = collapse(writableSlice, after.field_key, op.cellWrites);
+            try {
+              return payloadBuilders.replaceOptions!(
+                writableSlice,
+                after.field_key,
+                after.options ?? [],
+                replacements,
+              );
+            } catch (error) {
+              const message = errorMessage(error, "Could not update options.");
+              setActionError(message);
+              throw new Error(message);
+            }
+          },
           conflictMessages.activeRowConflict,
           "Could not update options.",
         );
@@ -393,8 +436,15 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
     reloadDraft,
     isReplacePending: replaceMutation.isPending,
     runWithConflictHandling,
+    resolveSliceForWrite,
     notifyRemoteSlice,
   };
+}
+
+function refetchResultData<TSlice>(result: unknown): TSlice | null {
+  if (!result || typeof result !== "object" || !("data" in result)) return null;
+  const data = (result as { data?: unknown }).data;
+  return data === undefined ? null : (data as TSlice);
 }
 
 // Re-exported for consumers that want the canonical FieldRegistryEntry

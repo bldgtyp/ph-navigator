@@ -4,9 +4,11 @@ import type { SliceTableController } from "../../../../shared/ui/data-table/feat
 
 export function heatPumpTestController<TSlice>({
   fieldDefs,
+  slice,
   onWrite = vi.fn(),
 }: {
   fieldDefs: FieldDef[];
+  slice?: TSlice;
   onWrite?: (op: WriteOp) => Promise<void> | void;
 }): SliceTableController<TSlice> {
   return {
@@ -35,6 +37,12 @@ export function heatPumpTestController<TSlice>({
     reloadDraft: vi.fn(),
     isReplacePending: false,
     runWithConflictHandling: vi.fn(),
+    resolveSliceForWrite: vi.fn(async () => {
+      if (slice === undefined) {
+        throw new Error("Test controller has no slice for write resolution.");
+      }
+      return slice;
+    }),
     notifyRemoteSlice: vi.fn(),
     handleAddCustomField: vi.fn(),
     handleEditCustomFieldBundle: vi.fn(),

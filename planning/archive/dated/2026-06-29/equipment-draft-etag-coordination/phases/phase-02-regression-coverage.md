@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 16:52 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Unit, controller, and Playwright coverage for cross-table draft ETag freshness.
 RELATED:
@@ -96,7 +96,35 @@ DataTable-regression policy is changed.
 
 ## Exit Criteria
 
-- Focused Vitest coverage fails before P01 and passes after P01.
-- Focused Playwright coverage fails before P01 and passes after P01.
-- Existing table-regression scripts still run.
-- No default-CI policy change is made without an explicit decision.
+- ✅ Focused controller Vitest coverage proves an invalidated target editor
+  slice is refetched before row-insert payload construction, and that the
+  mutation receives the fresh slice as `current`.
+- ✅ Focused controller Vitest coverage proves typed schema mutations use the
+  fresh resolved slice for mutation headers.
+- ✅ Focused Playwright coverage exercises the mounted Equipment workflow for
+  `Fans -> Hot-water tanks` and `Pumps -> Appliances`.
+- ✅ Existing focused table-slice and heat-pump outdoor-units tests still pass.
+- ✅ No default-CI policy change was made.
+
+## Verification
+
+Recorded 2026-06-29 17:41 EDT.
+
+```bash
+cd frontend && pnpm exec tsc --noEmit --pretty false
+# passed
+
+cd frontend && pnpm exec vitest run src/shared/ui/data-table/feature/useSliceTableController.test.tsx src/features/project_document/table-slice.test.ts src/features/equipment/heat-pumps/__tests__/OutdoorUnitsTable.test.tsx
+# 3 files passed, 13 tests passed
+```
+
+The existing `localhost:5173` dev server was running from the Dropbox checkout,
+not this worktree, so the focused Playwright spec was run against a temporary
+worktree Vite server on `localhost:3000` with the existing local backend:
+
+```bash
+cd frontend && VITE_API_BASE_URL=http://localhost:8000 pnpm exec vite --host 127.0.0.1 --port 3000 --strictPort
+
+cd frontend && E2E_BASE_URL=http://localhost:3000 E2E_API_BASE_URL=http://localhost:8000 E2E_EMAIL=codex@example.com E2E_PASSWORD=password pnpm exec playwright test tests/e2e/table-regression --grep @table-draft-etag
+# 2 passed
+```
