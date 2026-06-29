@@ -5,6 +5,7 @@ how and when each feature packet landed. Newest first. Grep by slug.
 
 ## 2026-06-29
 
+- `equipment-draft-etag-coordination` - stale Equipment sibling `draft_etag` regression fixed by resolving a fresh target table slice before write payload construction while preserving lazy sibling invalidation; focused Vitest, Playwright browser flow, and request-count no-fan-out guard passed. (branch closeout)
 - `admin-user-management` - two-user production account lifecycle MVP: audited first-admin bootstrap, invite/admin-reset-link/deactivate/reactivate/admin grants, last-admin protection, CSRF/Origin guard, capability-gated UI, Admin-derived `catalog.edit`, audit, runbook, and production smoke evidence. (docs closeout)
 
 ## 2026-06-28
