@@ -306,6 +306,26 @@ describe("EnvelopePage", () => {
     );
   });
 
+  test("assembly sidebar command tooltips render outside the clipped list", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    const renameButton = screen.getByRole("button", { name: "Rename assembly" });
+    expect(renameButton).not.toHaveAttribute("data-sidebar-tooltip");
+
+    await userEvent.hover(renameButton);
+
+    const tooltip = await screen.findByText("Rename assembly", { selector: ".app-tooltip" });
+    const sidebarList = document.querySelector(".envelope-sidebar-list");
+    expect(tooltip).toHaveTextContent("Rename assembly");
+    expect(tooltip).toHaveAttribute("role", "tooltip");
+    expect(sidebarList?.contains(tooltip)).toBe(false);
+    expect(tooltip.closest("[data-radix-popper-content-wrapper]")?.parentElement).toBe(
+      document.body,
+    );
+    expect(renameButton).toHaveAttribute("aria-describedby", tooltip.id);
+  });
+
   test("unit toggle changes labels without changing canvas dimensions", async () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
 

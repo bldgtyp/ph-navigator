@@ -29,6 +29,7 @@
 @import "./shared/ui/canvas/canvas-hint-tooltip.css";
 @import "./shared/ui/canvas/canvas-toolbar.css";
 @import "./shared/ui/dimensions/DimensionChrome.css";
+@import "./shared/ui/tooltip/Tooltip.css";
 @import "./shared/ui/info-tooltip/InfoTooltip.css";
 @import "./shared/ui/InlineHeaderNameEditor.css";
 @import "./shared/ui/attachments/attachments.css";

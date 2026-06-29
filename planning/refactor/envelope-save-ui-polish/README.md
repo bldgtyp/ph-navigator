@@ -2,7 +2,7 @@
 
 DATE: 2026-06-29
 TIME: 17:09 EDT
-STATUS: Planned
+STATUS: Active - Phase 1 implemented on branch
 AUTHOR: Codex
 SCOPE: Small UI reliability pass covering shared tooltip behavior,
 Envelope/Assemblies sidebar tooltips, project-document Save Version feedback,

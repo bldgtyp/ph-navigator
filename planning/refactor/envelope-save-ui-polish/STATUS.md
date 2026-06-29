@@ -2,9 +2,9 @@
 
 DATE: 2026-06-29
 TIME: 17:09 EDT
-STATUS: Planned
+STATUS: Active - Phase 1 implemented on branch
 AUTHOR: Codex
-SCOPE: Planning-only handoff for six UI fixes: shared tooltip consolidation,
+SCOPE: Implementation handoff for six UI fixes: shared tooltip consolidation,
 Envelope sidebar tooltip layering, project-document Save Version progress
 feedback, Envelope assembly SVG bottom-border clipping, Climate map
 tile-loading spinners, and Apertures zero-type empty-state cleanup.
@@ -15,7 +15,24 @@ planning/refactor/envelope-save-ui-polish/PLAN.md
 
 ## Current State
 
-Planned. No implementation has been done in this packet.
+Phase 1 is implemented on branch `codex/envelope-save-ui-polish`.
+
+Completed in Phase 1:
+
+- Added `frontend/src/shared/ui/tooltip/Tooltip.tsx` as a shared app-chrome
+  tooltip primitive backed by Radix Popover, with shared styling in
+  `Tooltip.css`.
+- Migrated project/version header controls, project action menu items, shell
+  dirty/save controls, and Envelope assembly sidebar command controls from
+  CSS pseudo-element tooltips to the shared portaled tooltip.
+- Removed the duplicated project-document `data-tooltip` pseudo-element rules
+  and the Envelope row-action `data-sidebar-tooltip` override that no longer
+  applies to the migrated controls.
+- Left the Envelope long-name tooltip and canvas toolbar hover hints in place
+  because they are separate surfaces; remaining migrations stay follow-up work.
+
+Next active implementation slice: Phase 2, the blocking Save Version progress
+overlay.
 
 ## Evidence Reviewed
 
@@ -88,12 +105,15 @@ Planned. No implementation has been done in this packet.
   sidebar maps inherit the behavior.
 - For zero-aperture Apertures builder state, hide the normal header and render
   one primary add action in the main panel.
+- Phase 1 used Radix Popover for the shared tooltip instead of custom viewport
+  math, matching the existing DataTable field-description tooltip precedent and
+  avoiding a bespoke placement engine.
 
 ## Next Step
 
-Implement Phase 1 from `PLAN.md`: create the shared tooltip primitive, migrate
-the header/version menu and Envelope sidebar command controls, and add focused
-placement/component coverage.
+Implement Phase 2 from `PLAN.md`: add the full-app blocking `Save Version`
+progress overlay and preserve existing stale/locked/generic save error
+handling.
 
 ## Verification So Far
 
@@ -105,5 +125,26 @@ Docs-only planning pass:
 - Searched current tooltip implementations across `frontend/src` and recorded
   the shared-system audit in `TOOLTIP_AUDIT.md`.
 - Reviewed the supplied screenshots with local visual inspection.
-- No frontend code changed.
-- Runtime/browser tests were not run.
+
+Phase 1 implementation verification:
+
+- `pnpm exec vitest run src/shared/ui/tooltip/__tests__/Tooltip.test.tsx src/features/project_document/__tests__/VersionControlsMenus.test.tsx src/features/envelope/__tests__/EnvelopePage.test.tsx`
+  passed: 3 files, 53 tests.
+- `pnpm run format` completed after implementation.
+- `make frontend-dev-check` passed after the final Phase 1 code and docs
+  updates. ESLint still reports the pre-existing Fast Refresh warnings in
+  unrelated Apertures, Climate, and DataTable files; no errors.
+- `make format` completed from the repo root with backend and frontend files
+  unchanged.
+- `make ci` passed:
+  - backend: Ruff format check, Ruff lint, backend boundary check, `ty check`,
+    Alembic upgrade, and pytest (`1213 passed`, `2 skipped`);
+  - frontend: format check, ESLint (`14` pre-existing Fast Refresh warnings,
+    no errors), structural guards, Vitest (`211` files, `1966` tests passed),
+    and production build.
+- `/simplify` review completed through three parallel review agents. Accepted
+  fixes: replaced custom tooltip placement math with Radix Popover, preserved
+  pre-existing `aria-describedby`, separated hover and focus open state, and
+  extracted project action menu tooltip helpers. Rejected one efficiency note
+  to keep version controls on CSS-only tooltips because Phase 1 explicitly
+  targets header/menu viewport collision, not only sidebar overflow clipping.

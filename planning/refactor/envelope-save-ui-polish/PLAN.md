@@ -49,6 +49,10 @@ Verification:
 
 ## Phase 1 - Shared Tooltip Primitive And Broken Surface Migration
 
+Status: Implemented on branch `codex/envelope-save-ui-polish` on
+2026-06-29. Phase 1 used Radix Popover for portal, flip, shift, and collision
+behavior instead of a custom placement helper.
+
 Goal: replace the observed broken pseudo-element tooltip behavior with one
 shared, portal-rendered, collision-safe primitive.
 
@@ -79,9 +83,10 @@ Implementation notes:
    dependency without a concrete reason.
 5. The primitive must portal to `document.body`, use fixed viewport
    positioning, and keep the final tooltip rectangle inside the viewport with
-   a small padding.
+   a small padding. Implemented through Radix Popover collision behavior.
 6. Support preferred placements `top`, `bottom`, `right`, and `left`, with
-   fallback side selection and final shift/clamp.
+   fallback side selection and final shift/clamp. Implemented through Radix
+   Popover `side`, `sideOffset`, and `collisionPadding`.
 7. Add `role="tooltip"` and `aria-describedby` only while visible.
 8. Hide on pointer leave, blur, Escape, scroll, resize, route unmount, and menu
    close.
@@ -101,9 +106,10 @@ Implementation notes:
 
 Testing:
 
-- Add shared placement-helper coverage with mocked trigger rectangles and
-  viewport dimensions. Cover top-edge, left-edge, right-edge, bottom-edge, and
-  corner collisions.
+- Add shared tooltip coverage for portal rendering, `role="tooltip"`,
+  temporary `aria-describedby`, preservation of existing `aria-describedby`,
+  and hover/focus close behavior. Radix owns the viewport collision algorithm,
+  so this phase does not keep a local placement-helper test.
 - Add or extend project-document component coverage so header/version action
   tooltips render under `document.body`, have `role="tooltip"`, and are not
   children of `.project-actions-menu`.

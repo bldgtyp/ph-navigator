@@ -1,0 +1,22 @@
+.app-tooltip {
+  z-index: var(--z-tooltip);
+  max-width: min(20rem, calc(100vw - var(--space-16)));
+  border-radius: var(--radius-2xs);
+  background: var(--info-tooltip-bg);
+  box-shadow: var(--shadow-elev-1);
+  color: var(--info-tooltip-fg);
+  font-family: var(--font-primary);
+  font-size: var(--fs-sm);
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.35;
+  padding: var(--space-8);
+  pointer-events: none;
+  text-align: left;
+  text-transform: none;
+  white-space: normal;
+}
+
+.app-tooltip__arrow {
+  fill: var(--info-tooltip-bg);
+}

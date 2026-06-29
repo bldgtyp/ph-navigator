@@ -17,5 +17,6 @@ export * from "./useOutsidePointerDown";
 
 // Co-located sub-packages (component + CSS + own barrel).
 export * from "./info-tooltip";
+export * from "./tooltip";
 export * from "./report-table";
 export * from "./data-table";
