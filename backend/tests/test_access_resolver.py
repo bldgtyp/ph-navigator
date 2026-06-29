@@ -15,6 +15,7 @@ import pytest
 from fastapi import HTTPException
 
 from features.access.capabilities import (
+    ADMIN_USERS_MANAGE,
     CATALOG_EDIT,
     CLIENT_CAPS,
     MEMBER_CAPS,
@@ -73,6 +74,12 @@ def test_signed_in_user_gets_member_caps() -> None:
 def test_staff_user_additionally_holds_catalog_edit() -> None:
     caps = capabilities_for(UserPrincipal(user=_user(), is_staff=True))
     assert MEMBER_CAPS <= caps
+    assert CATALOG_EDIT in caps
+
+
+def test_admin_preset_additionally_holds_catalog_edit() -> None:
+    caps = capabilities_for(UserPrincipal(user=_user(), granted_capabilities=frozenset({ADMIN_USERS_MANAGE})))
+    assert ADMIN_USERS_MANAGE in caps
     assert CATALOG_EDIT in caps
 
 

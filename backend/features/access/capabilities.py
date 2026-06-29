@@ -10,7 +10,8 @@ Beta collapses the model to today's binary behavior:
 
 - anonymous → `ViewerPrincipal("client")` → `CLIENT_CAPS` (read only)
 - signed-in → `UserPrincipal` → `MEMBER_CAPS` (read + write), plus any granted
-  capabilities and the catalog-admin capability for staff.
+  capabilities, catalog edit for Admins, and the catalog-admin capability for
+  staff.
 
 So `CLIENT_CAPS` ≈ today's viewer and `MEMBER_CAPS` ≈ today's editor. The
 `certifier`/`admin`/`staff` bundles and finer per-tab/export capabilities are
@@ -46,15 +47,15 @@ EQUIPMENT_EXPORT_PHIUS = "equipment.export.phius"
 MODEL_EXPORT = "model.export"
 DOCUMENT_EXPORT = "document.export"
 
-# Write access to the shared catalog library — a grantable capability, not a
-# role tier (decision D7), satisfied by a `catalog.edit` grant or `is_staff`.
+# Write access to the shared catalog library, satisfied by a `catalog.edit`
+# grant, the Admin preset, or `is_staff`.
 CATALOG_EDIT = "catalog.edit"
 
 # Admin user-management surface (invite/reset-link/deactivate/admin-grant). A
 # grantable capability backing the MVP `Admin` role preset, held via an active
-# global `user_grants` row — never a hard-coded superuser. Deliberately separate
-# from `catalog.edit`; holding one does not imply the other. See
-# planning/features/admin-user-management/PRD.md.
+# global `user_grants` row — never a hard-coded superuser. The current Admin
+# preset also resolves to `catalog.edit` so production admins can maintain the
+# shared bookshelf catalogs.
 ADMIN_USERS_MANAGE = "admin.users.manage"
 
 # --- Beta bundles ----------------------------------------------------------
@@ -82,6 +83,11 @@ MEMBER_CAPS: frozenset[str] = CLIENT_CAPS | EXPORT_CAPS | frozenset({PROJECT_EDI
 # cross-tenant staff bundle (admin/seat/cross-team reads) lands in Phase 5.
 STAFF_EXTRA_CAPS: frozenset[str] = frozenset({CATALOG_EDIT})
 
+# The MVP Admin preset includes catalog maintenance. This is derived at resolve
+# time instead of stored as a second grant, so a future standalone Catalog Admin
+# grant can remain independently revocable.
+ADMIN_EXTRA_CAPS: frozenset[str] = frozenset({CATALOG_EDIT})
+
 # Viewer audience → its read bundle. `certifier` (a superset of `client`) is
 # added when the share mechanism lands (Phase 5).
 AUDIENCE_CAPS: dict[str, frozenset[str]] = {"client": CLIENT_CAPS}
@@ -101,6 +107,8 @@ def capabilities_for(principal: Principal) -> frozenset[str]:
         if not principal.granted_capabilities and not principal.is_staff:
             return MEMBER_CAPS
         caps = MEMBER_CAPS | principal.granted_capabilities
+        if ADMIN_USERS_MANAGE in principal.granted_capabilities:
+            caps |= ADMIN_EXTRA_CAPS
         if principal.is_staff:
             caps |= STAFF_EXTRA_CAPS
         return caps

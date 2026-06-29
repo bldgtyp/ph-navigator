@@ -12,7 +12,7 @@ import type { AuthSession } from "../../auth/types";
 import { CatalogMenu } from "../components/CatalogMenu";
 import { MaterialEditorModal } from "../components/MaterialEditorModal";
 import { useMaterialsQuery, useReactivateMaterialMutation } from "../hooks";
-import { catalogPath } from "../lib";
+import { canEditCatalogs, catalogPath } from "../lib";
 import type { CatalogMaterial } from "../types";
 import {
   toMaterialRow,
@@ -137,6 +137,7 @@ export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
   const materialsQuery = useMaterialsQuery();
   const signOutMutation = useSignOutMutation();
   const reactivateMutation = useReactivateMaterialMutation();
+  const canEditCatalog = canEditCatalogs(session);
 
   // Fetch the full catalog once and filter the "Show deactivated" toggle
   // client-side. Keeps the toggle off the network and lets the row identity
@@ -229,11 +230,13 @@ export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
         }
       />
       <section className="dashboard-page" aria-label="Materials catalog">
-        <div className="page-heading">
-          <button type="button" onClick={() => setEditor({ kind: "create" })}>
-            New Material +
-          </button>
-        </div>
+        {canEditCatalog ? (
+          <div className="page-heading">
+            <button type="button" onClick={() => setEditor({ kind: "create" })}>
+              New Material +
+            </button>
+          </div>
+        ) : null}
 
         <div className="catalog-toolbar">
           <label className="catalog-inactive-toggle">
@@ -263,24 +266,31 @@ export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
             view={controller.view}
             onViewChange={controller.onViewChange}
             onResetView={controller.onResetView}
+            readOnly={!canEditCatalog}
             onWrite={controller.onWrite}
-            onRowOpen={(row) => {
-              const record = materials.find((material) => material.id === row.id);
-              if (record) setEditor({ kind: "edit", record });
-            }}
+            onRowOpen={
+              canEditCatalog
+                ? (row) => {
+                    const record = materials.find((material) => material.id === row.id);
+                    if (record) setEditor({ kind: "edit", record });
+                  }
+                : undefined
+            }
             buildEmptyRow={buildEmptyMaterialRow}
             bulkSelectionActions={renderBulkSelectionActions}
             overflowMenuActions={
               <CatalogImportExportMenu
                 onExport={handleExport}
-                onImport={() => setImportOpen(true)}
+                onImport={canEditCatalog ? () => setImportOpen(true) : undefined}
                 exportDisabled={materials.length === 0}
               />
             }
             emptyMessage={
               materialsQuery.isLoading
                 ? "Loading materials…"
-                : "No materials yet. Shift-Enter to add one."
+                : canEditCatalog
+                  ? "No materials yet. Shift-Enter to add one."
+                  : "No materials yet."
             }
           />
         )}
@@ -291,7 +301,9 @@ export function MaterialsCatalogPage({ session }: { session: AuthSession }) {
           setState on a hidden dialog and surface a stale report on
           the next open.
         */}
-        {importOpen ? <ImportDialog onClose={() => setImportOpen(false)} /> : null}
+        {canEditCatalog && importOpen ? (
+          <ImportDialog onClose={() => setImportOpen(false)} />
+        ) : null}
         {editor.kind !== "closed" ? (
           <MaterialEditorModal
             record={editor.kind === "edit" ? editor.record : null}

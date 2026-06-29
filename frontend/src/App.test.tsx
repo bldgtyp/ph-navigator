@@ -959,7 +959,7 @@ describe("App", () => {
     ).toBeVisible();
   });
 
-  test("routes the Materials dashboard card to the live Materials catalog page", async () => {
+  test("routes the Materials dashboard card to the read-only Materials catalog page", async () => {
     const user = userEvent.setup();
     window.history.pushState({}, "", "/dashboard");
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
@@ -975,8 +975,8 @@ describe("App", () => {
 
     await user.click(await screen.findByRole("link", { name: "Materials" }));
 
-    expect(await screen.findByRole("button", { name: "New Material +" })).toBeVisible();
-    expect(await screen.findByText("No materials yet. Shift-Enter to add one.")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "New Material +" })).not.toBeInTheDocument();
+    expect(await screen.findByText("No materials yet.")).toBeVisible();
     expect(window.location.pathname).toBe("/catalog/materials");
   });
 
@@ -1015,7 +1015,7 @@ describe("App", () => {
 
     await user.click(await screen.findByRole("link", { name: "Window-Frame Elements" }));
 
-    expect(await screen.findByText("No frame types yet. Shift-Enter to add one.")).toBeVisible();
+    expect(await screen.findByText("No frame types yet.")).toBeVisible();
     expect(window.location.pathname).toBe("/catalog/frame-types");
   });
 
@@ -1035,7 +1035,7 @@ describe("App", () => {
 
     await user.click(await screen.findByRole("link", { name: "Window-Glazing" }));
 
-    expect(await screen.findByText("No glazing types yet. Shift-Enter to add one.")).toBeVisible();
+    expect(await screen.findByText("No glazing types yet.")).toBeVisible();
     expect(window.location.pathname).toBe("/catalog/glazing-types");
   });
 

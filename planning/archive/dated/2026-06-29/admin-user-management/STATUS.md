@@ -104,7 +104,7 @@ for normal production operations:
 | MFA/passkeys/recovery codes | `planning/features_v2.0/account-security-hardening/` |
 | Session/device inventory and suspicious reset/invite alerting | `planning/features_v2.0/account-security-hardening/` |
 | Audit export and automated expired-token cleanup jobs | `planning/features_v2.0/account-security-hardening/` |
-| `Catalog Admin`, `is_staff` editing UI, richer roles/IAM | `planning/features_v2.0/access-capability-enforcement/` |
+| Separate `Catalog Admin`, `is_staff` editing UI, richer roles/IAM | `planning/features_v2.0/access-capability-enforcement/` |
 | Teams, external members, client/certifier accounts | `planning/features_v2.0/multi-tenant-teams/` and `planning/features_v2.0/access-capability-enforcement/` |
 
 ## Locked Decisions (Phase 00, 2026-06-27)

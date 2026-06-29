@@ -1,11 +1,11 @@
 """Catalog write authorization.
 
 Catalog reads are open to any signed-in member (catalogs are auth-only, CP-8);
-catalog *writes* require the grantable `catalog.edit` capability — a per-user
-grant or `is_staff` (decision D7). `CatalogEditor` is the dependency the write
-routes use in place of `CurrentUser`; it has the same shape (so route bodies
-keep unpacking `user, _ = auth`) but fails closed with 403 for a member without
-the capability.
+catalog *writes* require the resolved `catalog.edit` capability. That capability
+can come from an explicit grant, the Admin preset, or `is_staff`. `CatalogEditor`
+is the dependency the write routes use in place of `CurrentUser`; it has the
+same shape (so route bodies keep unpacking `user, _ = auth`) but fails closed
+with 403 for a member without the capability.
 """
 
 from __future__ import annotations

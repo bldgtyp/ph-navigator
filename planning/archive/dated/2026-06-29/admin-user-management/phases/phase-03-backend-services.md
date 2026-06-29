@@ -48,7 +48,8 @@ before exposing HTTP routes.
 6. Grant service:
    - grant/revoke `admin.users.manage`;
    - enforce last-admin protection transactionally;
-   - keep `catalog.edit` / `is_staff` out of MVP.
+   - keep separate `catalog.edit` grants and `is_staff` editing out of the MVP
+     UI while the Admin preset resolves to catalog maintenance rights.
 7. Audit service:
    - centralize admin action logging;
    - scrub tokens/passwords;

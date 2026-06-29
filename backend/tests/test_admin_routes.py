@@ -14,7 +14,7 @@ from fastapi.testclient import TestClient
 
 from database import transaction
 from features.access import repository as access_repository
-from features.access.capabilities import ADMIN_USERS_MANAGE
+from features.access.capabilities import ADMIN_USERS_MANAGE, CATALOG_EDIT
 from features.auth.models import UserPublic
 from features.auth.service import create_or_update_user
 from main import app
@@ -88,6 +88,7 @@ def test_session_exposes_admin_capability(clean_admin_tables: None) -> None:
     _login(client, "admin@example.com")
     session = client.get("/api/v1/auth/session").json()
     assert ADMIN_USERS_MANAGE in session["capabilities"]
+    assert CATALOG_EDIT in session["capabilities"]
 
 
 def test_admin_mutation_requires_csrf_header(clean_admin_tables: None) -> None:

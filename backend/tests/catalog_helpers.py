@@ -1,8 +1,9 @@
 """Shared helpers for catalog API tests.
 
-Catalog writes require the grantable `catalog.edit` capability (decision D7),
-held by bldgtyp `staff` or a granted member. Ed is staff, so catalog tests sign
-in as a staff user; `create_catalog_admin` creates that user and sets the flag.
+Catalog writes require the resolved `catalog.edit` capability (decision D7),
+held by bldgtyp `staff`, the Admin preset, or a granted member. Ed is staff, so
+catalog tests sign in as a staff user; `create_catalog_admin` creates that user
+and sets the flag.
 """
 
 from __future__ import annotations
