@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 16:52 EDT
-STATUS: Active planning packet - root cause and phased fix plan for stale draft ETags across Equipment sub-tabs.
+STATUS: Complete - stale draft ETag fix implemented, verified, and ready to archive.
 AUTHOR: Codex
 SCOPE: Same editor session writes across multiple slice-backed DataTable pages, starting with Equipment Fans -> Hot-water Tanks.
 RELATED:
@@ -92,10 +92,10 @@ fresh target slice.
 
 | Phase | State | Title | Purpose | Success Gate |
 |---|---|---|---|---|
-| P00 | Planned | Reproduce and root cause | Capture failing network/header sequence and confirm no backend behavior change is needed | Evidence shows first table write bumps `draft_etag`; second table write sends stale guard from cached sibling slice |
-| P01 | Planned | Fresh target slice before write | Add a generic freshness gate before payload construction for invalidated editor table slices | Sequential writes across two mounted sibling tables use the latest `draft_etag` without eager sibling refetch |
-| P02 | Planned | Regression coverage | Add focused unit and e2e coverage for stale sibling writes | Tests fail on current code and pass after P01 |
-| P03 | Planned | Browser and performance verification | Smoke the reported route and verify the June 25 perf fix is not undone | Fans -> Hot-water Tanks works in-browser; perf/network check shows no eager refetch fan-out |
+| P00 | Complete | Reproduce and root cause | Capture failing network/header sequence and confirm no backend behavior change is needed | Evidence shows first table write bumps `draft_etag`; second table write sends stale guard from cached sibling slice |
+| P01 | Complete | Fresh target slice before write | Add a generic freshness gate before payload construction for invalidated editor table slices | Sequential writes across two mounted sibling tables use the latest `draft_etag` without eager sibling refetch |
+| P02 | Complete | Regression coverage | Add focused unit and e2e coverage for stale sibling writes | Tests fail on current code and pass after P01 |
+| P03 | Complete | Browser and performance verification | Smoke the reported route and verify the June 25 perf fix is not undone | Fans -> Hot-water Tanks and Pumps -> Appliances pass in-browser; request guard shows no eager sibling GET fan-out and exactly one target refresh before second write |
 
 ## Out Of Scope
 
