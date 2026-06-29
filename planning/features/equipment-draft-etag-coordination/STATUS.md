@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 16:52 EDT
-STATUS: Active - P02 regression coverage complete; P03 browser/performance verification next.
+STATUS: Complete - P00-P03 implemented and verified; ready for archive.
 AUTHOR: Codex
 SCOPE: Current state, next step, blockers, and verification for the stale draft ETag fix.
 RELATED:
@@ -17,7 +17,8 @@ RELATED:
 
 P00 reproduction/root-cause pass completed. P01 fresh target-slice write seam
 implemented on branch. P02 focused unit/controller and Playwright regression
-coverage added.
+coverage added. P03 browser/network verification passed against the worktree
+frontend on `localhost:3000`.
 
 Root cause identified from current code:
 
@@ -81,13 +82,7 @@ project/version.
 
 ## Next Step
 
-Start P03:
-
-```text
-phases/phase-03-browser-and-performance-verification.md
-```
-
-Run final browser/performance verification and record the network guard.
+Archive this completed packet under `planning/archive/dated/2026-06-29/`.
 
 ## Blockers
 
@@ -106,7 +101,7 @@ Focused tests after implementation:
 - `cd frontend && pnpm exec vitest run src/features/project_document/table-slice.test.ts`
 - controller-level Vitest coverage for fresh-slice payload construction;
 - `cd frontend && pnpm exec playwright test tests/e2e/table-regression --grep @table-draft-etag`
-- `make frontend-dev-check`
+- `make format`
 
 Broaden only if the implementation touches wider shared table behavior:
 
@@ -139,6 +134,25 @@ Broaden only if the implementation touches wider shared table behavior:
   `cd frontend && E2E_BASE_URL=http://localhost:3000 E2E_API_BASE_URL=http://localhost:8000 E2E_EMAIL=codex@example.com E2E_PASSWORD=password pnpm exec playwright test tests/e2e/table-regression --grep @table-draft-etag`
   passed with 2 tests against a temporary worktree Vite server on
   `localhost:3000`.
+- P03 format:
+  `make format` passed.
+- P03 typecheck:
+  `cd frontend && pnpm exec tsc --noEmit --pretty false` passed.
+- P03 focused frontend tests:
+  `cd frontend && pnpm exec vitest run src/shared/ui/data-table/feature/useSliceTableController.test.tsx src/features/project_document/table-slice.test.ts src/features/equipment/heat-pumps/__tests__/OutdoorUnitsTable.test.tsx`
+  passed with 13 tests.
+- P03 focused Playwright browser/network regression:
+  `cd frontend && E2E_BASE_URL=http://localhost:3000 E2E_API_BASE_URL=http://localhost:8000 E2E_EMAIL=codex@example.com E2E_PASSWORD=password pnpm exec playwright test tests/e2e/table-regression --grep @table-draft-etag`
+  passed with 2 tests against the temporary worktree Vite server. The spec now
+  asserts source-table writes do not cause eager inactive Equipment table
+  `GET` fan-out, the target table performs exactly one fresh target `GET`
+  before its `PUT`, and no draft table response returns `409`.
+- P03 perf-matrix attempt:
+  `cd frontend && PHN_PERF=1 PERF_PROJECT_ID=3d56d037-806d-498b-b559-7f505e0e3498 E2E_BASE_URL=http://localhost:3000 E2E_API_BASE_URL=http://localhost:8000 E2E_EMAIL=codex@example.com E2E_PASSWORD=password pnpm run test:e2e -- tests/e2e/perf/perf-matrix.spec.ts`
+  did not produce usable route timings in this local DB: the dashboard case
+  timed out waiting for `PERF-STRESS - Frontend Perf Stress Fixture`, and
+  project-route cases failed their ready-region assertions. Per P03, the
+  passing draft-ETag request-count e2e is the minimum performance guard here.
 
 ## Notes
 
