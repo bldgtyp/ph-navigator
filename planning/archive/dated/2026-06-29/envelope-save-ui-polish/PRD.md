@@ -6,9 +6,9 @@ STATUS: Planned
 AUTHOR: Codex
 SCOPE: UI behavior contract for small polish fixes across shared tooltips,
 Apertures, Envelope, Climate, and project-document version saving.
-RELATED: planning/refactor/envelope-save-ui-polish/PLAN.md;
-planning/refactor/envelope-save-ui-polish/TOOLTIP_AUDIT.md;
-planning/refactor/envelope-save-ui-polish/STATUS.md
+RELATED: planning/archive/dated/2026-06-29/envelope-save-ui-polish/PLAN.md;
+planning/archive/dated/2026-06-29/envelope-save-ui-polish/TOOLTIP_AUDIT.md;
+planning/archive/dated/2026-06-29/envelope-save-ui-polish/STATUS.md
 
 ## Problem
 

@@ -1,6 +1,7 @@
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { ClimateMapPinStatus, ClimateMapStation } from "./ClimateMap";
+import { createClimateTileLoadingTracker } from "./climateTileLoading";
 
 // Imperative Leaflet wrapper for the app's live basemaps (D-DP-6: vanilla
 // Leaflet + keyless raster tiles — no key, no proxy, no committed secret). The
@@ -119,6 +120,7 @@ export type ClimateLeafletOptions = {
   singlePointZoom?: number;
   onSelectStation?: (stationId: string) => void;
   onPickPoint?: (latitude: number, longitude: number) => void;
+  onTilesLoadingChange?: (loading: boolean) => void;
 };
 
 type LocatedStation = ClimateMapStation & { latitude: number; longitude: number };
@@ -137,6 +139,7 @@ export function createClimateLeafletMap(
     singlePointZoom = 11,
     onSelectStation,
     onPickPoint,
+    onTilesLoadingChange,
   } = options;
   const basemap = CLIMATE_BASEMAPS[basemapStyle];
   const map = L.map(container, {
@@ -158,7 +161,14 @@ export function createClimateLeafletMap(
     attribution: basemap.attribution,
   };
   if (basemap.subdomains) tileOptions.subdomains = basemap.subdomains;
-  L.tileLayer(basemap.url, tileOptions).addTo(map);
+  const tileLayer = L.tileLayer(basemap.url, tileOptions);
+  const tileLoadingTracker = createClimateTileLoadingTracker(onTilesLoadingChange);
+  tileLayer.on("loading", tileLoadingTracker.markLayerLoading);
+  tileLayer.on("tileloadstart", tileLoadingTracker.markTileLoading);
+  tileLayer.on("tileload", tileLoadingTracker.markTileSettled);
+  tileLayer.on("tileerror", tileLoadingTracker.markTileSettled);
+  tileLayer.on("load", tileLoadingTracker.markLayerLoaded);
+  tileLayer.addTo(map);
   // Pin-drop: an empty-map click emits a coordinate the caller writes back.
   if (onPickPoint) {
     map.on("click", (event) => onPickPoint(event.latlng.lat, event.latlng.lng));
@@ -252,6 +262,7 @@ export function createClimateLeafletMap(
   }
 
   function destroy(): void {
+    tileLoadingTracker.reset();
     map.remove();
   }
 

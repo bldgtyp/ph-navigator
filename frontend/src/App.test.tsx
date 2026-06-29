@@ -172,6 +172,16 @@ function apiErrorResponse(status: number, errorCode: string, message: string) {
   );
 }
 
+function createDeferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((promiseResolve, promiseReject) => {
+    resolve = promiseResolve;
+    reject = promiseReject;
+  });
+  return { promise, resolve, reject };
+}
+
 function draftSummaryUrl(
   projectId = projectPayload.id,
   versionId = projectPayload.active_version_id,
@@ -721,6 +731,59 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "Save As" })).toBeVisible();
   });
 
+  test("blocks the app while Save Version is committing", async () => {
+    const user = userEvent.setup();
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
+    const draftUrl = draftSummaryUrl();
+    const saveUrl = `${draftUrl}/save`;
+    const saveResponse = createDeferred<Awaited<ReturnType<typeof jsonResponse>>>();
+    let saveResolved = false;
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === `/api/v1/projects/${projectPayload.id}`) return jsonResponse(projectPayload);
+      if (url === draftUrl) {
+        return jsonResponse(
+          saveResolved
+            ? draftSummaryPayload
+            : {
+                ...draftSummaryPayload,
+                source: "draft",
+                draft_etag: "draft-etag",
+                dirty_tables: ["rooms"],
+              },
+        );
+      }
+      if (url === saveUrl && init?.method === "POST") return saveResponse.promise;
+      if (url === `/api/v1/projects/${projectPayload.id}/status-items`) {
+        return jsonResponse({ items: [statusItemPayload] });
+      }
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Restore draft" }));
+    await user.click(screen.getByRole("button", { name: "Save Version" }));
+
+    expect(screen.getByRole("dialog", { name: "Saving version" })).toBeVisible();
+    expect(screen.getByRole("status")).toHaveTextContent("Saving version...");
+    expect(screen.getByRole("button", { name: "Saving..." })).toBeDisabled();
+
+    saveResolved = true;
+    saveResponse.resolve(
+      await jsonResponse({
+        project_id: projectPayload.id,
+        version: projectPayload.active_version,
+        version_etag: "saved-etag",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "Saving version" })).not.toBeInTheDocument();
+    });
+    expect(screen.queryByText("Uncommitted changes")).not.toBeInTheDocument();
+  });
+
   test("prompts to restore or discard a recovered draft and warns before unload", async () => {
     const user = userEvent.setup();
     window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
@@ -766,6 +829,8 @@ describe("App", () => {
     window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
     const draftUrl = draftSummaryUrl();
     const saveUrl = `${draftUrl}/save`;
+    const saveResponse = createDeferred<Awaited<ReturnType<typeof jsonResponse>>>();
+    let saveResolved = false;
     const projectWithVersions = {
       ...projectPayload,
       versions: [projectPayload.versions[0], alternateVersion],
@@ -774,20 +839,18 @@ describe("App", () => {
       const url = String(input);
       if (url === `/api/v1/projects/${projectPayload.id}`) return jsonResponse(projectWithVersions);
       if (url === draftUrl) {
-        return jsonResponse({
-          ...draftSummaryPayload,
-          source: "draft",
-          draft_etag: "draft-etag",
-          dirty_tables: ["rooms"],
-        });
+        return jsonResponse(
+          saveResolved
+            ? draftSummaryPayload
+            : {
+                ...draftSummaryPayload,
+                source: "draft",
+                draft_etag: "draft-etag",
+                dirty_tables: ["rooms"],
+              },
+        );
       }
-      if (url === saveUrl && init?.method === "POST") {
-        return jsonResponse({
-          project_id: projectPayload.id,
-          version: projectPayload.active_version,
-          version_etag: "saved-etag",
-        });
-      }
+      if (url === saveUrl && init?.method === "POST") return saveResponse.promise;
       if (url === `/api/v1/projects/${projectPayload.id}/status-items`) {
         return jsonResponse({ items: [statusItemPayload] });
       }
@@ -808,6 +871,16 @@ describe("App", () => {
 
     expect(await screen.findByRole("dialog", { name: "Uncommitted draft" })).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Save then open" }));
+    expect(screen.getByRole("dialog", { name: "Saving version" })).toBeVisible();
+
+    saveResolved = true;
+    saveResponse.resolve(
+      await jsonResponse({
+        project_id: projectPayload.id,
+        version: projectPayload.active_version,
+        version_etag: "saved-etag",
+      }),
+    );
 
     expect(fetchMock).toHaveBeenCalledWith(
       saveUrl,
@@ -816,7 +889,8 @@ describe("App", () => {
         headers: expect.any(Object),
       }),
     );
-    expect(window.location.search).toBe(`?version=${alternateVersion.id}`);
+    await waitFor(() => expect(window.location.search).toBe(`?version=${alternateVersion.id}`));
+    expect(screen.queryByRole("dialog", { name: "Saving version" })).not.toBeInTheDocument();
   });
 
   test("shows Save As and discard exits when Save finds a stale version ETag", async () => {
@@ -853,6 +927,7 @@ describe("App", () => {
     expect(dialog).toBeVisible();
     expect(within(dialog).getByRole("button", { name: "Save As" })).toBeVisible();
     expect(within(dialog).getByRole("button", { name: "Discard draft" })).toBeVisible();
+    expect(screen.queryByRole("dialog", { name: "Saving version" })).not.toBeInTheDocument();
   });
 
   test("renders read-safe recovery when the editor draft summary is unsupported", async () => {

@@ -48,7 +48,7 @@ export function AssemblySvgCanvas({
       shapeRendering="crispEdges"
       style={{
         left: `${ASSEMBLY_CANVAS_ORIGIN_X_PX - strokePaddingPx}px`,
-        top: `${-strokePaddingPx}px`,
+        top: 0,
       }}
     >
       <defs>

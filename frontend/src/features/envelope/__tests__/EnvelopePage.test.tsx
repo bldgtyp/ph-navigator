@@ -306,12 +306,32 @@ describe("EnvelopePage", () => {
     );
   });
 
+  test("assembly sidebar command tooltips render outside the clipped list", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    const renameButton = screen.getByRole("button", { name: "Rename assembly" });
+    expect(renameButton).not.toHaveAttribute("data-sidebar-tooltip");
+
+    await userEvent.hover(renameButton);
+
+    const tooltip = await screen.findByText("Rename assembly", { selector: ".app-tooltip" });
+    const sidebarList = document.querySelector(".envelope-sidebar-list");
+    expect(tooltip).toHaveTextContent("Rename assembly");
+    expect(tooltip).toHaveAttribute("role", "tooltip");
+    expect(sidebarList?.contains(tooltip)).toBe(false);
+    expect(tooltip.closest("[data-radix-popper-content-wrapper]")?.parentElement).toBe(
+      document.body,
+    );
+    expect(renameButton).toHaveAttribute("aria-describedby", tooltip.id);
+  });
+
   test("unit toggle changes labels without changing canvas dimensions", async () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
 
     const stage = await screen.findByTestId("assembly-canvas-stage");
     const initialWidth = stage.getAttribute("style");
-    expect(stage).toHaveStyle({ width: "880.8px" });
+    expect(stage).toHaveStyle({ width: "881.8px" });
     expect(screen.getByTestId("total-thickness")).toHaveTextContent("88 mm");
 
     await userEvent.click(screen.getByRole("button", { name: "IP" }));
@@ -640,8 +660,14 @@ describe("EnvelopePage", () => {
 
     const svg = await screen.findByTestId("assembly-svg-canvas");
     const stage = screen.getByTestId("assembly-canvas-stage");
+    const overlay = document.getElementById("assembly-canvas-overlay");
+    const labels = document.getElementById("assembly-orientation-labels");
     expect(svg).toHaveAttribute("viewBox", "-1 -1 357.6 103.6");
-    expect(stage).toHaveStyle({ height: "102.6px" });
+    expect(svg).toHaveAttribute("height", "103.6");
+    expect(svg).toHaveStyle({ top: "0px" });
+    expect(stage).toHaveStyle({ height: "105.6px" });
+    expect(overlay).toHaveStyle({ top: "1px", height: "101.6px" });
+    expect(labels).toHaveStyle({ top: "1px", height: "101.6px" });
     const segments = screen.getAllByTestId("assembly-svg-segment");
 
     expect(segments).toHaveLength(2);

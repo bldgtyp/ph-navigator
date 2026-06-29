@@ -15,6 +15,7 @@ import { AssemblyCanvasOverlay, type AssemblyCanvasOverlayActions } from "./Asse
 import { AssemblySvgCanvas } from "./AssemblySvgCanvas";
 import { buildAssemblyCanvasGeometry } from "../canvas-geometry";
 import {
+  ASSEMBLY_CANVAS_BOTTOM_SAFETY_GUTTER_PX,
   ASSEMBLY_CANVAS_ORIGIN_X_PX,
   SVG_STROKE_PADDING_MM,
   fitZoomForCanvasWidth,
@@ -75,8 +76,9 @@ export function AssemblyCanvas({
   const svgWidth = pxFromMm(geometry.widthMm, zoom);
   const svgHeight = pxFromMm(geometry.heightMm, zoom);
   const svgStrokePaddingPx = pxFromMm(SVG_STROKE_PADDING_MM, zoom);
-  const stageWidth = ASSEMBLY_CANVAS_ORIGIN_X_PX + svgWidth;
-  const canvasHeight = svgHeight + svgStrokePaddingPx;
+  const geometryTopPx = svgStrokePaddingPx;
+  const stageWidth = ASSEMBLY_CANVAS_ORIGIN_X_PX + svgWidth + svgStrokePaddingPx;
+  const canvasHeight = svgHeight + svgStrokePaddingPx * 2 + ASSEMBLY_CANVAS_BOTTOM_SAFETY_GUTTER_PX;
   const actions: AssemblyCanvasOverlayActions = {
     onDeleteLayer,
     onUpdateLayerThickness,
@@ -144,7 +146,9 @@ export function AssemblyCanvas({
             aria-hidden="true"
             style={{
               left: `${ASSEMBLY_CANVAS_ORIGIN_X_PX}px`,
+              top: `${geometryTopPx}px`,
               width: `${svgWidth}px`,
+              height: `${svgHeight}px`,
             }}
           >
             <span className="assembly-orientation-label is-top">{outsideLabel}</span>
@@ -167,6 +171,8 @@ export function AssemblyCanvas({
             canEdit={canEdit}
             paint={paint}
             actions={actions}
+            topPx={geometryTopPx}
+            heightPx={svgHeight}
           />
         </div>
       </div>
