@@ -10,7 +10,7 @@ RELATED:
   - ../PLAN.md
   - ../STATUS.md
   - ../research.md
-  - ../../v2-production-rollout/PLAN.md
+  - ../../../archive/dated/2026-06-28/v2-production-rollout/PLAN.md
 ---
 
 # Security / Use-Case Review - Admin User Management MVP
@@ -164,7 +164,7 @@ Still deferred by design:
 
 ## Rollout Gate
 
-Admin-user-management should unblock `planning/features/v2-production-rollout/`
+Admin-user-management should unblock `planning/archive/dated/2026-06-28/v2-production-rollout/`
 only after:
 
 1. Phases 00-06 pass their MVP exit criteria.

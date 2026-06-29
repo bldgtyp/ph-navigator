@@ -8,7 +8,7 @@ RELATED:
   - PRD.md
   - STATUS.md
   - ../../features/admin-user-management/
-  - ../../features/v2-production-rollout/
+  - ../../archive/dated/2026-06-28/v2-production-rollout/
 ---
 
 # Public Account Recovery / Email Delivery

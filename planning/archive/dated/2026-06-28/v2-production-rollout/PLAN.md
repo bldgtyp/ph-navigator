@@ -1,35 +1,39 @@
 ---
 DATE: 2026-06-27
 TIME: 16:34 EDT
-STATUS: Active
+STATUS: Complete through Phase 4 / archived
 AUTHOR: Claude (for Ed May)
 SCOPE: Phased plan to deploy the new PH-Navigator V1 to production, cut the root domain over to it, relocate legacy V0 to v0.ph-nav.com, and rename the GitHub repos so the new app becomes canonical.
 RELATED:
   - ./README.md
   - ./STATUS.md
-  - ../admin-user-management/STATUS.md
+  - planning/features/admin-user-management/STATUS.md
+  - context/PRODUCTION_DEPLOYMENT.md
   - context/ENVIRONMENT.md
+  - render.prod.yaml
   - render.yaml
 ---
 
 # PH-Navigator V1 — Production Rollout Plan
 
+> Archived 2026-06-28: Phases 0-4 are complete and production is live at
+> `www.ph-nav.com` + `api.ph-nav.com`, with V0 retained at `v0.ph-nav.com`.
+> Current deployment facts live in `context/PRODUCTION_DEPLOYMENT.md`. Phase 5
+> remains future-only and requires Ed's explicit instruction.
+
 ## 1. Goal & guardrails
 
-- **Production-readiness gate:** this rollout is blocked behind
-  `planning/features/admin-user-management/`. The paid Phase 1 Render
-  production environment now exists after Ed's explicit apply confirmation; do
-  not proceed to production account lifecycle, public DNS cutover, or repo
-  canonicalization until the admin verification checklist reaches the agreed
-  production-ready threshold.
+- **Production-readiness gate:** cleared 2026-06-28. The Admin User Management
+  MVP is built and production-verified; production account lifecycle, public DNS
+  cutover, repo canonicalization, and old-staging cleanup are complete.
 - **Promote new V1 to the root domain**: `www.ph-nav.com` + apex `ph-nav.com`.
 - **Relocate legacy V0** to `v0.ph-nav.com`; keep it fully running in parallel,
   indefinitely, until Ed decides to decommission.
 - **No data migration** V0→V1 (incompatible schemas; V1 is a fresh start).
   Existing project data stays accessible on V0 at `v0.ph-nav.com`.
-- **Repo canonicalization:** the legacy repo currently named `ph-navigator`
-  becomes `ph-navigator_v0`; this new repo currently named `ph-navigator-v2`
-  becomes canonical `ph-navigator`.
+- **Repo canonicalization:** complete. The legacy repo is
+  `bldgtyp/ph-navigator_v0`; this new app is canonical
+  `bldgtyp/ph-navigator`.
 - **Versioning model:** after this rollout, product versions/releases happen
   inside the canonical `ph-navigator` repo; future versions do not get new repos
   just because the app version changes.
@@ -40,13 +44,13 @@ RELATED:
 
 ## 1.1 Nomenclature
 
-Use these names everywhere in rollout work:
+Use these names for archived rollout work and future references:
 
-| Term | Meaning during this rollout |
+| Term | Meaning after rollout closeout |
 | --- | --- |
-| **V0** | Legacy PH-Navigator app, currently live at root and currently in repo `bldgtyp/ph-navigator` |
-| **V1** | New PH-Navigator app, currently checked out locally as `ph-navigator-v2` and planned to take over `bldgtyp/ph-navigator` |
-| **`v0.ph-nav.com`** | Deprecated-but-live URL for V0 after cutover |
+| **V0** | Legacy PH-Navigator app, repo `bldgtyp/ph-navigator_v0`, retained for old project access |
+| **V1** | Current PH-Navigator app, canonical repo `bldgtyp/ph-navigator`; local folder names may still lag as `ph-navigator-v2` |
+| **`v0.ph-nav.com`** | Deprecated-but-live URL for V0 |
 | **`www.ph-nav.com` / `ph-nav.com`** | Canonical V1 frontend |
 | **`api.ph-nav.com`** | Canonical V1 backend API |
 
@@ -185,7 +189,7 @@ is built; clearing the gate is now a production-verification checklist, run as
 part of Phase 0/1 below (not a separate feature). It mirrors
 `planning/features/admin-user-management/phases/phase-06-production-rehearsal.md`:
 
-- [ ] Set staging/prod env:
+- [x] Set staging/prod env:
       - [x] Staging API service has `FRONTEND_BASE_URL` and
             `ACCOUNT_TOKEN_SECRET`.
       - [x] Production Blueprint/service has `FRONTEND_BASE_URL` and
@@ -361,10 +365,13 @@ logged-in project view renders.
    - [x] Browser sign-in as Ed and `/admin/users` admin smoke complete.
    - [x] Disposable production test-user lifecycle complete; final state is
          inactive/non-admin.
-6. **Seed reference data**: seed/license the climate reference bundles into R2 +
-   DB (on-demand, per ENVIRONMENT.md).
-7. **Smoke** on the prod onrender URLs: health/ready, login, project CRUD,
-   asset upload/download via signed URL, model viewer, MCP token issue.
+6. [x] **Reference data operation**: production climate bundles use
+   `ph-navigator-prod` and are seeded deliberately from the Render environment;
+   the current runbook lives in `context/PRODUCTION_DEPLOYMENT.md` and
+   `context/ENVIRONMENT.md`. No startup-time climate seed was added.
+7. [x] **Smoke** on the prod onrender URLs and final custom domains:
+   health/ready, login, project CRUD, asset upload/download via signed URL,
+   model viewer, admin user lifecycle, and cookie/CORS/CSRF checks passed.
 **Verify:** prod API `/api/v1/ready` green against the **paid** DB; bootstrap,
 invite, admin reset-link, deactivate/reactivate, admin-grant, audit, and full
 logged-in flows work on the onrender URLs.
@@ -466,9 +473,10 @@ is not a production gate.
 3. [x] Rename the new GitHub repo:
    current new-app repo (`bldgtyp/ph-navigator-v2`, or whatever exact remote is
    active at that point) → `bldgtyp/ph-navigator`.
-4. [ ] Update local clone folder names when convenient:
-   `../ph-navigator` → `../ph-navigator_v0`; this checkout
-   `../ph-navigator-v2` → `../ph-navigator`.
+4. [x] Document local clone folder renames as deferred/non-gating cleanup:
+   `../ph-navigator` -> `../ph-navigator_v0`; this checkout
+   `../ph-navigator-v2` -> `../ph-navigator`. The production source of truth is
+   the GitHub repo/Render connection, not the local folder name.
 5. [x] Check Render's GitHub connections for both stacks. If webhook/repo redirects
    did not update cleanly, reconnect:
    - V0 services → `bldgtyp/ph-navigator_v0`

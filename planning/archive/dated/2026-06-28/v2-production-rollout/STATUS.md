@@ -1,18 +1,22 @@
 ---
 DATE: 2026-06-27
 TIME: 16:34 EDT
-STATUS: Complete through Phase 4
+STATUS: Complete through Phase 4 / archived
 AUTHOR: Claude (for Ed May)
-SCOPE: Live status + open decisions for the new PH-Navigator V1 production rollout.
+SCOPE: Archived status ledger for the new PH-Navigator V1 production rollout.
 RELATED:
   - ./PLAN.md
   - ./README.md
-  - ../admin-user-management/STATUS.md
-  - ../../features_v2.0/public-account-recovery/STATUS.md
-  - ../../features_v2.0/account-security-hardening/STATUS.md
+  - context/PRODUCTION_DEPLOYMENT.md
+  - planning/features/admin-user-management/STATUS.md
+  - planning/features_v2.0/public-account-recovery/STATUS.md
+  - planning/features_v2.0/account-security-hardening/STATUS.md
 ---
 
 # Status — PH-Navigator V1 Production Rollout
+
+> Archived 2026-06-28. This is the rollout ledger; use
+> `context/PRODUCTION_DEPLOYMENT.md` for current Render/DNS/R2/auth/MCP facts.
 
 **State:** Complete through Phase 4. Phase 0 staging/admin rehearsal, Phase 1 production infra, Phase 2
 public domain cutover, Phase 3 repo canonicalization, and Phase 4 old-staging
@@ -34,12 +38,10 @@ is now cleared. See "Production-readiness gate".
 
 ## Production-readiness gate
 
-The paid Phase 1 production environment now exists after Ed's explicit Blueprint
-apply confirmation. Do not proceed to production account lifecycle, DNS cutover,
-or GitHub repo canonicalization until the Admin User Management gate progresses
-through the audited production rehearsal. The gate's two-user MVP capability is
-**built** in `planning/features/admin-user-management/` (Phases 00–06,
-`make ci` green):
+The Admin User Management gate cleared on 2026-06-28 after the audited staging,
+prod-onrender, and final custom-domain production rehearsals. The gate's
+two-user MVP capability is built in `planning/features/admin-user-management/`
+(Phases 00-06, `make ci` green):
 
 - ✅ invite-only user creation;
 - ✅ admin-generated reset links without temporary admin-set passwords;
@@ -74,8 +76,8 @@ email, durable reset/invite-resend rate limiting, fresh admin re-authentication,
 MFA/passkeys, external users, richer IAM, and audit export — tracked in
 `planning/features_v2.0/`.
 
-With this gate clear and production upload/R2 housekeeping handled, Phase 3
-repo canonicalization can proceed.
+With this gate clear and production upload/R2 housekeeping handled, Phase 3 repo
+canonicalization and Phase 4 old-staging cleanup are complete.
 
 ## Decisions — settled (2026-06-27)
 
@@ -131,7 +133,7 @@ The work splits into two surfaces:
     audited first-admin bootstrap after Admin User Management lands; seed climate
     data.
 
-## Next concrete step
+## Archive state
 
 Decisions are settled (above), the admin-user-management capability is built,
 and the staging admin lifecycle rehearsal plus non-admin product smoke are

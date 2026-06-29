@@ -1,23 +1,29 @@
 ---
 DATE: 2026-06-27
 TIME: 16:34 EDT
-STATUS: Active
+STATUS: Complete / archived discovery
 AUTHOR: Claude (for Ed May)
 SCOPE: Detailed, verified discovery behind the new PH-Navigator V1 production rollout — Render account state, V0 hosting/domain, V1 deploy readiness, and the evidence for each.
 RELATED:
   - ./PLAN.md
   - ./STATUS.md
+  - context/PRODUCTION_DEPLOYMENT.md
   - context/ENVIRONMENT.md
+  - render.prod.yaml
   - render.yaml
   - V0 repo: ~/Dropbox/bldgtyp-00/00_PH_Tools/ph-navigator
 ---
 
 # Discovery & Verification — PH-Navigator V1 Production Rollout
 
-This is the durable record of *how the current setup actually works* and *how we
-know*. Everything below was verified on **2026-06-27** via the Render dashboard
-(Ed's screenshots), live DNS/HTTP probes, and reads of both repos. Where an
-earlier inference was wrong, the correction is called out.
+> Archived 2026-06-28. This file preserves the discovery evidence gathered
+> before and during rollout. Current production facts live in
+> `context/PRODUCTION_DEPLOYMENT.md`.
+
+This is the durable record of how the setup was discovered and verified during
+rollout. Everything below was initially verified on **2026-06-27** via the
+Render dashboard (Ed's screenshots), live DNS/HTTP probes, and reads of both
+repos. Where an earlier inference was wrong, the correction is called out.
 
 > Public-repo note: V0's `backend/alembic.ini` contains a hard-coded **local
 > dev** Postgres credential (localhost:5432). It is intentionally **not**
@@ -32,8 +38,10 @@ earlier inference was wrong, the correction is called out.
   `dashboard.render.com/project/prj-d0mcajhr0fns73bkq7gg`) holds everything,
   split into two environment groups: **Production** (legacy V0) and **Staging**
   (new V1, under old `v2` service names).
-- One leftover **ungrouped** service: `ph-ep-runner:latest` — Docker image,
-  Ohio, **suspended by Ed ~2 years ago**. Dead weight; delete during cleanup.
+- Early screenshots suggested one leftover **ungrouped** service:
+  `ph-ep-runner:latest` — Docker image, Ohio, **suspended by Ed ~2 years ago**.
+  Phase 4 later verified no active/preview Render resource named
+  `ph-ep-runner` was present.
 
 ### Free-Postgres policy (the "two databases" question)
 Verified against Render docs (2026):
@@ -97,7 +105,11 @@ expires at 30 days, so it must be a **paid** instance → permanent, safe.
 
 ---
 
-## 3. V1 — deploy readiness (the "Staging" env group, still named `v2` today)
+## 3. V1 — deploy readiness at discovery time (later deleted)
+
+The `*-staging` stack below existed at the start of rollout. Phase 4 later
+deleted the staging DB, staging API, staging static site, and empty Staging
+environment group after production was verified.
 
 ### Services (currently suspended by Ed, 2 days ago)
 | Service | Type | Region | Status |
