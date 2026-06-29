@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 16:52 EDT
-STATUS: Active - P01 implemented; P02 regression coverage next.
+STATUS: Active - P02 regression coverage complete; P03 browser/performance verification next.
 AUTHOR: Codex
 SCOPE: Current state, next step, blockers, and verification for the stale draft ETag fix.
 RELATED:
@@ -16,7 +16,8 @@ RELATED:
 ## Current State
 
 P00 reproduction/root-cause pass completed. P01 fresh target-slice write seam
-implemented on branch.
+implemented on branch. P02 focused unit/controller and Playwright regression
+coverage added.
 
 Root cause identified from current code:
 
@@ -80,14 +81,13 @@ project/version.
 
 ## Next Step
 
-Start P02:
+Start P03:
 
 ```text
-phases/phase-02-regression-coverage.md
+phases/phase-03-browser-and-performance-verification.md
 ```
 
-Add focused regression coverage proving invalidated sibling writes refetch the
-target slice before payload construction and mutation.
+Run final browser/performance verification and record the network guard.
 
 ## Blockers
 
@@ -130,6 +130,15 @@ Broaden only if the implementation touches wider shared table behavior:
 - P01 focused frontend tests:
   `cd frontend && pnpm exec vitest run src/features/project_document/table-slice.test.ts src/features/equipment/heat-pumps/__tests__/OutdoorUnitsTable.test.tsx`
   passed with 11 tests.
+- P02 typecheck:
+  `cd frontend && pnpm exec tsc --noEmit --pretty false` passed.
+- P02 focused frontend tests:
+  `cd frontend && pnpm exec vitest run src/shared/ui/data-table/feature/useSliceTableController.test.tsx src/features/project_document/table-slice.test.ts src/features/equipment/heat-pumps/__tests__/OutdoorUnitsTable.test.tsx`
+  passed with 13 tests.
+- P02 focused Playwright regression:
+  `cd frontend && E2E_BASE_URL=http://localhost:3000 E2E_API_BASE_URL=http://localhost:8000 E2E_EMAIL=codex@example.com E2E_PASSWORD=password pnpm exec playwright test tests/e2e/table-regression --grep @table-draft-etag`
+  passed with 2 tests against a temporary worktree Vite server on
+  `localhost:3000`.
 
 ## Notes
 
