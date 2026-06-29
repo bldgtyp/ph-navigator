@@ -466,6 +466,11 @@ Rules:
   generic table features should rely on `createTableSliceFeature` for
   this behavior; legacy aggregate endpoints that can change table data
   must also invalidate the generic editor table-slice query family.
+- If a target editor table slice is invalidated, the next write must
+  refresh that target slice before constructing the payload, not just
+  patch the outgoing ETag header. This preserves the lazy sibling
+  invalidation performance contract without overwriting target-table
+  rows that changed while the cached slice was stale.
 - Single-select option creation during paste belongs in the same op as
   the cell writes that use those options.
 - One table instance maintains a FIFO persistence queue per open draft.
