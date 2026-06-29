@@ -33,7 +33,7 @@ import {
   useFrameTypesQuery,
   useReactivateFrameTypeMutation,
 } from "../hooks";
-import { catalogPath } from "../lib";
+import { canEditCatalogs, catalogPath } from "../lib";
 import type { CatalogFrameType } from "../types";
 
 const EMPTY_FRAME_TYPES: readonly CatalogFrameType[] = Object.freeze([]);
@@ -190,6 +190,7 @@ export function FrameTypesCatalogPage({ session }: { session: AuthSession }) {
   const optionsQuery = useFrameTypeOptionsQuery();
   const signOutMutation = useSignOutMutation();
   const reactivateMutation = useReactivateFrameTypeMutation();
+  const canEditCatalog = canEditCatalogs(session);
 
   const optionsByField = useMemo(() => optionsQuery.data ?? {}, [optionsQuery.data]);
   const optionMaps = useMemo(() => buildFrameTypeOptionMaps(optionsByField), [optionsByField]);
@@ -309,27 +310,32 @@ export function FrameTypesCatalogPage({ session }: { session: AuthSession }) {
             view={controller.view}
             onViewChange={controller.onViewChange}
             onResetView={controller.onResetView}
+            readOnly={!canEditCatalog}
             onWrite={controller.onWrite}
             buildEmptyRow={buildEmptyFrameTypeRow}
             bulkSelectionActions={renderBulkSelectionActions}
             overflowMenuActions={
               <CatalogImportExportMenu
                 onExport={handleExport}
-                onImport={() => setImportOpen(true)}
+                onImport={canEditCatalog ? () => setImportOpen(true) : undefined}
                 exportDisabled={frameTypes.length === 0}
               />
             }
             emptyMessage={
               frameTypesQuery.isLoading
                 ? "Loading frame types…"
-                : "No frame types yet. Shift-Enter to add one."
+                : canEditCatalog
+                  ? "No frame types yet. Shift-Enter to add one."
+                  : "No frame types yet."
             }
           />
         )}
         {/* Conditional mount: closing tears down internal state and any
             in-flight preview/commit mutations so a late preview cannot
             setState on a hidden dialog. */}
-        {importOpen ? <ImportDialog onClose={() => setImportOpen(false)} /> : null}
+        {canEditCatalog && importOpen ? (
+          <ImportDialog onClose={() => setImportOpen(false)} />
+        ) : null}
       </section>
     </main>
   );

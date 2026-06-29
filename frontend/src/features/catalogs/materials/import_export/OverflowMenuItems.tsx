@@ -5,7 +5,7 @@
 
 export type CatalogImportExportMenuProps = {
   onExport: () => void;
-  onImport: () => void;
+  onImport?: () => void;
   exportDisabled?: boolean;
 };
 
@@ -24,9 +24,11 @@ export function CatalogImportExportMenu({
       >
         Export JSON
       </button>
-      <button type="button" className="data-table-overflow-menu-item" onClick={onImport}>
-        Import JSON…
-      </button>
+      {onImport ? (
+        <button type="button" className="data-table-overflow-menu-item" onClick={onImport}>
+          Import JSON…
+        </button>
+      ) : null}
     </>
   );
 }

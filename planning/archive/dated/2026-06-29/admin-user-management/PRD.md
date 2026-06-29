@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-27
 TIME: 20:18 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex (for Ed May)
 SCOPE: Product and security contract for the Admin User Management MVP.
 RELATED:
@@ -51,8 +51,10 @@ These are settled and should not be re-litigated during implementation:
   independently gated by a trusted-`Origin` allow-list plus an app-only custom
   header (`X-PHN-CSRF`). The guard ships regardless of the staging `SameSite`
   verification result.
-- **Role presets:** MVP exposes only `User` and `Admin` (the latter backed by
-  `admin.users.manage`). `Catalog Admin` and `is_staff` editing stay deferred.
+- **Role presets:** MVP exposes only `User` and `Admin` (the latter stored as
+  `admin.users.manage`). The resolver also derives `catalog.edit` for Admin so
+  production admins can maintain shared catalogs. A separate `Catalog Admin`
+  preset and `is_staff` editing stay deferred.
 
 ## Primary MVP Use Cases
 
@@ -87,7 +89,7 @@ These are settled and should not be re-litigated during implementation:
 - Full enterprise IAM.
 - Project/team sharing UI.
 - External client/certifier account management.
-- `Catalog Admin` preset or `is_staff` editing UI.
+- Separate `Catalog Admin` preset or `is_staff` editing UI.
 - Audit export tooling.
 
 ## Users
@@ -117,7 +119,7 @@ Use a small role-preset UI over the existing capability substrate:
 | UI preset | Backend state | Meaning |
 | --- | --- | --- |
 | User | active user, no admin grants | Normal PH-Navigator user |
-| Admin | active user with `admin.users.manage` | Can manage MVP user lifecycle |
+| Admin | active user with `admin.users.manage` | Can manage MVP user lifecycle and shared catalogs |
 | Inactive | `users.deleted_at IS NOT NULL` | Cannot sign in; sessions/tokens revoked |
 
 Keep `users.is_staff` as a BLDGTYP staff/support marker. It can be displayed in
@@ -159,7 +161,7 @@ Deferred dashboard polish:
 
 - active session count;
 - last login date;
-- `Catalog Admin`;
+- Separate `Catalog Admin`;
 - editable `is_staff`;
 - full audit drawer/export.
 
