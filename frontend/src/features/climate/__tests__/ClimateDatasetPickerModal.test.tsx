@@ -312,10 +312,8 @@ describe("ClimateDatasetPickerModal", () => {
 
     await user.click(await screen.findByRole("button", { name: "Find Nearest" }));
 
-    expect(await screen.findByRole("button", { name: /^Hudson/ })).toHaveAttribute(
-      "data-selected",
-      "true",
-    );
+    const nearestCandidate = await screen.findByRole("button", { name: /^Hudson/ });
+    await waitFor(() => expect(nearestCandidate).toHaveAttribute("data-selected", "true"));
     expect(screen.getByRole("combobox", { name: "State" })).toHaveValue("New York");
     expect(posted).toEqual([]);
     expect(onClose).not.toHaveBeenCalled();
