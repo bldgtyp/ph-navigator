@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
-TIME: 16:38 EDT
-STATUS: Planned
+TIME: 17:55 EDT
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Close out production climate-data seeding with durable evidence and rerun guidance.
 RELATED:
@@ -19,6 +19,18 @@ RELATED:
 Convert the production seed run from a one-off operation into durable project
 knowledge: what was run, what counts landed, how to verify it, and how to rerun
 it safely.
+
+## Outcome
+
+Complete on 2026-06-29.
+
+- Final production evidence is recorded in `../STATUS.md`.
+- R2 object keys, processing counts, Render one-off job id, SQL counts, and
+  manual production smoke outcome are preserved in the packet.
+- Stable rerun guidance already exists in `context/PRODUCTION_DEPLOYMENT.md`
+  and `context/ENVIRONMENT.md`; no durable context patch was required.
+- No production Climate blocker remains.
+- No production secrets or licensed source data were committed.
 
 ## Preconditions
 

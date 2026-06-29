@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
-TIME: 17:43 EDT
-STATUS: Blocked / next - needs authorized production editor browser session.
+TIME: 17:55 EDT
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Verify live production Climate workflows after seeding.
 RELATED:
@@ -27,7 +27,18 @@ live app, not just that rows exist in Postgres.
 - Operator understands PH-Navigator's single-active-session behavior before
   signing in as a production user.
 
-## Current blocker
+## Outcome
+
+Complete on 2026-06-29.
+
+Manual production testing confirmed:
+
+- PHIUS workflow works in production after P01/P02.
+- PHI workflow works in production after P01/P02.
+- Hourly Climate workflow works in production after P01/P02.
+- No new production browser/API blocker was reported after manual smoke.
+
+## Prior blocker
 
 P02 passed and production has candidate projects with saved coordinates, but no
 safe non-Ed active browser account is available to this operator.
@@ -43,12 +54,7 @@ Read-only production checks on 2026-06-29:
 - Alternate real project:
   `a0f6b57c-1dc3-4433-8940-498b78d113ce`, `Linde Residence`, Fort Collins, CO.
 
-Resume when the operator provides one of:
-
-- credentials/session access for an active production editor account; or
-- explicit permission to use an already-signed-in Ed/admin production browser
-  session; and
-- the project id to use for smoke, preferably the existing smoke project above.
+Resolved by manual operator testing.
 
 ## PHIUS smoke
 

@@ -5,6 +5,7 @@ how and when each feature packet landed. Newest first. Grep by slug.
 
 ## 2026-06-29
 
+- `production-climate-data-seeding` - production Climate enablement: full PHIUS 2022 and PHI 10.6 bundles published to private R2, Render Postgres seeded (`phius/2022` 1007 locations, `phi/10.6` 1002 locations), PHIUS/PHI/Hourly production workflows manually verified, and rerun evidence archived. (production closeout)
 - `admin-user-management` - two-user production account lifecycle MVP: audited first-admin bootstrap, invite/admin-reset-link/deactivate/reactivate/admin grants, last-admin protection, CSRF/Origin guard, capability-gated UI, Admin-derived `catalog.edit`, audit, runbook, and production smoke evidence. (docs closeout)
 
 ## 2026-06-28

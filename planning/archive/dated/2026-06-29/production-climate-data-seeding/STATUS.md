@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
-TIME: 17:43 EDT
-STATUS: P03 blocked - production DB seed complete; live browser smoke needs an authorized production editor session.
+TIME: 17:55 EDT
+STATUS: Complete - production R2 bundles published, Render Postgres seeded, and live Climate workflows manually verified.
 AUTHOR: Codex
 SCOPE: Current state and next step for production climate data enablement.
 RELATED:
@@ -17,7 +17,9 @@ RELATED:
 ## Current state
 
 P00 production readiness audit is complete. P01 production R2 bundle publishing
-is complete. P02 production Render Postgres seeding is complete.
+is complete. P02 production Render Postgres seeding is complete. P03 production
+UI/API smoke is complete by manual operator testing. P04 runbook closeout is
+complete and the packet is ready to archive.
 
 Current code/docs already support the target workflow:
 
@@ -44,7 +46,7 @@ Read-only checks completed:
   - Frontend: `ph-navigator-web`, `srv-d909olr7uimc7396slr0`, root `frontend`.
   - DB: `ph-navigator-db`, `dpg-d909olr7uimc7396sls0-a`,
     database `ph_navigator_74vs`.
-- Production DB aggregate counts:
+- Pre-seed production DB aggregate counts:
   - `climate_dataset`: no provider/version rows.
   - `project_climate_source` for `phius`, `phi`, `weather`: no rows.
 - Read-only Render one-off env/R2 audit job:
@@ -62,7 +64,7 @@ Read-only checks completed:
   - Managed public `r2.dev` domain is disabled.
   - CORS allows `https://www.ph-nav.com` and `https://ph-nav.com` for
     `GET`, `HEAD`, and `PUT`; exposed header is `ETag`.
-  - Listing prefix `climate/` returns no objects.
+  - Pre-upload listing prefix `climate/` returned no objects.
 - Production R2 upload on 2026-06-29 at 17:35 EDT:
   - `uv run python -m features.climate.processing --provider phius --version 2022 --src ../planning/archive/dated/2026-06-14/climate/example_data --upload`
     processed 1007 stations and uploaded
@@ -88,10 +90,18 @@ Read-only checks completed:
     - `project_climate_source` for `phius`, `phi`, and `weather`: no rows yet.
   - Auxiliary Python verification job `job-d91eblq8qa3s73fu7nqg` failed, so
     the accepted SQL evidence is the direct `render psql` output above.
+- Production manual smoke on 2026-06-29:
+  - Operator manually confirmed PHIUS workflow worked in production after
+    seeding.
+  - Operator manually confirmed PHI workflow worked in production after
+    seeding.
+  - Operator manually confirmed Hourly Climate workflow worked in production
+    after seeding.
+  - No additional code or data migration was required after manual smoke.
 
-## Next step
+## Final state
 
-Start P03: `phases/phase-03-production-ui-and-api-smoke.md`.
+Archive this packet to `planning/archive/dated/2026-06-29/`.
 
 P02 used the chosen first production seed mode:
 
@@ -101,9 +111,9 @@ uv run python -m features.climate.seeding --all --no-replace
 
 ## Blockers
 
-No code blocker. P03 is blocked on an authorized production browser session.
+None.
 
-Read-only production checks completed after P02:
+Read-only production checks completed after P02 before manual smoke:
 
 - Active password users:
   - `admin@bldgtyp.com`: active, non-staff, password set.
@@ -116,16 +126,6 @@ Read-only production checks completed after P02:
     `PROD-20260628-0919 - R2 Upload Smoke`, `42.26525`, `-73.366412`,
     Housatonic, MA.
 
-Later phase prerequisites:
-
-- Permission to sign in to `https://www.ph-nav.com` as an active production
-  editor, or explicit permission to use an already-signed-in Ed/admin browser
-  session despite PH-Navigator's single-active-session behavior.
-- Confirmation of which production project to use for P03 smoke. Recommended:
-  the existing smoke project
-  `1c11786d-3a6f-414a-b1d5-b9caca348454` unless the operator wants to test on
-  `Linde Residence`.
-
 ## Success gates by phase
 
 | Phase | Required evidence |
@@ -133,8 +133,8 @@ Later phase prerequisites:
 | P00 | Complete: audit note with current DB/object-store state and chosen seed mode |
 | P01 | Complete: R2 HEAD confirms both production bundle objects |
 | P02 | Complete: production SQL counts confirm seeded provider/version rows |
-| P03 | Live app screenshot/log notes confirm PHIUS, PHI, and Hourly attach workflows |
-| P04 | Runbook and this status file updated with exact date, counts, commands, and follow-ups |
+| P03 | Complete: manual production testing confirmed PHIUS, PHI, and Hourly attach workflows |
+| P04 | Complete: runbook evidence, rerun policy, and archive state recorded |
 
 ## Verification performed for this docs packet
 
@@ -143,5 +143,9 @@ Later phase prerequisites:
   project source service, frontend picker empty state, and local source counts
   were reviewed before drafting.
 - Production Render DB, Render service env, and Cloudflare R2 state were
-  checked read-only on 2026-06-29.
-- Runtime production seeding has not been run.
+  checked on 2026-06-29.
+- Runtime production R2 upload, Render Postgres seed, SQL verification, and
+  manual production Climate smoke are complete.
+- Stable production runbook guidance already existed in
+  `context/PRODUCTION_DEPLOYMENT.md` and `context/ENVIRONMENT.md`; no durable
+  context patch was required beyond this archived evidence packet.
