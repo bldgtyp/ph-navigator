@@ -134,6 +134,10 @@ export interface SliceTableController<TSlice> {
     conflictMessage: string,
     fallbackMessage: string,
   ): Promise<T | undefined>;
+  // For wrapper flows that must run their own preflight request before
+  // delegating to `onWrite` (for example cascade previews). Regular table
+  // writes already call this internally.
+  resolveSliceForWrite: () => Promise<TSlice>;
   // Consumers call this from their broadcast-channel `onRemoteSlice`
   // handler (e.g. inside `useRoomsDraftBroadcast`). The controller
   // applies its own active-row gate before surfacing the banner.

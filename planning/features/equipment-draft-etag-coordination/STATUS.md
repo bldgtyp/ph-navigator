@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 16:52 EDT
-STATUS: Active - P00 complete; P01 fresh target-slice write seam next.
+STATUS: Active - P01 implemented; P02 regression coverage next.
 AUTHOR: Codex
 SCOPE: Current state, next step, blockers, and verification for the stale draft ETag fix.
 RELATED:
@@ -15,8 +15,8 @@ RELATED:
 
 ## Current State
 
-P00 reproduction/root-cause pass completed. No application code has been
-changed yet.
+P00 reproduction/root-cause pass completed. P01 fresh target-slice write seam
+implemented on branch.
 
 Root cause identified from current code:
 
@@ -80,14 +80,14 @@ project/version.
 
 ## Next Step
 
-Start P01:
+Start P02:
 
 ```text
-phases/phase-01-fresh-target-slice-before-write.md
+phases/phase-02-regression-coverage.md
 ```
 
-Implement a generic write-time fresh target-slice seam before payload
-construction in `useSliceTableController`.
+Add focused regression coverage proving invalidated sibling writes refetch the
+target slice before payload construction and mutation.
 
 ## Blockers
 
@@ -125,6 +125,11 @@ Broaden only if the implementation touches wider shared table behavior:
 - Focused frontend test run:
   `cd frontend && pnpm exec vitest run src/features/project_document/table-slice.test.ts`
   passed with 5 tests.
+- P01 typecheck:
+  `cd frontend && pnpm exec tsc --noEmit --pretty false` passed.
+- P01 focused frontend tests:
+  `cd frontend && pnpm exec vitest run src/features/project_document/table-slice.test.ts src/features/equipment/heat-pumps/__tests__/OutdoorUnitsTable.test.tsx`
+  passed with 11 tests.
 
 ## Notes
 
