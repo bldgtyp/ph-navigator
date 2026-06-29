@@ -44,7 +44,6 @@ feature-first planning.
 | Refactor | State | Current pointer |
 |---|---|---|
 | Production Frontend Performance | Implemented locally through Phase 03 setup path / Production harness guards added; guarded `codex@testing.com` / `PERF-STRESS` fixture command added for 250-row Climate/Envelope/Apertures fixture with Model excluded; actual production setup and perf run held | `refactor/production-frontend-performance/STATUS.md` |
-| Apertures, Envelope, Climate + Tooltip UI Polish | Complete / Phases 1-6 implemented and verified on branch: shared Radix tooltip primitive, Save Version blocking overlay, Assembly canvas stroke gutter, Climate map tile-loading spinner, Apertures zero-type empty-state cleanup, `make format`, and `make ci` | `refactor/envelope-save-ui-polish/STATUS.md` |
 | Backend Data-Architecture Cleanup | Complete / Phases 1–3, 5, and 6 implemented and verified with `make ci`; old Phase 4 promoted to `table-write-architecture-unification`; Phase 7 deferred to pre-first-deploy gate; archived | `archive/dated/2026-06-24/backend-data-architecture-cleanup/STATUS.md` |
 | Table-Write-Architecture Unification | Complete / all phases (1, 2, 3a, 3b inc 1–6) landed — heat-pumps fully unified onto the generic registered-contract + spine (BE) and generic table-write client (FE); bespoke write service, FE client, and PATCH shim all removed; shared option-list delete cascade + `dependent_link_delete_blocked` rename; `make ci` green (BE 1110, FE 1906), browser smoke as Ed passed; archived | `archive/dated/2026-06-25/table-write-architecture-unification/STATUS.md` |
 | DataTable Status Field | Complete / Phases 01-05 implemented and verified with `make ci` (backend 1061, frontend 1887), live reset/reseed + browser smoke, graphify, simplify, and docs-pass evidence; durable contract folded into `context/technical-requirements/data-table.md`; archived | `archive/dated/2026-06-24/data-table-status-field/STATUS.md` |
@@ -70,6 +69,11 @@ feature-first planning.
   `archive/dated/2026-06-29/production-climate-data-seeding/` (production R2
   PHIUS/PHI bundles, Render Postgres climate dataset seed, SQL verification,
   manual production PHIUS/PHI/Hourly Climate smoke, and runbook evidence).
+- Completed Apertures, Envelope, Climate + Tooltip UI Polish refactor planning
+  now lives under `archive/dated/2026-06-29/envelope-save-ui-polish/` (shared
+  Radix tooltip primitive, Save Version blocking overlay, Assembly canvas
+  stroke gutter, Climate map tile-loading spinner, Apertures zero-type empty
+  state, browser smoke evidence, `make format`, and `make ci`).
 - Completed Assembly Builder canvas-refactor planning now lives under
   `archive/dated/2026-06-04/assembly-builder/`; older foundation precedent remains
   under `archive/dated/2026-06-04/assembly-builder-foundation/`.

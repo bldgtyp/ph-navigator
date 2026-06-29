@@ -2,21 +2,21 @@
 
 DATE: 2026-06-29
 TIME: 18:32 EDT
-STATUS: Complete - verified on branch
+STATUS: Complete - archived and verified
 AUTHOR: Codex
 SCOPE: Implementation handoff for six UI fixes: shared tooltip consolidation,
 Envelope sidebar tooltip layering, project-document Save Version progress
 feedback, Envelope assembly SVG bottom-border clipping, Climate map
 tile-loading spinners, and Apertures zero-type empty-state cleanup.
-RELATED: planning/refactor/envelope-save-ui-polish/README.md;
-planning/refactor/envelope-save-ui-polish/PRD.md;
-planning/refactor/envelope-save-ui-polish/TOOLTIP_AUDIT.md;
-planning/refactor/envelope-save-ui-polish/PLAN.md
+RELATED: planning/archive/dated/2026-06-29/envelope-save-ui-polish/README.md;
+planning/archive/dated/2026-06-29/envelope-save-ui-polish/PRD.md;
+planning/archive/dated/2026-06-29/envelope-save-ui-polish/TOOLTIP_AUDIT.md;
+planning/archive/dated/2026-06-29/envelope-save-ui-polish/PLAN.md
 
 ## Current State
 
-Phases 1, 2, 3, 4, 5, and 6 are complete on branch
-`codex/envelope-save-ui-polish`. Final closeout verification passed.
+Phases 1, 2, 3, 4, 5, and 6 are complete and archived. Final closeout
+verification passed.
 
 Completed in Phase 1:
 

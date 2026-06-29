@@ -13,7 +13,7 @@ frontend/src/features/project_document/components/VersionControls.tsx;
 frontend/src/features/envelope/components/AssemblyCanvas.tsx;
 frontend/src/features/climate/components/ClimateMap.tsx;
 frontend/src/features/apertures/routes/AperturesTab.tsx;
-planning/refactor/envelope-save-ui-polish/TOOLTIP_AUDIT.md
+planning/archive/dated/2026-06-29/envelope-save-ui-polish/TOOLTIP_AUDIT.md
 
 ## Phase 0 - Baseline And Reproduction
 
@@ -67,7 +67,7 @@ Source anchors:
 - `frontend/src/shared/ui/info-tooltip/InfoTooltip.tsx`
 - `frontend/src/features/apertures/components/ApertureSidebar.tsx`
 - `frontend/src/features/envelope/envelope.css`
-- `planning/refactor/envelope-save-ui-polish/TOOLTIP_AUDIT.md`
+- `planning/archive/dated/2026-06-29/envelope-save-ui-polish/TOOLTIP_AUDIT.md`
 
 Implementation notes:
 
@@ -312,8 +312,8 @@ Testing:
 
 ## Phase 6 - Final Verification
 
-Status: Complete on branch `codex/envelope-save-ui-polish` on 2026-06-29.
-`make format` and `make ci` passed after Phases 1-5 landed.
+Status: Complete on 2026-06-29. `make format` and `make ci` passed after
+Phases 1-5 landed.
 
 Frontend implementation gate:
 

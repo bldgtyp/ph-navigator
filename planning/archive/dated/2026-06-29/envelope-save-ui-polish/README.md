@@ -2,7 +2,7 @@
 
 DATE: 2026-06-29
 TIME: 18:32 EDT
-STATUS: Complete - verified on branch
+STATUS: Complete - archived and verified
 AUTHOR: Codex
 SCOPE: Small UI reliability pass covering shared tooltip behavior,
 Envelope/Assemblies sidebar tooltips, project-document Save Version feedback,
