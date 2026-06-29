@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
-TIME: 17:39 EDT
-STATUS: P02 complete - production Render Postgres seeded and verified; P03 is next.
+TIME: 17:43 EDT
+STATUS: P03 blocked - production DB seed complete; live browser smoke needs an authorized production editor session.
 AUTHOR: Codex
 SCOPE: Current state and next step for production climate data enablement.
 RELATED:
@@ -101,11 +101,30 @@ uv run python -m features.climate.seeding --all --no-replace
 
 ## Blockers
 
-No code blocker. No current P01 blocker remains.
+No code blocker. P03 is blocked on an authorized production browser session.
+
+Read-only production checks completed after P02:
+
+- Active password users:
+  - `admin@bldgtyp.com`: active, non-staff, password set.
+  - `ed@bldgtyp.com`: active, non-staff, password set.
+  - `codex-prod-smoke@example.com`: inactive, non-staff, password set.
+- Candidate projects with saved coordinates:
+  - `a0f6b57c-1dc3-4433-8940-498b78d113ce`, `2524`, `Linde Residence`,
+    `40.613102`, `-105.059859`, Fort Collins, CO.
+  - `1c11786d-3a6f-414a-b1d5-b9caca348454`, `PROD-20260628-0919`,
+    `PROD-20260628-0919 - R2 Upload Smoke`, `42.26525`, `-73.366412`,
+    Housatonic, MA.
 
 Later phase prerequisites:
 
-- Permission to sign in to the production app for P03 browser smoke.
+- Permission to sign in to `https://www.ph-nav.com` as an active production
+  editor, or explicit permission to use an already-signed-in Ed/admin browser
+  session despite PH-Navigator's single-active-session behavior.
+- Confirmation of which production project to use for P03 smoke. Recommended:
+  the existing smoke project
+  `1c11786d-3a6f-414a-b1d5-b9caca348454` unless the operator wants to test on
+  `Linde Residence`.
 
 ## Success gates by phase
 

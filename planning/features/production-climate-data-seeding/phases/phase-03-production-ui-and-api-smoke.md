@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
-TIME: 17:39 EDT
-STATUS: Next
+TIME: 17:43 EDT
+STATUS: Blocked / next - needs authorized production editor browser session.
 AUTHOR: Codex
 SCOPE: Verify live production Climate workflows after seeding.
 RELATED:
@@ -26,6 +26,29 @@ live app, not just that rows exist in Postgres.
 - Target project has a saved location with latitude and longitude.
 - Operator understands PH-Navigator's single-active-session behavior before
   signing in as a production user.
+
+## Current blocker
+
+P02 passed and production has candidate projects with saved coordinates, but no
+safe non-Ed active browser account is available to this operator.
+
+Read-only production checks on 2026-06-29:
+
+- Active password users are `admin@bldgtyp.com` and `ed@bldgtyp.com`.
+- `codex-prod-smoke@example.com` exists but is inactive and has no editor
+  capability.
+- Candidate smoke project:
+  `1c11786d-3a6f-414a-b1d5-b9caca348454`,
+  `PROD-20260628-0919 - R2 Upload Smoke`, Housatonic, MA.
+- Alternate real project:
+  `a0f6b57c-1dc3-4433-8940-498b78d113ce`, `Linde Residence`, Fort Collins, CO.
+
+Resume when the operator provides one of:
+
+- credentials/session access for an active production editor account; or
+- explicit permission to use an already-signed-in Ed/admin production browser
+  session; and
+- the project id to use for smoke, preferably the existing smoke project above.
 
 ## PHIUS smoke
 
