@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
-TIME: 16:56 EDT
-STATUS: P00 complete - production readiness audit recorded; P01 blocked on local production R2 credentials for bundle upload.
+TIME: 17:35 EDT
+STATUS: P01 complete - production R2 bundles published and verified; P02 is next.
 AUTHOR: Codex
 SCOPE: Current state and next step for production climate data enablement.
 RELATED:
@@ -16,8 +16,8 @@ RELATED:
 
 ## Current state
 
-P00 production readiness audit is complete. No production DB or R2 writes have
-been performed in this session.
+P00 production readiness audit is complete. P01 production R2 bundle publishing
+is complete. No production DB writes have been performed in this session.
 
 Current code/docs already support the target workflow:
 
@@ -63,15 +63,22 @@ Read-only checks completed:
   - CORS allows `https://www.ph-nav.com` and `https://ph-nav.com` for
     `GET`, `HEAD`, and `PUT`; exposed header is `ETag`.
   - Listing prefix `climate/` returns no objects.
+- Production R2 upload on 2026-06-29 at 17:35 EDT:
+  - `uv run python -m features.climate.processing --provider phius --version 2022 --src ../planning/archive/dated/2026-06-14/climate/example_data --upload`
+    processed 1007 stations and uploaded
+    `climate/phius/2022/dataset.json`.
+  - `uv run python -m features.climate.processing --provider phi --version 10.6 --src ../planning/archive/dated/2026-06-14/climate/example_data/phi_phpp_10_6_climate_data --upload`
+    processed 1002 stations and uploaded
+    `climate/phi/10.6/dataset.json`.
+  - R2 HEAD verification against `ph-navigator-prod`:
+    - `climate/phius/2022/dataset.json`: size `4807491`,
+      content type `application/json`, ETag present.
+    - `climate/phi/10.6/dataset.json`: size `4775302`,
+      content type `application/json`, ETag present.
 
 ## Next step
 
-Start P01: `phases/phase-01-publish-r2-reference-bundles.md`.
-
-The operator must publish both full bundles to `ph-navigator-prod` before P02:
-
-- `climate/phius/2022/dataset.json`.
-- `climate/phi/10.6/dataset.json`.
+Start P02: `phases/phase-02-seed-render-postgres.md`.
 
 Chosen P02 seed mode after upload:
 
@@ -84,12 +91,7 @@ no `climate_dataset` rows and no PHIUS/PHI/weather project sources.
 
 ## Blockers
 
-No code blocker. Operational blockers remain for P01:
-
-- Access to PH-Navigator R2 S3 credentials.
-- A local operator shell with those R2 credentials exported, because the full
-  licensed source files are local and are not available inside the Render
-  service image.
+No code blocker. No current P01 blocker remains.
 
 Later phase prerequisites:
 
@@ -101,7 +103,7 @@ Later phase prerequisites:
 | Phase | Required evidence |
 |---|---|
 | P00 | Complete: audit note with current DB/object-store state and chosen seed mode |
-| P01 | R2 HEAD/list confirms both production bundle objects |
+| P01 | Complete: R2 HEAD confirms both production bundle objects |
 | P02 | Production SQL counts confirm seeded provider/version rows |
 | P03 | Live app screenshot/log notes confirm PHIUS, PHI, and Hourly attach workflows |
 | P04 | Runbook and this status file updated with exact date, counts, commands, and follow-ups |
