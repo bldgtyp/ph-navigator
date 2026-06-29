@@ -5,6 +5,7 @@ how and when each feature packet landed. Newest first. Grep by slug.
 
 ## 2026-06-29
 
+- `envelope-save-ui-polish` - cross-feature UI polish refactor: shared Radix tooltip primitive, Save Version blocking overlay, Assembly canvas stroke gutter, Climate map tile-loading spinner, Apertures zero-type empty state, browser smoke evidence, `make format`, and `make ci`. (branch closeout)
 - `equipment-draft-etag-coordination` - stale Equipment sibling `draft_etag` regression fixed by resolving a fresh target table slice before write payload construction while preserving lazy sibling invalidation; focused Vitest, Playwright browser flow, and request-count no-fan-out guard passed. (branch closeout)
 - `production-climate-data-seeding` - production Climate enablement: full PHIUS 2022 and PHI 10.6 bundles published to private R2, Render Postgres seeded (`phius/2022` 1007 locations, `phi/10.6` 1002 locations), PHIUS/PHI/Hourly production workflows manually verified, and rerun evidence archived. (production closeout)
 - `admin-user-management` - two-user production account lifecycle MVP: audited first-admin bootstrap, invite/admin-reset-link/deactivate/reactivate/admin grants, last-admin protection, CSRF/Origin guard, capability-gated UI, Admin-derived `catalog.edit`, audit, runbook, and production smoke evidence. (docs closeout)

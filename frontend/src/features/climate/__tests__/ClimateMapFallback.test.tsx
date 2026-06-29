@@ -1,7 +1,11 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
-import { ClimateMap, type ClimateMapStation } from "../components/ClimateMap";
+import {
+  ClimateMap,
+  ClimateMapTileLoadingOverlay,
+  type ClimateMapStation,
+} from "../components/ClimateMap";
 
 // Under vitest `import.meta.env.MODE === "test"`, so `<ClimateMap>` renders the
 // deterministic `placePins` fallback (no Leaflet, no tiles). These exercise the
@@ -45,5 +49,25 @@ describe("ClimateMap fallback", () => {
   test("applies the sizing className to the map frame", () => {
     const { container } = render(<ClimateMap project={PROJECT} className="climate-big-map" />);
     expect(container.querySelector(".climate-map.climate-big-map")).toBeInTheDocument();
+  });
+
+  test("tile-loading overlay can render accessibly on big maps and decoratively on mini maps", () => {
+    const { container } = render(
+      <>
+        <div className="climate-map climate-big-map">
+          <ClimateMapTileLoadingOverlay ariaHidden={false} />
+        </div>
+        <div className="climate-map climate-mini-map">
+          <ClimateMapTileLoadingOverlay ariaHidden />
+        </div>
+      </>,
+    );
+
+    expect(screen.getByRole("status")).toHaveTextContent("Loading map");
+    expect(container.querySelector(".climate-big-map .climate-map-loading")).toBeInTheDocument();
+    expect(container.querySelector(".climate-mini-map .climate-map-loading")).toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
   });
 });

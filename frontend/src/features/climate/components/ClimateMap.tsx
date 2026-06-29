@@ -119,6 +119,7 @@ export function ClimateMap({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const controllerRef = useRef<ClimateLeafletController | null>(null);
   const [failed, setFailed] = useState(false);
+  const [tilesLoading, setTilesLoading] = useState(false);
   const showLive = LIVE_MAP && !failed;
 
   // The data the async Leaflet init reads once it resolves, and each redraw
@@ -145,9 +146,13 @@ export function ClimateMap({
   // Mount Leaflet once per live session (re-create when interactivity or the
   // presence of coordinates flips); apply current state on resolve.
   useEffect(() => {
-    if (!showLive || !hasProject || !containerRef.current) return;
+    if (!showLive || !hasProject || !containerRef.current) {
+      setTilesLoading(false);
+      return;
+    }
     let cancelled = false;
     let controller: ClimateLeafletController | null = null;
+    setTilesLoading(true);
     import("./climateLeafletMap")
       .then(({ createClimateLeafletMap }) => {
         const { data } = latestRef.current;
@@ -162,6 +167,9 @@ export function ClimateMap({
           onPickPoint: canPickPoint
             ? (lat, lon) => handlersRef.current.onPickPoint?.(lat, lon)
             : undefined,
+          onTilesLoadingChange: (loading) => {
+            if (!cancelled) setTilesLoading(loading);
+          },
         });
         controllerRef.current = controller;
         controller.setData(data);
@@ -170,6 +178,7 @@ export function ClimateMap({
       .catch((error) => {
         if (cancelled) return;
         console.warn("Climate basemap unavailable; using positioned-pin fallback.", error);
+        setTilesLoading(false);
         setFailed(true);
       });
     return () => {
@@ -225,6 +234,25 @@ export function ClimateMap({
           onSelectStation={onSelectStation}
         />
       )}
+      {showLive && tilesLoading ? <ClimateMapTileLoadingOverlay ariaHidden={ariaHidden} /> : null}
+    </div>
+  );
+}
+
+export function ClimateMapTileLoadingOverlay({ ariaHidden }: { ariaHidden: boolean }) {
+  const content = (
+    <>
+      <span className="climate-map-loading-spinner" aria-hidden="true" />
+      <span>Loading map</span>
+    </>
+  );
+  return ariaHidden ? (
+    <div className="climate-map-loading" aria-hidden="true">
+      {content}
+    </div>
+  ) : (
+    <div className="climate-map-loading" role="status" aria-live="polite">
+      {content}
     </div>
   );
 }

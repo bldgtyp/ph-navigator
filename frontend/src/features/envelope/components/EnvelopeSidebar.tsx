@@ -21,7 +21,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { NavLink, createSearchParams } from "react-router-dom";
-import { InlineHeaderNameEditor } from "../../../shared/ui/InlineHeaderNameEditor";
+import { InlineHeaderNameEditor, Tooltip } from "../../../shared/ui";
 import { envelopeAssemblyPath } from "../paths";
 import type { Assembly, AssemblyType } from "../types";
 
@@ -65,17 +65,18 @@ export function EnvelopeSidebar({
   const [editingAssemblyId, setEditingAssemblyId] = useState<string | null>(null);
   const [nameTooltip, setNameTooltip] = useState<NameTooltipState | null>(null);
   const addAssemblyButton = (
-    <button
-      id={collapsed ? "assembly-sidebar-add-collapsed" : "assembly-sidebar-add"}
-      type="button"
-      className={collapsed ? "icon-button envelope-sidebar-add-collapsed" : "icon-button"}
-      disabled={!canEdit}
-      aria-label="Add assembly"
-      data-sidebar-tooltip="Add assembly"
-      onClick={onAddAssembly}
-    >
-      <Plus size={16} aria-hidden="true" />
-    </button>
+    <Tooltip content="Add assembly" placement={collapsed ? "right" : "bottom"}>
+      <button
+        id={collapsed ? "assembly-sidebar-add-collapsed" : "assembly-sidebar-add"}
+        type="button"
+        className={collapsed ? "icon-button envelope-sidebar-add-collapsed" : "icon-button"}
+        disabled={!canEdit}
+        aria-label="Add assembly"
+        onClick={onAddAssembly}
+      >
+        <Plus size={16} aria-hidden="true" />
+      </button>
+    </Tooltip>
   );
 
   return (
@@ -87,20 +88,21 @@ export function EnvelopeSidebar({
       <div id="assembly-sidebar-header" className="envelope-sidebar-header">
         {collapsed ? null : <h2>Assemblies</h2>}
         <div className="envelope-sidebar-tools">
-          <button
-            id="assembly-sidebar-toggle"
-            type="button"
-            className="icon-button"
-            aria-label={collapsed ? "Expand assembly sidebar" : "Collapse assembly sidebar"}
-            data-sidebar-tooltip={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            onClick={onToggleCollapsed}
-          >
-            {collapsed ? (
-              <PanelLeftOpen size={16} aria-hidden="true" />
-            ) : (
-              <PanelLeftClose size={16} aria-hidden="true" />
-            )}
-          </button>
+          <Tooltip content={collapsed ? "Expand sidebar" : "Collapse sidebar"} placement="bottom">
+            <button
+              id="assembly-sidebar-toggle"
+              type="button"
+              className="icon-button"
+              aria-label={collapsed ? "Expand assembly sidebar" : "Collapse assembly sidebar"}
+              onClick={onToggleCollapsed}
+            >
+              {collapsed ? (
+                <PanelLeftOpen size={16} aria-hidden="true" />
+              ) : (
+                <PanelLeftClose size={16} aria-hidden="true" />
+              )}
+            </button>
+          </Tooltip>
           {collapsed ? null : addAssemblyButton}
         </div>
       </div>
@@ -278,20 +280,21 @@ function SidebarActionButton({
   onClick: () => void;
 }) {
   return (
-    <button
-      id={id}
-      type="button"
-      className={danger ? "envelope-sidebar-row-action is-danger" : "envelope-sidebar-row-action"}
-      aria-label={label}
-      data-sidebar-tooltip={tooltip}
-      disabled={disabled}
-      onClick={(event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        onClick();
-      }}
-    >
-      <Icon size={13} aria-hidden="true" />
-    </button>
+    <Tooltip content={tooltip} placement="right">
+      <button
+        id={id}
+        type="button"
+        className={danger ? "envelope-sidebar-row-action is-danger" : "envelope-sidebar-row-action"}
+        aria-label={label}
+        disabled={disabled}
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          onClick();
+        }}
+      >
+        <Icon size={13} aria-hidden="true" />
+      </button>
+    </Tooltip>
   );
 }

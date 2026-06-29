@@ -13,7 +13,7 @@ frontend/src/features/project_document/components/VersionControls.tsx;
 frontend/src/features/envelope/components/AssemblyCanvas.tsx;
 frontend/src/features/climate/components/ClimateMap.tsx;
 frontend/src/features/apertures/routes/AperturesTab.tsx;
-planning/refactor/envelope-save-ui-polish/TOOLTIP_AUDIT.md
+planning/archive/dated/2026-06-29/envelope-save-ui-polish/TOOLTIP_AUDIT.md
 
 ## Phase 0 - Baseline And Reproduction
 
@@ -49,6 +49,10 @@ Verification:
 
 ## Phase 1 - Shared Tooltip Primitive And Broken Surface Migration
 
+Status: Implemented on branch `codex/envelope-save-ui-polish` on
+2026-06-29. Phase 1 used Radix Popover for portal, flip, shift, and collision
+behavior instead of a custom placement helper.
+
 Goal: replace the observed broken pseudo-element tooltip behavior with one
 shared, portal-rendered, collision-safe primitive.
 
@@ -63,7 +67,7 @@ Source anchors:
 - `frontend/src/shared/ui/info-tooltip/InfoTooltip.tsx`
 - `frontend/src/features/apertures/components/ApertureSidebar.tsx`
 - `frontend/src/features/envelope/envelope.css`
-- `planning/refactor/envelope-save-ui-polish/TOOLTIP_AUDIT.md`
+- `planning/archive/dated/2026-06-29/envelope-save-ui-polish/TOOLTIP_AUDIT.md`
 
 Implementation notes:
 
@@ -79,9 +83,10 @@ Implementation notes:
    dependency without a concrete reason.
 5. The primitive must portal to `document.body`, use fixed viewport
    positioning, and keep the final tooltip rectangle inside the viewport with
-   a small padding.
+   a small padding. Implemented through Radix Popover collision behavior.
 6. Support preferred placements `top`, `bottom`, `right`, and `left`, with
-   fallback side selection and final shift/clamp.
+   fallback side selection and final shift/clamp. Implemented through Radix
+   Popover `side`, `sideOffset`, and `collisionPadding`.
 7. Add `role="tooltip"` and `aria-describedby` only while visible.
 8. Hide on pointer leave, blur, Escape, scroll, resize, route unmount, and menu
    close.
@@ -101,9 +106,10 @@ Implementation notes:
 
 Testing:
 
-- Add shared placement-helper coverage with mocked trigger rectangles and
-  viewport dimensions. Cover top-edge, left-edge, right-edge, bottom-edge, and
-  corner collisions.
+- Add shared tooltip coverage for portal rendering, `role="tooltip"`,
+  temporary `aria-describedby`, preservation of existing `aria-describedby`,
+  and hover/focus close behavior. Radix owns the viewport collision algorithm,
+  so this phase does not keep a local placement-helper test.
 - Add or extend project-document component coverage so header/version action
   tooltips render under `document.body`, have `role="tooltip"`, and are not
   children of `.project-actions-menu`.
@@ -118,6 +124,10 @@ Testing:
   - Envelope sidebar command tooltip near the bottom edge.
 
 ## Phase 2 - Blocking Save Version Progress Overlay
+
+Status: Implemented on branch `codex/envelope-save-ui-polish` on
+2026-06-29. Phase 2 adds a shared blocking progress overlay and drives it from
+the specific `/draft/save` mutation pending state.
 
 Goal: clicking `Save Version` visibly freezes the app until the version commit
 and cache invalidation finish.
@@ -162,6 +172,10 @@ Testing:
 
 ## Phase 3 - Assembly SVG Bottom Stroke Safety Gutter
 
+Status: Implemented on branch `codex/envelope-save-ui-polish` on
+2026-06-29. Phase 3 gives the SVG full padded layout bounds plus a 2px bottom
+guard while keeping controls on an offset, unpadded geometry plane.
+
 Goal: reserve enough real layout space for SVG stroke padding so the bottom
 segment border cannot be clipped by the scroll container or production browser
 rounding.
@@ -195,6 +209,11 @@ Testing:
   awkward gap.
 
 ## Phase 4 - Climate Map Tile-Loading Spinner
+
+Status: Implemented on branch `codex/envelope-save-ui-polish` on
+2026-06-29. Phase 4 keeps loading state at the shared `ClimateMap` layer and
+drives it from Leaflet base-tile layer events so the main map and sidebar
+mini-map use the same overlay.
 
 Goal: show explicit loading feedback while live Leaflet basemap tiles are
 pending, especially for the main Climate map and sidebar mini-map.
@@ -248,6 +267,11 @@ Testing:
 
 ## Phase 5 - Apertures Zero-Type Empty State
 
+Status: Implemented on branch `codex/envelope-save-ui-polish` on
+2026-06-29. Phase 5 gates the builder header/canvas behind a concrete active
+aperture type and reduces the zero-type editor main panel to one primary
+`Add aperture type` action.
+
 Goal: simplify the empty `Apertures > Apertures` builder state to one obvious
 creation action.
 
@@ -287,6 +311,9 @@ Testing:
 - Browser-smoke a fresh/new project on `Apertures > Apertures`.
 
 ## Phase 6 - Final Verification
+
+Status: Complete on 2026-06-29. `make format` and `make ci` passed after
+Phases 1-5 landed.
 
 Frontend implementation gate:
 

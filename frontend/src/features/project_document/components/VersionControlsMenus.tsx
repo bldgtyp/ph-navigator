@@ -1,4 +1,6 @@
 import { ChevronDown } from "lucide-react";
+import type { ReactNode } from "react";
+import { Tooltip } from "../../../shared/ui";
 import type { ProjectVersion } from "../../projects/types";
 import { projectDownloadUrl } from "../api";
 
@@ -9,6 +11,12 @@ const SAVE_HELP =
   "Write the current draft into the active unlocked version as a permanent snapshot.";
 const SAVE_AS_HELP = "Create a new version from the current draft, then switch to it.";
 const PROJECT_ACTIONS_HELP = "Open project and version actions.";
+const PROJECT_SETTINGS_HELP = "Open project-level metadata, access, and MCP token settings.";
+const DISCARD_HELP = "Drop the current draft and reload the saved version body.";
+const DIFF_HELP = "Compare the current draft or version against another saved version.";
+const PROJECT_JSON_HELP = "Download the raw saved project document JSON for this version.";
+const UNLOCK_HELP = "Allow this version to be edited and saved again.";
+const LOCK_HELP = "Freeze this version so future edits must use Save As.";
 
 export function VersionPathControls({
   activeVersionName,
@@ -25,17 +33,18 @@ export function VersionPathControls({
   return (
     <div className="version-path-inline">
       <span className="version-path-label">{label}</span>
-      <button
-        type="button"
-        className="version-path-trigger"
-        onClick={onToggleActions}
-        aria-label={`Version actions for ${label}`}
-        aria-expanded={actionsOpen}
-        aria-description={PROJECT_ACTIONS_HELP}
-        data-tooltip={PROJECT_ACTIONS_HELP}
-      >
-        <ChevronDown aria-hidden="true" size={12} strokeWidth={1.9} />
-      </button>
+      <Tooltip content={PROJECT_ACTIONS_HELP} placement="bottom">
+        <button
+          type="button"
+          className="version-path-trigger"
+          onClick={onToggleActions}
+          aria-label={`Version actions for ${label}`}
+          aria-expanded={actionsOpen}
+          aria-description={PROJECT_ACTIONS_HELP}
+        >
+          <ChevronDown aria-hidden="true" size={12} strokeWidth={1.9} />
+        </button>
+      </Tooltip>
     </div>
   );
 }
@@ -57,35 +66,34 @@ export function VersionShellControls({
 }) {
   return (
     <div className="shell-controls">
-      <span
-        className="save-state dirty"
-        data-tooltip={DIRTY_STATE_HELP}
-        aria-description={DIRTY_STATE_HELP}
-        tabIndex={0}
-      >
-        <span className="save-state-dot" aria-hidden="true" />
-        Uncommitted changes
-      </span>
+      <Tooltip content={DIRTY_STATE_HELP} placement="bottom">
+        <span className="save-state dirty" aria-description={DIRTY_STATE_HELP} tabIndex={0}>
+          <span className="save-state-dot" aria-hidden="true" />
+          Uncommitted changes
+        </span>
+      </Tooltip>
       {isLocked ? (
-        <button
-          type="button"
-          onClick={onSaveAs}
-          disabled={!canSaveAs || busy}
-          aria-description={SAVE_AS_HELP}
-          data-tooltip={SAVE_AS_HELP}
-        >
-          {busy ? "Saving..." : "Save As"}
-        </button>
+        <Tooltip content={SAVE_AS_HELP} placement="bottom">
+          <button
+            type="button"
+            onClick={onSaveAs}
+            disabled={!canSaveAs || busy}
+            aria-description={SAVE_AS_HELP}
+          >
+            {busy ? "Saving..." : "Save As"}
+          </button>
+        </Tooltip>
       ) : (
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={!canSave || busy}
-          aria-description={SAVE_HELP}
-          data-tooltip={SAVE_HELP}
-        >
-          {busy ? "Saving..." : "Save Version"}
-        </button>
+        <Tooltip content={SAVE_HELP} placement="bottom">
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={!canSave || busy}
+            aria-description={SAVE_HELP}
+          >
+            {busy ? "Saving..." : "Save Version"}
+          </button>
+        </Tooltip>
       )}
     </div>
   );
@@ -120,40 +128,29 @@ export function ProjectActionsMenu({
   onOpenDiff: () => void;
   onClose: () => void;
 }) {
+  const lockHelp = isLocked ? UNLOCK_HELP : LOCK_HELP;
   return (
     <div className="project-actions-menu" role="menu" aria-label="Project actions">
       {onOpenProjectSettings ? (
-        <button
-          type="button"
-          className="menu-action"
-          role="menuitem"
-          aria-description="Open project-level metadata, access, and MCP token settings."
-          data-tooltip="Open project-level metadata, access, and MCP token settings."
+        <MenuActionButton
+          help={PROJECT_SETTINGS_HELP}
           onClick={() => {
             onClose();
             onOpenProjectSettings();
           }}
         >
           Project settings
-        </button>
+        </MenuActionButton>
       ) : null}
-      <button
-        type="button"
-        className="menu-action"
-        role="menuitem"
-        aria-description={VERSION_TRIGGER_HELP}
-        data-tooltip={VERSION_TRIGGER_HELP}
+      <MenuActionButton
+        help={VERSION_TRIGGER_HELP}
         onClick={onOpenVersions}
         disabled={!activeVersionId || busy}
       >
         Open version...
-      </button>
-      <button
-        type="button"
-        className="menu-action"
-        role="menuitem"
-        aria-description={SAVE_HELP}
-        data-tooltip={SAVE_HELP}
+      </MenuActionButton>
+      <MenuActionButton
+        help={SAVE_HELP}
         onClick={() => {
           onClose();
           onSave();
@@ -161,74 +158,88 @@ export function ProjectActionsMenu({
         disabled={isLocked || !hasDraft || busy}
       >
         Save Version
-      </button>
+      </MenuActionButton>
       {!isLocked ? (
-        <button
-          type="button"
-          className="menu-action"
-          role="menuitem"
-          aria-description={SAVE_AS_HELP}
-          data-tooltip={SAVE_AS_HELP}
+        <MenuActionButton
+          help={SAVE_AS_HELP}
           onClick={onSaveAs}
           disabled={!activeVersionId || busy}
         >
           Save As
-        </button>
+        </MenuActionButton>
       ) : null}
-      <button
-        type="button"
-        className="menu-action"
-        role="menuitem"
-        aria-description="Drop the current draft and reload the saved version body."
-        data-tooltip="Drop the current draft and reload the saved version body."
-        onClick={onDiscard}
-        disabled={!hasDraft || busy}
-      >
+      <MenuActionButton help={DISCARD_HELP} onClick={onDiscard} disabled={!hasDraft || busy}>
         Discard changes
-      </button>
-      <button
-        type="button"
-        className="menu-action"
-        role="menuitem"
-        aria-description={
-          isLocked
-            ? "Allow this version to be edited and saved again."
-            : "Freeze this version so future edits must use Save As."
-        }
-        data-tooltip={
-          isLocked
-            ? "Allow this version to be edited and saved again."
-            : "Freeze this version so future edits must use Save As."
-        }
-        onClick={onToggleLock}
-        disabled={!activeVersionId || busy}
-      >
+      </MenuActionButton>
+      <MenuActionButton help={lockHelp} onClick={onToggleLock} disabled={!activeVersionId || busy}>
         {isLocked ? "Unlock version" : "Lock version"}
-      </button>
-      <button
-        type="button"
-        className="menu-action"
-        role="menuitem"
-        aria-description="Compare the current draft or version against another saved version."
-        data-tooltip="Compare the current draft or version against another saved version."
-        onClick={onOpenDiff}
-        disabled={!activeVersionId}
-      >
+      </MenuActionButton>
+      <MenuActionButton help={DIFF_HELP} onClick={onOpenDiff} disabled={!activeVersionId}>
         Diff
-      </button>
+      </MenuActionButton>
       {activeVersionId ? (
-        <a
-          className="menu-action download-link"
-          role="menuitem"
+        <MenuActionLink
+          help={PROJECT_JSON_HELP}
           href={projectDownloadUrl(projectId, activeVersionId)}
-          aria-description="Download the raw saved project document JSON for this version."
-          data-tooltip="Download the raw saved project document JSON for this version."
           onClick={onClose}
         >
           Project JSON
-        </a>
+        </MenuActionLink>
       ) : null}
     </div>
+  );
+}
+
+function MenuActionButton({
+  children,
+  disabled,
+  help,
+  onClick,
+}: {
+  children: ReactNode;
+  disabled?: boolean;
+  help: string;
+  onClick: () => void;
+}) {
+  return (
+    <Tooltip content={help} placement="left">
+      <button
+        type="button"
+        className="menu-action"
+        role="menuitem"
+        aria-description={help}
+        onClick={onClick}
+        disabled={disabled}
+      >
+        {children}
+      </button>
+    </Tooltip>
+  );
+}
+
+function MenuActionLink({
+  children,
+  help,
+  href,
+  onClick,
+}: {
+  children: ReactNode;
+  help: string;
+  href: string;
+  onClick: () => void;
+}) {
+  return (
+    <Tooltip content={help} placement="left">
+      <a
+        className="menu-action download-link"
+        role="menuitem"
+        href={href}
+        aria-description={help}
+        onClick={onClick}
+      >
+        {children}
+      </a>
+    </Tooltip>
   );
 }
 

@@ -152,6 +152,7 @@ export function useDraftLifecycle({
       saveAsMutation.isPending ||
       discardMutation.isPending ||
       patchVersionMutation.isPending,
+    savingVersion: saveMutation.isPending,
     save,
     saveAs,
     discard,

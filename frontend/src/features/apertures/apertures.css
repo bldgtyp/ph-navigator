@@ -531,14 +531,14 @@
   flex-direction: column;
   gap: var(--space-12);
   align-items: center;
+  min-height: 220px;
+  justify-content: center;
 }
 
 .apertures-empty__add {
-  padding: var(--space-4) var(--space-16);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--phn-control-radius);
-  background: var(--bg-card);
-  cursor: pointer;
+  gap: var(--space-8);
+  min-height: 44px;
+  padding: var(--space-10) var(--space-20);
 }
 
 .rename-aperture-dialog__input {

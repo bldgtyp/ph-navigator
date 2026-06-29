@@ -345,18 +345,6 @@
   color: color-mix(in oklab, var(--text-secondary) 38%, transparent);
 }
 
-.envelope-sidebar-row-action[data-sidebar-tooltip]::before {
-  bottom: auto;
-  top: calc(100% + 8px);
-}
-
-.envelope-sidebar-row-action[data-sidebar-tooltip]::after {
-  border-bottom: 5px solid color-mix(in oklab, var(--text-primary) 88%, transparent);
-  border-top: 0;
-  bottom: auto;
-  top: calc(100% + 3px);
-}
-
 .envelope-sidebar-list small {
   color: var(--text-secondary);
 }
@@ -599,8 +587,10 @@
 }
 
 .assembly-canvas-overlay {
-  inset: 0;
+  left: 0;
   position: absolute;
+  right: 0;
+  top: 0;
 }
 
 .assembly-layer-dimension,
