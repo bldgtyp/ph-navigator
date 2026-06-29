@@ -1,9 +1,10 @@
-"""Create a non-destructive local project for frontend performance sweeps."""
+"""Create or refresh the PERF-STRESS project for frontend performance sweeps."""
 
 from __future__ import annotations
 
 import argparse
-from dataclasses import dataclass
+import getpass
+from dataclasses import dataclass, replace
 from typing import Any, TypeVar
 from urllib.parse import quote
 from uuid import UUID
@@ -12,6 +13,7 @@ from psycopg import Connection
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel
 
+from config import settings
 from database import transaction
 from features.auth.service import create_or_update_user
 from features.project_document.document import ProjectDocumentV1
@@ -19,16 +21,21 @@ from features.project_document.validation import SerializedProjectDocument, seri
 from features.projects.models import CreateProjectRequest
 from features.projects.repository import insert_project_with_initial_version
 from scripts._seed_paths import assert_local_dev_database
-from scripts.seed_dev_db import _starter_project_document
+from scripts.seed_dev_db import _seed_climate, _starter_project_document
 
 DEFAULT_EMAIL = "codex@example.com"
 DEFAULT_DISPLAY_NAME = "Codex Agent"
 DEFAULT_PASSWORD = "password"
+DEFAULT_PRODUCTION_EMAIL = "codex@testing.com"
+DEFAULT_PRODUCTION_DISPLAY_NAME = "Codex Testing"
 DEFAULT_BT_NUMBER = "PERF-STRESS"
 DEFAULT_PROJECT_NAME = "Frontend Perf Stress Fixture"
 DEFAULT_FRONTEND_URL = "http://localhost:5173"
+DEFAULT_PRODUCTION_FRONTEND_URL = "https://www.ph-nav.com"
 DEFAULT_TABLE_ROWS = 1000
 DEFAULT_EQUIPMENT_ROWS = 250
+DEFAULT_PRODUCTION_TABLE_ROWS = 250
+DEFAULT_PRODUCTION_EQUIPMENT_ROWS = 250
 
 RowT = TypeVar("RowT", bound=BaseModel)
 
@@ -42,40 +49,62 @@ class PerfStressFixture:
     bt_number: str
     sign_in_route: str
     rooms_route: str
+    climate: dict[str, Any] | None = None
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Seed the local frontend perf stress project.")
-    parser.add_argument("--email", default=DEFAULT_EMAIL)
-    parser.add_argument("--display-name", default=DEFAULT_DISPLAY_NAME)
-    parser.add_argument("--password", default=DEFAULT_PASSWORD)
+    parser = argparse.ArgumentParser(description="Seed the PERF-STRESS frontend perf project.")
+    parser.add_argument("--email")
+    parser.add_argument("--display-name")
+    parser.add_argument("--password")
     parser.add_argument("--bt-number", default=DEFAULT_BT_NUMBER)
     parser.add_argument("--project-name", default=DEFAULT_PROJECT_NAME)
-    parser.add_argument("--frontend-url", default=DEFAULT_FRONTEND_URL)
-    parser.add_argument("--table-rows", type=int, default=DEFAULT_TABLE_ROWS)
-    parser.add_argument("--equipment-rows", type=int, default=DEFAULT_EQUIPMENT_ROWS)
+    parser.add_argument("--frontend-url")
+    parser.add_argument("--table-rows", type=int)
+    parser.add_argument("--equipment-rows", type=int)
+    parser.add_argument(
+        "--confirm-production",
+        action="store_true",
+        help="Allow the production-only fixture reset path. Required for production writes.",
+    )
+    parser.add_argument(
+        "--skip-climate",
+        action="store_true",
+        help="Skip production climate seeding. Intended only for recovery/debugging.",
+    )
     args = parser.parse_args()
 
+    if args.confirm_production:
+        password = args.password or getpass.getpass("Testing account password: ")
+        fixture = seed_production_perf_stress_fixture(
+            email=args.email or DEFAULT_PRODUCTION_EMAIL,
+            display_name=args.display_name or DEFAULT_PRODUCTION_DISPLAY_NAME,
+            password=password,
+            bt_number=args.bt_number,
+            project_name=args.project_name,
+            frontend_url=(args.frontend_url or DEFAULT_PRODUCTION_FRONTEND_URL).rstrip("/"),
+            table_rows=_int_arg_or_default(args.table_rows, DEFAULT_PRODUCTION_TABLE_ROWS),
+            equipment_rows=_int_arg_or_default(args.equipment_rows, DEFAULT_PRODUCTION_EQUIPMENT_ROWS),
+            confirm_production=True,
+            seed_climate=not args.skip_climate,
+        )
+        _print_production_fixture(fixture)
+        return
+
+    if args.skip_climate:
+        raise SystemExit("--skip-climate only applies with --confirm-production.")
+
     fixture = seed_perf_stress_fixture(
-        email=args.email,
-        display_name=args.display_name,
-        password=args.password,
+        email=args.email or DEFAULT_EMAIL,
+        display_name=args.display_name or DEFAULT_DISPLAY_NAME,
+        password=args.password or DEFAULT_PASSWORD,
         bt_number=args.bt_number,
         project_name=args.project_name,
-        frontend_url=args.frontend_url.rstrip("/"),
-        table_rows=args.table_rows,
-        equipment_rows=args.equipment_rows,
+        frontend_url=(args.frontend_url or DEFAULT_FRONTEND_URL).rstrip("/"),
+        table_rows=_int_arg_or_default(args.table_rows, DEFAULT_TABLE_ROWS),
+        equipment_rows=_int_arg_or_default(args.equipment_rows, DEFAULT_EQUIPMENT_ROWS),
     )
-
-    print("Seeded local frontend perf stress fixture:")
-    print(f"  login: {fixture.email} / {fixture.password}")
-    print(f"  project: {fixture.bt_number} ({fixture.project_id})")
-    print(f"  version: {fixture.version_id}")
-    print(f"  sign-in route: {fixture.sign_in_route}")
-    print(f"  rooms route: {fixture.rooms_route}")
-    print("")
-    print("Run perf matrix:")
-    print(f"  cd frontend && PHN_PERF=1 PERF_PROJECT_ID={fixture.project_id} pnpm run test:e2e -- tests/e2e/perf")
+    _print_local_fixture(fixture)
 
 
 def seed_perf_stress_fixture(
@@ -94,6 +123,74 @@ def seed_perf_stress_fixture(
     if table_rows < 1 or equipment_rows < 1:
         raise SystemExit("--table-rows and --equipment-rows must be positive.")
     assert_local_dev_database()
+
+    return _upsert_perf_stress_fixture(
+        email=email,
+        display_name=display_name,
+        password=password,
+        bt_number=bt_number,
+        project_name=project_name,
+        frontend_url=frontend_url,
+        table_rows=table_rows,
+        equipment_rows=equipment_rows,
+    )
+
+
+def seed_production_perf_stress_fixture(
+    *,
+    email: str = DEFAULT_PRODUCTION_EMAIL,
+    display_name: str = DEFAULT_PRODUCTION_DISPLAY_NAME,
+    password: str,
+    bt_number: str = DEFAULT_BT_NUMBER,
+    project_name: str = DEFAULT_PROJECT_NAME,
+    frontend_url: str = DEFAULT_PRODUCTION_FRONTEND_URL,
+    table_rows: int = DEFAULT_PRODUCTION_TABLE_ROWS,
+    equipment_rows: int = DEFAULT_PRODUCTION_EQUIPMENT_ROWS,
+    confirm_production: bool = False,
+    seed_climate: bool = True,
+) -> PerfStressFixture:
+    """Reset the dedicated production perf fixture in place.
+
+    This intentionally owns only the ``PERF-STRESS`` project/account path. It
+    never truncates production data and it refuses to run outside a production
+    environment so local/staging operators do not accidentally create divergent
+    fixture shapes.
+    """
+
+    if table_rows < 1 or equipment_rows < 1:
+        raise SystemExit("--table-rows and --equipment-rows must be positive.")
+    _assert_production_fixture_allowed(confirm_production, email=email, bt_number=bt_number)
+
+    fixture = _upsert_perf_stress_fixture(
+        email=email,
+        display_name=display_name,
+        password=password,
+        bt_number=bt_number,
+        project_name=project_name,
+        frontend_url=frontend_url,
+        table_rows=table_rows,
+        equipment_rows=equipment_rows,
+    )
+    if not seed_climate:
+        return fixture
+
+    _reset_project_climate(fixture.project_id)
+    climate = _seed_climate(fixture.project_id)
+    return replace(fixture, climate=climate)
+
+
+def _upsert_perf_stress_fixture(
+    *,
+    email: str,
+    display_name: str,
+    password: str,
+    bt_number: str,
+    project_name: str,
+    frontend_url: str,
+    table_rows: int,
+    equipment_rows: int,
+) -> PerfStressFixture:
+    frontend_url = frontend_url.rstrip("/")
 
     user = create_or_update_user(email=email, display_name=display_name, password=password)
     payload = CreateProjectRequest(
@@ -119,6 +216,67 @@ def seed_perf_stress_fixture(
         bt_number=bt_number,
         sign_in_route=f"{frontend_url}/sign-in?next={quote(path, safe='')}",
         rooms_route=f"{frontend_url}{path}",
+    )
+
+
+def _assert_production_fixture_allowed(
+    confirm_production: bool,
+    *,
+    email: str = DEFAULT_PRODUCTION_EMAIL,
+    bt_number: str = DEFAULT_BT_NUMBER,
+) -> None:
+    if settings.environment != "production":
+        raise SystemExit(
+            "Production perf fixture seeding must run with ENVIRONMENT=production. "
+            "Use the local seed path without --confirm-production for local dev."
+        )
+    if not confirm_production:
+        raise SystemExit("Refusing to reset the production perf fixture without --confirm-production.")
+    if email.lower() != DEFAULT_PRODUCTION_EMAIL:
+        raise SystemExit(f"Production perf fixture account must be {DEFAULT_PRODUCTION_EMAIL}.")
+    if bt_number != DEFAULT_BT_NUMBER:
+        raise SystemExit(f"Production perf fixture project must be {DEFAULT_BT_NUMBER}.")
+
+
+def _int_arg_or_default(value: int | None, default: int) -> int:
+    return default if value is None else value
+
+
+def _reset_project_climate(project_id: UUID) -> None:
+    with transaction() as conn:
+        conn.execute("DELETE FROM project_climate_source WHERE project_id = %(project_id)s", {"project_id": project_id})
+        conn.execute("DELETE FROM project_location WHERE project_id = %(project_id)s", {"project_id": project_id})
+
+
+def _print_local_fixture(fixture: PerfStressFixture) -> None:
+    print("Seeded local frontend perf stress fixture:")
+    print(f"  login: {fixture.email} / {fixture.password}")
+    print(f"  project: {fixture.bt_number} ({fixture.project_id})")
+    print(f"  version: {fixture.version_id}")
+    print(f"  sign-in route: {fixture.sign_in_route}")
+    print(f"  rooms route: {fixture.rooms_route}")
+    print("")
+    print("Run perf matrix:")
+    print(f"  cd frontend && PHN_PERF=1 PERF_PROJECT_ID={fixture.project_id} pnpm run test:e2e -- tests/e2e/perf")
+
+
+def _print_production_fixture(fixture: PerfStressFixture) -> None:
+    print("Seeded production frontend perf stress fixture:")
+    print(f"  login: {fixture.email} / <password not printed>")
+    print(f"  project: {fixture.bt_number} ({fixture.project_id})")
+    print(f"  version: {fixture.version_id}")
+    print(f"  sign-in route: {fixture.sign_in_route}")
+    print(f"  rooms route: {fixture.rooms_route}")
+    if fixture.climate is not None:
+        print(f"  climate: {fixture.climate}")
+    print("")
+    print("Read-only production perf matrix command:")
+    print(
+        "  cd frontend && "
+        f"PHN_PERF=1 PHN_PERF_PRODUCTION=1 PHN_PERF_READONLY=1 PERF_PROJECT_ID={fixture.project_id} "
+        f"E2E_BASE_URL={DEFAULT_PRODUCTION_FRONTEND_URL} E2E_API_BASE_URL=https://api.ph-nav.com "
+        f"E2E_EMAIL={fixture.email} E2E_PASSWORD=<supplied-at-runtime> "
+        "pnpm run test:e2e -- tests/e2e/perf"
     )
 
 

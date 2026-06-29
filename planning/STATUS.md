@@ -1,7 +1,7 @@
 # Planning Status
 
 DATE: 2026-06-29
-TIME: 17:09 EDT
+TIME: 17:30 EDT
 STATUS: Active routing index for tracked planning material.
 AUTHOR: Codex
 SCOPE: Current planning folder organization after moving dated docs to
@@ -43,6 +43,7 @@ feature-first planning.
 
 | Refactor | State | Current pointer |
 |---|---|---|
+| Production Frontend Performance | Implemented locally through Phase 03 setup path / Production harness guards added; guarded `codex@testing.com` / `PERF-STRESS` fixture command added for 250-row Climate/Envelope/Apertures fixture with Model excluded; actual production setup and perf run held | `refactor/production-frontend-performance/STATUS.md` |
 | Apertures, Envelope, Climate + Tooltip UI Polish | Planned / docs-only handoff for shared tooltip consolidation, header/version menu tooltip clipping, Envelope sidebar tooltip layering, Save Version blocking progress feedback, assembly SVG bottom-border clipping, Climate map tile-loading spinners, and Apertures zero-type empty-state cleanup | `refactor/envelope-save-ui-polish/STATUS.md` |
 | Backend Data-Architecture Cleanup | Complete / Phases 1–3, 5, and 6 implemented and verified with `make ci`; old Phase 4 promoted to `table-write-architecture-unification`; Phase 7 deferred to pre-first-deploy gate; archived | `archive/dated/2026-06-24/backend-data-architecture-cleanup/STATUS.md` |
 | Table-Write-Architecture Unification | Complete / all phases (1, 2, 3a, 3b inc 1–6) landed — heat-pumps fully unified onto the generic registered-contract + spine (BE) and generic table-write client (FE); bespoke write service, FE client, and PATCH shim all removed; shared option-list delete cascade + `dependent_link_delete_blocked` rename; `make ci` green (BE 1110, FE 1906), browser smoke as Ed passed; archived | `archive/dated/2026-06-25/table-write-architecture-unification/STATUS.md` |

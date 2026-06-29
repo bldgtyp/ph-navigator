@@ -28,6 +28,23 @@ make seed-perf-stress
 It creates or repairs the `codex@example.com` login plus the `PERF-STRESS`
 project, then prints the `PERF_PROJECT_ID` needed by `make e2e-perf`.
 
+For the production frontend performance fixture, run the guarded script from
+the production API environment only:
+
+```bash
+cd backend
+uv run python -m scripts.seed_perf_stress_fixture \
+  --confirm-production \
+  --email codex@testing.com \
+  --table-rows 250 \
+  --equipment-rows 250
+```
+
+The production path refuses non-production app environments, prompts for the
+testing-account password if `--password` is omitted, resets the same
+`PERF-STRESS` project in place, seeds Climate/Envelope/Apertures data, and does
+not print the password.
+
 For project-document schema bump checks:
 
 ```bash
