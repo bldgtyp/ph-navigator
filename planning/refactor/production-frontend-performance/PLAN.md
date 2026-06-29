@@ -1,6 +1,6 @@
 ---
 DATE: 2026-06-29
-TIME: 17:49 EDT
+TIME: 18:56 EDT
 STATUS: Phase 01 and Phase 03 setup implemented locally; production run held.
 AUTHOR: Codex
 SCOPE: Phase plan for production-safe frontend performance testing.
@@ -12,6 +12,13 @@ RELATED:
 ---
 
 # Production Frontend Performance Plan
+
+## Current Execution Boundary
+
+Phase 01 and Phase 03 are implemented locally. The next allowed live action is
+running the guarded production fixture setup command in the production API
+environment. The authenticated production performance matrix remains held until
+Ed explicitly approves that run after `PERF_PROJECT_ID` is known.
 
 ## Phase 00 - Credentials And Access Decisions
 

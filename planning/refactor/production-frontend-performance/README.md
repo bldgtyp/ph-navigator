@@ -1,6 +1,6 @@
 ---
 DATE: 2026-06-29
-TIME: 17:49 EDT
+TIME: 18:56 EDT
 STATUS: Implemented through fixture setup path - production run held.
 AUTHOR: Codex
 SCOPE: Router for adapting the archived local frontend performance harness into
@@ -75,9 +75,24 @@ Production changes the constraints:
 | 05 - Optional fixture write baseline | Deferred pending run decision | Table-edit scorecard isolated to `PERF-STRESS` only |
 | 06 - Triage and budget decisions | Planned | Ranked findings and decision on whether any metric becomes a gate |
 
-## Current Recommendation
+## Current Handoff
 
-When Ed approves live setup, run the guarded production fixture command in the
-production API environment, capture the printed `PERF_PROJECT_ID`, then run the
-authenticated matrix in read-only mode. The actual production test run remains
-held.
+Current state:
+
+- Harness code and fixture setup command are implemented locally.
+- Focused local validation passed.
+- Production fixture setup has not been executed.
+- Authenticated production performance testing has not been run.
+- Production write-path timing remains held.
+
+Next actions, in order:
+
+1. Choose the runtime-only password for `codex@testing.com`.
+2. Run the guarded fixture setup command in the production API environment.
+3. Capture the printed `PERF_PROJECT_ID` in this packet's `STATUS.md`.
+4. Wait for explicit approval before running the authenticated read-only matrix.
+5. After the run, summarize results in a dated scorecard under this refactor
+   packet.
+
+Do not run the production matrix from local defaults or without
+`PHN_PERF_PRODUCTION=1` and `PHN_PERF_READONLY=1`.
