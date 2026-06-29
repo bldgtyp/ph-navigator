@@ -210,6 +210,11 @@ Testing:
 
 ## Phase 4 - Climate Map Tile-Loading Spinner
 
+Status: Implemented on branch `codex/envelope-save-ui-polish` on
+2026-06-29. Phase 4 keeps loading state at the shared `ClimateMap` layer and
+drives it from Leaflet base-tile layer events so the main map and sidebar
+mini-map use the same overlay.
+
 Goal: show explicit loading feedback while live Leaflet basemap tiles are
 pending, especially for the main Climate map and sidebar mini-map.
 

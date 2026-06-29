@@ -1,8 +1,8 @@
 # Apertures, Envelope, Climate + Tooltip UI Polish Refactor Status
 
 DATE: 2026-06-29
-TIME: 18:08 EDT
-STATUS: Active - Phase 3 implemented on branch
+TIME: 18:14 EDT
+STATUS: Active - Phase 4 implemented on branch
 AUTHOR: Codex
 SCOPE: Implementation handoff for six UI fixes: shared tooltip consolidation,
 Envelope sidebar tooltip layering, project-document Save Version progress
@@ -15,7 +15,7 @@ planning/refactor/envelope-save-ui-polish/PLAN.md
 
 ## Current State
 
-Phases 1, 2, and 3 are implemented on branch
+Phases 1, 2, 3, and 4 are implemented on branch
 `codex/envelope-save-ui-polish`.
 
 Completed in Phase 1:
@@ -62,8 +62,28 @@ Completed in Phase 3:
   `http://localhost:5173` route; the SVG starts inside the stage, its bottom
   leaves the 2px guard, and the bottom segment sits inside the SVG padding.
 
-Next active implementation slice: Phase 4, the Climate map tile-loading
-spinner.
+Completed in Phase 4:
+
+- Added an optional `onTilesLoadingChange` callback to the lazy Leaflet map
+  controller and wired it to the base tile layer `loading`, `load`, and
+  `tileerror` events.
+- Added `climateTileLoading.ts` as a small tested pending-tile counter so a
+  single tile error settles only that tile and does not clear the spinner while
+  other visible tiles are still pending.
+- Added shared `ClimateMap` tile-loading state so live maps start with visible
+  loading feedback before the first Leaflet tile event arrives.
+- Rendered a clipped in-map loading overlay for both `.climate-big-map` and
+  `.climate-mini-map`; the main map exposes polite `role="status"` text, while
+  decorative/mini-map overlays respect `aria-hidden`.
+- Styled the loading surface and spinner in `climate-map.css`.
+- Extended `ClimateMapFallback.test.tsx` to assert the accessible main-map
+  overlay and decorative mini-map overlay.
+- Browser-smoked delayed tile responses in Chromium; both main and sidebar
+  map spinners appeared while 22 tile requests were held and cleared after the
+  delayed responses completed.
+
+Next active implementation slice: Phase 5, the Apertures zero-type empty
+state.
 
 ## Evidence Reviewed
 
@@ -146,12 +166,15 @@ spinner.
 - Phase 3 separates the padded stage bounds from the unpadded geometry plane
   rather than changing segment dimensions. This keeps controls aligned to the
   model geometry while giving the SVG stroke real layout space.
+- Phase 4 uses Leaflet tile layer events as the source of truth for loading
+  state and keeps the visual treatment at the shared `ClimateMap` layer so the
+  main project-location map and sidebar mini-map stay consistent.
 
 ## Next Step
 
-Implement Phase 4 from `PLAN.md`: add shared Climate map tile-loading feedback
-for live Leaflet maps, including the main project-location map and sidebar
-mini-map.
+Implement Phase 5 from `PLAN.md`: simplify the zero-aperture
+`Apertures > Apertures` builder state to one primary `Add aperture type`
+action in the main panel.
 
 ## Verification So Far
 
@@ -208,6 +231,21 @@ Phase 3 implementation verification:
   inside SVG padding, overlay and labels aligned to the geometry plane.
   Screenshot saved at `/tmp/phn-assembly-bottom-stroke-phase3.png`.
 - `pnpm run format` completed after implementation.
+- `make frontend-dev-check` passed. ESLint still reports the same
+  pre-existing `react-refresh/only-export-components` warnings in unrelated
+  Apertures, Climate, and DataTable files; no errors.
+- `git diff --check` passed.
+
+Phase 4 implementation verification:
+
+- `pnpm exec vitest run src/features/climate/__tests__/ClimateMapFallback.test.tsx src/features/climate/__tests__/ClimateMap.test.ts`
+  passed: 2 files, 13 tests.
+- Browser smoke on `http://localhost:5173` with delayed tile responses passed:
+  both `.climate-big-map` and `.climate-mini-map` showed the loading overlay,
+  the main overlay had `role="status"` with text `Loading map`, the mini-map
+  overlay had `aria-hidden="true"`, 22 tile requests were delayed, and both
+  overlays cleared after tile fulfillment. Screenshot saved at
+  `/tmp/phn-climate-map-loading-phase4.png`.
 - `make frontend-dev-check` passed. ESLint still reports the same
   pre-existing `react-refresh/only-export-components` warnings in unrelated
   Apertures, Climate, and DataTable files; no errors.

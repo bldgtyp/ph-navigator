@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { placePins } from "../components/ClimateMap";
+import { createClimateTileLoadingTracker } from "../components/climateTileLoading";
 
 const PROJECT = { latitude: 40, longitude: -75 };
 
@@ -44,5 +45,42 @@ describe("placePins", () => {
     ]);
     expect(placement.stations.located).toBeDefined();
     expect(placement.stations.missing).toBeUndefined();
+  });
+});
+
+describe("createClimateTileLoadingTracker", () => {
+  test("keeps loading true until every started tile settles", () => {
+    const states: boolean[] = [];
+    const tracker = createClimateTileLoadingTracker((loading) => states.push(loading));
+
+    tracker.markLayerLoading();
+    tracker.markTileLoading();
+    tracker.markTileLoading();
+    tracker.markTileSettled();
+    tracker.markTileSettled();
+
+    expect(states).toEqual([true, true, true, false]);
+  });
+
+  test("treats tile errors as one settled tile without clearing other pending tiles", () => {
+    const states: boolean[] = [];
+    const tracker = createClimateTileLoadingTracker((loading) => states.push(loading));
+
+    tracker.markTileLoading();
+    tracker.markTileLoading();
+    tracker.markTileSettled();
+    tracker.markLayerLoaded();
+
+    expect(states).toEqual([true, true, false]);
+  });
+
+  test("reset clears loading state", () => {
+    const states: boolean[] = [];
+    const tracker = createClimateTileLoadingTracker((loading) => states.push(loading));
+
+    tracker.markTileLoading();
+    tracker.reset();
+
+    expect(states).toEqual([true, false]);
   });
 });
