@@ -29,6 +29,7 @@ export function LegendCard({ model, activeFile, loadSummary }: LegendCardProps) 
     [lens, model, theme],
   );
   const canPickTheme = hasThemeMenu(lens);
+  const hasActiveLegendFilter = legendFilter?.theme === theme;
   useModelViewerPopoverEscape(closeInfo);
 
   if (!legend) {
@@ -51,29 +52,29 @@ export function LegendCard({ model, activeFile, loadSummary }: LegendCardProps) 
   return (
     <>
       <div className="model-legend-card" aria-label={`${legend.title} legend`}>
-        <div className="model-legend-titlebar">
-          {!canPickTheme ? (
-            <div className="model-legend-title">
-              <span>{legend.title}</span>
-              {legend.kind === "mini-key" ? <small>Key</small> : null}
+        {canPickTheme || hasActiveLegendFilter ? (
+          <div className="model-legend-titlebar">
+            <div className="model-legend-title-actions">
+              {canPickTheme ? <ThemeMenu lens={lens} theme={theme} /> : null}
+              {hasActiveLegendFilter ? (
+                <button
+                  type="button"
+                  className="model-legend-clear-filter"
+                  aria-label="Clear filter"
+                  title="Clear filter"
+                  onClick={clearLegendFilter}
+                >
+                  <X size={15} aria-hidden />
+                </button>
+              ) : null}
             </div>
-          ) : null}
-          <div className="model-legend-title-actions">
-            {canPickTheme ? <ThemeMenu lens={lens} theme={theme} /> : null}
-            {legendFilter?.theme === theme ? (
-              <button
-                type="button"
-                className="model-legend-clear-filter"
-                aria-label="Clear filter"
-                title="Clear filter"
-                onClick={clearLegendFilter}
-              >
-                <X size={15} aria-hidden />
-              </button>
-            ) : null}
           </div>
-        </div>
-        <LegendRows legend={legend} theme={theme} />
+        ) : null}
+        <LegendRows
+          legend={legend}
+          theme={theme}
+          hasHeader={canPickTheme || hasActiveLegendFilter}
+        />
       </div>
       <div className="model-scene-info-root">
         <InfoButton open={infoOpen} onClick={() => setInfoOpen((current) => !current)} />
@@ -93,15 +94,21 @@ export function LegendCard({ model, activeFile, loadSummary }: LegendCardProps) 
 function LegendRows({
   legend,
   theme,
+  hasHeader,
 }: {
   legend: Exclude<ModelViewerLegend, null>;
   theme: ModelViewerTheme;
+  hasHeader: boolean;
 }) {
   const legendFilter = useModelViewerStore((state) => state.legendFilter);
   const toggleLegendFilterKey = useModelViewerStore((state) => state.toggleLegendFilterKey);
   const activeKeys = legendFilter?.theme === theme ? legendFilter.keys : null;
   return (
-    <div className="model-legend-rows" role="group" aria-label={`Filter by ${legend.title}`}>
+    <div
+      className={hasHeader ? "model-legend-rows" : "model-legend-rows model-legend-rows--solo"}
+      role="group"
+      aria-label={`Filter by ${legend.title}`}
+    >
       {legend.rows.map((row) => {
         const active = activeKeys?.has(row.id) ?? false;
         return (
