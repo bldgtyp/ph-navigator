@@ -1,4 +1,5 @@
 import { fetchJson, getApiBaseUrl } from "../../shared/api/client";
+import type { BaseTableSlice } from "./table-slice";
 import type {
   DiffSummary,
   ProjectDocumentResponse,
@@ -16,6 +17,25 @@ export async function fetchDraftSummary(
     `/api/v1/projects/${projectId}/versions/${versionId}/draft`,
     { signal },
   );
+}
+
+// One request for many draft table slices, replacing the per-table fan-out on
+// page mount. Returns the response's `tables` map (table_name -> per-table
+// slice), each entry byte-identical to `GET …/draft/tables/<name>` so it seeds
+// the matching per-table cache 1:1. See `useDraftTablesBatchSeed`.
+export async function fetchDraftTablesBatch(
+  projectId: string,
+  versionId: string,
+  names: string[],
+  signal?: AbortSignal,
+): Promise<Record<string, BaseTableSlice>> {
+  const query = new URLSearchParams();
+  for (const name of names) query.append("names", name);
+  const response = await fetchJson<{ tables: Record<string, BaseTableSlice> }>(
+    `/api/v1/projects/${projectId}/versions/${versionId}/draft/tables?${query.toString()}`,
+    { signal },
+  );
+  return response.tables;
 }
 
 export async function fetchProjectDocument(

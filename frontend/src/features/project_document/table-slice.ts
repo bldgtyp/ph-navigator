@@ -49,12 +49,7 @@ export function createTableSliceFeature<TSlice extends BaseTableSlice, TReplaceB
   const queryKeys = {
     all: (projectId: string) => projectDocumentTableQueryKeys.table(projectId, tableName),
     slice: (projectId: string, versionId: string, accessMode: TableSliceAccessMode) =>
-      [
-        ...projectDocumentTableQueryKeys.table(projectId, tableName),
-        "slice",
-        versionId,
-        accessMode,
-      ] as const,
+      projectDocumentTableQueryKeys.slice(projectId, tableName, versionId, accessMode),
   };
 
   async function fetchSlice(
@@ -131,6 +126,14 @@ export function createTableSliceFeature<TSlice extends BaseTableSlice, TReplaceB
       queryKey: queryKeys.slice(projectId, resolvedVersionId, accessMode),
       queryFn: ({ signal }) => fetchSlice(projectId, resolvedVersionId, accessMode, signal),
       enabled: enabled && resolvedVersionId.length > 0,
+      // A slice only changes via an explicit write (which updates the cache
+      // through `applyAcceptedSlice`) or invalidation (which marks the query
+      // `isInvalidated` so `resolveSliceForWrite` refetches before the next
+      // write) — never on its own. `Infinity` stops a mount refetch, which is
+      // what lets `useDraftTablesBatchSeed` pre-seed this cache and suppress
+      // the per-table fan-out. `isInvalidated` is independent of `staleTime`,
+      // so the PR #18 refetch-before-write protocol is unaffected.
+      staleTime: Infinity,
     });
   }
 

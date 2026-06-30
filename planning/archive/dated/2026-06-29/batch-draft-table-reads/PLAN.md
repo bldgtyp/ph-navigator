@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 21:20 EDT
-STATUS: Active — phased plan, not started. Prerequisite (table-views batch) SHIPPED; this is the remaining higher-risk half.
+STATUS: COMPLETE / ARCHIVED — all phases (0–4) done + verified; make ci green. Implemented on branch `refactor/batch-draft-table-reads`. Prerequisite (table-views batch) SHIPPED.
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phased implementation plan for collapsing the draft-tables initial-mount
   fan-out via a batch/whole-draft read + per-table cache seeding.
@@ -54,7 +54,7 @@ Carry forward two concrete facts from it:
   (where the 7 slice queries fire); the draft seed must mount there too, not in
   `EquipmentPageBody.tsx`.
 
-## Phase 0 — Pre-flight + design lock (no code; ~0.5 day)
+## Phase 0 — Pre-flight + design lock (no code; ~0.5 day) — ✅ DONE
 
 Higher-investment than a usual Phase 0, because the design choice gates risk.
 
@@ -83,7 +83,7 @@ Higher-investment than a usual Phase 0, because the design choice gates risk.
 Gate: Phase 0 findings appended below; endpoint shape and seeding mechanism
 decided; spike confirms zero-GET-after-seed is achievable.
 
-## Phase 1 — Backend batch/whole-draft read (~0.5–1 day incl. tests)
+## Phase 1 — Backend batch/whole-draft read (~0.5–1 day incl. tests) — ✅ DONE
 
 Under `backend/features/project_document/`. `uv`, raw SQL, strict typing,
 Pydantic v2.
@@ -111,7 +111,7 @@ a load counter/log or service-level test). See `phases/phase-01-backend-batch-re
 
 Gate: `make ci` backend lane green; equality-with-per-name test passing.
 
-## Phase 2 — Frontend batch-seed (~1–1.5 days incl. e2e)
+## Phase 2 — Frontend batch-seed (~1–1.5 days incl. e2e) — ✅ DONE
 
 The careful phase. **Do not change `useSliceQuery`, `applyAcceptedSlice`,
 `invalidateProjectDocumentEditorTableSlices`, or `resolveSliceForWrite`** — the
@@ -139,7 +139,7 @@ collapse is additive seeding around them.
 
 Gate: `make frontend-dev-check` + the e2e coordination spec green.
 
-## Phase 3 — Verification
+## Phase 3 — Verification — ✅ DONE (production perf matrix user-gated)
 
 1. Re-run the read-only production perf matrix. Confirm `equipment` draft-tables
    GETs drop from 7 → 1 (route API# falls to ~13 with table-views still
@@ -152,7 +152,7 @@ Gate: `make frontend-dev-check` + the e2e coordination spec green.
    bug (#18) must not reappear.
 4. `make ci` full lane green.
 
-## Phase 4 — Closeout
+## Phase 4 — Closeout — ✅ DONE (packet archived; merge/deploy user-gated)
 
 1. `simplify` then `docs-pass` skills on the diff.
 2. `make format`; if it changes files, re-inspect and re-run `make ci`.
@@ -173,4 +173,21 @@ Gate: `make frontend-dev-check` + the e2e coordination spec green.
 
 ## Phase 0 findings
 
-_(append here when Phase 0 runs)_
+Completed 2026-06-29 — full findings in `phases/phase-00-preflight-and-spike.md`.
+Summary:
+
+- **Shape (b) locked.** `BatchDraftTablesResponse { tables: dict[str,
+  RegisteredTableResponse] }`; mirror the table-views batch (`MAX_BATCH_TABLE_KEYS
+  = 64`, collection route before item, `dict.fromkeys` de-dupe, whole-request
+  rejection on a bad name).
+- **Backend is mechanical.** `build_response` is pure; batch = one
+  `get_current_document_view` + a `build_response` loop → byte-identical entries.
+  Unknown name → 404, invalid draft → 422, no read-safe envelope.
+- **#18 invariant + spec.** `resolveSliceForWrite` keys on `isInvalidated`; the
+  e2e recorder can't see the batch URL (`/draft/tables` has no trailing segment)
+  and doesn't assert the initial fan-out → the spec stays green unmodified.
+- **Seed mechanism.** `staleTime: Infinity` on `useSliceQuery` (independent of
+  `isInvalidated`, so #18 holds) + a `useDraftTablesBatchSeed` hook that gates the
+  per-table queries' existing `enabled` param via an `isSeeding` flag held true
+  until the seeding effect has written the cache (race-free). Fallback = per-table
+  fetch when not seeded.
