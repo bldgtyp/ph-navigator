@@ -35,7 +35,7 @@ Impact = how many users feel it x how much. Effort = implementation + risk.
 | # | Finding | Layer | Impact | Effort | Recommendation |
 |---|---|---|---|---|---|
 | 1 | Static assets served `cache-control: max-age=0` | Infra/config | Low-Med (every repeat visit pays revalidation; fonts ~53 KB refetch) | **Low** (config-only) | **Do it** — best ratio in the packet |
-| 2 | `equipment` fans out to ~14 type-scoped GETs + a full draft fetch | API/data | Low (37 KB, 0 long tasks; felt only on slow links) | Med (needs investigation first) | **Investigate, then decide** |
+| 2 | `equipment` fans out to 14 type-scoped GETs (7 draft-tables + 7 table-views) | API/data | Low (37 KB, 0 long tasks; felt only on slow links) | Med (needs investigation first) | **Investigate, then decide** |
 | 3 | `climate` LCP 1.9 s (Leaflet map tile) | FE/render | Low (one route; map is the point of the page) | Med-High | **Document as expected**; optional polish |
 | 4 | Per-route JS chunk weight (status 103 KB, spaces 178 KB, equipment 200 KB transfer) | FE/payload | Low (loads still < 0.32 s) | Med | **Watch only** — no action now |
 
@@ -60,26 +60,42 @@ forever.
 
 ### Finding 2 — equipment fan-out (investigate first)
 
-The equipment load issues ~14 type-scoped requests — seven
-`…/draft/tables/<type>` plus seven `…/table-views/<type>` — **and** a full
-`…/draft` document fetch. `draft/tables/{table_name}` and `table-views/{table_name}`
-are confirmed per-name endpoints (`backend/features/project_document/routes.py`,
+The equipment load issues 14 type-scoped requests — seven
+`…/draft/tables/<type>` (data) plus seven `…/table-views/<type>` (view/column
+config). `draft/tables/{table_name}` and `table-views/{table_name}` are confirmed
+per-name endpoints (`backend/features/project_document/routes.py`,
 `backend/features/table_views/routes.py`).
 
-Open question before any change: **the full draft document already contains all
-tables — why does the page also fetch each table individually?** Either the
-per-table endpoints return something the draft doesn't (server-computed views,
-pagination over 250 rows), or this is redundant fetching. That answer decides
-the fix:
+**Correction (verified against the run's `equipment-metrics.json` and the
+backend routes, 2026-06-29):** an earlier draft of this finding claimed the load
+"already fetches the full draft document, which contains all tables." That is
+wrong. The single `…/draft` call on this load hits `GET …/draft` →
+`ProjectDraftSummary` (`models.py:47`) — a **status/metadata** object
+(`version_etag`, `draft_etag`, `dirty_tables: list[str]` of names only, lock /
+`can_edit` flags). It carries **no table rows**. The only endpoint that returns
+the whole document with every table is `GET …/document` → `ProjectDocumentV1`
+(`routes.py:64`), and the equipment page **never calls it** (confirmed: not in
+the captured request set). So the per-table data calls are not redundant with
+anything currently loaded — they are the page's only source of table rows.
 
-- If redundant → drop the per-table data calls; read from the already-fetched
-  draft. Frontend-only, meaningful request reduction.
-- If the per-table endpoints are load-bearing → consider a batch
-  `table-views` endpoint (one call returns all requested view configs) to
-  collapse the 7 `table-views` round-trips.
+Open question before any change, restated correctly: **could one
+`GET …/document` (whole doc, `ProjectDocumentV1`) replace the 7
+`…/draft/tables/<type>` calls by slicing client-side — or do the per-table
+endpoints earn their keep?** The leading hypothesis is the latter:
+`table-slice.ts` keys fetch / preview-replace / custom-field mutation /
+cache-invalidation per `tableName`, so the per-table endpoints look like
+deliberate editor plumbing, not accidental fan-out. That answer decides the fix:
 
-Do not act until the redundancy question is answered. Low user impact today (no
-long tasks, 37 KB), so this is not urgent.
+- If `…/document` could serve the read path → fetch it once and slice in the
+  frontend, dropping the 7 data calls. Frontend-only, but couples read and
+  mutation cache shapes — needs care.
+- Independent of that question, the 7 `…/table-views/<type>` calls are pure
+  per-table view/column config (`view_state` JSON, per user+project+table) and
+  are cleanly batchable: a single `GET …/table-views?keys=…` returning all
+  requested configs collapses 7 round-trips into 1. This is the lowest-risk win
+  and does not depend on resolving the data-path question.
+
+Low user impact today (no long tasks, 37 KB), so this is not urgent.
 
 ### Finding 3 — climate map LCP (EXPECTED — accepted, closed)
 
@@ -113,8 +129,10 @@ budget, or recurring smoke"):
 
 ## Areas Needing Further Investigation
 
-1. **Equipment redundant-fetch question** (Finding 2) — read the equipment page
-   data-loading code; confirm whether per-table fetches duplicate the draft.
+1. **Equipment data-path question** (Finding 2) — read the equipment page
+   data-loading code; decide whether one `GET …/document` could replace the 7
+   `…/draft/tables/<type>` reads (it does **not** duplicate `…/draft`, which is
+   only the draft summary). The `…/table-views` batch is actionable regardless.
 2. **Cloudflare vs Render header precedence** — before Finding 1, confirm which
    layer wins on `Cache-Control` so the fix lands where it takes effect.
 3. **Per-route cold/warm separation for authenticated pages** — the Phase 04
