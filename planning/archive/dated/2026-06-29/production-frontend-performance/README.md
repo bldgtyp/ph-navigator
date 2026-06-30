@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 18:56 EDT
-STATUS: Implemented through fixture setup path - production run held.
+STATUS: RESOLVED + ARCHIVED 2026-06-29 — findings shipped via PRs #20/#21/#22; historical record only.
 AUTHOR: Codex
 SCOPE: Router for adapting the archived local frontend performance harness into
   a production-safe performance validation workflow for `www.ph-nav.com`.
