@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-30
 TIME: 14:27 EDT
-STATUS: Active — findings ready for triage. No code changed by this review.
+STATUS: Actioned — implementation tracked in `planning/features/mcp-write-loop/`; Phases 1–4 close the write loop and doc drift.
 AUTHOR: Claude (Opus 4.8) with Ed May
 SCOPE: The PH-Navigator runtime MCP server — `backend/features/mcp/`,
        `backend/features/apertures_mcp/`, the per-feature `mcp.py` tool modules
@@ -179,9 +179,9 @@ completeness gap and it is *cheap* to close (the service layer is done).
 
 ## 4. Next steps (prioritized)
 
-> **Implementation packet:** P0 + the docs/discoverability work below are now
-> planned in `planning/features/mcp-write-loop/` (4 phases). The decision in §5
-> is the basis for that packet.
+> **Implementation packet:** P0 + the docs/discoverability work below are tracked
+> in `planning/features/mcp-write-loop/` (4 phases). The decision in §5 is the
+> basis for that packet.
 
 
 **P0 — close the write loop (small, high value).** Expose `save_draft` and

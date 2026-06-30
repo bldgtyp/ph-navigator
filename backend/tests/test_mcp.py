@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import cast
 
 import httpx
@@ -198,6 +199,25 @@ def tool_text(result) -> str:
     if result.content and isinstance(result.content[0], TextContent):
         return result.content[0].text
     return ""
+
+
+def documented_mcp_tool_names() -> set[str]:
+    doc_path = Path(__file__).resolve().parents[2] / "context" / "mcp.md"
+    lines = doc_path.read_text().splitlines()
+    try:
+        start = lines.index("<!-- mcp-tool-inventory:start -->")
+        end = lines.index("<!-- mcp-tool-inventory:end -->")
+    except ValueError as exc:
+        raise AssertionError("context/mcp.md is missing the MCP tool inventory markers") from exc
+    names: set[str] = set()
+    for line in lines[start + 1 : end]:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        assert stripped.startswith("- `") and stripped.endswith("`"), stripped
+        names.add(stripped.removeprefix("- `").removesuffix("`"))
+    assert len(names) == end - start - 1
+    return names
 
 
 def test_editor_can_issue_list_and_revoke_project_scoped_token(clean_mcp_tables: None) -> None:
@@ -1118,20 +1138,7 @@ async def test_mcp_read_tools_return_document_and_structured_write_rejection(cle
                 async with ClientSession(read, write) as session:
                     await session.initialize()
                     tool_names = {tool.name for tool in (await session.list_tools()).tools}
-                    assert {
-                        "list_envelope_assemblies",
-                        "list_project_materials",
-                        "query_unfinished_envelope_work",
-                        "report_material_catalog_drift",
-                        "report_missing_envelope_evidence",
-                        "apply_envelope_command",
-                        "save_draft",
-                        "save_draft_as",
-                        "discard_draft",
-                        "update_project",
-                        "diff_versions",
-                        "preview_replace_table",
-                    }.issubset(tool_names)
+                    assert tool_names == documented_mcp_tool_names()
 
                     listed = await session.call_tool("list_projects", {})
                     assert listed.isError is False
