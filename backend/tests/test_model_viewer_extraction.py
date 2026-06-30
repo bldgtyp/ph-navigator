@@ -13,6 +13,7 @@ The artifact + job workflow is covered in `test_model_viewer_model_data.py`.
 from __future__ import annotations
 
 import json
+import os
 from collections import Counter
 from pathlib import Path
 from typing import Any
@@ -38,7 +39,16 @@ from features.model_viewer.schemas.combined import CombinedModelDataSchema
 
 FIXTURES = Path(__file__).parent / "fixtures"
 PRIMARY_FIXTURE = FIXTURES / "ph_nav_v2_example.hbjson"
-HILLANDALE_FIXTURE = FIXTURES / "Hillandale_Gateway_NAR_260402.hbjson"
+# Hillandale is a real, licensed multifamily project model — it is NOT committed
+# to this public repo. Keep it locally at the default path below, or point at it
+# via PHN_HILLANDALE_FIXTURE. The `hillandale` canary tests skip when it is
+# absent, so public CI skips them while local dev (with the file) still runs them.
+HILLANDALE_FIXTURE = Path(
+    os.environ.get(
+        "PHN_HILLANDALE_FIXTURE",
+        str(FIXTURES / "Hillandale_Gateway_NAR_260402.hbjson"),
+    )
+)
 
 
 def _load_primary_model() -> Model:
@@ -242,6 +252,12 @@ def hillandale() -> tuple[CombinedModelDataSchema, Any]:
     `hillandale` marker keeps it out of quick local loops
     (`-m 'not hillandale'`); CI always runs it.
     """
+    if not HILLANDALE_FIXTURE.exists():
+        pytest.skip(
+            f"Hillandale fixture not found at {HILLANDALE_FIXTURE} — it is "
+            "licensed and not committed to this public repo; keep it locally "
+            "and/or set PHN_HILLANDALE_FIXTURE to its path."
+        )
     model = parse_hb_model(json.loads(HILLANDALE_FIXTURE.read_text()))
     return extract_model_data(model), extract_geometry_summary(model)
 

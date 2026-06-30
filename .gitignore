@@ -67,6 +67,13 @@ phase3-walk/
 
 # ─── Local working notes / agent scratch ───
 working/
+
+# ─── Licensed project models (real .hbjson) — never commit to this PUBLIC repo ───
+# Real project geometry is licensed PH data. Keep it locally and point tests at
+# it via PHN_HILLANDALE_FIXTURE; the synthetic ph_nav_v2_example.hbjson stays
+# tracked. (The 49MB Hillandale fixture was purged from history 2026-06-30.)
+**/Hillandale_*.hbjson
+
 # Climate reference example data (Phius/PHI source files) — gitignored
 # wherever the climate feature folder lives (active or archived).
 **/climate/example_data/
