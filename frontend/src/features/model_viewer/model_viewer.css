@@ -631,6 +631,7 @@
 
 .model-legend-title-actions {
   display: inline-flex;
+  align-items: center;
   gap: var(--space-4);
 }
 
@@ -648,43 +649,89 @@
   color: var(--text-primary);
 }
 
+.model-legend-title-actions .model-legend-collapse-trigger {
+  width: auto;
+  height: auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+}
+
+.model-legend-title-actions .model-legend-clear-filter {
+  align-self: center;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  min-height: 22px;
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.model-legend-title-actions .model-legend-clear-filter:hover,
+.model-legend-title-actions .model-legend-clear-filter:focus-visible {
+  background: var(--accent-light);
+  color: var(--accent-text);
+  outline: 0;
+}
+
+.model-legend-title-actions .model-legend-clear-filter svg {
+  width: 13px;
+  height: 13px;
+}
+
 .model-legend-rows {
   display: grid;
   max-height: 280px;
   overflow-y: auto;
-  padding: 0 7px 8px;
+  gap: var(--space-2);
+  padding: 0 8px 10px;
 }
 
-.model-legend-rows button {
+.model-legend-row {
   display: grid;
   grid-template-columns: 14px minmax(0, 1fr) auto;
   gap: var(--space-8);
   align-items: center;
-  min-height: 28px;
-  padding: 5px 4px;
+  min-height: 30px;
+  padding: 6px 8px;
   border: 0;
   border-radius: var(--phn-control-radius);
   background: transparent;
   color: var(--text-primary);
   font: inherit;
   font-size: var(--fs-sm);
+  font-weight: 400;
+  letter-spacing: 0;
   text-align: left;
+  text-transform: none;
   cursor: pointer;
 }
 
-.model-legend-rows button:hover {
-  background: color-mix(in oklab, var(--text-primary) 7%, transparent);
+.model-legend-row:hover {
+  background: var(--accent-light);
+  color: var(--text-primary);
 }
 
-.model-legend-rows button:focus-visible {
-  outline: 2px solid var(--highlight);
+.model-legend-row:focus-visible {
+  outline: 2px solid var(--accent-edge);
   outline-offset: -2px;
 }
 
 /* The isolated bucket(s) while a legend filter is active (NEW-VIEW-2). */
-.model-legend-rows button.is-active {
-  background: color-mix(in oklab, var(--highlight) 14%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--highlight) 45%, transparent);
+.model-legend-row.is-active {
+  background: var(--accent-light);
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.model-legend-row.is-active:hover {
+  background: var(--accent-light);
 }
 
 .model-legend-swatch {

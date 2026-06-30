@@ -61,6 +61,7 @@ export function LegendCard({ model, activeFile, loadSummary }: LegendCardProps) 
             {legendFilter?.theme === theme ? (
               <button
                 type="button"
+                className="model-legend-clear-filter"
                 aria-label="Clear filter"
                 title="Clear filter"
                 onClick={clearLegendFilter}
@@ -70,6 +71,7 @@ export function LegendCard({ model, activeFile, loadSummary }: LegendCardProps) 
             ) : null}
             <button
               type="button"
+              className="model-legend-collapse-trigger"
               aria-label={collapsed ? "Expand legend" : "Collapse legend"}
               title={collapsed ? "Expand legend" : "Collapse legend"}
               onClick={toggleCollapsed}
@@ -118,7 +120,7 @@ function LegendRows({
             key={row.id}
             type="button"
             aria-pressed={active}
-            className={active ? "is-active" : undefined}
+            className={active ? "model-legend-row is-active" : "model-legend-row"}
             title={`Isolate ${row.label} — Shift-click to add to the filter`}
             onClick={(event) => toggleLegendFilterKey(theme, row.id, event.shiftKey)}
           >
