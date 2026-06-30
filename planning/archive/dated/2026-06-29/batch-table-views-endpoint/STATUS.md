@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 21:05 EDT
-STATUS: ✅ Implemented on branch (Phases 0–4 done, CI green) — pending user perf re-run + merge to main
+STATUS: ✅ COMPLETE — Phases 0–4 done, CI green, merged to main (branch closeout). Optional post-merge: confirm the perf delta.
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Status ledger for the batch table-views read refactor.
 RELATED:
@@ -11,11 +11,12 @@ RELATED:
 
 # Status — Batch `table-views` read
 
-**State:** `Implemented on branch` — Phases 0–4 complete on
-`refactor/batch-table-views-endpoint`; full `make ci` green. Two residual
-actions are the **user's**: (1) the production perf re-run (fixture +
-credentials), and (2) merge to `main` (which deploys production, gated on the
-perf re-run). Archive this packet to `planning/archive/<date>/` once merged.
+**State:** `COMPLETE` — Phases 0–4 complete on
+`refactor/batch-table-views-endpoint`; full `make ci` green; merged to `main`
+and archived (2026-06-29). **Optional post-merge:** the empirical production
+perf re-run (`equipment` 19 → ~13) remains a nice-to-have confirmation (fixture
++ credentials); the 7→1 collapse is already unit-test-proven. Commands in
+`phases/phase-03-verification.md`.
 
 ## Current state
 

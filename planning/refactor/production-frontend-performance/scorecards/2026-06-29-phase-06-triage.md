@@ -35,7 +35,7 @@ Impact = how many users feel it x how much. Effort = implementation + risk.
 | # | Finding | Layer | Impact | Effort | Recommendation |
 |---|---|---|---|---|---|
 | 1 | Static assets served `cache-control: max-age=0` | Infra/config | Low-Med (every repeat visit pays revalidation; fonts ~53 KB refetch) | **Low** (config-only) | **Do it** — best ratio in the packet |
-| 2 | `equipment` fans out to 14 type-scoped GETs (7 draft-tables + 7 table-views) | API/data | Low (37 KB, 0 long tasks; felt only on slow links) | Med (needs investigation first) | **table-views half ✅ DONE (batch on branch); draft-tables half open** |
+| 2 | `equipment` fans out to 14 type-scoped GETs (7 draft-tables + 7 table-views) | API/data | Low (37 KB, 0 long tasks; felt only on slow links) | Med (needs investigation first) | **table-views half ✅ DONE (merged to main); draft-tables half open** |
 | 3 | `climate` LCP 1.9 s (Leaflet map tile) | FE/render | Low (one route; map is the point of the page) | Med-High | **Document as expected**; optional polish |
 | 4 | Per-route JS chunk weight (status 103 KB, spaces 178 KB, equipment 200 KB transfer) | FE/payload | Low (loads still < 0.32 s) | Med | **Watch only** — no action now |
 
@@ -107,16 +107,16 @@ per-table view/column config (`view_state` JSON, per user+project+table),
 **orthogonal to the draft etag protocol**, and cleanly batchable: a single
 `GET …/table-views?keys=…` collapses 7 round-trips into 1 with no coordination
 risk. This is the lowest-risk win — written up and planned at
-`planning/refactor/batch-table-views-endpoint/`.
+`planning/archive/dated/2026-06-29/batch-table-views-endpoint/`.
 
-> **✅ DONE (2026-06-29) — table-views half.** Implemented on branch
-> `refactor/batch-table-views-endpoint`: backend batch route
-> `GET /api/v1/projects/{id}/table-views?keys=…` + a frontend page-scoped batch
-> read-through wired into the equipment page (its 7 `table-views` reads collapse
-> to 1). `make ci` green; the 7→1 collapse is unit-test-proven. The empirical
-> perf re-run (`equipment` 19 → ~13) is a user-gated step (production fixture);
-> see that packet's `phases/phase-03-verification.md`. **The draft-tables half
-> of this finding remains open** under `planning/refactor/batch-draft-table-reads/`.
+> **✅ DONE (2026-06-29) — table-views half (merged to main).** Backend batch
+> route `GET /api/v1/projects/{id}/table-views?keys=…` + a frontend page-scoped
+> batch read-through wired into the equipment page (its 7 `table-views` reads
+> collapse to 1). `make ci` green; the 7→1 collapse is unit-test-proven. An
+> optional post-merge confirmation (empirical perf re-run, `equipment` 19 → ~13,
+> production fixture) is noted in the archived packet's
+> `phases/phase-03-verification.md`. **The draft-tables half of this finding
+> remains open** under `planning/refactor/batch-draft-table-reads/`.
 
 Low user impact today (no long tasks, 37 KB), so this is not urgent.
 

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 20:46 EDT
-STATUS: ✅ Implemented on branch `refactor/batch-table-views-endpoint` (Phases 0–4, CI green). Pending user perf re-run + merge. See STATUS.md.
+STATUS: ✅ COMPLETE — Phases 0–4 done; CI green; merged to main + archived (2026-06-29). See STATUS.md.
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Add a batch read endpoint for table-views so a page with N tables fetches
   all view/column configs in one request instead of N.

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 21:05 EDT
-STATUS: ✅ Implemented on branch `refactor/batch-table-views-endpoint` (Phases 0–4 done; CI green). Pending user perf re-run + merge to main.
+STATUS: ✅ COMPLETE — Phases 0–4 done; CI green; merged to main + archived (2026-06-29).
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phased implementation plan for the batch table-views read endpoint and
   its frontend consumer rewiring.

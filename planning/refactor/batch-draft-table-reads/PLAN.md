@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 21:20 EDT
-STATUS: Active — phased plan, not started. Deferred behind the table-views batch.
+STATUS: Active — phased plan, not started. Prerequisite (table-views batch) SHIPPED; this is the remaining higher-risk half.
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phased implementation plan for collapsing the draft-tables initial-mount
   fan-out via a batch/whole-draft read + per-table cache seeding.
@@ -35,11 +35,24 @@ seeding is 1:1) — not a separate-meta envelope; (2) the per-table draft read
 **422s** on an invalid draft and has **no** read-safe-envelope path, so the batch
 matches that — disregard the earlier "handle the read-safe envelope" note below.
 
-## Prerequisite
+## Prerequisite — SATISFIED
 
-**Ship `batch-table-views-endpoint` first.** It is lower-risk, orthogonal to the
-etag protocol, and proves the page-level prefetch pattern on a safe surface
-before we apply the same shape to the write-coupled draft path.
+**`batch-table-views-endpoint` has shipped** (archived
+`planning/archive/dated/2026-06-29/batch-table-views-endpoint/`). It proved the
+page-level prefetch shape on the safe (read-only, non-etag) view-state surface.
+Carry forward two concrete facts from it:
+
+- **Backend route convention** to mirror: a `GET …?names=…` collection route
+  declared **before** the `{single}` item route, with a bounded list param
+  (table-views used `keys`, 1..64). Reuse this for `?names=…`.
+- **Seam difference (important):** table-views wired the read-through through a
+  React **context** because `useProjectTableViewState` is a hand-rolled hook.
+  Draft-table slices are TanStack Query, so this refactor seeds via
+  `queryClient.setQueryData` instead — see Phase 2. Do not copy the context
+  pattern onto the slice queries.
+- **Mount point:** table-views mounted its provider at `EquipmentPage.tsx`
+  (where the 7 slice queries fire); the draft seed must mount there too, not in
+  `EquipmentPageBody.tsx`.
 
 ## Phase 0 — Pre-flight + design lock (no code; ~0.5 day)
 

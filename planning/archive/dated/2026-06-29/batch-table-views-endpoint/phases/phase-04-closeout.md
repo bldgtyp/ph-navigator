@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 21:35 EDT
-STATUS: ✅ DONE (closeout gate + fold-back complete; packet kept active pending user perf re-run + merge)
+STATUS: ✅ DONE (closeout gate + fold-back complete; merged to main + archived 2026-06-29)
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Repo closeout gate and fold-back of the result.
 RELATED:
@@ -58,9 +58,8 @@ Done this session (branch `refactor/batch-table-views-endpoint`):
   contract recorded in `context/user-stories/31-data-table-enhancements.md`
   (API surface §8).
 
-**Packet deliberately NOT archived.** Two residual actions are the user's:
-
-1. **Perf re-run** (production fixture + credentials) — confirm `equipment`
-   `API#` 19 → ~13. Commands in `phases/phase-03-verification.md` Findings.
-2. **Merge to `main`** — gated on the perf re-run, since `main` deploys
-   production. Archive this packet to `planning/archive/<date>/` once merged.
+**Merged to `main` and archived** to
+`planning/archive/dated/2026-06-29/batch-table-views-endpoint/` (2026-06-29).
+One **optional** post-merge confirmation remains (not a blocker): the empirical
+production perf re-run (`equipment` `API#` 19 → ~13) — the 7→1 collapse is
+already unit-test-proven. Commands in `phases/phase-03-verification.md` Findings.
