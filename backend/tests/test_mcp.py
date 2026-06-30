@@ -24,6 +24,7 @@ from features.mcp.service import authenticate_plaintext_token, project_access_fo
 from features.mcp.tools import (
     tool_apply_envelope_command,
     tool_delete_project,
+    tool_diff_versions,
     tool_discard_draft,
     tool_get_table,
     tool_hard_delete_project,
@@ -33,6 +34,8 @@ from features.mcp.tools import (
     tool_replace_table,
     tool_restore_project,
     tool_save_draft,
+    tool_save_draft_as,
+    tool_update_project,
 )
 from features.project_document.validation import document_etag
 from main import app
@@ -524,6 +527,143 @@ def test_mcp_discard_draft_drops_draft_and_noops_when_missing(
     assert saved_room_rows(version_id) == []
 
 
+def test_mcp_save_draft_as_creates_active_version_and_clears_draft(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = cast(str, project["id"])
+    version_id = cast(str, project["active_version_id"])
+    create_rooms_draft(client, project_id, version_id, name="Round 1 Living")
+    monkeypatch.setenv(
+        "PHN_MCP_TOKEN",
+        issue_mcp_token(client, project_id, scopes=["project:read", "project:write"]),
+    )
+
+    saved_as = tool_save_draft_as(
+        project_id,
+        version_id,
+        "Round 1 Submit",
+        cast(Context, None),
+        allow_env_token=True,
+        kind="submitted",
+    )
+
+    new_version_id = str(saved_as.version.id)
+    assert new_version_id != version_id
+    assert saved_as.version.kind == "submitted"
+    assert saved_as.version.locked is True
+    assert draft_row(version_id) is None
+    assert saved_room_name(new_version_id) == "Round 1 Living"
+    detail = client.get(f"/api/v1/projects/{project_id}").json()
+    assert detail["active_version_id"] == new_version_id
+
+
+def test_mcp_save_draft_as_succeeds_from_locked_source(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = cast(str, project["id"])
+    version_id = cast(str, project["active_version_id"])
+    create_rooms_draft(client, project_id, version_id, name="Locked Source Draft")
+    locked = client.patch(
+        f"/api/v1/projects/{project_id}/versions/{version_id}",
+        headers={"Origin": ORIGIN},
+        json={"locked": True},
+    )
+    assert locked.status_code == 200
+    monkeypatch.setenv(
+        "PHN_MCP_TOKEN",
+        issue_mcp_token(client, project_id, scopes=["project:read", "project:write"]),
+    )
+
+    copied = tool_save_draft_as(
+        project_id,
+        version_id,
+        "Unlocked Copy",
+        cast(Context, None),
+        allow_env_token=True,
+    )
+
+    assert str(copied.version.id) != version_id
+    assert copied.version.locked is False
+    assert saved_room_name(copied.version.id) == "Locked Source Draft"
+
+
+def test_mcp_save_draft_as_validation_failure_is_fatal(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = cast(str, project["id"])
+    version_id = cast(str, project["active_version_id"])
+    monkeypatch.setenv(
+        "PHN_MCP_TOKEN",
+        issue_mcp_token(client, project_id, scopes=["project:read", "project:write"]),
+    )
+
+    with pytest.raises(ToolError) as exc_info:
+        tool_save_draft_as(project_id, version_id, "", cast(Context, None), allow_env_token=True)
+
+    error = mcp_error(exc_info.value)
+    assert error["code"] == "validation_error"
+    assert error["recoverability"] == "fatal"
+
+
+def test_mcp_update_project_patches_version_metadata_and_rejects_noop(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = cast(str, project["id"])
+    version_id = cast(str, project["active_version_id"])
+    monkeypatch.setenv(
+        "PHN_MCP_TOKEN",
+        issue_mcp_token(client, project_id, scopes=["project:read", "project:write"]),
+    )
+
+    updated = tool_update_project(
+        project_id,
+        version_id,
+        cast(Context, None),
+        allow_env_token=True,
+        locked=True,
+    )
+
+    assert updated.active_version is not None
+    assert str(updated.active_version.id) == version_id
+    assert updated.active_version.locked is True
+    with pytest.raises(ToolError) as exc_info:
+        tool_update_project(project_id, version_id, cast(Context, None), allow_env_token=True)
+    error = mcp_error(exc_info.value)
+    assert error["code"] == "validation_error"
+    assert error["recoverability"] == "fatal"
+
+
+def test_mcp_diff_versions_reports_draft_table_delta(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = cast(str, project["id"])
+    version_id = cast(str, project["active_version_id"])
+    create_rooms_draft(client, project_id, version_id, name="Diff Target")
+    monkeypatch.setenv("PHN_MCP_TOKEN", issue_mcp_token(client, project_id, scopes=["project:read"]))
+
+    diff = tool_diff_versions(project_id, version_id, "draft", cast(Context, None), allow_env_token=True)
+
+    rooms_diff = diff.tables[0]
+    assert rooms_diff.table == "rooms"
+    assert rooms_diff.change_count > 0
+    assert "rooms.rooms.rows[rm_living]" in rooms_diff.changed_paths
+
+
 def test_mcp_save_draft_rechecks_revoked_token_at_commit(
     clean_mcp_tables: None,
     monkeypatch: pytest.MonkeyPatch,
@@ -986,7 +1126,10 @@ async def test_mcp_read_tools_return_document_and_structured_write_rejection(cle
                         "report_missing_envelope_evidence",
                         "apply_envelope_command",
                         "save_draft",
+                        "save_draft_as",
                         "discard_draft",
+                        "update_project",
+                        "diff_versions",
                         "preview_replace_table",
                     }.issubset(tool_names)
 

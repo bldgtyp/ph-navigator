@@ -22,7 +22,7 @@ def patch_version(
     version_id: UUID,
     payload: VersionPatchRequest,
     access: ProjectAccess,
-    request: Request,
+    request: Request | None,
 ) -> ProjectDetail:
     user = require_editor_user(access)
     if payload.locked is None and not payload.make_active:

@@ -44,6 +44,7 @@ from features.mcp.tools import (
     tool_delete_custom_field,
     tool_delete_hbjson_file,
     tool_delete_project,
+    tool_diff_versions,
     tool_discard_draft,
     tool_duplicate_custom_field,
     tool_edit_custom_field_options,
@@ -82,13 +83,16 @@ from features.mcp.tools import (
     tool_resolve_asset_urls,
     tool_restore_project,
     tool_save_draft,
+    tool_save_draft_as,
     tool_search_climate_locations,
     tool_set_custom_field_description,
     tool_set_custom_field_formula,
     tool_start_bulk_download,
+    tool_update_project,
 )
-from features.project_document.models import DiscardDraftResponse, SaveDraftResponse
+from features.project_document.models import DiscardDraftResponse, ProjectDiffResponse, SaveDraftResponse
 from features.project_document.tables.contracts import TableReplacePreviewResponse
+from features.projects.models import ProjectDetail, VersionKind
 
 __all__ = ["build_mcp_server", "mcp"]
 
@@ -251,9 +255,33 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
         Mutating MCP tools write into a draft first. Pass the version_body_etag
         seen when the draft was opened as `if_match`; stale or locked versions
         return a structured refreshable error. If the version is locked, use
-        save_draft_as once that lifecycle tool is available.
+        `save_draft_as` to create an unlocked copy instead.
         """
         return tool_save_draft(project_id, version_id, ctx, allow_env_token=allow_env_token, if_match=if_match)
+
+    @mcp.tool()
+    def save_draft_as(
+        project_id: str,
+        version_id: str,
+        name: str,
+        ctx: Context,
+        kind: VersionKind = "working",
+        locked: bool = False,
+    ) -> SaveDraftResponse:
+        """Create a new active version from the token owner's draft or saved body.
+
+        This is the locked-version escape hatch: source versions may be locked,
+        and submitted/closed target versions are auto-locked by the service.
+        """
+        return tool_save_draft_as(
+            project_id,
+            version_id,
+            name,
+            ctx,
+            allow_env_token=allow_env_token,
+            kind=kind,
+            locked=locked,
+        )
 
     @mcp.tool()
     def discard_draft(project_id: str, version_id: str, ctx: Context) -> DiscardDraftResponse:
@@ -263,6 +291,33 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
         `discarded=false` rather than raising.
         """
         return tool_discard_draft(project_id, version_id, ctx, allow_env_token=allow_env_token)
+
+    @mcp.tool()
+    def update_project(
+        project_id: str,
+        version_id: str,
+        ctx: Context,
+        locked: bool | None = None,
+        make_active: bool | None = None,
+    ) -> ProjectDetail:
+        """Patch version metadata for REST parity.
+
+        Current shipped fields are `locked` and `make_active`; project/version
+        naming is not accepted by the underlying REST service.
+        """
+        return tool_update_project(
+            project_id,
+            version_id,
+            ctx,
+            allow_env_token=allow_env_token,
+            locked=locked,
+            make_active=make_active,
+        )
+
+    @mcp.tool()
+    def diff_versions(project_id: str, from_version_id: str, to: str, ctx: Context) -> ProjectDiffResponse:
+        """Return per-table changed paths for a version-vs-version or version-vs-draft diff."""
+        return tool_diff_versions(project_id, from_version_id, to, ctx, allow_env_token=allow_env_token)
 
     @mcp.tool()
     def list_envelope_assemblies(
