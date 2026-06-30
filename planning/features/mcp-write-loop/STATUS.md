@@ -1,8 +1,8 @@
 # MCP Write-Loop — Status
 
 DATE: 2026-06-30
-TIME: 17:48 EDT
-STATUS: Active — Phases 1–3 implemented on `codex/mcp-write-loop`; Phase 4 next.
+TIME: 18:00 EDT
+STATUS: Active — Phases 1–4 implemented and verified on `codex/mcp-write-loop`; final archive/closeout next.
 AUTHOR: Claude (Opus 4.8) with Ed May; updated by Codex
 
 ## Current state
@@ -30,7 +30,7 @@ Decisions accepted (PRD §3). **Phase 1 is implemented on branch
   handshake, read-before-replace rule, payload shapes, and command-vs-replace
   guidance.
 
-**Phase 3 is implemented locally on the same branch:**
+**Phase 3 is implemented on the same branch:**
 
 - MCP `save_draft_as` wraps the existing Save As service and is the
   locked-version escape hatch.
@@ -42,14 +42,24 @@ Decisions accepted (PRD §3). **Phase 1 is implemented on branch
 - `context/mcp.md` documents the Phase 3 tools, scopes, save-as lifecycle role,
   and `update_project` field limitation.
 
-`llm-mcp-schema.md` and `save-versioning.md` still carry stale JSON-Patch
-contract language; Phase 4 owns that reconciliation.
+**Phase 4 is implemented and verified on the same branch:**
+
+- `context/mcp.md` is the canonical live MCP contract and includes a
+  CI-guarded registered tool inventory.
+- `tests/test_mcp.py` compares the actual MCP `list_tools()` result to the
+  `context/mcp.md` inventory, so undocumented tool drift fails CI.
+- `llm-mcp-schema.md` is demoted to historical planning intent for its original
+  tool list and no longer lists `update_document` / JSON-Patch writes.
+- `save-versioning.md` now describes typed service writes and whole-table
+  `replace_table_slice` instead of stale JSON-Patch draft sync.
+- `build_mcp_server(instructions=...)` and `scripts/smoke_mcp_read.py` now
+  describe/enforce the full live tool surface; the smoke has an opt-in write
+  round trip.
 
 ## Next step
 
-Start **Phase 4 — docs truth + discoverability**
-(`phases/phase-04-docs-discoverability.md`): reconcile stale MCP/schema docs,
-add drift guard coverage, and harden discovery/smoke guidance.
+Run final closeout: graph update, archive the feature packet, and commit the
+completed MCP write-loop branch.
 
 ## Phase map
 
@@ -57,8 +67,8 @@ add drift guard coverage, and harden discovery/smoke guidance.
 |---|---|---|---|
 | 1 | Draft commit/discard | P0 | **Implemented on branch** — `save_draft`, `discard_draft`; `context/mcp.md` skeleton; CLAUDE.md MCP row |
 | 2 | Generic table writes | P0 | **Implemented on branch** — `replace_table` wraps `replace_table_slice`; `preview_replace_table`; no MCP-side rejection |
-| 3 | Lifecycle & read parity | P1 | **Implemented locally** — `save_draft_as`, `update_project` (`locked`/`make_active`), `diff_versions` |
-| 4 | Docs truth + discoverability | P1 | reconcile `llm-mcp-schema.md` + `save-versioning.md`; tool-set drift guard; smoke hardening; `instructions=` polish |
+| 3 | Lifecycle & read parity | P1 | **Implemented on branch** — `save_draft_as`, `update_project` (`locked`/`make_active`), `diff_versions` |
+| 4 | Docs truth + discoverability | P1 | **Implemented on branch** — canonical `context/mcp.md`; tool-set drift guard; smoke hardening; stale contract reconciliation; `instructions=` polish |
 
 Phases 1 and 2 are the functional write loop; 3 rounds out parity; 4 is the
 cross-cutting doc/discoverability hardening (but per the standing requirement,
@@ -107,9 +117,15 @@ evidence in PRD §2 and §5). No open blockers remain for Phases 1–2.
   - `make format`
   - `make ci` — backend 1254 passed / 2 skipped; frontend 215 test files / 1985
     tests passed; production build completed.
-- New backend tests per remaining phase (tool inventory drift guard and docs
-  reconciliation).
+- Phase 4 focused checks passed:
+  - `cd backend && uv run ruff check features/mcp/server.py tests/test_mcp.py scripts/smoke_mcp_read.py`
+  - `cd backend && uv run ty check features/mcp/server.py tests/test_mcp.py scripts/smoke_mcp_read.py`
+  - `cd backend && uv run pytest tests/test_mcp.py` — 27 passed.
+  - `cd backend && uv run python -m py_compile scripts/smoke_mcp_read.py`
+- Phase 4 closeout gate passed:
+  - `make format`
+  - `make ci` — backend 1254 passed / 2 skipped; frontend 215 test files / 1985
+    tests passed; production build completed.
 - `make ci` green at each phase closeout.
-- `context/mcp.md` drift guard test (Phase 4).
 - Optional isolated browser/MCP smoke per `planning/features/.instructions.md`
   ("Isolated Smoke When The Dev Stack Is Busy") — do not take over Ed's ports.

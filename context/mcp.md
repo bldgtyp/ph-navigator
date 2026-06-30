@@ -68,6 +68,74 @@ Recoverability values:
 | `delete_project`, `restore_project`, `hard_delete_project` | `project:write` |
 | HBJSON model/file tools | project access; write tools require write scope |
 
+## Registered Tool Names
+
+This block is CI-guarded. Every registered MCP tool must appear here exactly
+once, and every name here must be registered by `build_mcp_server`.
+
+<!-- mcp-tool-inventory:start -->
+- `add_custom_field`
+- `apply_aperture_command`
+- `apply_envelope_command`
+- `bulk_attach`
+- `bulk_detach`
+- `calculate_aperture_u_values`
+- `change_custom_field_type`
+- `create_hbjson_file`
+- `delete_custom_field`
+- `delete_hbjson_file`
+- `delete_project`
+- `diff_versions`
+- `discard_draft`
+- `duplicate_custom_field`
+- `edit_custom_field_options`
+- `get_aperture_type`
+- `get_aperture_window_constructions`
+- `get_asset_url`
+- `get_climate_location`
+- `get_document`
+- `get_hbjson_file_download_url`
+- `get_hbjson_model_data`
+- `get_job`
+- `get_project`
+- `get_project_location`
+- `get_project_sun_path`
+- `get_table`
+- `hard_delete_project`
+- `list_aperture_types`
+- `list_assets`
+- `list_climate_datasets`
+- `list_envelope_assemblies`
+- `list_hbjson_faces`
+- `list_hbjson_files`
+- `list_hbjson_hot_water_systems`
+- `list_hbjson_shading_elements`
+- `list_hbjson_spaces`
+- `list_hbjson_ventilation_systems`
+- `list_project_climate_sources`
+- `list_project_materials`
+- `list_projects`
+- `list_status_items`
+- `list_versions`
+- `preview_replace_table`
+- `query_unfinished_envelope_work`
+- `rename_custom_field`
+- `rename_hbjson_file`
+- `replace_table`
+- `report_aperture_catalog_drift`
+- `report_material_catalog_drift`
+- `report_missing_envelope_evidence`
+- `resolve_asset_urls`
+- `restore_project`
+- `save_draft`
+- `save_draft_as`
+- `search_climate_locations`
+- `set_custom_field_description`
+- `set_custom_field_formula`
+- `start_bulk_download`
+- `update_project`
+<!-- mcp-tool-inventory:end -->
+
 ## Tool Inventory
 
 ### Project And Version Reads

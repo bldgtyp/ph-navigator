@@ -37,7 +37,7 @@ unlocked version.
 
 | Operation | Effect |
 |---|---|
-| **Edit** | Mutates frontend in-memory document. Patch ops sync to server-side draft buffer (debounced, ~500ms). Version body untouched. |
+| **Edit** | Mutates frontend in-memory document. Accepted browser/MCP writes sync to the server-side draft buffer. Version body untouched. |
 | **Save** | Flush draft to active version body. Lock check: locked → 409 with Save-As suggestion. Clear draft. |
 | **Save As** | Create new `project_versions` row from draft body; set as active version. User supplies name. Clear draft. |
 | **Discard changes** | Drop draft, reload version body. Confirm dialog. |
@@ -110,8 +110,9 @@ Properties:
   same version each have their own draft (rare in practice; single-user
   expectation per §4). Browser edits and MCP edits issued by the same
   editor token share the same draft for the same version.
-- Frontend and MCP post JSON-Patch ops → backend applies to the draft
-  body. Server is authoritative.
+- Frontend and MCP write through table replacement, semantic command tools,
+  custom-field schema mutations, or other typed service boundaries. The backend
+  applies accepted writes to the draft body and is authoritative.
 - Drafts are **not** versions: they don't appear in version lists or
   the diff `from`/`to` selectors.
 - Save: server reads draft body → writes to version body in one
@@ -119,6 +120,9 @@ Properties:
 - Save As: server reads draft body → INSERTs new version → deletes
   draft.
 - Discard: deletes draft.
+- MCP counterparts are `replace_table` for whole-table draft writes,
+  semantic command/custom-field tools for structured draft writes,
+  `save_draft`, `save_draft_as`, and `discard_draft`.
 - Stale-draft GC: drafts untouched for >30 days are deleted by a
   scheduled job. (User is warned on reopen if a draft is older than
   N days; configurable.)
@@ -128,10 +132,11 @@ Properties:
 - Opening a project does not create a draft row. The first accepted
   mutation creates the draft lazily from the saved version body and
   records `base_version_etag`.
-- Table/entity JSON-Patch operations must be guarded with stable-id
-  `test` ops before mutating array positions. Unguarded array mutation
-  is rejected with `unguarded_array_patch`. MCP helpers should prefer
-  higher-level table/row tools that generate safe patches.
+- Whole-table replacement uses `PUT /draft/tables/{name}` and the shared
+  `replace_table_slice` service. Browser and MCP callers send the complete
+  table payload or row envelope, guarded by `If-Match` / `draft_etag` after a
+  draft exists and `If-Match-Version` / `base_version_etag` for first draft
+  creation. Stale etags return 409 and preserve the draft.
 - **Immediate draft validation for field-config writes and schema
   mutations.** Cell writes (built-in and custom) and
   `FieldSchemaMutation` ops (see `data-table.md` "Write Pipeline" and
@@ -224,7 +229,7 @@ Implementation:
   with a retryable "couldn't open target version" toast.
 - **Whole-draft ETag for table replacement.** `replace_table` is not
   table-scoped concurrency in v1. It consumes and bumps the same
-  `draft_etag` as JSON-Patch. If two clients replace unrelated tables
+  `draft_etag` as other accepted draft writes. If two clients replace unrelated tables
   from the same base ETag, the first wins and the second receives 409.
   The loser must refetch and retry intentionally.
 - Locked versions reject draft patch and Save with `409 version_locked`.
