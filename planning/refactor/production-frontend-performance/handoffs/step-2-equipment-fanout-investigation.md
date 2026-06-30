@@ -54,33 +54,47 @@ It is a request-count / round-trip concern, not a render concern.
 > page **does not fetch**. So the 7 per-table data calls are not redundant with
 > anything already loaded. The real question is below.
 
-**Could one `GET …/document` (whole doc, `ProjectDocumentV1`) replace the 7
-`…/draft/tables/<type>` reads by slicing client-side — or do the per-table
-endpoints earn their keep?**
+**Each `…/draft/tables/<type>` read re-assembles the whole draft server-side
+(`get_draft_table_slice` → `get_current_document_view` →
+`load_current_document_parts`) and returns one table. The data is co-located, so
+the 7 reads waste round-trips *and* whole-draft loads. What is the safe way to
+collapse them — and what must stay per-table?**
 
-Two possibilities, opposite fixes:
+Two things this step must hold separate:
 
-1. **The per-table data fetches could be collapsed into `…/document`** — fetch
-   the whole document once and slice each table's rows out of it on the
-   frontend, instead of issuing 7 per-type GETs. → Removes ~7 requests per
-   equipment load (and likely helps `spaces`/`apertures`, which share the same
-   slice machinery). **Caveat:** this couples the read path to the document
-   shape and away from the per-table mutation/cache-invalidation path, so verify
-   the editor can still bind/mutate correctly (see `table-slice.ts`).
+1. **What could be collapsed (the initial-mount fan-out).** The 7 GETs that fire
+   when the page mounts could be replaced by **one batch/whole-*draft* read** that
+   seeds each table's cache. → Removes ~6 round-trips + 6 redundant whole-draft
+   server loads per mount (and helps `spaces`/`apertures`, which share the slice
+   machinery). **The target is a new draft batch read, NOT `GET …/document`** —
+   `…/document` returns the *saved* version (`ProjectDocumentV1`), which diverges
+   from the draft once there are unsaved edits; there is no whole-*draft* GET
+   today.
 
-2. **The per-table endpoints are load-bearing** — `table-slice.ts` keys fetch,
-   preview-replace, custom-field mutation, and cache invalidation per
-   `tableName`, so the per-table endpoints look like deliberate editor plumbing
-   (the leading hypothesis). → Then the data calls stay, and the **7
-   `table-views` calls** (pure per-table view/column config) are the better
-   target: a single batch endpoint returning all requested view configs.
+2. **What is load-bearing and must NOT regress.** PR #18
+   (`equipment-draft-etag-coordination`, merged 2026-06-29) made the per-table
+   cache split deliberate: all tables share one document-level draft etag; a
+   write to any table invalidates every *other* table's cached slice
+   (`applyAcceptedSlice` → `invalidateProjectDocumentEditorTableSlices`); and
+   `resolveSliceForWrite` (`useSliceTableController.ts`) refetches a table fresh
+   before its write so `If-Match` carries the current etag. That is the fix for
+   "edit table A, navigate to B, B's edit is blocked," covered by
+   `frontend/tests/e2e/.../table-draft-etag-coordination.spec.ts`. **A collapse
+   may only remove the initial-mount fan-out via batch-seed; it must keep the
+   per-table query + refetch-before-write machinery intact**, and that e2e spec
+   is a hard regression gate.
 
-**Independent of which world we are in:** the 7 `…/table-views/<type>` calls are
-pure per-(user, project, table) `view_state` JSON and are cleanly batchable. That
-is the lowest-risk win and does not depend on resolving the data-path question —
-see the dedicated refactor write-up referenced in the deliverable section.
+Because this sits directly on the etag protocol the team just fixed, it is a
+larger, riskier change than the table-views batch — **the table-views batch
+(below) should land first.**
 
-Determine which world we are in **before** proposing a change to the data path.
+**Orthogonal, zero-coordination-risk win:** the 7 `…/table-views/<type>` calls
+are pure per-(user, project, table) `view_state` JSON, unrelated to the draft
+etag, and cleanly batchable — already written up and planned at
+`planning/refactor/batch-table-views-endpoint/`. Reference it; do not re-derive.
+
+Confirm the load-bearing vs. wasteful split above **before** proposing any
+data-path change.
 
 ## Where to look (concrete anchors)
 
@@ -99,32 +113,36 @@ Frontend:
   query lives (find the draft-document query hook and what shape it returns).
 
 Backend:
-- `backend/features/project_document/routes.py` — note the three relevant GETs
-  and what each returns: `GET …/document` → `ProjectDocumentV1` (whole doc, all
-  tables; **not fetched** by the equipment page), `GET …/draft` →
-  `ProjectDraftSummary` (status/metadata only, no rows — this is the `…/draft`
-  call the page *does* make), and `GET …/draft/tables/{table_name}` →
-  `RegisteredTableResponse` (single table). Compare `…/document` vs the per-table
-  responses — that is the data-path comparison that matters.
+- `backend/features/project_document/routes.py` + `store.py` — note the GETs and
+  what each returns: `GET …/document` → `ProjectDocumentV1` (whole **saved**
+  doc; **not fetched** by the equipment page, and *not* the collapse target —
+  saved ≠ draft), `GET …/draft` → `ProjectDraftSummary` (status/metadata only,
+  no rows — this is the `…/draft` call the page *does* make), and
+  `GET …/draft/tables/{table_name}` → `RegisteredTableResponse` (single table,
+  but `store.get_draft_table_slice` loads the **whole draft** to produce it).
+  There is **no** whole-*draft* read endpoint today — adding one (or a batch
+  draft-tables read) is what a collapse would introduce.
 - `backend/features/table_views/routes.py` +
   `backend/features/table_views/service.py` — what a table-view actually is and
   whether it is per-table by nature or batchable.
 
 ## What to determine and report
 
-1. Does `GET …/document` (`ProjectDocumentV1`) contain the same table rows the
-   `…/draft/tables/<type>` calls return, in a shape the editor could bind to?
-   Quote both response shapes. (Do **not** compare against `…/draft` — that is
-   the summary and has no rows.)
-2. If `…/document` could serve the read path: is there any reason the editor
-   cannot bind to the document-embedded rows (mutation/cache-invalidation
-   coupling, row identity, draft-vs-saved divergence, etc.)?
-3. What is a `table-view` and is it inherently per-table, or could one request
-   return many? (Check the service + repository, not just the route. Note: the
-   batch case is already written up — see the deliverable section.)
-4. Recommend: (a) collapse data reads into `…/document`, (b) batch `table-views`
-   endpoint, (c) leave as-is with justification. Include rough effort and blast
-   radius (how many other pages share `createTableSliceFeature`).
+1. Can a new batch/whole-*draft* read reproduce each table's per-table
+   `RegisteredTableResponse` exactly (row identity, custom-field schema,
+   document-level etags) so seeded caches are indistinguishable from per-table
+   fetches? Quote `get_draft_table_slice` / `contract.build_response` and a
+   batch loop over the one already-loaded draft body.
+2. Does the batch-seed design preserve PR #18's etag coordination end to end —
+   per-table cache entries kept, invalidate-others on write kept, and
+   `resolveSliceForWrite` still refetching a **single** table (not the batch)
+   before a write? `table-draft-etag-coordination.spec.ts` must stay green.
+3. Server cost: confirm a whole-draft read does ONE document load+validate vs
+   the current 7, and measure.
+4. Recommend: (a) batch-seed the draft reads (keeping the #18 protocol),
+   (b) leave the data path as-is with justification. Include rough effort and
+   blast radius (how many pages share `createTableSliceFeature`). The
+   `table-views` batch is already decided and planned separately.
 
 ## Constraints / project rules
 

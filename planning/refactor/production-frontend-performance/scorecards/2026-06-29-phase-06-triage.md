@@ -78,22 +78,36 @@ the whole document with every table is `GET …/document` → `ProjectDocumentV1
 the captured request set). So the per-table data calls are not redundant with
 anything currently loaded — they are the page's only source of table rows.
 
-Open question before any change, restated correctly: **could one
-`GET …/document` (whole doc, `ProjectDocumentV1`) replace the 7
-`…/draft/tables/<type>` calls by slicing client-side — or do the per-table
-endpoints earn their keep?** The leading hypothesis is the latter:
-`table-slice.ts` keys fetch / preview-replace / custom-field mutation /
-cache-invalidation per `tableName`, so the per-table endpoints look like
-deliberate editor plumbing, not accidental fan-out. That answer decides the fix:
+Data-path question, restated correctly (full write-up + phased plan at
+`planning/refactor/batch-draft-table-reads/`): the 7
+`…/draft/tables/<type>` reads each re-assemble and re-validate the **whole
+draft** server-side (`get_draft_table_slice` → `get_current_document_view` →
+`load_current_document_parts`) and return one table. So the data is co-located;
+the fan-out wastes 6 round-trips *and* 6 whole-draft loads per mount.
 
-- If `…/document` could serve the read path → fetch it once and slice in the
-  frontend, dropping the 7 data calls. Frontend-only, but couples read and
-  mutation cache shapes — needs care.
-- Independent of that question, the 7 `…/table-views/<type>` calls are pure
-  per-table view/column config (`view_state` JSON, per user+project+table) and
-  are cleanly batchable: a single `GET …/table-views?keys=…` returning all
-  requested configs collapses 7 round-trips into 1. This is the lowest-risk win
-  and does not depend on resolving the data-path question.
+The collapse target is **not** `GET …/document` — that returns the **saved**
+version (`ProjectDocumentV1`), which diverges from the draft once there are
+unsaved edits, and there is no whole-*draft* GET today. A collapse needs a new
+batch/whole-draft **draft** read that seeds the per-table caches on mount.
+
+Crucially, the per-table split is **partly load-bearing and must not regress**:
+PR #18 (`equipment-draft-etag-coordination`, merged 2026-06-29) established that
+all tables share one document-level draft etag, a write to any table invalidates
+every other table's cached slice, and `resolveSliceForWrite` refetches a table
+fresh before its write so `If-Match` carries the current etag. That protocol
+(per-table cache entries + invalidate-others + refetch-before-write) is the fix
+for the "edit table A, go to B, B's edit is blocked" bug and is covered by
+`table-draft-etag-coordination.spec.ts`. A collapse may only remove the
+**initial-mount fan-out** (via batch-seed); it must keep the per-table query +
+refetch machinery intact. That makes it a larger, riskier change than the
+table-views batch — **defer it behind the table-views batch.**
+
+Independent of all the above, the 7 `…/table-views/<type>` calls are pure
+per-table view/column config (`view_state` JSON, per user+project+table),
+**orthogonal to the draft etag protocol**, and cleanly batchable: a single
+`GET …/table-views?keys=…` collapses 7 round-trips into 1 with no coordination
+risk. This is the lowest-risk win — written up and planned at
+`planning/refactor/batch-table-views-endpoint/`.
 
 Low user impact today (no long tasks, 37 KB), so this is not urgent.
 
