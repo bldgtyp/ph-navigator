@@ -552,7 +552,7 @@
 .model-camera-cluster {
   position: absolute;
   right: 14px;
-  bottom: 14px;
+  top: 14px;
   z-index: var(--z-base-elevated);
   display: flex;
   flex-direction: column;
