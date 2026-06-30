@@ -1,5 +1,16 @@
 {
   "mcpServers": {
+    "phn-local": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/Users/em/Dropbox/bldgtyp-00/00_PH_Tools/ph-navigator-v2/backend",
+        "run",
+        "python",
+        "-m",
+        "scripts.mcp_agent_stdio"
+      ]
+    },
     "playwright": {
       "command": "npx",
       "args": ["-y", "@playwright/mcp@latest"]

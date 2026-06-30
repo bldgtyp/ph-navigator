@@ -78,6 +78,29 @@ Commands: `make smoke` (orient in an unfamiliar state), `make ci` (full local CI
 mirror), `make format`, `make frontend-dev-check` (fast frontend-only gate),
 `make help` (everything else).
 
+## Agent MCP workflow
+
+PH-Navigator registers a local stdio MCP server for agents in `.mcp.json` and
+`.codex/config.toml` as `phn-local`. It runs
+`backend/scripts/mcp_agent_stdio.py`, which auto-seeds the local `AGENT-BROWSER`
+fixture and auto-issues a local project-scoped token when `PHN_MCP_TOKEN` is not
+already set. Agents should not ask Ed to run token scripts for local dev work.
+
+Use PHN MCP when a task needs live app/document data, table inspection, project
+metadata, asset lookup, or draft write flows. Start with `list_projects`,
+`get_project`, and `get_document`/`get_table`; for writes, use the latest etag
+and finish with `save_draft` or `discard_draft`. Prefer semantic write tools
+where they exist; use `replace_table` only for whole-table browser-parity
+updates. Never commit or print plaintext `phn_mcp_...` tokens.
+
+If `phn-local` is unavailable, run the local services yourself (`make dev`; for
+browser work also run `make backend` / `make frontend`) and retry the MCP check.
+For HTTP-client smoke or manual config debugging, `make seed-agent-mcp` and
+`make smoke-mcp-local` are available, but the default agent path is the
+project-registered stdio MCP server. MCP does not replace rendered UI checks:
+use Playwright/browser verification for DOM, layout, interaction, auth, and
+visual state.
+
 ## Planning
 
 Tracked planning lives under `planning/` — read `planning/.instructions.md`

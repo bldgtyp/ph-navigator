@@ -33,7 +33,17 @@ current document/table, write with the latest etag, then call `save_draft` or
 
 ## Local One-Time Setup
 
-Start local services:
+Agents do not need Ed to run token scripts. Project config registers a local
+stdio MCP server that auto-issues its own local fixture token when needed:
+
+- Codex: `.codex/config.toml` registers `phn_local`.
+- Claude: `.mcp.json` registers `phn-local`.
+- Launcher: `backend/scripts/mcp_agent_stdio.py`.
+
+The launcher is local-dev only because it uses the same guarded fixture seeder
+as `make seed-agent-browser`.
+
+When debugging manually, start local services:
 
 ```bash
 make dev
@@ -68,9 +78,25 @@ uv run python -m scripts.smoke_mcp_read --token "$PHN_MCP_TOKEN" --write-round-t
 ## Codex Config
 
 Codex reads MCP servers from `~/.codex/config.toml`, or from trusted project
-config at `.codex/config.toml`.
+config at `.codex/config.toml`. This repo already includes:
 
-Recommended local HTTP config:
+```toml
+[mcp_servers.phn_local]
+command = "uv"
+args = [
+  "--directory",
+  "/Users/em/Dropbox/bldgtyp-00/00_PH_Tools/ph-navigator-v2/backend",
+  "run",
+  "python",
+  "-m",
+  "scripts.mcp_agent_stdio",
+]
+startup_timeout_sec = 30
+tool_timeout_sec = 120
+enabled = true
+```
+
+Optional local HTTP config for manual debugging:
 
 ```toml
 [mcp_servers.phn_local]
@@ -81,7 +107,8 @@ tool_timeout_sec = 120
 enabled = true
 ```
 
-Alternative local stdio config:
+Alternative local stdio config if you want to use a pre-issued token instead of
+the auto-token launcher:
 
 ```toml
 [mcp_servers.phn_local_stdio]
@@ -112,7 +139,10 @@ Check active servers in Codex with `/mcp`.
 Claude Code can use local, user, or project MCP config. For this repo, prefer
 local or user scope for PHN MCP tokens so secrets are not checked in.
 
-Local HTTP:
+This repo's `.mcp.json` already registers the no-secret local stdio launcher as
+`phn-local`.
+
+Optional local HTTP:
 
 ```bash
 claude mcp add --transport http --scope local phn-local http://localhost:8000/mcp/ \

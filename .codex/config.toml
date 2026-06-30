@@ -1,0 +1,14 @@
+[mcp_servers.phn_local]
+command = "uv"
+args = [
+  "--directory",
+  "/Users/em/Dropbox/bldgtyp-00/00_PH_Tools/ph-navigator-v2/backend",
+  "run",
+  "python",
+  "-m",
+  "scripts.mcp_agent_stdio",
+]
+startup_timeout_sec = 30
+tool_timeout_sec = 120
+enabled = true
+
