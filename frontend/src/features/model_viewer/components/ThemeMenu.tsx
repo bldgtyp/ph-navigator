@@ -27,7 +27,7 @@ export function ThemeMenu({ lens, theme }: { lens: ModelViewerLens; theme: Model
         onClick={() => setOpen((current) => !current)}
       >
         <Palette size={14} aria-hidden />
-        <span>Color: {themeLabel(theme)}</span>
+        <span>{themeLabel(theme)}</span>
         <ChevronDown size={14} aria-hidden />
       </button>
       {open ? (
@@ -36,6 +36,7 @@ export function ThemeMenu({ lens, theme }: { lens: ModelViewerLens; theme: Model
             <button
               key={option.id}
               type="button"
+              className="model-theme-menu-option"
               role="menuitemcheckbox"
               aria-checked={theme === option.id}
               onClick={() => {
