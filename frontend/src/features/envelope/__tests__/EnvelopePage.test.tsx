@@ -1404,6 +1404,15 @@ describe("EnvelopePage", () => {
     ).not.toBeInTheDocument();
     expect(within(dialog).queryByText("Project material")).not.toBeInTheDocument();
     expect(within(dialog).queryByText("Shared material values")).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("region", { name: "Material attributes" })).toBeInTheDocument();
+    expect(within(dialog).getByText("Conductivity")).toBeInTheDocument();
+    expect(within(dialog).getByText("0.038 W/(m-K)")).toBeInTheDocument();
+    expect(within(dialog).getByText("160 kg/m3")).toBeInTheDocument();
+    expect(within(dialog).getByText("2100 J/(kg-K)")).toBeInTheDocument();
+    expect(within(dialog).getByText("#dce6c8")).toBeInTheDocument();
+    expect(
+      within(dialog).getByText("Steel stud parameters").closest("details"),
+    ).not.toHaveAttribute("open");
     expect(within(dialog).getByRole("button", { name: "Apply" })).toHaveClass("primary-button");
 
     await userEvent.click(within(dialog).getByRole("combobox", { name: "Project material" }));
@@ -1429,6 +1438,24 @@ describe("EnvelopePage", () => {
         command: expect.objectContaining({ kind: "hand_enter_material" }),
       }),
     );
+  });
+
+  test("segment modal opens steel stud parameters when the segment uses steel studs", async () => {
+    renderEnvelope(`/projects/${PROJECT_ID}/envelope/assemblies/asm_wall_c3`);
+
+    await screen.findByRole("link", { name: /WALL-C3/ });
+    await userEvent.click(
+      screen.getByRole("button", { name: "Edit No material segment in layer 2" }),
+    );
+
+    const dialog = await screen.findByRole("dialog", { name: "Segment properties" });
+    expect(
+      within(dialog).getByRole("group", { name: "Steel stud parameters" }),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByRole("textbox", { name: "Stud spacing (mm)" })).toHaveValue("406.4");
+    expect(within(dialog).queryByText("Steel stud parameters")?.closest("details")).toBeNull();
+    expect(within(dialog).getByRole("region", { name: "Material attributes" })).toBeInTheDocument();
+    expect(within(dialog).getAllByText("No material").length).toBeGreaterThan(0);
   });
 
   test("locked editor version loads saved source and keeps edit action disabled", async () => {
@@ -1691,6 +1718,12 @@ describe("EnvelopePage", () => {
 
     const detail = await screen.findByRole("dialog", { name: "Segment details" });
     expect(within(detail).getByText("Wood fiber board")).toBeInTheDocument();
+    expect(within(detail).getByRole("region", { name: "Material attributes" })).toBeInTheDocument();
+    expect(within(detail).getByText("Conductivity")).toBeInTheDocument();
+    expect(within(detail).getByText("0.038 W/(m-K)")).toBeInTheDocument();
+    expect(within(detail).getByText("160 kg/m3")).toBeInTheDocument();
+    expect(within(detail).getByText("2100 J/(kg-K)")).toBeInTheDocument();
+    expect(within(detail).getByText("#dce6c8")).toBeInTheDocument();
     expect(within(detail).getByText("Width")).toBeInTheDocument();
     // It is the read-only inspect, not the editor: no material picker or delete.
     expect(screen.queryByRole("dialog", { name: "Segment properties" })).not.toBeInTheDocument();
