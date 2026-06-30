@@ -304,14 +304,14 @@
 }
 
 .model-measure-hint {
-  bottom: 18px;
+  bottom: 62px;
 }
 
 /* Dev-only perf harness readout (Phase 00). Mounted only when the debug hook is
    enabled, so this never appears in production builds. */
 .model-perf-overlay {
   position: absolute;
-  bottom: 14px;
+  bottom: 58px;
   left: 14px;
   z-index: var(--z-base-elevated);
   display: grid;
@@ -346,7 +346,7 @@
 }
 
 .model-site-sun-hint {
-  bottom: 18px;
+  bottom: 62px;
   color: var(--text-muted);
 }
 
@@ -391,7 +391,7 @@
 
 .model-lens-bar {
   position: absolute;
-  top: 14px;
+  bottom: 14px;
   left: 50%;
   z-index: calc(var(--z-base-elevated) + 2);
   display: inline-flex;
@@ -457,7 +457,7 @@
 
 .model-theme-menu-list {
   position: absolute;
-  top: calc(100% + 7px);
+  bottom: calc(100% + 12px);
   right: 0;
   z-index: calc(var(--z-base-elevated) + 3);
   display: grid;
