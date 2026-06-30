@@ -152,7 +152,7 @@ Gate: `make frontend-dev-check` + the e2e coordination spec green.
    bug (#18) must not reappear.
 4. `make ci` full lane green.
 
-## Phase 4 — Closeout
+## Phase 4 — Closeout — ✅ DONE (packet archived; merge/deploy user-gated)
 
 1. `simplify` then `docs-pass` skills on the diff.
 2. `make format`; if it changes files, re-inspect and re-run `make ci`.

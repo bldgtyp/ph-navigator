@@ -35,7 +35,7 @@ Impact = how many users feel it x how much. Effort = implementation + risk.
 | # | Finding | Layer | Impact | Effort | Recommendation |
 |---|---|---|---|---|---|
 | 1 | Static assets served `cache-control: max-age=0` | Infra/config | Low-Med (every repeat visit pays revalidation; fonts ~53 KB refetch) | **Low** (config-only) | **Do it** — best ratio in the packet |
-| 2 | `equipment` fans out to 14 type-scoped GETs (7 draft-tables + 7 table-views) | API/data | Low (37 KB, 0 long tasks; felt only on slow links) | Med (needs investigation first) | **table-views half ✅ DONE (merged to main); draft-tables half open** |
+| 2 | `equipment` fans out to 14 type-scoped GETs (7 draft-tables + 7 table-views) | API/data | Low (37 KB, 0 long tasks; felt only on slow links) | Med (needs investigation first) | **✅ DONE — both halves: table-views (merged to main) + draft-tables (verified on branch `refactor/batch-draft-table-reads`)** |
 | 3 | `climate` LCP 1.9 s (Leaflet map tile) | FE/render | Low (one route; map is the point of the page) | Med-High | **Document as expected**; optional polish |
 | 4 | Per-route JS chunk weight (status 103 KB, spaces 178 KB, equipment 200 KB transfer) | FE/payload | Low (loads still < 0.32 s) | Med | **Watch only** — no action now |
 
@@ -78,8 +78,8 @@ the whole document with every table is `GET …/document` → `ProjectDocumentV1
 the captured request set). So the per-table data calls are not redundant with
 anything currently loaded — they are the page's only source of table rows.
 
-Data-path question, restated correctly (full write-up + phased plan at
-`planning/refactor/batch-draft-table-reads/`): the 7
+Data-path question, restated correctly (full write-up + phased plan, now
+archived, at `planning/archive/dated/2026-06-29/batch-draft-table-reads/`): the 7
 `…/draft/tables/<type>` reads each re-assemble and re-validate the **whole
 draft** server-side (`get_draft_table_slice` → `get_current_document_view` →
 `load_current_document_parts`) and return one table. So the data is co-located;
@@ -109,16 +109,25 @@ per-table view/column config (`view_state` JSON, per user+project+table),
 risk. This is the lowest-risk win — written up and planned at
 `planning/archive/dated/2026-06-29/batch-table-views-endpoint/`.
 
-> **✅ DONE (2026-06-29) — table-views half (merged to main).** Backend batch
-> route `GET /api/v1/projects/{id}/table-views?keys=…` + a frontend page-scoped
-> batch read-through wired into the equipment page (its 7 `table-views` reads
-> collapse to 1). `make ci` green; the 7→1 collapse is unit-test-proven. An
-> optional post-merge confirmation (empirical perf re-run, `equipment` 19 → ~13,
-> production fixture) is noted in the archived packet's
-> `phases/phase-03-verification.md`. **The draft-tables half of this finding
-> remains open** under `planning/refactor/batch-draft-table-reads/`.
+> **✅ DONE (2026-06-29) — both halves.**
+> - *table-views half (merged to main):* backend batch route
+>   `GET /api/v1/projects/{id}/table-views?keys=…` + a frontend page-scoped
+>   batch read-through; the equipment page's 7 `table-views` reads collapse to 1.
+>   Archived `planning/archive/dated/2026-06-29/batch-table-views-endpoint/`.
+> - *draft-tables half (verified on branch `refactor/batch-draft-table-reads`):*
+>   backend batch route `GET …/versions/{id}/draft/tables?names=…` (one
+>   whole-draft load, byte-identical per-table entries) + a frontend
+>   `useDraftTablesBatchSeed` that seeds the per-table editor caches; the 7
+>   `…/draft/tables/<type>` reads collapse to 1 with **zero** per-table GETs
+>   (live-verified) and one whole-draft server load per request. PR #18
+>   (draft-etag coordination) preserved — `table-draft-etag-coordination.spec.ts`
+>   green unmodified. `make ci` green. Archived
+>   `planning/archive/dated/2026-06-29/batch-draft-table-reads/`.
+>
+> For both halves the production read-only perf matrix (absolute `API#` on the
+> Render fixture) is user-gated; the local captures already prove the collapse.
 
-Low user impact today (no long tasks, 37 KB), so this is not urgent.
+Low user impact today (no long tasks, 37 KB), so this was not urgent.
 
 ### Finding 3 — climate map LCP (EXPECTED — accepted, closed)
 

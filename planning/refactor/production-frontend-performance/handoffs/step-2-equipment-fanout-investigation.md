@@ -1,8 +1,11 @@
 ---
 DATE: 2026-06-29
 TIME: 20:40 EDT
-STATUS: Investigation brief — not started. Reading task; no code change expected
-  in this step.
+STATUS: CLOSED (2026-06-29) — investigation done; both fan-out halves shipped/verified.
+  table-views batch merged to main; draft-tables batch verified on branch
+  `refactor/batch-draft-table-reads`
+  (archived `planning/archive/dated/2026-06-29/batch-draft-table-reads/`).
+  Equipment now issues 1 batch per surface instead of 7+7 per-table GETs.
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Handoff for investigating the equipment page's API fan-out flagged in the
   Phase 04 production perf scorecard.
