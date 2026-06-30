@@ -14,10 +14,7 @@ vi.mock("../api", () => ({
 
 // Imported after the mock so the provider + hook capture the mocked functions.
 import * as api from "../api";
-import {
-  ProjectTableViewsBatchProvider,
-  useProjectTableViewsBatchValue,
-} from "../batchContext";
+import { ProjectTableViewsBatchProvider, useProjectTableViewsBatchValue } from "../batchContext";
 import { useProjectTableViewState } from "../hooks";
 import type { TableViewResponse } from "../types";
 

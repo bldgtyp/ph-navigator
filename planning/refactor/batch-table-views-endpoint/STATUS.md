@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 21:05 EDT
-STATUS: In progress — Phase 0–2 done (backend + frontend landed), Phase 3 next
+STATUS: In progress — Phase 0–3 done (CI green); Phase 4 closeout next
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Status ledger for the batch table-views read refactor.
 RELATED:
@@ -11,9 +11,9 @@ RELATED:
 
 # Status — Batch `table-views` read
 
-**State:** `In progress` — Phases 0 (pre-flight), 1 (backend), and 2 (frontend)
-complete on branch `refactor/batch-table-views-endpoint`. Phase 3
-(verification) next.
+**State:** `In progress` — Phases 0 (pre-flight), 1 (backend), 2 (frontend),
+and 3 (verification) complete on branch `refactor/batch-table-views-endpoint`.
+Phase 4 (closeout) next.
 
 ## Current state
 
@@ -42,12 +42,19 @@ complete on branch `refactor/batch-table-views-endpoint`. Phase 3
   heat-pumps) are intentionally left on the per-table fallback — deferred
   follow-up, each a one-line `ProjectTableViewsBatchProvider` wrap.
 
+- **Phase 3 DONE** — automated gates green: full `make ci` passes (backend
+  1227 passed/2 skipped incl. 8 new batch tests; frontend 1980 passed incl. 5
+  new read-through tests; production build ok). The 7→1 win is unit-test-proven
+  (a covered key issues 0 per-table GETs). The empirical production perf re-run
+  and the manual browser smoke are **user-gated residual steps** (production
+  fixture + credentials) — hand-off commands are in
+  `phases/phase-03-verification.md` Findings.
+
 ## Next step
 
-Phase 3 (verification): re-run the read-only production perf matrix (confirm
-`equipment` API# drops ~19 → ~13), manual view-state smoke on the equipment
-page (reorder/resize/hide persists, no default-flash, reset clears), and a full
-`make ci`.
+Phase 4 (closeout): `make format`, fold the result into the parent triage card
+(Finding 2 — table-views half done), record the endpoint contract in `context/`
+if warranted, and archive this packet to `planning/archive/2026-06-29/`.
 
 ## Blockers / open decisions
 
