@@ -82,9 +82,11 @@ mirror), `make format`, `make frontend-dev-check` (fast frontend-only gate),
 
 PH-Navigator registers a local stdio MCP server for agents in `.mcp.json` and
 `.codex/config.toml` as `phn-local`. It runs
-`backend/scripts/mcp_agent_stdio.py`, which auto-seeds the local `AGENT-BROWSER`
-fixture and auto-issues a local project-scoped token when `PHN_MCP_TOKEN` is not
-already set. Agents should not ask Ed to run token scripts for local dev work.
+`backend/scripts/mcp_agent_stdio.py`, which reuses the gitignored
+`backend/.agent-mcp-token.json` local token file, and only auto-seeds the local
+`AGENT-BROWSER` fixture / issues a fresh local token when that file is missing
+or stale after a DB reset. Agents should not ask Ed to run token scripts for
+local dev work.
 
 Use PHN MCP when a task needs live app/document data, table inspection, project
 metadata, asset lookup, or draft write flows. Start with `list_projects`,
@@ -97,9 +99,11 @@ If `phn-local` is unavailable, run the local services yourself (`make dev`; for
 browser work also run `make backend` / `make frontend`) and retry the MCP check.
 For HTTP-client smoke or manual config debugging, `make seed-agent-mcp` and
 `make smoke-mcp-local` are available, but the default agent path is the
-project-registered stdio MCP server. MCP does not replace rendered UI checks:
-use Playwright/browser verification for DOM, layout, interaction, auth, and
-visual state.
+project-registered stdio MCP server. Production/Render MCP tokens are real
+infrastructure credentials: never auto-mint or store them in committed config;
+use an explicitly provided `PHN_MCP_TOKEN` or user-local MCP config. MCP does
+not replace rendered UI checks: use Playwright/browser verification for DOM,
+layout, interaction, auth, and visual state.
 
 ## Planning
 

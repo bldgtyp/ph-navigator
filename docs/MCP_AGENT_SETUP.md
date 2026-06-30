@@ -12,8 +12,9 @@ PH-Navigator exposes its app MCP server from the FastAPI backend:
 - Production Streamable HTTP: `https://api.ph-nav.com/mcp`
 - Local stdio wrapper: `cd backend && uv run python -m scripts.mcp_stdio`
 
-The repo-local `.mcp.json` is for Claude/Playwright browser tooling only. It
-does not configure PH-Navigator's own MCP server.
+The repo-local `.mcp.json` registers both PH-Navigator local MCP and Playwright
+browser tooling. Codex uses `.codex/config.toml` for the same PHN local MCP
+registration.
 
 ## Token Model
 
@@ -34,11 +35,14 @@ current document/table, write with the latest etag, then call `save_draft` or
 ## Local One-Time Setup
 
 Agents do not need Ed to run token scripts. Project config registers a local
-stdio MCP server that auto-issues its own local fixture token when needed:
+stdio MCP server that reuses a durable gitignored local token file and only
+issues a new local fixture token when the stored token is missing or invalid:
 
 - Codex: `.codex/config.toml` registers `phn_local`.
 - Claude: `.mcp.json` registers `phn-local`.
 - Launcher: `backend/scripts/mcp_agent_stdio.py`.
+- Local token store: `backend/.agent-mcp-token.json` (gitignored, chmod `600`
+  when the platform allows it).
 
 The launcher is local-dev only because it uses the same guarded fixture seeder
 as `make seed-agent-browser`.
@@ -121,7 +125,7 @@ tool_timeout_sec = 120
 enabled = true
 ```
 
-Production HTTP config:
+Production/Render HTTP config:
 
 ```toml
 [mcp_servers.phn_prod]
@@ -177,6 +181,24 @@ Inside Claude Code, run:
 /mcp
 ```
 
+## Durable Token Policy
+
+Local dev is intentionally durable and zero-touch: `phn-local` stores a token in
+`backend/.agent-mcp-token.json`, reuses it across Codex/Claude sessions, and
+replaces it automatically after a local DB reset or token revocation.
+
+Production/Render is intentionally explicit. Production tokens are real
+credentials against `https://api.ph-nav.com/mcp`; do not put them in committed
+repo config or checked-in `.env` examples. Use one of these local-only patterns:
+
+- Codex user config: `~/.codex/config.toml` with `bearer_token_env_var =
+  "PHN_MCP_TOKEN"` and a shell/launch environment that provides the token.
+- Claude local/user config: `claude mcp add --scope local ... -H
+  "Authorization: Bearer $PHN_MCP_TOKEN"` after the token is present in the
+  local environment.
+- Browser-issued token: Project Settings -> MCP tokens, then store it in a
+  password manager or local shell environment outside the repo.
+
 ## Browser Token Issuance
 
 For a real project token, sign in as an editor, open Project Settings, and use
@@ -203,7 +225,8 @@ Example payload:
 
 - Use local tokens for local development and production tokens only for
   deliberate production inspection.
-- Never commit plaintext `phn_mcp_...` tokens.
+- Never commit plaintext `phn_mcp_...` tokens or generated
+  `backend/.agent-mcp-token.json`.
 - Revoke stale tokens from Project Settings.
 - For agent refactors, ask the agent to start with `list_projects`,
   `get_project`, and `get_document` before write tools.

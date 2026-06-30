@@ -36,6 +36,7 @@ frontend/.vite/
 *.log
 *.sqlite
 *.sqlite3
+backend/.agent-mcp-token.json
 
 # ─── Playwright / browser test artifacts ───
 .playwright-mcp/
