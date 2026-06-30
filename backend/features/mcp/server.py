@@ -72,6 +72,7 @@ from features.mcp.tools import (
     tool_list_projects,
     tool_list_status_items,
     tool_list_versions,
+    tool_preview_replace_table,
     tool_query_unfinished_envelope_work,
     tool_rename_custom_field,
     tool_rename_hbjson_file,
@@ -87,6 +88,7 @@ from features.mcp.tools import (
     tool_start_bulk_download,
 )
 from features.project_document.models import DiscardDraftResponse, SaveDraftResponse
+from features.project_document.tables.contracts import TableReplacePreviewResponse
 
 __all__ = ["build_mcp_server", "mcp"]
 
@@ -514,16 +516,44 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
         version_id: str,
         table_name: str,
         ctx: Context,
-        rows: list[dict[str, object]] | None = None,
+        rows: object | None = None,
         draft_etag: str | None = None,
         base_version_etag: str | None = None,
     ) -> dict[str, object]:
-        """Reject write attempts until TB-17 ships MCP draft writes.
+        """Replace one registered table in the token owner's draft.
 
-        The write-contract arguments are accepted now to keep the tool signature
-        aligned with the planned TB-17 client contract.
+        This is a whole-table write. Read first, submit the full intended row
+        set or full table payload, then call `save_draft` to persist. For
+        structural envelope/aperture edits, prefer the semantic command tools;
+        this lower-level primitive mirrors the browser table PUT.
         """
         return tool_replace_table(
+            project_id,
+            version_id,
+            table_name,
+            ctx,
+            allow_env_token=allow_env_token,
+            rows=rows,
+            draft_etag=draft_etag,
+            base_version_etag=base_version_etag,
+        )
+
+    @mcp.tool()
+    def preview_replace_table(
+        project_id: str,
+        version_id: str,
+        table_name: str,
+        ctx: Context,
+        rows: object | None = None,
+        draft_etag: str | None = None,
+        base_version_etag: str | None = None,
+    ) -> TableReplacePreviewResponse:
+        """Dry-run a whole-table replace and report dependent-link cascades.
+
+        Use before destructive `replace_table` calls. The preview validates the
+        same payload and etags but does not persist a draft.
+        """
+        return tool_preview_replace_table(
             project_id,
             version_id,
             table_name,

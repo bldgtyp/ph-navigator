@@ -31,6 +31,7 @@ from features.mcp.tools_documents import (
     tool_discard_draft,
     tool_get_document,
     tool_get_table,
+    tool_preview_replace_table,
     tool_replace_table,
     tool_save_draft,
 )
@@ -106,6 +107,7 @@ __all__ = [
     "tool_list_projects",
     "tool_list_status_items",
     "tool_list_versions",
+    "tool_preview_replace_table",
     "tool_query_unfinished_envelope_work",
     "tool_rename_custom_field",
     "tool_rename_hbjson_file",
