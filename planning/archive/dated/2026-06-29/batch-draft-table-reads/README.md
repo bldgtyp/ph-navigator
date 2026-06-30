@@ -1,8 +1,9 @@
 ---
 DATE: 2026-06-29
 TIME: 21:20 EDT
-STATUS: Active — proposed refactor, planned, not started. Prerequisite
-  (table-views batch) now SHIPPED; this is the remaining, higher-risk half.
+STATUS: COMPLETE / ARCHIVED — all phases (0–4) done + verified; make ci green.
+  Implemented on branch `refactor/batch-draft-table-reads`. Prerequisite
+  (table-views batch) SHIPPED.
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Collapse the per-table `…/draft/tables/<type>` initial-mount fan-out into
   one batch/whole-draft read that seeds per-table caches, WITHOUT regressing the

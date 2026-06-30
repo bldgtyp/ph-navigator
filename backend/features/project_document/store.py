@@ -6,7 +6,7 @@ import json
 from dataclasses import dataclass
 from datetime import datetime
 from time import perf_counter
-from typing import Any, NoReturn
+from typing import TYPE_CHECKING, Any, NoReturn, cast
 from uuid import UUID
 
 import structlog
@@ -25,6 +25,7 @@ from features.project_document.models import (
     ProjectDraftSummary,
 )
 from features.project_document.tables import get_table_contract, iter_table_contracts
+from features.project_document.tables.batch import BatchDraftTablesResponse
 from features.project_document.validation import (
     JsonValue,
     document_etag,
@@ -37,6 +38,11 @@ from features.project_document.validation import (
 )
 from features.projects.access import ProjectAccess, require_editor_user
 from features.shared.errors import api_error
+
+if TYPE_CHECKING:
+    # Type-only: `build_response` is `-> BaseModel`; the cast in
+    # `get_draft_tables_batch` narrows the dict to the response union.
+    from features.project_document.tables import RegisteredTableResponse
 
 log = structlog.get_logger(__name__)
 
@@ -202,6 +208,38 @@ def get_draft_table_slice(version_id: UUID, table_name: str, access: ProjectAcce
         document.draft_etag,
         document.body,
     )
+
+
+def get_draft_tables_batch(version_id: UUID, table_names: list[str], access: ProjectAccess) -> BatchDraftTablesResponse:
+    """Return many draft tables from a single whole-draft load.
+
+    Collapses the per-table fan-out: where N `get_draft_table_slice` calls each
+    load+validate the whole draft, this loads it **once** and loops the pure
+    `build_response` over that one view, so each entry is byte-identical to
+    `GET …/draft/tables/<name>`. Unknown names 404 before any load (nothing
+    partial); an invalid draft 422s — matching the per-table read exactly.
+    """
+
+    # De-duplicate while preserving request order so the response keys are
+    # stable and each table is built once.
+    unique_names = list(dict.fromkeys(table_names))
+    contracts = [(name, get_table_contract(name)) for name in unique_names]
+    document = get_current_document_view(version_id, access)
+    tables: dict[str, BaseModel] = {
+        name: contract.build_response(
+            access.project_id,
+            version_id,
+            document.source,
+            document.version_etag,
+            document.draft_etag,
+            document.body,
+        )
+        for name, contract in contracts
+    }
+    # `build_response` is typed `-> BaseModel`; each value is in fact a
+    # `RegisteredTableResponse` union member (the per-table route returns it as
+    # `Any` for the same reason). Pydantic validates the union at construction.
+    return BatchDraftTablesResponse(tables=cast("dict[str, RegisteredTableResponse]", tables))
 
 
 def dirty_tables(version_body: ProjectDocumentV1, draft_body: ProjectDocumentV1) -> list[str]:

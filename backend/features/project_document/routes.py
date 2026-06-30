@@ -29,6 +29,7 @@ from features.project_document.service import (
     discard_draft,
     get_draft_summary_or_read_safe,
     get_draft_table_slice,
+    get_draft_tables_batch,
     get_project_diff,
     get_raw_saved_document,
     get_saved_document_or_read_safe,
@@ -42,6 +43,7 @@ from features.project_document.service import (
 )
 from features.project_document.tables import RegisteredTableResponse
 from features.project_document.tables.apertures import AperturesSliceResponse
+from features.project_document.tables.batch import BatchDraftTablesResponse
 from features.project_document.tables.contracts import TableReplacePreviewResponse
 from features.projects.access import (
     ProjectAccess,
@@ -60,6 +62,11 @@ router = APIRouter(
 ProjectViewAccess = Annotated[ProjectAccess, Depends(require_project_view_access)]
 ProjectEditAccess = Annotated[ProjectAccess, Depends(require_project_edit_access)]
 
+# Upper bound on the batch read so the requested-name list is never unbounded;
+# comfortably above any page's table count (equipment mounts 7). Mirrors the
+# table-views batch's `MAX_BATCH_TABLE_KEYS`.
+MAX_BATCH_TABLE_NAMES = 64
+
 
 @router.get("/document", response_model=ProjectDocumentV1 | ProjectDocumentReadSafeEnvelope)
 def get_document(
@@ -77,6 +84,20 @@ def get_saved_table(
     access: ProjectViewAccess,
 ) -> Any:
     return get_saved_table_slice(version_id, table_name, access)
+
+
+# Declared before `/draft/tables/{table_name}` so the collection read is never
+# shadowed by the item route. Collapses the per-table draft fan-out (one GET per
+# table, each loading the whole draft) into one whole-draft load that builds
+# every requested table. The per-table GET/PUT/POST routes below are untouched —
+# the write path and un-seeded mounts still use them.
+@router.get("/draft/tables", response_model=BatchDraftTablesResponse)
+def get_draft_tables_batch_route(
+    version_id: UUID,
+    access: ProjectEditAccess,
+    names: Annotated[list[str], Query(min_length=1, max_length=MAX_BATCH_TABLE_NAMES)],
+) -> BatchDraftTablesResponse:
+    return get_draft_tables_batch(version_id, names, access)
 
 
 @router.get("/draft/tables/{table_name}", response_model=RegisteredTableResponse)
