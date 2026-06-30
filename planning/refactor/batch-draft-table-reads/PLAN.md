@@ -139,7 +139,7 @@ collapse is additive seeding around them.
 
 Gate: `make frontend-dev-check` + the e2e coordination spec green.
 
-## Phase 3 — Verification
+## Phase 3 — Verification — ✅ DONE (production perf matrix user-gated)
 
 1. Re-run the read-only production perf matrix. Confirm `equipment` draft-tables
    GETs drop from 7 → 1 (route API# falls to ~13 with table-views still

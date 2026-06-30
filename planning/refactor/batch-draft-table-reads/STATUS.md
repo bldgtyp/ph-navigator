@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 21:20 EDT
-STATUS: Active — Phases 0–2 COMPLETE (backend endpoint + equipment frontend seed; e2e gate green); Phase 3 (verification) next
+STATUS: Active — Phases 0–3 COMPLETE (collapse + #18 verified, make ci green); Phase 4 (closeout) next
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Status ledger for the draft-tables batch-seed read refactor.
 RELATED:
@@ -12,11 +12,12 @@ RELATED:
 
 # Status — Batch-seed draft-tables read
 
-**State:** `Active` — **Phases 0–2 complete**. The prerequisite
-`batch-table-views-endpoint` has **shipped** (archived). Phase 0 (design lock +
-seeding de-risk), Phase 1 (backend batch endpoint + tests), and Phase 2
-(equipment frontend batch-seed; e2e coordination gate green) are done; Phase 3
-(verification — perf re-run + server load-count + `make ci`) is next.
+**State:** `Active` — **Phases 0–3 complete**. The prerequisite
+`batch-table-views-endpoint` has **shipped** (archived). Phase 0 (design lock),
+Phase 1 (backend endpoint + tests), Phase 2 (equipment frontend seed), and
+Phase 3 (verification: e2e green, 7→1 collapse + one-load both confirmed
+locally, `make ci` green) are done; Phase 4 (closeout + fold-back) is next. The
+production read-only perf matrix is user-gated.
 
 ## Current state
 
@@ -31,12 +32,11 @@ seeding de-risk), Phase 1 (backend batch endpoint + tests), and Phase 2
 
 ## Next step
 
-Phases 0–2 done. Backend batch endpoint + equipment frontend seed shipped; the
-e2e coordination spec is green and unit tests prove zero per-table GETs after
-seeding. Start **Phase 3 (verification)**: re-run the read-only perf matrix
-(confirm equipment draft-tables GETs drop 7 → 1), confirm one whole-draft server
-load per mount via logs, manual editor smoke (equipment/spaces/thermal-bridges),
-and `make ci` full lane green.
+Phases 0–3 done. The collapse (7 → 1 draft-table reads, one whole-draft server
+load), PR #18 behavior, and `make ci` are all verified. Start **Phase 4
+(closeout)**: fold the result into the parent triage card Finding 2, close the
+equipment-fanout investigation handoff, optionally record the batch read in
+`context/`, and archive this packet.
 
 ## Blockers / open decisions
 
