@@ -580,7 +580,6 @@
 .model-scene-info-root {
   position: absolute;
   left: 14px;
-  bottom: 14px;
   z-index: var(--z-base-elevated);
   display: inline-flex;
   align-items: center;
@@ -588,11 +587,16 @@
 }
 
 .model-legend-card {
+  top: 60px;
   width: min(280px, calc(100% - 28px));
   border: 1px solid var(--border-card);
   border-radius: var(--radius-md);
   background: color-mix(in oklab, var(--bg-card) 92%, transparent);
   box-shadow: var(--shadow-hud-2);
+}
+
+.model-scene-info-root {
+  bottom: 14px;
 }
 
 .model-legend-titlebar {
@@ -714,6 +718,11 @@
   border-radius: var(--radius-md);
   background: var(--bg-card);
   box-shadow: var(--shadow-hud-3);
+}
+
+.model-legend-card .model-scene-info-popover {
+  top: calc(100% + 8px);
+  bottom: auto;
 }
 
 .model-scene-info-popover h4,
