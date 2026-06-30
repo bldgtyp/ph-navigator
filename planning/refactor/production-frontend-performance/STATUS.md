@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 18:56 EDT
-STATUS: Implemented locally through Phase 03 setup path; production run held.
+STATUS: Phases 02-04 + 06 complete; triage recorded. Phase 05 write-path still held. Open work = 3 follow-ups (assets cache headers, equipment fan-out investigation, document climate map).
 AUTHOR: Codex
 SCOPE: Current state and handoff for production frontend performance testing.
 RELATED:
@@ -33,11 +33,27 @@ Completed:
 - Production fixture command documented in `backend/scripts/README.md`.
 - Focused backend tests added in `backend/tests/test_seed_perf_stress_fixture.py`.
 
+- Phase 02 public anonymous baseline captured 2026-06-29; scorecard at
+  `scorecards/2026-06-29-phase-02-public-baseline.md`. Headline: cold LCP
+  764 ms / warm 104 ms, zero long tasks; all content-hashed static assets are
+  served `cache-control: max-age=0`, so fonts (~53 KB) re-download on warm
+  navigation — first Phase 06 candidate.
+- Production fixture command password path now generates a strong password at
+  run time and prints it once (`_resolve_production_password`), matching the
+  Phase 00 decision; covered by `backend/tests/test_seed_perf_stress_fixture.py`.
+
+- Phase 03 fixture run executed 2026-06-29 in the `ph-navigator-api` Render
+  Shell; `codex@testing.com` / `PERF-STRESS` seeded and reset-in-place.
+- Phase 04 authenticated read-only matrix captured 2026-06-29; scorecard at
+  `scorecards/2026-06-29-phase-04-authenticated-readonly.md`. 10/10 routes
+  passed in 48.1s, zero long tasks; outliers: climate LCP 1.9s (Leaflet map
+  tile) and equipment 19 API requests (per-type table + table-views fan-out).
+
 Not done:
 
-- Production fixture command has not been run.
-- Authenticated production performance matrix has not been run.
-- Production write-path timing remains held.
+- Phase 05 production write-path timing remains held (separate explicit
+  approval required).
+- Phase 06 triage/budget decisions not yet made.
 
 ## Evidence Reviewed
 
@@ -71,6 +87,10 @@ Not done:
 - Use a dedicated production `testing` account with seeded fixture project data
   as the target for authenticated production performance runs.
 - Production testing email: `codex@testing.com`.
+- Production testing password: generated at run time, shown once, never stored
+  in the repo.
+- First-run metrics: browser-side timing only; Render correlation deferred.
+- First-run cache coverage: both cold-cache and warm-cache, recorded separately.
 - Fixture project name / BT number: `PERF-STRESS`.
 - Fixture size: 250 rows per seeded table for the first production pass. If the
   fixture implementation keeps separate `table_rows` and `equipment_rows`
@@ -134,47 +154,57 @@ Not needed:
 
 ## Open Questions
 
-- What password should be assigned to `codex@testing.com` when the production
-  setup command is run?
-- Is browser-side timing enough for the first production scorecard, or should
-  Render metrics/logs be correlated from the start?
-- Should the first run be cold-cache only, warm-cache only, or both?
+All three launch-blocking questions are resolved (Ed, 2026-06-29):
+
+- Password for `codex@testing.com`: generate a strong random password at run
+  time, print it once, never store it in the repo. Ed retains it out of band.
+- First scorecard metrics: browser-side timing only. Defer Render API
+  correlation unless a route looks API-bound. No Render dashboard access needed
+  for the first pass.
+- Cache state: record both cold-cache and warm-cache separately.
 
 ## Next Step
 
-The next live action is fixture setup, not the performance run. When Ed approves
-live setup, run the guarded fixture command in the production API environment:
+Baselines and triage are done (see Phase 06 scorecard). The packet's remaining
+work is three concrete follow-ups, each its own small change — not more
+measurement runs.
+
+## Next Actions (from Phase 06 triage)
+
+1. **DONE (pending deploy):** `/assets/*` immutable cache headers added to
+   `render.prod.yaml` + `render.yaml`, committed on branch
+   `perf/asset-immutable-cache-headers` (`6a1cd939`); `main` not yet merged.
+   Before deploy, validate with `render blueprints validate ./render.prod.yaml`
+   and confirm Cloudflare isn't overriding `Cache-Control`. After deploy,
+   re-run the Phase 02 public capture to confirm fonts no longer refetch warm.
+2. **IN PROGRESS:** equipment fan-out investigation handed off to another agent;
+   brief at `handoffs/step-2-equipment-fanout-investigation.md`. Open question:
+   do the per-table `draft/tables/<type>` fetches duplicate the already-fetched
+   full `…/draft` document? Decide frontend-dedupe vs batch `table-views`
+   endpoint from the finding.
+3. **CLOSED:** climate map LCP (~1.9 s) accepted as expected behavior (external
+   Leaflet tile), no action — Ed, 2026-06-29. See Phase 06 triage Finding 3.
+
+Re-run / re-measure helpers (fixture already seeded,
+`PERF_PROJECT_ID = ce77af67-8994-4174-89d6-a59e3bd6189e`, password in Ed's
+manager + session scratchpad):
 
 ```bash
-cd backend
-uv run python -m scripts.seed_perf_stress_fixture \
-  --confirm-production \
-  --email codex@testing.com \
-  --table-rows 250 \
-  --equipment-rows 250
+# Authenticated read-only matrix (password from scratchpad file, not inline)
+cd frontend
+E2E_BASE_URL=https://www.ph-nav.com E2E_API_BASE_URL=https://api.ph-nav.com \
+E2E_EMAIL=codex@testing.com E2E_PASSWORD="$(cat <scratchpad>/perf_pw)" \
+PERF_PROJECT_ID=ce77af67-8994-4174-89d6-a59e3bd6189e \
+PHN_PERF=1 PHN_PERF_PRODUCTION=1 PHN_PERF_READONLY=1 \
+pnpm exec playwright test tests/e2e/perf/perf-matrix.spec.ts --reporter=line
 ```
-
-Use the printed `PERF_PROJECT_ID` for Phase 04. Hold the actual authenticated
-performance run until explicitly approved.
-
-## Next Actions
-
-1. Choose or generate the runtime-only password for `codex@testing.com`.
-2. Run the guarded production fixture setup command above from the production
-   API environment.
-3. Record the printed `PERF_PROJECT_ID` here:
-   - `PERF_PROJECT_ID`: TBD
-4. Confirm whether to run the read-only production matrix.
-5. If approved, run Phase 04 with `PHN_PERF_PRODUCTION=1` and
-   `PHN_PERF_READONLY=1`.
-6. Write the first production scorecard under this refactor packet.
 
 Do not run:
 
 - `make e2e-perf` against production.
 - The production matrix without `PHN_PERF_PRODUCTION=1`.
-- Fixture writes outside `codex@testing.com` / `PERF-STRESS`.
-- Write-path timing without a separate explicit approval.
+- Fixture re-seed/writes outside `codex@testing.com` / `PERF-STRESS`.
+- Write-path timing (Phase 05) without a separate explicit approval.
 
 ## Verification So Far
 

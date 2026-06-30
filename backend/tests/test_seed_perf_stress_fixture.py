@@ -56,3 +56,20 @@ def test_production_fixture_guard_restricts_account_and_project(monkeypatch: pyt
 
     with pytest.raises(SystemExit, match="PERF-STRESS"):
         perf_fixture._assert_production_fixture_allowed(confirm_production=True, bt_number="OTHER")
+
+
+def test_resolve_production_password_uses_supplied_value_unmarked() -> None:
+    password, generated = perf_fixture._resolve_production_password("explicit-secret")
+
+    assert password == "explicit-secret"
+    assert generated is False
+
+
+def test_resolve_production_password_generates_strong_value_when_absent() -> None:
+    password, generated = perf_fixture._resolve_production_password(None)
+
+    assert generated is True
+    assert len(password) >= 24
+    # A freshly generated password must not collide with another generation.
+    other, _ = perf_fixture._resolve_production_password(None)
+    assert password != other

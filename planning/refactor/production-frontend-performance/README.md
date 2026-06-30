@@ -69,11 +69,11 @@ Production changes the constraints:
 |---|---|---|
 | 00 - Credentials and access | Decision recorded | `codex@testing.com`, `PERF-STRESS`, 250-row reset-in-place fixture, Climate/Envelope/Apertures included, Model excluded |
 | 01 - Production harness guards | Implemented locally | `perf-matrix` can target production only with explicit env flags and read-only mode |
-| 02 - Public anonymous baseline | Planned | Scorecard rows for public shell/readiness/static asset timing |
+| 02 - Public anonymous baseline | Captured 2026-06-29 | `scorecards/2026-06-29-phase-02-public-baseline.md`; cold LCP 764ms / warm 104ms, 0 long tasks; finding: hashed assets served `max-age=0` |
 | 03 - Production fixture setup | Implemented locally | Production-safe one-off creates/resets the `PERF-STRESS` fixture for `codex@testing.com` |
-| 04 - Authenticated fixture baseline | Planned | Full route matrix against the seeded fixture, read-only first |
+| 04 - Authenticated fixture baseline | Captured 2026-06-29 | `scorecards/2026-06-29-phase-04-authenticated-readonly.md`; 10/10 routes, 0 long tasks, loads ~0.24-0.32s; outliers: climate LCP 1.9s (map tile), equipment 19 API calls (per-type fan-out) |
 | 05 - Optional fixture write baseline | Deferred pending run decision | Table-edit scorecard isolated to `PERF-STRESS` only |
-| 06 - Triage and budget decisions | Planned | Ranked findings and decision on whether any metric becomes a gate |
+| 06 - Triage and budget decisions | Recorded 2026-06-29 | `scorecards/2026-06-29-phase-06-triage.md`; app healthy, no gate yet; top fix = `/assets/*` immutable cache headers; investigate equipment fan-out; climate map = expected |
 
 ## Current Handoff
 
