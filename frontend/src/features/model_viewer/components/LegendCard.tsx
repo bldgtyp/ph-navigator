@@ -4,10 +4,12 @@ import { formatProjectDateTime } from "../../../shared/lib/dates";
 import { isModelViewerDebugHookEnabled } from "../lib/debugHook";
 import { useModelViewerPopoverEscape } from "../lib/events";
 import { useModelViewerPerfStore } from "../lib/perf";
+import { hasThemeMenu } from "../lib/themeState";
 import { legendForModel } from "../lib/themes";
 import type { BuildingModel } from "../loaders/building";
 import { useModelViewerStore } from "../store";
 import type { HbjsonFile, LoadSummary, ModelViewerLegend, ModelViewerTheme } from "../types";
+import { ThemeMenu } from "./ThemeMenu";
 
 const LEGEND_COLLAPSED_KEY = "phn:model-viewer:legend-collapsed";
 
@@ -33,11 +35,19 @@ export function LegendCard({ model, activeFile, loadSummary }: LegendCardProps) 
 
   if (!legend) {
     return (
-      <div className="model-scene-info-root">
-        <InfoButton open={infoOpen} onClick={() => setInfoOpen((current) => !current)} />
-        <PerfToggleButton />
-        {infoOpen ? <SceneInfoPopover activeFile={activeFile} loadSummary={loadSummary} /> : null}
-      </div>
+      <>
+        {hasThemeMenu(lens) ? (
+          <div className="model-view-options-card" aria-label="Model color options">
+            <div className="model-view-options-title">Color</div>
+            <ThemeMenu lens={lens} theme={theme} />
+          </div>
+        ) : null}
+        <div className="model-scene-info-root">
+          <InfoButton open={infoOpen} onClick={() => setInfoOpen((current) => !current)} />
+          <PerfToggleButton />
+          {infoOpen ? <SceneInfoPopover activeFile={activeFile} loadSummary={loadSummary} /> : null}
+        </div>
+      </>
     );
   }
 
@@ -58,6 +68,7 @@ export function LegendCard({ model, activeFile, loadSummary }: LegendCardProps) 
             {legend.kind === "mini-key" ? <small>Key</small> : null}
           </div>
           <div className="model-legend-title-actions">
+            {hasThemeMenu(lens) ? <ThemeMenu lens={lens} theme={theme} /> : null}
             {legendFilter?.theme === theme ? (
               <button
                 type="button"
