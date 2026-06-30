@@ -44,6 +44,8 @@ from features.mcp.tools import (
     tool_delete_custom_field,
     tool_delete_hbjson_file,
     tool_delete_project,
+    tool_diff_versions,
+    tool_discard_draft,
     tool_duplicate_custom_field,
     tool_edit_custom_field_options,
     tool_get_asset_url,
@@ -71,6 +73,7 @@ from features.mcp.tools import (
     tool_list_projects,
     tool_list_status_items,
     tool_list_versions,
+    tool_preview_replace_table,
     tool_query_unfinished_envelope_work,
     tool_rename_custom_field,
     tool_rename_hbjson_file,
@@ -79,11 +82,17 @@ from features.mcp.tools import (
     tool_report_missing_envelope_evidence,
     tool_resolve_asset_urls,
     tool_restore_project,
+    tool_save_draft,
+    tool_save_draft_as,
     tool_search_climate_locations,
     tool_set_custom_field_description,
     tool_set_custom_field_formula,
     tool_start_bulk_download,
+    tool_update_project,
 )
+from features.project_document.models import DiscardDraftResponse, ProjectDiffResponse, SaveDraftResponse
+from features.project_document.tables.contracts import TableReplacePreviewResponse
+from features.projects.models import ProjectDetail, VersionKind
 
 __all__ = ["build_mcp_server", "mcp"]
 
@@ -92,7 +101,16 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
     """Create the MCP tool server used by HTTP and stdio transports."""
     mcp = FastMCP(
         "PH-Navigator",
-        instructions="Project-scoped PH-Navigator tools. All tokens are scoped to one project.",
+        instructions=(
+            "Project-scoped PH-Navigator tools. Tokens are scoped to one project; "
+            "read tools require project:read and write tools require project:write. "
+            "Document writes land in the issuing editor's draft, never directly in "
+            "the saved version: read current data first, write with the latest "
+            "version/draft etag, then call save_draft to persist or discard_draft "
+            "to drop unsaved work. Use semantic command tools for envelope and "
+            "aperture structure; use replace_table for whole-table browser-parity "
+            "table replacement. save_draft_as is the locked-version escape hatch."
+        ),
         json_response=True,
         streamable_http_path="/",
         stateless_http=True,
@@ -228,6 +246,82 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
         list under `rows`.
         """
         return tool_get_table(project_id, version_id, table_name, ctx, allow_env_token=allow_env_token)
+
+    @mcp.tool()
+    def save_draft(
+        project_id: str,
+        version_id: str,
+        ctx: Context,
+        if_match: str | None = None,
+    ) -> SaveDraftResponse:
+        """Commit the token owner's current draft to the active version.
+
+        Mutating MCP tools write into a draft first. Pass the version_body_etag
+        seen when the draft was opened as `if_match`; stale or locked versions
+        return a structured refreshable error. If the version is locked, use
+        `save_draft_as` to create an unlocked copy instead.
+        """
+        return tool_save_draft(project_id, version_id, ctx, allow_env_token=allow_env_token, if_match=if_match)
+
+    @mcp.tool()
+    def save_draft_as(
+        project_id: str,
+        version_id: str,
+        name: str,
+        ctx: Context,
+        kind: VersionKind = "working",
+        locked: bool = False,
+    ) -> SaveDraftResponse:
+        """Create a new active version from the token owner's draft or saved body.
+
+        This is the locked-version escape hatch: source versions may be locked,
+        and submitted/closed target versions are auto-locked by the service.
+        """
+        return tool_save_draft_as(
+            project_id,
+            version_id,
+            name,
+            ctx,
+            allow_env_token=allow_env_token,
+            kind=kind,
+            locked=locked,
+        )
+
+    @mcp.tool()
+    def discard_draft(project_id: str, version_id: str, ctx: Context) -> DiscardDraftResponse:
+        """Drop the token owner's unsaved draft changes.
+
+        Discard is safe to call when no draft exists; the response reports
+        `discarded=false` rather than raising.
+        """
+        return tool_discard_draft(project_id, version_id, ctx, allow_env_token=allow_env_token)
+
+    @mcp.tool()
+    def update_project(
+        project_id: str,
+        version_id: str,
+        ctx: Context,
+        locked: bool | None = None,
+        make_active: bool | None = None,
+    ) -> ProjectDetail:
+        """Patch version metadata for REST parity.
+
+        Current shipped fields are `locked` and `make_active`; project/version
+        naming is not accepted by the underlying REST service.
+        """
+        return tool_update_project(
+            project_id,
+            version_id,
+            ctx,
+            allow_env_token=allow_env_token,
+            locked=locked,
+            make_active=make_active,
+        )
+
+    @mcp.tool()
+    def diff_versions(project_id: str, from_version_id: str, to: str, ctx: Context) -> ProjectDiffResponse:
+        """Return per-table changed paths for a version-vs-version or version-vs-draft diff."""
+        return tool_diff_versions(project_id, from_version_id, to, ctx, allow_env_token=allow_env_token)
 
     @mcp.tool()
     def list_envelope_assemblies(
@@ -481,16 +575,44 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
         version_id: str,
         table_name: str,
         ctx: Context,
-        rows: list[dict[str, object]] | None = None,
+        rows: object | None = None,
         draft_etag: str | None = None,
         base_version_etag: str | None = None,
     ) -> dict[str, object]:
-        """Reject write attempts until TB-17 ships MCP draft writes.
+        """Replace one registered table in the token owner's draft.
 
-        The write-contract arguments are accepted now to keep the tool signature
-        aligned with the planned TB-17 client contract.
+        This is a whole-table write. Read first, submit the full intended row
+        set or full table payload, then call `save_draft` to persist. For
+        structural envelope/aperture edits, prefer the semantic command tools;
+        this lower-level primitive mirrors the browser table PUT.
         """
         return tool_replace_table(
+            project_id,
+            version_id,
+            table_name,
+            ctx,
+            allow_env_token=allow_env_token,
+            rows=rows,
+            draft_etag=draft_etag,
+            base_version_etag=base_version_etag,
+        )
+
+    @mcp.tool()
+    def preview_replace_table(
+        project_id: str,
+        version_id: str,
+        table_name: str,
+        ctx: Context,
+        rows: object | None = None,
+        draft_etag: str | None = None,
+        base_version_etag: str | None = None,
+    ) -> TableReplacePreviewResponse:
+        """Dry-run a whole-table replace and report dependent-link cascades.
+
+        Use before destructive `replace_table` calls. The preview validates the
+        same payload and etags but does not persist a draft.
+        """
+        return tool_preview_replace_table(
             project_id,
             version_id,
             table_name,

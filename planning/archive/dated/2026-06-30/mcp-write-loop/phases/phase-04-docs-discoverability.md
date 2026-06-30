@@ -1,9 +1,9 @@
 # Phase 4 — Docs truth + discoverability hardening
 
 DATE: 2026-06-30
-STATUS: Proposed. P1. The cross-tool contract reconciliation + the guard that
-        keeps the docs honest going forward. Do this once the tool surface from
-        Phases 1–3 has settled (so the reconciled docs describe the final shape).
+STATUS: Complete on branch `codex/mcp-write-loop`; phase closeout gate passed.
+        P1. The cross-tool contract reconciliation + the guard that keeps the
+        docs honest going forward.
 
 GOAL: The MCP surface drifted from its spec because tools shipped without doc
       updates. Land the canonical doc, reconcile the stale contracts, and add a
@@ -66,3 +66,31 @@ Per `planning/.instructions.md` rule #4, fold these accepted decisions into
 (`planning/code-reviews/2026-06-30/mcp-review.md`) status pointer to reference
 this feature folder. When the feature completes, archive per the feature
 contract and leave one line in `planning/archive/README.md`.
+
+## Completion evidence
+
+Implemented 2026-06-30:
+
+- `context/mcp.md` now includes a CI-guarded registered tool-name inventory.
+- `tests/test_mcp.py` compares MCP `list_tools()` exactly against the
+  `context/mcp.md` inventory.
+- `llm-mcp-schema.md` removes `update_document` / JSON-Patch write language and
+  marks its original tool list as historical planning intent.
+- `save-versioning.md` describes typed service writes and whole-table
+  `replace_table_slice` draft updates, not stale JSON-Patch sync.
+- `build_mcp_server` instructions now summarize scopes, draft lifecycle,
+  read-write-save, and semantic-vs-table write guidance.
+- `smoke_mcp_read.py` checks the full tool inventory and supports
+  `--write-round-trip` for an opt-in Rooms replace/save smoke.
+- Source review `planning/code-reviews/2026-06-30/mcp-review.md` points to this
+  feature packet; `planning/archive/README.md` has the closeout line.
+
+Verification:
+
+- `cd backend && uv run ruff check features/mcp/server.py tests/test_mcp.py scripts/smoke_mcp_read.py`
+- `cd backend && uv run ty check features/mcp/server.py tests/test_mcp.py scripts/smoke_mcp_read.py`
+- `cd backend && uv run pytest tests/test_mcp.py` — 27 passed.
+- `cd backend && uv run python -m py_compile scripts/smoke_mcp_read.py`
+- `make format`
+- `make ci` — backend 1254 passed / 2 skipped; frontend 215 test files / 1985
+  tests passed; production build completed.

@@ -214,7 +214,14 @@ def apply_schema_mutation_to_draft(
     return response, result.details or {}
 
 
-def save_draft(version_id: UUID, access: ProjectAccess, if_match: str | None, request: Request) -> SaveDraftResponse:
+def save_draft(
+    version_id: UUID,
+    access: ProjectAccess,
+    if_match: str | None,
+    request: Request | None,
+    *,
+    updated_via: Literal["browser", "mcp"] = "browser",
+) -> SaveDraftResponse:
     user = require_editor_user(access)
 
     with transaction() as conn:
@@ -255,7 +262,15 @@ def save_draft(version_id: UUID, access: ProjectAccess, if_match: str | None, re
             serialized_body=serialized_draft,
         )
         repository.delete_draft(conn, version_id, user.id)
-        log_document_action(conn, "project_version_save", access, version_id, user.id, request)
+        log_document_action(
+            conn,
+            "project_version_save",
+            access,
+            version_id,
+            user.id,
+            request,
+            extra_details={"updated_via": updated_via},
+        )
 
     version_public_model = version_public(saved_row)
     return SaveDraftResponse(
@@ -269,7 +284,7 @@ def save_draft_as(
     version_id: UUID,
     payload: SaveAsDraftRequest,
     access: ProjectAccess,
-    request: Request,
+    request: Request | None,
 ) -> SaveDraftResponse:
     user = require_editor_user(access)
     version_name = payload.name.strip()

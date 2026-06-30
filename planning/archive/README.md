@@ -3,6 +3,10 @@
 Append-only audit trail. Durable decisions live in `context/`; this records
 how and when each feature packet landed. Newest first. Grep by slug.
 
+## 2026-06-30
+
+- `mcp-write-loop` - MCP runtime write-loop and docs hardening: draft save/discard, generic table replace + preview, save-as/version metadata/diff parity, canonical `context/mcp.md`, tool-inventory drift guard, smoke hardening, stale JSON-Patch contract reconciliation, graphify update, and `make ci`. (branch closeout)
+
 ## 2026-06-29
 
 - `production-frontend-performance` - production frontend perf baseline + triage that drove the asset-cache and equipment fan-out fixes. Phase 02 public + Phase 04 authenticated read-only scorecards (10/10 routes healthy, 0 long tasks, loads ~0.24-0.32s), Phase 06 triage, Step-2 fan-out investigation. All findings shipped: `/assets/*` immutable cache headers (PR #20), equipment `table-views` + `draft-tables` fan-out collapsed 7→1 (PRs #21, #22); climate map LCP accepted as expected; Phase 05 write-path intentionally never run. (PR #20 + archive closeout)

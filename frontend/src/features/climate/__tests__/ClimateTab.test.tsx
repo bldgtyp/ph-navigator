@@ -467,8 +467,8 @@ describe("ClimateTab", () => {
     await user.click(await screen.findByRole("button", { name: "Set Phius Climate Data" }));
     await user.click(await screen.findByRole("button", { name: "Find Nearest" }));
 
-    const nearestCandidate = await screen.findByRole("button", { name: /^NEW YORK CENTRAL/ });
-    await waitFor(() => expect(nearestCandidate).toHaveAttribute("data-selected", "true"));
+    const selectedStation = () => screen.getByRole("button", { name: /^NEW YORK CENTRAL/ });
+    await waitFor(() => expect(selectedStation()).toHaveAttribute("data-selected", "true"));
     await user.click(screen.getByRole("button", { name: "Attach" }));
 
     // The nearest action only selects; the explicit attach hands off to detail.

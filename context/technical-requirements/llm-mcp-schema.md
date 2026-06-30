@@ -29,7 +29,7 @@ start is cheap.
 | **Whole-document fetch** | One GET returns the full project. LLM has full context. |
 | **Stable IDs** | Every entity has a ULID; LLM can reference precisely across edits. |
 | **JSON Schema published** | LLM can validate edits before submitting; server rejects invalid. |
-| **JSON-Patch writes** | LLM expresses edits as a list of ops; surgical, idempotent with key. |
+| **Draft writes** | LLM writes use semantic command tools or whole-table `replace_table`, guarded by draft/version etags. |
 | **OpenAPI spec** | LLM tools can introspect the API. |
 | **Structured errors** | Validation errors include JSON Pointer paths and machine-readable codes. |
 | **Idempotency keys** | LLM retries don't double-apply. |
@@ -54,7 +54,11 @@ with read-only scopes cannot call mutating tools. All tool calls are
 attributed to the issuing editor. Mutating tools obey the MCP/browser
 edit-lease rules in §8.5.
 
-Tool surface (initial):
+Original tool intent (historical):
+
+The authoritative shipped MCP inventory is `context/mcp.md`. The list below is
+retained only as the original planning intent; it no longer defines the live
+tool surface.
 
 ```
 list_projects()                      → token-visible projects
@@ -65,8 +69,8 @@ get_document(project_id, version_id) → full project JSON + version_body_etag
                                        + current draft_etag if present
 get_table(project_id, version_id, table_name)
                                      → TB-04b read primitive returning one
-                                       full table; `query_table` remains the
-                                       typed filtered table contract
+                                       full table; `query_table` is a typed
+                                       filtered-read backlog item
 list_envelope_assemblies(project_id, version_id, source?)
                                      → Assembly Builder assemblies with
                                        layers, segments, and status flags
@@ -87,21 +91,21 @@ apply_envelope_command(project_id, version_id, command, if_match?, if_match_vers
                                        EnvelopeCommandRequest used by REST;
                                        writes through the envelope command
                                        service and tags the draft as MCP-edited
-update_document(project_id, version_id, json_patch, draft_etag | base_version_etag)
-                                     → applies JSON-Patch to current draft,
-                                       returns new draft etag
 replace_table(project_id, version_id, table_name, rows, draft_etag | base_version_etag)
-                                     → replace one table in the draft;
-                                       stale etag returns 409
+                                     → live generic write; whole-table replace
+                                       through the same replace_table_slice
+                                       service as browser PUT; stale etag
+                                       returns 409
 query_table(project_id, version_id, table_name, query)
-                                     → filtered subset of one table using
-                                       a typed query object, not expression text
+                                     → read backlog; filtered subset of one
+                                       table using a typed query object, not
+                                       expression text
 diff_versions(project_id, from_version_id, to_version_id)
                                      → structured diff
 list_catalog(table)                  → catalog browse
 get_catalog_record(table, record_id) → record + version list
 create_version(project_id, source_version_id, name, kind?)
-                                     → save-as-new
+                                     → old name for save_draft_as
 save_draft(project_id, version_id)   → flush token owner's draft to version
 discard_draft(project_id, version_id)
                                      → discard token owner's draft
@@ -194,7 +198,7 @@ caller knows to re-read and retry.
 Assembly Builder MCP writes are intentionally narrower than the generic
 document-write backlog: `apply_envelope_command` accepts one semantic
 command payload and calls the same backend service as the browser.
-It does not accept raw nested JSON-Patch into `tables.assemblies[]`.
+It does not accept raw nested document mutation into `tables.assemblies[]`.
 All physical quantity fields remain SI canonical in MCP requests and
 responses; IP/SI conversion is a browser display/input concern.
 

@@ -1,7 +1,7 @@
 # Phase 1 — Draft commit / discard
 
 DATE: 2026-06-30
-STATUS: Proposed.
+STATUS: Complete on branch `codex/mcp-write-loop`.
 GOAL: Let an MCP agent persist or drop a draft. After this phase the
       already-working envelope / aperture / custom-field writes stop dead-ending
       in the draft.
@@ -53,3 +53,28 @@ GOAL: Let an MCP agent persist or drop a draft. After this phase the
 
 Tools registered + green tests + `context/mcp.md` and the CLAUDE.md row exist
 and describe the lifecycle. `make ci` green.
+
+## Completion evidence
+
+Implemented 2026-06-30:
+
+- `save_draft` and `discard_draft` MCP tools registered in
+  `backend/features/mcp/server.py`.
+- Tool wrappers live in `backend/features/mcp/tools_documents.py` and use
+  `current_token` → `project_access_or_error(..., "project:write")` → existing
+  project-document services → structured MCP error mapping.
+- `save_draft` preserves explicit MCP audit provenance with
+  `updated_via="mcp"` on `project_version_save`.
+- `context/mcp.md` created with lifecycle, scope matrix, structured errors,
+  token issuance, and current inventory.
+- `CLAUDE.md` dispatch table now routes MCP work to `context/mcp.md` and
+  `context/technical-requirements/llm-mcp-schema.md`.
+
+Verification:
+
+- `cd backend && uv run ruff check features/mcp/tools_documents.py features/mcp/tools.py features/mcp/server.py features/project_document/drafts.py tests/test_mcp.py`
+- `cd backend && uv run ty check features/mcp/tools_documents.py features/mcp/tools.py features/mcp/server.py features/project_document/drafts.py tests/test_mcp.py`
+- `cd backend && uv run pytest tests/test_mcp.py` — 14 passed.
+- `make format`
+- `make ci` — backend 1241 passed / 2 skipped; frontend 215 test files / 1985
+  tests passed; production build completed.

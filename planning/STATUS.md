@@ -1,7 +1,7 @@
 # Planning Status
 
-DATE: 2026-06-29
-TIME: 18:56 EDT
+DATE: 2026-06-30
+TIME: 18:00 EDT
 STATUS: Active routing index for tracked planning material.
 AUTHOR: Codex
 SCOPE: Current planning folder organization after moving dated docs to
@@ -20,6 +20,7 @@ feature-first planning.
 | DataTable Status Field — Backfill | Complete / resolved-unneeded before first deploy: no users or old project documents exist, focused status-field fresh-start verification passed, no migration/backfill written | `archive/dated/2026-06-27/datatable-status-backfill/STATUS.md` |
 | DataTable UI | Complete / numeric precision, unit headers, status chips, shared visual rhythm, route-smoke verification, final `make ci`, and archive cleanup landed | `archive/dated/2026-06-25/data-table-ui/STATUS.md` |
 | Delete Project | In review | `features/delete-project/STATUS.md` |
+| MCP Write Loop | Complete / archived after Phases 1–4: draft save/discard, generic `replace_table`, `preview_replace_table`, `save_draft_as`, version metadata patch, `diff_versions`, canonical MCP docs, drift guard, smoke hardening, stale contract reconciliation, graphify update, and `make ci` | `archive/dated/2026-06-30/mcp-write-loop/STATUS.md` |
 | DataTable Color Field | Complete / implemented on main with CI and browser smoke evidence | `features/color-field/STATUS.md` |
 | Attachments | Complete (v1) / implemented on main with automated coverage, R2 smoke, and full Render staging acceptance; Phase-5 polish deferred by decision; archived | `archive/dated/2026-06-15/attachments/STATUS.md` |
 | IP/SI Unit Switching | Planned / implementation plan drafted | `features/ip-si-unit-switching/STATUS.md` |
@@ -69,6 +70,11 @@ feature-first planning.
   `archive/dated/2026-06-29/production-climate-data-seeding/` (production R2
   PHIUS/PHI bundles, Render Postgres climate dataset seed, SQL verification,
   manual production PHIUS/PHI/Hourly Climate smoke, and runbook evidence).
+- Completed MCP Write Loop planning now lives under
+  `archive/dated/2026-06-30/mcp-write-loop/` (MCP draft save/discard,
+  generic table replace + preview, save-as/version metadata/diff parity,
+  canonical MCP docs, tool-inventory drift guard, smoke hardening, and stale
+  contract reconciliation).
 - Completed Apertures, Envelope, Climate + Tooltip UI Polish refactor planning
   now lives under `archive/dated/2026-06-29/envelope-save-ui-polish/` (shared
   Radix tooltip primitive, Save Version blocking overlay, Assembly canvas
