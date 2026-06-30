@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 18:56 EDT
-STATUS: Phases 02-04 + 06 complete; triage recorded. Phase 05 write-path still held. Open work = 3 follow-ups (assets cache headers, equipment fan-out investigation, document climate map).
+STATUS: RESOLVED + ARCHIVED 2026-06-29. All actionable findings shipped — cache headers (PR #20), equipment table-views + draft-tables fan-out collapsed 7→1 (PRs #21, #22); climate map LCP accepted as expected. Phase 05 write-path intentionally never run. Historical record only.
 AUTHOR: Codex
 SCOPE: Current state and handoff for production frontend performance testing.
 RELATED:
