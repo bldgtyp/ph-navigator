@@ -2,7 +2,7 @@
 
 DATE: 2026-06-30
 TIME: 18:00 EDT
-STATUS: Active — Phases 1–4 implemented and verified on `codex/mcp-write-loop`; final archive/closeout next.
+STATUS: Complete / archived — Phases 1–4 implemented and verified on `codex/mcp-write-loop`.
 AUTHOR: Claude (Opus 4.8) with Ed May; updated by Codex
 
 ## Current state
@@ -58,8 +58,7 @@ Decisions accepted (PRD §3). **Phase 1 is implemented on branch
 
 ## Next step
 
-Run final closeout: graph update, archive the feature packet, and commit the
-completed MCP write-loop branch.
+None. Feature packet archived after Phase 4 verification.
 
 ## Phase map
 
@@ -91,7 +90,7 @@ evidence in PRD §2 and §5). No open blockers remain for Phases 1–2.
   + the lighter "passive reload hint" are **out of scope** for this feature;
   revisit on a real collision report.
 
-## Verification (planned)
+## Verification
 
 - Phase 1 focused checks passed:
   - `cd backend && uv run ruff check features/mcp/tools_documents.py features/mcp/tools.py features/mcp/server.py features/project_document/drafts.py tests/test_mcp.py`

@@ -5,7 +5,7 @@ how and when each feature packet landed. Newest first. Grep by slug.
 
 ## 2026-06-30
 
-- `mcp-write-loop` - MCP runtime write-loop and docs hardening: draft save/discard, generic table replace + preview, save-as/version metadata/diff parity, canonical `context/mcp.md`, tool-inventory drift guard, smoke hardening, and stale JSON-Patch contract reconciliation. (branch closeout pending)
+- `mcp-write-loop` - MCP runtime write-loop and docs hardening: draft save/discard, generic table replace + preview, save-as/version metadata/diff parity, canonical `context/mcp.md`, tool-inventory drift guard, smoke hardening, stale JSON-Patch contract reconciliation, graphify update, and `make ci`. (branch closeout)
 
 ## 2026-06-29
 
