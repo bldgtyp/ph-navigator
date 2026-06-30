@@ -52,29 +52,28 @@ export function LegendCard({ model, activeFile, loadSummary }: LegendCardProps) 
   return (
     <>
       <div className="model-legend-card" aria-label={`${legend.title} legend`}>
-        {canPickTheme || hasActiveLegendFilter ? (
+        {canPickTheme ? (
           <div className="model-legend-titlebar">
             <div className="model-legend-title-actions">
-              {canPickTheme ? <ThemeMenu lens={lens} theme={theme} /> : null}
-              {hasActiveLegendFilter ? (
-                <button
-                  type="button"
-                  className="model-legend-clear-filter"
-                  aria-label="Clear filter"
-                  title="Clear filter"
-                  onClick={clearLegendFilter}
-                >
-                  <X size={15} aria-hidden />
-                </button>
-              ) : null}
+              <ThemeMenu lens={lens} theme={theme} />
             </div>
           </div>
         ) : null}
-        <LegendRows
-          legend={legend}
-          theme={theme}
-          hasHeader={canPickTheme || hasActiveLegendFilter}
-        />
+        <LegendRows legend={legend} theme={theme} hasHeader={canPickTheme} />
+        {hasActiveLegendFilter ? (
+          <div className="model-legend-footer">
+            <button
+              type="button"
+              className="model-legend-clear-filter"
+              aria-label="Clear filter"
+              title="Clear filter"
+              onClick={clearLegendFilter}
+            >
+              <X size={13} aria-hidden />
+              <span>Clear filter</span>
+            </button>
+          </div>
+        ) : null}
       </div>
       <div className="model-scene-info-root">
         <InfoButton open={infoOpen} onClick={() => setInfoOpen((current) => !current)} />

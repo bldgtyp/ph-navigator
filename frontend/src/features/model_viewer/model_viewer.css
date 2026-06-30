@@ -42,12 +42,14 @@
 /* Composes `.chip .chip--md .chip--outline`; floating HBJSON file button. */
 .model-file-chip {
   gap: 7px;
+  min-height: 32px;
+  padding: 6px 10px;
   box-shadow: var(--shadow-model-chip);
-  font-size: var(--fs-md);
+  font-size: var(--fs-sm);
 }
 
 .model-file-chip-label {
-  max-width: 28ch;
+  max-width: min(56ch, calc(100vw - 110px));
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -694,30 +696,6 @@
   color: var(--text-primary);
 }
 
-.model-legend-title-actions .model-legend-clear-filter {
-  align-self: center;
-  flex: 0 0 auto;
-  width: 22px;
-  height: 22px;
-  min-height: 22px;
-  border: 0;
-  border-radius: var(--radius-xs);
-  background: transparent;
-  color: var(--text-secondary);
-}
-
-.model-legend-title-actions .model-legend-clear-filter:hover,
-.model-legend-title-actions .model-legend-clear-filter:focus-visible {
-  background: var(--accent-light);
-  color: var(--accent-text);
-  outline: 0;
-}
-
-.model-legend-title-actions .model-legend-clear-filter svg {
-  width: 13px;
-  height: 13px;
-}
-
 .model-legend-rows {
   display: grid;
   max-height: 280px;
@@ -790,6 +768,36 @@
 .model-legend-count {
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
+}
+
+.model-legend-footer {
+  display: flex;
+  justify-content: center;
+  padding: 0 8px 10px;
+}
+
+.model-legend-clear-filter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  min-height: 28px;
+  padding: 4px 9px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-pill);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--fs-sm);
+  line-height: 1;
+}
+
+.model-legend-clear-filter:hover,
+.model-legend-clear-filter:focus-visible {
+  border-color: color-mix(in oklab, var(--accent) 35%, var(--border-card));
+  background: color-mix(in oklab, var(--accent) 8%, var(--bg-card));
+  color: var(--text-primary);
+  outline: 0;
 }
 
 .model-scene-info-root > button {
