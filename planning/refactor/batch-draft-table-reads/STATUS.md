@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 21:20 EDT
-STATUS: Active — Phase 0 COMPLETE (shape (b) locked, seeding de-risked); Phase 1 next
+STATUS: Active — Phases 0–1 COMPLETE (backend batch endpoint shipped + tested); Phase 2 (frontend seed) next
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Status ledger for the draft-tables batch-seed read refactor.
 RELATED:
@@ -12,9 +12,10 @@ RELATED:
 
 # Status — Batch-seed draft-tables read
 
-**State:** `Active` — scoped and planned, not started. The prerequisite
-`batch-table-views-endpoint` has **shipped** (archived), so this is now
-**unblocked** — ready to start Phase 0.
+**State:** `Active` — **Phases 0–1 complete**. The prerequisite
+`batch-table-views-endpoint` has **shipped** (archived). Phase 0 (design lock +
+seeding de-risk) and Phase 1 (backend batch endpoint + tests) are done; Phase 2
+(frontend batch-seed) is next.
 
 ## Current state
 
@@ -29,10 +30,12 @@ RELATED:
 
 ## Next step
 
-Phase 0 done (findings in PLAN.md + phases/phase-00). Start **Phase 1**: add
-`GET …/draft/tables?names=…` → `BatchDraftTablesResponse` from one
-`get_current_document_view`, mirroring the table-views route convention. Leave
-the per-table GET/PUT/POST routes untouched.
+Phases 0–1 done. Backend `GET …/draft/tables?names=…` → `BatchDraftTablesResponse`
+shipped (one whole-draft load; byte-identical to the per-table read; 9 tests
+green). Start **Phase 2**: frontend batch-seed — `fetchDraftTablesBatch` API,
+`staleTime: Infinity` on `useSliceQuery`, an `isSeeding`-gated page-scoped seed
+provider mounted at `EquipmentPage.tsx`. Preserve PR #18; keep the e2e
+coordination spec green.
 
 ## Blockers / open decisions
 

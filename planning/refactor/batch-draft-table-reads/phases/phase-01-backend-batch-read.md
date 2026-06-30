@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 21:55 EDT
-STATUS: Not started
+STATUS: COMPLETE (2026-06-29) — endpoint + model + service + 9 tests landed; backend lane green
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Add a batch draft-tables read that returns many tables from one
   whole-draft load. No change to per-table or write routes.
@@ -92,6 +92,28 @@ are still used by the write path and by un-seeded mounts.
 - **Non-editor access** rejected as the per-table draft read is.
 - **`names` over the bound / empty → 422** (FastAPI validation).
 - Gate: `make ci` backend lane green.
+
+## Outcome (2026-06-29)
+
+Implemented exactly as the preferred shape:
+
+- **Model** — `BatchDraftTablesResponse { tables: dict[str,
+  RegisteredTableResponse] }` in `backend/features/project_document/tables/batch.py`
+  (placed in the `tables` package, not `models.py`, to keep the import direction
+  one-way — `tables` already depends on `models`).
+- **Service** — `get_draft_tables_batch(version_id, table_names, access)` in
+  `store.py`: `dict.fromkeys` de-dupe → resolve all contracts (404 before any
+  load) → **one** `get_current_document_view` → loop `build_response`. Re-exported
+  through `service.py`.
+- **Route** — `GET …/draft/tables?names=…` in `routes.py`, declared before
+  `{table_name}`, `MAX_BATCH_TABLE_NAMES = 64`. Per-table GET/PUT/POST untouched.
+- **Tests** — `tests/test_project_document_batch_draft_tables.py`, 9 tests:
+  one-entry-per-name, **byte-equality with the per-table GET**, **one document
+  load** (asserted via `structlog` `capture_logs` counting `project_document.loaded`),
+  unknown→404, invalid draft→422, duplicate-collapse, empty-names→422,
+  anonymous→401, envelope `extra="forbid"`.
+- Lint/format/`ty`/tests all green; `simplify` applied (import placement +
+  docstring); the per-table read and write paths are byte-unchanged.
 
 ## Rejected alternatives
 

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 21:20 EDT
-STATUS: Active — phased plan, not started. Prerequisite (table-views batch) SHIPPED; this is the remaining higher-risk half.
+STATUS: Active — Phases 0–1 COMPLETE (backend batch endpoint shipped + tested); Phase 2 (frontend seed) next. Prerequisite (table-views batch) SHIPPED.
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phased implementation plan for collapsing the draft-tables initial-mount
   fan-out via a batch/whole-draft read + per-table cache seeding.
@@ -54,7 +54,7 @@ Carry forward two concrete facts from it:
   (where the 7 slice queries fire); the draft seed must mount there too, not in
   `EquipmentPageBody.tsx`.
 
-## Phase 0 — Pre-flight + design lock (no code; ~0.5 day)
+## Phase 0 — Pre-flight + design lock (no code; ~0.5 day) — ✅ DONE
 
 Higher-investment than a usual Phase 0, because the design choice gates risk.
 
@@ -83,7 +83,7 @@ Higher-investment than a usual Phase 0, because the design choice gates risk.
 Gate: Phase 0 findings appended below; endpoint shape and seeding mechanism
 decided; spike confirms zero-GET-after-seed is achievable.
 
-## Phase 1 — Backend batch/whole-draft read (~0.5–1 day incl. tests)
+## Phase 1 — Backend batch/whole-draft read (~0.5–1 day incl. tests) — ✅ DONE
 
 Under `backend/features/project_document/`. `uv`, raw SQL, strict typing,
 Pydantic v2.
