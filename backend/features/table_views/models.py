@@ -29,3 +29,16 @@ class TableViewResponse(BaseModel):
     view_state_schema_version: int
     view_state: dict[str, Any] | None
     updated_at: datetime | None
+
+
+class BatchTableViewsResponse(BaseModel):
+    """Many table-views in one read: `table_key` -> per-key config.
+
+    Each value is a `TableViewResponse` byte-identical to the single-key
+    route's output, including the default-empty shape for keys the user
+    has not saved. The map carries one entry per *requested* key.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    views: dict[str, TableViewResponse]

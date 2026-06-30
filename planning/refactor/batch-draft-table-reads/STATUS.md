@@ -1,19 +1,20 @@
 ---
 DATE: 2026-06-29
 TIME: 21:20 EDT
-STATUS: Active
+STATUS: Active — prerequisite (table-views batch) shipped; ready to start Phase 0
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Status ledger for the draft-tables batch-seed read refactor.
 RELATED:
   - planning/refactor/batch-draft-table-reads/README.md
   - planning/refactor/batch-draft-table-reads/PLAN.md
-  - planning/refactor/batch-table-views-endpoint/ (prerequisite)
+  - planning/archive/dated/2026-06-29/batch-table-views-endpoint/ (prerequisite — SHIPPED)
 ---
 
 # Status — Batch-seed draft-tables read
 
-**State:** `Active` — scoped and planned, not started. **Deferred behind
-`batch-table-views-endpoint`** (do that first).
+**State:** `Active` — scoped and planned, not started. The prerequisite
+`batch-table-views-endpoint` has **shipped** (archived), so this is now
+**unblocked** — ready to start Phase 0.
 
 ## Current state
 
@@ -28,10 +29,12 @@ RELATED:
 
 ## Next step
 
-Hold until `batch-table-views-endpoint` ships. Then start Phase 0: lock the
-endpoint shape (whole-draft vs batch draft-tables) and **spike the seeding
-mechanism** (can a pre-mount `setQueryData` prevent the per-table GET without
-going stale?) — that is the riskiest unknown.
+Prerequisite met — start Phase 0: lock the endpoint shape (whole-draft vs batch
+draft-tables) and **spike the seeding mechanism** (can a pre-mount
+`setQueryData` prevent the per-table GET without going stale?) — that is the
+riskiest unknown. Mirror the shipped table-views batch's `?keys=`→`?names=`
+route convention and its `EquipmentPage.tsx` mount point, but seed the TanStack
+Query cache rather than reuse its hand-rolled-hook context read-through.
 
 ## Blockers / open decisions
 

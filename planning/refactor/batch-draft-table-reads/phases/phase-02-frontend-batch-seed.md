@@ -25,6 +25,17 @@ This is the high-care phase. The acceptance bar is: the
 `table-draft-etag-coordination.spec.ts` e2e stays green (cross-table edit works,
 no false stale-draft blocker).
 
+## Precedent — the shipped table-views batch
+
+The sibling `batch-table-views-endpoint` (archived
+`planning/archive/dated/2026-06-29/batch-table-views-endpoint/`) shipped the same
+page-level-prefetch goal. **Reuse:** its backend `?keys=` collection-route
+convention (here `?names=`) and its provider mount point — `EquipmentPage.tsx`,
+where the slice queries fire. **Do NOT reuse** its frontend mechanism: it used a
+React **context read-through** because `useProjectTableViewState` is hand-rolled;
+the draft slices are TanStack Query, so seed the query cache with
+`setQueryData` (below). Different seam, same shape.
+
 ## Preferred Implementation Shape
 
 Use the **exact** mechanism the Phase 00 spike validated. The shape below is the
@@ -65,11 +76,15 @@ expected outcome; defer to the spike's findings if they differ.
    today. The seed is an optimization layer, never a requirement for correctness.
 
 6. **Mount the provider per page**, passing the page's mounted table set
-   (from Phase 00): equipment first
-   (`frontend/src/features/equipment/routes/EquipmentPageBody.tsx`), then spaces
-   and assets/ThermalBridges. The per-table fallback means a not-yet-wrapped page
-   simply keeps fanning out (correct, just unoptimized) — so this lands
-   page-by-page.
+   (from Phase 00): equipment first — at
+   `frontend/src/features/equipment/routes/EquipmentPage.tsx`, **not**
+   `EquipmentPageBody.tsx`. The 7 `useXxxSliceQuery` calls (the GETs to collapse)
+   fire in `EquipmentPage.tsx`; `EquipmentPageBody` only receives the resolved
+   `.data` as props, so seeding there would be too late to suppress the GETs.
+   This is also where the shipped table-views batch mounted its provider. Then
+   spaces and assets/ThermalBridges. The per-table fallback means a
+   not-yet-wrapped page simply keeps fanning out (correct, just unoptimized) — so
+   this lands page-by-page.
 
 ## Do NOT touch
 
@@ -87,8 +102,8 @@ expected outcome; defer to the spike's findings if they differ.
   `staleTime` / optional `enabled` gate; export the slice-key helper if not
   already)
 - new batch-seed provider module under `frontend/src/features/project_document/`
-- `frontend/src/features/equipment/routes/EquipmentPageBody.tsx` (+ spaces /
-  thermal-bridges page routes)
+- `frontend/src/features/equipment/routes/EquipmentPage.tsx` (the slice-query
+  call site; + spaces / thermal-bridges page routes)
 - tests: `frontend/src/features/project_document/__tests__/` and the e2e suite
 
 ## Tests / Acceptance

@@ -29,6 +29,29 @@ def get(
     ).fetchone()
 
 
+def get_many(
+    conn: Connection[Any],
+    user_id: UUID,
+    project_id: UUID,
+    table_keys: list[str],
+) -> list[dict[str, Any]]:
+    """Read many view-state rows in one query (a `table_key = ANY` widening
+    of `get`). The result may be shorter than `table_keys` — keys with no
+    saved row are simply absent and the service fills the default for them."""
+    return conn.execute(
+        """
+        SELECT user_id, project_id, table_key,
+               view_state_schema_version, view_state,
+               view_state_size_bytes, updated_at
+        FROM user_table_views
+        WHERE user_id = %(user_id)s
+          AND project_id = %(project_id)s
+          AND table_key = ANY(%(table_keys)s)
+        """,
+        {"user_id": user_id, "project_id": project_id, "table_keys": table_keys},
+    ).fetchall()
+
+
 def upsert(
     conn: Connection[Any],
     user_id: UUID,

@@ -1,14 +1,14 @@
 ---
 DATE: 2026-06-29
 TIME: 21:20 EDT
-STATUS: Active — proposed refactor, planned, not started. Deferred behind the
-  table-views batch.
+STATUS: Active — proposed refactor, planned, not started. Prerequisite
+  (table-views batch) now SHIPPED; this is the remaining, higher-risk half.
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Collapse the per-table `…/draft/tables/<type>` initial-mount fan-out into
   one batch/whole-draft read that seeds per-table caches, WITHOUT regressing the
   PR #18 draft-etag coordination protocol.
 RELATED:
-  - planning/refactor/batch-table-views-endpoint/README.md (do that FIRST)
+  - planning/archive/dated/2026-06-29/batch-table-views-endpoint/ (the sibling refactor — SHIPPED; pattern precedent)
   - planning/refactor/production-frontend-performance/handoffs/step-2-equipment-fanout-investigation.md
   - planning/refactor/production-frontend-performance/scorecards/2026-06-29-phase-06-triage.md
   - planning/archive/dated/2026-06-29/equipment-draft-etag-coordination/ (PR #18 — the protocol this MUST preserve)
@@ -99,10 +99,14 @@ per-table (one fresh table), so the #18 protocol is untouched.
 `createTableSliceFeature` is instantiated per type across `equipment` (pumps,
 fans, ventilators, hot_water_heaters, hot_water_tanks, electric_heaters,
 appliances, rooms, heat-pump sub-tables), `spaces`, and `assets/ThermalBridges`.
-Slice queries are wired in `equipment/hooks.ts`, `spaces/hooks.ts`, and consumed
-through `useSliceTableController` in many components. A page-level seed benefits
-all of them, but it touches the shared write/coordination path — so this is a
-broad, high-care change.
+The slice-query *hooks* are defined in `equipment/hooks.ts`, `spaces/hooks.ts`,
+and consumed through `useSliceTableController` in many components. **Where the
+GETs actually fire matters for the seed:** on equipment the 7 `useXxxSliceQuery`
+calls live in `equipment/routes/EquipmentPage.tsx` (not `EquipmentPageBody.tsx`,
+which only receives the resolved `.data` as props). So the seed/prefetch must be
+at `EquipmentPage.tsx` — the same place the shipped table-views batch mounted its
+provider. A page-level seed benefits all of them, but it touches the shared
+write/coordination path — so this is a broad, high-care change.
 
 ## Effort / risk
 
@@ -113,12 +117,28 @@ broad, high-care change.
   in **not** regressing PR #18 and in the stale-time seeding trap. Every change
   is on the editor write path that was just stabilized.
 - **Overall risk: higher than the table-views batch.** Perf is not urgent
-  (37 KB, zero jank). **Do the table-views batch first; do this second, behind
-  the #18 regression gate.**
+  (37 KB, zero jank). The table-views batch has **shipped**; do this second,
+  behind the #18 regression gate.
+
+## Precedent from the shipped table-views batch (read before Phase 2)
+
+The sibling `batch-table-views-endpoint` (archived
+`planning/archive/dated/2026-06-29/batch-table-views-endpoint/`) landed the same
+*shape* — a `?keys=`/`?names=` collection route declared before the
+`{single}` item route (bounded list), plus a page-scoped provider mounted at
+`EquipmentPage.tsx`. **Reuse that backend route convention.** But the
+**frontend mechanism is deliberately different**: table-views uses a *context
+read-through* because its per-table hook (`useProjectTableViewState`) is
+hand-rolled (not TanStack Query), so the hook reads a shared context value.
+Draft-tables slices **are** TanStack Query (`useSliceQuery` via
+`createTableSliceFeature`), so this refactor seeds the query cache with
+`queryClient.setQueryData(<editor slice key>, …)` instead — do **not** port the
+context-read-through pattern onto the slice queries. Same goal (one request,
+per-table fallback intact), different seam.
 
 ## Out of scope
 
-- The `table-views` fan-out — separate, lower-risk, already planned at
-  `planning/refactor/batch-table-views-endpoint/`. Land it first.
+- The `table-views` fan-out — separate, lower-risk, **already shipped** at
+  `planning/archive/dated/2026-06-29/batch-table-views-endpoint/`.
 - Any change to the draft-etag write protocol itself. This refactor is purely a
   *read-path* optimization; it must leave PR #18 behavior identical.
