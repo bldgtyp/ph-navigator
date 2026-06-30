@@ -1,8 +1,9 @@
 ---
 DATE: 2026-06-29
 TIME: 21:20 EDT
-STATUS: Active — Phases 0–1 COMPLETE (backend batch endpoint shipped + tested);
-  Phase 2 (frontend seed) next. Prerequisite (table-views batch) SHIPPED.
+STATUS: Active — Phases 0–2 COMPLETE (backend endpoint + equipment frontend
+  seed; e2e gate green); Phase 3 (verification) next. Prerequisite (table-views
+  batch) SHIPPED.
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Collapse the per-table `…/draft/tables/<type>` initial-mount fan-out into
   one batch/whole-draft read that seeds per-table caches, WITHOUT regressing the

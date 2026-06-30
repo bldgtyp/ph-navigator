@@ -15,4 +15,20 @@ export const projectDocumentTableQueryKeys = {
     [...projectDocumentTableQueryKeys.all, "project", projectId] as const,
   table: (projectId: string, tableName: string) =>
     [...projectDocumentTableQueryKeys.project(projectId), "table", tableName] as const,
+  // The canonical per-table slice key. Single source for the 8-segment shape so
+  // the factory's `useSliceQuery` read and the batch seed's `setQueryData` write
+  // can never drift out of lockstep — a mismatch would silently break the
+  // seed→read handoff with no type error.
+  slice: (
+    projectId: string,
+    tableName: string,
+    versionId: string,
+    accessMode: "editor" | "viewer",
+  ) =>
+    [
+      ...projectDocumentTableQueryKeys.table(projectId, tableName),
+      "slice",
+      versionId,
+      accessMode,
+    ] as const,
 };

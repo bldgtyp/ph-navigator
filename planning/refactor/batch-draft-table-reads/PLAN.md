@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 21:20 EDT
-STATUS: Active — Phases 0–1 COMPLETE (backend batch endpoint shipped + tested); Phase 2 (frontend seed) next. Prerequisite (table-views batch) SHIPPED.
+STATUS: Active — Phases 0–2 COMPLETE (backend endpoint + equipment frontend seed; e2e gate green); Phase 3 (verification) next. Prerequisite (table-views batch) SHIPPED.
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phased implementation plan for collapsing the draft-tables initial-mount
   fan-out via a batch/whole-draft read + per-table cache seeding.
@@ -111,7 +111,7 @@ a load counter/log or service-level test). See `phases/phase-01-backend-batch-re
 
 Gate: `make ci` backend lane green; equality-with-per-name test passing.
 
-## Phase 2 — Frontend batch-seed (~1–1.5 days incl. e2e)
+## Phase 2 — Frontend batch-seed (~1–1.5 days incl. e2e) — ✅ DONE
 
 The careful phase. **Do not change `useSliceQuery`, `applyAcceptedSlice`,
 `invalidateProjectDocumentEditorTableSlices`, or `resolveSliceForWrite`** — the

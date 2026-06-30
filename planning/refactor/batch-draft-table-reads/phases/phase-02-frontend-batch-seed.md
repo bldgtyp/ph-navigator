@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 21:55 EDT
-STATUS: Not started
+STATUS: COMPLETE (2026-06-29) — equipment seed shipped; unit tests + the e2e coordination gate green
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Seed each per-table editor slice cache from one batch read on mount,
   removing the initial fan-out WITHOUT changing the write/coordination path.
@@ -128,3 +128,37 @@ expected outcome; defer to the spike's findings if they differ.
 If no seeding mechanism keeps the e2e green without weakening the coordination
 assertion, **abandon the collapse**. The perf win (≤6 round-trips on a 37 KB,
 zero-jank page) is not worth reintroducing the cross-table edit bug.
+
+## Outcome (2026-06-29)
+
+Implemented for **equipment** (the 7 page-top sub-tables); spaces /
+thermal-bridges deferred — they keep the per-table fallback until wrapped.
+
+- **API** — `fetchDraftTablesBatch(projectId, versionId, names, signal)` in
+  `project_document/api.ts` (returns the response's `tables` map).
+- **Freshness** — `staleTime: Infinity` on the shared `useSliceQuery`
+  (`table-slice.ts`). Verified factory-level-correct: slices change only via
+  explicit write (`setQueryData`) or invalidation (`isInvalidated`), and the #18
+  refetch keys on `isInvalidated` — independent of `staleTime`.
+- **Seed hook** — `useDraftTablesBatchSeed` (`project_document/draftTablesBatchSeed.ts`):
+  one fetch, `setQueryData` into each per-table editor key, returns `isSeeding`
+  held true until the cache write lands (race-free gate). Warm-remount guard
+  skips the batch when all caches are already populated. No React context needed
+  (unlike the table-views batch) — the QueryClient is the shared cache; the seed
+  writes the same key `useSliceQuery` reads, via the shared
+  `projectDocumentTableQueryKeys.slice` builder.
+- **Wiring** — `EquipmentPage.tsx` calls the seed first, threads
+  `enabled = !isSeeding` into the 7 slice queries, folds `isSeeding` into the
+  loading guard. Per-table fallback preserved for viewer mode / batch failure /
+  un-wrapped pages.
+- **Untouched:** `applyAcceptedSlice`, `invalidateProjectDocumentEditorTableSlices`,
+  `resolveSliceForWrite`, and the per-table GET/PUT/POST endpoints.
+- **Tests:** `draftTablesBatchSeed.test.ts` — seeded → **zero** per-table GETs;
+  disabled → per-table fallback; batch failure → per-table fallback. The #18
+  write-path test (`useSliceTableController.test.tsx`) and the e2e
+  `table-draft-etag-coordination.spec.ts` (2/2) stay green **unmodified** — the
+  batch URL is invisible to the spec's recorder and the spec never asserted the
+  initial fan-out, so no spec edit was needed.
+- `tsc` / eslint / `pnpm run format` / `make frontend-dev-check` all green;
+  `simplify` applied (shared slice-key builder, warm-remount guard, loading-guard
+  collapse).
