@@ -50,42 +50,46 @@ export function LegendCard({ model, activeFile, loadSummary }: LegendCardProps) 
   };
 
   return (
-    <div className="model-legend-card" aria-label={`${legend.title} legend`}>
-      <div className="model-legend-titlebar">
-        <div className="model-legend-title">
-          <span>{legend.title}</span>
-          {legend.kind === "mini-key" ? <small>Key</small> : null}
-        </div>
-        <div className="model-legend-title-actions">
-          {legendFilter?.theme === theme ? (
+    <>
+      <div className="model-legend-card" aria-label={`${legend.title} legend`}>
+        <div className="model-legend-titlebar">
+          <div className="model-legend-title">
+            <span>{legend.title}</span>
+            {legend.kind === "mini-key" ? <small>Key</small> : null}
+          </div>
+          <div className="model-legend-title-actions">
+            {legendFilter?.theme === theme ? (
+              <button
+                type="button"
+                aria-label="Clear filter"
+                title="Clear filter"
+                onClick={clearLegendFilter}
+              >
+                <X size={15} aria-hidden />
+              </button>
+            ) : null}
             <button
               type="button"
-              aria-label="Clear filter"
-              title="Clear filter"
-              onClick={clearLegendFilter}
+              aria-label={collapsed ? "Expand legend" : "Collapse legend"}
+              title={collapsed ? "Expand legend" : "Collapse legend"}
+              onClick={toggleCollapsed}
             >
-              <X size={15} aria-hidden />
+              {collapsed ? (
+                <ChevronUp size={15} aria-hidden />
+              ) : (
+                <ChevronDown size={15} aria-hidden />
+              )}
             </button>
-          ) : null}
-          <InfoButton open={infoOpen} onClick={() => setInfoOpen((current) => !current)} />
-          <PerfToggleButton />
-          <button
-            type="button"
-            aria-label={collapsed ? "Expand legend" : "Collapse legend"}
-            title={collapsed ? "Expand legend" : "Collapse legend"}
-            onClick={toggleCollapsed}
-          >
-            {collapsed ? (
-              <ChevronUp size={15} aria-hidden />
-            ) : (
-              <ChevronDown size={15} aria-hidden />
-            )}
-          </button>
+          </div>
         </div>
+        {!collapsed ? <LegendRows legend={legend} theme={theme} /> : null}
       </div>
-      {infoOpen ? <SceneInfoPopover activeFile={activeFile} loadSummary={loadSummary} /> : null}
-      {!collapsed ? <LegendRows legend={legend} theme={theme} /> : null}
-    </div>
+      <div className="model-scene-info-root">
+        <InfoButton open={infoOpen} onClick={() => setInfoOpen((current) => !current)} />
+        <PerfToggleButton />
+        {infoOpen ? <SceneInfoPopover activeFile={activeFile} loadSummary={loadSummary} /> : null}
+      </div>
+    </>
   );
 }
 

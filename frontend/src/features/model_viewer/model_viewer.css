@@ -36,7 +36,7 @@
   position: absolute;
   top: 14px;
   left: 14px;
-  z-index: var(--z-base-elevated);
+  z-index: calc(var(--z-base-elevated) + 3);
 }
 
 /* Composes `.chip .chip--md .chip--outline`; floating HBJSON file button. */
@@ -721,11 +721,6 @@
   border-radius: var(--radius-md);
   background: var(--bg-card);
   box-shadow: var(--shadow-hud-3);
-}
-
-.model-legend-card .model-scene-info-popover {
-  top: calc(100% + 8px);
-  bottom: auto;
 }
 
 .model-scene-info-popover h4,
