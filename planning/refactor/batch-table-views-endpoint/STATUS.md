@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 21:05 EDT
-STATUS: In progress — Phase 0–3 done (CI green); Phase 4 closeout next
+STATUS: ✅ Implemented on branch (Phases 0–4 done, CI green) — pending user perf re-run + merge to main
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Status ledger for the batch table-views read refactor.
 RELATED:
@@ -11,9 +11,11 @@ RELATED:
 
 # Status — Batch `table-views` read
 
-**State:** `In progress` — Phases 0 (pre-flight), 1 (backend), 2 (frontend),
-and 3 (verification) complete on branch `refactor/batch-table-views-endpoint`.
-Phase 4 (closeout) next.
+**State:** `Implemented on branch` — Phases 0–4 complete on
+`refactor/batch-table-views-endpoint`; full `make ci` green. Two residual
+actions are the **user's**: (1) the production perf re-run (fixture +
+credentials), and (2) merge to `main` (which deploys production, gated on the
+perf re-run). Archive this packet to `planning/archive/<date>/` once merged.
 
 ## Current state
 
