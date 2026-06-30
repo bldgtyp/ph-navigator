@@ -91,7 +91,7 @@ larger, riskier change than the table-views batch — **the table-views batch
 **Orthogonal, zero-coordination-risk win:** the 7 `…/table-views/<type>` calls
 are pure per-(user, project, table) `view_state` JSON, unrelated to the draft
 etag, and cleanly batchable — already written up and planned at
-`planning/refactor/batch-table-views-endpoint/`. Reference it; do not re-derive.
+`planning/archive/dated/2026-06-29/batch-table-views-endpoint/`. Reference it; do not re-derive.
 
 Confirm the load-bearing vs. wasteful split above **before** proposing any
 data-path change.
@@ -168,5 +168,5 @@ file or appended here). No code change in this step.
 
 The `table-views` batch half of the fan-out does **not** need this
 investigation — it is already written up as a ready-to-hand-off refactor at
-`planning/refactor/batch-table-views-endpoint/README.md`. Reference it rather
+`planning/archive/dated/2026-06-29/batch-table-views-endpoint/README.md`. Reference it rather
 than re-deriving it; focus this step on the data path.

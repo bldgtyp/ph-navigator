@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 21:05 EDT
-STATUS: Active — phased plan, not started.
+STATUS: ✅ COMPLETE — Phases 0–4 done; CI green; merged to main + archived (2026-06-29).
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phased implementation plan for the batch table-views read endpoint and
   its frontend consumer rewiring.
@@ -189,4 +189,9 @@ save still round-trips.
 
 ## Phase 0 findings
 
-_(append here when Phase 0 runs)_
+Recorded in `phases/phase-00-preflight.md` (§Findings). Headline: equipment
+mounts all 7 view-state reads on load (the verified 7→1 win); `keys` is a
+repeated query param bounded 1..64; `get_many` is a faithful `table_key = ANY`
+widening of `get`; `spaces`/`thermal-bridges` are single-table (plan-doc
+correction). Per-phase status lives in each `phases/phase-0N-*.md` frontmatter;
+overall state in `STATUS.md`.

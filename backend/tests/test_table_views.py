@@ -77,6 +77,15 @@ def _sample_view_state() -> dict[str, object]:
     }
 
 
+def _put_sample_view(client: TestClient, project_id: str, table_key: str = "pumps") -> None:
+    response = client.put(
+        f"/api/v1/projects/{project_id}/table-views/{table_key}",
+        headers={"Origin": ORIGIN},
+        json={"view_state_schema_version": 1, "view_state": _sample_view_state()},
+    )
+    assert response.status_code == 200
+
+
 def test_get_missing_returns_null_view_state(clean_table_view_tables: None) -> None:
     client = _signed_in_client()
     project_id = _create_project(client)
@@ -303,6 +312,125 @@ def test_view_state_is_project_scoped(clean_table_view_tables: None) -> None:
     )
     assert response.status_code == 200
     assert response.json()["view_state"] is None
+
+
+def test_batch_returns_one_entry_per_requested_key(clean_table_view_tables: None) -> None:
+    client = _signed_in_client()
+    project_id = _create_project(client)
+    _put_sample_view(client, project_id, "pumps")
+
+    response = client.get(
+        f"/api/v1/projects/{project_id}/table-views",
+        headers={"Origin": ORIGIN},
+        params={"keys": ["pumps", "fans"]},
+    )
+
+    assert response.status_code == 200
+    views = response.json()["views"]
+    assert set(views.keys()) == {"pumps", "fans"}
+    # Present key carries the stored state; absent key is default-empty.
+    assert views["pumps"]["view_state"] == _sample_view_state()
+    assert views["fans"]["view_state"] is None
+    assert views["fans"]["view_state_schema_version"] == 1
+    assert views["fans"]["updated_at"] is None
+
+
+def test_batch_entry_matches_single_key_get(clean_table_view_tables: None) -> None:
+    client = _signed_in_client()
+    project_id = _create_project(client)
+    _put_sample_view(client, project_id, "pumps")
+
+    single = client.get(
+        f"/api/v1/projects/{project_id}/table-views/pumps",
+        headers={"Origin": ORIGIN},
+    )
+    batch = client.get(
+        f"/api/v1/projects/{project_id}/table-views",
+        headers={"Origin": ORIGIN},
+        params={"keys": ["pumps"]},
+    )
+
+    assert single.status_code == 200
+    assert batch.status_code == 200
+    assert batch.json()["views"]["pumps"] == single.json()
+
+
+def test_batch_duplicate_keys_collapse_to_one_entry(clean_table_view_tables: None) -> None:
+    client = _signed_in_client()
+    project_id = _create_project(client)
+
+    response = client.get(
+        f"/api/v1/projects/{project_id}/table-views",
+        headers={"Origin": ORIGIN},
+        params={"keys": ["pumps", "pumps", "fans"]},
+    )
+
+    assert response.status_code == 200
+    assert set(response.json()["views"].keys()) == {"pumps", "fans"}
+
+
+def test_batch_malformed_key_returns_400(clean_table_view_tables: None) -> None:
+    client = _signed_in_client()
+    project_id = _create_project(client)
+
+    response = client.get(
+        f"/api/v1/projects/{project_id}/table-views",
+        headers={"Origin": ORIGIN},
+        params={"keys": ["pumps", "Bad-Key"]},
+    )
+
+    assert response.status_code == 400
+    assert response.json()["error_code"] == "invalid_table_key"
+
+
+def test_batch_anonymous_returns_401(clean_table_view_tables: None) -> None:
+    editor = _signed_in_client()
+    project_id = _create_project(editor)
+    public_client = TestClient(app)
+
+    response = public_client.get(
+        f"/api/v1/projects/{project_id}/table-views",
+        params={"keys": ["pumps"]},
+    )
+    assert response.status_code == 401
+
+
+def test_batch_empty_keys_returns_422(clean_table_view_tables: None) -> None:
+    client = _signed_in_client()
+    project_id = _create_project(client)
+
+    response = client.get(
+        f"/api/v1/projects/{project_id}/table-views",
+        headers={"Origin": ORIGIN},
+    )
+    assert response.status_code == 422
+
+
+def test_batch_over_key_bound_returns_422(clean_table_view_tables: None) -> None:
+    client = _signed_in_client()
+    project_id = _create_project(client)
+
+    response = client.get(
+        f"/api/v1/projects/{project_id}/table-views",
+        headers={"Origin": ORIGIN},
+        params={"keys": [f"k{i}" for i in range(65)]},
+    )
+    assert response.status_code == 422
+
+
+def test_batch_is_user_scoped(clean_table_view_tables: None) -> None:
+    editor_a = _signed_in_client(email="a@example.com", display_name="A")
+    project_id = _create_project(editor_a)
+    _put_sample_view(editor_a, project_id, "pumps")
+
+    editor_b = _signed_in_client(email="b@example.com", display_name="B")
+    response_b = editor_b.get(
+        f"/api/v1/projects/{project_id}/table-views",
+        headers={"Origin": ORIGIN},
+        params={"keys": ["pumps"]},
+    )
+    assert response_b.status_code == 200
+    assert response_b.json()["views"]["pumps"]["view_state"] is None
 
 
 def test_repository_roundtrip(clean_table_view_tables: None) -> None:

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 21:35 EDT
-STATUS: Not started
+STATUS: ✅ DONE (closeout gate + fold-back complete; merged to main + archived 2026-06-29)
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Repo closeout gate and fold-back of the result.
 RELATED:
@@ -43,3 +43,23 @@ where the next reader will find it.
 `main` only when ready to deploy. This change is additive on the backend (new
 route) and behind a per-table fallback on the frontend, so it is low-risk to
 ship, but still gate on a green `make ci` and the perf re-run before merging.
+
+## Closeout findings (2026-06-29)
+
+Done this session (branch `refactor/batch-table-views-endpoint`):
+
+- Per-phase `simplify` (4-angle) + `docs-pass` run on each half; all findings
+  resolved or consciously skipped (see commit history).
+- `make format` clean (no changes).
+- Full `make ci` green (backend 1227 passed/2 skipped; frontend 1980 passed;
+  build ok).
+- Fold-back: parent triage card Finding 2 marked **table-views half done**
+  (draft-tables half still open under `batch-draft-table-reads`); endpoint
+  contract recorded in `context/user-stories/31-data-table-enhancements.md`
+  (API surface §8).
+
+**Merged to `main` and archived** to
+`planning/archive/dated/2026-06-29/batch-table-views-endpoint/` (2026-06-29).
+One **optional** post-merge confirmation remains (not a blocker): the empirical
+production perf re-run (`equipment` `API#` 19 → ~13) — the 7→1 collapse is
+already unit-test-proven. Commands in `phases/phase-03-verification.md` Findings.

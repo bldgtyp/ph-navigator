@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { errorMessage } from "../../shared/lib/errors";
 import { type DataTableColumnDef, type FieldDef, type ViewState } from "../../shared/ui/data-table";
 import { deleteTableView, fetchTableView, saveTableView } from "./api";
+import { useProjectTableViewsBatch } from "./batchContext";
 import { SAVE_DEBOUNCE_MS, SAVE_FALLBACK_MESSAGE, sanitizeViewStateForSchema } from "./lib";
 
 export { SAVE_DEBOUNCE_MS };
@@ -50,6 +51,19 @@ export function useProjectTableViewState({
   const inFlightRef = useRef(false);
   const pendingViewRef = useRef<ViewState | null>(null);
 
+  // Page-scoped batch read-through. `batchCovered` / `batchReady` are the only
+  // batch signals the load effect depends on; the batch object itself is held
+  // in a ref so a later `prime` / `drop` (after a save/reset) refreshes the
+  // shared cache without re-running the load effect on the live hook.
+  const batch = useProjectTableViewsBatch();
+  const batchRef = useRef(batch);
+  batchRef.current = batch;
+  const batchCovered = batch.active && batch.has(tableKey);
+  // Single load-effect trigger: stays "off" (constant) for an un-covered key so
+  // the batch settling never re-runs the per-table GET, and transitions
+  // "pending" → "ready" for a covered key so the seed lands once it arrives.
+  const batchGate = batchCovered ? (batch.ready ? "ready" : "pending") : "off";
+
   const renderSafeView = useMemo(
     () => sanitizeViewStateForSchema(view, fieldDefs, columns),
     [view, fieldDefs, columns],
@@ -78,11 +92,14 @@ export function useProjectTableViewState({
       }
       inFlightRef.current = true;
       try {
-        await saveTableView(projectId, tableKey, {
+        const saved = await saveTableView(projectId, tableKey, {
           schema_fingerprint: fingerprintRef.current,
           view_state: next,
         });
         setSaveError(null);
+        // Keep the shared batch cache in step so a remount reads the saved
+        // value, not a stale seed. No-op when no provider is mounted.
+        batchRef.current.prime(tableKey, saved);
       } catch (error) {
         if (scopeKeyRef.current === scope) {
           setSaveError(errorMessage(error, SAVE_FALLBACK_MESSAGE));
@@ -110,6 +127,28 @@ export function useProjectTableViewState({
       setIsLoading(false);
       setSaveError(null);
       return;
+    }
+
+    // Read-through: when a page-scoped batch covers this table, seed from it
+    // (or wait for it to settle) instead of issuing a per-table GET.
+    if (batchCovered) {
+      if (batchGate !== "ready") {
+        // Batch still in flight — hold the load gate; this effect re-runs when
+        // `batchReady` flips, at which point we seed below.
+        setIsLoading(true);
+        setView(defaults);
+        setSaveError(null);
+        return;
+      }
+      const seeded = batchRef.current.get(tableKey);
+      if (seeded !== undefined) {
+        setView(seeded.view_state ? seeded.view_state.view_state : defaults);
+        setIsLoading(false);
+        setSaveError(null);
+        return;
+      }
+      // Batch settled without an entry for this key (it failed) — fall through
+      // to the per-table GET below.
     }
 
     setIsLoading(true);
@@ -147,9 +186,10 @@ export function useProjectTableViewState({
       controller.abort();
     };
     // `defaults` identity is owned by the consumer; treat it as stable
-    // for the lifetime of one (projectId, tableKey) scope.
+    // for the lifetime of one (projectId, tableKey) scope. `batchRef` is read
+    // lazily so cache mutations (prime/drop) don't re-trigger this effect.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, tableKey, enabled, scopeKey, clearDebounce]);
+  }, [projectId, tableKey, enabled, scopeKey, clearDebounce, batchCovered, batchGate]);
 
   useEffect(() => clearDebounce, [clearDebounce]);
 
@@ -176,9 +216,16 @@ export function useProjectTableViewState({
     // DELETE rather than PUT-with-defaults: defaults rebuild from code
     // on next load, so reset never freezes today's defaults into the
     // saved row.
-    void deleteTableView(projectId, tableKey).catch((error) => {
-      setSaveError(errorMessage(error, SAVE_FALLBACK_MESSAGE));
-    });
+    void deleteTableView(projectId, tableKey)
+      .then(() => {
+        // Drop the shared cache entry so a remount re-reads the now
+        // default-empty state via the per-table fallback rather than the
+        // pre-reset seed. No-op when no provider is mounted.
+        batchRef.current.drop(tableKey);
+      })
+      .catch((error) => {
+        setSaveError(errorMessage(error, SAVE_FALLBACK_MESSAGE));
+      });
   }, [clearDebounce, defaults, enabled, projectId, tableKey]);
 
   return {

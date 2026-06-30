@@ -215,9 +215,14 @@ last-used view per table*.
 7. **Viewer (public read-only) mode** — does not write view state
    (no user identity). Reads default `ViewState` only.
 8. **API surface** — `GET /api/projects/{id}/table-views/{table_key}`
-   and `PUT` (idempotent upsert). MCP equivalents follow the
-   existing per-table pattern (US-Builder-Tables "Cross-cutting
-   hooks for LLM-friendliness").
+   and `PUT` (idempotent upsert). A batch read,
+   `GET /api/projects/{id}/table-views?keys=…` →
+   `{ views: { table_key: TableViewResponse } }` (one entry per requested
+   key, defaults for absent rows, editor-only, ≤64 keys), collapses a
+   multi-table page's per-table read fan-out into one request; the
+   single-key routes are unchanged. MCP equivalents follow the existing
+   per-table pattern (US-Builder-Tables "Cross-cutting hooks for
+   LLM-friendliness").
 9. **Backward-compatible.** If the stored `ViewState` references a
    column or single-select option that no longer exists in the
    schema, the missing reference is silently dropped and the view
