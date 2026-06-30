@@ -38,7 +38,9 @@ export function LensBar({ availability }: LensBarProps) {
             <button
               key={lens.id}
               type="button"
-              className={activeLens === lens.id ? "active" : undefined}
+              className={
+                activeLens === lens.id ? "model-lens-segment is-active" : "model-lens-segment"
+              }
               disabled={disabled}
               title={disabledReason ?? lens.label}
               aria-label={lens.label}
