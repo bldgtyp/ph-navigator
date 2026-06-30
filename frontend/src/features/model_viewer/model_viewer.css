@@ -451,6 +451,7 @@
 
 .model-theme-menu {
   position: relative;
+  min-width: 0;
 }
 
 .model-theme-trigger {
@@ -470,6 +471,7 @@
   letter-spacing: 0;
   text-transform: none;
   white-space: nowrap;
+  max-width: 100%;
 }
 
 .model-theme-trigger:hover {
@@ -478,6 +480,7 @@
 }
 
 .model-theme-trigger span {
+  min-width: 0;
   max-width: 18ch;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -486,10 +489,12 @@
 .model-theme-menu-list {
   position: absolute;
   top: calc(100% + 7px);
-  right: 0;
+  left: 0;
   z-index: calc(var(--z-base-elevated) + 3);
   display: grid;
+  width: max-content;
   min-width: 210px;
+  max-width: min(260px, calc(100vw - 28px));
   padding: 5px;
   border: 1px solid var(--border-card);
   border-radius: var(--radius-md);
@@ -497,7 +502,8 @@
   box-shadow: var(--shadow-hud-3);
 }
 
-.model-theme-menu-list button {
+.model-theme-menu-option {
+  appearance: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -511,10 +517,19 @@
   font: inherit;
   font-size: var(--fs-sm);
   text-align: left;
+  cursor: pointer;
 }
 
-.model-theme-menu-list button:hover {
-  background: color-mix(in oklab, var(--accent-light) 26%, transparent);
+.model-theme-menu-option:hover,
+.model-theme-menu-option:focus-visible {
+  background: color-mix(in oklab, var(--accent) 10%, transparent);
+  color: var(--text-primary);
+  outline: 0;
+}
+
+.model-theme-menu-option:active {
+  background: color-mix(in oklab, var(--accent) 12%, transparent);
+  color: var(--text-primary);
 }
 
 @media (max-width: 1100px) {
@@ -629,19 +644,11 @@
 
 .model-view-options-card {
   top: 60px;
-  padding: 7px 8px 7px 10px;
+  padding: 6px;
   border: 1px solid var(--border-card);
   border-radius: var(--radius-md);
   background: color-mix(in oklab, var(--bg-card) 92%, transparent);
   box-shadow: var(--shadow-hud-2);
-}
-
-.model-view-options-title {
-  color: var(--text-primary);
-  font-size: var(--fs-sm);
-  font-weight: 700;
-  letter-spacing: 0;
-  text-transform: uppercase;
 }
 
 .model-scene-info-root {
@@ -653,7 +660,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-10);
-  padding: 9px 10px;
+  padding: 7px 8px 6px;
 }
 
 .model-legend-title {
@@ -678,8 +685,18 @@
 .model-legend-title-actions {
   display: inline-flex;
   align-items: center;
+  flex: 1 1 auto;
   gap: var(--space-4);
   min-width: 0;
+}
+
+.model-legend-title-actions .model-theme-menu {
+  flex: 1 1 auto;
+  max-width: 100%;
+}
+
+.model-legend-title-actions .model-theme-trigger {
+  justify-content: flex-start;
 }
 
 .model-legend-title-actions > button,
@@ -694,15 +711,6 @@
   border-radius: var(--radius-7);
   background: var(--bg-card);
   color: var(--text-primary);
-}
-
-.model-legend-title-actions .model-legend-collapse-trigger {
-  width: auto;
-  height: auto;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: inherit;
 }
 
 .model-legend-title-actions .model-legend-clear-filter {

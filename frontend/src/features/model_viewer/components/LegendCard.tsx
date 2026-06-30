@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, Gauge, Info, X } from "lucide-react";
+import { Gauge, Info, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { formatProjectDateTime } from "../../../shared/lib/dates";
 import { isModelViewerDebugHookEnabled } from "../lib/debugHook";
@@ -11,8 +11,6 @@ import { useModelViewerStore } from "../store";
 import type { HbjsonFile, LoadSummary, ModelViewerLegend, ModelViewerTheme } from "../types";
 import { ThemeMenu } from "./ThemeMenu";
 
-const LEGEND_COLLAPSED_KEY = "phn:model-viewer:legend-collapsed";
-
 type LegendCardProps = {
   model: BuildingModel | null;
   activeFile: HbjsonFile;
@@ -24,21 +22,20 @@ export function LegendCard({ model, activeFile, loadSummary }: LegendCardProps) 
   const theme = useModelViewerStore((state) => state.themesByLens[state.lens]);
   const legendFilter = useModelViewerStore((state) => state.legendFilter);
   const clearLegendFilter = useModelViewerStore((state) => state.clearLegendFilter);
-  const [collapsed, setCollapsed] = useState(readCollapsed);
   const [infoOpen, setInfoOpen] = useState(false);
   const closeInfo = useCallback(() => setInfoOpen(false), []);
   const legend = useMemo(
     () => (model ? legendForModel(model, lens, theme) : null),
     [lens, model, theme],
   );
+  const canPickTheme = hasThemeMenu(lens);
   useModelViewerPopoverEscape(closeInfo);
 
   if (!legend) {
     return (
       <>
-        {hasThemeMenu(lens) ? (
+        {canPickTheme ? (
           <div className="model-view-options-card" aria-label="Model color options">
-            <div className="model-view-options-title">Color</div>
             <ThemeMenu lens={lens} theme={theme} />
           </div>
         ) : null}
@@ -51,24 +48,18 @@ export function LegendCard({ model, activeFile, loadSummary }: LegendCardProps) 
     );
   }
 
-  const toggleCollapsed = () => {
-    setCollapsed((current) => {
-      const next = !current;
-      sessionStorage.setItem(LEGEND_COLLAPSED_KEY, String(next));
-      return next;
-    });
-  };
-
   return (
     <>
       <div className="model-legend-card" aria-label={`${legend.title} legend`}>
         <div className="model-legend-titlebar">
-          <div className="model-legend-title">
-            <span>{legend.title}</span>
-            {legend.kind === "mini-key" ? <small>Key</small> : null}
-          </div>
+          {!canPickTheme ? (
+            <div className="model-legend-title">
+              <span>{legend.title}</span>
+              {legend.kind === "mini-key" ? <small>Key</small> : null}
+            </div>
+          ) : null}
           <div className="model-legend-title-actions">
-            {hasThemeMenu(lens) ? <ThemeMenu lens={lens} theme={theme} /> : null}
+            {canPickTheme ? <ThemeMenu lens={lens} theme={theme} /> : null}
             {legendFilter?.theme === theme ? (
               <button
                 type="button"
@@ -80,22 +71,9 @@ export function LegendCard({ model, activeFile, loadSummary }: LegendCardProps) 
                 <X size={15} aria-hidden />
               </button>
             ) : null}
-            <button
-              type="button"
-              className="model-legend-collapse-trigger"
-              aria-label={collapsed ? "Expand legend" : "Collapse legend"}
-              title={collapsed ? "Expand legend" : "Collapse legend"}
-              onClick={toggleCollapsed}
-            >
-              {collapsed ? (
-                <ChevronUp size={15} aria-hidden />
-              ) : (
-                <ChevronDown size={15} aria-hidden />
-              )}
-            </button>
           </div>
         </div>
-        {!collapsed ? <LegendRows legend={legend} theme={theme} /> : null}
+        <LegendRows legend={legend} theme={theme} />
       </div>
       <div className="model-scene-info-root">
         <InfoButton open={infoOpen} onClick={() => setInfoOpen((current) => !current)} />
@@ -235,8 +213,4 @@ function SceneInfoPopover({
       ) : null}
     </div>
   );
-}
-
-function readCollapsed(): boolean {
-  return sessionStorage.getItem(LEGEND_COLLAPSED_KEY) === "true";
 }
