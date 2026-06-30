@@ -24,10 +24,12 @@ from features.mcp.service import authenticate_plaintext_token, project_access_fo
 from features.mcp.tools import (
     tool_apply_envelope_command,
     tool_delete_project,
+    tool_discard_draft,
     tool_hard_delete_project,
     tool_list_envelope_assemblies,
     tool_query_unfinished_envelope_work,
     tool_restore_project,
+    tool_save_draft,
 )
 from features.project_document.validation import document_etag
 from main import app
@@ -111,6 +113,73 @@ def room_payload(field_defs: list[dict[str, object]]) -> dict[str, object]:
             "rooms.building_zone": [{"id": "opt_residential", "label": "Residential", "color": "#10b981", "order": 0}],
         },
     }
+
+
+def create_rooms_draft(client: TestClient, project_id: object, version_id: object, *, name: str) -> dict[str, object]:
+    draft_url = f"/api/v1/projects/{project_id}/versions/{version_id}/draft/tables/rooms"
+    initial = client.get(draft_url)
+    assert initial.status_code == 200
+    payload = room_payload(initial.json()["field_defs"])
+    rooms = cast(list[dict[str, object]], payload["rooms"])
+    rooms[0]["custom_values"] = {
+        "number": "101",
+        "name": name,
+        "num_people": 2,
+        "num_bedrooms": 0,
+    }
+    updated = client.put(
+        draft_url,
+        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
+        json=payload,
+    )
+    assert updated.status_code == 200
+    return updated.json()
+
+
+def issue_mcp_token(client: TestClient, project_id: object, *, scopes: list[str]) -> str:
+    issued = client.post(
+        f"/api/v1/projects/{project_id}/mcp-tokens",
+        headers={"Origin": ORIGIN},
+        json={"label": "MCP draft lifecycle", "scopes": scopes},
+    )
+    assert issued.status_code == 201
+    return cast(str, issued.json()["token"])
+
+
+def draft_row(version_id: object) -> dict[str, object] | None:
+    with connection() as conn:
+        return conn.execute(
+            """
+            SELECT body, draft_etag
+            FROM project_version_drafts
+            WHERE version_id = %(version_id)s
+            """,
+            {"version_id": version_id},
+        ).fetchone()
+
+
+def saved_room_name(version_id: object) -> str:
+    rows = saved_room_rows(version_id)
+    custom_values = cast(dict[str, object], rows[0]["custom_values"])
+    return cast(str, custom_values["name"])
+
+
+def saved_room_rows(version_id: object) -> list[dict[str, object]]:
+    with connection() as conn:
+        row = conn.execute(
+            """
+            SELECT body
+            FROM project_versions
+            WHERE id = %(version_id)s
+            """,
+            {"version_id": version_id},
+        ).fetchone()
+    assert row is not None
+    return cast(list[dict[str, object]], row["body"]["tables"]["rooms"]["rows"])
+
+
+def mcp_error(exc: ToolError) -> dict[str, object]:
+    return cast(dict[str, object], json.loads(str(exc)))
 
 
 def tool_text(result) -> str:
@@ -323,6 +392,167 @@ def test_mcp_envelope_read_reports_and_semantic_command_write(
         )
 
 
+def test_mcp_save_draft_commits_and_clears_token_owner_draft(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    draft = create_rooms_draft(client, project_id, version_id, name="Library")
+    monkeypatch.setenv(
+        "PHN_MCP_TOKEN",
+        issue_mcp_token(client, project_id, scopes=["project:read", "project:write"]),
+    )
+
+    saved = tool_save_draft(
+        cast(str, project_id),
+        cast(str, version_id),
+        cast(Context, None),
+        allow_env_token=True,
+        if_match=cast(str, draft["version_etag"]),
+    )
+
+    assert str(saved.project_id) == project_id
+    assert str(saved.version.id) == version_id
+    assert saved_room_name(version_id) == "Library"
+    assert draft_row(version_id) is None
+    with connection() as conn:
+        audit = conn.execute("SELECT details FROM user_action_log WHERE action = 'project_version_save'").fetchone()
+    assert audit is not None
+    assert audit["details"]["updated_via"] == "mcp"
+
+
+def test_mcp_save_draft_maps_stale_if_match_and_preserves_draft(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    create_rooms_draft(client, project_id, version_id, name="Office")
+    monkeypatch.setenv(
+        "PHN_MCP_TOKEN",
+        issue_mcp_token(client, project_id, scopes=["project:read", "project:write"]),
+    )
+
+    with pytest.raises(ToolError) as exc_info:
+        tool_save_draft(
+            cast(str, project_id),
+            cast(str, version_id),
+            cast(Context, None),
+            allow_env_token=True,
+            if_match="stale",
+        )
+
+    error = mcp_error(exc_info.value)
+    assert error["code"] == "version_etag_mismatch"
+    assert error["recoverability"] == "refresh"
+    assert draft_row(version_id) is not None
+
+
+def test_mcp_save_draft_maps_locked_version_to_refreshable_error(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    draft = create_rooms_draft(client, project_id, version_id, name="Locked Draft")
+    patch = client.patch(
+        f"/api/v1/projects/{project_id}/versions/{version_id}",
+        headers={"Origin": ORIGIN},
+        json={"locked": True},
+    )
+    assert patch.status_code == 200
+    monkeypatch.setenv(
+        "PHN_MCP_TOKEN",
+        issue_mcp_token(client, project_id, scopes=["project:read", "project:write"]),
+    )
+
+    with pytest.raises(ToolError) as exc_info:
+        tool_save_draft(
+            cast(str, project_id),
+            cast(str, version_id),
+            cast(Context, None),
+            allow_env_token=True,
+            if_match=cast(str, draft["version_etag"]),
+        )
+
+    error = mcp_error(exc_info.value)
+    assert error["code"] == "version_locked"
+    assert error["recoverability"] == "refresh"
+    assert draft_row(version_id) is not None
+
+
+def test_mcp_discard_draft_drops_draft_and_noops_when_missing(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    create_rooms_draft(client, project_id, version_id, name="Temporary")
+    monkeypatch.setenv(
+        "PHN_MCP_TOKEN",
+        issue_mcp_token(client, project_id, scopes=["project:read", "project:write"]),
+    )
+
+    discarded = tool_discard_draft(
+        cast(str, project_id), cast(str, version_id), cast(Context, None), allow_env_token=True
+    )
+    missing = tool_discard_draft(
+        cast(str, project_id), cast(str, version_id), cast(Context, None), allow_env_token=True
+    )
+
+    assert discarded.discarded is True
+    assert missing.discarded is False
+    assert draft_row(version_id) is None
+    assert saved_room_rows(version_id) == []
+
+
+def test_mcp_save_draft_rechecks_revoked_token_at_commit(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    draft = create_rooms_draft(client, project_id, version_id, name="Revoked")
+    issued = client.post(
+        f"/api/v1/projects/{project_id}/mcp-tokens",
+        headers={"Origin": ORIGIN},
+        json={"label": "Revoked commit token", "scopes": ["project:read", "project:write"]},
+    )
+    assert issued.status_code == 201
+    token = issued.json()["token"]
+    monkeypatch.setenv("PHN_MCP_TOKEN", token)
+    revoke = client.post(
+        f"/api/v1/projects/{project_id}/mcp-tokens/{issued.json()['token_record']['id']}/revoke",
+        headers={"Origin": ORIGIN},
+    )
+    assert revoke.status_code == 200
+
+    with pytest.raises(ToolError) as exc_info:
+        tool_save_draft(
+            cast(str, project_id),
+            cast(str, version_id),
+            cast(Context, None),
+            allow_env_token=True,
+            if_match=cast(str, draft["version_etag"]),
+        )
+
+    error = mcp_error(exc_info.value)
+    assert error["code"] == "not_authenticated"
+    assert error["recoverability"] == "reauthenticate"
+    assert draft_row(version_id) is not None
+
+
 class _FakeR2DeleteResult:
     deleted_object_count = 0
     failed_object_keys: list[str] = []
@@ -437,6 +667,8 @@ async def test_mcp_read_tools_return_document_and_structured_write_rejection(cle
                         "report_material_catalog_drift",
                         "report_missing_envelope_evidence",
                         "apply_envelope_command",
+                        "save_draft",
+                        "discard_draft",
                     }.issubset(tool_names)
 
                     listed = await session.call_tool("list_projects", {})
@@ -455,15 +687,7 @@ async def test_mcp_read_tools_return_document_and_structured_write_rejection(cle
                     assert saved_document["draft_etag"] is None
                     assert saved_document["body"]["schema_version"] == 1
 
-                    draft_url = f"/api/v1/projects/{project_id}/versions/{version_id}/draft/tables/rooms"
-                    initial = client.get(draft_url)
-                    assert initial.status_code == 200
-                    updated = client.put(
-                        draft_url,
-                        headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
-                        json=room_payload(initial.json()["field_defs"]),
-                    )
-                    assert updated.status_code == 200
+                    create_rooms_draft(client, project_id, version_id, name="Living Room")
 
                     draft_document_result = await session.call_tool(
                         "get_document",

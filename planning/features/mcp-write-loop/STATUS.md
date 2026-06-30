@@ -1,30 +1,38 @@
 # MCP Write-Loop — Status
 
 DATE: 2026-06-30
-TIME: 14:40 EDT
-STATUS: Proposed / not started. Planning packet written; no code changed.
-AUTHOR: Claude (Opus 4.8) with Ed May
+TIME: 17:12 EDT
+STATUS: Active — Phase 1 implemented on `codex/mcp-write-loop`; Phase 2 next.
+AUTHOR: Claude (Opus 4.8) with Ed May; updated by Codex
 
 ## Current state
 
-Decisions accepted (PRD §3). Nothing implemented. The MCP `replace_table` tool
-is still the always-rejecting `mcp_write_deferred` stub; there are no
-`save_draft` / `discard_draft` MCP tools; `context/mcp.md` does not exist;
-`llm-mcp-schema.md` and `save-versioning.md` still carry the stale JSON-Patch
-contract.
+Decisions accepted (PRD §3). **Phase 1 is implemented on branch
+`codex/mcp-write-loop`:**
+
+- MCP tools `save_draft` and `discard_draft` are registered and wrap the existing
+  project-document draft services.
+- `save_draft` re-resolves the MCP token at commit time and writes
+  `updated_via="mcp"` into the `project_version_save` audit details.
+- `discard_draft` is a clean no-op when no draft exists (`discarded=false`).
+- `context/mcp.md` now exists as the live MCP contract skeleton, and `CLAUDE.md`
+  routes MCP tool work to it.
+
+The MCP `replace_table` tool is still the always-rejecting
+`mcp_write_deferred` stub. `llm-mcp-schema.md` and `save-versioning.md` still
+carry stale JSON-Patch contract language; Phase 4 owns that reconciliation.
 
 ## Next step
 
-Start **Phase 1 — draft commit/discard** (`phases/phase-01-draft-commit.md`):
-smallest unlock, makes the already-working semantic/custom-field writes
-persistable. Create the `context/mcp.md` skeleton + CLAUDE.md MCP row in the
-same PR.
+Start **Phase 2 — generic table writes** (`phases/phase-02-replace-table.md`):
+wire `replace_table` to `replace_table_slice`, add `preview_replace_table`, and
+update `context/mcp.md` with read-before-replace + etag guidance.
 
 ## Phase map
 
 | Phase | Title | Priority | Lands |
 |---|---|---|---|
-| 1 | Draft commit/discard | P0 | `save_draft`, `discard_draft`; `context/mcp.md` skeleton; CLAUDE.md MCP row |
+| 1 | Draft commit/discard | P0 | **Implemented on branch** — `save_draft`, `discard_draft`; `context/mcp.md` skeleton; CLAUDE.md MCP row |
 | 2 | Generic table writes | P0 | `replace_table` (wire stub), `preview_replace_table`, table allow-list |
 | 3 | Lifecycle & read parity | P1 | `save_draft_as`/`create_version`, `update_project`, `diff_versions` |
 | 4 | Docs truth + discoverability | P1 | reconcile `llm-mcp-schema.md` + `save-versioning.md`; tool-set drift guard; smoke hardening; `instructions=` polish |
@@ -52,8 +60,16 @@ evidence in PRD §2 and §5). No open blockers remain for Phases 1–2.
 
 ## Verification (planned)
 
-- New backend tests per phase (round-trip read→replace→save; discard; locked
-  version; revoked-token-on-commit; semantic-table rejection).
+- Phase 1 focused checks passed:
+  - `cd backend && uv run ruff check features/mcp/tools_documents.py features/mcp/tools.py features/mcp/server.py features/project_document/drafts.py tests/test_mcp.py`
+  - `cd backend && uv run ty check features/mcp/tools_documents.py features/mcp/tools.py features/mcp/server.py features/project_document/drafts.py tests/test_mcp.py`
+  - `cd backend && uv run pytest tests/test_mcp.py` — 14 passed.
+- Phase 1 closeout gate passed:
+  - `make format`
+  - `make ci` — backend 1241 passed / 2 skipped; frontend 215 test files / 1985
+    tests passed; production build completed.
+- New backend tests per remaining phase (round-trip read→replace→save; stale
+  replace etag; locked replace; validation failures; preview cascade).
 - `make ci` green at each phase closeout.
 - `context/mcp.md` drift guard test (Phase 4).
 - Optional isolated browser/MCP smoke per `planning/features/.instructions.md`

@@ -196,7 +196,9 @@ doc updates. This feature fixes that and hardens against recurrence:
 - An MCP agent can: read a flat table → `replace_table` rows → read back the
   bumped draft → `save_draft` → see the change in the saved version. And
   `discard_draft` drops a dirty draft.
-- `replace_table` rejects the 3 semantic-owned tables with a redirect message.
+- `replace_table` mirrors the browser `PUT /draft/tables/{name}` for all
+  registered tables, including semantic-command tables; per-table replace models
+  and full document validation remain the guard.
 - Locked-version save returns `version_locked`; `save_draft_as` (if built)
   escapes it.
 - Revoked token fails closed on the commit step.

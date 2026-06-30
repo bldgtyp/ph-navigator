@@ -72,6 +72,8 @@ Load these only when the task touches the relevant surface:
 - `technical-requirements/data-table.md` — shared `<DataTable>`
   implementation contract. Load with `UI_UX.md` §1.7 and
   `user-stories/30-tables-equipment.md` when touching table behavior.
+- `mcp.md` — live MCP tool inventory, draft/save lifecycle, token scopes,
+  structured error envelope, and token issuance pointer.
 
 ## Historical / Removed
 
@@ -84,7 +86,7 @@ Load these only when the task touches the relevant surface:
 ## Planned Generated Docs
 
 Add these only as the corresponding implementation exists:
-`api.md`, `mcp.md`, `operations.md`, `error-codes.md`,
+`api.md`, `operations.md`, `error-codes.md`,
 `llm-cookbook.md`, and optional static JSON Schema snapshots under
 `schemas/`. The current runtime schema source is the backend endpoint
 set under `/api/v1/schemas/...`.
