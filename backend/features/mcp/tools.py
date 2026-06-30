@@ -28,12 +28,15 @@ from features.mcp.tools_custom_fields import (
     tool_set_custom_field_formula,
 )
 from features.mcp.tools_documents import (
+    tool_diff_versions,
     tool_discard_draft,
     tool_get_document,
     tool_get_table,
     tool_preview_replace_table,
     tool_replace_table,
     tool_save_draft,
+    tool_save_draft_as,
+    tool_update_project,
 )
 from features.mcp.tools_envelope import (
     tool_apply_envelope_command,
@@ -79,6 +82,7 @@ __all__ = [
     "tool_delete_custom_field",
     "tool_delete_hbjson_file",
     "tool_delete_project",
+    "tool_diff_versions",
     "tool_discard_draft",
     "tool_duplicate_custom_field",
     "tool_edit_custom_field_options",
@@ -116,9 +120,11 @@ __all__ = [
     "tool_report_missing_envelope_evidence",
     "tool_resolve_asset_urls",
     "tool_restore_project",
+    "tool_save_draft_as",
     "tool_save_draft",
     "tool_search_climate_locations",
     "tool_set_custom_field_description",
     "tool_set_custom_field_formula",
     "tool_start_bulk_download",
+    "tool_update_project",
 ]

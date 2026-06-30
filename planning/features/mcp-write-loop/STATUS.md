@@ -1,8 +1,8 @@
 # MCP Write-Loop — Status
 
 DATE: 2026-06-30
-TIME: 17:39 EDT
-STATUS: Active — Phases 1–2 implemented on `codex/mcp-write-loop`; Phase 3 next.
+TIME: 17:48 EDT
+STATUS: Active — Phases 1–3 implemented on `codex/mcp-write-loop`; Phase 4 next.
 AUTHOR: Claude (Opus 4.8) with Ed May; updated by Codex
 
 ## Current state
@@ -18,7 +18,7 @@ Decisions accepted (PRD §3). **Phase 1 is implemented on branch
 - `context/mcp.md` now exists as the live MCP contract skeleton, and `CLAUDE.md`
   routes MCP tool work to it.
 
-**Phase 2 is implemented locally on the same branch:**
+**Phase 2 is implemented on the same branch:**
 
 - MCP `replace_table` now wraps the existing `replace_table_slice` service for
   every registered table; there is no MCP-side semantic-table rejection.
@@ -30,22 +30,34 @@ Decisions accepted (PRD §3). **Phase 1 is implemented on branch
   handshake, read-before-replace rule, payload shapes, and command-vs-replace
   guidance.
 
+**Phase 3 is implemented locally on the same branch:**
+
+- MCP `save_draft_as` wraps the existing Save As service and is the
+  locked-version escape hatch.
+- MCP `update_project` wraps the shipped `patch_version` REST parity surface:
+  `locked` and `make_active`. Historical rename/name language remains a Phase 4
+  docs reconciliation item because the backend does not accept a name field here.
+- MCP `diff_versions` wraps `get_project_diff` for version-vs-version and
+  version-vs-draft table deltas.
+- `context/mcp.md` documents the Phase 3 tools, scopes, save-as lifecycle role,
+  and `update_project` field limitation.
+
 `llm-mcp-schema.md` and `save-versioning.md` still carry stale JSON-Patch
 contract language; Phase 4 owns that reconciliation.
 
 ## Next step
 
-Start **Phase 3 — lifecycle & read parity**
-(`phases/phase-03-lifecycle-read-parity.md`): add thin MCP wrappers for
-`save_draft_as`, `update_project`, and `diff_versions` if still scoped in.
+Start **Phase 4 — docs truth + discoverability**
+(`phases/phase-04-docs-discoverability.md`): reconcile stale MCP/schema docs,
+add drift guard coverage, and harden discovery/smoke guidance.
 
 ## Phase map
 
 | Phase | Title | Priority | Lands |
 |---|---|---|---|
 | 1 | Draft commit/discard | P0 | **Implemented on branch** — `save_draft`, `discard_draft`; `context/mcp.md` skeleton; CLAUDE.md MCP row |
-| 2 | Generic table writes | P0 | **Implemented locally** — `replace_table` wraps `replace_table_slice`; `preview_replace_table`; no MCP-side rejection |
-| 3 | Lifecycle & read parity | P1 | `save_draft_as`/`create_version`, `update_project`, `diff_versions` |
+| 2 | Generic table writes | P0 | **Implemented on branch** — `replace_table` wraps `replace_table_slice`; `preview_replace_table`; no MCP-side rejection |
+| 3 | Lifecycle & read parity | P1 | **Implemented locally** — `save_draft_as`, `update_project` (`locked`/`make_active`), `diff_versions` |
 | 4 | Docs truth + discoverability | P1 | reconcile `llm-mcp-schema.md` + `save-versioning.md`; tool-set drift guard; smoke hardening; `instructions=` polish |
 
 Phases 1 and 2 are the functional write loop; 3 rounds out parity; 4 is the
@@ -87,7 +99,16 @@ evidence in PRD §2 and §5). No open blockers remain for Phases 1–2.
   - `make format`
   - `make ci` — backend 1249 passed / 2 skipped; frontend 215 test files / 1985
     tests passed; production build completed.
-- New backend tests per remaining phase (save-as, metadata patch, version diff).
+- Phase 3 focused checks passed:
+  - `cd backend && uv run ruff check features/mcp/tools_documents.py features/mcp/tools.py features/mcp/server.py features/project_document/versions.py tests/test_mcp.py`
+  - `cd backend && uv run ty check features/mcp/tools_documents.py features/mcp/tools.py features/mcp/server.py features/project_document/versions.py tests/test_mcp.py`
+  - `cd backend && uv run pytest tests/test_mcp.py` — 27 passed.
+- Phase 3 closeout gate passed:
+  - `make format`
+  - `make ci` — backend 1254 passed / 2 skipped; frontend 215 test files / 1985
+    tests passed; production build completed.
+- New backend tests per remaining phase (tool inventory drift guard and docs
+  reconciliation).
 - `make ci` green at each phase closeout.
 - `context/mcp.md` drift guard test (Phase 4).
 - Optional isolated browser/MCP smoke per `planning/features/.instructions.md`

@@ -1,6 +1,6 @@
 ---
 DATE: 2026-06-30
-TIME: 17:05 EDT
+TIME: 17:44 EDT
 STATUS: ACTIVE MCP CONTRACT
 RELATED: context/technical-requirements/llm-mcp-schema.md, context/technical-requirements/save-versioning.md, backend/features/mcp/
 ---
@@ -27,8 +27,8 @@ saved version. The normal write loop is:
 4. Call `save_draft` to persist, or `discard_draft` to drop the draft.
 
 `save_draft` expects `if_match` to be the saved version body etag seen when the
-draft was opened. A locked version returns `version_locked`; the save-as escape
-path is planned for the lifecycle parity phase.
+draft was opened. A locked version returns `version_locked`; use
+`save_draft_as` to create an unlocked copy from the draft or saved body.
 
 ## Error Envelope
 
@@ -56,7 +56,7 @@ Recoverability values:
 
 | Tool | Scope |
 |---|---|
-| `list_projects`, `get_project`, `list_versions`, `list_status_items` | `project:read` |
+| `list_projects`, `get_project`, `list_versions`, `list_status_items`, `diff_versions` | `project:read` |
 | `get_document`, `get_table` | `project:read` |
 | `list_envelope_assemblies`, `list_project_materials`, `query_unfinished_envelope_work`, `report_material_catalog_drift`, `report_missing_envelope_evidence` | `project:read` |
 | `list_project_climate_sources`, `get_project_location`, `get_project_sun_path` | `project:read` |
@@ -64,7 +64,7 @@ Recoverability values:
 | `list_assets`, `resolve_asset_urls`, `get_asset_url`, `start_bulk_download`, `get_job` | `asset:read` plus project access |
 | `bulk_attach`, `bulk_detach` | `project:write` and `asset:write` |
 | `apply_envelope_command`, `apply_aperture_command`, custom-field mutation tools | `project:write` |
-| `replace_table`, `preview_replace_table`, `save_draft`, `discard_draft` | `project:write` |
+| `replace_table`, `preview_replace_table`, `save_draft`, `save_draft_as`, `discard_draft`, `update_project` | `project:write` |
 | `delete_project`, `restore_project`, `hard_delete_project` | `project:write` |
 | HBJSON model/file tools | project access; write tools require write scope |
 
@@ -76,6 +76,8 @@ Recoverability values:
 - `get_project(project_id)` returns project metadata plus version list.
 - `list_versions(project_id)` returns version metadata.
 - `list_status_items(project_id)` returns the relational status tracker.
+- `diff_versions(project_id, from_version_id, to)` returns per-table changed
+  paths for version-vs-version diffs, or version-vs-draft when `to="draft"`.
 - `get_project_location(project_id)` and `get_project_sun_path(project_id)`
   return SI-canonical location and sun-path data.
 
@@ -121,8 +123,17 @@ including semantic-command tables, but it is the lower-level primitive.
   draft to the active version and clears the draft. Recoverable conflict codes
   include `version_locked`, `version_etag_mismatch`, `draft_etag_mismatch`,
   `project_version_not_found`, and `draft_not_found`.
+- `save_draft_as(project_id, version_id, name, kind?, locked?)` creates a new
+  active version from the token owner's draft, or from the saved source version
+  when no draft exists, and clears the source draft. This is the locked-version
+  escape hatch after `version_locked`; `kind="submitted"` and `kind="closed"`
+  are auto-locked by the service.
 - `discard_draft(project_id, version_id)` deletes the token owner's draft.
   Calling it when no draft exists returns `discarded=false`.
+- `update_project(project_id, version_id, locked?, make_active?)` patches the
+  current REST version metadata surface and returns `ProjectDetail`. Despite the
+  historical tool name, the shipped backend accepts only `locked` and
+  `make_active` here; project/version naming is not part of this tool.
 
 ### Semantic Project-Document Writes
 

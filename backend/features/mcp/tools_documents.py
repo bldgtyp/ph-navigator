@@ -7,6 +7,7 @@ from typing import cast
 
 from fastapi import HTTPException
 from mcp.server.fastmcp import Context
+from pydantic import ValidationError
 
 from features.mcp.helpers import (
     current_document_view_or_error,
@@ -18,17 +19,36 @@ from features.mcp.helpers import (
     table_contract_or_error,
 )
 from features.mcp.models import McpDocumentEnvelope, McpRecoverability, McpTableEnvelope
-from features.project_document.models import DiscardDraftResponse, ProjectDocumentView, SaveDraftResponse
-from features.project_document.service import discard_draft, preview_table_replace, replace_table_slice, save_draft
+from features.project_document.models import (
+    DiscardDraftResponse,
+    ProjectDiffResponse,
+    ProjectDocumentView,
+    SaveAsDraftRequest,
+    SaveDraftResponse,
+    VersionPatchRequest,
+)
+from features.project_document.service import (
+    discard_draft,
+    get_project_diff,
+    patch_version,
+    preview_table_replace,
+    replace_table_slice,
+    save_draft,
+    save_draft_as,
+)
 from features.project_document.tables.contracts import TableContract, TableReplacePreviewResponse
+from features.projects.models import ProjectDetail, VersionKind
 
 __all__ = [
     "tool_discard_draft",
+    "tool_diff_versions",
     "tool_get_document",
     "tool_get_table",
     "tool_preview_replace_table",
     "tool_replace_table",
+    "tool_save_draft_as",
     "tool_save_draft",
+    "tool_update_project",
 ]
 
 
@@ -146,6 +166,94 @@ def tool_discard_draft(
             default_message="Draft could not be discarded.",
             default_recoverability="fatal",
             recoverability_by_code=_DRAFT_LIFECYCLE_RECOVERABILITY,
+        )
+
+
+def tool_save_draft_as(
+    project_id: str,
+    version_id: str,
+    name: str,
+    ctx: Context,
+    *,
+    allow_env_token: bool,
+    kind: VersionKind = "working",
+    locked: bool = False,
+) -> SaveDraftResponse:
+    parsed_project_id = parse_uuid(project_id, "project_id", ctx)
+    parsed_version_id = parse_uuid(version_id, "version_id", ctx)
+    token = current_token(ctx, allow_env_token)
+    access = project_access_or_error(token, parsed_project_id, "project:write", ctx)
+    try:
+        payload = SaveAsDraftRequest(name=name, kind=kind, locked=locked)
+        return save_draft_as(parsed_version_id, payload, access, request=None)
+    except ValidationError as exc:
+        raise_mcp_error(
+            "validation_error",
+            "Save As payload is invalid.",
+            "fatal",
+            ctx,
+            {"errors": exc.errors(include_url=False)},
+        )
+    except HTTPException as exc:
+        raise_http_exception_as_mcp_error(
+            exc,
+            ctx,
+            default_code="project_document_error",
+            default_message="Draft could not be saved as a new version.",
+            default_recoverability="fatal",
+            recoverability_by_code=_DRAFT_LIFECYCLE_RECOVERABILITY,
+        )
+
+
+def tool_update_project(
+    project_id: str,
+    version_id: str,
+    ctx: Context,
+    *,
+    allow_env_token: bool,
+    locked: bool | None = None,
+    make_active: bool | None = None,
+) -> ProjectDetail:
+    parsed_project_id = parse_uuid(project_id, "project_id", ctx)
+    parsed_version_id = parse_uuid(version_id, "version_id", ctx)
+    token = current_token(ctx, allow_env_token)
+    access = project_access_or_error(token, parsed_project_id, "project:write", ctx)
+    try:
+        payload = VersionPatchRequest(locked=locked, make_active=make_active)
+        return patch_version(parsed_version_id, payload, access, request=None)
+    except HTTPException as exc:
+        raise_http_exception_as_mcp_error(
+            exc,
+            ctx,
+            default_code="project_document_error",
+            default_message="Project version metadata could not be updated.",
+            default_recoverability="fatal",
+            recoverability_by_code={"project_version_not_found": "refresh"},
+        )
+
+
+def tool_diff_versions(
+    project_id: str,
+    from_version_id: str,
+    to: str,
+    ctx: Context,
+    *,
+    allow_env_token: bool,
+) -> ProjectDiffResponse:
+    parsed_project_id = parse_uuid(project_id, "project_id", ctx)
+    parsed_from_version_id = parse_uuid(from_version_id, "from_version_id", ctx)
+    token = current_token(ctx, allow_env_token)
+    access = project_access_or_error(token, parsed_project_id, "project:read", ctx)
+    try:
+        return get_project_diff(parsed_from_version_id, to, access)
+    except HTTPException as exc:
+        raise_http_exception_as_mcp_error(
+            exc,
+            ctx,
+            default_code="project_document_error",
+            default_message="Project version diff could not be loaded.",
+            default_recoverability="fatal",
+            recoverability_by_code={"project_version_not_found": "refresh"},
         )
 
 
