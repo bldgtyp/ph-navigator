@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 21:20 EDT
-STATUS: Active — Phases 0–2 COMPLETE (backend endpoint + equipment frontend seed; e2e gate green); Phase 3 (verification) next. Prerequisite (table-views batch) SHIPPED.
+STATUS: COMPLETE / ARCHIVED — all phases (0–4) done + verified; make ci green. Implemented on branch `refactor/batch-draft-table-reads`. Prerequisite (table-views batch) SHIPPED.
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Phased implementation plan for collapsing the draft-tables initial-mount
   fan-out via a batch/whole-draft read + per-table cache seeding.
