@@ -411,7 +411,7 @@
   gap: var(--space-2);
 }
 
-.model-lens-segments button,
+.model-lens-segment,
 .model-theme-trigger {
   display: inline-flex;
   align-items: center;
@@ -425,21 +425,28 @@
   color: var(--text-muted);
   font: inherit;
   font-size: var(--fs-sm);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: uppercase;
   white-space: nowrap;
 }
 
-.model-lens-segments button:hover:not(:disabled),
+.model-lens-segment:hover:not(:disabled),
 .model-theme-trigger:hover {
   color: var(--text-primary);
   background: color-mix(in oklab, var(--accent-light) 28%, transparent);
 }
 
-.model-lens-segments button.active {
+.model-lens-segment.is-active {
   background: var(--accent);
   color: var(--text-on-accent);
+  font-size: var(--fs-sm);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: uppercase;
 }
 
-.model-lens-segments button:disabled {
+.model-lens-segment:disabled {
   cursor: not-allowed;
   opacity: 0.44;
 }
@@ -490,12 +497,12 @@
 }
 
 @media (max-width: 1100px) {
-  .model-lens-segments button {
+  .model-lens-segment {
     width: 32px;
     padding-inline: 0;
   }
 
-  .model-lens-segments button span {
+  .model-lens-segment span {
     position: absolute;
     width: 1px;
     height: 1px;
