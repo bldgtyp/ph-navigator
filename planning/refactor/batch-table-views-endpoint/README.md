@@ -98,8 +98,13 @@ test the equipment, spaces, and apertures pages after.
 
 ## Explicitly out of scope
 
-- The `…/draft/tables/<type>` **data** fan-out — that is the open question in
-  `step-2-equipment-fanout-investigation.md` (could one `GET …/document` replace
-  the 7 per-table reads?) and must be decided separately before any change.
+- The `…/draft/tables/<type>` **data** fan-out. That is a separate, larger,
+  riskier refactor (a new batch/whole-*draft* read that seeds per-table caches —
+  **not** `GET …/document`, which is the saved doc). It must preserve PR #18's
+  per-table draft-etag coordination (`equipment-draft-etag-coordination`) and the
+  `table-draft-etag-coordination.spec.ts` regression gate. See
+  `step-2-equipment-fanout-investigation.md`; do that **after** this one. The
+  table-views batch here is orthogonal to that etag protocol and carries no
+  coordination risk.
 - Folding view-config into the draft-tables response — possible later, but it
   couples two concerns; the standalone batch endpoint is the cleaner first step.
