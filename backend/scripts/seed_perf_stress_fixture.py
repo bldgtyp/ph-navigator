@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import argparse
-import getpass
+import secrets
 from dataclasses import dataclass, replace
 from typing import Any, TypeVar
 from urllib.parse import quote
@@ -75,7 +75,7 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.confirm_production:
-        password = args.password or getpass.getpass("Testing account password: ")
+        password, password_generated = _resolve_production_password(args.password)
         fixture = seed_production_perf_stress_fixture(
             email=args.email or DEFAULT_PRODUCTION_EMAIL,
             display_name=args.display_name or DEFAULT_PRODUCTION_DISPLAY_NAME,
@@ -88,7 +88,7 @@ def main() -> None:
             confirm_production=True,
             seed_climate=not args.skip_climate,
         )
-        _print_production_fixture(fixture)
+        _print_production_fixture(fixture, password_generated=password_generated)
         return
 
     if args.skip_climate:
@@ -260,9 +260,26 @@ def _print_local_fixture(fixture: PerfStressFixture) -> None:
     print(f"  cd frontend && PHN_PERF=1 PERF_PROJECT_ID={fixture.project_id} pnpm run test:e2e -- tests/e2e/perf")
 
 
-def _print_production_fixture(fixture: PerfStressFixture) -> None:
+def _resolve_production_password(supplied: str | None) -> tuple[str, bool]:
+    """Resolve the production testing-account password.
+
+    Returns ``(password, generated)``. When no password is supplied, generate a
+    strong random one at run time so nothing is stored in the repo; the caller
+    prints it once. An explicitly supplied ``--password`` is used verbatim and
+    never printed.
+    """
+    if supplied:
+        return supplied, False
+    return secrets.token_urlsafe(24), True
+
+
+def _print_production_fixture(fixture: PerfStressFixture, *, password_generated: bool) -> None:
     print("Seeded production frontend perf stress fixture:")
-    print(f"  login: {fixture.email} / <password not printed>")
+    if password_generated:
+        print(f"  login: {fixture.email} / {fixture.password}")
+        print("  ^ generated password shown once; store it now, it is not saved anywhere.")
+    else:
+        print(f"  login: {fixture.email} / <password not printed; supplied via --password>")
     print(f"  project: {fixture.bt_number} ({fixture.project_id})")
     print(f"  version: {fixture.version_id}")
     print(f"  sign-in route: {fixture.sign_in_route}")

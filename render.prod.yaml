@@ -116,6 +116,15 @@ services:
       - type: rewrite
         source: /*
         destination: /index.html
+    # Build assets carry a content hash in their filename, so they are safe to
+    # cache forever. This removes the per-asset revalidation round-trip on warm
+    # navigations (notably the woff2 fonts, which were re-downloading in full).
+    # index.html is intentionally NOT matched here: it keeps Render's default
+    # Cache-Control: max-age=0 so a new deploy is picked up immediately.
+    headers:
+      - path: /assets/*
+        name: Cache-Control
+        value: "public, max-age=31536000, immutable"
     envVars:
       - key: VITE_API_BASE_URL
         value: https://api.ph-nav.com
