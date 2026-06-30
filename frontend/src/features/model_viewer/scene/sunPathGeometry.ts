@@ -9,8 +9,8 @@ export type Point3 = [number, number, number];
 // model scale once the fit-transform group scales the whole group up.
 const ARC3D_SEGMENTS = 48;
 const CIRCLE_SEGMENTS = 64;
-export const SUN_PATH_DASH_SIZE = 0.05;
-export const SUN_PATH_GAP_SIZE = 0.03;
+export const SUN_PATH_DASH_SIZE = 0.02;
+export const SUN_PATH_GAP_SIZE = 0.01;
 // Uniform scale = bounding-sphere radius × this factor, so the dome clears the
 // building with a little margin rather than circumscribing it exactly.
 export const SUN_PATH_FRAMING_FACTOR = 1.2;
@@ -25,9 +25,10 @@ export function arc3dToPoints(arc: Arc3DModelData, segments: number = ARC3D_SEGM
   const xAxis = new Vector3(...arc.plane.x).normalize();
   const normal = new Vector3(...arc.plane.n).normalize();
   const yAxis = new Vector3().crossVectors(normal, xAxis).normalize();
+  const endAngle = arc.a2 < arc.a1 ? arc.a2 + Math.PI * 2 : arc.a2;
   const points: Point3[] = [];
   for (let i = 0; i <= segments; i += 1) {
-    const angle = arc.a1 + ((arc.a2 - arc.a1) * i) / segments;
+    const angle = arc.a1 + ((endAngle - arc.a1) * i) / segments;
     const point = origin
       .clone()
       .addScaledVector(xAxis, Math.cos(angle) * arc.radius)

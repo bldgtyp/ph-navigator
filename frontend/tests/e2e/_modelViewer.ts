@@ -4,7 +4,7 @@ import { expect, type Page } from "@playwright/test";
 
 export const MODEL_VIEWER_FIXTURE_PATH = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
-  "../../../planning/archive/model-viewer/ph_nav_v2_example.hbjson",
+  "../../../planning/archive/dated/2026-06-13/model-viewer/ph_nav_v2_example.hbjson",
 );
 
 export async function waitForModelViewerReady(page: Page): Promise<void> {
@@ -17,7 +17,10 @@ export async function modelViewerObjectCount(
   page: Page,
   type: keyof NonNullable<Window["__phnModelViewer"]>["objectCounts"],
 ): Promise<number> {
-  return page.evaluate((objectType) => window.__phnModelViewer?.objectCounts[objectType] ?? 0, type);
+  return page.evaluate(
+    (objectType) => window.__phnModelViewer?.objectCounts[objectType] ?? 0,
+    type,
+  );
 }
 
 export async function selectAnyModelObject(

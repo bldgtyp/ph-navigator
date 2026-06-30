@@ -36,18 +36,20 @@
   position: absolute;
   top: 14px;
   left: 14px;
-  z-index: var(--z-base-elevated);
+  z-index: calc(var(--z-base-elevated) + 3);
 }
 
 /* Composes `.chip .chip--md .chip--outline`; floating HBJSON file button. */
 .model-file-chip {
   gap: 7px;
+  min-height: 32px;
+  padding: 6px 10px;
   box-shadow: var(--shadow-model-chip);
-  font-size: var(--fs-md);
+  font-size: var(--fs-sm);
 }
 
 .model-file-chip-label {
-  max-width: 28ch;
+  max-width: min(56ch, calc(100vw - 110px));
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -304,14 +306,14 @@
 }
 
 .model-measure-hint {
-  bottom: 18px;
+  bottom: 62px;
 }
 
 /* Dev-only perf harness readout (Phase 00). Mounted only when the debug hook is
    enabled, so this never appears in production builds. */
 .model-perf-overlay {
   position: absolute;
-  bottom: 14px;
+  bottom: 58px;
   left: 14px;
   z-index: var(--z-base-elevated);
   display: grid;
@@ -346,7 +348,7 @@
 }
 
 .model-site-sun-hint {
-  bottom: 18px;
+  bottom: 62px;
   color: var(--text-muted);
 }
 
@@ -391,7 +393,7 @@
 
 .model-lens-bar {
   position: absolute;
-  top: 14px;
+  bottom: 14px;
   left: 50%;
   z-index: calc(var(--z-base-elevated) + 2);
   display: inline-flex;
@@ -411,8 +413,7 @@
   gap: var(--space-2);
 }
 
-.model-lens-segments button,
-.model-theme-trigger {
+.model-lens-segment {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -425,43 +426,77 @@
   color: var(--text-muted);
   font: inherit;
   font-size: var(--fs-sm);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: uppercase;
   white-space: nowrap;
 }
 
-.model-lens-segments button:hover:not(:disabled),
-.model-theme-trigger:hover {
+.model-lens-segment:hover:not(:disabled) {
   color: var(--text-primary);
   background: color-mix(in oklab, var(--accent-light) 28%, transparent);
 }
 
-.model-lens-segments button.active {
+.model-lens-segment.is-active {
   background: var(--accent);
   color: var(--text-on-accent);
+  font-size: var(--fs-sm);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: uppercase;
 }
 
-.model-lens-segments button:disabled {
+.model-lens-segment:disabled {
   cursor: not-allowed;
   opacity: 0.44;
 }
 
 .model-theme-menu {
   position: relative;
-  margin-left: 3px;
-  padding-left: 3px;
-  border-left: 1px solid var(--border-card);
+  min-width: 0;
 }
 
 .model-theme-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-6);
+  min-height: 28px;
+  padding: 4px 7px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
   color: var(--text-primary);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.model-theme-trigger:hover {
+  background: var(--accent-light);
+  color: var(--text-primary);
+}
+
+.model-theme-trigger span {
+  min-width: 0;
+  max-width: 18ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .model-theme-menu-list {
   position: absolute;
   top: calc(100% + 7px);
-  right: 0;
+  left: 0;
   z-index: calc(var(--z-base-elevated) + 3);
   display: grid;
+  width: max-content;
   min-width: 210px;
+  max-width: min(260px, calc(100vw - 28px));
   padding: 5px;
   border: 1px solid var(--border-card);
   border-radius: var(--radius-md);
@@ -469,7 +504,8 @@
   box-shadow: var(--shadow-hud-3);
 }
 
-.model-theme-menu-list button {
+.model-theme-menu-option {
+  appearance: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -483,19 +519,28 @@
   font: inherit;
   font-size: var(--fs-sm);
   text-align: left;
+  cursor: pointer;
 }
 
-.model-theme-menu-list button:hover {
-  background: color-mix(in oklab, var(--accent-light) 26%, transparent);
+.model-theme-menu-option:hover,
+.model-theme-menu-option:focus-visible {
+  background: color-mix(in oklab, var(--accent) 10%, transparent);
+  color: var(--text-primary);
+  outline: 0;
+}
+
+.model-theme-menu-option:active {
+  background: color-mix(in oklab, var(--accent) 12%, transparent);
+  color: var(--text-primary);
 }
 
 @media (max-width: 1100px) {
-  .model-lens-segments button {
+  .model-lens-segment {
     width: 32px;
     padding-inline: 0;
   }
 
-  .model-lens-segments button span {
+  .model-lens-segment span {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -552,7 +597,7 @@
 .model-camera-cluster {
   position: absolute;
   right: 14px;
-  bottom: 14px;
+  top: 14px;
   z-index: var(--z-base-elevated);
   display: flex;
   flex-direction: column;
@@ -577,10 +622,10 @@
 }
 
 .model-legend-card,
+.model-view-options-card,
 .model-scene-info-root {
   position: absolute;
   left: 14px;
-  bottom: 14px;
   z-index: var(--z-base-elevated);
   display: inline-flex;
   align-items: center;
@@ -588,6 +633,10 @@
 }
 
 .model-legend-card {
+  top: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   width: min(280px, calc(100% - 28px));
   border: 1px solid var(--border-card);
   border-radius: var(--radius-md);
@@ -595,39 +644,45 @@
   box-shadow: var(--shadow-hud-2);
 }
 
+.model-view-options-card {
+  top: 60px;
+  padding: 6px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  background: color-mix(in oklab, var(--bg-card) 92%, transparent);
+  box-shadow: var(--shadow-hud-2);
+}
+
+.model-scene-info-root {
+  bottom: 14px;
+}
+
 .model-legend-titlebar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-10);
-  padding: 9px 10px;
-}
-
-.model-legend-title {
-  display: flex;
-  align-items: baseline;
-  gap: 7px;
-  min-width: 0;
-  color: var(--text-primary);
-  font-size: var(--fs-sm);
-  font-weight: 700;
-  letter-spacing: 0;
-  text-transform: uppercase;
-}
-
-.model-legend-titlebar small {
-  color: var(--text-muted);
-  font-size: var(--fs-xs);
-  font-weight: 500;
-  text-transform: none;
+  padding: 7px 8px 6px;
 }
 
 .model-legend-title-actions {
   display: inline-flex;
+  align-items: center;
+  flex: 1 1 auto;
   gap: var(--space-4);
+  min-width: 0;
 }
 
-.model-legend-title-actions button,
+.model-legend-title-actions .model-theme-menu {
+  flex: 1 1 auto;
+  max-width: 100%;
+}
+
+.model-legend-title-actions .model-theme-trigger {
+  justify-content: flex-start;
+}
+
+.model-legend-title-actions > button,
 .model-scene-info-root > button {
   display: inline-flex;
   align-items: center;
@@ -645,39 +700,56 @@
   display: grid;
   max-height: 280px;
   overflow-y: auto;
-  padding: 0 7px 8px;
+  gap: var(--space-2);
+  padding: 0 8px 10px;
 }
 
-.model-legend-rows button {
+.model-legend-rows--solo {
+  padding-top: 8px;
+}
+
+.model-legend-row {
   display: grid;
   grid-template-columns: 14px minmax(0, 1fr) auto;
   gap: var(--space-8);
   align-items: center;
-  min-height: 28px;
-  padding: 5px 4px;
+  min-height: 30px;
+  padding: 6px 8px;
   border: 0;
   border-radius: var(--phn-control-radius);
   background: transparent;
   color: var(--text-primary);
   font: inherit;
   font-size: var(--fs-sm);
+  font-weight: 400;
+  letter-spacing: 0;
   text-align: left;
+  text-transform: none;
   cursor: pointer;
 }
 
-.model-legend-rows button:hover {
-  background: color-mix(in oklab, var(--text-primary) 7%, transparent);
+.model-legend-row:hover {
+  background: var(--accent-light);
+  color: var(--text-primary);
 }
 
-.model-legend-rows button:focus-visible {
-  outline: 2px solid var(--highlight);
+.model-legend-row:focus-visible {
+  outline: 2px solid var(--accent-edge);
   outline-offset: -2px;
 }
 
 /* The isolated bucket(s) while a legend filter is active (NEW-VIEW-2). */
-.model-legend-rows button.is-active {
-  background: color-mix(in oklab, var(--highlight) 14%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--highlight) 45%, transparent);
+.model-legend-row.is-active {
+  background: var(--accent-light);
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.model-legend-row.is-active:hover {
+  background: var(--accent-light);
 }
 
 .model-legend-swatch {
@@ -696,6 +768,36 @@
 .model-legend-count {
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
+}
+
+.model-legend-footer {
+  display: flex;
+  justify-content: center;
+  padding: 0 8px 10px;
+}
+
+.model-legend-clear-filter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  min-height: 28px;
+  padding: 4px 9px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-pill);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--fs-sm);
+  line-height: 1;
+}
+
+.model-legend-clear-filter:hover,
+.model-legend-clear-filter:focus-visible {
+  border-color: color-mix(in oklab, var(--accent) 35%, var(--border-card));
+  background: color-mix(in oklab, var(--accent) 8%, var(--bg-card));
+  color: var(--text-primary);
+  outline: 0;
 }
 
 .model-scene-info-root > button {
