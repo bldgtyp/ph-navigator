@@ -45,6 +45,25 @@ describe("arc3dToPoints", () => {
     // midpoint at angle π/2 ⇒ origin + 2·yAxis = (10, 2, 5).
     expectPointClose(points[1], [10, 2, 5]);
   });
+
+  it("unwraps Ladybug arcs that cross zero radians instead of sampling the underside", () => {
+    const summerArc: Arc3DModelData = {
+      plane: {
+        n: [-0.00003549146504783794, -0.7358733975008166, -0.6771191487404276],
+        o: [0.000014284632821158237, 0.2961749049247657, 0.2725274485829091],
+        x: [-0.9999999988369145, 0.000048230395509737046, 0],
+      },
+      radius: 0.9154284326246619,
+      a1: 2.7266119629890904,
+      a2: 0.4160697376151572,
+    };
+
+    const points = arc3dToPoints(summerArc, 96);
+
+    expect(Math.min(...points.map((point) => point[2]))).toBeGreaterThanOrEqual(-0.001);
+    expect(Math.max(...points.map((point) => point[2]))).toBeGreaterThan(0.9);
+    expect(Math.min(...points.map((point) => point[1]))).toBeLessThan(-0.3);
+  });
 });
 
 describe("arc2dToPoints", () => {
