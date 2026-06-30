@@ -9,7 +9,7 @@
         db-create-test db-migrate-test \
         migrate makemigration test test-backend test-frontend coverage typecheck \
         lint check ci ci-backend ci-frontend check-backend check-frontend frontend-dev-check build-frontend format format-check \
-        smoke seed-dev-user seed-agent-user seed-agent-browser seed-perf-stress seed-climate-bundle seed-dev-data seed-materials seed-glazing seed-frames seed-hbjson db-seed e2e e2e-perf e2e-report clean graphify-prune
+        smoke seed-dev-user seed-agent-user seed-agent-browser seed-agent-mcp smoke-mcp-local seed-perf-stress seed-climate-bundle seed-dev-data seed-materials seed-glazing seed-frames seed-hbjson db-seed e2e e2e-perf e2e-report clean graphify-prune
 
 # Local Postgres URL for the dedicated pytest database. Mirrors the dev
 # URL in backend/.env.example with the database name swapped to *_test.
@@ -224,6 +224,13 @@ seed-agent-user: migrate ## Create/reset the dedicated local Codex/agent editor 
 
 seed-agent-browser: migrate ## Create/repair the Codex browser-test project and dirty draft; prints the test URL
 	cd backend && uv run python -m scripts.seed_agent_browser_fixture
+
+seed-agent-mcp: migrate ## Create/repair the local agent project and issue a full-scope PHN MCP token
+	cd backend && uv run python -m scripts.issue_agent_mcp_token
+
+smoke-mcp-local: ## Smoke local MCP tool discovery + read using PHN_MCP_TOKEN (backend must be running)
+	@test -n "$$PHN_MCP_TOKEN" || { echo "Set PHN_MCP_TOKEN first, e.g. from make seed-agent-mcp"; exit 1; }
+	cd backend && uv run python -m scripts.smoke_mcp_read --token "$$PHN_MCP_TOKEN"
 
 seed-perf-stress: migrate ## Create/repair the Codex-owned frontend perf stress project; prints PERF_PROJECT_ID
 	cd backend && uv run python -m scripts.seed_perf_stress_fixture
