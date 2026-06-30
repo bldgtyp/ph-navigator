@@ -1,6 +1,7 @@
 import { formatLengthFromMm, useUnitPreference } from "../../../../lib/units";
 import { ModalDialog } from "../../../../shared/ui/ModalDialog";
 import type { AssemblyLayer, AssemblySegment, ProjectMaterial } from "../../types";
+import { SegmentMaterialFacts } from "./SegmentMaterialFacts";
 
 // Read-only counterpart to SegmentDialog (CP-5): clicking a canvas segment as a
 // viewer — or as an editor on a locked version — opens this inspect-only detail
@@ -29,11 +30,8 @@ export function SegmentDetailDialog({
   return (
     <ModalDialog title="Segment details" titleId="envelope-segment-detail-title" onClose={onClose}>
       <div className="modal-form">
+        <SegmentMaterialFacts material={material} unitSystem={unitSystem} />
         <dl className="metadata-grid" aria-label="Segment details">
-          <div>
-            <dt>Material</dt>
-            <dd>{material?.name ?? "No material"}</dd>
-          </div>
           <div>
             <dt>Width</dt>
             <dd>{formatLengthFromMm(segment.width_mm, { unitSystem })}</dd>
