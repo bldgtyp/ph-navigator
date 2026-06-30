@@ -1,7 +1,7 @@
 # Phase 2 — Generic table writes (`replace_table`)
 
 DATE: 2026-06-30
-STATUS: Proposed.
+STATUS: Complete on branch `codex/mcp-write-loop`.
 GOAL: Wire the `replace_table` stub to the real service so an MCP agent can write
       the 14 flat data tables (Rooms + all equipment + thermal bridges). This is
       the core write-parity unlock.
@@ -65,3 +65,27 @@ GOAL: Wire the `replace_table` stub to the real service so an MCP agent can writ
 `replace_table` writes every registered table (mirroring the browser PUT — no
 MCP-side rejection), the full read→replace→save loop passes, the command-vs-replace
 + read-before-replace guidance is in `context/mcp.md`, `make ci` green.
+
+## Completion evidence
+
+Implemented 2026-06-30:
+
+- `tool_replace_table` now wraps `replace_table_slice` with `draft_etag →
+  if_match` and `base_version_etag → if_match_version`.
+- `preview_replace_table` is registered and wraps `preview_table_replace`.
+- No table allow-list or semantic-table rejection was added; `apertures` parity
+  is covered by test.
+- The MCP wrapper accepts full browser PUT payloads, `get_table(...).rows`
+  envelopes (read-only overlay keys ignored), or bare row arrays where current
+  side payload is sufficient.
+- `context/mcp.md` documents the read-before-replace rule, etag handshake,
+  payload shapes, preview tool, and command-vs-replace guidance.
+
+Verification:
+
+- `cd backend && uv run ruff check features/mcp/tools_documents.py features/mcp/tools.py features/mcp/server.py tests/test_mcp.py`
+- `cd backend && uv run ty check features/mcp/tools_documents.py features/mcp/tools.py features/mcp/server.py tests/test_mcp.py`
+- `cd backend && uv run pytest tests/test_mcp.py` — 22 passed.
+- `make format`
+- `make ci` — backend 1249 passed / 2 skipped; frontend 215 test files / 1985
+  tests passed; production build completed.

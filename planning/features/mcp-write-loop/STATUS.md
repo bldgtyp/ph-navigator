@@ -1,8 +1,8 @@
 # MCP Write-Loop — Status
 
 DATE: 2026-06-30
-TIME: 17:12 EDT
-STATUS: Active — Phase 1 implemented on `codex/mcp-write-loop`; Phase 2 next.
+TIME: 17:39 EDT
+STATUS: Active — Phases 1–2 implemented on `codex/mcp-write-loop`; Phase 3 next.
 AUTHOR: Claude (Opus 4.8) with Ed May; updated by Codex
 
 ## Current state
@@ -18,22 +18,33 @@ Decisions accepted (PRD §3). **Phase 1 is implemented on branch
 - `context/mcp.md` now exists as the live MCP contract skeleton, and `CLAUDE.md`
   routes MCP tool work to it.
 
-The MCP `replace_table` tool is still the always-rejecting
-`mcp_write_deferred` stub. `llm-mcp-schema.md` and `save-versioning.md` still
-carry stale JSON-Patch contract language; Phase 4 owns that reconciliation.
+**Phase 2 is implemented locally on the same branch:**
+
+- MCP `replace_table` now wraps the existing `replace_table_slice` service for
+  every registered table; there is no MCP-side semantic-table rejection.
+- MCP `preview_replace_table` wraps `preview_table_replace` and returns the same
+  dependent-link cascade dry-run as REST.
+- `replace_table` accepts full browser PUT payloads, `get_table(...).rows`
+  envelopes, or bare row arrays where current side payload is sufficient.
+- `context/mcp.md` now documents the whole-table replace contract, etag
+  handshake, read-before-replace rule, payload shapes, and command-vs-replace
+  guidance.
+
+`llm-mcp-schema.md` and `save-versioning.md` still carry stale JSON-Patch
+contract language; Phase 4 owns that reconciliation.
 
 ## Next step
 
-Start **Phase 2 — generic table writes** (`phases/phase-02-replace-table.md`):
-wire `replace_table` to `replace_table_slice`, add `preview_replace_table`, and
-update `context/mcp.md` with read-before-replace + etag guidance.
+Start **Phase 3 — lifecycle & read parity**
+(`phases/phase-03-lifecycle-read-parity.md`): add thin MCP wrappers for
+`save_draft_as`, `update_project`, and `diff_versions` if still scoped in.
 
 ## Phase map
 
 | Phase | Title | Priority | Lands |
 |---|---|---|---|
 | 1 | Draft commit/discard | P0 | **Implemented on branch** — `save_draft`, `discard_draft`; `context/mcp.md` skeleton; CLAUDE.md MCP row |
-| 2 | Generic table writes | P0 | `replace_table` (wire stub), `preview_replace_table`, table allow-list |
+| 2 | Generic table writes | P0 | **Implemented locally** — `replace_table` wraps `replace_table_slice`; `preview_replace_table`; no MCP-side rejection |
 | 3 | Lifecycle & read parity | P1 | `save_draft_as`/`create_version`, `update_project`, `diff_versions` |
 | 4 | Docs truth + discoverability | P1 | reconcile `llm-mcp-schema.md` + `save-versioning.md`; tool-set drift guard; smoke hardening; `instructions=` polish |
 
@@ -68,8 +79,15 @@ evidence in PRD §2 and §5). No open blockers remain for Phases 1–2.
   - `make format`
   - `make ci` — backend 1241 passed / 2 skipped; frontend 215 test files / 1985
     tests passed; production build completed.
-- New backend tests per remaining phase (round-trip read→replace→save; stale
-  replace etag; locked replace; validation failures; preview cascade).
+- Phase 2 focused checks passed:
+  - `cd backend && uv run ruff check features/mcp/tools_documents.py features/mcp/tools.py features/mcp/server.py tests/test_mcp.py`
+  - `cd backend && uv run ty check features/mcp/tools_documents.py features/mcp/tools.py features/mcp/server.py tests/test_mcp.py`
+  - `cd backend && uv run pytest tests/test_mcp.py` — 22 passed.
+- Phase 2 closeout gate passed:
+  - `make format`
+  - `make ci` — backend 1249 passed / 2 skipped; frontend 215 test files / 1985
+    tests passed; production build completed.
+- New backend tests per remaining phase (save-as, metadata patch, version diff).
 - `make ci` green at each phase closeout.
 - `context/mcp.md` drift guard test (Phase 4).
 - Optional isolated browser/MCP smoke per `planning/features/.instructions.md`

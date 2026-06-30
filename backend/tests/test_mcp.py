@@ -25,15 +25,24 @@ from features.mcp.tools import (
     tool_apply_envelope_command,
     tool_delete_project,
     tool_discard_draft,
+    tool_get_table,
     tool_hard_delete_project,
     tool_list_envelope_assemblies,
+    tool_preview_replace_table,
     tool_query_unfinished_envelope_work,
+    tool_replace_table,
     tool_restore_project,
     tool_save_draft,
 )
 from features.project_document.validation import document_etag
 from main import app
 from tests.envelope.test_envelope_document_contracts import envelope_body, write_saved_body
+from tests.features.heat_pumps.test_heat_pumps import (
+    HPIE_1,
+    indoor_equip,
+    outdoor_equip,
+    seed_leaf_rows,
+)
 from tests.project_document_helpers import set_saved_version_schema
 
 ORIGIN = "http://localhost:5173"
@@ -553,6 +562,315 @@ def test_mcp_save_draft_rechecks_revoked_token_at_commit(
     assert draft_row(version_id) is not None
 
 
+def test_mcp_replace_table_full_loop_saves_flat_table_edit(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = cast(str, project["id"])
+    version_id = cast(str, project["active_version_id"])
+    monkeypatch.setenv(
+        "PHN_MCP_TOKEN",
+        issue_mcp_token(client, project_id, scopes=["project:read", "project:write"]),
+    )
+    initial = tool_get_table(project_id, version_id, "rooms", cast(Context, None), allow_env_token=True)
+    initial_rows_payload = cast(dict[str, object], initial.rows)
+    payload = room_payload(cast(list[dict[str, object]], initial_rows_payload["field_defs"]))
+
+    replaced = tool_replace_table(
+        project_id,
+        version_id,
+        "rooms",
+        cast(Context, None),
+        allow_env_token=True,
+        rows=payload,
+        base_version_etag=initial.version_body_etag,
+    )
+    tool_save_draft(
+        project_id,
+        version_id,
+        cast(Context, None),
+        allow_env_token=True,
+        if_match=initial.version_body_etag,
+    )
+
+    assert replaced["source"] == "draft"
+    assert replaced["draft_etag"] is not None
+    replaced_rooms = cast(list[dict[str, object]], replaced["rooms"])
+    replaced_custom_values = cast(dict[str, object], replaced_rooms[0]["custom_values"])
+    assert replaced_custom_values["name"] == "Living Room"
+    assert saved_room_name(version_id) == "Living Room"
+
+
+def test_mcp_replace_table_maps_stale_draft_etag_and_preserves_draft(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = cast(str, project["id"])
+    version_id = cast(str, project["active_version_id"])
+    monkeypatch.setenv(
+        "PHN_MCP_TOKEN",
+        issue_mcp_token(client, project_id, scopes=["project:read", "project:write"]),
+    )
+    initial = tool_get_table(project_id, version_id, "rooms", cast(Context, None), allow_env_token=True)
+    initial_rows_payload = cast(dict[str, object], initial.rows)
+    payload = room_payload(cast(list[dict[str, object]], initial_rows_payload["field_defs"]))
+    first = tool_replace_table(
+        project_id,
+        version_id,
+        "rooms",
+        cast(Context, None),
+        allow_env_token=True,
+        rows=payload,
+        base_version_etag=initial.version_body_etag,
+    )
+
+    with pytest.raises(ToolError) as exc_info:
+        tool_replace_table(
+            project_id,
+            version_id,
+            "rooms",
+            cast(Context, None),
+            allow_env_token=True,
+            rows=payload,
+            draft_etag="stale",
+        )
+
+    error = mcp_error(exc_info.value)
+    assert error["code"] == "draft_etag_mismatch"
+    assert error["recoverability"] == "refresh"
+    draft = draft_row(version_id)
+    assert draft is not None
+    assert draft["draft_etag"] == first["draft_etag"]
+
+
+def test_mcp_replace_table_allows_semantic_table_browser_parity(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = cast(str, project["id"])
+    version_id = cast(str, project["active_version_id"])
+    monkeypatch.setenv(
+        "PHN_MCP_TOKEN",
+        issue_mcp_token(client, project_id, scopes=["project:read", "project:write"]),
+    )
+    initial = tool_get_table(project_id, version_id, "apertures", cast(Context, None), allow_env_token=True)
+    aperture_row = {
+        "id": "apt_mcp",
+        "name": "MCP Test Aperture",
+        "row_heights_mm": [1200.0],
+        "column_widths_mm": [1000.0],
+        "elements": [
+            {
+                "id": "aptel_mcp",
+                "name": "Fixed",
+                "row_span": [0, 0],
+                "column_span": [0, 0],
+                "frames": {"top": None, "right": None, "bottom": None, "left": None},
+                "glazing_id": None,
+                "operation": None,
+            }
+        ],
+    }
+
+    replaced = tool_replace_table(
+        project_id,
+        version_id,
+        "apertures",
+        cast(Context, None),
+        allow_env_token=True,
+        rows=[aperture_row],
+        base_version_etag=initial.version_body_etag,
+    )
+
+    assert cast(list[dict[str, object]], replaced["apertures"])[0]["id"] == "apt_mcp"
+    assert replaced["source"] == "draft"
+
+
+def test_mcp_replace_table_accepts_get_table_rows_envelope(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = cast(str, project["id"])
+    version_id = cast(str, project["active_version_id"])
+    monkeypatch.setenv(
+        "PHN_MCP_TOKEN",
+        issue_mcp_token(client, project_id, scopes=["project:read", "project:write"]),
+    )
+    initial = tool_get_table(project_id, version_id, "rooms", cast(Context, None), allow_env_token=True)
+    rows_payload = cast(dict[str, object], initial.rows)
+    room_row = cast(list[dict[str, object]], room_payload([])["rooms"])[0]
+    room_row["floor_level"] = None
+    room_row["building_zone"] = None
+    rows_payload["rows"] = [room_row]
+
+    replaced = tool_replace_table(
+        project_id,
+        version_id,
+        "rooms",
+        cast(Context, None),
+        allow_env_token=True,
+        rows=rows_payload,
+        base_version_etag=initial.version_body_etag,
+    )
+
+    assert cast(list[dict[str, object]], replaced["rooms"])[0]["id"] == "rm_living"
+    assert replaced["source"] == "draft"
+
+
+def test_mcp_replace_table_validation_failure_is_fatal(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = cast(str, project["id"])
+    version_id = cast(str, project["active_version_id"])
+    monkeypatch.setenv(
+        "PHN_MCP_TOKEN",
+        issue_mcp_token(client, project_id, scopes=["project:read", "project:write"]),
+    )
+    initial = tool_get_table(project_id, version_id, "rooms", cast(Context, None), allow_env_token=True)
+
+    with pytest.raises(ToolError) as exc_info:
+        tool_replace_table(
+            project_id,
+            version_id,
+            "rooms",
+            cast(Context, None),
+            allow_env_token=True,
+            rows={"rooms": [], "field_defs": [], "single_select_options": {}, "unknown": True},
+            base_version_etag=initial.version_body_etag,
+        )
+
+    error = mcp_error(exc_info.value)
+    assert error["code"] == "validation_error"
+    assert error["recoverability"] == "fatal"
+
+
+def test_mcp_replace_table_rows_envelope_rejects_unknown_keys(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = cast(str, project["id"])
+    version_id = cast(str, project["active_version_id"])
+    monkeypatch.setenv(
+        "PHN_MCP_TOKEN",
+        issue_mcp_token(client, project_id, scopes=["project:read", "project:write"]),
+    )
+    initial = tool_get_table(project_id, version_id, "rooms", cast(Context, None), allow_env_token=True)
+    rows_payload = cast(dict[str, object], initial.rows)
+    rows_payload["rows"] = []
+    rows_payload["unknown"] = True
+
+    with pytest.raises(ToolError) as exc_info:
+        tool_replace_table(
+            project_id,
+            version_id,
+            "rooms",
+            cast(Context, None),
+            allow_env_token=True,
+            rows=rows_payload,
+            base_version_etag=initial.version_body_etag,
+        )
+
+    error = mcp_error(exc_info.value)
+    assert error["code"] == "validation_error"
+    assert cast(dict[str, object], error["details"])["unsupported_keys"] == ["unknown"]
+
+
+def test_mcp_replace_table_locked_version_is_refreshable(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = cast(str, project["id"])
+    version_id = cast(str, project["active_version_id"])
+    monkeypatch.setenv(
+        "PHN_MCP_TOKEN",
+        issue_mcp_token(client, project_id, scopes=["project:read", "project:write"]),
+    )
+    initial = tool_get_table(project_id, version_id, "rooms", cast(Context, None), allow_env_token=True)
+    patch = client.patch(
+        f"/api/v1/projects/{project_id}/versions/{version_id}",
+        headers={"Origin": ORIGIN},
+        json={"locked": True},
+    )
+    assert patch.status_code == 200
+    initial_rows_payload = cast(dict[str, object], initial.rows)
+
+    with pytest.raises(ToolError) as exc_info:
+        tool_replace_table(
+            project_id,
+            version_id,
+            "rooms",
+            cast(Context, None),
+            allow_env_token=True,
+            rows=room_payload(cast(list[dict[str, object]], initial_rows_payload["field_defs"])),
+            base_version_etag=initial.version_body_etag,
+        )
+
+    error = mcp_error(exc_info.value)
+    assert error["code"] == "version_locked"
+    assert error["recoverability"] == "refresh"
+
+
+def test_mcp_preview_replace_table_reports_cascade_without_persisting(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = cast(str, project["id"])
+    version_id = cast(str, project["active_version_id"])
+    seed_leaf_rows(client, project_id, version_id, "heat_pumps_indoor_equip", "indoor_equip", [indoor_equip()])
+    seed_leaf_rows(
+        client,
+        project_id,
+        version_id,
+        "heat_pumps_outdoor_equip",
+        "outdoor_equip",
+        [outdoor_equip(paired_indoor_equip_id=HPIE_1)],
+    )
+    draft = draft_row(version_id)
+    assert draft is not None
+    monkeypatch.setenv(
+        "PHN_MCP_TOKEN",
+        issue_mcp_token(client, project_id, scopes=["project:read", "project:write"]),
+    )
+
+    preview = tool_preview_replace_table(
+        project_id,
+        version_id,
+        "heat_pumps_indoor_equip",
+        cast(Context, None),
+        allow_env_token=True,
+        rows=[],
+        draft_etag=cast(str, draft["draft_etag"]),
+    )
+
+    assert [ref.field for ref in preview.affected] == ["paired_indoor_equip_id"]
+    refetched = tool_get_table(
+        project_id,
+        version_id,
+        "heat_pumps_indoor_equip",
+        cast(Context, None),
+        allow_env_token=True,
+    )
+    refetched_rows_payload = cast(dict[str, object], refetched.rows)
+    assert len(cast(list[dict[str, object]], refetched_rows_payload["rows"])) == 1
+
+
 class _FakeR2DeleteResult:
     deleted_object_count = 0
     failed_object_keys: list[str] = []
@@ -669,6 +987,7 @@ async def test_mcp_read_tools_return_document_and_structured_write_rejection(cle
                         "apply_envelope_command",
                         "save_draft",
                         "discard_draft",
+                        "preview_replace_table",
                     }.issubset(tool_names)
 
                     listed = await session.call_tool("list_projects", {})

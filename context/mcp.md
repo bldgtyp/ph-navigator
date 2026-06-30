@@ -64,8 +64,7 @@ Recoverability values:
 | `list_assets`, `resolve_asset_urls`, `get_asset_url`, `start_bulk_download`, `get_job` | `asset:read` plus project access |
 | `bulk_attach`, `bulk_detach` | `project:write` and `asset:write` |
 | `apply_envelope_command`, `apply_aperture_command`, custom-field mutation tools | `project:write` |
-| `save_draft`, `discard_draft` | `project:write` |
-| `replace_table` | `project:write`, currently registered but write-deferred until Phase 2 |
+| `replace_table`, `preview_replace_table`, `save_draft`, `discard_draft` | `project:write` |
 | `delete_project`, `restore_project`, `hard_delete_project` | `project:write` |
 | HBJSON model/file tools | project access; write tools require write scope |
 
@@ -88,8 +87,33 @@ Recoverability values:
   Custom-field-capable tables return a `{field_defs, rows}` envelope under the
   `rows` field.
 - `replace_table(project_id, version_id, table_name, rows, draft_etag?,
-  base_version_etag?)` is still registered as a deferred write stub in Phase 1.
-  It becomes the whole-table write primitive in Phase 2.
+  base_version_etag?)` replaces one registered table in the token owner's draft
+  through the same `replace_table_slice` service as browser
+  `PUT /draft/tables/{name}`. This is a whole-table write: read first, submit
+  the full intended row set or full table replace payload, then call
+  `save_draft`.
+- `preview_replace_table(project_id, version_id, table_name, rows, draft_etag?,
+  base_version_etag?)` validates the same payload and etags as `replace_table`
+  but does not persist; it reports the optional dependent-link cascade that a
+  destructive replace would trigger.
+
+For `replace_table`, use `draft_etag` after a draft exists. On the first draft
+write, use `base_version_etag` from `get_document.version_body_etag` or
+`get_table.version_body_etag`. A stale draft/version etag returns a structured
+`refresh` error.
+
+The `rows` argument accepts:
+
+- a full table replace payload matching the browser PUT body, such as
+  `{field_defs, rooms, single_select_options}`;
+- the current `get_table(...).rows` envelope with its `rows` array edited; or
+- a bare row array when the table has no required side payload, or when the
+  existing draft/version already carries the option lists needed by those rows.
+
+For envelope/aperture structural edits, prefer the semantic command tools
+(`apply_envelope_command`, `apply_aperture_command`). `replace_table` remains
+available for browser-parity table replacement on all registered tables,
+including semantic-command tables, but it is the lower-level primitive.
 
 ### Draft Lifecycle
 
