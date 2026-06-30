@@ -8,6 +8,7 @@ import { useLengthDraft } from "../../hooks/useLengthDraft";
 import type { AssemblySegment, ProjectMaterial } from "../../types";
 import { ModalUnitToggle } from "../ModalUnitToggle";
 import { SegmentMaterialPicker } from "./SegmentMaterialPicker";
+import { SegmentMaterialFacts } from "./SegmentMaterialFacts";
 
 export function SegmentDialog({
   title,
@@ -47,6 +48,12 @@ export function SegmentDialog({
   const width = useLengthDraft(segment.width_mm, lengthDraftOptions);
   const [isContinuous, setIsContinuous] = useState(segment.is_continuous_insulation);
   const studSpacing = useLengthDraft(segment.steel_stud_spacing_mm, lengthDraftOptions);
+  const material = segment.project_material_id
+    ? (materials.find((candidate) => candidate.id === segment.project_material_id) ?? null)
+    : null;
+  const [steelStudOpen] = useState(
+    segment.steel_stud_spacing_mm !== null || segment.is_continuous_insulation,
+  );
   function submit(event: FormEvent) {
     event.preventDefault();
     const widthMm = width.parsePositive("Width");
@@ -93,8 +100,16 @@ export function SegmentDialog({
           onPickCatalogMaterial={onPickCatalogMaterial}
           onOpenCatalogPicker={onOpenCatalogPicker}
         />
-        <fieldset id="envelope-segment-width-section" className="segment-dialog-section">
-          <legend>Width ({width.unitLabel})</legend>
+        <SegmentMaterialFacts material={material} unitSystem={unitSystem} />
+        <section
+          id="envelope-segment-width-section"
+          className="segment-dialog-section"
+          role="group"
+          aria-labelledby="envelope-segment-width-heading"
+        >
+          <h3 id="envelope-segment-width-heading" className="segment-dialog-section-heading">
+            Width ({width.unitLabel})
+          </h3>
           <div className="segment-geometry-grid">
             <input
               id="envelope-segment-width-input"
@@ -103,30 +118,15 @@ export function SegmentDialog({
               onChange={(event) => width.setDraft(event.currentTarget.value)}
             />
           </div>
-        </fieldset>
-        <fieldset id="envelope-segment-steel-stud-section" className="segment-dialog-section">
-          <legend>Steel Stud Parameters</legend>
-          <div className="segment-geometry-grid">
-            <label htmlFor="envelope-segment-stud-spacing-input">
-              Stud spacing ({studSpacing.unitLabel})
-              <input
-                id="envelope-segment-stud-spacing-input"
-                value={studSpacing.draft}
-                onChange={(event) => studSpacing.setDraft(event.currentTarget.value)}
-                placeholder="None"
-              />
-            </label>
-          </div>
-          <label className="checkbox-row" htmlFor="envelope-segment-continuous-insulation">
-            <input
-              id="envelope-segment-continuous-insulation"
-              type="checkbox"
-              checked={isContinuous}
-              onChange={(event) => setIsContinuous(event.currentTarget.checked)}
-            />
-            Continuous insulation
-          </label>
-        </fieldset>
+        </section>
+        <SteelStudParameters
+          defaultOpen={steelStudOpen}
+          unitLabel={studSpacing.unitLabel}
+          draft={studSpacing.draft}
+          isContinuous={isContinuous}
+          onDraftChange={studSpacing.setDraft}
+          onContinuousChange={setIsContinuous}
+        />
         <DialogActions
           busy={busy}
           error={width.error ?? studSpacing.error ?? error}
@@ -135,6 +135,74 @@ export function SegmentDialog({
         />
       </form>
     </ModalDialog>
+  );
+}
+
+function SteelStudParameters({
+  defaultOpen,
+  unitLabel,
+  draft,
+  isContinuous,
+  onDraftChange,
+  onContinuousChange,
+}: {
+  defaultOpen: boolean;
+  unitLabel: string;
+  draft: string;
+  isContinuous: boolean;
+  onDraftChange: (value: string) => void;
+  onContinuousChange: (value: boolean) => void;
+}) {
+  const controls = (
+    <div className="segment-steel-stud-controls">
+      <div className="segment-steel-stud-row">
+        <label htmlFor="envelope-segment-stud-spacing-input">Stud spacing ({unitLabel})</label>
+        <input
+          id="envelope-segment-stud-spacing-input"
+          value={draft}
+          onChange={(event) => onDraftChange(event.currentTarget.value)}
+          placeholder="None"
+        />
+      </div>
+      <label
+        className="checkbox-row segment-steel-stud-checkbox"
+        htmlFor="envelope-segment-continuous-insulation"
+      >
+        <input
+          id="envelope-segment-continuous-insulation"
+          type="checkbox"
+          checked={isContinuous}
+          onChange={(event) => onContinuousChange(event.currentTarget.checked)}
+        />
+        Continuous insulation
+      </label>
+    </div>
+  );
+
+  if (defaultOpen) {
+    return (
+      <section
+        id="envelope-segment-steel-stud-section"
+        className="segment-dialog-section"
+        role="group"
+        aria-labelledby="envelope-segment-steel-stud-heading"
+      >
+        <h3 id="envelope-segment-steel-stud-heading" className="segment-dialog-section-heading">
+          Steel stud parameters
+        </h3>
+        {controls}
+      </section>
+    );
+  }
+
+  return (
+    <details
+      id="envelope-segment-steel-stud-section"
+      className="segment-dialog-section segment-dialog-disclosure"
+    >
+      <summary>Steel stud parameters</summary>
+      {controls}
+    </details>
   );
 }
 

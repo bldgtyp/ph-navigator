@@ -1,15 +1,15 @@
-import { ChevronDown, ChevronUp, Gauge, Info, X } from "lucide-react";
+import { Gauge, Info, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { formatProjectDateTime } from "../../../shared/lib/dates";
 import { isModelViewerDebugHookEnabled } from "../lib/debugHook";
 import { useModelViewerPopoverEscape } from "../lib/events";
 import { useModelViewerPerfStore } from "../lib/perf";
+import { hasThemeMenu } from "../lib/themeState";
 import { legendForModel } from "../lib/themes";
 import type { BuildingModel } from "../loaders/building";
 import { useModelViewerStore } from "../store";
 import type { HbjsonFile, LoadSummary, ModelViewerLegend, ModelViewerTheme } from "../types";
-
-const LEGEND_COLLAPSED_KEY = "phn:model-viewer:legend-collapsed";
+import { ThemeMenu } from "./ThemeMenu";
 
 type LegendCardProps = {
   model: BuildingModel | null;
@@ -22,70 +22,65 @@ export function LegendCard({ model, activeFile, loadSummary }: LegendCardProps) 
   const theme = useModelViewerStore((state) => state.themesByLens[state.lens]);
   const legendFilter = useModelViewerStore((state) => state.legendFilter);
   const clearLegendFilter = useModelViewerStore((state) => state.clearLegendFilter);
-  const [collapsed, setCollapsed] = useState(readCollapsed);
   const [infoOpen, setInfoOpen] = useState(false);
   const closeInfo = useCallback(() => setInfoOpen(false), []);
   const legend = useMemo(
     () => (model ? legendForModel(model, lens, theme) : null),
     [lens, model, theme],
   );
+  const canPickTheme = hasThemeMenu(lens);
+  const hasActiveLegendFilter = legendFilter?.theme === theme;
   useModelViewerPopoverEscape(closeInfo);
 
   if (!legend) {
     return (
+      <>
+        {canPickTheme ? (
+          <div className="model-view-options-card" aria-label="Model color options">
+            <ThemeMenu lens={lens} theme={theme} />
+          </div>
+        ) : null}
+        <div className="model-scene-info-root">
+          <InfoButton open={infoOpen} onClick={() => setInfoOpen((current) => !current)} />
+          <PerfToggleButton />
+          {infoOpen ? <SceneInfoPopover activeFile={activeFile} loadSummary={loadSummary} /> : null}
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <div className="model-legend-card" aria-label={`${legend.title} legend`}>
+        {canPickTheme ? (
+          <div className="model-legend-titlebar">
+            <div className="model-legend-title-actions">
+              <ThemeMenu lens={lens} theme={theme} />
+            </div>
+          </div>
+        ) : null}
+        <LegendRows legend={legend} theme={theme} hasHeader={canPickTheme} />
+        {hasActiveLegendFilter ? (
+          <div className="model-legend-footer">
+            <button
+              type="button"
+              className="model-legend-clear-filter"
+              aria-label="Clear filter"
+              title="Clear filter"
+              onClick={clearLegendFilter}
+            >
+              <X size={13} aria-hidden />
+              <span>Clear filter</span>
+            </button>
+          </div>
+        ) : null}
+      </div>
       <div className="model-scene-info-root">
         <InfoButton open={infoOpen} onClick={() => setInfoOpen((current) => !current)} />
         <PerfToggleButton />
         {infoOpen ? <SceneInfoPopover activeFile={activeFile} loadSummary={loadSummary} /> : null}
       </div>
-    );
-  }
-
-  const toggleCollapsed = () => {
-    setCollapsed((current) => {
-      const next = !current;
-      sessionStorage.setItem(LEGEND_COLLAPSED_KEY, String(next));
-      return next;
-    });
-  };
-
-  return (
-    <div className="model-legend-card" aria-label={`${legend.title} legend`}>
-      <div className="model-legend-titlebar">
-        <div className="model-legend-title">
-          <span>{legend.title}</span>
-          {legend.kind === "mini-key" ? <small>Key</small> : null}
-        </div>
-        <div className="model-legend-title-actions">
-          {legendFilter?.theme === theme ? (
-            <button
-              type="button"
-              aria-label="Clear filter"
-              title="Clear filter"
-              onClick={clearLegendFilter}
-            >
-              <X size={15} aria-hidden />
-            </button>
-          ) : null}
-          <InfoButton open={infoOpen} onClick={() => setInfoOpen((current) => !current)} />
-          <PerfToggleButton />
-          <button
-            type="button"
-            aria-label={collapsed ? "Expand legend" : "Collapse legend"}
-            title={collapsed ? "Expand legend" : "Collapse legend"}
-            onClick={toggleCollapsed}
-          >
-            {collapsed ? (
-              <ChevronUp size={15} aria-hidden />
-            ) : (
-              <ChevronDown size={15} aria-hidden />
-            )}
-          </button>
-        </div>
-      </div>
-      {infoOpen ? <SceneInfoPopover activeFile={activeFile} loadSummary={loadSummary} /> : null}
-      {!collapsed ? <LegendRows legend={legend} theme={theme} /> : null}
-    </div>
+    </>
   );
 }
 
@@ -98,15 +93,21 @@ export function LegendCard({ model, activeFile, loadSummary }: LegendCardProps) 
 function LegendRows({
   legend,
   theme,
+  hasHeader,
 }: {
   legend: Exclude<ModelViewerLegend, null>;
   theme: ModelViewerTheme;
+  hasHeader: boolean;
 }) {
   const legendFilter = useModelViewerStore((state) => state.legendFilter);
   const toggleLegendFilterKey = useModelViewerStore((state) => state.toggleLegendFilterKey);
   const activeKeys = legendFilter?.theme === theme ? legendFilter.keys : null;
   return (
-    <div className="model-legend-rows" role="group" aria-label={`Filter by ${legend.title}`}>
+    <div
+      className={hasHeader ? "model-legend-rows" : "model-legend-rows model-legend-rows--solo"}
+      role="group"
+      aria-label={`Filter by ${legend.title}`}
+    >
       {legend.rows.map((row) => {
         const active = activeKeys?.has(row.id) ?? false;
         return (
@@ -114,7 +115,7 @@ function LegendRows({
             key={row.id}
             type="button"
             aria-pressed={active}
-            className={active ? "is-active" : undefined}
+            className={active ? "model-legend-row is-active" : "model-legend-row"}
             title={`Isolate ${row.label} — Shift-click to add to the filter`}
             onClick={(event) => toggleLegendFilterKey(theme, row.id, event.shiftKey)}
           >
@@ -218,8 +219,4 @@ function SceneInfoPopover({
       ) : null}
     </div>
   );
-}
-
-function readCollapsed(): boolean {
-  return sessionStorage.getItem(LEGEND_COLLAPSED_KEY) === "true";
 }

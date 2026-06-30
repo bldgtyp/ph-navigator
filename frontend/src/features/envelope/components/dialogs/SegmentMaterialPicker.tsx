@@ -34,8 +34,15 @@ export function SegmentMaterialPicker({
   }
 
   return (
-    <fieldset id={id} className="material-picker">
-      <legend>Material</legend>
+    <section
+      id={id}
+      className="segment-dialog-section material-picker"
+      role="group"
+      aria-labelledby={`${id}-heading`}
+    >
+      <h3 id={`${id}-heading`} className="segment-dialog-section-heading">
+        Material
+      </h3>
       <div
         id={`${id}-tabs`}
         className="material-picker-tabs pill-tab-list"
@@ -105,6 +112,6 @@ export function SegmentMaterialPicker({
           />
         </div>
       ) : null}
-    </fieldset>
+    </section>
   );
 }
