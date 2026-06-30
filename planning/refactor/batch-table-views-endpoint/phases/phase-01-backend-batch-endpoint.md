@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 21:35 EDT
-STATUS: Not started
+STATUS: ✅ DONE (implemented 2026-06-29 on branch refactor/batch-table-views-endpoint)
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Add a batch read endpoint returning many table-views in one request.
 RELATED:

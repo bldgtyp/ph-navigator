@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 21:05 EDT
-STATUS: Active
+STATUS: In progress — Phase 0+1 done (backend landed), Phase 2 next
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Status ledger for the batch table-views read refactor.
 RELATED:
@@ -11,7 +11,8 @@ RELATED:
 
 # Status — Batch `table-views` read
 
-**State:** `Active` — scoped and planned, not started. Ready to hand off.
+**State:** `In progress` — Phase 0 (pre-flight) and Phase 1 (backend) complete
+on branch `refactor/batch-table-views-endpoint`. Phase 2 (frontend) next.
 
 ## Current state
 
@@ -19,12 +20,21 @@ RELATED:
   `table-views` per-table fan-out (7 GETs on `equipment`) is a pure round-trip
   artifact, batchable with no data-model change.
 - README (rationale + verified facts) and PLAN (phases 0–4) are written.
-- No code written yet.
+- **Phase 0 DONE** — findings recorded in `phases/phase-00-preflight.md`:
+  repo query shape, response envelope, editor-only access, and per-page key
+  sets confirmed. Correction logged: `spaces`/`thermal-bridges` are
+  single-table (no fan-out); equipment's 7→1 is the verified win.
+- **Phase 1 DONE** — backend batch read endpoint landed:
+  `GET /api/v1/projects/{id}/table-views?keys=…` →
+  `BatchTableViewsResponse { views }`, backed by `repository.get_many`
+  (`table_key = ANY`) and `service.get_table_views`. 8 new tests; backend
+  lint/boundaries/`ty`/pytest green for the module.
 
 ## Next step
 
-Phase 0 pre-flight: confirm the `repository.get` query shape and enumerate the
-per-page `table_key` sets, then start Phase 1 (backend batch endpoint).
+Phase 2 (frontend): add `fetchTableViews` + a page-scoped batch context and a
+read-through in `useProjectTableViewState`, then wire the equipment page so its
+7 view-state reads collapse to 1. Per-table fallback stays for un-wrapped pages.
 
 ## Blockers / open decisions
 

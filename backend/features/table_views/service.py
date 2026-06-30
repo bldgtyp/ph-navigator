@@ -15,6 +15,7 @@ from features.table_views import repository
 from features.table_views.models import (
     MAX_VIEW_STATE_BYTES,
     SUPPORTED_VIEW_STATE_SCHEMA_VERSION,
+    BatchTableViewsResponse,
     TableViewResponse,
     TableViewUpsertRequest,
 )
@@ -52,6 +53,31 @@ def get_table_view(table_key: str, access: ProjectAccess) -> TableViewResponse:
     with connection() as conn:
         row = repository.get(conn, user.id, access.project_id, table_key)
     return _row_to_response(row)
+
+
+def get_table_views(
+    table_keys: list[str],
+    access: ProjectAccess,
+) -> BatchTableViewsResponse:
+    """Read the view-state config for many `table_key`s in one round-trip.
+
+    Per-key semantics are identical to `get_table_view`: every requested key
+    appears in the response, and keys with no saved row carry the same
+    default-empty `TableViewResponse`. Any invalid key rejects the whole
+    request (nothing partial) to match the single-key route.
+    """
+    user = require_editor_user(access)
+    # De-duplicate while preserving request order so the `ANY` list and the
+    # response keys are stable and free of double rows.
+    unique_keys = list(dict.fromkeys(table_keys))
+    for table_key in unique_keys:
+        validate_table_key(table_key)
+
+    with connection() as conn:
+        rows = repository.get_many(conn, user.id, access.project_id, unique_keys)
+
+    rows_by_key = {row["table_key"]: row for row in rows}
+    return BatchTableViewsResponse(views={key: _row_to_response(rows_by_key.get(key)) for key in unique_keys})
 
 
 def upsert_table_view(
