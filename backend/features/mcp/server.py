@@ -44,6 +44,7 @@ from features.mcp.tools import (
     tool_delete_custom_field,
     tool_delete_hbjson_file,
     tool_delete_project,
+    tool_discard_draft,
     tool_duplicate_custom_field,
     tool_edit_custom_field_options,
     tool_get_asset_url,
@@ -79,11 +80,13 @@ from features.mcp.tools import (
     tool_report_missing_envelope_evidence,
     tool_resolve_asset_urls,
     tool_restore_project,
+    tool_save_draft,
     tool_search_climate_locations,
     tool_set_custom_field_description,
     tool_set_custom_field_formula,
     tool_start_bulk_download,
 )
+from features.project_document.models import DiscardDraftResponse, SaveDraftResponse
 
 __all__ = ["build_mcp_server", "mcp"]
 
@@ -92,7 +95,12 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
     """Create the MCP tool server used by HTTP and stdio transports."""
     mcp = FastMCP(
         "PH-Navigator",
-        instructions="Project-scoped PH-Navigator tools. All tokens are scoped to one project.",
+        instructions=(
+            "Project-scoped PH-Navigator tools. Tokens are scoped to one project. "
+            "Writes land in the issuing editor's draft; read current data first, "
+            "write with the latest version/draft etag, then call save_draft to "
+            "persist or discard_draft to drop unsaved work."
+        ),
         json_response=True,
         streamable_http_path="/",
         stateless_http=True,
@@ -228,6 +236,31 @@ def build_mcp_server(allow_env_token: bool = False) -> FastMCP:
         list under `rows`.
         """
         return tool_get_table(project_id, version_id, table_name, ctx, allow_env_token=allow_env_token)
+
+    @mcp.tool()
+    def save_draft(
+        project_id: str,
+        version_id: str,
+        ctx: Context,
+        if_match: str | None = None,
+    ) -> SaveDraftResponse:
+        """Commit the token owner's current draft to the active version.
+
+        Mutating MCP tools write into a draft first. Pass the version_body_etag
+        seen when the draft was opened as `if_match`; stale or locked versions
+        return a structured refreshable error. If the version is locked, use
+        save_draft_as once that lifecycle tool is available.
+        """
+        return tool_save_draft(project_id, version_id, ctx, allow_env_token=allow_env_token, if_match=if_match)
+
+    @mcp.tool()
+    def discard_draft(project_id: str, version_id: str, ctx: Context) -> DiscardDraftResponse:
+        """Drop the token owner's unsaved draft changes.
+
+        Discard is safe to call when no draft exists; the response reports
+        `discarded=false` rather than raising.
+        """
+        return tool_discard_draft(project_id, version_id, ctx, allow_env_token=allow_env_token)
 
     @mcp.tool()
     def list_envelope_assemblies(

@@ -68,6 +68,7 @@ always-loaded fast-path.
 | deciding **stack / persistence** | `context/TECH_STACK.md` | raw SQL + Pydantic v2 via narrow repositories; `psycopg` v3; JSONB document versions; no SQLAlchemy ORM in app code |
 | deciding **where data lives** / storage boundaries | `context/DATA_STORAGE.md` | two stores (Postgres / object store), four classes (relational, versioned JSONB docs, dynamic assets, static climate bundles); Postgres owns *references*, object store owns *bytes*; signed-URL-only, private bucket |
 | changing **architecture / data model** | `context/PRD.md` + `context/technical-requirements/*` | JSON-document model; versioned immutable-by-discipline saves; linear history; design for human + LLM use |
+| writing/reviewing **MCP tools** | `context/mcp.md` + `context/technical-requirements/llm-mcp-schema.md` | thin wrapper over REST service layer; project-scoped bearer tokens; writes go to a draft then `save_draft` |
 | adding/altering **logs** | `context/LOGGING.md` | structlog → JSON to stdout; `request_id` bound via middleware; never log secrets or request bodies |
 | changing **production deploy / Render / DNS / R2 / cookies / MCP URLs** | `context/PRODUCTION_DEPLOYMENT.md` + `context/DEVELOPMENT_WORKFLOW.md` | production lives at `www.ph-nav.com` + `api.ph-nav.com`; `main` deploys Render; staging is deleted unless recreated from `render.yaml` |
 | **naming** / domain terms | `context/GLOSSARY.md` | — |
