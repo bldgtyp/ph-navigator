@@ -23,3 +23,9 @@ export type TableViewUpsertRequest = {
   view_state_schema_version: number;
   view_state: ViewStateEnvelope;
 };
+
+// Batch read: one entry per requested `table_key`, each identical to the
+// single-key `TableViewResponse` (absent keys carry the default-empty shape).
+export type BatchTableViewsResponse = {
+  views: Record<string, TableViewResponse>;
+};

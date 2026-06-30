@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 21:35 EDT
-STATUS: Not started
+STATUS: ✅ DONE (implemented 2026-06-29; Strategy A — equipment page wired)
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Fetch all of a page's table-views once and have each per-table hook read
   from that shared result instead of issuing its own GET.

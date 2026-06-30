@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 21:05 EDT
-STATUS: In progress — Phase 0+1 done (backend landed), Phase 2 next
+STATUS: In progress — Phase 0–2 done (backend + frontend landed), Phase 3 next
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Status ledger for the batch table-views read refactor.
 RELATED:
@@ -11,8 +11,9 @@ RELATED:
 
 # Status — Batch `table-views` read
 
-**State:** `In progress` — Phase 0 (pre-flight) and Phase 1 (backend) complete
-on branch `refactor/batch-table-views-endpoint`. Phase 2 (frontend) next.
+**State:** `In progress` — Phases 0 (pre-flight), 1 (backend), and 2 (frontend)
+complete on branch `refactor/batch-table-views-endpoint`. Phase 3
+(verification) next.
 
 ## Current state
 
@@ -29,12 +30,24 @@ on branch `refactor/batch-table-views-endpoint`. Phase 2 (frontend) next.
   `BatchTableViewsResponse { views }`, backed by `repository.get_many`
   (`table_key = ANY`) and `service.get_table_views`. 8 new tests; backend
   lint/boundaries/`ty`/pytest green for the module.
+- **Phase 2 DONE** — frontend Strategy A landed: `fetchTableViews` +
+  `batchContext.ts` (`useProjectTableViewsBatchValue` /
+  `ProjectTableViewsBatchProvider` / `useProjectTableViewsBatch`) +
+  read-through in `useProjectTableViewState` (seed-or-wait when covered,
+  per-table GET fallback otherwise; `prime`/`drop` keep the shared cache
+  coherent across saves/resets). Equipment page wired (its 7 reads collapse to
+  1). 5 new tests; frontend format/lint/typecheck/build green; the existing
+  view-state hook tests pass unchanged. Single-table pages (spaces,
+  thermal-bridges) and the smaller multi-table fan-outs (apertures, materials,
+  heat-pumps) are intentionally left on the per-table fallback — deferred
+  follow-up, each a one-line `ProjectTableViewsBatchProvider` wrap.
 
 ## Next step
 
-Phase 2 (frontend): add `fetchTableViews` + a page-scoped batch context and a
-read-through in `useProjectTableViewState`, then wire the equipment page so its
-7 view-state reads collapse to 1. Per-table fallback stays for un-wrapped pages.
+Phase 3 (verification): re-run the read-only production perf matrix (confirm
+`equipment` API# drops ~19 → ~13), manual view-state smoke on the equipment
+page (reorder/resize/hide persists, no default-flash, reset clears), and a full
+`make ci`.
 
 ## Blockers / open decisions
 
