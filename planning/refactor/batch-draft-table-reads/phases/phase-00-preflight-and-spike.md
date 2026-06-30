@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 21:55 EDT
-STATUS: Not started
+STATUS: COMPLETE (2026-06-29) — shape (b) locked, #18 invariant captured, seeding mechanism de-risked
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Lock the endpoint shape, capture the PR #18 invariant verbatim, and
   de-risk the seed-without-refetch mechanism in a throwaway spike. No production
@@ -98,6 +98,112 @@ and the spec's network assertions; and a **green spike** showing zero per-table
 GETs after seeding with #18 behavior preserved. If the spike fails, stop and
 record why — do not start Phase 01.
 
-## Findings
+## Findings (2026-06-29)
 
-_(fill in when Phase 00 runs)_
+### Backend collapse is mechanical — CONFIRMED
+
+- `store.get_draft_table_slice(version_id, table_name, access)`
+  (`backend/features/project_document/store.py:194`) =
+  `get_current_document_view(version_id, access)` (one whole-draft load+validate
+  via `load_current_document_parts`) → `contract.build_response(project_id,
+  version_id, document.source, document.version_etag, document.draft_etag,
+  document.body)`.
+- `TableContract.build_response` is typed (`tables/contracts.py:256`)
+  `Callable[[UUID, UUID, ProjectDocumentSource, str, str | None,
+  ProjectDocumentV1], BaseModel]` — a pure function of (ids, source,
+  version_etag, draft_etag, body). So a batch = **one**
+  `get_current_document_view` + a loop of `build_response` with identical
+  doc-level args, and each entry is byte-identical to `GET …/draft/tables/<name>`.
+- `get_table_contract(name)` (`tables/registry.py:35`) raises **404**
+  `document_table_not_found` on an unknown name.
+- `load_current_document_parts` raises **422** `invalid_project_document` on a
+  draft that fails validation; it does **not** return the read-safe envelope
+  (only `/draft` summary and `/document` do). The batch matches this — 422 on
+  invalid, no envelope path. (Confirms the PLAN/README correction.)
+
+### Endpoint shape — LOCKED to (b)
+
+- `BatchDraftTablesResponse { tables: dict[str, RegisteredTableResponse] }`, each
+  value the full per-table response (already embeds `project_id, version_id,
+  source, version_etag, draft_etag` + payload). Seeding is then a literal
+  `setQueryData(perTableKey, tables[name])`.
+- **Mirror the shipped table-views batch** (`features/table_views/routes.py`,
+  `service.py`): `MAX_BATCH_TABLE_KEYS = 64`; collection route declared **before**
+  the `{table_name}` item route; de-dupe with `list(dict.fromkeys(names))`
+  preserving request order; invalid/unknown name rejects the whole request
+  (nothing partial). `names` is a repeated query param, `Query(min_length=1,
+  max_length=64)`.
+
+### PR #18 invariant — CAPTURED (from spec + `useSliceTableController.ts`)
+
+- All editor table slices share one document-level draft etag; the cache key is
+  exactly 8 elements: `["project-document-tables","project",pid,"table",name,
+  "slice",versionId,"editor"]` (`table-slice.ts` `isEditorTableSliceQueryKey`).
+- `applyAcceptedSlice` writes the accepted table's slice, then
+  `invalidateProjectDocumentEditorTableSlices(..., excludeTableName,
+  refetchActiveSlices: false)` → invalidates every **other** editor slice with
+  `refetchType: "none"` (marks `isInvalidated`, does **not** GET).
+- `resolveSliceForWrite` (`useSliceTableController.ts:263`) returns the in-memory
+  slice unless `getQueryState(editorSliceQueryKey)?.isInvalidated` → then one
+  `refetch()` (a single per-table GET) so `If-Match` carries the current etag.
+- **Spec network assertions** (`table-draft-etag-coordination.spec.ts`): its
+  `draftTableKeyFromUrl` matches only `/draft/tables/<name>$` (item path) — the
+  batch URL `/draft/tables?names=…` has pathname `…/draft/tables` (no trailing
+  segment) and is **invisible to the recorder**. The recorder is also attached
+  **after** `openTable(...)`, so the **initial-mount fan-out is not asserted**.
+  The spec asserts only: (1) after a source write, zero sibling GETs fan out;
+  (2) after switching to the target tab + write, **exactly one** fresh target GET
+  precedes the target PUT; (3) no 409s. All three are write-path assertions that
+  the seed does not touch → **the spec should stay green unmodified**.
+
+### Seeding mechanism — DE-RISKED (TanStack Query v5 semantics + code read)
+
+The plan's "throwaway spike" is folded into Phase 02's first unit test
+(zero per-table GETs after seeding) — building a separate spike branch is
+redundant given the analysis below and that the e2e recorder can't see the batch.
+
+- **Trap:** `useSliceQuery` has no `staleTime` today (default 0), so a
+  `setQueryData`-seeded entry is immediately stale and a mounting observer
+  refetches → the fan-out reappears. **Fix:** add `staleTime: Infinity` to
+  `useSliceQuery`'s `useQuery`. A freshly-seeded query is then fresh → no
+  mount refetch.
+- **#18 preserved:** `invalidateQueries` sets `isInvalidated` **independent of
+  `staleTime`**, and `resolveSliceForWrite` keys on `isInvalidated` (not
+  staleness), so refetch-before-write still fires after a sibling write. Manual
+  `refetch()` ignores `staleTime`, so reload-draft and the write-path refetch
+  are unaffected.
+- **Race fix (mount/seed ordering):** the 7 `useXxxSliceQuery` calls fire at the
+  top of `EquipmentPage` synchronously, before any async batch resolves — so the
+  per-table queries must be **gated** until the seed lands, or they GET first.
+  Mechanism: a `useDraftTablesBatchSeed({projectId, versionId, tableNames,
+  enabled})` hook runs a `useQuery` for the batch (`staleTime: Infinity`), seeds
+  each per-table editor key in an effect, and tracks a `seededVersion` state so
+  it returns `isSeeding` **true until the effect has actually written the cache**
+  (not merely until the batch resolved — avoids the one-render gap where queries
+  enable before the effect seeds). `EquipmentPage` passes `enabled = !isSeeding`
+  as the existing 4th `enabled` param of each `useXxxSliceQuery` (the param is
+  already there — `useSliceQuery(projectId, versionId, accessMode, enabled=true)`
+  — so **no hook signature changes**), and folds `isSeeding` into its loading
+  guard so it shows "Loading…" rather than the error branch while gated.
+- **Fallback:** `enabled=false` for the seed (viewer mode) or a batch error →
+  `isSeeding=false` → per-table queries enable and fetch exactly as today.
+  Tables/pages with no provider are unaffected.
+- **Seed key:** use the feature factory's own `queryKeys.slice(projectId,
+  versionId, "editor")` so the seed key always equals what `useSliceQuery` reads;
+  never hand-build the array.
+
+### Pages / slice features that seed
+
+- **equipment** — exactly the 7 mounted at `EquipmentPage` top: ventilators,
+  pumps, fans, hot_water_heaters, hot_water_tanks, electric_heaters, appliances
+  (mirrors `EQUIPMENT_VIEW_TABLE_KEYS` from the shipped table-views batch).
+  Rooms and heat-pump sub-tables mount on their own tabs (lazy) — not part of the
+  page-top fan-out, so they keep the per-table fallback for now.
+- **spaces**, **assets/ThermalBridges** — land after equipment; same provider,
+  their own mounted table set. Fallback means an un-wrapped page just fans out
+  (correct, slower).
+
+### Gate — PASSED
+
+Endpoint shape + `names` bound decided; #18 invariant + spec assertions written
+down; zero-GET-after-seed shown achievable with #18 intact. Proceed to Phase 01.

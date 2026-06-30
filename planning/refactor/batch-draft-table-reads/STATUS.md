@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-29
 TIME: 21:20 EDT
-STATUS: Active — prerequisite (table-views batch) shipped; ready to start Phase 0
+STATUS: Active — Phase 0 COMPLETE (shape (b) locked, seeding de-risked); Phase 1 next
 AUTHOR: Claude (Opus 4.8)
 SCOPE: Status ledger for the draft-tables batch-seed read refactor.
 RELATED:
@@ -29,12 +29,10 @@ RELATED:
 
 ## Next step
 
-Prerequisite met — start Phase 0: lock the endpoint shape (whole-draft vs batch
-draft-tables) and **spike the seeding mechanism** (can a pre-mount
-`setQueryData` prevent the per-table GET without going stale?) — that is the
-riskiest unknown. Mirror the shipped table-views batch's `?keys=`→`?names=`
-route convention and its `EquipmentPage.tsx` mount point, but seed the TanStack
-Query cache rather than reuse its hand-rolled-hook context read-through.
+Phase 0 done (findings in PLAN.md + phases/phase-00). Start **Phase 1**: add
+`GET …/draft/tables?names=…` → `BatchDraftTablesResponse` from one
+`get_current_document_view`, mirroring the table-views route convention. Leave
+the per-table GET/PUT/POST routes untouched.
 
 ## Blockers / open decisions
 

@@ -173,4 +173,21 @@ Gate: `make frontend-dev-check` + the e2e coordination spec green.
 
 ## Phase 0 findings
 
-_(append here when Phase 0 runs)_
+Completed 2026-06-29 — full findings in `phases/phase-00-preflight-and-spike.md`.
+Summary:
+
+- **Shape (b) locked.** `BatchDraftTablesResponse { tables: dict[str,
+  RegisteredTableResponse] }`; mirror the table-views batch (`MAX_BATCH_TABLE_KEYS
+  = 64`, collection route before item, `dict.fromkeys` de-dupe, whole-request
+  rejection on a bad name).
+- **Backend is mechanical.** `build_response` is pure; batch = one
+  `get_current_document_view` + a `build_response` loop → byte-identical entries.
+  Unknown name → 404, invalid draft → 422, no read-safe envelope.
+- **#18 invariant + spec.** `resolveSliceForWrite` keys on `isInvalidated`; the
+  e2e recorder can't see the batch URL (`/draft/tables` has no trailing segment)
+  and doesn't assert the initial fan-out → the spec stays green unmodified.
+- **Seed mechanism.** `staleTime: Infinity` on `useSliceQuery` (independent of
+  `isInvalidated`, so #18 holds) + a `useDraftTablesBatchSeed` hook that gates the
+  per-table queries' existing `enabled` param via an `isSeeding` flag held true
+  until the seeding effect has written the cache (race-free). Fallback = per-table
+  fetch when not seeded.
