@@ -588,6 +588,9 @@
 
 .model-legend-card {
   top: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   width: min(280px, calc(100% - 28px));
   border: 1px solid var(--border-card);
   border-radius: var(--radius-md);

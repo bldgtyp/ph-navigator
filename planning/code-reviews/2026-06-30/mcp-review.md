@@ -179,6 +179,11 @@ completeness gap and it is *cheap* to close (the service layer is done).
 
 ## 4. Next steps (prioritized)
 
+> **Implementation packet:** P0 + the docs/discoverability work below are now
+> planned in `planning/features/mcp-write-loop/` (4 phases). The decision in §5
+> is the basis for that packet.
+
+
 **P0 — close the write loop (small, high value).** Expose `save_draft` and
 `discard_draft` as MCP tools (wrap the existing
 `project_document/service.py` functions, mirror the `apply_envelope_command`
