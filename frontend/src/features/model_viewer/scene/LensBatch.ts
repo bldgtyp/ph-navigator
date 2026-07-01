@@ -7,8 +7,6 @@ import {
   VIEWER_FACE_EDGE_COLOR,
   viewerBaseColor,
   viewerBaseOpacity,
-  type MaterialState,
-  type ViewerTokens,
 } from "../lib/colors";
 import { colorForThemedObject } from "../lib/themes";
 import type { BuildingRenderable } from "../loaders/building";
@@ -32,21 +30,16 @@ import type { ModelObjectMeta, ModelObjectType, ModelViewerLens, ModelViewerThem
 export type BatchLocation = { mesh: BatchedMesh; instanceId: number };
 
 /**
- * The per-instance color one object should show, as a hex string for
- * `setColorAt`. This is the single resting/highlight color contract the batched
- * lens applies (Phase 03b): a selected/hovered object takes the highlight token,
- * otherwise it takes its color-by-theme color, falling back to the shaded base.
- * Pure — driven entirely by the object's meta + the current lens/theme/state.
+ * The per-instance resting color one object shows, as a hex string for
+ * `setColorAt`: its color-by-theme color, falling back to the shaded base.
+ * Hover/selection highlight is drawn on top by the flat `HighlightOverlay`, so
+ * the batch only ever paints resting color. Pure — object meta + lens/theme.
  */
 export function resolveInstanceColor(
   meta: ModelObjectMeta,
   lens: ModelViewerLens,
   theme: ModelViewerTheme,
-  state: MaterialState,
-  tokens: ViewerTokens,
 ): string {
-  if (state === "selected") return tokens.highlight;
-  if (state === "hovered") return tokens.highlightSoft;
   if (theme !== "shaded") {
     const themed = colorForThemedObject(meta, lens, theme);
     if (themed) return themed.color;

@@ -1,10 +1,16 @@
 import { ContactShadows, Grid } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
-import { EffectComposer, SMAA } from "@react-three/postprocessing";
+import { EffectComposer, N8AO, SMAA } from "@react-three/postprocessing";
 import { useEffect, useMemo } from "react";
 import { createGhostMaterials, resolveViewerTokens } from "../lib/colors";
+import {
+  VIEWER_SOFT_BG_COLOR,
+  VIEWER_SOFT_GROUND_COLOR,
+  VIEWER_SOFT_SKY_COLOR,
+} from "../lib/colorTokens";
 import { isModelViewerDebugHookEnabled } from "../lib/debugHook";
 import { labelForLens } from "../lib/lenses";
+import { useViewerRenderSettings } from "../lib/renderSettings";
 import type { BuildingModel } from "../loaders/building";
 import { useModelViewerStore } from "../store";
 import type { SunPathAndCompassModelData } from "../types";
@@ -30,6 +36,18 @@ export function ViewerCanvas({ model, activeFileName, sunPath }: ViewerCanvasPro
   const clearSelection = useModelViewerStore((state) => state.clearSelection);
   const measureActive = useModelViewerStore((state) => state.measureActive);
   const tokens = useMemo(() => resolveViewerTokens(), []);
+  // Render knobs — the defaults ARE the shipped study-model look; the dev-only
+  // panel + perf harness retune them live.
+  const ao = useViewerRenderSettings((state) => state.ao);
+  const aoIntensity = useViewerRenderSettings((state) => state.aoIntensity);
+  const aoRadius = useViewerRenderSettings((state) => state.aoRadius);
+  const aoHalfRes = useViewerRenderSettings((state) => state.aoHalfRes);
+  const aoQuality = useViewerRenderSettings((state) => state.aoQuality);
+  const softLighting = useViewerRenderSettings((state) => state.softLighting);
+  const keyIntensity = useViewerRenderSettings((state) => state.keyIntensity);
+  const fillIntensity = useViewerRenderSettings((state) => state.fillIntensity);
+  const keyElevation = useViewerRenderSettings((state) => state.keyElevation);
+  const keyAzimuth = useViewerRenderSettings((state) => state.keyAzimuth);
   // The ghost materials live for the Canvas's lifetime (one Canvas per file);
   // free them when it unmounts so a file swap doesn't leak GPU programs (CR3).
   const ghostMaterials = useMemo(() => createGhostMaterials(), []);
@@ -42,6 +60,15 @@ export function ViewerCanvas({ model, activeFileName, sunPath }: ViewerCanvasPro
   // The Canvas is keyed by file (ModelViewerStage), so the model is fixed for
   // this Canvas's lifetime — picking the AA strategy once at mount is safe.
   const isHeavy = model.objects.length > LARGE_MODEL_OBJECT_THRESHOLD;
+  // Key-light position from elevation/azimuth (Z-up): elevation 90 = overhead,
+  // ~45 = a raking sun that lights some walls directly. Radius is arbitrary
+  // (directional light only uses the direction).
+  const keyPos = useMemo<[number, number, number]>(() => {
+    const el = (keyElevation * Math.PI) / 180;
+    const az = (keyAzimuth * Math.PI) / 180;
+    const r = 30;
+    return [r * Math.cos(el) * Math.cos(az), r * Math.cos(el) * Math.sin(az), r * Math.sin(el)];
+  }, [keyElevation, keyAzimuth]);
   const handlePointerMissed = () => {
     if (!measureActive) clearSelection();
   };
@@ -56,9 +83,27 @@ export function ViewerCanvas({ model, activeFileName, sunPath }: ViewerCanvasPro
       aria-label={`3D model viewer for ${activeFileName}. Active lens: ${labelForLens(lens)}.`}
       gl={{ antialias: isHeavy }}
     >
-      <color attach="background" args={["snow"]} />
-      <ambientLight intensity={0.62} />
-      <directionalLight position={[-10, -10, 25]} intensity={1.55} />
+      <color attach="background" args={[softLighting ? VIEWER_SOFT_BG_COLOR : "snow"]} />
+      {/*
+        Lighting. The shipped look is a soft key+fill dome: a sky/ground
+        hemisphere fill + a directional key raked from elevation/azimuth (bright
+        lit faces, grey shadowed faces, so AO reads as gentle contact shadow).
+        The `else` branch (hard key + flat ambient) is the legacy flat look, kept
+        as a dev toggle only.
+      */}
+      {softLighting ? (
+        <>
+          <hemisphereLight
+            args={[VIEWER_SOFT_SKY_COLOR, VIEWER_SOFT_GROUND_COLOR, fillIntensity]}
+          />
+          <directionalLight position={keyPos} intensity={keyIntensity} />
+        </>
+      ) : (
+        <>
+          <ambientLight intensity={0.62} />
+          <directionalLight position={[-10, -10, 25]} intensity={1.55} />
+        </>
+      )}
       <Grid
         args={[80, 80]}
         rotation={[Math.PI / 2, 0, 0]}
@@ -96,12 +141,29 @@ export function ViewerCanvas({ model, activeFileName, sunPath }: ViewerCanvasPro
       />
       <CameraRig model={model} />
       {isModelViewerDebugHookEnabled() ? <ModelViewerPerfProbe /> : null}
-      {/* Post-FX only on light models; heavy models rely on MSAA above (F7). */}
-      {isHeavy ? null : (
+      {/*
+        Post-FX. AO (N8AO) is a composer pass and ships on by default, so the
+        composer runs on EVERY model (verified ~free on Hillandale, research §7).
+        The AO-off branch — SMAA on light models, hardware MSAA on heavy (F7) —
+        is the legacy path, kept as a dev toggle.
+      */}
+      {ao || !isHeavy ? (
         <EffectComposer multisampling={0}>
-          <SMAA />
+          {ao ? (
+            <>
+              <N8AO
+                aoRadius={aoRadius}
+                intensity={aoIntensity}
+                halfRes={aoHalfRes}
+                quality={aoQuality}
+              />
+              <SMAA />
+            </>
+          ) : (
+            <SMAA />
+          )}
         </EffectComposer>
-      )}
+      ) : null}
     </Canvas>
   );
 }
