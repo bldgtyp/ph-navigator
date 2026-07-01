@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-01
-TIME: 18:05
-STATUS: Pending
+TIME: 18:05 (completed 22:05)
+STATUS: Complete
 AUTHOR: Claude (for Ed)
 SCOPE: Phase 03 — backend hourly solar-position grid on the existing
   /sun-path payload (PRD §6, D-1/D-2). Backend-only; no frontend changes.
@@ -49,4 +49,20 @@ grid transparently); no frontend change required to keep compiling
 
 ## Ledger
 
-- (fill on completion)
+- `SunPositionGridSchema` added (required field — no users, no
+  backwards-compat shims); grid built inside `build_sun_path` from the
+  dome's own `Sunpath` via `_build_sun_position_grid`
+  (`sun.sun_vector_reversed` ≡ `position_3d(radius=1)`, so frame
+  identity is by construction).
+- Compute cost measured ~70 ms for the full 365×24 grid +
+  sunrise/sunset — fine per request on the revalidating route.
+- Golden values verified before coding: Jun 21 LST-noon altitude
+  71.1° = 90 − |42.325 − 23.45|; azimuth due south; sunrise/sunset
+  04:19/19:32 LST ↔ published ~05:17/20:32 EDT.
+- 7 new tests (shape/unit-length, solstice golden, below-horizon
+  inclusion, analemma frame-consistency, sunrise/sunset sanity +
+  photoperiod ordering, polar None-tolerance, payload bound <500 KB).
+  Module: 16/16 green; `ruff` + `ty` clean.
+- MCP `get_project_sun_path` carries the grid transparently (parity
+  test still green). No frontend change needed to compile (TS type
+  extension lands in phase 04).

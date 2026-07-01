@@ -36,7 +36,12 @@ RELATED:
     (three never clips the shadow pass against them) — v1 will disable
     the sun shadow pass while a section is active. Findings in
     `phases/phase-02-shadow-spike.md`.
-  - Phase 03 (backend solar grid): next.
+  - Phase 03 (backend solar grid): **Complete** 2026-07-01 —
+    `sun_positions` grid (365×24 unit vectors + per-day
+    sunrise/sunset) on the `/sun-path` payload, built from the dome's
+    own `Sunpath`; 7 new tests incl. frame-consistency; ~70 ms compute;
+    ledger in `phases/phase-03-backend-solar-grid.md`.
+  - Phase 04 (scene: marker/light/catcher): next.
 - **Blockers:** none.
 - **Verification so far:** codebase baseline in PRD §2 verified
   against source 2026-07-01 (backend `sun_path.py` dome builder;
