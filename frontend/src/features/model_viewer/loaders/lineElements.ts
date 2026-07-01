@@ -42,6 +42,8 @@ function addDuctElements(
 ): void {
   for (const element of elements) {
     const segmentIds: string[] = [];
+    // Source dict order is stable display order only; it is not a reliable
+    // start-to-end physical path order across exported HBJSON fixtures.
     for (const [segmentKey, segment] of Object.entries(element.segments)) {
       const id = `duct:${element.identifier}:${segmentKey}`;
       segmentIds.push(id);
@@ -111,6 +113,8 @@ function addPipeElement(
   pipeKind: "distribution" | "recirc",
 ): void {
   const segmentIds: string[] = [];
+  // Source dict order is stable display order only; it is not a reliable
+  // start-to-end physical path order across exported HBJSON fixtures.
   for (const [segmentKey, segment] of Object.entries(element.segments)) {
     const id = `pipe:${pipeKind}:${element.identifier}:${segmentKey}`;
     segmentIds.push(id);

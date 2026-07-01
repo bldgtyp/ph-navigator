@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-01
-TIME: -
-STATUS: Not started. Runs regardless of whether Phase 4 shipped.
+TIME: 16:20 EDT
+STATUS: Complete and verified.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff for Phase 5 — full cross-lens
   verification, the segment-order open question, and repo closeout.
@@ -132,3 +132,34 @@ only if formally descoped with a reason). `make ci` green. Closeout
 skills run. STATUS.md reflects final state. Feature folder ready to
 archive per `planning/.instructions.md`'s "Archiving Complete
 Features" section once merged.
+
+## 7. Completion record
+
+Completed 2026-07-01.
+
+Implemented / resolved:
+
+- PRD §13 segment-order question resolved by script against canonical
+  and Hillandale fixtures: source dict order is stable display order
+  only, not reliable physical start-to-end path order.
+- `lineElements.ts` comments record that invariant at both duct and
+  pipe `segmentIds` construction sites.
+- PRD/STATUS/README/PLAN updated to final complete state.
+- Context docs-pass amended `context/user-stories/40-model-viewer.md`
+  and `context/GLOSSARY.md` for the shipped MEP element behavior.
+- Screenshot walkthrough saved under `assets/`.
+
+Verification passed:
+
+- Full model-viewer Chromium Playwright sweep:
+  `model-viewer-files`, `model-viewer-lenses`,
+  `model-viewer-themes`, `model-viewer-measure`, and
+  `model-viewer-site-sun` — 6 passed.
+- Local simplify review completed; no code changes required beyond the
+  segment-order invariant comment already added for Phase 5.
+- Docs-pass completed with the context amendments listed above.
+- `make format`
+- `make ci`: backend 1250 passed / 7 skipped / 1 warning; frontend
+  219 test files passed / 2007 tests passed; production build
+  completed.
+- `graphify update .`

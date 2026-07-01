@@ -88,6 +88,8 @@ label each row explicitly and state the film convention in tooltips.
 | **Integrated unit** | A physical box that implements both an HP indoor coil and an ERV core (e.g. Mitsubishi LEV Kit + Lossnay LGH). Modeled as one HP Indoor Unit row + one ERV row, linked by `linked_erv_unit_id`. | Combo unit, dual unit, hybrid ERV    |
 | **Phius HP Performance Estimator** | The current-version Phius spreadsheet (`Phius_Heat Pump Performance Estimator_v25.1.1`) whose "Air Source Heat Pump Performance Data" section is the export target for HP Outdoor Equipment. | Phius HP calc, HP estimator        |
 | **HBJSON**      | A Honeybee-PH JSON model file uploaded for the Model tab's 3D viewer; **read-only**, never imports into Builder tables | HB model, 3D file, geometry file |
+| **Model Viewer MEP Element** | A selectable duct or hot-water pipe run in an uploaded HBJSON: one duct element, or one pipe element at trunk/branch/fixture/recirc depth. The Model tab selects/highlights the whole element and reports Total Length. Distinct from Envelope **Segment** and **Aperture Element**. | MEP run, duct run, pipe run |
+| **Model Viewer MEP Segment** | One rendered line segment inside a Model Viewer MEP Element. Segment table numbers are stable display indexes only, not physical start-to-end path order. | Duct segment, pipe segment |
 
 ## People & access
 

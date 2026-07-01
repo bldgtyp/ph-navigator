@@ -80,6 +80,17 @@ original text conflict, the amendment wins.
 
 Implementation handoffs: `planning/archive/dated/2026-06-13/model-viewer/phases/`.
 
+### MEP element amendments — accepted 2026-07-01
+
+`planning/features/model-viewer-mep-elements/` amends the Ventilation
+and Hot Water lenses only. Duct/pipe line clicks now select the parent
+MEP Element (one duct run, or one hot-water pipe run at trunk/branch/
+fixture/recirc depth) rather than a single segment. The inspector leads
+with element Total Length, then a stable per-segment table whose `#`
+column is display order only — verified not to be a physical
+start-to-end path order. Row hover/focus syncs with the 3D line
+segments, and selected elements render bounded dimension overlays.
+
 ### Story
 
 > As a CPHC working on a project, I want to upload completed
@@ -1107,8 +1118,8 @@ conversion at display)
    | `apertureMeshFace` | "Window" | Name, ID, Face Type, Boundary, Area | "Construction": Name, Type, U-Factor, U-Value (no R rows per V1; criterion 7) |
    | `spaceGroup` | "Interior Space" | Name, ID, Number, Quantity, WUFI Type, Floor Area, Weighted Area, Net Volume, Avg Height, Avg Weighting Factor | "Ventilation": Supply Air, Extract Air, Transfer Air (wire m³/s → m³/h SI / CFM IP per PRD §11.5) |
    | `spaceFloorSegmentMeshFace` | "Interior Floor" | Space, Number, Weight, Floor Area, Weighted Area | "Ventilation": Supply, Extract, Transfer Air |
-   | `pipeSegmentLine` | "Pipe" | ID, Name, **Diameter** (mm/in), **Insulation Thickness** (mm/in), **Insulation Conductivity** (W/m·K), **Insulation Reflective** (yes/no), **Insulation Quality** (text), **Water Temp** (°C/°F), **Daily Period** (hours), **Length** (m/ft), **Material** (text) | **Per Q-VIEW-4 resolved — V1 only showed ID + Name; V2 surfaces all loaded fields.** |
-   | `ductSegmentLine` | "Duct" | ID, Name, **Duct Type** (Supply / Exhaust — per Q-VIEW-2), Diameter (mm/in), Insulation Thickness (mm/in) | — |
+   | `pipeSegmentLine` | "Pipe" | ID, Name, **Diameter** (mm/in), **Insulation Thickness** (mm/in), **Insulation Conductivity** (W/m·K), **Insulation Reflective** (yes/no), **Insulation Quality** (text), **Water Temp** (°C/°F), **Daily Period** (hours), **Length** (m/ft), **Material** (text) | **Per Q-VIEW-4 resolved — V1 only showed ID + Name; V2 surfaces all loaded fields.** In Ventilation/Hot Water lenses, segment clicks promote to the parent MEP Element inspector; these rows remain reachable through the element segment table. |
+   | `ductSegmentLine` | "Duct" | ID, Name, **Duct Type** (Supply / Exhaust — per Q-VIEW-2), Diameter (mm/in), Insulation Thickness (mm/in), Length (m/ft) | In Ventilation/Hot Water lenses, segment clicks promote to the parent MEP Element inspector; these rows remain reachable through the element segment table. |
 
 6. **No info-panel config for shades** (Q-VIEW-3 resolved
    — shades not selectable in V2 v1). Even if a shade

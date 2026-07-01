@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-01
-TIME: 16:14 EDT
-STATUS: Phase 4 complete and verified; Phase 5 ready to start.
+TIME: 16:20 EDT
+STATUS: Complete; implemented, verified, and docs-pass folded back.
 AUTHOR: Claude (for Ed)
 SCOPE: Status ledger for the MEP element-selection feature.
 RELATED: README.md, PRD.md, PLAN.md, phases/
@@ -11,7 +11,7 @@ RELATED: README.md, PRD.md, PLAN.md, phases/
 
 ## Current state
 
-`Phase 4 complete.` PRD authored 2026-07-01 from a
+`Complete.` PRD authored 2026-07-01 from a
 full read of the current Ventilation/Hot Water lens implementation
 (`frontend/src/features/model_viewer/`), the backend `model_viewer`
 schemas/extraction, and the upstream `honeybee_phhvac` source
@@ -143,14 +143,56 @@ Phase 4 code changes are implemented and verified:
   labels render for the selected pipe element and disappear on lens
   switch.
 
+Phase 5 closeout is complete:
+
+- Segment dict insertion order was verified against both canonical and
+  Hillandale fixtures. It is **not** a reliable start-to-end physical
+  path order: canonical has 2 broken multi-segment elements out of 3;
+  Hillandale has 61 broken multi-segment elements out of 94. The `#`
+  column now ships/documented as stable display order only.
+- `frontend/src/features/model_viewer/loaders/lineElements.ts`
+  records the stable-display-order invariant where `segmentIds` are
+  built.
+- `PRD.md` §13 was moved from open question to settled note; the
+  remaining role-chip / dimension-label tuning items stay explicit
+  follow-up questions.
+- `context/user-stories/40-model-viewer.md` and
+  `context/GLOSSARY.md` were amended with the shipped MEP element /
+  MEP segment behavior.
+
 ## Next step
 
-Start `phases/phase-05-verification-closeout.md`.
+Ready to archive after merge per `planning/.instructions.md`.
 
-Before or during Phase 5, resolve PRD §13 open question 1 (is segment
-dict insertion order physically meaningful?) — flagged in
-`phase-05-verification-closeout.md` §3.1, not blocking earlier phases
-but must be settled before the `#` column ships to production.
+## Acceptance criteria
+
+PRD §14 closeout, recorded 2026-07-01:
+
+1. Pass — Ventilation duct segment click selects/highlights the full
+   duct element.
+2. Pass — Hot Water pipe segment click selects/highlights the full
+   pipe element; backend coverage includes trunk, branch, fixture, and
+   recirc length fields.
+3. Pass — pre-selection segment hover previews the whole MEP element.
+4. Pass — inspector shows element type, display name, and active-unit
+   Total Length without scrolling.
+5. Pass — inspector shows a stable per-segment table with display
+   index and length; full segment fields remain reachable by row
+   expand.
+6. Pass — selected-element 3D hover syncs to the table row; hovering
+   another element does not affect the open table.
+7. Pass — row click sets sticky segment focus, expands detail, and
+   persists through camera orbit; same-row click clears and another
+   row swaps focus.
+8. Pass — `focusedSegmentId` resets on selection/file/lens teardown.
+9. Pass — Zoom to and copy-ID resolve the element, not one segment.
+10. Pass — duct element length is computed from segment geometry and
+    verified against fixture math.
+11. Pass — pipe element length is wired from upstream aggregate
+    fields and verified at trunk/branch/fixture/recirc depths.
+12. Pass — dimension lines render only for selected MEP element
+    segments, follow active units, and tear down on lens switch.
+13. Pass — `make ci` green and full model-viewer Chromium sweep green.
 
 ## Verification evidence
 
@@ -211,10 +253,28 @@ Passed 2026-07-01:
   - frontend: 219 test files passed, 2007 tests passed; production
     build completed
 - `graphify update .`
+- `cd frontend && pnpm exec playwright test
+  tests/e2e/model-viewer-files.spec.ts
+  tests/e2e/model-viewer-lenses.spec.ts
+  tests/e2e/model-viewer-themes.spec.ts
+  tests/e2e/model-viewer-measure.spec.ts
+  tests/e2e/model-viewer-site-sun.spec.ts --project=chromium`
+  - 6 passed
+- Browser screenshot walkthrough saved:
+  - `assets/phase-05-duct-element-selection.png`
+  - `assets/phase-05-pipe-fixture-selection.png`
+  - `assets/phase-05-focused-segment-row.png`
+  - `assets/phase-05-dimension-lines.png`
+- `make format`
+- `make ci`:
+  - backend: 1250 passed, 7 skipped, 1 warning
+  - frontend: 219 test files passed, 2007 tests passed; production
+    build completed
+- `graphify update .`
 
 ## Blockers
 
-None for Phase 5.
+None.
 
 ## Note on an in-session file-loss incident (2026-07-01)
 

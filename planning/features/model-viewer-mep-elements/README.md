@@ -1,8 +1,7 @@
 ---
 DATE: 2026-07-01
-TIME: -
-STATUS: PRD accepted; phased implementation plan authored, ready to
-  hand off. No implementation started.
+TIME: 16:20 EDT
+STATUS: Complete; implemented, verified, and docs-pass folded back.
 AUTHOR: Claude (for Ed)
 SCOPE: Router for the MEP (duct/pipe) element-selection feature folder.
 RELATED:
@@ -19,7 +18,7 @@ RELATED:
 Amends the Model tab's Ventilation and Hot Water lenses only: clicking
 a duct/pipe segment selects and highlights the whole parent Element
 (not just the segment), the inspector leads with Total Length and an
-ordered per-segment table synced bidirectionally to the 3D scene, and
+stable per-segment table synced bidirectionally to the 3D scene, and
 adds automatic, selection-scoped dimension-line overlays.
 
 ## Read order
@@ -40,7 +39,8 @@ adds automatic, selection-scoped dimension-line overlays.
 
 ## Current state
 
-PRD accepted by Ed 2026-07-01 (including the row/segment focus-linking
-refinement in PRD §6). Five implementation phases authored in
-`phases/` — none started. Phase 4 (dimension lines) is explicitly
-optional/cuttable; Phase 5 (verification/closeout) runs regardless.
+Complete 2026-07-01. Phases 1-5 shipped: backend length fields,
+element-level selection/highlight/camera/inspector, row/segment focus
+sync, selection-scoped dimension lines, full viewer verification, and
+context docs-pass. Segment `#` order was verified **not** to be a
+physical path order; it ships as stable display order only.

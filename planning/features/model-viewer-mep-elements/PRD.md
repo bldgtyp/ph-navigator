@@ -236,9 +236,9 @@ other lens's inspector is unchanged):
   high-contrast, unit-toggle-responsive, always visible without
   scrolling — this is the certifier's primary QA number.
 - **Segment table** is a compact, purpose-built table (3-4 columns:
-  ordinal, length, and 1-2 differentiating attributes per lens type —
-  diameter for both, material for pipes, duct type doesn't vary within
-  one element so it's not a column). **Not** the shared `<DataTable>`
+  stable display index, length, and 1-2 differentiating attributes per
+  lens type — diameter for both, material for pipes, duct type doesn't
+  vary within one element so it's not a column). **Not** the shared `<DataTable>`
   primitive (`context/technical-requirements/data-table.md`) — that
   component is scoped to full-width page surfaces (catalog managers,
   Rooms, Equipment tabs, bookshelf pickers); its own doc's consumer
@@ -254,11 +254,10 @@ other lens's inspector is unchanged):
   formatters as-is. A row expands automatically when it becomes the
   §6 focused segment; clicking an already-focused row's header
   collapses it again.
-- Segment numbering (`#` column) is **display order, not an editable
-  or authoritative id** — it exists purely so a certifier can say
-  "segment 3 is short, that's the one under the joist" when talking to
-  a colleague. See §13 for the one open question this raises (is dict
-  insertion order the physically meaningful order?).
+- Segment numbering (`#` column) is **stable display order, not a
+  physical path order, editable id, or authoritative segment id** — it
+  exists purely so a certifier can say "segment 3 is short, that's the
+  one under the joist" when talking to a colleague.
 - All lengths respect the live IP/SI toggle, using the exact
   formatters already in `lib/fieldConfigs.ts`
   (`formatMetersAsLength` → `formatLengthFromMm`) — no new formatting
@@ -603,23 +602,25 @@ phase that ships §6, not the phase that ships §4.
 | D-6 | Dimension lines render only for the selected element's segments, no lens-wide toggle in v1 | Directly answers the "don't overwhelm the view" concern; keeps DOM-label count bounded |
 | D-7 | Row↔segment linking is hover (3D→row, transient) one direction and click (row→3D, sticky) the other; gated to only activate once the owning element is already selected; duct length computed locally (§7a), not via an upstream `honeybee_ph` release | Hover must stay ephemeral so it doesn't survive the user leaving the table to orbit the camera; click must own segment-level sub-selection so a 3D click can safely keep meaning "select the element," with no ambiguity; local duct-length compute avoids a cross-repo release blocking this feature |
 
-## 13. Open questions (resolve before/during implementation planning)
+## 13. Settled implementation notes
 
-1. **Is segment dict insertion order physically meaningful** (i.e.,
-   does segment 1 → 2 → 3 walk the run start-to-end), or is it
-   arbitrary GUID/export order? This determines whether the `#` column
-   in §5 is a trustworthy "walk the run in order" aid or a misleading
-   one. Verify against the canonical fixture (1 supply duct element,
-   3 segments) and Hillandale before building; if order isn't
-   meaningful, either sort by proximity/chaining at extraction time or
-   drop the ordinal claim from the UI copy.
-2. Should the pipe element card show a **role chip** ("Distribution ·
+1. **Segment dict insertion order is not physically meaningful.**
+   Verified 2026-07-01 against the canonical fixture and Hillandale
+   `Hillandale_Gateway_NAR_260402.hbjson`: endpoint-to-next-start
+   chaining fails for 2 of 3 multi-segment canonical elements and 61
+   of 94 multi-segment Hillandale elements. The `#` column remains a
+   stable display index only; the UI/docs must not claim it walks the
+   run start-to-end.
+
+## 13a. Remaining follow-up questions
+
+1. Should the pipe element card show a **role chip** ("Distribution ·
    Trunk" / "Distribution · Branch" / "Distribution · Fixture" /
    "Recirculation") per the §5 mockup? Requires the loader to stash a
    `pipe_role` onto meta (`pipe_kind` already exists;
    trunk/branch/fixture doesn't yet). Small addition, not required for
    the core feature — confirm it's wanted before adding scope.
-3. Exact dimension-line offset distance, tick size, and short-segment
+2. Exact dimension-line offset distance, tick size, and short-segment
    label decluttering rule (§9) — implementation-level tuning to
    settle during the phase plan, not a product decision.
 
@@ -637,9 +638,9 @@ phase that ships §6, not the phase that ships §4.
 4. The inspector shows, without scrolling: element type, display name,
    and **Total Length** in the active unit system, updating live on
    IP/SI toggle.
-5. The inspector shows an ordered, per-segment table with at minimum
-   ordinal and length per segment; every field currently shown for a
-   single segment today remains reachable (via row expand).
+5. The inspector shows a stable per-segment table with at minimum
+   display index and length per segment; every field currently shown
+   for a single segment today remains reachable (via row expand).
 6. Once an element is selected: hovering a segment belonging to *that*
    element highlights/scrolls its row into view and gives it a
    distinct 3D bump; hovering a segment belonging to a *different,
@@ -704,9 +705,9 @@ phase that ships §6, not the phase that ships §4.
 - **Dimension-line DOM-label perf is the main technical risk**,
   mitigated by scoping to selection-only (D-6) — see §9's named risk
   for what's explicitly deferred if that scoping isn't enough.
-- **Segment-order assumption (§13.1) is the main product-correctness
-  risk** — if wrong, the `#` column reads as authoritative and isn't;
-  must be verified before the segment table ships, not after.
+- **Segment-order assumption (§13.1) was the main product-correctness
+  risk** — it was verified false before closeout, so the shipped `#`
+  column is documented as stable display order only.
 - **State-resolution complexity risk:** §6/§10 add a third and fourth
   per-segment visual tier on top of the existing hover/selected pair.
   Keep the tier-resolution logic as one small, unit-tested pure

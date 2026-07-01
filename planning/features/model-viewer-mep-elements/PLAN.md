@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-01
-TIME: 16:14 EDT
-STATUS: Phase 4 complete and verified; Phase 5 ready to start.
+TIME: 16:20 EDT
+STATUS: Complete; all phases implemented and verified.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation phase sequence for MEP element selection/length
   reporting. Each phase is one PR-sized, independently verifiable
@@ -155,7 +155,7 @@ model-viewer lens e2e smoke. Full repo `make format` / `make ci` /
 7 skipped; frontend 219 test files passed / 2007 tests passed;
 production build completed.
 
-## Phase 5 — Full verification & closeout — NOT STARTED
+## Phase 5 — Full verification & closeout — COMPLETE
 
 Runs regardless of whether Phase 4 shipped. Full Ventilation + Hot
 Water Playwright suite across all four pipe roles (trunk/branch/
@@ -166,6 +166,13 @@ correct the `#` column claim or the extraction order if it's wrong)
 if not already settled in an earlier phase; `$ simplify`, `$
 docs-pass`, `make format`, `make ci`; browser walkthrough with
 screenshots; `graphify update .`.
+
+Completed 2026-07-01. Segment insertion order was verified against
+canonical and Hillandale fixtures and settled as stable display order
+only, not physical path order. PRD §14 acceptance criteria 1-13 are
+recorded pass in `STATUS.md`. Full model-viewer Chromium Playwright
+sweep, screenshot walkthrough, local simplify/docs-pass, `make
+format`, `make ci`, and `graphify update .` are complete.
 
 ## Sequencing notes
 
