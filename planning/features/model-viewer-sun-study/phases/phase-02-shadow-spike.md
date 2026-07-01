@@ -1,7 +1,8 @@
 ---
 DATE: 2026-07-01
-TIME: 18:05
-STATUS: Pending (blocked by phase 01)
+TIME: 18:05 (completed 21:45)
+STATUS: Complete — GO for the PRD shadow design, with D-11 amended
+  (see findings 5).
 AUTHOR: Claude (for Ed)
 SCOPE: Phase 02 — de-risk spike: BatchedMesh × real-time shadow maps
   (PRD §14 top technical risk). No product code lands from this phase;
@@ -47,4 +48,52 @@ for Ed rather than shipped quietly (PRD §14).
 
 ## Findings
 
-- (fill during spike)
+Method: temporary spike edits to `ViewerCanvas`/`BatchedLens`/
+`SiteSunLayer` (reverted, not committed), driven in the browser via the
+dev render knobs (`__phnViewerRender`) and the perf probe
+(`__phnModelViewerPerf`), on the AGENT-BROWSER fixture project. Perf
+numbers are orbit-EMA samples (noisy ±2 ms; compare orders, not digits).
+
+1. **BatchedMesh casts + receives: YES.** Both substrate batches
+   (opaque faces + transparent apertures, `MeshStandardMaterial`) cast
+   and receive with `Canvas shadows="soft"` + one `castShadow`
+   directional. Small fixture: crisp raking shadows; re-aiming the key
+   via the azimuth/elevation knobs moves them live; self-shading
+   correct (the tall block shades the low wing's roof at az 120).
+   `assets/phase-02-spike-shadows.png` (small fixture, az 300 / el 35).
+2. **ShadowMaterial catcher: YES.** A `planeGeometry` + `shadowMaterial`
+   plane at z≈0 receives batched shadows cleanly; invisible except
+   where shadow falls (default `planeGeometry` lies in XY — no rotation
+   needed in this Z-up scene).
+3. **`Canvas shadows` flag alone is FREE.** Small fixture, no caster:
+   36 calls / ~8.5 ms with the flag ≡ 36 calls / ~8.8 ms without.
+   Phase 04 can set the flag at Canvas creation unconditionally.
+4. **Engage cost = +6 draw calls** (shadow depth passes + catcher) on
+   both fixtures. Runtime `light.castShadow` flips are supported;
+   first engage recompiles programs once (unmeasurable on the small
+   fixture; acceptable per PRD §14). Set `receiveShadow` flags at
+   mount — free per (3) — and toggle only the light.
+5. **D-11 as written does NOT work.** Confirmed in three r0.180 source
+   (`WebGLShadowMap.js:432`, `WebGLClipping.js:67`): shadow-pass
+   clipping requires `renderer.localClippingEnabled` +
+   **material-local** `clippingPlanes` + `clipShadows`; renderer-global
+   `gl.clippingPlanes` (what `SectionClippingPlane` uses) are *never*
+   applied to the shadow depth pass. Empirically: sectioned-away
+   geometry kept casting its full phantom shadow. **Amendment for
+   phase 04 (v1): disable the sun shadow pass while a section is
+   active** — a sectioned model with live sun shadows is ambiguous
+   anyway; the honest alternatives (migrate the section tool to local
+   clipping) are a separate refactor.
+6. **Heavy fixture (Hillandale, ~7.2k objects, local licensed file):**
+   baseline 36 calls / ~15.8 ms orbit-EMA; with full shadow chain
+   42 calls / ~12.5 ms — the delta is inside orbit-sampling noise, as
+   predicted (casters are 2 batched draws). The spike's fixed ±30
+   ortho frustum was too small for a building this size — phase 04
+   must fit the shadow camera to `model.bounds` per engage (with the
+   fitted frustum the full-building shadow + courtyard self-shading
+   rendered correctly; Hillandale screenshots deliberately not
+   committed to this public repo).
+7. **Apertures cast solid shadows** (shadow depth ignores material
+   transparency). Fine for v1 — glass reads as part of the envelope in
+   a massing-model shading study; noted as a knob to revisit if Ed
+   wants light-through-glass.

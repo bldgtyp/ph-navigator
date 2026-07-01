@@ -28,7 +28,15 @@ RELATED:
     wrapping stock `ContactShadows` in a rigidly-rotated group. Before/
     after screenshots in `assets/`; `make frontend-dev-check` green.
     Ledger in `phases/phase-01-ground-shadow-baseline.md`.
-  - Phase 02 (BatchedMesh × shadow spike): next.
+  - Phase 02 (BatchedMesh × shadow spike): **Complete** 2026-07-01 —
+    GO. BatchedMesh casts/receives; ShadowMaterial catcher works;
+    `Canvas shadows` flag alone is free; Hillandale shadow-pass cost is
+    inside orbit noise (+6 draw calls). One amendment: **D-11 doesn't
+    work with the section tool's renderer-global clipping planes**
+    (three never clips the shadow pass against them) — v1 will disable
+    the sun shadow pass while a section is active. Findings in
+    `phases/phase-02-shadow-spike.md`.
+  - Phase 03 (backend solar grid): next.
 - **Blockers:** none.
 - **Verification so far:** codebase baseline in PRD §2 verified
   against source 2026-07-01 (backend `sun_path.py` dome builder;
