@@ -17,9 +17,10 @@ RELATED:
 
 Amends the Model tab's Ventilation and Hot Water lenses only: clicking
 a duct/pipe segment selects and highlights the whole parent Element
-(not just the segment), the inspector leads with Total Length and an
-stable per-segment table synced bidirectionally to the 3D scene, and
-adds automatic, selection-scoped dimension-line overlays.
+(not just the segment), the inspector leads with Total Length, the
+stable per-segment table syncs bidirectionally to the 3D scene, and
+automatic selection-scoped dimension-line overlays render for the
+selected element.
 
 ## Read order
 

@@ -5,6 +5,7 @@ how and when each feature packet landed. Newest first. Grep by slug.
 
 ## 2026-07-01
 
+- `model-viewer-mep-elements` - Ventilation/Hot Water MEP element selection and length reporting: backend duct/pipe length fields, element-level click/hover selection, Total Length inspector with segment table, row/3D focus sync, selected-element dimension overlays, segment-order resolution as stable display order only, screenshots, context docs-pass, and full viewer/CI closeout.
 - `model-viewer-clipping-planes` - axis-aligned section plane for the Model Viewer: camera-cluster toggle, X/Y/Z controls, slider mapped to model bounds, global renderer clipping, clipped raycast filtering, debug-hook support, Vitest/Playwright coverage, and `make ci`. Capped/filled sections remain out of scope.
 - `model-viewer-rendering-style` - cross-cutting 3D viewer rendering refactor: matched Spacio-style "solid study-model" look via soft key+fill lighting, N8AO, neutral near-white palette, dark opaque windows, flat unlit hover/selection highlight, and lightened edges; shipped as the new default (`DEFAULT_RENDER_SETTINGS`). Precedent research, perf baseline, and the licensed Hillandale-fixture leak fix included. (PR #26, `2c533d4b`)
 
