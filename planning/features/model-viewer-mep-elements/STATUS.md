@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-01
-TIME: 15:59 EDT
-STATUS: Phase 3 complete and verified; Phase 4 ready to start.
+TIME: 16:14 EDT
+STATUS: Phase 4 complete and verified; Phase 5 ready to start.
 AUTHOR: Claude (for Ed)
 SCOPE: Status ledger for the MEP element-selection feature.
 RELATED: README.md, PRD.md, PLAN.md, phases/
@@ -11,7 +11,7 @@ RELATED: README.md, PRD.md, PLAN.md, phases/
 
 ## Current state
 
-`Phase 3 complete.` PRD authored 2026-07-01 from a
+`Phase 4 complete.` PRD authored 2026-07-01 from a
 full read of the current Ventilation/Hot Water lens implementation
 (`frontend/src/features/model_viewer/`), the backend `model_viewer`
 schemas/extraction, and the upstream `honeybee_phhvac` source
@@ -123,11 +123,29 @@ Phase 3 code changes are implemented and verified:
   row class, sticky focused segment, focused tier, and focus
   persistence through a canvas orbit.
 
+Phase 4 code changes are implemented and verified:
+
+- `frontend/src/features/model_viewer/lib/dimensionLines.ts` adds
+  pure dimension-line geometry construction, a stable head-on offset
+  fallback, offset-distance tuning, and selected-segment primitive
+  counts.
+- `frontend/src/features/model_viewer/scene/DimensionOverlay.tsx`
+  renders selection-scoped extension lines, dimension lines, end
+  ticks, and canvas-scoped unit-aware labels.
+- `frontend/src/features/model_viewer/scene/BuildingLens.tsx` mounts
+  the overlay only for selected Ventilation/Hot Water elements.
+- `frontend/src/features/model_viewer/model_viewer.css` adds the
+  quieter `.model-dimension-label` style.
+- `frontend/src/features/model_viewer/__tests__/dimensionLines.test.ts`
+  covers normal geometry, degenerate head-on geometry, offset tuning,
+  and selected-element primitive-count scaling.
+- `frontend/tests/e2e/model-viewer-lenses.spec.ts` asserts dimension
+  labels render for the selected pipe element and disappear on lens
+  switch.
+
 ## Next step
 
-Start `phases/phase-04-dimension-lines.md` if the optional
-dimension-line phase is kept; otherwise proceed directly to
-`phases/phase-05-verification-closeout.md`.
+Start `phases/phase-05-verification-closeout.md`.
 
 Before or during Phase 5, resolve PRD §13 open question 1 (is segment
 dict insertion order physically meaningful?) — flagged in
@@ -180,10 +198,23 @@ Passed 2026-07-01:
   - frontend: 218 test files passed, 2003 tests passed; production
     build completed
 - `graphify update .`
+- `cd frontend && pnpm exec tsc -b --pretty false`
+- `cd frontend && pnpm exec vitest run
+  src/features/model_viewer/__tests__/dimensionLines.test.ts`
+- `cd frontend && pnpm run lint` (0 errors, existing 15 warnings)
+- `cd frontend && pnpm run check:all`
+- `cd frontend && pnpm exec playwright test
+  tests/e2e/model-viewer-lenses.spec.ts --project=chromium`
+- `make format`
+- `make ci`:
+  - backend: 1250 passed, 7 skipped, 1 warning
+  - frontend: 219 test files passed, 2007 tests passed; production
+    build completed
+- `graphify update .`
 
 ## Blockers
 
-None for Phase 4 / Phase 5.
+None for Phase 5.
 
 ## Note on an in-session file-loss incident (2026-07-01)
 

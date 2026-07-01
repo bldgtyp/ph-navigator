@@ -81,12 +81,15 @@ test("switches model lenses, selects lens objects, and honors lens deep links", 
     )
     .toBe("focused");
   await expect(page.getByLabel("Selected model element")).toContainText("Water Temp");
+  await expect(page.locator(".model-dimension-label")).toHaveCount(pipeElement.segmentIds.length);
+  await expect(page.locator(".model-dimension-label").first()).toContainText(/m|'/);
   await orbitModelViewer(page);
   await expect
     .poll(() => page.evaluate(() => window.__phnModelViewer?.focusedSegmentId ?? null))
     .toBe(focusedSegmentId);
 
   await switchLens(page, "Site & Sun");
+  await expect(page.locator(".model-dimension-label")).toHaveCount(0);
   await expect(page.getByText("Set project location to see the sun path.")).toBeVisible();
 
   const fileId = new URL(page.url()).searchParams.get("file");

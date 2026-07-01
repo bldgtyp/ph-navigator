@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-01
-TIME: 15:59 EDT
-STATUS: Phase 3 complete and verified; Phase 4 ready to start.
+TIME: 16:14 EDT
+STATUS: Phase 4 complete and verified; Phase 5 ready to start.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation phase sequence for MEP element selection/length
   reporting. Each phase is one PR-sized, independently verifiable
@@ -121,7 +121,7 @@ green. Full CI evidence: backend 1250 passed / 7 skipped; frontend
 218 test files passed / 2003 tests passed; production build completed.
 
 ## Phase 4 — Frontend: selection-scoped dimension lines — OPTIONAL,
-## READY
+## COMPLETE
 
 Implements PRD §9, D-6. Renders offset dimension line + extension
 lines + end ticks + unit-aware midpoint label for each segment of the
@@ -141,6 +141,19 @@ would have carried it.
 selecting a multi-segment element and asserting dimension-line count
 == segment count, and that no dimension lines render for an
 unselected element; `make format` + `make ci`; browser walkthrough.
+
+Implemented 2026-07-01. Added the pure
+`buildDimensionLineGeometry` helper with stable head-on fallback,
+offset-distance tuning, and selected-segment primitive counts; mounted
+`DimensionOverlay` only for selected Ventilation/Hot Water elements;
+rendered extension lines, dimension lines, ticks, and unit-aware
+canvas-scoped labels using the same length formatter as the inspector.
+Focused verification is green: frontend `tsc -b`, dimension-line
+Vitest, `pnpm run lint`, `pnpm run check:all`, and the Chromium
+model-viewer lens e2e smoke. Full repo `make format` / `make ci` /
+`graphify update .` are green. Full CI evidence: backend 1250 passed /
+7 skipped; frontend 219 test files passed / 2007 tests passed;
+production build completed.
 
 ## Phase 5 — Full verification & closeout — NOT STARTED
 

@@ -23,6 +23,7 @@ import type { BuildingModel, GhostGeometry, LineRenderable } from "../loaders/bu
 import { useModelViewerStore } from "../store";
 import type { ModelViewerLens, ModelViewerTheme, SunPathAndCompassModelData } from "../types";
 import { BatchedLens } from "./BatchedLens";
+import { DimensionOverlay } from "./DimensionOverlay";
 import { MeasureOverlay } from "./MeasureOverlay";
 import { SiteSunLayer } from "./SiteSunLayer";
 
@@ -48,6 +49,7 @@ export function BuildingLens({ model, ghostMaterials, tokens, sunPath }: Buildin
   const theme = useModelViewerStore((state) => state.themesByLens[state.lens]);
   const legendFilter = useModelViewerStore((state) => state.legendFilter);
   const measureActive = useModelViewerStore((state) => state.measureActive);
+  const selectionId = useModelViewerStore((state) => state.selectionId);
   useLineRaycastTolerance();
   useClearSelectionWhenHidden(model, lens, theme);
   // The real building shows on building + site-sun; other lenses get the faint
@@ -63,6 +65,9 @@ export function BuildingLens({ model, ghostMaterials, tokens, sunPath }: Buildin
     [model.objects, lens],
   );
   const interactive = !measureActive;
+  const selectedElement = selectionId ? (model.elementsById.get(selectionId) ?? null) : null;
+  const showDimensionOverlay =
+    selectedElement !== null && (lens === "ventilation" || lens === "hot-water");
 
   // The lens switch is a hard cut for now (F1); Phase 04c (D-8) restores the
   // 0.18 s fade as an imperative opacity tween that never reconciles React.
@@ -85,6 +90,7 @@ export function BuildingLens({ model, ghostMaterials, tokens, sunPath }: Buildin
         </group>
       )}
       {lens === "site-sun" ? <SiteSunLayer model={model} sunPath={sunPath} /> : null}
+      {showDimensionOverlay ? <DimensionOverlay model={model} element={selectedElement} /> : null}
       <MeasureOverlay model={model} />
     </>
   );

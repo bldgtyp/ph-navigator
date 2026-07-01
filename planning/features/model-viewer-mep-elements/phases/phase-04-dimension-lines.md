@@ -1,8 +1,7 @@
 ---
 DATE: 2026-07-01
-TIME: -
-STATUS: Not started. Optional/cuttable — see PRD §9 and PLAN.md. If
-  cut, skip straight to Phase 5.
+TIME: 16:14 EDT
+STATUS: Complete and verified.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff for Phase 4 — automatic, selection-scoped
   dimension-line overlays on the selected element's segments.
@@ -194,3 +193,45 @@ dimension-line visibility preferences.
 PRD §14 acceptance criterion 12 passes. STATUS.md records whether this
 phase shipped, was tuned, or was cut — either outcome is acceptable
 per PRD §9.
+
+## 8. Completion record
+
+Implemented 2026-07-01.
+
+Implemented:
+
+- `buildDimensionLineGeometry`, `dimensionOffsetDistance`, and
+  `dimensionPrimitiveCounts` in
+  `frontend/src/features/model_viewer/lib/dimensionLines.ts`.
+- `DimensionOverlay` in
+  `frontend/src/features/model_viewer/scene/DimensionOverlay.tsx`,
+  rendering extension lines, dimension lines, end ticks, and
+  canvas-scoped unit-aware labels for the selected element only.
+- Conditional overlay mounting from
+  `frontend/src/features/model_viewer/scene/BuildingLens.tsx` for
+  selected Ventilation / Hot Water elements.
+- `.model-dimension-label` styling in
+  `frontend/src/features/model_viewer/model_viewer.css`.
+- Unit coverage for normal geometry, degenerate head-on geometry,
+  offset tuning, and selected-element primitive-count scaling.
+- Chromium e2e coverage for selected-element dimension labels and
+  teardown on lens switch.
+
+Verification passed:
+
+- `cd frontend && pnpm exec tsc -b --pretty false`
+- `cd frontend && pnpm exec vitest run
+  src/features/model_viewer/__tests__/dimensionLines.test.ts`
+- `cd frontend && pnpm run lint` (0 errors, existing 15 warnings)
+- `cd frontend && pnpm run check:all`
+- `cd frontend && pnpm exec playwright test
+  tests/e2e/model-viewer-lenses.spec.ts --project=chromium`
+
+Repo closeout gate passed:
+
+- `make format`
+- `make ci`:
+  - backend: 1250 passed, 7 skipped, 1 warning
+  - frontend: 219 test files passed, 2007 tests passed; production
+    build completed
+- `graphify update .`
