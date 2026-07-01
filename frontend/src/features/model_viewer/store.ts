@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { DEFAULT_MODEL_VIEWER_THEMES, defaultThemeForLens } from "./lib/themeState";
+import type { ModelViewerSection } from "./lib/section";
 import type {
   LegendFilter,
   ModelViewerErrorKind,
@@ -25,6 +26,7 @@ type ModelViewerState = {
   measureSnap: ModelViewerMeasurePoint | null;
   measurePendingPoint: ModelViewerMeasurePoint | null;
   measureLines: ModelViewerMeasureLine[];
+  section: ModelViewerSection | null;
   loadPhase: ViewerLoadPhase;
   errorKind: ModelViewerErrorKind | null;
   cameraRequest: { kind: "fit" | "home" | "zoomTo"; targetId?: string; id: number } | null;
@@ -45,6 +47,8 @@ type ModelViewerState = {
   setMeasureSnap: (point: ModelViewerMeasurePoint | null) => void;
   commitMeasurePoint: (point: ModelViewerMeasurePoint) => ModelViewerMeasureLine | null;
   clearMeasureLines: () => void;
+  setSection: (section: ModelViewerSection) => void;
+  clearSection: () => void;
   setLoadState: (phase: ViewerLoadPhase, errorKind?: ModelViewerErrorKind | null) => void;
   requestCamera: (kind: "fit" | "home" | "zoomTo", targetId?: string) => void;
 };
@@ -60,6 +64,7 @@ export const useModelViewerStore = create<ModelViewerState>()((set) => ({
   measureSnap: null,
   measurePendingPoint: null,
   measureLines: [],
+  section: null,
   loadPhase: "idle",
   errorKind: null,
   cameraRequest: null,
@@ -69,6 +74,7 @@ export const useModelViewerStore = create<ModelViewerState>()((set) => ({
       hoverId: null,
       selectionId: null,
       legendFilter: null,
+      section: null,
       errorKind: null,
       ...inactiveMeasureState(),
     }),
@@ -175,6 +181,13 @@ export const useModelViewerStore = create<ModelViewerState>()((set) => ({
         ? { measureSnap: null, measurePendingPoint: null, measureLines: [] }
         : state,
     ),
+  setSection: (section) =>
+    set((state) =>
+      state.section?.axis === section.axis && state.section.offset === section.offset
+        ? state
+        : { section },
+    ),
+  clearSection: () => set((state) => (state.section === null ? state : { section: null })),
   setLoadState: (phase, errorKind = null) =>
     set((state) =>
       state.loadPhase === phase && state.errorKind === errorKind

@@ -11,7 +11,7 @@ RELATED:
   - PRD.md
   - planning/archive/dated/2026-06-23/model-viewer-sun-path/
   - planning/archive/dated/2026-06-23/model-viewer-legend-filter/
-  - planning/features_v1.1/model-viewer-clipping-planes/
+  - planning/archive/dated/2026-07-01/model-viewer-clipping-planes/
   - planning/archive/dated/2026-06-13/model-viewer/ (completed MVP — source of truth)
   - context/user-stories/40-model-viewer.md
 ---
@@ -40,7 +40,7 @@ with detailed phased plans.
 
 | Candidate | Feature folder | Gate |
 |---|---|---|
-| Section / clipping planes (Q-VIEW-8) | [`model-viewer-clipping-planes/`](../model-viewer-clipping-planes/) | A named sectioned-inspection workflow. Approach is low-ambiguity; plan is ready. |
+| Section / clipping planes (Q-VIEW-8) | [`model-viewer-clipping-planes/`](../../archive/dated/2026-07-01/model-viewer-clipping-planes/) | **Implemented 2026-07-01** (merged + archived). Axis-aligned section toggle, X/Y/Z slider, clipping, and pick filtering shipped; capped sections remain deferred. |
 
 ### Tier 3 — Not ready for detailed phasing (scoped here, with gates)
 
@@ -69,7 +69,7 @@ with detailed phased plans.
    merge. Renders the diagram in Site & Sun over geometry.
 3. **Legend-as-filter** — **implemented 2026-06-23** (merged + archived);
    both phases, isolate-with-wireframe-context.
-4. **Clipping planes** — when a section workflow names itself.
+4. **Clipping planes** — **implemented 2026-07-01** (archived).
 5. **Doc cross-check** — with the Rooms/equipment family, not before.
 
 ## Current decision

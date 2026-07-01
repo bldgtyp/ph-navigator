@@ -10,7 +10,7 @@ RELATED:
   - PRD.md
   - planning/archive/dated/2026-06-23/model-viewer-sun-path/
   - planning/archive/dated/2026-06-23/model-viewer-legend-filter/
-  - planning/features_v1.1/model-viewer-clipping-planes/
+  - planning/archive/dated/2026-07-01/model-viewer-clipping-planes/
   - planning/archive/dated/2026-06-13/model-viewer/STATUS.md
   - context/user-stories/40-model-viewer.md
 ---
@@ -31,7 +31,7 @@ on Ed's promotion.
 | Sun-path 3D render in Site & Sun | 1 | [`model-viewer-sun-path/`](../../archive/dated/2026-06-23/model-viewer-sun-path/) Phases 0 + 1 | **Implemented 2026-06-23** (merged + archived 2026-06-23). Backend (`project_location` — not Climate) + frontend render both done. D-SP-1 accepted. |
 | Sun-path scrubber | 1 (gated sub-phase) | [`model-viewer-sun-path/`](../../archive/dated/2026-06-23/model-viewer-sun-path/) Phase 2 | Phase 1 shipped 2026-06-23; reopen when a concrete time/season review need is named (Q-VIEW-6). |
 | NEW-VIEW-2 legend-as-filter | 1 | [`model-viewer-legend-filter/`](../../archive/dated/2026-06-23/model-viewer-legend-filter/) | **Implemented 2026-06-23** (merged + archived). Both phases — single-select + shift-click multi-select. |
-| Section / clipping planes | 2 (gated) | [`model-viewer-clipping-planes/`](../model-viewer-clipping-planes/) | A named sectioned-inspection workflow (Q-VIEW-8). |
+| Section / clipping planes | 2 | [`model-viewer-clipping-planes/`](../../archive/dated/2026-07-01/model-viewer-clipping-planes/) | **Implemented 2026-07-01** (archived). Axis-aligned clipping shipped; capped sections remain a follow-up only if hollow sections read poorly. |
 | NEW-VIEW-1 HBJSON ↔ document cross-check | 3 (not phased) | `PRD.md` stub | Plan with the Rooms/equipment QA/QC family (NEW-ROOMS-1) so divergence rules can be defined against builder tables. |
 | Comments / annotations | 3 (not phased) | `PRD.md` stub | App has a shared comment/presence model — not a Model Viewer-only island (D-I7). |
 | John test / non-technical product validation | 3 (not code) | `PRD.md` stub | Coordinate outside a coding-agent session; record the outcome here or in the archived MVP status if it changes the product contract. |

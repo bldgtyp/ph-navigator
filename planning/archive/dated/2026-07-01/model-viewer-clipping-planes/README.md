@@ -1,8 +1,7 @@
 ---
 DATE: 2026-06-13
-TIME: -
-STATUS: Deferred — gated on a concrete sectioned-inspection workflow.
-  Plan is implementable; do not start until the gate opens.
+TIME: 2026-07-01 14:05 EDT
+STATUS: Complete — Phase 1 implemented, verified, and archived.
 AUTHOR: Claude (for Ed)
 SCOPE: Router for the Model Viewer section / clipping-planes feature.
 RELATED:
@@ -21,13 +20,21 @@ orbiting around"). Deferred at MVP (Q-VIEW-8) because it needs
 plane-placement UI and a non-trivial scene integration, and because no
 v1 workflow gated it.
 
+## Current State
+
+The gate was opened by the 2026-07-01 implement-loop request. Phase 1
+is implemented in the frontend: section state, camera-cluster controls,
+global renderer clipping, debug-hook state, pick filtering, focused
+Vitest coverage, and a Playwright spec.
+
+Completed and archived on 2026-07-01.
+
 ## Gate
 
-Build this when a **named** review workflow needs sectioned inspection
+Opened 2026-07-01 by the implement-loop request. Original trigger:
+build this when a **named** review workflow needs sectioned inspection
 — e.g. a wall-section review or interior walkthrough that orbiting +
-the existing lenses cannot serve. Until then it stays planned-but-idle.
-The technical approach is low-ambiguity (below), so the plan is ready
-whenever the gate opens.
+the existing lenses cannot serve.
 
 ## Read order
 

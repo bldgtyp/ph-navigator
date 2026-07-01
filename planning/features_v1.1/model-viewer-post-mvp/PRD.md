@@ -13,7 +13,7 @@ RELATED:
   - planning/archive/dated/2026-06-13/model-viewer/decisions.md
   - planning/archive/dated/2026-06-23/model-viewer-sun-path/PRD.md
   - planning/archive/dated/2026-06-23/model-viewer-legend-filter/PRD.md
-  - planning/features_v1.1/model-viewer-clipping-planes/PRD.md
+  - planning/archive/dated/2026-07-01/model-viewer-clipping-planes/PRD.md
 ---
 
 # Model Viewer Post-MVP - PRD
@@ -52,12 +52,11 @@ near-priority.
 ## Tier 2 — Gated (plan ready, idle)
 
 ### Section / Clipping Planes
-→ **[`model-viewer-clipping-planes/PRD.md`](../model-viewer-clipping-planes/PRD.md)**
+→ **[`model-viewer-clipping-planes/PRD.md`](../../archive/dated/2026-07-01/model-viewer-clipping-planes/PRD.md)**
 
 Add a movable axis-aligned clipping plane for sectioned inspection.
-Plan ready (global renderer clipping plane); build only when a concrete
-review workflow needs it. Capped (filled) cross-sections are explicitly
-out of scope.
+Implemented 2026-07-01 with global renderer clipping. Capped (filled)
+cross-sections are explicitly out of scope.
 
 ## Tier 3 — Not ready for detailed phasing (full stubs below)
 

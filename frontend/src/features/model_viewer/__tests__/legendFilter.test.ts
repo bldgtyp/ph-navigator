@@ -13,6 +13,7 @@ afterEach(() => {
     hoverId: null,
     selectionId: null,
     legendFilter: null,
+    section: null,
   });
 });
 

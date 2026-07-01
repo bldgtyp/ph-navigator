@@ -5,6 +5,7 @@ how and when each feature packet landed. Newest first. Grep by slug.
 
 ## 2026-07-01
 
+- `model-viewer-clipping-planes` - axis-aligned section plane for the Model Viewer: camera-cluster toggle, X/Y/Z controls, slider mapped to model bounds, global renderer clipping, clipped raycast filtering, debug-hook support, Vitest/Playwright coverage, and `make ci`. Capped/filled sections remain out of scope.
 - `model-viewer-rendering-style` - cross-cutting 3D viewer rendering refactor: matched Spacio-style "solid study-model" look via soft key+fill lighting, N8AO, neutral near-white palette, dark opaque windows, flat unlit hover/selection highlight, and lightened edges; shipped as the new default (`DEFAULT_RENDER_SETTINGS`). Precedent research, perf baseline, and the licensed Hillandale-fixture leak fix included. (PR #26, `2c533d4b`)
 
 ## 2026-06-30

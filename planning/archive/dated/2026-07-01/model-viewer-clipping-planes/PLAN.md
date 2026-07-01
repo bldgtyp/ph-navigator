@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-13
-TIME: -
-STATUS: Deferred — implementation sequence for when the gate opens.
+TIME: 2026-07-01 14:05 EDT
+STATUS: Complete — Phase 1 implemented, verified, and archived.
 AUTHOR: Claude (for Ed)
 SCOPE: Approach + phase sequence for section / clipping planes.
 RELATED:
@@ -15,7 +15,7 @@ Frontend-only. No backend, no new data.
 
 | Phase | Scope | Ships |
 |---|---|---|
-| 1 — Axis clipping | Section toggle + axis pick + slider; global renderer clipping plane; selection/Measure coexistence | Live axis-aligned section across geometry lenses |
+| 1 — Axis clipping | Section toggle + axis pick + slider; global renderer clipping plane; selection/Measure coexistence | Complete |
 | (later, only if needed) Capped sections | Stencil/cap-geometry filled cross-sections | Filled poché — separate effort, gated on "hollow is unreadable" |
 
 ## Approach (Phase 1)

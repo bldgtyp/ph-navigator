@@ -10,6 +10,7 @@ import {
   type ViewerTokens,
 } from "../lib/colors";
 import { isHiddenByFilter } from "../lib/legendFilter";
+import { isPointVisibleForSection } from "../lib/section";
 import { isClickWithinDragTolerance, pointerPoint, type PointerPoint } from "../lib/selection";
 import { lineStyleDefinition } from "../lib/themes";
 import type { BuildingModel, GhostGeometry, LineRenderable } from "../loaders/building";
@@ -191,6 +192,7 @@ function lineWidth(
 
 function handlePointerOver(event: ThreeEvent<PointerEvent>, objectId: string): void {
   event.stopPropagation();
+  if (!isPointVisibleForSection(event.point, useModelViewerStore.getState().section)) return;
   useModelViewerStore.getState().setHoverId(objectId);
 }
 
@@ -205,6 +207,7 @@ function selectObject(
   objectId: string,
 ): void {
   event.stopPropagation();
+  if (!isPointVisibleForSection(event.point, useModelViewerStore.getState().section)) return;
   const point = { clientX: event.nativeEvent.clientX, clientY: event.nativeEvent.clientY };
   if (!isClickWithinDragTolerance(pointerDown, point)) return;
   useModelViewerStore.getState().setSelectionId(objectId);
@@ -212,6 +215,7 @@ function selectObject(
 
 function zoomToObject(event: ThreeEvent<MouseEvent>, objectId: string): void {
   event.stopPropagation();
+  if (!isPointVisibleForSection(event.point, useModelViewerStore.getState().section)) return;
   const store = useModelViewerStore.getState();
   store.setSelectionId(objectId);
   store.requestCamera("zoomTo", objectId);

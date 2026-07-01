@@ -9,6 +9,7 @@ import {
   type ViewerTokens,
 } from "../lib/colors";
 import { bucketKeyForMeta, isBucketHidden } from "../lib/legendFilter";
+import { isPointVisibleForSection } from "../lib/section";
 import { isClickWithinDragTolerance, pointerPoint, type PointerPoint } from "../lib/selection";
 import type { BuildingModel, BuildingRenderable } from "../loaders/building";
 import { mergeRenderableGeometries } from "../loaders/merge";
@@ -178,9 +179,11 @@ function useBatchFilter(
 /** R3F pointer handlers shared by both batch primitives; picking reads `batchId`. */
 function usePickHandlers(batch: LensBatch | null, interactive: boolean) {
   const pointerDown = useRef<PointerPoint | null>(null);
+  const section = useModelViewerStore((state) => state.section);
 
   return useMemo(() => {
     const idFromEvent = (event: ThreeEvent<PointerEvent | MouseEvent>): string | null => {
+      if (!isPointVisibleForSection(event.point, section)) return null;
       if (!batch || event.batchId === undefined) return null;
       return batch.idForBatch.get(event.object as BatchedMesh)?.get(event.batchId) ?? null;
     };
@@ -219,7 +222,7 @@ function usePickHandlers(batch: LensBatch | null, interactive: boolean) {
         store.requestCamera("zoomTo", id);
       },
     };
-  }, [batch, interactive]);
+  }, [batch, interactive, section]);
 }
 
 /** Seconds the incoming lens takes to fade up to full opacity (D-8, fade-in only). */

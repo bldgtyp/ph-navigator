@@ -194,7 +194,7 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
       {measureActive ? (
         <div className="model-measure-hint">Click two points to measure · Esc to exit</div>
       ) : null}
-      <CameraCluster />
+      <CameraCluster modelBounds={model?.bounds ?? null} />
       <InspectorPanel meta={selectedMeta} />
     </>
   );

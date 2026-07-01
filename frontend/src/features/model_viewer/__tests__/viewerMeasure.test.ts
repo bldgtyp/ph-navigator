@@ -19,6 +19,7 @@ afterEach(() => {
     measureSnap: null,
     measurePendingPoint: null,
     measureLines: [],
+    section: null,
     loadPhase: "idle",
     errorKind: null,
     cameraRequest: null,

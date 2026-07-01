@@ -1,5 +1,6 @@
 import { ContactShadows, Grid } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { EffectComposer, N8AO, SMAA } from "@react-three/postprocessing";
 import { useEffect, useMemo } from "react";
 import { createGhostMaterials, resolveViewerTokens } from "../lib/colors";
@@ -11,6 +12,7 @@ import {
 import { isModelViewerDebugHookEnabled } from "../lib/debugHook";
 import { labelForLens } from "../lib/lenses";
 import { useViewerRenderSettings } from "../lib/renderSettings";
+import { clampSectionToBounds, clippingPlaneForSection } from "../lib/section";
 import type { BuildingModel } from "../loaders/building";
 import { useModelViewerStore } from "../store";
 import type { SunPathAndCompassModelData } from "../types";
@@ -139,6 +141,7 @@ export function ViewerCanvas({ model, activeFileName, sunPath }: ViewerCanvasPro
         tokens={tokens}
         sunPath={sunPath}
       />
+      <SectionClippingPlane model={model} />
       <CameraRig model={model} />
       {isModelViewerDebugHookEnabled() ? <ModelViewerPerfProbe /> : null}
       {/*
@@ -166,4 +169,29 @@ export function ViewerCanvas({ model, activeFileName, sunPath }: ViewerCanvasPro
       ) : null}
     </Canvas>
   );
+}
+
+function SectionClippingPlane({ model }: { model: BuildingModel }) {
+  const section = useModelViewerStore((state) => state.section);
+  const { gl, invalidate } = useThree();
+
+  useEffect(() => {
+    if (!section) {
+      gl.clippingPlanes = [];
+      invalidate();
+      return;
+    }
+    const clipped = clampSectionToBounds(model.bounds, section);
+    gl.clippingPlanes = [clippingPlaneForSection(clipped)];
+    invalidate();
+  }, [gl, invalidate, model.bounds, section]);
+
+  useEffect(() => {
+    return () => {
+      gl.clippingPlanes = [];
+      invalidate();
+    };
+  }, [gl, invalidate]);
+
+  return null;
 }

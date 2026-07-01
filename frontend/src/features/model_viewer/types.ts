@@ -1,3 +1,5 @@
+import type { ModelViewerSection } from "./lib/section";
+
 export type ExtractionStatus = "pending" | "success" | "failed";
 
 export type HbjsonFile = {
@@ -430,6 +432,8 @@ export type ModelViewerDebugState = {
   sunPathReady: boolean;
   objectIds: string[];
   visibleObjectIds: string[];
+  section: ModelViewerSection | null;
+  sectionClippedObjectIds: () => string[];
   lens: ModelViewerLens;
   theme: ModelViewerTheme;
   legend: ModelViewerLegend;
@@ -446,6 +450,8 @@ export type ModelViewerDebugState = {
   selectObject: (objectId: string | null) => void;
   selectAnyModelObject: (type?: ModelObjectType) => string | null;
   clearSelection: () => void;
+  setSection: (section: ModelViewerSection) => void;
+  clearSection: () => void;
   setMeasureActive: (active: boolean) => void;
   measureBetweenVertices: (
     sourceObjectId: string,

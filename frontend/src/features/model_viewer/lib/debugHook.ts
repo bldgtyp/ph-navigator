@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { isHiddenByFilter } from "./legendFilter";
 import { distanceBetweenMeasurePoints } from "./measure";
+import { isTupleVisibleForSection } from "./section";
 import { colorForThemedObject, legendForModel } from "./themes";
 import { emptyModelObjectCounts, type BuildingModel } from "../loaders/building";
 import { useModelViewerStore } from "../store";
@@ -41,10 +42,13 @@ function useModelViewerDebugHook(model: BuildingModel | null, sunPathReady: bool
   const measureActive = useModelViewerStore((state) => state.measureActive);
   const measureSnap = useModelViewerStore((state) => state.measureSnap);
   const measureLines = useModelViewerStore((state) => state.measureLines);
+  const section = useModelViewerStore((state) => state.section);
   const setSelectionId = useModelViewerStore((state) => state.setSelectionId);
   const setLens = useModelViewerStore((state) => state.setLens);
   const setTheme = useModelViewerStore((state) => state.setTheme);
   const clearSelection = useModelViewerStore((state) => state.clearSelection);
+  const setSection = useModelViewerStore((state) => state.setSection);
+  const clearSection = useModelViewerStore((state) => state.clearSection);
   const setMeasureActive = useModelViewerStore((state) => state.setMeasureActive);
   const objectIds = useMemo(
     () => model?.objects.map((object) => object.id) ?? [],
@@ -56,6 +60,15 @@ function useModelViewerDebugHook(model: BuildingModel | null, sunPathReady: bool
         .filter((object) => !isHiddenByFilter(object, lens, theme, legendFilter))
         .map((object) => object.id),
     [lens, model, theme, legendFilter],
+  );
+  const sectionClippedObjectIds = useMemo(
+    () => () =>
+      selectableObjectsForLens(model, lens)
+        .filter((object) =>
+          object.meta.vertices.every((point) => !isTupleVisibleForSection(point, section)),
+        )
+        .map((object) => object.id),
+    [lens, model, section],
   );
   const legend = useMemo(
     () => (model ? legendForModel(model, lens, theme) : null),
@@ -72,6 +85,8 @@ function useModelViewerDebugHook(model: BuildingModel | null, sunPathReady: bool
       sunPathReady,
       objectIds,
       visibleObjectIds,
+      section,
+      sectionClippedObjectIds,
       lens,
       theme,
       legend,
@@ -99,6 +114,8 @@ function useModelViewerDebugHook(model: BuildingModel | null, sunPathReady: bool
         return object.id;
       },
       clearSelection,
+      setSection,
+      clearSection,
       setMeasureActive,
       measureBetweenVertices: (sourceObjectId, startIndex = 0, endIndex = 1) => {
         const meta = model?.metaById.get(sourceObjectId);
@@ -138,6 +155,7 @@ function useModelViewerDebugHook(model: BuildingModel | null, sunPathReady: bool
   }, [
     activeFileId,
     clearSelection,
+    clearSection,
     errorKind,
     hoverId,
     legendFilter,
@@ -149,10 +167,13 @@ function useModelViewerDebugHook(model: BuildingModel | null, sunPathReady: bool
     measureSnap,
     model,
     objectIds,
+    section,
+    sectionClippedObjectIds,
     selectionId,
     setLens,
     setMeasureActive,
     setSelectionId,
+    setSection,
     setTheme,
     sunPathReady,
     theme,

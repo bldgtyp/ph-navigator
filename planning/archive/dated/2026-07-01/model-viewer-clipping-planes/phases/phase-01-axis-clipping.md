@@ -1,7 +1,7 @@
 ---
 DATE: 2026-06-13
-TIME: -
-STATUS: Deferred — implementable handoff; start when the gate opens.
+TIME: 2026-07-01 14:05 EDT
+STATUS: Complete — implementation verified and archived.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff — axis-aligned clipping plane.
 RELATED:
@@ -55,6 +55,8 @@ Self-contained frontend handoff (read `../PRD.md` + `../PLAN.md` first).
 
 ## 4. Exit criteria
 
-- PRD §4 acceptance items met; hollow-section limitation documented in
-  STATUS (capping is explicitly out of scope).
-- `make format` + `make ci` green.
+- PRD §4 implementation items are in code; hollow-section limitation
+  documented in STATUS (capping is explicitly out of scope).
+- Focused Vitest, TypeScript, `make format`, and `make
+  frontend-dev-check` are green.
+- `tests/e2e/model-viewer-section.spec.ts` and `make ci` are green.
