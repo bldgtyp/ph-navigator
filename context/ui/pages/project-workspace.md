@@ -5,9 +5,11 @@
 
 # 2.4 Project workspace (`/projects/{project_id}/{tab}`)
 
-**Purpose:** One project's home. Workspace structure matches the V1
-mental model the user already has: Status / Windows / Envelope /
-Equipment / Model.
+**Purpose:** One project's home. Workspace structure started from the V1
+mental model the user already had and has since grown: Status / Climate /
+Apertures / Envelope / Spaces / Equipment / Thermal Bridges / Model
+(current tab set — see `frontend/src/features/projects/lib.ts`'s
+`PROJECT_TABS`; matches `../../UI_UX.md` §1's tab list).
 
 **Default landing:** `/projects/{id}/status` (the Status tab).
 Dashboard click goes here.
@@ -68,17 +70,22 @@ because the screen lacks a secondary information model.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
-│  Status · Windows · Envelope · Equipment · Model                         │
+│  Status · Climate · Apertures · Envelope · Spaces · Equipment ·          │
+│  Thermal Bridges · Model                                                 │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
-- Tabs match the V1 mental model. **No "Versions" tab** (header
-  dropdown instead). **No "Settings" tab** (overflow menu).
+- Tabs started from the V1 mental model and have since grown (Climate,
+  Spaces, and Thermal Bridges split out as their own top-level tabs).
+  **No "Versions" tab** (header dropdown instead). **No "Settings" tab**
+  (overflow menu).
 - Selected tab shows an active-state underline / fill.
 - Tab selection updates the URL:
-  `/projects/{id}/status`, `/projects/{id}/apertures`,
-  `/projects/{id}/envelope`, `/projects/{id}/equipment`,
-  `/projects/{id}/model`. Browser back/forward work.
+  `/projects/{id}/status`, `/projects/{id}/climate`,
+  `/projects/{id}/apertures`, `/projects/{id}/envelope`,
+  `/projects/{id}/spaces`, `/projects/{id}/equipment`,
+  `/projects/{id}/thermal-bridges`, `/projects/{id}/model`. Browser
+  back/forward work.
 - Each tab loads independently (no full-page reload between tabs;
   data fetches are scoped).
 

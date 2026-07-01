@@ -15,7 +15,7 @@ to the per-story sections above.
 |---|---|---|---|
 | ~~Q-OWN-1~~ | ~~US-1 Q1~~ | ~~Ownership = dashboard filter only, or strict ACL?~~ | **Resolved 2026-05-10:** dashboard-filter only; ACL deferred. Forward-compatible access-check seam (US-1.5). |
 | ~~Q-OWN-2~~ | ~~US-1 Q2~~ | ~~Ownership transferable?~~ | **Resolved 2026-05-10:** yes (data model supports; transfer UI post-MVP) |
-| ~~Q-AUTH-1~~ | ~~US-0 Q1~~ | ~~Forgot-password flow?~~ | **Resolved 2026-05-10:** admin-reset only |
+| ~~Q-AUTH-1~~ | ~~US-0 Q1~~ | ~~Forgot-password flow?~~ | **Resolved 2026-05-10, superseded 2026-06-29:** self-service invite + admin reset-link via `account_tokens`; see PRD §17 item 17 |
 | ~~Q-AUTH-2~~ | ~~US-0 Q2~~ | ~~Session duration?~~ | **Resolved 2026-05-10:** 60-min sliding |
 | ~~Q-AUTH-3~~ | ~~US-0 Q3~~ | ~~Concurrent sessions?~~ | **Resolved 2026-05-10:** single active session, most-recent-wins |
 | ~~Q-DASH-1~~ | ~~US-1 Q3~~ | ~~Default unpinned sort?~~ | **Resolved 2026-05-10:** by `bt_number` descending |
@@ -40,17 +40,17 @@ to the per-story sections above.
 | ~~Q-STATUS-5~~ | ~~US-Status~~ | ~~Per-item attachments (photos, PDFs)?~~ | **Resolved 2026-05-10, asset wording revised 2026-05-11:** out of v1. Description Markdown can link to stable PHN asset download routes for files uploaded elsewhere. Per-item attachment UI defers to v1.1+ |
 | ~~Q-STATUS-6~~ | ~~US-Status~~ | ~~Empty-state UX for brand-new project?~~ | **Resolved 2026-05-10 (via Q-LANDDEFAULT-1):** centered card with 3 CTAs — "Apply BLDGTYP default template" (primary) / "+ Add custom item" (secondary) / "Skip to Envelope" (link) |
 | ~~Q-STATUS-7~~ | ~~US-Status~~ | ~~`completion_date` editing — auto-populate or always-editable?~~ | **Resolved 2026-05-10:** auto-populate to today on `done` flip; user-editable thereafter (so they can backdate). Clearing to null supported via the edit form |
-| Q-LOG-1 | C-1 | Log retention? | keep forever |
+| ~~Q-LOG-1~~ | ~~C-1~~ | ~~Log retention?~~ | **Resolved:** keep forever |
 | ~~Q-URL-1~~ | ~~(meta)~~ | ~~V2 URL?~~ | **Resolved 2026-06-28:** current PH-Navigator serves `https://www.ph-nav.com`, API `https://api.ph-nav.com`, legacy V0 `https://v0.ph-nav.com`; see `context/PRODUCTION_DEPLOYMENT.md`. |
-| Q-APT-1 | US-Builder-Apertures | Element span representation? | **Lean:** range form `[start, end]` inclusive, per PRD §6.2 sketch |
+| ~~Q-APT-1~~ | ~~US-Builder-Apertures~~ | ~~Element span representation?~~ | **Confirmed shipped:** `row_span`/`column_span` tuples (`frontend/src/features/apertures/types.ts`), matches the leaned range form |
 | ~~Q-APT-2~~ | ~~US-Builder-Apertures~~ | ~~Per-side frames or single-frame per element?~~ | **Resolved 2026-05-11:** four sides (`top/right/bottom/left`) — matches V1 and PRD §6.2; per-side U / Ψ-g needed for Phius / WUFI |
-| Q-APT-3 | US-Builder-Apertures | Default frame / glazing on element create? | **Lean:** null + Save-time validation; explicit pick required |
-| Q-APT-4 | US-Builder-Apertures | Manufacturer-filter storage? | **Lean:** in project document (`tables.manufacturer_filters`); versions with the project |
-| Q-APT-5 | US-Builder-Apertures | Per-aperture-type deep-link URL? | **Lean:** `/projects/{id}/apertures/{apt_id}` |
-| Q-APT-6 | US-Builder-Apertures | Split behavior — preserve assignments? | **Lean:** preserve (fix the V1 papercut) |
-| Q-APT-7 | US-Builder-Apertures | Frame-label flip on interior view? | **Lean:** keep (matches V1; "what you see is what you label") |
-| Q-APT-8 | US-Builder-Apertures | HBJSON window-constructions export? | **Lean:** keep, as per-version export under header `⋯` menu |
-| Q-APT-9 | US-Builder-Apertures | Display-unit format selector scope? | **Lean:** per-user (`aperture_builder_dim_format_si` / `_ip`) |
+| Q-APT-3 | US-Builder-Apertures | Default frame / glazing on element create? | **Lean:** null + Save-time validation; explicit pick required (not re-verified against code this pass) |
+| ~~Q-APT-4~~ | ~~US-Builder-Apertures~~ | ~~Manufacturer-filter storage?~~ | **Confirmed shipped:** `tables.manufacturer_filters` in the project document (`backend/features/project_document/aperture_commands/handlers/manufacturer_filters.py`) |
+| Q-APT-5 | US-Builder-Apertures | Per-aperture-type deep-link URL? | **Still open — not shipped as leaned.** Current routes are `/projects/{id}/apertures/{builder\|glazings\|frames}` only; the active aperture type is component/store state (`AperturesTab.tsx`), not a URL param |
+| ~~Q-APT-6~~ | ~~US-Builder-Apertures~~ | ~~Split behavior — preserve assignments?~~ | **Confirmed shipped:** `frontend/src/features/apertures/split-geometry.ts` |
+| ~~Q-APT-7~~ | ~~US-Builder-Apertures~~ | ~~Frame-label flip on interior view?~~ | **Confirmed shipped:** `frontend/src/features/apertures/frame-label-map.ts` |
+| ~~Q-APT-8~~ | ~~US-Builder-Apertures~~ | ~~HBJSON window-constructions export?~~ | **Confirmed shipped:** per-version export, `backend/features/aperture_hbjson_export/` (see `context/technical-requirements/api.md` §9.10a-1) |
+| ~~Q-APT-9~~ | ~~US-Builder-Apertures~~ | ~~Display-unit format selector scope?~~ | **Confirmed shipped:** per-user, `frontend/src/features/apertures/hooks/useApertureDimFormat.ts` |
 | ~~Q-APT-1.1~~ | ~~US-APT-1~~ | ~~Name uniqueness within a project version?~~ | **Resolved 2026-05-10:** enforced (trim + case-insensitive); add/duplicate auto-suffix `(2)`, `(3)`, …; rename rejects collisions |
 | ~~Q-APT-1.2~~ | ~~US-APT-1~~ | ~~Delete confirmation strength?~~ | **Resolved 2026-05-10:** simple shadcn `Dialog` (Cancel / Delete); no type-name retyping |
 | ~~Q-APT-1.3~~ | ~~US-APT-1~~ | ~~Sidebar reorder?~~ | **Resolved 2026-05-10:** alphabetical-only (`naturalSortCompare`) for MVP; drag-reorder deferred |

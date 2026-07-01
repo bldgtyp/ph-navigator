@@ -1,9 +1,13 @@
 # PHN `context/` — Canonical Reference
 
-This folder is the stable description layer for PH-Navigator.
-Feature PRDs, implementation plans, dated reviews, progress ledgers,
-and temporary sequencing work live under `planning/` unless they have
-graduated into stable `context/` contracts.
+This folder is the stable description layer for PH-Navigator: the
+canonical contracts other docs/agents treat as ground truth (product
+behavior, architecture, data model, UI intent, coding standards).
+Stable supporting docs that are *not* canonical contracts — operational
+how-tos/setup guides, running logs/changelogs — live in `docs/` instead
+(see `docs/README.md`'s litmus test). Feature PRDs, implementation plans,
+dated reviews, progress ledgers, and temporary sequencing work live under
+`planning/` unless they have graduated into stable `context/` contracts.
 
 The repo was originally developed as `ph-navigator-v2` and became the canonical
 `bldgtyp/ph-navigator` repo during the 2026-06 production rollout. Older context

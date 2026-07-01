@@ -27,16 +27,23 @@ Canonical story bodies now live in `context/user-stories/`:
 | `50-settings-ops-llm.md` | Project Settings; action logging; header consistency; post-parity features; LLM/MCP asset API | Phases 0, 2, and 6 |
 | `90-open-questions.md` | Current and resolved open-question index | Ongoing cleanup |
 
-## Vertical-Slice Phasing
+## Vertical-Slice Phasing (historical — MVP shipped, production is live)
 
-The implementation plan should move in thin, manually verifiable slices.
-Each phase should include backend, frontend, tests, environment wiring,
+**This phase table is the original pre-launch build plan, not a live
+tracker.** Production has been live at `www.ph-nav.com`/`api.ph-nav.com`
+since the 2026-06 rollout, and most phases below are long since
+complete/archived. Kept for historical context on why the story files
+are grouped the way they are. For current/active work, read
+`planning/STATUS.md`.
+
+The implementation plan moved in thin, manually verifiable slices.
+Each phase included backend, frontend, tests, environment wiring,
 and enough UI to manually exercise the workflow on day one of that
-phase. Avoid building large isolated subsystems that cannot be clicked
+phase, avoiding large isolated subsystems that couldn't be clicked
 through end-to-end.
 
 Active execution tracker:
-`planning/ROADMAP.html`.
+`planning/STATUS.md`.
 
 | Phase | Goal | Stories / docs to load | Manual verification target |
 |---|---|---|---|
@@ -47,7 +54,7 @@ Active execution tracker:
 | 4. Envelope + assets slice | Implement Assemblies, Project Materials, Materials sub-tab, datasheet/photo asset attach, effective R/U display, and envelope export. | `20-envelope.md`, `50-settings-ops-llm.md` | Build one wall assembly, pick material, attach datasheet/photo, verify Viewer read-only cards, download construction JSON/HBJSON export. |
 | 5. Model viewer slice | Upload HBJSON, parse/model-data endpoint, render R3F Model tab, file picker, color/viz/tool basics. | `40-model-viewer.md`, `50-settings-ops-llm.md` | Upload two HBJSONs, switch active file, see nonblank interactive 3D scene, use basic select/measure/color-by. |
 | 6. MCP + mechanical completion | Harden MCP read/write, asset ingestion, ERV/Fans tables, placeholders for pumps/TB, concurrency edge cases, audit trail. | `30-tables-equipment.md`, `50-settings-ops-llm.md`, `00-foundation-shell.md` | Claude/MCP uploads a datasheet and attaches it; browser shows MCP edit lease; ERV/Fan rows save and reload. |
-| 7. Release hardening | Resolve remaining open questions, security/ops baseline, bundle/performance budgets, e2e coverage, staging deployment. | `90-open-questions.md`, `planning/ROADMAP.html`, all story files as needed | Full MVP smoke on staging with seed and imported V1 project. |
+| 7. Release hardening | Resolve remaining open questions, security/ops baseline, bundle/performance budgets, e2e coverage, staging deployment. | `90-open-questions.md`, `planning/STATUS.md`, all story files as needed | Full MVP smoke on staging with seed and imported V1 project. |
 
 ## Loading Rules
 
@@ -59,5 +66,5 @@ Active execution tracker:
   resolved historical Q rows drive implementation against newer story
   text.
 - When a phase lands, update this routing table and any active
-  `planning/features/<feature>/STATUS.md` or `planning/ROADMAP.html`
+  `planning/features/<feature>/STATUS.md` or `planning/STATUS.md`
   tracker.

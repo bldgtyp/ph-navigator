@@ -201,24 +201,26 @@ make check-backend
 make ci
 ```
 
-Current enforced controls live in `backend/pyproject.toml`:
+Current enforced controls live in `backend/pyproject.toml` and
+`backend/scripts/check_backend_boundaries.py` (run as
+`make check-backend`, part of `make ci-backend`/`make ci`):
 
 - Ruff for import order and baseline linting.
 - Static typechecking with `ty check`.
 - Pytest with backend coverage reporting.
+- **Feature-shape check:** every feature package has the required layer files
+  (`routes.py`, `models.py`, `service.py`, `repository.py`) or an explicit
+  documented exemption for declarative/schema-mirror packages; rejects
+  feature-level `schemas.py` files.
+- **Boundary check:** route modules do not import `database`; repository
+  modules do not import FastAPI request/response types; raw SQL
+  (`conn.execute`, cursors, `psycopg.sql`) appears only in `repository.py` or
+  documented shared repository equivalents such as `catalogs/_shared.py` and
+  `catalogs/_options_repository.py`. SAVEPOINT/ROLLBACK/RELEASE transaction
+  control may remain in import/export services.
 
 Near-term controls to add as the backend grows:
 
-- Feature-shape check: every feature package has the required layer files
-  (`routes.py`, `models.py`, `service.py`, `repository.py`) or an explicit
-  documented exemption for declarative/schema-mirror packages. The check should
-  reject feature-level `schemas.py` files.
-- Boundary check: route modules do not import `database`; repository modules
-  do not import FastAPI request/response types; raw SQL (`conn.execute`,
-  cursors, `psycopg.sql`) appears only in `repository.py` or documented shared
-  repository equivalents such as `catalogs/_shared.py` and
-  `catalogs/_options_repository.py`. SAVEPOINT/ROLLBACK/RELEASE transaction
-  control may remain in import/export services.
 - Size check: warn at the soft limits above and fail at the hard limit unless
   the exception is documented.
 - Docstring check: require behavior-bearing public functions to document why.
@@ -451,11 +453,25 @@ make check-frontend
 make ci
 ```
 
+Current enforced controls live under `frontend/scripts/`, wired into
+`check:all` (runs in `ci-frontend` and `make frontend-dev-check`):
+
+- **Size check** (`check-file-sizes.mjs`, `pnpm check:sizes`) for
+  route/component files using the limits above.
+- **Boundary/shape check** (`check-feature-shape.mjs`, `pnpm check:shape`):
+  `app/App.tsx` stays composition-only; feature packages follow the required
+  layer shape.
+- **Z-index check** (`check-z-index.mjs`, `pnpm check:z-index`): stacking
+  order uses the shared z-index scale rather than ad hoc literals.
+- **Hex-color check** (`check-hex.mjs`, `pnpm check:hex`): colors use the
+  token system rather than raw hex literals.
+- **CSS-vars check** (`check-css-vars.mjs`, `pnpm check:css-vars`): referenced
+  CSS custom properties are actually defined in the token files.
+- **DataTable convention check** (`check-data-table-contract.mjs`,
+  `pnpm check:data-table`) — see the DataTable Rendering Convention section.
+
 Near-term controls to add as the frontend grows:
 
-- Size check for route/component files using the limits above.
-- Boundary check: `app/App.tsx` does not import feature API functions directly.
-- Boundary check: route files use feature hooks instead of raw `fetch`.
 - Query check: server data loading uses TanStack Query, not manual
   `useEffect` fetch blocks.
 - Type check: API payload/response types live in feature `types.ts` or generated

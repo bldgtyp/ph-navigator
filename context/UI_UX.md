@@ -520,6 +520,8 @@ are building **plus §1 (common elements) above**. See
 | 2.6 Apertures tab — builder, glazings report, frames report | [`ui/pages/apertures-tab.md`](ui/pages/apertures-tab.md) |
 | 2.7 Envelope tab — assemblies, materials, airtightness, site photos | [`ui/pages/envelope-tab.md`](ui/pages/envelope-tab.md) |
 | 2.8 Spaces & Equipment tabs | [`ui/pages/spaces-equipment-tab.md`](ui/pages/spaces-equipment-tab.md) |
+| 2.8b Climate tab (location + weather/climate reference datasets) | **no narrative doc yet** — shipped tab, `frontend/src/features/climate/` |
+| 2.8c Thermal Bridges tab (top-level, not an Equipment sub-tab) | **no dedicated narrative yet** — mentioned in passing in `ui/pages/spaces-equipment-tab.md` |
 | 2.9 Model tab (HBJSON viewer) | [`ui/pages/model-tab.md`](ui/pages/model-tab.md) |
 | 2.10 Project settings (overflow menu) | [`ui/pages/project-settings.md`](ui/pages/project-settings.md) |
 | 2.11 Viewer public read | [`ui/pages/viewer-public.md`](ui/pages/viewer-public.md) |

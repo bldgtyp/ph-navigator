@@ -91,11 +91,19 @@ label each row explicitly and state the film convention in tooltips.
 
 ## People & access
 
+Access-capability model shipped 2026-06-27 (beta, Phases 1–4b; see
+`planning/archive/dated/2026-06-27/access-capability-model/`). Every request
+resolves to a **Principal**, which maps to a **Capability** set —
+`features/access/capabilities.py` / `principals.py`.
+
 | Term         | Definition                                                                                                          | Aliases to avoid                          |
 | ------------ | ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| **User**     | An authentication identity (a row in `users`) — currently Ed or John                                                | Login, account                            |
-| **Editor**   | A signed-in User with write permission on every Project                                                             | Author, admin, member                     |
-| **Viewer**   | An unauthenticated visitor with read-only access via a Project URL                                                  | Guest, public user, anonymous client      |
+| **User**     | An authentication identity (a row in `users`); Admins invite additional Users via the admin user-management surface — no longer just Ed/John | Login, account                            |
+| **Principal** | What a request resolves to before capability lookup: `ViewerPrincipal` (anonymous, `audience="client"`) or `UserPrincipal` (signed-in, carrying `is_staff` + granted capabilities). `certifier` audience and MCP `TokenPrincipal` are reserved, not yet issued (Phase 5) | Role, actor |
+| **Capability** | A stable string key a route gates on (`project.view`, `project.edit`, `catalog.edit`, `admin.users.manage`, per-surface export keys), resolved per-Principal by `capabilities_for` | Permission, scope (scope is the MCP-token term) |
+| **Editor**   | Informal shorthand for a signed-in User holding `project.edit` (today: every signed-in User, via `MEMBER_CAPS`) — no longer a distinct account type | Author, admin, member                     |
+| **Viewer**   | Informal shorthand for an anonymous request holding only `CLIENT_CAPS` (read-only, redacted metadata, no bulk exports) via a Project URL | Guest, public user, anonymous client      |
+| **Admin**    | A User holding the grantable `admin.users.manage` capability (`user_grants`), backing invite/reset-link/deactivate/grant flows — never a hard-coded superuser | Superuser, root |
 | **Owner**    | The User listed in `projects.owner_id`; **dashboard-organization concept only, not an ACL**                         | Author, admin, project lead               |
 | **Session**  | A server-side authenticated session row; single-active-per-user with 60-minute sliding idle expiry                  | Token (Session ID is a token, but bare "token" is ambiguous) |
 
@@ -105,7 +113,7 @@ label each row explicitly and state the film convention in tooltips.
 | ------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
 | **Dashboard**       | The signed-in landing page (`/dashboard`) listing the User's owned Projects                                    | Home, projects page                               |
 | **Project workspace** | The per-Project page (`/projects/{id}`) hosting the tab strip and Version panel                              | Project page, editor                              |
-| **Tab**             | One section of the Project workspace: Status, Apertures, Envelope, Equipment, Model                              | Page, panel, view (use only contextually)         |
+| **Tab**             | One section of the Project workspace: Status, Climate, Apertures, Envelope, Spaces, Equipment, Thermal Bridges, Model | Page, panel, view (use only contextually)         |
 | **Builder**         | The collective editing surfaces inside the Project workspace (everything that writes to the document)          | Editor, authoring mode                            |
 | **Catalog manager** | The top-nav surface for editing Catalog entries (`/catalog/{slug}`)                                            | Library admin, catalog editor                     |
 | **DataTable**       | The shared React grid component used by every tabular surface (Catalog pages, Builder sub-tabs, picker, etc.) | Grid, table (lowercase "table" = data table)    |
@@ -148,6 +156,7 @@ label each row explicitly and state the film convention in tooltips.
 - **"Material"** is overloaded: it can mean a **Catalog entry** (`catalog_materials`), a **Catalog version** (`catalog_material_versions`), or a **Project Material** (the inlined copy in `tables.project_materials`). Use the qualified term — the distinction matters for Refresh-from-catalog semantics.
 - **"Draft"** is *not* a kind of Version — it's a server-side WIP buffer for crash-recovery. Never list it as a Version, never include it in diff `from`/`to` selectors except for "live vs last save" explicitly.
 - **"Owner"** is a dashboard-organization label, not a permission. Either Editor can edit any Project; ownership only filters the dashboard view. Don't conflate with ACL — there is no per-project ACL in v1.
-- **"Tab"** in this product means a workspace section (Status/Apertures/Envelope/Equipment/Model), but the same word is used for browser tabs in concurrency discussions ("a second browser tab opening the same Version"). Qualify with "workspace tab" vs "browser tab" when both are in play.
+- **"Tab"** in this product means a workspace section (Status/Climate/Apertures/Envelope/Spaces/Equipment/Thermal Bridges/Model), but the same word is used for browser tabs in concurrency discussions ("a second browser tab opening the same Version"). Qualify with "workspace tab" vs "browser tab" when both are in play.
+- **"Editor"/"Viewer"** are informal shorthand, not distinct account types — see **Principal**/**Capability** in People & access. Today every signed-in User holds Editor-equivalent capabilities (`MEMBER_CAPS`); there is no per-project membership yet (deferred to Phase 5).
 - **"Snapshot"** appears as both (a) a Version `kind` (`'snapshot'`) and (b) loose talk for any saved Version. Prefer **Version** for the general concept; reserve **snapshot** for the specific `kind`.
 - **"Status"** is the workspace **Tab** name *and* the project-lifecycle tracker (`project_status_items`). The two are aligned (the Tab renders the tracker), but "Status" alone is ambiguous in code — prefer `project_status_items` or "Status tab" depending on context.

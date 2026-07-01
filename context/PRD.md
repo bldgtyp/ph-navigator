@@ -108,86 +108,67 @@ truth.
 
 ## 4. Users & access
 
-**Access model (updated 2026-05-10):** project URLs are
-**public-readable**. The same `/projects/{id}/...` routes resolve
-for everyone — logged in or not. The project's UUID is effectively
-the share token: share the URL with anyone (contractor, certifier,
-client) and they can read the project. **No per-share tokens, no
-`/v/{token}` routes, no revocation UI.** The frontend reads auth
-state and gates edit affordances (toolbars, drag-drop zones, `⋯`
-action menus, etc. hide when not logged in); the backend gates
-writes behind the editor session token.
+**Access model (superseded 2026-06-27 by the access-capability-model
+beta, Phases 1–4b — see `planning/archive/dated/2026-06-27/access-capability-model/`):**
+project URLs are still public-readable — the same `/projects/{id}/...`
+routes resolve for everyone, logged in or not, and there are still no
+per-share tokens or `/v/{token}` routes. But access is no longer a flat
+signed-in/anonymous binary: every request now resolves to a **Principal**
+that maps to a **Capability** set (`features/access/principals.py`,
+`features/access/capabilities.py`).
 
-This matches V1's existing pattern (frontend/backend separation of
-read vs write) and is much simpler than a per-share-token model.
+- **Principals today:** `ViewerPrincipal` (anonymous, `audience="client"`)
+  and `UserPrincipal` (a signed-in `users` row, carrying `is_staff` and any
+  active `user_grants` capabilities). A `certifier` viewer audience and an
+  MCP `TokenPrincipal` are reserved for Phase 5 (tenancy/certifier shares,
+  deferred to the RBC trigger; see `planning/features_v2.0/access-capability-enforcement/`)
+  — not issued yet.
+- **Capabilities, not a binary:** `CLIENT_CAPS` (anonymous) ≈ old
+  "Viewer" — read-only, redacted project metadata
+  (`project.view.private_metadata` gated out), no bulk exports/downloads.
+  `MEMBER_CAPS` (any signed-in User) ≈ old "Editor" — read + write +
+  private metadata + every export. `catalog.edit` and
+  `admin.users.manage` are separately grantable via `user_grants` (Admin
+  preset, or `is_staff`) rather than being implicit in "signed in."
+- **Project ownership** is still a *dashboard-organization* concept, not
+  an ACL. Each project has exactly one `owner_id`; the owner sees the
+  project on their personal dashboard. Any signed-in User with
+  `project.edit` can edit any project they can reach. Ownership is
+  transferable (data model supports; transfer UI post-MVP).
+- **No anonymous editing.** `project.edit` requires a `UserPrincipal`,
+  REST or MCP.
+- **No per-project membership yet.** A Viewer/Client can reach every
+  version of a project they have the URL for; there is still no
+  per-project visibility gate — that's the Phase 5 tenancy work
+  (`project_members`-equivalent), not yet built.
+- **Revocation model:** unchanged — to "revoke access" to a project, the
+  project must be soft-deleted (US-1.4).
+- **Admin user management shipped separately** (`admin-user-management`
+  MVP, archived 2026-06-29): self-service invite/reset-link accounts,
+  admin deactivate/reactivate, and Admin-grant/revoke via
+  `admin.users.manage`. See §17 item 17.
 
-**Decision confirmed 2026-05-11:** V2 v1 intentionally uses the
-normal project URL as the public read route. There are no special
-view-only URLs, no share-token rows, and no approval workflow for
-viewing. Logged-in editor state only changes which controls and write
-endpoints are available. This is an accepted product/security tradeoff:
-project URLs should be treated as durable read-capability links, and
-implementation must make write protection server-side, not merely a
-frontend affordance.
+### 4.1 The access-check seam (shipped, not just committed-to)
 
-- **Editors:** Ed May, John Mitchell. Authenticated users with edit
-  rights on all projects. No per-project ACL in V2 v1 (two-person
-  firm).
-- **Project ownership** is a *dashboard-organization* concept, not an
-  ACL. Each project has exactly one `owner_id` (Ed or John); the
-  owner sees the project on their personal dashboard. Either editor
-  can edit any project they can reach. Ownership is transferable
-  (data model supports; transfer UI post-MVP).
-- **Viewers:** anyone with a project URL. Read-only,
-  no auth required. Can browse the project workspace (Status,
-  Apertures, Envelope, Equipment, Model tabs), browse versions,
-  download project JSON, download table JSON, view uploaded
-  HBJSON. **Cannot edit anything.** Edit affordances render hidden
-  / disabled in the frontend; the backend rejects any write request
-  without a valid editor session.
-- **No anonymous editing.** Auth required for any write — REST,
-  MCP, or otherwise.
-- **No project-level permissions** beyond "editor / non-editor." A
-  Viewer can reach every version of a project they
-  have the URL for. Sensitive projects should not be created at all
-  (or should be deleted) — there's no per-URL visibility gate.
-- **Revocation model:** to "revoke access" to a project, the
-  project must be soft-deleted (US-1.4). There's no per-share-link
-  revocation because there are no per-share-links. This is a
-  trust-based model appropriate for a two-person firm.
+The seam described here as a forward-compatible commitment has shipped:
 
-### 4.1 Forward-compatible access-check seam (architectural commitment)
-
-Strict per-user ACL is **deferred** for V2 v1. To keep the future
-retrofit cheap, V2 commits to the following from day 1:
-
-- **Every project-scoped API route uses a single FastAPI dependency
-  `require_project_access(project_id, mode='view'|'edit')`.** Today
-  the dependency body has trivial behavior: `mode='view'` always
-  passes (project URLs are public-readable per §4); `mode='edit'`
-  requires a valid editor session token. It does not consult any
-  per-project membership table.
-- **The same dependency is used by REST routes and MCP tools.**
-  Auth model stays uniform; there is one place where access policy
-  lives.
-- **Dashboard query is intentionally simple:**
+- **Every project-scoped route goes through `features/projects/access.py`'s
+  `require_capability(project_id, capability)`**, backed by the
+  principal/capability resolver in §4. It does not yet consult any
+  per-project membership table — that's Phase 5.
+- **MCP tools do not yet use this seam** — they still authorize through
+  their own token-scope path (`context/mcp.md`); folding MCP into
+  `require_capability` via a `TokenPrincipal` is Phase 5 work.
+- **Dashboard query is still simple:**
   `WHERE owner_id = current_user.id AND deleted_at IS NULL`.
-  Ownership is the dashboard filter, period.
-- **Anti-patterns banned:** no inline
+- **Anti-patterns still banned:** no inline
   `if user.id == project.owner_id` checks in routes; no project
-  reads in handlers without going through the access seam.
+  reads in handlers without going through `require_capability`.
 
-If/when strict ACL ships:
-- A `project_members` table is added (purely additive; no schema
-  change to existing rows).
-- The dependency body grows to consult `project_members` after the
-  authentication check.
-- The dashboard query grows a "shared with me" section.
-- **Route signatures and call sites do not change.** The retrofit
-  is one function and one query — not a sweep across every route.
-
-This is a 10-line discipline that protects the architecture without
-adding MVP cost. See US-1.5 for the user-facing framing.
+Remaining Phase 5 scope (per-project membership/tenancy, `certifier`
+viewer audience, MCP `TokenPrincipal`) lives in
+`planning/features_v2.0/access-capability-enforcement/`, deferred to the
+RBC trigger. See US-1.5 for the original user-facing framing.
 
 ## 5. Architecture overview
 
@@ -846,8 +827,13 @@ acceptance, but each shapes a downstream decision:
 16. ~~**Ownership semantics** (US-1 Q1).~~ **Resolved 2026-05-10:**
     ownership = dashboard-filter only. Strict ACL deferred. See §4.1
     for the forward-compatible access-check seam.
-17. ~~**Forgot-password flow** (US-0 Q1).~~ **Resolved 2026-05-10:**
-    admin reset only.
+17. ~~**Forgot-password flow** (US-0 Q1).~~ **Resolved 2026-05-10,
+    superseded 2026-06-29:** originally admin-reset-only; the
+    `admin-user-management` MVP (archived
+    `planning/archive/dated/2026-06-29/admin-user-management/`) shipped
+    self-service invite and admin-generated reset-link flows via a new
+    `account_tokens` table, plus admin deactivate/reactivate and
+    Admin-grant/revoke. See §4.
 18. ~~**Session duration / concurrency** (US-0 Q2/Q3).~~
     **Resolved 2026-05-10:** 60-minute sliding expiration; single
     active session per user (most-recent-wins). See §13.

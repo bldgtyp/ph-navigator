@@ -1,6 +1,10 @@
 ---
 DATE: 2026-05-12
 STATUS: CANONICAL TECHNICAL REQUIREMENTS — extracted from context/PRD.md to keep startup context small.
+  DATE is stale as a "last verified" signal (routes have been added
+  piecemeal, e.g. material-catalog-drift, without bumping it) — treat this
+  file's route inventory as a floor, verify against
+  `backend/features/*/routes.py` before relying on completeness.
 RELATED: context/PRD.md §9, context/TECH_STACK.md
 ---
 
@@ -70,6 +74,34 @@ TB-01 implementation details:
 - The frontend currently uses a route-level auth guard for the empty
   dashboard. The in-place re-auth modal remains required before the
   first editable project surface ships.
+
+### 9.2b Admin user management (added, undated — shipped 2026-06-29)
+
+```
+GET    /api/v1/admin/users                       list users
+POST   /api/v1/admin/users/invite                invite a new user (issues account_tokens link)
+POST   /api/v1/admin/users/{user_id}/reset-link   issue an admin reset-link
+POST   /api/v1/admin/users/{user_id}/deactivate   deactivate a user
+POST   /api/v1/admin/users/{user_id}/reactivate   reactivate a user
+PATCH  /api/v1/admin/users/{user_id}/admin        grant/revoke the Admin preset
+PATCH  /api/v1/admin/users/{user_id}/name         edit a user's name
+PATCH  /api/v1/admin/users/{user_id}/email        edit a user's email
+GET    /api/v1/admin/users/{user_id}/audit        per-user admin-action audit trail
+```
+
+All gated server-side by the `admin.users.manage` capability; see
+`context/PRD.md` §4 and `context/technical-requirements/stack-auth-migration.md`
+§13.
+
+### 9.2c MCP tokens (added, undated)
+
+```
+GET    /api/v1/projects/{project_id}/mcp-tokens              list a project's MCP tokens
+POST   /api/v1/projects/{project_id}/mcp-tokens               issue a token (plaintext shown once)
+POST   /api/v1/projects/{project_id}/mcp-tokens/{id}/revoke   revoke a token
+```
+
+See `context/mcp.md` for scopes and token-issuance conventions.
 
 ### 9.2 Projects
 
@@ -472,6 +504,18 @@ ref as `in_sync`, `drifted`, or `catalog_row_missing` with per-field
 catalog-vs-project deltas plus the `local_overrides` flag. Apply
 actions write through the `refreshRefFromCatalog` aperture command on
 `POST /apertures/command`.
+
+### 9.10a-1 Apertures HBJSON export (added, undated)
+
+```
+GET /api/v1/projects/{pid}/versions/{vid}/apertures/hbjson?source=draft|version
+```
+
+Returns the V1-shaped window-constructions payload for the Rhino/honeybee_ph
+import path, keyed by escaped aperture-element identifier. View-access
+gated (`APERTURES_EXPORT_HBJSON` capability); see
+`context/technical-requirements/hbjson-export.md` for the sibling model-wide
+export.
 
 ### 9.10b Envelope (Assembly Builder)
 

@@ -108,20 +108,27 @@ metadata* (identity, project metadata, registries, audit) and **do not shadow
 the project-document tables** (assemblies, apertures, rooms, equipment, etc. —
 those live in class ②).
 
-Grouped by concern (full column-level schema in `data-model.md` §6.1; current
-relational baseline is `20260624_0001`):
+Grouped by concern (full column-level schema in `data-model.md` §6.1;
+`20260624_0001` is the relational baseline reset — three migrations have
+layered on top since: `20260627_0002` (awning/hopper frame operations),
+`20260627_0003` (access-capability foundation: `projects.team_id`,
+`users.is_staff`, `user_grants`), and `20260627_0004` (admin user
+management: `account_tokens`, `users.password_set_at`,
+`user_action_log.target_user_id`/`target_email`)):
 
 ### Auth & audit
 | Table | Holds | Notes |
 |---|---|---|
-| `users` | identity, `password_hash` (**Argon2id**), `units_preference`, soft-delete | Email unique via `uq_users_email_lower`. |
+| `users` | identity, `password_hash` (**Argon2id**, nullable, + `password_set_at`), `units_preference`, `is_staff`, soft-delete | Email unique via `uq_users_email_lower`. `is_staff` is the bldgtyp cross-tenant flag (2026-06-27). |
 | `sessions` | server-side sessions (opaque cookie → row) | Partial unique index = one active session per user. |
-| `user_action_log` | append-only audit trail (`details` JSONB) | Indexed by `created_at` and `(user_id, created_at)`; never deleted. |
+| `user_action_log` | append-only audit trail (`details` JSONB, `target_user_id`/`target_email`) | Indexed by `created_at` and `(user_id, created_at)`; never deleted. `target_*` columns (2026-06-27) record admin actions taken on another user. |
+| `account_tokens` | single-use, expiring, **hashed** invite/reset tokens (`token_hash`, `token_type`, expiry) | 2026-06-27, backs the admin-user-management invite/reset-link flow. Plaintext token never stored; partial unique index = one active token per `(user_id, token_type)`. |
+| `user_grants` | fine-grained per-user capability grants (capability, scope_type/scope_id, granted_by) | 2026-06-27, backs the access-capability model (`admin.users.manage`, `catalog.edit`, etc.); global-scope grants are unscoped by constraint. |
 
 ### Projects & lifecycle (metadata only — content is class ②)
 | Table | Holds | Notes |
 |---|---|---|
-| `projects` | name, `bt_number` (unique), `cert_programs[]`, `owner_id`, `active_version_id`, denormalized `last_saved_at`, soft-delete + `hard_delete_after` | `owner_id` is a dashboard concept, **not** an ACL. |
+| `projects` | name, `bt_number` (unique), `cert_programs[]`, `owner_id`, `team_id`, `active_version_id`, denormalized `last_saved_at`, soft-delete + `hard_delete_after` | `owner_id` is a dashboard concept, **not** an ACL. `team_id` (2026-06-27, nullable, no FK yet) reserves tenancy; `NULL` = legacy/bldgtyp-internal project. |
 | `project_status_items` | lifecycle checklist (`todo`/`done`/`na`), fractional `order_index` | Intentionally outside the document body — status is "where is this project," not a versioned model property. |
 | `user_project_preferences` | per-user pin/order on the dashboard | personal, so not on `projects`. |
 | `mcp_tokens` | project-scoped LLM bearer tokens, **hashed** (`token_hash`), `scopes[]`, revocable | Plaintext token never stored. |

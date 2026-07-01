@@ -22,8 +22,8 @@ do not make it part of default startup context.
 | Object storage | Cloudflare R2 |
 | Frontend build | **Vite** (V1's CRA / `react-scripts` is dead-end) |
 | Frontend framework | TypeScript, React 19 |
-| Frontend UI kit | **shadcn/ui + Tailwind** (catalog POC outcome — drop V1's MUI) |
-| Frontend table | TanStack Table + shadcn-table |
+| Frontend UI kit | ~~shadcn/ui + Tailwind~~ **superseded — plain CSS on a 3-tier token system** (no Tailwind/shadcn; see `context/CODING_STANDARDS.md`) |
+| Frontend table | Shared `<DataTable>` component (see `context/technical-requirements/data-table.md`) — not shadcn-table |
 | Frontend state | **Zustand** for client/UI state (drop nested-context pattern) |
 | Frontend data | TanStack Query for server state |
 | 3D viewer | **`three` + `@react-three/fiber` + `@react-three/drei` + `@react-three/postprocessing`** |
@@ -74,6 +74,12 @@ accumulations; standardizing the V2 stack keeps the surface coherent.
 
 ### 12.2 Folder / repo layout
 
+**Historical planning sketch — the repo question below is resolved.**
+The tree below reflects pre-implementation intent (e.g. `components/` as
+"shadcn primitives," which didn't ship — see §12's superseded UI-kit row);
+for the current actual layout see `context/TECH_STACK.md` and
+`backend/.instructions.md` / `frontend/.instructions.md`.
+
 V2 lives in a brand-new sibling folder to V1 — fresh start, no shared
 code:
 
@@ -119,16 +125,17 @@ code:
     └── CLAUDE.md
 ```
 
-**Repo question:** separate Git repo (`bldgtyp/ph-navigator-v2`) or
-sibling folder under one repo? Lean: **separate Git repo.** Reasons:
-clean commit history, independent CI, independent deploy pipeline,
-clean cutover (archive V1 repo when sunset), no risk of V1 changes
-contaminating V2 history. Cost: two repos during the parallel period;
-minor.
+**Repo question — resolved.** Separate Git repo, as leaned: this repo
+started as `bldgtyp/ph-navigator-v2` and became the canonical
+`bldgtyp/ph-navigator` repo/app during the 2026-06 production rollout
+(see `context/README.md`). V1 remains a separate repo
+(`bldgtyp/ph-navigator_v0`), still running at `v0.ph-nav.com`.
 
-V2 develops in isolation. Cutover happens project-by-project as Ed
-manually imports each (§14). V1 stays running until the last
-AirTable-bound project is migrated.
+V2 developed in isolation and is now the production app
+(`www.ph-nav.com` / `api.ph-nav.com`). Historical cutover happened
+project-by-project as Ed manually imported each project (§14); check
+current project status rather than assuming migration is still
+in-flight.
 
 ## 13. Auth
 
@@ -148,10 +155,11 @@ AirTable-bound project is migrated.
   `planning/archive/dated/2026-06-29/admin-user-management/`. The Admin preset is stored as the
   single `admin.users.manage` grant; resolved sessions also receive
   `catalog.edit` so admins can maintain shared catalogs.
-- **Password hashing** — Argon2id is the planned default, with memory,
-  time, and parallelism parameters exposed in backend Settings and
-  tested in the auth scaffold. If Argon2id causes installation friction
-  during Phase 0, bcrypt with cost >= 12 is the only accepted fallback.
+- **Password hashing** — Argon2id is shipped (not just planned):
+  `Settings.password_argon2_time_cost`/`_memory_cost`/`_parallelism`
+  (`backend/config.py`) drive the hasher. bcrypt with cost >= 12 was the
+  accepted fallback if Argon2id caused installation friction; it was not
+  needed.
 - **Browser request protection** — all mutating browser requests require
   an allowed `Origin` header. Allowed origins are the exact production
   frontend origin plus local dev origins; no wildcard credentialed CORS.

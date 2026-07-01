@@ -704,15 +704,16 @@ form:
 2. backend: `uv sync --locked`
 3. backend: `uv run ruff format --check .`
 4. backend: `uv run ruff check .`
-5. backend: `uv run ty check`
-6. backend: `DATABASE_URL=..._test uv run alembic upgrade head`
-7. backend: `DATABASE_URL=..._test uv run pytest`
-8. frontend: `pnpm install --frozen-lockfile`
-9. frontend: `pnpm run format:check`
-10. frontend: `pnpm run lint`
-11. frontend: `pnpm run check:all`
-12. frontend: `pnpm test`
-13. frontend: `pnpm run build`
+5. backend: `uv run python -m scripts.check_backend_boundaries`
+6. backend: `uv run ty check`
+7. backend: `DATABASE_URL=..._test uv run alembic upgrade head`
+8. backend: `DATABASE_URL=..._test uv run pytest -n <workers>` (parallel, per-worker `_test_gw<N>` databases)
+9. frontend: `pnpm install --frozen-lockfile`
+10. frontend: `pnpm run format:check`
+11. frontend: `pnpm run lint`
+12. frontend: `pnpm run check:all`
+13. frontend: `pnpm test`
+14. frontend: `pnpm run build`
 
 Narrow commands are fine while iterating, but the final accepted state is
 `make format` followed by a green `make ci`. If formatting changes files,

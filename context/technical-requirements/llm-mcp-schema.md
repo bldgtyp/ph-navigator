@@ -306,7 +306,13 @@ writes, and project asset attach flows are MCP-callable in v1.
 canonical product/architecture docs live here; dated working plans and
 implementation phasing stay under `planning/archive/dated/`.
 
-Current hand-written docs:
+**The file tree below is a historical snapshot (2026-05-12) and has since
+drifted** — `context/` has since grown `DATA_STORAGE.md`, `LOGGING.md`,
+`PRODUCTION_DEPLOYMENT.md`, `DEVELOPMENT_WORKFLOW.md`, `mcp.md`, `ui/`, and
+more of `technical-requirements/`. **`context/README.md` is the live,
+maintained index** — read that instead of treating this list as current.
+
+Docs as of this doc's writing:
 
 ```
 context/
@@ -323,10 +329,7 @@ context/
 └── technical-requirements/api.md    REST, OpenAPI, schema endpoint inventory
 ```
 
-Planned generated / implementation-adjacent docs, added only when the
-corresponding code exists: `api.md`, `mcp.md`, `operations.md`,
-`error-codes.md`, and `llm-cookbook.md`. Runtime JSON Schemas are
-served from `/api/v1/schemas/...` and OpenAPI from
+Runtime JSON Schemas are served from `/api/v1/schemas/...` and OpenAPI from
 `/api/v1/openapi.json`; static schema snapshots under `context/schemas/`
 can be added later if CI starts checking committed generated artifacts.
 

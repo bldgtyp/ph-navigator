@@ -141,13 +141,16 @@ def get_project_version(conn: Connection, version_id: UUID) -> ProjectVersion:
     return ProjectVersion.model_validate(dict(row))
 ```
 
-> **Convention note (2026-06-24 review).** The example shows the repository
-> returning a Pydantic model, but the *prevailing* in-code convention is the
-> opposite: repository functions return raw `dict[str, Any]` / scalars and
-> `model_validate()` happens in the **service** layer. Only `features/assets/`
-> currently matches the "repo returns Pydantic" shape (and it also uniquely
-> names its boundary file `schemas.py` instead of `models.py`). Treat "repo
-> returns dict, service validates" as the norm for new code.
+> **Convention note (2026-06-24 review, superseded — no exceptions remain).**
+> The example shows the repository returning a Pydantic model, but the
+> *prevailing* in-code convention is the opposite: repository functions
+> return raw `dict[str, Any]` / scalars and `model_validate()` happens in
+> the **service** layer. `features/assets/` was the sole exception as of
+> 2026-06-24 (Pydantic-returning repository, boundary file named
+> `schemas.py`); it has since been refactored to the standard shape
+> (`features/assets/models.py`, dict-returning repository). Treat "repo
+> returns dict, service validates" as the norm for all code, with no
+> current exceptions.
 
 Tradeoffs:
 
