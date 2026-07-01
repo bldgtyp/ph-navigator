@@ -1,11 +1,9 @@
 import { describe, expect, test } from "vitest";
 import { BatchedMesh } from "three";
-import { viewerBaseColor, type ViewerTokens } from "../lib/colors";
+import { viewerBaseColor } from "../lib/colors";
 import { buildLensBatch, resolveInstanceColor } from "../scene/LensBatch";
 import type { ModelObjectMeta } from "../types";
 import { renderable } from "./lensBatchFixtures";
-
-const TOKENS: ViewerTokens = { highlight: "#E23489", highlightSoft: "#f0a8cb" };
 
 describe("buildLensBatch", () => {
   test("splits opaque faces from transparent apertures into separate batches", () => {
@@ -81,25 +79,14 @@ describe("resolveInstanceColor", () => {
     face_type: "Wall",
   } as unknown as ModelObjectMeta;
 
-  test("selection/hover take the highlight tokens regardless of theme", () => {
-    expect(resolveInstanceColor(wallMeta, "building", "surface-type", "selected", TOKENS)).toBe(
-      TOKENS.highlight,
-    );
-    expect(resolveInstanceColor(wallMeta, "building", "surface-type", "hovered", TOKENS)).toBe(
-      TOKENS.highlightSoft,
-    );
+  // Highlight (hover/selection) is now drawn by the flat `HighlightOverlay`, not
+  // by the batch color — so `resolveInstanceColor` only resolves resting color.
+  test("shaded theme is the per-type base color", () => {
+    expect(resolveInstanceColor(faceMeta, "building", "shaded")).toBe(viewerBaseColor("faceMesh"));
   });
 
-  test("base state under shaded theme is the per-type base color", () => {
-    expect(resolveInstanceColor(faceMeta, "building", "shaded", "base", TOKENS)).toBe(
-      viewerBaseColor("faceMesh"),
-    );
-  });
-
-  test("base state under a color-by theme uses the themed color", () => {
+  test("a color-by theme uses the themed color", () => {
     // Surface Type colors a Wall face with the FACE_TYPE_COLORS Wall hue.
-    expect(resolveInstanceColor(wallMeta, "building", "surface-type", "base", TOKENS)).toBe(
-      "#E6B43C",
-    );
+    expect(resolveInstanceColor(wallMeta, "building", "surface-type")).toBe("#E6B43C");
   });
 });

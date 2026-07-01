@@ -347,6 +347,55 @@
   text-align: right;
 }
 
+/* Dev-only render-knob panel (rendering-style refactor). Mounted only when the
+   debug hook is enabled, so it never appears in production builds. */
+.model-render-controls {
+  position: absolute;
+  /* Below the file-version chip + theme selector (both top-left) so it doesn't
+     cover them; capped + scrollable so every control stays reachable. */
+  top: 120px;
+  left: 14px;
+  z-index: var(--z-base-elevated);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: calc(100% - 140px);
+  overflow-y: auto;
+  padding: 8px 10px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  background: color-mix(in oklab, var(--bg-card) 92%, transparent);
+  box-shadow: var(--shadow-model-hint);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  pointer-events: auto;
+}
+
+.model-render-controls-title {
+  margin-bottom: 2px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.model-render-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.model-render-controls-row input[type="range"] {
+  width: 90px;
+}
+
+.model-render-controls-val {
+  min-width: 26px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
 .model-site-sun-hint {
   bottom: 62px;
   color: var(--text-muted);

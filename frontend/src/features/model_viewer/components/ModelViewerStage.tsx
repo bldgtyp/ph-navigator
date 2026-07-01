@@ -16,6 +16,7 @@ import { LensBar } from "./LensBar";
 import { LoadingChip } from "./LoadingChip";
 import { ModelViewerPerfOverlay } from "./PerfOverlay";
 import { ModelViewerStagePlaceholder } from "./ModelViewerStagePlaceholder";
+import { ViewerRenderControls } from "./ViewerRenderControls";
 
 type ModelViewerStageProps = {
   projectId: string;
@@ -167,6 +168,7 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
             sunPath={sunPath}
           />
           {isModelViewerDebugHookEnabled() ? <ModelViewerPerfOverlay model={model} /> : null}
+          {isModelViewerDebugHookEnabled() ? <ViewerRenderControls /> : null}
         </div>
       ) : (
         <ModelViewerStagePlaceholder />

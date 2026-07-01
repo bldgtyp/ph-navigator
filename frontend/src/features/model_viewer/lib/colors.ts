@@ -78,6 +78,25 @@ export function createShadeMaterials(): ShadeMaterials {
   };
 }
 
+/** Flat, unlit highlight materials for the hover/selection overlay (drawn on top
+ *  of the lit batch so the highlight reads as a crisp flat colour regardless of
+ *  lighting). Selected takes the full highlight token, hover the soft one — the
+ *  single highlight-colour contract. Polygon-offset draws them just in front of
+ *  the coplanar face; an atomic pair, created + disposed together. */
+export type HighlightMaterials = { selected: MeshBasicMaterial; hovered: MeshBasicMaterial };
+
+export function createHighlightMaterials(tokens: ViewerTokens): HighlightMaterials {
+  const make = (color: string) =>
+    new MeshBasicMaterial({
+      color,
+      toneMapped: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -2,
+    });
+  return { selected: make(tokens.highlight), hovered: make(tokens.highlightSoft) };
+}
+
 /**
  * Batch materials for the BatchedMesh lens substrate (Phase 03). Each batch
  * uses one neutral-white material; per-object hue (shaded base, color-by theme,
@@ -126,7 +145,7 @@ const SHADED_SURFACE = { roughness: 0.78, metalness: 0 } as const;
 function baseOpacity(type: ModelObjectType): number {
   switch (type) {
     case "apertureMeshFace":
-      return 0.68;
+      return 0.85;
     case "spaceGroup":
       return 0.32;
     case "faceMesh":
@@ -140,12 +159,16 @@ function baseOpacity(type: ModelObjectType): number {
 function baseColor(type: ModelObjectType): string {
   switch (type) {
     case "apertureMeshFace":
-      return "#b9c8d5";
+      return "#6b7883";
     case "spaceGroup":
       return "#7aa58d";
     case "spaceFloorSegmentMeshFace":
       return "#c7a74c";
     case "faceMesh":
+      // Near-white study-model surface (rendering-style refactor) — a neutral
+      // light grey (no warm bias) so it reads as clean cool-white under the soft
+      // dome, like Spacio. Ducts/pipes keep the warm line color below.
+      return "#ececec";
     case "ductSegmentLine":
     case "pipeSegmentLine":
       return "#d8d1c6";

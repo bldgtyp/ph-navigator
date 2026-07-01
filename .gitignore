@@ -68,6 +68,12 @@ phase3-walk/
 # ─── Local working notes / agent scratch ───
 working/
 
+# ─── Precedent research screenshots (third-party, copyrighted) ───
+# Collected for the model-viewer rendering-style research. Keep local in this
+# PUBLIC repo; never commit. Written analysis lives in the research doc that
+# references these by filename.
+planning/refactor/**/assets/precedent/
+
 # ─── Licensed project models (real .hbjson) — never commit to this PUBLIC repo ───
 # Real project geometry is licensed PH data. Keep it locally and point tests at
 # it via PHN_HILLANDALE_FIXTURE; the synthetic ph_nav_v2_example.hbjson stays

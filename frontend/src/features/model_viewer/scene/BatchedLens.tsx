@@ -1,16 +1,17 @@
 import type { ThreeEvent } from "@react-three/fiber";
 import { useThree } from "@react-three/fiber";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Color, type BatchedMesh, type LineBasicMaterial } from "three";
+import { BufferGeometry, Color, type BatchedMesh, type LineBasicMaterial } from "three";
 import {
+  createHighlightMaterials,
   VIEWER_FACE_EDGE_COLOR,
   VIEWER_FILTER_WIREFRAME_COLOR,
-  type MaterialState,
   type ViewerTokens,
 } from "../lib/colors";
 import { bucketKeyForMeta, isBucketHidden } from "../lib/legendFilter";
 import { isClickWithinDragTolerance, pointerPoint, type PointerPoint } from "../lib/selection";
 import type { BuildingModel, BuildingRenderable } from "../loaders/building";
+import { mergeRenderableGeometries } from "../loaders/merge";
 import { useModelViewerStore } from "../store";
 import type { LegendFilter, ModelObjectMeta, ModelViewerLens, ModelViewerTheme } from "../types";
 import { buildLensBatch, resolveInstanceColor, type LensBatch } from "./LensBatch";
@@ -48,7 +49,7 @@ export function BatchedLens({ model, lens, tokens }: BatchedLensProps) {
     return () => built.dispose();
   }, [objects]);
 
-  useBatchColors(batch, model.metaById, lens, tokens, invalidate);
+  useBatchColors(batch, model.metaById, lens, invalidate);
   useBatchFilter(batch, model.metaById, lens, invalidate);
   useLensFadeIn(batch, invalidate);
 
@@ -60,6 +61,7 @@ export function BatchedLens({ model, lens, tokens }: BatchedLensProps) {
       {batch.opaqueMesh ? <primitive object={batch.opaqueMesh} {...handlers} /> : null}
       {batch.transparentMesh ? <primitive object={batch.transparentMesh} {...handlers} /> : null}
       <primitive object={batch.edges} />
+      <HighlightOverlay objects={objects} tokens={tokens} />
     </group>
   );
 }
@@ -75,28 +77,22 @@ function objectsForLens(model: BuildingModel, lens: ModelViewerLens): BuildingRe
 
 /**
  * The single subscriber that keeps the batch's per-instance colors in sync with
- * the store (F6). It repaints on theme change and applies/restores the highlight
- * on selection/hover change, touching only the objects whose color actually
- * changed (or every object on a theme switch). Reads everything off the store so
- * inspector/camera consumers stay untouched.
- *
- * The batch highlights selection/hover as a flat color swap; the per-mesh path
- * (`materialForObject`) additionally glows via emissive. That divergence is
- * intentional for the temporary dual path and disappears when Phase 04 retires
- * the per-mesh lenses (D-5).
+ * the store (F6). Hover/selection highlight is drawn by `HighlightOverlay`, so
+ * the batch only ever paints resting color — this repaints every object on a
+ * theme change and nothing else. Reads off the store so inspector/camera
+ * consumers stay untouched.
  */
 function useBatchColors(
   batch: LensBatch | null,
   metaById: Map<string, ModelObjectMeta>,
   lens: ModelViewerLens,
-  tokens: ViewerTokens,
   invalidate: () => void,
 ): void {
   useEffect(() => {
     if (!batch) return;
     const store = useModelViewerStore;
     // Cache parsed Colors by hex so the paint loop never re-parses a CSS string;
-    // resolved colors are static per (type, theme, state) + the highlight tokens.
+    // resolved colors are static per (type, theme).
     const colorCache = new Map<string, Color>();
     const colorFor = (hex: string): Color => {
       let color = colorCache.get(hex);
@@ -107,54 +103,25 @@ function useBatchColors(
       return color;
     };
 
-    // Paint one object given the selection/hover/theme already read for this
-    // pass. A multi-geometry object (e.g. a space) recolors all its instances.
-    const paint = (
-      id: string,
-      selectionId: string | null,
-      hoverId: string | null,
-      theme: ModelViewerTheme,
-    ) => {
-      const locations = batch.batchForId.get(id);
-      const meta = metaById.get(id);
-      if (!locations || !meta) return;
-      const state: MaterialState =
-        id === selectionId ? "selected" : id === hoverId ? "hovered" : "base";
-      const color = colorFor(resolveInstanceColor(meta, lens, theme, state, tokens));
-      for (const location of locations) location.mesh.setColorAt(location.instanceId, color);
-    };
-
-    const repaint = (ids: Iterable<string>) => {
-      const { selectionId, hoverId, themesByLens } = store.getState();
-      const theme = themesByLens[lens];
-      for (const id of ids) paint(id, selectionId, hoverId, theme);
+    const repaint = (theme: ModelViewerTheme) => {
+      for (const [id, locations] of batch.batchForId) {
+        const meta = metaById.get(id);
+        if (!meta) continue;
+        const color = colorFor(resolveInstanceColor(meta, lens, theme));
+        for (const location of locations) location.mesh.setColorAt(location.instanceId, color);
+      }
       invalidate();
     };
 
-    // Initial paint honors the theme/selection the store already holds.
-    repaint(batch.batchForId.keys());
+    // Initial paint honors the theme the store already holds.
+    repaint(store.getState().themesByLens[lens]);
 
     return store.subscribe((state, previous) => {
-      const themeChanged = state.themesByLens[lens] !== previous.themesByLens[lens];
-      if (themeChanged) {
-        repaint(batch.batchForId.keys());
-      } else if (state.selectionId !== previous.selectionId || state.hoverId !== previous.hoverId) {
-        repaint(affectedIds(previous, state));
+      if (state.themesByLens[lens] !== previous.themesByLens[lens]) {
+        repaint(state.themesByLens[lens]);
       }
     });
-  }, [batch, metaById, lens, tokens, invalidate]);
-}
-
-/** The object ids whose resting/highlight color may differ across a store step. */
-function affectedIds(
-  previous: { selectionId: string | null; hoverId: string | null },
-  next: { selectionId: string | null; hoverId: string | null },
-): Set<string> {
-  const ids = new Set<string>();
-  for (const id of [previous.selectionId, previous.hoverId, next.selectionId, next.hoverId]) {
-    if (id) ids.add(id);
-  }
-  return ids;
+  }, [batch, metaById, lens, invalidate]);
 }
 
 /**
@@ -288,4 +255,89 @@ function useLensFadeIn(batch: LensBatch | null, invalidate: () => void): void {
 
 function easeOutQuad(t: number): number {
   return 1 - (1 - t) * (1 - t);
+}
+
+/** Overlay meshes must never intercept picking — the batch owns raycasting. */
+const noRaycast = () => {};
+
+/**
+ * Flat, unlit highlight overlay for the hovered/selected object (rendering-style
+ * refactor). The batch paints only resting (lit) color; this draws the
+ * highlighted object's geometry on top with an unlit `MeshBasicMaterial`
+ * (polygon-offset), so the highlight reads as a crisp flat colour regardless of
+ * lighting — and, on transparent apertures, doesn't blend through the glass.
+ * Only the (at most two) live geometries are held, and the overlay never picks.
+ */
+function HighlightOverlay({
+  objects,
+  tokens,
+}: {
+  objects: BuildingRenderable[];
+  tokens: ViewerTokens;
+}) {
+  const selectionId = useModelViewerStore((state) => state.selectionId);
+  const hoverId = useModelViewerStore((state) => state.hoverId);
+
+  const objectById = useMemo(() => {
+    const map = new Map<string, BuildingRenderable>();
+    for (const object of objects) map.set(object.id, object);
+    return map;
+  }, [objects]);
+
+  const materials = useMemo(() => createHighlightMaterials(tokens), [tokens]);
+  useEffect(() => {
+    return () => {
+      materials.selected.dispose();
+      materials.hovered.dispose();
+    };
+  }, [materials]);
+
+  const selectedGeom = useHighlightGeometry(selectionId, objectById);
+  // Don't double-draw hover on the already-selected object.
+  const hoveredGeom = useHighlightGeometry(
+    hoverId && hoverId !== selectionId ? hoverId : null,
+    objectById,
+  );
+
+  return (
+    <>
+      {selectedGeom ? (
+        <mesh
+          geometry={selectedGeom}
+          material={materials.selected}
+          renderOrder={3}
+          raycast={noRaycast}
+        />
+      ) : null}
+      {hoveredGeom ? (
+        <mesh
+          geometry={hoveredGeom}
+          material={materials.hovered}
+          renderOrder={3}
+          raycast={noRaycast}
+        />
+      ) : null}
+    </>
+  );
+}
+
+/**
+ * The merged geometry for one highlighted object, or null. Merged fresh when the
+ * id changes (a single object's merge is cheap) and disposed when it changes or
+ * on unmount — so at most one geometry is held per highlight slot, with no
+ * unbounded cache. Uses the same `mergeRenderableGeometries` the batch builds from.
+ */
+function useHighlightGeometry(
+  id: string | null,
+  objectById: Map<string, BuildingRenderable>,
+): BufferGeometry | null {
+  const geometry = useMemo(() => {
+    if (!id) return null;
+    const object = objectById.get(id);
+    return object ? mergeRenderableGeometries([object]).geometry : null;
+  }, [id, objectById]);
+  useEffect(() => {
+    return () => geometry?.dispose();
+  }, [geometry]);
+  return geometry;
 }
