@@ -1,7 +1,9 @@
 ---
 DATE: 2026-07-01
 TIME: 16:18 EDT
-STATUS: Planned / short feature packet drafted. No implementation started.
+STATUS: Superseded — folded into
+  planning/features/model-viewer-sun-study/ (D-12, 2026-07-01); this
+  packet's PRD/PLAN are imported there as the baseline phase contract.
 AUTHOR: Codex
 SCOPE: Router for the Model Viewer ground-shadow/ground-plane correction.
 RELATED:
