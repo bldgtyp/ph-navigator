@@ -48,7 +48,13 @@ RELATED:
     (amended D-11), lens-switch state memory. Browser-verified
     (assets/phase-04-*.png). Note: three deprecated PCFSoft → plain
     PCF. Ledger in `phases/phase-04-scene-sun-light.md`.
-  - Phase 05 (sun bar UI): next.
+  - Phase 05 (sun bar UI): **Complete** 2026-07-01 — pill → full bar
+    (date scrubber + month rail, 4 preset chips on the canonical chip
+    pattern, daylight-band time scrubber, readouts, Esc/✕ exits).
+    Fixed a latent Stage bug: viewer shortcuts now work while
+    range/checkbox inputs hold focus. Screenshots in `assets/`.
+    Ledger in `phases/phase-05-sun-bar-ui.md`.
+  - Phase 06 (tests/perf/closeout): next.
 - **Blockers:** none.
 - **Verification so far:** codebase baseline in PRD §2 verified
   against source 2026-07-01 (backend `sun_path.py` dome builder;

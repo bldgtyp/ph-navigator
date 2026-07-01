@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-01
-TIME: 18:05
-STATUS: Pending (blocked by phase 04)
+TIME: 18:05 (completed 23:10)
+STATUS: Complete
 AUTHOR: Claude (for Ed)
 SCOPE: Phase 05 — the sun bar UI: collapsed pill, expanded control bar
   (date scrubber + preset chips, time scrubber with daylight band,
@@ -53,4 +53,27 @@ operation works; `make frontend-dev-check` green.
 
 ## Ledger
 
-- (fill on completion)
+- `SunStudyBar.tsx` mounted from `ModelViewerStage` (site-sun lens ∧
+  sun-path present ∧ model ready ∧ not measuring). Collapsed pill →
+  full bar per PRD §4.2: header (label · live "Jul 1 · 12:00" readout ·
+  ✕), date scrubber with month-initial rail, four preset chips
+  composing the canonical `chip chip--md chip--outline
+  chip--interactive` pattern (amber `aria-pressed` state), time
+  scrubber whose track is the daylight band (CSS gradient from the
+  backend sunrise/sunset with ±45 min dawn/dusk ramps), details row
+  (Alt · Az · ↑ · ↓ · "LST (no DST)").
+- Amber single-source: the TS token `VIEWER_SUN_MARKER_COLOR` is
+  injected as `--sun-study-amber` inline; CSS never restates the hex.
+- First engage defaults to today @ 12:00 (verified: Jul 1 · 12:00,
+  altitude 70.7°); chips set date only (Dec 21 kept 12:00); ArrowRight
+  on the focused time slider steps 10 min live.
+- **Bug found & fixed**: the Stage's `isTextEntryTarget` treated every
+  `input` as text entry, so Esc (and all viewer shortcuts) died while
+  a scrubber held focus — non-text input types (range/checkbox/radio/
+  button) are now excluded. Esc collapses the bar after
+  selection/filter in the Stage's Esc priority.
+- Verified in browser (screenshots in `../assets/`): pill state, full
+  bar at Jul-1 noon, Dec-21 chip state with visibly shorter daylight
+  band + low-sun scene, narrow 720 px viewport (bar fits, focus ring
+  visible).
+- Gates: model_viewer vitest 101 green, eslint clean, format applied.
