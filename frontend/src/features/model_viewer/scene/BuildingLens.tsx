@@ -4,7 +4,6 @@ import { useThree } from "@react-three/fiber";
 import { memo, useEffect, useMemo, useRef } from "react";
 import {
   VIEWER_FILTER_DIM_LINE_COLOR,
-  VIEWER_HIGHLIGHT_FALLBACK,
   VIEWER_LINE_HOVER_COLOR,
   type GhostMaterials,
   type ViewerTokens,
@@ -15,6 +14,8 @@ import {
   elementIdForSegmentId,
   isClickWithinDragTolerance,
   pointerPoint,
+  resolveLineHighlightTier,
+  type LineHighlightTier,
   type PointerPoint,
 } from "../lib/selection";
 import { lineStyleDefinition } from "../lib/themes";
@@ -76,6 +77,7 @@ export function BuildingLens({ model, ghostMaterials, tokens, sunPath }: Buildin
             <LineObject
               key={object.id}
               object={object}
+              tokens={tokens}
               interactive={interactive}
               hidden={isHiddenByFilter(object, lens, theme, legendFilter)}
             />
@@ -134,21 +136,18 @@ function GhostBuildingContext({
 
 const LineObject = memo(function LineObject({
   object,
+  tokens,
   interactive,
   hidden,
 }: {
   object: LineRenderable;
+  tokens: ViewerTokens;
   interactive: boolean;
   hidden: boolean;
 }) {
   const pointerDown = useRef<PointerPoint | null>(null);
-  const elementId = elementIdForSegmentId(object.id);
-  const isHovered = useModelViewerStore((state) => {
-    const hoverElementId = state.hoverId ? elementIdForSegmentId(state.hoverId) : null;
-    return elementId !== null && hoverElementId === elementId;
-  });
-  const isSelected = useModelViewerStore(
-    (state) => elementId !== null && state.selectionId === elementId,
+  const tier = useModelViewerStore((state) =>
+    resolveLineHighlightTier(object.id, state.selectionId, state.hoverId, state.focusedSegmentId),
   );
   // A legend-filtered line shows as faint context and is non-interactive (events
   // fall through to the lines behind it) — the line-lens analogue of the mesh
@@ -158,14 +157,8 @@ const LineObject = memo(function LineObject({
   return (
     <Line
       points={object.points}
-      color={
-        hidden
-          ? VIEWER_FILTER_DIM_LINE_COLOR
-          : isSelected
-            ? VIEWER_HIGHLIGHT_FALLBACK
-            : lineColor(object.lineStyle, isHovered)
-      }
-      lineWidth={lineWidth(object.lineStyle, isHovered && live, isSelected && live)}
+      color={hidden ? VIEWER_FILTER_DIM_LINE_COLOR : lineColor(object.lineStyle, tier, tokens)}
+      lineWidth={lineWidth(object.lineStyle, live ? tier : "default")}
       worldUnits
       dashed={object.lineStyle === "pipe-recirc"}
       dashSize={0.8}
@@ -195,18 +188,30 @@ function useLineRaycastTolerance(): void {
   }, [raycaster]);
 }
 
-function lineColor(style: LineRenderable["lineStyle"], isHovered: boolean): string {
-  if (isHovered) return VIEWER_LINE_HOVER_COLOR;
+function lineColor(
+  style: LineRenderable["lineStyle"],
+  tier: LineHighlightTier,
+  tokens: ViewerTokens,
+): string {
+  if (tier === "focused") return tokens.highlight;
+  if (tier === "selectedSoft") return tokens.highlightSoft;
+  if (tier === "hoverElement" || tier === "hoverSegment") return VIEWER_LINE_HOVER_COLOR;
   return lineStyleDefinition(style).color;
 }
 
-function lineWidth(
-  style: LineRenderable["lineStyle"],
-  isHovered: boolean,
-  isSelected: boolean,
-): number {
+function lineWidth(style: LineRenderable["lineStyle"], tier: LineHighlightTier): number {
   const base = style.startsWith("duct") ? 0.11 : 0.08;
-  return isSelected ? base * 1.8 : isHovered ? base * 1.45 : base;
+  switch (tier) {
+    case "focused":
+      return base * 1.8;
+    case "selectedSoft":
+      return base * 1.5;
+    case "hoverElement":
+    case "hoverSegment":
+      return base * 1.45;
+    case "default":
+      return base;
+  }
 }
 
 function handlePointerOver(event: ThreeEvent<PointerEvent>, objectId: string): void {

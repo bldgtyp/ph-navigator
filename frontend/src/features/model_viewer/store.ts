@@ -19,6 +19,7 @@ type ModelViewerState = {
   themesByLens: Record<ModelViewerLens, ModelViewerTheme>;
   hoverId: string | null;
   selectionId: string | null;
+  focusedSegmentId: string | null;
   /** Active legend filter (NEW-VIEW-2), or null when no row is isolated. Cleared
    *  on every lens/theme/file change so a filter never outlives its context. */
   legendFilter: LegendFilter | null;
@@ -41,6 +42,7 @@ type ModelViewerState = {
   clearLegendFilter: () => void;
   setHoverId: (objectId: string | null) => void;
   setSelectionId: (objectId: string | null) => void;
+  toggleFocusedSegment: (segmentId: string) => void;
   clearSelection: () => void;
   setMeasureActive: (active: boolean) => void;
   toggleMeasure: () => void;
@@ -59,6 +61,7 @@ export const useModelViewerStore = create<ModelViewerState>()((set) => ({
   themesByLens: DEFAULT_MODEL_VIEWER_THEMES,
   hoverId: null,
   selectionId: null,
+  focusedSegmentId: null,
   legendFilter: null,
   measureActive: false,
   measureSnap: null,
@@ -73,6 +76,7 @@ export const useModelViewerStore = create<ModelViewerState>()((set) => ({
       activeFileId: fileId,
       hoverId: null,
       selectionId: null,
+      focusedSegmentId: null,
       legendFilter: null,
       section: null,
       errorKind: null,
@@ -87,6 +91,7 @@ export const useModelViewerStore = create<ModelViewerState>()((set) => ({
         themesByLens: { ...state.themesByLens, [lens]: defaultTheme },
         hoverId: null,
         selectionId: null,
+        focusedSegmentId: null,
         legendFilter: null,
         ...inactiveMeasureState(),
       };
@@ -100,7 +105,14 @@ export const useModelViewerStore = create<ModelViewerState>()((set) => ({
         lens,
         themesByLens: { ...state.themesByLens, [lens]: theme },
         legendFilter: null,
-        ...(sameLens ? {} : { hoverId: null, selectionId: null, ...inactiveMeasureState() }),
+        ...(sameLens
+          ? {}
+          : {
+              hoverId: null,
+              selectionId: null,
+              focusedSegmentId: null,
+              ...inactiveMeasureState(),
+            }),
       };
     }),
   setTheme: (lens, theme) =>
@@ -128,12 +140,18 @@ export const useModelViewerStore = create<ModelViewerState>()((set) => ({
   setHoverId: (objectId) =>
     set((state) => (state.hoverId === objectId ? state : { hoverId: objectId })),
   setSelectionId: (objectId) =>
-    set((state) => (state.selectionId === objectId ? state : { selectionId: objectId })),
+    set((state) =>
+      state.selectionId === objectId ? state : { selectionId: objectId, focusedSegmentId: null },
+    ),
+  toggleFocusedSegment: (segmentId) =>
+    set((state) => ({
+      focusedSegmentId: state.focusedSegmentId === segmentId ? null : segmentId,
+    })),
   clearSelection: () =>
     set((state) =>
-      state.hoverId === null && state.selectionId === null
+      state.hoverId === null && state.selectionId === null && state.focusedSegmentId === null
         ? state
-        : { hoverId: null, selectionId: null },
+        : { hoverId: null, selectionId: null, focusedSegmentId: null },
     ),
   setMeasureActive: (active) =>
     set((state) => {
@@ -217,6 +235,7 @@ function activeMeasureState() {
     measureLines: [],
     hoverId: null,
     selectionId: null,
+    focusedSegmentId: null,
   };
 }
 

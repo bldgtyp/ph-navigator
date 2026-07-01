@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-01
-TIME: 15:45 EDT
-STATUS: Phase 2 complete and verified; Phase 3 ready to start.
+TIME: 15:59 EDT
+STATUS: Phase 3 complete and verified; Phase 4 ready to start.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation phase sequence for MEP element selection/length
   reporting. Each phase is one PR-sized, independently verifiable
@@ -92,7 +92,7 @@ frontend `tsc -b`, focused Vitest for viewer core/elements,
 Full repo `make format` / `make ci` / `graphify update .` run as the
 phase closeout gate.
 
-## Phase 3 — Frontend: row ↔ 3D focus linking — READY
+## Phase 3 — Frontend: row ↔ 3D focus linking — COMPLETE
 
 Implements PRD §6, §10 (the soft/full four-tier color model), D-7.
 Adds `focusedSegmentId` to the store; threads `tokens: ViewerTokens`
@@ -106,8 +106,22 @@ that already resets `selectionId`.
 isolation; Playwright case simulating hover-then-camera-orbit to prove
 focus persists; `make format` + `make ci`; browser walkthrough.
 
+Implemented 2026-07-01. Added `focusedSegmentId` and
+`toggleFocusedSegment` to the model-viewer store with reset behavior
+on selection/file/lens teardown; added the pure
+`resolveLineHighlightTier` resolver; threaded `ViewerTokens` into the
+line lens so selected-soft and focused tiers use CSS-derived
+highlight tokens; replaced local segment-row expansion with sticky
+store focus; added 3D-hover/table-row sync and debug-hook tier
+exposure for e2e. Focused verification is green: frontend `tsc -b`,
+focused Vitest for element tiers/store focus, `pnpm run lint`,
+`pnpm run check:all`, and the Chromium model-viewer lens e2e smoke.
+Full repo `make format`, `make ci`, and `graphify update .` are
+green. Full CI evidence: backend 1250 passed / 7 skipped; frontend
+218 test files passed / 2003 tests passed; production build completed.
+
 ## Phase 4 — Frontend: selection-scoped dimension lines — OPTIONAL,
-## NOT STARTED
+## READY
 
 Implements PRD §9, D-6. Renders offset dimension line + extension
 lines + end ticks + unit-aware midpoint label for each segment of the

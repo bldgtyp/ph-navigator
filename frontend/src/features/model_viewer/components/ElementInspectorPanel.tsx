@@ -2,6 +2,7 @@ import { Check, Copy, Maximize2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { formatLengthFromMm, useUnitPreference } from "../../../lib/units";
 import { configForMeta, formatMetersAsLength } from "../lib/fieldConfigs";
+import { elementIdForSegmentId } from "../lib/selection";
 import type { BuildingModel } from "../loaders/building";
 import type { ElementSummary } from "../loaders/lineElements";
 import { useModelViewerStore } from "../store";
@@ -17,13 +18,16 @@ export function ElementInspectorPanel({ element, model }: ElementInspectorPanelP
   const { unitSystem } = useUnitPreference();
   const clearSelection = useModelViewerStore((state) => state.clearSelection);
   const requestCamera = useModelViewerStore((state) => state.requestCamera);
+  const hoverId = useModelViewerStore((state) => state.hoverId);
+  const setHoverId = useModelViewerStore((state) => state.setHoverId);
+  const focusedSegmentId = useModelViewerStore((state) => state.focusedSegmentId);
+  const toggleFocusedSegment = useModelViewerStore((state) => state.toggleFocusedSegment);
   const [copied, setCopied] = useState(false);
-  const [expandedSegmentId, setExpandedSegmentId] = useState<string | null>(null);
   const resetTimer = useRef<number | null>(null);
+  const rowRefs = useRef(new Map<string, HTMLButtonElement>());
 
   useEffect(() => {
     setCopied(false);
-    setExpandedSegmentId(null);
     return () => {
       if (resetTimer.current !== null) {
         window.clearTimeout(resetTimer.current);
@@ -31,6 +35,17 @@ export function ElementInspectorPanel({ element, model }: ElementInspectorPanelP
       }
     };
   }, [element?.id]);
+
+  const hoveredSegmentId =
+    hoverId && element && elementIdForSegmentId(hoverId) === element.id ? hoverId : null;
+
+  useEffect(() => {
+    if (!hoveredSegmentId) return;
+    rowRefs.current.get(hoveredSegmentId)?.scrollIntoView({
+      block: "nearest",
+      behavior: "smooth",
+    });
+  }, [hoveredSegmentId]);
 
   if (!element || !model) return null;
 
@@ -84,19 +99,24 @@ export function ElementInspectorPanel({ element, model }: ElementInspectorPanelP
               {element.kind === "pipeElement" ? <span role="columnheader">Material</span> : null}
             </div>
             {rows.map((meta, index) => {
-              const expanded = expandedSegmentId === meta.id;
+              const expanded = focusedSegmentId === meta.id;
+              const hovered = hoveredSegmentId === meta.id;
               const config = configForMeta(meta);
               return (
                 <div className="model-inspector-segment-group" key={meta.id}>
                   <button
+                    ref={(node) => {
+                      if (node) rowRefs.current.set(meta.id, node);
+                      else rowRefs.current.delete(meta.id);
+                    }}
                     type="button"
-                    className={
-                      expanded
-                        ? "model-inspector-segment-row is-expanded"
-                        : "model-inspector-segment-row"
-                    }
+                    className={segmentRowClass(expanded, hovered)}
                     aria-expanded={expanded}
-                    onClick={() => setExpandedSegmentId(expanded ? null : meta.id)}
+                    onClick={() => toggleFocusedSegment(meta.id)}
+                    onFocus={() => setHoverId(meta.id)}
+                    onBlur={() => setHoverId(null)}
+                    onMouseEnter={() => setHoverId(meta.id)}
+                    onMouseLeave={() => setHoverId(null)}
                   >
                     <span>{index + 1}</span>
                     <span>{segmentLength(meta, unitSystem)}</span>
@@ -155,4 +175,11 @@ function segmentDiameter(
 
 function pipeMaterial(meta: DuctSegmentLineMeta | PipeSegmentLineMeta): string {
   return meta.type === "pipeSegmentLine" && meta.material_value ? meta.material_value : "--";
+}
+
+function segmentRowClass(expanded: boolean, hovered: boolean): string {
+  const classes = ["model-inspector-segment-row"];
+  if (expanded) classes.push("is-expanded");
+  if (hovered) classes.push("is-hovered");
+  return classes.join(" ");
 }

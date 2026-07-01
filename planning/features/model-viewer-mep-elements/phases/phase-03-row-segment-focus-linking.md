@@ -1,8 +1,7 @@
 ---
 DATE: 2026-07-01
-TIME: -
-STATUS: Not started. Depends on Phase 2 (needs `elementsById`, the
-  base `ElementInspectorPanel`, and `elementIdForSegmentId`).
+TIME: 15:59 EDT
+STATUS: Complete and verified.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff for Phase 3 — bidirectional row ↔ 3D
   segment linking once an element is selected, and the four-tier
@@ -221,3 +220,42 @@ it.
 
 PRD §14 acceptance criteria 3, 6, 7, 8 pass. The four-tier color table
 in PRD §10 is fully wired and unit-tested. STATUS.md updated.
+
+## 8. Completion record
+
+Implemented 2026-07-01.
+
+Implemented:
+
+- `focusedSegmentId` and `toggleFocusedSegment` in
+  `frontend/src/features/model_viewer/store.ts`, with reset behavior
+  on selection, file, lens, URL-lens, and measure-mode teardown paths.
+- `resolveLineHighlightTier` in
+  `frontend/src/features/model_viewer/lib/selection.ts`.
+- Token-aware line highlight colors/widths in
+  `frontend/src/features/model_viewer/scene/BuildingLens.tsx`.
+- Store-backed row expansion/focus plus row hover sync in
+  `frontend/src/features/model_viewer/components/ElementInspectorPanel.tsx`.
+- Debug-hook support for browser verification:
+  `focusedSegmentId`, `segmentIdsForElement`, `setHoverId`,
+  `toggleFocusedSegment`, and `lineHighlightTierForObject`.
+- Unit coverage for tier precedence and store reset semantics.
+- Chromium e2e coverage for row hover class, sticky row focus,
+  focused line tier, and focus persistence through a canvas orbit.
+
+Verification passed:
+
+- `cd frontend && pnpm exec tsc -b --pretty false`
+- `cd frontend && pnpm exec vitest run
+  src/features/model_viewer/__tests__/viewerElements.test.ts
+  src/features/model_viewer/__tests__/viewerFocusStore.test.ts`
+- `cd frontend && pnpm run lint` (0 errors, existing 15 warnings)
+- `cd frontend && pnpm run check:all`
+- `cd frontend && pnpm exec playwright test
+  tests/e2e/model-viewer-lenses.spec.ts --project=chromium`
+
+Repo closeout gate passed:
+
+- `make format`
+- `make ci`
+- `graphify update .`

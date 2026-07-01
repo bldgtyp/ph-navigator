@@ -450,13 +450,18 @@ export type ModelViewerDebugState = {
   legendFilter: { theme: ModelViewerTheme; keys: string[] } | null;
   selectionId: string | null;
   hoverId: string | null;
+  focusedSegmentId: string | null;
   measureActive: boolean;
   measureSnap: ModelViewerMeasurePoint | null;
   measureLines: ModelViewerMeasureLine[];
   setLens: (lens: ModelViewerLens) => void;
   setTheme: (theme: ModelViewerTheme) => void;
   themeColorForObject: (objectId: string) => string | null;
+  lineHighlightTierForObject: (objectId: string) => string;
+  segmentIdsForElement: (elementId: string) => string[];
   selectObject: (objectId: string | null) => void;
+  setHoverId: (objectId: string | null) => void;
+  toggleFocusedSegment: (segmentId: string) => void;
   selectAnyModelObject: (type?: ModelObjectType) => string | null;
   clearSelection: () => void;
   setSection: (section: ModelViewerSection) => void;

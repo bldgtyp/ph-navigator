@@ -1100,8 +1100,14 @@
 }
 
 .model-inspector-segment-row:not(.is-header):hover,
+.model-inspector-segment-row.is-hovered,
 .model-inspector-segment-row.is-expanded {
   background: color-mix(in oklab, var(--highlight) 8%, var(--bg-card));
+}
+
+.model-inspector-segment-row.is-hovered:not(.is-expanded) {
+  outline: 1px solid color-mix(in oklab, var(--highlight) 42%, transparent);
+  outline-offset: -1px;
 }
 
 .model-inspector-segment-row.is-header {

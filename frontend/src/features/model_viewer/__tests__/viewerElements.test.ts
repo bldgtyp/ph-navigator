@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { elementIdForSegmentId } from "../lib/selection";
+import { elementIdForSegmentId, resolveLineHighlightTier } from "../lib/selection";
 import { buildBuildingModel } from "../loaders/building";
 import type { CombinedModelData } from "../types";
 
@@ -36,6 +36,62 @@ describe("model viewer MEP elements", () => {
     );
     expect(elementIdForSegmentId("face:wall-1")).toBeNull();
   });
+
+  test.each([
+    {
+      name: "default",
+      objectId: "duct:supply-duct:seg-a",
+      selectionId: null,
+      hoverId: null,
+      focusedSegmentId: null,
+      tier: "default",
+    },
+    {
+      name: "hoverElement",
+      objectId: "duct:supply-duct:seg-a",
+      selectionId: null,
+      hoverId: "duct:supply-duct:seg-b",
+      focusedSegmentId: null,
+      tier: "hoverElement",
+    },
+    {
+      name: "selectedSoft",
+      objectId: "duct:supply-duct:seg-a",
+      selectionId: "element:duct:supply-duct",
+      hoverId: null,
+      focusedSegmentId: null,
+      tier: "selectedSoft",
+    },
+    {
+      name: "hoverSegment",
+      objectId: "duct:supply-duct:seg-a",
+      selectionId: "element:duct:supply-duct",
+      hoverId: "duct:supply-duct:seg-a",
+      focusedSegmentId: null,
+      tier: "hoverSegment",
+    },
+    {
+      name: "focused",
+      objectId: "duct:supply-duct:seg-a",
+      selectionId: "element:duct:supply-duct",
+      hoverId: "duct:supply-duct:seg-a",
+      focusedSegmentId: "duct:supply-duct:seg-a",
+      tier: "focused",
+    },
+    {
+      name: "different hovered element while another element is selected",
+      objectId: "duct:other-duct:seg-a",
+      selectionId: "element:duct:supply-duct",
+      hoverId: "duct:other-duct:seg-b",
+      focusedSegmentId: null,
+      tier: "hoverElement",
+    },
+  ] as const)(
+    "resolves line highlight tier: $name",
+    ({ objectId, selectionId, hoverId, focusedSegmentId, tier }) => {
+      expect(resolveLineHighlightTier(objectId, selectionId, hoverId, focusedSegmentId)).toBe(tier);
+    },
+  );
 });
 
 function mepElementData(): CombinedModelData {

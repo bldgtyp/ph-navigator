@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-01
-TIME: 15:45 EDT
-STATUS: Phase 2 complete and verified; Phase 3 ready to start.
+TIME: 15:59 EDT
+STATUS: Phase 3 complete and verified; Phase 4 ready to start.
 AUTHOR: Claude (for Ed)
 SCOPE: Status ledger for the MEP element-selection feature.
 RELATED: README.md, PRD.md, PLAN.md, phases/
@@ -11,7 +11,7 @@ RELATED: README.md, PRD.md, PLAN.md, phases/
 
 ## Current state
 
-`Phase 2 complete.` PRD authored 2026-07-01 from a
+`Phase 3 complete.` PRD authored 2026-07-01 from a
 full read of the current Ventilation/Hot Water lens implementation
 (`frontend/src/features/model_viewer/`), the backend `model_viewer`
 schemas/extraction, and the upstream `honeybee_phhvac` source
@@ -96,9 +96,38 @@ Phase 2 code changes are implemented and verified:
   Ventilation and Hot Water segment selection resolves to an
   `element:*` selection ID and renders the new element inspector.
 
+Phase 3 code changes are implemented and verified:
+
+- `frontend/src/features/model_viewer/store.ts` adds
+  `focusedSegmentId` and `toggleFocusedSegment`, clearing focus on the
+  same teardown paths that clear selection.
+- `frontend/src/features/model_viewer/lib/selection.ts` adds
+  `resolveLineHighlightTier` for the default / hover-element /
+  selected-soft / hover-segment / focused line tiers.
+- `frontend/src/features/model_viewer/scene/BuildingLens.tsx` threads
+  `ViewerTokens` into line renderables and uses the resolver for
+  token-aware line color/width tiers.
+- `frontend/src/features/model_viewer/components/ElementInspectorPanel.tsx`
+  replaces local row expansion with store-backed focused segment
+  state, syncs row hover to `hoverId`, and scrolls 3D-hovered rows
+  into view.
+- `frontend/src/features/model_viewer/lib/debugHook.ts` exposes
+  `focusedSegmentId`, segment IDs by element, row-hover helpers,
+  focus toggling, and line-tier inspection for browser tests.
+- `frontend/src/features/model_viewer/__tests__/viewerElements.test.ts`
+  covers tier precedence, including focused-over-hover and hovering
+  another element while a different element is selected.
+- `frontend/src/features/model_viewer/__tests__/viewerFocusStore.test.ts`
+  covers focus toggling and reset semantics.
+- `frontend/tests/e2e/model-viewer-lenses.spec.ts` asserts hovered
+  row class, sticky focused segment, focused tier, and focus
+  persistence through a canvas orbit.
+
 ## Next step
 
-Start `phases/phase-03-row-segment-focus-linking.md`.
+Start `phases/phase-04-dimension-lines.md` if the optional
+dimension-line phase is kept; otherwise proceed directly to
+`phases/phase-05-verification-closeout.md`.
 
 Before or during Phase 5, resolve PRD §13 open question 1 (is segment
 dict insertion order physically meaningful?) — flagged in
@@ -137,10 +166,24 @@ Passed 2026-07-01:
   - frontend: 217 test files passed, 1991 tests passed; production
     build completed
 - `graphify update .`
+- `cd frontend && pnpm exec tsc -b --pretty false`
+- `cd frontend && pnpm exec vitest run
+  src/features/model_viewer/__tests__/viewerElements.test.ts
+  src/features/model_viewer/__tests__/viewerFocusStore.test.ts`
+- `cd frontend && pnpm run lint` (0 errors, existing 15 warnings)
+- `cd frontend && pnpm run check:all`
+- `cd frontend && pnpm exec playwright test
+  tests/e2e/model-viewer-lenses.spec.ts --project=chromium`
+- `make format`
+- `make ci`:
+  - backend: 1250 passed, 7 skipped, 1 warning
+  - frontend: 218 test files passed, 2003 tests passed; production
+    build completed
+- `graphify update .`
 
 ## Blockers
 
-None for Phase 3.
+None for Phase 4 / Phase 5.
 
 ## Note on an in-session file-loss incident (2026-07-01)
 

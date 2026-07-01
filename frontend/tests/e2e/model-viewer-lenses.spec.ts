@@ -47,15 +47,44 @@ test("switches model lenses, selects lens objects, and honors lens deep links", 
   await expect(page.getByLabel("Selected model element")).toContainText(/segments?/);
 
   await switchLens(page, "Hot Water");
-  const pipeSegmentId = await selectAnyModelObject(page, "pipeSegmentLine");
+  const pipeElement = await selectMultiSegmentElement(page, "pipe");
+  const pipeSegmentId = pipeElement.segmentIds[0];
+  if (!pipeSegmentId) throw new Error("Selected pipe element has no segments.");
+  await page.evaluate(
+    (segmentId) => window.__phnModelViewer?.selectObject(segmentId),
+    pipeSegmentId,
+  );
   await expect
     .poll(() => page.evaluate(() => window.__phnModelViewer?.selectionId ?? null))
-    .toBe(`element:${pipeSegmentId.slice(0, pipeSegmentId.lastIndexOf(":"))}`);
+    .toBe(pipeElement.elementId);
   await expect(page.getByLabel("Selected model element")).toContainText("Pipe Element");
   await expect(page.getByLabel("Selected model element")).toContainText("Total Length");
   await expect(page.getByLabel("Selected model element")).toContainText(/segments?/);
-  await page.getByRole("button", { name: /^1\s/ }).click();
+  const focusedSegmentId = pipeElement.segmentIds[1] ?? pipeSegmentId;
+  const focusedRowIndex = pipeElement.segmentIds.indexOf(focusedSegmentId) + 1;
+  const focusedRow = page.getByRole("button", { name: new RegExp(`^${focusedRowIndex}\\s`) });
+  await page.evaluate(
+    (segmentId) => window.__phnModelViewer?.setHoverId(segmentId),
+    focusedSegmentId,
+  );
+  await expect(focusedRow).toHaveClass(/is-hovered/);
+  await focusedRow.click();
+  await expect
+    .poll(() => page.evaluate(() => window.__phnModelViewer?.focusedSegmentId ?? null))
+    .toBe(focusedSegmentId);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (segmentId) => window.__phnModelViewer?.lineHighlightTierForObject(segmentId),
+        focusedSegmentId,
+      ),
+    )
+    .toBe("focused");
   await expect(page.getByLabel("Selected model element")).toContainText("Water Temp");
+  await orbitModelViewer(page);
+  await expect
+    .poll(() => page.evaluate(() => window.__phnModelViewer?.focusedSegmentId ?? null))
+    .toBe(focusedSegmentId);
 
   await switchLens(page, "Site & Sun");
   await expect(page.getByText("Set project location to see the sun path.")).toBeVisible();
@@ -73,4 +102,32 @@ async function switchLens(page: import("@playwright/test").Page, name: string): 
   await expect
     .poll(() => page.evaluate(() => window.__phnModelViewer?.selectionId ?? null))
     .toBeNull();
+}
+
+async function selectMultiSegmentElement(
+  page: import("@playwright/test").Page,
+  family: "duct" | "pipe",
+): Promise<{ elementId: string; segmentIds: string[] }> {
+  const element = await page.evaluate((prefix) => {
+    const viewer = window.__phnModelViewer;
+    if (!viewer) throw new Error("Model viewer object hook is not ready.");
+    const candidates = viewer.elementIds
+      .filter((id) => id.startsWith(`element:${prefix}:`))
+      .map((elementId) => ({ elementId, segmentIds: viewer.segmentIdsForElement(elementId) }))
+      .filter((candidate) => candidate.segmentIds.length > 0);
+    return candidates.find((candidate) => candidate.segmentIds.length > 1) ?? candidates[0] ?? null;
+  }, family);
+  expect(element).toBeTruthy();
+  if (!element) throw new Error(`No ${family} element was found.`);
+  return element;
+}
+
+async function orbitModelViewer(page: import("@playwright/test").Page): Promise<void> {
+  const canvas = page.locator("canvas").first();
+  const box = await canvas.boundingBox();
+  if (!box) throw new Error("Model viewer canvas is not visible.");
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 80, box.y + box.height / 2 + 20, { steps: 5 });
+  await page.mouse.up();
 }

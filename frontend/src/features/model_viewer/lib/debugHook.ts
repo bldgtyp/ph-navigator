@@ -2,7 +2,7 @@ import { useEffect, useMemo } from "react";
 import { isHiddenByFilter } from "./legendFilter";
 import { distanceBetweenMeasurePoints } from "./measure";
 import { isTupleVisibleForSection } from "./section";
-import { elementIdForSegmentId } from "./selection";
+import { elementIdForSegmentId, resolveLineHighlightTier } from "./selection";
 import { colorForThemedObject, legendForModel } from "./themes";
 import { emptyModelObjectCounts, type BuildingModel } from "../loaders/building";
 import { useModelViewerStore } from "../store";
@@ -40,11 +40,14 @@ function useModelViewerDebugHook(model: BuildingModel | null, sunPathReady: bool
   const legendFilter = useModelViewerStore((state) => state.legendFilter);
   const selectionId = useModelViewerStore((state) => state.selectionId);
   const hoverId = useModelViewerStore((state) => state.hoverId);
+  const focusedSegmentId = useModelViewerStore((state) => state.focusedSegmentId);
   const measureActive = useModelViewerStore((state) => state.measureActive);
   const measureSnap = useModelViewerStore((state) => state.measureSnap);
   const measureLines = useModelViewerStore((state) => state.measureLines);
   const section = useModelViewerStore((state) => state.section);
   const setSelectionId = useModelViewerStore((state) => state.setSelectionId);
+  const setHoverId = useModelViewerStore((state) => state.setHoverId);
+  const toggleFocusedSegment = useModelViewerStore((state) => state.toggleFocusedSegment);
   const setLens = useModelViewerStore((state) => state.setLens);
   const setTheme = useModelViewerStore((state) => state.setTheme);
   const clearSelection = useModelViewerStore((state) => state.clearSelection);
@@ -98,6 +101,7 @@ function useModelViewerDebugHook(model: BuildingModel | null, sunPathReady: bool
         : null,
       selectionId,
       hoverId,
+      focusedSegmentId,
       measureActive,
       measureSnap,
       measureLines,
@@ -108,8 +112,13 @@ function useModelViewerDebugHook(model: BuildingModel | null, sunPathReady: bool
         if (!meta) return null;
         return colorForThemedObject(meta, lens, theme)?.color ?? null;
       },
+      lineHighlightTierForObject: (objectId) =>
+        resolveLineHighlightTier(objectId, selectionId, hoverId, focusedSegmentId),
+      segmentIdsForElement: (elementId) => model?.elementsById.get(elementId)?.segmentIds ?? [],
       selectObject: (objectId) =>
         setSelectionId(objectId ? (elementIdForSegmentId(objectId) ?? objectId) : null),
+      setHoverId,
+      toggleFocusedSegment,
       selectAnyModelObject: (type?: ModelObjectType) => {
         const objects = selectableObjectsForLens(model, lens);
         const object = objects.find((candidate) => !type || candidate.meta.type === type);
@@ -149,6 +158,7 @@ function useModelViewerDebugHook(model: BuildingModel | null, sunPathReady: bool
           measureLines: [...state.measureLines, line],
           hoverId: null,
           selectionId: null,
+          focusedSegmentId: null,
         }));
         return line;
       },
@@ -161,6 +171,7 @@ function useModelViewerDebugHook(model: BuildingModel | null, sunPathReady: bool
     clearSelection,
     clearSection,
     errorKind,
+    focusedSegmentId,
     hoverId,
     elementIds,
     legendFilter,
@@ -177,9 +188,11 @@ function useModelViewerDebugHook(model: BuildingModel | null, sunPathReady: bool
     selectionId,
     setLens,
     setMeasureActive,
+    setHoverId,
     setSelectionId,
     setSection,
     setTheme,
+    toggleFocusedSegment,
     sunPathReady,
     theme,
     visibleObjectIds,

@@ -32,3 +32,26 @@ export function elementIdForSegmentId(segmentId: string): string | null {
   if (lastColon <= 0) return null;
   return `element:${segmentId.slice(0, lastColon)}`;
 }
+
+export type LineHighlightTier =
+  | "default"
+  | "hoverElement"
+  | "selectedSoft"
+  | "hoverSegment"
+  | "focused";
+
+export function resolveLineHighlightTier(
+  objectId: string,
+  selectionId: string | null,
+  hoverId: string | null,
+  focusedSegmentId: string | null,
+): LineHighlightTier {
+  const objectElementId = elementIdForSegmentId(objectId);
+  const isSelectedElement = objectElementId !== null && objectElementId === selectionId;
+  if (objectId === focusedSegmentId) return "focused";
+  if (isSelectedElement && objectId === hoverId) return "hoverSegment";
+  if (isSelectedElement) return "selectedSoft";
+  const hoverElementId = hoverId ? elementIdForSegmentId(hoverId) : null;
+  if (hoverElementId !== null && hoverElementId === objectElementId) return "hoverElement";
+  return "default";
+}
