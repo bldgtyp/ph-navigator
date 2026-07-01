@@ -193,6 +193,7 @@ export type DuctSegmentModelData = {
   insulation_thickness: number;
   insulation_conductivity: number;
   insulation_reflective: boolean;
+  length: number;
 };
 
 export type DuctElementModelData = {
@@ -200,6 +201,7 @@ export type DuctElementModelData = {
   display_name: string;
   duct_type: 1 | 2 | number;
   segments: Record<string, DuctSegmentModelData>;
+  length: number;
 };
 
 export type VentilationSystemModelData = {
@@ -227,6 +229,11 @@ export type PipeElementModelData = {
   identifier: string;
   display_name: string;
   segments: Record<string, PipeSegmentModelData>;
+  length: number;
+  water_temp: number;
+  daily_period: number;
+  material_name: string;
+  diameter: number;
 };
 
 export type PipeBranchModelData = {

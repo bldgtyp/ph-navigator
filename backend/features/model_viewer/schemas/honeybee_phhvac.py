@@ -7,9 +7,10 @@ color-splits supply vs. exhaust on it (US-VIEW-7 crit. 7 / Q-VIEW-2).
 
 from __future__ import annotations
 
+from functools import cached_property
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
 
 from features.model_viewer.schemas.ladybug_geometry import LineSegment3DSchema
 
@@ -27,6 +28,12 @@ class PhHvacDuctSegmentSchema(BaseModel):
     insulation_conductivity: float
     insulation_reflective: bool
 
+    @computed_field
+    @cached_property
+    def length(self) -> float:
+        """Duct segment centerline length in model units."""
+        return self.geometry.vector_length
+
 
 class PhHvacDuctElementSchema(BaseModel):
     """honeybee_phhvac.ducting.PhDuctElement.
@@ -38,6 +45,12 @@ class PhHvacDuctElementSchema(BaseModel):
     display_name: str
     duct_type: int
     segments: dict[str, PhHvacDuctSegmentSchema]
+
+    @computed_field
+    @cached_property
+    def length(self) -> float:
+        """Total duct length across all segment centerlines."""
+        return sum(segment.length for segment in self.segments.values())
 
 
 class VentilatorSchema(BaseModel):
@@ -89,6 +102,11 @@ class PhHvacPipeElementSchema(BaseModel):
     display_name: str
     user_data: dict[Any, Any]
     segments: dict[str, PhHvacPipeSegmentSchema]
+    length: float
+    water_temp: float
+    daily_period: float
+    material_name: str
+    diameter: float
 
 
 class PhHvacPipeBranchSchema(BaseModel):

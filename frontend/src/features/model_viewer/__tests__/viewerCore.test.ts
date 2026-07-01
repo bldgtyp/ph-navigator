@@ -295,8 +295,10 @@ function samplePhaseFourData(): CombinedModelData {
                 insulation_thickness: 0.025,
                 insulation_conductivity: 0.04,
                 insulation_reflective: false,
+                length: 3,
               },
             },
+            length: 3,
           },
         ],
         exhaust_ducting: [
@@ -315,8 +317,10 @@ function samplePhaseFourData(): CombinedModelData {
                 insulation_thickness: 0.02,
                 insulation_conductivity: 0.04,
                 insulation_reflective: false,
+                length: 3,
               },
             },
+            length: 3,
           },
         ],
       },
@@ -330,40 +334,28 @@ function samplePhaseFourData(): CombinedModelData {
             identifier: "trunk-1",
             display_name: "Trunk",
             multiplier: 1,
-            pipe_element: { identifier: "empty-trunk", display_name: "Empty Trunk", segments: {} },
+            pipe_element: pipeElement("empty-trunk", "Empty Trunk", {}),
             branches: {
               "branch-1": {
                 identifier: "branch-1",
                 display_name: "Branch",
-                pipe_element: {
-                  identifier: "empty-branch",
-                  display_name: "Empty Branch",
-                  segments: {},
-                },
+                pipe_element: pipeElement("empty-branch", "Empty Branch", {}),
                 fixtures: {
-                  "fixture-1": {
-                    identifier: "fixture-1",
-                    display_name: "Sink",
-                    segments: {
-                      "seg-p": pipeSegment({
-                        diameter_mm: 12.7,
-                        geometry: { p: [0, 0, 0], v: [0, 0, 3] },
-                      }),
-                    },
-                  },
+                  "fixture-1": pipeElement("fixture-1", "Sink", {
+                    "seg-p": pipeSegment({
+                      diameter_mm: 12.7,
+                      geometry: { p: [0, 0, 0], v: [0, 0, 3] },
+                    }),
+                  }),
                 },
               },
             },
           },
         },
         recirc_piping: {
-          "recirc-1": {
-            identifier: "recirc-1",
-            display_name: "Recirc",
-            segments: {
-              "seg-r": pipeSegment({ diameter_mm: 19, geometry: { p: [1, 0, 0], v: [0, 0, 3] } }),
-            },
-          },
+          "recirc-1": pipeElement("recirc-1", "Recirc", {
+            "seg-r": pipeSegment({ diameter_mm: 19, geometry: { p: [1, 0, 0], v: [0, 0, 3] } }),
+          }),
         },
       },
     ],
@@ -416,6 +408,7 @@ function pipeSegment({
   diameter_mm: number;
   geometry: { p: [number, number, number]; v: [number, number, number] };
 }) {
+  const [x, y, z] = geometry.v;
   return {
     geometry,
     diameter_mm,
@@ -426,7 +419,27 @@ function pipeSegment({
     daily_period: 24,
     water_temp_c: 60,
     material_value: "Copper",
-    length: 3,
+    length: Math.hypot(x, y, z),
+  };
+}
+
+type SamplePipeSegment = ReturnType<typeof pipeSegment>;
+
+function pipeElement(
+  identifier: string,
+  display_name: string,
+  segments: Record<string, SamplePipeSegment>,
+) {
+  const segmentList = Object.values(segments);
+  return {
+    identifier,
+    display_name,
+    segments,
+    length: segmentList.reduce((total, segment) => total + segment.length, 0),
+    water_temp: 60,
+    daily_period: 24,
+    material_name: "Copper",
+    diameter: segmentList[0]?.diameter_mm ?? 0,
   };
 }
 

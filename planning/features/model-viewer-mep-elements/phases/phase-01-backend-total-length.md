@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-01
-TIME: -
-STATUS: Not started.
+TIME: 15:30 EDT
+STATUS: Complete and verified.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff for Phase 1 — duct/pipe segment and
   element total length on the wire.
@@ -14,6 +14,43 @@ RELATED:
 ---
 
 # Phase 1 — Backend: element & segment total length
+
+## Implementation status — 2026-07-01
+
+Complete:
+
+- `LineSegment3DSchema.vector_length` centralizes the line-vector
+  magnitude used by duct length serialization and tests.
+- `PhHvacDuctSegmentSchema.length` and
+  `PhHvacDuctElementSchema.length` are cached Pydantic computed
+  fields.
+- `PhHvacPipeElementSchema` declares the upstream aggregate fields
+  emitted by `to_dict(_include_properties=True)`.
+- Frontend model-viewer DTO types mirror the new wire fields.
+- Extraction tests cover canonical duct segment/element lengths,
+  canonical pipe element aggregates at trunk/branch/fixture depth,
+  synthesized recirc aggregate length, and Hillandale MEP length
+  fields when the licensed local fixture is present.
+
+Verification passed:
+
+- `cd backend && uv run ruff format --check . && uv run ruff check . &&
+  uv run ty check`
+- Canonical HBJSON extraction smoke via `uv run python`, including
+  JSON serialization of the new duct and pipe element fields.
+- `cd frontend && pnpm exec prettier --check
+  src/features/model_viewer/__tests__/viewerCore.test.ts
+  src/features/model_viewer/types.ts`
+- `cd frontend && pnpm exec tsc -b --pretty false && pnpm exec vitest
+  run src/features/model_viewer/__tests__/viewerCore.test.ts`
+- `make format`
+- `make ci`:
+  - backend: 1250 passed, 7 skipped, 1 warning
+  - frontend: 216 test files passed, 1989 tests passed; production
+    build completed
+- `graphify update .`
+
+Exit criteria met.
 
 ## 1. Goal
 

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-01
-TIME: -
-STATUS: Ready for implementation — phases authored, none started.
+TIME: 15:30 EDT
+STATUS: Phase 1 complete and verified; Phase 2 ready to start.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation phase sequence for MEP element selection/length
   reporting. Each phase is one PR-sized, independently verifiable
@@ -41,7 +41,7 @@ full** — it contains the design reasoning, the exact file:line
 grounding, and the decisions (D-1..D-7) each phase implements. Phase
 docs below cite PRD sections but do not repeat their content.
 
-## Phase 1 — Backend: element & segment total length — NOT STARTED
+## Phase 1 — Backend: element & segment total length — COMPLETE
 
 Implements PRD §7. Adds `length` as a computed field to
 `PhHvacDuctSegmentSchema`/`PhHvacDuctElementSchema` (local
@@ -55,6 +55,12 @@ independent of Phases 2-5; can be verified and merged on its own.
 **Verify:** backend pytest golden-fixture length assertions (canonical
 + Hillandale, all pipe tree depths); `uv run ty check`; `tsc -b`
 green on the type-only frontend change; `make format` + `make ci`.
+
+Completed 2026-07-01. Backend Ruff, `uv run ty check`, canonical
+extraction smoke, frontend Prettier/`tsc -b`/focused Vitest,
+`make format`, `make ci`, and `graphify update .` are green. Full CI
+evidence: backend 1250 passed / 7 skipped; frontend 216 test files
+passed / 1989 tests passed; production build completed.
 
 ## Phase 2 — Frontend: element-level selection, highlight, camera,
 ## base inspector card — NOT STARTED

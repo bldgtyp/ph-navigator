@@ -36,6 +36,7 @@ from features.model_viewer.extraction import (
     parse_hb_model,
 )
 from features.model_viewer.schemas.combined import CombinedModelDataSchema
+from features.model_viewer.schemas.honeybee_phhvac import PhHvacPipeElementSchema
 
 FIXTURES = Path(__file__).parent / "fixtures"
 PRIMARY_FIXTURE = FIXTURES / "ph_nav_v2_example.hbjson"
@@ -53,6 +54,28 @@ HILLANDALE_FIXTURE = Path(
 
 def _load_primary_model() -> Model:
     return parse_hb_model(json.loads(PRIMARY_FIXTURE.read_text()))
+
+
+def _assert_pipe_element_aggregates(element: PhHvacPipeElementSchema) -> None:
+    assert element.length == pytest.approx(sum(segment.length for segment in element.segments.values()))
+    assert element.material_name
+    assert element.diameter >= 0
+    if not element.segments:
+        return
+
+    segments = list(element.segments.values())
+    assert element.water_temp == pytest.approx(
+        sum(segment.length * segment.water_temp_c for segment in segments) / element.length
+    )
+    assert element.daily_period == pytest.approx(
+        sum(segment.length * segment.daily_period for segment in segments) / element.length
+    )
+    assert element.diameter == pytest.approx(
+        sum(segment.length * segment.diameter_mm for segment in segments) / element.length
+    )
+    material_values = {segment.material_value for segment in segments}
+    if len(material_values) == 1:
+        assert element.material_name == next(iter(material_values))
 
 
 @pytest.fixture(scope="module")
@@ -136,7 +159,10 @@ def test_primary_ventilation_duct_type_normalized(primary_data: CombinedModelDat
     assert sum(len(d.segments) for d in system.supply_ducting) == 3
     assert sum(len(d.segments) for d in system.exhaust_ducting) == 2
     for duct in system.supply_ducting + system.exhaust_ducting:
+        expected_length = sum(segment.geometry.vector_length for segment in duct.segments.values())
+        assert duct.length == pytest.approx(expected_length)
         for segment in duct.segments.values():
+            assert segment.length == pytest.approx(segment.geometry.vector_length)
             assert segment.diameter > 0
 
 
@@ -151,6 +177,8 @@ def test_primary_hot_water_tree_depth(primary_data: CombinedModelDataSchema) -> 
     assert len(branch.fixtures) == 1
     fixture = next(iter(branch.fixtures.values()))
     assert len(fixture.segments) == 4
+    for element in (trunk.pipe_element, branch.pipe_element, fixture):
+        _assert_pipe_element_aggregates(element)
     for segment in fixture.segments.values():
         assert segment.length > 0
         assert segment.diameter_mm > 0
@@ -226,8 +254,11 @@ def test_recirc_piping_on_wire() -> None:
     data = extract_model_data(model)
     recirc = data.hot_water_systems[0].recirc_piping
     assert len(recirc) == 1
-    segment = next(iter(next(iter(recirc.values())).segments.values()))
+    element = next(iter(recirc.values()))
+    _assert_pipe_element_aggregates(element)
+    segment = next(iter(element.segments.values()))
     assert segment.length == pytest.approx(2.0)
+    assert element.length == pytest.approx(2.0)
     assert segment.geometry.p == (0.0, 0.0, 0.0)
 
 
@@ -318,3 +349,28 @@ def test_hillandale_inches_normalized_to_meters(hillandale: tuple[CombinedModelD
     assert summary.envelope_area_m2 == pytest.approx(24071, rel=1e-3)
     assert summary.floor_area_m2 == pytest.approx(36279, rel=1e-3)
     assert 2.0 < summary.volume_m3 / summary.floor_area_m2 < 5.0
+
+
+@pytest.mark.hillandale
+def test_hillandale_mep_length_fields(hillandale: tuple[CombinedModelDataSchema, Any]) -> None:
+    data, _ = hillandale
+    ducts = [duct for system in data.ventilation_systems for duct in [*system.supply_ducting, *system.exhaust_ducting]]
+    assert len(ducts) == 48
+    for duct in ducts:
+        assert duct.length == pytest.approx(sum(segment.geometry.vector_length for segment in duct.segments.values()))
+        assert duct.length > 0
+        for segment in duct.segments.values():
+            assert segment.length == pytest.approx(segment.geometry.vector_length)
+            assert segment.length > 0
+
+    pipe_elements = []
+    for system in data.hot_water_systems:
+        for trunk in system.distribution_piping.values():
+            pipe_elements.append(trunk.pipe_element)
+            for branch in trunk.branches.values():
+                pipe_elements.append(branch.pipe_element)
+                pipe_elements.extend(branch.fixtures.values())
+        pipe_elements.extend(system.recirc_piping.values())
+    assert pipe_elements
+    for element in pipe_elements:
+        _assert_pipe_element_aggregates(element)

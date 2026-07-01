@@ -1,8 +1,7 @@
 ---
 DATE: 2026-07-01
-TIME: -
-STATUS: PRD accepted; phased plan authored. No implementation
-  started.
+TIME: 15:30 EDT
+STATUS: Phase 1 complete and verified; Phase 2 ready to start.
 AUTHOR: Claude (for Ed)
 SCOPE: Status ledger for the MEP element-selection feature.
 RELATED: README.md, PRD.md, PLAN.md, phases/
@@ -12,7 +11,7 @@ RELATED: README.md, PRD.md, PLAN.md, phases/
 
 ## Current state
 
-`Ready for implementation handoff.` PRD authored 2026-07-01 from a
+`Phase 1 complete.` PRD authored 2026-07-01 from a
 full read of the current Ventilation/Hot Water lens implementation
 (`frontend/src/features/model_viewer/`), the backend `model_viewer`
 schemas/extraction, and the upstream `honeybee_phhvac` source
@@ -37,7 +36,23 @@ archived MVP model-viewer feature's phase-doc format:
 5. `phase-05-verification-closeout.md` — full cross-lens
    verification + repo closeout (runs regardless of Phase 4).
 
-No code changes made yet.
+Phase 1 code changes are implemented and verified:
+
+- `backend/features/model_viewer/schemas/ladybug_geometry.py` exposes
+  a non-serialized `LineSegment3DSchema.vector_length` helper.
+- `backend/features/model_viewer/schemas/honeybee_phhvac.py` exposes
+  cached Pydantic computed `length` fields for duct segments and duct
+  elements, and declares the upstream hot-water pipe element aggregate
+  fields (`length`, `water_temp`, `daily_period`, `material_name`,
+  `diameter`).
+- `frontend/src/features/model_viewer/types.ts` mirrors the new wire
+  fields.
+- `backend/tests/test_model_viewer_extraction.py` now asserts duct
+  segment/element lengths, pipe element aggregate fields for trunk /
+  branch / fixture / recirc, and Hillandale-scale MEP length coverage
+  when the licensed local fixture is present.
+- `frontend/src/features/model_viewer/__tests__/viewerCore.test.ts`
+  fixture DTOs now carry the required fields.
 
 **Known-good finding baked into Phase 1:** pipe element total length
 is already computed by `honeybee_phhvac` and already present in the
@@ -53,18 +68,36 @@ rather than blocking on an upstream `honeybee_ph` release.
 
 ## Next step
 
-Hand off `phases/phase-01-backend-total-length.md` to an implementation
-agent (or start it directly). Phase 1 is fully independent of the
-others and has no open blockers.
+Start `phases/phase-02-element-selection-highlight.md`.
 
 Before or during Phase 5, resolve PRD §13 open question 1 (is segment
 dict insertion order physically meaningful?) — flagged in
 `phase-05-verification-closeout.md` §3.1, not blocking earlier phases
 but must be settled before the `#` column ships to production.
 
+## Verification evidence
+
+Passed 2026-07-01:
+
+- `cd backend && uv run ruff format --check . && uv run ruff check . &&
+  uv run ty check`
+- `cd backend && uv run python - <<'PY' ...` canonical
+  `ph_nav_v2_example.hbjson` extraction smoke confirming duct and pipe
+  length fields serialize in `model_dump(mode="json", by_alias=True)`.
+- `cd frontend && pnpm exec prettier --check
+  src/features/model_viewer/__tests__/viewerCore.test.ts
+  src/features/model_viewer/types.ts`
+- `cd frontend && pnpm exec tsc -b --pretty false && pnpm exec vitest
+  run src/features/model_viewer/__tests__/viewerCore.test.ts`
+- `make format`
+- `make ci`:
+  - backend: 1250 passed, 7 skipped, 1 warning
+  - frontend: 216 test files passed, 1989 tests passed; production
+    build completed
+
 ## Blockers
 
-None.
+None for Phase 2.
 
 ## Note on an in-session file-loss incident (2026-07-01)
 

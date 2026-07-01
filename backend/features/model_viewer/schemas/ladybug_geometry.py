@@ -44,6 +44,12 @@ class LineSegment3DSchema(BaseModel):
     p: tuple[float, float, float]
     v: tuple[float, float, float]
 
+    @property
+    def vector_length(self) -> float:
+        """Length of the line segment vector in model units."""
+        x, y, z = self.v
+        return (x**2 + y**2 + z**2) ** 0.5
+
 
 class Polyline3DSchema(BaseModel):
     """ladybug_geometry.geometry3d.polyline.Polyline3D."""
