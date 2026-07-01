@@ -19,11 +19,12 @@ RELATED:
   `model-viewer-ground-shadows` fix packet (Codex, 2026-07-01) is
   folded in as this feature's baseline phase (D-12); that folder is
   marked Superseded and its PRD/PLAN are imported as-is.
-- **Next step:** author `PLAN.md` + `phases/`. Expected sequence:
-  ground-shadow baseline fix (imported packet) → BatchedMesh ×
-  shadow-map spike on the heavy fixture (PRD §14) → backend solar
-  grid → scene (marker/light/catcher) → sun bar UI → tests/perf
-  verification.
+- **Next step:** implement per `PLAN.md` (authored 2026-07-01 18:05,
+  with `phases/phase-01…06`). Sequence: ground-shadow baseline fix
+  (imported packet) → BatchedMesh × shadow-map spike (PRD §14) →
+  backend solar grid → scene (marker/light/catcher) → sun bar UI →
+  tests/perf verification. Work on branch
+  `feature/model-viewer-sun-study`.
 - **Blockers:** none.
 - **Verification so far:** codebase baseline in PRD §2 verified
   against source 2026-07-01 (backend `sun_path.py` dome builder;

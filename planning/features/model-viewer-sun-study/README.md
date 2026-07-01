@@ -24,9 +24,10 @@ rendering stays inside the viewer's draw-call/perf budget.
 
 ## Read order
 
-1. `PRD.md` — product/behavior contract (current focus).
+1. `PRD.md` — product/behavior contract.
 2. `STATUS.md` — current state and next step.
-3. `phases/` — implementation phase plans (none authored yet).
+3. `PLAN.md` — implementation sequence (phase table + gates).
+4. `phases/phase-01…06` — per-phase implementation plans.
 
 ## Scope boundaries
 
