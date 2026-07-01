@@ -125,16 +125,17 @@ export function ViewerCanvas({ model, activeFileName, sunPath }: ViewerCanvasPro
         switch leaked a geometry per switch (CR3). The single bake is the
         building footprint, which every mesh lens shares — revisit if a future
         lens hides the building shell entirely.
+
+        drei's ContactShadows is built for Y-up scenes (receiver plane on XZ,
+        bake camera looking +Y). The wrapper group rigidly rotates the whole
+        stock assembly into this Z-up scene — plane onto XY, bake camera looking
+        +Z — instead of passing a `rotation` prop, which would replace drei's
+        internal default and desync plane from camera (the old vertical-sheet
+        artifact, ground-shadows fix packet D-12).
       */}
-      <ContactShadows
-        frames={1}
-        rotation={[Math.PI / 2, 0, 0]}
-        position={[0, 0, -0.02]}
-        opacity={0.24}
-        scale={80}
-        blur={2.8}
-        far={30}
-      />
+      <group rotation={[Math.PI / 2, 0, 0]} position={[0, 0, -0.02]}>
+        <ContactShadows frames={1} opacity={0.24} scale={80} blur={2.8} far={30} />
+      </group>
       <BuildingLens
         model={model}
         ghostMaterials={ghostMaterials}

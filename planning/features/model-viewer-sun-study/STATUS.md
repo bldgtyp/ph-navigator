@@ -20,11 +20,15 @@ RELATED:
   folded in as this feature's baseline phase (D-12); that folder is
   marked Superseded and its PRD/PLAN are imported as-is.
 - **Next step:** implement per `PLAN.md` (authored 2026-07-01 18:05,
-  with `phases/phase-01…06`). Sequence: ground-shadow baseline fix
-  (imported packet) → BatchedMesh × shadow-map spike (PRD §14) →
-  backend solar grid → scene (marker/light/catcher) → sun bar UI →
-  tests/perf verification. Work on branch
+  with `phases/phase-01…06`). Work on branch
   `feature/model-viewer-sun-study`.
+  - Phase 01 (ground-shadow baseline fix, D-12): **Complete**
+    2026-07-01 — the old `rotation` prop was drei's stock Y-up default,
+    so the receiver plane stood vertical in the Z-up scene; fixed by
+    wrapping stock `ContactShadows` in a rigidly-rotated group. Before/
+    after screenshots in `assets/`; `make frontend-dev-check` green.
+    Ledger in `phases/phase-01-ground-shadow-baseline.md`.
+  - Phase 02 (BatchedMesh × shadow spike): next.
 - **Blockers:** none.
 - **Verification so far:** codebase baseline in PRD §2 verified
   against source 2026-07-01 (backend `sun_path.py` dome builder;
