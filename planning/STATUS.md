@@ -1,7 +1,7 @@
 # Planning Status
 
-DATE: 2026-06-30
-TIME: 18:00 EDT
+DATE: 2026-07-01
+TIME: 16:18 EDT
 STATUS: Active routing index for tracked planning material.
 AUTHOR: Codex
 SCOPE: Current planning folder organization after moving dated docs to
@@ -39,6 +39,7 @@ feature-first planning.
 | Climate Dataset Picker | Complete / P1-P4 implemented and verified with focused backend/frontend tests plus `make ci`; O-DP-6 remains a documented non-blocking PHI region-filter follow-up; archived | `archive/dated/2026-06-22/climate-dataset-picker/STATUS.md` |
 | Envelope HBJSON Import | Research / design outline drafted; key decisions made (both PHN-native + raw Honeybee-PH sources, project-only new materials, Phase-0 export upgrade); phase planning next | `features/envelope-hbjson-import/STATUS.md` |
 | Model Viewer MEP Elements | Complete / Phases 1-5 implemented and verified; segment order settled as stable display order only; context docs-pass and full viewer closeout complete | `features/model-viewer-mep-elements/STATUS.md` |
+| Model Viewer Ground Shadows | Planned / short packet drafted to fix the visible vertical `ContactShadows` helper plane while preserving a soft ground-shadow cue; no implementation started | `features/model-viewer-ground-shadows/STATUS.md` |
 | Glazing + Frame Documentation | Complete / Phases 0-5 implemented; flat `ProjectGlazing`/`ProjectFrame` tables, aperture FK migration/write path, docs commands, datasheet registry, frontend API hydration, docs-pass, graphify, and `make ci` verified; archived | `archive/dated/2026-06-24/glazing-frame-documentation/STATUS.md` |
 
 ## Active / Current Refactor Folders
