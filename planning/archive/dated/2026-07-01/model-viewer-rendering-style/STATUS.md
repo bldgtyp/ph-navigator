@@ -1,7 +1,7 @@
 ---
-DATE: 2026-06-30
-TIME: 19:48 EDT
-STATUS: Implemented on branch — the "solid study-model" look ships as the default; simplify pass done; closeout gate + merge to main in progress
+DATE: 2026-07-01
+TIME: 00:55 EDT
+STATUS: Complete — merged to main via PR #26 (2c533d4b); worktree/branch cleaned up
 AUTHOR: Ed May / Claude
 SCOPE: Live progress + resume recipe for the model-viewer rendering-style refactor
 RELATED: ./README.md, ./research.md, ./target-spec.md
@@ -20,8 +20,9 @@ lighting (raked directional key + hemisphere fill) + **N8AO** + a near-white
 neutral palette + dark opaque windows + a **flat unlit hover/selection highlight**
 + lightened edges, on a light neutral background. Verified ~free on Hillandale.
 Precedent, baseline, and the licensed-fixture leak fix are all done; the simplify
-cleanup pass is applied (lint 0 / build ✓ / 65 unit tests green). **Remaining:
-finish the closeout gate (`make ci`) and merge to `main`.**
+cleanup pass is applied (lint 0 / build ✓ / 65 unit tests green). **Merged to
+`main` 2026-07-01 via PR #26 (`2c533d4b`); CI green (backend + frontend); the
+`viewer-rendering-style` branch and worktree are removed.**
 
 ## Where this work lives (resume recipe)
 
@@ -145,14 +146,13 @@ camera capture (`working/look-*.png`) layered today → soft → +AO → +tonema
 
 ## Remaining
 
-1. **Closeout gate:** `make format` (done) → `make ci` (backend + frontend).
-2. **Merge to `main`** (production-visible: the viewer look changes for all
-   users). Then **clean up** the `viewer-rendering-style` worktree/branch and any
-   other stale worktrees.
-3. Deferred (not blocking): future user-scrubbed solar position (elevation/azimuth
-   is already a sun position); `ao-compare`/`look` capture specs live in `working/`
-   with a real-mouse-hover pattern (synthetic pointer events don't drive R3F
-   object hover — use `page.mouse.move`).
+Nothing blocking. Merged to `main` 2026-07-01 (PR #26, `2c533d4b`); CI green;
+worktree/branch cleaned up.
+
+Deferred (not blocking, no owner yet): future user-scrubbed solar position
+(elevation/azimuth is already a sun position); `ao-compare`/`look` capture specs
+live in `working/` with a real-mouse-hover pattern (synthetic pointer events
+don't drive R3F object hover — use `page.mouse.move`).
 
 ## Key files
 

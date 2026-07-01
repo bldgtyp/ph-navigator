@@ -1,7 +1,7 @@
 ---
-DATE: 2026-06-30
-TIME: 17:19 EDT
-STATUS: Implemented on branch — look shipped as default; closeout + merge in progress
+DATE: 2026-07-01
+TIME: 00:55 EDT
+STATUS: Complete — merged to main via PR #26 (2c533d4b)
 AUTHOR: Ed May / Claude
 SCOPE: 3D model-viewer scene rendering — legibility, outlines, lighting, shadows
 RELATED:
@@ -59,8 +59,7 @@ look.
 
 ## Status
 
-Implemented on branch `viewer-rendering-style` — the "solid study-model" look
-ships as the default (soft key+fill lighting + N8AO + neutral near-white palette
-+ dark opaque windows + flat unlit highlight + lightened edges). Cleanup pass
-done; closeout gate + merge to `main` in progress. See `STATUS.md` for the live
-state.
+Complete. The "solid study-model" look (soft key+fill lighting + N8AO + neutral
+near-white palette + dark opaque windows + flat unlit highlight + lightened
+edges) ships as the default. Merged to `main` 2026-07-01 via PR #26 (`2c533d4b`);
+CI green. See `STATUS.md` for the full history.
