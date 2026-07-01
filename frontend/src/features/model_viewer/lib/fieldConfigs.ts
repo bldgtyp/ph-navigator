@@ -361,7 +361,7 @@ function formatMillimeters(value: unknown, unitSystem: UnitSystem): string {
   return formatLengthFromMm(numericValue(value), { unitSystem, empty: "--" });
 }
 
-function formatMetersAsLength(value: unknown, unitSystem: UnitSystem): string {
+export function formatMetersAsLength(value: unknown, unitSystem: UnitSystem): string {
   const number = numericValue(value);
   return formatLengthFromMm(number === null ? null : number * 1000, { unitSystem, empty: "--" });
 }

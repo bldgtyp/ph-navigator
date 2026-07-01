@@ -369,6 +369,7 @@ export type DuctSegmentLineMeta = BaseModelObjectMeta<"ductSegmentLine"> & {
   properties: Record<string, never>;
   duct_type?: 1 | 2 | number;
   diameter_m?: number;
+  length?: number;
   insulation_thickness_m?: number;
   insulation_conductivity?: number;
   insulation_reflective?: boolean;
@@ -438,6 +439,7 @@ export type ModelViewerDebugState = {
   shadeCount: number;
   sunPathReady: boolean;
   objectIds: string[];
+  elementIds: string[];
   visibleObjectIds: string[];
   section: ModelViewerSection | null;
   sectionClippedObjectIds: () => string[];

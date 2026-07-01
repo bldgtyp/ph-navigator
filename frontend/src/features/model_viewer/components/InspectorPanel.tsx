@@ -1,7 +1,7 @@
 import { Check, Copy, Maximize2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useUnitPreference } from "../../../lib/units";
-import { configForMeta, fieldValue } from "../lib/fieldConfigs";
+import { configForMeta, fieldValue, type InspectorConfig } from "../lib/fieldConfigs";
 import { useModelViewerStore } from "../store";
 import type { ModelObjectMeta } from "../types";
 
@@ -10,7 +10,6 @@ type InspectorPanelProps = {
 };
 
 export function InspectorPanel({ meta }: InspectorPanelProps) {
-  const { unitSystem } = useUnitPreference();
   const clearSelection = useModelViewerStore((state) => state.clearSelection);
   const requestCamera = useModelViewerStore((state) => state.requestCamera);
   const [copied, setCopied] = useState(false);
@@ -62,19 +61,27 @@ export function InspectorPanel({ meta }: InspectorPanelProps) {
           Zoom to
         </button>
       </div>
-      <div className="model-inspector-sections">
-        {config.sections.map((section, sectionIndex) => (
-          <section key={section.title ?? sectionIndex} className="model-inspector-section">
-            {section.title ? <h4>{section.title}</h4> : null}
-            {section.fields.map((field) => (
-              <div key={field.id} className="model-inspector-row">
-                <dt title={field.tooltip}>{field.label}</dt>
-                <dd>{fieldValue(meta, field, unitSystem)}</dd>
-              </div>
-            ))}
-          </section>
-        ))}
-      </div>
+      <FieldRows config={config} meta={meta} />
     </aside>
+  );
+}
+
+export function FieldRows({ config, meta }: { config: InspectorConfig; meta: ModelObjectMeta }) {
+  const { unitSystem } = useUnitPreference();
+
+  return (
+    <div className="model-inspector-sections">
+      {config.sections.map((section, sectionIndex) => (
+        <section key={section.title ?? sectionIndex} className="model-inspector-section">
+          {section.title ? <h4>{section.title}</h4> : null}
+          {section.fields.map((field) => (
+            <div key={field.id} className="model-inspector-row">
+              <dt title={field.tooltip}>{field.label}</dt>
+              <dd>{fieldValue(meta, field, unitSystem)}</dd>
+            </div>
+          ))}
+        </section>
+      ))}
+    </div>
   );
 }

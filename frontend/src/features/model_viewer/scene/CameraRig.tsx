@@ -26,10 +26,20 @@ export function CameraRig({ model }: CameraRigProps) {
       fitCameraToBounds(camera, controlsRef.current, model.bounds, invalidate);
       return;
     }
-    const target = cameraRequest.targetId ? model.metaById.get(cameraRequest.targetId) : null;
-    const bounds = target ? boundsForPoints(target.vertices) : model.bounds;
+    const elementTarget = cameraRequest.targetId
+      ? model.elementsById.get(cameraRequest.targetId)
+      : null;
+    const target =
+      cameraRequest.targetId && !elementTarget ? model.metaById.get(cameraRequest.targetId) : null;
+    const bounds = elementTarget
+      ? boundsForPoints(
+          elementTarget.segmentIds.flatMap((id) => model.metaById.get(id)?.vertices ?? []),
+        )
+      : target
+        ? boundsForPoints(target.vertices)
+        : model.bounds;
     fitCameraToBounds(camera, controlsRef.current, bounds, invalidate, 1.8);
-  }, [camera, cameraRequest, invalidate, model.bounds, model.metaById]);
+  }, [camera, cameraRequest, invalidate, model.bounds, model.elementsById, model.metaById]);
 
   return (
     <>

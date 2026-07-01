@@ -1036,6 +1036,17 @@
   text-transform: uppercase;
 }
 
+.model-inspector-total strong {
+  color: var(--text-primary);
+  font-size: var(--fs-2xl);
+  line-height: 1.1;
+}
+
+.model-inspector-total span {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
 .model-inspector-row {
   display: grid;
   grid-template-columns: minmax(92px, 0.8fr) minmax(0, 1.2fr);
@@ -1052,4 +1063,71 @@
   margin: 0;
   overflow-wrap: anywhere;
   text-align: right;
+}
+
+.model-inspector-segment-table {
+  display: grid;
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  background: var(--border-card);
+}
+
+.model-inspector-segment-group {
+  display: grid;
+  gap: 1px;
+  background: var(--border-card);
+}
+
+.model-inspector-segment-row {
+  display: grid;
+  grid-template-columns: 32px minmax(74px, 1fr) minmax(72px, 1fr) minmax(66px, 1fr);
+  gap: var(--space-8);
+  align-items: center;
+  min-height: 32px;
+  padding: 6px 8px;
+  border: 0;
+  background: color-mix(in oklab, var(--bg-card) 98%, var(--bg-elev));
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+  text-align: left;
+}
+
+.model-inspector-segment-row:not(.is-header) {
+  width: 100%;
+  cursor: pointer;
+}
+
+.model-inspector-segment-row:not(.is-header):hover,
+.model-inspector-segment-row.is-expanded {
+  background: color-mix(in oklab, var(--highlight) 8%, var(--bg-card));
+}
+
+.model-inspector-segment-row.is-header {
+  min-height: 28px;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.model-inspector-segment-row span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.model-inspector-segment-detail {
+  background: var(--bg-card);
+}
+
+.model-inspector-segment-detail .model-inspector-sections {
+  padding: var(--space-6) var(--space-10) var(--space-10);
+}
+
+.model-inspector-segment-detail .model-inspector-section {
+  padding: var(--space-8) 0 0;
+  border-bottom: 0;
 }

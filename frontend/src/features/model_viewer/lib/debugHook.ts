@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import { isHiddenByFilter } from "./legendFilter";
 import { distanceBetweenMeasurePoints } from "./measure";
 import { isTupleVisibleForSection } from "./section";
+import { elementIdForSegmentId } from "./selection";
 import { colorForThemedObject, legendForModel } from "./themes";
 import { emptyModelObjectCounts, type BuildingModel } from "../loaders/building";
 import { useModelViewerStore } from "../store";
@@ -54,6 +55,7 @@ function useModelViewerDebugHook(model: BuildingModel | null, sunPathReady: bool
     () => model?.objects.map((object) => object.id) ?? [],
     [model?.objects],
   );
+  const elementIds = useMemo(() => (model ? [...model.elementsById.keys()] : []), [model]);
   const visibleObjectIds = useMemo(
     () =>
       selectableObjectsForLens(model, lens)
@@ -84,6 +86,7 @@ function useModelViewerDebugHook(model: BuildingModel | null, sunPathReady: bool
       shadeCount: model?.shadeObjects.length ?? 0,
       sunPathReady,
       objectIds,
+      elementIds,
       visibleObjectIds,
       section,
       sectionClippedObjectIds,
@@ -105,12 +108,13 @@ function useModelViewerDebugHook(model: BuildingModel | null, sunPathReady: bool
         if (!meta) return null;
         return colorForThemedObject(meta, lens, theme)?.color ?? null;
       },
-      selectObject: setSelectionId,
+      selectObject: (objectId) =>
+        setSelectionId(objectId ? (elementIdForSegmentId(objectId) ?? objectId) : null),
       selectAnyModelObject: (type?: ModelObjectType) => {
         const objects = selectableObjectsForLens(model, lens);
         const object = objects.find((candidate) => !type || candidate.meta.type === type);
         if (!object) return null;
-        setSelectionId(object.id);
+        setSelectionId(elementIdForSegmentId(object.id) ?? object.id);
         return object.id;
       },
       clearSelection,
@@ -158,6 +162,7 @@ function useModelViewerDebugHook(model: BuildingModel | null, sunPathReady: bool
     clearSection,
     errorKind,
     hoverId,
+    elementIds,
     legendFilter,
     lens,
     legend,

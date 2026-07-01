@@ -11,7 +11,12 @@ import {
 } from "../lib/colors";
 import { isHiddenByFilter } from "../lib/legendFilter";
 import { isPointVisibleForSection } from "../lib/section";
-import { isClickWithinDragTolerance, pointerPoint, type PointerPoint } from "../lib/selection";
+import {
+  elementIdForSegmentId,
+  isClickWithinDragTolerance,
+  pointerPoint,
+  type PointerPoint,
+} from "../lib/selection";
 import { lineStyleDefinition } from "../lib/themes";
 import type { BuildingModel, GhostGeometry, LineRenderable } from "../loaders/building";
 import { useModelViewerStore } from "../store";
@@ -97,8 +102,16 @@ function useClearSelectionWhenHidden(
     if (!legendFilter) return;
     const { selectionId } = useModelViewerStore.getState();
     if (!selectionId) return;
-    const object = model.objects.find((candidate) => candidate.id === selectionId);
-    if (object && isHiddenByFilter(object, lens, theme, legendFilter)) {
+    const selectedElement = model.elementsById.get(selectionId);
+    const selectedObjects = selectedElement
+      ? selectedElement.segmentIds
+          .map((id) => model.objects.find((candidate) => candidate.id === id))
+          .filter((object): object is NonNullable<typeof object> => object !== undefined)
+      : model.objects.filter((candidate) => candidate.id === selectionId);
+    if (
+      selectedObjects.length > 0 &&
+      selectedObjects.every((object) => isHiddenByFilter(object, lens, theme, legendFilter))
+    ) {
       useModelViewerStore.getState().clearSelection();
     }
   }, [legendFilter, lens, theme, model]);
@@ -129,8 +142,14 @@ const LineObject = memo(function LineObject({
   hidden: boolean;
 }) {
   const pointerDown = useRef<PointerPoint | null>(null);
-  const isHovered = useModelViewerStore((state) => state.hoverId === object.id);
-  const isSelected = useModelViewerStore((state) => state.selectionId === object.id);
+  const elementId = elementIdForSegmentId(object.id);
+  const isHovered = useModelViewerStore((state) => {
+    const hoverElementId = state.hoverId ? elementIdForSegmentId(state.hoverId) : null;
+    return elementId !== null && hoverElementId === elementId;
+  });
+  const isSelected = useModelViewerStore(
+    (state) => elementId !== null && state.selectionId === elementId,
+  );
   // A legend-filtered line shows as faint context and is non-interactive (events
   // fall through to the lines behind it) — the line-lens analogue of the mesh
   // wireframe context (PRD §5).
@@ -210,13 +229,15 @@ function selectObject(
   if (!isPointVisibleForSection(event.point, useModelViewerStore.getState().section)) return;
   const point = { clientX: event.nativeEvent.clientX, clientY: event.nativeEvent.clientY };
   if (!isClickWithinDragTolerance(pointerDown, point)) return;
-  useModelViewerStore.getState().setSelectionId(objectId);
+  const elementId = elementIdForSegmentId(objectId) ?? objectId;
+  useModelViewerStore.getState().setSelectionId(elementId);
 }
 
 function zoomToObject(event: ThreeEvent<MouseEvent>, objectId: string): void {
   event.stopPropagation();
   if (!isPointVisibleForSection(event.point, useModelViewerStore.getState().section)) return;
   const store = useModelViewerStore.getState();
-  store.setSelectionId(objectId);
-  store.requestCamera("zoomTo", objectId);
+  const elementId = elementIdForSegmentId(objectId) ?? objectId;
+  store.setSelectionId(elementId);
+  store.requestCamera("zoomTo", elementId);
 }

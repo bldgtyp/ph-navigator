@@ -4,17 +4,14 @@ import { geometryFromFace3D } from "./geometry";
 import { mergeEdges, mergeRenderableGeometries } from "./merge";
 import { EDGE_THRESHOLD_DEGREES } from "../lib/colors";
 import { MODEL_VIEWER_LENS_IDS } from "../lib/lenses";
+import { ductRenderables, pipeRenderables, type ElementSummary } from "./lineElements";
 import type {
   ApertureModelData,
   CombinedModelData,
-  DuctElementModelData,
   FaceModelData,
-  HotWaterSystemModelData,
-  LineSegment3D,
   ModelObjectCounts,
   ModelObjectMeta,
   ModelViewerLens,
-  PipeElementModelData,
   ShadeGroupModelData,
   SpaceModelData,
 } from "../types";
@@ -65,6 +62,7 @@ export type BuildingModel = {
   ghost: GhostGeometry;
   shadeObjects: ShadeRenderable[];
   metaById: Map<string, ModelObjectMeta>;
+  elementsById: Map<string, ElementSummary>;
   bounds: Box3;
   objectCounts: ModelObjectCounts;
   lensAvailability: LensAvailability;
@@ -86,8 +84,10 @@ export function buildBuildingModel(data: CombinedModelData): BuildingModel {
 
   objects.push(...spaceRenderables(data.spaces));
   objects.push(...floorSegmentRenderables(data.spaces));
-  objects.push(...ductRenderables(data.ventilation_systems));
-  objects.push(...pipeRenderables(data.hot_water_systems));
+  const ductOutput = ductRenderables(data.ventilation_systems);
+  const pipeOutput = pipeRenderables(data.hot_water_systems);
+  objects.push(...ductOutput.lines);
+  objects.push(...pipeOutput.lines);
   const shadeObjects = shadeRenderables(data.shading_elements);
 
   for (const object of objects) {
@@ -102,6 +102,9 @@ export function buildBuildingModel(data: CombinedModelData): BuildingModel {
   }
 
   const metaById = new Map(objects.map((object) => [object.id, object.meta]));
+  const elementsById = new Map(
+    [...ductOutput.elements, ...pipeOutput.elements].map((element) => [element.id, element]),
+  );
   const buildingObjects = objects.filter(
     (object): object is BuildingRenderable =>
       object.kind === "mesh" &&
@@ -113,6 +116,7 @@ export function buildBuildingModel(data: CombinedModelData): BuildingModel {
     ghost: buildGhostGeometry(buildingObjects),
     shadeObjects,
     metaById,
+    elementsById,
     bounds: bounds.isEmpty() ? fallbackBounds(objects) : bounds,
     objectCounts: countObjects(objects),
     lensAvailability: lensAvailability(objects),
@@ -248,70 +252,6 @@ function floorSegmentRenderables(spaces: SpaceModelData[]): BuildingRenderable[]
   return renderables;
 }
 
-function ductRenderables(systems: CombinedModelData["ventilation_systems"]): LineRenderable[] {
-  const renderables: LineRenderable[] = [];
-  for (const system of systems) {
-    addDuctElements(renderables, system.supply_ducting, "duct-supply");
-    addDuctElements(renderables, system.exhaust_ducting, "duct-exhaust");
-  }
-  return renderables;
-}
-
-function addDuctElements(
-  renderables: LineRenderable[],
-  elements: DuctElementModelData[],
-  lineStyle: "duct-supply" | "duct-exhaust",
-): void {
-  for (const element of elements) {
-    for (const [segmentKey, segment] of Object.entries(element.segments)) {
-      const id = `duct:${element.identifier}:${segmentKey}`;
-      const points = pointsFromLineSegment(segment.geometry);
-      renderables.push({
-        id,
-        lens: "ventilation",
-        kind: "line",
-        points,
-        lineStyle,
-        meta: {
-          id,
-          type: "ductSegmentLine",
-          identifier: segment.identifier || segmentKey,
-          display_name: element.display_name,
-          face_type: "Duct",
-          boundary_condition: null,
-          area: null,
-          properties: {},
-          vertices: points,
-          duct_type: element.duct_type,
-          diameter_m: segment.diameter,
-          insulation_thickness_m: segment.insulation_thickness,
-          insulation_conductivity: segment.insulation_conductivity,
-          insulation_reflective: segment.insulation_reflective,
-        },
-      });
-    }
-  }
-}
-
-function pipeRenderables(systems: HotWaterSystemModelData[]): LineRenderable[] {
-  const renderables: LineRenderable[] = [];
-  for (const system of systems) {
-    for (const trunk of Object.values(system.distribution_piping)) {
-      addPipeElement(renderables, trunk.pipe_element, "distribution");
-      for (const branch of Object.values(trunk.branches)) {
-        addPipeElement(renderables, branch.pipe_element, "distribution");
-        for (const fixture of Object.values(branch.fixtures)) {
-          addPipeElement(renderables, fixture, "distribution");
-        }
-      }
-    }
-    for (const recirc of Object.values(system.recirc_piping)) {
-      addPipeElement(renderables, recirc, "recirc");
-    }
-  }
-  return renderables;
-}
-
 function shadeRenderables(groups: ShadeGroupModelData[]): ShadeRenderable[] {
   // Collect every shade's geometry under its display_name (insertion order kept).
   // display_name IS the group identity here (PRD §7 / D-7), so shades that share
@@ -337,56 +277,6 @@ function shadeRenderables(groups: ShadeGroupModelData[]): ShadeRenderable[] {
     renderables.push({ id: `shade:${displayName}`, displayName, geometry, edges });
   }
   return renderables;
-}
-
-function addPipeElement(
-  renderables: LineRenderable[],
-  element: PipeElementModelData,
-  pipeKind: "distribution" | "recirc",
-): void {
-  for (const [segmentKey, segment] of Object.entries(element.segments)) {
-    const id = `pipe:${pipeKind}:${element.identifier}:${segmentKey}`;
-    const points = pointsFromLineSegment(segment.geometry);
-    renderables.push({
-      id,
-      lens: "hot-water",
-      kind: "line",
-      points,
-      lineStyle: pipeKind === "distribution" ? "pipe-distribution" : "pipe-recirc",
-      meta: {
-        id,
-        type: "pipeSegmentLine",
-        identifier: element.identifier,
-        display_name: element.display_name,
-        face_type: "Pipe",
-        boundary_condition: null,
-        area: null,
-        properties: {},
-        vertices: points,
-        diameter_mm: segment.diameter_mm,
-        insulation_thickness_mm: segment.insulation_thickness_mm,
-        insulation_conductivity: segment.insulation_conductivity,
-        insulation_reflective: segment.insulation_reflective,
-        insulation_quality: segment.insulation_quality,
-        daily_period: segment.daily_period,
-        water_temp_c: segment.water_temp_c,
-        material_value: segment.material_value,
-        length: segment.length,
-        pipe_kind: pipeKind,
-      },
-    });
-  }
-}
-
-function pointsFromLineSegment(
-  segment: LineSegment3D,
-): [[number, number, number], [number, number, number]] {
-  const [px, py, pz] = segment.p;
-  const [vx, vy, vz] = segment.v;
-  return [
-    [px, py, pz],
-    [px + vx, py + vy, pz + vz],
-  ];
 }
 
 export function disposeBuildingModel(model: BuildingModel): void {

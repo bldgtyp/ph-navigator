@@ -10,6 +10,7 @@ import { useModelViewerStore } from "../store";
 import { useModelDataQuery, useSunPathQuery } from "../hooks";
 import type { HbjsonFile, ModelViewerErrorKind } from "../types";
 import { CameraCluster } from "./CameraCluster";
+import { ElementInspectorPanel } from "./ElementInspectorPanel";
 import { InspectorPanel } from "./InspectorPanel";
 import { LegendCard } from "./LegendCard";
 import { LensBar } from "./LensBar";
@@ -111,10 +112,14 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
         return;
       }
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "c") {
-        const meta = selectionId ? model?.metaById.get(selectionId) : null;
-        if (!meta) return;
+        const identifier = selectionId
+          ? (model?.metaById.get(selectionId)?.identifier ??
+            model?.elementsById.get(selectionId)?.identifier ??
+            null)
+          : null;
+        if (!identifier) return;
         event.preventDefault();
-        void navigator.clipboard?.writeText(meta.identifier);
+        void navigator.clipboard?.writeText(identifier);
         return;
       }
       const numberKey = Number(event.key);
@@ -153,6 +158,7 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
   const loadPhase = useModelViewerStore((state) => state.loadPhase);
   const storeErrorKind = useModelViewerStore((state) => state.errorKind);
   const selectedMeta = selectionId ? (model?.metaById.get(selectionId) ?? null) : null;
+  const selectedElement = selectionId ? (model?.elementsById.get(selectionId) ?? null) : null;
 
   return (
     <>
@@ -196,6 +202,7 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
       ) : null}
       <CameraCluster modelBounds={model?.bounds ?? null} />
       <InspectorPanel meta={selectedMeta} />
+      <ElementInspectorPanel element={selectedElement} model={model} />
     </>
   );
 

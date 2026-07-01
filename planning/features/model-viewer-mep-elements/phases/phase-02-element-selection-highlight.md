@@ -1,8 +1,7 @@
 ---
 DATE: 2026-07-01
-TIME: -
-STATUS: Not started. Depends on Phase 1 landing first (needs
-  `length` on the wire).
+TIME: 15:45 EDT
+STATUS: Complete and verified.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff for Phase 2 — element-level click/hover
   selection, highlight, camera zoom-to, copy-ID, and the base Element
@@ -308,3 +307,42 @@ table visible, zoom-to/copy-ID on the element) pass. Criteria 3, 6, 7,
 8 (hover/focus linking specifics) are Phase 3's, not blocking this
 phase's exit. STATUS.md updated with implementation notes and the
 verification evidence above.
+
+## 8. Completion record
+
+Completed 2026-07-01.
+
+Implemented:
+
+- `elementIdForSegmentId` in
+  `frontend/src/features/model_viewer/lib/selection.ts`.
+- `BuildingModel.elementsById` and extracted line-element assembly in
+  `frontend/src/features/model_viewer/loaders/lineElements.ts`.
+- Whole-element selection/hover resolution in
+  `frontend/src/features/model_viewer/scene/BuildingLens.tsx`.
+- Element union-bounds zoom in
+  `frontend/src/features/model_viewer/scene/CameraRig.tsx`.
+- Element-aware copy-ID and inspector routing in
+  `frontend/src/features/model_viewer/components/ModelViewerStage.tsx`.
+- Base `ElementInspectorPanel` with Total Length and expandable
+  segment rows reusing existing segment field configs.
+- Debug hook selection helpers and `elementIds` exposure for e2e.
+- Focused unit coverage in
+  `frontend/src/features/model_viewer/__tests__/viewerElements.test.ts`
+  plus updated model-viewer Chromium e2e assertions.
+
+Verification passed:
+
+- `cd frontend && pnpm exec tsc -b --pretty false`
+- `cd frontend && pnpm exec vitest run
+  src/features/model_viewer/__tests__/viewerCore.test.ts
+  src/features/model_viewer/__tests__/viewerElements.test.ts`
+- `cd frontend && pnpm run check:all`
+- `cd frontend && pnpm exec playwright test
+  tests/e2e/model-viewer-lenses.spec.ts --project=chromium`
+
+Repo closeout gate passed:
+
+- `make format`
+- `make ci`
+- `graphify update .`

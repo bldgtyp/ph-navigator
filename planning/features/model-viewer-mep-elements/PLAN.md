@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-01
-TIME: 15:30 EDT
-STATUS: Phase 1 complete and verified; Phase 2 ready to start.
+TIME: 15:45 EDT
+STATUS: Phase 2 complete and verified; Phase 3 ready to start.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation phase sequence for MEP element selection/length
   reporting. Each phase is one PR-sized, independently verifiable
@@ -63,7 +63,7 @@ evidence: backend 1250 passed / 7 skipped; frontend 216 test files
 passed / 1989 tests passed; production build completed.
 
 ## Phase 2 — Frontend: element-level selection, highlight, camera,
-## base inspector card — NOT STARTED
+## base inspector card — COMPLETE
 
 Implements PRD §4, §5 (base card only — no row/segment focus yet),
 §8, D-1, D-2, D-3, D-4. Clicking any segment selects+highlights the
@@ -82,7 +82,17 @@ user's core ask and is a coherent, shippable state on its own.
 whole-element in both lenses (all four pipe roles); `make format` +
 `make ci`; browser walkthrough.
 
-## Phase 3 — Frontend: row ↔ 3D focus linking — NOT STARTED
+Completed 2026-07-01. Implemented `elementIdForSegmentId`,
+`BuildingModel.elementsById`, element-scoped selection/hover
+resolution, union-bounds zoom-to, copy-ID fallback, debug-hook element
+selection, and the base `ElementInspectorPanel` with Total Length plus
+ordered expandable segment rows. Focused verification is green:
+frontend `tsc -b`, focused Vitest for viewer core/elements,
+`pnpm run check:all`, and the Chromium model-viewer lens e2e smoke.
+Full repo `make format` / `make ci` / `graphify update .` run as the
+phase closeout gate.
+
+## Phase 3 — Frontend: row ↔ 3D focus linking — READY
 
 Implements PRD §6, §10 (the soft/full four-tier color model), D-7.
 Adds `focusedSegmentId` to the store; threads `tokens: ViewerTokens`

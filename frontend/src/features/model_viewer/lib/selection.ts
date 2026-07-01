@@ -25,3 +25,10 @@ export function isClickWithinDragTolerance(
     Math.abs(start.clientY - end.clientY) <= tolerancePx
   );
 }
+
+export function elementIdForSegmentId(segmentId: string): string | null {
+  if (!segmentId.startsWith("duct:") && !segmentId.startsWith("pipe:")) return null;
+  const lastColon = segmentId.lastIndexOf(":");
+  if (lastColon <= 0) return null;
+  return `element:${segmentId.slice(0, lastColon)}`;
+}

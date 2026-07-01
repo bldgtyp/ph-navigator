@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-01
-TIME: 15:30 EDT
-STATUS: Phase 1 complete and verified; Phase 2 ready to start.
+TIME: 15:45 EDT
+STATUS: Phase 2 complete and verified; Phase 3 ready to start.
 AUTHOR: Claude (for Ed)
 SCOPE: Status ledger for the MEP element-selection feature.
 RELATED: README.md, PRD.md, PLAN.md, phases/
@@ -11,7 +11,7 @@ RELATED: README.md, PRD.md, PLAN.md, phases/
 
 ## Current state
 
-`Phase 1 complete.` PRD authored 2026-07-01 from a
+`Phase 2 complete.` PRD authored 2026-07-01 from a
 full read of the current Ventilation/Hot Water lens implementation
 (`frontend/src/features/model_viewer/`), the backend `model_viewer`
 schemas/extraction, and the upstream `honeybee_phhvac` source
@@ -66,9 +66,39 @@ element length has no upstream serialization at all; Phase 1
 recommends computing it locally in PHN via a Pydantic `@computed_field`
 rather than blocking on an upstream `honeybee_ph` release.
 
+Phase 2 code changes are implemented and verified:
+
+- `frontend/src/features/model_viewer/lib/selection.ts` exposes
+  `elementIdForSegmentId`, deriving stable parent element IDs from
+  duct/pipe segment renderable IDs while returning `null` for other
+  object families.
+- `frontend/src/features/model_viewer/loaders/lineElements.ts`
+  builds duct/pipe segment renderables and one `ElementSummary` per
+  MEP element, preserving source segment order in `segmentIds`.
+- `frontend/src/features/model_viewer/loaders/building.ts` now exposes
+  `BuildingModel.elementsById` beside `metaById`.
+- `frontend/src/features/model_viewer/scene/BuildingLens.tsx` resolves
+  duct/pipe segment clicks and double-click zooms to the parent
+  element ID. Selected/hovered state applies to every segment in that
+  element while retaining the literal hovered segment ID for Phase 3.
+- `frontend/src/features/model_viewer/scene/CameraRig.tsx` zooms
+  element selections to union bounds across all segment vertices.
+- `frontend/src/features/model_viewer/components/ElementInspectorPanel.tsx`
+  renders the base element card: header, copy ID, zoom, Total Length,
+  ordered segment table, and click-to-expand segment detail using the
+  existing duct/pipe segment field configs.
+- `frontend/src/features/model_viewer/components/InspectorPanel.tsx`
+  shares the field-row renderer with element row details.
+- `frontend/src/features/model_viewer/lib/debugHook.ts` exposes
+  `elementIds` and maps debug selection helpers to parent element IDs
+  for duct/pipe segment renderables.
+- `frontend/tests/e2e/model-viewer-lenses.spec.ts` asserts that
+  Ventilation and Hot Water segment selection resolves to an
+  `element:*` selection ID and renders the new element inspector.
+
 ## Next step
 
-Start `phases/phase-02-element-selection-highlight.md`.
+Start `phases/phase-03-row-segment-focus-linking.md`.
 
 Before or during Phase 5, resolve PRD §13 open question 1 (is segment
 dict insertion order physically meaningful?) — flagged in
@@ -94,10 +124,23 @@ Passed 2026-07-01:
   - backend: 1250 passed, 7 skipped, 1 warning
   - frontend: 216 test files passed, 1989 tests passed; production
     build completed
+- `cd frontend && pnpm exec tsc -b --pretty false`
+- `cd frontend && pnpm exec vitest run
+  src/features/model_viewer/__tests__/viewerCore.test.ts
+  src/features/model_viewer/__tests__/viewerElements.test.ts`
+- `cd frontend && pnpm run check:all`
+- `cd frontend && pnpm exec playwright test
+  tests/e2e/model-viewer-lenses.spec.ts --project=chromium`
+- `make format`
+- `make ci`:
+  - backend: 1250 passed, 7 skipped, 1 warning
+  - frontend: 217 test files passed, 1991 tests passed; production
+    build completed
+- `graphify update .`
 
 ## Blockers
 
-None for Phase 2.
+None for Phase 3.
 
 ## Note on an in-session file-loss incident (2026-07-01)
 
