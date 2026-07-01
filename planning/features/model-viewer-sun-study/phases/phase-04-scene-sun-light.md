@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-01
-TIME: 18:05
-STATUS: Pending (blocked by phases 02–03)
+TIME: 18:05 (completed 22:40)
+STATUS: Complete
 AUTHOR: Claude (for Ed)
 SCOPE: Phase 04 — sun-study scene: store slice, interpolation, sun
   marker, key-light re-aim + live shadows, shadow catcher, horizon ramp,
@@ -61,4 +61,31 @@ baseline exactly.
 
 ## Ledger
 
-- (fill on completion)
+- Landed: `lib/sunStudy.ts` (pure derivations + 13 unit tests), store
+  `sunStudy` slice (`engage`/`disengage`/`setDay`/`setMinutes`,
+  session-persistent across lens switches), `SunStudyLayer`
+  (amber marker + `ShadowMaterial` catcher, both non-pickable),
+  `ViewerCanvas` sun wiring (Canvas `shadows` at creation; the key
+  directional re-aims to the interpolated grid direction around the
+  model center with a bounds-fitted ortho shadow camera; horizon
+  smoothstep ramp; explicit scene-graph light target so off-origin
+  models aim correctly), `LensBatch` casts/receives at build,
+  shade meshes cast/receive, ContactShadows hidden-not-unmounted while
+  engaged, debug-hook `sunStudy` block + actions, `shadowMapSize`
+  dev knob, `VIEWER_SUN_MARKER_COLOR` token, backend `true_north_deg`
+  on the grid (compass-honest azimuth readout for rotated-north
+  projects).
+- Deviation from PRD D-5: three r0.18x deprecated `PCFSoftShadowMap`
+  (falls back to PCF with a console warning), so the Canvas uses plain
+  PCF — visually equivalent at 1024².
+- Amended D-11 implemented: sun shadow pass disabled while a section is
+  active (phase-02 finding); verified no phantom shadow with an X
+  section.
+- Browser-verified via debug hook (screenshots in `../assets/`):
+  summer-noon altitude 71.09° = backend golden; morning/evening
+  shadows swing correctly with self-shading; night hides marker +
+  shadows with the model legible on fill; winter noon reads low-sun;
+  disengage restores the baseline exactly and remembers scrub state;
+  lens round-trip keeps state.
+- Gates: 2020 frontend unit tests green; `tsc` clean; eslint clean in
+  `model_viewer`; `make frontend-dev-check` green.

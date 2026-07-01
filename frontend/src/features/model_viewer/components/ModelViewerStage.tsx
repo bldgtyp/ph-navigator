@@ -163,7 +163,7 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
   return (
     <>
       {isModelViewerDebugHookEnabled() ? (
-        <ModelViewerDebugBridge model={model} sunPathReady={Boolean(sunPath)} />
+        <ModelViewerDebugBridge model={model} sunPath={sunPath} />
       ) : null}
       {renderedModel ? (
         <div className={measureActive ? "model-canvas-wrap measuring" : "model-canvas-wrap"}>

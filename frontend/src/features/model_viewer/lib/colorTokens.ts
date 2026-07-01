@@ -16,6 +16,10 @@ export const VIEWER_SHADE_COLOR = "#a8aca7";
 export const VIEWER_SHADE_EDGE_COLOR = "#7d837d";
 export const VIEWER_SITE_COMPASS_COLOR = "#5f6760";
 export const VIEWER_SUN_PATH_COLOR = VIEWER_HIGHLIGHT_FALLBACK;
+/** Sun-study amber: the "sun right now" marker, the daylight band, and the
+ *  time-slider thumb — deliberately distinct from the sun-path crimson so the
+ *  live sun never reads as part of the annual-envelope geometry (D-10). */
+export const VIEWER_SUN_MARKER_COLOR = "#e8a33d";
 /** Soft-lighting hemisphere dome (rendering-style refactor): a near-white sky
  *  and a warm-grey ground bounce, for the matte "study model" look. */
 export const VIEWER_SOFT_SKY_COLOR = "#fcfcfc";

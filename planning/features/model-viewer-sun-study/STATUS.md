@@ -41,7 +41,14 @@ RELATED:
     sunrise/sunset) on the `/sun-path` payload, built from the dome's
     own `Sunpath`; 7 new tests incl. frame-consistency; ~70 ms compute;
     ledger in `phases/phase-03-backend-solar-grid.md`.
-  - Phase 04 (scene: marker/light/catcher): next.
+  - Phase 04 (scene: marker/light/catcher): **Complete** 2026-07-01 —
+    store slice + pure derivation lib (13 unit tests), amber marker on
+    the dome, key light becomes the sun with bounds-fitted shadow
+    camera, ShadowMaterial catcher, horizon ramp, section→shadows-off
+    (amended D-11), lens-switch state memory. Browser-verified
+    (assets/phase-04-*.png). Note: three deprecated PCFSoft → plain
+    PCF. Ledger in `phases/phase-04-scene-sun-light.md`.
+  - Phase 05 (sun bar UI): next.
 - **Blockers:** none.
 - **Verification so far:** codebase baseline in PRD §2 verified
   against source 2026-07-01 (backend `sun_path.py` dome builder;

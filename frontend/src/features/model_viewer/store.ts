@@ -11,6 +11,17 @@ import type {
   ViewerLoadPhase,
 } from "./types";
 import { distanceBetweenMeasurePoints } from "./lib/measureDistance";
+import { todayDayOfYear } from "./lib/sunStudy";
+
+/** Sun-study scrub state (PRD §6.3). `day` is a grid row (1..365, non-leap);
+ *  `minutes` is minutes-of-day (0..1439). Session-persistent: lens switches
+ *  keep it (the scene just stops rendering sun study outside site-sun), so
+ *  returning to the lens restores the remembered scrub position. */
+export type SunStudyState = {
+  engaged: boolean;
+  day: number;
+  minutes: number;
+};
 
 /** Cross-component viewer state shared by controls, overlays, and the 3D scene. */
 type ModelViewerState = {
@@ -31,6 +42,14 @@ type ModelViewerState = {
   loadPhase: ViewerLoadPhase;
   errorKind: ModelViewerErrorKind | null;
   cameraRequest: { kind: "fit" | "home" | "zoomTo"; targetId?: string; id: number } | null;
+  /** Null until sun study is first engaged in the session (D-8). */
+  sunStudy: SunStudyState | null;
+  /** Engage sun study; the first engage of a session defaults to today at
+   *  12:00 noon (D-8), later engages restore the remembered scrub state. */
+  engageSunStudy: () => void;
+  disengageSunStudy: () => void;
+  setSunStudyDay: (day: number) => void;
+  setSunStudyMinutes: (minutes: number) => void;
   setActiveFileId: (fileId: string | null) => void;
   setLens: (lens: ModelViewerLens) => void;
   setUrlViewState: (lens: ModelViewerLens, theme: ModelViewerTheme) => void;
@@ -71,6 +90,27 @@ export const useModelViewerStore = create<ModelViewerState>()((set) => ({
   loadPhase: "idle",
   errorKind: null,
   cameraRequest: null,
+  sunStudy: null,
+  engageSunStudy: () =>
+    set((state) => ({
+      sunStudy: state.sunStudy
+        ? { ...state.sunStudy, engaged: true }
+        : { engaged: true, day: todayDayOfYear(), minutes: 12 * 60 },
+    })),
+  disengageSunStudy: () =>
+    set((state) =>
+      state.sunStudy?.engaged ? { sunStudy: { ...state.sunStudy, engaged: false } } : state,
+    ),
+  setSunStudyDay: (day) =>
+    set((state) =>
+      state.sunStudy ? { sunStudy: { ...state.sunStudy, day: clampSunStudyDay(day) } } : state,
+    ),
+  setSunStudyMinutes: (minutes) =>
+    set((state) =>
+      state.sunStudy
+        ? { sunStudy: { ...state.sunStudy, minutes: clampSunStudyMinutes(minutes) } }
+        : state,
+    ),
   setActiveFileId: (fileId) =>
     set({
       activeFileId: fileId,
@@ -217,6 +257,14 @@ export const useModelViewerStore = create<ModelViewerState>()((set) => ({
       cameraRequest: { kind, targetId, id: (state.cameraRequest?.id ?? 0) + 1 },
     })),
 }));
+
+function clampSunStudyDay(day: number): number {
+  return Math.min(Math.max(Math.round(day), 1), 365);
+}
+
+function clampSunStudyMinutes(minutes: number): number {
+  return Math.min(Math.max(Math.round(minutes), 0), 24 * 60 - 1);
+}
 
 function inactiveMeasureState() {
   return {

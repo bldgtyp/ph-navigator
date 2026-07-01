@@ -294,6 +294,18 @@ export type LineSegment2DModelData = {
   v: [number, number];
 };
 
+/** Backend-computed hourly solar positions (sun study). Unit vectors live in
+ *  the same unit-radius, true-north-baked frame as the dome geometry; hours
+ *  are local standard time (no DST) on a 365-day year. The frontend only
+ *  interpolates between adjacent vectors for display smoothness (PRD D-1). */
+export type SunPositionGridModelData = {
+  true_north_deg: number;
+  hours: number[];
+  days: number[];
+  unit_vectors: [number, number, number][];
+  sunrise_sunset: [number | null, number | null][];
+};
+
 export type SunPathAndCompassModelData = {
   sunpath: {
     hourly_analemma_polyline3d: Polyline3DModelData[];
@@ -304,6 +316,7 @@ export type SunPathAndCompassModelData = {
     major_azimuth_ticks: LineSegment2DModelData[];
     minor_azimuth_ticks: LineSegment2DModelData[];
   };
+  sun_positions: SunPositionGridModelData;
 };
 
 export type CombinedModelData = {
@@ -454,6 +467,12 @@ export type ModelViewerDebugState = {
   measureActive: boolean;
   measureSnap: ModelViewerMeasurePoint | null;
   measureLines: ModelViewerMeasureLine[];
+  /** Sun-study scrub state + derived altitude (null until first engaged). */
+  sunStudy: { engaged: boolean; day: number; minutes: number; altitudeDeg: number | null } | null;
+  engageSunStudy: () => void;
+  disengageSunStudy: () => void;
+  setSunStudyDay: (day: number) => void;
+  setSunStudyMinutes: (minutes: number) => void;
   setLens: (lens: ModelViewerLens) => void;
   setTheme: (theme: ModelViewerTheme) => void;
   themeColorForObject: (objectId: string) => string | null;

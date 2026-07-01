@@ -21,6 +21,7 @@ export function ViewerRenderControls() {
   const fillIntensity = useViewerRenderSettings((s) => s.fillIntensity);
   const keyElevation = useViewerRenderSettings((s) => s.keyElevation);
   const keyAzimuth = useViewerRenderSettings((s) => s.keyAzimuth);
+  const shadowMapSize = useViewerRenderSettings((s) => s.shadowMapSize);
   const set = useViewerRenderSettings((s) => s.set);
 
   // Expose the knobs to the perf harness for the lifetime of the panel.
@@ -119,6 +120,18 @@ export function ViewerRenderControls() {
         onChange={(v) => set({ keyAzimuth: v })}
         format={degrees}
       />
+      <label className="model-render-controls-row">
+        <span>shadow map</span>
+        <select
+          value={shadowMapSize}
+          onChange={(e) => set({ shadowMapSize: Number(e.target.value) })}
+        >
+          <option value={512}>512</option>
+          <option value={1024}>1024</option>
+          <option value={2048}>2048</option>
+          <option value={4096}>4096</option>
+        </select>
+      </label>
     </div>
   );
 }

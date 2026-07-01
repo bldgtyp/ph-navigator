@@ -4,9 +4,15 @@ import { distanceBetweenMeasurePoints } from "./measure";
 import { isTupleVisibleForSection } from "./section";
 import { elementIdForSegmentId, resolveLineHighlightTier } from "./selection";
 import { colorForThemedObject, legendForModel } from "./themes";
+import { altitudeDeg, interpolateSunVector } from "./sunStudy";
 import { emptyModelObjectCounts, type BuildingModel } from "../loaders/building";
 import { useModelViewerStore } from "../store";
-import type { ModelObjectType, ModelViewerDebugState, ModelViewerLens } from "../types";
+import type {
+  ModelObjectType,
+  ModelViewerDebugState,
+  ModelViewerLens,
+  SunPathAndCompassModelData,
+} from "../types";
 
 declare global {
   interface Window {
@@ -22,16 +28,19 @@ export function isModelViewerDebugHookEnabled(): boolean {
 
 export function ModelViewerDebugBridge({
   model,
-  sunPathReady,
+  sunPath,
 }: {
   model: BuildingModel | null;
-  sunPathReady: boolean;
+  sunPath: SunPathAndCompassModelData | null;
 }) {
-  useModelViewerDebugHook(model, sunPathReady);
+  useModelViewerDebugHook(model, sunPath);
   return null;
 }
 
-function useModelViewerDebugHook(model: BuildingModel | null, sunPathReady: boolean): void {
+function useModelViewerDebugHook(
+  model: BuildingModel | null,
+  sunPath: SunPathAndCompassModelData | null,
+): void {
   const activeFileId = useModelViewerStore((state) => state.activeFileId);
   const loadPhase = useModelViewerStore((state) => state.loadPhase);
   const errorKind = useModelViewerStore((state) => state.errorKind);
@@ -54,6 +63,19 @@ function useModelViewerDebugHook(model: BuildingModel | null, sunPathReady: bool
   const setSection = useModelViewerStore((state) => state.setSection);
   const clearSection = useModelViewerStore((state) => state.clearSection);
   const setMeasureActive = useModelViewerStore((state) => state.setMeasureActive);
+  const sunStudyState = useModelViewerStore((state) => state.sunStudy);
+  const engageSunStudy = useModelViewerStore((state) => state.engageSunStudy);
+  const disengageSunStudy = useModelViewerStore((state) => state.disengageSunStudy);
+  const setSunStudyDay = useModelViewerStore((state) => state.setSunStudyDay);
+  const setSunStudyMinutes = useModelViewerStore((state) => state.setSunStudyMinutes);
+  const sunStudy = useMemo(() => {
+    if (!sunStudyState) return null;
+    const grid = sunPath?.sun_positions ?? null;
+    const altitude = grid
+      ? altitudeDeg(interpolateSunVector(grid, sunStudyState.day, sunStudyState.minutes))
+      : null;
+    return { ...sunStudyState, altitudeDeg: altitude };
+  }, [sunStudyState, sunPath]);
   const objectIds = useMemo(
     () => model?.objects.map((object) => object.id) ?? [],
     [model?.objects],
@@ -80,6 +102,7 @@ function useModelViewerDebugHook(model: BuildingModel | null, sunPathReady: bool
     [lens, model, theme],
   );
 
+  const sunPathReady = sunPath !== null;
   useEffect(() => {
     window.__phnModelViewer = {
       loadPhase,
@@ -88,6 +111,11 @@ function useModelViewerDebugHook(model: BuildingModel | null, sunPathReady: bool
       objectCounts: model?.objectCounts ?? emptyModelObjectCounts(),
       shadeCount: model?.shadeObjects.length ?? 0,
       sunPathReady,
+      sunStudy,
+      engageSunStudy,
+      disengageSunStudy,
+      setSunStudyDay,
+      setSunStudyMinutes,
       objectIds,
       elementIds,
       visibleObjectIds,
@@ -194,6 +222,11 @@ function useModelViewerDebugHook(model: BuildingModel | null, sunPathReady: bool
     setTheme,
     toggleFocusedSegment,
     sunPathReady,
+    sunStudy,
+    engageSunStudy,
+    disengageSunStudy,
+    setSunStudyDay,
+    setSunStudyMinutes,
     theme,
     visibleObjectIds,
   ]);

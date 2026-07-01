@@ -47,6 +47,10 @@ class SunPositionGridSchema(BaseModel):
     but derives no new domain values (PRD D-1/D-2).
     """
 
+    # The true-north rotation baked into the dome frame (stored convention:
+    # CCW from +Y). Shipped so the frontend can restate a frame vector as a
+    # *compass* azimuth (0 = true north) without new domain math.
+    true_north_deg: float
     # Column labels: whole hours 0.0..23.0 (LST, DST off).
     hours: list[float]
     # Row labels: day-of-year 1..365. Carried explicitly so a coarser day step

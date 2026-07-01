@@ -108,11 +108,11 @@ def build_sun_path(
     return SunPathAndCompassDTOSchema(
         sunpath=sunpath_dto,
         compass=compass_dto,
-        sun_positions=_build_sun_position_grid(sun_path),
+        sun_positions=_build_sun_position_grid(sun_path, true_north_deg),
     )
 
 
-def _build_sun_position_grid(sun_path: Sunpath) -> SunPositionGridSchema:
+def _build_sun_position_grid(sun_path: Sunpath, true_north_deg: float) -> SunPositionGridSchema:
     """Hourly solar-position grid from the dome's own ``Sunpath`` instance.
 
     Same-instance construction is what guarantees the vectors share the
@@ -144,6 +144,7 @@ def _build_sun_position_grid(sun_path: Sunpath) -> SunPositionGridSchema:
             )
         )
     return SunPositionGridSchema(
+        true_north_deg=true_north_deg,
         hours=[float(hour) for hour in range(_HOURS_PER_DAY)],
         days=list(range(1, _DAYS_PER_YEAR + 1)),
         unit_vectors=unit_vectors,

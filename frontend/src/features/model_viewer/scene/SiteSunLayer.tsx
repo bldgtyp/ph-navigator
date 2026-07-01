@@ -9,7 +9,9 @@ import {
   type ShadeMaterials,
 } from "../lib/colors";
 import type { BuildingModel, ShadeRenderable } from "../loaders/building";
+import type { SunVector } from "../lib/sunStudy";
 import type { SunPathAndCompassModelData } from "../types";
+import { SunStudyLayer } from "./SunStudyLayer";
 import {
   arc2dToPoints,
   arc3dToPoints,
@@ -29,9 +31,12 @@ import {
 export function SiteSunLayer({
   model,
   sunPath,
+  sunStudyVector,
 }: {
   model: BuildingModel;
   sunPath: SunPathAndCompassModelData | null;
+  /** The engaged sun-study direction, or null while sun study is off. */
+  sunStudyVector: SunVector | null;
 }) {
   const materials = useMemo(() => createShadeMaterials(), []);
   useEffect(() => {
@@ -54,6 +59,7 @@ export function SiteSunLayer({
       <ShadeGroups shades={model.shadeObjects} materials={materials} />
       <SiteCompass bounds={model.bounds} />
       {sunPath ? <SunPathDiagram bounds={model.bounds} sunPath={sunPath} /> : null}
+      {sunStudyVector ? <SunStudyLayer bounds={model.bounds} sunVector={sunStudyVector} /> : null}
     </>
   );
 }
@@ -69,7 +75,15 @@ function ShadeGroups({
     <group name="site-shade-groups">
       {shades.map((shade) => (
         <group key={shade.id} name={shade.displayName}>
-          <mesh geometry={shade.geometry} material={materials.fill} raycast={() => null} />
+          {/* Shades cast AND receive (PRD §5.2) — free until a shadow-casting
+              light exists, i.e. only while sun study is engaged. */}
+          <mesh
+            geometry={shade.geometry}
+            material={materials.fill}
+            raycast={() => null}
+            castShadow
+            receiveShadow
+          />
           <lineSegments geometry={shade.edges} material={materials.edge} raycast={() => null} />
         </group>
       ))}
