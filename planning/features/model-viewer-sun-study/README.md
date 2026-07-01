@@ -1,8 +1,10 @@
 ---
 DATE: 2026-07-01
 TIME: 16:31
-STATUS: PRD reviewed by Ed 2026-07-01; ready for implementation
-  planning. Includes the folded-in ground-shadows baseline fix (D-12).
+STATUS: Implemented on branch `feature/model-viewer-sun-study`
+  (2026-07-01) — phases 01–05 complete, phase 06 verification/closeout
+  in progress. Includes the folded-in ground-shadows baseline fix
+  (D-12), shipped in phase 01.
 AUTHOR: Claude (for Ed)
 SCOPE: Router for the model-viewer sun-study feature (date/time
   scrubbers + real-time sun shadows in the Site & Sun lens).

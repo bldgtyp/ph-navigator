@@ -1,7 +1,9 @@
 ---
 DATE: 2026-07-01
 TIME: 18:05
-STATUS: Active — implementation sequence for the reviewed PRD.
+STATUS: Phases 01–05 complete on branch `feature/model-viewer-sun-study`
+  (2026-07-01); phase 06 verification/closeout in progress. Per-phase
+  ledgers live in phases/.
 AUTHOR: Claude (for Ed)
 SCOPE: High-level implementation sequence for the model-viewer sun-study
   feature. Behavior contract lives in PRD.md; per-phase details live in

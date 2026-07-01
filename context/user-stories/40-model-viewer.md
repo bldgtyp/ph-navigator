@@ -245,10 +245,11 @@ All 9 Q-VIEW questions resolved 2026-05-10. Summary:
   model loads.
 
 - **Q-VIEW-6: Sun-path time-of-year scrubber.** Resolved:
-  **defer to v1.1+.** Annual envelope (V1 behavior — all
-  hourly analemmas + monthly arcs rendered simultaneously)
-  is enough for design reviews; scrubber adds UI complexity
-  without clear v1 payoff.
+  originally deferred to v1.1+, then **un-deferred and
+  shipped 2026-07-01** as the Sun-study feature
+  (`planning/features/model-viewer-sun-study/`): date/time
+  scrubbers move a sun marker along the dome and re-aim the
+  key light to cast real-time shadows.
 
 - **Q-VIEW-7: Legend-as-filter.** Resolved: **defer to
   v1.1+** — but flagged as **near-priority post-MVP** per
@@ -793,9 +794,11 @@ handlers — V2 refactor target)
    in V2 v1 (V1 parity). v1.1+ could add a fade if it
    helps orientation.
 
-8. **Sun-path scrubber NOT included** (Q-VIEW-6 deferred to
-   v1.1+). SunPath mode renders V1's annual envelope (all
-   hourly analemmas + monthly arcs simultaneously).
+8. **Sun-path scrubber shipped as "Sun study"** (Q-VIEW-6,
+   un-deferred 2026-07-01). The lens still renders the
+   annual envelope by default; an opt-in bar adds date/time
+   scrubbers, a dome-riding sun marker, and real-time
+   shadows (see `planning/features/model-viewer-sun-study/`).
 
 9. **Locked-version + Viewer rendering.** Menubar fully
    functional — viz-state changes are viewing operations,
@@ -805,7 +808,8 @@ handlers — V2 refactor target)
 - **Q-VIEW-3 (shade selectability):** shades NOT selectable
   even in SunPath mode (V1 parity, redirect from earlier
   lean). See criterion 4 row "SunPath."
-- **Q-VIEW-6 (sun-path scrubber):** deferred to v1.1+. See
+- **Q-VIEW-6 (sun-path scrubber):** deferred 2026-05-10,
+  un-deferred and shipped 2026-07-01 (Sun study). See
   criterion 8.
 
 ### Open questions

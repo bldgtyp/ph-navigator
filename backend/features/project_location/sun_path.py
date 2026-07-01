@@ -123,8 +123,9 @@ def _build_sun_position_grid(sun_path: Sunpath, true_north_deg: float) -> SunPos
     unit_vectors: list[tuple[float, float, float]] = []
     sunrise_sunset: list[tuple[float | None, float | None]] = []
     for day_of_year in range(1, _DAYS_PER_YEAR + 1):
+        day_start_hoy = (day_of_year - 1) * _HOURS_PER_DAY
         for hour in range(_HOURS_PER_DAY):
-            sun = sun_path.calculate_sun_from_hoy((day_of_year - 1) * _HOURS_PER_DAY + hour)
+            sun = sun_path.calculate_sun_from_hoy(day_start_hoy + hour)
             vector = sun.sun_vector_reversed
             unit_vectors.append(
                 (
@@ -133,7 +134,7 @@ def _build_sun_position_grid(sun_path: Sunpath, true_north_deg: float) -> SunPos
                     round(vector.z, _VECTOR_DECIMALS),
                 )
             )
-        noon = DateTime.from_hoy((day_of_year - 1) * _HOURS_PER_DAY + 12)
+        noon = DateTime.from_hoy(day_start_hoy + 12)
         edges = sun_path.calculate_sunrise_sunset(noon.month, noon.day)
         sunrise = edges["sunrise"]
         sunset = edges["sunset"]

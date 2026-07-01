@@ -125,11 +125,12 @@ export function ViewerCanvas({ model, activeFileName, sunPath }: ViewerCanvasPro
   return (
     <Canvas
       frameloop="demand"
-      /* PCF shadow maps (three r0.18x deprecated PCFSoft), enabled at Canvas
+      /* PCF shadow maps ("percentage" — R3F's bare `shadows` means PCFSoft,
+         which three r0.18x deprecated to a console warning). Enabled at Canvas
          creation so engaging sun study never rebuilds the GL context — the
          flag alone is free when no shadow-casting light exists (phase-02
          spike, PRD §7). */
-      shadows
+      shadows="percentage"
       dpr={[1, 1.5]}
       camera={{ fov: 45, near: 0.1, far: 1000, position: [-25, 40, 30], up: [0, 0, 1] }}
       onPointerMissed={handlePointerMissed}

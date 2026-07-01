@@ -14,7 +14,7 @@ export type SunVector = [number, number, number];
 export const MINUTES_PER_DAY = 24 * 60;
 export const DAYS_PER_YEAR = 365;
 
-const DAYS_PER_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+export const DAYS_PER_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 const MONTH_LABELS = [
   "Jan",
   "Feb",

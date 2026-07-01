@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-01
 TIME: 18:05
-STATUS: Pending (blocked by phase 05)
+STATUS: Complete
 AUTHOR: Claude (for Ed)
 SCOPE: Phase 06 — tests, perf verification, docs, closeout gate
   (PRD §12–§13).
@@ -40,4 +40,35 @@ RELATED:
 
 ## Ledger
 
-- (fill on completion)
+- **E2e**: `model-viewer-site-sun.spec.ts` extended and green (2/2) —
+  pill visible only in site-sun; engage via pill; geometry-count perf
+  gate (probe `geometries` delta ≤ 5 on engage; sun study owns 2);
+  scrub both range inputs with altitude assertions; Dec-21 chip sets
+  date only; winter-noon screenshot artifact; Esc → pill with state
+  remembered; lens round-trip restores the bar and readout.
+- **Perf (site-sun lens, small fixture + Hillandale)**: Hillandale
+  engaged 147 calls / ~15 ms orbit-EMA vs 136 / ~25 ms disengaged
+  (frame time inside orbit-sampling noise; delta is the shadow passes +
+  marker/catcher). Building-lens cost untouched by construction (sun
+  study renders only in site-sun; flags proven free in phase 02).
+- **Simplify pass** (4-angle review): shared `DAYS_PER_MONTH` export
+  (was duplicated in `SunStudyBar`), hoisted per-day hoy base in the
+  backend grid loop, daylight-band gradient memoized per day via an
+  `EngagedSunStudyBar` split. Skipped as out-of-scope/by-design: an
+  Esc-dispatch registry refactor, unifying the ViewerCanvas/debugHook
+  vector derivations (different gating semantics), cross-language
+  calendar constants (wire-contract, documented).
+- **Docs**: PRD gained an as-built amendments block (PCF, section ×
+  shadows, `true_north_deg`); README/PLAN/STATUS headers synced;
+  Q-VIEW-6 amended in `context/user-stories/40-model-viewer.md`.
+- **PRD §12 acceptance walk**: 1–11 verified (browser + e2e + unit
+  ledgers in phases 01–05; §12.10's "≤3 scene objects" implemented as
+  the e2e geometry-count gate with documented headroom); §12.12
+  `make ci` recorded below; §12.13 baseline criteria verified in
+  phase 01. Deviations from the reviewed contract are the three
+  as-built amendments at the top of `PRD.md`.
+- **`make ci`**: green 2026-07-01 (exit 0; backend 1257 passed /
+  7 skipped incl. Hillandale-gated skips, frontend prettier + eslint +
+  tsc + vitest + build all clean). The one earlier backend flake
+  (`test_batch_does_one_document_load`, unrelated document-batch test)
+  passed in the full run and in isolation.

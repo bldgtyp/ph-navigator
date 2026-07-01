@@ -1,9 +1,10 @@
 import { Sun, X } from "lucide-react";
-import type { CSSProperties } from "react";
+import { useMemo, type CSSProperties } from "react";
 import { VIEWER_SUN_MARKER_COLOR } from "../lib/colorTokens";
 import {
   altitudeDeg,
   azimuthDeg,
+  DAYS_PER_MONTH,
   DAYS_PER_YEAR,
   dayOfYearLabel,
   decimalHourLabel,
@@ -20,11 +21,10 @@ import type { SunPositionGridModelData } from "../types";
  *  start as a fraction of the 365-day year. */
 const MONTH_TICKS = (() => {
   const initials = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
-  const lengths = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
   let start = 0;
   return initials.map((initial, index) => {
-    const tick = { initial, key: `${initial}${index}`, percent: (start / 365) * 100 };
-    start += lengths[index] ?? 0;
+    const tick = { initial, key: `${initial}${index}`, percent: (start / DAYS_PER_YEAR) * 100 };
+    start += DAYS_PER_MONTH[index] ?? 0;
     return tick;
   });
 })();
@@ -70,11 +70,43 @@ export function SunStudyBar({ grid }: { grid: SunPositionGridModelData }) {
     );
   }
 
-  const { day, minutes } = sunStudy;
+  return (
+    <EngagedSunStudyBar
+      grid={grid}
+      day={sunStudy.day}
+      minutes={sunStudy.minutes}
+      amberVar={amberVar}
+      onClose={disengageSunStudy}
+      onDayChange={setSunStudyDay}
+      onMinutesChange={setSunStudyMinutes}
+    />
+  );
+}
+
+function EngagedSunStudyBar({
+  grid,
+  day,
+  minutes,
+  amberVar,
+  onClose,
+  onDayChange,
+  onMinutesChange,
+}: {
+  grid: SunPositionGridModelData;
+  day: number;
+  minutes: number;
+  amberVar: CSSProperties;
+  onClose: () => void;
+  onDayChange: (day: number) => void;
+  onMinutesChange: (minutes: number) => void;
+}) {
   const vector = interpolateSunVector(grid, day, minutes);
   const altitude = altitudeDeg(vector);
   const azimuth = azimuthDeg(vector, grid.true_north_deg);
   const [sunrise, sunset] = sunriseSunsetForDay(grid, day);
+  // Time scrubbing re-renders per input event; the band only changes with the
+  // selected day, so the gradient string is rebuilt per day, not per minute.
+  const bandGradient = useMemo(() => daylightBandGradient(sunrise, sunset), [sunrise, sunset]);
 
   return (
     <section className="sun-study-bar" style={amberVar} aria-label="Sun study">
@@ -90,7 +122,7 @@ export function SunStudyBar({ grid }: { grid: SunPositionGridModelData }) {
           type="button"
           className="sun-study-close"
           aria-label="Close sun study"
-          onClick={disengageSunStudy}
+          onClick={onClose}
         >
           <X size={14} aria-hidden />
         </button>
@@ -116,7 +148,7 @@ export function SunStudyBar({ grid }: { grid: SunPositionGridModelData }) {
             value={day}
             aria-labelledby="sun-study-date-label"
             aria-valuetext={dayOfYearLabel(day)}
-            onChange={(event) => setSunStudyDay(Number(event.target.value))}
+            onChange={(event) => onDayChange(Number(event.target.value))}
           />
         </div>
       </div>
@@ -129,7 +161,7 @@ export function SunStudyBar({ grid }: { grid: SunPositionGridModelData }) {
             className="chip chip--md chip--outline chip--interactive sun-study-chip"
             aria-pressed={day === preset.day}
             title={preset.season}
-            onClick={() => setSunStudyDay(preset.day)}
+            onClick={() => onDayChange(preset.day)}
           >
             {preset.label}
           </button>
@@ -150,8 +182,8 @@ export function SunStudyBar({ grid }: { grid: SunPositionGridModelData }) {
             value={minutes}
             aria-labelledby="sun-study-time-label"
             aria-valuetext={minutesLabel(minutes)}
-            style={{ background: daylightBandGradient(sunrise, sunset) }}
-            onChange={(event) => setSunStudyMinutes(Number(event.target.value))}
+            style={{ background: bandGradient }}
+            onChange={(event) => onMinutesChange(Number(event.target.value))}
           />
         </div>
       </div>
