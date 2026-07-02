@@ -1,11 +1,12 @@
 ---
 DATE: 2026-07-01
 TIME: 16:31
-STATUS: Implemented (2026-07-01, branch `feature/model-viewer-sun-study`)
-  — reviewed by Ed 2026-07-01 (all §11 questions resolved; ground-shadows
-  fix packet folded in as the baseline phase). See the "As-built
-  amendments" block below for the three deviations discovered during
-  implementation.
+STATUS: COMPLETE — shipped 2026-07-01 on branch
+  `feature/model-viewer-sun-study`, `make ci` green, merged to `main`
+  and archived. Reviewed by Ed 2026-07-01 (all §11 questions resolved;
+  ground-shadows fix packet folded in as the baseline phase). See the
+  "As-built amendments" block below for the three deviations discovered
+  during implementation.
 AUTHOR: Claude (for Ed)
 SCOPE: Product/behavior contract for a "Sun study" mode in the Model
   tab's Site & Sun lens - date-of-year and time-of-day scrubbers that

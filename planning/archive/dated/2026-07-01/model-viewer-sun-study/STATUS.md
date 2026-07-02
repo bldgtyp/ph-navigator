@@ -1,8 +1,9 @@
 ---
 DATE: 2026-07-01
-TIME: 16:31 (updated ~16:50 after Ed's review)
-STATUS: Implemented on branch `feature/model-viewer-sun-study` —
-  phases 01–05 complete 2026-07-01; phase 06 closeout in progress.
+TIME: 16:31 (updated ~16:50 after Ed's review; closed out 2026-07-01)
+STATUS: COMPLETE — all six phases shipped on branch
+  `feature/model-viewer-sun-study` 2026-07-01; `make ci` green;
+  merged to `main` and archived.
 AUTHOR: Claude (for Ed)
 SCOPE: Status ledger for the model-viewer sun-study feature.
 RELATED:
@@ -13,9 +14,9 @@ RELATED:
 
 # Status — Model Viewer Sun Study
 
-- **State:** Implemented on branch `feature/model-viewer-sun-study`
-  (phases 01–05 complete 2026-07-01; phase 06 closeout in progress).
-  PRD reviewed by Ed 2026-07-01 with all four open questions resolved
+- **State:** COMPLETE — all six phases shipped on branch
+  `feature/model-viewer-sun-study` 2026-07-01; `make ci` green; merged
+  to `main` and archived. PRD reviewed by Ed 2026-07-01 with all four open questions resolved
   (PRD §11): default = today @ 12:00 noon; azimuth ground line
   deferred; no playback (manual scrub only, SketchUp style); four
   preset chips (both equinoxes). The `model-viewer-ground-shadows` fix
@@ -23,9 +24,8 @@ RELATED:
   phase 01); that folder stays Superseded. Three as-built amendments
   are recorded at the top of `PRD.md` (PCF not PCFSoft; section
   disables the sun shadow pass; `true_north_deg` on the grid).
-- **Next step:** finish phase 06 (`make ci` green + acceptance ledger),
-  then Ed merges `feature/model-viewer-sun-study` → `main` (main
-  deploys production). Phase record:
+- **Next step:** none — feature merged to `main` and archived. Phase
+  record:
   - Phase 01 (ground-shadow baseline fix, D-12): **Complete**
     2026-07-01 — the old `rotation` prop was drei's stock Y-up default,
     so the receiver plane stood vertical in the Z-up scene; fixed by
