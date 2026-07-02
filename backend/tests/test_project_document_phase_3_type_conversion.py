@@ -242,6 +242,26 @@ def test_edit_options_allowed_on_option_editable_rooms_builtin() -> None:
     assert audit["field_id"] == "floor_level"
 
 
+def test_edit_field_bundle_edits_option_editable_rooms_builtin_options() -> None:
+    body = _seed_body()
+    floor = next(field for field in body.tables.rooms.field_defs if field.field_key == "floor_level")
+    option = SingleSelectOption(id="opt_roof", label="Roof", color="#3b82f6", order=0)
+    mutation = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="floor_level",
+        after=floor,
+        next_options=[option],
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+
+    next_body, audit = _apply(body, mutation)
+
+    assert next_body.single_select_options[ROOM_FLOOR_LEVEL_OPTION_KEY] == [option]
+    assert audit["kind"] == "editFieldBundle"
+    assert "options" in audit["properties_changed"]
+
+
 def test_edit_options_rejected_on_locked_builtin_status() -> None:
     body = _seed_body()
     next_options = [

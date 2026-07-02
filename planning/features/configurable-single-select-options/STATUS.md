@@ -12,21 +12,22 @@ RELATED:
   - ./reviews/2026-07-02-critical-feature-review.md
   - ./phases/phase-00-contract-spike.md
   - ./phases/phase-01-api-guardrails.md
+  - ./phases/phase-02-rooms-affordance.md
 ---
 
 # STATUS - Configurable Single-Select Options
 
 ## State
 
-`Active` - Phase 01 API/DataTable guardrails complete.
+`Active` - Phase 02 Rooms affordance complete.
 
 ## Next Step
 
-Start `phases/phase-02-rooms-affordance.md`.
+Start `phases/phase-03-cascade-ux.md`.
 
 ## Blockers
 
-None for Phase 01.
+None for Phase 02.
 
 ## Decisions
 
@@ -52,6 +53,8 @@ None for Phase 01.
   allowlisted.
 - Frontend DataTable uses `FieldDef.optionMutability` / `canEditFieldOptions`
   for field-config options, inline `+ Create`, and paste-created options.
+- Rooms `Floor` and `Zone` no longer carry the `"options"` lock, so the shared
+  field-config modal exposes editable option controls for those built-ins.
 
 ## Verification Ledger
 
@@ -66,3 +69,9 @@ None for Phase 01.
   - `pnpm vitest run src/shared/ui/data-table/__tests__/SingleSelectPopover.test.tsx src/shared/ui/data-table/__tests__/useGridEdit.test.ts src/shared/ui/data-table/__tests__/lib.test.ts`
   - `pnpm exec tsc -b`
   - `pnpm exec prettier --check src/shared/ui/data-table/types.ts src/shared/ui/data-table/index.ts src/shared/ui/data-table/lib/options/mutability.ts src/shared/ui/data-table/components/FieldConfigModal.tsx src/shared/ui/data-table/components/GridBody.tsx src/shared/ui/data-table/components/SingleSelectPopover.tsx src/shared/ui/data-table/hooks/useGridEdit.ts src/shared/ui/data-table/lib/rows/defaults.ts src/shared/ui/data-table/__tests__/SingleSelectPopover.test.tsx src/shared/ui/data-table/__tests__/useGridEdit.test.ts src/shared/ui/data-table/__tests__/lib.test.ts`
+- 2026-07-02: Phase 02 complete. Verification:
+  - `uv run pytest tests/test_project_document_phase_3_type_conversion.py`
+  - `uv run ruff check tests/test_project_document_phase_3_type_conversion.py`
+  - `pnpm vitest run src/features/equipment/__tests__/RoomsTable.schemaEditor.test.tsx src/shared/ui/data-table/__tests__/SingleSelectPopover.test.tsx src/shared/ui/data-table/__tests__/useGridEdit.test.ts src/shared/ui/data-table/__tests__/lib.test.ts`
+  - `pnpm exec tsc -b`
+  - `pnpm exec prettier --check src/features/equipment/lib.ts src/features/equipment/__tests__/RoomsTable.schemaEditor.test.tsx`

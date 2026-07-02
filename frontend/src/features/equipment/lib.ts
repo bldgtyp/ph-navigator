@@ -628,11 +628,11 @@ export function roomsFieldOverlay(roomsSlice: RoomsSlice): Record<string, TableF
     },
     [ROOM_FLOOR_LEVEL_KEY]: {
       options: roomsSlice.single_select_options[ROOM_FLOOR_LEVEL_OPTION_KEY],
-      locked: ["field_type", "options", "delete", "duplicate"],
+      locked: ["field_type", "delete", "duplicate"],
     },
     [ROOM_BUILDING_ZONE_KEY]: {
       options: roomsSlice.single_select_options[ROOM_BUILDING_ZONE_OPTION_KEY],
-      locked: ["field_type", "options", "delete", "duplicate"],
+      locked: ["field_type", "delete", "duplicate"],
     },
     [ROOM_SPACE_TYPE_FIELD_KEY]: {
       locked: DEFAULT_BUILT_IN_LOCKS,

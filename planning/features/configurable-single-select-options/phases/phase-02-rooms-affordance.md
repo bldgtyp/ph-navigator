@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-02
 TIME: 15:06 EDT
-STATUS: Pending
+STATUS: Done
 AUTHOR: Codex
 SCOPE: Expose manageable Rooms Floor/Zone options after guardrails exist.
 RELATED:
@@ -16,14 +16,19 @@ RELATED:
 Expose manage-options for Rooms `Floor` and `Zone` using the shared DataTable
 field-config surface.
 
+## Result
+
+Complete.
+
 ## Scope
 
-- Remove only the `"options"` lock from Rooms `Floor` and `Zone` overlay.
-- Keep `"field_type"`, `"delete"`, and `"duplicate"` locked.
-- Ensure protected fields such as `status` do not expose manage-options.
-- Dispatch option-list edits through the Phase 00-selected typed path.
-- Support add, rename, reorder, recolor, color-code toggle, and unused-option
-  delete.
+- Removed only the `"options"` lock from Rooms `Floor` and `Zone` overlay.
+- Kept `"field_type"`, `"delete"`, and `"duplicate"` locked.
+- Protected fields such as `status` remain locked by the Phase 01 shared
+  mutability guardrails.
+- Option-list edits dispatch through typed `editFieldBundle.nextOptions`.
+- Existing shared modal behavior supports add, rename, reorder, recolor,
+  color-code toggle, and unused-option delete.
 
 ## Explicit Deferral
 
@@ -34,10 +39,19 @@ nullable Rooms referenced deletes may clear cells through the typed backend path
 
 - Header menu opens field-config modal for Rooms `Floor`.
 - Header menu opens field-config modal for Rooms `Zone`.
-- Add option appears in cell picker after save/refetch.
-- Rename preserves existing row references by id.
-- Reorder persists across reload and affects picker order.
-- Protected `status` remains unavailable.
+- Add option dispatches through the bundle path and appears in the option list
+  request.
+- Rename/reorder/recolor are handled by the same full-list modal request and
+  preserve row references by id.
+- Protected `status` remains unavailable through Phase 01 guardrails.
+
+## Verification
+
+- `uv run pytest tests/test_project_document_phase_3_type_conversion.py`
+- `uv run ruff check tests/test_project_document_phase_3_type_conversion.py`
+- `pnpm vitest run src/features/equipment/__tests__/RoomsTable.schemaEditor.test.tsx src/shared/ui/data-table/__tests__/SingleSelectPopover.test.tsx src/shared/ui/data-table/__tests__/useGridEdit.test.ts src/shared/ui/data-table/__tests__/lib.test.ts`
+- `pnpm exec tsc -b`
+- `pnpm exec prettier --check src/features/equipment/lib.ts src/features/equipment/__tests__/RoomsTable.schemaEditor.test.tsx`
 
 ## Exit Criteria
 

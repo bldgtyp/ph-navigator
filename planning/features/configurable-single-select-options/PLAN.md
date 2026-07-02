@@ -61,14 +61,16 @@ edited through one path while another path still creates options.
 - Focused backend/frontend tests cover allowlisted Rooms fields, protected
   status, popover create gating, and paste rejection.
 
-## Phase 02 - Rooms Affordance
+## Phase 02 - Rooms Affordance - DONE
 
-- Complete `phases/phase-02-rooms-affordance.md`.
-- Expose the affordance only for configurable single-select fields.
-- Wire Rooms `Floor` and `Zone` through the agreed typed mutation path.
-- Support add, rename, reorder, and unused-option delete.
-- Defer explicit referenced-delete replacement UX; nullable Rooms deletes can
-  clear cells through the typed backend path.
+- Completed in `phases/phase-02-rooms-affordance.md`.
+- Removed only the `"options"` lock from Rooms `Floor` and `Zone`.
+- Verified the shared field-config modal exposes editable option controls for
+  both fields.
+- Verified Floor option edits dispatch through `editFieldBundle.nextOptions`.
+- Backend bundle coverage verifies the same typed path reaches
+  `apply_edit_options`.
+- Explicit referenced-delete replacement UX remains Phase 03 scope.
 
 ## Phase 03 - Cascade UX
 

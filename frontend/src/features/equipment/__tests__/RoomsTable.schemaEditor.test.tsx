@@ -38,6 +38,12 @@ function openPaintMenu() {
   fireEvent.contextMenu(screen.getByRole("columnheader", { name: /^Paint\b/ }));
 }
 
+async function openHeaderConfigDialog(headerName: RegExp): Promise<HTMLElement> {
+  fireEvent.contextMenu(screen.getByRole("columnheader", { name: headerName }));
+  fireEvent.click(screen.getByRole("menuitem", { name: "Edit field…" }));
+  return screen.findByRole("dialog", { name: /Edit field/ });
+}
+
 async function openPaintConfigDialog(): Promise<HTMLElement> {
   openPaintMenu();
   fireEvent.click(screen.getByRole("menuitem", { name: "Edit field…" }));
@@ -130,5 +136,36 @@ describe("RoomsTable custom-field schema editor (plan-15 P2.7)", () => {
 
     const dialog = await openPaintConfigDialog();
     expect(within(dialog).getByLabelText("Description")).toHaveValue("Existing note");
+  });
+
+  test("Rooms Floor and Zone expose editable option controls", async () => {
+    const onEditCustomFieldBundle = vi.fn().mockResolvedValue(undefined);
+    renderEditorTable(buildRoomsSlice({ rooms: [buildRoom()] }), { onEditCustomFieldBundle });
+
+    const floorDialog = await openHeaderConfigDialog(/^Floor\b/);
+    expect(within(floorDialog).getByRole("button", { name: /Add option/ })).toBeEnabled();
+    expect(within(floorDialog).getByLabelText("Color-code options")).toBeEnabled();
+    fireEvent.click(within(floorDialog).getByRole("button", { name: "Cancel" }));
+
+    const zoneDialog = await openHeaderConfigDialog(/^Zone\b/);
+    expect(within(zoneDialog).getByRole("button", { name: /Add option/ })).toBeEnabled();
+    expect(within(zoneDialog).getByLabelText("Color-code options")).toBeEnabled();
+  });
+
+  test("Rooms Floor option edits dispatch through the bundle path", async () => {
+    const onEditCustomFieldBundle = vi.fn().mockResolvedValue(undefined);
+    renderEditorTable(buildRoomsSlice({ rooms: [buildRoom()] }), { onEditCustomFieldBundle });
+
+    const dialog = await openHeaderConfigDialog(/^Floor\b/);
+    fireEvent.click(within(dialog).getByRole("button", { name: /Add option/ }));
+    fireEvent.change(within(dialog).getByLabelText(/Option label for new option/), {
+      target: { value: "Penthouse" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(onEditCustomFieldBundle).toHaveBeenCalledTimes(1));
+    const request = onEditCustomFieldBundle.mock.calls[0]?.[0] as EditCustomFieldBundleRequest;
+    expect(request.fieldKey).toBe("floor_level");
+    expect(request.options?.map((option) => option.label)).toEqual(["Ground", "Penthouse"]);
   });
 });
