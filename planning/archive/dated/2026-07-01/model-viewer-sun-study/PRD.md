@@ -1,9 +1,12 @@
 ---
 DATE: 2026-07-01
 TIME: 16:31
-STATUS: Draft — reviewed by Ed 2026-07-01 (all §11 questions resolved;
-  ground-shadows fix packet folded in as the baseline phase); ready for
-  implementation planning.
+STATUS: COMPLETE — shipped 2026-07-01 on branch
+  `feature/model-viewer-sun-study`, `make ci` green, merged to `main`
+  and archived. Reviewed by Ed 2026-07-01 (all §11 questions resolved;
+  ground-shadows fix packet folded in as the baseline phase). See the
+  "As-built amendments" block below for the three deviations discovered
+  during implementation.
 AUTHOR: Claude (for Ed)
 SCOPE: Product/behavior contract for a "Sun study" mode in the Model
   tab's Site & Sun lens - date-of-year and time-of-day scrubbers that
@@ -35,6 +38,24 @@ RELATED:
 ---
 
 # Model Viewer — Sun Study (Date/Time Scrub + Real-Time Shadows)
+
+## As-built amendments (2026-07-01)
+
+Three deviations from the reviewed contract, discovered during
+implementation (details in `phases/`):
+
+- **D-5 (shadow type):** three r0.18x deprecated `PCFSoftShadowMap`
+  (console-warns and falls back to PCF), so the Canvas ships plain PCF
+  (`shadows="percentage"`) at the same 1024² size.
+- **D-11 (section × shadows):** `clipShadows` cannot work — three never
+  clips the shadow depth pass against the renderer-global clipping
+  planes the section tool uses (`WebGLClipping.js:67`; verified in the
+  phase-02 spike). As built, the sun shadow pass is disabled while a
+  section is active, which also prevents the phantom-shadow bug D-11
+  targeted.
+- **D-2 (wire schema):** `SunPositionGridSchema` additionally carries
+  `true_north_deg` so the frontend can restate a dome-frame vector as a
+  *compass* azimuth for rotated-north projects without new domain math.
 
 ## 0. Problem & design intent
 

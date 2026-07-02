@@ -19,6 +19,7 @@ import {
   type PointerPoint,
 } from "../lib/selection";
 import { lineStyleDefinition } from "../lib/themes";
+import type { SunVector } from "../lib/sunStudy";
 import type { BuildingModel, GhostGeometry, LineRenderable } from "../loaders/building";
 import { useModelViewerStore } from "../store";
 import type { ModelViewerLens, ModelViewerTheme, SunPathAndCompassModelData } from "../types";
@@ -32,6 +33,8 @@ type BuildingLensProps = {
   ghostMaterials: GhostMaterials;
   tokens: ViewerTokens;
   sunPath: SunPathAndCompassModelData | null;
+  /** The engaged sun-study direction (site-sun lens only), or null. */
+  sunStudyVector: SunVector | null;
 };
 
 /** Lenses that render on the batched substrate (`BatchedLens`). site-sun also
@@ -44,7 +47,13 @@ const BATCHED_MESH_LENSES = new Set<ModelViewerLens>([
   "site-sun",
 ]);
 
-export function BuildingLens({ model, ghostMaterials, tokens, sunPath }: BuildingLensProps) {
+export function BuildingLens({
+  model,
+  ghostMaterials,
+  tokens,
+  sunPath,
+  sunStudyVector,
+}: BuildingLensProps) {
   const lens = useModelViewerStore((state) => state.lens);
   const theme = useModelViewerStore((state) => state.themesByLens[state.lens]);
   const legendFilter = useModelViewerStore((state) => state.legendFilter);
@@ -89,7 +98,9 @@ export function BuildingLens({ model, ghostMaterials, tokens, sunPath }: Buildin
           ))}
         </group>
       )}
-      {lens === "site-sun" ? <SiteSunLayer model={model} sunPath={sunPath} /> : null}
+      {lens === "site-sun" ? (
+        <SiteSunLayer model={model} sunPath={sunPath} sunStudyVector={sunStudyVector} />
+      ) : null}
       {showDimensionOverlay ? <DimensionOverlay model={model} element={selectedElement} /> : null}
       <MeasureOverlay model={model} />
     </>

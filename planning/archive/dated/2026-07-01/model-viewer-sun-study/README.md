@@ -1,8 +1,10 @@
 ---
 DATE: 2026-07-01
 TIME: 16:31
-STATUS: PRD reviewed by Ed 2026-07-01; ready for implementation
-  planning. Includes the folded-in ground-shadows baseline fix (D-12).
+STATUS: COMPLETE — all six phases shipped on branch
+  `feature/model-viewer-sun-study` (2026-07-01); `make ci` green;
+  merged to `main` and archived. Includes the folded-in ground-shadows
+  baseline fix (D-12), shipped in phase 01.
 AUTHOR: Claude (for Ed)
 SCOPE: Router for the model-viewer sun-study feature (date/time
   scrubbers + real-time sun shadows in the Site & Sun lens).
@@ -24,9 +26,10 @@ rendering stays inside the viewer's draw-call/perf budget.
 
 ## Read order
 
-1. `PRD.md` — product/behavior contract (current focus).
+1. `PRD.md` — product/behavior contract.
 2. `STATUS.md` — current state and next step.
-3. `phases/` — implementation phase plans (none authored yet).
+3. `PLAN.md` — implementation sequence (phase table + gates).
+4. `phases/phase-01…06` — per-phase implementation plans.
 
 ## Scope boundaries
 

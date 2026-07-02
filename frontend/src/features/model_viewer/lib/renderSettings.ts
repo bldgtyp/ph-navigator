@@ -33,6 +33,9 @@ export type ViewerRenderSettings = {
   keyElevation: number;
   /** Key-light azimuth, degrees (compass bearing of the sun around the model). */
   keyAzimuth: number;
+  /** Sun-study shadow-map resolution (one side, px). Dev-only knob (PRD D-5);
+   *  1024 is the deliberate v1 quality. */
+  shadowMapSize: number;
 };
 
 export const DEFAULT_RENDER_SETTINGS: ViewerRenderSettings = {
@@ -46,6 +49,7 @@ export const DEFAULT_RENDER_SETTINGS: ViewerRenderSettings = {
   fillIntensity: 1.4,
   keyElevation: 45,
   keyAzimuth: 264,
+  shadowMapSize: 1024,
 };
 
 type RenderSettingsStore = ViewerRenderSettings & {

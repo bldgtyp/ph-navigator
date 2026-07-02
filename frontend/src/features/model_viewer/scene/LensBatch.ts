@@ -189,6 +189,11 @@ function buildBatch(
 
   // Non-indexed geometry → no index buffer (maxIndexCount 0).
   const mesh = new BatchedMesh(instanceCount, vertexCount, 0, material);
+  // Sun-study shadows (PRD §5.2): the substrate casts and receives. Set at
+  // build so engaging never churns materials — the flags cost nothing until a
+  // shadow-casting light exists (phase-02 spike), which only sun study adds.
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
   const ids = new Map<number, string>();
   // Parse each type's shaded base color once; most objects share a few types.
   const colorByType = new Map<ModelObjectType, Color>();

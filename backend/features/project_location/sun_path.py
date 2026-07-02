@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from ladybug.compass import Compass
+from ladybug.dt import DateTime
 from ladybug.location import Location
 from ladybug.sunpath import Sunpath
 from ladybug_geometry.geometry2d.pointvector import Point2D
@@ -27,6 +28,7 @@ from features.project_location.sun_path_schemas import (
     CompassSchema,
     SunPathAndCompassDTOSchema,
     SunPathSchema,
+    SunPositionGridSchema,
 )
 
 # Origin-centered, unit radius: the frontend scales the diagram to the model
@@ -38,6 +40,13 @@ _ORIGIN = Point2D(0, 0)
 _DAYLIGHT_SAVING_PERIOD = None
 # Standard meridians sit every 15 degrees of longitude (360 / 24h).
 _DEGREES_PER_HOUR = 15.0
+# The solar-position grid is 365 days x 24 whole hours (non-leap year, matching
+# ladybug's default calendar and the dome's analemma convention).
+_DAYS_PER_YEAR = 365
+_HOURS_PER_DAY = 24
+# Vector components rounded to ~0.006 degrees -- far below visual resolution,
+# and it keeps the wire payload compact.
+_VECTOR_DECIMALS = 4
 
 
 def utc_offset_hours(time_zone: str | None, longitude: float) -> float:
@@ -96,4 +105,49 @@ def build_sun_path(
         major_azimuth_ticks=[LineSegment2DSchema(**tick.to_dict()) for tick in compass.major_azimuth_ticks],
         minor_azimuth_ticks=[LineSegment2DSchema(**tick.to_dict()) for tick in compass.minor_azimuth_ticks],
     )
-    return SunPathAndCompassDTOSchema(sunpath=sunpath_dto, compass=compass_dto)
+    return SunPathAndCompassDTOSchema(
+        sunpath=sunpath_dto,
+        compass=compass_dto,
+        sun_positions=_build_sun_position_grid(sun_path, true_north_deg),
+    )
+
+
+def _build_sun_position_grid(sun_path: Sunpath, true_north_deg: float) -> SunPositionGridSchema:
+    """Hourly solar-position grid from the dome's own ``Sunpath`` instance.
+
+    Same-instance construction is what guarantees the vectors share the
+    dome's unit-radius, true-north-baked frame (PRD D-2): ladybug builds the
+    analemma vertices from ``sun.position_3d(radius=1)``, which is exactly
+    ``sun_vector_reversed`` -- the unit vector emitted here.
+    """
+    unit_vectors: list[tuple[float, float, float]] = []
+    sunrise_sunset: list[tuple[float | None, float | None]] = []
+    for day_of_year in range(1, _DAYS_PER_YEAR + 1):
+        day_start_hoy = (day_of_year - 1) * _HOURS_PER_DAY
+        for hour in range(_HOURS_PER_DAY):
+            sun = sun_path.calculate_sun_from_hoy(day_start_hoy + hour)
+            vector = sun.sun_vector_reversed
+            unit_vectors.append(
+                (
+                    round(vector.x, _VECTOR_DECIMALS),
+                    round(vector.y, _VECTOR_DECIMALS),
+                    round(vector.z, _VECTOR_DECIMALS),
+                )
+            )
+        noon = DateTime.from_hoy(day_start_hoy + 12)
+        edges = sun_path.calculate_sunrise_sunset(noon.month, noon.day)
+        sunrise = edges["sunrise"]
+        sunset = edges["sunset"]
+        sunrise_sunset.append(
+            (
+                round(sunrise.float_hour, _VECTOR_DECIMALS) if sunrise is not None else None,
+                round(sunset.float_hour, _VECTOR_DECIMALS) if sunset is not None else None,
+            )
+        )
+    return SunPositionGridSchema(
+        true_north_deg=true_north_deg,
+        hours=[float(hour) for hour in range(_HOURS_PER_DAY)],
+        days=list(range(1, _DAYS_PER_YEAR + 1)),
+        unit_vectors=unit_vectors,
+        sunrise_sunset=sunrise_sunset,
+    )

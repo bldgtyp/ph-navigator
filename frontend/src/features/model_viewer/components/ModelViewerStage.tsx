@@ -17,6 +17,7 @@ import { LensBar } from "./LensBar";
 import { LoadingChip } from "./LoadingChip";
 import { ModelViewerPerfOverlay } from "./PerfOverlay";
 import { ModelViewerStagePlaceholder } from "./ModelViewerStagePlaceholder";
+import { SunStudyBar } from "./SunStudyBar";
 import { ViewerRenderControls } from "./ViewerRenderControls";
 
 type ModelViewerStageProps = {
@@ -45,6 +46,8 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
   const measureActive = useModelViewerStore((state) => state.measureActive);
   const setMeasureActive = useModelViewerStore((state) => state.setMeasureActive);
   const toggleMeasure = useModelViewerStore((state) => state.toggleMeasure);
+  const sunStudyEngaged = useModelViewerStore((state) => state.sunStudy?.engaged === true);
+  const disengageSunStudy = useModelViewerStore((state) => state.disengageSunStudy);
   const [renderedModel, setRenderedModel] = useState<RenderedModel | null>(null);
   const renderedModelRef = useRef<RenderedModel | null>(null);
 
@@ -108,6 +111,12 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
           clearLegendFilter();
           return;
         }
+        // Collapse the sun-study bar (PRD §4.3) — after selection/filter so a
+        // first Esc still means "deselect", a second collapses the bar.
+        if (lens === "site-sun" && sunStudyEngaged) {
+          disengageSunStudy();
+          return;
+        }
         dispatchModelViewerPopoverEscape();
         return;
       }
@@ -145,13 +154,16 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
   }, [
     clearLegendFilter,
     clearSelection,
+    disengageSunStudy,
     legendFilter,
+    lens,
     measureActive,
     model,
     requestCamera,
     selectionId,
     setLens,
     setMeasureActive,
+    sunStudyEngaged,
     toggleMeasure,
   ]);
 
@@ -163,7 +175,7 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
   return (
     <>
       {isModelViewerDebugHookEnabled() ? (
-        <ModelViewerDebugBridge model={model} sunPathReady={Boolean(sunPath)} />
+        <ModelViewerDebugBridge model={model} sunPath={sunPath} />
       ) : null}
       {renderedModel ? (
         <div className={measureActive ? "model-canvas-wrap measuring" : "model-canvas-wrap"}>
@@ -197,6 +209,9 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
       {model && lens === "site-sun" && !sunPath && !measureActive ? (
         <div className="model-site-sun-hint">Set project location to see the sun path.</div>
       ) : null}
+      {model && lens === "site-sun" && sunPath && !measureActive ? (
+        <SunStudyBar grid={sunPath.sun_positions} />
+      ) : null}
       {measureActive ? (
         <div className="model-measure-hint">Click two points to measure · Esc to exit</div>
       ) : null}
@@ -224,7 +239,14 @@ function errorKind(error: unknown): ModelViewerErrorKind {
   return "transient";
 }
 
+/** Input types that never take typed text — viewer shortcuts (Esc, lens
+ *  digits, m/f/h) stay live while one of these holds focus, e.g. the
+ *  sun-study scrubbers. */
+const NON_TEXT_INPUT_TYPES = new Set(["range", "checkbox", "radio", "button"]);
+
 function isTextEntryTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
-  return target.closest("input, textarea, select, [contenteditable='true']") !== null;
+  const control = target.closest("input, textarea, select, [contenteditable='true']");
+  if (control === null) return false;
+  return !(control instanceof HTMLInputElement && NON_TEXT_INPUT_TYPES.has(control.type));
 }
