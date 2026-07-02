@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-02
 TIME: 14:00 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Shared DataTable visual and overflow fixes for linked-record cells,
   sticky headers, and fixed-column bottom clipping.
@@ -33,4 +33,3 @@ Fix three shared DataTable polish issues observed across Spaces and Catalogs:
 
 `planning/refactor` because this is shared DataTable behavior and CSS/layout
 cleanup that spans multiple feature surfaces.
-

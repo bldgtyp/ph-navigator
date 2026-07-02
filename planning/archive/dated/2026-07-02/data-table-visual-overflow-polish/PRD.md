@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-02
 TIME: 14:00 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Product behavior contract for shared DataTable visual overflow polish.
 RELATED:
@@ -64,4 +64,3 @@ Several shared DataTable surfaces show layout artifacts under dense data:
   height math.
 - Linked-record overflow needs careful row-height constraints so horizontal
   scrolling does not destabilize table geometry.
-
