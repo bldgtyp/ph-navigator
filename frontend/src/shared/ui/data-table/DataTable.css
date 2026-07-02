@@ -26,6 +26,11 @@
   overflow: auto;
   max-height: calc(100dvh - var(--data-table-page-chrome) - var(--data-table-footer-height));
   background: var(--bg-card);
+  /* Sticky gutter/frozen cells can otherwise paint past the scrollport
+     when the virtualized body ends mid-row. Keep the scrollport as the
+     single clipping and stacking boundary for table chrome. */
+  contain: paint;
+  isolation: isolate;
 }
 
 .data-table-scroll:focus {

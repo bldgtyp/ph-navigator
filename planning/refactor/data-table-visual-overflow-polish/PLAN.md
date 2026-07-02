@@ -12,7 +12,7 @@ RELATED:
 
 # PLAN - DataTable Visual Overflow Polish
 
-## Phase 01 - Header and Clipping
+## Phase 01 - Header and Clipping - Complete
 
 - Inspect DataTable sticky header CSS and token usage.
 - Replace translucent header backgrounds with opaque equivalents.
@@ -37,4 +37,3 @@ RELATED:
 
 This is likely two sessions: Phase 01 for table chrome/layout, Phase 02 for
 linked-record overflow.
-

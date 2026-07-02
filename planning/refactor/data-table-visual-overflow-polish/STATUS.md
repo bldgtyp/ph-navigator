@@ -14,12 +14,15 @@ RELATED:
 
 ## State
 
-`Planned` - manual app-testing notes collected; no implementation started.
+`Active` - Phase 01 implemented. Sticky DataTable headers now use an opaque
+default header token, and the DataTable scroll viewport is isolated as the paint
+boundary for sticky gutter/frozen-column chrome. Phase 02 linked-record cell
+overflow remains next.
 
 ## Next Step
 
-Start Phase 01 by inspecting shared DataTable sticky header CSS and fixed-column
-scroll/clipping containers.
+Start Phase 02 by inspecting the shared linked-record cell renderer and adding
+readable pill overflow behavior.
 
 ## Blockers
 
@@ -27,5 +30,7 @@ None known.
 
 ## Verification Ledger
 
-- Not run; planning packet only.
-
+- 2026-07-02: `make frontend-dev-check` - pass. Existing lint warnings only:
+  React fast-refresh warnings in unrelated component/helper exports and one
+  pre-existing `useCallback` dependency warning in
+  `frontend/src/shared/ui/data-table/feature/useSliceTableController.ts`.
