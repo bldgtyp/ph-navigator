@@ -719,7 +719,7 @@ describe("EnvelopePage", () => {
     expect(within(legend).getByText("Emissivity")).toBeInTheDocument();
     expect(within(legend).getByText("0.038")).toBeInTheDocument();
     expect(within(legend).getByText("160")).toBeInTheDocument();
-    expect(within(legend).getByText("2100")).toBeInTheDocument();
+    expect(within(legend).getByText("2,100")).toBeInTheDocument();
     expect(within(legend).getByText("0.9")).toBeInTheDocument();
     expect(within(legend).queryByText("Dense-pack cellulose")).not.toBeInTheDocument();
     expect(within(legend).queryByText("Unused air barrier")).not.toBeInTheDocument();
@@ -1408,7 +1408,7 @@ describe("EnvelopePage", () => {
     expect(within(dialog).getByText("Conductivity")).toBeInTheDocument();
     expect(within(dialog).getByText("0.038 W/(m-K)")).toBeInTheDocument();
     expect(within(dialog).getByText("160 kg/m3")).toBeInTheDocument();
-    expect(within(dialog).getByText("2100 J/(kg-K)")).toBeInTheDocument();
+    expect(within(dialog).getByText("2,100 J/(kg-K)")).toBeInTheDocument();
     expect(within(dialog).getByText("#dce6c8")).toBeInTheDocument();
     expect(
       within(dialog).getByText("Steel stud parameters").closest("details"),
@@ -1722,7 +1722,7 @@ describe("EnvelopePage", () => {
     expect(within(detail).getByText("Conductivity")).toBeInTheDocument();
     expect(within(detail).getByText("0.038 W/(m-K)")).toBeInTheDocument();
     expect(within(detail).getByText("160 kg/m3")).toBeInTheDocument();
-    expect(within(detail).getByText("2100 J/(kg-K)")).toBeInTheDocument();
+    expect(within(detail).getByText("2,100 J/(kg-K)")).toBeInTheDocument();
     expect(within(detail).getByText("#dce6c8")).toBeInTheDocument();
     expect(within(detail).getByText("Width")).toBeInTheDocument();
     // It is the read-only inspect, not the editor: no material picker or delete.

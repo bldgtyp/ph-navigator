@@ -64,6 +64,7 @@ function unitOptionsFor(unitSystem: UnitSystem): UnitFormatOptions {
   return {
     unitSystem,
     showUnit: false,
+    useGrouping: false,
     empty: "",
   };
 }

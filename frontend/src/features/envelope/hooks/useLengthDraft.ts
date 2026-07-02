@@ -17,7 +17,11 @@ export function useLengthDraft(initialValueMm: number | null, options: LengthDra
   const [draft, setDraft] = useState(() =>
     initialValueMm === null
       ? ""
-      : formatLengthFromMm(initialValueMm, { unitSystem: activeUnitSystem, showUnit: false }),
+      : formatLengthFromMm(initialValueMm, {
+          unitSystem: activeUnitSystem,
+          showUnit: false,
+          useGrouping: false,
+        }),
   );
   const [error, setError] = useState<string | null>(null);
 
@@ -30,7 +34,11 @@ export function useLengthDraft(initialValueMm: number | null, options: LengthDra
       if (currentDraft.trim() === "") return currentDraft;
       const parsed = parseLengthToMm(currentDraft, { unitSystem: previous });
       if (!parsed.ok) return currentDraft;
-      return formatLengthFromMm(parsed.valueSi, { unitSystem: activeUnitSystem, showUnit: false });
+      return formatLengthFromMm(parsed.valueSi, {
+        unitSystem: activeUnitSystem,
+        showUnit: false,
+        useGrouping: false,
+      });
     });
     previousUnitSystem.current = activeUnitSystem;
   }, [activeUnitSystem, options.followUnitPreference]);

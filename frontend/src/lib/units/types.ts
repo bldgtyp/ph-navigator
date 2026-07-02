@@ -18,5 +18,6 @@ export type UnitFormatOptions = {
   unitSystem: UnitSystem;
   fractionDigits?: number;
   showUnit?: boolean;
+  useGrouping?: boolean;
   empty?: string;
 };

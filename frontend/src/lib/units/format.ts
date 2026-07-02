@@ -9,7 +9,8 @@ export function formatNumberWithUnit(
     return options.empty ?? "—";
   }
   const fractionDigits = options.fractionDigits ?? 2;
-  const formatted = addThousandsSeparators(stripTrailingZeros(value.toFixed(fractionDigits)));
+  const stripped = stripTrailingZeros(value.toFixed(fractionDigits));
+  const formatted = options.useGrouping === false ? stripped : addThousandsSeparators(stripped);
   return options.showUnit === false || unit === "" ? formatted : `${formatted} ${unit}`;
 }
 
