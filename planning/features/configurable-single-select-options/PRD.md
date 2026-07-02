@@ -1,6 +1,6 @@
 ---
 DATE: 2026-07-02
-TIME: 14:00 EDT
+TIME: 15:06 EDT
 STATUS: Planned
 AUTHOR: Codex
 SCOPE: Product and schema contract for user-configurable single-select options.
@@ -8,6 +8,7 @@ RELATED:
   - ./README.md
   - ./PLAN.md
   - ./STATUS.md
+  - ./reviews/2026-07-02-critical-feature-review.md
   - planning/features_v1.1/catalog-manage-options-modal/PRD.md
 ---
 
@@ -29,6 +30,8 @@ fields such as `STATUS` are controlled app vocabulary and should remain locked.
   user-configurable.
 - Rooms `Floor` and `Zone` are configurable.
 - System-owned single-selects such as `STATUS` are not configurable.
+- The same configurability rule applies to every option mutation entry point:
+  manage-options, inline create from the cell picker, and paste/type-to-create.
 - Users can add, rename, reorder, and delete/merge options through an existing
   or shared manage-options modal.
 - Records with existing option values remain valid or receive an explicit merge
@@ -46,6 +49,8 @@ fields such as `STATUS` are controlled app vocabulary and should remain locked.
 - Delete in-use option: user must choose a replacement or cancel.
 - Protected/system single-selects reject option-list edits even if a frontend bug
   attempts to dispatch one.
+- Protected/system single-selects do not offer inline "+ Create" or accept pasted
+  unknown labels as new options.
 - Tests cover allowlisted vs protected fields, option mutation persistence, and
   existing values during rename/delete.
 
@@ -65,4 +70,7 @@ fields such as `STATUS` are controlled app vocabulary and should remain locked.
   Rooms field option lists?
 - How should removed values display before merge: invalid chip, stale option, or
   immediate replacement-only flow?
-
+- Should nullable Rooms deletes clear referenced cells, or should the UI force a
+  replacement even though the backend can currently clear them?
+- Should this feature retire the legacy whole-table replace `legacyOptions`
+  path for Rooms in favor of typed `editOptions` / `editFieldBundle`?
