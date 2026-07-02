@@ -6,6 +6,7 @@ AUTHOR: Codex
 SCOPE: Backend and shared DataTable guardrails for option mutability.
 RELATED:
   - ../PLAN.md
+  - ../decisions.md
   - ./phase-00-contract-spike.md
 ---
 
@@ -17,12 +18,14 @@ Make option mutability enforceable before exposing new UI.
 
 ## Scope
 
-- Add the Phase 00-selected backend contract to `TableFieldRegistry`.
-- Enforce protected fields in `resolve_option_target` or `apply_edit_options`.
+- Add `TableFieldRegistry.option_editable_builtin_field_keys`.
+- Enforce protected built-ins in `resolve_option_target`.
+- Reject locked built-in option edits with `422 custom_field_options_locked`.
 - Keep Rooms `floor_level` and `building_zone` allowlisted.
 - Keep app-owned `status` option lists protected.
-- Add frontend FieldDef capability so cell editors know whether creating
-  options is allowed.
+- Add `FieldDef.optionMutability?: "editable" | "locked"`.
+- Add one shared frontend option-mutability helper used by the field-config
+  modal, inline `+ Create`, and paste coercion.
 - Disable inline `+ Create` and pasted unknown-label option creation for locked
   lists.
 

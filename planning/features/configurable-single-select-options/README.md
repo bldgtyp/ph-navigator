@@ -1,11 +1,12 @@
 ---
 DATE: 2026-07-02
 TIME: 14:00 EDT
-STATUS: Planned
+STATUS: Active
 AUTHOR: Codex
 SCOPE: User-configurable option lists for selected project single-select fields,
   starting with Spaces / Rooms `Floor` and `Zone`.
 RELATED:
+  - ./decisions.md
   - ./PRD.md
   - ./PLAN.md
   - ./STATUS.md
@@ -32,10 +33,11 @@ not become user-configurable.
 1. `PRD.md` - product/schema contract.
 2. `reviews/2026-07-02-critical-feature-review.md` - edge-case and API risk
    review that reframes the implementation.
-3. `PLAN.md` - phased plan and decision points.
-4. `phases/phase-00-contract-spike.md` - first executable planning phase.
-5. `STATUS.md` - current state and next action.
-6. `planning/features_v1.1/catalog-manage-options-modal/README.md` - related
+3. `decisions.md` - resolved option-mutability contract.
+4. `PLAN.md` - phased plan and decision points.
+5. `phases/phase-00-contract-spike.md` - completed contract spike.
+6. `STATUS.md` - current state and next action.
+7. `planning/features_v1.1/catalog-manage-options-modal/README.md` - related
    modal precedent for catalog option cleanup.
 
 ## Classification

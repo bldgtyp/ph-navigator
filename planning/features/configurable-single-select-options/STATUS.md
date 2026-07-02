@@ -6,23 +6,24 @@ AUTHOR: Codex
 SCOPE: Current state for user-configurable single-select options.
 RELATED:
   - ./README.md
+  - ./decisions.md
   - ./PRD.md
   - ./PLAN.md
   - ./reviews/2026-07-02-critical-feature-review.md
   - ./phases/phase-00-contract-spike.md
+  - ./phases/phase-01-api-guardrails.md
 ---
 
 # STATUS - Configurable Single-Select Options
 
 ## State
 
-`Active` - planning packet expanded after a critical code-backed review; no
-implementation started.
+`Active` - Phase 00 contract spike complete; implementation not started.
 
 ## Next Step
 
-Start `phases/phase-00-contract-spike.md`. Do not implement UI wiring until the
-option-mutability contract covers all three entry points:
+Start `phases/phase-01-api-guardrails.md`. Do not implement Rooms UI wiring
+until the option-mutability contract covers all three entry points:
 
 - field-config manage-options modal
 - inline single-select create
@@ -30,19 +31,26 @@ option-mutability contract covers all three entry points:
 
 ## Blockers
 
-Requires product/schema decisions before implementation:
+None for Phase 01.
 
-- Whether the existing render-time `FieldDef.locked: ["options"]` is the
-  product-facing source of truth, or whether the backend also needs a named
-  option-edit allowlist/lock registry.
-- Whether protected app-owned fields such as `status` must reject all option
-  creation/edit/delete paths, including inline create and pasted new labels.
-- Whether Rooms `Floor` and `Zone` delete in-use values by clearing cells
-  (current backend `editOptions` behavior for nullable built-ins) or by forcing
-  an explicit replacement (current PRD language and legacy slice-replace helper).
-- Whether the existing whole-table replace option editor remains in play or the
-  feature standardizes on typed `editOptions` / `editFieldBundle`.
+## Decisions
+
+- Contract: `option_mutability = "editable" | "locked"`.
+- Frontend capability: `FieldDef.optionMutability`, defaulting from
+  `FieldDef.locked.includes("options")`.
+- Backend capability: `TableFieldRegistry.option_editable_builtin_field_keys`.
+- Allowlisted built-ins: Rooms `floor_level`, `building_zone`.
+- Protected built-ins: app-owned `status` fields and other built-in
+  single-selects unless explicitly allowlisted.
+- Nullable Rooms referenced deletes clear cells; replacement UX is not required
+  for Phase 02.
+- Rooms manage-options uses typed `editFieldBundle.nextOptions` /
+  `apply_edit_options`.
 
 ## Verification Ledger
 
 - 2026-07-02: Code inspection only; no tests run.
+- 2026-07-02: Phase 00 code inspection completed across DataTable
+  single-select editors, paste planning, field-config options, backend
+  `TableFieldRegistry`, Rooms registry, and `options_ops`. Decisions captured
+  in `decisions.md`; no tests run because Phase 00 is docs/contract only.

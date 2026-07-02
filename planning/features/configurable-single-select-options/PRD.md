@@ -1,11 +1,12 @@
 ---
 DATE: 2026-07-02
 TIME: 15:06 EDT
-STATUS: Planned
+STATUS: Active
 AUTHOR: Codex
 SCOPE: Product and schema contract for user-configurable single-select options.
 RELATED:
   - ./README.md
+  - ./decisions.md
   - ./PLAN.md
   - ./STATUS.md
   - ./reviews/2026-07-02-critical-feature-review.md
@@ -46,7 +47,8 @@ fields such as `STATUS` are controlled app vocabulary and should remain locked.
 - Add option: the new option becomes available in Rooms cells.
 - Rename option: existing records update or continue to resolve correctly.
 - Reorder options: option order persists across reload.
-- Delete in-use option: user must choose a replacement or cancel.
+- Delete in-use nullable Rooms option: referenced cells clear to `null` unless a
+  later replacement UX supplies an explicit replacement.
 - Protected/system single-selects reject option-list edits even if a frontend bug
   attempts to dispatch one.
 - Protected/system single-selects do not offer inline "+ Create" or accept pasted
@@ -62,15 +64,17 @@ fields such as `STATUS` are controlled app vocabulary and should remain locked.
   same shared modal contract. Catalog option cleanup remains tracked in
   `planning/features_v1.1/catalog-manage-options-modal/`.
 
-## Open Decisions
+## Decisions
 
-- Where does the configurability flag live: field definition, project document
-  schema metadata, table contract registry, or another vocabulary registry?
-- Should `Floor` and `Zone` be project-wide reusable vocabularies, or independent
-  Rooms field option lists?
-- How should removed values display before merge: invalid chip, stale option, or
-  immediate replacement-only flow?
-- Should nullable Rooms deletes clear referenced cells, or should the UI force a
-  replacement even though the backend can currently clear them?
-- Should this feature retire the legacy whole-table replace `legacyOptions`
-  path for Rooms in favor of typed `editOptions` / `editFieldBundle`?
+See `decisions.md`.
+
+- Option mutability is an explicit shared capability:
+  `option_mutability = "editable" | "locked"`.
+- Frontend `FieldDef.locked: ["options"]` remains the render hint, with
+  `FieldDef.optionMutability` as the shared editor capability.
+- Backend `TableFieldRegistry.option_editable_builtin_field_keys` is the
+  enforcement allowlist for built-in single-select option edits.
+- Rooms `Floor` and `Zone` are editable built-ins.
+- Built-in `status` fields remain locked.
+- Rooms manage-options uses typed `editFieldBundle.nextOptions` /
+  `apply_edit_options`, not new `legacyOptions` wiring.

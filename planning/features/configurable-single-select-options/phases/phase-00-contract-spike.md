@@ -1,10 +1,11 @@
 ---
 DATE: 2026-07-02
 TIME: 15:06 EDT
-STATUS: Active
+STATUS: Done
 AUTHOR: Codex
 SCOPE: Decision pass before implementation.
 RELATED:
+  - ../decisions.md
   - ../README.md
   - ../PRD.md
   - ../PLAN.md
@@ -17,19 +18,21 @@ RELATED:
 
 Resolve the option-mutability contract before touching UI or backend behavior.
 
+## Result
+
+Complete. See `../decisions.md`.
+
 ## Questions To Answer
 
-1. Is `FieldDef.locked: ["options"]` the product-facing source of truth, or do
-   we add an explicit `option_editable` / `option_mutability` concept?
-2. What is the backend enforcement surface: per-table allowlist, per-table lock
-   set, or persisted schema metadata?
-3. Do Rooms `Floor` and `Zone` use current nullable delete-to-clear behavior, or
-   do in-use deletes require replacement?
-4. Should inline create and paste-created options be disabled for locked option
-   lists?
-5. Does Rooms manage-options dispatch through typed `editOptions` /
-   `editFieldBundle`, or continue using legacy whole-table replace
-   `legacyOptions`?
+1. Use explicit `option_mutability = "editable" | "locked"`.
+2. Backend enforcement is
+   `TableFieldRegistry.option_editable_builtin_field_keys`, an allowlist for
+   built-in single-select option edits. Custom `cf_*` single-selects remain
+   editable.
+3. Rooms `Floor` and `Zone` use nullable delete-to-clear behavior.
+4. Inline create and paste-created options are disabled for locked option lists.
+5. Rooms manage-options dispatches through typed `editFieldBundle.nextOptions`
+   into `apply_edit_options`; do not add new `legacyOptions` wiring.
 
 ## Investigation Targets
 
@@ -44,13 +47,16 @@ Resolve the option-mutability contract before touching UI or backend behavior.
 
 ## Deliverables
 
-- Decision entry in `decisions.md` or this phase file.
-- Updated PRD acceptance criteria if delete semantics change.
-- Updated Phase 01 scope with exact backend/frontend contract names.
+- Decision entry in `../decisions.md`.
+- PRD acceptance criteria updated for nullable Rooms delete-to-clear.
+- Phase 01 scope updated with exact backend/frontend contract names.
 
 ## Exit Criteria
 
-- A reviewer can state which fields are option-editable and why.
-- A direct REST/MCP mutation against protected `status` has an expected result.
-- Inline create and paste behavior for locked fields is specified.
-- Rooms in-use delete behavior is specified.
+- A reviewer can state which fields are option-editable and why:
+  custom `cf_*` single-selects and allowlisted built-ins only.
+- A direct REST/MCP mutation against protected `status` has an expected result:
+  `422 custom_field_options_locked`.
+- Inline create and paste behavior for locked fields is specified: reject
+  unknown labels instead of creating options.
+- Rooms in-use delete behavior is specified: nullable cells clear.

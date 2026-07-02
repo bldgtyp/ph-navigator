@@ -1,11 +1,12 @@
 ---
 DATE: 2026-07-02
 TIME: 15:06 EDT
-STATUS: Planned
+STATUS: Active
 AUTHOR: Codex
 SCOPE: Implementation plan for user-configurable single-select options.
 RELATED:
   - ./README.md
+  - ./decisions.md
   - ./PRD.md
   - ./STATUS.md
   - ./reviews/2026-07-02-critical-feature-review.md
@@ -36,23 +37,30 @@ has multiple paths that can alter option lists:
 The feature should be split so protected fields such as `status` cannot be
 edited through one path while another path still creates options.
 
-## Phase 00 - Contract Spike
+## Phase 00 - Contract Spike - DONE
 
-- Complete `phases/phase-00-contract-spike.md`.
-- Decide whether the product contract is expressed as `locked: ["options"]`,
-  backend `option_editable_field_keys`, backend `option_locked_field_keys`, or a
-  combined render/server contract.
-- Decide delete behavior for in-use nullable Rooms options: clear, require
-  replacement, or phased support.
-- Decide whether Rooms uses typed schema mutations only, or keeps the legacy
-  whole-table replace path.
+- Completed in `decisions.md` and `phases/phase-00-contract-spike.md`.
+- Product contract is `option_mutability = "editable" | "locked"`.
+- Frontend derives the default from `FieldDef.locked: ["options"]` and exposes
+  `FieldDef.optionMutability`.
+- Backend enforces built-in edits through
+  `TableFieldRegistry.option_editable_builtin_field_keys`.
+- Nullable Rooms referenced deletes clear cells.
+- Rooms manage-options uses typed `editFieldBundle.nextOptions` /
+  `apply_edit_options`, not new `legacyOptions` wiring.
 
 ## Phase 01 - API Guardrails
 
 - Complete `phases/phase-01-api-guardrails.md`.
-- Enforce option-edit allowlist/lock semantics on backend schema mutations.
-- Extend the frontend DataTable contract so inline create and paste observe the
-  same mutability rule as the field-config modal.
+- Add `TableFieldRegistry.option_editable_builtin_field_keys` and enforce it in
+  `resolve_option_target`.
+- Keep custom `cf_*` single-select options editable by default.
+- Keep Rooms `floor_level` and `building_zone` allowlisted.
+- Reject protected built-in option edits with `422 custom_field_options_locked`.
+- Add `FieldDef.optionMutability` plus one shared frontend helper for
+  manage-options, inline create, and paste-created options.
+- Disable inline `+ Create` and paste-created `newOptions` for locked option
+  lists.
 - Add focused tests for allowlisted Rooms fields and protected `status`.
 
 ## Phase 02 - Rooms Affordance
@@ -61,7 +69,8 @@ edited through one path while another path still creates options.
 - Expose the affordance only for configurable single-select fields.
 - Wire Rooms `Floor` and `Zone` through the agreed typed mutation path.
 - Support add, rename, reorder, and unused-option delete.
-- Defer in-use replacement UX unless Phase 00 explicitly keeps it in scope.
+- Defer explicit referenced-delete replacement UX; nullable Rooms deletes can
+  clear cells through the typed backend path.
 
 ## Phase 03 - Cascade UX
 

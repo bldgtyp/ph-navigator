@@ -27,8 +27,8 @@ field-config surface.
 
 ## Explicit Deferral
 
-Referenced-option delete with replacement/clear UX can be deferred to Phase 03
-unless Phase 00 decides current backend clear behavior is sufficient.
+Referenced-option replacement UX is deferred to Phase 03. For this phase,
+nullable Rooms referenced deletes may clear cells through the typed backend path.
 
 ## Tests
 
