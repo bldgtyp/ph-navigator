@@ -11,6 +11,7 @@ import {
   schemaForRooms,
   withRoomCustomValues,
 } from "../testing/testFixtures";
+import { chooseAutocompleteOption } from "../../../shared/ui/data-table/__tests__/helpers/autocomplete";
 
 function renderEditorTable(
   slice: RoomsSlice,
@@ -167,5 +168,34 @@ describe("RoomsTable custom-field schema editor (plan-15 P2.7)", () => {
     const request = onEditCustomFieldBundle.mock.calls[0]?.[0] as EditCustomFieldBundleRequest;
     expect(request.fieldKey).toBe("floor_level");
     expect(request.options?.map((option) => option.label)).toEqual(["Ground", "Penthouse"]);
+  });
+
+  test("Rooms Floor referenced option delete dispatches replacement choices", async () => {
+    const onEditCustomFieldBundle = vi.fn().mockResolvedValue(undefined);
+    renderEditorTable(
+      buildRoomsSlice({
+        rooms: [buildRoom({ floor_level: "opt_ground" })],
+        single_select_options: {
+          "rooms.floor_level": [
+            { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 },
+            { id: "opt_basement", label: "Basement", color: "#22c55e", order: 1 },
+          ],
+          "rooms.building_zone": [],
+        },
+      }),
+      { onEditCustomFieldBundle },
+    );
+
+    const dialog = await openHeaderConfigDialog(/^Floor\b/);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Delete option Ground" }));
+    chooseAutocompleteOption("Replacement option", "Basement");
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(onEditCustomFieldBundle).toHaveBeenCalledTimes(1));
+    const request = onEditCustomFieldBundle.mock.calls[0]?.[0] as EditCustomFieldBundleRequest;
+    expect(request.fieldKey).toBe("floor_level");
+    expect(request.options?.map((option) => option.id)).toEqual(["opt_basement"]);
+    expect(request.optionReplacements).toEqual({ opt_ground: "opt_basement" });
   });
 });

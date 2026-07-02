@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useCallback, useState } from "react";
 import { describe, expect, test, vi } from "vitest";
 import {
@@ -6,6 +6,7 @@ import {
   type OptionSourceRow,
 } from "../components/FieldConfigSectionOptions";
 import type { FieldOption } from "../types";
+import { chooseAutocompleteOption } from "./helpers/autocomplete";
 
 // Module-level stable empties mirror the EMPTY_FIELD_OPTIONS /
 // EMPTY_OPTION_SOURCE_ROWS constants in FieldConfigModal. Inline `[]`
@@ -15,6 +16,10 @@ import type { FieldOption } from "../types";
 // "Maximum update depth exceeded" after a text→single_select save.
 const EMPTY_OPTIONS: readonly FieldOption[] = [];
 const EMPTY_ROWS: readonly OptionSourceRow[] = [];
+const FLOOR_OPTIONS: readonly FieldOption[] = [
+  { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 },
+  { id: "opt_basement", label: "Basement", color: "#22c55e", order: 1 },
+];
 
 describe("FieldConfigSectionOptions", () => {
   test("stable empty sourceOptions reference does not cause unbounded onDraftChange calls", () => {
@@ -36,6 +41,7 @@ describe("FieldConfigSectionOptions", () => {
           sourceColorCodeOptions
           sourceDefaultOptionId={null}
           rows={EMPTY_ROWS}
+          required={false}
           disabled={false}
           onDraftChange={handle}
         />
@@ -43,5 +49,78 @@ describe("FieldConfigSectionOptions", () => {
     }
     expect(() => render(<Harness />)).not.toThrow();
     expect(onDraftChange.mock.calls.length).toBeLessThan(5);
+  });
+
+  test("in-use nullable option delete clears without a replacement map", async () => {
+    const onDraftChange = vi.fn();
+    render(
+      <FieldConfigSectionOptions
+        fieldDisplayName="Floor"
+        sourceOptions={FLOOR_OPTIONS}
+        sourceColorCodeOptions
+        sourceDefaultOptionId={null}
+        rows={[{ rowId: "rm_1", rawValue: "opt_ground" }]}
+        required={false}
+        disabled={false}
+        onDraftChange={onDraftChange}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete option Ground" }));
+    expect(screen.getByText(/1 row currently reference this option/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+
+    await waitFor(() => {
+      const draft = onDraftChange.mock.calls.at(-1)?.[0];
+      expect(draft.options.map((option: FieldOption) => option.id)).toEqual(["opt_basement"]);
+      expect(draft.optionReplacements).toEqual({});
+    });
+  });
+
+  test("in-use option delete can rewrite rows to a replacement option", async () => {
+    const onDraftChange = vi.fn();
+    render(
+      <FieldConfigSectionOptions
+        fieldDisplayName="Floor"
+        sourceOptions={FLOOR_OPTIONS}
+        sourceColorCodeOptions
+        sourceDefaultOptionId={null}
+        rows={[{ rowId: "rm_1", rawValue: "opt_ground" }]}
+        required={false}
+        disabled={false}
+        onDraftChange={onDraftChange}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete option Ground" }));
+    chooseAutocompleteOption("Replacement option", "Basement");
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+
+    await waitFor(() => {
+      const draft = onDraftChange.mock.calls.at(-1)?.[0];
+      expect(draft.options.map((option: FieldOption) => option.id)).toEqual(["opt_basement"]);
+      expect(draft.optionReplacements).toEqual({ opt_ground: "opt_basement" });
+    });
+  });
+
+  test("required in-use option delete without a replacement candidate is blocked", () => {
+    render(
+      <FieldConfigSectionOptions
+        fieldDisplayName="Floor"
+        sourceOptions={[FLOOR_OPTIONS[0] as FieldOption]}
+        sourceColorCodeOptions
+        sourceDefaultOptionId={null}
+        rows={[{ rowId: "rm_1", rawValue: "opt_ground" }]}
+        required
+        disabled={false}
+        onDraftChange={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete option Ground" }));
+
+    expect(screen.getByText(/Floor is required/)).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Replacement option" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Delete" })).toBeDisabled();
   });
 });

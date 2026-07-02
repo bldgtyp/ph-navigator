@@ -545,6 +545,9 @@ export type EditCustomFieldBundleRequest = {
   // Set by the single-select options section. The consumer sends this
   // as `editFieldBundle.nextOptions`.
   options?: FieldOption[];
+  // Deleted-option replacement map. Keys are deleted option ids; values
+  // are replacement option ids that remain in `options`.
+  optionReplacements?: Record<string, string>;
   // Set for custom single-selects. `null` means "no default".
   defaultOptionId?: string | null;
   // Stored in CustomFieldDef.config so custom select columns keep the

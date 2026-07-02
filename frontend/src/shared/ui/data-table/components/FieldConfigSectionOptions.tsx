@@ -20,7 +20,7 @@ import { OPTION_COLOR_PALETTE, createFieldOption } from "../lib/options/create";
 import { hasDuplicateFieldOptionLabels, missingOptionReferences } from "../lib/options/references";
 import { normalizeOptionOrders } from "../lib/options/normalize";
 import type { FieldOption } from "../types";
-import { ConfirmDeleteOptionDialog } from "./ConfirmDeleteOptionDialog";
+import { ConfirmDeleteOptionDialog, type CascadeChoice } from "./ConfirmDeleteOptionDialog";
 import { SingleSelectDefaultPicker } from "./SingleSelectDefaultPicker";
 
 export type OptionSourceRow = { rowId: string; rawValue: unknown };
@@ -31,11 +31,13 @@ export type FieldConfigSectionOptionsProps = {
   sourceColorCodeOptions: boolean;
   sourceDefaultOptionId: string | null;
   rows: readonly OptionSourceRow[];
+  required: boolean;
   disabled: boolean;
   onDraftChange: (draft: {
     options: FieldOption[];
     colorCodeOptions: boolean;
     defaultOptionId: string | null;
+    optionReplacements: Record<string, string>;
     valid: boolean;
     dirty: boolean;
   }) => void;
@@ -47,6 +49,7 @@ export function FieldConfigSectionOptions({
   sourceColorCodeOptions,
   sourceDefaultOptionId,
   rows,
+  required,
   disabled,
   onDraftChange,
 }: FieldConfigSectionOptionsProps) {
@@ -56,6 +59,7 @@ export function FieldConfigSectionOptions({
     sourceDefaultOptionId,
   );
   const [confirmingOptionId, setConfirmingOptionId] = useState<string | null>(null);
+  const [optionReplacements, setOptionReplacements] = useState<Record<string, string>>({});
   const focusOnMountIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -63,6 +67,7 @@ export function FieldConfigSectionOptions({
     setDraftColorCodeOptions(sourceColorCodeOptions);
     setDraftDefaultOptionId(sourceDefaultOptionId);
     setConfirmingOptionId(null);
+    setOptionReplacements({});
     focusOnMountIdRef.current = null;
   }, [sourceOptions, sourceColorCodeOptions, sourceDefaultOptionId]);
 
@@ -92,6 +97,7 @@ export function FieldConfigSectionOptions({
       options: normalizedDraftOptions,
       colorCodeOptions: draftColorCodeOptions,
       defaultOptionId: draftDefaultOptionId,
+      optionReplacements,
       valid,
       dirty,
     });
@@ -99,6 +105,7 @@ export function FieldConfigSectionOptions({
     dirty,
     draftColorCodeOptions,
     draftDefaultOptionId,
+    optionReplacements,
     normalizedDraftOptions,
     onDraftChange,
     valid,
@@ -124,6 +131,7 @@ export function FieldConfigSectionOptions({
     (id: string) => {
       if ((referenceCounts[id] ?? 0) === 0) {
         removeOptionFromDraft(id);
+        setOptionReplacements((current) => withoutKey(current, id));
         return;
       }
       setConfirmingOptionId(id);
@@ -164,6 +172,30 @@ export function FieldConfigSectionOptions({
   const confirmingOption = confirmingOptionId
     ? (draftOptions.find((option) => option.id === confirmingOptionId) ?? null)
     : null;
+  const replacementOptions = useMemo(
+    () =>
+      confirmingOptionId
+        ? draftOptions.filter((option) => option.id !== confirmingOptionId && option.label.trim())
+        : [],
+    [confirmingOptionId, draftOptions],
+  );
+
+  const handleConfirmDelete = useCallback(
+    (choice: CascadeChoice) => {
+      if (!confirmingOptionId) return;
+      if (choice.kind === "replace") {
+        setOptionReplacements((current) => ({
+          ...current,
+          [confirmingOptionId]: choice.replacementId,
+        }));
+      } else {
+        setOptionReplacements((current) => withoutKey(current, confirmingOptionId));
+      }
+      removeOptionFromDraft(confirmingOptionId);
+      setConfirmingOptionId(null);
+    },
+    [confirmingOptionId, removeOptionFromDraft],
+  );
 
   return (
     <>
@@ -241,15 +273,12 @@ export function FieldConfigSectionOptions({
         open={confirmingOptionId !== null}
         option={confirmingOption}
         referenceCount={confirmingOptionId ? (referenceCounts[confirmingOptionId] ?? 0) : 0}
-        required={false}
+        required={required}
         fieldDisplayName={fieldDisplayName}
-        replacementOptions={[]}
-        allowReplacement={false}
+        replacementOptions={replacementOptions}
+        allowReplacement
         onCancel={() => setConfirmingOptionId(null)}
-        onConfirm={() => {
-          if (confirmingOptionId) removeOptionFromDraft(confirmingOptionId);
-          setConfirmingOptionId(null);
-        }}
+        onConfirm={handleConfirmDelete}
       />
     </>
   );
@@ -400,6 +429,13 @@ function optionReferenceCounts(rows: readonly OptionSourceRow[]): Record<string,
     counts[row.rawValue] = (counts[row.rawValue] ?? 0) + 1;
   }
   return counts;
+}
+
+function withoutKey(record: Record<string, string>, key: string): Record<string, string> {
+  if (!(key in record)) return record;
+  const next = { ...record };
+  delete next[key];
+  return next;
 }
 
 function optionListsEquivalent(a: readonly FieldOption[], b: readonly FieldOption[]): boolean {

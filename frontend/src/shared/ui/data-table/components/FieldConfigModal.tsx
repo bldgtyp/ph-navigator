@@ -155,6 +155,7 @@ export function FieldConfigModal({
     options: FieldOption[];
     colorCodeOptions: boolean;
     defaultOptionId: string | null;
+    optionReplacements: Record<string, string>;
     valid: boolean;
     dirty: boolean;
   } | null>(null);
@@ -471,6 +472,9 @@ export function FieldConfigModal({
         ...(draftType === "single_select" && optionsDraft
           ? {
               options: optionsDraft.options,
+              ...(Object.keys(optionsDraft.optionReplacements).length > 0
+                ? { optionReplacements: optionsDraft.optionReplacements }
+                : {}),
               defaultOptionId: optionsDraft.defaultOptionId,
               colorCodeOptions: optionsDraft.colorCodeOptions,
             }
@@ -718,6 +722,7 @@ export function FieldConfigModal({
                 sourceColorCodeOptions={source.colorCodeOptions !== false}
                 sourceDefaultOptionId={source.defaultOptionId ?? null}
                 rows={optionRows ?? EMPTY_OPTION_SOURCE_ROWS}
+                required={source.required === true}
                 disabled={pending || !canEditFieldOptions(fieldDef)}
                 onDraftChange={setOptionsDraft}
               />

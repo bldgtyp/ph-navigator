@@ -13,21 +13,22 @@ RELATED:
   - ./phases/phase-00-contract-spike.md
   - ./phases/phase-01-api-guardrails.md
   - ./phases/phase-02-rooms-affordance.md
+  - ./phases/phase-03-cascade-ux.md
 ---
 
 # STATUS - Configurable Single-Select Options
 
 ## State
 
-`Active` - Phase 02 Rooms affordance complete.
+`Active` - Phase 03 cascade UX complete.
 
 ## Next Step
 
-Start `phases/phase-03-cascade-ux.md`.
+Start `phases/phase-04-verification-docs.md`.
 
 ## Blockers
 
-None for Phase 02.
+None for Phase 03.
 
 ## Decisions
 
@@ -38,10 +39,12 @@ None for Phase 02.
 - Allowlisted built-ins: Rooms `floor_level`, `building_zone`.
 - Protected built-ins: app-owned `status` fields and other built-in
   single-selects unless explicitly allowlisted.
-- Nullable Rooms referenced deletes clear cells; replacement UX is not required
-  for Phase 02.
+- Nullable Rooms referenced deletes can explicitly clear cells or replace
+  references with another option.
 - Rooms manage-options uses typed `editFieldBundle.nextOptions` /
   `apply_edit_options`.
+- Referenced-delete replacement choices use
+  `editFieldBundle.optionReplacements`.
 
 ## Implementation Notes
 
@@ -55,6 +58,11 @@ None for Phase 02.
   for field-config options, inline `+ Create`, and paste-created options.
 - Rooms `Floor` and `Zone` no longer carry the `"options"` lock, so the shared
   field-config modal exposes editable option controls for those built-ins.
+- `FieldConfigSectionOptions` now records explicit delete cascade choices.
+  Required single-select fields must choose a replacement; nullable fields
+  default to clear and may optionally replace.
+- `EditCustomFieldBundleRequest.optionReplacements` is forwarded through
+  `useCustomFieldHandlers` into the typed schema mutation builder.
 
 ## Verification Ledger
 
@@ -75,3 +83,9 @@ None for Phase 02.
   - `pnpm vitest run src/features/equipment/__tests__/RoomsTable.schemaEditor.test.tsx src/shared/ui/data-table/__tests__/SingleSelectPopover.test.tsx src/shared/ui/data-table/__tests__/useGridEdit.test.ts src/shared/ui/data-table/__tests__/lib.test.ts`
   - `pnpm exec tsc -b`
   - `pnpm exec prettier --check src/features/equipment/lib.ts src/features/equipment/__tests__/RoomsTable.schemaEditor.test.tsx`
+- 2026-07-02: Phase 03 complete. Verification:
+  - `uv run pytest tests/test_project_document_phase_3_type_conversion.py`
+  - `uv run ruff check tests/test_project_document_phase_3_type_conversion.py`
+  - `pnpm vitest run src/shared/ui/data-table/__tests__/FieldConfigSectionOptions.test.tsx src/features/equipment/__tests__/RoomsTable.schemaEditor.test.tsx src/shared/ui/data-table/__tests__/customFieldMutations.test.ts`
+  - `pnpm exec tsc -b`
+  - `pnpm exec prettier --check src/shared/ui/data-table/components/FieldConfigSectionOptions.tsx src/shared/ui/data-table/components/FieldConfigModal.tsx src/shared/ui/data-table/feature/useCustomFieldHandlers.ts src/shared/ui/data-table/types.ts src/shared/ui/data-table/__tests__/FieldConfigSectionOptions.test.tsx src/features/equipment/__tests__/RoomsTable.schemaEditor.test.tsx`

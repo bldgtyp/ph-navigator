@@ -72,11 +72,16 @@ edited through one path while another path still creates options.
   `apply_edit_options`.
 - Explicit referenced-delete replacement UX remains Phase 03 scope.
 
-## Phase 03 - Cascade UX
+## Phase 03 - Cascade UX - DONE
 
-- Complete `phases/phase-03-cascade-ux.md`.
-- Support referenced-option delete with explicit clear/replace semantics.
-- Decide whether this unlocks required built-in single-selects beyond Rooms.
+- Completed in `phases/phase-03-cascade-ux.md`.
+- `FieldConfigSectionOptions` now prompts on referenced option deletes with
+  explicit clear/replace semantics.
+- Replacement choices flow through `EditCustomFieldBundleRequest` as
+  `optionReplacements` and into `editFieldBundle.optionReplacements`.
+- Nullable Rooms built-ins may clear referenced cells; backend required
+  built-ins still require replacement.
+- No additional required built-in option lists were unlocked.
 
 ## Phase 04 - Verification and Docs
 

@@ -112,6 +112,7 @@ export function useCustomFieldHandlers(args: UseCustomFieldHandlersArgs): Custom
           config: nextConfig,
         },
         nextOptions: request.options,
+        optionReplacements: request.optionReplacements,
         acknowledgeDestructive: request.acknowledgeDestructive ?? false,
         formulaSource: request.formulaSource,
         schemaFingerprint: tableSchema.schemaFingerprint,

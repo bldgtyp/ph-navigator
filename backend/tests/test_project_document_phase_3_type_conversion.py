@@ -13,6 +13,7 @@ exercise only the dispatchers and apply paths added in Phase 3.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import UTC, datetime
 from typing import cast
 
@@ -104,6 +105,20 @@ def _with_room(
     envelope = body.tables.rooms
     next_envelope = envelope.model_copy(update={"rows": [*envelope.rows, row]})
     return body.model_copy(update={"tables": body.tables.model_copy(update={"rooms": next_envelope})})
+
+
+def _with_floor_options(
+    body: ProjectDocumentV1,
+    options: list[SingleSelectOption],
+) -> ProjectDocumentV1:
+    return body.model_copy(
+        update={
+            "single_select_options": {
+                **body.single_select_options,
+                ROOM_FLOOR_LEVEL_OPTION_KEY: options,
+            }
+        }
+    )
 
 
 def _fingerprint(body: ProjectDocumentV1) -> str:
@@ -260,6 +275,82 @@ def test_edit_field_bundle_edits_option_editable_rooms_builtin_options() -> None
     assert next_body.single_select_options[ROOM_FLOOR_LEVEL_OPTION_KEY] == [option]
     assert audit["kind"] == "editFieldBundle"
     assert "options" in audit["properties_changed"]
+
+
+def test_edit_field_bundle_deleting_nullable_rooms_builtin_option_clears_refs() -> None:
+    option_l1 = SingleSelectOption(id="opt_L1", label="L1", color="#3b82f6", order=0)
+    option_l2 = SingleSelectOption(id="opt_L2", label="L2", color="#22c55e", order=1)
+    body = _with_floor_options(_seed_body(), [option_l1, option_l2])
+    body = _with_room(body, room_id="rm_1", floor_option_id="opt_L1")
+    floor = next(field for field in body.tables.rooms.field_defs if field.field_key == "floor_level")
+    mutation = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="floor_level",
+        after=floor,
+        next_options=[option_l2],
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+
+    next_body, audit = _apply(body, mutation)
+
+    assert next_body.tables.rooms.rows[0].floor_level is None
+    assert next_body.single_select_options[ROOM_FLOOR_LEVEL_OPTION_KEY] == [option_l2]
+    assert audit["cleared_row_count"] == 1
+
+
+def test_edit_field_bundle_required_builtin_option_delete_rewrites_to_replacement() -> None:
+    option_l1 = SingleSelectOption(id="opt_L1", label="L1", color="#3b82f6", order=0)
+    option_l2 = SingleSelectOption(id="opt_L2", label="L2", color="#22c55e", order=1)
+    body = _with_floor_options(_seed_body(), [option_l1, option_l2])
+    body = _with_room(body, room_id="rm_1", floor_option_id="opt_L1")
+    floor = next(field for field in body.tables.rooms.field_defs if field.field_key == "floor_level")
+    required_registry = replace(rooms_custom_fields, required_field_keys=frozenset({"floor_level"}))
+    mutation = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="floor_level",
+        after=floor,
+        next_options=[option_l2],
+        option_replacements={"opt_L1": "opt_L2"},
+        expected_schema_fingerprint=required_registry.compute_schema_fingerprint(body),
+    )
+
+    next_body, audit = apply_schema_mutation(
+        body,
+        mutation,
+        actor_user_id=ACTOR,
+        capability=required_registry,
+    )
+
+    assert next_body.tables.rooms.rows[0].floor_level == "opt_L2"
+    assert next_body.single_select_options[ROOM_FLOOR_LEVEL_OPTION_KEY] == [option_l2]
+    assert audit["cleared_row_count"] == 1
+
+
+def test_edit_field_bundle_required_builtin_option_delete_requires_replacement() -> None:
+    option_l1 = SingleSelectOption(id="opt_L1", label="L1", color="#3b82f6", order=0)
+    option_l2 = SingleSelectOption(id="opt_L2", label="L2", color="#22c55e", order=1)
+    body = _with_floor_options(_seed_body(), [option_l1, option_l2])
+    body = _with_room(body, room_id="rm_1", floor_option_id="opt_L1")
+    floor = next(field for field in body.tables.rooms.field_defs if field.field_key == "floor_level")
+    required_registry = replace(rooms_custom_fields, required_field_keys=frozenset({"floor_level"}))
+    mutation = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="floor_level",
+        after=floor,
+        next_options=[option_l2],
+        expected_schema_fingerprint=required_registry.compute_schema_fingerprint(body),
+    )
+
+    with pytest.raises(HTTPException) as excinfo:
+        apply_schema_mutation(body, mutation, actor_user_id=ACTOR, capability=required_registry)
+
+    assert excinfo.value.status_code == 422
+    detail = cast(dict[str, object], excinfo.value.detail)
+    assert detail["error_code"] == "custom_field_option_list_invalid"
+    assert detail["details"]["reason"] == "required_built_in_select_delete_without_replacement"
 
 
 def test_edit_options_rejected_on_locked_builtin_status() -> None:
