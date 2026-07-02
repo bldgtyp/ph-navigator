@@ -46,6 +46,17 @@ export async function fetchClimateLocation(
   );
 }
 
+export async function fetchAttachedClimateRecord(
+  projectId: string,
+  sourceId: string,
+  signal?: AbortSignal,
+): Promise<ClimateLocationDetail> {
+  return fetchJson<ClimateLocationDetail>(
+    `/api/v1/projects/${projectId}/climate/sources/${sourceId}/record`,
+    { signal },
+  );
+}
+
 // Serialize the search filters into the backend's query params. `near`
 // becomes the `near=lat,long` string the route parses; country/region are
 // passed through; paging is clamped server-side.

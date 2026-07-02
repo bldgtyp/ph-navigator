@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, Query, Request, Response
 from starlette import status
 
 from features.assets.routes import AssetServiceDep
+from features.climate.models import ClimateLocationDetail
 from features.climate.proximity import PhDatasetProvider
 from features.project_climate_source.models import (
     AttachWeatherFromCatalogRequest,
@@ -30,6 +31,7 @@ from features.project_climate_source.service import (
     attach_weather_source_from_upload,
     create_project_climate_source,
     delete_project_climate_source,
+    get_attached_climate_record,
     get_project_dataset_roster,
     get_project_epw_roster,
     list_project_climate_sources,
@@ -52,6 +54,11 @@ ProjectEditAccess = Annotated[ProjectAccess, Depends(require_project_edit_access
 @router.get("/{project_id}/climate/sources", response_model=ProjectClimateSourceListResponse)
 def get_sources(project_id: UUID, _access: ProjectViewAccess) -> ProjectClimateSourceListResponse:
     return list_project_climate_sources(project_id)
+
+
+@router.get("/{project_id}/climate/sources/{source_id}/record", response_model=ClimateLocationDetail)
+def get_source_record(project_id: UUID, source_id: UUID, _access: ProjectViewAccess) -> ClimateLocationDetail:
+    return get_attached_climate_record(project_id, source_id)
 
 
 @router.get(

@@ -9,7 +9,7 @@ import { assetDownloadPath } from "../../assets/api";
 import { useProjectLocationQuery } from "../../projects/hooks";
 import type { ProjectDetail } from "../../projects/types";
 import {
-  useClimateLocationQuery,
+  useAttachedClimateRecordQuery,
   useDeleteClimateSourceMutation,
   useDeriveClimateSourceMutation,
 } from "../hooks";
@@ -254,9 +254,7 @@ function PassiveHouseSourcePage({
   source: ProjectClimateSource;
   unitSystem: UnitSystem;
 }) {
-  const datasetId = stringValue(source.data?.dataset_id);
-  const locationId = source.ref ?? stringValue(source.data?.location_id) ?? undefined;
-  const query = useClimateLocationQuery(datasetId ?? undefined, locationId);
+  const query = useAttachedClimateRecordQuery(project.id, source.id);
   const record = query.data?.record;
   const title = climateLocationTitle(query.data, climateSourceSubtitle(source));
   return (
@@ -269,11 +267,6 @@ function PassiveHouseSourcePage({
         subItems={[]}
         showActions={false}
       />
-      {!datasetId || !locationId ? (
-        <p className="form-note">
-          This source is missing the dataset pointer needed to load values.
-        </p>
-      ) : null}
       {source.kind === "phius" && climateSourceProximityStatus(source) === "fail" ? (
         <PhiusLimitWarning source={source} />
       ) : null}

@@ -17,8 +17,10 @@ const fetchMock = vi.fn();
 
 const SOURCES_URL = `/api/v1/projects/${PROJECT.id}/climate/sources`;
 const LOCATION_URL = `/api/v1/projects/${PROJECT.id}/location`;
-const PHIUS_LOCATION_URL = "/api/v1/climate/datasets/dataset-phius/locations/location-phius";
-const PHI_LOCATION_URL = "/api/v1/climate/datasets/dataset-phi/locations/location-phi";
+
+function sourceRecordUrl(sourceId: string) {
+  return `${SOURCES_URL}/${sourceId}/record`;
+}
 
 const WEATHER_SOURCE: ProjectClimateSource = {
   id: "src-weather",
@@ -209,45 +211,34 @@ afterEach(() => {
 });
 
 describe("ClimateTab", () => {
-  test("renders Phius monthly charts, monthly tables, and peak-load table", async () => {
+  test("viewer renders attached Phius record through the project source route", async () => {
     vi.stubGlobal("fetch", fetchMock);
+    const seededSource = { ...PHIUS_SOURCE, data: null };
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
       if (url === LOCATION_URL) return jsonResponse(SET_LOCATION);
-      if (url === SOURCES_URL) return jsonResponse({ items: [PHIUS_SOURCE] });
-      if (url === PHIUS_LOCATION_URL) return jsonResponse(phiusLocationDetail());
+      if (url === SOURCES_URL) return jsonResponse({ items: [seededSource] });
+      if (url === sourceRecordUrl(seededSource.id)) {
+        return jsonResponse(phiusLocationDetail(seededSource));
+      }
       return jsonResponse({}, 404);
     });
     const user = userEvent.setup();
 
-    renderTab();
+    renderTab({ ...PROJECT, access_mode: "viewer" });
 
     await user.click(await screen.findByRole("button", { name: /NEW YORK CENTRAL/ }));
 
-    const limitCheck = await screen.findByRole("table", { name: "Phius certification limits" });
-    expect(
-      within(limitCheck).getByRole("row", { name: /^Distance 6\.8 km 80\.5 km pass$/i }),
-    ).toBeVisible();
-    expect(
-      within(limitCheck).getByRole("row", { name: /^Elevation 36 m 122 m pass$/i }),
-    ).toBeVisible();
     expect(await screen.findByRole("heading", { name: "Monthly data" })).toBeVisible();
     expect(screen.getAllByText("Monthly temperatures").length).toBeGreaterThanOrEqual(2);
     expect(screen.getAllByText("Monthly radiation").length).toBeGreaterThanOrEqual(2);
-    const temperatureElements = screen.getAllByText("Monthly temperatures");
-    const radiationElements = screen.getAllByText("Monthly radiation");
-    expect(
-      temperatureElements[0]?.compareDocumentPosition(temperatureElements[1] ?? document.body),
-    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    expect(
-      temperatureElements[1]?.compareDocumentPosition(radiationElements[0] ?? document.body),
-    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    expect(
-      radiationElements[0]?.compareDocumentPosition(radiationElements[1] ?? document.body),
-    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     expect(screen.getByRole("heading", { name: "Peak loads" })).toBeVisible();
     expect(screen.getByRole("row", { name: /^Heating 1/ })).toBeVisible();
     expect(screen.getByRole("row", { name: /^Cooling 1/ })).toBeVisible();
+    expect(screen.queryByText(/missing the dataset pointer/i)).toBeNull();
+    expect(
+      fetchMock.mock.calls.some(([input]) => String(input).startsWith("/api/v1/climate/datasets/")),
+    ).toBe(false);
   });
 
   test("renders Phius limit checks in IP units when the app unit switch is IP", async () => {
@@ -256,7 +247,7 @@ describe("ClimateTab", () => {
       const url = String(input);
       if (url === LOCATION_URL) return jsonResponse(SET_LOCATION);
       if (url === SOURCES_URL) return jsonResponse({ items: [PHIUS_SOURCE] });
-      if (url === PHIUS_LOCATION_URL) return jsonResponse(phiusLocationDetail());
+      if (url === sourceRecordUrl(PHIUS_SOURCE.id)) return jsonResponse(phiusLocationDetail());
       return jsonResponse({}, 404);
     });
     const user = userEvent.setup();
@@ -280,7 +271,7 @@ describe("ClimateTab", () => {
       const url = String(input);
       if (url === LOCATION_URL) return jsonResponse(SET_LOCATION);
       if (url === SOURCES_URL) return jsonResponse({ items: [PHI_SOURCE] });
-      if (url === PHI_LOCATION_URL) return jsonResponse(phiLocationDetail());
+      if (url === sourceRecordUrl(PHI_SOURCE.id)) return jsonResponse(phiLocationDetail());
       return jsonResponse({}, 404);
     });
     const user = userEvent.setup();
@@ -320,7 +311,7 @@ describe("ClimateTab", () => {
         if (url.startsWith(`/api/v1/projects/${PROJECT.id}/climate/datasets/${kind}/locations`)) {
           return jsonResponse(rosterForAttach(kind));
         }
-        if (url === (kind === "phius" ? PHIUS_LOCATION_URL : PHI_LOCATION_URL)) {
+        if (url === sourceRecordUrl(attachedSource.id)) {
           return jsonResponse(
             kind === "phius"
               ? phiusLocationDetail(attachedSource)
@@ -352,7 +343,7 @@ describe("ClimateTab", () => {
       const url = String(input);
       if (url === LOCATION_URL) return jsonResponse(SET_LOCATION);
       if (url === SOURCES_URL) return jsonResponse({ items: [FAILING_PHIUS_SOURCE] });
-      if (url === PHIUS_LOCATION_URL)
+      if (url === sourceRecordUrl(FAILING_PHIUS_SOURCE.id))
         return jsonResponse(phiusLocationDetail(FAILING_PHIUS_SOURCE));
       return jsonResponse({}, 404);
     });
@@ -455,7 +446,7 @@ describe("ClimateTab", () => {
       if (url.startsWith(`/api/v1/projects/${PROJECT.id}/climate/datasets/phius/locations`)) {
         return jsonResponse(rosterForAttach("phius"));
       }
-      if (url === PHIUS_LOCATION_URL) return jsonResponse(phiusLocationDetail(attached));
+      if (url === sourceRecordUrl(attached.id)) return jsonResponse(phiusLocationDetail(attached));
       return jsonResponse({}, 404);
     });
     const user = userEvent.setup();

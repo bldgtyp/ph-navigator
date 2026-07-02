@@ -142,6 +142,33 @@ def test_phius_source_validates_ref_and_provider(clean_mcp_tables: None, clean_c
     assert mismatch.json()["error_code"] == "climate_source_provider_mismatch"
 
 
+def test_viewer_can_read_attached_phius_record_only_through_project_source(
+    clean_mcp_tables: None,
+    clean_climate_tables: None,
+) -> None:
+    _seed_two_locations()
+    client = signed_in_client()
+    project_id = cast(str, create_project(client, bt_number="2426")["id"])
+    other_project_id = cast(str, create_project(client, bt_number="2427")["id"])
+    _set_location(client, project_id, latitude=40.0, longitude=-75.0)
+    location_id = _first_phius_location_id(client)
+    source = _create(client, project_id, {"kind": "phius", "ref": location_id, "label": "Worcester"})
+
+    anon = TestClient(app)
+    record = anon.get(f"{_SOURCES.format(project_id=project_id)}/{source['id']}/record")
+    assert record.status_code == 200, record.text
+    assert record.json()["id"] == location_id
+    assert record.json()["record"]["station_id"] is not None
+
+    global_record = anon.get(f"/api/v1/climate/datasets/{record.json()['dataset_id']}/locations/{location_id}")
+    assert global_record.status_code == 401
+    assert global_record.json()["error_code"] == "not_authenticated"
+
+    cross_project = anon.get(f"{_SOURCES.format(project_id=other_project_id)}/{source['id']}/record")
+    assert cross_project.status_code == 404
+    assert cross_project.json()["error_code"] == "climate_source_not_found"
+
+
 def test_phius_source_read_tolerates_dangling_reference(clean_mcp_tables: None, clean_climate_tables: None) -> None:
     _seed_two_locations()
     client = signed_in_client()

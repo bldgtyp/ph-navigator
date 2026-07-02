@@ -7,6 +7,7 @@ import {
   createClimateSource,
   deleteClimateSource,
   deriveClimateSource,
+  fetchAttachedClimateRecord,
   fetchClimateDatasetRoster,
   fetchClimateDatasets,
   fetchClimateLocation,
@@ -56,6 +57,18 @@ export function useClimateLocationQuery(
     queryFn: ({ signal }) =>
       fetchClimateLocation(datasetId as string, locationId as string, signal),
     enabled: Boolean(datasetId) && Boolean(locationId),
+  });
+}
+
+export function useAttachedClimateRecordQuery(
+  projectId: string | undefined,
+  sourceId: string | undefined,
+) {
+  return useQuery({
+    queryKey: climateQueryKeys.sourceRecord(projectId ?? "", sourceId ?? ""),
+    queryFn: ({ signal }) =>
+      fetchAttachedClimateRecord(projectId as string, sourceId as string, signal),
+    enabled: Boolean(projectId) && Boolean(sourceId),
   });
 }
 

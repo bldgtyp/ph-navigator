@@ -21,6 +21,9 @@ editor.
 - Version dropdown remains available for opening other versions;
   lock/rename/delete/default-version actions are hidden.
 - Model tab viewing is allowed; Upload HBJSON is hidden.
+- Climate tab viewing includes PHI/Phius records only through project-scoped
+  attached-source reads; global climate dataset catalog/search endpoints and
+  picker rosters remain authenticated/editor surfaces.
 - Project settings remains available in read-only mode for metadata
   and location visibility, including linked EPW download when present;
   mutating settings, EPW upload/apply, and MCP token controls are
@@ -29,4 +32,3 @@ editor.
   Viewer project workspace.
 
 ---
-

@@ -32,7 +32,7 @@ from features.climate.epw_catalog import (
     find_entry_by_url,
     nearest_epw_entries,
 )
-from features.climate.models import ClimateLocationSummary
+from features.climate.models import ClimateLocationDetail, ClimateLocationSummary
 from features.climate.proximity import (
     PhDatasetProvider,
     build_location_roster,
@@ -65,6 +65,26 @@ def list_project_climate_sources(project_id: UUID) -> ProjectClimateSourceListRe
     with connection() as conn:
         rows = repository.list_sources(conn, project_id)
     return ProjectClimateSourceListResponse(items=[ProjectClimateSourcePublic.model_validate(row) for row in rows])
+
+
+def get_attached_climate_record(project_id: UUID, source_id: UUID) -> ClimateLocationDetail:
+    """Return the full PHI/Phius record only through a source attached to this project."""
+    with connection() as conn:
+        source = _load_owned_source(conn, project_id, source_id)
+        if source["kind"] not in ("phius", "phi"):
+            raise api_error(
+                status.HTTP_404_NOT_FOUND,
+                "climate_source_record_not_found",
+                "Climate source does not reference a PHI/Phius climate record.",
+            )
+        row = climate_repository.get_location(conn, _parse_ref_uuid(source["ref"]))
+    if row is None:
+        raise api_error(
+            status.HTTP_404_NOT_FOUND,
+            "climate_location_not_found",
+            "Climate location was not found.",
+        )
+    return ClimateLocationDetail.model_validate({**row, "record": row["data"]})
 
 
 def get_project_dataset_roster(
