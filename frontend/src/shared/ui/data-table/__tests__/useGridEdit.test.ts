@@ -331,6 +331,27 @@ describe("useGridEdit", () => {
     expect(op.newOptions?.["floor_level"]?.[0]?.id).toBe(createdId);
   });
 
+  test("single_select commit rejects brand-new labels when options are locked", async () => {
+    const lockedSelect: FieldDef = { ...singleSelectField, locked: ["options"] };
+    const { result } = setup({ fieldDefs: [lockedSelect] });
+    act(() => {
+      result.current.edit.start({
+        rowId: "rm_1",
+        fieldKey: "floor_level",
+        initialValue: null,
+        intent: "replace",
+      });
+      result.current.edit.draft("Penthouse");
+      result.current.edit.highlight(null);
+    });
+    await act(async () => {
+      await result.current.edit.commit();
+    });
+
+    expect(result.current.onWrite).not.toHaveBeenCalled();
+    expect(result.current.onAnnounce).toHaveBeenCalledWith("Floor does not allow new options.");
+  });
+
   test("single_select undo carries removedOptions for the created option", async () => {
     const { result } = setup();
     act(() => {

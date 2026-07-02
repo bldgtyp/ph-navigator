@@ -18,16 +18,11 @@ RELATED:
 
 ## State
 
-`Active` - Phase 00 contract spike complete; implementation not started.
+`Active` - Phase 01 API/DataTable guardrails complete.
 
 ## Next Step
 
-Start `phases/phase-01-api-guardrails.md`. Do not implement Rooms UI wiring
-until the option-mutability contract covers all three entry points:
-
-- field-config manage-options modal
-- inline single-select create
-- paste/type-to-create option deltas
+Start `phases/phase-02-rooms-affordance.md`.
 
 ## Blockers
 
@@ -47,6 +42,17 @@ None for Phase 01.
 - Rooms manage-options uses typed `editFieldBundle.nextOptions` /
   `apply_edit_options`.
 
+## Implementation Notes
+
+- Backend `editOptions` now rejects locked built-in single-select option edits
+  with `422 custom_field_options_locked`.
+- `TableFieldRegistry.option_editable_builtin_field_keys` allowlists editable
+  built-in option lists. Rooms allows `floor_level` and `building_zone`; existing
+  heat-pump project vocabularies remain allowlisted; built-in `status` is not
+  allowlisted.
+- Frontend DataTable uses `FieldDef.optionMutability` / `canEditFieldOptions`
+  for field-config options, inline `+ Create`, and paste-created options.
+
 ## Verification Ledger
 
 - 2026-07-02: Code inspection only; no tests run.
@@ -54,3 +60,9 @@ None for Phase 01.
   single-select editors, paste planning, field-config options, backend
   `TableFieldRegistry`, Rooms registry, and `options_ops`. Decisions captured
   in `decisions.md`; no tests run because Phase 00 is docs/contract only.
+- 2026-07-02: Phase 01 complete. Verification:
+  - `uv run pytest tests/test_project_document_phase_3_type_conversion.py tests/features/heat_pumps/test_shared_option_cascade.py`
+  - `uv run ruff check features/project_document/mutations/options_ops.py features/project_document/tables/_registry_helpers.py features/project_document/tables/contracts.py features/project_document/tables/heat_pumps.py features/project_document/tables/rooms.py tests/test_project_document_phase_3_type_conversion.py tests/features/heat_pumps/test_shared_option_cascade.py`
+  - `pnpm vitest run src/shared/ui/data-table/__tests__/SingleSelectPopover.test.tsx src/shared/ui/data-table/__tests__/useGridEdit.test.ts src/shared/ui/data-table/__tests__/lib.test.ts`
+  - `pnpm exec tsc -b`
+  - `pnpm exec prettier --check src/shared/ui/data-table/types.ts src/shared/ui/data-table/index.ts src/shared/ui/data-table/lib/options/mutability.ts src/shared/ui/data-table/components/FieldConfigModal.tsx src/shared/ui/data-table/components/GridBody.tsx src/shared/ui/data-table/components/SingleSelectPopover.tsx src/shared/ui/data-table/hooks/useGridEdit.ts src/shared/ui/data-table/lib/rows/defaults.ts src/shared/ui/data-table/__tests__/SingleSelectPopover.test.tsx src/shared/ui/data-table/__tests__/useGridEdit.test.ts src/shared/ui/data-table/__tests__/lib.test.ts`

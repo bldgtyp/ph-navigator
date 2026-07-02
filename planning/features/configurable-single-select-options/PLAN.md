@@ -49,19 +49,17 @@ edited through one path while another path still creates options.
 - Rooms manage-options uses typed `editFieldBundle.nextOptions` /
   `apply_edit_options`, not new `legacyOptions` wiring.
 
-## Phase 01 - API Guardrails
+## Phase 01 - API Guardrails - DONE
 
-- Complete `phases/phase-01-api-guardrails.md`.
-- Add `TableFieldRegistry.option_editable_builtin_field_keys` and enforce it in
-  `resolve_option_target`.
-- Keep custom `cf_*` single-select options editable by default.
-- Keep Rooms `floor_level` and `building_zone` allowlisted.
-- Reject protected built-in option edits with `422 custom_field_options_locked`.
-- Add `FieldDef.optionMutability` plus one shared frontend helper for
-  manage-options, inline create, and paste-created options.
-- Disable inline `+ Create` and paste-created `newOptions` for locked option
-  lists.
-- Add focused tests for allowlisted Rooms fields and protected `status`.
+- Completed in `phases/phase-01-api-guardrails.md`.
+- Added `TableFieldRegistry.option_editable_builtin_field_keys` and backend
+  `custom_field_options_locked` rejection for locked built-ins.
+- Added `FieldDef.optionMutability` plus `canEditFieldOptions` for
+  field-config options, inline single-select create, and paste coercion.
+- Rooms `floor_level` and `building_zone` remain allowlisted.
+- Built-in `status` option edits are locked through the schema-mutation path.
+- Focused backend/frontend tests cover allowlisted Rooms fields, protected
+  status, popover create gating, and paste rejection.
 
 ## Phase 02 - Rooms Affordance
 

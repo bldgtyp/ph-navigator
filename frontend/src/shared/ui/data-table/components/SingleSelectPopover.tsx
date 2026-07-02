@@ -17,6 +17,7 @@ export type SingleSelectPopoverProps = {
   onCancel: () => void;
   onCommit: () => void;
   onCommitAndMove: (shiftKey: boolean) => void;
+  allowCreate?: boolean;
   // The cell this popover is anchored to. Radix wraps the children in
   // Popover.Anchor so the floating content tracks the cell under
   // horizontal scroll.
@@ -32,11 +33,12 @@ export function SingleSelectPopover({
   onCancel,
   onCommit,
   onCommitAndMove,
+  allowCreate = true,
   anchorChildren,
 }: SingleSelectPopoverProps) {
   const filteredOptions = useMemo(() => filterOptions(options, searchText), [options, searchText]);
   const trimmed = searchText.trim();
-  const showCreate = trimmed.length > 0 && !findFieldOptionByLabel(options, trimmed);
+  const showCreate = allowCreate && trimmed.length > 0 && !findFieldOptionByLabel(options, trimmed);
 
   // Targets the keyboard cycles through: each existing option's id,
   // then null when the Create footer is present. Used by Up/Down nav
@@ -129,7 +131,7 @@ export function SingleSelectPopover({
             value={searchText}
             onChange={(event) => onSearchTextChange(event.target.value)}
             onKeyDown={onInputKeyDown}
-            placeholder="Find or create…"
+            placeholder={allowCreate ? "Find or create…" : "Find…"}
             aria-label="Search options"
           />
           <ul role="listbox" className="single-select-popover-list">

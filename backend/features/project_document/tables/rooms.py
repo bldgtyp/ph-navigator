@@ -463,6 +463,9 @@ ROOMS_REQUIRED_FIELD_KEYS: frozenset[str] = frozenset()
 ROOMS_FIELD_TYPE_LOCKED_KEYS: frozenset[str] = frozenset(
     {"floor_level", "building_zone", "icfa_factor", ROOM_SPACE_TYPE_FIELD_KEY}
 )
+ROOMS_OPTION_EDITABLE_BUILT_IN_FIELD_KEYS: frozenset[str] = frozenset(
+    {"floor_level", "building_zone"}
+)
 
 
 def _read_rooms_field_option_list(body: ProjectDocumentV1, field_key: str) -> list[SingleSelectOption]:
@@ -595,6 +598,7 @@ rooms_field_registry = TableFieldRegistry(
     replace_field_option_list=_replace_rooms_field_option_list,
     built_in_option_key_by_field_key=ROOMS_BUILT_IN_OPTION_KEY_BY_FIELD_KEY,
     required_field_keys=ROOMS_REQUIRED_FIELD_KEYS,
+    option_editable_builtin_field_keys=ROOMS_OPTION_EDITABLE_BUILT_IN_FIELD_KEYS,
     field_type_locked_keys=ROOMS_FIELD_TYPE_LOCKED_KEYS,
     read_built_in_option_value=_read_rooms_built_in_option_value,
     set_built_in_option_value=_set_rooms_built_in_option_value,

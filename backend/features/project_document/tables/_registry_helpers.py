@@ -60,6 +60,7 @@ def make_field_registry(
     row_model: type[RowWithCustomFields],
     built_in_option_key_by_field_key: dict[str, str] | None = None,
     built_in_formula_types: dict[str, FormulaType] | None = None,
+    option_editable_builtin_field_keys: frozenset[str] = frozenset(),
     field_type_locked_keys: frozenset[str] = frozenset(),
 ) -> TableFieldRegistry:
     """Build the standard registry for a FieldDef envelope table."""
@@ -181,6 +182,7 @@ def make_field_registry(
         field_value_for_formula=field_value_for_formula,
         field_type_for_formula=field_type_for_formula,  # type: ignore[arg-type]
         attach_computed_overlay=default_attach_computed_overlay,
+        option_editable_builtin_field_keys=option_editable_builtin_field_keys,
         field_type_locked_keys=field_type_locked_keys,
     )
     registry_holder["registry"] = registry

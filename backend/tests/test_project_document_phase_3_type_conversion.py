@@ -33,9 +33,12 @@ from features.project_document.mutations.models import (
     CONVERSION_MATRIX,
     ChangeTypeMutation,
     EditFieldBundleMutation,
+    EditOptionsMutation,
     FieldSchemaMutation,
 )
+from features.project_document.mutations.options_ops import apply_edit_options
 from features.project_document.schema_mutations import apply_schema_mutation
+from features.project_document.tables.pumps import pumps_field_registry
 from features.project_document.tables.rooms import (
     rooms_custom_fields,
     rooms_field_registry,
@@ -219,6 +222,45 @@ def test_change_type_allowed_on_unlocked_built_in() -> None:
     assert audit["kind"] == "changeType"
     assert audit["from_type"] == "short_text"
     assert audit["to_type"] == "long_text"
+
+
+def test_edit_options_allowed_on_option_editable_rooms_builtin() -> None:
+    body = _seed_body()
+    option = SingleSelectOption(id="opt_roof", label="Roof", color="#3b82f6", order=0)
+    mutation = EditOptionsMutation(
+        kind="editOptions",
+        table_key="rooms",
+        field_id="floor_level",
+        next_options=[option],
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+
+    next_body, audit = apply_edit_options(body, mutation, rooms_field_registry)
+
+    assert next_body.single_select_options[ROOM_FLOOR_LEVEL_OPTION_KEY] == [option]
+    assert audit["kind"] == "editOptions"
+    assert audit["field_id"] == "floor_level"
+
+
+def test_edit_options_rejected_on_locked_builtin_status() -> None:
+    body = _seed_body()
+    next_options = [
+        *body.single_select_options["pumps.status"],
+        SingleSelectOption(id="opt_status_custom", label="Custom", color="#111111", order=99),
+    ]
+    mutation = EditOptionsMutation(
+        kind="editOptions",
+        table_key="pumps",
+        field_id="status",
+        next_options=next_options,
+        expected_schema_fingerprint=pumps_field_registry.compute_schema_fingerprint(body),
+    )
+
+    with pytest.raises(HTTPException) as excinfo:
+        apply_edit_options(body, mutation, pumps_field_registry)
+    assert excinfo.value.status_code == 422
+    detail = cast(dict[str, object], excinfo.value.detail)
+    assert detail["error_code"] == "custom_field_options_locked"
 
 
 # ---------------------------------------------------------------------------

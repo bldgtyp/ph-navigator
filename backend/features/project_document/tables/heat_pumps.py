@@ -459,6 +459,7 @@ def _make_registry(
     table_path: tuple[str, ...],
     row_model: type[RowWithCustomFields],
     built_in_option_key_by_field_key: dict[str, str] | None = None,
+    option_editable_builtin_field_keys: frozenset[str] = frozenset(),
     built_in_formula_types: dict[str, FormulaType],
 ) -> TableFieldRegistry:
     option_keys = built_in_option_key_by_field_key or {}
@@ -468,6 +469,7 @@ def _make_registry(
         row_model=row_model,
         built_in_option_key_by_field_key=option_keys,
         built_in_formula_types=built_in_formula_types,
+        option_editable_builtin_field_keys=option_editable_builtin_field_keys,
         field_type_locked_keys=_locked_keys(field_defs),
     )
     default_read_option_value = registry.read_built_in_option_value
@@ -634,6 +636,7 @@ outdoor_equip_field_registry = _make_registry(
         "refrigerant": HEAT_PUMP_REFRIGERANT_OPTION_KEY,
         "status": HEAT_PUMPS_OUTDOOR_EQUIP_STATUS_OPTION_KEY,
     },
+    option_editable_builtin_field_keys=frozenset({"manufacturer", "system_family", "refrigerant"}),
     built_in_formula_types=_formula_types_from_field_defs(OUTDOOR_EQUIP_BUILT_IN_FIELD_DEFS),
 )
 indoor_equip_field_registry = _make_registry(
@@ -646,6 +649,7 @@ indoor_equip_field_registry = _make_registry(
         "install_type": HEAT_PUMP_INSTALL_TYPE_OPTION_KEY,
         "status": HEAT_PUMPS_INDOOR_EQUIP_STATUS_OPTION_KEY,
     },
+    option_editable_builtin_field_keys=frozenset({"manufacturer", "model_type", "install_type"}),
     built_in_formula_types=_formula_types_from_field_defs(INDOOR_EQUIP_BUILT_IN_FIELD_DEFS),
 )
 outdoor_units_field_registry = _make_registry(

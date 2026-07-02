@@ -49,6 +49,8 @@ export type FieldLockKey =
   | "delete"
   | "duplicate";
 
+export type OptionMutability = "editable" | "locked";
+
 export type FieldDef = {
   field_key: string;
   field_type: FieldType;
@@ -87,6 +89,9 @@ export type FieldDef = {
   // Per-attribute lock list applied at render time. Built-ins default
   // to `DEFAULT_BUILT_IN_LOCKS` per PRD §P5.0; custom fields omit it.
   locked?: ReadonlyArray<FieldLockKey>;
+  // Shared option-list mutation capability. When omitted, derive from
+  // `locked.includes("options")` so older overlays keep their behavior.
+  optionMutability?: OptionMutability;
   // Marks a seed as feature-author-declared. Custom (`cf_*`) fields
   // omit it. Drives the formula registry's `origin` classification.
   built_in?: boolean;

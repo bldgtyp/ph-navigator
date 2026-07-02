@@ -22,6 +22,7 @@ function renderPopover(args: {
   searchText?: string;
   highlightedOptionId?: string | null;
   options?: FieldOption[];
+  allowCreate?: boolean;
 }): Handlers {
   const handlers: Handlers = {
     onSearchTextChange: vi.fn(),
@@ -35,6 +36,7 @@ function renderPopover(args: {
       options={args.options ?? OPTIONS}
       searchText={args.searchText ?? ""}
       highlightedOptionId={args.highlightedOptionId ?? null}
+      allowCreate={args.allowCreate}
       anchorChildren={<span data-testid="anchor">cell</span>}
       {...handlers}
     />,
@@ -64,6 +66,12 @@ describe("SingleSelectPopover", () => {
   test("shows the Create footer when no existing option matches", () => {
     renderPopover({ searchText: "Penthouse" });
     expect(screen.getByText(/Create.*Penthouse/)).toBeTruthy();
+  });
+
+  test("hides the Create footer when option creation is locked", () => {
+    renderPopover({ searchText: "Penthouse", allowCreate: false });
+    expect(screen.queryByText(/Create.*Penthouse/)).toBeNull();
+    expect(screen.getByText("No matching options.")).toBeTruthy();
   });
 
   test("hides the Create footer when an existing option matches case-insensitively", () => {

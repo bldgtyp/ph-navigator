@@ -183,6 +183,11 @@ class TableFieldRegistry:
         [list[dict[str, object]], dict[str, dict[str, object]]],
         list[dict[str, object]],
     ]
+    # Built-in single-select field_keys whose option lists are editable through
+    # `editOptions` / `editFieldBundle`. Custom single-selects remain editable
+    # by default; built-ins must opt in here so app vocabularies like `status`
+    # stay locked against REST/MCP writes.
+    option_editable_builtin_field_keys: frozenset[str] = frozenset()
     # Built-in field_keys whose `field_type` is locked from user edits
     # (PRD §P4.1, §P5). The frontend renders these as
     # `locked: ["field_type", ...]` on the layered seed and disables
@@ -191,8 +196,7 @@ class TableFieldRegistry:
     # bypass the frontend lock. Custom fields and unlocked built-ins
     # never appear here. Defaults to empty so contracts that haven't
     # declared any field_type-locked built-ins (e.g. pre-registry
-    # tables) don't need to opt in. Must be last to keep the
-    # default-after-non-default dataclass ordering rule satisfied.
+    # tables) don't need to opt in.
     field_type_locked_keys: frozenset[str] = frozenset()
 
 

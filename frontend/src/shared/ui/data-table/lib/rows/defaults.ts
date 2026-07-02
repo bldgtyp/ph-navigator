@@ -2,6 +2,7 @@ import { parseNumberUnitsInput, type UnitSystem } from "../../../../../lib/units
 import type { DataTableColumnDef, FieldDef, FieldOption, FieldType } from "../../types";
 import { normalizeColorInput } from "../../../../lib/color";
 import { createFieldOption } from "../options/create";
+import { canEditFieldOptions } from "../options/mutability";
 import { findFieldOptionByLabel } from "../options/references";
 
 // Build a fieldKey-keyed map of values cloned from the anchor row. Reads
@@ -77,6 +78,9 @@ export function coerceFieldValue(
     const options = optionsForField();
     const existing = findFieldOptionByLabel(options, trimmed);
     if (existing) return { ok: true, value: existing.id };
+    if (!canEditFieldOptions(fieldDef)) {
+      return { ok: false, message: `${fieldDef.display_name} does not allow new options.` };
+    }
     const created = createFieldOption(trimmed, options);
     options.push(created);
     return { ok: true, value: created.id, created };

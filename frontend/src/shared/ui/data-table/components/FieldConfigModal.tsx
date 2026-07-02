@@ -27,6 +27,7 @@ import { MAX_DESCRIPTION, MAX_DISPLAY_NAME } from "../lib/customFieldMutations";
 import { findDuplicateDisplayName, type FieldDisplayName } from "../lib/fieldDisplayNames";
 import { schemaMutationErrorMessage } from "../lib/schemaMutationErrors";
 import { computeLocalPreflight, type PreflightSourceRow } from "../lib/coerceCustomFieldType";
+import { canEditFieldOptions } from "../lib/options/mutability";
 import {
   conversionPolicy,
   isConversionAllowed,
@@ -717,7 +718,7 @@ export function FieldConfigModal({
                 sourceColorCodeOptions={source.colorCodeOptions !== false}
                 sourceDefaultOptionId={source.defaultOptionId ?? null}
                 rows={optionRows ?? EMPTY_OPTION_SOURCE_ROWS}
-                disabled={pending || isAttributeLocked(fieldDef, "options")}
+                disabled={pending || !canEditFieldOptions(fieldDef)}
                 onDraftChange={setOptionsDraft}
               />
             ) : null}

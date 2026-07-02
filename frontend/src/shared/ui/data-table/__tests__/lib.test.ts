@@ -190,6 +190,41 @@ describe("DataTable helpers", () => {
     expect(result.ok && result.newOptions["rooms.floor_level"]?.[0]?.label).toBe("Level 2");
   });
 
+  test("paste coercion rejects unknown labels for locked single-select options", () => {
+    const selectColumns: DataTableColumnDef<Row>[] = [
+      { id: "status", fieldKey: "status", header: "Status", accessor: () => null },
+    ];
+    const selectFields: FieldDef[] = [
+      {
+        field_key: "status",
+        field_type: "single_select",
+        display_name: "Status",
+        locked: ["options"],
+        options: [{ id: "opt_needed", label: "Needed", color: "#d97706", order: 0 }],
+      },
+    ];
+
+    const result = coercePasteWrites({
+      plannedWrites: [{ rowIndex: 0, columnIndex: 0, raw: "Custom" }],
+      rows,
+      columns: selectColumns,
+      fieldDefs: selectFields,
+      getRowId: (row) => row.id,
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      errors: [
+        {
+          rowIndex: 0,
+          columnIndex: 0,
+          raw: "Custom",
+          message: "Status does not allow new options.",
+        },
+      ],
+    });
+  });
+
   test("paste coercion blocks read-only fields", () => {
     const result = coercePasteWrites({
       plannedWrites: [{ rowIndex: 0, columnIndex: 0, raw: "102" }],

@@ -3,6 +3,7 @@ import { useCallback, useRef, useState } from "react";
 import { formatNumberUnitsDisplay, type UnitSystem } from "../../../../lib/units";
 import { coerceFieldValue } from "../lib/rows/defaults";
 import { createFieldOption } from "../lib/options/create";
+import { canEditFieldOptions } from "../lib/options/mutability";
 import { findFieldOptionByLabel } from "../lib/options/references";
 import { formatClipboardValue } from "../lib/paste/tsv";
 import { singleSelectOption } from "../lib/rows/format";
@@ -437,6 +438,12 @@ function planSingleSelect(
     return { kind: "noop" };
   }
   const created = decision.kind === "create" ? decision.created : null;
+  if (created && !canEditFieldOptions(fieldDef)) {
+    return {
+      kind: "invalid",
+      message: `${fieldDef?.display_name ?? current.fieldKey} does not allow new options.`,
+    };
+  }
   const op: WriteOp = {
     kind: "cell",
     writes: [{ rowId: current.rowId, fieldKey: current.fieldKey, value: decision.optionId }],

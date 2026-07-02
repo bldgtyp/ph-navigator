@@ -54,6 +54,7 @@ def resolve_option_target(
     """
     built_in_namespace = capability.built_in_option_key_by_field_key.get(field_key)
     if built_in_namespace is not None:
+        _reject_locked_builtin_options(field_key, table_key, capability)
         return False, built_in_namespace, list(body.single_select_options.get(built_in_namespace, []))
     field_defs = capability.read_field_defs(body)
     for field in field_defs:
@@ -69,6 +70,8 @@ def resolve_option_target(
                         "reason": "field_type_not_single_select",
                     },
                 )
+            if field.origin == "built_in":
+                _reject_locked_builtin_options(field_key, table_key, capability)
             namespace_key = option_list_key(capability.table_path, field_key)
             return True, namespace_key, list(body.single_select_options.get(namespace_key, []))
     raise api_error(
@@ -76,6 +79,21 @@ def resolve_option_target(
         "custom_field_invalid_field_id",
         "Field id was not found as a single-select column.",
         {"field_id": field_key, "table_key": table_key},
+    )
+
+
+def _reject_locked_builtin_options(
+    field_key: str,
+    table_key: str,
+    capability: TableFieldRegistry,
+) -> None:
+    if field_key in capability.option_editable_builtin_field_keys:
+        return
+    raise api_error(
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+        "custom_field_options_locked",
+        "This built-in single-select option list is locked.",
+        {"field_id": field_key, "table_key": table_key, "reason": "options_locked"},
     )
 
 

@@ -61,6 +61,7 @@ export type {
   SetFormulaMutation,
 } from "./lib/customFieldMutations";
 export { OPTION_COLOR_PALETTE } from "./lib/options/create";
+export { canEditFieldOptions, optionMutabilityForField } from "./lib/options/mutability";
 export {
   DATA_TABLE_COLUMN_WIDTHS,
   LinkCell,

@@ -8,6 +8,7 @@ import type { DuplicateIdentifierRows } from "../lib/identifier/recordId";
 import { isCellInNormalizedRange, type NormalizedRange } from "../lib/range/normalize";
 import { isPointerInActiveEditor } from "../lib/eventTargets";
 import { isEmptyNumericValue, isNumericFieldDef } from "../lib/numberDisplay";
+import { canEditFieldOptions } from "../lib/options/mutability";
 import type {
   AxisRoleSubset,
   BodyPlanItem,
@@ -657,6 +658,7 @@ function renderCellContent<TRow>(args: {
     return (
       <SingleSelectPopover
         options={fieldDef?.options ?? EMPTY_OPTIONS}
+        allowCreate={canEditFieldOptions(fieldDef)}
         searchText={editor.searchText}
         highlightedOptionId={editor.highlightedOptionId}
         onSearchTextChange={edit.draft}
