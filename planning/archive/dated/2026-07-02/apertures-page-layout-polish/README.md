@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-02
 TIME: 14:00 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Apertures page layout polish for the aperture-type sidebar, SVG preview,
   attribute cards, and near-viewport dropdown placement.
@@ -34,4 +34,3 @@ Fix the Apertures / Apertures page layout issues collected during app testing:
 
 `planning/refactor` because this is a layout/interaction cleanup for an existing
 Apertures surface, not a new product capability.
-

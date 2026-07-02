@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-02
 TIME: 14:00 EDT
-STATUS: In review
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Current state for Apertures page layout polish.
 RELATED:
@@ -14,7 +14,7 @@ RELATED:
 
 ## State
 
-`In review` - all planned implementation and verification phases are complete.
+`Complete` - all planned implementation and verification phases are complete.
 The Apertures builder body now owns an explicit sidebar/main grid with a
 viewport-bounded workbench height. The sidebar list has a real scroll boundary
 and clipped horizontal overflow, while collapsed rail controls use symmetric
@@ -24,8 +24,7 @@ constrained; the local operation type menu uses the same placement decision.
 
 ## Next Step
 
-Run final completion cleanup: mark the packet complete, archive it, update
-planning indexes/status, and commit the archive move.
+Archived under `planning/archive/dated/2026-07-02/apertures-page-layout-polish/`.
 
 ## Blockers
 

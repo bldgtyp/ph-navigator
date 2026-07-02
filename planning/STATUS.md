@@ -50,7 +50,7 @@ feature-first planning.
 
 | Refactor | State | Current pointer |
 |---|---|---|
-| Apertures Page Layout Polish | Planned / app-testing notes collected for Apertures sidebar overflow, SVG/card coupling, collapsed rail button centering, and viewport-aware attribute-card dropdowns | `refactor/apertures-page-layout-polish/STATUS.md` |
+| Apertures Page Layout Polish | Complete / archived after Apertures builder layout polish: scroll-bounded aperture-type sidebar, centered collapsed rail, SVG/card coupling, and viewport-aware attribute-card dropdown placement verified with frontend gate and live browser smoke | `archive/dated/2026-07-02/apertures-page-layout-polish/STATUS.md` |
 | Aperture Frame Compatibility Rules | Planned / consolidate slider filtering and `Mull-H`/`Mull-V` side compatibility; fixed-frame slider validity needs decision before implementation | `refactor/aperture-frame-compatibility-rules/STATUS.md` |
 | DataTable Visual Overflow Polish | Complete / archived after shared DataTable linked-record overflow, opaque sticky header, and fixed-column/body clipping polish landed with focused tests, frontend gate, and browser smoke evidence | `archive/dated/2026-07-02/data-table-visual-overflow-polish/STATUS.md` |
 | Production Frontend Performance | Implemented locally through Phase 03 setup path / Production harness guards added; guarded `codex@testing.com` / `PERF-STRESS` fixture command added for 250-row Climate/Envelope/Apertures fixture with Model excluded; next live action is choosing the runtime password and running fixture setup in the production API environment; authenticated perf run still held | `refactor/production-frontend-performance/STATUS.md` |

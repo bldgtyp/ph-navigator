@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-02
 TIME: 14:00 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Product behavior contract for Apertures page layout polish.
 RELATED:
@@ -58,4 +58,3 @@ dropdowns can flow off-screen and become inaccessible.
   primitive or a local aperture-specific component.
 - Inspect the layout container that currently lets the sidebar list drive the
   main content height.
-
