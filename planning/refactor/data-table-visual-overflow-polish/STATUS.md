@@ -14,15 +14,16 @@ RELATED:
 
 ## State
 
-`Active` - Phase 01 implemented. Sticky DataTable headers now use an opaque
-default header token, and the DataTable scroll viewport is isolated as the paint
-boundary for sticky gutter/frozen-column chrome. Phase 02 linked-record cell
-overflow remains next.
+`Active` - Phase 01 and Phase 02 implemented. Sticky DataTable headers now use
+an opaque default header token, the DataTable scroll viewport is isolated as the
+paint boundary for sticky gutter/frozen-column chrome, and dense linked-record
+cells keep readable non-shrinking pills inside a horizontal scroll lane with a
+measured `...` overflow cue.
 
 ## Next Step
 
-Start Phase 02 by inspecting the shared linked-record cell renderer and adding
-readable pill overflow behavior.
+Start Phase 03 verification: browser-smoke Catalogs / Frame Types and Spaces /
+Space-Types, then update final evidence.
 
 ## Blockers
 
@@ -34,3 +35,8 @@ None known.
   React fast-refresh warnings in unrelated component/helper exports and one
   pre-existing `useCallback` dependency warning in
   `frontend/src/shared/ui/data-table/feature/useSliceTableController.ts`.
+- 2026-07-02: `cd frontend && pnpm exec vitest run
+  src/shared/ui/data-table/fields/linkedRecord/LinkedRecordCell.test.tsx` -
+  pass, 11 tests.
+- 2026-07-02: `make frontend-dev-check` - pass after Phase 02. Same existing
+  lint warnings only.

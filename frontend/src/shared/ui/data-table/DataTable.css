@@ -2980,27 +2980,76 @@ td.data-table-cell-editing {
   }
 }
 
-/* Linked-record cell: Airtable-style chip list. The cell is a horizontal
- * flex row that clips overflow — too many chips truncate at the cell
- * edge rather than wrapping or scrolling. */
+/* Linked-record cell: Airtable-style chip list. Dense cells keep one
+ * stable row height, expose a horizontal scroll lane, and show an
+ * inline overflow cue when multiple pills may continue off-cell. */
 .data-table-linked-record-cell {
+  position: relative;
   display: flex;
   align-items: center;
-  flex-wrap: nowrap;
-  gap: var(--space-4);
   width: 100%;
   max-width: 100%;
   padding: 1px 0;
   overflow: hidden;
 }
 
+.data-table-linked-record-scroll {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--text-muted) 42%, transparent) transparent;
+}
+
+.data-table-linked-record-cell.has-overflow-cue .data-table-linked-record-scroll {
+  padding-right: 24px;
+}
+
+.data-table-linked-record-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+
+.data-table-linked-record-scroll::-webkit-scrollbar-thumb {
+  border-radius: var(--radius-pill);
+  background: color-mix(in oklab, var(--text-muted) 42%, transparent);
+}
+
+.data-table-linked-record-overflow-cue {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 24px;
+  height: 20px;
+  padding-right: 2px;
+  transform: translateY(-50%);
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--bg-card) 0%, transparent),
+    var(--bg-card) 38%
+  );
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: 1;
+  pointer-events: none;
+}
+
 .data-table-linked-record-pill {
   display: inline-flex;
   align-items: center;
   align-self: center;
-  flex: 0 1 auto;
-  min-width: 0;
-  max-width: 100%;
+  flex: 0 0 auto;
+  min-width: 44px;
+  max-width: min(14rem, 100%);
   box-sizing: border-box;
   height: 20px;
   min-height: 0;

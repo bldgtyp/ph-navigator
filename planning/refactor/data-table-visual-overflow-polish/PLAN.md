@@ -19,7 +19,7 @@ RELATED:
 - Inspect fixed-column/gutter/body clipping containers.
 - Align bottom clipping across fixed and scrollable table regions.
 
-## Phase 02 - Linked-Record Cell Overflow
+## Phase 02 - Linked-Record Cell Overflow - Complete
 
 - Locate linked-record cell renderer.
 - Set minimum pill dimensions and stable row-height behavior.

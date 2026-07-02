@@ -1,4 +1,11 @@
-import type { KeyboardEvent, MouseEvent } from "react";
+import {
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+} from "react";
 
 /**
  * Per-pill resolution result. The cell does not know how to look up
@@ -52,6 +59,33 @@ export function LinkedRecordCell({
   emptyLabel = "Empty",
   isActive = false,
 }: LinkedRecordCellProps) {
+  const scrollRef = useRef<HTMLSpanElement | null>(null);
+  const [hasOverflow, setHasOverflow] = useState(false);
+
+  const measureOverflow = useCallback(() => {
+    const element = scrollRef.current;
+    const next = Boolean(element && element.scrollWidth > element.clientWidth + 1);
+    setHasOverflow((previous) => (previous === next ? previous : next));
+  }, []);
+
+  useLayoutEffect(() => {
+    measureOverflow();
+  });
+
+  useLayoutEffect(() => {
+    const element = scrollRef.current;
+    if (!element) return;
+
+    if ("ResizeObserver" in globalThis) {
+      const observer = new ResizeObserver(measureOverflow);
+      observer.observe(element);
+      return () => observer.disconnect();
+    }
+
+    window.addEventListener("resize", measureOverflow);
+    return () => window.removeEventListener("resize", measureOverflow);
+  }, [ids.length, measureOverflow]);
+
   // Airtable parity: the "+" affordance only appears once the cell is
   // active, mirroring the inline "x" unlink button. Inactive empty
   // cells fall back to the muted "Empty" caption (or the bare wrapper
@@ -114,77 +148,87 @@ export function LinkedRecordCell({
   const showUnlinkButton = isActive && Boolean(onPillUnlink);
 
   return (
-    <span className="data-table-linked-record-cell" data-testid="linked-record-cell">
-      {ids.map((rowId) => {
-        const resolution = resolve(rowId);
-        // §B7 — separate the two not-canonical states. `null`
-        // resolution means the target row no longer exists (orphan
-        // pill); a `{recordId: null}` resolution means the target row
-        // is present but has no `record_id` set yet (the Q18 fallback).
-        const isOrphan = resolution === null;
-        const recordId = resolution?.recordId ?? null;
-        const label = recordId && recordId.length > 0 ? recordId : rowId;
-        const isFallback = !recordId || recordId.length === 0;
-        const className =
-          "data-table-linked-record-pill" +
-          (isActive ? " is-active" : "") +
-          (isFallback ? " data-table-linked-record-pill-fallback" : "") +
-          (isOrphan ? " data-table-linked-record-pill-orphan" : "");
-        const pillAttrs = {
-          className,
-          "data-row-id": rowId,
-          "data-fallback": isFallback ? "true" : undefined,
-          "data-orphan": isOrphan ? "true" : undefined,
-          title: isOrphan ? "Linked record no longer exists" : undefined,
-        };
-        const labelNode = <span className="data-table-linked-record-pill-label">{label}</span>;
-        const unlinkButton = showUnlinkButton ? (
-          <button
-            type="button"
-            className="data-table-linked-record-pill-unlink"
-            aria-label="Unlink record"
-            title="Unlink record"
-            onClick={onUnlinkClick(rowId)}
-          >
-            ×
-          </button>
-        ) : null;
-        if (!isInteractive) {
-          return (
-            <span key={rowId} {...pillAttrs}>
-              {labelNode}
-            </span>
-          );
-        }
-        if (showUnlinkButton) {
-          return (
-            <span key={rowId} {...pillAttrs}>
-              <button
-                type="button"
-                className="data-table-linked-record-pill-open"
-                onClick={onClick(rowId)}
-                onKeyDown={onKeyDown(rowId)}
-              >
+    <span
+      className={"data-table-linked-record-cell" + (hasOverflow ? " has-overflow-cue" : "")}
+      data-testid="linked-record-cell"
+    >
+      <span ref={scrollRef} className="data-table-linked-record-scroll">
+        {ids.map((rowId) => {
+          const resolution = resolve(rowId);
+          // §B7 — separate the two not-canonical states. `null`
+          // resolution means the target row no longer exists (orphan
+          // pill); a `{recordId: null}` resolution means the target row
+          // is present but has no `record_id` set yet (the Q18 fallback).
+          const isOrphan = resolution === null;
+          const recordId = resolution?.recordId ?? null;
+          const label = recordId && recordId.length > 0 ? recordId : rowId;
+          const isFallback = !recordId || recordId.length === 0;
+          const className =
+            "data-table-linked-record-pill" +
+            (isActive ? " is-active" : "") +
+            (isFallback ? " data-table-linked-record-pill-fallback" : "") +
+            (isOrphan ? " data-table-linked-record-pill-orphan" : "");
+          const pillAttrs = {
+            className,
+            "data-row-id": rowId,
+            "data-fallback": isFallback ? "true" : undefined,
+            "data-orphan": isOrphan ? "true" : undefined,
+            title: isOrphan ? "Linked record no longer exists" : undefined,
+          };
+          const labelNode = <span className="data-table-linked-record-pill-label">{label}</span>;
+          const unlinkButton = showUnlinkButton ? (
+            <button
+              type="button"
+              className="data-table-linked-record-pill-unlink"
+              aria-label="Unlink record"
+              title="Unlink record"
+              onClick={onUnlinkClick(rowId)}
+            >
+              ×
+            </button>
+          ) : null;
+          if (!isInteractive) {
+            return (
+              <span key={rowId} {...pillAttrs}>
                 {labelNode}
-              </button>
+              </span>
+            );
+          }
+          if (showUnlinkButton) {
+            return (
+              <span key={rowId} {...pillAttrs}>
+                <button
+                  type="button"
+                  className="data-table-linked-record-pill-open"
+                  onClick={onClick(rowId)}
+                  onKeyDown={onKeyDown(rowId)}
+                >
+                  {labelNode}
+                </button>
+                {unlinkButton}
+              </span>
+            );
+          }
+          return (
+            <button
+              key={rowId}
+              type="button"
+              {...pillAttrs}
+              onClick={onClick(rowId)}
+              onKeyDown={onKeyDown(rowId)}
+            >
+              {labelNode}
               {unlinkButton}
-            </span>
+            </button>
           );
-        }
-        return (
-          <button
-            key={rowId}
-            type="button"
-            {...pillAttrs}
-            onClick={onClick(rowId)}
-            onKeyDown={onKeyDown(rowId)}
-          >
-            {labelNode}
-            {unlinkButton}
-          </button>
-        );
-      })}
-      {addButton}
+        })}
+        {addButton}
+      </span>
+      {hasOverflow ? (
+        <span className="data-table-linked-record-overflow-cue" aria-hidden="true">
+          ...
+        </span>
+      ) : null}
     </span>
   );
 }

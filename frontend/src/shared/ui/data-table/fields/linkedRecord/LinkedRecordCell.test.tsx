@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, test, vi } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import { LinkedRecordCell, type LinkedRecordPillResolver } from "./LinkedRecordCell";
 
 function makeResolver(map: Record<string, string | null>): LinkedRecordPillResolver {
@@ -10,6 +10,10 @@ function makeResolver(map: Record<string, string | null>): LinkedRecordPillResol
 }
 
 describe("LinkedRecordCell", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   test("renders an empty-state caption when ids is empty", () => {
     render(<LinkedRecordCell ids={[]} resolve={() => null} />);
     expect(screen.getByText("Empty")).toBeInTheDocument();
@@ -38,6 +42,68 @@ describe("LinkedRecordCell", () => {
     );
     expect(screen.getByText("PUMP-1")).toBeInTheDocument();
     expect(screen.getByText("PUMP-2")).toBeInTheDocument();
+  });
+
+  test("renders overflowing linked records inside a horizontal scroll lane with an overflow cue", () => {
+    vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(120);
+    vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockReturnValue(320);
+
+    render(
+      <LinkedRecordCell
+        ids={["pmp_a", "pmp_b", "pmp_c"]}
+        resolve={makeResolver({
+          pmp_a: "PUMP-1",
+          pmp_b: "PUMP-2",
+          pmp_c: "PUMP-3",
+        })}
+      />,
+    );
+    const cell = screen.getByTestId("linked-record-cell");
+    expect(cell).toHaveClass("has-overflow-cue");
+    expect(cell.querySelector(".data-table-linked-record-scroll")).not.toBeNull();
+    expect(cell.querySelector(".data-table-linked-record-overflow-cue")?.textContent).toBe("...");
+  });
+
+  test("omits the overflow cue when linked records fit inside the scroll lane", () => {
+    vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(320);
+    vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockReturnValue(320);
+
+    render(
+      <LinkedRecordCell
+        ids={["pmp_a", "pmp_b"]}
+        resolve={makeResolver({ pmp_a: "PUMP-1", pmp_b: "PUMP-2" })}
+      />,
+    );
+    const cell = screen.getByTestId("linked-record-cell");
+    expect(cell).not.toHaveClass("has-overflow-cue");
+    expect(cell.querySelector(".data-table-linked-record-overflow-cue")).toBeNull();
+  });
+
+  test("rechecks overflow when rendered content changes with the same ids", () => {
+    const ids = ["pmp_a", "pmp_b"] as const;
+    let scrollWidth = 120;
+    vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(160);
+    vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockImplementation(() => scrollWidth);
+
+    const { rerender } = render(
+      <LinkedRecordCell
+        ids={ids}
+        resolve={makeResolver({ pmp_a: "P-1", pmp_b: "P-2" })}
+        onActivateEdit={() => {}}
+      />,
+    );
+    expect(screen.getByTestId("linked-record-cell")).not.toHaveClass("has-overflow-cue");
+
+    scrollWidth = 260;
+    rerender(
+      <LinkedRecordCell
+        ids={ids}
+        resolve={makeResolver({ pmp_a: "PUMP-LONG-0001", pmp_b: "PUMP-LONG-0002" })}
+        onActivateEdit={() => {}}
+        isActive
+      />,
+    );
+    expect(screen.getByTestId("linked-record-cell")).toHaveClass("has-overflow-cue");
   });
 
   test("falls back to the row id when record_id is empty/null (PRD Q18)", () => {
