@@ -91,6 +91,8 @@ export function AutocompleteSelect({
     top: number;
     left: number;
     width: number;
+    maxHeight: number;
+    placement: "bottom" | "top";
   } | null>(null);
 
   useLayoutEffect(() => {
@@ -103,9 +105,29 @@ export function AutocompleteSelect({
       const el = inputRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
-      const next = { top: rect.bottom + 4, left: rect.left, width: rect.width };
+      const gap = 4;
+      const viewportPadding = 12;
+      const belowSpace = window.innerHeight - rect.bottom - viewportPadding;
+      const aboveSpace = rect.top - viewportPadding;
+      const placement: "bottom" | "top" =
+        belowSpace >= 220 || belowSpace >= aboveSpace ? "bottom" : "top";
+      const availableHeight = Math.max(
+        120,
+        placement === "bottom" ? belowSpace - gap : aboveSpace - gap,
+      );
+      const next = {
+        top: placement === "bottom" ? rect.bottom + gap : rect.top - gap,
+        left: rect.left,
+        width: rect.width,
+        maxHeight: Math.min(280, availableHeight),
+        placement,
+      };
       setListboxPosition((current) =>
-        current?.top === next.top && current.left === next.left && current.width === next.width
+        current?.top === next.top &&
+        current.left === next.left &&
+        current.width === next.width &&
+        current.maxHeight === next.maxHeight &&
+        current.placement === next.placement
           ? current
           : next,
       );
@@ -224,12 +246,15 @@ export function AutocompleteSelect({
               top: listboxPosition?.top ?? 0,
               left: listboxPosition?.left ?? 0,
               width: listboxPosition?.width,
+              maxHeight: listboxPosition?.maxHeight,
               right: "auto",
+              transform: listboxPosition?.placement === "top" ? "translateY(-100%)" : undefined,
               opacity: listboxPosition ? undefined : 0,
               pointerEvents: listboxPosition ? undefined : "none",
             }
           : undefined
       }
+      data-placement={listboxPosition?.placement}
     >
       {filteredOptions.length === 0 ? (
         <li className="autocomplete-select-empty">{emptyMessage}</li>

@@ -1069,13 +1069,18 @@
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--phn-control-radius);
-  bottom: calc(100% + 4px);
   box-shadow: 0 4px 12px color-mix(in oklab, var(--text-primary) 12%, transparent);
   left: 0;
   min-width: 88px;
   padding: 0.25rem 0;
   position: absolute;
+  top: calc(100% + 4px);
   z-index: var(--z-dropdown);
+}
+
+.aperture-operation-type-menu[data-placement="top"] .aperture-operation-type-menu__panel {
+  bottom: calc(100% + 4px);
+  top: auto;
 }
 
 .aperture-operation-type-menu__option {

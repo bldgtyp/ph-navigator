@@ -30,6 +30,8 @@ Status: Complete - 2026-07-02
 
 ## Phase 03 - Dropdown Placement
 
+Status: Complete - 2026-07-02
+
 - Trace the attribute-card select/dropdown primitive.
 - Reuse existing shared viewport-aware placement if available.
 - If local, add placement logic consistent with shared DataTable/select behavior.

@@ -9,7 +9,7 @@
 // fans into ``setElementOperation``. Locked / Viewer access renders
 // the read-only label from ``formatOperation`` instead of the editor.
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { formatOperation } from "../operation-labels";
 import type { ApertureOperation, ApertureOperationDirection } from "../types";
 
@@ -129,12 +129,26 @@ function OperationTypeMenu({
   onChange: (value: OperationTypeValue) => void;
 }) {
   const detailsRef = useRef<HTMLDetailsElement | null>(null);
+  const [placement, setPlacement] = useState<"bottom" | "top">("bottom");
   const label = OPERATION_TYPE_OPTIONS.find((option) => option.value === value)?.label ?? "Fixed";
+  const updatePlacement = () => {
+    const rect = detailsRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const viewportPadding = 12;
+    const belowSpace = window.innerHeight - rect.bottom - viewportPadding;
+    const aboveSpace = rect.top - viewportPadding;
+    setPlacement(belowSpace >= 140 || belowSpace >= aboveSpace ? "bottom" : "top");
+  };
+
   return (
     <details
       className="aperture-operation-type-menu"
+      data-placement={placement}
       data-testid="operation-type-select"
       ref={detailsRef}
+      onToggle={(event) => {
+        if (event.currentTarget.open) updatePlacement();
+      }}
     >
       <summary className="aperture-operation-type-menu__trigger" aria-label="Operation type">
         {label}
