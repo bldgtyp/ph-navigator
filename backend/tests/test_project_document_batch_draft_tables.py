@@ -9,10 +9,14 @@ draft, edit-access required).
 from __future__ import annotations
 
 from typing import Any
+from uuid import UUID
 
+import pytest
 from fastapi.testclient import TestClient
-from structlog.testing import capture_logs
 
+from features.project_document import store as document_store
+from features.project_document.models import ProjectDocumentView
+from features.projects.access import ProjectAccess
 from main import app
 from tests.test_project_document import (
     corrupt_draft_schema,
@@ -70,21 +74,28 @@ def test_batch_entry_matches_single_key_get(clean_document_tables: None) -> None
     assert batch.json()["tables"]["pumps"] == pumps_single.json()
 
 
-def test_batch_does_one_document_load(clean_document_tables: None) -> None:
+def test_batch_does_one_document_load(clean_document_tables: None, monkeypatch: pytest.MonkeyPatch) -> None:
     client = signed_in_client()
     project_id, version_id = _project_with_draft(client)
+    original_get_current_document_view = document_store.get_current_document_view
+    loads: list[UUID] = []
 
-    with capture_logs() as logs:
-        response = client.get(
-            batch_url(project_id, version_id),
-            params={"names": ["rooms", "pumps", "fans"]},
-        )
+    def counted_get_current_document_view(loaded_version_id: UUID, access: ProjectAccess) -> ProjectDocumentView:
+        loads.append(loaded_version_id)
+        return original_get_current_document_view(loaded_version_id, access)
+
+    monkeypatch.setattr(document_store, "get_current_document_view", counted_get_current_document_view)
+
+    response = client.get(
+        batch_url(project_id, version_id),
+        params={"names": ["rooms", "pumps", "fans"]},
+    )
 
     assert response.status_code == 200
-    loads = [entry for entry in logs if entry.get("event") == "project_document.loaded"]
     # One whole-draft load for the whole batch, vs. one per name on the
     # per-table fan-out.
     assert len(loads) == 1
+    assert str(loads[0]) == version_id
 
 
 def test_batch_unknown_name_returns_404(clean_document_tables: None) -> None:
