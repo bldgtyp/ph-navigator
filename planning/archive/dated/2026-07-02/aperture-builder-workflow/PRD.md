@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-02
 TIME: 14:00 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Product contract for Aperture Builder workflow improvements.
 RELATED:
@@ -65,4 +65,3 @@ aperture mirrored left/right.
   semantics where possible.
 - Locate the Aperture Builder state machine for picker/copy/paste modes before
   editing toolbar UI.
-

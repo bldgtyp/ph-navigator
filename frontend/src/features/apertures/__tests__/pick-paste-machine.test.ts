@@ -6,12 +6,8 @@ describe("pick-paste-machine", () => {
     expect(nextMode("idle", { type: "click-eyedropper" })).toBe("picking");
   });
 
-  it("picking + click-element → picked", () => {
-    expect(nextMode("picking", { type: "click-element" })).toBe("picked");
-  });
-
-  it("picked + click-paint-bucket → pasting", () => {
-    expect(nextMode("picked", { type: "click-paint-bucket" })).toBe("pasting");
+  it("picking + click-element → pasting", () => {
+    expect(nextMode("picking", { type: "click-element" })).toBe("pasting");
   });
 
   it("pasting + click-element → pasting (rapid fire)", () => {
@@ -20,12 +16,11 @@ describe("pick-paste-machine", () => {
 
   it("any non-idle + esc → idle", () => {
     expect(nextMode("picking", { type: "esc" })).toBe("idle");
-    expect(nextMode("picked", { type: "esc" })).toBe("idle");
     expect(nextMode("pasting", { type: "esc" })).toBe("idle");
   });
 
   it("any non-idle + click-background → idle", () => {
-    expect(nextMode("picked", { type: "click-background" })).toBe("idle");
+    expect(nextMode("picking", { type: "click-background" })).toBe("idle");
   });
 
   it("clear collapses to idle", () => {

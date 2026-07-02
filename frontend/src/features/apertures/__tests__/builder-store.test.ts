@@ -11,6 +11,9 @@ function reset() {
     hoveredElementId: null,
     hoveredRegion: null,
     pickPasteMode: "idle",
+    pickedAssignment: null,
+    undoStacksByAperture: {},
+    dismissedOperationWarnings: {},
   });
 }
 
@@ -64,5 +67,46 @@ describe("builder-store", () => {
 
     initial.setCanvasZoom((current) => current - 0.5);
     expect(useApertureBuilderStore.getState().canvasZoom).toBe(1.5);
+  });
+
+  it("arms paste mode and captures a source assignment after a valid pick", () => {
+    const frames = { top: null, right: null, bottom: null, left: null };
+    initial.pickPasteAction({ type: "click-eyedropper" });
+    initial.pickPasteAction(
+      { type: "click-element" },
+      {
+        source_element_id: "el_source",
+        operation: { type: "swing", directions: ["left"] },
+        glazing: null,
+        frames,
+      },
+    );
+
+    const state = useApertureBuilderStore.getState();
+    expect(state.pickPasteMode).toBe("pasting");
+    expect(state.pickedAssignment).toEqual({
+      source_element_id: "el_source",
+      operation: { type: "swing", directions: ["left"] },
+      glazing: null,
+      frames,
+    });
+  });
+
+  it("does not arm paste mode from an invalid source/background click", () => {
+    initial.pickPasteAction({ type: "click-eyedropper" });
+    initial.pickPasteAction({ type: "click-background" });
+
+    const state = useApertureBuilderStore.getState();
+    expect(state.pickPasteMode).toBe("idle");
+    expect(state.pickedAssignment).toBeNull();
+  });
+
+  it("does not arm paste mode when a source pick has no captured assignment", () => {
+    initial.pickPasteAction({ type: "click-eyedropper" });
+    initial.pickPasteAction({ type: "click-element" });
+
+    const state = useApertureBuilderStore.getState();
+    expect(state.pickPasteMode).toBe("picking");
+    expect(state.pickedAssignment).toBeNull();
   });
 });

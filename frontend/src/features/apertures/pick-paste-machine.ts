@@ -6,14 +6,13 @@
 // Transitions:
 //
 //   idle    + click-eyedropper  → picking
-//   picking + click-element     → picked
-//   picked  + click-paint-bucket → pasting
+//   picking + click-element     → pasting
 //   pasting + click-element     → pasting   (stay; rapid fire)
 //   (any non-idle) + esc        → idle
 //   (any non-idle) + click-bg   → idle
 //   (any non-idle) + clear      → idle
 
-export type PickPasteMode = "idle" | "picking" | "picked" | "pasting";
+export type PickPasteMode = "idle" | "picking" | "pasting";
 
 export type PickPasteAction =
   | { type: "click-eyedropper" }
@@ -31,13 +30,9 @@ export function nextMode(current: PickPasteMode, action: PickPasteAction): PickP
     case "idle":
       return action.type === "click-eyedropper" ? "picking" : "idle";
     case "picking":
-      if (action.type === "click-element") return "picked";
+      if (action.type === "click-element") return "pasting";
       if (action.type === "click-eyedropper") return "picking";
       return "picking";
-    case "picked":
-      if (action.type === "click-paint-bucket") return "pasting";
-      if (action.type === "click-eyedropper") return "picking";
-      return "picked";
     case "pasting":
       if (action.type === "click-element") return "pasting";
       if (action.type === "click-eyedropper") return "picking";

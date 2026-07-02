@@ -460,6 +460,7 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                         <ApertureCanvasContainer
                           aperture={activeAperture}
                           canEdit={canEdit}
+                          commandBusy={mutation.isPending}
                           onSetElementName={(elementId, newName) =>
                             void dispatch({
                               kind: "setElementName",
@@ -544,6 +545,12 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                               kind: "splitElement",
                               aperture_type_id: activeAperture.id,
                               element_id,
+                            })
+                          }
+                          onFlipLeftRight={() =>
+                            void dispatch({
+                              kind: "flipLeftRight",
+                              aperture_type_id: activeAperture.id,
                             })
                           }
                           onPasteAssignment={(source_element_id, target_element_ids) =>

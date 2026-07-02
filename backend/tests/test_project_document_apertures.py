@@ -21,6 +21,7 @@ from features.project_document.aperture_commands.models import (
     DeleteRow,
     DuplicateApertureType,
     EditDimension,
+    FlipLeftRight,
     PickFrame,
     PickGlazing,
     RenameApertureType,
@@ -819,3 +820,105 @@ def test_paste_assignment_target_equals_source_rejects() -> None:
             PasteAssignment(aperture_type_id=apt_id, source_element_id=el.id, target_element_ids=[el.id]),
         )
     assert "aperture_paste_target_is_source" in str(exc.value)
+
+
+def test_flip_left_right_single_column_preserves_span_and_mirrors_operation() -> None:
+    body, apt_id = _seeded_body_with_aperture()
+    entry = body.tables.apertures[0]
+    element = entry.elements[0]
+    body, _ = _apply(
+        body,
+        SetElementOperation(
+            aperture_type_id=apt_id,
+            element_id=element.id,
+            operation=ApertureOperation(type="slide", directions=["right", "up"]),
+        ),
+    )
+
+    body, audit = _apply(body, FlipLeftRight(aperture_type_id=apt_id))
+
+    flipped = body.tables.apertures[0].elements[0]
+    assert flipped.id == element.id
+    assert flipped.row_span == (0, 0)
+    assert flipped.column_span == (0, 0)
+    assert flipped.operation is not None
+    assert flipped.operation.directions == ["left", "up"]
+    payload = cast(dict[str, object], audit["payload"])
+    assert payload["flipped_element_ids"] == [element.id]
+    assert payload["column_count"] == 1
+    assert payload["affects_u_value"] is True
+
+
+def test_flip_left_right_two_column_aperture_reverses_columns_and_side_frames() -> None:
+    body, apt_id = _seeded_body_with_aperture()
+    body, _ = _apply(body, AddColumn(aperture_type_id=apt_id, at_index=1, width_mm=1300.0))
+    body, _ = _apply(body, EditDimension(aperture_type_id=apt_id, axis="column", index=0, new_value_mm=700.0))
+    entry = body.tables.apertures[0]
+    left_element = next(element for element in entry.elements if element.column_span == (0, 0))
+    right_element = next(element for element in entry.elements if element.column_span == (1, 1))
+    body, _ = _apply(
+        body,
+        PickFrame(
+            aperture_type_id=apt_id,
+            element_id=left_element.id,
+            side="left",
+            frame=FrameRef(
+                name="Left Jamb",
+                width_mm=40.0,
+                catalog_origin=CatalogOrigin(
+                    catalog_table="frame_types",
+                    catalog_record_id="rec0000000000LEFT",
+                    synced_at=datetime(2026, 7, 2, tzinfo=UTC),
+                ),
+            ),
+        ),
+    )
+    body, _ = _apply(
+        body,
+        PickFrame(
+            aperture_type_id=apt_id,
+            element_id=left_element.id,
+            side="right",
+            frame=FrameRef(
+                name="Right Jamb",
+                width_mm=60.0,
+                catalog_origin=CatalogOrigin(
+                    catalog_table="frame_types",
+                    catalog_record_id="rec000000000RIGHT",
+                    synced_at=datetime(2026, 7, 2, tzinfo=UTC),
+                ),
+            ),
+        ),
+    )
+    entry = body.tables.apertures[0]
+    left_element = next(element for element in entry.elements if element.id == left_element.id)
+    old_left_frame = left_element.frames.left
+    old_right_frame = left_element.frames.right
+
+    body, _audit = _apply(body, FlipLeftRight(aperture_type_id=apt_id))
+
+    entry = body.tables.apertures[0]
+    assert entry.column_widths_mm == [1300.0, 700.0]
+    flipped_left_element = next(element for element in entry.elements if element.id == left_element.id)
+    flipped_right_element = next(element for element in entry.elements if element.id == right_element.id)
+    assert flipped_left_element.column_span == (1, 1)
+    assert flipped_right_element.column_span == (0, 0)
+    assert flipped_left_element.frames.left == old_right_frame
+    assert flipped_left_element.frames.right == old_left_frame
+    assert flipped_left_element.frames.top == left_element.frames.top
+    assert flipped_left_element.frames.bottom == left_element.frames.bottom
+
+
+def test_flip_left_right_multi_segment_aperture_mirrors_spans_without_changing_rows() -> None:
+    body, apt_id = _two_by_two_aperture()
+    entry = body.tables.apertures[0]
+    before = {element.id: (element.row_span, element.column_span) for element in entry.elements}
+
+    body, _audit = _apply(body, FlipLeftRight(aperture_type_id=apt_id))
+
+    entry = body.tables.apertures[0]
+    assert len(entry.elements) == 4
+    after = {element.id: (element.row_span, element.column_span) for element in entry.elements}
+    for element_id, (row_span, column_span) in before.items():
+        assert after[element_id][0] == row_span
+        assert after[element_id][1] == (1 - column_span[1], 1 - column_span[0])

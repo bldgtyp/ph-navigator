@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-02
 TIME: 14:00 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Aperture Builder workflow improvements for copy/paste action coupling
   and horizontal flip behavior.
@@ -9,6 +9,7 @@ RELATED:
   - ./PRD.md
   - ./PLAN.md
   - ./STATUS.md
+  - ./decisions.md
   - planning/archive/dated/2026-06-05/apertures/README.md
 ---
 
@@ -27,12 +28,11 @@ Improve the Aperture Builder editing workflow:
 
 ## Read Order
 
-1. `PRD.md` - behavior contract and acceptance criteria.
-2. `PLAN.md` - split implementation phases.
-3. `STATUS.md` - current state and next action.
+1. `STATUS.md` - current state and next action.
+2. `PRD.md` - behavior contract and acceptance criteria.
+3. `PLAN.md` - split implementation phases.
+4. `decisions.md` - accepted remapping rules for flip implementation.
 
 ## Classification
 
-`planning/features` because this adds user-facing builder commands and workflow
-behavior.
-
+Archived from `planning/features` after the workflow behavior shipped.

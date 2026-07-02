@@ -82,8 +82,10 @@ export function ApertureCanvasContainer({
   onSetElementOperation,
   onMergeElements,
   onSplitElement,
+  onFlipLeftRight,
   onPasteAssignment,
   uValueByElementId,
+  commandBusy = false,
 }: {
   aperture: ApertureTypeEntry;
   dimFormat: ApertureDimFormatState;
@@ -102,12 +104,14 @@ export function ApertureCanvasContainer({
   ) => void;
   onMergeElements?: (elementIds: string[]) => void;
   onSplitElement?: (elementId: string) => void;
+  onFlipLeftRight?: () => void;
   onPasteAssignment?: (
     sourceElementId: string,
     targetElementIds: string[],
     payload: PickedAssignment,
   ) => Promise<void> | void;
   uValueByElementId?: Map<string, number>;
+  commandBusy?: boolean;
 }) {
   const [viewDirection, setViewDirection] = useState<ApertureViewDirection>("exterior");
   const [deleteTip, setDeleteTip] = useState<string | null>(null);
@@ -250,6 +254,7 @@ export function ApertureCanvasContainer({
   const selectedElement =
     selection.length === 1 ? (aperture.elements.find((e) => e.id === selection[0]) ?? null) : null;
   const canSplit = canEdit && selectedElement !== null && isSplittable(selectedElement);
+  const canFlipLeftRight = canEdit && !commandBusy && pickPasteMode === "idle";
 
   const handleMerge = useCallback(() => {
     if (!canMerge || !mergeValidation.ok) return;
@@ -260,6 +265,11 @@ export function ApertureCanvasContainer({
     if (!canSplit || !selectedElement) return;
     onSplitElement?.(selectedElement.id);
   }, [canSplit, selectedElement, onSplitElement]);
+
+  const handleFlipLeftRight = useCallback(() => {
+    if (!canFlipLeftRight) return;
+    onFlipLeftRight?.();
+  }, [canFlipLeftRight, onFlipLeftRight]);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Escape") {
@@ -308,6 +318,7 @@ export function ApertureCanvasContainer({
         canEdit={canEdit}
         canMerge={canMerge}
         canSplit={canSplit}
+        canFlipLeftRight={canFlipLeftRight}
         pickPasteMode={pickPasteMode}
         undoDepth={undoDepth}
         onZoomIn={() => setZoom((current) => nextZoomStep(current))}
@@ -319,6 +330,7 @@ export function ApertureCanvasContainer({
         onClearSelection={() => clearSelection(aperture.id)}
         onMerge={handleMerge}
         onSplit={handleSplit}
+        onFlipLeftRight={handleFlipLeftRight}
         onEyedropper={handleEyedropper}
         onPaintBucket={handlePaintBucket}
         onUndoPaste={() => void undoLastPaste()}

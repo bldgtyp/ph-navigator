@@ -1,8 +1,14 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactNode } from "react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, test, vi } from "vitest";
+import type { UnitSystem } from "../../../lib/units";
+import {
+  UnitPreferenceContext,
+  type UnitPreferenceContextValue,
+} from "../../../lib/units/preference-context";
 import type { ProjectDetail, ProjectVersion } from "../../projects/types";
 import { aperturesBuilderPath } from "../paths";
 import { AperturesTab } from "../routes/AperturesTab";
@@ -46,8 +52,10 @@ vi.mock("../hooks", () => ({
 
 vi.mock("../hooks/useApertureDimFormat", () => ({
   useApertureDimFormat: vi.fn(() => ({
-    displayFormat: "mm",
-    setDisplayFormat: vi.fn(),
+    system: "si",
+    format: "mm",
+    setSiFormat: vi.fn(),
+    setIpFormat: vi.fn(),
   })),
 }));
 
@@ -111,6 +119,24 @@ const CREATED_APERTURE: ApertureTypeEntry = {
   elements: [],
 };
 
+const ACTIVE_APERTURE: ApertureTypeEntry = {
+  id: "apt-active",
+  name: "Type A",
+  row_heights_mm: [1000],
+  column_widths_mm: [1000],
+  elements: [
+    {
+      id: "aptel-active",
+      name: "A",
+      row_span: [0, 0],
+      column_span: [0, 0],
+      frames: { top: null, right: null, bottom: null, left: null },
+      glazing: null,
+      operation: null,
+    },
+  ],
+};
+
 function createSlice(apertures: ApertureTypeEntry[]): AperturesSlice {
   return {
     project_id: PROJECT.id,
@@ -129,16 +155,35 @@ function renderAperturesTab(project: ProjectDetail = PROJECT) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={[aperturesBuilderPath(project.id)]}>
-        <Routes>
-          <Route
-            path="/projects/:projectId/apertures/*"
-            element={<AperturesTab project={project} />}
-          />
-        </Routes>
-      </MemoryRouter>
+      <UnitStub>
+        <MemoryRouter initialEntries={[aperturesBuilderPath(project.id)]}>
+          <Routes>
+            <Route
+              path="/projects/:projectId/apertures/*"
+              element={<AperturesTab project={project} />}
+            />
+          </Routes>
+        </MemoryRouter>
+      </UnitStub>
     </QueryClientProvider>,
   );
+}
+
+function UnitStub({
+  children,
+  unitSystem = "SI",
+}: {
+  children: ReactNode;
+  unitSystem?: UnitSystem;
+}) {
+  const value: UnitPreferenceContextValue = {
+    unitSystem,
+    source: "default",
+    error: null,
+    setUnitSystem: vi.fn(),
+    toggleUnitSystem: vi.fn(),
+  };
+  return <UnitPreferenceContext.Provider value={value}>{children}</UnitPreferenceContext.Provider>;
 }
 
 describe("AperturesTab zero-type state", () => {
@@ -178,5 +223,20 @@ describe("AperturesTab zero-type state", () => {
     ).not.toBeInTheDocument();
     expect(within(main).queryByText("No aperture types yet.")).not.toBeInTheDocument();
     expect(within(main).queryByText("U-Value")).not.toBeInTheDocument();
+  });
+
+  test("dispatches flipLeftRight from the builder toolbar", async () => {
+    const activeSlice = createSlice([ACTIVE_APERTURE]);
+    mocks.slice = activeSlice;
+    mocks.applyMutateAsync.mockResolvedValue(activeSlice);
+
+    renderAperturesTab();
+
+    await userEvent.click(screen.getByRole("button", { name: "Flip left/right" }));
+
+    expect(mocks.applyMutateAsync).toHaveBeenCalledWith({
+      current: activeSlice,
+      command: { kind: "flipLeftRight", aperture_type_id: ACTIVE_APERTURE.id },
+    });
   });
 });

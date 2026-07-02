@@ -41,6 +41,7 @@ const U_VALUE_AFFECTING_KINDS = new Set<ApertureCommand["kind"]>([
   "mergeElements",
   "splitElement",
   "pasteAssignment",
+  "flipLeftRight",
 ]);
 
 /** Wire kinds that change a catalog-aware ref shape (origin / fields)
@@ -61,6 +62,7 @@ const DRIFT_AFFECTING_KINDS = new Set<ApertureCommand["kind"]>([
   "mergeElements",
   "splitElement",
   "pasteAssignment",
+  "flipLeftRight",
   "refreshRefFromCatalog",
 ]);
 

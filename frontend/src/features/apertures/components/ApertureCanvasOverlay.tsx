@@ -52,7 +52,7 @@ export function ApertureCanvasOverlay({
   onRegionClick?: (elementId: string, region: ApertureRegionKind) => void;
   /** Phase 08: pick/paste machine state surfaced for source-ring +
    *  pulse styling and to gate element click intent. */
-  pickPasteMode?: "idle" | "picking" | "picked" | "pasting";
+  pickPasteMode?: "idle" | "picking" | "pasting";
   pickedSourceElementId?: string | null;
   pasteFlashElementId?: string | null;
   /** Click intent when ``pickPasteMode === "picking"``. */

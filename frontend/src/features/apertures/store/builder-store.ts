@@ -14,7 +14,7 @@ export type ApertureHoveredRegion = {
   region: ApertureSide | "glazing";
 };
 
-export type AperturePickPasteMode = "idle" | "picking" | "picked" | "pasting";
+export type AperturePickPasteMode = "idle" | "picking" | "pasting";
 export type CanvasZoomUpdate = number | ((current: number) => number);
 
 /** The 6-field assignment payload captured by the Eyedropper. Mirrors
@@ -65,9 +65,8 @@ export type ApertureBuilderState = {
   clearDismissedOperationWarnings: (apertureId: string) => void;
 
   /** Run an action through the pick/paste state machine. ``pick``
-   *  passes the captured 6 fields when transitioning ``picking →
-   *  picked`` so the same call atomically advances mode and stashes
-   *  the payload. */
+   *  passes the captured 6 fields when selecting a valid source so the
+   *  same call atomically advances mode and stashes the payload. */
   pickPasteAction: (action: PickPasteAction, pick?: PickedAssignment | null) => void;
   /** Push one undo entry on the active aperture's stack; trims to
    *  ``PASTE_UNDO_STACK_LIMIT``. */
@@ -152,14 +151,15 @@ export const useApertureBuilderStore = create<ApertureBuilderState>((set, get) =
 
   pickPasteAction: (action, pick) =>
     set((state) => {
+      if (state.pickPasteMode === "picking" && action.type === "click-element" && !pick) {
+        return state;
+      }
       const mode = nextMode(state.pickPasteMode, action);
-      // Drop the captured payload when the machine resets to idle, or
-      // when transitioning out of ``picked``/``pasting`` for any reason
-      // other than re-paste.
+      // Drop the captured payload when the machine resets to idle.
       let assignment = state.pickedAssignment;
       if (mode === "idle") {
         assignment = null;
-      } else if (state.pickPasteMode === "picking" && mode === "picked") {
+      } else if (state.pickPasteMode === "picking" && action.type === "click-element") {
         assignment = pick ?? null;
       }
       if (mode === state.pickPasteMode && assignment === state.pickedAssignment) return state;

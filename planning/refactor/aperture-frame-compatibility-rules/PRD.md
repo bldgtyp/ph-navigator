@@ -48,7 +48,7 @@ need to treat them as compatible with the appropriate physical sides.
 - No catalog schema migration.
 - No rename of catalog `Location` values.
 - No change to aperture builder flip behavior; that is tracked in
-  `planning/features/aperture-builder-workflow/`.
+  `planning/archive/dated/2026-07-02/aperture-builder-workflow/`.
 
 ## Open Questions
 
@@ -57,4 +57,3 @@ need to treat them as compatible with the appropriate physical sides.
 - Are fixed frames valid for the stationary panel of a slider aperture?
 - Is compatibility based only on frame metadata, or also on segment role
   (`FX-to-FX`, `OP-to-FX`, `OP-to-OP`)?
-

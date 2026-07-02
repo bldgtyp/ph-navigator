@@ -132,6 +132,8 @@ beforeEach(() => {
     hoveredRegion: null,
     pickPasteMode: "idle",
     pickedAssignment: null,
+    undoStacksByAperture: {},
+    dismissedOperationWarnings: {},
   });
 });
 

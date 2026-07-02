@@ -1,4 +1,5 @@
 import {
+  ArrowLeftRight,
   Combine,
   PaintBucket,
   Pipette,
@@ -20,6 +21,7 @@ export function ApertureCanvasToolbar({
   canEdit,
   canMerge,
   canSplit,
+  canFlipLeftRight,
   pickPasteMode,
   undoDepth,
   onZoomIn,
@@ -29,6 +31,7 @@ export function ApertureCanvasToolbar({
   onClearSelection,
   onMerge,
   onSplit,
+  onFlipLeftRight,
   onEyedropper,
   onPaintBucket,
   onUndoPaste,
@@ -39,6 +42,7 @@ export function ApertureCanvasToolbar({
   canEdit: boolean;
   canMerge: boolean;
   canSplit: boolean;
+  canFlipLeftRight: boolean;
   pickPasteMode: AperturePickPasteMode;
   undoDepth: number;
   onZoomIn: () => void;
@@ -48,6 +52,7 @@ export function ApertureCanvasToolbar({
   onClearSelection: () => void;
   onMerge: () => void;
   onSplit: () => void;
+  onFlipLeftRight: () => void;
   onEyedropper: () => void;
   onPaintBucket: () => void;
   onUndoPaste: () => void;
@@ -89,6 +94,14 @@ export function ApertureCanvasToolbar({
             onClick={onSplit}
             disabled={!canSplit}
           />
+          <ApertureToolbarButton
+            icon={ArrowLeftRight}
+            label="Flip left/right"
+            tooltip="Flip left/right"
+            data-testid="aperture-canvas-flip-left-right"
+            onClick={onFlipLeftRight}
+            disabled={!canFlipLeftRight}
+          />
           <ApertureToolbarDivider />
           <ApertureToolbarButton
             icon={Pipette}
@@ -96,7 +109,7 @@ export function ApertureCanvasToolbar({
             tooltip="Copy element assignment"
             data-testid="aperture-canvas-eyedropper"
             onClick={onEyedropper}
-            aria-pressed={pickPasteMode === "picking" || pickPasteMode === "picked"}
+            aria-pressed={pickPasteMode === "picking"}
           />
           <ApertureToolbarButton
             icon={PaintBucket}
@@ -105,7 +118,7 @@ export function ApertureCanvasToolbar({
             data-testid="aperture-canvas-paint-bucket"
             onClick={onPaintBucket}
             aria-pressed={pickPasteMode === "pasting"}
-            disabled={pickPasteMode !== "picked" && pickPasteMode !== "pasting"}
+            disabled={pickPasteMode !== "pasting"}
           />
           <ApertureToolbarButton
             icon={RotateCcw}

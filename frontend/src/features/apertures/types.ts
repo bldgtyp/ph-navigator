@@ -227,6 +227,7 @@ export type ApertureCommand =
       source_element_id: string;
       target_element_ids: string[];
     }
+  | { kind: "flipLeftRight"; aperture_type_id: string }
   | {
       // Phase 11: replace the project-document manufacturer-filter
       // enabled lists. ``null`` for either field = "all enabled".

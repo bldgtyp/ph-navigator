@@ -1,7 +1,7 @@
 # Planning Status
 
 DATE: 2026-07-02
-TIME: 14:00 EDT
+TIME: 18:24 EDT
 STATUS: Active routing index for tracked planning material.
 AUTHOR: Codex
 SCOPE: Current planning folder organization after moving dated docs to
@@ -11,7 +11,7 @@ feature-first planning.
 
 | Feature | State | Current pointer |
 |---|---|---|
-| Aperture Builder Workflow | Planned / app-testing notes collected for picker-to-paste state coupling and `Flip left/right` mirroring of aperture elements + frames; no implementation started | `features/aperture-builder-workflow/STATUS.md` |
+| Aperture Builder Workflow | Complete / archived after picker source selection now arms paste directly, persisted `flipLeftRight` mirrors columns/spans/side frames/operation directions, full CI and browser smoke passed | `archive/dated/2026-07-02/aperture-builder-workflow/STATUS.md` |
 | Apertures Frames Grouping | Complete / archived after Frames report grouping shipped: default `manufacturer`, optional durable `brand`, and ungrouped view; focused RTL + frontend gate passed | `archive/dated/2026-07-02/apertures-frames-grouping/STATUS.md` |
 | Rooms Airflow Fields | Planned / reviewed and phased for nullable unit-aware Rooms defaults (`Supply airflow rate`, `Extract airflow rate`); Phase 00 must settle existing-document compatibility and the real saved/draft/audit/diff data formats before implementation | `features/rooms-airflow-fields/STATUS.md` |
 | Configurable Single-Select Options | Active / critical review found this is mostly an option-mutability contract, not new Rooms storage; Phase 00 must settle backend allowlist/lock semantics, inline-create/paste gating, and in-use delete behavior before implementation | `features/configurable-single-select-options/STATUS.md` |
@@ -89,6 +89,11 @@ feature-first planning.
   Radix tooltip primitive, Save Version blocking overlay, Assembly canvas
   stroke gutter, Climate map tile-loading spinner, Apertures zero-type empty
   state, browser smoke evidence, `make format`, and `make ci`).
+- Completed Aperture Builder Workflow planning now lives under
+  `archive/dated/2026-07-02/aperture-builder-workflow/` (picker source
+  selection arms paste directly; persisted `flipLeftRight` mirrors aperture
+  columns, spans, side frames, and operation directions; focused tests,
+  `make ci`, and local browser smoke passed).
 - Completed Assembly Builder canvas-refactor planning now lives under
   `archive/dated/2026-06-04/assembly-builder/`; older foundation precedent remains
   under `archive/dated/2026-06-04/assembly-builder-foundation/`.
