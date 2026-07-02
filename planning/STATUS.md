@@ -1,7 +1,7 @@
 # Planning Status
 
-DATE: 2026-07-01
-TIME: 16:18 EDT
+DATE: 2026-07-02
+TIME: 14:00 EDT
 STATUS: Active routing index for tracked planning material.
 AUTHOR: Codex
 SCOPE: Current planning folder organization after moving dated docs to
@@ -11,7 +11,10 @@ feature-first planning.
 
 | Feature | State | Current pointer |
 |---|---|---|
+| Aperture Builder Workflow | Planned / app-testing notes collected for picker-to-paste state coupling and `Flip left/right` mirroring of aperture elements + frames; no implementation started | `features/aperture-builder-workflow/STATUS.md` |
 | Apertures Frames Grouping | Complete / archived after Frames report grouping shipped: default `manufacturer`, optional durable `brand`, and ungrouped view; focused RTL + frontend gate passed | `archive/dated/2026-07-02/apertures-frames-grouping/STATUS.md` |
+| Rooms Airflow Fields | Planned / add nullable unit-aware Rooms defaults for `Supply airflow rate` and `Extract airflow rate` (`cfm <> m3/h`), including existing sample-project alignment if needed | `features/rooms-airflow-fields/STATUS.md` |
+| Configurable Single-Select Options | Planned / define allowlisted user-configurable single-select option lists starting with Rooms `Floor` and `Zone`; protected fields such as `STATUS` must remain locked | `features/configurable-single-select-options/STATUS.md` |
 | Admin User Management MVP | Complete / archived after Phases 00-06 implemented and verified: first-admin bootstrap, invite/admin-reset-link/deactivate/reactivate/admin grants, last-admin protection, CSRF/Origin guard, capability-gated UI, Admin-derived `catalog.edit`, audit, runbook, and production smoke evidence | `archive/dated/2026-06-29/admin-user-management/STATUS.md` |
 | Production Climate Data Seeding | Complete / production R2 PHIUS+PHI bundles published, Render Postgres seeded (`phi/10.6` 1002 locations, `phius/2022` 1007 locations), and PHIUS, PHI, and Hourly Climate workflows manually verified on production; archived | `archive/dated/2026-06-29/production-climate-data-seeding/STATUS.md` |
 | Equipment Draft ETag Coordination | Complete / archived after P00-P03: stale Equipment sibling `draft_etag` writes now resolve a fresh target slice before payload construction; focused unit/controller coverage and browser request-count regression passed | `archive/dated/2026-06-29/equipment-draft-etag-coordination/STATUS.md` |
@@ -47,6 +50,9 @@ feature-first planning.
 
 | Refactor | State | Current pointer |
 |---|---|---|
+| Apertures Page Layout Polish | Planned / app-testing notes collected for Apertures sidebar overflow, SVG/card coupling, collapsed rail button centering, and viewport-aware attribute-card dropdowns | `refactor/apertures-page-layout-polish/STATUS.md` |
+| Aperture Frame Compatibility Rules | Planned / consolidate slider filtering and `Mull-H`/`Mull-V` side compatibility; fixed-frame slider validity needs decision before implementation | `refactor/aperture-frame-compatibility-rules/STATUS.md` |
+| DataTable Visual Overflow Polish | Planned / shared table polish for linked-record overflow, opaque sticky headers, and fixed-column/body bottom clipping alignment | `refactor/data-table-visual-overflow-polish/STATUS.md` |
 | Production Frontend Performance | Implemented locally through Phase 03 setup path / Production harness guards added; guarded `codex@testing.com` / `PERF-STRESS` fixture command added for 250-row Climate/Envelope/Apertures fixture with Model excluded; next live action is choosing the runtime password and running fixture setup in the production API environment; authenticated perf run still held | `refactor/production-frontend-performance/STATUS.md` |
 | Backend Data-Architecture Cleanup | Complete / Phases 1–3, 5, and 6 implemented and verified with `make ci`; old Phase 4 promoted to `table-write-architecture-unification`; Phase 7 deferred to pre-first-deploy gate; archived | `archive/dated/2026-06-24/backend-data-architecture-cleanup/STATUS.md` |
 | Table-Write-Architecture Unification | Complete / all phases (1, 2, 3a, 3b inc 1–6) landed — heat-pumps fully unified onto the generic registered-contract + spine (BE) and generic table-write client (FE); bespoke write service, FE client, and PATCH shim all removed; shared option-list delete cascade + `dependent_link_delete_blocked` rename; `make ci` green (BE 1110, FE 1906), browser smoke as Ed passed; archived | `archive/dated/2026-06-25/table-write-architecture-unification/STATUS.md` |
