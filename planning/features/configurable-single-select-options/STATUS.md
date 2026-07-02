@@ -14,21 +14,22 @@ RELATED:
   - ./phases/phase-01-api-guardrails.md
   - ./phases/phase-02-rooms-affordance.md
   - ./phases/phase-03-cascade-ux.md
+  - ./phases/phase-04-verification-docs.md
 ---
 
 # STATUS - Configurable Single-Select Options
 
 ## State
 
-`Active` - Phase 03 cascade UX complete.
+`Active` - Phase 04 verification/docs complete.
 
 ## Next Step
 
-Start `phases/phase-04-verification-docs.md`.
+Archive packet after final closeout checks.
 
 ## Blockers
 
-None for Phase 03.
+None for Phase 04.
 
 ## Decisions
 
@@ -63,6 +64,10 @@ None for Phase 03.
   default to clear and may optionally replace.
 - `EditCustomFieldBundleRequest.optionReplacements` is forwarded through
   `useCustomFieldHandlers` into the typed schema mutation builder.
+- Phase 04 browser smoke found generic Equipment `status` overlays still lacked
+  the frontend `"options"` lock. The backend already rejected those edits; the
+  frontend now applies `STATUS_OPTION_LOCK_OVERLAY` across shared Equipment
+  status tables so the modal, picker create path, and paste planner all match.
 
 ## Verification Ledger
 
@@ -89,3 +94,15 @@ None for Phase 03.
   - `pnpm vitest run src/shared/ui/data-table/__tests__/FieldConfigSectionOptions.test.tsx src/features/equipment/__tests__/RoomsTable.schemaEditor.test.tsx src/shared/ui/data-table/__tests__/customFieldMutations.test.ts`
   - `pnpm exec tsc -b`
   - `pnpm exec prettier --check src/shared/ui/data-table/components/FieldConfigSectionOptions.tsx src/shared/ui/data-table/components/FieldConfigModal.tsx src/shared/ui/data-table/feature/useCustomFieldHandlers.ts src/shared/ui/data-table/types.ts src/shared/ui/data-table/__tests__/FieldConfigSectionOptions.test.tsx src/features/equipment/__tests__/RoomsTable.schemaEditor.test.tsx`
+- 2026-07-02: Phase 04 complete. Verification:
+  - `uv run pytest tests/test_project_document_phase_3_type_conversion.py`
+  - `uv run ruff check tests/test_project_document_phase_3_type_conversion.py`
+  - `pnpm vitest run src/features/equipment/lib.test.ts src/features/equipment/__tests__/PumpsTable.reuse.test.tsx src/shared/ui/data-table/__tests__/SingleSelectPopover.test.tsx src/shared/ui/data-table/__tests__/useGridEdit.test.ts src/shared/ui/data-table/__tests__/lib.test.ts`
+  - `pnpm exec tsc -b`
+  - `pnpm exec prettier --check src/features/equipment/lib.ts src/features/equipment/lib.test.ts src/features/equipment/__tests__/PumpsTable.reuse.test.tsx`
+  - Browser smoke through in-app Browser at `http://localhost:5173` with
+    `codex@example.com`: Rooms Floor add + alphabetize + unused delete +
+    referenced delete clear; Rooms Zone add + rename; Pumps protected `Status`
+    modal disabled option controls; protected `Status` picker showed no
+    `+ Create` for unknown label; unknown status paste did not commit the
+    bogus label. Browser console warnings/errors: none.

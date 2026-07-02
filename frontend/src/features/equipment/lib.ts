@@ -699,6 +699,10 @@ const ROOMS_COLUMN_ID_BY_FIELD_KEY: Record<string, string> = {
   [ROOM_BUILDING_ZONE_KEY]: ROOM_BUILDING_ZONE_COLUMN_ID,
 };
 
+const STATUS_OPTION_LOCK_OVERLAY: TableFieldRenderOverlay = {
+  locked: ["field_type", "options", "delete", "duplicate"],
+};
+
 export function roomsTableColumnsForSanitize(
   fieldDefs: readonly FieldDef[],
 ): DataTableColumnDef<unknown>[] {
@@ -762,6 +766,7 @@ export function pumpsFieldOverlay(pumpsSlice: PumpsSlice): Record<string, TableF
     [PUMP_DATASHEET_FIELD_KEY]: {
       locked: ALL_FIELD_LOCKS,
     },
+    [STATUS_FIELD_KEY]: STATUS_OPTION_LOCK_OVERLAY,
   };
 }
 
@@ -821,6 +826,7 @@ export function ventilatorsFieldOverlay(
     [VENTILATOR_DATASHEET_FIELD_KEY]: {
       locked: ALL_FIELD_LOCKS,
     },
+    [STATUS_FIELD_KEY]: STATUS_OPTION_LOCK_OVERLAY,
   };
 }
 
@@ -889,6 +895,7 @@ export function fansFieldOverlay(fansSlice: FansSlice): Record<string, TableFiel
     [FAN_DATASHEET_FIELD_KEY]: {
       locked: ALL_FIELD_LOCKS,
     },
+    [STATUS_FIELD_KEY]: STATUS_OPTION_LOCK_OVERLAY,
   };
 }
 
@@ -959,6 +966,7 @@ export function hotWaterHeatersFieldOverlay(
     [HOT_WATER_HEATER_DATASHEET_FIELD_KEY]: {
       locked: ALL_FIELD_LOCKS,
     },
+    [STATUS_FIELD_KEY]: STATUS_OPTION_LOCK_OVERLAY,
   };
 }
 
@@ -1018,6 +1026,7 @@ export function hotWaterTanksFieldOverlay(
     notes: {
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
+    [STATUS_FIELD_KEY]: STATUS_OPTION_LOCK_OVERLAY,
   };
 }
 
@@ -1058,6 +1067,7 @@ export function electricHeatersFieldOverlay(): Record<string, TableFieldRenderOv
     notes: {
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
+    [STATUS_FIELD_KEY]: STATUS_OPTION_LOCK_OVERLAY,
   };
 }
 
@@ -1124,6 +1134,7 @@ export function appliancesFieldOverlay(
     notes: {
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
+    [STATUS_FIELD_KEY]: STATUS_OPTION_LOCK_OVERLAY,
   };
 }
 

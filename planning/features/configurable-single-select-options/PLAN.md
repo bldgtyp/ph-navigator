@@ -83,13 +83,15 @@ edited through one path while another path still creates options.
   built-ins still require replacement.
 - No additional required built-in option lists were unlocked.
 
-## Phase 04 - Verification and Docs
+## Phase 04 - Verification and Docs - DONE
 
-- Complete `phases/phase-04-verification-docs.md`.
-- Add or update backend, frontend unit, and browser-smoke coverage.
-- Fold durable DataTable field-contract decisions into
+- Completed in `phases/phase-04-verification-docs.md`.
+- Added frontend regression coverage for protected Equipment `status` option
+  locks found during browser smoke.
+- Re-ran targeted backend/frontend verification and browser smoke.
+- Folded durable DataTable field-contract decisions into
   `context/technical-requirements/data-table.md`.
-- Update this packet's `STATUS.md`.
+- Updated this packet's `STATUS.md` and the top-level planning index.
 
 ## Split Guidance
 

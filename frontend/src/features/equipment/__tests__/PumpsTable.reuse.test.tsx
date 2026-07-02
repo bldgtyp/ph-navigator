@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import type { ReactElement } from "react";
 import { createQueryClient } from "../../../app/query-client";
 import { spacesRoomsPath } from "../../spaces/paths";
-import { emptyViewState } from "../../../shared/ui/data-table";
+import { canEditFieldOptions, emptyViewState } from "../../../shared/ui/data-table";
 import { PumpsTable } from "../components/PumpsTable";
 import { routeForInverseSource } from "../lib/inverseRoutes";
 import { buildPump, buildPumpsSlice, schemaForPumps } from "../testing/testFixtures";
@@ -103,7 +103,7 @@ describe("PumpsTable DataTable reuse", () => {
     expect(statusCell).not.toBeNull();
   });
 
-  test("exposes Status as an editable (non-locked) single-select field", () => {
+  test("exposes Status as value-editable but option-locked", () => {
     const slice = buildPumpsSlice({ pumps: [buildPump()] });
     const tableSchema = schemaForPumps(slice);
     const statusField = tableSchema.fieldDefs.find((field) => field.field_key === "status");
@@ -113,6 +113,8 @@ describe("PumpsTable DataTable reuse", () => {
     // The value cell stays editable even though the option list is fixed;
     // a fully read-only field would carry `read_only: true`.
     expect(statusField?.options?.length).toBe(4);
+    expect(statusField?.locked).toContain("options");
+    expect(canEditFieldOptions(statusField)).toBe(false);
   });
 
   test("calls onWrite through inline cell editing", async () => {

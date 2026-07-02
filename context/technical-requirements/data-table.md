@@ -120,6 +120,7 @@ type FieldDef = {
   // documents.
   built_in?: boolean;
   locked?: ReadonlyArray<FieldLockKey>;
+  optionMutability?: OptionMutability;
   required?: boolean;
   description?: string;
 };
@@ -133,6 +134,8 @@ type FieldLockKey =
   | "formula"
   | "delete"
   | "duplicate";
+
+type OptionMutability = "editable" | "locked";
 
 type CoerceResult<T> =
   | { ok: true; value: T | null }
@@ -148,6 +151,31 @@ ship `["delete", "duplicate"]`; attachments ship the all-locked array
 rule that the type picker stays disabled on every built-in regardless
 of lock-list contents — Phase 3 lifts that rule once the storage path
 has been reshaped (see `data-model.md` §6.6 + `plan-31` PRD §P0.1).
+
+**Single-select option mutability.** Option-list editing is an explicit
+capability, not implied by `field_type === "single_select"`.
+Frontend `FieldDef.optionMutability` is `"editable"` or `"locked"`; when
+omitted it is derived from whether `FieldDef.locked` includes
+`"options"`. The shared field-config modal, inline single-select picker,
+and paste planner all use this contract: locked fields keep value edits
+for existing options, but cannot add, rename, reorder, recolor, delete,
+or paste-create options. Backend `TableFieldRegistry` mirrors the same
+policy with `option_editable_builtin_field_keys`; custom single-selects
+remain editable, while built-ins must be allowlisted. Rooms allowlist
+`floor_level` and `building_zone`. App-owned `status` fields and other
+non-allowlisted built-in single-select vocabularies are locked even
+when their cell values remain editable.
+
+Option-list saves use the typed schema path. The field-config modal
+emits the full next option list as `EditCustomFieldBundleRequest.options`,
+which becomes `editFieldBundle.nextOptions` and is applied through the
+same backend `apply_edit_options` path as direct `editOptions`. When an
+option referenced by rows is deleted, the modal records an explicit
+cascade choice. Nullable fields may clear referenced cells; replacement
+choices are carried as `optionReplacements` (`deletedOptionId ->
+replacementOptionId`). Required built-in single-selects cannot clear:
+the backend rejects referenced deletes unless every deleted id maps to
+a replacement id that remains in `nextOptions`.
 
 **Header/schema invariant.** Every project table header is rendered by
 the shared `GridHeader` / `DataTableHeaderCell` path; feature tables do

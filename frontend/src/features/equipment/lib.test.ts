@@ -50,7 +50,7 @@ import {
 } from "./lib";
 import { ApiRequestError } from "../../shared/api/client";
 import type { TableFieldDef } from "../../shared/ui/data-table";
-import { tableFieldDefsToFieldDefs } from "../../shared/ui/data-table";
+import { canEditFieldOptions, tableFieldDefsToFieldDefs } from "../../shared/ui/data-table";
 import {
   ROOM_BUILDING_ZONE_COLUMN_ID,
   ROOM_FLOOR_LEVEL_COLUMN_ID,
@@ -1553,12 +1553,15 @@ describe("built-in status field", () => {
     }
   });
 
-  test("useTableSchema resolves <table>.status into the local status FieldDef as an editable single-select", () => {
+  test("useTableSchema resolves <table>.status as value-editable but option-locked", () => {
     const schema = schemaForPumps(buildPumpsSlice());
     const statusField = schema.fieldDefs.find((field) => field.field_key === STATUS_FIELD_KEY);
 
     expect(statusField?.field_type).toBe("single_select");
     expect(statusField?.defaultOptionId).toBe(STATUS_DEFAULT_OPTION_ID);
+    expect(statusField?.read_only).not.toBe(true);
+    expect(statusField?.locked).toContain("options");
+    expect(canEditFieldOptions(statusField)).toBe(false);
     // The namespaced option list is attached, so the cell renders the four pills.
     expect(statusField?.options?.map((option) => option.id)).toEqual([
       "opt_status_complete",
