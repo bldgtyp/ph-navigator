@@ -65,6 +65,11 @@ describe("unit display helpers", () => {
     expect(formatLengthFromMm(25.4, { unitSystem: "IP" })).toBe("1 in");
   });
 
+  test("formats large unit values with thousands separators", () => {
+    expect(formatLengthFromMm(16252.7, { unitSystem: "SI" })).toBe("16,252.7 mm");
+    expect(formatLengthFromMm(50800, { unitSystem: "IP" })).toBe("2,000 in");
+  });
+
   test("parses explicit length units and fractional inches", () => {
     expect(parseLengthToMm("4 in", { unitSystem: "SI" })).toEqual({
       ok: true,

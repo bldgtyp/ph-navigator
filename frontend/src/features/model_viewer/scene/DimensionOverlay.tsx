@@ -12,6 +12,7 @@ import {
 import { formatMetersAsLength } from "../lib/fieldConfigs";
 import type { BuildingModel } from "../loaders/building";
 import type { ElementSummary } from "../loaders/lineElements";
+import { SCENE_HTML_Z_INDEX_RANGE } from "./htmlLayering";
 
 type DimensionOverlayProps = {
   model: BuildingModel;
@@ -99,6 +100,7 @@ function DimensionAnnotation({
         center
         className="model-dimension-label"
         pointerEvents="none"
+        zIndexRange={SCENE_HTML_Z_INDEX_RANGE}
       >
         {formatMetersAsLength(item.geometry.lengthM, unitSystem)}
       </Html>

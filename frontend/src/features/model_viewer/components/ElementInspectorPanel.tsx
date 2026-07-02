@@ -1,5 +1,5 @@
-import { Check, Copy, Maximize2, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Check, ChevronDown, Copy, Maximize2, X } from "lucide-react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { formatLengthFromMm, useUnitPreference } from "../../../lib/units";
 import { configForMeta, formatMetersAsLength } from "../lib/fieldConfigs";
 import { elementIdForSegmentId } from "../lib/selection";
@@ -24,7 +24,7 @@ export function ElementInspectorPanel({ element, model }: ElementInspectorPanelP
   const toggleFocusedSegment = useModelViewerStore((state) => state.toggleFocusedSegment);
   const [copied, setCopied] = useState(false);
   const resetTimer = useRef<number | null>(null);
-  const rowRefs = useRef(new Map<string, HTMLButtonElement>());
+  const rowRefs = useRef(new Map<string, HTMLTableRowElement>());
 
   useEffect(() => {
     setCopied(false);
@@ -52,6 +52,9 @@ export function ElementInspectorPanel({ element, model }: ElementInspectorPanelP
   const rows = element.segmentIds
     .map((segmentId) => model.metaById.get(segmentId))
     .filter((meta): meta is DuctSegmentLineMeta | PipeSegmentLineMeta => isLineSegmentMeta(meta));
+  const firstRow = rows[0] ?? null;
+  const lengthUnit = measurementUnit(firstRow ? segmentLength(firstRow, unitSystem) : null);
+  const diameterUnit = measurementUnit(firstRow ? segmentDiameter(firstRow, unitSystem) : null);
   const copyId = async () => {
     await navigator.clipboard.writeText(element.identifier);
     setCopied(true);
@@ -87,51 +90,112 @@ export function ElementInspectorPanel({ element, model }: ElementInspectorPanelP
         <section className="model-inspector-section model-inspector-total">
           <h4>Total Length</h4>
           <strong>{formatMetersAsLength(element.length, unitSystem)}</strong>
-          <span>{segmentSummary(rows, element)}</span>
+          <span>{segmentSummary(rows)}</span>
         </section>
         <section className="model-inspector-section">
           <h4>Segments</h4>
-          <div className="model-inspector-segment-table" role="table" aria-label="Element segments">
-            <div className="model-inspector-segment-row is-header" role="row">
-              <span role="columnheader">#</span>
-              <span role="columnheader">Length</span>
-              <span role="columnheader">Diameter</span>
-              {element.kind === "pipeElement" ? <span role="columnheader">Material</span> : null}
-            </div>
-            {rows.map((meta, index) => {
-              const expanded = focusedSegmentId === meta.id;
-              const hovered = hoveredSegmentId === meta.id;
-              const config = configForMeta(meta);
-              return (
-                <div className="model-inspector-segment-group" key={meta.id}>
-                  <button
-                    ref={(node) => {
-                      if (node) rowRefs.current.set(meta.id, node);
-                      else rowRefs.current.delete(meta.id);
-                    }}
-                    type="button"
-                    className={segmentRowClass(expanded, hovered)}
-                    aria-expanded={expanded}
-                    onClick={() => toggleFocusedSegment(meta.id)}
-                    onFocus={() => setHoverId(meta.id)}
-                    onBlur={() => setHoverId(null)}
-                    onMouseEnter={() => setHoverId(meta.id)}
-                    onMouseLeave={() => setHoverId(null)}
-                  >
-                    <span>{index + 1}</span>
-                    <span>{segmentLength(meta, unitSystem)}</span>
-                    <span>{segmentDiameter(meta, unitSystem)}</span>
-                    {element.kind === "pipeElement" ? <span>{pipeMaterial(meta)}</span> : null}
-                  </button>
-                  {expanded ? (
-                    <div className="model-inspector-segment-detail">
-                      <FieldRows config={config} meta={meta} />
-                    </div>
-                  ) : null}
-                </div>
-              );
-            })}
-          </div>
+          <table
+            className={
+              element.kind === "pipeElement"
+                ? "model-inspector-segment-table has-material"
+                : "model-inspector-segment-table"
+            }
+            aria-label="Element segments"
+          >
+            <colgroup>
+              <col className="model-inspector-segment-col-index" />
+              <col className="model-inspector-segment-col-length" />
+              <col className="model-inspector-segment-col-diameter" />
+              {element.kind === "pipeElement" ? (
+                <col className="model-inspector-segment-col-material" />
+              ) : null}
+              <col className="model-inspector-segment-col-more" />
+            </colgroup>
+            <thead>
+              <tr className="model-inspector-segment-row is-header">
+                <th scope="col">#</th>
+                <th scope="col">
+                  <SegmentColumnHeader label="Length" unit={lengthUnit} />
+                </th>
+                <th scope="col">
+                  <SegmentColumnHeader label="Diam." unit={diameterUnit} />
+                </th>
+                {element.kind === "pipeElement" ? <th scope="col">Material</th> : null}
+                <th scope="col">
+                  <span className="sr-only">More</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((meta, index) => {
+                const expanded = focusedSegmentId === meta.id;
+                const hovered = hoveredSegmentId === meta.id;
+                const config = configForMeta(meta);
+                const segmentNumber = index + 1;
+                const length = splitMeasurement(segmentLength(meta, unitSystem));
+                const diameter = splitMeasurement(segmentDiameter(meta, unitSystem));
+                const material = pipeMaterial(meta);
+                return (
+                  <Fragment key={meta.id}>
+                    <tr
+                      ref={(node) => {
+                        if (node) rowRefs.current.set(meta.id, node);
+                        else rowRefs.current.delete(meta.id);
+                      }}
+                      className={segmentRowClass(expanded, hovered)}
+                      onMouseEnter={() => setHoverId(meta.id)}
+                      onMouseLeave={() => setHoverId(null)}
+                    >
+                      <th className="model-inspector-segment-index" scope="row">
+                        {segmentNumber}
+                      </th>
+                      <td className="model-inspector-segment-length">{length.value}</td>
+                      <td className="model-inspector-segment-diameter">{diameter.value}</td>
+                      {element.kind === "pipeElement" ? (
+                        <td className="model-inspector-segment-material" title={material}>
+                          {material}
+                        </td>
+                      ) : null}
+                      <td className="model-inspector-segment-more-cell">
+                        <button
+                          type="button"
+                          className="model-inspector-segment-more"
+                          aria-label={segmentButtonLabel({
+                            expanded,
+                            segmentNumber,
+                            length: length.formatted,
+                            diameter: diameter.formatted,
+                            material: element.kind === "pipeElement" ? material : null,
+                          })}
+                          aria-expanded={expanded}
+                          title={expanded ? "Show less" : "Show more"}
+                          onClick={() => toggleFocusedSegment(meta.id)}
+                          onFocus={() => setHoverId(meta.id)}
+                          onBlur={() => setHoverId(null)}
+                        >
+                          <ChevronDown
+                            className="model-inspector-segment-chevron"
+                            size={14}
+                            aria-hidden
+                          />
+                        </button>
+                      </td>
+                    </tr>
+                    {expanded ? (
+                      <tr className="model-inspector-segment-detail-row">
+                        <td
+                          className="model-inspector-segment-detail"
+                          colSpan={element.kind === "pipeElement" ? 5 : 4}
+                        >
+                          <FieldRows config={config} meta={meta} />
+                        </td>
+                      </tr>
+                    ) : null}
+                  </Fragment>
+                );
+              })}
+            </tbody>
+          </table>
         </section>
       </div>
     </aside>
@@ -144,16 +208,8 @@ function isLineSegmentMeta(
   return meta?.type === "ductSegmentLine" || meta?.type === "pipeSegmentLine";
 }
 
-function segmentSummary(
-  rows: Array<DuctSegmentLineMeta | PipeSegmentLineMeta>,
-  element: ElementSummary,
-): string {
-  const segmentText = `${rows.length} ${rows.length === 1 ? "segment" : "segments"}`;
-  const firstRow = rows[0] ?? null;
-  const diameter = firstRow ? segmentDiameter(firstRow, "SI") : "--";
-  if (diameter === "--") return segmentText;
-  const prefix = element.kind === "pipeElement" ? "diam." : "dia.";
-  return `${segmentText} · ${prefix} ${diameter}`;
+function segmentSummary(rows: Array<DuctSegmentLineMeta | PipeSegmentLineMeta>): string {
+  return `${rows.length} ${rows.length === 1 ? "segment" : "segments"}`;
 }
 
 function segmentLength(
@@ -177,9 +233,54 @@ function pipeMaterial(meta: DuctSegmentLineMeta | PipeSegmentLineMeta): string {
   return meta.type === "pipeSegmentLine" && meta.material_value ? meta.material_value : "--";
 }
 
+type SegmentMeasurement = {
+  formatted: string;
+  value: string;
+  unit: string | null;
+};
+
+function splitMeasurement(formatted: string): SegmentMeasurement {
+  const trimmed = formatted.trim();
+  const match = /^(.+?)\s+([^\s]+)$/.exec(trimmed);
+  if (!match) return { formatted: trimmed, value: trimmed, unit: null };
+  const [, value = trimmed, unit = null] = match;
+  return { formatted: trimmed, value, unit };
+}
+
+function measurementUnit(formatted: string | null): string | null {
+  return formatted ? splitMeasurement(formatted).unit : null;
+}
+
+function SegmentColumnHeader({ label, unit }: { label: string; unit: string | null }) {
+  return (
+    <span className="model-inspector-segment-header-stack">
+      <span>{label}</span>
+      {unit ? <span className="model-inspector-segment-header-unit">{unit}</span> : null}
+    </span>
+  );
+}
+
 function segmentRowClass(expanded: boolean, hovered: boolean): string {
   const classes = ["model-inspector-segment-row"];
   if (expanded) classes.push("is-expanded");
   if (hovered) classes.push("is-hovered");
   return classes.join(" ");
+}
+
+function segmentButtonLabel({
+  expanded,
+  segmentNumber,
+  length,
+  diameter,
+  material,
+}: {
+  expanded: boolean;
+  segmentNumber: number;
+  length: string;
+  diameter: string;
+  material: string | null;
+}): string {
+  const action = expanded ? "Collapse" : "Expand";
+  const materialText = material ? `, material ${material}` : "";
+  return `${action} segment ${segmentNumber}: ${length}, diameter ${diameter}${materialText}`;
 }

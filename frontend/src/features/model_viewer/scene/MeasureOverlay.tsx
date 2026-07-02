@@ -14,6 +14,7 @@ import { isClickWithinDragTolerance } from "../lib/selection";
 import type { BuildingModel } from "../loaders/building";
 import { useModelViewerStore } from "../store";
 import type { ModelViewerMeasureLine } from "../types";
+import { SCENE_HTML_Z_INDEX_RANGE } from "./htmlLayering";
 
 type MeasureOverlayProps = {
   model: BuildingModel;
@@ -143,7 +144,13 @@ function MeasureLine({
         transparent
         opacity={0.92}
       />
-      <Html position={midpoint} center className="model-measure-label" pointerEvents="none">
+      <Html
+        position={midpoint}
+        center
+        className="model-measure-label"
+        pointerEvents="none"
+        zIndexRange={SCENE_HTML_Z_INDEX_RANGE}
+      >
         {formatMeasureDistance(line.distanceM, unitSystem)}
       </Html>
     </>

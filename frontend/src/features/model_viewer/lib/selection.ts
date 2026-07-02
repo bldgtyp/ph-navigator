@@ -55,3 +55,7 @@ export function resolveLineHighlightTier(
   if (hoverElementId !== null && hoverElementId === objectElementId) return "hoverElement";
   return "default";
 }
+
+export function isElevatedLineHighlightTier(tier: LineHighlightTier): boolean {
+  return tier === "selectedSoft" || tier === "hoverSegment" || tier === "focused";
+}

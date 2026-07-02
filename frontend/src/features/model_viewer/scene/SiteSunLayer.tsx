@@ -21,6 +21,7 @@ import {
   SUN_PATH_GAP_SIZE,
   sunPathFitTransform,
 } from "./sunPathGeometry";
+import { SCENE_HTML_Z_INDEX_RANGE } from "./htmlLayering";
 
 /**
  * The site-sun overlays: merged shade groups, the north compass, and — when a
@@ -96,7 +97,13 @@ function SiteCompass({ bounds }: { bounds: Box3 }) {
   return (
     <group name="site-compass">
       <Line points={[origin, end]} color={VIEWER_SITE_COMPASS_COLOR} lineWidth={1.2} />
-      <Html position={label} center className="model-site-compass-label" pointerEvents="none">
+      <Html
+        position={label}
+        center
+        className="model-site-compass-label"
+        pointerEvents="none"
+        zIndexRange={SCENE_HTML_Z_INDEX_RANGE}
+      >
         N
       </Html>
     </group>

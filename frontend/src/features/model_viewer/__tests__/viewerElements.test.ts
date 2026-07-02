@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vitest";
-import { elementIdForSegmentId, resolveLineHighlightTier } from "../lib/selection";
+import {
+  elementIdForSegmentId,
+  isElevatedLineHighlightTier,
+  resolveLineHighlightTier,
+} from "../lib/selection";
 import { buildBuildingModel } from "../loaders/building";
 import type { CombinedModelData } from "../types";
 
@@ -92,6 +96,14 @@ describe("model viewer MEP elements", () => {
       expect(resolveLineHighlightTier(objectId, selectionId, hoverId, focusedSegmentId)).toBe(tier);
     },
   );
+
+  test("only selected and focused line tiers render as elevated overlays", () => {
+    expect(isElevatedLineHighlightTier("default")).toBe(false);
+    expect(isElevatedLineHighlightTier("hoverElement")).toBe(false);
+    expect(isElevatedLineHighlightTier("selectedSoft")).toBe(true);
+    expect(isElevatedLineHighlightTier("hoverSegment")).toBe(true);
+    expect(isElevatedLineHighlightTier("focused")).toBe(true);
+  });
 });
 
 function mepElementData(): CombinedModelData {

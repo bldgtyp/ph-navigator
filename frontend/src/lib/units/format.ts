@@ -9,7 +9,7 @@ export function formatNumberWithUnit(
     return options.empty ?? "—";
   }
   const fractionDigits = options.fractionDigits ?? 2;
-  const formatted = stripTrailingZeros(value.toFixed(fractionDigits));
+  const formatted = addThousandsSeparators(stripTrailingZeros(value.toFixed(fractionDigits)));
   return options.showUnit === false || unit === "" ? formatted : `${formatted} ${unit}`;
 }
 
@@ -31,4 +31,15 @@ export function parseNumberInput(value: unknown): number | null {
 
 export function stripTrailingZeros(value: string): string {
   return value.includes(".") ? value.replace(/\.?0+$/, "") : value;
+}
+
+function addThousandsSeparators(value: string): string {
+  const [integerPart, decimalPart] = value.split(".");
+  if (!integerPart) return value;
+  const sign = integerPart.startsWith("-") ? "-" : "";
+  const unsignedInteger = sign ? integerPart.slice(1) : integerPart;
+  const groupedInteger = unsignedInteger.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return decimalPart === undefined
+    ? `${sign}${groupedInteger}`
+    : `${sign}${groupedInteger}.${decimalPart}`;
 }

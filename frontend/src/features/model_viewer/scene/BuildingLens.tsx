@@ -12,6 +12,7 @@ import { isHiddenByFilter } from "../lib/legendFilter";
 import { isPointVisibleForSection } from "../lib/section";
 import {
   elementIdForSegmentId,
+  isElevatedLineHighlightTier,
   isClickWithinDragTolerance,
   pointerPoint,
   resolveLineHighlightTier,
@@ -46,6 +47,8 @@ const BATCHED_MESH_LENSES = new Set<ModelViewerLens>([
   "floor-areas",
   "site-sun",
 ]);
+const DEFAULT_LINE_RENDER_ORDER = 0;
+const ELEVATED_LINE_RENDER_ORDER = 20;
 
 export function BuildingLens({
   model,
@@ -170,12 +173,16 @@ const LineObject = memo(function LineObject({
   // fall through to the lines behind it) — the line-lens analogue of the mesh
   // wireframe context (PRD §5).
   const live = interactive && !hidden;
+  const elevated = live && isElevatedLineHighlightTier(tier);
 
   return (
     <Line
       points={object.points}
       color={hidden ? VIEWER_FILTER_DIM_LINE_COLOR : lineColor(object.lineStyle, tier, tokens)}
       lineWidth={lineWidth(object.lineStyle, live ? tier : "default")}
+      renderOrder={elevated ? ELEVATED_LINE_RENDER_ORDER : DEFAULT_LINE_RENDER_ORDER}
+      depthTest={!elevated}
+      depthWrite={!elevated}
       worldUnits
       dashed={object.lineStyle === "pipe-recirc"}
       dashSize={0.8}
