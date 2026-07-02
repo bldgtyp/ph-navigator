@@ -31,7 +31,8 @@ from pydantic import ValidationError
 from features.model_viewer.schemas.combined import CombinedModelDataSchema, LoadSummarySchema
 from features.model_viewer.schemas.honeybee import FaceSchema, ShadeGroupSchema, ShadeSchema
 from features.model_viewer.schemas.honeybee_energy import (
-    OpaqueConstructionSchema,
+    DetailedOpaqueConstructionSchema,
+    FaceConstructionSummarySchema,
     WindowConstructionSchema,
 )
 from features.model_viewer.schemas.honeybee_ph import SpaceSchema
@@ -114,7 +115,7 @@ def extract_model_data(model: Model) -> CombinedModelDataSchema:
     and served by the project-scoped `GET /projects/{id}/sun-path` endpoint.
     """
     summary = LoadSummarySchema()
-    faces = _faces_from_model(model, summary)
+    faces, constructions = _faces_from_model(model, summary)
     spaces = _spaces_from_model(model, summary)
     shade_groups = _shade_groups_from_model(model)
     summary.faces_extracted = len(faces)
@@ -122,6 +123,7 @@ def extract_model_data(model: Model) -> CombinedModelDataSchema:
     summary.shade_groups_extracted = len(shade_groups)
     return CombinedModelDataSchema(
         faces=faces,
+        constructions=constructions,
         spaces=spaces,
         hot_water_systems=_hot_water_systems_from_model(model, summary),
         ventilation_systems=_ventilation_systems_from_model(model, summary),
@@ -130,22 +132,49 @@ def extract_model_data(model: Model) -> CombinedModelDataSchema:
     )
 
 
-def _faces_from_model(model: Model, summary: LoadSummarySchema) -> list[FaceSchema]:
+def _faces_from_model(
+    model: Model,
+    summary: LoadSummarySchema,
+) -> tuple[list[FaceSchema], dict[str, DetailedOpaqueConstructionSchema]]:
     """Opaque faces with punched, triangulated meshes + D-12 constructions.
 
+    Each unique opaque construction is parsed once and returned in the
+    deduplicated `constructions` map with its full layer/segment detail
+    (construction-detail D-2); faces carry only the thin summary keyed by
+    identifier. Parsing per unique construction (not per face) matters at
+    scale: dense models have thousands of faces sharing dozens of
+    constructions, and the detailed parse recursively validates every
+    layer's division cells.
+
     Faces whose construction fails opaque validation (AirBoundaries) are
-    skipped, logged, and counted — V1 parity made explicit (Q-VIEW-1).
+    skipped, logged, and counted per face — V1 parity made explicit
+    (Q-VIEW-1). The failed identifiers are cached so shared AirBoundary
+    constructions are not re-parsed per face.
     """
     face_dtos: list[FaceSchema] = []
+    constructions: dict[str, DetailedOpaqueConstructionSchema] = {}
+    summaries: dict[str, FaceConstructionSummarySchema] = {}
+    non_opaque_identifiers: set[str] = set()
     for hb_face in model.faces:
-        energy_prop = hb_face.properties.energy
-        try:
-            construction = OpaqueConstructionSchema(**energy_prop.construction.to_dict())
-        except ValidationError:
+        construction = hb_face.properties.energy.construction
+        identifier = construction.identifier
+        if identifier not in summaries and identifier not in non_opaque_identifiers:
+            try:
+                detailed = DetailedOpaqueConstructionSchema(**construction.to_dict())
+            except ValidationError:
+                non_opaque_identifiers.add(identifier)
+            else:
+                _apply_thermal_fields(detailed, construction)
+                constructions[identifier] = detailed
+                # NOT model_validate(detailed): Pydantic passes subclass
+                # instances through unchanged, which would put the full
+                # materials payload back on every face.
+                summaries[identifier] = FaceConstructionSummarySchema(**detailed.model_dump(exclude={"materials"}))
+        if identifier in non_opaque_identifiers:
             log.warning(
                 "model_viewer.extraction.face_skipped",
                 face=hb_face.display_name,
-                construction=energy_prop.construction.display_name,
+                construction=construction.display_name,
             )
             summary.air_boundaries_skipped += 1
             continue
@@ -153,8 +182,7 @@ def _faces_from_model(model: Model, summary: LoadSummarySchema) -> list[FaceSche
         face_dto = FaceSchema(**hb_face.to_dict())
         face_dto.geometry.mesh = Mesh3DSchema(**hb_face.punched_geometry.triangulated_mesh3d.to_dict())
         face_dto.geometry.area = hb_face.punched_geometry.area
-        _apply_thermal_fields(construction, energy_prop.construction)
-        face_dto.properties.energy.construction = construction
+        face_dto.properties.energy.construction = summaries[identifier]
 
         for aperture_dto, hb_aperture in zip(face_dto.apertures, hb_face.apertures, strict=True):
             aperture_dto.geometry.mesh = Mesh3DSchema(**hb_aperture.geometry.triangulated_mesh3d.to_dict())
@@ -172,10 +200,10 @@ def _faces_from_model(model: Model, summary: LoadSummarySchema) -> list[FaceSche
             aperture_dto.properties.energy.construction = ap_construction
 
         face_dtos.append(face_dto)
-    return face_dtos
+    return face_dtos, constructions
 
 
-def _apply_thermal_fields(dto: OpaqueConstructionSchema | WindowConstructionSchema, construction: Any) -> None:
+def _apply_thermal_fields(dto: FaceConstructionSummarySchema | WindowConstructionSchema, construction: Any) -> None:
     """D-12: ship Factor (air films included) AND Value (films excluded),
     straight from honeybee-energy, no relabeling."""
     dto.u_factor = getattr(construction, "u_factor", 0.0)

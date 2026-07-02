@@ -1,8 +1,10 @@
 ---
 DATE: 2026-07-01
 TIME: -
-STATUS: PRD accepted (decisions D-1/D-2/D-8/D-9 + label settled); four
-  phased handoff docs authored. No implementation started.
+STATUS: Complete — all 4 phases implemented on
+  feature/model-viewer-construction-detail (2026-07-02); all gates green;
+  acceptance all-pass. Merge to main + D-9 deploy DB reset = Ed's call.
+  ARCHIVED.
 AUTHOR: Claude (for Ed)
 SCOPE: Router for the Model tab "detailed construction viewer" feature —
   a read-only modal that visualizes an opaque surface's HBJSON assembly
@@ -55,6 +57,11 @@ full Envelope isolation, "View Construction" label). D-9: no
 migration/versioning/reset for v1 — the one-day-old prod has no projects,
 so there are no cached artifacts to migrate and nothing a reset would
 clear; the map just appears on every extraction going forward (versioning
-deferred to the next schema change against real data). Four phased handoff
-docs authored under `phases/`; none started. Phase 1 (backend map,
-additive) is the entry point.
+deferred to the next schema change against real data). **All four phases
+are complete** on `feature/model-viewer-construction-detail`: the
+`/model_data` `constructions` map (Phase 1), frontend types + adapter
+(Phase 2), the `ConstructionDetailModal` (Phase 3), and the inspector
+"View Construction" button + full verification (Phase 4). See `STATUS.md`
+for the acceptance walk and each phase doc's as-built notes; screenshots
+in `assets/`. Remaining actions are Ed's: merge to main, and do the D-9
+deploy DB reset while prod is still empty (STATUS.md reminder).

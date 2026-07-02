@@ -1,7 +1,9 @@
 ---
 DATE: 2026-07-01
 TIME: -
-STATUS: Not started.
+STATUS: ✅ DONE (2026-07-01) — implemented on
+  feature/model-viewer-construction-detail with as-built amendments (see
+  §7 As-built notes).
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff for Phase 3 — the read-only
   ConstructionDetailModal: header, to-scale SVG layer-stack drawing with
@@ -129,3 +131,34 @@ import (D-8). Copy/export of the assembly (PRD §12 deferred).
 correctly from props — drawing + table + totals + header, unit-aware,
 empty-state-safe — verified by unit tests. Not yet reachable from the UI
 (Phase 4 wires it).
+
+## 7. As-built notes (2026-07-01)
+
+Implemented as specified with UI-polish and simplify-review amendments:
+
+- **Header figures as a stat-tile strip** (Thickness / U-Factor / U-Value
+  / R-Factor / R-Value), tooltips shared with the inspector via
+  `THERMAL_FIELD_TOOLTIPS` exported from `lib/fieldConfigs.ts` (the
+  strings' original home; no duplication).
+- **Drawing ↔ table hover linking**: hovering a table row outlines the
+  layer in the SVG and vice versa (shared `hoveredIndex` owned by the
+  modal). The drawing is sticky beside the scrolling table; layers carry
+  `<title>` tooltips.
+- **Framed layers start expanded** — the segment make-up is the reason
+  the modal exists. Expansion state lives in the table (its only
+  consumer), seeded from `isFramedLayer` (exported by the adapter lib —
+  single definition of "framed").
+- **Segmented layer swatches**: the table's per-layer swatch draws the
+  cell stripes proportionally — a legend for the drawing. Null colors →
+  hatch fallback in both HTML (CSS gradient) and SVG (`<pattern>`), D-6.
+- **Steel-stud layers** get a diagonal overlay hatch in the drawing and a
+  "Steel studs @ 406.4 mm o.c." note row in the table.
+- Modal width via the established `id`-selector pattern
+  (`#construction-detail.modal-panel`, mirroring `#climate-picker`) — the
+  shared `ModalDialog` was left untouched.
+- Adapter gained `widthM` on cells (authored column width in meters,
+  null when degenerate) so sub-rows show real segment widths, plus shared
+  `totalThicknessM` used by header stat, drawing scale, and totals row.
+- 10 RTL cases: flat/framed/steel-stud rendering, expand/collapse,
+  totals reconciliation, IP/SI flip, Escape-close, null-color fallback,
+  empty state.

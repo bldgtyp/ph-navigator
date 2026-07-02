@@ -21,6 +21,12 @@ export function ModalDialog({
     function handleKeyDown(event: KeyboardEvent): void {
       if (event.key !== "Escape") return;
       event.preventDefault();
+      // The dialog consumes the Escape that closes it — this listener is on
+      // `document`, so stopping here keeps window-level Escape handlers
+      // (e.g. the model viewer's deselect) from also acting. Other keys are
+      // not intercepted; page hotkey owners must guard themselves while a
+      // modal is open (see ModelViewerStage's keydown guard).
+      event.stopPropagation();
       onClose();
     }
 

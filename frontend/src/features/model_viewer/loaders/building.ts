@@ -8,6 +8,7 @@ import { ductRenderables, pipeRenderables, type ElementSummary } from "./lineEle
 import type {
   ApertureModelData,
   CombinedModelData,
+  DetailedOpaqueConstruction,
   FaceModelData,
   ModelObjectCounts,
   ModelObjectMeta,
@@ -63,6 +64,9 @@ export type BuildingModel = {
   shadeObjects: ShadeRenderable[];
   metaById: Map<string, ModelObjectMeta>;
   elementsById: Map<string, ElementSummary>;
+  /** Deduplicated opaque construction detail by identifier (D-2); a face's
+   *  thin construction summary keys in via `construction.identifier`. */
+  constructions: Record<string, DetailedOpaqueConstruction>;
   bounds: Box3;
   objectCounts: ModelObjectCounts;
   lensAvailability: LensAvailability;
@@ -117,6 +121,7 @@ export function buildBuildingModel(data: CombinedModelData): BuildingModel {
     shadeObjects,
     metaById,
     elementsById,
+    constructions: data.constructions ?? {},
     bounds: bounds.isEmpty() ? fallbackBounds(objects) : bounds,
     objectCounts: countObjects(objects),
     lensAvailability: lensAvailability(objects),

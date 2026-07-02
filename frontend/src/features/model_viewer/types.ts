@@ -1,3 +1,4 @@
+// @size-exception: planning/archive/dated/2026-07-02/model-viewer-construction-detail/PRD.md §6 — one cohesive wire-mirror module for the /model_data artifact; splitting the data contract across files would hurt discoverability more than the length does
 import type { ModelViewerSection } from "./lib/section";
 
 export type ExtractionStatus = "pending" | "success" | "failed";
@@ -84,6 +85,42 @@ export type OpaqueConstruction = {
   u_value: number | null;
   r_factor: number | null;
   r_value: number | null;
+};
+
+/** ARGB material swatch from honeybee-ph (`properties.ph.ph_color`). */
+export type PhColor = { a: number; r: number; g: number; b: number };
+
+/** A framed layer's honeybee-ph division grid. Empty `column_widths`/`cells`
+ *  means the layer is homogeneous. Widths/heights are meters, as authored. */
+export type MaterialDivisions = {
+  column_widths: number[];
+  row_heights: number[];
+  steel_stud_spacing_mm: number | null;
+  cells: { row: number; column: number; material: ConstructionMaterial }[];
+};
+
+/** EnergyMaterial + honeybee-ph props. Recursive: division cells nest full
+ *  materials of this same type (construction-detail D-3). SI on the wire. */
+export type ConstructionMaterial = {
+  type: string;
+  identifier: string;
+  display_name: string | null;
+  thickness: number; // meters
+  conductivity: number; // W/mK
+  properties: {
+    ph: {
+      ph_color: PhColor | null;
+      divisions: MaterialDivisions;
+    } | null;
+  } | null;
+};
+
+/** Full layer detail for one opaque construction, stored once in the
+ *  top-level `constructions` map: the per-face summary plus its layers
+ *  (construction-detail D-2). `materials` is ordered exterior → interior
+ *  (honeybee convention, Q1 verified). */
+export type DetailedOpaqueConstruction = OpaqueConstruction & {
+  materials: ConstructionMaterial[];
 };
 
 export type WindowConstruction = {
@@ -321,6 +358,11 @@ export type SunPathAndCompassModelData = {
 
 export type CombinedModelData = {
   faces: FaceModelData[];
+  /** Deduplicated opaque construction detail, keyed by identifier
+   *  (construction-detail D-2). Faces key in via their thin summary.
+   *  Optional: artifacts extracted before this field existed lack it and
+   *  must degrade gracefully (D-9). */
+  constructions?: Record<string, DetailedOpaqueConstruction>;
   spaces: SpaceModelData[];
   hot_water_systems: HotWaterSystemModelData[];
   ventilation_systems: VentilationSystemModelData[];

@@ -1,7 +1,9 @@
 ---
 DATE: 2026-07-01
 TIME: -
-STATUS: Draft — feasibility verified by spike; awaiting Ed's review.
+STATUS: Complete — implemented on feature/model-viewer-construction-detail,
+  all 4 phases done 2026-07-02; acceptance §7 all-pass (see STATUS.md).
+  ARCHIVED.
 AUTHOR: Claude (for Ed)
 SCOPE: Product/behavior contract for a read-only "detailed construction"
   modal in the Model tab, opened from the Opaque Surface inspector,
@@ -520,9 +522,11 @@ cached `model_data` artifacts. Consequences for this feature:
 
 ## 13. Open questions
 
-- **Q1 (orientation):** Confirm honeybee `materials[]` order is
-  exterior→interior for the face types we render, and that it's stable
-  across wall/roof/floor. Settle before labeling Exterior/Interior.
+- **Q1 (orientation):** RESOLVED (Phase 1, 2026-07-01) — honeybee's
+  `OpaqueConstruction.materials` docstring states "outside to inside";
+  `materials[0]` is the exterior layer for all face types (the property is
+  construction-level, not face-type-dependent). Asserted in
+  `backend/tests/test_model_viewer_constructions.py`.
 - **Q2 (delivery shape):** RESOLVED — deduplicated top-level
   `constructions` map (Ed, 2026-07-01). See D-2, §6. Phase 1 records the
   artifact-size delta as a sanity check only.

@@ -16,6 +16,8 @@ const SANCTIONED_COLOR_LITERAL_FILES = new Set([
   "src/features/equipment/heat-pumps/option-helpers.ts",
   "src/features/model_viewer/lib/colorTokens.ts",
   "src/features/model_viewer/lib/colors.ts",
+  // ph_color material swatches from the HBJSON wire → CSS rgba() at render.
+  "src/features/model_viewer/lib/constructionLayers.ts",
   "src/features/model_viewer/lib/themes.ts",
   "src/shared/ui/data-table/lib/options/create.ts",
 ]);

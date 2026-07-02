@@ -1,7 +1,9 @@
 ---
 DATE: 2026-07-01
 TIME: -
-STATUS: Not started.
+STATUS: ✅ DONE (2026-07-01) — implemented on
+  feature/model-viewer-construction-detail with two as-built amendments
+  (see §8 As-built notes).
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff for Phase 1 — emit a deduplicated,
   detailed opaque `constructions` map in the `/model_data` artifact.
@@ -239,3 +241,32 @@ degrades gracefully — button hidden, PRD §4.5 — and is fixed by re-upload
 layer/segment/color detail for opaque constructions; faces carry only the
 thin summary; the AirBoundary tripwire still skips + counts; no migration
 or versioning added; all backend gates green. No frontend behavior change.
+
+## 8. As-built notes (2026-07-01)
+
+Implemented as specified, with two amendments from the simplify review:
+
+1. **Schema inheritance, not duplication.**
+   `DetailedOpaqueConstructionSchema(FaceConstructionSummarySchema)` adds
+   only `materials` — one field list instead of the three verbatim copies
+   §3.1 sketched. Wire shape identical. Gotcha: the summary must be built
+   via `FaceConstructionSummarySchema(**detailed.model_dump(
+   exclude={"materials"}))`, NOT `model_validate(detailed)` — Pydantic
+   passes subclass instances through unchanged, which silently puts the
+   full materials payload back on every face (caught by the exact-type
+   assertion in the test).
+2. **Parse once per unique construction, not per face.** The detailed
+   parse recursively validates every division cell; at Hillandale scale
+   (~6,200 faces / dozens of constructions) doing it per face is ~99%
+   waste. `_faces_from_model` keys on `construction.identifier` and
+   caches `(detailed, summary)` plus a failed-identifier set, so the
+   AirBoundary skip is still *counted* per face but *parsed* once. It
+   returns `(faces, constructions)` instead of mutating an out-param.
+
+Verification results: 6 new tests in
+`backend/tests/test_model_viewer_constructions.py` (synthetic API-built
+model, full HBJSON→parse→extract path) + existing suites green; `uv run
+ty check` clean. Q1 resolved (exterior-first, honeybee docstring).
+Artifact size on the canonical fixture: 121,135 B raw / 9,230 B gzip →
+111,748 B / 9,063 B — the map *shrinks* the artifact. Hillandale fixture
+absent locally, so its delta was not recorded.

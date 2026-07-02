@@ -1,7 +1,8 @@
 ---
 DATE: 2026-07-01
 TIME: -
-STATUS: Draft — phase outline pending PRD acceptance. Not started.
+STATUS: Complete — all 4 phases ✅ DONE (2026-07-02); implemented on
+  feature/model-viewer-construction-detail. ARCHIVED.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation phase sequence for the Model tab detailed
   construction viewer. Each phase is one PR-sized, independently
@@ -31,7 +32,7 @@ feasibility grounding (§2), the exact file:line change sites, and the
 decisions (D-1..D-9) each phase implements. Phase docs cite PRD sections
 rather than repeating them.
 
-## Phase 1 — Backend: dedup `constructions` map
+## Phase 1 — Backend: dedup `constructions` map — ✅ DONE (2026-07-01)
 
 Implements PRD §2, §5 (D-2, D-3), §6, §10.1. Purely additive; no
 migration/versioning (D-9 — prod is empty, nothing to re-extract).
@@ -54,7 +55,7 @@ map dedups by identifier and `ph_color` / `divisions.cells` /
 `steel_stud_spacing_mm` survive. `uv run ty check`; record the Hillandale
 artifact-size delta in STATUS. Backend-only; independently mergeable.
 
-## Phase 2 — Frontend: types + honeybee-construction → layer geometry adapter
+## Phase 2 — Frontend: types + honeybee-construction → layer geometry adapter — ✅ DONE (2026-07-01)
 
 Implements PRD §4.3, §5 (D-5), §6. Add the recursive `ConstructionMaterial`
 type, the `DetailedOpaqueConstruction` type, and the top-level
@@ -72,7 +73,7 @@ reimplemented against the honeybee shape — no Envelope import (D-4, D-8).
 widths sum to 1; steel-stud flag surfaced; null-color fallback) and the
 per-layer R math. Type-only + pure-function; no UI yet. `tsc -b`.
 
-## Phase 3 — Frontend: the modal (drawing + table)
+## Phase 3 — Frontend: the modal (drawing + table) — ✅ DONE (2026-07-01)
 
 Implements PRD §4.2-§4.5, §5 (D-4, D-6, D-7). Build
 `ConstructionDetailModal` on `shared/ui/ModalDialog`: header (name, type,
@@ -87,7 +88,7 @@ states (§4.5).
 structural test for the SVG cell counts on flat vs framed inputs.
 `make format`.
 
-## Phase 4 — Frontend: inspector button + wiring + full verification
+## Phase 4 — Frontend: inspector button + wiring + full verification — ✅ DONE (2026-07-02)
 
 Implements PRD §4.1, §7, §8. Add the "View Assembly" button to the
 Opaque Surface *Construction* section (`components/InspectorPanel.tsx` /

@@ -98,6 +98,10 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (isTextEntryTarget(event.target)) return;
+      // Viewer hotkeys (m/f/h, lens digits, ⌘C) must not fire behind an open
+      // modal. Escape specifically never reaches this window listener —
+      // ModalDialog consumes it (stopPropagation at document level).
+      if (document.querySelector(".modal-backdrop")) return;
       if (event.key === "Escape") {
         if (measureActive) {
           setMeasureActive(false);
@@ -216,7 +220,7 @@ export function ModelViewerStage({ projectId, activeFile }: ModelViewerStageProp
         <div className="model-measure-hint">Click two points to measure · Esc to exit</div>
       ) : null}
       <CameraCluster modelBounds={model?.bounds ?? null} />
-      <InspectorPanel meta={selectedMeta} />
+      <InspectorPanel meta={selectedMeta} constructions={model?.constructions ?? null} />
       <ElementInspectorPanel element={selectedElement} model={model} />
     </>
   );

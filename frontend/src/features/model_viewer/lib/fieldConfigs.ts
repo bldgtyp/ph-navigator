@@ -12,6 +12,17 @@ import {
 import { stripTrailingZeros } from "../../../lib/units/format";
 import type { ModelObjectMeta, ModelObjectType } from "../types";
 
+/** D-12 thermal-figure tooltips — shared verbatim by the inspector's
+ *  Construction section and the ConstructionDetailModal header. */
+export const THERMAL_FIELD_TOOLTIPS = {
+  u_factor:
+    "Includes interior + exterior air-film resistances (EN673/ISO10292). Honeybee u_factor.",
+  u_value: "Excludes air-film resistances. Honeybee u_value.",
+  r_factor:
+    "Includes interior + exterior air-film resistances (EN673/ISO10292). Honeybee r_factor.",
+  r_value: "Excludes air-film resistances. Honeybee r_value.",
+} as const;
+
 export type InspectorField = {
   id: string;
   label: string;
@@ -275,15 +286,14 @@ function constructionFields({ includeRValues }: { includeRValues: boolean }): In
     {
       id: "u_factor",
       label: "U-Factor",
-      tooltip:
-        "Includes interior + exterior air-film resistances (EN673/ISO10292). Honeybee u_factor.",
+      tooltip: THERMAL_FIELD_TOOLTIPS.u_factor,
       getValue: (meta) => construction(meta)?.u_factor,
       format: formatUValue,
     },
     {
       id: "u_value",
       label: "U-Value",
-      tooltip: "Excludes air-film resistances. Honeybee u_value.",
+      tooltip: THERMAL_FIELD_TOOLTIPS.u_value,
       getValue: (meta) => construction(meta)?.u_value,
       format: formatUValue,
     },
@@ -293,15 +303,14 @@ function constructionFields({ includeRValues }: { includeRValues: boolean }): In
       {
         id: "r_factor",
         label: "R-Factor",
-        tooltip:
-          "Includes interior + exterior air-film resistances (EN673/ISO10292). Honeybee r_factor.",
+        tooltip: THERMAL_FIELD_TOOLTIPS.r_factor,
         getValue: (meta) => construction(meta)?.r_factor,
         format: formatRValue,
       },
       {
         id: "r_value",
         label: "R-Value",
-        tooltip: "Excludes air-film resistances. Honeybee r_value.",
+        tooltip: THERMAL_FIELD_TOOLTIPS.r_value,
         getValue: (meta) => construction(meta)?.r_value,
         format: formatRValue,
       },
@@ -341,7 +350,8 @@ function airflowField(key: "_v_sup" | "_v_eta" | "_v_tran"): (meta: ModelObjectM
   return (meta) => ("airflow" in meta && meta.airflow ? meta.airflow[key] : undefined);
 }
 
-function construction(meta: ModelObjectMeta) {
+/** The meta's energy-construction summary (face or aperture), else null. */
+export function construction(meta: ModelObjectMeta) {
   return "energy" in meta.properties ? meta.properties.energy.construction : null;
 }
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 from features.model_viewer.schemas.honeybee import FaceSchema, ShadeGroupSchema
+from features.model_viewer.schemas.honeybee_energy import DetailedOpaqueConstructionSchema
 from features.model_viewer.schemas.honeybee_ph import SpaceSchema
 from features.model_viewer.schemas.honeybee_phhvac import (
     PhHotWaterSystemSchema,
@@ -37,6 +38,10 @@ class CombinedModelDataSchema(BaseModel):
     """
 
     faces: list[FaceSchema]
+    # Deduplicated opaque construction detail, keyed by identifier
+    # (construction-detail D-2); faces carry only a thin summary that keys
+    # into this map.
+    constructions: dict[str, DetailedOpaqueConstructionSchema] = Field(default_factory=dict)
     spaces: list[SpaceSchema]
     hot_water_systems: list[PhHotWaterSystemSchema]
     ventilation_systems: list[PhVentilationSystemSchema]

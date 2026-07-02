@@ -1,7 +1,9 @@
 ---
 DATE: 2026-07-01
 TIME: -
-STATUS: Not started.
+STATUS: ✅ DONE (2026-07-01) — implemented on
+  feature/model-viewer-construction-detail with as-built amendments (see
+  §7 As-built notes).
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff for Phase 2 — frontend types for the
   detailed `constructions` map, thread it into the loaded model, and a
@@ -157,3 +159,27 @@ through the existing `formatLengthFromMm` / `formatConductivityFromWmK` /
 `constructions` map; `buildConstructionLayers` deterministically converts
 any construction (flat or framed) into drawable layers/cells with correct
 width fractions and per-layer R; unit tests green; no UI change.
+
+## 7. As-built notes (2026-07-01)
+
+Implemented as specified, with amendments from the simplify review:
+
+- `DetailedOpaqueConstruction = OpaqueConstruction & { materials }` —
+  intersection, not a re-declared field list (mirrors the backend's
+  schema inheritance).
+- `CombinedModelData.constructions` is **optional** (`?`) — artifacts
+  extracted before the field existed lack the key (D-9 graceful
+  degradation); the loader defaults `data.constructions ?? {}` onto
+  `BuildingModel`.
+- `ConstructionMaterial` uses `| null` only (no `?`) — the artifact is
+  serialized without `exclude_none`, so keys are always present.
+- Cell contract extended beyond the §3.3 sketch: cells carry
+  `xFraction`/`yFraction`/`heightFraction` grid placement (pre-derived so
+  the Phase-3 SVG stays dumb, and Q4 multi-row grids render correctly);
+  `steelStudSpacingMm` moved from cell to **layer** (it is
+  divisions-level data); the cell's redundant `thickness` was dropped
+  (equals layer thickness). No `totalThickness` helper — the modal sums
+  `layer.thickness` inline beside its total-R sum.
+- 11 Vitest cases in `__tests__/constructionLayers.test.ts` cover flat /
+  framed / steel-stud / degenerate-widths / multi-row / color-fallback /
+  R-math. `tsc -b` green.

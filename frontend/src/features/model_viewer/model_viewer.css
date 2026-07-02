@@ -1345,3 +1345,248 @@
   padding: var(--space-8) 0 0;
   border-bottom: 0;
 }
+
+/* ------------------------------------------------------------------ */
+/* Construction detail modal (read-only HBJSON assembly view, D-8)     */
+
+#construction-detail.modal-panel {
+  width: min(100%, 780px);
+}
+
+.construction-detail-empty {
+  margin: var(--space-16) 0 0;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+.construction-detail-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  margin: var(--space-16) 0 0;
+}
+
+.construction-detail-stat {
+  flex: 1 1 110px;
+  padding: var(--space-8) var(--space-10);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  background: color-mix(in oklab, var(--bg-card) 98%, var(--bg-elev));
+}
+
+.construction-detail-stat dt {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.construction-detail-stat dd {
+  margin: var(--space-2) 0 0;
+  color: var(--text-primary);
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+
+.construction-detail-body {
+  display: flex;
+  gap: var(--space-16);
+  align-items: flex-start;
+  margin-top: var(--space-16);
+}
+
+/* --- section drawing ------------------------------------------------ */
+
+.construction-stack {
+  display: grid;
+  flex: 0 0 168px;
+  gap: var(--space-4);
+  margin: 0;
+  /* Keep the drawing in view while the table scrolls with the panel. */
+  position: sticky;
+  top: 0;
+}
+
+.construction-stack-end-label {
+  color: var(--text-muted);
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.construction-stack-svg {
+  width: 100%;
+  overflow: visible;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+}
+
+.construction-stack-cell {
+  /* Strong enough to separate layers even when every fill is the neutral
+     fallback hatch (plain-honeybee models carry no ph_color). */
+  stroke: color-mix(in oklab, var(--text-muted) 55%, var(--border-card));
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.construction-stack-layer-outline {
+  stroke: transparent;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.construction-stack-svg g.is-hovered .construction-stack-layer-outline {
+  stroke: var(--highlight);
+}
+
+.construction-hatch-bg {
+  fill: color-mix(in oklab, var(--bg-elev) 88%, var(--text-muted));
+}
+
+.construction-hatch-line,
+.construction-steel-hatch-line {
+  stroke: color-mix(in oklab, var(--text-muted) 55%, transparent);
+  stroke-width: 1;
+}
+
+.construction-steel-marker {
+  pointer-events: none;
+}
+
+/* --- layer schedule -------------------------------------------------- */
+
+.construction-layer-table {
+  flex: 1 1 auto;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+
+.construction-layer-table th,
+.construction-layer-table td {
+  padding: var(--space-6) var(--space-8);
+  border-bottom: 1px solid color-mix(in oklab, var(--border-card) 70%, transparent);
+  text-align: left;
+  vertical-align: baseline;
+}
+
+.construction-layer-table thead th {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.construction-col-index {
+  width: 26px;
+  color: var(--text-muted);
+}
+
+.construction-col-number {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.construction-layer-table th.construction-col-number,
+.construction-layer-table td.construction-col-number {
+  text-align: right;
+}
+
+.construction-layer-table tbody tr.is-hovered {
+  background: color-mix(in oklab, var(--highlight) 8%, transparent);
+}
+
+.construction-layer-label {
+  display: inline-flex;
+  gap: var(--space-8);
+  align-items: center;
+}
+
+.construction-layer-label.is-cell {
+  padding-left: var(--space-18);
+  color: var(--text-secondary);
+}
+
+.construction-expand-button {
+  display: inline-flex;
+  gap: var(--space-4);
+  align-items: center;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+
+.construction-swatch {
+  display: inline-flex;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 13px;
+  overflow: hidden;
+  border: 1px solid var(--border-card);
+  border-radius: 2px;
+}
+
+.construction-swatch.is-fallback,
+.construction-swatch.is-segmented > .is-fallback {
+  background: repeating-linear-gradient(
+    45deg,
+    color-mix(in oklab, var(--bg-elev) 88%, var(--text-muted)),
+    color-mix(in oklab, var(--bg-elev) 88%, var(--text-muted)) 3px,
+    color-mix(in oklab, var(--text-muted) 40%, transparent) 3px,
+    color-mix(in oklab, var(--text-muted) 40%, transparent) 4px
+  );
+}
+
+.construction-cell-row td {
+  border-bottom-color: color-mix(in oklab, var(--border-card) 36%, transparent);
+  font-size: var(--fs-xs);
+}
+
+.construction-steel-note td {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.construction-totals-row th,
+.construction-totals-row td {
+  border-top: 2px solid var(--border-card);
+  border-bottom: 0;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+@media (width <= 720px) {
+  .construction-detail-body {
+    flex-direction: column;
+  }
+
+  .construction-stack {
+    position: static;
+    width: 100%;
+  }
+}
+
+.model-inspector-construction-action {
+  padding: var(--space-10) var(--space-16) var(--space-16);
+  border-top: 1px solid var(--border-card);
+}
+
+/* Layout/gap/alignment come from the shared `.model-inspector button` rule. */
+.model-inspector-construction-action button {
+  width: 100%;
+  min-height: 32px;
+  font-size: var(--fs-sm);
+}
+
+.construction-layer-table thead th.construction-col-lambda {
+  /* Keep the λ glyph lowercase — the thead uppercase transform would turn
+     it into Λ. */
+  text-transform: none;
+}

@@ -3,6 +3,10 @@
 Append-only audit trail. Durable decisions live in `context/`; this records
 how and when each feature packet landed. Newest first. Grep by slug.
 
+## 2026-07-02
+
+- `model-viewer-construction-detail` - read-only "View Construction" assembly detail modal in the Model tab's Opaque Surface inspector, drawing the selected face's HBJSON construction: deduplicated top-level `constructions` map on the `/model_data` artifact (recursive honeybee-ph material schema — ph_color, division cells, steel-stud spacing — parsed once per unique construction, faces keep a thin summary; artifact got ~8% smaller), pure layer-geometry adapter (flat = degenerate single cell), stat-tile header + to-scale SVG section with hover↔row linking + expandable layer schedule with segment sub-rows and Σ-layers reconciliation, and inspector wiring with selection-preserving Escape. Fully isolated from the Envelope feature (D-8, view-only); windows deferred. All 11 acceptance criteria pass; e2e + 12 RTL + backend suites + `make ci` green. Implemented on `feature/model-viewer-construction-detail`; merge + D-9 deploy DB reset (prod still empty) = Ed's call.
+
 ## 2026-07-01
 
 - `model-viewer-sun-study` - "Sun study" mode for the Site & Sun lens: date-of-year + time-of-day scrubbers drive a sun marker along the existing sunpath dome and re-aim the scene's key light to cast real-time self+ground shadows. Six phases: ground-shadow baseline fix (D-12, folds in `model-viewer-ground-shadows`), BatchedMesh×shadow-map spike (GO), backend `sun_positions` grid (365×24 unit vectors + sunrise/sunset on `/sun-path`), scene (amber marker, sun key light with bounds-fitted shadow camera, `ShadowMaterial` catcher, horizon ramp, section→shadows-off), pill→full sun bar UI (date/month rail, 4 preset chips, daylight-band time scrubber, Esc/lens exit), and e2e+perf-gate closeout. Three as-built amendments (PCF not PCFSoft; section disables the sun shadow pass; `true_north_deg` on grid); Q-VIEW-6 un-deferred. `make ci` green.
