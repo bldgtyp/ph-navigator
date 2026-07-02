@@ -13,7 +13,8 @@ const ROWS = [
   frameRow("jamb-inswing", "Jamb Inswing", "Jamb", "Inswing"),
   frameRow("sill-sliding", "Sill Sliding", "Sill", "Sliding"),
   frameRow("any-casement", "Any Casement", "Any", "Casement"),
-  frameRow("mull-double", "Mull Double-Hung", "Mull-H", "Double-Hung"),
+  frameRow("mullh-double", "Mull-H Double-Hung", "Mull-H", "Double-Hung"),
+  frameRow("mullv-double", "Mull-V Double-Hung", "Mull-V", "Double-Hung"),
   frameRow("head-tilt", "Head Tilt-Turn", "Head", "Tilt-Turn"),
   frameRow("head-awning", "Head Awning", "Head", "Awning"),
   frameRow("head-hopper", "Head Hopper", "Head", "Hopper"),
@@ -83,22 +84,25 @@ function renderPicker({
 }
 
 describe("FramePicker filter engine", () => {
-  it("defaults to side filtering and includes Any rows for top pickers", () => {
+  it("defaults to side filtering and includes Any and Mull-H rows for top pickers", () => {
     renderPicker();
 
     expect(screen.getByRole("option", { name: /Head Fixed/ })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: /Any Casement/ })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /Mull-H Double-Hung/ })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: /Jamb Inswing/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("option", { name: /Sill Sliding/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole("option", { name: /Mull Double-Hung/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /Mull-V Double-Hung/ })).not.toBeInTheDocument();
   });
 
-  it("uses Jamb plus Any for side pickers", () => {
+  it("uses Jamb, Mull-V, and Any for side pickers", () => {
     renderPicker({ side: "right" });
 
     expect(screen.getByRole("option", { name: /Jamb Inswing/ })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: /Any Casement/ })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /Mull-V Double-Hung/ })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: /Head Fixed/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /Mull-H Double-Hung/ })).not.toBeInTheDocument();
   });
 
   it("shows all locations when side filtering is off", () => {
@@ -107,7 +111,8 @@ describe("FramePicker filter engine", () => {
     expect(screen.getByRole("option", { name: /Head Fixed/ })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: /Jamb Inswing/ })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: /Sill Sliding/ })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: /Mull Double-Hung/ })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /Mull-H Double-Hung/ })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /Mull-V Double-Hung/ })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: /Any Casement/ })).toBeInTheDocument();
   });
 
@@ -131,7 +136,8 @@ describe("FramePicker filter engine", () => {
     expect(screen.getByRole("option", { name: /Head Tilt-Turn/ })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: /Head Awning/ })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: /Head Hopper/ })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: /Mull Double-Hung/ })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /Mull-H Double-Hung/ })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /Mull-V Double-Hung/ })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: /Head Fixed/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("option", { name: /Sill Sliding/ })).not.toBeInTheDocument();
   });
@@ -144,7 +150,8 @@ describe("FramePicker filter engine", () => {
     });
 
     expect(screen.getByRole("option", { name: /Sill Sliding/ })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: /Mull Double-Hung/ })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /Mull-H Double-Hung/ })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /Mull-V Double-Hung/ })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: /Any Casement/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("option", { name: /Head Fixed/ })).not.toBeInTheDocument();
   });

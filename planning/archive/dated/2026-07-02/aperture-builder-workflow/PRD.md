@@ -56,7 +56,7 @@ aperture mirrored left/right.
 
 - No new persistence model beyond the existing aperture save path.
 - No change to frame compatibility rules; that is tracked separately in
-  `planning/refactor/aperture-frame-compatibility-rules/`.
+  `planning/archive/dated/2026-07-02/aperture-frame-compatibility-rules/`.
 - No redesign of the whole builder toolbar.
 
 ## Investigation Notes

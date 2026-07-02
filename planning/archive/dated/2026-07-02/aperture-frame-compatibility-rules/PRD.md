@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-02
 TIME: 14:00 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Product and validation contract for aperture frame compatibility rules.
 RELATED:
@@ -22,8 +22,8 @@ need to treat them as compatible with the appropriate physical sides.
 
 ## Desired Behavior
 
-- Slider operation frame dropdowns filter out incompatible fixed frame options,
-  matching the intent of Swing filtering.
+- Slider operation frame dropdowns filter out incompatible fixed frame options
+  when operation filtering is enabled, matching the intent of Swing filtering.
 - `Mull-H` means horizontal mullion and is compatible with aperture `Head` and
   `Sill` sides.
 - `Mull-V` means vertical mullion and is compatible with aperture `Jamb` sides
@@ -33,7 +33,8 @@ need to treat them as compatible with the appropriate physical sides.
 
 ## Acceptance Criteria
 
-- Slider frame dropdowns no longer show incompatible fixed frame options.
+- Slider frame dropdowns no longer show incompatible fixed frame options when
+  operation filtering is enabled.
 - Existing Swing filtering remains unchanged except where centralization removes
   duplicate behavior.
 - Head and sill frame dropdowns include valid `Mull-H` frame types.
@@ -50,10 +51,14 @@ need to treat them as compatible with the appropriate physical sides.
 - No change to aperture builder flip behavior; that is tracked in
   `planning/archive/dated/2026-07-02/aperture-builder-workflow/`.
 
-## Open Questions
+## Resolved Decisions
 
-- Should all fixed frames be excluded for slider elements, or only fixed jambs
-  on moving slider elements?
-- Are fixed frames valid for the stationary panel of a slider aperture?
-- Is compatibility based only on frame metadata, or also on segment role
-  (`FX-to-FX`, `OP-to-FX`, `OP-to-OP`)?
+- Resolved 2026-07-02: slider frame pickers exclude catalog rows whose
+  operation is `Fixed` when operation compatibility filtering is enabled. The
+  current aperture element model has only element-level `slide` operation and
+  no segment role (`FX-to-FX`, `OP-to-FX`, `OP-to-OP`), so the picker cannot
+  safely infer a stationary-panel exception.
+- Resolved 2026-07-02: stationary-panel fixed-frame exceptions are out of
+  scope until the model exposes segment role metadata at frame-pick time.
+- Resolved 2026-07-02: this refactor bases compatibility on catalog frame
+  metadata plus aperture side/element operation only, not on segment role.

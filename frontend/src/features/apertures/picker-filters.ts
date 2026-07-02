@@ -1,7 +1,7 @@
 // Picker filter primitives shared by FramePicker and region-click
 // open-picker wiring. Side families intentionally include literal
-// ``Any`` rows, while operation families keep catalog labels intact and
-// compare against normalized labels only.
+// ``Any`` rows and compatible mullion rows, while operation families keep
+// catalog labels intact and compare against normalized labels only.
 
 import type { ApertureOperation, ApertureSide } from "./types";
 import type { CatalogFrameType } from "../catalogs/types";
@@ -36,10 +36,10 @@ export function operationForElement(operation: ApertureOperation | null): Operat
 }
 
 const SIDE_LOCATION_FAMILIES: Record<ApertureSide, readonly string[]> = {
-  top: ["Head", "Any"],
-  right: ["Jamb", "Any"],
-  bottom: ["Sill", "Any"],
-  left: ["Jamb", "Any"],
+  top: ["Head", "Mull-H", "Any"],
+  right: ["Jamb", "Mull-V", "Any"],
+  bottom: ["Sill", "Mull-H", "Any"],
+  left: ["Jamb", "Mull-V", "Any"],
 };
 
 const OPERATION_FAMILIES: Record<OperationFilter["type"], readonly string[]> = {

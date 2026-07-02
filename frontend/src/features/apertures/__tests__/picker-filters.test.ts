@@ -37,17 +37,21 @@ describe("operationForElement", () => {
 });
 
 describe("sideLocationFamily", () => {
-  it("includes Any in every side family", () => {
-    expect(sideLocationFamily("top")).toEqual(["Head", "Any"]);
-    expect(sideLocationFamily("right")).toEqual(["Jamb", "Any"]);
-    expect(sideLocationFamily("bottom")).toEqual(["Sill", "Any"]);
-    expect(sideLocationFamily("left")).toEqual(["Jamb", "Any"]);
+  it("includes compatible mullion and Any locations in every side family", () => {
+    expect(sideLocationFamily("top")).toEqual(["Head", "Mull-H", "Any"]);
+    expect(sideLocationFamily("right")).toEqual(["Jamb", "Mull-V", "Any"]);
+    expect(sideLocationFamily("bottom")).toEqual(["Sill", "Mull-H", "Any"]);
+    expect(sideLocationFamily("left")).toEqual(["Jamb", "Mull-V", "Any"]);
   });
 
-  it("matches locations case-insensitively but not null locations", () => {
+  it("matches compatible side locations case-insensitively but not null locations", () => {
     expect(frameLocationMatchesSide("head", "top")).toBe(true);
+    expect(frameLocationMatchesSide("mull h", "top")).toBe(true);
+    expect(frameLocationMatchesSide("Mull_V", "right")).toBe(true);
     expect(frameLocationMatchesSide("Any", "top")).toBe(true);
     expect(frameLocationMatchesSide("Sill", "top")).toBe(false);
+    expect(frameLocationMatchesSide("Mull-V", "top")).toBe(false);
+    expect(frameLocationMatchesSide("Mull-H", "left")).toBe(false);
     expect(frameLocationMatchesSide(null, "top")).toBe(false);
   });
 });
@@ -92,6 +96,7 @@ describe("filterFrameRows", () => {
       row("any-casement", "Any", "Casement"),
       row("sill-sliding", "Sill", "Sliding"),
       row("mull-double", "Mull-H", "Double-Hung"),
+      row("mullv-double", "Mull-V", "Double-Hung"),
     ];
 
     expect(
@@ -101,7 +106,7 @@ describe("filterFrameRows", () => {
         filterFramesBySide: true,
         filterFramesByOperation: true,
       }).map((item) => item.id),
-    ).toEqual(["any-casement"]);
+    ).toEqual(["any-casement", "mull-double"]);
 
     expect(
       filterFrameRows(rows, {
@@ -110,7 +115,26 @@ describe("filterFrameRows", () => {
         filterFramesBySide: false,
         filterFramesByOperation: false,
       }).map((item) => item.id),
-    ).toEqual(["head-fixed", "any-casement", "sill-sliding", "mull-double"]);
+    ).toEqual(["head-fixed", "any-casement", "sill-sliding", "mull-double", "mullv-double"]);
+  });
+
+  it("combines top-side and slide-operation compatibility", () => {
+    const rows = [
+      row("head-fixed", "Head", "Fixed"),
+      row("mullh-double", "Mull-H", "Double-Hung"),
+      row("mullv-double", "Mull-V", "Double-Hung"),
+      row("sill-sliding", "Sill", "Sliding"),
+      row("any-sliding", "Any", "Sliding"),
+    ];
+
+    expect(
+      filterFrameRows(rows, {
+        side: "top",
+        operation: { type: "slide", directions: [] },
+        filterFramesBySide: true,
+        filterFramesByOperation: true,
+      }).map((item) => item.id),
+    ).toEqual(["mullh-double", "any-sliding"]);
   });
 });
 
