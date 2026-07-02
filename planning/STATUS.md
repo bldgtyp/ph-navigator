@@ -14,7 +14,7 @@ feature-first planning.
 | Aperture Builder Workflow | Complete / archived after picker source selection now arms paste directly, persisted `flipLeftRight` mirrors columns/spans/side frames/operation directions, full CI and browser smoke passed | `archive/dated/2026-07-02/aperture-builder-workflow/STATUS.md` |
 | Apertures Frames Grouping | Complete / archived after Frames report grouping shipped: default `manufacturer`, optional durable `brand`, and ungrouped view; focused RTL + frontend gate passed | `archive/dated/2026-07-02/apertures-frames-grouping/STATUS.md` |
 | Rooms Airflow Fields | Planned / reviewed and phased for nullable unit-aware Rooms defaults (`Supply airflow rate`, `Extract airflow rate`); Phase 00 must settle existing-document compatibility and the real saved/draft/audit/diff data formats before implementation | `features/rooms-airflow-fields/STATUS.md` |
-| Configurable Single-Select Options | Complete / final closeout pending archive: Rooms Floor/Zone option management shipped through the shared DataTable modal with backend allowlist guardrails, explicit delete clear/replace UX, protected status option locks, durable DataTable contract docs, focused tests, and browser smoke | `features/configurable-single-select-options/STATUS.md` |
+| Configurable Single-Select Options | Complete / archived after Rooms Floor/Zone option management shipped through the shared DataTable modal with backend allowlist guardrails, explicit delete clear/replace UX, protected status option locks, durable DataTable contract docs, focused tests, and browser smoke | `archive/dated/2026-07-02/configurable-single-select-options/STATUS.md` |
 | Admin User Management MVP | Complete / archived after Phases 00-06 implemented and verified: first-admin bootstrap, invite/admin-reset-link/deactivate/reactivate/admin grants, last-admin protection, CSRF/Origin guard, capability-gated UI, Admin-derived `catalog.edit`, audit, runbook, and production smoke evidence | `archive/dated/2026-06-29/admin-user-management/STATUS.md` |
 | Production Climate Data Seeding | Complete / production R2 PHIUS+PHI bundles published, Render Postgres seeded (`phi/10.6` 1002 locations, `phius/2022` 1007 locations), and PHIUS, PHI, and Hourly Climate workflows manually verified on production; archived | `archive/dated/2026-06-29/production-climate-data-seeding/STATUS.md` |
 | Equipment Draft ETag Coordination | Complete / archived after P00-P03: stale Equipment sibling `draft_etag` writes now resolve a fresh target slice before payload construction; focused unit/controller coverage and browser request-count regression passed | `archive/dated/2026-06-29/equipment-draft-etag-coordination/STATUS.md` |
@@ -94,6 +94,11 @@ feature-first planning.
   selection arms paste directly; persisted `flipLeftRight` mirrors aperture
   columns, spans, side frames, and operation directions; focused tests,
   `make ci`, and local browser smoke passed).
+- Completed Configurable Single-Select Options planning now lives under
+  `archive/dated/2026-07-02/configurable-single-select-options/` (Rooms
+  Floor/Zone option management through the shared DataTable modal, backend
+  allowlist guardrails, explicit clear/replace delete UX, protected status
+  option locks, durable DataTable docs, focused tests, and browser smoke).
 - Completed Assembly Builder canvas-refactor planning now lives under
   `archive/dated/2026-06-04/assembly-builder/`; older foundation precedent remains
   under `archive/dated/2026-06-04/assembly-builder-foundation/`.

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-02
 TIME: 15:06 EDT
-STATUS: Active
+STATUS: Archived
 AUTHOR: Codex
 SCOPE: Current state for user-configurable single-select options.
 RELATED:
@@ -21,15 +21,16 @@ RELATED:
 
 ## State
 
-`Active` - Phase 04 verification/docs complete.
+`Archived` - Implemented and archived on 2026-07-02.
 
 ## Next Step
 
-Archive packet after final closeout checks.
+No active next step. The packet now lives under
+`planning/archive/dated/2026-07-02/configurable-single-select-options/`.
 
 ## Blockers
 
-None for Phase 04.
+None.
 
 ## Decisions
 
