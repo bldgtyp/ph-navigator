@@ -26,7 +26,7 @@ RELATED:
 - Add horizontal overflow handling inside the cell.
 - Add a clear `...`/overflow cue when content is clipped.
 
-## Phase 03 - Verification
+## Phase 03 - Verification - Complete
 
 - Run focused frontend/DataTable tests.
 - Browser-smoke Catalogs / Frame Types long-table alignment and header opacity.
