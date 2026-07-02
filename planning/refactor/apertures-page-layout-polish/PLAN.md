@@ -38,6 +38,8 @@ Status: Complete - 2026-07-02
 
 ## Phase 04 - Verification
 
+Status: Complete - 2026-07-02
+
 - Run focused frontend checks.
 - Browser-smoke a long-sidebar Apertures page, collapsed rail, and bottom-of-screen
   dropdown.
