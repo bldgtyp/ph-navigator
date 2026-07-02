@@ -14,6 +14,8 @@ RELATED:
 
 ## Phase 01 - Layout Ownership
 
+Status: Complete - 2026-07-02
+
 - Inspect the Apertures / Apertures route structure and CSS.
 - Identify which container lets the sidebar list determine total row height.
 - Bound the sidebar and main working area so the SVG + cards stay coupled.
@@ -36,4 +38,3 @@ RELATED:
 - Browser-smoke a long-sidebar Apertures page, collapsed rail, and bottom-of-screen
   dropdown.
 - Update `STATUS.md` with command and browser evidence.
-
