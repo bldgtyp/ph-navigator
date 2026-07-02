@@ -22,6 +22,8 @@ Status: Complete - 2026-07-02
 
 ## Phase 02 - Sidebar Rail Polish
 
+Status: Complete - 2026-07-02
+
 - Fix expanded sidebar overflow.
 - Fix collapsed rail button centering and spacing.
 - Verify there is no layout jump between expanded/collapsed states.
