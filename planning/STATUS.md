@@ -11,6 +11,7 @@ feature-first planning.
 
 | Feature | State | Current pointer |
 |---|---|---|
+| Apertures Frames Grouping | Complete / archived after Frames report grouping shipped: default `manufacturer`, optional durable `brand`, and ungrouped view; focused RTL + frontend gate passed | `archive/dated/2026-07-02/apertures-frames-grouping/STATUS.md` |
 | Admin User Management MVP | Complete / archived after Phases 00-06 implemented and verified: first-admin bootstrap, invite/admin-reset-link/deactivate/reactivate/admin grants, last-admin protection, CSRF/Origin guard, capability-gated UI, Admin-derived `catalog.edit`, audit, runbook, and production smoke evidence | `archive/dated/2026-06-29/admin-user-management/STATUS.md` |
 | Production Climate Data Seeding | Complete / production R2 PHIUS+PHI bundles published, Render Postgres seeded (`phi/10.6` 1002 locations, `phius/2022` 1007 locations), and PHIUS, PHI, and Hourly Climate workflows manually verified on production; archived | `archive/dated/2026-06-29/production-climate-data-seeding/STATUS.md` |
 | Equipment Draft ETag Coordination | Complete / archived after P00-P03: stale Equipment sibling `draft_etag` writes now resolve a fresh target slice before payload construction; focused unit/controller coverage and browser request-count regression passed | `archive/dated/2026-06-29/equipment-draft-etag-coordination/STATUS.md` |

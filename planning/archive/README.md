@@ -5,6 +5,7 @@ how and when each feature packet landed. Newest first. Grep by slug.
 
 ## 2026-07-02
 
+- `apertures-frames-grouping` - Frames report grouping polish: report rows default-group by durable `manufacturer`, can regroup by durable `brand`, and can return to an ungrouped view from a compact report-toolbar control while preserving existing status sections, datasheet expansion, and use-site review behavior. Focused RTL coverage and `make frontend-dev-check` passed; populated-route smoke awaits local seed rows.
 - `model-viewer-construction-detail` - read-only "View Construction" assembly detail modal in the Model tab's Opaque Surface inspector, drawing the selected face's HBJSON construction: deduplicated top-level `constructions` map on the `/model_data` artifact (recursive honeybee-ph material schema — ph_color, division cells, steel-stud spacing — parsed once per unique construction, faces keep a thin summary; artifact got ~8% smaller), pure layer-geometry adapter (flat = degenerate single cell), stat-tile header + to-scale SVG section with hover↔row linking + expandable layer schedule with segment sub-rows and Σ-layers reconciliation, and inspector wiring with selection-preserving Escape. Fully isolated from the Envelope feature (D-8, view-only); windows deferred. All 11 acceptance criteria pass; e2e + 12 RTL + backend suites + `make ci` green. Implemented on `feature/model-viewer-construction-detail`; merge + D-9 deploy DB reset (prod still empty) = Ed's call.
 
 ## 2026-07-01

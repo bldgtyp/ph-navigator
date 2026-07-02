@@ -169,6 +169,94 @@
   font-size: 12px;
 }
 
+.report-group-toolbar {
+  align-items: center;
+  background: color-mix(in oklab, var(--bg-card) 92%, var(--bg-elev));
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--phn-control-radius);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  justify-content: flex-start;
+  margin: 0 0 var(--space-12);
+  min-height: 40px;
+  padding: var(--space-6) var(--space-8);
+}
+
+.report-group-toolbar__label,
+.report-group-toolbar__direction {
+  align-items: center;
+  display: inline-flex;
+  gap: var(--space-6);
+}
+
+.report-group-toolbar__label {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.report-group-toolbar__select select,
+.report-group-toolbar__direction {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--phn-control-radius);
+  color: var(--text-primary);
+  font: inherit;
+  min-height: 28px;
+}
+
+.report-group-toolbar__select select {
+  min-width: 150px;
+  padding: 0 var(--space-24) 0 var(--space-10);
+}
+
+.report-group-toolbar__direction {
+  cursor: pointer;
+  padding: 0 var(--space-10);
+}
+
+.report-group-toolbar__direction:disabled {
+  color: var(--text-muted, var(--text-secondary));
+  cursor: default;
+  opacity: 0.56;
+}
+
+.report-table-groups {
+  display: grid;
+  gap: var(--space-12);
+}
+
+.report-table-group {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.report-table-group__header {
+  align-items: center;
+  color: var(--text-secondary);
+  display: flex;
+  font-size: 12px;
+  gap: var(--space-8);
+  justify-content: space-between;
+  min-height: 26px;
+  padding-inline: var(--space-2);
+}
+
+.report-table-group__header span {
+  color: var(--text-primary);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.report-table-group__header em {
+  color: var(--text-muted, var(--text-secondary));
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-style: normal;
+}
+
 /* Composes `.chip .chip--md .chip--outline .chip--interactive`; only the
    filter-chip specifics remain here. */
 .report-status-chip {

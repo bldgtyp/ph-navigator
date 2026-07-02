@@ -1,6 +1,6 @@
 // @size-exception: planning/features/apertures-glazings-frames-reports/phases/phase-02-wire-and-retire-modal.md
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { X } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, Group, X } from "lucide-react";
 import {
   formatLengthFromMm,
   formatLinearPsiFromWmK,
@@ -43,6 +43,16 @@ import type {
 type ApertureSpecProduct = ProjectGlazingRead | ProjectFrameRead;
 type ApertureUseSite = ProjectGlazingUseSite | ProjectFrameUseSite;
 type ProductKind = "glazing" | "frame";
+type FrameGroupingField = "manufacturer" | "brand";
+type FrameGrouping = {
+  field: FrameGroupingField;
+  direction: "asc" | "desc";
+};
+type ProductGroup<TProduct> = {
+  id: string;
+  label: string;
+  rows: TProduct[];
+};
 type UseSiteApertureGroup = {
   id: string;
   name: string;
@@ -137,6 +147,9 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
   const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
   const [useSitesProductId, setUseSitesProductId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilterValue<ReportStatusKey>>("all");
+  const [frameGrouping, setFrameGrouping] = useState<FrameGrouping | null>(() =>
+    kind === "frame" ? { field: "manufacturer", direction: "asc" } : null,
+  );
   const productConfig = PRODUCT_CONFIG[kind];
 
   const visibleRows = useMemo(() => {
@@ -347,6 +360,30 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
       }}
     />
   );
+  const renderGroupedTables = (
+    tableRows: TProduct[],
+    message: string,
+    options: { unused?: boolean } = {},
+  ) => {
+    const groups = groupProducts(tableRows, kind === "frame" ? frameGrouping : null);
+    if (groups.length === 0) return renderTable(tableRows, message, options);
+    return (
+      <div className="report-table-groups" role="list">
+        {groups.map((group) => (
+          <section key={group.id} className="report-table-group" role="listitem">
+            <header className="report-table-group__header">
+              <span>{group.label}</span>
+              <em>
+                {group.rows.length}{" "}
+                {group.rows.length === 1 ? productColumnLabel.toLowerCase() : productLabel}
+              </em>
+            </header>
+            {renderTable(group.rows, message, options)}
+          </section>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <>
@@ -356,6 +393,9 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
         onChange={setStatusFilter}
         summary={`${resolvedCount}/${totalCount} resolved`}
       />
+      {kind === "frame" ? (
+        <FrameGroupingToolbar grouping={frameGrouping} onChange={setFrameGrouping} />
+      ) : null}
       <div className="materials-panel__sections">
         {showActiveSection ? (
           <section
@@ -366,7 +406,10 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
               <h2 id={`${productLabel}-active-heading`}>In scope</h2>
               <span>{activeRows.length}</span>
             </header>
-            {renderTable(activeRows, `No in-scope ${productLabel} match the current filter.`)}
+            {renderGroupedTables(
+              activeRows,
+              `No in-scope ${productLabel} match the current filter.`,
+            )}
           </section>
         ) : null}
         {showBackgroundSection ? (
@@ -378,7 +421,10 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
               <h2 id={`${productLabel}-background-heading`}>N/A</h2>
               <span>{backgroundRows.length}</span>
             </header>
-            {renderTable(backgroundRows, `No N/A ${productLabel} match the current filter.`)}
+            {renderGroupedTables(
+              backgroundRows,
+              `No N/A ${productLabel} match the current filter.`,
+            )}
           </section>
         ) : null}
         {showUnusedSection ? (
@@ -390,9 +436,13 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
               <h2 id={`${productLabel}-unused-heading`}>Unused</h2>
               <span>{unusedRows.length}</span>
             </header>
-            {renderTable(unusedRows, `No unused ${productLabel} match the current filter.`, {
-              unused: true,
-            })}
+            {renderGroupedTables(
+              unusedRows,
+              `No unused ${productLabel} match the current filter.`,
+              {
+                unused: true,
+              },
+            )}
           </section>
         ) : null}
       </div>
@@ -405,6 +455,64 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
       ) : null}
     </>
   );
+}
+
+function FrameGroupingToolbar({
+  grouping,
+  onChange,
+}: {
+  grouping: FrameGrouping | null;
+  onChange: (next: FrameGrouping | null) => void;
+}) {
+  const fieldValue = grouping?.field ?? "none";
+  const direction = grouping?.direction ?? "asc";
+  return (
+    <div className="report-group-toolbar" role="group" aria-label="Frame grouping controls">
+      <div className="report-group-toolbar__label">
+        <Group size={15} aria-hidden="true" />
+        <span>Group by</span>
+      </div>
+      <label className="report-group-toolbar__select">
+        <span className="sr-only">Frame group field</span>
+        <select
+          value={fieldValue}
+          onChange={(event) => {
+            const next = event.target.value;
+            onChange(isFrameGroupingField(next) ? { field: next, direction } : null);
+          }}
+        >
+          <option value="manufacturer">Manufacturer</option>
+          <option value="brand">Brand</option>
+          <option value="none">No grouping</option>
+        </select>
+      </label>
+      <button
+        type="button"
+        className="report-group-toolbar__direction"
+        aria-label={direction === "asc" ? "Sort groups ascending" : "Sort groups descending"}
+        disabled={!grouping}
+        onClick={() =>
+          grouping
+            ? onChange({
+                ...grouping,
+                direction: grouping.direction === "asc" ? "desc" : "asc",
+              })
+            : undefined
+        }
+      >
+        {direction === "asc" ? (
+          <ArrowDownAZ size={15} aria-hidden="true" />
+        ) : (
+          <ArrowUpAZ size={15} aria-hidden="true" />
+        )}
+        <span>{direction === "asc" ? "A-Z" : "Z-A"}</span>
+      </button>
+    </div>
+  );
+}
+
+function isFrameGroupingField(value: string): value is FrameGroupingField {
+  return value === "manufacturer" || value === "brand";
 }
 
 function ApertureUseSitesDrawer({
@@ -663,6 +771,28 @@ function sortProducts<TProduct extends ApertureSpecProduct>(rows: TProduct[]): T
   return [0, 1, 2, 3].flatMap((priority) =>
     naturalSortByName(rows.filter((row) => productSortPriority(row) === priority)),
   );
+}
+
+function groupProducts<TProduct extends ApertureSpecProduct>(
+  rows: TProduct[],
+  grouping: FrameGrouping | null,
+): ProductGroup<TProduct>[] {
+  if (!grouping || rows.length === 0) return [];
+  const groups = new Map<string, ProductGroup<TProduct>>();
+  for (const row of rows) {
+    const rawValue = grouping.field === "manufacturer" ? row.manufacturer : row.brand;
+    const label = rawValue?.trim() || "Unspecified";
+    const id = label.toLocaleLowerCase();
+    const group = groups.get(id);
+    if (group) group.rows.push(row);
+    else groups.set(id, { id, label, rows: [row] });
+  }
+  return Array.from(groups.values()).sort((a, b) => {
+    if (a.label === "Unspecified") return 1;
+    if (b.label === "Unspecified") return -1;
+    const result = a.label.localeCompare(b.label, undefined, { sensitivity: "base" });
+    return grouping.direction === "asc" ? result : -result;
+  });
 }
 
 function productSortPriority(row: ApertureSpecProduct): number {

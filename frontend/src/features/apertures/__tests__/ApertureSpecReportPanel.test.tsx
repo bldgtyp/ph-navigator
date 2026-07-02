@@ -289,6 +289,36 @@ describe("ApertureSpecReportPanel", () => {
     expect(screen.getByText("Frame Left · 1 field differs")).toBeInTheDocument();
   });
 
+  it("groups frame rows by manufacturer by default and can regroup by brand", () => {
+    renderFrames([
+      frame({ id: "frm_1", name: "Alpha Frame", manufacturer: "Zola", brand: "Classic" }),
+      frame({ id: "frm_2", name: "Beta Frame", manufacturer: "Zola", brand: "Passive" }),
+      frame({ id: "frm_3", name: "Gamma Frame", manufacturer: "Optiwin", brand: "Classic" }),
+    ]);
+
+    expect(screen.getByRole("combobox", { name: "Frame group field" })).toHaveValue("manufacturer");
+    expect(screen.getAllByText("Zola").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText("2 Frames")).toBeInTheDocument();
+    expect(screen.getAllByText("Optiwin").length).toBeGreaterThanOrEqual(2);
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Frame group field" }), {
+      target: { value: "brand" },
+    });
+
+    expect(screen.getByText("Classic")).toBeInTheDocument();
+    expect(screen.getByText("2 Frames")).toBeInTheDocument();
+    expect(screen.getByText("Passive")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Frame group field" }), {
+      target: { value: "none" },
+    });
+
+    expect(screen.queryByText("2 Frames")).not.toBeInTheDocument();
+    expect(screen.getByText("Alpha Frame")).toBeInTheDocument();
+    expect(screen.getByText("Beta Frame")).toBeInTheDocument();
+    expect(screen.getByText("Gamma Frame")).toBeInTheDocument();
+  });
+
   it("hides N/A and unused products for viewer reports", () => {
     renderGlazings(
       [
