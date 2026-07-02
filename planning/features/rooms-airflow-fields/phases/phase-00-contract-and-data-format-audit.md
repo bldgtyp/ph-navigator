@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-02
 TIME: 14:55 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Audit Rooms airflow field contract and persistence formats before implementation.
 RELATED:
@@ -66,8 +66,26 @@ by the chosen schema evolution strategy.
 
 ## Verification
 
-- Focused grep/review proves no active `data_changes` symbol exists or identifies
-  the actual current equivalent.
-- A short note in `STATUS.md` names the chosen compatibility path and why.
-- No code changes beyond docs in this phase unless the audit itself exposes a
-  broken current contract.
+- `graphify query "rooms airflow fields data-change format project document field definitions saved drafts audit diff" --budget 4000`
+  returned no useful scoped context.
+- Focused grep/review found no active `data_changes` storage surface. The
+  current surfaces are `project_versions.body`, `project_version_drafts.body`,
+  `user_action_log.details`, and `ProjectDiffResponse.tables[*].changed_paths`.
+- `backend/features/project_document/custom_fields.py` confirms
+  `NUMBER_UNIT_REGISTRY["airflow"]` accepts SI `m3_h` and IP `cfm`.
+- `backend/features/project_document/tables/rooms.py` confirms Rooms mutable
+  built-ins live outside `ROOMS_TYPED_COLUMN_FIELD_KEYS`, so airflow values
+  should live in `RoomRow.custom_values`.
+- `backend/seeds/project/rooms.json` contains only rows/options; the seed
+  builder in `backend/scripts/seed_dev_db.py` combines rows with current
+  `ROOMS_BUILT_IN_FIELD_DEFS`.
+- Local dev DB sample on 2026-07-02:
+  - `project_versions`: 115 rows.
+  - `project_version_drafts`: 19 rows.
+  - Latest sampled saved version and latest sampled draft both had Rooms
+    `field_defs` ending at `icfa_factor`; neither included airflow fields.
+- Decision: use schema-bump/read-time upgrade in Phase 02. Saved versions remain
+  immutable until saved again; stale draft rows can be rewritten through the
+  existing `rewrite_draft_if_upgraded(...)` path. Seed-only is insufficient for
+  current local/staging data, and read-overlay-only would make ETag/diff
+  behavior harder to reason about.
