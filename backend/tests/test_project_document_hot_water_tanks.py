@@ -8,7 +8,11 @@ import pytest
 from fastapi import HTTPException
 from pydantic import ValidationError
 
-from features.project_document.document import HotWaterTankRow, ProjectDocumentV1
+from features.project_document.document import (
+    CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION,
+    HotWaterTankRow,
+    ProjectDocumentV1,
+)
 from features.project_document.tables.registry import get_table_contract
 from tests.project_document_helpers import empty_hot_water_tanks_table, empty_required_tables
 from tests.status_field_helpers import (
@@ -70,7 +74,7 @@ def test_document_rejects_missing_hot_water_tank_type_option() -> None:
     first = hot_water_tank_payload()["hot_water_tanks"][0]
     tables = empty_required_tables()
     body = {
-        "schema_version": 1,
+        "schema_version": CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             **tables,

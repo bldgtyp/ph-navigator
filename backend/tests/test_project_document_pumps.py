@@ -8,7 +8,7 @@ import pytest
 from pydantic import ValidationError
 
 from features.project_document.custom_fields import CustomFieldType
-from features.project_document.document import ProjectDocumentV1, PumpRow
+from features.project_document.document import CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION, ProjectDocumentV1, PumpRow
 from features.project_document.tables import get_table_contract
 from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_DEFS, PUMPS_BUILT_IN_FIELD_KEYS
 from tests.builders.assets import insert_project_asset
@@ -101,7 +101,7 @@ def test_document_allows_duplicate_pump_tags() -> None:
     first = pump_payload()["pumps"][0]
     tables = empty_required_tables()
     body = {
-        "schema_version": 1,
+        "schema_version": CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             **tables,
@@ -137,7 +137,7 @@ def test_document_rejects_negative_pump_numeric_builtin() -> None:
     with pytest.raises(ValidationError, match="pump wattage must be zero or greater"):
         ProjectDocumentV1.model_validate(
             {
-                "schema_version": 1,
+                "schema_version": CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION,
                 "project": {"name": "p", "bt_number": "1", "cert_programs": []},
                 "tables": {
                     **tables,

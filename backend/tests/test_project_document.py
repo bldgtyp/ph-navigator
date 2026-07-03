@@ -14,7 +14,12 @@ from pydantic import ValidationError
 from config import settings
 from database import connection, transaction
 from features.auth.service import create_or_update_user
-from features.project_document.document import CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION, ProjectDocumentV1
+from features.project_document.custom_fields import CustomFieldType
+from features.project_document.document import (
+    CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION,
+    ROOMS_TYPED_COLUMN_FIELD_KEYS,
+    ProjectDocumentV1,
+)
 from features.project_document.drafts import apply_schema_mutation_to_draft
 from features.project_document.migrations import (
     SchemaVersionInvalidError,
@@ -219,6 +224,40 @@ def test_empty_project_document_has_rooms_and_option_lists() -> None:
     assert body.single_select_options["rooms.building_zone"] == []
 
 
+def test_empty_project_document_has_room_airflow_field_defs() -> None:
+    body = empty_project_document(
+        CreateProjectRequest(
+            name="West Stockbridge House",
+            bt_number="2426",
+            cert_programs=["phi"],
+            phius_number=None,
+            phius_dropbox_url=None,
+        )
+    )
+
+    fields_by_key = {field.field_key: field for field in body.tables.rooms.field_defs}
+
+    assert "supply_airflow_m3h" not in ROOMS_TYPED_COLUMN_FIELD_KEYS
+    assert "extract_airflow_m3h" not in ROOMS_TYPED_COLUMN_FIELD_KEYS
+    for field_key, display_name in (
+        ("supply_airflow_m3h", "Supply airflow rate"),
+        ("extract_airflow_m3h", "Extract airflow rate"),
+    ):
+        field = fields_by_key[field_key]
+        assert field.display_name == display_name
+        assert field.origin == "built_in"
+        assert field.field_type is CustomFieldType.number
+        assert field.default is None
+        assert field.config["units"] == {
+            "mode": "fixed",
+            "unit_type": "airflow",
+            "si_unit": "m3_h",
+            "ip_unit": "cfm",
+            "precision_si": 1,
+            "precision_ip": 1,
+        }
+
+
 def test_project_document_upgrade_entrypoint_accepts_current_and_v0_baseline() -> None:
     raw = empty_project_document(
         CreateProjectRequest(name="West Stockbridge House", bt_number="2426", cert_programs=[])
@@ -234,9 +273,50 @@ def test_project_document_upgrade_entrypoint_accepts_current_and_v0_baseline() -
     upgraded = upgrade_project_document(old)
     assert upgraded.original_schema_version == 0
     assert upgraded.target_schema_version == CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
-    assert upgraded.applied_steps == ("_upgrade_v0_to_v1",)
+    assert upgraded.applied_steps == ("_upgrade_v0_to_v1", "_upgrade_v1_to_v2")
     assert upgraded.document.schema_version == CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     assert upgraded.requires_persisted_rewrite is True
+
+
+def test_project_document_v1_upgrade_adds_rooms_airflow_fields_and_preserves_values() -> None:
+    raw = empty_project_document(
+        CreateProjectRequest(name="West Stockbridge House", bt_number="2426", cert_programs=[])
+    ).model_dump(mode="json")
+    raw["schema_version"] = 1
+    rooms = cast(dict[str, Any], cast(dict[str, Any], raw["tables"])["rooms"])
+    rooms["field_defs"] = [
+        field
+        for field in cast(list[dict[str, Any]], rooms["field_defs"])
+        if field["field_key"] not in {"supply_airflow_m3h", "extract_airflow_m3h"}
+    ]
+    rooms["rows"] = [
+        {
+            "id": "rm_101",
+            "floor_level": None,
+            "building_zone": None,
+            "icfa_factor": 1.0,
+            "custom_values": {
+                "number": "101",
+                "name": "Bedroom",
+                "supply_airflow_m3h": None,
+                "extract_airflow_m3h": None,
+            },
+        }
+    ]
+
+    result = upgrade_project_document(raw)
+
+    field_keys = [field.field_key for field in result.document.tables.rooms.field_defs]
+    assert result.original_schema_version == 1
+    assert result.target_schema_version == CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
+    assert result.applied_steps == ("_upgrade_v1_to_v2",)
+    assert result.requires_persisted_rewrite is True
+    assert field_keys[field_keys.index("num_bedrooms") + 1 : field_keys.index("icfa_factor")] == [
+        "supply_airflow_m3h",
+        "extract_airflow_m3h",
+    ]
+    assert result.document.tables.rooms.rows[0].custom_values["supply_airflow_m3h"] is None
+    assert result.document.tables.rooms.rows[0].custom_values["extract_airflow_m3h"] is None
 
 
 def test_project_document_upgrade_rejects_malformed_and_future_versions() -> None:
@@ -1147,7 +1227,7 @@ def test_rooms_envelope_rejects_unknown_custom_key(
 
 def test_rooms_custom_field_duplicate_display_name_rejected() -> None:
     body = {
-        "schema_version": 1,
+        "schema_version": CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             "rooms": {
@@ -1187,7 +1267,7 @@ def test_rooms_custom_field_duplicate_display_name_rejected() -> None:
 
 def test_rooms_custom_field_collides_with_core_display_name_rejected() -> None:
     body = {
-        "schema_version": 1,
+        "schema_version": CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION,
         "project": {"name": "p", "bt_number": "1", "cert_programs": []},
         "tables": {
             "rooms": {

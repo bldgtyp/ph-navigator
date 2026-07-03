@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-02
 TIME: 14:55 EDT
-STATUS: Planned / reviewed
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Product contract for Rooms default airflow fields.
 RELATED:
@@ -38,19 +38,19 @@ manually added custom columns.
 
 ## Acceptance Criteria
 
-- New/fresh projects include both fields by default.
-- Existing sample project data renders both fields without requiring a manual
+- [x] New/fresh projects include both fields by default.
+- [x] Existing sample project data renders both fields without requiring a manual
   user edit.
-- Blank/missing values render as blank, not `0`.
-- Clearing a value writes/preserves `null` through the Rooms payload path at
+- [x] Blank/missing values render as blank, not `0`.
+- [x] Clearing a value writes/preserves `null` through the Rooms payload path at
   `custom_values.<field_key>`.
-- Unit display switches correctly between `cfm` and `m3/h`.
-- Field headers show the active unit through the existing unit-header pill; the
+- [x] Unit display switches correctly between `cfm` and `m3/h`.
+- [x] Field headers show the active unit through the existing unit-header pill; the
   display names remain `Supply airflow rate` and `Extract airflow rate`.
-- Existing Rooms fields and Space-Type link behavior remain unchanged.
-- Focused backend/frontend tests cover default field registration and nullable
+- [x] Existing Rooms fields and Space-Type link behavior remain unchanged.
+- [x] Focused backend/frontend tests cover default field registration and nullable
   round-trip behavior.
-- `make frontend-dev-check` or the relevant focused checks pass; full `make ci`
+- [x] `make frontend-dev-check` or the relevant focused checks pass; full `make ci`
   should run before closeout.
 
 ## Non-Goals

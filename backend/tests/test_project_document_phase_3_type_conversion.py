@@ -274,7 +274,8 @@ def test_edit_field_bundle_edits_option_editable_rooms_builtin_options() -> None
 
     assert next_body.single_select_options[ROOM_FLOOR_LEVEL_OPTION_KEY] == [option]
     assert audit["kind"] == "editFieldBundle"
-    assert "options" in audit["properties_changed"]
+    properties_changed = cast(list[str], audit["properties_changed"])
+    assert "options" in properties_changed
 
 
 def test_edit_field_bundle_deleting_nullable_rooms_builtin_option_clears_refs() -> None:
@@ -349,8 +350,9 @@ def test_edit_field_bundle_required_builtin_option_delete_requires_replacement()
 
     assert excinfo.value.status_code == 422
     detail = cast(dict[str, object], excinfo.value.detail)
+    details = cast(dict[str, object], detail["details"])
     assert detail["error_code"] == "custom_field_option_list_invalid"
-    assert detail["details"]["reason"] == "required_built_in_select_delete_without_replacement"
+    assert details["reason"] == "required_built_in_select_delete_without_replacement"
 
 
 def test_edit_options_rejected_on_locked_builtin_status() -> None:

@@ -13,7 +13,7 @@ from __future__ import annotations
 from typing import Any
 from uuid import uuid4
 
-from features.project_document.document import ProjectDocumentV1, RoomRow
+from features.project_document.document import CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION, ProjectDocumentV1, RoomRow
 from features.project_document.tables.rooms import (
     ROOM_BUILDING_ZONE_OPTION_KEY,
     ROOM_FLOOR_LEVEL_OPTION_KEY,
@@ -136,7 +136,7 @@ def _build_body(
 
     return ProjectDocumentV1.model_validate(
         {
-            "schema_version": 1,
+            "schema_version": CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION,
             "project": {"name": "p", "bt_number": str(uuid4()), "cert_programs": []},
             "tables": tables,
             "single_select_options": {

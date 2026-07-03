@@ -551,7 +551,7 @@ function renderCellContent<TRow>(args: {
     if (fieldDef?.field_type === "number" && isEmptyNumericValue(cellValue)) {
       return (
         <span className="data-table-cell-content data-table-numeric-empty" aria-label="Empty">
-          —
+          {fieldDef.numberUnits ? "" : "—"}
         </span>
       );
     }

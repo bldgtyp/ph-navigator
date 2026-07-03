@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-02
 TIME: 14:55 EDT
-STATUS: Planned / phased
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Implementation plan for Rooms default airflow fields.
 RELATED:
@@ -34,36 +34,38 @@ RELATED:
 
 Detailed plan: `phases/phase-00-contract-and-data-format-audit.md`
 
-Goal: freeze exact field keys, storage semantics, and compatibility strategy
-before touching seeds or write paths.
+Status: Complete. Goal: freeze exact field keys, storage semantics, and
+compatibility strategy before touching seeds or write paths.
 
 ## Phase 01 - Built-In Field Contract
 
 Detailed plan: `phases/phase-01-built-in-field-contract.md`
 
-Goal: add backend product built-ins for fresh project documents with fixed
-airflow units and focused schema/fingerprint tests.
+Status: Complete. Goal: add backend product built-ins for fresh project
+documents with fixed airflow units and focused schema/fingerprint tests.
 
 ## Phase 02 - Existing Document Compatibility
 
 Detailed plan: `phases/phase-02-existing-document-compatibility.md`
 
-Goal: make existing sample/current project documents expose the two fields
-without corrupting saved-version or draft semantics.
+Status: Complete. Goal: make existing sample/current project documents expose
+the two fields without corrupting saved-version or draft semantics.
 
 ## Phase 03 - Frontend And DataTable Behavior
 
 Detailed plan: `phases/phase-03-frontend-and-data-table-behavior.md`
 
-Goal: verify Rooms renders the new fields as ordinary DataTable unit-number
-columns and preserves null clears through the shared write flow.
+Status: Complete. Goal: verify Rooms renders the new fields as ordinary
+DataTable unit-number columns and preserves null clears through the shared write
+flow.
 
 ## Phase 04 - Verification And Closeout
 
 Detailed plan: `phases/phase-04-verification-and-closeout.md`
 
-Goal: run focused checks, browser smoke Spaces / Rooms, update graph/docs, then
-run the appropriate closeout gate before marking complete.
+Status: Complete. Goal: run focused checks, browser smoke Spaces / Rooms,
+update graph/docs, then run the appropriate closeout gate before marking
+complete.
 
 ## Implementation Guardrails
 

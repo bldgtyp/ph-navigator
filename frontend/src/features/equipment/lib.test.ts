@@ -499,6 +499,28 @@ describe("equipment room helpers", () => {
     expect(validateRoomsPayload(payload)).toBeNull();
   });
 
+  test("roomsPayloadFromCellWrites keeps cleared room airflow null in custom_values", () => {
+    const current: RoomsSlice = {
+      ...baseSlice,
+      rooms: [
+        roomFixture(
+          { id: "rm_1", floor_level: null },
+          { number: "101", name: "Living", supply_airflow_m3h: 170 },
+        ),
+      ],
+      single_select_options: { "rooms.floor_level": [], "rooms.building_zone": [] },
+    };
+
+    const payload = roomsPayloadFromCellWrites(
+      current,
+      [{ rowId: "rm_1", fieldKey: "supply_airflow_m3h", value: null }],
+      {},
+    );
+
+    expect(payload.rooms[0]?.custom_values.supply_airflow_m3h).toBeNull();
+    expect(validateRoomsPayload(payload)).toBeNull();
+  });
+
   test("roomsPayloadFromRowDelete removes by id and preserves the option lists", () => {
     const ground = { id: "opt_ground", label: "Ground", color: "#3b82f6", order: 0 };
     const current: RoomsSlice = {
@@ -536,6 +558,8 @@ describe("equipment room helpers", () => {
       ROOM_SPACE_TYPE_FIELD_KEY,
       "num_people",
       "num_bedrooms",
+      "supply_airflow_m3h",
+      "extract_airflow_m3h",
       "icfa_factor",
     ]);
     expect(ROOM_FLOOR_LEVEL_COLUMN_ID).toBe("floor_level");

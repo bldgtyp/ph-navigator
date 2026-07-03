@@ -86,6 +86,36 @@ _ROOMS_NON_RECORD_ID_FIELD_DEFS: tuple[TableFieldDef, ...] = (
     ),
     built_in_field_def(field_key="num_people", display_name="People", field_type=CustomFieldType.number, default=0),
     built_in_field_def(field_key="num_bedrooms", display_name="Bedrooms", field_type=CustomFieldType.number, default=0),
+    built_in_field_def(
+        field_key="supply_airflow_m3h",
+        display_name="Supply airflow rate",
+        field_type=CustomFieldType.number,
+        config={
+            "units": {
+                "mode": "fixed",
+                "unit_type": "airflow",
+                "si_unit": "m3_h",
+                "ip_unit": "cfm",
+                "precision_si": 1,
+                "precision_ip": 1,
+            }
+        },
+    ),
+    built_in_field_def(
+        field_key="extract_airflow_m3h",
+        display_name="Extract airflow rate",
+        field_type=CustomFieldType.number,
+        config={
+            "units": {
+                "mode": "fixed",
+                "unit_type": "airflow",
+                "si_unit": "m3_h",
+                "ip_unit": "cfm",
+                "precision_si": 1,
+                "precision_ip": 1,
+            }
+        },
+    ),
     built_in_field_def(field_key="icfa_factor", display_name="iCFA", field_type=CustomFieldType.number, default=1.0),
 )
 
@@ -463,9 +493,7 @@ ROOMS_REQUIRED_FIELD_KEYS: frozenset[str] = frozenset()
 ROOMS_FIELD_TYPE_LOCKED_KEYS: frozenset[str] = frozenset(
     {"floor_level", "building_zone", "icfa_factor", ROOM_SPACE_TYPE_FIELD_KEY}
 )
-ROOMS_OPTION_EDITABLE_BUILT_IN_FIELD_KEYS: frozenset[str] = frozenset(
-    {"floor_level", "building_zone"}
-)
+ROOMS_OPTION_EDITABLE_BUILT_IN_FIELD_KEYS: frozenset[str] = frozenset({"floor_level", "building_zone"})
 
 
 def _read_rooms_field_option_list(body: ProjectDocumentV1, field_key: str) -> list[SingleSelectOption]:

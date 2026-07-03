@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-02
 TIME: 14:55 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Align existing sample/current documents with the new Rooms airflow fields.
 RELATED:
@@ -52,3 +52,5 @@ Choose one after Phase 00:
   fields and row display path remains blank.
 - Backend test with explicit `null` in `custom_values` round-tripping unchanged.
 - If a migration/backfill is chosen, add an idempotence test.
+- Passed on 2026-07-02:
+  `cd backend && uv run pytest tests/test_project_document.py::test_project_document_v1_upgrade_adds_rooms_airflow_fields_and_preserves_values tests/test_project_document_fielddef_drift.py::test_audit_cli_fielddef_drift_mode_keeps_current_fixtures_clean tests/test_project_document_schema_migrations.py tests/test_project_document_upgrade_audit_cli.py::test_project_document_upgrade_audit_reports_fixture_corpus`.

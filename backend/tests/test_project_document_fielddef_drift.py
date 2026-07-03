@@ -106,6 +106,29 @@ def test_fielddef_drift_reports_missing_extra_and_origin_mismatch() -> None:
     assert drift_by_key["stale_builtin"] == "extra_built_in"
 
 
+def test_fielddef_drift_reports_stale_rooms_airflow_built_ins() -> None:
+    raw = _body_json()
+    rooms = cast(dict[str, Any], cast(dict[str, Any], raw["tables"])["rooms"])
+    field_defs = cast(list[dict[str, Any]], rooms["field_defs"])
+    field_defs[:] = [
+        field for field in field_defs if field["field_key"] not in {"supply_airflow_m3h", "extract_airflow_m3h"}
+    ]
+    stale = ProjectDocumentV1.model_validate(raw)
+
+    report = report_project_document_fielddef_drift(stale)
+    rooms_report = next(table for table in report if table["table"] == "rooms")
+    airflow_drift_by_key = {
+        item["field_key"]: item["kind"]
+        for item in rooms_report["drift"]
+        if item["field_key"] in {"supply_airflow_m3h", "extract_airflow_m3h"}
+    }
+
+    assert airflow_drift_by_key == {
+        "supply_airflow_m3h": "missing_built_in",
+        "extract_airflow_m3h": "missing_built_in",
+    }
+
+
 def test_audit_cli_fielddef_drift_mode_fails_strict_on_seed_drift() -> None:
     raw = cast(dict[str, Any], deepcopy(iter_fixture_inputs()[0].body))
     rooms = cast(dict[str, Any], cast(dict[str, Any], raw["tables"])["rooms"])

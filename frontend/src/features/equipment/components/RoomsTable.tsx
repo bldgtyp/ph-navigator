@@ -27,6 +27,18 @@ import {
   type RoomsSlice,
 } from "../types";
 
+const EXPLICIT_ROOM_FIELD_KEYS = new Set([
+  RECORD_ID_FIELD_KEY,
+  "number",
+  "name",
+  ROOM_FLOOR_LEVEL_KEY,
+  ROOM_BUILDING_ZONE_KEY,
+  ROOM_SPACE_TYPE_FIELD_KEY,
+  "num_people",
+  "num_bedrooms",
+  "icfa_factor",
+]);
+
 export function RoomsTable({
   roomsSlice,
   tableSchema,
@@ -82,10 +94,26 @@ export function RoomsTable({
   linkedRecordOps?: ReadonlyMap<string, LinkedRecordCellOps>;
   linkedRecordTargets?: ReadonlyArray<LinkedRecordTargetTableOption>;
 }) {
-  const { fieldDefs, customFields } = tableSchema;
+  const { fieldDefs, tableFields, customFields } = tableSchema;
   const fieldDefByKey = useMemo(
     () => new Map(fieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef])),
     [fieldDefs],
+  );
+  const extraBuiltInCustomValueFields = useMemo(
+    () =>
+      tableFields.filter(
+        (field) => field.origin === "built_in" && !EXPLICIT_ROOM_FIELD_KEYS.has(field.field_key),
+      ),
+    [tableFields],
+  );
+  const extraBuiltInColumns = useMemo<DataTableColumnDef<RoomRow>[]>(
+    () =>
+      customFieldColumnDefs({
+        customFields: extraBuiltInCustomValueFields,
+        fieldDefByKey,
+        rowsComputed,
+      }),
+    [extraBuiltInCustomValueFields, fieldDefByKey, rowsComputed],
   );
   const customColumns = useMemo<DataTableColumnDef<RoomRow>[]>(
     () =>
@@ -166,6 +194,7 @@ export function RoomsTable({
         accessor: (room) => customNumberValue(room, "num_bedrooms"),
         className: "numeric-cell",
       },
+      ...extraBuiltInColumns,
       {
         id: "icfa_factor",
         fieldKey: "icfa_factor",
@@ -177,7 +206,7 @@ export function RoomsTable({
       },
       ...customColumns,
     ];
-  }, [fieldDefByKey, customColumns, rowsComputed]);
+  }, [fieldDefByKey, extraBuiltInColumns, customColumns, rowsComputed]);
 
   return (
     <DataTable

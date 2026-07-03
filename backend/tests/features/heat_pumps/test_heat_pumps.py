@@ -9,7 +9,7 @@ from pydantic import ValidationError
 
 from features.heat_pumps.models import HeatPumpOutdoorEquipRow
 from features.project_document.custom_fields import CustomFieldType
-from features.project_document.document import ProjectDocumentV1
+from features.project_document.document import CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION, ProjectDocumentV1
 from tests.project_document_helpers import empty_required_tables, field_defs_fingerprint
 from tests.status_field_helpers import (
     assert_status_field_def,
@@ -178,7 +178,7 @@ def test_outdoor_equip_model_validates_enums_and_ranges() -> None:
 def _heat_pump_document(tables: dict[str, Any]) -> ProjectDocumentV1:
     return ProjectDocumentV1.model_validate(
         {
-            "schema_version": 1,
+            "schema_version": CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION,
             "project": {"name": "p", "bt_number": "1", "cert_programs": []},
             "tables": tables,
             "single_select_options": {

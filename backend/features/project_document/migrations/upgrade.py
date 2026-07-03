@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from typing import cast
 
 from features.project_document.document import CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION, ProjectDocumentV1
 
@@ -50,8 +51,52 @@ def _upgrade_v0_to_v1(raw: dict[str, object]) -> dict[str, object]:
     return upgraded
 
 
+def _upgrade_v1_to_v2(raw: dict[str, object]) -> dict[str, object]:
+    """Add Rooms supply/extract airflow built-ins without changing row values."""
+
+    from features.project_document.tables.rooms import ROOMS_BUILT_IN_FIELD_DEFS
+
+    upgraded = dict(raw)
+    tables = dict(_mapping(upgraded.get("tables"), "tables"))
+    rooms = dict(_mapping(tables.get("rooms"), "tables.rooms"))
+    field_defs = list(_list(rooms.get("field_defs"), "tables.rooms.field_defs"))
+
+    current_rooms_built_ins = {
+        field.field_key: field.model_dump(mode="json")
+        for field in ROOMS_BUILT_IN_FIELD_DEFS
+        if field.origin == "built_in"
+    }
+    current_builtin_keys = [field.field_key for field in ROOMS_BUILT_IN_FIELD_DEFS if field.origin == "built_in"]
+    persisted_by_key: dict[str, object] = {}
+    for field in field_defs:
+        if not isinstance(field, Mapping):
+            continue
+        field_mapping = cast(Mapping[str, object], field)
+        field_key = field_mapping.get("field_key")
+        if isinstance(field_key, str):
+            persisted_by_key[field_key] = field
+
+    next_field_defs: list[object] = [
+        persisted_by_key.get(field_key, current_rooms_built_ins[field_key]) for field_key in current_builtin_keys
+    ]
+    current_builtin_key_set = set(current_builtin_keys)
+    for field in field_defs:
+        if isinstance(field, Mapping):
+            field_mapping = cast(Mapping[str, object], field)
+            if field_mapping.get("field_key") in current_builtin_key_set:
+                continue
+        next_field_defs.append(field)
+
+    rooms["field_defs"] = next_field_defs
+    tables["rooms"] = rooms
+    upgraded["tables"] = tables
+    upgraded["schema_version"] = 2
+    return upgraded
+
+
 UPGRADE_STEPS: dict[int, Callable[[dict[str, object]], dict[str, object]]] = {
     0: _upgrade_v0_to_v1,
+    1: _upgrade_v1_to_v2,
 }
 
 
@@ -109,3 +154,15 @@ def _schema_version(raw: Mapping[str, object]) -> int:
     if value < 0:
         raise SchemaVersionInvalidError("project document schema_version must be >= 0")
     return value
+
+
+def _mapping(value: object, path: str) -> Mapping[str, object]:
+    if not isinstance(value, Mapping):
+        raise SchemaVersionInvalidError(f"project document {path} must be an object")
+    return cast(Mapping[str, object], value)
+
+
+def _list(value: object, path: str) -> list[object]:
+    if not isinstance(value, list):
+        raise SchemaVersionInvalidError(f"project document {path} must be a list")
+    return cast(list[object], value)

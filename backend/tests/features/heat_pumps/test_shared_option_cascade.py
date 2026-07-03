@@ -11,7 +11,11 @@ from __future__ import annotations
 from typing import Any, cast
 
 from features.heat_pumps.models import HEAT_PUMP_MANUFACTURER_OPTION_KEY
-from features.project_document.document import ProjectDocumentV1, SingleSelectOption
+from features.project_document.document import (
+    CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION,
+    ProjectDocumentV1,
+    SingleSelectOption,
+)
 from features.project_document.mutations.models import EditOptionsMutation
 from features.project_document.mutations.options_ops import apply_edit_options
 from features.project_document.tables.heat_pumps import outdoor_equip_field_registry
@@ -34,7 +38,7 @@ def _document_with_shared_manufacturer() -> ProjectDocumentV1:
     heat_pumps["indoor_equip"]["rows"] = [indoor_equip(manufacturer=MFR_A)]
     return ProjectDocumentV1.model_validate(
         {
-            "schema_version": 1,
+            "schema_version": CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION,
             "project": {"name": "p", "bt_number": "1", "cert_programs": []},
             "tables": tables,
             "single_select_options": {

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-02
 TIME: 14:55 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Add Rooms airflow built-in FieldDefs for fresh documents.
 RELATED:
@@ -43,3 +43,5 @@ project documents receive them by default.
 - Focused backend tests for Rooms defaults and FieldDef drift.
 - Schema fingerprint test updated only if the change intentionally changes the
   product document contract.
+- Passed on 2026-07-02:
+  `cd backend && uv run pytest tests/test_project_document.py::test_empty_project_document_has_room_airflow_field_defs tests/test_project_document_fielddef_drift.py::test_fielddef_drift_reports_stale_rooms_airflow_built_ins tests/test_project_document_schema_guard.py::test_project_document_schema_fingerprint_requires_version_guard_update`.

@@ -85,6 +85,33 @@ describe("GridBody — DOM hit-test attrs", () => {
     expect(cell).toHaveTextContent("—");
     expect(cell.querySelector(".data-table-numeric-empty")).not.toBeNull();
   });
+
+  test("empty number-with-units cells render blank", () => {
+    renderTable({
+      rows: [{ id: "rm_1", number: "101", name: "Living", count: null }],
+      fieldDefs: [
+        { field_key: "number", field_type: "text", display_name: "Number" },
+        { field_key: "name", field_type: "text", display_name: "Name" },
+        {
+          field_key: "count",
+          field_type: "number",
+          display_name: "Count",
+          numberUnits: {
+            mode: "fixed",
+            unit_type: "airflow",
+            si_unit: "m3_h",
+            ip_unit: "cfm",
+            precision_si: 1,
+            precision_ip: 1,
+          },
+        },
+      ],
+    });
+
+    const empty = getBodyCell(0, 2).querySelector(".data-table-numeric-empty");
+    expect(empty).not.toBeNull();
+    expect(empty).toBeEmptyDOMElement();
+  });
 });
 
 describe("GridBody — row-expand affordance", () => {

@@ -335,6 +335,11 @@ wrapping), Home/End move the active cell. Enter or double-click
 opens the cell editor; Esc cancels; Enter/blur commits. Auto-scroll
 keeps the focused cell in view.
 
+**Empty numeric cells.** Plain number cells render an em dash for
+empty/null values. Number-with-units cells render empty/null as a
+blank cell so the separate unit pill does not imply a zero or a dash
+quantity.
+
 **Range selection.** Click-drag or Shift+arrow extends a rectangle.
 Shift+click sets the head, anchor unchanged. Auto-scroll near
 viewport edges while dragging. Click in the left gutter selects the

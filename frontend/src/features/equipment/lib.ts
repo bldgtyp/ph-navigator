@@ -382,6 +382,32 @@ export const ROOMS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   },
   builtInFieldDef("num_people", "People", "number"),
   builtInFieldDef("num_bedrooms", "Bedrooms", "number"),
+  {
+    ...builtInFieldDef("supply_airflow_m3h", "Supply airflow rate", "number"),
+    config: {
+      units: {
+        mode: "fixed",
+        unit_type: "airflow",
+        si_unit: "m3_h",
+        ip_unit: "cfm",
+        precision_si: 1,
+        precision_ip: 1,
+      },
+    },
+  },
+  {
+    ...builtInFieldDef("extract_airflow_m3h", "Extract airflow rate", "number"),
+    config: {
+      units: {
+        mode: "fixed",
+        unit_type: "airflow",
+        si_unit: "m3_h",
+        ip_unit: "cfm",
+        precision_si: 1,
+        precision_ip: 1,
+      },
+    },
+  },
   builtInFieldDef("icfa_factor", "iCFA", "number"),
 ];
 
@@ -641,6 +667,12 @@ export function roomsFieldOverlay(roomsSlice: RoomsSlice): Record<string, TableF
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
     num_bedrooms: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    supply_airflow_m3h: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    extract_airflow_m3h: {
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
     icfa_factor: {

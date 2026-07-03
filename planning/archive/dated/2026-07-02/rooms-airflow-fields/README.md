@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-02
 TIME: 14:55 EDT
-STATUS: Planned / phase plans drafted
+STATUS: Complete / archived
 AUTHOR: Codex
 SCOPE: Add default nullable unit-aware supply/extract airflow fields to Spaces /
   Rooms.
@@ -48,6 +48,12 @@ DataTable number-units contract.
 | 02 | Existing document compatibility | Decide and implement overlay/migration/seed alignment for existing sample and production documents. |
 | 03 | Frontend DataTable behavior | Verify Rooms renders, edits, clears, filters, exports, and switches units correctly. |
 | 04 | Verification + closeout | Focused backend/frontend tests, browser smoke, docs-pass, and final gate selection. |
+
+## Completion
+
+Completed on 2026-07-02. The packet was archived after backend/frontend
+focused tests, `make frontend-dev-check`, full `make ci`, in-app Browser smoke
+on Spaces / Rooms, `graphify update .`, simplify review, and docs-pass.
 
 ## Classification
 

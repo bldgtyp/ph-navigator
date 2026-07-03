@@ -306,7 +306,7 @@ def test_phase_02_custom_single_select_options_use_nested_table_path_namespace(
     assert "fans.cf_status" not in response.json()["single_select_options"]
 
 
-def test_phase_02_builtin_option_edit_still_updates_representative_table(
+def test_phase_02_locked_builtin_option_edit_still_rejects_representative_table(
     clean_document_tables: None,
 ) -> None:
     client = signed_in_client()
@@ -341,12 +341,14 @@ def test_phase_02_builtin_option_edit_still_updates_representative_table(
         },
     )
 
-    assert response.status_code == 200, response.text
-    assert response.json()["fans"][0]["fan_type"] == "opt_fan_user_defined"
-    assert [option["id"] for option in response.json()["single_select_options"]["fans.type"]] == [
-        "opt_fan_dryer",
-        "opt_fan_user_defined",
-    ]
+    assert response.status_code == 422, response.text
+    payload = response.json()
+    assert payload["error_code"] == "custom_field_options_locked"
+    assert payload["details"] == {
+        "field_id": "fan_type",
+        "table_key": "fans",
+        "reason": "options_locked",
+    }
 
 
 def test_phase_02_table_key_mismatch_still_rejects(clean_document_tables: None) -> None:

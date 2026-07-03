@@ -16,6 +16,7 @@ from typing import cast
 
 from features.project_document.custom_fields import CustomFieldType, CustomValue, TableFieldDef
 from features.project_document.document import (
+    CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION,
     ROOM_BUILDING_ZONE_OPTION_KEY,
     ROOM_FLOOR_LEVEL_OPTION_KEY,
     ProjectDocumentProject,
@@ -62,7 +63,7 @@ def _body_with_default_field() -> ProjectDocumentV1:
     heat_pumps = empty_required_tables()["equipment"]["heat_pumps"]
     return ProjectDocumentV1.model_validate(
         {
-            "schema_version": 1,
+            "schema_version": CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION,
             "project": ProjectDocumentProject(name="t", bt_number="1", cert_programs=[]).model_dump(mode="json"),
             "tables": {
                 "rooms": envelope.model_dump(mode="json"),

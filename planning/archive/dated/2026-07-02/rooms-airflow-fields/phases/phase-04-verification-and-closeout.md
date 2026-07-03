@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-02
 TIME: 14:55 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Final verification and documentation closeout for Rooms airflow fields.
 RELATED:
@@ -41,6 +41,6 @@ the right places.
 ## Completion Criteria
 
 - `STATUS.md` contains exact commands run and results.
-- PRD acceptance criteria are checked off or explicitly deferred.
-- Any compatibility decision is recorded with rationale.
-- No unrelated worktree changes are included.
+- PRD acceptance criteria are checked off.
+- Compatibility decision is recorded with rationale.
+- Simplify/docs-pass complete.

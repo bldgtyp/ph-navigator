@@ -38,6 +38,7 @@ from features.mcp.tools import (
     tool_save_draft_as,
     tool_update_project,
 )
+from features.project_document.document import CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
 from features.project_document.validation import document_etag
 from main import app
 from tests.envelope.test_envelope_document_contracts import envelope_body, write_saved_body
@@ -1154,7 +1155,7 @@ async def test_mcp_read_tools_return_document_and_structured_write_rejection(cle
                     saved_document = json.loads(tool_text(saved_document_result))
                     assert saved_document["source"] == "version"
                     assert saved_document["draft_etag"] is None
-                    assert saved_document["body"]["schema_version"] == 1
+                    assert saved_document["body"]["schema_version"] == CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
 
                     create_rooms_draft(client, project_id, version_id, name="Living Room")
 

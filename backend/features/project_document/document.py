@@ -177,7 +177,7 @@ ROOM_SPACE_TYPE_FIELD_KEY = "space_type_id"
 # v12: aperture glazings/frames move from inline element snapshots to flat,
 # documented project tables (`project_glazings` / `project_frames`) referenced
 # by FK ids from each aperture element.
-CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 1
+CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 2
 
 # Field keys that have a typed Pydantic column on the row model. Used
 # to split read/write paths between typed columns and the
@@ -262,7 +262,7 @@ class ProjectDocumentTables(BaseModel):
 class ProjectDocumentV1(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: Literal[1] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
+    schema_version: Literal[2] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     project: ProjectDocumentProject
     tables: ProjectDocumentTables = Field(default_factory=ProjectDocumentTables)
     single_select_options: dict[str, list[SingleSelectOption]] = Field(

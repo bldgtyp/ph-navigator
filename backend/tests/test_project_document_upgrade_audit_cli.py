@@ -21,7 +21,7 @@ def test_project_document_upgrade_audit_reports_fixture_corpus() -> None:
 
     assert report["ok"] is True
     assert report["total_bodies"] == 2
-    assert report["schema_versions"] == {str(CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION): 2}
+    assert report["schema_versions"] == {"1": 2}
     assert report["invalid_count"] == 0
     assert report["future_version_count"] == 0
     largest = report["body_size_bytes"]["largest"]

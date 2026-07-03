@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-02
 TIME: 14:55 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Verify Rooms DataTable rendering/editing for airflow unit fields.
 RELATED:
@@ -38,3 +38,5 @@ and behave like any other unit-aware numeric DataTable field.
 - Focused Vitest around Rooms table/schema behavior.
 - Existing shared DataTable unit tests remain green.
 - No visual or behavior regressions to Space-Type link pills.
+- Passed on 2026-07-02:
+  `cd frontend && pnpm exec vitest run src/features/equipment/__tests__/RoomsTable.airflowFields.test.tsx src/features/equipment/lib.test.ts src/shared/ui/data-table/__tests__/numberUnitsGrid.test.tsx src/shared/ui/data-table/__tests__/csv.test.ts src/shared/ui/data-table/__tests__/GridBody.test.tsx`.
