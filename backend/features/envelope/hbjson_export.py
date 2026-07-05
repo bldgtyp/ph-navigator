@@ -60,7 +60,7 @@ def _construction_payload(
             "assembly_type": assembly.type,
             "orientation": assembly.orientation,
         },
-        "materials": [_layer_material_payload(layer, materials_by_id) for layer in _layers_outside_to_inside(assembly)],
+        "materials": [_layer_material_payload(layer, materials_by_id) for layer in assembly.layers_outside_to_inside()],
     }
 
 
@@ -198,13 +198,6 @@ def _error_entry(issue: ThermalIssue) -> dict[str, object]:
         "segment_id": issue.segment_id,
         "segment_order": issue.segment_order,
     }
-
-
-def _layers_outside_to_inside(assembly: Assembly) -> list[AssemblyLayer]:
-    layers = sorted(assembly.layers, key=lambda layer: layer.order)
-    if assembly.orientation == "last_layer_outside":
-        return list(reversed(layers))
-    return layers
 
 
 def _unique_assembly_identifiers(assemblies: list[Assembly]) -> dict[str, str]:

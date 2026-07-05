@@ -213,6 +213,17 @@ class Assembly(BaseModel):
         validate_contiguous_orders("layer", [(layer.id, layer.order) for layer in self.layers])
         return self
 
+    def layers_outside_to_inside(self) -> list[AssemblyLayer]:
+        """Layers ordered outside→inside, honoring ``orientation``.
+
+        The stored `order` runs first→last; `last_layer_outside` means the last
+        stored layer faces outdoors, so the list is reversed. This ordering rule
+        is a property of the assembly, shared by every serializer (HBJSON web
+        download and the Grasshopper export) so they can never drift.
+        """
+        ordered = sorted(self.layers, key=lambda layer: layer.order)
+        return list(reversed(ordered)) if self.orientation == "last_layer_outside" else ordered
+
 
 class ProjectMaterial(BaseModel):
     """A project-owned material/product record referenced by segments.

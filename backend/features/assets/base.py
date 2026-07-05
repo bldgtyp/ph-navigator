@@ -12,6 +12,19 @@ from starlette import status
 from features.project_location import repository as location_repository
 from features.shared.errors import api_error
 
+ASSET_LOCATOR_SCHEME = "phn-asset"
+
+
+def asset_locator(asset_id: str) -> str:
+    """Stable, non-expiring reference to a project asset for external payloads.
+
+    Downstream consumers (e.g. the Grasshopper export / PHX) resolve
+    ``phn-asset:<id>`` to a signed download only when they need the bytes — so
+    payloads never embed short-lived signed URLs. Defined here, in the assets
+    domain, so every wire boundary that references an asset agrees on the scheme.
+    """
+    return f"{ASSET_LOCATOR_SCHEME}:{asset_id}"
+
 
 def generated_asset_id() -> str:
     return f"asset_{datetime.now(tz=UTC).strftime('%Y%m%d%H%M%S%f')}"

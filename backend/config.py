@@ -94,6 +94,14 @@ class Settings(BaseSettings):
     # which are opaque pointers to rows in the sessions table.
     fernet_secret_key: str = ""
 
+    # Grasshopper Data API (`/api/v1/gh`). Anonymous GETs are allowed, so the
+    # router carries its own per-IP rate limit (V2 has no global limiter). The
+    # limiter is a single-instance in-process fixed window — deliberately
+    # minimal; do not build distributed limiting. Disabled in the test suite
+    # (conftest sets GH_API_RATE_LIMIT_ENABLED=false) so shared IPs don't 429.
+    gh_api_rate_limit_enabled: bool = True
+    gh_api_rate_limit_per_minute: int = 30
+
     # CORS — comma-separated origins in env, list at use site
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000"
 

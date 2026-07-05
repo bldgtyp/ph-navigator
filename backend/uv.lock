@@ -884,6 +884,18 @@ wheels = [
 ]
 
 [[package]]
+name = "honeybee-ref"
+version = "0.2.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "honeybee-energy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ac/4f/e5de341ed074076800c8c140197f7b05d7707cec3e24911cf2890348ef4b/honeybee_ref-0.2.1.tar.gz", hash = "sha256:021b8f84a64794738bee41db02f3f94f341cd40b9e73c389a05e36c20987283c", size = 21806, upload-time = "2025-06-12T20:56:38.725Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/54/16/a4b9c95a809a531c862cae652b7d333b1432c742c6e353740d2970da9614/honeybee_ref-0.2.1-py3-none-any.whl", hash = "sha256:fba0c24c63083ff583ceffb9fd1c5eac316d6c5154b68d20893af3ecbb17e599", size = 22289, upload-time = "2025-06-12T20:56:37.188Z" },
+]
+
+[[package]]
 name = "honeybee-schema"
 version = "2.0.7"
 source = { registry = "https://pypi.org/simple" }
@@ -1301,6 +1313,7 @@ dependencies = [
     { name = "cryptography" },
     { name = "fastapi", extra = ["standard"] },
     { name = "honeybee-ph" },
+    { name = "honeybee-ref" },
     { name = "jsonpatch" },
     { name = "ladybug-core" },
     { name = "mcp" },
@@ -1338,6 +1351,7 @@ requires-dist = [
     { name = "cryptography", specifier = ">=43" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.115" },
     { name = "honeybee-ph", specifier = ">=1.33.19" },
+    { name = "honeybee-ref", specifier = "==0.2.1" },
     { name = "jsonpatch", specifier = ">=1.33" },
     { name = "ladybug-core", specifier = ">=0.44.49" },
     { name = "mcp", specifier = ">=1.27.1" },

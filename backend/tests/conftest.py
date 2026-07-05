@@ -41,6 +41,10 @@ def _route_database_url_for_worker() -> None:
         "DATABASE_URL",
         "postgresql://phn:phn_local_only@localhost:5433/ph_navigator_v2_test",
     )
+    # The GH router's per-IP rate limiter is off in the suite: every test shares
+    # the `testclient` IP, so a live limiter would 429 unrelated tests. The
+    # limiter's own boundary test re-enables it via monkeypatch.
+    os.environ.setdefault("GH_API_RATE_LIMIT_ENABLED", "false")
     worker = os.environ.get("PYTEST_XDIST_WORKER")
     if not worker or worker == "master":
         return
