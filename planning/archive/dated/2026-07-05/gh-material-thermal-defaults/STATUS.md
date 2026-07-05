@@ -33,7 +33,10 @@ strict. Default mode is `strict` (unchanged). Full spec in `README.md`.
 - [x] Collect defaulted-segment warnings; add `warnings` to the envelope.
 - [x] Tests: strict still 422s; `user_defaults` succeeds + populates `warnings`;
       missing conductivity still 422s under `user_defaults`.
-- [ ] Ping GH side to wire `PHNavV1Client` (send mode + surface `warnings`).
+- [x] Ping GH side to wire `PHNavV1Client` (send mode + surface `warnings`). Done
+      2026-07-05 in `honeybee_grasshopper_ph_plus` — `get_constructions_hbjson`
+      sends `on_missing_thermal=user_defaults`; `_surface_warnings` (in the shared
+      `_validate_envelope` path) emits envelope `warnings` as `IGH.warning`.
 
 ## Cross-repo follow-up (GH side, blocked on this)
 
