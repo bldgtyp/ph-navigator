@@ -124,6 +124,22 @@ export function HotWaterTanksTable({
         defaultWidth: 150,
       },
       {
+        id: "location_temp_c",
+        fieldKey: "location_temp_c",
+        header: fieldDefByKey.get("location_temp_c")?.display_name ?? "Location Temp",
+        accessor: (tank) => customNumberValue(tank, "location_temp_c"),
+        defaultWidth: 140,
+        className: "numeric-cell",
+      },
+      {
+        id: "water_temp_c",
+        fieldKey: "water_temp_c",
+        header: fieldDefByKey.get("water_temp_c")?.display_name ?? "Water Temp",
+        accessor: (tank) => customNumberValue(tank, "water_temp_c"),
+        defaultWidth: 130,
+        className: "numeric-cell",
+      },
+      {
         id: "manufacturer",
         fieldKey: "manufacturer",
         header: fieldDefByKey.get("manufacturer")?.display_name ?? "Manufacturer",

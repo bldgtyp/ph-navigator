@@ -174,6 +174,7 @@ export function makeBuildEmptyThermalBridgeRow(): BuildEmptyRow<ThermalBridgeRow
         name: readStringDefault(fieldDefaults.name, null),
         sheet_name: readStringDefault(fieldDefaults.sheet_name, null),
         drawing_number: readStringDefault(fieldDefaults.drawing_number, null),
+        quantity: readNumberDefault(fieldDefaults.quantity, null),
         psi_value_w_mk: readNumberDefault(fieldDefaults.psi_value_w_mk, null),
         frsi_value: readNumberDefault(fieldDefaults.frsi_value, null),
         [STATUS_FIELD_KEY]: readStatusDefault(

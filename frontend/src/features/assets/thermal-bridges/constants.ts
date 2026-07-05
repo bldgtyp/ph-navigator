@@ -33,6 +33,7 @@ export const THERMAL_BRIDGE_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("name", "Display Name", "short_text"),
   builtInFieldDef("sheet_name", "Sheet Name", "short_text"),
   builtInFieldDef("drawing_number", "Drawing Number", "short_text"),
+  builtInFieldDef("quantity", "Quantity", "number", 1),
   {
     ...builtInFieldDef("psi_value_w_mk", "Psi-Value", "number"),
     config: {
@@ -62,6 +63,7 @@ export const THERMAL_BRIDGE_CUSTOM_VALUE_FIELD_KEYS = new Set([
   "name",
   "sheet_name",
   "drawing_number",
+  "quantity",
   "psi_value_w_mk",
   "frsi_value",
   STATUS_FIELD_KEY,
@@ -128,6 +130,7 @@ function builtInFieldDef(
   field_key: string,
   display_name: string,
   field_type: TableFieldDef["field_type"],
+  defaultValue: TableFieldDef["default"] = null,
 ): TableFieldDef {
   return {
     field_key,
@@ -135,7 +138,7 @@ function builtInFieldDef(
     field_type,
     config: {},
     description: null,
-    default: null,
+    default: defaultValue,
     origin: "built_in",
     created_at: "2026-05-26T00:00:00Z",
     created_by: null,

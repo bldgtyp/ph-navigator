@@ -4,6 +4,7 @@ import type { VentilatorRow, VentilatorsSlice } from "../../types";
 import { VentilatorRowModal } from "../../components/VentilatorRowModal";
 
 const EMPTY_VENTILATOR_OPTIONS: VentilatorsSlice["single_select_options"] = {
+  "ventilators.frost_protection": [],
   "ventilators.inside_outside": [],
   "ventilators.status": [],
 };

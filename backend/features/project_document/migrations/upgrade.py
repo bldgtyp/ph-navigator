@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import cast
 
+from features.project_document.custom_fields import TableFieldDef
 from features.project_document.document import CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION, ProjectDocumentV1
 
 
@@ -94,9 +95,87 @@ def _upgrade_v1_to_v2(raw: dict[str, object]) -> dict[str, object]:
     return upgraded
 
 
+def _upgrade_v2_to_v3(raw: dict[str, object]) -> dict[str, object]:
+    """Add downstream-consumer built-ins and new equipment option namespaces."""
+
+    from features.project_document.document import (
+        PUMP_INSIDE_OUTSIDE_OPTION_KEY,
+        VENTILATOR_FROST_PROTECTION_OPTION_KEY,
+    )
+    from features.project_document.tables.hot_water_tanks import HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS
+    from features.project_document.tables.pumps import PUMP_INSIDE_OUTSIDE_OPTIONS, PUMPS_BUILT_IN_FIELD_DEFS
+    from features.project_document.tables.rooms import ROOMS_BUILT_IN_FIELD_DEFS
+    from features.project_document.tables.thermal_bridges import THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS
+    from features.project_document.tables.ventilators import (
+        VENTILATOR_FROST_PROTECTION_OPTIONS,
+        VENTILATORS_BUILT_IN_FIELD_DEFS,
+    )
+
+    upgraded = dict(raw)
+    tables = dict(_mapping(upgraded.get("tables"), "tables"))
+    equipment = dict(_mapping(tables.get("equipment"), "tables.equipment"))
+
+    rooms = dict(_mapping(tables.get("rooms"), "tables.rooms"))
+    rooms["field_defs"] = _merge_current_built_ins(
+        rooms.get("field_defs"),
+        current_built_ins=ROOMS_BUILT_IN_FIELD_DEFS,
+        path="tables.rooms.field_defs",
+    )
+    tables["rooms"] = rooms
+
+    thermal_bridges = dict(_mapping(tables.get("thermal_bridges"), "tables.thermal_bridges"))
+    thermal_bridges["field_defs"] = _merge_current_built_ins(
+        thermal_bridges.get("field_defs"),
+        current_built_ins=THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS,
+        path="tables.thermal_bridges.field_defs",
+    )
+    tables["thermal_bridges"] = thermal_bridges
+
+    pumps = dict(_mapping(equipment.get("pumps"), "tables.equipment.pumps"))
+    pumps["field_defs"] = _merge_current_built_ins(
+        pumps.get("field_defs"),
+        current_built_ins=PUMPS_BUILT_IN_FIELD_DEFS,
+        path="tables.equipment.pumps.field_defs",
+    )
+    equipment["pumps"] = pumps
+
+    ventilators = dict(_mapping(equipment.get("ervs"), "tables.equipment.ervs"))
+    ventilators["field_defs"] = _merge_current_built_ins(
+        ventilators.get("field_defs"),
+        current_built_ins=VENTILATORS_BUILT_IN_FIELD_DEFS,
+        path="tables.equipment.ervs.field_defs",
+    )
+    equipment["ervs"] = ventilators
+
+    hot_water_tanks = dict(_mapping(equipment.get("hot_water_tanks"), "tables.equipment.hot_water_tanks"))
+    hot_water_tanks["field_defs"] = _merge_current_built_ins(
+        hot_water_tanks.get("field_defs"),
+        current_built_ins=HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS,
+        path="tables.equipment.hot_water_tanks.field_defs",
+    )
+    equipment["hot_water_tanks"] = hot_water_tanks
+
+    options = dict(_mapping(upgraded.get("single_select_options"), "single_select_options"))
+    options.setdefault(
+        PUMP_INSIDE_OUTSIDE_OPTION_KEY,
+        [option.model_dump(mode="json") for option in PUMP_INSIDE_OUTSIDE_OPTIONS],
+    )
+    options.setdefault(
+        VENTILATOR_FROST_PROTECTION_OPTION_KEY,
+        [option.model_dump(mode="json") for option in VENTILATOR_FROST_PROTECTION_OPTIONS],
+    )
+
+    tables["equipment"] = equipment
+    upgraded["tables"] = tables
+    upgraded["single_select_options"] = options
+    upgraded["schema_version"] = 3
+    return upgraded
+
+
 UPGRADE_STEPS: dict[int, Callable[[dict[str, object]], dict[str, object]]] = {
     0: _upgrade_v0_to_v1,
     1: _upgrade_v1_to_v2,
+    2: _upgrade_v2_to_v3,
 }
 
 
@@ -166,3 +245,35 @@ def _list(value: object, path: str) -> list[object]:
     if not isinstance(value, list):
         raise SchemaVersionInvalidError(f"project document {path} must be a list")
     return cast(list[object], value)
+
+
+def _merge_current_built_ins(
+    value: object,
+    *,
+    current_built_ins: Sequence[TableFieldDef],
+    path: str,
+) -> list[object]:
+    field_defs = list(_list(value, path))
+    current_by_key = {
+        field.field_key: field.model_dump(mode="json") for field in current_built_ins if field.origin == "built_in"
+    }
+    current_keys = [field.field_key for field in current_built_ins if field.origin == "built_in"]
+    current_key_set = set(current_keys)
+
+    persisted_by_key: dict[str, object] = {}
+    for field in field_defs:
+        if not isinstance(field, Mapping):
+            continue
+        field_mapping = cast(Mapping[str, object], field)
+        field_key = field_mapping.get("field_key")
+        if isinstance(field_key, str):
+            persisted_by_key[field_key] = field
+
+    next_field_defs: list[object] = [
+        persisted_by_key.get(field_key, current_by_key[field_key]) for field_key in current_keys
+    ]
+    for field in field_defs:
+        if isinstance(field, Mapping) and cast(Mapping[str, object], field).get("field_key") in current_key_set:
+            continue
+        next_field_defs.append(field)
+    return next_field_defs

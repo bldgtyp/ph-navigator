@@ -16,7 +16,9 @@ from features.project_document.document import (
     HOT_WATER_HEATER_TYPE_OPTION_KEY,
     HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY,
     HOT_WATER_TANK_TYPE_OPTION_KEY,
+    PUMP_INSIDE_OUTSIDE_OPTION_KEY,
     THERMAL_BRIDGE_TYPE_OPTION_KEY,
+    VENTILATOR_FROST_PROTECTION_OPTION_KEY,
     VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,
     AppliancesTableEnvelope,
     ElectricHeatersTableEnvelope,
@@ -50,11 +52,14 @@ from features.project_document.tables.heat_pumps import (
 )
 from features.project_document.tables.hot_water_heaters import HOT_WATER_HEATERS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.hot_water_tanks import HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS
-from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_DEFS
+from features.project_document.tables.pumps import PUMP_INSIDE_OUTSIDE_OPTIONS, PUMPS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.rooms import ROOMS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.space_types import SPACE_TYPES_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.thermal_bridges import THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS
-from features.project_document.tables.ventilators import VENTILATORS_BUILT_IN_FIELD_DEFS
+from features.project_document.tables.ventilators import (
+    VENTILATOR_FROST_PROTECTION_OPTIONS,
+    VENTILATORS_BUILT_IN_FIELD_DEFS,
+)
 from features.projects.models import CreateProjectRequest
 
 
@@ -109,10 +114,12 @@ def empty_project_document(payload: CreateProjectRequest) -> ProjectDocumentV1:
                 SingleSelectOption(id="opt_pump_dhw_storage", label="7-DHW Storage Pump", color="#f97316", order=2),
                 SingleSelectOption(id="opt_pump_other", label="10-Other", color="#64748b", order=3),
             ],
+            PUMP_INSIDE_OUTSIDE_OPTION_KEY: list(PUMP_INSIDE_OUTSIDE_OPTIONS),
             VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY: [
                 SingleSelectOption(id="opt_vent_inside", label="Inside", color="#3b82f6", order=0),
                 SingleSelectOption(id="opt_vent_outside", label="Outside", color="#10b981", order=1),
             ],
+            VENTILATOR_FROST_PROTECTION_OPTION_KEY: list(VENTILATOR_FROST_PROTECTION_OPTIONS),
             FAN_TYPE_OPTION_KEY: [
                 SingleSelectOption(id="opt_fan_dryer", label="1-Dryer", color="#f97316", order=0),
                 SingleSelectOption(id="opt_fan_kitchen_hood", label="2-Kitchen Hood", color="#0ea5e9", order=1),

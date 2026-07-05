@@ -136,9 +136,15 @@ export const PUMPS_TABLE_NAME = "pumps";
 export const PUMPS_TARGET_TABLE_PATH = ["equipment", "pumps"] as const;
 export const PUMP_DEVICE_TYPE_KEY = "device_type";
 export const PUMP_DEVICE_TYPE_OPTION_KEY = "pumps.device_type";
+export const PUMP_INSIDE_OUTSIDE_KEY = "inside_outside";
+export const PUMP_INSIDE_OUTSIDE_OPTION_KEY = "pumps.inside_outside";
 export const PUMP_DEVICE_TYPE_COLUMN_ID = "device_type";
 export const PUMP_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
-export const PUMP_OPTION_KEYS = [PUMP_DEVICE_TYPE_OPTION_KEY, PUMPS_STATUS_OPTION_KEY] as const;
+export const PUMP_OPTION_KEYS = [
+  PUMP_DEVICE_TYPE_OPTION_KEY,
+  PUMP_INSIDE_OUTSIDE_OPTION_KEY,
+  PUMPS_STATUS_OPTION_KEY,
+] as const;
 
 export type PumpOptionKey = (typeof PUMP_OPTION_KEYS)[number];
 
@@ -183,11 +189,14 @@ export type PumpsReplacePayload = {
 export const VENTILATORS_TABLE_NAME = "ventilators";
 export const VENTILATOR_INSIDE_OUTSIDE_KEY = "inside_outside";
 export const VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY = "ventilators.inside_outside";
+export const VENTILATOR_FROST_PROTECTION_KEY = "frost_protection";
+export const VENTILATOR_FROST_PROTECTION_OPTION_KEY = "ventilators.frost_protection";
 export const VENTILATORS_STATUS_OPTION_KEY = "ventilators.status";
 export const VENTILATOR_INSIDE_OUTSIDE_COLUMN_ID = "inside_outside";
 export const VENTILATOR_DATASHEET_FIELD_KEY = "datasheet_asset_ids";
 export const VENTILATOR_OPTION_KEYS = [
   VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,
+  VENTILATOR_FROST_PROTECTION_OPTION_KEY,
   VENTILATORS_STATUS_OPTION_KEY,
 ] as const;
 

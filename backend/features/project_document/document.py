@@ -98,14 +98,21 @@ ROOM_OPTION_KEYS: tuple[RoomOptionKey, ...] = (
 # hardcoded here (rather than imported) because `_status_field` imports
 # `SingleSelectOption` from this module — importing back would form a cycle.
 PUMP_DEVICE_TYPE_OPTION_KEY = "pumps.device_type"
+PUMP_INSIDE_OUTSIDE_OPTION_KEY = "pumps.inside_outside"
 PUMP_STATUS_OPTION_KEY = "pumps.status"
-PumpOptionKey = Literal["pumps.device_type", "pumps.status"]
-PUMP_OPTION_KEYS: tuple[PumpOptionKey, ...] = (PUMP_DEVICE_TYPE_OPTION_KEY, PUMP_STATUS_OPTION_KEY)
+PumpOptionKey = Literal["pumps.device_type", "pumps.inside_outside", "pumps.status"]
+PUMP_OPTION_KEYS: tuple[PumpOptionKey, ...] = (
+    PUMP_DEVICE_TYPE_OPTION_KEY,
+    PUMP_INSIDE_OUTSIDE_OPTION_KEY,
+    PUMP_STATUS_OPTION_KEY,
+)
 VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY = "ventilators.inside_outside"
+VENTILATOR_FROST_PROTECTION_OPTION_KEY = "ventilators.frost_protection"
 VENTILATOR_STATUS_OPTION_KEY = "ventilators.status"
-VentilatorOptionKey = Literal["ventilators.inside_outside", "ventilators.status"]
+VentilatorOptionKey = Literal["ventilators.inside_outside", "ventilators.frost_protection", "ventilators.status"]
 VENTILATOR_OPTION_KEYS: tuple[VentilatorOptionKey, ...] = (
     VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,
+    VENTILATOR_FROST_PROTECTION_OPTION_KEY,
     VENTILATOR_STATUS_OPTION_KEY,
 )
 FAN_TYPE_OPTION_KEY = "fans.type"
@@ -177,7 +184,11 @@ ROOM_SPACE_TYPE_FIELD_KEY = "space_type_id"
 # v12: aperture glazings/frames move from inline element snapshots to flat,
 # documented project tables (`project_glazings` / `project_frames`) referenced
 # by FK ids from each aperture element.
-CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 2
+#
+# v3: rooms, thermal bridges, ventilators, pumps, and hot-water tanks gain
+# downstream-consumer built-ins (ceiling height, quantities, frost protection,
+# annual energy, heat-gain utilization, and tank temperature/location fields).
+CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 3
 
 # Field keys that have a typed Pydantic column on the row model. Used
 # to split read/write paths between typed columns and the
@@ -262,7 +273,7 @@ class ProjectDocumentTables(BaseModel):
 class ProjectDocumentV1(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: Literal[2] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
+    schema_version: Literal[3] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     project: ProjectDocumentProject
     tables: ProjectDocumentTables = Field(default_factory=ProjectDocumentTables)
     single_select_options: dict[str, list[SingleSelectOption]] = Field(
@@ -270,7 +281,9 @@ class ProjectDocumentV1(BaseModel):
             ROOM_FLOOR_LEVEL_OPTION_KEY: [],
             ROOM_BUILDING_ZONE_OPTION_KEY: [],
             PUMP_DEVICE_TYPE_OPTION_KEY: [],
+            PUMP_INSIDE_OUTSIDE_OPTION_KEY: [],
             VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY: [],
+            VENTILATOR_FROST_PROTECTION_OPTION_KEY: [],
             FAN_TYPE_OPTION_KEY: [],
             HOT_WATER_HEATER_TYPE_OPTION_KEY: [],
             HOT_WATER_TANK_TYPE_OPTION_KEY: [],
@@ -358,6 +371,7 @@ __all__ = [
     "HeatPumpOutdoorUnitsTableEnvelope",
     "HeatPumpsTableSlice",
     "PUMP_DEVICE_TYPE_OPTION_KEY",
+    "PUMP_INSIDE_OUTSIDE_OPTION_KEY",
     "PUMP_OPTION_KEYS",
     "PUMP_STATUS_OPTION_KEY",
     "PUMPS_TYPED_COLUMN_FIELD_KEYS",
@@ -391,6 +405,7 @@ __all__ = [
     "ThermalBridgeRow",
     "ThermalBridgesTableEnvelope",
     "VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY",
+    "VENTILATOR_FROST_PROTECTION_OPTION_KEY",
     "VENTILATOR_STATUS_OPTION_KEY",
     "VENTILATOR_OPTION_KEYS",
     "VENTILATORS_TYPED_COLUMN_FIELD_KEYS",

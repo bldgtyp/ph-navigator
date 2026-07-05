@@ -106,6 +106,14 @@ export function ThermalBridgesTable({
         defaultWidth: 140,
       },
       {
+        id: "quantity",
+        fieldKey: "quantity",
+        header: fieldDefByKey.get("quantity")?.display_name ?? "Quantity",
+        accessor: (row) => customNumberValue(row, "quantity"),
+        defaultWidth: 100,
+        className: "numeric-cell",
+      },
+      {
         id: "psi_value_w_mk",
         fieldKey: "psi_value_w_mk",
         header: fieldDefByKey.get("psi_value_w_mk")?.display_name ?? "Psi-Value",

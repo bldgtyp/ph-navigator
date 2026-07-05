@@ -10,7 +10,11 @@ from pydantic import ValidationError
 from features.project_document.custom_fields import CustomFieldType
 from features.project_document.document import CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION, ProjectDocumentV1, PumpRow
 from features.project_document.tables import get_table_contract
-from features.project_document.tables.pumps import PUMPS_BUILT_IN_FIELD_DEFS, PUMPS_BUILT_IN_FIELD_KEYS
+from features.project_document.tables.pumps import (
+    PUMP_INSIDE_OUTSIDE_OPTIONS,
+    PUMPS_BUILT_IN_FIELD_DEFS,
+    PUMPS_BUILT_IN_FIELD_KEYS,
+)
 from tests.builders.assets import insert_project_asset
 from tests.project_document_helpers import (
     custom_fields_from_slice,
@@ -70,6 +74,8 @@ def pump_payload() -> dict[str, Any]:
                 "datasheet_asset_ids": [],
                 "custom_values": {
                     "record_id": "P-1",
+                    "quantity": 1,
+                    "inside_outside": "opt_pump_inside",
                     "use": "DHW recirc",
                     "manufacturer": "Taco",
                     "model": "0015e3",
@@ -78,11 +84,14 @@ def pump_payload() -> dict[str, Any]:
                     "wattage": 45,
                     "flow_gpm": 15.141647136,
                     "runtime_khr_yr": 2.5,
+                    "annual_energy_kwh": 112.5,
+                    "internal_heat_gains_utilization_factor": 0.4,
                 },
             }
         ],
         "single_select_options": {
             "pumps.device_type": [{"id": "opt_circ", "label": "Circulator", "color": "#3b82f6", "order": 0}],
+            "pumps.inside_outside": [option.model_dump(mode="json") for option in PUMP_INSIDE_OUTSIDE_OPTIONS],
             "pumps.status": status_options_payload(),
         },
     }
@@ -123,6 +132,7 @@ def test_document_allows_duplicate_pump_tags() -> None:
             "rooms.floor_level": [],
             "rooms.building_zone": [],
             "pumps.device_type": [{"id": "opt_circ", "label": "Circulator", "color": "#3b82f6", "order": 0}],
+            "pumps.inside_outside": [option.model_dump(mode="json") for option in PUMP_INSIDE_OUTSIDE_OPTIONS],
         },
     }
     doc = ProjectDocumentV1.model_validate(body)
@@ -172,6 +182,23 @@ def test_pump_flow_field_uses_fixed_flow_rate_units() -> None:
         "precision_si": 1,
         "precision_ip": 1,
     }
+
+
+def test_pump_downstream_consumer_fields_are_seeded() -> None:
+    fields = {field.field_key: field for field in PUMPS_BUILT_IN_FIELD_DEFS}
+
+    assert fields["quantity"].field_type is CustomFieldType.number
+    assert fields["quantity"].default == 1
+    assert fields["inside_outside"].field_type is CustomFieldType.single_select
+    assert fields["annual_energy_kwh"].config["units"] == {
+        "mode": "fixed",
+        "unit_type": "energy",
+        "si_unit": "kwh",
+        "ip_unit": "kbtu",
+        "precision_si": 0,
+        "precision_ip": 0,
+    }
+    assert fields["internal_heat_gains_utilization_factor"].field_type is CustomFieldType.number
 
 
 def test_first_pumps_replace_lazily_creates_draft(clean_document_tables: None) -> None:

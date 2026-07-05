@@ -3,6 +3,7 @@ import { emptyVentilator } from "../lib";
 import {
   STATUS_DEFAULT_OPTION_ID,
   STATUS_FIELD_KEY,
+  VENTILATOR_FROST_PROTECTION_KEY,
   VENTILATOR_INSIDE_OUTSIDE_KEY,
   type VentilatorRow,
 } from "../types";
@@ -51,6 +52,14 @@ export function makeBuildEmptyVentilatorRow(): BuildEmptyRow<VentilatorRow> {
         filter_merv_rating: readNumberDefault(
           fieldDefaults.filter_merv_rating,
           customNumberValue(base, "filter_merv_rating"),
+        ),
+        [VENTILATOR_FROST_PROTECTION_KEY]: readStringDefault(
+          fieldDefaults[VENTILATOR_FROST_PROTECTION_KEY],
+          customTextValueOrNull(base, VENTILATOR_FROST_PROTECTION_KEY),
+        ),
+        frost_protection_limit_temp_c: readNumberDefault(
+          fieldDefaults.frost_protection_limit_temp_c,
+          customNumberValue(base, "frost_protection_limit_temp_c"),
         ),
         [STATUS_FIELD_KEY]: readStatusDefault(
           fieldDefaults[STATUS_FIELD_KEY],

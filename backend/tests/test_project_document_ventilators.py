@@ -10,6 +10,10 @@ from pydantic import ValidationError
 
 from features.project_document.document import CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION, ProjectDocumentV1, VentilatorRow
 from features.project_document.tables.registry import get_table_contract
+from features.project_document.tables.ventilators import (
+    VENTILATOR_FROST_PROTECTION_OPTIONS,
+    VENTILATORS_BUILT_IN_FIELD_DEFS,
+)
 from tests.project_document_helpers import empty_required_tables, empty_ventilators_table
 from tests.status_field_helpers import (
     assert_status_field_def,
@@ -43,6 +47,8 @@ def ventilator_payload() -> dict[str, Any]:
                     "moisture_recovery_percent": 70,
                     "electrical_efficiency_wh_m3": 0.42,
                     "filter_merv_rating": 13,
+                    "frost_protection": "opt_vent_frost_protection_yes",
+                    "frost_protection_limit_temp_c": -5.0,
                 },
             }
         ],
@@ -50,6 +56,9 @@ def ventilator_payload() -> dict[str, Any]:
             "ventilators.inside_outside": [
                 {"id": "opt_vent_inside", "label": "Inside", "color": "#3b82f6", "order": 0},
                 {"id": "opt_vent_outside", "label": "Outside", "color": "#10b981", "order": 1},
+            ],
+            "ventilators.frost_protection": [
+                option.model_dump(mode="json") for option in VENTILATOR_FROST_PROTECTION_OPTIONS
             ],
             "ventilators.status": status_options_payload(),
         },
@@ -63,6 +72,20 @@ def test_ventilator_row_validates_url() -> None:
     assert row.datasheet_asset_ids == []
     with pytest.raises(ValidationError, match="url must start"):
         VentilatorRow.model_validate({**base, "url": "ftp://example.com/erv.pdf"})
+
+
+def test_ventilator_frost_protection_fields_are_seeded() -> None:
+    fields = {field.field_key: field for field in VENTILATORS_BUILT_IN_FIELD_DEFS}
+
+    assert fields["frost_protection"].field_type.value == "single_select"
+    assert fields["frost_protection_limit_temp_c"].config["units"] == {
+        "mode": "fixed",
+        "unit_type": "temperature",
+        "si_unit": "c",
+        "ip_unit": "f",
+        "precision_si": 1,
+        "precision_ip": 1,
+    }
 
 
 def test_document_rejects_missing_inside_outside_option() -> None:

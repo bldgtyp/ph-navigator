@@ -104,6 +104,8 @@ def _save_pump_row(client: TestClient, project_id: object, version_id: object, d
         "link": None,
         "datasheet_asset_ids": datasheet_asset_ids,
         "custom_values": {
+            "quantity": 1,
+            "inside_outside": "opt_pump_inside",
             "use": "DHW recirc",
             "record_id": "P-1",
             "manufacturer": "Taco",
@@ -112,6 +114,8 @@ def _save_pump_row(client: TestClient, project_id: object, version_id: object, d
             "wattage": 45,
             "flow_gpm": 15.141647136,
             "runtime_khr_yr": 2.5,
+            "annual_energy_kwh": 113,
+            "internal_heat_gains_utilization_factor": 0.5,
         },
     }
     put = client.put(
@@ -122,6 +126,7 @@ def _save_pump_row(client: TestClient, project_id: object, version_id: object, d
             "field_defs": [field.model_dump(mode="json") for field in PUMPS_BUILT_IN_FIELD_DEFS],
             "single_select_options": {
                 "pumps.device_type": [{"id": "opt_circ", "label": "Circulator", "color": "#3b82f6", "order": 0}],
+                "pumps.inside_outside": [{"id": "opt_pump_inside", "label": "Inside", "color": "#0ea5e9", "order": 0}],
                 "pumps.status": [],
             },
         },

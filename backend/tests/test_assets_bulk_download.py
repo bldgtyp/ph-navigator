@@ -68,6 +68,7 @@ def _pump_rows_payload(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "field_defs": [field.model_dump(mode="json") for field in PUMPS_BUILT_IN_FIELD_DEFS],
         "single_select_options": {
             "pumps.device_type": [{"id": "opt_circ", "label": "Circulator", "color": "#3b82f6", "order": 0}],
+            "pumps.inside_outside": [{"id": "opt_pump_inside", "label": "Inside", "color": "#0ea5e9", "order": 0}],
             "pumps.status": [],
         },
     }
@@ -82,6 +83,8 @@ def _pump_row(row_id: str, record_id: str, datasheet_asset_ids: list[str]) -> di
         "link": None,
         "datasheet_asset_ids": datasheet_asset_ids,
         "custom_values": {
+            "quantity": 1,
+            "inside_outside": "opt_pump_inside",
             "use": "DHW recirc",
             "record_id": record_id,
             "manufacturer": "Taco",
@@ -90,6 +93,8 @@ def _pump_row(row_id: str, record_id: str, datasheet_asset_ids: list[str]) -> di
             "wattage": 45,
             "flow_gpm": 15.141647136,
             "runtime_khr_yr": 2.5,
+            "annual_energy_kwh": 113,
+            "internal_heat_gains_utilization_factor": 0.5,
         },
     }
 

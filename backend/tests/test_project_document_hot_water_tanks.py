@@ -13,6 +13,7 @@ from features.project_document.document import (
     HotWaterTankRow,
     ProjectDocumentV1,
 )
+from features.project_document.tables.hot_water_tanks import HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS
 from features.project_document.tables.registry import get_table_contract
 from tests.project_document_helpers import empty_hot_water_tanks_table, empty_required_tables
 from tests.status_field_helpers import (
@@ -42,6 +43,8 @@ def hot_water_tank_payload() -> dict[str, Any]:
                     "record_id": "HWT-1",
                     "name": "DHW storage tank",
                     "quantity": 1,
+                    "location_temp_c": 20,
+                    "water_temp_c": 60,
                     "manufacturer": "Acme",
                     "model": "ST-80",
                     "size_l": 302.8,
@@ -68,6 +71,20 @@ def test_hot_water_tank_row_validates_url() -> None:
     assert HotWaterTankRow.model_validate(base).custom_values["record_id"] == "HWT-1"
     with pytest.raises(ValidationError, match="url must start"):
         HotWaterTankRow.model_validate({**base, "url": "ftp://example.com/hwt.pdf"})
+
+
+def test_hot_water_tank_temperature_fields_are_seeded() -> None:
+    fields = {field.field_key: field for field in HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS}
+
+    assert fields["location_temp_c"].config["units"] == {
+        "mode": "fixed",
+        "unit_type": "temperature",
+        "si_unit": "c",
+        "ip_unit": "f",
+        "precision_si": 1,
+        "precision_ip": 1,
+    }
+    assert fields["water_temp_c"].config["units"] == fields["location_temp_c"].config["units"]
 
 
 def test_document_rejects_missing_hot_water_tank_type_option() -> None:

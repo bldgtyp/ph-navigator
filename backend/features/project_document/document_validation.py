@@ -40,12 +40,14 @@ from features.project_document.document import (
     HOT_WATER_TANK_OPTION_KEYS,
     HOT_WATER_TANK_TYPE_OPTION_KEY,
     PUMP_DEVICE_TYPE_OPTION_KEY,
+    PUMP_INSIDE_OUTSIDE_OPTION_KEY,
     PUMP_OPTION_KEYS,
     ROOM_BUILDING_ZONE_OPTION_KEY,
     ROOM_FLOOR_LEVEL_OPTION_KEY,
     ROOM_OPTION_KEYS,
     THERMAL_BRIDGE_OPTION_KEYS,
     THERMAL_BRIDGE_TYPE_OPTION_KEY,
+    VENTILATOR_FROST_PROTECTION_OPTION_KEY,
     VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,
     VENTILATOR_OPTION_KEYS,
 )
@@ -134,6 +136,7 @@ def validate_document_references(document: ProjectDocumentV1) -> ProjectDocument
 
     pumps = document.tables.equipment.pumps.rows
     pump_device_type_ids = {option.id for option in document.single_select_options[PUMP_DEVICE_TYPE_OPTION_KEY]}
+    pump_inside_outside_ids = {option.id for option in document.single_select_options[PUMP_INSIDE_OUTSIDE_OPTION_KEY]}
     validate_typed_option_refs(
         rows=[(pump.id, pump.device_type) for pump in pumps],
         valid_option_ids=pump_device_type_ids,
@@ -228,6 +231,11 @@ def validate_document_references(document: ProjectDocumentV1) -> ProjectDocument
         rows=document.tables.equipment.electric_heaters.rows,
         single_select_options=document.single_select_options,
         target_row_ids=target_row_ids,
+    )
+    validate_typed_option_refs(
+        rows=[(pump.id, _custom_option_ref(pump, "inside_outside")) for pump in pumps],
+        valid_option_ids=pump_inside_outside_ids,
+        missing_message="Missing pump inside/outside option for pump {row_id}: {value}",
     )
 
     appliances = document.tables.equipment.appliances.rows
@@ -338,10 +346,18 @@ def validate_document_references(document: ProjectDocumentV1) -> ProjectDocument
 
     ventilators = document.tables.equipment.ervs.rows
     inside_outside_ids = {option.id for option in document.single_select_options[VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY]}
+    frost_protection_ids = {
+        option.id for option in document.single_select_options[VENTILATOR_FROST_PROTECTION_OPTION_KEY]
+    }
     validate_typed_option_refs(
         rows=[(ventilator.id, ventilator.inside_outside) for ventilator in ventilators],
         valid_option_ids=inside_outside_ids,
         missing_message="Missing ventilator inside/outside option for ventilator {row_id}: {value}",
+    )
+    validate_typed_option_refs(
+        rows=[(ventilator.id, _custom_option_ref(ventilator, "frost_protection")) for ventilator in ventilators],
+        valid_option_ids=frost_protection_ids,
+        missing_message="Missing ventilator frost protection option for ventilator {row_id}: {value}",
     )
     validate_generic_table(
         table_label="ventilators",
@@ -391,6 +407,13 @@ def _validate_heat_pump_option(
         return
     if option_id not in option_ids_by_key[option_key]:
         raise ValueError(f"Missing heat-pump option {option_key} for row {row_id}: {option_id}")
+
+
+def _custom_option_ref(row: RowWithIdentity, field_key: str) -> str | None:
+    value = row.custom_values.get(field_key)
+    if value is None or isinstance(value, str):
+        return value
+    raise ValueError(f"Expected option id text for {field_key} on row {row.id}: {value!r}")
 
 
 def _validate_min_zero(rows: Sequence[RowWithIdentity], field_key: str, message: str) -> None:

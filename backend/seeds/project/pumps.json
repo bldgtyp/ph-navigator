@@ -21,6 +21,10 @@
       },
       { "id": "opt_pump_other", "label": "10-Other", "color": "#64748b", "order": 3 }
     ],
+    "pumps.inside_outside": [
+      { "id": "opt_pump_inside", "label": "Inside", "color": "#0ea5e9", "order": 0 },
+      { "id": "opt_pump_outside", "label": "Outside", "color": "#f97316", "order": 1 }
+    ],
     "pumps.status": [
       { "id": "opt_status_complete", "label": "Complete", "color": "#16a34a", "order": 0 },
       { "id": "opt_status_needed", "label": "Needed", "color": "#d97706", "order": 1 },
@@ -37,6 +41,8 @@
       "notes": "DHW recirculation pump.",
       "custom_values": {
         "record_id": "P-1",
+        "quantity": 1,
+        "inside_outside": "opt_pump_inside",
         "use": "DHW recirc",
         "manufacturer": "Taco",
         "model": "0015e3",
@@ -45,6 +51,8 @@
         "wattage": 45,
         "flow_gpm": 15.141647136,
         "runtime_khr_yr": 2.5,
+        "annual_energy_kwh": 112.5,
+        "internal_heat_gains_utilization_factor": 0.4,
         "status": "opt_status_complete"
       }
     },
@@ -56,6 +64,8 @@
       "notes": "Hydronic heating loop.",
       "custom_values": {
         "record_id": "P-2",
+        "quantity": 1,
+        "inside_outside": "opt_pump_inside",
         "use": "Hydronic heating",
         "manufacturer": "Grundfos",
         "model": "Alpha2 15-55",
@@ -64,6 +74,8 @@
         "wattage": 45,
         "flow_gpm": 22.712470704,
         "runtime_khr_yr": 4.0,
+        "annual_energy_kwh": 180,
+        "internal_heat_gains_utilization_factor": 0.5,
         "status": "opt_status_needed"
       }
     },
@@ -75,6 +87,8 @@
       "notes": "Shallow-well jet pump.",
       "custom_values": {
         "record_id": "P-3",
+        "quantity": 1,
+        "inside_outside": "opt_pump_inside",
         "use": "Domestic water supply",
         "manufacturer": "Goulds",
         "model": "JRS5",
@@ -83,6 +97,8 @@
         "wattage": 750,
         "flow_gpm": 45.424941408,
         "runtime_khr_yr": 0.8,
+        "annual_energy_kwh": 600,
+        "internal_heat_gains_utilization_factor": 0.3,
         "status": "opt_status_question"
       }
     },
@@ -94,6 +110,8 @@
       "notes": "Primary basement sump pump.",
       "custom_values": {
         "record_id": "P-4",
+        "quantity": 1,
+        "inside_outside": "opt_pump_inside",
         "use": "Sump",
         "manufacturer": "Zoeller",
         "model": "M53",
@@ -102,6 +120,8 @@
         "wattage": 360,
         "flow_gpm": 162.772706712,
         "runtime_khr_yr": 0.15,
+        "annual_energy_kwh": 54,
+        "internal_heat_gains_utilization_factor": 0,
         "status": "opt_status_na"
       }
     },
@@ -113,6 +133,8 @@
       "notes": "Solar thermal loop pump (optional).",
       "custom_values": {
         "record_id": "P-5",
+        "quantity": 1,
+        "inside_outside": "opt_pump_outside",
         "use": "Solar thermal",
         "manufacturer": "Wilo",
         "model": "Star-Z 15",
@@ -121,6 +143,8 @@
         "wattage": 60,
         "flow_gpm": 18.92705892,
         "runtime_khr_yr": 1.6,
+        "annual_energy_kwh": 96,
+        "internal_heat_gains_utilization_factor": 0.2,
         "status": "opt_status_complete"
       }
     }

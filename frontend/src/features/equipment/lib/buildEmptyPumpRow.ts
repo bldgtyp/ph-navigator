@@ -2,6 +2,7 @@ import type { BuildEmptyRow } from "../../../shared/ui/data-table";
 import { emptyPump } from "../lib";
 import {
   PUMP_DEVICE_TYPE_KEY,
+  PUMP_INSIDE_OUTSIDE_KEY,
   STATUS_DEFAULT_OPTION_ID,
   STATUS_FIELD_KEY,
   type PumpRow,
@@ -25,6 +26,11 @@ export function makeBuildEmptyPumpRow(): BuildEmptyRow<PumpRow> {
           fieldDefaults.record_id,
           customTextValueOrNull(base, "record_id"),
         ),
+        quantity: readNumberDefault(fieldDefaults.quantity, customNumberValue(base, "quantity")),
+        [PUMP_INSIDE_OUTSIDE_KEY]: readStringDefault(
+          fieldDefaults[PUMP_INSIDE_OUTSIDE_KEY],
+          customTextValueOrNull(base, PUMP_INSIDE_OUTSIDE_KEY),
+        ),
         use: readStringDefault(fieldDefaults.use, customTextValueOrNull(base, "use")),
         manufacturer: readStringDefault(
           fieldDefaults.manufacturer,
@@ -41,6 +47,14 @@ export function makeBuildEmptyPumpRow(): BuildEmptyRow<PumpRow> {
         runtime_khr_yr: readNumberDefault(
           fieldDefaults.runtime_khr_yr,
           customNumberValue(base, "runtime_khr_yr"),
+        ),
+        annual_energy_kwh: readNumberDefault(
+          fieldDefaults.annual_energy_kwh,
+          customNumberValue(base, "annual_energy_kwh"),
+        ),
+        internal_heat_gains_utilization_factor: readNumberDefault(
+          fieldDefaults.internal_heat_gains_utilization_factor,
+          customNumberValue(base, "internal_heat_gains_utilization_factor"),
         ),
         [STATUS_FIELD_KEY]: readStatusDefault(
           fieldDefaults[STATUS_FIELD_KEY],

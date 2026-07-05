@@ -65,6 +65,8 @@ import {
   PUMP_DEVICE_TYPE_COLUMN_ID,
   PUMP_DEVICE_TYPE_KEY,
   PUMP_DEVICE_TYPE_OPTION_KEY,
+  PUMP_INSIDE_OUTSIDE_KEY,
+  PUMP_INSIDE_OUTSIDE_OPTION_KEY,
   PUMPS_STATUS_OPTION_KEY,
   STATUS_DEFAULT_OPTION_ID,
   STATUS_DISPLAY_NAME,
@@ -78,6 +80,8 @@ import {
   ROOM_SPACE_TYPE_FIELD_KEY,
   ROOMS_TABLE_NAME,
   VENTILATOR_DATASHEET_FIELD_KEY,
+  VENTILATOR_FROST_PROTECTION_KEY,
+  VENTILATOR_FROST_PROTECTION_OPTION_KEY,
   VENTILATOR_INSIDE_OUTSIDE_COLUMN_ID,
   VENTILATOR_INSIDE_OUTSIDE_KEY,
   VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,
@@ -145,13 +149,29 @@ export const PUMP_FLOW_RATE_UNITS: NumberUnitsConfig = {
   precision_si: 1,
   precision_ip: 1,
 };
-export const APPLIANCE_ANNUAL_ENERGY_UNITS: NumberUnitsConfig = {
+export const ANNUAL_ENERGY_UNITS: NumberUnitsConfig = {
   mode: "fixed",
   unit_type: "energy",
   si_unit: "kwh",
   ip_unit: "kbtu",
   precision_si: 0,
   precision_ip: 0,
+};
+const TEMPERATURE_UNITS: NumberUnitsConfig = {
+  mode: "fixed",
+  unit_type: "temperature",
+  si_unit: "c",
+  ip_unit: "f",
+  precision_si: 1,
+  precision_ip: 1,
+};
+const LENGTH_M_UNITS: NumberUnitsConfig = {
+  mode: "fixed",
+  unit_type: "length",
+  si_unit: "m",
+  ip_unit: "ft",
+  precision_si: 2,
+  precision_ip: 2,
 };
 
 type RoomCellWrite = { rowId: string; fieldKey: string; value: unknown };
@@ -245,10 +265,18 @@ export const APPLIANCES_SCHEMA_CORE_FIELD_KEYS = [
   "custom_values",
 ] as const;
 
-const ROOM_CUSTOM_VALUE_FIELD_KEYS = new Set(["number", "name", "num_people", "num_bedrooms"]);
+const ROOM_CUSTOM_VALUE_FIELD_KEYS = new Set([
+  "number",
+  "name",
+  "num_people",
+  "num_bedrooms",
+  "ceiling_height_m",
+]);
 const PUMP_CUSTOM_VALUE_FIELD_KEYS = new Set([
   "record_id",
   "name",
+  "quantity",
+  PUMP_INSIDE_OUTSIDE_KEY,
   "use",
   "manufacturer",
   "model",
@@ -257,6 +285,8 @@ const PUMP_CUSTOM_VALUE_FIELD_KEYS = new Set([
   "wattage",
   "flow_gpm",
   "runtime_khr_yr",
+  "annual_energy_kwh",
+  "internal_heat_gains_utilization_factor",
   STATUS_FIELD_KEY,
 ]);
 const VENTILATOR_CUSTOM_VALUE_FIELD_KEYS = new Set([
@@ -269,6 +299,8 @@ const VENTILATOR_CUSTOM_VALUE_FIELD_KEYS = new Set([
   "moisture_recovery_percent",
   "electrical_efficiency_wh_m3",
   "filter_merv_rating",
+  VENTILATOR_FROST_PROTECTION_KEY,
+  "frost_protection_limit_temp_c",
   STATUS_FIELD_KEY,
 ]);
 const FAN_CUSTOM_VALUE_FIELD_KEYS = new Set([
@@ -307,6 +339,8 @@ const HOT_WATER_TANK_CUSTOM_VALUE_FIELD_KEYS = new Set([
   "manufacturer",
   "model",
   "size_l",
+  "location_temp_c",
+  "water_temp_c",
   "heat_loss_rate_w_k",
   STATUS_FIELD_KEY,
 ]);
@@ -383,6 +417,10 @@ export const ROOMS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("num_people", "People", "number"),
   builtInFieldDef("num_bedrooms", "Bedrooms", "number"),
   {
+    ...builtInFieldDef("ceiling_height_m", "Ceiling Height", "number"),
+    config: { units: LENGTH_M_UNITS },
+  },
+  {
     ...builtInFieldDef("supply_airflow_m3h", "Supply airflow rate", "number"),
     config: {
       units: {
@@ -414,7 +452,9 @@ export const ROOMS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
 export const PUMPS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("record_id", "Tag", "short_text"),
   builtInFieldDef("name", "Display Name", "short_text"),
+  builtInFieldDef("quantity", "Quantity", "number", 1),
   builtInFieldDef(PUMP_DEVICE_TYPE_KEY, "Device", "single_select"),
+  builtInFieldDef(PUMP_INSIDE_OUTSIDE_KEY, "Inside / Outside", "single_select"),
   builtInFieldDef("use", "Use", "short_text"),
   builtInFieldDef("manufacturer", "Manufacturer", "short_text"),
   builtInFieldDef("model", "Model", "short_text"),
@@ -429,6 +469,15 @@ export const PUMPS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
     },
   },
   builtInFieldDef("runtime_khr_yr", "Runtime - kHR/YEAR", "number"),
+  {
+    ...builtInFieldDef("annual_energy_kwh", "Annual Energy", "number"),
+    config: { units: ANNUAL_ENERGY_UNITS },
+  },
+  builtInFieldDef(
+    "internal_heat_gains_utilization_factor",
+    "Internal Heat Gains Utilization Factor",
+    "number",
+  ),
   builtInFieldDef("link", "Link", "url"),
   builtInFieldDef("notes", "Notes", "long_text"),
   builtInFieldDef(PUMP_DATASHEET_FIELD_KEY, "Datasheet", "long_text"),
@@ -469,6 +518,11 @@ export const VENTILATORS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
     },
   },
   builtInFieldDef("filter_merv_rating", "Filter MERV Rating", "number"),
+  builtInFieldDef(VENTILATOR_FROST_PROTECTION_KEY, "Frost Protection", "single_select"),
+  {
+    ...builtInFieldDef("frost_protection_limit_temp_c", "Frost Protection Limit Temp", "number"),
+    config: { units: TEMPERATURE_UNITS },
+  },
   builtInFieldDef(VENTILATOR_INSIDE_OUTSIDE_KEY, "Inside / Outside", "single_select"),
   builtInFieldDef("url", "URL", "url"),
   builtInFieldDef("notes", "Notes", "long_text"),
@@ -559,6 +613,14 @@ export const HOT_WATER_TANKS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   builtInFieldDef("quantity", "Quantity", "number", 1),
   builtInFieldDef(HOT_WATER_TANK_TYPE_KEY, "Type", "single_select"),
   builtInFieldDef(HOT_WATER_TANK_INSIDE_OUTSIDE_KEY, "Inside / Outside", "single_select"),
+  {
+    ...builtInFieldDef("location_temp_c", "Location Temp", "number"),
+    config: { units: TEMPERATURE_UNITS },
+  },
+  {
+    ...builtInFieldDef("water_temp_c", "Water Temp", "number"),
+    config: { units: TEMPERATURE_UNITS },
+  },
   builtInFieldDef("manufacturer", "Manufacturer", "short_text"),
   builtInFieldDef("model", "Model", "short_text"),
   {
@@ -632,7 +694,7 @@ export const APPLIANCES_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
   {
     ...builtInFieldDef("annual_energy_kwh", "Annual Energy", "number"),
     config: {
-      units: APPLIANCE_ANNUAL_ENERGY_UNITS,
+      units: ANNUAL_ENERGY_UNITS,
     },
   },
   builtInFieldDef("url", "URL", "url"),
@@ -668,6 +730,10 @@ export function roomsFieldOverlay(roomsSlice: RoomsSlice): Record<string, TableF
     },
     num_bedrooms: {
       locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    ceiling_height_m: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+      numberUnits: LENGTH_M_UNITS,
     },
     supply_airflow_m3h: {
       locked: DEFAULT_BUILT_IN_LOCKS,
@@ -752,8 +818,15 @@ export function pumpsFieldOverlay(pumpsSlice: PumpsSlice): Record<string, TableF
     record_id: {
       locked: ["display_name", "delete", "duplicate"],
     },
+    quantity: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
     [PUMP_DEVICE_TYPE_KEY]: {
       options: pumpsSlice.single_select_options[PUMP_DEVICE_TYPE_OPTION_KEY],
+      locked: ["field_type", "options", "delete", "duplicate"],
+    },
+    [PUMP_INSIDE_OUTSIDE_KEY]: {
+      options: pumpsSlice.single_select_options[PUMP_INSIDE_OUTSIDE_OPTION_KEY],
       locked: ["field_type", "options", "delete", "duplicate"],
     },
     use: {
@@ -786,6 +859,13 @@ export function pumpsFieldOverlay(pumpsSlice: PumpsSlice): Record<string, TableF
         : {}),
     },
     runtime_khr_yr: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    annual_energy_kwh: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+      numberUnits: ANNUAL_ENERGY_UNITS,
+    },
+    internal_heat_gains_utilization_factor: {
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
     notes: {
@@ -844,6 +924,14 @@ export function ventilatorsFieldOverlay(
     },
     filter_merv_rating: {
       locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    [VENTILATOR_FROST_PROTECTION_KEY]: {
+      options: ventilatorsSlice.single_select_options[VENTILATOR_FROST_PROTECTION_OPTION_KEY],
+      locked: ["field_type", "options", "delete", "duplicate"],
+    },
+    frost_protection_limit_temp_c: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+      numberUnits: TEMPERATURE_UNITS,
     },
     [VENTILATOR_INSIDE_OUTSIDE_KEY]: {
       options: ventilatorsSlice.single_select_options[VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY],
@@ -1037,6 +1125,14 @@ export function hotWaterTanksFieldOverlay(
       options: hotWaterTanksSlice.single_select_options[HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY],
       locked: ["field_type", "options", "delete", "duplicate"],
     },
+    location_temp_c: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+      numberUnits: TEMPERATURE_UNITS,
+    },
+    water_temp_c: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+      numberUnits: TEMPERATURE_UNITS,
+    },
     manufacturer: {
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
@@ -1155,7 +1251,7 @@ export function appliancesFieldOverlay(
     },
     annual_energy_kwh: {
       locked: DEFAULT_BUILT_IN_LOCKS,
-      numberUnits: APPLIANCE_ANNUAL_ENERGY_UNITS,
+      numberUnits: ANNUAL_ENERGY_UNITS,
     },
     url: {
       locked: ["field_type", "delete", "duplicate"],
@@ -3576,6 +3672,9 @@ function powerFactorOrOriginal(
 function clonePumpOptions(current: PumpsSlice): PumpsReplacePayload["single_select_options"] {
   return {
     [PUMP_DEVICE_TYPE_OPTION_KEY]: [...current.single_select_options[PUMP_DEVICE_TYPE_OPTION_KEY]],
+    [PUMP_INSIDE_OUTSIDE_OPTION_KEY]: [
+      ...current.single_select_options[PUMP_INSIDE_OUTSIDE_OPTION_KEY],
+    ],
     [PUMPS_STATUS_OPTION_KEY]: [...(current.single_select_options[PUMPS_STATUS_OPTION_KEY] ?? [])],
   };
 }
@@ -3586,6 +3685,9 @@ function cloneVentilatorOptions(
   return {
     [VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY]: [
       ...current.single_select_options[VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY],
+    ],
+    [VENTILATOR_FROST_PROTECTION_OPTION_KEY]: [
+      ...current.single_select_options[VENTILATOR_FROST_PROTECTION_OPTION_KEY],
     ],
     [VENTILATORS_STATUS_OPTION_KEY]: [
       ...(current.single_select_options[VENTILATORS_STATUS_OPTION_KEY] ?? []),

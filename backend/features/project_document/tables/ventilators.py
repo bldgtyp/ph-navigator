@@ -13,6 +13,7 @@ from features.project_document.custom_fields import (
     TableFieldDef,
 )
 from features.project_document.document import (
+    VENTILATOR_FROST_PROTECTION_OPTION_KEY,
     VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,
     VENTILATOR_OPTION_KEYS,
     VENTILATOR_STATUS_OPTION_KEY,
@@ -35,6 +36,11 @@ from features.project_document.validation import validate_document
 
 VENTILATORS_TABLE_NAME = "ventilators"
 _VENTILATORS_TABLE_PATH: tuple[str, ...] = ("equipment", "ervs")
+
+VENTILATOR_FROST_PROTECTION_OPTIONS: tuple[SingleSelectOption, ...] = (
+    SingleSelectOption(id="opt_vent_frost_protection_yes", label="Yes", color="#0ea5e9", order=0),
+    SingleSelectOption(id="opt_vent_frost_protection_no", label="No", color="#64748b", order=1),
+)
 
 
 VENTILATORS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
@@ -89,6 +95,26 @@ VENTILATORS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
         field_key="filter_merv_rating", display_name="Filter MERV Rating", field_type=CustomFieldType.number
     ),
     built_in_field_def(
+        field_key="frost_protection",
+        display_name="Frost Protection",
+        field_type=CustomFieldType.single_select,
+    ),
+    built_in_field_def(
+        field_key="frost_protection_limit_temp_c",
+        display_name="Frost Protection Limit Temp",
+        field_type=CustomFieldType.number,
+        config={
+            "units": {
+                "mode": "fixed",
+                "unit_type": "temperature",
+                "si_unit": "c",
+                "ip_unit": "f",
+                "precision_si": 1,
+                "precision_ip": 1,
+            }
+        },
+    ),
+    built_in_field_def(
         field_key="inside_outside",
         display_name="Inside / Outside",
         field_type=CustomFieldType.single_select,
@@ -117,6 +143,7 @@ class VentilatorsSliceOptions(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     ventilators_inside_outside: list[SingleSelectOption] = Field(alias=VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY)
+    ventilators_frost_protection: list[SingleSelectOption] = Field(alias=VENTILATOR_FROST_PROTECTION_OPTION_KEY)
     ventilators_status: list[SingleSelectOption] = Field(alias=VENTILATOR_STATUS_OPTION_KEY)
 
     @model_validator(mode="after")
@@ -127,6 +154,7 @@ class VentilatorsSliceOptions(BaseModel):
     def by_option_key(self) -> dict[str, list[SingleSelectOption]]:
         return {
             VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY: self.ventilators_inside_outside,
+            VENTILATOR_FROST_PROTECTION_OPTION_KEY: self.ventilators_frost_protection,
             VENTILATOR_STATUS_OPTION_KEY: self.ventilators_status,
         }
 
@@ -236,6 +264,7 @@ def ventilators_response(
         field_defs=body.tables.equipment.ervs.field_defs,
         single_select_options={
             VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY: body.single_select_options[VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY],
+            VENTILATOR_FROST_PROTECTION_OPTION_KEY: body.single_select_options[VENTILATOR_FROST_PROTECTION_OPTION_KEY],
             VENTILATOR_STATUS_OPTION_KEY: body.single_select_options[VENTILATOR_STATUS_OPTION_KEY],
             **custom_option_lists_for_table(body, _VENTILATORS_TABLE_PATH),
         },
@@ -258,6 +287,10 @@ def extract_ventilators_diff_value(body: ProjectDocumentV1) -> dict[str, object]
                 option.model_dump(mode="json")
                 for option in body.single_select_options[VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY]
             ],
+            VENTILATOR_FROST_PROTECTION_OPTION_KEY: [
+                option.model_dump(mode="json")
+                for option in body.single_select_options[VENTILATOR_FROST_PROTECTION_OPTION_KEY]
+            ],
             VENTILATOR_STATUS_OPTION_KEY: [
                 option.model_dump(mode="json") for option in body.single_select_options[VENTILATOR_STATUS_OPTION_KEY]
             ],
@@ -269,7 +302,10 @@ ventilators_field_registry = make_field_registry(
     field_keys=VENTILATORS_BUILT_IN_FIELD_KEYS,
     table_path=_VENTILATORS_TABLE_PATH,
     row_model=VentilatorRow,
-    built_in_option_key_by_field_key={"inside_outside": VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY},
+    built_in_option_key_by_field_key={
+        "inside_outside": VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,
+        "frost_protection": VENTILATOR_FROST_PROTECTION_OPTION_KEY,
+    },
     built_in_formula_types=VENTILATORS_TYPED_COLUMN_FORMULA_TYPES,
 )
 

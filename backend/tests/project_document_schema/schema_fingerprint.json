@@ -1,8 +1,8 @@
 {
-  "fingerprint": "443e350b41107b0cdc93247eae2f10c5f05ed106ec4baea6abef51b90bfb1dad",
+  "fingerprint": "54c0248c84b113740c0c9e9c511d9bbbfcc4bede710e89f9b4efdbf695c1166c",
   "fixture_input_count": 2,
   "fixture_versions": [
     "v1"
   ],
-  "schema_version": 2
+  "schema_version": 3
 }

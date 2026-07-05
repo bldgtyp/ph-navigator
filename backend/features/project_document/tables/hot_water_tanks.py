@@ -53,6 +53,36 @@ HOT_WATER_TANKS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
         display_name="Inside / Outside",
         field_type=CustomFieldType.single_select,
     ),
+    built_in_field_def(
+        field_key="location_temp_c",
+        display_name="Location Temp",
+        field_type=CustomFieldType.number,
+        config={
+            "units": {
+                "mode": "fixed",
+                "unit_type": "temperature",
+                "si_unit": "c",
+                "ip_unit": "f",
+                "precision_si": 1,
+                "precision_ip": 1,
+            }
+        },
+    ),
+    built_in_field_def(
+        field_key="water_temp_c",
+        display_name="Water Temp",
+        field_type=CustomFieldType.number,
+        config={
+            "units": {
+                "mode": "fixed",
+                "unit_type": "temperature",
+                "si_unit": "c",
+                "ip_unit": "f",
+                "precision_si": 1,
+                "precision_ip": 1,
+            }
+        },
+    ),
     built_in_field_def(field_key="manufacturer", display_name="Manufacturer", field_type=CustomFieldType.short_text),
     built_in_field_def(field_key="model", display_name="Model", field_type=CustomFieldType.short_text),
     built_in_field_def(

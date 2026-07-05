@@ -21,6 +21,7 @@ from features.project_document.tables.rooms import (
     apply_rooms_replace,
 )
 from features.project_document.tables.ventilators import (
+    VENTILATOR_FROST_PROTECTION_OPTION_KEY,
     VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,
     VENTILATOR_STATUS_OPTION_KEY,
     VentilatorsSliceReplaceRequest,
@@ -92,6 +93,8 @@ def _ventilator(vent_id: str, record_id: str) -> dict[str, Any]:
             "moisture_recovery_percent": 60,
             "electrical_efficiency_wh_m3": 0.4,
             "filter_merv_rating": 13,
+            "frost_protection": "opt_vent_frost_protection_no",
+            "frost_protection_limit_temp_c": -5,
         },
     }
 
@@ -133,6 +136,14 @@ def _build_body(
         if ventilators
         else []
     )
+    frost_protection_options = (
+        [
+            {"id": "opt_vent_frost_protection_yes", "label": "Yes", "color": "#0ea5e9", "order": 0},
+            {"id": "opt_vent_frost_protection_no", "label": "No", "color": "#64748b", "order": 1},
+        ]
+        if ventilators
+        else []
+    )
 
     return ProjectDocumentV1.model_validate(
         {
@@ -144,6 +155,7 @@ def _build_body(
                 ROOM_BUILDING_ZONE_OPTION_KEY: [],
                 "pumps.device_type": [],
                 VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY: inside_outside_options,
+                VENTILATOR_FROST_PROTECTION_OPTION_KEY: frost_protection_options,
             },
         }
     )
@@ -162,6 +174,9 @@ def _ventilators_payload(body: ProjectDocumentV1, ventilators: list[dict[str, An
                 ],
                 VENTILATOR_STATUS_OPTION_KEY: [
                     opt.model_dump() for opt in body.single_select_options[VENTILATOR_STATUS_OPTION_KEY]
+                ],
+                VENTILATOR_FROST_PROTECTION_OPTION_KEY: [
+                    opt.model_dump() for opt in body.single_select_options[VENTILATOR_FROST_PROTECTION_OPTION_KEY]
                 ],
             },
             "field_defs": [field.model_dump(mode="json") for field in body.tables.equipment.ervs.field_defs],

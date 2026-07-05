@@ -32,6 +32,10 @@ export function makeBuildEmptyRoomRow(roomsSlice: RoomsSlice): BuildEmptyRow<Roo
         num_bedrooms:
           readNumberDefault(fieldDefaults.num_bedrooms, customNumberValue(base, "num_bedrooms")) ??
           0,
+        ceiling_height_m: readNumberDefault(
+          fieldDefaults.ceiling_height_m,
+          customNumberValue(base, "ceiling_height_m"),
+        ),
       },
     };
   };

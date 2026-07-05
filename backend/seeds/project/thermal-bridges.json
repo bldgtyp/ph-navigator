@@ -23,6 +23,7 @@
         "name": "Roof Parapet",
         "sheet_name": "A-501",
         "drawing_number": "4/A-501",
+        "quantity": 1,
         "psi_value_w_mk": 0.094,
         "frsi_value": 0.83,
         "status": "opt_status_complete"
@@ -38,6 +39,7 @@
         "name": "Entry Threshold",
         "sheet_name": "A-502",
         "drawing_number": "2/A-502",
+        "quantity": 2,
         "psi_value_w_mk": 0.057,
         "frsi_value": 0.79,
         "status": "opt_status_needed"
@@ -53,6 +55,7 @@
         "name": "Footing Junction",
         "sheet_name": "S-301",
         "drawing_number": "1/S-301",
+        "quantity": 1,
         "psi_value_w_mk": 0.112,
         "frsi_value": 0.88,
         "status": "opt_status_question"
@@ -68,6 +71,7 @@
         "name": "Canopy Knife Plate",
         "sheet_name": "A-503",
         "drawing_number": "7/A-503",
+        "quantity": 3,
         "psi_value_w_mk": 0.181,
         "frsi_value": 0.72,
         "status": "opt_status_na"
@@ -83,6 +87,7 @@
         "name": "Balcony Bracket",
         "sheet_name": "A-504",
         "drawing_number": "5/A-504",
+        "quantity": 4,
         "psi_value_w_mk": 0.139,
         "frsi_value": 0.76,
         "status": "opt_status_complete"

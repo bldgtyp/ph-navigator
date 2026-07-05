@@ -4,6 +4,10 @@
       { "id": "opt_vent_inside", "label": "Inside", "color": "#3b82f6", "order": 0 },
       { "id": "opt_vent_outside", "label": "Outside", "color": "#10b981", "order": 1 }
     ],
+    "ventilators.frost_protection": [
+      { "id": "opt_vent_frost_protection_yes", "label": "Yes", "color": "#0ea5e9", "order": 0 },
+      { "id": "opt_vent_frost_protection_no", "label": "No", "color": "#64748b", "order": 1 }
+    ],
     "ventilators.status": [
       { "id": "opt_status_complete", "label": "Complete", "color": "#16a34a", "order": 0 },
       { "id": "opt_status_needed", "label": "Needed", "color": "#d97706", "order": 1 },
@@ -28,6 +32,8 @@
         "moisture_recovery_percent": 70,
         "electrical_efficiency_wh_m3": 0.42,
         "filter_merv_rating": 13,
+        "frost_protection": "opt_vent_frost_protection_yes",
+        "frost_protection_limit_temp_c": -5,
         "status": "opt_status_complete"
       }
     },
@@ -47,6 +53,8 @@
         "moisture_recovery_percent": 68,
         "electrical_efficiency_wh_m3": 0.48,
         "filter_merv_rating": 13,
+        "frost_protection": "opt_vent_frost_protection_yes",
+        "frost_protection_limit_temp_c": -5,
         "status": "opt_status_needed"
       }
     },
@@ -66,6 +74,8 @@
         "moisture_recovery_percent": 55,
         "electrical_efficiency_wh_m3": 0.55,
         "filter_merv_rating": 8,
+        "frost_protection": "opt_vent_frost_protection_yes",
+        "frost_protection_limit_temp_c": -10,
         "status": "opt_status_question"
       }
     },
@@ -85,6 +95,8 @@
         "moisture_recovery_percent": 60,
         "electrical_efficiency_wh_m3": 0.45,
         "filter_merv_rating": 13,
+        "frost_protection": "opt_vent_frost_protection_no",
+        "frost_protection_limit_temp_c": null,
         "status": "opt_status_na"
       }
     },
@@ -104,6 +116,8 @@
         "moisture_recovery_percent": 0,
         "electrical_efficiency_wh_m3": 0.6,
         "filter_merv_rating": 8,
+        "frost_protection": "opt_vent_frost_protection_yes",
+        "frost_protection_limit_temp_c": -8,
         "status": "opt_status_complete"
       }
     }

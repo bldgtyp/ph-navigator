@@ -239,6 +239,18 @@ def test_empty_project_document_has_room_airflow_field_defs() -> None:
 
     assert "supply_airflow_m3h" not in ROOMS_TYPED_COLUMN_FIELD_KEYS
     assert "extract_airflow_m3h" not in ROOMS_TYPED_COLUMN_FIELD_KEYS
+    ceiling_height = fields_by_key["ceiling_height_m"]
+    assert ceiling_height.display_name == "Ceiling Height"
+    assert ceiling_height.origin == "built_in"
+    assert ceiling_height.field_type is CustomFieldType.number
+    assert ceiling_height.config["units"] == {
+        "mode": "fixed",
+        "unit_type": "length",
+        "si_unit": "m",
+        "ip_unit": "ft",
+        "precision_si": 2,
+        "precision_ip": 2,
+    }
     for field_key, display_name in (
         ("supply_airflow_m3h", "Supply airflow rate"),
         ("extract_airflow_m3h", "Extract airflow rate"),
@@ -273,7 +285,7 @@ def test_project_document_upgrade_entrypoint_accepts_current_and_v0_baseline() -
     upgraded = upgrade_project_document(old)
     assert upgraded.original_schema_version == 0
     assert upgraded.target_schema_version == CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
-    assert upgraded.applied_steps == ("_upgrade_v0_to_v1", "_upgrade_v1_to_v2")
+    assert upgraded.applied_steps == ("_upgrade_v0_to_v1", "_upgrade_v1_to_v2", "_upgrade_v2_to_v3")
     assert upgraded.document.schema_version == CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     assert upgraded.requires_persisted_rewrite is True
 
@@ -309,14 +321,50 @@ def test_project_document_v1_upgrade_adds_rooms_airflow_fields_and_preserves_val
     field_keys = [field.field_key for field in result.document.tables.rooms.field_defs]
     assert result.original_schema_version == 1
     assert result.target_schema_version == CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
-    assert result.applied_steps == ("_upgrade_v1_to_v2",)
+    assert result.applied_steps == ("_upgrade_v1_to_v2", "_upgrade_v2_to_v3")
     assert result.requires_persisted_rewrite is True
     assert field_keys[field_keys.index("num_bedrooms") + 1 : field_keys.index("icfa_factor")] == [
+        "ceiling_height_m",
         "supply_airflow_m3h",
         "extract_airflow_m3h",
     ]
     assert result.document.tables.rooms.rows[0].custom_values["supply_airflow_m3h"] is None
     assert result.document.tables.rooms.rows[0].custom_values["extract_airflow_m3h"] is None
+
+
+def test_project_document_v2_upgrade_adds_downstream_consumer_equipment_fields() -> None:
+    raw = empty_project_document(
+        CreateProjectRequest(name="West Stockbridge House", bt_number="2426", cert_programs=[])
+    ).model_dump(mode="json")
+    raw["schema_version"] = 2
+    equipment = cast(dict[str, Any], cast(dict[str, Any], raw["tables"])["equipment"])
+
+    pumps = cast(dict[str, Any], equipment["pumps"])
+    pumps["field_defs"] = [
+        field
+        for field in cast(list[dict[str, Any]], pumps["field_defs"])
+        if field["field_key"]
+        not in {"quantity", "inside_outside", "annual_energy_kwh", "internal_heat_gains_utilization_factor"}
+    ]
+    ventilators = cast(dict[str, Any], equipment["ervs"])
+    ventilators["field_defs"] = [
+        field
+        for field in cast(list[dict[str, Any]], ventilators["field_defs"])
+        if field["field_key"] not in {"frost_protection", "frost_protection_limit_temp_c"}
+    ]
+
+    result = upgrade_project_document(raw)
+
+    pump_keys = [field.field_key for field in result.document.tables.equipment.pumps.field_defs]
+    ventilator_keys = [field.field_key for field in result.document.tables.equipment.ervs.field_defs]
+    assert result.original_schema_version == 2
+    assert result.applied_steps == ("_upgrade_v2_to_v3",)
+    assert {"quantity", "inside_outside", "annual_energy_kwh", "internal_heat_gains_utilization_factor"}.issubset(
+        pump_keys
+    )
+    assert {"frost_protection", "frost_protection_limit_temp_c"}.issubset(ventilator_keys)
+    assert "pumps.inside_outside" in result.document.single_select_options
+    assert "ventilators.frost_protection" in result.document.single_select_options
 
 
 def test_project_document_upgrade_rejects_malformed_and_future_versions() -> None:

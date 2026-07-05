@@ -558,6 +558,7 @@ describe("equipment room helpers", () => {
       ROOM_SPACE_TYPE_FIELD_KEY,
       "num_people",
       "num_bedrooms",
+      "ceiling_height_m",
       "supply_airflow_m3h",
       "extract_airflow_m3h",
       "icfa_factor",

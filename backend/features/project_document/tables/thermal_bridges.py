@@ -51,6 +51,7 @@ THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
         display_name="Drawing Number",
         field_type=CustomFieldType.short_text,
     ),
+    built_in_field_def(field_key="quantity", display_name="Quantity", field_type=CustomFieldType.number, default=1),
     built_in_field_def(
         field_key="psi_value_w_mk",
         display_name="Psi-Value",

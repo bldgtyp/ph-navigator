@@ -32,6 +32,7 @@ import {
 } from "../../../shared/ui/data-table/feature";
 import {
   VENTILATOR_DATASHEET_FIELD_KEY,
+  VENTILATOR_FROST_PROTECTION_KEY,
   VENTILATOR_INSIDE_OUTSIDE_COLUMN_ID,
   VENTILATOR_INSIDE_OUTSIDE_KEY,
   type VentilatorRow,
@@ -188,6 +189,24 @@ export function VentilatorsTable({
         header: fieldDefByKey.get("filter_merv_rating")?.display_name ?? "Filter MERV Rating",
         accessor: (ventilator) => customNumberValue(ventilator, "filter_merv_rating"),
         defaultWidth: 160,
+        className: "numeric-cell",
+      },
+      {
+        id: VENTILATOR_FROST_PROTECTION_KEY,
+        fieldKey: VENTILATOR_FROST_PROTECTION_KEY,
+        header:
+          fieldDefByKey.get(VENTILATOR_FROST_PROTECTION_KEY)?.display_name ?? "Frost Protection",
+        accessor: (ventilator) => customTextValue(ventilator, VENTILATOR_FROST_PROTECTION_KEY),
+        defaultWidth: 160,
+      },
+      {
+        id: "frost_protection_limit_temp_c",
+        fieldKey: "frost_protection_limit_temp_c",
+        header:
+          fieldDefByKey.get("frost_protection_limit_temp_c")?.display_name ??
+          "Frost Protection Limit Temp",
+        accessor: (ventilator) => customNumberValue(ventilator, "frost_protection_limit_temp_c"),
+        defaultWidth: 210,
         className: "numeric-cell",
       },
       {

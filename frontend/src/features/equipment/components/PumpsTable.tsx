@@ -29,6 +29,7 @@ import {
   PUMP_DATASHEET_FIELD_KEY,
   PUMP_DEVICE_TYPE_COLUMN_ID,
   PUMP_DEVICE_TYPE_KEY,
+  PUMP_INSIDE_OUTSIDE_KEY,
   type InverseLinkField,
   type PumpRow,
   type PumpsSlice,
@@ -127,10 +128,25 @@ export function PumpsTable({
         defaultWidth: DATA_TABLE_COLUMN_WIDTHS.recordId,
       },
       {
+        id: "quantity",
+        fieldKey: "quantity",
+        header: fieldDefByKey.get("quantity")?.display_name ?? "Quantity",
+        accessor: (pump) => customNumberValue(pump, "quantity"),
+        defaultWidth: 100,
+        className: "numeric-cell",
+      },
+      {
         id: PUMP_DEVICE_TYPE_COLUMN_ID,
         fieldKey: PUMP_DEVICE_TYPE_KEY,
         header: fieldDefByKey.get(PUMP_DEVICE_TYPE_KEY)?.display_name ?? "Device Type",
         accessor: (pump) => pump.device_type,
+        defaultWidth: 150,
+      },
+      {
+        id: PUMP_INSIDE_OUTSIDE_KEY,
+        fieldKey: PUMP_INSIDE_OUTSIDE_KEY,
+        header: fieldDefByKey.get(PUMP_INSIDE_OUTSIDE_KEY)?.display_name ?? "Inside / Outside",
+        accessor: (pump) => customTextValue(pump, PUMP_INSIDE_OUTSIDE_KEY),
         defaultWidth: 150,
       },
       {
@@ -200,6 +216,24 @@ export function PumpsTable({
         header: fieldDefByKey.get("runtime_khr_yr")?.display_name ?? "Runtime - kHR/YEAR",
         accessor: (pump) => customNumberValue(pump, "runtime_khr_yr"),
         defaultWidth: 160,
+        className: "numeric-cell",
+      },
+      {
+        id: "annual_energy_kwh",
+        fieldKey: "annual_energy_kwh",
+        header: fieldDefByKey.get("annual_energy_kwh")?.display_name ?? "Annual Energy",
+        accessor: (pump) => customNumberValue(pump, "annual_energy_kwh"),
+        defaultWidth: 150,
+        className: "numeric-cell",
+      },
+      {
+        id: "internal_heat_gains_utilization_factor",
+        fieldKey: "internal_heat_gains_utilization_factor",
+        header:
+          fieldDefByKey.get("internal_heat_gains_utilization_factor")?.display_name ??
+          "Internal Heat Gains Utilization Factor",
+        accessor: (pump) => customNumberValue(pump, "internal_heat_gains_utilization_factor"),
+        defaultWidth: 240,
         className: "numeric-cell",
       },
       {

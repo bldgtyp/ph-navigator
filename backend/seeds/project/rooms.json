@@ -19,7 +19,8 @@
         "number": "101",
         "name": "Living Room",
         "num_people": 2,
-        "num_bedrooms": 0
+        "num_bedrooms": 0,
+        "ceiling_height_m": 2.74
       }
     },
     {
@@ -31,7 +32,8 @@
         "number": "102",
         "name": "Kitchen",
         "num_people": 1,
-        "num_bedrooms": 0
+        "num_bedrooms": 0,
+        "ceiling_height_m": 2.74
       }
     },
     {
@@ -43,7 +45,8 @@
         "number": "103",
         "name": "Bedroom 1",
         "num_people": 0,
-        "num_bedrooms": 1
+        "num_bedrooms": 1,
+        "ceiling_height_m": 2.59
       }
     },
     {
@@ -55,7 +58,8 @@
         "number": "104",
         "name": "Bedroom 2",
         "num_people": 0,
-        "num_bedrooms": 1
+        "num_bedrooms": 1,
+        "ceiling_height_m": 2.59
       }
     },
     {
@@ -67,7 +71,8 @@
         "number": "105",
         "name": "Basement",
         "num_people": 0,
-        "num_bedrooms": 0
+        "num_bedrooms": 0,
+        "ceiling_height_m": 2.29
       }
     }
   ]

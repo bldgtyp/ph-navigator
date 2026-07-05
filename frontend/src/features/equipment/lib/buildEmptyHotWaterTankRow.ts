@@ -30,6 +30,14 @@ export function makeBuildEmptyHotWaterTankRow(): BuildEmptyRow<HotWaterTankRow> 
         ),
         name: readStringDefault(fieldDefaults.name, customTextValueOrNull(base, "name")),
         quantity: readNumberDefault(fieldDefaults.quantity, customNumberValue(base, "quantity")),
+        location_temp_c: readNumberDefault(
+          fieldDefaults.location_temp_c,
+          customNumberValue(base, "location_temp_c"),
+        ),
+        water_temp_c: readNumberDefault(
+          fieldDefaults.water_temp_c,
+          customNumberValue(base, "water_temp_c"),
+        ),
         manufacturer: readStringDefault(
           fieldDefaults.manufacturer,
           customTextValueOrNull(base, "manufacturer"),

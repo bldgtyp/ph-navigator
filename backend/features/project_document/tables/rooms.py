@@ -87,6 +87,21 @@ _ROOMS_NON_RECORD_ID_FIELD_DEFS: tuple[TableFieldDef, ...] = (
     built_in_field_def(field_key="num_people", display_name="People", field_type=CustomFieldType.number, default=0),
     built_in_field_def(field_key="num_bedrooms", display_name="Bedrooms", field_type=CustomFieldType.number, default=0),
     built_in_field_def(
+        field_key="ceiling_height_m",
+        display_name="Ceiling Height",
+        field_type=CustomFieldType.number,
+        config={
+            "units": {
+                "mode": "fixed",
+                "unit_type": "length",
+                "si_unit": "m",
+                "ip_unit": "ft",
+                "precision_si": 2,
+                "precision_ip": 2,
+            }
+        },
+    ),
+    built_in_field_def(
         field_key="supply_airflow_m3h",
         display_name="Supply airflow rate",
         field_type=CustomFieldType.number,

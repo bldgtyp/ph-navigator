@@ -25,6 +25,7 @@ from features.project_document.custom_fields import (
 )
 from features.project_document.document import (
     PUMP_DEVICE_TYPE_OPTION_KEY,
+    PUMP_INSIDE_OUTSIDE_OPTION_KEY,
     PUMP_OPTION_KEYS,
     PUMP_STATUS_OPTION_KEY,
     ProjectDocumentV1,
@@ -55,6 +56,11 @@ if TYPE_CHECKING:
 PUMPS_TABLE_NAME = "pumps"
 _PUMPS_TABLE_PATH: tuple[str, ...] = ("equipment", PUMPS_TABLE_NAME)
 
+PUMP_INSIDE_OUTSIDE_OPTIONS: tuple[SingleSelectOption, ...] = (
+    SingleSelectOption(id="opt_pump_inside", label="Inside", color="#0ea5e9", order=0),
+    SingleSelectOption(id="opt_pump_outside", label="Outside", color="#f97316", order=1),
+)
+
 
 # Pumps built-in FieldDef seeds. `name` is the pinned Display Name
 # identifier (record-identity model); Pumps had no descriptive name
@@ -71,7 +77,11 @@ PUMPS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
         description="Drawing-schedule tag (Phase 2: replaces `tag`).",
     ),
     built_in_field_def(field_key="name", display_name="Display Name", field_type=CustomFieldType.short_text),
+    built_in_field_def(field_key="quantity", display_name="Quantity", field_type=CustomFieldType.number, default=1),
     built_in_field_def(field_key="device_type", display_name="Device", field_type=CustomFieldType.single_select),
+    built_in_field_def(
+        field_key="inside_outside", display_name="Inside / Outside", field_type=CustomFieldType.single_select
+    ),
     built_in_field_def(field_key="use", display_name="Use", field_type=CustomFieldType.short_text),
     built_in_field_def(field_key="manufacturer", display_name="Manufacturer", field_type=CustomFieldType.short_text),
     built_in_field_def(field_key="model", display_name="Model", field_type=CustomFieldType.short_text),
@@ -99,6 +109,26 @@ PUMPS_BUILT_IN_FIELD_DEFS: tuple[TableFieldDef, ...] = (
         display_name="Runtime - kHR/YEAR",
         field_type=CustomFieldType.number,
     ),
+    built_in_field_def(
+        field_key="annual_energy_kwh",
+        display_name="Annual Energy",
+        field_type=CustomFieldType.number,
+        config={
+            "units": {
+                "mode": "fixed",
+                "unit_type": "energy",
+                "si_unit": "kwh",
+                "ip_unit": "kbtu",
+                "precision_si": 0,
+                "precision_ip": 0,
+            }
+        },
+    ),
+    built_in_field_def(
+        field_key="internal_heat_gains_utilization_factor",
+        display_name="Internal Heat Gains Utilization Factor",
+        field_type=CustomFieldType.number,
+    ),
     built_in_field_def(field_key="link", display_name="Link", field_type=CustomFieldType.url),
     built_in_field_def(field_key="notes", display_name="Notes", field_type=CustomFieldType.long_text),
     status_field_def(),
@@ -117,11 +147,13 @@ class PumpsSliceOptions(BaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     pumps_device_type: list[SingleSelectOption] = Field(alias=PUMP_DEVICE_TYPE_OPTION_KEY)
+    pumps_inside_outside: list[SingleSelectOption] = Field(alias=PUMP_INSIDE_OUTSIDE_OPTION_KEY)
     pumps_status: list[SingleSelectOption] = Field(alias=PUMP_STATUS_OPTION_KEY)
 
     def by_option_key(self) -> dict[str, list[SingleSelectOption]]:
         return {
             PUMP_DEVICE_TYPE_OPTION_KEY: self.pumps_device_type,
+            PUMP_INSIDE_OUTSIDE_OPTION_KEY: self.pumps_inside_outside,
             PUMP_STATUS_OPTION_KEY: self.pumps_status,
         }
 
@@ -196,6 +228,7 @@ def pumps_response(
         field_defs=body.tables.equipment.pumps.field_defs,
         single_select_options={
             PUMP_DEVICE_TYPE_OPTION_KEY: body.single_select_options[PUMP_DEVICE_TYPE_OPTION_KEY],
+            PUMP_INSIDE_OUTSIDE_OPTION_KEY: body.single_select_options[PUMP_INSIDE_OUTSIDE_OPTION_KEY],
             PUMP_STATUS_OPTION_KEY: body.single_select_options[PUMP_STATUS_OPTION_KEY],
         },
         rows_computed=rows_computed,
@@ -231,6 +264,9 @@ def extract_pumps_diff_value(body: ProjectDocumentV1) -> dict[str, object]:
         "single_select_options": {
             PUMP_DEVICE_TYPE_OPTION_KEY: [
                 option.model_dump(mode="json") for option in body.single_select_options[PUMP_DEVICE_TYPE_OPTION_KEY]
+            ],
+            PUMP_INSIDE_OUTSIDE_OPTION_KEY: [
+                option.model_dump(mode="json") for option in body.single_select_options[PUMP_INSIDE_OUTSIDE_OPTION_KEY]
             ],
             PUMP_STATUS_OPTION_KEY: [
                 option.model_dump(mode="json") for option in body.single_select_options[PUMP_STATUS_OPTION_KEY]
@@ -378,7 +414,10 @@ pumps_field_registry = TableFieldRegistry(
     validate_schema_mutation=_validate_pumps_schema_mutation,
     read_field_option_list=_read_pumps_field_option_list,
     replace_field_option_list=_replace_pumps_field_option_list,
-    built_in_option_key_by_field_key={"device_type": PUMP_DEVICE_TYPE_OPTION_KEY},
+    built_in_option_key_by_field_key={
+        "device_type": PUMP_DEVICE_TYPE_OPTION_KEY,
+        "inside_outside": PUMP_INSIDE_OUTSIDE_OPTION_KEY,
+    },
     required_field_keys=frozenset(),
     read_built_in_option_value=_read_pumps_built_in_option_value,
     set_built_in_option_value=_set_pumps_built_in_option_value,

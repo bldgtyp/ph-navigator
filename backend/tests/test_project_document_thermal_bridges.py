@@ -12,6 +12,7 @@ from features.project_document.document import (
     ProjectDocumentV1,
     ThermalBridgeRow,
 )
+from features.project_document.tables.thermal_bridges import THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS
 from tests.project_document_helpers import empty_required_tables, empty_thermal_bridges_table
 from tests.status_field_helpers import (
     assert_status_field_def,
@@ -39,6 +40,7 @@ def thermal_bridge_payload() -> dict[str, Any]:
                     "name": "Roof parapet",
                     "sheet_name": "A-501",
                     "drawing_number": "4/A-501",
+                    "quantity": 1,
                     "psi_value_w_mk": 0.094,
                     "frsi_value": 0.83,
                 },
@@ -64,6 +66,13 @@ def test_thermal_bridge_row_strips_notes() -> None:
     base = thermal_bridge_payload()["thermal_bridges"][0]
     row = ThermalBridgeRow.model_validate({**base, "notes": "  keep  "})
     assert row.notes == "keep"
+
+
+def test_thermal_bridge_quantity_field_is_seeded() -> None:
+    quantity = next(field for field in THERMAL_BRIDGES_BUILT_IN_FIELD_DEFS if field.field_key == "quantity")
+
+    assert quantity.display_name == "Quantity"
+    assert quantity.default == 1
 
 
 def test_document_rejects_missing_thermal_bridge_type_option() -> None:
