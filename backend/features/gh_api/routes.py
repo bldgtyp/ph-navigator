@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, Query
 
 from features.aperture_hbjson_export.service import export_aperture_window_constructions
 from features.gh_api.aperture_types_export import export_aperture_types
-from features.gh_api.constructions_export import export_rich_constructions
+from features.gh_api.constructions_export import OnMissingThermal, export_rich_constructions
 from features.gh_api.models import (
     GhApertureConstructionsResponse,
     GhApertureTypesResponse,
@@ -48,6 +48,11 @@ GhAccess = Annotated[ProjectAccess, Depends(resolve_gh_access)]
 # All data routes accept `?version=<version_id>`; omitted → the active saved version.
 VersionQuery = Annotated[UUID | None, Query(alias="version")]
 
+# `GET /constructions/hbjson` opt-in: `user_defaults` fills missing thermal-mass
+# fields (density/specific-heat) with PH-neutral defaults + `warnings` instead of
+# 422ing. Default `strict` preserves the original hard-fail contract.
+OnMissingThermalQuery = Annotated[OnMissingThermal, Query(alias="on_missing_thermal")]
+
 
 @router.get("", response_model=GhResolverResponse)
 def get_project_metadata(access: GhAccess) -> GhResolverResponse:
@@ -55,11 +60,17 @@ def get_project_metadata(access: GhAccess) -> GhResolverResponse:
 
 
 @router.get("/constructions/hbjson", response_model=GhConstructionsResponse)
-def get_constructions_hbjson(access: GhAccess, version: VersionQuery = None) -> GhConstructionsResponse:
+def get_constructions_hbjson(
+    access: GhAccess,
+    version: VersionQuery = None,
+    on_missing_thermal: OnMissingThermalQuery = "strict",
+) -> GhConstructionsResponse:
     resolved, body = resolve_version_and_body(access, version)
+    hb_constructions, warnings = export_rich_constructions(body, on_missing_thermal)
     return GhConstructionsResponse(
         **build_envelope_fields(access, resolved),
-        hb_constructions=export_rich_constructions(body),
+        hb_constructions=hb_constructions,
+        warnings=warnings,
     )
 
 

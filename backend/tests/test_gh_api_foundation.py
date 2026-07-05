@@ -76,7 +76,7 @@ def test_resolver_envelope_shape(clean_document_tables: None) -> None:
     assert response.status_code == 200, response.text
     body = response.json()
 
-    assert set(body) == {"schema_version", "project", "version_id", "last_modified", "versions"}
+    assert set(body) == {"schema_version", "project", "version_id", "last_modified", "warnings", "versions"}
     assert body["schema_version"] == 1
     assert body["project"] == {
         "bt_number": "2524",

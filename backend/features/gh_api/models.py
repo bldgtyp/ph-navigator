@@ -40,6 +40,25 @@ class GhProjectInfo(BaseModel):
     name: str
 
 
+class GhWarning(BaseModel):
+    """A non-fatal note a GH route attaches to its envelope (surfaced client-side
+    as an `IGH.warning`).
+
+    Route-agnostic on purpose: it mirrors the error-envelope shape (`code` +
+    `message` + a free-form `details` bag) so the *shared* `GhEnvelope` can carry
+    warnings from any route without growing route-specific fields, and the GH
+    client's existing error-`details` renderer handles them unchanged. The only
+    producer today is the constructions export (`on_missing_thermal=user_defaults`,
+    see `constructions_export.py`).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    code: str
+    message: str
+    details: dict[str, Any] = {}
+
+
 class GhEnvelope(BaseModel):
     """Common envelope every GH route returns; payload keys are added by subclasses."""
 
@@ -49,6 +68,7 @@ class GhEnvelope(BaseModel):
     project: GhProjectInfo
     version_id: UUID
     last_modified: IsoUtcZ
+    warnings: list[GhWarning] = []
 
 
 class GhVersionInfo(BaseModel):

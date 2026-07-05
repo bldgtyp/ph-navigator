@@ -1,13 +1,21 @@
 # Feature request (from Honeybee-PH+ / Grasshopper): opt-in default-fill for materials missing thermal-mass props
 
 ```
-STATUS:  Proposed — awaiting backend implementation
+STATUS:  Backend implemented (2026-07-05, on branch) — GH-side wiring pending
 ORIGIN:  honeybee_grasshopper_ph_plus (GH plugin, PH-Nav V1 client)
 DATE:    2026-07-05
 AUTHOR:  Ed + Claude (GH side)
 SCOPE:   backend/features/gh_api — route 2 (`GET /constructions/hbjson`)
 RELATED: CLIENT_HANDOFF.md (the reciprocal GH-data-API contract)
 ```
+
+> **As-built note (2026-07-05):** shipped as spec'd, with two resolved open
+> questions — param name is `on_missing_thermal`, and `warnings` sits on the
+> shared `GhEnvelope`. The `GhWarning` wire shape is route-agnostic
+> (`{code, message, details}`, mirroring the error envelope) rather than the
+> flat illustrative JSON in §3 — the material fields (`assembly`, `segment_id`,
+> `project_material_id`, `defaulted_fields`) live inside `details`. See §3 and
+> `STATUS.md` for the exact contract.
 
 ## One-liner
 
@@ -77,27 +85,29 @@ explicitly want defaults (Grasshopper) pass `user_defaults`.
 
 ### 3. Response signal — `warnings`
 
-So the GH client can tell the user *which* materials were defaulted, add a
-**`warnings`** field to the envelope (cleanest on the shared `GhEnvelope` at
-`models.py:43`, so any route can carry warnings later; or scoped to
-`GhConstructionsResponse` if you prefer to keep it route-local). Suggested shape —
-structured, one entry per defaulted segment:
+So the GH client can tell the user *which* materials were defaulted, `warnings`
+is a field on the shared `GhEnvelope` (every GH route carries it; empty `[]` when
+nothing was defaulted). **As shipped**, each `GhWarning` is route-agnostic —
+`{code, message, details}`, mirroring the error envelope so the GH client's
+existing error-`details` renderer handles it unchanged. The material specifics
+live inside `details`, one entry per defaulted segment:
 
 ```jsonc
 "warnings": [
   {
     "code": "material_thermal_defaulted",
-    "assembly": "Ext. Wall - Brick",
-    "segment_id": "seg-abc",
-    "project_material_id": "pmat-42",
-    "defaulted_fields": ["density_kg_m3", "specific_heat_j_kgk"],
-    "message": "Used default density (600) and specific heat (1000) — thermal-mass only; no effect on PH U-value."
+    "message": "Used default density (600) and specific heat (1000) — thermal-mass only; no effect on PH U-value.",
+    "details": {
+      "assembly": "Ext. Wall - Brick",
+      "segment_id": "seg-abc",
+      "project_material_id": "pmat-42",
+      "defaulted_fields": ["density_kg_m3", "specific_heat_j_kgk"]
+    }
   }
 ]
 ```
 
-Empty/absent when nothing was defaulted. The GH client will surface each as an
-`IGH.warning` on the canvas.
+The GH client surfaces each as an `IGH.warning` on the canvas.
 
 ## GH-side reciprocal changes (this repo will do, once backend ships)
 
@@ -118,13 +128,11 @@ Tracked in `honeybee_grasshopper_ph_plus` (`planning/ph-navigator-v1/02-get-cons
 
 ## Open questions for the backend
 
-- **Param name / spelling:** `on_missing_thermal=strict|user_defaults`, or a broader
-  `materials=strict|lenient`? Backend's call — the GH client will match whatever
-  ships.
-- **`warnings` placement:** on the shared `GhEnvelope` (reusable across routes) vs.
-  route-local on `GhConstructionsResponse`. Recommend the envelope.
-- **Do the aperture routes (3/4) need the same mode?** Deferred — apertures have
-  their own material handling; revisit if the same 422 shows up there.
+- ~~**Param name / spelling.**~~ **Resolved:** shipped as `on_missing_thermal=strict|user_defaults`.
+- ~~**`warnings` placement.**~~ **Resolved:** on the shared `GhEnvelope`, with a
+  route-agnostic `{code, message, details}` shape (see §3).
+- **Do the aperture routes (3/4) need the same mode?** Still deferred — apertures
+  have their own material handling; revisit if the same 422 shows up there.
 - **Web-app data hygiene** (flagging incomplete materials before export) is a
   separate, complementary improvement — out of scope here.
 
