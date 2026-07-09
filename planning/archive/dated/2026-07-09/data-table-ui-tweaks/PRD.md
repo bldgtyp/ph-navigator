@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-09
 TIME: 12:30 EDT
-STATUS: Active
+STATUS: Complete
 AUTHOR: Ed May + Claude
 SCOPE: Per-item spec for the DataTable UI-tweaks packet
 RELATED: ./README.md, ./STATUS.md,
@@ -10,7 +10,7 @@ RELATED: ./README.md, ./STATUS.md,
 
 # DataTable UI Tweaks — PRD
 
-Each item: the complaint, the root cause (`file:line`), the target design,
+Completed item specs: the complaint, the root cause (`file:line`), the target design,
 the fix, blast radius, and any open decision. Grid chrome is a single shared
 visual system (`DataTable.css`), so design decisions here are cross-table
 contracts — keep the whole cell-state ladder coherent, not one state at a time.

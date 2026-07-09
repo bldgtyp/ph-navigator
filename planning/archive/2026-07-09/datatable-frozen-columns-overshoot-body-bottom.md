@@ -7,7 +7,7 @@ SCOPE: DataTable — sticky gutter + frozen columns extend below the body's
        last row into the footer strip
 RELATED:
   - feedback_datatable_uniformity_ironlaw
-  - planning/refactor/data-table-ui-tweaks/ (visual grid polish packet)
+  - planning/archive/dated/2026-07-09/data-table-ui-tweaks/ (visual grid polish packet)
   - context/UI_UX.md
 ---
 

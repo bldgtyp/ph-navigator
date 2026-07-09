@@ -5,6 +5,7 @@ import { AlertTriangle } from "lucide-react";
 import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import { describeDuplicateRows } from "../lib/identifier/recordId";
 import type { DuplicateIdentifierRows } from "../lib/identifier/recordId";
+import { computeEdgeBits } from "../lib/range/edgeBits";
 import { isCellInNormalizedRange, type NormalizedRange } from "../lib/range/normalize";
 import { isPointerInActiveEditor } from "../lib/eventTargets";
 import { isEmptyNumericValue, isNumericFieldDef } from "../lib/numberDisplay";
@@ -35,6 +36,10 @@ const EMPTY_OPTIONS: FieldOption[] = [];
 const EMPTY_LINKED_CANDIDATES: LinkedRecordCellOps["candidates"] = [];
 const EMPTY_LINKED_IDS: readonly string[] = [];
 const emptyResolver: LinkedRecordCellOps["resolve"] = () => null;
+
+function cellKey(rowId: string, fieldKey: string): string {
+  return `${rowId}\u0000${fieldKey}`;
+}
 
 function toLinkedIdList(value: unknown): readonly string[] {
   if (!Array.isArray(value)) return EMPTY_LINKED_IDS;
@@ -104,6 +109,8 @@ export type GridBodyProps<TRow> = {
   fillTargetPreview?: FillRect | null;
   fillHandleVisible?: boolean;
   onFillHandleMouseDown?: (event: ReactMouseEvent<HTMLButtonElement>) => void;
+  copiedRange?: NormalizedRange | null;
+  pasteFlashCells?: ReadonlySet<string>;
   // Plan 05: gate the single-select chevron affordance. When false
   // (read-only / viewer mode / no write handler), the chevron is
   // hidden on active single-select cells. Inline-edit start paths
@@ -173,6 +180,8 @@ export function GridBody<TRow>({
   fillTargetPreview,
   fillHandleVisible,
   onFillHandleMouseDown,
+  copiedRange = null,
+  pasteFlashCells,
   cellsWritable = false,
   identifierColumnId = null,
   identifierDuplicates,
@@ -370,6 +379,10 @@ export function GridBody<TRow>({
                   fillSource != null &&
                   isCellInNormalizedRange({ rowIndex, columnIndex }, fillSource)
                 );
+              const copiedEdgeBits =
+                copiedRange && isCellInNormalizedRange({ rowIndex, columnIndex }, copiedRange)
+                  ? computeEdgeBits(rowIndex, columnIndex, copiedRange)
+                  : null;
               // Plan 05: render the chevron on every writable single-
               // select cell so CSS can fade it in on hover OR the active
               // cell. Skipped while an editor is open — the popover
@@ -399,6 +412,14 @@ export function GridBody<TRow>({
                   data-axis-tint={axisTint}
                   data-fill-handle={isFillSourceCorner ? "true" : undefined}
                   data-fill-target={isFillTarget ? "true" : undefined}
+                  data-copied-cell={copiedEdgeBits ? "true" : undefined}
+                  data-just-pasted={
+                    rowId !== undefined &&
+                    fieldKey &&
+                    pasteFlashCells?.has(cellKey(rowId, fieldKey))
+                      ? "true"
+                      : undefined
+                  }
                   data-row-edge={isLastDataRow ? "bottom" : undefined}
                   className={[
                     visibleColumnDefs[columnIndex]?.className,
@@ -409,6 +430,11 @@ export function GridBody<TRow>({
                     selectionEdgeRight ? "data-table-selection-edge-right" : "",
                     selectionEdgeBottom ? "data-table-selection-edge-bottom" : "",
                     selectionEdgeLeft ? "data-table-selection-edge-left" : "",
+                    copiedEdgeBits ? "data-table-cell-copied" : "",
+                    copiedEdgeBits?.top ? "data-table-copied-edge-top" : "",
+                    copiedEdgeBits?.right ? "data-table-copied-edge-right" : "",
+                    copiedEdgeBits?.bottom ? "data-table-copied-edge-bottom" : "",
+                    copiedEdgeBits?.left ? "data-table-copied-edge-left" : "",
                     active ? "data-table-cell-active" : "",
                     editing ? "data-table-cell-editing" : "",
                     cellError ? "data-table-cell-error" : "",

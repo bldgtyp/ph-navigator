@@ -77,6 +77,53 @@ describe("DataTable", () => {
     });
   });
 
+  test("marks copied cells and clears the copied range with Escape", () => {
+    renderTable({
+      rowsOverride: [
+        { id: "rm_1", number: "101", name: "Living Room", count: 2 },
+        { id: "rm_2", number: "102", name: "Kitchen", count: 1 },
+      ],
+    });
+
+    const grid = screen.getByRole("grid");
+    fireEvent.click(getBodyCell(0, 1));
+    fireEvent.keyDown(grid, { key: "ArrowDown", shiftKey: true });
+    fireEvent.keyDown(grid, { key: "c", metaKey: true });
+
+    const anchorCell = getBodyCell(0, 1);
+    const rangeEndCell = getBodyCell(1, 1);
+    expect(anchorCell).toHaveAttribute("data-copied-cell", "true");
+    expect(anchorCell).toHaveClass(
+      "data-table-cell-copied",
+      "data-table-copied-edge-top",
+      "data-table-copied-edge-left",
+      "data-table-copied-edge-right",
+    );
+    expect(rangeEndCell).toHaveAttribute("data-copied-cell", "true");
+    expect(rangeEndCell).toHaveClass("data-table-copied-edge-bottom");
+
+    fireEvent.keyDown(grid, { key: "Escape" });
+
+    expect(getBodyCell(0, 1)).not.toHaveAttribute("data-copied-cell");
+    expect(getBodyCell(1, 1)).not.toHaveAttribute("data-copied-cell");
+  });
+
+  test("marks pasted target cells and clears stale copied feedback", async () => {
+    const onWrite = vi.fn();
+    renderTable({ onWrite });
+    const grid = screen.getByRole("grid");
+
+    fireEvent.keyDown(grid, { key: "c", metaKey: true });
+    const numberCell = getBodyCell(0, 0);
+    expect(numberCell).toHaveAttribute("data-copied-cell", "true");
+
+    fireEvent.paste(grid, pasteClipboardData("102"));
+
+    expect(await screen.findByText("1 cells pasted.")).toBeVisible();
+    expect(getBodyCell(0, 0)).not.toHaveAttribute("data-copied-cell");
+    expect(getBodyCell(0, 0)).toHaveAttribute("data-just-pasted", "true");
+  });
+
   // A view transform (group / filter / sort) must not disable cell paste.
   // The paste path resolves the target against the same visible-data-row
   // subset that copy and click-drag fill use, so it lands on the row the

@@ -53,6 +53,8 @@ export type GridKeyboardArgs = {
   onFillRight?: () => Promise<void>;
   onFillUp?: () => Promise<void>;
   onFillLeft?: () => Promise<void>;
+  onClearCopiedRange?: () => void;
+  hasCopiedRange?: boolean;
   // Phase 3 §4.4: Esc during an active drag cancels the drag and
   // collapses the range to the drag anchor. Optional — when no drag
   // composition is wired, Esc keeps its prior no-op behavior.
@@ -76,6 +78,8 @@ export function useGridKeyboard(args: GridKeyboardArgs) {
     onFillRight,
     onFillUp,
     onFillLeft,
+    onClearCopiedRange,
+    hasCopiedRange = false,
     drag,
   } = args;
 
@@ -87,6 +91,11 @@ export function useGridKeyboard(args: GridKeyboardArgs) {
       if (event.key === "Escape" && drag?.isDragging) {
         event.preventDefault();
         drag.cancel();
+        return;
+      }
+      if (event.key === "Escape" && hasCopiedRange && onClearCopiedRange) {
+        event.preventDefault();
+        onClearCopiedRange();
         return;
       }
       // Edit-mode hands off all keystrokes to InlineCellEditor; the grid
@@ -212,6 +221,7 @@ export function useGridKeyboard(args: GridKeyboardArgs) {
       onFillLeft,
       onFillRight,
       onFillUp,
+      onClearCopiedRange,
       onPrintableKey,
       onRedo,
       onRowInsertBelowActive,
@@ -219,6 +229,7 @@ export function useGridKeyboard(args: GridKeyboardArgs) {
       onUndo,
       readOnly,
       selection,
+      hasCopiedRange,
     ],
   );
 
