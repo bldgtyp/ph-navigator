@@ -130,3 +130,11 @@ _(append per item: what was driven in the app, result, gate status)_
     code + unit tests.
   - Console: only a pre-sign-in 401 on /auth/session (expected); no errors
     from the changes.
+- 2026-07-09 — Item 3 refinement (Ed live review): card-variant tiles felt
+  tiny and washed-out next to the Site Photos zone. Bumped card
+  `--attachment-tile-size` 44→64px so tiles sit at the site-photo drop-zone
+  height, gave card thumbnails a real accent border (full accent on hover)
+  and the "+ Add" tile an accent-tinted dashed border, and tied the empty
+  "Drop files here" min-height to the tile size (with an accent-tinted
+  dash) so datasheet + site-photo zones align. Card-only; dense/equipment
+  tables unchanged. Verified live on Materials.

@@ -8,9 +8,23 @@
 }
 
 /* Roomier tiles for spec-card / expansion surfaces (Materials, Apertures)
-   where the cell is not constrained to a dense table row. */
+   where the cell is not constrained to a dense table row. Sized to sit at
+   the same height as the sibling site-photo drop zone, with a real accent
+   border so a documented tile reads as substantial, not incidental. */
 .attachment-cell--card {
-  --attachment-tile-size: 44px;
+  --attachment-tile-size: 64px;
+}
+
+.attachment-cell--card .attachment-thumb {
+  border-color: color-mix(in oklab, var(--accent) 55%, var(--border-subtle));
+}
+
+.attachment-cell--card .attachment-thumb:hover {
+  border-color: var(--accent);
+}
+
+.attachment-cell--card .attachment-add-tile {
+  border-color: color-mix(in oklab, var(--accent) 45%, var(--border-subtle));
 }
 
 .attachment-workbench {
@@ -55,12 +69,12 @@
 
 .attachment-cell-inline .attachment-drop-button {
   background: var(--bg-card);
-  border: 1px dashed var(--border-subtle);
+  border: 1px dashed color-mix(in oklab, var(--accent) 40%, var(--border-subtle));
   border-radius: var(--radius-md);
   color: var(--text-secondary);
   height: auto;
   justify-content: center;
-  min-height: 48px;
+  min-height: var(--attachment-tile-size);
   padding: var(--space-12) var(--space-16);
   visibility: visible;
   width: 100%;
