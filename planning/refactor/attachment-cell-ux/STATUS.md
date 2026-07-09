@@ -9,8 +9,10 @@ RELATED: README.md, PRD.md
 
 # STATUS — Attachment Cell UX
 
-**Current focus:** Items 8, 7 done (on branch `refactor/attachment-cell-ux`).
-Next: **Item 6** (expanded-row border).
+**Current focus:** Items 8, 7, 6 done (on branch `refactor/attachment-cell-ux`).
+Next: **Item 1** (drag-active highlight) — start of the `AttachmentCell` cluster.
+A batch live-verification pass (app screenshots) is queued after the
+visual cluster; gates are green so far.
 **Branch:** not created yet (suggest `refactor/attachment-cell-ux`).
 
 ## Item tracker
@@ -22,7 +24,7 @@ Next: **Item 6** (expanded-row border).
 | 3 | Thumbnail tile redesign | `AttachmentCell` | Not started | Invoke `frontend-design` skill |
 | 4 | Persistent "+ Add" tile | `AttachmentCell` | Not started | Registry already allows 5 datasheets |
 | 5 | Upload spinner + verification | `AttachmentCell` | Not started | Verification already exists; visual + thumbnail-lag |
-| 6 | Border around expanded row | `ReportTable` | Not started | CSS-only preferred; also hits Apertures |
+| 6 | Border around expanded row | `ReportTable` | Implemented on branch | CSS-only via split `inset` box-shadows (row=top+sides, expansion=bottom+sides); no layout shift; also Apertures |
 | 7 | Chip count tooltip + lighter "missing" | `AttachmentChipCell` | Implemented on branch | `noun` prop → `title`/`aria-label` count; "missing" glyph faded via color-mix; noun wired at 3 call sites |
 | 8 | IP → Resistivity [R/inch] column | `MaterialsPanel` | Implemented on branch | Reused `formatRPerInFromConductivityWmK`; header/unit/render branch on `unitSystem` |
 
@@ -69,4 +71,8 @@ _(append per item: what was driven in the app, result, gate status)_
   Missing-state glyph faded (`color-mix(--text-muted 55%, --bg-card)`) for
   stronger have-vs-missing contrast. Gate green. Hover-tooltip + contrast
   check pending in the batch app-verification pass.
+- 2026-07-09 — Item 6: `ReportTable` expanded row + expansion now framed by
+  a 2px accent outline, split across the two siblings via `inset`
+  box-shadows (no layout shift, no DOM/ARIA change). Applies to Materials
+  and Apertures. Gate green. Visual check pending in the batch pass.
 </content>
