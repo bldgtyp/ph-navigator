@@ -134,6 +134,7 @@ export function VentilatorsTable({
       identifierColumn({
         fieldDefByKey,
         accessor: (ventilator) => customTextValue(ventilator, "name"),
+        rowsComputed: ventilatorsSlice.rows_computed,
       }),
       {
         id: "airflow_rate_m3h",
@@ -264,6 +265,7 @@ export function VentilatorsTable({
       onWrite,
       projectId,
       sortedIndoorUnits,
+      ventilatorsSlice.rows_computed,
     ],
   );
   const linkedRecordOps = useMemo<ReadonlyMap<string, LinkedRecordCellOps>>(

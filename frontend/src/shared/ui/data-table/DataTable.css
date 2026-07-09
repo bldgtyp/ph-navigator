@@ -2132,9 +2132,10 @@
   outline: 0;
 }
 
-/* Keep bottom-edge active chrome above the sticky summary row. */
+/* Keep bottom-edge active chrome above the sticky summary row (which now
+   sits at z+8 so it clears the body gutter/frozen lane). */
 .data-table td.data-table-cell-active[data-row-edge="bottom"] {
-  z-index: calc(var(--z-base) + 4);
+  z-index: calc(var(--z-base) + 9);
 }
 
 .data-table td.data-table-cell-active:not(.data-table-cell-selected) {
@@ -2716,7 +2717,13 @@ td.data-table-cell-editing {
   position: sticky;
   bottom: 0;
   background: var(--data-table-header-bg);
-  z-index: calc(var(--z-base) + 2);
+  /* Bottom chrome, mirroring the sticky header: must sit ABOVE the body's
+     sticky gutter (z+7) and frozen (z+5) cells. Otherwise, when the bar
+     is pinned and floats over lower body rows (scrolled but not fully at
+     the bottom), those higher-z sticky cells paint over it and the
+     gutter/frozen lane appears to bleed a partial row past the body into
+     the footer strip. */
+  z-index: calc(var(--z-base) + 8);
 }
 
 .data-table-summary-bar tr {

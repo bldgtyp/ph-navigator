@@ -33,6 +33,7 @@ import {
   rememberHeatPumpLeaf,
   type HeatPumpLeafKey,
 } from "./heatPumpLeafTabs";
+import { INCOMING_INDOOR_UNITS_FIELD_KEY, INCOMING_OUTDOOR_UNITS_FIELD_KEY } from "../link-fields";
 
 const HEAT_PUMP_CONFLICT_MESSAGES = {
   activeRowConflict:
@@ -128,17 +129,18 @@ export function HeatPumpsPanel({ project }: { project: ProjectDetail }) {
     outdoorUnitsQuery.isError ||
     indoorUnitsQuery.isError;
   const outdoorEquipColumnsForSanitize = useMemo(
-    () => sanitizeColumns(outdoorEquipSlice?.field_defs),
+    () => sanitizeColumns(outdoorEquipSlice?.field_defs, [INCOMING_OUTDOOR_UNITS_FIELD_KEY]),
     [outdoorEquipSlice?.field_defs],
   );
   const indoorEquipColumnsForSanitize = useMemo(
-    () => sanitizeColumns(indoorEquipSlice?.field_defs),
+    () => sanitizeColumns(indoorEquipSlice?.field_defs, [INCOMING_INDOOR_UNITS_FIELD_KEY]),
     [indoorEquipSlice?.field_defs],
   );
   const outdoorUnitsColumnsForSanitize = useMemo(
-    () => sanitizeColumns(outdoorUnitsSlice?.field_defs),
+    () => sanitizeColumns(outdoorUnitsSlice?.field_defs, [INCOMING_INDOOR_UNITS_FIELD_KEY]),
     [outdoorUnitsSlice?.field_defs],
   );
+  // The Indoor-units table renders no incoming-link projection column.
   const indoorUnitsColumnsForSanitize = useMemo(
     () => sanitizeColumns(indoorUnitsSlice?.field_defs),
     [indoorUnitsSlice?.field_defs],
@@ -333,10 +335,17 @@ export function HeatPumpsPanel({ project }: { project: ProjectDetail }) {
   );
 }
 
+// `incomingLinkColumnIds` are the ids of the incoming-link projection
+// columns each table renders on top of its slice schema (e.g. the
+// "Indoor units" reverse link). They aren't in `slice.field_defs`, so
+// without them the view-state sanitizer would strip their ids from
+// columnOrder / hiddenColumns and the user's hide + drag-reorder would
+// not survive a render.
 function sanitizeColumns(
   fieldDefs: readonly { field_key: string; display_name: string }[] | undefined,
+  incomingLinkColumnIds: readonly string[] = [],
 ) {
-  return (fieldDefs ?? []).map(
+  const schemaColumns = (fieldDefs ?? []).map(
     (fieldDef): DataTableColumnDef<unknown> => ({
       id: fieldDef.field_key,
       fieldKey: fieldDef.field_key,
@@ -344,6 +353,15 @@ function sanitizeColumns(
       accessor: () => null,
     }),
   );
+  const incomingColumns = incomingLinkColumnIds.map(
+    (fieldKey): DataTableColumnDef<unknown> => ({
+      id: fieldKey,
+      fieldKey,
+      header: fieldKey,
+      accessor: () => null,
+    }),
+  );
+  return [...schemaColumns, ...incomingColumns];
 }
 
 const EMPTY_OUTDOOR_EQUIP_SLICE = {

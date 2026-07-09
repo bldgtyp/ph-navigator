@@ -107,6 +107,7 @@ export function AppliancesTable({
       identifierColumn({
         fieldDefByKey,
         accessor: (appliance) => customTextValue(appliance, "name"),
+        rowsComputed: appliancesSlice.rows_computed,
       }),
       {
         id: "quantity",
@@ -205,7 +206,15 @@ export function AppliancesTable({
       statusColumn<ApplianceRow>(fieldDefByKey),
       ...customColumns,
     ],
-    [customColumns, datasheetUrlById, fieldDefByKey, isEditor, onWrite, projectId],
+    [
+      customColumns,
+      datasheetUrlById,
+      fieldDefByKey,
+      isEditor,
+      onWrite,
+      projectId,
+      appliancesSlice.rows_computed,
+    ],
   );
 
   return (

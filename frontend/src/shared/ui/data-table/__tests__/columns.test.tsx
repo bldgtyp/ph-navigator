@@ -77,6 +77,42 @@ describe("shared data-table column builders", () => {
     expect(column.defaultWidth).toBe(DATA_TABLE_COLUMN_WIDTHS.identifier);
   });
 
+  test("identifierColumn renders a formula Display Name from the computed overlay", () => {
+    // Regression: a Display Name set to a Formula (field_type "computed")
+    // must read the precomputed overlay, not the empty stored value.
+    const formulaFields = new Map<string, FieldDef>([
+      [
+        "name",
+        {
+          field_key: "name",
+          field_type: "computed",
+          display_name: "Display Name",
+          computed_type: "text",
+        },
+      ],
+    ]);
+    const column = identifierColumn<Row>({
+      fieldDefByKey: formulaFields,
+      accessor: () => "stored-value-that-should-be-ignored",
+      rowsComputed: { r1: { name: "A2.2-XF" } },
+    });
+
+    expect(column.isIdentifier).toBe(true);
+    const row = { id: "r1", name: "", url: null, assetIds: [] };
+    expect(column.accessor(row)).toBe("A2.2-XF");
+  });
+
+  test("identifierColumn uses the plain accessor for a non-formula Display Name", () => {
+    const column = identifierColumn<Row>({
+      fieldDefByKey: fields,
+      accessor: (row) => row.name,
+      rowsComputed: { r1: { name: "IGNORED" } },
+    });
+
+    const row = { id: "r1", name: "Kitchen", url: null, assetIds: [] };
+    expect(column.accessor(row)).toBe("Kitchen");
+  });
+
   test("identifierColumnDef marks existing computed columns without changing ids", () => {
     const column = identifierColumnDef<Row>({
       id: "record_id",
@@ -99,6 +135,19 @@ describe("shared data-table column builders", () => {
 
     expect(fieldDef.field_type).toBe("linked_record");
     expect(fieldDef.read_only).toBe(true);
+    // Incoming/inverse links render as locked-schema built-in columns so
+    // their headers show the built-in border and offer no edit/delete.
+    expect(fieldDef.built_in).toBe(true);
+    expect(fieldDef.locked).toEqual([
+      "display_name",
+      "field_type",
+      "options",
+      "default",
+      "description",
+      "formula",
+      "delete",
+      "duplicate",
+    ]);
     expect(fieldDef.linked_record_config?.target_table_path).toEqual([
       "equipment",
       "heat_pumps",

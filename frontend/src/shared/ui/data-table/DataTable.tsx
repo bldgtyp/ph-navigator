@@ -1711,10 +1711,17 @@ function buildDefaultFormulaFieldRegistry(fieldDefs: readonly FieldDef[]): Field
 
 function isFormulaReferenceableField(fieldDef: FieldDef): boolean {
   // Read-only projection columns such as inverse/incoming links are not
-  // persisted in the table's formula registry. Keep real schema fields:
-  // built-ins carry `built_in`; custom fields carry `custom_field_type`.
-  if (fieldDef.read_only && fieldDef.built_in !== true && !fieldDef.custom_field_type) return false;
-  return true;
+  // persisted in the table's formula registry. They now carry `built_in`
+  // (so their headers show the locked-schema border), so exclude them by
+  // their read-only-projection shape rather than by `built_in`: drop any
+  // read-only non-custom field that either isn't built-in or is a
+  // linked-record projection. Real schema fields (built-in non-links,
+  // custom fields) stay referenceable.
+  const isReadOnlyProjection =
+    fieldDef.read_only &&
+    !fieldDef.custom_field_type &&
+    (fieldDef.built_in !== true || fieldDef.field_type === "linked_record");
+  return !isReadOnlyProjection;
 }
 
 function buildDefaultFormulaRowValues<TRow>(

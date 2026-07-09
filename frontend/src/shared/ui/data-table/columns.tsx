@@ -1,5 +1,6 @@
 import type { ComponentType, ReactNode } from "react";
 import type { DataTableColumnDef, DataTableProps, FieldDef } from "./types";
+import { computedFieldColumnDef, type CustomFieldRow } from "./feature/customFieldColumns";
 import { sameOrderedStrings } from "../../lib/arrays";
 
 export const DATA_TABLE_COLUMN_WIDTHS = {
@@ -61,13 +62,14 @@ export function linkColumn<TRow>({
   };
 }
 
-export function identifierColumn<TRow>({
+export function identifierColumn<TRow extends CustomFieldRow>({
   fieldDefByKey,
   accessor,
   id = "name",
   fieldKey = id,
   fallbackHeader = "Display Name",
   defaultWidth = DATA_TABLE_COLUMN_WIDTHS.identifier,
+  rowsComputed,
 }: {
   fieldDefByKey: ReadonlyMap<string, FieldDef>;
   accessor: (row: TRow) => unknown;
@@ -75,11 +77,32 @@ export function identifierColumn<TRow>({
   fieldKey?: string;
   fallbackHeader?: string;
   defaultWidth?: number;
+  // The precomputed formula overlay (`slice.rows_computed`). Pass it so a
+  // Display Name set to a Formula renders: the value then comes from the
+  // overlay, not the stored string (which is empty for a formula field).
+  rowsComputed?: Record<string, Record<string, unknown>>;
 }): DataTableColumnDef<TRow> {
+  const fieldDef = fieldDefByKey.get(fieldKey);
+  const header = fieldDef?.display_name ?? fallbackHeader;
+  // When the Display Name field is a formula it renders as a "computed"
+  // field type: read it from the precomputed overlay uniformly — the same
+  // path Rooms uses for its {Number} — {Name} identifier — so every table
+  // gets a formula Display Name for free rather than wiring it by hand.
+  if (fieldDef?.field_type === "computed") {
+    return identifierColumnDef(
+      computedFieldColumnDef<TRow>({
+        fieldKey,
+        header,
+        computedType: fieldDef.computed_type ?? "text",
+        rowsComputed,
+        defaultWidth,
+      }),
+    );
+  }
   return identifierColumnDef({
     id,
     fieldKey,
-    header: fieldDefByKey.get(fieldKey)?.display_name ?? fallbackHeader,
+    header,
     accessor,
     defaultWidth,
   });

@@ -119,6 +119,7 @@ import {
   customTextValue,
   customTextValueOrNull,
 } from "./lib/customValueReaders";
+import { INCOMING_INDOOR_UNITS_FIELD_KEY } from "./heat-pumps/link-fields";
 import { nextCopySuffix } from "../../shared/lib/copySuffix";
 export { nextCopySuffix } from "../../shared/lib/copySuffix";
 export {
@@ -953,15 +954,29 @@ export function ventilatorsFieldOverlay(
 export function ventilatorsTableColumnsForSanitize(
   fieldDefs: readonly FieldDef[],
 ): DataTableColumnDef<unknown>[] {
-  return fieldDefs.map((fieldDef) => ({
-    id:
-      fieldDef.field_key === VENTILATOR_INSIDE_OUTSIDE_KEY
-        ? VENTILATOR_INSIDE_OUTSIDE_COLUMN_ID
-        : fieldDef.field_key,
-    fieldKey: fieldDef.field_key,
-    header: fieldDef.display_name,
-    accessor: () => null,
-  }));
+  return [
+    ...fieldDefs.map((fieldDef) => ({
+      id:
+        fieldDef.field_key === VENTILATOR_INSIDE_OUTSIDE_KEY
+          ? VENTILATOR_INSIDE_OUTSIDE_COLUMN_ID
+          : fieldDef.field_key,
+      fieldKey: fieldDef.field_key,
+      header: fieldDef.display_name,
+      accessor: () => null,
+    })),
+    // VentilatorsTable appends the "HP indoor units" incoming-link column
+    // (not part of the slice schema); include it here or the view-state
+    // sanitizer would strip its id from columnOrder / hiddenColumns and
+    // the user's hide + drag-reorder would not survive a render.
+    incomingLinkSanitizeStub(INCOMING_INDOOR_UNITS_FIELD_KEY, "HP indoor units"),
+  ];
+}
+
+// Stub column for an incoming/inverse-link projection that a table
+// renders on top of its slice schema. The sanitizer reads only
+// `id` + `fieldKey`, so the header/accessor are placeholders.
+function incomingLinkSanitizeStub(fieldKey: string, header: string): DataTableColumnDef<unknown> {
+  return { id: fieldKey, fieldKey, header, accessor: () => null };
 }
 
 export function fansFieldOverlay(fansSlice: FansSlice): Record<string, TableFieldRenderOverlay> {

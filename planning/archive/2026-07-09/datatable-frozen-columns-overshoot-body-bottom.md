@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-09
 TIME: 12:48
-STATUS: Open
+STATUS: Fixed (2026-07-09)
 AUTHOR: Ed May (reported), Claude (recorded)
 SCOPE: DataTable — sticky gutter + frozen columns extend below the body's
        last row into the footer strip
@@ -91,7 +91,57 @@ sibling below `.data-table-scroll`, so the overshoot reads as the frozen columns
 3. Compare the bottom edge of the sticky gutter / frozen display-name column to
    the bottom edge of the scrollable body cells → the frozen lane extends lower.
 
+## Actual root cause — z-index inversion (NOT the virtualizer)
+
+The virtualizer-spacer hypothesis above is **wrong** (kept for the record).
+Reproduced the exact symptom in a faithful static browser harness (sticky
+header + sticky-left gutter/frozen body cells + sticky-bottom summary
+`<tfoot>`): it is a **stacking-order inversion between the sticky summary bar
+and the sticky body columns**, with no virtualizer involvement.
+
+- The aggregation **summary bar** is a `<tfoot class="data-table-summary-bar">`
+  rendered inside the `<table>`, `position: sticky; bottom: 0`, at
+  `z-index: z-base + 2` (`DataTable.css`).
+- The body's sticky **gutter** cells are `z-base + 7` and the sticky **frozen**
+  column cells are `z-base + 5`.
+- When the summary bar is pinned and floats over lower body rows (scrolled
+  down but not fully at the bottom — exactly the repro's "scroll so the last
+  row is visible"), those higher-z body sticky cells **paint over** the
+  summary bar. So the gutter + frozen lane appears to bleed one partial row
+  past the body's last gridline into the footer strip — precisely the report
+  ("row 26 shows in the frozen columns … the frozen fill bulges lower than
+  the body").
+- The sticky **header** never has this problem because it deliberately sits
+  *above* the body sticky cells (`thead` gutter `z-base + 9`, frozen
+  `z-base + 8`). The summary bar was simply never given the symmetric z.
+
+## Fix
+
+Two lines in `frontend/src/shared/ui/data-table/DataTable.css`:
+
+- `.data-table-summary-bar` z-index `z-base + 2` → **`z-base + 8`** (bottom
+  chrome now sits above the body gutter/frozen lane, mirroring the header).
+- `.data-table td.data-table-cell-active[data-row-edge="bottom"]` z-index
+  `z-base + 4` → **`z-base + 9`**, so the "bottom-row active chrome clears the
+  summary bar" behavior is preserved against the raised summary z.
+
+Raising only the `<tfoot>` z-index is sufficient — its sticky positioning +
+z-index create a stacking context, so its (unchanged) inner gutter cell paints
+above the body lane once the whole tfoot outranks it.
+
+## Verification
+
+- Faithful static harness reproduced the bug (blue gutter + green frozen
+  bleeding over the pink summary bar) and confirmed the fix (summary renders
+  as one clean strip; last row correctly hidden behind it) in Chromium via
+  Playwright. Before/after screenshots captured during the session.
+- `make ci-frontend`: green (format + lint + typecheck + 2076 tests + build).
+- Recommended real-app spot check (not blocking): open a table with enough
+  rows to scroll (SPACES/ROOMS), scroll so the last row sits just above the
+  summary bar, and confirm the gutter/frozen lane ends at the body's last
+  gridline.
+
 ## Status
 
-Open — not yet triaged or fixed. A prior guard (`contain: paint` + `isolation`)
-addressed a related symptom but not this one. Recorded from user report.
+Fixed 2026-07-09. Root cause corrected from the original virtualizer
+hypothesis to a summary-bar z-index inversion. Recorded from user report.
