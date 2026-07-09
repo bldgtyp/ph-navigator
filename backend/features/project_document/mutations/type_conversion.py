@@ -22,7 +22,7 @@ from features.project_document.custom_fields import (
     normalize_display_name,
 )
 from features.project_document.document import ProjectDocumentV1, SingleSelectOption
-from features.project_document.formula import evaluate_table_formulas
+from features.project_document.formula import evaluate_table_formulas, overlay_cell_value
 from features.project_document.mutations.guards import (
     find_field,
     read_rows_from_envelope,
@@ -178,10 +178,7 @@ def _read_source_value(
     if from_type is CustomFieldType.formula:
         row_id = str(getattr(row, "id", ""))
         per_row = formula_overlay.get(row_id, {})
-        value = per_row.get(field_id)
-        if isinstance(value, dict) and "error" in value:
-            return None
-        return value
+        return overlay_cell_value(per_row.get(field_id))
     custom_values = capability.read_row_custom_values(row)
     return custom_values.get(field_id)
 

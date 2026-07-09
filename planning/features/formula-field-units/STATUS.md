@@ -46,10 +46,11 @@ the guard relax means no built-in ever needs a conversion lock. See
 
 ## Next step
 
-Implement **Phase 1** (`phases/phase-01-export-computed-values.md`) — standalone exporter
-change. Then **Phase 2** (backend: registry drift + guard redesign + wire model + set_formula).
-Then **Phase 3** (frontend). Strictly in that order — Phase 1 before Phase 2 is a safety
-ordering (PRD §7.16), not a code dependency.
+**Phase 1 is DONE** (2026-07-09) — the gh_api exporter now emits computed/formula values
+inline (`backend/features/gh_api/tables_export.py`); the `{"error"}`-overlay decode was
+extracted into the shared `formula.overlay_cell_value` helper. Next: **Phase 2** (backend:
+registry drift + guard redesign + wire model + set_formula), then **Phase 3** (frontend).
+Phase 1 before Phase 2 was a safety ordering (PRD §7.16), now satisfied.
 
 ## Blockers
 
