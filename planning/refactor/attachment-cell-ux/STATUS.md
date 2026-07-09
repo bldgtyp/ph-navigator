@@ -9,11 +9,9 @@ RELATED: README.md, PRD.md
 
 # STATUS — Attachment Cell UX
 
-**Current focus:** ALL 8 items implemented on branch `refactor/attachment-cell-ux`.
-Remaining before "Complete": (1) live visual-verification pass (app
-screenshots — the changes are heavily visual), and (2) merge-to-main
-decision (Ed's call per project norms). Full frontend suite green
-(2070 tests); `make frontend-dev-check` green.
+**Current focus:** ALL 8 items implemented AND live-verified on branch
+`refactor/attachment-cell-ux`. Remaining before "Complete": merge-to-main
+decision (Ed's call). Full frontend suite green (2070 tests).
 **Branch:** not created yet (suggest `refactor/attachment-cell-ux`).
 
 ## Item tracker
@@ -111,3 +109,24 @@ _(append per item: what was driven in the app, result, gate status)_
   modal-only. Synced contract §A4.2/§A4.6. Updated 8 equipment
   detach-via-Delete tests to detach through the modal. Full frontend suite
   green (2070 tests).
+- 2026-07-09 — LIVE SMOKE-TEST (Playwright, local stack, codex@example.com,
+  AGENT-BROWSER fixture with a created Wall assembly → Concrete (Heavily
+  Reinforced) segment). Verified on Envelope → Materials:
+  - Item 8 ✓ SI shows "Lambda [W/m-K] = 3"; IP shows "Resistivity [R/inch]
+    = 0.05" (correct 1/λ conversion), density → lb/ft3, spec-heat → Btu/(lb-F).
+  - Item 7 ✓ chip a11y labels "No datasheets"/"No photos"; after upload the
+    datasheet chip flips to the solid accent state vs the faint missing one.
+  - Item 6 ✓ single accent border wraps the expanded row + panel; columns
+    stay aligned (no layout shift).
+  - Item 3 ✓ datasheet renders as a clean framed card tile (no dog-ear).
+  - Item 4 ✓ persistent "+ Add" tile appears after the first upload.
+  - Item 5 ✓ full upload→MinIO(R2)→complete-upload→thumbnail pipeline
+    completes and the thumbnail renders (spinner window too fast to catch on
+    localhost; no error tile).
+  - Item 2 ✓ single click opens the preview modal (Download / Open in new
+    tab / Replace / Detach).
+  - Item 1 — drop button renders; the drag-active highlight itself needs a
+    real OS drag (not exercised by the file-chooser automation); covered by
+    code + unit tests.
+  - Console: only a pre-sign-in 401 on /auth/session (expected); no errors
+    from the changes.
