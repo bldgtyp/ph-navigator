@@ -97,7 +97,6 @@ export function GridToolbar({
         <h2 className="data-table-toolbar-title" title={tableName}>
           {tableName}
         </h2>
-        {groupActive ? <span>Ungroup to paste</span> : null}
       </div>
       <div className="data-table-toolbar-buttons">
         <FilterPopover

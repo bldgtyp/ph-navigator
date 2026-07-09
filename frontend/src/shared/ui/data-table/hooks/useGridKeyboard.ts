@@ -18,7 +18,6 @@ export type GridKeyboardArgs = {
   selection: GridSelection;
   edit: GridEdit;
   readOnly: boolean;
-  isGrouped: boolean;
   onCopy: () => void;
   onUndo: () => void;
   onRedo: () => void;

@@ -398,8 +398,10 @@ Implement the shared UX contract from `context/UI_UX.md` §1.7:
 - tinting for filtered, sorted, and grouped columns;
 - read-only mode where local sort/filter/group and copy still work.
 
-Paste is disabled while grouped. Column overflow is dropped with a
-toast; row overflow prompts to append records when creation is allowed.
+Paste works regardless of group / filter / sort — it resolves against the
+same view-resolved visible rows copy and the fill handle use, so no view
+transform disables it. Column overflow is dropped with a toast; row overflow
+prompts to append records when creation is allowed.
 
 ### Download CSV (parent-owned overflow affordance)
 

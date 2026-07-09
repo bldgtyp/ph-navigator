@@ -5,7 +5,7 @@ STATUS: Active
 AUTHOR: Ed May + Claude
 SCOPE: Per-item spec for the DataTable UI-tweaks packet
 RELATED: ./README.md, ./STATUS.md,
-         planning/bugs/datatable-copy-paste-broken-when-grouped-filtered-sorted.md
+         planning/archive/2026-07-09/datatable-copy-paste-broken-when-grouped-filtered-sorted.md
 ---
 
 # DataTable UI Tweaks — PRD
@@ -137,8 +137,9 @@ un-boxed, letting the button's own background show through:
 ```
 (Equivalently, scope the broad `.data-table-toolbar span` rule to only the
 status-chip spans it was meant for — but the targeted reset is the smaller,
-safer diff. Confirm which spans the `:113` rule legitimately styles first,
-e.g. the "Ungroup to paste" status hint at `GridToolbar.tsx:100`.)
+safer diff. Confirm which spans the `:113` rule legitimately styles first.
+Note: the old "Ungroup to paste" status hint that once lived in this row was
+removed when grouped paste was fixed, so it is no longer an example span.)
 
 ### Blast radius
 All DataTable toolbars. Verify inactive, hover, and active states of Filter /
@@ -185,16 +186,18 @@ It's a missing affordance, not a broken one.
    single static frame).
 
 ### ⚠️ Cross-reference — track the range by stable identity, not visual index
-This item shares the copy/paste subsystem with the open bug
-**`planning/bugs/datatable-copy-paste-broken-when-grouped-filtered-sorted.md`**
-(⌘V no-ops under group/filter/sort because the keyboard path resolves cells
-against underlying data indices, not the rendered view). The `copiedRange` for
-the marching ants **must** be stored as row-id + field-id (stable identity) and
-re-projected onto the current rendered rows each frame — otherwise the ants will
-desync the moment a group/filter/sort reorders rows, repeating that bug's class
-of failure. Fixing that bug and building this overlay should share the same
-view-aware cell-resolution helper. **Consider sequencing the bug fix first**, or
-at least building both on one shared range↔render mapping.
+This item shares the copy/paste subsystem with the now-**resolved** bug
+**`planning/archive/2026-07-09/datatable-copy-paste-broken-when-grouped-filtered-sorted.md`**.
+That bug's original hypothesis — "⌘V no-ops because the keyboard path resolves
+cells against underlying data indices" — was **wrong**: paste already resolves
+through the view-resolved visible rows (same substrate as copy and fill), and
+the real cause was a stray group-only paste guard, now removed. So there is no
+bug to sequence first. The design rule for this item still stands on its own
+merits, though: the `copiedRange` for the marching ants **must** be stored as
+row-id + field-id (stable identity) and re-projected onto the current rendered
+rows each frame — otherwise the ants will desync the moment a group/filter/sort
+reorders rows. That is a property the *new* overlay must build in, not a defect
+inherited from the paste path.
 
 ### Blast radius
 All DataTable surfaces with clipboard enabled. New state + overlay + one

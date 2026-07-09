@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-09
 TIME: 12:05
-STATUS: Open
+STATUS: Resolved (2026-07-09)
 AUTHOR: Ed May (reported), Claude (recorded)
 SCOPE: DataTable — cell copy/paste when a GROUP, FILTER, or SORT is applied
 RELATED:
@@ -61,6 +61,48 @@ the same, since that one respects the current view.
 5. With the group/filter/sort re-applied, confirm click-drag fill still works
    (isolates the failure to the keyboard path).
 
+## Resolution (2026-07-09)
+
+**Root cause was simpler than the hypothesis above — and different.** The
+keyboard paste path was *not* resolving against underlying/unsorted data
+indices. `useGridClipboard` is wired on `visibleDataRows` (the
+filter/sort/group-resolved subset) and `selection.range`, exactly like the
+copy path and the click-drag fill hook. `coercePasteWrites` resolves
+`rows[plannedWrite.rowIndex]` against that visible subset, so filter and
+sort paste already worked correctly.
+
+The single defect was a blanket guard in `DataTable.handlePasteEvent`:
+
+```ts
+if (readOnly || isGrouped) return;   // ← isGrouped short-circuited paste
+```
+
+`⌘V` is handled via the native `onPaste` event on the grid wrapper (the
+keyboard hook deliberately does not intercept `⌘V`). That handler bailed
+whenever a group was active, so grouped tables silently no-op'd on paste
+while filtered/sorted tables were fine. The user report bundled all three
+view transforms together; only **group** was actually broken.
+
+**Fix:** dropped the `isGrouped` branch (paste resolves through
+`visibleDataRows` and needs no group-specific gate), and removed the now
+fully-dead `isGrouped` prop that was threaded into `useGridKeyboard` but
+never read there.
+
+**Evidence:** three new tests in `DataTable.test.tsx` — paste into a
+grouped table (was failing, now passes), paste into the visually-first row
+of a **sorted** table, and paste into the surviving row of a **filtered**
+table (both were already green, locking in the view-resolved behavior).
+
+**Note for dependent work** — `planning/features/datatable-paste-grow-rows`
+and `planning/refactor/data-table-ui-tweaks` (item 3, marching-ants
+`copiedRange`) cited this bug as evidence that the clipboard subsystem
+resolves cells by visual index and must be rebuilt on stable identity. That
+premise was mistaken: copy/paste/fill already track the view-resolved row
+subset. A *new* `copiedRange` overlay still must store row-id + field-id
+(a static index would desync), but that is a fresh requirement, not a
+carry-over of this bug.
+
 ## Status
 
-Open — not yet triaged or fixed. Recorded from user report.
+Resolved 2026-07-09. Archived to
+`planning/archive/2026-07-09/datatable-copy-paste-broken-when-grouped-filtered-sorted.md`.

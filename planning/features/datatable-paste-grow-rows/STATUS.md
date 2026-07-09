@@ -17,10 +17,12 @@ single-undo operation.
 
 ## Next step
 
-Resolve open decision #1 (behavior under active group/sort/filter) — likely
-sequence after the copy/paste-view bug
-(`planning/bugs/datatable-copy-paste-broken-when-grouped-filtered-sorted.md`) —
-then confirm modal copy (#2, #3) with Ed.
+Resolve open decision #1 (behavior under active group/sort/filter), then
+confirm modal copy (#2, #3) with Ed. The copy/paste-view bug this once
+sequenced behind is **resolved**
+(`planning/archive/2026-07-09/datatable-copy-paste-broken-when-grouped-filtered-sorted.md`);
+it turned out to be a stray group-only paste guard, not a cell-resolution
+desync, so it no longer blocks or informs this decision.
 
 ## Checklist
 

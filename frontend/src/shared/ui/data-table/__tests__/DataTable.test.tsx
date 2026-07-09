@@ -77,6 +77,77 @@ describe("DataTable", () => {
     });
   });
 
+  // A view transform (group / filter / sort) must not disable cell paste.
+  // The paste path resolves the target against the same visible-data-row
+  // subset that copy and click-drag fill use, so it lands on the row the
+  // user sees at the active cell — not an underlying/unsorted index.
+  const viewTransformRows: Row[] = [
+    { id: "rm_1", number: "101", name: "A", count: 2 },
+    { id: "rm_2", number: "201", name: "A", count: 2 },
+  ];
+
+  test("pastes into the active cell when the table is grouped", async () => {
+    const onWrite = vi.fn();
+    renderTable({
+      onWrite,
+      rowsOverride: viewTransformRows,
+      view: { ...emptyViewState(), group: [{ fieldKey: "name", direction: "asc" }] },
+    });
+
+    fireEvent.paste(screen.getByRole("grid"), pasteClipboardData("102"));
+
+    expect(await screen.findByText("1 cells pasted.")).toBeVisible();
+    expect(onWrite).toHaveBeenCalledWith({
+      kind: "paste",
+      writes: [{ rowId: "rm_1", fieldKey: "number", value: "102" }],
+      rowsInserted: [],
+      newOptions: {},
+    });
+  });
+
+  test("pastes into the visually-first row when the table is sorted", async () => {
+    const onWrite = vi.fn();
+    renderTable({
+      onWrite,
+      rowsOverride: viewTransformRows,
+      view: { ...emptyViewState(), sort: [{ fieldKey: "number", direction: "desc" }] },
+    });
+
+    fireEvent.paste(screen.getByRole("grid"), pasteClipboardData("102"));
+
+    // Sort desc puts rm_2 (201) first, so the active cell (0,0) is rm_2 —
+    // paste must follow the sorted view, not the unsorted rm_1.
+    expect(await screen.findByText("1 cells pasted.")).toBeVisible();
+    expect(onWrite).toHaveBeenCalledWith({
+      kind: "paste",
+      writes: [{ rowId: "rm_2", fieldKey: "number", value: "102" }],
+      rowsInserted: [],
+      newOptions: {},
+    });
+  });
+
+  test("pastes into the surviving row when the table is filtered", async () => {
+    const onWrite = vi.fn();
+    renderTable({
+      onWrite,
+      rowsOverride: viewTransformRows,
+      view: {
+        ...emptyViewState(),
+        filter: [{ fieldKey: "number", operator: "contains", value: "201" }],
+      },
+    });
+
+    fireEvent.paste(screen.getByRole("grid"), pasteClipboardData("102"));
+
+    expect(await screen.findByText("1 cells pasted.")).toBeVisible();
+    expect(onWrite).toHaveBeenCalledWith({
+      kind: "paste",
+      writes: [{ rowId: "rm_2", fieldKey: "number", value: "102" }],
+      rowsInserted: [],
+      newOptions: {},
+    });
+  });
+
   test("shows filtered empty state separately from source empty state", () => {
     renderTable({
       view: {

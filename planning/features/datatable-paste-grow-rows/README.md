@@ -11,7 +11,7 @@ RELATED: frontend/src/shared/ui/data-table/hooks/useGridClipboard.ts,
          frontend/src/shared/ui/data-table/lib/paste/plan.ts,
          frontend/src/shared/ui/data-table/DataTable.tsx (insertRowBelow),
          frontend/src/shared/ui/data-table/types.ts (WriteOp: paste / rowInsert),
-         planning/bugs/datatable-copy-paste-broken-when-grouped-filtered-sorted.md,
+         planning/archive/2026-07-09/datatable-copy-paste-broken-when-grouped-filtered-sorted.md,
          planning/refactor/data-table-ui-tweaks/ (item 3: paste feedback)
 ---
 

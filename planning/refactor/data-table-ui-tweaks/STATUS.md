@@ -16,11 +16,14 @@ one commit per item (precedent: `attachment-cell-ux`).
 
 ## Cross-links
 
-- Item 3 shares the copy/paste subsystem with the open bug
-  `planning/bugs/datatable-copy-paste-broken-when-grouped-filtered-sorted.md`
-  — the `copiedRange` overlay must track stable row/field identity (not visual
-  index) or it will desync under group/filter/sort exactly like that bug. Fix
-  the bug first, or build both on one shared range↔render mapping.
+- Item 3 shares the copy/paste subsystem with the now-**resolved** bug
+  `planning/archive/2026-07-09/datatable-copy-paste-broken-when-grouped-filtered-sorted.md`.
+  That bug was a stray group-only paste guard, **not** a cell-resolution
+  desync — copy/paste/fill already track view-resolved rows, so there is no
+  bug to fix first. The `copiedRange` overlay must still track stable
+  row/field identity (not visual index) or it will desync under
+  group/filter/sort; that is a fresh requirement for the new overlay, not a
+  carry-over.
 
 ## Verification (per item)
 

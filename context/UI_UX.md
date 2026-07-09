@@ -364,10 +364,12 @@ selection:
   drops overflow.
 - More clipboard columns than fit → silent drop with a toast note.
 
-Paste is **disabled while the table is grouped** — banner reads
-*"Ungroup to paste"*. Per-column type coercion runs on every
-incoming string (numeric strings parsed; single-select strings
-matched-or-created; etc.).
+Paste works **regardless of group / filter / sort** — a view
+transform never disables it. The target resolves against the same
+visible-data-row subset copy and the fill handle use, so ⌘V lands
+on the row at the active cell in the current view. Per-column type
+coercion runs on every incoming string (numeric strings parsed;
+single-select strings matched-or-created; etc.).
 
 **Fill handle.** When a range is active and not editing, a 6×6 px
 square at the bottom-right corner extends the selection by drag

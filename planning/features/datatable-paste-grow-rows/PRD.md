@@ -69,9 +69,12 @@ On paste, after `planPaste(...)` computes the plan:
 
 Appending rows while a **group / sort / filter** is active is the fraught case:
 new rows need a defined landing spot (which group? what sort position? do they
-pass the active filter?). This shares risk with the open bug
-`planning/bugs/datatable-copy-paste-broken-when-grouped-filtered-sorted.md`
-(paste cell-resolution desyncs under view transforms). **Open decision below.**
+pass the active filter?). This was once thought to share risk with
+`planning/archive/2026-07-09/datatable-copy-paste-broken-when-grouped-filtered-sorted.md`,
+but that bug is **resolved** and was *not* a cell-resolution desync — paste
+already resolves through the view-resolved visible rows. Row *appending*
+under a view transform is a genuinely separate open question. **Open
+decision below.**
 
 ## Open decisions
 

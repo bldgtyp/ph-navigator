@@ -84,21 +84,24 @@ describe("GridToolbar", () => {
   test("status chips collapse when state moves into button labels and footer chrome", () => {
     renderToolbar();
     // Phase 4 §4.8: the old `No filters` / `Sorted by 0 fields` chips
-    // were removed. Phase 6: the `Ungrouped` chip is also removed —
-    // the Group ▾ button label now carries the grouping info, and the
-    // "Ungroup to paste" banner moves out of the status row (only
-    // surfaces on a paste attempt). Editability lives in the table footer.
+    // were removed. Phase 6: the `Ungrouped` chip is also removed — the
+    // Group ▾ button label now carries the grouping info. Editability
+    // lives in the table footer. The old "Ungroup to paste" hint is gone
+    // entirely: paste works under group/filter/sort, so nothing tells the
+    // user to ungroup.
     expect(screen.queryByText(/No filters/)).not.toBeInTheDocument();
     expect(screen.queryByText("Ungrouped")).not.toBeInTheDocument();
     expect(screen.queryByText("Ungroup to paste")).not.toBeInTheDocument();
   });
 
-  test("status row surfaces 'Ungroup to paste' chip when any group rule is active", () => {
+  test("no 'Ungroup to paste' hint appears when a group rule is active", () => {
     renderToolbar({
       ...emptyViewState(),
       group: [{ fieldKey: "name", direction: "asc" }],
     });
-    expect(screen.getByText("Ungroup to paste")).toBeInTheDocument();
+    // Paste is not disabled while grouped, so the toolbar must not tell
+    // the user to ungroup.
+    expect(screen.queryByText("Ungroup to paste")).not.toBeInTheDocument();
   });
 
   test("Group button label is 'Group' when neutral and 'Grouped by N fields' when active", () => {

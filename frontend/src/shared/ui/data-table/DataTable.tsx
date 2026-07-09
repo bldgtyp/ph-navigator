@@ -401,7 +401,6 @@ export function DataTable<TRow>({
     getCoreRowModel: getCoreRowModel(),
   });
 
-  const isGrouped = view.group.length > 0;
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   // Row virtualization. Only rows in (or near) the viewport mount; the
@@ -822,7 +821,6 @@ export function DataTable<TRow>({
     selection,
     edit,
     readOnly,
-    isGrouped,
     onCopy: clipboard.copy,
     onUndo: () =>
       void undoOnce().catch((error) => {
@@ -1345,7 +1343,11 @@ export function DataTable<TRow>({
   };
 
   const handlePasteEvent = (event: ClipboardEvent<HTMLDivElement>) => {
-    if (readOnly || isGrouped) return;
+    // Paste resolves its target against `visibleDataRows` (the same
+    // filter/sort/group-resolved subset copy and click-drag fill use), so
+    // a view transform never disables it — grouped/filtered/sorted tables
+    // paste into the row at the active cell just like an ungrouped one.
+    if (readOnly) return;
     if (edit.editing) return;
     const tsv = event.clipboardData.getData("text/plain");
     if (!tsv) return;
