@@ -3,6 +3,7 @@ import { Pencil, X } from "lucide-react";
 import {
   formatConductivityFromWmK,
   formatDensityFromKgM3,
+  formatRPerInFromConductivityWmK,
   formatSpecificHeatFromJKgK,
   useUnitPreference,
 } from "../../../lib/units";
@@ -158,14 +159,18 @@ export function MaterialsPanel({
       render: (m) => <span>{m.category ?? "Uncategorized"}</span>,
     },
     {
+      // PH designers reason in R-per-inch (resistivity) in IP, conductivity in SI.
+      // The stored field is always conductivity_w_mk; resistivity is derived at display.
       key: "lambda",
-      header: "Lambda",
-      unit: conductivityUnitLabel(unitSystem),
+      header: unitSystem === "IP" ? "Resistivity" : "Lambda",
+      unit: unitSystem === "IP" ? "R/inch" : conductivityUnitLabel(unitSystem),
       numeric: true,
       width: "minmax(80px, 0.7fr)",
       render: (m) => (
         <span>
-          {formatConductivityFromWmK(m.conductivity_w_mk, { unitSystem, showUnit: false })}
+          {unitSystem === "IP"
+            ? formatRPerInFromConductivityWmK(m.conductivity_w_mk, { unitSystem, showUnit: false })
+            : formatConductivityFromWmK(m.conductivity_w_mk, { unitSystem, showUnit: false })}
         </span>
       ),
     },
