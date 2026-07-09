@@ -634,7 +634,9 @@ function buildColumns<TProduct extends ApertureSpecProduct>({
       key: "datasheet",
       header: "Datasheet",
       width: "80px",
-      render: (row) => <AttachmentChipCell count={row.datasheet_asset_ids.length} />,
+      render: (row) => (
+        <AttachmentChipCell count={row.datasheet_asset_ids.length} noun="datasheet" />
+      ),
     },
     {
       key: "status",

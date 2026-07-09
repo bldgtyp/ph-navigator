@@ -200,13 +200,15 @@ export function MaterialsPanel({
       key: "datasheet",
       header: "Datasheet",
       width: "80px",
-      render: (m) => <AttachmentChipCell count={m.datasheet_asset_ids.length} />,
+      render: (m) => <AttachmentChipCell count={m.datasheet_asset_ids.length} noun="datasheet" />,
     },
     {
       key: "photos",
       header: "Photos",
       width: "80px",
-      render: (m) => <AttachmentChipCell count={countGroupedUseSitePhotos(m.use_sites)} />,
+      render: (m) => (
+        <AttachmentChipCell count={countGroupedUseSitePhotos(m.use_sites)} noun="photo" />
+      ),
     },
     {
       key: "status",

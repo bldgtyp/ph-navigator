@@ -9,8 +9,8 @@ RELATED: README.md, PRD.md
 
 # STATUS — Attachment Cell UX
 
-**Current focus:** Item 8 done (on branch `refactor/attachment-cell-ux`).
-Next: **Item 7** (chip tooltip + contrast).
+**Current focus:** Items 8, 7 done (on branch `refactor/attachment-cell-ux`).
+Next: **Item 6** (expanded-row border).
 **Branch:** not created yet (suggest `refactor/attachment-cell-ux`).
 
 ## Item tracker
@@ -23,7 +23,7 @@ Next: **Item 7** (chip tooltip + contrast).
 | 4 | Persistent "+ Add" tile | `AttachmentCell` | Not started | Registry already allows 5 datasheets |
 | 5 | Upload spinner + verification | `AttachmentCell` | Not started | Verification already exists; visual + thumbnail-lag |
 | 6 | Border around expanded row | `ReportTable` | Not started | CSS-only preferred; also hits Apertures |
-| 7 | Chip count tooltip + lighter "missing" | `AttachmentChipCell` | Not started | Parameterize noun (datasheet/photo); also Apertures |
+| 7 | Chip count tooltip + lighter "missing" | `AttachmentChipCell` | Implemented on branch | `noun` prop → `title`/`aria-label` count; "missing" glyph faded via color-mix; noun wired at 3 call sites |
 | 8 | IP → Resistivity [R/inch] column | `MaterialsPanel` | Implemented on branch | Reused `formatRPerInFromConductivityWmK`; header/unit/render branch on `unitSystem` |
 
 State vocabulary: Not started · In progress · Blocked · In review ·
@@ -63,4 +63,10 @@ _(append per item: what was driven in the app, result, gate status)_
   `formatRPerInFromConductivityWmK`; SI unchanged). Gate:
   `make frontend-dev-check` green (typecheck + lint + build). Live IP/SI
   toggle check pending in the batch app-verification pass.
+- 2026-07-09 — Item 7: `AttachmentChipCell` gained a `noun` prop feeding a
+  `title`/`aria-label` count tooltip ("3 datasheets" / "No photos"); wired
+  at the 3 call sites (Materials datasheets/photos, Apertures datasheets).
+  Missing-state glyph faded (`color-mix(--text-muted 55%, --bg-card)`) for
+  stronger have-vs-missing contrast. Gate green. Hover-tooltip + contrast
+  check pending in the batch app-verification pass.
 </content>

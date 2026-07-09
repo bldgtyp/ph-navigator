@@ -316,7 +316,9 @@
   background: transparent;
   border: 1px dashed var(--border-subtle);
   border-radius: var(--phn-control-radius);
-  color: var(--text-muted, var(--text-secondary));
+  /* Missing state: faded well below the solid accent has-files chip so the
+     have-vs-missing contrast reads at a glance. */
+  color: color-mix(in oklab, var(--text-muted) 55%, var(--bg-card));
   display: inline-flex;
   justify-content: center;
   line-height: 1;
