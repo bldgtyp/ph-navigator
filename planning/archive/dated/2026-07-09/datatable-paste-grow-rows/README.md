@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-09
-TIME: 19:54 EDT
-STATUS: Implemented — focused tests + frontend gate green
+TIME: 19:56 EDT
+STATUS: Complete / archived — focused tests + frontend gate green
 AUTHOR: Ed May + Claude
 SCOPE: DataTable paste — when the clipboard source has more rows than the
        target table can hold from the paste anchor, prompt the user to either

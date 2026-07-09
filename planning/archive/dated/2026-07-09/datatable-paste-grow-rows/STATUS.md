@@ -1,8 +1,7 @@
 # STATUS — datatable-paste-grow-rows
 
-**State:** ✅ Implemented — focused DataTable tests, frontend build, graphify,
-simplify, docs-pass, and `make frontend-dev-check` are green. Ready for archive
-cleanup.
+**State:** ✅ Complete / archived — focused DataTable tests, frontend build,
+graphify, simplify, docs-pass, and `make frontend-dev-check` are green.
 
 **Ask:** when a paste source is taller than the target from the anchor
 (`plan.rowsOverflow > 0`), replace today's abort with a modal — **truncate** or

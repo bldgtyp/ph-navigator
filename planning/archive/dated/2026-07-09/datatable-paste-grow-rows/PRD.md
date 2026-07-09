@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-09
-TIME: 19:54 EDT
-STATUS: Implemented — v1 decisions resolved and verified
+TIME: 19:56 EDT
+STATUS: Complete / archived — v1 decisions resolved and verified
 AUTHOR: Ed May + Claude
 SCOPE: Behavior spec for paste-overflow → truncate-or-grow
 RELATED: ./README.md, ./STATUS.md
