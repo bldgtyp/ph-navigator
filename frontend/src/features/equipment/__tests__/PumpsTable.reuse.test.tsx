@@ -207,9 +207,8 @@ describe("PumpsTable DataTable reuse", () => {
     );
 
     const attachment = await screen.findByTitle("pump-datasheet.pdf · application/pdf");
-    const attachmentCell = attachment.closest(".attachment-cell");
-    expect(attachmentCell).not.toBeNull();
-    fireEvent.keyDown(attachmentCell as HTMLElement, { key: "Delete" });
+    fireEvent.click(attachment);
+    fireEvent.click(await screen.findByRole("button", { name: "Detach" }));
 
     await waitFor(() => {
       expect(onWrite).toHaveBeenCalledWith({

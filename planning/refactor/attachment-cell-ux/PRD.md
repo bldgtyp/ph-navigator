@@ -80,9 +80,10 @@ select is tolerable. Options:
 - **(C) Single-click opens; keep keyboard select for detach** (click =
   open, focus/arrows still select for `Delete`). Hybrid; slightly subtle.
 
-Recommend **(A)**. Confirm at implementation time. Whatever we pick, keep
-`Enter`/`Space` opening the focused tile for keyboard users, and preserve
-detach (modal Detach at minimum).
+**RESOLVED (Ed, 2026-07-09): (A) global.** Single click opens the preview on
+every attachment surface; the in-strip select model is removed; `Enter` /
+`Space` still open a focused tile (native `<button>`); detach is modal-only.
+Contract §A4.2/§A4.6 updated to match.
 
 **Blast radius.** Click semantics on every attachment cell (A) or scoped
 (B). Contract doc §A4.2 update required for (A)/(C).

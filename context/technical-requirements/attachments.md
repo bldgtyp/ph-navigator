@@ -158,16 +158,15 @@ Signed URL TTLs:
   here): thumbnails clickable for preview/download; no drop target;
   no empty-state button; Delete key is a no-op.
 
-### A4.2 Thumbnail selection inside the cell
+### A4.2 Opening a thumbnail
 
-- Click once = select (2 px focus ring, token
-  `--phn-selection-ring`).
-- Click twice / Enter / Space on selected = open preview modal.
-- Click outside cell = clear selection.
-- ←/→ inside the cell move the selection along the strip and scroll
-  the cell horizontally to keep the selected tile in view.
-- Selection is local to the cell; does NOT affect grid-level
-  active-cell or range-select state.
+- **Single click on a thumbnail = open the preview modal.** (Superseded the
+  earlier select-then-double-click model — 2026-07-09, decision D-1.)
+- Each thumbnail is a real focusable `<button>`; Enter / Space on a
+  focused tile opens the same modal via native button activation.
+- There is no in-strip "selected" state and no arrow-key strip
+  navigation; navigation between attachments happens inside the modal
+  (Prev / Next). Detach happens inside the modal (§A4.6).
 
 ### A4.3 Drop interaction
 
@@ -211,8 +210,10 @@ Signed URL TTLs:
 
 ### A4.6 Detach
 
-- AirTable parity: select thumbnail (cell strip *or* modal rail) →
-  press **Delete** (or Backspace) → attachment detaches.
+- Detach happens **from the preview modal**: open a thumbnail (single
+  click, §A4.2) → **Detach** (or the modal's Delete / Backspace on the
+  currently-viewed attachment). The in-strip Delete-to-detach shortcut was
+  removed with the select model (2026-07-09, decision D-1).
 - One semantic CellWrite removing the `asset_id`; one undo entry.
 - No confirm dialog.
 - Underlying `project_assets` row is NOT soft-deleted; PRD §6.5 rule

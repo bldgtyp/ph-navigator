@@ -131,11 +131,6 @@
   border-color: color-mix(in oklab, var(--accent) 45%, var(--border-subtle));
 }
 
-.attachment-thumb.selected {
-  border-color: var(--phn-selection-ring, var(--accent));
-  box-shadow: 0 0 0 2px var(--phn-selection-ring, var(--accent));
-}
-
 .attachment-thumb img {
   height: 100%;
   object-fit: cover;

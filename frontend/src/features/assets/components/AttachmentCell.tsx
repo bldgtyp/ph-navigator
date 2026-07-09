@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
+import { useMemo, useRef, useState, type DragEvent } from "react";
 import { createPortal } from "react-dom";
 import { AlertTriangle, Loader2, Paperclip, Plus } from "lucide-react";
 import { assetDownloadPath } from "../api";
@@ -28,7 +28,6 @@ export function AttachmentCell({
   variant?: "cell" | "card";
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const [selected, setSelected] = useState(0);
   const [modalIndex, setModalIndex] = useState<number | null>(null);
   const [pending, setPending] = useState<string[]>([]);
   const [failed, setFailed] = useState<string[]>([]);
@@ -84,13 +83,10 @@ export function AttachmentCell({
     if (readOnly || value.length === 0) return;
     const next = value.filter((_, index) => index !== targetIndex);
     await commitChange(next);
-    const nextSelected = Math.max(0, Math.min(targetIndex, next.length - 1));
-    setSelected(nextSelected);
-    setModalIndex(next[nextSelected] ? nextSelected : null);
-  };
-
-  const detachSelected = async () => {
-    await detachAt(selected);
+    // Keep the preview modal on a sensible neighbour, or close it if the
+    // strip is now empty.
+    const nextIndex = Math.max(0, Math.min(targetIndex, next.length - 1));
+    setModalIndex(next[nextIndex] ? nextIndex : null);
   };
 
   const replaceSelected = async (files: FileList | null) => {
@@ -99,14 +95,6 @@ export function AttachmentCell({
     const assetId = await uploadAsset(projectId, config.assetKind, file);
     const next = value.map((existing, index) => (index === modalIndex ? assetId : existing));
     await commitChange(next);
-  };
-
-  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === "ArrowRight")
-      setSelected((current) => Math.min(value.length - 1, current + 1));
-    if (event.key === "ArrowLeft") setSelected((current) => Math.max(0, current - 1));
-    if (event.key === "Enter" || event.key === " ") setModalIndex(selected);
-    if (event.key === "Delete" || event.key === "Backspace") void detachSelected();
   };
 
   const resetDrag = () => {
@@ -137,8 +125,6 @@ export function AttachmentCell({
       className={`attachment-cell attachment-cell--${variant} ${
         showInlineEmptyButton ? "attachment-cell-inline" : ""
       } ${dragActive && !readOnly ? "drag-active" : ""}`}
-      tabIndex={0}
-      onKeyDown={onKeyDown}
       onDragEnter={onDragEnter}
       onDragOver={(event) => {
         if (!readOnly) event.preventDefault();
@@ -171,10 +157,9 @@ export function AttachmentCell({
               <button
                 type="button"
                 key={`${assetId}-${index}`}
-                className={`attachment-thumb ${index === selected ? "selected" : ""}`}
+                className="attachment-thumb"
                 title={asset ? `${asset.original_filename} · ${asset.content_type}` : assetId}
-                onClick={() => setSelected(index)}
-                onDoubleClick={() => setModalIndex(index)}
+                onClick={() => setModalIndex(index)}
               >
                 {asset?.thumbnail_url ? (
                   <img src={asset.thumbnail_url} alt="" />

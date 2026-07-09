@@ -9,10 +9,11 @@ RELATED: README.md, PRD.md
 
 # STATUS — Attachment Cell UX
 
-**Current focus:** Items 8, 7, 6, 1, 4, 3, 5 done (on branch `refactor/attachment-cell-ux`).
-Next: **Item 2** (single-click preview) — BLOCKED on decision D-1 (Ed).
-A batch live-verification pass (app screenshots) is queued once item 2 lands;
-gates + full affected suites (1277 tests) green so far.
+**Current focus:** ALL 8 items implemented on branch `refactor/attachment-cell-ux`.
+Remaining before "Complete": (1) live visual-verification pass (app
+screenshots — the changes are heavily visual), and (2) merge-to-main
+decision (Ed's call per project norms). Full frontend suite green
+(2070 tests); `make frontend-dev-check` green.
 **Branch:** not created yet (suggest `refactor/attachment-cell-ux`).
 
 ## Item tracker
@@ -20,7 +21,7 @@ gates + full affected suites (1277 tests) green so far.
 | # | Item | Component | State | Notes |
 |---|------|-----------|-------|-------|
 | 1 | Drag-active highlight on drop zone | `AttachmentCell` | Implemented on branch | `dragActive` via enter/leave depth counter → `.drag-active` (accent ring + intensified drop button) |
-| 2 | Single-click opens preview | `AttachmentCell` | Blocked (decision) | Needs Ed's pick: A/B/C (PRD Item 2) |
+| 2 | Single-click opens preview | `AttachmentCell` | Implemented on branch | D-1 = A (global). Click opens modal; removed select model (state/arrow-nav/Delete/tabIndex/`.selected` CSS); detach via modal. Contract §A4.2/§A4.6 synced; 8 equipment tests updated |
 | 3 | Thumbnail tile redesign | `AttachmentCell` | Implemented on branch | `variant` prop (cell 32px / card 44px); unified tile frame; removed hand-drawn dog-ear/bar → clean type badge; card variant wired at Materials/Apertures/UseSite |
 | 4 | Persistent "+ Add" tile | `AttachmentCell` | Implemented on branch | Tail tile on populated strip when `value+pending < maxCount`; reuses file picker; empty-state button kept for zero case |
 | 5 | Upload spinner + verification | `AttachmentCell` | Implemented on branch | Spinner tile (Loader2) during pending; `useAssetUrls` polls while thumbnail pending; inline error tile per failed file (toast deferred — no Toaster mounted) |
@@ -49,9 +50,9 @@ cluster, then the click-semantics change last.
 
 ## Open decisions
 
-- **D-1 (Item 2):** single-click-to-open scope — (A) global / (B)
-  datasheets-only prop / (C) click-opens-but-keep-keyboard-select.
-  Recommend **(A)**. Resolve before item 2.
+- **D-1 (Item 2):** RESOLVED (Ed, 2026-07-09) = **(A) global**. Single click
+  opens the preview on every attachment surface; the in-strip select model is
+  gone; detach happens in the modal. Contract §A4.2/§A4.6 updated.
 - **D-2 (Item 3):** RESOLVED — context-aware sizing via a `variant` prop
   (`cell` 32px for dense tables, `card` 44px for spec-card/expansion). No
   filename caption added (kept clean; caption is a possible later add).
@@ -102,3 +103,11 @@ _(append per item: what was driven in the app, result, gate status)_
   global Toaster is mounted app-wide). The 3-step upload already verifies
   bytes landed in R2 (complete-upload MIME-sniff), so no new Cloudflare
   signal was needed. Gate + envelope/assets suites green (66 tests).
+- 2026-07-09 — Item 2 (D-1=A): single click on a thumbnail now opens the
+  preview modal on every attachment surface. Removed the whole in-strip
+  select model — `selected` state, arrow-key nav, Enter/Space/Delete cell
+  handler, `tabIndex`, and the dead `.attachment-thumb.selected` CSS —
+  relying on the tiles being native focusable `<button>`s. Detach is
+  modal-only. Synced contract §A4.2/§A4.6. Updated 8 equipment
+  detach-via-Delete tests to detach through the modal. Full frontend suite
+  green (2070 tests).
