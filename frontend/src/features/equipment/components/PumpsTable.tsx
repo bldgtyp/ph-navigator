@@ -119,6 +119,7 @@ export function PumpsTable({
       identifierColumn({
         fieldDefByKey,
         accessor: (pump) => customTextValue(pump, "name"),
+        rowsComputed: pumpsSlice.rows_computed,
       }),
       {
         id: RECORD_ID_FIELD_KEY,
@@ -290,6 +291,7 @@ export function PumpsTable({
     inverseLinks,
     resolveInverseLinkLabel,
     onInverseLinkEdit,
+    pumpsSlice.rows_computed,
   ]);
 
   return (

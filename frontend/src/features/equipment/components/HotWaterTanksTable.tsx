@@ -99,6 +99,7 @@ export function HotWaterTanksTable({
       identifierColumn({
         fieldDefByKey,
         accessor: (tank) => customTextValue(tank, "name"),
+        rowsComputed: hotWaterTanksSlice.rows_computed,
       }),
       {
         id: "quantity",
@@ -197,7 +198,15 @@ export function HotWaterTanksTable({
       statusColumn<HotWaterTankRow>(fieldDefByKey),
       ...customColumns,
     ],
-    [customColumns, datasheetUrlById, fieldDefByKey, isEditor, onWrite, projectId],
+    [
+      customColumns,
+      datasheetUrlById,
+      fieldDefByKey,
+      isEditor,
+      onWrite,
+      projectId,
+      hotWaterTanksSlice.rows_computed,
+    ],
   );
 
   return (

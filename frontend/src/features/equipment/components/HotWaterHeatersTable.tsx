@@ -98,6 +98,7 @@ export function HotWaterHeatersTable({
       identifierColumn({
         fieldDefByKey,
         accessor: (heater) => customTextValue(heater, "name"),
+        rowsComputed: hotWaterHeatersSlice.rows_computed,
       }),
       {
         id: "quantity",
@@ -221,7 +222,15 @@ export function HotWaterHeatersTable({
       statusColumn<HotWaterHeaterRow>(fieldDefByKey),
       ...customColumns,
     ],
-    [customColumns, datasheetUrlById, fieldDefByKey, isEditor, onWrite, projectId],
+    [
+      customColumns,
+      datasheetUrlById,
+      fieldDefByKey,
+      isEditor,
+      onWrite,
+      projectId,
+      hotWaterHeatersSlice.rows_computed,
+    ],
   );
 
   return (

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-09
 TIME: 13:15
-STATUS: Open
+STATUS: Fixed (2026-07-09)
 AUTHOR: Ed May (reported), Claude (recorded)
 SCOPE: THERMAL BRIDGES table — DISPLAY NAME field set to a Formula renders
        blank in every cell (grid render path), while the field-config modal
@@ -113,6 +113,43 @@ Equipment, etc. get it for free — rather than copying the Rooms wiring into ea
 5. Compare with SPACES/Rooms, where the `{Number} — {Name}` display-name formula
    renders correctly.
 
+## Fix — lift the computed-Display-Name path into the shared `identifierColumn`
+
+Rather than copy the Rooms wiring into each table (the iron-law failure mode),
+the shared `identifierColumn` helper is now formula-aware:
+
+- `shared/ui/data-table/columns.tsx` — `identifierColumn` takes an optional
+  `rowsComputed`. When the Display Name field's render type is `"computed"`
+  (a formula field maps `formula` → `computed` in
+  `CUSTOM_FIELD_TYPE_TO_FIELD_TYPE`), it builds the column via
+  `computedFieldColumnDef` (overlay-based `<ComputedCell>` render) — the exact
+  path Rooms uses — instead of the plain stored-value accessor. Non-formula
+  Display Names are unchanged.
+- Every `identifierColumn(...)` caller (Thermal Bridges + the 7 equipment
+  tables: Ventilators, Pumps, Fans, Hot-Water Heaters/Tanks, Electric Heaters,
+  Appliances) now passes `rowsComputed: <slice>.rows_computed` (and lists it in
+  the `columns` useMemo deps). So a formula Display Name now works on **every**
+  table for free.
+
+Backend was already correct: `evaluate_document_formulas` evaluates any field
+whose effective type is `formula` — including a built-in `name`/`record_id`
+overridden to a formula — into `rows_computed[row][field]`
+(`thermal_bridges.py:198`). So the overlay was populated all along; only the
+frontend identifier column wasn't reading it.
+
+### Both defects resolved
+
+1. **Missing render wiring** — fixed uniformly (parent-owned, not per-table).
+2. **Silent editor failure** — no longer silent: choosing Formula for the
+   Display Name now renders correctly, so no refuse/warn is needed.
+
+## Verification
+
+- New unit tests in `__tests__/columns.test.tsx`: `identifierColumn` renders a
+  formula Display Name from the computed overlay, and still uses the plain
+  accessor for a non-formula Display Name.
+- `make ci-frontend`: green (format + lint + typecheck + 2076 tests + build).
+
 ## Status
 
-Open — not yet triaged or fixed. Recorded from user report.
+Fixed 2026-07-09. Recorded from user report.

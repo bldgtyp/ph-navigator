@@ -90,6 +90,7 @@ export function ThermalBridgesTable({
         fieldDefByKey,
         accessor: (row) => customTextValue(row, "name"),
         defaultWidth: 190,
+        rowsComputed: slice.rows_computed,
       }),
       {
         id: "sheet_name",
@@ -160,7 +161,15 @@ export function ThermalBridgesTable({
       statusColumn<ThermalBridgeRow>(fieldDefByKey),
       ...customColumns,
     ],
-    [customColumns, fieldDefByKey, isEditor, onWrite, projectId, reportUrlById],
+    [
+      customColumns,
+      fieldDefByKey,
+      isEditor,
+      onWrite,
+      projectId,
+      reportUrlById,
+      slice.rows_computed,
+    ],
   );
 
   return (

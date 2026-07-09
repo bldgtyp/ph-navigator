@@ -91,6 +91,7 @@ export function FansTable({
       identifierColumn({
         fieldDefByKey,
         accessor: (fan) => customTextValue(fan, "name"),
+        rowsComputed: fansSlice.rows_computed,
       }),
       {
         id: "quantity",
@@ -207,7 +208,15 @@ export function FansTable({
       statusColumn<FanRow>(fieldDefByKey),
       ...customColumns,
     ],
-    [customColumns, datasheetUrlById, fieldDefByKey, isEditor, onWrite, projectId],
+    [
+      customColumns,
+      datasheetUrlById,
+      fieldDefByKey,
+      isEditor,
+      onWrite,
+      projectId,
+      fansSlice.rows_computed,
+    ],
   );
 
   return (

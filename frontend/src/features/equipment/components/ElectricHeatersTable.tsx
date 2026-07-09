@@ -96,6 +96,7 @@ export function ElectricHeatersTable({
       identifierColumn({
         fieldDefByKey,
         accessor: (heater) => customTextValue(heater, "name"),
+        rowsComputed: electricHeatersSlice.rows_computed,
       }),
       {
         id: "model",
@@ -147,7 +148,15 @@ export function ElectricHeatersTable({
       statusColumn<ElectricHeaterRow>(fieldDefByKey),
       ...customColumns,
     ],
-    [customColumns, datasheetUrlById, fieldDefByKey, isEditor, onWrite, projectId],
+    [
+      customColumns,
+      datasheetUrlById,
+      fieldDefByKey,
+      isEditor,
+      onWrite,
+      projectId,
+      electricHeatersSlice.rows_computed,
+    ],
   );
 
   return (
