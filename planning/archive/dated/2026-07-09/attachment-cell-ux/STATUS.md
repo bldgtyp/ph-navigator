@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-09
 TIME: 11:20 EDT
-STATUS: Active
+STATUS: Complete
 AUTHOR: Ed May + Claude
 SCOPE: Per-item tracker for the attachment-cell UX refactor
 RELATED: README.md, PRD.md
@@ -9,9 +9,9 @@ RELATED: README.md, PRD.md
 
 # STATUS — Attachment Cell UX
 
-**Current focus:** ALL 8 items implemented AND live-verified on branch
-`refactor/attachment-cell-ux`. Remaining before "Complete": merge-to-main
-decision (Ed's call). Full frontend suite green (2070 tests).
+**Current focus:** COMPLETE. All 8 items + the item-3 tile refinement
+implemented, live-verified, and squash-merged to `main` on 2026-07-09.
+Full frontend suite green (2070 tests). Packet archived.
 **Branch:** not created yet (suggest `refactor/attachment-cell-ux`).
 
 ## Item tracker

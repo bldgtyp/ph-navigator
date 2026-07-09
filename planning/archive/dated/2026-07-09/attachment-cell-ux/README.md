@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-09
 TIME: 11:20 EDT
-STATUS: Active
+STATUS: Complete
 AUTHOR: Ed May + Claude
 SCOPE: Envelope/Materials attachment UX — the shared `<AttachmentCell>`
        (drag feedback, open-on-click, thumbnail redesign, persistent add

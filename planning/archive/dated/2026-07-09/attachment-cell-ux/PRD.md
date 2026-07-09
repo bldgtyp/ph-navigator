@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-09
 TIME: 11:20 EDT
-STATUS: Active
+STATUS: Complete
 AUTHOR: Ed May + Claude
 SCOPE: Behavior contract for the five attachment-cell UX items
 RELATED: README.md, STATUS.md,
