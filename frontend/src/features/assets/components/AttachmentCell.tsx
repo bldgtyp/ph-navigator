@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
-import { Paperclip } from "lucide-react";
+import { Paperclip, Plus } from "lucide-react";
 import { assetDownloadPath } from "../api";
 import { uploadAsset, useAssetUrls } from "../hooks";
 import { sameAttachmentAssetIds } from "../lib";
@@ -180,6 +180,17 @@ export function AttachmentCell({
               uploading...
             </span>
           ))}
+          {!readOnly && value.length + pending.length < config.maxCount ? (
+            <button
+              type="button"
+              className="attachment-add-tile"
+              title="Add file"
+              aria-label="Add file"
+              onClick={() => inputRef.current?.click()}
+            >
+              <Plus size={16} aria-hidden="true" />
+            </button>
+          ) : null}
         </div>
       )}
       {modalIndex !== null && value[modalIndex]

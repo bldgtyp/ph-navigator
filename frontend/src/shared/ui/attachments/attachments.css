@@ -117,6 +117,28 @@
   background: color-mix(in oklab, var(--accent) 8%, transparent);
 }
 
+/* Persistent "add another file" affordance at the tail of a populated
+   strip; hidden by the caller once the cell reaches its max_count. */
+.attachment-add-tile {
+  align-items: center;
+  background: transparent;
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-xs);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  flex: 0 0 30px;
+  height: 30px;
+  justify-content: center;
+  min-height: 0;
+  padding: 0;
+}
+
+.attachment-add-tile:hover {
+  border-color: color-mix(in oklab, var(--accent) 50%, var(--border-subtle));
+  color: var(--text-primary);
+}
+
 .attachment-thumb.selected {
   box-shadow: 0 0 0 2px var(--phn-selection-ring, var(--accent));
 }

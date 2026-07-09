@@ -9,10 +9,10 @@ RELATED: README.md, PRD.md
 
 # STATUS — Attachment Cell UX
 
-**Current focus:** Items 8, 7, 6, 1 done (on branch `refactor/attachment-cell-ux`).
-Next: **Item 4** (persistent "+ Add" tile).
+**Current focus:** Items 8, 7, 6, 1, 4 done (on branch `refactor/attachment-cell-ux`).
+Next: **Item 3** (thumbnail redesign — needs `frontend-design` + decision D-2).
 A batch live-verification pass (app screenshots) is queued after the
-`AttachmentCell` cluster; gates are green so far.
+`AttachmentCell` cluster; gates + affected tests are green so far.
 **Branch:** not created yet (suggest `refactor/attachment-cell-ux`).
 
 ## Item tracker
@@ -22,7 +22,7 @@ A batch live-verification pass (app screenshots) is queued after the
 | 1 | Drag-active highlight on drop zone | `AttachmentCell` | Implemented on branch | `dragActive` via enter/leave depth counter → `.drag-active` (accent ring + intensified drop button) |
 | 2 | Single-click opens preview | `AttachmentCell` | Blocked (decision) | Needs Ed's pick: A/B/C (PRD Item 2) |
 | 3 | Thumbnail tile redesign | `AttachmentCell` | Not started | Invoke `frontend-design` skill |
-| 4 | Persistent "+ Add" tile | `AttachmentCell` | Not started | Registry already allows 5 datasheets |
+| 4 | Persistent "+ Add" tile | `AttachmentCell` | Implemented on branch | Tail tile on populated strip when `value+pending < maxCount`; reuses file picker; empty-state button kept for zero case |
 | 5 | Upload spinner + verification | `AttachmentCell` | Not started | Verification already exists; visual + thumbnail-lag |
 | 6 | Border around expanded row | `ReportTable` | Implemented on branch | CSS-only via split `inset` box-shadows (row=top+sides, expansion=bottom+sides); no layout shift; also Apertures |
 | 7 | Chip count tooltip + lighter "missing" | `AttachmentChipCell` | Implemented on branch | `noun` prop → `title`/`aria-label` count; "missing" glyph faded via color-mix; noun wired at 3 call sites |
@@ -80,4 +80,8 @@ _(append per item: what was driven in the app, result, gate status)_
   intensified "Drop files here" button while a valid file is dragged over
   the cell. Shared across all attachment surfaces. Gate green. Live
   drag-hover check pending in the batch pass.
+- 2026-07-09 — Item 4: populated `AttachmentCell` strips now end with a
+  persistent "+ Add" tile (hidden at `max_count`), so 2nd–5th datasheets
+  are addable by click or drop; empty-state button unchanged. Gate green;
+  affected suites pass (`EnvelopePage.test.tsx` 48, `columns.test.tsx` 12).
 </content>
