@@ -82,6 +82,25 @@
   background: color-mix(in oklab, var(--accent) 4%, transparent);
 }
 
+/* Expanded row + its expansion panel read as one framed unit: a 2px accent
+   outline wrapping both. Split across the two siblings — the row draws
+   top+sides, the expansion draws bottom+sides — so the shared edge has no
+   seam. `inset` shadows paint inside the box, so there is no layout shift
+   and columns stay aligned with the other rows. */
+.report-table__row--expanded {
+  box-shadow:
+    inset 2px 0 0 0 var(--accent),
+    inset -2px 0 0 0 var(--accent),
+    inset 0 2px 0 0 var(--accent);
+}
+
+.report-table__row--expanded + .report-table__expansion {
+  box-shadow:
+    inset 2px 0 0 0 var(--accent),
+    inset -2px 0 0 0 var(--accent),
+    inset 0 -2px 0 0 var(--accent);
+}
+
 .report-table__cell {
   display: flex;
   align-items: center;
@@ -316,7 +335,9 @@
   background: transparent;
   border: 1px dashed var(--border-subtle);
   border-radius: var(--phn-control-radius);
-  color: var(--text-muted, var(--text-secondary));
+  /* Missing state: faded well below the solid accent has-files chip so the
+     have-vs-missing contrast reads at a glance. */
+  color: color-mix(in oklab, var(--text-muted) 55%, var(--bg-card));
   display: inline-flex;
   justify-content: center;
   line-height: 1;

@@ -1,6 +1,6 @@
-import { useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
+import { useMemo, useRef, useState, type DragEvent } from "react";
 import { createPortal } from "react-dom";
-import { Paperclip } from "lucide-react";
+import { AlertTriangle, Loader2, Paperclip, Plus } from "lucide-react";
 import { assetDownloadPath } from "../api";
 import { uploadAsset, useAssetUrls } from "../hooks";
 import { sameAttachmentAssetIds } from "../lib";
@@ -14,6 +14,7 @@ export function AttachmentCell({
   onChange,
   assetUrlById,
   showInlineEmptyButton = false,
+  variant = "cell",
 }: {
   projectId: string;
   value: string[];
@@ -22,11 +23,18 @@ export function AttachmentCell({
   onChange: (next: string[]) => Promise<void> | void;
   assetUrlById?: ReadonlyMap<string, AssetUrls>;
   showInlineEmptyButton?: boolean;
+  /** "cell" = compact tiles for dense tables; "card" = roomier tiles for
+   * spec-card / expansion surfaces where there is vertical room. */
+  variant?: "cell" | "card";
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const [selected, setSelected] = useState(0);
   const [modalIndex, setModalIndex] = useState<number | null>(null);
   const [pending, setPending] = useState<string[]>([]);
+  const [failed, setFailed] = useState<string[]>([]);
+  const [dragActive, setDragActive] = useState(false);
+  // Enter/leave fire per descendant during a drag; a depth counter keeps the
+  // highlight steady instead of flickering as the cursor crosses children.
+  const dragDepth = useRef(0);
   const urls = useAssetUrls(projectId, assetUrlById ? [] : value);
   const urlById = useMemo(
     () => assetUrlById ?? new Map((urls.data ?? []).map((item) => [item.asset_id, item])),
@@ -49,30 +57,36 @@ export function AttachmentCell({
       return true;
     });
     const next = [...value];
+    const failures: string[] = [];
     setPending(accepted.map((file) => file.name));
     try {
       for (const file of accepted) {
         if (next.length >= config.maxCount) break;
-        const assetId = await uploadAsset(projectId, config.assetKind, file);
-        if (!next.includes(assetId)) next.push(assetId);
+        try {
+          const assetId = await uploadAsset(projectId, config.assetKind, file);
+          if (!next.includes(assetId)) next.push(assetId);
+        } catch {
+          failures.push(file.name);
+        }
       }
       await commitChange(next);
     } finally {
       setPending([]);
+      if (failures.length) setFailed((prev) => [...prev, ...failures]);
     }
   };
+
+  const dismissFailed = (name: string) =>
+    setFailed((prev) => prev.filter((failedName) => failedName !== name));
 
   const detachAt = async (targetIndex: number) => {
     if (readOnly || value.length === 0) return;
     const next = value.filter((_, index) => index !== targetIndex);
     await commitChange(next);
-    const nextSelected = Math.max(0, Math.min(targetIndex, next.length - 1));
-    setSelected(nextSelected);
-    setModalIndex(next[nextSelected] ? nextSelected : null);
-  };
-
-  const detachSelected = async () => {
-    await detachAt(selected);
+    // Keep the preview modal on a sensible neighbour, or close it if the
+    // strip is now empty.
+    const nextIndex = Math.max(0, Math.min(targetIndex, next.length - 1));
+    setModalIndex(next[nextIndex] ? nextIndex : null);
   };
 
   const replaceSelected = async (files: FileList | null) => {
@@ -83,29 +97,39 @@ export function AttachmentCell({
     await commitChange(next);
   };
 
-  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === "ArrowRight")
-      setSelected((current) => Math.min(value.length - 1, current + 1));
-    if (event.key === "ArrowLeft") setSelected((current) => Math.max(0, current - 1));
-    if (event.key === "Enter" || event.key === " ") setModalIndex(selected);
-    if (event.key === "Delete" || event.key === "Backspace") void detachSelected();
+  const resetDrag = () => {
+    dragDepth.current = 0;
+    setDragActive(false);
   };
-
+  const onDragEnter = (event: DragEvent<HTMLDivElement>) => {
+    if (readOnly) return;
+    event.preventDefault();
+    dragDepth.current += 1;
+    setDragActive(true);
+  };
+  const onDragLeave = () => {
+    if (readOnly) return;
+    dragDepth.current -= 1;
+    if (dragDepth.current <= 0) resetDrag();
+  };
   const onDrop = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
+    resetDrag();
     void attachFiles(event.dataTransfer.files);
   };
-  const isEmpty = value.length === 0 && pending.length === 0;
+  const isEmpty = value.length === 0 && pending.length === 0 && failed.length === 0;
   const shouldRenderEmptyDropButton = isEmpty && !readOnly;
 
   return (
     <div
-      className={`attachment-cell ${showInlineEmptyButton ? "attachment-cell-inline" : ""}`}
-      tabIndex={0}
-      onKeyDown={onKeyDown}
+      className={`attachment-cell attachment-cell--${variant} ${
+        showInlineEmptyButton ? "attachment-cell-inline" : ""
+      } ${dragActive && !readOnly ? "drag-active" : ""}`}
+      onDragEnter={onDragEnter}
       onDragOver={(event) => {
         if (!readOnly) event.preventDefault();
       }}
+      onDragLeave={onDragLeave}
       onDrop={onDrop}
     >
       <input
@@ -133,10 +157,9 @@ export function AttachmentCell({
               <button
                 type="button"
                 key={`${assetId}-${index}`}
-                className={`attachment-thumb ${index === selected ? "selected" : ""}`}
+                className="attachment-thumb"
                 title={asset ? `${asset.original_filename} · ${asset.content_type}` : assetId}
-                onClick={() => setSelected(index)}
-                onDoubleClick={() => setModalIndex(index)}
+                onClick={() => setModalIndex(index)}
               >
                 {asset?.thumbnail_url ? (
                   <img src={asset.thumbnail_url} alt="" />
@@ -152,10 +175,38 @@ export function AttachmentCell({
             );
           })}
           {pending.map((name) => (
-            <span className="attachment-pending" key={name}>
-              uploading...
+            <span
+              className="attachment-pending"
+              key={name}
+              title={`Uploading ${name}…`}
+              aria-label={`Uploading ${name}`}
+            >
+              <Loader2 className="attachment-spinner" size={16} aria-hidden="true" />
             </span>
           ))}
+          {failed.map((name) => (
+            <button
+              type="button"
+              className="attachment-error-tile"
+              key={`failed-${name}`}
+              title={`Upload failed: ${name} — click to dismiss`}
+              aria-label={`Upload failed: ${name}`}
+              onClick={() => dismissFailed(name)}
+            >
+              <AlertTriangle size={16} aria-hidden="true" />
+            </button>
+          ))}
+          {!readOnly && value.length + pending.length < config.maxCount ? (
+            <button
+              type="button"
+              className="attachment-add-tile"
+              title="Add file"
+              aria-label="Add file"
+              onClick={() => inputRef.current?.click()}
+            >
+              <Plus size={16} aria-hidden="true" />
+            </button>
+          ) : null}
         </div>
       )}
       {modalIndex !== null && value[modalIndex]

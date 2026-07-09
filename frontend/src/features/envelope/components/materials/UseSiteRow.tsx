@@ -55,6 +55,7 @@ export function UseSiteRow({
           config={SITE_PHOTO_ATTACHMENT_CONFIG}
           readOnly={!canEdit || busy}
           assetUrlById={assetUrlById}
+          variant="card"
           showInlineEmptyButton={canEdit}
           onChange={onPhotoChange}
         />
