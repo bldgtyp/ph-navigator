@@ -2,8 +2,10 @@
 
 ```
 DATE:    2026-07-09
-TIME:    11:46 EDT
-STATUS:  Requested — researched, NOT scoped. §4 decision gates everything below it.
+TIME:    13:38 EDT
+STATUS:  Scoped — Option B accepted (D1); revised after the 2026-07-09 pre-implementation
+         code review (guard redesign §5.1, wire transport §5.2, edge cases §7.12-7.16,
+         phase reorder §9 — export now lands FIRST).
 AUTHOR:  Ed + Claude
 SCOPE:   Custom-field schema-mutation pipeline (Rooms + all FieldDef tables), backend + frontend.
 RELATED: README.md; STATUS.md
@@ -195,40 +197,62 @@ Option A, only §5.1 (guard relax) and §7's destructive-ack item apply; the res
 
 ## 5. Behavior specification (Option B)
 
-### 5.1 Relax the fixed-units guard
-Replace the equality guard with intent-scoped logic. The guard should fire **only** when the
-field stays a `number` field *and* its unit config actually changes:
+### 5.1 Redesign the fixed-units guard — effective-units rule (D13)
 
-```
-if _number_units_are_fixed(existing) and after.field_type == number
-   and existing.config.units != after.config.units:
-       reject "Fixed unit config cannot be edited."
-```
+> **Revised by the 2026-07-09 review.** The first draft scoped the guard to
+> `after.field_type == number`, which (a) blocked `formula(fixed) → number` — and therefore
+> **undo** of the forward conversion — because the client sends no units on a type change and
+> the D6 carry-back seeding runs *after* the guard; and (b) silently dropped **all** backend
+> enforcement of `fixed` once the field was a formula (a formula→formula units retag would
+> pass; only the modal's disabled controls would protect it, and MCP / raw API bypass the
+> modal). Note `_number_units_are_fixed` checks only `config.units.mode` — once formulas
+> carry fixed units it is true for formula fields too, so the guard's reach changes whether
+> you plan for it or not.
 
-When `after.field_type != number`, units are expected to leave the `units` slot (or move to
-the formula display-units slot per §5.2) — do not reject here. Apply the same change to both
-`bundle.py:80` and `type_conversion.py:276`. (Do **not** loosen the *separate*
-`field_type_locked_keys` guard — floor/zone/iCFA/space-type stay type-locked.)
+The guard fires iff the existing field has fixed units **and the *effective* after-units
+differ from the existing units**, where effective = the explicit units in the request if
+provided (config `units` for a number target; top-level `display_units` for a formula
+target, §5.2), else *the units the server will carry/seed* (= existing units on
+number ⇄ formula conversions and same-type formula edits). Conversions of a fixed-unit
+field to any **other** type (text, url, …) stay rejected — the same protection the old
+guard provided incidentally (D13). Full behavior matrix in `phases/phase-02-backend.md`.
 
-### 5.2 Formula config gains an optional display-units slot
+The guard is currently **duplicated verbatim** in `bundle.py:80` and
+`type_conversion.py:276` (as is `_number_units_are_fixed`): extract one shared helper and
+route both sites through it. (Do **not** loosen the *separate* `field_type_locked_keys`
+guard — floor/zone/iCFA/space-type stay type-locked.)
+
+### 5.2 Formula config gains an optional display-units slot; units travel top-level on the wire
 `apply_set_formula` currently rebuilds config as `{source, ast, deps, result_type}`. It must
 **preserve** an existing display-units blob across a source edit, and the config schema must
 permit it:
 
 - Reuse the number `units` shape (`mode/unit_type/si_unit/ip_unit/precision_si/precision_ip`)
-  under a slot on the formula config. Decide key name in decisions (candidates: reuse `units`,
-  or a distinct `display_units` to avoid overloading the number-only validation). **Leaning:
-  reuse `units`** so the frontend `formatNumberUnitsDisplay` path is shared verbatim.
-- Extend `validate_number_config` (or add a sibling) so `units` is valid on a `formula` field
+  under the same `units` key on the **stored** formula config (D4), so the frontend
+  `formatNumberUnitsDisplay` path is shared verbatim.
+- Extend `validate_number_config` so `units` is valid on a `formula` field
   **iff `result_type == "number"`**; still rejected on text/url/etc. and on a formula whose
-  `result_type` is `text`/`bool`.
-- On conversion `number(units) → formula`, carry the source field's `units` forward into the
-  formula config. `mode` carries too: a `fixed` built-in stays `fixed` (unit not user-editable
-  on the formula either); an `editable` field's output unit stays editable in the modal.
+  `result_type` is `text`/`bool`. (Coherent for stored configs: `set_formula` always writes
+  `result_type`.)
+- **Wire transport (D12, from the 2026-07-09 review):** the client must NOT put `units` inside
+  a formula target's `after.config`. `EditFieldBundleMutation.after` is a `TableFieldDef`
+  whose `validate_config` runs **at request parse** — a formula config with `units` and no
+  `result_type` (server-owned; never sent by the client) 422s before the bundle runs. Instead
+  the bundle mutation gains a **top-level tri-state `display_units` field**, mirroring the
+  existing `formula_source` precedent (which is top-level for exactly this reason): absent →
+  carry forward existing units; explicit clear → bare number; provided → set/retag.
+- On conversion `number(units) → formula`, the server carries the source field's `units`
+  forward into the formula config (the absent-branch default). `mode` carries too: a `fixed`
+  built-in stays `fixed` (unit not user-editable on the formula either); an `editable` field's
+  output unit stays editable in the modal.
 - **The output unit is a free user choice (§4a), not derived from the formula.** After the
   carry-forward default, an `editable`-mode formula lets the user set *any* registry unit-type
   as the output (e.g. change the `{Wattage}/{Airflow}` field's display to `electric_efficiency`),
   or clear it (`mode`/`units` absent → bare number). No dep inspection, no unit inference.
+- **The set_formula reconciliation runs on every formula-target bundle (D14)**, not only when
+  the source changed — otherwise a rename-only bundle (whose config no longer carries units
+  per D12) would drop the units at the field-replace step, and a units-only retag (source not
+  dirty → client sends no `formulaSource`) would silently vanish.
 
 ### 5.3 Display path
 - `useTableSchema` maps a formula FieldDef with a display-units blob AND `result_type ==
@@ -244,7 +268,9 @@ permit it:
 `formula → number` is `lossy` today and lands a bare number field. Under Option B, if the
 formula carried display units, carry them back onto the resulting number field so a
 `number(units) → formula → number` round-trip preserves the unit (and the built-in airflow
-field can be restored to its seed config). Precision follows the units.
+field can be restored to its seed config). Precision follows the units. The §5.1 guard's
+effective-units rule treats the absent-units carry-back as legal — this is what makes
+**undo of the forward conversion** work; the client sends no units on a type change.
 
 ### 5.5 Adding the input fields
 No new work: the modal already supports authoring custom **number fields with units**
@@ -290,27 +316,29 @@ way; only the *sum-target* conversion is new.
    Supply-airflow values (they become computed). Existing manual entries are lost — the ack
    copy should say so plainly ("N typed airflow values will be replaced by the formula
    result").
-6. **Downstream consumers read the value from a new place — RESOLVED, see Phase 3.** After
+6. **Downstream consumers read the value from a new place — RESOLVED, see Phase 1.** After
    conversion the field's value moves from `custom_values["supply_airflow_m3h"]` to the computed
    overlay `rows_computed[row]["supply_airflow_m3h"]`. Computed values are **derived-on-read,
    never persisted** (correct architecture — no staleness). MCP `get_document`/`get_table` and
    the frontend **already** surface `rows_computed`; the **only** consumer that drops computed
    values is the Grasshopper tabular export (`gh_api/tables_export.py:19-20`, a pre-logged gap:
    *"No computed/formula values — raw stored fields only"*). So this is not an external
-   unknown — **Phase 3 makes that exporter emit computed values** (~25-40 LOC, all tables), which
-   removes the need to special-case built-in airflow at all. See
-   `phases/phase-03-export-computed-values.md`.
+   unknown — **Phase 1 makes that exporter emit computed values** (~25-40 LOC, all tables) and
+   lands *before* the guard relax, which removes the need to lock any built-in at all (§7.16).
+   See `phases/phase-01-export-computed-values.md`.
 7. **Fixed vs editable output unit on the formula.** A `fixed` built-in (airflow) should keep
    `mode: fixed` on the formula so the unit can't be silently retargeted; an `editable` source
    field's output unit stays editable. The modal's fixed-controls-disabled logic
    (`FieldConfigSectionNumberUnits.tsx`, `fixed` prop) should extend to formula display units.
 8. **Precision.** `precision_si`/`precision_ip` carry with the units and must reach the
    computed-cell formatter (which today only knows a single flat `numberPrecision`).
-9. **Backend/frontend unit-registry drift (pre-existing).** Frontend `NUMBER_UNIT_TYPES` has
-   entries (`power`, `length_mm`) absent from backend `NUMBER_UNIT_REGISTRY`; a field authored
-   with those passes frontend validation but is rejected by `validate_number_config`. Not
-   caused by this feature, but reusing the units validation for formulas widens the blast
-   radius — worth closing the drift or adding a shared-snapshot test.
+9. **Backend/frontend unit-registry drift (pre-existing) — promoted to a Phase-2
+   prerequisite.** Frontend `NUMBER_UNIT_TYPES` has entries (`power`, `length_mm`) absent from
+   backend `NUMBER_UNIT_REGISTRY`; a field authored with those passes frontend validation but
+   is rejected by `validate_number_config`. Not caused by this feature, but D11 hands formulas
+   the **full unit-type picker**, making the drift much easier to hit than today — close it
+   (add to backend registry, or hide in the picker — O4) plus a shared snapshot test
+   (frontend ⊆ backend) before the picker ships on formulas.
 10. **Schema fingerprint / cycle / deps unchanged.** Conversion changes `field_type` + config,
     so the schema fingerprint changes (expected). Formula cycle-checking, `deps`, and the
     linear-history save model are unaffected — a formula summing sibling fields is an ordinary
@@ -320,35 +348,80 @@ way; only the *sum-target* conversion is new.
     the carry-forward config logic lives in `buildNextConfigForFieldTypeChange` and must be
     updated in lockstep with the backend guard.
 
+The following five entries came out of the 2026-07-09 pre-implementation code review
+(verified against the code, not hypothetical):
+
+12. **Wire-parse validation kills any in-config units payload (D12).**
+    `EditFieldBundleMutation.after` is a `TableFieldDef` (`models.py:288`) and
+    `validate_config` is a `model_validator(mode="after")` (`custom_fields.py:225`) — it runs
+    when the request parses, *before* `bundle.py:80`. A formula-target
+    `after.config = {source, units}` carries no `result_type` (server-owned) and would 422 at
+    the model boundary; the bundle's careful step-4/step-5 threading never gets a chance.
+    Units must travel as a **top-level mutation field** (like `formula_source`, which is
+    top-level for exactly this reason). The frontend strips `units` from formula configs
+    unconditionally.
+13. **The reverse conversion — and undo — must pass the guard.** `_number_units_are_fixed`
+    checks only `config.units.mode` (`bundle.py:280`), so once formulas carry fixed units it
+    is true for them too. A guard scoped to `after.field_type == number` fires on
+    `formula(fixed) → number` because the client sends no units on a type change
+    (`buildNextConfigForFieldTypeChange` starts from `{}`) and the D6 seeding runs *after*
+    the guard — blocking both the round-trip and **undo of the forward conversion**. The
+    effective-units rule (§5.1) treats the absent-units carry-back as legal.
+14. **Fixed-unit enforcement must survive on formula fields.** With a number-scoped guard, a
+    `formula(fixed) → formula` edit retargeting `units` passes backend validation entirely —
+    only the modal's disabled controls protect it, and MCP / raw API bypass the modal. The
+    effective-units rule rejects a changed `display_units` on a fixed formula (§7.7's intent,
+    now enforced server-side).
+15. **A units-only retag must actually persist.** `handleSave` sends `formulaSource` only when
+    the source draft is dirty (`FieldConfigModal.tsx:486`), and bundle step 5 short-circuits
+    on `formula_source is None` (`bundle.py:221`) — so the flagship
+    `{Wattage}/{Airflow} → electric_efficiency` retag (units dirty, source untouched) would
+    be silently dropped once step 4 stops carrying units (D12). Fix is backend-side (D14):
+    step 5 reconciles on **every** formula-target bundle, defaulting the source to the stored
+    one. Robust for all clients; the frontend does not force-send the source.
+16. **The guard relax exposes 18 fixed-unit built-ins across 8 exported tables — order the
+    phases accordingly.** `appliances`, `fans`, `hot_water_tanks`, `hot_water_heaters`,
+    `pumps`, `ventilators`, `rooms`, `thermal_bridges` all carry `mode: "fixed"` built-ins,
+    and **only Rooms has a `field_type_locked_keys` list** — the originally-planned interim
+    lock on the two Rooms airflow fields would leave ~16 others convertible while the GH
+    export still dropped computed values (silent empty values into the energy model). The
+    export fix is smaller than any lock (~25-40 LOC), so it lands **first** (Phase 1) and no
+    lock is ever needed (D8 revised).
+
 ---
 
 ## 8. Open questions
 
 *Resolved (now in `decisions.md`):* Option B accepted (D1); reuse the `units` key gated on
-`result_type == "number"` (D4); the export path is an in-repo Phase-3 change, not an external
-gate (D8 / §7.6); hard/soft unit-validation killed (D2/D3); export wire shape = inline (D10);
-formula display-unit UI reuses the number units section, relabeled "Display units" (D11).
+`result_type == "number"` in the *stored* config (D4); the export path is an in-repo change
+that lands first (D8 revised / §7.6 / §7.16); hard/soft unit-validation killed (D2/D3); export
+wire shape = inline (D10); formula display-unit UI reuses the number units section, relabeled
+"Display units" (D11); units travel top-level on the wire (D12 / §7.12); fixed-unit fields
+convert only number ⇄ formula under the effective-units guard (D13 / §7.13-14); set_formula
+reconciliation runs on every formula-target bundle (D14 / §7.15).
 Remaining live questions:
 
 1. **Confirm the honeybee-ph GH client** reads a formula field's inline value from the exported
-   record (Phase-3 touchpoint — shape choice, not a blocker).
+   record (Phase-1 touchpoint — shape choice, not a blocker).
 2. **Should the two built-in airflow fields ship a *default* formula** (like `record_id` does),
    or stay plain number until a user opts in? (Likely stay plain; opt-in only.)
 
 ---
 
-## 9. Phase sketch (Option B — detailed plans in `phases/`)
+## 9. Phase sketch (Option B — detailed plans in `phases/`; reordered 2026-07-09, §7.16)
 
-- **Phase 1 — Backend** (`phases/phase-01-backend.md`). Relax the guard (§5.1); allow `units`
-  on formula when `result_type == number` (§5.2); carry units forward on `number → formula`
-  and back on `formula → number` (§5.4); preserve display units across `setFormula` source
-  edits with result_type reconciliation (§7.3-4). Scoped to custom fields (temporarily lock the
-  two built-in airflow fields).
-- **Phase 2 — Frontend** (`phases/phase-02-frontend.md`). Map formula+units → `numberUnits` in
-  `useTableSchema`; route computed number cells through `formatNumberUnitsDisplay`; add the
-  (fixed-aware) display-unit section to the modal; carry-forward payload in
-  `buildNextConfigForFieldTypeChange`.
-- **Phase 3 — Export computed values** (`phases/phase-03-export-computed-values.md`). Make the
+- **Phase 1 — Export computed values** (`phases/phase-01-export-computed-values.md`). Make the
   Grasshopper export (`gh_api/tables_export.py`) emit computed/formula values (~25-40 LOC, all
-  tables) — an in-repo change, not an external gate — then unlock the two built-in airflow
-  fields. Independent of Phase 2; can run in parallel.
+  tables). Standalone, lands **first**: the Phase-2 guard relax exposes 18 fixed-unit built-ins
+  across 8 exported tables, and with the export already correct no built-in ever needs an
+  interim conversion lock.
+- **Phase 2 — Backend** (`phases/phase-02-backend.md`). Close the unit-registry drift (§7.9);
+  redesign the guard on the effective-units rule (§5.1, D13); top-level `display_units` wire
+  field (§5.2, D12); allow `units` on formula when `result_type == number`; carry units forward
+  on `number → formula` and back on `formula → number` (§5.4, D6); set_formula reconciliation
+  on every formula-target bundle (D14) with result_type reconciliation (§7.3-4). No built-in
+  lock — Phase 1 already landed.
+- **Phase 3 — Frontend** (`phases/phase-03-frontend.md`). Map formula+units → `numberUnits` in
+  `useTableSchema`; route computed number cells through `formatNumberUnitsDisplay`; add the
+  (fixed-aware) display-unit section to the modal; top-level `displayUnits` payload (D12) —
+  `buildNextConfigForFieldTypeChange` keeps stripping `units` from formula configs.
