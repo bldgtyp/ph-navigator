@@ -2103,7 +2103,7 @@
 /* Phase 3 §4.10: multi-cell ranges use a filled selection treatment.
    Single active cells keep the normal bordered cursor treatment below. */
 .data-table td.data-table-cell-selected {
-  background: var(--data-table-cell-block-selected-bg) !important;
+  background-color: var(--data-table-cell-block-selected-bg) !important;
   --data-table-selection-border: color-mix(in oklab, var(--accent-text) 52%, transparent);
   --data-table-selection-edge-top-shadow: inset 0 0 0 0 transparent;
   --data-table-selection-edge-right-shadow: inset 0 0 0 0 transparent;
@@ -2143,11 +2143,11 @@
 }
 
 .data-table td.data-table-cell-active:not(.data-table-cell-selected) {
-  background: var(--data-table-cell-bg);
+  background-color: var(--data-table-cell-bg);
 }
 
 .data-table td.data-table-cell-active.data-table-cell-selected {
-  background: var(--data-table-cell-block-active-bg) !important;
+  background-color: var(--data-table-cell-block-active-bg) !important;
 }
 
 .data-table td.data-table-cell-error {
@@ -2180,7 +2180,7 @@
 
 .data-table tbody tr:hover td.data-table-cell-selected,
 .data-table tbody tr:has(.data-table-gutter-selected) td.data-table-cell-selected {
-  background: var(--data-table-cell-block-selected-bg) !important;
+  background-color: var(--data-table-cell-block-selected-bg) !important;
 }
 
 .data-table tbody tr:hover td.data-table-cell-active.data-table-cell-selected,
@@ -2188,7 +2188,116 @@
   tbody
   tr:has(.data-table-gutter-selected)
   td.data-table-cell-active.data-table-cell-selected {
-  background: var(--data-table-cell-block-active-bg) !important;
+  background-color: var(--data-table-cell-block-active-bg) !important;
+}
+
+.data-table td.data-table-cell-copied {
+  --data-table-copied-edge-color: var(--accent-text);
+  --data-table-copied-edge-blank: linear-gradient(transparent, transparent);
+  --data-table-copied-edge-top: var(--data-table-copied-edge-blank);
+  --data-table-copied-edge-right: var(--data-table-copied-edge-blank);
+  --data-table-copied-edge-bottom: var(--data-table-copied-edge-blank);
+  --data-table-copied-edge-left: var(--data-table-copied-edge-blank);
+  position: relative;
+}
+
+.data-table td.data-table-cell-copied::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    var(--data-table-copied-edge-top), var(--data-table-copied-edge-right),
+    var(--data-table-copied-edge-bottom), var(--data-table-copied-edge-left);
+  background-position:
+    0 0,
+    100% 0,
+    0 100%,
+    0 0;
+  background-repeat: repeat-x, repeat-y, repeat-x, repeat-y;
+  background-size:
+    8px 2px,
+    2px 8px,
+    8px 2px,
+    2px 8px;
+  animation: data-table-marching-ants 620ms linear infinite;
+  z-index: calc(var(--z-base) + 3);
+}
+
+.data-table td.data-table-cell-copied.data-table-copied-edge-top {
+  --data-table-copied-edge-top: repeating-linear-gradient(
+    90deg,
+    var(--data-table-copied-edge-color) 0,
+    var(--data-table-copied-edge-color) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+
+.data-table td.data-table-cell-copied.data-table-copied-edge-right {
+  --data-table-copied-edge-right: repeating-linear-gradient(
+    180deg,
+    var(--data-table-copied-edge-color) 0,
+    var(--data-table-copied-edge-color) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+
+.data-table td.data-table-cell-copied.data-table-copied-edge-bottom {
+  --data-table-copied-edge-bottom: repeating-linear-gradient(
+    90deg,
+    var(--data-table-copied-edge-color) 0,
+    var(--data-table-copied-edge-color) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+
+.data-table td.data-table-cell-copied.data-table-copied-edge-left {
+  --data-table-copied-edge-left: repeating-linear-gradient(
+    180deg,
+    var(--data-table-copied-edge-color) 0,
+    var(--data-table-copied-edge-color) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+
+.data-table td[data-just-pasted="true"] {
+  animation: data-table-paste-flash 650ms ease-out;
+}
+
+@keyframes data-table-marching-ants {
+  to {
+    background-position:
+      8px 0,
+      100% 8px,
+      -8px 100%,
+      0 -8px;
+  }
+}
+
+@keyframes data-table-paste-flash {
+  0% {
+    background-color: color-mix(in oklab, var(--accent) 30%, var(--data-table-cell-bg));
+    color: var(--accent-text);
+  }
+
+  100% {
+    background-color: var(--data-table-cell-bg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .data-table td.data-table-cell-copied::before,
+  .data-table td[data-just-pasted="true"] {
+    animation: none;
+  }
+
+  .data-table td[data-just-pasted="true"] {
+    background-color: color-mix(in oklab, var(--accent) 18%, var(--data-table-cell-bg));
+  }
 }
 
 /* Phase 7 §4.1 — fill handle. Small solid square anchored at the

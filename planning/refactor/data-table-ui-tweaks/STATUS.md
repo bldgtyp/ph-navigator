@@ -1,6 +1,6 @@
 # STATUS — data-table-ui-tweaks
 
-**State:** 🟡 Active — Items 1–2 implemented; Item 3 still open. Running list;
+**State:** 🟡 Active — Items 1–3 implemented. Running list;
 Ed is still adding items from a live grid review (2026-07-09).
 
 **Branch:** `codex/data-table-ui-tweaks`. One commit per item (precedent:
@@ -12,7 +12,7 @@ Ed is still adding items from a live grid review (2026-07-09).
 |---|------|-------|-----------|
 | 1 | Active-cell highlight ladder (crisp single ring, square corners, kill editor-radius corner spots) | ✅ Implemented | Active/error rings now render as square overlay pseudo-elements; editor radius is reset inside the grid |
 | 2 | Toolbar Filter/Sort/Group white-pill on active | ✅ Implemented | `.data-table-toolbar-button span` now resets border/background/padding/radius so active axis buttons render as one flat tint |
-| 3 | Copy/paste feedback: marching ants + Esc-clear + paste flash | 📋 Specced | Decide sequencing vs. the copy/paste bug (share the view-aware cell-resolution helper); build `copiedRange` (row-id/field-id) overlay |
+| 3 | Copy/paste feedback: marching ants + Esc-clear + paste flash | ✅ Implemented | Copied ranges are stored as stable row-id/field-key endpoints, projected onto the current visible range, and cleared on Esc, paste, or source row updates |
 
 ## Cross-links
 
@@ -54,6 +54,16 @@ Grid chrome is visual — verify in the running app, not just CSS:
    Vitest stderr noise, but no failures.
 3. Copy/paste: ⌘C shows ants; Esc clears; ⌘V flashes target; ants track
    correctly after applying a group AND a sort AND a filter.
+   Item 3 code verification: `cd frontend && pnpm exec vitest run src/shared/ui/data-table/__tests__/DataTable.test.tsx src/shared/ui/data-table/__tests__/GridBody.test.tsx src/shared/ui/data-table/__tests__/useGridKeyboard.test.ts`
+   (119 passed, 2026-07-09; existing `act(...)` stderr warning in the older
+   no-op inline edit test only). `make frontend-dev-check` passed after the
+   timer/`CellRange` type fixes (2026-07-09), with the repo's existing 15
+   frontend lint warnings.
+   Item 3 browser verification: Rooms route copied active frozen cell produced
+   `td[data-copied-cell="true"]`, `::before` repeating-gradient marching-ant
+   edge backgrounds, and retained the active `2px solid` square ring; Esc
+   cleared copied cells (`0` remaining); paste set `data-just-pasted="true"`
+   and `animation-name: data-table-paste-flash` on the target cell.
 4. Closeout gate per item/merge: `simplify` → `docs-pass` → `make format`
    → `make ci`.
 
@@ -62,6 +72,6 @@ Grid chrome is visual — verify in the running app, not just CSS:
 - [x] Document items 1–3 (this packet).
 - [x] Item 2 (no open decisions — smallest, do first).
 - [x] Item 1 (confirm ring approach with Ed).
-- [ ] Copy/paste bug fix (prereq/co-req for item 3).
-- [ ] Item 3 (marching ants + paste flash).
+- [x] Copy/paste bug fix (resolved earlier as grouped/filter/sort paste guard).
+- [x] Item 3 (marching ants + paste flash).
 - [ ] Append further review items as Ed reports them.

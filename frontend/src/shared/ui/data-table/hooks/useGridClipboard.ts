@@ -12,6 +12,9 @@ import type {
 } from "../types";
 import type { DispatchWrite } from "./useGridWriteReducer";
 
+type StableCellAddr = { rowId: string; fieldKey: string };
+export type CopiedCellRange = { anchor: StableCellAddr; focus: StableCellAddr };
+
 // Clipboard wiring — copy and paste — routed through dispatchWrite so
 // paste lands as one semantic undo entry (PoC L6.1, L6.2). Read uses
 // readText() rather than the native paste event because the surrounding
@@ -35,6 +38,8 @@ export function useGridClipboard<TRow>(args: {
   onWrite?: (op: WriteOp) => void | Promise<void>;
   dispatchWrite: DispatchWrite;
   onAnnounce: (message: string) => void;
+  onCopyRange?: (range: CopiedCellRange) => void;
+  onPasteComplete?: (writes: CellWrite[]) => void;
   unitSystem?: UnitSystem;
 }): GridClipboard {
   const {
@@ -46,12 +51,16 @@ export function useGridClipboard<TRow>(args: {
     onWrite,
     dispatchWrite,
     onAnnounce,
+    onCopyRange,
+    onPasteComplete,
     unitSystem = "SI",
   } = args;
 
   const copy = useCallback(() => {
     void copySelection(rows, columns, fieldDefs, range, unitSystem);
-  }, [columns, fieldDefs, range, rows, unitSystem]);
+    const copiedRange = rangeToStableRange(rows, columns, range, getRowId);
+    if (copiedRange) onCopyRange?.(copiedRange);
+  }, [columns, fieldDefs, getRowId, onCopyRange, range, rows, unitSystem]);
 
   const pasteText = useCallback(
     async (tsv: string) => {
@@ -65,10 +74,22 @@ export function useGridClipboard<TRow>(args: {
         onWrite,
         dispatchWrite,
         onAnnounce,
+        onPasteComplete,
         unitSystem,
       });
     },
-    [columns, dispatchWrite, fieldDefs, getRowId, onAnnounce, onWrite, range, rows, unitSystem],
+    [
+      columns,
+      dispatchWrite,
+      fieldDefs,
+      getRowId,
+      onAnnounce,
+      onPasteComplete,
+      onWrite,
+      range,
+      rows,
+      unitSystem,
+    ],
   );
 
   const pasteFromClipboard = useCallback(async () => {
@@ -115,6 +136,7 @@ async function pasteIntoSelection<TRow>(args: {
   onWrite?: (op: WriteOp) => void | Promise<void>;
   dispatchWrite: DispatchWrite;
   onAnnounce: (message: string) => void;
+  onPasteComplete?: (writes: CellWrite[]) => void;
   unitSystem: UnitSystem;
 }) {
   const {
@@ -127,6 +149,7 @@ async function pasteIntoSelection<TRow>(args: {
     onWrite,
     dispatchWrite,
     onAnnounce,
+    onPasteComplete,
     unitSystem,
   } = args;
   if (!onWrite) {
@@ -180,10 +203,28 @@ async function pasteIntoSelection<TRow>(args: {
   };
   try {
     await dispatchWrite(op, inverse);
+    onPasteComplete?.(coerced.writes);
     onAnnounce(`${coerced.writes.length} cells pasted.`);
   } catch (error) {
     onAnnounce(error instanceof Error ? error.message : "Paste failed.");
   }
+}
+
+function rangeToStableRange<TRow>(
+  rows: TRow[],
+  columns: DataTableColumnDef<TRow>[],
+  range: CellRange,
+  getRowId: (row: TRow) => string,
+): CopiedCellRange | null {
+  const anchorRow = rows[range.anchor.rowIndex];
+  const focusRow = rows[range.focus.rowIndex];
+  const anchorColumn = columns[range.anchor.columnIndex];
+  const focusColumn = columns[range.focus.columnIndex];
+  if (!anchorRow || !focusRow || !anchorColumn || !focusColumn) return null;
+  return {
+    anchor: { rowId: getRowId(anchorRow), fieldKey: anchorColumn.fieldKey },
+    focus: { rowId: getRowId(focusRow), fieldKey: focusColumn.fieldKey },
+  };
 }
 
 function optionsToRemoveOnInverse(

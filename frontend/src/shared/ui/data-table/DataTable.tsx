@@ -46,7 +46,7 @@ import type { AggregationKind } from "./fields/aggregations";
 import { getFilterOperators, isFilterContributing } from "./fields/filterOperators";
 import { useGridKeyboard } from "./hooks/useGridKeyboard";
 import { useGridPointerDrag } from "./hooks/useGridPointerDrag";
-import { useGridClipboard } from "./hooks/useGridClipboard";
+import { useGridClipboard, type CopiedCellRange } from "./hooks/useGridClipboard";
 import { useGridFill } from "./hooks/useGridFill";
 import { reorderColumnIds, useGridColumns } from "./hooks/useGridColumns";
 import { useGridColumnDragKeyboard } from "./hooks/useGridColumnDragKeyboard";
@@ -69,10 +69,12 @@ import { RecordDetailModal } from "./components/RecordDetailModal";
 import type { FieldRegistryEntry } from "./lib/formula";
 import { mapToFormulaType } from "./lib/formula/mapToFormulaType";
 import { getCustomValue } from "./lib/customFieldAccessor";
+import { normalizeRange } from "./lib/range/normalize";
 import type {
   AddCustomFieldRequest,
   AxisRoleSubset,
   CellCoord,
+  CellRange,
   CellWrite,
   DataTableColumnDef,
   DataTableProps,
@@ -91,6 +93,7 @@ import type {
 const EMPTY_ID_LIST = stableEmptyArray<string>() as string[];
 const DATA_TABLE_DATA_ROW_ESTIMATE = 38;
 const DATA_TABLE_GROUP_ROW_ESTIMATE = 40;
+const PASTE_FLASH_MS = 650;
 
 export function DataTable<TRow>({
   rows,
@@ -316,6 +319,9 @@ export function DataTable<TRow>({
       : null;
   const selection = useGridSelection({ rowIds, fieldKeys });
   const rowSelection = useGridRowSelection({ rowIds });
+  const [copiedRange, setCopiedRange] = useState<CopiedCellRange | null>(null);
+  const [pasteFlashCells, setPasteFlashCells] = useState<ReadonlySet<string>>(() => new Set());
+  const pasteFlashTimerRef = useRef<number | null>(null);
   const edit = useGridEdit({
     fieldDefByKey,
     dispatchWrite,
@@ -323,6 +329,41 @@ export function DataTable<TRow>({
     hasWriteHandler: Boolean(onWrite),
     unitSystem,
   });
+
+  useEffect(
+    () => () => {
+      if (pasteFlashTimerRef.current !== null) {
+        window.clearTimeout(pasteFlashTimerRef.current);
+      }
+    },
+    [],
+  );
+  const copiedRowsMountedRef = useRef(false);
+  useEffect(() => {
+    if (!copiedRowsMountedRef.current) {
+      copiedRowsMountedRef.current = true;
+      return;
+    }
+    setCopiedRange(null);
+  }, [rows]);
+
+  const copiedVisualRange = useMemo(() => {
+    if (!copiedRange) return null;
+    const visibleRange = stableRangeToVisibleRange(copiedRange, rowIds, fieldKeys);
+    return visibleRange ? normalizeRange(visibleRange) : null;
+  }, [copiedRange, fieldKeys, rowIds]);
+
+  const handlePasteComplete = useCallback((writes: CellWrite[]) => {
+    setCopiedRange(null);
+    if (pasteFlashTimerRef.current !== null) {
+      window.clearTimeout(pasteFlashTimerRef.current);
+    }
+    setPasteFlashCells(new Set(writes.map((write) => cellKey(write.rowId, write.fieldKey))));
+    pasteFlashTimerRef.current = window.setTimeout(() => {
+      setPasteFlashCells(new Set());
+      pasteFlashTimerRef.current = null;
+    }, PASTE_FLASH_MS);
+  }, []);
 
   // History is in-memory per session (PoC L6.3). Phase 2: prefer the
   // consumer-supplied sessionKey so history survives the rows-identity
@@ -507,6 +548,8 @@ export function DataTable<TRow>({
     onWrite,
     dispatchWrite,
     onAnnounce: setAnnounce,
+    onCopyRange: setCopiedRange,
+    onPasteComplete: handlePasteComplete,
     unitSystem,
   });
 
@@ -844,6 +887,8 @@ export function DataTable<TRow>({
     onFillRight: !readOnly && Boolean(onWrite) ? fill.fillRight : undefined,
     onFillUp: !readOnly && Boolean(onWrite) ? fill.fillUp : undefined,
     onFillLeft: !readOnly && Boolean(onWrite) ? fill.fillLeft : undefined,
+    onClearCopiedRange: () => setCopiedRange(null),
+    hasCopiedRange: copiedRange !== null,
     drag: { isDragging: pointerDrag.isDragging, cancel: pointerDrag.cancel },
   });
 
@@ -1610,6 +1655,8 @@ export function DataTable<TRow>({
                     fillTargetPreview={fill.targetPreview}
                     fillHandleVisible={fill.handleVisible}
                     onFillHandleMouseDown={fill.onHandleMouseDown}
+                    copiedRange={copiedVisualRange}
+                    pasteFlashCells={pasteFlashCells}
                     cellsWritable={!readOnly && Boolean(onWrite)}
                     identifierColumnId={pinnedColumnId}
                     identifierDuplicates={identifierDuplicates}
@@ -1698,6 +1745,28 @@ function describeDeleteImpact(populatedRowCount: number): string {
   if (populatedRowCount === 1)
     return "1 row currently has a value for this field; that value will be cleared.";
   return `${populatedRowCount} rows currently have values for this field; those values will be cleared.`;
+}
+
+function stableRangeToVisibleRange(
+  range: CopiedCellRange,
+  rowIds: readonly string[],
+  fieldKeys: readonly string[],
+): CellRange | null {
+  const anchorRowIndex = rowIds.indexOf(range.anchor.rowId);
+  const focusRowIndex = rowIds.indexOf(range.focus.rowId);
+  const anchorColumnIndex = fieldKeys.indexOf(range.anchor.fieldKey);
+  const focusColumnIndex = fieldKeys.indexOf(range.focus.fieldKey);
+  if (anchorRowIndex < 0 || focusRowIndex < 0 || anchorColumnIndex < 0 || focusColumnIndex < 0) {
+    return null;
+  }
+  return {
+    anchor: { rowIndex: anchorRowIndex, columnIndex: anchorColumnIndex },
+    focus: { rowIndex: focusRowIndex, columnIndex: focusColumnIndex },
+  };
+}
+
+function cellKey(rowId: string, fieldKey: string): string {
+  return `${rowId}\u0000${fieldKey}`;
 }
 
 function buildDefaultFormulaFieldRegistry(fieldDefs: readonly FieldDef[]): FieldRegistryEntry[] {
