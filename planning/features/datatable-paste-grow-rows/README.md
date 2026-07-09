@@ -12,7 +12,7 @@ RELATED: frontend/src/shared/ui/data-table/hooks/useGridClipboard.ts,
          frontend/src/shared/ui/data-table/DataTable.tsx (insertRowBelow),
          frontend/src/shared/ui/data-table/types.ts (WriteOp: paste / rowInsert),
          planning/archive/2026-07-09/datatable-copy-paste-broken-when-grouped-filtered-sorted.md,
-         planning/refactor/data-table-ui-tweaks/ (item 3: paste feedback)
+         planning/archive/dated/2026-07-09/data-table-ui-tweaks/ (item 3: paste feedback)
 ---
 
 # Feature — Paste grows the table (truncate vs. add-rows modal)

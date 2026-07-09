@@ -94,7 +94,7 @@ of a **sorted** table, and paste into the surviving row of a **filtered**
 table (both were already green, locking in the view-resolved behavior).
 
 **Note for dependent work** — `planning/features/datatable-paste-grow-rows`
-and `planning/refactor/data-table-ui-tweaks` (item 3, marching-ants
+and `planning/archive/dated/2026-07-09/data-table-ui-tweaks` (item 3, marching-ants
 `copiedRange`) cited this bug as evidence that the clipboard subsystem
 resolves cells by visual index and must be rebuilt on stable identity. That
 premise was mistaken: copy/paste/fill already track the view-resolved row

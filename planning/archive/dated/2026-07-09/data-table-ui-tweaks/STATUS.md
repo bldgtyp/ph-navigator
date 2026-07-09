@@ -1,7 +1,7 @@
 # STATUS — data-table-ui-tweaks
 
-**State:** 🟡 Active — Items 1–3 implemented. Running list;
-Ed is still adding items from a live grid review (2026-07-09).
+**State:** ✅ Complete / archived — Items 1–3 implemented, verified, committed,
+and moved to `planning/archive/dated/2026-07-09/data-table-ui-tweaks/`.
 
 **Branch:** `codex/data-table-ui-tweaks`. One commit per item (precedent:
 `attachment-cell-ux`).
@@ -74,4 +74,4 @@ Grid chrome is visual — verify in the running app, not just CSS:
 - [x] Item 1 (confirm ring approach with Ed).
 - [x] Copy/paste bug fix (resolved earlier as grouped/filter/sort paste guard).
 - [x] Item 3 (marching ants + paste flash).
-- [ ] Append further review items as Ed reports them.
+- [x] Archive packet after closeout.
