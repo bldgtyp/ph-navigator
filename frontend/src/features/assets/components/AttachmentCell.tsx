@@ -14,6 +14,7 @@ export function AttachmentCell({
   onChange,
   assetUrlById,
   showInlineEmptyButton = false,
+  variant = "cell",
 }: {
   projectId: string;
   value: string[];
@@ -22,6 +23,9 @@ export function AttachmentCell({
   onChange: (next: string[]) => Promise<void> | void;
   assetUrlById?: ReadonlyMap<string, AssetUrls>;
   showInlineEmptyButton?: boolean;
+  /** "cell" = compact tiles for dense tables; "card" = roomier tiles for
+   * spec-card / expansion surfaces where there is vertical room. */
+  variant?: "cell" | "card";
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [selected, setSelected] = useState(0);
@@ -120,9 +124,9 @@ export function AttachmentCell({
 
   return (
     <div
-      className={`attachment-cell ${showInlineEmptyButton ? "attachment-cell-inline" : ""} ${
-        dragActive && !readOnly ? "drag-active" : ""
-      }`}
+      className={`attachment-cell attachment-cell--${variant} ${
+        showInlineEmptyButton ? "attachment-cell-inline" : ""
+      } ${dragActive && !readOnly ? "drag-active" : ""}`}
       tabIndex={0}
       onKeyDown={onKeyDown}
       onDragEnter={onDragEnter}

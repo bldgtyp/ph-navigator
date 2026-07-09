@@ -9,10 +9,10 @@ RELATED: README.md, PRD.md
 
 # STATUS — Attachment Cell UX
 
-**Current focus:** Items 8, 7, 6, 1, 4 done (on branch `refactor/attachment-cell-ux`).
-Next: **Item 3** (thumbnail redesign — needs `frontend-design` + decision D-2).
+**Current focus:** Items 8, 7, 6, 1, 4, 3 done (on branch `refactor/attachment-cell-ux`).
+Next: **Item 5** (upload spinner + thumbnail-lag).
 A batch live-verification pass (app screenshots) is queued after the
-`AttachmentCell` cluster; gates + affected tests are green so far.
+`AttachmentCell` cluster; gates + full affected suites (1277 tests) green.
 **Branch:** not created yet (suggest `refactor/attachment-cell-ux`).
 
 ## Item tracker
@@ -21,7 +21,7 @@ A batch live-verification pass (app screenshots) is queued after the
 |---|------|-----------|-------|-------|
 | 1 | Drag-active highlight on drop zone | `AttachmentCell` | Implemented on branch | `dragActive` via enter/leave depth counter → `.drag-active` (accent ring + intensified drop button) |
 | 2 | Single-click opens preview | `AttachmentCell` | Blocked (decision) | Needs Ed's pick: A/B/C (PRD Item 2) |
-| 3 | Thumbnail tile redesign | `AttachmentCell` | Not started | Invoke `frontend-design` skill |
+| 3 | Thumbnail tile redesign | `AttachmentCell` | Implemented on branch | `variant` prop (cell 32px / card 44px); unified tile frame; removed hand-drawn dog-ear/bar → clean type badge; card variant wired at Materials/Apertures/UseSite |
 | 4 | Persistent "+ Add" tile | `AttachmentCell` | Implemented on branch | Tail tile on populated strip when `value+pending < maxCount`; reuses file picker; empty-state button kept for zero case |
 | 5 | Upload spinner + verification | `AttachmentCell` | Not started | Verification already exists; visual + thumbnail-lag |
 | 6 | Border around expanded row | `ReportTable` | Implemented on branch | CSS-only via split `inset` box-shadows (row=top+sides, expansion=bottom+sides); no layout shift; also Apertures |
@@ -52,8 +52,9 @@ cluster, then the click-semantics change last.
 - **D-1 (Item 2):** single-click-to-open scope — (A) global / (B)
   datasheets-only prop / (C) click-opens-but-keep-keyboard-select.
   Recommend **(A)**. Resolve before item 2.
-- **D-2 (Item 3):** thumbnail size + whether to show a filename caption
-  (card context only). Resolve during `frontend-design` pass.
+- **D-2 (Item 3):** RESOLVED — context-aware sizing via a `variant` prop
+  (`cell` 32px for dense tables, `card` 44px for spec-card/expansion). No
+  filename caption added (kept clean; caption is a possible later add).
 
 ## Verification log
 
@@ -84,4 +85,12 @@ _(append per item: what was driven in the app, result, gate status)_
   persistent "+ Add" tile (hidden at `max_count`), so 2nd–5th datasheets
   are addable by click or drop; empty-state button unchanged. Gate green;
   affected suites pass (`EnvelopePage.test.tsx` 48, `columns.test.tsx` 12).
-</content>
+- 2026-07-09 — Item 3: thumbnail redesign. New `variant` prop on
+  `AttachmentCell` (`cell` 32px / `card` 44px via `--attachment-tile-size`);
+  every tile (image/badge/add) now shares one frame; removed the hand-drawn
+  dog-ear + underline glyph (the "weird right border") for a clean type
+  badge. `variant="card"` wired at Materials datasheets, Apertures
+  datasheets, and UseSiteRow site photos; equipment/dense stay compact.
+  Synced contract `attachments.md §A4.1`. Also fixed an Item-7 aria-label
+  regression in `ApertureSpecReportPanel.test.tsx` (old "Attached"/"Missing"
+  → count labels). Full affected suites green (1277 tests).

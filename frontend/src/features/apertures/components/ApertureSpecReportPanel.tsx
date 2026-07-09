@@ -295,6 +295,7 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
                     config={DATASHEET_ATTACHMENT_CONFIG}
                     readOnly={!canEdit || row.specification_status === "na" || busy}
                     assetUrlById={assetUrlById}
+                    variant="card"
                     showInlineEmptyButton={canEdit && row.specification_status !== "na"}
                     onChange={(nextAssetIds) =>
                       onAttachmentChange({

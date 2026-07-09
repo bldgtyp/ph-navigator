@@ -1,9 +1,16 @@
 .attachment-cell {
+  --attachment-tile-size: 32px;
   align-items: center;
   display: flex;
   min-height: calc(var(--data-table-row-height) - 2px);
   outline: none;
   width: 100%;
+}
+
+/* Roomier tiles for spec-card / expansion surfaces (Materials, Apertures)
+   where the cell is not constrained to a dense table row. */
+.attachment-cell--card {
+  --attachment-tile-size: 44px;
 }
 
 .attachment-workbench {
@@ -98,23 +105,41 @@
   display: none;
 }
 
+/* Every tile — image thumbnail, file-type badge, add button — is the same
+   framed card: one border, one radius, one subtle shadow, sized per variant
+   via --attachment-tile-size. Consistency here is what makes the strip read
+   as intentional rather than as scraps. */
 .attachment-thumb {
   align-items: center;
-  background: transparent;
-  border: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xs);
+  box-shadow: var(--shadow-attachment-doc-thumb);
   color: var(--text-primary);
+  cursor: pointer;
   display: flex;
-  flex: 0 0 30px;
-  height: 30px;
-  min-height: 0;
+  flex: 0 0 var(--attachment-tile-size);
+  height: var(--attachment-tile-size);
   justify-content: center;
+  min-height: 0;
   overflow: hidden;
-  padding: var(--space-2);
+  padding: 0;
+  transition: border-color 0.12s var(--ease, ease-out);
 }
 
 .attachment-thumb:hover {
-  background: color-mix(in oklab, var(--accent) 8%, transparent);
+  border-color: color-mix(in oklab, var(--accent) 45%, var(--border-subtle));
+}
+
+.attachment-thumb.selected {
+  border-color: var(--phn-selection-ring, var(--accent));
+  box-shadow: 0 0 0 2px var(--phn-selection-ring, var(--accent));
+}
+
+.attachment-thumb img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
 }
 
 /* Persistent "add another file" affordance at the tail of a populated
@@ -127,8 +152,8 @@
   color: var(--text-secondary);
   cursor: pointer;
   display: flex;
-  flex: 0 0 30px;
-  height: 30px;
+  flex: 0 0 var(--attachment-tile-size);
+  height: var(--attachment-tile-size);
   justify-content: center;
   min-height: 0;
   padding: 0;
@@ -139,70 +164,27 @@
   color: var(--text-primary);
 }
 
-.attachment-thumb.selected {
-  box-shadow: 0 0 0 2px var(--phn-selection-ring, var(--accent));
-}
-
-.attachment-thumb img {
+/* Non-previewable file (or thumbnail not yet ready) → a clean type badge
+   filling the tile, no rendered image. */
+.attachment-doc-thumb {
+  align-items: center;
+  color: var(--text-secondary);
+  display: flex;
   height: 100%;
-  object-fit: cover;
+  justify-content: center;
+  line-height: 1;
   width: 100%;
 }
 
-.attachment-doc-thumb {
-  align-items: flex-end;
-  background: var(--bg-card);
-  border: 1px solid color-mix(in oklab, var(--border-subtle) 82%, var(--text-secondary));
-  border-radius: var(--radius-2xs);
-  box-shadow: var(--shadow-attachment-doc-thumb);
-  color: var(--text-primary);
-  display: flex;
-  height: 25px;
-  justify-content: center;
-  line-height: 1;
-  padding: 0 2px 3px;
-  position: relative;
-  width: 20px;
-}
-
-.attachment-doc-thumb::after {
-  background: linear-gradient(
-    135deg,
-    color-mix(in oklab, var(--bg-page) 88%, var(--border-subtle)) 50%,
-    transparent 50%
-  );
-  border-left: 1px solid var(--border-subtle);
-  border-bottom: 1px solid var(--border-subtle);
-  content: "";
-  height: 6px;
-  position: absolute;
-  right: -1px;
-  top: -1px;
-  width: 6px;
-}
-
-.attachment-doc-thumb::before {
-  background: color-mix(in oklab, var(--accent) 58%, transparent);
-  border-radius: var(--radius-pill);
-  bottom: 2px;
-  content: "";
-  height: 2px;
-  left: 4px;
-  position: absolute;
-  right: 4px;
-}
-
-.attachment-doc-thumb[data-kind="pdf"]::before {
-  background: var(--phn-danger);
+.attachment-doc-thumb[data-kind="pdf"] {
+  color: var(--phn-danger);
 }
 
 .attachment-doc-thumb span {
-  font-size: 7px;
+  font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0;
-  position: relative;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
-  z-index: calc(var(--z-base) + 1);
 }
 
 .attachment-pending {

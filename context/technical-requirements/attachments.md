@@ -142,9 +142,12 @@ Signed URL TTLs:
   `::-webkit-scrollbar { display: none }`, plus a wheel listener
   converting vertical wheel deltas to `scrollLeft` while the cursor is
   over the cell. No `+N` overflow collapse.
-- **Each thumbnail tile**: small bordered card, uniform width (~36 px),
-  image content scaled to fit. PDF → first-page render; image →
-  resized image; HBJSON / unknown → generic file-type glyph.
+- **Each thumbnail tile**: a uniformly-framed square card (one border, one
+  radius, one subtle shadow) sized per cell variant — compact (`~32 px`) in
+  dense-table contexts, roomier (`~44 px`) in spec-card / expansion
+  surfaces (driven by `--attachment-tile-size`). Image content scaled to
+  fit (`object-fit: cover`). PDF → first-page render; image → resized
+  image; HBJSON / unknown → generic file-type badge (PDF/IMG/JSON/FILE).
 - **Empty unselected cell**: renders nothing.
 - **Empty selected (active) cell**: renders a bordered pill button
   inside the cell — `📎  Drop files here`. Click → native file picker;

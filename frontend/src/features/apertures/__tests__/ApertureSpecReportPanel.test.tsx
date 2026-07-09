@@ -211,9 +211,9 @@ describe("ApertureSpecReportPanel", () => {
     expect(screen.getByText("2/3 resolved")).toBeInTheDocument();
 
     const activeRow = screen.getByRole("row", { name: /Triple Pane A/ });
-    expect(within(activeRow).getByLabelText("Attached")).toBeInTheDocument();
+    expect(within(activeRow).getByLabelText(/^\d+ datasheets?$/)).toBeInTheDocument();
     expect(
-      within(screen.getByRole("row", { name: /Unused Glazing/ })).getByLabelText("Missing"),
+      within(screen.getByRole("row", { name: /Unused Glazing/ })).getByLabelText("No datasheets"),
     ).toBeInTheDocument();
 
     fireEvent.click(activeRow);
@@ -269,7 +269,7 @@ describe("ApertureSpecReportPanel", () => {
     expect(screen.getByRole("columnheader", { name: /Width/ })).toBeInTheDocument();
 
     const row = screen.getByRole("row", { name: /Insulated Frame A/ });
-    expect(within(row).getByLabelText("Attached")).toBeInTheDocument();
+    expect(within(row).getByLabelText(/^\d+ datasheets?$/)).toBeInTheDocument();
     fireEvent.click(row);
 
     const useSitesRegion = screen.getByRole("region", { name: "Insulated Frame A use sites" });
