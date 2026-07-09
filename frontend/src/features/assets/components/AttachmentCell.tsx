@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
-import { Paperclip, Plus } from "lucide-react";
+import { AlertTriangle, Loader2, Paperclip, Plus } from "lucide-react";
 import { assetDownloadPath } from "../api";
 import { uploadAsset, useAssetUrls } from "../hooks";
 import { sameAttachmentAssetIds } from "../lib";
@@ -31,6 +31,7 @@ export function AttachmentCell({
   const [selected, setSelected] = useState(0);
   const [modalIndex, setModalIndex] = useState<number | null>(null);
   const [pending, setPending] = useState<string[]>([]);
+  const [failed, setFailed] = useState<string[]>([]);
   const [dragActive, setDragActive] = useState(false);
   // Enter/leave fire per descendant during a drag; a depth counter keeps the
   // highlight steady instead of flickering as the cursor crosses children.
@@ -57,18 +58,27 @@ export function AttachmentCell({
       return true;
     });
     const next = [...value];
+    const failures: string[] = [];
     setPending(accepted.map((file) => file.name));
     try {
       for (const file of accepted) {
         if (next.length >= config.maxCount) break;
-        const assetId = await uploadAsset(projectId, config.assetKind, file);
-        if (!next.includes(assetId)) next.push(assetId);
+        try {
+          const assetId = await uploadAsset(projectId, config.assetKind, file);
+          if (!next.includes(assetId)) next.push(assetId);
+        } catch {
+          failures.push(file.name);
+        }
       }
       await commitChange(next);
     } finally {
       setPending([]);
+      if (failures.length) setFailed((prev) => [...prev, ...failures]);
     }
   };
+
+  const dismissFailed = (name: string) =>
+    setFailed((prev) => prev.filter((failedName) => failedName !== name));
 
   const detachAt = async (targetIndex: number) => {
     if (readOnly || value.length === 0) return;
@@ -119,7 +129,7 @@ export function AttachmentCell({
     resetDrag();
     void attachFiles(event.dataTransfer.files);
   };
-  const isEmpty = value.length === 0 && pending.length === 0;
+  const isEmpty = value.length === 0 && pending.length === 0 && failed.length === 0;
   const shouldRenderEmptyDropButton = isEmpty && !readOnly;
 
   return (
@@ -180,9 +190,26 @@ export function AttachmentCell({
             );
           })}
           {pending.map((name) => (
-            <span className="attachment-pending" key={name}>
-              uploading...
+            <span
+              className="attachment-pending"
+              key={name}
+              title={`Uploading ${name}…`}
+              aria-label={`Uploading ${name}`}
+            >
+              <Loader2 className="attachment-spinner" size={16} aria-hidden="true" />
             </span>
+          ))}
+          {failed.map((name) => (
+            <button
+              type="button"
+              className="attachment-error-tile"
+              key={`failed-${name}`}
+              title={`Upload failed: ${name} — click to dismiss`}
+              aria-label={`Upload failed: ${name}`}
+              onClick={() => dismissFailed(name)}
+            >
+              <AlertTriangle size={16} aria-hidden="true" />
+            </button>
           ))}
           {!readOnly && value.length + pending.length < config.maxCount ? (
             <button

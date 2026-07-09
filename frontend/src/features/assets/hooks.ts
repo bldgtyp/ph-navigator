@@ -17,6 +17,12 @@ export function useAssetUrls(projectId: string, assetIds: string[]) {
     queryFn: () => fetchAssetUrls(projectId, assetIds),
     enabled: assetIds.length > 0,
     staleTime: 10 * 60 * 1000,
+    // Thumbnails render server-side as a background task after complete-upload,
+    // so a freshly attached asset can arrive with thumbnail_status "pending".
+    // Poll briefly until every thumbnail resolves, then stop — so the real
+    // thumbnail swaps in without a manual refresh.
+    refetchInterval: (query) =>
+      query.state.data?.some((asset) => asset.thumbnail_status === "pending") ? 2500 : false,
   });
 }
 

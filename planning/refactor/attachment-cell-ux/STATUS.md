@@ -9,10 +9,10 @@ RELATED: README.md, PRD.md
 
 # STATUS — Attachment Cell UX
 
-**Current focus:** Items 8, 7, 6, 1, 4, 3 done (on branch `refactor/attachment-cell-ux`).
-Next: **Item 5** (upload spinner + thumbnail-lag).
-A batch live-verification pass (app screenshots) is queued after the
-`AttachmentCell` cluster; gates + full affected suites (1277 tests) green.
+**Current focus:** Items 8, 7, 6, 1, 4, 3, 5 done (on branch `refactor/attachment-cell-ux`).
+Next: **Item 2** (single-click preview) — BLOCKED on decision D-1 (Ed).
+A batch live-verification pass (app screenshots) is queued once item 2 lands;
+gates + full affected suites (1277 tests) green so far.
 **Branch:** not created yet (suggest `refactor/attachment-cell-ux`).
 
 ## Item tracker
@@ -23,7 +23,7 @@ A batch live-verification pass (app screenshots) is queued after the
 | 2 | Single-click opens preview | `AttachmentCell` | Blocked (decision) | Needs Ed's pick: A/B/C (PRD Item 2) |
 | 3 | Thumbnail tile redesign | `AttachmentCell` | Implemented on branch | `variant` prop (cell 32px / card 44px); unified tile frame; removed hand-drawn dog-ear/bar → clean type badge; card variant wired at Materials/Apertures/UseSite |
 | 4 | Persistent "+ Add" tile | `AttachmentCell` | Implemented on branch | Tail tile on populated strip when `value+pending < maxCount`; reuses file picker; empty-state button kept for zero case |
-| 5 | Upload spinner + verification | `AttachmentCell` | Not started | Verification already exists; visual + thumbnail-lag |
+| 5 | Upload spinner + verification | `AttachmentCell` | Implemented on branch | Spinner tile (Loader2) during pending; `useAssetUrls` polls while thumbnail pending; inline error tile per failed file (toast deferred — no Toaster mounted) |
 | 6 | Border around expanded row | `ReportTable` | Implemented on branch | CSS-only via split `inset` box-shadows (row=top+sides, expansion=bottom+sides); no layout shift; also Apertures |
 | 7 | Chip count tooltip + lighter "missing" | `AttachmentChipCell` | Implemented on branch | `noun` prop → `title`/`aria-label` count; "missing" glyph faded via color-mix; noun wired at 3 call sites |
 | 8 | IP → Resistivity [R/inch] column | `MaterialsPanel` | Implemented on branch | Reused `formatRPerInFromConductivityWmK`; header/unit/render branch on `unitSystem` |
@@ -94,3 +94,11 @@ _(append per item: what was driven in the app, result, gate status)_
   Synced contract `attachments.md §A4.1`. Also fixed an Item-7 aria-label
   regression in `ApertureSpecReportPanel.test.tsx` (old "Attached"/"Missing"
   → count labels). Full affected suites green (1277 tests).
+- 2026-07-09 — Item 5: in-flight uploads now render a spinner tile (Loader2)
+  instead of "uploading…" text; `useAssetUrls` gained a bounded
+  `refetchInterval` that polls while any `thumbnail_status === "pending"`, so
+  the real thumbnail swaps in without a manual refresh. Per-file failures now
+  surface a dismissible danger tile (Sonner toast from the PRD deferred — no
+  global Toaster is mounted app-wide). The 3-step upload already verifies
+  bytes landed in R2 (complete-upload MIME-sniff), so no new Cloudflare
+  signal was needed. Gate + envelope/assets suites green (66 tests).

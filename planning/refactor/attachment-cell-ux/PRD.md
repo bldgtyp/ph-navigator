@@ -189,6 +189,9 @@ the thumbnail lag.
   invalidation on upload-complete is the clean hook).
 - Error path: on upload/verify failure surface a red tile + Sonner toast
   with the filename (§A4.3, envelope-tab.md §2.7.3), retry/dismiss.
+  **As-built:** shipped the dismissible red tile (filename in tooltip); the
+  Sonner toast is **deferred** — no global `<Toaster>` is mounted app-wide
+  yet, so wiring one is separate infra work, not part of this item.
 
 **Blast radius.** All attachment cells; upload plumbing in
 `assets/hooks.ts` unchanged except an optional post-complete cache
