@@ -4,6 +4,7 @@ import {
   type LinkedRecordPickerCandidate,
   type LinkedRecordPickerMode,
 } from "./fields/linkedRecord/Picker";
+import { ALL_FIELD_LOCKS } from "./lib/locks";
 import type { CellWrite, DataTableColumnDef, FieldDef } from "./types";
 
 export type IncomingLinkFieldDefArgs = {
@@ -12,6 +13,13 @@ export type IncomingLinkFieldDefArgs = {
   targetTablePath: readonly string[];
 };
 
+// Incoming/inverse-link columns are system-provided reverse-link
+// projections, not user-authorable fields. `built_in` gives their
+// header the same locked-schema border as other built-ins, and the
+// full lock set keeps the header menu from offering edit / delete /
+// duplicate. They stay out of the formula registry via
+// `isFormulaReferenceableField` (which excludes read-only linked-record
+// projections despite `built_in`).
 export function incomingLinkFieldDef({
   fieldKey,
   displayName,
@@ -22,6 +30,8 @@ export function incomingLinkFieldDef({
     field_type: "linked_record",
     display_name: displayName,
     read_only: true,
+    built_in: true,
+    locked: [...ALL_FIELD_LOCKS],
     linked_record_config: {
       target_table_path: [...targetTablePath],
       max_links: null,

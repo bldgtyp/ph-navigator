@@ -37,6 +37,7 @@ import {
   roomsPayloadFromRowDuplicate,
   roomsPayloadFromRowInsert,
   roomsTableColumnsForSanitize,
+  ventilatorsTableColumnsForSanitize,
   validateFansPayload,
   validateAppliancesPayload,
   validateElectricHeatersPayload,
@@ -565,6 +566,16 @@ describe("equipment room helpers", () => {
     ]);
     expect(ROOM_FLOOR_LEVEL_COLUMN_ID).toBe("floor_level");
     expect(ROOM_BUILDING_ZONE_COLUMN_ID).toBe("building_zone");
+  });
+
+  test("ventilatorsTableColumnsForSanitize includes the HP-indoor-units incoming column", () => {
+    // VentilatorsTable renders the incoming-link column on top of the
+    // slice schema; the sanitize stub must carry its id or the view-state
+    // sanitizer would strip hide/reorder state for it (regression: the
+    // column could not be hidden and drag-reorder snapped it back).
+    const columns = ventilatorsTableColumnsForSanitize([]);
+    const ids = columns.map((column) => column.id);
+    expect(ids).toContain("incoming_indoor_unit_ids");
   });
 
   // ---------------------------------------------------------------

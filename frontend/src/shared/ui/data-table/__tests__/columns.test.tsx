@@ -99,6 +99,19 @@ describe("shared data-table column builders", () => {
 
     expect(fieldDef.field_type).toBe("linked_record");
     expect(fieldDef.read_only).toBe(true);
+    // Incoming/inverse links render as locked-schema built-in columns so
+    // their headers show the built-in border and offer no edit/delete.
+    expect(fieldDef.built_in).toBe(true);
+    expect(fieldDef.locked).toEqual([
+      "display_name",
+      "field_type",
+      "options",
+      "default",
+      "description",
+      "formula",
+      "delete",
+      "duplicate",
+    ]);
     expect(fieldDef.linked_record_config?.target_table_path).toEqual([
       "equipment",
       "heat_pumps",

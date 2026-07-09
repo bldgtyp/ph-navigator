@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-09
 TIME: 11:50
-STATUS: Open
+STATUS: Fixed (2026-07-09)
 AUTHOR: Ed May (reported), Claude (recorded)
 SCOPE: EQUIPMENT / VENTILATORS table — "HP Indoor Units" field
 RELATED:
@@ -54,6 +54,64 @@ field-config / column-ordering logic.
 4. Try to drag it left → note it snaps back to the last position.
 5. Compare its header bottom border to adjacent built-in fields.
 
+## Root cause (confirmed)
+
+Two independent defects, both now fixed:
+
+1. **Can't hide / snaps to last (symptoms 1 & 2).** The "HP indoor units"
+   column is a synthetic incoming-link column that `VentilatorsTable`
+   appends on top of the slice schema (`incomingIndoorUnitsFieldDef` /
+   `incomingIndoorUnitColumnDef`, id `incoming_indoor_unit_ids`). But the
+   view-state sanitizer (`sanitizeViewStateForSchema`) is fed a **stub
+   column list built only from `slice.field_defs`**
+   (`ventilatorsTableColumnsForSanitize`), which omitted that id. So on
+   every render the sanitizer stripped `incoming_indoor_unit_ids` from
+   `view.columnOrder` and `view.hiddenColumns` — hide never stuck and a
+   drag-reorder was reverted (re-appended in declaration order ≈ last).
+2. **Missing built-in border (symptom 3).** `incomingLinkFieldDef` did
+   not set `built_in`, so `isBuiltInField` returned false and the header
+   never got the `data-schema-locked` bottom border.
+
+## Fix
+
+- `shared/ui/data-table/incoming-links.tsx`: `incomingLinkFieldDef` now
+  marks the projection `built_in: true` + fully `locked` (uniform for
+  **every** incoming/inverse-link column — Ventilators, heat-pumps,
+  Pumps, Space-Types — so they all get the built-in border + no
+  edit/delete/duplicate). This is the iron-law-correct place: the
+  affordance is parent-owned, not per-table.
+- `shared/ui/data-table/DataTable.tsx`: `isFormulaReferenceableField`
+  now excludes read-only **linked-record** projections by shape, so they
+  stay out of the formula registry despite `built_in`.
+- `features/equipment/lib.ts`: `ventilatorsTableColumnsForSanitize`
+  appends the `incoming_indoor_unit_ids` stub so hide/reorder survive.
+- `features/equipment/heat-pumps/routes/HeatPumpsPanel.tsx`: same
+  sanitize omission fixed for the outdoor-equip / indoor-equip /
+  outdoor-units tables (each renders an incoming-link column).
+
+Reference for the correct pattern: `spaceTypeColumnStubs` already threads
+`inverse_link_fields` into its sanitize stubs — Space-Types was never
+affected.
+
+## Verification
+
+- `pnpm exec vitest run` across `data-table`, `equipment`, `spaces`:
+  1291 passed. New tests: `columns.test.tsx` asserts the built-in/locked
+  contract; `equipment/lib.test.ts` asserts the incoming column id is in
+  the ventilators sanitize stub.
+- `make frontend-dev-check`: green (typecheck + lint + build).
+
+## Deferred follow-up
+
+`PumpsTable` builds inverse columns dynamically from
+`pumpsSlice.inverse_link_fields`, but `pumpsTableColumnsForSanitize` (via
+`useEquipmentTablePreview`, which only passes `field_defs`) still omits
+them — the same latent defect. It only bites if some table links **to**
+pumps (non-empty `inverse_link_fields`). Fixing it cleanly means
+threading the inverse fields into the sanitize stub the way
+`spaceTypeColumnStubs` does, which changes the shared
+`useEquipmentTablePreview` contract — left as a separate bite.
+
 ## Status
 
-Open — not yet triaged or fixed. Recorded from user report.
+Fixed 2026-07-09. Recorded from user report.
