@@ -39,6 +39,11 @@ export interface SlicePayloadBuilders<TSlice, TRow extends { id: string }, TPayl
     newOptions: OptionDelta,
     removedOptions: RemovedOptionDelta,
   ): TPayload;
+  fromPaste?(
+    slice: TSlice,
+    op: Extract<WriteOp, { kind: "paste" }>,
+    build: BuildEmptyRow<TRow>,
+  ): TPayload;
   fromRowInsert(slice: TSlice, rows: RowInsertPayload[], build: BuildEmptyRow<TRow>): TPayload;
   fromRowDelete(slice: TSlice, rows: RowDeletePayload[]): TPayload;
   // Phase 3b/3c — clone each `sourceRow` snapshot client-side and
@@ -77,6 +82,21 @@ export interface SlicePayloadBuilders<TSlice, TRow extends { id: string }, TPayl
   // `replaceOptions` signature accepts. Default: any string is
   // accepted. Rooms uses this to enforce the `RoomOptionKey` union.
   isLegacyOptionKey?(key: string): boolean;
+}
+
+export function composePastePayload<TSlice, TRow extends { id: string }, TPayload>(
+  builders: SlicePayloadBuilders<TSlice, TRow, TPayload>,
+): NonNullable<SlicePayloadBuilders<TSlice, TRow, TPayload>["fromPaste"]> {
+  return (slice, op, build) => {
+    let nextSlice = slice;
+    if (op.rowsDeleted?.length) {
+      nextSlice = builders.fromRowDelete(nextSlice, op.rowsDeleted) as unknown as TSlice;
+    }
+    if (op.rowsInserted.length) {
+      nextSlice = builders.fromRowInsert(nextSlice, op.rowsInserted, build) as unknown as TSlice;
+    }
+    return builders.fromCellWrites(nextSlice, op.writes, op.newOptions, op.removedOptions ?? {});
+  };
 }
 
 // User-facing copy for the three conflict states the controller can

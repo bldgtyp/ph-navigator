@@ -46,6 +46,7 @@ import type {
   SlicePayloadBuilders,
   SliceTableController,
 } from "./types";
+import { composePastePayload } from "./types";
 import { emptyViewState } from "../types";
 
 export type SliceTableReplaceMutation<TSlice, TPayload> = UseMutationResult<
@@ -322,8 +323,21 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
           op.kind === "paste" ? op.newOptions : op.kind === "cell" ? (op.newOptions ?? {}) : {};
         const removedOptions = op.kind === "fill" ? {} : (op.removedOptions ?? {});
         await commitPayloadOrThrow(
-          (writableSlice) =>
-            payloadBuilders.fromCellWrites(writableSlice, op.writes, newOptions, removedOptions),
+          (writableSlice) => {
+            if (op.kind === "paste") {
+              return (payloadBuilders.fromPaste ?? composePastePayload(payloadBuilders))(
+                writableSlice,
+                op,
+                buildEmptyRow,
+              );
+            }
+            return payloadBuilders.fromCellWrites(
+              writableSlice,
+              op.writes,
+              newOptions,
+              removedOptions,
+            );
+          },
           conflictMessages.activeRowConflict,
           "Could not update table values.",
         );
@@ -402,7 +416,6 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
       conflictMessages.activeRowConflict,
       conflictMessages.deleteConflict,
       payloadBuilders,
-      slice,
     ],
   );
 

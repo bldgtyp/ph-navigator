@@ -359,9 +359,10 @@ selection:
   selection.
 - Multi-cell clipboard with a single anchor → places a block.
 - Same-shape selection and clipboard → cell-by-cell.
-- More clipboard rows than fit → modal: *"Clipboard has N more
-  rows. Add N empty records and paste?"* Confirm appends; Cancel
-  drops overflow.
+- More clipboard rows than fit → modal: *"This paste is bigger than
+  the table."* **Add N rows** appends and pastes all values,
+  **Truncate** pastes only fitting rows, and **Cancel** writes
+  nothing.
 - More clipboard columns than fit → silent drop with a toast note.
 
 Paste works **regardless of group / filter / sort** — a view

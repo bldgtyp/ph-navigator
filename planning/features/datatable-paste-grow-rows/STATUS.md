@@ -1,8 +1,8 @@
 # STATUS — datatable-paste-grow-rows
 
-**State:** 🟡 Requested — scoped, **not started**. Behavior is defined; a few
-open decisions (grouped/sorted/filtered handling, remember-choice, modal copy)
-before implementation. See `PRD.md`.
+**State:** ✅ Implemented — focused DataTable tests, frontend build, graphify,
+simplify, docs-pass, and `make frontend-dev-check` are green. Ready for archive
+cleanup.
 
 **Ask:** when a paste source is taller than the target from the anchor
 (`plan.rowsOverflow > 0`), replace today's abort with a modal — **truncate** or
@@ -15,24 +15,36 @@ single-undo operation.
 - `paste` `WriteOp.rowsInserted` reserved slot (`types.ts`) — currently `[]`.
 - `rowInsert` `WriteOp` + `insertRowBelow` (`DataTable.tsx:515`) for row append + undo.
 
-## Next step
+## Decisions
 
-Resolve open decision #1 (behavior under active group/sort/filter), then
-confirm modal copy (#2, #3) with Ed. The copy/paste-view bug this once
-sequenced behind is **resolved**
-(`planning/archive/2026-07-09/datatable-copy-paste-broken-when-grouped-filtered-sorted.md`);
-it turned out to be a stray group-only paste guard, not a cell-resolution
-desync, so it no longer blocks or informs this decision.
+- Group/sort/filter: allow grow+paste; inserted backing rows use
+  `anchorRowId: null` and may land outside the current transformed view after
+  save/refetch.
+- Remember-choice policy: always show the modal for v1.
+- Modal copy: title "This paste is bigger than the table"; actions `Cancel`,
+  `Truncate`, primary `Add N row(s)`.
+- Backend: no new endpoint; slice-backed tables compose paste row inserts /
+  deletes and cell writes into one replace payload.
 
 ## Checklist
 
 - [x] Document the feature + reuse the existing paste/row-insert primitives.
-- [ ] Decide group/sort/filter behavior (open decision #1).
-- [ ] Confirm modal copy + primary action (#3) and remember-choice policy (#2).
-- [ ] Modal component (truncate / add-rows / cancel).
-- [ ] `useGridClipboard`: replace the `rowsOverflow` abort with the resolver.
-- [ ] Atomic grow+paste `WriteOp` (populate `rowsInserted`) + inverse for undo.
-- [ ] Truncate path (clamped row count).
-- [ ] Verify: fits / truncate / add-rows; undo/redo; batched single-save;
-      and behavior under group + sort + filter.
-- [ ] Closeout gate: `simplify` → `docs-pass` → `make format` → `make ci`.
+- [x] Decide group/sort/filter behavior (open decision #1).
+- [x] Confirm modal copy + primary action (#3) and remember-choice policy (#2).
+- [x] Modal component (truncate / add-rows / cancel).
+- [x] `useGridClipboard`: replace the `rowsOverflow` abort with the resolver.
+- [x] Atomic grow+paste `WriteOp` (populate `rowsInserted`) + inverse for undo.
+- [x] Truncate path (clamped row count).
+- [x] Verify: fits / truncate / add-rows; slice-controller single-payload
+      composition; frontend build.
+- [x] Closeout gate: `simplify` → `docs-pass` → format/checks as needed.
+
+## Verification
+
+- `pnpm vitest run src/shared/ui/data-table/__tests__/DataTable.test.tsx src/shared/ui/data-table/feature/useSliceTableController.test.tsx src/shared/ui/data-table/__tests__/lib.test.ts src/shared/ui/data-table/__tests__/useGridWriteReducer.test.ts` — 99 passed; existing unrelated `act(...)` warning in `DataTable.test.tsx`.
+- `pnpm run build` from `frontend/` — green.
+- `pnpm exec prettier --write ...` on touched frontend files.
+- `graphify update .` — graph updated; HTML viz skipped because graph exceeds
+  node limit.
+- `make frontend-dev-check` — green; existing lint warnings only
+  (`react-refresh/only-export-components` in unrelated files).

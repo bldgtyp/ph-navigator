@@ -205,4 +205,61 @@ describe("useSliceTableController write freshness", () => {
     expect(refetch).toHaveBeenCalledTimes(1);
     expect(schemaMutate).toHaveBeenCalledWith({ current: freshSlice, mutation });
   });
+
+  it("composes paste row inserts and cell writes into one replace payload", async () => {
+    const queryClient = new QueryClient();
+    const slice = makeSlice({ rows: ["old"] });
+    queryClient.setQueryData(editorSliceQueryKey(), slice);
+    const refetch = vi.fn(async () => ({ data: slice }));
+    const fromRowInsert = vi.fn(
+      (current: FakeSlice, rows: RowInsertPayload[], build: BuildEmptyRow<FakeRow>) => ({
+        rows: [
+          ...current.rows,
+          ...rows.map((row) => build({ rowId: row.rowId, fieldDefaults: {}, anchorRow: null }).id),
+        ],
+      }),
+    );
+    const fromCellWrites = vi.fn((current: FakeSlice) => ({
+      rows: [...current.rows, "cell-write"],
+    }));
+    const payloadBuilders: SlicePayloadBuilders<FakeSlice, FakeRow, FakePayload> = {
+      ...makePayloadBuilders(fromRowInsert),
+      fromCellWrites,
+    };
+    const replaceMutate = vi.fn(
+      async ({ current }: { current: FakeSlice; payload: FakePayload }) => current,
+    );
+    const { result } = renderController({
+      queryClient,
+      slice,
+      refetch,
+      payloadBuilders,
+      replaceMutate,
+    });
+
+    await act(async () => {
+      await result.current.onWrite({
+        kind: "paste",
+        writes: [{ rowId: "old", fieldKey: "name", value: "updated" }],
+        rowsInserted: [{ rowId: "new-row", fieldDefaults: { name: "new" }, anchorRowId: null }],
+        newOptions: {},
+      });
+    });
+
+    expect(fromRowInsert).toHaveBeenCalledWith(
+      slice,
+      [{ rowId: "new-row", fieldDefaults: { name: "new" }, anchorRowId: null }],
+      expect.any(Function),
+    );
+    expect(fromCellWrites).toHaveBeenCalledWith(
+      { rows: ["old", "new-row"] },
+      [{ rowId: "old", fieldKey: "name", value: "updated" }],
+      {},
+      {},
+    );
+    expect(replaceMutate).toHaveBeenCalledWith({
+      current: slice,
+      payload: { rows: ["old", "new-row", "cell-write"] },
+    });
+  });
 });

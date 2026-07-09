@@ -401,7 +401,9 @@ Implement the shared UX contract from `context/UI_UX.md` §1.7:
 Paste works regardless of group / filter / sort — it resolves against the
 same view-resolved visible rows copy and the fill handle use, so no view
 transform disables it. Column overflow is dropped with a toast; row overflow
-prompts to append records when creation is allowed.
+opens a truncate / add rows / cancel modal when row creation is allowed. The
+add-rows path appends backing rows at table end; under active group / sort /
+filter those new rows may land outside the current visible view after save.
 
 ### Download CSV (parent-owned overflow affordance)
 
@@ -433,7 +435,13 @@ All mutations collapse into one semantic `WriteOp` pipeline.
 ```ts
 type WriteOp =
   | { kind: "cell"; writes: CellWrite[] }
-  | { kind: "paste"; writes: CellWrite[]; rowsInserted: unknown[]; newOptions: Record<string, FieldOption[]> }
+  | {
+      kind: "paste";
+      writes: CellWrite[];
+      rowsInserted: RowInsertPayload[];
+      rowsDeleted?: RowDeletePayload[];
+      newOptions: Record<string, FieldOption[]>;
+    }
   | { kind: "fill"; writes: CellWrite[] }
   | { kind: "rowInsert"; rows: unknown[] }
   | { kind: "rowDelete"; rows: unknown[] }
@@ -490,6 +498,9 @@ Rules:
 - Inline edit, paste, fill, row insert/delete, and single-select option
   mutations all emit through `onWrite`.
 - One semantic gesture equals one undo entry.
+- Growing paste is still one semantic gesture: inserted rows travel in
+  `paste.rowsInserted`, undo removes them through `paste.rowsDeleted`, and
+  existing-cell inverses ride in the same history entry.
 - A draft ETag is document-scoped, not table-scoped. After any accepted
   editor table write, invalidate sibling editor table slices for the
   same project/version so subsequent writes use a fresh guard. New

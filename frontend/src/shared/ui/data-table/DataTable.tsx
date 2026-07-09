@@ -27,7 +27,7 @@ import { isPointerInActiveEditor as isPointerInActiveEditorBase } from "./lib/ev
 import { computeAggregatesByPath } from "./lib/body/aggregates";
 import { pruneExpandedGroups } from "./lib/body/prune";
 import { effectiveSortFromView } from "./lib/view/sanitize";
-import { buildEmptyRowDefaults, extractRowDefaults, fieldAllowsNull } from "./lib/rows/defaults";
+import { extractRowDefaults, fieldAllowsNull, planEmptyRows } from "./lib/rows/defaults";
 import { formatDisplayCellValue } from "./lib/rows/format";
 import { sortRows } from "./lib/sort/sortRows";
 import { resolveColumnWidth } from "./lib/columnWidths";
@@ -66,6 +66,7 @@ import { CreateFieldConfigModal } from "./components/CreateFieldConfigModal";
 import { ConfirmDestructiveDialog } from "./components/ConfirmDestructiveDialog";
 import { FieldConfigModal } from "./components/FieldConfigModal";
 import { RecordDetailModal } from "./components/RecordDetailModal";
+import { ModalDialog } from "../ModalDialog";
 import type { FieldRegistryEntry } from "./lib/formula";
 import { mapToFormulaType } from "./lib/formula/mapToFormulaType";
 import { getCustomValue } from "./lib/customFieldAccessor";
@@ -94,6 +95,10 @@ const EMPTY_ID_LIST = stableEmptyArray<string>() as string[];
 const DATA_TABLE_DATA_ROW_ESTIMATE = 38;
 const DATA_TABLE_GROUP_ROW_ESTIMATE = 40;
 const PASTE_FLASH_MS = 650;
+type PasteOverflowPrompt = {
+  rowsOverflow: number;
+  resolve: (decision: "add-rows" | "truncate" | "cancel") => void;
+};
 
 export function DataTable<TRow>({
   rows,
@@ -518,6 +523,32 @@ export function DataTable<TRow>({
   // multiple groups, (b) clamp the drag target to the source group,
   // and (c) split a multi-group ⌘D selection into per-group sub-fills.
   const groupPathByRowId = useMemo(() => groupPathByRowIdFromBodyPlan(bodyPlan), [bodyPlan]);
+  const [pasteOverflowPrompt, setPasteOverflowPrompt] = useState<PasteOverflowPrompt | null>(null);
+  const pasteOverflowResolveRef = useRef<PasteOverflowPrompt["resolve"] | null>(null);
+  useEffect(() => {
+    return () => {
+      pasteOverflowResolveRef.current?.("cancel");
+      pasteOverflowResolveRef.current = null;
+    };
+  }, []);
+  const resolvePasteRowsOverflow = useCallback((rowsOverflow: number) => {
+    return new Promise<"add-rows" | "truncate" | "cancel">((resolve) => {
+      pasteOverflowResolveRef.current?.("cancel");
+      pasteOverflowResolveRef.current = resolve;
+      setPasteOverflowPrompt({ rowsOverflow, resolve });
+    });
+  }, []);
+  const settlePasteOverflowPrompt = useCallback(
+    (decision: "add-rows" | "truncate" | "cancel") => {
+      const resolve = pasteOverflowPrompt?.resolve ?? pasteOverflowResolveRef.current;
+      resolve?.(decision);
+      if (pasteOverflowResolveRef.current === resolve) {
+        pasteOverflowResolveRef.current = null;
+      }
+      setPasteOverflowPrompt(null);
+    },
+    [pasteOverflowPrompt],
+  );
 
   const fill = useGridFill({
     containerRef: wrapperRef,
@@ -550,6 +581,9 @@ export function DataTable<TRow>({
     onAnnounce: setAnnounce,
     onCopyRange: setCopiedRange,
     onPasteComplete: handlePasteComplete,
+    onPasteRowsOverflow: resolvePasteRowsOverflow,
+    buildEmptyRow,
+    generateRowId,
     unitSystem,
   });
 
@@ -576,14 +610,24 @@ export function DataTable<TRow>({
       // still places the new row below it; the anchor's *values* don't
       // travel. The explicit "Duplicate record" gesture (out of scope
       // for this plan) will reuse `buildEmptyRow` with anchor values.
-      const fieldDefaults = buildEmptyRowDefaults(fieldDefs);
-      const tmpId = generateRowId?.() ?? `tmp_${generatedId("row")}`;
-      const newRow = buildEmptyRow({ rowId: tmpId, fieldDefaults, anchorRow });
+      const { rows: plannedRows, inserts } = planEmptyRows({
+        count: 1,
+        fieldDefs,
+        buildEmptyRow,
+        generateRowId,
+        anchorRow,
+        anchorRowId,
+      });
+      const newRow = plannedRows[0];
+      const insert = inserts[0];
+      if (!newRow || !insert) return;
+      const tmpId = insert.rowId;
+      const fieldDefaults = insert.fieldDefaults;
       const firstEditableFieldKey = pickFirstEditableFieldKey(visibleColumnDefs, fieldDefByKey);
 
       const op: WriteOp = {
         kind: "rowInsert",
-        rows: [{ rowId: tmpId, fieldDefaults, anchorRowId }],
+        rows: [insert],
       };
       const inverse: WriteOp = {
         kind: "rowDelete",
@@ -1735,6 +1779,45 @@ export function DataTable<TRow>({
           onCollapseAll={handleCollapseAllGroups}
           onExpandAll={handleExpandAllGroups}
         />
+        {pasteOverflowPrompt ? (
+          <ModalDialog
+            title="This paste is bigger than the table"
+            titleId="data-table-paste-overflow-title"
+            onClose={() => settlePasteOverflowPrompt("cancel")}
+          >
+            <div className="modal-body">
+              <p>
+                The copied data has <strong>{pasteOverflowPrompt.rowsOverflow}</strong> more{" "}
+                {pasteOverflowPrompt.rowsOverflow === 1 ? "row" : "rows"} than the table can fit
+                from here.
+              </p>
+            </div>
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => settlePasteOverflowPrompt("cancel")}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => settlePasteOverflowPrompt("truncate")}
+              >
+                Truncate
+              </button>
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() => settlePasteOverflowPrompt("add-rows")}
+              >
+                Add {pasteOverflowPrompt.rowsOverflow}{" "}
+                {pasteOverflowPrompt.rowsOverflow === 1 ? "row" : "rows"}
+              </button>
+            </div>
+          </ModalDialog>
+        ) : null}
       </div>
     </DataTableErrorBoundary>
   );

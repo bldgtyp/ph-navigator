@@ -1,5 +1,13 @@
 import { parseNumberUnitsInput, type UnitSystem } from "../../../../../lib/units";
-import type { DataTableColumnDef, FieldDef, FieldOption, FieldType } from "../../types";
+import { generatedId } from "../../../../lib/ids";
+import type {
+  BuildEmptyRow,
+  DataTableColumnDef,
+  FieldDef,
+  FieldOption,
+  FieldType,
+  RowInsertPayload,
+} from "../../types";
 import { normalizeColorInput } from "../../../../lib/color";
 import { createFieldOption } from "../options/create";
 import { canEditFieldOptions } from "../options/mutability";
@@ -37,6 +45,33 @@ export function buildEmptyRowDefaults(fieldDefs: FieldDef[]): Record<string, unk
       fieldDef.default !== undefined ? fieldDef.default : naturalZero(fieldDef.field_type),
     ]),
   );
+}
+
+export function planEmptyRows<TRow>({
+  count,
+  fieldDefs,
+  buildEmptyRow,
+  generateRowId,
+  anchorRow = null,
+  anchorRowId = null,
+}: {
+  count: number;
+  fieldDefs: FieldDef[];
+  buildEmptyRow: BuildEmptyRow<TRow>;
+  generateRowId?: () => string;
+  anchorRow?: TRow | null;
+  anchorRowId?: string | null;
+}): { rows: TRow[]; inserts: RowInsertPayload[] } {
+  const baseDefaults = buildEmptyRowDefaults(fieldDefs);
+  const inserts: RowInsertPayload[] = [];
+  const rows: TRow[] = [];
+  for (let index = 0; index < count; index += 1) {
+    const rowId = generateRowId?.() ?? `tmp_${generatedId("row")}`;
+    const fieldDefaults = { ...baseDefaults };
+    inserts.push({ rowId, fieldDefaults, anchorRowId });
+    rows.push(buildEmptyRow({ rowId, fieldDefaults, anchorRow }));
+  }
+  return { rows, inserts };
 }
 
 export function naturalZero(fieldType: FieldType): unknown {

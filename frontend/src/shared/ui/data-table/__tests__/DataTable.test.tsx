@@ -77,6 +77,49 @@ describe("DataTable", () => {
     });
   });
 
+  test("truncates a paste that has more rows than the table can fit", async () => {
+    const onWrite = vi.fn();
+    renderTable({ onWrite, buildEmptyRow });
+
+    fireEvent.paste(screen.getByRole("grid"), pasteClipboardData("102\n103"));
+
+    expect(
+      await screen.findByRole("dialog", { name: "This paste is bigger than the table" }),
+    ).toBeVisible();
+    await userEvent.click(screen.getByRole("button", { name: "Truncate" }));
+
+    expect(await screen.findByText("1 cells pasted.")).toBeVisible();
+    expect(onWrite).toHaveBeenCalledWith({
+      kind: "paste",
+      writes: [{ rowId: "rm_1", fieldKey: "number", value: "102" }],
+      rowsInserted: [],
+      newOptions: {},
+    });
+  });
+
+  test("adds rows and emits one paste write when the user grows the table", async () => {
+    const onWrite = vi.fn();
+    renderTable({ onWrite, buildEmptyRow, generateRowId: () => "rm_2" });
+
+    fireEvent.paste(screen.getByRole("grid"), pasteClipboardData("102\n103"));
+
+    await userEvent.click(await screen.findByRole("button", { name: "Add 1 row" }));
+
+    expect(await screen.findByText("2 cells pasted. 1 row added.")).toBeVisible();
+    expect(onWrite).toHaveBeenCalledWith({
+      kind: "paste",
+      writes: [{ rowId: "rm_1", fieldKey: "number", value: "102" }],
+      rowsInserted: [
+        {
+          rowId: "rm_2",
+          anchorRowId: null,
+          fieldDefaults: { number: "103", name: "", count: 0 },
+        },
+      ],
+      newOptions: {},
+    });
+  });
+
   test("marks copied cells and clears the copied range with Escape", () => {
     renderTable({
       rowsOverride: [
@@ -1073,6 +1116,7 @@ function renderTable({
   columnDefsOverride,
   rowActions,
   buildEmptyRow,
+  generateRowId,
 }: {
   view?: ViewState;
   readOnly?: boolean;
@@ -1083,6 +1127,7 @@ function renderTable({
   columnDefsOverride?: DataTableColumnDef<Row>[];
   rowActions?: DataTableProps<Row>["rowActions"];
   buildEmptyRow?: DataTableProps<Row>["buildEmptyRow"];
+  generateRowId?: DataTableProps<Row>["generateRowId"];
 } = {}) {
   return render(
     <DataTable
@@ -1095,6 +1140,7 @@ function renderTable({
       onViewChange={onViewChange ?? vi.fn()}
       onWrite={onWrite}
       buildEmptyRow={buildEmptyRow}
+      generateRowId={generateRowId}
       readOnly={readOnly}
       emptyMessage="No rooms yet."
       rowActions={rowActions}

@@ -2,18 +2,23 @@ import { useCallback } from "react";
 import type { UnitSystem } from "../../../../lib/units";
 import { parseTsv, rangeToHtml, rangeToTsv } from "../lib/paste/tsv";
 import { coercePasteWrites, planPaste } from "../lib/paste/plan";
+import { planEmptyRows } from "../lib/rows/defaults";
 import type {
+  BuildEmptyRow,
   CellRange,
   CellWrite,
   DataTableColumnDef,
   FieldDef,
   FieldOption,
+  RowDeletePayload,
+  RowInsertPayload,
   WriteOp,
 } from "../types";
 import type { DispatchWrite } from "./useGridWriteReducer";
 
 type StableCellAddr = { rowId: string; fieldKey: string };
 export type CopiedCellRange = { anchor: StableCellAddr; focus: StableCellAddr };
+export type PasteRowsOverflowDecision = "add-rows" | "truncate" | "cancel";
 
 // Clipboard wiring — copy and paste — routed through dispatchWrite so
 // paste lands as one semantic undo entry (PoC L6.1, L6.2). Read uses
@@ -40,6 +45,9 @@ export function useGridClipboard<TRow>(args: {
   onAnnounce: (message: string) => void;
   onCopyRange?: (range: CopiedCellRange) => void;
   onPasteComplete?: (writes: CellWrite[]) => void;
+  onPasteRowsOverflow?: (rowsOverflow: number) => Promise<PasteRowsOverflowDecision>;
+  buildEmptyRow?: BuildEmptyRow<TRow>;
+  generateRowId?: () => string;
   unitSystem?: UnitSystem;
 }): GridClipboard {
   const {
@@ -53,6 +61,9 @@ export function useGridClipboard<TRow>(args: {
     onAnnounce,
     onCopyRange,
     onPasteComplete,
+    onPasteRowsOverflow,
+    buildEmptyRow,
+    generateRowId,
     unitSystem = "SI",
   } = args;
 
@@ -75,6 +86,9 @@ export function useGridClipboard<TRow>(args: {
         dispatchWrite,
         onAnnounce,
         onPasteComplete,
+        onPasteRowsOverflow,
+        buildEmptyRow,
+        generateRowId,
         unitSystem,
       });
     },
@@ -86,6 +100,9 @@ export function useGridClipboard<TRow>(args: {
       onAnnounce,
       onPasteComplete,
       onWrite,
+      onPasteRowsOverflow,
+      buildEmptyRow,
+      generateRowId,
       range,
       rows,
       unitSystem,
@@ -137,6 +154,9 @@ async function pasteIntoSelection<TRow>(args: {
   dispatchWrite: DispatchWrite;
   onAnnounce: (message: string) => void;
   onPasteComplete?: (writes: CellWrite[]) => void;
+  onPasteRowsOverflow?: (rowsOverflow: number) => Promise<PasteRowsOverflowDecision>;
+  buildEmptyRow?: BuildEmptyRow<TRow>;
+  generateRowId?: () => string;
   unitSystem: UnitSystem;
 }) {
   const {
@@ -150,6 +170,9 @@ async function pasteIntoSelection<TRow>(args: {
     dispatchWrite,
     onAnnounce,
     onPasteComplete,
+    onPasteRowsOverflow,
+    buildEmptyRow,
+    generateRowId,
     unitSystem,
   } = args;
   if (!onWrite) {
@@ -157,15 +180,43 @@ async function pasteIntoSelection<TRow>(args: {
     return;
   }
   if (!tsv) return;
-  const plan = planPaste({
-    clipboard: parseTsv(tsv),
+  const clipboard = parseTsv(tsv);
+  let plan = planPaste({
+    clipboard,
     target: range,
     rowCount: rows.length,
     columnCount: columns.length,
   });
+  let rowsForCoercion = rows;
+  let rowsInserted: RowInsertPayload[] = [];
+  let insertedRowIds = new Set<string>();
   if (plan.rowsOverflow) {
-    onAnnounce(`Clipboard has ${plan.rowsOverflow} more rows. Add rows before paste.`);
-    return;
+    const decision = await onPasteRowsOverflow?.(plan.rowsOverflow);
+    if (!decision || decision === "cancel") {
+      onAnnounce("Paste canceled.");
+      return;
+    }
+    if (decision === "add-rows") {
+      if (!buildEmptyRow) {
+        onAnnounce("Row insert is not enabled for this table.");
+        return;
+      }
+      const growth = planEmptyRows({
+        count: plan.rowsOverflow,
+        fieldDefs,
+        buildEmptyRow,
+        generateRowId,
+      });
+      rowsForCoercion = [...rows, ...growth.rows];
+      rowsInserted = growth.inserts;
+      insertedRowIds = new Set(rowsInserted.map((row) => row.rowId));
+      plan = planPaste({
+        clipboard,
+        target: range,
+        rowCount: rowsForCoercion.length,
+        columnCount: columns.length,
+      });
+    }
   }
   if (plan.columnsOverflow) {
     onAnnounce(`Clipboard has ${plan.columnsOverflow} more columns. Extra columns dropped.`);
@@ -173,7 +224,7 @@ async function pasteIntoSelection<TRow>(args: {
   }
   const coerced = coercePasteWrites({
     plannedWrites: plan.writes,
-    rows,
+    rows: rowsForCoercion,
     columns,
     fieldDefs,
     getRowId,
@@ -188,26 +239,81 @@ async function pasteIntoSelection<TRow>(args: {
     );
     return;
   }
-  const inverseWrites = buildPasteInverse(coerced.writes, rows, columns, getRowId);
+  const { existingWrites, insertedFieldDefaultsByRowId } = splitPasteWrites(
+    coerced.writes,
+    insertedRowIds,
+  );
+  if (rowsInserted.length > 0) {
+    rowsInserted = rowsInserted.map((row) => ({
+      ...row,
+      fieldDefaults: {
+        ...row.fieldDefaults,
+        ...(insertedFieldDefaultsByRowId.get(row.rowId) ?? {}),
+      },
+    }));
+  }
+  const insertedDeletes = buildInsertedRowDeletes(rowsInserted, rowsForCoercion, getRowId);
+  const inverseWrites = buildPasteInverse(existingWrites, rows, columns, getRowId);
   const op: WriteOp = {
     kind: "paste",
-    writes: coerced.writes,
-    rowsInserted: [],
+    writes: existingWrites,
+    rowsInserted,
     newOptions: coerced.newOptions,
   };
   const removedOptions = optionsToRemoveOnInverse(coerced.newOptions);
   const inverse: WriteOp = {
-    kind: "cell",
+    kind: "paste",
     writes: inverseWrites,
+    rowsInserted: [],
+    ...(insertedDeletes.length > 0 ? { rowsDeleted: insertedDeletes } : {}),
+    newOptions: {},
     ...(removedOptions ? { removedOptions } : {}),
   };
   try {
     await dispatchWrite(op, inverse);
-    onPasteComplete?.(coerced.writes);
-    onAnnounce(`${coerced.writes.length} cells pasted.`);
+    onPasteComplete?.(existingWrites);
+    const rowMessage =
+      rowsInserted.length > 0
+        ? ` ${rowsInserted.length} ${rowsInserted.length === 1 ? "row" : "rows"} added.`
+        : "";
+    onAnnounce(`${coerced.writes.length} cells pasted.${rowMessage}`);
   } catch (error) {
     onAnnounce(error instanceof Error ? error.message : "Paste failed.");
   }
+}
+
+function splitPasteWrites(
+  writes: CellWrite[],
+  insertedRowIds: ReadonlySet<string>,
+): {
+  existingWrites: CellWrite[];
+  insertedFieldDefaultsByRowId: Map<string, Record<string, unknown>>;
+} {
+  const existingWrites: CellWrite[] = [];
+  const insertedFieldDefaultsByRowId = new Map<string, Record<string, unknown>>();
+  for (const write of writes) {
+    if (!insertedRowIds.has(write.rowId)) {
+      existingWrites.push(write);
+      continue;
+    }
+    const defaults = insertedFieldDefaultsByRowId.get(write.rowId) ?? {};
+    defaults[write.fieldKey] = write.value;
+    insertedFieldDefaultsByRowId.set(write.rowId, defaults);
+  }
+  return { existingWrites, insertedFieldDefaultsByRowId };
+}
+
+function buildInsertedRowDeletes<TRow>(
+  inserts: RowInsertPayload[],
+  rowsForCoercion: TRow[],
+  getRowId: (row: TRow) => string,
+): RowDeletePayload[] {
+  const rowById = new Map(rowsForCoercion.map((row) => [getRowId(row), row]));
+  return inserts.map((insert) => ({
+    rowId: insert.rowId,
+    row: rowById.get(insert.rowId) ?? null,
+    anchorRowId: insert.anchorRowId,
+  }));
 }
 
 function rangeToStableRange<TRow>(

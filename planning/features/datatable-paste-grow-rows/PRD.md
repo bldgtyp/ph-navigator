@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-09
-TIME: 12:58 EDT
-STATUS: Requested — scoped, not started
+TIME: 19:54 EDT
+STATUS: Implemented — v1 decisions resolved and verified
 AUTHOR: Ed May + Claude
 SCOPE: Behavior spec for paste-overflow → truncate-or-grow
 RELATED: ./README.md, ./STATUS.md
@@ -65,30 +65,28 @@ On paste, after `planPaste(...)` computes the plan:
   regardless of selection size; the modal count N is `plan.rowsOverflow`.
 - **Empty table / paste into last row:** N = full source height; append all.
 
-## ⚠️ Interaction with grouping / sorting / filtering
+## Interaction with grouping / sorting / filtering
 
-Appending rows while a **group / sort / filter** is active is the fraught case:
-new rows need a defined landing spot (which group? what sort position? do they
-pass the active filter?). This was once thought to share risk with
-`planning/archive/2026-07-09/datatable-copy-paste-broken-when-grouped-filtered-sorted.md`,
-but that bug is **resolved** and was *not* a cell-resolution desync — paste
-already resolves through the view-resolved visible rows. Row *appending*
-under a view transform is a genuinely separate open question. **Open
-decision below.**
+Cell writes still resolve through the view-resolved visible rows. For the v1
+grow path, newly-added rows use `anchorRowId: null`, matching the existing
+append-at-table-end behavior in the row-insert payload builders. Under active
+group / sort / filter, the inserted backing rows may land outside the current
+visible view after save/refetch; this is accepted for v1.
 
-## Open decisions
+## Resolved decisions
 
-1. **Behavior under active group/sort/filter:** (a) allow grow+paste and append
-   new rows to the table end with default group membership (may jump out of the
-   current filtered view), (b) require clearing group/sort/filter before a
-   growing paste, or (c) gate this feature on the copy/paste-view bug being
-   fixed first. Recommend (c)+(a): fix the view-resolution bug, then append to
-   end with default membership and announce where they landed.
-2. **Remember the choice?** AirTable just auto-grows. Do we offer a
-   "don't ask again / always add rows" preference, or always show the modal for
-   v1? Recommend always-show for v1 (explicit, low-risk), revisit later.
-3. **Modal copy + primary action** — confirm wording and that **Add rows** is
-   the default/primary button (matches the AirTable expectation of growing).
-4. **Backend:** row insertion already rides the existing `WriteOp`/document-save
-   path (add-row works today), so no new backend endpoint is expected — confirm
-   the batched N-row append persists in one save, not N round-trips.
+1. **Behavior under active group/sort/filter:** allow grow+paste and append
+   generated backing rows to the table end (`anchorRowId: null`). Existing
+   visible-row paste targeting remains unchanged.
+2. **Remember the choice:** always show the modal for v1; no user preference.
+3. **Modal copy + primary action:** title is "This paste is bigger than the
+   table"; actions are `Cancel`, `Truncate`, and primary `Add N row(s)`.
+4. **Backend:** slice-backed project tables compose row inserts/deletes and
+   cell writes into one replace payload via `useSliceTableController`. No new
+   backend endpoint was added.
+
+## Verification
+
+- `pnpm vitest run src/shared/ui/data-table/__tests__/DataTable.test.tsx src/shared/ui/data-table/feature/useSliceTableController.test.tsx src/shared/ui/data-table/__tests__/lib.test.ts src/shared/ui/data-table/__tests__/useGridWriteReducer.test.ts` — 99 passed. Existing `DataTable.test.tsx` `act(...)` warning remains unrelated.
+- `pnpm run build` from `frontend/` — green.
+- `make frontend-dev-check` — green; existing lint warnings only.

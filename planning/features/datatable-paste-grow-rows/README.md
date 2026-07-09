@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-09
-TIME: 12:58 EDT
-STATUS: Requested — scoped, not started
+TIME: 19:54 EDT
+STATUS: Implemented — focused tests + frontend gate green
 AUTHOR: Ed May + Claude
 SCOPE: DataTable paste — when the clipboard source has more rows than the
        target table can hold from the paste anchor, prompt the user to either
@@ -31,11 +31,19 @@ It adds a new product capability (a paste-overflow decision + table-growth
 semantics + a modal), not just polish or a defect fix. It's the AirTable-parity
 behavior the grid doesn't have yet.
 
-## Current behavior (the gap)
+## Implemented behavior
 
-`useGridClipboard.ts:143-145` — when `planPaste(...)` reports `rowsOverflow > 0`,
-paste bails with a screen-reader announce ("Clipboard has N more rows. Add rows
-before paste.") and writes nothing. That's the exact stop this feature replaces.
+`useGridClipboard.ts` now replaces the old `rowsOverflow` abort with a modal
+resolver:
+
+- **Add N rows** appends generated rows with the overflow clipboard values
+  encoded into `rowInsert.fieldDefaults`, then dispatches one semantic `paste`
+  `WriteOp`.
+- **Truncate** keeps the fitting writes only.
+- **Cancel** writes nothing.
+
+The v1 modal always appears for row overflow; no remembered preference is
+persisted.
 
 ## Foundation already in place
 
@@ -56,6 +64,6 @@ This is mostly wiring primitives that already exist:
 
 ## Blast radius
 
-Shared grid clipboard path → applies to every editable DataTable. Verify on a
-plain table and on a grouped/sorted/filtered table (see the PRD interaction note
-and the cross-referenced copy/paste bug).
+Shared grid clipboard path → applies to every editable DataTable. Focused
+component coverage verifies truncate and add-rows; slice-controller coverage
+verifies row inserts + cell writes compose into one replace payload.

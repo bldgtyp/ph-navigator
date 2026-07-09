@@ -347,7 +347,8 @@ export type WriteOp =
   | ({
       kind: "paste";
       writes: CellWrite[];
-      rowsInserted: unknown[];
+      rowsInserted: RowInsertPayload[];
+      rowsDeleted?: RowDeletePayload[];
       newOptions: Record<string, FieldOption[]>;
     } & Pick<OptionListDelta, "removedOptions">)
   | { kind: "fill"; writes: CellWrite[] }
