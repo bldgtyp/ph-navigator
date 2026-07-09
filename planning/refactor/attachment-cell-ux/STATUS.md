@@ -9,17 +9,17 @@ RELATED: README.md, PRD.md
 
 # STATUS — Attachment Cell UX
 
-**Current focus:** Items 8, 7, 6 done (on branch `refactor/attachment-cell-ux`).
-Next: **Item 1** (drag-active highlight) — start of the `AttachmentCell` cluster.
+**Current focus:** Items 8, 7, 6, 1 done (on branch `refactor/attachment-cell-ux`).
+Next: **Item 4** (persistent "+ Add" tile).
 A batch live-verification pass (app screenshots) is queued after the
-visual cluster; gates are green so far.
+`AttachmentCell` cluster; gates are green so far.
 **Branch:** not created yet (suggest `refactor/attachment-cell-ux`).
 
 ## Item tracker
 
 | # | Item | Component | State | Notes |
 |---|------|-----------|-------|-------|
-| 1 | Drag-active highlight on drop zone | `AttachmentCell` | Not started | Pure additive; safe |
+| 1 | Drag-active highlight on drop zone | `AttachmentCell` | Implemented on branch | `dragActive` via enter/leave depth counter → `.drag-active` (accent ring + intensified drop button) |
 | 2 | Single-click opens preview | `AttachmentCell` | Blocked (decision) | Needs Ed's pick: A/B/C (PRD Item 2) |
 | 3 | Thumbnail tile redesign | `AttachmentCell` | Not started | Invoke `frontend-design` skill |
 | 4 | Persistent "+ Add" tile | `AttachmentCell` | Not started | Registry already allows 5 datasheets |
@@ -75,4 +75,9 @@ _(append per item: what was driven in the app, result, gate status)_
   a 2px accent outline, split across the two siblings via `inset`
   box-shadows (no layout shift, no DOM/ARIA change). Applies to Materials
   and Apertures. Gate green. Visual check pending in the batch pass.
+- 2026-07-09 — Item 1: `AttachmentCell` now tracks a drag state via an
+  enter/leave depth counter and renders a `.drag-active` accent ring +
+  intensified "Drop files here" button while a valid file is dragged over
+  the cell. Shared across all attachment surfaces. Gate green. Live
+  drag-hover check pending in the batch pass.
 </content>

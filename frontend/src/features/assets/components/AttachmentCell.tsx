@@ -27,6 +27,10 @@ export function AttachmentCell({
   const [selected, setSelected] = useState(0);
   const [modalIndex, setModalIndex] = useState<number | null>(null);
   const [pending, setPending] = useState<string[]>([]);
+  const [dragActive, setDragActive] = useState(false);
+  // Enter/leave fire per descendant during a drag; a depth counter keeps the
+  // highlight steady instead of flickering as the cursor crosses children.
+  const dragDepth = useRef(0);
   const urls = useAssetUrls(projectId, assetUrlById ? [] : value);
   const urlById = useMemo(
     () => assetUrlById ?? new Map((urls.data ?? []).map((item) => [item.asset_id, item])),
@@ -91,8 +95,24 @@ export function AttachmentCell({
     if (event.key === "Delete" || event.key === "Backspace") void detachSelected();
   };
 
+  const resetDrag = () => {
+    dragDepth.current = 0;
+    setDragActive(false);
+  };
+  const onDragEnter = (event: DragEvent<HTMLDivElement>) => {
+    if (readOnly) return;
+    event.preventDefault();
+    dragDepth.current += 1;
+    setDragActive(true);
+  };
+  const onDragLeave = () => {
+    if (readOnly) return;
+    dragDepth.current -= 1;
+    if (dragDepth.current <= 0) resetDrag();
+  };
   const onDrop = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
+    resetDrag();
     void attachFiles(event.dataTransfer.files);
   };
   const isEmpty = value.length === 0 && pending.length === 0;
@@ -100,12 +120,16 @@ export function AttachmentCell({
 
   return (
     <div
-      className={`attachment-cell ${showInlineEmptyButton ? "attachment-cell-inline" : ""}`}
+      className={`attachment-cell ${showInlineEmptyButton ? "attachment-cell-inline" : ""} ${
+        dragActive && !readOnly ? "drag-active" : ""
+      }`}
       tabIndex={0}
       onKeyDown={onKeyDown}
+      onDragEnter={onDragEnter}
       onDragOver={(event) => {
         if (!readOnly) event.preventDefault();
       }}
+      onDragLeave={onDragLeave}
       onDrop={onDrop}
     >
       <input
