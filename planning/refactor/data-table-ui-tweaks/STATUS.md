@@ -1,6 +1,6 @@
 # STATUS — data-table-ui-tweaks
 
-**State:** 🟡 Active — Item 2 implemented; remaining items still open. Running list;
+**State:** 🟡 Active — Items 1–2 implemented; Item 3 still open. Running list;
 Ed is still adding items from a live grid review (2026-07-09).
 
 **Branch:** `codex/data-table-ui-tweaks`. One commit per item (precedent:
@@ -10,7 +10,7 @@ Ed is still adding items from a live grid review (2026-07-09).
 
 | # | Item | State | Next step |
 |---|------|-------|-----------|
-| 1 | Active-cell highlight ladder (crisp single ring, square corners, kill editor-radius corner spots) | 📋 Specced | Confirm overlay-pseudo vs. box-shadow approach + ring token, then implement |
+| 1 | Active-cell highlight ladder (crisp single ring, square corners, kill editor-radius corner spots) | ✅ Implemented | Active/error rings now render as square overlay pseudo-elements; editor radius is reset inside the grid |
 | 2 | Toolbar Filter/Sort/Group white-pill on active | ✅ Implemented | `.data-table-toolbar-button span` now resets border/background/padding/radius so active axis buttons render as one flat tint |
 | 3 | Copy/paste feedback: marching ants + Esc-clear + paste flash | 📋 Specced | Decide sequencing vs. the copy/paste bug (share the view-aware cell-resolution helper); build `copiedRange` (row-id/field-id) overlay |
 
@@ -31,6 +31,20 @@ Grid chrome is visual — verify in the running app, not just CSS:
 
 1. Screenshot each cell state on ≥2 tables (Spaces/Rooms + a catalog):
    rest / row-hover / block-selected / active / active-editing / error.
+   Item 1 code verification: `cd frontend && pnpm exec vitest run src/shared/ui/data-table/__tests__/GridBody.test.tsx src/shared/ui/data-table/__tests__/DataTable.test.tsx src/shared/ui/data-table/__tests__/numberUnitsGrid.test.tsx`
+   (100 passed, 2026-07-09; existing `act(...)` stderr warnings only).
+   Item 1 browser verification: Rooms active cell computed `::before` border
+   `2px solid rgb(45, 107, 128)`, radius `0px`, `box-shadow: none`; Rooms
+   edit mode kept the same ring and computed `.data-table-cell-editor`
+   `border-radius: 0px`; Materials catalog active frozen cell kept the same
+   square `::before` ring while preserving the frozen-column `::after` shadow.
+   Simplify follow-up raised the fill handle and single-select chevron above
+   the overlay ring (`z-index: 4` vs ring `3`), removed the redundant active
+   error shadow override, and gives active error cells a slightly stronger
+   danger fill instead of reintroducing a halo.
+   Item 1 gate: `make format`, `graphify update .`, and `make ci` passed
+   (2026-07-09). CI emitted existing frontend lint warnings and existing
+   Vitest stderr noise, but no failures.
 2. Toolbar: inactive / hover / active for Filter, Sort, Group, Hide-fields.
    Item 2 code verification: `cd frontend && pnpm exec vitest run src/shared/ui/data-table/__tests__/GridToolbar.test.tsx`
    (19 passed, 2026-07-09). Live screenshot verification remains part of the
@@ -47,7 +61,7 @@ Grid chrome is visual — verify in the running app, not just CSS:
 
 - [x] Document items 1–3 (this packet).
 - [x] Item 2 (no open decisions — smallest, do first).
-- [ ] Item 1 (confirm ring approach with Ed).
+- [x] Item 1 (confirm ring approach with Ed).
 - [ ] Copy/paste bug fix (prereq/co-req for item 3).
 - [ ] Item 3 (marching ants + paste flash).
 - [ ] Append further review items as Ed reports them.
