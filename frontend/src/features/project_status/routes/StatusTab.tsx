@@ -99,14 +99,11 @@ export function StatusTab({ project }: { project: ProjectDetail }) {
         <div className="status-dashboard-grid">
           <section className="status-roadmap" aria-labelledby="status-roadmap-heading">
             <div className="status-heading">
-              <div>
-                <h2 id="status-roadmap-heading">Roadmap</h2>
-                <p>Project milestones and what's next.</p>
-              </div>
+              <h2 id="status-roadmap-heading">Roadmap</h2>
               {isEditor && items.length > 0 ? (
                 <button
                   type="button"
-                  className="secondary-button"
+                  className="secondary-button status-add-milestone"
                   onClick={() => setIsAdding(true)}
                 >
                   Add milestone

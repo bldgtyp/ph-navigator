@@ -6,14 +6,14 @@
 .status-body {
   display: grid;
   width: calc(100% - 2 * clamp(var(--space-12), 2vw, var(--space-24)));
-  max-width: 1480px;
-  margin: var(--space-20) auto var(--space-32);
+  max-width: 1600px;
+  margin: var(--space-24) auto var(--space-32);
 }
 
 .status-dashboard-grid {
   display: grid;
-  grid-template-columns: minmax(300px, 1fr) minmax(0, 2fr);
-  gap: clamp(var(--space-24), 3vw, 48px);
+  grid-template-columns: minmax(260px, 0.7fr) minmax(620px, 2fr);
+  gap: clamp(var(--space-24), 3vw, var(--space-48));
   align-items: start;
 }
 
@@ -22,9 +22,30 @@
   top: var(--space-20);
   display: grid;
   min-width: 0;
-  gap: var(--space-14);
-  padding-right: clamp(var(--space-18), 2vw, var(--space-24));
-  border-right: 1px solid var(--border-subtle);
+  gap: var(--space-18);
+  padding-right: clamp(var(--space-12), 1.5vw, var(--space-24));
+}
+
+.status-roadmap .status-heading {
+  align-items: center;
+}
+
+.status-roadmap .status-heading h2 {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.status-add-milestone {
+  min-height: 30px;
+  padding: var(--space-4) var(--space-10);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .status-empty {
@@ -63,9 +84,19 @@
   align-items: flex-start;
   border: 0;
   border-radius: 0;
-  border-top: 1px solid var(--border-subtle);
+  position: relative;
   background: transparent;
-  padding: var(--space-12) var(--space-4);
+  padding: var(--space-12) var(--space-4) var(--space-14);
+}
+
+.status-item:not(:last-child)::after {
+  position: absolute;
+  top: 42px;
+  bottom: -13px;
+  left: 18px;
+  width: 1px;
+  background: var(--border-subtle);
+  content: "";
 }
 
 .status-item.current {
@@ -98,10 +129,10 @@
 .status-state-button,
 .status-state-static {
   display: inline-grid;
-  width: 30px;
-  min-width: 30px;
-  height: 30px;
-  min-height: 30px;
+  width: 22px;
+  min-width: 22px;
+  height: 22px;
+  min-height: 22px;
   place-items: center;
   border-radius: var(--radius-pill);
   padding: 0;
@@ -153,7 +184,7 @@
   color: var(--text-primary);
   padding: 0;
   font-family: var(--font-primary);
-  font-size: var(--fs-lg);
+  font-size: var(--fs-md);
   font-weight: 600;
   line-height: 1.25;
   text-align: left;

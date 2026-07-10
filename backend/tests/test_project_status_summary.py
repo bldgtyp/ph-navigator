@@ -72,15 +72,34 @@ def test_status_summary_registry_covers_shared_status_tables_in_product_order() 
         "heat_pumps_indoor_units",
         "pumps",
         "fans",
+        "electric_heaters",
         "hot_water_heaters",
         "hot_water_tanks",
-        "electric_heaters",
         "appliances",
         "project_glazings",
         "project_frames",
         "project_materials",
         "thermal_bridges",
     ]
+
+    groups: dict[str, list[str]] = {}
+    for table in STATUS_SUMMARY_TABLES:
+        groups.setdefault(table.group_key, []).append(table.leaf_label)
+    assert groups == {
+        "mechanical": [
+            "Ventilators",
+            "Outdoor Equipment",
+            "Indoor Equipment",
+            "Outdoor Units",
+            "Indoor Units",
+            "Pumps",
+            "Fans",
+            "Electric Heaters",
+        ],
+        "domestic_hot_water": ["Hot Water Heaters", "Hot Water Tanks", "Appliances"],
+        "envelope": ["Glazings", "Frames", "Materials"],
+        "thermal_bridges": ["Thermal Bridges"],
+    }
 
 
 def test_status_summary_registry_records_all_destination_families() -> None:
@@ -90,6 +109,8 @@ def test_status_summary_registry_records_all_destination_families() -> None:
     assert by_name["pumps"].destination_key == "pumps"
     assert by_name["heat_pumps_indoor_units"].destination_kind == "heat_pump_leaf"
     assert by_name["heat_pumps_indoor_units"].destination_key == "units-indoor"
+    assert by_name["heat_pumps_indoor_units"].subgroup_key == "heat_pumps"
+    assert by_name["heat_pumps_indoor_units"].subgroup_label == "Heat Pumps"
     assert by_name["thermal_bridges"].destination_kind == "thermal_bridges"
     assert by_name["thermal_bridges"].destination_key is None
     assert by_name["project_glazings"].destination_kind == "aperture_glazings"
@@ -127,7 +148,7 @@ def test_draft_status_summary_route_returns_draft_contract(clean_document_tables
     assert response.status_code == 200
     body = response.json()
     assert body["source"] == "draft"
-    assert len(body["groups"]) == 12
+    assert len(body["groups"]) == 4
     assert sum(len(group["leaves"]) for group in body["groups"]) == 15
 
 
@@ -174,15 +195,17 @@ def test_summary_projects_aperture_and_envelope_specification_status() -> None:
     )
 
     by_key = {group.key: group for group in summary.groups}
-    glazing = by_key["project_glazings"].leaves[0].records[0]
+    envelope = by_key["envelope"]
+    leaves = {leaf.table_name: leaf for leaf in envelope.leaves}
+    glazing = leaves["project_glazings"].records[0]
     assert glazing.model_dump() == {
         "id": "pglz_triple",
         "display_name": "Triple glazing",
         "status": "needed",
         "notes": "Confirm final SHGC.",
     }
-    assert by_key["project_frames"].counts.question == 1
-    assert by_key["project_materials"].counts.complete == 1
+    assert leaves["project_frames"].counts.question == 1
+    assert leaves["project_materials"].counts.complete == 1
 
 
 def test_summary_projects_status_name_notes_and_group_counts(clean_document_tables: None) -> None:
@@ -206,9 +229,16 @@ def test_summary_projects_status_name_notes_and_group_counts(clean_document_tabl
 
     assert response.status_code == 200
     body = response.json()
-    pumps = next(group for group in body["groups"] if group["key"] == "pumps")
-    assert pumps["counts"] == {"needed": 1, "question": 1, "complete": 1, "na": 1, "unknown": 0}
-    assert pumps["leaves"][0]["records"][0] == {
+    mechanical = next(group for group in body["groups"] if group["key"] == "mechanical")
+    assert mechanical["counts"] == {
+        "needed": 1,
+        "question": 1,
+        "complete": 1,
+        "na": 1,
+        "unknown": 0,
+    }
+    pumps = next(leaf for leaf in mechanical["leaves"] if leaf["table_name"] == "pumps")
+    assert pumps["records"][0] == {
         "id": "pmp_1",
         "display_name": "Pump 1",
         "status": "needed",

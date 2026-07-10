@@ -2,6 +2,7 @@ import { ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { errorMessage } from "../../../shared/lib/errors";
+import { Tooltip } from "../../../shared/ui";
 import type { ProjectDetail } from "../../projects/types";
 import {
   statusSummaryDestinationPath,
@@ -38,11 +39,11 @@ function RecordStatusSummaryForProject({ project }: { project: ProjectDetail }) 
     project.active_version_id,
     project.access_mode,
   );
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() =>
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(() =>
     readExpandedGroups(project.id),
   );
 
-  useEffect(() => writeExpandedGroups(project.id, expandedGroups), [expandedGroups, project.id]);
+  useEffect(() => writeExpandedGroups(project.id, expandedNodes), [expandedNodes, project.id]);
 
   if (!project.active_version_id) {
     return (
@@ -70,7 +71,7 @@ function RecordStatusSummaryForProject({ project }: { project: ProjectDetail }) 
   }
 
   const toggleGroup = (groupKey: string) => {
-    setExpandedGroups((current) => {
+    setExpandedNodes((current) => {
       const next = new Set(current);
       if (next.has(groupKey)) next.delete(groupKey);
       else next.add(groupKey);
@@ -84,7 +85,7 @@ function RecordStatusSummaryForProject({ project }: { project: ProjectDetail }) 
       <SummaryCounts counts={query.data.counts} />
       <div className="record-status-groups">
         {query.data.groups.map((group) => {
-          const expanded = expandedGroups.has(group.key);
+          const expanded = expandedNodes.has(group.key);
           return (
             <section className="record-status-group" key={group.key}>
               <button
@@ -105,14 +106,26 @@ function RecordStatusSummaryForProject({ project }: { project: ProjectDetail }) 
                   className="record-status-group-content"
                   id={`record-status-group-${group.key}`}
                 >
-                  {group.leaves.map((leaf) => (
-                    <StatusLeaf
-                      key={leaf.table_name}
-                      projectId={project.id}
-                      leaf={leaf}
-                      showHeading={group.leaves.length > 1}
-                    />
-                  ))}
+                  {groupChildren(group.leaves).map((child) =>
+                    child.kind === "leaf" ? (
+                      <StatusLeaf
+                        key={child.leaf.table_name}
+                        projectId={project.id}
+                        leaf={child.leaf}
+                        expanded={expandedNodes.has(leafNodeKey(group.key, child.leaf.table_name))}
+                        onToggle={() => toggleGroup(leafNodeKey(group.key, child.leaf.table_name))}
+                      />
+                    ) : (
+                      <StatusSubgroup
+                        key={child.key}
+                        projectId={project.id}
+                        groupKey={group.key}
+                        subgroup={child}
+                        expandedNodes={expandedNodes}
+                        onToggle={toggleGroup}
+                      />
+                    ),
+                  )}
                 </div>
               ) : null}
             </section>
@@ -125,39 +138,41 @@ function RecordStatusSummaryForProject({ project }: { project: ProjectDetail }) 
 
 function SummaryHeading() {
   return (
-    <div className="status-section-heading">
-      <div>
-        <h2 id="record-status-title">Record status</h2>
-        <p>Equipment and documentation that still need attention.</p>
-      </div>
-    </div>
+    <h2 className="sr-only" id="record-status-title">
+      Record status
+    </h2>
   );
 }
 
 function SummaryCounts({ counts }: { counts: StatusSummaryCounts }) {
+  const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+  const resolved = counts.complete + counts.na;
+  const attention = counts.needed + counts.question + counts.unknown;
+  const progress = total > 0 ? (resolved / total) * 100 : 0;
   return (
-    <div className="record-status-totals" aria-label="Record status totals">
-      <Count label="needed" value={counts.needed} state="needed" />
-      <Count label="questions" value={counts.question} state="question" />
-      <Count label="complete" value={counts.complete} state="complete" />
-      <Count label="N/A" value={counts.na} state="na" />
-      {counts.unknown > 0 ? <Count label="unknown" value={counts.unknown} state="unknown" /> : null}
+    <div className="record-status-overview" aria-label="Record status totals">
+      <div className="record-status-progress-copy">
+        <span>
+          <strong>{resolved}</strong> of {total} records resolved
+        </span>
+        <span className="record-status-attention">{attention} need attention</span>
+      </div>
+      <ProgressBar value={progress} label={`${resolved} of ${total} records resolved`} />
     </div>
   );
 }
 
-function Count({
-  label,
-  value,
-  state,
-}: {
-  label: string;
-  value: number;
-  state: StatusSummaryState;
-}) {
+function ProgressBar({ value, label }: { value: number; label: string }) {
   return (
-    <span className={`record-status-total record-status-total--${state}`}>
-      <strong>{value}</strong> {label}
+    <span
+      className="record-status-progress"
+      role="progressbar"
+      aria-label={label}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(value)}
+    >
+      <span style={{ width: `${value}%` }} />
     </span>
   );
 }
@@ -165,23 +180,134 @@ function Count({
 function GroupCounts({ counts }: { counts: StatusSummaryCounts }) {
   const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
   if (total === 0) return <span className="record-status-group-empty">No records</span>;
+  const resolved = counts.complete + counts.na;
+  const attention = counts.needed + counts.question + counts.unknown;
   return (
     <span className="record-status-group-counts">
-      {counts.needed > 0 ? <span className="needed">{counts.needed} needed</span> : null}
-      {counts.question > 0 ? <span className="question">{counts.question} questions</span> : null}
-      <span>{total} total</span>
+      {attention > 0 ? <span className="needed">{counts.needed} needed</span> : null}
+      <span className="record-status-group-progress-copy">
+        {resolved} / {total} resolved
+      </span>
+      <ProgressBar value={(resolved / total) * 100} label={`${resolved} of ${total} resolved`} />
     </span>
+  );
+}
+
+function LeafCounts({ counts }: { counts: StatusSummaryCounts }) {
+  const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+  if (total === 0) return <span className="record-status-group-empty">No records</span>;
+  const resolved = counts.complete + counts.na;
+  const attention = counts.needed + counts.question + counts.unknown;
+  return (
+    <span className="record-status-leaf-counts">
+      {attention > 0 ? <span className="needed">{attention} need attention</span> : null}
+      <span>{resolved} resolved</span>
+    </span>
+  );
+}
+
+type StatusSummaryChild =
+  | { kind: "leaf"; leaf: StatusSummaryLeaf }
+  | { kind: "subgroup"; key: string; label: string; leaves: StatusSummaryLeaf[] };
+
+function groupChildren(leaves: StatusSummaryLeaf[]): StatusSummaryChild[] {
+  const children: StatusSummaryChild[] = [];
+  for (const leaf of leaves) {
+    if (!leaf.subgroup_key || !leaf.subgroup_label) {
+      children.push({ kind: "leaf", leaf });
+      continue;
+    }
+    const existing = children.find(
+      (child): child is Extract<StatusSummaryChild, { kind: "subgroup" }> =>
+        child.kind === "subgroup" && child.key === leaf.subgroup_key,
+    );
+    if (existing) existing.leaves.push(leaf);
+    else {
+      children.push({
+        kind: "subgroup",
+        key: leaf.subgroup_key,
+        label: leaf.subgroup_label,
+        leaves: [leaf],
+      });
+    }
+  }
+  return children;
+}
+
+function StatusSubgroup({
+  projectId,
+  groupKey,
+  subgroup,
+  expandedNodes,
+  onToggle,
+}: {
+  projectId: string;
+  groupKey: string;
+  subgroup: Extract<StatusSummaryChild, { kind: "subgroup" }>;
+  expandedNodes: Set<string>;
+  onToggle: (key: string) => void;
+}) {
+  const nodeKey = subgroupNodeKey(groupKey, subgroup.key);
+  const expanded = expandedNodes.has(nodeKey);
+  const counts = sumCounts(subgroup.leaves.map((leaf) => leaf.counts));
+  return (
+    <section className="record-status-subgroup">
+      <button
+        type="button"
+        className="record-status-leaf-toggle record-status-subgroup-toggle"
+        aria-expanded={expanded}
+        aria-controls={`record-status-subgroup-${subgroup.key}`}
+        onClick={() => onToggle(nodeKey)}
+      >
+        <span className="record-status-leaf-chevron" aria-hidden="true">
+          {expanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+        </span>
+        <span className="record-status-leaf-name">{subgroup.label}</span>
+        <LeafCounts counts={counts} />
+      </button>
+      {expanded ? (
+        <div
+          className="record-status-subgroup-content"
+          id={`record-status-subgroup-${subgroup.key}`}
+        >
+          {subgroup.leaves.map((leaf) => (
+            <StatusLeaf
+              key={leaf.table_name}
+              projectId={projectId}
+              leaf={leaf}
+              expanded={expandedNodes.has(leafNodeKey(groupKey, leaf.table_name))}
+              onToggle={() => onToggle(leafNodeKey(groupKey, leaf.table_name))}
+            />
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function sumCounts(counts: StatusSummaryCounts[]): StatusSummaryCounts {
+  return counts.reduce(
+    (total, count) => ({
+      needed: total.needed + count.needed,
+      question: total.question + count.question,
+      complete: total.complete + count.complete,
+      na: total.na + count.na,
+      unknown: total.unknown + count.unknown,
+    }),
+    { needed: 0, question: 0, complete: 0, na: 0, unknown: 0 },
   );
 }
 
 function StatusLeaf({
   projectId,
   leaf,
-  showHeading,
+  expanded,
+  onToggle,
 }: {
   projectId: string;
   leaf: StatusSummaryLeaf;
-  showHeading: boolean;
+  expanded: boolean;
+  onToggle: () => void;
 }) {
   const [showAllAttention, setShowAllAttention] = useState(false);
   const [showResolved, setShowResolved] = useState(false);
@@ -195,56 +321,82 @@ function StatusLeaf({
 
   return (
     <section className="record-status-leaf">
-      <div className="record-status-leaf-heading">
-        {showHeading ? <h3>{leaf.label}</h3> : <span />}
-        <Link
-          className="text-link record-status-open-table"
-          to={statusSummaryDestinationPath(projectId, leaf.destination)}
+      <div className="record-status-leaf-header">
+        <button
+          type="button"
+          className="record-status-leaf-toggle"
+          aria-expanded={expanded}
+          aria-controls={`record-status-leaf-${leaf.table_name}`}
+          onClick={onToggle}
         >
-          Open table <ExternalLink size={13} aria-hidden="true" />
-        </Link>
+          <span className="record-status-leaf-chevron" aria-hidden="true">
+            {expanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+          </span>
+          <span className="record-status-leaf-name">{leaf.label}</span>
+          <LeafCounts counts={leaf.counts} />
+        </button>
+        <Tooltip content="Open table" hoverDelay={300} placement="top">
+          <Link
+            className="record-status-open-table"
+            to={statusSummaryDestinationPath(projectId, leaf.destination)}
+            aria-label="Open table"
+          >
+            <ExternalLink size={14} aria-hidden="true" />
+          </Link>
+        </Tooltip>
       </div>
-      {leaf.records.length === 0 ? (
-        <p className="record-status-leaf-empty">No records.</p>
-      ) : (
-        <>
-          <div className="record-status-records">
-            {visibleAttention.map((record) => (
-              <StatusRecordRow key={record.id} projectId={projectId} leaf={leaf} record={record} />
-            ))}
-            {showResolved
-              ? resolved.map((record) => (
+      {expanded ? (
+        <div className="record-status-leaf-content" id={`record-status-leaf-${leaf.table_name}`}>
+          {leaf.records.length === 0 ? (
+            <p className="record-status-leaf-empty">No records.</p>
+          ) : (
+            <>
+              <div className="record-status-records">
+                {visibleAttention.map((record) => (
                   <StatusRecordRow
                     key={record.id}
                     projectId={projectId}
                     leaf={leaf}
                     record={record}
                   />
-                ))
-              : null}
-          </div>
-          <div className="record-status-disclosure-actions">
-            {attention.length > ATTENTION_LIMIT ? (
-              <button
-                type="button"
-                className="text-link"
-                onClick={() => setShowAllAttention((value) => !value)}
-              >
-                {showAllAttention ? "Show fewer" : `Show all ${attention.length} attention items`}
-              </button>
-            ) : null}
-            {resolved.length > 0 ? (
-              <button
-                type="button"
-                className="text-link"
-                onClick={() => setShowResolved((value) => !value)}
-              >
-                {showResolved ? "Hide resolved" : `Show ${resolved.length} resolved`}
-              </button>
-            ) : null}
-          </div>
-        </>
-      )}
+                ))}
+                {showResolved
+                  ? resolved.map((record) => (
+                      <StatusRecordRow
+                        key={record.id}
+                        projectId={projectId}
+                        leaf={leaf}
+                        record={record}
+                      />
+                    ))
+                  : null}
+              </div>
+              <div className="record-status-disclosure-actions">
+                {attention.length > ATTENTION_LIMIT ? (
+                  <button
+                    type="button"
+                    className="text-link"
+                    onClick={() => setShowAllAttention((value) => !value)}
+                  >
+                    {showAllAttention
+                      ? "Show fewer"
+                      : `Show all ${attention.length} attention items`}
+                  </button>
+                ) : null}
+                {resolved.length > 0 ? (
+                  <button
+                    type="button"
+                    className="text-link"
+                    onClick={() => setShowResolved((value) => !value)}
+                  >
+                    {showResolved ? "Hide resolved" : `Show ${resolved.length} resolved`}
+                  </button>
+                ) : null}
+              </div>
+            </>
+          )}
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -306,6 +458,14 @@ function RecordStatusSkeleton() {
 
 function expandedStorageKey(projectId: string) {
   return `phn:status-summary:expanded:${projectId}`;
+}
+
+function leafNodeKey(groupKey: string, tableName: string) {
+  return `${groupKey}:${tableName}`;
+}
+
+function subgroupNodeKey(groupKey: string, subgroupKey: string) {
+  return `${groupKey}:group:${subgroupKey}`;
 }
 
 function readExpandedGroups(projectId: string): Set<string> {

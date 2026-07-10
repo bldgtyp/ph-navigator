@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, test } from "vitest";
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, test, vi } from "vitest";
 import { Tooltip } from "../Tooltip";
 
 describe("Tooltip", () => {
@@ -81,6 +81,25 @@ describe("Tooltip", () => {
 
     fireEvent.mouseLeave(trigger);
     expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+  });
+
+  test("delays a hover-only tooltip when requested", () => {
+    vi.useFakeTimers();
+    try {
+      render(
+        <Tooltip content="Delayed tooltip" hoverDelay={300}>
+          <button type="button">Trigger</button>
+        </Tooltip>,
+      );
+
+      fireEvent.mouseEnter(screen.getByRole("button", { name: "Trigger" }));
+      expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+
+      act(() => vi.advanceTimersByTime(300));
+      expect(screen.getByRole("tooltip")).toHaveTextContent("Delayed tooltip");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

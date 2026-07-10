@@ -76,6 +76,13 @@ test("keeps groups collapsed and bounds attention and resolved disclosure", asyn
   expect(screen.queryByText("Pump 1")).toBeNull();
 
   await user.click(pumpsToggle);
+  const pumpsLeafToggle = screen.getByRole("button", {
+    name: "Pumps 12 need attention 1 resolved",
+  });
+  expect(pumpsLeafToggle).toHaveAttribute("aria-expanded", "false");
+  expect(screen.queryByText("Pump 1")).toBeNull();
+
+  await user.click(pumpsLeafToggle);
   const records = screen.getByText("Pump 1").closest<HTMLElement>(".record-status-leaf");
   expect(records).not.toBeNull();
   expect(within(records!).getAllByRole("article")).toHaveLength(10);
@@ -107,6 +114,58 @@ test("recovers from a section-scoped load error through Retry", async () => {
   const region = screen.getByRole("region", { name: "Record status" });
   expect(await within(region).findByText("12 needed")).toBeVisible();
   expect(fetchMock).toHaveBeenCalledTimes(2);
+});
+
+test("keeps nested subgroup tables collapsed until each tree level opens", async () => {
+  const user = userEvent.setup();
+  const fixture = summaryFixture();
+  fixture.groups = [
+    {
+      key: "mechanical",
+      label: "Mechanical",
+      counts: { needed: 0, question: 0, complete: 0, na: 0, unknown: 0 },
+      leaves: [
+        {
+          table_name: "heat_pumps_outdoor_equip",
+          label: "Outdoor Equipment",
+          subgroup_key: "heat_pumps",
+          subgroup_label: "Heat Pumps",
+          destination: { kind: "heat_pump_leaf", key: "equipment-outdoor" },
+          counts: { needed: 0, question: 0, complete: 0, na: 0, unknown: 0 },
+          records: [],
+        },
+      ],
+    },
+  ];
+  fixture.counts = { needed: 0, question: 0, complete: 0, na: 0, unknown: 0 };
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(fixture), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    ),
+  );
+  renderSummary();
+
+  await user.click(await screen.findByRole("button", { name: "Mechanical No records" }));
+  expect(screen.getByRole("button", { name: "Heat Pumps No records" })).toHaveAttribute(
+    "aria-expanded",
+    "false",
+  );
+  expect(screen.queryByRole("button", { name: "Outdoor Equipment No records" })).toBeNull();
+
+  await user.click(screen.getByRole("button", { name: "Heat Pumps No records" }));
+  const outdoor = screen.getByRole("button", { name: "Outdoor Equipment No records" });
+  expect(outdoor).toHaveAttribute("aria-expanded", "false");
+  expect(screen.getByRole("link", { name: "Open table" })).toHaveAttribute(
+    "href",
+    "/projects/proj_1/equipment/heat-pumps/equipment-outdoor",
+  );
+
+  await user.click(outdoor);
+  expect(screen.getByText("No records.")).toBeVisible();
 });
 
 function renderSummary() {

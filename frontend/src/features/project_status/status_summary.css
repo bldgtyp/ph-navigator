@@ -1,6 +1,7 @@
 .record-status {
   display: grid;
-  gap: var(--space-14);
+  min-width: 0;
+  gap: var(--space-20);
 }
 
 .status-section-heading h2,
@@ -13,56 +14,74 @@
   color: var(--text-secondary);
 }
 
-.record-status-totals,
+.record-status-overview,
 .record-status-group-counts,
 .record-status-record-main,
-.record-status-leaf-heading,
+.record-status-leaf-counts,
 .record-status-disclosure-actions {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
 }
 
-.record-status-totals {
-  gap: var(--space-12);
+.record-status-overview {
+  display: grid;
+  gap: var(--space-8);
+  padding-top: var(--space-2);
+}
+
+.record-status-progress-copy {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-16);
   color: var(--text-secondary);
   font-size: var(--fs-sm);
 }
 
-.record-status-total {
-  display: inline-flex;
-  align-items: baseline;
-  gap: var(--space-4);
-}
-
-.record-status-total strong {
+.record-status-progress-copy strong {
   color: var(--text-primary);
-  font-family: var(--font-mono);
-  font-size: var(--fs-lg);
+  font-weight: 600;
 }
 
-.record-status-total--needed strong,
-.record-status-group-counts .needed {
+.record-status-attention {
   color: var(--report-status-missing);
+  font-weight: 600;
 }
 
-.record-status-total--question strong,
-.record-status-group-counts .question {
-  color: var(--report-status-question);
+.record-status-progress {
+  display: block;
+  width: 100%;
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--border-subtle);
+}
+
+.record-status-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
 }
 
 .record-status-groups {
-  border-top: 1px solid var(--border-subtle);
+  display: grid;
+  gap: var(--space-12);
 }
 
 .record-status-group {
-  border-bottom: 1px solid var(--border-subtle);
+  overflow: hidden;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-xl);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-elev-1);
 }
 
 .record-status-group-toggle {
   display: grid;
   width: 100%;
-  min-height: 46px;
+  min-height: 54px;
   grid-template-columns: 20px minmax(150px, 1fr) auto;
   gap: var(--space-8);
   align-items: center;
@@ -70,14 +89,14 @@
   border-radius: 0;
   background: transparent;
   color: var(--text-primary);
-  padding: var(--space-8) 0;
+  padding: var(--space-10) var(--space-16);
   text-align: left;
   text-transform: none;
   letter-spacing: 0;
 }
 
 .record-status-group-toggle:hover:not(:disabled) {
-  background: color-mix(in oklab, var(--bg-elev) 52%, transparent);
+  background: var(--bg-elev);
   transform: none;
 }
 
@@ -93,11 +112,25 @@
 
 .record-status-group-counts {
   justify-content: flex-end;
-  gap: var(--space-10);
+  display: grid;
+  grid-template-columns: auto auto 90px;
+  gap: var(--space-12);
   color: var(--text-muted);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
   font-weight: 400;
+}
+
+.record-status-group-counts .needed {
+  border-radius: var(--radius-pill);
+  background: color-mix(in oklab, var(--report-status-missing) 12%, var(--bg-card));
+  color: var(--report-status-missing);
+  padding: 3px var(--space-8);
+}
+
+.record-status-group-counts > .record-status-progress {
+  width: 90px;
+  height: 6px;
 }
 
 .record-status-group-empty,
@@ -109,35 +142,111 @@
 
 .record-status-group-content {
   display: grid;
-  gap: var(--space-16);
-  padding: var(--space-8) 0 var(--space-16) var(--space-24);
+  padding: 0 var(--space-16) var(--space-10) 42px;
+  border-top: 1px solid var(--border-subtle);
 }
 
 .record-status-leaf {
   display: grid;
-  gap: var(--space-8);
 }
 
 .record-status-leaf + .record-status-leaf {
-  padding-top: var(--space-12);
   border-top: 1px solid var(--border-subtle);
 }
 
-.record-status-leaf-heading {
-  justify-content: space-between;
-  gap: var(--space-12);
+.record-status-subgroup + .record-status-leaf,
+.record-status-leaf + .record-status-subgroup,
+.record-status-subgroup + .record-status-subgroup {
+  border-top: 1px solid var(--border-subtle);
 }
 
-.record-status-leaf-heading h3 {
-  margin: 0;
+.record-status-subgroup-content {
+  margin-left: var(--space-18);
+  padding-left: var(--space-14);
+  border-left: 1px solid var(--border-subtle);
+}
+
+.record-status-subgroup-content .record-status-leaf-name {
   font-size: var(--fs-sm);
 }
 
-.record-status-open-table {
-  display: inline-flex;
+.record-status-leaf-toggle {
+  display: grid;
+  width: 100%;
+  min-height: 44px;
+  grid-template-columns: 18px minmax(140px, 1fr) auto;
+  gap: var(--space-8);
   align-items: center;
-  gap: var(--space-4);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-primary);
+  padding: var(--space-8) 0;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.record-status-leaf-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-12);
+  align-items: center;
+}
+
+.record-status-leaf-header .record-status-leaf-toggle {
+  width: auto;
+}
+
+.record-status-leaf-toggle:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--bg-elev) 58%, transparent);
+  transform: none;
+}
+
+.record-status-leaf-chevron {
+  display: inline-grid;
+  color: var(--text-muted);
+  place-items: center;
+}
+
+.record-status-leaf-name {
+  font-size: var(--fs-md);
+  font-weight: 500;
+}
+
+.record-status-leaf-counts {
+  justify-content: flex-end;
+  gap: var(--space-10);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
   font-size: var(--fs-xs);
+}
+
+.record-status-leaf-counts .needed {
+  color: var(--report-status-missing);
+}
+
+.record-status-leaf-content {
+  display: grid;
+  gap: var(--space-8);
+  padding: 0 0 var(--space-12) 26px;
+}
+
+.record-status-open-table {
+  display: inline-grid;
+  width: 26px;
+  min-width: 26px;
+  height: 26px;
+  place-items: center;
+  align-items: center;
+  color: var(--accent-text);
+  border-radius: var(--radius-xs);
+  text-decoration: none;
+}
+
+.record-status-open-table:hover {
+  background: var(--bg-elev);
+  color: var(--highlight-text);
 }
 
 .record-status-records {
@@ -159,8 +268,15 @@
 .record-status-record-main > a {
   min-width: 0;
   color: var(--text-primary);
-  font-weight: 550;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  line-height: 1.35;
+  text-decoration: none;
   overflow-wrap: anywhere;
+}
+
+.record-status-record-main > a:hover {
+  color: var(--accent-text);
 }
 
 .record-status-chip {
@@ -214,6 +330,7 @@
   background: transparent;
   padding: 0;
   font-size: var(--fs-xs);
+  text-decoration: none;
   text-transform: none;
 }
 
@@ -280,5 +397,24 @@
 
   .record-status-group-content {
     padding-left: var(--space-20);
+  }
+
+  .record-status-leaf-toggle {
+    grid-template-columns: 18px minmax(0, 1fr);
+  }
+
+  .record-status-leaf-header {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .record-status-open-table {
+    justify-self: end;
+    margin-right: var(--space-2);
+  }
+
+  .record-status-leaf-counts {
+    grid-column: 2;
+    justify-content: flex-start;
   }
 }

@@ -70,6 +70,8 @@ class StatusSummaryLeaf(BaseModel):
 
     table_name: str
     label: str
+    subgroup_key: str | None = None
+    subgroup_label: str | None = None
     destination: StatusSummaryDestination
     counts: StatusSummaryCounts
     records: list[StatusSummaryRecord]
@@ -103,6 +105,8 @@ class StatusSummaryTable:
     group_label: str
     leaf_label: str
     destination_kind: StatusSummaryDestinationKind
+    subgroup_key: str | None = None
+    subgroup_label: str | None = None
     destination_key: str | None = None
     status_source: StatusSummaryStatusSource = "custom_status"
 
@@ -115,11 +119,18 @@ class _SummaryEnvelope(Protocol):
     rows: list[_SummaryRow]
 
 
-def _equipment_table(table_name: str, label: str, tab: str) -> StatusSummaryTable:
+def _equipment_table(
+    table_name: str,
+    label: str,
+    tab: str,
+    *,
+    group_key: str,
+    group_label: str,
+) -> StatusSummaryTable:
     return StatusSummaryTable(
         table_name=table_name,
-        group_key=table_name,
-        group_label=label,
+        group_key=group_key,
+        group_label=group_label,
         leaf_label=label,
         destination_kind="equipment_tab",
         destination_key=tab,
@@ -129,9 +140,11 @@ def _equipment_table(table_name: str, label: str, tab: str) -> StatusSummaryTabl
 def _heat_pump_leaf(table_name: str, label: str, leaf: str) -> StatusSummaryTable:
     return StatusSummaryTable(
         table_name=table_name,
-        group_key="heat_pumps",
-        group_label="Heat Pumps",
+        group_key="mechanical",
+        group_label="Mechanical",
         leaf_label=label,
+        subgroup_key="heat_pumps",
+        subgroup_label="Heat Pumps",
         destination_kind="heat_pump_leaf",
         destination_key=leaf,
     )
@@ -144,8 +157,8 @@ def _specification_table(
 ) -> StatusSummaryTable:
     return StatusSummaryTable(
         table_name=table_name,
-        group_key=table_name,
-        group_label=label,
+        group_key="envelope",
+        group_label="Envelope",
         leaf_label=label,
         destination_kind=destination_kind,
         status_source="specification_status",
@@ -153,17 +166,47 @@ def _specification_table(
 
 
 STATUS_SUMMARY_TABLES: tuple[StatusSummaryTable, ...] = (
-    _equipment_table("ventilators", "Ventilators", "ventilators"),
+    _equipment_table(
+        "ventilators",
+        "Ventilators",
+        "ventilators",
+        group_key="mechanical",
+        group_label="Mechanical",
+    ),
     _heat_pump_leaf("heat_pumps_outdoor_equip", "Outdoor Equipment", "equipment-outdoor"),
     _heat_pump_leaf("heat_pumps_indoor_equip", "Indoor Equipment", "equipment-indoor"),
     _heat_pump_leaf("heat_pumps_outdoor_units", "Outdoor Units", "units-outdoor"),
     _heat_pump_leaf("heat_pumps_indoor_units", "Indoor Units", "units-indoor"),
-    _equipment_table("pumps", "Pumps", "pumps"),
-    _equipment_table("fans", "Fans", "fans"),
-    _equipment_table("hot_water_heaters", "Hot Water Heaters", "hot-water-heaters"),
-    _equipment_table("hot_water_tanks", "Hot Water Tanks", "hot-water-tanks"),
-    _equipment_table("electric_heaters", "Electric Heaters", "electric-heaters"),
-    _equipment_table("appliances", "Appliances", "appliances"),
+    _equipment_table("pumps", "Pumps", "pumps", group_key="mechanical", group_label="Mechanical"),
+    _equipment_table("fans", "Fans", "fans", group_key="mechanical", group_label="Mechanical"),
+    _equipment_table(
+        "electric_heaters",
+        "Electric Heaters",
+        "electric-heaters",
+        group_key="mechanical",
+        group_label="Mechanical",
+    ),
+    _equipment_table(
+        "hot_water_heaters",
+        "Hot Water Heaters",
+        "hot-water-heaters",
+        group_key="domestic_hot_water",
+        group_label="Domestic Hot Water",
+    ),
+    _equipment_table(
+        "hot_water_tanks",
+        "Hot Water Tanks",
+        "hot-water-tanks",
+        group_key="domestic_hot_water",
+        group_label="Domestic Hot Water",
+    ),
+    _equipment_table(
+        "appliances",
+        "Appliances",
+        "appliances",
+        group_key="domestic_hot_water",
+        group_label="Domestic Hot Water",
+    ),
     _specification_table("project_glazings", "Glazings", "aperture_glazings"),
     _specification_table("project_frames", "Frames", "aperture_frames"),
     _specification_table("project_materials", "Materials", "envelope_materials"),
@@ -261,6 +304,8 @@ def _summary_leaf(view: ProjectDocumentView, table: StatusSummaryTable) -> Statu
     return StatusSummaryLeaf(
         table_name=table.table_name,
         label=table.leaf_label,
+        subgroup_key=table.subgroup_key,
+        subgroup_label=table.subgroup_label,
         destination=StatusSummaryDestination(kind=table.destination_kind, key=table.destination_key),
         counts=_count_records(records),
         records=records,

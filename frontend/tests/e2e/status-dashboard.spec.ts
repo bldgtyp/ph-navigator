@@ -19,9 +19,9 @@ test("Status dashboard cold-loads independently for editors and public viewers",
   await expect(page.getByRole("heading", { name: "Project status" })).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Record status" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Roadmap" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Glazings No records" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Frames No records" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Materials No records" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Mechanical No records" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Domestic Hot Water No records" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Envelope No records" })).toBeVisible();
   await page.getByRole("button", { name: "Apply BLDGTYP default template" }).click();
   await expect(page.getByText("CAD files received")).toBeVisible();
 

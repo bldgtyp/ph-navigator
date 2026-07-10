@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useRef,
   useState,
   type FocusEvent,
   type KeyboardEvent,
@@ -29,6 +30,7 @@ type TooltipTriggerProps = {
 export type TooltipProps = {
   children: ReactElement<TooltipTriggerProps>;
   content: ReactNode;
+  hoverDelay?: number;
   offset?: number;
   placement?: TooltipPlacement;
   viewportPadding?: number;
@@ -37,6 +39,7 @@ export type TooltipProps = {
 export function Tooltip({
   children,
   content,
+  hoverDelay = 0,
   offset = 8,
   placement = "top",
   viewportPadding = 8,
@@ -45,12 +48,22 @@ export function Tooltip({
   const tooltipId = `app-tooltip-${reactId.replace(/:/g, "")}`;
   const [focused, setFocused] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const open = focused || hovered;
 
+  const clearHoverTimer = useCallback(() => {
+    if (hoverTimer.current === null) return;
+    clearTimeout(hoverTimer.current);
+    hoverTimer.current = null;
+  }, []);
+
   const hide = useCallback(() => {
+    clearHoverTimer();
     setFocused(false);
     setHovered(false);
-  }, []);
+  }, [clearHoverTimer]);
+
+  useEffect(() => clearHoverTimer, [clearHoverTimer]);
 
   useEffect(() => {
     if (!open || typeof window === "undefined") return;
@@ -81,6 +94,7 @@ export function Tooltip({
     },
     onFocus: (event: FocusEvent<HTMLElement>) => {
       children.props.onFocus?.(event);
+      clearHoverTimer();
       setFocused(true);
     },
     onKeyDown: (event: KeyboardEvent<HTMLElement>) => {
@@ -89,10 +103,19 @@ export function Tooltip({
     },
     onMouseEnter: (event: MouseEvent<HTMLElement>) => {
       children.props.onMouseEnter?.(event);
-      setHovered(true);
+      clearHoverTimer();
+      if (hoverDelay <= 0) {
+        setHovered(true);
+      } else {
+        hoverTimer.current = setTimeout(() => {
+          hoverTimer.current = null;
+          setHovered(true);
+        }, hoverDelay);
+      }
     },
     onMouseLeave: (event: MouseEvent<HTMLElement>) => {
       children.props.onMouseLeave?.(event);
+      clearHoverTimer();
       setHovered(false);
     },
     ref: setTriggerRef,

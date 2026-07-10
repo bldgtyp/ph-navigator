@@ -29,6 +29,8 @@ export type StatusSummaryDestination = {
 export type StatusSummaryLeaf = {
   table_name: string;
   label: string;
+  subgroup_key?: string | null;
+  subgroup_label?: string | null;
   destination: StatusSummaryDestination;
   counts: StatusSummaryCounts;
   records: StatusSummaryRecord[];
