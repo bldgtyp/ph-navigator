@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import type { ProjectDetail } from "../../projects/types";
 import { tableFieldDefsToFieldDefs, type ViewState } from "../../../shared/ui/data-table";
 import {
@@ -41,6 +42,8 @@ import {
 } from "../../equipment/types";
 
 export function ThermalBridgesPage({ project }: { project: ProjectDetail }) {
+  const [searchParams] = useSearchParams();
+  const focusRowId = searchParams.get("focus");
   const thermalBridgesQuery = useThermalBridgesSliceQuery(
     project.id,
     project.active_version_id,
@@ -72,6 +75,7 @@ export function ThermalBridgesPage({ project }: { project: ProjectDetail }) {
       project={project}
       slice={thermalBridgesQuery.data}
       refetch={thermalBridgesQuery.refetch}
+      focusRowId={focusRowId}
     />
   );
 }
@@ -80,10 +84,12 @@ function ThermalBridgesPageBody({
   project,
   slice,
   refetch,
+  focusRowId,
 }: {
   project: ProjectDetail;
   slice: ThermalBridgesSlice;
   refetch: () => Promise<unknown>;
+  focusRowId: string | null;
 }) {
   const activeVersionId = project.active_version_id;
   const fieldRenderOverlay = useMemo(() => thermalBridgesFieldOverlay(slice), [slice]);
@@ -153,6 +159,7 @@ function ThermalBridgesPageBody({
       ) : (
         <ThermalBridgesTable
           slice={slice}
+          focusRowId={focusRowId}
           tableSchema={controller.tableSchema}
           isEditor={controller.canEdit}
           projectId={project.id}

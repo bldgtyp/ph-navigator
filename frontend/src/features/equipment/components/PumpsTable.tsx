@@ -54,6 +54,7 @@ export function PumpsTable({
   overflowMenuActions,
   footerAction,
   onResetView,
+  focusRowId,
   onInversePillClick,
   onInverseLinkEdit,
   resolveInverseLinkLabel,
@@ -72,6 +73,7 @@ export function PumpsTable({
   overflowMenuActions?: DataTableProps<PumpRow>["overflowMenuActions"];
   footerAction?: DataTableProps<PumpRow>["footerAction"];
   onResetView?: DataTableProps<PumpRow>["onResetView"];
+  focusRowId?: string | null;
   onInversePillClick?: (field: InverseLinkField, rowId: string) => void;
   onInverseLinkEdit?: (field: InverseLinkField, row: PumpRow) => void;
   resolveInverseLinkLabel?: (field: InverseLinkField, rowId: string) => string | null;
@@ -301,6 +303,7 @@ export function PumpsTable({
     <DataTable
       tableName="Pumps"
       rows={sortedRows}
+      focusRowId={focusRowId}
       columnDefs={columns}
       fieldDefs={dataTableFieldDefs}
       getRowId={(pump) => pump.id}

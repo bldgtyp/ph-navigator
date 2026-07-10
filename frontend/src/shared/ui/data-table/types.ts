@@ -444,6 +444,9 @@ export type DataTableProps<TRow> = {
   // `rows` identity change (the Phase 0 default, which is unsafe for
   // consumers whose rows array reidentifies after a successful write).
   sessionKey?: string;
+  // Route-level row target. DataTable scrolls the target into the virtualized
+  // viewport and applies the shared transient focus highlight once mounted.
+  focusRowId?: string | null;
   readOnly?: boolean;
   // Whether the "Download CSV" overflow affordance is offered. A CSV export is
   // a bulk export → editor/certifier-only (CP-7), so viewer-reachable tables

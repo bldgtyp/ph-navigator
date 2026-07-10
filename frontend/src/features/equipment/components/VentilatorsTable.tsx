@@ -64,6 +64,7 @@ export function VentilatorsTable({
   overflowMenuActions,
   footerAction,
   onResetView,
+  focusRowId,
   onEdit,
   onIncomingIndoorUnitOpen,
   onIncomingIndoorUnitsLinkEdit,
@@ -86,6 +87,7 @@ export function VentilatorsTable({
   overflowMenuActions?: DataTableProps<VentilatorRow>["overflowMenuActions"];
   footerAction?: DataTableProps<VentilatorRow>["footerAction"];
   onResetView?: DataTableProps<VentilatorRow>["onResetView"];
+  focusRowId?: string | null;
   onEdit?: (row: VentilatorRow) => void;
   onIncomingIndoorUnitOpen?: (rowId: string) => void;
   onIncomingIndoorUnitsLinkEdit?: (row: VentilatorRow) => void;
@@ -331,6 +333,7 @@ export function VentilatorsTable({
     <DataTable
       tableName="Ventilators"
       rows={sortedRows}
+      focusRowId={focusRowId}
       columnDefs={columns}
       fieldDefs={tableFieldDefs}
       getRowId={(ventilator) => ventilator.id}

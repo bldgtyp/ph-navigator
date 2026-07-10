@@ -15,11 +15,19 @@ export type AppliancesTableSlotProps = {
   activeVersionId: string | null;
   buildEmptyRow: BuildEmptyRow<ApplianceRow>;
   footerAction: React.ReactNode;
+  focusRowId?: string | null;
 };
 
 export function AppliancesTableSlot(props: AppliancesTableSlotProps) {
-  const { controller, appliancesSlice, projectId, activeVersionId, buildEmptyRow, footerAction } =
-    props;
+  const {
+    controller,
+    appliancesSlice,
+    projectId,
+    activeVersionId,
+    buildEmptyRow,
+    footerAction,
+    focusRowId,
+  } = props;
   if (controller.viewLoading) {
     return <p className="form-note">Loading table view...</p>;
   }
@@ -37,6 +45,7 @@ export function AppliancesTableSlot(props: AppliancesTableSlotProps) {
       generateRowId={controller.canEdit ? () => generatedId(APPLIANCE_ID_PREFIX) : undefined}
       sessionKey={`${projectId}:${activeVersionId ?? "none"}:${APPLIANCES_TABLE_NAME}`}
       footerAction={footerAction}
+      focusRowId={focusRowId}
       {...customFieldActionsForController(controller)}
     />
   );

@@ -19,6 +19,7 @@ export type ElectricHeatersTableSlotProps = {
   activeVersionId: string | null;
   buildEmptyRow: BuildEmptyRow<ElectricHeaterRow>;
   footerAction: React.ReactNode;
+  focusRowId?: string | null;
 };
 
 export function ElectricHeatersTableSlot(props: ElectricHeatersTableSlotProps) {
@@ -29,6 +30,7 @@ export function ElectricHeatersTableSlot(props: ElectricHeatersTableSlotProps) {
     activeVersionId,
     buildEmptyRow,
     footerAction,
+    focusRowId,
   } = props;
   if (controller.viewLoading) {
     return <p className="form-note">Loading table view...</p>;
@@ -47,6 +49,7 @@ export function ElectricHeatersTableSlot(props: ElectricHeatersTableSlotProps) {
       generateRowId={controller.canEdit ? () => generatedId(ELECTRIC_HEATER_ID_PREFIX) : undefined}
       sessionKey={`${projectId}:${activeVersionId ?? "none"}:${ELECTRIC_HEATERS_TABLE_NAME}`}
       footerAction={footerAction}
+      focusRowId={focusRowId}
       {...customFieldActionsForController(controller)}
     />
   );

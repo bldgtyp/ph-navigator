@@ -1,0 +1,127 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
+import { afterEach, describe, expect, test, vi } from "vitest";
+import type { ProjectDetail } from "../../projects/types";
+import { statusSummaryDestinationPath, type ProjectStatusSummary } from "../summary";
+import { RecordStatusSummary } from "./RecordStatusSummary";
+
+const PROJECT: ProjectDetail = {
+  id: "proj_1",
+  name: "Linde Home",
+  bt_number: "2524",
+  client: null,
+  cert_programs: ["phius"],
+  phius_number: null,
+  phius_dropbox_url: null,
+  active_version_id: "ver_1",
+  last_saved_at: null,
+  created_at: "2026-01-01T00:00:00Z",
+  updated_at: "2026-01-01T00:00:00Z",
+  versions: [],
+  active_version: null,
+  access_mode: "editor",
+  owner_display_name: "Ed May",
+};
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  window.sessionStorage.clear();
+});
+
+describe("statusSummaryDestinationPath", () => {
+  test("builds focused routes for every destination family", () => {
+    expect(
+      statusSummaryDestinationPath("proj_1", { kind: "equipment_tab", key: "appliances" }, "app_1"),
+    ).toBe("/projects/proj_1/equipment?tab=appliances&focus=app_1");
+    expect(
+      statusSummaryDestinationPath(
+        "proj_1",
+        { kind: "heat_pump_leaf", key: "units-indoor" },
+        "hpiu_1",
+      ),
+    ).toBe("/projects/proj_1/equipment/heat-pumps/units-indoor?focus=hpiu_1");
+    expect(
+      statusSummaryDestinationPath("proj_1", { kind: "thermal_bridges", key: null }, "tb_1"),
+    ).toBe("/projects/proj_1/thermal-bridges?focus=tb_1");
+  });
+});
+
+test("keeps groups collapsed and bounds attention and resolved disclosure", async () => {
+  const user = userEvent.setup();
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(summaryFixture()), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    ),
+  );
+  renderSummary();
+
+  expect(await screen.findByText("12 needed")).toBeInTheDocument();
+  const pumpsToggle = screen.getByRole("button", { name: /Pumps/ });
+  expect(pumpsToggle).toHaveAttribute("aria-expanded", "false");
+  expect(screen.queryByText("Pump 1")).toBeNull();
+
+  await user.click(pumpsToggle);
+  const records = screen.getByText("Pump 1").closest<HTMLElement>(".record-status-leaf");
+  expect(records).not.toBeNull();
+  expect(within(records!).getAllByRole("article")).toHaveLength(10);
+  expect(within(records!).queryByText("Pump 12")).toBeNull();
+  expect(within(records!).queryByText("Resolved pump")).toBeNull();
+
+  await user.click(within(records!).getByRole("button", { name: "Show all 12 attention items" }));
+  expect(within(records!).getAllByRole("article")).toHaveLength(12);
+  await user.click(within(records!).getByRole("button", { name: "Show 1 resolved" }));
+  expect(within(records!).getByText("Resolved pump")).toBeInTheDocument();
+});
+
+function renderSummary() {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <RecordStatusSummary project={PROJECT} />
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+}
+
+function summaryFixture(): ProjectStatusSummary {
+  const attention = Array.from({ length: 12 }, (_, index) => ({
+    id: `pmp_${index + 1}`,
+    display_name: `Pump ${index + 1}`,
+    status: "needed" as const,
+    notes: index === 0 ? "Confirm control sequence." : null,
+  }));
+  return {
+    project_id: PROJECT.id,
+    version_id: "ver_1",
+    source: "draft",
+    version_etag: "etag",
+    draft_etag: "draft-etag",
+    counts: { needed: 12, question: 0, complete: 1, na: 0, unknown: 0 },
+    groups: [
+      {
+        key: "pumps",
+        label: "Pumps",
+        counts: { needed: 12, question: 0, complete: 1, na: 0, unknown: 0 },
+        leaves: [
+          {
+            table_name: "pumps",
+            label: "Pumps",
+            destination: { kind: "equipment_tab", key: "pumps" },
+            counts: { needed: 12, question: 0, complete: 1, na: 0, unknown: 0 },
+            records: [
+              ...attention,
+              { id: "pmp_99", display_name: "Resolved pump", status: "complete", notes: null },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+}

@@ -19,6 +19,7 @@ export type HotWaterTanksTableSlotProps = {
   activeVersionId: string | null;
   buildEmptyRow: BuildEmptyRow<HotWaterTankRow>;
   footerAction: React.ReactNode;
+  focusRowId?: string | null;
 };
 
 export function HotWaterTanksTableSlot(props: HotWaterTanksTableSlotProps) {
@@ -29,6 +30,7 @@ export function HotWaterTanksTableSlot(props: HotWaterTanksTableSlotProps) {
     activeVersionId,
     buildEmptyRow,
     footerAction,
+    focusRowId,
   } = props;
   if (controller.viewLoading) {
     return <p className="form-note">Loading table view...</p>;
@@ -47,6 +49,7 @@ export function HotWaterTanksTableSlot(props: HotWaterTanksTableSlotProps) {
       generateRowId={controller.canEdit ? () => generatedId(HOT_WATER_TANK_ID_PREFIX) : undefined}
       sessionKey={`${projectId}:${activeVersionId ?? "none"}:${HOT_WATER_TANKS_TABLE_NAME}`}
       footerAction={footerAction}
+      focusRowId={focusRowId}
       {...customFieldActionsForController(controller)}
     />
   );

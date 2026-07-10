@@ -49,6 +49,7 @@ export type VentilatorsTableSlotProps = {
   versionLocked: boolean;
   buildEmptyRow: BuildEmptyRow<VentilatorRow>;
   footerAction: React.ReactNode;
+  focusRowId?: string | null;
 };
 
 export function VentilatorsTableSlot(props: VentilatorsTableSlotProps) {
@@ -61,6 +62,7 @@ export function VentilatorsTableSlot(props: VentilatorsTableSlotProps) {
     versionLocked,
     buildEmptyRow,
     footerAction,
+    focusRowId,
   } = props;
   const navigate = useNavigate();
   const [activeVentilator, setActiveVentilator] = useState<VentilatorRow | null>(null);
@@ -214,6 +216,7 @@ export function VentilatorsTableSlot(props: VentilatorsTableSlotProps) {
         generateRowId={controller.canEdit ? () => generatedId(VENTILATOR_ID_PREFIX) : undefined}
         sessionKey={`${projectId}:${activeVersionId ?? "none"}:${VENTILATORS_TABLE_NAME}`}
         footerAction={footerAction}
+        focusRowId={focusRowId}
         heatPumpIndoorUnits={indoorUnits}
         onEdit={controller.canEdit ? setActiveVentilator : undefined}
         onIncomingIndoorUnitOpen={(rowId) => {

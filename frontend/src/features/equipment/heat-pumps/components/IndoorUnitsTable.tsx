@@ -64,6 +64,7 @@ export function IndoorUnitsTable({
   controller,
   indoorEquipController,
   outdoorUnitsController,
+  focusRowId,
   versionLocked,
 }: {
   projectId: string;
@@ -72,6 +73,7 @@ export function IndoorUnitsTable({
   controller: SliceTableController<HeatPumpIndoorUnitsSlice>;
   indoorEquipController: SliceTableController<HeatPumpIndoorEquipSlice>;
   outdoorUnitsController: SliceTableController<HeatPumpOutdoorUnitsSlice>;
+  focusRowId?: string | null;
   isEditor?: boolean;
   versionLocked: boolean;
 }) {
@@ -305,6 +307,7 @@ export function IndoorUnitsTable({
         <DataTable
           tableName="Heat Pump Indoor Units"
           rows={rows}
+          focusRowId={focusRowId}
           getRowId={(row) => row.id}
           fieldDefs={fieldDefs}
           columnDefs={columns}

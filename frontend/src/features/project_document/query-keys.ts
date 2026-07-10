@@ -5,6 +5,10 @@ export const projectDocumentQueryKeys = {
     [...projectDocumentQueryKeys.project(projectId), "draft-summary", versionId] as const,
   document: (projectId: string, versionId: string) =>
     [...projectDocumentQueryKeys.project(projectId), "document", versionId] as const,
+  statusSummaries: (projectId: string) =>
+    [...projectDocumentQueryKeys.project(projectId), "status-summary"] as const,
+  statusSummary: (projectId: string, versionId: string, accessMode: "editor" | "viewer") =>
+    [...projectDocumentQueryKeys.statusSummaries(projectId), versionId, accessMode] as const,
   diff: (projectId: string, versionId: string, to: string) =>
     [...projectDocumentQueryKeys.project(projectId), "diff", versionId, to] as const,
 };

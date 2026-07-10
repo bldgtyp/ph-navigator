@@ -11,7 +11,7 @@ RELATED: README.md; PRD.md; PLAN.md
 
 ## Current state
 
-Phases 00 and 01 are complete. The compact backend summary contract is implemented and verified; Phase 02 frontend work is next.
+Phases 00-02 are complete. The compact API, progressively disclosed Record status UI, invalidation, and row destinations are implemented and verified; Phase 03 Roadmap redesign is next.
 
 The working decisions are:
 
@@ -25,7 +25,7 @@ The working decisions are:
 
 ## Next step
 
-Implement the independently loading Record status UI, bounded disclosures, session-only expansion state, summary invalidation, and exact row deep links in Phase 02.
+Redesign the Roadmap as the compact second pane and replace permanent editor action buttons with an accessible hover/focus/touch overflow menu in Phase 03.
 
 ## Blockers
 
@@ -39,3 +39,4 @@ None. Product review may revise the layout or scope before implementation.
 - Used the existing Graphify graph as the first codebase query, then verified weak graph results against source.
 - Phase 00 contract run: `uv run pytest tests/test_project_status_summary.py -q` produced `4 passed, 1 failed`; the only failure is the intentionally missing Phase 01 route (`404`, expected `200`).
 - Phase 01: `18 passed` across summary and adjacent batch-route tests; a 500-record summary measured 50,623 bytes and the route loaded the document once.
+- Phase 02: focused frontend suites `54 passed`, App suite `31 passed`, `make frontend-dev-check` passed, and the live Status route rendered without console errors.

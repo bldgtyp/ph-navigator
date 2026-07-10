@@ -248,6 +248,9 @@ export function createTableSliceFeature<TSlice extends BaseTableSlice, TReplaceB
         excludeTableName: acceptedTableName,
         refetchActiveSlices: false,
       }),
+      queryClient.invalidateQueries({
+        queryKey: projectDocumentQueryKeys.statusSummaries(projectId),
+      }),
     ];
     if (
       onAcceptedSlice &&

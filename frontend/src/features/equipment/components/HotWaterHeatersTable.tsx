@@ -43,6 +43,7 @@ export function HotWaterHeatersTable({
   overflowMenuActions,
   footerAction,
   onResetView,
+  focusRowId,
   ...customFieldActions
 }: {
   hotWaterHeatersSlice: HotWaterHeatersSlice;
@@ -58,6 +59,7 @@ export function HotWaterHeatersTable({
   overflowMenuActions?: DataTableProps<HotWaterHeaterRow>["overflowMenuActions"];
   footerAction?: DataTableProps<HotWaterHeaterRow>["footerAction"];
   onResetView?: DataTableProps<HotWaterHeaterRow>["onResetView"];
+  focusRowId?: string | null;
 } & CustomFieldTableActions<HotWaterHeaterRow>) {
   const sortedRows = useMemo(
     () => sortedHotWaterHeaters(hotWaterHeatersSlice.hot_water_heaters),
@@ -237,6 +239,7 @@ export function HotWaterHeatersTable({
     <DataTable
       tableName="Hot Water Heaters"
       rows={sortedRows}
+      focusRowId={focusRowId}
       columnDefs={columns}
       fieldDefs={fieldDefs}
       getRowId={(heater) => heater.id}

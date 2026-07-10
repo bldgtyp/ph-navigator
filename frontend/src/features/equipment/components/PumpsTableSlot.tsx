@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { generatedId } from "../../../shared/lib/ids";
 import {
@@ -10,7 +10,6 @@ import {
   incomingIdsForSourceKey,
   incomingLinkSelectionWrites,
   linkedRecordMaxLinksFromFieldDefs,
-  useRowFocusHighlight,
   type BuildEmptyRow,
   type ViewState,
 } from "../../../shared/ui/data-table";
@@ -91,26 +90,8 @@ export function PumpsTableSlot(props: PumpsTableSlotProps) {
       return labelsById.get(rowId)?.recordId ?? null;
     };
   }, [roomCandidates]);
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  // §A5 — `viewLoading` flips false AFTER mount; without a re-trigger
-  // the one-shot effect runs once on first paint, can't find the row,
-  // and never tries again. Bump `dependencyKey` on the loading edge
-  // (and on row-count changes) so the effect re-runs when the table
-  // body actually exists in the DOM.
-  const focusDependencyKey = controller.viewLoading
-    ? "loading"
-    : `ready:${pumpsSlice.pumps.length}`;
-  useRowFocusHighlight({
-    containerRef,
-    rowId: focusRowId ?? null,
-    dependencyKey: focusDependencyKey,
-  });
   if (controller.viewLoading) {
-    return (
-      <div ref={containerRef}>
-        <p className="form-note">Loading table view...</p>
-      </div>
-    );
+    return <p className="form-note">Loading table view...</p>;
   }
   const linkRoomsToPump = async (pump: PumpRow, roomIds: readonly string[]) => {
     if (!inverseLinkPicker || !isRoomsSource(inverseLinkPicker.field)) return;
@@ -128,7 +109,7 @@ export function PumpsTableSlot(props: PumpsTableSlotProps) {
     setInverseLinkPicker(null);
   };
   return (
-    <div ref={containerRef}>
+    <>
       <PumpsTable
         pumpsSlice={pumpsSlice}
         tableSchema={controller.tableSchema}
@@ -142,6 +123,7 @@ export function PumpsTableSlot(props: PumpsTableSlotProps) {
         generateRowId={controller.canEdit ? () => generatedId(PUMP_ID_PREFIX) : undefined}
         sessionKey={`${projectId}:${activeVersionId ?? "none"}:${PUMPS_TABLE_NAME}`}
         footerAction={footerAction}
+        focusRowId={focusRowId}
         {...customFieldActionsForController(controller)}
         resolveInverseLinkLabel={resolveInverseLinkLabel}
         onInversePillClick={(field, rowId) => {
@@ -171,6 +153,6 @@ export function PumpsTableSlot(props: PumpsTableSlotProps) {
         onCancel={() => setInverseLinkPicker(null)}
         onConfirm={linkRoomsToPump}
       />
-    </div>
+    </>
   );
 }

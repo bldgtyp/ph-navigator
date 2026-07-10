@@ -1,4 +1,5 @@
 import "../project_status.css";
+import "../status_summary.css";
 import { useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
 import type { ProjectDetail } from "../../projects/types";
@@ -6,6 +7,7 @@ import { StatusEmptyState } from "../components/StatusEmptyState";
 import { StatusDeleteDialog } from "../components/StatusDeleteDialog";
 import { StatusItemModal } from "../components/StatusItemModal";
 import { StatusItemRow } from "../components/StatusItemRow";
+import { RecordStatusSummary } from "../components/RecordStatusSummary";
 import {
   useApplyDefaultStatusTemplateMutation,
   useCreateStatusItemMutation,
@@ -88,34 +90,13 @@ export function StatusTab({ project }: { project: ProjectDetail }) {
     });
   };
 
-  if (itemsQuery.isLoading) {
-    return (
-      <section className="tab-panel status-panel">
-        <div className="status-body">
-          <h2>Status</h2>
-          <p>Loading status items...</p>
-        </div>
-      </section>
-    );
-  }
-
-  if (itemsQuery.isError) {
-    return (
-      <section className="tab-panel status-panel">
-        <div className="status-body">
-          <h2>Status</h2>
-          <p role="alert">{errorMessage(itemsQuery.error, "Could not load status items.")}</p>
-        </div>
-      </section>
-    );
-  }
-
   const items = itemsQuery.data ?? [];
   const currentItemId = items.find((item) => item.state === "todo")?.id ?? null;
 
   return (
     <section className="tab-panel status-panel">
       <div className="status-body">
+        <RecordStatusSummary project={project} />
         <div className="status-heading">
           <div>
             <h2>Status</h2>
@@ -132,7 +113,24 @@ export function StatusTab({ project }: { project: ProjectDetail }) {
             {actionError}
           </p>
         ) : null}
-        {items.length === 0 ? (
+        {itemsQuery.isLoading ? (
+          <div className="roadmap-skeleton" aria-hidden="true">
+            {Array.from({ length: 4 }, (_, index) => (
+              <div className="status-skeleton-line" key={index} />
+            ))}
+          </div>
+        ) : itemsQuery.isError ? (
+          <div className="status-section-error" role="alert">
+            <p>{errorMessage(itemsQuery.error, "Could not load roadmap.")}</p>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => void itemsQuery.refetch()}
+            >
+              Retry
+            </button>
+          </div>
+        ) : items.length === 0 ? (
           <StatusEmptyState
             isEditor={isEditor}
             projectId={project.id}

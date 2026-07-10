@@ -21,6 +21,9 @@ export type UseRowFocusHighlightOptions = {
   dependencyKey?: unknown;
   // Override the default 1.5s highlight window.
   durationMs?: number;
+  // Virtualized owners can position the row themselves and ask this hook to
+  // apply only the transient highlight once the row mounts.
+  scrollIntoView?: boolean;
 };
 
 export function useRowFocusHighlight({
@@ -28,6 +31,7 @@ export function useRowFocusHighlight({
   rowId,
   dependencyKey,
   durationMs = DEFAULT_HIGHLIGHT_MS,
+  scrollIntoView = true,
 }: UseRowFocusHighlightOptions): void {
   useEffect(() => {
     if (!rowId) return;
@@ -36,18 +40,29 @@ export function useRowFocusHighlight({
     // §A6 — scope the selector to `<tr>` so pill buttons with a
     // `data-row-id` attribute (LinkedRecordCell renders one per pill
     // link) don't shadow the actual row in document order.
-    const row = container.querySelector<HTMLElement>(`tr[data-row-id="${cssEscape(rowId)}"]`);
-    if (!row) return;
-    row.scrollIntoView({ behavior: "smooth", block: "center" });
-    row.setAttribute("data-focus", "true");
-    const handle = window.setTimeout(() => {
-      row.removeAttribute("data-focus");
-    }, durationMs);
-    return () => {
-      window.clearTimeout(handle);
-      row.removeAttribute("data-focus");
+    let highlightHandle: number | null = null;
+    let frameHandle: number | null = null;
+    let attempts = 0;
+    const findAndHighlight = () => {
+      const row = container.querySelector<HTMLElement>(`tr[data-row-id="${cssEscape(rowId)}"]`);
+      if (!row && attempts < 3) {
+        attempts += 1;
+        frameHandle = window.requestAnimationFrame(findAndHighlight);
+        return;
+      }
+      if (!row) return;
+      if (scrollIntoView) row.scrollIntoView({ behavior: "smooth", block: "center" });
+      row.setAttribute("data-focus", "true");
+      highlightHandle = window.setTimeout(() => row.removeAttribute("data-focus"), durationMs);
     };
-  }, [containerRef, rowId, dependencyKey, durationMs]);
+    findAndHighlight();
+    return () => {
+      if (frameHandle !== null) window.cancelAnimationFrame(frameHandle);
+      if (highlightHandle !== null) window.clearTimeout(highlightHandle);
+      const row = container.querySelector<HTMLElement>(`tr[data-row-id="${cssEscape(rowId)}"]`);
+      row?.removeAttribute("data-focus");
+    };
+  }, [containerRef, rowId, dependencyKey, durationMs, scrollIntoView]);
 }
 
 function cssEscape(value: string): string {

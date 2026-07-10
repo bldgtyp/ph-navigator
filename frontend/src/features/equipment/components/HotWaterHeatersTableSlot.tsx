@@ -19,6 +19,7 @@ export type HotWaterHeatersTableSlotProps = {
   activeVersionId: string | null;
   buildEmptyRow: BuildEmptyRow<HotWaterHeaterRow>;
   footerAction: React.ReactNode;
+  focusRowId?: string | null;
 };
 
 export function HotWaterHeatersTableSlot(props: HotWaterHeatersTableSlotProps) {
@@ -29,6 +30,7 @@ export function HotWaterHeatersTableSlot(props: HotWaterHeatersTableSlotProps) {
     activeVersionId,
     buildEmptyRow,
     footerAction,
+    focusRowId,
   } = props;
   if (controller.viewLoading) {
     return <p className="form-note">Loading table view...</p>;
@@ -47,6 +49,7 @@ export function HotWaterHeatersTableSlot(props: HotWaterHeatersTableSlotProps) {
       generateRowId={controller.canEdit ? () => generatedId(HOT_WATER_HEATER_ID_PREFIX) : undefined}
       sessionKey={`${projectId}:${activeVersionId ?? "none"}:${HOT_WATER_HEATERS_TABLE_NAME}`}
       footerAction={footerAction}
+      focusRowId={focusRowId}
       {...customFieldActionsForController(controller)}
     />
   );

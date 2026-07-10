@@ -49,6 +49,7 @@ import { useGridKeyboard } from "./hooks/useGridKeyboard";
 import { useGridPointerDrag } from "./hooks/useGridPointerDrag";
 import { useGridClipboard, type CopiedCellRange } from "./hooks/useGridClipboard";
 import { useGridFill } from "./hooks/useGridFill";
+import { useRowFocusHighlight } from "./hooks/useRowFocusHighlight";
 import { reorderColumnIds, useGridColumns } from "./hooks/useGridColumns";
 import { useGridColumnDragKeyboard } from "./hooks/useGridColumnDragKeyboard";
 import { useGridColumnResize } from "./hooks/useGridColumnResize";
@@ -114,6 +115,7 @@ export function DataTable<TRow>({
   buildEmptyRow,
   generateRowId,
   sessionKey,
+  focusRowId,
   readOnly = false,
   canDownloadCsv = true,
   density = "compact",
@@ -515,6 +517,21 @@ export function DataTable<TRow>({
     if (planIndex === undefined) return;
     rowVirtualizer.scrollToIndex(planIndex, { align: "auto" });
   }, [editingRowId, rowIds, bodyPlanIndexByDataRowIndex, rowVirtualizer]);
+
+  useEffect(() => {
+    if (!focusRowId) return;
+    const dataIndex = rowIds.indexOf(focusRowId);
+    if (dataIndex < 0) return;
+    const planIndex = bodyPlanIndexByDataRowIndex[dataIndex];
+    if (planIndex === undefined) return;
+    rowVirtualizer.scrollToIndex(planIndex, { align: "center" });
+  }, [bodyPlanIndexByDataRowIndex, focusRowId, rowIds, rowVirtualizer]);
+  useRowFocusHighlight({
+    containerRef: wrapperRef,
+    rowId: focusRowId,
+    dependencyKey: `${focusRowId ?? "none"}:${rowIds.length}`,
+    scrollIntoView: false,
+  });
 
   // Phase 3 §4.9: short-circuit pointer drag when the mousedown source
   // lives inside the active editor (inline <input> or single-select

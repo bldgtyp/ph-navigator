@@ -451,6 +451,7 @@ export function EquipmentPageBody(props: {
           footerAction={addRowButton("Add ventilator", ventilatorsController.canEdit, () =>
             insertEquipmentRow(ventilatorsController, "vent"),
           )}
+          focusRowId={focusRowId}
         />
       );
     }
@@ -485,6 +486,7 @@ export function EquipmentPageBody(props: {
           footerAction={addRowButton("Add fan", fansController.canEdit, () =>
             insertEquipmentRow(fansController, "fan"),
           )}
+          focusRowId={focusRowId}
         />
       );
     }
@@ -501,6 +503,7 @@ export function EquipmentPageBody(props: {
             hotWaterHeatersController.canEdit,
             () => insertEquipmentRow(hotWaterHeatersController, "hwh"),
           )}
+          focusRowId={focusRowId}
         />
       );
     }
@@ -515,6 +518,7 @@ export function EquipmentPageBody(props: {
           footerAction={addRowButton("Add hot water tank", hotWaterTanksController.canEdit, () =>
             insertEquipmentRow(hotWaterTanksController, "hwt"),
           )}
+          focusRowId={focusRowId}
         />
       );
     }
@@ -529,6 +533,7 @@ export function EquipmentPageBody(props: {
           footerAction={addRowButton("Add electric heater", electricHeatersController.canEdit, () =>
             insertEquipmentRow(electricHeatersController, "heatr"),
           )}
+          focusRowId={focusRowId}
         />
       );
     }
@@ -543,6 +548,7 @@ export function EquipmentPageBody(props: {
           footerAction={addRowButton("Add appliance", appliancesController.canEdit, () =>
             insertEquipmentRow(appliancesController, "appl"),
           )}
+          focusRowId={focusRowId}
         />
       );
     }

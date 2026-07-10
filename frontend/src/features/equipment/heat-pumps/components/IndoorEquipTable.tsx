@@ -52,12 +52,14 @@ export function IndoorEquipTable({
   leafSlice,
   controller,
   indoorUnitsController,
+  focusRowId,
 }: {
   projectId: string;
   slice: HeatPumpsSlice;
   leafSlice: HeatPumpIndoorEquipSlice;
   controller: SliceTableController<HeatPumpIndoorEquipSlice>;
   indoorUnitsController: SliceTableController<HeatPumpIndoorUnitsSlice>;
+  focusRowId?: string | null;
   isEditor?: boolean;
   versionLocked?: boolean;
 }) {
@@ -193,6 +195,7 @@ export function IndoorEquipTable({
         <DataTable
           tableName="Heat Pump Indoor Equipment"
           rows={rows}
+          focusRowId={focusRowId}
           getRowId={(row) => row.id}
           fieldDefs={fieldDefs}
           columnDefs={columns}

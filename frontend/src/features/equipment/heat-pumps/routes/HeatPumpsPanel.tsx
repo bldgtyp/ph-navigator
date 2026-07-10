@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { AppSubTabButton, AppSubTabs } from "../../../../shared/ui/AppSubTabs";
 import { useSliceTableController } from "../../../../shared/ui/data-table/feature";
 import type { DataTableColumnDef } from "../../../../shared/ui/data-table";
@@ -45,6 +45,8 @@ const HEAT_PUMP_CONFLICT_MESSAGES = {
 export function HeatPumpsPanel({ project }: { project: ProjectDetail }) {
   const navigate = useNavigate();
   const params = useParams();
+  const [searchParams] = useSearchParams();
+  const focusRowId = searchParams.get("focus");
   const nestedPath = params["*"] ?? "";
   const requestedLeaf = leafFromPath(nestedPath);
   const outdoorEquipQuery = heatPumpOutdoorEquipSliceFeature.useSliceQuery(
@@ -295,6 +297,7 @@ export function HeatPumpsPanel({ project }: { project: ProjectDetail }) {
           controller={outdoorEquipController}
           indoorEquipController={indoorEquipController}
           outdoorUnitsController={outdoorUnitsController}
+          focusRowId={focusRowId}
           isEditor={project.access_mode === "editor"}
           versionLocked={project.active_version?.locked ?? false}
         />
@@ -305,6 +308,7 @@ export function HeatPumpsPanel({ project }: { project: ProjectDetail }) {
           leafSlice={indoorEquipSlice}
           controller={indoorEquipController}
           indoorUnitsController={indoorUnitsController}
+          focusRowId={focusRowId}
           isEditor={project.access_mode === "editor"}
           versionLocked={project.active_version?.locked ?? false}
         />
@@ -316,6 +320,7 @@ export function HeatPumpsPanel({ project }: { project: ProjectDetail }) {
           controller={outdoorUnitsController}
           indoorUnitsController={indoorUnitsController}
           outdoorEquipController={outdoorEquipController}
+          focusRowId={focusRowId}
           isEditor={project.access_mode === "editor"}
           versionLocked={project.active_version?.locked ?? false}
         />
@@ -327,6 +332,7 @@ export function HeatPumpsPanel({ project }: { project: ProjectDetail }) {
           controller={indoorUnitsController}
           indoorEquipController={indoorEquipController}
           outdoorUnitsController={outdoorUnitsController}
+          focusRowId={focusRowId}
           isEditor={project.access_mode === "editor"}
           versionLocked={project.active_version?.locked ?? false}
         />

@@ -43,6 +43,7 @@ export function FansTable({
   overflowMenuActions,
   footerAction,
   onResetView,
+  focusRowId,
   ...customFieldActions
 }: {
   fansSlice: FansSlice;
@@ -58,6 +59,7 @@ export function FansTable({
   overflowMenuActions?: DataTableProps<FanRow>["overflowMenuActions"];
   footerAction?: DataTableProps<FanRow>["footerAction"];
   onResetView?: DataTableProps<FanRow>["onResetView"];
+  focusRowId?: string | null;
 } & CustomFieldTableActions<FanRow>) {
   const sortedRows = useMemo(() => sortedFans(fansSlice.fans), [fansSlice.fans]);
   const datasheetAssetIds = useMemo(
@@ -223,6 +225,7 @@ export function FansTable({
     <DataTable
       tableName="Fans"
       rows={sortedRows}
+      focusRowId={focusRowId}
       columnDefs={columns}
       fieldDefs={fieldDefs}
       getRowId={(fan) => fan.id}

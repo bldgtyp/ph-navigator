@@ -41,6 +41,7 @@ export function ElectricHeatersTable({
   overflowMenuActions,
   footerAction,
   onResetView,
+  focusRowId,
   ...customFieldActions
 }: {
   electricHeatersSlice: ElectricHeatersSlice;
@@ -56,6 +57,7 @@ export function ElectricHeatersTable({
   overflowMenuActions?: DataTableProps<ElectricHeaterRow>["overflowMenuActions"];
   footerAction?: DataTableProps<ElectricHeaterRow>["footerAction"];
   onResetView?: DataTableProps<ElectricHeaterRow>["onResetView"];
+  focusRowId?: string | null;
 } & CustomFieldTableActions<ElectricHeaterRow>) {
   const sortedRows = useMemo(
     () => sortedElectricHeaters(electricHeatersSlice.electric_heaters),
@@ -163,6 +165,7 @@ export function ElectricHeatersTable({
     <DataTable
       tableName="Electric Heaters"
       rows={sortedRows}
+      focusRowId={focusRowId}
       columnDefs={columns}
       fieldDefs={fieldDefs}
       getRowId={(heater) => heater.id}

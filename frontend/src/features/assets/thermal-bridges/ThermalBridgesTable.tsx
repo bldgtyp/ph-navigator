@@ -40,6 +40,7 @@ export function ThermalBridgesTable({
   sessionKey,
   footerAction,
   onResetView,
+  focusRowId,
   ...customFieldActions
 }: {
   slice: ThermalBridgesSlice;
@@ -54,6 +55,7 @@ export function ThermalBridgesTable({
   sessionKey?: DataTableProps<ThermalBridgeRow>["sessionKey"];
   footerAction?: DataTableProps<ThermalBridgeRow>["footerAction"];
   onResetView?: DataTableProps<ThermalBridgeRow>["onResetView"];
+  focusRowId?: string | null;
 } & CustomFieldTableActions<ThermalBridgeRow>) {
   const sortedRows = useMemo(
     () => sortedThermalBridges(slice.thermal_bridges),
@@ -176,6 +178,7 @@ export function ThermalBridgesTable({
     <DataTable
       tableName="Thermal Bridges"
       rows={sortedRows}
+      focusRowId={focusRowId}
       columnDefs={columns}
       fieldDefs={fieldDefs}
       getRowId={(row) => row.id}

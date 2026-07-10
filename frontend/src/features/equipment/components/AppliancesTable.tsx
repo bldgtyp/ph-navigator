@@ -45,6 +45,7 @@ export function AppliancesTable({
   overflowMenuActions,
   footerAction,
   onResetView,
+  focusRowId,
   ...customFieldActions
 }: {
   appliancesSlice: AppliancesSlice;
@@ -60,6 +61,7 @@ export function AppliancesTable({
   overflowMenuActions?: DataTableProps<ApplianceRow>["overflowMenuActions"];
   footerAction?: DataTableProps<ApplianceRow>["footerAction"];
   onResetView?: DataTableProps<ApplianceRow>["onResetView"];
+  focusRowId?: string | null;
 } & CustomFieldTableActions<ApplianceRow>) {
   const sortedRows = useMemo(
     () => sortedAppliances(appliancesSlice.appliances),
@@ -221,6 +223,7 @@ export function AppliancesTable({
     <DataTable
       tableName="Appliances"
       rows={sortedRows}
+      focusRowId={focusRowId}
       columnDefs={columns}
       fieldDefs={fieldDefs}
       getRowId={(appliance) => appliance.id}

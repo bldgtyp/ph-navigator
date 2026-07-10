@@ -15,10 +15,19 @@ export type FansTableSlotProps = {
   activeVersionId: string | null;
   buildEmptyRow: BuildEmptyRow<FanRow>;
   footerAction: React.ReactNode;
+  focusRowId?: string | null;
 };
 
 export function FansTableSlot(props: FansTableSlotProps) {
-  const { controller, fansSlice, projectId, activeVersionId, buildEmptyRow, footerAction } = props;
+  const {
+    controller,
+    fansSlice,
+    projectId,
+    activeVersionId,
+    buildEmptyRow,
+    footerAction,
+    focusRowId,
+  } = props;
   if (controller.viewLoading) {
     return <p className="form-note">Loading table view...</p>;
   }
@@ -36,6 +45,7 @@ export function FansTableSlot(props: FansTableSlotProps) {
       generateRowId={controller.canEdit ? () => generatedId(FAN_ID_PREFIX) : undefined}
       sessionKey={`${projectId}:${activeVersionId ?? "none"}:${FANS_TABLE_NAME}`}
       footerAction={footerAction}
+      focusRowId={focusRowId}
       {...customFieldActionsForController(controller)}
     />
   );

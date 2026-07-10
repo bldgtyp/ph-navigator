@@ -44,6 +44,7 @@ export function HotWaterTanksTable({
   overflowMenuActions,
   footerAction,
   onResetView,
+  focusRowId,
   ...customFieldActions
 }: {
   hotWaterTanksSlice: HotWaterTanksSlice;
@@ -59,6 +60,7 @@ export function HotWaterTanksTable({
   overflowMenuActions?: DataTableProps<HotWaterTankRow>["overflowMenuActions"];
   footerAction?: DataTableProps<HotWaterTankRow>["footerAction"];
   onResetView?: DataTableProps<HotWaterTankRow>["onResetView"];
+  focusRowId?: string | null;
 } & CustomFieldTableActions<HotWaterTankRow>) {
   const sortedRows = useMemo(
     () => sortedHotWaterTanks(hotWaterTanksSlice.hot_water_tanks),
@@ -213,6 +215,7 @@ export function HotWaterTanksTable({
     <DataTable
       tableName="Hot Water Tanks"
       rows={sortedRows}
+      focusRowId={focusRowId}
       columnDefs={columns}
       fieldDefs={fieldDefs}
       getRowId={(tank) => tank.id}
