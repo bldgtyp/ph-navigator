@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import { errorMessage } from "../../../shared/lib/errors";
 import { usePatchVersionMutation } from "../../projects/hooks";
 import type { ProjectDraftSummary } from "../types";
@@ -9,6 +10,7 @@ import type {
   PendingSwitch,
   SaveAsVersionKind,
 } from "../types/versionControls";
+import { useDraftWriteCoordinator } from "../useDraftWriteCoordinator";
 
 export function useDraftLifecycle({
   projectId,
@@ -43,13 +45,43 @@ export function useDraftLifecycle({
   const saveAsMutation = useSaveDraftAsMutation(projectId, activeVersionId);
   const discardMutation = useDiscardDraftMutation(projectId, activeVersionId);
   const patchVersionMutation = usePatchVersionMutation(projectId);
+  const { coordinator: writeCoordinator, status: writeStatus } = useDraftWriteCoordinator(
+    projectId,
+    activeVersionId,
+  );
+  const actionInProgressRef = useRef(false);
+  const [actionInProgress, setActionInProgress] = useState(false);
+
+  const beginAction = () => {
+    if (actionInProgressRef.current) return false;
+    actionInProgressRef.current = true;
+    setActionInProgress(true);
+    return true;
+  };
+
+  const endAction = () => {
+    actionInProgressRef.current = false;
+    setActionInProgress(false);
+  };
+
+  const flushWrites = async () => {
+    await writeCoordinator?.flush();
+  };
+
+  const cancelWrites = async () => {
+    writeCoordinator?.cancel();
+    await writeCoordinator?.whenIdle();
+  };
 
   const runHeaderAction = async (fallbackMessage: string, action: () => Promise<void>) => {
+    if (!beginAction()) return;
     setActionError(null);
     try {
       await action();
     } catch (error) {
       setActionError(errorMessage(error, fallbackMessage));
+    } finally {
+      endAction();
     }
   };
 
@@ -71,12 +103,16 @@ export function useDraftLifecycle({
 
   const saveDraft = async (fallbackMessage: string, afterSuccess?: () => void) => {
     if (!draftSummary || !activeVersionId) return;
+    if (!beginAction()) return;
     setActionError(null);
     try {
+      await flushWrites();
       await saveMutation.mutateAsync({ versionEtag: draftSummary.version_etag });
       afterSuccess?.();
     } catch (error) {
       await handleDocumentActionError(error, fallbackMessage);
+    } finally {
+      endAction();
     }
   };
 
@@ -87,6 +123,7 @@ export function useDraftLifecycle({
   const saveAs = async () => {
     if (!activeVersionId) return;
     await runHeaderAction("Could not save as a new version.", async () => {
+      await flushWrites();
       const response = await saveAsMutation.mutateAsync({
         name: versionName,
         kind: versionKind,
@@ -103,6 +140,7 @@ export function useDraftLifecycle({
   const discardDraft = async (fallbackMessage: string, afterSuccess?: () => void) => {
     if (!activeVersionId) return;
     await runHeaderAction(fallbackMessage, async () => {
+      await cancelWrites();
       await discardMutation.mutateAsync();
       setDraftRestorePrompt(null);
       setConfirmation(null);
@@ -151,8 +189,10 @@ export function useDraftLifecycle({
       saveMutation.isPending ||
       saveAsMutation.isPending ||
       discardMutation.isPending ||
-      patchVersionMutation.isPending,
+      patchVersionMutation.isPending ||
+      actionInProgress,
     savingVersion: saveMutation.isPending,
+    writesPending: writeStatus.inFlight || writeStatus.queued > 0,
     save,
     saveAs,
     discard,

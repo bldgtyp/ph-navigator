@@ -1,9 +1,8 @@
 ---
 DATE: 2026-07-09
 TIME: -
-STATUS: Active — packet revised per plan-review.md (R-1…R-10 + scope
-  corrections resolved); awaiting Ed's ratification before phase-00/01
-  implementation handoff.
+STATUS: Active — Phases 00-01 complete; Phase 02 optimistic journals
+  is the current implementation handoff.
 AUTHOR: Claude (for Ed)
 SCOPE: Router for the DataTable write-performance refactor packet:
   draft write coordinator + per-table optimistic journals, instant

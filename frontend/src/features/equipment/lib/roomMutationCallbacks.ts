@@ -1,7 +1,7 @@
 // Builds the save/delete callbacks RoomsPage passes to RoomModal
 // and ConfirmDeleteRoomDialog. Both pipe through the controller's
-// `runWithConflictHandling` so the draft-conflict / version-locked
-// banners surface on the same code path as the inline cell writes.
+// coordinated write lane so conflict handling and request ordering
+// match inline cell writes.
 
 import type { SliceTableController } from "../../../shared/ui/data-table/feature";
 import type { UseMutationResult } from "@tanstack/react-query";
@@ -17,22 +17,25 @@ export type RoomReplaceMutation = UseMutationResult<
 
 export function makeSaveRoom(args: {
   controller: SliceTableController<RoomsSlice>;
-  roomsSlice: RoomsSlice;
   replaceMutation: RoomReplaceMutation;
   conflictMessage: string;
   onSaved: () => void;
 }) {
-  const { controller, roomsSlice, replaceMutation, conflictMessage, onSaved } = args;
+  const { controller, replaceMutation, conflictMessage, onSaved } = args;
   return async (room: RoomRow, labels: { floorLevel: string; buildingZone: string }) => {
-    await controller.runWithConflictHandling(
-      () => {
-        const payload = nextRoomsPayload(roomsSlice, room, labels);
-        const validation = roomsPayloadBuilders.validate(payload);
-        if (validation) {
-          controller.setActionError(validation);
-          throw new Error(validation);
-        }
-        return replaceMutation.mutateAsync({ current: roomsSlice, payload });
+    await controller.runCoordinatedWrite(
+      {
+        label: "rooms:modalSave",
+        run: async () => {
+          const current = await controller.resolveSliceForWrite();
+          const payload = nextRoomsPayload(current, room, labels);
+          const validation = roomsPayloadBuilders.validate(payload);
+          if (validation) {
+            controller.setActionError(validation);
+            throw new Error(validation);
+          }
+          return replaceMutation.mutateAsync({ current, payload });
+        },
       },
       conflictMessage,
       "Could not save room.",
@@ -43,21 +46,25 @@ export function makeSaveRoom(args: {
 
 export function makeDeleteRoom(args: {
   controller: SliceTableController<RoomsSlice>;
-  roomsSlice: RoomsSlice;
   replaceMutation: RoomReplaceMutation;
   conflictMessage: string;
   onDeleted: () => void;
 }) {
-  const { controller, roomsSlice, replaceMutation, conflictMessage, onDeleted } = args;
+  const { controller, replaceMutation, conflictMessage, onDeleted } = args;
   return (room: RoomRow) => {
     if (!controller.canEdit) return;
     void controller
-      .runWithConflictHandling(
-        () =>
-          replaceMutation.mutateAsync({
-            current: roomsSlice,
-            payload: deleteRoomPayload(roomsSlice, room.id),
-          }),
+      .runCoordinatedWrite(
+        {
+          label: "rooms:modalDelete",
+          run: async () => {
+            const current = await controller.resolveSliceForWrite();
+            return replaceMutation.mutateAsync({
+              current,
+              payload: deleteRoomPayload(current, room.id),
+            });
+          },
+        },
         conflictMessage,
         "Could not delete room.",
       )

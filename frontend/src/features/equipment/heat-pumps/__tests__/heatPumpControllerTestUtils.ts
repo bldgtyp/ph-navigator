@@ -1,4 +1,5 @@
 import { vi } from "vitest";
+import type { TransportTask } from "../../../project_document/draftWriteCoordinator";
 import { emptyViewState, type FieldDef, type WriteOp } from "../../../../shared/ui/data-table";
 import type { SliceTableController } from "../../../../shared/ui/data-table/feature";
 
@@ -37,6 +38,9 @@ export function heatPumpTestController<TSlice>({
     reloadDraft: vi.fn(),
     isReplacePending: false,
     runWithConflictHandling: vi.fn(),
+    runCoordinatedWrite: vi.fn(async (task: TransportTask) =>
+      task.run(),
+    ) as SliceTableController<TSlice>["runCoordinatedWrite"],
     resolveSliceForWrite: vi.fn(async () => {
       if (slice === undefined) {
         throw new Error("Test controller has no slice for write resolution.");

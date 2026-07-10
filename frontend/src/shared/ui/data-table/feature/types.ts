@@ -19,6 +19,7 @@ import type {
   WriteOp,
 } from "../types";
 import type { TableSchema } from "../hooks/useTableSchema";
+import type { TransportTask } from "../../../../features/project_document/draftWriteCoordinator";
 
 // Cell-write delta carried by the cell / paste WriteOps. Keyed by
 // option-list key (the namespaced single-select id, e.g.
@@ -151,6 +152,11 @@ export interface SliceTableController<TSlice> {
   // `canEdit` is false.
   runWithConflictHandling<T>(
     run: () => Promise<T>,
+    conflictMessage: string,
+    fallbackMessage: string,
+  ): Promise<T | undefined>;
+  runCoordinatedWrite<T>(
+    task: TransportTask<T>,
     conflictMessage: string,
     fallbackMessage: string,
   ): Promise<T | undefined>;

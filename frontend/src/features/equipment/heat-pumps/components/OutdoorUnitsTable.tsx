@@ -262,16 +262,27 @@ export function OutdoorUnitsTable({
       // Dry-run the generic slice-replace (minus this row) to surface the
       // cascade before the user confirms. The backend clears the dependent
       // links on the real delete below; here we only preview them.
-      const writableLeafSlice = await controller.resolveSliceForWrite();
-      const previewPayload = heatPumpOutdoorUnitsPayloadBuilders.fromRowDelete(writableLeafSlice, [
-        { rowId: row.id, row, anchorRowId: null },
-      ]);
-      const preview = await heatPumpOutdoorUnitsSliceFeature.previewReplace(
-        projectId,
-        writableLeafSlice.version_id,
-        writableLeafSlice,
-        previewPayload,
+      const preview = await controller.runCoordinatedWrite(
+        {
+          label: "heat_pump_outdoor_units:deletePreview",
+          run: async () => {
+            const writableLeafSlice = await controller.resolveSliceForWrite();
+            const previewPayload = heatPumpOutdoorUnitsPayloadBuilders.fromRowDelete(
+              writableLeafSlice,
+              [{ rowId: row.id, row, anchorRowId: null }],
+            );
+            return heatPumpOutdoorUnitsSliceFeature.previewReplace(
+              projectId,
+              writableLeafSlice.version_id,
+              writableLeafSlice,
+              previewPayload,
+            );
+          },
+        },
+        "The draft changed before this delete preview was computed.",
+        "Could not preview outdoor-unit deletion.",
       );
+      if (!preview) return;
       if (preview.affected.length === 0) {
         await deleteHeatPumpRow(controller.onWrite, row);
         return;

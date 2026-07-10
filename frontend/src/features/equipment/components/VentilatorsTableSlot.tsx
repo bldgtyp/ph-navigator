@@ -146,13 +146,24 @@ export function VentilatorsTableSlot(props: VentilatorsTableSlotProps) {
   // etag a per-row loop would hit on its second write.
   const replaceIndoorUnitRows = async (writes: CellWrite[]) => {
     if (!indoorUnitsSlice || writes.length === 0) return;
-    const payload = heatPumpIndoorUnitsPayloadBuilders.fromCellWrites(
-      indoorUnitsSlice,
-      writes,
-      {},
-      {},
+    await controller.runCoordinatedWrite(
+      {
+        label: "heat_pump_indoor_units:ventilatorModal",
+        run: async () => {
+          const refetched = indoorUnitsQuery.isStale ? await indoorUnitsQuery.refetch() : null;
+          const current = refetched?.data ?? indoorUnitsSlice;
+          const payload = heatPumpIndoorUnitsPayloadBuilders.fromCellWrites(
+            current,
+            writes,
+            {},
+            {},
+          );
+          return indoorUnitsReplace.mutateAsync({ current, payload });
+        },
+      },
+      "The draft changed while the indoor unit was open.",
+      "Could not update heat-pump indoor units.",
     );
-    await indoorUnitsReplace.mutateAsync({ current: indoorUnitsSlice, payload });
   };
   const saveVentilator = async (row: VentilatorRow) => {
     await controller.onWrite({

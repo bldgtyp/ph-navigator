@@ -1,5 +1,5 @@
 // @size-exception: docs/plans/2026-05-25/plan-23-frontend-refactor-phased.md#phase-8--ci-guards-execute-8th--last
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { App } from "./app/App";
@@ -10,6 +10,10 @@ import {
 } from "./features/equipment/testing/testFixtures";
 import { spaceTypesPath, spacesRoomsPath } from "./features/spaces/paths";
 import { createDeferred } from "./test-utils/async";
+import {
+  getDraftWriteCoordinator,
+  resetDraftWriteCoordinatorsForTests,
+} from "./features/project_document/draftWriteCoordinator";
 
 const fetchMock = vi.fn();
 
@@ -181,6 +185,7 @@ function draftSummaryUrl(
 }
 
 beforeEach(() => {
+  resetDraftWriteCoordinatorsForTests();
   vi.stubGlobal("fetch", fetchMock);
 });
 
@@ -773,6 +778,144 @@ describe("App", () => {
       expect(screen.queryByRole("dialog", { name: "Saving version" })).not.toBeInTheDocument();
     });
     expect(screen.queryByText("Uncommitted changes")).not.toBeInTheDocument();
+  });
+
+  test("waits for queued table writes before Save Version", async () => {
+    const user = userEvent.setup();
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
+    const draftUrl = draftSummaryUrl();
+    const saveUrl = `${draftUrl}/save`;
+    const pendingWrite = createDeferred<void>();
+    const coordinator = getDraftWriteCoordinator(
+      projectPayload.id,
+      projectPayload.active_version_id,
+    );
+    coordinator.schedule({ label: "rooms:cell", run: () => pendingWrite.promise });
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === `/api/v1/projects/${projectPayload.id}`) return jsonResponse(projectPayload);
+      if (url === draftUrl) {
+        return jsonResponse({
+          ...draftSummaryPayload,
+          source: "draft",
+          draft_etag: "draft-etag",
+          dirty_tables: ["rooms"],
+        });
+      }
+      if (url === saveUrl && init?.method === "POST") {
+        return jsonResponse({
+          project_id: projectPayload.id,
+          version: projectPayload.active_version,
+          version_etag: "saved-etag",
+        });
+      }
+      if (url === `/api/v1/projects/${projectPayload.id}/status-items`) {
+        return jsonResponse({ items: [statusItemPayload] });
+      }
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+    await user.click(await screen.findByRole("button", { name: "Save Version" }));
+    expect(fetchMock.mock.calls.some(([input]) => String(input) === saveUrl)).toBe(false);
+
+    await act(async () => {
+      pendingWrite.resolve();
+      await coordinator.whenIdle();
+    });
+    await waitFor(() => {
+      expect(fetchMock.mock.calls.some(([input]) => String(input) === saveUrl)).toBe(true);
+    });
+  });
+
+  test("warns before unload while a table write is still pending without a server draft", async () => {
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
+    const pendingWrite = createDeferred<void>();
+    const coordinator = getDraftWriteCoordinator(
+      projectPayload.id,
+      projectPayload.active_version_id,
+    );
+    coordinator.schedule({
+      label: "rooms:cell",
+      run: () => pendingWrite.promise,
+    });
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === `/api/v1/projects/${projectPayload.id}`) return jsonResponse(projectPayload);
+      if (url === draftSummaryUrl()) return jsonResponse(draftSummaryPayload);
+      if (url === `/api/v1/projects/${projectPayload.id}/status-items`) {
+        return jsonResponse({ items: [statusItemPayload] });
+      }
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+    await screen.findByRole("button", { name: "Version actions for Working" });
+    const beforeUnload = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(beforeUnload);
+    expect(beforeUnload.defaultPrevented).toBe(true);
+    await act(async () => {
+      pendingWrite.resolve();
+      await coordinator.whenIdle();
+    });
+  });
+
+  test("cancels queued writes and waits for the in-flight write before discard", async () => {
+    const user = userEvent.setup();
+    window.history.pushState({}, "", `/projects/${projectPayload.id}/status`);
+    const draftUrl = draftSummaryUrl();
+    const pendingWrite = createDeferred<void>();
+    const queuedRun = vi.fn(async () => undefined);
+    const coordinator = getDraftWriteCoordinator(
+      projectPayload.id,
+      projectPayload.active_version_id,
+    );
+    coordinator.schedule({ label: "rooms:first", run: () => pendingWrite.promise });
+    coordinator.schedule({ label: "rooms:queued", run: queuedRun });
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === `/api/v1/projects/${projectPayload.id}`) return jsonResponse(projectPayload);
+      if (url === draftUrl && init?.method === "DELETE") return jsonResponse(undefined, 204);
+      if (url === draftUrl) {
+        return jsonResponse({
+          ...draftSummaryPayload,
+          source: "draft",
+          draft_etag: "draft-etag",
+          dirty_tables: ["rooms"],
+        });
+      }
+      if (url === `/api/v1/projects/${projectPayload.id}/status-items`) {
+        return jsonResponse({ items: [statusItemPayload] });
+      }
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+    const restoreDialog = await screen.findByRole("dialog", { name: "Recovered draft found" });
+    await user.click(within(restoreDialog).getByRole("button", { name: "Restore draft" }));
+    await user.click(await screen.findByRole("button", { name: "Version actions for Working" }));
+    await user.click(screen.getByRole("menuitem", { name: "Discard changes" }));
+    const discardDialog = screen.getByRole("dialog", { name: "Discard draft?" });
+    await user.click(within(discardDialog).getByRole("button", { name: "Discard draft" }));
+    expect(
+      fetchMock.mock.calls.some(
+        ([input, init]) => String(input) === draftUrl && init?.method === "DELETE",
+      ),
+    ).toBe(false);
+    expect(queuedRun).not.toHaveBeenCalled();
+
+    await act(async () => {
+      pendingWrite.resolve();
+      await coordinator.whenIdle();
+    });
+    await waitFor(() => {
+      expect(
+        fetchMock.mock.calls.some(
+          ([input, init]) => String(input) === draftUrl && init?.method === "DELETE",
+        ),
+      ).toBe(true);
+    });
+    expect(queuedRun).not.toHaveBeenCalled();
   });
 
   test("prompts to restore or discard a recovered draft and warns before unload", async () => {

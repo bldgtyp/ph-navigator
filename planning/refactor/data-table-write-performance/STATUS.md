@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-09
 TIME: -
-STATUS: Active — Phase 00 complete; Phase 01 is next.
+STATUS: Active — Phases 00-01 complete; Phase 02 is next.
 AUTHOR: Claude (for Ed)
 SCOPE: Live state ledger for the DataTable write-performance refactor.
 RELATED:
@@ -48,11 +48,16 @@ RELATED:
   controllable async transport/burst/unhandled-rejection harness with
   two current-behavior characterization tests, and captured the
   1,000-row PERF-STRESS baseline (50 cell writes + 10 inserts).
+- 2026-07-09 — **Phase 01 complete.** All project-document table,
+  modal, schema, and preview writes now share one FIFO transport lane
+  per open draft. Save/Save As flush it; Discard cancels queued work
+  and waits for the in-flight request. The live Pumps burst + Save
+  drill proved one request in flight and correct lifecycle ordering.
 
 ## Next step
 
-1. Implement Phase 01 from the Phase-00 routing inventory: one FIFO
-   coordinator lane per draft, then lifecycle flush/cancel wiring.
+1. Implement Phase 02: per-slice optimistic journals over the shared
+   coordinator, early acceptance, rebase, and counted rollback.
 
 ## Blockers
 
@@ -63,7 +68,7 @@ RELATED:
 | Phase | Status |
 |---|---|
 | 00 — observability + write-surface audit | **Complete** |
-| 01 — draft write coordinator | Planned |
+| 01 — draft write coordinator | **Complete** |
 | 02 — per-table optimistic journals | Planned |
 | 03 — transport coalescing | Planned (conditional — entry gate) |
 | 04 — undo polish | Planned |

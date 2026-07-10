@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-09
 TIME: -
-STATUS: Planned — depends on phase-00 (inventory + harness).
+STATUS: Complete — implemented and verified 2026-07-09.
 AUTHOR: Claude (for Ed); architecture per plan-review R-2/R-3/R-4
 SCOPE: Implementation handoff for Phase 1 — the draft write
   coordinator: one FIFO transport lane per open draft, WriteHandle
@@ -152,3 +152,28 @@ copy / retry (05), backend (06).
 - Rooms broadcast: a remote slice applied mid-backlog will 409 our
   next task — the drain path handles it; phase-05 improves the copy.
   No special-casing here.
+
+## 7. As-built record (2026-07-09)
+
+- Implemented an explicit shape-blind pump rather than TanStack mutation
+  `scope.id`: the latter serializes mutations but does not supply the required
+  shared registry lifetime, queue cancellation, failure drain, passive idle,
+  or lifecycle flush semantics.
+- The module registry is keyed by `projectId:versionId`. React's transient
+  unsubscribe/resubscribe cycle is bridged by microtask-delayed disposal;
+  live testing caught and fixed a split-lane race at this boundary.
+- Individual table unmount does not cancel a shared draft lane. The last
+  subscriber permits an existing backlog to drain before disposal. Save and
+  Save As flush; Discard cancels queued work and waits for the in-flight write.
+  Repeated lifecycle actions are guarded across the whole flush/cancel plus
+  version-mutation transaction.
+- `accepted` and `settled` are distinct handle promises but intentionally
+  settle together in this serialization-only phase. Phase 02 changes the
+  accepted boundary without changing caller shape.
+- Every Phase-00 inventory bypass now has an explicit route: controller writes,
+  Rooms modal writes, Ventilator and linked-ventilator modal writes, schema
+  writes, and outdoor-unit delete preview use the draft lane. Execution-time
+  slice resolution shares a cache-first, invalidation-aware helper.
+- Focused verification: coordinator/controller/lifecycle/heat-pump tests (47
+  passed). Live Pumps drill: Shift-Enter burst produced six ordered PUTs,
+  `max_in_flight=1`, and Save began only after the last PUT response.

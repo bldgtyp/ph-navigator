@@ -1,8 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { projectDocumentTableQueryKeys } from "../../../../features/project_document/query-keys";
+import { resetDraftWriteCoordinatorsForTests } from "../../../../features/project_document/draftWriteCoordinator";
 import type { BaseTableSlice } from "../../../../features/project_document/table-slice";
 import type { FieldSchemaMutation } from "../lib/customFieldMutations";
 import type { BuildEmptyRow, FieldOption, RowInsertPayload } from "../types";
@@ -25,6 +26,8 @@ type FakePayload = { rows: string[] };
 const projectId = "p1";
 const versionId = "v1";
 const tableKey = "fake_table";
+
+beforeEach(resetDraftWriteCoordinatorsForTests);
 
 function makeSlice(overrides: Partial<FakeSlice> = {}): FakeSlice {
   return {
@@ -268,7 +271,7 @@ describe("useSliceTableController write freshness", () => {
     });
   });
 
-  it("characterizes rapid writes as concurrent requests carrying the same draft etag", async () => {
+  it("serializes rapid writes and builds the second request from the first ack", async () => {
     const queryClient = new QueryClient();
     const slice = makeSlice({ draft_etag: "draft-shared", rows: ["old"] });
     queryClient.setQueryData(editorSliceQueryKey(), slice);
@@ -284,7 +287,11 @@ describe("useSliceTableController write freshness", () => {
       slice,
       refetch: vi.fn(async () => ({ data: slice })),
       payloadBuilders: makePayloadBuilders(fromRowInsert),
-      replaceMutate: controlled.transport,
+      replaceMutate: async (args) => {
+        const accepted = await controlled.transport(args);
+        queryClient.setQueryData(editorSliceQueryKey(), accepted);
+        return accepted;
+      },
     });
 
     let writes: Promise<void>[] = [];
@@ -305,13 +312,15 @@ describe("useSliceTableController write freshness", () => {
       await Promise.resolve();
     });
 
+    expect(controlled.requests).toHaveLength(1);
+    expect(controlled.requests[0]!.request.current.draft_etag).toBe("draft-shared");
+    await act(async () => {
+      controlled.requests[0]!.response.resolve(makeSlice({ draft_etag: "draft-a" }));
+      await writes[0];
+    });
     expect(controlled.requests).toHaveLength(2);
-    expect(controlled.requests.map(({ request }) => request.current.draft_etag)).toEqual([
-      "draft-shared",
-      "draft-shared",
-    ]);
+    expect(controlled.requests[1]!.request.current.draft_etag).toBe("draft-a");
     controlled.requests[1]!.response.resolve(makeSlice({ draft_etag: "draft-b" }));
-    controlled.requests[0]!.response.resolve(makeSlice({ draft_etag: "draft-a" }));
     await act(async () => Promise.all(writes));
   });
 
@@ -331,23 +340,31 @@ describe("useSliceTableController write freshness", () => {
     });
 
     await expectNoUnhandledRejections(async () => {
-      const writes = dispatchBurst(
-        [
-          {
-            kind: "rowInsert" as const,
-            rows: [{ rowId: "row-a", anchorRowId: null, fieldDefaults: {} }],
-          },
-          {
-            kind: "rowInsert" as const,
-            rows: [{ rowId: "row-b", anchorRowId: null, fieldDefaults: {} }],
-          },
-        ],
-        result.current.onWrite,
-      );
-      await Promise.resolve();
+      let writes: Promise<void>[] = [];
+      await act(async () => {
+        writes = dispatchBurst(
+          [
+            {
+              kind: "rowInsert" as const,
+              rows: [{ rowId: "row-a", anchorRowId: null, fieldDefaults: {} }],
+            },
+            {
+              kind: "rowInsert" as const,
+              rows: [{ rowId: "row-b", anchorRowId: null, fieldDefaults: {} }],
+            },
+          ],
+          result.current.onWrite,
+        );
+        await Promise.resolve();
+      });
+      expect(controlled.requests).toHaveLength(1);
       let outcomes: PromiseSettledResult<void>[] = [];
       await act(async () => {
         controlled.requests[0]!.response.resolve(makeSlice({ draft_etag: "draft-a" }));
+        await writes[0];
+      });
+      expect(controlled.requests).toHaveLength(2);
+      await act(async () => {
         controlled.requests[1]!.response.reject(new Error("409 draft_etag_mismatch"));
         outcomes = await Promise.allSettled(writes);
       });

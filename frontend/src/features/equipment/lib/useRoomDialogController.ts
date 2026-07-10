@@ -102,23 +102,21 @@ export function useRoomDialogController(args: UseRoomDialogControllerArgs) {
     () =>
       makeSaveRoom({
         controller,
-        roomsSlice,
         replaceMutation,
         conflictMessage: ROOMS_ACTIVE_ROW_CONFLICT_MESSAGE,
         onSaved,
       }),
-    [controller, onSaved, replaceMutation, roomsSlice],
+    [controller, onSaved, replaceMutation],
   );
   const deleteRoom = useMemo(
     () =>
       makeDeleteRoom({
         controller,
-        roomsSlice,
         replaceMutation,
         conflictMessage: ROOMS_DELETE_CONFLICT_MESSAGE,
         onDeleted,
       }),
-    [controller, onDeleted, replaceMutation, roomsSlice],
+    [controller, onDeleted, replaceMutation],
   );
   const frozenReason =
     controller.editBlocker?.message ?? (controller.isLocked ? ROOMS_VERSION_LOCKED_MESSAGE : null);

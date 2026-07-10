@@ -514,8 +514,9 @@ Rules:
   rows that changed while the cached slice was stale.
 - Single-select option creation during paste belongs in the same op as
   the cell writes that use those options.
-- One table instance maintains a FIFO persistence queue per open draft.
-  Do not send concurrent draft writes for the same table/draft.
+- All mounted table instances share one FIFO persistence lane per open
+  draft. Do not send concurrent project-document writes from different
+  tables, schema controls, or modal/preflight paths against the same draft.
 - The table may optimistically apply writes while the queue flushes; the
   surrounding shell owns save/sync/conflict indicators.
 - Save and Save As wait for pending table writes to flush before calling

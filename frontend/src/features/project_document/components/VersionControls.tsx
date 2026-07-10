@@ -76,14 +76,14 @@ export function VersionControls({
   });
 
   useEffect(() => {
-    if (!hasDraft || !activeVersionId) return;
+    if ((!hasDraft && !lifecycle.writesPending) || !activeVersionId) return;
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
       event.returnValue = "";
     };
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [activeVersionId, hasDraft]);
+  }, [activeVersionId, hasDraft, lifecycle.writesPending]);
 
   useEffect(() => {
     if (!activeVersionId || draftSummaryQuery.isLoading || draftSummary?.source !== "draft") return;

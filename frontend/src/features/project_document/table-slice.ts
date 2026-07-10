@@ -1,4 +1,10 @@
-import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+  type QueryKey,
+} from "@tanstack/react-query";
 import { fetchJson } from "../../shared/api/client";
 import type { FieldSchemaMutation } from "../../shared/ui/data-table/lib/customFieldMutations";
 import { projectDocumentQueryKeys, projectDocumentTableQueryKeys } from "./query-keys";
@@ -39,6 +45,18 @@ export type CascadePreviewRef = {
 export type TableReplacePreview = {
   affected: CascadePreviewRef[];
 };
+
+export async function resolveCachedSliceForWrite<TSlice>(
+  queryClient: QueryClient,
+  queryKey: QueryKey,
+  fallback: TSlice,
+  refetch: () => Promise<TSlice | null | undefined>,
+): Promise<TSlice> {
+  if (!queryClient.getQueryState(queryKey)?.isInvalidated) {
+    return queryClient.getQueryData<TSlice>(queryKey) ?? fallback;
+  }
+  return (await refetch()) ?? queryClient.getQueryData<TSlice>(queryKey) ?? fallback;
+}
 
 export function createTableSliceFeature<TSlice extends BaseTableSlice, TReplaceBody>(options: {
   tableName: string;

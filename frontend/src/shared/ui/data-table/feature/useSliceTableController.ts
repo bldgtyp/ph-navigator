@@ -9,20 +9,6 @@
 //   - feature-specific footer actions, sub-tab bars, download menus
 //   - feature-specific formula-row-values shape — the controller forwards
 //     it through but never reads it
-//
-// ERV-tab consumption sketch (per plan §2.7 — pre-PR sanity check):
-//   - ErvSlice / ErvRow / ErvPayload triple plugs straight in.
-//   - `payloadBuilders.remoteSliceChangesActiveRow` stays undefined
-//     (ERV has no row-detail modal; the table is the editor).
-//   - `payloadBuilders.replaceOptions` stays undefined (ERV has no
-//     core single-select option editor; only custom single-selects,
-//     which route through `cell` ops with `newOptions` deltas).
-//   - The consumer passes `activeRow = null` because there is no
-//     active-row concept; the controller's optional gate skips the
-//     comparison.
-//   - `getFormulaRowValues` is feature-specific (different cf_/core
-//     field-id mapping) but the registry interface is identical.
-//   No leaky-abstraction props surfaced by that sketch.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQueryClient, type UseMutationResult } from "@tanstack/react-query";
@@ -30,12 +16,21 @@ import { errorMessage } from "../../../lib/errors";
 import { useTableSchema } from "../index";
 import { isDraftStaleError, isVersionLockedError } from "../../../../features/project_document/lib";
 import {
+  WriteQueueCancelledError,
+  WriteQueueDrainedError,
+  type TransportTask,
+} from "../../../../features/project_document/draftWriteCoordinator";
+import { useDraftWriteCoordinator } from "../../../../features/project_document/useDraftWriteCoordinator";
+import {
   projectDocumentQueryKeys,
   projectDocumentTableQueryKeys,
 } from "../../../../features/project_document/query-keys";
 import { projectQueryKeys } from "../../../../features/projects/query-keys";
 import { useProjectTableViewState } from "../../../../features/table_views/hooks";
-import type { TableSliceAccessMode } from "../../../../features/project_document/table-slice";
+import {
+  resolveCachedSliceForWrite,
+  type TableSliceAccessMode,
+} from "../../../../features/project_document/table-slice";
 import type { BuildEmptyRow, FieldOption, WriteOp } from "../types";
 import type { FieldRegistryEntry, TableFieldDef, TableFieldRenderOverlays } from "../index";
 import type { FieldSchemaMutation } from "../lib/customFieldMutations";
@@ -132,6 +127,10 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
   const isEditor = accessMode === "editor";
   const [actionError, setActionError] = useState<string | null>(null);
   const [editBlocker, setEditBlocker] = useState<EditBlocker | null>(null);
+  const { coordinator: writeCoordinator, status: writeStatus } = useDraftWriteCoordinator(
+    projectId,
+    activeVersionId,
+  );
 
   // Stringify-keyed memoization keeps `viewDefaults` identity stable
   // when the caller passes an inline `["…"]` literal. `useProjectTableViewState`
@@ -245,6 +244,9 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
       try {
         return await run();
       } catch (error) {
+        if (error instanceof WriteQueueDrainedError || error instanceof WriteQueueCancelledError) {
+          throw error;
+        }
         if (isDraftStaleError(error)) {
           await handleStaleDraftConflict(conflictMessage);
           throw error;
@@ -263,43 +265,63 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
 
   const resolveSliceForWrite = useCallback(async (): Promise<TSlice> => {
     if (!isEditor || !editorSliceQueryKey) return slice;
-    const queryState = queryClient.getQueryState(editorSliceQueryKey);
-    if (!queryState?.isInvalidated) return slice;
-    const result = await refetch();
-    const refetched = refetchResultData<TSlice>(result);
-    if (refetched) return refetched;
-    return queryClient.getQueryData<TSlice>(editorSliceQueryKey) ?? slice;
+    return resolveCachedSliceForWrite(queryClient, editorSliceQueryKey, slice, async () =>
+      refetchResultData<TSlice>(await refetch()),
+    );
   }, [editorSliceQueryKey, isEditor, queryClient, refetch, slice]);
+
+  const runCoordinatedWrite = useCallback(
+    async <T>(task: TransportTask<T>, conflictMessage: string, fallbackMessage: string) => {
+      if (!canEdit || !writeCoordinator) return;
+      const handle = writeCoordinator.schedule(task);
+      const observed = runWithConflictHandling(
+        () => handle.settled,
+        conflictMessage,
+        fallbackMessage,
+      );
+      void observed.catch(() => undefined);
+      await handle.accepted;
+      return await observed;
+    },
+    [canEdit, runWithConflictHandling, writeCoordinator],
+  );
 
   const commitPayloadOrThrow = useCallback(
     (
+      label: string,
       buildPayload: (writableSlice: TSlice) => TPayload,
       conflictMessage: string,
       fallbackMessage: string,
     ) =>
-      runWithConflictHandling(
-        async () => {
-          const writableSlice = await resolveSliceForWrite();
-          const payload = buildPayload(writableSlice);
-          const validationMessage = payloadBuilders.validate(payload);
-          if (validationMessage) {
-            setActionError(validationMessage);
-            throw new Error(validationMessage);
-          }
-          return replaceMutation.mutateAsync({ current: writableSlice, payload });
+      runCoordinatedWrite(
+        {
+          label,
+          run: async () => {
+            const writableSlice = await resolveSliceForWrite();
+            const payload = buildPayload(writableSlice);
+            const validationMessage = payloadBuilders.validate(payload);
+            if (validationMessage) {
+              setActionError(validationMessage);
+              throw new Error(validationMessage);
+            }
+            return replaceMutation.mutateAsync({ current: writableSlice, payload });
+          },
         },
         conflictMessage,
         fallbackMessage,
       ),
-    [payloadBuilders, replaceMutation, resolveSliceForWrite, runWithConflictHandling],
+    [payloadBuilders, replaceMutation, resolveSliceForWrite, runCoordinatedWrite],
   );
 
   const commitSchemaMutation = useCallback(
     (mutation: FieldSchemaMutation) =>
-      runWithConflictHandling(
-        async () => {
-          const writableSlice = await resolveSliceForWrite();
-          return schemaMutation.mutateAsync({ current: writableSlice, mutation });
+      runCoordinatedWrite(
+        {
+          label: `${tableKey}:schemaMutation`,
+          run: async () => {
+            const writableSlice = await resolveSliceForWrite();
+            return schemaMutation.mutateAsync({ current: writableSlice, mutation });
+          },
         },
         conflictMessages.activeRowConflict,
         "Could not update custom-field schema.",
@@ -307,8 +329,9 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
     [
       conflictMessages.activeRowConflict,
       resolveSliceForWrite,
-      runWithConflictHandling,
+      runCoordinatedWrite,
       schemaMutation,
+      tableKey,
     ],
   );
 
@@ -323,6 +346,7 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
           op.kind === "paste" ? op.newOptions : op.kind === "cell" ? (op.newOptions ?? {}) : {};
         const removedOptions = op.kind === "fill" ? {} : (op.removedOptions ?? {});
         await commitPayloadOrThrow(
+          `${tableKey}:${op.kind}`,
           (writableSlice) => {
             if (op.kind === "paste") {
               return (payloadBuilders.fromPaste ?? composePastePayload(payloadBuilders))(
@@ -345,6 +369,7 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
       }
       if (op.kind === "rowInsert") {
         await commitPayloadOrThrow(
+          `${tableKey}:rowInsert`,
           (writableSlice) => payloadBuilders.fromRowInsert(writableSlice, op.rows, buildEmptyRow),
           conflictMessages.activeRowConflict,
           "Could not insert row.",
@@ -353,6 +378,7 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
       }
       if (op.kind === "rowDelete") {
         await commitPayloadOrThrow(
+          `${tableKey}:rowDelete`,
           (writableSlice) => payloadBuilders.fromRowDelete(writableSlice, op.rows),
           conflictMessages.activeRowConflict,
           conflictMessages.deleteConflict,
@@ -361,6 +387,7 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
       }
       if (op.kind === "rowDuplicate") {
         await commitPayloadOrThrow(
+          `${tableKey}:rowDuplicate`,
           (writableSlice) => payloadBuilders.fromRowDuplicate(writableSlice, op.rows),
           conflictMessages.activeRowConflict,
           "Could not duplicate row.",
@@ -388,6 +415,7 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
           payloadBuilders.collapseCellWritesToReplacements ??
           (() => ({}) as Record<string, string | null>);
         await commitPayloadOrThrow(
+          `${tableKey}:schemaOptions`,
           (writableSlice) => {
             const replacements = collapse(writableSlice, after.field_key, op.cellWrites);
             try {
@@ -416,6 +444,7 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
       conflictMessages.activeRowConflict,
       conflictMessages.deleteConflict,
       payloadBuilders,
+      tableKey,
     ],
   );
 
@@ -447,8 +476,13 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
     isEditor,
     isLocked,
     reloadDraft,
-    isReplacePending: replaceMutation.isPending,
+    isReplacePending:
+      replaceMutation.isPending ||
+      schemaMutation.isPending ||
+      writeStatus.inFlight ||
+      writeStatus.queued > 0,
     runWithConflictHandling,
+    runCoordinatedWrite,
     resolveSliceForWrite,
     notifyRemoteSlice,
   };
