@@ -27,6 +27,10 @@ export function ConstructionStackSvg({
 }) {
   const totalMm = totalThicknessM(layers) * 1000;
   const heightPx = Math.min(MAX_HEIGHT_PX, Math.max(MIN_HEIGHT_PX, totalMm * PX_PER_MM));
+  // The section is schematic across its width, but its layer heights remain
+  // proportional. Scaling the SVG coordinates to its rendered height lets us
+  // preserve the drawing's aspect ratio instead of stretching it vertically.
+  const stackScale = totalMm > 0 ? heightPx / totalMm : 1;
 
   let yMm = 0;
   const layerRects = layers.map((layer) => {
@@ -43,8 +47,8 @@ export function ConstructionStackSvg({
         className="construction-stack-svg"
         role="img"
         aria-label={`${constructionName} — assembly section, exterior at top`}
-        viewBox={`0 0 ${CROSS_AXIS_UNITS} ${totalMm}`}
-        preserveAspectRatio="none"
+        viewBox={`0 0 ${CROSS_AXIS_UNITS} ${heightPx}`}
+        preserveAspectRatio="xMidYMid meet"
         style={{ height: `${heightPx}px` }}
         onMouseLeave={() => onHoverLayer(null)}
       >
@@ -83,9 +87,9 @@ export function ConstructionStackSvg({
                 data-testid="construction-stack-cell"
                 className="construction-stack-cell"
                 x={cell.xFraction * CROSS_AXIS_UNITS}
-                y={layerY + cell.yFraction * layerMm}
+                y={(layerY + cell.yFraction * layerMm) * stackScale}
                 width={cell.widthFraction * CROSS_AXIS_UNITS}
-                height={cell.heightFraction * layerMm}
+                height={cell.heightFraction * layerMm * stackScale}
                 fill={cell.color ?? "url(#construction-fallback-hatch)"}
               >
                 <title>{cell.label}</title>
@@ -96,18 +100,18 @@ export function ConstructionStackSvg({
                 data-testid="construction-steel-marker"
                 className="construction-steel-marker"
                 x={0}
-                y={layerY}
+                y={layerY * stackScale}
                 width={CROSS_AXIS_UNITS}
-                height={layerMm}
+                height={layerMm * stackScale}
                 fill="url(#construction-steel-hatch)"
               />
             ) : null}
             <rect
               className="construction-stack-layer-outline"
               x={0}
-              y={layerY}
+              y={layerY * stackScale}
               width={CROSS_AXIS_UNITS}
-              height={layerMm}
+              height={layerMm * stackScale}
               fill="transparent"
             />
           </g>

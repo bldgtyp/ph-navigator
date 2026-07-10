@@ -8,6 +8,7 @@ import {
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
 import { buildConstructionLayers, totalThicknessM } from "../lib/constructionLayers";
 import { THERMAL_FIELD_TOOLTIPS } from "../lib/fieldConfigs";
+import { splitFormattedMeasurement } from "../lib/formattedMeasurement";
 import { ConstructionLayerTable } from "./ConstructionLayerTable";
 import { ConstructionStackSvg } from "./ConstructionStackSvg";
 import type { DetailedOpaqueConstruction } from "../types";
@@ -80,12 +81,18 @@ export function ConstructionDetailModal({
       ) : (
         <>
           <dl className="construction-detail-stats">
-            {stats.map((stat) => (
-              <div key={stat.id} className="construction-detail-stat" title={stat.tooltip}>
-                <dt>{stat.label}</dt>
-                <dd>{stat.value}</dd>
-              </div>
-            ))}
+            {stats.map((stat) => {
+              const measurement = splitFormattedMeasurement(stat.value);
+              return (
+                <div key={stat.id} className="construction-detail-stat" title={stat.tooltip}>
+                  <dt>{stat.label}</dt>
+                  <dd>
+                    <span>{measurement.value}</span>
+                    {measurement.unit ? <small>{measurement.unit}</small> : null}
+                  </dd>
+                </div>
+              );
+            })}
           </dl>
           <div className="construction-detail-body">
             <ConstructionStackSvg

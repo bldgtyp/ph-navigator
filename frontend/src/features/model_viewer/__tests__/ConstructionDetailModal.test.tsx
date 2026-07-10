@@ -162,23 +162,24 @@ describe("ConstructionDetailModal — flat construction", () => {
 describe("ConstructionDetailModal — framed construction", () => {
   const hybrid = construction([material({ identifier: "XPS", thickness: 0.1 }), framedMaterial]);
 
-  it("auto-expands framed layers into segment sub-rows with widths and λ", () => {
+  it("keeps framed-layer segments behind an explicit expand action", () => {
     render(<Harness construction={hybrid} />);
-    const cellRows = screen.getAllByTestId("construction-cell-row");
-    expect(cellRows).toHaveLength(3);
-    expect(within(cellRows[1]!).getByText("Wood Stud")).toBeInTheDocument();
-    expect(within(cellRows[1]!).getByText("↔ 38 mm")).toBeInTheDocument();
+    expect(screen.queryAllByTestId("construction-cell-row")).toHaveLength(0);
+    expect(screen.getByRole("button", { name: /Expand segments of/ })).toBeInTheDocument();
     // SVG: 1 flat rect + 3 segment rects.
     expect(screen.getAllByTestId("construction-stack-cell")).toHaveLength(4);
   });
 
   it("collapses and re-expands via the layer expander", async () => {
     render(<Harness construction={hybrid} />);
-    const expander = screen.getByRole("button", { name: /Collapse segments of/ });
+    const expander = screen.getByRole("button", { name: /Expand segments of/ });
     await userEvent.click(expander);
-    expect(screen.queryAllByTestId("construction-cell-row")).toHaveLength(0);
-    await userEvent.click(screen.getByRole("button", { name: /Expand segments of/ }));
     expect(screen.getAllByTestId("construction-cell-row")).toHaveLength(3);
+    expect(
+      within(screen.getAllByTestId("construction-cell-row")[1]!).getByText("Wood Stud"),
+    ).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /Collapse segments of/ }));
+    expect(screen.queryAllByTestId("construction-cell-row")).toHaveLength(0);
   });
 
   it("renders fallback fill for null colors without crashing", () => {

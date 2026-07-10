@@ -1500,7 +1500,11 @@ tbody .model-inspector-segment-row:hover td,
 /* Construction detail modal (read-only HBJSON assembly view, D-8)     */
 
 #construction-detail.modal-panel {
-  width: min(100%, 780px);
+  width: min(100%, 900px);
+  min-width: min(560px, calc(100vw - 40px));
+  min-height: 420px;
+  max-width: calc(100vw - 40px);
+  resize: both;
 }
 
 .construction-detail-empty {
@@ -1510,18 +1514,20 @@ tbody .model-inspector-segment-row:hover td,
 }
 
 .construction-detail-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-8);
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1px;
   margin: var(--space-16) 0 0;
+  overflow: hidden;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  background: var(--border-card);
 }
 
 .construction-detail-stat {
-  flex: 1 1 110px;
-  padding: var(--space-8) var(--space-10);
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius-sm);
-  background: color-mix(in oklab, var(--bg-card) 98%, var(--bg-elev));
+  min-width: 0;
+  padding: var(--space-10) var(--space-12);
+  background: var(--bg-card);
 }
 
 .construction-detail-stat dt {
@@ -1532,17 +1538,32 @@ tbody .model-inspector-segment-row:hover td,
 }
 
 .construction-detail-stat dd {
-  margin: var(--space-2) 0 0;
+  display: grid;
+  gap: 1px;
+  margin: var(--space-4) 0 0;
   color: var(--text-primary);
   font-size: var(--fs-md);
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.construction-detail-stat dd small {
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .construction-detail-body {
   display: flex;
-  gap: var(--space-16);
+  gap: var(--space-20);
   align-items: flex-start;
   margin-top: var(--space-16);
+  min-width: 0;
 }
 
 /* --- section drawing ------------------------------------------------ */
@@ -1567,6 +1588,7 @@ tbody .model-inspector-segment-row:hover td,
 }
 
 .construction-stack-svg {
+  display: block;
   width: 100%;
   overflow: visible;
   border: 1px solid var(--border-card);
@@ -1610,6 +1632,8 @@ tbody .model-inspector-segment-row:hover td,
 
 .construction-layer-table {
   flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
   border-collapse: collapse;
   font-size: var(--fs-sm);
 }
@@ -1627,6 +1651,17 @@ tbody .model-inspector-segment-row:hover td,
   font-size: var(--fs-xs);
   font-weight: 700;
   text-transform: uppercase;
+}
+
+.construction-column-unit {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-secondary);
+  font-size: var(--fs-2xs);
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
 }
 
 .construction-col-index {
@@ -1713,6 +1748,16 @@ tbody .model-inspector-segment-row:hover td,
 }
 
 @media (width <= 720px) {
+  #construction-detail.modal-panel {
+    min-width: 0;
+    min-height: 0;
+    resize: none;
+  }
+
+  .construction-detail-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .construction-detail-body {
     flex-direction: column;
   }

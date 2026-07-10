@@ -26,9 +26,8 @@ function rValue(r: number, unitSystem: UnitSystem): string {
 }
 
 /** Expandable layer schedule: one row per layer exterior→interior, framed
- *  layers open to their segment sub-rows, totals in the footer. Framed
- *  layers start expanded — the segment make-up is the whole reason to open
- *  the modal. Per-layer and Σ figures are display-only layer math (D-7);
+ *  layers reveal their segment sub-rows on request, totals in the footer.
+ *  Per-layer and Σ figures are display-only layer math (D-7);
  *  the authoritative U/R stay in the modal header, LBT-verbatim. */
 export function ConstructionLayerTable({
   layers,
@@ -41,9 +40,7 @@ export function ConstructionLayerTable({
   hoveredIndex: number | null;
   onHoverLayer: (index: number | null) => void;
 }) {
-  const [expandedIndices, setExpandedIndices] = useState<ReadonlySet<number>>(
-    () => new Set(layers.filter(isFramedLayer).map((layer) => layer.index)),
-  );
+  const [expandedIndices, setExpandedIndices] = useState<ReadonlySet<number>>(() => new Set());
 
   const toggleLayer = (index: number) => {
     setExpandedIndices((current) => {
@@ -63,17 +60,24 @@ export function ConstructionLayerTable({
           </th>
           <th scope="col">Layer</th>
           <th scope="col" className="construction-col-number">
-            Thickness
+            Thickness{" "}
+            <span className="construction-column-unit">({unitSystem === "IP" ? "in" : "mm"})</span>
           </th>
           <th
             scope="col"
             className="construction-col-number construction-col-lambda"
             title="Conductivity (homogenized)"
           >
-            λ
+            λ{" "}
+            <span className="construction-column-unit">
+              ({unitSystem === "IP" ? "Btu/(h-ft-F)" : "W/(m-K)"})
+            </span>
           </th>
           <th scope="col" className="construction-col-number" title="Layer R = thickness / λ (D-7)">
-            R
+            R{" "}
+            <span className="construction-column-unit">
+              ({unitSystem === "IP" ? "h-ft2-F/Btu" : "m2-K/W"})
+            </span>
           </th>
         </tr>
       </thead>

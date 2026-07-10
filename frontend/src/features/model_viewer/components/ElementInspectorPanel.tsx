@@ -2,6 +2,7 @@ import { Check, ChevronDown, Copy, Maximize2, X } from "lucide-react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { formatLengthFromMm, useUnitPreference } from "../../../lib/units";
 import { configForMeta, formatMetersAsLength } from "../lib/fieldConfigs";
+import { splitFormattedMeasurement } from "../lib/formattedMeasurement";
 import { elementIdForSegmentId } from "../lib/selection";
 import type { BuildingModel } from "../loaders/building";
 import type { ElementSummary } from "../loaders/lineElements";
@@ -132,8 +133,8 @@ export function ElementInspectorPanel({ element, model }: ElementInspectorPanelP
                 const hovered = hoveredSegmentId === meta.id;
                 const config = configForMeta(meta);
                 const segmentNumber = index + 1;
-                const length = splitMeasurement(segmentLength(meta, unitSystem));
-                const diameter = splitMeasurement(segmentDiameter(meta, unitSystem));
+                const length = splitFormattedMeasurement(segmentLength(meta, unitSystem));
+                const diameter = splitFormattedMeasurement(segmentDiameter(meta, unitSystem));
                 const material = pipeMaterial(meta);
                 return (
                   <Fragment key={meta.id}>
@@ -233,22 +234,8 @@ function pipeMaterial(meta: DuctSegmentLineMeta | PipeSegmentLineMeta): string {
   return meta.type === "pipeSegmentLine" && meta.material_value ? meta.material_value : "--";
 }
 
-type SegmentMeasurement = {
-  formatted: string;
-  value: string;
-  unit: string | null;
-};
-
-function splitMeasurement(formatted: string): SegmentMeasurement {
-  const trimmed = formatted.trim();
-  const match = /^(.+?)\s+([^\s]+)$/.exec(trimmed);
-  if (!match) return { formatted: trimmed, value: trimmed, unit: null };
-  const [, value = trimmed, unit = null] = match;
-  return { formatted: trimmed, value, unit };
-}
-
 function measurementUnit(formatted: string | null): string | null {
-  return formatted ? splitMeasurement(formatted).unit : null;
+  return formatted ? splitFormattedMeasurement(formatted).unit : null;
 }
 
 function SegmentColumnHeader({ label, unit }: { label: string; unit: string | null }) {
