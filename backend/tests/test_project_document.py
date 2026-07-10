@@ -286,7 +286,12 @@ def test_project_document_upgrade_entrypoint_accepts_current_and_v0_baseline() -
     upgraded = upgrade_project_document(old)
     assert upgraded.original_schema_version == 0
     assert upgraded.target_schema_version == CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
-    assert upgraded.applied_steps == ("_upgrade_v0_to_v1", "_upgrade_v1_to_v2", "_upgrade_v2_to_v3")
+    assert upgraded.applied_steps == (
+        "_upgrade_v0_to_v1",
+        "_upgrade_v1_to_v2",
+        "_upgrade_v2_to_v3",
+        "_upgrade_v3_to_v4",
+    )
     assert upgraded.document.schema_version == CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     assert upgraded.requires_persisted_rewrite is True
 
@@ -322,7 +327,7 @@ def test_project_document_v1_upgrade_adds_rooms_airflow_fields_and_preserves_val
     field_keys = [field.field_key for field in result.document.tables.rooms.field_defs]
     assert result.original_schema_version == 1
     assert result.target_schema_version == CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
-    assert result.applied_steps == ("_upgrade_v1_to_v2", "_upgrade_v2_to_v3")
+    assert result.applied_steps == ("_upgrade_v1_to_v2", "_upgrade_v2_to_v3", "_upgrade_v3_to_v4")
     assert result.requires_persisted_rewrite is True
     assert field_keys[field_keys.index("num_bedrooms") + 1 : field_keys.index("icfa_factor")] == [
         "ceiling_height_m",
@@ -359,13 +364,31 @@ def test_project_document_v2_upgrade_adds_downstream_consumer_equipment_fields()
     pump_keys = [field.field_key for field in result.document.tables.equipment.pumps.field_defs]
     ventilator_keys = [field.field_key for field in result.document.tables.equipment.ervs.field_defs]
     assert result.original_schema_version == 2
-    assert result.applied_steps == ("_upgrade_v2_to_v3",)
+    assert result.applied_steps == ("_upgrade_v2_to_v3", "_upgrade_v3_to_v4")
     assert {"quantity", "inside_outside", "annual_energy_kwh", "internal_heat_gains_utilization_factor"}.issubset(
         pump_keys
     )
     assert {"frost_protection", "frost_protection_limit_temp_c"}.issubset(ventilator_keys)
     assert "pumps.inside_outside" in result.document.single_select_options
     assert "ventilators.frost_protection" in result.document.single_select_options
+
+
+def test_project_document_v3_upgrade_adds_room_ventilator_field() -> None:
+    raw = empty_project_document(
+        CreateProjectRequest(name="West Stockbridge House", bt_number="2426", cert_programs=[])
+    ).model_dump(mode="json")
+    raw["schema_version"] = 3
+    rooms = cast(dict[str, Any], cast(dict[str, Any], raw["tables"])["rooms"])
+    rooms["field_defs"] = [
+        field for field in cast(list[dict[str, Any]], rooms["field_defs"]) if field["field_key"] != "ventilator_id"
+    ]
+
+    result = upgrade_project_document(raw)
+
+    field_keys = [field.field_key for field in result.document.tables.rooms.field_defs]
+    assert result.original_schema_version == 3
+    assert result.applied_steps == ("_upgrade_v3_to_v4",)
+    assert field_keys[field_keys.index("space_type_id") + 1] == "ventilator_id"
 
 
 def test_project_document_upgrade_rejects_malformed_and_future_versions() -> None:

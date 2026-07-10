@@ -182,6 +182,10 @@ ROOM_VENTILATOR_FIELD_KEY = "ventilator_id"
 # attachment field (`datasheet_asset_ids`) to match the other Equipment
 # tables.
 #
+# v4: Rooms adds the built-in `ventilator_id` linked-record FieldDef. This
+# explicitly upgrades existing v3 documents; new template documents already
+# receive the current Rooms built-in field seed.
+#
 # v12: aperture glazings/frames move from inline element snapshots to flat,
 # documented project tables (`project_glazings` / `project_frames`) referenced
 # by FK ids from each aperture element.
@@ -189,7 +193,7 @@ ROOM_VENTILATOR_FIELD_KEY = "ventilator_id"
 # v3: rooms, thermal bridges, ventilators, pumps, and hot-water tanks gain
 # downstream-consumer built-ins (ceiling height, quantities, frost protection,
 # annual energy, heat-gain utilization, and tank temperature/location fields).
-CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 3
+CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 4
 
 # Field keys that have a typed Pydantic column on the row model. Used
 # to split read/write paths between typed columns and the
@@ -274,7 +278,7 @@ class ProjectDocumentTables(BaseModel):
 class ProjectDocumentV1(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: Literal[3] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
+    schema_version: Literal[4] = CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION
     project: ProjectDocumentProject
     tables: ProjectDocumentTables = Field(default_factory=ProjectDocumentTables)
     single_select_options: dict[str, list[SingleSelectOption]] = Field(

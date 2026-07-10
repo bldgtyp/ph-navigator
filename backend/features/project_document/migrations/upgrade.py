@@ -172,10 +172,30 @@ def _upgrade_v2_to_v3(raw: dict[str, object]) -> dict[str, object]:
     return upgraded
 
 
+def _upgrade_v3_to_v4(raw: dict[str, object]) -> dict[str, object]:
+    """Add the built-in Room-to-Ventilator linked-record field."""
+
+    from features.project_document.tables.rooms import ROOMS_BUILT_IN_FIELD_DEFS
+
+    upgraded = dict(raw)
+    tables = dict(_mapping(upgraded.get("tables"), "tables"))
+    rooms = dict(_mapping(tables.get("rooms"), "tables.rooms"))
+    rooms["field_defs"] = _merge_current_built_ins(
+        rooms.get("field_defs"),
+        current_built_ins=ROOMS_BUILT_IN_FIELD_DEFS,
+        path="tables.rooms.field_defs",
+    )
+    tables["rooms"] = rooms
+    upgraded["tables"] = tables
+    upgraded["schema_version"] = 4
+    return upgraded
+
+
 UPGRADE_STEPS: dict[int, Callable[[dict[str, object]], dict[str, object]]] = {
     0: _upgrade_v0_to_v1,
     1: _upgrade_v1_to_v2,
     2: _upgrade_v2_to_v3,
+    3: _upgrade_v3_to_v4,
 }
 
 
