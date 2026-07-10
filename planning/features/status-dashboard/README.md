@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-10
 TIME: 10:08 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Redesign the project Status landing page and add a lightweight DATA-TABLE completeness summary.
 RELATED: context/ui/pages/status-tab.md; context/technical-requirements/data-table.md; frontend/src/features/project_status/
@@ -14,7 +14,8 @@ Planning packet for turning `/projects/{id}/status` into a calm project landing 
 1. **Record status** — an attention-first, progressively disclosed summary of the 12 DATA-TABLE record types that carry the shared `status` field.
 2. **Roadmap** — the existing user-managed lifecycle milestones, redesigned as a compact timeline.
 
-This is a docs-only design pass. No application code has been changed.
+All five phases are implemented and verified. Durable behavior now lives in
+`context/ui/pages/status-tab.md` and `context/technical-requirements/data-table.md`.
 
 ## Product decision
 
@@ -47,4 +48,3 @@ The desktop composition is a quiet two-column project brief: the wider **Record 
 - No aggregation of arbitrary custom fields or record specifications.
 - No percentage-based project score or inferred status from blank specifications.
 - No change to the four canonical DATA-TABLE status values.
-

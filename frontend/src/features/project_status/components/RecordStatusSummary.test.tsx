@@ -79,6 +79,27 @@ test("keeps groups collapsed and bounds attention and resolved disclosure", asyn
   expect(within(records!).getByText("Resolved pump")).toBeInTheDocument();
 });
 
+test("recovers from a section-scoped load error through Retry", async () => {
+  const user = userEvent.setup();
+  const fetchMock = vi
+    .fn()
+    .mockResolvedValueOnce(new Response("Unavailable", { status: 503 }))
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify(summaryFixture()), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+  vi.stubGlobal("fetch", fetchMock);
+  renderSummary();
+
+  await user.click(await screen.findByRole("button", { name: "Retry" }));
+
+  const region = screen.getByRole("region", { name: "Record status" });
+  expect(await within(region).findByText("12 needed")).toBeVisible();
+  expect(fetchMock).toHaveBeenCalledTimes(2);
+});
+
 function renderSummary() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(

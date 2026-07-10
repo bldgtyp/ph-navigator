@@ -1,67 +1,92 @@
 > Split from `context/UI_UX.md` §2 (Pages — narrative). Cross-cutting design
-> intent (§0), common elements incl. the DataTable model (§1 / §1.7), flows
-> (§3), and the state-indicator cheatsheet (§4) stay in `../../UI_UX.md` —
-> read it alongside this page.
+> intent (§0), common elements including the DataTable model (§1 / §1.7),
+> flows (§3), and the state-indicator cheatsheet (§4) remain in
+> `../../UI_UX.md` and apply here.
 
-# 2.5 Status tab (`/projects/{id}/status`) — placeholder
+# 2.5 Status tab (`/projects/{id}/status`)
 
-**(Full spec in US-Status.)**
+The Status tab is the default project landing page. It answers two distinct,
+related questions without adding another top-level route:
 
-Default landing for the project workspace. Vertical timeline of
-project lifecycle / certification milestones. Each item: state icon +
-title + completion date or free-text description (Markdown).
-User-managed list — add, reorder (drag), edit, mark done, delete.
+1. **Record status:** Which equipment and documentation records still need
+   attention?
+2. **Roadmap:** Where is the project in its user-managed lifecycle, and what
+   comes next?
 
-**Empty state (brand-new project, zero items):**
+## Composition
 
-The Status tab is the default landing tab, so a brand-new project
-opens directly into an empty Status surface. No auto-populate; user
-gets explicit control.
+The page uses a quiet two-pane project-brief layout rather than nested cards.
+On wide screens Record status is approximately two-thirds of the content width
+and Roadmap one-third. Roadmap is sticky only within normal page flow: it has no
+fixed height or internal scroll trap. Below 980px the sections stack with
+Record status first.
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                                                                  │
-│              No status items yet for this project.               │
-│                                                                  │
-│       Track lifecycle milestones — CAD received, design          │
-│       complete, Phius reviews, certification — to know           │
-│       where this project stands at a glance.                     │
-│                                                                  │
-│        [ Apply BLDGTYP default template ]   ← primary            │
-│        [ Add custom item ]                  ← secondary          │
-│                                                                  │
-│                  Skip to Envelope → (link)                       │
-│                                                                  │
-└──────────────────────────────────────────────────────────────────┘
-```
+Record status and Roadmap load independently. Each owns its skeleton, error,
+retry, and empty state so a slow or failed request does not blank the other
+section. Skeleton geometry approximates the final rows, is `aria-hidden`, and
+has one adjacent `role="status"` loading announcement. Motion is disabled for
+`prefers-reduced-motion`.
 
-**"Apply BLDGTYP default template"** populates 4 starter items in
-order:
-1. CAD files received
-2. Design Model complete
-3. Phius review complete
-4. Certification Complete
+## Record status
 
-All four start in `state='todo'`. User edits / reorders / dates / adds
-freely from there. The template is hardcoded in code; no
-template-management UI in v1.
+Record status is a compact, read-only projection of the shared DATA-TABLE
+status contract. It covers exactly these 12 registered tables:
 
-**Populated state:** vertical timeline component (similar to V1's
-Status page). Each row:
-- State icon (○ todo / ✓ done / – n/a)
-- Item number (auto from order)
-- Title (clickable to edit)
-- Completion date (if state = done) OR free-text description
-  (Markdown, may include in-app links — internal anchors v1.1+)
-- Optional next action / owner / linked work surface when a status item
-  is acting as a workflow gate.
-- Drag handle for reorder
-- `⋯` row menu: Edit, Mark done, Mark todo, Mark n/a, Delete
+- ventilators;
+- heat pump outdoor units, indoor units, systems, and options;
+- pumps;
+- fans;
+- hot water heaters and tanks;
+- electric heaters;
+- appliances;
+- thermal bridges.
 
-Each milestone should read as a compact status record: state, title,
-date/description, and a direct link to the surface that resolves it
-where applicable. Avoid treating Airtightness/Site Photos links as
-small annotations; if they are gates, they need action affordance.
+The initial view shows aggregate counts and nine collapsed product groups.
+Heat Pumps discloses its four source tables as separate leaves. Expanded groups
+sort attention states first, show at most ten attention records initially, and
+keep complete/N/A records behind a separate resolved disclosure. Record rows
+show only display name/ID, status, and notes; they do not reproduce technical
+specifications such as flow or capacity. Long notes clamp until requested.
 
-Reference: V1 Status page screenshot supplied 2026-05-10.
+Every record and `Open table` link returns to the owning Equipment or Thermal
+Bridges route. Record links include `focus={row_id}` so the virtualized
+DataTable scrolls to and focuses the exact row. Edits remain on the owning table
+surface.
 
+The backend summary endpoint loads the selected project document once and
+returns counts plus the compact row projection. Editors read the working draft;
+viewers read the selected saved version. The query key includes project,
+version, and source, and accepted writes to any in-scope table invalidate the
+summary. Group disclosure persists only in session storage, scoped by project.
+
+## Roadmap
+
+Roadmap remains a relational, project-level list independent of versioned
+DATA-TABLE content. A brand-new project is not auto-populated. Editors may
+explicitly apply the four-item BLDGTYP template or add a custom milestone.
+
+Each populated row shows the state control, title, optional date, and Markdown
+notes. Rows are separated by hairlines rather than cards; the first to-do item
+gets a subtle current marker. Editors retain drag reorder, `Alt+Arrow` keyboard
+reorder, direct state cycling, and edit/delete dialogs.
+
+Management actions use an editor-only `...` menu:
+
+- Edit milestone;
+- Move up/down;
+- Mark done, to do, or N/A;
+- Delete milestone.
+
+The menu and drag affordance appear on hover or `:focus-within` and remain
+visible for coarse pointers. They are absent from viewer markup. Viewer dates
+are static text, not disabled buttons, and viewer rows contain no mutation or
+reorder controls.
+
+## Performance and access invariants
+
+- Do not mount the 12 table hooks or return full FieldDefs/formulas/spec data.
+- Bound initial disclosure regardless of project size.
+- Keep the two section requests independent and cache the compact summary.
+- Anonymous/viewer access uses saved document data and exposes no editor
+  controls; backend mutation authorization remains authoritative.
+- Status and notes are conveyed by text and accessible names, not color alone.

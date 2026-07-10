@@ -256,9 +256,7 @@ def _count_records(records: list[StatusSummaryRecord]) -> StatusSummaryCounts:
 
 def _sum_counts(counts: Iterable[StatusSummaryCounts]) -> StatusSummaryCounts:
     values = list(counts)
-    return StatusSummaryCounts(
-        **{state: sum(getattr(count, state) for count in values) for state in _STATUS_STATES}
-    )
+    return StatusSummaryCounts(**{state: sum(getattr(count, state) for count in values) for state in _STATUS_STATES})
 
 
 _STATUS_STATES: tuple[StatusSummaryState, ...] = ("needed", "question", "complete", "na", "unknown")

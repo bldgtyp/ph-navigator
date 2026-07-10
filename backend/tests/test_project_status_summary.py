@@ -196,10 +196,7 @@ def test_large_summary_stays_under_compact_payload_target(clean_document_tables:
     project = create_project(client)
     project_id = project["id"]
     version_id = project["active_version_id"]
-    rows = [
-        _pump_row(index, status="opt_status_needed", notes="Coordinate selections.")
-        for index in range(1, 501)
-    ]
+    rows = [_pump_row(index, status="opt_status_needed", notes="Coordinate selections.") for index in range(1, 501)]
     _put_pump_rows(client, project_id, version_id, rows)
 
     response = client.get(_summary_url(project_id, version_id, "draft"))

@@ -17,7 +17,7 @@ test("editor creates a project and public viewer can open the shell", async ({ p
 
   const btNumber = `e2e-${Date.now().toString().slice(-8)}`;
   await createProject(page, { name: `E2E Project ${btNumber}`, btNumber });
-  await expect(page.getByRole("heading", { name: "Status" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Project status" })).toBeVisible();
   await expect(
     page.getByRole("link", { name: `${btNumber} - E2E Project ${btNumber}` }),
   ).toBeVisible();
@@ -31,15 +31,18 @@ test("editor creates a project and public viewer can open the shell", async ({ p
   await page.getByRole("button", { name: "Set CAD files received to Done" }).click();
   await expect(page.getByText("Done")).toBeVisible();
 
-  await page.getByRole("button", { name: "Edit" }).first().click();
+  await page.getByRole("button", { name: "More actions for CAD files received" }).click();
+  await page.getByRole("menuitem", { name: "Edit milestone" }).click();
   await page.getByLabel("Completion date").fill("2026-05-01");
   await page.getByRole("button", { name: "Save item" }).click();
   await expect(page.getByRole("button", { name: "May 1, 2026" })).toBeVisible();
 
-  await page.getByRole("button", { name: "Move Design Model complete up" }).click();
+  await page.getByRole("button", { name: "More actions for Design Model complete" }).click();
+  await page.getByRole("menuitem", { name: "Move up" }).click();
   await expect(page.locator(".status-title-button").first()).toHaveText("Design Model complete");
 
-  await page.getByRole("button", { name: "Delete" }).last().click();
+  await page.getByRole("button", { name: "More actions for Certification Complete" }).click();
+  await page.getByRole("menuitem", { name: "Delete milestone" }).click();
   await page.getByRole("button", { name: "Delete item" }).click();
   await expect(page.getByText("Certification Complete")).toHaveCount(0);
   const publicStatusUrl = page.url();
@@ -118,10 +121,10 @@ test("editor creates a project and public viewer can open the shell", async ({ p
     await publicPage.goto(publicStatusUrl);
     await expect(publicPage.getByText("Read-only")).toBeVisible();
     await expect(publicPage.getByText("Edit controls hidden")).toBeVisible();
-    await expect(publicPage.getByRole("heading", { name: "Status" })).toBeVisible();
+    await expect(publicPage.getByRole("heading", { name: "Project status" })).toBeVisible();
     await expect(publicPage.getByText("CAD files received")).toBeVisible();
-    await expect(publicPage.getByRole("button", { name: "Add item" })).toHaveCount(0);
-    await expect(publicPage.getByRole("button", { name: "Delete" })).toHaveCount(0);
+    await expect(publicPage.getByRole("button", { name: "Add milestone" })).toHaveCount(0);
+    await expect(publicPage.getByRole("button", { name: /More actions for/ })).toHaveCount(0);
   } finally {
     await publicContext.close();
   }

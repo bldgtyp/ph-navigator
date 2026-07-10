@@ -51,8 +51,7 @@ export function useProjectStatusSummaryQuery(
   const resolvedVersionId = versionId ?? "";
   return useQuery({
     queryKey: projectDocumentQueryKeys.statusSummary(projectId, resolvedVersionId, accessMode),
-    queryFn: ({ signal }) =>
-      fetchProjectStatusSummary(projectId, resolvedVersionId, accessMode, signal),
+    queryFn: () => fetchProjectStatusSummary(projectId, resolvedVersionId, accessMode),
     enabled: resolvedVersionId.length > 0,
     staleTime: Infinity,
   });
@@ -79,11 +78,9 @@ async function fetchProjectStatusSummary(
   projectId: string,
   versionId: string,
   accessMode: "editor" | "viewer",
-  signal?: AbortSignal,
 ): Promise<ProjectStatusSummary> {
   const source = accessMode === "editor" ? "draft" : "document";
   return fetchJson<ProjectStatusSummary>(
     `/api/v1/projects/${projectId}/versions/${versionId}/${source}/status-summary`,
-    { signal },
   );
 }

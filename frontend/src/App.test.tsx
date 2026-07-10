@@ -546,6 +546,13 @@ describe("App", () => {
     expect(
       screen.queryByRole("button", { name: /Set CAD files received/ }),
     ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /More actions for/ })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Drag CAD files received/)).not.toBeInTheDocument();
+    expect(
+      within(screen.getByRole("region", { name: "Record status" })).getByRole("button", {
+        name: "Retry",
+      }),
+    ).toBeVisible();
   });
 
   test("renders table-neutral editor header states", async () => {
