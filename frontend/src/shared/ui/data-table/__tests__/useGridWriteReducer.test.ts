@@ -13,9 +13,12 @@ const inverse: WriteOp = {
   writes: [{ rowId: "rm_1", fieldKey: "name", value: "prev" }],
 };
 
-function useHarness(onWrite?: (op: WriteOp) => void | Promise<void>) {
+function useHarness(
+  onWrite?: (op: WriteOp) => void | Promise<void>,
+  onAnnounce?: (message: string) => void,
+) {
   const history = useGridHistory();
-  const reducer = useGridWriteReducer({ history, onWrite });
+  const reducer = useGridWriteReducer({ history, onWrite, onAnnounce });
   return { history, reducer };
 }
 
@@ -67,6 +70,32 @@ describe("useGridWriteReducer", () => {
 
     expect(onWrite).toHaveBeenCalledWith(forward);
     expect(result.current.history.canUndo).toBe(true);
+    expect(result.current.history.canRedo).toBe(false);
+  });
+
+  test("announces successful undo and redo kinds", async () => {
+    const announce = vi.fn();
+    const { result } = renderHook(() => useHarness(vi.fn(), announce));
+    await act(async () => {
+      await result.current.reducer.dispatchWrite(forward, inverse);
+      await result.current.reducer.undoOnce();
+      await result.current.reducer.redoOnce();
+    });
+    expect(announce.mock.calls).toEqual([["Undid cell edit."], ["Redid cell edit."]]);
+  });
+
+  test("a rejected replay clears both history stacks", async () => {
+    const onWrite = vi.fn().mockResolvedValue(undefined);
+    const { result } = renderHook(() => useHarness(onWrite));
+    await act(async () => {
+      await result.current.reducer.dispatchWrite(forward, inverse);
+      await result.current.reducer.dispatchWrite(forward, inverse);
+    });
+    onWrite.mockRejectedValueOnce(new Error("replay failed"));
+    await act(async () => {
+      await expect(result.current.reducer.undoOnce()).rejects.toThrow("replay failed");
+    });
+    expect(result.current.history.canUndo).toBe(false);
     expect(result.current.history.canRedo).toBe(false);
   });
 

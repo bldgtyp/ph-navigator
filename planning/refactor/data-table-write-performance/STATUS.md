@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-09
 TIME: -
-STATUS: Active — Phases 00-03 complete; Phase 04 is next.
+STATUS: Active — Phases 00-04 complete; Phase 05 is next.
 AUTHOR: Claude (for Ed)
 SCOPE: Live state ledger for the DataTable write-performance refactor.
 RELATED:
@@ -62,11 +62,14 @@ RELATED:
   adjacent queued cell/row-insert gestures now coalesce without
   crossing hard-operation or flush boundaries. Ten optimistic inserts
   settled in two PUTs at 2.5 s simulated latency, one request in flight.
+- 2026-07-09 — **Phase 04 complete.** Undo depth is 50; lineage
+  replacement clears history draft-wide; rejected replay clears both
+  stacks; undo/redo announces the semantic operation kind.
 
 ## Next step
 
-1. Implement Phase 04: history capacity, lineage-clear audit,
-   burst-safe replay failure handling, and inverse coverage.
+1. Implement Phase 05: structured conflict classification, honest
+   cause-specific copy, and one-shot three-way-gated retry.
 
 ## Blockers
 
@@ -80,7 +83,7 @@ RELATED:
 | 01 — draft write coordinator | **Complete** |
 | 02 — per-table optimistic journals | **Complete** |
 | 03 — transport coalescing | **Complete** |
-| 04 — undo polish | Planned |
+| 04 — undo polish | **Complete** |
 | 05 — conflict copy + three-way retry | Planned |
 | 06 — backend write-path trims | Planned (measure-gated) |
 

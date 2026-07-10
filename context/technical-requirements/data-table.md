@@ -530,6 +530,9 @@ Rules:
   parent conflict/session/validation UI.
 - Undo is local-only. Do not issue compensating PATCH requests after a
   conflict.
+- Keep the 50 most recent semantic gestures per mounted table. Clear both
+  undo/redo stacks whenever the draft lineage is replaced (rollback, reload,
+  remote slice, lock conflict, discard, or version switch).
 
 ## View State
 

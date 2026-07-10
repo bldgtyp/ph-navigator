@@ -30,8 +30,9 @@ export type GridWriteReducer = {
 export function useGridWriteReducer(args: {
   history: GridHistory;
   onWrite?: (op: WriteOp) => void | Promise<void>;
+  onAnnounce?: (message: string) => void;
 }): GridWriteReducer {
-  const { history, onWrite } = args;
+  const { history, onWrite, onAnnounce } = args;
 
   const dispatchWrite = useCallback<DispatchWrite>(
     async (op, inverse, options) => {
@@ -46,19 +47,47 @@ export function useGridWriteReducer(args: {
     [history, onWrite],
   );
 
+  const replayOnce = useCallback(
+    async (direction: "undo" | "redo") => {
+      const entry = direction === "undo" ? history.undo() : history.redo();
+      if (!entry || !onWrite) return entry;
+      const op = direction === "undo" ? entry.inverse : entry.op;
+      try {
+        await onWrite(op);
+        onAnnounce?.(`${direction === "undo" ? "Undid" : "Redid"} ${writeOpLabel(entry.op)}.`);
+        return entry;
+      } catch (error) {
+        history.clear();
+        throw error;
+      }
+    },
+    [history, onAnnounce, onWrite],
+  );
+
   const undoOnce = useCallback(async () => {
-    const entry = history.undo();
-    if (!entry || !onWrite) return entry;
-    await onWrite(entry.inverse);
-    return entry;
-  }, [history, onWrite]);
+    return replayOnce("undo");
+  }, [replayOnce]);
 
   const redoOnce = useCallback(async () => {
-    const entry = history.redo();
-    if (!entry || !onWrite) return entry;
-    await onWrite(entry.op);
-    return entry;
-  }, [history, onWrite]);
+    return replayOnce("redo");
+  }, [replayOnce]);
 
   return { dispatchWrite, undoOnce, redoOnce };
+}
+
+function writeOpLabel(op: WriteOp): string {
+  switch (op.kind) {
+    case "cell":
+      return "cell edit";
+    case "rowInsert":
+      return "row insert";
+    case "rowDelete":
+      return "row delete";
+    case "rowDuplicate":
+      return "row duplicate";
+    case "schemaMutation":
+      return "schema change";
+    default:
+      return op.kind;
+  }
 }

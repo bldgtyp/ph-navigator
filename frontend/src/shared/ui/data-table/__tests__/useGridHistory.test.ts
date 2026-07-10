@@ -103,4 +103,21 @@ describe("useGridHistory", () => {
     // Most-recent-first; "a" was evicted.
     expect(seen).toEqual(["c", "b"]);
   });
+
+  test("default capacity retains the 50 most recent gestures", () => {
+    const { result } = renderHook(() => useGridHistory());
+    act(() => {
+      for (let index = 0; index < 51; index += 1) result.current.push(makeEntry(String(index)));
+    });
+    const seen: string[] = [];
+    act(() => {
+      let entry = result.current.undo();
+      while (entry) {
+        if (entry.op.kind === "cell") seen.push(String(entry.op.writes[0]?.value));
+        entry = result.current.undo();
+      }
+    });
+    expect(seen).toHaveLength(50);
+    expect(seen.at(-1)).toBe("1");
+  });
 });

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type { WriteOp } from "../types";
 
 // Each entry pairs the forward op (already applied) with the inverse op
@@ -18,7 +18,7 @@ export type GridHistory = {
   canRedo: boolean;
 };
 
-const DEFAULT_CAPACITY = 8;
+const DEFAULT_CAPACITY = 50;
 
 export function useGridHistory(opts?: { capacity?: number }): GridHistory {
   const capacity = opts?.capacity ?? DEFAULT_CAPACITY;
@@ -64,12 +64,10 @@ export function useGridHistory(opts?: { capacity?: number }): GridHistory {
     bump();
   }, [bump]);
 
-  return {
-    push,
-    undo,
-    redo,
-    clear,
-    canUndo: undoStack.current.length > 0,
-    canRedo: redoStack.current.length > 0,
-  };
+  const canUndo = undoStack.current.length > 0;
+  const canRedo = redoStack.current.length > 0;
+  return useMemo(
+    () => ({ push, undo, redo, clear, canUndo, canRedo }),
+    [canRedo, canUndo, clear, push, redo, undo],
+  );
 }

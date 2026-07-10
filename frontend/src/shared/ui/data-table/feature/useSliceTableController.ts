@@ -28,6 +28,7 @@ import {
 import type { BuildEmptyRow, FieldOption, WriteOp } from "../types";
 import { useJournaledSliceCommit } from "./useJournaledSliceCommit";
 import { buildCoalescedTablePayload } from "./buildCoalescedTablePayload";
+import { clearMountedDataTableHistories } from "../historyEvents";
 import type { FieldRegistryEntry, TableFieldDef, TableFieldRenderOverlays } from "../index";
 import type { FieldSchemaMutation } from "../lib/customFieldMutations";
 import { useCustomFieldHandlers } from "./useCustomFieldHandlers";
@@ -58,22 +59,15 @@ export type UseSliceTableControllerArgs<TSlice, TRow extends { id: string }, TPa
   accessMode: TableSliceAccessMode;
   versionLocked: boolean;
   tableKey: string;
-  // The latest accepted slice. The controller assumes the consumer has
-  // already short-circuited on loading / error so this is non-null.
-  slice: TSlice;
+  slice: TSlice; // Latest non-null slice after consumer loading/error guards.
   fieldDefs: TableFieldDef[] | null | undefined;
   fieldOverlay?: TableFieldRenderOverlays | null;
   singleSelectOptions: Record<string, FieldOption[]> | null;
-  // Stub columns whose `id` / `fieldKey` mirror the live grid's. The
-  // view-state sanitizer reads only `id` + `fieldKey`, so a slim list
-  // is fine. (See lib/view/sanitize.ts.)
-  columnsForSanitize: Parameters<typeof useProjectTableViewState>[0]["columns"];
+  columnsForSanitize: Parameters<typeof useProjectTableViewState>[0]["columns"]; // id/fieldKey stubs.
   payloadBuilders: SlicePayloadBuilders<TSlice, TRow, TPayload>;
   conflictMessages: ConflictMessages;
   buildEmptyRow: BuildEmptyRow<TRow>;
-  // The active "focused" row (e.g. the row open in a detail modal).
-  // Pass null when the tab has no active-row concept.
-  activeRow: TRow | null;
+  activeRow: TRow | null; // Consumer-owned focused modal row, when any.
   replaceMutation: SliceTableReplaceMutation<TSlice, TPayload>;
   schemaMutation: SliceTableSchemaMutation<TSlice>;
   // Returns a fresh slice from the network. Used by reload-draft and
@@ -89,9 +83,7 @@ export type UseSliceTableControllerArgs<TSlice, TRow extends { id: string }, TPa
   // effect on Reset — pass a stable module-constant unless that
   // semantics is intended.
   defaultHiddenColumns?: string[];
-  // Modal-only consumers can opt out of table-view persistence while
-  // still reusing schema, mutation, and conflict handling.
-  viewStateEnabled?: boolean;
+  viewStateEnabled?: boolean; // False for modal-only controller consumers.
 };
 
 export function useSliceTableController<TSlice, TRow extends { id: string }, TPayload>(
@@ -173,6 +165,11 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
         : null,
     [activeVersionId, projectId, tableKey],
   );
+  const clearDraftHistory = useCallback(() => {
+    if (activeVersionId) {
+      clearMountedDataTableHistories({ projectId, versionId: activeVersionId });
+    }
+  }, [activeVersionId, projectId]);
 
   useEffect(() => {
     setEditBlocker(null);
@@ -185,6 +182,7 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
   // pass `activeRow={null}` and the gate skips the comparison.
   const notifyRemoteSlice = useCallback(
     (incoming: TSlice) => {
+      clearDraftHistory();
       if (!activeRow) return;
       if (!payloadBuilders.remoteSliceChangesActiveRow) return;
       if (payloadBuilders.remoteSliceChangesActiveRow(slice, incoming, activeRow)) {
@@ -194,18 +192,20 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
         });
       }
     },
-    [activeRow, conflictMessages.activeRowConflict, payloadBuilders, slice],
+    [activeRow, clearDraftHistory, conflictMessages.activeRowConflict, payloadBuilders, slice],
   );
 
   const handleStaleDraftConflict = useCallback(
     async (message: string) => {
+      clearDraftHistory();
       setEditBlocker({ kind: "draft-conflict", message });
       await refetch();
     },
-    [refetch],
+    [clearDraftHistory, refetch],
   );
 
   const handleVersionLockedConflict = useCallback(async () => {
+    clearDraftHistory();
     setEditBlocker({
       kind: "version-locked",
       message: conflictMessages.versionLocked,
@@ -221,13 +221,14 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
       );
     }
     await Promise.all(invalidations);
-  }, [activeVersionId, conflictMessages.versionLocked, projectId, queryClient]);
+  }, [activeVersionId, clearDraftHistory, conflictMessages.versionLocked, projectId, queryClient]);
 
   const reloadDraft = useCallback(async () => {
+    clearDraftHistory();
     setEditBlocker(null);
     setActionError(null);
     await refetch();
-  }, [refetch]);
+  }, [clearDraftHistory, refetch]);
 
   const runWithConflictHandling = useCallback(
     async <T>(

@@ -286,7 +286,11 @@ export function DataTable<TRow>({
   const [announce, setAnnounce] = useState("");
   const headerCellRefByFieldKey = useRef(new Map<string, HTMLTableCellElement>()).current;
   const history = useGridHistory();
-  const { dispatchWrite, undoOnce, redoOnce } = useGridWriteReducer({ history, onWrite });
+  const { dispatchWrite, undoOnce, redoOnce } = useGridWriteReducer({
+    history,
+    onWrite,
+    onAnnounce: setAnnounce,
+  });
   // Row-expand is an intrinsic, always-on capability. `openRow` is the
   // single handler behind all three affordances (gutter button, context
   // menu, keyboard): it defers to the consumer's `onRowOpen` when given,
@@ -386,9 +390,11 @@ export function DataTable<TRow>({
 
   const clearHistory = history.clear;
   useEffect(() => {
+    if (!sessionKey) return;
     const clearHistoryForDraft = (event: Event) => {
       const scope = (event as CustomEvent<{ projectId: string; versionId: string }>).detail;
-      if (sessionKey?.includes(scope.projectId) && sessionKey.includes(scope.versionId)) {
+      const segments = sessionKey.split(":");
+      if (segments.includes(scope.projectId) && segments.includes(scope.versionId)) {
         clearHistory();
       }
     };

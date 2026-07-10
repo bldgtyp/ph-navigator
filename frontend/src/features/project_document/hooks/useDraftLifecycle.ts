@@ -11,6 +11,7 @@ import type {
   SaveAsVersionKind,
 } from "../types/versionControls";
 import { useDraftWriteCoordinator } from "../useDraftWriteCoordinator";
+import { clearMountedDataTableHistories } from "../../../shared/ui/data-table/historyEvents";
 
 export function useDraftLifecycle({
   projectId,
@@ -141,6 +142,7 @@ export function useDraftLifecycle({
     if (!activeVersionId) return;
     await runHeaderAction(fallbackMessage, async () => {
       await cancelWrites();
+      clearMountedDataTableHistories({ projectId, versionId: activeVersionId });
       await discardMutation.mutateAsync();
       setDraftRestorePrompt(null);
       setConfirmation(null);

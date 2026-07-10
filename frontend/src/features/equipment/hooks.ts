@@ -92,6 +92,7 @@ export function useRoomsDraftBroadcast(
       }
       const queryKey = roomsQueryKeys.slice(projectId, versionId, "editor");
       const current = queryClient.getQueryData<RoomsSlice>(queryKey);
+      onRemoteSliceRef.current(message.slice);
       if (current && !matchesVersionGuard(current, message.previous)) {
         void queryClient.invalidateQueries({ queryKey });
         void queryClient.invalidateQueries({
@@ -103,7 +104,6 @@ export function useRoomsDraftBroadcast(
       void queryClient.invalidateQueries({
         queryKey: projectDocumentQueryKeys.draftSummary(projectId, versionId),
       });
-      onRemoteSliceRef.current(message.slice);
     };
 
     return () => {

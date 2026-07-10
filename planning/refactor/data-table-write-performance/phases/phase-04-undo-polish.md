@@ -1,8 +1,7 @@
 ---
 DATE: 2026-07-09
 TIME: -
-STATUS: Planned — depends on phase-01 (serialization); phase-02 makes
-  undo feel instant but is not a hard dependency.
+STATUS: Complete — implemented and verified 2026-07-09.
 AUTHOR: Claude (for Ed)
 SCOPE: Implementation handoff for Phase 4 — make the existing ⌘Z/⌘⇧Z
   infrastructure reliable: capacity, lineage-clear safety, burst-safe
@@ -120,3 +119,32 @@ the kind from history with a code comment + PRD amendment.
   ⌘Z in Rooms must never undo a Ventilators edit.
 - No compensating-request scheme after conflicts (canonical contract);
   clearing is the correct response to lineage loss.
+
+## 6. As-built record (2026-07-09)
+
+- Default per-table history capacity is 50 with oldest-entry trimming.
+- Undo/redo replays remain ordinary optimistic journal writes, so rapid replay
+  preserves FIFO ordering and coalescing. Any accept-time or settled replay
+  failure clears both stacks; the journal rollback event covers asynchronous
+  transport failure after optimistic acceptance.
+- The existing live-region channel now announces `Undid <kind>` and
+  `Redid <kind>`. Inline editors stop keyboard propagation, preserving native
+  input undo; the grid keyboard path already treats Meta+Z and Ctrl+Z equally.
+
+| Lineage replacement | Clear call site |
+|---|---|
+| Journal failure / counted rollback | `useJournaledSliceCommit` draft-scoped history event |
+| Stale-draft conflict | `handleStaleDraftConflict` |
+| Version-locked conflict | `handleVersionLockedConflict` |
+| Explicit Reload draft | `reloadDraft` |
+| Remote slice/broadcast notification | `notifyRemoteSlice` |
+| Discard / discard-and-switch | `useDraftLifecycle.discardDraft` |
+| Version switch / controller unmount | DataTable `sessionKey` effect / mount-local refs |
+
+Inverse audit: cell/clear, paste (including inserted rows/options), fill,
+rowInsert, rowDelete, and rowDuplicate all retain the existing paired semantic
+inverse and now replay through the journal. Typed/legacy schema mutation remains
+outside the guaranteed basket. A row-delete inverse restores that table's row
+snapshot only; cross-table cascade-cleared links are explicitly not restored.
+Focused history/reducer/keyboard/App verification is green, including 50-entry
+capacity, replay-failure stack clear, and undo/redo announcements.
