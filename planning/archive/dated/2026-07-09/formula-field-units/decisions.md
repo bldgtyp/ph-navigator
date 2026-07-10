@@ -3,7 +3,8 @@
 ```
 DATE:    2026-07-09
 TIME:    13:38 EDT
-STATUS:  Accepted (design). Implementation not started. Revised after the
+STATUS:  Accepted + IMPLEMENTED (2026-07-09). All decisions D1-D14 honored in the
+         shipped code (branch feature/formula-field-units). Revised after the
          2026-07-09 pre-implementation code review (D12-D14, phase reorder).
 AUTHOR:  Ed + Claude
 RELATED: PRD.md (§4, §4a, §7), phases/

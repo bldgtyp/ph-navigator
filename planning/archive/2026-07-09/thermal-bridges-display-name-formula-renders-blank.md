@@ -8,7 +8,7 @@ SCOPE: THERMAL BRIDGES table — DISPLAY NAME field set to a Formula renders
        preview evaluates it correctly
 RELATED:
   - feedback_datatable_uniformity_ironlaw
-  - planning/features/formula-field-units/ (active formula-field work)
+  - planning/archive/dated/2026-07-09/formula-field-units/ (formula-field work, completed)
   - context/UI_UX.md
 ---
 
