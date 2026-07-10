@@ -1694,18 +1694,35 @@ tbody .model-inspector-segment-row:hover td,
   color: var(--text-secondary);
 }
 
-.construction-expand-button {
+.construction-layer-table .construction-expand-button {
   display: inline-flex;
   gap: var(--space-4);
   align-items: center;
   min-height: 0;
   padding: 0;
-  border: 0;
-  background: none;
+  border: 0 !important;
+  border-radius: 0;
+  background: transparent;
   box-shadow: none;
   color: var(--text-primary);
   font-size: var(--fs-sm);
   cursor: pointer;
+  text-align: left;
+}
+
+.construction-expand-button:hover:not(:disabled) {
+  border: 0 !important;
+  background: transparent;
+  color: var(--highlight-text);
+  transform: none;
+}
+
+/* Keep keyboard focus visible without restoring the generic button border. */
+.construction-layer-table .construction-expand-button:focus-visible {
+  border-color: transparent;
+  box-shadow: none;
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
 }
 
 .construction-swatch {

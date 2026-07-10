@@ -2,12 +2,12 @@ import { totalThicknessM, type ConstructionLayer } from "../lib/constructionLaye
 
 /** Cross-axis extent of the drawing in viewBox units — the layer width is
  *  abstract (fractions), only the stack axis (thickness, mm) is to scale. */
-const CROSS_AXIS_UNITS = 100;
+const CROSS_AXIS_UNITS = 140;
 /** Stack-axis px per mm of assembly thickness, clamped so thin roofs don't
  *  collapse and thick walls don't overflow the modal. */
-const PX_PER_MM = 0.8;
-const MIN_HEIGHT_PX = 120;
-const MAX_HEIGHT_PX = 340;
+const PX_PER_MM = 0.5;
+const MIN_HEIGHT_PX = 100;
+const MAX_HEIGHT_PX = 220;
 
 /** Read-only, to-scale section through the assembly: exterior at top,
  *  interior at bottom (honeybee materials[] order, Q1). One <rect> per

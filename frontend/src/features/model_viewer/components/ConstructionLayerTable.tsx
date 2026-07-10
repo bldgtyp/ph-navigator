@@ -12,17 +12,23 @@ import {
   type ConstructionCell,
   type ConstructionLayer,
 } from "../lib/constructionLayers";
+import { splitFormattedMeasurement } from "../lib/formattedMeasurement";
 
 function length(mm: number | null, unitSystem: UnitSystem): string {
+  return splitFormattedMeasurement(formatLengthFromMm(mm, { unitSystem, empty: "--" })).value;
+}
+
+function lengthWithUnit(mm: number | null, unitSystem: UnitSystem): string {
   return formatLengthFromMm(mm, { unitSystem, empty: "--" });
 }
 
 function conductivity(wmk: number, unitSystem: UnitSystem): string {
-  return formatConductivityFromWmK(wmk, { unitSystem, empty: "--" });
+  return splitFormattedMeasurement(formatConductivityFromWmK(wmk, { unitSystem, empty: "--" }))
+    .value;
 }
 
 function rValue(r: number, unitSystem: UnitSystem): string {
-  return formatRValueFromM2KPerW(r, { unitSystem, empty: "--" });
+  return splitFormattedMeasurement(formatRValueFromM2KPerW(r, { unitSystem, empty: "--" })).value;
 }
 
 /** Expandable layer schedule: one row per layer exterior→interior, framed
@@ -61,7 +67,7 @@ export function ConstructionLayerTable({
           <th scope="col">Layer</th>
           <th scope="col" className="construction-col-number">
             Thickness{" "}
-            <span className="construction-column-unit">({unitSystem === "IP" ? "in" : "mm"})</span>
+            <span className="construction-column-unit">{unitSystem === "IP" ? "in" : "mm"}</span>
           </th>
           <th
             scope="col"
@@ -70,13 +76,13 @@ export function ConstructionLayerTable({
           >
             λ{" "}
             <span className="construction-column-unit">
-              ({unitSystem === "IP" ? "Btu/(h-ft-F)" : "W/(m-K)"})
+              {unitSystem === "IP" ? "Btu/(h-ft-F)" : "W/(m-K)"}
             </span>
           </th>
           <th scope="col" className="construction-col-number" title="Layer R = thickness / λ (D-7)">
             R{" "}
             <span className="construction-column-unit">
-              ({unitSystem === "IP" ? "h-ft2-F/Btu" : "m2-K/W"})
+              {unitSystem === "IP" ? "h-ft2-F/Btu" : "m2-K/W"}
             </span>
           </th>
         </tr>
@@ -206,7 +212,9 @@ function LayerRows({
         // be annotated (acceptance crit. 3).
         <tr className="construction-cell-row construction-steel-note" data-testid="steel-stud-note">
           <td />
-          <td colSpan={4}>Steel studs @ {length(layer.steelStudSpacingMm, unitSystem)} o.c.</td>
+          <td colSpan={4}>
+            Steel studs @ {lengthWithUnit(layer.steelStudSpacingMm, unitSystem)} o.c.
+          </td>
         </tr>
       ) : null}
     </>

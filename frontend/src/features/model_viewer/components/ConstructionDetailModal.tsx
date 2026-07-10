@@ -1,3 +1,4 @@
+import { X } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   formatLengthFromMm,
@@ -69,6 +70,17 @@ export function ConstructionDetailModal({
       title={construction.identifier}
       titleId="construction-detail-title"
       onClose={onClose}
+      headerAccessory={
+        <button
+          type="button"
+          className="icon-button"
+          aria-label="Close construction detail"
+          onClick={onClose}
+        >
+          <X size={16} aria-hidden />
+        </button>
+      }
+      showHeaderClose={false}
     >
       <p className="modal-subtitle">
         {construction.type} · {layers.length} {layers.length === 1 ? "layer" : "layers"} · HBJSON

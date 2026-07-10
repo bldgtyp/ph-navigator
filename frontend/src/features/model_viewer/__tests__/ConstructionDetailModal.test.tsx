@@ -120,9 +120,11 @@ describe("ConstructionDetailModal — flat construction", () => {
     render(<Harness construction={flat} />);
     expect(screen.getByRole("dialog", { name: "Test Wall Assembly" })).toBeInTheDocument();
     expect(screen.getByText(/OpaqueConstruction · 2 layers/)).toBeInTheDocument();
-    // Σ thickness = 112.7 mm (stat tile + totals row); header R-Value 3.5 m2-K/W (SI).
-    expect(screen.getAllByText("112.7 mm").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("3.5 m2-K/W").length).toBeGreaterThanOrEqual(1);
+    // Header metrics retain their unit line; the schedule values inherit the header unit.
+    expect(screen.getAllByText("112.7").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText("mm").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText("3.5").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText("m2-K/W").length).toBeGreaterThanOrEqual(2);
   });
 
   it("renders one table row and one full-width SVG rect per layer, no expanders", () => {
@@ -138,8 +140,8 @@ describe("ConstructionDetailModal — flat construction", () => {
     render(<Harness construction={flat} />);
     const totals = screen.getByRole("row", { name: /Σ layers/ });
     // R = 0.1/0.029 + 0.0127/0.25 ≈ 3.499 → formatter rounds to 3.5.
-    expect(within(totals).getByText("3.5 m2-K/W")).toBeInTheDocument();
-    expect(within(totals).getByText("112.7 mm")).toBeInTheDocument();
+    expect(within(totals).getByText("3.5")).toBeInTheDocument();
+    expect(within(totals).getByText("112.7")).toBeInTheDocument();
   });
 
   it("closes on Escape", async () => {
@@ -151,11 +153,11 @@ describe("ConstructionDetailModal — flat construction", () => {
 
   it("flips units with the IP/SI preference", async () => {
     render(<Harness construction={flat} />);
-    expect(screen.getAllByText("112.7 mm").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("112.7").length).toBeGreaterThanOrEqual(2);
     await userEvent.click(screen.getByRole("button", { name: "switch-to-ip" }));
-    expect(screen.queryByText("112.7 mm")).not.toBeInTheDocument();
+    expect(screen.queryByText("112.7")).not.toBeInTheDocument();
     // 112.7 mm → 4.44 in via formatLengthFromMm (2 fraction digits in IP).
-    expect(screen.getAllByText("4.44 in").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("4.44").length).toBeGreaterThanOrEqual(2);
   });
 });
 
