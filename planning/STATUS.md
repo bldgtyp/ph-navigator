@@ -11,7 +11,7 @@ feature-first planning.
 
 | Feature | State | Current pointer |
 |---|---|---|
-| DataTable Write Performance (refactor) | Complete — Phases 00-05 shipped FIFO optimistic journals, bounded undo, coalescing, and safe conflict recovery; Phase 06 gate evaluated from the Phase 00 baseline and declined because no backend remedy met 30%; archive next | `refactor/data-table-write-performance/STATUS.md` |
+| DataTable Write Performance (refactor) | Complete / archived — Phases 00-05 shipped FIFO optimistic journals, bounded undo, coalescing, and safe conflict recovery; Phase 06 gate evaluated from the Phase 00 baseline and declined because no backend remedy met 30% | `archive/2026-07-09/data-table-write-performance/STATUS.md` |
 | Grasshopper Data API | Backend COMPLETE / archived — `/api/v1/gh` read API for Rhino/Grasshopper: bt_number-keyed router (anon + optional MCP bearer, per-IP rate limit), version pinning, rich opaque-construction + aperture-types + window-construction exports, and the generic 12-table route; Phases 01–03 merged to main. Phases 04–05 (GH-client components) DEFERRED to `honeybee_grasshopper_ph_plus` — start from `CLIENT_HANDOFF.md` | `archive/dated/2026-07-05/grasshopper-data-api/STATUS.md` |
 | Aperture Builder Workflow | Complete / archived after picker source selection now arms paste directly, persisted `flipLeftRight` mirrors columns/spans/side frames/operation directions, full CI and browser smoke passed | `archive/dated/2026-07-02/aperture-builder-workflow/STATUS.md` |
 | Apertures Frames Grouping | Complete / archived after Frames report grouping shipped: default `manufacturer`, optional durable `brand`, and ungrouped view; focused RTL + frontend gate passed | `archive/dated/2026-07-02/apertures-frames-grouping/STATUS.md` |

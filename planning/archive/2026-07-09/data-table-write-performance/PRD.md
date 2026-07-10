@@ -1,9 +1,9 @@
 ---
 DATE: 2026-07-09
 TIME: -
-STATUS: Revised per plan-review.md R-1…R-10 + scope corrections; all
-  findings re-verified against main @ 79f73eb4. Awaiting Ed's
-  ratification of the revised architecture before phase-01 handoff.
+STATUS: Complete — acceptance contract implemented through Phase 05;
+  Phase 06 reached its documented measurement stop condition on
+  2026-07-09.
 AUTHOR: Claude (for Ed); revisions incorporate Codex plan review
 SCOPE: Behavior + architecture contract for making project-document
   slice-backed DataTable data-entry keep up with the user: a draft
