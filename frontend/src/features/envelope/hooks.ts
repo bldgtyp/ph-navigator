@@ -54,6 +54,11 @@ export function useEnvelopeCommandMutation(projectId: string, versionId: string 
       queryClient.setQueryData(envelopeQueryKeys.read(projectId, slice.version_id, "draft"), slice);
       invalidateMaterialDriftQueries(queryClient, projectId, slice.version_id, variables.command);
       invalidateThermalQueries(queryClient, projectId, slice.version_id, variables.command);
+      if (statusSummaryInvalidationCommands.has(variables.command.kind)) {
+        queryClient.invalidateQueries({
+          queryKey: projectDocumentQueryKeys.statusSummary(projectId, slice.version_id, "editor"),
+        });
+      }
       if (slice.draft_etag !== variables.current.draft_etag) {
         markLocalDraftTouched(projectId, slice.version_id, slice.draft_etag);
         queryClient.invalidateQueries({
@@ -248,6 +253,16 @@ const broadThermalInvalidationCommands = new Set<EnvelopeCommand["kind"]>([
 
 const materialDriftInvalidationCommands = new Set<EnvelopeCommand["kind"]>([
   "pick_catalog_material",
+  "update_project_material",
+  "refresh_project_material_from_catalog",
+  "remove_unused_project_materials",
+  "remove_project_material",
+  "import_envelope_constructions",
+]);
+
+const statusSummaryInvalidationCommands = new Set<EnvelopeCommand["kind"]>([
+  "pick_catalog_material",
+  "hand_enter_material",
   "update_project_material",
   "refresh_project_material_from_catalog",
   "remove_unused_project_materials",

@@ -15,9 +15,13 @@ test("Status dashboard cold-loads independently for editors and public viewers",
     btNumber: `status-${suffix}`,
   });
 
-  await expect(page.getByRole("heading", { name: "Project status" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Roadmap" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Project status" })).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Record status" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Roadmap" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Glazings No records" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Frames No records" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Materials No records" })).toBeVisible();
   await page.getByRole("button", { name: "Apply BLDGTYP default template" }).click();
   await expect(page.getByText("CAD files received")).toBeVisible();
 
@@ -35,7 +39,7 @@ test("Status dashboard cold-loads independently for editors and public viewers",
   expect(response.status()).toBe(200);
   expect(response.url()).toContain("/draft/status-summary");
   expect(Buffer.byteLength(await response.body())).toBeLessThan(100_000);
-  await expect(coldPage.getByRole("heading", { name: "Project status" })).toBeVisible();
+  await expect(coldPage.getByRole("heading", { name: "Roadmap" })).toBeVisible();
   await expect(coldPage.getByText("CAD files received")).toBeVisible();
   expect(editorSummaryRequests).toBe(1);
 
@@ -52,7 +56,7 @@ test("Status dashboard cold-loads independently for editors and public viewers",
   const roadmapBox = await coldPage.getByRole("region", { name: "Roadmap" }).boundingBox();
   expect(recordBox).not.toBeNull();
   expect(roadmapBox).not.toBeNull();
-  expect(roadmapBox!.y).toBeGreaterThan(recordBox!.y + recordBox!.height - 1);
+  expect(recordBox!.y).toBeGreaterThan(roadmapBox!.y + roadmapBox!.height - 1);
 
   await coldPage.emulateMedia({ reducedMotion: "reduce" });
   expect(
@@ -87,7 +91,7 @@ test("Status dashboard cold-loads independently for editors and public viewers",
     );
     await publicPage.goto(`/projects/${projectId}/status`);
     expect((await viewerSummaryResponse).url()).toContain("/document/status-summary");
-    await expect(publicPage.getByRole("heading", { name: "Project status" })).toBeVisible();
+    await expect(publicPage.getByRole("heading", { name: "Roadmap" })).toBeVisible();
     await expect(publicPage.getByText("CAD files received")).toBeVisible();
     await expect(publicPage.getByRole("button", { name: "Add milestone" })).toHaveCount(0);
     await expect(publicPage.getByRole("button", { name: /More actions for/ })).toHaveCount(0);

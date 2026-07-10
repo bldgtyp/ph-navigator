@@ -8,14 +8,18 @@ from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from features.project_document import store as document_store
+from features.project_document.document import ProjectFrame, ProjectGlazing, ProjectMaterial
 from features.project_document.models import ProjectDocumentView
 from features.project_document.status_summary import (
     STATUS_SUMMARY_TABLES,
     StatusSummaryCounts,
     StatusSummaryRecord,
+    project_status_summary,
 )
 from features.project_document.tables._status_field import STATUS_TABLE_NAMES
+from features.project_document.templates import empty_project_document
 from features.projects.access import ProjectAccess
+from features.projects.models import CreateProjectRequest
 from main import app
 from tests.test_project_document import ORIGIN, create_project, create_rooms_draft, signed_in_client
 from tests.test_project_document_pumps import draft_pumps_url, pump_payload
@@ -57,7 +61,9 @@ def _pump_row(index: int, *, status: str, notes: str | None = None) -> dict[str,
 
 
 def test_status_summary_registry_covers_shared_status_tables_in_product_order() -> None:
-    assert {table.table_name for table in STATUS_SUMMARY_TABLES} == set(STATUS_TABLE_NAMES)
+    assert {table.table_name for table in STATUS_SUMMARY_TABLES if table.status_source == "custom_status"} == set(
+        STATUS_TABLE_NAMES
+    )
     assert [table.table_name for table in STATUS_SUMMARY_TABLES] == [
         "ventilators",
         "heat_pumps_outdoor_equip",
@@ -70,6 +76,9 @@ def test_status_summary_registry_covers_shared_status_tables_in_product_order() 
         "hot_water_tanks",
         "electric_heaters",
         "appliances",
+        "project_glazings",
+        "project_frames",
+        "project_materials",
         "thermal_bridges",
     ]
 
@@ -83,6 +92,9 @@ def test_status_summary_registry_records_all_destination_families() -> None:
     assert by_name["heat_pumps_indoor_units"].destination_key == "units-indoor"
     assert by_name["thermal_bridges"].destination_kind == "thermal_bridges"
     assert by_name["thermal_bridges"].destination_key is None
+    assert by_name["project_glazings"].destination_kind == "aperture_glazings"
+    assert by_name["project_frames"].destination_kind == "aperture_frames"
+    assert by_name["project_materials"].destination_kind == "envelope_materials"
 
 
 def test_status_summary_counts_include_unknown_without_treating_it_as_needed() -> None:
@@ -115,8 +127,62 @@ def test_draft_status_summary_route_returns_draft_contract(clean_document_tables
     assert response.status_code == 200
     body = response.json()
     assert body["source"] == "draft"
-    assert len(body["groups"]) == 9
-    assert sum(len(group["leaves"]) for group in body["groups"]) == 12
+    assert len(body["groups"]) == 12
+    assert sum(len(group["leaves"]) for group in body["groups"]) == 15
+
+
+def test_summary_projects_aperture_and_envelope_specification_status() -> None:
+    body = empty_project_document(
+        CreateProjectRequest(name="Status products", bt_number="status-products", cert_programs=[])
+    )
+    tables = body.tables.model_copy(
+        update={
+            "project_glazings": [
+                ProjectGlazing(
+                    id="pglz_triple",
+                    name="Triple glazing",
+                    specification_status="missing",
+                    comments="Confirm final SHGC.",
+                )
+            ],
+            "project_frames": [
+                ProjectFrame(
+                    id="pfrm_wood",
+                    name="Wood frame",
+                    specification_status="question",
+                )
+            ],
+            "project_materials": [
+                ProjectMaterial(
+                    id="pmat_cellulose",
+                    name="Cellulose",
+                    category="Insulation",
+                    specification_status="complete",
+                )
+            ],
+        }
+    )
+    summary = project_status_summary(
+        ProjectDocumentView(
+            project_id=UUID("00000000-0000-0000-0000-000000000001"),
+            version_id=UUID("00000000-0000-0000-0000-000000000002"),
+            source="draft",
+            version_etag="version-etag",
+            draft_etag="draft-etag",
+            body=body.model_copy(update={"tables": tables}),
+        )
+    )
+
+    by_key = {group.key: group for group in summary.groups}
+    glazing = by_key["project_glazings"].leaves[0].records[0]
+    assert glazing.model_dump() == {
+        "id": "pglz_triple",
+        "display_name": "Triple glazing",
+        "status": "needed",
+        "notes": "Confirm final SHGC.",
+    }
+    assert by_key["project_frames"].counts.question == 1
+    assert by_key["project_materials"].counts.complete == 1
 
 
 def test_summary_projects_status_name_notes_and_group_counts(clean_document_tables: None) -> None:

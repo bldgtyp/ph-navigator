@@ -9,6 +9,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
+from features.project_document.envelope_models import SpecificationStatus
 from features.project_document.models import ProjectDocumentSource, ProjectDocumentView
 from features.project_document.tables import get_table_contract
 from features.project_document.tables._status_field import (
@@ -23,7 +24,15 @@ from features.project_document.validation import document_etag
 from features.projects.access import ProjectAccess
 
 StatusSummaryState = Literal["needed", "question", "complete", "na", "unknown"]
-StatusSummaryDestinationKind = Literal["equipment_tab", "heat_pump_leaf", "thermal_bridges"]
+StatusSummaryDestinationKind = Literal[
+    "equipment_tab",
+    "heat_pump_leaf",
+    "thermal_bridges",
+    "aperture_glazings",
+    "aperture_frames",
+    "envelope_materials",
+]
+StatusSummaryStatusSource = Literal["custom_status", "specification_status"]
 
 
 class StatusSummaryCounts(BaseModel):
@@ -95,6 +104,7 @@ class StatusSummaryTable:
     leaf_label: str
     destination_kind: StatusSummaryDestinationKind
     destination_key: str | None = None
+    status_source: StatusSummaryStatusSource = "custom_status"
 
 
 class _SummaryRow(Protocol):
@@ -127,6 +137,21 @@ def _heat_pump_leaf(table_name: str, label: str, leaf: str) -> StatusSummaryTabl
     )
 
 
+def _specification_table(
+    table_name: str,
+    label: str,
+    destination_kind: StatusSummaryDestinationKind,
+) -> StatusSummaryTable:
+    return StatusSummaryTable(
+        table_name=table_name,
+        group_key=table_name,
+        group_label=label,
+        leaf_label=label,
+        destination_kind=destination_kind,
+        status_source="specification_status",
+    )
+
+
 STATUS_SUMMARY_TABLES: tuple[StatusSummaryTable, ...] = (
     _equipment_table("ventilators", "Ventilators", "ventilators"),
     _heat_pump_leaf("heat_pumps_outdoor_equip", "Outdoor Equipment", "equipment-outdoor"),
@@ -139,6 +164,9 @@ STATUS_SUMMARY_TABLES: tuple[StatusSummaryTable, ...] = (
     _equipment_table("hot_water_tanks", "Hot Water Tanks", "hot-water-tanks"),
     _equipment_table("electric_heaters", "Electric Heaters", "electric-heaters"),
     _equipment_table("appliances", "Appliances", "appliances"),
+    _specification_table("project_glazings", "Glazings", "aperture_glazings"),
+    _specification_table("project_frames", "Frames", "aperture_frames"),
+    _specification_table("project_materials", "Materials", "envelope_materials"),
     StatusSummaryTable(
         table_name="thermal_bridges",
         group_key="thermal_bridges",
@@ -148,13 +176,22 @@ STATUS_SUMMARY_TABLES: tuple[StatusSummaryTable, ...] = (
     ),
 )
 
-assert {table.table_name for table in STATUS_SUMMARY_TABLES} == set(STATUS_TABLE_NAMES)
+assert {table.table_name for table in STATUS_SUMMARY_TABLES if table.status_source == "custom_status"} == set(
+    STATUS_TABLE_NAMES
+)
 
 _STATUS_BY_OPTION_ID: dict[str, StatusSummaryState] = {
     STATUS_OPTION_NEEDED: "needed",
     STATUS_OPTION_QUESTION: "question",
     STATUS_OPTION_COMPLETE: "complete",
     STATUS_OPTION_NA: "na",
+}
+
+_STATUS_BY_SPECIFICATION_STATUS: dict[SpecificationStatus, StatusSummaryState] = {
+    "missing": "needed",
+    "question": "question",
+    "complete": "complete",
+    "na": "na",
 }
 
 
@@ -211,12 +248,16 @@ def project_status_summary(view: ProjectDocumentView) -> ProjectStatusSummaryRes
 
 
 def _summary_leaf(view: ProjectDocumentView, table: StatusSummaryTable) -> StatusSummaryLeaf:
-    contract = get_table_contract(table.table_name)
-    registry = contract.field_registry
-    assert registry is not None
-    envelope = cast("_SummaryEnvelope", read_table_envelope(view.body, contract.table_path))
-    rows = envelope.rows
-    records = [_summary_record(row, registry.read_row_custom_values(row)) for row in rows]
+    if table.status_source == "custom_status":
+        contract = get_table_contract(table.table_name)
+        registry = contract.field_registry
+        assert registry is not None
+        envelope = cast("_SummaryEnvelope", read_table_envelope(view.body, contract.table_path))
+        rows = envelope.rows
+        records = [_summary_record(row, registry.read_row_custom_values(row), table.status_source) for row in rows]
+    else:
+        rows = cast("list[_SummaryRow]", getattr(view.body.tables, table.table_name))
+        records = [_summary_record(row, {}, table.status_source) for row in rows]
     return StatusSummaryLeaf(
         table_name=table.table_name,
         label=table.leaf_label,
@@ -226,8 +267,21 @@ def _summary_leaf(view: ProjectDocumentView, table: StatusSummaryTable) -> Statu
     )
 
 
-def _summary_record(row: _SummaryRow, custom_values: Mapping[str, object]) -> StatusSummaryRecord:
-    raw_status = custom_values.get("status")
+def _summary_record(
+    row: _SummaryRow,
+    custom_values: Mapping[str, object],
+    status_source: StatusSummaryStatusSource,
+) -> StatusSummaryRecord:
+    if status_source == "specification_status":
+        raw_status = getattr(row, "specification_status", None)
+        status = (
+            _STATUS_BY_SPECIFICATION_STATUS.get(cast("SpecificationStatus", raw_status), "unknown")
+            if isinstance(raw_status, str)
+            else "unknown"
+        )
+    else:
+        raw_status = custom_values.get("status")
+        status = _STATUS_BY_OPTION_ID.get(raw_status, "unknown") if isinstance(raw_status, str) else "unknown"
     return StatusSummaryRecord(
         id=row.id,
         display_name=(
@@ -236,8 +290,8 @@ def _summary_record(row: _SummaryRow, custom_values: Mapping[str, object]) -> St
             or _string_value(row, custom_values, "tag")
             or "Untitled record"
         ),
-        status=_STATUS_BY_OPTION_ID.get(raw_status, "unknown") if isinstance(raw_status, str) else "unknown",
-        notes=_string_value(row, custom_values, "notes"),
+        status=status,
+        notes=_string_value(row, custom_values, "notes") or _string_value(row, custom_values, "comments"),
     )
 
 

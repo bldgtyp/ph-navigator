@@ -17,7 +17,7 @@ test("editor creates a project and public viewer can open the shell", async ({ p
 
   const btNumber = `e2e-${Date.now().toString().slice(-8)}`;
   await createProject(page, { name: `E2E Project ${btNumber}`, btNumber });
-  await expect(page.getByRole("heading", { name: "Project status" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Roadmap" })).toBeVisible();
   await expect(
     page.getByRole("link", { name: `${btNumber} - E2E Project ${btNumber}` }),
   ).toBeVisible();
@@ -121,7 +121,7 @@ test("editor creates a project and public viewer can open the shell", async ({ p
     await publicPage.goto(publicStatusUrl);
     await expect(publicPage.getByText("Read-only")).toBeVisible();
     await expect(publicPage.getByText("Edit controls hidden")).toBeVisible();
-    await expect(publicPage.getByRole("heading", { name: "Project status" })).toBeVisible();
+    await expect(publicPage.getByRole("heading", { name: "Roadmap" })).toBeVisible();
     await expect(publicPage.getByText("CAD files received")).toBeVisible();
     await expect(publicPage.getByRole("button", { name: "Add milestone" })).toHaveCount(0);
     await expect(publicPage.getByRole("button", { name: /More actions for/ })).toHaveCount(0);

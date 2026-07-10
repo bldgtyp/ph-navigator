@@ -45,6 +45,15 @@ describe("statusSummaryDestinationPath", () => {
     expect(
       statusSummaryDestinationPath("proj_1", { kind: "thermal_bridges", key: null }, "tb_1"),
     ).toBe("/projects/proj_1/thermal-bridges?focus=tb_1");
+    expect(
+      statusSummaryDestinationPath("proj_1", { kind: "aperture_glazings", key: null }, "pglz_1"),
+    ).toBe("/projects/proj_1/apertures/glazings");
+    expect(
+      statusSummaryDestinationPath("proj_1", { kind: "aperture_frames", key: null }, "pfrm_1"),
+    ).toBe("/projects/proj_1/apertures/frames");
+    expect(
+      statusSummaryDestinationPath("proj_1", { kind: "envelope_materials", key: null }, "pmat_1"),
+    ).toBe("/projects/proj_1/envelope/materials");
   });
 });
 

@@ -15,11 +15,11 @@ related questions without adding another top-level route:
 
 ## Composition
 
-The page uses a quiet two-pane project-brief layout rather than nested cards.
-On wide screens Record status is approximately two-thirds of the content width
-and Roadmap one-third. Roadmap is sticky only within normal page flow: it has no
-fixed height or internal scroll trap. Below 980px the sections stack with
-Record status first.
+The page uses a quiet two-pane project-brief layout rather than nested cards or
+a redundant page title. On wide screens Roadmap occupies the left third and
+Record status the right two-thirds. Roadmap is sticky only within normal page
+flow: it has no fixed height or internal scroll trap. Below 980px the sections
+stack with Roadmap first.
 
 Record status and Roadmap load independently. Each owns its skeleton, error,
 retry, and empty state so a slow or failed request does not blank the other
@@ -29,8 +29,9 @@ has one adjacent `role="status"` loading announcement. Motion is disabled for
 
 ## Record status
 
-Record status is a compact, read-only projection of the shared DATA-TABLE
-status contract. It covers exactly these 12 registered tables:
+Record status is a compact, read-only projection of 15 project-record tables.
+It covers the 12 registered shared-status tables plus three documented product
+tables that carry the equivalent `specification_status` contract:
 
 - ventilators;
 - heat pump outdoor units, indoor units, systems, and options;
@@ -39,19 +40,28 @@ status contract. It covers exactly these 12 registered tables:
 - hot water heaters and tanks;
 - electric heaters;
 - appliances;
+- aperture glazings;
+- aperture frames;
+- envelope materials;
 - thermal bridges.
 
-The initial view shows aggregate counts and nine collapsed product groups.
+The initial view shows aggregate counts and 12 collapsed product groups.
 Heat Pumps discloses its four source tables as separate leaves. Expanded groups
 sort attention states first, show at most ten attention records initially, and
 keep complete/N/A records behind a separate resolved disclosure. Record rows
 show only display name/ID, status, and notes; they do not reproduce technical
 specifications such as flow or capacity. Long notes clamp until requested.
 
-Every record and `Open table` link returns to the owning Equipment or Thermal
-Bridges route. Record links include `focus={row_id}` so the virtualized
-DataTable scrolls to and focuses the exact row. Edits remain on the owning table
-surface.
+Every record and `Open table` link returns to its owning Equipment, Apertures,
+Envelope, or Thermal Bridges route. Equipment and Thermal Bridges record links
+include `focus={row_id}` so the virtualized DataTable scrolls to and focuses the
+exact row; the report-style Glazings, Frames, and Materials links open their
+owning report page. Edits remain on the owning surface.
+
+For Glazings, Frames, and Materials, `specification_status="missing"` normalizes
+to dashboard `needed`; `question`, `complete`, and `na` retain their meanings.
+Their existing `comments` field supplies the summary note. No duplicate status
+or notes field is added.
 
 The backend summary endpoint loads the selected project document once and
 returns counts plus the compact row projection. Editors read the working draft;
@@ -84,7 +94,7 @@ reorder controls.
 
 ## Performance and access invariants
 
-- Do not mount the 12 table hooks or return full FieldDefs/formulas/spec data.
+- Do not mount the 15 owning data hooks or return full FieldDefs/formulas/spec data.
 - Bound initial disclosure regardless of project size.
 - Keep the two section requests independent and cache the compact summary.
 - Anonymous/viewer access uses saved document data and exposes no editor

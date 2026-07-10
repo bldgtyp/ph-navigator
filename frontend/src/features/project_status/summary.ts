@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchJson } from "../../shared/api/client";
+import { aperturesFramesPath, aperturesGlazingsPath } from "../apertures/paths";
+import { envelopeMaterialsPath } from "../envelope/paths";
 import { projectDocumentQueryKeys } from "../project_document/query-keys";
 
 export type StatusSummaryState = "needed" | "question" | "complete" | "na" | "unknown";
@@ -14,7 +16,13 @@ export type StatusSummaryRecord = {
 };
 
 export type StatusSummaryDestination = {
-  kind: "equipment_tab" | "heat_pump_leaf" | "thermal_bridges";
+  kind:
+    | "equipment_tab"
+    | "heat_pump_leaf"
+    | "thermal_bridges"
+    | "aperture_glazings"
+    | "aperture_frames"
+    | "envelope_materials";
   key: string | null;
 };
 
@@ -68,6 +76,15 @@ export function statusSummaryDestinationPath(
   }
   if (destination.kind === "thermal_bridges") {
     return `/projects/${projectId}/thermal-bridges${focus}`;
+  }
+  if (destination.kind === "aperture_glazings") {
+    return aperturesGlazingsPath(projectId);
+  }
+  if (destination.kind === "aperture_frames") {
+    return aperturesFramesPath(projectId);
+  }
+  if (destination.kind === "envelope_materials") {
+    return envelopeMaterialsPath(projectId);
   }
   const tab = encodeURIComponent(destination.key ?? "ventilators");
   const separator = rowId ? "&" : "";

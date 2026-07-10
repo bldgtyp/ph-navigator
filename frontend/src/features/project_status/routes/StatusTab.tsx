@@ -96,12 +96,7 @@ export function StatusTab({ project }: { project: ProjectDetail }) {
   return (
     <section className="tab-panel status-panel">
       <div className="status-body">
-        <div className="status-page-heading">
-          <h1>Project status</h1>
-          <p>See outstanding project data and what comes next.</p>
-        </div>
         <div className="status-dashboard-grid">
-          <RecordStatusSummary project={project} />
           <section className="status-roadmap" aria-labelledby="status-roadmap-heading">
             <div className="status-heading">
               <div>
@@ -167,6 +162,7 @@ export function StatusTab({ project }: { project: ProjectDetail }) {
               </div>
             )}
           </section>
+          <RecordStatusSummary project={project} />
         </div>
       </div>
       {isAdding ? (

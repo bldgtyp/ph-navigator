@@ -112,6 +112,9 @@ export function useApertureProductCommandMutation(projectId: string, versionId: 
     onSuccess: async (result, variables) => {
       const resolvedVersionId = result.version_id || variables.current.version_id;
       if (result.draft_etag) markLocalDraftTouched(projectId, resolvedVersionId, result.draft_etag);
+      queryClient.invalidateQueries({
+        queryKey: projectDocumentQueryKeys.statusSummary(projectId, resolvedVersionId, "editor"),
+      });
       await invalidateApertureReportQueries(queryClient, projectId, resolvedVersionId);
     },
   });
@@ -135,6 +138,9 @@ export function useApertureReportRefreshMutation(projectId: string, versionId: s
     onSuccess: async (result, variables) => {
       const resolvedVersionId = result.version_id || variables.current.version_id;
       if (result.draft_etag) markLocalDraftTouched(projectId, resolvedVersionId, result.draft_etag);
+      queryClient.invalidateQueries({
+        queryKey: projectDocumentQueryKeys.statusSummary(projectId, resolvedVersionId, "editor"),
+      });
       await invalidateApertureReportQueries(queryClient, projectId, resolvedVersionId);
     },
   });

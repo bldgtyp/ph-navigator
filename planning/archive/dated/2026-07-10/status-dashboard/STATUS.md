@@ -16,8 +16,8 @@ Phases 00-04 are complete. The compact API, progressively disclosed Record statu
 The working decisions are:
 
 - keep Record status and Roadmap on the existing Status route;
-- use a quiet two-pane desktop composition and stacked responsive layout;
-- summarize exactly the 12 tables governed by `STATUS_TABLE_NAMES`;
+- use a quiet two-pane desktop composition with Roadmap left and Record status right, stacked in that order responsively;
+- summarize the 12 tables governed by `STATUS_TABLE_NAMES` plus Aperture Glazings, Aperture Frames, and Envelope Materials;
 - use one compact backend read model rather than mounting/fetching full tables;
 - show attention records first with bounded, user-controlled disclosure;
 - keep all DATA-TABLE edits on their owning routes through exact row deep links;
@@ -42,3 +42,4 @@ None.
 - Phase 02: focused frontend suites `54 passed`, App suite `31 passed`, `make frontend-dev-check` passed, and the live Status route rendered without console errors.
 - Phase 03: focused Status/App suites `36 passed`; `make frontend-dev-check` passed with 14 pre-existing warnings; live editor verification confirmed the quiet 2:1 layout and compact four-milestone Roadmap.
 - Phase 04: backend Status suites `15 passed`, frontend Status/App suites `47 passed`, dedicated editor/viewer Playwright flow `1 passed`, `make ci` passed, and the cold editor load issued exactly one compact summary request.
+- Post-archive revision (2026-07-10): removed the redundant page title, flipped Roadmap left / Record status right, and added Glazings, Frames, and Materials by normalizing their existing specification statuses and comments.

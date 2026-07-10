@@ -170,10 +170,10 @@ const basePerfPages: PerfPage[] = [
     label: "Status",
     route: projectRoute("status"),
     ready: async (page) => {
-      await expect(page.getByRole("heading", { name: "Status" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Roadmap" })).toBeVisible();
     },
     scenario: async (page) => {
-      await page.getByRole("heading", { name: "Status" }).hover();
+      await page.getByRole("heading", { name: "Roadmap" }).hover();
     },
   },
   {
