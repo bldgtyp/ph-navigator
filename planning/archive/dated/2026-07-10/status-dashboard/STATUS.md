@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-10
 TIME: 10:08 EDT
-STATUS: Active
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Current execution state for Status dashboard.
 RELATED: README.md; PRD.md; PLAN.md
@@ -25,11 +25,11 @@ The working decisions are:
 
 ## Next step
 
-Archive this completed packet after the final graph update and clean-link check.
+None. The completed packet is archived at `planning/archive/dated/2026-07-10/status-dashboard/`.
 
 ## Blockers
 
-None. Product review may revise the layout or scope before implementation.
+None.
 
 ## Verification completed
 
