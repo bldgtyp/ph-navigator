@@ -249,6 +249,13 @@ function tableFieldToFieldDef(
     // catalogue: number-typed formulas use the number operator set,
     // every other formula falls back to text.
     fieldDef.computed_type = resultType === "number" ? "number" : "text";
+    // A numeric formula may carry a display unit (D4). Reuse the number
+    // display config verbatim so the computed cell formats through the same
+    // SI/IP path. The stored config always carries `units` (D12 only changes
+    // the mutation wire shape, not the persisted document).
+    if (resultType === "number" && isNumberUnitsConfig(config.units)) {
+      fieldDef.numberUnits = config.units;
+    }
   }
   return { ...fieldDef, ...overlayRest };
 }

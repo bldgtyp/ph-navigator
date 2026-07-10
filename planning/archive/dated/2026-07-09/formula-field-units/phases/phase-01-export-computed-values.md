@@ -3,7 +3,8 @@
 ```
 DATE:    2026-07-09
 TIME:    13:38 EDT
-STATUS:  Planned — in-repo change, no dependency on the other phases. LANDS FIRST.
+STATUS:  DONE (2026-07-09) — exporter now emits computed values inline; landed first.
+         Impl: gh_api/tables_export.py + shared formula.overlay_cell_value helper.
 AUTHOR:  Ed + Claude
 SCOPE:   backend/features/gh_api/tables_export.py (the GET /tables/{table_name} exporter).
          Fixes computed values for ALL tables + ALL formula fields, not just airflow.

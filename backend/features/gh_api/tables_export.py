@@ -16,8 +16,13 @@ Payload conventions (PRD §4.4, decisions O5/O6):
   `{"id", "label"}`, resolved from the document's `single_select_options`
   (which holds both built-in and custom option catalogs). Unset stays `null`.
 - Cross-table references stay ids (e.g. an indoor unit's `outdoor_unit_id`); the
-  GH side joins client-side. Asset references stay ids. No computed/formula
-  values — raw stored fields only (computed rollups are a logged follow-up).
+  GH side joins client-side. Asset references stay ids.
+- **Computed/formula values** (decisions D8/D10): a formula field's resolved
+  value is emitted **inline** on the record, keyed by its `field_key`, alongside
+  the typed built-ins and `custom_values`. Formula values are never persisted —
+  they are derived on read by `evaluate_table_formulas` (the same overlay MCP and
+  the frontend already surface). A row whose formula errored exports `null` (an
+  energy model can't consume `#ERROR`).
 """
 
 from __future__ import annotations
@@ -28,8 +33,9 @@ from starlette import status
 
 from features.project_document.custom_fields import CustomFieldType
 from features.project_document.document import ProjectDocumentV1, SingleSelectOption
+from features.project_document.formula.document_evaluator import evaluate_table_formulas, overlay_cell_value
 from features.project_document.rows import RowWithCustomFields
-from features.project_document.tables.contracts import read_table_envelope
+from features.project_document.tables.contracts import TableFieldRegistry, read_table_envelope
 from features.project_document.tables.registry import iter_table_contracts
 from features.shared.errors import api_error
 
@@ -74,13 +80,26 @@ def export_table(body: ProjectDocumentV1, table_name: str) -> dict[str, list[Any
         for field_def in envelope.field_defs
         if field_def.field_type is CustomFieldType.single_select
     }
+    formula_keys = {
+        field_def.field_key for field_def in envelope.field_defs if field_def.field_type is CustomFieldType.formula
+    }
+    # Overlay of derived formula values (`{row_id: {field_key: value | {"error"}}}`).
+    # `_REGISTRY_BY_PATH` only holds FieldDef tables and the import-time guard pins
+    # every exported path into it, so the lookup is total and already non-optional.
+    overlay = evaluate_table_formulas(_REGISTRY_BY_PATH[path], body)
     return {
         "field_defs": [field_def.model_dump(mode="json") for field_def in envelope.field_defs],
-        "records": [_record(row, single_select_keys, option_labels) for row in envelope.rows],
+        "records": [_record(row, single_select_keys, formula_keys, option_labels, overlay) for row in envelope.rows],
     }
 
 
-def _record(row: RowWithCustomFields, single_select_keys: set[str], option_labels: dict[str, str]) -> dict[str, Any]:
+def _record(
+    row: RowWithCustomFields,
+    single_select_keys: set[str],
+    formula_keys: set[str],
+    option_labels: dict[str, str],
+    overlay: dict[str, dict[str, object]],
+) -> dict[str, Any]:
     data = row.model_dump(mode="json")
 
     def denormalize(bag: dict[str, Any]) -> None:
@@ -93,6 +112,14 @@ def _record(row: RowWithCustomFields, single_select_keys: set[str], option_label
     custom_values = data.get("custom_values")
     if isinstance(custom_values, dict):
         denormalize(custom_values)
+    # Merge derived formula values inline (D10). A formula has no stored cell, so
+    # its `field_key` never collides with a typed column or `custom_values`; an
+    # errored row exports `null` (via `overlay_cell_value`).
+    # `id` is declared on each concrete row model, not the base (mirrors the
+    # evaluator's own `getattr(row, "id", "")` keying).
+    row_overlay = overlay.get(str(getattr(row, "id", "")), {})
+    for field_key in formula_keys:
+        data[field_key] = overlay_cell_value(row_overlay.get(field_key))
     return data
 
 
@@ -113,9 +140,15 @@ def _option_label_index(single_select_options: dict[str, list[SingleSelectOption
 
 
 # Drift guard (mirrors registry.py's status-field guard): every GH-facing path
-# must resolve to a real document table. If a table is renamed/moved internally,
-# or a new GH name is added with a wrong path, this fails at import rather than
-# 422-ing silently at request time.
-_known_table_paths = {contract.table_path for contract in iter_table_contracts()}
-_unknown = {name: path for name, path in TABLE_PATHS.items() if path not in _known_table_paths}
-assert not _unknown, f"TABLE_PATHS entries do not match any document table contract: {_unknown}"
+# must resolve to a real FieldDef document table. If a table is renamed/moved
+# internally, opts out of the field registry, or a new GH name is added with a
+# wrong path, this fails at import rather than 422-ing (or KeyError-ing) at
+# request time. Keying by `table_path` also lets `export_table` fetch a path's
+# field registry — guaranteed present by construction — without re-scanning.
+_REGISTRY_BY_PATH: dict[tuple[str, ...], TableFieldRegistry] = {
+    contract.table_path: contract.field_registry
+    for contract in iter_table_contracts()
+    if contract.field_registry is not None
+}
+_unknown = {name: path for name, path in TABLE_PATHS.items() if path not in _REGISTRY_BY_PATH}
+assert not _unknown, f"TABLE_PATHS entries must map to a FieldDef table contract: {_unknown}"

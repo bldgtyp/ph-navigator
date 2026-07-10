@@ -65,6 +65,19 @@ def reset_formula_overlay_cache() -> None:
     _DOCUMENT_FORMULA_CACHE.set({})
 
 
+def overlay_cell_value(cell: object) -> object:
+    """Decode one overlay cell to its plain value.
+
+    `evaluate_table_formulas` encodes an errored cell as `{"error": <code>}`.
+    Every consumer that wants the usable value (export, type-change snapshot)
+    maps that sentinel to `None` — there is nothing meaningful to display,
+    coerce, or serialize. This is the single place that knows the shape.
+    """
+    if isinstance(cell, dict) and "error" in cell:
+        return None
+    return cell
+
+
 def evaluate_table_formulas(
     capability: TableFieldRegistry,
     body: ProjectDocumentV1,

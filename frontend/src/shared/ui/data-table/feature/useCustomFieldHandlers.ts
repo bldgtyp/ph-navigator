@@ -115,6 +115,7 @@ export function useCustomFieldHandlers(args: UseCustomFieldHandlersArgs): Custom
         optionReplacements: request.optionReplacements,
         acknowledgeDestructive: request.acknowledgeDestructive ?? false,
         formulaSource: request.formulaSource,
+        displayUnits: request.displayUnits,
         schemaFingerprint: tableSchema.schemaFingerprint,
       });
       await commitSchemaMutation(mutation);

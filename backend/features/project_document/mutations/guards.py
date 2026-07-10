@@ -11,32 +11,124 @@ sentinels. The `origin` slot on each FieldDef carries the
 
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any, Final, cast
 
 from starlette import status
 
 from features.project_document.custom_fields import (
     RESERVED_CUSTOM_FIELD_KEYS,
+    CustomFieldType,
     TableFieldDef,
     normalize_display_name,
 )
 from features.project_document.document import ProjectDocumentV1
-from features.project_document.mutations.models import FieldSchemaMutation
+from features.project_document.mutations.models import EditFieldBundleMutation, FieldSchemaMutation
 from features.project_document.tables.contracts import TableFieldRegistry
 from features.shared.errors import api_error
 
 __all__ = [
+    "CARRY_FORWARD_UNITS",
     "check_stale_fingerprint",
+    "collapse_carried_units",
+    "enforce_fixed_units_lock",
     "find_field",
+    "number_units_are_fixed",
     "read_rows_from_envelope",
     "reject_duplicate_display_name",
     "reject_field_id_collision",
     "reject_reserved_field_key",
     "replace_rows_in_envelope",
     "resolve_insert_position",
+    "resolved_display_units",
     "strip_field_from_row",
     "strip_field_from_rows",
 ]
+
+# Sentinel: the client sent no explicit units signal, so the server carries
+# the existing units forward (on a number→formula convert / same-type edit)
+# or seeds them back (on a formula→number reverse). Distinct from `None`,
+# which is an explicit clear to a bare-number formula (D12 tri-state).
+CARRY_FORWARD_UNITS: Final = object()
+
+
+def number_units_are_fixed(field: TableFieldDef) -> bool:
+    """True when the field carries a catalog-locked (`mode == "fixed"`) unit."""
+    units = field.config.get("units")
+    return isinstance(units, dict) and cast(dict[str, object], units).get("mode") == "fixed"
+
+
+def resolved_display_units(mutation: EditFieldBundleMutation) -> object:
+    """The D12 tri-state display-units signal for a bundle:
+
+    - `CARRY_FORWARD_UNITS` — the field was absent from the request (carry forward);
+    - `None` — an explicit clear to a bare-number formula;
+    - a units dict — set / retag.
+    """
+    if "display_units" not in mutation.model_fields_set:
+        return CARRY_FORWARD_UNITS
+    return mutation.display_units
+
+
+def collapse_carried_units(signal: object, fallback_units: object) -> object:
+    """Resolve a units tri-state signal to a concrete value: `CARRY_FORWARD_UNITS`
+    → `fallback_units` (the existing / source units); otherwise the signal itself
+    (a units dict to set, or `None` to clear). The one place the sentinel meets
+    its fallback — used by the guard, the bundle, and `apply_set_formula`."""
+    return fallback_units if signal is CARRY_FORWARD_UNITS else signal
+
+
+def _effective_after_units(
+    existing: TableFieldDef,
+    to_type: CustomFieldType,
+    after_config: dict[str, object],
+    display_units: object,
+) -> object:
+    """The units the field will actually carry after this edit (D13).
+
+    - `number` target: a `number → number` edit keeps exact-match semantics
+      (`after_config["units"]`); a `formula → number` reverse carries the
+      display-unit back when the client sends none (D6 / undo).
+    - `formula` target: the `display_units` tri-state — provided (set or
+      explicit clear) wins, else the existing units carry forward (D5).
+    - any other target: units are irrelevant (the type gate rejects first).
+    """
+    existing_units = existing.config.get("units")
+    if to_type is CustomFieldType.number:
+        if existing.field_type is CustomFieldType.formula and "units" not in after_config:
+            return existing_units
+        return after_config.get("units")
+    if to_type is CustomFieldType.formula:
+        return collapse_carried_units(display_units, existing_units)
+    return None
+
+
+def enforce_fixed_units_lock(
+    existing: TableFieldDef,
+    to_type: CustomFieldType,
+    after_config: dict[str, object],
+    field_id: str,
+    display_units: object = CARRY_FORWARD_UNITS,
+) -> None:
+    """D13: a fixed-unit field may change type only `number ↔ formula`, and its
+    units may never be retargeted — on either type. `editable`-unit and unit-less
+    fields skip entirely. The effective-after units are computed here so the rule
+    lives in exactly one place; `display_units` (the D12 tri-state) is only
+    meaningful for a formula target, so a standalone changeType omits it."""
+    if not number_units_are_fixed(existing):
+        return
+    if to_type not in (CustomFieldType.number, CustomFieldType.formula):
+        raise _fixed_units_locked(field_id)
+    if _effective_after_units(existing, to_type, after_config, display_units) != existing.config.get("units"):
+        raise _fixed_units_locked(field_id)
+
+
+def _fixed_units_locked(field_id: str) -> Any:
+    return api_error(
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+        "custom_field_fixed_units_locked",
+        "Fixed unit config cannot be edited.",
+        {"field_id": field_id},
+    )
 
 
 def check_stale_fingerprint(

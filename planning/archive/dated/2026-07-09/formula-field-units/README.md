@@ -3,8 +3,9 @@
 ```
 DATE:    2026-07-09
 TIME:    13:38 EDT
-STATUS:  Scoped — Option B accepted (D1); revised after the 2026-07-09 pre-implementation
-         code review (D12-D14, phases reordered: export lands FIRST). Implementation not started.
+STATUS:  COMPLETE (2026-07-09) — all three phases implemented on branch
+         feature/formula-field-units; backend suite green (1334), frontend green.
+         Not yet merged to main (Ed's call). Packet archived under planning/archive/.
 AUTHOR:  Ed + Claude
 SCOPE:   SHARED data-table schema-mutation pipeline — lands for every FieldDef table at once (D9),
          not just Rooms. Backend: fixed-units guard, formula config, unit validation, set_formula,

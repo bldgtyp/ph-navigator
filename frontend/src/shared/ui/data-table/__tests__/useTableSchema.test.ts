@@ -151,6 +151,51 @@ describe("useTableSchema", () => {
     expect(result.current.fieldDefs[1]?.numberUnits).toBeUndefined();
   });
 
+  test("maps a numeric formula's units onto the computed FieldDef (Phase 3, D4)", () => {
+    const airflow = {
+      mode: "fixed" as const,
+      unit_type: "airflow",
+      si_unit: "m3_h",
+      ip_unit: "cfm",
+      precision_si: 1,
+      precision_ip: 1,
+    };
+    const { result } = renderHook(() =>
+      useTableSchema({
+        tableKey: "rooms",
+        fieldDefs: [
+          tableField("cf_flow", {
+            field_type: "formula",
+            config: {
+              source: "100 / 0.77",
+              ast: {},
+              deps: [],
+              result_type: "number",
+              units: airflow,
+            },
+          }),
+          // A text-result formula never carries units, so none map through.
+          tableField("cf_label", {
+            field_type: "formula",
+            config: {
+              source: 'concat("a")',
+              ast: {},
+              deps: [],
+              result_type: "text",
+              units: airflow,
+            },
+          }),
+        ],
+      }),
+    );
+
+    expect(result.current.fieldDefs[0]).toMatchObject({
+      field_type: "computed",
+      numberUnits: airflow,
+    });
+    expect(result.current.fieldDefs[1]?.numberUnits).toBeUndefined();
+  });
+
   test("attaches single-select options by exact or namespaced option-list key", () => {
     const { result } = renderHook(() =>
       useTableSchema({

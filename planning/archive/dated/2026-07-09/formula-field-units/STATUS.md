@@ -3,19 +3,21 @@
 ```
 DATE:    2026-07-09
 TIME:    13:38 EDT
-STATUS:  Scoped — Option B accepted; 2026-07-09 pre-implementation review folded in
-         (D12-D14, phase reorder). Phases 1-3 planned; implementation not started.
+STATUS:  COMPLETE (2026-07-09) — all three phases implemented on branch
+         feature/formula-field-units. Backend suite green (1334 passed); frontend
+         suites green. Merge to main = Ed's call.
 AUTHOR:  Ed + Claude
 ```
 
 ## Current state
 
-`Scoped`. Design is settled (Option B, unit-aware formula), the accepted decisions are in
-`decisions.md` (D1-D14), and handoff-ready implementation plans exist in `phases/` — revised
-after a pre-implementation code review (2026-07-09) that verified every load-bearing claim
-against the code and found five mechanics-level issues, all folded back into the plans. No
-code has been written. This is a **shared data-table** change — it lands for every FieldDef
-table at once (D9), not just Rooms.
+`COMPLETE`. All three phases are implemented on `feature/formula-field-units` (D1-D14
+honored). Phase 1 — gh_api export emits computed values inline. Phase 2 — unit-aware
+number↔formula conversion, shared fixed-units guard, `display_units` wire field, registry
+drift closed. Phase 3 — computed cells/headers/clipboard/CSV format through a shared
+`displayUnitsFor` accessor, modal Display-units section. This is a **shared data-table**
+change — it lands for every FieldDef table at once (D9), not just Rooms. Backend suite green
+(1334 passed); frontend suites green. Not yet merged to main (Ed's call).
 
 ## What was decided (see decisions.md)
 
@@ -46,10 +48,14 @@ the guard relax means no built-in ever needs a conversion lock. See
 
 ## Next step
 
-Implement **Phase 1** (`phases/phase-01-export-computed-values.md`) — standalone exporter
-change. Then **Phase 2** (backend: registry drift + guard redesign + wire model + set_formula).
-Then **Phase 3** (frontend). Strictly in that order — Phase 1 before Phase 2 is a safety
-ordering (PRD §7.16), not a code dependency.
+**Phases 1 & 2 are DONE** (2026-07-09). **Phase 1** — the gh_api exporter emits
+computed/formula values inline (`tables_export.py`); `{"error"}`-overlay decode extracted
+into shared `formula.overlay_cell_value`. **Phase 2** (backend) — registry drift closed
+(`length_mm`/`power` added), shared fixed-units guard + `collapse_carried_units` tri-state
+in `mutations/guards.py`, top-level `display_units` wire field (D12), numeric-formula units
+in `validate_number_config` (D4), `apply_set_formula` `carried_units` reconciliation
+(D7/D14), reverse carry-back on `formula→number` (D6). Full backend suite green (1334 passed).
+Next: **Phase 3** (frontend — `displayUnits` payload, computed-cell unit display, modal picker).
 
 ## Blockers
 

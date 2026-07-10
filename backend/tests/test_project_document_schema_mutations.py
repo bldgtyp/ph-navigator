@@ -26,6 +26,13 @@ from features.project_document.document import (
     RoomRow,
     SingleSelectOption,
 )
+from features.project_document.formula import (
+    ast_to_json,
+    build_field_registry,
+    evaluate_table_formulas,
+    parse,
+    resolve_refs,
+)
 from features.project_document.mutations import dispatcher as mutations_dispatcher
 from features.project_document.schema_mutations import (
     AddFieldMutation,
@@ -1752,3 +1759,337 @@ def test_edit_field_bundle_rename_plus_options_plus_default_single_audit() -> No
     assert "description" in changed
     assert "options" in changed  # option labels changed (A->Alpha)
     assert "default_option_id" in changed
+
+
+# ---------------------------------------------------------------------------
+# Formula fields with units (Phase 2 — D1-D14)
+# ---------------------------------------------------------------------------
+
+
+def _airflow_units(mode: str = "fixed") -> dict[str, object]:
+    return _make_number_units_config(mode=mode, unit_type="airflow", si_unit="m3_h", ip_unit="cfm")
+
+
+def _rooms_formula_config(
+    body: ProjectDocumentV1,
+    source: str,
+    deps: list[str],
+    *,
+    result_type: str = "number",
+    units: dict[str, object] | None = None,
+) -> dict[str, object]:
+    resolved = resolve_refs(parse(source), build_field_registry(rooms_field_registry, body))
+    config: dict[str, object] = {
+        "source": source,
+        "ast": ast_to_json(resolved),
+        "deps": deps,
+        "result_type": result_type,
+    }
+    if units is not None:
+        config["units"] = units
+    return config
+
+
+def _overlay(body: ProjectDocumentV1) -> dict[str, dict[str, object]]:
+    return evaluate_table_formulas(rooms_field_registry, body)
+
+
+def _fixed_airflow_number(field_key: str = "cf_supply", display_name: str = "Supply") -> TableFieldDef:
+    return _make_custom_field(
+        field_key,
+        display_name=display_name,
+        field_type=CustomFieldType.number,
+        config={"units": _airflow_units("fixed")},
+    )
+
+
+def test_bundle_number_fixed_to_formula_preflight_not_units_locked() -> None:
+    # D13 unblock: the fixed-units guard no longer fires on number→formula; the
+    # destructive-ack preflight is reached instead (was masked before Phase 2).
+    body = _seed_floor_option(_empty_body())
+    body = _with_field(body, _fixed_airflow_number())
+    body = _with_room(body, custom={"cf_supply": 120})
+    after = _make_bundle_after(_fixed_airflow_number(), field_type=CustomFieldType.formula, config={})
+    mutation = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="cf_supply",
+        after=after,
+        formula_source="100 / 0.77",
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    with pytest.raises(HTTPException) as excinfo:
+        _apply(body, mutation)
+    detail = cast(dict[str, object], excinfo.value.detail)
+    assert detail["error_code"] == "custom_field_coercion_preflight_required"
+
+
+def test_bundle_number_fixed_to_formula_carries_units_forward() -> None:
+    # D5 carry-forward: no display_units sent → the converted formula keeps the
+    # source field's fixed airflow units, and the computed value round-trips.
+    body = _seed_floor_option(_empty_body())
+    body = _with_field(body, _fixed_airflow_number())
+    body = _with_room(body, custom={"cf_supply": 120})
+    after = _make_bundle_after(_fixed_airflow_number(), field_type=CustomFieldType.formula, config={})
+    mutation = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="cf_supply",
+        after=after,
+        acknowledge_destructive=True,
+        formula_source="100 / 0.77",
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, _ = _apply(body, mutation)
+    final_field = _custom_fields(next_body)[0]
+    assert final_field.field_type is CustomFieldType.formula
+    assert set(final_field.config) == {"source", "ast", "deps", "result_type", "units"}
+    assert final_field.config["result_type"] == "number"
+    assert final_field.config["units"] == _airflow_units("fixed")
+    assert _overlay(next_body)["rm_1"]["cf_supply"] == pytest.approx(100 / 0.77)
+
+
+def test_bundle_formula_target_config_with_units_rejected_at_parse() -> None:
+    # D12 parse safety: a formula config carrying units but no server-owned
+    # result_type must 422 at the model boundary, never reach the bundle.
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        _make_custom_field(
+            "cf_bad",
+            field_type=CustomFieldType.formula,
+            config={"source": "1", "units": _airflow_units("editable")},
+        )
+
+
+def test_formula_units_are_a_free_choice_label_parity() -> None:
+    # PRD §4a corollary: dividing by a literal vs by a unit-less number field
+    # yields the identical numeric result; the airflow display unit is a label,
+    # never derived from the inputs.
+    body = _seed_floor_option(_empty_body())
+    body = _with_field(body, _fixed_airflow_number())
+    body = _with_field(body, _make_custom_field("cf_factor", display_name="Factor", field_type=CustomFieldType.number))
+    body = _with_field(
+        body,
+        _make_custom_field(
+            "cf_by_literal",
+            display_name="ByLiteral",
+            field_type=CustomFieldType.formula,
+            config=_rooms_formula_config(body, "{Supply} / 0.77", ["cf_supply"], units=_airflow_units("editable")),
+        ),
+    )
+    body = _with_field(
+        body,
+        _make_custom_field(
+            "cf_by_field",
+            display_name="ByField",
+            field_type=CustomFieldType.formula,
+            config=_rooms_formula_config(
+                body, "{Supply} / {Factor}", ["cf_supply", "cf_factor"], units=_airflow_units("editable")
+            ),
+        ),
+    )
+    body = _with_room(body, custom={"cf_supply": 100, "cf_factor": 0.77})
+    overlay = _overlay(body)["rm_1"]
+    assert overlay["cf_by_literal"] == overlay["cf_by_field"] == pytest.approx(100 / 0.77)
+
+
+def test_set_formula_drops_units_when_result_type_leaves_number() -> None:
+    # D7 reconciliation: editing a numeric formula's source to a text result
+    # drops the display units — the config invariant (units ⇒ number) holds.
+    body = _seed_floor_option(_empty_body())
+    body = _with_field(
+        body,
+        _make_custom_field(
+            "cf_calc",
+            display_name="Calc",
+            field_type=CustomFieldType.formula,
+            config=_rooms_formula_config(body, "1 + 1", [], units=_airflow_units("editable")),
+        ),
+    )
+    mutation = SetFormulaMutation(
+        kind="setFormula",
+        table_key="rooms",
+        field_id="cf_calc",
+        source='concat("a", "b")',
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, _ = _apply(body, mutation)
+    final_field = _custom_fields(next_body)[0]
+    assert final_field.config["result_type"] == "text"
+    assert "units" not in final_field.config
+
+
+def test_formula_with_units_but_text_result_rejected_at_validator() -> None:
+    # D4 gate: units on a non-numeric formula fail at the model validator.
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        _make_custom_field(
+            "cf_bad",
+            field_type=CustomFieldType.formula,
+            config={"source": "x", "result_type": "text", "units": _airflow_units("editable")},
+        )
+
+
+def test_numeric_formula_with_units_validates_via_model_boundary() -> None:
+    # D14/MCP parity: a numeric formula carrying units is valid at the model
+    # boundary (the same validation MCP save_draft runs) — no 500, no reject.
+    field = _make_custom_field(
+        "cf_ok",
+        field_type=CustomFieldType.formula,
+        config={
+            "source": "1",
+            "ast": ast_to_json(parse("1")),
+            "deps": [],
+            "result_type": "number",
+            "units": _airflow_units("editable"),
+        },
+    )
+    assert field.config["units"] == _airflow_units("editable")
+
+
+def test_round_trip_number_fixed_formula_number_restores_units() -> None:
+    # D6 + D13: number(fixed) → formula → number with NO explicit units on the
+    # reverse restores the seed units — the exact undo path.
+    body = _seed_floor_option(_empty_body())
+    body = _with_field(body, _fixed_airflow_number())
+    body = _with_room(body, custom={"cf_supply": 120})
+
+    to_formula = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="cf_supply",
+        after=_make_bundle_after(_fixed_airflow_number(), field_type=CustomFieldType.formula, config={}),
+        acknowledge_destructive=True,
+        formula_source="100 / 0.77",
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    body, _ = _apply(body, to_formula)
+    formula_field = _custom_fields(body)[0]
+
+    back_to_number = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="cf_supply",
+        after=formula_field.model_copy(update={"field_type": CustomFieldType.number, "config": {}}),
+        acknowledge_destructive=True,
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    body, _ = _apply(body, back_to_number)
+    final_field = _custom_fields(body)[0]
+    assert final_field.field_type is CustomFieldType.number
+    assert final_field.config["units"] == _airflow_units("fixed")
+
+
+def test_formula_fixed_units_retag_rejected_backend_side() -> None:
+    # D13: a formula(fixed) → formula units retag is rejected server-side, even
+    # though the modal would never send it (MCP / raw-API parity).
+    body = _seed_floor_option(_empty_body())
+    body = _with_field(
+        body,
+        _make_custom_field(
+            "cf_calc",
+            display_name="Calc",
+            field_type=CustomFieldType.formula,
+            config=_rooms_formula_config(body, "100 / 0.77", [], units=_airflow_units("fixed")),
+        ),
+    )
+    field = _custom_fields(body)[0]
+    mutation = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="cf_calc",
+        after=_make_bundle_after(field),
+        display_units=_make_number_units_config(unit_type="electric_efficiency", si_unit="wh_m3", ip_unit="w_cfm"),
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    with pytest.raises(HTTPException) as excinfo:
+        _apply(body, mutation)
+    detail = cast(dict[str, object], excinfo.value.detail)
+    assert detail["error_code"] == "custom_field_fixed_units_locked"
+
+
+def test_units_only_retag_persists_without_formula_source() -> None:
+    # D14: an editable formula, retagged via display_units with NO formula_source,
+    # persists the new units while leaving the source/ast untouched.
+    body = _seed_floor_option(_empty_body())
+    body = _with_field(
+        body,
+        _make_custom_field(
+            "cf_calc",
+            display_name="Calc",
+            field_type=CustomFieldType.formula,
+            config=_rooms_formula_config(body, "100 / 0.77", [], units=_airflow_units("editable")),
+        ),
+    )
+    field = _custom_fields(body)[0]
+    original_ast = field.config["ast"]
+    new_units = _make_number_units_config(unit_type="electric_efficiency", si_unit="wh_m3", ip_unit="w_cfm")
+    mutation = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="cf_calc",
+        after=_make_bundle_after(field),
+        display_units=new_units,
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, audit = _apply(body, mutation)
+    final_field = _custom_fields(next_body)[0]
+    assert final_field.config["units"] == new_units
+    assert final_field.config["source"] == "100 / 0.77"
+    assert final_field.config["ast"] == original_ast
+    assert "display_units" in cast(list[str], audit["properties_changed"])
+
+
+def test_rename_only_bundle_preserves_formula_units() -> None:
+    # D14: a rename-only bundle keeps the field's display units intact (step 4
+    # dropped them per D12; step 5 always-runs and carries them forward).
+    body = _seed_floor_option(_empty_body())
+    body = _with_field(
+        body,
+        _make_custom_field(
+            "cf_calc",
+            display_name="Calc",
+            field_type=CustomFieldType.formula,
+            config=_rooms_formula_config(body, "100 / 0.77", [], units=_airflow_units("editable")),
+        ),
+    )
+    field = _custom_fields(body)[0]
+    mutation = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="cf_calc",
+        after=_make_bundle_after(field, display_name="Renamed"),
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, _ = _apply(body, mutation)
+    final_field = _custom_fields(next_body)[0]
+    assert final_field.display_name == "Renamed"
+    assert final_field.config["units"] == _airflow_units("editable")
+
+
+def test_bundle_number_editable_units_to_formula_carries_forward() -> None:
+    # D13 allowlist / D5: an editable-units field converts to formula freely
+    # (no fixed guard) and carries its editable units forward.
+    body = _seed_floor_option(_empty_body())
+    editable = _make_custom_field(
+        "cf_flow",
+        display_name="Flow",
+        field_type=CustomFieldType.number,
+        config={"units": _airflow_units("editable")},
+    )
+    body = _with_field(body, editable)
+    body = _with_room(body, custom={"cf_flow": 50})
+    mutation = EditFieldBundleMutation(
+        kind="editFieldBundle",
+        table_key="rooms",
+        field_id="cf_flow",
+        after=_make_bundle_after(editable, field_type=CustomFieldType.formula, config={}),
+        acknowledge_destructive=True,
+        formula_source="42",
+        expected_schema_fingerprint=_fingerprint(body),
+    )
+    next_body, _ = _apply(body, mutation)
+    final_field = _custom_fields(next_body)[0]
+    assert final_field.config["units"] == _airflow_units("editable")

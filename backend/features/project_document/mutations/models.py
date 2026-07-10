@@ -305,6 +305,14 @@ class EditFieldBundleMutation(BaseModel):
     # dispatcher reparses + resolves + cycle-checks just like
     # `setFormula`. None means "keep the stored formula source".
     formula_source: str | None = Field(default=None, max_length=SOURCE_LENGTH_MAX)
+    # Display units for a formula target (D12), tri-state via `model_fields_set`:
+    # unset → carry the existing/source units forward; `null` → clear to a
+    # bare-number formula; a units object → set / retag. Travels top-level (not
+    # in `after.config`) because `after` is validated at request parse, and a
+    # formula config carrying units without the server-owned `result_type`
+    # would 422 before the bundle runs — the same reason `formula_source` is a
+    # top-level field. Only meaningful when the target is a formula.
+    display_units: dict[str, object] | None = None
     expected_schema_fingerprint: str
 
 

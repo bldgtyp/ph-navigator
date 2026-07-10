@@ -563,6 +563,12 @@ export type EditCustomFieldBundleRequest = {
   // consumer sends it as `editFieldBundle.formulaSource` so the
   // backend reparses/resolves the bundle atomically.
   formulaSource?: string;
+  // Display units for a formula target (D12), sent as the top-level
+  // `editFieldBundle.displayUnits` — NOT in `after.config`, which the
+  // backend validates at parse before `result_type` is known. Tri-state:
+  // `undefined` → carry the existing units forward; `null` → clear to a
+  // bare-number formula; a config → set / retag.
+  displayUnits?: NumberUnitsConfig | null;
   // Set for `linked_record` fields. PRD Q13 — `target_table_path` is
   // immutable on existing linked-record fields; the modal only emits it
   // when the type also changes (initial creation through this bundle

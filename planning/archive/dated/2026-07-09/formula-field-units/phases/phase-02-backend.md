@@ -3,9 +3,12 @@
 ```
 DATE:    2026-07-09
 TIME:    13:38 EDT
-STATUS:  Planned — not started. Revised per the 2026-07-09 pre-implementation review
-         (D12 wire transport, D13 guard redesign, D14 always-reconcile; interim
-         built-in lock deleted — Phase 1 lands first instead).
+STATUS:  DONE (2026-07-09). Registry drift closed (length_mm/power added to backend
+         NUMBER_UNIT_REGISTRY); shared fixed-units guard (guards.py: enforce_fixed_units_lock
+         + collapse_carried_units tri-state); top-level display_units wire field (D12);
+         numeric-formula units in validate_number_config (D4); apply_set_formula carried_units
+         reconciliation (D7/D14); reverse carry-back on formula→number (D6). Full backend
+         suite green (1334 passed). Next: Phase 3 (frontend).
 AUTHOR:  Ed + Claude
 SCOPE:   Shared project-document schema-mutation pipeline + config validation + formula config.
          Table-agnostic — lands for every FieldDef table at once (D9).

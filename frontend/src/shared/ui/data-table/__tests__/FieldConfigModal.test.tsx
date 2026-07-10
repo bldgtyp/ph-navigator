@@ -767,6 +767,72 @@ describe("FieldConfigModal", () => {
     );
   });
 
+  const AIRFLOW_UNITS = {
+    unit_type: "airflow" as const,
+    si_unit: "m3_h" as const,
+    ip_unit: "cfm" as const,
+    precision_si: 1,
+    precision_ip: 1,
+  };
+
+  test("formula fields expose a Display units section (Phase 3, D11)", () => {
+    render(
+      <Harness
+        initialField={baseField({
+          field_type: "computed",
+          custom_field_type: "formula",
+          formula_config: { source: "100 / 0.77", ast: null, deps: [] },
+          numberUnits: { mode: "editable", ...AIRFLOW_UNITS },
+        })}
+      />,
+    );
+
+    expect(screen.getByRole("group", { name: "Display units" })).toBeInTheDocument();
+    expect(
+      screen.getByText("Formats the computed result; applies to numeric formulas."),
+    ).toBeInTheDocument();
+  });
+
+  test("a units-only retag on a formula emits displayUnits without formulaSource (Phase 3, D14)", async () => {
+    const dispatchBundle = vi.fn().mockResolvedValue(undefined);
+    render(
+      <Harness
+        dispatchBundle={dispatchBundle}
+        initialField={baseField({
+          field_type: "computed",
+          custom_field_type: "formula",
+          formula_config: { source: "100 / 0.77", ast: null, deps: [] },
+          numberUnits: { mode: "editable", ...AIRFLOW_UNITS },
+        })}
+      />,
+    );
+
+    chooseAutocompleteOption("Unit type", "Electrical Efficiency");
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(dispatchBundle).toHaveBeenCalledTimes(1));
+    const request = dispatchBundle.mock.calls[0]![0] as Record<string, unknown>;
+    expect(request.displayUnits).toMatchObject({ unit_type: "electric_efficiency" });
+    expect("formulaSource" in request).toBe(false);
+  });
+
+  test("fixed units on a formula disable the section controls (Phase 3, D11)", () => {
+    render(
+      <Harness
+        initialField={baseField({
+          field_type: "computed",
+          custom_field_type: "formula",
+          formula_config: { source: "100 / 0.77", ast: null, deps: [] },
+          numberUnits: { mode: "fixed", ...AIRFLOW_UNITS },
+        })}
+      />,
+    );
+
+    expect(screen.getByRole("group", { name: "Display units" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Unit type")).toBeDisabled();
+    expect(screen.getByText("Units are fixed by this catalog field.")).toBeInTheDocument();
+  });
+
   test("formula fields can change type to Short text through the shared bundle", async () => {
     const dispatchBundle = vi.fn().mockResolvedValue(undefined);
     render(

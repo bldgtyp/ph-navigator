@@ -30,7 +30,11 @@ from features.project_document.formula.ast_nodes import (
     ast_from_json,
     ast_to_json,
 )
-from features.project_document.formula.document_evaluator import evaluate_table_formulas, reset_formula_overlay_cache
+from features.project_document.formula.document_evaluator import (
+    evaluate_table_formulas,
+    overlay_cell_value,
+    reset_formula_overlay_cache,
+)
 from features.project_document.formula.errors import (
     FormulaCycleError,
     FormulaInvalidLinkedArgError,
@@ -105,6 +109,7 @@ __all__ = [
     "evaluate_table_formulas",
     "formula_facing_field_type",
     "infer_result_type",
+    "overlay_cell_value",
     "parse",
     "resolve_refs",
     "reset_formula_overlay_cache",

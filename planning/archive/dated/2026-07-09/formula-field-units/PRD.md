@@ -3,9 +3,9 @@
 ```
 DATE:    2026-07-09
 TIME:    13:38 EDT
-STATUS:  Scoped — Option B accepted (D1); revised after the 2026-07-09 pre-implementation
-         code review (guard redesign §5.1, wire transport §5.2, edge cases §7.12-7.16,
-         phase reorder §9 — export now lands FIRST).
+STATUS:  COMPLETE (2026-07-09) — implemented as designed (Option B; guard redesign §5.1,
+         wire transport §5.2, edge cases §7.12-7.16, export-first §9). On branch
+         feature/formula-field-units, not yet merged to main.
 AUTHOR:  Ed + Claude
 SCOPE:   Custom-field schema-mutation pipeline (Rooms + all FieldDef tables), backend + frontend.
 RELATED: README.md; STATUS.md

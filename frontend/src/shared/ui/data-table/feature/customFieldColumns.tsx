@@ -1,5 +1,7 @@
 import { getCustomLink, getCustomValue } from "../lib/customFieldAccessor";
 import { ComputedCell } from "../components/ComputedCell";
+import type { NumberUnitsConfig } from "../../../../lib/units";
+import { displayUnitsFor } from "../lib/fieldUnits";
 import type { TableFieldDef } from "../hooks/useTableSchema";
 import { isComputedErrorValue } from "../lib/formula";
 import type { DataTableColumnDef, DataTableProps, FieldDef } from "../types";
@@ -66,6 +68,7 @@ export function customFieldColumnDefs<TRow extends CustomFieldRow>({
         fieldKey: custom.field_key,
         header: custom.display_name,
         computedType: fieldDef?.computed_type ?? "text",
+        numberUnits: displayUnitsFor(fieldDef),
         rowsComputed,
       });
     }
@@ -107,6 +110,7 @@ export function computedFieldColumnDef<TRow extends CustomFieldRow>({
   fieldKey,
   header,
   computedType,
+  numberUnits,
   rowsComputed,
   defaultWidth,
   isIdentifier,
@@ -114,6 +118,10 @@ export function computedFieldColumnDef<TRow extends CustomFieldRow>({
   fieldKey: string;
   header: string;
   computedType: "text" | "number";
+  // A numeric formula's display unit (D4); the cell formats the SI overlay
+  // value through the SI/IP path when set. `unitSystem` is read from context
+  // inside `ComputedCell`, so it never needs threading through call sites.
+  numberUnits?: NumberUnitsConfig;
   rowsComputed: Record<string, Record<string, unknown>> | undefined;
   defaultWidth?: number;
   // Set on the one computed column that is the table's Display Name
@@ -129,6 +137,7 @@ export function computedFieldColumnDef<TRow extends CustomFieldRow>({
       <ComputedCell
         value={readComputedRaw(rowsComputed, row.id, fieldKey)}
         computedType={computedType}
+        numberUnits={numberUnits}
       />
     ),
     measureText: (row) => String(readComputedScalar(rowsComputed, row.id, fieldKey) ?? ""),

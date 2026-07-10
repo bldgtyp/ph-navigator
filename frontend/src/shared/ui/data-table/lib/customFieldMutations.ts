@@ -4,6 +4,7 @@
 // `backend/features/project_document/schema_mutations.py` — fields
 // added to one side must land on the other in lockstep.
 
+import type { NumberUnitsConfig } from "../../../../lib/units";
 import type { CustomFieldDef } from "../hooks/useTableSchema";
 import type { EditCustomFieldBundleRequest, FieldOption } from "../types";
 import { CUSTOM_FIELD_KEY_PREFIX, isCustomFieldKey } from "./customFieldAccessor";
@@ -101,6 +102,11 @@ export type EditFieldBundleMutation = {
   optionReplacements?: Record<string, string>;
   // Set when target field_type is "formula" AND the source changed.
   formulaSource?: string;
+  // Display units for a formula target (D12), top-level (never in
+  // `after.config`). Tri-state on the wire: key absent → carry forward;
+  // `null` → clear; a config → set / retag. The backend distinguishes
+  // absent from null via `model_fields_set`.
+  displayUnits?: NumberUnitsConfig | null;
   expectedSchemaFingerprint: string;
 };
 
@@ -369,6 +375,9 @@ export type BuildEditFieldBundleArgs = {
   acknowledgeDestructive?: boolean;
   optionReplacements?: Record<string, string>;
   formulaSource?: string;
+  // Tri-state (see EditFieldBundleMutation.displayUnits): `undefined` omits the
+  // field (carry forward); `null` clears; a config sets / retags.
+  displayUnits?: NumberUnitsConfig | null;
   schemaFingerprint: string;
 };
 
@@ -420,6 +429,12 @@ export function buildEditFieldBundleMutation(
   }
   if (args.formulaSource !== undefined) {
     op.formulaSource = args.formulaSource;
+  }
+  // Tri-state (D12): omit the key to carry forward; send `null` to clear; send a
+  // config to set / retag. `undefined` must drop the key so the backend's
+  // `model_fields_set` sees "absent", not "explicit clear".
+  if (args.displayUnits !== undefined) {
+    op.displayUnits = args.displayUnits;
   }
   return op;
 }

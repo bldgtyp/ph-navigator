@@ -5,6 +5,7 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from "react";
 import { numberUnitForSystem, numberUnitLabel, type UnitSystem } from "../../../../lib/units";
+import { displayUnitsFor } from "../lib/fieldUnits";
 import type { GridColumnDragKeyboard } from "../hooks/useGridColumnDragKeyboard";
 import type { GridColumnResize } from "../hooks/useGridColumnResize";
 import { isAttributeLocked, isBuiltInField, isFieldDuplicable } from "../lib/locks";
@@ -174,11 +175,13 @@ function DataTableHeaderCell<TRow>({
   // "has at least one author-declared lock" so it stays correct if a
   // future custom-field author exposes locks.
   const schemaLocked = isBuiltInField(fieldDef);
-  const hasUnitHeader = fieldDef?.field_type === "number" && Boolean(fieldDef.numberUnits);
+  // A numeric formula carries a display unit just like a number field, so the
+  // shared accessor drives whether the header shows a unit label (D4).
+  const headerUnits = displayUnitsFor(fieldDef);
   const className = [
     "data-table-th",
     isPrimary ? "data-table-frozen" : "",
-    hasUnitHeader ? "data-table-th--with-units" : "",
+    headerUnits ? "data-table-th--with-units" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -277,9 +280,9 @@ function DataTableHeaderCell<TRow>({
               />
             ) : null}
           </span>
-          {hasUnitHeader && fieldDef?.numberUnits ? (
+          {headerUnits ? (
             <span className="data-table-header-units" data-testid="data-table-header-units">
-              {numberUnitLabel(numberUnitForSystem(fieldDef.numberUnits, unitSystem))}
+              {numberUnitLabel(numberUnitForSystem(headerUnits, unitSystem))}
             </span>
           ) : null}
         </span>

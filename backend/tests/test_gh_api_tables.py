@@ -15,8 +15,10 @@ from fastapi.testclient import TestClient
 
 from features.gh_api.tables_export import TABLE_PATHS, export_table
 from features.project_document.custom_fields import CustomFieldType, TableFieldDef
-from features.project_document.document import ProjectDocumentV1, SingleSelectOption
+from features.project_document.document import ProjectDocumentV1, PumpRow, SingleSelectOption
+from features.project_document.formula import ast_to_json, build_field_registry, parse, resolve_refs
 from features.project_document.rows import RoomRow
+from features.project_document.tables.rooms import rooms_field_registry
 from features.project_document.templates import empty_project_document
 from features.projects.models import CreateProjectRequest
 from main import app
@@ -32,14 +34,25 @@ def _option(option_id: str, label: str) -> SingleSelectOption:
     return SingleSelectOption(id=option_id, label=label, color="#123456", order=0.0)
 
 
-def _field_def(field_key: str, field_type: CustomFieldType) -> TableFieldDef:
+def _field_def(field_key: str, field_type: CustomFieldType, config: dict[str, object] | None = None) -> TableFieldDef:
     return TableFieldDef(
         field_key=field_key,
         display_name=field_key,
         field_type=field_type,
+        config=config or {},
         origin="custom",
         created_at=datetime(2026, 1, 1, tzinfo=UTC),
     )
+
+
+def _formula_config(body: ProjectDocumentV1, source: str, deps: list[str] | None = None) -> dict[str, object]:
+    """A numeric formula config with references resolved against the live schema.
+
+    `resolve_refs` is inert for a ref-less source (`"1 / 0"`), so the same helper
+    serves both literal and field-referencing formulas.
+    """
+    resolved = resolve_refs(parse(source), build_field_registry(rooms_field_registry, body))
+    return {"source": source, "ast": ast_to_json(resolved), "deps": deps or [], "result_type": "number"}
 
 
 # --- serializer -------------------------------------------------------------
@@ -97,6 +110,48 @@ def test_every_allowlisted_table_serializes() -> None:
     for name in TABLE_PATHS:
         result = export_table(body, name)
         assert set(result) == {"field_defs", "records"}
+
+
+# --- computed/formula values (Phase 1, D8/D10) ------------------------------
+
+
+def test_formula_value_exported_inline() -> None:
+    body = _document()
+    body.tables.rooms.field_defs.append(
+        _field_def("cf_load", CustomFieldType.formula, _formula_config(body, "{People} * 10", ["num_people"]))
+    )
+    body.tables.rooms.rows = [RoomRow(id="rm_1", custom_values={"num_people": 3})]
+
+    (record,) = export_table(body, "rooms")["records"]
+    # A formula has no stored cell; its resolved value drops in inline by field_key.
+    assert record["cf_load"] == 30.0
+
+
+def test_formula_error_row_exports_null() -> None:
+    body = _document()
+    body.tables.rooms.field_defs.append(_field_def("cf_bad", CustomFieldType.formula, _formula_config(body, "1 / 0")))
+    body.tables.rooms.rows = [RoomRow(id="rm_1")]
+
+    (record,) = export_table(body, "rooms")["records"]
+    assert record["cf_bad"] is None  # #ERROR is exported as null, never a marker string
+
+
+def test_non_rooms_table_formula_exported() -> None:
+    body = _document()
+    body.tables.equipment.pumps.field_defs.append(
+        _field_def("cf_calc", CustomFieldType.formula, _formula_config(body, "10 + 5"))
+    )
+    body.tables.equipment.pumps.rows = [PumpRow(id="pmp_1")]
+
+    (record,) = export_table(body, "pumps")["records"]
+    assert record["cf_calc"] == 15.0  # generality: computed values land on every FieldDef table
+
+
+def test_table_without_formulas_gains_no_extra_keys() -> None:
+    body = _document()
+    body.tables.rooms.rows = [RoomRow(id="rm_1", custom_values={"name": "Living"})]
+    (record,) = export_table(body, "rooms")["records"]
+    assert not any(key.startswith("cf_") for key in record)  # no formula overlay keys leak in
 
 
 # --- route ------------------------------------------------------------------

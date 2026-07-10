@@ -335,6 +335,53 @@ describe("buildEditFieldBundleMutation", () => {
       }),
     ).toThrow(SchemaMutationBuildError);
   });
+
+  // Phase 3 — displayUnits tri-state (D12): absent → carry forward; null →
+  // clear; a config → set / retag. `undefined` must drop the key entirely so
+  // the backend's `model_fields_set` sees "absent", not "explicit clear".
+  const AIRFLOW_UNITS = {
+    mode: "editable" as const,
+    unit_type: "airflow" as const,
+    si_unit: "m3_h" as const,
+    ip_unit: "cfm" as const,
+    precision_si: 1,
+    precision_ip: 1,
+  };
+
+  test("omits displayUnits when carry-forward (undefined)", () => {
+    const after: CustomFieldDef = { ...BUILT_IN_NUMBER_FIELD, field_type: "formula", config: {} };
+    const op = buildEditFieldBundleMutation({
+      tableKey: "rooms",
+      fieldId: "number",
+      after,
+      schemaFingerprint: "fp",
+    });
+    expect("displayUnits" in op).toBe(false);
+  });
+
+  test("sends displayUnits: null for an explicit clear", () => {
+    const after: CustomFieldDef = { ...BUILT_IN_NUMBER_FIELD, field_type: "formula", config: {} };
+    const op = buildEditFieldBundleMutation({
+      tableKey: "rooms",
+      fieldId: "number",
+      after,
+      displayUnits: null,
+      schemaFingerprint: "fp",
+    });
+    expect(op.displayUnits).toBeNull();
+  });
+
+  test("sends the units config for a set / retag", () => {
+    const after: CustomFieldDef = { ...BUILT_IN_NUMBER_FIELD, field_type: "formula", config: {} };
+    const op = buildEditFieldBundleMutation({
+      tableKey: "rooms",
+      fieldId: "number",
+      after,
+      displayUnits: AIRFLOW_UNITS,
+      schemaFingerprint: "fp",
+    });
+    expect(op.displayUnits).toEqual(AIRFLOW_UNITS);
+  });
 });
 
 describe("buildNextConfigForFieldTypeChange number units", () => {
@@ -363,6 +410,33 @@ describe("buildNextConfigForFieldTypeChange number units", () => {
         fieldType: "short_text",
       }),
     ).toEqual({});
+  });
+
+  test("drops units from a formula target's config (D12 — units travel top-level)", () => {
+    const source: CustomFieldDef = {
+      ...SAMPLE_FIELD,
+      field_type: "number",
+      config: {
+        precision: 2,
+        units: {
+          mode: "fixed",
+          unit_type: "airflow",
+          si_unit: "m3_h",
+          ip_unit: "cfm",
+          precision_si: 1,
+          precision_ip: 1,
+        },
+      },
+    };
+    const next = buildNextConfigForFieldTypeChange(source, {
+      fieldKey: "cf_sample",
+      displayName: "Supply",
+      description: null,
+      fieldType: "formula",
+      formulaSource: "100 / 0.77",
+    });
+    expect("units" in next).toBe(false);
+    expect(next.source).toBe("100 / 0.77");
   });
 });
 
