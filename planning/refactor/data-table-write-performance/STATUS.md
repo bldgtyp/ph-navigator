@@ -1,7 +1,8 @@
 ---
 DATE: 2026-07-09
 TIME: -
-STATUS: Active — Phases 00-05 complete; Phase 06 measurement gate next.
+STATUS: Complete — Phases 00-05 shipped; Phase 06 gate evaluated from
+  the Phase 00 baseline and declined.
 AUTHOR: Claude (for Ed)
 SCOPE: Live state ledger for the DataTable write-performance refactor.
 RELATED:
@@ -68,15 +69,20 @@ RELATED:
 - 2026-07-09 — **Phase 05 complete.** Conflict codes now drive honest
   cause-specific counted copy. Draft-ETag conflicts self-heal once
   only when row/id and observed-base three-way gates all pass.
+- 2026-07-09 — **Phase 06 complete — gate evaluated; declined.** On the
+  368.511 ms cell-write p50 baseline, the largest candidate stage was
+  `sql_ms` at 58.712 ms (15.9%). Remedy A's two input parses total only
+  14.2%; Remedy B's outgoing validation is 7.0%. No remedy met the 30%
+  entry gate, so no backend change was justified. Instrumentation
+  remains as the regression alarm.
 
 ## Next step
 
-1. Execute the Phase 06 measurement gate against the Phase-00
-   PERF-STRESS baseline; implement only a measured qualifying remedy.
+1. Archive this completed refactor packet.
 
 ## Blockers
 
-- None. Planning gate cleared pending ratification.
+- None.
 
 ## Phase ledger
 
@@ -88,7 +94,7 @@ RELATED:
 | 03 — transport coalescing | **Complete** |
 | 04 — undo polish | **Complete** |
 | 05 — conflict copy + three-way retry | **Complete** |
-| 06 — backend write-path trims | Planned (measure-gated) |
+| 06 — backend write-path trims | **Complete — measured; declined** |
 
 ## Verification evidence
 

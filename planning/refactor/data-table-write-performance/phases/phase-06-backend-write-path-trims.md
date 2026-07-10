@@ -1,9 +1,8 @@
 ---
 DATE: 2026-07-09
 TIME: -
-STATUS: Planned — measure-gated on phase-00 baselines; act on the
-  measured dominator, not the assumed one. May legitimately conclude
-  "measured; declined."
+STATUS: Complete — entry gate evaluated from the Phase 00 baseline;
+  declined 2026-07-09. No remedy met the gate, so no backend change.
 AUTHOR: Claude (for Ed); corrections per plan-review R-8/R-9
 SCOPE: Implementation handoff for Phase 6 — trim the measured dominant
   whole-document work in the write path. Backend only; zero API,
@@ -102,3 +101,29 @@ NG-2).
 
 - A-7, or the documented stop decision; instrumentation retained;
   zero API change.
+
+## 8. As-built decision (2026-07-09)
+
+The Phase 00 PERF-STRESS baseline triggered the explicit stop rule. For the
+1.657-1.660 MiB Rooms document, the single-cell request p50 was 368.511 ms.
+No individual candidate stage approached 30% of request time:
+
+| Stage | p50 (ms) | Share of request p50 |
+|---|---:|---:|
+| `version_parse_ms` | 26.100 | 7.1% |
+| `draft_parse_ms` | 26.210 | 7.1% |
+| `outgoing_validate_ms` | 25.784 | 7.0% |
+| `serialize_ms` | 22.090 | 6.0% |
+| `sql_ms` | 58.712 | 15.9% |
+
+The largest stage (`sql_ms`) was still roughly half the entry threshold and
+is explicitly outside this phase's remedy scope. Remedy A's two input parses
+total 52.310 ms (14.2%); Remedy B's outgoing validation is 25.784 ms (7.0%).
+Even all three in-scope parse/validation stages total only 78.094 ms (21.2%).
+Adding the out-of-scope serialization stage reaches 100.184 ms (27.2%), still
+below the gate before any cache overhead or residual work.
+
+The data therefore does not support a credible 30% end-to-end improvement
+from either proposed remedy. Per §2, the phase stops without code, API,
+schema, or document-shape changes. The Phase 00 timing event remains in place
+as the regression alarm.

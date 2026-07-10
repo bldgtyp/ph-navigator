@@ -1,8 +1,8 @@
 ---
 DATE: 2026-07-09
 TIME: -
-STATUS: Active — Phases 00-01 complete; Phase 02 optimistic journals
-  is the current implementation handoff.
+STATUS: Complete — Phases 00-05 shipped; Phase 06 entry gate evaluated
+  from the Phase 00 baseline and declined.
 AUTHOR: Claude (for Ed)
 SCOPE: Router for the DataTable write-performance refactor packet:
   draft write coordinator + per-table optimistic journals, instant
