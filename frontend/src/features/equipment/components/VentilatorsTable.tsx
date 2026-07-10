@@ -6,9 +6,12 @@ import {
   RECORD_ID_FIELD_KEY,
   attachmentColumn,
   identifierColumn,
+  incomingLinkColumn,
+  incomingLinkFieldDef,
   linkColumn,
   type DataTableColumnDef,
   type DataTableProps,
+  type FieldDef,
   type LinkedRecordCellOps,
   type TableSchema,
   type ViewState,
@@ -24,6 +27,12 @@ import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { useAssetUrls } from "../../assets/hooks";
 import { DATASHEET_ATTACHMENT_CONFIG } from "../../assets/lib";
 import { sortedVentilators } from "../lib";
+import {
+  inverseColumnHeader,
+  inverseFieldKey,
+  inverseIdsForTarget,
+  isRoomsSource,
+} from "../lib/inverseSource";
 import { statusColumn } from "../lib/statusColumn";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
 import {
@@ -35,12 +44,12 @@ import {
   VENTILATOR_FROST_PROTECTION_KEY,
   VENTILATOR_INSIDE_OUTSIDE_COLUMN_ID,
   VENTILATOR_INSIDE_OUTSIDE_KEY,
+  type InverseLinkField,
   type VentilatorRow,
   type VentilatorsSlice,
 } from "../types";
 
 const EMPTY_HEAT_PUMP_INDOOR_UNITS: readonly HeatPumpIndoorUnitRow[] = [];
-
 export function VentilatorsTable({
   ventilatorsSlice,
   tableSchema,
@@ -58,6 +67,9 @@ export function VentilatorsTable({
   onEdit,
   onIncomingIndoorUnitOpen,
   onIncomingIndoorUnitsLinkEdit,
+  onInversePillClick,
+  onInverseLinkEdit,
+  resolveInverseLinkLabel,
   heatPumpIndoorUnits = EMPTY_HEAT_PUMP_INDOOR_UNITS,
   ...customFieldActions
 }: {
@@ -77,6 +89,9 @@ export function VentilatorsTable({
   onEdit?: (row: VentilatorRow) => void;
   onIncomingIndoorUnitOpen?: (rowId: string) => void;
   onIncomingIndoorUnitsLinkEdit?: (row: VentilatorRow) => void;
+  onInversePillClick?: (field: InverseLinkField, rowId: string) => void;
+  onInverseLinkEdit?: (field: InverseLinkField, row: VentilatorRow) => void;
+  resolveInverseLinkLabel?: (field: InverseLinkField, rowId: string) => string | null;
   heatPumpIndoorUnits?: readonly HeatPumpIndoorUnitRow[];
 } & CustomFieldTableActions<VentilatorRow>) {
   const sortedRows = useMemo(
@@ -93,9 +108,22 @@ export function VentilatorsTable({
     [datasheetUrls.data],
   );
   const { fieldDefs, customFields } = tableSchema;
+  const inverseLinkFields = ventilatorsSlice.inverse_link_fields;
+  const inverseLinks = ventilatorsSlice.inverse_links;
+  const inverseFieldDefs = useMemo<FieldDef[]>(
+    () =>
+      (inverseLinkFields ?? []).map((field) =>
+        incomingLinkFieldDef({
+          fieldKey: inverseFieldKey(field),
+          displayName: inverseColumnHeader(field),
+          targetTablePath: field.source_table_path,
+        }),
+      ),
+    [inverseLinkFields],
+  );
   const tableFieldDefs = useMemo(
-    () => [...fieldDefs, incomingIndoorUnitsFieldDef("HP indoor units")],
-    [fieldDefs],
+    () => [...fieldDefs, incomingIndoorUnitsFieldDef("HP indoor units"), ...inverseFieldDefs],
+    [fieldDefs, inverseFieldDefs],
   );
   const fieldDefByKey = useMemo(
     () => new Map(tableFieldDefs.map((fieldDef) => [fieldDef.field_key, fieldDef])),
@@ -253,17 +281,36 @@ export function VentilatorsTable({
       }),
       statusColumn<VentilatorRow>(fieldDefByKey),
       ...customColumns,
+      ...(inverseLinkFields ?? []).map((field) =>
+        incomingLinkColumn<VentilatorRow>({
+          id: inverseFieldKey(field),
+          header: inverseColumnHeader(field),
+          getIncomingIds: (ventilator) =>
+            inverseIdsForTarget(inverseLinks, ventilator.id, field),
+          resolveLabel: (rowId) => resolveInverseLinkLabel?.(field, rowId) ?? null,
+          onPillClick: (rowId) => onInversePillClick?.(field, rowId),
+          edit:
+            isEditor && onInverseLinkEdit && isRoomsSource(field)
+              ? { onActivate: (ventilator) => onInverseLinkEdit(field, ventilator) }
+              : null,
+        }),
+      ),
     ],
     [
       customColumns,
       datasheetUrlById,
       fieldDefByKey,
       incomingIndoorUnitIdsByVentilatorId,
+      inverseLinkFields,
+      inverseLinks,
       isEditor,
       onIncomingIndoorUnitOpen,
       onIncomingIndoorUnitsLinkEdit,
+      onInverseLinkEdit,
+      onInversePillClick,
       onWrite,
       projectId,
+      resolveInverseLinkLabel,
       sortedIndoorUnits,
       ventilatorsSlice.rows_computed,
     ],

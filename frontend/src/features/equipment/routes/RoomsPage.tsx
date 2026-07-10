@@ -17,7 +17,7 @@ import {
   buildRoomsDownloadAction,
 } from "../components/RoomsToolbarActions";
 import { RoomsTableSlot } from "../components/RoomsTableSlot";
-import { usePumpsSliceQuery, useRoomsSliceQuery } from "../hooks";
+import { usePumpsSliceQuery, useRoomsSliceQuery, useVentilatorsSliceQuery } from "../hooks";
 import { useSpaceTypesSliceQuery } from "../../spaces/hooks";
 import { customTextValueOrNull } from "../lib/customValueReaders";
 import { wasLocalDraftTouched } from "../lib";
@@ -29,6 +29,9 @@ import {
   type PumpsSlice,
   type RoomRow,
   type RoomsSlice,
+  VENTILATORS_TARGET_TABLE_PATH,
+  type VentilatorRow,
+  type VentilatorsSlice,
 } from "../types";
 import {
   SPACE_TYPE_NAME_FIELD_KEY,
@@ -49,6 +52,11 @@ export function RoomsPage({ project }: { project: ProjectDetail }) {
   // query cache the equipment page uses — no extra round-trip when the
   // user has just left the equipment page.
   const pumpsQuery = usePumpsSliceQuery(project.id, project.active_version_id, project.access_mode);
+  const ventilatorsQuery = useVentilatorsSliceQuery(
+    project.id,
+    project.active_version_id,
+    project.access_mode,
+  );
   const spaceTypesQuery = useSpaceTypesSliceQuery(
     project.id,
     project.active_version_id,
@@ -70,6 +78,7 @@ export function RoomsPage({ project }: { project: ProjectDetail }) {
       roomsSlice={roomsQuery.data}
       refetch={roomsQuery.refetch}
       pumpsSlice={pumpsQuery.data ?? null}
+      ventilatorsSlice={ventilatorsQuery.data ?? null}
       spaceTypesSlice={spaceTypesQuery.data ?? null}
     />
   );
@@ -82,9 +91,10 @@ function RoomsPageBody(props: {
   roomsSlice: RoomsSlice;
   refetch: () => Promise<unknown>;
   pumpsSlice: PumpsSlice | null;
+  ventilatorsSlice: VentilatorsSlice | null;
   spaceTypesSlice: SpaceTypesSlice | null;
 }) {
-  const { project, roomsSlice, refetch, pumpsSlice, spaceTypesSlice } = props;
+  const { project, roomsSlice, refetch, pumpsSlice, ventilatorsSlice, spaceTypesSlice } = props;
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const focusRowId = searchParams.get("focus");
@@ -184,8 +194,33 @@ function RoomsPageBody(props: {
         }),
       );
     }
+    if (ventilatorsSlice?.ventilators) {
+      maps.push(
+        buildLinkedRecordOps<VentilatorRow>({
+          fieldDefs: controller.tableSchema.fieldDefs,
+          targetTablePath: VENTILATORS_TARGET_TABLE_PATH,
+          targetRows: ventilatorsSlice.ventilators,
+          getRowId: (ventilator) => ventilator.id,
+          getRecordId: (ventilator) =>
+            customTextValueOrNull(ventilator, "name") ??
+            customTextValueOrNull(ventilator, RECORD_ID_FIELD_KEY),
+          onPillClick: (rowId) => {
+            navigate(
+              `/projects/${project.id}/equipment?tab=ventilators&focus=${encodeURIComponent(rowId)}`,
+            );
+          },
+        }),
+      );
+    }
     return mergeLinkedRecordOps(maps);
-  }, [controller.tableSchema.fieldDefs, navigate, project.id, pumpsSlice, spaceTypesSlice]);
+  }, [
+    controller.tableSchema.fieldDefs,
+    navigate,
+    project.id,
+    pumpsSlice,
+    spaceTypesSlice,
+    ventilatorsSlice,
+  ]);
 
   const linkedRecordTargets = useMemo(
     () => linkedRecordTargetsFromFieldDefs(controller.tableSchema.fieldDefs),
@@ -259,6 +294,7 @@ function mergeLinkedRecordOps(
 const LINKED_RECORD_TARGET_LABELS = new Map<string, string>([
   [targetPathKey(SPACE_TYPES_TARGET_TABLE_PATH), "Space-Types"],
   [targetPathKey(PUMPS_TARGET_TABLE_PATH), "Pumps"],
+  [targetPathKey(VENTILATORS_TARGET_TABLE_PATH), "Ventilators"],
 ]);
 
 function linkedRecordTargetsFromFieldDefs(

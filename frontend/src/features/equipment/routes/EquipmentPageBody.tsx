@@ -445,6 +445,8 @@ export function EquipmentPageBody(props: {
           ventilatorsSlice={ventilatorsSlice}
           projectId={project.id}
           activeVersionId={activeVersionId}
+          accessMode={project.access_mode}
+          versionLocked={project.active_version?.locked ?? false}
           buildEmptyRow={buildEmptyVentilatorRow}
           footerAction={addRowButton("Add ventilator", ventilatorsController.canEdit, () =>
             insertEquipmentRow(ventilatorsController, "vent"),

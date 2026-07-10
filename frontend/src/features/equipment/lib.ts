@@ -78,6 +78,7 @@ import {
   ROOM_FLOOR_LEVEL_KEY,
   ROOM_FLOOR_LEVEL_OPTION_KEY,
   ROOM_SPACE_TYPE_FIELD_KEY,
+  ROOM_VENTILATOR_FIELD_KEY,
   ROOMS_TABLE_NAME,
   VENTILATOR_DATASHEET_FIELD_KEY,
   VENTILATOR_FROST_PROTECTION_KEY,
@@ -85,6 +86,7 @@ import {
   VENTILATOR_INSIDE_OUTSIDE_COLUMN_ID,
   VENTILATOR_INSIDE_OUTSIDE_KEY,
   VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,
+  VENTILATORS_TARGET_TABLE_PATH,
   VENTILATORS_STATUS_OPTION_KEY,
 } from "./types";
 import type {
@@ -415,6 +417,10 @@ export const ROOMS_COMPAT_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
     ...builtInFieldDef(ROOM_SPACE_TYPE_FIELD_KEY, "Space Type", "linked_record"),
     config: { target_table_path: ["space_types"], max_links: 1 },
   },
+  {
+    ...builtInFieldDef(ROOM_VENTILATOR_FIELD_KEY, "Ventilator", "linked_record"),
+    config: { target_table_path: [...VENTILATORS_TARGET_TABLE_PATH], max_links: 1 },
+  },
   builtInFieldDef("num_people", "People", "number"),
   builtInFieldDef("num_bedrooms", "Bedrooms", "number"),
   {
@@ -724,6 +730,9 @@ export function roomsFieldOverlay(roomsSlice: RoomsSlice): Record<string, TableF
       locked: ["field_type", "delete", "duplicate"],
     },
     [ROOM_SPACE_TYPE_FIELD_KEY]: {
+      locked: DEFAULT_BUILT_IN_LOCKS,
+    },
+    [ROOM_VENTILATOR_FIELD_KEY]: {
       locked: DEFAULT_BUILT_IN_LOCKS,
     },
     num_people: {

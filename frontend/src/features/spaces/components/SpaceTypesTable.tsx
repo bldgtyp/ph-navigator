@@ -14,15 +14,18 @@ import {
   customFieldColumnDefs,
   type CustomFieldTableActions,
 } from "../../../shared/ui/data-table/feature";
-import { isRoomsSource } from "../../equipment/lib/inverseSource";
+import {
+  inverseColumnHeader,
+  inverseFieldKey,
+  inverseIdsForTarget,
+  isRoomsSource,
+} from "../../equipment/lib/inverseSource";
 import {
   SPACE_TYPE_NAME_FIELD_KEY,
   type InverseLinkField,
   type SpaceTypeRow,
   type SpaceTypesSlice,
 } from "../types";
-
-const EMPTY_INVERSE_IDS: readonly string[] = [];
 
 export type LinkedRoomResolver = (rowId: string) => { recordId: string | null } | null;
 
@@ -114,7 +117,7 @@ export function SpaceTypesTable({
         id: inverseFieldKey(field),
         fieldKey: inverseFieldKey(field),
         header: inverseColumnHeader(field),
-        getIncomingIds: (spaceType) => inverseIdsForSpaceType(inverseLinks, spaceType.id, field),
+        getIncomingIds: (spaceType) => inverseIdsForTarget(inverseLinks, spaceType.id, field),
         resolveLabel: (rowId) => resolveLinkedRoom(rowId)?.recordId ?? null,
         onPillClick: (rowId) => onInversePillClick?.(field, rowId),
         edit:
@@ -160,22 +163,6 @@ export function SpaceTypesTable({
       {...customFieldActions}
     />
   );
-}
-
-function inverseFieldKey(field: InverseLinkField): string {
-  return `inverse:${field.source_key}`;
-}
-
-function inverseColumnHeader(field: InverseLinkField): string {
-  return `${field.source_table_display} ← ${field.source_field_display_name}`;
-}
-
-function inverseIdsForSpaceType(
-  inverseLinks: SpaceTypesSlice["inverse_links"],
-  spaceTypeId: string,
-  field: InverseLinkField,
-): readonly string[] {
-  return inverseLinks?.[spaceTypeId]?.[field.source_key] ?? EMPTY_INVERSE_IDS;
 }
 
 function textValue(row: SpaceTypeRow, fieldKey: string): string {

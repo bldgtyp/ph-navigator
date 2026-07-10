@@ -936,13 +936,15 @@ None outstanding.
 
 ## US-EQ-4 — ERVs sub-tab — *Amendment 2026-06-09: Linked-from-HP-indoor surfaces*
 
-**Status:** Phase 4 amended (2026-06-16). The old reverse count
-column was replaced with a read-only incoming linked-record column
-on the Ventilators DataTable. The real editable link remains owned
-by HP Units — Indoor via `linked_erv_unit_id`. Ventilators uses
-inline DataTable editing, so modal-badge deep-links remain
-descoped and tracked as **Q-HP-FOLLOWUP-7** (post-v1): revisit
-when / if Ventilators grows a row-detail modal. ·
+**Status:** Phase 4 amended (2026-06-16); Rooms link amended
+2026-07-09. The old reverse count column was replaced with
+read-only incoming linked-record columns on the Ventilators DataTable.
+HP Units — Indoor remains the owner of the HP indoor link via
+`linked_erv_unit_id`; Rooms now owns the built-in room assignment via
+`custom_links.ventilator_id`. Ventilators uses inline DataTable
+editing, so modal-badge deep-links remain descoped and tracked as
+**Q-HP-FOLLOWUP-7** (post-v1): revisit when / if Ventilators grows a
+row-detail modal. ·
 **Priority:** MVP (Phase 4 of the Heat Pumps rollout — see
 `planning/archive/dated/2026-06-09/heat-pumps/PRD.md` §5.4)
 **Driver:** Heat Pumps feature requires the ERV sub-tab to expose
@@ -959,6 +961,8 @@ the reverse side of the HP-indoor ↔ ERV link captured by
    `linked_record` column sourced from HP Units — Indoor rows whose
    `linked_erv_unit_id` points at the ventilator. The editable link
    remains the normal HP Units — Indoor `linked_erv_unit_id` field.
+   It also carries a computed `Rooms ← Ventilator` inverse column
+   sourced from Rooms' built-in `ventilator_id` linked-record field.
 3. **New badge on the ERV row-detail modal header:** when ≥1 HP
    indoor unit links to this ERV, render `"Linked from HP indoor:
    {tag}"` for each linked tag (comma-separated if multiple).
@@ -973,7 +977,9 @@ the reverse side of the HP-indoor ↔ ERV link captured by
    `planning/archive/dated/2026-06-09/heat-pumps/phases/phase-04-erv-and-rooms-cross-link.md`
    "Scope amendment"). The historical "US-EQ-2 cascade still nulls
    `rooms[*].erv_unit_ids`" claim is obsolete — no `erv_unit_ids`
-   field exists on rooms in the V2 codebase.
+   field exists on rooms in the V2 codebase. Rooms' current
+   `custom_links.ventilator_id` reference is also silently cleared
+   when the target ventilator row is deleted.
 
 ### Acceptance criteria (additive to existing US-EQ-4)
 

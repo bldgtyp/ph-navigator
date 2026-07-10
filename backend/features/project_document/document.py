@@ -152,6 +152,7 @@ THERMAL_BRIDGE_OPTION_KEYS: tuple[ThermalBridgeOptionKey, ...] = (
     THERMAL_BRIDGE_STATUS_OPTION_KEY,
 )
 ROOM_SPACE_TYPE_FIELD_KEY = "space_type_id"
+ROOM_VENTILATOR_FIELD_KEY = "ventilator_id"
 
 # v7 wire shape: Rooms adds a built-in linked-record FieldDef
 # (`space_type_id`) targeting Space-Types.

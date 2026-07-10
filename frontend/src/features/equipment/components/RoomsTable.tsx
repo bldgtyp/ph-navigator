@@ -23,6 +23,7 @@ import {
   ROOM_FLOOR_LEVEL_COLUMN_ID,
   ROOM_FLOOR_LEVEL_KEY,
   ROOM_SPACE_TYPE_FIELD_KEY,
+  ROOM_VENTILATOR_FIELD_KEY,
   type RoomRow,
   type RoomsSlice,
 } from "../types";
@@ -34,6 +35,7 @@ const EXPLICIT_ROOM_FIELD_KEYS = new Set([
   ROOM_FLOOR_LEVEL_KEY,
   ROOM_BUILDING_ZONE_KEY,
   ROOM_SPACE_TYPE_FIELD_KEY,
+  ROOM_VENTILATOR_FIELD_KEY,
   "num_people",
   "num_bedrooms",
   "icfa_factor",
@@ -140,6 +142,20 @@ export function RoomsTable({
           },
         ]
       : [];
+    const ventilatorColumn: DataTableColumnDef<RoomRow>[] = fieldDefByKey.has(
+      ROOM_VENTILATOR_FIELD_KEY,
+    )
+      ? [
+          {
+            id: ROOM_VENTILATOR_FIELD_KEY,
+            fieldKey: ROOM_VENTILATOR_FIELD_KEY,
+            header: fieldDefByKey.get(ROOM_VENTILATOR_FIELD_KEY)?.display_name ?? "Ventilator",
+            accessor: (room) => getCustomLink(room, ROOM_VENTILATOR_FIELD_KEY),
+            measureText: (room) => getCustomLink(room, ROOM_VENTILATOR_FIELD_KEY).join(","),
+            defaultWidth: 180,
+          },
+        ]
+      : [];
     return [
       // Rooms is the formula exception: the Display Name identifier is
       // the `{Number} — {Name}` formula kept on the `record_id` field,
@@ -180,6 +196,7 @@ export function RoomsTable({
         accessor: (room) => room.building_zone,
       },
       ...spaceTypeColumn,
+      ...ventilatorColumn,
       {
         id: "num_people",
         fieldKey: "num_people",

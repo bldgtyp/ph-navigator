@@ -58,6 +58,7 @@ import {
   HOT_WATER_TANK_INSIDE_OUTSIDE_OPTION_KEY,
   PUMPS_STATUS_OPTION_KEY,
   ROOM_SPACE_TYPE_FIELD_KEY,
+  ROOM_VENTILATOR_FIELD_KEY,
   STATUS_DEFAULT_OPTION_ID,
   STATUS_FIELD_KEY,
   type RoomRow,
@@ -557,6 +558,7 @@ describe("equipment room helpers", () => {
       ROOM_FLOOR_LEVEL_COLUMN_ID,
       ROOM_BUILDING_ZONE_COLUMN_ID,
       ROOM_SPACE_TYPE_FIELD_KEY,
+      ROOM_VENTILATOR_FIELD_KEY,
       "num_people",
       "num_bedrooms",
       "ceiling_height_m",
@@ -659,6 +661,21 @@ describe("equipment room helpers", () => {
 
     expect(payload.rooms[0]?.custom_links?.cf_pumps).toEqual(["pump-a", "pump-b"]);
     expect(payload.rooms[0]?.custom_values.cf_pumps).toBeUndefined();
+  });
+
+  test("roomsPayloadFromCellWrites routes the built-in ventilator link to custom_links", () => {
+    const current = sliceWithCustomFields([], {
+      rooms: [roomFixture({ id: "rm_1", floor_level: null }, { number: "101", name: "Living" })],
+    });
+
+    const payload = roomsPayloadFromCellWrites(
+      current,
+      [{ rowId: "rm_1", fieldKey: ROOM_VENTILATOR_FIELD_KEY, value: ["vent_1"] }],
+      {},
+    );
+
+    expect(payload.rooms[0]?.custom_links?.[ROOM_VENTILATOR_FIELD_KEY]).toEqual(["vent_1"]);
+    expect(payload.rooms[0]?.custom_values[ROOM_VENTILATOR_FIELD_KEY]).toBeUndefined();
   });
 
   test("roomsPayloadFromCellWrites clears linked_record cell to empty list", () => {

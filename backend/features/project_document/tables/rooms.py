@@ -26,6 +26,7 @@ from features.project_document.document import (
     ROOM_FLOOR_LEVEL_OPTION_KEY,
     ROOM_OPTION_KEYS,
     ROOM_SPACE_TYPE_FIELD_KEY,
+    ROOM_VENTILATOR_FIELD_KEY,
     ROOMS_TYPED_COLUMN_FIELD_KEYS,
     ProjectDocumentV1,
     RoomOptionKey,
@@ -83,6 +84,13 @@ _ROOMS_NON_RECORD_ID_FIELD_DEFS: tuple[TableFieldDef, ...] = (
         field_type=CustomFieldType.linked_record,
         config={"target_table_path": ["space_types"], "max_links": 1},
         description="Project-local Space-Type linked to this Room.",
+    ),
+    built_in_field_def(
+        field_key=ROOM_VENTILATOR_FIELD_KEY,
+        display_name="Ventilator",
+        field_type=CustomFieldType.linked_record,
+        config={"target_table_path": ["equipment", "ervs"], "max_links": 1},
+        description="Ventilation unit serving this Room.",
     ),
     built_in_field_def(field_key="num_people", display_name="People", field_type=CustomFieldType.number, default=0),
     built_in_field_def(field_key="num_bedrooms", display_name="Bedrooms", field_type=CustomFieldType.number, default=0),
@@ -506,7 +514,7 @@ ROOMS_REQUIRED_FIELD_KEYS: frozenset[str] = frozenset()
 # the typed column. Floor / Zone reference the project's namespaced
 # option list; iCFA carries the `ge=0, le=1.0` PH-domain invariant.
 ROOMS_FIELD_TYPE_LOCKED_KEYS: frozenset[str] = frozenset(
-    {"floor_level", "building_zone", "icfa_factor", ROOM_SPACE_TYPE_FIELD_KEY}
+    {"floor_level", "building_zone", "icfa_factor", ROOM_SPACE_TYPE_FIELD_KEY, ROOM_VENTILATOR_FIELD_KEY}
 )
 ROOMS_OPTION_EDITABLE_BUILT_IN_FIELD_KEYS: frozenset[str] = frozenset({"floor_level", "building_zone"})
 
