@@ -269,10 +269,10 @@ export function PumpsTable({
       statusColumn<PumpRow>(fieldDefByKey),
     ];
     const inverseColumns: DataTableColumnDef<PumpRow>[] = (inverseLinkFields ?? []).map((field) =>
-        incomingLinkColumn({
-          id: inverseFieldKey(field),
-          header: inverseColumnHeader(field),
-          getIncomingIds: (pump) => inverseIdsForTarget(inverseLinks, pump.id, field),
+      incomingLinkColumn({
+        id: inverseFieldKey(field),
+        header: inverseColumnHeader(field),
+        getIncomingIds: (pump) => inverseIdsForTarget(inverseLinks, pump.id, field),
         resolveLabel: (rowId) => resolveInverseLinkLabel?.(field, rowId) ?? null,
         onPillClick: (rowId) => onInversePillClick?.(field, rowId),
         edit:

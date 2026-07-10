@@ -93,7 +93,12 @@ export function VentilatorsTableSlot(props: VentilatorsTableSlotProps) {
     activeVersionId,
   );
   const hasRoomInverseLinks = ventilatorsSlice.inverse_link_fields?.some(isRoomsSource) ?? false;
-  const roomsQuery = useRoomsSliceQuery(projectId, activeVersionId, accessMode, hasRoomInverseLinks);
+  const roomsQuery = useRoomsSliceQuery(
+    projectId,
+    activeVersionId,
+    accessMode,
+    hasRoomInverseLinks,
+  );
   const roomsSlice = roomsQuery.data ?? emptyRoomsSlice();
   const roomDialog = useRoomDialogController({
     projectId,

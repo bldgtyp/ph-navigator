@@ -186,9 +186,7 @@ def test_ventilators_response_includes_rooms_inverse_overlay() -> None:
                     ),
                     "equipment": body.tables.equipment.model_copy(
                         update={
-                            "ervs": body.tables.equipment.ervs.model_copy(
-                                update={"rows": [VentilatorRow(id="vent_a")]}
-                            )
+                            "ervs": body.tables.equipment.ervs.model_copy(update={"rows": [VentilatorRow(id="vent_a")]})
                         }
                     ),
                 }

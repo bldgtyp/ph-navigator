@@ -285,8 +285,7 @@ export function VentilatorsTable({
         incomingLinkColumn<VentilatorRow>({
           id: inverseFieldKey(field),
           header: inverseColumnHeader(field),
-          getIncomingIds: (ventilator) =>
-            inverseIdsForTarget(inverseLinks, ventilator.id, field),
+          getIncomingIds: (ventilator) => inverseIdsForTarget(inverseLinks, ventilator.id, field),
           resolveLabel: (rowId) => resolveInverseLinkLabel?.(field, rowId) ?? null,
           onPillClick: (rowId) => onInversePillClick?.(field, rowId),
           edit:
