@@ -41,6 +41,11 @@ from features.project_document.service import (
     save_draft_as,
     table_download_body,
 )
+from features.project_document.status_summary import (
+    ProjectStatusSummaryResponse,
+    get_draft_status_summary,
+    get_saved_status_summary,
+)
 from features.project_document.tables import RegisteredTableResponse
 from features.project_document.tables.apertures import AperturesSliceResponse
 from features.project_document.tables.batch import BatchDraftTablesResponse
@@ -77,6 +82,14 @@ def get_document(
     return get_saved_document_or_read_safe(version_id, access, request_id=request_id(request))
 
 
+@router.get("/document/status-summary", response_model=ProjectStatusSummaryResponse)
+def get_saved_status_summary_route(
+    version_id: UUID,
+    access: ProjectViewAccess,
+) -> ProjectStatusSummaryResponse:
+    return get_saved_status_summary(version_id, access)
+
+
 @router.get("/document/tables/{table_name}", response_model=RegisteredTableResponse)
 def get_saved_table(
     version_id: UUID,
@@ -98,6 +111,14 @@ def get_draft_tables_batch_route(
     names: Annotated[list[str], Query(min_length=1, max_length=MAX_BATCH_TABLE_NAMES)],
 ) -> BatchDraftTablesResponse:
     return get_draft_tables_batch(version_id, names, access)
+
+
+@router.get("/draft/status-summary", response_model=ProjectStatusSummaryResponse)
+def get_draft_status_summary_route(
+    version_id: UUID,
+    access: ProjectEditAccess,
+) -> ProjectStatusSummaryResponse:
+    return get_draft_status_summary(version_id, access)
 
 
 @router.get("/draft/tables/{table_name}", response_model=RegisteredTableResponse)

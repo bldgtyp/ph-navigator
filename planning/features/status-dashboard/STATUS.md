@@ -11,7 +11,7 @@ RELATED: README.md; PRD.md; PLAN.md
 
 ## Current state
 
-Phase 00 is complete at its intended red-test boundary. Phase 01 is next.
+Phases 00 and 01 are complete. The compact backend summary contract is implemented and verified; Phase 02 frontend work is next.
 
 The working decisions are:
 
@@ -25,7 +25,7 @@ The working decisions are:
 
 ## Next step
 
-Implement the shared summary projection plus editor-draft and saved-version routes in Phase 01, turning the expected `404` route-contract failure green.
+Implement the independently loading Record status UI, bounded disclosures, session-only expansion state, summary invalidation, and exact row deep links in Phase 02.
 
 ## Blockers
 
@@ -38,3 +38,4 @@ None. Product review may revise the layout or scope before implementation.
 - Reviewed table read architecture, editor batch-read seam, version/viewer source behavior, and deep-link routes.
 - Used the existing Graphify graph as the first codebase query, then verified weak graph results against source.
 - Phase 00 contract run: `uv run pytest tests/test_project_status_summary.py -q` produced `4 passed, 1 failed`; the only failure is the intentionally missing Phase 01 route (`404`, expected `200`).
+- Phase 01: `18 passed` across summary and adjacent batch-route tests; a 500-record summary measured 50,623 bytes and the route loaded the document once.
