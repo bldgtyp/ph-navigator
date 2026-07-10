@@ -48,7 +48,7 @@ from features.project_document.tables.contracts import (
     TableFieldRegistry,
     default_attach_computed_overlay,
 )
-from features.project_document.validation import validate_document
+from features.project_document.validation import validate_outgoing_document
 
 if TYPE_CHECKING:
     from features.project_document.schema_mutations import FieldSchemaMutation
@@ -203,7 +203,7 @@ def apply_pumps_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectD
     next_equipment = body.tables.equipment.model_copy(update={"pumps": next_pumps_envelope})
     next_tables = body.tables.model_copy(update={"equipment": next_equipment})
     next_body = body.model_copy(update={"tables": next_tables, "single_select_options": options})
-    return validate_document(next_body.model_dump(mode="json"))
+    return validate_outgoing_document(next_body.model_dump(mode="json"))
 
 
 def pumps_response(

@@ -51,7 +51,7 @@ from features.project_document.tables.dependent_links import (
     DependentLink,
     apply_dependent_link_cascade,
 )
-from features.project_document.validation import validate_document
+from features.project_document.validation import validate_outgoing_document
 
 HEAT_PUMPS_OUTDOOR_EQUIP_TABLE_NAME = "heat_pumps_outdoor_equip"
 HEAT_PUMPS_INDOOR_EQUIP_TABLE_NAME = "heat_pumps_indoor_equip"
@@ -534,7 +534,7 @@ def _apply_replace(
     # replace removed, before the document validator would reject a dangling
     # reference. This is the generic form of the old heat-pump delete-cascade.
     next_body = apply_dependent_link_cascade(body, next_body, table_path=table_path, dependent_links=dependent_links)
-    return validate_document(next_body.model_dump(mode="json"))
+    return validate_outgoing_document(next_body.model_dump(mode="json"))
 
 
 def _leaf_options(

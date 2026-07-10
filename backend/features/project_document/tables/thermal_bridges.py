@@ -31,7 +31,7 @@ from features.project_document.tables._registry_helpers import (
 )
 from features.project_document.tables._status_field import status_field_def
 from features.project_document.tables.contracts import TableContract
-from features.project_document.validation import validate_document
+from features.project_document.validation import validate_outgoing_document
 
 THERMAL_BRIDGES_TABLE_NAME = "thermal_bridges"
 _THERMAL_BRIDGES_TABLE_PATH: tuple[str, ...] = (THERMAL_BRIDGES_TABLE_NAME,)
@@ -169,7 +169,7 @@ def apply_thermal_bridges_replace(body: ProjectDocumentV1, payload: BaseModel) -
     )
     next_tables = body.tables.model_copy(update={"thermal_bridges": next_thermal_bridges})
     next_body = body.model_copy(update={"tables": next_tables, "single_select_options": options})
-    return validate_document(next_body.model_dump(mode="json"))
+    return validate_outgoing_document(next_body.model_dump(mode="json"))
 
 
 def thermal_bridges_response(

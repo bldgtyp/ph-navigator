@@ -22,7 +22,7 @@ from features.project_document.document import (
     RoomsTableEnvelope,
     SingleSelectOption,
 )
-from features.project_document.validation import validate_document
+from features.project_document.validation import validate_outgoing_document
 
 
 def _is_dev_or_test() -> bool:
@@ -64,7 +64,7 @@ def seed_rooms_custom_field(
     )
     next_tables = body.tables.model_copy(update={"rooms": next_envelope})
     next_body = body.model_copy(update={"tables": next_tables})
-    return validate_document(next_body.model_dump(mode="json")), field_def
+    return validate_outgoing_document(next_body.model_dump(mode="json")), field_def
 
 
 def seed_rooms_custom_single_select(
@@ -98,4 +98,4 @@ def seed_rooms_custom_single_select(
     next_options = dict(body.single_select_options)
     next_options[f"rooms.{field_def.field_key}"] = list(options)
     next_body = body.model_copy(update={"tables": next_tables, "single_select_options": next_options})
-    return validate_document(next_body.model_dump(mode="json")), field_def
+    return validate_outgoing_document(next_body.model_dump(mode="json")), field_def

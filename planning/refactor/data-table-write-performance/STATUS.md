@@ -1,8 +1,7 @@
 ---
 DATE: 2026-07-09
 TIME: -
-STATUS: Active — plan review complete. PRD + PLAN + phase-01…05 require
-  revision per plan-review.md R-1…R-10 before implementation handoff.
+STATUS: Active — Phase 00 complete; Phase 01 is next.
 AUTHOR: Claude (for Ed)
 SCOPE: Live state ledger for the DataTable write-performance refactor.
 RELATED:
@@ -13,38 +12,68 @@ RELATED:
 
 ## Current state
 
-- 2026-07-09 — Research complete (frontend + backend write path mapped
-  with file:line evidence; findings F-1…F-10 in PRD §2). Packet drafted:
-  PRD, PLAN, and five phase handoffs. **No code changes yet.**
-- 2026-07-09 — Architecture review completed against current main @
-  `79f73eb4`. `plan-review.md` records ten required corrections,
-  revised queue/journal boundaries, scope corrections, and a recommended
-  phase sequence. **Implementation remains gated on packet revision.**
+- 2026-07-09 — Research complete (write path mapped with file:line
+  evidence). Initial packet drafted (5 phases). **No code changes.**
+- 2026-07-09 — Codex architecture review (`plan-review.md`) against
+  main @ `79f73eb4`: ten required corrections + scope corrections.
+- 2026-07-09 — **Packet revised; every review item verified against
+  code and resolved.** Restructured to seven phases (00-06). Resolution
+  map:
+
+| Review item | Resolution |
+|---|---|
+| R-1 double-apply | PRD §6 invariants + D-3; phase-02 §2.1 + test matrix (queued ops never in an earlier request body) |
+| R-2 two-layer split | PRD D-2 (coordinator + per-slice journals); phase-01 §2.1 / phase-02 §2.1 |
+| R-3 accepted/settled | PRD §6 WriteHandle; contract ships in phase-01 (settled==accepted), timing changes in phase-02; A-9 |
+| R-4 lifecycle flush/cancel | PRD D-12 + A-8; phase-01 §2.4 (useDraftLifecycle, VersionControls beforeunload keyed on non-idle) |
+| R-5 insert-order reversal | Verified (splice at anchorIndex+1, spaceTypesController.ts:84-95) → F-15; phase-03 §2.2 anchor rewriting + contract test |
+| R-6 option-delta algebra | F-16; phase-03 §2.3 + serial-execution oracle; coalescing deferred to its own conditional phase (D-4) |
+| R-7 three-way retry precondition | PRD D-9 (observed-base equality, no silent same-cell overwrite); D-6 rejected-op counts; recovery buffer deferred v1.1 |
+| Scope 3.1 catalogs | Verified (Materials = parallel row PATCHes) → F-10 corrected; scope renamed to project-document slice-backed tables; NG-7 follow-up |
+| Scope 3.2 canonical contract | Verified (data-table.md:517-528 pre-ratifies queue/optimistic/flush/rollback) → F-11; PRD decisions marked [contract] |
+| R-8 etag/cache keys | Verified (draft etag = sha256(etag:uuid4)) → F-12; phase-06 §3 keys |
+| R-9 full-path instrumentation | Verified (third full-doc validate in tables/*.py, e.g. rooms.py:386) → F-7 expanded; phase-00 §2 aggregates at write spine |
+| R-10 ack-effect stall | F-13; PRD D-7; phase-02 §2.4 split |
+| §5 sequence | PLAN.md adopted (00-06); coalescing conditional; backend last |
+| §6 alternatives | PRD D-13 (TanStack scope.id investigate in phase-01; command endpoint recorded + deferred in NG-2) |
+
+  Deliberate scoping deviations from the review (not disagreements of
+  substance): frontend queue metrics ride WITH phase-01 dev logging
+  rather than a standalone telemetry step; the failed-op recovery
+  buffer is optional/v1.1; lifecycle edge cases (auth change, unmount)
+  get simple cancel+banner semantics, not recovery.
+- 2026-07-09 — **Phase 00 complete.** Added the
+  `project_document.write_timing` event with every planned stage/byte
+  field, audited all scoped frontend write surfaces, added a
+  controllable async transport/burst/unhandled-rejection harness with
+  two current-behavior characterization tests, and captured the
+  1,000-row PERF-STRESS baseline (50 cell writes + 10 inserts).
 
 ## Next step
 
-1. Revise PRD / PLAN / phase handoffs to resolve `plan-review.md`
-   R-1…R-10.
-2. Reconcile the PRD decision state with the canonical DataTable
-   technical requirement.
-3. Review and ratify the revised architecture before handing Phase 1 to
-   implementation.
+1. Implement Phase 01 from the Phase-00 routing inventory: one FIFO
+   coordinator lane per draft, then lifecycle flush/cancel wiring.
 
 ## Blockers
 
-- Implementation handoff is blocked on the required packet corrections
-  in `plan-review.md`. This is a planning gate, not an external blocker.
+- None. Planning gate cleared pending ratification.
 
 ## Phase ledger
 
 | Phase | Status |
 |---|---|
-| 01 — write queue + coalescing | Planned |
-| 02 — optimistic apply + instant cursor | Planned |
-| 03 — undo polish | Planned |
-| 04 — conflict messaging + self-heal | Planned |
-| 05 — backend write-path trims | Planned (measure-gated) |
+| 00 — observability + write-surface audit | **Complete** |
+| 01 — draft write coordinator | Planned |
+| 02 — per-table optimistic journals | Planned |
+| 03 — transport coalescing | Planned (conditional — entry gate) |
+| 04 — undo polish | Planned |
+| 05 — conflict copy + three-way retry | Planned |
+| 06 — backend write-path trims | Planned (measure-gated) |
 
 ## Verification evidence
 
-- (none yet — populated per phase at closeout)
+- Phase 00 focused backend + frontend tests green.
+- PERF-STRESS baseline: 1,000 Rooms rows, 1.657-1.660 MiB body;
+  single-cell `request_ms` p50/p95 = 368.511/438.328; row-insert
+  p50/p95 = 360.913/442.479.
+- Full `make format && make ci` recorded at phase closeout.

@@ -310,7 +310,13 @@ Whole-document JSONB hot paths emit one coarse line per document op:
 `db_ms`. Project-document writes reject bodies above
 `PROJECT_DOCUMENT_MAX_BODY_BYTES` before persistence, returning
 `project_document_too_large` with the measured `size_bytes` and
-`limit_bytes`. R2 operations emit `r2.op` with `op`, `duration_ms`, and
+`limit_bytes`. Draft table PUTs also emit
+`project_document.write_timing`: one body-free service-level event
+with parse, apply, outgoing-validation, asset-check, serialization,
+SQL, response-build, transaction, and request timings plus document,
+request, and response byte counts. This event is the write-path
+performance regression source; `project_document.saved` remains the
+narrow repository/SQL event. R2 operations emit `r2.op` with `op`, `duration_ms`, and
 `bytes` when known. Postgres-side `pg_stat_statements` +
 `log_min_duration_statement` on the Render DB remain the server-side
 truth for lock waits and plan regressions.

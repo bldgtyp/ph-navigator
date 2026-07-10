@@ -14,7 +14,9 @@ load-draft → check-ETag → apply → validate → persist → bump-ETag plumb
 from __future__ import annotations
 
 from collections.abc import Callable
+from contextlib import nullcontext
 from dataclasses import dataclass
+from time import perf_counter
 from typing import Any, Literal
 from uuid import UUID
 
@@ -33,6 +35,10 @@ from features.project_document.validation import (
     next_draft_etag_from_etag,
     upgrade_document_with_errors,
     validate_document,
+)
+from features.project_document.write_metrics import (
+    DocumentWriteMetrics,
+    active_write_metrics,
 )
 from features.projects.access import ProjectAccess
 from features.shared.errors import api_error
@@ -59,6 +65,7 @@ def load_draft_context(
     if_match_version: str | None,
     *,
     draft_etag_mismatch_message: str,
+    metrics: DocumentWriteMetrics | None = None,
 ) -> tuple[ProjectDocumentV1, str, str, dict[str, Any] | None]:
     """Load + ETag-gate the draft basis used by every mutating draft op.
 
@@ -81,7 +88,8 @@ def load_draft_context(
             "Locked versions cannot be edited.",
         )
 
-    version_body = validate_document(version["body"])
+    with metrics.measure("version_parse_ms") if metrics is not None else nullcontext():
+        version_body = validate_document(version["body"])
     version_etag = document_etag(version_body)
     draft = repository.get_draft_for_update(conn, version_id, user_id)
 
@@ -104,7 +112,8 @@ def load_draft_context(
             {"expected": stored_draft_etag},
         )
 
-    draft_result, draft_errors = upgrade_document_with_errors(draft["body"])
+    with metrics.measure("draft_parse_ms") if metrics is not None else nullcontext():
+        draft_result, draft_errors = upgrade_document_with_errors(draft["body"])
     if draft_result is None:
         raise api_error(
             status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -154,6 +163,7 @@ def apply_document_write(
     updated_via: Literal["browser", "mcp"] = "browser",
     validate_asset_references: bool = False,
     on_persisted: OnPersisted | None = None,
+    metrics: DocumentWriteMetrics | None = None,
 ) -> DocumentWriteResult:
     """Run one document mutation through the shared draft write lifecycle.
 
@@ -162,43 +172,58 @@ def apply_document_write(
     leaves the body unchanged returns a no-op result without touching the draft
     or the audit log.
     """
-    with transaction() as conn:
-        base_body, base_version_etag, version_etag, draft = load_draft_context(
-            conn,
-            access.project_id,
-            version_id,
-            user_id,
-            if_match,
-            if_match_version,
-            draft_etag_mismatch_message=draft_etag_mismatch_message,
-        )
-
-        next_body, details = mutate(conn, base_body)
-
-        if next_body == base_body:
-            return DocumentWriteResult(
-                body=base_body,
-                source="draft" if draft is not None else "version",
-                version_etag=version_etag,
-                draft_etag=draft["draft_etag"] if draft is not None else None,
-                details=details,
+    transaction_measurement = metrics.measure("txn_ms") if metrics is not None else nullcontext()
+    with transaction_measurement:
+        with transaction() as conn:
+            base_body, base_version_etag, version_etag, draft = load_draft_context(
+                conn,
+                access.project_id,
+                version_id,
+                user_id,
+                if_match,
+                if_match_version,
+                draft_etag_mismatch_message=draft_etag_mismatch_message,
+                metrics=metrics,
             )
 
-        if validate_asset_references:
-            validate_document_asset_references(conn, project_id=access.project_id, body=next_body)
-        serialized_next = enforce_document_body_size(next_body)
-        draft_etag = repository.upsert_draft(
-            conn,
-            version_id,
-            user_id,
-            next_body,
-            base_version_etag,
-            next_draft_etag_from_etag(serialized_next.etag),
-            updated_via=updated_via,
-            serialized_body=serialized_next,
-        )
-        if on_persisted is not None:
-            on_persisted(conn, details)
+            outgoing_before = metrics.outgoing_validate_ms if metrics is not None else 0.0
+            mutate_started_at = perf_counter()
+            with active_write_metrics(metrics):
+                next_body, details = mutate(conn, base_body)
+            if metrics is not None:
+                mutate_ms = (perf_counter() - mutate_started_at) * 1000
+                outgoing_ms = metrics.outgoing_validate_ms - outgoing_before
+                metrics.apply_ms += max(0.0, mutate_ms - outgoing_ms)
+
+            if next_body == base_body:
+                return DocumentWriteResult(
+                    body=base_body,
+                    source="draft" if draft is not None else "version",
+                    version_etag=version_etag,
+                    draft_etag=draft["draft_etag"] if draft is not None else None,
+                    details=details,
+                )
+
+            if validate_asset_references:
+                with metrics.measure("asset_check_ms") if metrics is not None else nullcontext():
+                    validate_document_asset_references(conn, project_id=access.project_id, body=next_body)
+            with metrics.measure("serialize_ms") if metrics is not None else nullcontext():
+                serialized_next = enforce_document_body_size(next_body)
+            if metrics is not None:
+                metrics.body_bytes = serialized_next.size_bytes
+            with metrics.measure("sql_ms") if metrics is not None else nullcontext():
+                draft_etag = repository.upsert_draft(
+                    conn,
+                    version_id,
+                    user_id,
+                    next_body,
+                    base_version_etag,
+                    next_draft_etag_from_etag(serialized_next.etag),
+                    updated_via=updated_via,
+                    serialized_body=serialized_next,
+                )
+            if on_persisted is not None:
+                on_persisted(conn, details)
 
     return DocumentWriteResult(
         body=next_body,

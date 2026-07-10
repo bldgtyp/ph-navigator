@@ -27,7 +27,7 @@ from features.project_document.tables._registry_helpers import (
 )
 from features.project_document.tables._status_field import status_field_def
 from features.project_document.tables.contracts import TableContract
-from features.project_document.validation import validate_document
+from features.project_document.validation import validate_outgoing_document
 
 ELECTRIC_HEATERS_TABLE_NAME = "electric_heaters"
 _ELECTRIC_HEATERS_TABLE_PATH: tuple[str, ...] = ("equipment", "electric_heaters")
@@ -113,7 +113,7 @@ def apply_electric_heaters_replace(body: ProjectDocumentV1, payload: BaseModel) 
     for key, value in electric_heaters_payload.single_select_options.items():
         options[key] = value
     next_body = body.model_copy(update={"tables": next_tables, "single_select_options": options})
-    return validate_document(next_body.model_dump(mode="json"))
+    return validate_outgoing_document(next_body.model_dump(mode="json"))
 
 
 def electric_heaters_response(

@@ -12,6 +12,11 @@ import {
   type SliceTableSchemaMutation,
 } from "./useSliceTableController";
 import type { SlicePayloadBuilders } from "./types";
+import {
+  createControllableTransport,
+  dispatchBurst,
+  expectNoUnhandledRejections,
+} from "./writeTestHarness";
 
 type FakeRow = { id: string };
 type FakeSlice = BaseTableSlice & { rows: string[] };
@@ -260,6 +265,94 @@ describe("useSliceTableController write freshness", () => {
     expect(replaceMutate).toHaveBeenCalledWith({
       current: slice,
       payload: { rows: ["old", "new-row", "cell-write"] },
+    });
+  });
+
+  it("characterizes rapid writes as concurrent requests carrying the same draft etag", async () => {
+    const queryClient = new QueryClient();
+    const slice = makeSlice({ draft_etag: "draft-shared", rows: ["old"] });
+    queryClient.setQueryData(editorSliceQueryKey(), slice);
+    const controlled = createControllableTransport<
+      { current: FakeSlice; payload: FakePayload },
+      FakeSlice
+    >();
+    const fromRowInsert = vi.fn((current: FakeSlice, rows: RowInsertPayload[]) => ({
+      rows: [...current.rows, ...rows.map((row) => row.rowId)],
+    }));
+    const { result } = renderController({
+      queryClient,
+      slice,
+      refetch: vi.fn(async () => ({ data: slice })),
+      payloadBuilders: makePayloadBuilders(fromRowInsert),
+      replaceMutate: controlled.transport,
+    });
+
+    let writes: Promise<void>[] = [];
+    await act(async () => {
+      writes = dispatchBurst(
+        [
+          {
+            kind: "rowInsert" as const,
+            rows: [{ rowId: "row-a", anchorRowId: null, fieldDefaults: {} }],
+          },
+          {
+            kind: "rowInsert" as const,
+            rows: [{ rowId: "row-b", anchorRowId: null, fieldDefaults: {} }],
+          },
+        ],
+        result.current.onWrite,
+      );
+      await Promise.resolve();
+    });
+
+    expect(controlled.requests).toHaveLength(2);
+    expect(controlled.requests.map(({ request }) => request.current.draft_etag)).toEqual([
+      "draft-shared",
+      "draft-shared",
+    ]);
+    controlled.requests[1]!.response.resolve(makeSlice({ draft_etag: "draft-b" }));
+    controlled.requests[0]!.response.resolve(makeSlice({ draft_etag: "draft-a" }));
+    await act(async () => Promise.all(writes));
+  });
+
+  it("characterizes a rapid-write rejection as observed by every caller", async () => {
+    const queryClient = new QueryClient();
+    const slice = makeSlice();
+    queryClient.setQueryData(editorSliceQueryKey(), slice);
+    const controlled = createControllableTransport<
+      { current: FakeSlice; payload: FakePayload },
+      FakeSlice
+    >();
+    const { result } = renderController({
+      queryClient,
+      slice,
+      refetch: vi.fn(async () => ({ data: slice })),
+      replaceMutate: controlled.transport,
+    });
+
+    await expectNoUnhandledRejections(async () => {
+      const writes = dispatchBurst(
+        [
+          {
+            kind: "rowInsert" as const,
+            rows: [{ rowId: "row-a", anchorRowId: null, fieldDefaults: {} }],
+          },
+          {
+            kind: "rowInsert" as const,
+            rows: [{ rowId: "row-b", anchorRowId: null, fieldDefaults: {} }],
+          },
+        ],
+        result.current.onWrite,
+      );
+      await Promise.resolve();
+      let outcomes: PromiseSettledResult<void>[] = [];
+      await act(async () => {
+        controlled.requests[0]!.response.resolve(makeSlice({ draft_etag: "draft-a" }));
+        controlled.requests[1]!.response.reject(new Error("409 draft_etag_mismatch"));
+        outcomes = await Promise.allSettled(writes);
+      });
+      expect(outcomes.map((outcome) => outcome.status)).toEqual(["fulfilled", "rejected"]);
+      expect(result.current.actionError).toBe("409 draft_etag_mismatch");
     });
   });
 });

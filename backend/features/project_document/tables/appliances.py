@@ -32,7 +32,7 @@ from features.project_document.tables._registry_helpers import (
 )
 from features.project_document.tables._status_field import status_field_def
 from features.project_document.tables.contracts import TableContract
-from features.project_document.validation import validate_document
+from features.project_document.validation import validate_outgoing_document
 
 APPLIANCES_TABLE_NAME = "appliances"
 _APPLIANCES_TABLE_PATH: tuple[str, ...] = ("equipment", "appliances")
@@ -174,7 +174,7 @@ def apply_appliances_replace(body: ProjectDocumentV1, payload: BaseModel) -> Pro
     next_equipment = body.tables.equipment.model_copy(update={"appliances": next_appliances_envelope})
     next_tables = body.tables.model_copy(update={"equipment": next_equipment})
     next_body = body.model_copy(update={"tables": next_tables, "single_select_options": options})
-    return validate_document(next_body.model_dump(mode="json"))
+    return validate_outgoing_document(next_body.model_dump(mode="json"))
 
 
 def appliances_response(

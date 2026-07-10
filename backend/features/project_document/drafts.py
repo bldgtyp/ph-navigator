@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any, Literal, cast
 from uuid import UUID
 
@@ -39,6 +40,7 @@ from features.project_document.validation import (
     enforce_document_body_size,
     validate_document,
 )
+from features.project_document.write_metrics import DocumentWriteMetrics
 from features.project_document.write_spine import apply_document_write, load_draft_context
 from features.projects.access import ProjectAccess, require_editor_user
 from features.projects.service import version_public
@@ -55,7 +57,10 @@ def replace_table_slice(
 ) -> BaseModel:
     user = require_editor_user(access)
     contract = get_table_contract(table_name)
-    payload = contract.parse_replace_payload(raw_payload)
+    metrics = DocumentWriteMetrics.start()
+    metrics.request_bytes = len(json.dumps(raw_payload, separators=(",", ":")).encode("utf-8"))
+    with metrics.measure("payload_parse_ms"):
+        payload = contract.parse_replace_payload(raw_payload)
 
     result = apply_document_write(
         access,
@@ -66,15 +71,20 @@ def replace_table_slice(
         mutate=lambda _conn, base_body: (contract.apply_replace(base_body, payload), None),
         draft_etag_mismatch_message="The draft changed before this table update was applied.",
         validate_asset_references=True,
+        metrics=metrics,
     )
-    return contract.build_response(
-        access.project_id,
-        version_id,
-        result.source,
-        result.version_etag,
-        result.draft_etag,
-        result.body,
-    )
+    with metrics.measure("response_build_ms"):
+        response = contract.build_response(
+            access.project_id,
+            version_id,
+            result.source,
+            result.version_etag,
+            result.draft_etag,
+            result.body,
+        )
+        metrics.response_bytes = len(response.model_dump_json().encode("utf-8"))
+    metrics.emit(project_id=access.project_id, version_id=version_id, table_name=table_name)
+    return response
 
 
 def preview_table_replace(

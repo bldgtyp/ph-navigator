@@ -38,7 +38,7 @@ from features.project_document.tables._registry_helpers import (
 from features.project_document.tables._status_field import status_field_def
 from features.project_document.tables.contracts import InverseLinkField, TableContract
 from features.project_document.tables.custom_link_cascade import clear_removed_custom_links
-from features.project_document.validation import validate_document
+from features.project_document.validation import validate_outgoing_document
 
 VENTILATORS_TABLE_NAME = "ventilators"
 _VENTILATORS_TABLE_PATH: tuple[str, ...] = ("equipment", "ervs")
@@ -265,7 +265,7 @@ def apply_ventilators_replace(body: ProjectDocumentV1, payload: BaseModel) -> Pr
 
     next_tables = next_tables.model_copy(update={"equipment": next_equipment})
     next_body = body.model_copy(update={"tables": next_tables, "single_select_options": options})
-    return validate_document(next_body.model_dump(mode="json"))
+    return validate_outgoing_document(next_body.model_dump(mode="json"))
 
 
 def ventilators_response(

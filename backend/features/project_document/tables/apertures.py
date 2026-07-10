@@ -16,7 +16,7 @@ from features.project_document.document import (
 )
 from features.project_document.models import ProjectDocumentSource
 from features.project_document.tables.contracts import TableContract
-from features.project_document.validation import validate_document
+from features.project_document.validation import validate_outgoing_document
 
 APERTURES_TABLE_NAME = "apertures"
 
@@ -49,7 +49,7 @@ def apply_apertures_replace(body: ProjectDocumentV1, payload: BaseModel) -> Proj
         return body
     next_tables = body.tables.model_copy(update={"apertures": request.apertures})
     next_body = body.model_copy(update={"tables": next_tables})
-    return validate_document(next_body.model_dump(mode="json"))
+    return validate_outgoing_document(next_body.model_dump(mode="json"))
 
 
 def apertures_response(

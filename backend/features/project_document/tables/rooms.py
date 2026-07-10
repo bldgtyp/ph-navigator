@@ -52,7 +52,7 @@ from features.project_document.tables.contracts import (
     TableFieldRegistry,
     default_attach_computed_overlay,
 )
-from features.project_document.validation import validate_document
+from features.project_document.validation import validate_outgoing_document
 
 if TYPE_CHECKING:
     # schema_mutations imports TableFieldRegistry from contracts at
@@ -383,7 +383,7 @@ def apply_rooms_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectD
             next_tables = next_tables.model_copy(update={"equipment": next_equipment})
 
     next_body = body.model_copy(update={"tables": next_tables, "single_select_options": options})
-    return validate_document(next_body.model_dump(mode="json"))
+    return validate_outgoing_document(next_body.model_dump(mode="json"))
 
 
 def _rooms_single_select_options(body: ProjectDocumentV1) -> dict[str, list[SingleSelectOption]]:

@@ -18,6 +18,7 @@ from features.project_document.migrations import (
     UpgradeResult,
     upgrade_project_document,
 )
+from features.project_document.write_metrics import measure_outgoing_validation
 from features.shared.errors import api_error
 
 JsonValue: TypeAlias = None | bool | int | float | str | list["JsonValue"] | dict[str, "JsonValue"]
@@ -91,6 +92,12 @@ def validate_document(raw_body: object) -> ProjectDocumentV1:
         "Project document failed validation.",
         {"errors": errors},
     )
+
+
+def validate_outgoing_document(raw_body: object) -> ProjectDocumentV1:
+    """Validate a mutation result while attributing its full-document cost."""
+    with measure_outgoing_validation():
+        return validate_document(raw_body)
 
 
 def validate_document_with_errors(raw_body: object) -> tuple[ProjectDocumentV1 | None, list[str]]:

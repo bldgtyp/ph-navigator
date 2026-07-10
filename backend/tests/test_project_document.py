@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any, cast
 from uuid import UUID
 
@@ -439,6 +440,52 @@ def test_first_rooms_replace_lazily_creates_draft(clean_document_tables: None) -
     assert reloaded.status_code == 200
     assert reloaded.json()["source"] == "draft"
     assert reloaded.json()["rooms"][0]["custom_values"]["name"] == "Living Room"
+
+
+def test_rooms_replace_emits_full_write_timing_event(
+    clean_document_tables: None,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+    initial = client.get(draft_rooms_url(project_id, version_id)).json()
+
+    with caplog.at_level(logging.INFO):
+        response = client.put(
+            draft_rooms_url(project_id, version_id),
+            headers={"Origin": ORIGIN, "If-Match-Version": initial["version_etag"]},
+            json=room_payload(),
+        )
+
+    assert response.status_code == 200
+    record = next(
+        record for record in caplog.records if getattr(record, "event", None) == "project_document.write_timing"
+    )
+    payload = cast(dict[str, object], record.msg)
+    assert payload["project_id"] == str(project_id)
+    assert payload["version_id"] == str(version_id)
+    assert payload["table_name"] == "rooms"
+    for field in (
+        "version_parse_ms",
+        "draft_parse_ms",
+        "payload_parse_ms",
+        "apply_ms",
+        "outgoing_validate_ms",
+        "asset_check_ms",
+        "serialize_ms",
+        "sql_ms",
+        "response_build_ms",
+        "txn_ms",
+        "request_ms",
+    ):
+        assert isinstance(payload[field], float)
+        assert cast(float, payload[field]) >= 0
+    assert cast(float, payload["outgoing_validate_ms"]) > 0
+    assert cast(int, payload["body_bytes"]) > 0
+    assert cast(int, payload["request_bytes"]) > 0
+    assert cast(int, payload["response_bytes"]) > 0
 
 
 def test_rooms_replace_noop_does_not_create_draft(clean_document_tables: None) -> None:

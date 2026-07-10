@@ -30,7 +30,7 @@ from features.project_document.tables._registry_helpers import (
 )
 from features.project_document.tables.contracts import InverseLinkField, TableContract
 from features.project_document.tables.custom_link_cascade import clear_removed_custom_links
-from features.project_document.validation import validate_document
+from features.project_document.validation import validate_outgoing_document
 
 SPACE_TYPES_TABLE_NAME = "space_types"
 _SPACE_TYPES_TABLE_PATH: tuple[str, ...] = (SPACE_TYPES_TABLE_NAME,)
@@ -129,7 +129,7 @@ def apply_space_types_replace(body: ProjectDocumentV1, payload: BaseModel) -> Pr
             )
 
     next_body = body.model_copy(update={"tables": next_tables, "single_select_options": options})
-    return validate_document(next_body.model_dump(mode="json"))
+    return validate_outgoing_document(next_body.model_dump(mode="json"))
 
 
 def space_types_response(
