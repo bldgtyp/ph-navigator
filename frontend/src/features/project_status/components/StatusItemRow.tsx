@@ -1,5 +1,7 @@
 import type { DragEvent, KeyboardEvent } from "react";
+import { ArrowDown, ArrowUp, Ban, Check, Circle, Pencil, Trash2 } from "lucide-react";
 import { formatProjectDate } from "../../../shared/lib/dates";
+import { AppMenu, AppMenuItem } from "../../../shared/ui/AppMenu";
 import { nextStatusState, stateSymbol, STATUS_STATE_LABELS } from "../lib";
 import type { StatusItem } from "../types";
 import { StatusDescription } from "./StatusDescription";
@@ -10,7 +12,7 @@ export function StatusItemRow({
   isEditor,
   canMoveUp,
   canMoveDown,
-  onCycleState,
+  onSetState,
   onEdit,
   onDelete,
   onMove,
@@ -21,7 +23,7 @@ export function StatusItemRow({
   isEditor: boolean;
   canMoveUp: boolean;
   canMoveDown: boolean;
-  onCycleState: () => void;
+  onSetState: (state: StatusItem["state"]) => void;
   onEdit: () => void;
   onDelete: () => void;
   onMove: (direction: -1 | 1) => void;
@@ -79,7 +81,7 @@ export function StatusItemRow({
             type="button"
             className={`status-state-button ${item.state}`}
             aria-label={`Set ${item.title} to ${STATUS_STATE_LABELS[nextStatusState(item.state)]}`}
-            onClick={onCycleState}
+            onClick={() => onSetState(nextStatusState(item.state))}
           >
             {stateSymbol(item.state)}
           </button>
@@ -104,15 +106,14 @@ export function StatusItemRow({
           <span className={`chip chip--sm status-badge ${item.state}`}>
             {STATUS_STATE_LABELS[item.state]}
           </span>
-          {item.completion_date ? (
-            <button
-              type="button"
-              className="chip chip--sm date-pill"
-              disabled={!isEditor}
-              onClick={isEditor ? onEdit : undefined}
-            >
+          {item.completion_date && isEditor ? (
+            <button type="button" className="chip chip--sm date-pill" onClick={onEdit}>
               {formatProjectDate(item.completion_date)}
             </button>
+          ) : item.completion_date ? (
+            <span className="chip chip--sm date-pill">
+              {formatProjectDate(item.completion_date)}
+            </span>
           ) : null}
         </div>
         {item.description ? (
@@ -124,32 +125,35 @@ export function StatusItemRow({
         ) : null}
       </div>
       {isEditor ? (
-        <div className="status-row-actions">
-          <button
-            type="button"
-            className="icon-button"
-            aria-label={`Move ${item.title} up`}
-            disabled={!canMoveUp}
-            onClick={() => onMove(-1)}
-          >
-            ^
-          </button>
-          <button
-            type="button"
-            className="icon-button"
-            aria-label={`Move ${item.title} down`}
-            disabled={!canMoveDown}
-            onClick={() => onMove(1)}
-          >
-            v
-          </button>
-          <button type="button" className="secondary-button" onClick={onEdit}>
-            Edit
-          </button>
-          <button type="button" className="danger-button" onClick={onDelete}>
-            Delete
-          </button>
-        </div>
+        <AppMenu className="status-row-menu" label={`More actions for ${item.title}`}>
+          <AppMenuItem icon={Pencil} onClick={onEdit}>
+            Edit milestone
+          </AppMenuItem>
+          <AppMenuItem icon={ArrowUp} disabled={!canMoveUp} onClick={() => onMove(-1)}>
+            Move up
+          </AppMenuItem>
+          <AppMenuItem icon={ArrowDown} disabled={!canMoveDown} onClick={() => onMove(1)}>
+            Move down
+          </AppMenuItem>
+          {item.state !== "done" ? (
+            <AppMenuItem icon={Check} onClick={() => onSetState("done")}>
+              Mark done
+            </AppMenuItem>
+          ) : null}
+          {item.state !== "todo" ? (
+            <AppMenuItem icon={Circle} onClick={() => onSetState("todo")}>
+              Mark to do
+            </AppMenuItem>
+          ) : null}
+          {item.state !== "na" ? (
+            <AppMenuItem icon={Ban} onClick={() => onSetState("na")}>
+              Mark N/A
+            </AppMenuItem>
+          ) : null}
+          <AppMenuItem icon={Trash2} danger onClick={onDelete}>
+            Delete milestone
+          </AppMenuItem>
+        </AppMenu>
       ) : null}
     </article>
   );

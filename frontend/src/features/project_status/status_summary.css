@@ -1,8 +1,6 @@
 .record-status {
   display: grid;
   gap: var(--space-14);
-  padding-bottom: var(--space-20);
-  border-bottom: 1px solid var(--border-subtle);
 }
 
 .status-section-heading h2,

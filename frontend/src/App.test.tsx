@@ -308,7 +308,9 @@ describe("App", () => {
     ).toBeVisible();
     expect(screen.queryByRole("button", { name: "Save Version" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "2426 - West Stockbridge House" })).toBeVisible();
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Status" })).toBeVisible());
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "Project status" })).toBeVisible(),
+    );
     const projectTabs = screen.getByRole("navigation", { name: "Project tabs" });
     expect(within(projectTabs).getByRole("link", { name: "Spaces" })).toBeVisible();
     expect(within(projectTabs).queryByRole("link", { name: "Rooms" })).not.toBeInTheDocument();
@@ -332,7 +334,7 @@ describe("App", () => {
 
     render(<App />);
 
-    await screen.findByRole("heading", { name: "Status" });
+    await screen.findByRole("heading", { name: "Project status" });
     const projectTabs = screen.getByRole("navigation", { name: "Project tabs" });
     expect(within(projectTabs).getByRole("link", { name: "Spaces" })).toHaveAttribute(
       "href",
@@ -572,13 +574,13 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "Version actions for Working" }));
     await user.click(screen.getByRole("menuitem", { name: "Open version..." }));
     expect(screen.getByText("Versions")).toBeVisible();
-    await user.click(screen.getByRole("heading", { name: "Status" }));
+    await user.click(screen.getByRole("heading", { name: "Project status" }));
     expect(screen.queryByText("Versions")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Version actions for Working" }));
     expect(screen.getByRole("menuitem", { name: "Save Version" })).toBeDisabled();
     expect(screen.getByRole("menuitem", { name: "Diff" })).toBeVisible();
-    await user.click(screen.getByRole("heading", { name: "Status" }));
+    await user.click(screen.getByRole("heading", { name: "Project status" }));
     expect(screen.queryByRole("menuitem", { name: "Diff" })).not.toBeInTheDocument();
   });
 

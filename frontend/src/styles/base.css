@@ -638,8 +638,7 @@ a:focus-visible {
 .status-item-main,
 .read-safe-actions,
 .status-empty-actions,
-.room-actions,
-.status-row-actions {
+.room-actions {
   display: flex;
   gap: var(--space-14);
 }
@@ -688,8 +687,7 @@ a:focus-visible {
 }
 
 .shell-controls,
-.table-actions,
-.status-row-actions {
+.table-actions {
   align-items: center;
   justify-content: flex-end;
   flex-wrap: wrap;

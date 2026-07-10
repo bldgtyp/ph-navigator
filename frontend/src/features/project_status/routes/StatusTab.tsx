@@ -15,7 +15,7 @@ import {
   useStatusItemsQuery,
   useUpdateStatusItemMutation,
 } from "../hooks";
-import { nextStatusState, orderIndexForDrop, orderIndexForMove } from "../lib";
+import { orderIndexForDrop, orderIndexForMove } from "../lib";
 import type { StatusItem, StatusItemPayload } from "../types";
 
 export function StatusTab({ project }: { project: ProjectDetail }) {
@@ -48,9 +48,9 @@ export function StatusTab({ project }: { project: ProjectDetail }) {
     setEditingItem(null);
   };
 
-  const cycleState = (item: StatusItem) => {
+  const setItemState = (item: StatusItem, state: StatusItem["state"]) => {
     if (!isEditor) return;
-    void patchItem(item.id, { state: nextStatusState(item.state) }).catch((error: unknown) => {
+    void patchItem(item.id, { state }).catch((error: unknown) => {
       setActionError(errorMessage(error, "Could not update item."));
     });
   };
@@ -96,66 +96,78 @@ export function StatusTab({ project }: { project: ProjectDetail }) {
   return (
     <section className="tab-panel status-panel">
       <div className="status-body">
-        <RecordStatusSummary project={project} />
-        <div className="status-heading">
-          <div>
-            <h2>Status</h2>
-            {items.length > 0 ? <p>Track this project's lifecycle milestones.</p> : null}
-          </div>
-          {isEditor && items.length > 0 ? (
-            <button type="button" onClick={() => setIsAdding(true)}>
-              Add item
-            </button>
-          ) : null}
+        <div className="status-page-heading">
+          <h1>Project status</h1>
+          <p>See outstanding project data and what comes next.</p>
         </div>
-        {actionError ? (
-          <p className="form-error" role="alert">
-            {actionError}
-          </p>
-        ) : null}
-        {itemsQuery.isLoading ? (
-          <div className="roadmap-skeleton" aria-hidden="true">
-            {Array.from({ length: 4 }, (_, index) => (
-              <div className="status-skeleton-line" key={index} />
-            ))}
-          </div>
-        ) : itemsQuery.isError ? (
-          <div className="status-section-error" role="alert">
-            <p>{errorMessage(itemsQuery.error, "Could not load roadmap.")}</p>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => void itemsQuery.refetch()}
-            >
-              Retry
-            </button>
-          </div>
-        ) : items.length === 0 ? (
-          <StatusEmptyState
-            isEditor={isEditor}
-            projectId={project.id}
-            onApplyTemplate={applyTemplate}
-            onAddItem={() => setIsAdding(true)}
-          />
-        ) : (
-          <div className="status-timeline" aria-label="Project status items">
-            {items.map((item, index) => (
-              <StatusItemRow
-                key={item.id}
-                item={item}
-                isCurrent={item.id === currentItemId}
+        <div className="status-dashboard-grid">
+          <RecordStatusSummary project={project} />
+          <section className="status-roadmap" aria-labelledby="status-roadmap-heading">
+            <div className="status-heading">
+              <div>
+                <h2 id="status-roadmap-heading">Roadmap</h2>
+                <p>Project milestones and what's next.</p>
+              </div>
+              {isEditor && items.length > 0 ? (
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => setIsAdding(true)}
+                >
+                  Add milestone
+                </button>
+              ) : null}
+            </div>
+            {actionError ? (
+              <p className="form-error" role="alert">
+                {actionError}
+              </p>
+            ) : null}
+            {itemsQuery.isLoading ? (
+              <div className="roadmap-skeleton" aria-hidden="true">
+                {Array.from({ length: 4 }, (_, index) => (
+                  <div className="status-skeleton-line" key={index} />
+                ))}
+              </div>
+            ) : itemsQuery.isError ? (
+              <div className="status-section-error" role="alert">
+                <p>{errorMessage(itemsQuery.error, "Could not load roadmap.")}</p>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => void itemsQuery.refetch()}
+                >
+                  Retry
+                </button>
+              </div>
+            ) : items.length === 0 ? (
+              <StatusEmptyState
                 isEditor={isEditor}
-                canMoveUp={index > 0}
-                canMoveDown={index < items.length - 1}
-                onCycleState={() => cycleState(item)}
-                onEdit={() => setEditingItem(item)}
-                onDelete={() => setDeletingItem(item)}
-                onMove={(direction) => moveItem(item, direction)}
-                onDrop={(draggedItemId, placement) => dropItem(draggedItemId, item, placement)}
+                projectId={project.id}
+                onApplyTemplate={applyTemplate}
+                onAddItem={() => setIsAdding(true)}
               />
-            ))}
-          </div>
-        )}
+            ) : (
+              <div className="status-timeline" aria-label="Project roadmap milestones">
+                {items.map((item, index) => (
+                  <StatusItemRow
+                    key={item.id}
+                    item={item}
+                    isCurrent={item.id === currentItemId}
+                    isEditor={isEditor}
+                    canMoveUp={index > 0}
+                    canMoveDown={index < items.length - 1}
+                    onSetState={(state) => setItemState(item, state)}
+                    onEdit={() => setEditingItem(item)}
+                    onDelete={() => setDeletingItem(item)}
+                    onMove={(direction) => moveItem(item, direction)}
+                    onDrop={(draggedItemId, placement) => dropItem(draggedItemId, item, placement)}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
       </div>
       {isAdding ? (
         <StatusItemModal

@@ -91,7 +91,6 @@
     flex-direction: column;
   }
 
-  .status-row-actions,
   .table-actions,
   .shell-controls {
     justify-content: flex-start;

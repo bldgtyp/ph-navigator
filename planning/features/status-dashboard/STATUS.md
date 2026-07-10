@@ -11,7 +11,7 @@ RELATED: README.md; PRD.md; PLAN.md
 
 ## Current state
 
-Phases 00-02 are complete. The compact API, progressively disclosed Record status UI, invalidation, and row destinations are implemented and verified; Phase 03 Roadmap redesign is next.
+Phases 00-03 are complete. The compact API, progressively disclosed Record status UI, invalidation, row destinations, two-pane composition, and lightweight Roadmap controls are implemented and verified; Phase 04 integration and final verification is next.
 
 The working decisions are:
 
@@ -25,7 +25,7 @@ The working decisions are:
 
 ## Next step
 
-Redesign the Roadmap as the compact second pane and replace permanent editor action buttons with an accessible hover/focus/touch overflow menu in Phase 03.
+Complete editor/viewer integration coverage, responsive and cold-load verification, full repository gates, and durable Status page documentation in Phase 04.
 
 ## Blockers
 
@@ -40,3 +40,4 @@ None. Product review may revise the layout or scope before implementation.
 - Phase 00 contract run: `uv run pytest tests/test_project_status_summary.py -q` produced `4 passed, 1 failed`; the only failure is the intentionally missing Phase 01 route (`404`, expected `200`).
 - Phase 01: `18 passed` across summary and adjacent batch-route tests; a 500-record summary measured 50,623 bytes and the route loaded the document once.
 - Phase 02: focused frontend suites `54 passed`, App suite `31 passed`, `make frontend-dev-check` passed, and the live Status route rendered without console errors.
+- Phase 03: focused Status/App suites `36 passed`; `make frontend-dev-check` passed with 14 pre-existing warnings; live editor verification confirmed the quiet 2:1 layout and compact four-milestone Roadmap.
