@@ -3,6 +3,11 @@ export type DraftWriteStatus = Readonly<{ queued: number; inFlight: boolean }>;
 export type TransportTask<T = unknown> = {
   label: string;
   run(): Promise<T>;
+  batch?: {
+    key: string;
+    value: unknown;
+    run(values: readonly unknown[]): Promise<T>;
+  };
 };
 
 export type WriteHandle<T = unknown> = {
@@ -30,7 +35,8 @@ type Deferred<T = void> = {
   reject(reason: unknown): void;
 };
 
-type QueueEntry = { sequence: number; task: TransportTask; deferred: Deferred<unknown> };
+type QueueHandle = { sequence: number; deferred: Deferred<unknown> };
+type QueueEntry = { batchEpoch: number; tasks: TransportTask[]; handles: QueueHandle[] };
 type IdleWaiter = { deferred: Deferred; targetSequence: number | null };
 
 export class DraftWriteCoordinator {
@@ -43,6 +49,8 @@ export class DraftWriteCoordinator {
   private drainFailure: unknown = null;
   private scheduledSequence = 0;
   private completedSequence = 0;
+  private batchEpoch = 0;
+  private queuedHandles = 0;
 
   constructor(key: string) {
     this.key = key;
@@ -54,7 +62,19 @@ export class DraftWriteCoordinator {
     // ignores a fire-and-forget handle. Callers still receive the original promise.
     void deferred.promise.catch(() => undefined);
     this.drainFailure = null;
-    this.queue.push({ sequence: ++this.scheduledSequence, task, deferred });
+    const handle = { sequence: ++this.scheduledSequence, deferred };
+    const lastQueued = this.queue.at(-1);
+    if (
+      task.batch &&
+      lastQueued?.batchEpoch === this.batchEpoch &&
+      lastQueued?.tasks[0]?.batch?.key === task.batch.key
+    ) {
+      lastQueued.tasks.push(task);
+      lastQueued.handles.push(handle);
+    } else {
+      this.queue.push({ batchEpoch: this.batchEpoch, tasks: [task], handles: [handle] });
+    }
+    this.queuedHandles += 1;
     this.publish();
     this.pump();
     const accepted = deferred.promise.then(() => undefined);
@@ -64,6 +84,7 @@ export class DraftWriteCoordinator {
 
   flush(): Promise<void> {
     const targetSequence = this.scheduledSequence;
+    this.batchEpoch += 1;
     if (this.completedSequence >= targetSequence) {
       return this.drainFailure === null ? Promise.resolve() : Promise.reject(this.drainFailure);
     }
@@ -81,8 +102,12 @@ export class DraftWriteCoordinator {
 
   cancel(): void {
     const queued = this.queue.splice(0);
-    for (const entry of queued) entry.deferred.reject(new WriteQueueCancelledError());
-    if (queued.length > 0) this.completedSequence = queued.at(-1)!.sequence;
+    this.queuedHandles = 0;
+    for (const entry of queued) {
+      for (const handle of entry.handles) handle.deferred.reject(new WriteQueueCancelledError());
+    }
+    const lastCancelled = queued.at(-1)?.handles.at(-1);
+    if (lastCancelled) this.completedSequence = lastCancelled.sequence;
     this.publish();
     this.settleIdleWaitersIfIdle();
   }
@@ -110,21 +135,33 @@ export class DraftWriteCoordinator {
       return;
     }
 
+    this.queuedHandles -= entry.handles.length;
     this.inFlight = true;
     this.publish();
-    void entry.task.run().then(
+    const firstTask = entry.tasks[0]!;
+    const execution =
+      entry.tasks.length > 1 && firstTask.batch
+        ? firstTask.batch.run(entry.tasks.map((task) => task.batch!.value))
+        : firstTask.run();
+    void execution.then(
       (result) => {
-        this.completedSequence = entry.sequence;
-        entry.deferred.resolve(result);
+        this.completedSequence = entry.handles.at(-1)!.sequence;
+        for (const handle of entry.handles) handle.deferred.resolve(result);
         this.settleIdleWaitersIfIdle();
         this.finishTask();
       },
       (error: unknown) => {
         this.drainFailure = error;
-        entry.deferred.reject(error);
+        for (const handle of entry.handles) handle.deferred.reject(error);
         const queued = this.queue.splice(0);
-        for (const waiting of queued) waiting.deferred.reject(new WriteQueueDrainedError(error));
-        this.completedSequence = queued.at(-1)?.sequence ?? entry.sequence;
+        this.queuedHandles = 0;
+        for (const waiting of queued) {
+          for (const handle of waiting.handles) {
+            handle.deferred.reject(new WriteQueueDrainedError(error));
+          }
+        }
+        this.completedSequence =
+          queued.at(-1)?.handles.at(-1)?.sequence ?? entry.handles.at(-1)!.sequence;
         this.settleIdleWaitersIfIdle();
         this.finishTask();
       },
@@ -142,7 +179,10 @@ export class DraftWriteCoordinator {
   }
 
   private publish(): void {
-    const next = { queued: this.queue.length, inFlight: this.inFlight };
+    const next = {
+      queued: this.queuedHandles,
+      inFlight: this.inFlight,
+    };
     if (next.queued === this.snapshot.queued && next.inFlight === this.snapshot.inFlight) return;
     this.snapshot = next;
     for (const listener of this.listeners) listener();
@@ -150,12 +190,16 @@ export class DraftWriteCoordinator {
 
   private settleIdleWaitersIfIdle(): void {
     if (this.idleWaiters.length === 0) return;
-    const ready = this.idleWaiters.filter((waiter) =>
-      waiter.targetSequence === null
-        ? !this.inFlight && this.queue.length === 0
-        : this.completedSequence >= waiter.targetSequence,
-    );
-    this.idleWaiters = this.idleWaiters.filter((waiter) => !ready.includes(waiter));
+    const ready: IdleWaiter[] = [];
+    const pending: IdleWaiter[] = [];
+    for (const waiter of this.idleWaiters) {
+      const isReady =
+        waiter.targetSequence === null
+          ? !this.inFlight && this.queue.length === 0
+          : this.completedSequence >= waiter.targetSequence;
+      (isReady ? ready : pending).push(waiter);
+    }
+    this.idleWaiters = pending;
     for (const waiter of ready) {
       if (waiter.targetSequence !== null && this.drainFailure !== null)
         waiter.deferred.reject(this.drainFailure);

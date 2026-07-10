@@ -2,14 +2,6 @@
 // feature tab that ships a JSON-document slice + DataTable composes
 // this hook with its own SlicePayloadBuilders, then renders the
 // returned controller through <SliceTableShell> + its own table.
-//
-// Out of scope for this controller (consumer-owned):
-//   - feature-specific modal state (e.g. RoomModal, ErvDetailDrawer)
-//   - feature-specific row id generation (`generatedId(prefix)`)
-//   - feature-specific footer actions, sub-tab bars, download menus
-//   - feature-specific formula-row-values shape — the controller forwards
-//     it through but never reads it
-
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQueryClient, type UseMutationResult } from "@tanstack/react-query";
 import { errorMessage } from "../../../lib/errors";
@@ -35,6 +27,7 @@ import {
 } from "../../../../features/project_document/table-slice";
 import type { BuildEmptyRow, FieldOption, WriteOp } from "../types";
 import { useJournaledSliceCommit } from "./useJournaledSliceCommit";
+import { buildCoalescedTablePayload } from "./buildCoalescedTablePayload";
 import type { FieldRegistryEntry, TableFieldDef, TableFieldRenderOverlays } from "../index";
 import type { FieldSchemaMutation } from "../lib/customFieldMutations";
 import { useCustomFieldHandlers } from "./useCustomFieldHandlers";
@@ -357,6 +350,19 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
           },
           conflictMessages.activeRowConflict,
           "Could not update table values.",
+          op.kind === "cell"
+            ? {
+                batchable: true,
+                metadata: op,
+                buildBatchPayload: (writableSlice, metadata) =>
+                  buildCoalescedTablePayload(
+                    writableSlice,
+                    metadata,
+                    payloadBuilders,
+                    buildEmptyRow,
+                  ),
+              }
+            : undefined,
         );
         return;
       }
@@ -366,6 +372,12 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
           (writableSlice) => payloadBuilders.fromRowInsert(writableSlice, op.rows, buildEmptyRow),
           conflictMessages.activeRowConflict,
           "Could not insert row.",
+          {
+            batchable: true,
+            metadata: op,
+            buildBatchPayload: (writableSlice, metadata) =>
+              buildCoalescedTablePayload(writableSlice, metadata, payloadBuilders, buildEmptyRow),
+          },
         );
         return;
       }

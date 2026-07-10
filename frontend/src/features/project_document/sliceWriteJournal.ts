@@ -3,7 +3,10 @@ import type { DraftWriteCoordinator, TransportTask, WriteHandle } from "./draftW
 export type JournalWrite<TSlice, TPayload> = {
   label: string;
   refreshBase?: boolean;
+  batchable?: boolean;
+  metadata?: unknown;
   buildPayload(slice: TSlice): TPayload;
+  buildBatchPayload?(slice: TSlice, metadata: readonly unknown[]): TPayload;
   validate(payload: TPayload): string | null;
 };
 
@@ -26,6 +29,7 @@ export class SliceWriteJournal<TSlice, TPayload> {
       slice: TSlice,
       forceRefresh: boolean,
     ) => Promise<TSlice> = async (slice) => slice,
+    private readonly coalesceKey: string | null = null,
   ) {
     this.lastAcked = initial;
     this.currentRendered = initial;
@@ -68,25 +72,56 @@ export class SliceWriteJournal<TSlice, TPayload> {
   }
 
   private transportTask(entry: JournalEntry<TSlice, TPayload>): TransportTask<TSlice> {
-    return {
+    const task: TransportTask<TSlice> = {
       label: entry.label,
-      run: async () => {
-        const preparedBase = await this.prepareBase(this.lastAcked, entry.refreshBase === true);
-        if (preparedBase !== this.lastAcked) {
-          this.lastAcked = preparedBase;
-          this.rebaseRendered();
-        }
-        const payload = entry.buildPayload(this.lastAcked);
-        const validationMessage = entry.validate(payload);
-        if (validationMessage) throw new Error(validationMessage);
-        const acknowledged = await this.transport(this.lastAcked, payload);
-        this.lastAcked = acknowledged;
-        if (this.outstanding[0]?.id === entry.id) this.outstanding.shift();
-        else this.outstanding = this.outstanding.filter((candidate) => candidate.id !== entry.id);
-        this.rebaseRendered();
-        return acknowledged;
-      },
+      run: () => this.runEntries([entry]),
     };
+    if (entry.batchable && this.coalesceKey) {
+      task.batch = {
+        key: this.coalesceKey,
+        value: entry,
+        run: (values) => this.runEntries(values as JournalEntry<TSlice, TPayload>[]),
+      };
+    }
+    return task;
+  }
+
+  private async runEntries(entries: JournalEntry<TSlice, TPayload>[]): Promise<TSlice> {
+    const preparedBase = await this.prepareBase(
+      this.lastAcked,
+      entries.some((entry) => entry.refreshBase === true),
+    );
+    if (preparedBase !== this.lastAcked) {
+      this.lastAcked = preparedBase;
+      this.rebaseRendered();
+    }
+    let payload: TPayload;
+    const batchBuilder = entries.length > 1 ? entries[0]?.buildBatchPayload : undefined;
+    if (batchBuilder) {
+      payload = batchBuilder(
+        this.lastAcked,
+        entries.map((entry) => entry.metadata),
+      );
+      const validationMessage = entries[0]!.validate(payload);
+      if (validationMessage) throw new Error(validationMessage);
+    } else {
+      let transportProjection = this.lastAcked;
+      let latestPayload: TPayload | null = null;
+      for (const entry of entries) {
+        latestPayload = entry.buildPayload(transportProjection);
+        const validationMessage = entry.validate(latestPayload);
+        if (validationMessage) throw new Error(validationMessage);
+        transportProjection = this.applyPayload(transportProjection, latestPayload);
+      }
+      if (latestPayload === null) throw new Error("Cannot dispatch an empty journal batch.");
+      payload = latestPayload;
+    }
+    const acknowledged = await this.transport(this.lastAcked, payload);
+    this.lastAcked = acknowledged;
+    const settledIds = new Set(entries.map((entry) => entry.id));
+    this.outstanding = this.outstanding.filter((entry) => !settledIds.has(entry.id));
+    this.rebaseRendered();
+    return acknowledged;
   }
 
   private rebaseRendered(): void {

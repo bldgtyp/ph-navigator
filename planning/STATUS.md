@@ -11,7 +11,7 @@ feature-first planning.
 
 | Feature | State | Current pointer |
 |---|---|---|
-| DataTable Write Performance (refactor) | Active — Phases 00-02 complete: one draft FIFO plus per-slice optimistic journals/count-aware rollback; measured Phase 03 coalescing gate passed | `refactor/data-table-write-performance/STATUS.md` |
+| DataTable Write Performance (refactor) | Active — Phases 00-03 complete: draft FIFO, optimistic journals, counted rollback, and measured adjacent-write coalescing; Phase 04 undo polish next | `refactor/data-table-write-performance/STATUS.md` |
 | Grasshopper Data API | Backend COMPLETE / archived — `/api/v1/gh` read API for Rhino/Grasshopper: bt_number-keyed router (anon + optional MCP bearer, per-IP rate limit), version pinning, rich opaque-construction + aperture-types + window-construction exports, and the generic 12-table route; Phases 01–03 merged to main. Phases 04–05 (GH-client components) DEFERRED to `honeybee_grasshopper_ph_plus` — start from `CLIENT_HANDOFF.md` | `archive/dated/2026-07-05/grasshopper-data-api/STATUS.md` |
 | Aperture Builder Workflow | Complete / archived after picker source selection now arms paste directly, persisted `flipLeftRight` mirrors columns/spans/side frames/operation directions, full CI and browser smoke passed | `archive/dated/2026-07-02/aperture-builder-workflow/STATUS.md` |
 | Apertures Frames Grouping | Complete / archived after Frames report grouping shipped: default `manufacturer`, optional durable `brand`, and ungrouped view; focused RTL + frontend gate passed | `archive/dated/2026-07-02/apertures-frames-grouping/STATUS.md` |

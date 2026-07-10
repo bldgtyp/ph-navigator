@@ -6,9 +6,10 @@ import { mergeSlicePayload, SliceWriteJournal } from "./sliceWriteJournal";
 type Slice = { draft_etag: string; rows: string[] };
 type Payload = { rows: string[] };
 
-function append(value: string) {
+function append(value: string, batchable = false) {
   return {
     label: `rows:${value}`,
+    batchable,
     buildPayload: (slice: Slice): Payload => ({ rows: [...slice.rows, value] }),
     validate: () => null,
   };
@@ -24,7 +25,7 @@ describe("SliceWriteJournal", () => {
       if (requests.length === 1) return first.promise;
       return { draft_etag: `etag-${requests.length}`, rows: payload.rows };
     });
-    const journal = new SliceWriteJournal(
+    const journal = new SliceWriteJournal<Slice, Payload>(
       { draft_etag: "etag-0", rows: [] },
       new DraftWriteCoordinator("test"),
       mergeSlicePayload,
@@ -100,5 +101,31 @@ describe("SliceWriteJournal", () => {
 
     const recovered = journal.accept(append("C"));
     await expect(recovered.settled).resolves.toEqual({ draft_etag: "etag-ok", rows: ["C"] });
+  });
+
+  it("folds adjacent queued entries into one transport payload", async () => {
+    const first = createDeferred<Slice>();
+    const requests: Payload[] = [];
+    const journal = new SliceWriteJournal<Slice, Payload>(
+      { draft_etag: "etag-0", rows: [] },
+      new DraftWriteCoordinator("test"),
+      mergeSlicePayload,
+      async (_slice, payload) => {
+        requests.push(payload);
+        if (requests.length === 1) return first.promise;
+        return { draft_etag: "etag-2", rows: payload.rows };
+      },
+      vi.fn(),
+      vi.fn(),
+      undefined,
+      "rows",
+    );
+    const a = journal.accept(append("A", true));
+    const b = journal.accept(append("B", true));
+    const c = journal.accept(append("C", true));
+    first.resolve({ draft_etag: "etag-1", rows: ["A"] });
+    await Promise.all([a.settled, b.settled, c.settled]);
+
+    expect(requests.map((request) => request.rows)).toEqual([["A"], ["A", "B", "C"]]);
   });
 });

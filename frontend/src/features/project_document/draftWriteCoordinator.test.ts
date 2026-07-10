@@ -96,6 +96,53 @@ describe("DraftWriteCoordinator", () => {
     await second.settled;
   });
 
+  it("coalesces only adjacent queued tasks with the same batch key", async () => {
+    const controlled = createControllableTransport<string, string>();
+    const coordinator = new DraftWriteCoordinator("p:v");
+    const first = coordinator.schedule({
+      label: "first",
+      run: () => controlled.transport("first"),
+    });
+    const batchRun = vi.fn(async (values: readonly unknown[]) => values.join("+"));
+    const second = coordinator.schedule({
+      label: "second",
+      run: () => Promise.resolve("second"),
+      batch: { key: "table", value: "second", run: batchRun },
+    });
+    const third = coordinator.schedule({
+      label: "third",
+      run: () => Promise.resolve("third"),
+      batch: { key: "table", value: "third", run: batchRun },
+    });
+    expect(coordinator.status()).toEqual({ queued: 2, inFlight: true });
+    controlled.requests[0]!.response.resolve("first");
+    await first.settled;
+    await expect(second.settled).resolves.toBe("second+third");
+    await expect(third.settled).resolves.toBe("second+third");
+    expect(batchRun).toHaveBeenCalledWith(["second", "third"]);
+  });
+
+  it("does not coalesce across a flush boundary", async () => {
+    const gate = createControllableTransport<string, string>();
+    const coordinator = new DraftWriteCoordinator("p:v");
+    const first = coordinator.schedule({ label: "first", run: () => gate.transport("first") });
+    const batchRun = vi.fn(async (values: readonly unknown[]) => values.join("+"));
+    const task = (value: string) => ({
+      label: value,
+      run: () => Promise.resolve(value),
+      batch: { key: "table", value, run: batchRun },
+    });
+    const before = coordinator.schedule(task("before"));
+    const flush = coordinator.flush();
+    const after = coordinator.schedule(task("after"));
+    gate.requests[0]!.response.resolve("first");
+    await first.settled;
+    await expect(before.settled).resolves.toBe("before");
+    await expect(flush).resolves.toBeUndefined();
+    await expect(after.settled).resolves.toBe("after");
+    expect(batchRun).not.toHaveBeenCalled();
+  });
+
   it("publishes status changes and reuses one registry lane per draft", async () => {
     const coordinator = getDraftWriteCoordinator("p", "v");
     expect(getDraftWriteCoordinator("p", "v")).toBe(coordinator);

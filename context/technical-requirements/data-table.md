@@ -517,6 +517,9 @@ Rules:
 - All mounted table instances share one FIFO persistence lane per open
   draft. Do not send concurrent project-document writes from different
   tables, schema controls, or modal/preflight paths against the same draft.
+- Adjacent queued cell/row-insert gestures may share one transport request,
+  but keep one history entry and one settlement handle per gesture. Never
+  coalesce across a lifecycle flush boundary.
 - The table may optimistically apply writes while the queue flushes; the
   surrounding shell owns save/sync/conflict indicators.
 - Save and Save As wait for pending table writes to flush before calling

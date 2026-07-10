@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef } from "react";
-import type { QueryClient, QueryKey } from "@tanstack/react-query";
+import { hashKey, type QueryClient, type QueryKey } from "@tanstack/react-query";
 import type { DraftWriteCoordinator } from "../../../../features/project_document/draftWriteCoordinator";
 import { isDraftStaleError } from "../../../../features/project_document/lib";
 import {
@@ -13,6 +13,12 @@ import {
 import { errorMessage } from "../../../lib/errors";
 import { clearMountedDataTableHistories } from "../historyEvents";
 import type { SliceTableController } from "./types";
+
+export type JournalCommitOptions<TSlice, TPayload> = {
+  batchable?: boolean;
+  metadata?: unknown;
+  buildBatchPayload?: (slice: TSlice, metadata: readonly unknown[]) => TPayload;
+};
 
 export function useJournaledSliceCommit<TSlice, TPayload>(args: {
   slice: TSlice;
@@ -76,6 +82,7 @@ export function useJournaledSliceCommit<TSlice, TPayload>(args: {
               }
               return refetchResultData<TSlice>(await current.refetch()) ?? lastAcked;
             },
+            hashKey(args.queryKey),
           )
         : null,
     [args.coordinator, args.queryClient, args.queryKey],
@@ -87,6 +94,7 @@ export function useJournaledSliceCommit<TSlice, TPayload>(args: {
       buildPayload: (writableSlice: TSlice) => TPayload,
       conflictMessage: string,
       fallbackMessage: string,
+      options: JournalCommitOptions<TSlice, TPayload> = {},
     ) => {
       if (!journal) {
         return await latest.current.runCoordinatedWrite(
@@ -112,7 +120,10 @@ export function useJournaledSliceCommit<TSlice, TPayload>(args: {
       const handle = journal.accept({
         label,
         refreshBase,
+        batchable: options.batchable,
+        metadata: options.metadata,
         buildPayload,
+        buildBatchPayload: options.buildBatchPayload,
         validate: current.validate,
       });
       void handle.settled.catch(() => undefined);

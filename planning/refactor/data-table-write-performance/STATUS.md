@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-09
 TIME: -
-STATUS: Active — Phases 00-02 complete; Phase 03 entry gate passed.
+STATUS: Active — Phases 00-03 complete; Phase 04 is next.
 AUTHOR: Claude (for Ed)
 SCOPE: Live state ledger for the DataTable write-performance refactor.
 RELATED:
@@ -58,12 +58,15 @@ RELATED:
   transport payloads from the last ack only, rebase queued operations,
   and perform counted rollback with history clear. The 350 ms-latency
   browser drill rendered ten inserts ahead of a six-request backlog.
+- 2026-07-09 — **Phase 03 complete.** The measured gate passed and
+  adjacent queued cell/row-insert gestures now coalesce without
+  crossing hard-operation or flush boundaries. Ten optimistic inserts
+  settled in two PUTs at 2.5 s simulated latency, one request in flight.
 
 ## Next step
 
-1. Phase 03 entry gate passed (>3 writes queued in the Phase-02 live
-   drill; ten serial requests materially extend Save flush). Implement
-   transport coalescing and preserve per-gesture history.
+1. Implement Phase 04: history capacity, lineage-clear audit,
+   burst-safe replay failure handling, and inverse coverage.
 
 ## Blockers
 
@@ -76,7 +79,7 @@ RELATED:
 | 00 — observability + write-surface audit | **Complete** |
 | 01 — draft write coordinator | **Complete** |
 | 02 — per-table optimistic journals | **Complete** |
-| 03 — transport coalescing | **Entry gate passed** |
+| 03 — transport coalescing | **Complete** |
 | 04 — undo polish | Planned |
 | 05 — conflict copy + three-way retry | Planned |
 | 06 — backend write-path trims | Planned (measure-gated) |

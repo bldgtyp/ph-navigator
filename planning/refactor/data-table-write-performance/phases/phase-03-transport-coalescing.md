@@ -1,8 +1,7 @@
 ---
 DATE: 2026-07-09
 TIME: -
-STATUS: Planned — CONDITIONAL. Depends on phase-02; build only if
-  post-02 measurement shows queue drain lagging real data-entry.
+STATUS: Complete — entry gate passed; implemented and verified 2026-07-09.
 AUTHOR: Claude (for Ed); algebra requirements per plan-review R-5/R-6
 SCOPE: Implementation handoff for Phase 3 — merge backlogged journal
   ops into fewer transport requests, with defined row-insert ordering
@@ -112,3 +111,27 @@ special-casing.
 - Do not merge across a flush() boundary — ops accepted after a flush
   call must not batch into the pre-flush request (keeps phase-02's
   flush semantics exact).
+
+## 7. Entry decision and as-built record (2026-07-09)
+
+- Entry gate **passed**. The Phase-02 350 ms-latency drill had six of ten
+  writes backlogged and required ten serial PUTs, making Save flush and server
+  load visibly material even though rendering was already optimistic.
+- The coordinator groups only adjacent queued tasks with the same opaque batch
+  key. It remains table-shape-blind; journals supply opaque values and the
+  batch runner. Non-mergeable operations create hard queue boundaries.
+- Cell and row-insert operations are mergeable. The typed table coalescer folds
+  all insert rows, cell writes, and option deltas first, then invokes at most
+  one row builder and one cell builder for the transport batch (rather than one
+  full-table builder per gesture). Option add/remove uses last-action-wins by
+  option id with first-seen ordering. Paste, fill, delete, duplicate, schema,
+  modal, and preview operations remain boundaries.
+- Same-original-anchor row inserts rewrite each later anchor to the prior
+  inserted row id, preserving gesture order. The pure anchor rewriter has
+  independent same-anchor and mixed-anchor tests.
+- `flush()` increments a batch epoch; later writes cannot merge into its
+  pre-flush transport group. Each gesture retains its own `WriteHandle`, and
+  DataTable history still records each optimistic acceptance separately.
+- Live 2.5 s-latency drill: ten Shift-Enter gestures rendered 11 rows before
+  any response, settled through **2 PUTs**, and maintained
+  `max_in_flight=1` with no conflict/rollback banner.
