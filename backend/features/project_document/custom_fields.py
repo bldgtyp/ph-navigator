@@ -104,6 +104,8 @@ NUMBER_UNIT_REGISTRY: dict[str, dict[str, frozenset[str]]] = {
     "u_value": {"si": frozenset({"w_m2_k"}), "ip": frozenset({"btu_h_ft2_f"})},
     "specific_heat": {"si": frozenset({"j_kg_k"}), "ip": frozenset({"btu_lb_f"})},
     "length": {"si": frozenset({"m"}), "ip": frozenset({"ft"})},
+    # Small-scale length stored in millimetres (frame profile widths etc.).
+    "length_mm": {"si": frozenset({"mm"}), "ip": frozenset({"in"})},
     "area": {"si": frozenset({"m2"}), "ip": frozenset({"ft2"})},
     "volume": {"si": frozenset({"m3"}), "ip": frozenset({"ft3"})},
     "volume_liters": {"si": frozenset({"l"}), "ip": frozenset({"gal"})},
@@ -113,7 +115,14 @@ NUMBER_UNIT_REGISTRY: dict[str, dict[str, frozenset[str]]] = {
     "electric_efficiency": {"si": frozenset({"wh_m3"}), "ip": frozenset({"w_cfm"})},
     "heat_loss_rate": {"si": frozenset({"w_k"}), "ip": frozenset({"btu_h_f"})},
     "energy": {"si": frozenset({"kwh"}), "ip": frozenset({"kbtu"})},
+    "power": {"si": frozenset({"kw"}), "ip": frozenset({"kbtu_h"})},
 }
+# This registry is the validation allowlist only — SI↔IP conversion is
+# display-only and lives on the frontend. It MUST stay a superset of the
+# frontend `NUMBER_UNIT_TYPES` picker (`frontend/src/lib/units/numberUnits.ts`):
+# formula fields get the full picker, so a type the frontend offers but the
+# backend rejects would pass the modal and then 422. The parity is pinned by
+# `test_number_unit_registry_snapshot_matches_frontend_contract`.
 NUMBER_UNITS_REQUIRED_KEYS = frozenset({"mode", "unit_type", "si_unit", "ip_unit", "precision_si", "precision_ip"})
 NUMBER_UNIT_MODES = frozenset({"editable", "fixed"})
 
@@ -129,12 +138,24 @@ def clamp_number_precision(value: object) -> int:
 
 
 def validate_number_config(field_type: CustomFieldType, config: dict[str, object]) -> dict[str, object]:
-    """Validate optional Number units while preserving existing config."""
+    """Validate optional units config while preserving the rest of `config`.
+
+    Units are valid on a `number` field or on a `formula` whose
+    `result_type == "number"` (D4 — a numeric formula carries a display-only
+    unit that formats through the same SI/IP path). Persisted formula configs
+    always carry `result_type` (`apply_set_formula` writes it), so the gate is
+    coherent for stored docs; a wire-parse formula config never carries units
+    (they travel top-level as `display_units`, D12), so the strict gate is safe.
+    """
     units = config.get("units")
     if units is None:
         return config
-    if field_type is not CustomFieldType.number:
-        raise ValueError("units config is only valid for number fields")
+    if field_type is CustomFieldType.number:
+        pass
+    elif field_type is CustomFieldType.formula and config.get("result_type") == "number":
+        pass
+    else:
+        raise ValueError("units config is only valid for number fields or numeric formulas")
     if not isinstance(units, dict):
         raise ValueError("units config must be an object")
     units_config = cast(dict[str, object], units)

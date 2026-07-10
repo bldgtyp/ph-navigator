@@ -24,6 +24,7 @@ from features.project_document.custom_fields import (
 from features.project_document.document import ProjectDocumentV1, SingleSelectOption
 from features.project_document.formula import evaluate_table_formulas, overlay_cell_value
 from features.project_document.mutations.guards import (
+    enforce_fixed_units_lock,
     find_field,
     read_rows_from_envelope,
     replace_rows_in_envelope,
@@ -270,13 +271,12 @@ def apply_change_type(
             "changeType target id must equal the source field id.",
             {"field_id": mutation.after.field_key, "expected_field_id": mutation.field_id},
         )
-    if _number_units_are_fixed(existing) and existing.config.get("units") != mutation.after.config.get("units"):
-        raise api_error(
-            status.HTTP_422_UNPROCESSABLE_CONTENT,
-            "custom_field_fixed_units_locked",
-            "Fixed unit config cannot be edited.",
-            {"field_id": mutation.field_id},
-        )
+    # D13 fixed-units guard (shared with the bundle path). A standalone
+    # changeType carries no `display_units`, so a formula target is treated as a
+    # carry-forward and a `formula → number` reverse carries the unit back — the
+    # bundle path's own guard (run first, with the real tri-state) is what
+    # rejects a retarget attempt.
+    enforce_fixed_units_lock(existing, mutation.after.field_type, mutation.after.config, mutation.field_id)
     # Defense-in-depth: reject `field_type` changes on built-in fields
     # whose `"field_type"` lock is set in feature code. The frontend
     # already disables the picker; this guard catches MCP / hand-crafted
@@ -496,10 +496,17 @@ def apply_change_type(
     # Apply: replace field def, rewrite rows, update option lists.
     # Preserve created_at / created_by from the existing field so a
     # client doesn't need to round-trip them exactly.
+    new_field = mutation.after.model_copy(update={"created_by": existing.created_by, "created_at": existing.created_at})
+    # D6: a `formula(units) → number` reverse carries the display-unit back onto
+    # the number field so a `number → formula → number` round-trip (and undo of
+    # the forward conversion) is unit-stable. Skip when the client sent explicit
+    # units — site-1's guard already vetted those for a fixed field.
+    if from_type is CustomFieldType.formula and to_type is CustomFieldType.number and "units" not in new_field.config:
+        carried_units = existing.config.get("units")
+        if isinstance(carried_units, dict):
+            new_field = new_field.model_copy(update={"config": {**new_field.config, "units": carried_units}})
     next_fields = list(current_fields)
-    next_fields[index] = mutation.after.model_copy(
-        update={"created_by": existing.created_by, "created_at": existing.created_at}
-    )
+    next_fields[index] = new_field
     next_body = capability.replace_field_defs(body, next_fields)
 
     # Handle option-list namespace changes.
@@ -618,8 +625,3 @@ def _apply_linked_record_wipe(
         "cleared_row_count": cleared_rows,
     }
     return next_body, audit
-
-
-def _number_units_are_fixed(field: TableFieldDef) -> bool:
-    units = field.config.get("units")
-    return isinstance(units, dict) and cast(dict[str, object], units).get("mode") == "fixed"

@@ -31,7 +31,7 @@ from features.project_document.formula import (
 )
 from features.project_document.formula.analysis import count_ast_nodes, infer_result_type
 from features.project_document.formula.resolver import collect_field_refs
-from features.project_document.mutations.guards import find_field
+from features.project_document.mutations.guards import CARRY_FORWARD_UNITS, collapse_carried_units, find_field
 from features.project_document.mutations.models import SetFormulaMutation
 from features.project_document.tables.contracts import TableFieldRegistry
 from features.shared.errors import api_error
@@ -152,6 +152,7 @@ def apply_set_formula(
     body: ProjectDocumentV1,
     mutation: SetFormulaMutation,
     capability: TableFieldRegistry,
+    carried_units: object = CARRY_FORWARD_UNITS,
 ) -> tuple[ProjectDocumentV1, dict[str, object]]:
     current_fields = capability.read_field_defs(body)
     index, existing = find_field(current_fields, mutation.field_id, mutation.table_key)
@@ -192,12 +193,22 @@ def apply_set_formula(
         raise  # pragma: no cover
 
     deps = collect_field_refs(resolved)
+    result_type = infer_result_type(resolved)
     new_config: dict[str, object] = {
         "source": mutation.source,
         "ast": ast_to_json(resolved),
         "deps": deps,
-        "result_type": infer_result_type(resolved),
+        "result_type": result_type,
     }
+    # D4/D5/D7: a numeric formula may carry a display unit; `set_formula` is the
+    # single reconciliation point. Units are dropped whenever the result isn't a
+    # number (e.g. a source edited to `concat(...)`), so the config invariant
+    # (`units` ⇒ `result_type == "number"`) holds without a separate validator.
+    # Tri-state (D12): unset → carry the field's own units forward (standalone
+    # `setFormula`); `None` → clear; a dict → set / retag.
+    carried = collapse_carried_units(carried_units, existing.config.get("units"))
+    if carried is not None and result_type == "number":
+        new_config["units"] = carried
 
     next_field = existing.model_copy(update={"config": new_config})
     next_fields = list(current_fields)
@@ -225,5 +236,8 @@ def apply_set_formula(
         "source_length": len(mutation.source),
         "ast_node_count": count_ast_nodes(resolved),
         "deps": deps,
+        # The reconciled display units (`None` when dropped) so the bundle can
+        # audit the units outcome without re-reading the field defs.
+        "units": new_config.get("units"),
     }
     return next_body, audit

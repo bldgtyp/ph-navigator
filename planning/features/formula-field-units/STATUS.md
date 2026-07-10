@@ -46,11 +46,14 @@ the guard relax means no built-in ever needs a conversion lock. See
 
 ## Next step
 
-**Phase 1 is DONE** (2026-07-09) — the gh_api exporter now emits computed/formula values
-inline (`backend/features/gh_api/tables_export.py`); the `{"error"}`-overlay decode was
-extracted into the shared `formula.overlay_cell_value` helper. Next: **Phase 2** (backend:
-registry drift + guard redesign + wire model + set_formula), then **Phase 3** (frontend).
-Phase 1 before Phase 2 was a safety ordering (PRD §7.16), now satisfied.
+**Phases 1 & 2 are DONE** (2026-07-09). **Phase 1** — the gh_api exporter emits
+computed/formula values inline (`tables_export.py`); `{"error"}`-overlay decode extracted
+into shared `formula.overlay_cell_value`. **Phase 2** (backend) — registry drift closed
+(`length_mm`/`power` added), shared fixed-units guard + `collapse_carried_units` tri-state
+in `mutations/guards.py`, top-level `display_units` wire field (D12), numeric-formula units
+in `validate_number_config` (D4), `apply_set_formula` `carried_units` reconciliation
+(D7/D14), reverse carry-back on `formula→number` (D6). Full backend suite green (1334 passed).
+Next: **Phase 3** (frontend — `displayUnits` payload, computed-cell unit display, modal picker).
 
 ## Blockers
 

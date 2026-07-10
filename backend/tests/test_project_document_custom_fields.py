@@ -155,12 +155,17 @@ def test_non_number_field_rejects_units_config() -> None:
 
 
 def test_number_unit_registry_snapshot_matches_frontend_contract() -> None:
+    # MUST stay identical to the frontend `numberUnitRegistrySnapshot()` assertion
+    # in `frontend/src/lib/units/units.test.ts`. Formula fields get the full
+    # frontend picker (D11), so any type the frontend offers must validate here —
+    # backend registry ⊇ frontend picker (O4 registry-drift closure).
     assert number_unit_registry_snapshot() == {
         "density": {"si": ["kg_m3"], "ip": ["lb_ft3"]},
         "conductivity": {"si": ["w_m_k"], "ip": ["btu_h_ft_f"]},
         "u_value": {"si": ["w_m2_k"], "ip": ["btu_h_ft2_f"]},
         "specific_heat": {"si": ["j_kg_k"], "ip": ["btu_lb_f"]},
         "length": {"si": ["m"], "ip": ["ft"]},
+        "length_mm": {"si": ["mm"], "ip": ["in"]},
         "area": {"si": ["m2"], "ip": ["ft2"]},
         "volume": {"si": ["m3"], "ip": ["ft3"]},
         "airflow": {"si": ["m3_h"], "ip": ["cfm"]},
@@ -170,6 +175,7 @@ def test_number_unit_registry_snapshot_matches_frontend_contract() -> None:
         "electric_efficiency": {"si": ["wh_m3"], "ip": ["w_cfm"]},
         "heat_loss_rate": {"si": ["w_k"], "ip": ["btu_h_f"]},
         "energy": {"si": ["kwh"], "ip": ["kbtu"]},
+        "power": {"si": ["kw"], "ip": ["kbtu_h"]},
     }
 
 
