@@ -10,6 +10,7 @@ from pydantic import ValidationError
 from features.project_document.document import (
     CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION,
     ROOM_SPACE_TYPE_FIELD_KEY,
+    ROOM_VENTILATOR_FIELD_KEY,
     ProjectDocumentV1,
     RoomRow,
     SpaceTypeRow,
@@ -81,6 +82,21 @@ def test_new_project_document_seeds_rooms_space_type_link_field(clean_document_t
     assert field["display_name"] == "Space Type"
     assert field["field_type"] == "linked_record"
     assert field["config"] == {"target_table_path": ["space_types"], "max_links": 1}
+
+
+def test_new_project_document_seeds_rooms_ventilator_link_field(clean_document_tables: None) -> None:
+    client = signed_in_client()
+    project = create_project(client)
+    project_id = project["id"]
+    version_id = project["active_version_id"]
+
+    saved = client.get(f"/api/v1/projects/{project_id}/versions/{version_id}/document/tables/rooms")
+
+    assert saved.status_code == 200
+    field = next(field for field in saved.json()["field_defs"] if field["field_key"] == ROOM_VENTILATOR_FIELD_KEY)
+    assert field["display_name"] == "Ventilator"
+    assert field["field_type"] == "linked_record"
+    assert field["config"] == {"target_table_path": ["equipment", "ervs"], "max_links": 1}
 
 
 def test_space_types_replace_lazily_creates_draft(clean_document_tables: None) -> None:

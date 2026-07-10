@@ -19,7 +19,12 @@ import { useAssetUrls } from "../../assets/hooks";
 import { DATASHEET_ATTACHMENT_CONFIG } from "../../assets/lib";
 import { sortedPumps } from "../lib";
 import { customNumberValue, customTextValue } from "../lib/customValueReaders";
-import { isRoomsSource } from "../lib/inverseSource";
+import {
+  inverseColumnHeader,
+  inverseFieldKey,
+  inverseIdsForTarget,
+  isRoomsSource,
+} from "../lib/inverseSource";
 import { statusColumn } from "../lib/statusColumn";
 import {
   customFieldColumnDefs,
@@ -34,8 +39,6 @@ import {
   type PumpRow,
   type PumpsSlice,
 } from "../types";
-
-const EMPTY_INVERSE_IDS: readonly string[] = [];
 
 export function PumpsTable({
   pumpsSlice,
@@ -266,10 +269,10 @@ export function PumpsTable({
       statusColumn<PumpRow>(fieldDefByKey),
     ];
     const inverseColumns: DataTableColumnDef<PumpRow>[] = (inverseLinkFields ?? []).map((field) =>
-      incomingLinkColumn({
-        id: inverseFieldKey(field),
-        header: inverseColumnHeader(field),
-        getIncomingIds: (pump) => inverseIdsForPump(inverseLinks, pump.id, field),
+        incomingLinkColumn({
+          id: inverseFieldKey(field),
+          header: inverseColumnHeader(field),
+          getIncomingIds: (pump) => inverseIdsForTarget(inverseLinks, pump.id, field),
         resolveLabel: (rowId) => resolveInverseLinkLabel?.(field, rowId) ?? null,
         onPillClick: (rowId) => onInversePillClick?.(field, rowId),
         edit:
@@ -315,20 +318,4 @@ export function PumpsTable({
       {...customFieldActions}
     />
   );
-}
-
-function inverseFieldKey(field: InverseLinkField): string {
-  return `inverse:${field.source_key}`;
-}
-
-function inverseColumnHeader(field: InverseLinkField): string {
-  return `${field.source_table_display} ← ${field.source_field_display_name}`;
-}
-
-function inverseIdsForPump(
-  inverseLinks: PumpsSlice["inverse_links"],
-  pumpId: string,
-  field: InverseLinkField,
-): readonly string[] {
-  return inverseLinks?.[pumpId]?.[field.source_key] ?? EMPTY_INVERSE_IDS;
 }

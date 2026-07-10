@@ -13,6 +13,7 @@ from features.project_document.custom_fields import (
     TableFieldDef,
 )
 from features.project_document.document import (
+    ROOM_VENTILATOR_FIELD_KEY,
     VENTILATOR_FROST_PROTECTION_OPTION_KEY,
     VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY,
     VENTILATOR_OPTION_KEYS,
@@ -21,6 +22,10 @@ from features.project_document.document import (
     SingleSelectOption,
     VentilatorRow,
     VentilatorsTableEnvelope,
+)
+from features.project_document.inverse_view import (
+    attach_inverse_links_overlay,
+    build_inverse_table_view,
 )
 from features.project_document.models import ProjectDocumentSource
 from features.project_document.tables._built_in_seeds import built_in_field_def
@@ -31,7 +36,8 @@ from features.project_document.tables._registry_helpers import (
     make_field_registry,
 )
 from features.project_document.tables._status_field import status_field_def
-from features.project_document.tables.contracts import TableContract
+from features.project_document.tables.contracts import InverseLinkField, TableContract
+from features.project_document.tables.custom_link_cascade import clear_removed_custom_links
 from features.project_document.validation import validate_document
 
 VENTILATORS_TABLE_NAME = "ventilators"
@@ -182,6 +188,9 @@ class VentilatorsSliceResponse(BaseModel):
     field_defs: list[TableFieldDef]
     single_select_options: dict[str, list[SingleSelectOption]]
     rows_computed: dict[str, dict[str, object]] = Field(default_factory=dict)
+    inverse_links: dict[str, dict[str, list[str]]] = Field(default_factory=dict)
+    inverse_link_fields: list[InverseLinkField] = Field(default_factory=list)
+    inverse_links_fingerprint: str = ""
 
 
 def apply_ventilators_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectDocumentV1:
@@ -222,7 +231,22 @@ def apply_ventilators_replace(body: ProjectDocumentV1, payload: BaseModel) -> Pr
     prior_ids = {row.id for row in body.tables.equipment.ervs.rows}
     next_ids = {row.id for row in ventilators_payload.ventilators}
     removed_ids = prior_ids - next_ids
+    next_tables = body.tables.model_copy(update={"equipment": next_equipment})
     if removed_ids:
+        rooms_rows = clear_removed_custom_links(
+            body.tables.rooms.rows,
+            field_key=ROOM_VENTILATOR_FIELD_KEY,
+            removed_ids=removed_ids,
+        )
+        if rooms_rows != list(body.tables.rooms.rows):
+            next_tables = body.tables.model_copy(
+                update={
+                    "rooms": body.tables.rooms.model_copy(update={"rows": rooms_rows}),
+                    "equipment": next_equipment,
+                }
+            )
+            next_equipment = next_tables.equipment.model_copy(update={"ervs": next_ventilators_envelope})
+
         heat_pumps = next_equipment.heat_pumps
         cascaded_indoor_units = [
             row.model_copy(update={"linked_erv_unit_id": None}) if row.linked_erv_unit_id in removed_ids else row
@@ -239,7 +263,7 @@ def apply_ventilators_replace(body: ProjectDocumentV1, payload: BaseModel) -> Pr
                 }
             )
 
-    next_tables = body.tables.model_copy(update={"equipment": next_equipment})
+    next_tables = next_tables.model_copy(update={"equipment": next_equipment})
     next_body = body.model_copy(update={"tables": next_tables, "single_select_options": options})
     return validate_document(next_body.model_dump(mode="json"))
 
@@ -254,6 +278,7 @@ def ventilators_response(
 ) -> VentilatorsSliceResponse:
     from features.project_document.formula import evaluate_table_formulas
 
+    inverse_view = build_inverse_table_view(body, _VENTILATORS_TABLE_PATH)
     return VentilatorsSliceResponse(
         project_id=project_id,
         version_id=version_id,
@@ -269,13 +294,20 @@ def ventilators_response(
             **custom_option_lists_for_table(body, _VENTILATORS_TABLE_PATH),
         },
         rows_computed=evaluate_table_formulas(ventilators_field_registry, body),
+        inverse_links=inverse_view.inverse_links,
+        inverse_link_fields=inverse_view.inverse_link_fields,
+        inverse_links_fingerprint=inverse_view.fingerprint,
     )
 
 
 def extract_ventilators_envelope(body: ProjectDocumentV1) -> dict[str, object]:
+    inverse_view = build_inverse_table_view(body, _VENTILATORS_TABLE_PATH)
+    row_dicts = [ventilator.model_dump(mode="json") for ventilator in body.tables.equipment.ervs.rows]
     return {
         "field_defs": [field.model_dump(mode="json") for field in body.tables.equipment.ervs.field_defs],
-        "rows": [ventilator.model_dump(mode="json") for ventilator in body.tables.equipment.ervs.rows],
+        "rows": attach_inverse_links_overlay(row_dicts, inverse_view.inverse_links),
+        "inverse_link_fields": [field.model_dump(mode="json") for field in inverse_view.inverse_link_fields],
+        "inverse_links_fingerprint": inverse_view.fingerprint,
     }
 
 

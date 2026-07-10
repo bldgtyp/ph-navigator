@@ -1,17 +1,16 @@
 # Feature request: built-in "Ventilator" link field on SPACES / ROOMS
 
 ```
-STATUS:  Requested — documented, NOT scoped. Data-model + UI approach TBD (Ed).
+STATUS:  Active — scoped for implementation.
 DATE:    2026-07-09
 AUTHOR:  Ed + Claude (recorded)
 SCOPE:   SPACES / ROOMS record schema — a built-in reference field pointing at a
-         VENTILATORS record. Backend data model + built-in field wiring; UI TBD.
+         VENTILATORS record. Backend data model + built-in field wiring; room-side UI.
 RELATED: EQUIPMENT / VENTILATORS table; feedback_datatable_uniformity_ironlaw;
          context/UI_UX.md (DataTable / field model)
 ```
 
-> **Purpose of this doc:** record the *need* so it is not forgotten. It does **not**
-> yet propose a data-model shape or UI — those are open. When settled, add scope/phases.
+> **Purpose of this doc:** record and execute the built-in room→ventilator link.
 
 ## One-liner
 
@@ -40,15 +39,21 @@ iron-law that basic, universally-needed affordances are parent-owned, not opt-in
 3. **Referential integrity.** The link points at a real ventilator record and
    behaves sensibly when that ventilator is renamed, reordered, or deleted.
 
-## Open questions (for whenever this is picked up)
+## Decisions
 
-- **Cardinality:** one ventilator per room (single link), or can a room draw from
-  more than one unit? (Assume single-link to start unless PH modeling needs more.)
-- **Field type / UI:** dropdown/picker of existing VENTILATORS records vs. a
-  generic cross-table reference field. Is this the first cross-table "link" field
-  in the SPACES schema, or does a reference-field pattern already exist to reuse?
-- **Direction / rollup:** does the ventilator side also need to show its served
-  rooms (and their aggregate airflow), or is the link one-directional from the room?
-- **Delete behavior:** what happens to a room's link when its ventilator record is
-  deleted — null it out, block the delete, or warn?
-```
+- **Cardinality:** single ventilator per room (`max_links: 1`).
+- **Field type / UI:** reuse the existing `linked_record` field type with target
+  path `["equipment", "ervs"]`, surfaced as a built-in Rooms field.
+- **Direction / rollup:** room-side edit is primary; Ventilators show read-overlay
+  inverse room links from the existing inverse-link machinery. Airflow rollups are
+  deferred.
+- **Delete behavior:** deleting a ventilator silently clears any Rooms links to
+  that ventilator, matching the existing optional-link cascade posture.
+
+## Phases
+
+1. **Phase 01 — built-in link and UI:** add the backend built-in field, validation,
+   ventilator-delete cascade, room-side picker/pills, and ventilator-side inverse
+   room visibility.
+2. **Phase 02 — verification and closeout:** run focused backend/frontend tests,
+   update this packet with evidence, then archive if complete.

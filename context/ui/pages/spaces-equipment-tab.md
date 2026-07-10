@@ -11,7 +11,9 @@ Rooms sub-tabs. Space-Types is the setup table for project-specific
 labels such as Apartment, Corridor, Restroom, or other local program
 types; Rooms links to exactly one Space-Type and remains the
 PHN-first source-of-truth consumed by downstream Rhino/HBJSON
-workflows. Legacy `/projects/{id}/rooms` URLs redirect to
+workflows. Rooms also carries a built-in single Ventilator link so
+room ventilation assignments are first-class, not per-project custom
+columns. Legacy `/projects/{id}/rooms` URLs redirect to
 `/projects/{id}/spaces/rooms`.
 
 **Equipment (`/projects/{id}/equipment`).** Detailed in
@@ -26,4 +28,3 @@ wide for the grid, use a selected-row details/evidence panel rather
 than forcing long manufacturer/model/spec strings into cramped cells.
 Preserve fast scan/edit/copy behavior; avoid pagination as the primary
 way to manage project-scale tables unless performance requires it.
-

@@ -9,7 +9,13 @@ import pytest
 
 import features.project_document.inverse_view as inverse_view
 from features.project_document.custom_fields import CustomFieldType, TableFieldDef
-from features.project_document.document import ProjectDocumentV1, PumpRow, RoomRow
+from features.project_document.document import (
+    ROOM_VENTILATOR_FIELD_KEY,
+    ProjectDocumentV1,
+    PumpRow,
+    RoomRow,
+    VentilatorRow,
+)
 from features.project_document.inverse_view import (
     build_inverse_links,
     build_inverse_table_view,
@@ -18,6 +24,11 @@ from features.project_document.inverse_view import (
     reset_inverse_view_cache,
 )
 from features.project_document.tables.pumps import pumps_response
+from features.project_document.tables.ventilators import (
+    VentilatorsSliceReplaceRequest,
+    apply_ventilators_replace,
+    ventilators_response,
+)
 from features.projects.models import CreateProjectRequest
 from features.projects.service import empty_project_document
 
@@ -155,6 +166,81 @@ def test_pumps_response_includes_inverse_overlay_and_metadata() -> None:
     assert response.inverse_link_fields[0].source_table_display == "Rooms"
     assert response.inverse_link_fields[0].source_field_display_name == "Pump"
     assert response.inverse_links_fingerprint == inverse_fingerprint_for_table(body, ("equipment", "pumps"))
+
+
+def test_ventilators_response_includes_rooms_inverse_overlay() -> None:
+    body = _empty_body()
+    body = body.model_copy(
+        update={
+            "tables": body.tables.model_copy(
+                update={
+                    "rooms": body.tables.rooms.model_copy(
+                        update={
+                            "rows": [
+                                RoomRow(
+                                    id="rm_a",
+                                    custom_links={ROOM_VENTILATOR_FIELD_KEY: ["vent_a"]},
+                                )
+                            ]
+                        }
+                    ),
+                    "equipment": body.tables.equipment.model_copy(
+                        update={
+                            "ervs": body.tables.equipment.ervs.model_copy(
+                                update={"rows": [VentilatorRow(id="vent_a")]}
+                            )
+                        }
+                    ),
+                }
+            )
+        }
+    )
+
+    response = ventilators_response(
+        project_id=uuid4(),
+        version_id=uuid4(),
+        source="version",
+        version_etag="v",
+        draft_etag=None,
+        body=body,
+    )
+
+    assert response.inverse_links["vent_a"][f"rooms.{ROOM_VENTILATOR_FIELD_KEY}"] == ["rm_a"]
+    assert response.inverse_link_fields[0].source_field_key == ROOM_VENTILATOR_FIELD_KEY
+    assert response.inverse_link_fields[0].source_field_display_name == "Ventilator"
+
+
+def test_ventilator_delete_clears_room_ventilator_links() -> None:
+    body = _empty_body()
+    room = RoomRow(id="rm_a", custom_links={ROOM_VENTILATOR_FIELD_KEY: ["vent_a"]})
+    vent_a = VentilatorRow(id="vent_a")
+    body = body.model_copy(
+        update={
+            "tables": body.tables.model_copy(
+                update={
+                    "rooms": body.tables.rooms.model_copy(update={"rows": [room]}),
+                    "equipment": body.tables.equipment.model_copy(
+                        update={"ervs": body.tables.equipment.ervs.model_copy(update={"rows": [vent_a]})}
+                    ),
+                }
+            )
+        }
+    )
+    payload = VentilatorsSliceReplaceRequest.model_validate(
+        {
+            "field_defs": body.tables.equipment.ervs.field_defs,
+            "ventilators": [],
+            "single_select_options": {
+                "ventilators.inside_outside": body.single_select_options["ventilators.inside_outside"],
+                "ventilators.frost_protection": body.single_select_options["ventilators.frost_protection"],
+                "ventilators.status": body.single_select_options["ventilators.status"],
+            },
+        }
+    )
+
+    updated = apply_ventilators_replace(body, payload)
+
+    assert ROOM_VENTILATOR_FIELD_KEY not in updated.tables.rooms.rows[0].custom_links
 
 
 def test_inverse_fingerprint_changes_only_when_target_incoming_links_change() -> None:

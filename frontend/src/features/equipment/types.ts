@@ -75,6 +75,7 @@ export type RoomRow = {
 export const ROOM_FLOOR_LEVEL_KEY = "floor_level";
 export const ROOM_BUILDING_ZONE_KEY = "building_zone";
 export const ROOM_SPACE_TYPE_FIELD_KEY = "space_type_id";
+export const ROOM_VENTILATOR_FIELD_KEY = "ventilator_id";
 export const ROOM_FLOOR_LEVEL_OPTION_KEY = "rooms.floor_level";
 export const ROOM_BUILDING_ZONE_OPTION_KEY = "rooms.building_zone";
 export const ROOM_OPTION_KEYS = [
@@ -187,6 +188,7 @@ export type PumpsReplacePayload = {
 };
 
 export const VENTILATORS_TABLE_NAME = "ventilators";
+export const VENTILATORS_TARGET_TABLE_PATH = ["equipment", "ervs"] as const;
 export const VENTILATOR_INSIDE_OUTSIDE_KEY = "inside_outside";
 export const VENTILATOR_INSIDE_OUTSIDE_OPTION_KEY = "ventilators.inside_outside";
 export const VENTILATOR_FROST_PROTECTION_KEY = "frost_protection";
@@ -224,6 +226,9 @@ export type VentilatorsSlice = {
   field_defs: TableFieldDef[];
   single_select_options: VentilatorsOptionMap;
   rows_computed?: RowsComputed;
+  inverse_links?: InverseLinks;
+  inverse_link_fields?: InverseLinkField[];
+  inverse_links_fingerprint?: string;
 };
 
 export type VentilatorsReplacePayload = {
