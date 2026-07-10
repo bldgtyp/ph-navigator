@@ -13,6 +13,7 @@ import { canEditFieldOptions } from "../lib/options/mutability";
 import type {
   AxisRoleSubset,
   BodyPlanItem,
+  CellCommitMove,
   CellCoord,
   DataTableColumnDef,
   FieldDef,
@@ -61,8 +62,6 @@ import { InlineCellEditor } from "./InlineCellEditor";
 import { SingleSelectCell } from "./SingleSelectCell";
 import { SingleSelectPopover } from "./SingleSelectPopover";
 
-type CommitMove = { kind: "tab"; shiftKey: boolean } | { kind: "down" };
-
 // Pure tbody renderer. Hit targets emit stable identity to the parent;
 // active/selection visuals derive from the normalized range projection.
 export type GridBodyProps<TRow> = {
@@ -99,7 +98,7 @@ export type GridBodyProps<TRow> = {
   // supplies a handler (the consumer's `onRowOpen`, else the built-in
   // record-detail modal), so the gutter never renders a dead affordance.
   onRowExpand: (row: TRow) => void;
-  onCommitAndMove: (rowIndex: number, columnIndex: number, move: CommitMove) => void;
+  onCommitAndMove: (rowIndex: number, columnIndex: number, move: CellCommitMove) => void;
   // Phase 7: fill state from `useGridFill`. The bottom-right cell of
   // `fillSource` carries `data-fill-handle="true"` and renders
   // `<FillHandle>` when `fillHandleVisible` is true. Cells inside
@@ -547,7 +546,7 @@ function renderCellContent<TRow>(args: {
   fieldDef: FieldDef | undefined;
   cellValue: unknown;
   fallback: () => ReactNode;
-  onCommitAndMove: (move: CommitMove) => void;
+  onCommitAndMove: (move: CellCommitMove) => void;
   linkedRecordOps: LinkedRecordCellOps | undefined;
   linkedRecordCell: LinkedRecordColumnCell<TRow> | undefined;
   // Opens the editor for this cell (same path as double-click).

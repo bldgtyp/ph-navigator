@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-09
 TIME: -
-STATUS: Active — Phases 00-01 complete; Phase 02 is next.
+STATUS: Active — Phases 00-02 complete; Phase 03 entry gate passed.
 AUTHOR: Claude (for Ed)
 SCOPE: Live state ledger for the DataTable write-performance refactor.
 RELATED:
@@ -53,11 +53,17 @@ RELATED:
   per open draft. Save/Save As flush it; Discard cancels queued work
   and waits for the in-flight request. The live Pumps burst + Save
   drill proved one request in flight and correct lifecycle ordering.
+- 2026-07-09 — **Phase 02 complete.** Per-slice optimistic journals
+  now separate early local acceptance from server settlement, build
+  transport payloads from the last ack only, rebase queued operations,
+  and perform counted rollback with history clear. The 350 ms-latency
+  browser drill rendered ten inserts ahead of a six-request backlog.
 
 ## Next step
 
-1. Implement Phase 02: per-slice optimistic journals over the shared
-   coordinator, early acceptance, rebase, and counted rollback.
+1. Phase 03 entry gate passed (>3 writes queued in the Phase-02 live
+   drill; ten serial requests materially extend Save flush). Implement
+   transport coalescing and preserve per-gesture history.
 
 ## Blockers
 
@@ -69,8 +75,8 @@ RELATED:
 |---|---|
 | 00 — observability + write-surface audit | **Complete** |
 | 01 — draft write coordinator | **Complete** |
-| 02 — per-table optimistic journals | Planned |
-| 03 — transport coalescing | Planned (conditional — entry gate) |
+| 02 — per-table optimistic journals | **Complete** |
+| 03 — transport coalescing | **Entry gate passed** |
 | 04 — undo polish | Planned |
 | 05 — conflict copy + three-way retry | Planned |
 | 06 — backend write-path trims | Planned (measure-gated) |

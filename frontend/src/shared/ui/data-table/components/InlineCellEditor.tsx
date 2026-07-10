@@ -1,13 +1,12 @@
 import { useRef } from "react";
-
-type InlineCommitMove = { kind: "tab"; shiftKey: boolean } | { kind: "down" };
+import type { CellCommitMove } from "../types";
 
 export type InlineCellEditorProps = {
   value: string;
   onChange: (value: string) => void;
   onCancel: () => void;
   onCommit: () => void;
-  onCommitAndMove: (move: InlineCommitMove) => void;
+  onCommitAndMove: (move: CellCommitMove) => void;
 };
 
 // Borderless overlay used for text and number fields. Phase 1 will
@@ -53,7 +52,7 @@ export function InlineCellEditor({
         if (event.key === "Enter") {
           event.preventDefault();
           skipBlurCommit();
-          onCommitAndMove({ kind: "down" });
+          onCommitAndMove(event.shiftKey ? { kind: "insert" } : { kind: "down" });
         }
       }}
     />

@@ -372,6 +372,11 @@ export type WriteOp =
       cellWrites?: CellWrite[];
     };
 
+export type CellCommitMove =
+  | { kind: "tab"; shiftKey: boolean }
+  | { kind: "down" }
+  | { kind: "insert" };
+
 export type CellCoord = {
   rowIndex: number;
   columnIndex: number;

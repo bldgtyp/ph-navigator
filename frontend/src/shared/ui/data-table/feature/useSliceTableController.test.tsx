@@ -3,7 +3,10 @@ import { act, renderHook } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { projectDocumentTableQueryKeys } from "../../../../features/project_document/query-keys";
-import { resetDraftWriteCoordinatorsForTests } from "../../../../features/project_document/draftWriteCoordinator";
+import {
+  getDraftWriteCoordinator,
+  resetDraftWriteCoordinatorsForTests,
+} from "../../../../features/project_document/draftWriteCoordinator";
 import type { BaseTableSlice } from "../../../../features/project_document/table-slice";
 import type { FieldSchemaMutation } from "../lib/customFieldMutations";
 import type { BuildEmptyRow, FieldOption, RowInsertPayload } from "../types";
@@ -171,6 +174,7 @@ describe("useSliceTableController write freshness", () => {
     expect(replaceMutate).toHaveBeenCalledWith({
       current: freshSlice,
       payload: { rows: ["old", "remote-safe-row", "new-row"] },
+      cachePolicy: "journal-managed",
     });
   });
 
@@ -268,6 +272,7 @@ describe("useSliceTableController write freshness", () => {
     expect(replaceMutate).toHaveBeenCalledWith({
       current: slice,
       payload: { rows: ["old", "new-row", "cell-write"] },
+      cachePolicy: "journal-managed",
     });
   });
 
@@ -324,7 +329,7 @@ describe("useSliceTableController write freshness", () => {
     await act(async () => Promise.all(writes));
   });
 
-  it("characterizes a rapid-write rejection as observed by every caller", async () => {
+  it("accepts a burst immediately, then rolls back and reports a settled failure", async () => {
     const queryClient = new QueryClient();
     const slice = makeSlice();
     queryClient.setQueryData(editorSliceQueryKey(), slice);
@@ -358,18 +363,20 @@ describe("useSliceTableController write freshness", () => {
         await Promise.resolve();
       });
       expect(controlled.requests).toHaveLength(1);
-      let outcomes: PromiseSettledResult<void>[] = [];
+      const outcomes = await Promise.allSettled(writes);
+      expect(outcomes.map((outcome) => outcome.status)).toEqual(["fulfilled", "fulfilled"]);
       await act(async () => {
         controlled.requests[0]!.response.resolve(makeSlice({ draft_etag: "draft-a" }));
-        await writes[0];
+        await Promise.resolve();
       });
       expect(controlled.requests).toHaveLength(2);
       await act(async () => {
         controlled.requests[1]!.response.reject(new Error("409 draft_etag_mismatch"));
-        outcomes = await Promise.allSettled(writes);
+        await getDraftWriteCoordinator(projectId, versionId).whenIdle();
       });
-      expect(outcomes.map((outcome) => outcome.status)).toEqual(["fulfilled", "rejected"]);
-      expect(result.current.actionError).toBe("409 draft_etag_mismatch");
+      expect(result.current.actionError).toBe(
+        "409 draft_etag_mismatch 1 unsaved change was discarded.",
+      );
     });
   });
 });

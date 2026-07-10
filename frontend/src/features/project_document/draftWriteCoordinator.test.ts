@@ -75,6 +75,27 @@ describe("DraftWriteCoordinator", () => {
     await expect(coordinator.whenIdle()).resolves.toBeUndefined();
   });
 
+  it("flush waits only for writes accepted before its boundary", async () => {
+    const controlled = createControllableTransport<string, void>();
+    const coordinator = new DraftWriteCoordinator("p:v");
+    const first = coordinator.schedule({
+      label: "first",
+      run: () => controlled.transport("first"),
+    });
+    const flush = coordinator.flush();
+    const second = coordinator.schedule({
+      label: "second",
+      run: () => controlled.transport("second"),
+    });
+
+    controlled.requests[0]!.response.resolve();
+    await first.settled;
+    await expect(flush).resolves.toBeUndefined();
+    expect(coordinator.status()).toEqual({ queued: 0, inFlight: true });
+    controlled.requests[1]!.response.resolve();
+    await second.settled;
+  });
+
   it("publishes status changes and reuses one registry lane per draft", async () => {
     const coordinator = getDraftWriteCoordinator("p", "v");
     expect(getDraftWriteCoordinator("p", "v")).toBe(coordinator);

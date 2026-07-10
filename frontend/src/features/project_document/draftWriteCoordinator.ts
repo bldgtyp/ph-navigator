@@ -30,8 +30,8 @@ type Deferred<T = void> = {
   reject(reason: unknown): void;
 };
 
-type QueueEntry = { task: TransportTask; deferred: Deferred<unknown> };
-type IdleWaiter = { deferred: Deferred; rejectOnFailure: boolean };
+type QueueEntry = { sequence: number; task: TransportTask; deferred: Deferred<unknown> };
+type IdleWaiter = { deferred: Deferred; targetSequence: number | null };
 
 export class DraftWriteCoordinator {
   readonly key: string;
@@ -41,6 +41,8 @@ export class DraftWriteCoordinator {
   private idleWaiters: IdleWaiter[] = [];
   private snapshot: DraftWriteStatus = { queued: 0, inFlight: false };
   private drainFailure: unknown = null;
+  private scheduledSequence = 0;
+  private completedSequence = 0;
 
   constructor(key: string) {
     this.key = key;
@@ -52,7 +54,7 @@ export class DraftWriteCoordinator {
     // ignores a fire-and-forget handle. Callers still receive the original promise.
     void deferred.promise.catch(() => undefined);
     this.drainFailure = null;
-    this.queue.push({ task, deferred });
+    this.queue.push({ sequence: ++this.scheduledSequence, task, deferred });
     this.publish();
     this.pump();
     const accepted = deferred.promise.then(() => undefined);
@@ -61,24 +63,26 @@ export class DraftWriteCoordinator {
   }
 
   flush(): Promise<void> {
-    if (!this.inFlight && this.queue.length === 0) {
+    const targetSequence = this.scheduledSequence;
+    if (this.completedSequence >= targetSequence) {
       return this.drainFailure === null ? Promise.resolve() : Promise.reject(this.drainFailure);
     }
     const deferred = createDeferred();
-    this.idleWaiters.push({ deferred, rejectOnFailure: true });
+    this.idleWaiters.push({ deferred, targetSequence });
     return deferred.promise;
   }
 
   whenIdle(): Promise<void> {
     if (!this.inFlight && this.queue.length === 0) return Promise.resolve();
     const deferred = createDeferred();
-    this.idleWaiters.push({ deferred, rejectOnFailure: false });
+    this.idleWaiters.push({ deferred, targetSequence: null });
     return deferred.promise;
   }
 
   cancel(): void {
     const queued = this.queue.splice(0);
     for (const entry of queued) entry.deferred.reject(new WriteQueueCancelledError());
+    if (queued.length > 0) this.completedSequence = queued.at(-1)!.sequence;
     this.publish();
     this.settleIdleWaitersIfIdle();
   }
@@ -110,7 +114,9 @@ export class DraftWriteCoordinator {
     this.publish();
     void entry.task.run().then(
       (result) => {
+        this.completedSequence = entry.sequence;
         entry.deferred.resolve(result);
+        this.settleIdleWaitersIfIdle();
         this.finishTask();
       },
       (error: unknown) => {
@@ -118,6 +124,8 @@ export class DraftWriteCoordinator {
         entry.deferred.reject(error);
         const queued = this.queue.splice(0);
         for (const waiting of queued) waiting.deferred.reject(new WriteQueueDrainedError(error));
+        this.completedSequence = queued.at(-1)?.sequence ?? entry.sequence;
+        this.settleIdleWaitersIfIdle();
         this.finishTask();
       },
     );
@@ -141,10 +149,15 @@ export class DraftWriteCoordinator {
   }
 
   private settleIdleWaitersIfIdle(): void {
-    if (this.inFlight || this.queue.length > 0 || this.idleWaiters.length === 0) return;
-    const waiters = this.idleWaiters.splice(0);
-    for (const waiter of waiters) {
-      if (waiter.rejectOnFailure && this.drainFailure !== null)
+    if (this.idleWaiters.length === 0) return;
+    const ready = this.idleWaiters.filter((waiter) =>
+      waiter.targetSequence === null
+        ? !this.inFlight && this.queue.length === 0
+        : this.completedSequence >= waiter.targetSequence,
+    );
+    this.idleWaiters = this.idleWaiters.filter((waiter) => !ready.includes(waiter));
+    for (const waiter of ready) {
+      if (waiter.targetSequence !== null && this.drainFailure !== null)
         waiter.deferred.reject(this.drainFailure);
       else waiter.deferred.resolve();
     }

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-09
 TIME: -
-STATUS: Planned — hard dependency on phase-01.
+STATUS: Complete — implemented and verified 2026-07-09.
 AUTHOR: Claude (for Ed); state model per plan-review R-1/R-2/R-3/R-10
 SCOPE: Implementation handoff for Phase 2 — per-slice optimistic
   journals over the phase-01 coordinator: transport from acked base +
@@ -172,3 +172,46 @@ copy/retry (05), backend (06).
   `run()` thunk per dispatch.
 - Draft-status badge intentionally lags typing by one settle (D-7);
   unchanged from today's feel.
+
+## 7. As-built record (2026-07-09)
+
+### Payload-applier audit
+
+All 14 registered slice tables use replace payloads whose mutable top-level
+keys are the corresponding slice keys, so shallow application
+`{ ...slice, ...payload }` preserves the envelope and reproduces the client
+structure required for optimistic rendering. Server normalization remains an
+ack-rebase concern.
+
+| Tables | Audit result |
+|---|---|
+| Appliances, Rooms, Pumps, Ventilators, Thermal Bridges, Fans | Pass |
+| Hot Water Heaters, Hot Water Tanks, Electric Heaters, Space Types | Pass |
+| Heat Pump Outdoor Equipment, Indoor Equipment, Outdoor Units, Indoor Units | Pass |
+
+The existing per-table payload-builder tests remain the semantic source; the
+new journal matrix proves transport isolation, queued-op rebase, normalized
+ack convergence, counted rollback, failure reuse, and early acceptance.
+
+### Implementation decisions and evidence
+
+- `SliceWriteJournal` owns `lastAcked` plus the outstanding op list. Transport
+  builds each request only from `lastAcked` and the dispatched op; rendered
+  cache state reapplies all outstanding ops. Journal-managed mutations no
+  longer write the accepted-table cache in their TanStack `onSuccess` path.
+- `onWrite` resolves after local validation and optimistic cache installation;
+  every transport rejection remains internally observed. Rollback restores
+  `lastAcked`, clears mounted DataTable histories, and reports the rejected-op
+  count once.
+- Ack-critical cache install/rebase remains pump-blocking. The draft-summary
+  cache is patched directly; sibling invalidation and broadcast work is
+  fire-and-tracked so it cannot stall the next request.
+- A sibling-invalidated table still accepts optimistically without awaiting a
+  refetch. Its journal captures the invalidation bit and refreshes the
+  acknowledged base inside the transport task before building that request.
+- `flush()` now captures a sequence boundary: it waits for writes accepted
+  before the call, not later writes. `whenIdle()` retains full-lane semantics.
+- Live Slow-3G-style drill (350 ms latency): ten Shift-Enter inserts rendered
+  as 11 rows while six requests were still backlogged; all ten settled 200,
+  `max_in_flight=1`. The drill exposed and fixed inline-editor Shift-Enter so
+  commit+insert remains one gesture after the optimistic row opens instantly.

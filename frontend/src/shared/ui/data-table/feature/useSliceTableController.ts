@@ -28,10 +28,13 @@ import {
 import { projectQueryKeys } from "../../../../features/projects/query-keys";
 import { useProjectTableViewState } from "../../../../features/table_views/hooks";
 import {
+  refetchResultData,
   resolveCachedSliceForWrite,
+  type TableReplaceMutationVariables,
   type TableSliceAccessMode,
 } from "../../../../features/project_document/table-slice";
 import type { BuildEmptyRow, FieldOption, WriteOp } from "../types";
+import { useJournaledSliceCommit } from "./useJournaledSliceCommit";
 import type { FieldRegistryEntry, TableFieldDef, TableFieldRenderOverlays } from "../index";
 import type { FieldSchemaMutation } from "../lib/customFieldMutations";
 import { useCustomFieldHandlers } from "./useCustomFieldHandlers";
@@ -47,7 +50,7 @@ import { emptyViewState } from "../types";
 export type SliceTableReplaceMutation<TSlice, TPayload> = UseMutationResult<
   TSlice,
   Error,
-  { current: TSlice; payload: TPayload }
+  TableReplaceMutationVariables<TSlice, TPayload>
 >;
 
 export type SliceTableSchemaMutation<TSlice> = UseMutationResult<
@@ -286,32 +289,22 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
     [canEdit, runWithConflictHandling, writeCoordinator],
   );
 
-  const commitPayloadOrThrow = useCallback(
-    (
-      label: string,
-      buildPayload: (writableSlice: TSlice) => TPayload,
-      conflictMessage: string,
-      fallbackMessage: string,
-    ) =>
-      runCoordinatedWrite(
-        {
-          label,
-          run: async () => {
-            const writableSlice = await resolveSliceForWrite();
-            const payload = buildPayload(writableSlice);
-            const validationMessage = payloadBuilders.validate(payload);
-            if (validationMessage) {
-              setActionError(validationMessage);
-              throw new Error(validationMessage);
-            }
-            return replaceMutation.mutateAsync({ current: writableSlice, payload });
-          },
-        },
-        conflictMessage,
-        fallbackMessage,
-      ),
-    [payloadBuilders, replaceMutation, resolveSliceForWrite, runCoordinatedWrite],
-  );
+  const commitPayloadOrThrow = useJournaledSliceCommit({
+    slice,
+    coordinator: writeCoordinator,
+    queryClient,
+    queryKey: editorSliceQueryKey,
+    projectId,
+    versionId: activeVersionId,
+    mutate: replaceMutation.mutateAsync,
+    validate: payloadBuilders.validate,
+    refetch,
+    resolveSliceForWrite,
+    runCoordinatedWrite,
+    runWithConflictHandling,
+    conflictMessage: conflictMessages.activeRowConflict,
+    setActionError,
+  });
 
   const commitSchemaMutation = useCallback(
     (mutation: FieldSchemaMutation) =>
@@ -486,12 +479,6 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
     resolveSliceForWrite,
     notifyRemoteSlice,
   };
-}
-
-function refetchResultData<TSlice>(result: unknown): TSlice | null {
-  if (!result || typeof result !== "object" || !("data" in result)) return null;
-  const data = (result as { data?: unknown }).data;
-  return data === undefined ? null : (data as TSlice);
 }
 
 // Re-exported for consumers that want the canonical FieldRegistryEntry

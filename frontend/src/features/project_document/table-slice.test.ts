@@ -158,7 +158,17 @@ describe("createTableSliceFeature", () => {
     );
     queryClient.setQueryData(siblingViewerKey, makeSlice({ rows: ["saved-sibling"] }));
     queryClient.setQueryData(siblingOtherVersionKey, makeSlice({ version_id: "v2" }));
-    queryClient.setQueryData(draftSummaryKey, { draft_etag: "draft-old" });
+    queryClient.setQueryData(draftSummaryKey, {
+      project_id: projectId,
+      version_id: versionId,
+      source: "draft",
+      version_etag: "version-etag",
+      draft_etag: "draft-old",
+      dirty_tables: [],
+      last_patched_at: null,
+      is_locked: false,
+      can_edit: true,
+    });
     const siblingRefetch = vi.fn(async () => makeSlice({ rows: ["refetched-sibling"] }));
     const siblingObserver = new QueryObserver(queryClient, {
       queryKey: siblingEditorKey,
@@ -188,6 +198,10 @@ describe("createTableSliceFeature", () => {
     expect(siblingRefetch).not.toHaveBeenCalled();
     expect(queryClient.getQueryState(siblingViewerKey)?.isInvalidated).toBe(false);
     expect(queryClient.getQueryState(siblingOtherVersionKey)?.isInvalidated).toBe(false);
-    expect(queryClient.getQueryState(draftSummaryKey)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryData(draftSummaryKey)).toMatchObject({
+      draft_etag: "draft-new",
+      dirty_tables: ["source_table"],
+    });
+    expect(queryClient.getQueryState(draftSummaryKey)?.isInvalidated).toBe(false);
   });
 });

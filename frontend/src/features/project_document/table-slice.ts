@@ -9,6 +9,7 @@ import { fetchJson } from "../../shared/api/client";
 import type { FieldSchemaMutation } from "../../shared/ui/data-table/lib/customFieldMutations";
 import { projectDocumentQueryKeys, projectDocumentTableQueryKeys } from "./query-keys";
 import { markLocalDraftTouched } from "./lib";
+import type { ProjectDraftSummary } from "./types";
 
 export type TableSliceAccessMode = "editor" | "viewer";
 
@@ -46,6 +47,12 @@ export type TableReplacePreview = {
   affected: CascadePreviewRef[];
 };
 
+export type TableReplaceMutationVariables<TSlice, TReplaceBody> = {
+  current: TSlice;
+  payload: TReplaceBody;
+  cachePolicy?: "apply-ack" | "journal-managed";
+};
+
 export async function resolveCachedSliceForWrite<TSlice>(
   queryClient: QueryClient,
   queryKey: QueryKey,
@@ -56,6 +63,12 @@ export async function resolveCachedSliceForWrite<TSlice>(
     return queryClient.getQueryData<TSlice>(queryKey) ?? fallback;
   }
   return (await refetch()) ?? queryClient.getQueryData<TSlice>(queryKey) ?? fallback;
+}
+
+export function refetchResultData<TSlice>(result: unknown): TSlice | null {
+  if (!result || typeof result !== "object" || !("data" in result)) return null;
+  const data = (result as { data?: unknown }).data;
+  return data === undefined ? null : (data as TSlice);
 }
 
 export function createTableSliceFeature<TSlice extends BaseTableSlice, TReplaceBody>(options: {
@@ -162,7 +175,7 @@ export function createTableSliceFeature<TSlice extends BaseTableSlice, TReplaceB
   ) {
     const queryClient = useQueryClient();
     return useMutation({
-      mutationFn: ({ current, payload }: { current: TSlice; payload: TReplaceBody }) => {
+      mutationFn: ({ current, payload }: TableReplaceMutationVariables<TSlice, TReplaceBody>) => {
         if (!versionId) {
           throw new Error(missingVersionMessage);
         }
@@ -176,6 +189,7 @@ export function createTableSliceFeature<TSlice extends BaseTableSlice, TReplaceB
           projectId,
           tableName,
           onAcceptedSlice,
+          variables.cachePolicy !== "journal-managed",
         ),
     });
   }
@@ -205,20 +219,31 @@ export function createTableSliceFeature<TSlice extends BaseTableSlice, TReplaceB
     });
   }
 
-  async function applyAcceptedSlice(
+  function applyAcceptedSlice(
     slice: TSlice,
     previous: TSlice,
     queryClient: QueryClient,
     projectId: string,
     acceptedTableName: string,
     onAcceptedSlice: OnAcceptedTableSlice<TSlice> | undefined,
-  ): Promise<void> {
+    updateAcceptedTableCache = true,
+  ): void {
     markLocalDraftTouched(projectId, slice.version_id, slice.draft_etag);
-    queryClient.setQueryData(queryKeys.slice(projectId, slice.version_id, "editor"), slice);
-    const invalidations: Array<Promise<unknown>> = [
-      queryClient.invalidateQueries({
-        queryKey: projectDocumentQueryKeys.draftSummary(projectId, slice.version_id),
-      }),
+    if (updateAcceptedTableCache) {
+      queryClient.setQueryData(queryKeys.slice(projectId, slice.version_id, "editor"), slice);
+    }
+    const draftSummaryKey = projectDocumentQueryKeys.draftSummary(projectId, slice.version_id);
+    queryClient.setQueryData<ProjectDraftSummary | undefined>(draftSummaryKey, (current) =>
+      current
+        ? {
+            ...current,
+            source: "draft",
+            draft_etag: slice.draft_etag,
+            dirty_tables: Array.from(new Set([...current.dirty_tables, acceptedTableName])),
+          }
+        : current,
+    );
+    const sideEffects: Array<Promise<unknown>> = [
       invalidateProjectDocumentEditorTableSlices(queryClient, projectId, slice.version_id, {
         excludeTableName: acceptedTableName,
         refetchActiveSlices: false,
@@ -228,8 +253,8 @@ export function createTableSliceFeature<TSlice extends BaseTableSlice, TReplaceB
       onAcceptedSlice &&
       (slice.source !== previous.source || slice.draft_etag !== previous.draft_etag)
     ) {
-      invalidations.push(
-        Promise.resolve(
+      sideEffects.push(
+        Promise.resolve().then(() =>
           onAcceptedSlice(slice, {
             draftEtag: previous.draft_etag,
             versionEtag: previous.version_etag,
@@ -237,7 +262,9 @@ export function createTableSliceFeature<TSlice extends BaseTableSlice, TReplaceB
         ),
       );
     }
-    await Promise.all(invalidations);
+    void Promise.all(sideEffects).catch((error: unknown) => {
+      console.warn("Non-critical table-write acknowledgement side effect failed.", error);
+    });
   }
 
   return {

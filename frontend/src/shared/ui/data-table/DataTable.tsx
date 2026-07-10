@@ -37,6 +37,7 @@ import { stableEmptyArray } from "../../lib/stableEmpty";
 import { downloadBlob } from "../../lib/downloadBlob";
 import { CSV_MIME_TYPE, tableToCsv } from "./lib/export/csv";
 import { useGridHistory } from "./hooks/useGridHistory";
+import { CLEAR_DATA_TABLE_HISTORY_EVENT } from "./historyEvents";
 import { useGridWriteReducer } from "./hooks/useGridWriteReducer";
 import { useGridSelection } from "./hooks/useGridSelection";
 import { useGridRowSelection } from "./hooks/useGridRowSelection";
@@ -74,6 +75,7 @@ import { normalizeRange } from "./lib/range/normalize";
 import type {
   AddCustomFieldRequest,
   AxisRoleSubset,
+  CellCommitMove,
   CellCoord,
   CellRange,
   CellWrite,
@@ -382,6 +384,18 @@ export function DataTable<TRow>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionKey ?? rows]);
 
+  const clearHistory = history.clear;
+  useEffect(() => {
+    const clearHistoryForDraft = (event: Event) => {
+      const scope = (event as CustomEvent<{ projectId: string; versionId: string }>).detail;
+      if (sessionKey?.includes(scope.projectId) && sessionKey.includes(scope.versionId)) {
+        clearHistory();
+      }
+    };
+    window.addEventListener(CLEAR_DATA_TABLE_HISTORY_EVENT, clearHistoryForDraft);
+    return () => window.removeEventListener(CLEAR_DATA_TABLE_HISTORY_EVENT, clearHistoryForDraft);
+  }, [clearHistory, sessionKey]);
+
   // Sanitize filters when a field's numberUnits config changes. Stored
   // filter values are typed in the active unit system at the time of
   // entry — once the unit pair or precision swaps, those values would
@@ -589,14 +603,14 @@ export function DataTable<TRow>({
 
   const canInsertRow = Boolean(buildEmptyRow) && !readOnly && Boolean(onWrite);
   const insertRowBelow = useCallback(
-    async (anchorRowId: string | null) => {
+    async (anchorRowId: string | null, commitActiveEditor = true) => {
       if (!canInsertRow || !buildEmptyRow) {
         setAnnounce("Row insert is not enabled for this table.");
         return;
       }
       // Commit any pending edit first; abort if the commit failed
       // (validation blocked the cell write).
-      if (edit.editing) {
+      if (commitActiveEditor && edit.editing) {
         const committed = await edit.commit();
         if (!committed) return;
       }
@@ -1409,11 +1423,11 @@ export function DataTable<TRow>({
     return map;
   }, [view.filter, view.sort, view.group]);
 
-  const handleCommitAndMove = (
-    rowIndex: number,
-    columnIndex: number,
-    move: { kind: "tab"; shiftKey: boolean } | { kind: "down" },
-  ) => {
+  const handleCommitAndMove = (rowIndex: number, columnIndex: number, move: CellCommitMove) => {
+    if (move.kind === "insert") {
+      void insertRowBelow(rowIds[rowIndex] ?? null, false);
+      return;
+    }
     const next =
       move.kind === "down"
         ? moveDownCell({ rowIndex, columnIndex }, visibleDataRows.length, visibleColumnDefs.length)
