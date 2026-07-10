@@ -1,5 +1,6 @@
 import { numberUnitForSystem, numberUnitLabel, type UnitSystem } from "../../../../../lib/units";
 import type { DataTableColumnDef, FieldDef } from "../../types";
+import { displayUnitsFor } from "../fieldUnits";
 import { isComputedErrorValue } from "../formula/computedValues";
 import { formatClipboardCellValue } from "../paste/tsv";
 
@@ -81,9 +82,11 @@ function headerLabel<TRow>(
   fieldDef: FieldDef | undefined,
   unitSystem: UnitSystem,
 ): string {
-  if (fieldDef?.field_type === "number" && fieldDef.numberUnits) {
-    const unitId = numberUnitForSystem(fieldDef.numberUnits, unitSystem);
-    return `${column.header} (${numberUnitLabel(unitId)})`;
+  // Suffix the unit for any unit-bearing field (number or numeric formula) so
+  // the CSV header matches the on-screen column header.
+  const displayUnits = displayUnitsFor(fieldDef);
+  if (displayUnits) {
+    return `${column.header} (${numberUnitLabel(numberUnitForSystem(displayUnits, unitSystem))})`;
   }
   return column.header;
 }

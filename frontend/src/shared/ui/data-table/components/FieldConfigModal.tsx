@@ -384,9 +384,13 @@ export function FieldConfigModal({
   const numberPrecisionDirty =
     draftType === "number" &&
     numberPrecision !== clampNumberPrecision(source?.numberPrecision ?? DEFAULT_NUMBER_PRECISION);
-  const numberUnitsDirty =
-    draftType === "number" && !numberUnitsEquivalent(numberUnits, source?.numberUnits ?? null);
+  // Number and formula share the units section/state (D11 — one units UX), so
+  // the diff is computed once and gated per draft type. Left clean on a formula,
+  // the backend carries the existing units forward (D14).
+  const unitsDirty = !numberUnitsEquivalent(numberUnits, source?.numberUnits ?? null);
+  const numberUnitsDirty = draftType === "number" && unitsDirty;
   const numberDirty = numberPrecisionDirty || numberUnitsDirty;
+  const formulaUnitsDirty = draftType === "formula" && unitsDirty;
 
   // PRD Q3 / Q13 — linked-record max_links is editable in place; the
   // target path is immutable on an existing linked_record field, so we
@@ -406,7 +410,7 @@ export function FieldConfigModal({
   const hasTypeSpecificDirty = Boolean(
     (draftType === "single_select" && optionsDraft?.dirty) ||
     numberDirty ||
-    (draftType === "formula" && formulaDraft?.dirty) ||
+    (draftType === "formula" && (formulaDraft?.dirty || formulaUnitsDirty)) ||
     linkedRecordDirty,
   );
 
@@ -486,6 +490,11 @@ export function FieldConfigModal({
         ...(draftType === "formula" && formulaDraft?.dirty
           ? { formulaSource: formulaDraft.source }
           : {}),
+        // D12/D14 tri-state: send top-level `displayUnits` only when the units
+        // section is dirty (a config sets/retags; `null` clears). Left clean →
+        // omit, and the backend carries the existing units forward without the
+        // frontend needing to resend `formulaSource`.
+        ...(draftType === "formula" && formulaUnitsDirty ? { displayUnits: numberUnits } : {}),
         ...(draftType === "linked_record" && typeChanged && linkedRecordTargetPath
           ? { linkedRecordTargetPath: [...linkedRecordTargetPath] }
           : {}),
@@ -527,6 +536,7 @@ export function FieldConfigModal({
     typeChanged,
     numberPrecisionDirty,
     numberUnitsDirty,
+    formulaUnitsDirty,
     draftType,
     needsAck,
     dispatchBundle,
@@ -745,17 +755,31 @@ export function FieldConfigModal({
               </>
             ) : null}
             {draftType === "formula" && source ? (
-              <FieldConfigSectionFormula
-                fieldId={source.field_key}
-                initialSource={initialFormulaSource}
-                fieldRegistry={formulaFieldRegistry}
-                previewRow={formulaPreviewSnapshot}
-                previewStale={formulaPreviewStale}
-                disabled={pending || isAttributeLocked(fieldDef, "formula")}
-                onDraftChange={setFormulaDraft}
-                onSuggestionPanelOpenChange={setFormulaSuggestionPanelOpen}
-                dismissSuggestionsSignal={dismissFormulaSuggestionsSignal}
-              />
+              <>
+                <FieldConfigSectionFormula
+                  fieldId={source.field_key}
+                  initialSource={initialFormulaSource}
+                  fieldRegistry={formulaFieldRegistry}
+                  previewRow={formulaPreviewSnapshot}
+                  previewStale={formulaPreviewStale}
+                  disabled={pending || isAttributeLocked(fieldDef, "formula")}
+                  onDraftChange={setFormulaDraft}
+                  onSuggestionPanelOpenChange={setFormulaSuggestionPanelOpen}
+                  dismissSuggestionsSignal={dismissFormulaSuggestionsSignal}
+                />
+                {/* D11: reuse the number units section verbatim, relabeled. The
+                    backend drops the units if the formula's result isn't numeric
+                    (D7), so it's shown for every formula. A `fixed` catalog unit
+                    carried onto a formula stays locked. */}
+                <FieldConfigSectionNumberUnits
+                  units={numberUnits}
+                  onUnitsChange={setNumberUnits}
+                  disabled={pending || fieldTypeLocked}
+                  fixed={numberUnits?.mode === "fixed"}
+                  label="Display units"
+                  hint="Formats the computed result; applies to numeric formulas."
+                />
+              </>
             ) : null}
             {draftType === "linked_record" && source ? (
               <FieldConfigSectionLinkedRecord

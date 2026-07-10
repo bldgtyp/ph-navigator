@@ -19,6 +19,12 @@ export type FieldConfigSectionNumberUnitsProps = {
   onUnitsChange: (units: NumberUnitsConfig | null) => void;
   disabled?: boolean;
   fixed?: boolean;
+  // Section heading; a formula reuses this component under "Display units"
+  // (D11 — one units UX across number and formula), a number keeps "Units".
+  label?: string;
+  // Optional one-line hint under the heading (formula clarifies the unit is a
+  // formatting choice, not data entry).
+  hint?: string;
 };
 
 const DEFAULT_UNIT_TYPE = NUMBER_UNIT_TYPES[0]!;
@@ -36,6 +42,8 @@ export function FieldConfigSectionNumberUnits({
   onUnitsChange,
   disabled = false,
   fixed = false,
+  label = "Units",
+  hint,
 }: FieldConfigSectionNumberUnitsProps) {
   const typeId = useId();
   const siUnitId = useId();
@@ -48,7 +56,8 @@ export function FieldConfigSectionNumberUnits({
   if (!units) {
     return (
       <div className="data-table-field-config-modal-section">
-        <span className="data-table-field-config-label">Units</span>
+        <span className="data-table-field-config-label">{label}</span>
+        {hint ? <p className="data-table-field-config-modal-hint">{hint}</p> : null}
         <button
           type="button"
           className="secondary-button"
@@ -62,8 +71,9 @@ export function FieldConfigSectionNumberUnits({
   }
 
   return (
-    <div className="data-table-field-config-modal-section" role="group" aria-label="Units">
-      <span className="data-table-field-config-label">Unit</span>
+    <div className="data-table-field-config-modal-section" role="group" aria-label={label}>
+      <span className="data-table-field-config-label">{label}</span>
+      {hint ? <p className="data-table-field-config-modal-hint">{hint}</p> : null}
       <label className="data-table-field-config-label" htmlFor={typeId}>
         Unit type
       </label>

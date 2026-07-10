@@ -1,5 +1,6 @@
 import { formatNumberUnitsDisplay, type UnitSystem } from "../../../../../lib/units";
 import type { CellRange, DataTableColumnDef, FieldDef } from "../../types";
+import { displayUnitsFor } from "../fieldUnits";
 import { fieldDefForColumn } from "../internal/fieldDefForColumn";
 import { fieldKeyFieldDefMap } from "../internal/fieldKeyFieldDefMap";
 import { formatPlainNumberDisplay } from "../numberDisplay";
@@ -25,8 +26,12 @@ export function formatClipboardCellValue(
     const option = fieldDef.options?.find((candidate) => candidate.id === value);
     return option?.label ?? "";
   }
-  if (fieldDef?.field_type === "number" && fieldDef.numberUnits) {
-    return formatNumberUnitsDisplay(value, fieldDef.numberUnits, unitSystem);
+  // A unit-bearing field (number or numeric formula) copies its unit-formatted
+  // value so the clipboard matches the grid; a formula error overlay (an object)
+  // is excluded and falls through to the raw path.
+  const displayUnits = displayUnitsFor(fieldDef);
+  if (displayUnits && (fieldDef?.field_type === "number" || typeof value === "number")) {
+    return formatNumberUnitsDisplay(value, displayUnits, unitSystem);
   }
   if (fieldDef?.field_type === "number") {
     return formatPlainNumberDisplay(value, fieldDef);

@@ -575,4 +575,27 @@ describe("DataTable helpers", () => {
     expect(formatDisplayCellValue(1, fieldDef, "SI")).toBe("1.000");
     expect(formatDisplayCellValue(1, fieldDef, "IP")).toBe("3.3");
   });
+
+  test("formats a numeric formula (computed) with units — clipboard/CSV parity (Phase 3)", () => {
+    const fieldDef: FieldDef = {
+      field_key: "cf_flow",
+      field_type: "computed",
+      display_name: "Supply",
+      numberUnits: {
+        mode: "editable",
+        unit_type: "airflow",
+        si_unit: "m3_h",
+        ip_unit: "cfm",
+        precision_si: 1,
+        precision_ip: 1,
+      },
+    };
+
+    expect(formatDisplayCellValue(259.7, fieldDef, "SI")).toBe("259.7");
+    expect(formatDisplayCellValue(259.7, fieldDef, "IP")).toBe("152.9");
+    // A formula error overlay is an object, not a number — never unit-formatted.
+    expect(formatDisplayCellValue({ error: "div_by_zero" }, fieldDef, "IP")).not.toContain("cfm");
+    // Clipboard / TSV path matches the grid — same unit-formatted value.
+    expect(formatClipboardCellValue(259.7, fieldDef, "IP")).toBe("152.9");
+  });
 });

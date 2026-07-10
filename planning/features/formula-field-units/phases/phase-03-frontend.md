@@ -3,10 +3,12 @@
 ```
 DATE:    2026-07-09
 TIME:    13:38 EDT
-STATUS:  Planned — not started. Revised per the 2026-07-09 pre-implementation review:
-         units ship as a TOP-LEVEL displayUnits request field (D12), never inside a
-         formula target's config; backend reconciliation (D14) means formulaSource
-         stays dirty-gated.
+STATUS:  DONE (2026-07-09). Top-level displayUnits tri-state payload (D12);
+         numeric-formula units mapped to numberUnits in useTableSchema (D4);
+         computed cells + header + clipboard + CSV format through a shared
+         displayUnitsFor accessor (grid/header/clipboard/CSV parity); modal reuses
+         FieldConfigSectionNumberUnits relabeled "Display units" (D11); formulaSource
+         stays dirty-gated (D14). Frontend suites green. Merge to main = Ed's call.
 AUTHOR:  Ed + Claude
 SCOPE:   Shared data-table UI (frontend/src/shared/ui/data-table/*) + unit format lib.
          Table-agnostic — every table using DataTable inherits it (D9).

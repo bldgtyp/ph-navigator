@@ -1,5 +1,6 @@
 import { formatNumberUnitsDisplay, type UnitSystem } from "../../../../../lib/units";
 import type { FieldDef, FieldOption } from "../../types";
+import { displayUnitsFor } from "../fieldUnits";
 import { formatPlainNumberDisplay } from "../numberDisplay";
 import { formatClipboardValue } from "../paste/tsv";
 
@@ -15,8 +16,13 @@ export function formatDisplayCellValue(
     const option = singleSelectOption(value, fieldDef);
     return option?.label ?? "Missing option";
   }
-  if (fieldDef?.field_type === "number" && fieldDef.numberUnits) {
-    return formatNumberUnitsDisplay(value, fieldDef.numberUnits, unitSystem);
+  // A unit-bearing field (number, or a numeric formula) formats its SI value
+  // through the unit path so display / clipboard / CSV all agree. A formula
+  // error overlay is an object, not a number, so it's excluded and falls
+  // through to the raw path — never unit-formatted.
+  const displayUnits = displayUnitsFor(fieldDef);
+  if (displayUnits && (fieldDef?.field_type === "number" || typeof value === "number")) {
+    return formatNumberUnitsDisplay(value, displayUnits, unitSystem);
   }
   if (fieldDef?.field_type === "number") {
     return formatPlainNumberDisplay(value, fieldDef);
