@@ -1,7 +1,7 @@
 # Feature request: built-in "Ventilator" link field on SPACES / ROOMS
 
 ```
-STATUS:  Active — scoped for implementation.
+STATUS:  Complete — implemented, verified, archived.
 DATE:    2026-07-09
 AUTHOR:  Ed + Claude (recorded)
 SCOPE:   SPACES / ROOMS record schema — a built-in reference field pointing at a
@@ -57,3 +57,8 @@ iron-law that basic, universally-needed affordances are parent-owned, not opt-in
    room visibility.
 2. **Phase 02 — verification and closeout:** run focused backend/frontend tests,
    update this packet with evidence, then archive if complete.
+
+## Final status
+
+Complete as of 2026-07-09. Implementation landed in `370e6795`; final archive
+cleanup followed in the closeout commit.

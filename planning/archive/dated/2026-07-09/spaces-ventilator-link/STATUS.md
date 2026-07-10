@@ -1,6 +1,6 @@
 # STATUS — spaces-ventilator-link
 
-**State:** 🟢 Phase 01 implemented — verification passed; Phase 02 closeout pending.
+**State:** ✅ Complete — implemented, verified, and archived.
 
 **Ask:** SPACES / ROOMS records need a **built-in link field to a VENTILATORS
 record** so each room is associated with the specific ventilator that serves it.
@@ -26,8 +26,8 @@ inverse room visibility; deleting a ventilator clears referencing Rooms links.
 
 ## Phase status
 
-- Phase 01 — Implemented and focused verification passed.
-- Phase 02 — Pending.
+- Phase 01 — Complete.
+- Phase 02 — Complete.
 
 ## Phase 01 evidence
 
