@@ -28,6 +28,7 @@ describe("buildCoalescedTablePayload", () => {
       { rows: ["root"] },
       ops,
       {
+        rows: (slice) => slice.rows.map((id) => ({ id })),
         fromRowInsert,
         fromCellWrites,
         fromRowDelete: vi.fn(),
@@ -69,6 +70,7 @@ describe("buildCoalescedTablePayload", () => {
       { rows: [] },
       ops,
       {
+        rows: (): readonly { id: string }[] => [],
         fromCellWrites,
         fromRowInsert: vi.fn(),
         fromRowDelete: vi.fn(),

@@ -20,6 +20,7 @@ export const hotWaterTanksPayloadBuilders: SlicePayloadBuilders<
   HotWaterTankRow,
   HotWaterTanksReplacePayload
 > = {
+  rows: (slice) => slice.hot_water_tanks,
   fromCellWrites(slice, writes, newOptions, removedOptions) {
     return hotWaterTanksPayloadFromCellWrites(slice, writes, newOptions, removedOptions);
   },

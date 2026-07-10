@@ -72,6 +72,7 @@ import type { FieldRegistryEntry } from "./lib/formula";
 import { mapToFormulaType } from "./lib/formula/mapToFormulaType";
 import { getCustomValue } from "./lib/customFieldAccessor";
 import { normalizeRange } from "./lib/range/normalize";
+import { cellKey } from "./lib/cellKey";
 import type {
   AddCustomFieldRequest,
   AxisRoleSubset,
@@ -1866,10 +1867,6 @@ function stableRangeToVisibleRange(
     anchor: { rowIndex: anchorRowIndex, columnIndex: anchorColumnIndex },
     focus: { rowIndex: focusRowIndex, columnIndex: focusColumnIndex },
   };
-}
-
-function cellKey(rowId: string, fieldKey: string): string {
-  return `${rowId}\u0000${fieldKey}`;
 }
 
 function buildDefaultFormulaFieldRegistry(fieldDefs: readonly FieldDef[]): FieldRegistryEntry[] {

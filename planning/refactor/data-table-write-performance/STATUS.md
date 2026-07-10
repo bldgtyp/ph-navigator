@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-09
 TIME: -
-STATUS: Active — Phases 00-04 complete; Phase 05 is next.
+STATUS: Active — Phases 00-05 complete; Phase 06 measurement gate next.
 AUTHOR: Claude (for Ed)
 SCOPE: Live state ledger for the DataTable write-performance refactor.
 RELATED:
@@ -65,11 +65,14 @@ RELATED:
 - 2026-07-09 — **Phase 04 complete.** Undo depth is 50; lineage
   replacement clears history draft-wide; rejected replay clears both
   stacks; undo/redo announces the semantic operation kind.
+- 2026-07-09 — **Phase 05 complete.** Conflict codes now drive honest
+  cause-specific counted copy. Draft-ETag conflicts self-heal once
+  only when row/id and observed-base three-way gates all pass.
 
 ## Next step
 
-1. Implement Phase 05: structured conflict classification, honest
-   cause-specific copy, and one-shot three-way-gated retry.
+1. Execute the Phase 06 measurement gate against the Phase-00
+   PERF-STRESS baseline; implement only a measured qualifying remedy.
 
 ## Blockers
 
@@ -84,7 +87,7 @@ RELATED:
 | 02 — per-table optimistic journals | **Complete** |
 | 03 — transport coalescing | **Complete** |
 | 04 — undo polish | **Complete** |
-| 05 — conflict copy + three-way retry | Planned |
+| 05 — conflict copy + three-way retry | **Complete** |
 | 06 — backend write-path trims | Planned (measure-gated) |
 
 ## Verification evidence

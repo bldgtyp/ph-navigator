@@ -20,6 +20,7 @@ export const hotWaterHeatersPayloadBuilders: SlicePayloadBuilders<
   HotWaterHeaterRow,
   HotWaterHeatersReplacePayload
 > = {
+  rows: (slice) => slice.hot_water_heaters,
   fromCellWrites(slice, writes, newOptions, removedOptions) {
     return hotWaterHeatersPayloadFromCellWrites(slice, writes, newOptions, removedOptions);
   },

@@ -1,9 +1,7 @@
 ---
 DATE: 2026-07-09
 TIME: -
-STATUS: Planned — depends on phase-01 (residual 409s are genuine
-  conflicts) and phase-02 (journals hold the observed base values the
-  three-way check needs).
+STATUS: Complete — implemented and verified 2026-07-09.
 AUTHOR: Claude (for Ed); retry preconditions per plan-review R-7
 SCOPE: Implementation handoff for Phase 5 — truthful conflict copy
   keyed to the actual 409 cause, and a narrowly-gated one-shot
@@ -108,3 +106,28 @@ deleted the row tab B was editing → banner path.
 - MCP agents share the same draft row (one draft per version+user) —
   self-heal smooths agent+browser co-editing, but do not widen the
   gates for it.
+
+## 6. As-built record (2026-07-09)
+
+- The existing API envelope already carries machine-readable
+  `draft_etag_mismatch` and `version_etag_mismatch`; no backend/API change was
+  needed. `classifyDraftConflict` maps these separately.
+- Conflict copy no longer asserts another tab without evidence. Draft copy
+  names another tab/editor/agent as possibilities; saved-version copy names
+  the saved version. Both state that latest truth was reloaded and include the
+  rejected-op count.
+- The journal captures each target's observed base value from its optimistic
+  pre-write projection into a private recovery envelope. Public `WriteOp`
+  values and history entries remain transport-agnostic.
+- A failed batch gets at most one recovery attempt. Retry is allowed only for
+  draft-ETag mismatch; cell/fill/rowInsert operations; existing target rows;
+  collision-free inserted ids with valid anchors; and exact
+  remote-vs-observed base equality for every target. Version mismatch,
+  unsupported op, missing row/anchor, duplicate or colliding id, or same-cell
+  remote change takes the counted rollback path.
+- The journal refetches authoritative state, rebuilds the batch from its fresh
+  ETag/base, and sends once. A second failure is final. Unit coverage toggles
+  untouched target, same-cell change, deleted row, insert collision,
+  unsupported kind, cause classification, counted copy, one recovery, and
+  rebuilt-payload behavior. Unsafe conflicts install the already-refetched
+  authoritative base before rollback and do not issue a duplicate refetch.

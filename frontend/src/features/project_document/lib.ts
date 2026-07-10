@@ -47,6 +47,25 @@ export function isDraftStaleError(error: unknown): boolean {
   return isDocumentWorkflowError(error, PROJECT_DOCUMENT_ERROR_CODES.draftEtagMismatch);
 }
 
+export type DraftConflictCause = "draft-etag" | "version-etag" | null;
+
+export function classifyDraftConflict(error: unknown): DraftConflictCause {
+  if (isDraftStaleError(error)) return "draft-etag";
+  if (isVersionStaleError(error)) return "version-etag";
+  return null;
+}
+
+export function draftConflictMessage(error: unknown, rejectedCount: number): string {
+  const discarded = discardedWritesMessage(rejectedCount);
+  return classifyDraftConflict(error) === "version-etag"
+    ? `The saved version changed outside this view. Reloaded the latest version; ${discarded}`
+    : `The draft changed outside this view (another tab, editor, or agent). Reloaded the latest draft; ${discarded}`;
+}
+
+export function discardedWritesMessage(rejectedCount: number): string {
+  return `${rejectedCount} unsaved ${rejectedCount === 1 ? "change was" : "changes were"} discarded.`;
+}
+
 export function isVersionStaleError(error: unknown): boolean {
   return isDocumentWorkflowError(error, PROJECT_DOCUMENT_ERROR_CODES.versionEtagMismatch);
 }

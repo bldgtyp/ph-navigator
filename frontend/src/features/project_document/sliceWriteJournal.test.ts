@@ -96,7 +96,7 @@ describe("SliceWriteJournal", () => {
     await expect(a.settled).rejects.toBe(failure);
     await expect(b.settled).rejects.toThrow("earlier draft write failed");
     expect(onFailure).toHaveBeenCalledOnce();
-    expect(onFailure).toHaveBeenCalledWith(failure, 2);
+    expect(onFailure).toHaveBeenCalledWith(failure, 2, false);
     expect(renders.at(-1)).toEqual({ draft_etag: "etag-0", rows: [] });
 
     const recovered = journal.accept(append("C"));
@@ -127,5 +127,64 @@ describe("SliceWriteJournal", () => {
     await Promise.all([a.settled, b.settled, c.settled]);
 
     expect(requests.map((request) => request.rows)).toEqual([["A"], ["A", "B", "C"]]);
+  });
+
+  it("rebuilds once from a recovered authoritative base", async () => {
+    const stale = new Error("stale");
+    const transport = vi
+      .fn()
+      .mockRejectedValueOnce(stale)
+      .mockImplementation(async (_slice, payload: Payload) => ({
+        draft_etag: "etag-retry",
+        rows: payload.rows,
+      }));
+    const recover = vi.fn(async () => ({
+      base: { draft_etag: "etag-fresh", rows: ["REMOTE"] },
+      retryAllowed: true,
+    }));
+    const journal = new SliceWriteJournal<Slice, Payload>(
+      { draft_etag: "etag-0", rows: [] },
+      new DraftWriteCoordinator("test"),
+      mergeSlicePayload,
+      transport,
+      vi.fn(),
+      vi.fn(),
+      undefined,
+      null,
+      recover,
+    );
+    const handle = journal.accept({ ...append("A"), metadata: { kind: "cell" } });
+    await expect(handle.settled).resolves.toEqual({
+      draft_etag: "etag-retry",
+      rows: ["REMOTE", "A"],
+    });
+    expect(transport).toHaveBeenCalledTimes(2);
+    expect(recover).toHaveBeenCalledOnce();
+  });
+
+  it("installs a recovered base without retrying an unsafe write", async () => {
+    const stale = new Error("stale");
+    const onFailure = vi.fn();
+    const renders: Slice[] = [];
+    const transport = vi.fn().mockRejectedValue(stale);
+    const journal = new SliceWriteJournal<Slice, Payload>(
+      { draft_etag: "etag-0", rows: [] },
+      new DraftWriteCoordinator("test"),
+      mergeSlicePayload,
+      transport,
+      (slice) => renders.push(slice),
+      onFailure,
+      undefined,
+      null,
+      async () => ({
+        base: { draft_etag: "etag-fresh", rows: ["REMOTE"] },
+        retryAllowed: false,
+      }),
+    );
+
+    await expect(journal.accept(append("A")).settled).rejects.toBe(stale);
+    expect(transport).toHaveBeenCalledOnce();
+    expect(renders.at(-1)).toEqual({ draft_etag: "etag-fresh", rows: ["REMOTE"] });
+    expect(onFailure).toHaveBeenCalledWith(stale, 1, true);
   });
 });

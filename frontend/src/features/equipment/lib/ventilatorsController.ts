@@ -20,6 +20,7 @@ export const ventilatorsPayloadBuilders: SlicePayloadBuilders<
   VentilatorRow,
   VentilatorsReplacePayload
 > = {
+  rows: (slice) => slice.ventilators,
   fromCellWrites(slice, writes, newOptions, removedOptions) {
     return ventilatorsPayloadFromCellWrites(slice, writes, newOptions, removedOptions);
   },

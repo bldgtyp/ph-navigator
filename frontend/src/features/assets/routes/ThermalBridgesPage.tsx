@@ -192,6 +192,7 @@ const thermalBridgesPayloadBuilders: SlicePayloadBuilders<
   ThermalBridgeRow,
   ThermalBridgesReplacePayload
 > = {
+  rows: (slice) => slice.thermal_bridges,
   fromCellWrites(slice, writes, newOptions, removedOptions) {
     return thermalBridgesPayloadFromCellWrites(slice, writes, newOptions, removedOptions);
   },

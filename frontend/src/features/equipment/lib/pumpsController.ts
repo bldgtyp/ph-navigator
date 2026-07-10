@@ -12,6 +12,7 @@ import {
 
 export const pumpsPayloadBuilders: SlicePayloadBuilders<PumpsSlice, PumpRow, PumpsReplacePayload> =
   {
+    rows: (slice) => slice.pumps,
     fromCellWrites(slice, writes, newOptions, removedOptions) {
       return pumpsPayloadFromCellWrites(slice, writes, newOptions, removedOptions);
     },

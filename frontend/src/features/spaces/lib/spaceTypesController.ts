@@ -34,6 +34,7 @@ export const spaceTypesPayloadBuilders: SlicePayloadBuilders<
   SpaceTypeRow,
   SpaceTypesReplacePayload
 > = {
+  rows: (slice) => slice.space_types,
   fromCellWrites: spaceTypesPayloadFromCellWrites,
   fromRowInsert: spaceTypesPayloadFromRowInsert,
   fromRowDelete: spaceTypesPayloadFromRowDelete,

@@ -20,6 +20,7 @@ export const appliancesPayloadBuilders: SlicePayloadBuilders<
   ApplianceRow,
   AppliancesReplacePayload
 > = {
+  rows: (slice) => slice.appliances,
   fromCellWrites(slice, writes, newOptions, removedOptions) {
     return appliancesPayloadFromCellWrites(slice, writes, newOptions, removedOptions);
   },

@@ -528,6 +528,10 @@ Rules:
   validation failure, stop the queue, roll back to the last
   server-acknowledged snapshot, clear undo, and hand control to the
   parent conflict/session/validation UI.
+- A draft-ETag conflict may retry once only when all targeted rows still
+  exist, inserted ids do not collide, and every remote target value equals
+  the gesture's captured pre-edit value. Never retry a saved-version mismatch
+  or overwrite a remotely changed target cell.
 - Undo is local-only. Do not issue compensating PATCH requests after a
   conflict.
 - Keep the 50 most recent semantic gestures per mounted table. Clear both

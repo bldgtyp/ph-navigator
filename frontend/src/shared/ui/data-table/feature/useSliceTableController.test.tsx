@@ -67,6 +67,7 @@ function makePayloadBuilders(
   ),
 ): SlicePayloadBuilders<FakeSlice, FakeRow, FakePayload> {
   return {
+    rows: (slice) => slice.rows.map((id) => ({ id })),
     fromCellWrites: vi.fn((slice) => ({ rows: slice.rows })),
     fromRowInsert,
     fromRowDelete: vi.fn((slice) => ({ rows: slice.rows })),

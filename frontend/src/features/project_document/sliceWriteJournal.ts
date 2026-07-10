@@ -5,18 +5,25 @@ export type JournalWrite<TSlice, TPayload> = {
   refreshBase?: boolean;
   batchable?: boolean;
   metadata?: unknown;
+  recoveryMetadata?: unknown | ((slice: TSlice) => unknown);
   buildPayload(slice: TSlice): TPayload;
   buildBatchPayload?(slice: TSlice, metadata: readonly unknown[]): TPayload;
   validate(payload: TPayload): string | null;
 };
 
-type JournalEntry<TSlice, TPayload> = JournalWrite<TSlice, TPayload> & { id: number };
+type JournalEntry<TSlice, TPayload> = Omit<JournalWrite<TSlice, TPayload>, "recoveryMetadata"> & {
+  recoveryMetadata?: unknown;
+  id: number;
+};
+
+export type JournalRecovery<TSlice> = { base: TSlice; retryAllowed: boolean };
 
 export class SliceWriteJournal<TSlice, TPayload> {
   private lastAcked: TSlice;
   private currentRendered: TSlice;
   private outstanding: JournalEntry<TSlice, TPayload>[] = [];
   private nextId = 1;
+  private failureBaseRefreshed = false;
 
   constructor(
     initial: TSlice,
@@ -24,12 +31,20 @@ export class SliceWriteJournal<TSlice, TPayload> {
     private readonly applyPayload: (slice: TSlice, payload: TPayload) => TSlice,
     private readonly transport: (slice: TSlice, payload: TPayload) => Promise<TSlice>,
     private readonly render: (slice: TSlice) => void,
-    private readonly onFailure: (error: unknown, rejectedCount: number) => void,
+    private readonly onFailure: (
+      error: unknown,
+      rejectedCount: number,
+      baseRefreshed: boolean,
+    ) => void,
     private readonly prepareBase: (
       slice: TSlice,
       forceRefresh: boolean,
     ) => Promise<TSlice> = async (slice) => slice,
     private readonly coalesceKey: string | null = null,
+    private readonly recoverBase: (
+      error: unknown,
+      metadata: readonly unknown[],
+    ) => Promise<JournalRecovery<TSlice> | null> = async () => null,
   ) {
     this.lastAcked = initial;
     this.currentRendered = initial;
@@ -51,7 +66,14 @@ export class SliceWriteJournal<TSlice, TPayload> {
       return { accepted: rejected.then(() => undefined), settled: rejected };
     }
 
-    const entry = { ...write, id: this.nextId++ };
+    const entry = {
+      ...write,
+      recoveryMetadata:
+        typeof write.recoveryMetadata === "function"
+          ? write.recoveryMetadata(this.currentRendered)
+          : write.recoveryMetadata,
+      id: this.nextId++,
+    };
     this.outstanding.push(entry);
     this.currentRendered = this.applyPayload(this.currentRendered, optimisticPayload);
     this.render(this.currentRendered);
@@ -95,6 +117,31 @@ export class SliceWriteJournal<TSlice, TPayload> {
       this.lastAcked = preparedBase;
       this.rebaseRendered();
     }
+    let payload = this.buildEntriesPayload(entries);
+    let acknowledged: TSlice;
+    try {
+      acknowledged = await this.transport(this.lastAcked, payload);
+    } catch (error) {
+      const recovered = await this.recoverBase(
+        error,
+        entries.map((entry) => entry.recoveryMetadata ?? entry.metadata),
+      );
+      if (!recovered) throw error;
+      this.lastAcked = recovered.base;
+      this.failureBaseRefreshed = true;
+      this.rebaseRendered();
+      if (!recovered.retryAllowed) throw error;
+      payload = this.buildEntriesPayload(entries);
+      acknowledged = await this.transport(this.lastAcked, payload);
+    }
+    this.lastAcked = acknowledged;
+    const settledIds = new Set(entries.map((entry) => entry.id));
+    this.outstanding = this.outstanding.filter((entry) => !settledIds.has(entry.id));
+    this.rebaseRendered();
+    return acknowledged;
+  }
+
+  private buildEntriesPayload(entries: JournalEntry<TSlice, TPayload>[]): TPayload {
     let payload: TPayload;
     const batchBuilder = entries.length > 1 ? entries[0]?.buildBatchPayload : undefined;
     if (batchBuilder) {
@@ -116,12 +163,7 @@ export class SliceWriteJournal<TSlice, TPayload> {
       if (latestPayload === null) throw new Error("Cannot dispatch an empty journal batch.");
       payload = latestPayload;
     }
-    const acknowledged = await this.transport(this.lastAcked, payload);
-    this.lastAcked = acknowledged;
-    const settledIds = new Set(entries.map((entry) => entry.id));
-    this.outstanding = this.outstanding.filter((entry) => !settledIds.has(entry.id));
-    this.rebaseRendered();
-    return acknowledged;
+    return payload;
   }
 
   private rebaseRendered(): void {
@@ -138,7 +180,9 @@ export class SliceWriteJournal<TSlice, TPayload> {
     this.outstanding = [];
     this.currentRendered = this.lastAcked;
     this.render(this.currentRendered);
-    this.onFailure(error, rejectedCount);
+    const baseRefreshed = this.failureBaseRefreshed;
+    this.failureBaseRefreshed = false;
+    this.onFailure(error, rejectedCount, baseRefreshed);
   }
 }
 

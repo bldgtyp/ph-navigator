@@ -11,6 +11,7 @@ import {
 } from "../lib";
 
 export const fansPayloadBuilders: SlicePayloadBuilders<FansSlice, FanRow, FansReplacePayload> = {
+  rows: (slice) => slice.fans,
   fromCellWrites(slice, writes, newOptions, removedOptions) {
     return fansPayloadFromCellWrites(slice, writes, newOptions, removedOptions);
   },

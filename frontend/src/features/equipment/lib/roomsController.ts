@@ -20,6 +20,7 @@ import { collapseRoomCellWritesToReplacements } from "./collapseRoomCellWritesTo
 
 export const roomsPayloadBuilders: SlicePayloadBuilders<RoomsSlice, RoomRow, RoomsReplacePayload> =
   {
+    rows: (slice) => slice.rooms,
     fromCellWrites(slice, writes, newOptions, removedOptions) {
       return roomsPayloadFromCellWrites(slice, writes, newOptions, removedOptions);
     },

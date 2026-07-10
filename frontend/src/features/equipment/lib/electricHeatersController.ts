@@ -17,6 +17,7 @@ export const electricHeatersPayloadBuilders: SlicePayloadBuilders<
   ElectricHeaterRow,
   ElectricHeatersReplacePayload
 > = {
+  rows: (slice) => slice.electric_heaters,
   fromCellWrites(slice, writes) {
     return electricHeatersPayloadFromCellWrites(slice, writes);
   },

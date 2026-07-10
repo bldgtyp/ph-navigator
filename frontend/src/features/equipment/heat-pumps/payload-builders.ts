@@ -72,6 +72,7 @@ function heatPumpLeafPayloadBuilders<
   },
 >(rowsKey: TKey): SlicePayloadBuilders<TSlice, TRow, TPayload> {
   return {
+    rows: (slice) => slice[rowsKey],
     fromCellWrites(slice, writes, newOptions, removedOptions) {
       return heatPumpPayloadFromRows(
         slice,

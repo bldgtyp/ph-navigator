@@ -34,6 +34,9 @@ export type RemovedOptionDelta = Record<string, string[]>;
 // backend `replaceSlice` endpoint accepts. Each tab implements one of
 // these against its own `TSlice` / `TRow` / `TPayload` triple.
 export interface SlicePayloadBuilders<TSlice, TRow extends { id: string }, TPayload> {
+  // Authoritative row collection for conflict retry. Keeping this explicit
+  // avoids guessing among the several array-valued collections in a slice.
+  rows(slice: TSlice): readonly TRow[];
   fromCellWrites(
     slice: TSlice,
     writes: CellWrite[],
@@ -154,6 +157,7 @@ export interface SliceTableController<TSlice> {
     run: () => Promise<T>,
     conflictMessage: string,
     fallbackMessage: string,
+    conflictBaseFresh?: boolean,
   ): Promise<T | undefined>;
   runCoordinatedWrite<T>(
     task: TransportTask<T>,

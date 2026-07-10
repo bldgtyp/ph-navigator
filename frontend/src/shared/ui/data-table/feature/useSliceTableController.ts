@@ -1,12 +1,11 @@
-// Generic orchestrator for the "slice-backed DataTable" pattern. Every
-// feature tab that ships a JSON-document slice + DataTable composes
-// this hook with its own SlicePayloadBuilders, then renders the
-// returned controller through <SliceTableShell> + its own table.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQueryClient, type UseMutationResult } from "@tanstack/react-query";
 import { errorMessage } from "../../../lib/errors";
 import { useTableSchema } from "../index";
-import { isDraftStaleError, isVersionLockedError } from "../../../../features/project_document/lib";
+import {
+  classifyDraftConflict,
+  isVersionLockedError,
+} from "../../../../features/project_document/lib";
 import {
   WriteQueueCancelledError,
   WriteQueueDrainedError,
@@ -27,6 +26,7 @@ import {
 } from "../../../../features/project_document/table-slice";
 import type { BuildEmptyRow, FieldOption, WriteOp } from "../types";
 import { useJournaledSliceCommit } from "./useJournaledSliceCommit";
+import { buildCellRetryMetadata } from "../../../../features/project_document/conflictRetry";
 import { buildCoalescedTablePayload } from "./buildCoalescedTablePayload";
 import { clearMountedDataTableHistories } from "../historyEvents";
 import type { FieldRegistryEntry, TableFieldDef, TableFieldRenderOverlays } from "../index";
@@ -196,10 +196,10 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
   );
 
   const handleStaleDraftConflict = useCallback(
-    async (message: string) => {
+    async (message: string, baseFresh = false) => {
       clearDraftHistory();
       setEditBlocker({ kind: "draft-conflict", message });
-      await refetch();
+      if (!baseFresh) await refetch();
     },
     [clearDraftHistory, refetch],
   );
@@ -235,6 +235,7 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
       run: () => Promise<T>,
       conflictMessage: string,
       fallbackMessage: string,
+      conflictBaseFresh = false,
     ): Promise<T | undefined> => {
       if (!canEdit) return undefined;
       setActionError(null);
@@ -244,8 +245,8 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
         if (error instanceof WriteQueueDrainedError || error instanceof WriteQueueCancelledError) {
           throw error;
         }
-        if (isDraftStaleError(error)) {
-          await handleStaleDraftConflict(conflictMessage);
+        if (classifyDraftConflict(error) !== null) {
+          await handleStaleDraftConflict(conflictMessage, conflictBaseFresh);
           throw error;
         }
         if (isVersionLockedError(error)) {
@@ -292,11 +293,11 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
     versionId: activeVersionId,
     mutate: replaceMutation.mutateAsync,
     validate: payloadBuilders.validate,
+    rows: payloadBuilders.rows,
     refetch,
     resolveSliceForWrite,
     runCoordinatedWrite,
     runWithConflictHandling,
-    conflictMessage: conflictMessages.activeRowConflict,
     setActionError,
   });
 
@@ -326,12 +327,13 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
     async (op: WriteOp) => {
       if (!canEdit) return;
       if (op.kind === "cell" || op.kind === "paste" || op.kind === "fill") {
-        // `fill` shares the CellWrite[] payload shape with `cell` /
-        // `paste` but carries no option-list delta (the source values
-        // are already in the table — fill never creates options).
         const newOptions =
           op.kind === "paste" ? op.newOptions : op.kind === "cell" ? (op.newOptions ?? {}) : {};
         const removedOptions = op.kind === "fill" ? {} : (op.removedOptions ?? {});
+        const recoveryMetadata =
+          op.kind === "paste"
+            ? undefined
+            : (current: TSlice) => buildCellRetryMetadata(payloadBuilders.rows(current), op);
         await commitPayloadOrThrow(
           `${tableKey}:${op.kind}`,
           (writableSlice) => {
@@ -355,6 +357,7 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
             ? {
                 batchable: true,
                 metadata: op,
+                recoveryMetadata,
                 buildBatchPayload: (writableSlice, metadata) =>
                   buildCoalescedTablePayload(
                     writableSlice,
@@ -363,7 +366,7 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
                     buildEmptyRow,
                   ),
               }
-            : undefined,
+            : { metadata: op, recoveryMetadata },
         );
         return;
       }
@@ -494,6 +497,4 @@ export function useSliceTableController<TSlice, TRow extends { id: string }, TPa
   };
 }
 
-// Re-exported for consumers that want the canonical FieldRegistryEntry
-// without reaching across the data-table package boundary.
 export type { FieldRegistryEntry };

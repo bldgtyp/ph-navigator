@@ -4,6 +4,7 @@ import type { Virtualizer } from "@tanstack/react-virtual";
 import { AlertTriangle } from "lucide-react";
 import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import { describeDuplicateRows } from "../lib/identifier/recordId";
+import { cellKey } from "../lib/cellKey";
 import type { DuplicateIdentifierRows } from "../lib/identifier/recordId";
 import { computeEdgeBits } from "../lib/range/edgeBits";
 import { isCellInNormalizedRange, type NormalizedRange } from "../lib/range/normalize";
@@ -37,10 +38,6 @@ const EMPTY_OPTIONS: FieldOption[] = [];
 const EMPTY_LINKED_CANDIDATES: LinkedRecordCellOps["candidates"] = [];
 const EMPTY_LINKED_IDS: readonly string[] = [];
 const emptyResolver: LinkedRecordCellOps["resolve"] = () => null;
-
-function cellKey(rowId: string, fieldKey: string): string {
-  return `${rowId}\u0000${fieldKey}`;
-}
 
 function toLinkedIdList(value: unknown): readonly string[] {
   if (!Array.isArray(value)) return EMPTY_LINKED_IDS;
