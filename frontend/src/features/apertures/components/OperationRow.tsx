@@ -9,7 +9,9 @@
 // fans into ``setElementOperation``. Locked / Viewer access renders
 // the read-only label from ``formatOperation`` instead of the editor.
 
-import { useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { useOutsidePointerDown } from "../../../shared/ui/useOutsidePointerDown";
 import { formatOperation } from "../operation-labels";
 import type { ApertureOperation, ApertureOperationDirection } from "../types";
 
@@ -128,49 +130,113 @@ function OperationTypeMenu({
   value: OperationTypeValue;
   onChange: (value: OperationTypeValue) => void;
 }) {
-  const detailsRef = useRef<HTMLDetailsElement | null>(null);
-  const [placement, setPlacement] = useState<"bottom" | "top">("bottom");
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState<MenuPosition | null>(null);
   const label = OPERATION_TYPE_OPTIONS.find((option) => option.value === value)?.label ?? "Fixed";
-  const updatePlacement = () => {
-    const rect = detailsRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const viewportPadding = 12;
-    const belowSpace = window.innerHeight - rect.bottom - viewportPadding;
-    const aboveSpace = rect.top - viewportPadding;
-    setPlacement(belowSpace >= 140 || belowSpace >= aboveSpace ? "bottom" : "top");
-  };
+
+  useOutsidePointerDown(rootRef, open, () => setOpen(false), [panelRef]);
+
+  useEffect(() => {
+    if (!open) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [open]);
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setPosition(null);
+      return;
+    }
+
+    let frameId: number | null = null;
+    const updatePosition = () => {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const viewportPadding = 12;
+      const gap = 4;
+      const belowSpace = window.innerHeight - rect.bottom - viewportPadding;
+      const aboveSpace = rect.top - viewportPadding;
+      setPosition({
+        top: belowSpace >= 140 || belowSpace >= aboveSpace ? rect.bottom + gap : rect.top - gap,
+        left: rect.left,
+        placement: belowSpace >= 140 || belowSpace >= aboveSpace ? "bottom" : "top",
+      });
+    };
+    const schedulePositionUpdate = () => {
+      frameId = window.requestAnimationFrame(updatePosition);
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", schedulePositionUpdate, true);
+    return () => {
+      if (frameId !== null) window.cancelAnimationFrame(frameId);
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", schedulePositionUpdate, true);
+    };
+  }, [open]);
 
   return (
-    <details
-      className="aperture-operation-type-menu"
-      data-placement={placement}
-      data-testid="operation-type-select"
-      ref={detailsRef}
-      onToggle={(event) => {
-        if (event.currentTarget.open) updatePlacement();
-      }}
-    >
-      <summary className="aperture-operation-type-menu__trigger" aria-label="Operation type">
+    <div className="aperture-operation-type-menu" ref={rootRef}>
+      <button
+        type="button"
+        className="aperture-operation-type-menu__trigger"
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-label="Operation type"
+        data-testid="operation-type-select"
+        ref={triggerRef}
+        onClick={() => setOpen((current) => !current)}
+      >
         {label}
-      </summary>
-      <div className="aperture-operation-type-menu__panel" role="menu">
-        {OPERATION_TYPE_OPTIONS.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            className="aperture-operation-type-menu__option"
-            data-active={option.value === value ? "true" : undefined}
-            role="menuitemradio"
-            aria-checked={option.value === value}
-            onClick={() => {
-              onChange(option.value);
-              if (detailsRef.current) detailsRef.current.open = false;
-            }}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-    </details>
+      </button>
+      {open
+        ? createPortal(
+            <div
+              className="aperture-operation-type-menu__panel"
+              data-placement={position?.placement}
+              ref={panelRef}
+              role="menu"
+              style={{
+                left: position?.left ?? 0,
+                opacity: position ? undefined : 0,
+                pointerEvents: position ? undefined : "none",
+                top: position?.top ?? 0,
+                transform: position?.placement === "top" ? "translateY(-100%)" : undefined,
+              }}
+            >
+              {OPERATION_TYPE_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className="aperture-operation-type-menu__option"
+                  data-active={option.value === value ? "true" : undefined}
+                  role="menuitemradio"
+                  aria-checked={option.value === value}
+                  onClick={() => {
+                    onChange(option.value);
+                    setOpen(false);
+                  }}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>,
+            document.body,
+          )
+        : null}
+    </div>
   );
 }
+
+type MenuPosition = {
+  top: number;
+  left: number;
+  placement: "bottom" | "top";
+};
