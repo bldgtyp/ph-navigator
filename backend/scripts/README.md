@@ -9,15 +9,21 @@ CLI tools that don't belong in the request/response surface. Examples
 
 Run any script with `cd backend && uv run python scripts/<name>.py`.
 
-For repeatable local browser/UI inspection, prefer the Make wrapper:
+For repeatable local browser/UI inspection, use the self-healing Make wrapper:
 
 ```bash
-make seed-agent-browser
+make agent-browser-ready
 ```
 
-It creates or repairs the `codex@example.com` login plus the `AGENT-BROWSER`
-project with a dirty draft, then prints both a clean-profile sign-in route and
-the direct `localhost:5173` project route.
+It starts or reuses the strict local backend/frontend services, validates their
+application-specific health markers and Vite's same-origin `/api` proxy, then
+creates or reuses a task-isolated login and `AGENT-BROWSER-*` project with a
+dirty draft. `CODEX_THREAD_ID` provides automatic isolation;
+`PHN_AGENT_BROWSER_ID` is the explicit override for other runtimes. The command
+prints the credentials, a clean-profile sign-in route, and the direct
+`localhost:5173` project route. Use `make agent-browser-check` for a read-only
+readiness check. If a browser tab has already shown a network error, discard it
+and open the printed sign-in route in a fresh tab.
 
 For frontend performance sweeps, seed the non-destructive stress fixture:
 

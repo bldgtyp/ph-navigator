@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { CSRF_HEADER_NAME, fetchJson } from "./client";
+import { CSRF_HEADER_NAME, fetchJson, resolveApiBaseUrl } from "./client";
 
 describe("api client", () => {
   beforeEach(() => {
@@ -36,5 +36,13 @@ describe("api client", () => {
 
     expect(headers.has("Content-Type")).toBe(false);
     expect(headers.get(CSRF_HEADER_NAME)).toBe("1");
+  });
+
+  it("uses the same origin in development even with a legacy base URL", () => {
+    expect(resolveApiBaseUrl(true, "http://localhost:8000")).toBe("");
+  });
+
+  it("preserves a configured API origin in production", () => {
+    expect(resolveApiBaseUrl(false, "https://api.ph-nav.com")).toBe("https://api.ph-nav.com");
   });
 });

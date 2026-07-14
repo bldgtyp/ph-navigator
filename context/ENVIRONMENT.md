@@ -73,32 +73,57 @@ inspection:
 
 - Frontend: `http://localhost:5173`.
 - Backend API: `http://localhost:8000`.
-- Dedicated agent login: `codex@example.com` / `password`.
-- Dedicated browser fixture: run `make seed-agent-browser`, then open the
-  printed `sign-in route`. In a clean browser profile, the raw project route
+- Dedicated agent login: use the email printed by `make agent-browser-ready`;
+  the password is `password`.
+- Dedicated browser fixture: run `make agent-browser-ready`, then open the
+  printed `sign-in route` in a fresh tab. In a clean browser profile, the raw project route
   renders read-only instead of redirecting, so the `sign-in?next=...` URL is
   the reliable path to editor controls. The fixture project uses BT number
-  `AGENT-BROWSER`, is owned by `codex@example.com`, and includes a real dirty
-  Rooms draft so the app-wide "Uncommitted changes" / "Save Version" controls
-  render immediately after sign-in.
+  `AGENT-BROWSER-<task>`, is owned by the printed task-specific login, and
+  includes a real dirty Rooms draft so the app-wide "Uncommitted changes" /
+  "Save Version" controls render immediately after sign-in.
 
-Setup/repair sequence:
+Setup/repair command:
 
 ```bash
-make dev
-make backend
-make frontend
-make seed-agent-browser
+make agent-browser-ready
 ```
 
-Run `make backend` and `make frontend` in separate long-lived terminals.
-`make frontend` should bind Vite to `5173`. If `5173` is already
-responding, agents should use that server instead of starting another
-one. If an agent must start Vite directly, use a strict port from
-`frontend/`:
+This command is safe for concurrent agents. One exclusive lock covers local
+infrastructure provisioning, service startup, and fixture validation. It starts
+Postgres and MinIO, applies migrations, reuses healthy backend and frontend
+processes, starts missing processes concurrently, verifies
+application-specific response markers on `8000` and `5173`, verifies the API
+through Vite at `http://localhost:5173/api/v1/health`, and reuses a healthy
+task fixture without rewriting it. Codex derives task isolation from
+`CODEX_THREAD_ID`; other runtimes should set a stable
+`PHN_AGENT_BROWSER_ID`. Managed service logs and PIDs are written under the
+gitignored `working/agent-browser/` directory. Use the non-mutating check when
+you only need status:
 
 ```bash
-pnpm run dev -- --host 127.0.0.1 --port 5173 --strictPort
+make agent-browser-check
+```
+
+**Failed-tab rule:** Chromium network-error pages are internal `data:`/error
+documents. Browser-control security policy may refuse navigation away from one
+even after the server becomes healthy. Never reuse a tab that has displayed
+`ERR_CONNECTION_REFUSED`, another network error, or an internal `data:` error
+URL. After `make agent-browser-ready` succeeds, discard that tab and create a
+fresh tab for the printed sign-in route.
+
+Development API requests are always same-origin: browser code calls `/api` on
+`:5173`, and Vite proxies to FastAPI on `:8000`. This avoids CORS preflights and
+their cancellation race during auth/access-mode route transitions. Local
+`VITE_API_BASE_URL` values are intentionally ignored by the development client;
+use `VITE_API_PROXY_TARGET` to change the local FastAPI target. Production
+builds still honor `VITE_API_BASE_URL`.
+
+The readiness utility always starts Vite with the strict command below. If a
+human must start it manually, use the same command from `frontend/`:
+
+```bash
+pnpm exec vite --host 127.0.0.1 --port 5173 --strictPort
 ```
 
 Do not inspect the app on a Vite fallback port such as `5174` unless
@@ -106,7 +131,7 @@ the backend CORS config has also been changed. Local CORS defaults allow
 `localhost:5173`, `127.0.0.1:5173`, `localhost:3000`, and
 `127.0.0.1:3000`.
 
-Before browser work, check the API:
+For lower-level diagnosis, check the API:
 
 ```bash
 curl -i http://localhost:8000/api/v1/auth/session
@@ -125,10 +150,10 @@ isolated Playwright browser can invalidate the user's own live browser
 session. The dedicated agent user avoids that collision while still
 exercising the authenticated UI.
 
-Use `make seed-agent-browser` before visual/browser checks that need a
-mounted project-document route, version controls, dirty-draft controls, or a
-known non-empty dashboard. In a fresh Playwright context, navigate to the
-printed `sign-in route`, fill `codex@example.com` / `password`, wait for the
+`make agent-browser-ready` validates and, only when required, repairs the
+mounted project-document fixture, version controls, dirty-draft controls, and
+known non-empty dashboard. In a fresh browser tab/context, navigate to the
+printed `sign-in route`, fill the printed email / `password`, wait for the
 redirect, then assert the dirty controls. `make seed-agent-user` is auth-only:
 it creates the login but does not create or share any projects, so the Codex
 dashboard may be empty after a DB reset. Do not use screenshot project slugs

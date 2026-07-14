@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 from urllib.parse import quote
 from uuid import UUID
 
@@ -12,6 +12,8 @@ from psycopg import Connection
 from psycopg.types.json import Jsonb
 
 from database import transaction
+from features.auth import repository as auth_repository
+from features.auth.passwords import verify_password
 from features.auth.service import create_or_update_user
 from features.project_document import repository as document_repository
 from features.project_document.document import ProjectDocumentV1, RoomRow, RoomsTableEnvelope
@@ -120,6 +122,102 @@ def seed_agent_browser_fixture(
         sign_in_route=f"{frontend_url}/sign-in?next={quote(path, safe='')}",
         draft_etag=draft_etag,
     )
+
+
+def ensure_agent_browser_fixture(
+    *,
+    email: str = DEFAULT_EMAIL,
+    display_name: str = DEFAULT_DISPLAY_NAME,
+    password: str = DEFAULT_PASSWORD,
+    bt_number: str = DEFAULT_BT_NUMBER,
+    project_name: str = DEFAULT_PROJECT_NAME,
+    frontend_url: str = DEFAULT_FRONTEND_URL,
+) -> tuple[AgentBrowserFixture, bool]:
+    """Reuse a healthy fixture, repairing it only when required."""
+
+    assert_local_dev_database()
+    existing = _ready_fixture(
+        email=email,
+        password=password,
+        bt_number=bt_number,
+        frontend_url=frontend_url,
+    )
+    if existing is not None:
+        return existing, False
+    return (
+        seed_agent_browser_fixture(
+            email=email,
+            display_name=display_name,
+            password=password,
+            bt_number=bt_number,
+            project_name=project_name,
+            frontend_url=frontend_url,
+        ),
+        True,
+    )
+
+
+def _ready_fixture(
+    *,
+    email: str,
+    password: str,
+    bt_number: str,
+    frontend_url: str,
+) -> AgentBrowserFixture | None:
+    with transaction() as conn:
+        user = auth_repository.get_user_by_email(conn, email)
+        if user is None or not user["is_active"]:
+            return None
+        password_hash = user.get("password_hash")
+        if not isinstance(password_hash, str) or not verify_password(password, password_hash):
+            return None
+
+        project = conn.execute(
+            """
+            SELECT p.id, p.active_version_id
+            FROM projects AS p
+            JOIN project_versions AS v ON v.id = p.active_version_id
+            WHERE p.bt_number = %(bt_number)s
+              AND p.owner_id = %(user_id)s
+              AND p.deleted_at IS NULL
+              AND v.kind = 'working'
+              AND v.locked = false
+            """,
+            {"bt_number": bt_number, "user_id": user["id"]},
+        ).fetchone()
+        if project is None or project["active_version_id"] is None:
+            return None
+
+        draft = document_repository.get_draft(conn, project["active_version_id"], user["id"])
+        if draft is None or not _has_seeded_dirty_room(draft["body"]):
+            return None
+
+    path = f"/projects/{project['id']}/apertures"
+    normalized_frontend_url = frontend_url.rstrip("/")
+    return AgentBrowserFixture(
+        email=email,
+        password=password,
+        project_id=project["id"],
+        version_id=project["active_version_id"],
+        bt_number=bt_number,
+        route=f"{normalized_frontend_url}{path}",
+        sign_in_route=f"{normalized_frontend_url}/sign-in?next={quote(path, safe='')}",
+        draft_etag=str(draft["draft_etag"]),
+    )
+
+
+def _has_seeded_dirty_room(body: object) -> bool:
+    if not isinstance(body, dict):
+        return False
+    body_dict = cast(dict[str, Any], body)
+    tables = body_dict.get("tables")
+    if not isinstance(tables, dict):
+        return False
+    rooms = tables.get("rooms")
+    if not isinstance(rooms, dict):
+        return False
+    rows = rooms.get("rows")
+    return isinstance(rows, list) and any(isinstance(row, dict) and row.get("id") == "rm_agent_browser" for row in rows)
 
 
 def _dirty_rooms_draft(saved_body: ProjectDocumentV1) -> ProjectDocumentV1:

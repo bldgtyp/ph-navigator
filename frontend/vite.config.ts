@@ -2,8 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "node:path";
 
-const apiProxyTarget =
-  process.env.VITE_API_PROXY_TARGET || process.env.VITE_API_BASE_URL || "http://localhost:8000";
+const apiProxyTarget = process.env.VITE_API_PROXY_TARGET || "http://localhost:8000";
 const analyzeBundle = process.env.ANALYZE === "true";
 
 export default defineConfig(async ({ mode }) => {

@@ -26,8 +26,15 @@ export class ApiRequestError extends Error {
 // Must match `Settings.csrf_header_name` in backend/config.py.
 export const CSRF_HEADER_NAME = "X-PHN-CSRF";
 
+export function resolveApiBaseUrl(isDevelopment: boolean, configuredBaseUrl?: string): string {
+  // Development requests must stay on the Vite origin. Vite proxies `/api`
+  // to FastAPI, which avoids browser CORS/preflight races during auth-driven
+  // route remounts. Production builds still use the configured API origin.
+  return isDevelopment ? "" : (configuredBaseUrl ?? "");
+}
+
 export function getApiBaseUrl(): string {
-  return import.meta.env.VITE_API_BASE_URL ?? "";
+  return resolveApiBaseUrl(import.meta.env.DEV, import.meta.env.VITE_API_BASE_URL);
 }
 
 function apiUrl(path: string, apiBaseUrl = getApiBaseUrl()): string {

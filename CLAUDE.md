@@ -76,7 +76,24 @@ always-loaded fast-path.
 
 Commands: `make smoke` (orient in an unfamiliar state), `make ci` (full local CI
 mirror), `make format`, `make frontend-dev-check` (fast frontend-only gate),
+`make agent-browser-ready` (self-healing local browser stack + fixture),
 `make help` (everything else).
+
+## Agent browser workflow
+
+Before any localhost UI/browser check, run `make agent-browser-ready`. This is
+the single supported bootstrap/repair command: it starts or reuses the strict
+`5173`/`8000` services, verifies PH-Navigator-specific health markers, seeds
+the dedicated `AGENT-BROWSER` fixture, verifies the Vite same-origin `/api`
+proxy, and prints the exact login and sign-in route. The fixture is isolated by
+`CODEX_THREAD_ID`; other runtimes can set `PHN_AGENT_BROWSER_ID`. Development
+browser requests stay on `:5173`; Vite proxies them to `:8000` to eliminate
+CORS/preflight races. Do
+not reuse a tab that has shown `ERR_CONNECTION_REFUSED`, another network error,
+or an internal `data:` error URL; discard it and open the printed route in a
+fresh tab after readiness succeeds. Use `make agent-browser-check` for a
+non-mutating readiness check. Details and managed-service logs live in
+`context/ENVIRONMENT.md` and `working/agent-browser/`.
 
 ## Agent MCP workflow
 
@@ -95,8 +112,8 @@ and finish with `save_draft` or `discard_draft`. Prefer semantic write tools
 where they exist; use `replace_table` only for whole-table browser-parity
 updates. Never commit or print plaintext `phn_mcp_...` tokens.
 
-If `phn-local` is unavailable, run the local services yourself (`make dev`; for
-browser work also run `make backend` / `make frontend`) and retry the MCP check.
+If `phn-local` is unavailable, run `make agent-browser-ready` and retry the MCP
+check.
 For HTTP-client smoke or manual config debugging, `make seed-agent-mcp` and
 `make smoke-mcp-local` are available, but the default agent path is the
 project-registered stdio MCP server. Production/Render MCP tokens are real

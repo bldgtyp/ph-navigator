@@ -4,7 +4,7 @@
 # `cd <subdir> && uv run …` or `cd <subdir> && pnpm …` so it never assumes
 # the caller's working directory. See context/environment-setup.md §6.
 
-.PHONY: help setup sync dev backend frontend db db-up db-down db-wait db-reset db-reset-dev \
+.PHONY: help setup sync dev backend frontend agent-browser-ready agent-browser-check db db-up db-down db-wait db-reset db-reset-dev \
         object-store-up object-store-init object-store-down \
         db-create-test db-migrate-test \
         migrate makemigration test test-backend test-frontend coverage typecheck \
@@ -74,12 +74,23 @@ backend: ## Run FastAPI dev server
 	exit $$exit_code
 
 frontend: ## Run Vite dev server
-	cd frontend && pnpm run dev; \
+	cd frontend && pnpm exec vite --host 127.0.0.1 --port 5173 --strictPort; \
 	exit_code=$$?; \
 	if [ $$exit_code -eq 130 ]; then \
 		exit 0; \
 	fi; \
 	exit $$exit_code
+
+agent-browser-ready: ## Provision/check browser stack + isolated agent fixture
+	cd backend && \
+	LOCAL_R2_ENDPOINT_URL="$(LOCAL_R2_ENDPOINT_URL)" \
+	LOCAL_R2_ACCESS_KEY_ID="$(LOCAL_R2_ACCESS_KEY_ID)" \
+	LOCAL_R2_SECRET_ACCESS_KEY="$(LOCAL_R2_SECRET_ACCESS_KEY)" \
+	LOCAL_R2_BUCKET="$(LOCAL_R2_BUCKET)" \
+	uv run python -m scripts.ensure_agent_browser
+
+agent-browser-check: ## Verify the browser stack without starting services
+	cd backend && uv run python -m scripts.ensure_agent_browser --check
 
 # ─────────────── database ───────────────
 
