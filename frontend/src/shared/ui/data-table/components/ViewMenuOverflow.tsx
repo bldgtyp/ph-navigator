@@ -20,6 +20,9 @@ export type ViewMenuOverflowProps = {
   // iron-law), so it can never be silently dropped per-table. Pinned by
   // scripts/check-data-table-contract.mjs.
   onDownloadCsv: () => void;
+  // Download JSON is the machine-readable sibling of CSV and follows the
+  // same required, parent-owned every-table contract.
+  onDownloadJson: () => void;
   // Whether the Download CSV item is visible. A CSV export is a bulk export →
   // editor/certifier-only (CP-7), hidden from `client` viewers. The handler
   // stays REQUIRED/wired (the iron-law); only its visibility is access-gated.
@@ -32,6 +35,7 @@ export function ViewMenuOverflow({
   onReset,
   canReset,
   onDownloadCsv,
+  onDownloadJson,
   canDownloadCsv,
   actions,
 }: ViewMenuOverflowProps) {
@@ -56,16 +60,28 @@ export function ViewMenuOverflow({
         >
           {actions}
           {canDownloadCsv ? (
-            <button
-              type="button"
-              className="data-table-overflow-menu-item"
-              onClick={() => {
-                onDownloadCsv();
-                setOpen(false);
-              }}
-            >
-              Download CSV
-            </button>
+            <>
+              <button
+                type="button"
+                className="data-table-overflow-menu-item"
+                onClick={() => {
+                  onDownloadCsv();
+                  setOpen(false);
+                }}
+              >
+                Download CSV
+              </button>
+              <button
+                type="button"
+                className="data-table-overflow-menu-item"
+                onClick={() => {
+                  onDownloadJson();
+                  setOpen(false);
+                }}
+              >
+                Download JSON
+              </button>
+            </>
           ) : null}
           <button
             type="button"

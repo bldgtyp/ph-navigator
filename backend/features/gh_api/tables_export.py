@@ -17,6 +17,9 @@ Payload conventions (PRD §4.4, decisions O5/O6):
   (which holds both built-in and custom option catalogs). Unset stays `null`.
 - Cross-table references stay ids (e.g. an indoor unit's `outdoor_unit_id`); the
   GH side joins client-side. Asset references stay ids.
+- **Reverse links** are emitted per target record in `inverse_links`, keyed by
+  the stable `<source_table_path>.<field_key>` source key. Values remain source
+  row ids so GH can join them against the corresponding table download.
 - **Computed/formula values** (decisions D8/D10): a formula field's resolved
   value is emitted **inline** on the record, keyed by its `field_key`, alongside
   the typed built-ins and `custom_values`. Formula values are never persisted —
@@ -34,6 +37,7 @@ from starlette import status
 from features.project_document.custom_fields import CustomFieldType
 from features.project_document.document import ProjectDocumentV1, SingleSelectOption
 from features.project_document.formula.document_evaluator import evaluate_table_formulas, overlay_cell_value
+from features.project_document.inverse_view import attach_inverse_links_overlay, build_inverse_table_view
 from features.project_document.rows import RowWithCustomFields
 from features.project_document.tables.contracts import TableFieldRegistry, read_table_envelope
 from features.project_document.tables.registry import iter_table_contracts
@@ -87,9 +91,16 @@ def export_table(body: ProjectDocumentV1, table_name: str) -> dict[str, list[Any
     # `_REGISTRY_BY_PATH` only holds FieldDef tables and the import-time guard pins
     # every exported path into it, so the lookup is total and already non-optional.
     overlay = evaluate_table_formulas(_REGISTRY_BY_PATH[path], body)
+    inverse_view = build_inverse_table_view(body, path)
+    records = [_record(row, single_select_keys, formula_keys, option_labels, overlay) for row in envelope.rows]
+    # Attach reverse-link ids via the shared derived-export helper (the same seam
+    # the rooms/ventilators table payloads use). Only tables that are a link
+    # target gain the `inverse_links` key.
+    if inverse_view.inverse_link_fields:
+        records = attach_inverse_links_overlay(records, inverse_view.inverse_links)
     return {
         "field_defs": [field_def.model_dump(mode="json") for field_def in envelope.field_defs],
-        "records": [_record(row, single_select_keys, formula_keys, option_labels, overlay) for row in envelope.rows],
+        "records": records,
     }
 
 

@@ -448,21 +448,20 @@ export type DataTableProps<TRow> = {
   // viewport and applies the shared transient focus highlight once mounted.
   focusRowId?: string | null;
   readOnly?: boolean;
-  // Whether the "Download CSV" overflow affordance is offered. A CSV export is
+  // Whether the CSV/JSON overflow affordances are offered. A table export is
   // a bulk export → editor/certifier-only (CP-7), so viewer-reachable tables
   // pass `false` for `client` viewers. Defaults to `true`: the affordance is
   // still parent-owned and always WIRED (contract-enforced); this only gates
   // its visibility. Gate on the access principal (`isEditor`), NOT `readOnly`,
-  // so an editor on a locked version keeps export. CSV is a client-side
+  // so an editor on a locked version keeps export. Both are client-side
   // serialization of already-visible rows, so this is UX-consistency with the
   // server-side export gates, not a confidentiality boundary.
   canDownloadCsv?: boolean;
   density?: "compact" | "comfortable";
   emptyMessage: string;
-  // Human-readable name of this table, used as the base of the CSV
-  // download filename (`${sanitizeFilename(tableName)}.csv`). REQUIRED so
-  // every table ships a meaningful filename — the "Download CSV" overflow
-  // affordance is a parent-owned, every-table iron-law (PRD §4.5).
+  // Human-readable name of this table, used as the base of the CSV/JSON
+  // download filenames. REQUIRED so every table ships meaningful filenames —
+  // both download affordances are parent-owned every-table iron-laws.
   tableName: string;
   // Optional OVERRIDE for the row-expand modal. Row-expand itself is NOT
   // optional: every table always renders a working gutter Expand button,

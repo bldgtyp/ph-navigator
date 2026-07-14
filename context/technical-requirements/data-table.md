@@ -419,13 +419,14 @@ opens a truncate / add rows / cancel modal when row creation is allowed. The
 add-rows path appends backing rows at table end; under active group / sort /
 filter those new rows may land outside the current visible view after save.
 
-### Download CSV (parent-owned overflow affordance)
+### Download CSV and JSON (parent-owned overflow affordances)
 
-The `...` overflow menu always renders a built-in **Download CSV** item
+The `...` overflow menu always renders built-in **Download CSV** and
+**Download JSON** items
 (in `ViewMenuOverflow`, alongside `Reset view`). Like row-expand, this is
 an iron-law affordance: it is parent-owned, never injected per-table via
 the consumer `actions`/`overflowMenuActions` slot, and is enforced by a
-required `onDownloadCsv` prop at every internal seam plus a structural
+required handler props at every internal seam plus a structural
 guard (`scripts/check-data-table-contract.mjs`). Every consumer supplies
 a required `tableName` prop that becomes the download filename.
 
@@ -440,7 +441,10 @@ SI/IP value with the unit on the header — and adds a computed/formula
 branch (error cells → `""`). Format is RFC-4180 (comma-delimited,
 minimal double-quote quoting, `\r\n` records) as UTF-8 with a leading
 BOM so Excel renders `m²`, the Rooms em-dash, and accented names
-correctly.
+correctly. JSON uses the same current-view rows and columns, retains stable
+`field_key` keys and visible `field_defs`, and emits forward or reverse linked
+records as `{id, name}` objects so both machine joins and the displayed labels
+survive the export.
 
 ## Write Pipeline
 

@@ -12,10 +12,7 @@ import { SliceTableShell } from "../../../shared/ui/data-table/feature";
 import type { ProjectDetail } from "../../projects/types";
 import { RoomsPageError } from "../components/RoomsPageError";
 import { RoomDialogStack, type RoomModalState } from "../components/RoomDialogStack";
-import {
-  buildAddRoomFooterAction,
-  buildRoomsDownloadAction,
-} from "../components/RoomsToolbarActions";
+import { buildAddRoomFooterAction } from "../components/RoomsToolbarActions";
 import { RoomsTableSlot } from "../components/RoomsTableSlot";
 import { usePumpsSliceQuery, useRoomsSliceQuery, useVentilatorsSliceQuery } from "../hooks";
 import { useSpaceTypesSliceQuery } from "../../spaces/hooks";
@@ -256,7 +253,6 @@ function RoomsPageBody(props: {
         buildEmptyRow={buildEmptyRoomRow}
         formulaFieldRegistry={formulaFieldRegistry}
         getFormulaRowValues={buildRoomFormulaRowValues}
-        downloadAction={buildRoomsDownloadAction(project.id, activeVersionId)}
         footerAction={buildAddRoomFooterAction(controller.canEdit, () =>
           setRoomModal({ mode: "add" }),
         )}

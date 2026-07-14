@@ -15,7 +15,13 @@ from fastapi.testclient import TestClient
 
 from features.gh_api.tables_export import TABLE_PATHS, export_table
 from features.project_document.custom_fields import CustomFieldType, TableFieldDef
-from features.project_document.document import ProjectDocumentV1, PumpRow, SingleSelectOption
+from features.project_document.document import (
+    ROOM_VENTILATOR_FIELD_KEY,
+    ProjectDocumentV1,
+    PumpRow,
+    SingleSelectOption,
+    VentilatorRow,
+)
 from features.project_document.formula import ast_to_json, build_field_registry, parse, resolve_refs
 from features.project_document.rows import RoomRow
 from features.project_document.tables.rooms import rooms_field_registry
@@ -152,6 +158,24 @@ def test_table_without_formulas_gains_no_extra_keys() -> None:
     body.tables.rooms.rows = [RoomRow(id="rm_1", custom_values={"name": "Living"})]
     (record,) = export_table(body, "rooms")["records"]
     assert not any(key.startswith("cf_") for key in record)  # no formula overlay keys leak in
+
+
+def test_reverse_link_ids_are_exported_on_target_records() -> None:
+    body = _document()
+    body.tables.rooms.rows = [
+        RoomRow(
+            id="rm_1",
+            custom_values={"number": "101", "name": "Living Room"},
+            custom_links={ROOM_VENTILATOR_FIELD_KEY: ["vent_1"]},
+        )
+    ]
+    body.tables.equipment.ervs.rows = [
+        VentilatorRow(id="vent_1", custom_values={"record_id": "ERV-1", "name": "Main ERV"})
+    ]
+
+    (record,) = export_table(body, "ventilators")["records"]
+
+    assert record["inverse_links"] == {"rooms.ventilator_id": ["rm_1"]}
 
 
 # --- route ------------------------------------------------------------------

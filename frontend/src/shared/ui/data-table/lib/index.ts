@@ -30,6 +30,12 @@ export {
   type CsvExport,
   type TableToCsvParams,
 } from "./export/csv";
+export {
+  JSON_MIME_TYPE,
+  tableToJson,
+  type JsonExport,
+  type TableToJsonParams,
+} from "./export/json";
 
 export { applyFilters, defaultOperatorForField } from "./filter/apply";
 

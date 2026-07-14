@@ -15,7 +15,7 @@ import {
   type FieldDef,
 } from "../types";
 
-type Row = { id: string; name: string; count: number };
+type Row = { id: string; name: string; count: number; roomIds?: string[] };
 
 const rows: Row[] = [
   { id: "r1", name: "Alpha", count: 2 },
@@ -28,6 +28,30 @@ const fieldDefs: FieldDef[] = [
 const columnDefs: DataTableColumnDef<Row>[] = [
   { id: "name", fieldKey: "name", header: "Name", accessor: (row) => row.name, isIdentifier: true },
   { id: "count", fieldKey: "count", header: "Count", accessor: (row) => row.count },
+];
+
+const linkedFieldDefs: FieldDef[] = [
+  ...fieldDefs,
+  {
+    field_key: "inverse:rooms.ventilator_id",
+    field_type: "linked_record",
+    display_name: "Rooms ← Ventilator",
+    read_only: true,
+  },
+];
+
+const linkedColumnDefs: DataTableColumnDef<Row>[] = [
+  ...columnDefs,
+  {
+    id: "inverse:rooms.ventilator_id",
+    fieldKey: "inverse:rooms.ventilator_id",
+    header: "Rooms ← Ventilator",
+    accessor: (row) => row.roomIds ?? [],
+    linkedRecordCell: {
+      getIds: (row) => row.roomIds ?? [],
+      resolve: (rowId) => ({ recordId: rowId === "rm_1" ? "101 — Living Room" : null }),
+    },
+  },
 ];
 
 function renderTable(overrides: Partial<DataTableProps<Row>> = {}) {
@@ -61,15 +85,24 @@ class RecordingBlob {
   }
 }
 
-function readDownloadedCsv(): { filename: string; type: string; lines: string[] } {
+function readDownload(): { filename: string; type: string; content: string } {
   const mock = downloadBlob as unknown as Mock;
   expect(mock).toHaveBeenCalledTimes(1);
   const [blob, filename] = mock.mock.calls[0] as [RecordingBlob, string];
-  expect(blob.content.charCodeAt(0)).toBe(0xfeff); // leading BOM
   return {
     filename,
     type: blob.type,
-    lines: blob.content.replace(/^\uFEFF/, "").split("\r\n"),
+    content: blob.content,
+  };
+}
+
+function readDownloadedCsv(): { filename: string; type: string; lines: string[] } {
+  const download = readDownload();
+  expect(download.content.charCodeAt(0)).toBe(0xfeff); // leading BOM
+  return {
+    filename: download.filename,
+    type: download.type,
+    lines: download.content.replace(/^\uFEFF/, "").split("\r\n"),
   };
 }
 
@@ -121,5 +154,44 @@ describe("DataTable CSV download", () => {
     expect(screen.queryByRole("button", { name: "Download CSV" })).not.toBeInTheDocument();
     // The rest of the overflow menu still works.
     expect(screen.getByRole("button", { name: "Reset view" })).toBeInTheDocument();
+  });
+});
+
+describe("DataTable JSON download", () => {
+  test("the overflow menu always offers a Download JSON item", () => {
+    renderTable();
+    openMenu();
+    expect(screen.getByRole("button", { name: "Download JSON" })).toBeEnabled();
+  });
+
+  test("exports linked and reverse-linked records with stable ids and display names", () => {
+    renderTable({
+      rows: [{ id: "vent_1", name: "Main ERV", count: 1, roomIds: ["rm_1"] }],
+      fieldDefs: linkedFieldDefs,
+      columnDefs: linkedColumnDefs,
+      tableName: "Ventilators",
+    });
+    openMenu();
+    fireEvent.click(screen.getByRole("button", { name: "Download JSON" }));
+
+    const { filename, type, content } = readDownload();
+    expect(filename).toBe("Ventilators.json");
+    expect(type).toBe("application/json;charset=utf-8");
+    expect(JSON.parse(content)).toMatchObject({
+      table_name: "Ventilators",
+      records: [
+        {
+          name: "Main ERV",
+          count: 1,
+          "inverse:rooms.ventilator_id": [{ id: "rm_1", name: "101 — Living Room" }],
+        },
+      ],
+    });
+  });
+
+  test("canDownloadCsv=false hides both bulk table downloads", () => {
+    renderTable({ canDownloadCsv: false });
+    openMenu();
+    expect(screen.queryByRole("button", { name: "Download JSON" })).not.toBeInTheDocument();
   });
 });

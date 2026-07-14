@@ -98,7 +98,3 @@ export async function fetchDiff(
 export function projectDownloadUrl(projectId: string, versionId: string): string {
   return `${getApiBaseUrl()}/api/v1/projects/${projectId}/versions/${versionId}/download`;
 }
-
-export function tableDownloadUrl(projectId: string, versionId: string, tableName: string): string {
-  return `${getApiBaseUrl()}/api/v1/projects/${projectId}/versions/${versionId}/download/tables/${tableName}`;
-}

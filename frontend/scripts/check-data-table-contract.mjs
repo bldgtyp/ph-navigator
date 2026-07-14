@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 // in working order, never as a per-table opt-in. It fails the build if any
 // of them is removed or quietly made optional. Two are pinned today:
 //   1. Row-expand (sections 1–3) — an always-working Expand control.
-//   2. Download CSV (section 4) — an always-present overflow menu item.
+//   2. Download CSV + JSON (section 4) — always-present overflow menu items.
 //
 // History: row-expand was once an optional, consumer-wired capability with
 // a silent fallback (a non-interactive <span> that looked exactly like the
@@ -16,9 +16,8 @@ import { fileURLToPath } from "node:url";
 // the gutter always renders a real <button>, the handler props are
 // REQUIRED at every internal seam, and DataTable always supplies a handler
 // (the consumer's `onRowOpen`, else the built-in RecordDetailModal). The
-// CSV download follows the same pattern (required `onDownloadCsv` + a
-// built-in menu item). This guard pins those invariants so they cannot
-// quietly regress.
+// Table downloads follow the same pattern (required handlers + built-in menu
+// items). This guard pins those invariants so they cannot quietly regress.
 
 const FRONTEND_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DATA_TABLE_ROOT = path.join(FRONTEND_ROOT, "src", "shared", "ui", "data-table");
@@ -86,10 +85,10 @@ if (/data-table-gutter-expand\[aria-hidden/.test(css)) {
 // at every seam so a table cannot silently ship without it. See
 // planning/features/table-csv-download/PRD.md §7.
 //
-// Its *visibility* is access-gated (the `canDownloadCsv` prop): a CSV export
+// Their *visibility* is access-gated (the legacy-named `canDownloadCsv` prop): a table export
 // is a bulk export → editor/certifier-only, hidden from `client` viewers
 // (CP-7, access-capability-model). That gate does not weaken this contract —
-// the handler stays required/wired and the built-in "Download CSV" item stays
+// both handlers stay required/wired and both built-in download items stay
 // present in source; viewers simply don't render it.
 const overflowMenu = read(path.join("components", "ViewMenuOverflow.tsx"));
 
@@ -100,25 +99,34 @@ if (/data-table-overflow-menu-item[\s\S]{0,300}?Download CSV/.test(overflowMenu)
       "per-table opt-in.",
   );
 }
+if (/data-table-overflow-menu-item[\s\S]{0,300}?Download JSON/.test(overflowMenu) === false) {
+  violations.push(
+    "ViewMenuOverflow.tsx: no built-in 'data-table-overflow-menu-item' button renders " +
+      "'Download JSON'. The JSON download must be a parent-owned overflow item, not a " +
+      "per-table opt-in.",
+  );
+}
 
-// The download handler prop must be required (`onDownloadCsv:`), never
-// optional (`onDownloadCsv?:`), at every internal seam.
+// Both download handler props must be required, never optional, at every
+// internal seam.
 const downloadHandlerSeams = [
   path.join("components", "ViewMenuOverflow.tsx"),
   path.join("components", "GridToolbar.tsx"),
 ];
-for (const file of downloadHandlerSeams) {
-  const source = read(file);
-  if (/\bonDownloadCsv\?:/.test(source)) {
-    violations.push(
-      `${file}: 'onDownloadCsv' is declared optional ('onDownloadCsv?:'). It must be ` +
-        "required so the CSV-download wiring cannot be silently omitted.",
-    );
-  } else if (/\bonDownloadCsv:/.test(source) === false) {
-    violations.push(
-      `${file}: 'onDownloadCsv' is not declared. The CSV-download handler must be a ` +
-        "required prop at this seam.",
-    );
+for (const prop of ["onDownloadCsv", "onDownloadJson"]) {
+  for (const file of downloadHandlerSeams) {
+    const source = read(file);
+    if (new RegExp(`\\b${prop}\\?:`).test(source)) {
+      violations.push(
+        `${file}: '${prop}' is declared optional ('${prop}?:'). It must be required so ` +
+          "table-download wiring cannot be silently omitted.",
+      );
+    } else if (new RegExp(`\\b${prop}:`).test(source) === false) {
+      violations.push(
+        `${file}: '${prop}' is not declared. The table-download handler must be a ` +
+          "required prop at this seam.",
+      );
+    }
   }
 }
 

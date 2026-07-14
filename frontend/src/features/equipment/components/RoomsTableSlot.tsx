@@ -29,7 +29,6 @@ export type RoomsTableSlotProps = {
   buildEmptyRow: BuildEmptyRow<RoomRow>;
   formulaFieldRegistry: FieldRegistryEntry[];
   getFormulaRowValues: (room: RoomRow) => Record<string, unknown>;
-  downloadAction: React.ReactNode;
   footerAction: React.ReactNode;
   onEdit: (room: RoomRow) => void;
   // Per-fieldKey integration surface for `linked_record` columns. The
@@ -53,7 +52,6 @@ export function RoomsTableSlot(props: RoomsTableSlotProps) {
     buildEmptyRow,
     formulaFieldRegistry,
     getFormulaRowValues,
-    downloadAction,
     footerAction,
     onEdit,
     linkedRecordOps,
@@ -90,7 +88,6 @@ export function RoomsTableSlot(props: RoomsTableSlotProps) {
         buildEmptyRow={controller.canEdit ? buildEmptyRow : undefined}
         generateRowId={controller.canEdit ? () => generatedId(ROOM_ID_PREFIX) : undefined}
         sessionKey={`${projectId}:${activeVersionId ?? "none"}:${ROOMS_TABLE_NAME}`}
-        overflowMenuActions={downloadAction}
         footerAction={footerAction}
         {...customFieldActionsForController(controller)}
         formulaFieldRegistry={formulaFieldRegistry}

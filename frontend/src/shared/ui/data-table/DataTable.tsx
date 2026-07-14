@@ -36,6 +36,7 @@ import { generatedId } from "../../lib/ids";
 import { stableEmptyArray } from "../../lib/stableEmpty";
 import { downloadBlob } from "../../lib/downloadBlob";
 import { CSV_MIME_TYPE, tableToCsv } from "./lib/export/csv";
+import { JSON_MIME_TYPE, tableToJson } from "./lib/export/json";
 import { useGridHistory } from "./hooks/useGridHistory";
 import { CLEAR_DATA_TABLE_HISTORY_EVENT } from "./historyEvents";
 import { useGridWriteReducer } from "./hooks/useGridWriteReducer";
@@ -1427,6 +1428,17 @@ export function DataTable<TRow>({
     downloadBlob(new Blob([content], { type: CSV_MIME_TYPE }), filename);
   }, [filteredRows, visibleColumnDefs, fieldDefByKey, unitSystem, tableName]);
 
+  const handleDownloadJson = useCallback(() => {
+    const { filename, content } = tableToJson({
+      rows: filteredRows,
+      columns: visibleColumnDefs,
+      fieldDefByKey,
+      linkedRecordOps,
+      tableName,
+    });
+    downloadBlob(new Blob([content], { type: JSON_MIME_TYPE }), filename);
+  }, [filteredRows, visibleColumnDefs, fieldDefByKey, linkedRecordOps, tableName]);
+
   // Filter membership requires the rule to be contributing (dormant
   // rules don't tint, matching AirTable). Sort and group count as
   // soon as a rule exists.
@@ -1575,6 +1587,7 @@ export function DataTable<TRow>({
           onExpandAllGroups={handleExpandAllGroups}
           onResetView={handleResetView}
           onDownloadCsv={handleDownloadCsv}
+          onDownloadJson={handleDownloadJson}
           canDownloadCsv={canDownloadCsv}
           onHideFieldsChange={handleHideFieldsChange}
           overflowMenuActions={overflowMenuActions}

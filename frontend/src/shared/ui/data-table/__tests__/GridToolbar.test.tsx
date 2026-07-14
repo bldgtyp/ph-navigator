@@ -19,6 +19,7 @@ function renderToolbar(
   handlers: {
     onResetView?: () => void;
     onDownloadCsv?: () => void;
+    onDownloadJson?: () => void;
     onGroupChange?: () => void;
     onCollapseAllGroups?: () => void;
     onExpandAllGroups?: () => void;
@@ -41,6 +42,7 @@ function renderToolbar(
       onExpandAllGroups={handlers.onExpandAllGroups ?? vi.fn()}
       onResetView={handlers.onResetView ?? vi.fn()}
       onDownloadCsv={handlers.onDownloadCsv ?? vi.fn()}
+      onDownloadJson={handlers.onDownloadJson ?? vi.fn()}
       canDownloadCsv
       onHideFieldsChange={handlers.onHideFieldsChange ?? vi.fn()}
     />,
@@ -171,6 +173,14 @@ describe("GridToolbar", () => {
     fireEvent.click(screen.getByRole("button", { name: "More view actions" }));
     fireEvent.click(screen.getByRole("button", { name: "Download CSV" }));
     expect(onDownloadCsv).toHaveBeenCalledTimes(1);
+  });
+
+  test("Download JSON action in the overflow menu fires onDownloadJson", () => {
+    const onDownloadJson = vi.fn();
+    renderToolbar(emptyViewState(), { onDownloadJson });
+    fireEvent.click(screen.getByRole("button", { name: "More view actions" }));
+    fireEvent.click(screen.getByRole("button", { name: "Download JSON" }));
+    expect(onDownloadJson).toHaveBeenCalledTimes(1);
   });
 
   test("Download CSV stays enabled even with an empty view (it is a read action)", () => {
