@@ -6,6 +6,7 @@ import {
   type KeyboardEvent,
   type MouseEvent,
 } from "react";
+import { linkedRecordLabelFromRecordId } from "./display";
 
 /**
  * Per-pill resolution result. The cell does not know how to look up
@@ -161,7 +162,7 @@ export function LinkedRecordCell({
           // is present but has no `record_id` set yet (the Q18 fallback).
           const isOrphan = resolution === null;
           const recordId = resolution?.recordId ?? null;
-          const label = recordId && recordId.length > 0 ? recordId : rowId;
+          const label = linkedRecordLabelFromRecordId(rowId, recordId);
           const isFallback = !recordId || recordId.length === 0;
           const className =
             "data-table-linked-record-pill" +

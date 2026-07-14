@@ -6,7 +6,14 @@ import { GroupPopover } from "./GroupPopover";
 import { ViewMenuOverflow } from "./ViewMenuOverflow";
 import { HideFieldsPopover } from "./HideFieldsPopover";
 import type { HideFieldsColumn, HideFieldsPanelChange } from "./HideFieldsPanel";
-import type { FieldDef, FilterCondition, GroupRule, SortRule, ViewState } from "../types";
+import type {
+  FieldDef,
+  FilterCondition,
+  GroupRule,
+  LinkedRecordCellOps,
+  SortRule,
+  ViewState,
+} from "../types";
 
 // Toolbar shell. Status chips on the left, right-aligned axis buttons.
 // The `actions` slot — used for the row-delete button — sits below the
@@ -19,6 +26,7 @@ export type GridToolbarProps = {
   filterableFieldDefs: FieldDef[];
   sortableFieldDefs: FieldDef[];
   groupableFieldDefs: FieldDef[];
+  linkedRecordOps?: ReadonlyMap<string, LinkedRecordCellOps>;
   // Full column list — ordered, includes hidden ones — so the Hide-
   // fields panel can render every row with the right toggle state.
   orderedColumnsForHidePanel: HideFieldsColumn[];
@@ -48,6 +56,7 @@ export function GridToolbar({
   filterableFieldDefs,
   sortableFieldDefs,
   groupableFieldDefs,
+  linkedRecordOps,
   orderedColumnsForHidePanel,
   onFilterChange,
   onSortChange,
@@ -105,6 +114,7 @@ export function GridToolbar({
           rules={view.filter}
           onFilterChange={onFilterChange}
           filterableFieldDefs={filterableFieldDefs}
+          linkedRecordOps={linkedRecordOps}
           trigger={
             <button
               type="button"

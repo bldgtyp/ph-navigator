@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { normalizeDisplayName } from "../../lib/fieldDisplayNames";
+import { linkedRecordLabelFromRecordId } from "./display";
 
 /**
  * A picker row — one candidate from the target table. The picker is
@@ -168,10 +169,7 @@ export function LinkedRecordPicker({
         ) : (
           visible.map((candidate) => {
             const checked = draftIds.includes(candidate.rowId);
-            const labelText =
-              candidate.recordId && candidate.recordId.length > 0
-                ? candidate.recordId
-                : candidate.rowId;
+            const labelText = linkedRecordLabelFromRecordId(candidate.rowId, candidate.recordId);
             const isFallback = !candidate.recordId || candidate.recordId.length === 0;
             return (
               <li key={candidate.rowId} role="option" aria-selected={checked}>

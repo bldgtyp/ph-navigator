@@ -1,6 +1,7 @@
 import { parseNumberUnitsInput, type UnitSystem } from "../../../../lib/units";
 import type { FieldDef, FilterCondition, FilterOperator } from "../types";
 import { formatClipboardCellValue } from "../lib/paste/tsv";
+import { linkedRecordIds } from "./linkedRecord/display";
 
 // Phase 4 §4.2: per-field-type operator catalogue. Each entry declares
 // its display label (verbatim AirTable phrasing per §12 Q8) and the
@@ -79,8 +80,7 @@ export function getFilterOperators(fieldDef: FieldDef | undefined): readonly Fil
     case "attachment":
       return EMPTY_OPERATORS;
     case "linked_record":
-      // Phase 1: no filter operators surfaced for linked_record cells.
-      return EMPTY_OPERATORS;
+      return SINGLE_SELECT_OPERATORS;
   }
 }
 
@@ -194,11 +194,17 @@ export function evaluateFilter(
     case "is_any_of": {
       const list = condition.valueList ?? [];
       if (list.length === 0) return true;
+      if (fieldDef.field_type === "linked_record") {
+        return linkedRecordIds(cellValue).some((rowId) => list.includes(rowId));
+      }
       return typeof cellValue === "string" && list.includes(cellValue);
     }
     case "is_none_of": {
       const list = condition.valueList ?? [];
       if (list.length === 0) return true;
+      if (fieldDef.field_type === "linked_record") {
+        return !linkedRecordIds(cellValue).some((rowId) => list.includes(rowId));
+      }
       return !(typeof cellValue === "string" && list.includes(cellValue));
     }
   }
@@ -208,6 +214,7 @@ export function evaluateFilter(
 // trimmed to "". Anything else non-null/undefined is non-empty.
 function isCellEmpty(cellValue: unknown): boolean {
   if (cellValue === null || cellValue === undefined) return true;
+  if (Array.isArray(cellValue)) return cellValue.length === 0;
   if (typeof cellValue === "string") return cellValue.trim() === "";
   return false;
 }

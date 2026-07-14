@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { formatDisplayCellValue } from "../lib/rows/format";
-import type { DataTableColumnDef, FieldDef } from "../types";
+import { formatLinkedRecordValue } from "../fields/linkedRecord/display";
+import type { DataTableColumnDef, FieldDef, LinkedRecordCellOps } from "../types";
 import { AddFieldTailCell } from "./AddFieldTailCell";
 import { SingleSelectCell } from "./SingleSelectCell";
 
@@ -18,6 +19,7 @@ export type GroupHeaderRowProps<TRow> = {
   aggregatedValues: Map<string, string>;
   expanded: boolean;
   visibleColumnDefs: readonly DataTableColumnDef<TRow>[];
+  linkedRecordOps?: LinkedRecordCellOps;
   onToggle: (pathKey: string) => void;
   // Row-virtualization plumbing. The body renders only the rows the
   // virtualizer returns; each `<tr>` reports its measured height back
@@ -36,6 +38,7 @@ export function GroupHeaderRow<TRow>({
   aggregatedValues,
   expanded,
   visibleColumnDefs,
+  linkedRecordOps,
   onToggle,
   measureRef,
   dataIndex,
@@ -72,7 +75,9 @@ export function GroupHeaderRow<TRow>({
               >
                 {expanded ? "▼" : "▶"}
               </button>
-              <span className="data-table-group-key">{renderGroupKey(groupValue, fieldDef)}</span>
+              <span className="data-table-group-key">
+                {renderGroupKey(groupValue, fieldDef, linkedRecordOps)}
+              </span>
               <span className="data-table-group-count">
                 ({count} {count === 1 ? "row" : "rows"})
               </span>
@@ -94,12 +99,20 @@ export function GroupHeaderRow<TRow>({
   );
 }
 
-function renderGroupKey(value: unknown, fieldDef: FieldDef): ReactNode {
+function renderGroupKey(
+  value: unknown,
+  fieldDef: FieldDef,
+  linkedRecordOps?: LinkedRecordCellOps,
+): ReactNode {
   if (fieldDef.field_type === "single_select") {
     return <SingleSelectCell value={value} fieldDef={fieldDef} />;
   }
   if (value === null || value === undefined || value === "") {
     return <span className="muted-cell">Unassigned</span>;
+  }
+  if (fieldDef.field_type === "linked_record") {
+    const label = formatLinkedRecordValue(value, linkedRecordOps);
+    return label || <span className="muted-cell">Unassigned</span>;
   }
   return formatDisplayCellValue(value, fieldDef);
 }

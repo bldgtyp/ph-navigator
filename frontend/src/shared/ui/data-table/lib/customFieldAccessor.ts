@@ -2,6 +2,7 @@
 // `custom_values` bag. Render code MUST go through these helpers so the
 // storage key rule has a single enforced entry point.
 import type { FieldDef } from "../types";
+import { linkedRecordIds } from "../fields/linkedRecord/display";
 
 export const CUSTOM_FIELD_KEY_PREFIX = "cf_";
 type FieldKeyRef = Pick<FieldDef, "field_key"> | string;
@@ -75,9 +76,7 @@ export function getCustomLink(
   const links = row.custom_links?.[fieldKey];
   if (links !== undefined) return links;
   const legacy = row.custom_values?.[fieldKey];
-  if (Array.isArray(legacy)) {
-    return legacy.filter((entry): entry is string => typeof entry === "string" && entry.length > 0);
-  }
+  if (Array.isArray(legacy)) return linkedRecordIds(legacy);
   return EMPTY_LINKED_IDS;
 }
 
@@ -94,9 +93,7 @@ export function setCustomLink<
   },
 >(row: TRow, fieldDef: FieldKeyRef, value: unknown): TRow {
   const fieldKey = fieldKeyOf(fieldDef);
-  const ids = Array.isArray(value)
-    ? value.filter((entry): entry is string => typeof entry === "string" && entry.length > 0)
-    : [];
+  const ids = [...linkedRecordIds(value)];
   const next: Record<string, string[]> = { ...(row.custom_links ?? {}) };
   next[fieldKey] = ids;
   let nextRow: TRow = { ...row, custom_links: next };

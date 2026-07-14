@@ -14,7 +14,7 @@ import { computeEdgeBits } from "../lib/range/edgeBits";
 import { isCellInRange } from "../lib/range/normalize";
 import { moveActiveCell } from "../lib/range/move";
 import { sortRows } from "../lib/sort/sortRows";
-import type { DataTableColumnDef, FieldDef } from "../types";
+import type { DataTableColumnDef, FieldDef, LinkedRecordCellOps } from "../types";
 
 type Row = { id: string; number: string; name: string };
 
@@ -154,6 +154,82 @@ describe("DataTable helpers", () => {
         { fieldKey: "rooms.floor_level", direction: "asc" },
       ]).map((row) => row.id),
     ).toEqual(["rm_basement", "rm_ground", "rm_empty"]);
+  });
+
+  test("sorts linked records by their rendered labels instead of opaque ids", () => {
+    type LinkedRow = { id: string; ventilator: string[] };
+    const linkedRows: LinkedRow[] = [
+      { id: "rm_system_2", ventilator: ["vent_aaa"] },
+      { id: "rm_system_1", ventilator: ["vent_zzz"] },
+    ];
+    const linkedColumns: DataTableColumnDef<LinkedRow>[] = [
+      {
+        id: "ventilator",
+        fieldKey: "rooms.ventilator",
+        header: "Ventilator",
+        accessor: (row) => row.ventilator,
+      },
+    ];
+    const linkedFields: FieldDef[] = [
+      {
+        field_key: "rooms.ventilator",
+        field_type: "linked_record",
+        display_name: "Ventilator",
+      },
+    ];
+    const ops: LinkedRecordCellOps = {
+      candidates: [],
+      resolve: (rowId) => ({ recordId: rowId === "vent_aaa" ? "System-2" : "System-1" }),
+    };
+
+    expect(
+      sortRows(
+        linkedRows,
+        linkedColumns,
+        linkedFields,
+        [{ fieldKey: "rooms.ventilator", direction: "asc" }],
+        new Map([["rooms.ventilator", ops]]),
+      ).map((row) => row.id),
+    ).toEqual(["rm_system_1", "rm_system_2"]);
+  });
+
+  test("filters linked records by selected ids while names remain presentation-only", () => {
+    type LinkedRow = { id: string; ventilator: string[] };
+    const linkedRows: LinkedRow[] = [
+      { id: "rm_system_2", ventilator: ["vent_aaa"] },
+      { id: "rm_system_1", ventilator: ["vent_zzz"] },
+      { id: "rm_unassigned", ventilator: [] },
+    ];
+    const linkedColumns: DataTableColumnDef<LinkedRow>[] = [
+      {
+        id: "ventilator",
+        fieldKey: "rooms.ventilator",
+        header: "Ventilator",
+        accessor: (row) => row.ventilator,
+      },
+    ];
+    const linkedFields: FieldDef[] = [
+      {
+        field_key: "rooms.ventilator",
+        field_type: "linked_record",
+        display_name: "Ventilator",
+      },
+    ];
+
+    expect(
+      applyFilters(linkedRows, linkedColumns, linkedFields, [
+        {
+          fieldKey: "rooms.ventilator",
+          operator: "is_any_of",
+          valueList: ["vent_zzz"],
+        },
+      ]).map((row) => row.id),
+    ).toEqual(["rm_system_1"]);
+    expect(
+      applyFilters(linkedRows, linkedColumns, linkedFields, [
+        { fieldKey: "rooms.ventilator", operator: "is_empty" },
+      ]).map((row) => row.id),
+    ).toEqual(["rm_unassigned"]);
   });
 
   test("paste coercion matches or creates single-select options", () => {

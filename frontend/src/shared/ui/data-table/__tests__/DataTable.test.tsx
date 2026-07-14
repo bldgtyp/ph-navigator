@@ -9,6 +9,7 @@ import {
   type DataTableColumnDef,
   type DataTableProps,
   type FieldDef,
+  type LinkedRecordCellOps,
   type ViewState,
 } from "../types";
 import { chooseAutocompleteOption } from "./helpers/autocomplete";
@@ -44,6 +45,116 @@ function pasteClipboardData(tsv: string) {
 }
 
 describe("DataTable", () => {
+  test("renders linked-record group headers with the same resolved labels as body cells", () => {
+    type LinkedRow = { id: string; ventilator: string[] };
+    const linkedFieldDefs: FieldDef[] = [
+      {
+        field_key: "rooms.ventilator",
+        field_type: "linked_record",
+        display_name: "Ventilator",
+      },
+    ];
+    const linkedColumnDefs: DataTableColumnDef<LinkedRow>[] = [
+      {
+        id: "ventilator",
+        fieldKey: "rooms.ventilator",
+        header: "Ventilator",
+        accessor: (row) => row.ventilator,
+      },
+    ];
+    const linkedRecordOps = new Map<string, LinkedRecordCellOps>([
+      [
+        "rooms.ventilator",
+        {
+          candidates: [{ rowId: "vent_zzz", recordId: "System-1" }],
+          resolve: () => ({ recordId: "System-1" }),
+        },
+      ],
+    ]);
+    const { container } = render(
+      <DataTable
+        tableName="Rooms"
+        rows={[{ id: "rm_1", ventilator: ["vent_zzz"] }]}
+        getRowId={(row) => row.id}
+        fieldDefs={linkedFieldDefs}
+        columnDefs={linkedColumnDefs}
+        view={{
+          ...emptyViewState(),
+          group: [{ fieldKey: "rooms.ventilator", direction: "asc" }],
+        }}
+        onViewChange={vi.fn()}
+        linkedRecordOps={linkedRecordOps}
+        emptyMessage="No rooms yet."
+      />,
+    );
+
+    const groupKey = container.querySelector(".data-table-group-key");
+    expect(groupKey).toHaveTextContent("System-1");
+    expect(groupKey).not.toHaveTextContent("vent_zzz");
+  });
+
+  test("shows linked-record names in filter choices while persisting selected ids", async () => {
+    type LinkedRow = { id: string; ventilator: string[] };
+    const linkedRecordOps = new Map<string, LinkedRecordCellOps>([
+      [
+        "rooms.ventilator",
+        {
+          candidates: [
+            { rowId: "vent_zzz", recordId: "System-1" },
+            { rowId: "vent_aaa", recordId: "System-2" },
+          ],
+          resolve: (rowId) => ({ recordId: rowId === "vent_zzz" ? "System-1" : "System-2" }),
+        },
+      ],
+    ]);
+    render(
+      <DataTable
+        tableName="Rooms"
+        rows={[
+          { id: "rm_1", ventilator: ["vent_zzz"] },
+          { id: "rm_2", ventilator: ["vent_aaa"] },
+        ]}
+        getRowId={(row) => row.id}
+        fieldDefs={[
+          {
+            field_key: "rooms.ventilator",
+            field_type: "linked_record",
+            display_name: "Ventilator",
+          },
+        ]}
+        columnDefs={[
+          {
+            id: "ventilator",
+            fieldKey: "rooms.ventilator",
+            header: "Ventilator",
+            accessor: (row: LinkedRow) => row.ventilator,
+          },
+        ]}
+        view={{
+          ...emptyViewState(),
+          filter: [
+            {
+              fieldKey: "rooms.ventilator",
+              operator: "is_any_of",
+              valueList: ["vent_zzz"],
+            },
+          ],
+        }}
+        onViewChange={vi.fn()}
+        linkedRecordOps={linkedRecordOps}
+        emptyMessage="No rooms yet."
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Filtered by Ventilator" }));
+    const popover = await screen.findByRole("dialog", { name: "Filter rules" });
+    await userEvent.click(within(popover).getByText("1 selected"));
+    expect(within(popover).getByText("System-1")).toBeVisible();
+    expect(within(popover).getByText("System-2")).toBeVisible();
+    expect(within(popover).queryByText(/vent_(zzz|aaa)/)).not.toBeInTheDocument();
+    expect(within(popover).getByRole("checkbox", { name: "System-1" })).toBeChecked();
+  });
+
   test("announces that paste is unavailable when no write handler is provided", async () => {
     renderTable();
 

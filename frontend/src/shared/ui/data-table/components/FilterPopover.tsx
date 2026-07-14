@@ -11,7 +11,8 @@ import {
 import { AutocompleteSelect } from "../../AutocompleteSelect";
 import { defaultOperatorForField } from "../lib/filter/apply";
 import { useSortableRules } from "../hooks/useSortableRules";
-import type { FieldDef, FilterCondition, FilterOperator } from "../types";
+import { linkedRecordLabelFromRecordId } from "../fields/linkedRecord/display";
+import type { FieldDef, FilterCondition, FilterOperator, LinkedRecordCellOps } from "../types";
 
 // Phase 4 §4.5: Filter popover. Stacked rule rows wired to user-intent
 // `view.filter` via a single `onFilterChange(next)` callback. Each
@@ -27,6 +28,7 @@ export type FilterPopoverProps = {
   rules: FilterCondition[];
   onFilterChange: (next: FilterCondition[]) => void;
   filterableFieldDefs: FieldDef[];
+  linkedRecordOps?: ReadonlyMap<string, LinkedRecordCellOps>;
 };
 
 export function FilterPopover({
@@ -36,6 +38,7 @@ export function FilterPopover({
   rules,
   onFilterChange,
   filterableFieldDefs,
+  linkedRecordOps,
 }: FilterPopoverProps) {
   const sortable = useSortableRules(rules, onFilterChange, "filt");
 
@@ -76,6 +79,7 @@ export function FilterPopover({
                       index={index}
                       rule={rule}
                       fieldDefs={filterableFieldDefs}
+                      linkedRecordOps={linkedRecordOps}
                       onChange={(next) => sortable.updateRuleAt(index, next)}
                       onRemove={() => sortable.removeRuleAt(index)}
                     />
@@ -103,11 +107,20 @@ type FilterRuleRowProps = {
   index: number;
   rule: FilterCondition;
   fieldDefs: FieldDef[];
+  linkedRecordOps?: ReadonlyMap<string, LinkedRecordCellOps>;
   onChange: (next: FilterCondition) => void;
   onRemove: () => void;
 };
 
-function FilterRuleRow({ ruleId, index, rule, fieldDefs, onChange, onRemove }: FilterRuleRowProps) {
+function FilterRuleRow({
+  ruleId,
+  index,
+  rule,
+  fieldDefs,
+  linkedRecordOps,
+  onChange,
+  onRemove,
+}: FilterRuleRowProps) {
   const fieldDef = fieldDefs.find((def) => def.field_key === rule.fieldKey);
   const operators = useMemo(() => getFilterOperators(fieldDef), [fieldDef]);
   const operatorDef = getOperatorDef(rule.operator);
@@ -175,6 +188,7 @@ function FilterRuleRow({ ruleId, index, rule, fieldDefs, onChange, onRemove }: F
         rule={rule}
         operatorDef={operatorDef}
         fieldDef={fieldDef}
+        linkedRecordOps={fieldDef ? linkedRecordOps?.get(fieldDef.field_key) : undefined}
         onChange={onChange}
       />
       <button
@@ -203,10 +217,17 @@ type FilterValueEditorProps = {
   rule: FilterCondition;
   operatorDef: FilterOperatorDef | undefined;
   fieldDef: FieldDef | undefined;
+  linkedRecordOps?: LinkedRecordCellOps;
   onChange: (next: FilterCondition) => void;
 };
 
-function FilterValueEditor({ rule, operatorDef, fieldDef, onChange }: FilterValueEditorProps) {
+function FilterValueEditor({
+  rule,
+  operatorDef,
+  fieldDef,
+  linkedRecordOps,
+  onChange,
+}: FilterValueEditorProps) {
   if (!operatorDef) return <div className="data-table-view-popover-value" />;
   switch (operatorDef.shape.kind) {
     case "none":
@@ -259,7 +280,18 @@ function FilterValueEditor({ rule, operatorDef, fieldDef, onChange }: FilterValu
       );
     }
     case "optionIdList": {
-      const options = fieldDef?.options ?? [];
+      const isLinkedRecord = fieldDef?.field_type === "linked_record";
+      const choices: Array<{ id: string; label: string; color?: string }> =
+        fieldDef?.field_type === "linked_record"
+          ? (linkedRecordOps?.candidates ?? []).map((candidate) => ({
+              id: candidate.rowId,
+              label: linkedRecordLabelFromRecordId(candidate.rowId, candidate.recordId),
+            }))
+          : (fieldDef?.options ?? []).map((option) => ({
+              id: option.id,
+              label: option.label,
+              color: option.color,
+            }));
       const selected = new Set(rule.valueList ?? []);
       const toggle = (optionId: string) => {
         const next = new Set(selected);
@@ -272,24 +304,30 @@ function FilterValueEditor({ rule, operatorDef, fieldDef, onChange }: FilterValu
         <details className="data-table-view-popover-value data-table-view-popover-disclosure">
           <summary>{summary}</summary>
           <ul className="data-table-view-popover-options">
-            {options.map((option) => (
-              <li key={option.id}>
+            {choices.map((choice) => (
+              <li key={choice.id}>
                 <label className="data-table-view-popover-option">
                   <input
                     type="checkbox"
-                    checked={selected.has(option.id)}
-                    onChange={() => toggle(option.id)}
+                    checked={selected.has(choice.id)}
+                    onChange={() => toggle(choice.id)}
                   />
                   <span
-                    className="single-select-pill"
-                    style={{ "--option-color": option.color } as CSSProperties}
+                    className={
+                      isLinkedRecord ? "data-table-linked-record-pill" : "single-select-pill"
+                    }
+                    style={
+                      isLinkedRecord
+                        ? undefined
+                        : ({ "--option-color": choice.color } as CSSProperties)
+                    }
                   >
-                    {option.label}
+                    {choice.label}
                   </span>
                 </label>
               </li>
             ))}
-            {options.length === 0 ? (
+            {choices.length === 0 ? (
               <li className="data-table-view-popover-options-empty">
                 No options defined for this field.
               </li>

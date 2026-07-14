@@ -173,8 +173,9 @@ export function DataTable<TRow>({
         visibleColumnDefs,
         fieldDefs,
         effectiveSort,
+        linkedRecordOps,
       ),
-    [rows, visibleColumnDefs, fieldDefs, view.filter, effectiveSort, unitSystem],
+    [rows, visibleColumnDefs, fieldDefs, view.filter, effectiveSort, unitSystem, linkedRecordOps],
   );
   // Plan 30 §P5 / D13 — duplicate-value warning chip. O(n) over the
   // post-filter rows, keyed by identifier value; empty values do not
@@ -1565,6 +1566,7 @@ export function DataTable<TRow>({
           filterableFieldDefs={filterableFieldDefs}
           sortableFieldDefs={sortableFieldDefs}
           groupableFieldDefs={groupableFieldDefs}
+          linkedRecordOps={linkedRecordOps}
           orderedColumnsForHidePanel={orderedColumnsForHidePanel}
           onFilterChange={handleFilterChange}
           onSortChange={handleSortChange}

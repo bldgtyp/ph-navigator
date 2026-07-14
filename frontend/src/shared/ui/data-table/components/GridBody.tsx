@@ -289,6 +289,7 @@ export function GridBody<TRow>({
               aggregatedValues={item.aggregatedValues}
               expanded={item.expanded}
               visibleColumnDefs={visibleColumnDefs}
+              linkedRecordOps={linkedRecordOps?.get(item.fieldDef.field_key)}
               onToggle={onGroupToggle}
             />
           );
