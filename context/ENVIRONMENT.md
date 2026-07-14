@@ -280,7 +280,7 @@ an ephemeral local shell for the opt-in smoke.
   - `SLOW_QUERY_MS=500`
   - `PROJECT_DOCUMENT_MAX_BODY_BYTES=8388608`
   - `SESSION_COOKIE_NAME=phn_session`
-  - `SESSION_LIFETIME_MINUTES=60`
+  - `SESSION_LIFETIME_MINUTES=480`
   - `SESSION_COOKIE_SAMESITE=lax`
   - `PASSWORD_ARGON2_TIME_COST=3`
   - `PASSWORD_ARGON2_MEMORY_COST=65536`
@@ -376,7 +376,7 @@ The verbatim service/DB config (also encoded in `render.yaml`):
     - `PROJECT_DOCUMENT_MAX_BODY_BYTES=8388608`
     - `CORS_ORIGINS=https://ph-navigator-v2-staging.onrender.com`
     - `SESSION_COOKIE_NAME=phn_session`
-    - `SESSION_LIFETIME_MINUTES=60`
+    - `SESSION_LIFETIME_MINUTES=480`
     - `SESSION_COOKIE_SAMESITE=none`
     - `FRONTEND_BASE_URL=https://ph-navigator-v2-staging.onrender.com`
     - `MCP_ISSUER_URL=https://ph-navigator-v2.onrender.com`
@@ -463,7 +463,7 @@ GitHub repo wiring after the 2026-06-28 canonicalization:
     - `PROJECT_DOCUMENT_MAX_BODY_BYTES=8388608`
     - `CORS_ORIGINS=https://www.ph-nav.com,https://ph-nav.com`
     - `SESSION_COOKIE_NAME=phn_session`
-    - `SESSION_LIFETIME_MINUTES=60`
+    - `SESSION_LIFETIME_MINUTES=480`
     - `SESSION_COOKIE_SAMESITE=lax`
     - `FRONTEND_BASE_URL=https://www.ph-nav.com`
     - `MCP_ISSUER_URL=https://api.ph-nav.com`

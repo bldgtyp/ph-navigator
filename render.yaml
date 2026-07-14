@@ -74,7 +74,7 @@ services:
       - key: SESSION_COOKIE_NAME
         value: phn_session
       - key: SESSION_LIFETIME_MINUTES
-        value: "60"
+        value: "480"
       # Split-origin staging (separate frontend/backend subdomains) needs
       # SameSite=None + HTTPS so the browser stores the API session cookie.
       - key: SESSION_COOKIE_SAMESITE

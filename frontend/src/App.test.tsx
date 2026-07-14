@@ -3,6 +3,7 @@ import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { App } from "./app/App";
+import { markSessionAuthenticated } from "./features/auth/session-lifecycle";
 import {
   buildRoom,
   roomsBuiltInFieldDefs,
@@ -186,6 +187,7 @@ function draftSummaryUrl(
 
 beforeEach(() => {
   resetDraftWriteCoordinatorsForTests();
+  window.sessionStorage.clear();
   vi.stubGlobal("fetch", fetchMock);
 });
 
@@ -513,6 +515,9 @@ describe("App", () => {
     );
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
+      if (url === "/api/v1/auth/session") {
+        return apiErrorResponse(401, "not_authenticated", "Sign-in required.");
+      }
       if (url === `/api/v1/projects/${projectPayload.id}`) {
         return jsonResponse({
           ...projectPayload,
@@ -551,6 +556,31 @@ describe("App", () => {
         name: "Retry",
       }),
     ).toBeVisible();
+  });
+
+  test("redirects a previously authenticated project tab after a 401", async () => {
+    const projectPath = `/projects/${projectPayload.id}/status?version=${projectPayload.active_version_id}#working`;
+    window.history.pushState({}, "", projectPath);
+    markSessionAuthenticated();
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "/api/v1/auth/session") {
+        return apiErrorResponse(401, "session_expired", "Your session expired after inactivity.");
+      }
+      if (url === `/api/v1/projects/${projectPayload.id}`) {
+        return jsonResponse({ ...projectPayload, access_mode: "viewer" });
+      }
+      if (url === `/api/v1/projects/${projectPayload.id}/status-items`) {
+        return jsonResponse({ items: [statusItemPayload] });
+      }
+      return jsonResponse({}, 404);
+    });
+
+    render(<App />);
+
+    expect(await screen.findByRole("heading", { name: "Sign in" })).toBeVisible();
+    expect(window.location.pathname).toBe("/sign-in");
+    expect(window.location.search).toBe(`?next=${encodeURIComponent(projectPath)}`);
   });
 
   test("renders table-neutral editor header states", async () => {

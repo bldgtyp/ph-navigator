@@ -15,8 +15,9 @@ from fastapi.testclient import TestClient
 
 from config import settings
 from database import connection, transaction
+from features.auth.cookies import set_session_cookie
 from features.auth.passwords import hash_password, verify_password
-from features.auth.service import create_or_update_user, now_utc, session_expires_at, set_session_cookie
+from features.auth.service import create_or_update_user, now_utc, session_expires_at
 from main import app
 from scripts import seed_frame_catalog, seed_glazing_catalog, seed_materials_catalog, seed_user
 
@@ -253,6 +254,8 @@ def test_expired_session_is_invalidated(clean_auth_tables: None) -> None:
     response = client.get("/api/v1/auth/session")
     assert response.status_code == 401
     assert response.json()["error_code"] == "session_expired"
+    assert "phn_session=" in response.headers["set-cookie"]
+    assert "Max-Age=0" in response.headers["set-cookie"]
 
     with connection() as conn:
         row = conn.execute("SELECT invalidation_reason FROM sessions WHERE invalidated_at IS NOT NULL").fetchone()
@@ -307,6 +310,7 @@ def test_cookie_expires_at_slides_on_every_response(clean_auth_tables: None) -> 
 
     second_response = client.get("/api/v1/auth/session")
     assert second_response.status_code == 200
+    assert "phn_session=" in second_response.headers["set-cookie"]
     second = second_response.json()["expires_at"]
     assert second >= first
 

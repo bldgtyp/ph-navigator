@@ -21,6 +21,7 @@ from features.aperture_u_value.routes import router as aperture_u_value_router
 from features.apertures.routes import router as apertures_router
 from features.assets.routes import jobs_router as asset_jobs_router
 from features.assets.routes import router as assets_router
+from features.auth.cookies import sliding_session_cookie_middleware
 from features.auth.routes import router as auth_router
 from features.catalogs import routers as catalog_routers
 from features.climate.routes import router as climate_router
@@ -75,6 +76,7 @@ app.add_middleware(
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 app.middleware("http")(request_context_middleware)
+app.middleware("http")(sliding_session_cookie_middleware)
 app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 

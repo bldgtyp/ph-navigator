@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     log_format: Literal["json", "console"] = "console"
     log_sql: bool = False
     log_sample_health: bool = False
-    session_lifetime_minutes: int = 60
+    session_lifetime_minutes: int = 480
     # Throttle for the per-request sessions.last_seen_at / expires_at UPDATE.
     # The response cookie's expires_at is recomputed on every authenticated
     # response; the DB row's expires_at only advances when this throttle

@@ -1,20 +1,29 @@
 import { fetchJson } from "../../shared/api/client";
 import type { UnitSystem } from "../../lib/units/types";
 import type { AuthSession } from "./types";
+import { clearSessionAuthentication, markSessionAuthenticated } from "./session-lifecycle";
 
 export async function fetchCurrentSession(signal?: AbortSignal): Promise<AuthSession> {
-  return fetchJson<AuthSession>("/api/v1/auth/session", { signal });
+  const session = await fetchJson<AuthSession>("/api/v1/auth/session", { signal });
+  markSessionAuthenticated();
+  return session;
 }
 
 export async function signIn(email: string, password: string): Promise<AuthSession> {
-  return fetchJson<AuthSession>("/api/v1/auth/login", {
+  const session = await fetchJson<AuthSession>("/api/v1/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
   });
+  markSessionAuthenticated();
+  return session;
 }
 
 export async function signOut(): Promise<void> {
-  await fetchJson<void>("/api/v1/auth/logout", { method: "POST" });
+  try {
+    await fetchJson<void>("/api/v1/auth/logout", { method: "POST" });
+  } finally {
+    clearSessionAuthentication();
+  }
 }
 
 export async function updateUnitsPreference(unitsPreference: UnitSystem): Promise<AuthSession> {

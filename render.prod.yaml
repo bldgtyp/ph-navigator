@@ -71,7 +71,7 @@ services:
       - key: SESSION_COOKIE_NAME
         value: phn_session
       - key: SESSION_LIFETIME_MINUTES
-        value: "60"
+        value: "480"
       # www.ph-nav.com and api.ph-nav.com are same-site under ph-nav.com.
       - key: SESSION_COOKIE_SAMESITE
         value: lax

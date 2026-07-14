@@ -227,7 +227,8 @@ settings:
 - Cookie: `phn_session`; `HttpOnly`, `Path=/`;
   `SESSION_COOKIE_SAMESITE=lax` by default; `Secure` is disabled only
   for `development`, `test`, and `local`.
-- Settings: `SESSION_LIFETIME_MINUTES=60`,
+- Settings: `SESSION_LIFETIME_MINUTES=480` (sliding inactivity window; the
+  browser cookie is renewed on each successfully authenticated API response),
   `PASSWORD_ARGON2_TIME_COST=3`,
   `PASSWORD_ARGON2_MEMORY_COST=65536`,
   `PASSWORD_ARGON2_PARALLELISM=4`.

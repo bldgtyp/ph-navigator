@@ -6,12 +6,13 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 import structlog
-from fastapi import Request, Response
+from fastapi import Request
 from starlette import status
 
 from config import settings
 from database import connection, transaction
 from features.auth import repository
+from features.auth.cookies import queue_session_cookie_clear, queue_session_cookie_refresh
 from features.auth.models import AuthSessionResponse, UnitSystem, UserPublic
 from features.auth.passwords import hash_password, verify_password
 from features.shared.errors import api_error
@@ -56,28 +57,6 @@ def public_user(row: dict[str, object]) -> UserPublic:
         email=str(row["email"]),
         display_name=str(row["display_name"]),
         units_preference="IP" if units_preference == "IP" else "SI",
-    )
-
-
-def set_session_cookie(response: Response, session_id: UUID, expires_at: datetime) -> None:
-    response.set_cookie(
-        key=settings.session_cookie_name,
-        value=str(session_id),
-        expires=expires_at,
-        httponly=True,
-        secure=settings.session_cookie_secure,
-        samesite=settings.session_cookie_samesite,
-        path="/",
-    )
-
-
-def clear_session_cookie(response: Response) -> None:
-    response.delete_cookie(
-        key=settings.session_cookie_name,
-        httponly=True,
-        secure=settings.session_cookie_secure,
-        samesite=settings.session_cookie_samesite,
-        path="/",
     )
 
 
@@ -213,6 +192,7 @@ def current_user_from_request(request: Request) -> tuple[UserPublic, datetime]:
     try:
         session_id = UUID(raw_session_id)
     except ValueError as exc:
+        queue_session_cookie_clear(request)
         raise api_error(status.HTTP_401_UNAUTHORIZED, "invalid_session", "Sign-in required.") from exc
 
     now = now_utc()
@@ -221,9 +201,11 @@ def current_user_from_request(request: Request) -> tuple[UserPublic, datetime]:
     with transaction() as conn:
         row = repository.get_session_with_user(conn, session_id)
         if row is None:
+            queue_session_cookie_clear(request)
             raise api_error(status.HTTP_401_UNAUTHORIZED, "invalid_session", "Sign-in required.")
 
         if row["session_invalidated_at"] is not None:
+            queue_session_cookie_clear(request)
             reason = str(row["session_invalidation_reason"] or "invalidated")
             raise api_error(
                 status.HTTP_401_UNAUTHORIZED,
@@ -237,6 +219,7 @@ def current_user_from_request(request: Request) -> tuple[UserPublic, datetime]:
             session_expired = True
         else:
             if not row["user_is_active"]:
+                queue_session_cookie_clear(request)
                 raise api_error(status.HTTP_401_UNAUTHORIZED, "invalid_session", "Sign-in required.")
 
             expires_at = session_expires_at(now)
@@ -255,6 +238,7 @@ def current_user_from_request(request: Request) -> tuple[UserPublic, datetime]:
             result = (user, expires_at)
 
     if session_expired:
+        queue_session_cookie_clear(request)
         raise api_error(
             status.HTTP_401_UNAUTHORIZED,
             "session_expired",
@@ -262,7 +246,9 @@ def current_user_from_request(request: Request) -> tuple[UserPublic, datetime]:
         )
 
     if result is None:
+        queue_session_cookie_clear(request)
         raise api_error(status.HTTP_401_UNAUTHORIZED, "invalid_session", "Sign-in required.")
+    queue_session_cookie_refresh(request, session_id, result[1])
     structlog.contextvars.bind_contextvars(user_id=str(result[0].id))
     return result
 

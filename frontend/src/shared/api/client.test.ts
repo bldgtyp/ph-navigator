@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { CSRF_HEADER_NAME, fetchJson, resolveApiBaseUrl } from "./client";
+import { AUTH_REQUIRED_EVENT, CSRF_HEADER_NAME, fetchJson, resolveApiBaseUrl } from "./client";
 
 describe("api client", () => {
   beforeEach(() => {
@@ -44,5 +44,30 @@ describe("api client", () => {
 
   it("preserves a configured API origin in production", () => {
     expect(resolveApiBaseUrl(false, "https://api.ph-nav.com")).toBe("https://api.ph-nav.com");
+  });
+
+  it("announces a 401 so the auth route boundary can redirect an expired session", async () => {
+    const onAuthRequired = vi.fn();
+    window.addEventListener(AUTH_REQUIRED_EVENT, onAuthRequired);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              error_code: "session_expired",
+              message: "Your session expired after inactivity.",
+              request_id: "test",
+              details: {},
+            }),
+            { status: 401 },
+          ),
+      ),
+    );
+
+    await expect(fetchJson("/api/v1/auth/session")).rejects.toMatchObject({ status: 401 });
+    expect(onAuthRequired).toHaveBeenCalledOnce();
+
+    window.removeEventListener(AUTH_REQUIRED_EVENT, onAuthRequired);
   });
 });

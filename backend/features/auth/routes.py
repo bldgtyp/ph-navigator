@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, Request, Response
 
 from features.access.user_capabilities import global_capabilities_for_user
 from features.auth.account_completion import complete_invite, complete_reset
+from features.auth.cookies import clear_session_cookie, set_session_cookie
 from features.auth.models import (
     AccountCompletionRequest,
     AuthSessionResponse,
@@ -18,9 +19,7 @@ from features.auth.models import (
 )
 from features.auth.service import (
     authenticate,
-    clear_session_cookie,
     current_user_from_request,
-    set_session_cookie,
     sign_out,
     update_units_preference,
     user_agent,

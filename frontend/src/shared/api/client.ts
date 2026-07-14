@@ -25,6 +25,7 @@ export class ApiRequestError extends Error {
 
 // Must match `Settings.csrf_header_name` in backend/config.py.
 export const CSRF_HEADER_NAME = "X-PHN-CSRF";
+export const AUTH_REQUIRED_EVENT = "phn:auth-required";
 
 export function resolveApiBaseUrl(isDevelopment: boolean, configuredBaseUrl?: string): string {
   // Development requests must stay on the Vite origin. Vite proxies `/api`
@@ -99,7 +100,11 @@ async function fetchApiResponse(
     } catch {
       apiError = null;
     }
-    throw new ApiRequestError(response, apiError);
+    const error = new ApiRequestError(response, apiError);
+    if (response.status === 401) {
+      window.dispatchEvent(new CustomEvent(AUTH_REQUIRED_EVENT));
+    }
+    throw error;
   }
   return response;
 }
