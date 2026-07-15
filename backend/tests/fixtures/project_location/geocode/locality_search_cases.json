@@ -1,0 +1,34 @@
+{
+  "cases": [
+    {
+      "query": "West Stockbridge, MA 01266",
+      "expected_names": ["West Stockbridge"],
+      "expected_kinds": ["county_subdivision"],
+      "expected_postal_code": "01266"
+    },
+    {
+      "query": "Hoboken, NJ",
+      "expected_names": ["Hoboken"],
+      "expected_kinds": ["place"],
+      "expected_postal_code": null
+    },
+    {
+      "query": "Springfield, NY 12000",
+      "expected_names": ["Springfield", "Springfield"],
+      "expected_kinds": ["county_subdivision", "place"],
+      "expected_postal_code": "12000"
+    },
+    {
+      "query": "01266",
+      "expected_names": [],
+      "expected_kinds": [],
+      "expected_postal_code": null
+    },
+    {
+      "query": "Not A Place, MA",
+      "expected_names": [],
+      "expected_kinds": [],
+      "expected_postal_code": null
+    }
+  ]
+}

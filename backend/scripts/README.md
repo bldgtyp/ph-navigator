@@ -9,6 +9,18 @@ CLI tools that don't belong in the request/response surface. Examples
 
 Run any script with `cd backend && uv run python scripts/<name>.py`.
 
+To refresh the bundled Census locality index used by Project Location town
+search, run:
+
+```bash
+cd backend && uv run python -m scripts.import_census_localities
+```
+
+The command downloads the pinned official 2025 Places, County Subdivisions,
+and ZCTA Gazetteer archives, validates them, and writes deterministic artifacts
+under `features/project_location/data/`. It also accepts local source paths;
+run it with `--help` for the review/offline options.
+
 For repeatable local browser/UI inspection, use the self-healing Make wrapper:
 
 ```bash

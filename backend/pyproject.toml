@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "PH-Navigator V2 backend — FastAPI service for versioned project documents."
 requires-python = ">=3.11"
 dependencies = [
+    "certifi>=2024.8",
     "fastapi[standard]>=0.115",
     "uvicorn[standard]>=0.32",
     "pydantic>=2.9",

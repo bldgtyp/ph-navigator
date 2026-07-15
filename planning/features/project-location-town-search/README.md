@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-15
 TIME: 15:00 EDT
-STATUS: Planned
+STATUS: In Progress
 AUTHOR: Codex
 SCOPE: Allow the Climate / Project Location search to resolve either a full
   street address or a town/state locality without persisting a false street
@@ -58,5 +58,6 @@ architecture. It is not a cross-cutting refactor.
 
 ## Working Boundary
 
-This packet is planning-only. No production code has been changed. Implementation
-must begin with Phase 00 and keep the existing full-address path working.
+Phase 00 is complete: the repository now contains the deterministic 2025 Census
+locality/ZCTA artifacts, reproducible importer, and contract fixtures. Phase 01
+is next and must keep the existing full-address path working.

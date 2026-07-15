@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-15
 TIME: 15:00 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Freeze Census locality source, normalized index, matching, and fixtures.
 RELATED:
@@ -16,8 +16,8 @@ RELATED:
 
 ## Current Result
 
-**Planned; no operational blocker.** The locality path will use public Census
-Gazetteer data and will not require `MAPTILER_API_KEY` or another runtime key.
+**Complete.** The locality path uses public Census Gazetteer data and does not
+require `MAPTILER_API_KEY` or another runtime key.
 
 Phase 00 must pin the Census vintage and define a reproducible normalized index
 from three official national Gazetteer files:
@@ -129,4 +129,36 @@ frontend test-first changes.
 - A reviewer can explain how locality city/state/postal fields and coordinates
   are selected.
 - The exact additive API field is settled before Phase 01.
-- `503 locality_index_unavailable` behavior is fixture-tested and frozen.
+- `503 locality_index_unavailable` behavior is frozen for Phase 01 route tests.
+
+## Completed Result
+
+- Pinned the official 2025 national Places, County Subdivisions, and ZCTA
+  archive URLs and recorded their SHA-256 hashes in generated metadata.
+- Added `backend/scripts/import_census_localities.py`; the default command
+  downloads with the repository Python environment's CA bundle, accepts local
+  archives/text fixtures, validates schema/keys/coordinates, and writes
+  deterministic CSV plus metadata.
+- Generated 50,099 selectable locality rows and 33,791 ZCTA ranking rows.
+- Froze County Subdivision eligibility at `FUNCSTAT` `A/B/C/G`. The 2025
+  Gazetteer does not publish `CLASSFP` in this file, so no name-based class
+  inference is used. Places include `A/B/C/G/S` to retain CDPs.
+- Froze exact normalized name + state matching, five-candidate limit,
+  ambiguity labels, source-key deduplication, Place-before-County-Subdivision
+  tie order, and optional-ZIP Haversine ranking in the data README.
+- Added deterministic MA/NY/NJ fixtures for West Stockbridge, Hoboken,
+  ambiguous Springfield, an excluded statistical County Subdivision, ZCTAs,
+  ZIP-only/no-match cases, and a preserved Census address response.
+- Kept production Pydantic and TypeScript contracts unchanged as required by
+  the Phase 00 boundary.
+
+Verification:
+
+```text
+cd backend && uv run pytest tests/test_import_census_localities.py -q
+7 passed
+cd backend && uv run ruff check scripts/import_census_localities.py tests/test_import_census_localities.py
+All checks passed
+cd backend && uv run ty check scripts/import_census_localities.py tests/test_import_census_localities.py
+All checks passed
+```

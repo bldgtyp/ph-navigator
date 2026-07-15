@@ -1,0 +1,15 @@
+{
+  "result": {
+    "addressMatches": [
+      {
+        "matchedAddress": "1 MAIN ST, WEST STOCKBRIDGE, MA, 01266",
+        "coordinates": {"x": -73.367, "y": 42.325},
+        "addressComponents": {
+          "city": "WEST STOCKBRIDGE",
+          "state": "MA",
+          "zip": "01266"
+        }
+      }
+    ]
+  }
+}
