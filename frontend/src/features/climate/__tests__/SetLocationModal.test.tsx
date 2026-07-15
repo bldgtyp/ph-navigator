@@ -1,4 +1,4 @@
-// @size-exception: planning/features/project-location-town-search/phases/phase-02-modal-town-search.md
+// @size-exception: planning/archive/2026-07-15/project-location-town-search/phases/phase-02-modal-town-search.md
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

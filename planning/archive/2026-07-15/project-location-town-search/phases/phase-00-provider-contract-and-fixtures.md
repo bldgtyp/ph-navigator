@@ -114,8 +114,8 @@ frontend test-first changes.
 - `backend/features/project_location/data/`
 - `backend/scripts/`
 - `backend/tests/fixtures/project_location/geocode/`
-- `planning/features/project-location-town-search/decisions.md`
-- `planning/features/project-location-town-search/research.md`
+- `../decisions.md`
+- `../research.md`
 - this phase handoff and Phase 01/02 handoffs
 
 ## Exit Criteria

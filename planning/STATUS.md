@@ -20,7 +20,7 @@ feature-first planning.
 | Configurable Single-Select Options | Complete / archived after Rooms Floor/Zone option management shipped through the shared DataTable modal with backend allowlist guardrails, explicit delete clear/replace UX, protected status option locks, durable DataTable contract docs, focused tests, and browser smoke | `archive/dated/2026-07-02/configurable-single-select-options/STATUS.md` |
 | Admin User Management MVP | Complete / archived after Phases 00-06 implemented and verified: first-admin bootstrap, invite/admin-reset-link/deactivate/reactivate/admin grants, last-admin protection, CSRF/Origin guard, capability-gated UI, Admin-derived `catalog.edit`, audit, runbook, and production smoke evidence | `archive/dated/2026-06-29/admin-user-management/STATUS.md` |
 | Production Climate Data Seeding | Complete / production R2 PHIUS+PHI bundles published, Render Postgres seeded (`phi/10.6` 1002 locations, `phius/2022` 1007 locations), and PHIUS, PHI, and Hourly Climate workflows manually verified on production; archived | `archive/dated/2026-06-29/production-climate-data-seeding/STATUS.md` |
-| Project Location Town Search | Planned / keyless Census Gazetteer locality index plus existing Census street-address path; four implementation phases drafted; no implementation started | `features/project-location-town-search/STATUS.md` |
+| Project Location Town Search | Complete / archived after deterministic 2025 Census locality artifacts, typed keyless locality + live Census address search, privacy-safe town persistence, unique ambiguity labels, mounted Climate acceptance, Graphify, simplify, docs-pass, and full CI | `archive/2026-07-15/project-location-town-search/STATUS.md` |
 | Equipment Draft ETag Coordination | Complete / archived after P00-P03: stale Equipment sibling `draft_etag` writes now resolve a fresh target slice before payload construction; focused unit/controller coverage and browser request-count regression passed | `archive/dated/2026-06-29/equipment-draft-etag-coordination/STATUS.md` |
 | V1 Production Rollout | Archived / complete through Phase 4: production live at `www.ph-nav.com` + `api.ph-nav.com`, V0 retained at `v0.ph-nav.com`, repo canonicalized, old staging deleted; stable deployment facts moved to `context/PRODUCTION_DEPLOYMENT.md` | `archive/dated/2026-06-28/v2-production-rollout/STATUS.md` |
 | Beta Schema Evolution | Complete / archived after beta gate drill passed with fixture audit, local DB audit, and `make ci` | `archive/dated/2026-06-27/beta-schema-evolution/STATUS.md` |
@@ -76,6 +76,10 @@ feature-first planning.
 ## Historical Material
 
 - Legacy dated planning files now live under `archive/dated/<date>/...`.
+- Completed Project Location Town Search planning now lives under
+  `archive/2026-07-15/project-location-town-search/` (2025 Census Gazetteer
+  locality index, preserved live Census address path, town-only privacy UX,
+  unique ambiguity labels, mounted browser acceptance, and full CI evidence).
 - Dated code reviews now live under `code-reviews/<date>/...`.
 - Feature-specific dated bundles now live under `features/<feature>/...`.
 - Completed Admin User Management MVP planning now lives under
