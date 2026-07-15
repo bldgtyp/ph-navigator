@@ -478,8 +478,6 @@ GitHub repo wiring after the 2026-06-28 canonicalization:
     - `R2_ENDPOINT_URL=https://<account-id>.r2.cloudflarestorage.com`
     - `FERNET_SECRET_KEY=<generated Fernet key>`
     - `ACCOUNT_TOKEN_SECRET=<Render secret>`
-    - `MAPTILER_API_KEY` is intentionally unset unless PHN later adopts
-      MapTiler; address lookup falls back to the Census geocoder without it.
 - Postgres service: `ph-navigator-db`
   - Database: `ph_navigator`
   - Runtime: PostgreSQL 16

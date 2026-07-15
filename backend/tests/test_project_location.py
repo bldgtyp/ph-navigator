@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import hashlib
+import json
+from pathlib import Path
 from typing import cast
 from uuid import UUID, uuid4
 
@@ -26,6 +28,7 @@ from features.project_location.derive import (
     geocode_address,
     lookup_climate_zone,
 )
+from features.project_location.locality_index import clear_locality_index_cache
 from features.project_location.mcp import tool_get_project_location
 from features.project_location.models import GeocodeProjectLocationCandidate, UpdateProjectLocationRequest
 from features.project_location.service import existing_weather_source_values
@@ -305,6 +308,47 @@ def test_public_location_projection_omits_street_address(
     assert editor.status_code == 200
     assert editor.json()["street_address"] == "1 Main St"
     assert editor.json()["full_site_address"] == "1 Main St, West Stockbridge, MA 01266"
+
+
+def test_locality_only_location_replaces_old_street_in_editor_and_public_projections(
+    clean_mcp_tables: None,
+) -> None:
+    client = signed_in_client()
+    project_id = cast(str, create_project(client)["id"])
+    first_save = client.put(
+        f"/api/v1/projects/{project_id}/location",
+        headers={"Origin": ORIGIN},
+        json={
+            "latitude": 42.325,
+            "longitude": -73.367,
+            "street_address": "1 Main St",
+            "city": "West Stockbridge",
+            "state": "MA",
+            "postal_code": "01266",
+        },
+    )
+    assert first_save.status_code == 200
+
+    locality_save = client.put(
+        f"/api/v1/projects/{project_id}/location",
+        headers={"Origin": ORIGIN},
+        json={
+            "latitude": 42.312354,
+            "longitude": -73.388044,
+            "street_address": None,
+            "city": "West Stockbridge",
+            "state": "MA",
+            "postal_code": "01266",
+        },
+    )
+
+    assert locality_save.status_code == 200
+    editor_location = locality_save.json()["location"]
+    assert editor_location["street_address"] is None
+    assert editor_location["full_site_address"] == "West Stockbridge, MA 01266"
+    public_location = TestClient(app).get(f"/api/v1/projects/{project_id}/location").json()
+    assert public_location["street_address"] is None
+    assert public_location["full_site_address"] == "West Stockbridge, MA 01266"
 
 
 def test_climate_zone_lookup_uses_pnnl_2021_county_csv() -> None:
@@ -659,6 +703,7 @@ def test_geocode_location_requires_editor_and_returns_candidates(
         assert query == "1 Main St"
         return [
             GeocodeProjectLocationCandidate(
+                result_type="address",
                 label="1 Main St, West Stockbridge, Massachusetts",
                 latitude=42.325,
                 longitude=-73.367,
@@ -667,7 +712,7 @@ def test_geocode_location_requires_editor_and_returns_candidates(
                 state="MA",
                 postal_code="01266",
                 country="US",
-                source="maptiler",
+                source="census_geocoder",
             )
         ]
 
@@ -800,9 +845,7 @@ def test_lookup_elevation_rejects_out_of_range_coordinates(clean_mcp_tables: Non
     assert response.status_code == 422
 
 
-def test_geocode_address_falls_back_to_census_without_maptiler_key(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("features.project_location.derive.settings.maptiler_api_key", "")
-
+def test_geocode_address_uses_census_when_locality_does_not_match() -> None:
     def fake_fetch(url: str) -> dict[str, object]:
         assert "geocoder/locations/onelineaddress" in url
         assert "address=1+Main+St%2C+West+Stockbridge%2C+MA" in url
@@ -822,6 +865,7 @@ def test_geocode_address_falls_back_to_census_without_maptiler_key(monkeypatch: 
 
     assert candidates == [
         GeocodeProjectLocationCandidate(
+            result_type="address",
             label="1 MAIN ST, WEST STOCKBRIDGE, MA, 01266",
             latitude=42.325,
             longitude=-73.367,
@@ -833,6 +877,188 @@ def test_geocode_address_falls_back_to_census_without_maptiler_key(monkeypatch: 
             source="census_geocoder",
         )
     ]
+
+
+def test_geocode_address_returns_keyless_census_locality_without_external_request() -> None:
+    def unexpected_fetch(_url: str) -> dict[str, object]:
+        raise AssertionError("Locality lookup must not call an external geocoder")
+
+    candidates = geocode_address(
+        "West Stockbridge, MA 01266",
+        DeriveClients(fetch_json=unexpected_fetch),
+    )
+
+    assert candidates == [
+        GeocodeProjectLocationCandidate(
+            result_type="locality",
+            label="West Stockbridge, MA 01266",
+            latitude=42.312354,
+            longitude=-73.388044,
+            street_address=None,
+            city="West Stockbridge",
+            state="MA",
+            postal_code="01266",
+            country="US",
+            source="census_gazetteer_2025",
+        )
+    ]
+
+
+def test_geocode_address_ranks_ambiguous_localities_by_optional_zip() -> None:
+    without_zip = geocode_address("Springfield, NJ")
+    with_zip = geocode_address("Springfield, NJ 07081")
+
+    assert [candidate.result_type for candidate in with_zip] == ["locality", "locality", "locality"]
+    assert [candidate.source for candidate in with_zip] == ["census_gazetteer_2025"] * 3
+    assert [candidate.label for candidate in without_zip] == [
+        "Springfield, NJ — Place",
+        "Springfield, NJ — Town / county subdivision",
+        "Springfield, NJ — Town / county subdivision",
+    ]
+    assert [candidate.latitude for candidate in with_zip] == [40.697966, 40.706073, 40.039565]
+    assert all(candidate.postal_code == "07081" for candidate in with_zip)
+
+
+def test_geocode_address_returns_empty_for_zip_only_without_external_request() -> None:
+    def unexpected_fetch(_url: str) -> dict[str, object]:
+        raise AssertionError("ZIP-only input must not call an external geocoder")
+
+    assert geocode_address("01266", DeriveClients(fetch_json=unexpected_fetch)) == []
+
+
+def test_geocode_location_returns_503_for_corrupt_locality_index_without_address_fallback(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    from features.project_location import locality_index
+
+    corrupt_metadata = tmp_path / "metadata.json"
+    corrupt_metadata.write_text("{}")
+    monkeypatch.setattr(locality_index, "_METADATA_PATH", corrupt_metadata)
+    clear_locality_index_cache()
+
+    def unexpected_fetch(_url: str) -> dict[str, object]:
+        raise AssertionError("A corrupt locality index must not fall through to Census")
+
+    monkeypatch.setattr("features.project_location.derive.fetch_json_url", unexpected_fetch)
+    client = signed_in_client()
+    project_id = cast(str, create_project(client)["id"])
+
+    response = client.post(
+        f"/api/v1/projects/{project_id}/location/geocode",
+        headers={"Origin": ORIGIN},
+        json={"query": "1 Main St, West Stockbridge, MA"},
+    )
+
+    assert response.status_code == 503
+    assert response.json()["error_code"] == "locality_index_unavailable"
+    clear_locality_index_cache()
+
+
+def test_geocode_location_returns_502_when_census_address_geocoder_is_unavailable(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def offline(_url: str) -> dict[str, object]:
+        raise RuntimeError("offline")
+
+    monkeypatch.setattr("features.project_location.derive.fetch_json_url", offline)
+    client = signed_in_client()
+    project_id = cast(str, create_project(client)["id"])
+
+    response = client.post(
+        f"/api/v1/projects/{project_id}/location/geocode",
+        headers={"Origin": ORIGIN},
+        json={"query": "1 Main St, Not A Locality, MA"},
+    )
+
+    assert response.status_code == 502
+    assert response.json()["error_code"] == "geocoder_unavailable"
+
+
+def test_geocode_location_returns_502_for_invalid_census_candidate(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def malformed(_url: str) -> dict[str, object]:
+        return {
+            "result": {
+                "addressMatches": [
+                    {
+                        "matchedAddress": "INVALID",
+                        "coordinates": {"x": "not-a-longitude", "y": 42.0},
+                        "addressComponents": {},
+                    }
+                ]
+            }
+        }
+
+    monkeypatch.setattr("features.project_location.derive.fetch_json_url", malformed)
+    client = signed_in_client()
+    project_id = cast(str, create_project(client)["id"])
+
+    response = client.post(
+        f"/api/v1/projects/{project_id}/location/geocode",
+        headers={"Origin": ORIGIN},
+        json={"query": "1 Invalid Address, MA"},
+    )
+
+    assert response.status_code == 502
+    assert response.json()["error_code"] == "geocoder_unavailable"
+
+
+def test_geocode_location_returns_503_for_hash_valid_malformed_locality_rows(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    from features.project_location import locality_index
+
+    locality_path = tmp_path / "census_localities_2025.csv"
+    zcta_path = tmp_path / "census_zctas_2025.csv"
+    metadata_path = tmp_path / "census_localities_2025.metadata.json"
+    locality_path.write_text(
+        "kind,state,state_fips,county_fips,name,normalized_name,source_name,geoid,funcstat,latitude,longitude,source_vintage\n"
+        "place,NJ,34,,Broken,broken,Broken city,3400001,A,40.0,,2025\n"
+    )
+    zcta_path.write_text("postal_code,latitude,longitude,source_vintage\n01266,42.3,-73.4,2025\n")
+    metadata_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "source_vintage": "2025",
+                "county_subdivision_funcstat_allowlist": ["A", "B", "C", "G"],
+                "place_funcstat_allowlist": ["A", "B", "C", "G", "S"],
+                "artifacts": {
+                    locality_path.name: {
+                        "rows": 1,
+                        "sha256": hashlib.sha256(locality_path.read_bytes()).hexdigest(),
+                    },
+                    zcta_path.name: {
+                        "rows": 1,
+                        "sha256": hashlib.sha256(zcta_path.read_bytes()).hexdigest(),
+                    },
+                },
+            }
+        )
+    )
+    monkeypatch.setattr(locality_index, "_LOCALITY_PATH", locality_path)
+    monkeypatch.setattr(locality_index, "_ZCTA_PATH", zcta_path)
+    monkeypatch.setattr(locality_index, "_METADATA_PATH", metadata_path)
+    clear_locality_index_cache()
+    client = signed_in_client()
+    project_id = cast(str, create_project(client)["id"])
+
+    response = client.post(
+        f"/api/v1/projects/{project_id}/location/geocode",
+        headers={"Origin": ORIGIN},
+        json={"query": "Broken, NJ"},
+    )
+
+    assert response.status_code == 503
+    assert response.json()["error_code"] == "locality_index_unavailable"
+    clear_locality_index_cache()
 
 
 def test_epw_upload_parse_persists_metadata_and_suggests_location(clean_mcp_tables: None) -> None:

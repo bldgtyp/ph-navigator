@@ -86,7 +86,6 @@ class Settings(BaseSettings):
     asset_max_file_size_mb_hard_cap: int = 100
 
     # Project location geodata
-    maptiler_api_key: str = ""
     location_derive_timeout_seconds: float = 4.0
     epw_catalog_urls: str = ""
 

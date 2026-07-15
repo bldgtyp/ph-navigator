@@ -305,10 +305,16 @@ county table), and persists them with per-field provenance. A client-supplied
 coordinates clears the derived geodata. The heavy external lookups run before
 the write transaction is opened.
 
-`POST /location/geocode` is an editor-only backend proxy for address search.
-It uses `MAPTILER_API_KEY` when configured and returns candidate coordinates
-plus normalized address pieces; without a configured key it returns
-`503 geocoder_not_configured`.
+`POST /location/geocode` is an editor-only address-or-town search. Exact
+town/locality + two-letter state matches are served from the bundled,
+integrity-validated 2025 Census Gazetteer index; an optional valid five-digit
+ZCTA ranks ambiguous same-state results by distance but never replaces the
+locality internal point. ZIP-only input returns no candidates. Queries without
+a locality match use the live keyless Census oneline address geocoder.
+Candidates include `result_type: "address" | "locality"`; locality candidates
+always have `street_address: null`. A broken bundled index returns
+`503 locality_index_unavailable` without address fallback, while live Census
+address failures return `502 geocoder_unavailable`.
 
 `POST /location/elevation` is an editor-only stateless lookup used by the Set
 Location modal to auto-fill the elevation field. It resolves elevation for the

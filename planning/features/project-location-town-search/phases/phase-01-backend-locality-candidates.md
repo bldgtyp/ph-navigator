@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-15
 TIME: 15:00 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Implement keyless Census locality lookup and preserve address geocoding.
 RELATED:
@@ -92,3 +92,35 @@ uv run ty check features/project_location tests/test_project_location.py
 - Census external failures return `502 geocoder_unavailable`.
 - The locality-only editor/public projection regression is green.
 - Locality tests require no live provider call or API key.
+
+## Completed Result
+
+- Added the required `result_type: "address" | "locality"` candidate
+  discriminator and explicit construction on both paths.
+- Added a cached, integrity-validating loader for the committed locality/ZCTA
+  artifacts. Successes and failures are cached for the immutable process
+  lifetime; corrupt metadata, hashes, schemas, rows, or coordinates map to
+  `503 locality_index_unavailable` without address fallback.
+- Added exact normalized locality + state matching, deterministic ambiguity
+  labels/order, five-candidate limit, ZIP-only rejection, and valid-ZCTA
+  Haversine ranking using the shared Climate proximity helper.
+- West Stockbridge resolves as a County Subdivision with its Census internal
+  point, `street_address = null`, and accepted `01266` qualifier.
+- Preserved the Census oneline address path for non-locality queries and mapped
+  network/invalid-response failures to `502 geocoder_unavailable`.
+- Removed the dormant MapTiler geocoder branch and `maptiler_api_key` setting;
+  repository search found no deployment configuration using it. Keyless raster
+  map tiles are unchanged.
+- Added editor/public persistence coverage proving a locality-only update
+  clears an old street and composes `West Stockbridge, MA 01266`.
+
+Verification:
+
+```text
+cd backend && uv run pytest tests/test_project_location.py tests/test_import_census_localities.py -q
+43 passed
+cd backend && uv run ruff check features/project_location scripts/import_census_localities.py tests/test_project_location.py tests/test_import_census_localities.py
+All checks passed
+cd backend && uv run ty check features/project_location scripts/import_census_localities.py tests/test_project_location.py tests/test_import_census_localities.py
+All checks passed
+```

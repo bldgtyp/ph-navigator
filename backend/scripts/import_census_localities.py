@@ -27,18 +27,27 @@ import os
 import re
 import ssl
 import tempfile
-import unicodedata
 import urllib.request
 import zipfile
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Literal, cast
+from typing import cast
 
 import certifi
 
-SOURCE_VINTAGE = "2025"
-SCHEMA_VERSION = 1
+from features.project_location.locality_contract import (
+    COUNTY_SUBDIVISION_FUNCSTAT_ALLOWLIST,
+    LOCALITY_COLUMNS,
+    LOCALITY_KIND_ORDER,
+    PLACE_FUNCSTAT_ALLOWLIST,
+    SCHEMA_VERSION,
+    SOURCE_VINTAGE,
+    ZCTA_COLUMNS,
+    LocalityKind,
+    normalize_locality_name,
+)
+
 SOURCE_URLS = {
     "places": (
         "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/"
@@ -57,26 +66,6 @@ SOURCE_URLS = {
 # Census Gazetteer County Subdivision files expose FUNCSTAT, not CLASSFP.
 # A/B/C/G are functioning legal governments. F/I/N/S are respectively
 # fictitious, inactive, nonfunctioning, and statistical entities.
-COUNTY_SUBDIVISION_FUNCSTAT_ALLOWLIST = frozenset({"A", "B", "C", "G"})
-PLACE_FUNCSTAT_ALLOWLIST = frozenset({"A", "B", "C", "G", "S"})
-
-LOCALITY_COLUMNS = (
-    "kind",
-    "state",
-    "state_fips",
-    "county_fips",
-    "name",
-    "normalized_name",
-    "source_name",
-    "geoid",
-    "funcstat",
-    "latitude",
-    "longitude",
-    "source_vintage",
-)
-ZCTA_COLUMNS = ("postal_code", "latitude", "longitude", "source_vintage")
-LocalityKind = Literal["place", "county_subdivision"]
-
 _LOCALITY_SUFFIXES = tuple(
     sorted(
         {
@@ -132,12 +121,6 @@ class ZctaRow:
     source_vintage: str = SOURCE_VINTAGE
 
 
-def normalize_locality_name(value: str) -> str:
-    """Return the accent-insensitive, punctuation-normalized match key."""
-    ascii_value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode("ascii")
-    return " ".join(re.sub(r"[^a-z0-9]+", " ", ascii_value.casefold()).split())
-
-
 def locality_name(source_name: str) -> str:
     """Remove one Census legal/statistical suffix while preserving the name."""
     folded = source_name.casefold()
@@ -160,8 +143,9 @@ def build_index(
     _require_unique(((row.kind, row.geoid) for row in localities), label="locality source key")
     _require_unique(((row.postal_code,) for row in zctas), label="ZCTA postal code")
 
-    kind_order: dict[LocalityKind, int] = {"place": 0, "county_subdivision": 1}
-    localities.sort(key=lambda row: (row.state, row.normalized_name, kind_order[row.kind], row.name, row.geoid))
+    localities.sort(
+        key=lambda row: (row.state, row.normalized_name, LOCALITY_KIND_ORDER[row.kind], row.name, row.geoid)
+    )
     zctas.sort(key=lambda row: row.postal_code)
     return localities, zctas
 

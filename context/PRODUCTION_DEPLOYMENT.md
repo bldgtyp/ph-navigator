@@ -138,8 +138,9 @@ Key production env values:
 | `MCP_ALLOWED_ORIGINS` | `https://www.ph-nav.com,https://ph-nav.com` |
 | `R2_BUCKET` | `ph-navigator-prod` |
 
-`MAPTILER_API_KEY` is intentionally unset. PH-Navigator does not currently use
-MapTiler; address lookup falls back to the Census geocoder when no key exists.
+Project Location search needs no geocoder secret. Town/locality lookup uses the
+bundled Census Gazetteer index and street-address lookup uses the keyless live
+Census geocoder.
 
 Backend start command:
 
@@ -320,7 +321,6 @@ invent credentials.
 - Do not paste Render database URLs, R2 secrets, Fernet keys, account-token
   secrets, or one-time invite/reset links into this repo.
 - Do not add production seeds to Render's normal start command.
-- Do not set `MAPTILER_API_KEY` unless PH-Navigator actually adopts MapTiler.
 - Do not use `ed@example.com` in local Playwright/Codex browser work unless Ed
   explicitly asks; local agent work uses `codex@example.com` to avoid the
   single-active-session collision.

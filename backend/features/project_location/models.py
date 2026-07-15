@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
@@ -208,10 +209,11 @@ class GeocodeProjectLocationRequest(BaseModel):
 
 
 class GeocodeProjectLocationCandidate(BaseModel):
-    """Address candidate returned by the project-location geocoder."""
+    """Typed address or locality candidate returned by Project Location search."""
 
     model_config = ConfigDict(extra="forbid")
 
+    result_type: Literal["address", "locality"]
     label: str
     latitude: float
     longitude: float

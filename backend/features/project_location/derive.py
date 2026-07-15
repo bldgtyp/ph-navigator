@@ -10,9 +10,9 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.parse import quote, urlencode
+from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 import certifi
@@ -20,6 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from starlette import status
 
 from config import settings
+from features.project_location.locality_index import is_zip_only_query, load_locality_index, search_localities
 from features.project_location.models import GeocodeProjectLocationCandidate
 from features.shared.errors import api_error
 
@@ -87,6 +88,10 @@ class DeriveClients:
     fetch_json: JsonFetcher = lambda url: fetch_json_url(url)
 
 
+class AddressGeocoderError(RuntimeError):
+    """The live Census address geocoder failed or returned an invalid envelope."""
+
+
 def derive_location_geodata(
     latitude: float,
     longitude: float,
@@ -129,49 +134,24 @@ def derive_location_geodata(
 
 
 def geocode_address(query: str, clients: DeriveClients | None = None) -> list[GeocodeProjectLocationCandidate]:
-    """Resolve an address string into candidate coordinates.
-
-    MapTiler gives better POI handling when configured. Local/dev installs
-    fall back to the Census geocoder so US address lookup does not require a
-    secret just to seed project coordinates.
-    """
+    """Resolve a bundled Census locality first, otherwise a live US address."""
     resolved_clients = clients or DeriveClients()
-    api_key = settings.maptiler_api_key.strip()
-    if not api_key:
-        return _parse_census_address_candidates(resolved_clients.fetch_json(_census_address_url(query)), query)
-    params = urlencode({"key": api_key, "limit": 5, "country": "us"})
-    payload = resolved_clients.fetch_json(f"https://api.maptiler.com/geocoding/{quote(query)}.json?{params}")
-    candidates: list[GeocodeProjectLocationCandidate] = []
-    for feature in payload.get("features", []):
-        if not isinstance(feature, dict):
-            continue
-        geometry = feature.get("geometry")
-        if not isinstance(geometry, dict):
-            continue
-        coords = geometry.get("coordinates")
-        if not isinstance(coords, list) or len(coords) < 2:
-            continue
-        context = feature.get("context")
-        context_items = context if isinstance(context, list) else []
-        city = _context_value(context_items, "place")
-        state = _context_value(context_items, "region")
-        postal_code = _context_value(context_items, "postcode")
-        country = _context_value(context_items, "country")
-        label = str(feature.get("place_name") or feature.get("text") or query)
-        candidates.append(
-            GeocodeProjectLocationCandidate(
-                label=label,
-                latitude=float(coords[1]),
-                longitude=float(coords[0]),
-                street_address=street_address_from_full_address(label, city, state, postal_code, country),
-                city=city,
-                state=state,
-                postal_code=postal_code,
-                country=country,
-                source="maptiler",
-            )
-        )
-    return candidates
+    if is_zip_only_query(query):
+        return []
+    index = load_locality_index()
+    locality_candidates = search_localities(query, index)
+    if locality_candidates:
+        return locality_candidates
+    try:
+        payload = resolved_clients.fetch_json(_census_address_url(query))
+    except (RuntimeError, ValueError) as exc:
+        raise AddressGeocoderError("Census address geocoder request failed.") from exc
+    try:
+        return _parse_census_address_candidates(payload, query)
+    except AddressGeocoderError:
+        raise
+    except (TypeError, ValueError) as exc:
+        raise AddressGeocoderError("Census address geocoder response contains invalid candidate data.") from exc
 
 
 def _parse_census_address_candidates(
@@ -180,10 +160,10 @@ def _parse_census_address_candidates(
 ) -> list[GeocodeProjectLocationCandidate]:
     result = payload.get("result")
     if not isinstance(result, dict):
-        return []
+        raise AddressGeocoderError("Census address geocoder response has no result object.")
     matches = result.get("addressMatches")
     if not isinstance(matches, list):
-        return []
+        raise AddressGeocoderError("Census address geocoder response has no addressMatches list.")
     candidates: list[GeocodeProjectLocationCandidate] = []
     for match in matches[:5]:
         if not isinstance(match, dict):
@@ -204,6 +184,7 @@ def _parse_census_address_candidates(
         postal_code = _optional_str(component_items.get("zip"))
         candidates.append(
             GeocodeProjectLocationCandidate(
+                result_type="address",
                 label=label,
                 latitude=float(latitude),
                 longitude=float(longitude),
@@ -364,18 +345,6 @@ def _usgs_epqs_url(latitude: float, longitude: float) -> str:
 def _open_meteo_url(latitude: float, longitude: float) -> str:
     params = urlencode({"latitude": latitude, "longitude": longitude})
     return f"https://api.open-meteo.com/v1/elevation?{params}"
-
-
-def _context_value(items: list[object], prefix: str) -> str | None:
-    for item in items:
-        if not isinstance(item, dict):
-            continue
-        item_dict = cast(dict[str, object], item)
-        raw_id = item_dict.get("id")
-        if isinstance(raw_id, str) and raw_id.startswith(f"{prefix}."):
-            value = item_dict.get("text") or item_dict.get("short_code")
-            return str(value) if value else None
-    return None
 
 
 def _optional_str(value: object) -> str | None:

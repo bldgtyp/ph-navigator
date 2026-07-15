@@ -40,7 +40,7 @@ The implementation risk is at three boundaries:
 | Phase | Scope | Dependency | Exit condition |
 |---|---|---|---|
 | 00 | **Complete** - Census locality data contract and fixtures | None | 2025 source vintage, normalized schema, importer, ZIP qualification, and matching fixtures are frozen |
-| 01 | Backend locality index and address fallback | Phase 00 | Locality candidates are served keylessly; existing Census address behavior remains intact |
+| 01 | **Complete** - Backend locality index and address fallback | Phase 00 | Typed locality candidates are served keylessly; Census address behavior and explicit failures are verified |
 | 02 | Modal query/persistence separation and locality UX | Phase 01 | Address and town selections both save correctly; old streets clear |
 | 03 | Integration/browser verification and durable docs | Phases 01-02 | Focused gates, browser matrix, graph update, docs-pass, and status closeout complete |
 

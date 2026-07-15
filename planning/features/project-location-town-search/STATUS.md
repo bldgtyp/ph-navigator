@@ -16,34 +16,34 @@ RELATED:
 
 ## Current State
 
-**Phase 00 complete. Production API behavior remains unchanged.**
+**Phases 00-01 complete. Backend locality search is implemented and verified.**
 
 The current modal/backend flow has been traced and the feature contract is
 documented. Existing storage already supports a streetless location, and
 downstream Climate consumers already use coordinates rather than requiring a
 street address.
 
-The deterministic 2025 Census locality artifact, reproducible importer, source
-hash metadata, and contract fixtures are now committed in the working tree.
-The generated index includes 50,099 eligible Places/County Subdivisions and
-33,791 ZCTA ranking references. Production models and routing intentionally
-remain unchanged until Phase 01.
+The deterministic 2025 Census locality artifact now feeds a cached,
+integrity-validating backend search. Candidates are typed as address/locality;
+locality results are keyless and streetless, while non-locality queries retain
+the live Census oneline address path. The dormant MapTiler geocoder branch and
+setting are removed.
 
 ## Next Action
 
-Begin `phases/phase-01-backend-locality-candidates.md`:
+Begin `phases/phase-02-modal-town-search.md`:
 
-1. add the typed `result_type` response field with red/green tests;
-2. add the cached integrity-validating locality repository and routing;
-3. preserve Census street-address fallback and normalize failure responses;
-4. remove the dormant MapTiler geocoder branch after configuration audit.
+1. separate modal-local `searchQuery` from persisted `street_address`;
+2. apply typed address/locality candidates as complete field replacement;
+3. add town-level/custom-point privacy copy and state transitions;
+4. preserve elevation, pin refinement, validation, and full-address behavior.
 
 ## Phase Ledger
 
 | Phase | State | Purpose |
 |---|---|---|
 | 00 - Census locality data contract | Complete | Pinned 2025 sources, deterministic index/importer, matching rules, and fixtures |
-| 01 - Backend locality candidates | Planned | Add the local Census index and preserve Census street-address fallback |
+| 01 - Backend locality candidates | Complete | Typed local Census candidates, ZIP ranking, Census address fallback, and explicit 503/502 errors |
 | 02 - Modal town search | Planned | Separate search text from street persistence and implement locality UX |
 | 03 - Verification and docs | Planned | Focused gates, live browser matrix, context reconciliation, closeout |
 
@@ -61,8 +61,7 @@ Begin `phases/phase-01-backend-locality-candidates.md`:
 
 ## Blockers
 
-None. The Phase 00 source/importer contract is proven; Phase 01 can implement
-the production loader and endpoint behavior against it.
+None. Phase 02 can consume the additive typed candidate contract.
 
 ## Verification Baseline
 
@@ -75,3 +74,5 @@ Review-time focused baseline on 2026-07-15:
   street-address-only contract.
 - Phase 00 importer suite: `7 passed`; focused Ruff and ty checks passed.
 - Reproducible import output: 50,099 locality rows; 33,791 ZCTA rows.
+- Phase 01 combined backend/importer suite: `43 passed`; focused Ruff and ty
+  checks passed.
