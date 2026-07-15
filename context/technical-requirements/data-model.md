@@ -107,7 +107,9 @@ project_location (
     street_address      TEXT,
                       -- editor-visible only; public/viewer API projection
                       -- returns NULL for this field. Renamed from
-                      -- site_address (0036).
+                      -- site_address (0036). Locality-only locations keep this
+                      -- NULL and compose full_site_address from city/state/
+                      -- postal_code at response time.
     postal_code         TEXT,
                       -- parsed out of the address string (0036).
     city                TEXT,

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-15
 TIME: 15:00 EDT
-STATUS: In Progress
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Current state and next action for Project Location town search.
 RELATED:
@@ -16,7 +16,7 @@ RELATED:
 
 ## Current State
 
-**Phases 00-02 complete. Address-or-town search is implemented end to end.**
+**Phases 00-03 complete. Address-or-town search is implemented and verified.**
 
 The current modal/backend flow has been traced and the feature contract is
 documented. Existing storage already supports a streetless location, and
@@ -30,16 +30,13 @@ the live Census oneline address path. The dormant MapTiler geocoder branch and
 setting are removed. The modal keeps search text separate from persisted street
 data, classifies candidates, clears stale address components on selection, and
 tracks town/saved/custom-point privacy presentation without changing storage.
+Ambiguous locality labels are unique through county, geography type, and a
+last-resort Census GEOID qualifier.
 
 ## Next Action
 
-Begin `phases/phase-03-verification-and-docs.md`:
-
-1. run the combined focused backend/frontend gates;
-2. exercise the mounted Climate route with the isolated browser fixture;
-3. verify address, locality, ambiguity, no-match, privacy, and downstream
-   Climate behavior;
-4. reconcile durable docs and run the full repository closeout gates.
+Archive this completed packet and update `planning/STATUS.md` to the archived
+path. No implementation work remains.
 
 ## Phase Ledger
 
@@ -48,7 +45,7 @@ Begin `phases/phase-03-verification-and-docs.md`:
 | 00 - Census locality data contract | Complete | Pinned 2025 sources, deterministic index/importer, matching rules, and fixtures |
 | 01 - Backend locality candidates | Complete | Typed local Census candidates, ZIP ranking, Census address fallback, and explicit 503/502 errors |
 | 02 - Modal town search | Complete | Separate search text from street persistence, typed candidate application, privacy copy, and stale-response guards |
-| 03 - Verification and docs | Planned | Focused gates, live browser matrix, context reconciliation, closeout |
+| 03 - Verification and docs | Complete | Focused/full gates, mounted browser matrix, ambiguity hardening, context reconciliation, simplify/docs-pass |
 
 ## Accepted Boundaries
 
@@ -64,7 +61,7 @@ Begin `phases/phase-03-verification-and-docs.md`:
 
 ## Blockers
 
-None. Phase 03 can verify the integrated feature.
+None.
 
 ## Verification Baseline
 
@@ -81,3 +78,10 @@ Review-time focused baseline on 2026-07-15:
   checks passed.
 - Phase 02 frontend helper/modal/presentation suite: `31 passed`; TypeScript and
   `make frontend-dev-check` passed.
+- Phase 03 backend focused suite: `47 passed`; frontend focused suite: `31
+  passed`; Ruff, ty, and TypeScript passed.
+- Mounted Climate route verified full-address and town-only save/reopen,
+  street clearing, public privacy projection, elevation override, pin privacy,
+  ambiguous/no-match results, and Phius/hourly picker loading.
+- Final `make ci`: backend `1373 passed, 7 skipped`; frontend `2165 passed`;
+  production build passed.

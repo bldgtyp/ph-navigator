@@ -912,11 +912,42 @@ def test_geocode_address_ranks_ambiguous_localities_by_optional_zip() -> None:
     assert [candidate.source for candidate in with_zip] == ["census_gazetteer_2025"] * 3
     assert [candidate.label for candidate in without_zip] == [
         "Springfield, NJ — Place",
-        "Springfield, NJ — Town / county subdivision",
-        "Springfield, NJ — Town / county subdivision",
+        "Springfield, NJ — Town / county subdivision, Burlington County",
+        "Springfield, NJ — Town / county subdivision, Union County",
     ]
     assert [candidate.latitude for candidate in with_zip] == [40.697966, 40.706073, 40.039565]
     assert all(candidate.postal_code == "07081" for candidate in with_zip)
+
+
+def test_geocode_address_disambiguates_same_name_townships_by_county() -> None:
+    candidates = geocode_address("Washington, PA")
+
+    assert [candidate.label for candidate in candidates] == [
+        "Washington, PA — Place",
+        "Washington, PA — Town / county subdivision, Armstrong County",
+        "Washington, PA — Town / county subdivision, Berks County",
+        "Washington, PA — Town / county subdivision, Butler County",
+        "Washington, PA — Town / county subdivision, Cambria County",
+    ]
+
+
+def test_geocode_address_disambiguates_same_county_subdivisions_by_geography_type() -> None:
+    candidates = geocode_address("Rangeley, ME")
+
+    assert [candidate.label for candidate in candidates] == [
+        "Rangeley, ME — Place",
+        "Rangeley, ME — Town / county subdivision (Town), Franklin County",
+        "Rangeley, ME — Town / county subdivision (Plantation), Franklin County",
+    ]
+
+
+def test_geocode_address_uses_geoid_as_last_resort_for_duplicate_places() -> None:
+    candidates = geocode_address("Mount Olive, AL")
+
+    assert [candidate.label for candidate in candidates] == [
+        "Mount Olive, AL — Place (CDP), Census GEOID 0152320",
+        "Mount Olive, AL — Place (CDP), Census GEOID 0152344",
+    ]
 
 
 def test_geocode_address_returns_empty_for_zip_only_without_external_request() -> None:
@@ -953,6 +984,33 @@ def test_geocode_location_returns_503_for_corrupt_locality_index_without_address
 
     assert response.status_code == 503
     assert response.json()["error_code"] == "locality_index_unavailable"
+    clear_locality_index_cache()
+
+
+def test_geocode_location_returns_503_for_corrupt_county_reference(
+    clean_mcp_tables: None,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    from features.project_location import reference_data
+
+    corrupt_counties = tmp_path / "climate_zones.csv"
+    corrupt_counties.write_text("wrong,columns\n1,2\n")
+    monkeypatch.setattr(reference_data, "_COUNTY_REFERENCE_CSV", corrupt_counties)
+    reference_data.load_county_reference_rows.cache_clear()
+    clear_locality_index_cache()
+    client = signed_in_client()
+    project_id = cast(str, create_project(client)["id"])
+
+    response = client.post(
+        f"/api/v1/projects/{project_id}/location/geocode",
+        headers={"Origin": ORIGIN},
+        json={"query": "West Stockbridge, MA"},
+    )
+
+    assert response.status_code == 503
+    assert response.json()["error_code"] == "locality_index_unavailable"
+    reference_data.load_county_reference_rows.cache_clear()
     clear_locality_index_cache()
 
 

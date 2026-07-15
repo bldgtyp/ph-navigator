@@ -2,14 +2,11 @@
 
 from __future__ import annotations
 
-import csv
 import json
 import ssl
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from functools import cache
-from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
@@ -22,12 +19,11 @@ from starlette import status
 from config import settings
 from features.project_location.locality_index import is_zip_only_query, load_locality_index, search_localities
 from features.project_location.models import GeocodeProjectLocationCandidate
+from features.project_location.reference_data import load_county_reference_rows
 from features.shared.errors import api_error
 
 JsonFetcher = Callable[[str], dict[str, Any]]
 
-_DATA_DIR = Path(__file__).with_name("data")
-_CLIMATE_ZONE_CSV = _DATA_DIR / "climate_zones.csv"
 _SSL_CONTEXT = ssl.create_default_context(cafile=certifi.where())
 
 
@@ -233,7 +229,7 @@ def fetch_elevation_geodata(
 
 def lookup_climate_zone(county_fips: str) -> ClimateZoneGeodata | None:
     """Return the PNNL 2021 IECC county climate zone for a 5-digit FIPS code."""
-    rows = _load_climate_zone_rows()
+    rows = load_county_reference_rows()
     row = rows.get(county_fips.zfill(5))
     if row is None:
         return None
@@ -252,13 +248,6 @@ def fetch_json_url(url: str) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise RuntimeError("External location lookup did not return a JSON object.")
     return payload
-
-
-@cache
-def _load_climate_zone_rows() -> dict[str, dict[str, str]]:
-    with _CLIMATE_ZONE_CSV.open(encoding="utf-8", newline="") as handle:
-        rows = {row["county_fips_5"].zfill(5): row for row in csv.DictReader(handle) if row.get("county_fips_5")}
-    return rows
 
 
 def _parse_fcc_county(payload: dict[str, Any]) -> CountyGeodata:

@@ -289,7 +289,7 @@ POST /api/v1/projects/{pid}/climate/sources/weather/from-upload
 
 `GET /location` returns coordinates, coarse public geodata, EPW attachment
 metadata, and editor-visible address fields. For anonymous/viewer reads, the
-same route returns `site_address: null` while preserving public fields such as
+same route returns `street_address: null` while preserving public fields such as
 `latitude`, `longitude`, `elevation_m`, `county`, `state`, `country`, and
 `climate_zone`.
 
@@ -312,7 +312,11 @@ ZCTA ranks ambiguous same-state results by distance but never replaces the
 locality internal point. ZIP-only input returns no candidates. Queries without
 a locality match use the live keyless Census oneline address geocoder.
 Candidates include `result_type: "address" | "locality"`; locality candidates
-always have `street_address: null`. A broken bundled index returns
+always have `street_address: null`. Ambiguous County Subdivision candidates
+include the county name in their display label; remaining collisions add the
+Census geography type and, only as a last resort, GEOID. Thus same-name
+localities remain selectable without changing the persisted city/state tuple.
+A broken bundled index returns
 `503 locality_index_unavailable` without address fallback, while live Census
 address failures return `502 geocoder_unavailable`.
 

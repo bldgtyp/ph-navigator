@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-15
 TIME: 15:00 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Integrated verification, browser acceptance, graph update, and docs closeout.
 RELATED:
@@ -14,6 +14,14 @@ RELATED:
 ---
 
 # Phase 03 - Verification and Docs
+
+## Result
+
+Complete. Both search modes passed the mounted Climate route, downstream
+Climate pickers, public projection, focused suites, simplify/docs-pass, and the
+full repository gate. Browser testing found indistinguishable same-name County
+Subdivision labels; the final backend now adds county, then Census geography
+type, then GEOID only when needed to make every returned label unique.
 
 ## Goal
 
@@ -86,3 +94,36 @@ error.
   honestly.
 - Graphify, simplify, docs-pass, and the final repository gate are complete.
 - Planning status accurately distinguishes implemented, merged, and complete.
+
+## Completed Evidence
+
+Automated on 2026-07-15:
+
+- backend importer/project-location suite: `47 passed`; focused Ruff and ty
+  passed;
+- frontend location-form/modal/presentation suite: `31 passed`; TypeScript
+  passed;
+- `make frontend-dev-check`: passed with the 14 existing Fast Refresh warnings
+  and existing Vite chunk-size warning;
+- `graphify update .`: rebuilt 24,281 nodes / 58,413 edges;
+- simplify: shared the county-reference loader, reduced cached locality FIPS
+  state, closed duplicate-label edge cases, and normalized reference failures
+  to the locality-index 503 contract;
+- docs-pass: reconciled `context/technical-requirements/api.md` and
+  `context/technical-requirements/data-model.md`;
+- `make format && git diff --check && make ci`: passed; backend `1373 passed,
+  7 skipped`, frontend `2165 passed`, production build passed.
+
+Mounted Climate route using the isolated `AGENT-BROWSER` fixture:
+
+- full address searched, selected, mapped, saved, and reopened;
+- `West Stockbridge, MA 01266` searched keylessly, selected as Town, replaced
+  the old street, saved, and reopened as locality-only;
+- locality elevation auto-filled from USGS, accepted a manual `500 m` override,
+  and a map pin refinement switched to the custom-point privacy warning;
+- anonymous `GET /location` returned `street_address: null` and
+  `full_site_address: "West Stockbridge, MA 01266"`;
+- `Washington, PA` rendered five deterministic, county-qualified candidates;
+  no-match input rendered the address-or-town alert;
+- the saved town coordinates loaded 15 Phius Massachusetts stations and 38
+  hourly-weather files.

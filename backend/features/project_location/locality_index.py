@@ -8,7 +8,7 @@ import io
 import json
 import math
 import re
-from collections import defaultdict
+from collections import Counter, defaultdict
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from functools import cache
@@ -28,6 +28,7 @@ from features.project_location.locality_contract import (
     normalize_locality_name,
 )
 from features.project_location.models import GeocodeProjectLocationCandidate
+from features.project_location.reference_data import load_county_reference_rows
 
 MAX_CANDIDATES = 5
 
@@ -50,8 +51,10 @@ class LocalityIndexError(RuntimeError):
 class LocalityRecord:
     kind: LocalityKind
     state: str
+    county_fips_5: str | None
     name: str
     normalized_name: str
+    source_name: str
     geoid: str
     latitude: float
     longitude: float
@@ -67,6 +70,7 @@ class ZctaPoint:
 class LocalityIndex:
     by_name_and_state: Mapping[tuple[str, str], tuple[LocalityRecord, ...]]
     zctas: Mapping[str, ZctaPoint]
+    county_names: Mapping[str, str]
 
 
 def load_locality_index() -> LocalityIndex:
@@ -90,6 +94,7 @@ def _load_locality_index_result() -> LocalityIndex | LocalityIndexError:
         zcta_bytes = _validated_artifact(_ZCTA_PATH, metadata)
         localities = _read_localities(locality_bytes, expected_rows=_artifact_rows(metadata, _LOCALITY_PATH.name))
         zctas = _read_zctas(zcta_bytes, expected_rows=_artifact_rows(metadata, _ZCTA_PATH.name))
+        county_names = {county_fips: row["county_name"] for county_fips, row in load_county_reference_rows().items()}
     except (OSError, UnicodeError, ValueError, TypeError, AttributeError, csv.Error, json.JSONDecodeError) as exc:
         return LocalityIndexError(str(exc))
 
@@ -99,6 +104,7 @@ def _load_locality_index_result() -> LocalityIndex | LocalityIndexError:
     return LocalityIndex(
         by_name_and_state={key: tuple(value) for key, value in grouped.items()},
         zctas=zctas,
+        county_names=county_names,
     )
 
 
@@ -117,6 +123,7 @@ def search_localities(query: str, index: LocalityIndex | None = None) -> list[Ge
     supplied_postal_code = match.group("postal_code")
     zcta = resolved_index.zctas.get(supplied_postal_code) if supplied_postal_code else None
     accepted_postal_code = supplied_postal_code if zcta is not None else None
+
     def sort_key(record: LocalityRecord) -> tuple[float, int, str, str]:
         distance = (
             haversine_miles(zcta.latitude, zcta.longitude, record.latitude, record.longitude)
@@ -127,9 +134,35 @@ def search_localities(query: str, index: LocalityIndex | None = None) -> list[Ge
 
     matches.sort(key=sort_key)
     ambiguous = len(matches) > 1
+    selected_matches = matches[:MAX_CANDIDATES]
+    labels = [
+        _candidate_label(
+            record,
+            postal_code=accepted_postal_code,
+            ambiguous=ambiguous,
+            county_names=resolved_index.county_names,
+        )
+        for record in selected_matches
+    ]
+    duplicate_labels = Counter(labels)
+    labels = [
+        _candidate_label(
+            record,
+            postal_code=accepted_postal_code,
+            ambiguous=ambiguous,
+            county_names=resolved_index.county_names,
+            include_source_type=duplicate_labels[label] > 1,
+        )
+        for record, label in zip(selected_matches, labels, strict=True)
+    ]
+    duplicate_labels = Counter(labels)
     return [
-        _candidate(record, postal_code=accepted_postal_code, ambiguous=ambiguous)
-        for record in matches[:MAX_CANDIDATES]
+        _candidate(
+            record,
+            label=(label if duplicate_labels[label] == 1 else f"{label}, Census GEOID {record.geoid}"),
+            postal_code=accepted_postal_code,
+        )
+        for record, label in zip(selected_matches, labels, strict=True)
     ]
 
 
@@ -140,15 +173,9 @@ def is_zip_only_query(query: str) -> bool:
 def _candidate(
     record: LocalityRecord,
     *,
+    label: str,
     postal_code: str | None,
-    ambiguous: bool,
 ) -> GeocodeProjectLocationCandidate:
-    label = f"{record.name}, {record.state}"
-    if postal_code:
-        label = f"{label} {postal_code}"
-    if ambiguous:
-        qualifier = "Place" if record.kind == "place" else "Town / county subdivision"
-        label = f"{label} — {qualifier}"
     return GeocodeProjectLocationCandidate(
         result_type="locality",
         label=label,
@@ -161,6 +188,34 @@ def _candidate(
         country="US",
         source=f"census_gazetteer_{SOURCE_VINTAGE}",
     )
+
+
+def _candidate_label(
+    record: LocalityRecord,
+    *,
+    postal_code: str | None,
+    ambiguous: bool,
+    county_names: Mapping[str, str],
+    include_source_type: bool = False,
+) -> str:
+    label = f"{record.name}, {record.state}"
+    if postal_code:
+        label = f"{label} {postal_code}"
+    if ambiguous:
+        qualifier = "Place" if record.kind == "place" else "Town / county subdivision"
+        if include_source_type:
+            qualifier = f"{qualifier} ({_source_type(record)})"
+        if record.kind == "county_subdivision":
+            assert record.county_fips_5 is not None
+            county_name = county_names.get(record.county_fips_5, f"FIPS {record.county_fips_5}")
+            qualifier = f"{qualifier}, {county_name} County"
+        label = f"{label} — {qualifier}"
+    return label
+
+
+def _source_type(record: LocalityRecord) -> str:
+    suffix = record.source_name.removeprefix(record.name).strip()
+    return suffix if suffix.isupper() else suffix.title()
 
 
 def _read_metadata(path: Path) -> dict[str, object]:
@@ -231,9 +286,32 @@ def _read_localities(data: bytes, *, expected_rows: int) -> list[LocalityRecord]
         state = row["state"].strip()
         if re.fullmatch(r"[A-Z]{2}", state) is None:
             raise ValueError(f"Invalid locality state for {kind}/{geoid}: {state!r}")
+        state_fips = row["state_fips"].strip()
+        if re.fullmatch(r"\d{2}", state_fips) is None:
+            raise ValueError(f"Invalid locality state FIPS for {kind}/{geoid}: {state_fips!r}")
+        county_fips = row["county_fips"].strip()
+        expected_county_fips = r"\d{3}" if kind == "county_subdivision" else r""
+        if re.fullmatch(expected_county_fips, county_fips) is None:
+            raise ValueError(f"Invalid locality county FIPS for {kind}/{geoid}: {county_fips!r}")
+        county_fips_5 = f"{state_fips}{county_fips}" if county_fips else None
+        source_name = row["source_name"].strip()
+        if not source_name:
+            raise ValueError(f"Invalid locality source name for {kind}/{geoid}")
         if row["source_vintage"] != SOURCE_VINTAGE:
             raise ValueError(f"Unexpected locality row vintage for {kind}/{geoid}")
-        records.append(LocalityRecord(kind, state, name, normalized_name, geoid, latitude, longitude))
+        records.append(
+            LocalityRecord(
+                kind,
+                state,
+                county_fips_5,
+                name,
+                normalized_name,
+                source_name,
+                geoid,
+                latitude,
+                longitude,
+            )
+        )
     if len(records) != expected_rows:
         raise ValueError(f"Locality artifact row count mismatch: expected {expected_rows}, found {len(records)}")
     return records

@@ -49,18 +49,11 @@ from features.project_location.locality_contract import (
 )
 
 SOURCE_URLS = {
-    "places": (
-        "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/"
-        "2025_Gazetteer/2025_Gaz_place_national.zip"
-    ),
+    "places": ("https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/2025_Gaz_place_national.zip"),
     "county_subdivisions": (
-        "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/"
-        "2025_Gazetteer/2025_Gaz_cousubs_national.zip"
+        "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/2025_Gaz_cousubs_national.zip"
     ),
-    "zctas": (
-        "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/"
-        "2025_Gazetteer/2025_Gaz_zcta_national.zip"
-    ),
+    "zctas": ("https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/2025_Gaz_zcta_national.zip"),
 }
 
 # Census Gazetteer County Subdivision files expose FUNCSTAT, not CLASSFP.
@@ -174,10 +167,7 @@ def write_index(
         "source_vintage": SOURCE_VINTAGE,
         "county_subdivision_funcstat_allowlist": sorted(COUNTY_SUBDIVISION_FUNCSTAT_ALLOWLIST),
         "place_funcstat_allowlist": sorted(PLACE_FUNCSTAT_ALLOWLIST),
-        "sources": {
-            key: {"url": SOURCE_URLS[key], "sha256": _sha256(value)}
-            for key, value in sorted(sources.items())
-        },
+        "sources": {key: {"url": SOURCE_URLS[key], "sha256": _sha256(value)} for key, value in sorted(sources.items())},
         "artifacts": {
             locality_path.name: {"rows": len(localities), "sha256": _sha256(locality_path.read_bytes())},
             zcta_path.name: {"rows": len(zctas), "sha256": _sha256(zcta_path.read_bytes())},
