@@ -1,6 +1,6 @@
 ---
 DATE: 2026-07-15
-TIME: 14:27 EDT
+TIME: 15:00 EDT
 STATUS: Review complete
 AUTHOR: Codex
 SCOPE: Current-code and provider findings behind the town-search plan.
@@ -27,24 +27,14 @@ false street address in the frontend.
 ## Current Backend Flow
 
 - `POST /api/v1/projects/{id}/location/geocode` is editor-only.
-- `geocode_address(...)` uses MapTiler when `MAPTILER_API_KEY` is configured.
-- Without the key it calls Census `locations/onelineaddress`.
-- The MapTiler parser reads context IDs but does not inspect `place_type`.
+- `geocode_address(...)` contains a dormant optional MapTiler branch, but the
+  deployed/default configuration leaves `MAPTILER_API_KEY` empty.
+- The active keyless path calls Census `locations/onelineaddress`.
 - The geocode candidate has no address/locality result classification.
 
 ## Provider Findings
 
-### MapTiler
-
-Official forward-geocoding documentation says the query may be a place name and
-lists municipality, locality, place, postal code, and address result types:
-
-- https://docs.maptiler.com/cloud/api/geocoding/
-
-This is sufficient for town-level search, subject to Phase 00 fixtures confirming
-the exact response shape returned by the configured production service.
-
-### Census
+### Census Address Geocoder
 
 Official Census documentation requires structure number and street name; city,
 state, and ZIP are optional address qualifiers:
@@ -53,8 +43,43 @@ state, and ZIP are optional address qualifiers:
 - https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html
 
 Review-time local calls confirmed that town/state/ZIP queries returned no
-candidates through the keyless Census fallback. It should not be represented as
-a locality provider.
+candidates through the keyless Census address path. It remains suitable for the
+existing full-address behavior but is not a locality lookup service.
+
+### Census Gazetteer Files
+
+The official 2025 Gazetteer release supplies small national, pipe-delimited
+files for Places, County Subdivisions, and ZIP Code Tabulation Areas:
+
+- https://www.census.gov/geographies/reference-files/2025/geo/gazetter-file.html
+- https://www.census.gov/programs-surveys/geography/technical-documentation/records-layout/gaz-record-layouts.2025.html
+
+Relevant fields include state abbreviation/FIPS, geography name/GEOID, and
+`INTPTLAT`/`INTPTLONG`. The internal point is the correct representative
+coordinate for this feature, but it must not be described as a guaranteed
+mathematical centroid.
+
+National Places covers incorporated places and Census Designated Places. County
+Subdivisions is also required because legal towns in New England, including
+West Stockbridge, are represented as minor civil divisions rather than Census
+Places. The importer must filter functional-status/class codes so statistical,
+remainder, unnamed, and nonfunctioning units are not presented as towns. ZCTA
+data can distance-rank a supplied ZIP, but a ZCTA point must not replace the
+selected locality point, imply containment, or create a ZIP-only result.
+
+The compressed national files are small enough to support a committed,
+normalized runtime artifact. A reproducible importer should pin the vintage and
+source URLs, validate required columns/coordinates, and generate the artifact;
+runtime search should not depend on Census network availability.
+
+### MapTiler Rejected for This Feature
+
+Production and environment documentation intentionally leave
+`MAPTILER_API_KEY` unset. Adding an operational secret and commercial-provider
+dependency is unnecessary when Census publishes the required representative
+points. The optional MapTiler geocoder branch should be retired during
+implementation after deployment-use confirmation. This does not affect the
+Leaflet map, which already uses keyless raster tile URLs.
 
 ## Existing Storage and Privacy Support
 
@@ -81,16 +106,21 @@ No downstream consumer requires `street_address`.
 | Risk | Control |
 |---|---|
 | Locality label saved as street | Separate `searchQuery`; remove label-to-street fallback |
-| Provider hierarchy parsed incorrectly | Fixture-driven `place_type` parsing |
+| Places omit a legal New England town | Index both Places and County Subdivisions |
+| Census vintage changes | Pin source vintage and regenerate through a documented importer |
+| Duplicate locality names in one state | Return multiple typed candidates; use deterministic labels/ties and optional ZCTA distance ranking |
+| ZIP is treated as a town center or containment proof | Use ZCTA only for distance ranking; retain locality internal point |
+| Internal point is called an exact centroid/site | Use explicit approximate/internal-point UI copy |
 | Existing street survives mode switch | Locality application explicitly writes empty/null street |
-| Census fallback appears to support towns | Add response search-scope metadata and accurate UI copy |
+| Bundled artifact is missing/corrupt | Validate required columns, row uniqueness, and coordinate ranges; fail visibly |
 | Town-center elevation affects Phius proximity | Keep manual elevation override and locality approximation note |
 | Pin refinement reveals a more exact site | Warn that saved coordinates are shown; stop calling a moved pin town-level |
-| Live-provider drift breaks tests | Commit sanitized response fixtures; mock all automated calls |
 | Full-address regression | Maintain address fixtures and end-to-end save assertions |
 
 ## Documentation Drift Found During Review
 
-`context/technical-requirements/api.md` says an unconfigured MapTiler key returns
-`503 geocoder_not_configured`, while current code falls back to Census. Phase 03
-must reconcile that contract with the implemented provider behavior.
+`context/technical-requirements/api.md` describes MapTiler configuration and an
+unconfigured-key error, while current production documentation and runtime use
+the Census fallback. Phase 03 must document the final split clearly: bundled
+Census Gazetteer locality lookup plus live Census street-address lookup, with no
+MapTiler requirement.

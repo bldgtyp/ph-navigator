@@ -1,6 +1,6 @@
 ---
 DATE: 2026-07-15
-TIME: 14:27 EDT
+TIME: 15:00 EDT
 STATUS: Planned
 AUTHOR: Codex
 SCOPE: Allow the Climate / Project Location search to resolve either a full
@@ -27,9 +27,11 @@ either:
 - a full street address, or
 - a town/locality plus state, with ZIP/postal code optional.
 
-Selecting a locality stores the provider's representative locality point as the
+Selecting a locality stores the U.S. Census Gazetteer internal point as the
 project coordinates while keeping `street_address = null`. Existing
 city/state/postal storage and coordinate-driven Climate workflows are reused.
+The locality path uses a versioned repository data file and requires no runtime
+API key; full street addresses continue through the existing Census geocoder.
 
 ## Intended Outcome
 
@@ -41,8 +43,8 @@ continue to consume the saved coordinates.
 ## Read Order
 
 1. `PRD.md` - product, privacy, and behavior contract.
-2. `decisions.md` - accepted provider, persistence, and UI boundaries.
-3. `research.md` - current-code findings and provider constraints.
+2. `decisions.md` - accepted data-source, persistence, and UI boundaries.
+3. `research.md` - current-code and Census data findings.
 4. `PLAN.md` - phase sequence and implementation seams.
 5. `phases/phase-00-provider-contract-and-fixtures.md` - first implementation
    handoff.

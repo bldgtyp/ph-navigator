@@ -1,7 +1,7 @@
 # Planning Status
 
 DATE: 2026-07-15
-TIME: 14:27 EDT
+TIME: 15:00 EDT
 STATUS: Active routing index for tracked planning material.
 AUTHOR: Codex
 SCOPE: Current planning folder organization after moving dated docs to
@@ -20,7 +20,7 @@ feature-first planning.
 | Configurable Single-Select Options | Complete / archived after Rooms Floor/Zone option management shipped through the shared DataTable modal with backend allowlist guardrails, explicit delete clear/replace UX, protected status option locks, durable DataTable contract docs, focused tests, and browser smoke | `archive/dated/2026-07-02/configurable-single-select-options/STATUS.md` |
 | Admin User Management MVP | Complete / archived after Phases 00-06 implemented and verified: first-admin bootstrap, invite/admin-reset-link/deactivate/reactivate/admin grants, last-admin protection, CSRF/Origin guard, capability-gated UI, Admin-derived `catalog.edit`, audit, runbook, and production smoke evidence | `archive/dated/2026-06-29/admin-user-management/STATUS.md` |
 | Production Climate Data Seeding | Complete / production R2 PHIUS+PHI bundles published, Render Postgres seeded (`phi/10.6` 1002 locations, `phius/2022` 1007 locations), and PHIUS, PHI, and Hourly Climate workflows manually verified on production; archived | `archive/dated/2026-06-29/production-climate-data-seeding/STATUS.md` |
-| Project Location Town Search | Planned / address-or-town geocoder contract, privacy semantics, provider boundaries, and four-phase implementation handoffs drafted; no implementation started | `features/project-location-town-search/STATUS.md` |
+| Project Location Town Search | Planned / keyless Census Gazetteer locality index plus existing Census street-address path; four implementation phases drafted; no implementation started | `features/project-location-town-search/STATUS.md` |
 | Equipment Draft ETag Coordination | Complete / archived after P00-P03: stale Equipment sibling `draft_etag` writes now resolve a fresh target slice before payload construction; focused unit/controller coverage and browser request-count regression passed | `archive/dated/2026-06-29/equipment-draft-etag-coordination/STATUS.md` |
 | V1 Production Rollout | Archived / complete through Phase 4: production live at `www.ph-nav.com` + `api.ph-nav.com`, V0 retained at `v0.ph-nav.com`, repo canonicalized, old staging deleted; stable deployment facts moved to `context/PRODUCTION_DEPLOYMENT.md` | `archive/dated/2026-06-28/v2-production-rollout/STATUS.md` |
 | Beta Schema Evolution | Complete / archived after beta gate drill passed with fixture audit, local DB audit, and `make ci` | `archive/dated/2026-06-27/beta-schema-evolution/STATUS.md` |

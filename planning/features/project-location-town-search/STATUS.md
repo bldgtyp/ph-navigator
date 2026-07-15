@@ -1,6 +1,6 @@
 ---
 DATE: 2026-07-15
-TIME: 14:27 EDT
+TIME: 15:00 EDT
 STATUS: Planned
 AUTHOR: Codex
 SCOPE: Current state and next action for Project Location town search.
@@ -16,49 +16,55 @@ RELATED:
 
 ## Current State
 
-**Planned. No implementation has started.**
+**Planned. No production implementation has started.**
 
 The current modal/backend flow has been traced and the feature contract is
 documented. Existing storage already supports a streetless location, and
 downstream Climate consumers already use coordinates rather than requiring a
 street address.
 
+The implementation no longer depends on MapTiler. Town/locality candidates will
+come from a versioned repository index derived from official U.S. Census
+Gazetteer files. The index must include both Places and County Subdivisions so
+New England legal towns such as West Stockbridge resolve. The existing keyless
+Census oneline geocoder remains the full-street-address path.
+
 ## Next Action
 
 Begin `phases/phase-00-provider-contract-and-fixtures.md`:
 
-1. capture representative MapTiler address/locality/postal response fixtures;
-2. settle the additive candidate/result metadata shape;
-3. record configured-provider success, zero-result, and failure semantics;
-4. confirm an authorized MapTiler environment is available for fixture capture
-   and final live smoke.
+1. define the normalized Census locality-index schema and source vintage;
+2. define a reproducible importer for Places, eligible County Subdivisions, and
+   ZCTA ZIP ranking data;
+3. freeze locality matching, ambiguity, and optional-ZIP ranking semantics;
+4. create deterministic fixtures for representative MA, NY, and NJ cases.
 
 ## Phase Ledger
 
 | Phase | State | Purpose |
 |---|---|---|
-| 00 - Provider contract and fixtures | Planned | Freeze provider shapes, candidate semantics, and fallback reporting |
-| 01 - Backend locality candidates | Planned | Parse typed MapTiler results and expose honest search capability |
+| 00 - Census locality data contract | Planned | Freeze source files, normalized index, matching rules, and fixtures |
+| 01 - Backend locality candidates | Planned | Add the local Census index and preserve Census street-address fallback |
 | 02 - Modal town search | Planned | Separate search text from street persistence and implement locality UX |
 | 03 - Verification and docs | Planned | Focused gates, live browser matrix, context reconciliation, closeout |
 
 ## Accepted Boundaries
 
-- MapTiler is the address + locality provider.
-- Census remains a keyless street-address-only fallback.
-- No new provider and no database migration in this feature.
+- Census Gazetteer data provides keyless locality internal points.
+- Census oneline geocoding remains the street-address path.
+- No MapTiler key, new commercial provider, or database migration is required.
+- Places and eligible legal/locality County Subdivisions are both required;
+  ZCTA is only a distance-ranking qualifier, not municipal-containment proof or
+  a ZIP-only location mode.
 - Locality selection persists `street_address = null`.
 - Town-level elevation is approximate; manual elevation/pin refinement remains
   the correction path.
 
 ## Blockers
 
-No product decision blocker. Implementation has one operational prerequisite:
-access to an authorized environment with `MAPTILER_API_KEY` for sanitized
-fixture capture and the final live-provider smoke. If that is unavailable,
-Phase 00 may finish its contract review but must mark fixture capture/live smoke
-blocked rather than inventing provider payloads. Automated work remains
-fixture-driven and keyless.
+None. The selected locality source is public, versionable Census data and the
+runtime design is keyless. Phase 00 must still pin the source vintage and prove
+the importer output before production implementation begins.
 
 ## Verification Baseline
 

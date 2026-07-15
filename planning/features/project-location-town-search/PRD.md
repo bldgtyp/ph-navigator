@@ -1,6 +1,6 @@
 ---
 DATE: 2026-07-15
-TIME: 14:27 EDT
+TIME: 15:00 EDT
 STATUS: Planned
 AUTHOR: Codex
 SCOPE: Product contract for address-or-town Project Location search.
@@ -32,7 +32,7 @@ were a street address.
 ## User Story
 
 As a project editor, I can enter `West Stockbridge, MA 01266`, select the town
-result, see the map pin move to the provider's representative point, and save
+result, see the map pin move to the Census representative point, and save
 the location without storing a street address.
 
 ## Definitions
@@ -41,8 +41,9 @@ the location without storing a street address.
   address.
 - **Locality result**: a municipality, locality, place, or equivalent populated
   place result.
-- **Town-center point**: the representative point returned by the geocoder. It
-  is not promised to be the mathematical centroid or the actual project site.
+- **Locality internal point**: the representative point published in the U.S.
+  Census Gazetteer. It is not promised to be the mathematical centroid or the
+  actual project site.
 - **Search query**: modal-local text sent to the geocoder; it is not itself a
   stored address field.
 
@@ -51,7 +52,7 @@ the location without storing a street address.
 - The search accepts full address, town + state, and town + state + ZIP inputs.
 - The UI says `Address or town` and provides examples for both modes.
 - Candidate rows make address vs town-level results understandable without
-  exposing provider jargon.
+  exposing Census geography jargon.
 - Selecting an address result sets coordinates plus normalized street, city,
   state, and postal fields.
 - Selecting a locality result sets coordinates plus normalized city, state, and
@@ -105,8 +106,8 @@ the location without storing a street address.
 
 ## Acceptance Criteria
 
-1. `West Stockbridge, MA 01266` can return and apply a locality candidate when
-   MapTiler is configured.
+1. `West Stockbridge, MA 01266` returns and applies a locality candidate without
+   any MapTiler or other runtime API key.
 2. A locality candidate persists coordinates, city, state, and available postal
    code with `street_address = null`.
 3. Replacing an existing full address with a locality clears the old street.
@@ -115,15 +116,14 @@ the location without storing a street address.
 5. The modal search box displays the selected locality label after selection.
 6. Reopening a town-only location displays useful city/state/postal search text,
    not an empty field or a fake street.
-7. Zero-result copy supports both search modes and accurately describes a
-   street-only fallback geocoder when applicable.
+7. Zero-result copy supports both search modes without implying that a street
+   number is required.
 8. Climate roster and map consumers continue to work from the saved coordinates.
 9. Public/viewer output contains no street address for either input mode.
 10. Focused backend/frontend tests and live browser verification pass.
-11. A configured MapTiler zero-result response remains an address-and-locality
-    search result; provider failure surfaces as an error rather than silently
-    changing to Census semantics. External geocoder failure returns
-    `502 geocoder_unavailable`.
+11. A locality lookup is served from the bundled Census-derived index and does
+    not require network access. Census address-geocoder failure returns
+    `502 geocoder_unavailable` only when the request reaches the address path.
 12. Standalone postal-code-area results are not offered as selectable
     candidates.
 13. Pin movement and direct coordinate edits switch the current modal to custom-
@@ -132,7 +132,7 @@ the location without storing a street address.
 ## Non-Goals
 
 - No Google Maps or Google Geocoding integration.
-- No new third-party locality fallback in the first implementation.
+- No MapTiler dependency or new commercial geocoding provider.
 - No geocoder autocomplete redesign; search remains explicit-submit.
 - No ZIP-only or postal-area location mode.
 - No database migration solely to label a location as approximate.
@@ -152,4 +152,4 @@ the location without storing a street address.
   not place it at the exact site if town-level privacy is required.`
 
 Exact wording may be tightened during Phase 02, but it must not imply that a
-provider point is the actual site or guaranteed geographic centroid.
+Census internal point is the actual site or guaranteed geographic centroid.

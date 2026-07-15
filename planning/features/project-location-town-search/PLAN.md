@@ -1,6 +1,6 @@
 ---
 DATE: 2026-07-15
-TIME: 14:27 EDT
+TIME: 15:00 EDT
 STATUS: Planned
 AUTHOR: Codex
 SCOPE: Phased implementation sequence for Project Location town search.
@@ -25,49 +25,59 @@ nullable `street_address`, `city`, `state`, and `postal_code` fields, and
 `full_site_address` already composes a locality-only display. Climate roster,
 weather, map, and sun-path consumers already use coordinates.
 
-The implementation risk is at two boundaries:
+The implementation risk is at three boundaries:
 
-1. **Provider semantics** - the MapTiler parser does not currently distinguish
-   address from municipality/locality/place/postal results.
+1. **Locality data semantics** - Census Places alone do not cover all legal
+   towns; the index must also include County Subdivisions and distinguish an
+   internal point from a promised geographic centroid.
 2. **Frontend state ownership** - the modal uses the same `siteAddress` value
    as both geocoder query text and persisted `street_address`.
+3. **Search routing** - locality lookup must be deterministic while preserving
+   the existing full-address Census behavior.
 
 ## Phase Map
 
 | Phase | Scope | Dependency | Exit condition |
 |---|---|---|---|
-| 00 | Provider contract and response fixtures | None | Address/locality shapes and provider runtime semantics are frozen without production model changes |
-| 01 | Backend parsing and response capability metadata | Phase 00 | MapTiler locality returns typed streetless candidate; Census behavior remains intact |
+| 00 | Census locality data contract and fixtures | None | Source vintage, normalized schema, importer, ZIP qualification, and matching fixtures are frozen |
+| 01 | Backend locality index and address fallback | Phase 00 | Locality candidates are served keylessly; existing Census address behavior remains intact |
 | 02 | Modal query/persistence separation and locality UX | Phase 01 | Address and town selections both save correctly; old streets clear |
 | 03 | Integration/browser verification and durable docs | Phases 01-02 | Focused gates, browser matrix, graph update, docs-pass, and status closeout complete |
 
-## Phase 00 - Provider Contract and Fixtures
+## Phase 00 - Census Locality Data Contract
 
 See `phases/phase-00-provider-contract-and-fixtures.md`.
 
-- Capture sanitized MapTiler fixtures for address, municipality/locality/place,
-  and a postal-code result that v1 will explicitly skip.
-- Confirm which response fields are stable enough to parse (`place_type`,
-  `text`, `place_name`, `context`, geometry/center).
-- Settle `result_type = "address" | "locality"`; standalone postal-code
-  results are excluded from v1 candidates.
-- Decide the exact zero-result capability signal. Recommended additive response
-  field: `search_scope = "address_and_locality" | "street_address_only"`.
-- Record configured MapTiler success/zero/failure behavior. Do not change
-  production Pydantic or TypeScript models in Phase 00.
+- Pin official Census Gazetteer source vintage and files: national Places,
+  eligible legal/locality County Subdivisions, and ZCTA data used only for
+  optional ZIP distance ranking.
+- Define the normalized, versioned runtime index and reproducible importer.
+- Freeze matching, ambiguity, deduplication, ZIP, and candidate-label rules.
+- Prove representative fixtures including West Stockbridge as a County
+  Subdivision and at least one incorporated Place.
+- Keep `result_type = "address" | "locality"`; ZIP-only results remain excluded.
+- Do not change production Pydantic or TypeScript models in Phase 00.
 
 ## Phase 01 - Backend Locality Candidates
 
 See `phases/phase-01-backend-locality-candidates.md`.
 
-- Parse MapTiler result type before deriving normalized address pieces.
-- Treat municipality/locality/place as streetless locality candidates.
-- Skip standalone postal-code-area results; still parse postal code when it is a
-  component of an address/locality result.
-- Preserve Census full-address parsing and identify its search scope honestly.
+- Add a cached loader/search service for the committed Census-derived locality
+  index.
+- Parse trailing state and optional ZIP, then match normalized locality name +
+  state across Place and County Subdivision rows.
+- Use optional ZCTA data only for Haversine-distance ranking of same-state
+  locality candidates; keep the selected locality internal point as the saved
+  coordinate and make no containment claim.
+- If no locality candidate exists, preserve the current Census oneline
+  full-address request and parsing.
+- Add `result_type` and ensure locality candidates always have
+  `street_address = null`.
+- Remove the dormant MapTiler geocoder branch/config after verifying it has no
+  deployed use; do not alter the separate keyless raster-map tile setup.
 - Write backend regression tests first, then implement the parser/response
   changes.
-- Keep the endpoint editor-only and keep provider keys server-side.
+- Keep the endpoint editor-only and its existing candidate/query limits.
 
 ## Phase 02 - Modal Town Search
 
@@ -91,6 +101,7 @@ See `phases/phase-03-verification-and-docs.md`.
   through the mounted Climate route.
 - Verify switching an existing street location to town-only clears the street.
 - Verify viewer/public output and map show only the town-level location.
+- Verify the feature works with no MapTiler configuration.
 - Run `graphify update .`, `simplify`, `docs-pass`, `make format`, and `make ci`.
 
 ## Likely Production Files
@@ -100,6 +111,8 @@ Backend:
 - `backend/features/project_location/models.py`
 - `backend/features/project_location/derive.py`
 - `backend/features/project_location/service.py`
+- `backend/features/project_location/data/` (new versioned Census-derived index)
+- `backend/scripts/` (reproducible Gazetteer importer/refresh command)
 - `backend/tests/test_project_location.py`
 
 Frontend:
@@ -118,16 +131,21 @@ Durable docs likely requiring reconciliation:
 
 ## Implementation Rules
 
-- Preserve full-address behavior and API compatibility through additive
-  response fields.
-- Test provider payload parsing from committed fixtures; do not require live
-  MapTiler calls in automated tests.
-- Do not infer locality vs address from commas or token count in the user query.
-- Do not persist the provider label as a street address.
+- Preserve full-address behavior and API compatibility through the additive
+  `result_type` field.
+- Test locality lookup from committed deterministic fixtures; automated tests
+  must not download Census files or call a locality API.
+- Identify locality input by a valid trailing state plus an exact normalized
+  locality-index match; do not classify by punctuation or token count alone.
+- Return a deterministic empty result for ZIP-only input without calling the
+  Census address geocoder.
+- Do not persist the candidate label as a street address.
 - Treat candidate application as replacement of the full address-component
   tuple; do not retain old city/state/postal values when the new candidate omits
   them.
 - Do not attach or replace climate sources when saving a location.
-- Keep town-center approximation visible to the editor.
-- Do not silently fall back from a configured-but-failing MapTiler request to
-  Census; that would change query capability without the user knowing.
+- Keep the Census locality internal-point approximation visible to the editor.
+- Treat Census Gazetteer `INTPTLAT`/`INTPTLONG` as representative internal
+  points, not guaranteed centroids.
+- Do not allow missing/corrupt bundled index data to silently disable locality
+  search; return `503 locality_index_unavailable` without address fallback.

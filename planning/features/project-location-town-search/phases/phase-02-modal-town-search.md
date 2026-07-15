@@ -1,6 +1,6 @@
 ---
 DATE: 2026-07-15
-TIME: 14:27 EDT
+TIME: 15:00 EDT
 STATUS: Planned
 AUTHOR: Codex
 SCOPE: Implement address-or-town modal UX and correct persistence semantics.
@@ -59,7 +59,7 @@ Form helper:
 - address candidate remains unchanged;
 - locality candidate clears an existing saved street;
 - locality candidate clears stale city/state/postal components that the new
-  provider result does not supply;
+  candidate does not supply;
 
 Modal:
 
@@ -67,11 +67,10 @@ Modal:
 - selecting locality keeps its label in the search input;
 - save PUT contains `street_address: null` when replacing an existing address;
 - city/state/postal and coordinates are included as needed;
-- street-only fallback no-match copy is accurate;
-- full-scope MapTiler zero-result copy remains address-or-town oriented;
-- configured MapTiler failure renders the existing actionable error path rather
-  than street-only fallback copy; `geocoder_unavailable` tells the editor to
-  retry or set coordinates manually;
+- no-match copy remains address-or-town oriented and does not claim a street is
+  required;
+- Census address failure renders the existing actionable error path;
+  `geocoder_unavailable` tells the editor to retry or set coordinates manually;
 - elevation auto-fill still runs from locality coordinates;
 - reopening an existing town-only location shows city/state/postal text;
 - late query/refetch does not overwrite in-progress `searchQuery` typing;
@@ -99,7 +98,6 @@ Then run `make frontend-dev-check` before live browser work.
 - A town candidate can be selected and saved with `street_address = null`.
 - A previous street does not survive switching to town-only.
 - Full-address save behavior remains green.
-- The UI accurately describes approximate locality coordinates and fallback
-  limitations.
+- The UI accurately describes the approximate Census locality internal point.
 - Search-query initialization/reopen behavior is deterministic and covered.
 - Custom-point privacy state transitions are deterministic and covered.
