@@ -1,0 +1,41 @@
+{
+  "artifacts": {
+    "census_localities_2025.csv": {
+      "rows": 50099,
+      "sha256": "0d1dd9987e83f89c5ff4d28b08865be74a8da457bfc9f3fef0992429b229f70b"
+    },
+    "census_zctas_2025.csv": {
+      "rows": 33791,
+      "sha256": "702776df0e7705bd5f039e2e863af715edde9ea8a38aefa886631f943d5e0d1e"
+    }
+  },
+  "county_subdivision_funcstat_allowlist": [
+    "A",
+    "B",
+    "C",
+    "G"
+  ],
+  "place_funcstat_allowlist": [
+    "A",
+    "B",
+    "C",
+    "G",
+    "S"
+  ],
+  "schema_version": 1,
+  "source_vintage": "2025",
+  "sources": {
+    "county_subdivisions": {
+      "sha256": "5e498edbf27e2426ec6661415851ea42c6a635f3cc3a2b79eccc2c3c19b2892e",
+      "url": "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/2025_Gaz_cousubs_national.zip"
+    },
+    "places": {
+      "sha256": "49644173a453469d9bd77fb7a493b027f87567e209edaf2078aac7543ac2ee29",
+      "url": "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/2025_Gaz_place_national.zip"
+    },
+    "zctas": {
+      "sha256": "51516a4283bab5cd2376eec75609ddc4b363a18297e8adeeaac7b03cf7c84dbe",
+      "url": "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/2025_Gaz_zcta_national.zip"
+    }
+  }
+}

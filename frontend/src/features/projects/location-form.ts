@@ -85,10 +85,10 @@ export function applyGeocodeCandidateToLocationValues(
     ...current,
     latitude: formatOptionalNumber(candidate.latitude, 6),
     longitude: formatOptionalNumber(candidate.longitude, 6),
-    siteAddress: candidate.street_address ?? candidate.label,
-    city: candidate.city ?? current.city,
-    state: candidate.state ?? current.state,
-    postalCode: candidate.postal_code ?? current.postalCode,
+    siteAddress: candidate.street_address ?? "",
+    city: candidate.city ?? "",
+    state: candidate.state ?? "",
+    postalCode: candidate.postal_code ?? "",
   };
 }
 

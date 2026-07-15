@@ -166,6 +166,7 @@ export type ElevationLookupResult = {
 };
 
 export type GeocodeProjectLocationCandidate = {
+  result_type: "address" | "locality";
   label: string;
   latitude: number;
   longitude: number;

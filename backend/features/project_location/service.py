@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, cast
 from uuid import UUID
 
+import structlog
 from fastapi import Request
 from psycopg import Connection
 from starlette import status
@@ -25,12 +26,14 @@ from features.project_climate_source import repository as climate_source_reposit
 from features.project_climate_source.service import attach_weather_source, upsert_source_by_kind
 from features.project_location import repository
 from features.project_location.derive import (
+    AddressGeocoderError,
     derive_location_geodata,
     fetch_elevation_geodata,
     fetch_json_url,
     geocode_address,
 )
 from features.project_location.epw import EPW_HEADER_PREFIX_BYTES, parse_epw_location_header
+from features.project_location.locality_index import LocalityIndexError
 from features.project_location.models import (
     ElevationLookupResponse,
     EpwDescriptor,
@@ -46,6 +49,8 @@ from features.project_location.sun_path import build_sun_path
 from features.project_location.sun_path_schemas import SunPathAndCompassDTOSchema
 from features.projects.access import ProjectAccess
 from features.shared.errors import api_error
+
+log = structlog.get_logger(__name__)
 
 COORDINATE_FIELDS = {"latitude", "longitude"}
 AUTO_ATTACH_PROVIDERS: tuple[PhDatasetProvider, ...] = ("phius", "phi")
@@ -243,8 +248,24 @@ def log_climate_source_derive(
 
 
 def geocode_project_location(payload: GeocodeProjectLocationRequest) -> GeocodeProjectLocationResponse:
-    """Resolve editor-entered address text into candidate coordinates."""
-    return GeocodeProjectLocationResponse(candidates=geocode_address(payload.query))
+    """Resolve editor-entered address or locality text into candidate coordinates."""
+    try:
+        candidates = geocode_address(payload.query)
+    except LocalityIndexError as exc:
+        log.error("project_location.locality_index_unavailable", reason=str(exc))
+        raise api_error(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "locality_index_unavailable",
+            "Town search is temporarily unavailable.",
+        ) from exc
+    except AddressGeocoderError as exc:
+        log.warning("project_location.address_geocoder_unavailable", reason=str(exc))
+        raise api_error(
+            status.HTTP_502_BAD_GATEWAY,
+            "geocoder_unavailable",
+            "Address search is temporarily unavailable; retry or enter coordinates manually.",
+        ) from exc
+    return GeocodeProjectLocationResponse(candidates=candidates)
 
 
 def lookup_site_elevation(latitude: float, longitude: float) -> ElevationLookupResponse:

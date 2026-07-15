@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
+  applyGeocodeCandidateToLocationValues,
   buildProjectLocationPayload,
   elevationCoordsKey,
   elevationInputFromMeters,
@@ -8,7 +9,8 @@ import {
   locationFormValuesFromLocation,
   reformatElevationForUnitSystem,
 } from "../location-form";
-import type { ProjectLocation } from "../types";
+import type { GeocodeProjectLocationCandidate, ProjectLocation } from "../types";
+import { ADDRESS_GEOCODE_CANDIDATE, LOCALITY_GEOCODE_CANDIDATE } from "../testing/locationFixtures";
 
 const LOCATION: ProjectLocation = {
   is_set: true,
@@ -34,6 +36,62 @@ const LOCATION: ProjectLocation = {
 };
 
 describe("project location form helpers", () => {
+  test("applies a locality as a complete streetless address tuple", () => {
+    const current = locationFormValuesFromLocation(LOCATION, "SI");
+    const locality = LOCALITY_GEOCODE_CANDIDATE;
+
+    expect(applyGeocodeCandidateToLocationValues(current, locality)).toMatchObject({
+      latitude: "42.312354",
+      longitude: "-73.388044",
+      siteAddress: "",
+      city: "West Stockbridge",
+      state: "MA",
+      postalCode: "01266",
+    });
+  });
+
+  test("clears stale address components that the selected candidate omits", () => {
+    const current = locationFormValuesFromLocation(LOCATION, "SI");
+    const candidate: GeocodeProjectLocationCandidate = {
+      ...LOCALITY_GEOCODE_CANDIDATE,
+      label: "Privacy Point, MA",
+      latitude: 42,
+      longitude: -73,
+      city: "Privacy Point",
+      postal_code: null,
+      full_site_address: "Privacy Point, MA",
+    };
+
+    expect(applyGeocodeCandidateToLocationValues(current, candidate)).toMatchObject({
+      siteAddress: "",
+      city: "Privacy Point",
+      state: "MA",
+      postalCode: "",
+    });
+  });
+
+  test("keeps normalized address fields without copying the presentation label", () => {
+    const current = locationFormValuesFromLocation(LOCATION, "SI");
+    const address: GeocodeProjectLocationCandidate = {
+      ...ADDRESS_GEOCODE_CANDIDATE,
+      label: "10 DISPLAY LABEL, NEW YORK, NY 10001",
+      latitude: 40.75,
+      longitude: -73.99,
+      street_address: "10 W 30TH ST",
+      city: "NEW YORK",
+      state: "NY",
+      postal_code: "10001",
+      full_site_address: "10 W 30TH ST, NEW YORK, NY 10001",
+    };
+
+    expect(applyGeocodeCandidateToLocationValues(current, address)).toMatchObject({
+      siteAddress: "10 W 30TH ST",
+      city: "NEW YORK",
+      state: "NY",
+      postalCode: "10001",
+    });
+  });
+
   test("round-trips elevation between metres and feet without converting angular fields", () => {
     const ipValues = locationFormValuesFromLocation(LOCATION, "IP");
 
