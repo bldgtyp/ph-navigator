@@ -16,7 +16,7 @@
   justify-content: flex-end;
 }
 
-/* Set-location modal — address-first entry point to the climate basis.
+/* Set-location modal — address-or-town entry point to the climate basis.
    Reuses the shared `.project-form` + `.settings-location-*` form styles;
    these rules add only the map preview and the advanced disclosure. */
 .set-location-modal {

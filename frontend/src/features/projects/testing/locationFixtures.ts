@@ -1,5 +1,5 @@
 import { vi } from "vitest";
-import type { ProjectDetail, ProjectLocation } from "../types";
+import type { GeocodeProjectLocationCandidate, ProjectDetail, ProjectLocation } from "../types";
 
 // Shared fixtures for the project-location editor tests, used by both the
 // Climate-tab section test and the (now read-only) settings-modal test.
@@ -78,6 +78,34 @@ export const SET_LOCATION: ProjectLocation = {
     climate_zone: "pnnl_2021_iecc",
   },
   updated_at: "2026-06-12T18:00:00Z",
+};
+
+export const ADDRESS_GEOCODE_CANDIDATE: GeocodeProjectLocationCandidate = {
+  result_type: "address",
+  label: "1 MAIN ST, WEST STOCKBRIDGE, MA, 01266",
+  latitude: 42.325,
+  longitude: -73.367,
+  street_address: "1 MAIN ST",
+  city: "WEST STOCKBRIDGE",
+  state: "MA",
+  postal_code: "01266",
+  full_site_address: "1 MAIN ST, WEST STOCKBRIDGE, MA 01266",
+  country: "US",
+  source: "census_geocoder",
+};
+
+export const LOCALITY_GEOCODE_CANDIDATE: GeocodeProjectLocationCandidate = {
+  result_type: "locality",
+  label: "West Stockbridge, MA 01266",
+  latitude: 42.312354,
+  longitude: -73.388044,
+  street_address: null,
+  city: "West Stockbridge",
+  state: "MA",
+  postal_code: "01266",
+  full_site_address: "West Stockbridge, MA 01266",
+  country: "US",
+  source: "census_gazetteer_2025",
 };
 
 export function jsonResponse(body: unknown, status = 200) {

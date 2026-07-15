@@ -58,7 +58,7 @@ architecture. It is not a cross-cutting refactor.
 
 ## Working Boundary
 
-Phases 00-01 are complete: the repository contains the deterministic 2025
-Census artifacts/importer plus the typed backend locality search and preserved
-Census full-address fallback. Phase 02 is the modal query/persistence and
-privacy-UX implementation.
+Phases 00-02 are complete: the repository contains the deterministic 2025
+Census artifacts/importer, typed backend locality search with preserved Census
+full-address fallback, and the modal query/persistence plus privacy UX. Phase 03
+is integrated verification, durable-doc reconciliation, and closeout.

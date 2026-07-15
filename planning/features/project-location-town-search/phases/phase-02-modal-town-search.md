@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-15
 TIME: 15:00 EDT
-STATUS: Planned
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Implement address-or-town modal UX and correct persistence semantics.
 RELATED:
@@ -13,6 +13,15 @@ RELATED:
 ---
 
 # Phase 02 - Modal Town Search
+
+## Result
+
+Complete. The modal now owns display-only search text separately from the
+persisted address tuple, applies typed address/locality candidates as full
+replacement values, and uses explicit saved/town/custom point privacy copy.
+Late location loads and stale geocode responses cannot overwrite newer user
+input. Search results expose Address/Town chips plus live-region status, and
+provider failures use an alert.
 
 ## Goal
 
@@ -92,6 +101,13 @@ pnpm exec tsc --noEmit
 ```
 
 Then run `make frontend-dev-check` before live browser work.
+
+Completed verification on 2026-07-15:
+
+- focused frontend suite: `31 passed`;
+- `pnpm exec tsc --noEmit`: passed;
+- `make frontend-dev-check`: passed with the 14 existing Fast Refresh warnings
+  and the existing Vite chunk-size warning.
 
 ## Exit Criteria
 

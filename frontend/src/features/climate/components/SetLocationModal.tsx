@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { MapPin, Search } from "lucide-react";
 import { errorMessage } from "../../../shared/lib/errors";
 import { ModalDialog } from "../../../shared/ui/ModalDialog";
@@ -7,6 +7,7 @@ import { useProjectLocationForm } from "../../projects/useProjectLocationForm";
 import { parseNumberInput } from "../../../lib/units/format";
 import type { GeocodeProjectLocationResponse } from "../../projects/types";
 import { ClimateMap } from "./ClimateMap";
+import { pointPresentationNote, type PointPresentation } from "./location-point-presentation";
 
 const COMMON_TIME_ZONES = [
   "America/New_York",
@@ -20,10 +21,9 @@ const COMMON_TIME_ZONES = [
 
 type LocationFormField = keyof ProjectLocationFormValues;
 
-// The address-first "Set location" modal: find the site by address (or set
-// coordinates directly for an address-less rural site), then save the site
-// geometry. Climate-source derivation and EPW file management live on their
-// own Climate pages so this modal stays focused.
+// Find an address or privacy-preserving Census locality point, then save the
+// project geometry. Climate-source derivation and EPW file management remain
+// on their own Climate pages so this modal stays focused.
 export function SetLocationModal({
   projectId,
   onClose,
@@ -34,39 +34,55 @@ export function SetLocationModal({
   const form = useProjectLocationForm(projectId);
   const { values, unitSystem } = form;
   const [candidates, setCandidates] = useState<GeocodeProjectLocationResponse["candidates"]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [pointPresentation, setPointPresentation] = useState<PointPresentation>("saved");
   const [geocodeError, setGeocodeError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const searchInitialized = useRef(false);
+  const searchEdited = useRef(false);
+  const searchRequestSeq = useRef(0);
+
+  useEffect(() => {
+    if (searchInitialized.current || !form.location) return;
+    searchInitialized.current = true;
+    if (searchEdited.current) return;
+    setSearchQuery(form.location.full_site_address ?? "");
+  }, [form.location]);
 
   const hasCoords = values.latitude.trim() !== "" && values.longitude.trim() !== "";
   const latitude = parseNumberInput(values.latitude);
   const longitude = parseNumberInput(values.longitude);
   const coords = latitude !== null && longitude !== null ? { latitude, longitude } : null;
   const busy = form.isSaving;
-  const handleField = (field: LocationFormField) => (event: ChangeEvent<HTMLInputElement>) =>
+  const handleField = (field: LocationFormField) => (event: ChangeEvent<HTMLInputElement>) => {
+    if (field === "latitude" || field === "longitude") setPointPresentation("custom");
     form.updateField(field, event.target.value);
+  };
   // Pin-drop refines the coordinates: write the clicked point back into the
   // lat/long fields (live map only — the fallback box has no projection).
   const dropPin = (lat: number, lon: number) => {
+    setPointPresentation("custom");
     form.updateField("latitude", lat.toFixed(6));
     form.updateField("longitude", lon.toFixed(6));
   };
 
   const search = async () => {
+    const requestSeq = (searchRequestSeq.current += 1);
     setGeocodeError(null);
     setCandidates([]);
     try {
-      // Geocode exactly what the editor typed — the single address field holds
-      // the full address, so appending stale city/state would corrupt the query.
-      const response = await form.geocodeAddress(values.siteAddress.trim());
+      const response = await form.geocodeAddress(searchQuery.trim());
+      if (requestSeq !== searchRequestSeq.current) return;
       setCandidates(response.candidates);
       if (response.candidates.length === 0) {
         setGeocodeError(
-          "No matches — search needs a full street address (e.g. 123 Main St, City, ST). " +
-            "For a site without an address, set the coordinates directly below.",
+          "No address or town matches. Try a full street address or City, ST ZIP; " +
+            "you can also set coordinates directly below.",
         );
       }
     } catch (error) {
-      setGeocodeError(errorMessage(error, "Could not search for that address."));
+      if (requestSeq !== searchRequestSeq.current) return;
+      setGeocodeError(errorMessage(error, "Could not search for that address or town."));
     }
   };
 
@@ -87,8 +103,8 @@ export function SetLocationModal({
         onSubmit={(event) => event.preventDefault()}
       >
         <p className="modal-subtitle">
-          Enter the building&rsquo;s address to find its coordinates and climate basis — or set
-          coordinates directly for a site without a mailing address.
+          Search a full address or choose an approximate town-level Census point for privacy and
+          climate lookup. You can also set coordinates directly.
         </p>
         {form.loadError ? (
           <p className="form-error">
@@ -97,19 +113,25 @@ export function SetLocationModal({
         ) : null}
 
         <label>
-          <span>Site address</span>
+          <span>Address or town</span>
           <div className="settings-location-inline-control">
             <input
-              value={values.siteAddress}
+              value={searchQuery}
               maxLength={500}
-              onChange={handleField("siteAddress")}
-              placeholder="123 Main St, City, ST"
+              onChange={(event) => {
+                searchRequestSeq.current += 1;
+                searchEdited.current = true;
+                setCandidates([]);
+                setGeocodeError(null);
+                setSearchQuery(event.target.value);
+              }}
+              placeholder="123 Main St, City, ST — or City, ST ZIP"
             />
             <button
               type="button"
               className="secondary-button"
               onClick={() => void search()}
-              disabled={!values.siteAddress.trim() || form.isGeocoding}
+              disabled={!searchQuery.trim() || form.isGeocoding}
             >
               <Search size={16} aria-hidden="true" />
               {form.isGeocoding ? "Searching…" : "Search"}
@@ -117,7 +139,7 @@ export function SetLocationModal({
           </div>
         </label>
         {candidates.length > 0 ? (
-          <div className="settings-location-candidates">
+          <div className="settings-location-candidates" aria-label="Location search results">
             {candidates.map((candidate) => (
               <button
                 type="button"
@@ -125,16 +147,29 @@ export function SetLocationModal({
                 key={`${candidate.latitude}-${candidate.longitude}-${candidate.label}`}
                 onClick={() => {
                   form.applyGeocodeCandidate(candidate);
+                  searchEdited.current = true;
+                  setSearchQuery(candidate.label);
+                  setPointPresentation(candidate.result_type);
                   setCandidates([]);
                 }}
               >
                 <MapPin size={16} aria-hidden="true" />
-                {candidate.label}
+                <span>{candidate.label}</span>
+                <span className="chip chip--sm chip--outline">
+                  {candidate.result_type === "locality" ? "Town" : "Address"}
+                </span>
               </button>
             ))}
           </div>
         ) : null}
-        {geocodeError ? <p className="form-error">{geocodeError}</p> : null}
+        <p className="visually-hidden" role="status" aria-live="polite">
+          {candidates.length > 0 ? `${candidates.length} location search results available.` : ""}
+        </p>
+        {geocodeError ? (
+          <p className="form-error" role="alert">
+            {geocodeError}
+          </p>
+        ) : null}
 
         <ClimateMap
           className="set-location-map"
@@ -142,11 +177,7 @@ export function SetLocationModal({
           project={coords}
           onPickPoint={dropPin}
         />
-        <p className="form-note">
-          {coords
-            ? "Click the map to drop a pin and refine the coordinates."
-            : "Set an address or coordinates below to place the project, then drop a pin to refine."}
-        </p>
+        <p className="form-note">{pointPresentationNote(pointPresentation, Boolean(coords))}</p>
 
         <div className="settings-location-grid">
           <label>
