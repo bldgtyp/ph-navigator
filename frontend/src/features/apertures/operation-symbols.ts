@@ -12,7 +12,16 @@ export type Segment = { x1: number; y1: number; x2: number; y2: number };
 export type ViewDirection = "exterior" | "interior";
 
 const ARROW_SHAFT_FRACTION = 0.8;
-const ARROW_HEAD_FRACTION = 0.1;
+// Slim arrowhead: length along the shaft is greater than its half-width across
+// the shaft, so the head reads as a narrow point rather than the old stubby,
+// wider-than-long wedge.
+const ARROW_HEAD_LENGTH_FRACTION = 0.13;
+const ARROW_HEAD_HALF_WIDTH_FRACTION = 0.05;
+// Perpendicular nudge that shifts the arrow off the glazing center so the
+// element's name pill (also centered) no longer covers it: horizontal arrows
+// drop below center, vertical arrows step beside it. Expressed as a fraction of
+// the perpendicular glazing dimension so the whole arrow stays inside the rect.
+const ARROW_LABEL_CLEARANCE_FRACTION = 0.2;
 
 export function flipForView(
   direction: ApertureOperationDirection,
@@ -47,9 +56,11 @@ export type Arrow = {
   head: [{ x: number; y: number }, { x: number; y: number }, { x: number; y: number }];
 };
 
-/** Centered arrow pointing in the named direction. Shaft length is
- *  80% of the glazing's smaller dimension; head edges are 10% of the
- *  same. Returned as one segment + a 3-point head polygon. */
+/** Slim arrow pointing in the named direction, nudged off the glazing
+ *  center so the centered name pill does not cover it. Shaft length is
+ *  80% of the glazing's smaller dimension; the head is a narrow point
+ *  (length 13% / half-width 5% of that dimension). Returned as one
+ *  segment + a 3-point head polygon. */
 export function slideArrow(
   glazing: RectLike,
   direction: ApertureOperationDirection,
@@ -60,7 +71,8 @@ export function slideArrow(
   const cy = glazing.y + glazing.height / 2;
   const minDim = Math.min(glazing.width, glazing.height);
   const half = (minDim * ARROW_SHAFT_FRACTION) / 2;
-  const head = minDim * ARROW_HEAD_FRACTION;
+  const headLen = minDim * ARROW_HEAD_LENGTH_FRACTION;
+  const headHalfWidth = minDim * ARROW_HEAD_HALF_WIDTH_FRACTION;
 
   let shaft: Segment;
   let tip: { x: number; y: number };
@@ -68,16 +80,18 @@ export function slideArrow(
   let backRight: { x: number; y: number };
   if (side === "left" || side === "right") {
     const dir = side === "right" ? 1 : -1;
-    shaft = { x1: cx - dir * half, y1: cy, x2: cx + dir * half, y2: cy };
+    const y = cy + glazing.height * ARROW_LABEL_CLEARANCE_FRACTION;
+    shaft = { x1: cx - dir * half, y1: y, x2: cx + dir * half, y2: y };
     tip = { x: shaft.x2, y: shaft.y2 };
-    backLeft = { x: tip.x - dir * head, y: tip.y - head };
-    backRight = { x: tip.x - dir * head, y: tip.y + head };
+    backLeft = { x: tip.x - dir * headLen, y: tip.y - headHalfWidth };
+    backRight = { x: tip.x - dir * headLen, y: tip.y + headHalfWidth };
   } else {
     const dir = side === "down" ? 1 : -1;
-    shaft = { x1: cx, y1: cy - dir * half, x2: cx, y2: cy + dir * half };
+    const x = cx + glazing.width * ARROW_LABEL_CLEARANCE_FRACTION;
+    shaft = { x1: x, y1: cy - dir * half, x2: x, y2: cy + dir * half };
     tip = { x: shaft.x2, y: shaft.y2 };
-    backLeft = { x: tip.x - head, y: tip.y - dir * head };
-    backRight = { x: tip.x + head, y: tip.y - dir * head };
+    backLeft = { x: tip.x - headHalfWidth, y: tip.y - dir * headLen };
+    backRight = { x: tip.x + headHalfWidth, y: tip.y - dir * headLen };
   }
   return { shaft, head: [tip, backLeft, backRight] };
 }

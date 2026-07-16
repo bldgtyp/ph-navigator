@@ -27,21 +27,6 @@ export function previousZoomStep(current: number): number {
   return ZOOM_MIN;
 }
 
-// Snap an arbitrary zoom value to the nearest discrete step. Used by `Fit` so
-// the resulting state is always one of the canonical `ZOOM_STEPS` entries.
-export function snapZoomToStep(target: number): number {
-  let best = ZOOM_STEPS[0] as number;
-  let bestDelta = Math.abs(target - best);
-  for (const step of ZOOM_STEPS) {
-    const delta = Math.abs(target - step);
-    if (delta < bestDelta) {
-      best = step;
-      bestDelta = delta;
-    }
-  }
-  return best;
-}
-
 function zoomBoundary(index: number): (typeof ZOOM_STEPS)[number] {
   const step = ZOOM_STEPS[index];
   if (step === undefined) throw new Error("Zoom steps must define min and max values.");

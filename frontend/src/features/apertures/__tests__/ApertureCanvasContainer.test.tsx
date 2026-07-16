@@ -186,6 +186,8 @@ describe("ApertureCanvasContainer", () => {
   it("preserves the user zoom level when switching aperture types", () => {
     const clientWidthSpy = vi.spyOn(HTMLElement.prototype, "clientWidth", "get");
     clientWidthSpy.mockReturnValue(500);
+    const clientHeightSpy = vi.spyOn(HTMLElement.prototype, "clientHeight", "get");
+    clientHeightSpy.mockReturnValue(500);
 
     try {
       const { rerender } = render(
@@ -208,12 +210,15 @@ describe("ApertureCanvasContainer", () => {
       expect(screen.getByTestId("aperture-canvas-zoom")).toHaveTextContent("200%");
     } finally {
       clientWidthSpy.mockRestore();
+      clientHeightSpy.mockRestore();
     }
   });
 
   it("preserves the user zoom level after the canvas unmounts and remounts", () => {
     const clientWidthSpy = vi.spyOn(HTMLElement.prototype, "clientWidth", "get");
     clientWidthSpy.mockReturnValue(500);
+    const clientHeightSpy = vi.spyOn(HTMLElement.prototype, "clientHeight", "get");
+    clientHeightSpy.mockReturnValue(500);
 
     try {
       const { rerender } = render(
@@ -236,6 +241,7 @@ describe("ApertureCanvasContainer", () => {
       expect(screen.getByTestId("aperture-canvas-zoom")).toHaveTextContent("200%");
     } finally {
       clientWidthSpy.mockRestore();
+      clientHeightSpy.mockRestore();
     }
   });
 
