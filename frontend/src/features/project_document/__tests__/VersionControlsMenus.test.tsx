@@ -3,7 +3,7 @@ import { describe, expect, test, vi } from "vitest";
 import { ProjectActionsMenu, VersionPathControls } from "../components/VersionControlsMenus";
 
 describe("VersionControlsMenus", () => {
-  test("version action trigger uses the shared portaled tooltip", () => {
+  test("version action trigger uses the shared portaled tooltip", async () => {
     render(
       <VersionPathControls
         activeVersionName="Working"
@@ -18,13 +18,14 @@ describe("VersionControlsMenus", () => {
 
     fireEvent.mouseEnter(trigger);
 
-    const tooltip = screen.getByRole("tooltip");
+    // The version-path trigger opens on a long hover delay (anti-flicker).
+    const tooltip = await screen.findByRole("tooltip", {}, { timeout: 2000 });
     expect(tooltip).toHaveTextContent("Open project and version actions.");
     expect(portalRoot(tooltip)?.parentElement).toBe(document.body);
     expect(trigger).toHaveAttribute("aria-describedby", tooltip.id);
   });
 
-  test("project action menu item tooltips portal outside the menu", () => {
+  test("project action menu item tooltips portal outside the menu", async () => {
     render(
       <ProjectActionsMenu
         projectId="project-1"
@@ -49,7 +50,8 @@ describe("VersionControlsMenus", () => {
 
     fireEvent.mouseEnter(item);
 
-    const tooltip = screen.getByRole("tooltip");
+    // Menu-item help tooltips open on a long hover delay.
+    const tooltip = await screen.findByRole("tooltip", {}, { timeout: 2000 });
     expect(tooltip).toHaveTextContent("Open the version list to switch or compare versions.");
     expect(menu.contains(tooltip)).toBe(false);
     expect(portalRoot(tooltip)?.parentElement).toBe(document.body);

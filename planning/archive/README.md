@@ -3,6 +3,10 @@
 Append-only audit trail. Durable decisions live in `context/`; this records
 how and when each feature packet landed. Newest first. Grep by slug.
 
+## 2026-07-15
+
+- `tooltip-hover-delays` - packet 1 of the 2026-07-15 UI-tweak batch (items 4/9/10). Added named `TOOLTIP_HOVER_DELAY` tiers (`medium` 500ms / `long` 900ms) to the shared `Tooltip` primitive and converged the Apertures + Envelope sidebars onto it, deleting both bespoke JS-portal tooltips, their CSS, and the orphaned `[data-sidebar-tooltip]` hint rules (toolbar variant kept) for identical font/color/size/top-placement parity (net -247 lines). Tiers applied: element name = `medium`; row-action buttons + `version-path-trigger` + version-control help tooltips (project-actions menu items, Save Version / Save As, Uncommitted-changes label) = `long`. Browser verification surfaced and fixed a **general** lingering bug (every tooltip app-wide): Radix restores focus to the trigger on popover close, which re-fired the primitive's `onFocus` and re-opened the tooltip — fixed with `onCloseAutoFocus` preventDefault on `Popover.Content` (browser-verified; jsdom can't reproduce Radix focus restoration). Tests migrated to the shared `.app-tooltip` DOM with async hover asserts; `make ci` green. Remaining batch packets (apertures-builder-fixes, datatable-ui-fixes, spaces-tab-rename-reorder, sidebar-organization, project-public-alias, viewer-display-modes) stay in `planning/`. (squash-merge closeout 2026-07-15)
+
 ## 2026-07-09
 
 - `spaces-ventilator-link` - built-in Rooms `Ventilator` linked-record field (`custom_links.ventilator_id`) targeting `tables.equipment.ervs`, with single-link cardinality, room-side picker/pills, Ventilators-side inverse room visibility/editing, silent room-link cleanup when a ventilator is deleted, shared frontend inverse-link helpers, shared backend `custom_links` delete-cascade helper, focused backend/frontend tests, typechecks, graphify, simplify, and docs-pass. (370e6795 + closeout)

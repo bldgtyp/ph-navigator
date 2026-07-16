@@ -17,6 +17,18 @@ import {
 
 export type TooltipPlacement = "top" | "bottom" | "left" | "right";
 
+/**
+ * Named hover-open delay tiers (ms) for the {@link Tooltip} `hoverDelay` prop.
+ * Use these instead of ad-hoc numbers so hover latency stays consistent across
+ * the app. `medium` suits element-name hints; `long` suits row-action buttons
+ * and other controls that should only reveal on a deliberate hover (they
+ * otherwise flicker as the pointer sweeps across a dense list).
+ */
+export const TOOLTIP_HOVER_DELAY = {
+  medium: 500,
+  long: 900,
+} as const;
+
 type TooltipTriggerProps = {
   "aria-describedby"?: string;
   onBlur?: (event: FocusEvent<HTMLElement>) => void;
@@ -134,6 +146,11 @@ export function Tooltip({
           collisionPadding={viewportPadding}
           onClick={(event) => event.preventDefault()}
           onOpenAutoFocus={(event) => event.preventDefault()}
+          // Radix restores focus to the trigger when the popover closes; that
+          // programmatic focus would fire our onFocus and immediately re-open
+          // the tooltip (it "lingers" after the pointer leaves). Suppress it so
+          // a hover-opened tooltip closes cleanly on mouse-leave.
+          onCloseAutoFocus={(event) => event.preventDefault()}
         >
           {content}
           <Popover.Arrow className="app-tooltip__arrow" />

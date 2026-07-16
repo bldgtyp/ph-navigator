@@ -1,6 +1,6 @@
 import { ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
-import { Tooltip } from "../../../shared/ui";
+import { Tooltip, TOOLTIP_HOVER_DELAY } from "../../../shared/ui";
 import type { ProjectVersion } from "../../projects/types";
 import { projectDownloadUrl } from "../api";
 
@@ -33,7 +33,11 @@ export function VersionPathControls({
   return (
     <div className="version-path-inline">
       <span className="version-path-label">{label}</span>
-      <Tooltip content={PROJECT_ACTIONS_HELP} placement="bottom">
+      <Tooltip
+        content={PROJECT_ACTIONS_HELP}
+        placement="bottom"
+        hoverDelay={TOOLTIP_HOVER_DELAY.long}
+      >
         <button
           type="button"
           className="version-path-trigger"
@@ -66,14 +70,14 @@ export function VersionShellControls({
 }) {
   return (
     <div className="shell-controls">
-      <Tooltip content={DIRTY_STATE_HELP} placement="bottom">
+      <Tooltip content={DIRTY_STATE_HELP} placement="bottom" hoverDelay={TOOLTIP_HOVER_DELAY.long}>
         <span className="save-state dirty" aria-description={DIRTY_STATE_HELP} tabIndex={0}>
           <span className="save-state-dot" aria-hidden="true" />
           Uncommitted changes
         </span>
       </Tooltip>
       {isLocked ? (
-        <Tooltip content={SAVE_AS_HELP} placement="bottom">
+        <Tooltip content={SAVE_AS_HELP} placement="bottom" hoverDelay={TOOLTIP_HOVER_DELAY.long}>
           <button
             type="button"
             onClick={onSaveAs}
@@ -84,7 +88,7 @@ export function VersionShellControls({
           </button>
         </Tooltip>
       ) : (
-        <Tooltip content={SAVE_HELP} placement="bottom">
+        <Tooltip content={SAVE_HELP} placement="bottom" hoverDelay={TOOLTIP_HOVER_DELAY.long}>
           <button
             type="button"
             onClick={onSave}
@@ -202,7 +206,7 @@ function MenuActionButton({
   onClick: () => void;
 }) {
   return (
-    <Tooltip content={help} placement="left">
+    <Tooltip content={help} placement="left" hoverDelay={TOOLTIP_HOVER_DELAY.long}>
       <button
         type="button"
         className="menu-action"
@@ -229,7 +233,7 @@ function MenuActionLink({
   onClick: () => void;
 }) {
   return (
-    <Tooltip content={help} placement="left">
+    <Tooltip content={help} placement="left" hoverDelay={TOOLTIP_HOVER_DELAY.long}>
       <a
         className="menu-action download-link"
         role="menuitem"

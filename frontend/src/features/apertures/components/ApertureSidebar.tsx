@@ -8,16 +8,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useState } from "react";
-import { createPortal } from "react-dom";
 import { InlineHeaderNameEditor } from "../../../shared/ui/InlineHeaderNameEditor";
+import { Tooltip, TOOLTIP_HOVER_DELAY } from "../../../shared/ui";
 import { nameCollides } from "../lib";
 import type { ApertureTypeEntry } from "../types";
-
-type SidebarTooltipState = {
-  label: string;
-  left: number;
-  top: number;
-};
 
 export function ApertureSidebar({
   apertures,
@@ -45,27 +39,18 @@ export function ApertureSidebar({
   onDelete: (aperture: ApertureTypeEntry) => void;
 }) {
   const [editingApertureId, setEditingApertureId] = useState<string | null>(null);
-  const [tooltip, setTooltip] = useState<SidebarTooltipState | null>(null);
-  const showTooltip = (label: string, target: HTMLElement) => {
-    const rect = target.getBoundingClientRect();
-    setTooltip({
-      label,
-      left: rect.left + rect.width / 2,
-      top: rect.top - 8,
-    });
-  };
-  const hideTooltip = () => setTooltip(null);
   const addButton = canEdit ? (
-    <button
-      type="button"
-      className={collapsed ? "icon-button aperture-sidebar__add-collapsed" : "icon-button"}
-      disabled={actionDisabled}
-      aria-label="Add aperture type"
-      data-sidebar-tooltip="Add aperture type"
-      onClick={onAdd}
-    >
-      <Plus size={16} aria-hidden="true" />
-    </button>
+    <Tooltip content="Add aperture type" placement={collapsed ? "right" : "bottom"}>
+      <button
+        type="button"
+        className={collapsed ? "icon-button aperture-sidebar__add-collapsed" : "icon-button"}
+        disabled={actionDisabled}
+        aria-label="Add aperture type"
+        onClick={onAdd}
+      >
+        <Plus size={16} aria-hidden="true" />
+      </button>
+    </Tooltip>
   ) : null;
 
   return (
@@ -76,20 +61,21 @@ export function ApertureSidebar({
       <div className="aperture-sidebar__header">
         {collapsed ? null : <h2>Aperture Types</h2>}
         <div className="aperture-sidebar__tools">
-          <button
-            id="aperture-sidebar-toggle"
-            type="button"
-            className="icon-button"
-            aria-label={collapsed ? "Expand aperture sidebar" : "Collapse aperture sidebar"}
-            data-sidebar-tooltip={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            onClick={onToggleCollapsed}
-          >
-            {collapsed ? (
-              <PanelLeftOpen size={16} aria-hidden="true" />
-            ) : (
-              <PanelLeftClose size={16} aria-hidden="true" />
-            )}
-          </button>
+          <Tooltip content={collapsed ? "Expand sidebar" : "Collapse sidebar"} placement="bottom">
+            <button
+              id="aperture-sidebar-toggle"
+              type="button"
+              className="icon-button"
+              aria-label={collapsed ? "Expand aperture sidebar" : "Collapse aperture sidebar"}
+              onClick={onToggleCollapsed}
+            >
+              {collapsed ? (
+                <PanelLeftOpen size={16} aria-hidden="true" />
+              ) : (
+                <PanelLeftClose size={16} aria-hidden="true" />
+              )}
+            </button>
+          </Tooltip>
           {collapsed ? null : addButton}
         </div>
       </div>
@@ -127,13 +113,13 @@ export function ApertureSidebar({
                     onSubmit={(name) => onRename(aperture, name)}
                   />
                 ) : (
-                  <span
-                    className="aperture-sidebar__item-name"
-                    onPointerEnter={(event) => showTooltip(aperture.name, event.currentTarget)}
-                    onPointerLeave={hideTooltip}
+                  <Tooltip
+                    content={aperture.name}
+                    placement="top"
+                    hoverDelay={TOOLTIP_HOVER_DELAY.medium}
                   >
-                    {aperture.name}
-                  </span>
+                    <span className="aperture-sidebar__item-name">{aperture.name}</span>
+                  </Tooltip>
                 )}
                 {canEdit && !isEditing ? (
                   <span
@@ -143,30 +129,21 @@ export function ApertureSidebar({
                   >
                     <SidebarActionButton
                       label="Rename aperture type"
-                      tooltip="Rename aperture type"
                       icon={Pencil}
                       disabled={actionDisabled}
-                      onHideTooltip={hideTooltip}
-                      onShowTooltip={showTooltip}
                       onClick={() => setEditingApertureId(aperture.id)}
                     />
                     <SidebarActionButton
                       label="Duplicate aperture type"
-                      tooltip="Duplicate aperture type"
                       icon={Copy}
                       disabled={actionDisabled}
-                      onHideTooltip={hideTooltip}
-                      onShowTooltip={showTooltip}
                       onClick={() => onDuplicate(aperture)}
                     />
                     <SidebarActionButton
                       label="Delete aperture type"
-                      tooltip="Delete aperture type"
                       icon={Trash2}
                       disabled={actionDisabled}
                       danger
-                      onHideTooltip={hideTooltip}
-                      onShowTooltip={showTooltip}
                       onClick={() => onDelete(aperture)}
                     />
                   </span>
@@ -177,58 +154,39 @@ export function ApertureSidebar({
         </ul>
       )}
       {collapsed ? addButton : null}
-      {tooltip
-        ? createPortal(
-            <div
-              className="aperture-sidebar__floating-tooltip"
-              role="tooltip"
-              style={{ left: tooltip.left, top: tooltip.top }}
-            >
-              {tooltip.label}
-            </div>,
-            document.body,
-          )
-        : null}
     </aside>
   );
 }
 
 function SidebarActionButton({
   label,
-  tooltip,
   icon: Icon,
   disabled = false,
   danger = false,
-  onHideTooltip,
-  onShowTooltip,
   onClick,
 }: {
   label: string;
-  tooltip: string;
   icon: LucideIcon;
   disabled?: boolean;
   danger?: boolean;
-  onHideTooltip: () => void;
-  onShowTooltip: (label: string, target: HTMLElement) => void;
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
-      className={danger ? "aperture-sidebar__row-action is-danger" : "aperture-sidebar__row-action"}
-      aria-label={label}
-      disabled={disabled}
-      onBlur={onHideTooltip}
-      onClick={(event) => {
-        event.stopPropagation();
-        onHideTooltip();
-        onClick();
-      }}
-      onFocus={(event) => onShowTooltip(tooltip, event.currentTarget)}
-      onPointerEnter={(event) => onShowTooltip(tooltip, event.currentTarget)}
-      onPointerLeave={onHideTooltip}
-    >
-      <Icon size={13} aria-hidden="true" />
-    </button>
+    <Tooltip content={label} placement="top" hoverDelay={TOOLTIP_HOVER_DELAY.long}>
+      <button
+        type="button"
+        className={
+          danger ? "aperture-sidebar__row-action is-danger" : "aperture-sidebar__row-action"
+        }
+        aria-label={label}
+        disabled={disabled}
+        onClick={(event) => {
+          event.stopPropagation();
+          onClick();
+        }}
+      >
+        <Icon size={13} aria-hidden="true" />
+      </button>
+    </Tooltip>
   );
 }

@@ -1,0 +1,50 @@
+---
+DATE: 2026-07-15
+TIME: 20:44 EDT
+STATUS: Active — captured, not scoped
+AUTHOR: Claude (Opus 4.8) for Ed May
+SCOPE: Three 3D model-viewer display changes: (13) fix the Spaces lens material
+  to match the Building view's standard material, (14) add the Airflow color mode
+  to the Floor Areas lens, (15) research + add a new "color by Ventilator (ERV)"
+  mode.
+RELATED:
+  - frontend/src/features/model_viewer/lib/lenses.ts (per-lens material + color modes)
+  - frontend/src/features/model_viewer/scene/BatchedLens.tsx
+  - frontend/src/features/model_viewer/scene/BuildingLens.tsx (standard material reference)
+  - frontend/src/features/model_viewer/scene/LensBatch.ts
+  - frontend/src/features/model_viewer/store.ts (active lens + color mode state)
+  - frontend/src/features/model_viewer/components/LegendCard.tsx (airflow legend)
+  - frontend/src/features/model_viewer/components/LensBar.tsx
+  - memory: model-viewer batched substrate (build on LensBatch/BatchedLens, not per-face meshes)
+  - memory: MEP element-selection PRD (precedent for "upstream data dropped by PHN schema")
+---
+
+# 3D viewer display modes
+
+## Read order
+
+1. `PRD.md` — the three changes, the reuse story, the research gate.
+2. `STATUS.md` — disposition + phase map.
+
+## One-liner
+
+Fix the Spaces lens material (bug), extend the existing Airflow color mode to
+Floor Areas (easy win), and research/add a new "color by Ventilator (ERV)" mode
+(harder — data-availability gated).
+
+## Items folded in
+
+- **Item 13 (bug)** — Spaces lens renders volumes with a weird semi-transparent
+  green material; should use the **standard material** from the Building view.
+- **Item 14 (feature)** — the Spaces "Airflow" color mode (supply / extract /
+  none) works well; add the **same mode to the Floor Areas** lens.
+- **Item 15 (feature, research-gated)** — add a **new "color by Ventilator (ERV)"
+  mode**: color each space by its assigned ventilation unit. Needs research to
+  confirm the space→ERV mapping survives into the PHN document schema.
+
+## Why one packet
+
+All three touch the same lens machinery (`lenses.ts`, `BatchedLens`,
+`store.ts`, legend). 13 is a quick material swap; 14 reuses the airflow color
+path on another lens; 15 adds a sibling color mode but carries a data-research
+phase the others don't.

@@ -12,25 +12,11 @@ import {
   Plus,
   type LucideIcon,
 } from "lucide-react";
-import {
-  useState,
-  type Dispatch,
-  type FocusEvent,
-  type MouseEvent,
-  type SetStateAction,
-} from "react";
-import { createPortal } from "react-dom";
+import { useState } from "react";
 import { NavLink, createSearchParams } from "react-router-dom";
-import { InlineHeaderNameEditor, Tooltip } from "../../../shared/ui";
+import { InlineHeaderNameEditor, Tooltip, TOOLTIP_HOVER_DELAY } from "../../../shared/ui";
 import { envelopeAssemblyPath } from "../paths";
 import type { Assembly, AssemblyType } from "../types";
-
-type NameTooltipState = {
-  assemblyId: string;
-  left: number;
-  name: string;
-  top: number;
-};
 
 export function EnvelopeSidebar({
   projectId,
@@ -63,7 +49,6 @@ export function EnvelopeSidebar({
 }) {
   const query = createSearchParams(search).toString();
   const [editingAssemblyId, setEditingAssemblyId] = useState<string | null>(null);
-  const [nameTooltip, setNameTooltip] = useState<NameTooltipState | null>(null);
   const addAssemblyButton = (
     <Tooltip content="Add assembly" placement={collapsed ? "right" : "bottom"}>
       <button
@@ -113,8 +98,6 @@ export function EnvelopeSidebar({
             const isEditing = editingAssemblyId === assembly.id;
             const typeIcon = assemblyTypeIcon(assembly.type);
             const AssemblyTypeIcon = typeIcon.icon;
-            const tooltipId = assemblyNameTooltipId(assembly.id);
-            const isNameTooltipVisible = nameTooltip?.assemblyId === assembly.id;
             return (
               <div
                 key={assembly.id}
@@ -137,27 +120,28 @@ export function EnvelopeSidebar({
                     onSubmit={(name) => onRename(assembly, name)}
                   />
                 ) : (
-                  <NavLink
-                    className="envelope-sidebar-row-name"
-                    data-assembly-type={assembly.type}
-                    aria-describedby={isNameTooltipVisible ? tooltipId : undefined}
-                    onBlur={() => hideNameTooltip(assembly.id, setNameTooltip)}
-                    onFocus={(event) => showNameTooltip(assembly, event, setNameTooltip)}
-                    onMouseEnter={(event) => showNameTooltip(assembly, event, setNameTooltip)}
-                    onMouseLeave={() => hideNameTooltip(assembly.id, setNameTooltip)}
-                    to={{
-                      pathname: envelopeAssemblyPath(projectId, assembly.id),
-                      search: query,
-                    }}
+                  <Tooltip
+                    content={assembly.name}
+                    placement="top"
+                    hoverDelay={TOOLTIP_HOVER_DELAY.medium}
                   >
-                    <AssemblyTypeIcon
-                      className="envelope-sidebar-row-type-icon"
-                      size={14}
-                      strokeWidth={1.8}
-                      aria-hidden="true"
-                    />
-                    <span className="envelope-sidebar-row-name-text">{assembly.name}</span>
-                  </NavLink>
+                    <NavLink
+                      className="envelope-sidebar-row-name"
+                      data-assembly-type={assembly.type}
+                      to={{
+                        pathname: envelopeAssemblyPath(projectId, assembly.id),
+                        search: query,
+                      }}
+                    >
+                      <AssemblyTypeIcon
+                        className="envelope-sidebar-row-type-icon"
+                        size={14}
+                        strokeWidth={1.8}
+                        aria-hidden="true"
+                      />
+                      <span className="envelope-sidebar-row-name-text">{assembly.name}</span>
+                    </NavLink>
+                  </Tooltip>
                 )}
                 {canEdit && !isEditing ? (
                   <span
@@ -168,7 +152,6 @@ export function EnvelopeSidebar({
                     <SidebarActionButton
                       id={`assembly-sidebar-rename-${assembly.id}`}
                       label="Rename assembly"
-                      tooltip="Rename assembly"
                       icon={Pencil}
                       disabled={actionDisabled}
                       onClick={() => setEditingAssemblyId(assembly.id)}
@@ -176,7 +159,6 @@ export function EnvelopeSidebar({
                     <SidebarActionButton
                       id={`assembly-sidebar-change-type-${assembly.id}`}
                       label="Change assembly type"
-                      tooltip="Change assembly type"
                       icon={Shapes}
                       disabled={actionDisabled}
                       onClick={() => onTypeChange(assembly)}
@@ -184,7 +166,6 @@ export function EnvelopeSidebar({
                     <SidebarActionButton
                       id={`assembly-sidebar-duplicate-${assembly.id}`}
                       label="Duplicate assembly"
-                      tooltip="Duplicate assembly"
                       icon={Copy}
                       disabled={actionDisabled}
                       onClick={() => onDuplicate(assembly)}
@@ -192,7 +173,6 @@ export function EnvelopeSidebar({
                     <SidebarActionButton
                       id={`assembly-sidebar-delete-${assembly.id}`}
                       label="Delete assembly"
-                      tooltip="Delete assembly"
                       icon={Trash2}
                       disabled={actionDisabled}
                       danger
@@ -206,19 +186,6 @@ export function EnvelopeSidebar({
         </div>
       )}
       {collapsed ? addAssemblyButton : null}
-      {nameTooltip
-        ? createPortal(
-            <div
-              id={assemblyNameTooltipId(nameTooltip.assemblyId)}
-              className="envelope-sidebar-name-tooltip"
-              role="tooltip"
-              style={{ left: nameTooltip.left, top: nameTooltip.top }}
-            >
-              {nameTooltip.name}
-            </div>,
-            document.body,
-          )
-        : null}
     </aside>
   );
 }
@@ -236,36 +203,9 @@ function assemblyTypeIcon(type: AssemblyType): { icon: LucideIcon } {
   }
 }
 
-function assemblyNameTooltipId(assemblyId: string): string {
-  return `assembly-sidebar-name-tooltip-${assemblyId}`;
-}
-
-function showNameTooltip(
-  assembly: Assembly,
-  event: FocusEvent<HTMLAnchorElement> | MouseEvent<HTMLAnchorElement>,
-  setNameTooltip: Dispatch<SetStateAction<NameTooltipState | null>>,
-): void {
-  const row = event.currentTarget.closest(".envelope-sidebar-row") ?? event.currentTarget;
-  const rect = row.getBoundingClientRect();
-  setNameTooltip({
-    assemblyId: assembly.id,
-    left: rect.right + 10,
-    name: assembly.name,
-    top: rect.top + rect.height / 2,
-  });
-}
-
-function hideNameTooltip(
-  assemblyId: string,
-  setNameTooltip: Dispatch<SetStateAction<NameTooltipState | null>>,
-): void {
-  setNameTooltip((current) => (current?.assemblyId === assemblyId ? null : current));
-}
-
 function SidebarActionButton({
   id,
   label,
-  tooltip,
   icon: Icon,
   disabled = false,
   danger = false,
@@ -273,14 +213,13 @@ function SidebarActionButton({
 }: {
   id?: string;
   label: string;
-  tooltip: string;
   icon: LucideIcon;
   disabled?: boolean;
   danger?: boolean;
   onClick: () => void;
 }) {
   return (
-    <Tooltip content={tooltip} placement="right">
+    <Tooltip content={label} placement="top" hoverDelay={TOOLTIP_HOVER_DELAY.long}>
       <button
         id={id}
         type="button"

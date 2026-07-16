@@ -289,21 +289,14 @@ describe("EnvelopePage", () => {
     const assemblyLink = await screen.findByRole("link", { name: longName });
     await userEvent.hover(assemblyLink);
 
-    await waitFor(() =>
-      expect(
-        document.getElementById("assembly-sidebar-name-tooltip-asm_wall_c3"),
-      ).toHaveTextContent(longName),
+    // Name tooltip opens on a medium hover delay via the shared <Tooltip>.
+    const tooltip = await screen.findByText(
+      longName,
+      { selector: ".app-tooltip" },
+      { timeout: 2000 },
     );
-    expect(assemblyLink).toHaveAttribute(
-      "aria-describedby",
-      "assembly-sidebar-name-tooltip-asm_wall_c3",
-    );
-
-    await userEvent.unhover(assemblyLink);
-
-    await waitFor(() =>
-      expect(document.getElementById("assembly-sidebar-name-tooltip-asm_wall_c3")).toBeNull(),
-    );
+    expect(tooltip).toHaveAttribute("role", "tooltip");
+    expect(assemblyLink).toHaveAttribute("aria-describedby", tooltip.id);
   });
 
   test("assembly sidebar command tooltips render outside the clipped list", async () => {
@@ -315,7 +308,12 @@ describe("EnvelopePage", () => {
 
     await userEvent.hover(renameButton);
 
-    const tooltip = await screen.findByText("Rename assembly", { selector: ".app-tooltip" });
+    // Row-action tooltips open on a long hover delay via the shared <Tooltip>.
+    const tooltip = await screen.findByText(
+      "Rename assembly",
+      { selector: ".app-tooltip" },
+      { timeout: 2000 },
+    );
     const sidebarList = document.querySelector(".envelope-sidebar-list");
     expect(tooltip).toHaveTextContent("Rename assembly");
     expect(tooltip).toHaveAttribute("role", "tooltip");

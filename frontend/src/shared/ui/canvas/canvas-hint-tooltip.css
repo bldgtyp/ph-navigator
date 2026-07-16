@@ -1,20 +1,17 @@
 /* Shared hover-hint tooltip for canvas-page chrome — the drawing-tool
-   toolbar buttons and sidebar roster controls in the apertures + envelope
-   features. Pure CSS, attribute-driven: any control carrying
-   [data-toolbar-tooltip] or [data-sidebar-tooltip] gets a small label +
-   arrow above it on hover/focus. The host element must be
-   position: relative (the toolbar buttons and sidebar controls already
-   are). Imported once via App.css.
+   toolbar buttons in the apertures + envelope features. Pure CSS,
+   attribute-driven: any control carrying [data-toolbar-tooltip] gets a small
+   label + arrow above it on hover/focus. The host element must be
+   position: relative (the toolbar buttons already are). Imported once via
+   App.css.
 
    Distinct from the info "ⓘ" panel (shared/ui/info-tooltip) and from the
-   base.css [data-tooltip] system. Previously duplicated three times —
-   apertures toolbar, apertures sidebar, and an envelope block serving both
-   its toolbar + sidebar (CSS rationalization Phase 7). */
+   base.css [data-tooltip] system. The sidebar roster controls used to share
+   this via [data-sidebar-tooltip]; they now use the shared <Tooltip> primitive
+   (shared/ui/tooltip), so only the toolbar variant remains here. */
 
 [data-toolbar-tooltip]::before,
-[data-toolbar-tooltip]::after,
-[data-sidebar-tooltip]::before,
-[data-sidebar-tooltip]::after {
+[data-toolbar-tooltip]::after {
   left: var(--canvas-hint-tooltip-left, 50%);
   opacity: 0;
   pointer-events: none;
@@ -25,8 +22,7 @@
   z-index: var(--z-tooltip);
 }
 
-[data-toolbar-tooltip]::before,
-[data-sidebar-tooltip]::before {
+[data-toolbar-tooltip]::before {
   background: color-mix(in oklab, var(--text-primary) 88%, transparent);
   border-radius: var(--radius-2xs);
   bottom: calc(100% + 8px);
@@ -37,18 +33,10 @@
   padding: 4px 7px;
   transform: translate(var(--canvas-hint-tooltip-x, -50%), 2px);
   white-space: nowrap;
-}
-
-[data-toolbar-tooltip]::before {
   content: attr(data-toolbar-tooltip);
 }
 
-[data-sidebar-tooltip]::before {
-  content: attr(data-sidebar-tooltip);
-}
-
-[data-toolbar-tooltip]::after,
-[data-sidebar-tooltip]::after {
+[data-toolbar-tooltip]::after {
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
   border-top: 5px solid color-mix(in oklab, var(--text-primary) 88%, transparent);
@@ -57,14 +45,12 @@
   transform: translate(var(--canvas-hint-tooltip-x, -50%), 2px);
 }
 
-[data-toolbar-tooltip-placement="start"],
-[data-sidebar-tooltip-placement="start"] {
+[data-toolbar-tooltip-placement="start"] {
   --canvas-hint-tooltip-left: 100%;
   --canvas-hint-tooltip-x: 0;
 }
 
-[data-toolbar-tooltip-placement="end"],
-[data-sidebar-tooltip-placement="end"] {
+[data-toolbar-tooltip-placement="end"] {
   --canvas-hint-tooltip-left: 0;
   --canvas-hint-tooltip-x: -100%;
 }
@@ -72,11 +58,7 @@
 [data-toolbar-tooltip]:hover::before,
 [data-toolbar-tooltip]:hover::after,
 [data-toolbar-tooltip]:focus-visible::before,
-[data-toolbar-tooltip]:focus-visible::after,
-[data-sidebar-tooltip]:hover::before,
-[data-sidebar-tooltip]:hover::after,
-[data-sidebar-tooltip]:focus-visible::before,
-[data-sidebar-tooltip]:focus-visible::after {
+[data-toolbar-tooltip]:focus-visible::after {
   opacity: 1;
   transform: translate(var(--canvas-hint-tooltip-x, -50%), 0);
 }

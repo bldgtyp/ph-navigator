@@ -289,36 +289,9 @@
   color: color-mix(in oklab, var(--text-secondary) 38%, transparent);
 }
 
-/* [data-sidebar-tooltip] hover-hint moved to
-   shared/ui/canvas/canvas-hint-tooltip.css (CSS rationalization Phase 7). */
-
-.aperture-sidebar__floating-tooltip {
-  background: color-mix(in oklab, var(--text-primary) 88%, transparent);
-  border-radius: var(--radius-2xs);
-  color: var(--bg-card);
-  font-family: var(--font-primary);
-  font-size: 11px;
-  left: 0;
-  line-height: 1.2;
-  padding: 4px 7px;
-  pointer-events: none;
-  position: fixed;
-  top: 0;
-  transform: translate(-50%, -100%);
-  white-space: nowrap;
-  z-index: var(--z-tooltip);
-}
-
-.aperture-sidebar__floating-tooltip::after {
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-top: 5px solid color-mix(in oklab, var(--text-primary) 88%, transparent);
-  content: "";
-  left: 50%;
-  position: absolute;
-  top: 100%;
-  transform: translateX(-50%);
-}
+/* Sidebar name + row-action tooltips now use the shared <Tooltip> primitive
+   (shared/ui/tooltip) with named hover-delay tiers — no bespoke floating
+   tooltip here. */
 
 .apertures-page__main {
   color: var(--text-secondary);
