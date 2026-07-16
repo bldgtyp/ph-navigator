@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-15
 TIME: 20:44 EDT
-STATUS: Active — captured, not scheduled
+STATUS: ✅ Complete — implemented + verified 2026-07-15 (commit c0d31fb8, branch refactor/apertures-builder-fixes)
 AUTHOR: Claude (Opus 4.8) for Ed May
 SCOPE: Three self-contained fixes to the Aperture Builder canvas (Apertures /
   Apertures): operable-direction arrow restyle, U-Value chip layout bug, and
@@ -66,3 +66,38 @@ when to stop auto-fitting. Fit math likely belongs near `ApertureSvgCanvas` /
 - U-Value chip no longer touches the divider or the dimension text.
 - Landing on Apertures with no saved zoom frames the first unit fully; once you
   zoom manually, that zoom sticks across page changes.
+
+## Outcome — 2026-07-15 (commit c0d31fb8)
+
+All three items shipped on branch `refactor/apertures-builder-fixes`.
+
+- **Item 1 — arrow.** `operation-symbols.ts` `slideArrow`: split the single
+  `ARROW_HEAD_FRACTION` into a length (0.13) + half-width (0.05) so the head is
+  a slim point instead of a wider-than-long wedge; added
+  `ARROW_LABEL_CLEARANCE_FRACTION` (0.2) that nudges the arrow perpendicular to
+  its axis (horizontal arrows drop below center, vertical arrows step beside it)
+  to clear the centered name pill. Offset is a fraction of the *glazing*
+  dimension so the whole arrow stays inside the rect.
+- **Item 2 — chip.** `apertures.css` `.apertures-page__header` gets
+  `flex-shrink: 0`; as a column-flex child it was being compressed below its
+  min-height, spilling the summary row (U-Value chip) past the divider onto the
+  dimension caption.
+- **Item 3 — fit.** `ApertureCanvasContainer.tsx` `fitZoom` now frames the whole
+  unit — largest zoom where both width and height fit inside the scroll viewport
+  minus its edge padding, clamped to `[ZOOM_MIN, ZOOM_MAX]` — replacing the
+  width-only, discrete-step snap that clipped tall units. `hasCanvasZoom`
+  (already present) still stops the auto-fit after the first explicit user zoom.
+  Orphaned `snapZoomToStep` removed; Fit control relabeled "Fit canvas to view".
+
+**Verification.** `make ci` green (2165 FE + 1373 BE). Browser-verified on the
+local `AGENT-BROWSER` fixture: chip↔caption gap restored (11px), slide arrow
+sits clear below the name pill, and a short-viewport Fit framed the unit with no
+vertical/horizontal overflow (height-aware).
+
+**Known residual (deferred, low priority).** The arrow's label-clearance offset
+is a fraction of the glazing dimension, so at `ZOOM_MIN` on a small glazing the
+rendered clearance can shrink below the fixed-px name-pill footprint and the two
+can still partially overlap. A fixed-px clearance was rejected because it
+overflows the arrow *outside* small glazings at low zoom; a fuller fix would
+reposition the pill itself. Strictly better than the prior always-centered
+arrow; acceptable for now.

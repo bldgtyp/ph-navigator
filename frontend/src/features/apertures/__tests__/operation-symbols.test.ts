@@ -41,15 +41,18 @@ describe("swingLines", () => {
 });
 
 describe("slideArrow", () => {
-  it("slide-right exterior: shaft from center heading right, length 80% of min dim", () => {
+  it("slide-right exterior: shaft heading right (length 80% of min dim), nudged below center to clear the name pill", () => {
     const arrow = slideArrow(GLAZING, "right", "exterior");
     const cx = GLAZING.x + GLAZING.width / 2;
     const cy = GLAZING.y + GLAZING.height / 2;
     const half = (Math.min(GLAZING.width, GLAZING.height) * 0.8) / 2;
+    // Horizontal arrows drop below center by 20% of the glazing height.
+    const y = cy + GLAZING.height * 0.2;
     expect(arrow.shaft.x1).toBeCloseTo(cx - half);
-    expect(arrow.shaft.y1).toBeCloseTo(cy);
+    expect(arrow.shaft.y1).toBeCloseTo(y);
     expect(arrow.shaft.x2).toBeCloseTo(cx + half);
-    expect(arrow.shaft.y2).toBeCloseTo(cy);
+    expect(arrow.shaft.y2).toBeCloseTo(y);
+    expect(arrow.shaft.y1).toBeGreaterThan(cy);
     // Head tip at shaft end
     expect(arrow.head[0]).toEqual({ x: arrow.shaft.x2, y: arrow.shaft.y2 });
   });
