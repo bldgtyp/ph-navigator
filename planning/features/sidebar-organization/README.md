@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-15
 TIME: 20:44 EDT
-STATUS: Phase 0 done (2026-07-15); Phases 1–4 blocked on persistence decision
+STATUS: Phases 0–1 done (2026-07-15/16); Phases 2–4 remain (toggle UI + dnd-kit + groups + collapse)
 AUTHOR: Claude (Opus 4.8) for Ed May
 SCOPE: Give the two element sidebars (Apertures / Apertures and Envelope /
   Assemblies) user-controlled organization: manual drag ordering, grouping into

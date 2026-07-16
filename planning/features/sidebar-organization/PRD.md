@@ -89,17 +89,24 @@ one mechanism rather than inventing a second.
 
 ## Open questions
 
-1. **Persistence store + scope.** Backend vs. local; per-project vs. global;
-   per-user vs. shared. (Recommend: backend, per-user, per-project.)
+1. **Persistence store + scope.** ✅ RESOLVED 2026-07-15 (Ed): **backend-backed,
+   per-user × per-project × per-sidebar**, modeled on the existing server-side
+   `frontend/src/features/table_views/` view-state mechanism
+   (`useProjectTableViewState` + `api.ts`, backed by Postgres). Not localStorage —
+   state must follow the user across devices.
 2. **New items' placement.** When a new aperture/assembly is created while in
    manual/grouped mode, where does it land — top, bottom, or an "Ungrouped"
-   bucket?
+   bucket? (Still open; carry a sensible default — append to Ungrouped/bottom —
+   and confirm during Phase 2/3.)
 3. **Groups when switched back to alphabetical.** Do groups persist but flatten,
-   or are groups only meaningful in manual mode?
-4. **Reorder primitive.** Share one drag-reorder implementation with the
-   single-select field-editor reorder handle (item 12) — pick a library or a
-   small in-house primitive once.
-5. **Empty groups.** Allowed? Auto-removed when last item leaves?
+   or are groups only meaningful in manual mode? (Still open; resolve in Phase 3.)
+4. **Reorder primitive.** ✅ RESOLVED 2026-07-15 (Ed): **`@dnd-kit/core` +
+   `@dnd-kit/sortable`** — one shared, accessible (keyboard + pointer) primitive,
+   reused by the sidebar tree (Phase 2/3) and the single-select field-editor
+   reorder handle (batch item 12). Subject to the 24h min-release-age supply-chain
+   gate.
+5. **Empty groups.** Allowed? Auto-removed when last item leaves? (Still open;
+   resolve in Phase 3.)
 
 ## Acceptance (high level — refine when scoped)
 

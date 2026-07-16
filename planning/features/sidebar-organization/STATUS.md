@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-15
 TIME: 20:44 EDT
-STATUS: Phase 0 done; Phases 1–4 blocked on persistence decision
+STATUS: Phases 0–1 done; Phases 2–4 (toggle UI + dnd-kit + groups + collapse) remain
 AUTHOR: Claude (Opus 4.8) for Ed May
 SCOPE: Disposition + phase map for sidebar-organization.
 RELATED: ./README.md; ./PRD.md
@@ -24,24 +24,46 @@ persistence-store decision (open Q #1) — he wants to take those slowly.
   render the envelope's proven `position: relative` row with the `::before`
   full-row hit overlay. The near-identical per-feature `SidebarActionButton` is
   now a single button inside the shared component.
-- **Phase 1 — Persistence foundation.** Decide + build the per-user persisted
-  state store (reuse DataTable view-state mechanism if server-side). Wire an
-  empty sort-mode toggle (alphabetical | manual).
-- **Phase 2 — Manual ordering (G1).** Drag handles + reorder + persist.
+- **Phase 1 — Persistence foundation. ✅ DONE (2026-07-16).** Backend-backed,
+  per-user × per-project × per-sidebar store, modeled on `features/table_views/`:
+  new `backend/features/sidebar_views/` (routes/models/service/repository) + table
+  `user_sidebar_views` (migration `20260716_0006`, opaque JSONB payload, PK
+  `(user_id, project_id, view_key)`, both FKs `ON DELETE CASCADE`); frontend
+  `features/sidebar_views/` (types/api/lib/hooks) with `useProjectSidebarViewState`
+  (debounced save, single-flight) and the composed `useSidebarOrganization` hook
+  (sort-mode + `applySidebarOrder`). Foundation only — **the sort-mode toggle UI
+  and drag are Phase 2** (an inert toggle would ship confusing UX; the toggle is
+  only meaningful once manual ordering exists). Payload schema already carries
+  `order`/`groups`/`collapsed_group_ids` so Phases 2–4 need no new migration.
+- **Phase 2 — Manual ordering (G1) + sort-mode toggle.** Wire
+  `useSidebarOrganization` into both adapters (adds a `projectId` prop), render the
+  alphabetical | manual toggle in the shared sidebar header, and add **dnd-kit**
+  drag handles to reorder + persist. Shares the dnd-kit primitive with the
+  single-select field-editor reorder handle (batch item 12).
 - **Phase 3 — Grouping (G2).** Group create/assign/reorder + tree render +
-  persist.
-- **Phase 4 — Collapse (G3).** Per-group collapse/expand + persist.
+  persist (extends the same persisted document: `groups`).
+- **Phase 4 — Collapse (G3).** Per-group collapse/expand + persist
+  (`collapsed_group_ids`).
 
 ## Next step
 
-Resolve PRD open question #1 (persistence store + scope) with Ed, and confirm how
-DataTable view state persists today so Phase 1 reuses it. Phase 1 cannot start
-until that decision lands.
+Phase 2: wire `useSidebarOrganization` into `ApertureSidebar`/`EnvelopeSidebar`
+(thread `projectId` from the parents), render the sort-mode toggle in
+`ElementSidebar`, and add dnd-kit drag. This touches the aperture/envelope test
+harnesses (they'll need a `projectId` + a mocked `sidebar-views` fetch), so budget
+for that churn.
 
 ## Blockers
 
-- **Phase 1+ blocked** on the persistence-store decision (open Q #1) — Ed's call.
-  Phase 0 was independently shippable and is done.
+- None. Open Q #1 (persistence store) and #4 (reorder primitive) resolved by Ed
+  2026-07-15. Remaining UX details (open Qs #2/#3/#5) resolve inside Phases 2–3.
+
+## Deploy note
+
+This feature branch must merge as a **bundle** (Phases 1–4 together), not
+mid-feature: Phase 1 ships no user-visible change, and a Phase-2 toggle is
+confusing without the drag it gates. Phase 0 remains the only independently
+shippable slice (it fixes live bug Item 6).
 
 ## Verification
 
@@ -57,7 +79,17 @@ until that decision lands.
   aperture-sidebar row and check the confirm/cancel buttons don't overlap the next
   row.
 
-### Phases 1–4 (when built)
+### Phase 1 (done)
+
+- ✅ Backend: `test_sidebar_views.py` — 17 pass (roundtrip, idempotent upsert,
+  delete/reset, 401 anon, 400 invalid-key/schema/oversized, 422 non-object,
+  404 unknown project, user/project/sidebar scoping, repository roundtrip).
+- ✅ Migration `20260716_0006` applies to dev + test DBs; head advances.
+- ✅ Frontend: `sidebar_views` unit tests — 14 pass (`applySidebarOrder`,
+  `useProjectSidebarViewState` load/debounce-coalesce/reset/disabled,
+  `useSidebarOrganization` order + toggle-freezes-order).
+
+### Phases 2–4 (when built)
 
 - Browser: manual order + a group survive a reload and a fresh session
   (sign in as Ed — the seed project is owned by ed@example.com).
