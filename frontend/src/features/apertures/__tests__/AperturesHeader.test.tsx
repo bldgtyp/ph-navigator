@@ -4,6 +4,20 @@ import { useState, type ReactNode } from "react";
 import { describe, expect, test, vi } from "vitest";
 import { UnitPreferenceContext } from "../../../lib/units/preference-context";
 import type { UnitSystem } from "../../../lib/units";
+
+// This suite exercises rename, not sidebar organization; stub the org hook so it
+// renders an identity ordering with no network I/O.
+vi.mock("../../sidebar_views/useSidebarOrganization", () => ({
+  useSidebarOrganization: ({ items }: { items: unknown[] }) => ({
+    sortMode: "alphabetical" as const,
+    orderedItems: items,
+    onToggleSortMode: () => undefined,
+    onReorder: () => undefined,
+    isLoading: false,
+    saveError: null,
+  }),
+}));
+
 import { ApertureSidebar } from "../components/ApertureSidebar";
 import { AperturesHeader } from "../components/AperturesHeader";
 import type { ApertureTypeEntry } from "../types";
@@ -35,6 +49,7 @@ function Harness({ onRename }: { onRename?: (name: string) => void }) {
         onRename={renameActive}
       />
       <ApertureSidebar
+        projectId="proj_test"
         apertures={apertures}
         activeApertureId={activeAperture.id}
         canEdit

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { createSearchParams } from "react-router-dom";
 import { ElementSidebar, type ElementSidebarItem } from "../../../shared/ui";
+import { useSidebarOrganization } from "../../sidebar_views/useSidebarOrganization";
 import { envelopeAssemblyPath } from "../paths";
 import type { Assembly, AssemblyType } from "../types";
 
@@ -77,6 +78,8 @@ export function EnvelopeSidebar({
     ],
   }));
 
+  const org = useSidebarOrganization({ projectId, viewKey: "assemblies", canEdit, items });
+
   return (
     <ElementSidebar
       title="Assemblies"
@@ -87,7 +90,7 @@ export function EnvelopeSidebar({
       onToggleCollapsed={onToggleCollapsed}
       canEdit={canEdit}
       actionDisabled={actionDisabled}
-      items={items}
+      items={org.orderedItems}
       activeId={activeId}
       navigation={{
         mode: "link",
@@ -99,6 +102,15 @@ export function EnvelopeSidebar({
         editLabel: "Edit assembly name",
       }}
       add={{ label: "Add assembly", onAdd: onAddAssembly, disabled: !canEdit }}
+      organization={
+        canEdit
+          ? {
+              sortMode: org.sortMode,
+              onToggleSortMode: org.onToggleSortMode,
+              onReorder: org.onReorder,
+            }
+          : undefined
+      }
     />
   );
 }

@@ -1819,6 +1819,11 @@ function commandRequestBodies(): unknown[] {
 }
 
 function defaultFetchImplementation(url: string): Promise<Response> {
+  if (url.includes("/sidebar-views")) {
+    return Promise.resolve(
+      jsonResponse({ view_state_schema_version: 1, view_state: null, updated_at: null }),
+    );
+  }
   if (url.includes("/envelope?")) return Promise.resolve(jsonResponse(envelopePayload));
   if (url.includes("/thermal?")) return Promise.resolve(jsonResponse(thermalPayload));
   if (url.includes("/envelope/material-catalog-drift?")) {

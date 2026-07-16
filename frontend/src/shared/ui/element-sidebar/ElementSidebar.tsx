@@ -1,5 +1,30 @@
-import { PanelLeftClose, PanelLeftOpen, Pencil, Plus, type LucideIcon } from "lucide-react";
-import { useState } from "react";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
+  ArrowDownAZ,
+  GripVertical,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Pencil,
+  Plus,
+  type LucideIcon,
+} from "lucide-react";
+import { useState, type CSSProperties } from "react";
 import { NavLink, type To } from "react-router-dom";
 import { InlineHeaderNameEditor } from "../InlineHeaderNameEditor";
 import { Tooltip, TOOLTIP_HOVER_DELAY } from "../tooltip";
@@ -56,12 +81,40 @@ export type ElementSidebarAdd = {
   disabled: boolean;
 };
 
+export type ElementSidebarSortMode = "alphabetical" | "manual";
+
+/**
+ * User-controlled ordering. Provided only for editors (persistence is
+ * editor-only); its presence turns on the sort-mode toggle, and `manual` mode
+ * turns on drag-to-reorder. `items` must already be in the order this mode
+ * implies — the sidebar renders them as given and reports drags via `onReorder`.
+ */
+export type ElementSidebarOrganization = {
+  sortMode: ElementSidebarSortMode;
+  onToggleSortMode: () => void;
+  /** Called on drag end with the full new id order. */
+  onReorder: (orderedIds: string[]) => void;
+};
+
+/** Everything a row needs that is constant across the list, bundled to avoid drilling. */
+type RowContext = {
+  idPrefix: string;
+  title: string;
+  canEdit: boolean;
+  actionDisabled: boolean;
+  activeId: string | null;
+  navigation: ElementSidebarNavigation;
+  rename: ElementSidebarRename;
+  editingId: string | null;
+  setEditingId: (id: string | null) => void;
+};
+
 /**
  * The single shared element-list sidebar behind both the Apertures (Aperture
  * Types) and Envelope (Assemblies) sidebars. Owns collapse chrome, the item
- * list, inline rename state, and the row-action buttons. Features supply their
- * data and behaviors through the props below; nothing feature-specific lives
- * here.
+ * list, inline rename state, the row-action buttons, and (for editors) the
+ * sort-mode toggle + drag-to-reorder. Features supply their data and behaviors
+ * through the props below; nothing feature-specific lives here.
  */
 export function ElementSidebar({
   title,
@@ -77,6 +130,7 @@ export function ElementSidebar({
   navigation,
   rename,
   add,
+  organization,
 }: {
   title: string;
   ariaLabel: string;
@@ -94,8 +148,23 @@ export function ElementSidebar({
   rename: ElementSidebarRename;
   /** Add control; omit (null) to hide it entirely (e.g. read-only apertures). */
   add: ElementSidebarAdd | null;
+  /** User-controlled ordering (editors only); omit to render a fixed list. */
+  organization?: ElementSidebarOrganization;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  const rowContext: RowContext = {
+    idPrefix,
+    title,
+    canEdit,
+    actionDisabled,
+    activeId,
+    navigation,
+    rename,
+    editingId,
+    setEditingId,
+  };
+  const isManual = organization?.sortMode === "manual";
 
   const addButton = add ? (
     <Tooltip content={add.label} placement={collapsed ? "right" : "bottom"}>
@@ -141,67 +210,199 @@ export function ElementSidebar({
           {collapsed ? null : addButton}
         </div>
       </div>
+      {collapsed || !organization ? null : (
+        <SortModeToggle idPrefix={idPrefix} title={title} organization={organization} />
+      )}
       {collapsed ? null : (
         <div id={`${idPrefix}-list`} className="element-sidebar__list">
-          {items.map((item) => {
-            const isActive = item.id === activeId;
-            const isEditing = editingId === item.id;
-            return (
-              <div
-                key={item.id}
-                id={`${idPrefix}-row-${item.id}`}
-                className={isActive ? "element-sidebar__row is-active" : "element-sidebar__row"}
-              >
-                {isEditing ? (
-                  <InlineHeaderNameEditor
-                    value={item.name}
-                    variant="inline"
-                    canEdit={canEdit}
-                    busy={actionDisabled}
-                    editLabel={rename.editLabel}
-                    inputLabel={rename.inputLabel}
-                    showEditButton={false}
-                    editing={isEditing}
-                    onEditingChange={(editing) => setEditingId(editing ? item.id : null)}
-                    getValidationMessage={item.getRenameValidationMessage}
-                    onSubmit={(name) => item.onRename(name)}
-                  />
-                ) : (
-                  <ElementSidebarRowLink item={item} navigation={navigation} />
-                )}
-                {canEdit && !isEditing ? (
-                  <span
-                    id={`${idPrefix}-row-actions-${item.id}`}
-                    className="element-sidebar__row-actions"
-                    aria-label={`${title} actions`}
-                  >
-                    <SidebarActionButton
-                      id={`${idPrefix}-rename-${item.id}`}
-                      label={rename.actionLabel}
-                      icon={Pencil}
-                      disabled={actionDisabled}
-                      onClick={() => setEditingId(item.id)}
-                    />
-                    {item.actions.map((action) => (
-                      <SidebarActionButton
-                        key={action.key}
-                        id={`${idPrefix}-${action.key}-${item.id}`}
-                        label={action.label}
-                        icon={action.icon}
-                        disabled={actionDisabled}
-                        danger={action.danger}
-                        onClick={action.onClick}
-                      />
-                    ))}
-                  </span>
-                ) : null}
-              </div>
-            );
-          })}
+          {isManual && organization ? (
+            <SortableRows items={items} ctx={rowContext} onReorder={organization.onReorder} />
+          ) : (
+            items.map((item) => <StaticRow key={item.id} item={item} ctx={rowContext} />)
+          )}
         </div>
       )}
       {collapsed ? addButton : null}
     </aside>
+  );
+}
+
+function SortModeToggle({
+  idPrefix,
+  title,
+  organization,
+}: {
+  idPrefix: string;
+  title: string;
+  organization: ElementSidebarOrganization;
+}) {
+  const { sortMode, onToggleSortMode } = organization;
+  return (
+    <div className="element-sidebar__sortbar" role="group" aria-label={`${title} order`}>
+      <span className="element-sidebar__sortbar-label">Order</span>
+      <div className="element-sidebar__sort-toggle">
+        <button
+          id={`${idPrefix}-sort-alphabetical`}
+          type="button"
+          className="element-sidebar__sort-option"
+          aria-pressed={sortMode === "alphabetical"}
+          onClick={() => {
+            if (sortMode !== "alphabetical") onToggleSortMode();
+          }}
+        >
+          <ArrowDownAZ size={13} aria-hidden="true" />
+          A–Z
+        </button>
+        <button
+          id={`${idPrefix}-sort-manual`}
+          type="button"
+          className="element-sidebar__sort-option"
+          aria-pressed={sortMode === "manual"}
+          onClick={() => {
+            if (sortMode !== "manual") onToggleSortMode();
+          }}
+        >
+          <GripVertical size={13} aria-hidden="true" />
+          Manual
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SortableRows({
+  items,
+  ctx,
+  onReorder,
+}: {
+  items: ElementSidebarItem[];
+  ctx: RowContext;
+  onReorder: (orderedIds: string[]) => void;
+}) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const ids = items.map((item) => item.id);
+    const from = ids.indexOf(String(active.id));
+    const to = ids.indexOf(String(over.id));
+    if (from < 0 || to < 0) return;
+    onReorder(arrayMove(ids, from, to));
+  }
+
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <SortableContext items={items.map((item) => item.id)} strategy={verticalListSortingStrategy}>
+        {items.map((item) => (
+          <SortableRow key={item.id} item={item} ctx={ctx} />
+        ))}
+      </SortableContext>
+    </DndContext>
+  );
+}
+
+function StaticRow({ item, ctx }: { item: ElementSidebarItem; ctx: RowContext }) {
+  const isActive = item.id === ctx.activeId;
+  return (
+    <div
+      id={`${ctx.idPrefix}-row-${item.id}`}
+      className={isActive ? "element-sidebar__row is-active" : "element-sidebar__row"}
+    >
+      <ElementSidebarRowBody item={item} ctx={ctx} />
+    </div>
+  );
+}
+
+function SortableRow({ item, ctx }: { item: ElementSidebarItem; ctx: RowContext }) {
+  const isActive = item.id === ctx.activeId;
+  const sortable = useSortable({ id: item.id, disabled: ctx.editingId === item.id });
+  const style: CSSProperties = {
+    transform: CSS.Transform.toString(sortable.transform),
+    transition: sortable.transition,
+  };
+  const className = [
+    "element-sidebar__row",
+    "element-sidebar__row--draggable",
+    isActive ? "is-active" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  return (
+    <div
+      ref={sortable.setNodeRef}
+      style={style}
+      id={`${ctx.idPrefix}-row-${item.id}`}
+      className={className}
+      data-dragging={sortable.isDragging ? "true" : undefined}
+    >
+      <button
+        type="button"
+        className="element-sidebar__row-handle"
+        aria-label={`Reorder ${item.name}`}
+        ref={sortable.setActivatorNodeRef}
+        {...sortable.attributes}
+        {...sortable.listeners}
+      >
+        <GripVertical size={14} aria-hidden="true" />
+      </button>
+      <ElementSidebarRowBody item={item} ctx={ctx} />
+    </div>
+  );
+}
+
+/** The editor-or-link plus the row-action buttons — shared by static and sortable rows. */
+function ElementSidebarRowBody({ item, ctx }: { item: ElementSidebarItem; ctx: RowContext }) {
+  const isEditing = ctx.editingId === item.id;
+  return (
+    <>
+      {isEditing ? (
+        <InlineHeaderNameEditor
+          value={item.name}
+          variant="inline"
+          canEdit={ctx.canEdit}
+          busy={ctx.actionDisabled}
+          editLabel={ctx.rename.editLabel}
+          inputLabel={ctx.rename.inputLabel}
+          showEditButton={false}
+          editing={isEditing}
+          onEditingChange={(editing) => ctx.setEditingId(editing ? item.id : null)}
+          getValidationMessage={item.getRenameValidationMessage}
+          onSubmit={(name) => item.onRename(name)}
+        />
+      ) : (
+        <ElementSidebarRowLink item={item} navigation={ctx.navigation} />
+      )}
+      {ctx.canEdit && !isEditing ? (
+        <span
+          id={`${ctx.idPrefix}-row-actions-${item.id}`}
+          className="element-sidebar__row-actions"
+          aria-label={`${ctx.title} actions`}
+        >
+          <SidebarActionButton
+            id={`${ctx.idPrefix}-rename-${item.id}`}
+            label={ctx.rename.actionLabel}
+            icon={Pencil}
+            disabled={ctx.actionDisabled}
+            onClick={() => ctx.setEditingId(item.id)}
+          />
+          {item.actions.map((action) => (
+            <SidebarActionButton
+              key={action.key}
+              id={`${ctx.idPrefix}-${action.key}-${item.id}`}
+              label={action.label}
+              icon={action.icon}
+              disabled={ctx.actionDisabled}
+              danger={action.danger}
+              onClick={action.onClick}
+            />
+          ))}
+        </span>
+      ) : null}
+    </>
   );
 }
 

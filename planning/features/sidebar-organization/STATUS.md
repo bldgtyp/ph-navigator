@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-15
 TIME: 20:44 EDT
-STATUS: Phases 0–1 done; Phases 2–4 (toggle UI + dnd-kit + groups + collapse) remain
+STATUS: Phases 0–2 done; Phases 3–4 (groups + collapse) remain
 AUTHOR: Claude (Opus 4.8) for Ed May
 SCOPE: Disposition + phase map for sidebar-organization.
 RELATED: ./README.md; ./PRD.md
@@ -35,11 +35,15 @@ persistence-store decision (open Q #1) — he wants to take those slowly.
   and drag are Phase 2** (an inert toggle would ship confusing UX; the toggle is
   only meaningful once manual ordering exists). Payload schema already carries
   `order`/`groups`/`collapsed_group_ids` so Phases 2–4 need no new migration.
-- **Phase 2 — Manual ordering (G1) + sort-mode toggle.** Wire
-  `useSidebarOrganization` into both adapters (adds a `projectId` prop), render the
-  alphabetical | manual toggle in the shared sidebar header, and add **dnd-kit**
-  drag handles to reorder + persist. Shares the dnd-kit primitive with the
-  single-select field-editor reorder handle (batch item 12).
+- **Phase 2 — Manual ordering (G1) + sort-mode toggle. ✅ DONE (2026-07-16).**
+  `useSidebarOrganization` wired into both adapters (`ApertureSidebar` gained a
+  `projectId` prop, threaded from `AperturesTab`; `EnvelopeSidebar` already had it).
+  `ElementSidebar` renders the alphabetical | manual sort toggle (editors only) and,
+  in manual mode, dnd-kit drag handles (`SortableRows`/`SortableRow`) that reorder +
+  persist via `onReorder`. Uses the repo's existing `@dnd-kit` deps and the
+  field-editor drag idiom (PointerSensor distance:4 + KeyboardSensor); switching to
+  manual freezes the current order. ⚠️ Visual drag verification deferred (Playwright
+  profile locked this session) — confirm before/after merge.
 - **Phase 3 — Grouping (G2).** Group create/assign/reorder + tree render +
   persist (extends the same persisted document: `groups`).
 - **Phase 4 — Collapse (G3).** Per-group collapse/expand + persist
@@ -47,11 +51,10 @@ persistence-store decision (open Q #1) — he wants to take those slowly.
 
 ## Next step
 
-Phase 2: wire `useSidebarOrganization` into `ApertureSidebar`/`EnvelopeSidebar`
-(thread `projectId` from the parents), render the sort-mode toggle in
-`ElementSidebar`, and add dnd-kit drag. This touches the aperture/envelope test
-harnesses (they'll need a `projectId` + a mocked `sidebar-views` fetch), so budget
-for that churn.
+Phase 3 (grouping): let users define groups and assign items, rendering the sidebar
+as a tree of groups → items, persisted in the `groups` field. Reuse the dnd-kit
+setup from Phase 2 for cross-group drag. Resolve open Qs #2 (new-item placement),
+#3 (groups when switched to alphabetical), #5 (empty groups) here.
 
 ## Blockers
 
@@ -89,7 +92,17 @@ shippable slice (it fixes live bug Item 6).
   `useProjectSidebarViewState` load/debounce-coalesce/reset/disabled,
   `useSidebarOrganization` order + toggle-freezes-order).
 
-### Phases 2–4 (when built)
+### Phase 2 (done)
+
+- ✅ `make ci` green: frontend 2186 passed incl. new `ElementSidebar.test.tsx`
+  (toggle present/pressed, click toggles, manual mode renders a drag handle per
+  row) + `useSidebarOrganization` `onReorder` test; aperture/envelope harnesses
+  updated (mock org hook / mock `sidebar-views` fetch) and still green.
+- ⚠️ Deferred: live drag reorder + persistence-across-reload in the browser
+  (Playwright profile locked). Correctness of the handle/overlay stacking and the
+  drag order math were verified by review.
+
+### Phases 3–4 (when built)
 
 - Browser: manual order + a group survive a reload and a fresh session
   (sign in as Ed — the seed project is owned by ed@example.com).

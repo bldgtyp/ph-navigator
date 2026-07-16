@@ -4,5 +4,7 @@ export type {
   ElementSidebarAdd,
   ElementSidebarItem,
   ElementSidebarNavigation,
+  ElementSidebarOrganization,
   ElementSidebarRename,
+  ElementSidebarSortMode,
 } from "./ElementSidebar";

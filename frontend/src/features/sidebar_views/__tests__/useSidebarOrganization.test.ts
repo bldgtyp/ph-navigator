@@ -77,4 +77,20 @@ describe("useSidebarOrganization", () => {
       collapsed_group_ids: [],
     });
   });
+
+  test("onReorder persists the new order and pins manual mode", () => {
+    // Even if state somehow read alphabetical, a drag pins manual so the new
+    // order can't be stranded behind an alphabetical sort.
+    mockState({ sort_mode: "alphabetical", order: [], groups: [], collapsed_group_ids: [] });
+    const { result } = render(items("a", "b", "c"));
+
+    act(() => result.current.onReorder(["c", "b", "a"]));
+
+    expect(setViewState).toHaveBeenCalledWith({
+      sort_mode: "manual",
+      order: ["c", "b", "a"],
+      groups: [],
+      collapsed_group_ids: [],
+    });
+  });
 });

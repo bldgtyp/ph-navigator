@@ -58,6 +58,50 @@
   position: relative;
 }
 
+/* Sort-mode toggle (editors only): alphabetical | manual. Manual turns on the
+   per-row drag handles below. */
+.element-sidebar__sortbar {
+  align-items: center;
+  display: flex;
+  gap: var(--space-8);
+  justify-content: space-between;
+  padding: var(--space-12) var(--space-18) 0;
+}
+
+.element-sidebar__sortbar-label {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+}
+
+.element-sidebar__sort-toggle {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  display: inline-flex;
+  overflow: hidden;
+}
+
+.element-sidebar__sort-option {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: var(--fs-sm);
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-8);
+}
+
+.element-sidebar__sort-option + .element-sidebar__sort-option {
+  border-left: 1px solid var(--border-subtle);
+}
+
+.element-sidebar__sort-option[aria-pressed="true"] {
+  background: color-mix(in oklab, var(--accent) 14%, transparent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
 .element-sidebar__list {
   display: grid;
   gap: var(--space-6);
@@ -86,6 +130,43 @@
 
 .element-sidebar__row.is-active {
   font-weight: 600;
+}
+
+/* Manual-mode rows lead with a 6-dot drag handle column. */
+.element-sidebar__row--draggable {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.element-sidebar__row--draggable[data-dragging="true"] {
+  background: var(--bg-card);
+  box-shadow: var(--shadow-elev-2);
+  z-index: var(--z-dropdown);
+}
+
+.element-sidebar__row-handle {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--text-secondary);
+  cursor: grab;
+  display: inline-flex;
+  height: 24px;
+  justify-content: center;
+  padding: 0;
+  position: relative;
+  touch-action: none;
+  width: 18px;
+  z-index: var(--z-base-elevated);
+}
+
+.element-sidebar__row-handle:active {
+  cursor: grabbing;
+}
+
+.element-sidebar__row-handle:focus-visible {
+  border-radius: var(--radius-xs);
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 
 /* Row link — a NavLink (envelope) or a select button (apertures). Its

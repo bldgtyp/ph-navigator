@@ -19,6 +19,8 @@ export type UseSidebarOrganizationResult<T extends { id: string }> = {
   orderedItems: T[];
   /** Flip alphabetical ⇄ manual; switching to manual freezes the current order. */
   onToggleSortMode: () => void;
+  /** Persist a new manual order (from a drag); implies manual mode. */
+  onReorder: (orderedIds: string[]) => void;
   isLoading: boolean;
   saveError: string | null;
 };
@@ -50,7 +52,7 @@ export function useSidebarOrganization<T extends { id: string }>({
     const nextMode: SidebarSortMode = viewState.sort_mode === "manual" ? "alphabetical" : "manual";
     // Switching to manual with no saved order freezes the current display order,
     // so the choice is immediately meaningful (new items append; alphabetical
-    // re-sorts no longer reshuffle). Drag to rearrange arrives in Phase 2.
+    // re-sorts no longer reshuffle). Drag then rearranges via onReorder below.
     const nextOrder =
       nextMode === "manual" && viewState.order.length === 0
         ? items.map((item) => item.id)
@@ -58,5 +60,21 @@ export function useSidebarOrganization<T extends { id: string }>({
     setViewState({ ...viewState, sort_mode: nextMode, order: nextOrder });
   }, [viewState, setViewState, items]);
 
-  return { sortMode: viewState.sort_mode, orderedItems, onToggleSortMode, isLoading, saveError };
+  const onReorder = useCallback(
+    (orderedIds: string[]) => {
+      // A drag only happens in manual mode; pin the mode defensively so the new
+      // order can never be stranded behind an alphabetical sort.
+      setViewState({ ...viewState, sort_mode: "manual", order: orderedIds });
+    },
+    [viewState, setViewState],
+  );
+
+  return {
+    sortMode: viewState.sort_mode,
+    orderedItems,
+    onToggleSortMode,
+    onReorder,
+    isLoading,
+    saveError,
+  };
 }

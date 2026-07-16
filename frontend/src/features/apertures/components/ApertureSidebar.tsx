@@ -1,5 +1,6 @@
 import { Copy, Trash2 } from "lucide-react";
 import { ElementSidebar, type ElementSidebarItem } from "../../../shared/ui";
+import { useSidebarOrganization } from "../../sidebar_views/useSidebarOrganization";
 import { nameCollides } from "../lib";
 import type { ApertureTypeEntry } from "../types";
 
@@ -8,6 +9,7 @@ import type { ApertureTypeEntry } from "../types";
  * Selection is state-based (`onSelect`); rows carry no leading icon.
  */
 export function ApertureSidebar({
+  projectId,
   apertures,
   activeApertureId,
   canEdit,
@@ -20,6 +22,7 @@ export function ApertureSidebar({
   onDuplicate,
   onDelete,
 }: {
+  projectId: string;
   apertures: ApertureTypeEntry[];
   activeApertureId: string | null;
   canEdit: boolean;
@@ -57,6 +60,8 @@ export function ApertureSidebar({
     ],
   }));
 
+  const org = useSidebarOrganization({ projectId, viewKey: "apertures", canEdit, items });
+
   return (
     <ElementSidebar
       title="Aperture Types"
@@ -67,7 +72,7 @@ export function ApertureSidebar({
       onToggleCollapsed={onToggleCollapsed}
       canEdit={canEdit}
       actionDisabled={actionDisabled}
-      items={items}
+      items={org.orderedItems}
       activeId={activeApertureId}
       navigation={{ mode: "select", onSelect }}
       rename={{
@@ -76,6 +81,15 @@ export function ApertureSidebar({
         editLabel: "Edit aperture type name",
       }}
       add={canEdit ? { label: "Add aperture type", onAdd, disabled: actionDisabled } : null}
+      organization={
+        canEdit
+          ? {
+              sortMode: org.sortMode,
+              onToggleSortMode: org.onToggleSortMode,
+              onReorder: org.onReorder,
+            }
+          : undefined
+      }
     />
   );
 }
