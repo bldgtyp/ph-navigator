@@ -1,4 +1,3 @@
-import * as Popover from "@radix-ui/react-popover";
 import {
   DndContext,
   KeyboardSensor,
@@ -15,12 +14,14 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { GripVertical } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { OPTION_COLOR_PALETTE, createFieldOption } from "../lib/options/create";
+import { createFieldOption, nonEmptyFieldOptions } from "../lib/options/create";
 import { hasDuplicateFieldOptionLabels, missingOptionReferences } from "../lib/options/references";
 import { normalizeOptionOrders } from "../lib/options/normalize";
 import type { FieldOption } from "../types";
 import { ConfirmDeleteOptionDialog, type CascadeChoice } from "./ConfirmDeleteOptionDialog";
+import { OptionColorPicker } from "./OptionColorPicker";
 import { SingleSelectDefaultPicker } from "./SingleSelectDefaultPicker";
 
 export type OptionSourceRow = { rowId: string; rawValue: unknown };
@@ -76,12 +77,23 @@ export function FieldConfigSectionOptions({
     () => missingOptionReferences(rows, sourceOptions, (row) => row.rawValue),
     [rows, sourceOptions],
   );
+  // A blank row is the "new option" affordance, not an error: it never
+  // blocks Save and is dropped from the saved set (Airtable parity), so the
+  // modal no longer yells "needs a label" the instant a row is added. Only
+  // real conflicts surface — duplicate labels, or an *in-use* option that was
+  // blanked (which would strand the rows still referencing it).
+  const nonEmptyOptions = useMemo(() => nonEmptyFieldOptions(draftOptions), [draftOptions]);
   const duplicateLabels = hasDuplicateFieldOptionLabels(draftOptions);
-  const hasEmptyLabel = draftOptions.some((option) => !option.label.trim());
-  const valid = !duplicateLabels && !hasEmptyLabel;
-  const normalizedDraftOptions = useMemo(() => normalizeOptionOrders(draftOptions), [draftOptions]);
+  const referencedBlankLabel = draftOptions.some(
+    (option) => !option.label.trim() && (referenceCounts[option.id] ?? 0) > 0,
+  );
+  const valid = !duplicateLabels && !referencedBlankLabel;
+  const normalizedDraftOptions = useMemo(
+    () => normalizeOptionOrders(nonEmptyOptions),
+    [nonEmptyOptions],
+  );
   const dirty =
-    !optionListsEquivalent(sourceOptions, draftOptions) ||
+    !optionListsEquivalent(sourceOptions, nonEmptyOptions) ||
     draftColorCodeOptions !== sourceColorCodeOptions ||
     draftDefaultOptionId !== sourceDefaultOptionId;
 
@@ -251,7 +263,7 @@ export function FieldConfigSectionOptions({
           ⊕ Add option
         </button>
         <SingleSelectDefaultPicker
-          options={draftOptions.filter((option) => option.label.trim())}
+          options={nonEmptyOptions}
           value={draftDefaultOptionId}
           onChange={setDraftDefaultOptionId}
           disabled={disabled}
@@ -259,8 +271,10 @@ export function FieldConfigSectionOptions({
         {duplicateLabels ? (
           <p className="form-error data-table-field-editor-error">Option labels must be unique.</p>
         ) : null}
-        {hasEmptyLabel ? (
-          <p className="form-error data-table-field-editor-error">Every option needs a label.</p>
+        {referencedBlankLabel ? (
+          <p className="form-error data-table-field-editor-error">
+            An option that rows still use can’t have an empty label.
+          </p>
         ) : null}
         {missingRefs.length > 0 ? (
           <p className="form-note data-table-field-editor-warning">
@@ -325,16 +339,16 @@ function OptionRow({
     >
       <button
         type="button"
-        className="data-table-view-popover-drag"
+        className="data-table-view-popover-drag data-table-field-editor-drag"
         aria-label={`Reorder ${option.label || "option"}`}
         ref={sortable.setActivatorNodeRef}
         disabled={disabled}
         {...sortable.attributes}
         {...sortable.listeners}
       >
-        ⋮⋮
+        <GripVertical aria-hidden />
       </button>
-      <ColorCirclePopover
+      <OptionColorPicker
         color={option.color}
         label={option.label}
         disabled={disabled}
@@ -365,60 +379,6 @@ function OptionRow({
         ×
       </button>
     </li>
-  );
-}
-
-function ColorCirclePopover({
-  color,
-  label,
-  disabled,
-  onColorChange,
-}: {
-  color: string;
-  label: string;
-  disabled: boolean;
-  onColorChange: (color: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  return (
-    <Popover.Root open={open} onOpenChange={setOpen}>
-      <Popover.Trigger asChild>
-        <button
-          type="button"
-          className="data-table-field-editor-color-circle"
-          aria-label={`Color for ${label || "option"}`}
-          style={{ "--option-color": color } as CSSProperties}
-          disabled={disabled}
-        >
-          <span aria-hidden className="data-table-field-editor-color-chevron">
-            ▾
-          </span>
-        </button>
-      </Popover.Trigger>
-      <Popover.Portal>
-        <Popover.Content
-          className="data-table-field-editor-color-picker"
-          align="start"
-          sideOffset={4}
-          aria-label="Pick option color"
-        >
-          {OPTION_COLOR_PALETTE.map((swatch) => (
-            <button
-              key={swatch}
-              type="button"
-              className="data-table-field-editor-color-swatch"
-              aria-label={swatch}
-              aria-pressed={swatch === color}
-              style={{ "--option-color": swatch } as CSSProperties}
-              onClick={() => {
-                onColorChange(swatch);
-                setOpen(false);
-              }}
-            />
-          ))}
-        </Popover.Content>
-      </Popover.Portal>
-    </Popover.Root>
   );
 }
 

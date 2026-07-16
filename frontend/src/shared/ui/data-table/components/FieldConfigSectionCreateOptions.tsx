@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { AutocompleteSelect } from "../../AutocompleteSelect";
-import { OPTION_COLOR_PALETTE, createFieldOption } from "../lib/options/create";
+import { createFieldOption, nonEmptyFieldOptions } from "../lib/options/create";
 import { hasDuplicateFieldOptionLabels } from "../lib/options/references";
 import { normalizeOptionOrders } from "../lib/options/normalize";
 import type { FieldOption } from "../types";
+import { OptionColorPicker } from "./OptionColorPicker";
 import { SingleSelectDefaultPicker } from "./SingleSelectDefaultPicker";
 
 export type CreateOptionsDraft = {
@@ -24,10 +24,16 @@ export function FieldConfigSectionCreateOptions({
   const [options, setOptions] = useState<FieldOption[]>(() => [createFieldOption("", [])]);
   const [defaultOptionId, setDefaultOptionId] = useState<string | null>(null);
 
+  // Blank rows are the "new option" affordance, dropped from the saved set
+  // rather than flagged — so adding a row never immediately errors. The field
+  // just needs at least one labelled option to be a valid single-select.
+  const nonEmptyOptions = useMemo(() => nonEmptyFieldOptions(options), [options]);
   const duplicateLabels = useMemo(() => hasDuplicateFieldOptionLabels(options), [options]);
-  const hasEmptyLabel = options.some((option) => !option.label.trim());
-  const normalizedOptions = useMemo(() => normalizeOptionOrders(options), [options]);
-  const valid = options.length > 0 && !duplicateLabels && !hasEmptyLabel;
+  const normalizedOptions = useMemo(
+    () => normalizeOptionOrders(nonEmptyOptions),
+    [nonEmptyOptions],
+  );
+  const valid = nonEmptyOptions.length > 0 && !duplicateLabels;
 
   useEffect(() => {
     const ids = new Set(options.map((option) => option.id));
@@ -50,18 +56,11 @@ export function FieldConfigSectionCreateOptions({
       <ul className="data-table-add-field-options" role="list">
         {options.map((option, index) => (
           <li key={option.id} className="data-table-add-field-option-row">
-            <AutocompleteSelect
-              className="data-table-add-field-option-color"
-              aria-label={`Option color ${index + 1}`}
-              value={option.color}
+            <OptionColorPicker
+              color={option.color}
+              label={option.label}
               disabled={disabled}
-              compact
-              options={OPTION_COLOR_PALETTE.map((swatch) => ({
-                value: swatch,
-                label: swatch,
-                color: swatch,
-              }))}
-              onChange={(color) => updateOption(option.id, { color })}
+              onColorChange={(color) => updateOption(option.id, { color })}
             />
             <input
               type="text"
@@ -93,16 +92,13 @@ export function FieldConfigSectionCreateOptions({
         + Add option
       </button>
       <SingleSelectDefaultPicker
-        options={options.filter((option) => option.label.trim())}
+        options={nonEmptyOptions}
         value={defaultOptionId}
         onChange={setDefaultOptionId}
         disabled={disabled}
       />
       {duplicateLabels ? (
         <p className="form-error data-table-field-editor-error">Option labels must be unique.</p>
-      ) : null}
-      {hasEmptyLabel ? (
-        <p className="form-error data-table-field-editor-error">Every option needs a label.</p>
       ) : null}
     </div>
   );

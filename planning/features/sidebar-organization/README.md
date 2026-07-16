@@ -14,7 +14,7 @@ RELATED:
   - frontend/src/features/apertures/hooks/useFramePickerFilterPreferences.ts (per-user preference pattern precedent)
   - frontend/src/shared/ui/data-table/ (grouping/filter persistence pattern to mirror)
   - planning/refactor/tooltip-hover-delays/ (sibling — sidebar tooltip parity)
-  - planning/refactor/datatable-ui-fixes/ (item 12 reorder handle — share one reorder primitive)
+  - planning/archive/dated/2026-07-15/datatable-ui-fixes/ (item 12 reorder handle — share one reorder primitive; the create-modal reorder parity is a deferred follow-up recorded there)
 ---
 
 # Sidebar organization — manual order, grouping, collapse

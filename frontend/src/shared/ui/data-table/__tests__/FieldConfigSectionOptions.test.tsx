@@ -103,6 +103,63 @@ describe("FieldConfigSectionOptions", () => {
     });
   });
 
+  test("adding a blank option does not surface an error and drops it from the saved set", async () => {
+    const onDraftChange = vi.fn();
+    render(
+      <FieldConfigSectionOptions
+        fieldDisplayName="Floor"
+        sourceOptions={FLOOR_OPTIONS}
+        sourceColorCodeOptions
+        sourceDefaultOptionId={null}
+        rows={EMPTY_ROWS}
+        required={false}
+        disabled={false}
+        onDraftChange={onDraftChange}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Add option/ }));
+
+    // No premature "needs a label" yelling before the user types anything.
+    expect(screen.queryByText(/needs a label/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/empty label/i)).not.toBeInTheDocument();
+
+    await waitFor(() => {
+      const draft = onDraftChange.mock.calls.at(-1)?.[0];
+      expect(draft.valid).toBe(true);
+      // The blank row is displayed for editing but excluded from the saved set.
+      expect(draft.options.map((option: FieldOption) => option.id)).toEqual([
+        "opt_ground",
+        "opt_basement",
+      ]);
+    });
+  });
+
+  test("blanking an in-use option surfaces the referenced-blank error and blocks save", async () => {
+    const onDraftChange = vi.fn();
+    render(
+      <FieldConfigSectionOptions
+        fieldDisplayName="Floor"
+        sourceOptions={FLOOR_OPTIONS}
+        sourceColorCodeOptions
+        sourceDefaultOptionId={null}
+        rows={[{ rowId: "rm_1", rawValue: "opt_ground" }]}
+        required={false}
+        disabled={false}
+        onDraftChange={onDraftChange}
+      />,
+    );
+
+    fireEvent.change(screen.getByRole("textbox", { name: "Option label for Ground" }), {
+      target: { value: "" },
+    });
+
+    expect(screen.getByText(/can’t have an empty label/)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(onDraftChange.mock.calls.at(-1)?.[0].valid).toBe(false);
+    });
+  });
+
   test("required in-use option delete without a replacement candidate is blocked", () => {
     render(
       <FieldConfigSectionOptions
