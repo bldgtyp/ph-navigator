@@ -13,7 +13,7 @@ from features.project_document.validation import SerializedProjectDocument, seri
 from features.projects.models import CreateProjectRequest, UpdateProjectRequest
 
 PROJECT_COLUMNS = """
-    id, name, bt_number, client, cert_programs, phius_number,
+    id, name, public_alias, bt_number, client, cert_programs, phius_number,
     phius_dropbox_url, active_version_id, last_saved_at,
     created_at, updated_at
 """
@@ -26,7 +26,7 @@ PROJECT_LIFECYCLE_COLUMNS = f"""
 def list_projects_for_owner(conn: Connection[Any], owner_id: UUID) -> list[dict[str, Any]]:
     rows = conn.execute(
         """
-        SELECT id, name, bt_number, client, cert_programs, phius_number,
+        SELECT id, name, public_alias, bt_number, client, cert_programs, phius_number,
                phius_dropbox_url, active_version_id, last_saved_at,
                created_at, updated_at
         FROM projects
@@ -42,7 +42,7 @@ def list_projects_for_owner(conn: Connection[Any], owner_id: UUID) -> list[dict[
 def get_project_by_id(conn: Connection[Any], project_id: UUID) -> dict[str, Any] | None:
     return conn.execute(
         """
-        SELECT id, name, bt_number, client, cert_programs, phius_number,
+        SELECT id, name, public_alias, bt_number, client, cert_programs, phius_number,
                phius_dropbox_url, active_version_id, last_saved_at,
                created_at, updated_at
         FROM projects
@@ -67,7 +67,7 @@ def get_project_by_id_including_deleted(conn: Connection[Any], project_id: UUID)
 def get_project_detail_by_id(conn: Connection[Any], project_id: UUID) -> dict[str, Any] | None:
     return conn.execute(
         """
-        SELECT projects.id, projects.name, projects.bt_number, projects.client,
+        SELECT projects.id, projects.name, projects.public_alias, projects.bt_number, projects.client,
                projects.cert_programs, projects.phius_number, projects.phius_dropbox_url,
                projects.active_version_id, projects.last_saved_at,
                projects.created_at, projects.updated_at,
@@ -289,7 +289,7 @@ def insert_project_with_initial_version(
             %(name)s, %(bt_number)s, %(client)s, %(cert_programs)s,
             %(phius_number)s, %(phius_dropbox_url)s, %(owner_id)s
         )
-        RETURNING id, name, bt_number, client, cert_programs, phius_number,
+        RETURNING id, name, public_alias, bt_number, client, cert_programs, phius_number,
                   phius_dropbox_url, active_version_id, last_saved_at,
                   created_at, updated_at
         """,
@@ -336,7 +336,7 @@ def insert_project_with_initial_version(
             last_saved_at = now(),
             updated_at = now()
         WHERE id = %(project_id)s
-        RETURNING id, name, bt_number, client, cert_programs, phius_number,
+        RETURNING id, name, public_alias, bt_number, client, cert_programs, phius_number,
                   phius_dropbox_url, active_version_id, last_saved_at,
                   created_at, updated_at
         """,
@@ -366,7 +366,7 @@ def update_project_metadata(
                 updated_at = now()
             WHERE id = %(project_id)s
               AND deleted_at IS NULL
-            RETURNING id, name, bt_number, client, cert_programs, phius_number,
+            RETURNING id, name, public_alias, bt_number, client, cert_programs, phius_number,
                       phius_dropbox_url, active_version_id, last_saved_at,
                       created_at, updated_at,
                       (

@@ -122,7 +122,9 @@ def issue_agent_mcp_token(
         raise RuntimeError(f"Project is deleted after fixture seed: {fixture.project_id}")
 
     user = public_user(user_row)
-    project = ProjectSummary.model_validate({field: project_row[field] for field in ProjectSummary.model_fields})
+    project = ProjectSummary.model_validate(
+        {field: project_row[field] for field in ProjectSummary.model_fields if field in project_row}
+    )
     access = project_access_for_user(user, project, "edit")
     payload = McpTokenIssueRequest(label=label, scopes=resolved_scopes, expires_at=expires_at)
     request = Request(

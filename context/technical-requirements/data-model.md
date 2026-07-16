@@ -73,6 +73,14 @@ projects (
                        -- soft-deleted projects retain their numbers and
                        -- numbers are never reused.
     client             TEXT,
+    public_alias       TEXT,
+                       -- user-settable public-facing title. `name` may carry
+                       -- identifying info; the display rule is
+                       -- `display_name = public_alias ?? name` (server-computed,
+                       -- shown to everyone). Once set, `name` is also redacted
+                       -- to the alias for `client` viewers (service layer), so
+                       -- the real name never reaches an anonymous/API-client
+                       -- principal. NULL ⇒ real name shows (opt-in privacy).
     cert_programs      TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
                        -- zero or more target certification programs:
                        -- 'phi' and/or 'phius'. A building may pursue both.

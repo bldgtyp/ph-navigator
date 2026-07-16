@@ -74,11 +74,12 @@ class UpdateProjectRequest(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=200)
     bt_number: str | None = Field(default=None, min_length=1, max_length=64)
     client: str | None = Field(default=None, max_length=200)
+    public_alias: str | None = Field(default=None, max_length=200)
     cert_programs: list[CertificationProgram] | None = None
     phius_number: str | None = Field(default=None, max_length=100)
     phius_dropbox_url: str | None = Field(default=None, max_length=500)
 
-    @field_validator("name", "bt_number", "client", "phius_number", "phius_dropbox_url", mode="before")
+    @field_validator("name", "bt_number", "client", "public_alias", "phius_number", "phius_dropbox_url", mode="before")
     @classmethod
     def strip_blank_strings(cls, value: object) -> object:
         return strip_blank_string(value)
@@ -129,6 +130,7 @@ class ProjectSummary(BaseModel):
 
     id: UUID
     name: str
+    public_alias: str | None
     bt_number: str
     client: str | None
     cert_programs: list[CertificationProgram]
@@ -138,6 +140,20 @@ class ProjectSummary(BaseModel):
     last_saved_at: datetime | None
     created_at: datetime
     updated_at: datetime
+    # The public-facing title: the alias if set, else the internal name. Always
+    # server-derived by `_derive_display_name` (any supplied value is ignored),
+    # so every title site and every API/MCP consumer shares one resolution rule.
+    # A plain field — not a computed property — so it appears in both the
+    # validation and serialization JSON schemas (FastMCP validates tool output
+    # against the former). For a `client` viewer the internal `name` is itself
+    # redacted to the alias in `service.get_project_detail`, so `display_name`
+    # and `name` coincide there and the real name never reaches them.
+    display_name: str = ""
+
+    @model_validator(mode="after")
+    def _derive_display_name(self) -> Self:
+        self.display_name = self.public_alias or self.name
+        return self
 
 
 class ProjectDetail(ProjectSummary):

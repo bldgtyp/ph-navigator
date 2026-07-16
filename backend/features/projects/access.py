@@ -92,7 +92,9 @@ def require_project_access(project_id: UUID, request: Request, mode: ProjectAcce
                     "hard_delete_after": _isoformat(project_row["hard_delete_after"]),
                 },
             )
-        project = ProjectSummary.model_validate({field: project_row[field] for field in ProjectSummary.model_fields})
+        project = ProjectSummary.model_validate(
+            {field: project_row[field] for field in ProjectSummary.model_fields if field in project_row}
+        )
         principal: Principal = build_user_principal(conn, user) if user is not None else ViewerPrincipal()
 
     access = ProjectAccess(project_id=project_id, mode=mode, principal=principal, project=project)

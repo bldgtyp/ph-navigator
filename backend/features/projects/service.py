@@ -56,7 +56,9 @@ class ProjectObjectStorage(Protocol):
 
 
 def project_summary(row: dict[str, object]) -> ProjectSummary:
-    return ProjectSummary.model_validate({field: row[field] for field in ProjectSummary.model_fields})
+    # `display_name` is server-derived, not a DB column, so skip it here — the
+    # model's after-validator fills it from `public_alias`/`name`.
+    return ProjectSummary.model_validate({field: row[field] for field in ProjectSummary.model_fields if field in row})
 
 
 def project_delete_counts(row: dict[str, int]) -> ProjectDeleteCounts:
@@ -64,7 +66,7 @@ def project_delete_counts(row: dict[str, int]) -> ProjectDeleteCounts:
 
 
 def project_deleted_summary(row: dict[str, object], counts: ProjectDeleteCounts) -> ProjectDeletedSummary:
-    values = {field: row[field] for field in ProjectSummary.model_fields}
+    values = {field: row[field] for field in ProjectSummary.model_fields if field in row}
     values.update(
         {
             "deleted_at": row["deleted_at"],
@@ -446,9 +448,16 @@ def get_project_detail(
     fields = project.model_dump()
     if not can_view_private_metadata:
         # Redact internal metadata from `client` viewers (keep `phius_number`,
-        # `name`, `bt_number` public). Ledger §4.9.
+        # `bt_number` public). Ledger §4.9.
         fields["client"] = None
         fields["phius_dropbox_url"] = None
+        # The internal `name` may carry identifying info. Once an alias is set,
+        # it replaces `name` for `client` viewers so the real name never reaches
+        # them (here, not just the frontend — so API/MCP client tokens are
+        # covered too). With no alias, the real name flows through unchanged
+        # (opt-in privacy). See planning/features/project-public-alias/PRD.md.
+        if fields["public_alias"]:
+            fields["name"] = fields["public_alias"]
     return ProjectDetail(
         **fields,
         versions=versions,

@@ -38,6 +38,7 @@ def _project() -> ProjectSummary:
     return ProjectSummary(
         id=uuid4(),
         name="P",
+        public_alias=None,
         bt_number="0000",
         client=None,
         cert_programs=[],

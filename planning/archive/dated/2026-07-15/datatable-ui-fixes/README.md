@@ -65,7 +65,7 @@ confirm the frozen gutter paints over it).
   also gains drag-to-reorder (today reorder is edit-only). The create + edit
   editors still carry parallel `updateOption`/`removeOption`/`addOption` +
   blank-row validation. This overlaps the "one shared reorder primitive" work
-  tracked in [`sidebar-organization`](../../../../features/sidebar-organization/README.md)
+  tracked in [`sidebar-organization`](../../2026-07-16/sidebar-organization/README.md)
   — do them together.
 - **Named z-index token ladder** (`--z-dt-active/-frozen/-gutter/-summary`) to
   replace the ~9 scattered `calc(var(--z-base) + N)` offsets in `DataTable.css`,
@@ -117,7 +117,7 @@ Sub-issues:
 
 - The **reorder handle** (#4) shares the drag-reorder interaction with the
   sidebar manual-ordering work in
-  [`sidebar-organization`](../../../../features/sidebar-organization/README.md). Build
+  [`sidebar-organization`](../../2026-07-16/sidebar-organization/README.md). Build
   or reuse **one** shared reorder primitive across both.
 - [`features_v1.1/catalog-manage-options-modal`](../../../../features_v1.1/catalog-manage-options-modal/README.md)
   is about making this same modal *reachable* for catalog single-selects

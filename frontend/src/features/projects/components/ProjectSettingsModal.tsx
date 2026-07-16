@@ -21,6 +21,7 @@ export function ProjectSettingsModal({
 }) {
   const isViewer = project.access_mode === "viewer";
   const [name, setName] = useState(project.name);
+  const [publicAlias, setPublicAlias] = useState(project.public_alias ?? "");
   const [btNumber, setBtNumber] = useState(project.bt_number);
   const [client, setClient] = useState(project.client ?? "");
   const [certPrograms, setCertPrograms] = useState<CertificationProgram[]>(project.cert_programs);
@@ -33,6 +34,7 @@ export function ProjectSettingsModal({
   const tokensQuery = useMcpTokensQuery(project.id, !isViewer);
   const changedPayload = changedProjectFields(project, {
     name,
+    publicAlias,
     btNumber,
     client,
     certPrograms,
@@ -88,6 +90,19 @@ export function ProjectSettingsModal({
                   required
                 />
               </label>
+              <label>
+                <span>Public alias</span>
+                <input
+                  value={publicAlias}
+                  maxLength={200}
+                  placeholder="e.g. Manhattan Townhouse"
+                  onChange={(event) => setPublicAlias(event.target.value)}
+                />
+              </label>
+              <p className="form-note">
+                Public-facing title shown wherever the project name appears. Leave blank to show the
+                real project name.
+              </p>
               <label>
                 <span>BT number</span>
                 <input
@@ -236,6 +251,7 @@ function changedProjectFields(
   project: ProjectDetail,
   values: {
     name: string;
+    publicAlias: string;
     btNumber: string;
     client: string;
     certPrograms: CertificationProgram[];
@@ -245,6 +261,7 @@ function changedProjectFields(
 ): UpdateProjectPayload {
   const next = {
     name: values.name.trim(),
+    public_alias: values.publicAlias.trim() || null,
     bt_number: values.btNumber.trim(),
     client: values.client.trim() || null,
     cert_programs: values.certPrograms,
@@ -253,6 +270,7 @@ function changedProjectFields(
   };
   const payload: UpdateProjectPayload = {};
   if (next.name !== project.name) payload.name = next.name;
+  if (next.public_alias !== project.public_alias) payload.public_alias = next.public_alias;
   if (next.bt_number !== project.bt_number) payload.bt_number = next.bt_number;
   if (next.client !== project.client) payload.client = next.client;
   if (next.phius_number !== project.phius_number) payload.phius_number = next.phius_number;

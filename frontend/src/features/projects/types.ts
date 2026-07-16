@@ -15,6 +15,13 @@ export type ProjectVersion = {
 export type ProjectSummary = {
   id: string;
   name: string;
+  /** User-settable public-facing alias; null when unset. */
+  public_alias: string | null;
+  /**
+   * Public-facing title, server-derived as `public_alias ?? name`. Render this
+   * at every title site (breadcrumb, cards, `<title>`) — never `name` directly.
+   */
+  display_name: string;
   bt_number: string;
   client: string | null;
   cert_programs: CertificationProgram[];
@@ -83,7 +90,11 @@ export type CreateProjectPayload = {
   phius_dropbox_url: string | null;
 };
 
-export type UpdateProjectPayload = Partial<CreateProjectPayload>;
+// `public_alias` is settable only via update (project settings), not at
+// creation — the backend's create contract rejects unknown fields.
+export type UpdateProjectPayload = Partial<CreateProjectPayload> & {
+  public_alias?: string | null;
+};
 
 export type BtNumberAvailability = {
   available: boolean;

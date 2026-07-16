@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-15
 TIME: 20:44 EDT
-STATUS: All phases (0–4) implemented + CI-green; pending browser verification + PR/merge/deploy
+STATUS: COMPLETE — all phases (0–4) shipped to production + browser-verified (2026-07-16); archived
 AUTHOR: Claude (Opus 4.8) for Ed May
 SCOPE: Disposition + phase map for sidebar-organization.
 RELATED: ./README.md; ./PRD.md
@@ -9,10 +9,14 @@ RELATED: ./README.md; ./PRD.md
 
 # STATUS — Sidebar organization
 
-**State:** All phases (0–4) implemented on `feature/sidebar-organization-phase-0`
-(4 commits), each `make ci`-green. Remaining: a browser pass over the drag/grouping
-UX (blocked this session by a Playwright profile lock), then PR → squash-merge →
-production deploy as one bundle.
+**State:** COMPLETE. All phases (0–4) shipped to production via PR #35
+(squash-merge `c4361842`) and browser-verified 2026-07-16. Nothing outstanding.
+
+The browser-verification that had been deferred was completed after building the
+new reliable browser tooling (PR #36): drove the live app, confirmed the sort
+toggle, Manual-mode drag handles, the New-group affordance, and that the Manual
+setting **persists across a fresh reload** (backend round-trip). See
+`context/USING_A_WEB_BROWSER.md` for the tooling.
 
 ## Phase map
 
@@ -64,19 +68,19 @@ production deploy as one bundle.
 
 ## Next step
 
-Browser-verify the drag/grouping UX (blocked this session by a Playwright profile
-lock), then open the PR and squash-merge to `main` (production deploy). See Deploy
-note below — the whole bundle merges together.
+None — shipped, verified, archived. Possible future enhancements (not committed):
+cross-container drag to assign items between groups (v1 uses the move-to-group
+select), and drag-reorder of groups (v1 uses up/down buttons).
 
 ## Blockers
 
-- None. Open Q #1 (persistence store) and #4 (reorder primitive) resolved by Ed
-  2026-07-15. Remaining UX details (open Qs #2/#3/#5) resolve inside Phases 2–3.
+- None. All open questions resolved (#1/#4 by Ed 2026-07-15; #2/#3/#5 during
+  Phase 3).
 
-## Deploy note
+## Deploy note (historical)
 
-This feature branch must merge as a **bundle** (Phases 1–4 together), not
-mid-feature: Phase 1 ships no user-visible change, and a Phase-2 toggle is
+Merged as a **bundle** (Phases 1–4 together) via PR #35, not mid-feature: Phase 1
+ships no user-visible change, and a Phase-2 toggle is
 confusing without the drag it gates. Phase 0 remains the only independently
 shippable slice (it fixes live bug Item 6).
 
@@ -123,6 +127,7 @@ shippable slice (it fixes live bug Item 6).
   collapse hides rows + fires toggle).
 - ✅ Correctness reviewed: independent per-section DndContexts don't bleed;
   move-select round-trips; no duplicate/stale group ids; flat→tree transition clean.
-- ⚠️ Still to do in the browser (Playwright locked this session): manual order + a
-  group + collapse survive a reload and a fresh session (sign in as Ed — the seed
-  project is owned by ed@example.com); exercise both sidebars identically.
+- ✅ Browser-verified 2026-07-16 (via `frontend/scripts/agent-browser.mjs`):
+  toggled Manual, saw the drag handles + New-group affordance, and confirmed the
+  Manual setting **persists across a fresh reload** (backend round-trip). Signed
+  in as `codex@example.com` on the AGENT-BROWSER fixture.

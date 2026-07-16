@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-15
 TIME: 20:44 EDT
-STATUS: Active — captured, not scoped
+STATUS: Active — scoped 2026-07-16; Phase 1 (Data + API) built, frontend Phases 2–4 pending
 AUTHOR: Claude (Opus 4.8) for Ed May
 SCOPE: Add a user-settable, public-facing `public_alias` to projects, used in
   public-facing titles instead of the internal project name (which may carry

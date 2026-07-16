@@ -10,6 +10,8 @@ import { RecordStatusSummary } from "./RecordStatusSummary";
 const PROJECT: ProjectDetail = {
   id: "proj_1",
   name: "Linde Home",
+  public_alias: null,
+  display_name: "Linde Home",
   bt_number: "2524",
   client: null,
   cert_programs: ["phius"],

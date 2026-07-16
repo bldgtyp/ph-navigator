@@ -13,7 +13,7 @@ RELATED:
   - frontend/src/features/envelope/components/EnvelopeSidebar.tsx (item 10 — needs parity)
   - frontend/src/features/project_document/components/VersionControls.tsx (item 9)
   - frontend/src/features/project_document/components/VersionControlsMenus.tsx
-  - planning/features/sidebar-organization/ (sibling — the two sidebars also diverge in rename UI)
+  - planning/archive/dated/2026-07-16/sidebar-organization/ (sibling — the two sidebars also diverge in rename UI)
 ---
 
 # Tooltip hover-delays + appearance consistency
@@ -96,7 +96,7 @@ unaffected. Values 500 / 900 ms chosen by feel; retune in-browser if needed.
 
 - **Shared row-action button** — both sidebars still carry a near-identical local
   `SidebarActionButton`. Extraction is deferred to
-  [`sidebar-organization`](../../features/sidebar-organization/README.md) Phase 0
+  [`sidebar-organization`](../../2026-07-16/sidebar-organization/README.md) Phase 0
   (consolidation), where the two call sites converge anyway.
 - **Next adopter of the constant** — `features/project_status/.../RecordStatusSummary.tsx`
   passes a raw `hoverDelay={300}`; migrate it to a named tier when next touched.
@@ -104,7 +104,7 @@ unaffected. Values 500 / 900 ms chosen by feel; retune in-browser if needed.
 ## Notes
 
 - The sidebar work here (Envelope↔Apertures parity) overlaps the larger
-  [`sidebar-organization`](../../features/sidebar-organization/README.md)
+  [`sidebar-organization`](../../2026-07-16/sidebar-organization/README.md)
   feature, which proposes consolidating the two sidebars into one shared
   component. If that consolidation lands first, item 10's appearance-parity half
   is largely absorbed by it — do the tooltip-delay half here regardless.

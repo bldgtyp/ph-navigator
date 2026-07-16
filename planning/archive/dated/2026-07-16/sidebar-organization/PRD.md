@@ -59,7 +59,7 @@ one shared sidebar component (parameterized by item type / actions). This:
   shared component adopts that behavior.
 - Gives ordering/grouping/collapse a single home instead of two.
 - Pairs naturally with the tooltip-parity half of
-  [`tooltip-hover-delays`](../../refactor/tooltip-hover-delays/README.md) item 10.
+  [`tooltip-hover-delays`](../../2026-07-15/tooltip-hover-delays/README.md) item 10.
 - **Extract the shared row-action button.** The tooltip-hover-delays refactor
   (merged first) left both sidebars carrying a near-identical local
   `SidebarActionButton` (icon button wrapped in `<Tooltip … hoverDelay={long}>`).

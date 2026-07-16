@@ -809,7 +809,9 @@ def test_mcp_schema_mutation_rejects_project_document_over_size_limit(
     )
     access = project_access_for_user(
         user,
-        ProjectSummary.model_validate({field: project[field] for field in ProjectSummary.model_fields}),
+        ProjectSummary.model_validate(
+            {field: project[field] for field in ProjectSummary.model_fields if field in project}
+        ),
         "edit",
     )
     monkeypatch.setattr(settings, "project_document_max_body_bytes", 1)
