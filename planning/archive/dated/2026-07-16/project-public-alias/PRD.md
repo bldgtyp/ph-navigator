@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-15
 TIME: 20:44 EDT
-STATUS: Resolved 2026-07-16 — Phase 1 built; see STATUS.md for the phase map.
+STATUS: ✅ COMPLETE — all phases built + CI-green 2026-07-16; see STATUS.md.
 AUTHOR: Claude (Opus 4.8) for Ed May
 SCOPE: Behavior contract for project public alias.
 RELATED: ./README.md; ./STATUS.md
