@@ -61,7 +61,9 @@ def _anon_access(bt_number: str) -> ProjectAccess:
     with connection() as conn:
         row = repository.get_live_project_by_bt_number(conn, bt_number)
     assert row is not None
-    project = ProjectSummary.model_validate({field: row[field] for field in ProjectSummary.model_fields})
+    project = ProjectSummary.model_validate(
+        {field: row[field] for field in ProjectSummary.model_fields if field in row}
+    )
     return ProjectAccess(project_id=project.id, mode="view", principal=ViewerPrincipal(), project=project)
 
 

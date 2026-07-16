@@ -1,13 +1,24 @@
 ---
 DATE: 2026-07-15
 TIME: 20:44 EDT
-STATUS: Draft
+STATUS: Resolved 2026-07-16 — Phase 1 built; see STATUS.md for the phase map.
 AUTHOR: Claude (Opus 4.8) for Ed May
 SCOPE: Behavior contract for project public alias.
 RELATED: ./README.md; ./STATUS.md
 ---
 
 # PRD — Project public alias
+
+> **Resolved 2026-07-16 (Ed).** The open questions below are settled and the rule
+> simplified. Final model: `display_name = public_alias ?? name`, computed
+> **server-side** and shown to **everyone** (a universal override, not a
+> viewer-branch). With **no alias, the real name shows** — privacy is opt-in.
+> Once an alias is set, the internal `name` is additionally redacted to the alias
+> for principals without `PROJECT_VIEW_PRIVATE` (anonymous/`client`), server-side,
+> so API/MCP client tokens can't read it either. See STATUS.md §"Resolved model".
+> Sections below are kept as the original contract; where they differ (the
+> `displayName(viewer)` helper, the non-identifying fallback) the resolved model
+> wins.
 
 ## Problem
 

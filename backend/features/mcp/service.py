@@ -162,7 +162,9 @@ def project_access_for_token(token: McpTokenRecord, project_id: UUID, scope: Mcp
     # way the request seam does. (Token-scope intersection is Phase 5; today the
     # project/scope boundary is enforced by require_token_scope above.)
     user = UserPublic.model_validate({key: user_row[key] for key in UserPublic.model_fields})
-    project = ProjectSummary.model_validate({key: project_row[key] for key in ProjectSummary.model_fields})
+    project = ProjectSummary.model_validate(
+        {key: project_row[key] for key in ProjectSummary.model_fields if key in project_row}
+    )
     return project_access_for_user(user, project, "view")
 
 
