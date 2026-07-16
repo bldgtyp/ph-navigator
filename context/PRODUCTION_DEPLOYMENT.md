@@ -1,5 +1,5 @@
 ---
-DATE: 2026-06-28
+DATE: 2026-07-16
 STATUS: CANONICAL PRODUCTION DEPLOYMENT RUNBOOK
 RELATED:
   - context/ENVIRONMENT.md
@@ -29,6 +29,7 @@ workflow.
 | Current repo | `https://github.com/bldgtyp/ph-navigator` |
 | Legacy V0 repo | `https://github.com/bldgtyp/ph-navigator_v0` |
 | Production Blueprint | `render.prod.yaml` |
+| Deploy trigger | "Deploy Production" GitHub Actions workflow (`.github/workflows/deploy.yml`) — auto-deploy is OFF |
 | Optional staging Blueprint | `render.yaml` |
 | Production object store | Cloudflare R2 bucket `ph-navigator-prod` |
 | Local/dev object store | MinIO bucket `ph-navigator-v2-dev` |
@@ -55,8 +56,11 @@ active Render staging stack.
 | Database | `ph-navigator-db` | `dpg-d909olr7uimc7396sls0-a` | Render PostgreSQL 16, database `ph_navigator`, region Ohio, plan `basic_256mb`, 1 GB disk. |
 
 `ph-navigator-web` and `ph-navigator-api` track
-`https://github.com/bldgtyp/ph-navigator` on branch `main`. A push or merge to
-`main` is a production deploy trigger. Do not treat main pushes as harmless WIP.
+`https://github.com/bldgtyp/ph-navigator` on branch `main` with **auto-deploy
+off** (`autoDeployTrigger: "off"` in `render.prod.yaml` and in each service's
+dashboard settings). A push or merge to `main` does NOT deploy; the "Deploy
+Production" GitHub Actions workflow is the only deploy trigger. `main` must
+still stay deployable — the next deploy always ships its latest commit.
 
 ### Legacy V0
 
@@ -250,20 +254,34 @@ operator-held token.
 
 ## Deployment Workflow
 
-Production deploys are tied to `main`, so branch discipline is part of the
-infrastructure contract.
+Auto-deploy is off; the "Deploy Production" GitHub Actions workflow
+(`.github/workflows/deploy.yml`) is the only production deploy trigger. It is
+started by Ed — manual dispatch from `main`, or pushing a `v*` tag on the tip
+of `main` — never by an agent.
 
 Default workflow:
 
 1. Branch from current `main`, usually `codex/<short-task>`.
 2. Iterate locally and push the feature branch only when useful for review or
-   backup. Branch pushes may run GitHub Actions, but Render production services
-   track `main`.
+   backup.
 3. Keep `main` deploy-ready. Do not push tiny WIP commits directly to `main`.
 4. Aggregate coherent work into one reviewed merge/squash/fast-forward to
-   `main`. Treat that merge as the production deploy event.
-5. After `main` updates, watch the Render deploy and run the public smoke checks
-   below.
+   `main`. Merging does not deploy.
+5. When ready to ship (one merge or a bundle of them), trigger Deploy
+   Production: `git tag v0.x.y && git push origin v0.x.y` from the tip of
+   `main`, or GitHub → Actions → "Deploy Production" → Run workflow.
+6. The workflow gates on the ref being the tip of `main` and on the required
+   CI checks passing, fires both Render deploy hooks pinned to the exact
+   commit (`&ref=<sha>`), then polls `/api/v1/version` until `git_sha` matches
+   and smoke-checks the public surfaces. Watch it finish green; spot-check
+   with the commands below.
+
+The workflow needs two repo secrets, `RENDER_DEPLOY_HOOK_API` and
+`RENDER_DEPLOY_HOOK_WEB` — the deploy-hook URLs from each service's Render
+dashboard (Settings → Deploy Hook). Deploy-hook URLs let anyone who has them
+trigger a deploy: store them in Apple Passwords alongside the other Render
+secrets, set them with `gh secret set`, and never commit or print them. If a
+service is rebuilt, its hook URL changes — update the secret.
 
 For `render.prod.yaml` changes, validate before merge:
 

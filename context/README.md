@@ -74,8 +74,8 @@ Load these only when the task touches the relevant surface:
   Blueprint/env vars, DNS records, R2 bucket/CORS, cookie/CSRF posture, runtime
   MCP endpoint, deleted staging resources, and public smoke commands.
 - `DEVELOPMENT_WORKFLOW.md` — branch policy, build-minute discipline, CI
-  expectations, and deploy-aware closeout rules now that `main` triggers Render
-  production deploys.
+  expectations, the explicit "Deploy Production" workflow (Render auto-deploy
+  is off; merging to `main` does not deploy), and deploy-aware closeout rules.
 - `technical-requirements/data-table.md` — shared `<DataTable>`
   implementation contract. Load with `UI_UX.md` §1.7 and
   `user-stories/30-tables-equipment.md` when touching table behavior.

@@ -13,7 +13,11 @@
 # ONLY non-secret config. Every secret or account-identifying value is
 # `sync: false` and must be entered in Render/Apple Passwords, never committed.
 #
-# Current URL env targets the custom-domain production stack. `main` deploys it.
+# Current URL env targets the custom-domain production stack.
+#
+# DEPLOY TRIGGER: auto-deploy is OFF for both services — merging to `main`
+# does NOT deploy. The "Deploy Production" GitHub Actions workflow is the only
+# deploy trigger; see context/PRODUCTION_DEPLOYMENT.md → "Deployment Workflow".
 
 databases:
   - name: ph-navigator-db
@@ -32,6 +36,7 @@ services:
     name: ph-navigator-api
     runtime: python
     rootDir: backend
+    autoDeployTrigger: "off"
     # Match the legacy V0 backend tier for the initial production cutover.
     plan: standard
     region: ohio
@@ -110,6 +115,7 @@ services:
     name: ph-navigator-web
     runtime: static
     rootDir: frontend
+    autoDeployTrigger: "off"
     buildCommand: pnpm install --frozen-lockfile && pnpm run build
     staticPublishPath: dist
     routes:

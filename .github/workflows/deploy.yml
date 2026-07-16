@@ -1,0 +1,123 @@
+# Deploy Production — explicit Render deploy trigger for PH-Navigator.
+#
+# Render auto-deploy is OFF for ph-navigator-api and ph-navigator-web
+# (render.prod.yaml → autoDeployTrigger: "off"), so merging to `main` does NOT
+# deploy. This workflow is the production deploy event. Trigger it by:
+#   - pushing a version tag:  git tag v0.2.0 && git push origin v0.2.0
+#   - manual dispatch:        Actions → "Deploy Production" → Run workflow (main)
+#
+# The deploy is pinned to the exact triggering commit via the deploy hooks'
+# `ref` parameter. Policy still requires that commit to be the tip of main —
+# production history stays linear, and an old tag can't ship stale code onto a
+# newer database schema (migrations do not roll back).
+#
+# Required repo secrets (Settings → Secrets and variables → Actions):
+#   RENDER_DEPLOY_HOOK_API — deploy hook URL for ph-navigator-api
+#   RENDER_DEPLOY_HOOK_WEB — deploy hook URL for ph-navigator-web
+# Hook URLs come from each service's Render dashboard → Settings → Deploy Hook.
+# They are secrets: they allow anyone to trigger a deploy. Never commit them.
+#
+# Runbook: context/PRODUCTION_DEPLOYMENT.md → "Deployment Workflow".
+
+name: Deploy Production
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  checks: read
+
+# One production deploy at a time; a queued deploy waits rather than cancels.
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require the trigger to be the tip of main
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::Dispatch this workflow from main (got $GITHUB_REF)." && exit 1
+          fi
+          REFS=$(git ls-remote "https://github.com/$GITHUB_REPOSITORY" refs/heads/main "$GITHUB_REF" "$GITHUB_REF^{}")
+          MAIN_SHA=$(echo "$REFS" | awk '$2 == "refs/heads/main" {print $1}')
+          # For annotated tags the peeled (^{}) line has the commit; otherwise
+          # the plain ref line already does.
+          REF_SHA=$(echo "$REFS" | awk -v r="$GITHUB_REF" '$2 == r "^{}" {p = $1} $2 == r {t = $1} END {print (p != "" ? p : t)}')
+          if [ -z "$MAIN_SHA" ] || [ "$REF_SHA" != "$MAIN_SHA" ]; then
+            echo "::error::$GITHUB_REF ($REF_SHA) is not the tip of main ($MAIN_SHA). Production deploys ship only the tip of main — retag after updating main." && exit 1
+          fi
+          echo "DEPLOY_SHA=$MAIN_SHA" >> "$GITHUB_ENV"
+          echo "Deploying main @ $MAIN_SHA"
+
+      - name: Wait for required CI checks on the deploy commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Job names from .github/workflows/ci.yml — update together.
+          REQUIRED_CHECKS="backend frontend"
+          # Poll until every required check completes successfully; fail on any
+          # failed check. Times out after 20 minutes so a wedged CI run cannot
+          # deploy by default.
+          for i in $(seq 1 40); do
+            RUNS=$(gh api "repos/$GITHUB_REPOSITORY/commits/$DEPLOY_SHA/check-runs" \
+              --jq '[.check_runs[] | {name, status, conclusion}]')
+            RESULT=ready
+            for NAME in $REQUIRED_CHECKS; do
+              STATE=$(echo "$RUNS" | jq -r --arg n "$NAME" \
+                'map(select(.name == $n)) | if length == 0 then "waiting" elif .[0].status != "completed" then "waiting" else .[0].conclusion end')
+              case "$STATE" in
+                success|neutral|skipped) ;;
+                waiting) RESULT=waiting ;;
+                *)
+                  echo "::error::Required check '$NAME' concluded '$STATE' on $DEPLOY_SHA — not deploying." && exit 1 ;;
+              esac
+            done
+            if [ "$RESULT" = "ready" ]; then
+              echo "Required checks green: $REQUIRED_CHECKS" && exit 0
+            fi
+            echo "Waiting for required checks ($REQUIRED_CHECKS)..." && sleep 30
+          done
+          echo "::error::Timed out waiting for CI checks on $DEPLOY_SHA." && exit 1
+
+      - name: Trigger Render deploys
+        env:
+          HOOK_API: ${{ secrets.RENDER_DEPLOY_HOOK_API }}
+          HOOK_WEB: ${{ secrets.RENDER_DEPLOY_HOOK_WEB }}
+        run: |
+          if [ -z "$HOOK_API" ] || [ -z "$HOOK_WEB" ]; then
+            echo "::error::RENDER_DEPLOY_HOOK_API / RENDER_DEPLOY_HOOK_WEB secrets are not set." && exit 1
+          fi
+          # `ref` pins the exact commit (hook URLs already carry ?key=...).
+          curl -fsS -o /dev/null "$HOOK_API&ref=$DEPLOY_SHA" && echo "API deploy triggered."
+          curl -fsS -o /dev/null "$HOOK_WEB&ref=$DEPLOY_SHA" && echo "Web deploy triggered."
+
+      - name: Verify API deploy (git_sha match)
+        run: |
+          # The API start command exports GIT_SHA=$RENDER_GIT_COMMIT, exposed at
+          # /api/v1/version. Poll until it reports the deployed commit
+          # (build + alembic migrations typically take a few minutes).
+          for i in $(seq 1 90); do
+            LIVE=$(curl -fsS https://api.ph-nav.com/api/v1/version | jq -r '.git_sha // empty' || true)
+            if [ "$LIVE" = "$DEPLOY_SHA" ]; then
+              echo "API is live at $LIVE." && exit 0
+            fi
+            echo "API still at ${LIVE:-unknown}..." && sleep 10
+          done
+          echo "::error::API never reported $DEPLOY_SHA — check the Render deploy logs." && exit 1
+
+      - name: Smoke-check public surfaces
+        run: |
+          # Mirrors context/PRODUCTION_DEPLOYMENT.md → "Verification Commands".
+          READY=$(curl -fsS https://api.ph-nav.com/api/v1/ready)
+          echo "$READY" | jq -e '.db == true' > /dev/null || {
+            echo "::error::/api/v1/ready did not report db:true — got: $READY" && exit 1
+          }
+          curl -fsSI -o /dev/null https://www.ph-nav.com && echo "www OK"
+          curl -fsSI https://ph-nav.com | grep -qi '^location: https://www.ph-nav.com' && echo "apex redirect OK"

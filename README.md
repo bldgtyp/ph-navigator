@@ -12,8 +12,10 @@ use "V2" to refer to the rewrite generation.
 
 Production deployment details are centralized in
 `context/PRODUCTION_DEPLOYMENT.md`. Development and deploy workflow rules live in
-`context/DEVELOPMENT_WORKFLOW.md`; ordinary work should happen on feature
-branches because `main` deploys production on Render.
+`context/DEVELOPMENT_WORKFLOW.md`; ordinary work happens on feature branches,
+and deploys are explicit — merging to `main` does not deploy; the
+"Deploy Production" GitHub Actions workflow (manual dispatch or a `v*` tag)
+triggers Render.
 
 ## Quickstart (one-time)
 
@@ -72,8 +74,8 @@ See `Makefile` (`make help`) for the full recipe list.
    `psql`.
 4. **Env files:** `backend/.env` and `frontend/.env.local`. No
    overlays, no `.env.poc`.
-5. **Branches/deploys:** feature branches by default; merge to `main` only when
-   ready for a production Render deploy.
+5. **Branches/deploys:** feature branches by default; keep `main` deployable.
+   Merging does not deploy — the "Deploy Production" Actions workflow does.
 6. **Testing UIs:** Playwright MCP (`mcp__plugin_playwright_playwright__*`)
    is available; use it to drive the frontend in a browser.
 

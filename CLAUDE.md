@@ -37,9 +37,11 @@ Render verification live in `context/PRODUCTION_DEPLOYMENT.md`.
 - **This repo is public.** Never commit PHI / Phius / PHPP / WUFI-derived or
   otherwise licensed data; route source-of-truth through the private object
   store.
-- **Main deploys production.** Render tracks `main` for the production API and
-  web services. Do normal work on feature branches, aggregate small edits, and
-  merge/push `main` only when the change is ready to deploy. See
+- **Deploys are explicit, not merges.** Render auto-deploy is OFF; merging to
+  `main` does NOT deploy production. The deploy event is the "Deploy
+  Production" GitHub Actions workflow (manual dispatch from `main`, or pushing
+  a `v*` tag on the tip of `main`) — and it is Ed's call, never an agent's.
+  Do normal work on feature branches and keep `main` always deployable. See
   `context/DEVELOPMENT_WORKFLOW.md`.
 
 ## Closeout gate (after any code-changing session)
@@ -71,7 +73,7 @@ always-loaded fast-path.
 | changing **architecture / data model** | `context/PRD.md` + `context/technical-requirements/*` | JSON-document model; versioned immutable-by-discipline saves; linear history; design for human + LLM use |
 | writing/reviewing **MCP tools** | `context/mcp.md` + `context/technical-requirements/llm-mcp-schema.md` | thin wrapper over REST service layer; project-scoped bearer tokens; writes go to a draft then `save_draft` |
 | adding/altering **logs** | `context/LOGGING.md` | structlog → JSON to stdout; `request_id` bound via middleware; never log secrets or request bodies |
-| changing **production deploy / Render / DNS / R2 / cookies / MCP URLs** | `context/PRODUCTION_DEPLOYMENT.md` + `context/DEVELOPMENT_WORKFLOW.md` | production lives at `www.ph-nav.com` + `api.ph-nav.com`; `main` deploys Render; staging is deleted unless recreated from `render.yaml` |
+| changing **production deploy / Render / DNS / R2 / cookies / MCP URLs** | `context/PRODUCTION_DEPLOYMENT.md` + `context/DEVELOPMENT_WORKFLOW.md` | production lives at `www.ph-nav.com` + `api.ph-nav.com`; deploys via the "Deploy Production" Actions workflow (auto-deploy off); staging is deleted unless recreated from `render.yaml` |
 | **naming** / domain terms | `context/GLOSSARY.md` | — |
 | picking up a **story / phase** | `context/USER_STORIES.md` → `context/user-stories/*` | — |
 
