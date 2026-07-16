@@ -33,6 +33,8 @@ describe("model viewer themes", () => {
     expect(parseModelViewerTheme("building", "boundary")).toBe("boundary");
     expect(parseModelViewerTheme("building", "ventilation-airflow")).toBe("shaded");
     expect(parseModelViewerTheme("floor-areas", "bad-token")).toBe("weighting-factor");
+    // Item 14: Floor Areas now offers the Airflow mode (Spaces already did).
+    expect(parseModelViewerTheme("floor-areas", "ventilation-airflow")).toBe("ventilation-airflow");
   });
 
   test("pins the V1 construction color hash algorithm", () => {
@@ -82,6 +84,28 @@ describe("model viewer themes", () => {
     expect(legendForModel(model, "building", "shaded")).toBeNull();
   });
 
+  test("colors floor-area segments by ventilation airflow (Item 14)", () => {
+    const model = {
+      objects: [
+        mesh("floor:sup", "floor-areas", "spaceFloorSegmentMeshFace", {
+          airflow: { sup: 0.01, eta: null },
+        }),
+        mesh("floor:eta", "floor-areas", "spaceFloorSegmentMeshFace", {
+          airflow: { sup: null, eta: 0.02 },
+        }),
+      ],
+    } as unknown as BuildingModel;
+
+    expect(legendForModel(model, "floor-areas", "ventilation-airflow")).toEqual({
+      title: "Ventilation Airflow",
+      kind: "theme",
+      rows: [
+        { id: "SupplyOnly", label: "Supply Only", color: "#8CCEFE", count: 1 },
+        { id: "ExtractOnly", label: "Extract Only", color: "#FE8C8C", count: 1 },
+      ],
+    });
+  });
+
   test("resets theme on lens switch but preserves selection on theme switch", () => {
     const store = useModelViewerStore.getState();
     store.setTheme("building", "boundary");
@@ -123,7 +147,11 @@ function mesh(
   id: string,
   lens: string,
   type: string,
-  options: { boundary?: string; weightingFactor?: number },
+  options: {
+    boundary?: string;
+    weightingFactor?: number;
+    airflow?: { sup?: number | null; eta?: number | null };
+  },
 ) {
   return {
     id,
@@ -140,6 +168,9 @@ function mesh(
       properties: { energy: { construction: { identifier: "WALL-C3" } } },
       vertices: [],
       weighting_factor: options.weightingFactor,
+      airflow: options.airflow
+        ? { _v_sup: options.airflow.sup ?? null, _v_eta: options.airflow.eta ?? null }
+        : null,
     },
   };
 }

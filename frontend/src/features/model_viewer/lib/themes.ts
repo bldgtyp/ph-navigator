@@ -97,7 +97,10 @@ export function colorForThemedObject(
         ? constructionColor(meta.properties.energy.construction?.identifier)
         : null;
     case "ventilation-airflow":
-      return meta.type === "spaceGroup"
+      // Spaces and their floor segments carry the same parent-space airflow
+      // (loaders/building.ts assigns `space.properties.ph` to both), so the
+      // Airflow mode colors both lenses from the one supply/extract source.
+      return meta.type === "spaceGroup" || meta.type === "spaceFloorSegmentMeshFace"
         ? ventilationAirflowColor(meta.airflow?._v_sup, meta.airflow?._v_eta)
         : null;
     case "weighting-factor":

@@ -20,6 +20,7 @@ export const MODEL_VIEWER_THEMES_BY_LENS: Record<ModelViewerLens, ThemeDefinitio
   "floor-areas": [
     { id: "weighting-factor", label: "Weighting Factor" },
     { id: "shaded", label: "Shaded" },
+    { id: "ventilation-airflow", label: "Ventilation Airflow" },
   ],
   "site-sun": [{ id: "shaded", label: "Shaded" }],
   ventilation: [{ id: "shaded", label: "Shaded" }],

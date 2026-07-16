@@ -29,29 +29,49 @@ The whole opaque-vs-transparent split is driven by one number,
 merging `spaceGroup` into `faceMesh`'s existing case branches. To revert, split
 those case labels back out.
 
-## Item 14 — Airflow color mode on Floor Areas (feature)
+## Item 14 — Airflow color mode on Floor Areas (feature) — DONE
 
-The Spaces lens supports an "Airflow" color mode (supply / extract / none) that
-works well. Add the **same mode to the Floor Areas lens**, reusing the existing
-airflow-coloring logic and legend (`store.ts` color-mode state, `LegendCard.tsx`,
-`lenses.ts`). No new data needed — Floor Areas derive from the same spaces.
+The Spaces "Airflow" color mode (supply / extract / none) now also works on the
+**Floor Areas** lens. Floor segments already carry the parent space's airflow
+(`loaders/building.ts` assigns `space.properties.ph` to both spaces and floor
+segments), so this was a **2-line change**: (1) add
+`ventilation-airflow` to the `floor-areas` entry in
+`lib/themeState.ts` (`MODEL_VIEWER_THEMES_BY_LENS`); (2) widen the
+`case "ventilation-airflow"` guard in `lib/themes.ts` `colorForThemedObject` to
+also accept `spaceFloorSegmentMeshFace`. The theme menu, legend, batch recolor,
+and legend-filter all flow from those two edits (they delegate to the same config
++ color switch). Verified on a render: Floor Areas shows the Ventilation Airflow
+mode + the same Supply/Extract/None legend as Spaces.
 
 ## Item 15 — Color by Ventilator (ERV) mode (feature, research-gated)
 
 Add a **new color mode** that colors each space by the **ventilation unit (ERV)
 assigned to it**, alongside the existing Airflow mode.
 
-**Research gate (do first):** confirm the **space→ERV assignment** is available
-in the HBJSON / PHX model **and** survives into the PHN document schema. Signal:
-the MCP tool `list_hbjson_ventilation_systems` exists, so ventilation systems are
-present — the open question is whether the *per-space assignment mapping* is
-carried through (not dropped in translation, à la the duct-length gap noted in
-the MEP element-selection PRD).
+**Research gate (Phase 3a) — RESULT: DROPPED (duct-length precedent).** The
+space→ERV assignment exists in HBJSON but is **room-level, not per-space**: a
+Space has no vent reference; the ERV lives at `room.properties.ph_hvac.
+ventilation_system.ventilation_unit`, and every space in a room shares it (so
+each space still deterministically resolves to exactly one unit). PHN
+**drops** it at extraction: `backend/features/model_viewer/extraction.py`
+`_spaces_from_model` iterates room-by-room (the vent system is in scope) but
+copies only airflow magnitudes onto the space DTO; `_ventilation_systems_from_model`
+dedupes systems into a flat dict keyed by `display_name`, discarding which
+rooms/spaces each serves. So `SpaceSchema` carries no unit id, the two lists are
+disconnected, and the viewer's `SpacePhProperties` (`_v_sup`/`_v_eta`/`_v_tran`)
+has flow only — no unit identity. MCP tools expose the same disconnected payload.
 
-- If the mapping is present → wire a new color mode (assign a color per ERV unit,
-  build a legend keyed by unit name), following the Airflow-mode pattern.
-- If it's dropped by the PHN schema → this becomes a schema/translation task
-  first (add the computed field upstream), and the coloring is a follow-on.
+**→ Item 15 is therefore a backend-first task, not a pure "register a color
+mode."** Concrete minimal fix (single-source, no honeybee_ph change needed):
+1. `backend/features/model_viewer/schemas/honeybee_ph.py` — add
+   `ventilation_unit_id: str | None` (and optionally `_name`) to `SpaceSchema`.
+2. `backend/features/model_viewer/extraction.py` `_spaces_from_model` — inside
+   the existing room loop, populate it from
+   `room.properties.ph_hvac.ventilation_system.ventilation_unit.identifier`
+   (guard `None`). Same object `_ventilation_systems_from_model` already reads.
+3. Frontend — thread the id through `types.ts` `SpacePhProperties`/`SpaceGroupMeta`
+   → `loaders/building.ts` → a new `"ventilation-unit"` color mode + per-unit
+   categorical legend in `themes.ts`/`themeState.ts` (Airflow-mode pattern).
 
 ## Reuse story
 
@@ -65,8 +85,9 @@ path (build on `LensBatch`/`BatchedLens`, per the batched-substrate constraint).
 
 1. ~~Item 13: opaque vs. keep-some-transparency~~ — **RESOLVED:** fully opaque,
    exact Building material (white), Ed-confirmed on a render.
-2. Item 15: is the space→ERV mapping in the PHN schema today? (First research
-   task — gates the whole item.)
+2. ~~Item 15: is the space→ERV mapping in the PHN schema today?~~ — **RESOLVED
+   (Phase 3a): DROPPED.** Room-level in HBJSON, discarded at PHN extraction;
+   needs the backend carry-through in the Item 15 section above.
 3. Item 15: color assignment when many ERV units exist — categorical palette +
    legend; how many units realistically, and do we need stable colors across
    sessions?
@@ -75,6 +96,6 @@ path (build on `LensBatch`/`BatchedLens`, per the batched-substrate constraint).
 
 - ✅ Spaces lens reads clean and solid — matches the Building material exactly
   (opaque white), interiors occluded (section plane to cut in).
-- Floor Areas lens offers the Airflow color mode with the same legend as Spaces.
-- (If research clears) a "color by Ventilator" mode colors spaces by ERV with a
-  per-unit legend.
+- ✅ Floor Areas lens offers the Airflow color mode with the same legend as Spaces.
+- (Item 15, backend-first) a "color by Ventilator" mode colors spaces by ERV with
+  a per-unit legend — needs the extraction carry-through first (Phase 3a: DROPPED).

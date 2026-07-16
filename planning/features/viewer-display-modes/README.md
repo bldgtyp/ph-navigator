@@ -37,11 +37,14 @@ Floor Areas (easy win), and research/add a new "color by Ventilator (ERV)" mode
 - **Item 13 (bug) — DONE.** Spaces now render fully opaque with the exact Building
   shaded material (white `#ececec`); was a muddy semi-transparent green. One-value
   fix in `lib/colors.ts` (`baseOpacity`/`baseColor`), not `lenses.ts`.
-- **Item 14 (feature)** — the Spaces "Airflow" color mode (supply / extract /
-  none) works well; add the **same mode to the Floor Areas** lens.
-- **Item 15 (feature, research-gated)** — add a **new "color by Ventilator (ERV)"
-  mode**: color each space by its assigned ventilation unit. Needs research to
-  confirm the space→ERV mapping survives into the PHN document schema.
+- **Item 14 (feature) — DONE.** The Spaces "Airflow" color mode (supply / extract
+  / none) now also runs on the **Floor Areas** lens. 2-line change; floor segments
+  already carried the airflow data.
+- **Item 15 (feature, research-gated) — backend-first.** A **new "color by
+  Ventilator (ERV)" mode**: color each space by its assigned ventilation unit.
+  Phase 3a research verdict: the space→ERV mapping is **DROPPED** at PHN
+  extraction, so this needs a backend schema/extraction carry-through before the
+  frontend color mode (see PRD).
 
 ## Why one packet
 

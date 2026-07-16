@@ -18,29 +18,36 @@ RELATED: ./README.md; ./PRD.md
   `baseOpacity`/`baseColor` in `lib/colors.ts` (not `lenses.ts` as first assumed).
   Verified on a render; Ed confirmed opaque + white. On branch
   `feature/spaces-opaque-material` (not yet merged to main).
-- **Phase 2 — Airflow on Floor Areas (Item 14).** Reuse the airflow color path +
-  legend on the Floor Areas lens.
-- **Phase 3a — ERV research (Item 15 gate).** Determine whether the space→ERV
-  mapping reaches the PHN document schema. Deliverable: yes/no + where the data
-  lives (or where it's dropped).
-- **Phase 3b — ERV color mode (Item 15).** Only if 3a clears (or after the
-  upstream schema field is added): register the new color mode + legend.
+- **Phase 2 — Airflow on Floor Areas (Item 14). ✅ DONE.** 2-line change
+  (`themeState.ts` mode list + `themes.ts` guard); floor segments already carried
+  the airflow data. Unit test + render-verified.
+- **Phase 3a — ERV research (Item 15 gate). ✅ DONE — verdict: DROPPED.** The
+  space→ERV assignment is room-level in HBJSON and discarded at PHN extraction
+  (`_spaces_from_model` copies only airflow magnitudes; `_ventilation_systems_from_model`
+  dedupes systems, dropping which spaces they serve). Details + minimal upstream
+  fix in PRD Item 15.
+- **Phase 3b — ERV color mode (Item 15). Backend-first, not yet started.** Needs
+  the extraction carry-through (add `ventilation_unit_id` to `SpaceSchema`,
+  populate in `_spaces_from_model`) before the frontend color mode. See PRD.
 
 ## Next step
 
-Phase 1 (Item 13) is done. Remaining: Phase 2 (Airflow on Floor Areas) and the
-Phase 3a ERV research that gates Item 15.
+Phases 1, 2, 3a done. Item 15 (Phase 3b) remains and is **backend-first**: it
+needs a schema/extraction change to carry the space→ERV id before any frontend
+coloring — a bigger bite than 14. Ed's call whether to take it now or defer.
 
 ## Blockers
 
-- Item 15 is blocked on the Phase 3a research result.
+- Item 15 (Phase 3b) needs the backend extraction carry-through first (Phase 3a
+  found the mapping is DROPPED at PHN translation).
 
 ## Verification
 
 - ✅ Item 13: Spaces lens renders solid opaque white, identical to the Building
   shaded material; interiors occluded (section plane to cut in) — confirmed on a
   render.
-- Floor Areas lens shows the Airflow legend and colors correctly.
-- (If shipped) ERV mode colors spaces per unit with a correct legend.
+- ✅ Item 14: Floor Areas lens shows the Ventilation Airflow mode + Supply/Extract/
+  None legend and colors floor segments — unit test + render-verified.
+- (Item 15, if shipped) ERV mode colors spaces per unit with a correct legend.
 - Check draw-call / FPS baseline (~14 calls @ 60 FPS on Hillandale) isn't
   regressed by new materials/modes.
