@@ -4,6 +4,20 @@ import { useState, type ReactNode } from "react";
 import { describe, expect, test, vi } from "vitest";
 import { UnitPreferenceContext } from "../../../lib/units/preference-context";
 import type { UnitSystem } from "../../../lib/units";
+
+// This suite exercises rename, not sidebar organization; stub the org hook so it
+// renders an identity ordering with no network I/O.
+vi.mock("../../sidebar_views/useSidebarOrganization", () => ({
+  useSidebarOrganization: ({ items }: { items: unknown[] }) => ({
+    sortMode: "alphabetical" as const,
+    orderedItems: items,
+    onToggleSortMode: () => undefined,
+    onReorder: () => undefined,
+    isLoading: false,
+    saveError: null,
+  }),
+}));
+
 import { ApertureSidebar } from "../components/ApertureSidebar";
 import { AperturesHeader } from "../components/AperturesHeader";
 import type { ApertureTypeEntry } from "../types";
@@ -35,6 +49,7 @@ function Harness({ onRename }: { onRename?: (name: string) => void }) {
         onRename={renameActive}
       />
       <ApertureSidebar
+        projectId="proj_test"
         apertures={apertures}
         activeApertureId={activeAperture.id}
         canEdit
@@ -74,7 +89,7 @@ describe("AperturesHeader", () => {
     render(<Harness onRename={onRename} />);
 
     expect(screen.getByRole("heading", { name: "W1" })).toBeInTheDocument();
-    expect(screen.getByText("W1", { selector: ".aperture-sidebar__item-name" })).toBeVisible();
+    expect(screen.getByText("W1", { selector: ".element-sidebar__row-name" })).toBeVisible();
 
     await userEvent.click(screen.getByRole("button", { name: "Edit aperture type name" }));
     const nameInput = screen.getByLabelText("Aperture type name");
@@ -85,7 +100,7 @@ describe("AperturesHeader", () => {
     expect(onRename).toHaveBeenCalledWith("W1-Renamed");
     expect(screen.getByRole("heading", { name: "W1-Renamed" })).toBeInTheDocument();
     expect(
-      screen.getByText("W1-Renamed", { selector: ".aperture-sidebar__item-name" }),
+      screen.getByText("W1-Renamed", { selector: ".element-sidebar__row-name" }),
     ).toBeVisible();
   });
 
@@ -117,7 +132,7 @@ describe("AperturesHeader", () => {
     expect(onRename).toHaveBeenCalledWith("W1-Sidebar");
     expect(screen.getByRole("heading", { name: "W1-Sidebar" })).toBeInTheDocument();
     expect(
-      screen.getByText("W1-Sidebar", { selector: ".aperture-sidebar__item-name" }),
+      screen.getByText("W1-Sidebar", { selector: ".element-sidebar__row-name" }),
     ).toBeVisible();
   });
 });

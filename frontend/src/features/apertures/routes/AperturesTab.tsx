@@ -419,6 +419,7 @@ export function AperturesTab({ project }: { project: ProjectDetail }) {
                   }
                 >
                   <ApertureSidebar
+                    projectId={project.id}
                     apertures={sorted}
                     activeApertureId={activeAperture?.id ?? null}
                     canEdit={canEdit}

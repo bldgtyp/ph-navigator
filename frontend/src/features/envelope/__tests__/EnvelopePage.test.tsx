@@ -264,7 +264,7 @@ describe("EnvelopePage", () => {
     for (const type of ["wall", "roof", "floor", "other"]) {
       expect(
         document.querySelector(
-          `.envelope-sidebar-row-name[data-assembly-type="${type}"] .envelope-sidebar-row-type-icon`,
+          `.element-sidebar__row-link[data-assembly-type="${type}"] .element-sidebar__row-icon`,
         ),
       ).toBeInTheDocument();
     }
@@ -314,7 +314,7 @@ describe("EnvelopePage", () => {
       { selector: ".app-tooltip" },
       { timeout: 2000 },
     );
-    const sidebarList = document.querySelector(".envelope-sidebar-list");
+    const sidebarList = document.querySelector(".element-sidebar__list");
     expect(tooltip).toHaveTextContent("Rename assembly");
     expect(tooltip).toHaveAttribute("role", "tooltip");
     expect(sidebarList?.contains(tooltip)).toBe(false);
@@ -1819,6 +1819,11 @@ function commandRequestBodies(): unknown[] {
 }
 
 function defaultFetchImplementation(url: string): Promise<Response> {
+  if (url.includes("/sidebar-views")) {
+    return Promise.resolve(
+      jsonResponse({ view_state_schema_version: 1, view_state: null, updated_at: null }),
+    );
+  }
   if (url.includes("/envelope?")) return Promise.resolve(jsonResponse(envelopePayload));
   if (url.includes("/thermal?")) return Promise.resolve(jsonResponse(thermalPayload));
   if (url.includes("/envelope/material-catalog-drift?")) {

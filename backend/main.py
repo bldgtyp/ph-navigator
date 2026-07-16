@@ -40,6 +40,7 @@ from features.projects.routes import router as projects_router
 from features.schemas.routes import router as schemas_router
 from features.shared.errors import http_exception_handler, validation_exception_handler
 from features.shared.middleware import request_context_middleware
+from features.sidebar_views.routes import router as sidebar_views_router
 from features.system.routes import router as system_router
 from features.table_views.routes import router as table_views_router
 from logging_config import configure_logging
@@ -100,6 +101,7 @@ app.include_router(climate_router)
 app.include_router(schemas_router)
 app.include_router(system_router)
 app.include_router(table_views_router)
+app.include_router(sidebar_views_router)
 app.include_router(apertures_router)
 app.include_router(aperture_u_value_router)
 app.include_router(aperture_hbjson_export_router)
