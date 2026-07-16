@@ -14,7 +14,7 @@ export function SpacesPage({ project }: { project: ProjectDetail }) {
     return (
       <Navigate
         to={{
-          pathname: spaceTypesPath(project.id),
+          pathname: spacesRoomsPath(project.id),
           search: location.search,
           hash: location.hash,
         }}
@@ -27,7 +27,7 @@ export function SpacesPage({ project }: { project: ProjectDetail }) {
     return (
       <Navigate
         to={{
-          pathname: spaceTypesPath(project.id),
+          pathname: spacesRoomsPath(project.id),
           search: location.search,
           hash: location.hash,
         }}
@@ -41,19 +41,19 @@ export function SpacesPage({ project }: { project: ProjectDetail }) {
       <AppSubTabs ariaLabel="Spaces tables">
         <AppSubTabLink
           to={{
+            pathname: spacesRoomsPath(project.id),
+            search: location.search,
+          }}
+        >
+          Spaces
+        </AppSubTabLink>
+        <AppSubTabLink
+          to={{
             pathname: spaceTypesPath(project.id),
             search: location.search,
           }}
         >
           Space-Types
-        </AppSubTabLink>
-        <AppSubTabLink
-          to={{
-            pathname: spacesRoomsPath(project.id),
-            search: location.search,
-          }}
-        >
-          Rooms
         </AppSubTabLink>
       </AppSubTabs>
       {activeTab === "rooms" ? (

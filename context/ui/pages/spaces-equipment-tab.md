@@ -6,8 +6,12 @@
 # 2.8 Spaces and Equipment tabs
 
 **Spaces (`/projects/{id}/spaces`).** The Spaces tab groups
-project-local occupancy/program tables. It contains Space-Types and
-Rooms sub-tabs. Space-Types is the setup table for project-specific
+project-local occupancy/program tables. It contains two sub-tabs:
+**Spaces** — first in order and the default the tab opens on — and
+**Space-Types**. The **Spaces** sub-tab is a display-only relabel of
+the Rooms table; its route (`/projects/{id}/spaces/rooms`), the
+internal `rooms` table key/path, and persisted table-view state are
+unchanged. Space-Types is the setup table for project-specific
 labels such as Apartment, Corridor, Restroom, or other local program
 types; Rooms links to exactly one Space-Type and remains the
 PHN-first source-of-truth consumed by downstream Rhino/HBJSON

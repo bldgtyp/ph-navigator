@@ -343,13 +343,14 @@ describe("App", () => {
     expect(within(projectTabs).queryByRole("link", { name: "Rooms" })).not.toBeInTheDocument();
   });
 
-  test("redirects Spaces to the Space-Types sub-tab by default", async () => {
+  test("redirects Spaces to the Rooms sub-tab (labelled Spaces) by default", async () => {
     window.history.pushState(
       {},
       "",
       `/projects/${projectPayload.id}/spaces?version=${alternateVersion.id}`,
     );
     const draftUrl = draftSummaryUrl(projectPayload.id, alternateVersion.id);
+    const roomsUrl = `/api/v1/projects/${projectPayload.id}/versions/${alternateVersion.id}/draft/tables/rooms`;
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
       if (url === "/api/v1/auth/session") return sessionResponse();
@@ -363,19 +364,18 @@ describe("App", () => {
       }
       if (url === draftUrl)
         return jsonResponse({ ...draftSummaryPayload, version_id: alternateVersion.id });
+      if (url === roomsUrl) return jsonResponse(roomsSlicePayload);
       return jsonResponse({}, 404);
     });
 
     render(<App />);
 
-    expect(await screen.findByRole("region", { name: "Space-Types" })).toBeVisible();
-    expect(window.location.pathname).toBe(spaceTypesPath(projectPayload.id));
+    expect(await screen.findByRole("region", { name: "Rooms" })).toBeVisible();
+    expect(window.location.pathname).toBe(spacesRoomsPath(projectPayload.id));
     expect(window.location.search).toBe(`?version=${alternateVersion.id}`);
-    expect(screen.getByRole("button", { name: "Space-Types" })).toHaveAttribute(
-      "data-active",
-      "true",
-    );
-    expect(screen.getByRole("button", { name: "Rooms" })).toBeVisible();
+    // Sub-tab is the Rooms table displayed as "Spaces" (display-only rename).
+    expect(screen.getByRole("button", { name: "Spaces" })).toHaveAttribute("data-active", "true");
+    expect(screen.getByRole("button", { name: "Space-Types" })).toBeVisible();
   });
 
   test("redirects legacy Rooms URLs into Spaces Rooms without dropping query params", async () => {
@@ -402,7 +402,8 @@ describe("App", () => {
     expect(window.location.search).toBe(
       `?focus=rm_a&open=1&version=${projectPayload.active_version_id}`,
     );
-    expect(screen.getByRole("button", { name: "Rooms" })).toHaveAttribute("data-active", "true");
+    // Sub-tab is the Rooms table displayed as "Spaces" (display-only rename).
+    expect(screen.getByRole("button", { name: "Spaces" })).toHaveAttribute("data-active", "true");
   });
 
   test("bulk soft-deletes selected dashboard projects and restores from Recently Deleted", async () => {
@@ -1127,7 +1128,8 @@ describe("App", () => {
     );
     expect(screen.getByText("schema-safe")).toBeVisible();
     expect(screen.queryByRole("button", { name: "Save Version" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Rooms" })).not.toBeInTheDocument();
+    // Rooms table renders its title as "Spaces" (display-only rename).
+    expect(screen.queryByRole("heading", { name: "Spaces" })).not.toBeInTheDocument();
   });
 
   test("renders public read-safe recovery without editor diagnostics", async () => {

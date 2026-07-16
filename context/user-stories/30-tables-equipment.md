@@ -424,8 +424,9 @@ the Spaces tab.
 - **Q-EQ-2: Default sub-tab on first visit to the Equipment
   tab.** Original answer **Rooms** is superseded by the Spaces
   refactor and later Equipment table expansion. `/projects/{id}/spaces`
-  defaults to Space-Types, `/projects/{id}/spaces/rooms` owns the Rooms
-  table, and `/projects/{id}/equipment` defaults to Ventilators. Legacy
+  defaults to `/projects/{id}/spaces/rooms` (the Rooms table — sub-tab
+  labelled **Spaces**, first in order and the default), and
+  `/projects/{id}/equipment` defaults to Ventilators. Legacy
   `/projects/{id}/rooms` redirects to `/projects/{id}/spaces/rooms`.
 
 ### Open questions
@@ -456,7 +457,10 @@ the project document.
 mutations, locked-version, JSON download).
 
 **Current route:** `/projects/{id}/spaces/rooms`. Rooms is under the
-top-level Spaces tab, paired with `/projects/{id}/spaces/space-types`.
+top-level Spaces tab, paired with `/projects/{id}/spaces/space-types`,
+and is the first / default sub-tab. Its user-facing sub-tab label and
+table title are **"Spaces"** (display-only rename); the route, the
+internal `rooms` table key, and everything below keep the Rooms name.
 
 ### Story
 > As an editor, I want a Rooms table that captures the per-room

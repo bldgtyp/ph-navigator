@@ -227,7 +227,7 @@ export function RoomsTable({
 
   return (
     <DataTable
-      tableName="Rooms"
+      tableName="Spaces"
       rows={roomsSlice.rooms}
       columnDefs={columns}
       fieldDefs={fieldDefs}

@@ -133,7 +133,9 @@ export async function addShortTextField(page: Page, name: string): Promise<void>
 
 export async function openRoomsTable(page: Page): Promise<void> {
   await page.getByRole("link", { name: "Spaces" }).click();
-  await page.getByRole("button", { name: "Rooms" }).click();
+  // The "Rooms" sub-tab is labelled "Spaces" (display-only rename); the
+  // panel's region aria-label stays "Rooms" (internal `rooms` identity).
+  await page.getByRole("button", { name: "Spaces" }).click();
   await expect(page.getByRole("region", { name: "Rooms" })).toBeVisible();
 }
 
