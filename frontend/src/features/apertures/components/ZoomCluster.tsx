@@ -40,7 +40,7 @@ export function ZoomCluster({
       <button
         type="button"
         className="canvas-toolbar__button"
-        aria-label="Fit canvas to width"
+        aria-label="Fit canvas to view"
         data-toolbar-tooltip="Fit canvas"
         onClick={onFit}
       >

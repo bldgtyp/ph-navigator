@@ -27,6 +27,10 @@
 .apertures-page__header {
   border-bottom: 1px solid var(--border-subtle);
   display: grid;
+  /* Never shrink below content height: as a column-flex child of
+     `apertures-page__main`, shrinking clipped the summary row (U-Value chip)
+     past the divider and over the dimension caption below. */
+  flex-shrink: 0;
   gap: var(--space-6);
   min-height: 62px;
   min-width: 0;

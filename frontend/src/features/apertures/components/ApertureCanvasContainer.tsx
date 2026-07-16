@@ -13,7 +13,8 @@ import {
   nextZoomStep,
   pxFromMm,
   previousZoomStep,
-  snapZoomToStep,
+  ZOOM_MAX,
+  ZOOM_MIN,
 } from "../canvas-constants";
 import {
   mirrorApertureForInterior,
@@ -166,18 +167,34 @@ export function ApertureCanvasContainer({
     clearPickPaste,
   ]);
 
+  // Frame the whole unit: pick the largest zoom at which both the aperture's
+  // width and height fit inside the scroll viewport (minus its edge padding),
+  // clamped to the zoom range. Used for the initial auto-fit and the toolbar
+  // Fit button, so a tall unit is never clipped the way a width-only fit was.
   const fitZoom = useCallback(() => {
     const container = scrollRef.current;
     if (!container) return;
     const widthMm = totalApertureWidthMm(aperture);
-    if (widthMm <= 0) {
-      setZoom(snapZoomToStep(1));
+    const heightMm = totalApertureHeightMm(aperture);
+    if (widthMm <= 0 || heightMm <= 0) {
+      setZoom(1);
       return;
     }
-    const availablePx = container.clientWidth;
-    if (availablePx <= 0) return;
-    const targetZoom = availablePx / (widthMm * BASE_PX_PER_MM);
-    setZoom(snapZoomToStep(targetZoom));
+    const style = getComputedStyle(container);
+    // `|| 0` guards a non-numeric computed padding (empty string under jsdom):
+    // fall back to zero padding rather than poisoning the fit with NaN.
+    const padX = (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0);
+    const padY = (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0);
+    const availW = container.clientWidth - padX;
+    const availH = container.clientHeight - padY;
+    // `!(x > 0)` (not `x <= 0`) so a NaN — e.g. an unmeasured container or a
+    // non-numeric computed padding under jsdom — is treated as "can't fit yet"
+    // and leaves the current zoom untouched rather than propagating NaN.
+    if (!(availW > 0) || !(availH > 0)) return;
+    const fitW = availW / (widthMm * BASE_PX_PER_MM);
+    const fitH = availH / (heightMm * BASE_PX_PER_MM);
+    const target = Math.min(fitW, fitH);
+    setZoom(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, target)));
   }, [aperture, setZoom]);
 
   useLayoutEffect(() => {
