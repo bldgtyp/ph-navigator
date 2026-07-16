@@ -26,6 +26,9 @@ they govern — `backend/.instructions.md`, `frontend/.instructions.md`,
 Read these first:
 
 1. `ENVIRONMENT.md` — local command / environment card.
+1a. `USING_A_WEB_BROWSER.md` — how to reliably drive/screenshot the app
+   (`frontend/scripts/agent-browser.mjs`), why the browser MCP tools fail, and
+   process-cleanup discipline. Read before any browser check.
 2. `PRODUCTION_DEPLOYMENT.md` — live Render/DNS/R2/auth/MCP deployment source of truth.
 3. `DEVELOPMENT_WORKFLOW.md` — branch, CI, and Render deploy discipline.
 4. `PRD.md` — concise product and high-level architecture PRD.
