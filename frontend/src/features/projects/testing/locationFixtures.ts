@@ -7,6 +7,8 @@ import type { GeocodeProjectLocationCandidate, ProjectDetail, ProjectLocation } 
 export const LOCATION_PROJECT: ProjectDetail = {
   id: "5b99d1c9-d1f6-46c8-a9aa-9f7efb8c54b5",
   name: "West Stockbridge House",
+  public_alias: null,
+  display_name: "West Stockbridge House",
   bt_number: "2426",
   client: "May",
   cert_programs: ["phi"],

@@ -97,18 +97,18 @@ export function ProjectList({
             <span className="project-select-cell">
               <input
                 type="checkbox"
-                aria-label={`Select project ${project.bt_number} ${project.name}`}
+                aria-label={`Select project ${project.bt_number} ${project.display_name}`}
                 checked={selectedProjectIds.has(project.id)}
                 onChange={(event) => onToggleProject(project.id, event.currentTarget.checked)}
               />
             </span>
             <span className="project-number">{project.bt_number}</span>
             <Link
-              aria-label={`${project.bt_number} - ${project.name}`}
+              aria-label={`${project.bt_number} - ${project.display_name}`}
               className="project-name-link"
               to={projectStatusPath(project.id)}
             >
-              <strong>{project.name}</strong>
+              <strong>{project.display_name}</strong>
             </Link>
             <span>{project.client || "-"}</span>
             <span

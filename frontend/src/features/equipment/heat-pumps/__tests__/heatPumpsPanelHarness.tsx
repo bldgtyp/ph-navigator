@@ -340,6 +340,8 @@ function project(overrides: Partial<ProjectDetail> = {}): ProjectDetail {
   return {
     id: "proj_1",
     name: "Test Project",
+    public_alias: null,
+    display_name: "Test Project",
     bt_number: "BT-001",
     client: null,
     cert_programs: ["phius"],

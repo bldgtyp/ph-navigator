@@ -27,6 +27,8 @@ const userPayload = {
 const projectPayload = {
   id: "5b99d1c9-d1f6-46c8-a9aa-9f7efb8c54b5",
   name: "West Stockbridge House",
+  public_alias: null,
+  display_name: "West Stockbridge House",
   bt_number: "2426",
   client: "May",
   cert_programs: ["phi"],
@@ -654,6 +656,8 @@ describe("App", () => {
     const updatedProject = {
       ...projectPayload,
       name: "West Stockbridge Retrofit",
+      // No alias set, so the server-derived display_name tracks the name.
+      display_name: "West Stockbridge Retrofit",
       client: "May Studio",
     };
     fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {

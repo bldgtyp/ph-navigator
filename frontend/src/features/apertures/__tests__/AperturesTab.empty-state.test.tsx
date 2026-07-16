@@ -96,6 +96,8 @@ const VERSION: ProjectVersion = {
 const PROJECT: ProjectDetail = {
   id: "project-1",
   name: "Apertures Fixture",
+  public_alias: null,
+  display_name: "Apertures Fixture",
   bt_number: "BT-001",
   client: null,
   cert_programs: ["phi"],

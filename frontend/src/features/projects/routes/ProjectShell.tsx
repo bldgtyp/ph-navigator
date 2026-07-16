@@ -111,7 +111,9 @@ export function ProjectShell() {
     }
     setSearchParams(next);
   };
-  const projectTitleLabel = `${project.bt_number} - ${project.name}`;
+  // Title sites render the public-facing `display_name` (alias ?? name), never
+  // the internal `name` directly. See planning/features/project-public-alias.
+  const projectTitleLabel = `${project.bt_number} - ${project.display_name}`;
   const projectCrumbLabel = projectTitleLabel;
   const topbarBreadcrumbs = [{ label: projectCrumbLabel, to: projectStatusPath(project.id) }];
   const handleSignOut = () => {
@@ -163,7 +165,7 @@ export function ProjectShell() {
       <main className="workspace-shell">
         {topbar}
         <ReadSafeRecoveryPanel
-          projectName={project.name}
+          projectName={project.display_name}
           versions={project.versions.map((version) => ({ id: version.id, name: version.name }))}
           isViewer={isViewer}
           envelope={readSafeEnvelope}
