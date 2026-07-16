@@ -33,6 +33,7 @@
 @import "./shared/ui/tooltip/Tooltip.css";
 @import "./shared/ui/info-tooltip/InfoTooltip.css";
 @import "./shared/ui/InlineHeaderNameEditor.css";
+@import "./shared/ui/element-sidebar/element-sidebar.css";
 @import "./shared/ui/attachments/attachments.css";
 @import "./styles/panels.css";
 @import "./shared/ui/data-table/DataTable.css";

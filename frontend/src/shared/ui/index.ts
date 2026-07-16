@@ -17,6 +17,7 @@ export * from "./WorkspaceTopbar";
 export * from "./useOutsidePointerDown";
 
 // Co-located sub-packages (component + CSS + own barrel).
+export * from "./element-sidebar";
 export * from "./info-tooltip";
 export * from "./tooltip";
 export * from "./report-table";

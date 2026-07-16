@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-15
 TIME: 20:44 EDT
-STATUS: Active — captured, needs scoping (take our time)
+STATUS: Phase 0 done (2026-07-15); Phases 1–4 blocked on persistence decision
 AUTHOR: Claude (Opus 4.8) for Ed May
 SCOPE: Give the two element sidebars (Apertures / Apertures and Envelope /
   Assemblies) user-controlled organization: manual drag ordering, grouping into

@@ -74,7 +74,7 @@ describe("AperturesHeader", () => {
     render(<Harness onRename={onRename} />);
 
     expect(screen.getByRole("heading", { name: "W1" })).toBeInTheDocument();
-    expect(screen.getByText("W1", { selector: ".aperture-sidebar__item-name" })).toBeVisible();
+    expect(screen.getByText("W1", { selector: ".element-sidebar__row-name" })).toBeVisible();
 
     await userEvent.click(screen.getByRole("button", { name: "Edit aperture type name" }));
     const nameInput = screen.getByLabelText("Aperture type name");
@@ -85,7 +85,7 @@ describe("AperturesHeader", () => {
     expect(onRename).toHaveBeenCalledWith("W1-Renamed");
     expect(screen.getByRole("heading", { name: "W1-Renamed" })).toBeInTheDocument();
     expect(
-      screen.getByText("W1-Renamed", { selector: ".aperture-sidebar__item-name" }),
+      screen.getByText("W1-Renamed", { selector: ".element-sidebar__row-name" }),
     ).toBeVisible();
   });
 
@@ -117,7 +117,7 @@ describe("AperturesHeader", () => {
     expect(onRename).toHaveBeenCalledWith("W1-Sidebar");
     expect(screen.getByRole("heading", { name: "W1-Sidebar" })).toBeInTheDocument();
     expect(
-      screen.getByText("W1-Sidebar", { selector: ".aperture-sidebar__item-name" }),
+      screen.getByText("W1-Sidebar", { selector: ".element-sidebar__row-name" }),
     ).toBeVisible();
   });
 });

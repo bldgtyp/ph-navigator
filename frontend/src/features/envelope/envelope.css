@@ -124,17 +124,9 @@
   box-shadow: var(--shadow-workspace-shell);
 }
 
-.envelope-sidebar-header {
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-12);
-}
-
-.envelope-sidebar h2 {
-  margin: 0;
-}
-
+/* Sidebar appearance lives in the shared element-sidebar sheet; the envelope
+   workbench only owns the two-column page grid and the banner-adjacent
+   negative-margin reset. */
 .envelope-workbench {
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
@@ -146,184 +138,8 @@
   grid-template-columns: 52px minmax(0, 1fr);
 }
 
-.envelope-sidebar {
-  border-right: 1px solid var(--border-subtle);
-  background: var(--bg-card);
-  display: flex;
-  flex-direction: column;
-  margin: calc(-1 * var(--space-14)) 0 calc(-1 * var(--space-14)) calc(-1 * var(--space-14));
-  min-width: 0;
-  overflow: visible;
-  border-radius: var(--radius-md) 0 0 var(--radius-md);
-  width: 260px;
-}
-
-.envelope-command-banner + .envelope-workbench .envelope-sidebar {
+.envelope-command-banner + .envelope-workbench .element-sidebar {
   margin-top: 0;
-}
-
-.envelope-sidebar.is-collapsed {
-  align-content: start;
-  display: grid;
-  gap: var(--space-10);
-  justify-items: center;
-  padding: var(--space-18) var(--space-10) var(--space-18) 0;
-  width: 52px;
-}
-
-.envelope-sidebar-header {
-  align-items: center;
-  display: flex;
-  gap: var(--space-12);
-  justify-content: space-between;
-  padding: var(--space-18) var(--space-18) 0;
-}
-
-.envelope-sidebar.is-collapsed .envelope-sidebar-header {
-  display: grid;
-  justify-items: center;
-  padding: 0;
-}
-
-.envelope-sidebar-header h2 {
-  font-size: var(--fs-lg);
-}
-
-.envelope-sidebar-tools {
-  align-items: center;
-  display: flex;
-  gap: var(--space-6);
-}
-
-.envelope-sidebar-tools .icon-button {
-  position: relative;
-}
-
-.envelope-sidebar-list {
-  display: grid;
-  gap: var(--space-6);
-  margin: var(--space-16) 0 0;
-  overflow-x: hidden;
-  overflow-y: auto;
-  padding: 0 var(--space-8) var(--space-8);
-}
-
-.envelope-sidebar-row {
-  align-items: center;
-  border-radius: var(--phn-control-radius);
-  color: var(--text-primary);
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  min-height: 38px;
-  min-width: 0;
-  padding: var(--space-6) var(--space-6) var(--space-6) var(--space-10);
-  position: relative;
-  text-decoration: none;
-}
-
-.envelope-sidebar-row.active,
-.envelope-sidebar-row:hover {
-  background: color-mix(in oklab, var(--accent) 10%, transparent);
-}
-
-.envelope-sidebar-row-name {
-  align-items: center;
-  color: inherit;
-  display: grid;
-  font-size: var(--fs-sm);
-  font-weight: 500;
-  gap: var(--space-8);
-  grid-template-columns: 16px minmax(0, 1fr);
-  line-height: 1.25;
-  min-width: 0;
-  overflow: hidden;
-  text-decoration: none;
-}
-
-.envelope-sidebar-row-name::before {
-  border-radius: inherit;
-  content: "";
-  inset: 0;
-  position: absolute;
-}
-
-.envelope-sidebar-row-type-icon {
-  color: var(--text-secondary);
-  opacity: 0.85;
-}
-
-.envelope-sidebar-row.active .envelope-sidebar-row-type-icon {
-  color: var(--accent-text);
-  opacity: 1;
-}
-
-.envelope-sidebar-row-name-text {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Sidebar name + row-action tooltips now use the shared <Tooltip> primitive
-   (shared/ui/tooltip) with named hover-delay tiers — no bespoke floating
-   tooltip here. */
-
-.envelope-sidebar-row-actions {
-  align-items: center;
-  display: inline-flex;
-  gap: var(--space-2);
-  opacity: 0;
-  pointer-events: none;
-  position: relative;
-  z-index: var(--z-base-elevated);
-}
-
-.envelope-sidebar-row:hover .envelope-sidebar-row-actions,
-.envelope-sidebar-row:focus-within .envelope-sidebar-row-actions {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.envelope-sidebar-row:hover,
-.envelope-sidebar-row:focus-within {
-  z-index: var(--z-dropdown);
-}
-
-.envelope-sidebar-row-action {
-  align-items: center;
-  background: transparent;
-  border: 0;
-  border-radius: var(--radius-xs);
-  color: var(--text-secondary);
-  display: inline-flex;
-  height: 24px;
-  justify-content: center;
-  min-height: 24px;
-  min-width: 24px;
-  padding: 0;
-  position: relative;
-  width: 24px;
-}
-
-.envelope-sidebar-row-action:hover,
-.envelope-sidebar-row-action:focus-visible {
-  background: color-mix(in oklab, var(--accent) 12%, transparent);
-  color: var(--accent-text);
-  outline: 0;
-}
-
-.envelope-sidebar-row-action.is-danger:hover,
-.envelope-sidebar-row-action.is-danger:focus-visible {
-  background: var(--phn-danger-bg);
-  color: var(--phn-danger);
-}
-
-.envelope-sidebar-row-action:disabled {
-  color: color-mix(in oklab, var(--text-secondary) 38%, transparent);
-}
-
-.envelope-sidebar-list small {
-  color: var(--text-secondary);
 }
 
 .assembly-workspace {
@@ -1675,19 +1491,6 @@
 
   .envelope-workbench.is-sidebar-collapsed {
     grid-template-columns: 1fr;
-  }
-
-  .envelope-sidebar {
-    width: 100%;
-    margin: calc(-1 * var(--space-12)) calc(-1 * var(--space-12)) 0;
-    border-right: 0;
-    border-bottom: 1px solid var(--border-subtle);
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
-    padding: var(--space-12) 0;
-  }
-
-  .envelope-sidebar.is-collapsed {
-    width: 100%;
   }
 
   .assembly-workspace {
