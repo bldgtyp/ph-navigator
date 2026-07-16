@@ -13,9 +13,11 @@ RELATED: ./README.md; ./PRD.md
 
 ## Phase map (proposed)
 
-- **Phase 1 — Spaces material fix (Item 13).** Quick material swap in `lenses.ts`
-  toward the Building treatment; verify against a rendered model with Ed to
-  resolve the opaque-vs-transparency clarify.
+- **Phase 1 — Spaces material fix (Item 13). ✅ DONE.** Spaces now render fully
+  opaque with the exact Building shaded material (white `#ececec`). The knob was
+  `baseOpacity`/`baseColor` in `lib/colors.ts` (not `lenses.ts` as first assumed).
+  Verified on a render; Ed confirmed opaque + white. On branch
+  `feature/spaces-opaque-material` (not yet merged to main).
 - **Phase 2 — Airflow on Floor Areas (Item 14).** Reuse the airflow color path +
   legend on the Floor Areas lens.
 - **Phase 3a — ERV research (Item 15 gate).** Determine whether the space→ERV
@@ -26,19 +28,18 @@ RELATED: ./README.md; ./PRD.md
 
 ## Next step
 
-Phase 1 is a fast, high-value fix — do it first (with an eyeball check on the
-material). In parallel, run the Phase 3a research so Item 15's true size is known
-before committing.
+Phase 1 (Item 13) is done. Remaining: Phase 2 (Airflow on Floor Areas) and the
+Phase 3a ERV research that gates Item 15.
 
 ## Blockers
 
 - Item 15 is blocked on the Phase 3a research result.
-- Item 13 has a soft decision (opaque vs. translucent) best made on a screenshot.
 
-## Verification (when built)
+## Verification
 
-- Browser/screenshot: Spaces lens looks solid like Building; interiors still
-  legible per the resolved decision.
+- ✅ Item 13: Spaces lens renders solid opaque white, identical to the Building
+  shaded material; interiors occluded (section plane to cut in) — confirmed on a
+  render.
 - Floor Areas lens shows the Airflow legend and colors correctly.
 - (If shipped) ERV mode colors spaces per unit with a correct legend.
 - Check draw-call / FPS baseline (~14 calls @ 60 FPS on Hillandale) isn't

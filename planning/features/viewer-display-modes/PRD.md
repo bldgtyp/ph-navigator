@@ -9,25 +9,25 @@ RELATED: ./README.md; ./STATUS.md
 
 # PRD — Viewer display modes
 
-## Item 13 — Spaces lens material (bug)
+## Item 13 — Spaces lens material (bug) — DONE
 
-**Now:** the Spaces lens renders space volumes with a semi-transparent green
-material that reads as muddy/chaotic (overlapping translucent boxes).
+**Was:** the Spaces lens rendered space volumes with a semi-transparent green
+material that read as muddy/chaotic (overlapping translucent boxes).
 
-**Want:** render Spaces with the **standard material** used by the Building view,
-not the transparent one. Material config lives per-lens in `lenses.ts`; Building's
-material is the reference (`BuildingLens.tsx`).
+**Shipped (option (a), Ed-confirmed on a render):** Spaces render **fully opaque
+with the *exact* Building shaded material** — same near-white `#ececec` fill,
+same `MeshStandardMaterial` (roughness 0.78, metalness 0), same AO/lighting. The
+Spaces lens now matches the Building lens material exactly; only the geometry
+differs (interior room volumes vs. envelope surfaces). Interiors are occluded by
+design — the **section/clipping plane** is the way to cut in.
 
-**Clarify (from Ed — carry into implementation):** spaces are volumetric room
-solids. Fully opaque like Building geometry would make spaces occlude each other
-so you can't see interior rooms. Two readings of "standard material":
-  - (a) fully opaque standard material (accept occlusion), or
-  - (b) the standard material's *look/shading* (color, lighting response) but
-    keep *some* transparency so overlapping spaces stay legible.
-
-Default assumption: **match the Building material treatment**; if that fully
-occludes interiors and reads worse, fall to (b). Confirm with Ed against a
-rendered screenshot before finalizing.
+**Implementation (not as the PRD assumed):** the material is *not* in `lenses.ts`.
+The whole opaque-vs-transparent split is driven by one number,
+`baseOpacity("spaceGroup")` in `frontend/src/features/model_viewer/lib/colors.ts`
+(any type with opacity < 1 routes into the blending BatchedMesh). The fix was
+`0.32 → 1` for opacity plus `#7aa58d → #ececec` for the base color — both done by
+merging `spaceGroup` into `faceMesh`'s existing case branches. To revert, split
+those case labels back out.
 
 ## Item 14 — Airflow color mode on Floor Areas (feature)
 
@@ -63,8 +63,8 @@ path (build on `LensBatch`/`BatchedLens`, per the batched-substrate constraint).
 
 ## Open questions
 
-1. Item 13: opaque vs. keep-some-transparency (see clarify above) — needs an
-   eyeball on a real model.
+1. ~~Item 13: opaque vs. keep-some-transparency~~ — **RESOLVED:** fully opaque,
+   exact Building material (white), Ed-confirmed on a render.
 2. Item 15: is the space→ERV mapping in the PHN schema today? (First research
    task — gates the whole item.)
 3. Item 15: color assignment when many ERV units exist — categorical palette +
@@ -73,8 +73,8 @@ path (build on `LensBatch`/`BatchedLens`, per the batched-substrate constraint).
 
 ## Acceptance
 
-- Spaces lens reads clean and solid (matches Building material treatment, per the
-  resolved clarify).
+- ✅ Spaces lens reads clean and solid — matches the Building material exactly
+  (opaque white), interiors occluded (section plane to cut in).
 - Floor Areas lens offers the Airflow color mode with the same legend as Spaces.
 - (If research clears) a "color by Ventilator" mode colors spaces by ERV with a
   per-unit legend.

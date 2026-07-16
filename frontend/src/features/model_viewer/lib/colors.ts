@@ -102,8 +102,8 @@ export function createHighlightMaterials(tokens: ViewerTokens): HighlightMateria
  * uses one neutral-white material; per-object hue (shaded base, color-by theme,
  * or highlight) is driven entirely by the BatchedMesh per-instance color buffer
  * (`setColorAt`), so the whole lens is one or two draw calls. The partition is
- * opaque vs transparent (not glass-specific): the building lens's transparent
- * batch is apertures (0.68); Phase 04 lenses set their own transparent opacity.
+ * opaque vs transparent (not glass-specific): the only transparent type is
+ * apertures (0.85); spaces render opaque (Item 13).
  */
 export type BatchMaterials = { opaque: MeshStandardMaterial; transparent: MeshStandardMaterial };
 
@@ -146,8 +146,11 @@ function baseOpacity(type: ModelObjectType): number {
   switch (type) {
     case "apertureMeshFace":
       return 0.85;
+    // Spaces render fully opaque with the standard (Building) material treatment
+    // (Item 13): a solid massing reads cleaner than overlapping translucent
+    // volumes. This occludes interior rooms by design — the clipping plane is the
+    // way to see inside. Was 0.32 (semi-transparent); flip back here to revert.
     case "spaceGroup":
-      return 0.32;
     case "faceMesh":
     case "spaceFloorSegmentMeshFace":
     case "ductSegmentLine":
@@ -160,14 +163,15 @@ function baseColor(type: ModelObjectType): string {
   switch (type) {
     case "apertureMeshFace":
       return "#6b7883";
-    case "spaceGroup":
-      return "#7aa58d";
     case "spaceFloorSegmentMeshFace":
       return "#c7a74c";
+    case "spaceGroup":
     case "faceMesh":
       // Near-white study-model surface (rendering-style refactor) — a neutral
       // light grey (no warm bias) so it reads as clean cool-white under the soft
-      // dome, like Spacio. Ducts/pipes keep the warm line color below.
+      // dome, like Spacio. Spaces share this so the Spaces lens matches the
+      // Building shaded material exactly (Item 13). Ducts/pipes keep the warm
+      // line color below.
       return "#ececec";
     case "ductSegmentLine":
     case "pipeSegmentLine":

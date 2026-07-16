@@ -50,8 +50,8 @@ export function resolveInstanceColor(
 export type LensBatch = {
   /** Opaque objects (faces); null when the lens has none. */
   opaqueMesh: BatchedMesh | null;
-  /** Transparent objects (apertures here; spaces in Phase 04), kept in their own
-   *  batch so opaque early-Z is preserved; null when the lens has none. */
+  /** Transparent objects (apertures), kept in their own batch so opaque early-Z
+   *  is preserved; null when the lens has none. Spaces are opaque (Item 13). */
   transparentMesh: BatchedMesh | null;
   /** All non-null batches, for raycasting and iteration. */
   meshes: BatchedMesh[];
@@ -89,7 +89,7 @@ function captureFade(material: Material): FadeMaterial {
 }
 
 // Opaque vs transparent batch, keyed on the shaded opacity of the object's type
-// (Phase-01 semantics). Apertures here; spaces/floor reuse this in Phase 04.
+// (Phase-01 semantics). Only apertures are transparent; spaces render opaque.
 function isTransparent(object: BuildingRenderable): boolean {
   return isTransparentType(object.meta.type);
 }
@@ -98,9 +98,9 @@ function isTransparent(object: BuildingRenderable): boolean {
  * Build the batched substrate for a set of building renderables. Each object's
  * geometry is added once and seeded to its "shaded" base color; callers recolor
  * via `setColorAt` for themes/highlight. The batch owns its materials: the
- * transparent batch's opacity is the opacity of its (single) transparent type —
- * apertures 0.68, space volumes 0.32 — derived here, next to the opaque/
- * transparent split, and freed by `dispose()`.
+ * transparent batch's opacity is the opacity of its (single) transparent type
+ * (apertures 0.85) — derived here, next to the opaque/transparent split, and
+ * freed by `dispose()`.
  */
 export function buildLensBatch(renderables: BuildingRenderable[]): LensBatch {
   const idForBatch = new Map<BatchedMesh, Map<number, string>>();

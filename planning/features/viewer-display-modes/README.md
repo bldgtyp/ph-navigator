@@ -34,8 +34,9 @@ Floor Areas (easy win), and research/add a new "color by Ventilator (ERV)" mode
 
 ## Items folded in
 
-- **Item 13 (bug)** — Spaces lens renders volumes with a weird semi-transparent
-  green material; should use the **standard material** from the Building view.
+- **Item 13 (bug) — DONE.** Spaces now render fully opaque with the exact Building
+  shaded material (white `#ececec`); was a muddy semi-transparent green. One-value
+  fix in `lib/colors.ts` (`baseOpacity`/`baseColor`), not `lenses.ts`.
 - **Item 14 (feature)** — the Spaces "Airflow" color mode (supply / extract /
   none) works well; add the **same mode to the Floor Areas** lens.
 - **Item 15 (feature, research-gated)** — add a **new "color by Ventilator (ERV)"
