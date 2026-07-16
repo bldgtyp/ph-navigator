@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-15
 TIME: 20:44 EDT
-STATUS: Phases 0–2 done; Phases 3–4 (groups + collapse) remain
+STATUS: All phases (0–4) implemented + CI-green; pending browser verification + PR/merge/deploy
 AUTHOR: Claude (Opus 4.8) for Ed May
 SCOPE: Disposition + phase map for sidebar-organization.
 RELATED: ./README.md; ./PRD.md
@@ -9,9 +9,10 @@ RELATED: ./README.md; ./PRD.md
 
 # STATUS — Sidebar organization
 
-**State:** Phase 0 implemented (2026-07-15) on a feature branch, pending commit.
-Phases 1–4 (the new capabilities) are still unscoped and blocked on Ed's
-persistence-store decision (open Q #1) — he wants to take those slowly.
+**State:** All phases (0–4) implemented on `feature/sidebar-organization-phase-0`
+(4 commits), each `make ci`-green. Remaining: a browser pass over the drag/grouping
+UX (blocked this session by a Playwright profile lock), then PR → squash-merge →
+production deploy as one bundle.
 
 ## Phase map
 
@@ -44,17 +45,28 @@ persistence-store decision (open Q #1) — he wants to take those slowly.
   field-editor drag idiom (PointerSensor distance:4 + KeyboardSensor); switching to
   manual freezes the current order. ⚠️ Visual drag verification deferred (Playwright
   profile locked this session) — confirm before/after merge.
-- **Phase 3 — Grouping (G2).** Group create/assign/reorder + tree render +
-  persist (extends the same persisted document: `groups`).
-- **Phase 4 — Collapse (G3).** Per-group collapse/expand + persist
-  (`collapsed_group_ids`).
+- **Phase 3 — Grouping (G2). ✅ DONE (2026-07-16).** Pure ops in
+  `sidebar_views/groups.ts` (`buildSidebarTree` + add/rename/delete/move/reorder);
+  `useSidebarOrganization` exposes `groups`/`ungrouped`/`hasGroups` + operations.
+  In manual mode, defining a group turns the flat list into a tree: group sections
+  (each a `SortableRows` for within-group drag) + an Ungrouped remainder + a "New
+  group" button. Assignment is a per-row **native `<select>`** ("move to group") —
+  chosen over a popover (clipped by the list overflow) and over cross-container drag
+  (fragile to ship unverified). Group order is up/down buttons (avoids nested DnD).
+  ElementSidebar split into `types.ts`/`rows.tsx`/`GroupedList.tsx` to stay under the
+  500-line guard. **Open Qs resolved:** #2 new items → Ungrouped (bottom); #3 groups
+  apply only in manual mode (alphabetical flattens but preserves them); #5 empty
+  groups allowed (explicit delete; members fall back to Ungrouped).
+- **Phase 4 — Collapse (G3). ✅ DONE (2026-07-16).** Each group header has a
+  chevron that toggles `collapsed_group_ids` (persisted); collapsed groups hide
+  their rows. `deleteGroup` clears the group's collapsed flag. Folded into the
+  Phase 3 build since the group header naturally carries the collapse control.
 
 ## Next step
 
-Phase 3 (grouping): let users define groups and assign items, rendering the sidebar
-as a tree of groups → items, persisted in the `groups` field. Reuse the dnd-kit
-setup from Phase 2 for cross-group drag. Resolve open Qs #2 (new-item placement),
-#3 (groups when switched to alphabetical), #5 (empty groups) here.
+Browser-verify the drag/grouping UX (blocked this session by a Playwright profile
+lock), then open the PR and squash-merge to `main` (production deploy). See Deploy
+note below — the whole bundle merges together.
 
 ## Blockers
 
@@ -102,8 +114,15 @@ shippable slice (it fixes live bug Item 6).
   (Playwright profile locked). Correctness of the handle/overlay stacking and the
   drag order math were verified by review.
 
-### Phases 3–4 (when built)
+### Phases 3–4 (done)
 
-- Browser: manual order + a group survive a reload and a fresh session
-  (sign in as Ed — the seed project is owned by ed@example.com).
-- Both sidebars exercised identically (shared component).
+- ✅ Pure ops: `groups.test.ts` — 10 pass (tree build incl. claimed-item dedup +
+  stale-id drop; add/rename/delete; move item; group reorder; member reorder).
+- ✅ Component: `ElementSidebar.test.tsx` — 8 pass (flat manual → drag handles +
+  New group; grouped → sections + Ungrouped + move selects; select reports target;
+  collapse hides rows + fires toggle).
+- ✅ Correctness reviewed: independent per-section DndContexts don't bleed;
+  move-select round-trips; no duplicate/stale group ids; flat→tree transition clean.
+- ⚠️ Still to do in the browser (Playwright locked this session): manual order + a
+  group + collapse survive a reload and a fresh session (sign in as Ed — the seed
+  project is owned by ed@example.com); exercise both sidebars identically.

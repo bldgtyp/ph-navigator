@@ -1,5 +1,6 @@
 import { Copy, Trash2 } from "lucide-react";
 import { ElementSidebar, type ElementSidebarItem } from "../../../shared/ui";
+import { toElementSidebarOrganization } from "../../sidebar_views/toElementSidebarOrganization";
 import { useSidebarOrganization } from "../../sidebar_views/useSidebarOrganization";
 import { nameCollides } from "../lib";
 import type { ApertureTypeEntry } from "../types";
@@ -81,15 +82,7 @@ export function ApertureSidebar({
         editLabel: "Edit aperture type name",
       }}
       add={canEdit ? { label: "Add aperture type", onAdd, disabled: actionDisabled } : null}
-      organization={
-        canEdit
-          ? {
-              sortMode: org.sortMode,
-              onToggleSortMode: org.onToggleSortMode,
-              onReorder: org.onReorder,
-            }
-          : undefined
-      }
+      organization={canEdit ? toElementSidebarOrganization(org) : undefined}
     />
   );
 }

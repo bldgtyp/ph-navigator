@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-15
 TIME: 20:44 EDT
-STATUS: Phases 0–2 done (2026-07-15/16); Phases 3–4 remain (groups + collapse)
+STATUS: All phases (0–4) implemented + CI-green (2026-07-15/16); pending browser verify + PR/merge/deploy
 AUTHOR: Claude (Opus 4.8) for Ed May
 SCOPE: Give the two element sidebars (Apertures / Apertures and Envelope /
   Assemblies) user-controlled organization: manual drag ordering, grouping into

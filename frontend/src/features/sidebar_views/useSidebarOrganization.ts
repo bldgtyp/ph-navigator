@@ -1,4 +1,13 @@
 import { useCallback, useMemo } from "react";
+import {
+  addGroup,
+  buildSidebarTree,
+  deleteGroup,
+  moveItemToGroup,
+  renameGroup,
+  reorderGroups,
+  setGroupMemberOrder,
+} from "./groups";
 import { useProjectSidebarViewState } from "./hooks";
 import { applySidebarOrder } from "./lib";
 import type { SidebarSortMode } from "./types";
@@ -13,23 +22,45 @@ export type UseSidebarOrganizationArgs<T extends { id: string }> = {
   items: T[];
 };
 
+/** A group resolved to its items plus its persisted collapse flag. */
+export type SidebarGroupView<T> = {
+  id: string;
+  label: string;
+  items: T[];
+  collapsed: boolean;
+};
+
 export type UseSidebarOrganizationResult<T extends { id: string }> = {
   sortMode: SidebarSortMode;
-  /** `items` reordered per the persisted manual order when in manual mode. */
+  /** Flat list for alphabetical mode or manual mode with no groups. */
   orderedItems: T[];
+  /** Manual-mode groups (empty when no groups defined). */
+  groups: SidebarGroupView<T>[];
+  /** Manual-mode items belonging to no group. */
+  ungrouped: T[];
+  /** True when at least one group is defined (render the tree, not the flat list). */
+  hasGroups: boolean;
   /** Flip alphabetical ⇄ manual; switching to manual freezes the current order. */
   onToggleSortMode: () => void;
-  /** Persist a new manual order (from a drag); implies manual mode. */
+  /** Persist a new flat / ungrouped-section order (from a drag); implies manual. */
   onReorder: (orderedIds: string[]) => void;
+  onAddGroup: (label?: string) => void;
+  onRenameGroup: (groupId: string, label: string) => void;
+  onDeleteGroup: (groupId: string) => void;
+  /** Assign an item to a group, or to `null` for ungrouped. */
+  onMoveItem: (itemId: string, groupId: string | null) => void;
+  onReorderGroups: (orderedGroupIds: string[]) => void;
+  onReorderGroupMembers: (groupId: string, orderedIds: string[]) => void;
+  onToggleGroupCollapsed: (groupId: string) => void;
   isLoading: boolean;
   saveError: string | null;
 };
 
 /**
- * Composes the sidebar persistence hook with ordering so both element sidebars
- * get identical organization behavior from one place (uniformity by
- * construction). Phase 1 wires sort mode + manual order; grouping/collapse
- * (Phases 3–4) extend the same persisted document.
+ * Composes the sidebar persistence hook with ordering + grouping so both element
+ * sidebars get identical organization behavior from one place (uniformity by
+ * construction). Manual mode adds a flat drag order; defining groups turns the
+ * list into a collapsible tree (groups → items, plus an ungrouped remainder).
  */
 export function useSidebarOrganization<T extends { id: string }>({
   projectId,
@@ -43,13 +74,31 @@ export function useSidebarOrganization<T extends { id: string }>({
     enabled: canEdit,
   });
 
+  const isManual = viewState.sort_mode === "manual";
+
   const orderedItems = useMemo(
-    () => (viewState.sort_mode === "manual" ? applySidebarOrder(items, viewState.order) : items),
-    [viewState.sort_mode, viewState.order, items],
+    () => (isManual ? applySidebarOrder(items, viewState.order) : items),
+    [isManual, viewState.order, items],
+  );
+
+  const tree = useMemo(() => buildSidebarTree(items, viewState), [items, viewState]);
+  const collapsed = useMemo(
+    () => new Set(viewState.collapsed_group_ids),
+    [viewState.collapsed_group_ids],
+  );
+  const groups = useMemo<SidebarGroupView<T>[]>(
+    () =>
+      tree.groups.map(({ group, items: groupItems }) => ({
+        id: group.id,
+        label: group.label,
+        items: groupItems,
+        collapsed: collapsed.has(group.id),
+      })),
+    [tree, collapsed],
   );
 
   const onToggleSortMode = useCallback(() => {
-    const nextMode: SidebarSortMode = viewState.sort_mode === "manual" ? "alphabetical" : "manual";
+    const nextMode: SidebarSortMode = isManual ? "alphabetical" : "manual";
     // Switching to manual with no saved order freezes the current display order,
     // so the choice is immediately meaningful (new items append; alphabetical
     // re-sorts no longer reshuffle). Drag then rearranges via onReorder below.
@@ -58,7 +107,7 @@ export function useSidebarOrganization<T extends { id: string }>({
         ? items.map((item) => item.id)
         : viewState.order;
     setViewState({ ...viewState, sort_mode: nextMode, order: nextOrder });
-  }, [viewState, setViewState, items]);
+  }, [isManual, viewState, setViewState, items]);
 
   const onReorder = useCallback(
     (orderedIds: string[]) => {
@@ -69,11 +118,57 @@ export function useSidebarOrganization<T extends { id: string }>({
     [viewState, setViewState],
   );
 
+  const onAddGroup = useCallback(
+    (label = "New group") => setViewState(addGroup(viewState, label)),
+    [viewState, setViewState],
+  );
+  const onRenameGroup = useCallback(
+    (groupId: string, label: string) => setViewState(renameGroup(viewState, groupId, label)),
+    [viewState, setViewState],
+  );
+  const onDeleteGroup = useCallback(
+    (groupId: string) => setViewState(deleteGroup(viewState, groupId)),
+    [viewState, setViewState],
+  );
+  const onMoveItem = useCallback(
+    (itemId: string, groupId: string | null) =>
+      setViewState(moveItemToGroup(viewState, itemId, groupId)),
+    [viewState, setViewState],
+  );
+  const onReorderGroups = useCallback(
+    (orderedGroupIds: string[]) => setViewState(reorderGroups(viewState, orderedGroupIds)),
+    [viewState, setViewState],
+  );
+  const onReorderGroupMembers = useCallback(
+    (groupId: string, orderedIds: string[]) =>
+      setViewState(setGroupMemberOrder(viewState, groupId, orderedIds)),
+    [viewState, setViewState],
+  );
+  const onToggleGroupCollapsed = useCallback(
+    (groupId: string) => {
+      const next = collapsed.has(groupId)
+        ? viewState.collapsed_group_ids.filter((id) => id !== groupId)
+        : [...viewState.collapsed_group_ids, groupId];
+      setViewState({ ...viewState, collapsed_group_ids: next });
+    },
+    [collapsed, viewState, setViewState],
+  );
+
   return {
     sortMode: viewState.sort_mode,
     orderedItems,
+    groups,
+    ungrouped: tree.ungrouped,
+    hasGroups: groups.length > 0,
     onToggleSortMode,
     onReorder,
+    onAddGroup,
+    onRenameGroup,
+    onDeleteGroup,
+    onMoveItem,
+    onReorderGroups,
+    onReorderGroupMembers,
+    onToggleGroupCollapsed,
     isLoading,
     saveError,
   };

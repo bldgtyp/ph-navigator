@@ -1,7 +1,12 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
-import { ElementSidebar, type ElementSidebarItem, type ElementSidebarOrganization } from "..";
+import {
+  ElementSidebar,
+  type ElementSidebarGroup,
+  type ElementSidebarItem,
+  type ElementSidebarOrganization,
+} from "..";
 
 function makeItems(...names: string[]): ElementSidebarItem[] {
   return names.map((name) => ({
@@ -10,6 +15,25 @@ function makeItems(...names: string[]): ElementSidebarItem[] {
     onRename: () => undefined,
     actions: [],
   }));
+}
+
+function makeOrg(over: Partial<ElementSidebarOrganization> = {}): ElementSidebarOrganization {
+  return {
+    sortMode: "alphabetical",
+    onToggleSortMode: () => undefined,
+    onReorder: () => undefined,
+    hasGroups: false,
+    groups: [],
+    ungrouped: [],
+    onAddGroup: () => undefined,
+    onRenameGroup: () => undefined,
+    onDeleteGroup: () => undefined,
+    onMoveItem: () => undefined,
+    onReorderGroups: () => undefined,
+    onReorderGroupMembers: () => undefined,
+    onToggleGroupCollapsed: () => undefined,
+    ...over,
+  };
 }
 
 function renderSidebar(organization?: ElementSidebarOrganization, items = makeItems("W1", "W2")) {
@@ -37,13 +61,11 @@ function renderSidebar(organization?: ElementSidebarOrganization, items = makeIt
   );
 }
 
-const alphabetical = (
-  over: Partial<ElementSidebarOrganization> = {},
-): ElementSidebarOrganization => ({
-  sortMode: "alphabetical",
-  onToggleSortMode: () => undefined,
-  onReorder: () => undefined,
-  ...over,
+const group = (id: string, label: string, items: ElementSidebarItem[]): ElementSidebarGroup => ({
+  id,
+  label,
+  items,
+  collapsed: false,
 });
 
 describe("ElementSidebar organization", () => {
@@ -54,7 +76,7 @@ describe("ElementSidebar organization", () => {
   });
 
   test("alphabetical mode shows the toggle with A–Z pressed and no drag handles", () => {
-    renderSidebar(alphabetical());
+    renderSidebar(makeOrg());
     expect(screen.getByRole("button", { name: "A–Z" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "Manual" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.queryByRole("button", { name: /^Reorder / })).toBeNull();
@@ -62,7 +84,7 @@ describe("ElementSidebar organization", () => {
 
   test("clicking Manual toggles sort mode", async () => {
     const onToggleSortMode = vi.fn();
-    renderSidebar(alphabetical({ onToggleSortMode }));
+    renderSidebar(makeOrg({ onToggleSortMode }));
 
     await userEvent.click(screen.getByRole("button", { name: "Manual" }));
     expect(onToggleSortMode).toHaveBeenCalledTimes(1);
@@ -72,10 +94,84 @@ describe("ElementSidebar organization", () => {
     expect(onToggleSortMode).toHaveBeenCalledTimes(1);
   });
 
-  test("manual mode renders a drag handle per row", () => {
-    renderSidebar(alphabetical({ sortMode: "manual" }));
+  test("manual mode with no groups renders drag handles + a New group button", () => {
+    renderSidebar(makeOrg({ sortMode: "manual" }));
     expect(screen.getByRole("button", { name: "Reorder W1" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Reorder W2" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Manual" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "New group" })).toBeInTheDocument();
+    // No group headers, so no move-to-group selects yet.
+    expect(screen.queryByRole("combobox", { name: /Move .* to group/ })).toBeNull();
+  });
+
+  test("New group button creates a group", async () => {
+    const onAddGroup = vi.fn();
+    renderSidebar(makeOrg({ sortMode: "manual", onAddGroup }));
+    await userEvent.click(screen.getByRole("button", { name: "New group" }));
+    expect(onAddGroup).toHaveBeenCalledTimes(1);
+  });
+
+  test("grouped mode renders group sections, an Ungrouped remainder, and move selects", () => {
+    const [w1, w2, w3] = makeItems("W1", "W2", "W3");
+    renderSidebar(
+      makeOrg({
+        sortMode: "manual",
+        hasGroups: true,
+        groups: [group("g_north", "North", [w1!])],
+        ungrouped: [w2!, w3!],
+      }),
+      [w1!, w2!, w3!],
+    );
+
+    expect(screen.getByRole("button", { name: "Collapse North" })).toBeInTheDocument();
+    expect(
+      screen.getByText("Ungrouped", { selector: ".element-sidebar__group-label" }),
+    ).toBeInTheDocument();
+    // Each item gets a move-to-group select whose only option beyond Ungrouped is North.
+    const moveSelect = screen.getByRole("combobox", { name: "Move W1 to group" });
+    expect(within(moveSelect).getByRole("option", { name: "North" })).toBeInTheDocument();
+    expect(within(moveSelect).getByRole("option", { name: "Ungrouped" })).toBeInTheDocument();
+  });
+
+  test("moving an item via the select reports the target group", async () => {
+    const onMoveItem = vi.fn();
+    const [w1, w2] = makeItems("W1", "W2");
+    renderSidebar(
+      makeOrg({
+        sortMode: "manual",
+        hasGroups: true,
+        groups: [group("g_north", "North", [])],
+        ungrouped: [w1!, w2!],
+        onMoveItem,
+      }),
+      [w1!, w2!],
+    );
+
+    await userEvent.selectOptions(
+      screen.getByRole("combobox", { name: "Move W1 to group" }),
+      "g_north",
+    );
+    expect(onMoveItem).toHaveBeenCalledWith("w1", "g_north");
+  });
+
+  test("collapsing a group hides its rows", async () => {
+    const onToggleGroupCollapsed = vi.fn();
+    const [w1] = makeItems("W1");
+    renderSidebar(
+      makeOrg({
+        sortMode: "manual",
+        hasGroups: true,
+        groups: [{ ...group("g_north", "North", [w1!]), collapsed: true }],
+        ungrouped: [],
+        onToggleGroupCollapsed,
+      }),
+      [w1!],
+    );
+
+    // Collapsed group shows an expand affordance and hides its member row.
+    expect(screen.getByRole("button", { name: "Expand North" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Reorder W1" })).toBeNull();
+
+    await userEvent.click(screen.getByRole("button", { name: "Expand North" }));
+    expect(onToggleGroupCollapsed).toHaveBeenCalledWith("g_north");
   });
 });

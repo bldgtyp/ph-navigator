@@ -132,6 +132,111 @@
   font-weight: 600;
 }
 
+/* Group tree (manual mode). */
+.element-sidebar__group {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.element-sidebar__group-header {
+  align-items: center;
+  display: flex;
+  gap: var(--space-4);
+  min-width: 0;
+  padding: var(--space-6) var(--space-4) var(--space-2) 0;
+}
+
+.element-sidebar__group-collapse {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  height: 22px;
+  justify-content: center;
+  padding: 0;
+  width: 20px;
+}
+
+.element-sidebar__group-label {
+  color: var(--text-primary);
+  flex: 1 1 auto;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.element-sidebar__group-label.is-muted {
+  color: var(--text-secondary);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.element-sidebar__group-actions {
+  align-items: center;
+  display: inline-flex;
+  gap: var(--space-2);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.element-sidebar__group-header:hover .element-sidebar__group-actions,
+.element-sidebar__group-header:focus-within .element-sidebar__group-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Indent a group's rows under its header for tree hierarchy. */
+.element-sidebar__group .element-sidebar__row,
+.element-sidebar__group-empty {
+  margin-left: var(--space-8);
+}
+
+.element-sidebar__group-empty {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  margin-bottom: 0;
+  margin-top: 0;
+  padding: var(--space-4) var(--space-10);
+}
+
+.element-sidebar__new-group {
+  align-items: center;
+  background: transparent;
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-xs);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  gap: var(--space-6);
+  justify-content: center;
+  margin-top: var(--space-8);
+  padding: var(--space-6);
+  width: 100%;
+}
+
+.element-sidebar__new-group:hover,
+.element-sidebar__new-group:focus-visible {
+  background: color-mix(in oklab, var(--accent) 8%, transparent);
+  color: var(--accent-text);
+  outline: 0;
+}
+
+.element-sidebar__row-move {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  color: var(--text-secondary);
+  font-size: var(--fs-xs);
+  max-width: 84px;
+}
+
 /* Manual-mode rows lead with a 6-dot drag handle column. */
 .element-sidebar__row--draggable {
   grid-template-columns: auto minmax(0, 1fr) auto;

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { createSearchParams } from "react-router-dom";
 import { ElementSidebar, type ElementSidebarItem } from "../../../shared/ui";
+import { toElementSidebarOrganization } from "../../sidebar_views/toElementSidebarOrganization";
 import { useSidebarOrganization } from "../../sidebar_views/useSidebarOrganization";
 import { envelopeAssemblyPath } from "../paths";
 import type { Assembly, AssemblyType } from "../types";
@@ -102,15 +103,7 @@ export function EnvelopeSidebar({
         editLabel: "Edit assembly name",
       }}
       add={{ label: "Add assembly", onAdd: onAddAssembly, disabled: !canEdit }}
-      organization={
-        canEdit
-          ? {
-              sortMode: org.sortMode,
-              onToggleSortMode: org.onToggleSortMode,
-              onReorder: org.onReorder,
-            }
-          : undefined
-      }
+      organization={canEdit ? toElementSidebarOrganization(org) : undefined}
     />
   );
 }
