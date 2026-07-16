@@ -65,6 +65,7 @@ always-loaded fast-path.
 | writing/reviewing **frontend** code | `frontend/.instructions.md` → `context/CODING_STANDARDS.md` | plain CSS on 3-tier tokens (no Tailwind/shadcn); TanStack Query for server state; `App.tsx` = composition only |
 | building a specific **page / screen** | `context/ui/pages/<page>.md` + `context/UI_UX.md` §0/§1 | read only the page in hand; common elements + DataTable model live in the UI_UX core |
 | running the app / env / DB / ports / login | `context/ENVIRONMENT.md` | frontend :5173, backend :8000; sign in as `codex@example.com` (not Ed); Postgres in Docker, Alembic migrations; no `.env` overlays |
+| loading/clicking/**screenshotting** the app in a browser | `context/USING_A_WEB_BROWSER.md` | use `frontend/scripts/agent-browser.mjs` (self-cleaning, reliable) — NOT the browser MCP tools / claude-in-chrome; `make agent-browser-cleanup` reaps zombies |
 | deciding **stack / persistence** | `context/TECH_STACK.md` | raw SQL + Pydantic v2 via narrow repositories; `psycopg` v3; JSONB document versions; no SQLAlchemy ORM in app code |
 | deciding **where data lives** / storage boundaries | `context/DATA_STORAGE.md` | two stores (Postgres / object store), four classes (relational, versioned JSONB docs, dynamic assets, static climate bundles); Postgres owns *references*, object store owns *bytes*; signed-URL-only, private bucket |
 | changing **architecture / data model** | `context/PRD.md` + `context/technical-requirements/*` | JSON-document model; versioned immutable-by-discipline saves; linear history; design for human + LLM use |
@@ -81,19 +82,33 @@ mirror), `make format`, `make frontend-dev-check` (fast frontend-only gate),
 
 ## Agent browser workflow
 
-Before any localhost UI/browser check, run `make agent-browser-ready`. This is
-the single supported bootstrap/repair command: it starts or reuses the strict
-`5173`/`8000` services, verifies PH-Navigator-specific health markers, seeds
-the dedicated `AGENT-BROWSER` fixture, verifies the Vite same-origin `/api`
-proxy, and prints the exact login and sign-in route. The fixture is isolated by
-`CODEX_THREAD_ID`; other runtimes can set `PHN_AGENT_BROWSER_ID`. Development
-browser requests stay on `:5173`; Vite proxies them to `:8000` to eliminate
-CORS/preflight races. Do
-not reuse a tab that has shown `ERR_CONNECTION_REFUSED`, another network error,
-or an internal `data:` error URL; discard it and open the printed route in a
-fresh tab after readiness succeeds. Use `make agent-browser-check` for a
-non-mutating readiness check. Details and managed-service logs live in
-`context/ENVIRONMENT.md` and `working/agent-browser/`.
+**Read `context/USING_A_WEB_BROWSER.md` before any browser work.** Short version:
+the `@playwright/mcp` / `chrome-devtools-mcp` MCP tools and `claude-in-chrome`
+are unreliable here (shared-profile lock + zombie processes + pairing failures).
+**Use the self-cleaning helper instead** — it always works, never leaks a
+process, and never touches the user's real Chrome:
+
+```bash
+make agent-browser-ready                                  # start :5173/:8000 + seed fixture, prints login + route
+cd frontend && node scripts/agent-browser.mjs /projects/<id>/apertures --out /tmp/shot.png
+```
+
+`make agent-browser-ready` is the single supported bootstrap/repair command: it
+starts or reuses the strict `5173`/`8000` services, verifies health markers,
+seeds the dedicated `AGENT-BROWSER` fixture (`codex@example.com`), verifies the
+Vite same-origin `/api` proxy, and prints the login + sign-in route. The fixture
+is isolated by `CODEX_THREAD_ID` (`PHN_AGENT_BROWSER_ID` for other runtimes).
+`make agent-browser-check` is a non-mutating readiness check.
+
+- Verifying persisted state? Add `--settle 1200` (saves debounce ~500ms) — see
+  the doc's recipes.
+- Blocked by "Browser is already in use" or want to clear cross-session zombies:
+  `make agent-browser-cleanup` (reaps only MCP browser tooling; never your real
+  browsers). **Never leave a process running that you started** —
+  `agent-browser.mjs` self-cleans; anything you background yourself, you kill.
+
+Details, recipes, and cleanup discipline live in `context/USING_A_WEB_BROWSER.md`;
+managed-service logs in `context/ENVIRONMENT.md` and `working/agent-browser/`.
 
 ## Agent MCP workflow
 
