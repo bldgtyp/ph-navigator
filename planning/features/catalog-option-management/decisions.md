@@ -17,8 +17,8 @@ audience resolves to zero capabilities (fails closed), client viewers get
 *rows*, not just options — aligned with how the firm uses shared catalogs.
 Alternative rejected: a separate `catalog.options.edit` capability (more
 surface, no current need for the split).
-*Status: recommended in the 2026-07-17 session review; Ed approved the packet
-built on it — re-confirm at Phase 1 kickoff before touching capabilities.*
+*Status: confirmed by the 2026-07-17 implement-loop kickoff; implemented in
+Phase 1.*
 
 ### D-2 — Rename cascades project-wide via heavy rewrite + working modal
 Ed, 2026-07-17: "on re-name we can handle heavy re-write (with a good

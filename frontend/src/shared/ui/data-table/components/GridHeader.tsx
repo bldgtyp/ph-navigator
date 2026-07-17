@@ -44,6 +44,7 @@ export type HeaderActionHandlers = {
   // Opens the unified field-config modal for a custom field. The anchor
   // element is stashed so the modal can return focus on close.
   onEditCustomFieldConfig?: (fieldKey: string, anchorElement: HTMLElement | null) => void;
+  canEditFieldConfig?: (fieldKey: string) => boolean;
   // The anchor is the clicked `<th>` (captured by the menu's triggerRef)
   // so the DataTable can return focus to it after create mode closes.
   onInsertFieldLeft?: (fieldKey: string, anchorElement: HTMLElement | null) => void;
@@ -212,7 +213,8 @@ function DataTableHeaderCell<TRow>({
     !fieldDef.read_only &&
     !readOnly &&
     hasWriteHandler &&
-    headerActions.onEditCustomFieldConfig,
+    headerActions.onEditCustomFieldConfig &&
+    (headerActions.canEditFieldConfig?.(schemaFieldKey) ?? true),
   );
   const onEditCustomFieldConfig =
     canEditFieldConfig && headerActions.onEditCustomFieldConfig

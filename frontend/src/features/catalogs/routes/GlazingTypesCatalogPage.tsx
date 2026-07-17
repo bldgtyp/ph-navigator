@@ -19,6 +19,7 @@ import {
 import {
   buildGlazingTypesFieldOverlay,
   GLAZING_TYPES_BUILT_IN_FIELD_DEFS,
+  GLAZING_TYPES_SINGLE_SELECT_FIELDS,
   GLAZING_TYPES_TABLE_KEY,
 } from "../glazing-types/fieldDefs";
 import { ImportDialog } from "../glazing-types/import_export/ImportDialog";
@@ -37,6 +38,7 @@ import { canEditCatalogs, catalogPath } from "../lib";
 import type { CatalogGlazingType } from "../types";
 
 const EMPTY_GLAZING_TYPES: readonly CatalogGlazingType[] = Object.freeze([]);
+const GLAZING_CONFIG_FIELDS = new Set<string>(GLAZING_TYPES_SINGLE_SELECT_FIELDS);
 
 const PLACEHOLDER_TIMESTAMP = "1970-01-01T00:00:00Z";
 function buildEmptyGlazingTypeRow({ rowId }: { rowId: string }): GlazingTypeRow {
@@ -250,6 +252,8 @@ export function GlazingTypesCatalogPage({ session }: { session: AuthSession }) {
             onResetView={controller.onResetView}
             readOnly={!canEditCatalog}
             onWrite={controller.onWrite}
+            onEditCustomFieldBundle={controller.onEditCustomFieldBundle}
+            canEditFieldConfig={(fieldKey) => GLAZING_CONFIG_FIELDS.has(fieldKey)}
             buildEmptyRow={buildEmptyGlazingTypeRow}
             bulkSelectionActions={renderBulkSelectionActions}
             overflowMenuActions={

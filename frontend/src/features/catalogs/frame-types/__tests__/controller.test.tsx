@@ -204,6 +204,33 @@ describe("useFrameTypesCatalogController.onWrite", () => {
     });
   });
 
+  test("field-config bundle routes option edits through legacyOptions", async () => {
+    const fieldDefs = [
+      field("mull_type", [
+        { id: "opt_old", label: "Old", color: "#3b82f6", order: 0 },
+        { id: "opt_new", label: "New", color: "#22c55e", order: 1 },
+      ]),
+    ];
+    const { result } = renderHook(
+      () => useFrameTypesCatalogController({ ...CONTROLLER_ARGS, fieldDefs }),
+      { wrapper },
+    );
+    await act(async () => {
+      await result.current.onEditCustomFieldBundle({
+        fieldKey: "mull_type",
+        displayName: "mull_type",
+        description: null,
+        options: [{ id: "opt_new", label: "New", color: "#22c55e", order: 0 }],
+        optionReplacements: { opt_old: "opt_new" },
+      });
+    });
+    expect(api.putFrameTypeOptions).toHaveBeenCalledWith({
+      field_key: "mull_type",
+      options: [{ id: "opt_new", label: "New", color: "#22c55e", order: 0 }],
+      replacements: { Old: "New" },
+    });
+  });
+
   test("merge (delete in-use option + cascade) PUTs label replacements", async () => {
     const { result } = renderHook(() => useFrameTypesCatalogController(CONTROLLER_ARGS), {
       wrapper,

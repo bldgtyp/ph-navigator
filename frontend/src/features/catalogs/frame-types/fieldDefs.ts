@@ -64,7 +64,7 @@ export const FRAME_TYPES_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
 // / reorder / merge, routed to the REST store by the controller. `field_type`
 // stays locked (these are fixed built-ins).
 const SINGLE_SELECT_BASE_OVERLAY: TableFieldRenderOverlay = {
-  locked: [...DEFAULT_BUILT_IN_LOCKS, "field_type"],
+  locked: [...DEFAULT_BUILT_IN_LOCKS, "display_name", "description", "field_type"],
 };
 
 const FRAME_TYPES_STATIC_OVERLAY: TableFieldRenderOverlays = {

@@ -14,7 +14,7 @@ from fastapi.testclient import TestClient
 
 from database import transaction
 from features.access import repository as access_repository
-from features.access.capabilities import ADMIN_USERS_MANAGE, CATALOG_EDIT
+from features.access.capabilities import ADMIN_USERS_MANAGE
 from features.auth import repository as auth_repository
 from features.auth.models import UserPublic
 from features.auth.service import create_or_update_user
@@ -137,23 +137,8 @@ def _material_payload() -> dict[str, object]:
     return {"name": "XPS Insulation", "category": "insulation", "conductivity_w_mk": 0.033}
 
 
-def test_member_without_catalog_edit_is_forbidden(clean_tables: None) -> None:
+def test_member_can_write_catalog(clean_tables: None) -> None:
     member, _ = _sign_in()
-    resp = member.post("/api/v1/catalogs/materials", headers={"Origin": ORIGIN}, json=_material_payload())
-    assert resp.status_code == 403
-
-
-def test_member_with_catalog_edit_grant_can_write(clean_tables: None) -> None:
-    member, user = _sign_in()
-    with transaction() as conn:
-        access_repository.insert_grant(
-            conn,
-            user_id=user.id,
-            capability=CATALOG_EDIT,
-            scope_type="global",
-            scope_id=None,
-            granted_by=None,
-        )
     resp = member.post("/api/v1/catalogs/materials", headers={"Origin": ORIGIN}, json=_material_payload())
     assert resp.status_code == 201
 

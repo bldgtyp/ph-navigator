@@ -21,6 +21,7 @@ import {
 import {
   buildFrameTypesFieldOverlay,
   FRAME_TYPES_BUILT_IN_FIELD_DEFS,
+  FRAME_TYPES_SINGLE_SELECT_FIELDS,
   FRAME_TYPES_TABLE_KEY,
 } from "../frame-types/fieldDefs";
 import { ImportDialog } from "../frame-types/import_export/ImportDialog";
@@ -39,6 +40,7 @@ import { canEditCatalogs, catalogPath } from "../lib";
 import type { CatalogFrameType } from "../types";
 
 const EMPTY_FRAME_TYPES: readonly CatalogFrameType[] = Object.freeze([]);
+const FRAME_CONFIG_FIELDS = new Set<string>(FRAME_TYPES_SINGLE_SELECT_FIELDS);
 
 const PLACEHOLDER_TIMESTAMP = "1970-01-01T00:00:00Z";
 function buildEmptyFrameTypeRow({ rowId }: { rowId: string }): FrameTypeRow {
@@ -317,6 +319,8 @@ export function FrameTypesCatalogPage({ session }: { session: AuthSession }) {
             onResetView={controller.onResetView}
             readOnly={!canEditCatalog}
             onWrite={controller.onWrite}
+            onEditCustomFieldBundle={controller.onEditCustomFieldBundle}
+            canEditFieldConfig={(fieldKey) => FRAME_CONFIG_FIELDS.has(fieldKey)}
             buildEmptyRow={buildEmptyFrameTypeRow}
             focusRowId={focusRowId}
             // The footer "+" opens the create modal instead of silently

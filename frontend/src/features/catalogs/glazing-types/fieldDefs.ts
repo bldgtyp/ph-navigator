@@ -50,7 +50,7 @@ export const GLAZING_TYPES_BUILT_IN_FIELD_DEFS: TableFieldDef[] = [
 // / merge, routed to the REST store by the controller. `field_type` stays locked
 // (these are fixed built-ins). `brand` is free text (a static overlay entry).
 const SINGLE_SELECT_BASE_OVERLAY: TableFieldRenderOverlay = {
-  locked: [...DEFAULT_BUILT_IN_LOCKS, "field_type"],
+  locked: [...DEFAULT_BUILT_IN_LOCKS, "display_name", "description", "field_type"],
 };
 
 const GLAZING_TYPES_STATIC_OVERLAY: TableFieldRenderOverlays = {

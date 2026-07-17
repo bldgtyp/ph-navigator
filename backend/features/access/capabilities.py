@@ -9,9 +9,8 @@ to project routes via `require_capability`.
 Beta collapses the model to today's binary behavior:
 
 - anonymous → `ViewerPrincipal("client")` → `CLIENT_CAPS` (read only)
-- signed-in → `UserPrincipal` → `MEMBER_CAPS` (read + write), plus any granted
-  capabilities, catalog edit for Admins, and the catalog-admin capability for
-  staff.
+- signed-in → `UserPrincipal` → `MEMBER_CAPS` (read + write, including shared
+  catalog editing), plus any explicitly granted capabilities.
 
 So `CLIENT_CAPS` ≈ today's viewer and `MEMBER_CAPS` ≈ today's editor. The
 `certifier`/`admin`/`staff` bundles and finer per-tab/export capabilities are
@@ -47,8 +46,7 @@ EQUIPMENT_EXPORT_PHIUS = "equipment.export.phius"
 MODEL_EXPORT = "model.export"
 DOCUMENT_EXPORT = "document.export"
 
-# Write access to the shared catalog library, satisfied by a `catalog.edit`
-# grant, the Admin preset, or `is_staff`.
+# Write access to the shared catalog library, held by every signed-in member.
 CATALOG_EDIT = "catalog.edit"
 
 # Admin user-management surface (invite/reset-link/deactivate/admin-grant). A
@@ -75,18 +73,9 @@ EXPORT_CAPS: frozenset[str] = frozenset(
     }
 )
 
-# A member is today's editor: everything a client can read, plus writes, the
-# redacted metadata, and every bulk export.
-MEMBER_CAPS: frozenset[str] = CLIENT_CAPS | EXPORT_CAPS | frozenset({PROJECT_EDIT, PROJECT_VIEW_PRIVATE})
-
-# A staff user additionally holds the catalog-admin capability (D7). The full
-# cross-tenant staff bundle (admin/seat/cross-team reads) lands in Phase 5.
-STAFF_EXTRA_CAPS: frozenset[str] = frozenset({CATALOG_EDIT})
-
-# The MVP Admin preset includes catalog maintenance. This is derived at resolve
-# time instead of stored as a second grant, so a future standalone Catalog Admin
-# grant can remain independently revocable.
-ADMIN_EXTRA_CAPS: frozenset[str] = frozenset({CATALOG_EDIT})
+# A member is today's editor: everything a client can read, plus project and
+# shared-catalog writes, redacted metadata, and every bulk export.
+MEMBER_CAPS: frozenset[str] = CLIENT_CAPS | EXPORT_CAPS | frozenset({PROJECT_EDIT, PROJECT_VIEW_PRIVATE, CATALOG_EDIT})
 
 # Viewer audience → its read bundle. `certifier` (a superset of `client`) is
 # added when the share mechanism lands (Phase 5).
@@ -106,10 +95,5 @@ def capabilities_for(principal: Principal) -> frozenset[str]:
     if isinstance(principal, UserPrincipal):
         if not principal.granted_capabilities and not principal.is_staff:
             return MEMBER_CAPS
-        caps = MEMBER_CAPS | principal.granted_capabilities
-        if ADMIN_USERS_MANAGE in principal.granted_capabilities:
-            caps |= ADMIN_EXTRA_CAPS
-        if principal.is_staff:
-            caps |= STAFF_EXTRA_CAPS
-        return caps
+        return MEMBER_CAPS | principal.granted_capabilities
     assert_never(principal)

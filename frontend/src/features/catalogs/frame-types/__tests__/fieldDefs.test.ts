@@ -59,6 +59,8 @@ describe("frame-types field defs", () => {
     // catalog store. `field_type` stays locked (fixed built-ins).
     expect(OVERLAY.manufacturer?.locked).not.toContain("options");
     expect(OVERLAY.manufacturer?.locked).toContain("field_type");
+    expect(OVERLAY.manufacturer?.locked).toContain("display_name");
+    expect(OVERLAY.manufacturer?.locked).toContain("description");
     // A field with no fetched options still gets an (empty) list, not undefined.
     expect(OVERLAY.brand?.options).toEqual([]);
   });

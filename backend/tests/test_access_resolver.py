@@ -69,16 +69,16 @@ def test_signed_in_user_gets_member_caps() -> None:
     caps = capabilities_for(UserPrincipal(user=_user()))
     assert caps == MEMBER_CAPS
     assert PROJECT_EDIT in caps
-    assert CATALOG_EDIT not in caps
+    assert CATALOG_EDIT in caps
 
 
-def test_staff_user_additionally_holds_catalog_edit() -> None:
+def test_staff_user_retains_member_catalog_edit() -> None:
     caps = capabilities_for(UserPrincipal(user=_user(), is_staff=True))
     assert MEMBER_CAPS <= caps
     assert CATALOG_EDIT in caps
 
 
-def test_admin_preset_additionally_holds_catalog_edit() -> None:
+def test_admin_preset_retains_member_catalog_edit() -> None:
     caps = capabilities_for(UserPrincipal(user=_user(), granted_capabilities=frozenset({ADMIN_USERS_MANAGE})))
     assert ADMIN_USERS_MANAGE in caps
     assert CATALOG_EDIT in caps
@@ -109,7 +109,7 @@ def test_require_capability_401_for_anonymous_viewer() -> None:
 
 def test_require_capability_403_for_user_missing_capability() -> None:
     with pytest.raises(HTTPException) as exc:
-        require_capability(_access(UserPrincipal(user=_user())), CATALOG_EDIT)
+        require_capability(_access(UserPrincipal(user=_user())), ADMIN_USERS_MANAGE)
     assert exc.value.status_code == 403
 
 

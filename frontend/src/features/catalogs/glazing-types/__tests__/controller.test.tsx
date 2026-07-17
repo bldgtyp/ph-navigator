@@ -204,6 +204,33 @@ describe("useGlazingTypesCatalogController.onWrite", () => {
     });
   });
 
+  test("field-config bundle routes option edits through legacyOptions", async () => {
+    const fieldDefs = [
+      field("manufacturer", [
+        { id: "opt_old", label: "Old", color: "#3b82f6", order: 0 },
+        { id: "opt_new", label: "New", color: "#22c55e", order: 1 },
+      ]),
+    ];
+    const { result } = renderHook(
+      () => useGlazingTypesCatalogController({ ...CONTROLLER_ARGS, fieldDefs }),
+      { wrapper },
+    );
+    await act(async () => {
+      await result.current.onEditCustomFieldBundle({
+        fieldKey: "manufacturer",
+        displayName: "manufacturer",
+        description: null,
+        options: [{ id: "opt_new", label: "New", color: "#22c55e", order: 0 }],
+        optionReplacements: { opt_old: "opt_new" },
+      });
+    });
+    expect(api.putGlazingTypeOptions).toHaveBeenCalledWith({
+      field_key: "manufacturer",
+      options: [{ id: "opt_new", label: "New", color: "#22c55e", order: 0 }],
+      replacements: { Old: "New" },
+    });
+  });
+
   test("merge (delete in-use option + cascade) PUTs label replacements", async () => {
     const { result } = renderHook(() => useGlazingTypesCatalogController(CONTROLLER_ARGS), {
       wrapper,

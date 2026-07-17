@@ -370,6 +370,10 @@ export type WriteOp =
       // field-def + cell changes together. Populated when an option
       // delete cascades (Clear / Replace-with).
       cellWrites?: CellWrite[];
+      // Exact deleted-option id -> replacement-option id map from the
+      // field-config modal. Catalog consumers need this because their REST
+      // boundary stores labels and may merge more than one option per save.
+      optionReplacements?: Record<string, string>;
     };
 
 // Optional result a consumer's `onWrite` may return for `rowInsert`
@@ -522,6 +526,9 @@ export type DataTableProps<TRow> = {
   // this and awaits resolution; rejection leaves the modal open with
   // the error surfaced inline.
   onEditCustomFieldBundle?: (request: EditCustomFieldBundleRequest) => Promise<void>;
+  // Optional per-field gate for consumers that expose configuration on only a
+  // subset of built-ins. Omit to retain the default all-editable-fields path.
+  canEditFieldConfig?: (fieldKey: string) => boolean;
   // Registry the formula editor uses for ref completion / palette /
   // live preview. When omitted (or empty), the editor cannot resolve
   // `{Display Name}` refs.

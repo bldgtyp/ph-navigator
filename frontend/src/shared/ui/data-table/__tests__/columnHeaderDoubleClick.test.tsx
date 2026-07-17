@@ -308,6 +308,22 @@ describe("DataTable column header double-click trigger (plan 21)", () => {
     expect(onEditCustomFieldBundle).not.toHaveBeenCalled();
   });
 
+  test("consumer field gate exposes configuration only on allowed columns", async () => {
+    const user = userEvent.setup();
+    const onEditCustomFieldBundle = vi.fn().mockResolvedValue(undefined);
+    renderTable({
+      onEditCustomFieldBundle,
+      canEditFieldConfig: (fieldKey) => fieldKey === "floor",
+    });
+
+    expect(getColumnHeader("Floor")).toHaveAttribute("data-field-editable", "true");
+    expect(getColumnHeader("Count")).not.toHaveAttribute("data-field-editable");
+    await user.dblClick(getColumnHeader("Count"));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    await user.dblClick(getColumnHeader("Floor"));
+    expect(screen.getByRole("dialog", { name: /Edit field/ })).toBeInTheDocument();
+  });
+
   test("plan-21: Enter on a focused custom header opens the FieldConfigModal", async () => {
     const user = userEvent.setup();
     const onEditCustomFieldBundle = vi.fn().mockResolvedValue(undefined);

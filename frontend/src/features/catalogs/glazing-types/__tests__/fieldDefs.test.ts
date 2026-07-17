@@ -55,6 +55,8 @@ describe("glazing-types field defs", () => {
     // catalog store. `field_type` stays locked (fixed built-ins).
     expect(OVERLAY.manufacturer?.locked).not.toContain("options");
     expect(OVERLAY.manufacturer?.locked).toContain("field_type");
+    expect(OVERLAY.manufacturer?.locked).toContain("display_name");
+    expect(OVERLAY.manufacturer?.locked).toContain("description");
     // `brand` is free text — a static overlay entry with no options list.
     expect(OVERLAY.brand?.options).toBeUndefined();
   });
