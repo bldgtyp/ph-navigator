@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-15
 TIME: 20:44 EDT
-STATUS: ✅ Complete — implemented + verified 2026-07-15 (commit c0d31fb8, branch refactor/apertures-builder-fixes)
+STATUS: ✅ Complete — implemented + verified 2026-07-15 (commit ab00c89f, branch refactor/apertures-builder-fixes)
 AUTHOR: Claude (Opus 4.8) for Ed May
 SCOPE: Three self-contained fixes to the Aperture Builder canvas (Apertures /
   Apertures): operable-direction arrow restyle, U-Value chip layout bug, and
@@ -67,7 +67,7 @@ when to stop auto-fitting. Fit math likely belongs near `ApertureSvgCanvas` /
 - Landing on Apertures with no saved zoom frames the first unit fully; once you
   zoom manually, that zoom sticks across page changes.
 
-## Outcome — 2026-07-15 (commit c0d31fb8)
+## Outcome — 2026-07-15 (commit ab00c89f)
 
 All three items shipped on branch `refactor/apertures-builder-fixes`.
 
