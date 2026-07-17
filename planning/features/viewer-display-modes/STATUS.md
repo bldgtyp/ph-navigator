@@ -26,20 +26,23 @@ RELATED: ./README.md; ./PRD.md
   (`_spaces_from_model` copies only airflow magnitudes; `_ventilation_systems_from_model`
   dedupes systems, dropping which spaces they serve). Details + minimal upstream
   fix in PRD Item 15.
-- **Phase 3b — ERV color mode (Item 15). Backend-first, not yet started.** Needs
-  the extraction carry-through (add `ventilation_unit_id` to `SpaceSchema`,
-  populate in `_spaces_from_model`) before the frontend color mode. See PRD.
+- **Phase 3b — ERV color mode (Item 15). ✅ DONE.** Backend carry-through
+  (`SpaceSchema.ventilation_unit_id/_name` + `_spaces_from_model`) plus the
+  frontend `"ventilation-unit"` mode on both space lenses — stable hash-based
+  hues (shared `hashedColor` engine), dynamic per-unit legend. Backend + frontend
+  tests; render-verified. Forward-only (existing artifacts show grey until
+  re-extracted; `/model_data` is immutably cached per `asset_id`).
 
 ## Next step
 
-Phases 1, 2, 3a done. Item 15 (Phase 3b) remains and is **backend-first**: it
-needs a schema/extraction change to carry the space→ERV id before any frontend
-coloring — a bigger bite than 14. Ed's call whether to take it now or defer.
+All items (13, 14, 15) done and committed on `feature/spaces-opaque-material`.
+Ready to merge to `main` (note: `main` no longer auto-deploys prod — deploys are
+now a manual workflow, so merging is safe). Item 15 is forward-only: to color
+existing production models, their `/model_data` artifacts must be re-extracted.
 
 ## Blockers
 
-- Item 15 (Phase 3b) needs the backend extraction carry-through first (Phase 3a
-  found the mapping is DROPPED at PHN translation).
+- None. (Item 15 is forward-only by design — see Next step.)
 
 ## Verification
 
@@ -48,6 +51,7 @@ coloring — a bigger bite than 14. Ed's call whether to take it now or defer.
   render.
 - ✅ Item 14: Floor Areas lens shows the Ventilation Airflow mode + Supply/Extract/
   None legend and colors floor segments — unit test + render-verified.
-- (Item 15, if shipped) ERV mode colors spaces per unit with a correct legend.
+- ✅ Item 15: Ventilation Unit mode colors spaces/floor segments per ERV with a
+  per-unit hashed-color legend — backend + frontend tests + render-verified.
 - Check draw-call / FPS baseline (~14 calls @ 60 FPS on Hillandale) isn't
   regressed by new materials/modes.

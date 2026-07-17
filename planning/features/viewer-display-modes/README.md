@@ -40,11 +40,12 @@ Floor Areas (easy win), and research/add a new "color by Ventilator (ERV)" mode
 - **Item 14 (feature) — DONE.** The Spaces "Airflow" color mode (supply / extract
   / none) now also runs on the **Floor Areas** lens. 2-line change; floor segments
   already carried the airflow data.
-- **Item 15 (feature, research-gated) — backend-first.** A **new "color by
-  Ventilator (ERV)" mode**: color each space by its assigned ventilation unit.
-  Phase 3a research verdict: the space→ERV mapping is **DROPPED** at PHN
-  extraction, so this needs a backend schema/extraction carry-through before the
-  frontend color mode (see PRD).
+- **Item 15 (feature) — DONE.** A **new "Ventilation Unit" color mode** colors
+  each space (and floor segment) by its assigned ERV, with a per-unit legend and
+  stable hash-based hues. Built backend-first (Phase 3a found the space→ERV
+  mapping is DROPPED at extraction): added the carry-through to `SpaceSchema` +
+  `_spaces_from_model`, then the frontend mode. Forward-only (existing models
+  show grey until re-extracted).
 
 ## Why one packet
 

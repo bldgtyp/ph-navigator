@@ -43,10 +43,30 @@ and legend-filter all flow from those two edits (they delegate to the same confi
 + color switch). Verified on a render: Floor Areas shows the Ventilation Airflow
 mode + the same Supply/Extract/None legend as Spaces.
 
-## Item 15 — Color by Ventilator (ERV) mode (feature, research-gated)
+## Item 15 — Color by Ventilator (ERV) mode (feature) — DONE
 
-Add a **new color mode** that colors each space by the **ventilation unit (ERV)
-assigned to it**, alongside the existing Airflow mode.
+A **new "Ventilation Unit" color mode** colors each space (and floor segment) by
+the **ventilation unit (ERV) assigned to it**, alongside the Airflow mode. Built
+backend-first per the Phase 3a verdict; forward-only (existing already-extracted
+models show grey "Unassigned" until re-extracted — the `/model_data` artifact is
+immutably cached per `asset_id`, so a re-upload or artifact bust re-extracts).
+Ed's calls: build now; hash-based stable colors.
+
+**Shipped:**
+- Backend: `SpaceSchema.ventilation_unit_id` / `ventilation_unit_name`
+  (service-computed, like `net_volume`); `_spaces_from_model` populates them from
+  the parent room's `ph_hvac.ventilation_system.ventilation_unit` (guarded `None`).
+- Frontend: threaded id/name through `SpaceModelData` →
+  `loaders/building.ts` → space + floor-segment meta; new `"ventilation-unit"`
+  theme on the `spaces` and `floor-areas` lenses; `colorForThemedObject` colors
+  by `ventilationUnitColor(id, name)` — a stable golden-ratio hue **hashed from
+  the unit id** (extracted the shared `hashedColor` engine out of
+  `constructionColor`; reused per Ed's choice), keyed by id, labeled by name,
+  neutral grey for unassigned. Legend joins the dynamic (model-derived, sorted)
+  branch, so it lists exactly the units present.
+- Tests: backend extraction carries the unit; frontend covers stable/distinct/
+  unassigned colors + the per-unit legend. Render-verified (seed has 1 ERV → one
+  hue; multi-ERV models get one stable hue each).
 
 **Research gate (Phase 3a) — RESULT: DROPPED (duct-length precedent).** The
 space→ERV assignment exists in HBJSON but is **room-level, not per-space**: a
@@ -61,17 +81,9 @@ rooms/spaces each serves. So `SpaceSchema` carries no unit id, the two lists are
 disconnected, and the viewer's `SpacePhProperties` (`_v_sup`/`_v_eta`/`_v_tran`)
 has flow only — no unit identity. MCP tools expose the same disconnected payload.
 
-**→ Item 15 is therefore a backend-first task, not a pure "register a color
-mode."** Concrete minimal fix (single-source, no honeybee_ph change needed):
-1. `backend/features/model_viewer/schemas/honeybee_ph.py` — add
-   `ventilation_unit_id: str | None` (and optionally `_name`) to `SpaceSchema`.
-2. `backend/features/model_viewer/extraction.py` `_spaces_from_model` — inside
-   the existing room loop, populate it from
-   `room.properties.ph_hvac.ventilation_system.ventilation_unit.identifier`
-   (guard `None`). Same object `_ventilation_systems_from_model` already reads.
-3. Frontend — thread the id through `types.ts` `SpacePhProperties`/`SpaceGroupMeta`
-   → `loaders/building.ts` → a new `"ventilation-unit"` color mode + per-unit
-   categorical legend in `themes.ts`/`themeState.ts` (Airflow-mode pattern).
+This is why Item 15 was **backend-first, not a pure "register a color mode"** —
+the space→unit carry-through (documented as shipped above) had to be added at
+extraction before the frontend could color by it.
 
 ## Reuse story
 
@@ -88,14 +100,15 @@ path (build on `LensBatch`/`BatchedLens`, per the batched-substrate constraint).
 2. ~~Item 15: is the space→ERV mapping in the PHN schema today?~~ — **RESOLVED
    (Phase 3a): DROPPED.** Room-level in HBJSON, discarded at PHN extraction;
    needs the backend carry-through in the Item 15 section above.
-3. Item 15: color assignment when many ERV units exist — categorical palette +
-   legend; how many units realistically, and do we need stable colors across
-   sessions?
+3. ~~Item 15: color assignment when many ERV units exist~~ — **RESOLVED:**
+   hash-based stable hues (Ed's choice) — no palette cap, color stable across
+   sessions/models per unit id; dynamic legend lists only units present.
 
 ## Acceptance
 
 - ✅ Spaces lens reads clean and solid — matches the Building material exactly
   (opaque white), interiors occluded (section plane to cut in).
 - ✅ Floor Areas lens offers the Airflow color mode with the same legend as Spaces.
-- (Item 15, backend-first) a "color by Ventilator" mode colors spaces by ERV with
-  a per-unit legend — needs the extraction carry-through first (Phase 3a: DROPPED).
+- ✅ A "Ventilation Unit" mode colors spaces (and floor segments) by their ERV
+  with a per-unit legend — stable hashed hues; forward-only (grey until
+  re-extracted). Backend carry-through added first (Phase 3a: DROPPED).

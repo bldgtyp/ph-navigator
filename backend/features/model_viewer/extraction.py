@@ -220,6 +220,10 @@ def _spaces_from_model(model: Model, summary: LoadSummarySchema) -> list[SpaceSc
     """
     spaces: list[SpaceSchema] = []
     for room in model.rooms:
+        # Room-level ventilation unit shared by every space in this room
+        # (Item 15). Same object `_ventilation_systems_from_model` reads.
+        vent_system = room.properties.ph_hvac.ventilation_system
+        vent_unit = vent_system.ventilation_unit if vent_system is not None else None
         for space in room.properties.ph.spaces:
             try:
                 space_dto = SpaceSchema(**space.to_dict(include_mesh=True))
@@ -231,6 +235,9 @@ def _spaces_from_model(model: Model, summary: LoadSummarySchema) -> list[SpaceSc
             space_dto.weighted_floor_area = space.weighted_floor_area
             space_dto.avg_clear_height = space.avg_clear_height
             space_dto.average_floor_weighting_factor = space.average_floor_weighting_factor
+            if vent_unit is not None:
+                space_dto.ventilation_unit_id = vent_unit.identifier
+                space_dto.ventilation_unit_name = vent_unit.display_name
             spaces.append(space_dto)
     return spaces
 

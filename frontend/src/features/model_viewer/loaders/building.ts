@@ -214,6 +214,8 @@ function spaceRenderables(spaces: SpaceModelData[]): BuildingRenderable[] {
           avg_clear_height: space.avg_clear_height,
           average_floor_weighting_factor: space.average_floor_weighting_factor,
           airflow: space.properties.ph,
+          ventilation_unit_id: space.ventilation_unit_id,
+          ventilation_unit_name: space.ventilation_unit_name,
         },
       },
     ];
@@ -249,6 +251,8 @@ function floorSegmentRenderables(spaces: SpaceModelData[]): BuildingRenderable[]
             weighted_floor_area: segment.weighted_floor_area,
             weighting_factor: segment.weighting_factor,
             airflow: space.properties.ph,
+            ventilation_unit_id: space.ventilation_unit_id,
+            ventilation_unit_name: space.ventilation_unit_name,
           },
         });
       }

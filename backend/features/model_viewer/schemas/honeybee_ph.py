@@ -86,3 +86,11 @@ class SpaceSchema(BaseModel):
     weighted_floor_area: float = 0.0
     avg_clear_height: float = 0.0
     average_floor_weighting_factor: float = 0.0
+
+    # The ventilation unit (ERV/HRV) serving this space, resolved by the
+    # extraction service from the parent room's ph_hvac ventilation system
+    # (Item 15 — "color by Ventilator"). The assignment is room-level in
+    # honeybee_ph, so every space in a room shares one unit; None when the
+    # room has no ventilation unit assigned.
+    ventilation_unit_id: str | None = None
+    ventilation_unit_name: str | None = None

@@ -5,6 +5,7 @@ import {
   cyrb53,
   legendForModel,
   ventilationAirflowCategory,
+  ventilationUnitColor,
   weightingFactorCategory,
 } from "../lib/themes";
 import type { BuildingModel } from "../loaders/building";
@@ -35,6 +36,46 @@ describe("model viewer themes", () => {
     expect(parseModelViewerTheme("floor-areas", "bad-token")).toBe("weighting-factor");
     // Item 14: Floor Areas now offers the Airflow mode (Spaces already did).
     expect(parseModelViewerTheme("floor-areas", "ventilation-airflow")).toBe("ventilation-airflow");
+    // Item 15: Ventilation Unit mode is offered on both space lenses.
+    expect(parseModelViewerTheme("spaces", "ventilation-unit")).toBe("ventilation-unit");
+    expect(parseModelViewerTheme("floor-areas", "ventilation-unit")).toBe("ventilation-unit");
+    expect(parseModelViewerTheme("building", "ventilation-unit")).toBe("shaded");
+  });
+
+  test("colors spaces by ventilation unit with stable hashed hues (Item 15)", () => {
+    const ervA = ventilationUnitColor("erv-a-uuid", "ERV A");
+    // Stable: same id → identical color; keyed by id, labeled by name.
+    expect(ventilationUnitColor("erv-a-uuid", "ERV A")).toEqual(ervA);
+    expect(ervA.key).toBe("erv-a-uuid");
+    expect(ervA.label).toBe("ERV A");
+    // Distinct units get distinct colors.
+    expect(ventilationUnitColor("erv-b-uuid", "ERV B").color).not.toBe(ervA.color);
+    // Unassigned spaces fall to a neutral grey bucket.
+    expect(ventilationUnitColor(null, null)).toEqual({
+      key: "__unassigned__",
+      label: "Unassigned",
+      color: "#C8C8C8",
+    });
+  });
+
+  test("builds a per-unit Ventilation Unit legend (Item 15)", () => {
+    const model = {
+      objects: [
+        mesh("space:1", "spaces", "spaceGroup", { ventUnit: { id: "erv-a", name: "ERV A" } }),
+        mesh("space:2", "spaces", "spaceGroup", { ventUnit: { id: "erv-a", name: "ERV A" } }),
+        mesh("space:3", "spaces", "spaceGroup", { ventUnit: { id: "erv-b", name: "ERV B" } }),
+        mesh("space:4", "spaces", "spaceGroup", {}),
+      ],
+    } as unknown as BuildingModel;
+
+    const legend = legendForModel(model, "spaces", "ventilation-unit");
+    expect(legend?.title).toBe("Ventilation Unit");
+    // Alphabetized by label; each unit counted; unassigned included.
+    expect(legend?.rows.map((row) => [row.id, row.label, row.count])).toEqual([
+      ["erv-a", "ERV A", 2],
+      ["erv-b", "ERV B", 1],
+      ["__unassigned__", "Unassigned", 1],
+    ]);
   });
 
   test("pins the V1 construction color hash algorithm", () => {
@@ -151,6 +192,7 @@ function mesh(
     boundary?: string;
     weightingFactor?: number;
     airflow?: { sup?: number | null; eta?: number | null };
+    ventUnit?: { id?: string | null; name?: string | null };
   },
 ) {
   return {
@@ -171,6 +213,8 @@ function mesh(
       airflow: options.airflow
         ? { _v_sup: options.airflow.sup ?? null, _v_eta: options.airflow.eta ?? null }
         : null,
+      ventilation_unit_id: options.ventUnit?.id ?? null,
+      ventilation_unit_name: options.ventUnit?.name ?? null,
     },
   };
 }

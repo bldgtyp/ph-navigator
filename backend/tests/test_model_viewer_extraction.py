@@ -135,6 +135,20 @@ def test_primary_spaces_and_floor_segments(primary_data: CombinedModelDataSchema
         assert space.properties.ph is not None
 
 
+def test_primary_spaces_carry_ventilation_unit(primary_data: CombinedModelDataSchema) -> None:
+    """Item 15: each space carries its room's ventilation unit (ERV/HRV). The
+    fixture's one system spans all 4 rooms, so every space resolves to the same
+    non-null unit id + name (the room-level assignment, carried through to the
+    space DTO so the viewer can color by unit)."""
+    unit_ids = {space.ventilation_unit_id for space in primary_data.spaces}
+    assert len(unit_ids) == 1
+    (unit_id,) = unit_ids
+    assert unit_id is not None
+    for space in primary_data.spaces:
+        assert space.ventilation_unit_id == unit_id
+        assert space.ventilation_unit_name is not None
+
+
 def test_primary_shade_groups_merged(primary_data: CombinedModelDataSchema) -> None:
     """5 distinct display_names → 5 groups, each ONE merged mesh (crit. 5)."""
     assert primary_data.load_summary.shade_groups_extracted == 5

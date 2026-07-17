@@ -16,11 +16,13 @@ export const MODEL_VIEWER_THEMES_BY_LENS: Record<ModelViewerLens, ThemeDefinitio
   spaces: [
     { id: "shaded", label: "Shaded" },
     { id: "ventilation-airflow", label: "Ventilation Airflow" },
+    { id: "ventilation-unit", label: "Ventilation Unit" },
   ],
   "floor-areas": [
     { id: "weighting-factor", label: "Weighting Factor" },
     { id: "shaded", label: "Shaded" },
     { id: "ventilation-airflow", label: "Ventilation Airflow" },
+    { id: "ventilation-unit", label: "Ventilation Unit" },
   ],
   "site-sun": [{ id: "shaded", label: "Shaded" }],
   ventilation: [{ id: "shaded", label: "Shaded" }],

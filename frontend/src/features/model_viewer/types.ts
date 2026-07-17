@@ -54,6 +54,7 @@ export type ModelViewerTheme =
   | "construction"
   | "window-construction"
   | "ventilation-airflow"
+  | "ventilation-unit"
   | "weighting-factor";
 
 export type Mesh3D = {
@@ -213,6 +214,8 @@ export type SpaceModelData = {
   weighted_floor_area: number;
   avg_clear_height: number;
   average_floor_weighting_factor: number;
+  ventilation_unit_id?: string | null;
+  ventilation_unit_name?: string | null;
 };
 
 export type LineSegment3D = {
@@ -409,6 +412,8 @@ export type SpaceGroupMeta = BaseModelObjectMeta<"spaceGroup"> & {
   avg_clear_height?: number;
   average_floor_weighting_factor?: number;
   airflow?: SpacePhProperties | null;
+  ventilation_unit_id?: string | null;
+  ventilation_unit_name?: string | null;
 };
 
 export type SpaceFloorSegmentMeshFaceMeta = BaseModelObjectMeta<"spaceFloorSegmentMeshFace"> & {
@@ -418,6 +423,8 @@ export type SpaceFloorSegmentMeshFaceMeta = BaseModelObjectMeta<"spaceFloorSegme
   weighted_floor_area?: number | null;
   weighting_factor?: number;
   airflow?: SpacePhProperties | null;
+  ventilation_unit_id?: string | null;
+  ventilation_unit_name?: string | null;
 };
 
 export type DuctSegmentLineMeta = BaseModelObjectMeta<"ductSegmentLine"> & {

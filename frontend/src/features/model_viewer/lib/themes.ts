@@ -103,6 +103,10 @@ export function colorForThemedObject(
       return meta.type === "spaceGroup" || meta.type === "spaceFloorSegmentMeshFace"
         ? ventilationAirflowColor(meta.airflow?._v_sup, meta.airflow?._v_eta)
         : null;
+    case "ventilation-unit":
+      return meta.type === "spaceGroup" || meta.type === "spaceFloorSegmentMeshFace"
+        ? ventilationUnitColor(meta.ventilation_unit_id, meta.ventilation_unit_name)
+        : null;
     case "weighting-factor":
       return meta.type === "spaceFloorSegmentMeshFace"
         ? colorFromMap(
@@ -168,20 +172,43 @@ export function cyrb53(value: string, seed = 0): number {
   return 4294967296 * (2097151 & h2) + (h1 >>> 0);
 }
 
-export function constructionColor(identifier: string | null | undefined): ColorDefinition {
-  const label = identifier?.trim() || "Unknown";
-  const hash1 = cyrb53(label, 0);
-  const hash2 = cyrb53(label, hash1);
+/** A stable, well-distributed color derived from `hashSource` (golden-ratio hue
+ *  hopping over a cyrb53 hash), keyed by `key` and shown as `label`. Same source
+ *  → same color across sessions, with no fixed palette to overflow — the shared
+ *  engine behind the Construction and Ventilation-Unit themes. */
+function hashedColor(key: string, label: string, hashSource: string): ColorDefinition {
+  const hash1 = cyrb53(hashSource, 0);
+  const hash2 = cyrb53(hashSource, hash1);
   const goldenRatio = 0.618033988749895;
   const baseHue = (hash1 % 1000) / 1000;
   const hue = (baseHue + goldenRatio * (hash2 % 100)) % 1.0;
   const saturation = 0.55 + ((hash1 >>> 20) % 30) / 100;
   const lightness = 0.4 + ((hash2 >>> 20) % 25) / 100;
   return colorDefinition(
-    label,
+    key,
     label,
     `#${new Color().setHSL(hue, saturation, lightness).getHexString()}`,
   );
+}
+
+export function constructionColor(identifier: string | null | undefined): ColorDefinition {
+  const label = identifier?.trim() || "Unknown";
+  // Construction keys, labels, and hashes are all the construction name.
+  return hashedColor(label, label, label);
+}
+
+const VENTILATION_UNIT_UNASSIGNED = colorDefinition("__unassigned__", "Unassigned", "#C8C8C8");
+
+/** Color a space by its assigned ventilation unit (Item 15): a stable hue hashed
+ *  from the unit's identifier (so the same ERV keeps its color across sessions
+ *  and models), keyed by that identifier and labeled by the unit's name. Spaces
+ *  with no assigned unit fall to a neutral "Unassigned" grey. */
+export function ventilationUnitColor(
+  unitId: string | null | undefined,
+  unitName: string | null | undefined,
+): ColorDefinition {
+  if (!unitId) return VENTILATION_UNIT_UNASSIGNED;
+  return hashedColor(unitId, unitName?.trim() || unitId, unitId);
 }
 
 function legendRowsForTheme(
@@ -196,7 +223,10 @@ function legendRowsForTheme(
     if (!color) continue;
     incrementLegendCount(counts, color);
   }
-  if (theme === "construction" || theme === "window-construction") {
+  // Dynamic legends (unbounded, model-derived buckets) list every bucket that
+  // actually appears, alphabetized — unlike the static themes below whose rows
+  // follow a fixed color map. Ventilation Unit joins the two construction themes.
+  if (theme === "construction" || theme === "window-construction" || theme === "ventilation-unit") {
     return [...counts.values()].sort((a, b) => a.label.localeCompare(b.label));
   }
   return staticLegendRows(theme, counts);
@@ -284,6 +314,7 @@ function staticThemeColorMap(theme: ModelViewerTheme): Record<string, ColorDefin
       return FLOOR_WEIGHTING_FACTOR_COLORS;
     case "construction":
     case "window-construction":
+    case "ventilation-unit":
     case "shaded":
       return null;
   }
