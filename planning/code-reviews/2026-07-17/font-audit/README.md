@@ -97,10 +97,10 @@ The drift, concretely:
    system from the pages hosting it (page h2s are 16px; modal buttons differ
    from page buttons), which is likely why modals read as "ugly"/foreign.
 
-## Suggested next step (not started)
+## Follow-up
 
-A `planning/refactor/` packet to: (a) define one canonical role→variant map
-(button tiers, heading tiers, label, table chrome) on the existing token
-scale; (b) add tracking + weight tokens; (c) fix the six off-scale sources
-(§3) and the `code` reset gap; (d) re-run this audit as the regression check
-— target ≤ ~25 variants with zero OFF-SCALE rows.
+Consolidation is planned and tracked in
+`planning/refactor/typography-consolidation/` (PRD with the canonical
+role→variant map, tracking/weight tokens, off-scale fixes, CI enforcement;
+this audit's sweep is the regression check — target ≤ ~25 variants, zero
+OFF-SCALE rows).
