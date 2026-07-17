@@ -2,6 +2,7 @@ import "../catalogs.css";
 import { useCallback, useMemo, useState } from "react";
 import {
   DataTable,
+  addRowButton,
   buildTableSchema,
   type DataTableColumnDef,
 } from "../../../shared/ui/data-table";
@@ -10,6 +11,7 @@ import { errorMessage } from "../../../shared/lib/errors";
 import { useSignOutMutation } from "../../auth/hooks";
 import type { AuthSession } from "../../auth/types";
 import { CatalogMenu } from "../components/CatalogMenu";
+import { FrameTypeCreateModal } from "../components/FrameTypeCreateModal";
 import {
   buildFrameTypeOptionMaps,
   toFrameTypeRow,
@@ -185,6 +187,9 @@ const COLUMN_DEFS: DataTableColumnDef<FrameTypeRow>[] = [
 export function FrameTypesCatalogPage({ session }: { session: AuthSession }) {
   const [includeInactive, setIncludeInactive] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  // Row to scroll-and-highlight after a modal create lands in the table.
+  const [focusRowId, setFocusRowId] = useState<string | null>(null);
   const [bulkReactivating, setBulkReactivating] = useState(false);
   const frameTypesQuery = useFrameTypesQuery();
   const optionsQuery = useFrameTypeOptionsQuery();
@@ -313,6 +318,10 @@ export function FrameTypesCatalogPage({ session }: { session: AuthSession }) {
             readOnly={!canEditCatalog}
             onWrite={controller.onWrite}
             buildEmptyRow={buildEmptyFrameTypeRow}
+            focusRowId={focusRowId}
+            // The footer "+" opens the create modal instead of silently
+            // appending a blank row (the Shift-Enter grid path remains).
+            footerAction={addRowButton("Add frame type", canEditCatalog, () => setCreateOpen(true))}
             bulkSelectionActions={renderBulkSelectionActions}
             overflowMenuActions={
               <CatalogImportExportMenu
@@ -335,6 +344,16 @@ export function FrameTypesCatalogPage({ session }: { session: AuthSession }) {
             setState on a hidden dialog. */}
         {canEditCatalog && importOpen ? (
           <ImportDialog onClose={() => setImportOpen(false)} />
+        ) : null}
+        {canEditCatalog && createOpen ? (
+          <FrameTypeCreateModal
+            optionsByField={optionsByField}
+            onClose={() => setCreateOpen(false)}
+            onCreated={(created) => {
+              setCreateOpen(false);
+              setFocusRowId(created.id);
+            }}
+          />
         ) : null}
       </section>
     </main>

@@ -7,9 +7,11 @@ import type {
   FieldDef,
   ViewState,
   WriteOp,
+  WriteResult,
 } from "../../../shared/ui/data-table";
 import { useLocalTableViewState } from "../../table_views/useLocalTableViewState";
 import { createMaterial, deactivateMaterial, duplicateMaterial, updateMaterial } from "../api";
+import { toInsertedRowIds } from "../lib";
 import { catalogQueryKeys } from "../query-keys";
 import type {
   CatalogMaterial,
@@ -111,7 +113,7 @@ export type MaterialsCatalogController = {
   view: ViewState;
   onViewChange: (next: ViewState) => void;
   onResetView: () => void;
-  onWrite: (op: WriteOp) => Promise<void>;
+  onWrite: (op: WriteOp) => Promise<WriteResult>;
 };
 
 export type MaterialsCatalogControllerArgs = {
@@ -163,11 +165,11 @@ export function useMaterialsCatalogController({
           return;
         case "rowInsert": {
           if (op.rows.length === 0) return;
-          await Promise.all(
+          const created = await Promise.all(
             op.rows.map((row) => createMaterial(buildCreatePayload(row.fieldDefaults))),
           );
           await invalidate();
-          return;
+          return toInsertedRowIds(op.rows, created);
         }
         case "rowDelete": {
           await Promise.all(op.rows.map((row) => deactivateMaterial(row.rowId)));
@@ -180,9 +182,11 @@ export function useMaterialsCatalogController({
           // but Materials lets the backend rebuild the duplicate from
           // its own state — we only need `sourceRowId`. The snapshot
           // still feeds the inverse `rowDelete` for ⌘Z bookkeeping.
-          await Promise.all(op.rows.map((row) => duplicateMaterial(row.sourceRowId)));
+          const created = await Promise.all(
+            op.rows.map((row) => duplicateMaterial(row.sourceRowId)),
+          );
           await invalidate();
-          return;
+          return toInsertedRowIds(op.rows, created);
         }
         case "schemaMutation":
           throw new Error(

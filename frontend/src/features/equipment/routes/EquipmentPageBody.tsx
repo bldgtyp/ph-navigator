@@ -96,7 +96,8 @@ import {
   VENTILATORS_CONFLICT_MESSAGES,
   equipmentTabLabel,
 } from "./equipmentPageConfig";
-import { addRowButton, insertEquipmentRow } from "./equipmentRowActions";
+import { addRowButton } from "../../../shared/ui/data-table";
+import { insertEquipmentRow } from "./equipmentRowActions";
 
 export function EquipmentPageBody(props: {
   project: ProjectDetail;

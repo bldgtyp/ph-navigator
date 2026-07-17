@@ -448,7 +448,13 @@ survive the export.
 
 ## Write Pipeline
 
-All mutations collapse into one semantic `WriteOp` pipeline.
+All mutations collapse into one semantic `WriteOp` pipeline. For
+row-creating ops (`rowInsert`, `rowDuplicate`) whose backend assigns
+server ids (the catalogs), `onWrite` may return a
+`WriteResult.insertedRowIds` map (library tmp id → persisted id); the
+grid uses it to keep the post-insert reveal, pending inline edit, and
+the undo inverse pointed at the persisted row. Consumers whose
+client-generated ids are canonical return nothing.
 
 ```ts
 type WriteOp =
@@ -670,9 +676,15 @@ Rules:
   `generic_table_row_ids` (`backend/features/project_document/_validators.py`).
 - **The pinned slot cannot be hidden or reordered** (the "Hide field"
   toggle is suppressed for it; only sort remains).
-- **Shift-Enter row insert produces a truly blank row**: field defaults
-  come from `FieldDef.default` / natural zero only, never cloned from
-  the anchor row.
+- **Shift-Enter row insert produces a blank row**: field defaults come
+  from `FieldDef.default` / natural zero, never cloned from the anchor
+  row — with one amendment (2026-07-17): when the view is **grouped**,
+  the group-rule fields inherit the anchor row's values so the new row
+  lands in the group the user is working in. After any insert the new
+  row becomes the active record: collapsed groups on its path
+  auto-expand, the selection anchors on it, and the grid scrolls it
+  into view (riding the server-id mapping from `WriteResult` when the
+  backend assigns ids).
 - **View state round-trips without a special case.** The identifier
   column has an ordinary column id, so its persisted sort rules and
   widths flow through `sanitizeViewStateForSchema`'s generic

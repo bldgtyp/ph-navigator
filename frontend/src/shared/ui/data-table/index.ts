@@ -1,4 +1,5 @@
 export { DataTable } from "./DataTable";
+export { addRowButton } from "./components/addRowButton";
 export { SingleSelectCell } from "./components/SingleSelectCell";
 export { coerceCustomValue } from "./lib/coerceCustomFieldType";
 export type { CoerceResult } from "./lib/coerceCustomFieldType";
@@ -164,6 +165,7 @@ export type {
   SortRule,
   ViewState,
   WriteOp,
+  WriteResult,
 } from "./types";
 export {
   ALL_FIELD_LOCKS,

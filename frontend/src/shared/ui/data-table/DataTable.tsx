@@ -22,7 +22,12 @@ import { useContext } from "react";
 import { UnitPreferenceContext } from "../../../lib/units/preference-context";
 import { computeIdentifierDuplicates, identifierColumnId } from "./lib/identifier/recordId";
 import { applyFilters } from "./lib/filter/apply";
-import { buildBodyPlan, groupPathByRowIdFromBodyPlan } from "./lib/body/plan";
+import {
+  buildBodyPlan,
+  expandedGroupsRevealing,
+  groupPathByRowIdFromBodyPlan,
+  resolveGroupRules,
+} from "./lib/body/plan";
 import { isPointerInActiveEditor as isPointerInActiveEditorBase } from "./lib/eventTargets";
 import { computeAggregatesByPath } from "./lib/body/aggregates";
 import { pruneExpandedGroups } from "./lib/body/prune";
@@ -323,8 +328,9 @@ export function DataTable<TRow>({
   // Modal saves ride the same write chokepoint inline edits use, so a
   // record-detail edit lands on the undo/redo history like any cell edit.
   const commitRecordDetail = useCallback(
-    (writes: CellWrite[], inverses: CellWrite[]) =>
-      dispatchWrite({ kind: "cell", writes }, { kind: "cell", writes: inverses }),
+    async (writes: CellWrite[], inverses: CellWrite[]) => {
+      await dispatchWrite({ kind: "cell", writes }, { kind: "cell", writes: inverses });
+    },
     [dispatchWrite],
   );
   // Resolve the open record by id (not by snapshot) so the modal tracks
@@ -520,6 +526,40 @@ export function DataTable<TRow>({
     rowVirtualizer.scrollToIndex(planIndex, { align: "auto" });
   }, [editingRowId, rowIds, bodyPlanIndexByDataRowIndex, rowVirtualizer]);
 
+  // Group rules resolved once per (group, columns, fieldDefs) change and
+  // shared by the reveal paths below, instead of each call site rebuilding
+  // the accessor maps.
+  const resolvedGroupRules = useMemo(
+    () =>
+      view.group.length > 0 ? resolveGroupRules(view.group, visibleColumnDefs, fieldDefs) : null,
+    [view.group, visibleColumnDefs, fieldDefs],
+  );
+  // Shared "make this group path visible" tail: expand any collapsed
+  // ancestor of `path` in one view commit.
+  const revealGroupPath = useCallback(
+    (path: readonly unknown[]) => {
+      const nextExpanded = expandedGroupsRevealing(view.expandedGroups, path);
+      if (nextExpanded) onViewChange({ ...view, expandedGroups: nextExpanded });
+    },
+    [onViewChange, view],
+  );
+
+  // A focus target hidden inside a collapsed group can't be scrolled
+  // to — expand its ancestors first (once per focusRowId value, so the
+  // user can still re-collapse the group afterwards).
+  const expandedForFocusRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!focusRowId || expandedForFocusRef.current === focusRowId) return;
+    if (!resolvedGroupRules || rowIds.includes(focusRowId)) {
+      expandedForFocusRef.current = focusRowId;
+      return;
+    }
+    const row = filteredRows.find((candidate) => getRowId(candidate) === focusRowId);
+    if (!row) return;
+    expandedForFocusRef.current = focusRowId;
+    revealGroupPath(resolvedGroupRules.groupAccessors.map((accessor) => accessor(row)));
+  }, [filteredRows, focusRowId, getRowId, resolvedGroupRules, revealGroupPath, rowIds]);
+
   useEffect(() => {
     if (!focusRowId) return;
     const dataIndex = rowIds.indexOf(focusRowId);
@@ -644,12 +684,20 @@ export function DataTable<TRow>({
         anchorRowId !== null
           ? (visibleDataRows.find((row) => getRowId(row) === anchorRowId) ?? null)
           : null;
-      // Plan 30 D10 — Shift-Enter creates a truly blank row. Field
-      // defaults are sourced from `FieldDef.default` / natural zero
-      // only — never cloned from the anchor row. The anchor's position
-      // still places the new row below it; the anchor's *values* don't
-      // travel. The explicit "Duplicate record" gesture (out of scope
-      // for this plan) will reuse `buildEmptyRow` with anchor values.
+      // Plan 30 D10 — Shift-Enter creates a blank row: field defaults
+      // come from `FieldDef.default` / natural zero, never cloned from
+      // the anchor row. One amendment: when the view is grouped, the
+      // group-rule fields DO inherit the anchor's values, so the new
+      // row lands in the group the user is working in instead of
+      // falling into the catch-all group at the bottom. The explicit
+      // "Duplicate record" gesture still owns full-value cloning.
+      let groupInherited: Record<string, unknown> | null = null;
+      if (anchorRow !== null && resolvedGroupRules) {
+        groupInherited = {};
+        view.group.forEach((rule, depth) => {
+          groupInherited![rule.fieldKey] = resolvedGroupRules.groupAccessors[depth]!(anchorRow);
+        });
+      }
       const { rows: plannedRows, inserts } = planEmptyRows({
         count: 1,
         fieldDefs,
@@ -657,6 +705,7 @@ export function DataTable<TRow>({
         generateRowId,
         anchorRow,
         anchorRowId,
+        overlayDefaults: groupInherited,
       });
       const newRow = plannedRows[0];
       const insert = inserts[0];
@@ -674,14 +723,28 @@ export function DataTable<TRow>({
         rows: [{ rowId: tmpId, row: newRow, anchorRowId }],
       };
       try {
-        await dispatchWrite(op, inverse);
+        const result = await dispatchWrite(op, inverse);
+        // Catalog-style consumers persist under a server id; keep every
+        // post-insert affordance pointed at the row that actually exists.
+        const persistedId = result?.insertedRowIds?.[tmpId] ?? tmpId;
+        // The new record becomes the active record: expand any collapsed
+        // group on its path, then anchor the selection on it — the
+        // active-cell effect scrolls it into the viewport once it lands
+        // in the render's rowIds. The path reads `fieldDefaults`, whose
+        // group-rule entries are the anchor's accessor values (inherited
+        // above), so it matches the refetched row's rendered group.
+        if (view.group.length > 0) {
+          revealGroupPath(view.group.map((rule) => fieldDefaults[rule.fieldKey] ?? null));
+        }
+        const activeFieldKey = firstEditableFieldKey ?? visibleColumnDefs[0]?.fieldKey;
+        if (activeFieldKey) selection.setActive({ rowId: persistedId, fieldKey: activeFieldKey });
         if (firstEditableFieldKey) {
           const initialValue =
             fieldDefaults[firstEditableFieldKey] ??
             fieldDefByKey.get(firstEditableFieldKey)?.default ??
             "";
           edit.queuePendingEdit({
-            rowId: tmpId,
+            rowId: persistedId,
             fieldKey: firstEditableFieldKey,
             initialValue,
           });
@@ -701,6 +764,10 @@ export function DataTable<TRow>({
       visibleDataRows,
       generateRowId,
       getRowId,
+      resolvedGroupRules,
+      revealGroupPath,
+      selection,
+      view.group,
       visibleColumnDefs,
     ],
   );

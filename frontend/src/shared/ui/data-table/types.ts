@@ -372,6 +372,15 @@ export type WriteOp =
       cellWrites?: CellWrite[];
     };
 
+// Optional result a consumer's `onWrite` may return for `rowInsert`
+// ops whose backend assigns server ids (the catalogs): maps each
+// library-generated tmp rowId → the persisted row id. DataTable uses
+// the mapping to keep the post-insert affordances (active-cell reveal,
+// pending inline edit, undo's rowDelete inverse) pointed at the row
+// after the refetch swaps ids. Consumers whose client-generated ids
+// are canonical (document-backed tables) return nothing.
+export type WriteResult = { insertedRowIds?: Record<string, string> } | void;
+
 export type CellCommitMove =
   | { kind: "tab"; shiftKey: boolean }
   | { kind: "down" }
@@ -388,12 +397,13 @@ export type CellRange = {
 };
 
 // Consumer callback used by Shift+Enter row insert (Phase 2). Receives
-// the library-generated tmp rowId and the field-default map (per
-// plan-30 D10 always sourced from `FieldDef.default` / natural zero —
-// never from anchor values). `anchorRow` is retained for the future
-// explicit "Duplicate record" right-click action, which will reuse this
-// builder; the Shift-Enter path never reads values from it. Consumers
-// that omit this prop disable row insert.
+// the library-generated tmp rowId and the field-default map — sourced
+// from `FieldDef.default` / natural zero (plan-30 D10), except that
+// when the view is grouped the active group-rule fields inherit the
+// anchor row's values so the new row lands in the group the user is
+// working in. `anchorRow` is retained for the future explicit
+// "Duplicate record" right-click action, which will reuse this
+// builder. Consumers that omit this prop disable row insert.
 export type BuildEmptyRow<TRow> = (args: {
   rowId: string;
   fieldDefaults: Record<string, unknown>;
@@ -429,7 +439,7 @@ export type DataTableProps<TRow> = {
   columnDefs: DataTableColumnDef<TRow>[];
   view: ViewState;
   onViewChange: (next: ViewState) => void;
-  onWrite?: (op: WriteOp) => void | Promise<void>;
+  onWrite?: (op: WriteOp) => WriteResult | Promise<WriteResult>;
   buildEmptyRow?: BuildEmptyRow<TRow>;
   // Generate a fresh row id for Shift+Enter inserts. Consumers whose
   // backend enforces a specific id prefix (Rooms: ^rm_...) should pass

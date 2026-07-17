@@ -54,6 +54,7 @@ export function planEmptyRows<TRow>({
   generateRowId,
   anchorRow = null,
   anchorRowId = null,
+  overlayDefaults = null,
 }: {
   count: number;
   fieldDefs: FieldDef[];
@@ -61,8 +62,12 @@ export function planEmptyRows<TRow>({
   generateRowId?: () => string;
   anchorRow?: TRow | null;
   anchorRowId?: string | null;
+  // Values layered over the FieldDef defaults — the grouped-insert path
+  // passes the anchor row's group-field values here so the new row
+  // lands in the anchor's group.
+  overlayDefaults?: Record<string, unknown> | null;
 }): { rows: TRow[]; inserts: RowInsertPayload[] } {
-  const baseDefaults = buildEmptyRowDefaults(fieldDefs);
+  const baseDefaults = { ...buildEmptyRowDefaults(fieldDefs), ...overlayDefaults };
   const inserts: RowInsertPayload[] = [];
   const rows: TRow[] = [];
   for (let index = 0; index < count; index += 1) {

@@ -171,11 +171,11 @@ export function attachmentColumn<TRow, TConfig, TAssetUrl>({
         config={config}
         readOnly={!isEditor}
         assetUrlById={assetUrlById}
-        onChange={(next) => {
+        onChange={async (next) => {
           if (sameOrderedStrings(getAssetIds(row), next)) return;
           if (onChange) return onChange(row, next);
           if (onWrite && getRowId) {
-            return onWrite({
+            await onWrite({
               kind: "cell",
               writes: [{ rowId: getRowId(row), fieldKey, value: next }],
             });

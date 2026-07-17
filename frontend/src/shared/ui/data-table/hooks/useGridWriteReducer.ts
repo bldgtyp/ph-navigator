@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import type { WriteOp } from "../types";
+import type { WriteOp, WriteResult } from "../types";
 import type { GridHistory, HistoryEntry } from "./useGridHistory";
 
 // Every gesture (inline edit, paste, future row-insert, fill, etc.)
@@ -19,7 +19,7 @@ export type DispatchWrite = (
   op: WriteOp,
   inverse: WriteOp,
   options?: DispatchOptions,
-) => Promise<void>;
+) => Promise<WriteResult>;
 
 export type GridWriteReducer = {
   dispatchWrite: DispatchWrite;
@@ -29,7 +29,7 @@ export type GridWriteReducer = {
 
 export function useGridWriteReducer(args: {
   history: GridHistory;
-  onWrite?: (op: WriteOp) => void | Promise<void>;
+  onWrite?: (op: WriteOp) => WriteResult | Promise<WriteResult>;
   onAnnounce?: (message: string) => void;
 }): GridWriteReducer {
   const { history, onWrite, onAnnounce } = args;
@@ -37,12 +37,17 @@ export function useGridWriteReducer(args: {
   const dispatchWrite = useCallback<DispatchWrite>(
     async (op, inverse, options) => {
       if (!onWrite) return;
-      await onWrite(op);
+      const result = await onWrite(op);
       // History is only touched after onWrite resolves, so a rejected
-      // write leaves both stacks unchanged.
+      // write leaves both stacks unchanged. When the consumer's backend
+      // assigned server ids to inserted rows, retarget the inverse
+      // (rowDelete) onto them — undoing a catalog insert must delete
+      // the persisted row, not the defunct tmp id.
       if (!options?.skipHistory) {
-        history.push({ op, inverse });
+        const mapping = result?.insertedRowIds;
+        history.push({ op, inverse: mapping ? remapDeleteRowIds(inverse, mapping) : inverse });
       }
+      return result;
     },
     [history, onWrite],
   );
@@ -73,6 +78,17 @@ export function useGridWriteReducer(args: {
   }, [replayOnce]);
 
   return { dispatchWrite, undoOnce, redoOnce };
+}
+
+function remapDeleteRowIds(inverse: WriteOp, mapping: Record<string, string>): WriteOp {
+  if (inverse.kind !== "rowDelete") return inverse;
+  return {
+    ...inverse,
+    rows: inverse.rows.map((row) => ({
+      ...row,
+      rowId: mapping[row.rowId] ?? row.rowId,
+    })),
+  };
 }
 
 function writeOpLabel(op: WriteOp): string {

@@ -1,5 +1,10 @@
 import { describe, expect, test } from "vitest";
-import { buildBodyPlan, firstDivergeIndex, groupPathKey } from "../lib/body/plan";
+import {
+  buildBodyPlan,
+  expandedGroupsRevealing,
+  firstDivergeIndex,
+  groupPathKey,
+} from "../lib/body/plan";
 import { pruneExpandedGroups } from "../lib/body/prune";
 import { effectiveSortFromView } from "../lib/view/sanitize";
 import type { BodyPlanItem, DataTableColumnDef, FieldDef, ViewState } from "../types";
@@ -54,6 +59,23 @@ describe("groupPathKey", () => {
   });
   test("normalizes null and undefined to the same segment", () => {
     expect(groupPathKey([null])).toBe(groupPathKey([undefined]));
+  });
+});
+
+describe("expandedGroupsRevealing", () => {
+  test("removes collapsed ancestors along the path", () => {
+    const collapsed = {
+      [groupPathKey(["1st"])]: false,
+      [groupPathKey(["1st", "A"])]: false,
+      [groupPathKey(["2nd"])]: false,
+    };
+    const next = expandedGroupsRevealing(collapsed, ["1st", "A"]);
+    expect(next).toEqual({ [groupPathKey(["2nd"])]: false });
+  });
+  test("returns null when nothing on the path is collapsed", () => {
+    const collapsed = { [groupPathKey(["2nd"])]: false };
+    expect(expandedGroupsRevealing(collapsed, ["1st", "A"])).toBeNull();
+    expect(expandedGroupsRevealing({}, ["1st"])).toBeNull();
   });
 });
 

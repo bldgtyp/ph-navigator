@@ -148,6 +148,21 @@ export function isPathFullyExpanded(
   return true;
 }
 
+// Next `expandedGroups` with every collapsed ancestor of `path`
+// removed (absence == expanded), so the row at `path` becomes visible.
+// Returns null when nothing on the path is collapsed.
+export function expandedGroupsRevealing(
+  expandedGroups: Readonly<Record<string, boolean>>,
+  path: readonly unknown[],
+): Record<string, boolean> | null {
+  if (isPathFullyExpanded(expandedGroups, path)) return null;
+  const next = { ...expandedGroups };
+  for (let depth = 0; depth < path.length; depth += 1) {
+    delete next[groupPathKey(path.slice(0, depth + 1))];
+  }
+  return next;
+}
+
 // Map data-row id → innermost group's `pathKey`. Group-header items are
 // skipped; their pathKey is recorded as the "current path" so subsequent
 // data items inherit it. Ungrouped views produce a map where every

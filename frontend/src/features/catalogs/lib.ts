@@ -1,4 +1,17 @@
 import type { AuthSession } from "../auth/types";
+import type { WriteResult } from "../../shared/ui/data-table";
+
+// The catalog backends assign their own row ids, so every row-creating
+// WriteOp (insert, duplicate) reports the library-tmp-id → server-id
+// mapping back to the DataTable via `WriteResult.insertedRowIds`.
+export function toInsertedRowIds(
+  rows: readonly { rowId: string }[],
+  created: readonly { id: string }[],
+): WriteResult {
+  return {
+    insertedRowIds: Object.fromEntries(rows.map((row, index) => [row.rowId, created[index]!.id])),
+  };
+}
 
 // Feature-scoped ID prefixes for `generatedId`. Centralized so future
 // catalog editors can't pick colliding short prefixes when minting

@@ -8,6 +8,7 @@ import type {
   FieldOption,
   ViewState,
   WriteOp,
+  WriteResult,
 } from "../../../shared/ui/data-table";
 import { useLocalTableViewState } from "../../table_views/useLocalTableViewState";
 import {
@@ -17,6 +18,7 @@ import {
   putGlazingTypeOptions,
   updateGlazingType,
 } from "../api";
+import { toInsertedRowIds } from "../lib";
 import { catalogQueryKeys } from "../query-keys";
 import type {
   CatalogGlazingType,
@@ -237,7 +239,7 @@ export type GlazingTypesCatalogController = {
   view: ViewState;
   onViewChange: (next: ViewState) => void;
   onResetView: () => void;
-  onWrite: (op: WriteOp) => Promise<void>;
+  onWrite: (op: WriteOp) => Promise<WriteResult>;
 };
 
 export type GlazingTypesCatalogControllerArgs = {
@@ -292,13 +294,13 @@ export function useGlazingTypesCatalogController({
           return;
         case "rowInsert": {
           if (op.rows.length === 0) return;
-          await Promise.all(
+          const created = await Promise.all(
             op.rows.map((row) =>
               createGlazingType(buildCreatePayload(row.fieldDefaults, maps.idToLabel)),
             ),
           );
           await invalidate();
-          return;
+          return toInsertedRowIds(op.rows, created);
         }
         case "rowDelete": {
           await Promise.all(op.rows.map((row) => deactivateGlazingType(row.rowId)));
@@ -307,9 +309,11 @@ export function useGlazingTypesCatalogController({
         }
         case "rowDuplicate": {
           if (op.rows.length === 0) return;
-          await Promise.all(op.rows.map((row) => duplicateGlazingType(row.sourceRowId)));
+          const created = await Promise.all(
+            op.rows.map((row) => duplicateGlazingType(row.sourceRowId)),
+          );
           await invalidate();
-          return;
+          return toInsertedRowIds(op.rows, created);
         }
         case "schemaMutation": {
           // The only schema change glazing-types supports is option editing

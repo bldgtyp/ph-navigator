@@ -13,6 +13,7 @@ import type {
   RowDeletePayload,
   RowInsertPayload,
   WriteOp,
+  WriteResult,
 } from "../types";
 import type { DispatchWrite } from "./useGridWriteReducer";
 
@@ -40,7 +41,7 @@ export function useGridClipboard<TRow>(args: {
   columns: DataTableColumnDef<TRow>[];
   fieldDefs: FieldDef[];
   getRowId: (row: TRow) => string;
-  onWrite?: (op: WriteOp) => void | Promise<void>;
+  onWrite?: (op: WriteOp) => WriteResult | Promise<WriteResult>;
   dispatchWrite: DispatchWrite;
   onAnnounce: (message: string) => void;
   onCopyRange?: (range: CopiedCellRange) => void;
@@ -150,7 +151,7 @@ async function pasteIntoSelection<TRow>(args: {
   columns: DataTableColumnDef<TRow>[];
   fieldDefs: FieldDef[];
   getRowId: (row: TRow) => string;
-  onWrite?: (op: WriteOp) => void | Promise<void>;
+  onWrite?: (op: WriteOp) => WriteResult | Promise<WriteResult>;
   dispatchWrite: DispatchWrite;
   onAnnounce: (message: string) => void;
   onPasteComplete?: (writes: CellWrite[]) => void;

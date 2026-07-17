@@ -36,7 +36,7 @@ import {
   type HeatPumpIndoorUnitRow,
   type HeatPumpsSlice,
 } from "../types";
-import { addRowButton } from "../../routes/equipmentRowActions";
+import { addRowButton } from "../../../../shared/ui/data-table";
 import { IndoorEquipRowModal } from "./IndoorEquipRowModal";
 import { IndoorUnitRowModal } from "./IndoorUnitRowModal";
 import { heatPumpColumnsWithCustomFields } from "./heatPumpCustomColumns";
