@@ -65,7 +65,7 @@ Caveats / setup notes:
 **55 unique typography variants** across 22 states (1,707 elements sampled).
 Two families (Geist / Geist Mono) plus one accidental raw `monospace`.
 14 distinct sizes (7 off the token scale), 6 weights (including non-standard
-550 and 650).
+550 and 650), and 9 non-zero tracking values.
 
 The good news: the 8-step `--fs-*` token scale mostly holds — the bulk of
 text lands on-scale, and the biggest populations (DataTable cells/headers,
@@ -87,8 +87,8 @@ The drift, concretely:
      em-of-em compounding (0.9em × 1rem-ish parents), on all 5 catalog states.
    - `18.72px` empty-state h3, `49.6px` sign-in h1, `10px` chevrons/dimension
      labels, weight-550 `.aperture-uvalue-chip__label`.
-4. **Tracking has no scale**: uppercase text ships at 0.04 / 0.05 / 0.06 /
-   0.08 em depending on component.
+4. **Tracking has no scale**: rendered text ships with nine non-zero values
+   from 0.04em through 0.15em depending on component.
 5. **Raw `monospace` leak**: the `<code>` element (".hbjson" on the model
    tab) gets browser-default monospace 14px — `reset.css` never assigns
    `code` a family.

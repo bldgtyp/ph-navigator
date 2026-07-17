@@ -4,62 +4,50 @@
 - TIME: 12:38
 - STATUS: Active
 - AUTHOR: Claude (Fable 5) with Ed May
+- REVISED: 2026-07-17 afternoon ET by Codex
 - SCOPE: Phase sequence for PRD.md; each phase independently shippable
 - RELATED: `PRD.md`, `planning/code-reviews/2026-07-17/font-audit/REPORT.md`
 
-Work on a feature branch; keep `main` deployable. After each phase: run the
-font-audit sweep, record the variant count in `STATUS.md`, run the repo
-closeout gate (`simplify`, `docs-pass`, `make format`, `make ci`).
+Work on a feature branch and keep `main` deployable. The implementation order
+is mandatory because Phase 1 establishes the guard used to control every later
+phase.
 
-## Phase 1 — Foundations (low risk, no visual change intended)
+## Operating rules
 
-1. `tokens.css`: add `--fw-*` and `--tracking-caps` tokens (PRD §New tokens).
-2. `reset.css`: `code, kbd, samp, pre { font-family: var(--font-mono); }`.
-3. New `frontend/scripts/check-font-tokens.mjs` lint (PRD §Enforcement),
-   **warn-only**; print the offending file:line list. This list is the
-   worklist for Phases 2–5.
-4. Verify: sweep shows the same 55 variants except raw `monospace` gone.
+1. Migrate by CSS owner, not by whichever visible selector is easiest. Each
+   owner is assigned to one phase.
+2. The Phase 1 guard is blocking immediately. The checked-in baseline may only
+   shrink; never refresh it to bless new debt.
+3. Use the static inventory as the source worklist and the rendered audit as
+   the semantic/cascade check. Neither substitutes for the other.
+4. During a phase, run focused scanner/tests, `make frontend-dev-check`, and
+   focused browser states. Before marking that phase complete, run
+   `make format` and `make ci` and record evidence in `STATUS.md`.
+5. Do not overwrite the baseline `REPORT.md`. Final output is
+   `REPORT-after.md`.
+6. Run `simplify` and `docs-pass` at overall closeout, after the final
+   implementation phase and before archive.
 
-## Phase 2 — Shared chrome (biggest reach per edit)
+## Phase sequence
 
-1. DataTable.css: footer 8.64px → `--fs-2xs`; toolbar title 650 →
-   `--fw-semibold`; gutter chevron (D5); "+" glyph via token; all
-   font-size/weight/letter-spacing literals → tokens.
-2. App shell (topbar, subtabs, save-state, nav tabs): collapse the four
-   tracking values to `--tracking-caps`; weights → tokens.
-3. Catalog toolbar: `.catalog-count` + toggle labels (em-of-em 14.4/14.72px)
-   → `--fs-md`.
-4. Verify: sweep; expect ~10 variants gone; screenshot DataTable pages
-   (catalog-materials, equipment) against baseline for density regressions.
+| Phase | Plan | Exit signal |
+| --- | --- | --- |
+| 1 | `phases/phase-01-contract-and-ratchet.md` | new typography debt fails CI; current debt is reproducibly fingerprinted |
+| 2 | `phases/phase-02-shared-primitives.md` | shell/buttons/headings/forms/modals use shared roles |
+| 3 | `phases/phase-03-data-surfaces.md` | DataTable/ReportTable/catalog owners compliant without density regression |
+| 4 | `phases/phase-04-technical-workspaces.md` | aperture/envelope/canvas owners compliant; exceptions token-backed |
+| 5 | `phases/phase-05-remaining-features.md` | source debt baseline empty |
+| 6 | `phases/phase-06-rendered-eval-and-closeout.md` | hermetic evaluator and docs/CI controls complete; all PRD criteria pass |
 
-## Phase 3 — Buttons (25 variants → 4 tiers)
+## Commit boundaries
 
-1. Define the four tiers from PRD §Role map as shared button classes (extend
-   the existing `.secondary-button` / `.text-button` family in base.css) —
-   typography only; colors/borders out of scope.
-2. Migrate one-off buttons found in REPORT.md (`top selectors` column is the
-   worklist) to a tier class; delete their per-component font declarations.
-3. Verify: sweep role-consistency table shows `button` ≤ 5 variants.
+Each phase is independently reviewable. Within Phases 3–5, use one commit per
+large owner (`DataTable.css`, apertures/envelope, model viewer) so visual or
+cascade regressions can be isolated without reverting the guard or contract.
 
-## Phase 4 — Modals + headings
+## Scope control
 
-1. `modals.css`: title → `--fs-lg`/`--fw-semibold` (D1); body/labels/inputs
-   → `--fs-md`; actions use the Phase 3 action-button tier. Kill all
-   modal-private typography.
-2. Headings: element defaults for h1–h4 in base.css per role map; fix
-   empty-state h3 (18.72px) and aperture editor h2 (D4); sign-in h1 per D2.
-3. Verify: sweep — `modal/*` roles use only variants that also appear
-   outside modals; `heading:*` ≤ 3 variants. Screenshot every modal state in
-   the sweep manifest.
-
-## Phase 5 — Long tail + enforcement + closeout
-
-1. Remaining lint findings: `.aperture-uvalue-chip__label` 550, dimension
-   labels (D3), any stragglers the Phase 1 lint list still shows.
-2. Flip `check-font-tokens.mjs` to **error** in CI with the final allowlist.
-3. Final sweep → regenerate REPORT into
-   `planning/code-reviews/2026-07-17/font-audit/` as `REPORT-after.md`;
-   verify every PRD exit criterion; record pass/fail table in `STATUS.md`.
-4. Docs: fold accepted decisions (D1–D5 outcomes) back into
-   `context/UI_UX.md` / `context/CODING_STANDARDS.md` per planning rule 4;
-   archive this packet when merged.
+Typography class wiring is in scope. Color, borders, spacing, and component
+behavior are not, except for surgical adjustments needed to prevent clipping
+or geometry regressions caused by an accepted typography change. Record any
+broader design issue as a follow-up rather than folding it into this refactor.
