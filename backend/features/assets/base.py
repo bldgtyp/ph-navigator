@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
 from typing import Any, Protocol
 from uuid import UUID
 
@@ -11,6 +10,7 @@ from starlette import status
 
 from features.project_location import repository as location_repository
 from features.shared.errors import api_error
+from features.shared.ids import timestamp_id
 
 ASSET_LOCATOR_SCHEME = "phn-asset"
 
@@ -27,11 +27,11 @@ def asset_locator(asset_id: str) -> str:
 
 
 def generated_asset_id() -> str:
-    return f"asset_{datetime.now(tz=UTC).strftime('%Y%m%d%H%M%S%f')}"
+    return timestamp_id("asset")
 
 
 def generated_job_id() -> str:
-    return f"job_{datetime.now(tz=UTC).strftime('%Y%m%d%H%M%S%f')}"
+    return timestamp_id("job")
 
 
 class AssetStorage(Protocol):

@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import Annotated
 
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, BackgroundTasks, Query, Request
 from starlette import status
 
 from features.auth.routes import CurrentUser
@@ -43,6 +43,7 @@ from features.catalogs.frame_types.service import (
     reactivate_frame_type,
     update_frame_type,
 )
+from features.catalogs.option_jobs_service import run_job
 from features.shared.errors import api_error
 
 # 8 MB cap — same rationale as Materials / Glazing. The 189-row AirTable
@@ -107,12 +108,18 @@ def get_frame_type_options(auth: CurrentUser) -> CatalogFrameTypeOptionsResponse
 
 @router.put("/options", response_model=CatalogFieldOptionsResponse)
 def put_frame_type_options(
-    payload: EditCatalogOptionsRequest, request: Request, auth: CatalogEditor
+    payload: EditCatalogOptionsRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    auth: CatalogEditor,
 ) -> CatalogFieldOptionsResponse:
     """Full-replace one field's option list (add / rename / reorder / merge)."""
 
     user, _expires_at = auth
-    return edit_frame_type_options(payload, user, request)
+    result = edit_frame_type_options(payload, user, request)
+    if result.cascade_job is not None:
+        background_tasks.add_task(run_job, result.cascade_job.id)
+    return result
 
 
 @router.get("/{record_id}", response_model=CatalogFrameTypePublic)

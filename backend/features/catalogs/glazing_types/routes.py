@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import Annotated
 
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, BackgroundTasks, Query, Request
 from starlette import status
 
 from features.auth.routes import CurrentUser
@@ -43,6 +43,7 @@ from features.catalogs.glazing_types.service import (
     reactivate_glazing_type,
     update_glazing_type,
 )
+from features.catalogs.option_jobs_service import run_job
 from features.shared.errors import api_error
 
 # 8 MB cap — same rationale as Materials. Glazing imports are tiny
@@ -93,12 +94,18 @@ def get_glazing_type_options(auth: CurrentUser) -> CatalogGlazingTypeOptionsResp
 
 @router.put("/options", response_model=CatalogFieldOptionsResponse)
 def put_glazing_type_options(
-    payload: EditCatalogOptionsRequest, request: Request, auth: CatalogEditor
+    payload: EditCatalogOptionsRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    auth: CatalogEditor,
 ) -> CatalogFieldOptionsResponse:
     """Full-replace one field's option list (add / rename / reorder / merge)."""
 
     user, _expires_at = auth
-    return edit_glazing_type_options(payload, user, request)
+    result = edit_glazing_type_options(payload, user, request)
+    if result.cascade_job is not None:
+        background_tasks.add_task(run_job, result.cascade_job.id)
+    return result
 
 
 @router.get("/{record_id}", response_model=CatalogGlazingTypePublic)

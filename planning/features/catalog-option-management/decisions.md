@@ -37,21 +37,23 @@ existing drift/Refresh review instead. Project *filters* are still cascaded on
 merge (an orphaned allow-list entry is never useful). If this split proves
 confusing in practice, promoting merge to full cascade is a small delta.
 
-## Open (settle during implementation)
+## Settled during Phase 2
 
 ### O-1 — System-authored version identity
-When the cascade lands on a project with no draft, who is the author of the
-appended version? Options: a reserved system user, or the member who triggered
-the rename. Leaning: the triggering member (keeps audit honest, no new
-infrastructure). Check what `saved_by` / version metadata requires.
+The appended version is named by the system (`Catalog rename: <old> → <new>`)
+but authored by the member who triggered the catalog edit. This preserves the
+normal `created_by` audit trail without inventing a reserved user.
 
 ### O-2 — Cascade vs. someone's open draft
-The cascade rewrites a draft owned by another editor (etag bump mid-edit).
-Confirm the draft-save flow tolerates an external etag advance gracefully
-(client refetch on 409/412), or scope the cascade to skip actively-locked
-drafts and report them in the summary.
+Rewrite every draft attached to the current active version, including drafts
+owned by other editors, and advance their draft ETags. Existing optimistic
+writes then fail with the normal `draft_etag_mismatch` 409 and refetch path;
+historical-version drafts are deliberately untouched.
 
 ### O-3 — Job infrastructure reuse
-A jobs mechanism exists (`get_job` MCP tool / extraction jobs). Confirm it fits
-a multi-project fan-out with per-project progress, or whether a simple
-dedicated table + polling endpoint is cleaner.
+A dedicated catalog-scoped job plus per-project result table is cleaner than
+the existing project-scoped asset job. `PUT /options` creates the durable job
+in its option-write transaction; a background runner updates progress; a
+catalog-editor status/retry API exposes it to Phase 3. A five-minute heartbeat
+lease turns a killed worker into a retryable failure rather than blocking all
+later option edits.

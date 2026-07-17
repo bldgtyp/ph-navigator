@@ -34,6 +34,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from features.auth import repository as auth_repository
 from features.auth.models import UserPublic
 from features.auth.service import client_ip, user_agent
+from features.catalogs.option_jobs_models import CatalogOptionJob
 from features.project_document.rows import SingleSelectOption
 
 
@@ -73,6 +74,7 @@ class CatalogFieldOptionsResponse(BaseModel):
 
     field_key: str
     options: list[SingleSelectOption]
+    cascade_job: CatalogOptionJob | None = None
 
 
 class EditCatalogOptionsRequest(BaseModel):

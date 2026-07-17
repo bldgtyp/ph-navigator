@@ -35,5 +35,5 @@ acceptable because renames happen roughly once or twice a year.
 | Phase | Deliverable | Ships alone? |
 | --- | --- | --- |
 | 1 — Complete | Authorization (`catalog.edit` → members) + field-config modal wired on the frame/glazing catalog pages | Yes — core ask; renames work catalog-side, projects see drift |
-| 2 | Rename-cascade backend: job that rewrites project `ManufacturerFilters` + snapshot ref labels, system-authored version per project | No UI yet |
+| 2 — Complete | Rename-cascade backend: durable resumable job rewrites active project drafts or appends a system-named version; retries preserve per-project results | No UI yet |
 | 3 | Working modal (progress, summary), rename path routed through the job, e2e verification | Yes — completes the feature |

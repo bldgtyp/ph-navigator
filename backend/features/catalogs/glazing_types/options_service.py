@@ -27,6 +27,7 @@ from starlette import status
 from database import connection, transaction
 from features.auth.models import UserPublic
 from features.catalogs import _options_repository as options_repository
+from features.catalogs import option_jobs_service
 from features.catalogs._option_seeds import GLAZING_TYPE_OPTION_SEEDS, GLAZING_TYPE_SINGLE_SELECT_FIELDS
 from features.catalogs._shared import (
     CatalogFieldOptionsResponse,
@@ -86,8 +87,10 @@ def edit_glazing_type_options(
 
     incoming_label_by_id = {option.id: option.label for option in payload.options}
     incoming_labels = set(incoming_label_by_id.values())
+    merge_replacements: dict[str, str] = {}
 
     with transaction() as conn:
+        option_jobs_service.begin_option_edit(conn, CATALOG_TABLE)
         stored_label_by_id = {
             row["option_id"]: row["label"]
             for row in options_repository.list_options(conn, catalog_table=CATALOG_TABLE, field_key=field_key)
@@ -138,6 +141,7 @@ def edit_glazing_type_options(
                 new_label=replacement,
                 user_id=user.id,
             )
+            merge_replacements[old_label] = replacement
             rows_rewritten = True
 
         options_repository.replace_options(
@@ -157,8 +161,29 @@ def edit_glazing_type_options(
             changed_fields=[field_key],
         )
         result = options_repository.list_options(conn, catalog_table=CATALOG_TABLE, field_key=field_key)
+        cascade_operations = option_jobs_service.operations_from_option_edit(
+            field_key=field_key,
+            stored_label_by_id=stored_label_by_id,
+            incoming_label_by_id=incoming_label_by_id,
+            replacements=merge_replacements,
+        )
+        cascade_job = (
+            option_jobs_service.create_job_in_transaction(
+                conn,
+                catalog_table=CATALOG_TABLE,
+                field_key=field_key,
+                operations=cascade_operations,
+                created_by=user.id,
+            )
+            if cascade_operations
+            else None
+        )
 
-    return CatalogFieldOptionsResponse(field_key=field_key, options=[_to_option(row) for row in result])
+    return CatalogFieldOptionsResponse(
+        field_key=field_key,
+        options=[_to_option(row) for row in result],
+        cascade_job=cascade_job,
+    )
 
 
 def seed_glazing_type_options(conn: Connection[Any]) -> None:

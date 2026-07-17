@@ -151,10 +151,18 @@ def test_in_place_rename_rewrites_rows(clean_catalog_tables: None) -> None:
     for option in options:
         if option["label"] == "Casement":
             option["label"] = "Casement-X"  # same id, new label
-    assert _put(client, "operation", options).status_code == 200
+    response = _put(client, "operation", options)
+    assert response.status_code == 200
+    job = response.json()["cascade_job"]
+    assert job is not None
+    assert job["catalog_table"] == "frame_types"
+    assert job["operations"] == [{"kind": "rename", "old_label": "Casement", "new_label": "Casement-X"}]
 
     row = client.get(f"/api/v1/catalogs/frame-types/{created['id']}").json()
     assert row["operation"] == "Casement-X"
+    status_response = client.get(f"/api/v1/catalogs/option-jobs/{job['id']}")
+    assert status_response.status_code == 200
+    assert status_response.json()["status"] == "completed"
 
 
 def test_merge_replacement_not_in_new_list_is_rejected(clean_catalog_tables: None) -> None:

@@ -135,10 +135,18 @@ def test_in_place_rename_rewrites_rows(clean_catalog_tables: None) -> None:
     for option in options:
         if option["label"] == "Intus":
             option["label"] = "Intus Inc"  # same id, new label
-    assert _put(client, "manufacturer", options).status_code == 200
+    response = _put(client, "manufacturer", options)
+    assert response.status_code == 200
+    job = response.json()["cascade_job"]
+    assert job is not None
+    assert job["catalog_table"] == "glazing_types"
+    assert job["operations"] == [{"kind": "rename", "old_label": "Intus", "new_label": "Intus Inc"}]
 
     row = client.get(f"/api/v1/catalogs/glazing-types/{created['id']}").json()
     assert row["manufacturer"] == "Intus Inc"
+    status_response = client.get(f"/api/v1/catalogs/option-jobs/{job['id']}")
+    assert status_response.status_code == 200
+    assert status_response.json()["status"] == "completed"
 
 
 @pytest.mark.parametrize("field_key", ["brand", "suffix"])
