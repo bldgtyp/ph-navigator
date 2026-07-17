@@ -25,7 +25,9 @@ Ed, 2026-07-17: "on re-name we can handle heavy re-write (with a good
 'working' modal). Rename is pretty infrequent, so doing it properly once or
 twice a year seems ok." So: async backend job rewrites project
 `ManufacturerFilters` entries and label-matching snapshot ref fields; progress
-modal in the catalog UI. Alternatives rejected: (a) tolerant/ID-based filter
+modal in the catalog UI. The modal previews the exact active-project count,
+mounts only after the field editor closes, and recovers an unresolved job after
+a catalog-page remount. Alternatives rejected: (a) tolerant/ID-based filter
 matching (leaves stale strings in documents forever), (b) leaving renames to
 per-ref drift resolution (tedious for a pure relabel, and filters would still
 orphan).

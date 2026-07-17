@@ -231,6 +231,41 @@ describe("useFrameTypesCatalogController.onWrite", () => {
     });
   });
 
+  test("rename defers the returned cascade job until the field editor closes", async () => {
+    const onCascadeJobCreated = vi.fn();
+    const fieldDefs = [
+      field("mull_type", [{ id: "opt_old", label: "Old", color: "#3b82f6", order: 0 }]),
+    ];
+    vi.mocked(api.putFrameTypeOptions).mockResolvedValue({
+      cascade_job: { id: "catjob_123" },
+    } as never);
+    const { result } = renderHook(
+      () =>
+        useFrameTypesCatalogController({
+          ...CONTROLLER_ARGS,
+          fieldDefs,
+          onCascadeJobCreated,
+        }),
+      { wrapper },
+    );
+
+    let afterClose: (() => void) | undefined;
+    await act(async () => {
+      const editResult = await result.current.onEditCustomFieldBundle({
+        fieldKey: "mull_type",
+        displayName: "mull_type",
+        description: null,
+        options: [{ id: "opt_old", label: "New", color: "#3b82f6", order: 0 }],
+      });
+      if (editResult && "afterClose" in editResult) afterClose = editResult.afterClose;
+    });
+
+    expect(onCascadeJobCreated).not.toHaveBeenCalled();
+    expect(afterClose).toBeTypeOf("function");
+    afterClose?.();
+    expect(onCascadeJobCreated).toHaveBeenCalledWith({ id: "catjob_123" });
+  });
+
   test("merge (delete in-use option + cascade) PUTs label replacements", async () => {
     const { result } = renderHook(() => useFrameTypesCatalogController(CONTROLLER_ARGS), {
       wrapper,

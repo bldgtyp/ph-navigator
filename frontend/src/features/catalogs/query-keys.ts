@@ -10,6 +10,9 @@ export const catalogQueryKeys = {
   frameType: (id: string) => [...catalogQueryKeys.frameTypes(), "detail", id] as const,
   frameTypeManufacturers: () => [...catalogQueryKeys.frameTypes(), "manufacturers"] as const,
   frameTypeOptions: () => [...catalogQueryKeys.frameTypes(), "options"] as const,
+  optionJob: (jobId: string) => [...catalogQueryKeys.all, "option-job", jobId] as const,
+  unresolvedOptionJob: (catalogTable: "frame_types" | "glazing_types") =>
+    [...catalogQueryKeys.all, "option-job", "unresolved", catalogTable] as const,
   // Glazing types
   glazingTypes: () => [...catalogQueryKeys.all, "glazing-types"] as const,
   glazingTypesList: () => [...catalogQueryKeys.glazingTypes(), "list"] as const,

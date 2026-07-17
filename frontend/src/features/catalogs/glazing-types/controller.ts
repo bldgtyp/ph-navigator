@@ -5,6 +5,7 @@ import type {
   CellWrite,
   DataTableColumnDef,
   EditCustomFieldBundleRequest,
+  EditCustomFieldBundleResult,
   FieldDef,
   FieldOption,
   ViewState,
@@ -30,6 +31,7 @@ import type {
   CatalogGlazingType,
   CatalogGlazingTypeCreatePayload,
   CatalogGlazingTypeUpdatePayload,
+  CatalogOptionJob,
 } from "../types";
 import {
   GLAZING_TYPES_BUILT_IN_FIELD_DEFS,
@@ -206,8 +208,8 @@ function buildCreatePayload(
 async function editGlazingTypeOptions(
   mutation: CatalogLegacyOptionsMutation,
   opts: WriteOptions,
-): Promise<void> {
-  await putGlazingTypeOptions({
+): Promise<CatalogOptionJob | null> {
+  const response = await putGlazingTypeOptions({
     field_key: mutation.after.field_key,
     options: (mutation.after.options ?? []).map((o) => ({
       id: o.id,
@@ -218,6 +220,7 @@ async function editGlazingTypeOptions(
     replacements: buildCatalogLabelReplacements(mutation),
   });
   await opts.invalidate();
+  return response.cascade_job;
 }
 
 export type GlazingTypesCatalogController = {
@@ -225,7 +228,9 @@ export type GlazingTypesCatalogController = {
   onViewChange: (next: ViewState) => void;
   onResetView: () => void;
   onWrite: (op: WriteOp) => Promise<WriteResult>;
-  onEditCustomFieldBundle: (request: EditCustomFieldBundleRequest) => Promise<void>;
+  onEditCustomFieldBundle: (
+    request: EditCustomFieldBundleRequest,
+  ) => Promise<EditCustomFieldBundleResult>;
 };
 
 export type GlazingTypesCatalogControllerArgs = {
@@ -234,6 +239,7 @@ export type GlazingTypesCatalogControllerArgs = {
   fieldDefs: FieldDef[];
   schemaFingerprint: string;
   optionsByField: Record<string, FieldOption[]>;
+  onCascadeJobCreated?: (job: CatalogOptionJob) => void;
 };
 
 export function useGlazingTypesCatalogController({
@@ -242,6 +248,7 @@ export function useGlazingTypesCatalogController({
   fieldDefs,
   schemaFingerprint,
   optionsByField,
+  onCascadeJobCreated,
 }: GlazingTypesCatalogControllerArgs): GlazingTypesCatalogController {
   const defaults = useMemo(() => emptyViewState(), []);
   const {
@@ -321,9 +328,15 @@ export function useGlazingTypesCatalogController({
 
   const onEditCustomFieldBundle = useCallback(
     async (request: EditCustomFieldBundleRequest) => {
-      await onWrite(buildCatalogOptionMutation(request, fieldDefs, SINGLE_SELECT_FIELDS));
+      const job = await editGlazingTypeOptions(
+        buildCatalogOptionMutation(request, fieldDefs, SINGLE_SELECT_FIELDS),
+        { invalidate },
+      );
+      if (job && onCascadeJobCreated) {
+        return { afterClose: () => onCascadeJobCreated(job) };
+      }
     },
-    [fieldDefs, onWrite],
+    [fieldDefs, invalidate, onCascadeJobCreated],
   );
 
   return { view, onViewChange, onResetView, onWrite, onEditCustomFieldBundle };

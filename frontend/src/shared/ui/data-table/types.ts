@@ -525,7 +525,14 @@ export type DataTableProps<TRow> = {
   // request because it owns the schema fingerprint. Modal Save calls
   // this and awaits resolution; rejection leaves the modal open with
   // the error surfaced inline.
-  onEditCustomFieldBundle?: (request: EditCustomFieldBundleRequest) => Promise<void>;
+  onEditCustomFieldBundle?: (
+    request: EditCustomFieldBundleRequest,
+  ) => Promise<EditCustomFieldBundleResult>;
+  // Optional confirmation preflight for dependent writes. The editor hosts the
+  // returned confirmation inside its own modal, so cancel keeps the draft open.
+  prepareEditCustomFieldBundleConfirmation?: (
+    request: EditCustomFieldBundleRequest,
+  ) => Promise<EditCustomFieldBundleConfirmation | null>;
   // Optional per-field gate for consumers that expose configuration on only a
   // subset of built-ins. Omit to retain the default all-editable-fields path.
   canEditFieldConfig?: (fieldKey: string) => boolean;
@@ -601,6 +608,23 @@ export type EditCustomFieldBundleRequest = {
   linkedRecordTargetPath?: string[];
   linkedRecordMaxLinks?: number | null;
 };
+
+export type EditCustomFieldBundleConfirmation = {
+  title: string;
+  message: string;
+  detail?: string;
+  confirmLabel: string;
+};
+
+// A consumer can defer page-level follow-up UI until the field-config dialog
+// has actually closed. This avoids stacking a second modal over the editor
+// while keeping the write and its durable job response in one transaction.
+export type EditCustomFieldBundleResult =
+  | void
+  | false
+  | {
+      afterClose: () => void;
+    };
 
 // Phase 6 §4.6: discriminated union the body renderer walks. A `group`
 // entry produces a <GroupHeaderRow> at the given depth; a `data` entry

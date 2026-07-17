@@ -11,6 +11,7 @@ feature-first planning.
 
 | Feature | State | Current pointer |
 |---|---|---|
+| Catalog Option Management | Complete / archived after member-editable frame/glazing option management, atomic durable project rename cascades, progress/retry/recovery UI, live browser probe, Graphify, and full CI | `archive/dated/2026-07-17/catalog-option-management/STATUS.md` |
 | Status Dashboard | Complete / archived after compact draft/viewer summary API for 12 shared-status tables plus Glazings, Frames, and Materials; Roadmap-left two-pane layout; bounded disclosure; progressive editor controls; cold-load/accessibility E2E; Graphify; and full CI | `archive/dated/2026-07-10/status-dashboard/STATUS.md` |
 | DataTable Write Performance (refactor) | Complete / archived — Phases 00-05 shipped FIFO optimistic journals, bounded undo, coalescing, and safe conflict recovery; Phase 06 gate evaluated from the Phase 00 baseline and declined because no backend remedy met 30% | `archive/2026-07-09/data-table-write-performance/STATUS.md` |
 | Grasshopper Data API | Backend COMPLETE / archived — `/api/v1/gh` read API for Rhino/Grasshopper: bt_number-keyed router (anon + optional MCP bearer, per-IP rate limit), version pinning, rich opaque-construction + aperture-types + window-construction exports, and the generic 12-table route; Phases 01–03 merged to main. Phases 04–05 (GH-client components) DEFERRED to `honeybee_grasshopper_ph_plus` — start from `CLIENT_HANDOFF.md` | `archive/dated/2026-07-05/grasshopper-data-api/STATUS.md` |

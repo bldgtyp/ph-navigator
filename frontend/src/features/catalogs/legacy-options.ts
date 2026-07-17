@@ -1,4 +1,5 @@
 import type { EditCustomFieldBundleRequest, FieldDef, WriteOp } from "../../shared/ui/data-table";
+import type { CatalogOptionOperation } from "./types";
 
 export type CatalogLegacyOptionsMutation = Extract<
   WriteOp,
@@ -36,6 +37,17 @@ export function buildCatalogLabelReplacements(
   return Object.fromEntries(deleted.map((option) => [option.label, targetLabel]));
 }
 
+export function buildCatalogOptionRenames(
+  mutation: CatalogLegacyOptionsMutation,
+): CatalogOptionOperation[] {
+  const afterById = new Map((mutation.after.options ?? []).map((option) => [option.id, option]));
+  return (mutation.before.options ?? []).flatMap((before) => {
+    const after = afterById.get(before.id);
+    if (!after || after.label === before.label) return [];
+    return [{ kind: "rename", old_label: before.label, new_label: after.label }];
+  });
+}
+
 export function buildCatalogOptionMutation(
   request: EditCustomFieldBundleRequest,
   fieldDefs: FieldDef[],
@@ -52,7 +64,7 @@ export function buildCatalogOptionMutation(
     after: {
       ...before,
       display_name: request.displayName,
-      description: request.description,
+      description: request.description ?? undefined,
       options: request.options,
     },
     optionReplacements: request.optionReplacements,

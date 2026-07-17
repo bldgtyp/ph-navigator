@@ -15,6 +15,8 @@ from features.catalogs.option_jobs_service import (
     begin_option_edit,
     create_job,
     get_job,
+    get_unresolved_job,
+    preview_cascade,
     rewrite_document_options,
     run_job,
 )
@@ -205,6 +207,20 @@ def test_job_appends_version_when_active_version_has_no_draft(clean_document_tab
     assert count is not None and count["count"] == 2
 
 
+def test_preview_counts_active_project_documents_that_need_rewrite(clean_document_tables: None) -> None:
+    user = create_or_update_user(email="ed@example.com", display_name="Ed", password="password")
+    _insert_project(_body(), user.id)
+
+    assert (
+        preview_cascade(
+            catalog_table="frame_types",
+            field_key="manufacturer",
+            operations=_rename(),
+        )
+        == 1
+    )
+
+
 def test_job_rewrites_existing_draft_and_bumps_etag_without_new_version(
     clean_document_tables: None,
 ) -> None:
@@ -315,6 +331,22 @@ def test_unresolved_job_blocks_every_option_edit(clean_document_tables: None) ->
     assert error.value.status_code == 409
     assert isinstance(error.value.detail, dict)
     assert error.value.detail["error_code"] == "catalog_option_cascade_running"
+
+
+def test_unresolved_job_is_available_to_a_returning_catalog_editor(clean_document_tables: None) -> None:
+    user = create_or_update_user(email="ed@example.com", display_name="Ed", password="password")
+    created = create_job(
+        catalog_table="frame_types",
+        field_key="manufacturer",
+        operations=_rename(),
+        created_by=user.id,
+    )
+
+    unresolved = get_unresolved_job("frame_types")
+
+    assert unresolved is not None
+    assert unresolved.id == created.id
+    assert unresolved.status == "pending"
 
 
 def test_expired_running_job_becomes_retryable(clean_document_tables: None) -> None:

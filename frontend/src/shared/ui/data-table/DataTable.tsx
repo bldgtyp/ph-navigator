@@ -136,6 +136,7 @@ export function DataTable<TRow>({
   onAddCustomField,
   onDuplicateCustomField,
   onEditCustomFieldBundle,
+  prepareEditCustomFieldBundleConfirmation,
   canEditFieldConfig,
   rowActions,
   formulaFieldRegistry,
@@ -1320,7 +1321,7 @@ export function DataTable<TRow>({
   const handleEditCustomFieldBundle = useCallback(
     async (request: EditCustomFieldBundleRequest) => {
       if (!onEditCustomFieldBundle) return;
-      await onEditCustomFieldBundle(request);
+      return onEditCustomFieldBundle(request);
     },
     [onEditCustomFieldBundle],
   );
@@ -1706,6 +1707,7 @@ export function DataTable<TRow>({
             fieldDef={configModalFieldDef}
             existingFieldLabels={existingFieldLabels}
             dispatchBundle={handleEditCustomFieldBundle}
+            prepareConfirmation={prepareEditCustomFieldBundleConfirmation}
             returnFocusTo={configModalReturnFocusRef.current}
             onFieldRemoved={(message) => {
               setAnnounce(message);

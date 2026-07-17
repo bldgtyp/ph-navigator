@@ -2,7 +2,7 @@
 
 DATE: 2026-07-17
 TIME: 12:07
-STATUS: Active
+STATUS: Complete — archive next
 AUTHOR: Ed + Claude (Fable 5)
 SCOPE: Expose add/rename/reorder/recolor/delete/merge of catalog single-select
 options (frame-types: manufacturer, brand, use, operation, location, mull_type;
@@ -36,4 +36,4 @@ acceptable because renames happen roughly once or twice a year.
 | --- | --- | --- |
 | 1 — Complete | Authorization (`catalog.edit` → members) + field-config modal wired on the frame/glazing catalog pages | Yes — core ask; renames work catalog-side, projects see drift |
 | 2 — Complete | Rename-cascade backend: durable resumable job rewrites active project drafts or appends a system-named version; retries preserve per-project results | No UI yet |
-| 3 | Working modal (progress, summary), rename path routed through the job, e2e verification | Yes — completes the feature |
+| 3 — Complete | Rename confirmation plus working/progress modal, durable job recovery after remount, retry/error detail, and browser verification | Yes — completes the feature |

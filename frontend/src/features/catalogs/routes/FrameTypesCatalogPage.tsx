@@ -1,17 +1,21 @@
 import "../catalogs.css";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   DataTable,
   addRowButton,
   buildTableSchema,
   type DataTableColumnDef,
+  type EditCustomFieldBundleConfirmation,
+  type EditCustomFieldBundleRequest,
 } from "../../../shared/ui/data-table";
 import { WorkspaceTopbar, TopbarAccountMenu } from "../../../shared/ui/WorkspaceTopbar";
 import { errorMessage } from "../../../shared/lib/errors";
 import { useSignOutMutation } from "../../auth/hooks";
 import type { AuthSession } from "../../auth/types";
 import { CatalogMenu } from "../components/CatalogMenu";
+import { CatalogOptionCascadeProgressModal } from "../components/CatalogOptionCascadeModal";
 import { FrameTypeCreateModal } from "../components/FrameTypeCreateModal";
+import { previewCatalogOptionCascade } from "../api";
 import {
   buildFrameTypeOptionMaps,
   toFrameTypeRow,
@@ -35,9 +39,11 @@ import {
   useFrameTypeOptionsQuery,
   useFrameTypesQuery,
   useReactivateFrameTypeMutation,
+  useUnresolvedCatalogOptionJob,
 } from "../hooks";
 import { canEditCatalogs, catalogPath } from "../lib";
-import type { CatalogFrameType } from "../types";
+import { buildCatalogOptionMutation, buildCatalogOptionRenames } from "../legacy-options";
+import type { CatalogFrameType, CatalogOptionJob } from "../types";
 
 const EMPTY_FRAME_TYPES: readonly CatalogFrameType[] = Object.freeze([]);
 const FRAME_CONFIG_FIELDS = new Set<string>(FRAME_TYPES_SINGLE_SELECT_FIELDS);
@@ -193,11 +199,18 @@ export function FrameTypesCatalogPage({ session }: { session: AuthSession }) {
   // Row to scroll-and-highlight after a modal create lands in the table.
   const [focusRowId, setFocusRowId] = useState<string | null>(null);
   const [bulkReactivating, setBulkReactivating] = useState(false);
+  const [cascadeJobId, setCascadeJobId] = useState<string | null>(null);
   const frameTypesQuery = useFrameTypesQuery();
   const optionsQuery = useFrameTypeOptionsQuery();
   const signOutMutation = useSignOutMutation();
   const reactivateMutation = useReactivateFrameTypeMutation();
   const canEditCatalog = canEditCatalogs(session);
+  const unresolvedCascadeQuery = useUnresolvedCatalogOptionJob("frame_types", canEditCatalog);
+
+  useEffect(() => {
+    const unresolvedJob = unresolvedCascadeQuery.data;
+    if (unresolvedJob) setCascadeJobId((current) => current ?? unresolvedJob.id);
+  }, [unresolvedCascadeQuery.data]);
 
   const optionsByField = useMemo(() => optionsQuery.data ?? {}, [optionsQuery.data]);
   const optionMaps = useMemo(() => buildFrameTypeOptionMaps(optionsByField), [optionsByField]);
@@ -228,12 +241,48 @@ export function FrameTypesCatalogPage({ session }: { session: AuthSession }) {
       }),
     [optionsByField],
   );
+  const prepareOptionCascadeConfirmation = useCallback(
+    async (
+      request: EditCustomFieldBundleRequest,
+    ): Promise<EditCustomFieldBundleConfirmation | null> => {
+      const mutation = buildCatalogOptionMutation(
+        request,
+        tableSchema.fieldDefs,
+        FRAME_CONFIG_FIELDS,
+      );
+      const operations = buildCatalogOptionRenames(mutation);
+      if (operations.length === 0) return null;
+      const fieldKey = mutation.after.field_key;
+      const preview = await previewCatalogOptionCascade({
+        catalog_table: "frame_types",
+        field_key: fieldKey,
+        operations,
+      });
+      const labels = new Set(operations.map((operation) => operation.old_label));
+      const catalogRowCount = allFrameTypes.filter(
+        (frame) =>
+          frame.is_active && labels.has(frame[fieldKey as keyof CatalogFrameType] as string),
+      ).length;
+      const optionLabel = operations.length === 1 ? "option" : "options";
+      const catalogLabel = catalogRowCount === 1 ? "catalog row" : "catalog rows";
+      const projectLabel = preview.project_count === 1 ? "project" : "projects";
+      return {
+        title: `Rename ${operations.length} ${optionLabel}?`,
+        message: `This updates ${catalogRowCount} ${catalogLabel} and rewrites references in ${preview.project_count} ${projectLabel}. The catalog stays locked until the project cascade finishes.`,
+        detail: `Field: ${fieldKey}`,
+        confirmLabel: "Rename and update projects",
+      };
+    },
+    [allFrameTypes, tableSchema.fieldDefs],
+  );
+  const onCascadeJobCreated = useCallback((job: CatalogOptionJob) => setCascadeJobId(job.id), []);
   const controller = useFrameTypesCatalogController({
     userId: session.user.id,
     columns: COLUMN_DEFS,
     fieldDefs: tableSchema.fieldDefs,
     schemaFingerprint: tableSchema.schemaFingerprint,
     optionsByField,
+    onCascadeJobCreated,
   });
 
   const isActiveById = useMemo(() => {
@@ -320,6 +369,7 @@ export function FrameTypesCatalogPage({ session }: { session: AuthSession }) {
             readOnly={!canEditCatalog}
             onWrite={controller.onWrite}
             onEditCustomFieldBundle={controller.onEditCustomFieldBundle}
+            prepareEditCustomFieldBundleConfirmation={prepareOptionCascadeConfirmation}
             canEditFieldConfig={(fieldKey) => FRAME_CONFIG_FIELDS.has(fieldKey)}
             buildEmptyRow={buildEmptyFrameTypeRow}
             focusRowId={focusRowId}
@@ -357,6 +407,12 @@ export function FrameTypesCatalogPage({ session }: { session: AuthSession }) {
               setCreateOpen(false);
               setFocusRowId(created.id);
             }}
+          />
+        ) : null}
+        {cascadeJobId ? (
+          <CatalogOptionCascadeProgressModal
+            jobId={cascadeJobId}
+            onClose={() => setCascadeJobId(null)}
           />
         ) : null}
       </section>

@@ -4,6 +4,7 @@
 // R-S5 pending-save re-entrancy) so consumers wire only the dispatch
 // callback.
 import * as Dialog from "@radix-ui/react-dialog";
+import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import {
   useCallback,
   useEffect,
@@ -16,7 +17,9 @@ import {
 } from "react";
 import type {
   CustomFieldType,
+  EditCustomFieldBundleConfirmation,
   EditCustomFieldBundleRequest,
+  EditCustomFieldBundleResult,
   FieldDef,
   FieldOption,
 } from "../types";
@@ -98,7 +101,10 @@ export type FieldConfigModalProps = {
   // excludes the field being edited by `field_key`; callers pass the
   // same `existingFieldLabels` memo used by add-field validation.
   existingFieldLabels: ReadonlyArray<FieldDisplayName>;
-  dispatchBundle: (request: EditCustomFieldBundleRequest) => Promise<void>;
+  dispatchBundle: (request: EditCustomFieldBundleRequest) => Promise<EditCustomFieldBundleResult>;
+  prepareConfirmation?: (
+    request: EditCustomFieldBundleRequest,
+  ) => Promise<EditCustomFieldBundleConfirmation | null>;
   // Element to return focus to on close (the originating header <th>).
   // Stored at open time so a re-render of the header cell doesn't
   // invalidate the reference. Optional in tests.
@@ -127,6 +133,7 @@ export function FieldConfigModal({
   fieldDef,
   existingFieldLabels,
   dispatchBundle,
+  prepareConfirmation,
   returnFocusTo,
   onFieldRemoved,
   sourceCustomFieldType,
@@ -144,6 +151,10 @@ export function FieldConfigModal({
   const [description, setDescription] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [pendingConfirmation, setPendingConfirmation] = useState<
+    (EditCustomFieldBundleConfirmation & { resolve: (confirmed: boolean) => void }) | null
+  >(null);
+  const [afterClose, setAfterClose] = useState<(() => void) | null>(null);
   // R-S2 — external edit detected while modal is open. The user
   // picks Keep (rebase draft onto new source, preserving the
   // user's diff property-by-property) or Discard (re-seed draft
@@ -233,6 +244,15 @@ export function FieldConfigModal({
     setLinkedRecordTargetPath(linkedConfig ? [...linkedConfig.target_table_path] : null);
     setLinkedRecordMaxLinks(linkedConfig ? linkedConfig.max_links : 1);
   }, [open, fieldDef?.field_key]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // A catalog option cascade returns a durable job with its write response.
+  // Mount its page-level progress dialog only after this nested editor has
+  // closed, so the two modal focus traps never overlap.
+  useEffect(() => {
+    if (open || afterClose === null) return;
+    setAfterClose(null);
+    afterClose();
+  }, [afterClose, open]);
 
   const formulaFieldRegistry = formulaPreview?.fieldRegistry ?? EMPTY_FORMULA_FIELD_REGISTRY;
   const initialFormulaSource = useMemo(() => {
@@ -467,7 +487,7 @@ export function FieldConfigModal({
     setPending(true);
     setSubmitError(null);
     try {
-      await dispatchBundle({
+      const request: EditCustomFieldBundleRequest = {
         fieldKey: source.field_key,
         displayName: trimmedName,
         description: normalizedDescription,
@@ -501,8 +521,22 @@ export function FieldConfigModal({
         ...(draftType === "linked_record" && (typeChanged || linkedRecordMaxLinksDirty)
           ? { linkedRecordMaxLinks }
           : {}),
-      });
-      onOpenChange(false);
+      };
+      const confirmation = await prepareConfirmation?.(request);
+      if (confirmation) {
+        const confirmed = await new Promise<boolean>((resolve) => {
+          setPendingConfirmation({ ...confirmation, resolve });
+        });
+        if (!confirmed) return;
+      }
+      const result = await dispatchBundle(request);
+      // A catalog rename confirmation may be declined after this editor has
+      // collected the requested preview. Keep the form open, intact, rather
+      // than treating a deliberate cancel as a failed submit.
+      if (result !== false) {
+        if (result && "afterClose" in result) setAfterClose(() => result.afterClose);
+        onOpenChange(false);
+      }
     } catch (error) {
       // If the backend returned a structured preflight envelope, swap
       // the inline panel to the server's authoritative payload so the
@@ -540,6 +574,7 @@ export function FieldConfigModal({
     draftType,
     needsAck,
     dispatchBundle,
+    prepareConfirmation,
     optionsDraft,
     numberPrecision,
     numberUnits,
@@ -555,6 +590,14 @@ export function FieldConfigModal({
   // open-change. Suppress dismissal while saving (R-S5) or while
   // the R-S2 banner is up.
   const handleEscape = (event: KeyboardEvent) => {
+    if (pendingConfirmation) {
+      event.preventDefault();
+      setPendingConfirmation((current) => {
+        current?.resolve(false);
+        return null;
+      });
+      return;
+    }
     if (pending) {
       event.preventDefault();
       return;
@@ -565,7 +608,7 @@ export function FieldConfigModal({
     }
   };
   const handleInteractOutside = (event: Event) => {
-    if (pending) event.preventDefault();
+    if (pending || pendingConfirmation) event.preventDefault();
   };
   const handleOpenChange = (next: boolean) => {
     if (pending && !next) return;
@@ -635,6 +678,51 @@ export function FieldConfigModal({
           onCloseAutoFocus={handleCloseAutoFocus}
         >
           <Dialog.Title className="sr-only">Edit field</Dialog.Title>
+          <AlertDialog.Root
+            open={pendingConfirmation !== null}
+            onOpenChange={(next) => {
+              if (next) return;
+              setPendingConfirmation((current) => {
+                current?.resolve(false);
+                return null;
+              });
+            }}
+          >
+            <AlertDialog.Portal>
+              <AlertDialog.Overlay className="data-table-field-config-confirmation-overlay" />
+              <AlertDialog.Content className="data-table-field-config-confirmation-content">
+                <AlertDialog.Title className="data-table-alert-title">
+                  {pendingConfirmation?.title}
+                </AlertDialog.Title>
+                <AlertDialog.Description className="data-table-alert-description">
+                  {pendingConfirmation?.message}
+                </AlertDialog.Description>
+                {pendingConfirmation?.detail ? (
+                  <p className="data-table-field-config-modal-hint">{pendingConfirmation.detail}</p>
+                ) : null}
+                <div className="data-table-alert-actions">
+                  <AlertDialog.Cancel asChild>
+                    <button type="button" className="secondary-button">
+                      Cancel
+                    </button>
+                  </AlertDialog.Cancel>
+                  <AlertDialog.Action asChild>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPendingConfirmation((current) => {
+                          current?.resolve(true);
+                          return null;
+                        });
+                      }}
+                    >
+                      {pendingConfirmation?.confirmLabel}
+                    </button>
+                  </AlertDialog.Action>
+                </div>
+              </AlertDialog.Content>
+            </AlertDialog.Portal>
+          </AlertDialog.Root>
           {externalConflict ? (
             <div className="data-table-field-config-modal-conflict" role="alert" aria-live="polite">
               <p className="data-table-field-config-modal-conflict-text">

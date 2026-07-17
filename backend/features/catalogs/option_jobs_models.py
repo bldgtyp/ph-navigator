@@ -21,6 +21,22 @@ class CatalogOptionOperation(BaseModel):
     new_label: str = Field(min_length=1, max_length=200)
 
 
+class CatalogOptionCascadePreviewRequest(BaseModel):
+    """The client-side confirmation asks how many active projects a change reaches."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    catalog_table: CatalogOptionTable
+    field_key: str
+    operations: list[CatalogOptionOperation] = Field(min_length=1)
+
+
+class CatalogOptionCascadePreview(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    project_count: int
+
+
 class CatalogOptionProjectResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

@@ -5,6 +5,10 @@ import type {
   CatalogFrameTypeListResponse,
   CatalogFrameTypeOptionsResponse,
   CatalogFrameTypeUpdatePayload,
+  CatalogFieldOptionsEditResponse,
+  CatalogOptionCascadePreview,
+  CatalogOptionCascadePreviewPayload,
+  CatalogOptionJob,
   EditCatalogFrameTypeOptionsPayload,
   CatalogGlazingType,
   CatalogGlazingTypeCreatePayload,
@@ -136,8 +140,8 @@ export async function getFrameTypeOptions(
 
 export async function putFrameTypeOptions(
   payload: EditCatalogFrameTypeOptionsPayload,
-): Promise<unknown> {
-  return fetchJson<unknown>("/api/v1/catalogs/frame-types/options", {
+): Promise<CatalogFieldOptionsEditResponse> {
+  return fetchJson<CatalogFieldOptionsEditResponse>("/api/v1/catalogs/frame-types/options", {
     method: "PUT",
     body: JSON.stringify(payload),
   });
@@ -211,10 +215,42 @@ export async function getGlazingTypeOptions(
 
 export async function putGlazingTypeOptions(
   payload: EditCatalogGlazingTypeOptionsPayload,
-): Promise<unknown> {
-  return fetchJson<unknown>("/api/v1/catalogs/glazing-types/options", {
+): Promise<CatalogFieldOptionsEditResponse> {
+  return fetchJson<CatalogFieldOptionsEditResponse>("/api/v1/catalogs/glazing-types/options", {
     method: "PUT",
     body: JSON.stringify(payload),
+  });
+}
+
+export async function previewCatalogOptionCascade(
+  payload: CatalogOptionCascadePreviewPayload,
+): Promise<CatalogOptionCascadePreview> {
+  return fetchJson<CatalogOptionCascadePreview>("/api/v1/catalogs/option-jobs/preview", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getCatalogOptionJob(
+  jobId: string,
+  signal?: AbortSignal,
+): Promise<CatalogOptionJob> {
+  return fetchJson<CatalogOptionJob>(`/api/v1/catalogs/option-jobs/${jobId}`, { signal });
+}
+
+export async function getUnresolvedCatalogOptionJob(
+  catalogTable: CatalogOptionJob["catalog_table"],
+  signal?: AbortSignal,
+): Promise<CatalogOptionJob | null> {
+  return fetchJson<CatalogOptionJob | null>(
+    `/api/v1/catalogs/option-jobs/unresolved/${catalogTable}`,
+    { signal },
+  );
+}
+
+export async function retryCatalogOptionJob(jobId: string): Promise<CatalogOptionJob> {
+  return fetchJson<CatalogOptionJob>(`/api/v1/catalogs/option-jobs/${jobId}/retry`, {
+    method: "POST",
   });
 }
 

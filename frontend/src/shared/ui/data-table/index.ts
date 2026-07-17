@@ -147,6 +147,8 @@ export type {
   CellWrite,
   DataTableColumnDef,
   DataTableProps,
+  EditCustomFieldBundleConfirmation,
+  EditCustomFieldBundleResult,
   EditCustomFieldBundleRequest,
   FieldDef,
   FieldLockKey,

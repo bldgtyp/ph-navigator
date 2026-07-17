@@ -151,6 +151,16 @@ def get_job(job_id: str) -> CatalogOptionJob | None:
     return _job(row) if row else None
 
 
+def get_unresolved_job(catalog_table: CatalogOptionTable) -> CatalogOptionJob | None:
+    """Return the one job that still holds this catalog's option-edit lock."""
+
+    with transaction() as conn:
+        row = repository.get_unresolved_job(conn, catalog_table)
+    # Fetch through `get_job` so a dead running worker is surfaced as a
+    # retryable failure instead of making a returning editor wait forever.
+    return get_job(str(row["id"])) if row else None
+
+
 def _operation_maps(
     operations: list[CatalogOptionOperation],
 ) -> tuple[dict[str, str], dict[str, str]]:
@@ -272,17 +282,22 @@ def rewrite_document_options(
     return next_body, stats
 
 
-def _target_projects(job: CatalogOptionJob) -> list[dict[str, Any]]:
+def _target_projects_for(
+    *,
+    catalog_table: CatalogOptionTable,
+    field_key: str,
+    operations: list[CatalogOptionOperation],
+) -> list[dict[str, Any]]:
     with connection() as conn:
         rows = repository.list_active_project_bodies(conn)
     targets: dict[UUID, dict[str, Any]] = {}
-    rename_map, filter_map = _operation_maps(job.operations)
+    rename_map, filter_map = _operation_maps(operations)
     for row in rows:
         body = validate_document(row["body"])
         if not _rewrite_stats(
             body,
-            catalog_table=job.catalog_table,
-            field_key=job.field_key,
+            catalog_table=catalog_table,
+            field_key=field_key,
             rename_map=rename_map,
             filter_map=filter_map,
         ).changed:
@@ -292,6 +307,36 @@ def _target_projects(job: CatalogOptionJob) -> list[dict[str, Any]]:
             "id": project_id,
             "name": str(row["name"]),
         }
+    return list(targets.values())
+
+
+def preview_cascade(
+    *,
+    catalog_table: CatalogOptionTable,
+    field_key: str,
+    operations: list[CatalogOptionOperation],
+) -> int:
+    """Count active project documents the rename confirmation will rewrite."""
+
+    _validate_job_input(catalog_table, field_key, operations)
+    return len(
+        _target_projects_for(
+            catalog_table=catalog_table,
+            field_key=field_key,
+            operations=operations,
+        )
+    )
+
+
+def _target_projects(job: CatalogOptionJob) -> list[dict[str, Any]]:
+    targets = {
+        UUID(str(project["id"])): project
+        for project in _target_projects_for(
+            catalog_table=job.catalog_table,
+            field_key=job.field_key,
+            operations=job.operations,
+        )
+    }
     for result in job.project_results:
         if result.status == "failed":
             targets.setdefault(

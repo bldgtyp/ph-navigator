@@ -182,3 +182,99 @@
 .import-dialog-reasons-warning h3 {
   color: var(--phn-warning);
 }
+
+.catalog-option-cascade-modal {
+  display: grid;
+  gap: var(--space-14);
+}
+
+.catalog-option-cascade-modal p {
+  margin: 0;
+}
+
+.catalog-option-cascade-note {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+.catalog-option-cascade-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-8);
+  flex-wrap: wrap;
+}
+
+.catalog-option-cascade-progress {
+  height: var(--space-8);
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--bg-elev);
+}
+
+.catalog-option-cascade-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 160ms ease-out;
+}
+
+.catalog-option-cascade-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-8);
+  margin: 0;
+}
+
+.catalog-option-cascade-summary > div {
+  padding: var(--space-8) var(--space-10);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--phn-radius);
+}
+
+.catalog-option-cascade-summary dt {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+}
+
+.catalog-option-cascade-summary dd {
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-lg);
+  font-weight: 600;
+}
+
+.catalog-option-cascade-projects summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.catalog-option-cascade-projects ul {
+  display: grid;
+  gap: var(--space-4);
+  margin: var(--space-8) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.catalog-option-cascade-projects li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-12);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.catalog-option-cascade-projects li > div {
+  min-width: 0;
+}
+
+.catalog-option-cascade-project-error {
+  margin: var(--space-4) 0 0;
+  color: var(--phn-danger);
+  font-size: var(--fs-sm);
+  overflow-wrap: anywhere;
+}
+
+.catalog-option-cascade-projects li[data-status="failed"] span:last-child {
+  color: var(--phn-danger);
+}

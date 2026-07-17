@@ -6,6 +6,7 @@ import {
   deactivateFrameType,
   deactivateGlazingType,
   deactivateMaterial,
+  getUnresolvedCatalogOptionJob,
   getFrameTypeOptions,
   getGlazingTypeOptions,
   listFrameTypes,
@@ -26,7 +27,23 @@ import type {
   CatalogGlazingTypeUpdatePayload,
   CatalogMaterialCreatePayload,
   CatalogMaterialUpdatePayload,
+  CatalogOptionJob,
 } from "./types";
+
+export function useUnresolvedCatalogOptionJob(
+  catalogTable: CatalogOptionJob["catalog_table"],
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: catalogQueryKeys.unresolvedOptionJob(catalogTable),
+    queryFn: ({ signal }) => getUnresolvedCatalogOptionJob(catalogTable, signal),
+    enabled,
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status === "pending" || status === "running" ? 1_000 : false;
+    },
+  });
+}
 
 function useInvalidateMaterials() {
   const queryClient = useQueryClient();

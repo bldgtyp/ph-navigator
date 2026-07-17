@@ -10,7 +10,7 @@
 //     Keep / Discard
 //   - R-S5 — pending Save disables inputs, suppresses Esc / Cancel,
 //     and ignores a re-fire of submit
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { FieldConfigModal } from "../components/FieldConfigModal";
@@ -38,6 +38,7 @@ type PathLabel = { path: string[]; label: string };
 type HarnessProps = {
   initialField?: FieldDef;
   dispatchBundle?: ReturnType<typeof vi.fn>;
+  prepareConfirmation?: ReturnType<typeof vi.fn>;
   onFieldRemoved?: ReturnType<typeof vi.fn>;
   // Names of other fields in the table; the editing field is excluded
   // by field_key in the helper, so callers only pass siblings.
@@ -51,6 +52,7 @@ type HarnessProps = {
 function Harness({
   initialField = baseField(),
   dispatchBundle = vi.fn().mockResolvedValue(undefined),
+  prepareConfirmation,
   onFieldRemoved,
   siblingDisplayNames = [],
   sourceCustomFieldType,
@@ -112,6 +114,7 @@ function Harness({
           displayName,
         }))}
         dispatchBundle={dispatchBundle}
+        prepareConfirmation={prepareConfirmation}
         onFieldRemoved={onFieldRemoved}
         sourceCustomFieldType={sourceCustomFieldType ?? fieldDef?.custom_field_type}
         preflightRows={rows}
@@ -173,6 +176,28 @@ describe("FieldConfigModal", () => {
     render(<Harness />);
     const saveButton = screen.getByRole("button", { name: "Save" });
     expect(saveButton).toBeDisabled();
+  });
+
+  test("a declined dependent-write confirmation keeps the field draft open", async () => {
+    const dispatchBundle = vi.fn().mockResolvedValue(undefined);
+    const prepareConfirmation = vi.fn().mockResolvedValue({
+      title: "Rename 1 option?",
+      message: "This updates 1 catalog row and rewrites references in 1 project.",
+      confirmLabel: "Rename and update projects",
+    });
+    render(<Harness dispatchBundle={dispatchBundle} prepareConfirmation={prepareConfirmation} />);
+
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Renamed notes" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    const confirmation = await screen.findByRole("alertdialog", { name: "Rename 1 option?" });
+    expect(dispatchBundle).not.toHaveBeenCalled();
+    fireEvent.click(within(confirmation).getByRole("button", { name: "Cancel" }));
+
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByLabelText("Name")).toHaveValue("Renamed notes");
+    expect(dispatchBundle).not.toHaveBeenCalled();
   });
 
   test("blocks Save when name collides with another field", () => {

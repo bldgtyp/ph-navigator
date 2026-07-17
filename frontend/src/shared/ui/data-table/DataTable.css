@@ -1014,6 +1014,27 @@
   overflow-y: auto;
 }
 
+.data-table-field-config-confirmation-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-dropdown) + 32);
+  background: var(--scrim);
+}
+
+.data-table-field-config-confirmation-content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: calc(var(--z-dropdown) + 33);
+  width: min(480px, calc(100vw - 48px));
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--border-card);
+  border-radius: var(--phn-radius);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-alert);
+  padding: var(--space-20);
+}
+
 .data-table-field-config-modal-formula {
   max-width: min(720px, calc(100vw - 48px));
 }

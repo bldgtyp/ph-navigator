@@ -5,6 +5,7 @@ import type {
   CellWrite,
   DataTableColumnDef,
   EditCustomFieldBundleRequest,
+  EditCustomFieldBundleResult,
   FieldDef,
   FieldOption,
   ViewState,
@@ -30,6 +31,7 @@ import type {
   CatalogFrameType,
   CatalogFrameTypeCreatePayload,
   CatalogFrameTypeUpdatePayload,
+  CatalogOptionJob,
 } from "../types";
 import {
   FRAME_TYPES_BUILT_IN_FIELD_DEFS,
@@ -202,8 +204,8 @@ function buildCreatePayload(
 async function editFrameTypeOptions(
   mutation: CatalogLegacyOptionsMutation,
   opts: WriteOptions,
-): Promise<void> {
-  await putFrameTypeOptions({
+): Promise<CatalogOptionJob | null> {
+  const response = await putFrameTypeOptions({
     field_key: mutation.after.field_key,
     options: (mutation.after.options ?? []).map((o) => ({
       id: o.id,
@@ -214,6 +216,7 @@ async function editFrameTypeOptions(
     replacements: buildCatalogLabelReplacements(mutation),
   });
   await opts.invalidate();
+  return response.cascade_job;
 }
 
 export type FrameTypesCatalogController = {
@@ -221,7 +224,9 @@ export type FrameTypesCatalogController = {
   onViewChange: (next: ViewState) => void;
   onResetView: () => void;
   onWrite: (op: WriteOp) => Promise<WriteResult>;
-  onEditCustomFieldBundle: (request: EditCustomFieldBundleRequest) => Promise<void>;
+  onEditCustomFieldBundle: (
+    request: EditCustomFieldBundleRequest,
+  ) => Promise<EditCustomFieldBundleResult>;
 };
 
 export type FrameTypesCatalogControllerArgs = {
@@ -230,6 +235,7 @@ export type FrameTypesCatalogControllerArgs = {
   fieldDefs: FieldDef[];
   schemaFingerprint: string;
   optionsByField: Record<string, FieldOption[]>;
+  onCascadeJobCreated?: (job: CatalogOptionJob) => void;
 };
 
 export function useFrameTypesCatalogController({
@@ -238,6 +244,7 @@ export function useFrameTypesCatalogController({
   fieldDefs,
   schemaFingerprint,
   optionsByField,
+  onCascadeJobCreated,
 }: FrameTypesCatalogControllerArgs): FrameTypesCatalogController {
   const defaults = useMemo(() => emptyViewState(), []);
   const {
@@ -314,9 +321,15 @@ export function useFrameTypesCatalogController({
 
   const onEditCustomFieldBundle = useCallback(
     async (request: EditCustomFieldBundleRequest) => {
-      await onWrite(buildCatalogOptionMutation(request, fieldDefs, SINGLE_SELECT_FIELDS));
+      const job = await editFrameTypeOptions(
+        buildCatalogOptionMutation(request, fieldDefs, SINGLE_SELECT_FIELDS),
+        { invalidate },
+      );
+      if (job && onCascadeJobCreated) {
+        return { afterClose: () => onCascadeJobCreated(job) };
+      }
     },
-    [fieldDefs, onWrite],
+    [fieldDefs, invalidate, onCascadeJobCreated],
   );
 
   return { view, onViewChange, onResetView, onWrite, onEditCustomFieldBundle };

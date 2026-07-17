@@ -124,6 +124,66 @@ export type CatalogFrameTypeOptionsResponse = {
   fields: Record<string, CatalogFrameTypeOption[]>;
 };
 
+export type CatalogOptionOperation = {
+  kind: "rename" | "merge";
+  old_label: string;
+  new_label: string;
+};
+
+export type CatalogOptionProjectResult = {
+  project_id: string;
+  project_name: string;
+  status: "pending" | "running" | "completed" | "failed";
+  refs_rewritten: number;
+  filters_rewritten: number;
+  drafts_rewritten: number;
+  version_created: boolean;
+  error: string | null;
+};
+
+export type CatalogOptionCascadeTotals = {
+  projects_touched: number;
+  refs_rewritten: number;
+  filters_rewritten: number;
+  drafts_rewritten: number;
+  versions_created: number;
+  failures: number;
+};
+
+export type CatalogOptionJob = {
+  id: string;
+  catalog_table: "frame_types" | "glazing_types";
+  field_key: string;
+  status: "pending" | "running" | "completed" | "failed";
+  progress: number;
+  created_by: string;
+  operations: CatalogOptionOperation[];
+  total_projects: number;
+  processed_projects: number;
+  current_project_id: string | null;
+  project_results: CatalogOptionProjectResult[];
+  result: CatalogOptionCascadeTotals;
+  error: string | null;
+  created_at: string;
+  started_at: string | null;
+  heartbeat_at: string | null;
+  finished_at: string | null;
+};
+
+export type CatalogOptionCascadePreview = { project_count: number };
+
+export type CatalogOptionCascadePreviewPayload = {
+  catalog_table: CatalogOptionJob["catalog_table"];
+  field_key: string;
+  operations: CatalogOptionOperation[];
+};
+
+export type CatalogFieldOptionsEditResponse = {
+  field_key: string;
+  options: CatalogFrameTypeOption[];
+  cascade_job: CatalogOptionJob | null;
+};
+
 // `PUT …/frame-types/options` — full-replace one field's list (+ merge map).
 export type EditCatalogFrameTypeOptionsPayload = {
   field_key: string;
