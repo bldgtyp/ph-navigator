@@ -469,6 +469,17 @@ Current enforced controls live under `frontend/scripts/`, wired into
   CSS custom properties are actually defined in the token files.
 - **DataTable convention check** (`check-data-table-contract.mjs`,
   `pnpm check:data-table`) — see the DataTable Rendering Convention section.
+- **Typography check** (`check-typography.mjs`, `pnpm check:typography`):
+  typography in component CSS and TS/TSX comes only from the token
+  vocabulary (`--font-*`, `--fs-*`, `--fw-*`, `--tracking-*`, `--lh-*`) or
+  deliberate `inherit`. The migration baseline
+  (`scripts/typography-baseline.json`) is empty — the guard runs in
+  zero-debt mode and any literal fails CI; never refresh the baseline to
+  bless new debt. The rendered counterpart (`make typography-eval`,
+  scheduled/manual `typography-eval.yml` workflow) evaluates the 22-state
+  computed-style sweep against
+  `frontend/scripts/typography-rendered-contract.json`. Rules and the
+  exception registry are documented in `frontend/src/styles/README.md`.
 
 Near-term controls to add as the frontend grows:
 

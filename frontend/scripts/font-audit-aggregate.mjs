@@ -8,12 +8,7 @@
  */
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { formatExtras, formatWeight, isOffScale, top } from "./font-audit-lib.mjs";
-
-function argValue(flag, fallback) {
-  const i = process.argv.indexOf(flag);
-  return i === -1 ? fallback : process.argv[i + 1];
-}
+import { argValue, formatExtras, formatWeight, isOffScale, top } from "./font-audit-lib.mjs";
 
 const dir = resolve(argValue("--dir", "working/font-audit"));
 const outPath = argValue("--out", null);

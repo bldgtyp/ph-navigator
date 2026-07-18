@@ -41,12 +41,12 @@
 
 .record-status-progress-copy strong {
   color: var(--text-primary);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
 }
 
 .record-status-attention {
   color: var(--report-status-missing);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
 }
 
 .record-status-progress {
@@ -92,7 +92,7 @@
   padding: var(--space-10) var(--space-16);
   text-align: left;
   text-transform: none;
-  letter-spacing: 0;
+  letter-spacing: var(--tracking-normal);
 }
 
 .record-status-group-toggle:hover:not(:disabled) {
@@ -101,7 +101,7 @@
 }
 
 .record-status-group-name {
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
 }
 
 .record-status-group-chevron {
@@ -118,7 +118,7 @@
   color: var(--text-muted);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
-  font-weight: 400;
+  font-weight: var(--fw-regular);
 }
 
 .record-status-group-counts .needed {
@@ -184,7 +184,7 @@
   padding: var(--space-8) 0;
   text-align: left;
   text-transform: none;
-  letter-spacing: 0;
+  letter-spacing: var(--tracking-normal);
 }
 
 .record-status-leaf-header {
@@ -211,7 +211,7 @@
 
 .record-status-leaf-name {
   font-size: var(--fs-md);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
 }
 
 .record-status-leaf-counts {
@@ -269,8 +269,8 @@
   min-width: 0;
   color: var(--text-primary);
   font-size: var(--fs-sm);
-  font-weight: 500;
-  line-height: 1.35;
+  font-weight: var(--fw-medium);
+  line-height: var(--lh-ui);
   text-decoration: none;
   overflow-wrap: anywhere;
 }
@@ -284,7 +284,7 @@
   padding: 2px 7px;
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
-  line-height: 1.25;
+  line-height: var(--lh-ui);
   text-transform: uppercase;
 }
 

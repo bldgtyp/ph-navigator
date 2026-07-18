@@ -1,6 +1,12 @@
-/** Shared report helpers for font-audit.mjs and font-audit-aggregate.mjs. */
+/** Shared helpers for the font-audit scripts (audit, sweep, aggregate, eval). */
 
 export const KNOWN_WEIGHTS = new Set(["400", "500", "600", "700"]);
+
+/** Value of a `--flag value` CLI pair, or the fallback when absent. */
+export function argValue(flag, fallback) {
+  const index = process.argv.indexOf(flag);
+  return index === -1 ? fallback : process.argv[index + 1];
+}
 
 /** Top-n entries of a {key: count} histogram as "key (count), …". */
 export function top(obj, n = 4) {

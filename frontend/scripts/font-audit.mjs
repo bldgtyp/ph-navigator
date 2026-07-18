@@ -103,13 +103,26 @@ function collectTypography() {
       }
     }
     const remPx = parseFloat(rootStyle.fontSize);
+    // Probe element for tokens that aren't plain rem/px (clamp() display
+    // sizes): let the browser compute the actual px at this viewport so
+    // they map to their token name like the plain scale steps do.
+    const probe = document.createElement("span");
+    document.body.appendChild(probe);
     const map = {};
     for (const name of names) {
       const raw = rootStyle.getPropertyValue(name).trim();
       if (!raw) continue;
-      const px = raw.endsWith("rem") ? parseFloat(raw) * remPx : parseFloat(raw);
+      let px;
+      if (/^-?\d*\.?\d+rem$/.test(raw)) px = parseFloat(raw) * remPx;
+      else if (/^-?\d*\.?\d+px$/.test(raw)) px = parseFloat(raw);
+      else {
+        probe.style.fontSize = `var(${name})`;
+        px = parseFloat(getComputedStyle(probe).fontSize);
+      }
+      if (Number.isNaN(px)) continue;
       map[`${px}px`] = name;
     }
+    probe.remove();
     return map;
   }
 
@@ -175,11 +188,11 @@ function collectTypography() {
     const lh = cs.lineHeight === "normal" ? null : parseFloat(cs.lineHeight);
     const family = cs.fontFamily.split(",")[0].replace(/["']/g, "").trim();
     // Normalize letter-spacing to em so the same tracking at different sizes
-    // buckets together (computed px is tracking × font-size).
-    const tracking =
-      cs.letterSpacing === "normal"
-        ? "normal"
-        : `${(parseFloat(cs.letterSpacing) / sizePx).toFixed(2)}em`;
+    // buckets together (computed px is tracking × font-size). Values inside
+    // half a rounding step of zero are "normal" — an explicit 0 and an
+    // unset tracking are the same design decision.
+    const trackingEm = cs.letterSpacing === "normal" ? 0 : parseFloat(cs.letterSpacing) / sizePx;
+    const tracking = Math.abs(trackingEm) < 0.005 ? "normal" : `${trackingEm.toFixed(2)}em`;
     const key = [family, cs.fontSize, cs.fontWeight, cs.fontStyle, cs.textTransform, tracking].join(
       " | ",
     );

@@ -7,9 +7,9 @@
   color: var(--info-tooltip-fg);
   font-family: var(--font-primary);
   font-size: var(--fs-sm);
-  font-weight: 400;
-  letter-spacing: 0;
-  line-height: 1.35;
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--tracking-normal);
+  line-height: var(--lh-ui);
   padding: var(--space-8);
   pointer-events: none;
   text-align: left;

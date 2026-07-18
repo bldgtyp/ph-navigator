@@ -10,62 +10,23 @@
  *   node scripts/font-audit-sweep.mjs [--only <label-substring>]
  */
 import { spawnSync } from "node:child_process";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { buildStates } from "./font-audit-states.mjs";
+import { readJson } from "./lib/guard-utils.mjs";
 
-const PROJECT_ID = process.env.PHN_AUDIT_PROJECT ?? "5f9e8977-cd89-40c0-9c64-8e04272d174a";
-const EMAIL = process.env.PHN_AUDIT_EMAIL ?? "codex@example.com";
-const P = `/projects/${PROJECT_ID}`;
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
-// DataTable's row-expand gutter button is opacity-0 until its row is hovered,
-// so record-modal states hover the first body row before clicking.
-const EXPAND_ROW = {
-  hovers: [".data-table tbody tr"],
-  clicks: ["[aria-label='Expand row 1']"],
-};
+// Fixture discovery: env override > the manifest written by
+// `make agent-browser-ready` (working/agent-browser/fixture.json at the repo
+// root) > the historical local default. Keeps the sweep hermetic — no
+// hardcoded UUID dependence in CI or after a DB reset.
+const FIXTURE = readJson(path.join(REPO_ROOT, "working", "agent-browser", "fixture.json"), {});
+const PROJECT_ID =
+  process.env.PHN_AUDIT_PROJECT ?? FIXTURE.project_id ?? "5f9e8977-cd89-40c0-9c64-8e04272d174a";
+const EMAIL = process.env.PHN_AUDIT_EMAIL ?? FIXTURE.email ?? "codex@example.com";
 
-/** @type {{label: string, route: string, hovers?: string[], clicks?: string[], noSignin?: boolean, email?: string}[]} */
-const STATES = [
-  { label: "sign-in", route: "/sign-in", noSignin: true },
-  { label: "dashboard", route: "/dashboard" },
-  { label: "dashboard-new-project-modal", route: "/dashboard", clicks: ["text=Add New Project +"] },
-  { label: "admin-users", route: "/admin/users" },
-  { label: "admin-invite-modal", route: "/admin/users", clicks: ["text=Invite user"] },
-  { label: "catalog-materials", route: "/catalog/materials" },
-  { label: "catalog-materials-record-modal", route: "/catalog/materials", ...EXPAND_ROW },
-  { label: "catalog-frame-types", route: "/catalog/frame-types" },
-  {
-    label: "catalog-frame-types-create-modal",
-    route: "/catalog/frame-types",
-    clicks: ["[aria-label='Add frame type']"],
-  },
-  { label: "catalog-glazing-types", route: "/catalog/glazing-types" },
-  // Project states click "Close" first: the fixture's dirty draft pops the
-  // "Recovered draft found" modal on every project-tab load, which both
-  // pollutes the base-page data and blocks further clicks. (Its own
-  // typography is captured separately by project-recovered-draft-modal.)
-  { label: "project-recovered-draft-modal", route: `${P}/status` },
-  { label: "project-status", route: `${P}/status`, clicks: ["text=Close"] },
-  {
-    label: "project-status-add-modal",
-    route: `${P}/status`,
-    clicks: ["text=Close", ".status-add-milestone"],
-  },
-  { label: "project-climate", route: `${P}/climate`, clicks: ["text=Close"] },
-  { label: "project-apertures", route: `${P}/apertures`, clicks: ["text=Close"] },
-  { label: "project-envelope", route: `${P}/envelope`, clicks: ["text=Close"] },
-  { label: "project-spaces-types", route: `${P}/spaces/space-types`, clicks: ["text=Close"] },
-  // NOTE: no spaces/equipment record-modal states — those fixture tables are
-  // empty (no row to expand); the shared RecordDetailModal shell is covered
-  // by catalog-materials-record-modal.
-  { label: "project-spaces-rooms", route: `${P}/spaces/rooms`, clicks: ["text=Close"] },
-  { label: "project-equipment", route: `${P}/equipment`, clicks: ["text=Close"] },
-  {
-    label: "project-equipment-heat-pumps",
-    route: `${P}/equipment?tab=heat-pumps`,
-    clicks: ["text=Close"],
-  },
-  { label: "project-thermal-bridges", route: `${P}/thermal-bridges`, clicks: ["text=Close"] },
-  { label: "project-model", route: `${P}/model`, clicks: ["text=Close"] },
-];
+const STATES = buildStates(PROJECT_ID);
 
 const only = (() => {
   const i = process.argv.indexOf("--only");

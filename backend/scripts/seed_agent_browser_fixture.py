@@ -12,6 +12,7 @@ from psycopg import Connection
 from psycopg.types.json import Jsonb
 
 from database import transaction
+from features.access import repository as access_repository
 from features.auth import repository as auth_repository
 from features.auth.passwords import verify_password
 from features.auth.service import create_or_update_user
@@ -29,6 +30,11 @@ DEFAULT_PASSWORD = "password"
 DEFAULT_BT_NUMBER = "AGENT-BROWSER"
 DEFAULT_PROJECT_NAME = "Agent Browser Fixture"
 DEFAULT_FRONTEND_URL = "http://localhost:5173"
+
+# Global capabilities the browser fixture user needs so agent sweeps (catalog
+# editing, /admin/users states) work hermetically — no hand-run
+# manage_user_access step, and grants survive a DB reset via re-seed.
+FIXTURE_GLOBAL_CAPABILITIES = ("catalog.edit", "admin.users.manage")
 
 
 @dataclass(frozen=True)
@@ -98,6 +104,7 @@ def seed_agent_browser_fixture(
     base_version_etag = document_etag(saved_body)
 
     with transaction() as conn:
+        _ensure_fixture_grants(conn, user.id)
         project = _upsert_fixture_project(conn, payload, user.id, saved_body)
         version_id = project["active_version_id"]
         draft_etag = document_repository.upsert_draft(
@@ -171,6 +178,7 @@ def _ready_fixture(
         password_hash = user.get("password_hash")
         if not isinstance(password_hash, str) or not verify_password(password, password_hash):
             return None
+        _ensure_fixture_grants(conn, user["id"])
 
         project = conn.execute(
             """
@@ -204,6 +212,11 @@ def _ready_fixture(
         sign_in_route=f"{normalized_frontend_url}/sign-in?next={quote(path, safe='')}",
         draft_etag=str(draft["draft_etag"]),
     )
+
+
+def _ensure_fixture_grants(conn: Connection[Any], user_id: UUID) -> None:
+    for capability in FIXTURE_GLOBAL_CAPABILITIES:
+        access_repository.ensure_global_grant(conn, user_id=user_id, capability=capability, granted_by=None)
 
 
 def _has_seeded_dirty_room(body: object) -> bool:

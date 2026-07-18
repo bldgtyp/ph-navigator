@@ -2,7 +2,7 @@
 
 - DATE: 2026-07-17
 - TIME: 12:38
-- STATUS: Active
+- STATUS: ✅ Complete 2026-07-17 — exit criteria measured in STATUS.md (29 variants vs ≤25 aspiration recorded as deviation)
 - AUTHOR: Claude (Fable 5) with Ed May
 - REVISED: 2026-07-17 afternoon ET by Codex
 - SCOPE: Target type system + role map + exit criteria

@@ -38,8 +38,8 @@
 }
 
 .attachment-panel h3 {
-  font-size: 14px;
-  font-weight: 650;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
   margin: 0 0 var(--space-10);
 }
 
@@ -181,7 +181,7 @@
   display: flex;
   height: 100%;
   justify-content: center;
-  line-height: 1;
+  line-height: var(--lh-solid);
   width: 100%;
 }
 
@@ -190,9 +190,9 @@
 }
 
 .attachment-doc-thumb span {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.03em;
+  font-size: var(--fs-icon-badge);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
 }
 

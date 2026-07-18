@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-17
 TIME: afternoon ET
-STATUS: Proposed; becomes active when Phase 1 lands
+STATUS: ✅ Active since Phase 1 (2026-07-17); canonical copies live in frontend/src/styles/README.md + context/UI_UX.md — this file is the planning-packet record
 AUTHOR: Codex
 SCOPE: Authoring, ownership, exception, and enforcement rules for typography
 RELATED:

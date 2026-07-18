@@ -154,6 +154,17 @@ CI) keeps the token system honest:
   `--z-*` tokens, `.ts`/`.tsx`/`.css` files stay under the size cap
   (`@size-exception` escape hatch on line 1), and feature folders keep
   their canonical shape.
+- `check:typography` — font family/size/weight/tracking/line-height in
+  component CSS and TS/TSX come only from the typography tokens
+  (`--font-*`, `--fs-*`, `--fw-*`, `--tracking-*`, `--lh-*`) or
+  deliberate `inherit`; the `font:` shorthand is banned except
+  `font: inherit`. The debt baseline is **empty** (zero-debt mode since
+  the 2026-07 consolidation) — any literal fails CI. The rendered
+  counterpart, `make typography-eval`, sweeps 22 page/modal states and
+  asserts the computed-style contract (two families, 0.05em caps
+  tracking, role budgets, 29-variant ceiling) on a scheduled/manual
+  GitHub Actions workflow. Roles, exceptions, and the full authoring
+  rules live in `frontend/src/styles/README.md`.
 
 The token + shared-class catalog, the import strategy, the "how to style a
 new feature" recipe, and the god-stylesheet split plan live in

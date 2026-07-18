@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import fcntl
 import hashlib
+import json
 import os
 import signal
 import subprocess
@@ -214,6 +215,20 @@ def _ensure_fixture() -> None:
     print(f"  dirty draft etag: {fixture.draft_etag}")
     print(f"  sign-in route: {fixture.sign_in_route}")
     print(f"  direct route: {fixture.route}")
+
+    # Machine-readable manifest so browser tooling (font-audit sweep, agent
+    # scripts) can discover the fixture identity without parsing stdout or
+    # relying on a hardcoded project UUID.
+    manifest = {
+        "email": fixture.email,
+        "password": fixture.password,
+        "project_id": str(fixture.project_id),
+        "version_id": str(fixture.version_id),
+        "bt_number": fixture.bt_number,
+        "route": fixture.route,
+        "sign_in_route": fixture.sign_in_route,
+    }
+    (WORK_DIR / "fixture.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 
 
 def _agent_fixture_identity() -> FixtureIdentity:

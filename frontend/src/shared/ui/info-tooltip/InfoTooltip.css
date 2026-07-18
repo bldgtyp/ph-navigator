@@ -33,9 +33,9 @@
   color: var(--info-tooltip-fg);
   display: grid;
   font-size: var(--fs-sm);
-  font-weight: 400;
+  font-weight: var(--fw-regular);
   gap: var(--space-8);
-  line-height: 1.35;
+  line-height: var(--lh-ui);
   max-width: min(316px, calc(100vw - 24px));
   opacity: 0;
   padding: var(--space-8);
@@ -64,7 +64,7 @@
 }
 
 .info-tooltip-content strong {
-  font-weight: 700;
+  font-weight: var(--fw-bold);
 }
 
 .info-tooltip-content em {

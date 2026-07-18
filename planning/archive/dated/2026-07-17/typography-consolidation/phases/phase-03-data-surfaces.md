@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-17
 TIME: afternoon ET
-STATUS: Not started
+STATUS: ✅ Done 2026-07-17 (all 117 owner fingerprints retired; baseline 371 → 254 decls; e2e table smoke 14/14; make ci green)
 AUTHOR: Codex
 SCOPE: DataTable, ReportTable, catalog toolbar, and table-adjacent equipment
   typography

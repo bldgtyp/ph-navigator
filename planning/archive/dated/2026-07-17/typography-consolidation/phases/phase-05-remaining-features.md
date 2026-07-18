@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-17
 TIME: afternoon ET
-STATUS: Not started
+STATUS: ✅ Done 2026-07-17 (source-debt baseline EMPTY {}; exceptions registry empty — charts moved to CSS hooks; make ci green)
 AUTHOR: Codex
 SCOPE: Model viewer, climate, project status/version controls, admin, tooltip,
   overlay, chart props, and all remaining source debt

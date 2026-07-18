@@ -55,14 +55,17 @@ def ensure_global_grant(conn: Connection[Any], *, user_id: UUID, capability: str
     idempotent shape both the admin service and the bootstrap command need.
     """
     try:
-        insert_grant(
-            conn,
-            user_id=user_id,
-            capability=capability,
-            scope_type="global",
-            scope_id=None,
-            granted_by=granted_by,
-        )
+        # Savepoint (psycopg nests transaction() as SAVEPOINT) so a swallowed
+        # UniqueViolation cannot abort the caller's enclosing transaction.
+        with conn.transaction():
+            insert_grant(
+                conn,
+                user_id=user_id,
+                capability=capability,
+                scope_type="global",
+                scope_id=None,
+                granted_by=granted_by,
+            )
     except UniqueViolation:
         return False
     return True

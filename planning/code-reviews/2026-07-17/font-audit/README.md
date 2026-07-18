@@ -2,7 +2,7 @@
 
 - DATE: 2026-07-17
 - TIME: 12:03
-- STATUS: Complete (research); follow-up consolidation work not yet planned
+- STATUS: Complete (research); follow-up consolidation COMPLETE 2026-07-17 — see `planning/archive/dated/2026-07-17/typography-consolidation/` (REPORT-after.md: 55 → 29 variants)
 - AUTHOR: Claude (Fable 5) with Ed May
 - SCOPE: Every routed page + representative modal states, surveyed from the
   **actual rendered DOM** (computed styles), not source CSS
@@ -47,10 +47,10 @@ Rerun: `make agent-browser-ready`, then from `frontend/`:
 
 Caveats / setup notes:
 
-- Fixture: `AGENT-BROWSER` project as `codex@example.com`. The admin states
-  needed a local-only `admin.users.manage` global grant for codex (inserted
-  into `user_grants`, same pattern as the existing `catalog.edit` grant —
-  re-grant after any DB reset).
+- Fixture: `AGENT-BROWSER` project as `codex@example.com`. The
+  `catalog.edit` + `admin.users.manage` global grants are seeded by the
+  fixture itself since the Phase 6 hermeticity work (2026-07-17) — no
+  hand-granting or post-reset repair needed.
 - Project-tab states click `Close` first: the fixture's dirty draft pops the
   "Recovered draft found" modal on every load (captured once as its own
   state).
@@ -99,8 +99,9 @@ The drift, concretely:
 
 ## Follow-up
 
-Consolidation is planned and tracked in
-`planning/refactor/typography-consolidation/` (PRD with the canonical
-role→variant map, tracking/weight tokens, off-scale fixes, CI enforcement;
-this audit's sweep is the regression check — target ≤ ~25 variants, zero
-OFF-SCALE rows).
+Consolidation is COMPLETE (2026-07-17) — see
+`planning/archive/dated/2026-07-17/typography-consolidation/` (REPORT-after.md: 29 variants,
+zero off-scale, weights {400,500,600,700}, single 0.05em caps tracking).
+The sweep is now contract-enforced via `make typography-eval` and the
+scheduled `typography-eval.yml` workflow; the state manifest lives in
+`frontend/scripts/font-audit-states.mjs`.

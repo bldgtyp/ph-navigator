@@ -4,7 +4,7 @@
 # `cd <subdir> && uv run …` or `cd <subdir> && pnpm …` so it never assumes
 # the caller's working directory. See context/environment-setup.md §6.
 
-.PHONY: help setup sync dev backend frontend agent-browser-ready agent-browser-check agent-shot agent-browser-cleanup db db-up db-down db-wait db-reset db-reset-dev \
+.PHONY: help setup sync dev backend frontend agent-browser-ready agent-browser-check agent-shot agent-browser-cleanup typography-eval db db-up db-down db-wait db-reset db-reset-dev \
         object-store-up object-store-init object-store-down \
         db-create-test db-migrate-test \
         migrate makemigration test test-backend test-frontend coverage typecheck \
@@ -97,6 +97,10 @@ agent-shot: ## Screenshot a route with the self-cleaning Playwright helper. Args
 
 agent-browser-cleanup: ## Reap orphaned MCP browser tooling + stale profiles (never touches real browsers)
 	cd frontend && node scripts/agent-browser-cleanup.mjs $(if $(DRY),--dry-run,)
+
+typography-eval: agent-browser-ready ## Rendered typography sweep + contract evaluator (see frontend/scripts/typography-rendered-contract.json)
+	cd frontend && node scripts/font-audit-sweep.mjs
+	cd frontend && node scripts/font-audit-eval.mjs
 
 # ─────────────── database ───────────────
 

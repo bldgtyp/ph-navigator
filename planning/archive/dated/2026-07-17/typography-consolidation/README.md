@@ -2,7 +2,7 @@
 
 - DATE: 2026-07-17
 - TIME: 12:38
-- STATUS: Active
+- STATUS: ✅ Complete 2026-07-17 (55 → 29 rendered variants; source debt 0; both enforcement layers live)
 - AUTHOR: Claude (Fable 5) with Ed May
 - REVISED: 2026-07-17 afternoon ET by Codex
 - SCOPE: Site-wide CSS/typography consolidation driven by the 2026-07-17

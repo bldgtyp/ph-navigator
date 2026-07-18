@@ -32,8 +32,8 @@
   background: color-mix(in oklab, var(--bg-card) 42%, transparent);
   color: var(--text-secondary);
   font-size: var(--fs-sm);
-  font-weight: 600;
-  letter-spacing: 0;
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-normal);
   pointer-events: none;
 }
 

@@ -63,7 +63,10 @@ Source of truth is `styles/tokens.css` (+ `styles/brand/tokens.css`). Intent:
 |-------|--------|---------|
 | **Brand palette** (L1) | `--accent`, `--accent-dark/-light/-text`, `--highlight*`, `--bg-page/-elev/-card`, `--border-subtle/-card/-strong`, `--text-primary/-secondary/-muted`, `--svg-line-*`, `--svg-fill-dot`, `--svg-text`, `--ease` | brand-level color, surfaces, borders, text, blueprint SVG lines |
 | **Spacing** | `--space-2 … --space-48` (px-named, 2px base) | margins, padding, gaps |
-| **Type size** | `--fs-2xs … --fs-3xl` (8-step, rem) | `font-size`. Intentional literals: 13px table body, em sizes |
+| **Type size** | `--fs-2xs … --fs-3xl` (8-step, rem), `--data-table-font-size` (13px table body), semantic exceptions `--fs-display`, `--fs-display-sm`, `--fs-canvas-annotation` | `font-size` — component CSS uses these tokens only, never px/em/rem/calc/clamp literals (see [Typography rules](#typography-rules)) |
+| **Type weight** | `--fw-regular/-medium/-semibold/-bold` (400/500/600/700) | `font-weight` — no numeric literals; 550/650 are abolished |
+| **Type tracking** | `--tracking-normal` (0), `--tracking-caps` (0.05em) | `letter-spacing` — caps UI text pairs `text-transform: uppercase` with `--tracking-caps` |
+| **Type line-height** | `--lh-solid/-tight/-heading/-ui/-body` (1/1.15/1.2/1.25/1.5) | `line-height` — no new literal values |
 | **Radius** | `--radius-2xs/xs/sm/md/lg/xl/pill`, exact active steps `--radius-7/-9`, `--phn-radius`, `--phn-control-radius` | `border-radius` |
 | **Shadow** | `--shadow-elev-1/2/3`, `--shadow-popover`, `--shadow-hud-1/2/3`, exact feature/shared shadows, `--phn-shadow` | `box-shadow` |
 | **Z-index** | `--z-base`, `--z-base-elevated`, `--z-sticky`, `--z-dropdown`, `--z-modal`, `--z-tooltip` | stacking (contract enforced by `check:z-index`) |
@@ -76,6 +79,54 @@ Source of truth is `styles/tokens.css` (+ `styles/brand/tokens.css`). Intent:
 
 Fonts: brand sets `--font-primary` (Outfit) but **Layer 2 overrides it to
 Geist** for body + tables; `--font-mono` is Geist Mono.
+
+---
+
+## Typography rules
+
+The app renders exactly two families — Geist (content) and Geist Mono
+(chrome, labels, data, actions) — on the 8-step `--fs-*` scale. Roles, the
+target variant budget, and the migration plan live in
+`planning/archive/dated/2026-07-17/typography-consolidation/` (PRD + TYPOGRAPHY-CONTRACT);
+these are the always-true authoring rules:
+
+1. **Tokens only.** `font-family`, `font-size`, `font-weight`,
+   `letter-spacing`, and `line-height` in component CSS take only
+   `var(--font-*)`, `var(--fs-*)`, `var(--fw-*)`, `var(--tracking-*)`,
+   `var(--lh-*)` (or `inherit` where the parent deliberately owns the
+   complete role). No `px`/`em`/`rem`/`calc()`/`clamp()` font-size literals —
+   em-of-em compounding is what produced the audit's off-scale sizes.
+2. **`font:` shorthand is banned** except `font: inherit` — shorthand hides
+   family/size/weight/line-height from focused review.
+3. **Uppercase UI text** pairs `text-transform: uppercase` with
+   `var(--tracking-caps)`; everything else uses normal tracking.
+4. **Roles, not places.** Shared owners (`base.css`, `modals.css`,
+   `DataTable.css`, `shared/ui`) compose typography roles; feature CSS picks
+   an approved role and never restyles a shared primitive's typography. A
+   button in a modal renders identically to the same-tier button on a page.
+5. **No typography via React inline `style`** or library presentation props
+   (`fontSize` etc.). Unavoidable chart/canvas adapters route through named
+   tokens plus the exception registry
+   (`scripts/typography-exceptions.json` — stable id + fingerprint +
+   reason; the guard rejects unused/duplicate entries).
+6. **Deliberate off-scale roles are named tokens**, not literals:
+   `--fs-display` / `--fs-display-sm` (auth/page hero display type) and
+   `--fs-canvas-annotation` (10px labels annotating a technical drawing).
+
+`check:typography` enforces all of this (CSS via a real CSS parser, TS/TSX
+entry points via fingerprinting), and runs **in native zero-debt mode**: the
+migration baseline (`scripts/typography-baseline.json`) was emptied when the
+2026-07 consolidation retired all 436 fingerprints, so any typography
+literal now fails CI directly. (`--update-baseline` exists only for a future
+deliberate migration; never use it to bless new debt.)
+
+The rendered half of the control is `make typography-eval`: a 22-state
+computed-style sweep evaluated against
+`scripts/typography-rendered-contract.json` (families, weights, tracking,
+token-mapped sizes, role budgets, modal-role reuse, 29-variant ceiling —
+down from the 55-variant 2026-07-17 audit baseline). It runs on a scheduled/
+manual GitHub Actions workflow (`typography-eval.yml`) and is the required
+local closeout gate for typography-affecting work.
 
 ---
 
@@ -168,6 +219,7 @@ cascade does not move, and verify in the browser.
 | `check:sizes` | `.ts/.tsx/.css` ≤ 500 lines unless line 1 has `@size-exception` |
 | `check:z-index` | raw `z-index` integers must use the `--z-*` scale |
 | `check:shape` | feature-package file shape |
+| `check:typography` | typography comes from the token vocabulary or `inherit`; zero-debt (empty baseline — see [Typography rules](#typography-rules)) |
 
 ---
 

@@ -28,8 +28,8 @@
   bottom: calc(100% + 8px);
   color: var(--bg-card);
   font-family: var(--font-primary);
-  font-size: 11px;
-  line-height: 1.2;
+  font-size: var(--fs-xs);
+  line-height: var(--lh-heading);
   padding: 4px 7px;
   transform: translate(var(--canvas-hint-tooltip-x, -50%), 2px);
   white-space: nowrap;

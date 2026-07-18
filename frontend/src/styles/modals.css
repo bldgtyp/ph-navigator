@@ -18,9 +18,10 @@
 
 .modal-header h2 {
   margin: 0;
-  font-size: var(--fs-2xl);
-  font-weight: 600;
-  letter-spacing: 0;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-normal);
+  line-height: var(--lh-heading);
 }
 
 .modal-header-actions {

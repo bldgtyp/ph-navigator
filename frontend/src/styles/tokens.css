@@ -126,9 +126,9 @@
   --data-table-linked-record-bg: rgb(233 238 249);
   --font-primary: "Geist", sans-serif;
   --font-table: "Geist", sans-serif;
-  /* Type scale (rem). Consolidates the prior ~40 ad-hoc font-sizes onto
-     8 steps; px font-sizes (badges, 13px table body) and em sizes are
-     intentional and left as literals. */
+  /* Type scale (rem). 8 steps — the only font sizes allowed in component
+     CSS (via var()), plus the named semantic exceptions below. Enforced by
+     check:typography (see planning/archive/dated/2026-07-17/typography-consolidation). */
   --fs-2xs: 0.68rem;
   --fs-xs: 0.72rem;
   --fs-sm: 0.78rem;
@@ -137,6 +137,37 @@
   --fs-xl: 1.1rem;
   --fs-2xl: 1.25rem;
   --fs-3xl: 1.55rem;
+  /* Named semantic size exceptions — roles a scale step cannot express.
+     Display type for the auth/page hero h1 (PRD D2) and the 10px labels
+     that annotate a technical drawing rather than UI text (PRD D3). */
+  --fs-display: clamp(2rem, 5vw, 3.1rem);
+  --fs-display-sm: clamp(1.9rem, 4vw, 2.75rem);
+  --fs-canvas-annotation: 10px;
+  /* Canvas annotation labels pin exact text-box geometry (absolute-
+     positioned over a drawing), so the role owns its line height too. */
+  --lh-canvas-annotation: 14px;
+  /* Micro letterform chrome: icon-internal labels (attachment doc thumb
+     "PDF") and the sun-study month-rail ticks. */
+  --fs-icon-badge: 9px;
+  /* Icon-only buttons collapse their line box so the glyph centers. */
+  --lh-icon-collapse: 0;
+  /* Font weights. 550/650 are abolished (→ 500/600); component CSS uses
+     these tokens, never numeric literals. */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  /* Tracking. Uppercase UI text pairs text-transform: uppercase with
+     --tracking-caps; everything else is normal tracking. */
+  --tracking-normal: 0;
+  --tracking-caps: 0.05em;
+  /* Line-height roles, confirmed against the 2026-07-17 rendered/source
+     inventory (dominant literals: 1, 1.15, 1.2, 1.25, 1.5). */
+  --lh-solid: 1;
+  --lh-tight: 1.15;
+  --lh-heading: 1.2;
+  --lh-ui: 1.25;
+  --lh-body: 1.5;
   /* Readable text on an --accent-filled surface (active lens-bar button,
      primary buttons). Light-theme app, so a fixed white reads correctly
      on the teal --accent; revisit if dark theme is ever enabled. */

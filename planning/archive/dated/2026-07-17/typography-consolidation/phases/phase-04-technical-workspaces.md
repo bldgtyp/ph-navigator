@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-17
 TIME: afternoon ET
-STATUS: Not started
+STATUS: ✅ Done 2026-07-17 (all 115 owner fingerprints retired; baseline 254 → 139 decls; D3/D4 applied; make ci green)
 AUTHOR: Codex
 SCOPE: Apertures, envelope, shared canvas/dimension chrome, element sidebar,
   and attachment typography

@@ -48,7 +48,7 @@
 
 #weather-picker .climate-picker-toolbar .modal-subtitle {
   padding: var(--space-4) 0 0;
-  line-height: 1.55;
+  line-height: var(--lh-body);
 }
 
 .climate-picker-filter.autocomplete-select {
@@ -60,8 +60,8 @@
 .climate-picker-filter .autocomplete-select-label {
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
-  font-weight: 600;
-  letter-spacing: 0.09em;
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
   color: var(--text-secondary);
 }
@@ -218,8 +218,8 @@
 
 .climate-picker-row-name {
   font-size: var(--fs-sm);
-  font-weight: 600;
-  line-height: 1.25;
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-ui);
   overflow-wrap: anywhere;
 }
 
@@ -266,7 +266,7 @@
 #weather-picker .climate-picker-preview p {
   margin: 0;
   font-size: var(--fs-sm);
-  line-height: 1.45;
+  line-height: var(--lh-body);
 }
 
 .climate-picker-actions {
@@ -319,5 +319,5 @@
 
 .climate-upload-slot-label {
   min-width: 12rem;
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
 }

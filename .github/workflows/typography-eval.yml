@@ -1,0 +1,57 @@
+# Rendered typography-contract evaluation (typography-consolidation Phase 6).
+#
+# Boots the full local stack hermetically (Postgres + MinIO via docker
+# compose, backend + frontend via `make agent-browser-ready`, which also
+# seeds the AGENT-BROWSER fixture user/project/grants), runs the 22-state
+# computed-style sweep, and evaluates it against the checked-in contract
+# (frontend/scripts/typography-rendered-contract.json).
+#
+# Scheduled + manual only — the blocking every-PR control is the static
+# `check:typography` guard inside `pnpm run check:all` (ci.yml). Promote
+# this job into required PR CI only after its runtime proves reproducible
+# (see planning/archive/dated/2026-07-17/typography-consolidation/).
+name: Typography Eval
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 6 * * 1" # weekly, Monday 06:17 UTC
+
+jobs:
+  typography-eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install Python
+        run: uv python install 3.11
+      - name: Sync backend dependencies
+        run: cd backend && uv sync --locked
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Install frontend dependencies
+        run: cd frontend && pnpm install --frozen-lockfile
+      - name: Install Playwright Chromium
+        run: cd frontend && pnpm exec playwright install --with-deps chromium
+      - name: Sweep + evaluate rendered typography
+        run: make typography-eval
+      - name: Aggregate report
+        if: always()
+        run: cd frontend && node scripts/font-audit-aggregate.mjs --out working/font-audit/REPORT.md
+      - name: Upload sweep artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: typography-eval-${{ github.run_id }}
+          path: |
+            frontend/working/font-audit/
+          retention-days: 30

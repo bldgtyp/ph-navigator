@@ -16,7 +16,8 @@
 }
 
 .admin-page__heading h1 {
-  font-size: var(--fs-lg, 1.25rem);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
   margin: 0;
 }
 
@@ -35,7 +36,7 @@
 }
 
 .admin-users-table th {
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   color: var(--text-secondary);
 }
 
@@ -50,7 +51,7 @@
   padding: var(--space-2) var(--space-10);
   border-radius: var(--radius-pill);
   font-size: var(--fs-xs);
-  font-weight: 600;
+  font-weight: var(--fw-medium);
   border: 1px solid var(--border-subtle);
   color: var(--text-secondary);
 }
@@ -127,7 +128,7 @@
 }
 
 .admin-audit-action {
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   font-size: var(--fs-sm);
 }
 

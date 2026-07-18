@@ -38,7 +38,7 @@
   color: var(--text-secondary);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
 }
 
@@ -115,7 +115,7 @@
   color: var(--text-muted);
   font-size: var(--fs-xs);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tracking-caps);
 }
 
 .climate-location-list ul {
@@ -206,7 +206,7 @@
   color: var(--text-muted);
   font-family: var(--font-mono);
   font-size: var(--fs-2xs);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
 }
 
@@ -224,7 +224,7 @@
 .climate-table caption {
   text-align: left;
   padding-bottom: var(--space-8);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
 }
 
 .climate-table-unit {
@@ -232,7 +232,7 @@
   color: var(--text-muted);
   font-family: var(--font-mono);
   font-size: var(--fs-2xs);
-  font-weight: 400;
+  font-weight: var(--fw-regular);
 }
 
 .climate-table th,
@@ -277,11 +277,20 @@
   margin: 0;
 }
 
+/* Recharts emits SVG/positioned text that cannot take our classes; size
+   its tick, tooltip, and legend text through the library's own hooks so
+   chart typography stays on the token scale (no inline fontSize props). */
+.climate-chart .recharts-cartesian-axis-tick-value,
+.climate-chart .recharts-default-tooltip,
+.climate-chart .recharts-legend-wrapper {
+  font-size: var(--fs-sm);
+}
+
 .climate-chart figcaption {
   margin-bottom: var(--space-8);
   color: var(--text-secondary);
   font-size: var(--fs-sm);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
 }
 
 /* ResponsiveContainer fills this fixed-height canvas; recharts needs a

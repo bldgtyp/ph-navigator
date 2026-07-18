@@ -97,18 +97,17 @@ function MonthlyLineChart({
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={rows} margin={{ top: 8, right: 12, bottom: 0, left: -8 }}>
             <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
-            <XAxis dataKey="month" stroke="var(--chart-axis)" fontSize={12} tickMargin={6} />
-            <YAxis stroke="var(--chart-axis)" fontSize={12} width={44} />
+            <XAxis dataKey="month" stroke="var(--chart-axis)" tickMargin={6} />
+            <YAxis stroke="var(--chart-axis)" width={44} />
             <Tooltip
               formatter={(value) => formatTooltipValue(value, tooltipFractionDigits)}
               contentStyle={{
                 background: "var(--bg-card)",
                 border: "1px solid var(--chart-grid)",
                 borderRadius: "var(--phn-radius)",
-                fontSize: "0.8rem",
               }}
             />
-            <Legend wrapperStyle={{ fontSize: "0.78rem" }} />
+            <Legend />
             {series.map((line) => (
               <Line
                 key={line.key}

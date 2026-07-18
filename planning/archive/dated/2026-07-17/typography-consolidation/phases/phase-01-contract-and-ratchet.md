@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-17
 TIME: afternoon ET
-STATUS: Not started
+STATUS: ✅ Done 2026-07-17 (D1–D5 defaults adopted; guard blocking in check:all; baseline 436 decls / 435 fingerprints; make ci green)
 AUTHOR: Codex
 SCOPE: Typography tokens, canonical authoring rules, static inventory, and
   blocking no-new-debt CI ratchet

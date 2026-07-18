@@ -21,14 +21,14 @@
 .project-header h1 {
   margin: 0;
   color: var(--text-primary);
-  font-size: clamp(2rem, 5vw, 3.1rem);
-  font-weight: 600;
-  line-height: 1.05;
-  letter-spacing: 0;
+  font-size: var(--fs-display);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-solid);
+  letter-spacing: var(--tracking-normal);
 }
 
 .project-header h1 {
-  font-size: clamp(1.9rem, 4vw, 2.75rem);
+  font-size: var(--fs-display-sm);
 }
 
 .eyebrow {
@@ -36,8 +36,8 @@
   color: var(--accent-text);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
-  font-weight: 400;
-  letter-spacing: 0.15em;
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
 }
 
@@ -73,7 +73,7 @@
   gap: var(--space-8);
   color: var(--text-secondary);
   font-size: var(--fs-md);
-  font-weight: 400;
+  font-weight: var(--fw-regular);
 }
 
 .auth-form label span,
@@ -84,7 +84,7 @@
 .diff-target-control .autocomplete-select-label {
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
-  letter-spacing: 0.09em;
+  letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
 }
 
@@ -122,7 +122,7 @@ a:focus-visible {
 
 .project-form textarea {
   resize: vertical;
-  line-height: 1.45;
+  line-height: var(--lh-body);
 }
 
 .autocomplete-select {
@@ -217,7 +217,7 @@ a:focus-visible {
 
 .autocomplete-select-listbox [role="option"][aria-selected="true"] {
   color: var(--accent-text);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
 }
 
 .autocomplete-select-listbox [role="option"][aria-disabled="true"] {
@@ -262,7 +262,7 @@ a:focus-visible {
 .autocomplete-select-option-text small {
   color: var(--text-secondary);
   font-size: var(--fs-xs);
-  font-weight: 400;
+  font-weight: var(--fw-regular);
 }
 
 .autocomplete-select.is-compact {
@@ -306,7 +306,7 @@ a:focus-visible {
   align-items: center;
   gap: var(--space-8);
   font-family: var(--font-primary);
-  letter-spacing: 0;
+  letter-spacing: var(--tracking-normal);
   text-transform: none;
 }
 
@@ -346,9 +346,10 @@ a:focus-visible {
   color: var(--text-primary);
   font-family: var(--font-mono);
   font-size: var(--fs-sm);
-  font-weight: 400;
-  letter-spacing: 0.06em;
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--tracking-caps);
   text-decoration: none;
+  text-transform: uppercase;
 }
 
 .breadcrumbs {
@@ -430,8 +431,8 @@ a:focus-visible {
   color: var(--text-secondary);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
-  font-weight: 400;
-  letter-spacing: 0.05em;
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--tracking-caps);
   text-decoration: none;
   text-transform: uppercase;
 }
@@ -523,7 +524,7 @@ a:focus-visible {
   margin: var(--space-2) var(--space-4) var(--space-4);
   color: var(--text-primary);
   font-size: var(--fs-md);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
 }
 
 .account-menu-panel .text-button {
@@ -593,11 +594,12 @@ a:focus-visible {
   border: 0;
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: var(--fs-2xs);
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  line-height: 1;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tracking-caps);
+  line-height: var(--lh-solid);
   min-height: 32px;
+  text-transform: uppercase;
   min-width: 32px;
   padding: 0;
   transition: color 0.16s var(--ease);
@@ -724,7 +726,7 @@ a:focus-visible {
 .status-heading h2 {
   margin: 0;
   font-size: var(--fs-xl);
-  line-height: 1.2;
+  line-height: var(--lh-heading);
 }
 
 .status-heading p {
@@ -757,14 +759,14 @@ a:focus-visible {
 .diff-table h3 {
   margin: 0 0 var(--space-8);
   color: var(--text-primary);
-  font-weight: 600;
-  letter-spacing: 0;
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-normal);
 }
 
 .empty-state h2,
 .tab-panel h2,
 .read-safe-panel h2 {
-  font-size: var(--fs-2xl);
+  font-size: var(--fs-xl);
 }
 
 .empty-state p,
@@ -778,7 +780,7 @@ a:focus-visible {
 .version-row span,
 .diff-table p {
   color: var(--text-secondary);
-  line-height: 1.5;
+  line-height: var(--lh-body);
 }
 
 .empty-state p,
@@ -848,7 +850,7 @@ a:focus-visible {
 
 .catalog-card > span:last-child {
   min-width: 0;
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   overflow-wrap: anywhere;
 }
 
@@ -876,14 +878,14 @@ a:focus-visible {
   margin: 0;
   color: var(--text-primary);
   font-size: var(--fs-lg);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
 }
 
 .project-section-heading span {
   color: var(--text-muted);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
 }
 
@@ -907,8 +909,8 @@ a:focus-visible {
   color: var(--text-muted);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
-  font-weight: 400;
-  letter-spacing: 0.08em;
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
 }
 
@@ -945,6 +947,12 @@ a:focus-visible {
 .project-name-link {
   color: var(--text-primary);
   text-decoration: none;
+}
+
+.project-row strong,
+.deleted-project-row strong,
+.project-name-link strong {
+  font-weight: var(--fw-semibold);
 }
 
 .project-name-link:hover {
@@ -1012,7 +1020,7 @@ a:focus-visible {
   color: var(--text-muted);
   font-family: var(--font-mono);
   font-size: var(--fs-2xs);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
 }
 
@@ -1101,7 +1109,7 @@ a:focus-visible {
   margin: 0;
   color: var(--text-primary);
   font-size: var(--fs-lg);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
 }
 
 .settings-section-heading {
@@ -1115,7 +1123,7 @@ a:focus-visible {
   color: var(--text-muted);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
 }
 
@@ -1172,7 +1180,7 @@ a:focus-visible {
   color: var(--text-muted);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
 }
 
@@ -1247,13 +1255,13 @@ a:focus-visible {
 
 .token-row strong {
   color: var(--text-primary);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
 }
 
 .token-row span {
   color: var(--text-secondary);
   font-size: var(--fs-sm);
-  line-height: 1.4;
+  line-height: var(--lh-body);
   overflow-wrap: anywhere;
 }
 
@@ -1274,7 +1282,7 @@ button {
   background: transparent;
   color: inherit;
   padding: var(--space-8) var(--space-14);
-  line-height: 1;
+  line-height: var(--lh-solid);
   transition:
     transform 0.16s var(--ease),
     border-color 0.16s var(--ease),
@@ -1296,8 +1304,8 @@ button:not([class]),
   color: #ffffff;
   font-family: var(--font-mono);
   font-size: var(--fs-sm);
-  font-weight: 400;
-  letter-spacing: 0.06em;
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--tracking-caps);
   text-decoration: none;
   text-transform: uppercase;
 }
@@ -1415,7 +1423,7 @@ button:not([class]):hover:not(:disabled),
   align-items: center;
   gap: var(--space-6);
   border-radius: var(--radius-pill);
-  line-height: 1;
+  line-height: var(--lh-solid);
   white-space: nowrap;
 }
 
@@ -1426,7 +1434,7 @@ button:not([class]):hover:not(:disabled),
 
 .chip--md {
   padding: 7px var(--space-12);
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 
 .chip--outline {
@@ -1457,9 +1465,9 @@ button:not([class]):hover:not(:disabled),
   display: block;
   font-family: var(--font-primary);
   font-size: var(--fs-sm);
-  font-weight: 400;
-  letter-spacing: 0;
-  line-height: 1.35;
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--tracking-normal);
+  line-height: var(--lh-ui);
   opacity: 0;
   padding: 7px 9px;
   pointer-events: none;
@@ -1490,7 +1498,7 @@ button:disabled {
   margin: var(--space-4) 0 0;
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--tracking-normal);
 }
 
 .project-title-row {
@@ -1506,7 +1514,7 @@ button:disabled {
   background: var(--phn-warning-bg);
   color: var(--phn-warning);
   font-family: var(--font-mono);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
 }
 
@@ -1524,7 +1532,7 @@ button:disabled {
   background: var(--bg-card);
   color: var(--accent-text);
   font-size: var(--fs-md);
-  line-height: 1;
+  line-height: var(--lh-solid);
   padding: 7px 12px;
   text-transform: none;
 }
@@ -1574,7 +1582,7 @@ button:disabled {
   padding: 9px 12px 8px;
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
-  letter-spacing: 0.05em;
+  letter-spacing: var(--tracking-caps);
   text-decoration: none;
   text-transform: uppercase;
 }
@@ -1584,7 +1592,7 @@ button:disabled {
   border-bottom: 2px solid var(--accent);
   background: transparent;
   color: var(--accent-text);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
 }
 
 .tabbar a.active:focus-visible {
@@ -1635,9 +1643,10 @@ button:disabled {
   flex: 0 0 auto;
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  line-height: 1.2;
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tracking-caps);
+  line-height: var(--lh-ui);
+  text-transform: uppercase;
   margin-bottom: -1px;
   min-height: auto;
   overflow: hidden;
@@ -1658,7 +1667,7 @@ button:disabled {
 .app-subtabs__tab[data-active="true"],
 .app-subtabs__tab[aria-selected="true"] {
   border-bottom-color: var(--accent);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   color: var(--accent-text);
 }
 
@@ -1709,10 +1718,11 @@ button:disabled {
   color: var(--text-secondary);
   font-family: inherit;
   font-size: var(--fs-sm);
-  font-weight: 500;
-  letter-spacing: 0;
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tracking-normal);
   margin-bottom: 0;
   padding: var(--space-4) var(--space-12);
+  text-transform: none;
 }
 
 .app-subtabs[data-variant="pills"] .app-subtabs__tab:hover {
@@ -1726,7 +1736,7 @@ button:disabled {
   background: var(--accent);
   border-color: var(--accent);
   color: #ffffff;
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
 }
 
 .app-subtabs[data-variant="pills"] .app-subtabs__actions {
@@ -1788,10 +1798,10 @@ button:disabled {
   display: grid;
   font-family: var(--font-primary);
   font-size: var(--fs-xs);
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   gap: var(--space-8);
   grid-template-columns: 16px minmax(0, 1fr) auto;
-  line-height: 1.25;
+  line-height: var(--lh-ui);
   padding: var(--space-8) var(--space-12);
   text-align: left;
   text-decoration: none;
@@ -1845,7 +1855,7 @@ button:disabled {
   color: var(--text-secondary);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
-  letter-spacing: 0.03em;
+  letter-spacing: var(--tracking-normal);
   white-space: nowrap;
 }
 
@@ -1861,7 +1871,7 @@ button:disabled {
 
 .app-menu__radio-item[aria-checked="true"] {
   color: var(--accent-text);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
 }
 
 .app-menu__radio-mark {
@@ -1882,7 +1892,7 @@ button:disabled {
 
 .app-menu__checkbox-item[aria-checked="true"] {
   color: var(--accent-text);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
 }
 
 .app-menu__checkbox-mark {

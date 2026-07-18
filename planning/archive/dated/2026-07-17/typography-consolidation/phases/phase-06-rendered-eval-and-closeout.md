@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-17
 TIME: afternoon ET
-STATUS: Not started
+STATUS: ✅ Done 2026-07-17 (evaluator + contract + hermetic fixture + workflow landed; 29/55 variants; REPORT-after.md written; PR-CI promotion decision deferred to Ed after 3 workflow runs)
 AUTHOR: Codex
 SCOPE: Hermetic rendered-contract evaluator, CI workflow, final visual audit,
   canonical docs reconciliation, and archive closeout

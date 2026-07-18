@@ -23,7 +23,7 @@ body {
   background: var(--bg-page);
   color: var(--text-primary);
   font-family: var(--font-primary);
-  font-weight: 400;
+  font-weight: var(--fw-regular);
   font-kerning: normal;
   font-feature-settings: "kern" 1;
   text-rendering: optimizeLegibility;
@@ -40,6 +40,15 @@ textarea {
   font: inherit;
 }
 
+/* Code/file literals render in the app mono family; without this the UA's
+   raw `monospace` stack leaks to the screen (2026-07-17 font audit #53). */
+code,
+kbd,
+samp,
+pre {
+  font-family: var(--font-mono);
+}
+
 input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="range"]),
 textarea {
   min-height: 34px;
@@ -48,7 +57,7 @@ textarea {
   background: var(--bg-input, var(--bg-card));
   color: var(--text-primary);
   font-size: var(--fs-md);
-  line-height: 1.25;
+  line-height: var(--lh-ui);
   padding: 7px 10px 7px 14px;
   outline: none;
   transition:

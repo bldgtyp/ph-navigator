@@ -1,7 +1,7 @@
 ---
 DATE: 2026-07-17
 TIME: afternoon ET
-STATUS: Not started
+STATUS: ✅ Done 2026-07-17 (all 65 shared-owner fingerprints retired; baseline 436 → 371 decls; D1/D2 applied; make ci green)
 AUTHOR: Codex
 SCOPE: Global resets, app shell, shared headings/buttons/forms/tabs/menus, and
   modal typography
