@@ -257,12 +257,6 @@
   grid-template-columns: minmax(min(240px, 100%), 1fr) repeat(3, minmax(112px, 176px));
 }
 
-/* The status cells carry their own interactions — don't let the row's
-   pointer cursor imply they toggle the record. */
-.documentation-record-summary .documentation-spec-cell {
-  cursor: default;
-}
-
 .documentation-record + .documentation-record {
   border-top: 1px solid var(--border-subtle);
 }
@@ -386,6 +380,7 @@ select.documentation-status-select {
 
 span.documentation-status-select {
   align-items: center;
+  cursor: default;
 }
 
 .documentation-status-select--needed,

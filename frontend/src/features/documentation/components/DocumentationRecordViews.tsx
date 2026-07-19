@@ -53,9 +53,10 @@ export function DocumentationRecordRow({
       <div
         className="documentation-record-summary"
         onClick={(event) => {
-          // Row-wide expand toggle, but leave the status controls (and the
-          // name button, which toggles itself) to handle their own clicks.
-          if ((event.target as HTMLElement).closest("button, select, label, a")) return;
+          // Row-wide expand toggle, except when the click lands on a status
+          // select (which changes its own value) or the name button (which
+          // toggles itself — guarding it avoids a double toggle).
+          if ((event.target as HTMLElement).closest(".documentation-status-select, button")) return;
           onToggle();
         }}
       >
@@ -275,11 +276,15 @@ export function AxisStatusCell<TValue extends string>({
       </div>
     );
   }
+  // A <div> (not <label>) wrapper: clicking the cell's non-select area should
+  // toggle the row's expansion, not get forwarded into the select. The select
+  // keeps its accessible name via aria-label.
   return (
-    <label className="documentation-cell documentation-spec-cell">
+    <div className="documentation-cell documentation-spec-cell">
       <span className="documentation-cell-label">{label}</span>
       <select
         className={statusClass}
+        aria-label={label}
         value={value}
         disabled={disabled}
         onChange={(event) => void onChange(event.target.value as TValue)}
@@ -290,7 +295,7 @@ export function AxisStatusCell<TValue extends string>({
           </option>
         ))}
       </select>
-    </label>
+    </div>
   );
 }
 
