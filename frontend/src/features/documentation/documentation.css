@@ -160,21 +160,26 @@
   gap: var(--space-20);
 }
 
-.documentation-section {
+.documentation-section-body {
+  background: color-mix(in oklab, var(--bg-page) 70%, var(--bg-card));
   border-top: 1px solid var(--border-subtle);
-  padding-top: var(--space-12);
+  margin: var(--space-12) calc(-1 * var(--space-12)) calc(-1 * var(--space-12));
+  padding: var(--space-16) var(--space-20) var(--space-20);
+}
+
+.documentation-section {
+  background: color-mix(in oklab, var(--bg-card) 88%, var(--bg-page));
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-12);
   scroll-margin-top: var(--space-24);
 }
 
 .documentation-section-header {
-  background: color-mix(in oklab, var(--bg-card) 82%, var(--bg-page));
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-elev-1);
   display: grid;
   gap: var(--space-12);
   grid-template-columns: minmax(0, 1fr) minmax(min(320px, 100%), 0.45fr) auto;
-  padding: var(--space-12);
+  padding: 0;
   position: sticky;
   top: var(--space-8);
   z-index: var(--z-sticky);
@@ -202,19 +207,19 @@
 }
 
 .documentation-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-10);
-}
-
-.documentation-group-header {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+  padding: var(--space-10);
+}
+
+.documentation-group-header {
   display: grid;
   gap: var(--space-12);
   grid-template-columns: minmax(0, 1fr) minmax(min(300px, 100%), 0.4fr);
-  padding: var(--space-10) var(--space-12);
 }
 
 .documentation-group-title {
