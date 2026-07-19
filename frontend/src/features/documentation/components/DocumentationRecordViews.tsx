@@ -19,7 +19,6 @@ import type {
 
 export function DocumentationRecordRow({
   projectId,
-  sectionKey,
   record,
   assetUrlById,
   canEdit,
@@ -32,7 +31,6 @@ export function DocumentationRecordRow({
   onOpenRecord,
 }: {
   projectId: string;
-  sectionKey: string;
   record: DocumentationRecord;
   assetUrlById: ReadonlyMap<string, AssetUrls>;
   canEdit: boolean;
@@ -46,12 +44,22 @@ export function DocumentationRecordRow({
 }) {
   const specNa = record.spec_status === "na";
   return (
-    <article className="documentation-record" data-spec-status={record.spec_status} role="listitem">
-      <div className="documentation-record-summary">
+    <article
+      className="documentation-record"
+      data-spec-status={record.spec_status}
+      data-expanded={expanded}
+      role="listitem"
+    >
+      <div
+        className="documentation-record-summary"
+        onClick={(event) => {
+          // Row-wide expand toggle, but leave the status controls (and the
+          // name button, which toggles itself) to handle their own clicks.
+          if ((event.target as HTMLElement).closest("button, select, label, a")) return;
+          onToggle();
+        }}
+      >
         <div className="documentation-record-main">
-          {sectionKey === "envelope" ? (
-            <MiniAssemblyStrip segmentCount={record.segment_ids.length} />
-          ) : null}
           <div className="documentation-record-label">
             <button
               type="button"
@@ -317,17 +325,6 @@ function EvidenceState({
   return (
     <span className="documentation-evidence-state documentation-evidence-state--attached">
       {assetIds.length > 0 ? `${assetIds.length} attached` : "Complete"}
-    </span>
-  );
-}
-
-function MiniAssemblyStrip({ segmentCount }: { segmentCount: number }) {
-  const bands = Math.max(1, Math.min(segmentCount, 5));
-  return (
-    <span className="documentation-assembly-strip" aria-label={`${segmentCount} assembly segments`}>
-      {Array.from({ length: bands }, (_, index) => (
-        <span key={index} />
-      ))}
     </span>
   );
 }

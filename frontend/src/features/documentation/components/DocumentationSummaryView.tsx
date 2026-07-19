@@ -1,4 +1,4 @@
-import { BookOpen, ChevronDown, ChevronRight, Link as LinkIcon } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { ProgressBar } from "../../../shared/ui";
@@ -111,11 +111,9 @@ export function DocumentationSummaryView({
     );
   };
   const toggleRecord = (record: DocumentationRecord) => {
-    setExpandedRecords((current) => setWithToggledValue(current, documentationRecordKey(record)));
-  };
-  const copyAnchor = async (anchor: string) => {
-    const nextUrl = `${window.location.origin}${window.location.pathname}${window.location.search}#${anchor}`;
-    await navigator.clipboard?.writeText(nextUrl);
+    // Only one record may be open at a time — clicking a record rolls up any other.
+    const key = documentationRecordKey(record);
+    setExpandedRecords((current) => (current.has(key) ? new Set() : new Set([key])));
   };
   const updateDatasheets = async (record: DocumentationRecord, nextAssetIds: string[]) => {
     await attachmentMutation.mutateAsync({ summary, record, axis: "datasheet", nextAssetIds });
@@ -191,7 +189,7 @@ export function DocumentationSummaryView({
                     </span>
                     <span id={`documentation-section-${section.key}`}>{section.title}</span>
                   </button>
-                  <AxisRollup counts={section.counts} compact />
+                  <AxisRollup counts={section.counts} />
                   <div className="documentation-section-actions">
                     <button
                       type="button"
@@ -201,15 +199,6 @@ export function DocumentationSummaryView({
                       onClick={() => setDirectionsSection(section)}
                     >
                       <BookOpen size={16} aria-hidden="true" />
-                    </button>
-                    <button
-                      type="button"
-                      className="icon-button"
-                      aria-label={`Copy ${section.title} link`}
-                      title={`Copy ${section.title} link`}
-                      onClick={() => void copyAnchor(section.anchor)}
-                    >
-                      <LinkIcon size={16} aria-hidden="true" />
                     </button>
                   </div>
                 </div>
@@ -295,19 +284,9 @@ function pluralCount(count: number, label: string): string {
   return `${count} ${label}${count === 1 ? "" : "s"}`;
 }
 
-function AxisRollup({
-  counts,
-  compact = false,
-}: {
-  counts: DocumentationAxisCounts;
-  compact?: boolean;
-}) {
+function AxisRollup({ counts }: { counts: DocumentationAxisCounts }) {
   return (
-    <div
-      className={
-        compact ? "documentation-rollup documentation-rollup--compact" : "documentation-rollup"
-      }
-    >
+    <div className="documentation-rollup">
       <AxisMeter label="Spec" done={counts.spec_done} total={counts.spec_total} />
       <AxisMeter label="Datasheets" done={counts.ds_done} total={counts.ds_total} />
       <AxisMeter label="Photos" done={counts.photo_done} total={counts.photo_total} />
@@ -463,7 +442,7 @@ function DocumentationGroupView({
           </span>
           <span id={groupId}>{group.title}</span>
         </button>
-        <AxisRollup counts={group.counts} compact />
+        <AxisRollup counts={group.counts} />
       </header>
       {expanded ? (
         <div id={groupBodyId}>
@@ -475,7 +454,6 @@ function DocumentationGroupView({
                 <DocumentationRecordRow
                   key={record.record_id}
                   projectId={projectId}
-                  sectionKey={sectionKey}
                   record={record}
                   assetUrlById={assetUrlById}
                   canEdit={canEdit}
