@@ -2,7 +2,7 @@ import { ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { errorMessage } from "../../../shared/lib/errors";
-import { Tooltip } from "../../../shared/ui";
+import { ProgressBar, Tooltip } from "../../../shared/ui";
 import type { ProjectDetail } from "../../projects/types";
 import {
   statusSummaryDestinationPath,
@@ -157,23 +157,12 @@ function SummaryCounts({ counts }: { counts: StatusSummaryCounts }) {
         </span>
         <span className="record-status-attention">{attention} need attention</span>
       </div>
-      <ProgressBar value={progress} label={`${resolved} of ${total} records resolved`} />
+      <ProgressBar
+        className="record-status-progress"
+        value={progress}
+        label={`${resolved} of ${total} records resolved`}
+      />
     </div>
-  );
-}
-
-function ProgressBar({ value, label }: { value: number; label: string }) {
-  return (
-    <span
-      className="record-status-progress"
-      role="progressbar"
-      aria-label={label}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={Math.round(value)}
-    >
-      <span style={{ width: `${value}%` }} />
-    </span>
   );
 }
 
@@ -188,7 +177,11 @@ function GroupCounts({ counts }: { counts: StatusSummaryCounts }) {
       <span className="record-status-group-progress-copy">
         {resolved} / {total} resolved
       </span>
-      <ProgressBar value={(resolved / total) * 100} label={`${resolved} of ${total} resolved`} />
+      <ProgressBar
+        className="record-status-progress"
+        value={(resolved / total) * 100}
+        label={`${resolved} of ${total} resolved`}
+      />
     </span>
   );
 }

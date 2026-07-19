@@ -237,6 +237,7 @@ export function DocumentationEvidenceAttachmentControl({
             : onPhotoChange(record, nextAssetIds)
         }
         assetUrlById={assetUrlById}
+        showInlineEmptyButton
         variant={variant}
       />
     );

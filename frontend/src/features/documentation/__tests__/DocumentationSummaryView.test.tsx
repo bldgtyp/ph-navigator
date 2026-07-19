@@ -61,8 +61,8 @@ describe("DocumentationPage", () => {
       "aria-expanded",
       "false",
     );
-    expect(screen.getAllByText(hasTextContent("Spec 2/3"))[0]).toBeVisible();
-    expect(screen.getAllByText(hasTextContent("Photos 2/3"))[0]).toBeVisible();
+    expect(screen.getAllByRole("progressbar", { name: "Spec 2/3" })[0]).toBeVisible();
+    expect(screen.getAllByRole("progressbar", { name: "Photos 2/3" })[0]).toBeVisible();
 
     await user.click(screen.getByRole("button", { name: "How to photograph - Equipment" }));
     const directionsDialog = await screen.findByRole("dialog", {
@@ -374,8 +374,4 @@ function jsonResponse(body: unknown, status = 200): Response {
     status,
     headers: { "Content-Type": "application/json" },
   });
-}
-
-function hasTextContent(text: string) {
-  return (_content: string, node: Element | null) => node?.textContent === text;
 }

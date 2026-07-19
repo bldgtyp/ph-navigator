@@ -58,7 +58,7 @@
   background: var(--border-subtle);
 }
 
-.record-status-progress > span {
+.record-status-progress > .progress-bar__fill {
   display: block;
   height: 100%;
   border-radius: inherit;

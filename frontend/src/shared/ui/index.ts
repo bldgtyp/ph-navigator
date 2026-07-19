@@ -11,6 +11,7 @@ export * from "./BlockingProgressOverlay";
 export * from "./DialogActions";
 export * from "./InlineHeaderNameEditor";
 export * from "./ModalDialog";
+export * from "./ProgressBar";
 export * from "./ShellMessage";
 export * from "./TopbarUnitToggle";
 export * from "./WorkspaceTopbar";

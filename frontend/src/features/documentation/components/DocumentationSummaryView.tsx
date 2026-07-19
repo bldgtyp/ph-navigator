@@ -1,6 +1,7 @@
 import { BookOpen, ChevronDown, ChevronRight, Link as LinkIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { ProgressBar } from "../../../shared/ui";
 import type { AssetUrls } from "../../assets/types";
 import type { ProjectDetail } from "../../projects/types";
 import {
@@ -307,16 +308,30 @@ function AxisRollup({
         compact ? "documentation-rollup documentation-rollup--compact" : "documentation-rollup"
       }
     >
-      <span className="chip chip--sm documentation-axis-chip">
-        Spec {completeCountLabel(counts.spec_done, counts.spec_total)}
-      </span>
-      <span className="chip chip--sm documentation-axis-chip">
-        Datasheets {completeCountLabel(counts.ds_done, counts.ds_total)}
-      </span>
-      <span className="chip chip--sm documentation-axis-chip">
-        Photos {completeCountLabel(counts.photo_done, counts.photo_total)}
-      </span>
+      <AxisMeter label="Spec" done={counts.spec_done} total={counts.spec_total} />
+      <AxisMeter label="Datasheets" done={counts.ds_done} total={counts.ds_total} />
+      <AxisMeter label="Photos" done={counts.photo_done} total={counts.photo_total} />
     </div>
+  );
+}
+
+function AxisMeter({ label, done, total }: { label: string; done: number; total: number }) {
+  const complete = total === 0 || done >= total;
+  const zero = total > 0 && done === 0;
+  const progress = total > 0 ? (done / total) * 100 : 100;
+  const count = completeCountLabel(done, total);
+  return (
+    <span className="documentation-axis-meter" data-complete={complete} data-zero={zero}>
+      <span className="documentation-axis-meter-copy">
+        <span className="documentation-axis-meter-label">{label}</span>{" "}
+        <span className="documentation-axis-meter-count">{count}</span>
+      </span>
+      <ProgressBar
+        className="documentation-axis-meter-track"
+        value={progress}
+        label={`${label} ${count}`}
+      />
+    </span>
   );
 }
 

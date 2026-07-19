@@ -1,6 +1,6 @@
 ---
 DATE: 2026-07-19
-TIME: 00:05 EDT
+TIME: 00:29 EDT
 STATUS: In Progress
 AUTHOR: Codex
 SCOPE: Current state and handoff for the Documentation tab Option 1A redesign.
@@ -15,11 +15,12 @@ RELATED:
 
 ## Current State
 
-Phase 03 implemented. The project-document schema is v7 with persisted
+Phase 04 implemented. The project-document schema is v7 with persisted
 Datasheet/Photo evidence statuses. The Documentation page now loads as an
 overview-first disclosure shell with compact Spec/Datasheet/Photo status
 selects, expanded-row evidence controls, Datasheet and Photo upload/delete
-paths, and read-only viewer rows.
+paths, read-only viewer rows, tokenized meter styling, responsive section/group
+layouts, and visible expanded-row drop zones.
 
 Reviewed:
 
@@ -28,12 +29,18 @@ Reviewed:
   Option `#1a`;
 - `frontend/src/features/documentation/components/DocumentationSummaryView.tsx`;
 - `frontend/src/features/documentation/components/DocumentationRecordViews.tsx`;
+- `frontend/src/features/documentation/documentation-modals.css`;
+- `frontend/src/features/documentation/documentation-records.css`;
 - `frontend/src/features/documentation/lib.ts`;
 - `frontend/src/features/documentation/types.ts`;
 - `frontend/src/features/documentation/documentation.css`;
 - `frontend/src/features/documentation/hooks.ts`;
 - `frontend/src/features/documentation/__tests__/DocumentationSummaryView.test.tsx`;
 - `frontend/src/features/documentation/__tests__/DocumentationSummaryView.fixtures.ts`;
+- `frontend/src/features/project_status/components/RecordStatusSummary.tsx`;
+- `frontend/src/features/project_status/status_summary.css`;
+- `frontend/src/shared/ui/ProgressBar.tsx`;
+- `frontend/src/shared/ui/index.ts`;
 - `context/ui/pages/documentation-tab.md`;
 - `planning/archive/dated/2026-07-19/documentation-tab/`.
 
@@ -45,8 +52,8 @@ Reviewed:
 | 01 - Evidence status schema | Complete | Schema v7 adds/backfills Datasheet/Photo status, rollups use persisted status, uploads auto-complete |
 | 02 - Progressive disclosure shell | Complete | Overview header, local section/group/record expansion, hash expansion, compact rows |
 | 03 - Axis selects and evidence writes | Complete | Spec/Datasheet/Photo pill selects, status writes, Datasheet/Photo attachments, viewer read-only |
-| 04 - Visual polish and responsive behavior | Planned | Tokenized CSS, meters, pills, drop zones, desktop/mobile checks |
-| 05 - Verification and docs | Planned | RTL, browser smoke, docs-pass, Graphify |
+| 04 - Visual polish and responsive behavior | Complete | Tokenized meters, responsive section/group/record grids, visible expanded drop zones, desktop/mobile browser geometry checks |
+| 05 - Verification and docs | Planned | Final RTL/browser/doc verification, Graphify, archive cleanup |
 
 ## Decisions So Far
 
@@ -77,8 +84,9 @@ None currently. The three initial contract questions were resolved by Ed on
 
 ## Next Step
 
-Start Phase 04 by polishing the visual density, responsive behavior, meters,
-pills, and evidence drop-zone treatment against Option 1A.
+Start Phase 05 by running the final verification/docs sweep, reconciling packet
+docs, and preparing the active packet for archive once all acceptance evidence is
+current.
 
 ## Verification
 
@@ -86,6 +94,21 @@ pills, and evidence drop-zone treatment against Option 1A.
 - `pnpm exec tsc -b --pretty false` passed.
 - `git diff --check` passed.
 - `pnpm exec vitest run src/features/documentation/__tests__/DocumentationSummaryView.test.tsx` passed.
+- `pnpm exec vitest run src/features/documentation/__tests__/DocumentationSummaryView.test.tsx` passed again after Phase 04.
+- `pnpm exec tsc -b --pretty false` passed again after Phase 04.
+- `make frontend-dev-check` passed again after Phase 04; eslint still reports
+  the pre-existing Fast Refresh warnings in Apertures, Climate, and shared
+  DataTable files.
+- `make agent-browser-check` passed with frontend `:5173` and backend `:8000`
+  ready.
+- Live browser check on project `437c8d56-ac12-44fc-99a9-ff1e6055792a` with
+  fixture record `Documentation Verification Pump With Long Label` passed at
+  `1440x900` and `390x844`: no Documentation-page overflow, 15 semantic
+  progress bars with visible `.progress-bar__fill` elements, and two visible
+  expanded Datasheet/Photo `Drop files here` controls.
 - Phase 03 simplify pass completed with three review agents; concrete findings
   were fixed in shared status helpers, attachment controls, and test coverage.
-- `make frontend-dev-check` passed; eslint still reports the pre-existing Fast Refresh warnings in Apertures, Climate, and shared DataTable files.
+- Phase 04 simplify pass completed with three review agents; concrete findings
+  were fixed by exporting `ProgressBar` through `shared/ui`, making the
+  component styling class explicit, adding a stable progress-fill class, and
+  letting the shared component own value clamping.
