@@ -5,7 +5,7 @@ STATUS: Complete
 AUTHOR: Codex
 SCOPE: Apply PH-Navigator design-system styling to the Option 1A layout.
 RELATED:
-  - planning/refactor/documentation-page-redesign/PRD.md
+  - planning/archive/dated/2026-07-19/documentation-page-redesign/PRD.md
   - frontend/src/features/documentation/documentation.css
 ---
 

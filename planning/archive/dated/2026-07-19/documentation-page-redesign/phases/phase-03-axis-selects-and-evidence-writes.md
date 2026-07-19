@@ -5,7 +5,7 @@ STATUS: Complete
 AUTHOR: Codex
 SCOPE: Implement status-pill selects and expanded-row evidence write controls.
 RELATED:
-  - planning/refactor/documentation-page-redesign/PRD.md
+  - planning/archive/dated/2026-07-19/documentation-page-redesign/PRD.md
   - frontend/src/features/documentation/hooks.ts
   - frontend/src/features/documentation/components/DocumentationRecordViews.tsx
 ---

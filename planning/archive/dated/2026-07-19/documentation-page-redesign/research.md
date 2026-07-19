@@ -5,7 +5,7 @@ STATUS: Draft
 AUTHOR: Codex
 SCOPE: Current-state notes for the Documentation tab Option 1A redesign.
 RELATED:
-  - planning/refactor/documentation-page-redesign/README.md
+  - planning/archive/dated/2026-07-19/documentation-page-redesign/README.md
   - frontend/src/features/documentation/
   - planning/archive/dated/2026-07-19/documentation-tab/
 ---

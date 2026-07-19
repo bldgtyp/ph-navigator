@@ -5,7 +5,7 @@ STATUS: Complete
 AUTHOR: Codex
 SCOPE: Build the Option 1A section/group/record shell over the existing summary data.
 RELATED:
-  - planning/refactor/documentation-page-redesign/PLAN.md
+  - planning/archive/dated/2026-07-19/documentation-page-redesign/PLAN.md
   - frontend/src/features/documentation/components/DocumentationSummaryView.tsx
   - frontend/src/features/documentation/components/DocumentationRecordViews.tsx
 ---

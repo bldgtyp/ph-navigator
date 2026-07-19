@@ -5,7 +5,7 @@ STATUS: Complete
 AUTHOR: Codex
 SCOPE: Close out the Documentation page redesign with focused tests, browser evidence, and docs.
 RELATED:
-  - planning/refactor/documentation-page-redesign/PLAN.md
+  - planning/archive/dated/2026-07-19/documentation-page-redesign/PLAN.md
   - frontend/src/features/documentation/__tests__/DocumentationSummaryView.test.tsx
   - context/ui/pages/documentation-tab.md
 ---

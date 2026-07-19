@@ -5,8 +5,8 @@ STATUS: Complete
 AUTHOR: Codex
 SCOPE: Persist Datasheet/Photo evidence status so status can differ from attachment presence.
 RELATED:
-  - planning/refactor/documentation-page-redesign/PRD.md
-  - planning/refactor/documentation-page-redesign/STATUS.md
+  - planning/archive/dated/2026-07-19/documentation-page-redesign/PRD.md
+  - planning/archive/dated/2026-07-19/documentation-page-redesign/STATUS.md
   - backend/features/project_document/
   - frontend/src/features/documentation/types.ts
 ---

@@ -1,14 +1,14 @@
 ---
 DATE: 2026-07-19
 TIME: 00:34 EDT
-STATUS: In Progress
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Current state and handoff for the Documentation tab Option 1A redesign.
 RELATED:
-  - planning/refactor/documentation-page-redesign/README.md
-  - planning/refactor/documentation-page-redesign/PRD.md
-  - planning/refactor/documentation-page-redesign/PLAN.md
-  - planning/refactor/documentation-page-redesign/research.md
+  - planning/archive/dated/2026-07-19/documentation-page-redesign/README.md
+  - planning/archive/dated/2026-07-19/documentation-page-redesign/PRD.md
+  - planning/archive/dated/2026-07-19/documentation-page-redesign/PLAN.md
+  - planning/archive/dated/2026-07-19/documentation-page-redesign/research.md
 ---
 
 # Documentation Page Redesign Status
@@ -84,9 +84,7 @@ None currently. The three initial contract questions were resolved by Ed on
 
 ## Next Step
 
-All implementation phases are complete. Run the implement-loop final completion
-cleanup: reconcile final packet status, archive this packet under
-`planning/archive/`, update planning indexes, and commit the archive move.
+Archived by implement-loop final cleanup.
 
 ## Verification
 
@@ -104,4 +102,4 @@ cleanup: reconcile final packet status, archive this packet under
 - `context/ui/pages/documentation-tab.md` was updated to match the accepted
   persisted-status and overview/disclosure behavior.
 - Detailed per-phase evidence lives in the phase files under
-  `planning/refactor/documentation-page-redesign/phases/`.
+  `planning/archive/dated/2026-07-19/documentation-page-redesign/phases/`.
