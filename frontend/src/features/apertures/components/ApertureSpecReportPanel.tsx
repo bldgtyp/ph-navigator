@@ -72,7 +72,7 @@ type UseSiteTypeGroup = {
 const STATUSES: SpecificationStatus[] = ["missing", "question", "complete", "na"];
 
 const STATUS_LABEL: Record<SpecificationStatus, string> = {
-  missing: "Missing",
+  missing: "Needed",
   question: "Question",
   complete: "Complete",
   na: "N/A",
@@ -235,10 +235,12 @@ export function ApertureSpecReportPanel<TProduct extends ApertureSpecProduct>({
   const totalCount = visibleRows.length;
   const filterOptions: StatusFilterOption<ReportStatusKey>[] = [
     { value: "all", label: "All", count: totalCount },
-    { value: "missing", status: "missing", label: "Missing", count: statusCounts.missing },
-    { value: "question", status: "question", label: "Question", count: statusCounts.question },
-    { value: "complete", status: "complete", label: "Complete", count: statusCounts.complete },
-    { value: "na", status: "na", label: "N/A", count: statusCounts.na },
+    ...STATUSES.map((status) => ({
+      value: status,
+      status,
+      label: STATUS_LABEL[status],
+      count: statusCounts[status],
+    })),
   ];
   const columns = buildColumns({
     kind,

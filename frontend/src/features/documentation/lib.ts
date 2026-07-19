@@ -1,5 +1,7 @@
+import type { StatusSelectOption } from "../../shared/ui";
 import type {
   DocumentationAxisCounts,
+  DocumentationEvidenceStatus,
   DocumentationRecord,
   DocumentationSection,
   DocumentationSpecStatus,
@@ -14,6 +16,23 @@ export const SPEC_STATUS_LABELS: Record<DocumentationSpecStatus, string> = {
   na: "N/A",
   unknown: "Unknown",
 };
+
+export type DocumentationStatusOption<TValue extends string> = StatusSelectOption<TValue>;
+
+export const SPEC_STATUS_OPTIONS: Array<DocumentationStatusOption<DocumentationSpecStatus>> = [
+  { value: "needed", label: SPEC_STATUS_LABELS.needed, tone: "missing" },
+  { value: "question", label: SPEC_STATUS_LABELS.question, tone: "question" },
+  { value: "complete", label: SPEC_STATUS_LABELS.complete, tone: "complete" },
+  { value: "na", label: SPEC_STATUS_LABELS.na, tone: "na" },
+];
+
+export const EVIDENCE_STATUS_OPTIONS: Array<
+  DocumentationStatusOption<DocumentationEvidenceStatus>
+> = [
+  { value: "needed", label: "Needed", tone: "missing" },
+  { value: "complete", label: "Complete", tone: "complete" },
+  { value: "na", label: "N/A", tone: "na" },
+];
 
 export function allDocumentationAssetIds(sections: readonly DocumentationSection[]): string[] {
   const ids = new Set<string>();
@@ -34,18 +53,23 @@ export function sectionRecords(section: DocumentationSection): DocumentationReco
   return [...section.records, ...section.groups.flatMap((group) => group.records)];
 }
 
+export function documentationSpecStatusValue(record: DocumentationRecord): DocumentationSpecStatus {
+  return record.spec_status === "unknown" ? "needed" : record.spec_status;
+}
+
+export function documentationEvidenceStatusValue(
+  record: DocumentationRecord,
+  axis: "datasheet" | "photo",
+): DocumentationEvidenceStatus {
+  if (record.spec_status === "na") return "na";
+  return axis === "datasheet" ? record.datasheet_status : record.photo_status;
+}
+
 export function axisDone(record: DocumentationRecord, axis: DocumentationAxis): boolean {
   if (axis === "spec") return record.spec_status === "complete" || record.spec_status === "na";
-  if (axis === "datasheet") {
-    return (
-      record.datasheet_asset_ids.length > 0 ||
-      record.datasheet_not_required ||
-      record.spec_status === "na"
-    );
-  }
-  return (
-    record.photo_asset_ids.length > 0 || record.photo_not_required || record.spec_status === "na"
-  );
+  if (axis === "datasheet")
+    return record.datasheet_status !== "needed" || record.spec_status === "na";
+  return record.photo_status !== "needed" || record.spec_status === "na";
 }
 
 export function axisMissing(record: DocumentationRecord, axis: DocumentationAxis): boolean {

@@ -274,9 +274,9 @@ Default workflow:
    `main`, or GitHub → Actions → "Deploy Production" → Run workflow.
 6. The workflow gates on the ref being the tip of `main` and on the required
    CI checks passing, fires both Render deploy hooks pinned to the exact
-   commit (`&ref=<sha>`), then polls `/api/v1/version` until `git_sha` matches
-   and smoke-checks the public surfaces. Watch it finish green; spot-check
-   with the commands below.
+   commit (`&ref=<sha>`), then polls both API `/api/v1/version` and web
+   `/version.json` until each `git_sha` matches before smoke-checking the
+   public surfaces. Watch it finish green; spot-check with the commands below.
 
 The workflow needs two repo secrets, `RENDER_DEPLOY_HOOK_API` and
 `RENDER_DEPLOY_HOOK_WEB` — the deploy-hook URLs from each service's Render
@@ -302,6 +302,8 @@ Basic public checks:
 
 ```bash
 curl -fsS https://api.ph-nav.com/api/v1/ready
+curl -fsS https://api.ph-nav.com/api/v1/version
+curl -fsS https://www.ph-nav.com/version.json
 curl -I https://www.ph-nav.com
 curl -I https://ph-nav.com
 curl -I https://v0.ph-nav.com
@@ -310,6 +312,8 @@ curl -I https://v0.ph-nav.com
 Expected:
 
 - `https://api.ph-nav.com/api/v1/ready` returns `200` with `db:true`.
+- API `/api/v1/version` and web `/version.json` report the same deployed
+  40-character `git_sha`.
 - `https://www.ph-nav.com` returns `200`.
 - `https://ph-nav.com` redirects to `https://www.ph-nav.com/`.
 - `https://v0.ph-nav.com` returns `200`.

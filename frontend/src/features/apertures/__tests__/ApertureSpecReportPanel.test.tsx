@@ -240,7 +240,7 @@ describe("ApertureSpecReportPanel", () => {
     expect(screen.getByText("Glazing · 1 field differs")).toBeInTheDocument();
 
     fireEvent.click(within(drawer).getByRole("button", { name: "Close use sites" }));
-    fireEvent.click(screen.getByRole("button", { name: /Missing\s+1/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Needed\s+1/ }));
     expect(screen.getByText("Triple Pane A")).toBeInTheDocument();
     expect(screen.queryByText("Background Glazing")).not.toBeInTheDocument();
     expect(screen.queryByText("Unused Glazing")).not.toBeInTheDocument();

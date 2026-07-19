@@ -1,10 +1,15 @@
 import type { BaseTableSlice } from "../project_document/table-slice";
 import type { CatalogOrigin } from "../project_document/catalog-origin";
+import type {
+  SpecificationStatus,
+  WireSpecificationStatusRecord,
+} from "../project_document/specification-status";
+
+export type { SpecificationStatus } from "../project_document/specification-status";
 
 export type AssemblyType = "wall" | "floor" | "roof" | "other";
 export type AssemblyOrientation = "first_layer_outside" | "last_layer_outside";
 
-export type SpecificationStatus = "complete" | "missing" | "question" | "na";
 export type ThermalStatusFlag =
   | "missing_material"
   | "missing_conductivity"
@@ -77,6 +82,12 @@ export type Assembly = {
 export type EnvelopeReadResponse = BaseTableSlice & {
   assemblies: Assembly[];
   project_materials: ProjectMaterial[];
+};
+
+export type WireProjectMaterial = WireSpecificationStatusRecord<ProjectMaterial>;
+
+export type WireEnvelopeReadResponse = Omit<EnvelopeReadResponse, "project_materials"> & {
+  project_materials: WireProjectMaterial[];
 };
 
 export type AssemblyThermalResponse = {

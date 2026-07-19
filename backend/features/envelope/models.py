@@ -9,12 +9,13 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from features.envelope.import_models import ConstructionResolution, MaterialResolution
 from features.envelope.phpp_types import ExportReason
+from features.envelope.specification_status_compat import CompatibleSpecificationStatus
 from features.project_document.document import (
     Assembly,
     AssemblyOrientation,
     AssemblyType,
+    EvidenceStatus,
     ProjectMaterial,
-    SpecificationStatus,
 )
 from features.project_document.models import ProjectDocumentSource
 from features.shared.colors import normalize_optional_hex_color
@@ -372,7 +373,8 @@ class UpdateProjectMaterialCommand(BaseModel):
     source: str | None = Field(default=None, max_length=400)
     url: str | None = Field(default=None, max_length=2000)
     comments: str | None = Field(default=None, max_length=4000)
-    specification_status: SpecificationStatus | None = None
+    specification_status: CompatibleSpecificationStatus | None = None
+    datasheet_status: EvidenceStatus | None = None
     datasheet_not_required: bool | None = None
 
     @field_validator("color", mode="before")
@@ -427,7 +429,9 @@ class UpdateProjectGlazingCommand(BaseModel):
     color: str | None = Field(default=None, max_length=40)
     source: str | None = Field(default=None, max_length=400)
     comments: str | None = Field(default=None, max_length=4000)
-    specification_status: SpecificationStatus | None = None
+    specification_status: CompatibleSpecificationStatus | None = None
+    datasheet_status: EvidenceStatus | None = None
+    photo_status: EvidenceStatus | None = None
     datasheet_not_required: bool | None = None
     photo_not_required: bool | None = None
 
@@ -459,7 +463,9 @@ class UpdateProjectFrameCommand(BaseModel):
     color: str | None = Field(default=None, max_length=40)
     source: str | None = Field(default=None, max_length=400)
     comments: str | None = Field(default=None, max_length=4000)
-    specification_status: SpecificationStatus | None = None
+    specification_status: CompatibleSpecificationStatus | None = None
+    datasheet_status: EvidenceStatus | None = None
+    photo_status: EvidenceStatus | None = None
     datasheet_not_required: bool | None = None
     photo_not_required: bool | None = None
 
@@ -566,5 +572,6 @@ class AssemblySegmentTableRow(BaseModel):
     project_material_id: str | None
     project_material_name: str | None
     photo_asset_ids: list[str] = Field(default_factory=list)
+    photo_status: EvidenceStatus = "needed"
     photo_not_required: bool = False
     use_site_notes: str | None

@@ -25,6 +25,7 @@ CATALOG_VERSION_ID_PATTERN = r"^(matv|framev|glazingv)_[A-Za-z0-9_-]+$"
 AssemblyType = Literal["wall", "floor", "roof", "other"]
 AssemblyOrientation = Literal["first_layer_outside", "last_layer_outside"]
 SpecificationStatus = Literal["complete", "missing", "question", "na"]
+EvidenceStatus = Literal["needed", "complete", "na"]
 
 APERTURE_DEFAULT_FRAME_NAME = "PHN-Default-Frame"
 APERTURE_DEFAULT_GLAZING_NAME = "PHN-Default-Glass"
@@ -161,6 +162,7 @@ class AssemblySegment(BaseModel):
     steel_stud_spacing_mm: float | None = Field(default=None, gt=0, allow_inf_nan=False)
     project_material_id: str | None = Field(default=None, pattern=r"^pmat_[A-Za-z0-9_-]+$", max_length=80)
     photo_asset_ids: list[str] = Field(default_factory=list)
+    photo_status: EvidenceStatus = "needed"
     photo_not_required: bool = False
     use_site_notes: str | None = Field(default=None, max_length=4000)
 
@@ -249,6 +251,7 @@ class ProjectMaterial(BaseModel):
     comments: str | None = Field(default=None, max_length=4000)
     specification_status: SpecificationStatus = "missing"
     datasheet_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_status: EvidenceStatus = "needed"
     datasheet_not_required: bool = False
     catalog_origin: CatalogOrigin | None = None
 
@@ -300,6 +303,8 @@ class ProjectGlazing(BaseModel):
     specification_status: SpecificationStatus = "missing"
     datasheet_asset_ids: list[str] = Field(default_factory=list)
     photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_status: EvidenceStatus = "needed"
+    photo_status: EvidenceStatus = "needed"
     datasheet_not_required: bool = False
     photo_not_required: bool = False
     catalog_origin: CatalogOrigin | None = None
@@ -360,6 +365,8 @@ class ProjectFrame(BaseModel):
     specification_status: SpecificationStatus = "missing"
     datasheet_asset_ids: list[str] = Field(default_factory=list)
     photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_status: EvidenceStatus = "needed"
+    photo_status: EvidenceStatus = "needed"
     datasheet_not_required: bool = False
     photo_not_required: bool = False
     catalog_origin: CatalogOrigin | None = None

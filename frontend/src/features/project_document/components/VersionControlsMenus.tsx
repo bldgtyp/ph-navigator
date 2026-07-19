@@ -31,25 +31,25 @@ export function VersionPathControls({
 }) {
   const label = `${activeVersionName}${isLocked ? " · Locked" : ""}`;
   return (
-    <div className="version-path-inline">
-      <span className="version-path-label">{label}</span>
-      <Tooltip
-        content={PROJECT_ACTIONS_HELP}
-        placement="bottom"
-        hoverDelay={TOOLTIP_HOVER_DELAY.long}
+    <Tooltip
+      content={PROJECT_ACTIONS_HELP}
+      placement="bottom"
+      hoverDelay={TOOLTIP_HOVER_DELAY.long}
+    >
+      <button
+        type="button"
+        className="version-path-inline"
+        onClick={onToggleActions}
+        aria-label={`Version actions for ${label}`}
+        aria-expanded={actionsOpen}
+        aria-description={PROJECT_ACTIONS_HELP}
       >
-        <button
-          type="button"
-          className="version-path-trigger"
-          onClick={onToggleActions}
-          aria-label={`Version actions for ${label}`}
-          aria-expanded={actionsOpen}
-          aria-description={PROJECT_ACTIONS_HELP}
-        >
+        <span className="version-path-label">{label}</span>
+        <span className="version-path-trigger" aria-hidden="true">
           <ChevronDown aria-hidden="true" size={12} strokeWidth={1.9} />
-        </button>
-      </Tooltip>
-    </div>
+        </span>
+      </button>
+    </Tooltip>
   );
 }
 

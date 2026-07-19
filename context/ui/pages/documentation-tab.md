@@ -26,8 +26,15 @@ invalidate the summary.
 The summary carries three independent axes:
 
 - specification status, from the stored `Specification Status` field;
-- datasheets, derived from datasheet attachment ids or datasheet N/A waiver;
-- photos, derived from site-photo attachment ids or photo N/A waiver.
+- datasheets, from persisted Datasheet evidence status plus datasheet
+  attachment ids;
+- photos, from persisted Photo evidence status plus site-photo attachment ids.
+
+Datasheet and Photo status are deliberately independent from attachment
+presence. A user can mark an axis `Needed` even when files are attached, and a
+new upload auto-sets that axis to `Complete`. The legacy datasheet/photo waiver
+fields still exist for migrated documents and adjacent owner-page compatibility,
+but the Documentation page writes the persisted evidence status fields directly.
 
 The page fetches asset preview URLs in one bulk call for the visible
 datasheets and photos. Rows never duplicate attachment data; they display the
@@ -35,25 +42,28 @@ same attachment ids stored on the owning record.
 
 ## Composition
 
-The page opens with three rollup chips; the selected version and active tab are
-already identified by the project workspace chrome:
-`Spec N/M`, `Datasheets N/M`, and `Photos N/M`.
+The page opens as an overview-first disclosure shell. The selected version and
+active tab are already identified by the project workspace chrome. The
+Documentation header and each section/group header render three compact progress
+meters: `Spec N/M`, `Datasheets N/M`, and `Photos N/M`.
 
 Below the header, per-axis filter chips show only records missing specs,
 datasheets, or photos. Filter chips are button toggles with text labels and
 `aria-pressed`; missing state is a work item, not an application error.
 
-Sections follow the documentation summary order:
+Sections follow the documentation summary order, which matches the nav-bar tab
+order:
 
+- Apertures;
 - Envelope;
 - Equipment;
-- Apertures;
 - Thermal Bridges.
 
 Each section has an anchor id, section-level rollups, a copy-link control, and
-a "How to photograph" modal trigger. Complete sections may render collapsed as
-one-line stubs with an expand control. Incomplete sections render their records
-directly and do not pretend to be collapsible.
+a labeled "Photo Guide" button that opens the "How to photograph" modal. Complete sections may render collapsed as
+one-line stubs with an expand control. Incomplete sections remain collapsed by
+default but advertise that they need review; expansion state is local to the
+current browser session and hash navigation expands the matching section/group.
 
 Groups with no records are omitted. If filters hide every record in a populated
 group, the group remains visible with a "No records match the active filters"
@@ -63,28 +73,31 @@ message.
 
 Rows use a unified evidence grid:
 
-- record identity: display name, optional sub-label, and an `Open owner` link
-  back to Equipment, Apertures, Envelope, or Thermal Bridges;
-- spec chip for viewers or a status select for editors;
-- photo evidence state and thumbnail strip;
-- datasheet evidence state and file strip.
+- record identity: display name, optional sub-label, and an `Open record` link
+  (an external-link icon revealed on hover of the record label) back to
+  Equipment, Apertures, Envelope, or Thermal Bridges;
+- spec/datasheet/photo status via the shared `StatusSelect` pill — an editable
+  `<select>` for editors, a read-only pill for viewers.
 
 Envelope rows also show a compact assembly strip as a material/assembly cue.
-Record names open a detail modal with identity fields, source table,
-specification status, photos, and datasheets. Editors get the same status,
-photo, and waiver controls in the modal; viewers get read-only evidence.
+Clicking anywhere in the summary row (except a status select or the open-record
+link) toggles the expanded row, and only one record is expanded at a time. The
+expanded panel shows the datasheet and photo evidence cells (upload zones / file
+strips); there is no separate detail modal.
 
 ## Editor writes
 
 The Documentation page uses the owning record's normal write path:
 
 - photo changes use attachment attach/detach endpoints and chain draft etags;
-- envelope material spec and datasheet waivers write through envelope commands;
-- aperture product spec and waiver changes write through envelope commands;
+- datasheet changes use attachment attach/detach endpoints and chain draft
+  etags;
+- envelope material spec and evidence statuses write through envelope commands;
+- aperture product spec and evidence statuses write through envelope commands;
 - equipment, heat-pump leaf, and thermal-bridge scalar fields write through
   guarded draft-table replaces.
 
-Envelope material/assembly photo writes and photo waivers fan out over every
+Envelope material/assembly photo and evidence-status writes fan out over every
 segment id supplied by the documentation summary. Missing segment ids fail the
 write rather than silently producing partial evidence.
 

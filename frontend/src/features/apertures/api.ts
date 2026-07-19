@@ -1,5 +1,6 @@
 import { fetchJson } from "../../shared/api/client";
 import { draftWriteHeaders } from "../project_document/table-slice";
+import { normalizeSpecificationStatusRecord } from "../project_document/specification-status";
 import type {
   ApertureCommand,
   ApertureElementFrames,
@@ -10,6 +11,7 @@ import type {
   ProjectFrame,
   WireApertureElementFrames,
   WireAperturesSlice,
+  WireApertureSpecReportResponse,
 } from "./types";
 
 type DraftWriteResult = {
@@ -54,10 +56,11 @@ export async function fetchApertureSpecReport(
   source: ApertureReadSource,
   signal?: AbortSignal,
 ): Promise<ApertureSpecReportResponse> {
-  return fetchJson<ApertureSpecReportResponse>(
+  const response = await fetchJson<WireApertureSpecReportResponse>(
     `/api/v1/projects/${projectId}/versions/${versionId}/apertures/spec-report?source=${source}`,
     { signal },
   );
+  return normalizeApertureSpecReport(response);
 }
 
 export async function applyApertureProductCommand(
@@ -93,10 +96,14 @@ export async function applyApertureReportRefreshCommand(
 }
 
 function hydrateAperturesSlice(slice: WireAperturesSlice): AperturesSlice {
-  const framesById = new Map(slice.project_frames.map((frame) => [frame.id, frame]));
-  const glazingsById = new Map(slice.project_glazings.map((glazing) => [glazing.id, glazing]));
+  const projectFrames = slice.project_frames.map(normalizeSpecificationStatusRecord);
+  const projectGlazings = slice.project_glazings.map(normalizeSpecificationStatusRecord);
+  const framesById = new Map(projectFrames.map((frame) => [frame.id, frame]));
+  const glazingsById = new Map(projectGlazings.map((glazing) => [glazing.id, glazing]));
   return {
     ...slice,
+    project_frames: projectFrames,
+    project_glazings: projectGlazings,
     apertures: slice.apertures.map((aperture) => ({
       ...aperture,
       elements: aperture.elements.map((element) => ({
@@ -109,6 +116,16 @@ function hydrateAperturesSlice(slice: WireAperturesSlice): AperturesSlice {
         operation: element.operation,
       })),
     })),
+  };
+}
+
+export function normalizeApertureSpecReport(
+  response: WireApertureSpecReportResponse,
+): ApertureSpecReportResponse {
+  return {
+    ...response,
+    project_glazings: response.project_glazings.map(normalizeSpecificationStatusRecord),
+    project_frames: response.project_frames.map(normalizeSpecificationStatusRecord),
   };
 }
 

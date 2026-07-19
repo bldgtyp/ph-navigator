@@ -1,237 +1,271 @@
-import { Copy, ExternalLink } from "lucide-react";
+import { ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
-import { ModalDialog } from "../../../shared/ui/ModalDialog";
+import { StatusSelect } from "../../../shared/ui";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { DATASHEET_ATTACHMENT_CONFIG, SITE_PHOTO_ATTACHMENT_CONFIG } from "../../assets/lib";
 import type { AssetUrls, AttachmentFieldConfig } from "../../assets/types";
-import { directionsForSection } from "../directions/content";
 import type { DocumentationFieldChange } from "../hooks";
-import { axisDone, axisMissing, SPEC_STATUS_LABELS } from "../lib";
-import type { DocumentationRecord, DocumentationSection, DocumentationSpecStatus } from "../types";
+import {
+  EVIDENCE_STATUS_OPTIONS,
+  SPEC_STATUS_OPTIONS,
+  documentationEvidenceStatusValue,
+  documentationSpecStatusValue,
+  type DocumentationStatusOption,
+} from "../lib";
+import type { DocumentationEvidenceStatus, DocumentationRecord } from "../types";
 
 export function DocumentationRecordRow({
   projectId,
-  sectionKey,
   record,
   assetUrlById,
   canEdit,
   writing,
+  expanded,
+  onToggle,
+  onDatasheetChange,
   onPhotoChange,
   onFieldChange,
-  onOpenRecord,
 }: {
   projectId: string;
-  sectionKey: string;
   record: DocumentationRecord;
   assetUrlById: ReadonlyMap<string, AssetUrls>;
   canEdit: boolean;
   writing: boolean;
+  expanded: boolean;
+  onToggle: () => void;
+  onDatasheetChange: (record: DocumentationRecord, nextAssetIds: string[]) => Promise<void>;
   onPhotoChange: (record: DocumentationRecord, nextAssetIds: string[]) => Promise<void>;
   onFieldChange: (change: DocumentationFieldChange) => Promise<void>;
-  onOpenRecord: (record: DocumentationRecord) => void;
 }) {
   const specNa = record.spec_status === "na";
   return (
-    <article className="documentation-record" data-spec-status={record.spec_status} role="listitem">
-      <div className="documentation-record-main">
-        {sectionKey === "envelope" ? (
-          <MiniAssemblyStrip segmentCount={record.segment_ids.length} />
-        ) : null}
-        <div className="documentation-record-label">
-          <button
-            type="button"
-            className="documentation-record-name"
-            onClick={() => onOpenRecord(record)}
-          >
-            {record.display_name}
-          </button>
-          {record.sub_label ? <p>{record.sub_label}</p> : null}
-          <Link className="documentation-owner-link" to={record.table_path}>
-            <ExternalLink size={13} aria-hidden="true" />
-            <span>Open owner</span>
-          </Link>
+    <article
+      className="documentation-record"
+      data-spec-status={record.spec_status}
+      data-expanded={expanded}
+      role="listitem"
+    >
+      <div
+        className="documentation-record-summary"
+        onClick={(event) => {
+          // Row-wide expand toggle, except when the click lands on a status
+          // select (which changes its own value), the name button (which
+          // toggles itself — guarding it avoids a double toggle), or the
+          // open-owner link (which navigates).
+          if ((event.target as HTMLElement).closest(".status-select, button, a")) return;
+          onToggle();
+        }}
+      >
+        <div className="documentation-record-main">
+          <div className="documentation-record-label">
+            <div className="documentation-record-name-row">
+              <button
+                type="button"
+                className="documentation-record-name"
+                onClick={onToggle}
+                aria-expanded={expanded}
+              >
+                <span aria-hidden="true">
+                  {expanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+                </span>
+                <span>{record.display_name}</span>
+              </button>
+              <Link
+                className="documentation-record-open-owner"
+                to={record.table_path}
+                aria-label={`Open record - ${record.display_name}`}
+                title="Open record"
+              >
+                <ExternalLink size={14} aria-hidden="true" />
+              </Link>
+            </div>
+            {record.sub_label ? <p>{record.sub_label}</p> : null}
+          </div>
         </div>
-      </div>
-      <SpecCell
-        record={record}
-        canEdit={canEdit}
-        disabled={writing}
-        onChange={(value) => onFieldChange({ record, field: "spec_status", value })}
-      />
-      <EvidenceCell
-        label="Photos"
-        done={axisDone(record, "photo")}
-        notRequired={record.photo_not_required || specNa}
-        waiverChecked={record.photo_not_required}
-        canEdit={canEdit && !specNa}
-        disabled={writing}
-        onWaiverChange={(value) => onFieldChange({ record, field: "photo_not_required", value })}
-        assetIds={record.photo_asset_ids}
-        emptyLabel="Photo needed"
-      >
-        {canEdit && !specNa ? (
-          <AttachmentCell
-            projectId={projectId}
-            value={record.photo_asset_ids}
-            config={SITE_PHOTO_ATTACHMENT_CONFIG}
-            readOnly={writing || record.photo_not_required}
-            onChange={(nextAssetIds) => onPhotoChange(record, nextAssetIds)}
-            assetUrlById={assetUrlById}
-            variant="cell"
-          />
-        ) : (
-          <ReadOnlyAttachmentStrip assetIds={record.photo_asset_ids} assetUrlById={assetUrlById} />
-        )}
-      </EvidenceCell>
-      <EvidenceCell
-        label="Datasheet"
-        done={axisDone(record, "datasheet")}
-        notRequired={record.datasheet_not_required || specNa}
-        waiverChecked={record.datasheet_not_required}
-        canEdit={canEdit && !specNa}
-        disabled={writing}
-        onWaiverChange={(value) =>
-          onFieldChange({ record, field: "datasheet_not_required", value })
-        }
-        assetIds={record.datasheet_asset_ids}
-        emptyLabel="Missing"
-      >
-        <ReadOnlyAttachmentStrip
-          assetIds={record.datasheet_asset_ids}
-          assetUrlById={assetUrlById}
+        <AxisStatusCell
+          label="Spec"
+          value={documentationSpecStatusValue(record)}
+          options={SPEC_STATUS_OPTIONS}
+          canEdit={canEdit}
+          disabled={writing}
+          onChange={(value) => onFieldChange({ record, field: "spec_status", value })}
         />
-      </EvidenceCell>
+        <AxisStatusCell
+          label="Datasheet"
+          value={documentationEvidenceStatusValue(record, "datasheet")}
+          options={EVIDENCE_STATUS_OPTIONS}
+          canEdit={canEdit && !specNa}
+          disabled={writing}
+          onChange={(value) => onFieldChange({ record, field: "datasheet_status", value })}
+        />
+        <AxisStatusCell
+          label="Photos"
+          value={documentationEvidenceStatusValue(record, "photo")}
+          options={EVIDENCE_STATUS_OPTIONS}
+          canEdit={canEdit && !specNa}
+          disabled={writing}
+          onChange={(value) => onFieldChange({ record, field: "photo_status", value })}
+        />
+      </div>
+      {expanded ? (
+        <div className="documentation-record-panel">
+          <EvidenceCell
+            label="Datasheet"
+            status={documentationEvidenceStatusValue(record, "datasheet")}
+            assetIds={record.datasheet_asset_ids}
+          >
+            <DocumentationEvidenceAttachmentControl
+              projectId={projectId}
+              record={record}
+              axis="datasheet"
+              assetUrlById={assetUrlById}
+              canEdit={canEdit}
+              writing={writing}
+              variant="cell"
+              onDatasheetChange={onDatasheetChange}
+              onPhotoChange={onPhotoChange}
+            />
+          </EvidenceCell>
+          <EvidenceCell
+            label="Photos"
+            status={documentationEvidenceStatusValue(record, "photo")}
+            assetIds={record.photo_asset_ids}
+          >
+            <DocumentationEvidenceAttachmentControl
+              projectId={projectId}
+              record={record}
+              axis="photo"
+              assetUrlById={assetUrlById}
+              canEdit={canEdit}
+              writing={writing}
+              variant="cell"
+              onDatasheetChange={onDatasheetChange}
+              onPhotoChange={onPhotoChange}
+            />
+          </EvidenceCell>
+        </div>
+      ) : null}
     </article>
-  );
-}
-
-function SpecCell({
-  record,
-  canEdit,
-  disabled,
-  onChange,
-}: {
-  record: DocumentationRecord;
-  canEdit: boolean;
-  disabled: boolean;
-  onChange: (value: DocumentationSpecStatus) => Promise<void>;
-}) {
-  if (canEdit) {
-    return (
-      <label className="documentation-cell documentation-spec-cell">
-        <span className="documentation-cell-label">Spec</span>
-        <select
-          className="documentation-spec-select"
-          value={record.spec_status === "unknown" ? "needed" : record.spec_status}
-          disabled={disabled}
-          onChange={(event) => void onChange(event.target.value as DocumentationSpecStatus)}
-        >
-          <option value="needed">Needed</option>
-          <option value="question">Question</option>
-          <option value="complete">Complete</option>
-          <option value="na">N/A</option>
-        </select>
-      </label>
-    );
-  }
-  return (
-    <div className="documentation-cell documentation-spec-cell">
-      <span className="documentation-cell-label">Spec</span>
-      <span className={`record-status-chip record-status-chip--${record.spec_status}`}>
-        {SPEC_STATUS_LABELS[record.spec_status]}
-      </span>
-    </div>
   );
 }
 
 function EvidenceCell({
   label,
-  done,
-  notRequired,
-  waiverChecked,
-  canEdit,
-  disabled,
-  onWaiverChange,
+  status,
   assetIds,
-  emptyLabel,
   children,
 }: {
   label: string;
-  done: boolean;
-  notRequired: boolean;
-  waiverChecked: boolean;
-  canEdit: boolean;
-  disabled: boolean;
-  onWaiverChange: (value: boolean) => Promise<void>;
+  status: DocumentationEvidenceStatus;
   assetIds: readonly string[];
-  emptyLabel: string;
   children: React.ReactNode;
 }) {
-  let state: React.ReactNode = null;
-  if (notRequired) {
-    state = (
-      <span className="documentation-evidence-state documentation-evidence-state--na">
-        not required
-      </span>
-    );
-  } else if (assetIds.length === 0) {
-    state = (
-      <span className="documentation-evidence-state documentation-evidence-state--missing">
-        {emptyLabel}
-      </span>
-    );
-  } else {
-    state = (
-      <span className="documentation-evidence-state documentation-evidence-state--attached">
-        {assetIds.length} attached
-      </span>
-    );
-  }
   return (
     <div
       className="documentation-cell documentation-evidence-cell"
-      data-done={done ? "true" : "false"}
+      data-done={status === "complete" || status === "na" ? "true" : "false"}
     >
       <div className="documentation-cell-header">
         <span className="documentation-cell-label">{label}</span>
-        {state}
       </div>
-      {canEdit ? (
-        <label className="documentation-waiver-toggle">
-          <input
-            type="checkbox"
-            checked={waiverChecked}
-            disabled={disabled}
-            onChange={(event) => void onWaiverChange(event.target.checked)}
-          />
-          <span>Not required</span>
-        </label>
-      ) : null}
-      {assetIds.length > 0 || canEdit ? children : null}
+      {assetIds.length > 0 || status !== "na" ? children : null}
     </div>
   );
 }
 
-function MiniAssemblyStrip({ segmentCount }: { segmentCount: number }) {
-  const bands = Math.max(1, Math.min(segmentCount, 5));
+function DocumentationEvidenceAttachmentControl({
+  projectId,
+  record,
+  axis,
+  assetUrlById,
+  canEdit,
+  writing,
+  variant,
+  onDatasheetChange,
+  onPhotoChange,
+}: {
+  projectId: string;
+  record: DocumentationRecord;
+  axis: "datasheet" | "photo";
+  assetUrlById: ReadonlyMap<string, AssetUrls>;
+  canEdit: boolean;
+  writing: boolean;
+  variant: "cell" | "card";
+  onDatasheetChange: (record: DocumentationRecord, nextAssetIds: string[]) => Promise<void>;
+  onPhotoChange: (record: DocumentationRecord, nextAssetIds: string[]) => Promise<void>;
+}) {
+  const specNa = record.spec_status === "na";
+  const assetIds = axis === "datasheet" ? record.datasheet_asset_ids : record.photo_asset_ids;
+  const config = axis === "datasheet" ? DATASHEET_ATTACHMENT_CONFIG : SITE_PHOTO_ATTACHMENT_CONFIG;
+  const status = documentationEvidenceStatusValue(record, axis);
+  if (canEdit && !specNa) {
+    return (
+      <AttachmentCell
+        projectId={projectId}
+        value={assetIds}
+        config={config}
+        readOnly={writing || status === "na"}
+        onChange={(nextAssetIds) =>
+          axis === "datasheet"
+            ? onDatasheetChange(record, nextAssetIds)
+            : onPhotoChange(record, nextAssetIds)
+        }
+        assetUrlById={assetUrlById}
+        showInlineEmptyButton
+        variant={variant}
+      />
+    );
+  }
   return (
-    <span className="documentation-assembly-strip" aria-label={`${segmentCount} assembly segments`}>
-      {Array.from({ length: bands }, (_, index) => (
-        <span key={index} />
-      ))}
-    </span>
+    <ReadOnlyAttachmentStrip assetIds={assetIds} assetUrlById={assetUrlById} variant={variant} />
+  );
+}
+
+function AxisStatusCell<TValue extends string>({
+  label,
+  value,
+  options,
+  canEdit,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  value: TValue;
+  options: Array<DocumentationStatusOption<TValue>>;
+  canEdit: boolean;
+  disabled: boolean;
+  onChange: (value: TValue) => Promise<void>;
+}) {
+  // A <div> (not <label>) wrapper: clicking the cell's non-select area should
+  // toggle the row's expansion, not get forwarded into the select.
+  return (
+    <div className="documentation-cell documentation-spec-cell">
+      <span className="documentation-cell-label">{label}</span>
+      <StatusSelect
+        value={value}
+        options={options}
+        ariaLabel={label}
+        disabled={disabled}
+        readOnly={!canEdit}
+        onChange={(next) => void onChange(next)}
+      />
+    </div>
   );
 }
 
 function ReadOnlyAttachmentStrip({
   assetIds,
   assetUrlById,
+  variant,
 }: {
   assetIds: readonly string[];
   assetUrlById: ReadonlyMap<string, AssetUrls>;
+  variant: "cell" | "card";
 }) {
   return (
-    <div className="attachment-cell attachment-cell--card documentation-readonly-attachments">
+    <div
+      className={`attachment-cell attachment-cell--${variant} documentation-readonly-attachments`}
+    >
       <div className="attachment-strip">
         {assetIds.map((assetId, index) => {
           const asset = assetUrlById.get(assetId);
@@ -257,7 +291,7 @@ function ReadOnlyAttachmentStrip({
   );
 }
 
-function ReadOnlyAttachmentCell({
+export function ReadOnlyAttachmentCell({
   projectId,
   assetIds,
   config,
@@ -285,194 +319,4 @@ function fileGlyph(contentType: string | undefined | null): string {
   if (contentType === "application/pdf") return "PDF";
   if (contentType?.includes("json")) return "JSON";
   return "FILE";
-}
-
-export function DirectionsModal({
-  section,
-  onClose,
-}: {
-  section: DocumentationSection;
-  onClose: () => void;
-}) {
-  const directions = directionsForSection(section);
-  return (
-    <ModalDialog
-      title={`How to photograph - ${section.title}`}
-      titleId="documentation-directions-title"
-      onClose={onClose}
-    >
-      <div className="documentation-modal-body documentation-directions">
-        {directions.map((direction) => (
-          <section key={direction.key} className="documentation-direction-card">
-            <div>
-              <h3>{direction.title}</h3>
-              <p>{direction.overview}</p>
-            </div>
-            {direction.exampleImageUrl ? (
-              <img src={direction.exampleImageUrl} alt="" />
-            ) : (
-              <div className="documentation-direction-placeholder" aria-hidden="true">
-                Example photo pending
-              </div>
-            )}
-            <ul>
-              {direction.shots.map((shot) => (
-                <li key={shot}>{shot}</li>
-              ))}
-            </ul>
-          </section>
-        ))}
-      </div>
-    </ModalDialog>
-  );
-}
-
-export function RecordDetailModal({
-  projectId,
-  record,
-  assetUrlById,
-  canEdit,
-  writing,
-  onPhotoChange,
-  onFieldChange,
-  onClose,
-}: {
-  projectId: string;
-  record: DocumentationRecord;
-  assetUrlById: ReadonlyMap<string, AssetUrls>;
-  canEdit: boolean;
-  writing: boolean;
-  onPhotoChange: (record: DocumentationRecord, nextAssetIds: string[]) => Promise<void>;
-  onFieldChange: (change: DocumentationFieldChange) => Promise<void>;
-  onClose: () => void;
-}) {
-  const specNa = record.spec_status === "na";
-  const rows = [
-    ["Display Name", record.display_name],
-    ["Description", record.sub_label],
-    ["Source table", record.table_key],
-    ["Record ID", record.record_id],
-    ["Material ID", record.material_id],
-    ["Segments", record.segment_ids.length ? record.segment_ids.length.toString() : null],
-    ["Specification Status", SPEC_STATUS_LABELS[record.spec_status]],
-  ].filter((row): row is [string, string] => Boolean(row[1]));
-  const copyRecordId = async () => {
-    await navigator.clipboard?.writeText(record.record_id);
-  };
-  return (
-    <ModalDialog
-      title={record.display_name}
-      titleId="documentation-record-detail-title"
-      onClose={onClose}
-      headerAccessory={
-        <Link className="secondary-button documentation-modal-owner-link" to={record.table_path}>
-          <ExternalLink size={14} aria-hidden="true" />
-          Open owner
-        </Link>
-      }
-    >
-      <div className="documentation-modal-body documentation-record-detail">
-        <dl className="documentation-record-attributes">
-          {rows.map(([label, value]) => (
-            <div key={label}>
-              <dt>{label}</dt>
-              <dd>{value}</dd>
-            </div>
-          ))}
-        </dl>
-        {canEdit ? (
-          <section aria-label="Record specification status">
-            <SpecCell
-              record={record}
-              canEdit
-              disabled={writing}
-              onChange={(value) => onFieldChange({ record, field: "spec_status", value })}
-            />
-          </section>
-        ) : null}
-        <section aria-label="Record photos">
-          <h3>Photos</h3>
-          {axisMissing(record, "photo") ? (
-            <p className="documentation-evidence-state documentation-evidence-state--missing">
-              Photo needed
-            </p>
-          ) : null}
-          {canEdit && !specNa ? (
-            <>
-              <label className="documentation-waiver-toggle">
-                <input
-                  type="checkbox"
-                  checked={record.photo_not_required}
-                  disabled={writing}
-                  onChange={(event) =>
-                    void onFieldChange({
-                      record,
-                      field: "photo_not_required",
-                      value: event.target.checked,
-                    })
-                  }
-                />
-                <span>Not required</span>
-              </label>
-              <AttachmentCell
-                projectId={projectId}
-                value={record.photo_asset_ids}
-                config={SITE_PHOTO_ATTACHMENT_CONFIG}
-                readOnly={writing || record.photo_not_required}
-                onChange={(nextAssetIds) => onPhotoChange(record, nextAssetIds)}
-                assetUrlById={assetUrlById}
-                variant="card"
-              />
-            </>
-          ) : (
-            <ReadOnlyAttachmentCell
-              projectId={projectId}
-              assetIds={record.photo_asset_ids}
-              config={SITE_PHOTO_ATTACHMENT_CONFIG}
-              assetUrlById={assetUrlById}
-            />
-          )}
-        </section>
-        <section aria-label="Record datasheets">
-          <h3>Datasheets</h3>
-          {axisMissing(record, "datasheet") ? (
-            <p className="documentation-evidence-state documentation-evidence-state--missing">
-              Missing
-            </p>
-          ) : null}
-          {canEdit && !specNa ? (
-            <label className="documentation-waiver-toggle">
-              <input
-                type="checkbox"
-                checked={record.datasheet_not_required}
-                disabled={writing}
-                onChange={(event) =>
-                  void onFieldChange({
-                    record,
-                    field: "datasheet_not_required",
-                    value: event.target.checked,
-                  })
-                }
-              />
-              <span>Not required</span>
-            </label>
-          ) : null}
-          <ReadOnlyAttachmentCell
-            projectId={projectId}
-            assetIds={record.datasheet_asset_ids}
-            config={DATASHEET_ATTACHMENT_CONFIG}
-            assetUrlById={assetUrlById}
-          />
-        </section>
-        <button
-          type="button"
-          className="secondary-button documentation-copy-id"
-          onClick={() => void copyRecordId()}
-        >
-          <Copy size={14} aria-hidden="true" />
-          {record.record_id}
-        </button>
-      </div>
-    </ModalDialog>
-  );
 }

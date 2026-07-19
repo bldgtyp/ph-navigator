@@ -4,15 +4,57 @@
    after base.css so the cascade order is unchanged. See styles/README.md. */
 
 @media (max-width: 760px) {
+  /* Compact app-bar: identity + global controls share the top line, the
+     project path sits beneath it, and the save/dirty controls (when present)
+     drop to their own full-width row instead of the wide layout's
+     absolute-centered float. */
   .topbar {
-    grid-template-columns: 1fr;
-    gap: var(--space-10);
-    padding: 38px var(--space-20) var(--space-12);
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "brand actions"
+      "path path";
+    align-items: center;
+    column-gap: var(--space-12);
+    row-gap: var(--space-8);
+    padding: var(--space-12) var(--space-20);
+  }
+
+  .topbar:has(.topbar-document-controls) {
+    grid-template-areas:
+      "brand actions"
+      "path path"
+      "docs docs";
   }
 
   .brand {
+    grid-area: brand;
     border-right: 0;
     padding-right: 0;
+  }
+
+  .topbar-path {
+    grid-area: path;
+    flex-wrap: wrap;
+  }
+
+  .topbar-global-actions {
+    grid-area: actions;
+    flex-wrap: wrap;
+    gap: var(--space-10);
+  }
+
+  /* Un-float the save/dirty controls so they flow as the third grid row. */
+  .topbar-document-controls {
+    position: static;
+    grid-area: docs;
+    justify-content: flex-start;
+    transform: none;
+  }
+
+  /* Account/read-only controls stay inline within the compact top row. */
+  .topbar-global-actions .user-menu {
+    flex-direction: row;
+    align-items: center;
   }
 
   .topnav {
@@ -24,7 +66,6 @@
     justify-content: flex-start;
   }
 
-  .user-menu,
   .page-heading,
   .project-header,
   .modal-header,

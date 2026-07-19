@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from fastapi.testclient import TestClient
@@ -258,12 +258,15 @@ def test_envelope_read_endpoint_returns_saved_and_draft_sources(clean_document_t
     draft_materials = saved_body.tables.project_materials + [
         ProjectMaterial.model_validate(project_material(id="pmat_extra", name="Extra"))
     ]
+    replacement_rows = [material.model_dump(mode="json") for material in draft_materials]
+    replacement_rows[-1]["specification_status"] = "needed"
     updated = client.put(
         draft_project_materials_url(project_id, version_id),
         headers={"Origin": ORIGIN, "If-Match-Version": initial.json()["version_etag"]},
-        json={"rows": [material.model_dump(mode="json") for material in draft_materials]},
+        json={"rows": replacement_rows},
     )
     assert updated.status_code == 200
+    assert updated.json()["rows"][-1]["specification_status"] == "missing"
 
     draft = client.get(envelope_url(project_id, version_id, source="draft"))
     assert draft.status_code == 200
@@ -298,17 +301,29 @@ def test_assembly_segments_replace_preserves_omitted_notes_and_skips_noop() -> N
     segment = body.tables.assemblies[0].layers[0].segments[0]
 
     photos_only = contract.parse_replace_payload(
-        {"rows": [{"id": segment.id, "photo_asset_ids": ["asset_new"], "photo_not_required": True}]}
+        {
+            "rows": [
+                {
+                    "id": segment.id,
+                    "photo_asset_ids": ["asset_new"],
+                    "photo_status": "complete",
+                    "photo_not_required": True,
+                }
+            ]
+        }
     )
     updated = contract.apply_replace(body, photos_only)
 
     updated_segment = updated.tables.assemblies[0].layers[0].segments[0]
     assert updated_segment.photo_asset_ids == ["asset_new"]
+    assert updated_segment.photo_status == "complete"
     assert updated_segment.photo_not_required is True
     assert updated_segment.use_site_notes == "Use over exterior sheathing."
     extracted_rows = contract.extract_rows(updated)
     assert isinstance(extracted_rows, list)
-    assert extracted_rows[0]["photo_not_required"] is True
+    first_row = cast("dict[str, Any]", extracted_rows[0])
+    assert first_row["photo_status"] == "complete"
+    assert first_row["photo_not_required"] is True
 
     unchanged = contract.parse_replace_payload(
         {
@@ -316,6 +331,7 @@ def test_assembly_segments_replace_preserves_omitted_notes_and_skips_noop() -> N
                 {
                     "id": updated_segment.id,
                     "photo_asset_ids": ["asset_new"],
+                    "photo_status": updated_segment.photo_status,
                     "photo_not_required": updated_segment.photo_not_required,
                     "use_site_notes": updated_segment.use_site_notes,
                 }

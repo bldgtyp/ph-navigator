@@ -119,6 +119,13 @@
   min-width: 0;
   align-items: center;
   gap: 1px;
+  border: 0;
+  border-radius: var(--radius-2xs);
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
 }
 
 .version-path-label {
@@ -145,8 +152,8 @@
   padding: 0;
 }
 
-.version-path-trigger:hover:not(:disabled),
-.version-path-trigger[aria-expanded="true"] {
+.version-path-inline:hover:not(:disabled) .version-path-trigger,
+.version-path-inline[aria-expanded="true"] .version-path-trigger {
   background: transparent;
   color: var(--accent-text);
   transform: none;

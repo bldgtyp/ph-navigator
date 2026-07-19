@@ -5,9 +5,9 @@ STATUS: Decision recorded
 AUTHOR: Codex
 SCOPE: Resolve the evidence-axis status contract and identify the exact implementation slice.
 RELATED:
-  - planning/refactor/documentation-page-redesign/README.md
-  - planning/refactor/documentation-page-redesign/PRD.md
-  - planning/refactor/documentation-page-redesign/research.md
+  - planning/archive/dated/2026-07-19/documentation-page-redesign/README.md
+  - planning/archive/dated/2026-07-19/documentation-page-redesign/PRD.md
+  - planning/archive/dated/2026-07-19/documentation-page-redesign/research.md
 ---
 
 # Phase 00 - Status Contract And Current Slice

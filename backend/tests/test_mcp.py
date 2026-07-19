@@ -368,6 +368,7 @@ def test_mcp_envelope_read_reports_and_semantic_command_write(
     project_id = cast(str, project["id"])
     version_id = cast(str, project["active_version_id"])
     saved_body = envelope_body()
+    saved_body.tables.project_materials[0].specification_status = "question"
     write_saved_body(version_id, saved_body)
     issued = client.post(
         f"/api/v1/projects/{project_id}/mcp-tokens",
@@ -394,14 +395,18 @@ def test_mcp_envelope_read_reports_and_semantic_command_write(
     updated = tool_apply_envelope_command(
         project_id,
         version_id,
-        {"kind": "rename_assembly", "assembly_id": "asm_wall_c3", "name": "WALL-C3 MCP"},
+        {
+            "kind": "update_project_material",
+            "project_material_id": saved_body.tables.project_materials[0].id,
+            "specification_status": "needed",
+        },
         cast(Context, None),
         allow_env_token=True,
         if_match_version=document_etag(saved_body),
     )
-    updated_assemblies = cast(list[dict[str, object]], updated["assemblies"])
+    updated_materials = cast(list[dict[str, object]], updated["project_materials"])
     assert updated["source"] == "draft"
-    assert updated_assemblies[0]["name"] == "WALL-C3 MCP"
+    assert updated_materials[0]["specification_status"] == "missing"
 
     with connection() as conn:
         draft = conn.execute(
@@ -412,7 +417,7 @@ def test_mcp_envelope_read_reports_and_semantic_command_write(
     assert draft is not None
     assert draft["updated_via"] == "mcp"
     assert audit is not None
-    assert audit["details"]["command_kind"] == "rename_assembly"
+    assert audit["details"]["command_kind"] == "update_project_material"
 
     with pytest.raises(ToolError, match="draft_etag_mismatch"):
         tool_apply_envelope_command(

@@ -876,7 +876,7 @@ describe("EnvelopePage", () => {
     });
   });
 
-  test("materials status selector opens options outside the clipped report table", async () => {
+  test("materials status selector renders the shared status pill options", async () => {
     renderEnvelope(`/projects/${PROJECT_ID}/envelope/materials`);
 
     const woodFiberRow = (await screen.findByText("Wood fiber board")).closest(
@@ -884,16 +884,13 @@ describe("EnvelopePage", () => {
     ) as HTMLElement | null;
     if (!woodFiberRow) throw new Error("Expected Wood fiber board row.");
 
-    const statusToggle = within(woodFiberRow).getByRole("button", { name: "Status options" });
-    const chevron = statusToggle.querySelector(".lucide-chevron-down");
-    expect(chevron).not.toBeNull();
-
-    await userEvent.click(statusToggle);
-
-    const listbox = await screen.findByRole("listbox");
-    expect(listbox.closest(".report-table")).toBeNull();
-    expect(within(listbox).getByRole("option", { name: "Question" })).toBeInTheDocument();
-    expect(within(listbox).getByRole("option", { name: "Complete" })).toBeInTheDocument();
+    const statusSelect = within(woodFiberRow).getByLabelText("Status");
+    expect(statusSelect.tagName).toBe("SELECT");
+    // Unified with the Documentation vocabulary: "missing" is labelled "Needed".
+    expect(within(statusSelect).getByRole("option", { name: "Needed" })).toBeInTheDocument();
+    expect(within(statusSelect).getByRole("option", { name: "Question" })).toBeInTheDocument();
+    expect(within(statusSelect).getByRole("option", { name: "Complete" })).toBeInTheDocument();
+    expect(within(statusSelect).getByRole("option", { name: "N/A" })).toBeInTheDocument();
   });
 
   test("catalog drift badges render in assemblies and materials tabs", async () => {

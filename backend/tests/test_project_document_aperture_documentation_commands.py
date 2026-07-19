@@ -103,7 +103,7 @@ def test_project_glazing_and_frame_documentation_commands(clean_document_tables:
                 "kind": "update_project_glazing",
                 "project_glazing_id": "pglz_used",
                 "manufacturer": "Updated Glass Co",
-                "specification_status": "complete",
+                "specification_status": "needed",
                 "datasheet_not_required": True,
                 "photo_not_required": True,
                 "comments": "Basis of design confirmed.",
@@ -114,7 +114,7 @@ def test_project_glazing_and_frame_documentation_commands(clean_document_tables:
     aperture_slice = client.get(_draft_apertures_url(project_id, version_id)).json()
     glazing = next(row for row in aperture_slice["project_glazings"] if row["id"] == "pglz_used")
     assert glazing["manufacturer"] == "Updated Glass Co"
-    assert glazing["specification_status"] == "complete"
+    assert glazing["specification_status"] == "missing"
     assert glazing["datasheet_not_required"] is True
     assert glazing["photo_not_required"] is True
     assert glazing["catalog_origin"]["local_overrides"] == ["comments", "manufacturer"]
@@ -127,7 +127,7 @@ def test_project_glazing_and_frame_documentation_commands(clean_document_tables:
                 "kind": "update_project_frame",
                 "project_frame_id": "pfrm_used",
                 "width_mm": 98.0,
-                "specification_status": "question",
+                "specification_status": "needed",
                 "datasheet_not_required": True,
                 "photo_not_required": True,
             }
@@ -137,7 +137,7 @@ def test_project_glazing_and_frame_documentation_commands(clean_document_tables:
     aperture_slice = client.get(_draft_apertures_url(project_id, version_id)).json()
     frame = next(row for row in aperture_slice["project_frames"] if row["id"] == "pfrm_used")
     assert frame["width_mm"] == 98.0
-    assert frame["specification_status"] == "question"
+    assert frame["specification_status"] == "missing"
     assert frame["datasheet_not_required"] is True
     assert frame["photo_not_required"] is True
 

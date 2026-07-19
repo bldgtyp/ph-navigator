@@ -1,11 +1,11 @@
 ---
-DATE: 2026-07-18
-TIME: 22:50 EDT
-STATUS: Planned
+DATE: 2026-07-19
+TIME: 00:00 EDT
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Build the Option 1A section/group/record shell over the existing summary data.
 RELATED:
-  - planning/refactor/documentation-page-redesign/PLAN.md
+  - planning/archive/dated/2026-07-19/documentation-page-redesign/PLAN.md
   - frontend/src/features/documentation/components/DocumentationSummaryView.tsx
   - frontend/src/features/documentation/components/DocumentationRecordViews.tsx
 ---
@@ -38,3 +38,28 @@ leaving writes and final visual polish for later phases.
 - The existing directions modal still opens from each applicable section.
 - Existing Documentation tests are updated or extended for overview load and
   drill-down behavior.
+
+## Implementation Notes
+
+- `DocumentationSummaryView` now owns local expansion state for sections,
+  groups, and records.
+- Hash targets expand their containing section and, for group anchors, the
+  matching group before scrolling.
+- The page header renders `Documentation status`, a short subtitle, and a
+  computed attention line from summary counts.
+- Section and group rows show rollups while their bodies remain collapsed until
+  opened.
+- `DocumentationRecordRow` now renders a compact summary row plus an expanded
+  panel for owner links, detail modal access, and existing evidence controls.
+- `DocumentationModals` holds the preserved directions and record detail modal
+  views so row rendering remains below the repository size threshold.
+- Simplify review fixes included section-scoped group body ids, distinct
+  Datasheet/Photos waiver accessible names, inherited group-title font styling,
+  and stronger filter/viewer assertions.
+
+## Verification
+
+- `pnpm exec vitest run src/features/documentation/__tests__/DocumentationSummaryView.test.tsx` passed.
+- `pnpm exec tsc -b --pretty false` passed.
+- `make frontend-dev-check` passed; eslint still reports pre-existing Fast
+  Refresh warnings in unrelated files.

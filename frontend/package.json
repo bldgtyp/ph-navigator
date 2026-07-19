@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/check-version-marker.mjs",
     "analyze": "ANALYZE=true pnpm run build",
     "dev:scan": "VITE_REACT_SCAN=true vite",
     "preview": "vite preview",

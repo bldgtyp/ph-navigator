@@ -9,16 +9,23 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from features.envelope.models import AssemblySegmentTableRow
 from features.envelope.selectors import flatten_assembly_segments
-from features.project_document.document import ProjectDocumentV1, ProjectMaterial
+from features.envelope.specification_status_compat import CompatibleSpecificationStatus
+from features.project_document.document import EvidenceStatus, ProjectDocumentV1, ProjectMaterial
 from features.project_document.models import ProjectDocumentSource
 from features.project_document.tables.contracts import TableContract, TableRowsResponse
 from features.project_document.validation import validate_document
 
 
+class ProjectMaterialMutation(ProjectMaterial):
+    """Public table-row DTO; the stored ``ProjectMaterial`` remains strict v7."""
+
+    specification_status: CompatibleSpecificationStatus = "missing"
+
+
 class ProjectMaterialsReplaceRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    rows: list[ProjectMaterial]
+    rows: list[ProjectMaterialMutation]
 
 
 class AssemblySegmentReplaceRow(BaseModel):
@@ -26,6 +33,7 @@ class AssemblySegmentReplaceRow(BaseModel):
 
     id: str
     photo_asset_ids: list[str] = Field(default_factory=list)
+    photo_status: EvidenceStatus = "needed"
     photo_not_required: bool = False
     use_site_notes: str | None = None
 
@@ -63,7 +71,10 @@ def build_project_materials_response(
 
 
 def apply_project_materials_replace(body: ProjectDocumentV1, payload: BaseModel) -> ProjectDocumentV1:
-    rows = cast(ProjectMaterialsReplaceRequest, payload).rows
+    rows = [
+        ProjectMaterial.model_validate(row.model_dump(mode="json"))
+        for row in cast(ProjectMaterialsReplaceRequest, payload).rows
+    ]
     if body.tables.project_materials == rows:
         return body
     raw = body.model_dump(mode="json")
@@ -111,7 +122,15 @@ def apply_assembly_segments_replace(body: ProjectDocumentV1, payload: BaseModel)
                     "photo_not_required" in replacement.model_fields_set
                     and segment.photo_not_required != replacement.photo_not_required
                 )
-                if segment.photo_asset_ids != replacement.photo_asset_ids or waiver_changed or notes_changed:
+                status_changed = (
+                    "photo_status" in replacement.model_fields_set and segment.photo_status != replacement.photo_status
+                )
+                if (
+                    segment.photo_asset_ids != replacement.photo_asset_ids
+                    or status_changed
+                    or waiver_changed
+                    or notes_changed
+                ):
                     changed = True
                     break
             if changed:
@@ -130,6 +149,8 @@ def apply_assembly_segments_replace(body: ProjectDocumentV1, payload: BaseModel)
                     continue
                 photo_asset_ids = list(replacement.photo_asset_ids)
                 segment["photo_asset_ids"] = photo_asset_ids
+                if "photo_status" in replacement.model_fields_set:
+                    segment["photo_status"] = replacement.photo_status
                 if "photo_not_required" in replacement.model_fields_set:
                     segment["photo_not_required"] = replacement.photo_not_required
                 if "use_site_notes" in replacement.model_fields_set:

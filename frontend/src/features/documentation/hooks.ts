@@ -9,6 +9,7 @@ import {
 } from "../equipment/types";
 import { markLocalDraftTouched } from "../project_document/lib";
 import { projectDocumentQueryKeys } from "../project_document/query-keys";
+import { serializeReleaseASpecificationStatus } from "../project_document/specification-status";
 import {
   invalidateProjectDocumentEditorTableSlices,
   type BaseTableSlice,
@@ -22,6 +23,7 @@ import {
 import { documentationQueryKeys } from "./query-keys";
 import type {
   DocumentationRecord,
+  DocumentationEvidenceStatus,
   DocumentationSpecStatus,
   ProjectDocumentationSummary,
 } from "./types";
@@ -43,8 +45,11 @@ export function useDocumentationSummaryQuery(
 type DocumentationAttachmentMutation = {
   summary: ProjectDocumentationSummary;
   record: DocumentationRecord;
+  axis: DocumentationAttachmentAxis;
   nextAssetIds: string[];
 };
+
+export type DocumentationAttachmentAxis = "datasheet" | "photo";
 
 export type DocumentationFieldChange =
   | {
@@ -54,20 +59,20 @@ export type DocumentationFieldChange =
     }
   | {
       record: DocumentationRecord;
-      field: "datasheet_not_required" | "photo_not_required";
-      value: boolean;
+      field: "datasheet_status" | "photo_status";
+      value: DocumentationEvidenceStatus;
     };
 
 export type DocumentationFieldMutation = DocumentationFieldChange & {
   summary: ProjectDocumentationSummary;
 };
 
-export function useDocumentationPhotoMutation(projectId: string, versionId: string | null) {
+export function useDocumentationAttachmentMutation(projectId: string, versionId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (change: DocumentationAttachmentMutation) => {
       if (!versionId) throw new Error("No active project-document version is selected.");
-      return updateDocumentationPhotos(projectId, versionId, change);
+      return updateDocumentationAttachments(projectId, versionId, change);
     },
     onSuccess: (current) => acknowledgeDocumentationWrite(queryClient, projectId, current),
   });
@@ -132,26 +137,28 @@ function applyOptimisticDocumentationFieldChange(
   };
 }
 
-async function updateDocumentationPhotos(
+async function updateDocumentationAttachments(
   projectId: string,
   versionId: string,
-  { summary, record, nextAssetIds }: DocumentationAttachmentMutation,
+  { summary, record, axis, nextAssetIds }: DocumentationAttachmentMutation,
 ): Promise<BaseTableSlice> {
   let current = summaryAsTableSlice(summary);
-  const before = new Set(record.photo_asset_ids);
+  const currentAssetIds =
+    axis === "datasheet" ? record.datasheet_asset_ids : record.photo_asset_ids;
+  const before = new Set(currentAssetIds);
   const after = new Set(nextAssetIds);
   const added = nextAssetIds.filter((assetId) => !before.has(assetId));
-  const removed = record.photo_asset_ids.filter((assetId) => !after.has(assetId));
-  const rowIds = documentationPhotoTargetRowIds(record);
-  const opGroupId = globalThis.crypto?.randomUUID?.() ?? `doc-photo-${Date.now()}`;
+  const removed = currentAssetIds.filter((assetId) => !after.has(assetId));
+  const target = documentationAttachmentTarget(record, axis);
+  const opGroupId = globalThis.crypto?.randomUUID?.() ?? `doc-${axis}-${Date.now()}`;
 
   for (const assetId of removed) {
-    for (const rowId of rowIds) {
+    for (const rowId of target.rowIds) {
       const response = await detachAssetFromDocument(projectId, assetId, {
         version_id: versionId,
-        table_key: record.table_key,
+        table_key: target.tableKey,
         row_id: rowId,
-        field_key: "photo_asset_ids",
+        field_key: target.fieldKey,
         if_match: current.draft_etag,
         if_match_version: current.draft_etag ? null : current.version_etag,
         op_group_id: opGroupId,
@@ -160,12 +167,12 @@ async function updateDocumentationPhotos(
     }
   }
   for (const assetId of added) {
-    for (const rowId of rowIds) {
+    for (const rowId of target.rowIds) {
       const response = await attachAssetToDocument(projectId, assetId, {
         version_id: versionId,
-        table_key: record.table_key,
+        table_key: target.tableKey,
         row_id: rowId,
-        field_key: "photo_asset_ids",
+        field_key: target.fieldKey,
         index: nextAssetIds.indexOf(assetId),
         if_match: current.draft_etag,
         if_match_version: current.draft_etag ? null : current.version_etag,
@@ -207,7 +214,7 @@ async function updateApertureProductDocumentationField(
       : "update_project_frame";
   const fieldValue =
     change.field === "spec_status"
-      ? { specification_status: typedSpecificationStatus(change.value) }
+      ? { specification_status: serializeReleaseASpecificationStatus(change.value) }
       : { [change.field]: change.value };
   const response = await applyDocumentationEnvelopeCommand(
     projectId,
@@ -227,16 +234,16 @@ async function updateEnvelopeDocumentationField(
   versionId: string,
   change: DocumentationFieldMutation,
 ): Promise<BaseTableSlice> {
-  if (change.field === "photo_not_required") {
-    return updateAssemblySegmentPhotoWaiver(projectId, versionId, change.record, change.value);
+  if (change.field === "photo_status") {
+    return updateAssemblySegmentPhotoStatus(projectId, versionId, change.record, change.value);
   }
   if (!change.record.material_id) {
     throw new Error(`Documentation row ${change.record.record_id} has no project material id.`);
   }
   const fieldValue =
     change.field === "spec_status"
-      ? { specification_status: typedSpecificationStatus(change.value) }
-      : { datasheet_not_required: change.value };
+      ? { specification_status: serializeReleaseASpecificationStatus(change.value) }
+      : { [change.field]: change.value };
   const response = await applyDocumentationEnvelopeCommand(
     projectId,
     versionId,
@@ -250,24 +257,36 @@ async function updateEnvelopeDocumentationField(
   return { ...summaryAsTableSlice(change.summary), draft_etag: response.draft_etag };
 }
 
-async function updateAssemblySegmentPhotoWaiver(
+async function updateAssemblySegmentPhotoStatus(
   projectId: string,
   versionId: string,
   record: DocumentationRecord,
-  value: boolean,
+  value: DocumentationEvidenceStatus,
+): Promise<BaseTableSlice> {
+  return updateAssemblySegmentPhotoField(projectId, versionId, record, "photo_status", value);
+}
+
+async function updateAssemblySegmentPhotoField(
+  projectId: string,
+  versionId: string,
+  record: DocumentationRecord,
+  field: "photo_status",
+  value: DocumentationEvidenceStatus,
 ): Promise<BaseTableSlice> {
   const current = await fetchDocumentationDraftTable(projectId, versionId, "assembly_segments");
-  const rows = readRows(current, "rows").filter((row) => record.segment_ids.includes(row.id));
+  const targetIds = new Set(record.segment_ids);
+  const rows = readRows(current, "rows").filter((row) => targetIds.has(row.id));
   const matchedIds = new Set(rows.map((row) => row.id));
   const missingIds = record.segment_ids.filter((segmentId) => !matchedIds.has(segmentId));
   if (missingIds.length) {
     throw new Error(`Documentation write could not find segments: ${missingIds.join(", ")}.`);
   }
-  if (rows.every((row) => Boolean(row.photo_not_required) === value)) return current;
+  const hasValue = (row: DocumentationDraftRow) => row.photo_status === value;
+  if (rows.every(hasValue)) return current;
   const payloadRows = rows.map((row) => ({
     id: row.id,
     photo_asset_ids: Array.isArray(row.photo_asset_ids) ? row.photo_asset_ids : [],
-    photo_not_required: value,
+    [field]: value,
     ...(typeof row.use_site_notes === "string" || row.use_site_notes === null
       ? { use_site_notes: row.use_site_notes }
       : {}),
@@ -356,14 +375,35 @@ function acceptedAttachmentSlice(current: BaseTableSlice, draftEtag: string): Ba
   return { ...current, source: "draft", draft_etag: draftEtag };
 }
 
-function documentationPhotoTargetRowIds(record: DocumentationRecord): string[] {
-  if (record.table_key === "assembly_segments") {
+function documentationAttachmentTarget(
+  record: DocumentationRecord,
+  axis: DocumentationAttachmentAxis,
+): { tableKey: string; fieldKey: string; rowIds: string[] } {
+  if (axis === "datasheet" && record.table_key === "assembly_segments") {
+    if (!record.material_id) {
+      throw new Error(`Documentation row ${record.record_id} has no project material id.`);
+    }
+    return {
+      tableKey: "project_materials",
+      fieldKey: "datasheet_asset_ids",
+      rowIds: [record.material_id],
+    };
+  }
+  if (axis === "photo" && record.table_key === "assembly_segments") {
     if (record.segment_ids.length === 0) {
       throw new Error(`Documentation row ${record.record_id} has no assembly segment ids.`);
     }
-    return record.segment_ids;
+    return {
+      tableKey: "assembly_segments",
+      fieldKey: "photo_asset_ids",
+      rowIds: record.segment_ids,
+    };
   }
-  return [record.record_id];
+  return {
+    tableKey: record.table_key,
+    fieldKey: axis === "datasheet" ? "datasheet_asset_ids" : "photo_asset_ids",
+    rowIds: [record.record_id],
+  };
 }
 
 const ROWS_KEY_BY_TABLE: Record<string, string> = {
@@ -419,12 +459,10 @@ function documentationRowHasValue(
     if (!isRecord(row.custom_values)) return false;
     return row.custom_values[STATUS_FIELD_KEY] === customStatusOption(change.value);
   }
-  return Boolean(row[change.field]) === change.value;
-}
-
-function typedSpecificationStatus(status: DocumentationSpecStatus) {
-  if (status === "needed" || status === "unknown") return "missing";
-  return status;
+  if (change.field === "datasheet_status" || change.field === "photo_status") {
+    return row[change.field] === change.value;
+  }
+  return false;
 }
 
 function customStatusOption(status: DocumentationSpecStatus): string {

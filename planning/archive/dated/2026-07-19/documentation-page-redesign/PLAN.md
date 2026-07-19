@@ -1,28 +1,28 @@
 ---
-DATE: 2026-07-18
-TIME: 22:50 EDT
-STATUS: Planned
+DATE: 2026-07-19
+TIME: 00:34 EDT
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Phase sequence for the Documentation tab Option 1A redesign.
 RELATED:
-  - planning/refactor/documentation-page-redesign/README.md
-  - planning/refactor/documentation-page-redesign/PRD.md
-  - planning/refactor/documentation-page-redesign/STATUS.md
-  - planning/refactor/documentation-page-redesign/phases/
+  - planning/archive/dated/2026-07-19/documentation-page-redesign/README.md
+  - planning/archive/dated/2026-07-19/documentation-page-redesign/PRD.md
+  - planning/archive/dated/2026-07-19/documentation-page-redesign/STATUS.md
+  - planning/archive/dated/2026-07-19/documentation-page-redesign/phases/
 ---
 
 # Documentation Page Redesign Plan
 
 ## Sequence
 
-| Phase | Scope | Depends on |
-|---|---|---|
-| 00 | Status contract and current slice review | - |
-| 01 | Evidence status schema: persisted Datasheet/Photo status, migration/backfill, summary rollup updates | 00 |
-| 02 | Progressive disclosure shell: header, local expansion state, section/group accordions, compact rows | 01 |
-| 03 | Axis selects and evidence writes: select-value adapter, datasheet/photo upload panels, optimistic rollup handling | 01, 02 |
-| 04 | Visual polish and responsive behavior: design-system CSS, meters, status pills, row-expanded drop zones, desktop/phone geometry | 02, 03 |
-| 05 | Verification and docs: RTL, browser smoke, context docs-pass, Graphify update | 04 |
+| Phase | Scope                                                                                                                           | Depends on |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| 00    | Status contract and current slice review                                                                                        | -          |
+| 01    | Evidence status schema: persisted Datasheet/Photo status, migration/backfill, summary rollup updates                            | 00         |
+| 02    | Progressive disclosure shell: header, local expansion state, section/group accordions, compact rows                             | 01         |
+| 03    | Axis selects and evidence writes: select-value adapter, datasheet/photo upload panels, optimistic rollup handling               | 01, 02     |
+| 04    | Visual polish and responsive behavior: design-system CSS, meters, status pills, row-expanded drop zones, desktop/phone geometry | 02, 03     |
+| 05    | Verification and docs: RTL, browser smoke, context docs-pass, Graphify update                                                   | 04         |
 
 ## Standing Rules
 

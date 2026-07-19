@@ -1,14 +1,14 @@
 ---
-DATE: 2026-07-18
-TIME: 22:50 EDT
-STATUS: Planned
+DATE: 2026-07-19
+TIME: 00:34 EDT
+STATUS: Complete
 AUTHOR: Codex
 SCOPE: Product and behavior contract for the Documentation tab Option 1A redesign.
 RELATED:
-  - planning/refactor/documentation-page-redesign/README.md
-  - planning/refactor/documentation-page-redesign/PLAN.md
-  - planning/refactor/documentation-page-redesign/STATUS.md
-  - planning/refactor/documentation-page-redesign/research.md
+  - planning/archive/dated/2026-07-19/documentation-page-redesign/README.md
+  - planning/archive/dated/2026-07-19/documentation-page-redesign/PLAN.md
+  - planning/archive/dated/2026-07-19/documentation-page-redesign/STATUS.md
+  - planning/archive/dated/2026-07-19/documentation-page-redesign/research.md
   - frontend/src/features/documentation/
   - context/ui/pages/documentation-tab.md
 ---
@@ -51,7 +51,7 @@ The top of `.documentation-page` must show:
 - subtitle: "Spec sign-off, datasheets, and site photos for every material and
   piece of equipment in the model.";
 - one muted attention line: `N specs, N datasheets and N photos still need
-  attention.`
+attention.`
 
 The existing three header rollup chips (`Spec N/M`, `Datasheets N/M`,
 `Photos N/M`) should be removed from the page header. Counts remain derived
