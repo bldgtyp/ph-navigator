@@ -32,17 +32,20 @@ non-status uses of `missing`.
    `opt_status_needed`.
 5. Change `ReportStatusKey`, report status dots, filter typings, and
    `data-status` from `missing` to `needed` for specification-status widgets.
-6. Change `StatusTone`/`data-tone` to `needed` for status controls. Add/use
-   `--report-status-needed` for the amber status palette. Preserve
-   `--report-status-missing` as an alias or separate token for Climate and
-   truly absent-data consumers; do not blind-replace unrelated CSS.
+6. Change `StatusTone`/`data-tone` to `needed` for status controls. Add
+   `--report-status-needed: #d97706` and move status-semantic consumers to it.
+   Set `--report-status-missing: var(--report-status-needed)` for unchanged
+   Climate and non-status consumers. Leave Documentation write-error/zero-meter
+   uses unchanged unless separately reclassified; do not blind-replace CSS.
 7. Keep Documentation phrases such as “Missing photos” where they describe
    absent evidence rather than the enum value.
 8. Verify current Documentation and Project Status types already consume
    `needed`; add regression rather than rewriting them.
-9. Verify Equipment, all four Heat Pump leaves, and Thermal Bridges still
-   render/write `opt_status_needed`. Add a Thermal Bridge default regression if
-   none exists.
+9. Add one automated option-list/default/render/write contract matrix covering
+   all 12 custom-status tables: Ventilators, Pumps, Fans, Hot Water Heaters,
+   Hot Water Tanks, Electric Heaters, Appliances, all four Heat Pump leaves,
+   and Thermal Bridges. Every namespaced option list must retain
+   `opt_status_needed`. Add a Thermal Bridge default regression if none exists.
 10. Verify MCP and current GH API typed payloads show `needed`; verify rich
     Honeybee construction output remains external `MISSING`.
 11. Use scoped grep checks over status symbols/paths. Do not assert that the
@@ -56,7 +59,8 @@ non-status uses of `missing`.
   Equipment Needed write.
 - Status dashboard: summaries for both storage families.
 - Shared status widgets: `needed` data attributes/tone.
-- Equipment/Heat Pump/TB: stable option ids and labels.
+- All 12 Equipment/Heat Pump/TB table surfaces: stable namespaced option lists,
+  defaults, render values, writes, ids, and labels.
 - API/MCP/GH/HBJSON: canonical vs external boundary values.
 
 ## Browser verification

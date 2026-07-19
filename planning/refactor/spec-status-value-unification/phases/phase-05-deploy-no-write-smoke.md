@@ -27,31 +27,36 @@ approved read-only checks; they do not deploy or mutate production implicitly.
 1. Reconfirm Phase 04 GO, write freeze, backup timestamp, candidate/main tip SHA,
    and no corpus drift.
 2. Ed triggers Deploy Production from the approved tip of `main`.
-3. Monitor required CI and both Render deploys. Record API and web SHAs; do not
-   rely solely on the workflow's API SHA check.
+3. Monitor required CI and both Render deploys. Poll the API version endpoint
+   and the cache-safe frontend build marker added in Phase 01 until both report
+   the candidate SHA.
 4. Run public readiness/version checks from `PRODUCTION_DEPLOYMENT.md`.
 5. Confirm both frontend and API serve the candidate before authenticated app
    navigation.
-6. Sign in with a freshly opened/refreshed tab—never reuse a network-error tab
-   or a predeploy app tab.
-7. With writes still frozen, inspect saved/read-only surfaces for Production
-   Project 1, then Project 2:
+6. Use saved-document endpoints for project smoke. Use a Viewer/read-only UI
+   route only after its network trace proves it does not call the draft-summary
+   endpoint. Do not mount the normal editor ProjectShell while writes are
+   frozen: its draft-summary request can rewrite a stale draft before the UI
+   reveals it.
+7. Inspect saved/read-only surfaces for Production Project 1, then Project 2:
    - project opens without read-safe recovery;
    - Materials/Glazings/Frames show Needed;
    - Documentation and Status counts load;
    - Equipment/TB status labels remain correct;
-   - raw JSON download remains available and raw.
-8. Avoid routes/actions that open a known stale draft. If an unexpected draft
-   appears, stop before reading/rewriting it and compare with Phase 04 inventory.
+   - raw JSON download returns the historical stored semantic value.
+8. Recheck the DB inventory after smoke. Any draft row or metadata/hash change
+   means the no-write guarantee failed; stop and update rollback mode.
 9. Record whether any v8 row was persisted. Expected result for this phase is
    none.
 
 ## Rollback gate
 
-If no v8 draft/version has been persisted, stop traffic/editing and redeploy the
-previous application SHA if needed; retain the database restore point. If any
-v8 persistence occurred, do not redeploy v7 alone—switch to the roll-forward
-runbook or restore/repair the DB under explicit authorization.
+App-only rollback to the previous SHA is permitted only if no v8 draft/version
+has been persisted **and** Phase 04 proved that SHA compatible with the
+candidate Alembic head, relational schema, and production config. Otherwise,
+switch to the roll-forward runbook or restore/repair the DB/config under
+explicit authorization. Render startup migrations do not roll back when code
+does.
 
 ## Exit gate
 

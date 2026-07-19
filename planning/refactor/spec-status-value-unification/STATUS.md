@@ -66,6 +66,7 @@ the unrelated edits.
 ## Open operator inputs (not design blockers)
 
 - Stable name/id of Production Project 1 and Production Project 2.
+- Current production API/web SHA and whether v7 has already been deployed.
 - Actual production backup/snapshot mechanism, retention, restore owner, and
   verified recovery procedure.
 - Duration of the Compatibility A observation/cache window before temporary

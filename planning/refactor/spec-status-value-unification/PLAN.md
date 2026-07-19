@@ -35,8 +35,11 @@ This is an expand/contract migration, not one atomic code edit.
 
 Reconcile the current branch and record the exact target. The documentation
 redesign branch already reports schema v7, but its committed schema fingerprint
-still records v6. Do not start v8 until the v7 baseline, fixtures, fingerprint,
-and focused schema tests are internally consistent.
+still records v6. Confirm the production API SHA and corpus schema: if v7 is
+not deployed yet, Compatibility A must ride with the v7 release and inherit its
+production audit/write-freeze/rollback gate. Do not start v8 until the v7
+baseline, fixtures, fingerprint, and focused schema tests are internally
+consistent.
 
 Deliverables: `decisions.md`, `research.md`, exact surface inventory, production
 project identifiers, and a green v7 schema baseline.
@@ -50,9 +53,10 @@ the coming value. Backend mutation inputs accept `missing | needed` and
 normalize to v7 `missing`. Frontend response boundaries accept either, display
 Needed on Materials/Glazings/Frames, and still serialize legacy `missing`.
 
-This release makes the later API/web skew safe and is fully rollbackable because
-it creates no v8 data. Deploy and verify both production projects before Phase
-02/03 ships.
+This release makes the later API/web skew safe and creates no v8 data. Its
+status-rename changes are code-rollback-safe; whole-app rollback still depends
+on whether production was already v7. Deploy and verify both production
+projects before Phase 02/03 ships.
 
 Plan: `phases/phase-01-compatibility-release.md`.
 
@@ -138,12 +142,16 @@ Stop the rollout if any of these is true:
 
 - v7 baseline/fingerprint is not green;
 - a production body fails candidate validation;
-- changed-count does not equal legacy-value count at the three allowed paths;
-- the candidate diff touches any other semantic value;
+- a v7 intermediate's changed-count does not equal its legacy-value count at
+  the three allowed paths;
+- the v7 → v8 diff touches any other semantic value, or an older source's full
+  diff cannot be explained by the named existing steps plus v7 → v8;
 - any production draft is unaccounted for;
 - backup/restore availability is not verified;
+- previous/candidate Alembic heads and deploy-time DB/config changes are not
+  inventoried, or app-only rollback compatibility is unproven;
 - Ed/John cannot pause writes and close/refresh old tabs;
-- API and web candidate SHAs are not both confirmed;
+- API and web candidate SHAs are not both confirmed through version markers;
 - either project fails the read-only smoke;
 - a rollback is proposed after v8 persistence without restoring/repairing the
   database.

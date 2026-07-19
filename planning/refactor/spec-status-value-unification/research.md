@@ -18,8 +18,9 @@ RELATED:
   `backend/features/project_document/document.py`.
 - `migrations/upgrade.py` contains sequential pure dict steps through
   `_upgrade_v6_to_v7`.
-- Typed saved-version reads upgrade in memory. Raw download returns stored raw
-  bytes.
+- Typed saved-version reads upgrade in memory. Raw download returns the stored
+  semantic JSON value reserialized by the route; it is not PostgreSQL JSONB's
+  original byte representation.
 - Stale drafts are rewritten on read by `store.rewrite_draft_if_upgraded`,
   including schema version and draft ETag.
 - First mutation from an old saved version creates a current-shape draft.
@@ -108,9 +109,10 @@ and legacy import must therefore use explicit versioned/boundary translation.
 
 `--report-status-missing` is broader than specification status. It is used by
 Documentation, Project Status, Climate, and shared controls. Rename status
-keys/tones to `needed`, introduce a canonical needed token for status semantics,
-and preserve a compatibility alias/distinct missing token where “missing” still
-means absent data. Do not perform blind repo-wide replacement.
+keys/tones to `needed`, introduce `--report-status-needed: #d97706`, and retain
+`--report-status-missing: var(--report-status-needed)` for unchanged Climate and
+non-status consumers. Leave Documentation write-error/zero-meter uses unchanged
+unless separately reclassified. Do not perform blind repo-wide replacement.
 
 ## Current baseline gap
 
@@ -139,7 +141,8 @@ For each production source body, report:
 - project/version/draft identity and source schema;
 - count of `missing`, `needed`, and other allowed values at each target path;
 - applied upgrade steps and current validation result;
-- upgraded body size and preview hash;
+- stored row metadata; a hash of one named canonical/export serialization; the
+  candidate-upgraded canonical hash; and upgraded body size;
 - exact changed paths/count;
 - second-pass byte identity.
 

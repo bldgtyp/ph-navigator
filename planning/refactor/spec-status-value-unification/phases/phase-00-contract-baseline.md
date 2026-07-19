@@ -35,7 +35,12 @@ and a complete surface/production inventory.
    frozen historical fixture/raw body, or unrelated grammatical/data state.
 7. Record Production Project 1 and 2 stable names/ids in a gitignored operator
    worksheet under `working/`; do not commit project data.
-8. Confirm whether either production project has open user drafts before
+8. Record the deployed production API/web SHA and the schema-version inventory
+   of both production projects. Decide whether v7 is already the production
+   baseline or Compatibility A must join the v6 → v7 rollout.
+9. If production is pre-v7, import the v7 release's corpus, write-freeze,
+   backup, and post-first-v7-write roll-forward boundary into Phase 01 evidence.
+10. Confirm whether either production project has open user drafts before
    Compatibility A planning is finalized.
 
 ## Verification
@@ -58,6 +63,7 @@ audit in this phase.
 - v7 baseline is green and internally consistent.
 - Surface inventory is classified, not a blind word-replacement list.
 - Both production project ids are known.
+- Production SHA/schema baseline and the v7 rollout path are explicit.
 - Existing production draft state is known or explicitly marked unavailable.
 
 ## Stop conditions

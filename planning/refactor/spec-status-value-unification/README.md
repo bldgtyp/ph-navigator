@@ -39,11 +39,14 @@ PH-Navigator's canonical built-in `SpecificationStatus` becomes:
 complete | needed | question | na
 ```
 
-Every status UI displays:
+Every specification-status UI displays:
 
 ```text
 Complete | Needed | Question | N/A
 ```
+
+Documentation Datasheet/Photo evidence status intentionally remains the
+smaller `Needed | Complete | N/A` contract.
 
 This is semantic consistency, not one physical storage format:
 

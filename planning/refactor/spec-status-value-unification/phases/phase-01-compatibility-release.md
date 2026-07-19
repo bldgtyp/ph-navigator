@@ -44,9 +44,16 @@ without creating schema-v8 data.
    - A frontend reading either spelling;
    - A frontend displaying Needed and writing legacy `missing`.
 7. Prove no schema constant, upgrader, seed value, or saved fixture changed.
-8. Run focused backend/frontend gates, then full `make ci`.
-9. After review/merge, Ed deploys Release A. Verify both production projects
-   load and edit normally; record deployed API/web SHAs.
+8. Add a cache-safe frontend build identity marker (for example generated
+   `/version.json`) containing the exact git SHA, test it, and update the deploy
+   workflow/runbook to poll both API and web SHAs before app smoke.
+9. Run focused backend/frontend gates, then full `make ci`.
+10. If production is still v6, complete the v7 candidate-corpus audit, backup,
+   draft-resolution, write-freeze, and rollback gate before deploying A. Treat
+   first persisted v7 data as the existing v7 rollout's rollback cliff.
+11. After review/merge, Ed deploys Release A. Run authenticated read-only smoke
+   on both production projects; record deployed API/web SHAs. Do not edit a
+   real project as a smoke test.
 
 ## Required tests
 
@@ -54,6 +61,7 @@ without creating schema-v8 data.
 - Materials and Aperture report controls;
 - Documentation built-in status write;
 - Equipment/TB option-id non-regression;
+- web build-marker content/cache behavior and deploy-workflow polling;
 - no schema fingerprint change.
 
 ## Exit gate
@@ -62,7 +70,9 @@ without creating schema-v8 data.
 - Schema remains v7 everywhere.
 - Either deployment order and either spelling are tolerated at mutation/read
   boundaries.
-- Release A can be rolled back by code deploy alone because no v8 data exists.
+- No v8 data exists. Code-only rollback is allowed only to an application that
+  supports the highest schema already persisted; if A also introduced v7 to a
+  v6 production baseline, follow the v7 rollout's roll-forward/restore rule.
 
 ## Stop conditions
 
@@ -75,5 +85,5 @@ without creating schema-v8 data.
 
 - focused/full CI results;
 - merged/deployed SHAs;
-- project-by-project read/edit smoke result;
+- project-by-project authenticated read-only smoke result;
 - confirmation that production corpus remains schema ≤7.

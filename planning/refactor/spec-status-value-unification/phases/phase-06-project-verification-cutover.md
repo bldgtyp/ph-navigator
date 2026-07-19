@@ -27,12 +27,14 @@ with the rollback boundary explicitly understood.
    Needed and match preflight counts.
 3. Verify Documentation built-in and custom-status records agree with owning
    tables; preserve `unknown` behavior where no source exists.
-4. Verify Status dashboard rollups and one Equipment/TB status edit preview
-   without saving if a safe read-only check suffices.
+4. Verify Status dashboard rollups and inspect Equipment/TB Needed values
+   read-only. Do not edit: cell/status changes immediately persist a server
+   draft even before explicit Save.
 5. Verify current MCP/GH typed reads use `needed` and rich Honeybee construction
    export still carries valid external `MISSING`.
 6. Verify raw download remains the historical stored schema/value where
-   expected; do not mistake raw recovery bytes for a failed typed migration.
+   expected; do not mistake reserialized raw recovery JSON for a failed typed
+   migration.
 
 ### Project 2 verification
 
@@ -44,7 +46,8 @@ with the rollback boundary explicitly understood.
 9. Allow the next legitimate user edit to create a v8 draft. Do not fabricate a
    no-op or bulk rewrite solely to stamp v8.
 10. On the first v8 persistence, record project/version/draft id, user,
-    timestamp, deployed SHA, schema, and ETag. Mark rollback mode
+    timestamp, deployed SHA, schema, persisted `draft_etag`, persisted
+    `base_version_etag`, and candidate-derived version ETag. Mark rollback mode
     `ROLL-FORWARD`.
 11. Verify that draft reads/writes, Save, and Save As continue normally. When
     each production project's next legitimate save occurs, record that its

@@ -59,8 +59,10 @@ After the v8 cutover:
 - Documentation and Status summary code passes canonical built-in values
   through; custom-status option ids continue through their explicit option-id
   adapters.
-- Shared status widgets use a `needed` status/tone key. The amber palette may
-  retain a compatibility alias for unrelated `missing` consumers.
+- Shared status widgets use a `needed` status/tone key and
+  `--report-status-needed: #d97706`. The existing missing token becomes
+  `--report-status-missing: var(--report-status-needed)` for unchanged Climate
+  and other non-status consumers.
 
 ## Historical and external compatibility
 
@@ -83,8 +85,8 @@ Use `CURRENT_PROJECT_DOCUMENT_SCHEMA_VERSION = 8` and a pure forward upgrader:
 
 - input: schema v7 raw dict;
 - rewrite only `"missing"` → `"needed"` in the three row lists named above;
-- preserve `complete`, `question`, `na`, already-`needed`, unknown unrelated
-  keys, row order, ids, and every non-target value;
+- preserve `complete`, `question`, `na`, defensively preserve already-`needed`,
+  and preserve every valid unrelated key/value, row order, and id;
 - stamp schema v8;
 - validate once against the current Pydantic model;
 - remain idempotent.
@@ -104,7 +106,9 @@ web separately:
 
 - Compatibility release (schema v7): backend mutation boundaries accept both
   values but normalize to v7 `missing`; frontend reads tolerate both, displays
-  Needed everywhere, and continues emitting legacy `missing`.
+  Needed everywhere, and continues emitting legacy `missing`. If production is
+  still v6, this compatibility work ships with the already-required v7 corpus,
+  write-freeze, and rollback gate rather than assuming v7 is already live.
 - Canonical release (schema v8): upgrader/domain use `needed`; backend still
   accepts cached-client `missing` at one named request boundary; frontend emits
   `needed`.
@@ -118,7 +122,8 @@ Before the canonical release, identify both production projects by name/id and
 record, for every saved version and every user draft:
 
 - version/draft id, owner where applicable, active/locked state, schema version,
-  ETag, body size, and target-value counts;
+  persisted `draft_etag`, persisted `base_version_etag`, candidate-derived saved
+  document ETag, body size, and target-value counts;
 - candidate upgrade result, applied steps, validation result, and preview hash;
 - exact semantic diff count at the three permitted paths.
 
@@ -129,23 +134,27 @@ before deployment.
 
 ## Acceptance criteria
 
-1. All in-scope UI surfaces display Complete / Needed / Question / N/A;
-   Apertures no longer displays Missing as a specification-status label.
+1. All in-scope specification-status UI surfaces display Complete / Needed /
+   Question / N/A; Apertures no longer displays Missing as a
+   specification-status label. Evidence-only controls keep their smaller set.
 2. Current backend/frontend built-in status contracts use `needed` and current
    PH-Navigator writes never persist `missing`.
 3. A frozen v7 body upgrades through v8 with an exact, idempotent diff limited
    to schema version plus the three permitted row paths.
 4. All saved versions and drafts belonging to both production projects pass the
-   candidate upgrader before deploy; counts before/after reconcile exactly.
+   candidate upgrader before deploy. For pre-v7 bodies, the accepted existing
+   chain is verified source → v7, then the v7 intermediate → v8 exact diff and
+   replacement counts reconcile independently.
 5. Equipment/Thermal Bridges retain `opt_status_needed`; summary APIs still
    return semantic `needed` for those tables.
 6. Documentation built-in writes emit `needed`; its response-only `unknown`
    sentinel remains and presents/writes as Needed.
 7. Status-summary and documentation-summary built-in `missing → needed`
    translation tables are removed; pass-through behavior is tested.
-8. Legacy Honeybee/HBJSON `MISSING` imports as internal `needed`; rich
-   Honeybee/Grasshopper export writes external `MISSING`; native current
-   round-trips preserve internal meaning.
+8. Legacy Honeybee/HBJSON `MISSING` imports as internal `needed`; both the
+   hand-built native HBJSON material-ref export and rich Honeybee/Grasshopper
+   export write external `MISSING`; native current round-trips preserve
+   internal meaning.
 9. MCP and GH API current typed outputs expose `needed`, except the named rich
    Honeybee reference adapter.
 10. Compatibility and canonical releases each pass focused gates plus full
@@ -154,8 +163,10 @@ before deployment.
 11. Both production projects pass authenticated read-only smoke after deploy;
     later ordinary Save/Save As persists v8 without a forced historical rewrite.
 12. Rollback/roll-forward evidence records whether any v8 draft/version has
-    been persisted. No one redeploys v7 code across that boundary without a DB
-    restore or reviewed reverse repair.
+    been persisted and whether candidate Alembic/config changes remain
+    backward-compatible with the previous SHA. No one redeploys v7 code across
+    either boundary without a compatible DB/config state, DB restore, or
+    reviewed repair.
 
 ## Non-goals
 

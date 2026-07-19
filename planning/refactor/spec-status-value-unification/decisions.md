@@ -60,15 +60,20 @@ resolve it to Needed. It is not persisted as a specification status.
 
 Status controls/counts/filters/data attributes use `needed`. Generic meanings
 of missing—absent evidence, missing climate data, catalog-row absence,
-validation errors—remain. Add/use a canonical `--report-status-needed` token
-for status semantics while preserving an alias or distinct token for unrelated
-consumers. Do not combine CSS architecture cleanup with the schema rollout.
+validation errors—remain. Add `--report-status-needed: #d97706`; move
+status-semantic consumers to it; retain
+`--report-status-missing: var(--report-status-needed)` for Climate and other
+non-status consumers during this refactor. Leave Documentation write-error and
+zero-meter uses unchanged unless a separate review reclassifies them. Do not
+combine CSS architecture cleanup with the schema rollout.
 
 ## D9 — Production rollout has a write cliff
 
-Before any v8 persistence: old code + predeploy DB restore is available. After
-any v8 draft/version is persisted, old v7 code rejects schema-too-new bodies;
-default recovery is roll-forward. Record the first v8 persistent write.
+Before any v8 persistence, app-only rollback is available only if the previous
+SHA is also proven compatible with the candidate's Alembic head, relational DB
+shape, and production config. After any v8 draft/version is persisted, old v7
+code rejects schema-too-new bodies; default recovery is roll-forward. Record
+the first v8 persistent write.
 
 ## D10 — “Update both projects” does not mean bulk rewrite
 

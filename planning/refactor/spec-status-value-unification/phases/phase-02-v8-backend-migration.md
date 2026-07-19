@@ -37,8 +37,10 @@ through the standing forward-upgrade lane.
    cached-client `missing` → internal `needed`. Keep it at the named boundary,
    not in persisted Pydantic row models.
 8. Add permanent external adapters:
-   - HBJSON/Honeybee import accepts `MISSING`/`missing` and `needed`, returns
-     internal `needed`;
+   - HBJSON/Honeybee import case-normalizes `MISSING`/`missing` and accepts
+     `needed`, returning internal `needed`;
+   - hand-built native `envelope/hbjson_export.py` material-ref export maps
+     internal `needed` to external `MISSING`;
    - rich Honeybee/GH construction export maps internal `needed` to external
      `MISSING` before assigning `honeybee_ref.ref_status`;
    - current native API/MCP/GH aperture outputs use `needed`.
@@ -53,16 +55,19 @@ through the standing forward-upgrade lane.
 ## Required automated cases
 
 - all three lists rewrite `missing` → `needed`;
-- complete/question/na/already-needed remain unchanged;
+- complete/question/na remain unchanged in the canonical v7 corpus;
+- an anomalous/transitional raw v7 dict already carrying `needed` is preserved
+  in a focused upgrader unit test, not admitted as a valid frozen v7 fixture;
 - absent/empty lists remain valid;
 - second upgrade/serialization is byte-identical;
 - exact diff is limited to schema version + permitted values;
 - stale draft rewrite updates schema/ETag through existing behavior;
 - Save/Save As writes v8;
-- raw download still returns the original stored v7 body;
+- raw download still returns the original stored semantic v7 JSON value;
 - Documentation/Status summaries pass through `needed`;
 - `opt_status_needed` mapping remains unchanged;
-- legacy Honeybee import and rich export both work.
+- legacy Honeybee import, native HBJSON material-ref export/round-trip, and rich
+  export all work.
 
 ## Verification
 
