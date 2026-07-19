@@ -7,6 +7,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from features.project_document.custom_fields import TableFieldDef
+from features.project_document.envelope_models import EvidenceStatus
 from features.project_document.row_base import RowWithCustomFields
 
 # Phius Multiple HP Performance Estimator dropdown values, used both
@@ -66,6 +67,8 @@ class HeatPumpOutdoorEquipRow(RowWithCustomFields):
     ieer: NonNegativeFloat | None = None
     datasheet_asset_ids: list[str] = Field(default_factory=list)
     photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_status: EvidenceStatus = "needed"
+    photo_status: EvidenceStatus = "needed"
     datasheet_not_required: bool = False
     photo_not_required: bool = False
     notes: str | None = Field(default=None, max_length=4000)
@@ -102,6 +105,8 @@ class HeatPumpIndoorEquipRow(RowWithCustomFields):
     hspf: NonNegativeFloat | None = None
     datasheet_asset_ids: list[str] = Field(default_factory=list)
     photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_status: EvidenceStatus = "needed"
+    photo_status: EvidenceStatus = "needed"
     datasheet_not_required: bool = False
     photo_not_required: bool = False
     notes: str | None = Field(default=None, max_length=4000)
@@ -126,6 +131,8 @@ class HeatPumpOutdoorUnitRow(RowWithCustomFields):
     outdoor_equip_id: str = Field(pattern=rf"^hpoe_{ULID_SUFFIX_PATTERN}$")
     datasheet_asset_ids: list[str] = Field(default_factory=list)
     photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_status: EvidenceStatus = "needed"
+    photo_status: EvidenceStatus = "needed"
     datasheet_not_required: bool = False
     photo_not_required: bool = False
     notes: str | None = Field(default=None, max_length=4000)
@@ -152,6 +159,8 @@ class HeatPumpIndoorUnitRow(RowWithCustomFields):
     served_room_ids: list[str] = Field(default_factory=list)
     datasheet_asset_ids: list[str] = Field(default_factory=list)
     photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_status: EvidenceStatus = "needed"
+    photo_status: EvidenceStatus = "needed"
     datasheet_not_required: bool = False
     photo_not_required: bool = False
     notes: str | None = Field(default=None, max_length=4000)

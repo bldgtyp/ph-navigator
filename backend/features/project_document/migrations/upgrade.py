@@ -337,6 +337,60 @@ def _upgrade_v5_to_v6(raw: dict[str, object]) -> dict[str, object]:
     return upgraded
 
 
+def _upgrade_v6_to_v7(raw: dict[str, object]) -> dict[str, object]:
+    """Backfill persisted Documentation Datasheet/Photo evidence statuses."""
+
+    upgraded = dict(raw)
+    tables = dict(_mapping(upgraded.get("tables"), "tables"))
+    equipment = dict(_mapping(tables.get("equipment"), "tables.equipment"))
+
+    for table_name in (
+        "appliances",
+        "electric_heaters",
+        "fans",
+        "hot_water_heaters",
+        "hot_water_tanks",
+        "pumps",
+        "ervs",
+    ):
+        equipment[table_name] = _backfill_evidence_statuses_in_envelope(
+            equipment.get(table_name),
+            path=f"tables.equipment.{table_name}",
+        )
+
+    heat_pumps = dict(_mapping(equipment.get("heat_pumps"), "tables.equipment.heat_pumps"))
+    for leaf_name in ("outdoor_equip", "indoor_equip", "outdoor_units", "indoor_units"):
+        heat_pumps[leaf_name] = _backfill_evidence_statuses_in_envelope(
+            heat_pumps.get(leaf_name),
+            path=f"tables.equipment.heat_pumps.{leaf_name}",
+        )
+    equipment["heat_pumps"] = heat_pumps
+    tables["equipment"] = equipment
+
+    tables["thermal_bridges"] = _backfill_evidence_statuses_in_envelope(
+        tables.get("thermal_bridges"),
+        path="tables.thermal_bridges",
+    )
+    tables["project_glazings"] = _backfill_evidence_statuses_in_rows(
+        tables.get("project_glazings"),
+        path="tables.project_glazings",
+    )
+    tables["project_frames"] = _backfill_evidence_statuses_in_rows(
+        tables.get("project_frames"),
+        path="tables.project_frames",
+    )
+    tables["project_materials"] = _backfill_evidence_statuses_in_rows(
+        tables.get("project_materials"),
+        path="tables.project_materials",
+        include_photo=False,
+    )
+    tables["assemblies"] = _backfill_assembly_segment_photo_statuses(tables.get("assemblies"))
+
+    upgraded["tables"] = tables
+    upgraded["schema_version"] = 7
+    return upgraded
+
+
 UPGRADE_STEPS: dict[int, Callable[[dict[str, object]], dict[str, object]]] = {
     0: _upgrade_v0_to_v1,
     1: _upgrade_v1_to_v2,
@@ -344,6 +398,7 @@ UPGRADE_STEPS: dict[int, Callable[[dict[str, object]], dict[str, object]]] = {
     3: _upgrade_v3_to_v4,
     4: _upgrade_v4_to_v5,
     5: _upgrade_v5_to_v6,
+    6: _upgrade_v6_to_v7,
 }
 
 
@@ -449,3 +504,76 @@ def _merge_current_built_ins(
             continue
         next_field_defs.append(field)
     return next_field_defs
+
+
+def _backfill_evidence_statuses_in_envelope(value: object, *, path: str) -> dict[str, object]:
+    envelope = dict(_mapping(value, path))
+    envelope["rows"] = _backfill_evidence_statuses_in_rows(envelope.get("rows"), path=f"{path}.rows")
+    return envelope
+
+
+def _backfill_evidence_statuses_in_rows(value: object, *, path: str, include_photo: bool = True) -> list[object]:
+    return [_backfill_evidence_statuses_in_row(row, include_photo=include_photo) for row in _list(value, path)]
+
+
+def _backfill_evidence_statuses_in_row(row: object, *, include_photo: bool = True) -> object:
+    if not isinstance(row, Mapping):
+        return row
+    row_mapping = dict(cast(Mapping[str, object], row))
+    row_mapping["datasheet_status"] = _backfilled_axis_status(
+        row_mapping,
+        asset_key="datasheet_asset_ids",
+        waiver_key="datasheet_not_required",
+    )
+    if include_photo:
+        row_mapping["photo_status"] = _backfilled_axis_status(
+            row_mapping,
+            asset_key="photo_asset_ids",
+            waiver_key="photo_not_required",
+        )
+    return row_mapping
+
+
+def _backfilled_axis_status(row: Mapping[str, object], *, asset_key: str, waiver_key: str) -> str:
+    if row.get(waiver_key) is True:
+        return "na"
+    asset_ids = row.get(asset_key)
+    if isinstance(asset_ids, list) and any(isinstance(asset_id, str) and asset_id for asset_id in asset_ids):
+        return "complete"
+    return "needed"
+
+
+def _backfill_assembly_segment_photo_statuses(value: object) -> list[object]:
+    assemblies: list[object] = []
+    for assembly in _list(value, "tables.assemblies"):
+        if not isinstance(assembly, Mapping):
+            assemblies.append(assembly)
+            continue
+        assembly_mapping = dict(cast(Mapping[str, object], assembly))
+        layers: list[object] = []
+        for layer in _list(assembly_mapping.get("layers"), "tables.assemblies.layers"):
+            if not isinstance(layer, Mapping):
+                layers.append(layer)
+                continue
+            layer_mapping = dict(cast(Mapping[str, object], layer))
+            layer_mapping["segments"] = _backfill_photo_statuses_in_segments(layer_mapping.get("segments"))
+            layers.append(layer_mapping)
+        assembly_mapping["layers"] = layers
+        assemblies.append(assembly_mapping)
+    return assemblies
+
+
+def _backfill_photo_statuses_in_segments(value: object) -> list[object]:
+    segments: list[object] = []
+    for segment in _list(value, "tables.assemblies.layers.segments"):
+        if not isinstance(segment, Mapping):
+            segments.append(segment)
+            continue
+        segment_mapping = dict(cast(Mapping[str, object], segment))
+        segment_mapping["photo_status"] = _backfilled_axis_status(
+            segment_mapping,
+            asset_key="photo_asset_ids",
+            waiver_key="photo_not_required",
+        )
+        segments.append(segment_mapping)
+    return segments

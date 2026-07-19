@@ -9,7 +9,13 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
-from features.project_document.envelope_models import Assembly, AssemblySegment, ProjectMaterial, SpecificationStatus
+from features.project_document.envelope_models import (
+    Assembly,
+    AssemblySegment,
+    EvidenceStatus,
+    ProjectMaterial,
+    SpecificationStatus,
+)
 from features.project_document.models import ProjectDocumentSource, ProjectDocumentView
 from features.project_document.tables import get_table_contract
 from features.project_document.tables._status_field import (
@@ -23,6 +29,7 @@ from features.project_document.validation import document_etag
 from features.projects.access import ProjectAccess
 
 DocumentationSpecStatus = Literal["needed", "question", "complete", "na", "unknown"]
+DocumentationEvidenceStatus = EvidenceStatus
 
 
 class DocumentationAxisCounts(BaseModel):
@@ -45,6 +52,8 @@ class DocumentationRecord(BaseModel):
     display_name: str
     sub_label: str | None = None
     spec_status: DocumentationSpecStatus
+    datasheet_status: DocumentationEvidenceStatus
+    photo_status: DocumentationEvidenceStatus
     datasheet_asset_ids: list[str]
     photo_asset_ids: list[str]
     datasheet_not_required: bool = False
@@ -307,6 +316,8 @@ def _assembly_material_records(
                 display_name=material.name,
                 sub_label=f"{assembly.name} · {material.category} · used in {len(segments)} segment(s)",
                 spec_status=_specification_status(material.specification_status),
+                datasheet_status=material.datasheet_status,
+                photo_status=_group_photo_status(segments),
                 datasheet_asset_ids=material.datasheet_asset_ids,
                 photo_asset_ids=photo_asset_ids,
                 datasheet_not_required=material.datasheet_not_required,
@@ -382,6 +393,8 @@ def _table_record(
         display_name=_display_name(row, custom_values),
         sub_label=_sub_label(row, custom_values, option_labels),
         spec_status=spec_status,
+        datasheet_status=_evidence_status(row, "datasheet_status"),
+        photo_status=_evidence_status(row, "photo_status"),
         datasheet_asset_ids=_asset_ids(row, "datasheet_asset_ids"),
         photo_asset_ids=_asset_ids(row, "photo_asset_ids"),
         datasheet_not_required=bool(getattr(row, "datasheet_not_required", False)),
@@ -398,6 +411,8 @@ def _record(
     display_name: str,
     sub_label: str | None,
     spec_status: DocumentationSpecStatus,
+    datasheet_status: DocumentationEvidenceStatus,
+    photo_status: DocumentationEvidenceStatus,
     datasheet_asset_ids: Sequence[str],
     photo_asset_ids: Sequence[str],
     datasheet_not_required: bool,
@@ -407,6 +422,8 @@ def _record(
     material_id: str | None = None,
 ) -> DocumentationRecord:
     if spec_status == "na":
+        datasheet_status = "na"
+        photo_status = "na"
         datasheet_not_required = True
         photo_not_required = True
     return DocumentationRecord(
@@ -416,6 +433,8 @@ def _record(
         display_name=display_name,
         sub_label=sub_label,
         spec_status=spec_status,
+        datasheet_status=datasheet_status,
+        photo_status=photo_status,
         datasheet_asset_ids=list(datasheet_asset_ids),
         photo_asset_ids=list(photo_asset_ids),
         datasheet_not_required=datasheet_not_required,
@@ -438,6 +457,27 @@ def _row_spec_status(row: object) -> DocumentationSpecStatus:
 
 def _specification_status(status: SpecificationStatus) -> DocumentationSpecStatus:
     return _STATUS_BY_SPECIFICATION_STATUS.get(status, "unknown")
+
+
+def _evidence_status(row: object, key: str) -> DocumentationEvidenceStatus:
+    value = getattr(row, key, "needed")
+    return value if value in {"needed", "complete", "na"} else "needed"
+
+
+def _group_photo_status(segments: Sequence[AssemblySegment]) -> DocumentationEvidenceStatus:
+    if not segments:
+        return "needed"
+    all_na = True
+    all_done = True
+    for segment in segments:
+        status = _evidence_status(segment, "photo_status")
+        all_na = all_na and status == "na"
+        all_done = all_done and status in {"complete", "na"}
+    if all_na:
+        return "na"
+    if all_done:
+        return "complete"
+    return "needed"
 
 
 def _display_name(row: object, custom_values: Mapping[str, object]) -> str:
@@ -485,20 +525,15 @@ def _count_records(records: list[DocumentationRecord]) -> DocumentationAxisCount
     return DocumentationAxisCounts(
         spec_done=sum(record.spec_status in {"complete", "na"} for record in records),
         spec_total=len(records),
-        ds_done=sum(
-            _axis_done(record.datasheet_asset_ids, record.datasheet_not_required, record.spec_status)
-            for record in records
-        ),
+        ds_done=sum(_axis_done(record.datasheet_status, record.spec_status) for record in records),
         ds_total=len(records),
-        photo_done=sum(
-            _axis_done(record.photo_asset_ids, record.photo_not_required, record.spec_status) for record in records
-        ),
+        photo_done=sum(_axis_done(record.photo_status, record.spec_status) for record in records),
         photo_total=len(records),
     )
 
 
-def _axis_done(asset_ids: Sequence[str], not_required: bool, spec_status: DocumentationSpecStatus) -> bool:
-    return bool(asset_ids) or not_required or spec_status == "na"
+def _axis_done(evidence_status: DocumentationEvidenceStatus, spec_status: DocumentationSpecStatus) -> bool:
+    return evidence_status in {"complete", "na"} or spec_status == "na"
 
 
 def _sum_counts(counts: Iterable[DocumentationAxisCounts]) -> DocumentationAxisCounts:

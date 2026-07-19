@@ -41,6 +41,8 @@ from features.assets.models import (
 )
 from features.assets.orphan_sweeper import AssetOrphanSweepWorkflow
 from features.assets.registry import (
+    DATASHEET_FIELD_KEY,
+    PHOTO_FIELD_KEY,
     WEATHER_FILE_KINDS,
     all_asset_kinds,
     asset_matches_field,
@@ -63,6 +65,11 @@ from features.project_document.write_spine import load_draft_context
 from features.project_location.epw import epw_header_looks_valid
 from features.projects.access import ProjectAccess, require_editor_user
 from features.shared.errors import api_error
+
+ATTACHMENT_STATUS_FIELD_BY_ASSET_FIELD = {
+    DATASHEET_FIELD_KEY: "datasheet_status",
+    PHOTO_FIELD_KEY: "photo_status",
+}
 
 
 class AssetService(AssetBulkDownloadWorkflow, AssetOrphanSweepWorkflow):
@@ -526,6 +533,8 @@ class AssetService(AssetBulkDownloadWorkflow, AssetOrphanSweepWorkflow):
             else:
                 values = [value for value in values if value != asset_id]
             row[payload.field_key] = values
+            if mode == "attach" and payload.field_key in ATTACHMENT_STATUS_FIELD_BY_ASSET_FIELD:
+                row[ATTACHMENT_STATUS_FIELD_BY_ASSET_FIELD[payload.field_key]] = "complete"
             next_body = validate_document(next_raw)
             serialized_next = enforce_document_body_size(next_body)
             draft_etag = next_draft_etag_from_etag(serialized_next.etag)

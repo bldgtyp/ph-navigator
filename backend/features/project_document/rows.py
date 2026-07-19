@@ -18,6 +18,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from features.heat_pumps.models import HeatPumpsTableSlice
 from features.project_document.custom_fields import TableFieldDef
+from features.project_document.envelope_models import EvidenceStatus
 from features.project_document.row_base import RowWithCustomFields
 
 
@@ -111,6 +112,8 @@ class PumpRow(RowWithCustomFields):
     notes: str | None = Field(default=None, max_length=4000)
     datasheet_asset_ids: list[str] = Field(default_factory=list)
     photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_status: EvidenceStatus = "needed"
+    photo_status: EvidenceStatus = "needed"
     datasheet_not_required: bool = False
     photo_not_required: bool = False
 
@@ -162,6 +165,8 @@ class VentilatorRow(RowWithCustomFields):
     notes: str | None = Field(default=None, max_length=4000)
     datasheet_asset_ids: list[str] = Field(default_factory=list)
     photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_status: EvidenceStatus = "needed"
+    photo_status: EvidenceStatus = "needed"
     datasheet_not_required: bool = False
     photo_not_required: bool = False
 
@@ -200,6 +205,8 @@ class FanRow(RowWithCustomFields):
     notes: str | None = Field(default=None, max_length=4000)
     datasheet_asset_ids: list[str] = Field(default_factory=list)
     photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_status: EvidenceStatus = "needed"
+    photo_status: EvidenceStatus = "needed"
     datasheet_not_required: bool = False
     photo_not_required: bool = False
 
@@ -245,6 +252,8 @@ class HotWaterHeaterRow(RowWithCustomFields):
     notes: str | None = Field(default=None, max_length=4000)
     datasheet_asset_ids: list[str] = Field(default_factory=list)
     photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_status: EvidenceStatus = "needed"
+    photo_status: EvidenceStatus = "needed"
     datasheet_not_required: bool = False
     photo_not_required: bool = False
 
@@ -290,6 +299,8 @@ class HotWaterTankRow(RowWithCustomFields):
     notes: str | None = Field(default=None, max_length=4000)
     datasheet_asset_ids: list[str] = Field(default_factory=list)
     photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_status: EvidenceStatus = "needed"
+    photo_status: EvidenceStatus = "needed"
     datasheet_not_required: bool = False
     photo_not_required: bool = False
 
@@ -326,6 +337,8 @@ class ElectricHeaterRow(RowWithCustomFields):
     notes: str | None = Field(default=None, max_length=4000)
     datasheet_asset_ids: list[str] = Field(default_factory=list)
     photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_status: EvidenceStatus = "needed"
+    photo_status: EvidenceStatus = "needed"
     datasheet_not_required: bool = False
     photo_not_required: bool = False
 
@@ -364,6 +377,8 @@ class ApplianceRow(RowWithCustomFields):
     notes: str | None = Field(default=None, max_length=4000)
     datasheet_asset_ids: list[str] = Field(default_factory=list)
     photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_status: EvidenceStatus = "needed"
+    photo_status: EvidenceStatus = "needed"
     datasheet_not_required: bool = False
     photo_not_required: bool = False
 
@@ -400,6 +415,8 @@ class ThermalBridgeRow(RowWithCustomFields):
     pdf_report_asset_ids: list[str] = Field(default_factory=list)
     datasheet_asset_ids: list[str] = Field(default_factory=list)
     photo_asset_ids: list[str] = Field(default_factory=list)
+    datasheet_status: EvidenceStatus = "needed"
+    photo_status: EvidenceStatus = "needed"
     datasheet_not_required: bool = False
     photo_not_required: bool = False
     notes: str | None = Field(default=None, max_length=4000)

@@ -60,7 +60,9 @@ def test_documentation_summary_counts_derived_axes_and_na_rows() -> None:
                     PumpRow(
                         id="pmp_1",
                         datasheet_not_required=True,
+                        datasheet_status="na",
                         photo_asset_ids=["asset_photo_1"],
+                        photo_status="complete",
                         custom_values={"name": "Pump 1", "status": STATUS_OPTION_NEEDED},
                     ),
                     PumpRow(
@@ -85,6 +87,42 @@ def test_documentation_summary_counts_derived_axes_and_na_rows() -> None:
     }
     assert pumps.records[1].datasheet_not_required is True
     assert pumps.records[1].photo_not_required is True
+    assert pumps.records[1].datasheet_status == "na"
+    assert pumps.records[1].photo_status == "na"
+
+
+def test_documentation_summary_counts_manual_needed_with_attachments_as_incomplete() -> None:
+    base = empty_project_document(
+        CreateProjectRequest(name="Documentation summary", bt_number="doc-summary", cert_programs=[])
+    )
+    equipment = base.tables.equipment.model_copy(
+        update={
+            "pumps": PumpsTableEnvelope(
+                rows=[
+                    PumpRow(
+                        id="pmp_1",
+                        datasheet_asset_ids=["asset_ds_1"],
+                        photo_asset_ids=["asset_photo_1"],
+                        datasheet_status="needed",
+                        photo_status="needed",
+                        custom_values={"name": "Pump 1", "status": STATUS_OPTION_NEEDED},
+                    )
+                ]
+            )
+        }
+    )
+
+    summary = project_documentation_summary(_view(base.tables.model_copy(update={"equipment": equipment})))
+
+    equipment_section = next(section for section in summary.sections if section.key == "equipment")
+    pumps = next(group for group in equipment_section.groups if group.key == "pumps")
+    assert pumps.counts.ds_done == 0
+    assert pumps.counts.photo_done == 0
+    record = pumps.records[0]
+    assert record.datasheet_asset_ids == ["asset_ds_1"]
+    assert record.photo_asset_ids == ["asset_photo_1"]
+    assert record.datasheet_status == "needed"
+    assert record.photo_status == "needed"
 
 
 def test_documentation_summary_groups_envelope_materials_per_assembly() -> None:
@@ -94,6 +132,7 @@ def test_documentation_summary_groups_envelope_materials_per_assembly() -> None:
         category="Insulation",
         specification_status="complete",
         datasheet_asset_ids=["asset_ds_1"],
+        datasheet_status="complete",
     )
     assembly = Assembly(
         id="asm_wall_c3",
@@ -112,6 +151,7 @@ def test_documentation_summary_groups_envelope_materials_per_assembly() -> None:
                         width_mm=400,
                         project_material_id=material.id,
                         photo_asset_ids=["asset_photo_1"],
+                        photo_status="complete",
                     ),
                     AssemblySegment(
                         id="seg_2",
@@ -119,6 +159,7 @@ def test_documentation_summary_groups_envelope_materials_per_assembly() -> None:
                         width_mm=400,
                         project_material_id=material.id,
                         photo_asset_ids=["asset_photo_1", "asset_photo_2"],
+                        photo_status="complete",
                     ),
                 ],
             )
@@ -160,7 +201,9 @@ def test_documentation_summary_keeps_heat_pump_leaf_grouping_and_option_sublabel
                         manufacturer="opt_mitsu",
                         model_number="MXZ-SM48",
                         datasheet_asset_ids=["asset_ds_1"],
+                        datasheet_status="complete",
                         photo_not_required=True,
+                        photo_status="na",
                         custom_values={"name": "Outdoor heat pump", "status": STATUS_OPTION_NEEDED},
                     )
                 ]

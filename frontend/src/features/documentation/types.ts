@@ -1,4 +1,5 @@
 export type DocumentationSpecStatus = "needed" | "question" | "complete" | "na" | "unknown";
+export type DocumentationEvidenceStatus = "needed" | "complete" | "na";
 
 export type DocumentationAxisCounts = {
   spec_done: number;
@@ -16,6 +17,8 @@ export type DocumentationRecord = {
   display_name: string;
   sub_label: string | null;
   spec_status: DocumentationSpecStatus;
+  datasheet_status: DocumentationEvidenceStatus;
+  photo_status: DocumentationEvidenceStatus;
   datasheet_asset_ids: string[];
   photo_asset_ids: string[];
   datasheet_not_required: boolean;

@@ -298,16 +298,27 @@ def test_assembly_segments_replace_preserves_omitted_notes_and_skips_noop() -> N
     segment = body.tables.assemblies[0].layers[0].segments[0]
 
     photos_only = contract.parse_replace_payload(
-        {"rows": [{"id": segment.id, "photo_asset_ids": ["asset_new"], "photo_not_required": True}]}
+        {
+            "rows": [
+                {
+                    "id": segment.id,
+                    "photo_asset_ids": ["asset_new"],
+                    "photo_status": "complete",
+                    "photo_not_required": True,
+                }
+            ]
+        }
     )
     updated = contract.apply_replace(body, photos_only)
 
     updated_segment = updated.tables.assemblies[0].layers[0].segments[0]
     assert updated_segment.photo_asset_ids == ["asset_new"]
+    assert updated_segment.photo_status == "complete"
     assert updated_segment.photo_not_required is True
     assert updated_segment.use_site_notes == "Use over exterior sheathing."
     extracted_rows = contract.extract_rows(updated)
     assert isinstance(extracted_rows, list)
+    assert extracted_rows[0]["photo_status"] == "complete"
     assert extracted_rows[0]["photo_not_required"] is True
 
     unchanged = contract.parse_replace_payload(
@@ -316,6 +327,7 @@ def test_assembly_segments_replace_preserves_omitted_notes_and_skips_noop() -> N
                 {
                     "id": updated_segment.id,
                     "photo_asset_ids": ["asset_new"],
+                    "photo_status": updated_segment.photo_status,
                     "photo_not_required": updated_segment.photo_not_required,
                     "use_site_notes": updated_segment.use_site_notes,
                 }

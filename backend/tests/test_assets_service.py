@@ -327,6 +327,7 @@ def test_datasheet_upload_complete_url_attach_and_detach_with_fake_storage(clean
 
         attached_slice = client.get(_draft_pumps_url(project_id, version_id)).json()
         assert attached_slice["pumps"][0]["datasheet_asset_ids"] == [asset_id]
+        assert attached_slice["pumps"][0]["datasheet_status"] == "complete"
 
         detach = client.post(
             _asset_url(project_id, asset_id, "/detach"),

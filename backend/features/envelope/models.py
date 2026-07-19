@@ -13,6 +13,7 @@ from features.project_document.document import (
     Assembly,
     AssemblyOrientation,
     AssemblyType,
+    EvidenceStatus,
     ProjectMaterial,
     SpecificationStatus,
 )
@@ -566,5 +567,6 @@ class AssemblySegmentTableRow(BaseModel):
     project_material_id: str | None
     project_material_name: str | None
     photo_asset_ids: list[str] = Field(default_factory=list)
+    photo_status: EvidenceStatus = "needed"
     photo_not_required: bool = False
     use_site_notes: str | None

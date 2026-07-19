@@ -22,6 +22,7 @@ import {
 import { documentationQueryKeys } from "./query-keys";
 import type {
   DocumentationRecord,
+  DocumentationEvidenceStatus,
   DocumentationSpecStatus,
   ProjectDocumentationSummary,
 } from "./types";
@@ -56,6 +57,11 @@ export type DocumentationFieldChange =
       record: DocumentationRecord;
       field: "datasheet_not_required" | "photo_not_required";
       value: boolean;
+    }
+  | {
+      record: DocumentationRecord;
+      field: "datasheet_status" | "photo_status";
+      value: DocumentationEvidenceStatus;
     };
 
 export type DocumentationFieldMutation = DocumentationFieldChange & {
@@ -230,13 +236,16 @@ async function updateEnvelopeDocumentationField(
   if (change.field === "photo_not_required") {
     return updateAssemblySegmentPhotoWaiver(projectId, versionId, change.record, change.value);
   }
+  if (change.field === "photo_status") {
+    return updateAssemblySegmentPhotoStatus(projectId, versionId, change.record, change.value);
+  }
   if (!change.record.material_id) {
     throw new Error(`Documentation row ${change.record.record_id} has no project material id.`);
   }
   const fieldValue =
     change.field === "spec_status"
       ? { specification_status: typedSpecificationStatus(change.value) }
-      : { datasheet_not_required: change.value };
+      : { [change.field]: change.value };
   const response = await applyDocumentationEnvelopeCommand(
     projectId,
     versionId,
@@ -256,18 +265,40 @@ async function updateAssemblySegmentPhotoWaiver(
   record: DocumentationRecord,
   value: boolean,
 ): Promise<BaseTableSlice> {
+  return updateAssemblySegmentPhotoField(projectId, versionId, record, "photo_not_required", value);
+}
+
+async function updateAssemblySegmentPhotoStatus(
+  projectId: string,
+  versionId: string,
+  record: DocumentationRecord,
+  value: DocumentationEvidenceStatus,
+): Promise<BaseTableSlice> {
+  return updateAssemblySegmentPhotoField(projectId, versionId, record, "photo_status", value);
+}
+
+async function updateAssemblySegmentPhotoField(
+  projectId: string,
+  versionId: string,
+  record: DocumentationRecord,
+  field: "photo_not_required" | "photo_status",
+  value: boolean | DocumentationEvidenceStatus,
+): Promise<BaseTableSlice> {
   const current = await fetchDocumentationDraftTable(projectId, versionId, "assembly_segments");
-  const rows = readRows(current, "rows").filter((row) => record.segment_ids.includes(row.id));
+  const targetIds = new Set(record.segment_ids);
+  const rows = readRows(current, "rows").filter((row) => targetIds.has(row.id));
   const matchedIds = new Set(rows.map((row) => row.id));
   const missingIds = record.segment_ids.filter((segmentId) => !matchedIds.has(segmentId));
   if (missingIds.length) {
     throw new Error(`Documentation write could not find segments: ${missingIds.join(", ")}.`);
   }
-  if (rows.every((row) => Boolean(row.photo_not_required) === value)) return current;
+  const hasValue = (row: DocumentationDraftRow) =>
+    field === "photo_not_required" ? Boolean(row.photo_not_required) === value : row.photo_status === value;
+  if (rows.every(hasValue)) return current;
   const payloadRows = rows.map((row) => ({
     id: row.id,
     photo_asset_ids: Array.isArray(row.photo_asset_ids) ? row.photo_asset_ids : [],
-    photo_not_required: value,
+    [field]: value,
     ...(typeof row.use_site_notes === "string" || row.use_site_notes === null
       ? { use_site_notes: row.use_site_notes }
       : {}),
@@ -418,6 +449,9 @@ function documentationRowHasValue(
   if (change.field === "spec_status") {
     if (!isRecord(row.custom_values)) return false;
     return row.custom_values[STATUS_FIELD_KEY] === customStatusOption(change.value);
+  }
+  if (change.field === "datasheet_status" || change.field === "photo_status") {
+    return row[change.field] === change.value;
   }
   return Boolean(row[change.field]) === change.value;
 }
