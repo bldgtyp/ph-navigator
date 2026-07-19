@@ -98,13 +98,6 @@ describe("DocumentationPage", () => {
     expect(pumpRowToggle).toHaveAttribute("aria-expanded", "true");
     const pumpRow = pumpRowToggle.closest("article");
     expect(pumpRow).not.toBeNull();
-    await user.click(within(pumpRow as HTMLElement).getByRole("button", { name: "Details" }));
-    const dialog = await screen.findByRole("dialog", { name: "Pump P-01" });
-    expect(within(dialog).getByText("Specification Status")).toBeVisible();
-    expect(within(dialog).getAllByText("Needed").length).toBeGreaterThan(0);
-
-    await user.keyboard("{Escape}");
-    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Pump P-01" })).toBeNull());
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/projects/proj_1/versions/ver_1/draft/documentation-summary",
       expect.objectContaining({ credentials: "include" }),

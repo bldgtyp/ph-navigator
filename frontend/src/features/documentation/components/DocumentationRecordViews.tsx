@@ -11,11 +11,7 @@ import {
   documentationSpecStatusValue,
   type DocumentationStatusOption,
 } from "../lib";
-import type {
-  DocumentationEvidenceStatus,
-  DocumentationRecord,
-  DocumentationSpecStatus,
-} from "../types";
+import type { DocumentationEvidenceStatus, DocumentationRecord } from "../types";
 
 export function DocumentationRecordRow({
   projectId,
@@ -28,7 +24,6 @@ export function DocumentationRecordRow({
   onDatasheetChange,
   onPhotoChange,
   onFieldChange,
-  onOpenRecord,
 }: {
   projectId: string;
   record: DocumentationRecord;
@@ -40,7 +35,6 @@ export function DocumentationRecordRow({
   onDatasheetChange: (record: DocumentationRecord, nextAssetIds: string[]) => Promise<void>;
   onPhotoChange: (record: DocumentationRecord, nextAssetIds: string[]) => Promise<void>;
   onFieldChange: (change: DocumentationFieldChange) => Promise<void>;
-  onOpenRecord: (record: DocumentationRecord) => void;
 }) {
   const specNa = record.spec_status === "na";
   return (
@@ -54,25 +48,37 @@ export function DocumentationRecordRow({
         className="documentation-record-summary"
         onClick={(event) => {
           // Row-wide expand toggle, except when the click lands on a status
-          // select (which changes its own value) or the name button (which
-          // toggles itself — guarding it avoids a double toggle).
-          if ((event.target as HTMLElement).closest(".documentation-status-select, button")) return;
+          // select (which changes its own value), the name button (which
+          // toggles itself — guarding it avoids a double toggle), or the
+          // open-owner link (which navigates).
+          if ((event.target as HTMLElement).closest(".documentation-status-select, button, a"))
+            return;
           onToggle();
         }}
       >
         <div className="documentation-record-main">
           <div className="documentation-record-label">
-            <button
-              type="button"
-              className="documentation-record-name"
-              onClick={onToggle}
-              aria-expanded={expanded}
-            >
-              <span aria-hidden="true">
-                {expanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
-              </span>
-              <span>{record.display_name}</span>
-            </button>
+            <div className="documentation-record-name-row">
+              <button
+                type="button"
+                className="documentation-record-name"
+                onClick={onToggle}
+                aria-expanded={expanded}
+              >
+                <span aria-hidden="true">
+                  {expanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+                </span>
+                <span>{record.display_name}</span>
+              </button>
+              <Link
+                className="documentation-record-open-owner"
+                to={record.table_path}
+                aria-label={`Open record - ${record.display_name}`}
+                title="Open record"
+              >
+                <ExternalLink size={14} aria-hidden="true" />
+              </Link>
+            </div>
             {record.sub_label ? <p>{record.sub_label}</p> : null}
           </div>
         </div>
@@ -103,19 +109,6 @@ export function DocumentationRecordRow({
       </div>
       {expanded ? (
         <div className="documentation-record-panel">
-          <div className="documentation-record-panel-actions">
-            <Link className="documentation-owner-link" to={record.table_path}>
-              <ExternalLink size={13} aria-hidden="true" />
-              <span>Open owner</span>
-            </Link>
-            <button
-              type="button"
-              className="secondary-button documentation-record-details"
-              onClick={() => onOpenRecord(record)}
-            >
-              Details
-            </button>
-          </div>
           <EvidenceCell
             label="Datasheet"
             status={documentationEvidenceStatusValue(record, "datasheet")}
@@ -153,29 +146,6 @@ export function DocumentationRecordRow({
         </div>
       ) : null}
     </article>
-  );
-}
-
-export function SpecCell({
-  record,
-  canEdit,
-  disabled,
-  onChange,
-}: {
-  record: DocumentationRecord;
-  canEdit: boolean;
-  disabled: boolean;
-  onChange: (value: DocumentationSpecStatus) => Promise<void>;
-}) {
-  return (
-    <AxisStatusCell
-      label="Spec"
-      value={documentationSpecStatusValue(record)}
-      options={SPEC_STATUS_OPTIONS}
-      canEdit={canEdit}
-      disabled={disabled}
-      onChange={onChange}
-    />
   );
 }
 

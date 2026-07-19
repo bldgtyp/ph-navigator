@@ -23,7 +23,7 @@ import type {
   DocumentationSection,
   ProjectDocumentationSummary,
 } from "../types";
-import { DirectionsModal, RecordDetailModal } from "./DocumentationModals";
+import { DirectionsModal } from "./DocumentationModals";
 import { DocumentationRecordRow } from "./DocumentationRecordViews";
 
 const AXIS_FILTERS: Array<{ axis: DocumentationAxis; label: string }> = [
@@ -47,7 +47,6 @@ export function DocumentationSummaryView({
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => new Set());
   const [expandedRecords, setExpandedRecords] = useState<Set<string>>(() => new Set());
   const [directionsSection, setDirectionsSection] = useState<DocumentationSection | null>(null);
-  const [activeRecordKey, setActiveRecordKey] = useState<string | null>(null);
   const attachmentMutation = useDocumentationAttachmentMutation(
     project.id,
     project.active_version_id,
@@ -62,16 +61,6 @@ export function DocumentationSummaryView({
     (fieldMutation.isPending &&
       fieldMutation.variables?.record.table_key === record.table_key &&
       fieldMutation.variables.record.record_id === record.record_id);
-  const activeRecord = useMemo(() => {
-    if (!activeRecordKey) return null;
-    for (const section of summary.sections) {
-      const match = sectionRecords(section).find(
-        (record) => documentationRecordKey(record) === activeRecordKey,
-      );
-      if (match) return match;
-    }
-    return null;
-  }, [activeRecordKey, summary.sections]);
 
   useEffect(() => {
     if (!location.hash) return;
@@ -218,7 +207,6 @@ export function DocumentationSummaryView({
                     onDatasheetChange={updateDatasheets}
                     onPhotoChange={updatePhotos}
                     onFieldChange={updateField}
-                    onOpenRecord={(record) => setActiveRecordKey(documentationRecordKey(record))}
                   />
                 ) : (
                   <p className="documentation-collapsed-stub">
@@ -234,19 +222,6 @@ export function DocumentationSummaryView({
       )}
       {directionsSection ? (
         <DirectionsModal section={directionsSection} onClose={() => setDirectionsSection(null)} />
-      ) : null}
-      {activeRecord ? (
-        <RecordDetailModal
-          projectId={project.id}
-          record={activeRecord}
-          assetUrlById={assetUrlById}
-          canEdit={canEdit}
-          writing={isRecordWriting(activeRecord)}
-          onDatasheetChange={updateDatasheets}
-          onPhotoChange={updatePhotos}
-          onFieldChange={updateField}
-          onClose={() => setActiveRecordKey(null)}
-        />
       ) : null}
     </section>
   );
@@ -329,7 +304,6 @@ function DocumentationSectionBody({
   onDatasheetChange,
   onPhotoChange,
   onFieldChange,
-  onOpenRecord,
 }: {
   id: string;
   projectId: string;
@@ -345,7 +319,6 @@ function DocumentationSectionBody({
   onDatasheetChange: (record: DocumentationRecord, nextAssetIds: string[]) => Promise<void>;
   onPhotoChange: (record: DocumentationRecord, nextAssetIds: string[]) => Promise<void>;
   onFieldChange: (change: DocumentationFieldChange) => Promise<void>;
-  onOpenRecord: (record: DocumentationRecord) => void;
 }) {
   const groups = section.groups.length
     ? section.groups
@@ -381,7 +354,6 @@ function DocumentationSectionBody({
           onDatasheetChange={onDatasheetChange}
           onPhotoChange={onPhotoChange}
           onFieldChange={onFieldChange}
-          onOpenRecord={onOpenRecord}
         />
       ))}
     </div>
@@ -403,7 +375,6 @@ function DocumentationGroupView({
   onDatasheetChange,
   onPhotoChange,
   onFieldChange,
-  onOpenRecord,
 }: {
   projectId: string;
   sectionKey: string;
@@ -419,7 +390,6 @@ function DocumentationGroupView({
   onDatasheetChange: (record: DocumentationRecord, nextAssetIds: string[]) => Promise<void>;
   onPhotoChange: (record: DocumentationRecord, nextAssetIds: string[]) => Promise<void>;
   onFieldChange: (change: DocumentationFieldChange) => Promise<void>;
-  onOpenRecord: (record: DocumentationRecord) => void;
 }) {
   const records = useMemo(
     () => group.records.filter((record) => filterRecord(record, activeFilters)),
@@ -463,7 +433,6 @@ function DocumentationGroupView({
                   onDatasheetChange={onDatasheetChange}
                   onPhotoChange={onPhotoChange}
                   onFieldChange={onFieldChange}
-                  onOpenRecord={onOpenRecord}
                 />
               ))}
             </div>

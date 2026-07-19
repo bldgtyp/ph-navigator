@@ -12,11 +12,7 @@
 .documentation-rollup,
 .documentation-filterbar,
 .documentation-cell-header,
-.documentation-section-actions,
-.documentation-owner-link,
-.documentation-modal-owner-link,
-.documentation-copy-id,
-.documentation-record-panel-actions {
+.documentation-section-actions {
   align-items: center;
   display: flex;
 }
@@ -273,6 +269,16 @@
   background: color-mix(in oklab, var(--text-muted) 5%, var(--bg-card));
 }
 
+/* NA records read as "off": mute the label text and the expand chevron
+   (a currentColor lucide icon, so it follows the name's color). */
+.documentation-record[data-spec-status="na"] .documentation-record-name {
+  color: var(--text-muted);
+}
+
+.documentation-record[data-spec-status="na"] .documentation-record-label p {
+  color: color-mix(in oklab, var(--text-muted) 80%, var(--bg-card));
+}
+
 /* Expanded record reads as one framed unit — a 2px accent outline drawn as an
    inset shadow so there is no layout shift and columns stay aligned with the
    other rows (matches the Envelope/Materials expanded-row pattern). */
@@ -295,6 +301,35 @@
   min-width: 0;
 }
 
+.documentation-record-name-row {
+  align-items: center;
+  display: flex;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+/* Open-owner link: revealed on hover/focus of the record label, mirroring the
+   ReportTable row-action reveal. */
+.documentation-record-open-owner {
+  align-items: center;
+  color: var(--text-muted);
+  display: inline-flex;
+  flex: 0 0 auto;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s var(--ease, ease-out);
+}
+
+.documentation-record-label:hover .documentation-record-open-owner,
+.documentation-record-label:focus-within .documentation-record-open-owner {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.documentation-record-open-owner:hover {
+  color: var(--accent-text);
+}
+
 .documentation-record-name {
   align-items: center;
   background: transparent;
@@ -311,38 +346,12 @@
   text-align: left;
 }
 
-.documentation-owner-link:hover {
-  text-decoration: underline;
-}
-
-.documentation-owner-link,
-.documentation-modal-owner-link,
-.documentation-copy-id {
-  gap: var(--space-6);
-}
-
-.documentation-owner-link {
-  color: var(--text-secondary);
-  font-size: var(--fs-xs);
-  text-decoration: none;
-}
-
 .documentation-record-panel {
   border-top: 1px solid var(--border-subtle);
   display: grid;
   gap: var(--space-12);
-  grid-template-columns: minmax(180px, 0.55fr) repeat(2, minmax(190px, 1fr));
+  grid-template-columns: repeat(2, minmax(190px, 1fr));
   padding-top: var(--space-12);
-}
-
-.documentation-record-panel-actions {
-  align-items: flex-start;
-  flex-direction: column;
-  gap: var(--space-8);
-}
-
-.documentation-record-details {
-  min-height: 32px;
 }
 
 .documentation-readonly-attachments {
