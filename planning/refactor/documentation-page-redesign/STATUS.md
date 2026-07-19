@@ -15,9 +15,11 @@ RELATED:
 
 ## Current State
 
-Phase 01 implemented. The project-document schema is now v7 with persisted
-Datasheet/Photo evidence statuses, documentation summary rollups read those
-statuses, and attachment uploads auto-set the matching status to `complete`.
+Phase 02 implemented. The project-document schema is v7 with persisted
+Datasheet/Photo evidence statuses, and the Documentation page now loads as an
+overview-first disclosure shell: sections are collapsed by default, hash links
+expand their target section/group, groups expand inside sections, and compact
+record rows expand locally for owner/detail/evidence controls.
 
 Reviewed:
 
@@ -40,7 +42,7 @@ Reviewed:
 |---|---|---|
 | 00 - Status contract and current slice | Decision recorded | Spec has four states; Datasheet/Photo have three persisted states |
 | 01 - Evidence status schema | Complete | Schema v7 adds/backfills Datasheet/Photo status, rollups use persisted status, uploads auto-complete |
-| 02 - Progressive disclosure shell | Planned | Header, section/group accordions, local expansion state, compact rows |
+| 02 - Progressive disclosure shell | Complete | Overview header, local section/group/record expansion, hash expansion, compact rows |
 | 03 - Axis selects and evidence writes | Planned | Spec/Datasheet/Photo selects; upload auto-sets Datasheet/Photo complete |
 | 04 - Visual polish and responsive behavior | Planned | Tokenized CSS, meters, pills, drop zones, desktop/mobile checks |
 | 05 - Verification and docs | Planned | RTL, browser smoke, docs-pass, Graphify |
@@ -74,12 +76,13 @@ None currently. The three initial contract questions were resolved by Ed on
 
 ## Next Step
 
-Start Phase 02 by replacing the initial dense summary body with the
-overview-first section/group/record disclosure shell while keeping existing
-writes operational.
+Start Phase 03 by replacing the compatibility spec/waiver controls with the
+three axis status selects and evidence write paths required by Option 1A.
 
 ## Verification
 
 - `.venv/bin/pytest tests/test_project_documentation_summary.py tests/test_assets_service.py::test_datasheet_upload_complete_url_attach_and_detach_with_fake_storage tests/test_project_document.py::test_project_document_upgrade_entrypoint_accepts_current_and_v0_baseline tests/test_project_document.py::test_project_document_v6_upgrade_backfills_documentation_evidence_statuses tests/envelope/test_envelope_document_contracts.py::test_assembly_segments_replace_preserves_omitted_notes_and_skips_noop -q` passed.
 - `pnpm exec tsc -b --pretty false` passed.
 - `git diff --check` passed.
+- `pnpm exec vitest run src/features/documentation/__tests__/DocumentationSummaryView.test.tsx` passed.
+- `make frontend-dev-check` passed; eslint still reports the pre-existing Fast Refresh warnings in Apertures, Climate, and shared DataTable files.

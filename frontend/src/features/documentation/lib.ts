@@ -36,7 +36,8 @@ export function sectionRecords(section: DocumentationSection): DocumentationReco
 
 export function axisDone(record: DocumentationRecord, axis: DocumentationAxis): boolean {
   if (axis === "spec") return record.spec_status === "complete" || record.spec_status === "na";
-  if (axis === "datasheet") return record.datasheet_status !== "needed" || record.spec_status === "na";
+  if (axis === "datasheet")
+    return record.datasheet_status !== "needed" || record.spec_status === "na";
   return record.photo_status !== "needed" || record.spec_status === "na";
 }
 

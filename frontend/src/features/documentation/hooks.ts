@@ -293,7 +293,9 @@ async function updateAssemblySegmentPhotoField(
     throw new Error(`Documentation write could not find segments: ${missingIds.join(", ")}.`);
   }
   const hasValue = (row: DocumentationDraftRow) =>
-    field === "photo_not_required" ? Boolean(row.photo_not_required) === value : row.photo_status === value;
+    field === "photo_not_required"
+      ? Boolean(row.photo_not_required) === value
+      : row.photo_status === value;
   if (rows.every(hasValue)) return current;
   const payloadRows = rows.map((row) => ({
     id: row.id,

@@ -22,11 +22,8 @@ import type {
   DocumentationSection,
   ProjectDocumentationSummary,
 } from "../types";
-import {
-  DirectionsModal,
-  DocumentationRecordRow,
-  RecordDetailModal,
-} from "./DocumentationRecordViews";
+import { DirectionsModal, RecordDetailModal } from "./DocumentationModals";
+import { DocumentationRecordRow } from "./DocumentationRecordViews";
 
 const AXIS_FILTERS: Array<{ axis: DocumentationAxis; label: string }> = [
   { axis: "spec", label: "Missing specs" },
@@ -45,9 +42,9 @@ export function DocumentationSummaryView({
 }) {
   const location = useLocation();
   const [activeFilters, setActiveFilters] = useState<Set<DocumentationAxis>>(() => new Set());
-  const [expandedCompleteSections, setExpandedCompleteSections] = useState<Set<string>>(
-    () => new Set(),
-  );
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(() => new Set());
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => new Set());
+  const [expandedRecords, setExpandedRecords] = useState<Set<string>>(() => new Set());
   const [directionsSection, setDirectionsSection] = useState<DocumentationSection | null>(null);
   const [activeRecordKey, setActiveRecordKey] = useState<string | null>(null);
   const photoMutation = useDocumentationPhotoMutation(project.id, project.active_version_id);
@@ -74,11 +71,24 @@ export function DocumentationSummaryView({
 
   useEffect(() => {
     if (!location.hash) return;
-    const target = document.getElementById(location.hash.slice(1));
-    if (target && "scrollIntoView" in target) {
-      target.scrollIntoView({ block: "start" });
+    const anchor = location.hash.slice(1);
+    const section = summary.sections.find(
+      (candidate) =>
+        candidate.anchor === anchor || candidate.groups.some((group) => group.anchor === anchor),
+    );
+    if (!section) return;
+    setExpandedSections((current) => setWithToggledValue(current, section.key, true));
+    const group = section.groups.find((candidate) => candidate.anchor === anchor);
+    if (group) {
+      setExpandedGroups((current) =>
+        setWithToggledValue(current, documentationGroupKey(section.key, group.key), true),
+      );
     }
-  }, [location.hash, summary.version_etag, summary.draft_etag]);
+    window.requestAnimationFrame(() => {
+      const target = document.getElementById(anchor);
+      if (target && "scrollIntoView" in target) target.scrollIntoView({ block: "start" });
+    });
+  }, [location.hash, summary.sections, summary.version_etag, summary.draft_etag]);
 
   const toggleFilter = (axis: DocumentationAxis) => {
     setActiveFilters((current) => {
@@ -88,13 +98,16 @@ export function DocumentationSummaryView({
       return next;
     });
   };
-  const toggleCompleteSection = (sectionKey: string) => {
-    setExpandedCompleteSections((current) => {
-      const next = new Set(current);
-      if (next.has(sectionKey)) next.delete(sectionKey);
-      else next.add(sectionKey);
-      return next;
-    });
+  const toggleSection = (sectionKey: string) => {
+    setExpandedSections((current) => setWithToggledValue(current, sectionKey));
+  };
+  const toggleGroup = (sectionKey: string, groupKey: string) => {
+    setExpandedGroups((current) =>
+      setWithToggledValue(current, documentationGroupKey(sectionKey, groupKey)),
+    );
+  };
+  const toggleRecord = (record: DocumentationRecord) => {
+    setExpandedRecords((current) => setWithToggledValue(current, documentationRecordKey(record)));
   };
   const copyAnchor = async (anchor: string) => {
     const nextUrl = `${window.location.origin}${window.location.pathname}${window.location.search}#${anchor}`;
@@ -110,7 +123,14 @@ export function DocumentationSummaryView({
   return (
     <section className="tab-panel documentation-page" aria-label="Documentation">
       <header className="documentation-header">
-        <AxisRollup counts={summary.counts} />
+        <div>
+          <h1>Documentation status</h1>
+          <p>
+            Spec sign-off, datasheets, and site photos for every material and piece of equipment in
+            the model.
+          </p>
+          <p className="documentation-attention-line">{attentionLine(summary.counts)}</p>
+        </div>
       </header>
       {project.active_version?.locked ? (
         <p className="draft-banner">
@@ -143,8 +163,7 @@ export function DocumentationSummaryView({
       ) : (
         <div className="documentation-sections">
           {summary.sections.map((section) => {
-            const complete = isCountsComplete(section.counts);
-            const collapsed = complete && !expandedCompleteSections.has(section.key);
+            const expanded = expandedSections.has(section.key);
             return (
               <section
                 className="documentation-section"
@@ -153,26 +172,18 @@ export function DocumentationSummaryView({
                 aria-labelledby={`documentation-section-${section.key}`}
               >
                 <div className="documentation-section-header">
-                  {complete ? (
-                    <button
-                      type="button"
-                      className="documentation-section-title"
-                      onClick={() => toggleCompleteSection(section.key)}
-                      aria-expanded={!collapsed}
-                    >
-                      <span aria-hidden="true">
-                        {collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
-                      </span>
-                      <span id={`documentation-section-${section.key}`}>{section.title}</span>
-                    </button>
-                  ) : (
-                    <h3
-                      className="documentation-section-title documentation-section-title--static"
-                      id={`documentation-section-${section.key}`}
-                    >
-                      {section.title}
-                    </h3>
-                  )}
+                  <button
+                    type="button"
+                    className="documentation-section-title"
+                    onClick={() => toggleSection(section.key)}
+                    aria-expanded={expanded}
+                    aria-controls={`documentation-section-body-${section.key}`}
+                  >
+                    <span aria-hidden="true">
+                      {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                    </span>
+                    <span id={`documentation-section-${section.key}`}>{section.title}</span>
+                  </button>
                   <AxisRollup counts={section.counts} compact />
                   <div className="documentation-section-actions">
                     <button
@@ -195,20 +206,29 @@ export function DocumentationSummaryView({
                     </button>
                   </div>
                 </div>
-                {collapsed ? (
-                  <p className="documentation-collapsed-stub">All visible evidence is complete.</p>
-                ) : (
+                {expanded ? (
                   <DocumentationSectionBody
+                    id={`documentation-section-body-${section.key}`}
                     projectId={project.id}
                     section={section}
                     activeFilters={activeFilters}
                     assetUrlById={assetUrlById}
                     canEdit={canEdit}
                     isRecordWriting={isRecordWriting}
+                    expandedGroups={expandedGroups}
+                    expandedRecords={expandedRecords}
+                    onToggleGroup={toggleGroup}
+                    onToggleRecord={toggleRecord}
                     onPhotoChange={updatePhotos}
                     onFieldChange={updateField}
                     onOpenRecord={(record) => setActiveRecordKey(documentationRecordKey(record))}
                   />
+                ) : (
+                  <p className="documentation-collapsed-stub">
+                    {isCountsComplete(section.counts)
+                      ? "All visible evidence is complete."
+                      : "Expand to review groups."}
+                  </p>
                 )}
               </section>
             );
@@ -238,6 +258,34 @@ function documentationRecordKey(record: DocumentationRecord): string {
   return `${record.table_key}:${record.record_id}`;
 }
 
+function documentationGroupKey(sectionKey: string, groupKey: string): string {
+  return `${sectionKey}:${groupKey}`;
+}
+
+function setWithToggledValue(current: Set<string>, key: string, force?: boolean): Set<string> {
+  const hasKey = current.has(key);
+  const shouldAdd = force ?? !hasKey;
+  if (hasKey === shouldAdd) return current;
+  const next = new Set(current);
+  if (shouldAdd) next.add(key);
+  else next.delete(key);
+  return next;
+}
+
+function attentionLine(counts: DocumentationAxisCounts): string {
+  const specs = counts.spec_total - counts.spec_done;
+  const datasheets = counts.ds_total - counts.ds_done;
+  const photos = counts.photo_total - counts.photo_done;
+  return `${pluralCount(specs, "spec")}, ${pluralCount(datasheets, "datasheet")}, and ${pluralCount(
+    photos,
+    "photo",
+  )} still need attention.`;
+}
+
+function pluralCount(count: number, label: string): string {
+  return `${count} ${label}${count === 1 ? "" : "s"}`;
+}
+
 function AxisRollup({
   counts,
   compact = false,
@@ -265,22 +313,32 @@ function AxisRollup({
 }
 
 function DocumentationSectionBody({
+  id,
   projectId,
   section,
   activeFilters,
   assetUrlById,
   canEdit,
   isRecordWriting,
+  expandedGroups,
+  expandedRecords,
+  onToggleGroup,
+  onToggleRecord,
   onPhotoChange,
   onFieldChange,
   onOpenRecord,
 }: {
+  id: string;
   projectId: string;
   section: DocumentationSection;
   activeFilters: ReadonlySet<DocumentationAxis>;
   assetUrlById: ReadonlyMap<string, AssetUrls>;
   canEdit: boolean;
   isRecordWriting: (record: DocumentationRecord) => boolean;
+  expandedGroups: ReadonlySet<string>;
+  expandedRecords: ReadonlySet<string>;
+  onToggleGroup: (sectionKey: string, groupKey: string) => void;
+  onToggleRecord: (record: DocumentationRecord) => void;
   onPhotoChange: (record: DocumentationRecord, nextAssetIds: string[]) => Promise<void>;
   onFieldChange: (change: DocumentationFieldChange) => Promise<void>;
   onOpenRecord: (record: DocumentationRecord) => void;
@@ -301,7 +359,7 @@ function DocumentationSectionBody({
     return <p className="documentation-group-empty">No records are available in this section.</p>;
   }
   return (
-    <div className="documentation-section-body">
+    <div className="documentation-section-body" id={id}>
       {visibleGroups.map((group) => (
         <DocumentationGroupView
           key={group.key}
@@ -312,6 +370,10 @@ function DocumentationSectionBody({
           assetUrlById={assetUrlById}
           canEdit={canEdit}
           isRecordWriting={isRecordWriting}
+          expanded={expandedGroups.has(documentationGroupKey(section.key, group.key))}
+          expandedRecords={expandedRecords}
+          onToggleGroup={onToggleGroup}
+          onToggleRecord={onToggleRecord}
           onPhotoChange={onPhotoChange}
           onFieldChange={onFieldChange}
           onOpenRecord={onOpenRecord}
@@ -329,6 +391,10 @@ function DocumentationGroupView({
   assetUrlById,
   canEdit,
   isRecordWriting,
+  expanded,
+  expandedRecords,
+  onToggleGroup,
+  onToggleRecord,
   onPhotoChange,
   onFieldChange,
   onOpenRecord,
@@ -340,6 +406,10 @@ function DocumentationGroupView({
   assetUrlById: ReadonlyMap<string, AssetUrls>;
   canEdit: boolean;
   isRecordWriting: (record: DocumentationRecord) => boolean;
+  expanded: boolean;
+  expandedRecords: ReadonlySet<string>;
+  onToggleGroup: (sectionKey: string, groupKey: string) => void;
+  onToggleRecord: (record: DocumentationRecord) => void;
   onPhotoChange: (record: DocumentationRecord, nextAssetIds: string[]) => Promise<void>;
   onFieldChange: (change: DocumentationFieldChange) => Promise<void>;
   onOpenRecord: (record: DocumentationRecord) => void;
@@ -348,39 +418,51 @@ function DocumentationGroupView({
     () => group.records.filter((record) => filterRecord(record, activeFilters)),
     [activeFilters, group.records],
   );
-  if (records.length === 0) {
-    return (
-      <section className="documentation-group" aria-labelledby={`documentation-group-${group.key}`}>
-        <header className="documentation-group-header">
-          <h3 id={`documentation-group-${group.key}`}>{group.title}</h3>
-          <AxisRollup counts={group.counts} compact />
-        </header>
-        <p className="documentation-group-empty">No records match the active filters.</p>
-      </section>
-    );
-  }
+  const groupId = `documentation-group-${sectionKey}-${group.key}`;
+  const groupBodyId = `documentation-group-body-${sectionKey}-${group.key}`;
   return (
-    <section className="documentation-group" aria-labelledby={`documentation-group-${group.key}`}>
+    <section className="documentation-group" id={group.anchor} aria-labelledby={groupId}>
       <header className="documentation-group-header">
-        <h3 id={`documentation-group-${group.key}`}>{group.title}</h3>
+        <button
+          type="button"
+          className="documentation-group-title"
+          aria-expanded={expanded}
+          aria-controls={groupBodyId}
+          onClick={() => onToggleGroup(sectionKey, group.key)}
+        >
+          <span aria-hidden="true">
+            {expanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+          </span>
+          <span id={groupId}>{group.title}</span>
+        </button>
         <AxisRollup counts={group.counts} compact />
       </header>
-      <div className="documentation-grid" role="list">
-        {records.map((record) => (
-          <DocumentationRecordRow
-            key={record.record_id}
-            projectId={projectId}
-            sectionKey={sectionKey}
-            record={record}
-            assetUrlById={assetUrlById}
-            canEdit={canEdit}
-            writing={isRecordWriting(record)}
-            onPhotoChange={onPhotoChange}
-            onFieldChange={onFieldChange}
-            onOpenRecord={onOpenRecord}
-          />
-        ))}
-      </div>
+      {expanded ? (
+        <div id={groupBodyId}>
+          {records.length === 0 ? (
+            <p className="documentation-group-empty">No records match the active filters.</p>
+          ) : (
+            <div className="documentation-grid" role="list">
+              {records.map((record) => (
+                <DocumentationRecordRow
+                  key={record.record_id}
+                  projectId={projectId}
+                  sectionKey={sectionKey}
+                  record={record}
+                  assetUrlById={assetUrlById}
+                  canEdit={canEdit}
+                  writing={isRecordWriting(record)}
+                  expanded={expandedRecords.has(documentationRecordKey(record))}
+                  onToggle={() => onToggleRecord(record)}
+                  onPhotoChange={onPhotoChange}
+                  onFieldChange={onFieldChange}
+                  onOpenRecord={onOpenRecord}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      ) : null}
     </section>
   );
 }
