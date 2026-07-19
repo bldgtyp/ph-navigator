@@ -1,3 +1,4 @@
+import type { StatusSelectOption } from "../../shared/ui";
 import type {
   DocumentationAxisCounts,
   DocumentationEvidenceStatus,
@@ -16,24 +17,21 @@ export const SPEC_STATUS_LABELS: Record<DocumentationSpecStatus, string> = {
   unknown: "Unknown",
 };
 
-export type DocumentationStatusOption<TValue extends string> = {
-  value: TValue;
-  label: string;
-};
+export type DocumentationStatusOption<TValue extends string> = StatusSelectOption<TValue>;
 
 export const SPEC_STATUS_OPTIONS: Array<DocumentationStatusOption<DocumentationSpecStatus>> = [
-  { value: "needed", label: SPEC_STATUS_LABELS.needed },
-  { value: "question", label: SPEC_STATUS_LABELS.question },
-  { value: "complete", label: SPEC_STATUS_LABELS.complete },
-  { value: "na", label: SPEC_STATUS_LABELS.na },
+  { value: "needed", label: SPEC_STATUS_LABELS.needed, tone: "missing" },
+  { value: "question", label: SPEC_STATUS_LABELS.question, tone: "question" },
+  { value: "complete", label: SPEC_STATUS_LABELS.complete, tone: "complete" },
+  { value: "na", label: SPEC_STATUS_LABELS.na, tone: "na" },
 ];
 
 export const EVIDENCE_STATUS_OPTIONS: Array<
   DocumentationStatusOption<DocumentationEvidenceStatus>
 > = [
-  { value: "needed", label: "Needed" },
-  { value: "complete", label: "Complete" },
-  { value: "na", label: "N/A" },
+  { value: "needed", label: "Needed", tone: "missing" },
+  { value: "complete", label: "Complete", tone: "complete" },
+  { value: "na", label: "N/A", tone: "na" },
 ];
 
 export function allDocumentationAssetIds(sections: readonly DocumentationSection[]): string[] {

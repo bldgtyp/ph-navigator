@@ -13,6 +13,7 @@ export * from "./InlineHeaderNameEditor";
 export * from "./ModalDialog";
 export * from "./ProgressBar";
 export * from "./ShellMessage";
+export * from "./StatusSelect";
 export * from "./TopbarUnitToggle";
 export * from "./WorkspaceTopbar";
 export * from "./useOutsidePointerDown";

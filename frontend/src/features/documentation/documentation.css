@@ -157,9 +157,10 @@
 }
 
 .documentation-section {
-  background: color-mix(in oklab, var(--bg-card) 88%, var(--bg-page));
+  background: var(--bg-card);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-workspace-shell);
   padding: var(--space-12);
   scroll-margin-top: var(--space-24);
 }
@@ -373,63 +374,6 @@
   gap: var(--space-8);
 }
 
-/* Match the app's status pill (`.single-select-pill--status`): a soft
-   option-color fill with colored text and no border, driven by --option-color. */
-.documentation-status-select {
-  align-items: center;
-  background-color: color-mix(in oklab, var(--option-color, var(--text-muted)) 18%, var(--bg-card));
-  border: 0;
-  border-radius: var(--radius-pill);
-  color: color-mix(in oklab, var(--option-color, var(--text-muted)) 76%, var(--text-primary));
-  display: inline-flex;
-  font: inherit;
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-medium);
-  line-height: var(--lh-ui);
-  min-height: 30px;
-  min-width: 112px;
-  padding: 2px var(--space-10);
-}
-
-/* Native select: replace the UA arrow (which sits flush to the edge and can't
-   be padded away) with a custom chevron and room to breathe on the right. */
-select.documentation-status-select {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  cursor: pointer;
-  padding-right: 28px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right var(--space-10) center;
-}
-
-.documentation-status-select:focus-visible {
-  box-shadow: var(--phn-focus);
-  outline: none;
-}
-
-span.documentation-status-select {
-  cursor: default;
-}
-
-.documentation-status-select--needed {
-  --option-color: var(--report-status-missing);
-}
-
-.documentation-status-select--question {
-  --option-color: var(--report-status-question);
-}
-
-.documentation-status-select--complete {
-  --option-color: var(--report-status-complete);
-}
-
-.documentation-status-select--na,
-.documentation-status-select--unknown {
-  --option-color: var(--text-muted);
-}
-
 .documentation-cell-label {
   color: color-mix(in oklab, var(--text-muted) 78%, var(--bg-card));
   font-size: var(--fs-xs);
@@ -482,7 +426,7 @@ span.documentation-status-select {
     align-items: stretch;
   }
 
-  .documentation-status-select {
+  .documentation-spec-cell .status-select {
     width: 100%;
   }
 }

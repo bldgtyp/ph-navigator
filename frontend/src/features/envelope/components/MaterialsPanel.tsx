@@ -15,11 +15,10 @@ import {
   densityUnitLabel,
   specificHeatUnitLabel,
 } from "../../catalogs/components/unit-labels";
-import { AutocompleteSelect } from "../../../shared/ui/AutocompleteSelect";
+import { StatusSelect, type StatusSelectOption } from "../../../shared/ui";
 import {
   AttachmentChipCell,
   ReportTable,
-  StatusDot,
   StatusFilterChips,
   type ReportStatusKey,
   type ReportTableColumn,
@@ -44,14 +43,14 @@ import {
   groupMaterialUseSites,
 } from "./materials/use-site-groups";
 
-const STATUSES: SpecificationStatus[] = ["missing", "question", "complete", "na"];
-
-const STATUS_LABEL: Record<SpecificationStatus, string> = {
-  missing: "Missing",
-  question: "Question",
-  complete: "Complete",
-  na: "N/A",
-};
+// Shared status vocabulary with the Documentation page: the backend value
+// "missing" is presented as "Needed" (same underlying value, unified label).
+const STATUS_OPTIONS: StatusSelectOption<SpecificationStatus>[] = [
+  { value: "missing", label: "Needed", tone: "missing" },
+  { value: "question", label: "Question", tone: "question" },
+  { value: "complete", label: "Complete", tone: "complete" },
+  { value: "na", label: "N/A", tone: "na" },
+];
 
 export function MaterialsPanel({
   materials,
@@ -138,7 +137,7 @@ export function MaterialsPanel({
 
   const filterOptions: StatusFilterOption<ReportStatusKey>[] = [
     { value: "all", label: "All", count: totalCount },
-    { value: "missing", status: "missing", label: "Missing", count: statusCounts.missing },
+    { value: "missing", status: "missing", label: "Needed", count: statusCounts.missing },
     { value: "question", status: "question", label: "Question", count: statusCounts.question },
     { value: "complete", status: "complete", label: "Complete", count: statusCounts.complete },
     { value: "na", status: "na", label: "N/A", count: statusCounts.na },
@@ -215,31 +214,20 @@ export function MaterialsPanel({
       header: "Status",
       width: "minmax(120px, 1fr)",
       render: (m) => (
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, width: "100%" }}>
-          <StatusDot status={m.specification_status} />
-          {canEdit ? (
-            <AutocompleteSelect
-              ariaLabel="Status"
-              value={m.specification_status}
-              disabled={busy}
-              compact
-              listboxPlacement="portal"
-              options={STATUSES.map((status) => ({
-                value: status,
-                label: STATUS_LABEL[status],
-              }))}
-              onChange={(nextStatus) =>
-                onCommand({
-                  kind: "update_project_material",
-                  project_material_id: m.id,
-                  specification_status: nextStatus as SpecificationStatus,
-                })
-              }
-            />
-          ) : (
-            <span>{STATUS_LABEL[m.specification_status]}</span>
-          )}
-        </span>
+        <StatusSelect
+          ariaLabel="Status"
+          value={m.specification_status}
+          options={STATUS_OPTIONS}
+          disabled={busy}
+          readOnly={!canEdit}
+          onChange={(nextStatus) =>
+            onCommand({
+              kind: "update_project_material",
+              project_material_id: m.id,
+              specification_status: nextStatus,
+            })
+          }
+        />
       ),
     },
   ];

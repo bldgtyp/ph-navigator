@@ -1,5 +1,6 @@
 import { ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
+import { StatusSelect } from "../../../shared/ui";
 import { AttachmentCell } from "../../assets/components/AttachmentCell";
 import { DATASHEET_ATTACHMENT_CONFIG, SITE_PHOTO_ATTACHMENT_CONFIG } from "../../assets/lib";
 import type { AssetUrls, AttachmentFieldConfig } from "../../assets/types";
@@ -51,8 +52,7 @@ export function DocumentationRecordRow({
           // select (which changes its own value), the name button (which
           // toggles itself — guarding it avoids a double toggle), or the
           // open-owner link (which navigates).
-          if ((event.target as HTMLElement).closest(".documentation-status-select, button, a"))
-            return;
+          if ((event.target as HTMLElement).closest(".status-select, button, a")) return;
           onToggle();
         }}
       >
@@ -236,35 +236,19 @@ export function AxisStatusCell<TValue extends string>({
   disabled: boolean;
   onChange: (value: TValue) => Promise<void>;
 }) {
-  const statusClass = `documentation-status-select documentation-status-select--${value}`;
-  const statusLabel = options.find((option) => option.value === value)?.label ?? value;
-  if (!canEdit) {
-    return (
-      <div className="documentation-cell documentation-spec-cell">
-        <span className="documentation-cell-label">{label}</span>
-        <span className={statusClass}>{statusLabel}</span>
-      </div>
-    );
-  }
   // A <div> (not <label>) wrapper: clicking the cell's non-select area should
-  // toggle the row's expansion, not get forwarded into the select. The select
-  // keeps its accessible name via aria-label.
+  // toggle the row's expansion, not get forwarded into the select.
   return (
     <div className="documentation-cell documentation-spec-cell">
       <span className="documentation-cell-label">{label}</span>
-      <select
-        className={statusClass}
-        aria-label={label}
+      <StatusSelect
         value={value}
+        options={options}
+        ariaLabel={label}
         disabled={disabled}
-        onChange={(event) => void onChange(event.target.value as TValue)}
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+        readOnly={!canEdit}
+        onChange={(next) => void onChange(next)}
+      />
     </div>
   );
 }

@@ -1,0 +1,59 @@
+/* Shared status pill-select (see StatusSelect.tsx). Matches the app status
+   pill (`.single-select-pill--status`): a soft --option-color fill with
+   coloured text and no border. --option-color is set per tone below, all from
+   the shared --report-status-* tokens so every status dropdown reads the same
+   across pages. */
+.status-select {
+  align-items: center;
+  background-color: color-mix(in oklab, var(--option-color, var(--text-muted)) 18%, var(--bg-card));
+  border: 0;
+  border-radius: var(--radius-pill);
+  color: color-mix(in oklab, var(--option-color, var(--text-muted)) 76%, var(--text-primary));
+  display: inline-flex;
+  font: inherit;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  line-height: var(--lh-ui);
+  min-height: 30px;
+  min-width: 112px;
+  padding: 2px var(--space-10);
+}
+
+/* Native <select>: replace the UA arrow (which sits flush to the edge and
+   can't be padded away) with a custom chevron and room on the right. */
+select.status-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  padding-right: 28px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-10) center;
+}
+
+.status-select:focus-visible {
+  box-shadow: var(--phn-focus);
+  outline: none;
+}
+
+span.status-select {
+  cursor: default;
+}
+
+.status-select[data-tone="missing"] {
+  --option-color: var(--report-status-missing);
+}
+
+.status-select[data-tone="question"] {
+  --option-color: var(--report-status-question);
+}
+
+.status-select[data-tone="complete"] {
+  --option-color: var(--report-status-complete);
+}
+
+.status-select[data-tone="na"],
+.status-select[data-tone="neutral"] {
+  --option-color: var(--text-muted);
+}
