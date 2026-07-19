@@ -618,8 +618,7 @@ JSON document. Illustrative sketch (the canonical model is the
     ],
     "equipment.ervs.unit_type": [ /* user-defined; typically [ERV, HRV] but user picks labels */ ],
     "equipment.ervs.manufacturer": [ /* user-defined */ ],
-    "equipment.fans.fan_purpose": [ /* user-defined */ ],
-    "equipment.fans.manufacturer": [ /* user-defined */ ]
+    "fans.type": [ /* user-defined; option key is "fans.type", not "equipment.fans.fan_purpose" or "fan_purpose" — see `FAN_TYPE_OPTION_KEY` in `document.py` */ ]
   }
 }
 ```
@@ -681,9 +680,8 @@ Properties of the document shape:
 - **User-defined column options live alongside data**
   (V2 NEW per US-Builder-Tables criteria 16–17). Single-select
   columns (e.g. `rooms.floor_level`, `rooms.building_zone`,
-  `thermal_bridges.category`, equipment `manufacturer` /
-  `unit_type` / `pump_type` / `fan_purpose`) draw their option
-  list from a top-level `single_select_options` keyed by
+  `thermal_bridges.type`, `pumps.device_type`, `fans.type`) draw their
+  option list from a top-level `single_select_options` keyed by
   `<table_path>.<column_key>`. Each option carries a stable
   `id`, `label`, `color`, and `order`. **Sort follows
   `order`, not label** — reordering options reorders table data

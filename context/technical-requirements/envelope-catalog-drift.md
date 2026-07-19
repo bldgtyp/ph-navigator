@@ -111,4 +111,4 @@ for `drifted` rows; the other states are surfaced via static badges.
 - `backend/tests/envelope/test_envelope_catalog_drift.py` — contract
   tests covering all five states.
 - `context/GLOSSARY.md` `Drift`, `Refresh from catalog`.
-- `context/user-stories/20-envelope.md` US-ENV-11.
+- `planning/archive/user-stories/20-envelope.md` US-ENV-11.

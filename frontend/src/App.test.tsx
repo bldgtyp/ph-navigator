@@ -9,7 +9,7 @@ import {
   roomsBuiltInFieldDefs,
   withRoomCustomValues,
 } from "./features/equipment/testing/testFixtures";
-import { spaceTypesPath, spacesRoomsPath } from "./features/spaces/paths";
+import { spacesRoomsPath } from "./features/spaces/paths";
 import { createDeferred } from "./test-utils/async";
 import {
   getDraftWriteCoordinator,
@@ -341,7 +341,7 @@ describe("App", () => {
     const projectTabs = screen.getByRole("navigation", { name: "Project tabs" });
     expect(within(projectTabs).getByRole("link", { name: "Spaces" })).toHaveAttribute(
       "href",
-      spaceTypesPath(projectPayload.id),
+      spacesRoomsPath(projectPayload.id),
     );
     expect(within(projectTabs).queryByRole("link", { name: "Rooms" })).not.toBeInTheDocument();
   });

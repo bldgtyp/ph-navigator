@@ -234,7 +234,7 @@ This omission is deliberate, not accidental.
 - `backend/features/envelope/hbjson_export.py` — implementation.
 - `backend/tests/envelope/test_envelope_thermal_and_export.py` —
   contract tests (`test_hbjson_export_*`).
-- `context/user-stories/20-envelope.md` US-ENV-12 — user-facing
+- `planning/archive/user-stories/20-envelope.md` US-ENV-12 — user-facing
   contract.
 - `context/technical-requirements/envelope-thermal-preview.md` —
   flag vocabulary that drives the 422 payload.

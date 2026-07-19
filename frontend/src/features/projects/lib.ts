@@ -1,5 +1,5 @@
 import { errorMessage } from "../../shared/lib/errors";
-import { spaceTypesPath } from "../spaces/paths";
+import { spacesRoomsPath } from "../spaces/paths";
 
 export const PROJECT_TABS = [
   "status",
@@ -41,7 +41,7 @@ export const TAB_COPY: Record<ProjectTab, string> = {
 
 export function projectTabPath(projectId: string, tab: ProjectTab): string {
   if (tab === "spaces") {
-    return spaceTypesPath(projectId);
+    return spacesRoomsPath(projectId);
   }
   return `/projects/${projectId}/${tab}`;
 }

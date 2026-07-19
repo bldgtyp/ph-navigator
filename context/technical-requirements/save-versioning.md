@@ -1,7 +1,7 @@
 ---
 DATE: 2026-05-12
 STATUS: CANONICAL TECHNICAL REQUIREMENTS — extracted from context/PRD.md to keep startup context small.
-RELATED: context/PRD.md §8, context/user-stories/00-foundation-shell.md
+RELATED: context/PRD.md §8, planning/archive/user-stories/00-foundation-shell.md
 ---
 
 # PH-Navigator V2 — Save / Versioning Requirements

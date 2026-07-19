@@ -2,7 +2,7 @@
 DATE: 2026-05-12
 STATUS: CANONICAL TECHNICAL REQUIREMENTS — extracted from the catalog POC table-view doc.
 RELATED: context/PRD.md §11.3, context/TECH_STACK.md,
-         context/UI_UX.md §1.7, context/user-stories/30-tables-equipment.md,
+         context/UI_UX.md §1.7, planning/archive/user-stories/30-tables-equipment.md,
          research/poc-plans/grid-spike-results.md,
          research/poc-plans/poc-evaluation.md,
          research/poc-plans/poc-lessons-for-real-build.md
@@ -24,7 +24,7 @@ current implementation decisions.
 - Product scope and startup-level direction: `context/PRD.md`.
 - User-facing table interaction model: `context/UI_UX.md` §1.7.
 - Acceptance criteria for project tables and equipment tabs:
-  `context/user-stories/30-tables-equipment.md`.
+  `planning/archive/user-stories/30-tables-equipment.md`.
 - Stack/library decision: `context/TECH_STACK.md`.
 - Implementation contract: this file.
 

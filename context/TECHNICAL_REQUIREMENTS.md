@@ -5,9 +5,9 @@ RELATED: context/PRD.md, context/TECH_STACK.md, context/UI_UX.md,
          context/USER_STORIES.md
 ---
 
-# PH-Navigator V2 — Technical Requirements Router
+# PH-Navigator — Technical Requirements Router
 
-This is the on-demand technical contract layer for PH-Navigator V2. It
+This is the on-demand technical contract layer for PH-Navigator. It
 exists so `context/PRD.md` can stay small enough for default startup
 context while implementation details remain durable and discoverable.
 
@@ -41,6 +41,23 @@ load only the file that matches the active implementation surface.
   roster, `<AttachmentCell>` UX contract, upload coordinator, save /
   version invariants and edge-case test targets, thumbnail pipeline,
   errors, and security.
+
+### Envelope / HBJSON export-import
+
+- `technical-requirements/envelope-commands.md` — the semantic
+  envelope-command catalog (Assembly Builder edits), request/response
+  shape, and conflict-code reference.
+- `technical-requirements/envelope-hbjson-export.md` — the saved-version
+  opaque-construction HBJSON export payload shape.
+- `technical-requirements/envelope-hbjson-import.md` — HBJSON
+  construction import: parse, match, resolve, and commit.
+- `technical-requirements/envelope-thermal-preview.md` — the Assembly
+  Builder thermal R/U preview contract and input-hash cache semantics.
+- `technical-requirements/envelope-catalog-drift.md` — the material
+  catalog-drift states and refresh-from-catalog contract.
+- `technical-requirements/hbjson-export.md` — the per-aperture-type
+  HBJSON export service (U-Value / cache behavior), distinct from the
+  envelope (assembly) export above.
 
 ## Maintenance Rule
 

@@ -3,7 +3,7 @@ DATE: 2026-05-12
 STATUS: CANONICAL TECHNICAL REQUIREMENTS — extracted from context/PRD.md to keep startup context small.
 RELATED: context/PRD.md §11, context/UI_UX.md,
          context/technical-requirements/data-table.md,
-         context/user-stories/40-model-viewer.md
+         planning/archive/user-stories/40-model-viewer.md
 ---
 
 # PH-Navigator V2 — Frontend / Viewer / Units Requirements

@@ -1,7 +1,7 @@
 ---
 DATE: 2026-05-12
 STATUS: CANONICAL TECHNICAL REQUIREMENTS — extracted from context/PRD.md to keep startup context small.
-RELATED: context/PRD.md §10, context/user-stories/50-settings-ops-llm.md
+RELATED: context/PRD.md §10, planning/archive/user-stories/50-settings-ops-llm.md
 ---
 
 # PH-Navigator V2 — LLM / MCP / Schema Requirements
