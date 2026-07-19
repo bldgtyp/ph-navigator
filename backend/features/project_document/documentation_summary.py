@@ -248,10 +248,13 @@ def get_saved_documentation_summary(version_id: UUID, access: ProjectAccess) -> 
 
 def project_documentation_summary(view: ProjectDocumentView) -> ProjectDocumentationSummaryResponse:
     option_labels = _option_label_index(view)
-    sections = [
-        _envelope_section(view),
-        *_table_sections(view, option_labels),
-    ]
+    by_key = {section.key: section for section in _table_sections(view, option_labels)}
+    by_key["envelope"] = _envelope_section(view)
+    # Present sections in the nav-bar tab order; any future section keys not
+    # listed here fall through to the end rather than being dropped.
+    section_order = ("apertures", "envelope", "equipment", "thermal_bridges")
+    sections = [by_key.pop(key) for key in section_order if key in by_key]
+    sections.extend(by_key.values())
     return ProjectDocumentationSummaryResponse(
         project_id=view.project_id,
         version_id=view.version_id,

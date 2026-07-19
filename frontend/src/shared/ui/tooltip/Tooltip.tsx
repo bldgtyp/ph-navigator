@@ -34,6 +34,7 @@ type TooltipTriggerProps = {
   onBlur?: (event: FocusEvent<HTMLElement>) => void;
   onFocus?: (event: FocusEvent<HTMLElement>) => void;
   onKeyDown?: (event: KeyboardEvent<HTMLElement>) => void;
+  onMouseDown?: (event: MouseEvent<HTMLElement>) => void;
   onMouseEnter?: (event: MouseEvent<HTMLElement>) => void;
   onMouseLeave?: (event: MouseEvent<HTMLElement>) => void;
   ref?: Ref<HTMLElement>;
@@ -61,6 +62,11 @@ export function Tooltip({
   const [focused, setFocused] = useState(false);
   const [hovered, setHovered] = useState(false);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // A pointer press focuses the trigger, and that programmatic focus would
+  // otherwise open the tooltip for a frame before the click's own action (e.g.
+  // opening a menu) runs — a flash. Flag pointer-driven focus so onFocus skips
+  // opening; keyboard focus (no preceding pointer-down) still reveals it.
+  const pointerFocusRef = useRef(false);
   const open = focused || hovered;
 
   const clearHoverTimer = useCallback(() => {
@@ -102,12 +108,22 @@ export function Tooltip({
     "aria-describedby": describedBy(children.props["aria-describedby"], tooltipId, open),
     onBlur: (event: FocusEvent<HTMLElement>) => {
       children.props.onBlur?.(event);
+      pointerFocusRef.current = false;
       setFocused(false);
     },
     onFocus: (event: FocusEvent<HTMLElement>) => {
       children.props.onFocus?.(event);
+      if (pointerFocusRef.current) {
+        pointerFocusRef.current = false;
+        return;
+      }
       clearHoverTimer();
       setFocused(true);
+    },
+    onMouseDown: (event: MouseEvent<HTMLElement>) => {
+      children.props.onMouseDown?.(event);
+      pointerFocusRef.current = true;
+      hide();
     },
     onKeyDown: (event: KeyboardEvent<HTMLElement>) => {
       children.props.onKeyDown?.(event);
